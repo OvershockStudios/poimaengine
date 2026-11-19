@@ -17,7 +17,7 @@ A one-minute gameplay showcase built and playtested with Codex in Poima.
 ## Get started
 
 1. [Set up Poima for Windows](docs/DESKTOP_EDITOR.md#build-and-launch) and open `Poima.Editor.exe`.
-2. Name your game and select **Create project**. Choose **Codex** or **Antigravity** to connect an installed agent.
+2. Name your game and select **Create project**. Choose **Codex**, **Antigravity**, or **Claude Code**. [Agent setup](docs/AGENT_CLIENTS.md)
 3. Describe your idea, agree on a short game brief, and press **Play** to try the project.
 
 Describe your idea in your own words. New projects guide the agent to ask a

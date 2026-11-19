@@ -8,8 +8,9 @@ Vulkan graphics driver. Open `Poima.Editor.exe`.
 - **Create project** starts with a name in **Documents → Poima Projects**.
 - **Open selected project** reopens a project from that folder.
   **Open project from disk…** accepts a `.poimaproject` or an existing `project.json`.
-- The [creator workspace](DESKTOP_EDITOR.md#creator-workspace) puts game chat
-  beside Play and Stop. Choose **Open in the full editor** for Scene and Inspector.
+- The creator workspace puts game chat beside Play and Stop. Choose
+  **Open in the full editor** for Scene and Inspector.
+  [Creator guide](https://github.com/OvershockStudios/poimaengine/blob/main/docs/DESKTOP_EDITOR.md#creator-workspace)
 
 You can also open a project directly from PowerShell.
 
@@ -23,8 +24,9 @@ toolchain prerequisites. [Gameplay tools](https://github.com/OvershockStudios/po
 
 ## Connect an agent
 
-In the creator workspace, select **Codex** or **Antigravity** and connect the
-installed, signed-in CLI. You can also connect from a separate client.
+In the creator workspace, select **Codex**, **Antigravity**, or **Claude Code**.
+Use an installed, signed-in client.
+[Agent setup](https://github.com/OvershockStudios/poimaengine/blob/main/docs/AGENT_CLIENTS.md)
 
 Use the bundled `poima.exe` with an installed Codex or Claude Code client.
 Point the client's MCP configuration at the full path to the executable

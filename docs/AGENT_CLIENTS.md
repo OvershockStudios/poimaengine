@@ -61,6 +61,19 @@ Claude Code accepts a server definition in a JSON configuration file:
 
 Launch the official CLI with `--mcp-config PATH`. For an isolated test, `--strict-mcp-config` restricts servers to that configuration, and `--allowedTools mcp__poima__poima_discover,mcp__poima__poima_call` pre-authorizes Poima's tools. These options do not sign the user in; use the provider's normal authentication flow separately. Use an executable built for the platform running it, especially when switching between WSL and Windows.
 
+## Claude Code in Poima
+
+Extract a [Claude ACP adapter Windows release](https://github.com/agentclientprotocol/claude-agent-acp/releases)
+and keep its executables together. Sign in through Claude Code. Then select
+**Claude Code** in Poima's creator or Agent window, set the path to
+`claude-agent-acp.exe`, and connect. Poima also looks in
+`%LOCALAPPDATA%\Poima\agents\claude` and on PATH.
+
+The adapter uses the Claude Agent SDK and its configured account and model.
+Poima supplies the open project's native MCP endpoint over ACP v1, streams
+responses and shows tool approval cards. Each Connect opens a new
+conversation. [Claude ACP adapter](https://github.com/agentclientprotocol/claude-agent-acp)
+
 ## Antigravity in Poima
 
 Install the Antigravity CLI and sign in by running `agy` in a terminal. Use

@@ -1,8 +1,15 @@
 # Implementation status
 
-Updated 2026-11-19 for **0.0.283**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-19 for **0.0.284**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.284 adds [Claude Code](AGENT_CLIENTS.md#claude-code-in-poima) to the
+Windows agent picker. Claude Code and Antigravity read the same native world
+through one creator workspace and preserve its files. Codex reconnects in the
+same run. A separate Codex game-brief attempt reached its provider and received
+a workspace routing 401. An extracted portable ZIP opens its launcher and
+bundled Collection Room on the development laptop. [Results](evidence/m2-claude-workspace-284.json)
 
 Version 0.0.283 adds [Antigravity to desktop chat](AGENT_CLIENTS.md#antigravity-in-poima).
 The Windows creator test connects the installed Antigravity CLI 1.5.13,

@@ -17,9 +17,10 @@ internal sealed class AgentChat : UserControl
     private readonly string projectRoot, endpoint;
     private readonly bool creator;
     private readonly CancellationTokenSource lifetime = new();
-    private readonly ComboBox provider = new() { ItemsSource = new[] { "Codex", "Antigravity" }, SelectedIndex = 0 };
+    private readonly ComboBox provider = new() { ItemsSource = new[] { "Codex", "Antigravity", "Claude Code" }, SelectedIndex = 0 };
     private readonly TextBox executable = Field("Codex executable", "codex.exe");
     private readonly TextBox agyExecutable = Field("Antigravity CLI executable", FindAntigravity());
+    private readonly TextBox claudeExecutable = Field("Claude ACP executable", FindClaudeAdapter());
     private readonly TextBox engine = Field("Poima executable", Path.Combine(AppContext.BaseDirectory, "poima.exe"));
     private readonly TextBox thread = Field("Conversation ID (empty starts a new conversation)", "");
     private readonly TextBox model = Field("Model (empty uses the CLI's advertised default)", "");
@@ -38,8 +39,7 @@ internal sealed class AgentChat : UserControl
     private bool submitting, closing, connecting, ready, cancelRequested;
     private Task? connectingTask, closingTask, retiringTask;
     public bool Busy => submitting || activeTurn is not null || connecting || retiringTask?.IsCompleted == false;
-    private bool UsesAntigravity => provider.SelectedIndex == 1;
-    private string ProviderName => UsesAntigravity ? "Antigravity" : "Codex";
+    private string ProviderName => provider.SelectedItem as string ?? "Codex";
     public AgentChat(string projectRoot, string endpoint, bool creator = false)
     {
         this.projectRoot = projectRoot; this.endpoint = endpoint; this.creator = creator;
@@ -58,7 +58,8 @@ internal sealed class AgentChat : UserControl
             setup.Children.Add(new TextBlock { Text = "Connect with your agent’s sign-in. Start with your idea and agree on what you’ll build.", TextWrapping = TextWrapping.Wrap });
             setup.Children.Add(provider);
             var settings = new StackPanel { Spacing = 6 };
-            settings.Children.Add(executable); settings.Children.Add(agyExecutable); settings.Children.Add(model); settings.Children.Add(thread);
+            settings.Children.Add(executable); settings.Children.Add(agyExecutable); settings.Children.Add(claudeExecutable);
+            settings.Children.Add(model); settings.Children.Add(thread);
             var options = new Expander { Header = "Connection settings", Content = settings };
             AutomationProperties.SetName(options, "Connection settings");
             setup.Children.Add(options);
@@ -71,7 +72,8 @@ internal sealed class AgentChat : UserControl
         {
             setup.Children.Add(new TextBlock { Text = "Build with an agent", FontSize = 20 });
             setup.Children.Add(new TextBlock { Text = "Uses your installed agent’s login. Changes reach the same world as the editor.", TextWrapping = TextWrapping.Wrap });
-            setup.Children.Add(provider); setup.Children.Add(executable); setup.Children.Add(agyExecutable); setup.Children.Add(engine);
+            setup.Children.Add(provider); setup.Children.Add(executable); setup.Children.Add(agyExecutable);
+            setup.Children.Add(claudeExecutable); setup.Children.Add(engine);
             setup.Children.Add(model); setup.Children.Add(thread); setup.Children.Add(allowEdits);
             var connection = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
             connection.Children.Add(connect); connection.Children.Add(disconnect);
@@ -102,8 +104,9 @@ internal sealed class AgentChat : UserControl
 
     private void UpdateProvider()
     {
-        executable.IsVisible = model.IsVisible = thread.IsVisible = allowEdits.IsVisible = !UsesAntigravity;
-        agyExecutable.IsVisible = UsesAntigravity;
+        executable.IsVisible = model.IsVisible = thread.IsVisible = allowEdits.IsVisible = ProviderName == "Codex";
+        agyExecutable.IsVisible = ProviderName == "Antigravity";
+        claudeExecutable.IsVisible = ProviderName == "Claude Code";
         connect.Content = "Connect " + ProviderName;
     }
 
@@ -112,6 +115,13 @@ internal sealed class AgentChat : UserControl
         var installed = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "agy", "bin", "agy.exe");
         return File.Exists(installed) ? installed : "agy.exe";
+    }
+
+    private static string FindClaudeAdapter()
+    {
+        var installed = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "Poima", "agents", "claude", "claude-agent-acp.exe");
+        return File.Exists(installed) ? installed : "claude-agent-acp.exe";
     }
 
     private static string FindCodex()
@@ -156,7 +166,8 @@ internal sealed class AgentChat : UserControl
         stop.IsEnabled = live && !cancelRequested && (activeTurn is not null || session is AcpSession && submitting);
         connect.IsEnabled = !Busy && session is null && !closing;
         disconnect.IsEnabled = live && !Busy;
-        provider.IsEnabled = executable.IsEnabled = agyExecutable.IsEnabled = engine.IsEnabled = model.IsEnabled = connect.IsEnabled;
+        provider.IsEnabled = executable.IsEnabled = agyExecutable.IsEnabled = claudeExecutable.IsEnabled =
+            engine.IsEnabled = model.IsEnabled = connect.IsEnabled;
         thread.IsReadOnly = !connect.IsEnabled; thread.IsEnabled = !closing;
         allowEdits.IsEnabled = connect.IsEnabled;
     }
@@ -169,9 +180,15 @@ internal sealed class AgentChat : UserControl
         startup.CancelAfter(TimeSpan.FromSeconds(60));
         try
         {
-            current = UsesAntigravity
-                ? await AcpSession.ConnectAsync(agyExecutable.Text ?? "", engine.Text ?? "", endpoint, projectRoot, startup.Token)
-                : await CodexSession.ConnectAsync(executable.Text ?? "", engine.Text ?? "", endpoint, projectRoot, startup.Token, allowEdits.IsChecked == true);
+            current = ProviderName switch
+            {
+                "Antigravity" => await AcpSession.ConnectAsync(agyExecutable.Text ?? "", engine.Text ?? "",
+                    endpoint, projectRoot, startup.Token),
+                "Claude Code" => await AcpSession.ConnectAsync(claudeExecutable.Text ?? "", [], engine.Text ?? "",
+                    endpoint, projectRoot, startup.Token),
+                _ => await CodexSession.ConnectAsync(executable.Text ?? "", engine.Text ?? "",
+                    endpoint, projectRoot, startup.Token, allowEdits.IsChecked == true)
+            };
             session = current;
             if (closing) { await current.DisposeAsync(); return; }
             _ = ReadEvents(current);
@@ -179,7 +196,7 @@ internal sealed class AgentChat : UserControl
             else await OpenCodex((CodexSession)current, startup.Token);
             if (!ReferenceEquals(session, current)) throw new IOException("Connection ended while opening the conversation.");
             if (current is AcpSession && !string.IsNullOrEmpty(transcript.Text))
-                Append("\nNew Antigravity conversation\n");
+                Append("\nNew " + ProviderName + " conversation\n");
             ready = true;
             status.Text = "Connected to " + ProviderName + ".";
             Controls();
@@ -188,7 +205,20 @@ internal sealed class AgentChat : UserControl
         {
             if (current is not null) await DisposeSession(current);
             if (ReferenceEquals(session, current)) { session = null; ready = false; }
-            if (!closing) status.Text = error.Message;
+            if (!closing)
+            {
+                status.Text = error switch
+                {
+                    AgentRpcException problem when current is AcpSession &&
+                        problem.Error["code"]?.GetValue<int>() == -32000 &&
+                        problem.Message.Contains("auth", StringComparison.OrdinalIgnoreCase) =>
+                        ProviderName == "Claude Code" ? "Sign in with claude in a terminal, then connect again."
+                            : "Sign in with agy in a terminal, then connect again.",
+                    System.ComponentModel.Win32Exception problem when ProviderName == "Claude Code" && problem.NativeErrorCode == 2 =>
+                        "Install the Claude ACP adapter and select its executable in the connection settings.",
+                    _ => error.Message
+                };
+            }
         }
         finally { connecting = false; Controls(); }
     }
@@ -229,7 +259,7 @@ internal sealed class AgentChat : UserControl
                     {
                         "end_turn" => "Turn completed",
                         "cancelled" => "Turn cancelled",
-                        _ => "Antigravity ended the turn: " + reason
+                        _ => ProviderName + " ended the turn: " + reason
                     };
                     Append("\n");
                 }
@@ -328,7 +358,7 @@ internal sealed class AgentChat : UserControl
         var parameters = message["params"] as JsonObject;
         if (current is AcpSession)
         {
-            HandleAntigravity(current, method, parameters, message["id"]);
+            HandleAcp(current, method, parameters, message["id"]);
             return;
         }
         if (message["id"] is JsonNode requestId)
@@ -354,7 +384,7 @@ internal sealed class AgentChat : UserControl
         }
         else if (method == "error") status.Text = parameters?.ToJsonString();
     }
-    private void HandleAntigravity(IAgentSession current, string method, JsonObject? parameters, JsonNode? id)
+    private void HandleAcp(IAgentSession current, string method, JsonObject? parameters, JsonNode? id)
     {
         var matches = current.ConversationId is { } conversation && parameters?["sessionId"]?.GetValue<string>() == conversation;
         if (id is not null)
@@ -375,7 +405,7 @@ internal sealed class AgentChat : UserControl
                     ShowApproval(current, id, detail, PermissionOutcome(allow), deny);
                 else
                 {
-                    status.Text = "Antigravity requested permission without reviewable tool details.";
+                    status.Text = ProviderName + " requested permission without reviewable tool details.";
                     _ = Reply(current, id, deny);
                 }
             }

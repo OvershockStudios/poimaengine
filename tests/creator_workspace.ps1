@@ -3,12 +3,15 @@
 # UI Automation addresses only windows owned by this run. No file picker,
 # physical input or pre-existing project is used. -WithCodex opens a local
 # Codex connection with the installed client and submits no model turn.
-# -Antigravity launches the supplied agy.exe and sends one bounded MCP prompt.
+# -Antigravity and -Claude use the supplied ACP clients for one MCP read each.
+# -CodexBrief runs a two-turn interview on the unchanged starter project.
 param(
     [Parameter(Mandatory = $true)][string]$Editor,
     [Parameter(Mandatory = $true)][string]$Output,
     [switch]$WithCodex,
-    [string]$Antigravity
+    [string]$Antigravity,
+    [string]$Claude,
+    [switch]$CodexBrief
 )
 
 $ErrorActionPreference = 'Stop'
@@ -41,6 +44,8 @@ $report = [ordered]@{
     bridge_sha256 = (Get-FileHash -LiteralPath (Join-Path $package 'poima_desktop.dll')).Hash.ToLowerInvariant()
     codex_connection_requested = [bool]$WithCodex
     antigravity_turn_requested = ![string]::IsNullOrEmpty($Antigravity)
+    claude_turn_requested = ![string]::IsNullOrEmpty($Claude)
+    codex_brief_requested = [bool]$CodexBrief
     checks = [ordered]@{}
 }
 
@@ -87,70 +92,122 @@ function Set-ControlText($Label, $Value) {
     $control.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern).SetValue($Value)
 }
 
-function Select-Antigravity {
+function Select-AgentProvider($Name) {
     $selector = Wait-For 'the agent selector' { Find-Control 'Agent provider' -Enabled }
     $selector.GetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern).Expand()
     $condition = [System.Windows.Automation.AndCondition]::new(
         [System.Windows.Automation.PropertyCondition]::new(
-            [System.Windows.Automation.AutomationElement]::NameProperty, 'Antigravity'),
+            [System.Windows.Automation.AutomationElement]::NameProperty, $Name),
         [System.Windows.Automation.PropertyCondition]::new(
             [System.Windows.Automation.AutomationElement]::ProcessIdProperty, $owner.Id))
-    $option = Wait-For 'the Antigravity option' {
+    $option = Wait-For "the $Name option" {
         [System.Windows.Automation.AutomationElement]::RootElement.FindFirst(
             [System.Windows.Automation.TreeScope]::Descendants, $condition)
     }
     $option.GetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern).Select()
+}
+
+function Set-AgentExecutable($Control, $Path) {
     $settings = Wait-For 'Connection settings' { Find-Control 'Connection settings' -Enabled }
     $settings.GetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern).Expand()
-    Set-ControlText 'Antigravity CLI executable' (Resolve-Path -LiteralPath $Antigravity).Path
+    Set-ControlText $Control (Resolve-Path -LiteralPath $Path).Path
     $settings.GetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern).Collapse()
 }
 
-function Exercise-Antigravity($Project) {
-    $world = Get-Content -LiteralPath (Join-Path (Split-Path -Parent $manifest) $Project.entry.world) -Raw | ConvertFrom-Json
-    Select-Antigravity
+function Send-CodexPrompt($Prompt) {
+    Set-ControlText 'Agent prompt' $Prompt
+    Invoke-Control 'Agent Send'
+    $prefix = "You: $Prompt"
+    $null = Wait-For 'the submitted Codex prompt' {
+        (Get-ControlText 'Agent transcript').Contains($prefix)
+    }
+    $null = Wait-For 'the completed Codex response' {
+        $transcript = Get-ControlText 'Agent transcript'
+        $transcript | Set-Content -LiteralPath (Join-Path $run 'codex-transcript.txt') -Encoding UTF8
+        $reply = $transcript.Substring($transcript.LastIndexOf($prefix) + $prefix.Length).Trim()
+        if ((Find-Control 'Agent Send' -Enabled) -and $reply.StartsWith('Codex:') -and $reply.Length -gt 6) {
+            return $true
+        }
+    } 120
+    return Get-ControlText 'Agent transcript'
+}
+
+function Exercise-CodexBrief($Project) {
+    Select-AgentProvider 'Codex'
     Invoke-Control 'Agent Connect'
-    $null = Wait-For 'the connected Antigravity conversation' { Find-Control 'Agent Send' -Enabled } 65
-    $report.checks.antigravity_ready = $true
-    Set-ControlText 'Agent prompt' ('Use the Poima MCP tools to call only world.inspect and read the world ID and revision. ' +
+    $null = Wait-For 'the connected Codex conversation' { Find-Control 'Agent Send' -Enabled } 65
+    $idea = ('I want to make my first game. A quiet cave where I collect three glowing crystals and open an exit. ' +
+        'Please follow the project game-brief interview. Ask short multiple-choice questions in this chat. ' +
+        'Leave the project untouched until I explicitly approve the brief.')
+    $interview = Send-CodexPrompt $idea
+    $interview | Set-Content -LiteralPath (Join-Path $run 'codex-interview.txt') -Encoding UTF8
+    $answer = ('First person, no timer, and keyboard controls using WASD to move and E to interact. ' +
+        'Use your judgment for the cave layout, colors, and exit placement. ' +
+        'Please summarize the brief and the first playable acceptance check. Wait for my approval.')
+    $brief = Send-CodexPrompt $answer
+    $brief | Set-Content -LiteralPath (Join-Path $run 'codex-brief.txt') -Encoding UTF8
+    $current = Inspect-Project
+    if ($current.world_sha256 -ne $Project.world_sha256 -or $current.manifest_sha256 -ne $Project.manifest_sha256) {
+        throw 'The Codex interview changed the project before brief approval.'
+    }
+    $report.checks.codex_brief = [ordered]@{
+        responded_to_both_prompts = $true
+        project_files_unchanged = $true
+    }
+    Invoke-Control 'Agent Disconnect'
+    $null = Wait-For 'the retired Codex connection' { Find-Control 'Agent Connect' -Enabled }
+}
+
+function Exercise-Acp($Project, $Provider, $Setting, $Executable, $Key) {
+    $world = Get-Content -LiteralPath (Join-Path (Split-Path -Parent $manifest) $Project.entry.world) -Raw | ConvertFrom-Json
+    Select-AgentProvider $Provider
+    Set-AgentExecutable $Setting $Executable
+    Invoke-Control 'Agent Connect'
+    $null = Wait-For "the connected $Provider conversation" { Find-Control 'Agent Send' -Enabled } 65
+    $report.checks["${Key}_ready"] = $true
+    $prompt = ('Use the Poima MCP tools to call only world.inspect and read the world ID and revision. ' +
         'Do not write files, edit the world, run commands, or use other tools. ' +
         'Reply with one line containing POIMA_WORLD=<world_id>/<revision> using the values you read, with no markdown.')
+    Set-ControlText 'Agent prompt' $prompt
+    $priorTranscript = Get-ControlText 'Agent transcript'
     Invoke-Control 'Agent Send'
-    $null = Wait-For 'the submitted Antigravity prompt' {
-        (Find-Control 'Agent Stop' -Enabled) -or (Get-ControlText 'Agent transcript') -match '(?m)^You:'
+    $null = Wait-For "the submitted $Provider prompt" {
+        (Find-Control 'Agent Stop' -Enabled) -or (Get-ControlText 'Agent transcript') -cne $priorTranscript
     }
-    $report.checks.antigravity_permissions = @()
-    $null = Wait-For 'the completed Antigravity MCP read' {
+    $report.checks["${Key}_permissions"] = @()
+    $null = Wait-For "the completed $Provider MCP read" {
         $card = Find-Control 'Approve once' -Enabled
         if ($card) {
             $details = Get-ControlText 'Agent approval details'
-            $details | Add-Content -LiteralPath (Join-Path $run 'permission-details.txt')
+            $details | Add-Content -LiteralPath (Join-Path $run "$Key-permission-details.txt")
             if ($details -notmatch 'world\.inspect' -or $details -notmatch 'poima[_/ :.-]+call') {
                 Invoke-Control 'Decline'
-                throw 'Antigravity requested a tool outside the expected test operation.'
+                throw "$Provider requested a tool outside the expected test operation."
             }
-            $report.checks.antigravity_permissions += 'world.inspect'
+            $report.checks["${Key}_permissions"] += 'world.inspect'
             $card.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
         }
         $transcript = Get-ControlText 'Agent transcript'
-        $transcript | Set-Content -LiteralPath (Join-Path $run 'antigravity-transcript.txt') -Encoding UTF8
+        $transcript | Set-Content -LiteralPath (Join-Path $run "$Key-transcript.txt") -Encoding UTF8
         if (Find-Control 'Agent Send' -Enabled) {
-            $match = [regex]::Match($transcript, '(?m)^Antigravity:\s*POIMA_WORLD=([0-9a-f]+)/([0-9]+)\s*$')
+            $reply = $transcript.Substring($transcript.LastIndexOf($prompt) + $prompt.Length)
+            $pattern = '(?m)^' + [regex]::Escape($Provider) + ':\s*POIMA_WORLD=([0-9a-f]+)/([0-9]+)\s*$'
+            $match = [regex]::Match($reply, $pattern)
             if (!$match.Success -or $match.Groups[1].Value -cne $world.world_id -or
                 [long]$match.Groups[2].Value -ne $Project.revision) {
-                throw 'Antigravity returned the wrong world identity or revision.'
+                throw "$Provider returned the wrong world identity or revision."
             }
             return $true
         }
     } 120
-    $report.checks.antigravity_read = [ordered]@{ world_id = $world.world_id; revision = $Project.revision }
+    $report.checks["${Key}_read"] = [ordered]@{ world_id = $world.world_id; revision = $Project.revision }
     $current = Inspect-Project
     if ($current.world_sha256 -ne $Project.world_sha256 -or $current.manifest_sha256 -ne $Project.manifest_sha256) {
         throw 'The read-only ACP test changed the project.'
     }
     Invoke-Control 'Agent Disconnect'
-    $null = Wait-For 'the retired Antigravity connection' { Find-Control 'Agent Connect' -Enabled }
-    $report.checks.antigravity_disconnected = $true
+    $null = Wait-For "the retired $Provider connection" { Find-Control 'Agent Connect' -Enabled }
+    $report.checks["${Key}_disconnected"] = $true
 }
 
 function Start-Launcher($Phase) {
@@ -221,8 +278,11 @@ try {
         $state = Inspect-Desktop
         !$state.runtime.active -and !$state.views.game.attached
     })
-    if ($Antigravity) { Exercise-Antigravity $project }
+    if ($Antigravity) { Exercise-Acp $project 'Antigravity' 'Antigravity CLI executable' $Antigravity 'antigravity' }
+    if ($Claude) { Exercise-Acp $project 'Claude Code' 'Claude ACP executable' $Claude 'claude' }
+    if ($CodexBrief) { Exercise-CodexBrief $project }
     if ($WithCodex) {
+        Select-AgentProvider 'Codex'
         Invoke-Control 'Agent Connect'
         $null = Wait-For 'the connected Codex conversation' { Find-Control 'Agent Send' -Enabled } 65
         $report.checks.codex_ready = $true

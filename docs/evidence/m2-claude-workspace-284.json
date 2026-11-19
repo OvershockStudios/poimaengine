@@ -1,0 +1,109 @@
+{
+  "engine_version": "0.0.284",
+  "scope": "Windows creator workspace against local signed-in providers; extracted Windows preview with installed 0.0.284 native Collection Room runtime.",
+  "test_sha256": "aa2e563fdda9549afc3123c6c246f00e44c18ada9b46b2dd24db4b86af79622a",
+  "claude": {
+    "adapter_version": "0.109.0",
+    "provider_cli_version": "2.1.328",
+    "adapter_release_sha256": "1e756ae33179821d52077d9c7c43e42b849f97a1074a50189f149aa15720519a",
+    "scoped_tool_trace": {
+      "tool_names_and_methods": [
+        [
+          "ToolSearch",
+          null
+        ],
+        [
+          "mcp__poima__poima_call",
+          "world.inspect"
+        ]
+      ],
+      "only_tested_project": true,
+      "reply_world_id_matched": true
+    }
+  },
+  "antigravity_cli_version": "1.5.13",
+  "creator": {
+    "passed": true,
+    "input": "Windows UI Automation and an owned WM_CLOSE message",
+    "editor_sha256": "83f992a703d84be307e5797dba6084e2eaa580162565584d4d5ba947477a3b29",
+    "frontend_sha256": "35305a53afe185d9b6a97409d9f66bc6a8a09e1cdbfae9d51c836a1341310996",
+    "cli_sha256": "c91704a251167ed6f3f74c8869a1e2950ea62996488221494a383a82d1ce34ed",
+    "bridge_sha256": "3488384391c0da0d7f4371ae3a632d5f079f81d3cdd0241b68839d0e9fdf61db",
+    "codex_connection_requested": true,
+    "antigravity_turn_requested": true,
+    "claude_turn_requested": true,
+    "codex_brief_requested": false,
+    "checks": {
+      "created": {
+        "id": "0fd1ca2fc01d71fa44feea1b57cea091",
+        "revision": 1
+      },
+      "first_preview": {
+        "session": "d63542d592b2423e9741b7196537e5fd",
+        "tick": 2,
+        "frames": 1,
+        "revision": 1,
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "validation_errors": 0
+      },
+      "stopped": true,
+      "antigravity_ready": true,
+      "antigravity_permissions": [
+        "world.inspect"
+      ],
+      "antigravity_read": {
+        "world_id": "fb6a42a39bb7f16f497b1bb641e7ddde",
+        "revision": 1
+      },
+      "antigravity_disconnected": true,
+      "claude_ready": true,
+      "claude_permissions": [],
+      "claude_read": {
+        "world_id": "fb6a42a39bb7f16f497b1bb641e7ddde",
+        "revision": 1
+      },
+      "claude_disconnected": true,
+      "codex_ready": true,
+      "codex_disconnected": true,
+      "codex_reconnected": true,
+      "closed_exit_code": 0,
+      "reopened_preview": {
+        "session": "46eac8203b304c019845f9bee6a8cdd2",
+        "tick": 2,
+        "frames": 1,
+        "revision": 1,
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "validation_errors": 0
+      },
+      "closed_during_play_exit_code": 0
+    }
+  },
+  "transport_contract_passed": true,
+  "preview": {
+    "archive": "Poima-0.0.284-Windows-x64.zip",
+    "sha256": "ae41798d4bc832dc9e2686db545ae8bab151d37be8314bb2dc829260423ff2b5",
+    "bytes": 128665405,
+    "sample_export_revision": 1,
+    "sample_export_file_count": 59,
+    "launcher_check": {
+      "passed": true,
+      "working_directory_outside_bundle": true,
+      "launched_bundled_player_title": "Poima \u2014 authored scene preview",
+      "launcher_title": "Poima",
+      "launcher_exit": 0,
+      "player_exit": 0,
+      "action_names_found": 3
+    },
+    "qualification": "Runs from an extracted ZIP with a separate working directory and process-local minimal PATH on the development laptop."
+  },
+  "codex_account_blocker": {
+    "failed_game_brief": "0.0.283 creator workspace and Codex CLI 0.163.0-alpha.11",
+    "provider_error": "workspace routing discovery unauthorized (401)",
+    "independent_cli_check": "Codex CLI 0.160.1 reproduced the provider error outside Poima."
+  },
+  "limits": [
+    "Live ACP turns cover reads only. Claude used its configured permissions, while Antigravity presented a once-only approval.",
+    "Codex connection and reconnection pass. The new brief-to-play workflow remains unqualified.",
+    "The ZIP was not tested on a clean machine. No automatic update or release channel was exercised."
+  ]
+}
