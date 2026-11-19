@@ -1,0 +1,98 @@
+{
+  "format": "poima.evidence.authored-rotation-clips.v1",
+  "date": "2026-11-19",
+  "source_checkpoint": "0.0.246",
+  "schema_revision": 138,
+  "input": "Original synthetic animated ribbon with a nonidentity child rest rotation",
+  "identical_cooked_model_results": {
+    "asset": "9e0cf09fb192808bed71aef4b1a59c52803d7a28a292242d89d8ea64702fcfaf",
+    "base_asset": "f1253416af68409da8e0ba1519d16ab7beb78e0070203ddfe134e7c1a2f322b3",
+    "bytes": 2307,
+    "clips": [
+      {
+        "duration": 1.0,
+        "index": 1,
+        "name": "Curl and release",
+        "tracks": 1
+      },
+      {
+        "duration": 0.5,
+        "index": 2,
+        "name": "Local pose changes",
+        "tracks": 2
+      },
+      {
+        "duration": 0.0,
+        "index": 3,
+        "name": "Static grip",
+        "tracks": 1
+      }
+    ]
+  },
+  "platforms": {
+    "linux": {
+      "executable_sha256": "9ab6bf96f7c224175f3e3e9e1ed1a955108ace4d86963dfde280e63665bcd209",
+      "rpc_count": 71,
+      "exact_cold_save": true,
+      "exact_partitioned_continuation": true,
+      "runtime_pose_samples": 4,
+      "rejected_requests": 13,
+      "owners_naturally_closed": 2,
+      "report_sha256": "bb52955b4d728b05ebcf3281efe0e3ae97d136d5744fc317db64e06e414fd3e5",
+      "native_cli_regression_suites": [
+        "model_source_fingerprint_protocol",
+        "mcp_contract",
+        "world_ui_contract",
+        "animation_contract",
+        "runtime_animation_layers_contract",
+        "world_contract",
+        "asset_references_contract"
+      ]
+    },
+    "windows": {
+      "executable_sha256": "2cbe94a030f88af7f5798f110b3bd6aed2877f8dc32a1160ce61e17f121a26e4",
+      "rpc_count": 71,
+      "exact_cold_save": true,
+      "exact_partitioned_continuation": true,
+      "runtime_pose_samples": 4,
+      "rejected_requests": 13,
+      "owners_naturally_closed": 2,
+      "report_sha256": "f1cb62995b01d4f82f46ac088490bf9cdbd524248103958cbfa7f688e2e11915"
+    }
+  },
+  "mcp": {
+    "passed": true,
+    "requests": 5,
+    "replies": 4,
+    "natural_exit": 0,
+    "report_sha256": "978fc91258cb13ea2d812085aeacf1806e77cef4aea89719a17885532edb232c"
+  },
+  "relocated_windows": {
+    "authored_project_original_path_unavailable": true,
+    "single_referenced_cooked_model_sha256": "9e0cf09fb192808bed71aef4b1a59c52803d7a28a292242d89d8ea64702fcfaf",
+    "exact_additive_local_pose_at_tick_15": true,
+    "authoring_method_hidden_and_rejected_in_both_game_hosts": true,
+    "standalone_rpc_count_including_source_comparison": 13,
+    "shared_rpc_count": 6,
+    "standalone_report_sha256": "31088e5260d506fd983e5a67a6450b463949915769b6ac130866a54f7c044af2",
+    "shared_report_sha256": "cd66abe54672acd63d9057f3b0bbaf0ba740c6cb2bb9325c889550a29f865f9f"
+  },
+  "request_schema_compatibility": {
+    "authoring_core_v1": "Windows selected authoring projection",
+    "runtime_game_session_v1": [
+      "Windows source_world",
+      "Windows readonly_game"
+    ]
+  },
+  "verification_history": [
+    "The initial Windows export rejected an installed desktop debug library that exceeded the existing file limit. The successful retry strips debug sections from the generated install copy.",
+    "The dedicated game stdio discovery lacks the shared-headless session_scope, as documented. Its use as a shared release candidate failed. The actual shared game owner supplies the passing candidate.",
+    "The first shared-owner harness used a Windows-only Python pipe helper under WSL. The successor uses the native connector and records natural owner shutdown."
+  ],
+  "scope": [
+    "The native recipe authors ordinary rotation channels. Simulation uses the existing cooked model, layer and save implementations.",
+    "The hinge envelope bounds authored offsets. It does not enforce articulated skin contact or combined anatomical limits.",
+    "The relocated test verifies native pose playback and read-only authoring behavior in an exported game service."
+  ],
+  "reproduce": "tests/authored_rotation_clips.py"
+}

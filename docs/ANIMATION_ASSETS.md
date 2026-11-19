@@ -1,6 +1,15 @@
 # Animation asset reference pipeline
 
-The animation asset pipeline provides glTF skin/curve import, immutable packages, numerical inspection and isolated pose capture. [Compute skinning](GPU_SKINNING.md) and [editable runtime rigs](RUNTIME_ANIMATION.md) support fixed-tick playback, crossfades, inertial transitions and masked layers. [Explicit rotation retargeting](ANIMATION_RETARGETING.md) supports matching named ancestry with chosen reference poses and position/scale policies. Root-motion extraction, animation events, IK and automatic anatomical/contact retargeting remain unfinished. [FBX import and separate clip composition](FBX_IMPORT.md) feed the same cooked model and runtime paths, with explicit import limits.
+The animation asset pipeline provides glTF and FBX rig import, immutable
+packages, numerical inspection and isolated pose capture. Runtime rigs support
+fixed-tick playback, crossfades, inertial transitions, masked layers, planar
+root motion and explicit two-bone IK. [Runtime animation](RUNTIME_ANIMATION.md) ·
+[Compute skinning](GPU_SKINNING.md) · [Two-bone IK](TWO_BONE_IK.md)
+
+Compose external clips by choosing a reference pose, position/scale policy and
+matching ancestry. To build a new pose from joint keys, author a clip directly
+on a cooked model. [FBX import](FBX_IMPORT.md) ·
+[Rotation retargeting](ANIMATION_RETARGETING.md)
 
 Run the checked-in original ribbon example from the repository root:
 
@@ -35,6 +44,82 @@ Node sampling is the default: each item supplies local position/rotation/scale, 
 ```
 
 Invalid selectors/parameters return `-32602`; invalid packages or unevaluable poses return `-32050`. The sampler rejects a cubic quaternion that evaluates to zero, nonpositive evaluated scale, singular blended skin transforms or out-of-range coordinates. These are reported failures, not silently substituted poses.
+
+## Author joint rotation clips
+
+`asset.animation.author` makes a new cooked model from an existing model hash
+and appends named rotation clips. Use it for grip, release, lever and other
+joint poses you can express with a small set of rotation keys. First inspect the
+source model's nodes and axes. A hinge uses the node's **rest-local axis**.
+For a multi-axis track, supply unit XYZW `rotation` keys expressed in the
+parent frame and omit `hinge`.
+
+```json
+{
+  "asset": "<cooked model hash>",
+  "clips": [{
+    "name": "Release and regrip",
+    "tracks": [{
+      "node": 9,
+      "hinge": {
+        "axis": [1, 0, 0],
+        "minimum_degrees": -35,
+        "maximum_degrees": 0
+      },
+      "keys": [
+        {"time": 0, "degrees": 0},
+        {"time": 0.2, "degrees": -35},
+        {"time": 0.4, "degrees": -35},
+        {"time": 0.6, "degrees": 0}
+      ]
+    }]
+  }]
+}
+```
+
+Use this as the method parameters. Calibrate the axis and range per joint.
+The hinge track composes the model's rest rotation with the local rotation
+offset. It rejects degrees outside the supplied interval. Its endpoints must
+lie within ±180°, with a span of at most 179.9° for shortest-path interpolation.
+Hinge limits apply to the authored offsets. The final composed motion also
+depends on the base animation, other layers and procedural constraints.
+
+Each request appends 1–8 clips covering 1–128 tracks per clip, 1–256 keys per
+track and at most 4,096 keys total. Usual model budgets still apply. New names
+are unique within the model and contain 1–256 UTF-8 bytes without NUL.
+Each node appears once per clip, with channels stored in ascending node order.
+`interpolation` accepts `linear` (the default) or `step`. Keys use seconds in
+0–3,600 and must increase strictly after conversion to float32. A single key
+at zero holds a pose. The last stored key time across tracks is the duration.
+Axes and quaternions must have unit length within 1e-6.
+
+The result contains `base_asset`, the new `asset` hash, `bytes` and a
+`clips` array with each added clip's `index`, `name`, `duration` and
+`tracks` count. Geometry, node indices and original takes carry forward.
+The authored scene and the input package keep their existing identities.
+Malformed keys and selectors return `-32602`. Missing or invalid model
+packages and storage errors return `-32050`. A rejected request publishes
+no derived package. Retry the same request against the same base.
+
+Instantiate the returned model hash and use the new clip index in the ordinary
+[animation layer workflow](RUNTIME_ANIMATION.md#masked-animation-layers).
+An additive layer with the original rest transforms and a mask covering the
+intended joints applies the rotation offsets over the body take while retaining
+its translations and scales. Use `runtime.step.animations` or C#
+`SetAnimationLayer` for weight, seek and transition control. Inspect
+off-target motion with [committed frame comparisons](POSE_FRAME_COMPARISON.md)
+and review the skinned pose in the player view. A calibrated angle alone cannot
+verify surface contact.
+
+The operation is available to authoring clients. Packaged read-only players
+consume the resulting model through their regular animation pipeline.
+Run the authoring, composition and exact save continuation check on a
+simulation build.
+
+```sh
+python3 tests/authored_rotation_clips.py --binary build/linux-game/poima \
+  --output build/authored-rotation-check
+```
 
 ## Measure a posed model
 

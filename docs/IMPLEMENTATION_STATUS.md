@@ -1,8 +1,16 @@
 # Implementation status
 
-Updated 2026-11-19 for **0.0.245**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-19 for **0.0.246**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.246 adds [authored joint rotation clips](ANIMATION_ASSETS.md#author-joint-rotation-clips).
+Static poses, hinge keys and multi-axis quaternion keys append to a new cooked
+model. Existing playback layers blend the keys over a base take and preserve
+them through cold saves. [Qualification](evidence/m2-authored-rotation-clips.json)
+covers Linux, Windows, native MCP and relocated Windows export. Hinge bounds
+validate authored offsets. Anatomical limits across the final mixed pose and
+skinned hand-to-item contact need their own checks.
 
 Version 0.0.245 adds [animation-driven grip attachments](TWO_BONE_IK.md#follow-a-moving-item).
 A two-bone slot follows a calibrated wrist position, elbow pole and wrist

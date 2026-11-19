@@ -221,7 +221,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 137}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 138}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -785,6 +785,24 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     result["invariants"].push_back("Contained external FBX texture read failures return error -32050 with versioned fbx_texture_dependency data, relative dependency identity, reason and effective byte limit. Animation donor failures identify the zero-based donor index. Source inspection and rejected imports do not publish partial models or mutate authored state; no texture search or admission relaxation is performed.");
     const Json page_limit={{"type","integer"},{"minimum",1},{"maximum",64}};
     const Json model_index={{"type","integer"},{"minimum",0},{"maximum",9999}};
+    const Json key_time={{"type","number"},{"minimum",0},{"maximum",3600}};
+    const Json hinge_degrees={{"type","number"},{"minimum",-180},{"maximum",180}};
+    const Json unit_coordinate={{"type","number"},{"minimum",-1.000001},{"maximum",1.000001}};
+    const auto keys=[&](const Json& key) { return Json{{"type","array"},{"minItems",1},{"maxItems",256},{"items",key}}; };
+    const Json interpolation={{"enum",{"step","linear"}},{"default","linear"}};
+    const auto track_rotation=object_schema({{"node",model_node},{"interpolation",interpolation},
+        {"keys",keys(object_schema({{"time",key_time},{"rotation",vector(unit_coordinate,4)}},{"time","rotation"}))}},{"node","keys"});
+    const auto hinge=object_schema({{"axis",vector(unit_coordinate,3)},{"minimum_degrees",hinge_degrees},{"maximum_degrees",hinge_degrees}},
+        {"axis","minimum_degrees","maximum_degrees"});
+    const auto track_hinge=object_schema({{"node",model_node},{"interpolation",interpolation},{"hinge",hinge},
+        {"keys",keys(object_schema({{"time",key_time},{"degrees",hinge_degrees}},{"time","degrees"}))}},{"node","hinge","keys"});
+    const auto authored_clip=object_schema({
+        {"name",{{"type","string"},{"minLength",1},{"maxLength",256}}},
+        {"tracks",{{"type","array"},{"minItems",1},{"maxItems",128},{"items",{{"oneOf",Json::array({track_rotation,track_hinge})}}}}}},
+        {"name","tracks"});
+    methods["asset.animation.author"]=object_schema({{"asset",asset_id},
+        {"clips",{{"type","array"},{"minItems",1},{"maxItems",8},{"items",authored_clip}}}},{"asset","clips"});
+    methods["asset.animation.author"]["description"]="Append 1..8 joint-local rotation clips to an immutable cooked model and return a new model hash with clip indices. Keys use unit XYZW in the joint's parent frame, or an explicit unit hinge axis and signed degree offsets from model rest. Hinge interval width is at most 179.9 degrees. Times must strictly increase after float32 encoding, at most 4096 total keys. Track nodes and new clip names must be unique in their scope. No world edit occurs.";
     methods["asset.animation.channel"]=object_schema({{"asset",asset_id},{"clip",model_index},{"channel",model_index},{"offset",rev},{"limit",page_limit}}, {"asset","clip","channel"});
     methods["asset.animation.skin"]=object_schema({{"asset",asset_id},{"skin",model_index},{"offset",rev},{"limit",page_limit}}, {"asset","skin"});
     methods["asset.animation.sample"]=object_schema({{"asset",asset_id},{"clip",model_index},{"time",{{"type","number"},{"minimum",0},{"maximum",1e9}}},{"loop",{{"type","boolean"},{"default",false}}},{"section",{{"enum",{"nodes","vertices"}}}},{"node",model_index},{"primitive",model_index},{"offset",rev},{"limit",page_limit}}, {"asset","time"});

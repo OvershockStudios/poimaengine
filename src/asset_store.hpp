@@ -39,6 +39,26 @@ inline LoadedModel read_model_asset(const std::filesystem::path& directory,const
     if(!input.read(bytes.data(),static_cast<std::streamsize>(length)) || content_hash(bytes)!=id)throw std::runtime_error("Model asset content hash mismatch or read failure.");
     return {id,bytes.size(),decode_model(bytes)};
 }
+inline LoadedModel store_cooked_model(const std::filesystem::path& directory,const ModelAsset& source,const std::string& importer) {
+    const auto bytes=encode_model_with_importer(source,importer);
+    const auto model=decode_model(bytes); // Validate the shipping format before publication.
+    const auto id=content_hash(bytes);std::filesystem::create_directories(directory);
+    // Never follow a linked store or truncate a pre-existing staging entry.
+    std::error_code error;const auto status=std::filesystem::symlink_status(directory,error);
+    if(error || !std::filesystem::is_directory(status) || std::filesystem::is_symlink(status))throw std::runtime_error("Asset store must be a regular directory.");
+#ifdef _WIN32
+    const auto attributes=GetFileAttributesW(directory.c_str());
+    if(attributes==INVALID_FILE_ATTRIBUTES || (attributes&FILE_ATTRIBUTE_REPARSE_POINT))throw std::runtime_error("Asset store cannot be a reparse point.");
+#endif
+    const auto path=directory/(id+".pmodel");
+    if(std::filesystem::exists(std::filesystem::symlink_status(path)))return read_model_asset(directory,id);
+    const auto pending=directory/(id+".pending");
+    if(std::filesystem::exists(std::filesystem::symlink_status(pending)))throw std::runtime_error("Model staging path already exists; remove only an abandoned regular staging file before retrying.");
+    write_asset_pending_exclusive(pending,bytes);
+    try {world_detail::replace_file(pending,path);}
+    catch(...) {std::error_code unused;std::filesystem::remove(pending,unused);throw;}
+    return {id,bytes.size(),model};
+}
 inline LoadedModel store_model_asset(const std::filesystem::path& directory,const std::filesystem::path& source,
     const std::vector<ModelAnimationSource>& animations={},std::optional<FbxNormalConvention> normal_map={},
     std::optional<std::string> expected_model_sha256={}) {
@@ -84,25 +104,7 @@ inline LoadedModel store_model_asset(const std::filesystem::path& directory,cons
         imported.model=compose_model_animations(*imported.model,donors);
         imported.importer=(imported.importer.empty() ? std::string("cgltf-1.15") : imported.importer)+"/poima-exact-skeleton-1";
     }
-    const auto bytes=encode_model_with_importer(*imported.model,imported.importer);
-    const auto model=decode_model(bytes); // Validate the shipping format before publication.
-    const auto id=content_hash(bytes);std::filesystem::create_directories(directory);
-    // Match existing image-store admission before any staging write. A linked
-    // directory or predictable pre-existing staging path is never followed.
-    std::error_code error;const auto status=std::filesystem::symlink_status(directory,error);
-    if(error || !std::filesystem::is_directory(status) || std::filesystem::is_symlink(status))throw std::runtime_error("Asset store must be a regular directory.");
-#ifdef _WIN32
-    const auto attributes=GetFileAttributesW(directory.c_str());
-    if(attributes==INVALID_FILE_ATTRIBUTES || (attributes&FILE_ATTRIBUTE_REPARSE_POINT))throw std::runtime_error("Asset store cannot be a reparse point.");
-#endif
-    const auto path=directory/(id+".pmodel");
-    if(std::filesystem::exists(std::filesystem::symlink_status(path)))return read_model_asset(directory,id);
-    const auto pending=directory/(id+".pending");
-    if(std::filesystem::exists(std::filesystem::symlink_status(pending)))throw std::runtime_error("Model staging path already exists; remove only an abandoned regular staging file before retrying.");
-    write_asset_pending_exclusive(pending,bytes);
-    try {world_detail::replace_file(pending,path);}
-    catch(...) {std::error_code unused;std::filesystem::remove(pending,unused);throw;}
-    return {id,bytes.size(),model};
+    return store_cooked_model(directory,*imported.model,imported.importer);
 }
 struct LoadedImage { std::string id;std::size_t bytes=0;std::shared_ptr<const TextureImage> image; };
 struct LoadedAudio { std::string id;std::size_t bytes=0;std::shared_ptr<const AudioClip> clip; };

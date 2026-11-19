@@ -2,6 +2,7 @@
 #include "poima/core.hpp"
 #include "gpu_memory_json.hpp"
 #include <limits>
+#include <numbers>
 #include "poima/world.hpp"
 #include "world_stdio.hpp"
 #include "poima/animation.hpp"
@@ -1185,7 +1186,7 @@ void validate(const Json& doc) {
     }
 }
 
-constexpr std::array authoring_methods{"component.schema.import","world.transact","world.undo","world.redo","asset.import","asset.image.import","asset.audio.import","input.transact","settings.transact","development.compile","development.profiles","development.publish","development.export","development.jobs","development.inspect","development.diagnostics","development.cancel","development.forget","project.inspect","project.gameplay.adopt","asset.material.generate","asset.material.job","asset.material.jobs","asset.material.cancel","asset.material.forget","world.navigation.bake","asset.provenance.create"};
+constexpr std::array authoring_methods{"component.schema.import","world.transact","world.undo","world.redo","asset.import","asset.image.import","asset.audio.import","input.transact","settings.transact","development.compile","development.profiles","development.publish","development.export","development.jobs","development.inspect","development.diagnostics","development.cancel","development.forget","project.inspect","project.gameplay.adopt","asset.material.generate","asset.material.job","asset.material.jobs","asset.material.cancel","asset.material.forget","world.navigation.bake","asset.provenance.create","asset.animation.author"};
 class World {
     profiling::Service profiler_;
     frame_performance::Service performance_;
@@ -2146,7 +2147,106 @@ public:
             return {{"asset",loaded.id},{"format","poima.audio.v1"},{"bytes",loaded.bytes},{"sample_rate",audio_rate},{"channels",1},{"frames",loaded.clip->samples.size()},{"duration_seconds",double(loaded.clip->samples.size())/audio_rate}};
         }catch(const Error&) { throw; }catch(const std::exception& e) { throw Error(-32050,e.what()); }
     }
+    Json author_animation(const Json& params) const {
+        fields(params,{"asset","clips"},{"asset","clips"});
+        require(params.at("asset").is_string() && valid_asset_id(params.at("asset").get<std::string>()),"Invalid model asset ID.");
+        const auto& clips=params.at("clips");
+        require(clips.is_array() && !clips.empty() && clips.size()<=8,"Author 1..8 rotation clips per request.");
+        const auto number=[](const Json& value,double minimum,double maximum,const char* message) {
+            require(value.is_number(),message);
+            const auto result=value.get<double>();
+            require(std::isfinite(result) && result>=minimum && result<=maximum,message);
+            return result;
+        };
+        try {
+            const auto source=read_model_asset(asset_directory(),params.at("asset"));
+            ModelAsset model=*source.model;
+            require(clips.size()<=max_model_clips-model.animations.size(),"Result exceeds the model clip limit.");
+            std::set<std::string> names;
+            for(const auto& clip:model.animations)names.insert(clip.name);
+            auto appended=Json::array();
+            std::size_t key_count=0;
+            for(const auto& input:clips) {
+                fields(input,{"name","tracks"},{"name","tracks"});
+                require(input.at("name").is_string(),"Authored clip name must be a string.");
+                AnimationClip clip;clip.name=input.at("name").get<std::string>();
+                require(!clip.name.empty() && clip.name.size()<=256 && clip.name.find('\0')==std::string::npos,
+                    "Authored clip name must be 1..256 UTF-8 bytes without NUL.");
+                require(names.insert(clip.name).second,"Authored clip name must be unique in the model.");
+                const auto& tracks=input.at("tracks");
+                require(tracks.is_array() && !tracks.empty() && tracks.size()<=128,"Author 1..128 rotation tracks per clip.");
+                std::set<std::uint32_t> nodes;
+                for(const auto& track:tracks) {
+                    fields(track,{"node","interpolation","hinge","keys"},{"node","keys"});
+                    const auto node=revision(track.at("node"));
+                    require(node<model.nodes.size(),"Rotation track node is outside the source model.");
+                    AnimationChannel channel;
+                    channel.node=static_cast<std::uint32_t>(node);
+                    channel.path=AnimationPath::rotation;
+                    require(nodes.insert(channel.node).second,"A clip permits one rotation track per node.");
+                    if(track.contains("interpolation")) {
+                        const auto& interpolation=track.at("interpolation");
+                        require(interpolation=="step" || interpolation=="linear","Rotation interpolation must be step or linear.");
+                        if(interpolation=="step")channel.interpolation=AnimationInterpolation::step;
+                    }
+                    std::array<double,3> axis{};
+                    double minimum=0,maximum=0;
+                    const auto hinge=track.find("hinge");
+                    if(hinge!=track.end()) {
+                        fields(*hinge,{"axis","minimum_degrees","maximum_degrees"},{"axis","minimum_degrees","maximum_degrees"});
+                        minimum=number(hinge->at("minimum_degrees"),-180,180,"Hinge minimum must be within -180..180 degrees.");
+                        maximum=number(hinge->at("maximum_degrees"),-180,180,"Hinge maximum must be within -180..180 degrees.");
+                        require(maximum>=minimum && maximum-minimum<=179.9,"Hinge interval must be ordered and span at most 179.9 degrees.");
+                        const auto& coordinates=hinge->at("axis");
+                        require(coordinates.is_array() && coordinates.size()==3,"Hinge axis requires three components.");
+                        for(std::size_t i=0;i<axis.size();++i)axis[i]=number(coordinates[i],-1.000001,1.000001,"Hinge axis must be a unit vector.");
+                        const auto length=std::hypot(axis[0],axis[1],axis[2]);
+                        require(std::abs(length-1)<=1e-6,"Hinge axis must have unit length within 1e-6.");
+                        for(auto& component:axis)component/=length;
+                    }
+                    const auto& keys=track.at("keys");
+                    require(keys.is_array() && !keys.empty() && keys.size()<=256 && keys.size()<=4096-key_count,
+                        "Author 1..256 keys per track and at most 4096 per request.");
+                    key_count+=keys.size();
+                    for(const auto& key:keys) {
+                        const char* value_field=hinge==track.end()?"rotation":"degrees";
+                        fields(key,{"time",value_field},{"time",value_field});
+                        const auto time=number(key.at("time"),0,3600,"Rotation key time must be within 0..3600 seconds.");
+                        const auto stored=static_cast<float>(time==0?0:time);
+                        require(channel.times.empty() || stored>channel.times.back(),"Key times must increase after float32 encoding.");
+                        channel.times.push_back(stored);
+                        std::array<double,4> rotation{};
+                        if(hinge==track.end()) {
+                            const auto& q=key.at("rotation");
+                            require(q.is_array() && q.size()==4,"Rotation key requires four XYZW components.");
+                            for(std::size_t i=0;i<rotation.size();++i)rotation[i]=number(q[i],-1.000001,1.000001,"Rotation key must be a unit quaternion.");
+                            const auto length=std::hypot(std::hypot(rotation[0],rotation[1]),std::hypot(rotation[2],rotation[3]));
+                            require(std::abs(length-1)<=1e-6,"Rotation key must have unit length within 1e-6.");
+                            rotation=physical_rig::canonical_quaternion(rotation);
+                        } else {
+                            const auto angle=number(key.at("degrees"),minimum,maximum,"Hinge key is outside its declared angle interval.");
+                            const auto half=angle*(std::numbers::pi/360.0);
+                            const auto sine=std::sin(half);
+                            rotation=physical_rig::multiply(model.nodes[node].rotation,
+                                {axis[0]*sine,axis[1]*sine,axis[2]*sine,std::cos(half)});
+                        }
+                        channel.values.push_back({static_cast<float>(rotation[0]),static_cast<float>(rotation[1]),
+                            static_cast<float>(rotation[2]),static_cast<float>(rotation[3])});
+                    }
+                    clip.duration=std::max(clip.duration,static_cast<double>(channel.times.back()));
+                    clip.channels.push_back(std::move(channel));
+                }
+                std::sort(clip.channels.begin(),clip.channels.end(),[](const auto& a,const auto& b){return a.node<b.node;});
+                appended.push_back({{"index",model.animations.size()},{"name",clip.name},{"duration",clip.duration},{"tracks",clip.channels.size()}});
+                model.animations.push_back(std::move(clip));
+            }
+            const auto result=store_cooked_model(asset_directory(),model,"poima-animation-author-1");
+            return {{"base_asset",source.id},{"asset",result.id},{"bytes",result.bytes},{"clips",std::move(appended)}};
+        } catch(const Error&) { throw; }
+        catch(const std::exception& error) { throw Error(-32050,error.what()); }
+    }
     Json animation_dispatch(const std::string& method,const Json& params) const {
+        if(method=="asset.animation.author")return author_animation(params);
         if(method=="asset.animation.physical_limits") {
             fields(params,{"entity","revision","clip","time","loop"},{"entity","revision","clip","time"});
             current_revision(params);
