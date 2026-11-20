@@ -1,8 +1,14 @@
 # Implementation status
 
-Updated 2026-11-20 for **0.0.304**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-20 for **0.0.305**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.305 lets the Windows creator [continue a saved Codex chat](AGENT_CLIENTS.md#connect-a-project).
+The live Windows check reopened the same conversation, displayed recent
+messages and verified Codex’s recall of an earlier brief. It also started a
+separate chat, isolated a copied project and rejected a saved pointer to the
+original project from the copy. [Results](evidence/m2-creator-conversations-305.json)
 
 Version 0.0.304 lets the Windows x64 creator [install Codex](AGENT_CLIENTS.md#connect-a-project).
 The packaged check cancelled a download, retried from an empty install folder,

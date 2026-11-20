@@ -28,6 +28,13 @@ confirms the matching sign-in, Poima rechecks the account and opens the
 conversation. Codex handles the callback and stores its own credentials.
 [Codex app-server authentication](https://learn.chatgpt.com/docs/app-server#authentication)
 
+After a completed Codex turn, the creator remembers the thread ID in your
+local Poima preferences, keyed by the project’s identity and location. Choose
+**Continue Codex chat** to reconnect and see up to three recent turn summaries
+from Codex. A new conversation becomes the default after its first completed
+turn. Project copies and relocated manifests each start with their own local
+selection. The Codex client holds the history and the account. [Thread history](https://learn.chatgpt.com/docs/app-server#threads)
+
 On Windows x64, **Install Codex** appears when the executable cannot be found.
 Poima downloads OpenAI’s Codex 0.171.0 release, verifies its pinned SHA-256 and
 installs it under `%LOCALAPPDATA%\Poima\agents\codex\0.171.0`. Allow about

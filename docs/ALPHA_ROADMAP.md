@@ -48,6 +48,9 @@ a scripted account confirmation. A real browser authorization is still needed.
 The [Codex installation check](evidence/m2-creator-codex-install-304.json)
 reaches the same sign-in dialog from an empty per-user Codex install folder
 through Poima’s UI, using OpenAI’s published Windows x64 client.
+The [conversation continuation check](evidence/m2-creator-conversations-305.json)
+reopens a live Codex conversation after restarting the creator and checks recall
+of an earlier brief and isolation of a copied project.
 Qualification with a first-time creator on clean Windows remains open.
 
 ### Engine and delivery

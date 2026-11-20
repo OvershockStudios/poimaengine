@@ -127,3 +127,4 @@ Console.WriteLine("Agent RPC contracts passed: concurrency, Unicode, errors, app
 await AcpContract.VerifyAsync(token);
 await CodexLoginContract.VerifyAsync(Environment.ProcessPath!, Environment.ProcessPath!, Directory.GetCurrentDirectory(), useFixture: true);
 await CodexInstallContract.VerifyAsync();
+CreatorConversationContract.Verify();

@@ -74,6 +74,7 @@ Useful arguments are `--gpu N` for both native viewports, `--samples 1|4`, and a
    If Poima can't find the provider client, set its executable in
    **Connection settings**. On Windows x64, **Install Codex** downloads the
    pinned official client into Poima’s per-user folder and retries the connection.
+   When reopening a project, choose **Continue Codex chat** or **New chat**.
    Describe your game to begin the [brief](GAME_BRIEF.md). Codex has separate
    per-connection controls for world calls, gameplay source edits, check edits
    and builds.
@@ -153,10 +154,11 @@ Native AOT gameplay when present. If a desktop gameplay profile is configured,
 clear it and attach the published game in the project before exporting. The
 workspace displays the exported authored revision. The bundle check validates
 the files and runtime requirements. Playtest the build for gameplay behavior.
-Use the full editor's gameplay controls for managed reload. Closing a creator
-session retires its local provider connection. After sending a message, save
-the conversation ID from **Connection settings** to resume it after reopening.
-If you disconnect before the first message, reconnect starts a fresh conversation.
+Use the full editor's gameplay controls for managed reload. Closing the creator
+retires its provider connection. Poima remembers the Codex chat after a completed
+turn and shows recent messages when you choose **Continue Codex chat**. **New
+chat** replaces the saved choice after its first completed turn. For manual
+continuation, enter a Codex conversation ID in **Connection settings**.
 
 Run the launcher and preview regression in an interactive Windows session
 with a current desktop package. Add `-WithCodex` to exercise connection and

@@ -123,7 +123,13 @@ public sealed class CodexSession : IAgentSession
     }
 
     public Task<JsonNode?> ListTurnsAsync(string? cursor = null, CancellationToken cancellation = default) =>
-        rpc.RequestAsync("thread/turns/list", new JsonObject { ["threadId"] = RequireThread(), ["cursor"] = cursor, ["limit"] = 25 }, cancellation);
+        ListTurnsAsync(cursor, cancellation, 25);
+
+    public Task<JsonNode?> ListTurnsAsync(string? cursor, CancellationToken cancellation, int limit) =>
+        rpc.RequestAsync("thread/turns/list", new JsonObject { ["threadId"] = RequireThread(), ["cursor"] = cursor, ["limit"] = limit }, cancellation);
+
+    public Task<JsonNode?> ReadThreadAsync(string threadId, CancellationToken cancellation = default) =>
+        rpc.RequestAsync("thread/read", new JsonObject { ["threadId"] = threadId, ["includeTurns"] = false }, cancellation);
 
     public Task<JsonNode?> ListMcpServersAsync(CancellationToken cancellation = default) =>
         rpc.RequestAsync("mcpServerStatus/list", new JsonObject { ["threadId"] = RequireThread(), ["serverName"] = "poima" }, cancellation);

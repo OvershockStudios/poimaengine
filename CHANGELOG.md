@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.305
+
+- Continue a project's Codex conversation after reopening the Windows creator.
+
 ## 0.0.304
 
 - Install the official Codex client from the Windows creator and continue into sign-in.

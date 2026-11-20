@@ -1,0 +1,61 @@
+{
+  "engine_version": "0.0.305",
+  "scope": "Windows UI Automation against the extracted preview on the development laptop with an installed, signed-in Codex client. Closing and relaunching separate editor processes restores the same real conversation. A copied manifest has the same project ID and a different location.",
+  "archive": {
+    "name": "Poima-0.0.305-Windows-x64.zip",
+    "bytes": 141401646,
+    "sha256": "b81d66873a818c744bf5a50ee8fd1577589bf0ea694e00d6706d2beaf507c986"
+  },
+  "release_files": 499,
+  "artifacts": {
+    "editor_sha256": "ce48dc61bb913c84a21b58382ce025ba1dda35d787186527c659017bc6d64436",
+    "frontend_sha256": "1584b6468aa9b3fa0298f2fe34b83ab99e2782b31dd1f546409b5bf24fa0cbf5",
+    "cli_sha256": "2d9739c243be93f3d1d7a24ee8aa37d7a8e91459bb673dacb834f1bb3d42e2c8"
+  },
+  "live_codex": {
+    "client_version": "codex-cli 0.163.0-alpha.11",
+    "checks": {
+      "completed_turn_saved": true,
+      "provider_messages_restored": true,
+      "two_paginated_turns_in_order": true,
+      "provider_retained_original_context": true,
+      "fresh_chat_preserves_previous_pointer_until_turn": true,
+      "completed_new_chat_became_default": true,
+      "copied_project_isolated": true,
+      "foreign_workspace_rejected_before_resume": true,
+      "project_unchanged": true
+    },
+    "editor_processes_closed_cleanly": 4,
+    "report_sha256": "3337a1d536fc8b4ef3026a577f2360e64e1d927a89fb945f12974ec564f72fe4"
+  },
+  "conversation_selection_fixtures": {
+    "windows": true,
+    "linux": true,
+    "identity_and_path_partition": true,
+    "invalid_id_rejected": true,
+    "atomic_replacement_and_temp_cleanup": true
+  },
+  "windows_creator_regression": {
+    "checks": [
+      "closed_during_play_exit_code",
+      "closed_exit_code",
+      "codex_disconnected",
+      "codex_questions",
+      "codex_ready",
+      "codex_reconnected",
+      "created",
+      "edit_before_export",
+      "export",
+      "export_disabled_during_preview",
+      "first_preview",
+      "relocated_export",
+      "reopened_preview",
+      "stopped"
+    ],
+    "report_sha256": "b13736754e07e49b868d2bec3ee0ebe61d8f0ae4eb4e54861fe9c3e2c2e27f0a"
+  },
+  "open_qualification": [
+    "Conversation continuation with other providers",
+    "First-time creator and toolchain on clean Windows"
+  ]
+}

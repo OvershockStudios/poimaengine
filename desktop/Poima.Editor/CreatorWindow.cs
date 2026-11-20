@@ -59,7 +59,8 @@ internal sealed class CreatorWindow : Window
             game = new GameInput(model);
             game.Error += message => { error = message; UpdateControls(); };
             chat = new AgentChat(project.Root, host.Endpoint, creator: true,
-                gameplayToolStatus: options.GameplayToolStatus, gameplayToolContext: options.GameplayToolContext);
+                gameplayToolStatus: options.GameplayToolStatus, gameplayToolContext: options.GameplayToolContext,
+                conversationStore: new CreatorConversationStore(project.Manifest, project.ProjectId));
             Content = BuildContent();
         }
         catch { host.Dispose(); throw; }

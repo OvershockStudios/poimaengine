@@ -18,6 +18,7 @@ internal sealed class AgentChat : UserControl
     private readonly string projectRoot, endpoint;
     private readonly bool creator;
     private readonly string? gameplayToolContext;
+    private readonly CreatorConversationStore? conversationStore;
     private readonly CancellationTokenSource lifetime = new();
     private readonly ComboBox provider = new() { ItemsSource = new[] { "Codex", "Antigravity", "Claude Code" }, SelectedIndex = 0 };
     private readonly TextBox executable = Field("Codex executable", "codex.exe");
@@ -41,11 +42,14 @@ internal sealed class AgentChat : UserControl
     private readonly Button connect = new() { Content = "Connect" }, disconnect = new() { Content = "Disconnect", IsEnabled = false },
         send = new() { Content = "Send", IsEnabled = false }, stop = new() { Content = "Stop", IsEnabled = false };
     private readonly Button getCodex = new() { Content = WindowsCodexInstall.Supported ? "Install Codex" : "Get Codex", IsVisible = false };
+    private readonly Button newChat = new() { Content = "New chat", IsVisible = false };
     private IAgentSession? session;
     private CodexSignInWindow? signIn;
     private CodexInstallWindow? codexInstall;
     private CodexQuestionCard? questionCard;
     private string? activeTurn, unusedConversation;
+    private string? rememberedThread, displayedThread, submittedCodexTurn, lastSuccessfulCodexTurn;
+    private bool historyUnavailable;
     private readonly HashSet<string> completed = new(StringComparer.Ordinal);
     private readonly Dictionary<StackPanel, JsonNode> acpPermissions = [];
     private readonly Dictionary<string, string> acpToolDetails = new(StringComparer.Ordinal);
@@ -54,11 +58,20 @@ internal sealed class AgentChat : UserControl
     private Task? connectingTask, closingTask, retiringTask, installingTask;
     public bool Busy => submitting || activeTurn is not null || connecting || codexInstall is not null || retiringTask?.IsCompleted == false;
     private string ProviderName => provider.SelectedItem as string ?? "Codex";
+    private string? ResumeThread => string.IsNullOrWhiteSpace(thread.Text) || thread.Text.Trim() == unusedConversation
+        ? null : thread.Text.Trim();
     public AgentChat(string projectRoot, string endpoint, bool creator = false,
-        string? gameplayToolStatus = null, string? gameplayToolContext = null)
+        string? gameplayToolStatus = null, string? gameplayToolContext = null, CreatorConversationStore? conversationStore = null)
     {
         this.projectRoot = projectRoot; this.endpoint = endpoint; this.creator = creator;
         this.gameplayToolContext = gameplayToolContext;
+        this.conversationStore = conversationStore;
+        if (conversationStore is not null)
+        {
+            try { thread.Text = rememberedThread = conversationStore.Read(); }
+            catch (Exception error) when (error is IOException or InvalidDataException or UnauthorizedAccessException)
+            { status.Text = "Poima couldn’t read the saved Codex chat. You can start a new chat."; }
+        }
         FontFamily = new FontFamily("avares://Poima.Editor/Assets#Inter"); FontSize = creator ? 14 : 12;
         var root = new Grid { RowDefinitions = new RowDefinitions("Auto,Auto,*,Auto,Auto,Auto"), Margin = new Thickness(14), RowSpacing = 8 };
         prompt.PlaceholderText = creator ? "Describe the game you want to make…" : "Ask about this project…";
@@ -94,8 +107,9 @@ internal sealed class AgentChat : UserControl
                 ToolTip.SetTip(allowChecks, "Authorize Codex to edit the checks used to verify this project's exported game.");
                 setup.Children.Add(allowChecks);
             }
-            var connection = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+            var connection = new WrapPanel { ItemSpacing = 8, LineSpacing = 8 };
             connection.Children.Add(connect); connection.Children.Add(disconnect); connection.Children.Add(getCodex);
+            connection.Children.Add(newChat);
             setup.Children.Add(connection);
         }
         else
@@ -125,6 +139,12 @@ internal sealed class AgentChat : UserControl
         AutomationProperties.SetName(allowEdits, "Agent allow world edits");
         ToolTip.SetTip(addImages, "Send PNG or JPEG references with your next message.");
         connect.Click += async (_, _) => await (connectingTask = Connect());
+        newChat.Click += async (_, _) =>
+        {
+            if (!newChat.IsEnabled) return;
+            thread.Text = "";
+            await (connectingTask = Connect());
+        };
         disconnect.Click += async (_, _) =>
         {
             if (session is { } current && !Busy) await Retire(current, "Disconnected.");
@@ -134,6 +154,7 @@ internal sealed class AgentChat : UserControl
         stop.Click += async (_, _) => await Stop();
         getCodex.Click += async (_, _) => await (installingTask = InstallCodex());
         provider.SelectionChanged += (_, _) => UpdateProvider();
+        thread.TextChanged += (_, _) => UpdateConversationButtons();
         UpdateProvider();
     }
 
@@ -144,7 +165,15 @@ internal sealed class AgentChat : UserControl
         agyExecutable.IsVisible = ProviderName == "Antigravity";
         claudeExecutable.IsVisible = ProviderName == "Claude Code";
         getCodex.IsVisible = codexMissing && ProviderName == "Codex";
-        connect.Content = "Connect " + ProviderName;
+        UpdateConversationButtons();
+    }
+
+    private void UpdateConversationButtons()
+    {
+        var canContinue = creator && ProviderName == "Codex" && ResumeThread is not null;
+        connect.Content = canContinue ? "Continue Codex chat" : "Connect " + ProviderName;
+        newChat.IsVisible = canContinue && session is null;
+        newChat.IsEnabled = newChat.IsVisible && connect.IsEnabled;
     }
 
     private static string FindAntigravity()
@@ -221,11 +250,13 @@ internal sealed class AgentChat : UserControl
             engine.IsEnabled = model.IsEnabled = connect.IsEnabled;
         thread.IsReadOnly = !connect.IsEnabled; thread.IsEnabled = !closing;
         allowEdits.IsEnabled = allowSourceEdits.IsEnabled = allowBuilds.IsEnabled = allowChecks.IsEnabled = connect.IsEnabled;
+        UpdateConversationButtons();
     }
     private async Task Connect()
     {
         connecting = true; Controls();
         status.Text = "Connecting…";
+        historyUnavailable = false;
         if (ProviderName == "Codex" && executable.Text == "codex.exe") executable.Text = FindCodex();
         codexMissing = getCodex.IsVisible = false;
         IAgentSession? current = null;
@@ -263,9 +294,10 @@ internal sealed class AgentChat : UserControl
             if (!ReferenceEquals(session, current)) throw new IOException("Connection ended while opening the conversation.");
             if (current is AcpSession && !string.IsNullOrEmpty(transcript.Text))
                 Append("\nNew " + ProviderName + " conversation\n");
+            if (current is AcpSession) displayedThread = null;
             ready = true;
             sentGameplayContext = false;
-            status.Text = "Connected to " + ProviderName + ".";
+            status.Text = historyUnavailable ? "Codex resumed the chat. Earlier messages couldn’t be displayed." : "Connected to " + ProviderName + ".";
             Controls();
         }
         catch (Exception error)
@@ -341,12 +373,82 @@ internal sealed class AgentChat : UserControl
         codexSupportsImages = available.First(item => item["model"]?.GetValue<string>() == chosen)["inputModalities"] is JsonArray modalities &&
             modalities.OfType<JsonValue>().Any(value => value.TryGetValue<string>(out var modality) && modality == "image");
         ToolTip.SetTip(model, "Models offered by this CLI: " + string.Join(", ", available.Select(item => item["model"]?.GetValue<string>())));
-        var requested = thread.Text?.Trim();
         // An unused conversation does not yet have provider history to resume.
-        var resume = string.IsNullOrEmpty(requested) || requested == unusedConversation ? null : requested;
+        var resume = ResumeThread;
+        if (resume is not null && resume == rememberedThread)
+        {
+            var saved = (await current.ReadThreadAsync(resume, cancellation))?["thread"];
+            var folder = saved?["cwd"]?.GetValue<string>();
+            var comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+            if (saved?["id"]?.GetValue<string>() != resume || folder is null || !Path.IsPathFullyQualified(folder) ||
+                !string.Equals(Path.TrimEndingDirectorySeparator(Path.GetFullPath(folder)),
+                    Path.TrimEndingDirectorySeparator(Path.GetFullPath(projectRoot)), comparison))
+                throw new InvalidOperationException("The saved Codex chat belongs to a different folder. Choose New chat to continue here.");
+        }
         var id = await current.OpenAsync(resume, cancellation, chosen);
         unusedConversation = resume is null ? id : null;
         thread.Text = id;
+        if (conversationStore is not null && displayedThread != id)
+        {
+            transcript.Text = "";
+            displayedThread = id;
+            if (resume is not null) await ShowRecentMessages(current, cancellation);
+        }
+    }
+
+    private async Task ShowRecentMessages(CodexSession current, CancellationToken cancellation)
+    {
+        try
+        {
+            var recent = new List<JsonObject>();
+            string? cursor = null;
+            for (var page = 0; page < 3; page++)
+            {
+                var reply = await current.ListTurnsAsync(cursor, cancellation, limit: 1);
+                if (reply?["data"] is not JsonArray turns || turns.Count > 1)
+                    throw new InvalidDataException("Invalid Codex conversation page.");
+                if (turns.Count == 0) break;
+                if (turns[0] is not JsonObject turn) throw new InvalidDataException("Invalid Codex conversation turn.");
+                recent.Add(turn);
+                var next = reply["nextCursor"]?.GetValue<string>();
+                if (string.IsNullOrEmpty(next) || next == cursor) break;
+                cursor = next;
+            }
+            for (var page = recent.Count - 1; page >= 0; page--)
+            {
+                if (recent[page]["items"] is not JsonArray items) continue;
+                foreach (var item in items.OfType<JsonObject>())
+                {
+                    var kind = item["type"]?.GetValue<string>();
+                    if (kind == "agentMessage" && item["text"]?.GetValue<string>() is { Length: > 0 } reply)
+                        Append("\nCodex: " + reply + "\n");
+                    if (kind != "userMessage" || item["content"] is not JsonArray blocks) continue;
+                    var text = string.Join("\n", blocks.OfType<JsonObject>().Select(block => block["type"]?.GetValue<string>() switch
+                    {
+                        "text" => block["text"]?.GetValue<string>(),
+                        "image" or "localImage" => "[Image reference]",
+                        _ => null
+                    }).OfType<string>());
+                    if (gameplayToolContext is not null && text.EndsWith("\n\n" + gameplayToolContext, StringComparison.Ordinal))
+                        text = text[..^(gameplayToolContext.Length + 2)];
+                    if (text.Length > 0) Append("\nYou: " + text + "\n");
+                }
+            }
+        }
+        catch (Exception error) when (error is AgentRpcException or AgentExchangeException or InvalidOperationException or InvalidDataException)
+        { historyUnavailable = true; }
+    }
+
+    private void RememberCompletedChat(string? id)
+    {
+        if (conversationStore is null || id is null || id == rememberedThread) return;
+        try
+        {
+            conversationStore.Write(id);
+            rememberedThread = id;
+        }
+        catch (Exception error) when (error is IOException or InvalidDataException or UnauthorizedAccessException)
+        { status.Text = "Turn completed. Poima couldn’t save the chat for reopening."; }
     }
 
     private async Task PickImages()
@@ -417,6 +519,7 @@ internal sealed class AgentChat : UserControl
     {
         if (!send.IsEnabled || session is not { } current || string.IsNullOrWhiteSpace(prompt.Text)) return;
         completed.Clear();
+        lastSuccessfulCodexTurn = null;
         var text = prompt.Text; submitting = true; cancelRequested = false; Controls();
         var attachments = images.Select(entry => entry.Image).ToArray();
         var names = images.Count == 0 ? "" : "\nImages: " + string.Join(", ", images.Select(entry => entry.Name));
@@ -448,7 +551,8 @@ internal sealed class AgentChat : UserControl
                 sentGameplayContext = true;
                 prompt.Text = ""; ClearImages();
                 unusedConversation = null;
-                if (!completed.Contains(id)) activeTurn = id;
+                if (!completed.Contains(id)) activeTurn = submittedCodexTurn = id;
+                else if (lastSuccessfulCodexTurn == id) RememberCompletedChat(current.ConversationId);
             }
         }
         catch (Exception error)
@@ -525,6 +629,7 @@ internal sealed class AgentChat : UserControl
     {
         if (!ReferenceEquals(session, current)) return;
         session = null; ready = false; activeTurn = null; submitting = false; cancelRequested = false;
+        submittedCodexTurn = null;
         ClearApprovals(); ClearImages(); status.Text = message;
         if (signIn is { } dialog) await dialog.CancelAsync();
         var pending = retiringTask = DisposeSession(current);
@@ -581,6 +686,12 @@ internal sealed class AgentChat : UserControl
             if (id is not null) completed.Add(id);
             if (activeTurn == id) activeTurn = null;
             status.Text = "Turn " + parameters?["turn"]?["status"] + (parameters?["turn"]?["error"] is { } error ? ": " + error.ToJsonString() : "");
+            if (id is not null && parameters?["turn"]?["status"]?.GetValue<string>() == "completed")
+            {
+                lastSuccessfulCodexTurn = id;
+                if (id == submittedCodexTurn) RememberCompletedChat(current.ConversationId);
+            }
+            if (id == submittedCodexTurn) submittedCodexTurn = null;
             ClearApprovals(); Append("\n"); Controls();
         }
         else if (method == "error") status.Text = parameters?.ToJsonString();
