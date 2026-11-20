@@ -11,8 +11,13 @@ if (args is ["--codex-login", var client, var engine, var directory])
     return;
 }
 if (args.Length > 0 && args[0] == "app-server") { await QuestionPeer.RunAsync(); return; }
-if (args is ["acp"]) { await AcpContract.RunPeerAsync(); return; }
+if (args is ["acp"])
+{
+    await AcpContract.RunPeerAsync(requiresAuth: Environment.GetEnvironmentVariable("POIMA_ACP_SIGN_IN_FIXTURE") == "1");
+    return;
+}
 if (args is ["acp", "text"]) { await AcpContract.RunPeerAsync(supportsImages: false); return; }
+if (args is ["acp", "sign-in"]) { await AcpContract.RunPeerAsync(requiresAuth: true); return; }
 
 if (args.Length > 0 && args[0] == "peer")
 {
@@ -130,4 +135,5 @@ await AcpContract.VerifyAsync(token);
 await CodexLoginContract.VerifyAsync(Environment.ProcessPath!, Environment.ProcessPath!, Directory.GetCurrentDirectory(), useFixture: true);
 await AgentInstallContract.VerifyAsync(WindowsCodexInstall.Package, WindowsCodexInstall.PackageUrl, WindowsCodexInstall.ArchiveBytes);
 await AgentInstallContract.VerifyAsync(WindowsClaudeInstall.Package, WindowsClaudeInstall.PackageUrl, WindowsClaudeInstall.ArchiveBytes);
+await AgentInstallContract.VerifyAsync(WindowsAntigravityInstall.Package, WindowsAntigravityInstall.PackageUrl, WindowsAntigravityInstall.DownloadBytes);
 CreatorConversationContract.Verify();

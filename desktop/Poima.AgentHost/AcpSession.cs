@@ -9,6 +9,7 @@ public sealed class AcpSession : IAgentSession
 {
     private readonly AgentRpcProcess rpc;
     private readonly string directory, poimaExecutable, endpoint;
+    private readonly HashSet<string> authMethods = new(StringComparer.Ordinal);
     private int prompting;
     public string? ConversationId { get; private set; }
     public bool SupportsImages { get; private set; }
@@ -45,11 +46,28 @@ public sealed class AcpSession : IAgentSession
             }, cancellation);
             if (reply?["protocolVersion"]?.GetValue<int>() != 1)
                 throw new IOException("The agent must support ACP version 1.");
+            if (reply?["authMethods"] is JsonArray methods)
+                foreach (var method in methods.OfType<JsonObject>())
+                    if (method["id"] is JsonValue value && value.TryGetValue<string>(out var id) &&
+                        (method["type"] is null || method["type"] is JsonValue type &&
+                            type.TryGetValue<string>(out var kind) && kind == "agent") &&
+                        id is { Length: > 0 and <= 128 } && session.authMethods.Count < 32)
+                        session.authMethods.Add(id);
             session.SupportsImages = reply?["agentCapabilities"]?["promptCapabilities"]?["image"] is JsonValue image &&
                 image.TryGetValue<bool>(out var supported) && supported;
             return session;
         }
         catch { await session.DisposeAsync(); throw; }
+    }
+
+    public bool OffersAuthentication(string methodId) => authMethods.Contains(methodId);
+
+    public async Task AuthenticateAsync(string methodId, CancellationToken cancellation = default)
+    {
+        if (!OffersAuthentication(methodId))
+            throw new InvalidOperationException("The agent did not offer this sign-in method.");
+        var reply = await rpc.RequestAsync("authenticate", new JsonObject { ["methodId"] = methodId }, cancellation);
+        if (reply is not JsonObject) throw new IOException("The agent did not confirm authentication.");
     }
 
     public async Task OpenAsync(CancellationToken cancellation = default)

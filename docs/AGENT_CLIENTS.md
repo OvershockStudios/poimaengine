@@ -121,11 +121,20 @@ conversation. [Claude ACP adapter](https://github.com/agentclientprotocol/claude
 
 ## Antigravity in Poima
 
-Install the Antigravity CLI and sign in by running `agy` in a terminal. Use
-a version with `agy acp` (1.5.0 or newer). In the Windows creator or full
-editor’s Agent panel, select **Antigravity**, then **Connect Antigravity**.
-Use **Connection settings** in the creator to specify `agy.exe` when it is
-outside the default installer location or PATH.
+Select **Antigravity**, then **Connect Antigravity**. If the CLI is missing,
+choose **Install Antigravity**. On Windows x64, Poima downloads the official
+Antigravity CLI 1.5.13, matches Google's SHA-512 and installs it under
+`%LOCALAPPDATA%\Poima\agents\antigravity\1.5.13`. The download and installed
+executable each use about 225 MiB. Poima also discovers a CLI installed with
+Google’s installer. **Connection settings** can select another `agy.exe` with ACP
+support (1.5.0 or newer).
+
+Choose **Sign in to Antigravity** in the workspace. Pick **Sign in with Google**
+or **Gemini Enterprise** when the installed CLI offers those options.
+Antigravity handles sign-in in your browser and stores the account. When the
+CLI confirms sign-in, Poima opens the conversation. You can close the sign-in
+window and try again. Selecting sign-in during a conversation starts a new
+conversation and keeps your draft and attachments.
 [Google's installation and ACP setup](https://antigravity.google/docs/ide/extensions/acp)
 
 Poima runs the installed client with your project as its working directory

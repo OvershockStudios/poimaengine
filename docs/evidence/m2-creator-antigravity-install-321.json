@@ -1,0 +1,88 @@
+{
+  "engine_version": "0.0.321",
+  "scope": "On the development laptop, Windows UI Automation installed the official Antigravity CLI into an unused Poima-managed directory using the exact Poima archive. The packaged run used the normal Windows user profile and cleared inherited Antigravity provider environment overrides. The unauthenticated control fixture ran separately from the official client.",
+  "runner": "tests/creator_workspace.ps1 -InstallAntigravity -AntigravitySignInPeer <Windows ACP fixture executable> -WithCodex -CodexExecutable <installed Codex executable>",
+  "archive": {
+    "name": "Poima-0.0.321-Windows-x64.zip",
+    "bytes": 141566010,
+    "sha256": "e76051b828cf2faf2e1506edf893382d32e4e3fb0a4d056510a89c9906af122f"
+  },
+  "release_files_verified": 499,
+  "artifacts": {
+    "Poima.Editor.exe": "519f9af484e6c06005a0f7b53659cc59bfc861a3e278699d5d4b51400d5f0c6b",
+    "Poima.Editor.dll": "7efe623195bab5e8a526122001ad74f8a0ca74794fa9bcbbbb9d5341bd396d5d",
+    "poima.exe": "05aeac9b52d5268d8cd9ec476ed229ce4c8e2d36f5afc03843626ff79753ffc4",
+    "poima_desktop.dll": "e4c058686051eb17ef3bb2d83ce62423dabf921007c37ead670524281e503a4e"
+  },
+  "vendor_release": {
+    "manifest": "https://antigravity-cli-auto-updater-974169037036.us-central1.run.app/manifests/windows_amd64.json",
+    "version": "1.5.13",
+    "download": "https://storage.googleapis.com/antigravity-public/antigravity-cli/1.5.13-5999302598852608/windows-x64/cli_windows_x64.exe",
+    "binary_bytes": 236040344,
+    "sha512": "6b80a17a2bc34a969ed9ba31500a8201b0b4aad3e7fe061374022d161fec8bd7de49b6dc069a6ac67a90632e8671bbe860a7e94309bc5adbc536d27a75a86b58"
+  },
+  "official_cli_probe": {
+    "protocol_version": 1,
+    "advertised_auth_methods": [
+      "oauth-personal",
+      "oauth-business",
+      "gemini-api-key",
+      "agent-platform"
+    ],
+    "new_session_opened": true,
+    "natural_exit_code": 0,
+    "log_sha256": "16fcd7ea6c7dab40c50d658a00ac8dfb24e3adf9992c2f0c9a085cf2849fae66",
+    "earlier_probe_attempts": [
+      {
+        "result": "Timeout waiting for ACP response with PowerShell probe",
+        "log_sha256": "9b398b65a14fa8cd09c51614fdf6e406d8e465c846c6be073cb1c38c6355467b"
+      },
+      {
+        "result": "Timeout waiting for ACP response with PowerShell probe",
+        "log_sha256": "fdc7b01ad3fc737ebcdeca2599baea7289f9a0933f48a3ad3b89a5607565f81a"
+      }
+    ]
+  },
+  "real_windows_install": {
+    "missing_cli_recovery": true,
+    "matched_official_executable": true,
+    "personal_and_enterprise_choices_visible": true,
+    "cancelled_without_authenticating": true,
+    "discovered_again_after_restart": true,
+    "project_unchanged": true,
+    "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "native_preview_frames": [
+      4,
+      4
+    ],
+    "clean_creator_exit": true,
+    "codex_reconnected_without_prompt": true,
+    "report_sha256": "de4ee116b94e59f9852e4e9783bea29536225b06c6ec9894f42a169966d09da2"
+  },
+  "simulated_browser_authorization_in_packaged_app": {
+    "draft_unchanged": true,
+    "connected": true
+  },
+  "agent_protocol_and_installer_contracts": {
+    "linux": {
+      "passed": true,
+      "log_sha256": "34ebd5ac16b237e7767cec1339b3c65013b1d1464d12bfecba8b68add2331a27"
+    },
+    "windows": {
+      "passed": true,
+      "log_sha256": "96f92b9def1e9808b0cf34cb93095e8f5886e9309aa0088f761e461b323f8ad6"
+    }
+  },
+  "open_qualification": [
+    "Live Google browser authorization through the new dialog",
+    "First-time creator on clean Windows"
+  ],
+  "failed_ui_attempts": [
+    {
+      "result": "Timed out waiting for Antigravity connected or awaiting sign-in.",
+      "cause": "Overriding USERPROFILE redirected the Windows LocalApplicationData lookup on restart. The corrected run used the normal Windows profile and the same package.",
+      "report_sha256": "f23f4f18ab616eeaa36c3d8eacf868e4bc0b06707f33fc67ce9930d994e315d3",
+      "reopen_probe_sha256": "3c6131138e632ddaaa9e2974e589883441b7199d353923fe746a0f346fd99702"
+    }
+  ]
+}

@@ -76,8 +76,9 @@ Poima. If the client is missing, choose **Install Codex**. Windows x64 downloads
 the official client with checksum verification and then starts the connection.
 For Claude Code, select **Connect Claude Code**, then **Install Claude Code**
 if the adapter is missing. Select **Sign in to Claude Code** when prompted
-and finish in the Claude Code window or browser. Install and sign in to
-Antigravity separately before connecting.
+and finish in the Claude Code window or browser. For Antigravity, select
+**Connect Antigravity**, install the CLI if prompted, then use
+**Sign in to Antigravity** if you need to add or change your account.
 [Agent setup](https://github.com/OvershockStudios/poimaengine/blob/main/docs/AGENT_CLIENTS.md)
 
 If Codex asks to use a Poima tool, review the operation in chat and select

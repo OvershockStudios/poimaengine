@@ -44,9 +44,11 @@ internal sealed class AgentChat : UserControl
         send = new() { Content = "Send", IsEnabled = false }, stop = new() { Content = "Stop", IsEnabled = false };
     private readonly Button getAgent = new() { IsVisible = false };
     private readonly Button signIntoClaude = new() { Content = "Sign in to Claude Code", IsVisible = false };
+    private readonly Button signIntoAntigravity = new() { Content = "Sign in to Antigravity", IsVisible = false };
     private readonly Button newChat = new() { Content = "New chat", IsVisible = false };
     private IAgentSession? session;
     private CodexSignInWindow? signIn;
+    private AntigravitySignInWindow? antigravitySignIn;
     private AgentInstallWindow? agentInstall;
     private CodexQuestionCard? questionCard;
     private string? activeTurn, unusedConversation;
@@ -57,7 +59,7 @@ internal sealed class AgentChat : UserControl
     private readonly Dictionary<StackPanel, JsonNode> codexPoimaApprovals = [];
     private readonly Dictionary<string, string> acpToolDetails = new(StringComparer.Ordinal);
     private bool submitting, closing, connecting, ready, cancelRequested, sentGameplayContext;
-    private bool acpReceivedReply, codexSupportsImages, pickingImages, codexMissing, claudeMissing, claudeNeedsSignIn;
+    private bool acpReceivedReply, codexSupportsImages, pickingImages, codexMissing, claudeMissing, antigravityMissing, claudeNeedsSignIn;
     private Task? connectingTask, closingTask, retiringTask, installingTask;
     public bool Busy => submitting || activeTurn is not null || connecting || agentInstall is not null || retiringTask?.IsCompleted == false;
     private string ProviderName => provider.SelectedItem as string ?? "Codex";
@@ -113,6 +115,7 @@ internal sealed class AgentChat : UserControl
             var connection = new WrapPanel { ItemSpacing = 8, LineSpacing = 8 };
             connection.Children.Add(connect); connection.Children.Add(disconnect); connection.Children.Add(getAgent);
             connection.Children.Add(signIntoClaude);
+            connection.Children.Add(signIntoAntigravity);
             connection.Children.Add(newChat);
             setup.Children.Add(connection);
         }
@@ -126,6 +129,7 @@ internal sealed class AgentChat : UserControl
             var connection = new WrapPanel { ItemSpacing = 8, LineSpacing = 8 };
             connection.Children.Add(connect); connection.Children.Add(disconnect); connection.Children.Add(getAgent);
             connection.Children.Add(signIntoClaude);
+            connection.Children.Add(signIntoAntigravity);
             setup.Children.Add(connection);
         }
         root.Children.Add(setup); Grid.SetRow(status, 1); root.Children.Add(status);
@@ -159,6 +163,7 @@ internal sealed class AgentChat : UserControl
         stop.Click += async (_, _) => await Stop();
         getAgent.Click += async (_, _) => await (installingTask = InstallAgent());
         signIntoClaude.Click += async (_, _) => await (connectingTask = SignIntoClaude());
+        signIntoAntigravity.Click += async (_, _) => await (connectingTask = OpenAntigravitySignIn());
         provider.SelectionChanged += (_, _) => UpdateProvider();
         thread.TextChanged += (_, _) => UpdateConversationButtons();
         UpdateProvider();
@@ -177,8 +182,15 @@ internal sealed class AgentChat : UserControl
     private void UpdateSetupButtons()
     {
         getAgent.Content = (WindowsAgentPackage.Supported ? "Install " : "Get ") + ProviderName;
-        getAgent.IsVisible = ProviderName switch { "Codex" => codexMissing, "Claude Code" => claudeMissing, _ => false };
+        getAgent.IsVisible = ProviderName switch
+        {
+            "Codex" => codexMissing,
+            "Claude Code" => claudeMissing,
+            "Antigravity" => antigravityMissing,
+            _ => false
+        };
         signIntoClaude.IsVisible = ProviderName == "Claude Code" && claudeNeedsSignIn;
+        signIntoAntigravity.IsVisible = ProviderName == "Antigravity" && !antigravityMissing;
     }
 
     private void UpdateConversationButtons()
@@ -193,7 +205,8 @@ internal sealed class AgentChat : UserControl
     {
         var installed = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "agy", "bin", "agy.exe");
-        return File.Exists(installed) ? installed : "agy.exe";
+        var package = WindowsAntigravityInstall.Package;
+        return File.Exists(installed) ? installed : package.Executable(package.Root) ?? "agy.exe";
     }
 
     private static string FindClaudeAdapter()
@@ -242,6 +255,7 @@ internal sealed class AgentChat : UserControl
     {
         closing = true; Controls(); lifetime.Cancel();
         agentInstall?.Stop();
+        antigravitySignIn?.Cancel();
         if (signIn is { } dialog) await dialog.CancelAsync();
         if (installingTask is not null) await installingTask;
         if (connectingTask is not null) await connectingTask;
@@ -271,6 +285,7 @@ internal sealed class AgentChat : UserControl
         stop.IsEnabled = live && !cancelRequested && (activeTurn is not null || session is AcpSession && submitting);
         connect.IsEnabled = !Busy && session is null && !closing;
         getAgent.IsEnabled = signIntoClaude.IsEnabled = connect.IsEnabled;
+        signIntoAntigravity.IsEnabled = !Busy && !closing;
         disconnect.IsEnabled = live && !Busy;
         provider.IsEnabled = executable.IsEnabled = agyExecutable.IsEnabled = claudeExecutable.IsEnabled =
             engine.IsEnabled = model.IsEnabled = connect.IsEnabled;
@@ -278,13 +293,18 @@ internal sealed class AgentChat : UserControl
         allowEdits.IsEnabled = allowSourceEdits.IsEnabled = allowBuilds.IsEnabled = allowChecks.IsEnabled = connect.IsEnabled;
         UpdateConversationButtons();
     }
-    private async Task Connect()
+    private async Task Connect(bool authenticateAntigravity = false)
     {
         connecting = true; Controls();
         status.Text = "Connecting…";
         historyUnavailable = false;
         if (ProviderName == "Codex" && executable.Text == "codex.exe") executable.Text = FindCodex();
         if (ProviderName == "Codex") codexMissing = false;
+        if (ProviderName == "Antigravity")
+        {
+            antigravityMissing = false;
+            if (agyExecutable.Text == "agy.exe") agyExecutable.Text = FindAntigravity();
+        }
         if (ProviderName == "Claude Code")
         {
             claudeMissing = claudeNeedsSignIn = false;
@@ -316,7 +336,22 @@ internal sealed class AgentChat : UserControl
             session = current;
             if (closing) { await current.DisposeAsync(); return; }
             _ = ReadEvents(current);
-            if (current is AcpSession acp) await acp.OpenAsync(startup.Token);
+            if (current is AcpSession acp)
+            {
+                if (authenticateAntigravity)
+                {
+                    if (!AntigravitySignInWindow.Available(acp))
+                        throw new InvalidOperationException("This Antigravity CLI does not offer browser sign-in. Update the CLI or sign in through Antigravity.");
+                    await AuthenticateAntigravity(acp, startup);
+                }
+                try { await acp.OpenAsync(startup.Token); }
+                catch (AgentRpcException error) when (!authenticateAntigravity && ProviderName == "Antigravity" &&
+                    RequiresAcpAuthentication(error) && AntigravitySignInWindow.Available(acp))
+                {
+                    await AuthenticateAntigravity(acp, startup);
+                    await acp.OpenAsync(startup.Token);
+                }
+            }
             else
             {
                 var codex = (CodexSession)current;
@@ -348,15 +383,16 @@ internal sealed class AgentChat : UserControl
                 var executableMissing = error is System.ComponentModel.Win32Exception { NativeErrorCode: 2 or 3 };
                 if (ProviderName == "Codex") codexMissing = executableMissing;
                 if (ProviderName == "Claude Code") claudeMissing = executableMissing;
+                if (ProviderName == "Antigravity") antigravityMissing = executableMissing;
                 status.Text = error switch
                 {
                     _ when executableMissing && ProviderName == "Codex" =>
                         "Poima couldn’t find Codex. Install it or choose its executable in Connection settings.",
                     _ when executableMissing && ProviderName == "Claude Code" =>
                         "Poima couldn’t find the Claude Code adapter. Install it or choose its executable in Connection settings.",
-                    AgentRpcException problem when current is AcpSession &&
-                        problem.Error["code"]?.GetValue<int>() == -32000 &&
-                        problem.Message.Contains("auth", StringComparison.OrdinalIgnoreCase) =>
+                    _ when executableMissing && ProviderName == "Antigravity" =>
+                        "Poima couldn’t find Antigravity. Install it or choose its executable in Connection settings.",
+                    AgentRpcException problem when current is AcpSession && RequiresAcpAuthentication(problem) =>
                         ProviderName == "Claude Code" ? "Sign in with claude in a terminal, then connect again."
                             : "Sign in with agy in a terminal, then connect again.",
                     _ => error.Message
@@ -369,9 +405,15 @@ internal sealed class AgentChat : UserControl
     private async Task InstallAgent()
     {
         if (!getAgent.IsEnabled || !getAgent.IsVisible) return;
-        var claude = ProviderName == "Claude Code";
-        var package = claude ? WindowsClaudeInstall.Package : WindowsCodexInstall.Package;
-        var guideUrl = claude ? WindowsClaudeInstall.GuideUrl : "https://learn.chatgpt.com/docs/cli";
+        var (package, field, guideUrl, details) = ProviderName switch
+        {
+            "Claude Code" => (WindowsClaudeInstall.Package, claudeExecutable, WindowsClaudeInstall.GuideUrl,
+                "209 MiB from the Claude ACP project. Poima installs the adapter and Claude Code together in your user folder."),
+            "Antigravity" => (WindowsAntigravityInstall.Package, agyExecutable, WindowsAntigravityInstall.GuideUrl,
+                "225 MiB from Google. Poima keeps the Antigravity CLI in your user folder."),
+            _ => (WindowsCodexInstall.Package, executable, "https://learn.chatgpt.com/docs/cli",
+                "205 MiB from OpenAI. Poima keeps the client in your user folder.")
+        };
         if (!WindowsAgentPackage.Supported)
         {
             try { AgentInstallWindow.OpenGuide(guideUrl); }
@@ -380,18 +422,42 @@ internal sealed class AgentChat : UserControl
             return;
         }
         if (TopLevel.GetTopLevel(this) is not Window owner) return;
-        var details = claude
-            ? "209 MiB from the Claude ACP project. Poima installs the adapter and Claude Code together in your user folder."
-            : "205 MiB from OpenAI. Poima keeps the client in your user folder.";
         var dialog = agentInstall = new AgentInstallWindow(package, details, guideUrl);
         Controls();
         string? installed;
         try { installed = await dialog.ShowDialog<string?>(owner); }
         finally { agentInstall = null; Controls(); }
         if (installed is null || closing) return;
-        if (claude) claudeExecutable.Text = installed;
-        else executable.Text = installed;
+        field.Text = installed;
         await (connectingTask = Connect());
+    }
+
+    private static bool RequiresAcpAuthentication(AgentRpcException error) =>
+        error.Error is JsonObject reply && reply["code"] is JsonValue code &&
+        code.TryGetValue<int>(out var number) && number == -32000;
+
+    private async Task OpenAntigravitySignIn()
+    {
+        if (!signIntoAntigravity.IsVisible || !signIntoAntigravity.IsEnabled) return;
+        if (session is { } existing)
+            await Retire(existing, "Opening Antigravity sign-in…", keepDraftImages: true);
+        if (!closing) await Connect(authenticateAntigravity: true);
+    }
+
+    private async Task AuthenticateAntigravity(AcpSession agent, CancellationTokenSource startup)
+    {
+        startup.Token.ThrowIfCancellationRequested();
+        startup.CancelAfter(Timeout.InfiniteTimeSpan);
+        if (TopLevel.GetTopLevel(this) is not Window owner)
+            throw new InvalidOperationException("Open Antigravity sign-in from a Poima window.");
+        var dialog = antigravitySignIn = new AntigravitySignInWindow(agent);
+        try
+        {
+            if (!await dialog.ShowDialog<bool>(owner))
+                throw new InvalidOperationException("Sign-in closed. Connect with your current account or try signing in again.");
+        }
+        finally { antigravitySignIn = null; }
+        startup.CancelAfter(TimeSpan.FromSeconds(60));
     }
 
     private async Task SignIntoClaude()
@@ -632,6 +698,10 @@ internal sealed class AgentChat : UserControl
             if (ReferenceEquals(session, current))
             {
                 status.Text = error.Message;
+                if (ProviderName == "Antigravity" && current is AcpSession acp &&
+                    error is AgentRpcException problem && RequiresAcpAuthentication(problem) &&
+                    AntigravitySignInWindow.Available(acp))
+                    await Retire(current, "Sign in to Antigravity, then send your draft again.", keepDraftImages: true);
                 if (error is AgentExchangeException { OutcomeUnknown: true })
                 {
                     if (current is CodexSession) unusedConversation = null;
@@ -699,12 +769,15 @@ internal sealed class AgentChat : UserControl
             });
         }
     }
-    private async Task Retire(IAgentSession current, string message)
+    private async Task Retire(IAgentSession current, string message, bool keepDraftImages = false)
     {
         if (!ReferenceEquals(session, current)) return;
         session = null; ready = false; activeTurn = null; submitting = false; cancelRequested = false;
         submittedCodexTurn = null;
-        ClearApprovals(); ClearImages(); status.Text = message;
+        ClearApprovals();
+        if (!keepDraftImages) ClearImages();
+        status.Text = message;
+        antigravitySignIn?.Cancel();
         if (signIn is { } dialog) await dialog.CancelAsync();
         var pending = retiringTask = DisposeSession(current);
         Controls();

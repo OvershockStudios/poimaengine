@@ -1,8 +1,17 @@
 # Implementation status
 
-Updated 2026-11-20 for **0.0.320**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-20 for **0.0.321**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.321 installs the [official Antigravity CLI](AGENT_CLIENTS.md#antigravity-in-poima)
+from the Windows creator and offers Google and Gemini Enterprise sign-in.
+The packaged test matches the installed CLI to Google's checksum, opens
+and cancels sign-in, and finds the installation again after a restart. The
+same package opens a conversation after simulated browser authorization and
+preserves the draft. Live Google browser authorization and qualification on
+clean Windows remain open.
+[Results](evidence/m2-creator-antigravity-install-321.json)
 
 Version 0.0.320 installs the [official Claude ACP adapter](AGENT_CLIENTS.md#claude-code-in-poima)
 from the Windows x64 creator. The packaged test cancels setup, retries from

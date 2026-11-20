@@ -103,6 +103,10 @@ reaches the sign-in action with the official Windows x64 adapter, verifies
 cancellation and retry, and finds the installed pair after restarting Poima.
 Browser authorization and the first authenticated chat through this setup
 remain open.
+The [Antigravity installation check](evidence/m2-creator-antigravity-install-321.json)
+installs the official Windows CLI, checks discovery after a restart, and
+opens a session after simulated browser authorization. Live Google browser
+authorization remains open.
 The [conversation continuation check](evidence/m2-creator-conversations-305.json)
 reopens a live Codex conversation after restarting the creator and checks recall
 of an earlier brief and isolation of a copied project.

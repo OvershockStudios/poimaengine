@@ -9,6 +9,28 @@ internal static class AcpContract
     public static async Task VerifyAsync(CancellationToken token)
     {
         var executable = Environment.ProcessPath!;
+        await using (var signedOut = await AcpSession.ConnectAsync(executable, ["acp", "sign-in"], executable,
+            "acp-contract", Directory.GetCurrentDirectory(), token))
+        {
+            Check(signedOut.OffersAuthentication("oauth-personal") && !signedOut.OffersAuthentication("unadvertised") &&
+                !signedOut.OffersAuthentication("terminal-login"), "Offered protocol-driven sign-in methods");
+            try
+            {
+                await signedOut.AuthenticateAsync("unadvertised", token);
+                throw new InvalidDataException("Sent an unadvertised authentication method.");
+            }
+            catch (InvalidOperationException error) when (error.Message == "The agent did not offer this sign-in method.") { }
+            try
+            {
+                await signedOut.OpenAsync(token);
+                throw new InvalidDataException("Opened a session before authentication.");
+            }
+            catch (AgentRpcException error) when (error.Error["code"]?.GetValue<int>() == -32000) { }
+            await signedOut.AuthenticateAsync("oauth-personal", token);
+            await signedOut.OpenAsync(token);
+            Check(signedOut.ConversationId == "acp-test", "Authenticated session opened");
+        }
+        Console.WriteLine("ACP authentication offers, signed-out rejection and same-process session recovery passed.");
         var image = new AgentImage(Convert.FromBase64String(Png));
         await using (var textOnly = await AcpSession.ConnectAsync(executable, ["acp", "text"], executable,
             "acp-contract", Directory.GetCurrentDirectory(), token))
@@ -48,13 +70,13 @@ internal static class AcpContract
         Console.WriteLine("ACP v1 session, shared endpoint, image capability and payload, exact approval and ordered prompt completion passed.");
     }
 
-    public static async Task RunPeerAsync(bool supportsImages = true)
+    public static async Task RunPeerAsync(bool supportsImages = true, bool requiresAuth = false)
     {
-        async Task<JsonObject> Read(string method)
+        async Task<JsonObject> Read(string? method)
         {
             var request = JsonNode.Parse((await Console.In.ReadLineAsync())!)!.AsObject();
             Check(request["jsonrpc"]?.GetValue<string>() == "2.0" &&
-                request["method"]?.GetValue<string>() == method, "ACP request envelope");
+                (method is null || request["method"]?.GetValue<string>() == method), "ACP request envelope");
             return request;
         }
         async Task Send(JsonObject message)
@@ -86,13 +108,32 @@ internal static class AcpContract
         {
             ["promptCapabilities"] = new JsonObject { ["image"] = true }
         };
+        if (requiresAuth)
+            capabilities["authMethods"] = new JsonArray(new JsonObject { ["id"] = "oauth-personal", ["name"] = "Google" },
+                new JsonObject { ["id"] = "oauth-business", ["type"] = "agent", ["name"] = "Gemini Enterprise" },
+                new JsonObject { ["id"] = "terminal-login", ["type"] = "terminal" });
         await Reply(initialize, capabilities);
+        if (requiresAuth)
+        {
+            var request = await Read(null);
+            if (request["method"]?.GetValue<string>() == "session/new")
+            {
+                await Send(new() { ["id"] = request["id"]!.DeepClone(),
+                    ["error"] = new JsonObject { ["code"] = -32000, ["message"] = "Authentication required" } });
+                request = await Read("authenticate");
+            }
+            Check(request["method"]?.GetValue<string>() == "authenticate" &&
+                request["params"]?["methodId"]?.GetValue<string>() == "oauth-personal", "Exact chosen browser sign-in");
+            await Reply(request, new());
+        }
         var session = await Read("session/new");
         var server = session["params"]!["mcpServers"]![0]!;
-        Check(server["name"]?.GetValue<string>() == "poima" &&
-            JsonNode.DeepEquals(server["args"], new JsonArray("mcp", "--endpoint", "acp-contract")), "Shared MCP endpoint");
+        Check(server["name"]?.GetValue<string>() == "poima" && server["args"] is JsonArray { Count: 3 } arguments &&
+            arguments[0]?.GetValue<string>() == "mcp" && arguments[1]?.GetValue<string>() == "--endpoint" &&
+            (arguments[2]?.GetValue<string>() == "acp-contract" ||
+                requiresAuth && arguments[2]?.GetValue<string>()?.StartsWith("poima-", StringComparison.Ordinal) == true), "Shared MCP endpoint");
         await Reply(session, new() { ["sessionId"] = "acp-test" });
-        if (!supportsImages)
+        if (!supportsImages || requiresAuth)
         {
             Check(await Console.In.ReadLineAsync() is null, "Text-only session received an unsupported image request");
             return;

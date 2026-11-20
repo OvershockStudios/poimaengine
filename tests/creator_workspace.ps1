@@ -5,6 +5,8 @@
 # Codex connection with the installed client and submits no model turn.
 # -CodexExecutable selects an exact client for that installed-client check.
 # -Antigravity and -Claude use the supplied ACP clients for one MCP read each.
+# -InstallAntigravity downloads the official CLI and checks the browser sign-in choices.
+# -AntigravitySignInPeer exercises a simulated browser authorization through the supplied ACP fixture.
 # -InstallClaude downloads the official adapter into an unused per-user install folder and uses an isolated signed-out profile.
 # -CodexBrief runs a two-turn interview on the unchanged starter project.
 # -CodexQuestions uses the local AgentRpc contract executable as a scripted app-server.
@@ -25,6 +27,8 @@ param(
     [switch]$WithCodex,
     [string]$CodexExecutable,
     [string]$Antigravity,
+    [switch]$InstallAntigravity,
+    [string]$AntigravitySignInPeer,
     [string]$Claude,
     [switch]$InstallClaude,
     [switch]$CodexBrief,
@@ -45,6 +49,7 @@ param(
 $ErrorActionPreference = 'Stop'
 if ($CodexAssetRead -and !$AssetFixtures) { throw 'Supply -AssetFixtures for the Codex asset handoff check.' }
 if ($InstallClaude -and $Claude) { throw 'Run the signed-out installation and the supplied Claude client checks separately.' }
+if ($InstallAntigravity -and $Antigravity) { throw 'Run the installation and supplied Antigravity client checks separately.' }
 if ($VerifiedPlayChat -and $VerifiedPlayWithCodex) { throw 'Run the scripted and live playback checks separately.' }
 if ($ObserveVerifiedPlayback -and !$VerifiedPlayWithCodex) { throw 'Use -VerifiedPlayWithCodex for the live observation workflow.' }
 if ($VerifiedPlayChat -or $VerifiedPlayWithCodex) { $WithPlaytestResults = $true }
@@ -122,6 +127,8 @@ $report = [ordered]@{
     bridge_sha256 = (Get-FileHash -LiteralPath (Join-Path $package 'poima_desktop.dll')).Hash.ToLowerInvariant()
     codex_connection_requested = [bool]$WithCodex
     antigravity_turn_requested = ![string]::IsNullOrEmpty($Antigravity)
+    antigravity_install_requested = [bool]$InstallAntigravity
+    antigravity_sign_in_fixture_requested = ![string]::IsNullOrEmpty($AntigravitySignInPeer)
     claude_turn_requested = ![string]::IsNullOrEmpty($Claude)
     claude_install_requested = [bool]$InstallClaude
     codex_brief_requested = [bool]$CodexBrief
@@ -154,6 +161,14 @@ function Find-Window($Title) {
         [System.Windows.Automation.TreeScope]::Children, $condition)
     foreach ($candidate in $windows) {
         if ($candidate.Current.Name -like $Title) { return $candidate }
+    }
+}
+
+function Find-OwnedDialog($Parent, $Title) {
+    $handle = [CreatorTestWindow]::FindDialog([IntPtr]$Parent.Current.NativeWindowHandle, $Title)
+    if ($handle -ne [IntPtr]::Zero) {
+        $dialog = [System.Windows.Automation.AutomationElement]::FromHandle($handle)
+        if ($dialog.Current.ProcessId -eq $owner.Id) { return $dialog }
     }
 }
 
@@ -219,10 +234,11 @@ function Select-ComboValue($Label, $Name) {
 
 function Select-AgentProvider($Name) { Select-ComboValue 'Agent provider' $Name }
 
-function Set-AgentExecutable($Control, $Path) {
+function Set-AgentExecutable($Control, $Path, [switch]$AllowMissing) {
     $settings = Wait-For 'Connection settings' { Find-Control 'Connection settings' -Enabled }
     $settings.GetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern).Expand()
-    Set-ControlText $Control (Resolve-Path -LiteralPath $Path).Path
+    $absolute = if ($AllowMissing) { [System.IO.Path]::GetFullPath($Path) } else { (Resolve-Path -LiteralPath $Path).Path }
+    Set-ControlText $Control $absolute
     $settings.GetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern).Collapse()
 }
 
@@ -433,22 +449,88 @@ function Check-ClaudeSignIn {
     if (Find-Control 'Agent Send' -Enabled) { throw 'The signed-out client can send a turn.' }
 }
 
+function Check-AntigravitySignInChoices($Creator) {
+    $null = Wait-For 'Antigravity connected or awaiting sign-in' {
+        (Find-OwnedDialog $Creator 'Sign in to Antigravity') -or (Find-Control 'Sign in to Antigravity' -Enabled)
+    } 65
+    if (!(Find-OwnedDialog $Creator 'Sign in to Antigravity')) { Invoke-Control 'Sign in to Antigravity' }
+    $window = Wait-For 'Antigravity sign-in window' { Find-OwnedDialog $Creator 'Sign in to Antigravity' }
+    $null = Wait-For 'personal and enterprise sign-in' {
+        (Find-Control 'Sign in with Google' -Enabled) -and (Find-Control 'Gemini Enterprise' -Enabled)
+    }
+    Invoke-Control 'Cancel'
+    $window = $Creator
+    $null = Wait-For 'creator after cancelled Antigravity sign-in' {
+        !(Find-OwnedDialog $Creator 'Sign in to Antigravity') -and (Find-Control 'Agent Connect' -Enabled)
+    }
+    if (Find-Control 'Agent Send' -Enabled) { throw 'Cancelled sign-in left an active conversation.' }
+}
+
+function Exercise-AntigravityInstall($Project) {
+    Select-AgentProvider 'Antigravity'
+    Set-AgentExecutable 'Antigravity CLI executable' (Join-Path $run 'missing-agy.exe') -AllowMissing
+    Invoke-Control 'Agent Connect'
+    $null = Wait-For 'missing Antigravity recovery' { Find-Control 'Install Antigravity' -Enabled }
+    $creator = $window
+    Invoke-Control 'Install Antigravity'
+    $null = Wait-For 'installed Antigravity' {
+        if ($dialog = Find-OwnedDialog $creator 'Install Antigravity') {
+            $condition = [System.Windows.Automation.PropertyCondition]::new(
+                [System.Windows.Automation.AutomationElement]::NameProperty, 'Open setup guide')
+            if ($dialog.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $condition)) {
+                $labels = $dialog.FindAll([System.Windows.Automation.TreeScope]::Descendants,
+                    [System.Windows.Automation.Condition]::TrueCondition)
+                throw ('Antigravity installer failed. ' + (($labels | ForEach-Object { $_.Current.Name }) -join ' | '))
+            }
+        }
+        (Find-OwnedDialog $creator 'Sign in to Antigravity') -or (Find-Control 'Agent Send' -Enabled)
+    } 240
+    $exePath = Join-Path $agyInstallRoot '1.5.13\agy.exe'
+    $digest = (Get-FileHash -LiteralPath $exePath -Algorithm SHA512).Hash.ToLowerInvariant()
+    if ($digest -cne '6b80a17a2bc34a969ed9ba31500a8201b0b4aad3e7fe061374022d161fec8bd7de49b6dc069a6ac67a90632e8671bbe860a7e94309bc5adbc536d27a75a86b58') {
+        throw 'Installed Antigravity executable differs from the pinned download.'
+    }
+    if (Get-ChildItem -LiteralPath $agyInstallRoot -Force -Directory -Filter '.install-*') {
+        throw 'Successful installation left staging files.'
+    }
+    $version = & $exePath --version
+    if ($LASTEXITCODE -ne 0 -or $version -cne '1.5.13') { throw 'Unexpected Antigravity CLI version.' }
+    Check-AntigravitySignInChoices $creator
+    $current = Inspect-Project
+    if ($current.manifest_sha256 -cne $Project.manifest_sha256 -or $current.world_sha256 -cne $Project.world_sha256) {
+        throw 'Antigravity setup changed the project.'
+    }
+    $report.checks.antigravity_install = @{
+        cli_sha512 = $digest; version = $version; sign_in_choices = $true; sign_in_cancelled = $true; project_unchanged = $true
+    }
+}
+
+function Exercise-AntigravitySignInFixture($Peer) {
+    Select-AgentProvider 'Antigravity'
+    Set-AgentExecutable 'Antigravity CLI executable' $Peer
+    $draft = 'Make a small lantern puzzle.'
+    Set-ControlText 'Agent prompt' $draft
+    $creator = $window
+    Invoke-Control 'Agent Connect'
+    $window = Wait-For 'synthetic signed-out recovery' { Find-OwnedDialog $creator 'Sign in to Antigravity' }
+    Invoke-Control 'Sign in with Google'
+    $window = $creator
+    $null = Wait-For 'authenticated ACP fixture session' { Find-Control 'Agent Send' -Enabled }
+    if ((Get-ControlText 'Agent prompt') -cne $draft) { throw 'The sign-in flow changed the draft.' }
+    Set-ControlText 'Agent prompt' ''
+    Invoke-Control 'Agent Disconnect'
+    $null = Wait-For 'fixture disconnect' { Find-Control 'Agent Connect' -Enabled }
+    $report.checks.antigravity_sign_in_fixture = @{ connected = $true; draft_unchanged = $true }
+}
+
 function Exercise-ClaudeInstall($Project) {
     Select-AgentProvider 'Claude Code'
-    $settings = Wait-For 'Connection settings' { Find-Control 'Connection settings' -Enabled }
-    $expander = $settings.GetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern)
-    $expander.Expand()
-    Set-ControlText 'Claude ACP executable' (Join-Path $run 'missing-claude.exe')
-    $expander.Collapse()
+    Set-AgentExecutable 'Claude ACP executable' (Join-Path $run 'missing-claude.exe') -AllowMissing
     Invoke-Control 'Agent Connect'
     $null = Wait-For 'missing adapter recovery' { Find-Control 'Install Claude Code' -Enabled }
     $creator = $window
     function Claude-Installer {
-        $handle = [CreatorTestWindow]::FindDialog([IntPtr]$creator.Current.NativeWindowHandle, 'Install Claude Code')
-        if ($handle -ne [IntPtr]::Zero) {
-            $dialog = [System.Windows.Automation.AutomationElement]::FromHandle($handle)
-            if ($dialog.Current.ProcessId -eq $owner.Id) { return $dialog }
-        }
+        Find-OwnedDialog $creator 'Install Claude Code'
     }
     Invoke-Control 'Install Claude Code'
     $window = Wait-For 'the installer window' { Claude-Installer }
@@ -1309,6 +1391,13 @@ function Play-RelocatedExport($Bundle, $Expected = $report.checks.export, $Kind 
 
 $oldDriverFiles, $oldIcdFiles = $env:VK_DRIVER_FILES, $env:VK_ICD_FILENAMES
 try {
+    if ($InstallAntigravity) {
+        $agyInstallRoot = Join-Path $env:LOCALAPPDATA 'Poima\agents\antigravity'
+        if (Test-Path -LiteralPath $agyInstallRoot) { throw 'The per-user Antigravity install folder must be unused.' }
+        Get-ChildItem Env: | Where-Object { $_.Name -match '^(GEMINI_|AGY_|GOOGLE_|ANTIGRAVITY_)' } |
+            ForEach-Object { Remove-Item ('Env:' + $_.Name) }
+    }
+    if ($AntigravitySignInPeer) { $env:POIMA_ACP_SIGN_IN_FIXTURE = '1' }
     if ($InstallClaude) {
         $claudeInstallRoot = Join-Path $env:LOCALAPPDATA 'Poima\agents\claude'
         if (Test-Path -LiteralPath $claudeInstallRoot) { throw 'The per-user Claude install folder must be unused.' }
@@ -1393,6 +1482,8 @@ try {
         }
     }
     if ($Antigravity) { Exercise-Acp $project 'Antigravity' 'Antigravity CLI executable' $Antigravity 'antigravity' }
+    if ($InstallAntigravity) { Exercise-AntigravityInstall $project }
+    if ($AntigravitySignInPeer) { Exercise-AntigravitySignInFixture $AntigravitySignInPeer }
     if ($Claude) { Exercise-Acp $project 'Claude Code' 'Claude ACP executable' $Claude 'claude' }
     if ($InstallClaude) { Exercise-ClaudeInstall $project }
     if ($CodexBrief) { Exercise-CodexBrief $project }
@@ -1424,6 +1515,20 @@ try {
     $window = Wait-For 'the reopened launcher' { Find-Window 'Poima' }
     Invoke-Control 'Open selected project'
     $window = Wait-For 'the reopened creator' { Find-Window "$name*Poima Creator" }
+    if ($InstallAntigravity) {
+        Select-AgentProvider 'Antigravity'
+        $settings = Wait-For 'Connection settings after reopening' { Find-Control 'Connection settings' -Enabled }
+        $expander = $settings.GetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern)
+        $expander.Expand()
+        $selectedCli = Get-ControlText 'Antigravity CLI executable'
+        $expander.Collapse()
+        if ($selectedCli -ne (Join-Path $agyInstallRoot '1.5.13\agy.exe')) {
+            throw 'Reopened creator did not discover the Poima-managed Antigravity executable.'
+        }
+        Invoke-Control 'Agent Connect'
+        Check-AntigravitySignInChoices $window
+        $report.checks.antigravity_install_reopened = $true
+    }
     if ($InstallClaude) {
         Check-ClaudeSignIn
         $report.checks.claude_install_reopened = $true
