@@ -8,7 +8,8 @@ creator describes the game, plays each build, and directs the next change.
 The engine gives agents the project operations and playtest observations
 that also power the desktop editor.
 
-The first product is a local Windows creator workspace. Its first release
+The first product is a local Windows creator workspace. Public distribution
+uses a precompiled launcher and versioned engine packages. Its first release
 gate is a small single-player game made from a blank project and finished as
 a standalone build. Advanced rendering, reactive worlds, deterministic simulation,
 browser deployment, multiplayer and current-generation consoles remain part
