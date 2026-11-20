@@ -95,6 +95,14 @@ with your message. [Plan a game](https://github.com/OvershockStudios/poimaengine
 
 ## Import assets
 
-Use the editor's **File** menu to import local models, images, or WAV clips.
-For an FBX with old texture paths, choose **Import FBX geometry…** and add
-the textures you want separately. [Supported formats and Unity Asset Store handoff](https://github.com/OvershockStudios/poimaengine/blob/main/docs/ASSETS.md#bring-assets-from-an-existing-library)
+Stop Play and choose **Import assets…** in the creator. Pick a file type and
+choose local files. Use **Color textures** for base color or emission and
+**Data textures** for normal, roughness, or metallic maps. For an FBX with old
+texture paths, choose **FBX geometry** and import the textures separately.
+
+Select imported items and choose **Add to chat draft** to give your agent the
+asset names and cooked IDs. You can edit the text and ask how to place or use
+each item before sending. The imported assets are available in the project
+as soon as cooking succeeds. The list of imported items covers the current
+creator session, and the cooked IDs remain valid when you reopen the project.
+[Supported formats and asset handoff](https://github.com/OvershockStudios/poimaengine/blob/main/docs/ASSETS.md#bring-assets-from-an-existing-library)

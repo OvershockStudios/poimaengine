@@ -8,6 +8,7 @@ using Avalonia.Media.Imaging;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using Poima.AgentHost;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 
 namespace Poima.Editor;
@@ -213,6 +214,17 @@ internal sealed class AgentChat : UserControl
     }
 
     public Task CloseAsync() => closingTask ??= CloseCoreAsync();
+
+    internal void AddAssetReferences(IReadOnlyList<CreatorAsset> assets)
+    {
+        var references = string.Join('\n', assets.Select(asset =>
+            $"- {asset.Kind} {JsonSerializer.Serialize(asset.Name)}: `{asset.Id}`"));
+        var draft = prompt.Text;
+        prompt.Text = (string.IsNullOrWhiteSpace(draft) ? "" : draft.TrimEnd() + "\n\n") +
+            "Imported Poima assets available in this project:\n" + references;
+        prompt.CaretIndex = prompt.Text.Length;
+        prompt.Focus();
+    }
     private async Task CloseCoreAsync()
     {
         closing = true; Controls(); lifetime.Cancel();

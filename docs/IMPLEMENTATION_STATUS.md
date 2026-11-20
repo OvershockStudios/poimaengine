@@ -1,8 +1,15 @@
 # Implementation status
 
-Updated 2026-11-20 for **0.0.315**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-20 for **0.0.316**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.316 imports [local assets from the Windows creator](WINDOWS_PREVIEW.md#import-assets).
+The packaged test cooks GLB, PNG in both color spaces, and WAV through the
+native file picker workflow. The draft carries cooked IDs, and the installed
+Codex client reads the selected model's triangle count after approval. A
+shared authoring client places the same model, and the relocated export
+loads its exact bytes. [Results](evidence/m2-windows-creator-assets-316.json)
 
 Version 0.0.315 opens the [Windows desktop controls](WINDOWS_PREVIEW.md) with
 software rendering if Vulkan UI initialization fails. With the drivers masked

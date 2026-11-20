@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # Run in the interactive Windows session against a portable desktop directory.
-# UI Automation addresses only windows owned by this run. No file picker,
-# physical input or pre-existing project is used. -WithCodex opens a local
+# UI Automation addresses only windows owned by this run. The run uses no
+# physical input or pre-existing project. -WithCodex opens a local
 # Codex connection with the installed client and submits no model turn.
 # -CodexExecutable selects an exact client for that installed-client check.
 # -Antigravity and -Claude use the supplied ACP clients for one MCP read each.
@@ -13,6 +13,8 @@
 # -WithShareZip also exercises the owned save dialog and plays the unpacked ZIP.
 # -WithBuildHistory creates two passing versions and restores the older one through the history dialog.
 # -WithoutVulkan masks drivers for the owned processes and checks preview failure recovery.
+# -AssetFixtures imports model, color/data image and WAV fixtures through the file picker.
+# -CodexAssetRead asks the real Codex client to inspect the model ID in the draft.
 param(
     [Parameter(Mandatory = $true)][string]$Editor,
     [Parameter(Mandatory = $true)][string]$Output,
@@ -27,10 +29,13 @@ param(
     [switch]$WithPlaytestResults,
     [switch]$WithShareZip,
     [switch]$WithBuildHistory,
-    [switch]$WithoutVulkan
+    [switch]$WithoutVulkan,
+    [string]$AssetFixtures,
+    [switch]$CodexAssetRead
 )
 
 $ErrorActionPreference = 'Stop'
+if ($CodexAssetRead -and !$AssetFixtures) { throw 'Supply -AssetFixtures for the Codex asset handoff check.' }
 if ($WithoutVulkan -and ($WithExport -or $WithPlaytestResults -or $WithShareZip -or $WithBuildHistory)) {
     throw 'Run the no-driver check separately from export and hardware playback checks.'
 }
@@ -47,6 +52,13 @@ public static class CreatorTestWindow {
     [DllImport("user32.dll")] private static extern bool IsWindowVisible(IntPtr window);
     [DllImport("user32.dll", CharSet=CharSet.Unicode)]
     private static extern int GetWindowText(IntPtr window, System.Text.StringBuilder text, int capacity);
+    [DllImport("user32.dll")] private static extern bool EnumChildWindows(IntPtr window, WindowCallback callback, IntPtr context);
+    [DllImport("user32.dll")] private static extern IntPtr GetParent(IntPtr window);
+    [DllImport("user32.dll")] private static extern int GetDlgCtrlID(IntPtr window);
+    [DllImport("user32.dll")] private static extern IntPtr GetDlgItem(IntPtr window, int id);
+    [DllImport("user32.dll", CharSet=CharSet.Unicode)] private static extern int GetClassName(IntPtr window, System.Text.StringBuilder name, int capacity);
+    [DllImport("user32.dll", CharSet=CharSet.Unicode)] private static extern IntPtr SendMessageTimeout(IntPtr window, uint message,
+        IntPtr wparam, string value, uint flags, uint timeout, out IntPtr result);
     public static IntPtr FindDialog(IntPtr parent, string title) {
         IntPtr match = IntPtr.Zero;
         EnumWindows((window, _) => {
@@ -58,6 +70,22 @@ public static class CreatorTestWindow {
             return false;
         }, IntPtr.Zero);
         return match;
+    }
+    public static bool ChooseFile(IntPtr dialog, string file) {
+        IntPtr field = IntPtr.Zero;
+        EnumChildWindows(dialog, (window, _) => {
+            var name = new System.Text.StringBuilder(32);
+            GetClassName(window, name, name.Capacity);
+            if (name.ToString() != "Edit" ||
+                (GetDlgCtrlID(window) != 1148 && GetDlgCtrlID(GetParent(window)) != 1148)) return true;
+            field = window;
+            return false;
+        }, IntPtr.Zero);
+        IntPtr accepted;
+        if (field == IntPtr.Zero || SendMessageTimeout(field, 0x000c, IntPtr.Zero, file, 3, 5000, out accepted) == IntPtr.Zero ||
+            accepted == IntPtr.Zero) return false;
+        var open = GetDlgItem(dialog, 1);
+        return open != IntPtr.Zero && PostMessage(open, 0x00f5, IntPtr.Zero, IntPtr.Zero);
     }
 }
 '@
@@ -153,8 +181,8 @@ function Select-QuestionChoice($Control) {
     }
 }
 
-function Select-AgentProvider($Name) {
-    $selector = Wait-For 'the agent selector' { Find-Control 'Agent provider' -Enabled }
+function Select-ComboValue($Label, $Name) {
+    $selector = Wait-For $Label { Find-Control $Label -Enabled }
     $selection = $null
     if ($selector.TryGetCurrentPattern([System.Windows.Automation.SelectionPattern]::Pattern, [ref]$selection) -and
         @($selection.Current.GetSelection() | Where-Object { $_.Current.Name -eq $Name }).Count -gt 0) { return }
@@ -173,6 +201,8 @@ function Select-AgentProvider($Name) {
     }
     $option.GetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern).Select()
 }
+
+function Select-AgentProvider($Name) { Select-ComboValue 'Agent provider' $Name }
 
 function Set-AgentExecutable($Control, $Path) {
     $settings = Wait-For 'Connection settings' { Find-Control 'Connection settings' -Enabled }
@@ -399,6 +429,132 @@ function Inspect-Desktop {
     $reply = $request | & $cli connect $endpoint --timeout-ms 2000 | ConvertFrom-Json
     if ($LASTEXITCODE -ne 0 -or !$reply.result) { throw 'The shared owner could not be inspected.' }
     return $reply.result
+}
+
+function Select-CreatorAssetFile($Kind, $File, [switch]$Reject) {
+    $creator = $window
+    $creatorHandle = [IntPtr]$creator.Current.NativeWindowHandle
+    Invoke-Control ('Import assets' + [char]0x2026)
+    $dialog = [IntPtr](Wait-For 'the creator asset window' {
+        $handle = [CreatorTestWindow]::FindDialog($creatorHandle, 'Import assets')
+        if ($handle -ne [IntPtr]::Zero) { $handle }
+    })
+    $window = [Windows.Automation.AutomationElement]::FromHandle($dialog)
+    Select-ComboValue 'Asset type' $Kind
+    Invoke-Control ('Choose files' + [char]0x2026)
+    $picker = [IntPtr](Wait-For 'the owned asset file picker' {
+        $handle = [CreatorTestWindow]::FindDialog($dialog, 'Choose assets')
+        if ($handle -ne [IntPtr]::Zero) { $handle }
+    })
+    if (![CreatorTestWindow]::ChooseFile($picker, $File)) { throw 'The test could not select the asset fixture.' }
+    if ($Reject) {
+        $null = Wait-For 'the rejected asset filename' {
+            $control = Find-ControlId 'creator-import-status'
+            if ($control -and $control.Current.Name -like ('*' + [IO.Path]::GetFileName($File) + '*') -and
+                (Find-Control ('Choose files' + [char]0x2026) -Enabled)) { $control }
+        }
+        if (Find-Control 'Add to chat draft' -Enabled) { throw 'An unsuccessful import enabled the handoff.' }
+        Invoke-Control 'Done'
+    } else { Invoke-Control 'Add to chat draft' }
+    $null = Wait-For 'return to the creator workspace' {
+        [CreatorTestWindow]::FindDialog($creatorHandle, 'Import assets') -eq [IntPtr]::Zero
+    }
+}
+
+function Exercise-CreatorAssets($Project) {
+    $intro = 'Please use these files in my project.'
+    Set-ControlText 'Agent prompt' $intro
+    $results = [ordered]@{}
+    foreach ($test in @(
+        @{ kind = '3D models'; file = 'Station fixture.glb'; key = 'model'; method = 'asset.inspect'; extension = 'pmodel' },
+        @{ kind = 'Color textures'; file = 'Surface swatch.png'; key = 'color'; method = 'asset.image.inspect'; extension = 'pimage'; color = 'srgb' },
+        @{ kind = 'Data textures'; file = 'Surface swatch.png'; key = 'data'; method = 'asset.image.inspect'; extension = 'pimage'; color = 'linear' },
+        @{ kind = 'WAV audio'; file = 'Relay audio.wav'; key = 'audio'; method = 'asset.audio.inspect'; extension = 'paudio' }
+    )) {
+        $file = (Resolve-Path -LiteralPath (Join-Path $AssetFixtures $test.file)).Path
+        Select-CreatorAssetFile $test.kind $file
+        $draft = Get-ControlText 'Agent prompt'
+        $ids = [regex]::Matches($draft, '`([0-9a-f]{64})`')
+        if (!$draft.StartsWith($intro) -or $draft.Contains($file) -or $ids.Count -ne ($results.Count + 1)) {
+            throw 'The asset handoff replaced the draft, disclosed a local path or omitted the new asset ID.'
+        }
+        $assetId = $ids[$ids.Count - 1].Groups[1].Value
+        $request = @{jsonrpc='2.0'; id=1; method=$test.method; params=@{asset=$assetId}} | ConvertTo-Json -Depth 4 -Compress
+        $reply = $request | & $cli connect $endpoint --timeout-ms 2000 | ConvertFrom-Json
+        if ($LASTEXITCODE -ne 0 -or $reply.result.asset -cne $assetId -or ($test.color -and $reply.result.color_space -cne $test.color)) {
+            throw 'The shared native owner could not inspect the exact imported asset.'
+        }
+        $stored = Join-Path (Split-Path -Parent $manifest) ('world.json.assets\' + $assetId + '.' + $test.extension)
+        if ((Get-FileHash -LiteralPath $stored).Hash.ToLowerInvariant() -cne $assetId) { throw 'Cooked asset identity differs from the draft.' }
+        $results[$test.key] = [ordered]@{id=$assetId; bytes=$reply.result.bytes; format=$reply.result.format}
+        if ($test.color) { $results[$test.key].color_space = $reply.result.color_space }
+        if ($test.key -ceq 'model') { $results.model.triangles = $reply.result.triangles }
+    }
+    $draftBeforeFailure = Get-ControlText 'Agent prompt'
+    Select-CreatorAssetFile '3D models' (Join-Path $AssetFixtures 'Broken.glb') -Reject
+    $current = Inspect-Project
+    if ((Get-ControlText 'Agent prompt') -cne $draftBeforeFailure -or (Find-Control 'Agent Send' -Enabled) -or
+        (Get-ControlText 'Agent transcript') -or $current.world_sha256 -cne $Project.world_sha256 -or
+        $current.manifest_sha256 -cne $Project.manifest_sha256 -or $results.color.id -ceq $results.data.id) {
+        throw 'One of the imports modified or sent the draft, changed the scene or confused image color spaces.'
+    }
+    $draftBeforeFailure | Set-Content -LiteralPath (Join-Path $run 'asset-handoff-draft.txt') -Encoding UTF8
+
+    $item = [guid]::NewGuid().ToString('N')
+    $request = @{jsonrpc='2.0'; id=1; method='world.transact'; params=@{
+        request_id=[guid]::NewGuid().ToString('N'); base_revision=$Project.revision; ops=@(
+            @{op='asset.instantiate'; asset=$results.model.id; id=$item; name='Imported station'; parent=$null},
+            @{op='component.set'; id=$item; type='Transform'; value=@{position=@(0,1,-3); rotation=@(0,0,0,1); scale=@(1,1,1)}}
+        )}} | ConvertTo-Json -Depth 10 -Compress
+    $reply = $request | & $cli connect $endpoint --timeout-ms 2000 | ConvertFrom-Json
+    $placementExit = $LASTEXITCODE
+    $saved = Inspect-Project
+    if ($placementExit -ne 0 -or $reply.result.revision -ne ($Project.revision + 1) -or $saved.revision -ne $reply.result.revision -or
+        @($saved.assets | Where-Object {$_.sha256 -ceq $results.model.id}).Count -ne 1) {
+        throw 'A shared authoring client could not instantiate the asset from the draft.'
+    }
+    $report.checks.asset_import = [ordered]@{ assets=$results; imported_without_scene_edit=$true; guarded_placement_revision=$saved.revision;
+        malformed_source_rejected=$true; draft_and_local_paths_preserved=$true }
+    return $saved
+}
+
+function Exercise-CodexImportedAsset($Project) {
+    if ($CodexExecutable) { Set-AgentExecutable 'Codex executable' $CodexExecutable }
+    Invoke-Control 'Agent Connect'
+    $null = Wait-For 'the connected asset handoff chat' { Find-Control 'Agent Send' -Enabled } 65
+    $draft = Get-ControlText 'Agent prompt'
+    $expected = $report.checks.asset_import.assets.model
+    Set-ControlText 'Agent prompt' ($draft + "`n`nInspection test only. Ignore gameplay planning and build guides for this turn. " +
+        'Call mcp__poima__poima_call exactly once with method asset.inspect, params.asset set to the 64-character ID beside Station fixture.glb above. ' +
+        'Read no other files or tools and make no changes. Reply with IMPORTED_TRIANGLES=<actual triangle count> from that response.')
+    Invoke-Control 'Agent Send'
+    $null = Wait-For 'an asset inspection approval' { Find-Control 'Approve once' -Enabled } 80
+    $details = Get-ControlText 'Agent approval details'
+    $details | Set-Content -LiteralPath (Join-Path $run 'asset-handoff-approval.txt') -Encoding UTF8
+    $lines = $details -split '\r?\n', 2
+    if ($lines.Length -ne 2 -or $lines[0] -cne 'poima_call') { throw 'Unexpected tool in the asset handoff.' }
+    $operation = $lines[1] | ConvertFrom-Json
+    if ($operation.method -cne 'asset.inspect' -or $operation.params.asset -cne $expected.id) {
+        Invoke-Control 'Decline'
+        throw 'Codex asked to inspect a different asset or tool.'
+    }
+    Invoke-Control 'Approve once'
+    $null = Wait-For 'Codex reporting the cooked triangle count' {
+        if (Find-Control 'Agent Send' -Enabled) {
+            $text = Get-ControlText 'Agent transcript'
+            $text | Set-Content -LiteralPath (Join-Path $run 'asset-handoff-codex.txt') -Encoding UTF8
+            if ($text -notmatch ('IMPORTED_TRIANGLES=' + $expected.triangles + '\b')) { throw 'Codex reported the wrong cooked triangle count.' }
+            $true
+        }
+    } 80
+    $current = Inspect-Project
+    if ($current.world_sha256 -cne $Project.world_sha256 -or $current.manifest_sha256 -cne $Project.manifest_sha256) {
+        throw 'The Codex inspection changed the project.'
+    }
+    $report.checks.asset_import.codex_inspected_id = $expected.id
+    $report.checks.asset_import.codex_reported_triangles = $expected.triangles
+    Invoke-Control 'Agent Disconnect'
+    $null = Wait-For 'the closed asset handoff connection' { Find-Control 'Agent Connect' -Enabled }
 }
 
 function Play-Preview($Revision) {
@@ -782,6 +938,8 @@ try {
     $project = Inspect-Project
     $endpoint = 'poima-' + $project.project_id
     $report.checks.created = [ordered]@{ id = $project.project_id; revision = $project.revision }
+    if ($AssetFixtures) { $project = Exercise-CreatorAssets $project }
+    if ($CodexAssetRead) { Exercise-CodexImportedAsset $project }
 
     if ($WithoutVulkan) {
         $report.checks.first_preview_failure = Check-UnavailablePreview $project 'first'
@@ -892,7 +1050,19 @@ try {
         Close-Owner
         $report.checks.closed_during_play_exit_code = $owner.ExitCode
     }
-    if ($WithExport) { Play-RelocatedExport $bundle }
+    if ($WithExport) {
+        Play-RelocatedExport $bundle
+        if ($AssetFixtures) {
+            $relocated = Join-Path $run 'Relocated Windows export'
+            $game = Get-Content -LiteralPath (Join-Path $relocated 'game.json') -Raw | ConvertFrom-Json
+            $id = $report.checks.asset_import.assets.model.id
+            $file = @($game.files | Where-Object { $_.sha256 -ceq $id -and $_.path.EndsWith("$id.pmodel") })
+            if ($file.Count -ne 1 -or (Get-FileHash -LiteralPath (Join-Path $relocated $file[0].path)).Hash.ToLowerInvariant() -cne $id) {
+                throw 'The relocated game is missing the exact imported model.'
+            }
+            $report.checks.asset_import.relocated_model_verified = $true
+        }
+    }
     if ($WithShareZip) {
         $archiveRoot = Join-Path $projects '.poima-history'
         Move-Item -LiteralPath $archiveRoot -Destination (Join-Path $run 'retired history')

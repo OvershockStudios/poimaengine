@@ -10,10 +10,13 @@ remain unchanged. Raster cutouts do not modify collision geometry.
 ## Bring assets from an existing library
 
 Choose the source files you want to use and keep any referenced buffers and
-textures with them. Use the **File** menu in the Windows editor to import a
-model, color image, data image, or WAV clip. The Project browser can inspect
-and instantiate cooked models. The Console reports the imported image or
-audio asset ID. [Desktop controls](DESKTOP_EDITOR.md#current-authoring-controls)
+textures with them. In the Windows creator, use **Import assets…** to cook
+models, color or data textures, and WAV clips. **Add to chat draft** inserts
+names and asset IDs into your next message. In the full editor, use **File**
+to import, then use the Project browser to inspect or instantiate cooked
+models. The Console reports image and audio asset IDs.
+[Creator import](WINDOWS_PREVIEW.md#import-assets)
+[Desktop controls](DESKTOP_EDITOR.md#current-authoring-controls)
 
 The native world service also accepts the following source files on Windows
 and Linux. You can send these requests yourself or use them from a connected

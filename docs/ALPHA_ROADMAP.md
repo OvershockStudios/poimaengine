@@ -76,6 +76,9 @@ operations without authorizing a whole connection.
 The [0.0.315 graphics startup test](evidence/m2-windows-graphics-start-315.json)
 keeps setup and authoring accessible with a driver failure and exercises
 native preview and standalone playback with the hardware driver available.
+The [0.0.316 asset handoff test](evidence/m2-windows-creator-assets-316.json)
+cooks local files through the creator, hands the model ID to Codex, and
+checks that the referenced model is present in the relocated game.
 The [Codex sign-in check](evidence/m2-creator-codex-sign-in-303.json) covers
 opening and cancelling sign-in with an isolated client and continuation after
 a scripted account confirmation. A real browser authorization is still needed.

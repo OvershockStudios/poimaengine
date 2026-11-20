@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 using System.Diagnostics;
+using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -33,6 +34,8 @@ internal sealed class CreatorWindow : Window
     private readonly Button restore = new() { Content = "Restore verified project as copy", IsVisible = false };
     private readonly Button openRecovered = new() { Content = "Open recovered project", IsVisible = false };
     private readonly Button setupBuilds = new() { Content = "Set up gameplay builds", IsVisible = false };
+    private readonly Button importAssets = new() { Content = "Import assets…" };
+    private readonly ObservableCollection<CreatorAsset> importedAssets = [];
     private readonly TextBlock status = new() { TextWrapping = TextWrapping.Wrap };
     private readonly Border viewport = new() { Background = EditorTheme.Brush("#161518"), ClipToBounds = true };
     private bool starting, waitingForPreviewFrame, exporting, closeAfterExport, verifiedPlayerRunning, closing, allowClose;
@@ -100,6 +103,7 @@ internal sealed class CreatorWindow : Window
         buildHistory.Click += async (_, _) => await ShowBuildHistoryAsync();
         restore.Click += async (_, _) => await RestoreVerifiedAsync();
         openRecovered.Click += (_, _) => OpenRecoveredProject();
+        importAssets.Click += async (_, _) => await ImportAssetsAsync();
         setupBuilds.IsVisible = OperatingSystem.IsWindows() && WindowsGameplayTools.HasAuthoringPack &&
             options.ActiveDevelopmentProfiles is null;
         setupBuilds.Click += async (_, _) =>
@@ -161,12 +165,12 @@ internal sealed class CreatorWindow : Window
         title.Children.Add(new TextBlock { Text = project.Root, FontSize = 12, Foreground = EditorTheme.Brush("#B4ACB2"),
             TextTrimming = TextTrimming.CharacterEllipsis });
         var root = new Grid { RowDefinitions = new RowDefinitions("Auto,*"), Margin = new Thickness(24), RowSpacing = 20 };
-        setupBuilds.HorizontalAlignment = HorizontalAlignment.Right;
-        setupBuilds.VerticalAlignment = VerticalAlignment.Top;
         var heading = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto"), ColumnSpacing = 16 };
         heading.Children.Add(title);
-        Grid.SetColumn(setupBuilds, 1);
-        heading.Children.Add(setupBuilds);
+        var projectActions = new WrapPanel { ItemSpacing = 8, VerticalAlignment = VerticalAlignment.Top,
+            Children = { importAssets, setupBuilds } };
+        Grid.SetColumn(projectActions, 1);
+        heading.Children.Add(projectActions);
         root.Children.Add(heading);
         var panels = new Grid { ColumnDefinitions = new ColumnDefinitions("5*,7*"), ColumnSpacing = 16 };
         panels.Children.Add(Card(chat));
@@ -207,6 +211,13 @@ internal sealed class CreatorWindow : Window
 
     private static Border Card(Control child) => new() { Child = child, Background = EditorTheme.Brush("#232125"),
         BorderBrush = EditorTheme.Brush("#41383E"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(8) };
+
+    private async Task ImportAssetsAsync()
+    {
+        if (!importAssets.IsEnabled) return;
+        var selected = await new CreatorAssetWindow(host, importedAssets).ShowDialog<CreatorAsset[]?>(this);
+        if (!closing && selected is { Length: > 0 }) chat.AddAssetReferences(selected);
+    }
 
     private async Task PlayAsync()
     {
@@ -648,6 +659,7 @@ internal sealed class CreatorWindow : Window
         play.IsEnabled = ready && model.RuntimeId is null;
         stop.IsEnabled = ready && model.RuntimeId is not null;
         export.IsEnabled = play.IsEnabled;
+        importAssets.IsEnabled = play.IsEnabled;
         setupBuilds.IsEnabled = play.IsEnabled;
         chat.IsEnabled = !closing && !exporting;
         playVerified.IsVisible = verifiedBundleHash is not null;

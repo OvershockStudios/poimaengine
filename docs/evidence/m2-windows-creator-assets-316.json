@@ -1,0 +1,99 @@
+{
+  "version": "0.0.316",
+  "scope": "Packaged creator on Windows x64 and native Vulkan player on the development laptop.",
+  "release": {
+    "version": "0.0.316",
+    "tag": "v0.0.316",
+    "engine_files": 499,
+    "sample_manifest_sha256": "b44a9a10dfe5882f7ca24e6ce5345db27c46984481d3fb6b0a419b6c3d8d212d",
+    "assets": [
+      {
+        "name": "Poima-0.0.316-Windows-x64.zip",
+        "bytes": 141487346,
+        "sha256": "c3388f979b9cd3382720f4baf2c3573cc14befda5e2a9169f5ffeed47c43d93d"
+      },
+      {
+        "name": "Poima-0.0.316-Windows-x64.manifest.json",
+        "bytes": 89315,
+        "sha256": "1630060196bcac62fcc0da83102c3852f1dee9d1cda64d8196e976c1927d0308"
+      },
+      {
+        "name": "Poima-Launcher-0.0.316-Windows-x64.zip",
+        "bytes": 46080464,
+        "sha256": "26ca7fbac99214858f2e0d28ae4c8a06d08ff1c21e8f324006461305260096eb"
+      }
+    ]
+  },
+  "fixture_inputs": {
+    "GLB": {
+      "source": "examples/assets/material-sphere.glb",
+      "sha256": "000000f6c2b8a58d024168ffa467e8b24d73314c27f00bf8f37ce6e1417e39de"
+    },
+    "PNG": {
+      "source": "docs/evidence/fixtures/agent-pumphouse/partial.png",
+      "sha256": "7266f655a10c997433fad1f6ec6457799a8c6f6ce53ec562569a715d24229ef1"
+    },
+    "WAV": {
+      "source": "examples/assets/acoustic-probe.wav",
+      "sha256": "bfbe27ec9d9b6dc06f81c002c6395224ccea9a78b83c00effbc31236684d85fe"
+    }
+  },
+  "authoring_client": "A native shared endpoint client placed the model. The installed Codex client then read its exact ID from the desktop draft and used asset.inspect after a one-time approval.",
+  "codex_approval_sha256": "b5cfbcf3e4529cf56b3030a894461199921d6d69e5e29b28baa80ddf50210e10",
+  "initial_live_attempt": {
+    "passed": false,
+    "report_sha256": "0f61d8190ae685c5e6cf1b161367ffc1ac8afb2bd791d2212d9e5f898ac7fda7",
+    "failure": "The approval gate declined an operation that did not match the requested asset inspection. The completed run used a prompt naming the expected tool and draft asset label."
+  },
+  "checks": {
+    "assets": {
+      "model": {
+        "id": "9d523785bc99760a2c53bc663d6fa36ddf7ed947eeb0974579a652d4ad4fca8e",
+        "bytes": 85992,
+        "format": "poima.static-model.v3",
+        "triangles": 2208
+      },
+      "color": {
+        "id": "ced84efe0fe91919f4d0962f214b898fb2df8f57535877ddcc40c5e87af559da",
+        "bytes": 4915520,
+        "format": "poima.image.v1",
+        "color_space": "srgb"
+      },
+      "data": {
+        "id": "dd6fd7d61a3cadadbced91f5aadaf86557cb39435a18573b7f7e970c79606cd9",
+        "bytes": 4915521,
+        "format": "poima.image.v1",
+        "color_space": "linear"
+      },
+      "audio": {
+        "id": "e600508bc9f7be06f4675bb17c3739954b8e5578ae7c71dcaebde195ab99c14f",
+        "bytes": 19212,
+        "format": "poima.audio.v1"
+      }
+    },
+    "imported_without_scene_edit": true,
+    "guarded_placement_revision": 2,
+    "malformed_source_rejected": true,
+    "draft_and_local_paths_preserved": true,
+    "codex_inspected_id": "9d523785bc99760a2c53bc663d6fa36ddf7ed947eeb0974579a652d4ad4fca8e",
+    "codex_reported_triangles": 2208,
+    "relocated_model_verified": true
+  },
+  "preview_frames": 4,
+  "relocated_export": {
+    "original_project_unavailable": true,
+    "exit_code": 0,
+    "tick": 12,
+    "presented_frames": 13,
+    "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "external_save_directory_created": true,
+    "capture_sha256": "7295eda85b80fcbf3e3228881e994ab3db1907ad9361c5dace4cba14d9f04544"
+  },
+  "draft_sha256": "01507d973f8c6964f9d15835d01f2b97ed079de14d169420454cc1aa1885745a",
+  "report_sha256": "a5a19a32836d19a5a33aad17c1ebc4bd1187578d838e80d43d42e8ac749cd745",
+  "open_qualification": [
+    "first-time creator on clean Windows",
+    "agent-led placement using creator imports",
+    "FBX geometry-only and JPEG picker flows"
+  ]
+}
