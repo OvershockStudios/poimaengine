@@ -23,14 +23,15 @@ internal sealed class CreatorWindow : Window
     private readonly DispatcherTimer timer = new() { Interval = TimeSpan.FromMilliseconds(33) };
     private readonly Button play = new() { Content = "Play" }, stop = new() { Content = "Stop" };
     private readonly Button export = new() { Content = "Export build" };
+    private readonly Button playVerified = new() { Content = "Play verified build", IsVisible = false };
     private readonly Button showExport = new() { Content = "Open build folder", IsVisible = false };
     private readonly Button showChecks = new() { Content = "Open check report", IsVisible = false };
     private readonly Button restore = new() { Content = "Restore verified project as copy", IsVisible = false };
     private readonly Button openRecovered = new() { Content = "Open recovered project", IsVisible = false };
     private readonly TextBlock status = new() { TextWrapping = TextWrapping.Wrap };
     private readonly Border viewport = new() { Background = EditorTheme.Brush("#161518"), ClipToBounds = true };
-    private bool starting, exporting, closeAfterExport, closing, allowClose;
-    private string? exportedFolder, checkReport, checkSummary, verifiedCheckpoint, recoveredManifest;
+    private bool starting, exporting, closeAfterExport, verifiedPlayerRunning, closing, allowClose;
+    private string? exportedFolder, checkReport, checkSummary, verifiedCheckpoint, verifiedBundleHash, recoveredManifest;
     private string workDescription = "";
     private long exportedRevision;
     private Task? agentShutdown;
@@ -71,6 +72,7 @@ internal sealed class CreatorWindow : Window
         play.Click += async (_, _) => await PlayAsync();
         stop.Click += (_, _) => ExecuteStop();
         export.Click += async (_, _) => await ExportAsync();
+        playVerified.Click += async (_, _) => await PlayVerifiedAsync();
         showExport.Click += (_, _) => OpenExportItem(exportedFolder, Directory.Exists);
         showChecks.Click += (_, _) => OpenExportItem(checkReport, File.Exists);
         restore.Click += async (_, _) => await RestoreVerifiedAsync();
@@ -136,6 +138,7 @@ internal sealed class CreatorWindow : Window
         AutomationProperties.SetName(status, "Preview status");
         var result = new StackPanel { Spacing = 8 };
         result.Children.Add(status);
+        result.Children.Add(playVerified);
         result.Children.Add(showExport);
         result.Children.Add(showChecks);
         result.Children.Add(restore);
@@ -315,14 +318,55 @@ internal sealed class CreatorWindow : Window
 
     private async Task LoadLatestVerification(CancellationToken cancellation)
     {
-        var history = await ProjectFiles.Command(cancellation, "history", HistoryDirectory(), "--project-id", project.ProjectId);
-        var latest = history.GetProperty("latest");
+        var latest = await LatestVerification(cancellation);
         if (latest.ValueKind != JsonValueKind.Object) return;
         verifiedCheckpoint = latest.GetProperty("checkpoint").GetString();
+        verifiedBundleHash = latest.GetProperty("bundle_sha256").GetString();
         checkReport = latest.GetProperty("report").GetString();
         exportedFolder = Path.GetDirectoryName(latest.GetProperty("game_manifest").GetString());
         exportedRevision = latest.GetProperty("revision").GetInt64();
         checkSummary = $"Revision {exportedRevision} passed all {latest.GetProperty("groups_passed").GetInt32()} check groups.";
+    }
+
+    private async Task<JsonElement> LatestVerification(CancellationToken cancellation)
+    {
+        var history = await ProjectFiles.Command(cancellation, "history", HistoryDirectory(), "--project-id", project.ProjectId);
+        return history.GetProperty("latest");
+    }
+
+    private async Task PlayVerifiedAsync()
+    {
+        if (!playVerified.IsEnabled || exportedFolder is null || verifiedBundleHash is null) return;
+        var manifest = Path.GetFullPath(Path.Combine(exportedFolder, "game.json"));
+        var bundleHash = verifiedBundleHash;
+        var priorError = error;
+        await ProjectWork("Checking the verified build…", async () =>
+        {
+            using (var cancellation = new CancellationTokenSource())
+            {
+                checking = cancellation;
+                var latest = await LatestVerification(cancellation.Token);
+                if (latest.ValueKind != JsonValueKind.Object ||
+                    latest.GetProperty("bundle_sha256").GetString() != bundleHash ||
+                    !string.Equals(Path.GetFullPath(latest.GetProperty("game_manifest").GetString()!), manifest, StringComparison.OrdinalIgnoreCase))
+                    throw new InvalidOperationException("The selected verified build changed or is unavailable. Reopen the project to refresh it.");
+                checking = null;
+            }
+            if (closeAfterExport) return;
+            var local = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            if (!Path.IsPathFullyQualified(local))
+                throw new InvalidOperationException("Poima could not locate local storage for playtest saves.");
+            var saves = Directory.CreateDirectory(Path.Combine(local, "Poima", "Playtests", project.ProjectId, bundleHash)).FullName;
+            verifiedPlayerRunning = true;
+            workDescription = $"Playing verified revision {exportedRevision} in a separate window.";
+            UpdateControls();
+            try
+            {
+                await ProjectFiles.PlayExport(manifest, saves, options.Gpu, options.Samples);
+                error = priorError;
+            }
+            finally { verifiedPlayerRunning = false; }
+        }, describeEarlierExport: false);
     }
 
     private async Task RestoreVerifiedAsync()
@@ -367,7 +411,7 @@ internal sealed class CreatorWindow : Window
         catch (Exception failure) { error = failure.Message; UpdateControls(); }
     }
 
-    private async Task ProjectWork(string description, Func<Task> work)
+    private async Task ProjectWork(string description, Func<Task> work, bool describeEarlierExport = true)
     {
         exporting = true;
         error = null;
@@ -375,7 +419,7 @@ internal sealed class CreatorWindow : Window
         UpdateControls();
         try { await work(); }
         catch (OperationCanceledException) when (closeAfterExport) { }
-        catch (Exception failure) { error = failure.Message + EarlierExportMessage(); }
+        catch (Exception failure) { error = failure.Message + (describeEarlierExport ? EarlierExportMessage() : ""); }
         finally
         {
             checking = null;
@@ -427,6 +471,8 @@ internal sealed class CreatorWindow : Window
         stop.IsEnabled = ready && model.RuntimeId is not null;
         export.IsEnabled = play.IsEnabled;
         chat.IsEnabled = !closing && !exporting;
+        playVerified.IsVisible = verifiedBundleHash is not null;
+        playVerified.IsEnabled = play.IsEnabled;
         showExport.IsVisible = exportedFolder is not null;
         showExport.IsEnabled = !closing && !exporting;
         showChecks.IsVisible = checkReport is not null;
@@ -436,7 +482,8 @@ internal sealed class CreatorWindow : Window
         openRecovered.IsVisible = recoveredManifest is not null;
         openRecovered.IsEnabled = play.IsEnabled;
         var gameView = host.State["views"]?["game"];
-        status.Text = closing ? "Closing project…" : closeAfterExport ? "Finishing project work before closing…" :
+        status.Text = closing ? "Closing project…" : closeAfterExport
+            ? verifiedPlayerRunning ? "Close the verified game window to finish closing Poima." : "Finishing project work before closing…" :
             exporting ? workDescription :
             starting ? "Starting preview…" : error ?? host.ViewError("game") ??
             model.PlaybackError ?? (previewSession is not null

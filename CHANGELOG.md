@@ -2,6 +2,12 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.294
+
+- Play the verified export from the creator workspace in its own window with saves scoped to that build.
+- Reopen verified checkpoints from earlier engine versions when their captured source and bundle formats are supported.
+- Allow gameplay builds in Codex creator sessions with a separate per-connection control.
+
 ## 0.0.293
 
 - Read and write C# gameplay source through the open project's native service, with content guards and separate MCP source-write approval.

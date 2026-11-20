@@ -27,6 +27,7 @@ internal sealed class AgentChat : UserControl
     private readonly TextBox model = Field("Model (empty uses the CLI's advertised default)", "");
     private readonly CheckBox allowEdits = new() { Content = "Allow Poima world edits in this session", IsChecked = true };
     private readonly CheckBox allowSourceEdits = new() { Content = "Allow gameplay source edits in this session" };
+    private readonly CheckBox allowBuilds = new() { Content = "Allow gameplay builds in this session" };
     private readonly TextBox prompt = new() { AcceptsReturn = true, TextWrapping = TextWrapping.Wrap, MinHeight = 85, MaxHeight = 180 };
     private readonly TextBox transcript = new() { IsReadOnly = true, AcceptsReturn = true, TextWrapping = TextWrapping.Wrap };
     private readonly TextBlock status = new() { Text = "Disconnected", TextWrapping = TextWrapping.Wrap };
@@ -76,6 +77,9 @@ internal sealed class AgentChat : UserControl
                 AutomationProperties.SetName(allowSourceEdits, "Agent allow source edits");
                 ToolTip.SetTip(allowSourceEdits, "Pre-approve guarded C# source writes for this Codex connection.");
                 setup.Children.Add(allowSourceEdits);
+                AutomationProperties.SetName(allowBuilds, "Agent allow gameplay builds");
+                ToolTip.SetTip(allowBuilds, "Authorize Codex to run the configured project build tools and attach their outputs for this connection.");
+                setup.Children.Add(allowBuilds);
             }
             var connection = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
             connection.Children.Add(connect); connection.Children.Add(disconnect);
@@ -118,7 +122,7 @@ internal sealed class AgentChat : UserControl
     private void UpdateProvider()
     {
         executable.IsVisible = model.IsVisible = thread.IsVisible = allowEdits.IsVisible = ProviderName == "Codex";
-        allowSourceEdits.IsVisible = ProviderName == "Codex";
+        allowSourceEdits.IsVisible = allowBuilds.IsVisible = ProviderName == "Codex";
         agyExecutable.IsVisible = ProviderName == "Antigravity";
         claudeExecutable.IsVisible = ProviderName == "Claude Code";
         connect.Content = "Connect " + ProviderName;
@@ -183,7 +187,7 @@ internal sealed class AgentChat : UserControl
         provider.IsEnabled = executable.IsEnabled = agyExecutable.IsEnabled = claudeExecutable.IsEnabled =
             engine.IsEnabled = model.IsEnabled = connect.IsEnabled;
         thread.IsReadOnly = !connect.IsEnabled; thread.IsEnabled = !closing;
-        allowEdits.IsEnabled = allowSourceEdits.IsEnabled = connect.IsEnabled;
+        allowEdits.IsEnabled = allowSourceEdits.IsEnabled = allowBuilds.IsEnabled = connect.IsEnabled;
     }
     private async Task Connect()
     {
@@ -201,7 +205,8 @@ internal sealed class AgentChat : UserControl
                 "Claude Code" => await AcpSession.ConnectAsync(claudeExecutable.Text ?? "", [], engine.Text ?? "",
                     endpoint, projectRoot, startup.Token),
                 _ => await CodexSession.ConnectAsync(executable.Text ?? "", engine.Text ?? "",
-                    endpoint, projectRoot, startup.Token, allowEdits.IsChecked == true, allowSourceEdits.IsChecked == true)
+                    endpoint, projectRoot, startup.Token, allowEdits.IsChecked == true, allowSourceEdits.IsChecked == true,
+                    allowBuilds.IsChecked == true)
             };
             session = current;
             if (closing) { await current.DisposeAsync(); return; }

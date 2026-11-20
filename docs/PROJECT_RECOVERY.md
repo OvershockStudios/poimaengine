@@ -6,12 +6,18 @@ its bundled [gameplay verification suite](GAME_VERIFICATION.md). The report
 links the exact bundle and suite. A failed export or check leaves the previous
 verified build available.
 
-Close and reopen the original project to see its last verified build. Choose
-**Open build folder** to play the exported game. Select **Restore verified
-project as copy** to publish a new editable project in a sibling folder, then
-**Open recovered project** to switch to it. The recovered copy receives a new
-project identity and keeps the captured world, assets, source, input profile
-and attached native gameplay. Both versions can be edited independently.
+Choose **Play verified build** to run the last passing export in a separate
+window. Poima rechecks the selected checkpoint and launches its bundled
+player. Playtest saves are kept under
+`%LOCALAPPDATA%\Poima\Playtests\<project_id>\<bundle_sha256>`. Close the game
+window to return to editing. **Play** previews the current working project.
+
+Close and reopen the project to find the last passing export again. Select
+**Restore verified project as copy** to publish an editable project in a
+sibling folder, then **Open recovered project** to switch to it. The copy
+receives a new project identity and keeps the captured world, assets, source,
+input profile and attached native gameplay. Both projects can be edited
+independently.
 
 ## Storage and version selection
 
@@ -22,7 +28,10 @@ writes `checks.json`. The native history command selects the newest complete
 passing version in descending directory name order. It checks project identity,
 source inventory and hashes, the suite and report, and the full game inventory.
 It can fall back to an earlier passing version when a newer version fails or is
-incomplete. Keep these folders to retain the versions they contain.
+incomplete. Earlier engine versions remain available when the current engine
+can validate the archived source and package formats. The version recorded in
+the report must match the archived game and runtime. Play uses that archived
+runtime. Keep these folders to retain the versions they contain.
 
 The source inventory includes the local editable files and engine dependencies.
 It skips Git metadata, Visual Studio metadata, recognized managed `bin` and `obj`

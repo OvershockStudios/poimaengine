@@ -70,9 +70,9 @@ Useful arguments are `--gpu N` for both native viewports, `--samples 1|4`, and a
    that folder on subsequent starts.
 2. Select **Codex**, **Antigravity**, or **Claude Code** and connect a signed-in agent.
    If Poima can't find it, set its executable in **Connection settings**.
-   Describe your game to begin the [brief](GAME_BRIEF.md). Codex's **Allow
-   Poima tools without asking** pre-approves calls to the world tools, including
-   edits, for this connection. Antigravity and Claude display their ACP
+   Describe your game to begin the [brief](GAME_BRIEF.md). Codex has separate
+   per-connection controls for world calls, gameplay source edits and builds.
+   Antigravity and Claude display their ACP
    permission requests in the chat. [Agent setup](AGENT_CLIENTS.md)
 3. Choose **Play** when the agent turn finishes. Play uses the project's
    current saved entry, camera, input profile and audio setting. Click the game
@@ -85,8 +85,8 @@ Useful arguments are `--gpu N` for both native viewports, `--samples 1|4`, and a
    on the packaged game and shows the result and report. Reopen the project to
    find its last verified build and recover its editable source as a copy.
    [Write a suite](GAME_VERIFICATION.md) and [recover a verified project](PROJECT_RECOVERY.md).
-   Choose **Open build folder** and run `launch.cmd` to play it. Keep the whole
-   folder together when sharing it.
+   Choose **Play verified build** to run the passing export. Use **Open build
+   folder** to find it for sharing. Keep the whole folder together.
 
 Select **Open in the full editor** in the launcher to use the same project with
 the Scene and Inspector panels. Close the current workspace before reopening

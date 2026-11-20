@@ -89,7 +89,9 @@ See the [compiled gameplay API](MANAGED_GAMEPLAY.md#write-gameplay) and
 
 Use `poima_call` to inspect `development.profiles`. With the creator's
 automatic profile, select `creator`. The profile's project root is the open
-project directory. A typical request to `poima_build` is:
+project directory. In a trusted Codex project, **Allow gameplay builds in this
+session** authorizes the configured build tools and artifact attachment for
+that connection. A typical request to `poima_build` is:
 
 ```json
 {

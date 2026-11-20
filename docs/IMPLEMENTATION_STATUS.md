@@ -1,8 +1,20 @@
 # Implementation status
 
-Updated 2026-11-20 for **0.0.293**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-20 for **0.0.294**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.294 adds [Play verified build](PROJECT_RECOVERY.md) in the Windows
+creator. It checks the selected checkpoint and opens its bundled player with
+build-specific playtest saves. Recovery can validate a supported earlier
+checkpoint against the engine version in its original verification report.
+The creator also offers a separate Codex approval for gameplay builds.
+In the packaged creator, Codex changed Signal Shelter through chat and
+published its native gameplay. The new build passed 11 assertions. After a
+movement regression, the same passing build played before and after a
+restart. Recovery matched the passing world, C# source and native gameplay.
+The relocated build repeated the checks, resumed from a save in a fresh
+process and completed a Vulkan replay. [Results](evidence/m2-creator-verified-play-294.json)
 
 Version 0.0.293 adds [guarded C# source editing](CREATOR_GAMEPLAY.md#write-compiled-c-gameplay)
 through the open project's native service. The configured project owner can

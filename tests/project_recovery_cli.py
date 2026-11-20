@@ -62,6 +62,17 @@ def main():
     latest = run('history', 'project', 'history', history, '--project-id', original['project_id'])
     assert Path(latest['latest']['checkpoint']) == Path(ready['checkpoint']) and latest['skipped'] == 1
     assert latest['latest']['bundle_sha256'] == verified['bundle_sha256']
+    report = ready_path / 'checks.json'
+    saved_report = report.read_bytes()
+    report.write_text(json.dumps({**verified, 'engine_version': '999.0.0'}), encoding='utf-8')
+    try:
+        mismatch = run('wrong-verifier-history', 'project', 'history', history, '--project-id', original['project_id'])
+        assert mismatch['latest'] is None and mismatch['skipped'] == 2
+        rejected = out / 'Wrong verifier version'
+        run('reject-wrong-verifier', 'project', 'recover', ready['checkpoint'], '--output', rejected, code=4)
+        assert not rejected.exists()
+    finally:
+        report.write_bytes(saved_report)
     run('reject-existing', 'project', 'recover', ready['checkpoint'], '--output', project, code=4)
     assert creator_file.read_bytes() == b'A later working copy edit\n'
     old = out / 'Original unavailable'

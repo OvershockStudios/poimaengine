@@ -394,9 +394,10 @@ void require_content_contract(const std::string& document,const Json& runtime) {
         return;
     }
 }
-Json runtime_spec(const std::string& bytes) {
+Json runtime_spec(const std::string& bytes,std::string_view expected_version=build_metadata().version) {
     const auto value=parse(bytes);fields(value,{"format","version","engine_version","gameplay_services_version","gameplay_call_version","gameplay_call_bytes","gameplay_services_bytes","gameplay_features","target_os","target_arch","executable","features"},{"format","version","engine_version","target_os","target_arch","executable","features"});
-    require(value.at("format")=="poima.runtime" && integer(value.at("version"))==1,"Unsupported runtime descriptor.");require(value.at("engine_version")==build_metadata().version,"Runtime engine version must exactly match the exporting engine.");
+    require(value.at("format")=="poima.runtime" && integer(value.at("version"))==1,"Unsupported runtime descriptor.");
+    require(value.at("engine_version")==expected_version,"Runtime engine version does not match the expected engine version.");
     if(value.contains("gameplay_services_version"))require(value.at("gameplay_services_version").is_number_integer() && integer(value.at("gameplay_services_version"))>0,"Runtime gameplay_services_version must be a positive integer.");
     unsigned contract_fields=0;
     for(const auto* name:{"gameplay_call_version","gameplay_call_bytes","gameplay_services_bytes","gameplay_features"})contract_fields+=value.contains(name) ? 1u : 0u;
@@ -433,7 +434,7 @@ struct Inventory {
     void sort() { std::sort(files.begin(),files.end(),[](const Json& a,const Json& b){return a.at("path").get<std::string>()<b.at("path").get<std::string>();}); }
 };
 struct VerifiedGame { GameDefinition definition;Json spec;fs::path manifest; };
-VerifiedGame verify_game(const std::string& filename) {
+VerifiedGame verify_game(const std::string& filename,std::string_view expected_version=build_metadata().version) {
     VerifiedGame result;result.manifest=fs::absolute(path_of(filename)).lexically_normal();regular(result.manifest);result.manifest=canonical_project_path(result.manifest);require(result.manifest.filename()=="game.json","Game bundle manifest must be named game.json.");const auto root=result.manifest.parent_path();require(fs::symlink_status(root/".poima-incomplete").type()==fs::file_type::not_found,"Game publication is incomplete.");
     const auto manifest_bytes=read(result.manifest,4*1024*1024);result.spec=parse(manifest_bytes);const auto& spec=result.spec;
     result.definition.manifest_sha256=hash(manifest_bytes);
@@ -451,7 +452,7 @@ VerifiedGame verify_game(const std::string& filename) {
     }
     const auto actual=file_tree(root);require(actual.size()==inventory.size()+1,"Bundle has missing or extra files.");for(const auto& path:actual)require(path=="game.json" || inventory.contains(path),"Uninventoried bundle file: "+path);
     auto expect=[&](const std::string& path,const std::string& role) { require(inventory.contains(path) && inventory.at(path).at("role")==role,"Required bundle payload is missing or incorrectly classified: "+path); };
-    expect("runtime/runtime.json","runtime");const auto runtime=runtime_spec(read(contained(root,"runtime/runtime.json"),65536));
+    expect("runtime/runtime.json","runtime");const auto runtime=runtime_spec(read(contained(root,"runtime/runtime.json"),65536),expected_version);
     require(engine.at("version")==runtime.at("engine_version") && engine.at("target_os")==runtime.at("target_os") && engine.at("target_arch")==runtime.at("target_arch") && engine.at("executable")=="runtime/"+runtime.at("executable").get<std::string>(),"Game engine descriptor differs from runtime descriptor.");
     expect(engine.at("executable"),"runtime");executable_mode(contained(root,engine.at("executable")),runtime.at("target_os"));expect("runtime/share/poima/LICENSE","runtime");expect("runtime/share/poima/THIRD_PARTY_NOTICES.md","runtime");
     result.definition.executable=text(contained(root,engine.at("executable")));

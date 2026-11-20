@@ -29,7 +29,7 @@ public sealed class CodexSession : IAgentSession
     /// <summary>Attach Poima through its existing endpoint; never open a second world writer.</summary>
     public static async Task<CodexSession> ConnectAsync(string codexExecutable, string poimaExecutable,
         string endpoint, string workingDirectory, CancellationToken cancellation = default, bool allowPoimaEdits = false,
-        bool allowPoimaSourceEdits = false)
+        bool allowPoimaSourceEdits = false, bool allowPoimaBuilds = false)
     {
         if (endpoint.Length is < 1 or > 64 || endpoint.Any(c => !char.IsAsciiLetterOrDigit(c) && c != '-' && c != '_'))
             throw new ArgumentException("Invalid Poima endpoint.", nameof(endpoint));
@@ -47,6 +47,8 @@ public sealed class CodexSession : IAgentSession
             arguments.AddRange(["-c", "mcp_servers.poima.tools.poima_call.approval_mode=\"approve\""]);
         if (allowPoimaSourceEdits)
             arguments.AddRange(["-c", "mcp_servers.poima.tools.poima_source.approval_mode=\"approve\""]);
+        if (allowPoimaBuilds)
+            arguments.AddRange(["-c", "mcp_servers.poima.tools.poima_build.approval_mode=\"approve\""]);
         var rpc = new AgentRpcProcess(codexExecutable, arguments, directory);
         var session = new CodexSession(rpc, directory);
         try

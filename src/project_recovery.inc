@@ -114,7 +114,11 @@ Checkpoint verified_checkpoint(const fs::path& checkpoint) {
     require(source.spec.at("project_id") == project_id && source.content.revision == revision,
         "Checkpoint source project identity differs.");
     plain_directory(root / "game");
-    auto game = verify_game(text(contained(root, "game/game.json")));
+    const auto verified_version = report.at("engine_version").get<std::string>();
+    require(!verified_version.empty() && verified_version.size() <= 64 &&
+        verified_version.find_first_not_of("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz.+-") == std::string::npos,
+        "Invalid verification report engine version.");
+    auto game = verify_game(text(contained(root, "game/game.json")), verified_version);
     require(game.definition.manifest_sha256 == report.at("bundle_sha256").get<std::string>() && game.definition.project_id == project_id &&
         game.definition.revision == revision, "Verified game bundle identity changed.");
     require(game.spec.at("source").at("world_sha256") == hash(source.world_bytes) &&

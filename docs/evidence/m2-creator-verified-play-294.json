@@ -1,0 +1,68 @@
+{
+  "engine_version": "0.0.294",
+  "scope": "Packaged Windows creator revises the retained Signal Shelter puzzle through an installed Codex 0.152.1 session. Windows UI Automation supplies the revision request and explicit per-connection permissions. Test code supplies the verification suite and applies the separate failing movement change. Microsoft build tools are already installed.",
+  "package": {
+    "bytes": 140849404,
+    "sha256": "3f4debbacf2a452feea8f747012c836aed27bc882e10505e61c41c6f32558574"
+  },
+  "archived_build": {
+    "engine_version": "0.0.293",
+    "revision": 2,
+    "bundle_sha256": "ab5fd64ffc8fc070a6725620409045cb24bc92c5b3d1b0f501374db17fc5220f",
+    "player_sha256": "783eb05c2c22ba9ca3a2a3019ca6d77fd4bcaa92d7415073659d53e67659534e",
+    "isolated_save_root": true,
+    "owned_sdl_window": true,
+    "player_exited_naturally": true,
+    "creator_waited_and_closed": false,
+    "missing_verification_refused": true
+  },
+  "revision": {
+    "revision": 3,
+    "source_sha256": "2d7cf5145342988be2251a1170085ab709571984f2d4197e2785e2a7eec660d5",
+    "library_sha256": "c969f4044682ed00441a2be1be72e5e97d1a55ea2510f3d15768ac25baa51d83",
+    "change": "The breaker shows the player a radio clue. Its scene entity is renamed.",
+    "all_three_permissions_start_off": true,
+    "bundle_sha256": "d5ff8515d4c5e647dbf9f803a4992552c5315f5f72c944125936a1c48b1d5c32",
+    "suite_sha256": "dd32d41f01a03cc133117c9b867fa18bba423b3abdeae16fd07e35e67c52ef29",
+    "verified_assertions": 11,
+    "standalone_player_launched": true,
+    "playtest_saves_scoped_to_bundle": true
+  },
+  "failed_revision": {
+    "revision": 4,
+    "bundle_sha256": "3740ca07eb73d613f3e21dbc27c08cb435bfc8dfffc70868c0265365bf441ce1",
+    "groups_passed": 0,
+    "failed_assertion_names": [
+      "Breaker action gives power",
+      "The breaker displays the new radio clue",
+      "Powered radio gives power",
+      "Powered radio gives signal",
+      "After walking away gives power",
+      "After walking away gives signal"
+    ],
+    "passing_build_played_before_and_after_restart": true,
+    "creator_waited_for_player_then_both_closed_naturally": true,
+    "recovered_world_source_and_native_image_match_passing_build": true,
+    "working_project_preserved": true
+  },
+  "relocated": {
+    "original_project_path_unavailable": true,
+    "verification_report_identical_to_creator_export": true,
+    "fresh_process_restored_selection_and_completed_objective": true,
+    "saved_tick": 128,
+    "vulkan_gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "vulkan_replay_ticks": 224,
+    "vulkan_presented_frames": 225,
+    "renderer_validation_errors_reported": 0,
+    "capture_sha256": "a0f3b1a8d383aaada024a37cc5600721b31a9ce85d5732efce7e44a7c0dbdd04"
+  },
+  "regression": {
+    "native_project_recovery_passed": true,
+    "wrong_verifier_engine_version_rejected": true,
+    "managed_agent_transport_contract_passed": true,
+    "initial_product_failures_corrected": [
+      "Current-version comparison originally excluded the retained checkpoint.",
+      "Windows path separators differed between native history and the creator launch selection."
+    ]
+  }
+}
