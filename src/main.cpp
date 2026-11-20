@@ -101,6 +101,17 @@ poima::Reply run(int argc, char** argv) {
             }
             if(!output.empty() && !runtime.empty())return poima::build_project(argv[3],output,runtime);
         }
+        if(action=="share" && argc==8 && *argv[3]) {
+            std::string output,bundle;
+            for(int i=4;i<8;i+=2) {
+                if(!*argv[i+1])return poima::usage_error("Share requires nonempty options.");
+                const std::string_view key=argv[i];
+                if(key=="--output" && output.empty())output=argv[i+1];
+                else if(key=="--expected-bundle-sha256" && bundle.empty())bundle=argv[i+1];
+                else return poima::usage_error("Unknown or repeated share option.");
+            }
+            if(!output.empty() && !bundle.empty())return poima::share_project_build(argv[3],bundle,output);
+        }
         if(argc==6 && *argv[3] && *argv[5]) {
             const std::string_view flag=argv[4];
             if(action=="checkpoint" && flag=="--output")return poima::checkpoint_project(argv[3],argv[5]);

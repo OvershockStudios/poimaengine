@@ -6,6 +6,7 @@ import hashlib
 import json
 from pathlib import Path
 import subprocess
+from zipfile import ZipFile
 
 
 def main():
@@ -157,8 +158,55 @@ def main():
     failed_report.write_text(json.dumps(fabricated), encoding='utf-8')
     ignored = run('mismatched-check-history', 'project', 'history', history, '--project-id', original['project_id'])
     assert ignored['latest'] == latest['latest'] and ignored['latest_check'] == latest['latest_check']
+
+    archive = out / 'Playable game.zip'
+    def share(label, output=archive, checkpoint=ready['checkpoint'], digest=verified['bundle_sha256'], code=0):
+        return run(label, 'project', 'share', checkpoint, '--expected-bundle-sha256', digest, '--output', output, code=code)
+
+    bad = out / 'Rejected ZIP.zip'
+    share('reject-incorrect-share-hash', bad, digest='0' * 64, code=4)
+    share('reject-failed-share', bad, checkpoint=failure['checkpoint'], code=4)
+    assert not bad.exists()
+    share('reject-share-within-checkpoint', ready_path / 'Inside.zip', code=4)
+    assert not (ready_path / 'Inside.zip').exists()
+    share('reject-invalid-share-extension', out / 'Wrong.txt', code=4)
+    shared = share('share')
+    assert Path(shared['archive']) == archive and shared['bytes'] == archive.stat().st_size
+    assert shared['bundle_sha256'] == verified['bundle_sha256']
+    assert shared['project_id'] == original['project_id'] and shared['revision'] == original['revision']
+    def archive_hash(path):
+        with path.open('rb') as stream:
+            return hashlib.file_digest(stream, 'sha256').hexdigest()
+    original_archive_hash = archive_hash(archive)
+    share('reject-existing-share', code=4)
+    assert archive_hash(archive) == original_archive_hash
+    repeat = out / 'Repeat.zip'
+    share('repeat-share', repeat)
+    assert archive_hash(repeat) == original_archive_hash
+    repeat.unlink()
+
+    receipt = json.loads((bundle / 'game.json').read_bytes())
+    expected = {'game.json': verified['bundle_sha256'], **{item['path']: item['sha256'] for item in receipt['files']}}
+    relocated = out / 'Recipient - unpacked elsewhere'
+    with ZipFile(archive) as portable:
+        assert portable.testzip() is None
+        assert len(portable.namelist()) == shared['files'] == len(expected)
+        assert set(portable.namelist()) == set(expected)
+        for name, digest in expected.items():
+            with portable.open(name) as member:
+                assert hashlib.file_digest(member, 'sha256').hexdigest() == digest, name
+        portable.extractall(relocated)
+    relocated_suite = out / 'original-checks.json'
+    relocated_suite.write_bytes((snapshot / suite.name).read_bytes())
+    ready_path.rename(out / 'Original checkpoint unavailable')
+    assert not bundle.exists() and not project.exists()
+    replayed = run('share-relocated-playtest', 'game', 'verify', relocated / 'game.json', '--suite', relocated_suite,
+                   '--expected-bundle-sha256', verified['bundle_sha256'], binary=relocated / 'runtime' / runtime['executable'])
+    assert replayed == verified
+    assert not list(out.glob('.poima-stage-*'))
     print(json.dumps({'passed': True, 'source_files': len(paths), 'bundle_sha256': hashlib.sha256(
-        (bundle / 'game.json').read_bytes()).hexdigest(), 'latest_failed_groups': failed['groups_total'] - failed['groups_passed']}))
+        (relocated / 'game.json').read_bytes()).hexdigest(), 'latest_failed_groups': failed['groups_total'] - failed['groups_passed'],
+        'archive_sha256': original_archive_hash, 'archive_files': shared['files']}))
 
 
 if __name__ == '__main__':

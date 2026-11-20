@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.307
+
+- Save a standalone game ZIP directly from the creator's last verified build.
+
 ## 0.0.306
 
 - Review named gameplay checks in the Windows creator, including failed attempts after reopening a project.

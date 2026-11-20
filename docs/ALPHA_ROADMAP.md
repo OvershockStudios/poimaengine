@@ -45,6 +45,9 @@ input through the same Windows chat with Codex and Antigravity.
 The [0.0.306 review test](evidence/m2-creator-check-results-306.json) opens
 named playtest results, restarts the creator after a failed change, then plays
 and restores the earlier verified build.
+The [0.0.307 sharing test](evidence/m2-creator-share-307.json) saves the
+passing build through the Windows dialog and plays it after extracting the
+ZIP with the original project and history paths unavailable.
 The [Codex sign-in check](evidence/m2-creator-codex-sign-in-303.json) covers
 opening and cancelling sign-in with an isolated client and continuation after
 a scripted account confirmation. A real browser authorization is still needed.

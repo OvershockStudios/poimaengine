@@ -99,8 +99,9 @@ Useful arguments are `--gpu N` for both native viewports, `--samples 1|4`, and a
    from the latest completed run. Reopen the project to see those results again
    and recover the last verified build's editable source as a copy.
    [Write a suite](GAME_VERIFICATION.md) and [recover a verified project](PROJECT_RECOVERY.md).
-   Choose **Play verified build** to run the passing export. Use **Open build
-   folder** to find it for sharing. Keep the whole folder together.
+   Choose **Play verified build** to run the passing export or **Save game ZIP**
+   to share that exact build. The recipient extracts it and opens
+   `launch.cmd`. Use **Open build folder** to inspect the unpacked export.
 
 Select **Open in the full editor** in the launcher to use the same project with
 the Scene and Inspector panels. Close the current workspace before reopening

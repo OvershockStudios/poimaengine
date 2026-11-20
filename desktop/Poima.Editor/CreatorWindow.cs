@@ -8,6 +8,7 @@ using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 
 namespace Poima.Editor;
@@ -25,6 +26,8 @@ internal sealed class CreatorWindow : Window
     private readonly Button export = new() { Content = "Export build" };
     private readonly Button playVerified = new() { Content = "Play verified build", IsVisible = false };
     private readonly Button showExport = new() { Content = "Open build folder", IsVisible = false };
+    private readonly Button shareExport = new() { Content = "Save game ZIP", IsVisible = false };
+    private readonly Button showSharedZip = new() { Content = "Open ZIP folder", IsVisible = false };
     private readonly Button showChecks = new() { Content = "View playtest results", IsVisible = false };
     private readonly Button restore = new() { Content = "Restore verified project as copy", IsVisible = false };
     private readonly Button openRecovered = new() { Content = "Open recovered project", IsVisible = false };
@@ -34,6 +37,7 @@ internal sealed class CreatorWindow : Window
     private bool starting, exporting, closeAfterExport, verifiedPlayerRunning, closing, allowClose;
     private bool agentWasBusy, toolsReadyForReopen, reopenWithTools;
     private string? exportedFolder, verifiedCheckpoint, verifiedBundleHash, recoveredManifest;
+    private string? sharedZip, shareNotice;
     private PlaytestAttempt? latestAttempt;
     private string workDescription = "";
     private long exportedRevision;
@@ -78,6 +82,19 @@ internal sealed class CreatorWindow : Window
         export.Click += async (_, _) => await ExportAsync();
         playVerified.Click += async (_, _) => await PlayVerifiedAsync();
         showExport.Click += (_, _) => OpenExportItem(exportedFolder, Directory.Exists);
+        shareExport.Click += async (_, _) => await ShareVerifiedAsync();
+        showSharedZip.Click += (_, _) =>
+        {
+            if (sharedZip is not null && File.Exists(sharedZip))
+                OpenExportItem(Path.GetDirectoryName(sharedZip), Directory.Exists);
+            else
+            {
+                sharedZip = null;
+                shareNotice = null;
+                error = "The game ZIP has moved or been removed.";
+                UpdateControls();
+            }
+        };
         showChecks.Click += async (_, _) => await ShowPlaytestResultsAsync();
         restore.Click += async (_, _) => await RestoreVerifiedAsync();
         openRecovered.Click += (_, _) => OpenRecoveredProject();
@@ -171,7 +188,11 @@ internal sealed class CreatorWindow : Window
         var result = new StackPanel { Spacing = 8 };
         result.Children.Add(status);
         result.Children.Add(playVerified);
-        result.Children.Add(showExport);
+        var sharing = new WrapPanel { ItemSpacing = 8, LineSpacing = 8 };
+        sharing.Children.Add(showExport);
+        sharing.Children.Add(shareExport);
+        sharing.Children.Add(showSharedZip);
+        result.Children.Add(sharing);
         result.Children.Add(showChecks);
         result.Children.Add(restore);
         result.Children.Add(openRecovered);
@@ -436,6 +457,42 @@ internal sealed class CreatorWindow : Window
         });
     }
 
+    private async Task ShareVerifiedAsync()
+    {
+        if (!shareExport.IsEnabled || verifiedCheckpoint is not { } checkpoint || verifiedBundleHash is not { } bundle)
+            return;
+        await ProjectWork("Choose where to save the game…", async () =>
+        {
+            var leaf = Path.GetFileName(project.Root);
+            var name = leaf.Length <= 100 ? leaf : "Poima Game";
+            var destination = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
+            {
+                Title = "Save game ZIP",
+                SuggestedStartLocation = await StorageProvider.TryGetFolderFromPathAsync(ProjectParent()),
+                SuggestedFileName = $"{name} r{exportedRevision}",
+                DefaultExtension = "zip",
+                FileTypeChoices = [new FilePickerFileType("ZIP archive") { Patterns = ["*.zip"] }],
+                ShowOverwritePrompt = false,
+            });
+            if (destination is null || closeAfterExport) return;
+            var path = destination.TryGetLocalPath() ?? throw new InvalidOperationException("Choose a local folder for the game ZIP.");
+            if (IsInside(path, project.Root) || IsInside(path, HistoryDirectory()))
+                throw new InvalidOperationException("Save the ZIP outside the editable project and its build history.");
+            workDescription = "Saving the verified game ZIP…";
+            UpdateControls();
+            var result = await ProjectFiles.Command("share", checkpoint, "--expected-bundle-sha256", bundle, "--output", path);
+            sharedZip = result.GetProperty("archive").GetString()!;
+            shareNotice = $"Saved {Path.GetFileName(sharedZip)}. Extract the ZIP and open launch.cmd to play.";
+        });
+    }
+
+    private static bool IsInside(string file, string directory)
+    {
+        var relative = Path.GetRelativePath(directory, file);
+        return !Path.IsPathRooted(relative) && relative != ".." &&
+            !relative.StartsWith(".." + Path.DirectorySeparatorChar, StringComparison.Ordinal);
+    }
+
     private void OpenRecoveredProject()
     {
         if (recoveredManifest is null || !openRecovered.IsEnabled) return;
@@ -478,6 +535,7 @@ internal sealed class CreatorWindow : Window
     {
         exporting = true;
         error = null;
+        shareNotice = null;
         workDescription = description;
         UpdateControls();
         try { await work(); }
@@ -546,6 +604,10 @@ internal sealed class CreatorWindow : Window
         playVerified.IsEnabled = play.IsEnabled;
         showExport.IsVisible = exportedFolder is not null;
         showExport.IsEnabled = !closing && !exporting;
+        shareExport.IsVisible = verifiedCheckpoint is not null;
+        shareExport.IsEnabled = play.IsEnabled;
+        showSharedZip.IsVisible = sharedZip is not null;
+        showSharedZip.IsEnabled = showExport.IsEnabled;
         showChecks.IsVisible = latestAttempt is not null;
         showChecks.IsEnabled = !closing && !exporting;
         restore.IsVisible = verifiedCheckpoint is not null;
@@ -560,6 +622,7 @@ internal sealed class CreatorWindow : Window
             model.PlaybackError ?? (previewSession is not null
                 ? gameView?["presented_tick"] is not null ? "Click the game to take control. Press Esc to release the mouse." : "Waiting for the first game frame…"
                 : model.RuntimeId is not null ? "A playtest is running. Stop it to start a preview."
+                : shareNotice is not null ? shareNotice
                 : recoveredManifest is not null ? "The verified project was recovered as an editable copy."
                 : latestAttempt is { } attempt ? attempt.Summary + (!attempt.Retained && verifiedCheckpoint is not null
                     ? $" The last verified build, revision {exportedRevision}, is still playable." : "")

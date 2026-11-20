@@ -22,6 +22,7 @@ Reply retain_project_candidate(const std::string& manifest,const std::string& ow
     const std::string& report_sha256);
 Reply project_history(const std::string& directory,const std::string& project_id);
 Reply recover_project(const std::string& checkpoint,const std::string& output);
+Reply share_project_build(const std::string& checkpoint,const std::string& expected_bundle,const std::string& output);
 Reply inspect_game(const std::string& manifest);
 struct GameDefinition {
     std::string root,world,camera,controller,input_profile,name,target_os,target_arch;

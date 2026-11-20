@@ -610,6 +610,7 @@ Reply project_text_reply(const std::string& manifest,const std::string& owned_wo
 }
 } // namespace
 #include "project_recovery.inc"
+#include "project_share.inc"
 
 Reply create_project(const std::string& directory,const std::string& name,bool gameplay_source) {
     return operation("project.create",[&] {

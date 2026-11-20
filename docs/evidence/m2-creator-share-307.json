@@ -1,0 +1,97 @@
+{
+  "engine_version": "0.0.307",
+  "scope": "Native Windows x64 authoring and Windows UI Automation on the development laptop. Recipient tests unpack the exact ZIP and launch the bundled runtime. Archived Rainlight Greenhouse uses its original Native AOT gameplay.",
+  "archive": {
+    "name": "Poima-0.0.307-Windows-x64.zip",
+    "bytes": 141448560,
+    "sha256": "3a72e0957fb54e20319fa5633a67d67bbb41d0052e200cb4538bd6d062426e0e"
+  },
+  "release_files_verified": 499,
+  "artifacts": {
+    "editor_sha256": "f8db39f2ef24dd5157efc0c813a74da460b43f5be412757dd02c399cd1235406",
+    "frontend_sha256": "05433e54f1e1ba450965484c663e584799c5b2d6fd7f9260548827e6e4c00356",
+    "cli_sha256": "a219dde8a6f51b1783b1722646a86ba1f61b4e05418b0462c172c3f8d797f924",
+    "bridge_sha256": "380d5916e9de48541df2df878bc358d821ded3a468d01036f2703d48e3bf6476"
+  },
+  "windows_creator": {
+    "cancelled_without_output": true,
+    "revision": 1,
+    "bundle_sha256": "256c17be1000533ad302a7c7daccdb02b74d2b5db9fd26593432d79531e343e8",
+    "archive_sha256": "782d91ab755a94ea8d1715a02cafb6ffb0a93c9c1fc65b16a4611bc7170c27c8",
+    "archive_bytes": 105489803,
+    "later_failed_revision": 2,
+    "original_history_path_unavailable": true,
+    "relocated_player": {
+      "original_project_unavailable": true,
+      "exit_code": 0,
+      "tick": 12,
+      "presented_frames": 13,
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "external_save_directory_created": true,
+      "capture_sha256": "816bfad621be36bf1454a9f1ca37dd3c14726d03b49953665005fb70649580b4"
+    },
+    "report_sha256": "79378c5183071ed5caa1a182d2f9596dbc5eb42b8d12e798314c6fa011684cc8"
+  },
+  "native_share": {
+    "responses_checked": 32,
+    "archive_sha256": "82381c1b9813d2a09290cb325cc04df55c82ead825615ecaf6dc813ad03c3b80",
+    "bundle_sha256": "927399b2e86372bc68494da8f117c1f886932815f47a723b617adddfb51e51ec",
+    "exact_manifest_and_members": 53,
+    "repeated_archives_identical": true,
+    "relocated_playtest_matches": true,
+    "invalid_requests": [
+      "existing output",
+      "wrong build hash",
+      "failed attempt",
+      "inside checkpoint",
+      "wrong extension"
+    ]
+  },
+  "archived_native_aot": {
+    "engine_version": "0.0.301",
+    "bundle_sha256": "54158cd1e7475ad8e0fd54850ee3d68a0f5f3ca3952aac1036116cf6ee213a66",
+    "archive_sha256": "311b72e1f5b600747198165a86544a3ecd9313de8cb272d4a9663bc2653800ab",
+    "archive_bytes": 107006360,
+    "files": 61,
+    "simultaneous_shared_destination_results": [
+      "one publish",
+      "one rejection"
+    ],
+    "relocated_playtest_groups": 3,
+    "independent_gameplay_observations": [
+      "Initial game is unsolved",
+      "Use away from the controls has no effect",
+      "Misting before water gives a useful hint",
+      "Valve turns water on while misting stays off",
+      "Return to the console and complete the puzzle",
+      "Fresh process restores the partially solved game",
+      "Fresh process completes from the saved state"
+    ],
+    "fresh_process_continued_save": true
+  },
+  "file_folder_export_regression": {
+    "windows_creator_checks": [
+      "closed_during_play_exit_code",
+      "closed_exit_code",
+      "codex_disconnected",
+      "codex_questions",
+      "codex_ready",
+      "codex_reconnected",
+      "created",
+      "edit_before_export",
+      "export",
+      "export_disabled_during_preview",
+      "first_preview",
+      "relocated_export",
+      "reopened_preview",
+      "stopped"
+    ],
+    "relocated_final_tick": 12,
+    "report_sha256": "ff793ac2f33ccf005051ef972dd7c26579c99739949ea7e61bb9a850e1414405"
+  },
+  "linux_headless_syntax_check": [
+    "src/project.cpp",
+    "src/core.cpp",
+    "src/main.cpp"
+  ]
+}

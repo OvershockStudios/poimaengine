@@ -1,8 +1,15 @@
 # Implementation status
 
-Updated 2026-11-20 for **0.0.306**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-20 for **0.0.307**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.307 adds [Save game ZIP](PROJECT_RECOVERY.md#share-a-playable-zip)
+and the native `project share` command. An automated Windows run saved the
+earlier passing build after a failed revision, extracted it and launched it
+with the original project and history paths unavailable. The archived
+Rainlight Greenhouse ZIP repeated the original suite and continued a partially
+solved save in a new process. [Results](evidence/m2-creator-share-307.json)
 
 Version 0.0.306 shows [named playtest results](PROJECT_RECOVERY.md) in the
 Windows creator. An automated Windows run inspected a passing result and a

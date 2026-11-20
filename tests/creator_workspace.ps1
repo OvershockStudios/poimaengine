@@ -9,6 +9,7 @@
 # -CodexQuestions uses the local AgentRpc contract executable as a scripted app-server.
 # -WithExport requires a packaged sample runtime and plays a relocated export.
 # -WithPlaytestResults checks passing and failed reports, reopening and recovery.
+# -WithShareZip also exercises the owned save dialog and plays the unpacked ZIP.
 param(
     [Parameter(Mandatory = $true)][string]$Editor,
     [Parameter(Mandatory = $true)][string]$Output,
@@ -19,7 +20,8 @@ param(
     [switch]$CodexBrief,
     [string]$CodexQuestions,
     [switch]$WithExport,
-    [switch]$WithPlaytestResults
+    [switch]$WithPlaytestResults,
+    [switch]$WithShareZip
 )
 
 $ErrorActionPreference = 'Stop'
@@ -76,6 +78,7 @@ $report = [ordered]@{
     codex_questions_requested = ![string]::IsNullOrWhiteSpace($CodexQuestions)
     export_requested = [bool]$WithExport
     playtest_results_requested = [bool]$WithPlaytestResults
+    share_zip_requested = [bool]$WithShareZip
     checks = [ordered]@{}
 }
 
@@ -520,18 +523,46 @@ function Reopen-PlaytestResults($Project, $FailedHistory) {
     }
 }
 
-function Play-RelocatedExport($Bundle) {
+function Save-GameZip($Archive) {
+    $creator = [IntPtr]$window.Current.NativeWindowHandle
+    Invoke-Control 'Save game ZIP'
+    $handle = [IntPtr](Wait-For 'the owned game ZIP save dialog' {
+        $found = [CreatorTestWindow]::FindDialog($creator, 'Save game ZIP')
+        if ($found -ne [IntPtr]::Zero) { $found }
+    })
+    try {
+        $window = [System.Windows.Automation.AutomationElement]::FromHandle($handle)
+        if (!$Archive) { Invoke-Control 'Cancel' }
+        else {
+            $field = Wait-For 'the archive filename field' { Find-ControlId '1001' }
+            $field.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern).SetValue($Archive)
+            Invoke-Control 'Save'
+        }
+        $null = Wait-For 'the save dialog to close' {
+            [CreatorTestWindow]::FindDialog($creator, 'Save game ZIP') -eq [IntPtr]::Zero
+        }
+    }
+    finally {
+        if ([CreatorTestWindow]::FindDialog($creator, 'Save game ZIP') -eq $handle) {
+            $null = [CreatorTestWindow]::PostMessage($handle, 0x0010, [IntPtr]::Zero, [IntPtr]::Zero)
+        }
+    }
+}
+
+function Play-RelocatedExport($Bundle, $Expected = $report.checks.export, $Kind = 'export') {
     $source = Split-Path -Parent $manifest
-    Move-Item -LiteralPath $source -Destination (Join-Path $run 'retired source')
+    if (Test-Path -LiteralPath $source) {
+        Move-Item -LiteralPath $source -Destination (Join-Path $run 'retired source')
+    }
     if (Test-Path -LiteralPath $manifest) { throw 'The original project remains available.' }
-    $relocated = Join-Path $run 'Relocated Windows build'
+    $relocated = Join-Path $run "Relocated Windows $Kind"
     Move-Item -LiteralPath $Bundle -Destination $relocated
     $gameManifest = Join-Path $relocated 'game.json'
-    $replay = Join-Path $run 'export-replay.json'
-    $capture = Join-Path $run 'export-frame.bmp'
-    $playerReport = Join-Path $run 'export-player.json'
+    $replay = Join-Path $run "$Kind-replay.json"
+    $capture = Join-Path $run "$Kind-frame.bmp"
+    $playerReport = Join-Path $run "$Kind-player.json"
     $launcher = Join-Path $relocated 'launch.cmd'
-    $localData = Join-Path $run 'player local data'
+    $localData = Join-Path $run "$Kind player local data"
     New-Item -ItemType Directory -Path $localData | Out-Null
     '[{"ticks":12,"move":[0,1]}]' | Set-Content -LiteralPath $replay -Encoding ASCII
     $path = $env:PATH
@@ -541,7 +572,7 @@ function Play-RelocatedExport($Bundle) {
         $env:PATH = "$env:SystemRoot\System32;$env:SystemRoot"
         $env:LOCALAPPDATA = $localData
         & $launcher --replay $replay --width 640 --height 360 --capture $capture --report $playerReport |
-            Set-Content -LiteralPath (Join-Path $run 'export-player.stdout.txt')
+            Set-Content -LiteralPath (Join-Path $run "$Kind-player.stdout.txt")
         $exitCode = $LASTEXITCODE
     }
     finally {
@@ -551,14 +582,14 @@ function Play-RelocatedExport($Bundle) {
     }
     if ($exitCode -ne 0) { throw "The relocated player exited with $exitCode." }
     $result = Get-Content -LiteralPath $playerReport -Raw | ConvertFrom-Json
-    $saveRoot = Join-Path $localData "Poima\Games\$($report.checks.export.project_id)\Saves"
+    $saveRoot = Join-Path $localData "Poima\Games\$($Expected.project_id)\Saves"
     if (!$result.play.success -or !$result.play.hardware -or $result.play.tick -ne 12 -or
         $result.play.frames_presented -lt 1 -or $result.play.stop_reason -cne 'replay_complete' -or
         $result.play.nvrhi_errors -ne 0 -or !(Test-Path -LiteralPath $capture) -or !(Test-Path -LiteralPath $saveRoot -PathType Container) -or
-        (Get-FileHash -LiteralPath $gameManifest).Hash.ToLowerInvariant() -cne $report.checks.export.manifest_sha256) {
+        (Get-FileHash -LiteralPath $gameManifest).Hash.ToLowerInvariant() -cne $Expected.manifest_sha256) {
         throw 'Native playback of the relocated export failed.'
     }
-    $report.checks.relocated_export = [ordered]@{
+    $report.checks["relocated_$Kind"] = [ordered]@{
         original_project_unavailable = !(Test-Path -LiteralPath $manifest)
         exit_code = $exitCode
         tick = $result.play.tick
@@ -596,7 +627,10 @@ try {
         $project = Edit-ProjectForExport $project
         $bundle = Export-Project $project
     }
-    if ($WithPlaytestResults) {
+    if ($WithPlaytestResults -or $WithShareZip) {
+        if ($WithShareZip -and (Find-Control 'Save game ZIP' -Enabled)) {
+            throw 'A project with no verified build can offer a verified ZIP.'
+        }
         $passing = Export-PlaytestCandidate $project $true
         $project = Edit-ProjectForExport $project 'Playtested viewpoint'
         $failedHistory = Export-PlaytestCandidate $project $false
@@ -638,7 +672,28 @@ try {
     if ($reopened.project_id -ne $project.project_id -or $reopened.revision -ne $project.revision) {
         throw 'Project identity or authoring revision changed after reopen.'
     }
-    if ($WithPlaytestResults) { $report.checks.playtest_results = Reopen-PlaytestResults $reopened $failedHistory }
+    if ($WithPlaytestResults -or $WithShareZip) {
+        $report.checks.playtest_results = Reopen-PlaytestResults $reopened $failedHistory
+    }
+    if ($WithShareZip) {
+        $archive = Join-Path $run ('Recipient & Game ' + [char]0x03a9 + '.zip')
+        Save-GameZip $null
+        $null = Wait-For 'creator ready after cancelling save' { Find-Control 'Save game ZIP' -Enabled }
+        if ((Find-Control 'Open ZIP folder') -or (Test-Path -LiteralPath $archive)) {
+            throw 'Cancelling the dialog unexpectedly published a game ZIP.'
+        }
+        Save-GameZip $archive
+        $null = Wait-For 'the saved ZIP and its folder button' {
+            (Test-Path -LiteralPath $archive -PathType Leaf) -and (Find-Control 'Open ZIP folder' -Enabled)
+        } 60
+        $report.checks.share_zip = [ordered]@{
+            cancelled_without_output = $true
+            revision = $passing.latest.revision
+            bundle_sha256 = $passing.latest.bundle_sha256
+            archive_sha256 = (Get-FileHash -LiteralPath $archive).Hash.ToLowerInvariant()
+            archive_bytes = (Get-Item -LiteralPath $archive).Length
+        }
+    }
     $report.checks.reopened_preview = Play-Preview $reopened.revision
     if ($report.checks.reopened_preview.session -eq $report.checks.first_preview.session) {
         throw 'Reopening reused the retired play session.'
@@ -646,6 +701,14 @@ try {
     Close-Owner
     $report.checks.closed_during_play_exit_code = $owner.ExitCode
     if ($WithExport) { Play-RelocatedExport $bundle }
+    if ($WithShareZip) {
+        $archiveRoot = Join-Path $projects '.poima-history'
+        Move-Item -LiteralPath $archiveRoot -Destination (Join-Path $run 'retired history')
+        if (Test-Path -LiteralPath $passing.latest.game_manifest) { throw 'The archived original remains available.' }
+        $game = Join-Path $run 'Extracted ZIP'
+        Expand-Archive -LiteralPath $archive -DestinationPath $game
+        Play-RelocatedExport $game @{ project_id = $project.project_id; manifest_sha256 = $passing.latest.bundle_sha256 } 'zip'
+    }
     $report.passed = $true
 }
 catch {

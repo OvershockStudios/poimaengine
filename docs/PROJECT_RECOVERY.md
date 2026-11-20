@@ -30,6 +30,19 @@ receives a new project identity and keeps the captured world, assets, source,
 input profile and attached native gameplay. Both projects can be edited
 independently.
 
+## Share a playable ZIP
+
+Choose **Save game ZIP** to save the same build used by **Play verified build**.
+Pick a new filename in a local folder outside the editable project and its
+history. Sharing rechecks the build's identity and includes only the standalone
+game's manifest and files, including the player, assets, gameplay and notices.
+Another person can extract the ZIP and open `launch.cmd` on a Windows PC with a
+supported Vulkan driver.
+
+The ZIP uses stored members, so its size is close to the exported game folder.
+Poima stages the archive beside the destination and publishes the finished
+file without replacing an existing one. [ZIP format specification](https://pkware.cachefly.net/webdocs/casestudies/APPNOTE.TXT)
+
 ## Storage and version selection
 
 The creator stores versions beside the project under
@@ -74,6 +87,7 @@ poima project build .\History\2026-11-20-a\source\project.poimaproject --output 
 .\History\2026-11-20-a\game\runtime\bin\poima.exe game verify .\History\2026-11-20-a\game\game.json --suite .\History\2026-11-20-a\source\game.verify.json --report .\History\2026-11-20-a\checks.json
 poima project history .\History --project-id 0123456789abcdef0123456789abcdef
 poima project recover .\History\2026-11-20-a\checkpoint.json --output .\MyRecoveredGame
+poima project share .\History\2026-11-20-a\checkpoint.json --expected-bundle-sha256 <bundle-sha256> --output .\MyGame.zip
 ```
 
 Use the project's real ID from `project inspect`. `project history` takes the
@@ -81,9 +95,14 @@ history directory directly, so it also works when the original project's path
 is unavailable. To recover a specific older passing version, supply its
 `checkpoint.json`. Recovery checks the archived source and build before
 publishing the copy. Use the returned `restored_manifest` to edit or export it.
+For sharing, take the 64-character `bundle_sha256` from the retained passing
+result. The command reports the archive path, byte count, file count and exact
+build identity.
 
 Run `python tests/project_recovery_cli.py --runtime <installed-runtime> --output <new-directory>`
 to reproduce the native checkpoint, validation and recovery checks on a matching
 host. The installed runtime must include simulation and the native player.
 On Windows, run `tests/creator_workspace.ps1 -Editor <packaged-editor-exe> -Output <new-directory> -WithPlaytestResults`
 to exercise the results dialog, restart, verified play and recovery.
+Use `-WithShareZip` to exercise saving and cancelling through the Windows dialog,
+then extract and launch the shared game.
