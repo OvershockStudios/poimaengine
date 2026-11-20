@@ -70,6 +70,9 @@ the official client with checksum verification and then starts the connection.
 The other clients use their own installation and sign-in flows.
 [Agent setup](https://github.com/OvershockStudios/poimaengine/blob/main/docs/AGENT_CLIENTS.md)
 
+If Codex asks to use a Poima tool, review the operation in chat and select
+**Approve once** or **Decline**. The card shows the tool and its arguments.
+
 Use the bundled `poima.exe` with an installed Codex or Claude Code client.
 Point the client's MCP configuration at the full path to the executable
 with arguments `mcp --project <full path to project.poimaproject>` in Poima

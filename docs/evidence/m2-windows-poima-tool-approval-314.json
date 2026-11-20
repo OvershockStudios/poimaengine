@@ -1,0 +1,85 @@
+{
+  "version": "0.0.314",
+  "scope": "Windows x64 UI Automation over an exact packaged creator, with the installed Codex client and a fresh project. One guarded editor transaction was declined and another approved; no session preapproval was selected.",
+  "release": {
+    "version": "0.0.314",
+    "tag": "v0.0.314",
+    "engine_files": 499,
+    "sample_manifest_sha256": "8a671ae6a6a795bb967f3b3cbe1cb46077831e08f92e9cda306a59b65fdd35a8",
+    "assets": [
+      {
+        "name": "Poima-0.0.314-Windows-x64.zip",
+        "bytes": 141482075,
+        "sha256": "2f9ddb0f605b7fc1c96519630eb9dd0d451b779618fb70c1d4f62da2e9511a93"
+      },
+      {
+        "name": "Poima-0.0.314-Windows-x64.manifest.json",
+        "bytes": 89315,
+        "sha256": "3d41e23feb5ae27394ab033ef5d2867c956a1b5b149e1fc48ffdad602cb11327"
+      },
+      {
+        "name": "Poima-Launcher-0.0.314-Windows-x64.zip",
+        "bytes": 46080511,
+        "sha256": "dfd3aec564c3a65c4ee8f38e1dc198affe6c1faafbb9002607833db7bc4ac174"
+      }
+    ]
+  },
+  "provider": "Codex CLI 0.163.0-alpha.11",
+  "baseline": {
+    "description": "A live app-server call to the retained 0.0.313 runtime produced a form. A protocol driver mirrored the older desktop\u2019s unsupported-request error, and Codex reported that the tool was rejected.",
+    "provider_reported_tool_failed": true,
+    "project_files_unchanged": true,
+    "trace_sha256": "6f478ca1d8ae4259efa067cc7fdf91d83799526132f41e2b3002a03c873de8b9"
+  },
+  "windows": {
+    "report_sha256": "c446108410c3c2ac41404a3eb874e1fd359fde668792c78c0c850acce177ea39",
+    "approval": {
+      "declined_revision": 1,
+      "approved_revision": 2,
+      "pending_and_declined_world_unchanged": true,
+      "exact_arguments_reviewed": true,
+      "resolved_cards_removed": true
+    },
+    "other_checks": [
+      "closed_during_play_exit_code",
+      "closed_exit_code",
+      "created",
+      "first_preview",
+      "reopened_preview",
+      "stopped"
+    ],
+    "approve_card_sha256": "2dd0b338ee3b9e47fed7c5f7b3591a1d4943c919d1d41713f1568692af31da8b",
+    "decline_card_sha256": "193eb3d64f7b8005f23432fa4948902adfa9271f159da4bf7a973c55dc6fe5b7"
+  },
+  "scripted_questions": {
+    "report_sha256": "691a7415b9e7de53ae1ec00a8b3dca8a1de27c036d15d73709245c91fdcbc175",
+    "fixture": "Retained 0.0.304 question peer with account/read support",
+    "checks": {
+      "exact_reply_verified_by_peer": true,
+      "custom_unicode": true,
+      "rejected_other_thread": true,
+      "no_automatic_answer": true,
+      "project_unchanged": true,
+      "card_retired": true
+    }
+  },
+  "initial_windows_attempts": [
+    {
+      "report_sha256": "f270a672de4c66f764058be82f5d1d8fb75d4e9c9faff06e8227b7e644769b21",
+      "failure": "Windows PowerShell split the approval detail at all newlines due to overload selection. The test now splits once."
+    },
+    {
+      "report_sha256": "a4fbb0701d24a3bcfe9fc758dc15257f3b184dde19785cfb8ce1f9165096cb94",
+      "failure": "Live approval passed. A later question regression used a 0.0.300 test peer that exits on account/read. The 0.0.304 peer handles that method."
+    }
+  ],
+  "linux_contract": {
+    "passed": true,
+    "log_sha256": "49191b40cd745d000b88745ad75948abfd88dd5afe485550bebece1218da5777",
+    "scope": "Production form parser and existing agent transport contracts. The first build attempt selected the host .NET 6 CLI; the qualified run used the configured .NET 10 SDK."
+  },
+  "open_qualification": [
+    "clean Windows installation",
+    "first-time human creator journey"
+  ]
+}

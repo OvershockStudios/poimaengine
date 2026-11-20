@@ -7,6 +7,7 @@
 # -Antigravity and -Claude use the supplied ACP clients for one MCP read each.
 # -CodexBrief runs a two-turn interview on the unchanged starter project.
 # -CodexQuestions uses the local AgentRpc contract executable as a scripted app-server.
+# -CodexToolApproval exercises decline and approve once with the installed Codex.
 # -WithExport requires a packaged sample runtime and plays a relocated export.
 # -WithPlaytestResults checks passing and failed reports, reopening and recovery.
 # -WithShareZip also exercises the owned save dialog and plays the unpacked ZIP.
@@ -20,6 +21,7 @@ param(
     [string]$Claude,
     [switch]$CodexBrief,
     [string]$CodexQuestions,
+    [switch]$CodexToolApproval,
     [switch]$WithExport,
     [switch]$WithPlaytestResults,
     [switch]$WithShareZip,
@@ -215,6 +217,62 @@ function Exercise-CodexBrief($Project) {
     }
     Invoke-Control 'Agent Disconnect'
     $null = Wait-For 'the retired Codex connection' { Find-Control 'Agent Connect' -Enabled }
+}
+
+function Exercise-CodexToolApproval($Project) {
+    Select-AgentProvider 'Codex'
+    if ($CodexExecutable) { Set-AgentExecutable 'Codex executable' $CodexExecutable }
+    foreach ($controlName in 'Agent allow world edits', 'Agent allow source edits', 'Agent allow gameplay builds', 'Agent allow gameplay checks') {
+        $control = Find-Control $controlName -Enabled
+        if ($control -and $control.GetCurrentPattern([Windows.Automation.TogglePattern]::Pattern).Current.ToggleState -ne 'Off') {
+            throw "Unexpected blanket authorization for $controlName."
+        }
+    }
+    Invoke-Control 'Agent Connect'
+    $null = Wait-For 'the connected Codex conversation for tool approval' { Find-Control 'Agent Send' -Enabled } 65
+    foreach ($decision in 'Decline', 'Approve once') {
+        $requestId = [guid]::NewGuid().ToString('N')
+        $arguments = @{ method = 'world.transact'; params = @{
+            request_id = $requestId; base_revision = $Project.revision
+            ops = @(@{ op = 'entity.rename'; id = $Project.entry.camera; name = 'Consent Camera' })
+        } } | ConvertTo-Json -Depth 6 -Compress
+        Set-ControlText 'Agent prompt' ("This is a test. Invoke mcp__poima__poima_call exactly once with these exact arguments: $arguments. " +
+            'Do not use any other tools or edit files directly. If approval is declined, end the turn without retry. Describe the result briefly.')
+        Invoke-Control 'Agent Send'
+        $null = Wait-For 'the pending Poima tool approval' { Find-Control $decision -Enabled } 80
+        $detail = Get-ControlText 'Agent approval details'
+        $detail | Set-Content -LiteralPath (Join-Path $run ("approval-" + $decision + '.txt')) -Encoding UTF8
+        $lines = $detail -split '\r?\n', 2
+        if ($lines[0] -cne 'poima_call' -or $lines.Length -ne 2) { throw 'Approval did not identify the exact tool.' }
+        $shown = $lines[1] | ConvertFrom-Json
+        if ($shown.method -cne 'world.transact' -or $shown.params.request_id -cne $requestId -or
+            $shown.params.base_revision -ne $Project.revision -or $shown.params.ops.Count -ne 1 -or
+            $shown.params.ops[0].op -cne 'entity.rename' -or $shown.params.ops[0].id -cne $Project.entry.camera -or
+            $shown.params.ops[0].name -cne 'Consent Camera') { throw 'Approval showed the wrong native transaction.' }
+        if ((Inspect-Project).world_sha256 -cne $Project.world_sha256) { throw 'The pending operation modified the project before consent.' }
+        Invoke-Control $decision
+        $null = Wait-For 'the completed turn after tool approval' { Find-Control 'Agent Send' -Enabled } 80
+        $current = Inspect-Project
+        if ($current.manifest_sha256 -cne $Project.manifest_sha256 -or (Find-Control 'Agent approval details')) {
+            throw 'The project manifest changed or the resolved approval remained visible.'
+        }
+        if ($decision -ceq 'Decline' -and ($current.revision -ne $Project.revision -or $current.world_sha256 -cne $Project.world_sha256)) {
+            throw 'The declined transaction changed the project.'
+        }
+        if ($decision -ceq 'Approve once') {
+            $world = Get-Content -LiteralPath (Join-Path (Split-Path -Parent $manifest) 'world.json') -Raw | ConvertFrom-Json
+            if ($current.revision -ne ($Project.revision + 1) -or $current.world_sha256 -ceq $Project.world_sha256 -or
+                $world.entities.PSObject.Properties[$Project.entry.camera].Value.name -cne 'Consent Camera') {
+                throw 'The approved transaction did not commit exactly one native revision.'
+            }
+        }
+    }
+    (Get-ControlText 'Agent transcript') | Set-Content -LiteralPath (Join-Path $run 'approval-transcript.txt') -Encoding UTF8
+    $report.checks.codex_tool_approval = [ordered]@{ declined_revision = $Project.revision; approved_revision = $current.revision;
+        pending_and_declined_world_unchanged = $true; exact_arguments_reviewed = $true; resolved_cards_removed = $true }
+    Invoke-Control 'Agent Disconnect'
+    $null = Wait-For 'the retired Codex approval connection' { Find-Control 'Agent Connect' -Enabled }
+    return $current
 }
 
 function Exercise-CodexQuestions($Project, $Peer) {
@@ -714,6 +772,7 @@ try {
     if ($Antigravity) { Exercise-Acp $project 'Antigravity' 'Antigravity CLI executable' $Antigravity 'antigravity' }
     if ($Claude) { Exercise-Acp $project 'Claude Code' 'Claude ACP executable' $Claude 'claude' }
     if ($CodexBrief) { Exercise-CodexBrief $project }
+    if ($CodexToolApproval) { $project = Exercise-CodexToolApproval $project }
     if ($WithCodex) {
         Select-AgentProvider 'Codex'
         if ($CodexExecutable) { Set-AgentExecutable 'Codex executable' $CodexExecutable }

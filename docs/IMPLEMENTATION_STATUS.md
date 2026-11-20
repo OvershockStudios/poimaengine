@@ -1,8 +1,14 @@
 # Implementation status
 
-Updated 2026-11-20 for **0.0.313**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-20 for **0.0.314**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.314 shows [individual Poima tool approvals](AGENT_CLIENTS.md#connect-a-project)
+in Codex chat. The packaged Windows run declined one guarded edit without
+changing the project, then approved a separate call and observed one
+committed world revision. The card showed the exact arguments in both cases.
+[Results](evidence/m2-windows-poima-tool-approval-314.json)
 
 Version 0.0.313 checks [Windows build tools](WINDOWS_PREVIEW.md#build-c-gameplay)
 before creating a project. The packaged test creates a project with its own

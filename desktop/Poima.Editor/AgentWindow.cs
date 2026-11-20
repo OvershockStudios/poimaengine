@@ -52,6 +52,7 @@ internal sealed class AgentChat : UserControl
     private bool historyUnavailable;
     private readonly HashSet<string> completed = new(StringComparer.Ordinal);
     private readonly Dictionary<StackPanel, JsonNode> acpPermissions = [];
+    private readonly Dictionary<StackPanel, JsonNode> codexPoimaApprovals = [];
     private readonly Dictionary<string, string> acpToolDetails = new(StringComparer.Ordinal);
     private bool submitting, closing, connecting, ready, cancelRequested, sentGameplayContext;
     private bool acpReceivedReply, codexSupportsImages, pickingImages, codexMissing;
@@ -583,6 +584,7 @@ internal sealed class AgentChat : UserControl
         var id = activeTurn;
         cancelRequested = true; Controls();
         if (questionCard is { } pendingQuestion) pendingQuestion.IsEnabled = false;
+        foreach (var card in codexPoimaApprovals.Keys) card.IsEnabled = false;
         try
         {
             if (current is AcpSession acp)
@@ -602,6 +604,7 @@ internal sealed class AgentChat : UserControl
             {
                 cancelRequested = false;
                 if (questionCard is { } pending) pending.IsEnabled = true;
+                foreach (var card in codexPoimaApprovals.Keys) card.IsEnabled = true;
                 status.Text = error.Message; Controls();
             }
         }
@@ -663,6 +666,17 @@ internal sealed class AgentChat : UserControl
             {
                 if (!ShowQuestions(current, requestId, parameters)) _ = RejectUnsupported(current, requestId, method);
             }
+            else if (method == "mcpServer/elicitation/request")
+            {
+                if (!cancelRequested && approvals.Children.Count < 16 &&
+                    CodexPoimaApproval.Read(parameters, current.ConversationId, activeTurn) is { } approval)
+                {
+                    ShowApproval(current, requestId, approval.Details,
+                        new JsonObject { ["action"] = "accept", ["content"] = new JsonObject() },
+                        new JsonObject { ["action"] = "decline" }, approval.Title);
+                }
+                else _ = Reply(current, requestId, new JsonObject { ["action"] = "cancel" });
+            }
             else if (method is "item/commandExecution/requestApproval" or "item/fileChange/requestApproval" && approvals.Children.Count < 16)
             {
                 ShowApproval(current, requestId, method + "\n" + parameters?.ToJsonString(),
@@ -678,6 +692,11 @@ internal sealed class AgentChat : UserControl
         {
             RemoveQuestions(card);
             if (!cancelRequested) status.Text = "Working…";
+        }
+        else if (method == "serverRequest/resolved")
+        {
+            var approval = codexPoimaApprovals.FirstOrDefault(entry => JsonNode.DeepEquals(entry.Value, parameters?["requestId"])).Key;
+            if (approval is not null) RemoveApproval(approval);
         }
         else if (method == "turn/started") { activeTurn = parameters?["turn"]?["id"]?.GetValue<string>(); Controls(); }
         else if (method == "turn/completed")
@@ -795,9 +814,15 @@ internal sealed class AgentChat : UserControl
             : new JsonObject { ["outcome"] = "selected", ["optionId"] = option }
     };
 
-    private void ShowApproval(IAgentSession current, JsonNode id, string message, JsonObject allow, JsonObject deny)
+    private void ShowApproval(IAgentSession current, JsonNode id, string message, JsonObject allow, JsonObject deny, string? poimaTitle = null)
     {
         var card = new StackPanel { Spacing = 4 };
+        if (poimaTitle is not null)
+        {
+            card.Children.Add(new TextBlock { Text = poimaTitle, TextWrapping = TextWrapping.Wrap, FontWeight = FontWeight.SemiBold });
+            codexPoimaApprovals.Add(card, id.DeepClone());
+            status.Text = "Waiting for your approval.";
+        }
         var details = new TextBox { Text = message, IsReadOnly = true, AcceptsReturn = true, TextWrapping = TextWrapping.Wrap, MaxHeight = 130 };
         AutomationProperties.SetName(details, "Agent approval details");
         card.Children.Add(details);
@@ -808,15 +833,23 @@ internal sealed class AgentChat : UserControl
             var button = new Button { Content = label };
             button.Click += async (_, _) =>
             {
-                if (!ReferenceEquals(session, current) || closing || !card.IsEnabled || current is AcpSession && cancelRequested) return;
-                card.IsEnabled = false;
-                acpPermissions.Remove(card);
+                if (!ReferenceEquals(session, current) || closing || !card.IsEnabled ||
+                    (current is AcpSession || poimaTitle is not null) && cancelRequested) return;
+                RemoveApproval(card);
                 await Reply(current, id, reply);
-                approvals.Children.Remove(card);
             };
             buttons.Children.Add(button);
         }
         card.Children.Add(buttons); approvals.Children.Add(card);
+    }
+
+    private void RemoveApproval(StackPanel card)
+    {
+        card.IsEnabled = false;
+        acpPermissions.Remove(card);
+        if (codexPoimaApprovals.Remove(card) && codexPoimaApprovals.Count == 0 && !cancelRequested)
+            status.Text = "Working…";
+        approvals.Children.Remove(card);
     }
 
     private void ClearApprovals()
@@ -825,6 +858,7 @@ internal sealed class AgentChat : UserControl
         foreach (var child in approvals.Children) child.IsEnabled = false;
         approvals.Children.Clear();
         acpPermissions.Clear();
+        codexPoimaApprovals.Clear();
         acpToolDetails.Clear();
     }
 

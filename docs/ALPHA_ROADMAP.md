@@ -70,6 +70,9 @@ project while keeping the latest pass and working project available.
 The [0.0.313 setup test](evidence/m2-windows-create-setup-313.json) checks
 build readiness before creating a project. It exercises the installed tools
 and the recovery choices after a controlled SDK probe failure.
+The [0.0.314 Codex approval test](evidence/m2-windows-poima-tool-approval-314.json)
+checks that a creator can inspect, decline and approve individual Poima
+operations without authorizing a whole connection.
 The [Codex sign-in check](evidence/m2-creator-codex-sign-in-303.json) covers
 opening and cancelling sign-in with an isolated client and continuation after
 a scripted account confirmation. A real browser authorization is still needed.

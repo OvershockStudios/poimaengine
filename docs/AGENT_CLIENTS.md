@@ -35,6 +35,17 @@ from Codex. A new conversation becomes the default after its first completed
 turn. Project copies and relocated manifests each start with their own local
 selection. The Codex client holds the history and the account. [Thread history](https://learn.chatgpt.com/docs/app-server#threads)
 
+When Codex asks to use a Poima tool, its chat card shows the tool and exact
+arguments. Select **Approve once** to run the operation or **Decline** to
+leave it unapproved. These choices apply to the pending call. The existing
+connection settings can authorize specific groups of Poima calls for the
+whole connection. Command and file approvals stay separate.
+
+The creator shows Codex tool-approval forms for its `poima` server and active
+turn. If the form asks for other input or its formatted arguments exceed
+1,048,576 UTF-16 code units, Poima cancels the request. Use smaller operations
+if the arguments exceed that limit.
+
 On Windows x64, **Install Codex** appears when the executable cannot be found.
 Poima downloads OpenAI’s Codex 0.171.0 release, verifies its pinned SHA-256 and
 installs it under `%LOCALAPPDATA%\Poima\agents\codex\0.171.0`. Allow about

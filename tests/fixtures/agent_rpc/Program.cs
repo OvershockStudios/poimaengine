@@ -58,6 +58,7 @@ if (args.Length > 0 && args[0] == "peer")
 }
 
 using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+CodexPoimaApprovalContract.Verify();
 var token = deadline.Token;
 var assembly = Assembly.GetExecutingAssembly().Location;
 AgentRpcProcess Start() => new(Environment.ProcessPath!,
