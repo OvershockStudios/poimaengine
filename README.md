@@ -11,10 +11,10 @@ during the playtest. The same projects open in the desktop editor.
 
 ## Winter Village
 
-[![Watch the Winter Village showcase](https://i.ytimg.com/vi/OjqWUCXsNX8/maxresdefault.jpg)](https://www.youtube.com/watch?v=OjqWUCXsNX8)
+[![Watch the Winter Village showcase](https://i.ytimg.com/vi/JH9HWhj7jpE/maxresdefault.jpg)](https://www.youtube.com/watch?v=JH9HWhj7jpE)
 
 A one-minute gameplay showcase built and playtested with Codex in Poima.
-[Watch on YouTube](https://www.youtube.com/watch?v=OjqWUCXsNX8)
+[Watch on YouTube](https://www.youtube.com/watch?v=JH9HWhj7jpE)
 
 ## Get started
 
