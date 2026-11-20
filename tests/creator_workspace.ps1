@@ -5,6 +5,7 @@
 # Codex connection with the installed client and submits no model turn.
 # -Antigravity and -Claude use the supplied ACP clients for one MCP read each.
 # -CodexBrief runs a two-turn interview on the unchanged starter project.
+# -CodexQuestions uses the local AgentRpc contract executable as a scripted app-server.
 # -WithExport requires a packaged sample runtime and plays a relocated export.
 param(
     [Parameter(Mandatory = $true)][string]$Editor,
@@ -13,6 +14,7 @@ param(
     [string]$Antigravity,
     [string]$Claude,
     [switch]$CodexBrief,
+    [string]$CodexQuestions,
     [switch]$WithExport
 )
 
@@ -48,6 +50,7 @@ $report = [ordered]@{
     antigravity_turn_requested = ![string]::IsNullOrEmpty($Antigravity)
     claude_turn_requested = ![string]::IsNullOrEmpty($Claude)
     codex_brief_requested = [bool]$CodexBrief
+    codex_questions_requested = ![string]::IsNullOrWhiteSpace($CodexQuestions)
     export_requested = [bool]$WithExport
     checks = [ordered]@{}
 }
@@ -95,8 +98,28 @@ function Set-ControlText($Label, $Value) {
     $control.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern).SetValue($Value)
 }
 
+function Find-ControlId($Id) {
+    $condition = [System.Windows.Automation.PropertyCondition]::new(
+        [System.Windows.Automation.AutomationElement]::AutomationIdProperty, $Id)
+    return $window.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $condition)
+}
+
+function Select-QuestionChoice($Control) {
+    $pattern = $null
+    if ($Control.TryGetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern, [ref]$pattern)) {
+        $pattern.Select()
+    } elseif ($Control.TryGetCurrentPattern([System.Windows.Automation.TogglePattern]::Pattern, [ref]$pattern)) {
+        $pattern.Toggle()
+    } else {
+        throw 'Question choice does not expose an accessible selection action.'
+    }
+}
+
 function Select-AgentProvider($Name) {
     $selector = Wait-For 'the agent selector' { Find-Control 'Agent provider' -Enabled }
+    $selection = $null
+    if ($selector.TryGetCurrentPattern([System.Windows.Automation.SelectionPattern]::Pattern, [ref]$selection) -and
+        @($selection.Current.GetSelection() | Where-Object { $_.Current.Name -eq $Name }).Count -gt 0) { return }
     $selector.GetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern).Expand()
     $condition = [System.Windows.Automation.AndCondition]::new(
         [System.Windows.Automation.PropertyCondition]::new(
@@ -104,8 +127,11 @@ function Select-AgentProvider($Name) {
         [System.Windows.Automation.PropertyCondition]::new(
             [System.Windows.Automation.AutomationElement]::ProcessIdProperty, $owner.Id))
     $option = Wait-For "the $Name option" {
-        [System.Windows.Automation.AutomationElement]::RootElement.FindFirst(
+        $items = [System.Windows.Automation.AutomationElement]::RootElement.FindAll(
             [System.Windows.Automation.TreeScope]::Descendants, $condition)
+        foreach ($item in $items) {
+            if ($item.TryGetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern, [ref]$selection)) { return $item }
+        }
     }
     $option.GetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern).Select()
 }
@@ -140,7 +166,7 @@ function Exercise-CodexBrief($Project) {
     Invoke-Control 'Agent Connect'
     $null = Wait-For 'the connected Codex conversation' { Find-Control 'Agent Send' -Enabled } 65
     $idea = ('I want to make my first game. A quiet cave where I collect three glowing crystals and open an exit. ' +
-        'Please follow the project game-brief interview. Ask short multiple-choice questions in this chat. ' +
+        'Please follow the project game-brief interview. Ask short multiple-choice questions as numbered text in your chat reply. ' +
         'Leave the project untouched until I explicitly approve the brief.')
     $interview = Send-CodexPrompt $idea
     $interview | Set-Content -LiteralPath (Join-Path $run 'codex-interview.txt') -Encoding UTF8
@@ -159,6 +185,38 @@ function Exercise-CodexBrief($Project) {
     }
     Invoke-Control 'Agent Disconnect'
     $null = Wait-For 'the retired Codex connection' { Find-Control 'Agent Connect' -Enabled }
+}
+
+function Exercise-CodexQuestions($Project, $Peer) {
+    Select-AgentProvider 'Codex'
+    Set-AgentExecutable 'Codex executable' $Peer
+    Invoke-Control 'Agent Connect'
+    $null = Wait-For 'the scripted question connection' { Find-Control 'Agent Send' -Enabled } 65
+    Set-ControlText 'Agent prompt' 'Ask me about a game.'
+    Invoke-Control 'Agent Send'
+    $first = Wait-For 'the first choice' { Find-ControlId 'agent-question-1-choice-1' }
+    if (Find-Control 'Send answers' -Enabled) { throw 'An unanswered question card can be submitted.' }
+    Select-QuestionChoice $first
+    if (Find-Control 'Send answers' -Enabled) { throw 'A partially answered round can be submitted.' }
+    $other = Wait-For 'a custom answer option' { Find-ControlId 'agent-question-2-other' }
+    Select-QuestionChoice $other
+    $text = Wait-For 'the custom answer field' { Find-ControlId 'agent-question-2-answer' }
+    $text.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern).SetValue("After the rain, " + [char]0x6c34)
+    Invoke-Control 'Send answers'
+    $null = Wait-For 'the scripted peer accepting the exact reply' {
+        (Find-Control 'Agent Send' -Enabled) -and (Get-ControlText 'Agent transcript').Contains('QUESTIONS_ACCEPTED')
+    }
+    if (Find-ControlId 'agent-question-1-choice-1') { throw 'The answered card remained in the next turn.' }
+    $current = Inspect-Project
+    if ($current.world_sha256 -cne $Project.world_sha256 -or $current.manifest_sha256 -cne $Project.manifest_sha256) {
+        throw 'The question exchange changed the project.'
+    }
+    $report.checks.codex_questions = @{
+        exact_reply_verified_by_peer = $true; rejected_other_thread = $true; custom_unicode = $true
+        no_automatic_answer = $true; card_retired = $true; project_unchanged = $true
+    }
+    Invoke-Control 'Agent Disconnect'
+    $null = Wait-For 'the retired question connection' { Find-Control 'Agent Connect' -Enabled }
 }
 
 function Exercise-Acp($Project, $Provider, $Setting, $Executable, $Key) {
@@ -404,6 +462,10 @@ try {
         Invoke-Control 'Agent Connect'
         $null = Wait-For 'the reconnected Codex conversation' { Find-Control 'Agent Send' -Enabled } 65
         $report.checks.codex_reconnected = $true
+    }
+    if ($CodexQuestions) {
+        if ($WithCodex) { Invoke-Control 'Agent Disconnect' }
+        Exercise-CodexQuestions $project $CodexQuestions
     }
     Close-Owner
     $report.checks.closed_exit_code = $owner.ExitCode

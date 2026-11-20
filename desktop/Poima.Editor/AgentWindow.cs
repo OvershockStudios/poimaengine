@@ -33,9 +33,11 @@ internal sealed class AgentChat : UserControl
     private readonly TextBox transcript = new() { IsReadOnly = true, AcceptsReturn = true, TextWrapping = TextWrapping.Wrap };
     private readonly TextBlock status = new() { Text = "Disconnected", TextWrapping = TextWrapping.Wrap };
     private readonly StackPanel approvals = new() { Spacing = 6 };
+    private readonly ScrollViewer approvalScroll;
     private readonly Button connect = new() { Content = "Connect" }, disconnect = new() { Content = "Disconnect", IsEnabled = false },
         send = new() { Content = "Send", IsEnabled = false }, stop = new() { Content = "Stop", IsEnabled = false };
     private IAgentSession? session;
+    private CodexQuestionCard? questionCard;
     private string? activeTurn, unusedConversation;
     private readonly HashSet<string> completed = new(StringComparer.Ordinal);
     private readonly Dictionary<StackPanel, JsonNode> acpPermissions = [];
@@ -102,7 +104,7 @@ internal sealed class AgentChat : UserControl
         }
         root.Children.Add(setup); Grid.SetRow(status, 1); root.Children.Add(status);
         Grid.SetRow(transcript, 2); root.Children.Add(transcript);
-        var approvalScroll = new ScrollViewer { Content = approvals, MaxHeight = 200 };
+        approvalScroll = new ScrollViewer { Content = approvals, MaxHeight = 200 };
         Grid.SetRow(approvalScroll, 3); root.Children.Add(approvalScroll);
         Grid.SetRow(prompt, 4); root.Children.Add(prompt);
         var actions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
@@ -210,7 +212,7 @@ internal sealed class AgentChat : UserControl
                     endpoint, projectRoot, startup.Token),
                 _ => await CodexSession.ConnectAsync(executable.Text ?? "", engine.Text ?? "",
                     endpoint, projectRoot, startup.Token, allowEdits.IsChecked == true, allowSourceEdits.IsChecked == true,
-                    allowBuilds.IsChecked == true, allowChecks.IsChecked == true)
+                    allowBuilds.IsChecked == true, allowChecks.IsChecked == true, receiveQuestions: true)
             };
             session = current;
             if (closing) { await current.DisposeAsync(); return; }
@@ -327,6 +329,7 @@ internal sealed class AgentChat : UserControl
         if (session is not { } current || !stop.IsEnabled) return;
         var id = activeTurn;
         cancelRequested = true; Controls();
+        if (questionCard is { } pendingQuestion) pendingQuestion.IsEnabled = false;
         try
         {
             if (current is AcpSession acp)
@@ -342,7 +345,12 @@ internal sealed class AgentChat : UserControl
         }
         catch (Exception error)
         {
-            if (ReferenceEquals(session, current)) { cancelRequested = false; status.Text = error.Message; Controls(); }
+            if (ReferenceEquals(session, current))
+            {
+                cancelRequested = false;
+                if (questionCard is { } pending) pending.IsEnabled = true;
+                status.Text = error.Message; Controls();
+            }
         }
     }
     private async Task ReadEvents(IAgentSession current)
@@ -391,7 +399,11 @@ internal sealed class AgentChat : UserControl
         }
         if (message["id"] is JsonNode requestId)
         {
-            if (method is "item/commandExecution/requestApproval" or "item/fileChange/requestApproval" && approvals.Children.Count < 16)
+            if (method == "item/tool/requestUserInput")
+            {
+                if (!ShowQuestions(current, requestId, parameters)) _ = RejectUnsupported(current, requestId, method);
+            }
+            else if (method is "item/commandExecution/requestApproval" or "item/fileChange/requestApproval" && approvals.Children.Count < 16)
             {
                 ShowApproval(current, requestId, method + "\n" + parameters?.ToJsonString(),
                     new JsonObject { ["decision"] = "accept" }, new JsonObject { ["decision"] = "decline" });
@@ -401,6 +413,12 @@ internal sealed class AgentChat : UserControl
         }
         if (parameters?["threadId"]?.GetValue<string>() != current.ConversationId) return;
         if (method == "item/agentMessage/delta") Append(parameters?["delta"]?.GetValue<string>() ?? "");
+        else if (method == "serverRequest/resolved" && questionCard is { } card &&
+            JsonNode.DeepEquals(card.RequestId, parameters?["requestId"]))
+        {
+            RemoveQuestions(card);
+            if (!cancelRequested) status.Text = "Working…";
+        }
         else if (method == "turn/started") { activeTurn = parameters?["turn"]?["id"]?.GetValue<string>(); Controls(); }
         else if (method == "turn/completed")
         {
@@ -408,9 +426,39 @@ internal sealed class AgentChat : UserControl
             if (id is not null) completed.Add(id);
             if (activeTurn == id) activeTurn = null;
             status.Text = "Turn " + parameters?["turn"]?["status"] + (parameters?["turn"]?["error"] is { } error ? ": " + error.ToJsonString() : "");
-            approvals.Children.Clear(); Append("\n"); Controls();
+            ClearApprovals(); Append("\n"); Controls();
         }
         else if (method == "error") status.Text = parameters?.ToJsonString();
+    }
+
+    private bool ShowQuestions(IAgentSession current, JsonNode requestId, JsonObject? parameters)
+    {
+        if (questionCard is not null || cancelRequested || !Busy ||
+            parameters?["threadId"] is not JsonValue identity || !identity.TryGetValue<string>(out var threadId) ||
+            threadId != current.ConversationId || CodexQuestionCard.Create(requestId, parameters) is not { } card ||
+            activeTurn is { } turn && turn != card.TurnId || completed.Contains(card.TurnId)) return false;
+        questionCard = card;
+        approvals.Children.Add(card);
+        approvalScroll.MaxHeight = 290;
+        prompt.IsVisible = false;
+        status.Text = "Waiting for your answers.";
+        card.OnSubmit(async answer =>
+        {
+            if (!ReferenceEquals(questionCard, card) || !ReferenceEquals(session, current) || closing || cancelRequested) return;
+            RemoveQuestions(card);
+            status.Text = "Working…";
+            await Reply(current, card.RequestId, answer);
+        });
+        return true;
+    }
+
+    private void RemoveQuestions(CodexQuestionCard card)
+    {
+        card.IsEnabled = false;
+        approvals.Children.Remove(card);
+        questionCard = null;
+        approvalScroll.MaxHeight = 200;
+        prompt.IsVisible = true;
     }
     private void HandleAcp(IAgentSession current, string method, JsonObject? parameters, JsonNode? id)
     {
@@ -507,6 +555,7 @@ internal sealed class AgentChat : UserControl
 
     private void ClearApprovals()
     {
+        if (questionCard is { } card) RemoveQuestions(card);
         foreach (var child in approvals.Children) child.IsEnabled = false;
         approvals.Children.Clear();
         acpPermissions.Clear();

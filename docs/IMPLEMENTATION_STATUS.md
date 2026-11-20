@@ -1,8 +1,16 @@
 # Implementation status
 
-Updated 2026-11-20 for **0.0.299**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-20 for **0.0.300**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.300 displays [Codex question cards](GAME_BRIEF.md) in the creator.
+An installed Codex client asked a question and read back the answer selected
+in Windows UI Automation. A scripted peer separately checked the exact
+option and custom text, rejected a request for another conversation and
+verified that the project stayed unchanged. A broader fresh-game attempt
+agreed on a brief, then stalled when the agent could not read its packaged
+gameplay reference. [Results](evidence/m2-creator-questions-300.json)
 
 Version 0.0.299 adds [Windows gameplay setup](WINDOWS_PREVIEW.md#build-c-gameplay).
 The launcher and creator can check the installed .NET, MSVC and Windows SDK

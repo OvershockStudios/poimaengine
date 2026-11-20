@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.300
+
+- Answer Codex's game-brief questions directly in the creator, with choices and custom answers.
+
 ## 0.0.299
 
 - Check the Windows C# build prerequisites and start Microsoft setup directly from the creator.

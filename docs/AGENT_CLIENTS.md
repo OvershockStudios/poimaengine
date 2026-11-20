@@ -153,6 +153,18 @@ Official references: [Codex MCP configuration](https://learn.chatgpt.com/docs/ex
 
 `CodexSession` adds official app-server initialization, persistent thread creation/resume, text turns, interrupt requests, paginated history and Poima MCP discovery. Its process-local MCP configuration attaches to an existing shared endpoint. Codex retains account ownership and its existing user configuration; Poima does not manage credentials or write global provider configuration. Approval requests remain explicit events for the caller to handle.
 
+When Codex requests input during a desktop turn, the creator displays the
+questions and replies to the pending request after the creator selects
+**Send answers**. No option is selected automatically. Custom answers appear
+when the provider offers them. Closing the turn or resolving the request
+removes its card. [Game-brief workflow](GAME_BRIEF.md) · [Codex app-server protocol](https://learn.chatgpt.com/docs/app-server#toolrequestuserinput)
+
+Build `tests/fixtures/agent_rpc` on Windows and pass its
+`Poima.AgentRpc.Contract.exe` to `tests/creator_workspace.ps1 -CodexQuestions`
+alongside the packaged editor and a new output directory. This uses a
+scripted peer and checks both the native reply and the desktop controls.
+[Qualification](evidence/m2-creator-questions-300.json)
+
 A Linux integration check with Codex CLI 0.160.1 discovered both Poima tools, completed one short text turn, restarted the app-server process, resumed the same thread and retrieved the exact saved assistant response. Streaming notifications were received. The development desktop integration below separately qualifies one Windows chat edit. Approval-card interaction, interrupt completion and Claude's persistent adapter remain unqualified or unfinished. The interrupt response alone does not establish that a turn finished or an engine edit was undone.
 
 The process-level contract fixture launches a synthetic peer and exercises concurrent correlation, Unicode, RPC errors, approval replies, cancellation, late responses, bounded diagnostics, truncated output, malformed responses, oversized frames, event overflow, cancellation during a blocked pipe write and concurrent disposal. It checks that disposal leaves no live peer process:

@@ -4,6 +4,7 @@ using System.Text.Json.Nodes;
 using Poima.AgentHost;
 
 if (args.Length > 0 && args[0] == "--codex") { await CodexIntegration.RunAsync(args); return; }
+if (args.Length > 0 && args[0] == "app-server") { await QuestionPeer.RunAsync(); return; }
 if (args is ["acp"]) { await AcpContract.RunPeerAsync(); return; }
 
 if (args.Length > 0 && args[0] == "peer")

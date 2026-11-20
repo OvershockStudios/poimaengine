@@ -52,5 +52,7 @@ creator’s feedback changes a decision. The same project can be opened in the
 editor whenever direct editing would help.
 
 The [Windows creator workspace](DESKTOP_EDITOR.md#creator-workspace) runs
-the interview in chat. Use numbered choices until interactive question cards
-are available in the selected client.
+the interview in chat. With Codex, questions can appear as a card. Select an
+answer for each question, or write your own when the card offers that choice.
+Select **Send answers** to continue the interview. For clients that present
+the questions in chat, reply with the numbered choices or your own answers.

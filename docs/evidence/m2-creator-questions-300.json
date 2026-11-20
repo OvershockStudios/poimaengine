@@ -1,0 +1,61 @@
+{
+  "engine_version": "0.0.300",
+  "scope": "Real Codex question and scripted protocol peer through Windows UI Automation on the standalone extracted package. The peer requests one fixed radio choice and one Unicode custom answer. The real Codex check explicitly requested a native card and received one. Both used fresh starter projects and preinstalled tools.",
+  "archive": {
+    "bytes": 141170483,
+    "sha256": "c25e63adee95cd890940a335f2f691fb82fdaf2e5ff3a2b5b967a8ffab296438"
+  },
+  "authoring_pack": {
+    "engine_version": "0.0.300",
+    "manifest_sha256": "7370f008febee8004accdea6ab7e46d4ec413657a7b858de89f3a4093e079664",
+    "files": 17
+  },
+  "live_codex": {
+    "cli_version": "0.163.0-alpha.11",
+    "model_selected": "CLI default",
+    "confirmed_choice": "Amber",
+    "question_cards": 1,
+    "choice_answers": 1,
+    "custom_answers": 0,
+    "turn_native_ms": 5551,
+    "no_edits": true,
+    "natural_close": true
+  },
+  "protocol_fixture": {
+    "exact_reply_verified_by_peer": true,
+    "custom_unicode": true,
+    "rejected_other_thread": true,
+    "no_automatic_answer": true,
+    "project_unchanged": true,
+    "card_retired": true,
+    "native_preview_and_reopen": true,
+    "natural_desktop_close": true
+  },
+  "provider_transport_regression": {
+    "agent_rpc_contract": true,
+    "acp_session_contract": true
+  },
+  "earlier_attempts": [
+    {
+      "engine_version": "0.0.299",
+      "archive_sha256": "55e3a75dccd4a4dd9c3a7e3031ca901dbbccb5f4f1ff6886e38c208e00c2513a",
+      "passed": false,
+      "stage": "brief",
+      "finding": "The reply introduced choices without displaying the question options.",
+      "owner_forced": false
+    },
+    {
+      "engine_version": "0.0.300",
+      "archive_sha256": "281cfb87e3a52983f6600f1496d64b9d84cda386decdc5a01d20798ce4703389",
+      "passed": false,
+      "stage": "game implementation",
+      "brief_before_edit": true,
+      "findings": [
+        "The approved brief used three completed text turns with the starter source, manifest and world unchanged.",
+        "Codex reported that its local command runner could not read the packaged gameplay reference. It left the starter unchanged and created no verification suite.",
+        "The harness timed out after the build response did not retire the turn in the creator."
+      ],
+      "owner_forced": false
+    }
+  ]
+}

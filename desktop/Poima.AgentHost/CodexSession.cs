@@ -29,7 +29,8 @@ public sealed class CodexSession : IAgentSession
     /// <summary>Attach Poima through its existing endpoint; never open a second world writer.</summary>
     public static async Task<CodexSession> ConnectAsync(string codexExecutable, string poimaExecutable,
         string endpoint, string workingDirectory, CancellationToken cancellation = default, bool allowPoimaEdits = false,
-        bool allowPoimaSourceEdits = false, bool allowPoimaBuilds = false, bool allowPoimaChecks = false)
+        bool allowPoimaSourceEdits = false, bool allowPoimaBuilds = false, bool allowPoimaChecks = false,
+        bool receiveQuestions = false)
     {
         if (endpoint.Length is < 1 or > 64 || endpoint.Any(c => !char.IsAsciiLetterOrDigit(c) && c != '-' && c != '_'))
             throw new ArgumentException("Invalid Poima endpoint.", nameof(endpoint));
@@ -43,6 +44,8 @@ public sealed class CodexSession : IAgentSession
             "app-server", "-c", "mcp_servers.poima.command=" + JsonSerializer.Serialize(poimaExecutable),
             "-c", "mcp_servers.poima.args=" + JsonSerializer.Serialize(new[] { "mcp", "--endpoint", endpoint })
         };
+        if (receiveQuestions)
+            arguments.AddRange(["-c", "features.default_mode_request_user_input=true"]);
         if (allowPoimaEdits)
             arguments.AddRange(["-c", "mcp_servers.poima.tools.poima_call.approval_mode=\"approve\""]);
         if (allowPoimaSourceEdits)
@@ -55,10 +58,12 @@ public sealed class CodexSession : IAgentSession
         var session = new CodexSession(rpc, directory);
         try
         {
-            await rpc.RequestAsync("initialize", new JsonObject
+            var initialization = new JsonObject
             {
                 ["clientInfo"] = new JsonObject { ["name"] = "poima", ["version"] = "0.0.40", ["title"] = "Poima" }
-            }, cancellation);
+            };
+            if (receiveQuestions) initialization["capabilities"] = new JsonObject { ["experimentalApi"] = true };
+            await rpc.RequestAsync("initialize", initialization, cancellation);
             await rpc.NotifyAsync("initialized", cancellation: cancellation);
             return session;
         }
