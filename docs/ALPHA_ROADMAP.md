@@ -117,6 +117,10 @@ it, then recover and share the passing build after a deliberate failure.
 Independent inputs complete the relocated ZIP and resume from a partial save
 in a fresh process. The laptop already had Microsoft tools and a signed-in
 Codex client.
+The [0.0.323 build setup handoff](evidence/m2-creator-build-reopen-323.json)
+preserves an unsent draft and reference image when a creator enables gameplay
+builds in an open project. After reconnecting Codex, the reopened workspace
+publishes and checks the Native AOT starter with the newly available profile.
 Qualification with a first-time creator on clean Windows remains open.
 
 ### Engine and delivery

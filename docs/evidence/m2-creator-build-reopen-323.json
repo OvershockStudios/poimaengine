@@ -1,0 +1,44 @@
+{
+  "engine_version": "0.0.323",
+  "scope": "Windows UI Automation on the development laptop with the extracted runtime from the exact local release archive. The laptop has signed-in Codex and Microsoft tools.",
+  "engine_archive": {
+    "name": "Poima-0.0.323-Windows-x64.zip",
+    "bytes": 141604306,
+    "sha256": "53a5ab39cfadc7eb47dd19c2c7957702e9687a7bd25025edfdcb1639677a0334"
+  },
+  "engine_archive_inventory_files": 499,
+  "setup_fixture": "An exclusive read handle on a disposable, copied SDK executable prevents discovery. Releasing that handle and removing the fixture executable lets the existing installed toolchain be discovered.",
+  "baseline": {
+    "version": "0.0.321",
+    "engine_archive_sha256": "e76051b828cf2faf2e1506edf893382d32e4e3fb0a4d056510a89c9906af122f",
+    "reopened_in_another_process": true,
+    "draft_retained": false,
+    "native_profile_reachable": true,
+    "report_sha256": "90b52d32f53f3c734020b50e431e453648d7e953488946f6b2ef66d3b0c32652"
+  },
+  "candidate": {
+    "reopened_in_same_process": true,
+    "started_without_a_compiler_profile": true,
+    "image_attached": true,
+    "failed_preflight_keeps_draft": true,
+    "draft_retained": true,
+    "reference_retained_and_not_sent": true,
+    "connection_approval_reset": true,
+    "native_profile_reachable": true,
+    "native_aot_build_and_input_verified": true,
+    "authored_files_unchanged": true,
+    "natural_close": true,
+    "native_aot_descriptor_sha256": "bcf5022626fe0acd7fdb9a5e76384a8c9bab554176db2fb7f17f51820fb369d6",
+    "report_sha256": "b7a25453e8ec0c1988bb297c4447f59e99a3508f1e2a8ff278d5296e44281cb3",
+    "native_mcp_contract_cases_passed": 14
+  },
+  "attempt_notes": [
+    "The first baseline test could not locate the owned modal using top-level accessibility enumeration. Looking up the modal by its Win32 window owner qualified the unchanged package."
+  ],
+  "open_qualification": [
+    "Independent human on a clean Windows machine",
+    "Microsoft installer and browser sign-in on a clean environment",
+    "Public tagged installation and update",
+    "Handoff with other connected agent providers"
+  ]
+}

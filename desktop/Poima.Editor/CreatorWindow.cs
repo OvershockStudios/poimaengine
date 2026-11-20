@@ -6,6 +6,7 @@ using System.Text.Json.Nodes;
 using Avalonia;
 using Avalonia.Automation;
 using Avalonia.Controls;
+using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
@@ -38,7 +39,8 @@ internal sealed class CreatorWindow : Window
     private readonly TextBlock verifiedPlayStatus = new() { TextWrapping = TextWrapping.Wrap, IsVisible = false };
     private readonly Border viewport = new() { Background = EditorTheme.Brush("#161518"), ClipToBounds = true };
     private bool starting, waitingForPreviewFrame, exporting, closeRequested, verifiedPlayActive, closing, allowClose;
-    private bool agentWasBusy, toolsReadyForReopen, reopenWithTools;
+    private bool agentWasBusy, toolsReadyForReopen, ownerDisposed;
+    private (ProjectLocation Project, LaunchOptions Options)? reopen;
     private string? exportedFolder, verifiedCheckpoint, verifiedBundleHash, recoveredManifest;
     private VerifiedPlayback? verifiedPlayback;
     private string? sharedZip, shareNotice;
@@ -49,7 +51,7 @@ internal sealed class CreatorWindow : Window
     private CancellationTokenSource? checking, checkingVerifiedPlay;
     private string? previewSession, error;
 
-    public CreatorWindow(ProjectLocation project, LaunchOptions options)
+    public CreatorWindow(ProjectLocation project, LaunchOptions options, AgentChat.Draft? draft = null)
     {
         this.project = project;
         this.options = options;
@@ -70,6 +72,7 @@ internal sealed class CreatorWindow : Window
             chat = new AgentChat(project.Root, host.Endpoint, creator: true,
                 gameplayToolStatus: options.GameplayToolStatus, gameplayToolContext: options.GameplayToolContext,
                 conversationStore: new CreatorConversationStore(project.Manifest, project.ProjectId));
+            if (draft is not null) chat.RestoreDraft(draft);
             Content = BuildContent();
         }
         catch { host.Dispose(); throw; }
@@ -110,15 +113,25 @@ internal sealed class CreatorWindow : Window
         {
             if (toolsReadyForReopen)
             {
-                reopenWithTools = true;
+                (ProjectLocation Project, LaunchOptions Options)? configured = null;
+                await ProjectWork("Preparing the gameplay build tools…", async () =>
+                {
+                    var current = await OpenCurrentProject();
+                    var launch = await WindowsGameplayTools.ConfigureAsync(options, current);
+                    if (launch.ActiveDevelopmentProfiles is null)
+                        throw new InvalidOperationException(launch.GameplayToolStatus ?? "Poima could not set up gameplay builds.");
+                    configured = (current, launch);
+                });
+                if (configured is null || closing || !IsVisible) return;
+                reopen = configured;
                 Close();
-                if (!closing) reopenWithTools = false;
+                if (!closing) reopen = null;
             }
             else if (await new GameplaySetupWindow().ShowDialog<bool>(this))
             {
                 toolsReadyForReopen = true;
                 setupBuilds.Content = "Reopen with build tools";
-                error = "Build tools are ready. Reopening will close this conversation.";
+                error = "Build tools are ready. Reopen to activate them and keep your draft.";
                 UpdateControls();
             }
         };
@@ -147,16 +160,44 @@ internal sealed class CreatorWindow : Window
             catch (Exception failure) { error = failure.Message; }
             UpdateControls();
         };
-        Closed += (_, _) =>
+        Closed += (_, _) => DisposeOwner();
+    }
+
+    private void DisposeOwner()
+    {
+        if (ownerDisposed) return;
+        ownerDisposed = true;
+        timer.Stop();
+        model.Dispose();
+        host.Dispose();
+    }
+
+    private void OpenWithBuildTools(ProjectLocation current, LaunchOptions configured, AgentChat.Draft draft)
+    {
+        CreatorWindow? replacement = null;
+        try
         {
-            timer.Stop();
-            model.Dispose();
-            host.Dispose();
-            if (reopenWithTools)
-                try { using var process = Process.Start(CreatorStart(project.Manifest, reuseEndpoint: true)); }
-                catch (Exception failure) when (failure is InvalidOperationException or System.ComponentModel.Win32Exception)
-                { Console.Error.WriteLine(failure.Message); }
-        };
+            if (Application.Current?.ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop ||
+                desktop.MainWindow != this)
+                throw new InvalidOperationException("The creator workspace is no longer active.");
+            replacement = new CreatorWindow(current, configured, draft);
+            replacement.Show();
+            desktop.MainWindow = replacement;
+        }
+        catch (Exception failure)
+        {
+            replacement?.DisposeOwner();
+            var retry = new Button { Content = "Retry opening the project" };
+            retry.Click += (_, _) => OpenWithBuildTools(current, configured, draft);
+            Content = new StackPanel { Margin = new Thickness(26), Spacing = 12, Children =
+                {
+                    new TextBlock { Text = "Couldn’t reopen the project. " + failure.Message, TextWrapping = TextWrapping.Wrap },
+                    new TextBox { Text = draft.Text, IsReadOnly = true, AcceptsReturn = true, TextWrapping = TextWrapping.Wrap },
+                    retry
+                } };
+            return;
+        }
+        Close();
     }
 
     private Control BuildContent()
@@ -598,16 +639,11 @@ internal sealed class CreatorWindow : Window
         catch (Exception failure) { error = failure.Message; UpdateControls(); }
     }
 
-    private ProcessStartInfo CreatorStart(string manifest, bool reuseEndpoint = false)
+    private ProcessStartInfo CreatorStart(string manifest)
     {
         var info = new ProcessStartInfo(Path.Combine(AppContext.BaseDirectory, "Poima.Editor.exe")) { UseShellExecute = false };
         info.ArgumentList.Add("--creator");
         info.ArgumentList.Add(manifest);
-        if (reuseEndpoint)
-        {
-            info.ArgumentList.Add("--endpoint");
-            info.ArgumentList.Add(options.Endpoint);
-        }
         if (options.DevelopmentProfiles is not null)
         {
             info.ArgumentList.Add("--development-profiles");
@@ -674,7 +710,13 @@ internal sealed class CreatorWindow : Window
             if (agentShutdown?.IsCompleted == true && host.WorkersRetired)
             {
                 allowClose = true;
-                Close();
+                if (reopen is { } configured)
+                {
+                    var draft = chat.CaptureDraft();
+                    DisposeOwner();
+                    OpenWithBuildTools(configured.Project, configured.Options, draft);
+                }
+                else Close();
             }
             return;
         }

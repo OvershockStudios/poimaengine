@@ -16,6 +16,9 @@ namespace Poima.Editor;
 /// <summary>Chat client over the shared engine endpoint; never calls NativeHost from a worker.</summary>
 internal sealed class AgentChat : UserControl
 {
+    internal sealed record Draft(string? Text, (string Name, AgentImage Image)[] Images,
+        int Provider, string? Codex, string? Antigravity, string? Claude, string? Model, string? Conversation);
+
     private readonly string projectRoot, endpoint;
     private readonly bool creator;
     private readonly string? gameplayToolContext;
@@ -61,7 +64,8 @@ internal sealed class AgentChat : UserControl
     private bool submitting, closing, connecting, ready, cancelRequested, sentGameplayContext;
     private bool acpReceivedReply, codexSupportsImages, pickingImages, codexMissing, claudeMissing, antigravityMissing, claudeNeedsSignIn;
     private Task? connectingTask, closingTask, retiringTask, installingTask;
-    public bool Busy => submitting || activeTurn is not null || connecting || agentInstall is not null || retiringTask?.IsCompleted == false;
+    public bool Busy => submitting || activeTurn is not null || connecting || pickingImages ||
+        agentInstall is not null || retiringTask?.IsCompleted == false;
     private string ProviderName => provider.SelectedItem as string ?? "Codex";
     private string? ResumeThread => string.IsNullOrWhiteSpace(thread.Text) || thread.Text.Trim() == unusedConversation
         ? null : thread.Text.Trim();
@@ -240,6 +244,24 @@ internal sealed class AgentChat : UserControl
     }
 
     public Task CloseAsync() => closingTask ??= CloseCoreAsync();
+
+    internal Draft CaptureDraft() => new(prompt.Text, images.Select(item => (item.Name, item.Image)).ToArray(),
+        provider.SelectedIndex, executable.Text, agyExecutable.Text, claudeExecutable.Text, model.Text, ResumeThread);
+
+    internal void RestoreDraft(Draft draft)
+    {
+        executable.Text = draft.Codex;
+        agyExecutable.Text = draft.Antigravity;
+        claudeExecutable.Text = draft.Claude;
+        model.Text = draft.Model;
+        thread.Text = draft.Conversation;
+        provider.SelectedIndex = draft.Provider;
+        prompt.Text = draft.Text;
+        prompt.CaretIndex = draft.Text?.Length ?? 0;
+        foreach (var (name, image) in draft.Images) AddImage(name, image);
+        status.Text = "Reconnect to your agent to continue.";
+        Controls();
+    }
 
     internal void AddAssetReferences(IReadOnlyList<CreatorAsset> assets)
     {

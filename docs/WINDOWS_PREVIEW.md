@@ -62,7 +62,9 @@ package cache for future builds.
 
 If you already opened a project, select **Set up gameplay builds** in the
 creator, then **Reopen with build tools** when setup is ready. The reopened
-workspace supplies its project-scoped build profile to the connected agent.
+workspace keeps your unsent message, attached reference images, and agent
+selection in memory. Reconnect to use the new project build profile. The
+new connection asks for its own tool approvals.
 
 Gameplay compilation packages include a [local gameplay guide](reference/CREATOR_GAMEPLAY.md).
 [Complete gameplay tools guide](https://github.com/OvershockStudios/poimaengine/blob/main/docs/AUTHORING_TOOLS.md)

@@ -1,8 +1,15 @@
 # Implementation status
 
-Updated 2026-11-20 for **0.0.322**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-20 for **0.0.323**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.323 preserves the [creator's draft while enabling gameplay builds](WINDOWS_PREVIEW.md#build-c-gameplay).
+In the packaged Windows test, a failed compiler check leaves the draft
+available. A successful retry carries the text and attached image into the
+reopened workspace. Codex reconnects with fresh approvals. The new profile
+compiles a Native AOT starter that responds to native input.
+[Results](evidence/m2-creator-build-reopen-323.json)
 
 Version 0.0.322 groups up to 12 [focused schema lookups](WORLD_SERVICE.md#select-multiple-schemas)
 in one native or MCP request. In a replay of seven lookups from the Windows
