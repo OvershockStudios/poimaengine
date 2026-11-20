@@ -1,8 +1,15 @@
 # Implementation status
 
-Updated 2026-11-20 for **0.0.303**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-20 for **0.0.304**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.304 lets the Windows x64 creator [install Codex](AGENT_CLIENTS.md#connect-a-project).
+The packaged check cancelled a download, retried from an empty install folder,
+verified the official release, reached browser sign-in and reused the installed
+client. The same executable connected and reconnected using an existing signed-in
+account. Fresh browser authorization and clean Windows qualification remain open.
+[Results](evidence/m2-creator-codex-install-304.json)
 
 Version 0.0.303 offers [browser sign-in for an installed Codex client](AGENT_CLIENTS.md#connect-a-project).
 The packaged Windows creator detected a signed-out real client in isolated

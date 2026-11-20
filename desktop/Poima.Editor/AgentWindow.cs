@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: Apache-2.0
-using System.Diagnostics;
 using Avalonia;
 using Avalonia.Automation;
 using Avalonia.Controls;
@@ -41,9 +40,10 @@ internal sealed class AgentChat : UserControl
     private readonly List<(string Name, AgentImage Image, Control Chip)> images = [];
     private readonly Button connect = new() { Content = "Connect" }, disconnect = new() { Content = "Disconnect", IsEnabled = false },
         send = new() { Content = "Send", IsEnabled = false }, stop = new() { Content = "Stop", IsEnabled = false };
-    private readonly Button getCodex = new() { Content = "Get Codex", IsVisible = false };
+    private readonly Button getCodex = new() { Content = WindowsCodexInstall.Supported ? "Install Codex" : "Get Codex", IsVisible = false };
     private IAgentSession? session;
     private CodexSignInWindow? signIn;
+    private CodexInstallWindow? codexInstall;
     private CodexQuestionCard? questionCard;
     private string? activeTurn, unusedConversation;
     private readonly HashSet<string> completed = new(StringComparer.Ordinal);
@@ -51,8 +51,8 @@ internal sealed class AgentChat : UserControl
     private readonly Dictionary<string, string> acpToolDetails = new(StringComparer.Ordinal);
     private bool submitting, closing, connecting, ready, cancelRequested, sentGameplayContext;
     private bool acpReceivedReply, codexSupportsImages, pickingImages, codexMissing;
-    private Task? connectingTask, closingTask, retiringTask;
-    public bool Busy => submitting || activeTurn is not null || connecting || retiringTask?.IsCompleted == false;
+    private Task? connectingTask, closingTask, retiringTask, installingTask;
+    public bool Busy => submitting || activeTurn is not null || connecting || codexInstall is not null || retiringTask?.IsCompleted == false;
     private string ProviderName => provider.SelectedItem as string ?? "Codex";
     public AgentChat(string projectRoot, string endpoint, bool creator = false,
         string? gameplayToolStatus = null, string? gameplayToolContext = null)
@@ -132,12 +132,7 @@ internal sealed class AgentChat : UserControl
         send.Click += async (_, _) => await Send();
         addImages.Click += async (_, _) => await PickImages();
         stop.Click += async (_, _) => await Stop();
-        getCodex.Click += (_, _) =>
-        {
-            try { using var launched = Process.Start(new ProcessStartInfo("https://learn.chatgpt.com/docs/cli") { UseShellExecute = true }); }
-            catch (Exception error) when (error is System.ComponentModel.Win32Exception or InvalidOperationException)
-            { status.Text = "Windows couldn’t open the Codex installation guide."; }
-        };
+        getCodex.Click += async (_, _) => await (installingTask = InstallCodex());
         provider.SelectionChanged += (_, _) => UpdateProvider();
         UpdateProvider();
     }
@@ -184,14 +179,16 @@ internal sealed class AgentChat : UserControl
         catch (IOException) { }
         catch (UnauthorizedAccessException) { }
         var standalone = Path.Combine(local, "Programs", "OpenAI", "Codex", "bin", "codex.exe");
-        return File.Exists(standalone) ? standalone : "codex.exe";
+        return File.Exists(standalone) ? standalone : WindowsCodexInstall.Executable(WindowsCodexInstall.Root) ?? "codex.exe";
     }
 
     public Task CloseAsync() => closingTask ??= CloseCoreAsync();
     private async Task CloseCoreAsync()
     {
         closing = true; Controls(); lifetime.Cancel();
+        codexInstall?.Stop();
         if (signIn is { } dialog) await dialog.CancelAsync();
+        if (installingTask is not null) await installingTask;
         if (connectingTask is not null) await connectingTask;
         if (session is { } current) await DisposeSession(current);
         if (retiringTask is not null) await retiringTask;
@@ -294,6 +291,27 @@ internal sealed class AgentChat : UserControl
             }
         }
         finally { connecting = false; Controls(); }
+    }
+
+    private async Task InstallCodex()
+    {
+        if (!getCodex.IsEnabled || !getCodex.IsVisible) return;
+        if (!WindowsCodexInstall.Supported)
+        {
+            try { CodexInstallWindow.OpenGuide(); }
+            catch (Exception error) when (error is System.ComponentModel.Win32Exception or InvalidOperationException)
+            { status.Text = "Windows couldn’t open the Codex setup guide."; }
+            return;
+        }
+        if (TopLevel.GetTopLevel(this) is not Window owner) return;
+        var dialog = codexInstall = new CodexInstallWindow();
+        Controls();
+        string? installed;
+        try { installed = await dialog.ShowDialog<string?>(owner); }
+        finally { codexInstall = null; Controls(); }
+        if (installed is null || closing) return;
+        executable.Text = installed;
+        await (connectingTask = Connect());
     }
 
     private async Task SignInAsync(CodexSession codex, CancellationToken cancellation)

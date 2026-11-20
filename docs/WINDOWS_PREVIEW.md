@@ -52,8 +52,9 @@ Gameplay compilation packages include a [local gameplay guide](reference/CREATOR
 In the creator workspace, select **Codex**, **Antigravity**, or **Claude Code**.
 For an installed Codex client, choose **Connect Codex** and use **Open sign-in
 page** if prompted. Once your browser finishes, the conversation opens in
-Poima. **Get Codex** opens the official installation guide when the client is
-missing. The other clients use their own sign-in flows.
+Poima. If the client is missing, choose **Install Codex**. Windows x64 downloads
+the official client with checksum verification and then starts the connection.
+The other clients use their own installation and sign-in flows.
 [Agent setup](https://github.com/OvershockStudios/poimaengine/blob/main/docs/AGENT_CLIENTS.md)
 
 Use the bundled `poima.exe` with an installed Codex or Claude Code client.

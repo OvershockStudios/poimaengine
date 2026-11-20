@@ -1,0 +1,68 @@
+{
+  "engine_version": "0.0.304",
+  "scope": "Windows UI Automation against the extracted preview on the development laptop. The first run starts with an empty Poima-managed client folder and isolated Codex credential storage. A separate packaged regression connects the installed client using the existing signed-in account.",
+  "archive": {
+    "name": "Poima-0.0.304-Windows-x64.zip",
+    "bytes": 141399522,
+    "sha256": "7417fea77d7c18b2dcae487fdf08fb7f7691fa38cc2d726789c069ebe6e44018"
+  },
+  "release_files_verified": 499,
+  "artifacts": {
+    "editor_sha256": "46ea9277c3005368f45e983ccc1e65bb130538943d1b82306da8b349c416455b",
+    "frontend_sha256": "f86a50f022811ec13a0f3d1ae92a40bda98306d1138c88f4556f7466e78b4d61",
+    "cli_sha256": "dd3a485ed16a19c028541173b5dbea24b1e9b24750e1b76d89988052de070ea4"
+  },
+  "vendor_release": {
+    "name": "codex-package-x86_64-pc-windows-msvc.tar.gz",
+    "version": "0.171.0",
+    "source": "https://releases.openai.com/codex/releases/0.171.0/codex-package-x86_64-pc-windows-msvc.tar.gz",
+    "archive_bytes": 214982795,
+    "archive_sha256": "669941eff23dd8470fbf85d919a03d80c4e3d35b441e3fcd361c0f8630945be8",
+    "executable_sha256": "cefea4ffee1fff04983a99c0dda99944d8b380e891e740a28b32f4b815a6e0b7",
+    "payload_files_independently_matched": 46
+  },
+  "live_install": {
+    "checks": {
+      "missing_client_action_visible": true,
+      "cancelled_install_left_no_client": true,
+      "installed_client_reached_sign_in": true,
+      "cached_install_connected": true,
+      "isolated_auth_remained_empty": true,
+      "project_unchanged": true
+    },
+    "client_version": "codex-cli 0.171.0",
+    "install_to_sign_in_ms": 8096,
+    "cached_recovery_ms": 301,
+    "editor_exited_cleanly": true,
+    "report_sha256": "d3f93e555409d2af132ee097d38eeb5b88c668d5ac80b01ee1a7f1d6ca302e84"
+  },
+  "protocol_and_installer_fixtures": {
+    "windows": true,
+    "linux": true,
+    "incorrect_download_length_rejected": true,
+    "cancel_during_partial_transfer_retires_staging": true
+  },
+  "windows_creator_regression": {
+    "checks": [
+      "closed_during_play_exit_code",
+      "closed_exit_code",
+      "codex_disconnected",
+      "codex_questions",
+      "codex_ready",
+      "codex_reconnected",
+      "created",
+      "edit_before_export",
+      "export",
+      "export_disabled_during_preview",
+      "first_preview",
+      "relocated_export",
+      "reopened_preview",
+      "stopped"
+    ],
+    "report_sha256": "015dcea8c0a9f7192ecb7b9023c0c07b1e8043d722317ef40c19dbf8dc1e940c"
+  },
+  "open_qualification": [
+    "Browser authorization for a new account installation",
+    "First-time creator and toolchain on clean Windows"
+  ]
+}

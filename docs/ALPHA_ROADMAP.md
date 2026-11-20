@@ -45,6 +45,9 @@ input through the same Windows chat with Codex and Antigravity.
 The [Codex sign-in check](evidence/m2-creator-codex-sign-in-303.json) covers
 opening and cancelling sign-in with an isolated client and continuation after
 a scripted account confirmation. A real browser authorization is still needed.
+The [Codex installation check](evidence/m2-creator-codex-install-304.json)
+reaches the same sign-in dialog from an empty per-user Codex install folder
+through Poima’s UI, using OpenAI’s published Windows x64 client.
 Qualification with a first-time creator on clean Windows remains open.
 
 ### Engine and delivery

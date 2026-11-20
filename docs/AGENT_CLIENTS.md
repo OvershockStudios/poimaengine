@@ -28,6 +28,13 @@ confirms the matching sign-in, Poima rechecks the account and opens the
 conversation. Codex handles the callback and stores its own credentials.
 [Codex app-server authentication](https://learn.chatgpt.com/docs/app-server#authentication)
 
+On Windows x64, **Install Codex** appears when the executable cannot be found.
+Poima downloads OpenAI’s Codex 0.171.0 release, verifies its pinned SHA-256 and
+installs it under `%LOCALAPPDATA%\Poima\agents\codex\0.171.0`. Allow about
+800 MiB during installation and 600 MiB for the installed client. The managed
+client lives alongside any existing CLI. **Connection
+settings** can select another executable. [Official Codex release](https://github.com/openai/codex/releases/tag/rust-v0.171.0)
+
 Use absolute paths to the engine executable and the project's manifest. With
 Poima 0.0.278 or later, `mcp --project` opens the entry world and owns its
 writer lock. To work alongside an open editor or shared headless host,

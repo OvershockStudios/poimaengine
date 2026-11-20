@@ -126,3 +126,4 @@ foreach (var disposeDuringWrite in new[] { false, true })
 Console.WriteLine("Agent RPC contracts passed: concurrency, Unicode, errors, approval IDs, cancellation, late replies, diagnostics, EOF, malformed/oversized frames, event overflow, partial-write shutdown and concurrent disposal.");
 await AcpContract.VerifyAsync(token);
 await CodexLoginContract.VerifyAsync(Environment.ProcessPath!, Environment.ProcessPath!, Directory.GetCurrentDirectory(), useFixture: true);
+await CodexInstallContract.VerifyAsync();

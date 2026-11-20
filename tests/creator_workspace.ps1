@@ -3,6 +3,7 @@
 # UI Automation addresses only windows owned by this run. No file picker,
 # physical input or pre-existing project is used. -WithCodex opens a local
 # Codex connection with the installed client and submits no model turn.
+# -CodexExecutable selects an exact client for that installed-client check.
 # -Antigravity and -Claude use the supplied ACP clients for one MCP read each.
 # -CodexBrief runs a two-turn interview on the unchanged starter project.
 # -CodexQuestions uses the local AgentRpc contract executable as a scripted app-server.
@@ -11,6 +12,7 @@ param(
     [Parameter(Mandatory = $true)][string]$Editor,
     [Parameter(Mandatory = $true)][string]$Output,
     [switch]$WithCodex,
+    [string]$CodexExecutable,
     [string]$Antigravity,
     [string]$Claude,
     [switch]$CodexBrief,
@@ -459,6 +461,7 @@ try {
     if ($CodexBrief) { Exercise-CodexBrief $project }
     if ($WithCodex) {
         Select-AgentProvider 'Codex'
+        if ($CodexExecutable) { Set-AgentExecutable 'Codex executable' $CodexExecutable }
         Invoke-Control 'Agent Connect'
         $null = Wait-For 'the connected Codex conversation' { Find-Control 'Agent Send' -Enabled } 65
         $report.checks.codex_ready = $true

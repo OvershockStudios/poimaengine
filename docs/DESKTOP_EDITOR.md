@@ -72,7 +72,8 @@ Useful arguments are `--gpu N` for both native viewports, `--samples 1|4`, and a
    If Codex needs a sign-in, choose **Open sign-in page** and finish in your
    browser. Poima opens the conversation after Codex confirms your account.
    If Poima can't find the provider client, set its executable in
-   **Connection settings**. The Codex connection also offers **Get Codex**.
+   **Connection settings**. On Windows x64, **Install Codex** downloads the
+   pinned official client into Poima’s per-user folder and retries the connection.
    Describe your game to begin the [brief](GAME_BRIEF.md). Codex has separate
    per-connection controls for world calls, gameplay source edits, check edits
    and builds.
