@@ -1,0 +1,74 @@
+{
+  "version": "0.0.318",
+  "scope": "Windows UI Automation, a scripted Codex protocol peer, native candidate work through the shared project owner, and the bundled Vulkan player on the development laptop.",
+  "package": {
+    "name": "Poima-0.0.318-Windows-x64.zip",
+    "bytes": 141545921,
+    "sha256": "342d401c5a8ed6172e44aa7dd13e75009991d4e2edaa5b752b4861d435679b7b"
+  },
+  "tested_package_files_sha256": {
+    "Poima.Editor.exe": "d9ecc117e9502c8fe25d9d939f0aa7bbcba8e35f96753ee4a4e9de4911a84783",
+    "Poima.Editor.dll": "2838c14b267f574c959dee8caf5d571f41be3507b20edc0a1b0d043202710fc1",
+    "poima.exe": "0808668aed74de42c91eaf3c5987f09258148d3fd73ec4d76381dd6f1031865b",
+    "poima_desktop.dll": "a72e15b04ef65782ae957b263666e00025b7adfb011556f91d5972258f9e8b53"
+  },
+  "parallel_play_and_chat": {
+    "old_player": {
+      "event_type": "verified_play_closed",
+      "revision": 1,
+      "bundle_sha256": "80a2d9dada27fb6eec88ee0a6d20b5bf52347f4d635b9325ded4d597b3fabb59",
+      "tick": 474,
+      "frames_presented": 1216,
+      "stop_reason": "window_closed"
+    },
+    "candidate_job_id": 1,
+    "newer_revision": 2,
+    "newer_bundle_sha256": "856bab2e028d3f7e19451d41d178969f1c2592271f02cd0e2d24719d9e0b6c2e",
+    "newer_report_sha256": "6fc8df8a04f4ed97776b696d470ef6640765e364926f829799009f832933bedf",
+    "question_answered_during_play": true,
+    "new_result_opened_during_play": true,
+    "second_player_unavailable": true
+  },
+  "close_waits_for_player": {
+    "player": {
+      "event_type": "verified_play_closed",
+      "revision": 2,
+      "bundle_sha256": "856bab2e028d3f7e19451d41d178969f1c2592271f02cd0e2d24719d9e0b6c2e",
+      "tick": 45,
+      "frames_presented": 99,
+      "stop_reason": "window_closed"
+    },
+    "creator_exit": 0
+  },
+  "native_candidate_request_sha256": "6cc5c834e9a0ae225a4456ed1cda1ea12ba050f8c27129ed4e12378702aa78bb",
+  "native_candidate_response_sha256": "32385c37917e9df05cbaad97bab3386555bc80ad3adc10cccb7d122aa8520ca8",
+  "native_candidate_poll_count": 38,
+  "reopen_after_failed_candidate": {
+    "failed_report_sha256": "1e870a786b53194abba6e965e74a1857b6fecd1d2a1785a0447923a76041fb25",
+    "failed_revision": 3,
+    "playable_bundle_sha256": "856bab2e028d3f7e19451d41d178969f1c2592271f02cd0e2d24719d9e0b6c2e",
+    "playable_revision": 2,
+    "report_changed_rejected": true,
+    "verified_player_exit": 0,
+    "recovered_revision": 2
+  },
+  "relocated_zip": {
+    "original_project_unavailable": true,
+    "exit_code": 0,
+    "tick": 12,
+    "presented_frames": 13,
+    "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "external_save_directory_created": true,
+    "capture_sha256": "816bfad621be36bf1454a9f1ca37dd3c14726d03b49953665005fb70649580b4"
+  },
+  "creator_test_sha256": "be2da91067a4803ae28e6a2bd5b022da437afdac8c5945e977627e3bb3452148",
+  "creator_report_sha256": "d518674353910cc51dc5c3d2307fc71f860d184973a9c552c8a4e04ce155dd18",
+  "open_qualification": [
+    "first-time creator on clean Windows",
+    "live model-authored change during verified playback"
+  ],
+  "initial_attempt": {
+    "report_sha256": "f19454efda69a1d1b0cd75aa30b3d3eb148128e52ba925caa0a8f69e46d7002b",
+    "failure": "The shutdown harness reopened through the launcher default after creating a recovered copy and timed out waiting for verified play. The retry opened the intended manifest directly."
+  }
+}

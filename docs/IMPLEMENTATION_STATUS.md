@@ -1,8 +1,14 @@
 # Implementation status
 
-Updated 2026-11-20 for **0.0.317**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-20 for **0.0.318**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.318 lets the Windows creator [play the verified game while the
+agent works](PROJECT_RECOVERY.md). A scripted chat question remained available
+while a separate native client submitted and retained a newer passing build.
+The creator displayed its checks while the first Vulkan player kept running.
+[Results](evidence/m2-verified-play-chat-318.json)
 
 Version 0.0.317 adds a [paged catalog of cooked assets](ASSETS.md#browse-cooked-assets)
 to the shared world service. The Windows creator uses it to find imports on

@@ -58,7 +58,7 @@ internal static class ProjectFiles
             ["game", "verify", Path.Combine(bundle, "game.json"), "--suite", suite, "--report", report],
             allowFailedVerification: true, cancellation: cancellation);
 
-    public static Task PlayExport(string manifest, string saves, int gpu, uint samples)
+    public static Task<JsonElement> PlayExport(string manifest, string saves, int gpu, uint samples)
     {
         var executable = Path.Combine(Path.GetDirectoryName(manifest)!, "runtime", "bin", "poima.exe");
         var arguments = new List<string> { "game", "run", manifest, "--save-root", saves,

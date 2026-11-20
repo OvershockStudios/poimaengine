@@ -14,9 +14,17 @@ ineligible for retention.
 
 Choose **Play verified build** to run the last passing export in a separate
 window. Poima rechecks the selected checkpoint and launches its bundled
-player. Playtest saves are kept under
-`%LOCALAPPDATA%\Poima\Playtests\<project_id>\<bundle_sha256>`. Close the game
-window to return to editing. **Play** previews the current working project.
+player. You can play a verified build during an agent turn or switch back to
+chat while the game runs. The creator can show newer playtest results as
+turns finish. The open game keeps the revision it started with.
+
+Playtest saves are kept under
+`%LOCALAPPDATA%\Poima\Playtests\<project_id>\<bundle_sha256>`. Close the
+standalone game to start a different build or use **Play** to preview the
+current working project. If you close Poima first, it waits for the game to
+close. When started with standard output redirected, the workspace emits a
+`verified_play_closed` event with the build identity, last tick, presented
+frame count and stop reason.
 
 Choose **View playtest results** to see the latest completed attempt and
 expand its named groups. Failed checks show the recorded tick and observation.

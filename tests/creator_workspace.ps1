@@ -12,6 +12,7 @@
 # -WithPlaytestResults checks passing and failed reports, reopening and recovery.
 # -WithShareZip also exercises the owned save dialog and plays the unpacked ZIP.
 # -WithBuildHistory creates two passing versions and restores the older one through the history dialog.
+# -VerifiedPlayChat tests live workspace chat and native candidate publication while playing a verified build.
 # -WithoutVulkan masks drivers for the owned processes and checks preview failure recovery.
 # -AssetFixtures imports model, color/data image and WAV fixtures through the file picker.
 # -CodexAssetRead asks the real Codex client to inspect the model ID in the draft.
@@ -29,6 +30,7 @@ param(
     [switch]$WithPlaytestResults,
     [switch]$WithShareZip,
     [switch]$WithBuildHistory,
+    [string]$VerifiedPlayChat,
     [switch]$WithoutVulkan,
     [string]$AssetFixtures,
     [switch]$CodexAssetRead
@@ -36,6 +38,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 if ($CodexAssetRead -and !$AssetFixtures) { throw 'Supply -AssetFixtures for the Codex asset handoff check.' }
+if ($VerifiedPlayChat) { $WithPlaytestResults = $true }
 if ($WithoutVulkan -and ($WithExport -or $WithPlaytestResults -or $WithShareZip -or $WithBuildHistory)) {
     throw 'Run the no-driver check separately from export and hardware playback checks.'
 }
@@ -117,6 +120,7 @@ $report = [ordered]@{
     playtest_results_requested = [bool]$WithPlaytestResults
     share_zip_requested = [bool]$WithShareZip
     build_history_requested = [bool]$WithBuildHistory
+    verified_play_chat_requested = [bool]$VerifiedPlayChat
     vulkan_masked = [bool]$WithoutVulkan
     checks = [ordered]@{}
 }
@@ -311,7 +315,7 @@ function Exercise-CodexToolApproval($Project) {
     return $current
 }
 
-function Exercise-CodexQuestions($Project, $Peer) {
+function Open-CodexQuestionRound($Peer) {
     Select-AgentProvider 'Codex'
     $settings = Wait-For 'Connection settings' { Find-Control 'Connection settings' -Enabled }
     $expander = $settings.GetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern)
@@ -324,6 +328,10 @@ function Exercise-CodexQuestions($Project, $Peer) {
     $null = Wait-For 'the scripted question connection' { Find-Control 'Agent Send' -Enabled } 65
     Set-ControlText 'Agent prompt' 'Ask me about a game.'
     Invoke-Control 'Agent Send'
+    $null = Wait-For 'the first choice' { Find-ControlId 'agent-question-1-choice-1' }
+}
+
+function Answer-CodexQuestionRound {
     $first = Wait-For 'the first choice' { Find-ControlId 'agent-question-1-choice-1' }
     if (Find-Control 'Send answers' -Enabled) { throw 'An unanswered question card can be submitted.' }
     Select-QuestionChoice $first
@@ -337,6 +345,11 @@ function Exercise-CodexQuestions($Project, $Peer) {
         (Find-Control 'Agent Send' -Enabled) -and (Get-ControlText 'Agent transcript').Contains('QUESTIONS_ACCEPTED')
     }
     if (Find-ControlId 'agent-question-1-choice-1') { throw 'The answered card remained in the next turn.' }
+}
+
+function Exercise-CodexQuestions($Project, $Peer) {
+    Open-CodexQuestionRound $Peer
+    Answer-CodexQuestionRound
     $current = Inspect-Project
     if ($current.world_sha256 -cne $Project.world_sha256 -or $current.manifest_sha256 -cne $Project.manifest_sha256) {
         throw 'The question exchange changed the project.'
@@ -401,8 +414,9 @@ function Exercise-Acp($Project, $Provider, $Setting, $Executable, $Key) {
     $report.checks["${Key}_disconnected"] = $true
 }
 
-function Start-Launcher($Phase) {
-    $process = Start-Process -FilePath $exe -ArgumentList "--projects `"$projects`"" -WorkingDirectory $package -PassThru `
+function Start-Launcher($Phase, [string]$ProjectPath) {
+    $arguments = if ($ProjectPath) { "--creator `"$ProjectPath`"" } else { "--projects `"$projects`"" }
+    $process = Start-Process -FilePath $exe -ArgumentList $arguments -WorkingDirectory $package -PassThru `
         -RedirectStandardOutput (Join-Path $run "$Phase.stdout.txt") `
         -RedirectStandardError (Join-Path $run "$Phase.stderr.txt")
     $null = $process.Handle
@@ -748,6 +762,120 @@ function Export-PlaytestCandidate($Project, [bool]$Passed) {
     return $current
 }
 
+function Verified-PlayRpc($Method, $Params) {
+    $request = @{ jsonrpc = '2.0'; id = 1; method = $Method; params = $Params } | ConvertTo-Json -Depth 8 -Compress
+    $request | Add-Content -LiteralPath (Join-Path $run 'verified-play-requests.jsonl') -Encoding UTF8
+    $raw = $request | & $cli connect $endpoint --timeout-ms 2000
+    if ($LASTEXITCODE -ne 0) { throw "The native endpoint failed during $Method." }
+    $raw | Add-Content -LiteralPath (Join-Path $run 'verified-play-responses.jsonl') -Encoding UTF8
+    $reply = $raw | ConvertFrom-Json
+    if ($reply.error -or !$reply.result) { throw "$Method failed: $raw" }
+    return $reply.result
+}
+
+function Start-VerifiedPlayer($Version) {
+    $runtime = Join-Path (Split-Path -Parent $Version.game_manifest) 'runtime\bin\poima.exe'
+    Invoke-Control 'Play verified build'
+    $script:verifiedPlayer = Wait-For 'the selected standalone player window' {
+        Get-Process -Name poima -ErrorAction SilentlyContinue | Where-Object {
+            $_.Path -ieq $runtime -and $_.MainWindowHandle -ne [IntPtr]::Zero
+        } | Select-Object -First 1
+    } 45
+    $null = $verifiedPlayer.Handle
+    if ((Find-Control 'Play verified build' -Enabled) -or (Find-Control 'Play project' -Enabled)) {
+        throw 'A second interactive player was offered while verified playback was active.'
+    }
+    $null = Wait-For 'status for the running revision' {
+        $activity = Find-ControlId 'verified-play-status'
+        $activity -and $activity.Current.Name -ceq "Verified revision $($Version.revision) is running in a separate window."
+    }
+}
+
+function Close-VerifiedPlayer($Version, $Phase) {
+    if (![CreatorTestWindow]::PostMessage($verifiedPlayer.MainWindowHandle, 0x0010, [IntPtr]::Zero, [IntPtr]::Zero) -or
+        !$verifiedPlayer.WaitForExit(20000) -or $verifiedPlayer.ExitCode -ne 0) {
+        throw 'The selected standalone player failed to close normally.'
+    }
+    $stdout = Join-Path $run "$Phase.stdout.txt"
+    $deadline = [Diagnostics.Stopwatch]::StartNew()
+    while ($deadline.Elapsed.TotalSeconds -lt 15) {
+        foreach ($line in (Get-Content -LiteralPath $stdout -Encoding UTF8 | Where-Object { $_.StartsWith('{"event_type":"verified_play_closed"') })) {
+            $played = $line | ConvertFrom-Json
+            if ($played.bundle_sha256 -cne $Version.bundle_sha256) { continue }
+            if ($played.revision -ne $Version.revision -or $played.frames_presented -lt 1 -or
+                $played.tick -lt 1 -or $played.stop_reason -cne 'window_closed') {
+                throw 'The closed player did not report native presentation for the selected revision.'
+            }
+            return $played
+        }
+        Start-Sleep -Milliseconds 100
+    }
+    throw 'The closed player did not publish a playback receipt.'
+}
+
+function Exercise-VerifiedPlayChat($Project, $Passing) {
+    $old = $Passing.latest
+    Open-CodexQuestionRound $VerifiedPlayChat
+    if (!(Find-Control 'Agent Stop' -Enabled) -or (Find-Control 'Play project' -Enabled)) {
+        throw 'The test did not hold a turn with the editable preview unavailable.'
+    }
+    Start-VerifiedPlayer $old
+    $updated = Rename-ProjectCamera $Project 'Working on the next version'
+    $selectors = @{ profile = 'creator'; project = 'project.poimaproject' }
+    $suite = Verified-PlayRpc 'project.verification.read' $selectors
+    $job = Verified-PlayRpc 'development.candidate' ($selectors + @{
+        expected_suite_sha256 = $suite.sha256; request_id = [guid]::NewGuid().ToString('N')
+    })
+    $result = Wait-For 'the independent candidate verdict' {
+        $current = Verified-PlayRpc 'development.inspect' @{ job_id = $job.job_id; include_output = $false }
+        if ($current.state -notin @('queued', 'running')) { $current }
+    } 75
+    if ($result.state -cne 'succeeded' -or !$result.result.passed) { throw 'The background candidate did not pass.' }
+    $retained = Verified-PlayRpc 'project.candidate.retain' ($selectors + @{ job_id = $job.job_id })
+    $latest = Read-PlaytestHistory $Project.project_id
+    if ($latest.latest.bundle_sha256 -ceq $old.bundle_sha256 -or $latest.latest.revision -ne $updated.revision -or
+        $retained.bundle_sha256 -cne $latest.latest.bundle_sha256 -or $verifiedPlayer.HasExited -or
+        !(Find-ControlId 'agent-question-1-choice-1')) {
+        throw 'The original player, open chat turn or independently retained candidate changed unexpectedly.'
+    }
+    Answer-CodexQuestionRound
+    $null = Wait-For 'the new completed checks shown beside the old player' {
+        $work = Find-ControlId 'preview-status'
+        $work -and $work.Current.Name -match "^Revision $($updated.revision)\b" -and (Find-Control 'View playtest results' -Enabled)
+    } 40
+    Inspect-PlaytestDialog $latest $true
+    if ($verifiedPlayer.HasExited -or !(Find-Control 'Agent Send' -Enabled)) {
+        throw 'The old player or active conversation became unavailable during the refresh.'
+    }
+    $played = Close-VerifiedPlayer $old 'create'
+    $null = Wait-For 'the ready preview controls after natural player exit' { Find-Control 'Play project' -Enabled }
+    Invoke-Control 'Agent Disconnect'
+    $null = Wait-For 'retirement of the scripted conversation' { Find-Control 'Agent Connect' -Enabled }
+    $report.checks.verified_play_chat = [ordered]@{
+        old_player = $played; candidate_job_id = $job.job_id; newer_revision = $latest.latest.revision
+        newer_bundle_sha256 = $latest.latest.bundle_sha256; newer_report_sha256 = $latest.latest_check.report_sha256
+        question_answered_during_play = $true; new_result_opened_during_play = $true; second_player_unavailable = $true
+    }
+    return $updated
+}
+
+function Check-VerifiedPlayShutdown($Version) {
+    Start-VerifiedPlayer $Version
+    $handle = [IntPtr]$window.Current.NativeWindowHandle
+    if (![CreatorTestWindow]::PostMessage($handle, 0x0010, [IntPtr]::Zero, [IntPtr]::Zero)) {
+        throw 'Could not ask the creator to close.'
+    }
+    $null = Wait-For 'the pending creator close' {
+        Find-Control 'Close the verified game window to finish closing Poima.'
+    }
+    # An SDL window handle is available before Vulkan presents its first frame.
+    Start-Sleep -Seconds 1
+    if ($verifiedPlayer.HasExited) { throw 'Closing the creator unexpectedly stopped the game.' }
+    $played = Close-VerifiedPlayer $Version 'verified-close'
+    if (!$owner.WaitForExit(20000) -or $owner.ExitCode -ne 0) { throw 'The pending creator close did not finish normally.' }
+    $report.checks.verified_play_shutdown = [ordered]@{ player = $played; creator_exit = $owner.ExitCode }
+}
+
 function Reopen-PlaytestResults($Project, $FailedHistory) {
     $null = Wait-For 'the restored playtest result and verified play controls' {
         (Find-Control 'View playtest results' -Enabled) -and (Find-Control 'Play verified build' -Enabled)
@@ -1002,6 +1130,10 @@ try {
             $project = Edit-ProjectForExport $project 'Second verified viewpoint'
             $passing = Export-PlaytestCandidate $project $true
         }
+        if ($VerifiedPlayChat) {
+            $project = Exercise-VerifiedPlayChat $project $passing
+            $passing = Read-PlaytestHistory $project.project_id
+        }
         $project = Edit-ProjectForExport $project 'Playtested viewpoint'
         $failedHistory = Export-PlaytestCandidate $project $false
         if ($failedHistory.latest.bundle_sha256 -cne $passing.latest.bundle_sha256) {
@@ -1078,6 +1210,11 @@ try {
         }
         Close-Owner
         $report.checks.closed_during_play_exit_code = $owner.ExitCode
+    }
+    if ($VerifiedPlayChat) {
+        $owner = Start-Launcher 'verified-close' $manifest
+        $window = Wait-For 'the creator for the verified close check' { Find-Window "$name*Poima Creator" }
+        Check-VerifiedPlayShutdown $passing.latest
     }
     if ($WithExport) {
         Play-RelocatedExport $bundle

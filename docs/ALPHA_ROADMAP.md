@@ -83,6 +83,9 @@ The [0.0.317 asset library test](evidence/m2-creator-asset-library-317.json)
 reopens the project and adds the original model to a new draft by name. The
 editable checkpoint keeps the label, and the relocated game loads the same
 cooked model.
+The [0.0.318 concurrent playback test](evidence/m2-verified-play-chat-318.json)
+keeps a verified build running while chat accepts a reply and displays the
+checks for a newer retained build.
 The [Codex sign-in check](evidence/m2-creator-codex-sign-in-303.json) covers
 opening and cancelling sign-in with an isolated client and continuation after
 a scripted account confirmation. A real browser authorization is still needed.
