@@ -1,0 +1,97 @@
+{
+  "engine_version": "0.0.285",
+  "scope": "Recovered run of a small first-person puzzle authored from a blank project with the portable Windows x64 creator and an installed Claude Code ACP adapter. The harness supplied the approved brief, the C# project and API references, operated the compiler and attached its output. The agent authored the scene, UI definitions and gameplay source.",
+  "packaged_creator_sha256": "df6d63f6eb32ac21f60ce794abb9cc14234c4ce03007b55d4b2b468d4e722974",
+  "interview": {
+    "idea_and_brief_files_unchanged": true,
+    "initial_revision": 1,
+    "natural_close": true
+  },
+  "authoring": {
+    "classification": "recovered",
+    "authoritative_world_revision": 8,
+    "entities": 59,
+    "ui_elements": 2,
+    "gameplay_source_sha256": "559875c392982f836013eb9ac88201eeea96609c09ef56bf2574d4f16138dbf0",
+    "native_gameplay_sha256": "57d0e22908342c2e959e4f2dbaf4f7c4252a999720e9c3e256b13d6a206c03ec",
+    "world_sha256": "9c49fe3aac25a60cdcd5aeec26a801108e6b1ad3e6fa05630ac64d60cdce452d",
+    "failures": [
+      "The room and puzzle props committed before the first authoring turn reached its seven-minute harness deadline.",
+      "The continuation saved the HUD and C# source. The product retired the agent connection with the prompt outcome unknown before it displayed a completion. The harness deadline then expired."
+    ]
+  },
+  "publisher": {
+    "observation": "A normal Python import from an installed pack generated tools/__pycache__, and the strict pack inventory rejected it. The tested game used the original publisher with Python -B.",
+    "fix_verified": "Built a separate 17-resource authoring pack containing the publisher fix and published the same game source with a normal Python invocation. The validator admitted the pack again after publication.",
+    "fixed_pack_sha256": "08040d042ab5ddaa97eb1ff19d1042e2d0df0d3835dd66d6fcd9b1759aa9e3af"
+  },
+  "creator": {
+    "revision": 8,
+    "compiled_backend": "native_aot",
+    "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "validated_presented_tick": 1,
+    "renderer_validation_errors": 0,
+    "natural_close": true,
+    "exported_files": 60,
+    "original_project_path_unavailable": true
+  },
+  "independent_native_game_session": {
+    "assertion_groups": [
+      "initial",
+      "blocked_entry",
+      "blue_first_resets",
+      "gold_first",
+      "standing_does_not_retrigger",
+      "last_lit_pad_does_not_retrigger",
+      "blue_second",
+      "wrong_pad_clears_progress",
+      "gold_again",
+      "blue_again",
+      "red_completes_puzzle",
+      "open_entry",
+      "outside_win",
+      "final_message_stays",
+      "fresh_process_after_load",
+      "fresh_process_wins"
+    ],
+    "save_checkpoint_tick": 371,
+    "restore_checked_fields": [
+      "compiled state values",
+      "logical HUD text",
+      "player position",
+      "simulation tick"
+    ],
+    "fresh_process_exit_tick": 602,
+    "bundle_inventory_unchanged": true
+  },
+  "relocated_launcher": {
+    "backend": "native_aot",
+    "tick": 632,
+    "presented_frames": 633,
+    "size": [
+      800,
+      450
+    ],
+    "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "validation_errors": 0,
+    "exit_state": {
+      "CurrentPad": 0,
+      "DoorOpen": 1,
+      "Escaped": 1,
+      "HudShown": 1,
+      "LastLit": 3,
+      "LastWasReset": 0,
+      "Progress": 3,
+      "Resets": 2
+    },
+    "final_capture_sha256": "491c7caf87fc6558bbd241a0e09b6ad1e3af71b719dbfaae463947330be42f98",
+    "verified_bundle_files_after_play": 60
+  },
+  "remaining": [
+    "Creator-owned gameplay compilation and adoption",
+    "A full successful authoring turn reported in the workspace",
+    "Verification results tied to the build shown in the creator",
+    "Revision, working-build retention and restart-safe recovery through the creator UI",
+    "First-time creator qualification on a fresh setup"
+  ]
+}

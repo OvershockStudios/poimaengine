@@ -11,6 +11,15 @@ plays 12 ticks after the build is moved and the original project path is unavail
 The same preview also runs the bundled Native AOT Collection Room sample.
 [Results](evidence/m2-creator-export-285.json)
 
+A separate 0.0.285 trial used Claude Code in the creator to agree on a brief
+and author a first-person observatory puzzle from a blank project. The scene,
+HUD and C# files survived a lost chat connection. The harness compiled and
+attached gameplay with an external toolchain, then previewed and exported the
+game in the creator. Independent tests solved the relocated build, restored
+mid-puzzle progress in a fresh process and solved it again. The creator still
+needs integrated compilation, build verification and recovery controls.
+[Results](evidence/m2-creator-observatory-285.json)
+
 Version 0.0.284 adds [Claude Code](AGENT_CLIENTS.md#claude-code-in-poima) to the
 Windows agent picker. Claude Code and Antigravity read the same native world
 through one creator workspace and preserve its files. Codex reconnects in the

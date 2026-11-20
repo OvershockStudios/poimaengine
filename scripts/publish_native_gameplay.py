@@ -159,6 +159,8 @@ def main():
         raise ValueError('--authoring-sha256 requires --authoring-pack.')
     pack = None
     if args.authoring_pack is not None:
+        # Importing a validator from the pack must leave its exact inventory intact.
+        sys.dont_write_bytecode = True
         from authoring_pack import load_pack
         pack = load_pack(args.authoring_pack, expected_sha256=args.authoring_sha256)
     project = args.project.resolve(strict=True)
