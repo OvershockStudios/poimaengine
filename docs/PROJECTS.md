@@ -198,6 +198,10 @@ the native error code, attempt count and path/attribute diagnostics.
 
 The fallback exposes a directory while it is being populated; project/game readers reject it while `.poima-incomplete` exists. If publication fails or is interrupted, a partial **new** destination can remain. It is not reused automatically: inspect/remove it explicitly or retry into a different destination. No fallback uses an ordinary replacing rename to bypass an existing directory.
 
+On Windows, file validation uses extended paths for staged worlds, input
+profiles, and publication markers. Paths returned by project and game
+commands retain their ordinary absolute spelling.
+
 `game inspect` and `game run` verify the inventory and dependency closure. Missing, modified, extra or incorrectly classified files are errors. Put captures, reports, replay experiments and other added files outside the bundle. To change shipped content, edit the source project and build a fresh destination.
 
 ## Run or replay

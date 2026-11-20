@@ -1,0 +1,163 @@
+{
+  "version": "0.0.311",
+  "scope": "Windows x64 native export, input and creator qualification on the development laptop. The packaged creator runs under Windows UI Automation with installed tools and uses a 185-character retained history checkpoint.",
+  "release": {
+    "version": "0.0.311",
+    "tag": "v0.0.311",
+    "engine_files": 499,
+    "sample_manifest_sha256": "e5dd01f94ffa6e70eb7414d1f846c528b2a9ea20c1d99470a2ec875db367484c",
+    "assets": [
+      {
+        "name": "Poima-0.0.311-Windows-x64.zip",
+        "bytes": 141456318,
+        "sha256": "b2c492acfc4d563ffaa7b73eca17b707337ea4e7c18ce56915110444e4737244"
+      },
+      {
+        "name": "Poima-0.0.311-Windows-x64.manifest.json",
+        "bytes": 89315,
+        "sha256": "f938af1ee2193dd8006f1fbfb72a3a46ce47a97ac5dc0bda5f9a5520152e65dc"
+      },
+      {
+        "name": "Poima-Launcher-0.0.311-Windows-x64.zip",
+        "bytes": 46080471,
+        "sha256": "6f8aae36da200cecda65e2e069427ede36773809f9afe264f88a7ef5a7eb594d"
+      }
+    ]
+  },
+  "staged_bundle_regression": {
+    "parent_path_utf16_units": [
+      189,
+      205
+    ],
+    "0.0.310": [
+      {
+        "exit": 4,
+        "diagnostics": [
+          "Requested input profile does not exist."
+        ]
+      },
+      {
+        "exit": 4,
+        "diagnostics": [
+          "A read-only runtime world must be an existing regular file."
+        ]
+      }
+    ],
+    "input_only_intermediate": [
+      {
+        "exit": 0,
+        "diagnostics": []
+      },
+      {
+        "exit": 4,
+        "diagnostics": [
+          "A read-only runtime world must be an existing regular file."
+        ]
+      }
+    ],
+    "0.0.311": [
+      {
+        "exit": 0,
+        "diagnostics": []
+      },
+      {
+        "exit": 0,
+        "diagnostics": []
+      }
+    ]
+  },
+  "retained_checkpoint": {
+    "passed": true,
+    "checkpoint_source_files": 8,
+    "same_relative_checkpoint_path": true,
+    "ordinary_checkpoint_path_utf16_units": 185,
+    "source_profile_sha256": "7166d70f540be52b139c4f5e422611e54f0ebc8309b76904cb78b6417de66e52",
+    "world_sha256": "1539ba49088c8d6a38172139e51aa4a0b17188aac869c1a00bb07ea540ac29a4",
+    "binary_sha256": "9b2abb3a0904539f234ca6012b0b505d7e6cb3c0427d923864534d4c9294b4b6",
+    "bundle_sha256": "3762d6cffec9949712171e4bc1244bae0d0df17d1cb278ebf78ad10ad0256ea4",
+    "bundle_files": 52,
+    "published_atomically": true,
+    "verification_report_sha256": "7d064bbc600259fd60a733b2e77b210f63de617186f09a5fe41cef3622afeaac",
+    "history_skipped": 0
+  },
+  "long_input_profile": {
+    "passed": true,
+    "path_utf16_units": 285,
+    "first_revision": 1,
+    "second_revision": 2,
+    "prior_revision_bytes_preserved": true,
+    "read_only_unchanged": true,
+    "retry_unchanged": true,
+    "hardlink_rejected": true,
+    "remapped_movement": [
+      0.0,
+      1.0
+    ],
+    "raw_rpc_sha256": "6d9a34c6ca6246a0e9c3aa44a7a1de45f09a13c8e60a140e681dfb082d84515b"
+  },
+  "windows_project_contract": {
+    "tests": 17,
+    "skipped": 0,
+    "binary_sha256": "9b2abb3a0904539f234ca6012b0b505d7e6cb3c0427d923864534d4c9294b4b6",
+    "test_sha256": "708e1906ca9cfe54aaa3f0b069372e85593372601e92a3126119e664abe342b1",
+    "report_sha256": "cd7f4c9f3d8ca26a0ca3c03bd26ec4e9f3bf64fd480efbe8beef39d9d77cdd1f"
+  },
+  "windows_input_contract": {
+    "tests": 20,
+    "binary_sha256": "ea9fcfeef9973bc273f025a11a5954a8fcdf36ba36f71a27b95fd3283884706b",
+    "test_sha256": "e6870e87dc7fb5ce074e281af7aff935b8a5516a8a814c4b3f684d45dc05405e",
+    "report_sha256": "4adc118de954d1b597f4bec8164169afc016bb327730eff9d81f6ce7dff4cd1f"
+  },
+  "portable_installation": {
+    "installed_inventory_files": 499,
+    "install_staging_empty": true,
+    "portable_project_created": true,
+    "creator_editor_sha256": "46d330b40c6c7d09a5378e1841b7f772ce3d9fce2a347d76e73422fc980667df",
+    "default_launcher_settings_preserved": true,
+    "launcher_exit": 0,
+    "creator_exit": 0,
+    "report_sha256": "c6e83aa246c68d1049cd27bfa3ed0bcfe80cce2f7202ed1388ddb8a889af2c29"
+  },
+  "creator": {
+    "checks": [
+      "closed_during_play_exit_code",
+      "closed_exit_code",
+      "created",
+      "edit_before_export",
+      "export",
+      "export_disabled_during_preview",
+      "first_preview",
+      "playtest_results",
+      "relocated_export",
+      "relocated_zip",
+      "reopened_preview",
+      "share_zip",
+      "stopped"
+    ],
+    "report_sha256": "c5b366e570db724ac5d8993fac3b992c918517bc43c7bc65c35c4d37cb2249c6",
+    "standalone_frames": 13,
+    "shared_zip_frames": 13,
+    "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "nvrhi_errors": 0
+  },
+  "open_qualification": [
+    "public tagged installation",
+    "clean Windows setup",
+    "first-time human creator journey"
+  ],
+  "linux_headless": {
+    "project": {
+      "tests": 17,
+      "skipped": 3,
+      "binary_sha256": "d8ee807cb73fe018ea89c246f1c03afa8c1f51f768c0f0bc4ceb4cb85888ddb3",
+      "test_sha256": "708e1906ca9cfe54aaa3f0b069372e85593372601e92a3126119e664abe342b1",
+      "report_sha256": "ae28d3ff3a8a3f1c75f413b03ad4d17e21e1f89b7b164ee58e50a6e1db33d1e9"
+    },
+    "input": {
+      "tests": 20,
+      "binary_sha256": "d8ee807cb73fe018ea89c246f1c03afa8c1f51f768c0f0bc4ceb4cb85888ddb3",
+      "test_sha256": "e6870e87dc7fb5ce074e281af7aff935b8a5516a8a814c4b3f684d45dc05405e",
+      "report_sha256": "13774f23485073cfc3c1da05c13b6b5de0555c190f0463fb24e0a76add808bc8"
+    }
+  }
+}

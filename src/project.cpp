@@ -306,7 +306,7 @@ struct Project {
     Json gameplay_values=Json::object();
 };
 Project project(const std::string& filename,const std::optional<Json>& prospective=std::nullopt) {
-    Project p;p.manifest=fs::absolute(path_of(filename)).lexically_normal();regular(p.manifest);p.manifest=canonical_project_path(p.manifest);p.root=p.manifest.parent_path();require(fs::symlink_status(p.root/".poima-incomplete").type()==fs::file_type::not_found,"Project publication is incomplete; retry with a new destination.");
+    Project p;p.manifest=fs::absolute(path_of(filename)).lexically_normal();regular(p.manifest);p.manifest=canonical_project_path(p.manifest);p.root=p.manifest.parent_path();require(fs::symlink_status(project_io_path(p.root/".poima-incomplete")).type()==fs::file_type::not_found,"Project publication is incomplete; retry with a new destination.");
     p.manifest_bytes=read(p.manifest,65536);p.spec=prospective ? *prospective : parse(p.manifest_bytes);
     fields(p.spec,{"format","version","project_id","name","entry","input_profile","audio","gameplay"},{"format","version","project_id","name","entry"});
     const auto version=integer(p.spec.at("version"));
@@ -438,7 +438,7 @@ struct Inventory {
 };
 struct VerifiedGame { GameDefinition definition;Json spec;fs::path manifest; };
 VerifiedGame verify_game(const std::string& filename,std::string_view expected_version=build_metadata().version) {
-    VerifiedGame result;result.manifest=fs::absolute(path_of(filename)).lexically_normal();regular(result.manifest);result.manifest=canonical_project_path(result.manifest);require(result.manifest.filename()=="game.json","Game bundle manifest must be named game.json.");const auto root=result.manifest.parent_path();require(fs::symlink_status(root/".poima-incomplete").type()==fs::file_type::not_found,"Game publication is incomplete.");
+    VerifiedGame result;result.manifest=fs::absolute(path_of(filename)).lexically_normal();regular(result.manifest);result.manifest=canonical_project_path(result.manifest);require(result.manifest.filename()=="game.json","Game bundle manifest must be named game.json.");const auto root=result.manifest.parent_path();require(fs::symlink_status(project_io_path(root/".poima-incomplete")).type()==fs::file_type::not_found,"Game publication is incomplete.");
     const auto manifest_bytes=read(result.manifest,4*1024*1024);result.spec=parse(manifest_bytes);const auto& spec=result.spec;
     result.definition.manifest_sha256=hash(manifest_bytes);
     fields(spec,{"format","version","project_id","name","engine","entry","audio","input_profile","source","files","gameplay"},{"format","version","project_id","name","engine","entry","audio","source","files"});

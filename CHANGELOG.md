@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.311
+
+- Read staged worlds and their input profiles when Windows exports a game from a deep project history path.
+
 ## 0.0.310
 
 - Test Windows gameplay setup by compiling the starter and checking an input in the native engine.

@@ -34,6 +34,7 @@
 #include "poima/save_upgrade_document.hpp"
 #include "poima/save_upgrade_snapshot.hpp"
 #include "world_storage.hpp"
+#include "project_io_path.hpp"
 #include "profiler_service.hpp"
 #include "frame_performance_service.hpp"
 #include "development_service.hpp"
@@ -1421,15 +1422,27 @@ public:
         return result;
     }
     explicit World(const std::string& utf8_path,WorldOpenMode mode,const std::string& protected_root) :
-        path_(fs::weakly_canonical(fs::absolute(fs::path(std::u8string(utf8_path.begin(), utf8_path.end()))))),
+        path_(std::u8string(utf8_path.begin(), utf8_path.end())),
         read_only_(mode==WorldOpenMode::read_only_runtime) {
         require(mode==WorldOpenMode::authoring || mode==WorldOpenMode::read_only_runtime,"Unknown world open mode.");
-        if(read_only_)protected_root_=protected_root.empty() ? path_.parent_path() : fs::canonical(fs::path(std::u8string(protected_root.begin(),protected_root.end())));
-        if(read_only_)require(fs::is_directory(protected_root_) && save_inside(path_,protected_root_),"Protected bundle root must contain this world.");
-        if(read_only_)require(fs::is_regular_file(path_),"A read-only runtime world must be an existing regular file.");
-        else lock_=std::make_unique<WriterLock>(fs::path(path_).concat(".lock"));
-        exists_ = fs::exists(path_);
-        if (exists_) { disk_ = read(path_); doc_ = parse(disk_); validate(doc_);validate_animation_document(doc_); }
+        if(read_only_) {
+            using project_detail::canonical_project_path;
+            using project_detail::project_io_path;
+            require(fs::is_regular_file(project_io_path(path_)),"A read-only runtime world must be an existing regular file.");
+            path_=canonical_project_path(path_);
+            protected_root_=protected_root.empty() ? path_.parent_path() :
+                canonical_project_path(fs::path(std::u8string(protected_root.begin(),protected_root.end())));
+            require(fs::is_directory(project_io_path(protected_root_)) && save_inside(path_,protected_root_),
+                "Protected bundle root must contain this world.");
+            exists_=true;
+            disk_=read(project_io_path(path_));
+        } else {
+            path_=fs::weakly_canonical(fs::absolute(path_));
+            lock_=std::make_unique<WriterLock>(fs::path(path_).concat(".lock"));
+            exists_=fs::exists(path_);
+            if(exists_)disk_=read(path_);
+        }
+        if (exists_) { doc_ = parse(disk_); validate(doc_);validate_animation_document(doc_); }
         else doc_ = {{"format", "poima.authored-world"}, {"version", 1}, {"world_id", new_id()},
                      {"revision", 0}, {"entities", Json::object()}, {"retired_ids", Json::array()}, {"receipts", Json::array()}};
         presentation_shapes_=next_presentation_shapes(doc_,presentation_incarnation_cursor_);

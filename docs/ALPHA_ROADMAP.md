@@ -60,6 +60,9 @@ The [0.0.310 build setup test](evidence/m2-windows-first-build-310.json)
 starts the packaged creator with an empty .NET package directory, compiles
 the starter and checks input through its Native AOT module. A second build
 is cancelled while its publisher is active, and the creator retries successfully.
+The [0.0.311 deep export test](evidence/m2-windows-deep-export-311.json)
+verifies the previously failing history checkpoint and runs the packaged
+creator's recovery and relocated export and ZIP playback from the same depth.
 The [Codex sign-in check](evidence/m2-creator-codex-sign-in-303.json) covers
 opening and cancelling sign-in with an isolated client and continuation after
 a scripted account confirmation. A real browser authorization is still needed.

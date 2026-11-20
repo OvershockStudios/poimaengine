@@ -227,7 +227,7 @@ class ProjectContract(unittest.TestCase):
         self.assertEqual(tree(self.project), before)
         self.assertFalse(destination.exists(), 'Failed preflight published a partial game bundle.')
 
-    def test_legacy_runtime_descriptor_remains_usable_without_gameplay(self):
+    def metadata_runtime(self):
         # Metadata-only runtime, never executed: this checks the no-gameplay
         # compatibility branch independently of a developer's installed build.
         runtime = self.root/'Legacy runtime'
@@ -242,6 +242,10 @@ class ProjectContract(unittest.TestCase):
         spec = dict(format='poima.runtime', version=1, engine_version=self.run_cli('version')['version'],
                     target_os=target, target_arch='x86_64', executable=executable,
                     features=dict(simulation=True, renderer=True, audio=False, managed=False, editor=False))
+        return runtime, spec
+
+    def test_legacy_runtime_descriptor_remains_usable_without_gameplay(self):
+        runtime, spec = self.metadata_runtime()
         source = tree(self.project)
         for abi in (None, 3):
             if abi is not None: spec['gameplay_services_version'] = abi
@@ -252,6 +256,32 @@ class ProjectContract(unittest.TestCase):
             self.run_cli('game', 'inspect', native(bundle/'game.json'))
             self.assertEqual(tree(runtime), original)
         self.assertEqual(tree(self.project), source)
+
+    @unittest.skipUnless(args.windows_interop or os.name == 'nt', 'Reproduces the Windows staging path limit.')
+    def test_windows_export_reads_world_and_profile_in_deep_staging_paths(self):
+        runtime, spec = self.metadata_runtime()
+        (runtime/'runtime.json').write_text(json.dumps(spec), encoding='utf-8')
+        length = len(native(self.root).encode('utf-16-le')) // 2
+        before = tree(self.project)
+        relative_profile = 'content/default.poima-input.json'
+        # The stage adds a 45-character directory to this parent. At the
+        # first depth the input profile exceeds MAX_PATH, followed by the
+        # shorter world filename at the second depth.
+        for parent_length in (189, 205):
+            with self.subTest(parent_length=parent_length):
+                parent = self.root/('p' * (parent_length - length - 1))
+                parent.mkdir(exist_ok=True)
+                destination = parent/'game'
+                self.run_cli('project', 'build', native(self.manifest), '--runtime', native(runtime),
+                             '--output', native(destination))
+                bundle = tree(destination)
+                self.assertEqual(bundle[relative_profile], before[self.document['input_profile']])
+                manifest = native(destination/'game.json')
+                inspected = self.run_cli('game', 'inspect', manifest)
+                self.assertEqual(inspected['manifest'].replace('\\', '/'), manifest.replace('\\', '/'))
+                self.assertEqual(inspected['input_profile'], relative_profile)
+                self.assertEqual(tree(destination), bundle, 'Reading the bundle changed its files.')
+        self.assertEqual(tree(self.project), before, 'Export changed the source project.')
 
     def test_authored_ui_requires_explicit_runtime_capability(self):
         runtime = self.root/'UI metadata runtime'

@@ -1,8 +1,15 @@
 # Implementation status
 
-Updated 2026-11-20 for **0.0.310**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-20 for **0.0.311**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.311 fixes [verified Windows exports from deep project histories](PROJECTS.md#publication-and-immutability).
+The native check exports the previously failing checkpoint, verifies its
+gameplay, and reads it back as the latest passing build. The source and
+bundled input profile retain their original bytes. The packaged creator
+passes playtest recovery, standalone export, and shared ZIP playback from
+the deep fixture on the development laptop. [Results](evidence/m2-windows-deep-export-311.json)
 
 Version 0.0.310 lets the Windows creator [test its gameplay build tools](WINDOWS_PREVIEW.md#build-c-gameplay).
 It compiles a temporary starter to Native AOT, loads the verified artifact,

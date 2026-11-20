@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "input_profile_store.hpp"
+#include "project_io_path.hpp"
 #include "world_storage.hpp"
 #include "asset_store.hpp"
 #include <algorithm>
@@ -252,14 +253,16 @@ Json describe() {
         {"conversion_policy","Existing files cannot change format through transact. Inspect the old profile, explicitly construct a complete target-format profile and transact to a new destination path. The original file and receipts remain intact; there is no automatic migration."},
         {"persistence",{{"filename_suffix",".poima-input.json"},{"max_bytes",max_bytes},{"max_receipts",max_receipts},{"backup_suffix",".previous"},{"automatic_recovery",false}}}};
 }
-Json inspect(const fs::path& path) {
+Json inspect(const fs::path& logical_path) {
     return storage_errors([&]() -> Json {
+        const auto path=project_detail::project_io_path(logical_path);
         guard_paths(path);if(!regular_or_missing(path))return summary(read_document(path));
         world_detail::WriterLock lock(sidecar(path,".lock"));guard_paths(path,true);return summary(read_document(path));
     });
 }
-Loaded load(const fs::path& path) {
+Loaded load(const fs::path& logical_path) {
     return storage_errors([&]() -> Loaded {
+        const auto path=project_detail::project_io_path(logical_path);
         guard_paths(path);require(regular_or_missing(path),"Requested input profile does not exist.",-32070);
         world_detail::WriterLock lock(sidecar(path,".lock"));guard_paths(path,true);const auto doc=read_document(path);
         require(doc.persisted,"Requested input profile disappeared.",-32070);
@@ -268,18 +271,23 @@ Loaded load(const fs::path& path) {
 }
 // Packaged settings are immutable inputs. Validate the same file and format
 // contracts without creating or opening any writer-lock sidecar.
-Loaded load_read_only(const fs::path& path) {
+Loaded load_read_only(const fs::path& logical_path) {
     return storage_errors([&]() -> Loaded {
+        const auto path=project_detail::project_io_path(logical_path);
         guard_paths(path);const auto doc=read_document(path);
         require(doc.persisted,"Requested input profile does not exist.",-32070);
         return {parse_profile(doc.value.at("profile")),revision(doc.value.at("revision")),profile_hash(doc.value.at("profile")),doc.value.at("format").get<std::string>()};
     });
 }
-Json inspect_read_only(const fs::path& path) {
-    return storage_errors([&]() -> Json { guard_paths(path);return summary(read_document(path)); });
-}
-Json transact(const fs::path& path,const Json& source) {
+Json inspect_read_only(const fs::path& logical_path) {
     return storage_errors([&]() -> Json {
+        const auto path=project_detail::project_io_path(logical_path);
+        guard_paths(path);return summary(read_document(path));
+    });
+}
+Json transact(const fs::path& logical_path,const Json& source) {
+    return storage_errors([&]() -> Json {
+        const auto path=project_detail::project_io_path(logical_path);
         const auto params=normalized_params(source);guard_paths(path);
         if(params.at("preview").get<bool>()) {
             const auto doc=read_document(path);bool replayed=false;auto result=prepare_transaction(doc,params,replayed);unchanged(path,doc);return result;
