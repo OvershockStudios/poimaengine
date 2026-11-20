@@ -1,8 +1,14 @@
 # Implementation status
 
-Updated 2026-11-20 for **0.0.323**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-20 for **0.0.324**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.324 lets an agent [read a bundled guide by heading](CREATOR_GAMEPLAY.md).
+A replay without cached line numbers retrieved four sections in four calls
+instead of eight. The returned Markdown and guide hashes match.
+A Codex CLI probe retrieved two sections after approval for the shared
+dispatcher. [Results](evidence/m2-guide-sections-324.json)
 
 Version 0.0.323 preserves the [creator's draft while enabling gameplay builds](WINDOWS_PREVIEW.md#build-c-gameplay).
 In the packaged Windows test, a failed compiler check leaves the draft

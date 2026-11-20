@@ -49,11 +49,9 @@ internal static class WindowsGameplayTools
 
             var projectFile = Path.GetFileName(project.Manifest);
             var context = $$"""
-                Poima configured profile `{{ProfileName}}` for manifest `{{projectFile}}`. Use Poima's MCP tools for the project.
-                Read the matching gameplay guide with `poima_call`, method `world.reference` and params `{"guide":"creator-gameplay","line":1}`.
-                Use the same call for `game-verification`, `managed-gameplay` and `game-ui`. The guide names alone give heading indexes.
-                After brief approval, inspect the world and the starter C# file, then use the guide's guarded scene, source and verification operations.
-                Use the configured profile to publish and adopt C#, run the game's checks and retain a passing candidate for Play.
+                Poima configured profile `{{ProfileName}}` for `{{projectFile}}`. Agree on the game brief before editing.
+                For build work, use `poima_call` → `world.reference` with guide `creator-gameplay` and the section that matches the task: `Write compiled C# gameplay`, `Publish and attach`, or `Check the playable build`.
+                Inspect the world and starter source before editing. Use the profile to publish, run checks, and retain a passing build for Play. A guide name alone lists its headings.
                 """;
             return options with { InstalledDevelopmentProfiles = profilePath, GameplayToolStatus = tools.Summary, GameplayToolContext = context };
         }

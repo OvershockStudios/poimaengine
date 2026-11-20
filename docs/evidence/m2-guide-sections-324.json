@@ -1,0 +1,145 @@
+{
+  "engine_version": "0.0.324",
+  "discovery_schema_revision": 171,
+  "measurement": {
+    "comparison": "Start without cached line numbers. For each section, compare reading the guide's heading index and its exact line range with reading the same text directly by heading.",
+    "wire_bytes": "Complete UTF-8 JSON-RPC response lines, including MCP's text copy, structured result and line ending.",
+    "mcp_text_bytes": "Decoded UTF-8 bytes of the text content item in each successful tool response.",
+    "linux_standalone": {
+      "sections": [
+        {
+          "guide": "creator-gameplay",
+          "section": "Publish and attach",
+          "markdown_bytes": 1535,
+          "legacy_wire_bytes": 4942,
+          "section_wire_bytes": 3978,
+          "legacy_mcp_text_bytes": 2273,
+          "section_mcp_text_bytes": 1872
+        },
+        {
+          "guide": "game-verification",
+          "section": "Write a suite",
+          "markdown_bytes": 2956,
+          "legacy_wire_bytes": 7903,
+          "section_wire_bytes": 6983,
+          "legacy_mcp_text_bytes": 3716,
+          "section_mcp_text_bytes": 3337
+        },
+        {
+          "guide": "managed-gameplay",
+          "section": "Read named gameplay input",
+          "markdown_bytes": 462,
+          "legacy_wire_bytes": 5420,
+          "section_wire_bytes": 1644,
+          "legacy_mcp_text_bytes": 2466,
+          "section_mcp_text_bytes": 747
+        },
+        {
+          "guide": "game-ui",
+          "section": "Compiled control callbacks",
+          "markdown_bytes": 5545,
+          "legacy_wire_bytes": 13724,
+          "section_wire_bytes": 11954,
+          "legacy_mcp_text_bytes": 6645,
+          "section_mcp_text_bytes": 5873
+        }
+      ],
+      "totals": {
+        "legacy_wire_bytes": 31989,
+        "section_wire_bytes": 24559,
+        "legacy_mcp_text_bytes": 15100,
+        "section_mcp_text_bytes": 11829
+      },
+      "legacy_calls": 8,
+      "section_calls": 4,
+      "same_markdown_and_guide_digest": true,
+      "world_and_history_unchanged": true,
+      "desktop_owner": false,
+      "schema_revision": 171
+    },
+    "windows_desktop_owner": {
+      "sections": [
+        {
+          "guide": "creator-gameplay",
+          "section": "Publish and attach",
+          "markdown_bytes": 1535,
+          "legacy_wire_bytes": 4942,
+          "section_wire_bytes": 3978,
+          "legacy_mcp_text_bytes": 2273,
+          "section_mcp_text_bytes": 1872
+        },
+        {
+          "guide": "game-verification",
+          "section": "Write a suite",
+          "markdown_bytes": 2956,
+          "legacy_wire_bytes": 7903,
+          "section_wire_bytes": 6983,
+          "legacy_mcp_text_bytes": 3716,
+          "section_mcp_text_bytes": 3337
+        },
+        {
+          "guide": "managed-gameplay",
+          "section": "Read named gameplay input",
+          "markdown_bytes": 462,
+          "legacy_wire_bytes": 5420,
+          "section_wire_bytes": 1644,
+          "legacy_mcp_text_bytes": 2466,
+          "section_mcp_text_bytes": 747
+        },
+        {
+          "guide": "game-ui",
+          "section": "Compiled control callbacks",
+          "markdown_bytes": 5545,
+          "legacy_wire_bytes": 13724,
+          "section_wire_bytes": 11954,
+          "legacy_mcp_text_bytes": 6645,
+          "section_mcp_text_bytes": 5873
+        }
+      ],
+      "totals": {
+        "legacy_wire_bytes": 31989,
+        "section_wire_bytes": 24559,
+        "legacy_mcp_text_bytes": 15100,
+        "section_mcp_text_bytes": 11829
+      },
+      "legacy_calls": 8,
+      "section_calls": 4,
+      "same_markdown_and_guide_digest": true,
+      "world_and_history_unchanged": true,
+      "desktop_owner": true,
+      "schema_revision": 171
+    }
+  },
+  "qualification": {
+    "linux_ctest_passed": [
+      "authoring_api_compatibility",
+      "authoring_api_projection",
+      "world_session_native",
+      "mcp_native",
+      "mcp_contract",
+      "world_ui_contract",
+      "mutation-discovery-native",
+      "asset_references_contract"
+    ],
+    "compiled_authoring_core_v1_request_projection_matches_frozen_baseline": true,
+    "codex_cli": {
+      "client_version": "0.170.0",
+      "model": "gpt-6.1-terra",
+      "scope": "Short document retrieval in a disposable Linux world with a read-only filesystem sandbox.",
+      "first_attempt": "Two tool calls rejected by the shared dispatcher's approval policy.",
+      "with_per_process_tool_approval": "Both requested sections returned with guide hashes equal to the bundled documents. Codex reported development.publish and poima.game-verification version 1.",
+      "section_calls": 2
+    },
+    "windows": {
+      "desktop_owner_transport": "Native Windows desktop bridge via local IPC and MCP stdio.",
+      "cli_mcp_contract_tests_passed": 14,
+      "managed_creator_win_x64_build_succeeded": true
+    }
+  },
+  "limitations": [
+    "This replays fixed document reads. A caller with existing line numbers can read each section in one call via the line pager.",
+    "MCP payload size does not measure model token usage or complete creator-task latency.",
+    "The provider probe requested the exact headings and did not run the full creator journey.",
+    "This checkpoint compiled the Windows creator and exercised its native service. It did not package or repeat the full Windows creator journey."
+  ]
+}

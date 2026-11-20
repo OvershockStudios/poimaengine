@@ -9,11 +9,19 @@ For a scene edit, select the operations and component types you need through
 schema revision. Inspect the current world and use revision guards for scene edits.
 Keep the player's controls and authored entity IDs available for replay tests.
 
-Read these guides from `poima_call` with `method: "world.reference"`.
-Use `{"guide":"creator-gameplay","line":1}` for this guide, or call with
-an empty parameter object to list the references. A guide name by itself
-lists headings with their starting lines. Set `line` to read up to 8192
-UTF-8 bytes of complete lines, and use `next_line` for the following page.
+Read the section that matches the current task from `poima_call` using
+`method: "world.reference"` and the guide name and exact heading title:
+
+```json
+{"guide":"creator-gameplay","section":"Write compiled C# gameplay"}
+```
+
+For publication or verification, select **Publish and attach** or **Check the
+playable build**. Fetch specialist material as needed. For example, select
+**Write a suite** in `game-verification` when adding checks. A guide name
+alone lists its headings, and empty parameters list the bundled guides.
+Keep the same guide and section when passing `next_line` as the next
+`line`. Each page contains at most 8192 UTF-8 bytes of complete lines.
 The text and SHA-256 come from the running engine build.
 
 ## Write compiled C# gameplay

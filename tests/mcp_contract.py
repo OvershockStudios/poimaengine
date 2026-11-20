@@ -432,6 +432,7 @@ class McpContract(unittest.TestCase):
         expected = {'creator-gameplay': 'CREATOR_GAMEPLAY.md', 'managed-gameplay': 'MANAGED_GAMEPLAY.md',
                     'game-ui': 'GAME_UI.md', 'game-verification': 'GAME_VERIFICATION.md'}
         self.assertEqual(set(discovery['methods'][method]['properties']['guide']['enum']), set(expected))
+        self.assertIn('section', discovery['methods'][method]['properties'])
         self.assertEqual({guide['guide'] for guide in catalog['guides']}, set(expected))
         for guide in catalog['guides']:
             key = guide['guide']
@@ -459,9 +460,49 @@ class McpContract(unittest.TestCase):
                     pages.append(payload)
                     line = page['next_line']
                 self.assertEqual(b''.join(pages), data)
+        sections = (
+            ('creator-gameplay', '## Publish and attach', '## Check the playable build', 5),
+            ('managed-gameplay', '## Control two-bone IK from C#', '## Control planar root motion from C#', 17),
+            ('game-verification', '## Write a suite', '## Run and inspect', 180),
+            ('game-ui', '# Native game UI foundation', None, 180),
+        )
+        for key, heading, end_heading, page_lines in sections:
+            with self.subTest(guide=key, section=heading):
+                data = (examples / expected[key]).read_bytes()
+                lines = data.splitlines(keepends=True)
+                start = next(i for i, line in enumerate(lines, 1) if line.rstrip() == heading.encode())
+                end = (next(i for i, line in enumerate(lines, 1) if line.rstrip() == end_heading.encode()) - 1
+                       if end_heading else len(lines))
+                title = heading.split(' ', 1)[1]
+                selector = {'guide': key, 'section': title, 'lines': page_lines}
+                line = start
+                content = bytearray()
+                while line is not None:
+                    page = client.world(method, selector)
+                    self.assertEqual(page['section'], title)
+                    self.assertEqual(page['section_start_line'], start)
+                    self.assertEqual(page['section_end_line'], end)
+                    self.assertEqual(page['sha256'], hashlib.sha256(data).hexdigest())
+                    self.assertEqual(page['engine_version'], catalog['engine_version'])
+                    self.assertEqual(page['line'], line)
+                    payload = page['text'].encode('utf-8')
+                    self.assertTrue(0 < len(payload) <= catalog['page_bytes'])
+                    self.assertTrue(0 < page['line_count'] <= page_lines)
+                    following = line + page['line_count']
+                    self.assertEqual(page['next_line'], following if following <= end else None)
+                    content.extend(payload)
+                    line = page['next_line']
+                    selector['line'] = line
+                self.assertEqual(bytes(content), b''.join(lines[start-1:end]))
+                for invalid_line in (True, start-1, end+1):
+                    client.world(method, {**selector, 'line': invalid_line}, error=-32602)
         for invalid in ({'guide': '../authoring.json'}, {'path': 'reference'}, {'line': 1},
                         {'guide': 'game-ui', 'lines': 1}, {'guide': 'game-ui', 'line': True},
-                        {'guide': 'game-ui', 'line': 9999}, {'guide': 'game-ui', 'line': 1, 'lines': 181}):
+                        {'guide': 'game-ui', 'line': 9999}, {'guide': 'game-ui', 'line': 1, 'lines': 181},
+                        {'section': 'Publish and attach'}, {'guide': 'creator-gameplay', 'section': ''},
+                        {'guide': 'creator-gameplay', 'section': True}, {'guide': 'creator-gameplay', 'section': 'é' * 65},
+                        {'guide': 'creator-gameplay', 'section': 'publish and attach'},
+                        {'guide': 'creator-gameplay', 'section': 'Publish and attach', 'lines': 181}):
             with self.subTest(params=invalid):
                 client.world(method, invalid, error=-32602)
         self.assertEqual(client.world('world.inspect'), before)

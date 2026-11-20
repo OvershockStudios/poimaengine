@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.324
+
+- Read a single bundled gameplay guide section by its heading. Creator agents start with the section for their current task.
+
 ## 0.0.323
 
 - Keep the creator's unsent prompt, reference images, and agent selection when enabling gameplay builds in an open project.

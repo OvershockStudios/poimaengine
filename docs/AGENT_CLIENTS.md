@@ -220,10 +220,19 @@ scripted peer and checks both the native reply and the desktop controls.
 [Qualification](evidence/m2-creator-questions-300.json)
 
 For gameplay authoring, use `poima_call` with `world.reference` to read
-the reference text bundled in the running build. List the guides with empty
-parameters, pass a `guide` to see its headings, and pass the heading's line
-number to read that page. The reply includes the exact guide hash and
-continuation line. [Creator gameplay guide](CREATOR_GAMEPLAY.md)
+the reference text bundled in the running build. List guides with empty
+parameters or pass a `guide` to see its headings. For a focused read, pass
+the exact heading title as `section`. The section includes its subheadings
+and ends before the next heading at the same or higher level. Titles are
+case-sensitive and contain 1–128 UTF-8 bytes. If the same title appears
+twice, use the index and explicit line ranges.
+
+Replies identify the exact guide hash and, for a section, its inclusive
+line range. Keep `guide` and `section` when passing `next_line` as `line`
+to continue a section. `next_line: null` marks the end. Use only `guide`
+and `line` for arbitrary pages. An optional `lines` limits the page to
+1–180 lines, with a default of 120. Both paths cap text at 8192 UTF-8
+bytes of complete lines. [Creator gameplay guide](CREATOR_GAMEPLAY.md)
 
 A Linux integration check with Codex CLI 0.160.1 discovered both Poima tools, completed one short text turn, restarted the app-server process, resumed the same thread and retrieved the exact saved assistant response. Streaming notifications were received. The development desktop integration below separately qualifies one Windows chat edit. Approval-card interaction, interrupt completion and Claude's persistent adapter remain unqualified or unfinished. The interrupt response alone does not establish that a turn finished or an engine edit was undone.
 
