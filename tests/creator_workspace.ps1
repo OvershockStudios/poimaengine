@@ -557,6 +557,34 @@ function Exercise-CodexImportedAsset($Project) {
     $null = Wait-For 'the closed asset handoff connection' { Find-Control 'Agent Connect' -Enabled }
 }
 
+function Check-ReopenedAssetLibrary {
+    $creatorHandle = [IntPtr]$window.Current.NativeWindowHandle
+    Invoke-Control ('Import assets' + [char]0x2026)
+    $dialog = [IntPtr](Wait-For 'the reopened asset window' {
+        $handle = [CreatorTestWindow]::FindDialog($creatorHandle, 'Import assets')
+        if ($handle -ne [IntPtr]::Zero) { $handle }
+    })
+    & {
+        $window = [Windows.Automation.AutomationElement]::FromHandle($dialog)
+        $row = Wait-For 'the retained model name' { Find-Control 'Station fixture.glb (3D model)' -Enabled }
+        $row.GetCurrentPattern([Windows.Automation.SelectionItemPattern]::Pattern).Select()
+        Invoke-Control 'Add to chat draft'
+    }
+    $id = $report.checks.asset_import.assets.model.id
+    $null = Wait-For 'the retained model in the reopened draft' {
+        (Get-ControlText 'Agent prompt').Contains($id)
+    }
+    $report.checks.asset_import.reopened_library_preserved_name_and_id = $true
+    $checkpoint = Join-Path $run 'Asset Checkpoint'
+    $captured = & $cli project checkpoint $manifest --output $checkpoint | ConvertFrom-Json
+    if ($LASTEXITCODE -ne 0 -or $captured.status -cne 'ok') { throw 'The labeled project could not be captured.' }
+    $modelLabel = Join-Path $checkpoint "source\world.json.assets\$id.pmodel.label"
+    if ((Get-Content -LiteralPath $modelLabel -Raw -Encoding UTF8 | ConvertFrom-Json) -cne 'Station fixture.glb') {
+        throw 'The editable checkpoint lost the imported model label.'
+    }
+    $report.checks.asset_import.checkpoint_preserved_name = $true
+}
+
 function Play-Preview($Revision) {
     Invoke-Control 'Play project'
     $state = Wait-For 'a presented Game frame' {
@@ -1015,6 +1043,7 @@ try {
     if ($reopened.project_id -ne $project.project_id -or $reopened.revision -ne $project.revision) {
         throw 'Project identity or authoring revision changed after reopen.'
     }
+    if ($AssetFixtures) { Check-ReopenedAssetLibrary }
     if ($WithPlaytestResults -or $WithShareZip -or $WithBuildHistory) {
         $report.checks.playtest_results = Reopen-PlaytestResults $reopened $failedHistory
     }
@@ -1060,6 +1089,7 @@ try {
             if ($file.Count -ne 1 -or (Get-FileHash -LiteralPath (Join-Path $relocated $file[0].path)).Hash.ToLowerInvariant() -cne $id) {
                 throw 'The relocated game is missing the exact imported model.'
             }
+            if ($game.files | Where-Object { $_.path.EndsWith('.label') }) { throw 'The runtime bundle includes an authoring label.' }
             $report.checks.asset_import.relocated_model_verified = $true
         }
     }

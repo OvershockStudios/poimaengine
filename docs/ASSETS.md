@@ -18,6 +18,32 @@ models. The Console reports image and audio asset IDs.
 [Creator import](WINDOWS_PREVIEW.md#import-assets)
 [Desktop controls](DESKTOP_EDITOR.md#current-authoring-controls)
 
+### Browse cooked assets
+
+Call `asset.catalog` to list models, images and audio available in the
+world's store, including assets that are unused by the scene. An optional
+`kind` selects `model`, `image` or `audio`. Pass `limit` from 1 to 64. The
+default is 64. To continue, supply `next_after` from the previous response as
+`after` with the same kind filter. A null cursor ends the list.
+
+```json
+{"jsonrpc":"2.0","id":1,"method":"asset.catalog","params":{"kind":"model","limit":16}}
+```
+
+The order is the cooked filename, including its extension. The command scans
+directory entries and reads optional labels for the returned page. Use the
+corresponding inspect command below to verify package bytes before placing or
+assigning an asset. Refresh the first page to see imports that sort before
+your current cursor.
+
+The creator remembers the first display name for each new import using
+`asset.label` with `asset`, `kind` and `label`. Labels are 1–1,024 UTF-8 bytes
+without path separators or ASCII control characters. They live beside the
+cooked package. Repeat calls return the existing name, and a missing or
+unusable label appears as null in the catalog. Names travel with editable
+project checkpoints. Scene revisions and cooked identities are independent
+of labels. Runtime bundles select content by actual scene dependencies.
+
 The native world service also accepts the following source files on Windows
 and Linux. You can send these requests yourself or use them from a connected
 agent. Relative paths are resolved from the world file's directory.

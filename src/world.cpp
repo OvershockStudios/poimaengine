@@ -40,6 +40,7 @@
 #include "development_service.hpp"
 #include "poima/development_profiles.hpp"
 #include "asset_store.hpp"
+#include "asset_catalog.hpp"
 #include "asset_provenance.hpp"
 #include "input_profile_store.hpp"
 #include "player_settings_store.hpp"
@@ -1207,7 +1208,7 @@ void validate(const Json& doc) {
     }
 }
 
-constexpr std::array authoring_methods{"component.schema.import","world.reference","world.transact","world.undo","world.redo","asset.import","asset.image.import","asset.audio.import","input.transact","settings.transact","development.compile","development.profiles","development.publish","development.export","development.verify","development.candidate","project.candidate.retain","development.jobs","development.inspect","development.diagnostics","development.cancel","development.forget","project.inspect","project.gameplay.adopt","project.source.read","project.source.write","project.verification.read","project.verification.write","asset.material.generate","asset.material.job","asset.material.jobs","asset.material.cancel","asset.material.forget","world.navigation.bake","asset.provenance.create","asset.animation.author","asset.mesh.extract_rigid"};
+constexpr std::array authoring_methods{"component.schema.import","world.reference","world.transact","world.undo","world.redo","asset.import","asset.image.import","asset.audio.import","asset.label","input.transact","settings.transact","development.compile","development.profiles","development.publish","development.export","development.verify","development.candidate","project.candidate.retain","development.jobs","development.inspect","development.diagnostics","development.cancel","development.forget","project.inspect","project.gameplay.adopt","project.source.read","project.source.write","project.verification.read","project.verification.write","asset.material.generate","asset.material.job","asset.material.jobs","asset.material.cancel","asset.material.forget","world.navigation.bake","asset.provenance.create","asset.animation.author","asset.mesh.extract_rigid"};
 class World {
     profiling::Service profiler_;
     frame_performance::Service performance_;
@@ -1751,6 +1752,7 @@ public:
         // This authored metadata read deliberately bypasses cache pruning and
         // every package/snapshot resolver. Other dispatch behavior is unchanged.
         if(method=="world.asset.references")return asset_reference_dispatch(params);
+        if(method=="asset.catalog")return asset_dispatch(method,params);
         if(method=="world.reference") {
             try { return authoring_reference::read(params); }
             catch(const std::invalid_argument& error) { throw Error(-32602,error.what()); }
@@ -2548,6 +2550,35 @@ public:
     }
 #include "world_rigid_mesh.inc"
     Json asset_dispatch(const std::string& method,const Json& params) const {
+        if(method=="asset.catalog" || method=="asset.label") {
+            const bool label=method=="asset.label";
+            if(label)fields(params,{"asset","kind","label"},{"asset","kind","label"});
+            else fields(params,{"kind","after","limit"});
+            const asset_catalog::Kind* kind=nullptr;
+            if(params.contains("kind")) {
+                require(params.at("kind").is_string(),"Asset catalog kind must be a string.");
+                kind=asset_catalog::kind_named(params.at("kind").get_ref<const std::string&>());
+                require(kind,"Choose model, image or audio.");
+            }
+            if(label) {
+                require(params.at("asset").is_string() && valid_asset_id(params.at("asset").get_ref<const std::string&>()),"Invalid asset ID.");
+                require(params.at("label").is_string() && asset_catalog::valid_label(params.at("label").get_ref<const std::string&>()),
+                    "Asset label must be 1..1024 UTF-8 bytes without path separators or control characters.");
+                try { return asset_catalog::remember(asset_directory(),params.at("asset"),*kind,params.at("label")); }
+                catch(const std::exception& error) { throw Error(-32050,asset_diagnostic(error.what())); }
+            }
+            const auto limit=params.contains("limit") ? revision(params.at("limit")) : 64;
+            require(limit>=1 && limit<=64,"Asset catalog page limit must be 1..64.");
+            std::string after;
+            if(params.contains("after")) {
+                require(params.at("after").is_string(),"Asset catalog cursor must be a string.");
+                after=params.at("after");
+                const auto* cursor_kind=asset_catalog::package_kind(after);
+                require(cursor_kind && (!kind || kind==cursor_kind),"Invalid asset catalog cursor for this kind.");
+            }
+            try { return asset_catalog::list(asset_directory(),kind,after,static_cast<std::size_t>(limit)); }
+            catch(const std::exception& error) { throw Error(-32050,asset_diagnostic(error.what())); }
+        }
         if(method=="asset.mesh.extract_rigid")return extract_rigid_mesh(params);
         if(method=="asset.animation.capture")return capture(params,false,true);
         if(method.starts_with("asset.animation."))return animation_dispatch(method,params);

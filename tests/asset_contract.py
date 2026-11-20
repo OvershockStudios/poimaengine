@@ -41,6 +41,44 @@ class Assets(unittest.TestCase):
     def error(self,r,code):self.assertEqual(r['error']['code'],code,r)
     def imported(self):return self.result(self.run_requests([rpc('asset.import',{'source':self.native(self.glb)})])[0])
     def cache(self,asset):return Path(str(self.world)+'.assets')/(asset+'.pmodel')
+    def test_catalog_pages_labels_and_fresh_owner(self):
+        self.assertEqual(self.result(self.run_requests([rpc('asset.catalog',{})])[0]),{'entries':[],'next_after':None})
+        texture=self.root/'texture.png';texture.write_bytes(png(1,1,[16,32,64,255]))
+        wave=ROOT/'examples/assets/acoustic-probe.wav'
+        model,image,audio=(self.result(item)['asset'] for item in self.run_requests([
+            rpc('asset.import',{'source':self.native(self.glb)}),
+            rpc('asset.image.import',{'source':self.native(texture),'color_space':'srgb'}),
+            rpc('asset.audio.import',{'source':self.native(wave)})]))
+        folder=self.cache(model).parent
+        (folder/('0'*64+'.pmodel')).mkdir()
+        (folder/('1'*64+'.pimage.pending')).write_text('unfinished')
+        (folder/('2'*64+'.pprov')).write_text('unrelated')
+        expected={model:{'asset':model,'kind':'model','label':'Valve 泉'},
+            image:{'asset':image,'kind':'image','label':'色.png'},audio:{'asset':audio,'kind':'audio','label':None}}
+        label=rpc('asset.label',{'asset':model,'kind':'model','label':expected[model]['label']})
+        r=self.run_requests([label,rpc('asset.label',{'asset':model,'kind':'model','label':'Second name'}),
+            rpc('asset.label',{'asset':image,'kind':'image','label':expected[image]['label']}),
+            rpc('asset.label',{'asset':audio,'kind':'audio','label':'C:\\private.wav'}),
+            rpc('asset.catalog',{'kind':'model','after':image+'.pimage'}),rpc('asset.catalog',{'limit':65})])
+        self.assertEqual(self.result(r[0]),{**expected[model],'created':True})
+        self.assertEqual(self.result(r[1]),{**expected[model],'created':False})
+        self.assertEqual(self.result(r[2]),{**expected[image],'created':True})
+        for rejected in r[3:]:self.error(rejected,-32602)
+        entries=[];cursor=None
+        for index in range(3):
+            params={'limit':1,**({'after':cursor} if cursor else {})}
+            page=self.result(self.run_requests([rpc('asset.catalog',params)])[0]);entries.extend(page['entries']);cursor=page['next_after']
+            self.assertEqual(bool(cursor),index<2)
+        self.assertEqual(entries,[expected[key] for key in sorted(expected)])
+        filtered=self.result(self.run_requests([rpc('asset.catalog',{'kind':'image'})])[0])
+        self.assertEqual(filtered,{'entries':[expected[image]],'next_after':None})
+        self.assertEqual(hashlib.sha256(self.cache(model).read_bytes()).hexdigest(),model)
+        self.assertFalse(self.world.exists(),'Labels and catalog reads should not create a scene revision.')
+        # Bad display metadata cannot hide a usable package.
+        (folder/(model+'.pmodel.label')).write_text('invalid metadata')
+        page,inspect=self.run_requests([rpc('asset.catalog',{'kind':'model'}),rpc('asset.inspect',{'asset':model})])
+        self.assertEqual(self.result(page)['entries'],[{**expected[model],'label':None}])
+        self.assertEqual(self.result(inspect)['asset'],model)
     def test_glb_external_data_uri_and_shipping_package(self):
         doc,blob=sphere();import base64
         doc['buffers'][0]['uri']='data:application/octet-stream;base64,'+base64.b64encode(blob).decode()

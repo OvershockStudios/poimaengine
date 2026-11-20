@@ -218,7 +218,7 @@ internal sealed class AgentChat : UserControl
     internal void AddAssetReferences(IReadOnlyList<CreatorAsset> assets)
     {
         var references = string.Join('\n', assets.Select(asset =>
-            $"- {asset.Kind} {JsonSerializer.Serialize(asset.Name)}: `{asset.Id}`"));
+            $"- {asset.Description} {JsonSerializer.Serialize(asset.Name)}: `{asset.Id}`"));
         var draft = prompt.Text;
         prompt.Text = (string.IsNullOrWhiteSpace(draft) ? "" : draft.TrimEnd() + "\n\n") +
             "Imported Poima assets available in this project:\n" + references;

@@ -1,8 +1,16 @@
 # Implementation status
 
-Updated 2026-11-20 for **0.0.316**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-20 for **0.0.317**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.317 adds a [paged catalog of cooked assets](ASSETS.md#browse-cooked-assets)
+to the shared world service. The Windows creator uses it to find imports on
+reopen. New imports keep their first display name and earlier imports appear
+by ID. The packaged test reopened the creator, selected the original model
+by name, and verified its ID in the chat draft. The editable checkpoint kept
+the name, and the relocated game loaded the same cooked model.
+[Results](evidence/m2-creator-asset-library-317.json)
 
 Version 0.0.316 imports [local assets from the Windows creator](WINDOWS_PREVIEW.md#import-assets).
 The packaged test cooks GLB, PNG in both color spaces, and WAV through the

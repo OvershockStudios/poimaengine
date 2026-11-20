@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
 using System.Diagnostics;
-using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -35,7 +34,6 @@ internal sealed class CreatorWindow : Window
     private readonly Button openRecovered = new() { Content = "Open recovered project", IsVisible = false };
     private readonly Button setupBuilds = new() { Content = "Set up gameplay builds", IsVisible = false };
     private readonly Button importAssets = new() { Content = "Import assets…" };
-    private readonly ObservableCollection<CreatorAsset> importedAssets = [];
     private readonly TextBlock status = new() { TextWrapping = TextWrapping.Wrap };
     private readonly Border viewport = new() { Background = EditorTheme.Brush("#161518"), ClipToBounds = true };
     private bool starting, waitingForPreviewFrame, exporting, closeAfterExport, verifiedPlayerRunning, closing, allowClose;
@@ -215,7 +213,7 @@ internal sealed class CreatorWindow : Window
     private async Task ImportAssetsAsync()
     {
         if (!importAssets.IsEnabled) return;
-        var selected = await new CreatorAssetWindow(host, importedAssets).ShowDialog<CreatorAsset[]?>(this);
+        var selected = await new CreatorAssetWindow(host).ShowDialog<CreatorAsset[]?>(this);
         if (!closing && selected is { Length: > 0 }) chat.AddAssetReferences(selected);
     }
 

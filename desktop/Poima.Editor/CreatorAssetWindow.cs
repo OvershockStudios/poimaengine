@@ -13,7 +13,8 @@ namespace Poima.Editor;
 
 internal sealed record CreatorAsset(string Name, string Id, string Kind)
 {
-    public override string ToString() => $"{Name} ({Kind})";
+    public string Description => Kind switch { "model" => "3D model", "audio" => "audio clip", _ => "image" };
+    public override string ToString() => $"{Name} ({Description})";
 }
 
 internal sealed class CreatorAssetWindow : Window
@@ -26,26 +27,28 @@ internal sealed class CreatorAssetWindow : Window
 
     private static readonly SourceKind[] SourceKinds =
     [
-        new("3D models", "3D model", "asset.import", ["*.gltf", "*.glb", "*.fbx"]),
-        new("FBX geometry", "3D model", "asset.import", ["*.fbx"], GeometryOnly: true),
-        new("Color textures", "color texture", "asset.image.import", ["*.png", "*.jpg", "*.jpeg"], "srgb"),
-        new("Data textures", "data texture", "asset.image.import", ["*.png", "*.jpg", "*.jpeg"], "linear"),
-        new("WAV audio", "audio clip", "asset.audio.import", ["*.wav"])
+        new("3D models", "model", "asset.import", ["*.gltf", "*.glb", "*.fbx"]),
+        new("FBX geometry", "model", "asset.import", ["*.fbx"], GeometryOnly: true),
+        new("Color textures", "image", "asset.image.import", ["*.png", "*.jpg", "*.jpeg"], "srgb"),
+        new("Data textures", "image", "asset.image.import", ["*.png", "*.jpg", "*.jpeg"], "linear"),
+        new("WAV audio", "audio", "asset.audio.import", ["*.wav"])
     ];
 
     private readonly NativeHost host;
-    private readonly ObservableCollection<CreatorAsset> imported;
+    private readonly ObservableCollection<CreatorAsset> imported = [];
     private readonly ComboBox kind = new() { ItemsSource = SourceKinds, SelectedIndex = 0 };
     private readonly ListBox assets = new() { SelectionMode = SelectionMode.Multiple };
     private readonly TextBlock status = new() { TextWrapping = TextWrapping.Wrap };
     private readonly Button pick = new() { Content = "Choose files…" };
     private readonly Button use = new() { Content = "Add to chat draft" };
+    private readonly Button refresh = new() { Content = "Refresh" };
+    private readonly Button more = new() { Content = "Load more" };
+    private string? nextPage;
     private bool busy, closed;
 
-    public CreatorAssetWindow(NativeHost host, ObservableCollection<CreatorAsset> imported)
+    public CreatorAssetWindow(NativeHost host)
     {
         this.host = host;
-        this.imported = imported;
         Title = "Import assets";
         Width = 580; Height = 430; MinWidth = 420; MinHeight = 350;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
@@ -56,12 +59,19 @@ internal sealed class CreatorAssetWindow : Window
         use.Background = EditorTheme.Brush("#722F37");
         use.Foreground = EditorTheme.Brush("#F7E8EB");
         status.Foreground = EditorTheme.Brush("#B4ACB2");
-        status.Text = imported.Count == 0 ? "Choose local files to use in this project." : "Select assets to add to your chat draft.";
         assets.ItemsSource = imported;
         AutomationProperties.SetName(kind, "Asset type");
         AutomationProperties.SetName(assets, "Imported assets");
         AutomationProperties.SetAutomationId(status, "creator-import-status");
+        assets.ContainerPrepared += (_, args) =>
+        {
+            if (args.Container is ListBoxItem { Content: CreatorAsset asset })
+                AutomationProperties.SetName(args.Container, asset.ToString());
+        };
         pick.Click += async (_, _) => await PickAsync();
+        Opened += (_, _) => ReadPage(reset: true);
+        refresh.Click += (_, _) => ReadPage(reset: true);
+        more.Click += (_, _) => ReadPage(reset: false);
         assets.SelectionChanged += (_, _) => UpdateControls();
         use.Click += (_, _) =>
         {
@@ -72,7 +82,7 @@ internal sealed class CreatorAssetWindow : Window
         Closed += (_, _) => closed = true;
 
         var layout = new Grid { RowDefinitions = new RowDefinitions("Auto,*,Auto,Auto"), RowSpacing = 12, Margin = new Thickness(20) };
-        layout.Children.Add(new WrapPanel { ItemSpacing = 8, LineSpacing = 6, Children = { kind, pick } });
+        layout.Children.Add(new WrapPanel { ItemSpacing = 8, LineSpacing = 6, Children = { kind, pick, refresh, more } });
         Grid.SetRow(assets, 1); layout.Children.Add(assets);
         var messages = new ScrollViewer { Content = status, MaxHeight = 96 };
         Grid.SetRow(messages, 2); layout.Children.Add(messages);
@@ -80,6 +90,36 @@ internal sealed class CreatorAssetWindow : Window
         Grid.SetRow(actions, 3); layout.Children.Add(actions);
         Content = layout;
         UpdateControls();
+    }
+
+    private void ReadPage(bool reset)
+    {
+        if (busy || (!reset && nextPage is null)) return;
+        try
+        {
+            var request = reset ? new JsonObject() : new JsonObject { ["after"] = nextPage };
+            var result = host.Call("asset.catalog", request);
+            var entries = result["entries"]!.AsArray().Select(value =>
+            {
+                var id = value!["asset"]!.GetValue<string>();
+                return new CreatorAsset(value["label"]?.GetValue<string>() ?? id[..12], id, value["kind"]!.GetValue<string>());
+            }).ToArray();
+            nextPage = result["next_after"]?.GetValue<string>();
+            if (reset) imported.Clear();
+            foreach (var entry in entries) Include(entry);
+            status.Text = imported.Count == 0 ? "Choose local files to use in this project." : "Select assets to add to your chat draft.";
+        }
+        catch (Exception error) { status.Text = error.Message; }
+        UpdateControls();
+    }
+
+    private CreatorAsset Include(CreatorAsset entry)
+    {
+        // An import can name an asset already present on the page.
+        var existing = imported.FirstOrDefault(asset => asset.Id == entry.Id && asset.Kind == entry.Kind);
+        if (existing is null) imported.Add(entry);
+        else if (existing != entry) imported[imported.IndexOf(existing)] = entry;
+        return entry;
     }
 
     private async Task PickAsync()
@@ -109,12 +149,17 @@ internal sealed class CreatorAssetWindow : Window
                     if (selected.GeometryOnly) request["fbx_geometry_only"] = true;
                     var id = host.Call(selected.Method, request)["asset"]?.GetValue<string>()
                         ?? throw new InvalidOperationException("Poima did not return a cooked asset ID.");
-                    var asset = imported.FirstOrDefault(item => item.Id == id && item.Kind == selected.Kind);
-                    if (asset is null)
+                    var name = selected.ColorSpace switch
                     {
-                        asset = new CreatorAsset(file.Name, id, selected.Kind);
-                        imported.Add(asset);
+                        "srgb" => $"{file.Name} (sRGB)", "linear" => $"{file.Name} (linear)", _ => file.Name
+                    };
+                    try
+                    {
+                        name = host.Call("asset.label", new() { ["asset"] = id, ["kind"] = selected.Kind, ["label"] = name })
+                            ["label"]!.GetValue<string>();
                     }
+                    catch (Exception error) { failures.Add($"{file.Name} imported. Couldn’t save its name. {error.Message}"); }
+                    var asset = Include(new CreatorAsset(name, id, selected.Kind));
                     if (!added.Contains(asset)) added.Add(asset);
                 }
                 catch (Exception error) { failures.Add($"{file.Name} — {error.Message}"); }
@@ -131,6 +176,9 @@ internal sealed class CreatorAssetWindow : Window
     private void UpdateControls()
     {
         pick.IsEnabled = kind.IsEnabled = assets.IsEnabled = !busy;
+        refresh.IsEnabled = !busy;
+        more.IsVisible = nextPage is not null;
+        more.IsEnabled = !busy && nextPage is not null;
         use.IsEnabled = !busy && assets.SelectedItems?.Count > 0;
     }
 }

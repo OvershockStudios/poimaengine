@@ -103,6 +103,8 @@ texture paths, choose **FBX geometry** and import the textures separately.
 Select imported items and choose **Add to chat draft** to give your agent the
 asset names and cooked IDs. You can edit the text and ask how to place or use
 each item before sending. The imported assets are available in the project
-as soon as cooking succeeds. The list of imported items covers the current
-creator session, and the cooked IDs remain valid when you reopen the project.
+as soon as cooking succeeds. The library is available when you reopen the project.
+New imports keep their names. Older unnamed assets appear by short ID.
+Use **Load more** for additional entries and **Refresh** to pick up imports
+made by another client.
 [Supported formats and asset handoff](https://github.com/OvershockStudios/poimaengine/blob/main/docs/ASSETS.md#bring-assets-from-an-existing-library)

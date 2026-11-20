@@ -1,0 +1,101 @@
+{
+  "version": "0.0.317",
+  "scope": "Automated creator workflow from the matching Windows x64 package, Vulkan playback on the development laptop, and native asset contract checks.",
+  "release": {
+    "version": "0.0.317",
+    "tag": "v0.0.317",
+    "engine_files": 499,
+    "sample_manifest_sha256": "b8855bad514cc4a16098a0d81e6849c63b3c48be3fd82d875c73acfa5ace892b",
+    "assets": [
+      {
+        "name": "Poima-0.0.317-Windows-x64.zip",
+        "bytes": 141545209,
+        "sha256": "83ca5a4b8b66c641ee1354204b3d23edeea178eb882979d89854dce4b9456283"
+      },
+      {
+        "name": "Poima-0.0.317-Windows-x64.manifest.json",
+        "bytes": 89315,
+        "sha256": "4c7e94e2a16ee33eb9a3e1e230b9f31d5640317601d52d2a9b7c4a24b5ac4838"
+      },
+      {
+        "name": "Poima-Launcher-0.0.317-Windows-x64.zip",
+        "bytes": 46080468,
+        "sha256": "e3f7d0db32d3514a9aec21d5a7f2c3b033da2b27c123151520954fb20894360c"
+      }
+    ]
+  },
+  "tested_package_files_sha256": {
+    "Poima.Editor.exe": "4a57987fb3c4637adb7206e47a40d9568467c60d3ce0958e65f6461f3a7f9a07",
+    "Poima.Editor.dll": "4db8e19af2e41f245cbe288119cc31d1cddf8877aeb87ed5843f081f82cd6aad",
+    "poima.exe": "9f87fe1000dad598c166b09de20bbc33f4a4dc7a79fbb79a7d977ab8ad9d5883",
+    "poima_desktop.dll": "bca42bb21479f4613e7e0ff565b6fd24843f73f0cdfec6bd7396b9fd87e7d1c2"
+  },
+  "creator_asset_checks": {
+    "assets": {
+      "model": {
+        "id": "9d523785bc99760a2c53bc663d6fa36ddf7ed947eeb0974579a652d4ad4fca8e",
+        "bytes": 85992,
+        "format": "poima.static-model.v3",
+        "triangles": 2208
+      },
+      "color": {
+        "id": "ced84efe0fe91919f4d0962f214b898fb2df8f57535877ddcc40c5e87af559da",
+        "bytes": 4915520,
+        "format": "poima.image.v1",
+        "color_space": "srgb"
+      },
+      "data": {
+        "id": "dd6fd7d61a3cadadbced91f5aadaf86557cb39435a18573b7f7e970c79606cd9",
+        "bytes": 4915521,
+        "format": "poima.image.v1",
+        "color_space": "linear"
+      },
+      "audio": {
+        "id": "e600508bc9f7be06f4675bb17c3739954b8e5578ae7c71dcaebde195ab99c14f",
+        "bytes": 19212,
+        "format": "poima.audio.v1"
+      }
+    },
+    "imported_without_scene_edit": true,
+    "guarded_placement_revision": 2,
+    "malformed_source_rejected": true,
+    "draft_and_local_paths_preserved": true,
+    "reopened_library_preserved_name_and_id": true,
+    "checkpoint_preserved_name": true,
+    "relocated_model_verified": true
+  },
+  "legacy_catalog": {
+    "passed": true,
+    "source_version": "0.0.316",
+    "existing_unlabeled_assets": 4
+  },
+  "windows_native_contracts": {
+    "assets": {
+      "cases": 12,
+      "report_sha256": "010965ba6ef3e0464caf336b66a2b12ed4ba9f88c699c25b71b11e93ce6b2e59"
+    },
+    "references": {
+      "cases": 8,
+      "report_sha256": "5170290ae32e797eff09f16a9195ea5c583d7f7c60acfa3c399e4315b5f3b8da"
+    },
+    "ui": {
+      "cases": 7,
+      "report_sha256": "84cc152e9150d264cb13233e458aaf19a8ad8eb2c6d956437bdcdae42b965e4c"
+    }
+  },
+  "preview_frames": 4,
+  "relocated_export": {
+    "original_project_unavailable": true,
+    "exit_code": 0,
+    "tick": 12,
+    "presented_frames": 13,
+    "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "external_save_directory_created": true,
+    "capture_sha256": "7295eda85b80fcbf3e3228881e994ab3db1907ad9361c5dace4cba14d9f04544"
+  },
+  "creator_report_sha256": "94fdb6fa38eec8629a65acfd706ce364271baeac41f9db8e82fce1be0d341c2f",
+  "open_qualification": [
+    "first-time creator on clean Windows",
+    "agent-led placement using creator imports"
+  ]
+}

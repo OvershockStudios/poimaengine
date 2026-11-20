@@ -230,7 +230,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 168}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 169}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -777,6 +777,14 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"clip",{{"type","integer"},{"minimum",0},{"maximum",255}}},{"name",{{"type","string"},{"minLength",1},{"maxLength",256}}},
         {"frame_transfer",frame_transfer},{"retarget",rotation_retarget},{"expected_model_sha256",asset_id}},{"source"});
     animation_source["allOf"]=Json::array({Json{{"not",{{"required",Json::array({"frame_transfer","retarget"})}}}}});
+    const Json catalog_kind={{"enum",{"model","image","audio"}}};
+    methods["asset.catalog"]=object_schema({{"kind",catalog_kind},
+        {"after",{{"type","string"},{"pattern","^[0-9a-f]{64}\\.(pmodel|pimage|paudio)$"}}},
+        {"limit",{{"type","integer"},{"minimum",1},{"maximum",64},{"default",64}}}});
+    methods["asset.catalog"]["description"]="List candidate cooked models, images and audio from the current world's asset store, including unused assets. Pages are sorted by store filename. Pass next_after to continue. Package bytes are not read: use the type's inspect method before use. Labels are optional.";
+    methods["asset.label"]=object_schema({{"asset",asset_id},{"kind",catalog_kind},
+        {"label",{{"type","string"},{"minLength",1},{"maxLength",1024}}}},{"asset","kind","label"});
+    methods["asset.label"]["description"]="Remember the first display label for an existing cooked asset. Returns the existing label on repeat. Labels accept 1..1024 UTF-8 bytes without paths or control characters. Does not change the scene, dependency set, or cooked identity.";
     methods["asset.import"]=object_schema({{"source",{{"type","string"},{"minLength",1}}},
         {"expected_model_sha256",asset_id},
         {"fbx_normal_map",{{"enum",{"opengl","directx"}}}},
