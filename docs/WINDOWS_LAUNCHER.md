@@ -29,30 +29,35 @@ installation.
 
 ## Prepare release assets
 
-Build the [engine ZIP](DESKTOP_EDITOR.md#build-and-launch), then
-generate its companion inventory.
+From the configured WSL checkout, use the pinned WSL .NET SDK, Windows x64
+.NET SDK and C++ build tools. Supply the official embedded Python archive
+used by the [Windows preview](DESKTOP_EDITOR.md#build-and-launch).
 
-```powershell
-python scripts/windows_release_inventory.py D:\Releases\Poima-0.0.298-Windows-x64.zip
+```sh
+python3 scripts/build_windows_release.py \
+  --windows-dotnet '/mnt/c/Program Files/dotnet/dotnet.exe' \
+  --python-embed /path/to/python-3.13.17-embed-amd64.zip \
+  --work build/windows-release-work --output build/windows-release-assets
 ```
 
-Attach the ZIP and `Poima-0.0.298-Windows-x64.manifest.json` to the same
-GitHub release under canonical tag `v0.0.298`. Mark preview releases as
-prereleases. The launcher reads the public release list for
-`OvershockStudios/poimaengine` and uses the highest matching version with
-both assets uploaded. Both assets must carry their GitHub SHA-256 digests.
+The command builds the engine and authoring tools, compiles Collection Room
+from its tracked source, then assembles the engine ZIP, its companion inventory
+and the self-contained launcher ZIP. The local `release.json` identifies
+the tag, archive hashes and sample build. Use new work and output directories.
+During an incremental build, `--skip-native` uses the current native targets
+from the configured Windows build. ZIP assembly gives the same bytes for the
+same inputs and ZIP tooling, independent of file timestamps.
+
+Attach the three named assets to the same GitHub release under the tag in
+`release.json`. Mark preview releases as prereleases. The launcher reads
+the public release list for `OvershockStudios/poimaengine` and uses the
+highest matching version with the engine ZIP and inventory uploaded. The
+launcher checks the GitHub SHA-256 digests for that pair.
 [GitHub Releases API](https://docs.github.com/en/rest/releases/releases) ·
 [Release asset integrity](https://docs.github.com/en/rest/releases/assets)
 
-Publish the independent launcher on Windows with the .NET 10 SDK.
-
-```powershell
-dotnet publish desktop/Poima.Launcher -c Release -p:Version=0.0.308 -o build/launcher
-```
-
-Distribute the resulting executable with the repository license, the
-wordmark font notice in `docs/branding/Playball-OFL.txt`, and the license
-and notices from the .NET runtime packs selected by the publish.
+The launcher ZIP includes Poima's license, the wordmark font notice and
+notices from the actual .NET runtime packs selected for the launcher.
 
 ## Qualification
 
@@ -77,5 +82,6 @@ dotnet run --project tests/windows_launcher -c Release -- --local D:\Releases\Po
 
 Qualification with a public release, a fresh Windows machine and a first-time
 creator remains open.
-[0.0.298 HTTP installation](evidence/m2-windows-launcher-298.json)
-and [0.0.308 local installation and creator tests](evidence/m2-launcher-local-install-308.json).
+[0.0.298 HTTP installation](evidence/m2-windows-launcher-298.json),
+[0.0.308 local installation and creator tests](evidence/m2-launcher-local-install-308.json),
+[0.0.309 release build and packaged sample](evidence/m2-windows-release-set-309.json).

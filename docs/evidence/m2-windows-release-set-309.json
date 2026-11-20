@@ -1,0 +1,98 @@
+{
+  "scope": "Configured WSL release build and Windows x64 qualification on the development laptop using installed tools. The portable launcher profile started empty. The installer and project creation use UI Automation. The sample checks use scripted native input and a hardware Vulkan replay.",
+  "release": {
+    "version": "0.0.309",
+    "tag": "v0.0.309",
+    "engine_files": 499,
+    "sample_manifest_sha256": "0135a6c8f259af619f61add2a392aa892c6a2991d0708320e725cf381fe8f5ee",
+    "assets": [
+      {
+        "name": "Poima-0.0.309-Windows-x64.zip",
+        "bytes": 141448632,
+        "sha256": "b23ee9da2f0db2287efde955c6706985ca90066f0c86069fec48c7eb10d009bb"
+      },
+      {
+        "name": "Poima-0.0.309-Windows-x64.manifest.json",
+        "bytes": 89315,
+        "sha256": "71e4074c903a86e5ad20d59deddc7ff9bb0dad34c1e96f6dd4578ff9e20098e5"
+      },
+      {
+        "name": "Poima-Launcher-0.0.309-Windows-x64.zip",
+        "bytes": 46080457,
+        "sha256": "12f62bd1f51df6a797e298fbf9011b9134114f8783b46fa086263d9c106808b6"
+      }
+    ]
+  },
+  "release_receipt_sha256": "655533bafa004591f4ac7ed3295afba8d0e90ff738b855892f8ddcb1336266a7",
+  "assembly_reproduced": {
+    "passed": true,
+    "scope": "Reassembly from identical staged payloads after changing two payload mtimes",
+    "identical_assets": [
+      "Poima-0.0.309-Windows-x64.zip",
+      "Poima-0.0.309-Windows-x64.manifest.json",
+      "Poima-Launcher-0.0.309-Windows-x64.zip"
+    ],
+    "archive_integrity": true
+  },
+  "existing_output_refused": {
+    "passed": true,
+    "existing_receipt_sha256": "655533bafa004591f4ac7ed3295afba8d0e90ff738b855892f8ddcb1336266a7",
+    "new_work_created": false
+  },
+  "launcher": {
+    "file_version": "0.0.309.0",
+    "executable_sha256": "418b44e258fb97842a1b43e968a0287b939cbd5f4cb5eaab64588efc0a100712",
+    "installed_inventory_files": 499,
+    "install_staging_empty": true,
+    "portable_project_created": true,
+    "creator_editor_sha256": "f69863c1124f7b477b63ba330df4777cc10277f4b4ce5ef66de611dab2454e24",
+    "default_launcher_settings_preserved": true,
+    "launcher_exit": 0,
+    "creator_exit": 0,
+    "report_sha256": "3c9985604cfa64f055072ba3a6eba7b54a58872d01a54b3c2f7360aac6687023"
+  },
+  "collection_room": {
+    "sources_sha256": {
+      "world.jsonl": "eb5ce4a5f3b161d156189b7baed53c54321e7c0e4f9b5eb2b7f530da844b77ef",
+      "CollectionGame.cs": "c38cc8fd20e8196a205bb8c0f0b058169c87bc9f868bcf9fd17059431a40b952",
+      "Poima.CollectionGame.csproj": "a4aef7679b1bfbb8e54aab9923b3cf1841531082ee56d820aaf0fb6b918b1a8a",
+      "run.py": "8f9b33793a4cf07b4d07a95500531074f1e261f6b08c24da8755c3d219be5272"
+    },
+    "export_file_count": 59,
+    "backend": "native_aot",
+    "binary_sha256": "e70f28710a3f0c9efb010760af8ea4efc00c1522a795e85b640224f81a84dd0c",
+    "native_descriptor_sha256": "b0e997d4cd0e302cf2a69df419fb3e8f05b4c16e5d4d16bf9d60e01b7e196de2",
+    "headless_checks": [
+      "Real raycast/Use removes exactly one spawned collectible; another Use cannot collect out of range.",
+      "Actual CharacterController movement and camera queries collect all three cells; native UI reports completion.",
+      "Compiled Load restores count, live spawned handles and exact player transform; restored gameplay finishes again.",
+      "A fresh native process loads the same durable checkpoint and completes the room again."
+    ],
+    "headless_process_exit_codes": [
+      0,
+      0
+    ],
+    "restored_tick": 3,
+    "fresh_process_completion_tick": 245,
+    "fresh_process_collected": 3,
+    "headless_report_sha256": "e6eaffd5a9602e45ad782bf32f42cb7af1b93c82e9837062cf55c88c247b08d8",
+    "relocated_player": {
+      "authored_source_path_unavailable": true,
+      "collected": 3,
+      "external_save_directory_created": true,
+      "tick": 245,
+      "frames_presented": 246,
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "hardware": true,
+      "nvrhi_errors": 0,
+      "stop_reason": "replay_complete",
+      "report_sha256": "6a1e06d2b141f5ee21480afbbedccffc7d7ccbc080fcc482b3de22a5718e2d33",
+      "final_frame_sha256": "53920f5d57004ccb490aac63e366180b87f38ea81a9bbd6bdb60bf4088dcce64"
+    }
+  },
+  "open_qualification": [
+    "public tagged installation",
+    "clean Windows toolchain and agent setup",
+    "first-time human creator journey"
+  ]
+}

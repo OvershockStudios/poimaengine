@@ -52,6 +52,10 @@ The [0.0.308 launcher test](evidence/m2-launcher-local-install-308.json)
 starts with a blank portable profile, installs the current ZIP from disk
 and opens the installed creator. It uses the development laptop's existing
 toolchain and agent installation.
+The [0.0.309 release-set test](evidence/m2-windows-release-set-309.json)
+builds the matching engine and launcher from source, installs the exact
+release ZIP and completes the bundled Collection Room game after moving
+it away from the installation and hiding its authored project path.
 The [Codex sign-in check](evidence/m2-creator-codex-sign-in-303.json) covers
 opening and cancelling sign-in with an isolated client and continuation after
 a scripted account confirmation. A real browser authorization is still needed.

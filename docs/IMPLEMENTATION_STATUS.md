@@ -1,8 +1,17 @@
 # Implementation status
 
-Updated 2026-11-20 for **0.0.308**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-20 for **0.0.309**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.309 builds the [Windows release set](WINDOWS_LAUNCHER.md#prepare-release-assets)
+from one configured checkout, including Collection Room compiled from source.
+The launcher installed all 499 engine files into a blank portable profile
+and opened a new project. The relocated sample collected all three cells in
+a Vulkan replay and passed save continuation in a fresh native process.
+Reassembling the same payloads yielded byte-identical assets. Public tagged
+installation and the first-time creator trial on clean Windows remain open.
+[Results](evidence/m2-windows-release-set-309.json)
 
 The 0.0.308 [Windows launcher](WINDOWS_LAUNCHER.md) installs an engine ZIP
 and its matching inventory from disk. An automated run installed all 499
