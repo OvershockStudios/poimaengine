@@ -1,0 +1,71 @@
+{
+  "version": "0.0.313",
+  "scope": "Windows x64 UI Automation from the exact Windows packages in fresh portable profiles on the development laptop.",
+  "release": {
+    "version": "0.0.313",
+    "tag": "v0.0.313",
+    "engine_files": 499,
+    "sample_manifest_sha256": "babd8c25ea34ec355ddd77a451d2f23db5f681697e2f90988bf67c59cfa1e97a",
+    "assets": [
+      {
+        "name": "Poima-0.0.313-Windows-x64.zip",
+        "bytes": 141480367,
+        "sha256": "3f6970525213f3869fad01fdb6dd93ce684d8adf26809e94bad91806d21fd275"
+      },
+      {
+        "name": "Poima-0.0.313-Windows-x64.manifest.json",
+        "bytes": 89315,
+        "sha256": "f731892fcfae18062369fc6359f2f932f21c1e689d58bd225d96f6bcfb193b06"
+      },
+      {
+        "name": "Poima-Launcher-0.0.313-Windows-x64.zip",
+        "bytes": 46080476,
+        "sha256": "0bcd8b45dbf627650bdda95b246c7457e3777b28e44e12b2c0cb823c200b573c"
+      }
+    ]
+  },
+  "installed_tools": {
+    "report_sha256": "e851f02692099e07f80a544c6147a4fcf07c87c1d3e3f87e834c39f7821b6c67",
+    "checks": {
+      "installed_inventory_files": 499,
+      "install_staging_empty": true,
+      "gameplay_build_check_first_ms": 24017,
+      "fresh_nuget_packages": 7,
+      "active_build_cancelled": true,
+      "gameplay_retry_passed": true,
+      "gameplay_scratch_removed": true,
+      "project_build_profile_configured": true,
+      "portable_project_created": true,
+      "creator_editor_sha256": "c325566cb794b929359b5e84eef550063ac506027f9da6a60c026001dc6e8907",
+      "default_launcher_settings_preserved": true,
+      "launcher_exit": 0,
+      "creator_exit": 0
+    }
+  },
+  "unreadable_sdk_fixture": {
+    "report_sha256": "f11936155a5f7204afa5752e1b35fc2fd9f58b41466c15b82d973e48710ebbea",
+    "checks": {
+      "installed_inventory_files": 499,
+      "install_staging_empty": true,
+      "build_probe_reported_error": true,
+      "setup_back_preserved_draft": true,
+      "project_created_without_tools": true,
+      "portable_project_created": true,
+      "creator_editor_sha256": "c325566cb794b929359b5e84eef550063ac506027f9da6a60c026001dc6e8907",
+      "default_launcher_settings_preserved": true,
+      "launcher_exit": 0,
+      "creator_exit": 0
+    }
+  },
+  "fixture": "Set DOTNET_ROOT_X64 for the owned processes to a disposable SDK-shaped folder with an unreadable test copy of dotnet.exe. A Windows ACL denied reading that copy. The installed toolchain was not changed.",
+  "initial_fixture_attempt": {
+    "report_sha256": "9f8bc9693d597768b954bb4d027a3590f2d7db0db62d7d837832568376630220",
+    "passed": false,
+    "failure": "Windows PowerShell Resolve-Path rejected a deep inventory path. Direct extended-path IO read the installed entry and produced the exact archive hash. The rerun used extended-path IO in the verification script."
+  },
+  "open_qualification": [
+    "public tagged installation",
+    "Microsoft prerequisite installation on clean Windows",
+    "first-time human creator journey"
+  ]
+}

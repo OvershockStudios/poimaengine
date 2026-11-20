@@ -21,14 +21,20 @@ internal sealed class GameplaySetupWindow : Window
     private readonly Button test = new() { Content = "Test gameplay build", IsVisible = false };
     private readonly Button cancelTest = new() { Content = "Cancel test", IsVisible = false };
     private readonly Button done = new() { Content = "Done" };
+    private readonly Button skip = new() { Content = "Create without build tools", IsVisible = false };
+    private readonly Button back = new() { Content = "Back", IsCancel = true, IsVisible = false };
     private readonly Button dotnetDownload = new() { Content = "Open .NET downloads", IsVisible = false };
     private readonly Button cppDownload = new() { Content = "Open C++ setup guide", IsVisible = false };
     private WindowsBuildToolchain? current;
     private CancellationTokenSource? buildTest;
     private bool busy;
+    private readonly bool forProject;
 
-    public GameplaySetupWindow()
+    public GameplaySetupWindow() : this(forProject: false) { }
+
+    private GameplaySetupWindow(bool forProject)
     {
+        this.forProject = forProject;
         Title = "Set up gameplay builds";
         Width = 575; MinWidth = 480; SizeToContent = SizeToContent.Height;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
@@ -40,19 +46,22 @@ internal sealed class GameplaySetupWindow : Window
         done.Foreground = EditorTheme.Brush("#F7E8EB");
         var body = new StackPanel { Margin = new Thickness(26), Spacing = 16 };
         body.Children.Add(new TextBlock { Text = "Gameplay build tools", FontSize = 24, FontWeight = FontWeight.SemiBold });
-        body.Children.Add(new TextBlock { Text = "These Microsoft tools compile C# gameplay for Windows.",
+        body.Children.Add(new TextBlock { Text = forProject
+            ? "Install these tools to build new gameplay. You can also create the project and set up the tools later."
+            : "These Microsoft tools compile C# gameplay for Windows.",
             TextWrapping = TextWrapping.Wrap });
         body.Children.Add(ToolRow("x64 .NET 10 SDK", dotnetState, dotnet, dotnetDownload));
         body.Children.Add(ToolRow("C++ build tools", cppState, cpp, cppDownload));
         body.Children.Add(message);
         body.Children.Add(new WrapPanel { HorizontalAlignment = HorizontalAlignment.Right,
-            ItemSpacing = 8, LineSpacing = 8, Children = { check, test, cancelTest, done } });
+            ItemSpacing = 8, LineSpacing = 8, Children = { check, test, cancelTest, back, skip, done } });
         Content = body;
 
         AutomationProperties.SetName(dotnetState, ".NET setup status");
         AutomationProperties.SetName(cppState, "C++ setup status");
         AutomationProperties.SetAutomationId(message, "gameplay-build-status");
-        Opened += async (_, _) => await RunAsync(ProbeAsync);
+        if (!forProject) Opened += async (_, _) => await RunAsync(ProbeAsync);
+        else done.Content = "Create project";
         check.Click += async (_, _) => await RunAsync(ProbeAsync);
         test.Click += async (_, _) => await RunAsync(TestBuildAsync);
         cancelTest.Click += (_, _) =>
@@ -65,8 +74,27 @@ internal sealed class GameplaySetupWindow : Window
         cpp.Click += async (_, _) => await RunAsync(() => InstallAsync(WindowsBuildDependency.Cpp));
         dotnetDownload.Click += async (_, _) => await RunAsync(() => OpenGuideAsync(WindowsBuildDependency.Dotnet));
         cppDownload.Click += async (_, _) => await RunAsync(() => OpenGuideAsync(WindowsBuildDependency.Cpp));
+        back.Click += (_, _) => Close(false);
+        skip.Click += (_, _) => Close(true);
         done.Click += (_, _) => Close(current?.Ready == true);
         Closing += (_, args) => args.Cancel = busy;
+    }
+
+    public static async Task<WindowsBuildToolchain?> BeforeCreateAsync(Window owner)
+    {
+        if (!OperatingSystem.IsWindows()) return null;
+        WindowsBuildToolchain? detected = null;
+        string? detectionError = null;
+        try { detected = await Task.Run(WindowsBuildToolchain.DetectAsync); }
+        catch (Exception error) when (IsSetupError(error)) { detectionError = error.Message; }
+        if (!owner.IsVisible) return null;
+        if (detected is { Ready: true }) return detected;
+
+        var setup = new GameplaySetupWindow(forProject: true);
+        if (detected is not null) setup.ShowTools(detected);
+        else setup.ShowDetectionError(detectionError!);
+        setup.UpdateButtons();
+        return await setup.ShowDialog<bool>(owner) ? setup.current ?? new(null, null, null) : null;
     }
 
     private static TextBlock RowStatus() => new()
@@ -91,20 +119,28 @@ internal sealed class GameplaySetupWindow : Window
         if (busy) return;
         busy = true; UpdateButtons();
         try { await action(); }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException or InvalidOperationException
-            or System.ComponentModel.Win32Exception or JsonException or TimeoutException or AgentRpcException or AgentExchangeException)
+        catch (Exception error) when (IsSetupError(error))
         {
-            message.Text = error.Message;
-            if (current is null) dotnetDownload.IsVisible = cppDownload.IsVisible = true;
+            if (current is null) ShowDetectionError(error.Message);
+            else message.Text = error.Message;
         }
         finally { busy = false; UpdateButtons(); }
     }
+
+    private static bool IsSetupError(Exception error) => error is IOException or UnauthorizedAccessException or InvalidOperationException
+        or System.ComponentModel.Win32Exception or JsonException or TimeoutException or AgentRpcException or AgentExchangeException;
 
     private async Task ProbeAsync()
     {
         if (!OperatingSystem.IsWindows()) return;
         message.Text = "Checking installed tools…";
-        current = await Task.Run(WindowsBuildToolchain.DetectAsync);
+        current = null;
+        ShowTools(await Task.Run(WindowsBuildToolchain.DetectAsync));
+    }
+
+    private void ShowTools(WindowsBuildToolchain tools)
+    {
+        current = tools;
         dotnetState.Text = current.Dotnet is null ? "Needed for C# builds." : "Ready";
         cppState.Text = (current.Msvc is not null, current.Sdk is not null) switch
         {
@@ -123,6 +159,14 @@ internal sealed class GameplaySetupWindow : Window
         cppDownload.IsVisible = cpp.IsVisible && (winget is not null || WindowsBuildToolchain.VisualStudioInstaller is not null);
         message.Text = current.Ready ? "The tools are installed. Test a starter to confirm they can build and run C# gameplay." :
             "Microsoft installers may ask for administrator approval.";
+    }
+
+    private void ShowDetectionError(string detail)
+    {
+        message.Text = "Couldn’t check the installed build tools. " + detail;
+        dotnetState.Text = cppState.Text = "Status unknown";
+        dotnet.IsVisible = cpp.IsVisible = false;
+        dotnetDownload.IsVisible = cppDownload.IsVisible = true;
     }
 
     private async Task TestBuildAsync()
@@ -171,7 +215,10 @@ internal sealed class GameplaySetupWindow : Window
     private void UpdateButtons()
     {
         check.IsEnabled = done.IsEnabled = test.IsEnabled = dotnet.IsEnabled = cpp.IsEnabled =
-            dotnetDownload.IsEnabled = cppDownload.IsEnabled = !busy;
+            dotnetDownload.IsEnabled = cppDownload.IsEnabled = skip.IsEnabled = back.IsEnabled = !busy;
+        done.IsVisible = !forProject || current?.Ready == true;
+        skip.IsVisible = forProject && current?.Ready != true;
+        back.IsVisible = forProject;
         test.IsVisible = current?.Ready == true;
         cancelTest.IsVisible = buildTest is not null;
         cancelTest.IsEnabled = buildTest is { IsCancellationRequested: false };

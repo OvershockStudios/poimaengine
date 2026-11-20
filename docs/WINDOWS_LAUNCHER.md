@@ -83,7 +83,11 @@ dotnet run --project tests/windows_launcher -c Release -- --local D:\Releases\Po
 For 0.0.310 or later, add `-WithBuildCheck` to exercise **Test gameplay
 build** before creating the project. This check uses the installed Microsoft
 toolchain with an empty .NET package directory and the system PATH. It runs
-the starter, cancels an active second build, and retries through the dialog.
+the starter, cancels an active second build, retries through the dialog, and
+checks the project received its own build profile. On a machine with missing
+tools, use `-ExpectBuildSetup` with 0.0.313 or later to check that **Back**
+keeps the draft project name and that **Create without build tools** opens
+the project with setup still available.
 
 Qualification with a public release, a fresh Windows machine and a first-time
 creator remains open.

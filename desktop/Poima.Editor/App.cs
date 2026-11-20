@@ -31,11 +31,11 @@ public sealed class App : Application
             else if (Program.Options is { } options) OpenEditor(desktop, options);
             else
             {
-                var launcher = new LauncherWindow(async (selected, advanced) =>
+                var launcher = new LauncherWindow(async (selected, advanced, tools) =>
                 {
                     var previous = desktop.MainWindow!;
                     var launch = LaunchOptions.Parse([selected.World], selected) with { DevelopmentProfiles = Program.LauncherDevelopmentProfiles };
-                    launch = await WindowsGameplayTools.ConfigureAsync(launch, selected);
+                    launch = await WindowsGameplayTools.ConfigureAsync(launch, selected, tools);
                     if (!previous.IsVisible) return;
                     if (advanced) OpenEditor(desktop, launch);
                     else desktop.MainWindow = new CreatorWindow(selected, launch);

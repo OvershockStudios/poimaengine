@@ -4,10 +4,12 @@ param(
     [Parameter(Mandatory = $true)][string]$Launcher,
     [Parameter(Mandatory = $true)][string]$EngineZip,
     [Parameter(Mandatory = $true)][string]$Output,
-    [switch]$WithBuildCheck
+    [switch]$WithBuildCheck,
+    [switch]$ExpectBuildSetup
 )
 
 $ErrorActionPreference = 'Stop'
+if ($WithBuildCheck -and $ExpectBuildSetup) { throw 'Choose the installed or unavailable build-tools path.' }
 Add-Type -AssemblyName UIAutomationClient, UIAutomationTypes
 Add-Type @'
 using System;
@@ -91,7 +93,21 @@ if ($WithBuildCheck) {
 $owner = $creator = $null
 $report = [ordered]@{ passed = $false; engine_version = $version; checks = [ordered]@{} }
 
-function Hash($Path) { (Get-FileHash -LiteralPath $Path).Hash.ToLowerInvariant() }
+function Hash($Path) {
+    # The engine installs with long-path support. Windows PowerShell's file
+    # provider can hide valid inventory entries beyond the legacy path limit.
+    $full = [IO.Path]::GetFullPath($Path)
+    $extended = if ($full.StartsWith('\\?\')) { $full }
+        elseif ($full.StartsWith('\\')) { '\\?\UNC\' + $full.Substring(2) }
+        else { '\\?\' + $full }
+    $digest = [Security.Cryptography.SHA256]::Create()
+    try {
+        $inputFile = [IO.File]::OpenRead($extended)
+        try { [BitConverter]::ToString($digest.ComputeHash($inputFile)).Replace('-', '').ToLowerInvariant() }
+        finally { $inputFile.Dispose() }
+    }
+    finally { $digest.Dispose() }
+}
 function SettingsHash {
     if (Test-Path -LiteralPath $ordinary) { Hash $ordinary }
 }
@@ -221,8 +237,26 @@ try {
     if ($WithBuildCheck) { Check-GameplayBuild $creatorHomeWindow }
     $field = Wait-For 'new project name' { Element $creatorHomeWindow 'Project name' }
     Set-Field $field 'Portable Starter'
-    Invoke-Button $creatorHomeWindow 'Create project'
     $projectPath = Join-Path $projects 'Portable Starter\project.poimaproject'
+    Invoke-Button $creatorHomeWindow 'Create project'
+    if ($ExpectBuildSetup) {
+        $setup = Wait-For 'setup before project creation' { Window $creator 'Set up gameplay builds' }
+        $statusId = [Windows.Automation.PropertyCondition]::new([Windows.Automation.AutomationElement]::AutomationIdProperty,
+            'gameplay-build-status')
+        $message = Wait-For 'build setup result' { $setup.FindFirst([Windows.Automation.TreeScope]::Descendants, $statusId) }
+        $report.checks.build_probe_reported_error = $message.Current.Name -like '*check the installed build tools*'
+        if (Test-Path -LiteralPath (Split-Path -Parent $projectPath)) { throw 'Setup began after the project was created.' }
+        Invoke-Button $setup 'Back'
+        $null = Wait-For 'return to project form' { Element $creatorHomeWindow 'Create project' }
+        if ($field.GetCurrentPattern([Windows.Automation.ValuePattern]::Pattern).Current.Value -cne 'Portable Starter' -or
+            (Test-Path -LiteralPath (Split-Path -Parent $projectPath))) {
+            throw 'Returning from setup changed the draft or created its folder.'
+        }
+        $report.checks.setup_back_preserved_draft = $true
+        Invoke-Button $creatorHomeWindow 'Create project'
+        $setup = Wait-For 'reopen setup from project form' { Window $creator 'Set up gameplay builds' }
+        Invoke-Button $setup 'Create without build tools'
+    }
     $null = Wait-For 'new portable project' { Test-Path -LiteralPath $projectPath -PathType Leaf }
     $workspace = Wait-For 'installed workspace' {
         $creator.Refresh()
@@ -232,6 +266,22 @@ try {
         if ($candidate.Current.Name -like 'Portable Starter*Poima Creator') { $candidate }
     }
     $null = Wait-For 'installed workspace play control' { Element $workspace 'Play project' }
+    if ($WithBuildCheck -or $ExpectBuildSetup) {
+        $project = Get-Content -Raw -LiteralPath $projectPath | ConvertFrom-Json
+        $profiles = Join-Path $projects ".poima-build\$($project.project_id)\profiles.json"
+        if ($WithBuildCheck) {
+            $profile = (Get-Content -Raw -LiteralPath $profiles | ConvertFrom-Json).profiles[0]
+            if ($profile.name -cne 'creator' -or $profile.project_root -cne (Split-Path -Parent $projectPath)) {
+                throw 'The new project received the wrong build profile.'
+            }
+            $report.checks.project_build_profile_configured = $true
+        }
+        else {
+            if (Test-Path -LiteralPath $profiles) { throw 'Continuing without tools created a build profile.' }
+            $null = Wait-For 'setup available in the created project' { Element $workspace 'Set up gameplay builds' }
+            $report.checks.project_created_without_tools = $true
+        }
+    }
     $report.checks.portable_project_created = $true
     $report.checks.creator_editor_sha256 = Hash $editorPath
     Close-ProcessWindow $creator

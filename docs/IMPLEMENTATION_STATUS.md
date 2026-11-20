@@ -1,8 +1,16 @@
 # Implementation status
 
-Updated 2026-11-20 for **0.0.312**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-20 for **0.0.313**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.313 checks [Windows build tools](WINDOWS_PREVIEW.md#build-c-gameplay)
+before creating a project. The packaged test creates a project with its own
+build profile after a successful Native AOT starter test. A separate run with
+an unreadable SDK fixture reports the probe failure, preserves the draft on
+**Back**, and creates a project without a build profile on explicit choice.
+The Microsoft installation flow on clean Windows remains open.
+[Results](evidence/m2-windows-create-setup-313.json)
 
 Version 0.0.312 adds [build history](PROJECT_RECOVERY.md) to the Windows creator.
 An automated packaged run reviewed a failed playtest after reopening the

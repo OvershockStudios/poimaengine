@@ -10,14 +10,14 @@ namespace Poima.Editor;
 
 internal sealed class LauncherWindow : Window
 {
-    private readonly Func<ProjectLocation, bool, Task> openProject;
+    private readonly Func<ProjectLocation, bool, WindowsBuildToolchain?, Task> openProject;
     private readonly string projectsDirectory;
     private readonly TextBox projectName = new() { PlaceholderText = "Project name", MaxLength = 96, MinHeight = 34 };
     private readonly StackPanel actions = new() { Spacing = 10 };
     private readonly TextBlock status = new() { TextWrapping = TextWrapping.Wrap };
     private readonly CheckBox advanced = new() { Content = "Open in the full editor" };
 
-    public LauncherWindow(Func<ProjectLocation, bool, Task> openProject, string? projectsDirectory = null)
+    public LauncherWindow(Func<ProjectLocation, bool, WindowsBuildToolchain?, Task> openProject, string? projectsDirectory = null)
     {
         this.openProject = openProject;
         this.projectsDirectory = projectsDirectory ?? Path.Combine(
@@ -59,7 +59,7 @@ internal sealed class LauncherWindow : Window
         actions.Children.Add(ActionButton("Open project from disk…", PickProject));
         actions.Children.Add(advanced);
         actions.Children.Add(new Expander { Header = "Project location", Content = ActionButton("Create in another folder…", ChooseFolder) });
-        if (OperatingSystem.IsWindows() && WindowsGameplayTools.HasAuthoringPack && Program.LauncherDevelopmentProfiles is null)
+        if (CanSetUpBuilds)
             actions.Children.Add(ActionButton("Set up gameplay builds", () => new GameplaySetupWindow().ShowDialog<bool>(this)));
         if (File.Exists(ProjectFiles.PreviewSample))
             actions.Children.Add(ActionButton("Play Collection Room", PlaySample));
@@ -122,17 +122,30 @@ internal sealed class LauncherWindow : Window
         if (string.IsNullOrWhiteSpace(name) || name is "." or ".." || name.EndsWith('.') ||
             name.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
             throw new ArgumentException("Enter a valid project folder name.");
+        WindowsBuildToolchain? tools = null;
+        if (CanSetUpBuilds)
+        {
+            status.Text = "Checking gameplay build tools…";
+            status.Foreground = EditorTheme.Brush("#B4ACB2");
+            status.IsVisible = true;
+            try { tools = await GameplaySetupWindow.BeforeCreateAsync(this); }
+            finally { status.IsVisible = false; }
+            if (tools is null) return;
+        }
         Directory.CreateDirectory(parent);
         string[] arguments = ["create", Path.Combine(parent, name), "--name", name];
         if (WindowsGameplayTools.HasAuthoringPack) arguments = [.. arguments, "--gameplay"];
         var created = await ProjectFiles.Command(arguments);
-        await Open(created.GetProperty("manifest").GetString()!);
+        await Open(created.GetProperty("manifest").GetString()!, tools);
     }
 
-    private async Task Open(string manifest)
+    private static bool CanSetUpBuilds => OperatingSystem.IsWindows() && WindowsGameplayTools.HasAuthoringPack &&
+        Program.LauncherDevelopmentProfiles is null;
+
+    private async Task Open(string manifest, WindowsBuildToolchain? tools = null)
     {
         var selected = await ProjectFiles.Open(manifest);
-        if (IsVisible) await openProject(selected, advanced.IsChecked == true);
+        if (IsVisible) await openProject(selected, advanced.IsChecked == true, tools);
     }
 
     private async Task ChooseFolder()

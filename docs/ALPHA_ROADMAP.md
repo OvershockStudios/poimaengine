@@ -67,6 +67,9 @@ The [0.0.312 build history test](evidence/m2-creator-build-history-312.json)
 reopens a project with two passing builds and a failed change. The automated
 creator reviews the failed checks and restores the older pass as a separate
 project while keeping the latest pass and working project available.
+The [0.0.313 setup test](evidence/m2-windows-create-setup-313.json) checks
+build readiness before creating a project. It exercises the installed tools
+and the recovery choices after a controlled SDK probe failure.
 The [Codex sign-in check](evidence/m2-creator-codex-sign-in-303.json) covers
 opening and cancelling sign-in with an isolated client and continuation after
 a scripted account confirmation. A real browser authorization is still needed.

@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.313
+
+- Check Windows gameplay tools before starting a new creator project. Set up missing tools, return to the project form, or continue without them.
+
 ## 0.0.312
 
 - Browse previous playtests and restore a chosen passing version from build history.

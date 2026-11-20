@@ -34,9 +34,14 @@ Poima or installing a separate .NET runtime.
 ## Build C# gameplay
 
 The creator package includes Poima's C# authoring SDK and its Python publisher.
-Choose **Set up gameplay builds** before opening a project. Poima checks for
-the x64 .NET 10 SDK, MSVC and a Windows SDK. Use the install buttons to start
-Microsoft's setup. If Visual Studio Installer opens, add **Desktop development
+When you create a project, Poima checks for the x64 .NET 10 SDK, MSVC and a
+Windows SDK. If tools are missing, the setup dialog offers Microsoft’s
+installers. **Back** returns to the project form and keeps the name you
+entered. **Create without build tools** opens the project and lets you set
+up compilation later. You can also open **Set up gameplay builds** from the
+home screen at any time.
+
+If Visual Studio Installer opens, add **Desktop development
 with C++** with x64 MSVC and a Windows SDK, then return to Poima and select
 **Check again**. The setup window also has Microsoft download links.
 [Native AOT prerequisites](https://learn.microsoft.com/en-us/dotnet/core/deploying/native-aot/#prerequisites)
