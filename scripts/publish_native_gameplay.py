@@ -90,22 +90,29 @@ def generated_requirements(path):
     return data
 
 
-def run(command, cwd, *, capture=False):
+def run(command, cwd, *, capture=False, authoring_root=None):
     # Supervised publication does not need opportunistic SDK update advertising.
+    environment = dict(os.environ, DOTNET_CLI_TELEMETRY_OPTOUT='1', DOTNET_GENERATE_ASPNET_CERTIFICATE='false',
+                       DOTNET_CLI_WORKLOAD_UPDATE_NOTIFY_DISABLE='true')
+    if authoring_root is not None:
+        for name in tuple(environment):
+            if name.casefold() == 'poimaauthoringroot':
+                del environment[name]
+        environment['PoimaAuthoringRoot'] = str(authoring_root)
     result = subprocess.run([str(p) for p in command], cwd=cwd, text=True,
                             stdout=subprocess.PIPE if capture else None, check=True,
-                            env=dict(os.environ, DOTNET_CLI_TELEMETRY_OPTOUT='1', DOTNET_GENERATE_ASPNET_CERTIFICATE='false',
-                                     DOTNET_CLI_WORKLOAD_UPDATE_NOTIFY_DISABLE='true'))
+                            env=environment)
     return result.stdout.strip() if capture else None
 
 
-def build(dotnet, operation, *arguments, capture=False, cwd=None):
+def build(dotnet, operation, *arguments, capture=False, cwd=None, authoring_root=None):
     # A supervised job owns its compiler processes. Do not connect to shared
     # compiler/MSBuild servers that outlive or escape that job's process tree.
     options = ['-nodeReuse:false', '-p:UseSharedCompilation=false']
     if operation in ('build', 'publish'):
         options.append('--disable-build-servers')
-    return run([dotnet, operation, *arguments, *options], ROOT if cwd is None else cwd, capture=capture)
+    return run([dotnet, operation, *arguments, *options], ROOT if cwd is None else cwd,
+               capture=capture, authoring_root=authoring_root)
 
 
 def pack_isolation(pack, project, output, work):
@@ -206,11 +213,11 @@ def main():
     else:
         pack.verify()
         build(dotnet, 'build', project, '-c', 'Release', '-o', built, '--nologo',
-              '--artifacts-path', work / 'game-artifacts', cwd=project.parent)
+              '--artifacts-path', work / 'game-artifacts', cwd=project.parent, authoring_root=pack.root)
         name = build(dotnet, 'msbuild', project, '-getProperty:AssemblyName', '-nologo',
                      '-p:ArtifactsPath='+str(work / 'game-artifacts'), '-p:UseArtifactsOutput=true',
                      '-p:Configuration=Release',
-                     capture=True, cwd=project.parent)
+                     capture=True, cwd=project.parent, authoring_root=pack.root)
     assembly = built / (name + '.dll')
     if not assembly.is_file():
         raise ValueError('Selected project produced no game assembly: ' + str(assembly))
@@ -259,12 +266,12 @@ def main():
     else:
         pack.verify()
         build(dotnet, 'publish', generated_project, '-c', 'Release', '-r', rid, '-o', published, '--nologo',
-              '--artifacts-path', work / 'publish-artifacts', cwd=project.parent)
+              '--artifacts-path', work / 'publish-artifacts', cwd=project.parent, authoring_root=pack.root)
         pack.verify()
         selected_assets = build(dotnet, 'msbuild', generated_project, '-getProperty:ProjectAssetsFile', '-nologo',
             '-p:ArtifactsPath='+str(work / 'publish-artifacts'), '-p:UseArtifactsOutput=true',
             '-p:Configuration=Release', '-p:RuntimeIdentifier='+rid,
-            capture=True, cwd=project.parent)
+            capture=True, cwd=project.parent, authoring_root=pack.root)
         assets_path = Path(selected_assets)
         if not assets_path.is_absolute() or not assets_path.resolve(strict=True).is_relative_to(work):
             raise ValueError('Resolved NativeAOT assets must be inside installed publication work.')

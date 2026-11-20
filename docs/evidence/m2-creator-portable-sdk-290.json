@@ -1,0 +1,47 @@
+{
+  "engine_version": "0.0.290",
+  "scope": "Windows x64 portable creator with installed .NET 10, MSVC and Windows SDK. The preview directory is moved before opening a retained C# puzzle project with a portable SDK import. A scripted MCP client submits and attaches the native gameplay build.",
+  "package": {
+    "bytes": 140782262,
+    "sha256": "dbe43e8b68bf65649ced1ad6d251c3be61d55b059517e410017036fbc2c6ea7a",
+    "authoring_manifest_sha256": "3cc2a908f8969b36a6bec5071a4e8b7126680678b6bc8faf9a342ea0e029f134",
+    "included_gameplay_guide_sha256": "2f84e746c9dcc29374446861decfac0d8856a9a70d869db908df9e5b70e1b536",
+    "earlier_install_path_unavailable": true
+  },
+  "source_build": {
+    "project_file_sha256": "187fe6335189214b57eb11c3889d0cf18dd672369c92e8723634313d33d2b259",
+    "portable_authoring_import": true,
+    "configured_profile_uses_relocated_package": true,
+    "windows_install_path_contains_spaces_comma_ampersand": true,
+    "publisher_elapsed_ms": 15004,
+    "published_library_sha256": "cdf9840419540f2a15eb0e94b781f53802e45304648fa70e55d047220d6c0e0e",
+    "attached_descriptor_sha256": "4546bd0104d84236899b890fc865403cb14bc50a68fe24204a6494c8a186a0d5",
+    "preview_backend": "native_aot"
+  },
+  "standalone": {
+    "original_source_path_unavailable": true,
+    "independent_gameplay_and_save_groups": 16,
+    "fresh_process_save_continuation": true,
+    "vulkan_gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "ticks": 632,
+    "frames_presented": 633,
+    "renderer_validation_errors": 0,
+    "files_verified_after_play": 60
+  },
+  "separate_creator_interview": {
+    "engine_version": "0.0.289",
+    "provider": "Antigravity CLI 1.5.13",
+    "project_started_blank": true,
+    "question_rounds": 2,
+    "brief_and_playtest_criteria_before_approval": true,
+    "world_and_manifest_unchanged_during_interview": true
+  },
+  "regression": {
+    "publisher_pack_tests": 14,
+    "coreclr_pack_tests": 19,
+    "known_interview_lab_failures": [
+      "Two initial automation trials declined read-only requests. The provider returned no answer. The completed interview asked the provider to stay in chat while making decisions.",
+      "The authoring test initially misclassified a provider file write and later aborted while reading a transcript it was overwriting. The results distinguish this recovered workflow from an uninterrupted fresh run."
+    ]
+  }
+}

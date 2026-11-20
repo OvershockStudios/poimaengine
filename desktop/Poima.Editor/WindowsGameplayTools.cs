@@ -58,10 +58,10 @@ internal static class WindowsGameplayTools
             }
             finally { if (File.Exists(temporary)) File.Delete(temporary); }
 
-            var props = Path.Combine(Authoring, "build", "Poima.Gameplay.props").Replace('\\', '/');
+            var guide = Path.Combine(PackageDirectory, "reference", "CREATOR_GAMEPLAY.md").Replace('\\', '/');
             var projectFile = Path.GetFileName(project.Manifest);
             var context = $"""
-                Poima has configured the native gameplay profile `{ProfileName}` for this project root. The profile-relative project manifest is `{projectFile}`. For C# gameplay, write a project importing `{props}` (MSBuild Project attribute). Use `development.publish` via `poima_build`, poll `development.inspect`, then use `project.inspect` and the verified descriptor hash for `project.gameplay.adopt`. Use paths relative to this project for source selectors and relative to the profile's product root for artifact selectors. Tool approvals and the creator's game brief still apply.
+                Poima has configured the native gameplay profile `{ProfileName}` for this project root. The profile-relative project manifest is `{projectFile}`. For C# gameplay, read the installed guide `{guide}` after brief approval. Import `$(PoimaAuthoringRoot)/build/Poima.Gameplay.props` in the C# project. Use `development.publish` and `project.gameplay.adopt` via `poima_build`. The guide covers verification and the publish and adoption receipts.
                 """;
             return options with { InstalledDevelopmentProfiles = profilePath, GameplayToolStatus = "C# gameplay builds are ready.", GameplayToolContext = context };
         }

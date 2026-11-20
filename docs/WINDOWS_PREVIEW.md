@@ -33,7 +33,8 @@ the project after installing the tools. The creator reports when the tools
 are ready and supplies the build profile to the connected agent.
 [Microsoft's Native AOT prerequisites](https://learn.microsoft.com/en-us/dotnet/core/deploying/native-aot/#prerequisites)
 
-[Gameplay tools](https://github.com/OvershockStudios/poimaengine/blob/main/docs/AUTHORING_TOOLS.md)
+Gameplay compilation packages include a [local gameplay guide](reference/CREATOR_GAMEPLAY.md).
+[Complete gameplay tools guide](https://github.com/OvershockStudios/poimaengine/blob/main/docs/AUTHORING_TOOLS.md)
 
 ## Connect an agent
 

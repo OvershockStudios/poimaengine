@@ -101,7 +101,9 @@ authoring SDK and publisher. On project open it discovers the installed x64
 .NET 10 SDK, MSVC and Windows SDK, then configures a profile named `creator`
 for that project. Build products and configuration are stored in
 `.poima-build/<project_id>` beside the project folder. The chat passes the
-profile name and installed SDK path to the agent on the first submission.
+profile name and [installed gameplay guide](CREATOR_GAMEPLAY.md) to the agent
+on the first submission. The publisher supplies the installed SDK path when
+it compiles a project that imports from `PoimaAuthoringRoot`.
 
 For a custom toolchain or build location, supply an operator-configured
 [development profile](DEVELOPMENT_PROFILES.md).

@@ -13,6 +13,9 @@ from authoring_pack import load_pack
 from build_desktop import MANIFEST, digest, inventory, prior_output, source_engine_version
 
 PYTHON_EMBED_SHA256 = '9e35319bffedab8b36ad44d8f377cb4f1733bcec257a0b6d04d94f01486ddb38'
+CREATOR_REFERENCE = (
+    'CREATOR_GAMEPLAY.md', 'MANAGED_GAMEPLAY.md', 'GAME_UI.md', 'GAME_VERIFICATION.md',
+)
 
 
 def main():
@@ -31,7 +34,7 @@ def main():
     desktop_manifest = json.loads((desktop/MANIFEST).read_text(encoding='utf-8'))
     if desktop_manifest.get('native_version') != version:
         parser.error('The desktop build must match the selected engine version.')
-    if any(name.split('/')[0] in ('samples', 'START.md', 'authoring', 'publisher-python') for name in files):
+    if any(name.split('/')[0] in ('samples', 'START.md', 'authoring', 'publisher-python', 'reference') for name in files):
         parser.error('The desktop input already includes preview content.')
     manifest = json.loads((sample/'game.json').read_text(encoding='utf-8'))
     if (manifest.get('format') != 'poima.game' or manifest.get('name') != 'Collection Room' or
@@ -67,7 +70,8 @@ def main():
     if any(root in output.resolve().parents for root in roots):
         parser.error('The archive must be outside the input trees.')
     prefix = f'Poima-{version}-Windows-x64'
-    guide = (Path(__file__).resolve().parents[1]/'docs'/'WINDOWS_PREVIEW.md').read_bytes()
+    docs = Path(__file__).resolve().parents[1]/'docs'
+    readme_files = {f'{prefix}/START.md': (docs/'WINDOWS_PREVIEW.md').read_bytes()}
     desktop_files = {name: checksum for name, checksum in files.items()
                      if name != MANIFEST and Path(name).suffix.lower() != '.pdb'}
     desktop_manifest['files'] = desktop_files
@@ -80,6 +84,7 @@ def main():
         auth_files['authoring.json'] = pack.manifest_sha256
         payload.update({f'{prefix}/authoring/{name}': (authoring/name, checksum)
                         for name, checksum in auth_files.items()})
+        readme_files.update({f'{prefix}/reference/{name}': (docs/name).read_bytes() for name in CREATOR_REFERENCE})
     with tempfile.TemporaryDirectory(prefix='.poima-preview-', dir=output.parent) as directory:
         staged = Path(directory)/'preview.zip'
         with ZipFile(staged, 'x', compression=ZIP_DEFLATED, compresslevel=6) as archive:
@@ -88,7 +93,8 @@ def main():
             for name, contents in sorted(python_files.items()):
                 archive.writestr(f'{prefix}/publisher-python/{name}', contents)
             archive.writestr(f'{prefix}/{MANIFEST}', receipt)
-            archive.writestr(f'{prefix}/START.md', guide)
+            for name, contents in sorted(readme_files.items()):
+                archive.writestr(name, contents)
         with ZipFile(staged) as archive:
             for name,(_,checksum) in payload.items():
                 with archive.open(name) as member:
@@ -97,8 +103,9 @@ def main():
                         value.update(block)
                 if value.hexdigest() != checksum:
                     raise RuntimeError('Package input changed during assembly: '+name)
-            if archive.read(f'{prefix}/START.md') != guide:
-                raise RuntimeError('Archive guide integrity check failed.')
+            for name, contents in readme_files.items():
+                if archive.read(name) != contents:
+                    raise RuntimeError('Archive guide integrity check failed: '+name)
             if archive.read(f'{prefix}/{MANIFEST}') != receipt:
                 raise RuntimeError('Archive desktop receipt integrity check failed.')
             for name, contents in python_files.items():

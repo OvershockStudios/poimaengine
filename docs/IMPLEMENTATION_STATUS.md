@@ -1,8 +1,16 @@
 # Implementation status
 
-Updated 2026-11-20 for **0.0.289**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-20 for **0.0.290**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.290 includes a [local gameplay guide](CREATOR_GAMEPLAY.md) and
+lets C# source import the SDK through `PoimaAuthoringRoot`. The moved creator
+preview compiled the retained Observatory, and its relocated game passed
+16 gameplay and save groups plus the Vulkan replay. A separate Antigravity
+interview in 0.0.289 completed two rounds of choices and presented an
+approval-ready brief and playtest criteria with the project untouched.
+[Results](evidence/m2-creator-portable-sdk-290.json)
 
 Version 0.0.289 packages the [C# authoring SDK and publisher](WINDOWS_PREVIEW.md#build-c-gameplay)
 with the Windows creator. The launcher discovers installed Microsoft tools and

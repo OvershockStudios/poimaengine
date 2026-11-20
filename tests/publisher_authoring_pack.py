@@ -33,6 +33,17 @@ def digest(data):
 
 
 class PublisherChildEnvironment(unittest.TestCase):
+    def test_installed_sdk_root_replaces_an_inherited_alias(self):
+        environment = {'POIMAAUTHORINGROOT': 'removed install', 'POIMA_TEST_VALUE': 'kept'}
+        completed = publish.subprocess.CompletedProcess(['dotnet'], 0)
+        with patch.dict(os.environ, environment, clear=True), patch.object(publish.subprocess, 'run', return_value=completed) as child:
+            root = Path('installed authoring & tools')
+            publish.run(['dotnet'], Path('owned work'), authoring_root=root)
+            selected = {key: value for key, value in child.call_args.kwargs['env'].items()
+                        if key.casefold() == 'poimaauthoringroot'}
+            self.assertEqual(selected, {'PoimaAuthoringRoot': str(root)})
+            self.assertEqual(dict(os.environ), environment)
+
     def test_sdk_advertising_disabled_only_in_child_environment(self):
         variable = 'DOTNET_CLI_WORKLOAD_UPDATE_NOTIFY_DISABLE'
         for setting in (None, 'false', 'true'):
@@ -105,9 +116,9 @@ class PublisherPack(unittest.TestCase):
             for name in ('LICENSE.TXT', 'THIRD-PARTY-NOTICES.TXT'):
                 (directory/name).write_text('synthetic runtime notice '+family+name, encoding='utf-8')
 
-    def fake_run(self, command, cwd, *, capture=False):
+    def fake_run(self, command, cwd, *, capture=False, authoring_root=None):
         command = [str(value) for value in command]
-        self.commands.append(dict(argv=command, cwd=Path(cwd), capture=capture))
+        self.commands.append(dict(argv=command, cwd=Path(cwd), capture=capture, authoring_root=authoring_root))
         operation = command[1]
         result = None
         event = None
@@ -179,6 +190,8 @@ class PublisherPack(unittest.TestCase):
         for row in self.commands:
             self.assertEqual(row['cwd'], self.project.parent)
             self.assertNotIn(str(self.checkout), '\n'.join(row['argv']))
+            if row['argv'][1] in ('build','msbuild','publish'):
+                self.assertEqual(row['authoring_root'], self.pack)
         builds = [c['argv'] for c in self.commands if c['argv'][1] in ('build','publish')]
         for command in builds:
             artifact_root = Path(command[command.index('--artifacts-path')+1])

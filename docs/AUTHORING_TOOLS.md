@@ -82,6 +82,12 @@ and compiler work. Import the installed props file from an ordinary project:
 </Project>
 ```
 
+Installed Native AOT publication supplies `PoimaAuthoringRoot` from the
+selected pack. Use `$(PoimaAuthoringRoot)/build/Poima.Gameplay.props` to let
+the same source project build from different installation locations.
+Set the property or environment variable to the authoring directory for a
+separate direct `dotnet build`.
+
 The props select .NET 10/C# 14, the binary SDK and prebuilt component analyzer,
 with nullable checks, implicit usings, unsafe code, deterministic compilation
 and warnings as errors. There is no repository-relative `ProjectReference`.
