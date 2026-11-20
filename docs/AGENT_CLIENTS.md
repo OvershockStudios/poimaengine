@@ -219,13 +219,15 @@ alongside the packaged editor and a new output directory. This uses a
 scripted peer and checks both the native reply and the desktop controls.
 [Qualification](evidence/m2-creator-questions-300.json)
 
-For gameplay authoring, use `poima_call` with `world.reference` to read
-the reference text bundled in the running build. List guides with empty
+For gameplay authoring, use `poima_reference` to read the guides bundled in
+the running host's engine without granting world edit or build permissions.
+List guides with empty
 parameters or pass a `guide` to see its headings. For a focused read, pass
 the exact heading title as `section`. The section includes its subheadings
 and ends before the next heading at the same or higher level. Titles are
 case-sensitive and contain 1–128 UTF-8 bytes. If the same title appears
-twice, use the index and explicit line ranges.
+twice, use the index and explicit line ranges. Clients on earlier builds can
+send the same arguments as `params` in a `poima_call` for `world.reference`.
 
 Replies identify the exact guide hash and, for a section, its inclusive
 line range. Keep `guide` and `section` when passing `next_line` as `line`

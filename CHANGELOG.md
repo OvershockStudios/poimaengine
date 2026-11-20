@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.325
+
+- Give creator agents a dedicated read-only MCP tool for bundled guides. Guide retrieval needs no permission to edit a world or run a build.
+
 ## 0.0.324
 
 - Read a single bundled gameplay guide section by its heading. Creator agents start with the section for their current task.

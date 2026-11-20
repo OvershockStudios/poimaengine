@@ -1,0 +1,64 @@
+{
+  "engine_version": "0.0.325",
+  "native_schema_revision": 171,
+  "mcp_tool": "poima_reference",
+  "native_method": "world.reference",
+  "previous_provider_probe": {
+    "evidence": "m2-guide-sections-324.json",
+    "guide_reads_rejected_without_shared_tool_approval": 2
+  },
+  "codex_cli": {
+    "client_version": "0.170.0",
+    "model": "gpt-6.1-terra",
+    "approval_policy": "never",
+    "shell_sandbox": "read-only",
+    "project_approval_overrides": false,
+    "guide_calls": [
+      {
+        "guide": "creator-gameplay",
+        "section": "Publish and attach",
+        "guide_sha256": "3b42364c142054721d7727c5122da873c4cfad13f71c502e13b6227f5b748770",
+        "returned_markdown_bytes": 1535
+      },
+      {
+        "guide": "game-verification",
+        "section": "Write a suite",
+        "guide_sha256": "90511027ba7f039baf3cf58f6aa9eb7e7708559ffce4fdedf148acb56209a352",
+        "returned_markdown_bytes": 2956
+      }
+    ],
+    "world_edit_call": {
+      "method": "world.transact",
+      "provider_status": "failed",
+      "provider_error": "MCP tool call requires approval, but approval policy is never",
+      "world_file_absent": true,
+      "same_edit_committed_under_separate_local_authority": true
+    }
+  },
+  "qualification": {
+    "linux_ctest_passed": [
+      "authoring_api_compatibility",
+      "authoring_api_projection",
+      "world_session_native",
+      "mcp_native",
+      "mcp_contract",
+      "mutation-discovery-native"
+    ],
+    "compiled_authoring_core_v1_request_projection_matches_frozen_baseline": true,
+    "windows_native_mcp_cases_passed": 14,
+    "windows_native_desktop_owner_over_mcp_and_ipc": {
+      "desktop_owner": true,
+      "schema_revision": 171,
+      "matching_reference_reply": true,
+      "write_selector_rejected": true,
+      "owner_build": "0.0.325",
+      "guide_sha256": "90511027ba7f039baf3cf58f6aa9eb7e7708559ffce4fdedf148acb56209a352",
+      "world_and_history_unchanged": true
+    },
+    "windows_managed_creator_win_x64_build_succeeded": true
+  },
+  "limitations": [
+    "The provider test used a disposable Linux world and an explicit prompt. Client approval behavior was checked with the installed Codex release.",
+    "Native Windows and managed creator builds were checked. A packaged Windows creator journey, Claude Code and Antigravity sessions were outside this run."
+  ]
+}

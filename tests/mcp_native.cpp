@@ -126,12 +126,21 @@ try {
     error(rpc(session,"initialize"),-32600);
     ignore_responses();
     const auto listed=rpc(session,"tools/list").at("result").at("tools");
-    check(listed.size()==5,"Unexpected tool count");
+    check(listed.size()==6,"Unexpected tool count");
     check(calls==0,"Lifecycle or listing invoked backend");
     check(session.request(R"({"jsonrpc":"2.0","method":"tools/call","params":{"name":"poima_call","arguments":{"method":"world.transact"}}})").empty(),"Tool notification replied");
     check(calls==0,"Tool notification executed backend");
     const auto discovery=tool(session,Json::object(),"poima_discover");
     check(!discovery.at("isError").get<bool>()&&seen.at("method")=="world.describe"&&seen.at("params")==Json{{"view","catalog"}},"Default discovery not catalog");
+    const Json section={{"guide","creator-gameplay"},{"section","Publish and attach"}};
+    const auto before_reference=calls;
+    const auto reference=tool(session,section,"poima_reference");
+    check(calls==before_reference+1 && seen.at("method")=="world.reference" && seen.at("params")==section
+        && reference.at("structuredContent").at("result")==receipt,"Reference tool did not preserve the exact native read");
+    for(const char* method:{"world.transact","project.source.write","project.verification.write","development.publish"}) {
+        tool(session,{{"method",method},{"params",Json::object()}},"poima_reference");
+        check(seen.at("method")=="world.reference","Reference tool let arguments select another native operation");
+    }
     const Json parameters={{"request_id",std::string(32,'1')},{"base_revision",11}};
     auto result=tool(session,{{"method","world.transact"},{"params",parameters}});
     check(seen.at("params")==parameters&&result.at("structuredContent").at("result")==receipt,"Native parameters or receipt changed");

@@ -37,10 +37,19 @@ and build-job submission with separate approval for each kind of write.
 | Tool | Arguments | Result |
 | --- | --- | --- |
 | `poima_discover` | Optional `view` and `name`, or mutation `operation` and `type`. Use `selection` on its own to [retrieve multiple exact schemas](WORLD_SERVICE.md#select-multiple-schemas). Defaults to `catalog`. | Available operation names or selected schemas and contract sections. |
+| `poima_reference` | Empty arguments list guides. Set `guide` for its outline or add an exact `section` heading. Optional `line` and `lines` page the requested text. | Bounded Markdown, heading index or catalog from the current host build. |
 | `poima_call` | Required `method`, optional object `params` and capture-only `image`. | The native operation result or error. |
 | `poima_source` | `project.source.write` with project selectors, exact guard and replacement text. | A guarded write receipt and resulting SHA-256. |
 | `poima_checks` | `project.verification.write` with project selectors, exact guard and complete suite JSON text. | A guarded suite write receipt and resulting SHA-256. |
 | `poima_build` | Required build or verification `method` and object `params`. | A session-local job receipt for a trusted build or check run. Inspect it through the world API. |
+
+For example, pass `{"guide":"creator-gameplay","section":"Publish and attach"}`
+to `poima_reference`. The tool always invokes `world.reference` on the same
+owner, using its bundled guides and preserving the guide hash and page limits.
+It advertises read-only access to the client and accepts only the native guide
+selectors. The client can permit these reads without granting any of the edit
+or build tools. `world.reference` also remains available through `poima_call`.
+[Guide selection and paging](CREATOR_GAMEPLAY.md)
 
 Read editable C# with `project.source.read` through `poima_call`.
 The host's profile and open world govern the source selectors.

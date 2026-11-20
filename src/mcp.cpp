@@ -3,6 +3,7 @@
 #include "poima/local_session.hpp"
 #include "poima/build_metadata.hpp"
 #include "poima/capture_image.hpp"
+#include "authoring_reference.hpp"
 #include "discovery_selection.hpp"
 #include <filesystem>
 #include <fstream>
@@ -82,6 +83,9 @@ Json tools(){
         {{"name","poima_discover"},{"description","Discover the current native world API. Defaults to its compact catalog. Use selection alone to retrieve up to 12 exact method, component, section or scoped mutation schemas in one reply. Read invariants before editing. Select specific operations for transactions."},
          {"inputSchema",schema({{"view",{{"type","string"},{"enum",{"full","catalog","method","component","section","mutation"}},{"default","catalog"}}},{"name",{{"type","string"},{"minLength",1}}},{"operation",{{"type","string"},{"minLength",1},{"maxLength",128}}},{"type",{{"type","string"},{"minLength",1},{"maxLength",128}}},{"selection",discovery_detail::selection_parameters_schema()}})},
          {"annotations",{{"readOnlyHint",true},{"destructiveHint",false},{"idempotentHint",true},{"openWorldHint",false}}}},
+        {{"name","poima_reference"},{"description","Read gameplay and verification guides bundled in the world owner's engine. Pass guide and an exact section heading for focused instructions. A guide alone lists its headings. Empty arguments list guides."},
+         {"inputSchema",authoring_reference::schema()},
+         {"annotations",{{"readOnlyHint",true},{"destructiveHint",false},{"idempotentHint",true},{"openWorldHint",false}}}},
         {{"name","poima_call"},{"description","Call one native world operation using discovered parameters. Preserve native request_id and base_revision for edits. Calls are synchronous and never retried; transport failure may leave the outcome unknown."},
          {"inputSchema",schema({{"method",{{"type","string"},{"minLength",1}}},{"params",{{"type","object"}}},{"image",schema({{"max_edge",{{"type","integer"},{"minimum",128},{"maximum",2048},{"default",1280}}}})}},{"method"})},
          {"annotations",{{"readOnlyHint",false},{"destructiveHint",true},{"idempotentHint",false},{"openWorldHint",true}}}},
@@ -115,6 +119,8 @@ struct McpSession::Impl {
                 method="world.describe";params=arguments;
                 if(!params.contains("view"))params["view"]="catalog";
             }
+        } else if(name=="poima_reference") {
+            method="world.reference";params=arguments;
         } else {
             for(const auto& [key,value]:arguments.items()) {
                 (void)value;
@@ -221,7 +227,7 @@ std::string McpSession::request(std::string_view message) {
                 require(!params.contains("task"),-32602,"Task execution is unsupported.");
                 require(params.contains("name") && params["name"].is_string(),-32602,"Tool name is required.");
                 const auto name=params["name"].get<std::string>();
-                require(name=="poima_discover" || name=="poima_call" || name=="poima_build" || name=="poima_source" || name=="poima_checks",-32602,"Unknown tool.");
+                require(name=="poima_discover" || name=="poima_reference" || name=="poima_call" || name=="poima_build" || name=="poima_source" || name=="poima_checks",-32602,"Unknown tool.");
                 require(!params.contains("arguments") || params["arguments"].is_object(),-32602,"Tool arguments must be an object.");
                 result=impl_->call(name,params.value("arguments",Json::object()));
             } else throw ProtocolError(-32601,"Unknown MCP method.");

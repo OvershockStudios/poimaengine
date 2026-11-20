@@ -297,7 +297,8 @@ class McpContract(unittest.TestCase):
     def test_authoring_receipts_conflicts_undo_and_eof_persistence(self):
         client = self.client()
         tools = client.rpc('tools/list')['tools']
-        self.assertEqual({tool['name'] for tool in tools}, {'poima_discover', 'poima_call', 'poima_build', 'poima_source', 'poima_checks'})
+        self.assertEqual({tool['name'] for tool in tools}, {'poima_discover', 'poima_reference', 'poima_call',
+                                                          'poima_build', 'poima_source', 'poima_checks'})
         catalog = client.tool('poima_discover')
         self.assertEqual(catalog['view'], 'catalog')
         self.assertTrue(catalog['partial'])
@@ -425,9 +426,14 @@ class McpContract(unittest.TestCase):
     def test_engine_reference_pages_match_built_public_guides(self):
         client = self.client(cwd=self.temp.name)
         method = 'world.reference'
-        before = client.world('world.inspect')
+        before = client.world('world.inspect'), client.world('world.history')
         discovery = client.tool('poima_discover', {'view': 'method', 'name': method})
-        catalog = client.world(method)
+        reference = next(tool for tool in client.rpc('tools/list')['tools'] if tool['name'] == 'poima_reference')
+        self.assertEqual(reference['inputSchema'], discovery['methods'][method])
+        self.assertEqual(reference['annotations'], {'readOnlyHint': True, 'destructiveHint': False,
+                                                    'idempotentHint': True, 'openWorldHint': False})
+        catalog = client.tool('poima_reference')
+        self.assertEqual(catalog, client.world(method))
         examples = Path(__file__).resolve().parents[1] / 'docs'
         expected = {'creator-gameplay': 'CREATOR_GAMEPLAY.md', 'managed-gameplay': 'MANAGED_GAMEPLAY.md',
                     'game-ui': 'GAME_UI.md', 'game-verification': 'GAME_VERIFICATION.md'}
@@ -440,7 +446,9 @@ class McpContract(unittest.TestCase):
             with self.subTest(guide=key):
                 self.assertEqual(guide['sha256'], hashlib.sha256(data).hexdigest())
                 self.assertEqual(guide['bytes'], len(data))
-                headings = client.world(method, {'guide': key})['headings']
+                outline = client.tool('poima_reference', {'guide': key})
+                self.assertEqual(outline, client.world(method, {'guide': key}))
+                headings = outline['headings']
                 self.assertTrue(headings)
                 lines = data.splitlines(keepends=True)
                 for heading in headings:
@@ -478,7 +486,8 @@ class McpContract(unittest.TestCase):
                 line = start
                 content = bytearray()
                 while line is not None:
-                    page = client.world(method, selector)
+                    page = client.tool('poima_reference', selector)
+                    self.assertEqual(page, client.world(method, selector))
                     self.assertEqual(page['section'], title)
                     self.assertEqual(page['section_start_line'], start)
                     self.assertEqual(page['section_end_line'], end)
@@ -504,8 +513,15 @@ class McpContract(unittest.TestCase):
                         {'guide': 'creator-gameplay', 'section': 'publish and attach'},
                         {'guide': 'creator-gameplay', 'section': 'Publish and attach', 'lines': 181}):
             with self.subTest(params=invalid):
-                client.world(method, invalid, error=-32602)
-        self.assertEqual(client.world('world.inspect'), before)
+                self.assertEqual(client.tool('poima_reference', invalid, error=-32602),
+                                 client.world(method, invalid, error=-32602))
+        illegal_methods = ('world.transact', 'project.source.write', 'project.verification.write', 'development.publish')
+        for method_override in illegal_methods:
+            original = {'guide': 'creator-gameplay', 'section': 'Publish and attach'}
+            invalid = {**original, 'method': method_override, 'params': {}}
+            self.assertEqual(client.tool('poima_reference', invalid, error=-32602),
+                             client.world(method, invalid, error=-32602))
+        self.assertEqual((client.world('world.inspect'), client.world('world.history')), before)
         self.assertFalse(self.path.exists())
 
     def test_asset_reference_discovery_reads_and_stale_error_translation(self):
@@ -649,6 +665,10 @@ class McpContract(unittest.TestCase):
             self.assertEqual(grouped['session_scope'], 'shared_headless')
             self.assertEqual(sorted(grouped['methods']), ['host.shutdown', 'world.inspect'])
             client.tool('poima_discover', {'selection': {'methods': ['world.inspect', 'session.close']}}, error=-32602)
+            guide = {'guide': 'game-verification', 'section': 'Write a suite'}
+            reference = direct('world.reference', guide)
+            self.assertEqual(reference.returncode, 0, reference.stderr)
+            self.assertEqual(client.tool('poima_reference', guide), json.loads(reference.stdout)['result'])
             transaction = {'request_id': uuid.uuid4().hex, 'base_revision': revision,
                            'ops': [{'op': 'entity.create', 'id': uuid.uuid4().hex, 'name': 'Shared MCP entity'}]}
             self.assertEqual(client.world('world.transact', transaction)['revision'], revision + 1)

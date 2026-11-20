@@ -1,8 +1,14 @@
 # Implementation status
 
-Updated 2026-11-20 for **0.0.324**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-20 for **0.0.325**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.325 exposes [bundled guides through a read-only MCP tool](MCP.md#tools-and-workflow).
+With its approval policy set to `never`, Codex read two exact sections and
+denied a valid world edit in the same session. The Windows desktop owner
+returned the same guide text and digest through both the dedicated tool
+and the general dispatcher. [Results](evidence/m2-reference-permissions-325.json)
 
 Version 0.0.324 lets an agent [read a bundled guide by heading](CREATOR_GAMEPLAY.md).
 A replay without cached line numbers retrieved four sections in four calls
