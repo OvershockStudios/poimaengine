@@ -22,5 +22,8 @@
     <PackageReference Include="Dock.Avalonia.Themes.Simple" Version="12.1.0.6" />
     <AvaloniaResource Include="../../third_party/inter/Inter-Regular.ttf" Link="Assets/Inter-Regular.ttf" />
     <AvaloniaResource Include="../../third_party/inter/Inter-SemiBold.ttf" Link="Assets/Inter-SemiBold.ttf" />
+    <AvaloniaResource Include="../Branding/landscape.jpg" Link="Assets/Landscape.jpg" />
+    <AvaloniaResource Include="../Poima.Launcher/Poima.png" Link="Assets/Poima.png" />
+    <Compile Include="../Branding/StartupBackdrop.cs" Link="StartupBackdrop.cs" />
   </ItemGroup>
 </Project>

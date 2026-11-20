@@ -14,5 +14,7 @@
   </PropertyGroup>
   <ItemGroup>
     <EmbeddedResource Include="Poima.png" />
+    <EmbeddedResource Include="../Branding/landscape.jpg" LogicalName="Poima.Launcher.Landscape.jpg" />
+    <Compile Include="../Branding/StartupBackdrop.cs" Link="StartupBackdrop.cs" />
   </ItemGroup>
 </Project>

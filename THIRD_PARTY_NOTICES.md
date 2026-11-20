@@ -29,6 +29,11 @@ Poima ships the wordmark artwork and does not bundle the font.
 
 ## Desktop editor
 
+The Windows installer and project picker use the
+[startup landscape by Abigail Ducote](https://unsplash.com/photos/E79BIjgHXTg)
+under the [Unsplash License](https://unsplash.com/license). See the
+[landscape notice](desktop/Branding/Landscape-NOTICE.md).
+
 `desktop/Poima.Editor/packages.lock.json` pins the Avalonia 12.1.3 and Dock 12.1.0.6 dependency graph. The Windows desktop package uses a self-contained .NET runtime, Skia/HarfBuzz and Inter 4.1. The older ImGui frontend retains Source Sans 3. These dependencies support Poima’s first-class desktop editor. They are restored by the desktop build; native headless configurations do not require them. `scripts/build_desktop.py` collects resolved package licenses, runtime/apphost notices and the font license into the desktop payload. Packages that provide only an SPDX expression are supplemented by unchanged upstream license texts pinned to their package source commits in `third_party/desktop_notices/provenance.json`. The package manifest records payload and notice hashes; this inventory is not console or clean-machine distribution qualification.
 
 Original Poima source is licensed under Apache-2.0; see [LICENSE](LICENSE).

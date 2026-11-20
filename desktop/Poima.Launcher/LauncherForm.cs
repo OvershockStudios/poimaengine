@@ -2,12 +2,13 @@
 using System.Diagnostics;
 using System.Drawing.Drawing2D;
 using System.Text.Json;
+using Poima.Branding;
 
 namespace Poima.Launcher;
 
 internal sealed class LauncherForm : Form
 {
-    private static readonly Color Surface = Color.FromArgb(33, 16, 22);
+    private static readonly Color Surface = Color.FromArgb(unchecked((int)StartupBackdrop.Ground));
     private static readonly Color Panel = Color.FromArgb(43, 26, 35);
     private static readonly Color TextColor = Color.FromArgb(247, 232, 235);
     private static readonly Color Muted = Color.FromArgb(204, 188, 194);
@@ -31,6 +32,8 @@ internal sealed class LauncherForm : Form
     private readonly Button cancel = Button("Cancel");
     private readonly Button showOptions = Button("Installation options");
     private readonly ToolTip tooltips = new();
+    private readonly Bitmap landscape = LoadBitmap("Landscape.jpg");
+    private Bitmap? backdrop;
     private readonly Bitmap settingsIcon = DrawIcon((g, pen) =>
     {
         g.DrawLine(pen, 3, 5, 17, 5);
@@ -50,7 +53,7 @@ internal sealed class LauncherForm : Form
     private readonly TableLayoutPanel options = new()
     {
         Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3, AutoSize = true,
-        AutoSizeMode = AutoSizeMode.GrowAndShrink, Visible = false
+        AutoSizeMode = AutoSizeMode.GrowAndShrink, Visible = false, BackColor = Color.Transparent
     };
     private readonly Dictionary<string, string> pins;
     private CancellationTokenSource? pending;
@@ -68,6 +71,8 @@ internal sealed class LauncherForm : Form
         Font = new Font("Segoe UI", 10);
         ForeColor = TextColor;
         BackColor = Surface;
+        DoubleBuffered = true;
+        ResizeRedraw = true;
         ClientSize = new Size(620, 380);
         MinimumSize = new Size(560, 392);
         StartPosition = FormStartPosition.CenterScreen;
@@ -76,7 +81,8 @@ internal sealed class LauncherForm : Form
 
         var layout = new TableLayoutPanel
         {
-            Dock = DockStyle.Fill, Padding = new Padding(26, 22, 26, 18), ColumnCount = 1, RowCount = 6
+            Dock = DockStyle.Fill, Padding = new Padding(26, 22, 26, 18), ColumnCount = 1, RowCount = 6,
+            BackColor = Color.Transparent
         };
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 70));
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 44));
@@ -86,10 +92,12 @@ internal sealed class LauncherForm : Form
         layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         Controls.Add(layout);
 
-        using var wordmark = typeof(LauncherForm).Assembly.GetManifestResourceStream("Poima.Launcher.Poima.png")!;
-        using var source = Image.FromStream(wordmark);
-        var logo = new PictureBox { Width = 145, Height = 54, SizeMode = PictureBoxSizeMode.Zoom, Image = new Bitmap(source) };
-        var header = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1 };
+        var logo = new PictureBox
+        {
+            Width = 145, Height = 54, SizeMode = PictureBoxSizeMode.Zoom, Image = LoadBitmap("Poima.png"),
+            BackColor = Color.Transparent
+        };
+        var header = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, BackColor = Color.Transparent };
         header.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         header.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
         header.Controls.Add(logo, 0, 0);
@@ -98,14 +106,16 @@ internal sealed class LauncherForm : Form
         header.Controls.Add(showOptions, 1, 0);
         layout.Controls.Add(header, 0, 0);
         current.Dock = DockStyle.Fill;
+        current.BackColor = Color.Transparent;
         current.Font = new Font(Font.FontFamily, 15, FontStyle.Bold);
         layout.Controls.Add(current, 0, 1);
 
-        var actions = new FlowLayoutPanel { Dock = DockStyle.Fill, WrapContents = false };
+        var actions = new FlowLayoutPanel { Dock = DockStyle.Fill, WrapContents = false, BackColor = Color.Transparent };
         SetIcon(project, folderIcon, "Open project…");
         actions.Controls.AddRange([open, update, project, cancel]);
         layout.Controls.Add(actions, 0, 2);
         status.Dock = DockStyle.Fill;
+        status.BackColor = Color.Transparent;
         status.ForeColor = Muted;
         layout.Controls.Add(status, 0, 3);
         progress.Dock = DockStyle.Fill;
@@ -118,12 +128,12 @@ internal sealed class LauncherForm : Form
         location.Text = settings.Location;
         location.Dock = DockStyle.Fill;
         SetIcon(browse, folderIcon, "Browse…");
-        options.RowStyles.Add(new RowStyle(SizeType.Absolute, 38));
+        options.RowStyles.Add(new RowStyle(SizeType.Absolute, 40));
         options.RowStyles.Add(new RowStyle(SizeType.Absolute, 38));
         options.RowStyles.Add(new RowStyle(SizeType.Absolute, 42));
         options.Controls.Add(Row("Install location", location, browse), 0, 0);
         options.Controls.Add(Row("Release channel", channel), 0, 1);
-        var local = new FlowLayoutPanel { Dock = DockStyle.Fill, WrapContents = false };
+        var local = new FlowLayoutPanel { Dock = DockStyle.Fill, WrapContents = false, BackColor = Color.Transparent };
         local.Controls.AddRange([installPackage, rollback]);
         options.Controls.Add(local, 0, 2);
         layout.Controls.Add(options, 0, 5);
@@ -147,11 +157,43 @@ internal sealed class LauncherForm : Form
         Disposed += (_, _) =>
         {
             http.Dispose(); tooltips.Dispose(); logo.Image?.Dispose();
+            backdrop?.Dispose(); landscape.Dispose();
             settingsIcon.Dispose(); folderIcon.Dispose(); updateIcon.Dispose();
         };
         RunWithStatus(RefreshInstall);
         ActiveControl = open.Enabled ? open : update;
         Shown += async (_, _) => { if (open.Enabled && pending is null) await UpdateAsync(automatic: true); };
+    }
+
+    private static Bitmap LoadBitmap(string name)
+    {
+        using var stream = typeof(LauncherForm).Assembly.GetManifestResourceStream($"Poima.Launcher.{name}")!;
+        using var source = Image.FromStream(stream);
+        return new Bitmap(source);
+    }
+
+    protected override void OnPaintBackground(PaintEventArgs args)
+    {
+        var bounds = ClientRectangle;
+        if (bounds.Width == 0 || bounds.Height == 0) return;
+        if (backdrop?.Size != bounds.Size)
+        {
+            backdrop?.Dispose();
+            backdrop = new Bitmap(bounds.Width, bounds.Height);
+            using var graphics = Graphics.FromImage(backdrop);
+            graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
+            var crop = StartupBackdrop.Crop(landscape.Width, landscape.Height, bounds.Width, bounds.Height);
+            graphics.DrawImage(landscape, bounds, new RectangleF((float)crop.X, (float)crop.Y,
+                (float)crop.Width, (float)crop.Height), GraphicsUnit.Pixel);
+            using var overlay = new LinearGradientBrush(bounds, Surface, Surface, LinearGradientMode.Vertical);
+            overlay.InterpolationColors = new ColorBlend
+            {
+                Positions = StartupBackdrop.Tint.Select(stop => stop.Position).ToArray(),
+                Colors = StartupBackdrop.Tint.Select(stop => Color.FromArgb(unchecked((int)stop.Argb))).ToArray()
+            };
+            graphics.FillRectangle(overlay, bounds);
+        }
+        args.Graphics.DrawImageUnscaled(backdrop, 0, 0);
     }
 
     private static Button Button(string title, bool primary = false)
@@ -186,9 +228,9 @@ internal sealed class LauncherForm : Form
         button.Size = new Size(38, 33);
         button.Image = icon;
         button.AccessibleName = name;
-        button.BackColor = Surface;
+        button.BackColor = Panel;
         button.FlatAppearance.BorderSize = 0;
-        button.FlatAppearance.MouseOverBackColor = Panel;
+        button.FlatAppearance.MouseOverBackColor = Color.FromArgb(54, 46, 54);
         tooltips.SetToolTip(button, name);
     }
 
@@ -204,11 +246,14 @@ internal sealed class LauncherForm : Form
 
     private static TableLayoutPanel Row(string title, Control field, params Control[] actions)
     {
-        var row = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = actions.Length + 2, RowCount = 1 };
+        var row = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill, ColumnCount = actions.Length + 2, RowCount = 1, BackColor = Color.Transparent
+        };
         row.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 144));
         row.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         row.Controls.Add(new Label { Text = title, AutoEllipsis = true, TextAlign = ContentAlignment.TopLeft, Dock = DockStyle.Fill,
-            ForeColor = Muted, Padding = new Padding(0, 6, 0, 0) });
+            ForeColor = Muted, Padding = new Padding(0, 6, 0, 0), BackColor = Color.Transparent });
         row.Controls.Add(field);
         foreach (var action in actions)
         {

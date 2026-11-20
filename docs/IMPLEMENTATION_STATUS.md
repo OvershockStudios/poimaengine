@@ -1,8 +1,15 @@
 # Implementation status
 
-Updated 2026-11-20 for **0.0.331**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-20 for **0.0.332**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.332 uses the website's landscape and wine gradient in the
+[Windows launcher and project picker](WINDOWS_LAUNCHER.md). Both windows
+load the embedded artwork locally. Inspecting the exact packaged windows
+confirmed the background, and an empty portable profile installed all
+501 files, created a project and presented a Vulkan game frame.
+[Results](evidence/m2-launcher-branding-332.json)
 
 Version 0.0.331 simplifies the [Windows launcher](WINDOWS_LAUNCHER.md).
 **Install Poima** and **Open Poima** are the primary actions. Options, folder

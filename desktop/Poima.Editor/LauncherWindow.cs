@@ -4,6 +4,7 @@ using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Markup.Xaml.Styling;
 using Avalonia.Platform.Storage;
 
 namespace Poima.Editor;
@@ -30,14 +31,17 @@ internal sealed class LauncherWindow : Window
         WindowStartupLocation = WindowStartupLocation.CenterScreen;
         FontFamily = new FontFamily("avares://Poima.Editor/Assets#Inter");
         FontSize = 14;
-        Background = EditorTheme.Brush("#19191C");
-        Foreground = EditorTheme.Brush("#F2EDEE");
+        Background = EditorTheme.Brush("#211016");
+        Foreground = EditorTheme.Brush("#F7E8EB");
+        Styles.Add(new StyleInclude(new Uri("avares://Poima.Editor/"))
+        { Source = new Uri("avares://Poima.Editor/Themes/CreatorControls.axaml") });
         AutomationProperties.SetName(projectName, "Project name");
 
-        var wordmark = new TextBlock { Text = "Poima", FontWeight = FontWeight.SemiBold, FontSize = 32 };
+        var logo = LauncherBackdrop.Load("Poima.png");
+        var wordmark = new Image { Source = logo, Height = 52, HorizontalAlignment = HorizontalAlignment.Left };
+        AutomationProperties.SetName(wordmark, "Poima");
         var create = ActionButton("Create project", () => CreateProject(this.projectsDirectory));
-        create.Background = EditorTheme.Brush("#722F37");
-        create.Foreground = EditorTheme.Brush("#F7E8EB");
+        create.Classes.Add("primary");
         var row = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto"), ColumnSpacing = 8 };
         row.Children.Add(projectName);
         Grid.SetColumn(create, 1);
@@ -69,7 +73,9 @@ internal sealed class LauncherWindow : Window
         content.Children.Add(actions);
         status.IsVisible = !string.IsNullOrEmpty(status.Text);
         content.Children.Add(status);
-        Content = content;
+        var backdrop = new LauncherBackdrop { IsHitTestVisible = false };
+        Content = new Grid { Children = { backdrop, content } };
+        Closed += (_, _) => { backdrop.Dispose(); logo.Dispose(); };
     }
 
     private sealed record LocalProject(string Name, string Manifest)

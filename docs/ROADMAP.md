@@ -82,6 +82,10 @@ export. Keep closing performance, physical-input and reliability gates in
 parallel as the work permits. Installable desktop workflows establish the
 product before optional hosting.
 
+Packaged games should show a brief Poima splash on interactive startup by
+default. Let the creator disable it in project settings. Headless verification
+and replay keep their existing start tick and timing.
+
 For work that can run in parallel, a lead agent coordinates independent
 project drafts. It reviews and combines their contributions in a candidate,
 then verifies the candidate against the shared brief before offering it for

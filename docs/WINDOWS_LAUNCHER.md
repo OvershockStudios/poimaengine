@@ -7,6 +7,8 @@ keep them side by side and choose **Install from ZIP…** in that panel.
 The launcher verifies the archive and every extracted file before activation.
 After installation, select **Open Poima**. The launcher includes its own runtime.
 See the [Windows engine guide](WINDOWS_PREVIEW.md) for projects and agent sign-in.
+The launcher and project picker bundle the website's landscape and wine tint
+for offline startup. [Landscape credit](../desktop/Branding/Landscape-NOTICE.md)
 
 **Preview** selects tagged `0.x.x`, alpha, beta and release candidate builds.
 **Stable** selects final builds from `1.0.0` onward. After the first install,
@@ -57,8 +59,8 @@ launcher checks the GitHub SHA-256 digests for that pair.
 [GitHub Releases API](https://docs.github.com/en/rest/releases/releases) ·
 [Release asset integrity](https://docs.github.com/en/rest/releases/assets)
 
-The launcher ZIP includes Poima's license, the wordmark font notice and
-notices from the actual .NET runtime packs selected for the launcher.
+The launcher ZIP includes Poima's license, wordmark font and landscape notices,
+and notices from the actual .NET runtime packs selected for the launcher.
 
 ## Qualification
 

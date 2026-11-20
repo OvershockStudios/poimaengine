@@ -1,0 +1,106 @@
+{
+  "scope": "Exact precompiled Windows x64 archives tested on the development laptop. An empty portable profile uses UI Automation and a hardware Vulkan Play/Stop check. Owned window captures were inspected privately.",
+  "release": {
+    "version": "0.0.332",
+    "tag": "v0.0.332",
+    "engine_files": 501,
+    "sample_manifest_sha256": "7b2fb7d6cc18963d4943546143d3e78ff3a79b1eb94e14bf6d98aac926485458",
+    "assets": [
+      {
+        "name": "Poima-0.0.332-Windows-x64.zip",
+        "bytes": 141936477,
+        "sha256": "d49ecb175a8b6affa398b5a063b16e857346de31abdfe30c5fbe2401963770b6"
+      },
+      {
+        "name": "Poima-0.0.332-Windows-x64.manifest.json",
+        "bytes": 89637,
+        "sha256": "d17ae20599446e9b49a7e3024b9648661c6d59f6648c13f0d7648c82ef0b9454"
+      },
+      {
+        "name": "Poima-Launcher-0.0.332-Windows-x64.zip",
+        "bytes": 46194720,
+        "sha256": "20ed177888fb3ceab48df3556327d7b0b3b2701425133871ddbe2cbeb8d89131"
+      }
+    ]
+  },
+  "release_receipt_sha256": "5cbe3b5ad81e15a870b01eb53f9c666dfeecf5b0095a1c1269d2a98287e51e26",
+  "artwork": {
+    "photo_sha256": "4e21c0a372f5bd430c4e0c20e7b22944c0768d6bb71c573d3e9489f142e2d407",
+    "credit": "Abigail Ducote",
+    "source": "https://unsplash.com/photos/E79BIjgHXTg",
+    "license": "https://unsplash.com/license",
+    "matches_website_copy": true,
+    "packaged_notices_match": true
+  },
+  "launcher": {
+    "passed": true,
+    "engine_version": "0.0.332",
+    "checks": {
+      "compact_first_run": true,
+      "installation_options_opened": true,
+      "compact_installed": true,
+      "installed_inventory_files": 501,
+      "install_staging_empty": true,
+      "portable_project_created": true,
+      "creator_editor_sha256": "b7a7d702ed7bdaa46bc473a37c054c46889d7d93e50fd999049a6e56cd84f388",
+      "first_play": {
+        "project_id": "bd98542c3c6f47fd64b557dddf2a79b8",
+        "revision": 1,
+        "session": "6cc062d86d3240aaa034a581936f0e8b",
+        "tick": 7,
+        "frames": 5,
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "validation_errors": 0,
+        "stopped": true
+      },
+      "default_launcher_settings_preserved": true,
+      "launcher_exit": 0,
+      "creator_exit": 0
+    },
+    "archive_sha256": "d49ecb175a8b6affa398b5a063b16e857346de31abdfe30c5fbe2401963770b6",
+    "launcher_sha256": "77ac8f5162a59707581b8d19c27c3838584e73b3df1d7c6a5e95647a4350191a",
+    "report_sha256": "17f49855000d0e0347ba53be94a61cba06bc1724620b014bd6d9584c4b19a6fa",
+    "first_play_observations_sha256": "84dbdcaef3c8e44a546b16b3f7bcc8d76136d708eac8e54285d3cd485e753a65"
+  },
+  "windows_captures": {
+    "launcher": {
+      "sha256": "1907cb1655906b06fd2db438dedbd224fa9ee594ccb4dfbd6998b538e0465404",
+      "size_px": [
+        638,
+        427
+      ]
+    },
+    "launcher-options": {
+      "sha256": "fd3c16b43e8a1127c0f153d10acdc61eccb41f124d4236a1b6264853144b3862",
+      "size_px": [
+        638,
+        427
+      ]
+    },
+    "launcher-installed": {
+      "sha256": "438f43873e24f98f0bfee9f268119e6a304ebcfa8a832c7aa365065ba3c7b800",
+      "size_px": [
+        638,
+        427
+      ]
+    },
+    "project-picker": {
+      "sha256": "ab78f737366050f7c5f00e209d8618d0b966a5a4c5f0916f7158d1e0e2ce96e6",
+      "size_px": [
+        655,
+        556
+      ]
+    }
+  },
+  "earlier_builds": {
+    "desktop_build_failed": "The installed Avalonia version requires the gradient stops to be inserted into a new collection. The corrected build succeeded.",
+    "first_launcher_ui_passed": true,
+    "first_launcher_archive_sha256": "b02437d5557bfe033530674c8c5ee748452d2e0bcbcfa6402933e203fe858ab7",
+    "launcher_refinement": "Use wine icon button backgrounds after the first physical window capture revealed black controls. The final install passed with the identical engine ZIP."
+  },
+  "scope_pending": [
+    "Public tagged installation",
+    "Clean Windows and first-time human journey",
+    "Standalone game splash"
+  ]
+}

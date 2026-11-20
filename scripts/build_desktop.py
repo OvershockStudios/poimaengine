@@ -289,6 +289,8 @@ def main():
         copy_installed_native(installed, stage, expected_version, native_payload)
         # A fresh install tree also prevents obsolete native notices persisting.
         shutil.copytree(installed/'share/poima', stage/'licenses/engine')
+        shutil.copy2(ROOT/'desktop/Branding/Landscape-NOTICE.md', stage/'licenses/Landscape-NOTICE.md')
+        shutil.copy2(ROOT/'docs/branding/Playball-OFL.txt', stage/'licenses/Playball-OFL.txt')
         # Inter is embedded in the desktop resources; Source Sans remains in
         # the optional native ImGui editor shipped alongside the desktop host.
         fonts = stage/'licenses/SourceSans3'

@@ -114,6 +114,7 @@ def launcher_notices(work):
     files = {
         'licenses/Poima-LICENSE.txt': ROOT/'LICENSE',
         'licenses/Playball-OFL.txt': ROOT/'docs/branding/Playball-OFL.txt',
+        'licenses/Landscape-NOTICE.md': ROOT/'desktop/Branding/Landscape-NOTICE.md',
     }
     for name, notices in RUNTIME_PACKS.items():
         selected = [key.split('/')[-1] for key in deps['libraries']
