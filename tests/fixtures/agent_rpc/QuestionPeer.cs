@@ -7,6 +7,10 @@ static class QuestionPeer
     public static async Task RunAsync()
     {
         const string thread = "question-fixture";
+        const string login = "poima-browser-login";
+        var authentication = Environment.GetEnvironmentVariable("POIMA_TEST_CODEX_SIGN_IN");
+        var signedIn = authentication is null;
+        var loginPending = false;
         var turn = "";
         while (await Console.In.ReadLineAsync() is { } line)
         {
@@ -41,7 +45,38 @@ static class QuestionPeer
                     await Send(Response(new JsonObject()));
                     break;
                 case "initialized": break;
+                case "account/read":
+                    await Send(Response(new JsonObject { ["requiresOpenaiAuth"] = true,
+                        ["account"] = signedIn ? new JsonObject { ["type"] = "chatgpt" } : null }));
+                    break;
+                case "account/login/start":
+                    if (signedIn || loginPending || call["params"]?["type"]?.GetValue<string>() != "chatgpt")
+                        throw new InvalidDataException("Unexpected browser login start.");
+                    loginPending = true;
+                    await Send(LoginCompleted("another-login", true));
+                    await Send(Response(new JsonObject { ["type"] = "chatgpt", ["loginId"] = login,
+                        ["authUrl"] = authentication == "invalid-url" ? "https://auth.openai.com.example.org/" : "https://auth.openai.com/oauth/authorize" }));
+                    if (authentication == "success")
+                    {
+                        var signal = Environment.GetEnvironmentVariable("POIMA_TEST_CODEX_AUTH_SIGNAL")!;
+                        using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+                        while (!File.Exists(signal)) await Task.Delay(50, deadline.Token);
+                        signedIn = true;
+                        loginPending = false;
+                        await Send(LoginCompleted(login, true));
+                    }
+                    break;
+                case "account/login/cancel":
+                    if (!loginPending || call["params"]?["loginId"]?.GetValue<string>() != login)
+                        throw new InvalidDataException("The fixture did not receive its pending login ID.");
+                    loginPending = false;
+                    await Send(Response(new JsonObject { ["status"] = "canceled" }));
+                    await Send(LoginCompleted(login, false));
+                    if (Environment.GetEnvironmentVariable("POIMA_TEST_CODEX_AUTH_SIGNAL") is { } record)
+                        await File.WriteAllTextAsync(record, login);
+                    break;
                 case "model/list":
+                    if (!signedIn) throw new InvalidDataException("Opened the model catalog before sign-in.");
                     await Send(Response(new JsonObject { ["data"] = new JsonArray(
                         new JsonObject { ["model"] = "question-fixture", ["isDefault"] = true }) }));
                     break;
@@ -62,6 +97,12 @@ static class QuestionPeer
                 default: throw new InvalidDataException("Unexpected question fixture method.");
             }
         }
+
+        static JsonObject LoginCompleted(string id, bool success) => new()
+        {
+            ["method"] = "account/login/completed",
+            ["params"] = new JsonObject { ["loginId"] = id, ["success"] = success }
+        };
 
         JsonObject Question(int id, string target) => new()
         {

@@ -1,8 +1,15 @@
 # Implementation status
 
-Updated 2026-11-20 for **0.0.302**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-20 for **0.0.303**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.303 offers [browser sign-in for an installed Codex client](AGENT_CLIENTS.md#connect-a-project).
+The packaged Windows creator detected a signed-out real client in isolated
+storage, offered the sign-in page and cancelled without creating credentials.
+A scripted app-server separately verified matching completion, stale-event
+handling, account recheck and opening the conversation. Browser authorization
+with a first-time creator remains open. [Results](evidence/m2-creator-codex-sign-in-303.json)
 
 Version 0.0.302 adds [image references](GAME_BRIEF.md#agree-on-the-brief) to
 the creator chat. Codex and Antigravity each described two selected images,

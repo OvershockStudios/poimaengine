@@ -21,6 +21,13 @@ physical-device qualification; rendered evidence is separate.
 
 ## Connect a project
 
+In the Windows creator, **Connect Codex** checks the account reported by the
+installed client. If it needs sign-in, **Open sign-in page** starts the
+browser step. **Cancel** leaves the conversation disconnected. After Codex
+confirms the matching sign-in, Poima rechecks the account and opens the
+conversation. Codex handles the callback and stores its own credentials.
+[Codex app-server authentication](https://learn.chatgpt.com/docs/app-server#authentication)
+
 Use absolute paths to the engine executable and the project's manifest. With
 Poima 0.0.278 or later, `mcp --project` opens the entry world and owns its
 writer lock. To work alongside an open editor or shared headless host,

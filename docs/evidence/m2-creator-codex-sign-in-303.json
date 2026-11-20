@@ -1,0 +1,82 @@
+{
+  "engine_version": "0.0.303",
+  "scope": "Account connection in the extracted Windows preview on the development machine. The real Codex client runs with isolated provider storage. A separate deterministic app-server peer confirms success, checks that an unrelated completion is ignored and verifies the cancelled login identity. Browser interaction and real account authorization require a human.",
+  "archive": {
+    "name": "Poima-0.0.303-Windows-x64.zip",
+    "bytes": 141392815,
+    "sha256": "20ad1ea88ff2486fe173f4a0dfef025bd8307f7e40d86bd846361a8531264d3d"
+  },
+  "release_inventory_files": 499,
+  "artifacts": {
+    "editor_sha256": "46e91d8a3ba420cc88fbb4ba7286706ef3fb9082bdb534152e27134bdebabd0e",
+    "frontend_sha256": "efb1e66648d8399abda2ece44fafd32f946cc0e553262cdb4560cbd206f1ff06",
+    "agent_host_sha256": "b883e2c17157c5c88c128f66269f1e153d8b7fc440524bb223b1fcf64e521369",
+    "cli_sha256": "7155e084f59fe69405a2368f6e17a2f76c96ed1cb95e5a7c238bbf39f15ed71a"
+  },
+  "real_codex": {
+    "version": "codex-cli 0.163.0-alpha.11",
+    "checks": {
+      "browser_action_available": true,
+      "cancel_left_disconnected": true,
+      "no_credentials_after_cancellation": true,
+      "project_unchanged": true
+    },
+    "report_sha256": "fac1eb5b38e79acaa39e92c1ac9a63d3f8a1876abc08931a5ebf61bb2ac46954"
+  },
+  "protocol_fixtures": {
+    "windows": true,
+    "linux": true,
+    "untrusted_authorization_page_rejected": true,
+    "cancel": {
+      "checks": {
+        "missing_client_help": true,
+        "browser_action_available": true,
+        "cancel_left_disconnected": true,
+        "exact_login_cancelled": true,
+        "project_unchanged": true
+      },
+      "report_sha256": "e662553efa2148c4943a3526f8666d15726c44daa43a35b0eb1ade2b5f557b34"
+    },
+    "confirmed_account": {
+      "checks": {
+        "browser_action_available": true,
+        "stale_completion_ignored": true,
+        "confirmed_account_opened_conversation": true,
+        "project_unchanged": true
+      },
+      "report_sha256": "f87582bc74895822081746554dfa648983d88fa3c943534f999cea0babb245bc"
+    }
+  },
+  "windows_creator_regression": {
+    "passed": true,
+    "checks": [
+      "closed_during_play_exit_code",
+      "closed_exit_code",
+      "codex_disconnected",
+      "codex_questions",
+      "codex_ready",
+      "codex_reconnected",
+      "created",
+      "edit_before_export",
+      "export",
+      "export_disabled_during_preview",
+      "first_preview",
+      "relocated_export",
+      "reopened_preview",
+      "stopped"
+    ],
+    "report_sha256": "6303faae7df0554d8aecfcb0a25e94c043323aac114476636f414826e62db9fc"
+  },
+  "earlier_ui_probe": {
+    "passed": false,
+    "finding": "The first automation locator did not find the owned modal through the top-level accessibility tree. Cleanup forced the owned editor to exit. The repeated probe identifies the native child by its owner and then uses UI Automation inside it."
+  },
+  "earlier_mixed_client_regression": {
+    "passed": false,
+    "finding": "The test carried the real client's model selection into the scripted peer. It timed out before the question turn and forced test cleanup. The repeated regression clears the model and conversation fields when switching executables and waits for the earlier connection to retire."
+  },
+  "open_qualification": [
+    "Real browser sign-in to a fresh Codex account",
+    "First-time creator and toolchain on clean Windows"
+  ]
+}

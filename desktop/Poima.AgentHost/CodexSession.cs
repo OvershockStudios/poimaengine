@@ -5,6 +5,8 @@ using System.Threading.Channels;
 
 namespace Poima.AgentHost;
 
+public sealed record CodexBrowserLogin(string Id, Uri AuthorizationPage);
+
 /// <summary>
 /// An official Codex app-server connection. The owner consumes Events continuously,
 /// renders streamed items and explicitly answers server approval requests.
@@ -128,6 +130,29 @@ public sealed class CodexSession : IAgentSession
 
     public Task<JsonNode?> ListModelsAsync(CancellationToken cancellation = default) =>
         rpc.RequestAsync("model/list", new JsonObject { ["limit"] = 100 }, cancellation);
+
+    public async Task<bool> RequiresSignInAsync(CancellationToken cancellation = default)
+    {
+        var result = await rpc.RequestAsync("account/read", new JsonObject { ["refreshToken"] = false }, cancellation);
+        if (result?["requiresOpenaiAuth"] is not JsonValue required || !required.TryGetValue<bool>(out var requiresAuth))
+            throw new IOException("Codex returned no account status.");
+        return requiresAuth && result["account"] is null;
+    }
+
+    public async Task<CodexBrowserLogin> StartBrowserLoginAsync(CancellationToken cancellation = default)
+    {
+        var result = await rpc.RequestAsync("account/login/start", new JsonObject { ["type"] = "chatgpt" }, cancellation);
+        var id = result?["loginId"]?.GetValue<string>();
+        if (result?["type"]?.GetValue<string>() != "chatgpt" || string.IsNullOrWhiteSpace(id) || id.Length > 128 ||
+            !Uri.TryCreate(result["authUrl"]?.GetValue<string>(), UriKind.Absolute, out var page) ||
+            page.Scheme != Uri.UriSchemeHttps || !page.IsDefaultPort || page.UserInfo.Length != 0 ||
+            page.IdnHost is not ("auth.openai.com" or "chatgpt.com"))
+            throw new InvalidDataException("Codex returned an invalid sign-in page or login ID.");
+        return new(id, page);
+    }
+
+    public Task<JsonNode?> CancelBrowserLoginAsync(string loginId, CancellationToken cancellation = default) =>
+        rpc.RequestAsync("account/login/cancel", new JsonObject { ["loginId"] = loginId }, cancellation);
 
     public Task<JsonNode?> ListItemsAsync(string turnId, string? cursor = null, CancellationToken cancellation = default)
     {

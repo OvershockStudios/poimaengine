@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+using System.Diagnostics;
 using Avalonia;
 using Avalonia.Automation;
 using Avalonia.Controls;
@@ -40,14 +41,16 @@ internal sealed class AgentChat : UserControl
     private readonly List<(string Name, AgentImage Image, Control Chip)> images = [];
     private readonly Button connect = new() { Content = "Connect" }, disconnect = new() { Content = "Disconnect", IsEnabled = false },
         send = new() { Content = "Send", IsEnabled = false }, stop = new() { Content = "Stop", IsEnabled = false };
+    private readonly Button getCodex = new() { Content = "Get Codex", IsVisible = false };
     private IAgentSession? session;
+    private CodexSignInWindow? signIn;
     private CodexQuestionCard? questionCard;
     private string? activeTurn, unusedConversation;
     private readonly HashSet<string> completed = new(StringComparer.Ordinal);
     private readonly Dictionary<StackPanel, JsonNode> acpPermissions = [];
     private readonly Dictionary<string, string> acpToolDetails = new(StringComparer.Ordinal);
     private bool submitting, closing, connecting, ready, cancelRequested, sentGameplayContext;
-    private bool acpReceivedReply, codexSupportsImages, pickingImages;
+    private bool acpReceivedReply, codexSupportsImages, pickingImages, codexMissing;
     private Task? connectingTask, closingTask, retiringTask;
     public bool Busy => submitting || activeTurn is not null || connecting || retiringTask?.IsCompleted == false;
     private string ProviderName => provider.SelectedItem as string ?? "Codex";
@@ -92,7 +95,7 @@ internal sealed class AgentChat : UserControl
                 setup.Children.Add(allowChecks);
             }
             var connection = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
-            connection.Children.Add(connect); connection.Children.Add(disconnect);
+            connection.Children.Add(connect); connection.Children.Add(disconnect); connection.Children.Add(getCodex);
             setup.Children.Add(connection);
         }
         else
@@ -103,7 +106,7 @@ internal sealed class AgentChat : UserControl
             setup.Children.Add(claudeExecutable); setup.Children.Add(engine);
             setup.Children.Add(model); setup.Children.Add(thread); setup.Children.Add(allowEdits);
             var connection = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
-            connection.Children.Add(connect); connection.Children.Add(disconnect);
+            connection.Children.Add(connect); connection.Children.Add(disconnect); connection.Children.Add(getCodex);
             setup.Children.Add(connection);
         }
         root.Children.Add(setup); Grid.SetRow(status, 1); root.Children.Add(status);
@@ -129,6 +132,12 @@ internal sealed class AgentChat : UserControl
         send.Click += async (_, _) => await Send();
         addImages.Click += async (_, _) => await PickImages();
         stop.Click += async (_, _) => await Stop();
+        getCodex.Click += (_, _) =>
+        {
+            try { using var launched = Process.Start(new ProcessStartInfo("https://learn.chatgpt.com/docs/cli") { UseShellExecute = true }); }
+            catch (Exception error) when (error is System.ComponentModel.Win32Exception or InvalidOperationException)
+            { status.Text = "Windows couldn’t open the Codex installation guide."; }
+        };
         provider.SelectionChanged += (_, _) => UpdateProvider();
         UpdateProvider();
     }
@@ -139,6 +148,7 @@ internal sealed class AgentChat : UserControl
         allowSourceEdits.IsVisible = allowBuilds.IsVisible = allowChecks.IsVisible = ProviderName == "Codex";
         agyExecutable.IsVisible = ProviderName == "Antigravity";
         claudeExecutable.IsVisible = ProviderName == "Claude Code";
+        getCodex.IsVisible = codexMissing && ProviderName == "Codex";
         connect.Content = "Connect " + ProviderName;
     }
 
@@ -158,24 +168,30 @@ internal sealed class AgentChat : UserControl
 
     private static string FindCodex()
     {
-        var root = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "OpenAI", "Codex", "bin");
+        var local = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        var root = Path.Combine(local, "OpenAI", "Codex", "bin");
         try
         {
             if (Directory.Exists(root))
-                return new DirectoryInfo(root).EnumerateDirectories().Take(32)
+            {
+                var installed = new DirectoryInfo(root).EnumerateDirectories().Take(32)
                     .OrderByDescending(item => item.LastWriteTimeUtc)
                     .Select(item => Path.Combine(item.FullName, "codex.exe"))
-                    .FirstOrDefault(File.Exists) ?? "codex.exe";
+                    .FirstOrDefault(File.Exists);
+                if (installed is not null) return installed;
+            }
         }
         catch (IOException) { }
         catch (UnauthorizedAccessException) { }
-        return "codex.exe";
+        var standalone = Path.Combine(local, "Programs", "OpenAI", "Codex", "bin", "codex.exe");
+        return File.Exists(standalone) ? standalone : "codex.exe";
     }
 
     public Task CloseAsync() => closingTask ??= CloseCoreAsync();
     private async Task CloseCoreAsync()
     {
         closing = true; Controls(); lifetime.Cancel();
+        if (signIn is { } dialog) await dialog.CancelAsync();
         if (connectingTask is not null) await connectingTask;
         if (session is { } current) await DisposeSession(current);
         if (retiringTask is not null) await retiringTask;
@@ -202,6 +218,7 @@ internal sealed class AgentChat : UserControl
         prompt.IsReadOnly = submitting;
         stop.IsEnabled = live && !cancelRequested && (activeTurn is not null || session is AcpSession && submitting);
         connect.IsEnabled = !Busy && session is null && !closing;
+        getCodex.IsEnabled = connect.IsEnabled;
         disconnect.IsEnabled = live && !Busy;
         provider.IsEnabled = executable.IsEnabled = agyExecutable.IsEnabled = claudeExecutable.IsEnabled =
             engine.IsEnabled = model.IsEnabled = connect.IsEnabled;
@@ -212,6 +229,8 @@ internal sealed class AgentChat : UserControl
     {
         connecting = true; Controls();
         status.Text = "Connecting…";
+        if (ProviderName == "Codex" && executable.Text == "codex.exe") executable.Text = FindCodex();
+        codexMissing = getCodex.IsVisible = false;
         IAgentSession? current = null;
         using var startup = CancellationTokenSource.CreateLinkedTokenSource(lifetime.Token);
         startup.CancelAfter(TimeSpan.FromSeconds(60));
@@ -231,7 +250,19 @@ internal sealed class AgentChat : UserControl
             if (closing) { await current.DisposeAsync(); return; }
             _ = ReadEvents(current);
             if (current is AcpSession acp) await acp.OpenAsync(startup.Token);
-            else await OpenCodex((CodexSession)current, startup.Token);
+            else
+            {
+                var codex = (CodexSession)current;
+                if (await codex.RequiresSignInAsync(startup.Token))
+                {
+                    startup.CancelAfter(Timeout.InfiniteTimeSpan);
+                    await SignInAsync(codex, startup.Token);
+                    startup.CancelAfter(TimeSpan.FromSeconds(60));
+                    if (await codex.RequiresSignInAsync(startup.Token))
+                        throw new InvalidOperationException("Codex still needs sign-in. Connect to try again.");
+                }
+                await OpenCodex(codex, startup.Token);
+            }
             if (!ReferenceEquals(session, current)) throw new IOException("Connection ended while opening the conversation.");
             if (current is AcpSession && !string.IsNullOrEmpty(transcript.Text))
                 Append("\nNew " + ProviderName + " conversation\n");
@@ -246,8 +277,11 @@ internal sealed class AgentChat : UserControl
             if (ReferenceEquals(session, current)) { session = null; ready = false; }
             if (!closing)
             {
+                codexMissing = ProviderName == "Codex" && error is System.ComponentModel.Win32Exception { NativeErrorCode: 2 or 3 };
+                getCodex.IsVisible = codexMissing;
                 status.Text = error switch
                 {
+                    _ when codexMissing => "Poima couldn’t find Codex. Install it or choose its executable in Connection settings.",
                     AgentRpcException problem when current is AcpSession &&
                         problem.Error["code"]?.GetValue<int>() == -32000 &&
                         problem.Message.Contains("auth", StringComparison.OrdinalIgnoreCase) =>
@@ -260,6 +294,19 @@ internal sealed class AgentChat : UserControl
             }
         }
         finally { connecting = false; Controls(); }
+    }
+
+    private async Task SignInAsync(CodexSession codex, CancellationToken cancellation)
+    {
+        cancellation.ThrowIfCancellationRequested();
+        if (TopLevel.GetTopLevel(this) is not Window owner) throw new InvalidOperationException("Open Codex sign-in from a Poima window.");
+        var dialog = signIn = new CodexSignInWindow(codex);
+        try
+        {
+            if (!await dialog.ShowDialog<bool>(owner))
+                throw new InvalidOperationException("Connect to try Codex sign-in again.");
+        }
+        finally { signIn = null; }
     }
 
     private async Task OpenCodex(CodexSession current, CancellationToken cancellation)
@@ -461,6 +508,7 @@ internal sealed class AgentChat : UserControl
         if (!ReferenceEquals(session, current)) return;
         session = null; ready = false; activeTurn = null; submitting = false; cancelRequested = false;
         ClearApprovals(); ClearImages(); status.Text = message;
+        if (signIn is { } dialog) await dialog.CancelAsync();
         var pending = retiringTask = DisposeSession(current);
         Controls();
         await pending;
@@ -479,6 +527,11 @@ internal sealed class AgentChat : UserControl
         if (current is AcpSession)
         {
             HandleAcp(current, method, parameters, message["id"]);
+            return;
+        }
+        if (method == "account/login/completed" && message["id"] is null)
+        {
+            signIn?.ObserveCompletion(parameters);
             return;
         }
         if (message["id"] is JsonNode requestId)

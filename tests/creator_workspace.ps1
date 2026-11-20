@@ -189,7 +189,13 @@ function Exercise-CodexBrief($Project) {
 
 function Exercise-CodexQuestions($Project, $Peer) {
     Select-AgentProvider 'Codex'
-    Set-AgentExecutable 'Codex executable' $Peer
+    $settings = Wait-For 'Connection settings' { Find-Control 'Connection settings' -Enabled }
+    $expander = $settings.GetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern)
+    $expander.Expand()
+    Set-ControlText 'Codex executable' (Resolve-Path -LiteralPath $Peer).Path
+    Set-ControlText "Model (empty uses the CLI's advertised default)" ''
+    Set-ControlText 'Conversation ID (empty starts a new conversation)' ''
+    $expander.Collapse()
     Invoke-Control 'Agent Connect'
     $null = Wait-For 'the scripted question connection' { Find-Control 'Agent Send' -Enabled } 65
     Set-ControlText 'Agent prompt' 'Ask me about a game.'
@@ -464,7 +470,10 @@ try {
         $report.checks.codex_reconnected = $true
     }
     if ($CodexQuestions) {
-        if ($WithCodex) { Invoke-Control 'Agent Disconnect' }
+        if ($WithCodex) {
+            Invoke-Control 'Agent Disconnect'
+            $null = Wait-For 'the retired Codex connection' { Find-Control 'Agent Connect' -Enabled }
+        }
         Exercise-CodexQuestions $project $CodexQuestions
     }
     Close-Owner

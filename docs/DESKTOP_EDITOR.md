@@ -69,7 +69,10 @@ Useful arguments are `--gpu N` for both native viewports, `--samples 1|4`, and a
    location is **Documents → Poima Projects**. The launcher lists projects in
    that folder on subsequent starts.
 2. Select **Codex**, **Antigravity**, or **Claude Code** and connect a signed-in agent.
-   If Poima can't find it, set its executable in **Connection settings**.
+   If Codex needs a sign-in, choose **Open sign-in page** and finish in your
+   browser. Poima opens the conversation after Codex confirms your account.
+   If Poima can't find the provider client, set its executable in
+   **Connection settings**. The Codex connection also offers **Get Codex**.
    Describe your game to begin the [brief](GAME_BRIEF.md). Codex has separate
    per-connection controls for world calls, gameplay source edits, check edits
    and builds.
