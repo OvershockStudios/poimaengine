@@ -32,6 +32,13 @@ SHA-256 and a new JSON report path under the profile's output root. The worker
 rechecks the bundle before starting its own executable. Inspect the completed
 job for the verdict and report identity. [Verification workflow](GAME_VERIFICATION.md#run-and-inspect)
 
+`development.candidate` captures the open project's saved files before
+export. Its directory is assigned under that project's history. Both the
+bundled verifier and the job result use the captured suite. Call
+`project.candidate.retain` while the passing job is still available on the
+host. Retention rechecks the captured source, bundle and exact report before
+publishing the history entry. Repeating retention returns the same entry.
+
 ## Configure a host
 
 Create an owner-controlled JSON file outside public project history. All paths

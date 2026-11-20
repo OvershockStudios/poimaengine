@@ -51,17 +51,20 @@ def main():
 
     requests = [{'jsonrpc': '2.0', 'id': 1, 'method': 'world.describe', 'params': {'view': 'full'}},
                 {'jsonrpc': '2.0', 'id': 2, 'method': 'project.verification.write', 'params': {}},
-                {'jsonrpc': '2.0', 'id': 3, 'method': 'development.verify', 'params': {}}]
+                {'jsonrpc': '2.0', 'id': 3, 'method': 'development.verify', 'params': {}},
+                {'jsonrpc': '2.0', 'id': 4, 'method': 'development.candidate', 'params': {}},
+                {'jsonrpc': '2.0', 'id': 5, 'method': 'project.candidate.retain', 'params': {}}]
     session = subprocess.run([packaged, 'game', 'stdio', game],
                              input=''.join(json.dumps(request) + '\n' for request in requests),
                              capture_output=True, text=True, timeout=30, check=True)
     (out / 'read-only.stdout.ndjson').write_text(session.stdout, encoding='utf-8')
-    description, refused, refused_verify = [json.loads(line) for line in session.stdout.splitlines()]
+    description, *refusals = [json.loads(line) for line in session.stdout.splitlines()]
     require(all(method not in description['result']['methods'] for method in
-                ('project.verification.read', 'project.verification.write', 'development.verify')),
+                ('project.verification.read', 'project.verification.write', 'development.verify',
+                 'development.candidate', 'project.candidate.retain')),
             'Packaged world advertises authoring or development verification')
-    require(refused['error']['code'] == -32081, 'Packaged world did not reject suite authoring')
-    require(refused_verify['error']['code'] == -32081, 'Packaged world did not reject development verification')
+    require(len(refusals) == 4 and all(reply['error']['code'] == -32081 for reply in refusals),
+            'Packaged world did not reject authoring and verification requests')
 
     def expect(label, path, comparison, value):
         return {'expect': {'label': label, 'method': 'runtime.entity', 'params': {'id': controller},

@@ -1,8 +1,20 @@
 # Implementation status
 
-Updated 2026-11-20 for **0.0.296**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-20 for **0.0.297**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.297 adds [recoverable agent builds](PROJECT_RECOVERY.md). A native
+job captures the current project and suite, exports the captured files and
+checks the resulting game. Retention validates the passing report, editable
+snapshot and bundle before publishing the history entry. The Windows creator
+refreshes its verified build after a chat turn. In the Windows preview, Codex
+created and retained a passing Signal Shelter candidate from the existing
+project and suite. A slower movement setting then failed three of four
+checks. The creator still played the earlier bundle after restart and
+recovered its editable source and native gameplay. The relocated bundle
+reproduced the passing report, passed 11 independent checks and resumed
+a save in a fresh process. [Results](evidence/m2-creator-candidates-297.json)
 
 Version 0.0.296 adds [agent-triggered verification](GAME_VERIFICATION.md#run-and-inspect).
 A configured development host can run the native checks from its own exported

@@ -108,8 +108,51 @@ def main():
             assert refused['result'] is None and not (products / 'must-not-run.json').exists()
         finally:
             executable.write_bytes(original_executable)
+        candidate_suite = set_suite(2, failed_suite)
+        notes = manifest.parent / 'Design.txt'
+        notes.write_text('Captured design\n', encoding='utf-8')
+        assert client.call('development.profiles')['profiles'][0]['candidate']
+        candidate_request = {**params, 'request_id': uuid.uuid4().hex, 'expected_suite_sha256': candidate_suite}
+        receipt = client.call('development.candidate', candidate_request)
+        candidate = terminal(receipt)
+        assert candidate['state'] == 'succeeded' and candidate['result']['passed'], candidate
+        retry = client.call('development.candidate', candidate_request)
+        assert retry['replayed'] and retry['job_id'] == receipt['job_id']
+        checkpoint = Path(candidate['result']['checkpoint'])
+        retained_report = checkpoint.parent / 'checks.json'
+        assert not retained_report.exists()
+        retain = {**params, 'job_id': receipt['job_id']}
+        changed = checkpoint.parent / 'source/Design.txt'
+        captured = changed.read_bytes()
+        changed.write_bytes(b'Tampered captured design')
+        try:
+            reject('project.candidate.retain', retain, -32091)
+            assert not retained_report.exists()
+        finally:
+            changed.write_bytes(captured)
+        assert not client.call('project.candidate.retain', retain)['replayed']
+        assert client.call('project.candidate.retain', retain)['replayed']
+        assert retained_report.read_bytes() == Path(candidate['result']['report']).read_bytes()
+        notes.write_text('Later working design\n', encoding='utf-8')
+        guard = set_suite(10, candidate_suite)
+        failed_candidate = terminal(client.call('development.candidate', {**params, 'request_id': uuid.uuid4().hex,
+                                                                           'expected_suite_sha256': guard}))
+        assert failed_candidate['state'] == 'succeeded' and not failed_candidate['result']['passed'], failed_candidate
+        reject('project.candidate.retain', {**params, 'job_id': failed_candidate['job_id']}, -32009)
+        assert not (Path(failed_candidate['result']['checkpoint']).parent / 'checks.json').exists()
+        project_id = candidate['result']['project_id']
+        history = subprocess.run([engine, 'project', 'history', checkpoint.parent.parent, '--project-id', project_id],
+                                 check=True, capture_output=True, timeout=90)
+        latest = json.loads(history.stdout)['result']['latest']
+        assert Path(latest['checkpoint']) == checkpoint, latest
+        restored = root / 'Restored'
+        subprocess.run([engine, 'project', 'recover', checkpoint, '--output', restored],
+                       check=True, capture_output=True, timeout=90)
+        assert (restored / 'Design.txt').read_bytes() == captured and notes.read_text(encoding='utf-8') == 'Later working design\n'
     print(json.dumps({'passed': True, 'pass': passed['result'], 'rejected_check': rejected_check['result'],
-                      'tampered_bundle_started_no_child': True}))
+                      'tampered_bundle_started_no_child': True,
+                      'candidate_recovered': True, 'candidate_tamper_refused': True,
+                      'failed_candidate_preserved_last_passing': True}))
 
 
 if __name__ == '__main__':

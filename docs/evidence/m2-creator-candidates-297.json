@@ -1,0 +1,96 @@
+{
+  "engine_version": "0.0.297",
+  "scope": "Windows UI Automation directed an installed Codex 0.152.1 session inside the packaged creator. Signal Shelter, its existing Native AOT gameplay and its four-check suite were supplied from an earlier checkpoint. The harness introduced a slower movement speed between two agent turns. Toolchain setup and tagged launcher installation remain separate.",
+  "package": {
+    "bytes": 141158087,
+    "sha256": "700383f8b1f552a4e0c849e006c4ab4f2577d5997e0821846efdb8212f864429"
+  },
+  "creator": {
+    "agent_submitted_and_retained_passing_candidate": true,
+    "played_same_bundle_before_and_after_restart": true,
+    "owned_sdl_window": true,
+    "isolated_playtest_saves": true,
+    "failed_candidate_kept_earlier_pass": true,
+    "recovered_world_suite_csharp_and_native_image": true,
+    "player_sha256": "2358b90f4917012537765c9b86fc4cd222073df8764fc53fe3ab5e9a95ef66ba",
+    "desktop_and_players_exited_naturally": true
+  },
+  "passing_candidate": {
+    "job_id": 1,
+    "state": "succeeded",
+    "exit_code": 0,
+    "elapsed_ms": 6343,
+    "passed": true,
+    "revision": 3,
+    "bundle_sha256": "ec8b4d575843a9fe575fd77ca85bec9e2a369d23d3d4a537b4aa8a60776b7ae2",
+    "suite_sha256": "1e0ba5ab0f8d5aac4fd8a5d3a8d2ecfb7a403b44677a4804a42e8dcfe655e097",
+    "report_sha256": "3479f3e366ecbffd03d0329bad103a121e939b32c47988739319c9bf8016f5c3",
+    "checks_observed": 4,
+    "groups_passed": 1,
+    "groups_total": 1,
+    "failures": [],
+    "owned_process_group": true,
+    "process_cleanup_finished": true,
+    "forced_cleanup_requests": 0
+  },
+  "failing_candidate": {
+    "job_id": 2,
+    "state": "succeeded",
+    "exit_code": 0,
+    "elapsed_ms": 6274,
+    "passed": false,
+    "revision": 4,
+    "bundle_sha256": "666318959ffcca39301598f2768d177d9d4e478774fac0bf8696052d080d15ff",
+    "suite_sha256": "1e0ba5ab0f8d5aac4fd8a5d3a8d2ecfb7a403b44677a4804a42e8dcfe655e097",
+    "report_sha256": "94b55d5ac588b3e6c9c78a9c97727b6415f40dc2a68ea59e7941489c3b35d67f",
+    "checks_observed": 4,
+    "groups_passed": 0,
+    "groups_total": 1,
+    "failures": [
+      {
+        "actual": 0,
+        "actual_omitted": false,
+        "group": "Radio requires breaker power",
+        "label": "Breaker turns power on",
+        "observed": true,
+        "tick": 88
+      },
+      {
+        "actual": "Power off",
+        "actual_omitted": false,
+        "group": "Radio requires breaker power",
+        "label": "Powered HUD directs player to radio",
+        "observed": true,
+        "tick": 88
+      },
+      {
+        "actual": 0,
+        "actual_omitted": false,
+        "group": "Radio requires breaker power",
+        "label": "Powered radio restores signal",
+        "observed": true,
+        "tick": 134
+      }
+    ],
+    "owned_process_group": true,
+    "process_cleanup_finished": true,
+    "forced_cleanup_requests": 0
+  },
+  "relocated": {
+    "original_project_path_unavailable": true,
+    "identical_verification_report": true,
+    "independent_assertions_passed": 11,
+    "fresh_process_resumed_saved_progress_and_finished": true,
+    "vulkan_gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "vulkan_presented_frames": 225,
+    "vulkan_ticks": 224,
+    "renderer_validation_errors_reported": 0,
+    "capture_sha256": "a0f3b1a8d383aaada024a37cc5600721b31a9ce85d5732efce7e44a7c0dbdd04"
+  },
+  "native_regression": {
+    "candidate_recovered": true,
+    "tampered_snapshot_rejected": true,
+    "failed_candidate_preserved_last_passing": true,
+    "tampered_verifier_executable_started_no_child": true
+  }
+}

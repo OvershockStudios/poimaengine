@@ -66,7 +66,18 @@ presentation and checks beyond the suite format.
 
 ## Run and inspect
 
-An agent can run the saved suite through the connected creator workflow.
+An agent can build a recoverable candidate from the saved project through the
+connected creator workflow. Call `development.candidate` through `poima_build`
+with `profile`, `project`, a fresh 32-hex `request_id` and the
+`expected_suite_sha256` from `project.verification.read`. The worker captures
+the source and suite, builds that snapshot and runs the tests. Inspect the
+`job_id` with `development.inspect`, `include_output: false`. Once a completed
+result has `passed: true`, call `project.candidate.retain` through `poima_build`
+with the same profile, project and candidate `job_id`. The history then holds
+the exact playable build and its editable source. The creator refreshes that
+history after the turn. [Project recovery](PROJECT_RECOVERY.md)
+
+For an export or check run without a source checkpoint, use separate jobs.
 The selected profile supplies the installed runtime and output directory.
 
 1. Read `project.verification.read` and keep the suite's `sha256`.
@@ -83,9 +94,9 @@ The selected profile supplies the installed runtime and output directory.
    check counts, up to 16 failures or execution issues, and the full report
    path and hash. A failed or cancelled job publishes no verdict.
 
-Use **Allow gameplay builds in this session** to authorize those jobs for
-Codex. The creator's **Export build** action records a recoverable checkpoint
-with the saved suite and editable project source.
+Use **Allow gameplay builds in this session** to authorize these operations
+for Codex. The creator's **Export build** action also records a recoverable
+checkpoint with the saved suite and editable project source.
 
 For direct CLI use, run the executable from the exported bundle.
 

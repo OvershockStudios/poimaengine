@@ -90,8 +90,8 @@ Json tools(){
         {{"name","poima_checks"},{"description","Write the open project's gameplay verification suite. Read project.verification.read through poima_call and use its SHA-256 as the write guard. A successful write validates the suite format; the game has to run the checks separately."},
          {"inputSchema",schema({{"method",{{"enum",{"project.verification.write"}}}},{"params",{{"type","object"}}}},{"method","params"})},
          {"annotations",{{"readOnlyHint",false},{"destructiveHint",true},{"idempotentHint",true},{"openWorldHint",false}}}},
-        {{"name","poima_build"},{"description","Submit trusted compile, native publish, export or verification jobs, or synchronously adopt verified native gameplay into a project. Publishing/export/adoption use host-configured profiles; legacy compilation uses an explicit SDK executable. This grants build/process/filesystem authority separately from world edits. Inspect development.profiles first. Compile, publish, export and verification return jobs polled through development.inspect; project.gameplay.adopt returns a durable project receipt and launches no compiler. No automatic gameplay activation or undo of emitted files."},
-         {"inputSchema",schema({{"method",{{"enum",{"development.compile","development.publish","development.export","development.verify","project.gameplay.adopt"}}}},{"params",{{"type","object"}}}},{"method","params"})},
+        {{"name","poima_build"},{"description","Submit trusted compile, native publish, export, verification or candidate jobs, or synchronously retain a passing candidate or adopt native gameplay. Publishing/export/adoption use host-configured profiles; legacy compilation uses an explicit SDK executable. This grants build/process/filesystem authority separately from world edits. Inspect development.profiles first. Compile, publish, export and verification return jobs polled through development.inspect; project.gameplay.adopt returns a durable project receipt and launches no compiler. No automatic gameplay activation or undo of emitted files."},
+         {"inputSchema",schema({{"method",{{"enum",{"development.compile","development.publish","development.export","development.verify","development.candidate","project.candidate.retain","project.gameplay.adopt"}}}},{"params",{{"type","object"}}}},{"method","params"})},
          {"annotations",{{"readOnlyHint",false},{"destructiveHint",true},{"idempotentHint",false},{"openWorldHint",true}}}}
     });
 }
@@ -118,7 +118,7 @@ struct McpSession::Impl {
                 return tool_result({{"error",error(-32602,"A nonempty native method is required.")}},true);
             method=arguments["method"].get<std::string>();params=arguments.value("params",Json::object());
             if(!params.is_object())return tool_result({{"error",error(-32602,"Native params must be an object.")}},true);
-            const bool build=method=="development.compile" || method=="development.publish" || method=="development.export" || method=="development.verify" || method=="project.gameplay.adopt";
+            const bool build=method=="development.compile" || method=="development.publish" || method=="development.export" || method=="development.verify" || method=="development.candidate" || method=="project.candidate.retain" || method=="project.gameplay.adopt";
             const bool source=method=="project.source.write";
             const bool checks=method=="project.verification.write";
             if(name=="poima_build") {

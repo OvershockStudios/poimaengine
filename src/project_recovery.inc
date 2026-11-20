@@ -2,6 +2,11 @@
 namespace {
 constexpr auto checkpoint_name = "checkpoint.json";
 constexpr auto check_report_name = "checks.json";
+constexpr auto candidate_report_name = "candidate-checks.json";
+
+fs::path history_root(const Project& source) {
+    return source.root.parent_path()/".poima-history"/id(source.spec.at("project_id"));
+}
 
 void plain_directory(const fs::path& path) {
     const auto io = project_io_path(path);
@@ -61,7 +66,8 @@ struct Checkpoint {
     VerifiedGame game;
 };
 
-Checkpoint verified_checkpoint(const fs::path& checkpoint) {
+Checkpoint verified_checkpoint(const fs::path& checkpoint,const char* report_name=check_report_name,
+    const std::string& expected_report={}) {
     const auto root = fs::absolute(checkpoint).lexically_normal().parent_path();
     plain_directory(root);
     require(checkpoint.filename() == checkpoint_name, "Expected a checkpoint.json file.");
@@ -75,7 +81,9 @@ Checkpoint verified_checkpoint(const fs::path& checkpoint) {
     const auto revision = integer(info.at("revision"));
     const auto project_name = relative_path(info.at("project"));
     require(project_name.find('/') == std::string::npos, "Checkpoint project must be a root manifest.");
-    const auto report = parse(read(contained(root, check_report_name), 4 * 1024 * 1024));
+    const auto report_bytes = read(contained(root, report_name), 4 * 1024 * 1024);
+    require(expected_report.empty() || hash(report_bytes)==expected_report,"Verification report changed after the job completed.");
+    const auto report = parse(report_bytes);
     require(report.at("format") == "poima.game-verification-result" && integer(report.at("version")) == 1 &&
         report.at("passed") == true && integer(report.at("groups_total"), 32) > 0 &&
         report.at("groups_passed") == report.at("groups_total"), "Checkpoint requires passing gameplay checks.");
@@ -173,6 +181,80 @@ Reply checkpoint_project(const std::string& manifest, const std::string& output)
         stage.publish(checkpoint_name);
         return Json{{"checkpoint", text(stage.destination / checkpoint_name)},
             {"source_manifest", text(stage.destination / "source" / project_name)}, {"revision", revision}, {"files", files.size()}};
+    });
+}
+
+Reply build_project_candidate(const std::string& manifest,const std::string& output,const std::string& runtime_root,
+    const std::string& request) {
+    return operation("project.candidate",[&] {
+        const auto expected=parse(request);
+        fields(expected,{"manifest_sha256","world_sha256","suite_sha256"},{"manifest_sha256","world_sha256","suite_sha256"});
+        const auto current=project(manifest);
+        const auto root=history_root(current);
+        const auto destination=fs::absolute(path_of(output)).lexically_normal().make_preferred();
+        require(within(destination.parent_path(),root) && within(root,destination.parent_path()),
+            "Candidate must use this project's history directory.");
+        const auto compare=[&](const Project& source) {
+            require(hash(source.manifest_bytes)==expected.at("manifest_sha256").get<std::string>() &&
+                hash(source.world_bytes)==expected.at("world_sha256").get<std::string>(),
+                "Project changed before the candidate was captured.");
+            const auto bytes=read(contained(source.root,suite_name),1024*1024);
+            require(hash(bytes)==expected.at("suite_sha256").get<std::string>(),"Verification suite changed before the candidate was captured.");
+            validate_game_verification_suite(bytes);
+        };
+        compare(current);
+        adoption_directory(root.parent_path());adoption_directory(root);
+        const auto captured=checkpoint_project(manifest,output);
+        const auto snapshot=parse(captured.json);
+        require(captured.exit_code==0,snapshot.at("diagnostics").empty() ? "Could not capture project." :
+            snapshot.at("diagnostics")[0].at("message").get<std::string>());
+        const auto captured_source=snapshot.at("result").at("source_manifest").get<std::string>();
+        const auto frozen=project(captured_source);
+        compare(frozen);
+        const auto exported=build_project(captured_source,text(destination/"game"),runtime_root);
+        const auto built=parse(exported.json);
+        require(exported.exit_code==0,built.at("diagnostics").empty() ? "Could not export candidate." :
+            built.at("diagnostics")[0].at("message").get<std::string>());
+        const auto bundle=built.at("result").at("game_manifest").get<std::string>();
+        return Json{{"checkpoint",text(destination/checkpoint_name)},{"project_id",frozen.spec.at("project_id")},
+            {"revision",frozen.content.revision},{"bundle_sha256",hash(read(path_of(bundle),4*1024*1024))},
+            {"suite_sha256",expected.at("suite_sha256")}};
+    });
+}
+
+Reply retain_project_candidate(const std::string& manifest,const std::string& owned_world,const std::string& checkpoint,
+    const std::string& report_sha256) {
+    return operation("project.candidate.retain",[&] {
+        const auto current=project(manifest);
+        const auto owner=canonical_project_path(path_of(owned_world));
+        require(within(owner,current.world) && within(current.world,owner),"Retaining a build requires the open project owner.");
+        require(hexadecimal(report_sha256,64),"Expected verification report SHA-256.");
+        const auto info=fs::absolute(path_of(checkpoint)).lexically_normal().make_preferred();
+        const auto root=history_root(current),folder=info.parent_path();
+        require(within(folder.parent_path(),root) && within(root,folder.parent_path()),"Candidate is outside project history.");
+        adoption_safe_path(info);
+        const auto final_report=folder/check_report_name;
+        adoption_safe_path(final_report,true);adoption_case_name(final_report);
+        const bool already=fs::is_regular_file(fs::symlink_status(project_io_path(final_report)));
+        const auto verified=verified_checkpoint(info,already ? check_report_name : candidate_report_name,report_sha256);
+        require(verified.source.spec.at("project_id")==current.spec.at("project_id"),"Candidate belongs to another project.");
+        if(!already) {
+            const auto incoming=folder/candidate_report_name;
+            adoption_safe_path(incoming);
+            const auto bytes=read(incoming,4*1024*1024);
+            require(hash(bytes)==report_sha256,"Verification report changed before retention.");
+            const auto temporary=folder/(".checks-"+new_id()+".pending");
+            try {
+                exclusive_write(temporary,bytes);
+                adoption_publish_new(temporary,final_report);
+            } catch(...) {
+                std::error_code ignored;fs::remove(project_io_path(temporary),ignored);throw;
+            }
+        }
+        auto result=checkpoint_summary(verified);
+        result["replayed"]=already;
+        result["report_sha256"]=report_sha256;
+        return result;
     });
 }
 

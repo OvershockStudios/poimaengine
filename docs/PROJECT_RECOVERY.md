@@ -6,6 +6,12 @@ its bundled [gameplay verification suite](GAME_VERIFICATION.md). The report
 links the exact bundle and suite. A failed export or check leaves the previous
 verified build available.
 
+Agents can [build a candidate and retain its passing result](GAME_VERIFICATION.md#run-and-inspect)
+from chat. The candidate's source and suite are captured before export. Its
+check report is kept in the candidate folder. **Play verified build** and
+recovery use only retained passing candidates. A failed or cancelled job is
+ineligible for retention.
+
 Choose **Play verified build** to run the last passing export in a separate
 window. Poima rechecks the selected checkpoint and launches its bundled
 player. Playtest saves are kept under

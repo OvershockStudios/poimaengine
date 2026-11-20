@@ -16,6 +16,10 @@ Reply project_verification_suite(const std::string& manifest,const std::string& 
 Reply adopt_project_gameplay(const std::string& manifest,const std::string& artifact_descriptor,const std::string& request_json);
 Reply build_project(const std::string& manifest,const std::string& output,const std::string& runtime_root);
 Reply checkpoint_project(const std::string& manifest,const std::string& output);
+Reply build_project_candidate(const std::string& manifest,const std::string& output,const std::string& runtime_root,
+    const std::string& request);
+Reply retain_project_candidate(const std::string& manifest,const std::string& owned_world,const std::string& checkpoint,
+    const std::string& report_sha256);
 Reply project_history(const std::string& directory,const std::string& project_id);
 Reply recover_project(const std::string& checkpoint,const std::string& output);
 Reply inspect_game(const std::string& manifest);

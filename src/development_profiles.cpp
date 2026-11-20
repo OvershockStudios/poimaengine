@@ -312,6 +312,13 @@ std::vector<Profile> load_profiles(const std::string& filename) {
             unchanged(pins);
             return verification_summary(report,identity);
         };
+        profile.build_candidate=[pins,runtime=profile.runtime_root](const fs::path& project,const fs::path& output,const std::string& guards) {
+            unchanged(pins);
+            return project_result(poima::build_project_candidate(text(project),text(output),text(runtime),guards));
+        };
+        profile.retain_candidate=[](const fs::path& project,const fs::path& world,const fs::path& checkpoint,const std::string& report_sha256) {
+            return project_result(poima::retain_project_candidate(text(project),text(world),text(checkpoint),report_sha256));
+        };
         result.push_back(std::move(profile));
     }
     return result;

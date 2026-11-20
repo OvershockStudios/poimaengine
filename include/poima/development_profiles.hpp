@@ -24,6 +24,8 @@ struct Profile {
     std::string authoring_manifest_sha256;
     std::function<std::string(const std::filesystem::path&,const std::filesystem::path&,const std::string&)> verification_suite;
     std::function<std::string(const std::filesystem::path&,const std::string&)> verify_checks;
+    std::function<std::string(const std::filesystem::path&,const std::filesystem::path&,const std::string&)> build_candidate;
+    std::function<std::string(const std::filesystem::path&,const std::filesystem::path&,const std::filesystem::path&,const std::string&)> retain_candidate;
 };
 // Owner-side loader supplies canonical paths, explicit environment, content
 // fingerprints and native result verifiers. No tool discovery or installation.

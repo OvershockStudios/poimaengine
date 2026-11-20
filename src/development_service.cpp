@@ -3,6 +3,7 @@
 #include "development_diagnostics.hpp"
 #include <algorithm>
 #include <cctype>
+#include <ctime>
 #ifdef _WIN32
 #define NOMINMAX
 #include <windows.h>
@@ -101,6 +102,21 @@ bool game_type(const std::string& value) {
         first=false;
     }
     return !first;
+}
+std::string candidate_name(const std::string& id) {
+    const auto now=std::chrono::system_clock::now();
+    const auto second=std::chrono::floor<std::chrono::seconds>(now);
+    const auto time=std::chrono::system_clock::to_time_t(second);
+    std::tm utc{};
+#ifdef _WIN32
+    need(gmtime_s(&utc,&time)==0,"Could not read the UTC timestamp.");
+#else
+    need(gmtime_r(&time,&utc)!=nullptr,"Could not read the UTC timestamp.");
+#endif
+    char text[24]{};
+    need(std::strftime(text,sizeof(text),"%Y%m%d-%H%M%S",&utc)>0,"Could not format the candidate timestamp.");
+    const auto milliseconds=std::chrono::duration_cast<std::chrono::milliseconds>(now-second).count();
+    return std::string(text)+std::to_string(1000+milliseconds).substr(1)+"-"+id.substr(0,8);
 }
 std::string verified_result(const std::string& value,std::size_t limit=65536) {
     need(!value.empty() && value.size()<=limit,limit==65536 ? "Development verifier must return 1..65536 bytes of JSON.":"Project operation must return 1..4194304 bytes of JSON.");
@@ -268,6 +284,7 @@ Json Service::dispatch(const std::string& method,const Json& p,const fs::path& o
             if(profile.gameplay_source && !owned_world.empty())item["gameplay_source"]=true;
             if(profile.verification_suite && !owned_world.empty())item["verification_suite"]=true;
             if(profile.verify_checks && !owned_world.empty())item["verify"]=true;
+            if(profile.build_candidate && !owned_world.empty())item["candidate"]=true;
             result.push_back(std::move(item));
         }
         return {{"profiles",result}};
@@ -334,13 +351,34 @@ Json Service::dispatch(const std::string& method,const Json& p,const fs::path& o
         catch(const std::exception& error) {throw ServiceError(-32091,safe_diagnostic(std::string(error.what()).substr(0,4096)).get<std::string>());}
         return Json::parse(verified_result(result,4ULL*1024*1024));
     }
-    if(method=="development.compile" || method=="development.publish" || method=="development.export" || method=="development.verify") {
+    if(method=="project.candidate.retain") {
+        fields(p,{"profile","project","job_id"},{"profile","project","job_id"});
+        const auto selected=profiles_.find(text(p.at("profile"),64));
+        need(selected!=profiles_.end() && selected->second.retain_candidate && !owned_world.empty(),
+            "Retention requires a configured project owner.",-32004);
+        const auto& profile=selected->second;
+        const auto project=contained(profile.project_root,relative(p.at("project")),true);
+        need(project_manifest_extension(lower_extension(project)),"Retention expects a project manifest.");
+        const auto job=jobs_ ? jobs_->poll_summary(job_id(p.at("job_id"))):std::optional<Status>{};
+        need(job && job->state==State::succeeded && !job->result.empty(),"Select a completed candidate job.",-32009);
+        const auto result=Json::parse(job->result);
+        need(result.value("kind",std::string{})=="game_verification" && result.contains("checkpoint") &&
+            result.value("profile_fingerprint",std::string{})==profile.fingerprint && result.at("passed")==true,
+            "Select a passing candidate from this profile.",-32009);
+        return Json::parse(verified_result(profile.retain_candidate(project,owned_world,
+            absolute(result.at("checkpoint")),digest(result.at("report_sha256")))));
+    }
+    if(method=="development.compile" || method=="development.publish" || method=="development.export" ||
+        method=="development.verify" || method=="development.candidate") {
         const bool compile=method=="development.compile",publish=method=="development.publish";
         const bool verify_checks=method=="development.verify";
+        const bool candidate=method=="development.candidate";
         if(compile)fields(p,{"request_id","executable","project","output","configuration","restore","compiler_server","timeout_ms"},{"request_id","executable","project","output"});
         else if(publish)fields(p,{"request_id","profile","project","output","type","timeout_ms"},{"request_id","profile","project","output","type"});
         else if(verify_checks)fields(p,{"request_id","profile","project","output","export_job_id","expected_suite_sha256","timeout_ms"},
             {"request_id","profile","project","output","export_job_id","expected_suite_sha256"});
+        else if(candidate)fields(p,{"request_id","profile","project","expected_suite_sha256","timeout_ms"},
+            {"request_id","profile","project","expected_suite_sha256"});
         else fields(p,{"request_id","profile","project","output","timeout_ms"},{"request_id","profile","project","output"});
         const auto id=request_id(p.at("request_id"));Request request;std::optional<fs::path> reservation;
         const auto timeout=p.value("timeout_ms",Json(compile ? 600000:900000));
@@ -380,13 +418,15 @@ Json Service::dispatch(const std::string& method,const Json& p,const fs::path& o
         }else {
             const auto name=text(p.at("profile"),64);const auto selected=profiles_.find(name);need(selected!=profiles_.end(),"Development profile is unavailable.",-32004);profile=&selected->second;
             need(publish ? bool(profile->verify_publish):bool(profile->verify_export),"Development profile does not enable this operation.",-32004);
-            if(verify_checks)need(profile->verify_checks && profile->verification_suite && profile->inspect_project && !owned_world.empty(),
+            if(verify_checks || candidate)need(profile->verify_checks && profile->verification_suite && profile->inspect_project && !owned_world.empty(),
                 "Game verification requires a configured project owner.",-32004);
-            project_name=relative(p.at("project"));output_name=relative(p.at("output"));
-            normalized.update({{"profile",name},{"fingerprint",profile->fingerprint},{"project",project_name},{"output",output_name}});
+            if(candidate)need(bool(profile->build_candidate),"This profile does not support building candidates.",-32004);
+            project_name=relative(p.at("project"));
+            normalized.update({{"profile",name},{"fingerprint",profile->fingerprint},{"project",project_name}});
+            if(!candidate) {output_name=relative(p.at("output"));normalized["output"]=output_name;}
             if(publish) {type=text(p.at("type"),512);need(game_type(type),"Invalid compiled C# gameplay type name.");normalized["type"]=type;}
-            if(verify_checks) {
-                normalized["export_job_id"]=job_id(p.at("export_job_id"));
+            if(verify_checks || candidate) {
+                if(verify_checks)normalized["export_job_id"]=job_id(p.at("export_job_id"));
                 normalized["expected_suite_sha256"]=digest(p.at("expected_suite_sha256"));
             }
         }
@@ -397,9 +437,24 @@ Json Service::dispatch(const std::string& method,const Json& p,const fs::path& o
         need(!used_requests_.contains(id),"Development receipt expired; inspect existing jobs instead of resubmitting this ID.",-32009);
         need(used_requests_.size()<4096,"Session development request budget exhausted.",-32090);
         if(!compile) {
-            const auto project=contained(profile->project_root,project_name,true),output=contained(profile->output_root,output_name,false);
+            const auto project=contained(profile->project_root,project_name,true);
             const auto extension=lower_extension(project);
             need(publish ? extension==".csproj" : project_manifest_extension(extension),"Unexpected development project extension.");
+            fs::path output;
+            Json candidate_identity, candidate_guards;
+            if(candidate) {
+                const auto suite=Json::parse(profile->verification_suite(project,owned_world,"{}"));
+                need(suite.at("exists")==true && suite.at("sha256")==normalized.at("expected_suite_sha256"),
+                    "The current verification suite differs from the requested SHA-256.",-32009);
+                const auto summary=Json::parse(profile->inspect_project(project));
+                const auto project_id=request_id(summary.at("project_id"));
+                output=project.parent_path().parent_path()/".poima-history"/project_id/candidate_name(id);
+                checked_components(output);
+                candidate_identity={{"project_id",project_id},{"revision",summary.at("revision")},
+                    {"suite_sha256",suite.at("sha256")},{"profile_fingerprint",profile->fingerprint}};
+                candidate_guards={{"manifest_sha256",summary.at("manifest_sha256")},{"world_sha256",summary.at("world_sha256")},
+                    {"suite_sha256",suite.at("sha256")}};
+            } else output=contained(profile->output_root,output_name,false);
             need(!fs::exists(fs::symlink_status(output)),"Development output must name a new path.",-32009);
             for(const auto& prior:output_reservations_)need(!overlap(output,prior),"Development output is already reserved.",-32009);
             request.working_directory=profile->project_root;request.environment=profile->environment;reservation=output;
@@ -407,6 +462,22 @@ Json Service::dispatch(const std::string& method,const Json& p,const fs::path& o
                 request.executable=profile->python;request.arguments={utf8(profile->publisher),"--project",utf8(project),"--type",type,"--output",utf8(output),"--dotnet",utf8(profile->dotnet),"--rid",profile->target_rid};
                 if(!profile->authoring_pack.empty())request.arguments.insert(request.arguments.end(),{"--authoring-pack",utf8(profile->authoring_pack),"--authoring-sha256",profile->authoring_manifest_sha256});
                 request.verify_success=[verify=profile->verify_publish,output,type] {return verified_result(verify(output,type));};
+            }else if(candidate) {
+                const auto bundle=output/"game",report=output/"candidate-checks.json";
+                const auto captured=std::make_shared<Json>(std::move(candidate_identity));
+                request.executable=bundle/"runtime/bin"/(profile->target_rid=="win-x64" ? "poima.exe":"poima");
+                request.arguments={"game","verify",utf8(bundle/"game.json"),"--suite",utf8(output/"source/game.verify.json"),
+                    "--report",utf8(report),"--expected-suite-sha256",captured->at("suite_sha256").get<std::string>(),"--completed-exit","true"};
+                request.before_launch=[build=profile->build_candidate,project,output,guards=candidate_guards.dump(),captured] {
+                    const auto built=Json::parse(verified_result(build(project,output,guards)));
+                    for(const auto* field:{"project_id","revision","suite_sha256"})
+                        need(built.at(field)==captured->at(field),"Candidate inputs changed before export.",-32009);
+                    (*captured)["checkpoint"]=built.at("checkpoint");
+                    (*captured)["bundle_sha256"]=digest(built.at("bundle_sha256"));
+                };
+                request.verify_success=[verify=profile->verify_checks,report,captured] {
+                    return verified_result(verify(report,captured->dump()));
+                };
             }else if(verify_checks) {
                 need(lower_extension(output)==".json" && fs::is_directory(output.parent_path()),
                     "Verification expects a new JSON report in an existing output directory.");
@@ -533,6 +604,10 @@ Json Service::schemas() {
         {"development.verify",object({{"request_id",receipt},{"profile",profile},{"project",portable},{"output",portable},
             {"export_job_id",id},{"expected_suite_sha256",{{"type","string"},{"pattern","^[0-9a-f]{64}$"}}},{"timeout_ms",timeout}},
             {"request_id","profile","project","output","export_job_id","expected_suite_sha256"})},
+        {"development.candidate",object({{"request_id",receipt},{"profile",profile},{"project",portable},
+            {"expected_suite_sha256",{{"type","string"},{"pattern","^[0-9a-f]{64}$"}}},{"timeout_ms",timeout}},
+            {"request_id","profile","project","expected_suite_sha256"})},
+        {"project.candidate.retain",object({{"profile",profile},{"project",portable},{"job_id",id}},{"profile","project","job_id"})},
         {"development.compile",object({{"request_id",{{"type","string"},{"pattern","^[0-9a-f]{32}$"}}},{"executable",path},{"project",path},{"output",path},
             {"configuration",{{"enum",{"Debug","Release"}},{"default","Debug"}}},{"restore",{{"type","boolean"},{"default",true}}},
             {"compiler_server",{{"type","string"},{"minLength",1},{"maxLength",4096},

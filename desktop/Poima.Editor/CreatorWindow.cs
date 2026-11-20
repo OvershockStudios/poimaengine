@@ -31,6 +31,7 @@ internal sealed class CreatorWindow : Window
     private readonly TextBlock status = new() { TextWrapping = TextWrapping.Wrap };
     private readonly Border viewport = new() { Background = EditorTheme.Brush("#161518"), ClipToBounds = true };
     private bool starting, exporting, closeAfterExport, verifiedPlayerRunning, closing, allowClose;
+    private bool agentWasBusy;
     private string? exportedFolder, checkReport, checkSummary, verifiedCheckpoint, verifiedBundleHash, recoveredManifest;
     private string workDescription = "";
     private long exportedRevision;
@@ -316,6 +317,22 @@ internal sealed class CreatorWindow : Window
         await LoadLatestVerification(cancellation.Token);
     }
 
+    private async Task RefreshAgentHistory()
+    {
+        var previous = verifiedCheckpoint;
+        var priorError = error;
+        var priorReport = checkReport;
+        await ProjectWork("Checking for a new verified build…", async () =>
+        {
+            await LoadLatestVerification();
+            if (verifiedCheckpoint == previous)
+            {
+                error = priorError;
+                checkReport = priorReport;
+            }
+        });
+    }
+
     private async Task LoadLatestVerification(CancellationToken cancellation)
     {
         var latest = await LatestVerification(cancellation);
@@ -461,6 +478,13 @@ internal sealed class CreatorWindow : Window
             viewport.Child = null; previewSession = null;
         }
         if (previewSession is not null) game.Tick();
+        if (chat.Busy) agentWasBusy = true;
+        else if (agentWasBusy && !starting && !exporting && model.RuntimeId is null)
+        {
+            agentWasBusy = false;
+            if (Path.GetDirectoryName(project.Root) is not null && Directory.Exists(HistoryDirectory()))
+                _ = RefreshAgentHistory();
+        }
         UpdateControls();
     }
 

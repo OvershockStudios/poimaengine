@@ -1205,7 +1205,7 @@ void validate(const Json& doc) {
     }
 }
 
-constexpr std::array authoring_methods{"component.schema.import","world.transact","world.undo","world.redo","asset.import","asset.image.import","asset.audio.import","input.transact","settings.transact","development.compile","development.profiles","development.publish","development.export","development.verify","development.jobs","development.inspect","development.diagnostics","development.cancel","development.forget","project.inspect","project.gameplay.adopt","project.source.read","project.source.write","project.verification.read","project.verification.write","asset.material.generate","asset.material.job","asset.material.jobs","asset.material.cancel","asset.material.forget","world.navigation.bake","asset.provenance.create","asset.animation.author","asset.mesh.extract_rigid"};
+constexpr std::array authoring_methods{"component.schema.import","world.transact","world.undo","world.redo","asset.import","asset.image.import","asset.audio.import","input.transact","settings.transact","development.compile","development.profiles","development.publish","development.export","development.verify","development.candidate","project.candidate.retain","development.jobs","development.inspect","development.diagnostics","development.cancel","development.forget","project.inspect","project.gameplay.adopt","project.source.read","project.source.write","project.verification.read","project.verification.write","asset.material.generate","asset.material.job","asset.material.jobs","asset.material.cancel","asset.material.forget","world.navigation.bake","asset.provenance.create","asset.animation.author","asset.mesh.extract_rigid"};
 class World {
     profiling::Service profiler_;
     frame_performance::Service performance_;
@@ -1751,7 +1751,7 @@ public:
                     active && player_owner_->window->ready(),active ? std::function<void()>([this]{player_owner_->window->drain_performance();}) : std::function<void()>{});
             } catch(const frame_performance::ServiceError& e) {throw Error(e.code,e.what());}
         }
-        if(method.starts_with("development.") || method=="project.inspect" || method=="project.gameplay.adopt" || method=="project.source.read" || method=="project.source.write" || method=="project.verification.read" || method=="project.verification.write") {
+        if(method.starts_with("development.") || method=="project.inspect" || method=="project.gameplay.adopt" || method=="project.source.read" || method=="project.source.write" || method=="project.verification.read" || method=="project.verification.write" || method=="project.candidate.retain") {
             try { return development_.dispatch(method,params,path_); }
             catch(const development::ServiceError& error) { throw Error(error.code,error.what()); }
         }
