@@ -63,9 +63,11 @@ poima::Reply run(int argc, char** argv) {
     if (argc == 1) return poima::help();
     const std::string_view command = argv[1];
     if(command=="project") {
-        if(argc<4)return poima::usage_error("Use: project create <directory> --name <name> | inspect <project-manifest> | adopt-gameplay <project-manifest> --artifact <descriptor.json> --request <request.json> | build <project-manifest> --output <new-directory> --runtime <installed-runtime>.");
+        if(argc<4)return poima::usage_error("Use: project create <directory> --name <name> [--gameplay] | inspect <project-manifest> | adopt-gameplay <project-manifest> --artifact <descriptor.json> --request <request.json> | build <project-manifest> --output <new-directory> --runtime <installed-runtime>.");
         const std::string_view action=argv[2];
-        if(action=="create" && argc==6 && std::string_view(argv[4])=="--name" && *argv[3] && *argv[5])return poima::create_project(argv[3],argv[5]);
+        if(action=="create" && (argc==6 || (argc==7 && std::string_view(argv[6])=="--gameplay")) &&
+           std::string_view(argv[4])=="--name" && *argv[3] && *argv[5])
+            return poima::create_project(argv[3],argv[5],argc==7);
         if(action=="inspect" && argc==4 && *argv[3])return poima::inspect_project(argv[3]);
         if(action=="adopt-gameplay" && argc==8 && *argv[3]) {
             std::string artifact,request;

@@ -1,8 +1,16 @@
 # Implementation status
 
-Updated 2026-11-20 for **0.0.290**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-20 for **0.0.291**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.291 creates [editable C# starter source](CREATOR_GAMEPLAY.md#write-compiled-c-gameplay)
+with new projects in the packaged Windows creator. The CLI offers the same
+starter through `project create --gameplay`. A scripted MCP client compiled
+and adopted the generated source. The creator presented and exported it,
+and the standalone game passed five input assertions after relocation. The
+chat also distinguishes an empty agent turn from a reply, exercised with a
+scripted ACP peer. [Results](evidence/m2-creator-starter-291.json)
 
 Version 0.0.290 includes a [local gameplay guide](CREATOR_GAMEPLAY.md) and
 lets C# source import the SDK through `PoimaAuthoringRoot`. The moved creator

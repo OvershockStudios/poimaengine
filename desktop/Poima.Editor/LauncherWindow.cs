@@ -121,7 +121,9 @@ internal sealed class LauncherWindow : Window
             name.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
             throw new ArgumentException("Enter a valid project folder name.");
         Directory.CreateDirectory(parent);
-        var created = await ProjectFiles.Command("create", Path.Combine(parent, name), "--name", name);
+        string[] arguments = ["create", Path.Combine(parent, name), "--name", name];
+        if (WindowsGameplayTools.HasAuthoringPack) arguments = [.. arguments, "--gameplay"];
+        var created = await ProjectFiles.Command(arguments);
         await Open(created.GetProperty("manifest").GetString()!);
     }
 

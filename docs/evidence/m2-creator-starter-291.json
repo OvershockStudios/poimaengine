@@ -1,0 +1,63 @@
+{
+  "engine_version": "0.0.291",
+  "scope": "A Windows x64 portable creator with an installed .NET SDK, MSVC and Windows SDK. UI Automation creates a fresh project without supplied project files. A scripted MCP client compiles and adopts the generated source. The creator presents and exports the attached game, then the original source path is hidden.",
+  "package": {
+    "sha256": "f3bd579d561285ff07816349176a2b20056209f2ce01f1e66decbbab395f9a4f",
+    "bytes": 140787359
+  },
+  "project": {
+    "created_scene_revision": 1,
+    "generated_game_cs_sha256": "80122812c1bfe3364bbe98fb2d5efaff788fb8ff2f44b2ad980cbac7e99a556a",
+    "generated_game_csproj_sha256": "03fb8fb8304b9d6b50d7087db7562aa173df3e3fd3df917e6477052f12a0a02e",
+    "unattached_before_publication": true,
+    "native_gameplay_image_sha256": "11bcf1e2420c04a0c26c9de5db8cebb1736f1e02cd0bba61ea80e4781492b799",
+    "publication_ms": 16279
+  },
+  "creator_preview": {
+    "gameplay_backend": "native_aot",
+    "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "presented_frames": 1,
+    "renderer_validation_errors": 0
+  },
+  "relocated_export": {
+    "original_source_path_unavailable": true,
+    "contains_editable_source": false,
+    "bundle_sha256": "ebbd65444d2b6308c1b05f4428a77f4785b950d80d4a9a6de88cefd1f1ce9984",
+    "suite_sha256": "d4d77dfee78dbe549d4e68331d6954071b1c25458125004d153d6bad69f04a95",
+    "input_assertions": [
+      {
+        "name": "Initial count",
+        "tick": 0,
+        "uses": 0
+      },
+      {
+        "name": "No automatic interactions",
+        "tick": 5,
+        "uses": 0
+      },
+      {
+        "name": "Count the first press once",
+        "tick": 17,
+        "uses": 1
+      },
+      {
+        "name": "An idle interval leaves the count unchanged",
+        "tick": 22,
+        "uses": 1
+      },
+      {
+        "name": "Count a second press once",
+        "tick": 23,
+        "uses": 2
+      }
+    ]
+  },
+  "acp_scripted_peer": {
+    "empty_reply_status": "Antigravity ended the turn without a reply.",
+    "text_reply_status": "Turn completed",
+    "human_controls_reenabled_after_each_turn": true
+  },
+  "project_contract": {
+    "native_windows_cases": 16
+  }
+}

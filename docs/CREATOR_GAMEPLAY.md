@@ -7,9 +7,15 @@ Keep the player's controls and authored entity IDs available for replay tests.
 
 ## Write compiled C# gameplay
 
-Create a C# project under the game's source tree. The installed publisher
-supplies `PoimaAuthoringRoot` from the selected pack. This import works when
-the project and preview are moved to different folders.
+In a new packaged creator project, start by editing `gameplay-src/Game.cs`.
+The starter uses `gameplay-src/Game.csproj` and entry type
+`ProjectGameplay.Game`. It counts presses of the Use action after
+publication and adoption. The controller already handles movement and aim.
+
+In a project without starter source, create a C# project under its source
+tree. The installed publisher supplies `PoimaAuthoringRoot` from the
+selected pack. This import works when the project and preview move to
+different folders.
 
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">
@@ -42,9 +48,13 @@ public sealed class Game : Poima.Game<State>
 ```
 
 Keep mutable gameplay values in the state struct so the engine can inspect,
-save and restore them. See the [compiled gameplay API](MANAGED_GAMEPLAY.md#write-gameplay)
-for movement, interaction and state, and [native UI](GAME_UI.md) for HUD
-elements and their observations.
+save and restore them. In a tick, `context.Pressed(player, GameAction.Use)`
+reads the current press edge. Read a position with
+`context.Get(player).Transform.Position`. This returns a vector with
+`X`, `Y` and `Z` coordinates. For an existing native HUD label, use
+`context.SetUi(UiId.Parse(labelId), text: "Power on")` when its text changes.
+See the [compiled gameplay API](MANAGED_GAMEPLAY.md#write-gameplay) and
+[native UI guide](GAME_UI.md) for more operations.
 
 ## Publish and attach
 
@@ -58,7 +68,7 @@ project directory. A typical request to `poima_build` is:
   "params": {
     "profile": "creator",
     "project": "gameplay-src/Game.csproj",
-    "type": "Example.Game",
+    "type": "ProjectGameplay.Game",
     "output": "playable-1",
     "request_id": "6e7c208ab2df4ebc8aa4c09c56984900"
   }
@@ -66,7 +76,8 @@ project directory. A typical request to `poima_build` is:
 ```
 
 Use a fresh lowercase 32-hex request ID and a new output directory for each
-new build. Poll `development.inspect` with the returned `job_id` until it
+new build. Use the actual fully qualified game type if you wrote your own
+module. Poll `development.inspect` with the returned `job_id` until it
 reaches a terminal state. For failures, ask for output or compiler diagnostics
 and correct the source. For success, retain `result.descriptor_sha256`.
 

@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <string>
 namespace poima {
-Reply create_project(const std::string& directory,const std::string& name);
+Reply create_project(const std::string& directory,const std::string& name,bool gameplay_source=false);
 Reply inspect_project(const std::string& manifest);
 // Resolve the entry world only after validating the existing project.
 std::string project_world_path(const std::string& manifest);

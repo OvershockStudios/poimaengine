@@ -512,7 +512,7 @@ VerifiedGame verify_game(const std::string& filename) {
 } // namespace
 #include "project_recovery.inc"
 
-Reply create_project(const std::string& directory,const std::string& name) {
+Reply create_project(const std::string& directory,const std::string& name,bool gameplay_source) {
     return operation("project.create",[&] {
         name_value(name);Stage stage(directory);const auto project_id=new_id(),floor=std::string(31,'0')+"1",controller=std::string(31,'0')+"2",camera=std::string(31,'0')+"3",environment=std::string(31,'0')+"4",sun=std::string(31,'0')+"5";
         Json ops=Json::array();auto entity=[&](const std::string& entity_id,const char* label,Json parent=nullptr){ops.push_back({{"op","entity.create"},{"id",entity_id},{"name",label},{"parent",parent}});};
@@ -535,7 +535,7 @@ Reply create_project(const std::string& directory,const std::string& name) {
         fs::remove(stage.path/"world.json.lock");fs::create_directory(stage.path/"settings");const auto profile=stage.path/"settings/default.poima-input.json";
         input_profiles::transact(profile,{{"request_id",new_id()},{"expected_revision",0},{"profile",input_profiles::profile_json(default_gamepad_input_profile())},{"preview",false}});fs::remove(fs::path(profile).concat(".lock"));
         Json spec={{"format","poima.project"},{"version",1},{"project_id",project_id},{"name",name},{"entry",{{"world","world.json"},{"camera",camera},{"controller",controller}}},{"input_profile","settings/default.poima-input.json"},{"audio",false}};
-        exclusive_write(stage.path/"AGENTS.md",R"(# Make a game with Poima
+        std::string agent_guide=R"(# Make a game with Poima
 
 For a new game idea, help the creator agree on a game brief before changing
 the project. Use planning mode if available. Start with the experience the
@@ -562,7 +562,50 @@ profile and its matching gameplay SDK to publish through poima_build. Wait for
 successful publication and use project.inspect and the verified artifact hash
 for guarded project.gameplay.adopt. Ask for the profile-relative project path
 if it wasn't supplied. Use gameplay checks before saying a build is verified.
+)";
+        if(gameplay_source) {
+            const auto source=stage.path/"gameplay-src";
+            fs::create_directory(project_io_path(source));
+            exclusive_write(source/"Game.csproj",R"xml(<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="$(PoimaAuthoringRoot)/build/Poima.Gameplay.props" />
+  <PropertyGroup><AssemblyName>ProjectGameplay</AssemblyName></PropertyGroup>
+</Project>
+)xml");
+            exclusive_write(source/"Game.cs",R"(// SPDX-License-Identifier: Apache-2.0
+using System.Runtime.InteropServices;
+using Poima;
+
+namespace ProjectGameplay;
+
+[StructLayout(LayoutKind.Sequential)]
+public struct State
+{
+    public int Uses;
+}
+
+[GameModule("project.gameplay")]
+public sealed class Game : Poima.Game<State>
+{
+    // This is the controller in the starter world.
+    private static readonly EntityId Player = new(0, 2);
+
+    public override void Initialize(ref State state) => state = default;
+
+    public override void Tick(ref State state, GameContext context)
+    {
+        if (context.Pressed(Player, GameAction.Use))
+            ++state.Uses;
+    }
+}
 )");
+            agent_guide+=R"(
+Compiled gameplay starts in gameplay-src/Game.cs. Edit that source after brief
+approval. The portable project is gameplay-src/Game.csproj and its initial
+type is ProjectGameplay.Game. The starter counts the Use action in native-owned
+state. Movement and aim already work through the starter controller.
+)";
+        }
+        exclusive_write(stage.path/"AGENTS.md",agent_guide);
         exclusive_write(stage.path/"CLAUDE.md","@AGENTS.md\n");
         exclusive_write(stage.path/project_manifest_filename,spec.dump(2)+"\n");
         project(text(stage.path/project_manifest_filename));

@@ -32,6 +32,12 @@ Sun shadows with 80-metre coverage, depth bias 0.0001 and normal bias 0.005 metr
 These starter choices do not rewrite existing worlds: an omitted authored filter
 still falls back to point PCF. See [shadow authoring and filter precedence](SHADOWS.md#filter-selection). The persisted v2 input profile supplies keyboard/mouse and gamepad defaults. Creation removes its own writer-lock sidecars before publication.
 
+Add `--gameplay` after the project name to include editable C# starter
+source. The packaged Windows launcher selects this when it includes the
+authoring pack. The initial project opens and plays its scene immediately.
+Publish and attach the source to enable its first gameplay rule.
+[Creator gameplay guide](CREATOR_GAMEPLAY.md)
+
 Project inspection validates the world and every referenced cooked asset without creating writer sidecars or repairing files. It reports the project identity, entry entities, authored revision, dependencies, audio requirement and optional input profile. Missing worlds are errors; inspection never creates a blank replacement.
 
 A project manifest has this shape; actual generated identities differ:

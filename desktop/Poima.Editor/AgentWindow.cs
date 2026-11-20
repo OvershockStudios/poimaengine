@@ -38,6 +38,7 @@ internal sealed class AgentChat : UserControl
     private readonly Dictionary<StackPanel, JsonNode> acpPermissions = [];
     private readonly Dictionary<string, string> acpToolDetails = new(StringComparer.Ordinal);
     private bool submitting, closing, connecting, ready, cancelRequested, sentGameplayContext;
+    private bool acpReceivedReply;
     private Task? connectingTask, closingTask, retiringTask;
     public bool Busy => submitting || activeTurn is not null || connecting || retiringTask?.IsCompleted == false;
     private string ProviderName => provider.SelectedItem as string ?? "Codex";
@@ -259,13 +260,14 @@ internal sealed class AgentChat : UserControl
         {
             if (current is AcpSession acp)
             {
+                acpReceivedReply = false;
                 var reason = await acp.PromptAsync(payload, lifetime.Token);
                 if (ReferenceEquals(session, current))
                 {
                     sentGameplayContext = true;
                     status.Text = reason switch
                     {
-                        "end_turn" => "Turn completed",
+                        "end_turn" => acpReceivedReply ? "Turn completed" : ProviderName + " ended the turn without a reply.",
                         "cancelled" => "Turn cancelled",
                         _ => ProviderName + " ended the turn: " + reason
                     };
@@ -425,7 +427,11 @@ internal sealed class AgentChat : UserControl
             var kind = update["sessionUpdate"]?.GetValue<string>();
             if (kind == "agent_message_chunk" &&
                 update["content"] is JsonObject content && content["type"]?.GetValue<string>() == "text")
-                Append(content["text"]?.GetValue<string>() ?? "");
+            {
+                var text = content["text"]?.GetValue<string>() ?? "";
+                if (!string.IsNullOrWhiteSpace(text)) acpReceivedReply = true;
+                Append(text);
+            }
             else if (kind is "tool_call" or "tool_call_update" && submitting &&
                 update["toolCallId"]?.GetValue<string>() is { } toolId)
             {

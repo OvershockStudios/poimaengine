@@ -108,6 +108,22 @@ class ProjectContract(unittest.TestCase):
         self.assertEqual(inspected['project_id'], doc['project_id'])
         self.assertFalse(list(self.project.rglob('*.lock')), 'Starter/inspection unexpectedly created a lock sidecar.')
 
+    def test_opt_in_gameplay_sources_are_portable_and_unattached(self):
+        self.assertFalse((self.project/'gameplay-src').exists())
+        target = self.root/'Café game with source'
+        self.run_cli('project', 'create', native(target), '--name', 'Café game', '--gameplay')
+        before = tree(target)
+        source = target/'gameplay-src'
+        self.assertEqual(sorted(item.name for item in source.iterdir()), ['Game.cs','Game.csproj'])
+        self.assertIn('$(PoimaAuthoringRoot)/build/Poima.Gameplay.props', (source/'Game.csproj').read_text())
+        self.assertIn('namespace ProjectGameplay;', (source/'Game.cs').read_text())
+        self.assertIn('ProjectGameplay.Game', (target/'AGENTS.md').read_text())
+        result = self.run_cli('project', 'inspect', native(target/'project.poimaproject'))
+        self.assertNotIn('gameplay', result)
+        self.assertEqual(result['revision'], 1)
+        self.run_cli('project', 'create', native(target), '--name', 'Replacement', '--gameplay', success=False)
+        self.assertEqual(tree(target), before)
+
     def test_manifest_name_compatibility(self):
         original = self.inspect()
         for name in ('project.json', 'Room with spaces.poimaproject'):

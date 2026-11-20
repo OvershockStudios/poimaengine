@@ -6,6 +6,8 @@ Vulkan graphics driver. Open `Poima.Editor.exe`.
 - **Play Collection Room** opens the bundled game. Use WASD and the mouse
   to move and aim, E to collect the three green cells, and Esc to exit.
 - **Create project** starts with a name in **Documents → Poima Projects**.
+  Previews with the authoring pack include editable C# gameplay source in
+  new projects.
 - **Open selected project** reopens a project from that folder.
   **Open project from disk…** accepts a `.poimaproject` or an existing `project.json`.
 - The creator workspace puts game chat beside Play and Stop. Choose

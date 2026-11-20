@@ -11,13 +11,13 @@ internal static class WindowsGameplayTools
     private const string ProfileName = "creator";
     private static string PackageDirectory => AppContext.BaseDirectory;
     private static string Authoring => Path.Combine(PackageDirectory, "authoring");
+    public static bool HasAuthoringPack => File.Exists(Path.Combine(Authoring, "authoring.json"));
     private static string DotnetSdkDirectory => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "dotnet");
 
     public static async Task<LaunchOptions> ConfigureAsync(LaunchOptions options, ProjectLocation project)
     {
-        if (!OperatingSystem.IsWindows() || options.DevelopmentProfiles is not null ||
-            !File.Exists(Path.Combine(Authoring, "authoring.json")))
+        if (!OperatingSystem.IsWindows() || options.DevelopmentProfiles is not null || !HasAuthoringPack)
             return options;
         try
         {
@@ -61,7 +61,7 @@ internal static class WindowsGameplayTools
             var guide = Path.Combine(PackageDirectory, "reference", "CREATOR_GAMEPLAY.md").Replace('\\', '/');
             var projectFile = Path.GetFileName(project.Manifest);
             var context = $"""
-                Poima has configured the native gameplay profile `{ProfileName}` for this project root. The profile-relative project manifest is `{projectFile}`. For C# gameplay, read the installed guide `{guide}` after brief approval. Import `$(PoimaAuthoringRoot)/build/Poima.Gameplay.props` in the C# project. Use `development.publish` and `project.gameplay.adopt` via `poima_build`. The guide covers verification and the publish and adoption receipts.
+                Poima configured the native gameplay profile `{ProfileName}` for this project root. The profile-relative manifest is `{projectFile}`. After brief approval, start with the project's `gameplay-src/Game.cs` and `Game.csproj` if present. The installed guide `{guide}` covers the C# API, verification and the build receipts. Use `development.publish` and `project.gameplay.adopt` via `poima_build`. The publisher supplies `PoimaAuthoringRoot` for the project import.
                 """;
             return options with { InstalledDevelopmentProfiles = profilePath, GameplayToolStatus = "C# gameplay builds are ready.", GameplayToolContext = context };
         }

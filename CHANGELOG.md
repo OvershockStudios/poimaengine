@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.291
+
+- Start projects in the packaged Windows creator with editable, portable C# gameplay source. The CLI can opt in with `project create --gameplay`.
+- Show when an agent ends a chat turn without replying.
+
 ## 0.0.290
 
 - Resolve the gameplay SDK from the selected authoring pack during publication so source projects can move between preview installations.
