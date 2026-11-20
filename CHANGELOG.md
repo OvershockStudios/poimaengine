@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.331
+
+- Lead with Install Poima and Open Poima in the Windows launcher. Keep local packages, release channels and install location under Installation options.
+- Let Windows release maintainers stage a full build on another drive without changing the active desktop build.
+
 ## 0.0.330
 
 - Refresh the creator workspace with a wine palette, compact connection controls, clearer conversation layout and an idle preview state.

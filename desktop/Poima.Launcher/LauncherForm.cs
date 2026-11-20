@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
 using System.Diagnostics;
+using System.Drawing.Drawing2D;
 using System.Text.Json;
 
 namespace Poima.Launcher;
 
 internal sealed class LauncherForm : Form
 {
-    private static readonly Color Surface = Color.FromArgb(25, 23, 26);
-    private static readonly Color Panel = Color.FromArgb(38, 33, 38);
+    private static readonly Color Surface = Color.FromArgb(33, 16, 22);
+    private static readonly Color Panel = Color.FromArgb(43, 26, 35);
     private static readonly Color TextColor = Color.FromArgb(247, 232, 235);
     private static readonly Color Muted = Color.FromArgb(204, 188, 194);
     private static readonly Color Wine = Color.FromArgb(114, 47, 55);
@@ -21,15 +22,39 @@ internal sealed class LauncherForm : Form
     private readonly Label current = new();
     private readonly Label status = new() { AutoSize = false, Height = 44, AccessibleName = "Install status" };
     private readonly ProgressBar progress = new() { Height = 6, AccessibleName = "Download progress" };
-    private readonly Button update = Button("Check and install", primary: true);
+    private readonly Button update = Button("Install Poima", primary: true);
     private readonly Button installPackage = Button("Install from ZIP…");
     private readonly Button browse = Button("Browse…");
     private readonly Button open = Button("Open Poima", primary: true);
     private readonly Button project = Button("Open project…");
     private readonly Button rollback = Button("Use previous version");
     private readonly Button cancel = Button("Cancel");
+    private readonly Button showOptions = Button("Installation options");
+    private readonly ToolTip tooltips = new();
+    private readonly Bitmap settingsIcon = DrawIcon((g, pen) =>
+    {
+        g.DrawLine(pen, 3, 5, 17, 5);
+        g.DrawLine(pen, 3, 10, 17, 10);
+        g.DrawLine(pen, 3, 15, 17, 15);
+        g.DrawLine(pen, 7, 3, 7, 7);
+        g.DrawLine(pen, 13, 8, 13, 12);
+        g.DrawLine(pen, 8, 13, 8, 17);
+    });
+    private readonly Bitmap folderIcon = DrawIcon((g, pen) => g.DrawLines(pen,
+        (Point[])[new(2, 5), new(8, 5), new(10, 7), new(18, 7), new(18, 16), new(2, 16), new(2, 5)]));
+    private readonly Bitmap updateIcon = DrawIcon((g, pen) =>
+    {
+        g.DrawArc(pen, 4, 4, 12, 12, 2, 308);
+        g.DrawLines(pen, (Point[])[new(15, 3), new(15, 7), new(11, 7)]);
+    });
+    private readonly TableLayoutPanel options = new()
+    {
+        Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3, AutoSize = true,
+        AutoSizeMode = AutoSizeMode.GrowAndShrink, Visible = false
+    };
     private readonly Dictionary<string, string> pins;
     private CancellationTokenSource? pending;
+    private bool closeAfterInstall;
 
     private sealed record Settings(string Location, ReleaseChannel Channel, Dictionary<string, string> Projects);
 
@@ -43,56 +68,67 @@ internal sealed class LauncherForm : Form
         Font = new Font("Segoe UI", 10);
         ForeColor = TextColor;
         BackColor = Surface;
-        ClientSize = new Size(660, 445);
-        MinimumSize = new Size(570, 489);
+        ClientSize = new Size(620, 380);
+        MinimumSize = new Size(560, 392);
         StartPosition = FormStartPosition.CenterScreen;
         var settings = LoadSettings();
         pins = new(settings.Projects, StringComparer.OrdinalIgnoreCase);
 
         var layout = new TableLayoutPanel
         {
-            Dock = DockStyle.Fill, Padding = new Padding(26, 22, 26, 18), ColumnCount = 1, RowCount = 8
+            Dock = DockStyle.Fill, Padding = new Padding(26, 22, 26, 18), ColumnCount = 1, RowCount = 6
         };
-        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 84));
-        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 35));
-        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 49));
-        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 49));
-        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 43));
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 70));
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 44));
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 46));
         layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 16));
-        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 47));
+        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         Controls.Add(layout);
 
         using var wordmark = typeof(LauncherForm).Assembly.GetManifestResourceStream("Poima.Launcher.Poima.png")!;
         using var source = Image.FromStream(wordmark);
         var logo = new PictureBox { Width = 145, Height = 54, SizeMode = PictureBoxSizeMode.Zoom, Image = new Bitmap(source) };
-        layout.Controls.Add(logo, 0, 0);
+        var header = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1 };
+        header.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        header.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+        header.Controls.Add(logo, 0, 0);
+        SetIcon(showOptions, settingsIcon, "Installation options");
+        showOptions.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+        header.Controls.Add(showOptions, 1, 0);
+        layout.Controls.Add(header, 0, 0);
         current.Dock = DockStyle.Fill;
-        current.Font = new Font(Font, FontStyle.Bold);
+        current.Font = new Font(Font.FontFamily, 15, FontStyle.Bold);
         layout.Controls.Add(current, 0, 1);
 
+        var actions = new FlowLayoutPanel { Dock = DockStyle.Fill, WrapContents = false };
+        SetIcon(project, folderIcon, "Open project…");
+        actions.Controls.AddRange([open, update, project, cancel]);
+        layout.Controls.Add(actions, 0, 2);
+        status.Dock = DockStyle.Fill;
+        status.ForeColor = Muted;
+        layout.Controls.Add(status, 0, 3);
+        progress.Dock = DockStyle.Fill;
+        progress.Visible = false;
+        layout.Controls.Add(progress, 0, 4);
         channel.DataSource = Enum.GetValues<ReleaseChannel>();
         channel.SelectedItem = settings.Channel;
         location.BackColor = Panel;
         location.ForeColor = TextColor;
         location.Text = settings.Location;
         location.Dock = DockStyle.Fill;
-        layout.Controls.Add(Row("Install location", location, browse), 0, 2);
-        layout.Controls.Add(Row("Release channel", channel, update, cancel), 0, 3);
-        var local = new FlowLayoutPanel { Dock = DockStyle.Fill };
-        local.Controls.Add(installPackage);
-        layout.Controls.Add(local, 0, 4);
+        SetIcon(browse, folderIcon, "Browse…");
+        options.RowStyles.Add(new RowStyle(SizeType.Absolute, 38));
+        options.RowStyles.Add(new RowStyle(SizeType.Absolute, 38));
+        options.RowStyles.Add(new RowStyle(SizeType.Absolute, 42));
+        options.Controls.Add(Row("Install location", location, browse), 0, 0);
+        options.Controls.Add(Row("Release channel", channel), 0, 1);
+        var local = new FlowLayoutPanel { Dock = DockStyle.Fill, WrapContents = false };
+        local.Controls.AddRange([installPackage, rollback]);
+        options.Controls.Add(local, 0, 2);
+        layout.Controls.Add(options, 0, 5);
 
-        status.Dock = DockStyle.Fill;
-        status.ForeColor = Muted;
-        layout.Controls.Add(status, 0, 5);
-        progress.Dock = DockStyle.Fill;
-        progress.Visible = false;
-        layout.Controls.Add(progress, 0, 6);
-        var actions = new FlowLayoutPanel { Dock = DockStyle.Fill, WrapContents = false };
-        actions.Controls.AddRange([open, project, rollback]);
-        layout.Controls.Add(actions, 0, 7);
-
+        showOptions.Click += (_, _) => ShowInstallationOptions(!options.Visible);
         browse.Click += (_, _) => PickInstallFolder();
         channel.SelectedIndexChanged += (_, _) => RunWithStatus(SaveSettings);
         update.Click += async (_, _) => await UpdateAsync(automatic: false);
@@ -104,26 +140,66 @@ internal sealed class LauncherForm : Form
         FormClosing += (_, args) =>
         {
             if (pending is null) return;
+            closeAfterInstall = true;
             pending.Cancel();
             args.Cancel = true;
         };
-        Disposed += (_, _) => { http.Dispose(); logo.Image?.Dispose(); };
+        Disposed += (_, _) =>
+        {
+            http.Dispose(); tooltips.Dispose(); logo.Image?.Dispose();
+            settingsIcon.Dispose(); folderIcon.Dispose(); updateIcon.Dispose();
+        };
         RunWithStatus(RefreshInstall);
-        ActiveControl = update;
+        ActiveControl = open.Enabled ? open : update;
         Shown += async (_, _) => { if (open.Enabled && pending is null) await UpdateAsync(automatic: true); };
     }
 
     private static Button Button(string title, bool primary = false)
     {
-        var background = primary ? Wine : Panel;
         var button = new Button
         {
             Text = title, Height = 33, AutoSize = true, Padding = new Padding(9, 0, 9, 0),
-            FlatStyle = FlatStyle.Flat, BackColor = background, ForeColor = TextColor, UseVisualStyleBackColor = false
+            FlatStyle = FlatStyle.Flat, ForeColor = TextColor, UseVisualStyleBackColor = false
         };
+        StyleAction(button, primary);
+        return button;
+    }
+
+    private static void StyleAction(Button button, bool primary)
+    {
+        var background = primary ? Wine : Panel;
+        button.BackColor = background;
         button.FlatAppearance.BorderColor = background;
         button.FlatAppearance.MouseOverBackColor = primary ? Color.FromArgb(133, 57, 67) : Color.FromArgb(54, 46, 54);
-        return button;
+    }
+
+    private void ShowInstallationOptions(bool visible)
+    {
+        options.Visible = visible;
+        tooltips.SetToolTip(showOptions, visible ? "Hide installation options" : "Installation options");
+    }
+
+    private void SetIcon(Button button, Bitmap icon, string name)
+    {
+        button.Text = "";
+        button.AutoSize = false;
+        button.Size = new Size(38, 33);
+        button.Image = icon;
+        button.AccessibleName = name;
+        button.BackColor = Surface;
+        button.FlatAppearance.BorderSize = 0;
+        button.FlatAppearance.MouseOverBackColor = Panel;
+        tooltips.SetToolTip(button, name);
+    }
+
+    private static Bitmap DrawIcon(Action<Graphics, Pen> draw)
+    {
+        var icon = new Bitmap(20, 20);
+        using var graphics = Graphics.FromImage(icon);
+        using var pen = new Pen(TextColor, 1.6F) { StartCap = LineCap.Round, EndCap = LineCap.Round, LineJoin = LineJoin.Round };
+        graphics.SmoothingMode = SmoothingMode.AntiAlias;
+        draw(graphics, pen);
+        return icon;
     }
 
     private static TableLayoutPanel Row(string title, Control field, params Control[] actions)
@@ -150,7 +226,18 @@ internal sealed class LauncherForm : Form
         var install = Install;
         var state = install.State();
         var ready = install.Executable(state.Active) is not null;
-        current.Text = ready ? $"Poima {state.Active}" : "Install Poima to get started";
+        current.Text = ready ? $"Poima {state.Active}" : "Set up Poima on this PC";
+        if (ready) SetIcon(update, updateIcon, "Check for updates");
+        else
+        {
+            update.Text = "Install Poima";
+            update.AccessibleName = update.Text;
+            update.Image = null;
+            update.AutoSize = true;
+            update.FlatAppearance.BorderSize = 1;
+            tooltips.SetToolTip(update, "");
+            StyleAction(update, primary: true);
+        }
         open.Visible = project.Visible = ready;
         open.Enabled = project.Enabled = ready;
         rollback.Visible = install.Executable(state.Previous) is not null;
@@ -185,6 +272,7 @@ internal sealed class LauncherForm : Form
         try
         {
             browse.Enabled = channel.Enabled = update.Enabled = rollback.Enabled = installPackage.Enabled = false;
+            showOptions.Enabled = false;
             cancel.Visible = progress.Visible = true;
             progress.Value = 0;
             status.ForeColor = Muted;
@@ -197,17 +285,19 @@ internal sealed class LauncherForm : Form
                 ? install.UpdateAsync(selected, automatic, messages, download, work.Token)
                 : install.InstallPackageAsync(archive, messages, download, work.Token));
             status.Text = result.Version is null ? $"No {selected.ToString().ToLowerInvariant()} Windows releases are available." :
-                result.Held ? $"Poima {result.Version} is available. Check and install to switch back." :
+                result.Held ? $"Poima {result.Version} is available. Check for updates to switch back." :
                 result.Downloaded ? $"Poima {result.Version} is installed." : $"Poima {result.Version} is already installed.";
+            if (result.Downloaded) ShowInstallationOptions(false);
         }
         catch (OperationCanceledException) { status.Text = "Installation stopped. Your active engine is unchanged."; }
         catch (Exception error) when (Expected(error)) { Report(error); }
         finally
         {
             pending = null;
-            browse.Enabled = channel.Enabled = update.Enabled = installPackage.Enabled = true;
+            browse.Enabled = channel.Enabled = update.Enabled = installPackage.Enabled = showOptions.Enabled = true;
             progress.Visible = false;
             RunWithStatus(RefreshInstall);
+            if (closeAfterInstall) BeginInvoke(Close);
         }
     }
 

@@ -1,8 +1,19 @@
 # Implementation status
 
-Updated 2026-11-20 for **0.0.330**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-20 for **0.0.331**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.331 simplifies the [Windows launcher](WINDOWS_LAUNCHER.md).
+**Install Poima** and **Open Poima** are the primary actions. Options, folder
+selection and update checks use icons with tooltips and accessible names.
+An empty portable install on the development laptop verified all 499 engine
+files, created a project and presented a hardware Vulkan frame before stopping.
+A separate check closed the launcher cleanly during a pending release lookup.
+The installed Collection Room's Native AOT module passed headless play and
+save continuation in a fresh native process. Installation from a public tag,
+clean Windows setup and first-time human use still need qualification.
+[Results](evidence/m2-launcher-first-run-331.json)
 
 Version 0.0.330 refreshes the Windows creator workspace. The conversation
 has a compact connection bar, expandable settings and a persistent

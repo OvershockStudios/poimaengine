@@ -1,11 +1,14 @@
 # SPDX-License-Identifier: Apache-2.0
 # Uses the published launcher and release ZIP in an interactive Windows session.
+# WithFirstPlay requires a working hardware Vulkan preview.
 param(
     [Parameter(Mandatory = $true)][string]$Launcher,
     [Parameter(Mandatory = $true)][string]$EngineZip,
     [Parameter(Mandatory = $true)][string]$Output,
     [switch]$WithBuildCheck,
-    [switch]$ExpectBuildSetup
+    [switch]$ExpectBuildSetup,
+    [switch]$ExpectCompactStart,
+    [switch]$WithFirstPlay
 )
 
 $ErrorActionPreference = 'Stop'
@@ -130,6 +133,13 @@ function Element($Window, $Name) {
     $item = $Window.FindFirst([Windows.Automation.TreeScope]::Descendants, $match)
     if ($item -and $item.Current.IsEnabled) { $item }
 }
+function Visible-Element($Window, $Name) {
+    $match = [Windows.Automation.PropertyCondition]::new([Windows.Automation.AutomationElement]::NameProperty, $Name)
+    $items = $Window.FindAll([Windows.Automation.TreeScope]::Descendants, $match)
+    foreach ($item in $items) {
+        if (!$item.Current.IsOffscreen) { return $item }
+    }
+}
 function Invoke-Button($Window, $Name) {
     $button = Wait-For $Name { Element $Window $Name }
     $button.GetCurrentPattern([Windows.Automation.InvokePattern]::Pattern).Invoke()
@@ -140,6 +150,56 @@ function Set-Field($Field, $Text) {
 function Close-ProcessWindow($Process) {
     if (!$Process.CloseMainWindow() -or !$Process.WaitForExit(20000) -or $Process.ExitCode -ne 0) {
         throw "Process $($Process.Id) did not close normally."
+    }
+}
+
+function Inspect-InstalledDesktop($Cli, $Endpoint) {
+    $request = '{"jsonrpc":"2.0","id":1,"method":"desktop.inspect"}'
+    $response = $request | & $Cli connect $Endpoint --timeout-ms 2000
+    $exitCode = $LASTEXITCODE
+    $response | Add-Content -LiteralPath (Join-Path $run 'first-play-desktop.jsonl') -Encoding UTF8
+    $reply = $response | ConvertFrom-Json
+    if ($exitCode -ne 0 -or $reply.id -ne 1 -or !$reply.result) {
+        throw 'The installed creator owner could not be inspected.'
+    }
+    return $reply.result
+}
+
+function Check-FirstPlay($Workspace, $ProjectPath) {
+    $cli = Join-Path $installed 'poima.exe'
+    $response = & $cli project inspect $ProjectPath
+    $exitCode = $LASTEXITCODE
+    $response | Set-Content -LiteralPath (Join-Path $run 'first-play-project.json') -Encoding UTF8
+    $receipt = $response | ConvertFrom-Json
+    if ($exitCode -ne 0 -or !$receipt.result) { throw 'The installed project could not be inspected.' }
+    $project = $receipt.result
+    $endpoint = 'poima-' + $project.project_id
+    $beforePlay = Inspect-InstalledDesktop $cli $endpoint
+    if ($beforePlay.runtime.active -ne $false -or $beforePlay.views.game.attached -ne $false) {
+        throw 'The installed creator already had an active preview.'
+    }
+
+    Invoke-Button $Workspace 'Play project'
+    $playing = Wait-For 'a presented frame in the installed Game preview' {
+        $candidate = Inspect-InstalledDesktop $cli $endpoint
+        if ($candidate.runtime.active -and $candidate.views.game.presented_tick -gt 0) { $candidate }
+    }
+    $view = $playing.views.game
+    if ($playing.runtime.authored_revision -ne $project.revision -or !$playing.runtime.session_id -or
+        !$view.attached -or $playing.views.scene.attached -ne $false -or $view.frames_presented -lt 1 -or
+        !$view.render.success -or !$view.render.hardware -or $view.render.nvrhi_errors -ne 0) {
+        throw 'The installed Game frame failed the native preview checks.'
+    }
+    Invoke-Button $Workspace 'Stop preview'
+    $null = Wait-For 'the installed Game preview to stop' {
+        $candidate = Inspect-InstalledDesktop $cli $endpoint
+        $candidate.runtime.active -eq $false -and $candidate.views.game.attached -eq $false -and
+            (Element $Workspace 'Play project')
+    }
+    $report.checks.first_play = [ordered]@{
+        project_id = $project.project_id; revision = $project.revision; session = $playing.runtime.session_id
+        tick = $view.presented_tick; frames = $view.frames_presented; gpu = $view.render.gpu
+        validation_errors = $view.render.nvrhi_errors; stopped = $true
     }
 }
 
@@ -207,6 +267,21 @@ try {
     $window = Wait-For 'portable launcher' { Window $owner 'Poima Launcher' }
     if (Element $window 'Open Poima') { throw 'An empty profile offered to open an existing engine.' }
     $installLabel = 'Install from ZIP' + [char]0x2026
+    if ($ExpectCompactStart) {
+        $null = Wait-For 'Install Poima' { Element $window 'Install Poima' }
+        $optionLabels = @('Install location', 'Release channel', ('Browse' + [char]0x2026), $installLabel)
+        foreach ($label in $optionLabels) {
+            if (Visible-Element $window $label) { throw "'$label' was visible before opening Installation options." }
+        }
+        $report.checks.compact_first_run = $true
+        Invoke-Button $window 'Installation options'
+        foreach ($optionName in $optionLabels) {
+            $null = Wait-For "the expanded $optionName control" { Visible-Element $window $optionName }
+        }
+        $report.checks.installation_options_opened = $true
+    } elseif (Element $window 'Installation options') {
+        Invoke-Button $window 'Installation options'
+    }
     $pick = Wait-For $installLabel { Element $window $installLabel }
     $buttonHandle = [IntPtr]$pick.Current.NativeWindowHandle
     # The WinForms button opens a synchronous modal dialog on its UI thread.
@@ -219,6 +294,15 @@ try {
         throw 'Could not select the engine ZIP in the owned dialog.'
     }
     $null = Wait-For 'installed engine' { (Test-Path -LiteralPath $editorPath) -and (Element $window 'Open Poima') } 120
+    if ($ExpectCompactStart) {
+        $null = Wait-For 'Check for updates' { Element $window 'Check for updates' }
+        $projectLabel = 'Open project' + [char]0x2026
+        $null = Wait-For $projectLabel { Element $window $projectLabel }
+        foreach ($label in $optionLabels) {
+            if (Visible-Element $window $label) { throw "'$label' remained visible after installation." }
+        }
+        $report.checks.compact_installed = $true
+    }
     foreach ($entry in $manifest.files) {
         if ((Hash (Join-Path $installed $entry.path)) -cne $entry.sha256) {
             throw "Installed file differs from the release inventory: $($entry.path)"
@@ -284,6 +368,7 @@ try {
     }
     $report.checks.portable_project_created = $true
     $report.checks.creator_editor_sha256 = Hash $editorPath
+    if ($WithFirstPlay) { Check-FirstPlay $workspace $projectPath }
     Close-ProcessWindow $creator
     Close-ProcessWindow $owner
     if ((SettingsHash) -cne $before) { throw 'Portable mode modified normal launcher settings.' }

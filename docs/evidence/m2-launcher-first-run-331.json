@@ -1,0 +1,120 @@
+{
+  "scope": "Configured Windows x64 development laptop, starting with an empty portable profile using the exact precompiled launcher and engine ZIPs. UI Automation drives the startup and play controls. Private owned window captures were inspected.",
+  "release": {
+    "version": "0.0.331",
+    "tag": "v0.0.331",
+    "engine_files": 499,
+    "sample_manifest_sha256": "6a908e64faf8c82600eca8f831f8414ea2fe2859b082ff9d998a0b05323861ce",
+    "assets": [
+      {
+        "name": "Poima-0.0.331-Windows-x64.zip",
+        "bytes": 141814503,
+        "sha256": "80802cb0edf521f6e4b9ac4cfa55106e67b73a4df0c0313167c69e7b76d16dee"
+      },
+      {
+        "name": "Poima-0.0.331-Windows-x64.manifest.json",
+        "bytes": 89315,
+        "sha256": "a79f3a07ddcc13113b1daaca7378f1574924622a4173309bdfc3de3e90504a8e"
+      },
+      {
+        "name": "Poima-Launcher-0.0.331-Windows-x64.zip",
+        "bytes": 46081606,
+        "sha256": "a085d413460f5193abd3fea8e3aa65509deb83361e2b4503916ca1031fa9c89d"
+      }
+    ]
+  },
+  "release_receipt_sha256": "22c3c5ef953fa4590c1770df4c18c5bb8132e8003f6d2fe788af952f3d7f1fec",
+  "build": {
+    "windows_native_targets": [
+      "poima",
+      "poima_desktop"
+    ],
+    "windows_release_work_outside_checkout": true,
+    "matching_engine_before_and_after_launcher_only_rebuild": true,
+    "first_launcher_archive_sha256": "35776cf2743ceaf3c26889652ec31070127910f7efb96a18d99b10b45350be52"
+  },
+  "launcher": {
+    "passed": true,
+    "engine_version": "0.0.331",
+    "checks": {
+      "compact_first_run": true,
+      "installation_options_opened": true,
+      "compact_installed": true,
+      "installed_inventory_files": 499,
+      "install_staging_empty": true,
+      "portable_project_created": true,
+      "creator_editor_sha256": "3cbcaef8ae6f95f4403c0ee4bbdd9dfba3cd8606955b0ecfcb464f7985b0dd4c",
+      "first_play": {
+        "project_id": "f3d602c8df1882d37537ae6aa70ac332",
+        "revision": 1,
+        "session": "645ae11f35134e5c972ba83f17a661f6",
+        "tick": 6,
+        "frames": 4,
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "validation_errors": 0,
+        "stopped": true
+      },
+      "default_launcher_settings_preserved": true,
+      "launcher_exit": 0,
+      "creator_exit": 0
+    },
+    "archive_sha256": "80802cb0edf521f6e4b9ac4cfa55106e67b73a4df0c0313167c69e7b76d16dee",
+    "launcher_sha256": "690c0b1dfa12c4d84547d5aab70c6e004f863a892c1da4ed794155372918ff83",
+    "automation": [
+      "-ExpectCompactStart",
+      "-WithFirstPlay"
+    ],
+    "accessible_icon_names_observed": [
+      "Installation options",
+      "Browse…",
+      "Check for updates",
+      "Open project…"
+    ],
+    "report_sha256": "d8e0c217b5a94182c00b1ef3dea4fbce03084e8731ba5de8947f49eca7708872",
+    "presented_frame_responses_sha256": "ea5b32adddc94b161642262acbc4db3144b6c40bc092dedd741d94fec7444cf5",
+    "capture_sha256": {
+      "first_run": "93393e2bb5c2b1938744e5f930a159f069bf470e8a50c0f94e53b92198d3293d",
+      "expanded_options": "1ae82fda4fdda1a7938a831ffcf54f62f3ac5d72b2ccfafe9edf2d12e4b271e7",
+      "installed": "1781eaf604b7b5c08f830409f929999a81129792baeef6dae9e6f3f07988de13"
+    }
+  },
+  "close_during_install": {
+    "scope": "The launcher was closed while its real release request awaited a response from a controlled local proxy.",
+    "passed": true,
+    "install_lookup_pending": true,
+    "cancel_available": true,
+    "close_duration_ms": 95,
+    "process_exit": 0,
+    "versions_empty": true,
+    "staging_empty": true,
+    "report_sha256": "a4b2df6d0507e35f032dc51f60ae486d22e48f273b32ba16173c41bbf565bfdf"
+  },
+  "collection_room": {
+    "scope": "Bundle inspection plus a headless scripted playtest using the installed engine and the installed sample's Native AOT module, with fresh authored fixture and saves.",
+    "game_inspect_sha256": "30178c7b883da45113dd8502c1e49311605ebb26d3af05232bce24584465edc3",
+    "playtest_report_sha256": "d9331f24d467b40569fd4f7fe01bcf0db99edbc1d74d61beb4c6a65004021f6e",
+    "headless_checks": [
+      "Real raycast/Use removes exactly one spawned collectible; another Use cannot collect out of range.",
+      "Actual CharacterController movement and camera queries collect all three cells; native UI reports completion.",
+      "Compiled Load restores count, live spawned handles and exact player transform; restored gameplay finishes again.",
+      "A fresh native process loads the same durable checkpoint and completes the room again."
+    ],
+    "process_exit_codes": [
+      0,
+      0
+    ],
+    "restored_tick": 3,
+    "fresh_process_completion_tick": 245,
+    "fresh_process_collected": 3,
+    "native_artifact_sha256": "eedbe53115883d897f6fe087813fa56b59be6725fa2689561b2ba8af6328fc79"
+  },
+  "earlier_attempts": {
+    "ui_harness_timeouts": 2,
+    "diagnosis": "A PowerShell loop variable shadowed the wait helper's Label parameter during its probe. Owned captures confirmed the options were visible. The corrected maintained harness passed with the final launcher archive."
+  },
+  "open_qualification": [
+    "download and install through a public tagged release",
+    "clean Windows toolchain and agent setup",
+    "first-time human creator journey"
+  ]
+}

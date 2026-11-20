@@ -25,11 +25,11 @@ RUNTIME_PACKS = {
 }
 LAUNCHER_START = b"""# Poima Launcher
 
-Open Poima.Launcher.exe on Windows x64. Choose **Check and install**
+Open Poima.Launcher.exe on Windows x64. Choose **Install Poima**
 to use the Windows engine releases on GitHub.
 
 If you received an engine ZIP and its matching .manifest.json, keep them
-together and choose **Install from ZIP**. Select **Open Poima** when
+together and choose **Installation options**, then **Install from ZIP**. Select **Open Poima** when
 installation finishes.
 
 Run Poima.Launcher.exe --portable to keep launcher data and new projects
@@ -160,13 +160,13 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--windows-dotnet', type=Path, required=True, help='Path to the installed Windows x64 dotnet.exe.')
     parser.add_argument('--python-embed', type=Path, required=True, help='The pinned official embedded Windows Python ZIP.')
-    parser.add_argument('--work', type=Path, required=True, help='A new directory under this checkout build directory.')
+    parser.add_argument('--work', type=Path, required=True, help='A new directory for temporary build products.')
     parser.add_argument('--output', type=Path, required=True, help='A new directory for the finished release assets.')
     parser.add_argument('--skip-native', action='store_true', help='Use an already-current configured native Windows build.')
     args = parser.parse_args()
     work, destination = (path.absolute() for path in (args.work, args.output))
-    require(ROOT/'build' in work.resolve().parents and all(not p.exists() and not p.is_symlink()
-            for p in (work, destination)), 'Use new output and work paths, with work below the checkout build directory.')
+    require(all(not p.exists() and not p.is_symlink() for p in (work, destination)),
+            'Use new output and work paths.')
     require(not work.resolve().is_relative_to(destination.resolve()) and not destination.resolve().is_relative_to(work.resolve()),
             'The build work and release directories must be separate.')
     require(args.windows_dotnet.is_file() and SDK.is_file(), 'The configured Windows and WSL .NET SDKs are required.')

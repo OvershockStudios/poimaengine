@@ -238,8 +238,8 @@ def main():
     if output.is_symlink():
         parser.error('Publish output cannot be a symlink.')
     output = output.resolve()
-    if ROOT/'build' not in output.parents:
-        parser.error('Publish output must be a subdirectory of this checkout build directory.')
+    if not args.no_activate and ROOT/'build' not in output.parents:
+        parser.error('Use --no-activate to publish outside this checkout build directory.')
     previous = prior_output(output)
     sdk = ROOT/'.cache/toolchains/dotnet-10.0.401/dotnet'
     if not sdk.is_file():

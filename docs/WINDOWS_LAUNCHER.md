@@ -1,12 +1,12 @@
 # Windows launcher
 
-Open `Poima.Launcher.exe` on Windows x64. Choose an install location and a
-release channel, then select **Check and install**. If you already have the
-engine ZIP and its matching `.manifest.json` from Poima, keep them side by
-side and choose **Install from ZIP…**. The launcher checks the ZIP and every
-extracted file before activating it. **Open Poima** takes you to the
-installed creator workspace. The launcher includes its own runtime.
-Projects, authoring tools and agent sign-in follow the [Windows engine guide](WINDOWS_PREVIEW.md).
+Open `Poima.Launcher.exe` on Windows x64 and select **Install Poima**.
+Use the **Installation options** icon to change the install location or
+release channel. If you have a Poima engine ZIP and its matching `.manifest.json`,
+keep them side by side and choose **Install from ZIP…** in that panel.
+The launcher verifies the archive and every extracted file before activation.
+After installation, select **Open Poima**. The launcher includes its own runtime.
+See the [Windows engine guide](WINDOWS_PREVIEW.md) for projects and agent sign-in.
 
 **Preview** selects tagged `0.x.x`, alpha, beta and release candidate builds.
 **Stable** selects final builds from `1.0.0` onward. After the first install,
@@ -16,11 +16,11 @@ the archive and every file against the release inventory before switching
 the active version. The previous engine remains available if an update
 fails or is cancelled.
 
-**Use previous version** switches back to the prior install. An automatic
-check skips the version you just rolled back from. Use **Check and install**
-to reselect it. **Open project…** remembers the engine version used with
-that project manifest path. The matching install must remain on disk to
-open it through the launcher.
+Under **Installation options**, **Use previous version** switches back to the
+prior install. An automatic check skips the version you just rolled back from.
+Use **Check for updates** to reselect it. **Open project…** remembers the engine
+version used with that project manifest path. Keep the matching install on
+disk to open it through the launcher.
 
 Run `Poima.Launcher.exe --portable` from a writable folder to put launcher
 settings, default engine installs, and the new-project folder in
@@ -44,6 +44,7 @@ The command builds the engine and authoring tools, compiles Collection Room
 from its tracked source, then assembles the engine ZIP, its companion inventory
 and the self-contained launcher ZIP. The local `release.json` identifies
 the tag, archive hashes and sample build. Use new work and output directories.
+The work directory can be on a different drive from the checkout.
 During an incremental build, `--skip-native` uses the current native targets
 from the configured Windows build. ZIP assembly gives the same bytes for the
 same inputs and ZIP tooling, independent of file timestamps.
@@ -89,9 +90,14 @@ tools, use `-ExpectBuildSetup` with 0.0.313 or later to check that **Back**
 keeps the draft project name and that **Create without build tools** opens
 the project with setup still available.
 
+For 0.0.331 or later, add `-ExpectCompactStart -WithFirstPlay` to check the
+first-run actions, local package install, accessible icon names and first
+presented game frame from the installed creator.
+
 Qualification with a public release, a fresh Windows machine and a first-time
 creator remains open.
 [0.0.298 HTTP installation](evidence/m2-windows-launcher-298.json),
 [0.0.308 local installation and creator tests](evidence/m2-launcher-local-install-308.json),
 [0.0.309 release build and packaged sample](evidence/m2-windows-release-set-309.json),
-[0.0.310 first gameplay build and cancellation](evidence/m2-windows-first-build-310.json).
+[0.0.310 first gameplay build and cancellation](evidence/m2-windows-first-build-310.json),
+[0.0.331 first play and compact launcher](evidence/m2-launcher-first-run-331.json).
