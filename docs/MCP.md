@@ -40,7 +40,7 @@ and build-job submission with separate approval for each kind of write.
 | `poima_call` | Required `method`, optional object `params` and capture-only `image`. | The native operation result or error. |
 | `poima_source` | `project.source.write` with project selectors, exact guard and replacement text. | A guarded write receipt and resulting SHA-256. |
 | `poima_checks` | `project.verification.write` with project selectors, exact guard and complete suite JSON text. | A guarded suite write receipt and resulting SHA-256. |
-| `poima_build` | Required build `method` and object `params`. | A session-local job receipt for a trusted build; inspect it through the world API. |
+| `poima_build` | Required build or verification `method` and object `params`. | A session-local job receipt for a trusted build or check run. Inspect it through the world API. |
 
 Read editable C# with `project.source.read` through `poima_call`.
 The host's profile and open world govern the source selectors.

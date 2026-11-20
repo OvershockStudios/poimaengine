@@ -26,6 +26,12 @@ for the project whose entry world the host owns. Source writes use
 its own guarded write tool, `poima_checks`. Compilation and artifact adoption
 use `poima_build`.
 
+The same build approval covers `development.verify`. It accepts a retained
+successful `development.export` job for the same profile and project, a suite
+SHA-256 and a new JSON report path under the profile's output root. The worker
+rechecks the bundle before starting its own executable. Inspect the completed
+job for the verdict and report identity. [Verification workflow](GAME_VERIFICATION.md#run-and-inspect)
+
 ## Configure a host
 
 Create an owner-controlled JSON file outside public project history. All paths

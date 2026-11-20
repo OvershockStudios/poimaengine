@@ -135,7 +135,7 @@ try {
     const Json parameters={{"request_id",std::string(32,'1')},{"base_revision",11}};
     auto result=tool(session,{{"method","world.transact"},{"params",parameters}});
     check(seen.at("params")==parameters&&result.at("structuredContent").at("result")==receipt,"Native parameters or receipt changed");
-    for(const char* method:{"development.compile","development.publish","development.export","project.gameplay.adopt"}) {
+    for(const char* method:{"development.compile","development.publish","development.export","development.verify","project.gameplay.adopt"}) {
         const auto before_build=calls;
         auto rejected_build=tool(session,{{"method",method},{"params",Json::object()}});
         check(rejected_build.at("isError")==true && calls==before_build,"World edit tool silently granted build authority");

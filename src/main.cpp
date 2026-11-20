@@ -114,16 +114,26 @@ poima::Reply run(int argc, char** argv) {
         const std::string_view action=argv[2];if(action=="inspect" && argc==4)return poima::inspect_game(argv[3]);
         if(action=="verify") {
             std::string suite,report;
+            poima::GameVerificationOptions options;std::set<std::string_view> seen;
             for(int i=4;i<argc;i+=2) {
                 const std::string_view key=argv[i];
-                if(i+1>=argc || !*argv[i+1] || std::string_view(argv[i+1]).starts_with("--"))
-                    return poima::usage_error("Game verification requires nonempty --suite and optional --report paths.");
-                if(key=="--suite" && suite.empty())suite=argv[i+1];
-                else if(key=="--report" && report.empty())report=argv[i+1];
-                else return poima::usage_error("Unknown or repeated game verification option.");
+                if(i+1>=argc || !*argv[i+1] || std::string_view(argv[i+1]).starts_with("--") || !seen.insert(key).second)
+                    return poima::usage_error("Game verification options need distinct keys and nonempty values.");
+                const std::string_view value=argv[i+1];
+                if(key=="--suite")suite=value;
+                else if(key=="--report")report=value;
+                else if(key=="--completed-exit") {
+                    if(value!="true" && value!="false")return poima::usage_error("Completion exit expects true or false.");
+                    options.completed_exit=value=="true";
+                } else if(key=="--expected-suite-sha256" || key=="--expected-bundle-sha256") {
+                    if(value.size()!=64 || value.find_first_not_of("0123456789abcdef")!=std::string_view::npos)
+                        return poima::usage_error("Expected verification hashes require 64 lowercase hexadecimal characters.");
+                    (key=="--expected-suite-sha256" ? options.expected_suite_sha256 : options.expected_bundle_sha256)=value;
+                } else return poima::usage_error("Unknown game verification option.");
             }
             if(suite.empty())return poima::usage_error("Game verification requires --suite.");
-            return poima::verify_gameplay(argv[3],suite,report);
+            if(options.completed_exit && report.empty())return poima::usage_error("Completion exit mode requires --report.");
+            return poima::verify_gameplay(argv[3],suite,report,options);
         }
         if(action=="stdio") {
             poima::GameStdioOptions options;options.manifest=argv[3];std::set<std::string_view> seen;

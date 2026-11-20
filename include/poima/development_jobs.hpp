@@ -42,6 +42,9 @@ struct Request {
     // actual Csc-use evidence (larger explicit Limits still apply). Isolated
     // requests keep the configured ordinary capacity unchanged.
     std::optional<std::filesystem::path> compiler_server=std::nullopt;
+    // Bounded host-owned input checks on the worker before spawning. A failure
+    // prevents execution. Cancellation or timeout can still win during this check.
+    std::function<void()> before_launch={};
 };
 struct CompilerServerRetirement {
     bool cleanup_verified=false,forced=false;

@@ -301,12 +301,18 @@ Json evaluate_group(const GameDefinition& game,const Json& group) {
 
 void validate_game_verification_suite(std::string_view bytes) { (void)parse_suite(bytes); }
 
-Reply verify_gameplay(const std::string& manifest,const std::string& suite_file,const std::string& report) {
+Reply verify_gameplay(const std::string& manifest,const std::string& suite_file,const std::string& report,
+    const GameVerificationOptions& options) {
     Json result=nullptr,diagnostics=Json::array();
     bool passed=false;
     try {
+        require(!options.completed_exit || !report.empty(),"Completion exit mode requires a report file.");
         const auto [suite,suite_hash]=read_suite(suite_file);
+        require(options.expected_suite_sha256.empty() || options.expected_suite_sha256==suite_hash,
+            "Verification suite SHA-256 differs from the requested suite.");
         const auto game=load_game(manifest);
+        require(options.expected_bundle_sha256.empty() || options.expected_bundle_sha256==game.manifest_sha256,
+            "Game bundle SHA-256 differs from the requested export.");
         validate_game_host(game);
         require(fs::equivalent(running_executable(),path_of(game.executable)),"Run verification with this bundle's own runtime executable.");
         output_path(report,game,suite_file);
@@ -332,8 +338,9 @@ Reply verify_gameplay(const std::string& manifest,const std::string& suite_file,
         result=nullptr;
         diagnostics.push_back({{"code","game.verify_failed"},{"message",error.what()}});
     }
-    return {passed ? 0 : 4,Json{{"protocol_version",1},{"request_id",nullptr},{"command","game.verify"},
-        {"status",passed ? "ok" : "error"},{"result",result},{"diagnostics",diagnostics}}.dump(-1,' ',false,Json::error_handler_t::replace)};
+    const bool completed=passed || (options.completed_exit && result.is_object());
+    return {completed ? 0 : 4,Json{{"protocol_version",1},{"request_id",nullptr},{"command","game.verify"},
+        {"status",completed ? "ok" : "error"},{"result",result},{"diagnostics",diagnostics}}.dump(-1,' ',false,Json::error_handler_t::replace)};
 }
 Reply serve_game(const GameServeOptions& options) {
     try {

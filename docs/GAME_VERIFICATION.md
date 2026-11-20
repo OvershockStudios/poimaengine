@@ -66,6 +66,29 @@ presentation and checks beyond the suite format.
 
 ## Run and inspect
 
+An agent can run the saved suite through the connected creator workflow.
+The selected profile supplies the installed runtime and output directory.
+
+1. Read `project.verification.read` and keep the suite's `sha256`.
+2. Submit `development.export` through `poima_build` with `profile`, `project`,
+   a new `output` directory, and a fresh 32-hex `request_id`. Poll the receipt's
+   `job_id` with `development.inspect` until the export succeeds.
+3. Submit `development.verify` through `poima_build` with the same `profile`
+   and `project`, the `export_job_id`, the `expected_suite_sha256`, a new
+   `request_id` and an `output` filename such as `first-checks.json`. The
+   report lives beside the bundle under the profile's output root.
+4. Inspect the verification job with `include_output: false`. A completed
+   verdict has `state: "succeeded"`. Its `result.passed` indicates whether
+   the gameplay passed. The summary includes the bundle and suite hashes,
+   check counts, up to 16 failures or execution issues, and the full report
+   path and hash. A failed or cancelled job publishes no verdict.
+
+Use **Allow gameplay builds in this session** to authorize those jobs for
+Codex. The creator's **Export build** action records a recoverable checkpoint
+with the saved suite and editable project source.
+
+For direct CLI use, run the executable from the exported bundle.
+
 ```powershell
 .\Export\runtime\bin\poima.exe game verify .\Export\game.json --suite .\game.verify.json --report .\export.checks.json
 ```
@@ -77,6 +100,10 @@ returns group counts, simulated ticks, individual observations and issues.
 Missing or invalid setup returns diagnostics. An assertion failure leaves the
 other groups available to run. Review `actual` and `observed` at the check's
 recorded tick. Very large observations are omitted from the report.
+Pass `--expected-bundle-sha256` and `--expected-suite-sha256` to pin the exact
+inputs. `--completed-exit true` requires `--report` and exits zero once it
+writes a complete verdict, including a failed suite. Read `result.passed`
+when using that mode.
 
 In the Windows creator, save the suite as `game.verify.json` beside the project
 manifest. **Export build** runs it against the exported candidate and exposes
@@ -94,3 +121,7 @@ Run `python tests/game_verification_cli.py --runtime <installed-runtime> --outpu
 on a matching host with a renderer-enabled runtime distribution. The test creates and exports the
 starter game, relocates the bundle, executes passing and failing suites, and
 checks that reports and verification preserve the bundle's exact bytes.
+
+Run `python tests/development_verification_cli.py --runtime <installed-runtime> --output <new-directory>`
+to exercise the owned jobs. It checks passing and failing verdicts, guarded
+retries and refusal to start a modified bundled executable.

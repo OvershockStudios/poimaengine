@@ -267,6 +267,7 @@ Json Service::dispatch(const std::string& method,const Json& p,const fs::path& o
             if(profile.inspect_project || profile.adopt_gameplay)item.update({{"project_inspect",bool(profile.inspect_project)},{"gameplay_adopt",bool(profile.adopt_gameplay)}});
             if(profile.gameplay_source && !owned_world.empty())item["gameplay_source"]=true;
             if(profile.verification_suite && !owned_world.empty())item["verification_suite"]=true;
+            if(profile.verify_checks && !owned_world.empty())item["verify"]=true;
             result.push_back(std::move(item));
         }
         return {{"profiles",result}};
@@ -333,10 +334,13 @@ Json Service::dispatch(const std::string& method,const Json& p,const fs::path& o
         catch(const std::exception& error) {throw ServiceError(-32091,safe_diagnostic(std::string(error.what()).substr(0,4096)).get<std::string>());}
         return Json::parse(verified_result(result,4ULL*1024*1024));
     }
-    if(method=="development.compile" || method=="development.publish" || method=="development.export") {
+    if(method=="development.compile" || method=="development.publish" || method=="development.export" || method=="development.verify") {
         const bool compile=method=="development.compile",publish=method=="development.publish";
+        const bool verify_checks=method=="development.verify";
         if(compile)fields(p,{"request_id","executable","project","output","configuration","restore","compiler_server","timeout_ms"},{"request_id","executable","project","output"});
         else if(publish)fields(p,{"request_id","profile","project","output","type","timeout_ms"},{"request_id","profile","project","output","type"});
+        else if(verify_checks)fields(p,{"request_id","profile","project","output","export_job_id","expected_suite_sha256","timeout_ms"},
+            {"request_id","profile","project","output","export_job_id","expected_suite_sha256"});
         else fields(p,{"request_id","profile","project","output","timeout_ms"},{"request_id","profile","project","output"});
         const auto id=request_id(p.at("request_id"));Request request;std::optional<fs::path> reservation;
         const auto timeout=p.value("timeout_ms",Json(compile ? 600000:900000));
@@ -376,9 +380,15 @@ Json Service::dispatch(const std::string& method,const Json& p,const fs::path& o
         }else {
             const auto name=text(p.at("profile"),64);const auto selected=profiles_.find(name);need(selected!=profiles_.end(),"Development profile is unavailable.",-32004);profile=&selected->second;
             need(publish ? bool(profile->verify_publish):bool(profile->verify_export),"Development profile does not enable this operation.",-32004);
+            if(verify_checks)need(profile->verify_checks && profile->verification_suite && profile->inspect_project && !owned_world.empty(),
+                "Game verification requires a configured project owner.",-32004);
             project_name=relative(p.at("project"));output_name=relative(p.at("output"));
             normalized.update({{"profile",name},{"fingerprint",profile->fingerprint},{"project",project_name},{"output",output_name}});
             if(publish) {type=text(p.at("type"),512);need(game_type(type),"Invalid compiled C# gameplay type name.");normalized["type"]=type;}
+            if(verify_checks) {
+                normalized["export_job_id"]=job_id(p.at("export_job_id"));
+                normalized["expected_suite_sha256"]=digest(p.at("expected_suite_sha256"));
+            }
         }
         if(const auto prior=receipts_.find(id);prior!=receipts_.end()) {
             need(prior->second.params==normalized,"Development request ID was reused with different parameters.",-32009);
@@ -390,13 +400,46 @@ Json Service::dispatch(const std::string& method,const Json& p,const fs::path& o
             const auto project=contained(profile->project_root,project_name,true),output=contained(profile->output_root,output_name,false);
             const auto extension=lower_extension(project);
             need(publish ? extension==".csproj" : project_manifest_extension(extension),"Unexpected development project extension.");
-            need(!fs::exists(fs::symlink_status(output)),"Development output must name a new directory.",-32009);
+            need(!fs::exists(fs::symlink_status(output)),"Development output must name a new path.",-32009);
             for(const auto& prior:output_reservations_)need(!overlap(output,prior),"Development output is already reserved.",-32009);
             request.working_directory=profile->project_root;request.environment=profile->environment;reservation=output;
             if(publish) {
                 request.executable=profile->python;request.arguments={utf8(profile->publisher),"--project",utf8(project),"--type",type,"--output",utf8(output),"--dotnet",utf8(profile->dotnet),"--rid",profile->target_rid};
                 if(!profile->authoring_pack.empty())request.arguments.insert(request.arguments.end(),{"--authoring-pack",utf8(profile->authoring_pack),"--authoring-sha256",profile->authoring_manifest_sha256});
                 request.verify_success=[verify=profile->verify_publish,output,type] {return verified_result(verify(output,type));};
+            }else if(verify_checks) {
+                need(lower_extension(output)==".json" && fs::is_directory(output.parent_path()),
+                    "Verification expects a new JSON report in an existing output directory.");
+                const auto previous=jobs_ ? jobs_->poll_summary(normalized.at("export_job_id").get<JobId>()):std::optional<Status>{};
+                need(previous && previous->state==State::succeeded && !previous->result.empty(),
+                    "Select a successful retained export job.",-32009);
+                const auto exported=Json::parse(previous->result);
+                need(exported.value("kind",std::string{})=="game_bundle" &&
+                    exported.value("profile_fingerprint",std::string{})==profile->fingerprint,
+                    "Select a successful export from this development profile.",-32009);
+                const auto suite_hash=normalized.at("expected_suite_sha256");
+                const auto suite=Json::parse(profile->verification_suite(project,owned_world,"{}"));
+                need(suite.at("exists")==true && suite.at("sha256")==suite_hash,"The current verification suite differs from the requested SHA-256.",-32009);
+                const auto current=Json::parse(profile->inspect_project(project));
+                need(current.at("project_id")==exported.at("project_id"),"The export belongs to another project.",-32009);
+                const auto manifest=absolute(exported.at("manifest")).make_preferred();
+                checked_components(manifest);
+                need(within(manifest,profile->output_root) && manifest.filename()=="game.json" && fs::is_regular_file(manifest),
+                    "Verified export manifest is outside its profile or unavailable.",-32009);
+                const auto bundle=manifest.parent_path();
+                const auto bundle_hash=digest(exported.at("manifest_sha256"));
+                const Json identity={{"project_id",exported.at("project_id")},{"revision",exported.at("source_revision")},
+                    {"bundle_sha256",bundle_hash},{"suite_sha256",suite_hash}};
+                request.executable=bundle/"runtime/bin"/(profile->target_rid=="win-x64" ? "poima.exe":"poima");
+                request.arguments={"game","verify",utf8(manifest),"--suite",utf8(project.parent_path()/"game.verify.json"),
+                    "--report",utf8(output),"--expected-suite-sha256",suite_hash.get<std::string>(),"--expected-bundle-sha256",bundle_hash,"--completed-exit","true"};
+                request.before_launch=[verify=profile->verify_export,bundle,bundle_hash] {
+                    const auto current=Json::parse(verified_result(verify(bundle)));
+                    need(current.at("manifest_sha256")==bundle_hash,"Game bundle changed after export.",-32009);
+                };
+                request.verify_success=[verify=profile->verify_checks,output,identity=identity.dump()] {
+                    return verified_result(verify(output,identity));
+                };
             }else {
                 request.executable=profile->exporter;request.arguments={"project","build",utf8(project),"--output",utf8(output),"--runtime",utf8(profile->runtime_root)};
                 request.verify_success=[verify=profile->verify_export,output] {return verified_result(verify(output));};
@@ -487,6 +530,9 @@ Json Service::schemas() {
             {"request_id","profile","project","output","type"})},
         {"development.export",object({{"request_id",receipt},{"profile",profile},{"project",portable},{"output",portable},{"timeout_ms",timeout}},
             {"request_id","profile","project","output"})},
+        {"development.verify",object({{"request_id",receipt},{"profile",profile},{"project",portable},{"output",portable},
+            {"export_job_id",id},{"expected_suite_sha256",{{"type","string"},{"pattern","^[0-9a-f]{64}$"}}},{"timeout_ms",timeout}},
+            {"request_id","profile","project","output","export_job_id","expected_suite_sha256"})},
         {"development.compile",object({{"request_id",{{"type","string"},{"pattern","^[0-9a-f]{32}$"}}},{"executable",path},{"project",path},{"output",path},
             {"configuration",{{"enum",{"Debug","Release"}},{"default","Debug"}}},{"restore",{{"type","boolean"},{"default",true}}},
             {"compiler_server",{{"type","string"},{"minLength",1},{"maxLength",4096},

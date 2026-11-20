@@ -61,10 +61,10 @@ fs::path path(const Json& value,bool directory) {
     need(directory ? fs::is_directory(resolved):fs::is_regular_file(resolved),"Development profile path has the wrong kind.");
     return resolved;
 }
-Json parse(const std::string& bytes) {
+Json parse(const std::string& bytes,int max_depth=16) {
     std::vector<std::set<std::string>> keys;
     return Json::parse(bytes,[&](int depth,Json::parse_event_t event,Json& value) {
-        need(depth<=16,"Development profiles exceed the nesting limit.");
+        need(depth<=max_depth,"Development JSON exceeds the nesting limit.");
         if(event==Json::parse_event_t::object_start)keys.emplace_back();
         if(event==Json::parse_event_t::key)need(keys.back().insert(value.get<std::string>()).second,"Duplicate development profile field.");
         if(event==Json::parse_event_t::object_end)keys.pop_back();
@@ -189,6 +189,53 @@ std::string project_result(const Reply& reply) {
     need(value.contains("result") && value.at("result").is_object() && !value.at("result").empty(),"Native project operation returned no result.");
     return value.at("result").dump();
 }
+
+std::string verification_summary(const fs::path& report,const std::string& expected) {
+    const auto bytes=read(path(text(report),false),96ULL*1024*1024);
+    const auto value=parse(bytes,64),identity=parse(expected);
+    need(value.at("format")=="poima.game-verification-result" && value.at("version")==1 &&
+         value.at("engine_version")==build_metadata().version,"Unsupported gameplay verification report.");
+    for(const auto* field:{"project_id","revision","bundle_sha256","suite_sha256"})
+        need(value.at(field)==identity.at(field),std::string("Verification report identity differs: ")+field);
+    const auto& groups=value.at("groups");
+    need(groups.is_array() && !groups.empty() && groups.size()<=32 && value.at("groups_total")==groups.size(),
+         "Verification report has invalid group counts.");
+    Json failures=Json::array();std::size_t passed=0,failed=0,checks=0;
+    for(const auto& group:groups) {
+        const auto name=group.at("name").get<std::string>();
+        need(!name.empty() && name.size()<=96,"Invalid verification group name.");
+        const auto& entries=group.at("checks");
+        need(entries.is_array() && entries.size()<=512-checks,"Verification report exceeds its check count.");
+        checks+=entries.size();
+        bool group_passed=!entries.empty();
+        for(const auto& check:entries) {
+            if(check.at("passed").get<bool>())continue;
+            group_passed=false;++failed;
+            if(failures.size()<16) {
+                const auto& actual=check.at("actual");
+                const bool omitted=check.at("actual_omitted").get<bool>() || actual.is_structured() || actual.dump().size()>256;
+                const auto label=check.at("label").get<std::string>();
+                need(!label.empty() && label.size()<=96,"Invalid verification label.");
+                failures.push_back({{"group",name},{"label",label},
+                    {"tick",check.at("tick").get<std::uint64_t>()},{"observed",check.at("observed").get<bool>()},
+                    {"actual",omitted ? Json(nullptr) : actual},{"actual_omitted",omitted}});
+            }
+        }
+        if(group.contains("issue")) {
+            group_passed=false;++failed;
+            if(failures.size()<16)failures.push_back({{"group",name},{"issue",group.at("issue").at("message").get<std::string>().substr(0,384)}});
+        }
+        need(group.at("passed").get<bool>()==group_passed,"Verification report group result differs from its observations.");
+        if(group_passed)++passed;
+    }
+    const bool all=passed==groups.size();
+    need(value.at("passed").get<bool>()==all && value.at("groups_passed")==passed,"Verification report result disagrees with its groups.");
+    auto summary=identity;
+    summary.update({{"kind","game_verification"},{"report",text(report)},{"report_sha256",hash(bytes)},
+        {"passed",all},{"groups_passed",passed},{"groups_total",groups.size()},{"checks_observed",checks},
+        {"failures_omitted",failed-failures.size()},{"failures",std::move(failures)}});
+    return summary.dump(-1,' ',false,Json::error_handler_t::replace);
+}
 }
 std::vector<Profile> load_profiles(const std::string& filename) {
     const fs::path file(std::u8string(filename.begin(),filename.end()));
@@ -240,13 +287,13 @@ std::vector<Profile> load_profiles(const std::string& filename) {
                 {"library_sha256",artifact.library_sha256},{"inventory_sha256",hash(files.dump())},{"files",artifact.files.size()},
                 {"payload_bytes",bytes},{"type",artifact.type},{"identity",artifact.identity},{"target_os",artifact.target_os},{"target_arch",artifact.target_arch}}.dump();
         };
-        profile.verify_export=[pins,rid=profile.target_rid](const fs::path& output) {
+        profile.verify_export=[pins,rid=profile.target_rid,fingerprint=profile.fingerprint](const fs::path& output) {
             const auto manifest=output/"game.json";const auto reply=inspect_game(text(manifest));
             need(reply.exit_code==0,"Exported game failed native inventory validation: "+reply.json);
             const auto inspected=Json::parse(reply.json).at("result");
             need(inspected.at("target_os")== (rid=="win-x64" ? "Windows":"Linux"),"Exported game target differs from the host profile.");
             unchanged(pins);std::uint64_t bytes=0;for(const auto& entry:inspected.at("files"))bytes+=entry.at("size").get<std::uint64_t>();
-            return Json{{"kind","game_bundle"},{"manifest",text(manifest)},{"manifest_sha256",hash(read(manifest,4*1024*1024))},
+            return Json{{"kind","game_bundle"},{"manifest",text(manifest)},{"manifest_sha256",hash(read(manifest,4*1024*1024))},{"profile_fingerprint",fingerprint},
                 {"inventory_sha256",hash(inspected.at("files").dump())},{"files",inspected.at("files").size()},
                 {"payload_bytes",bytes},{"project_id",inspected.at("project_id")},{"source_revision",inspected.at("revision")},
                 {"target_os",inspected.at("target_os")},{"target_arch",inspected.at("target_arch")}}.dump();
@@ -260,6 +307,10 @@ std::vector<Profile> load_profiles(const std::string& filename) {
         };
         profile.verification_suite=[](const fs::path& manifest,const fs::path& world,const std::string& request) {
             return project_result(poima::project_verification_suite(text(manifest),text(world),request));
+        };
+        profile.verify_checks=[pins](const fs::path& report,const std::string& identity) {
+            unchanged(pins);
+            return verification_summary(report,identity);
         };
         result.push_back(std::move(profile));
     }

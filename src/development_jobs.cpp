@@ -529,25 +529,30 @@ struct Jobs::Impl {
             };
             if(!queued_cancelled){
                 try {
+                    if(job->request.before_launch && !stop_reason(*job))job->request.before_launch();
+                    const auto stopped=job->request.before_launch ? stop_reason(*job):std::nullopt;
+                    if(stopped)result.state=*stopped;
+                    else {
 #ifdef _WIN32
-                    if(job->request.compiler_server){
-                        job->effective_request=job->request;
-                        compiler_observation=compiler.prepare(*job->effective_request,[&]{return bool(stop_reason(*job));});
-                        {std::lock_guard lock(mutex);job->status.compiler_server=compiler_observation;}
-                        process_observation.emplace();result=run(*job,*process_observation,[&]{compiler.pump([&]{return bool(stop_reason(*job));});});
-                        Status current;{std::lock_guard lock(mutex);current=job->status;}
-                        compiler_observation=compiler.complete(current,*compiler_observation);
-                    }else{
-                        retire_compiler(true);
-                        if(compiler.blocked())throw std::runtime_error(compiler.error());
-                        process_observation.emplace();result=run(*job,*process_observation);
-                    }
+                        if(job->request.compiler_server){
+                            job->effective_request=job->request;
+                            compiler_observation=compiler.prepare(*job->effective_request,[&]{return bool(stop_reason(*job));});
+                            {std::lock_guard lock(mutex);job->status.compiler_server=compiler_observation;}
+                            process_observation.emplace();result=run(*job,*process_observation,[&]{compiler.pump([&]{return bool(stop_reason(*job));});});
+                            Status current;{std::lock_guard lock(mutex);current=job->status;}
+                            compiler_observation=compiler.complete(current,*compiler_observation);
+                        }else{
+                            retire_compiler(true);
+                            if(compiler.blocked())throw std::runtime_error(compiler.error());
+                            process_observation.emplace();result=run(*job,*process_observation);
+                        }
 #else
-                    process_observation.emplace();result=run(*job,*process_observation);
+                        process_observation.emplace();result=run(*job,*process_observation);
 #endif
+                    }
                 }
-                catch(const std::exception& error) { const auto ordinary=job->launched?State::failed:State::launch_failed;result.state=job->request.compiler_server?stop_reason(*job).value_or(ordinary):ordinary;result.error=std::string(error.what()).substr(0,4096); }
-                catch(...) { const auto ordinary=job->launched?State::failed:State::launch_failed;result.state=job->request.compiler_server?stop_reason(*job).value_or(ordinary):ordinary;result.error="Unexpected development worker failure."; }
+                catch(const std::exception& error) { const auto ordinary=job->launched?State::failed:State::launch_failed;result.state=(job->request.compiler_server || job->request.before_launch)?stop_reason(*job).value_or(ordinary):ordinary;result.error=std::string(error.what()).substr(0,4096); }
+                catch(...) { const auto ordinary=job->launched?State::failed:State::launch_failed;result.state=(job->request.compiler_server || job->request.before_launch)?stop_reason(*job).value_or(ordinary):ordinary;result.error="Unexpected development worker failure."; }
             }
             std::string verified;
             bool verify=false;

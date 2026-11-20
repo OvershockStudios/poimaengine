@@ -50,15 +50,18 @@ def main():
     inventory = {str(path.relative_to(bundle)): sha(path) for path in bundle.rglob('*') if path.is_file()}
 
     requests = [{'jsonrpc': '2.0', 'id': 1, 'method': 'world.describe', 'params': {'view': 'full'}},
-                {'jsonrpc': '2.0', 'id': 2, 'method': 'project.verification.write', 'params': {}}]
+                {'jsonrpc': '2.0', 'id': 2, 'method': 'project.verification.write', 'params': {}},
+                {'jsonrpc': '2.0', 'id': 3, 'method': 'development.verify', 'params': {}}]
     session = subprocess.run([packaged, 'game', 'stdio', game],
                              input=''.join(json.dumps(request) + '\n' for request in requests),
                              capture_output=True, text=True, timeout=30, check=True)
     (out / 'read-only.stdout.ndjson').write_text(session.stdout, encoding='utf-8')
-    description, refused = [json.loads(line) for line in session.stdout.splitlines()]
+    description, refused, refused_verify = [json.loads(line) for line in session.stdout.splitlines()]
     require(all(method not in description['result']['methods'] for method in
-                ('project.verification.read', 'project.verification.write')), 'Packaged world advertises suite authoring')
+                ('project.verification.read', 'project.verification.write', 'development.verify')),
+            'Packaged world advertises authoring or development verification')
     require(refused['error']['code'] == -32081, 'Packaged world did not reject suite authoring')
+    require(refused_verify['error']['code'] == -32081, 'Packaged world did not reject development verification')
 
     def expect(label, path, comparison, value):
         return {'expect': {'label': label, 'method': 'runtime.entity', 'params': {'id': controller},
@@ -102,6 +105,17 @@ def main():
             'A failed group was ignored or prevented independent verification')
     require(failure['groups'][0]['checks'][0]['actual'] == 2 and not failure['groups'][0]['checks'][1]['observed'],
             'Failure observations are incomplete')
+    completed = out / 'completed-failure.json'
+    guards = ('--expected-bundle-sha256', inventory['game.json'], '--expected-suite-sha256', sha(fail_spec))
+    outcome = run('completed-failure', packaged, 'game', 'verify', game, '--suite', fail_spec,
+                  '--report', completed, '--completed-exit', 'true', *guards)
+    require(outcome['status'] == 'ok' and outcome['result'] == failure and
+            json.loads(completed.read_text(encoding='utf-8')) == failure, 'Completion lost the failed check verdict')
+    for key, label in [('--expected-bundle-sha256', 'bundle'), ('--expected-suite-sha256', 'suite')]:
+        rejected = out / f'wrong-{label}.json'
+        reply = run(f'guard-{label}', packaged, 'game', 'verify', game, '--suite', fail_spec,
+                    '--report', rejected, '--completed-exit', 'true', key, '0' * 64, code=4)
+        require(reply['result'] is None and not rejected.exists(), f'Wrong {label} hash wrote a verdict')
     malformed = out / 'duplicate.json'
     malformed.write_text(specification.read_text(encoding='utf-8').replace('"version": 1', '"version": 1, "version": 1'),
                          encoding='utf-8')

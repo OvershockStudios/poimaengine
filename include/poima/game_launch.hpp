@@ -32,8 +32,13 @@ struct GameStdioOptions {
 // Verify and prepare a read-only game, then own its synchronous NDJSON session
 // until session.close or stdin EOF. No endpoint, window or automatic Tick.
 Reply stdio_game(const GameStdioOptions& options);
+struct GameVerificationOptions {
+    std::string expected_bundle_sha256,expected_suite_sha256;
+    bool completed_exit=false;
+};
 // Exercise fixed ticks and typed observations in the bundled runtime.
-Reply verify_gameplay(const std::string& manifest,const std::string& suite,const std::string& report={});
+Reply verify_gameplay(const std::string& manifest,const std::string& suite,const std::string& report={},
+    const GameVerificationOptions& options={});
 // Validate the verifier's input format without opening a game or running ticks.
 void validate_game_verification_suite(std::string_view bytes);
 }

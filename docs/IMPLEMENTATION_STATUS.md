@@ -1,8 +1,19 @@
 # Implementation status
 
-Updated 2026-11-20 for **0.0.295**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-20 for **0.0.296**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.296 adds [agent-triggered verification](GAME_VERIFICATION.md#run-and-inspect).
+A configured development host can run the native checks from its own exported
+game, with the bundle and suite hashes pinned. The job returns a pass or fail
+verdict, a compact list of failed checks, and the full report identity.
+From the Windows creator chat, Codex exported and checked Signal Shelter
+twice. All four assertions passed before a movement edit, and three failed
+after it. The earlier report stayed unchanged. The relocated passing build
+reproduced the report, passed 11 independent assertions, resumed a save in a
+fresh process and completed a Vulkan replay.
+[Results](evidence/m2-creator-verification-jobs-296.json)
 
 Version 0.0.295 lets agents [author a project's gameplay checks](GAME_VERIFICATION.md#write-a-suite)
 through MCP. The project service checks the open project's identity, the

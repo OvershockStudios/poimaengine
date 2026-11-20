@@ -424,6 +424,17 @@ int test_main(int argc,char** argv) {
                 result.result=="{\"artifact\":\"verified-child-artifact\"}","Verified child did not publish its result.");
             observed_process(result);
             verification_jobs.forget(result.id);
+            const auto refused_artifact=root/"refused-before-launch";
+            auto refused=request("verification");refused.arguments.push_back(path_text(refused_artifact));
+            refused.before_launch=[&] {
+                check(std::this_thread::get_id()!=owner,"Launch preflight ran on the owner thread.");
+                throw std::runtime_error("fixture input changed");
+            };
+            const auto refused_status=await(verification_jobs,verification_jobs.submit(std::move(refused)));
+            check(refused_status.state==dev::State::launch_failed && !refused_status.process &&
+                refused_status.error.find("fixture input changed")!=std::string::npos && !std::filesystem::exists(refused_artifact),
+                "A refused preflight started a child.");
+            verification_jobs.forget(refused_status.id);
             auto rejected=[&](std::function<std::string()> callback,const char* message) {
                 auto child=request("echo");child.verify_success=std::move(callback);
                 const auto status=await(verification_jobs,verification_jobs.submit(std::move(child)));
