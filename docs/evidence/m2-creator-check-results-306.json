@@ -1,0 +1,84 @@
+{
+  "engine_version": "0.0.306",
+  "scope": "Windows UI Automation on the extracted preview and fresh native CLI fixtures on the development laptop. The named checks and recovery workflow use a compact starter. The archived 0.0.301 game has compiled Native AOT gameplay.",
+  "archive": {
+    "name": "Poima-0.0.306-Windows-x64.zip",
+    "bytes": 141415613,
+    "sha256": "7125bbc728a2736dd7133696b331ecd8d2171e1542963a24fd7c6baa64dacbc0"
+  },
+  "release_files_verified": 499,
+  "artifacts": {
+    "editor_sha256": "717e6fb971267ad6f60bc42350ea793ee967ad0facd3fec1b44c169e05cfe0d6",
+    "frontend_sha256": "5ac8092e3e32db6bcc74cff73d8e1d0c11bd30be7f18cd195cc76ab6837239e5",
+    "cli_sha256": "f371e6fcdc3369f517fd586616e50911768f0beebc1970a202a9cafa1b3bf789",
+    "bridge_sha256": "dffaad7b97bd7e4f6cadc3395cfdff616c4e756a9f831d1e1a87515ed1f4180f"
+  },
+  "windows_creator": {
+    "failed_report_sha256": "25fa092de93cf8e191f224c0efbb32b5b785a740143e80e17052cbfd91380429",
+    "failed_revision": 2,
+    "playable_bundle_sha256": "2e8cf1ff306197b22915936aa184b472d9b8b3f7303919a902c0358b5555fc77",
+    "playable_revision": 1,
+    "report_changed_rejected": true,
+    "verified_player_exit": 0,
+    "recovered_revision": 1,
+    "named_passing_group_and_check": true,
+    "named_failed_group_and_check_before_and_after_reopen": true,
+    "current_project_revision_preserved": 2,
+    "native_preview_validation_errors": 0,
+    "creator_exit_codes": [
+      0,
+      0
+    ],
+    "report_sha256": "babed04b6602d37c5c588feee6532e171cf9c94e13b211d34271b0bf75ff55a7"
+  },
+  "native_recovery": {
+    "responses_checked": 24,
+    "failed_candidate_report_sha256": "1481b30d599ac05e90ea9c64b65205194a093e7869655d01e1667f56a218e89e",
+    "failed_candidate_groups_passed": 1,
+    "failed_candidate_groups_total": 3,
+    "unretained_pass_observable_and_ineligible_for_recovery": true,
+    "interrupted_group_observable": true,
+    "candidate_and_manual_failures_leave_earlier_build_available": true,
+    "wrong_suite_label_ignored": true,
+    "wrong_verifier_and_changed_source_rejected": true
+  },
+  "native_verification_regression": {
+    "responses_checked": 14,
+    "passing_report_sha256": "0e61000d284b78f3d140c6f064843d190101fa30b8c9ef8e9c757724a3884a40"
+  },
+  "linux_headless_syntax_check": [
+    "src/game_launch.cpp",
+    "src/project.cpp"
+  ],
+  "archived_agent_run": {
+    "engine_version": "0.0.301",
+    "existing_history_fields_match_0_0_305": true,
+    "passing_bundle_sha256": "54158cd1e7475ad8e0fd54850ee3d68a0f5f3ca3952aac1036116cf6ee213a66",
+    "failed_bundle_sha256": "855bb8a3737154e6bcf4d89ec90238829ee38cb60f44bb16291370c0a88cca47",
+    "failed_report_sha256": "8f04b25fe6f62ca02f08e77cb8bc4ecf5a3feba397c4a034d849421dbcda17c6",
+    "passing_and_failing_world_revision": 3,
+    "failed_attempt_groups_passed": 1,
+    "failed_attempt_groups_total": 3,
+    "recovered_source_files": 25
+  },
+  "windows_creator_regression": {
+    "checks": [
+      "closed_during_play_exit_code",
+      "closed_exit_code",
+      "codex_disconnected",
+      "codex_questions",
+      "codex_ready",
+      "codex_reconnected",
+      "created",
+      "edit_before_export",
+      "export",
+      "export_disabled_during_preview",
+      "first_preview",
+      "relocated_export",
+      "reopened_preview",
+      "stopped"
+    ],
+    "relocated_export_final_tick": 12,
+    "report_sha256": "310a4eb4e8ff458d8a0572e2ec4c176ff35d99adc8b9bd27e975ffbfd6d232a0"
+  }
+}

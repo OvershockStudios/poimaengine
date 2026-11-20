@@ -8,6 +8,7 @@
 # -CodexBrief runs a two-turn interview on the unchanged starter project.
 # -CodexQuestions uses the local AgentRpc contract executable as a scripted app-server.
 # -WithExport requires a packaged sample runtime and plays a relocated export.
+# -WithPlaytestResults checks passing and failed reports, reopening and recovery.
 param(
     [Parameter(Mandatory = $true)][string]$Editor,
     [Parameter(Mandatory = $true)][string]$Output,
@@ -17,7 +18,8 @@ param(
     [string]$Claude,
     [switch]$CodexBrief,
     [string]$CodexQuestions,
-    [switch]$WithExport
+    [switch]$WithExport,
+    [switch]$WithPlaytestResults
 )
 
 $ErrorActionPreference = 'Stop'
@@ -28,6 +30,24 @@ using System.Runtime.InteropServices;
 public static class CreatorTestWindow {
     [DllImport("user32.dll", SetLastError = true)]
     public static extern bool PostMessage(IntPtr window, uint message, IntPtr wparam, IntPtr lparam);
+    private delegate bool WindowCallback(IntPtr window, IntPtr context);
+    [DllImport("user32.dll")] private static extern bool EnumWindows(WindowCallback callback, IntPtr context);
+    [DllImport("user32.dll")] private static extern IntPtr GetWindow(IntPtr window, uint command);
+    [DllImport("user32.dll")] private static extern bool IsWindowVisible(IntPtr window);
+    [DllImport("user32.dll", CharSet=CharSet.Unicode)]
+    private static extern int GetWindowText(IntPtr window, System.Text.StringBuilder text, int capacity);
+    public static IntPtr FindDialog(IntPtr parent, string title) {
+        IntPtr match = IntPtr.Zero;
+        EnumWindows((window, _) => {
+            if (GetWindow(window, 4) != parent || !IsWindowVisible(window)) return true;
+            var text = new System.Text.StringBuilder(256);
+            GetWindowText(window, text, text.Capacity);
+            if (text.ToString() != title) return true;
+            match = window;
+            return false;
+        }, IntPtr.Zero);
+        return match;
+    }
 }
 '@
 
@@ -41,6 +61,7 @@ $manifest = Join-Path (Join-Path $projects $name) 'project.poimaproject'
 New-Item -ItemType Directory -Path $projects | Out-Null
 $owner = $null
 $window = $null
+$verifiedPlayer = $null
 $report = [ordered]@{
     passed = $false
     input = 'Windows UI Automation and an owned WM_CLOSE message'
@@ -54,6 +75,7 @@ $report = [ordered]@{
     codex_brief_requested = [bool]$CodexBrief
     codex_questions_requested = ![string]::IsNullOrWhiteSpace($CodexQuestions)
     export_requested = [bool]$WithExport
+    playtest_results_requested = [bool]$WithPlaytestResults
     checks = [ordered]@{}
 }
 
@@ -359,12 +381,12 @@ function Export-Project($Project) {
     return $bundle
 }
 
-function Edit-ProjectForExport($Project) {
+function Edit-ProjectForExport($Project, $CameraName = 'Export viewpoint') {
     $request = @{
         jsonrpc = '2.0'; id = 1; method = 'world.transact'
         params = @{
             request_id = [guid]::NewGuid().ToString('N'); base_revision = $Project.revision
-            ops = @(@{ op = 'entity.rename'; id = $Project.entry.camera; name = 'Export viewpoint' })
+            ops = @(@{ op = 'entity.rename'; id = $Project.entry.camera; name = $CameraName })
         }
     } | ConvertTo-Json -Depth 6 -Compress
     $response = $request | & $cli connect $endpoint --timeout-ms 2000 | ConvertFrom-Json
@@ -378,6 +400,124 @@ function Edit-ProjectForExport($Project) {
     }
     $report.checks.edit_before_export = [ordered]@{ revision = $saved.revision; world_sha256 = $saved.world_sha256 }
     return $saved
+}
+
+function Read-PlaytestHistory($ProjectId) {
+    $path = Join-Path $projects (Join-Path '.poima-history' $ProjectId)
+    $response = & $cli project history $path --project-id $ProjectId | ConvertFrom-Json
+    if ($LASTEXITCODE -ne 0 -or !$response.result) { throw 'Project history could not be read.' }
+    return $response.result
+}
+
+function Write-PlaytestSuite($Controller, $Range) {
+    $suite = @{
+        format = 'poima.game-verification'; version = 1
+        groups = @(@{ name = 'Walk to the marker'; sequence = @(
+            @{ step = @{ ticks = 15; inputs = @(@{ entity = $Controller; move = @(0, 1) }) } }
+            @{ expect = @{
+                label = 'The player reaches the marker'; method = 'runtime.entity'
+                params = @{ id = $Controller }; path = '/world_matrix/14'; between = $Range
+            } }
+        ) })
+    } | ConvertTo-Json -Depth 10 -Compress
+    $path = Join-Path (Split-Path -Parent $manifest) 'game.verify.json'
+    [IO.File]::WriteAllText($path, $suite)
+}
+
+function Inspect-PlaytestDialog($History, [bool]$Passed) {
+    $attempt = $History.latest_check
+    $creator = [IntPtr]$window.Current.NativeWindowHandle
+    Invoke-Control 'View playtest results'
+    $handle = [IntPtr](Wait-For 'playtest result dialog' {
+        $found = [CreatorTestWindow]::FindDialog($creator, 'Playtest results')
+        if ($found -ne [IntPtr]::Zero) { $found }
+    })
+    try {
+        $window = [System.Windows.Automation.AutomationElement]::FromHandle($handle)
+        $status = if ($Passed) { 'passed' } else { 'failed' }
+        $group = Wait-For 'the named group and result' { Find-Control "Walk to the marker ($status)" }
+        $null = Wait-For 'the exact tested build' { Find-Control "Tested build $($attempt.bundle_sha256.Substring(0,12))" }
+        if ($Passed) {
+            $group.GetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern).Expand()
+        } else {
+            $working = $History.latest
+            $null = Wait-For 'the still playable build' {
+                Find-Control "Revision $($working.revision) is still playable ($($working.bundle_sha256.Substring(0,12)))."
+            }
+        }
+        $null = Wait-For 'the named gameplay check' { Find-Control "The player reaches the marker ($status)" }
+        Invoke-Control 'Done'
+        $null = Wait-For 'results closed' {
+            [CreatorTestWindow]::FindDialog($creator, 'Playtest results') -eq [IntPtr]::Zero
+        }
+    }
+    finally {
+        if ([CreatorTestWindow]::FindDialog($creator, 'Playtest results') -eq $handle) {
+            $null = [CreatorTestWindow]::PostMessage($handle, 0x0010, [IntPtr]::Zero, [IntPtr]::Zero)
+        }
+    }
+}
+
+function Export-PlaytestCandidate($Project, [bool]$Passed) {
+    Write-PlaytestSuite $Project.entry.controller $(if ($Passed) { @(0.5, 1.8) } else { @(100, 101) })
+    Invoke-Control 'Export Windows build'
+    $null = Wait-For 'the completed playtest control' { Find-Control 'View playtest results' -Enabled } 90
+    $current = Read-PlaytestHistory $Project.project_id
+    if (!$current.latest_check -or $current.latest_check.passed -ne $Passed -or
+        $current.latest_check.revision -ne $Project.revision -or $current.latest_check.retained -ne $Passed) {
+        throw 'The saved candidate did not match the playtest result.'
+    }
+    Inspect-PlaytestDialog $current $Passed
+    return $current
+}
+
+function Reopen-PlaytestResults($Project, $FailedHistory) {
+    $null = Wait-For 'the restored playtest result and verified play controls' {
+        (Find-Control 'View playtest results' -Enabled) -and (Find-Control 'Play verified build' -Enabled)
+    } 60
+    $current = Read-PlaytestHistory $Project.project_id
+    if ($current.latest_check.report_sha256 -cne $FailedHistory.latest_check.report_sha256 -or
+        $current.latest.bundle_sha256 -cne $FailedHistory.latest.bundle_sha256) {
+        throw 'Reopening selected a different test attempt or playable build.'
+    }
+    Inspect-PlaytestDialog $current $false
+    $path = $current.latest_check.report
+    $exact = [IO.File]::ReadAllBytes($path)
+    try {
+        [IO.File]::AppendAllText($path, "`n")
+        Invoke-Control 'View playtest results'
+        $null = Wait-For 'report digest rejection' { Find-Control 'The playtest report changed. Reopen the project to refresh its results.' }
+    }
+    finally { [IO.File]::WriteAllBytes($path, $exact) }
+    $runtime = Join-Path (Split-Path -Parent $current.latest.game_manifest) 'runtime\bin\poima.exe'
+    Invoke-Control 'Play verified build'
+    $player = Wait-For 'the retained standalone player window' {
+        Get-Process -Name poima -ErrorAction SilentlyContinue | Where-Object {
+            $_.Path -ieq $runtime -and $_.MainWindowHandle -ne [IntPtr]::Zero
+        } | Select-Object -First 1
+    } 45
+    $script:verifiedPlayer = $player
+    $null = $player.Handle
+    if (![CreatorTestWindow]::PostMessage($player.MainWindowHandle, 0x0010, [IntPtr]::Zero, [IntPtr]::Zero) -or
+        !$player.WaitForExit(20000) -or $player.ExitCode -ne 0) {
+        throw 'The retained standalone player failed to close normally.'
+    }
+    Invoke-Control 'Restore verified project as copy'
+    $null = Wait-For 'an independently editable recovered copy' { Find-Control 'Open recovered project' -Enabled } 60
+    $copies = @(Get-ChildItem -LiteralPath $projects -Directory -Filter "$name - Recovered *")
+    if ($copies.Count -ne 1) { throw 'Expected one restored project copy.' }
+    $copy = & $cli project inspect (Join-Path $copies[0].FullName 'project.poimaproject') | ConvertFrom-Json
+    if ($LASTEXITCODE -ne 0 -or $copy.result.project_id -ceq $Project.project_id -or
+        $copy.result.revision -ne $current.latest.revision) { throw 'Recovery did not restore the passing revision.' }
+    return [ordered]@{
+        failed_report_sha256 = $current.latest_check.report_sha256
+        failed_revision = $current.latest_check.revision
+        playable_bundle_sha256 = $current.latest.bundle_sha256
+        playable_revision = $current.latest.revision
+        report_changed_rejected = $true
+        verified_player_exit = $player.ExitCode
+        recovered_revision = $copy.result.revision
+    }
 }
 
 function Play-RelocatedExport($Bundle) {
@@ -456,6 +596,14 @@ try {
         $project = Edit-ProjectForExport $project
         $bundle = Export-Project $project
     }
+    if ($WithPlaytestResults) {
+        $passing = Export-PlaytestCandidate $project $true
+        $project = Edit-ProjectForExport $project 'Playtested viewpoint'
+        $failedHistory = Export-PlaytestCandidate $project $false
+        if ($failedHistory.latest.bundle_sha256 -cne $passing.latest.bundle_sha256) {
+            throw 'The failed attempt replaced the playable version.'
+        }
+    }
     if ($Antigravity) { Exercise-Acp $project 'Antigravity' 'Antigravity CLI executable' $Antigravity 'antigravity' }
     if ($Claude) { Exercise-Acp $project 'Claude Code' 'Claude ACP executable' $Claude 'claude' }
     if ($CodexBrief) { Exercise-CodexBrief $project }
@@ -490,6 +638,7 @@ try {
     if ($reopened.project_id -ne $project.project_id -or $reopened.revision -ne $project.revision) {
         throw 'Project identity or authoring revision changed after reopen.'
     }
+    if ($WithPlaytestResults) { $report.checks.playtest_results = Reopen-PlaytestResults $reopened $failedHistory }
     $report.checks.reopened_preview = Play-Preview $reopened.revision
     if ($report.checks.reopened_preview.session -eq $report.checks.first_preview.session) {
         throw 'Reopening reused the retired play session.'
@@ -504,6 +653,10 @@ catch {
     throw
 }
 finally {
+    if ($verifiedPlayer -and !$verifiedPlayer.HasExited) {
+        $report.forced_player_cleanup = $true
+        Stop-Process -Id $verifiedPlayer.Id
+    }
     if ($owner -and !$owner.HasExited) {
         $report.forced_cleanup = $true
         Stop-Process -Id $owner.Id

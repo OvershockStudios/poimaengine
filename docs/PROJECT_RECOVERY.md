@@ -18,7 +18,12 @@ player. Playtest saves are kept under
 `%LOCALAPPDATA%\Poima\Playtests\<project_id>\<bundle_sha256>`. Close the game
 window to return to editing. **Play** previews the current working project.
 
-Close and reopen the project to find the last passing export again. Select
+Choose **View playtest results** to see the latest completed attempt and
+expand its named groups. Failed checks show the recorded tick and observation.
+An interrupted group shows where the playtest stopped. The report identifies
+the tested build even when an earlier build is still playable.
+
+Close and reopen the project to find its results and last passing export again. Select
 **Restore verified project as copy** to publish an editable project in a
 sibling folder, then **Open recovered project** to switch to it. The copy
 receives a new project identity and keeps the captured world, assets, source,
@@ -30,11 +35,15 @@ independently.
 The creator stores versions beside the project under
 `.poima-history/<project_id>/<UTC timestamp>-<suffix>/`. Each version contains
 `checkpoint.json` and `source/`. Export adds `game/`, and the verification run
-writes `checks.json`. The native history command selects the newest complete
-passing version in descending directory name order. It checks project identity,
-source inventory and hashes, the suite and report, and the full game inventory.
-It can fall back to an earlier passing version when a newer version fails or is
-incomplete. Earlier engine versions remain available when the current engine
+writes `checks.json`. Agent jobs first write `candidate-checks.json`.
+In descending directory name order, the native history command returns
+`latest_check` for the newest validated completed report and `latest` for the
+newest retained passing build. Each can be null. An agent candidate can pass
+before retention, so a passing report can have `retained: false`. History
+checks the project identity, source and game inventories, suite and report,
+and the order, names, ticks and outcomes recorded for the suite. The desktop
+checks the report hash again when opening it. Earlier engine versions remain
+available when the current engine
 can validate the archived source and package formats. The version recorded in
 the report must match the archived game and runtime. Play uses that archived
 runtime. Keep these folders to retain the versions they contain.
@@ -76,3 +85,5 @@ publishing the copy. Use the returned `restored_manifest` to edit or export it.
 Run `python tests/project_recovery_cli.py --runtime <installed-runtime> --output <new-directory>`
 to reproduce the native checkpoint, validation and recovery checks on a matching
 host. The installed runtime must include simulation and the native player.
+On Windows, run `tests/creator_workspace.ps1 -Editor <packaged-editor-exe> -Output <new-directory> -WithPlaytestResults`
+to exercise the results dialog, restart, verified play and recovery.

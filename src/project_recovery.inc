@@ -64,9 +64,10 @@ struct Checkpoint {
     Json files;
     Json report;
     VerifiedGame game;
+    std::string report_sha256;
 };
 
-Checkpoint verified_checkpoint(const fs::path& checkpoint,const char* report_name=check_report_name,
+Checkpoint read_checkpoint(const fs::path& checkpoint,const char* report_name,
     const std::string& expected_report={}) {
     const auto root = fs::absolute(checkpoint).lexically_normal().parent_path();
     plain_directory(root);
@@ -82,25 +83,19 @@ Checkpoint verified_checkpoint(const fs::path& checkpoint,const char* report_nam
     const auto project_name = relative_path(info.at("project"));
     require(project_name.find('/') == std::string::npos, "Checkpoint project must be a root manifest.");
     const auto report_bytes = read(contained(root, report_name), 4 * 1024 * 1024);
-    require(expected_report.empty() || hash(report_bytes)==expected_report,"Verification report changed after the job completed.");
+    const auto report_sha256=hash(report_bytes);
+    require(expected_report.empty() || report_sha256==expected_report,"Verification report changed after the job completed.");
     const auto report = parse(report_bytes);
-    require(report.at("format") == "poima.game-verification-result" && integer(report.at("version")) == 1 &&
-        report.at("passed") == true && integer(report.at("groups_total"), 32) > 0 &&
-        report.at("groups_passed") == report.at("groups_total"), "Checkpoint requires passing gameplay checks.");
-    require(report.at("project_id") == project_id && report.at("revision") == revision,
+    require(report.at("format") == "poima.game-verification-result" && integer(report.at("version")) == 1,
+        "Unsupported verification report format or version.");
+    require(report.at("project_id") == project_id && integer(report.at("revision")) == revision,
         "Verification report belongs to a different project or revision.");
-    const auto& groups = report.at("groups");
-    require(groups.is_array() && groups.size() == report.at("groups_total").get<std::size_t>(),
-        "Verification group counts differ.");
-    for (const auto& group : groups) {
-        require(group.at("passed") == true && !group.contains("issue") && group.at("checks").is_array() &&
-            !group.at("checks").empty(), "Verification report has an incomplete group.");
-        for (const auto& check : group.at("checks")) require(check.at("passed") == true, "Verification report contains a failed check.");
-    }
     const auto source_root = root / "source";
     plain_directory(source_root);
-    require(hash(read(contained(source_root, suite_name), 1024 * 1024)) == report.at("suite_sha256").get<std::string>(),
+    const auto suite_bytes=read(contained(source_root, suite_name), 1024 * 1024);
+    require(hash(suite_bytes) == report.at("suite_sha256").get<std::string>(),
         "Checkpoint verification suite bytes changed.");
+    validate_game_verification_groups(report,suite_bytes);
     const auto& files = info.at("files");
     require(files.is_array() && !files.empty() && files.size() <= count_limit, "Invalid checkpoint source inventory.");
     const auto actual = file_tree(source_root);
@@ -138,7 +133,14 @@ Checkpoint verified_checkpoint(const fs::path& checkpoint,const char* report_nam
     require(source.gameplay ? game.definition.gameplay_descriptor_sha256 == source.gameplay->descriptor_sha256 &&
         parse(game.definition.gameplay_values) == source.gameplay_values : game.definition.gameplay_descriptor.empty(),
         "Verified gameplay differs from the checkpoint.");
-    return {root, std::move(source), files, report, std::move(game)};
+    return {root, std::move(source), files, report, std::move(game), report_sha256};
+}
+
+Checkpoint verified_checkpoint(const fs::path& checkpoint,const char* report_name=check_report_name,
+    const std::string& expected_report={}) {
+    auto value=read_checkpoint(checkpoint,report_name,expected_report);
+    require(value.report.at("passed")==true,"Checkpoint requires passing gameplay checks.");
+    return value;
 }
 
 Json checkpoint_summary(const Checkpoint& value) {
@@ -262,7 +264,7 @@ Reply project_history(const std::string& directory, const std::string& project_i
     return operation("project.history", [&] {
         const auto project_id = id(project_id_arg);
         const auto root = fs::absolute(path_of(directory)).lexically_normal();
-        if (!fs::exists(root)) return Json{{"latest", nullptr}, {"skipped", 0}};
+        if (!fs::exists(root)) return Json{{"latest", nullptr}, {"latest_check", nullptr}, {"skipped", 0}};
         plain_directory(root);
         const auto io = project_io_path(root);
         std::vector<fs::path> candidates;
@@ -274,14 +276,28 @@ Reply project_history(const std::string& directory, const std::string& project_i
         }
         std::sort(candidates.rbegin(), candidates.rend());
         std::size_t skipped = 0;
+        Json latest=nullptr,latest_check=nullptr;
         for (const auto& candidate : candidates) {
             try {
-                const auto checkpoint = verified_checkpoint(candidate / checkpoint_name);
+                plain_directory(candidate);
+                const bool published=fs::symlink_status(project_io_path(candidate / check_report_name)).type()!=fs::file_type::not_found;
+                const auto* report_name=published ? check_report_name : candidate_report_name;
+                const auto checkpoint = read_checkpoint(candidate / checkpoint_name,report_name);
                 require(checkpoint.source.spec.at("project_id") == project_id, "Checkpoint belongs to another project.");
-                return Json{{"latest", checkpoint_summary(checkpoint)}, {"skipped", skipped}};
-            } catch (const std::exception&) { ++skipped; }
+                const bool passed=checkpoint.report.at("passed").get<bool>();
+                if(latest_check.is_null()) {
+                    latest_check=checkpoint_summary(checkpoint);
+                    latest_check.update({{"report",text(candidate / report_name)},{"report_sha256",checkpoint.report_sha256},
+                        {"groups_total",checkpoint.report.at("groups_total")},{"passed",passed},{"retained",published && passed}});
+                }
+                if(published && passed) {
+                    latest=checkpoint_summary(checkpoint);
+                    break;
+                }
+            } catch (const std::exception&) { }
+            ++skipped;
         }
-        return Json{{"latest", nullptr}, {"skipped", skipped}};
+        return Json{{"latest", std::move(latest)}, {"latest_check", std::move(latest_check)}, {"skipped", skipped}};
     });
 }
 

@@ -124,9 +124,10 @@ when using that mode.
 
 In the Windows creator, save the suite as `game.verify.json` beside the project
 manifest. **Export build** runs it against the exported candidate and exposes
-**Open check report**. A failed check leaves an earlier export available in the
-workspace. The [project checkpoint](PROJECT_RECOVERY.md) keeps the verified
-bundle, report and editable source available across restarts.
+**View playtest results**. Expand a group to see its named checks. The latest
+completed attempt stays visible after reopening, and the last verified game
+remains playable after a failed attempt. The [project checkpoint](PROJECT_RECOVERY.md)
+keeps the bundle, report and editable source together.
 
 Use tests that express the agreed game brief. Coverage is visible in the named
 checks and their exact input hash. Rendered appearance, audible output and

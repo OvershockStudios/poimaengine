@@ -7,6 +7,7 @@
 #include "poima/build_metadata.hpp"
 #include "poima/local_session.hpp"
 #include "poima/shared_session.hpp"
+#include "game_verification_report.hpp"
 #include "world_stdio.hpp"
 #include "world_storage.hpp"
 #include <nlohmann/json.hpp>
@@ -251,6 +252,13 @@ fs::path running_executable() {
 #endif
 }
 
+bool matches_expectation(const Json& value,const Json& expect) {
+    if(expect.contains("equals"))return value==expect.at("equals");
+    const auto& range=expect.at("between");
+    return value.is_number() && value.get<double>()>=range[0].get<double>() &&
+        value.get<double>()<=range[1].get<double>();
+}
+
 Json evaluate_group(const GameDefinition& game,const Json& group) {
     Json result={{"name",group.at("name")},{"passed",true},{"ticks",0},{"checks",Json::array()}};
     std::size_t index=0;
@@ -280,10 +288,7 @@ Json evaluate_group(const GameDefinition& game,const Json& group) {
             const Json::json_pointer pointer(expect.at("path").get<std::string>());
             const bool present=observed.contains(pointer);
             const Json& value=present ? observed.at(pointer) : Json(nullptr);
-            const bool exact=expect.contains("equals");
-            const auto& comparison=expect.at(exact ? "equals" : "between");
-            const bool matches=present && (exact ? value==comparison : value.is_number() &&
-                value.get<double>()>=comparison[0].get<double>() && value.get<double>()<=comparison[1].get<double>());
+            const bool matches=present && matches_expectation(value,expect);
             // Observing a large native collection should not inflate a receipt.
             const bool omitted=value.dump().size()>2048;
             result["checks"].push_back({{"label",expect.at("label")},{"tick",current.tick},{"passed",matches},
@@ -300,6 +305,61 @@ Json evaluate_group(const GameDefinition& game,const Json& group) {
 }
 
 void validate_game_verification_suite(std::string_view bytes) { (void)parse_suite(bytes); }
+
+void validate_game_verification_groups(const Json& report,std::string_view suite_bytes) {
+    const auto suite=parse_suite(suite_bytes);
+    const auto& planned=suite.at("groups");
+    const auto& groups=report.at("groups");
+    require(groups.is_array() && groups.size()==planned.size() && report.at("groups_total").is_number_integer() &&
+        report.at("groups_total")==groups.size(),"Verification group counts differ from the suite.");
+    std::size_t passed=0;
+    for(std::size_t g=0;g<groups.size();++g) {
+        const auto& group=groups[g];
+        const auto& sequence=planned[g].at("sequence");
+        const auto& checks=group.at("checks");
+        require(group.at("name")==planned[g].at("name") && checks.is_array(),
+            "Verification group differs from the suite.");
+        auto completed=sequence.size();
+        const bool interrupted=group.contains("issue");
+        if(interrupted) {
+            const auto& issue=group.at("issue");
+            const auto& operation=issue.at("operation");
+            require(operation.is_number_integer() && operation>=0 && operation<=completed &&
+                issue.at("message").is_string() && issue.at("message").get_ref<const std::string&>().size()<=2048,
+                "Invalid interrupted verification group.");
+            completed=operation==0 ? 0 : operation.get<std::size_t>()-1;
+        }
+        std::uint64_t tick=0;
+        std::size_t index=0;
+        bool group_passed=!interrupted;
+        for(std::size_t i=0;i<completed;++i) {
+            const auto& operation=sequence[i];
+            if(operation.contains("step")) {
+                tick+=operation.at("step").at("ticks").get<std::uint64_t>();
+                continue;
+            }
+            const auto& expect=operation.at("expect");
+            const auto& check=checks.at(index++);
+            for(const auto* key:{"label","method","path"})
+                require(check.at(key)==expect.at(key),"Verification check differs from the suite.");
+            require(check.at("tick").is_number_integer() && check.at("tick")==tick,
+                "Verification check tick differs from the suite.");
+            const bool observed=check.at("observed").get<bool>();
+            const bool omitted=check.at("actual_omitted").get<bool>();
+            const bool accepted=check.at("passed").get<bool>();
+            const auto& actual=check.at("actual");
+            require((observed || (!omitted && !accepted)) && ((observed && !omitted) || actual.is_null()) &&
+                (omitted || accepted==(observed && matches_expectation(actual,expect))),
+                "Verification check disagrees with its recorded observation.");
+            group_passed=group_passed && accepted;
+        }
+        require(checks.size()==index && group.at("ticks").is_number_integer() && group.at("ticks")==tick &&
+            group.at("passed").get<bool>()==group_passed,"Verification group result is inconsistent.");
+        if(group_passed)++passed;
+    }
+    require(report.at("groups_passed").is_number_integer() && report.at("groups_passed")==passed &&
+        report.at("passed").get<bool>()==(passed==groups.size()),"Verification report result is inconsistent.");
+}
 
 Reply verify_gameplay(const std::string& manifest,const std::string& suite_file,const std::string& report,
     const GameVerificationOptions& options) {

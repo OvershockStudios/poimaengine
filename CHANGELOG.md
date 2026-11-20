@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.306
+
+- Review named gameplay checks in the Windows creator, including failed attempts after reopening a project.
+
 ## 0.0.305
 
 - Continue a project's Codex conversation after reopening the Windows creator.

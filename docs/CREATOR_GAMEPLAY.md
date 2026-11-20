@@ -156,7 +156,7 @@ and include both an expected success and a failure or boundary case from the
 brief. Verify the results with native observations and keep the report tied
 to the exact export. Agents can [build and retain a passing candidate](GAME_VERIFICATION.md#run-and-inspect)
 and read its verdict in chat. The creator can also export the current project
-after the preview stops. Use **Open check report** to inspect the result.
+after the preview stops. Use **View playtest results** to inspect the named checks.
 Recover a verified copy when you want to edit an earlier passing project.
 
 For the full authoring and runtime reference, see the engine documentation.

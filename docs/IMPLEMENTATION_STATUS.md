@@ -1,8 +1,16 @@
 # Implementation status
 
-Updated 2026-11-20 for **0.0.305**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-20 for **0.0.306**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.306 shows [named playtest results](PROJECT_RECOVERY.md) in the
+Windows creator. An automated Windows run inspected a passing result and a
+failed change, reopened the project, then played and recovered the earlier
+verified build. Native history also recovered the passing 0.0.301 Rainlight
+Greenhouse build alongside its archived failed attempt. The Windows smoke
+checks include the relocated standalone export.
+[Results](evidence/m2-creator-check-results-306.json)
 
 Version 0.0.305 lets the Windows creator [continue a saved Codex chat](AGENT_CLIENTS.md#connect-a-project).
 The live Windows check reopened the same conversation, displayed recent

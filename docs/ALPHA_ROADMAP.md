@@ -42,6 +42,9 @@ build and revision, kept the previous pass after the requested deliberate
 failure, restored its source and completed a save in a relocated export.
 The [image-reference trial](evidence/m2-creator-images-302.json) checks visual
 input through the same Windows chat with Codex and Antigravity.
+The [0.0.306 review test](evidence/m2-creator-check-results-306.json) opens
+named playtest results, restarts the creator after a failed change, then plays
+and restores the earlier verified build.
 The [Codex sign-in check](evidence/m2-creator-codex-sign-in-303.json) covers
 opening and cancelling sign-in with an isolated client and continuation after
 a scripted account confirmation. A real browser authorization is still needed.

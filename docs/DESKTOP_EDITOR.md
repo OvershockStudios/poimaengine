@@ -95,8 +95,9 @@ Useful arguments are `--gpu N` for both native viewports, `--samples 1|4`, and a
    finishing the agent turn. Poima copies the saved project into a new
    timestamped folder beside the project and checks the standalone bundle.
    If the project contains `game.verify.json`, it runs those gameplay checks
-   on the packaged game and shows the result and report. Reopen the project to
-   find its last verified build and recover its editable source as a copy.
+   on the packaged game. Open **View playtest results** to inspect named checks
+   from the latest completed run. Reopen the project to see those results again
+   and recover the last verified build's editable source as a copy.
    [Write a suite](GAME_VERIFICATION.md) and [recover a verified project](PROJECT_RECOVERY.md).
    Choose **Play verified build** to run the passing export. Use **Open build
    folder** to find it for sharing. Keep the whole folder together.

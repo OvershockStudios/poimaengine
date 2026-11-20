@@ -25,7 +25,7 @@ internal sealed class CreatorWindow : Window
     private readonly Button export = new() { Content = "Export build" };
     private readonly Button playVerified = new() { Content = "Play verified build", IsVisible = false };
     private readonly Button showExport = new() { Content = "Open build folder", IsVisible = false };
-    private readonly Button showChecks = new() { Content = "Open check report", IsVisible = false };
+    private readonly Button showChecks = new() { Content = "View playtest results", IsVisible = false };
     private readonly Button restore = new() { Content = "Restore verified project as copy", IsVisible = false };
     private readonly Button openRecovered = new() { Content = "Open recovered project", IsVisible = false };
     private readonly Button setupBuilds = new() { Content = "Set up gameplay builds", IsVisible = false };
@@ -33,7 +33,8 @@ internal sealed class CreatorWindow : Window
     private readonly Border viewport = new() { Background = EditorTheme.Brush("#161518"), ClipToBounds = true };
     private bool starting, exporting, closeAfterExport, verifiedPlayerRunning, closing, allowClose;
     private bool agentWasBusy, toolsReadyForReopen, reopenWithTools;
-    private string? exportedFolder, checkReport, checkSummary, verifiedCheckpoint, verifiedBundleHash, recoveredManifest;
+    private string? exportedFolder, verifiedCheckpoint, verifiedBundleHash, recoveredManifest;
+    private PlaytestAttempt? latestAttempt;
     private string workDescription = "";
     private long exportedRevision;
     private Task? agentShutdown;
@@ -77,7 +78,7 @@ internal sealed class CreatorWindow : Window
         export.Click += async (_, _) => await ExportAsync();
         playVerified.Click += async (_, _) => await PlayVerifiedAsync();
         showExport.Click += (_, _) => OpenExportItem(exportedFolder, Directory.Exists);
-        showChecks.Click += (_, _) => OpenExportItem(checkReport, File.Exists);
+        showChecks.Click += async (_, _) => await ShowPlaytestResultsAsync();
         restore.Click += async (_, _) => await RestoreVerifiedAsync();
         openRecovered.Click += (_, _) => OpenRecoveredProject();
         setupBuilds.IsVisible = OperatingSystem.IsWindows() && WindowsGameplayTools.HasAuthoringPack &&
@@ -275,7 +276,6 @@ internal sealed class CreatorWindow : Window
     private async Task ExportAsync()
     {
         if (!export.IsEnabled || !export.IsVisible) return;
-        checkReport = null;
         await ProjectWork("Exporting the saved project…", async () =>
         {
             var current = await OpenCurrentProject();
@@ -325,18 +325,10 @@ internal sealed class CreatorWindow : Window
             UpdateControls();
             var report = Path.Combine(checkpoint, "checks.json");
             var verification = await ProjectFiles.VerifyExport(candidate, suite, report, cancellation.Token);
-            var passed = verification.GetProperty("groups_passed").GetInt32();
-            var total = verification.GetProperty("groups_total").GetInt32();
-            checkReport = report;
-            if (!verification.GetProperty("passed").GetBoolean())
-            {
-                error = $"Revision {revision} passed {passed} of {total} check groups." + EarlierExportMessage();
-                return;
-            }
             await LoadLatestVerification(cancellation.Token);
-            if (verifiedCheckpoint is null || !string.Equals(Path.GetFullPath(verifiedCheckpoint),
-                Path.GetFullPath(Path.Combine(checkpoint, "checkpoint.json")), StringComparison.OrdinalIgnoreCase))
-                throw new InvalidOperationException("The passing game could not be paired with a valid source checkpoint.");
+            if (latestAttempt is null || latestAttempt.Passed != verification.GetProperty("passed").GetBoolean() ||
+                !string.Equals(Path.GetFullPath(latestAttempt.Report), Path.GetFullPath(report), StringComparison.OrdinalIgnoreCase))
+                throw new InvalidOperationException("The exported game's results could not be paired with its source checkpoint.");
         });
     }
 
@@ -350,35 +342,48 @@ internal sealed class CreatorWindow : Window
     private async Task RefreshAgentHistory()
     {
         var previous = verifiedCheckpoint;
+        var previousAttempt = latestAttempt;
         var priorError = error;
-        var priorReport = checkReport;
         await ProjectWork("Checking for a new verified build…", async () =>
         {
             await LoadLatestVerification();
-            if (verifiedCheckpoint == previous)
-            {
+            if (verifiedCheckpoint == previous && latestAttempt == previousAttempt)
                 error = priorError;
-                checkReport = priorReport;
-            }
         });
     }
 
     private async Task LoadLatestVerification(CancellationToken cancellation)
     {
-        var latest = await LatestVerification(cancellation);
-        if (latest.ValueKind != JsonValueKind.Object) return;
+        var history = await ReadHistory(cancellation);
+        var latest = history.GetProperty("latest");
+        var tested = history.GetProperty("latest_check");
+        latestAttempt = tested.ValueKind == JsonValueKind.Object ? PlaytestAttempt.FromHistory(tested) : null;
+        if (latest.ValueKind != JsonValueKind.Object)
+        {
+            if (verifiedCheckpoint is not null) exportedFolder = null;
+            verifiedCheckpoint = null;
+            verifiedBundleHash = null;
+            return;
+        }
         verifiedCheckpoint = latest.GetProperty("checkpoint").GetString();
         verifiedBundleHash = latest.GetProperty("bundle_sha256").GetString();
-        checkReport = latest.GetProperty("report").GetString();
         exportedFolder = Path.GetDirectoryName(latest.GetProperty("game_manifest").GetString());
         exportedRevision = latest.GetProperty("revision").GetInt64();
-        checkSummary = $"Revision {exportedRevision} passed all {latest.GetProperty("groups_passed").GetInt32()} check groups.";
     }
 
-    private async Task<JsonElement> LatestVerification(CancellationToken cancellation)
+    private Task<JsonElement> ReadHistory(CancellationToken cancellation) =>
+        ProjectFiles.Command(cancellation, "history", HistoryDirectory(), "--project-id", project.ProjectId);
+
+    private async Task ShowPlaytestResultsAsync()
     {
-        var history = await ProjectFiles.Command(cancellation, "history", HistoryDirectory(), "--project-id", project.ProjectId);
-        return history.GetProperty("latest");
+        if (latestAttempt is not { } attempt || closing || exporting) return;
+        try
+        {
+            using var report = await attempt.ReadReportAsync();
+            if (closing || exporting || latestAttempt != attempt) return;
+            await new PlaytestResultsWindow(attempt, report.RootElement, verifiedBundleHash, exportedRevision).ShowDialog(this);
+        }
+        catch (Exception failure) { error = failure.Message; UpdateControls(); }
     }
 
     private async Task PlayVerifiedAsync()
@@ -392,7 +397,7 @@ internal sealed class CreatorWindow : Window
             using (var cancellation = new CancellationTokenSource())
             {
                 checking = cancellation;
-                var latest = await LatestVerification(cancellation.Token);
+                var latest = (await ReadHistory(cancellation.Token)).GetProperty("latest");
                 if (latest.ValueKind != JsonValueKind.Object ||
                     latest.GetProperty("bundle_sha256").GetString() != bundleHash ||
                     !string.Equals(Path.GetFullPath(latest.GetProperty("game_manifest").GetString()!), manifest, StringComparison.OrdinalIgnoreCase))
@@ -541,7 +546,7 @@ internal sealed class CreatorWindow : Window
         playVerified.IsEnabled = play.IsEnabled;
         showExport.IsVisible = exportedFolder is not null;
         showExport.IsEnabled = !closing && !exporting;
-        showChecks.IsVisible = checkReport is not null;
+        showChecks.IsVisible = latestAttempt is not null;
         showChecks.IsEnabled = !closing && !exporting;
         restore.IsVisible = verifiedCheckpoint is not null;
         restore.IsEnabled = play.IsEnabled;
@@ -556,7 +561,9 @@ internal sealed class CreatorWindow : Window
                 ? gameView?["presented_tick"] is not null ? "Click the game to take control. Press Esc to release the mouse." : "Waiting for the first game frame…"
                 : model.RuntimeId is not null ? "A playtest is running. Stop it to start a preview."
                 : recoveredManifest is not null ? "The verified project was recovered as an editable copy."
-                : exportedFolder is not null ? checkSummary ?? $"Exported revision {exportedRevision}. Open the build folder and run launch.cmd."
+                : latestAttempt is { } attempt ? attempt.Summary + (!attempt.Retained && verifiedCheckpoint is not null
+                    ? $" The last verified build, revision {exportedRevision}, is still playable." : "")
+                : exportedFolder is not null ? $"Exported revision {exportedRevision}. Open the build folder and run launch.cmd."
                 : "Play opens the current project. Chat changes appear the next time you play.");
     }
 }
