@@ -36,7 +36,7 @@ and build-job submission with separate approval for each kind of write.
 
 | Tool | Arguments | Result |
 | --- | --- | --- |
-| `poima_discover` | Optional `view` and `name`, or mutation `operation` and `type`, as in [focused discovery](WORLD_SERVICE.md#focused-discovery-development). Defaults to `catalog`. | Available operation names, a selected schema or contract section. |
+| `poima_discover` | Optional `view` and `name`, or mutation `operation` and `type`. Use `selection` on its own to [retrieve multiple exact schemas](WORLD_SERVICE.md#select-multiple-schemas). Defaults to `catalog`. | Available operation names or selected schemas and contract sections. |
 | `poima_call` | Required `method`, optional object `params` and capture-only `image`. | The native operation result or error. |
 | `poima_source` | `project.source.write` with project selectors, exact guard and replacement text. | A guarded write receipt and resulting SHA-256. |
 | `poima_checks` | `project.verification.write` with project selectors, exact guard and complete suite JSON text. | A guarded suite write receipt and resulting SHA-256. |
@@ -65,6 +65,16 @@ This keeps the transaction's revision/receipt requirements visible while omittin
 provably unrelated operation branches. Fetch other selections or the complete
 `world.transact` method when composing mixed edits. Existing views remain
 available; malformed or unavailable selections retain native errors.
+
+For a small authoring task, send one selection through `poima_discover`:
+
+```json
+{"selection":{"methods":["entity.query"],"components":["Transform"],"mutations":[{"operation":"entity.create"},{"operation":"component.set","type":"Transform"}]}}
+```
+
+The adapter forwards this to `world.describe.select`. The selected schemas
+match single lookups, with contract and owner metadata sent once. Reuse the
+schemas while the owner and schema revision are the same.
 
 Start with discovery. Read the `invariants` section and relevant operation schemas, then inspect the world before editing. For example, call `poima_call` with `{"method":"world.inspect"}`. Submit guarded transactions using the returned revision and a caller-generated durable `request_id`. The adapter does not invent revisions, fill missing mutation identifiers or automatically retry failures.
 

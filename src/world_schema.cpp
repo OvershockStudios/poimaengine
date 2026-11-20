@@ -10,6 +10,7 @@
 #include "navigation_schema.hpp"
 #include "asset_provenance.hpp"
 #include "authoring_reference.hpp"
+#include "discovery_selection.hpp"
 #include "model_import.hpp"
 #include "ui_authoring_schema.hpp"
 #include <nlohmann/json.hpp>
@@ -230,13 +231,14 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 169}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 170}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
                 object_schema({{"view",{{"enum",{"method","component","section"}}}},{"name",{{"type","string"},{"minLength",1}}}},{"view","name"}),
                 object_schema({{"view",{{"const","mutation"}}},{"operation",{{"type","string"},{"minLength",1},{"maxLength",128}}},{"type",{{"type","string"},{"minLength",1},{"maxLength",128}}}},{"view","operation"})
             })}}}, {"world.inspect", object_schema(Json::object())},
+            {"world.describe.select",discovery_detail::selection_parameters_schema()},
             {"world.dependencies",object_schema(Json::object())},
             {"jobs.status",object_schema(Json::object())},
             {"world.asset.references",references_schema},

@@ -331,6 +331,54 @@ class McpContract(unittest.TestCase):
         self.assertEqual(replies[0]['result']['value']['name'], 'MCP durable entity')
         self.assertEqual(replies[1]['result']['revision'], 3)
 
+    def test_grouped_discovery_matches_individual_lookups(self):
+        client = self.client()
+        args = {
+            'methods': ['entity.query', 'world.inspect'],
+            'components': ['Transform'],
+            'sections': ['transport'],
+            'mutations': [{'operation': 'entity.create'}, {'operation': 'component.set', 'type': 'Transform'}],
+        }
+        catalog = client.tool('poima_discover')
+        self.assertIn('world.describe.select', catalog['methods'])
+        before = client.world('world.inspect')
+        history = client.world('world.history')
+        group = client.tool('poima_discover', {'selection': args})
+        self.assertEqual(group, client.world('world.describe.select', args))
+        self.assertTrue(group['partial'])
+        self.assertEqual(group['view'], 'selection')
+        singles = []
+        for view in ('method', 'component', 'section'):
+            field = view + 's'
+            expected = {}
+            for name in args[field]:
+                single = client.tool('poima_discover', {'view': view, 'name': name})
+                singles.append(single)
+                expected.update(single[field])
+                for key in ('schema_revision', 'authoring_contract', 'runtime_game_session_contract'):
+                    self.assertEqual(group[key], single[key])
+            self.assertEqual(group[field], expected)
+        for index, selection in enumerate(args['mutations']):
+            single = client.tool('poima_discover', {'view': 'mutation', **selection})
+            singles.append(single)
+            self.assertEqual(group['mutations'][index], {
+                'selection': selection, 'schema': single['methods']['world.transact']})
+        size = lambda payload: len(json.dumps(payload, separators=(',', ':')).encode())
+        self.assertLess(size(group), sum(map(size, singles)))
+        self.assertLessEqual(size(group), 24 * 1024)
+        for bad in (None, {}, {'methods': []}, {'methods': ['entity.get', 'entity.get']},
+                    {'components': [True]}, {'sections': ['é' * 65]},
+                    {'sections': ['authoring_contract']}, {'methods': ['entity.get', 'missing.method']},
+                    {'methods': catalog['methods'][:12], 'components': ['Transform']},
+                    {'mutations': [{'operation': 'entity.create', 'type': 'Transform'}]},
+                    {'mutations': [{'operation': 'entity.create'}] * 2},
+                    {'methods': ['world.transact']}):
+            with self.subTest(bad=bad):
+                client.tool('poima_discover', {'selection': bad}, error=-32602)
+        client.tool('poima_discover', {'view': 'catalog', 'selection': args}, error=-32602)
+        self.assertEqual(client.world('world.inspect'), before)
+        self.assertEqual(client.world('world.history'), history)
+
     def test_mutation_discovery_advertises_selectors_and_keeps_guards(self):
         client = self.client()
         discover = next(tool for tool in client.rpc('tools/list')['tools']
@@ -556,6 +604,10 @@ class McpContract(unittest.TestCase):
             catalog = client.tool('poima_discover')
             self.assertEqual(catalog['session_scope'], 'shared_headless')
             self.assertNotIn('session.close', catalog['methods'])
+            grouped = client.tool('poima_discover', {'selection': {'methods': ['host.shutdown', 'world.inspect']}})
+            self.assertEqual(grouped['session_scope'], 'shared_headless')
+            self.assertEqual(sorted(grouped['methods']), ['host.shutdown', 'world.inspect'])
+            client.tool('poima_discover', {'selection': {'methods': ['world.inspect', 'session.close']}}, error=-32602)
             transaction = {'request_id': uuid.uuid4().hex, 'base_revision': revision,
                            'ops': [{'op': 'entity.create', 'id': uuid.uuid4().hex, 'name': 'Shared MCP entity'}]}
             self.assertEqual(client.world('world.transact', transaction)['revision'], revision + 1)

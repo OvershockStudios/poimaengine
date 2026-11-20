@@ -64,6 +64,30 @@ the catalog revision and does not freeze other components or runtime APIs.
 
 The catalog returns sorted `methods`, `components` and `sections` name arrays. A selected entry returns a one-entry object under the corresponding key; sections use `sections`. Partial responses include `partial: true`, their `view`, schema/build availability and applicable session metadata. `view: "full"` is equivalent to omitting parameters. `name` is required for `method`, `component` and `section`, and forbidden for `full` or `catalog`. Unknown or unavailable names and malformed selectors return `-32602`.
 
+### Select multiple schemas
+
+Use `world.describe.select` to prepare the schemas for one task. It reads one
+description from the current owner. Named entries match their individual views
+and share one copy of the contract metadata.
+
+```json
+{"jsonrpc":"2.0","id":5,"method":"world.describe.select","params":{"methods":["entity.query","development.publish"],"components":["Transform"],"sections":["transport"],"mutations":[{"operation":"entity.create"},{"operation":"component.set","type":"Transform"}]}}
+```
+
+Provide 1–12 entries total across the optional arrays. Omit arrays you do not
+need. Names contain 1–128 UTF-8 bytes. Entries must be unique within each array.
+The result has `view: "selection"`. Named schemas appear in their respective
+maps. Each requested mutation appears in input order as `{ "selection": …,
+"schema": … }`, with the exact guarded `world.transact` schema from its
+individual mutation view. The existing transaction can combine those
+operations in a single edit.
+
+The native projection is capped at 24 KiB before desktop-only hints. A
+malformed, unavailable, or oversized selection rejects the request with
+`-32602`. For a large transaction, request the operations and component types
+you need. Use an individual view if you need the complete schema. This
+operation is outside authoring-core v1.
+
 The mutation view selects a transaction operation, optionally a component type:
 
 ```json
@@ -173,6 +197,7 @@ The successful transaction returns revision 1, `committed: true`, `replayed: fal
 | Method | Behavior |
 | --- | --- |
 | `world.describe` | Parameter schemas, Transform schema, limits and invariants. |
+| `world.describe.select` | Exact schemas for up to 12 selections under a shared 24 KiB result budget. |
 | `world.inspect` | World identity, revision, entity count, persistence and coordinate convention. |
 | `entity.get` | One entity, or its selected built-in component; optional revision guard. |
 | `entity.world_transform` | Evaluated column-major world matrix; optional revision guard. |

@@ -1,0 +1,77 @@
+{
+  "engine_version": "0.0.322",
+  "discovery_schema_revision": 170,
+  "source_workflow": "m2-creator-joined-windows-321.json",
+  "method_selection": [
+    "development.publish",
+    "project.gameplay.adopt",
+    "development.inspect",
+    "runtime.start",
+    "runtime.step",
+    "development.candidate",
+    "project.candidate.retain"
+  ],
+  "measurement": {
+    "comparison": "Replay the same seven exact method lookups through poima_discover. Compare seven individual successful tools/call responses with one grouped successful response from the same owner.",
+    "wire_bytes": "UTF-8 JSON-RPC response lines, including the MCP text and structured result encodings and line endings.",
+    "individual_calls": 7,
+    "grouped_calls": 1,
+    "linux_standalone": {
+      "single_response_wire_bytes": [
+        5501,
+        5751,
+        4769,
+        4357,
+        42219,
+        5082,
+        4728
+      ],
+      "single_total_response_wire_bytes": 72407,
+      "grouped_response_wire_bytes": 49390,
+      "match_exact_schemas": true,
+      "world_unchanged": true
+    },
+    "windows_desktop_owner": {
+      "single_response_wire_bytes": [
+        5961,
+        6211,
+        5229,
+        4817,
+        42679,
+        5542,
+        5188
+      ],
+      "single_total_response_wire_bytes": 75627,
+      "grouped_response_wire_bytes": 49850,
+      "match_exact_schemas": true,
+      "world_unchanged": true
+    }
+  },
+  "qualification": {
+    "linux": {
+      "ctest_passed": [
+        "authoring_api_compatibility",
+        "authoring_api_projection",
+        "world_session_native",
+        "mcp_native",
+        "mcp_contract",
+        "world_ui_contract",
+        "mutation-discovery-native",
+        "asset_references_contract"
+      ],
+      "compiled_authoring_core_v1_request_projection_matches_frozen_baseline": true
+    },
+    "windows": {
+      "desktop_owner_transport": "Native Windows desktop bridge via local IPC and MCP stdio.",
+      "matching_desktop_discovery_and_verified_playback_metadata": true,
+      "owner_hidden_operation_rejected": true,
+      "grouped_inspection_available_during_close": true,
+      "world_and_history_unchanged": true,
+      "mcp_contract_tests_passed": 14
+    }
+  },
+  "limitations": [
+    "The cohort replays discovery calls directly. It does not measure model tokens, provider latency, or whether an agent selects the batching tool on its own.",
+    "Frozen authoring-core projection covers existing selected request schemas. Grouped discovery remains a development operation outside that contract."
+  ]
+}

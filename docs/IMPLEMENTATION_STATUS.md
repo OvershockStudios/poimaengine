@@ -1,8 +1,15 @@
 # Implementation status
 
-Updated 2026-11-20 for **0.0.321**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-20 for **0.0.322**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.322 groups up to 12 [focused schema lookups](WORLD_SERVICE.md#select-multiple-schemas)
+in one native or MCP request. In a replay of seven lookups from the Windows
+creator trial, grouping returned the same schemas and cut MCP response bytes
+by 34% from the Windows desktop owner and 32% from a standalone Linux owner.
+Model token use and complete creator-task timings still require a paired trial.
+[Results](evidence/m2-discovery-selection-322.json)
 
 The [joined Windows creator trial](evidence/m2-creator-joined-windows-321.json)
 uses the 0.0.321 launcher and its exact installed engine. An automated creator

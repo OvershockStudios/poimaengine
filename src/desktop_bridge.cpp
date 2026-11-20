@@ -1197,7 +1197,7 @@ struct Bridge : ViewportState {
             const auto message=parse(bytes);require(message.is_object() && message.value("jsonrpc",Json())=="2.0" && message.contains("method") && message.at("method").is_string(),"Invalid JSON-RPC 2.0 request.",-32600);
             if(message.contains("id")) { id=message.at("id");require(id.is_null() || id.is_string() || id.is_number_integer(),"Invalid JSON-RPC ID.",-32600); }else notification=true;
             const auto method=message.at("method").get<std::string>();
-            require(!closing || method=="desktop.close.begin" || method=="desktop.inspect" || method=="desktop.describe" || method=="desktop.verified.inspect" || method=="desktop.audio.inspect" || method=="world.inspect" || method=="world.describe",
+            require(!closing || method=="desktop.close.begin" || method=="desktop.inspect" || method=="desktop.describe" || method=="desktop.verified.inspect" || method=="desktop.audio.inspect" || method=="world.inspect" || method=="world.describe" || method=="world.describe.select",
                 "Desktop host is closing; only final inspection and close polling are available.",-32009);
             // The generic world service has a standalone device host. Route
             // discovery through the hosted owner as well, including this alias.
@@ -1219,7 +1219,7 @@ struct Bridge : ViewportState {
                     auto request_with_id=message;request_with_id["id"]="desktop-ui-control";forwarded=request_with_id.dump();
                 }
                 auto response=world->request(forwarded.empty() ? bytes : forwarded,WorldRequestScope::shared_editor);
-                if(method=="world.describe" && !notification) {
+                if((method=="world.describe" || method=="world.describe.select") && !notification) {
                     auto value=Json::parse(response);
                     if(value.contains("result")) {
                         value["result"]["editor_discovery"]="desktop.describe";

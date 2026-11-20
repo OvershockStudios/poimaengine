@@ -110,6 +110,20 @@ void discovery_projection(poima::WorldSession& session,poima::WorldRequestScope 
     }
     const auto state=call(session,"world.inspect"),history=call(session,"world.history");
     const Json selection={{"operation","component.set"},{"type","Transform"}};
+    const auto grouped=[&](Json params) {
+        return Json::parse(session.request(Json{{"jsonrpc","2.0"},{"id",42},{"method","world.describe.select"},{"params",params}}.dump(),scope));
+    };
+    Json group={{"methods",{"world.inspect","entity.query"}},{"components",{"Transform"}},{"sections",{"transport"}}};
+    auto group_expected=metadata;
+    group_expected["partial"]=true;group_expected["view"]="selection";
+    group_expected["methods"]={{"world.inspect",full.at("methods").at("world.inspect")},{"entity.query",full.at("methods").at("entity.query")}};
+    group_expected["components"]={{"Transform",full.at("components").at("Transform")}};
+    group_expected["sections"]={{"transport",full.at("transport")}};
+    check(grouped(group).at("result")==group_expected,"Grouped discovery changed its scope metadata or selected schemas.");
+    for(const auto* field:{"unavailable_methods","unavailable_mutations"})if(full.contains(field))
+        for(const auto& name:full.at(field))if(name.is_string())
+            check(grouped({{"methods",{"world.inspect",name}}})["error"]["code"]==-32602,
+                  "Grouped discovery disclosed a schema hidden by scope.");
     if(full.at("methods").contains("world.transact")) {
         auto projected=full.at("methods").at("world.transact");
         auto branches=Json::array();bool has_conditional=false;
@@ -152,11 +166,17 @@ void discovery_projection(poima::WorldSession& session,poima::WorldRequestScope 
         camera_expected["methods"]={{"world.transact",camera_projected}};
         check(result({{"view","mutation"},{"operation","component.set"},{"type","Camera"}})==camera_expected,
               "Typed Camera discovery rejected or changed its dependency, envelope or selected branch.");
+        group["mutations"]={selection,camera_expected.at("selection")};
+        group_expected["mutations"]={Json{{"selection",selection},{"schema",projected}},
+            Json{{"selection",camera_expected.at("selection")},{"schema",camera_projected}}};
+        check(grouped(group).at("result")==group_expected,"Grouped mutation schemas changed guards or their requested order.");
     } else {
         for(const Json selector:{Json{{"view","mutation"},{"operation","entity.create"}},
                                  Json{{"view","mutation"},{"operation","component.set"},{"type","Transform"}}})
             check(request(selector)["error"]["code"]==-32602,
                   "Read-only discovery leaked a mutation schema.");
+        check(grouped({{"methods",{"world.inspect"}},{"mutations",{selection}}})["error"]["code"]==-32602,
+              "Read-only grouped discovery leaked a mutation schema.");
     }
     check(request({{"view","mutation"},{"operation","entity.create"},{"type","Transform"}})["error"]["code"]==-32602,
           "Scoped mutation discovery accepted an impossible type selector.");

@@ -3,6 +3,7 @@
 #include "poima/local_session.hpp"
 #include "poima/build_metadata.hpp"
 #include "poima/capture_image.hpp"
+#include "discovery_selection.hpp"
 #include <filesystem>
 #include <fstream>
 #include <limits>
@@ -78,8 +79,8 @@ Json observation(const std::string& method,const Json& receipt,std::uint32_t max
 Json schema(Json properties,Json required=Json::array()) {return {{"type","object"},{"properties",std::move(properties)},{"required",std::move(required)},{"additionalProperties",false}};}
 Json tools(){
     return Json::array({
-        {{"name","poima_discover"},{"description","Discover the current native world API. Defaults to its compact catalog. Read invariants before editing; request individual method, component or section schemas, or mutation schemas with operation and optional component type."},
-         {"inputSchema",schema({{"view",{{"type","string"},{"enum",{"full","catalog","method","component","section","mutation"}},{"default","catalog"}}},{"name",{{"type","string"},{"minLength",1}}},{"operation",{{"type","string"},{"minLength",1},{"maxLength",128}}},{"type",{{"type","string"},{"minLength",1},{"maxLength",128}}}})},
+        {{"name","poima_discover"},{"description","Discover the current native world API. Defaults to its compact catalog. Use selection alone to retrieve up to 12 exact method, component, section or scoped mutation schemas in one reply. Read invariants before editing. Select specific operations for transactions."},
+         {"inputSchema",schema({{"view",{{"type","string"},{"enum",{"full","catalog","method","component","section","mutation"}},{"default","catalog"}}},{"name",{{"type","string"},{"minLength",1}}},{"operation",{{"type","string"},{"minLength",1},{"maxLength",128}}},{"type",{{"type","string"},{"minLength",1},{"maxLength",128}}},{"selection",discovery_detail::selection_parameters_schema()}})},
          {"annotations",{{"readOnlyHint",true},{"destructiveHint",false},{"idempotentHint",true},{"openWorldHint",false}}}},
         {{"name","poima_call"},{"description","Call one native world operation using discovered parameters. Preserve native request_id and base_revision for edits. Calls are synchronous and never retried; transport failure may leave the outcome unknown."},
          {"inputSchema",schema({{"method",{{"type","string"},{"minLength",1}}},{"params",{{"type","object"}}},{"image",schema({{"max_edge",{{"type","integer"},{"minimum",128},{"maximum",2048},{"default",1280}}}})}},{"method"})},
@@ -107,8 +108,13 @@ struct McpSession::Impl {
         if(!arguments.is_object())return tool_result({{"error",error(-32602,"Tool arguments must be an object.")}},true);
         std::string method;Json params;bool image_requested=false;std::uint32_t max_edge=1280;
         if(name=="poima_discover") {
-            method="world.describe";params=arguments;
-            if(!params.contains("view"))params["view"]="catalog";
+            if(arguments.contains("selection")) {
+                if(arguments.size()!=1)return tool_result({{"error",error(-32602,"Discovery selection cannot be combined with single-view arguments.")}},true);
+                method="world.describe.select";params=arguments.at("selection");
+            } else {
+                method="world.describe";params=arguments;
+                if(!params.contains("view"))params["view"]="catalog";
+            }
         } else {
             for(const auto& [key,value]:arguments.items()) {
                 (void)value;

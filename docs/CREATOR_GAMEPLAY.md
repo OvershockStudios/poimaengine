@@ -1,8 +1,12 @@
 # Build and verify gameplay from the creator
 
 Use the approved brief to decide what the first build must do. Query Poima's
-native schema through `poima_discover`. Start with the selected methods and
-components. Inspect the current world and use revision guards for scene edits.
+native schema through `poima_discover`. When the catalog offers
+`world.describe.select`, fetch related schemas together, for example
+`{"selection":{"methods":["development.publish","project.gameplay.adopt","development.inspect"]}}`.
+For a scene edit, select the operations and component types you need through
+`selection.mutations`. Reuse a schema you already read for this owner and
+schema revision. Inspect the current world and use revision guards for scene edits.
 Keep the player's controls and authored entity IDs available for replay tests.
 
 Read these guides from `poima_call` with `method: "world.reference"`.
