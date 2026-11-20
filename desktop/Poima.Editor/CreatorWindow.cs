@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+using System.Diagnostics;
 using System.Text.Json.Nodes;
 using Avalonia;
 using Avalonia.Automation;
@@ -18,9 +19,13 @@ internal sealed class CreatorWindow : Window
     private readonly AgentChat chat;
     private readonly DispatcherTimer timer = new() { Interval = TimeSpan.FromMilliseconds(33) };
     private readonly Button play = new() { Content = "Play" }, stop = new() { Content = "Stop" };
+    private readonly Button export = new() { Content = "Export build" };
+    private readonly Button showExport = new() { Content = "Open build folder", IsVisible = false };
     private readonly TextBlock status = new() { TextWrapping = TextWrapping.Wrap };
     private readonly Border viewport = new() { Background = EditorTheme.Brush("#161518"), ClipToBounds = true };
-    private bool starting, closing, allowClose;
+    private bool starting, exporting, closeAfterExport, closing, allowClose;
+    private string? exportedFolder;
+    private long exportedRevision;
     private Task? agentShutdown;
     private string? previewSession, error;
 
@@ -49,11 +54,19 @@ internal sealed class CreatorWindow : Window
         Opened += (_, _) => { UpdateControls(); timer.Start(); };
         play.Click += async (_, _) => await PlayAsync();
         stop.Click += (_, _) => ExecuteStop();
+        export.Click += async (_, _) => await ExportAsync();
+        showExport.Click += (_, _) => OpenExportFolder();
         Closing += (_, args) =>
         {
             if (allowClose) return;
             args.Cancel = true;
             if (closing) return;
+            if (exporting)
+            {
+                closeAfterExport = true;
+                UpdateControls();
+                return;
+            }
             try
             {
                 game.Release();
@@ -93,12 +106,18 @@ internal sealed class CreatorWindow : Window
         play.Foreground = EditorTheme.Brush("#F7E8EB");
         AutomationProperties.SetName(play, "Play project");
         AutomationProperties.SetName(stop, "Stop preview");
+        AutomationProperties.SetName(export, "Export Windows build");
+        export.IsVisible = File.Exists(Path.Combine(ProjectFiles.PreviewRuntime, "runtime.json"));
         transport.Children.Add(play); transport.Children.Add(stop);
+        transport.Children.Add(export);
         Grid.SetColumn(transport, 1); bar.Children.Add(transport);
         preview.Children.Add(bar);
         Grid.SetRow(viewport, 1); preview.Children.Add(viewport);
         AutomationProperties.SetName(status, "Preview status");
-        Grid.SetRow(status, 2); preview.Children.Add(status);
+        var result = new StackPanel { Spacing = 8 };
+        result.Children.Add(status);
+        result.Children.Add(showExport);
+        Grid.SetRow(result, 2); preview.Children.Add(result);
         var previewCard = Card(preview);
         Grid.SetColumn(previewCard, 1); panels.Children.Add(previewCard);
         Grid.SetRow(panels, 1); root.Children.Add(panels);
@@ -110,18 +129,16 @@ internal sealed class CreatorWindow : Window
 
     private async Task PlayAsync()
     {
-        if (starting || closing || chat.Busy) return;
+        if (starting || exporting || closing || chat.Busy) return;
         starting = true; error = null; UpdateControls();
         string? started = null;
         try
         {
             // Resolve the current manifest through the CLI before starting a
             // playtest. The native guarded startup pins the inspected revision.
-            var current = await ProjectFiles.Open(project.Manifest);
+            var current = await OpenCurrentProject();
             if (closing) return;
             if (chat.Busy) throw new InvalidOperationException("Wait for the agent to finish its turn, then try Play again.");
-            if (current.World != project.World || current.Endpoint != project.Endpoint)
-                throw new InvalidOperationException("The project entry changed. Reopen the project to play it.");
             host.RefreshState();
             if (model.RuntimeId is not null)
                 throw new InvalidOperationException("Stop the current playtest before starting a new preview.");
@@ -166,7 +183,7 @@ internal sealed class CreatorWindow : Window
 
     private void ExecuteStop()
     {
-        if (closing || starting || chat.Busy) return;
+        if (closing || starting || exporting || chat.Busy) return;
         error = null;
         try
         {
@@ -183,6 +200,59 @@ internal sealed class CreatorWindow : Window
         game.Release();
         host.Call("desktop.play.stop", new() { ["session_id"] = session });
         host.RefreshState();
+    }
+
+    private async Task<ProjectLocation> OpenCurrentProject()
+    {
+        var current = await ProjectFiles.Open(project.Manifest);
+        if (current.World != project.World || current.Endpoint != project.Endpoint)
+            throw new InvalidOperationException("The project entry changed. Reopen the project to continue.");
+        return current;
+    }
+
+    private async Task ExportAsync()
+    {
+        if (!export.IsEnabled || !export.IsVisible) return;
+        exporting = true; error = null; UpdateControls();
+        try
+        {
+            var current = await OpenCurrentProject();
+            host.RefreshState();
+            if (model.RuntimeId is not null || chat.Busy)
+                throw new InvalidOperationException("Stop the playtest and wait for the agent before exporting.");
+            if (host.Call("desktop.gameplay.inspect")["profile"] is not null)
+                throw new InvalidOperationException("Clear the desktop gameplay profile and attach the published Native AOT game before exporting.");
+
+            var parent = Path.GetDirectoryName(current.Root)
+                ?? throw new InvalidOperationException("Move the project into its own folder before exporting.");
+            var name = Path.GetFileName(current.Root);
+            if (name.Length > 160) name = "Poima";
+            var suffix = Guid.NewGuid().ToString("N")[..8];
+            var folder = Path.Combine(parent, $"{name} - Build {DateTime.Now:yyyy-MM-dd HHmmss} {suffix}");
+            var result = await ProjectFiles.Command("build", current.Manifest, "--output", folder,
+                "--runtime", ProjectFiles.PreviewRuntime);
+            exportedFolder = Path.GetFullPath(result.GetProperty("output").GetString()!);
+            exportedRevision = result.GetProperty("revision").GetInt64();
+        }
+        catch (Exception failure) { error = failure.Message; }
+        finally
+        {
+            exporting = false;
+            UpdateControls();
+            if (closeAfterExport) { closeAfterExport = false; Close(); }
+        }
+    }
+
+    private void OpenExportFolder()
+    {
+        if (exportedFolder is null || closing || exporting) return;
+        try
+        {
+            if (!Directory.Exists(exportedFolder))
+                throw new InvalidOperationException("The exported build folder has moved or been removed.");
+            using var process = Process.Start(new ProcessStartInfo(exportedFolder) { UseShellExecute = true });
+        }
+        catch (Exception failure) { error = failure.Message; UpdateControls(); }
     }
 
     private void Pump()
@@ -208,13 +278,20 @@ internal sealed class CreatorWindow : Window
 
     private void UpdateControls()
     {
-        play.IsEnabled = !closing && !starting && !chat.Busy && model.RuntimeId is null;
-        stop.IsEnabled = !closing && !starting && !chat.Busy && model.RuntimeId is not null;
+        var ready = !closing && !starting && !exporting && !chat.Busy;
+        play.IsEnabled = ready && model.RuntimeId is null;
+        stop.IsEnabled = ready && model.RuntimeId is not null;
+        export.IsEnabled = play.IsEnabled;
+        chat.IsEnabled = !closing && !exporting;
+        showExport.IsVisible = exportedFolder is not null;
+        showExport.IsEnabled = !closing && !exporting;
         var gameView = host.State["views"]?["game"];
-        status.Text = closing ? "Closing project…" : starting ? "Starting preview…" : error ?? host.ViewError("game") ??
+        status.Text = closing ? "Closing project…" : closeAfterExport ? "Finishing export before closing…" :
+            exporting ? "Exporting the saved project…" : starting ? "Starting preview…" : error ?? host.ViewError("game") ??
             model.PlaybackError ?? (previewSession is not null
                 ? gameView?["presented_tick"] is not null ? "Click the game to take control. Press Esc to release the mouse." : "Waiting for the first game frame…"
                 : model.RuntimeId is not null ? "A playtest is running. Stop it to start a preview."
+                : exportedFolder is not null ? $"Exported revision {exportedRevision}. Open the build folder and run launch.cmd."
                 : "Play opens the current project. Chat changes appear the next time you play.");
     }
 }

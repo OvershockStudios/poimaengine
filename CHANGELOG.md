@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.285
+
+- Export the saved project as a standalone Windows build from the creator workspace in the portable preview.
+
 ## 0.0.284
 
 - Add Claude Code to the desktop agent picker through the Claude ACP adapter.

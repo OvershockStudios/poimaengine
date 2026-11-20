@@ -11,6 +11,9 @@ Vulkan graphics driver. Open `Poima.Editor.exe`.
 - The creator workspace puts game chat beside Play and Stop. Choose
   **Open in the full editor** for Scene and Inspector.
   [Creator guide](https://github.com/OvershockStudios/poimaengine/blob/main/docs/DESKTOP_EDITOR.md#creator-workspace)
+- **Export build** in the creator workspace makes a standalone copy of the
+  saved project in a new folder beside it. Stop Play and finish the agent turn
+  first. Open the build folder and run `launch.cmd`.
 
 You can also open a project directly from PowerShell.
 
@@ -18,9 +21,9 @@ You can also open a project directly from PowerShell.
 .\Poima.Editor.exe "D:\My Projects\MyRoom\project.poimaproject"
 ```
 
-The included editor, CLI, and sample run without compiling Poima or installing
-a separate .NET runtime. Gameplay development and export have their own
-toolchain prerequisites. [Gameplay tools](https://github.com/OvershockStudios/poimaengine/blob/main/docs/AUTHORING_TOOLS.md)
+The included editor, CLI, sample, and Windows exporter run without compiling
+Poima or installing a separate .NET runtime. Compiling new gameplay modules
+requires the gameplay toolchain. [Gameplay tools](https://github.com/OvershockStudios/poimaengine/blob/main/docs/AUTHORING_TOOLS.md)
 
 ## Connect an agent
 

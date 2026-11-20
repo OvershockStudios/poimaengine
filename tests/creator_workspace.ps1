@@ -5,13 +5,15 @@
 # Codex connection with the installed client and submits no model turn.
 # -Antigravity and -Claude use the supplied ACP clients for one MCP read each.
 # -CodexBrief runs a two-turn interview on the unchanged starter project.
+# -WithExport requires a packaged sample runtime and plays a relocated export.
 param(
     [Parameter(Mandatory = $true)][string]$Editor,
     [Parameter(Mandatory = $true)][string]$Output,
     [switch]$WithCodex,
     [string]$Antigravity,
     [string]$Claude,
-    [switch]$CodexBrief
+    [switch]$CodexBrief,
+    [switch]$WithExport
 )
 
 $ErrorActionPreference = 'Stop'
@@ -46,6 +48,7 @@ $report = [ordered]@{
     antigravity_turn_requested = ![string]::IsNullOrEmpty($Antigravity)
     claude_turn_requested = ![string]::IsNullOrEmpty($Claude)
     codex_brief_requested = [bool]$CodexBrief
+    export_requested = [bool]$WithExport
     checks = [ordered]@{}
 }
 
@@ -261,6 +264,105 @@ function Play-Preview($Revision) {
     }
 }
 
+function Export-Project($Project) {
+    Invoke-Control 'Export Windows build'
+    $null = Wait-For 'the exported build folder control' { Find-Control 'Open build folder' -Enabled } 60
+    $folders = @(Get-ChildItem -LiteralPath $projects -Directory -Filter "$name - Build *")
+    if ($folders.Count -ne 1) { throw 'Expected one new standalone build beside the project.' }
+    $bundle = $folders[0].FullName
+    $gameManifest = Join-Path $bundle 'game.json'
+    $response = & $cli game inspect $gameManifest | ConvertFrom-Json
+    $inspected = $LASTEXITCODE -eq 0
+    $game = Get-Content -LiteralPath $gameManifest -Raw | ConvertFrom-Json
+    $world = Get-Content -LiteralPath (Join-Path $bundle $game.entry.world) -Raw | ConvertFrom-Json
+    $camera = $world.entities.PSObject.Properties[$game.entry.camera].Value
+    $current = Inspect-Project
+    if (!$inspected -or !$response.result -or $response.result.project_id -cne $Project.project_id -or
+        $response.result.revision -ne $Project.revision -or $response.result.target_os -cne 'Windows' -or
+        $game.source.world_sha256 -cne $Project.world_sha256 -or $camera.name -cne 'Export viewpoint' -or
+        $current.manifest_sha256 -cne $Project.manifest_sha256 -or $current.world_sha256 -cne $Project.world_sha256) {
+        throw 'The exported bundle identity or saved project failed inspection.'
+    }
+    $report.checks.export = [ordered]@{
+        project_id = $response.result.project_id
+        revision = $response.result.revision
+        target_os = $response.result.target_os
+        manifest_sha256 = (Get-FileHash -LiteralPath $gameManifest).Hash.ToLowerInvariant()
+        file_count = $response.result.files.Count
+    }
+    return $bundle
+}
+
+function Edit-ProjectForExport($Project) {
+    $request = @{
+        jsonrpc = '2.0'; id = 1; method = 'world.transact'
+        params = @{
+            request_id = [guid]::NewGuid().ToString('N'); base_revision = $Project.revision
+            ops = @(@{ op = 'entity.rename'; id = $Project.entry.camera; name = 'Export viewpoint' })
+        }
+    } | ConvertTo-Json -Depth 6 -Compress
+    $response = $request | & $cli connect $endpoint --timeout-ms 2000 | ConvertFrom-Json
+    if ($LASTEXITCODE -ne 0 -or !$response.result -or $response.result.revision -ne ($Project.revision + 1)) {
+        throw 'The shared owner did not commit the export test edit.'
+    }
+    $saved = Inspect-Project
+    if ($saved.revision -ne $response.result.revision -or $saved.world_sha256 -ceq $Project.world_sha256 -or
+        $saved.manifest_sha256 -cne $Project.manifest_sha256) {
+        throw 'The shared edit did not produce the expected saved project revision.'
+    }
+    $report.checks.edit_before_export = [ordered]@{ revision = $saved.revision; world_sha256 = $saved.world_sha256 }
+    return $saved
+}
+
+function Play-RelocatedExport($Bundle) {
+    $source = Split-Path -Parent $manifest
+    Move-Item -LiteralPath $source -Destination (Join-Path $run 'retired source')
+    if (Test-Path -LiteralPath $manifest) { throw 'The original project remains available.' }
+    $relocated = Join-Path $run 'Relocated Windows build'
+    Move-Item -LiteralPath $Bundle -Destination $relocated
+    $gameManifest = Join-Path $relocated 'game.json'
+    $replay = Join-Path $run 'export-replay.json'
+    $capture = Join-Path $run 'export-frame.bmp'
+    $playerReport = Join-Path $run 'export-player.json'
+    $launcher = Join-Path $relocated 'launch.cmd'
+    $localData = Join-Path $run 'player local data'
+    New-Item -ItemType Directory -Path $localData | Out-Null
+    '[{"ticks":12,"move":[0,1]}]' | Set-Content -LiteralPath $replay -Encoding ASCII
+    $path = $env:PATH
+    $originalLocalData = $env:LOCALAPPDATA
+    Push-Location $run
+    try {
+        $env:PATH = "$env:SystemRoot\System32;$env:SystemRoot"
+        $env:LOCALAPPDATA = $localData
+        & $launcher --replay $replay --width 640 --height 360 --capture $capture --report $playerReport |
+            Set-Content -LiteralPath (Join-Path $run 'export-player.stdout.txt')
+        $exitCode = $LASTEXITCODE
+    }
+    finally {
+        $env:PATH = $path
+        $env:LOCALAPPDATA = $originalLocalData
+        Pop-Location
+    }
+    if ($exitCode -ne 0) { throw "The relocated player exited with $exitCode." }
+    $result = Get-Content -LiteralPath $playerReport -Raw | ConvertFrom-Json
+    $saveRoot = Join-Path $localData "Poima\Games\$($report.checks.export.project_id)\Saves"
+    if (!$result.play.success -or !$result.play.hardware -or $result.play.tick -ne 12 -or
+        $result.play.frames_presented -lt 1 -or $result.play.stop_reason -cne 'replay_complete' -or
+        $result.play.nvrhi_errors -ne 0 -or !(Test-Path -LiteralPath $capture) -or !(Test-Path -LiteralPath $saveRoot -PathType Container) -or
+        (Get-FileHash -LiteralPath $gameManifest).Hash.ToLowerInvariant() -cne $report.checks.export.manifest_sha256) {
+        throw 'Native playback of the relocated export failed.'
+    }
+    $report.checks.relocated_export = [ordered]@{
+        original_project_unavailable = !(Test-Path -LiteralPath $manifest)
+        exit_code = $exitCode
+        tick = $result.play.tick
+        presented_frames = $result.play.frames_presented
+        gpu = $result.play.gpu
+        external_save_directory_created = $true
+        capture_sha256 = (Get-FileHash -LiteralPath $capture).Hash.ToLowerInvariant()
+    }
+}
+
 try {
     $owner = Start-Launcher 'create'
     $window = Wait-For 'the launcher window' { Find-Window 'Poima' }
@@ -273,11 +375,21 @@ try {
     $report.checks.created = [ordered]@{ id = $project.project_id; revision = $project.revision }
 
     $report.checks.first_preview = Play-Preview $project.revision
+    if ($WithExport) {
+        if (!(Find-Control 'Export Windows build') -or (Find-Control 'Export Windows build' -Enabled)) {
+            throw 'The Windows export control should be unavailable while Play is active.'
+        }
+        $report.checks.export_disabled_during_preview = $true
+    }
     Invoke-Control 'Stop preview'
     $report.checks.stopped = [bool](Wait-For 'the stopped Game preview' {
         $state = Inspect-Desktop
         !$state.runtime.active -and !$state.views.game.attached
     })
+    if ($WithExport) {
+        $project = Edit-ProjectForExport $project
+        $bundle = Export-Project $project
+    }
     if ($Antigravity) { Exercise-Acp $project 'Antigravity' 'Antigravity CLI executable' $Antigravity 'antigravity' }
     if ($Claude) { Exercise-Acp $project 'Claude Code' 'Claude ACP executable' $Claude 'claude' }
     if ($CodexBrief) { Exercise-CodexBrief $project }
@@ -310,6 +422,7 @@ try {
     }
     Close-Owner
     $report.checks.closed_during_play_exit_code = $owner.ExitCode
+    if ($WithExport) { Play-RelocatedExport $bundle }
     $report.passed = $true
 }
 catch {

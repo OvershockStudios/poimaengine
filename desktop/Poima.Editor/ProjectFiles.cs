@@ -12,6 +12,8 @@ internal static class ProjectFiles
     public const string Extension = ".poimaproject";
     public const string DefaultManifestName = "project" + Extension;
     public const string LegacyManifestName = "project.json";
+    public static string PreviewSample => Path.Combine(AppContext.BaseDirectory, "samples", "Collection Room", "game.json");
+    public static string PreviewRuntime => Path.Combine(Path.GetDirectoryName(PreviewSample)!, "runtime");
 
     public static bool IsManifest(string path) =>
         string.Equals(Path.GetExtension(path), Extension, StringComparison.OrdinalIgnoreCase) ||

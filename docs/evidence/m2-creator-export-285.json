@@ -1,0 +1,95 @@
+{
+  "engine_version": "0.0.285",
+  "scope": "Extracted portable Windows x64 preview on the development laptop. Windows UI Automation creates and reopens a fresh starter project, invokes export after a committed shared-session edit, and plays the relocated export through its bundled launcher.",
+  "package": {
+    "bytes": 128667008,
+    "sha256": "df6d63f6eb32ac21f60ce794abb9cc14234c4ce03007b55d4b2b468d4e722974"
+  },
+  "runtime_descriptor_check": {
+    "call_bytes": 80,
+    "call_version": 1,
+    "feature_count": 37,
+    "navigation": true,
+    "passed": true,
+    "services_bytes": 528,
+    "services_version": 7
+  },
+  "test_sha256": "0d40d38445779ddf1b282a828ad964dec21fa15106fd3d022384c1bf317a7b1f",
+  "creator": {
+    "passed": true,
+    "input": "Windows UI Automation and an owned WM_CLOSE message",
+    "editor_sha256": "52ac62cebcd7de6b1e9fb98d29cfc25bbdd01c7fc377aa48812c01e811716ffc",
+    "frontend_sha256": "c75f2d26e89cbeb3d3e52f1f56ec4f2aa2f581707420ae154175dbc1cefd6e57",
+    "cli_sha256": "b0bf7c2aa01d7597f69fe81f3207f88d5d059d851a972162284148d9c4e958a9",
+    "bridge_sha256": "0313eea313a53960503a28215a0994a17e0fdb3e83820d146dcc202620a95d2b",
+    "codex_connection_requested": false,
+    "antigravity_turn_requested": false,
+    "claude_turn_requested": false,
+    "codex_brief_requested": false,
+    "export_requested": true,
+    "checks": {
+      "created": {
+        "id": "0a469df9d1063a7053f24e8389aa15ea",
+        "revision": 1
+      },
+      "first_preview": {
+        "session": "05ceb21332d54fd1affbf57d2291a3a4",
+        "tick": 15,
+        "frames": 4,
+        "revision": 1,
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "validation_errors": 0
+      },
+      "export_disabled_during_preview": true,
+      "stopped": true,
+      "edit_before_export": {
+        "revision": 2,
+        "world_sha256": "f33921eeae70443a6921a3ffec974e331e8476766813ba831ca13af920829c7d"
+      },
+      "export": {
+        "project_id": "0a469df9d1063a7053f24e8389aa15ea",
+        "revision": 2,
+        "target_os": "Windows",
+        "manifest_sha256": "303d5711d4c6ff831ea6d6f014627cc408022386c672ba36356c0b7713f0060c",
+        "file_count": 52
+      },
+      "closed_exit_code": 0,
+      "reopened_preview": {
+        "session": "9bb2303ee73b4ea7a63a498f9bdd776d",
+        "tick": 15,
+        "frames": 4,
+        "revision": 2,
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "validation_errors": 0
+      },
+      "closed_during_play_exit_code": 0,
+      "relocated_export": {
+        "original_project_unavailable": true,
+        "exit_code": 0,
+        "tick": 12,
+        "presented_frames": 13,
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "external_save_directory_created": true,
+        "capture_sha256": "816bfad621be36bf1454a9f1ca37dd3c14726d03b49953665005fb70649580b4"
+      }
+    }
+  },
+  "relocated_inventory_inspection": {
+    "passed_after_play": true,
+    "file_count": 52,
+    "revision": 2
+  },
+  "native_aot_collection_room": {
+    "passed": true,
+    "backend": "native_aot",
+    "ticks": 7,
+    "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "validation_errors": 0,
+    "stop_reason": "replay_complete"
+  },
+  "limits": [
+    "The creator export check uses the starter world and a shared-session camera rename. The compiled Collection Room sample is a separate bundled replay.",
+    "Agent authoring, physical input, gameplay verification and working-build recovery require separate coverage.",
+    "The package is a local candidate qualified on the development laptop."
+  ]
+}

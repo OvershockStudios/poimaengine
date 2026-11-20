@@ -75,6 +75,11 @@ Useful arguments are `--gpu N` for both native viewports, `--samples 1|4`, and a
    current saved entry, camera, input profile and audio setting. Click the game
    to control it and press Esc to release the mouse. Choose **Stop** before
    playing the next revision.
+4. In the portable preview, choose **Export build** after stopping Play and
+   finishing the agent turn. Poima copies the saved project into a new
+   timestamped folder beside the project and checks the standalone bundle.
+   Choose **Open build folder** and run `launch.cmd` to play it. Keep the whole
+   folder together when sharing it.
 
 Select **Open in the full editor** in the launcher to use the same project with
 the Scene and Inspector panels. Close the current workspace before reopening
@@ -84,6 +89,12 @@ different local project directory, use `Poima.Editor.exe --projects <directory>`
 
 The creator can preview an adopted Native AOT module and a configured desktop
 gameplay launch profile. It does not compile gameplay when you press Play.
+Export uses the native [bundle builder](PROJECTS.md#install-a-runtime-and-export)
+and the Windows runtime included with the portable preview. It exports adopted
+Native AOT gameplay when present. If a desktop gameplay profile is configured,
+clear it and attach the published game in the project before exporting. The
+workspace displays the exported authored revision. The bundle check validates
+the files and runtime requirements. Playtest the build for gameplay behavior.
 Use the full editor's gameplay controls for managed reload. Closing a creator
 session retires its local provider connection. After sending a message, save
 the conversation ID from **Connection settings** to resume it after reopening.
@@ -93,6 +104,8 @@ Run the launcher and preview regression in an interactive Windows session
 with a current desktop package. Add `-WithCodex` to exercise connection and
 reconnection through an installed Codex client. Supply `-Antigravity PATH`
 or `-Claude PATH` for one read-only MCP turn through the selected executable.
+Add `-WithExport` with an extracted portable preview to export a fresh project
+and run a native replay from the relocated bundle.
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File tests\creator_workspace.ps1 `

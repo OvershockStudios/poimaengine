@@ -1,8 +1,15 @@
 # Implementation status
 
-Updated 2026-11-19 for **0.0.284**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-20 for **0.0.285**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.285 adds [standalone Windows export from the creator workspace](DESKTOP_EDITOR.md#creator-workspace)
+in the portable preview. Windows UI Automation creates a project, previews it,
+applies a shared-owner edit and exports the saved revision. The bundled launcher
+plays 12 ticks after the build is moved and the original project path is unavailable.
+The same preview also runs the bundled Native AOT Collection Room sample.
+[Results](evidence/m2-creator-export-285.json)
 
 Version 0.0.284 adds [Claude Code](AGENT_CLIENTS.md#claude-code-in-poima) to the
 Windows agent picker. Claude Code and Antigravity read the same native world
@@ -23,8 +30,8 @@ chat beside an on-demand Game view. Windows UI Automation exercises creation,
 Vulkan presentation, Stop, reopening the same project and closing during play.
 The installed Codex client connects and reconnects before a first prompt.
 The direct full-editor route also opens the project and presents Scene frames.
-Build verification, recovery and standalone export through the workspace
-remain Alpha gates. [Results](evidence/m2-creator-workspace-282.json)
+Gameplay verification and recovery through the workspace remain Alpha gates.
+[Results](evidence/m2-creator-workspace-282.json)
 
 Version 0.0.281 [reduces deferred color playback storage](DEFERRED_RENDERING.md#storage-and-execution).
 At 1920×1080 it uses 49.4 MiB less logical texture payload when playback has no

@@ -10,7 +10,6 @@ namespace Poima.Editor;
 
 internal sealed class LauncherWindow : Window
 {
-    private static readonly string Root = AppContext.BaseDirectory;
     private readonly Action<ProjectLocation, bool> openProject;
     private readonly string projectsDirectory;
     private readonly TextBox projectName = new() { PlaceholderText = "Project name", MaxLength = 96, MinHeight = 34 };
@@ -60,7 +59,7 @@ internal sealed class LauncherWindow : Window
         actions.Children.Add(ActionButton("Open project from disk…", PickProject));
         actions.Children.Add(advanced);
         actions.Children.Add(new Expander { Header = "Project location", Content = ActionButton("Create in another folder…", ChooseFolder) });
-        if (File.Exists(SampleManifest))
+        if (File.Exists(ProjectFiles.PreviewSample))
             actions.Children.Add(ActionButton("Play Collection Room", PlaySample));
 
         var content = new StackPanel { Spacing = 24, Margin = new Thickness(30) };
@@ -70,8 +69,6 @@ internal sealed class LauncherWindow : Window
         content.Children.Add(status);
         Content = content;
     }
-
-    private static string SampleManifest => Path.Combine(Root, "samples", "Collection Room", "game.json");
 
     private sealed record LocalProject(string Name, string Manifest)
     {
@@ -156,8 +153,8 @@ internal sealed class LauncherWindow : Window
 
     private static async Task PlaySample()
     {
-        var executable = Path.Combine(Path.GetDirectoryName(SampleManifest)!, "runtime", "bin", "poima.exe");
-        using var process = ProjectFiles.Start(executable, "game", "run", SampleManifest, "--default-save-root", "true");
+        var executable = Path.Combine(ProjectFiles.PreviewRuntime, "bin", "poima.exe");
+        using var process = ProjectFiles.Start(executable, "game", "run", ProjectFiles.PreviewSample, "--default-save-root", "true");
         var output = process.StandardOutput.ReadToEndAsync();
         var error = process.StandardError.ReadToEndAsync();
         await process.WaitForExitAsync();
