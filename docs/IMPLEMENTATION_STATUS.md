@@ -4,6 +4,15 @@ Updated 2026-11-20 for **0.0.321**. Capability discovery reports what is availab
 
 ## Current limits
 
+The [joined Windows creator trial](evidence/m2-creator-joined-windows-321.json)
+uses the 0.0.321 launcher and its exact installed engine. An automated creator
+chooses answers in Codex chat and approves a brief. Codex makes and revises
+Low Tide Pump House from a blank project. The unchanged suite catches a
+deliberately broken valve. The creator restores the earlier passing project
+after restart and saves a playable ZIP. Independent tests finish the relocated
+puzzle and continue a partial save in a fresh process. The trial uses existing
+Microsoft tools and Codex credentials on the development laptop.
+
 Version 0.0.321 installs the [official Antigravity CLI](AGENT_CLIENTS.md#antigravity-in-poima)
 from the Windows creator and offers Google and Gemini Enterprise sign-in.
 The packaged test matches the installed CLI to Google's checksum, opens

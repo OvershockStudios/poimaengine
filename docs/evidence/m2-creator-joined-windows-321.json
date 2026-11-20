@@ -1,0 +1,176 @@
+{
+  "engine_version": "0.0.321",
+  "scope": "Windows UI Automation played the creator role using an installed signed-in Codex client and Microsoft tools on the development laptop. The portable launcher installed the exact local package into a blank launcher profile. The greybox puzzle started from a separate blank project opened by the installed executable.",
+  "release_assets": [
+    {
+      "name": "Poima-0.0.321-Windows-x64.zip",
+      "bytes": 141566010,
+      "sha256": "e76051b828cf2faf2e1506edf893382d32e4e3fb0a4d056510a89c9906af122f"
+    },
+    {
+      "name": "Poima-0.0.321-Windows-x64.manifest.json",
+      "bytes": 89315,
+      "sha256": "a36220c57a5850e4282b77db3934db4deb5319f10c3bc23c260b24a3e60acfdb"
+    },
+    {
+      "name": "Poima-Launcher-0.0.321-Windows-x64.zip",
+      "bytes": 46080475,
+      "sha256": "9473793b27b794237aac3b00204ca7a06832803b170028f0aa259e3dcc507403"
+    }
+  ],
+  "launcher_and_tools": {
+    "inventory_files_verified": 499,
+    "starter_native_aot_test_ms": 21696,
+    "fresh_nuget_packages": 7,
+    "cancelled_active_build_and_retried": true,
+    "project_compiler_profile_verified": true,
+    "ordinary_launcher_settings_unchanged": true,
+    "report_sha256": "48662389788587e799388c717bc79d596831580b9de4649365c48ed949f38255"
+  },
+  "creator_journey": {
+    "game": "Low Tide Pump House",
+    "case_sha256": "3d87c47bed954242366ac90de4307256f6229378c43b0c31f50d994939ee4a3b",
+    "model": "gpt-6.1-terra",
+    "codex_cli_version": "codex-cli 0.163.0-alpha.11",
+    "provider_turns": 6,
+    "mcp_calls": 129,
+    "mcp_errors": 3,
+    "mcp_error_methods": [
+      "input.inspect",
+      "world.reference",
+      "runtime.gameplay.load_native"
+    ],
+    "tool_call_counts": {
+      "poima_discover": 30,
+      "world.reference": 11,
+      "development.inspect": 11
+    },
+    "command_or_file_edit_tools": 0,
+    "world_transactions": 2,
+    "native_candidate_runs": 3,
+    "retained_candidates": 2,
+    "trace_sha256": "8035f93c0633b1d43ee915ddae51e398818fd60d7149956f1a34c9624df43bc7",
+    "question_cards": 1,
+    "choice_answers": 2,
+    "custom_answers": 1,
+    "brief_agreed_with_starter_unchanged": true,
+    "first_verified_play_ms_from_creator_launch": 142932,
+    "implementation_turn_ms": 107793,
+    "revision_turn_ms": 51353,
+    "deliberate_regression_turn_ms": 57227,
+    "initial": {
+      "bundle_sha256": "fdcef07dede4255e3f08a27b7ea73119fc752eaf231dd8933489b6640fe2e9ba",
+      "suite_sha256": "6d3746ca8bdc1af5bf5dbe5f23a3d606677d68281185c4d683607b3e55d079d1",
+      "report_sha256": "b497c209899e6e48122f0185f873e228e4ad1a0cc7187673c25227dcb51de2f9",
+      "revision": 2,
+      "passed": true,
+      "groups_passed": 1,
+      "groups_total": 1,
+      "checks_observed": 8,
+      "failures": []
+    },
+    "revision": {
+      "bundle_sha256": "8f5bf6d0a8c173b60e42d46e0a65cca27aa6d12462e2f409b6b6d4c515e2233c",
+      "suite_sha256": "3c32eb28c8a09b4b1a2c58f451e642bf9b27e556dbb500d4de5ea2773546743b",
+      "report_sha256": "2942109db3cd576bff6a6979132796e03317b40673b7c2a747db54eeb7a5b5dc",
+      "revision": 3,
+      "passed": true,
+      "groups_passed": 1,
+      "groups_total": 1,
+      "checks_observed": 8,
+      "failures": []
+    },
+    "deliberate_regression": {
+      "bundle_sha256": "db21bb5fdef7686b7ff073c6ff88591504cb5ddbf9645be98942da68e9db92a7",
+      "suite_sha256": "3c32eb28c8a09b4b1a2c58f451e642bf9b27e556dbb500d4de5ea2773546743b",
+      "report_sha256": "b37080086677af2578cf25303e2c420f46ce3ece18b3350119732e272c31f1b2",
+      "revision": 3,
+      "passed": false,
+      "groups_passed": 0,
+      "groups_total": 1,
+      "checks_observed": 8,
+      "failures": [
+        {
+          "actual": 0,
+          "actual_omitted": false,
+          "group": "Restore the pump after the storm",
+          "label": "Intake opens",
+          "observed": true,
+          "tick": 56
+        },
+        {
+          "actual": 0,
+          "actual_omitted": false,
+          "group": "Restore the pump after the storm",
+          "label": "Pump starts after intake",
+          "observed": true,
+          "tick": 79
+        },
+        {
+          "actual": "Pump needs water. Open the blue Intake Valve first.",
+          "actual_omitted": false,
+          "group": "Restore the pump after the storm",
+          "label": "Completion message",
+          "observed": true,
+          "tick": 79
+        }
+      ]
+    },
+    "last_pass_played_after_restart": true,
+    "exact_world_suite_code_and_native_image_restored_as_copy": true,
+    "exported_with_creator_save_dialog": true,
+    "report_sha256": "4b07ccbe7eed143efcee1f8caf7c7a959f8326728668cf86b93af360e6b9f76f",
+    "reported_cumulative_token_usage": {
+      "input_tokens": 3744632,
+      "cached_input_tokens": 3637632,
+      "cache_write_input_tokens": 0,
+      "output_tokens": 10187,
+      "reasoning_output_tokens": 898,
+      "total_tokens": 3754819
+    }
+  },
+  "independent_playtests": {
+    "observations": [
+      "Initial game",
+      "Use looking away from both controls",
+      "Pump attempted before intake",
+      "Opened intake without starting pump",
+      "Started pump after intake",
+      "Fresh process restored partial save",
+      "Fresh process completed puzzle from saved state"
+    ],
+    "initial_fresh_process_continuation_passed": true,
+    "relocated_fresh_process_continuation_passed": true,
+    "initial_console_albedo": [
+      0.5,
+      0.57,
+      0.52
+    ],
+    "requested_amber_console_albedo": [
+      0.82,
+      0.43,
+      0.12
+    ],
+    "initial_report_sha256": "883c63a7c66214845acfef2cb2fa67fade7b6c850b71a50340ede14128dce703",
+    "relocated_report_sha256": "7f9809072fccbc4943ab542fa5fdb76e33f9cd50970e137f5456861fcc223971"
+  },
+  "source_free_export": {
+    "bundle_sha256": "8f5bf6d0a8c173b60e42d46e0a65cca27aa6d12462e2f409b6b6d4c515e2233c",
+    "zip_sha256": "852059580428a073ee131fd0fb7b48b82feb5f2e4a05448979afa85a3357d127",
+    "zip_bytes": 107138682,
+    "inventory_files_verified": 61,
+    "original_project_and_history_paths_unavailable": true,
+    "vulkan_gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "vulkan_replay_ticks": 141,
+    "native_presented_frames": 142,
+    "validation_errors": 0,
+    "frame_sha256": "623249c2e40f29929718b427062823de16d113322f6e70db3c45d78eb71417b2",
+    "render_report_sha256": "6eedf897e061f25d714786287ea58588970919c4ea20136a838f87addc7fb5e1"
+  },
+  "open_qualification": [
+    "Tag-based public download and update",
+    "Clean Windows machine with a first-time human creator",
+    "Fresh browser sign-in",
+    "Physical controls and representative game performance"
+  ]
+}

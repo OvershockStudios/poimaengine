@@ -110,6 +110,13 @@ authorization remains open.
 The [conversation continuation check](evidence/m2-creator-conversations-305.json)
 reopens a live Codex conversation after restarting the creator and checks recall
 of an earlier brief and isolation of a copied project.
+The [joined 0.0.321 Windows trial](evidence/m2-creator-joined-windows-321.json)
+starts with a local launcher install and an in-app compiler check. Codex and
+an automated creator agree on a brief for Low Tide Pump House, build and revise
+it, then recover and share the passing build after a deliberate failure.
+Independent inputs complete the relocated ZIP and resume from a partial save
+in a fresh process. The laptop already had Microsoft tools and a signed-in
+Codex client.
 Qualification with a first-time creator on clean Windows remains open.
 
 ### Engine and delivery
