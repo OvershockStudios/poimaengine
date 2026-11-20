@@ -1,0 +1,69 @@
+{
+  "version": "0.0.318",
+  "scope": "One live installed Codex turn on the development laptop. The automation supplied sole change approval and independent verification. Native standalone play used the packaged Windows Vulkan runtime.",
+  "engine_archive_sha256": "342d401c5a8ed6172e44aa7dd13e75009991d4e2edaa5b752b4861d435679b7b",
+  "provider": {
+    "provider": "codex-cli 0.163.0-alpha.11",
+    "model": "gpt-6.1-terra",
+    "mcp_calls": 43,
+    "mcp_errors": 0,
+    "world_transactions": 1,
+    "candidate_jobs": 1,
+    "candidate_retentions": 1,
+    "trace_sha256": "b659e83bb71d86b91bce01f047d8c1a2e28b4fffa65dc36578098db47e13a316"
+  },
+  "checks": {
+    "old_player": {
+      "event_type": "verified_play_closed",
+      "revision": 1,
+      "bundle_sha256": "e50e28d72cc2fa4ea5beb63881e9ca86cd920236bb29d22c26b8c887efb9cc67",
+      "tick": 2695,
+      "frames_presented": 6470,
+      "stop_reason": "window_closed"
+    },
+    "codex_turn_ms": 44982,
+    "candidate_job_id": 1,
+    "new_revision": 2,
+    "new_bundle_sha256": "7cfeefd46fcc21ebcfe3ace2583bdfac1ec4720d2717cd1d863906ecd808181a",
+    "report_sha256": "9d9185322e0470ca5258ac6c76704be1d86e186b44caeec839ff7be9e768124b",
+    "unchanged_suite_sha256": "e19edf05e56f518d6e2a595f3d0e6fe5a4974a2025fe0dd5fe3c7e930153a289",
+    "independent_suite_sha256": "5bc31ff53a07039a10dab8bc10c77c780bab640c702b6f2ba941002e05d1a578",
+    "independent_original_passed": false,
+    "independent_revision_passed": true,
+    "only_jump_speed_changed": true
+  },
+  "jump_at_tick_57_m": {
+    "original": 0.7628741688256679,
+    "revised": 0.36503402843825206
+  },
+  "relocated_independent_replay_matches": true,
+  "relocated_zip": {
+    "original_project_unavailable": true,
+    "exit_code": 0,
+    "tick": 12,
+    "presented_frames": 13,
+    "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "external_save_directory_created": true,
+    "capture_sha256": "816bfad621be36bf1454a9f1ca37dd3c14726d03b49953665005fb70649580b4"
+  },
+  "creator_test_sha256": "18f71f6e6530e9bb82e17f3ecb0b21cf06faf24bfc25fd82bee18063820d6ac7",
+  "creator_report_sha256": "6aef79c6bb0e69b628a8d985cc43f3aba63841148b2aae8be4edd94aee633744",
+  "earlier_attempts": [
+    {
+      "report_sha256": "c43cd08345c47e11c210977049204143a41e27f44273236a45cfa232b82eb4f4",
+      "observation": "Harness expected the job summary check count in the raw verifier output and stopped before starting the provider."
+    },
+    {
+      "report_sha256": "9cd853c926bda72dcad69e0b68baef1298a9be198fa9bcf2d53d592ff0ed2663",
+      "observation": "Codex retained the revised build and it passed the independent replay. The prior game presented frames while out of focus and advanced zero ticks."
+    },
+    {
+      "report_sha256": "a37812b540c678198a5e376abd5e915f0040cd981edc676e0105d66a058ec6eb",
+      "observation": "Windows did not focus the requested game window. The harness timed out and cleaned up its windows."
+    }
+  ],
+  "open_qualification": [
+    "first-time creator on clean Windows",
+    "project endpoint observation of the separate verified player"
+  ]
+}

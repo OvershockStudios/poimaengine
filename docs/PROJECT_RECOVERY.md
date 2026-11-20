@@ -26,6 +26,10 @@ close. When started with standard output redirected, the workspace emits a
 `verified_play_closed` event with the build identity, last tick, presented
 frame count and stop reason.
 
+The project endpoint's `player.inspect` describes the working preview.
+The separately launched verified game keeps its own runtime and produces the
+closure receipt above.
+
 Choose **View playtest results** to see the latest completed attempt and
 expand its named groups. Failed checks show the recorded tick and observation.
 An interrupted group shows where the playtest stopped. The report identifies

@@ -10,6 +10,13 @@ while a separate native client submitted and retained a newer passing build.
 The creator displayed its checks while the first Vulkan player kept running.
 [Results](evidence/m2-verified-play-chat-318.json)
 
+A [live Codex run](evidence/m2-live-verified-iteration-318.json) on the same
+package changed one jump setting and retained the passing candidate through
+Poima MCP. The original player advanced 2,695 ticks before closing. A separate
+replay measured the reduced jump and confirmed it again on the relocated ZIP.
+The project endpoint's `player.inspect` currently covers the working preview.
+The separate verified player produces its own receipt when it closes.
+
 Version 0.0.317 adds a [paged catalog of cooked assets](ASSETS.md#browse-cooked-assets)
 to the shared world service. The Windows creator uses it to find imports on
 reopen. New imports keep their first display name and earlier imports appear

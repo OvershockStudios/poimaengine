@@ -13,6 +13,7 @@
 # -WithShareZip also exercises the owned save dialog and plays the unpacked ZIP.
 # -WithBuildHistory creates two passing versions and restores the older one through the history dialog.
 # -VerifiedPlayChat tests live workspace chat and native candidate publication while playing a verified build.
+# -VerifiedPlayWithCodex uses an installed, signed-in Codex model to author and retain a new version during playback.
 # -WithoutVulkan masks drivers for the owned processes and checks preview failure recovery.
 # -AssetFixtures imports model, color/data image and WAV fixtures through the file picker.
 # -CodexAssetRead asks the real Codex client to inspect the model ID in the draft.
@@ -31,6 +32,7 @@ param(
     [switch]$WithShareZip,
     [switch]$WithBuildHistory,
     [string]$VerifiedPlayChat,
+    [switch]$VerifiedPlayWithCodex,
     [switch]$WithoutVulkan,
     [string]$AssetFixtures,
     [switch]$CodexAssetRead
@@ -38,7 +40,8 @@ param(
 
 $ErrorActionPreference = 'Stop'
 if ($CodexAssetRead -and !$AssetFixtures) { throw 'Supply -AssetFixtures for the Codex asset handoff check.' }
-if ($VerifiedPlayChat) { $WithPlaytestResults = $true }
+if ($VerifiedPlayChat -and $VerifiedPlayWithCodex) { throw 'Run the scripted and live playback checks separately.' }
+if ($VerifiedPlayChat -or $VerifiedPlayWithCodex) { $WithPlaytestResults = $true }
 if ($WithoutVulkan -and ($WithExport -or $WithPlaytestResults -or $WithShareZip -or $WithBuildHistory)) {
     throw 'Run the no-driver check separately from export and hardware playback checks.'
 }
@@ -121,6 +124,7 @@ $report = [ordered]@{
     share_zip_requested = [bool]$WithShareZip
     build_history_requested = [bool]$WithBuildHistory
     verified_play_chat_requested = [bool]$VerifiedPlayChat
+    verified_play_with_codex_requested = [bool]$VerifiedPlayWithCodex
     vulkan_masked = [bool]$WithoutVulkan
     checks = [ordered]@{}
 }
@@ -215,13 +219,14 @@ function Set-AgentExecutable($Control, $Path) {
     $settings.GetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern).Collapse()
 }
 
-function Send-CodexPrompt($Prompt) {
+function Send-CodexPrompt($Prompt, [scriptblock]$AfterSubmit) {
     Set-ControlText 'Agent prompt' $Prompt
     Invoke-Control 'Agent Send'
     $prefix = "You: $Prompt"
     $null = Wait-For 'the submitted Codex prompt' {
         (Get-ControlText 'Agent transcript').Contains($prefix)
     }
+    if ($AfterSubmit) { & $AfterSubmit }
     $null = Wait-For 'the completed Codex response' {
         $transcript = Get-ControlText 'Agent transcript'
         $transcript | Set-Content -LiteralPath (Join-Path $run 'codex-transcript.txt') -Encoding UTF8
@@ -859,6 +864,117 @@ function Exercise-VerifiedPlayChat($Project, $Passing) {
     return $updated
 }
 
+function Write-LowJumpOracle($Controller) {
+    $height = @{ method = 'runtime.entity'; params = @{ id = $Controller }; path = '/world_matrix/13' }
+    $oracle = @{
+        format = 'poima.game-verification'; version = 1
+        groups = @(@{ name = 'Reduced jump with unchanged landing'; sequence = @(
+            @{ step = @{ ticks = 45 } }
+            @{ expect = $height + @{ label = 'Starts supported'; between = @(-0.05, 0.05) } }
+            @{ step = @{ ticks = 12; inputs = @(@{ entity = $Controller; jump = $true }) } }
+            @{ expect = $height + @{ label = 'The jump rises less at tick 57'; between = @(0.30, 0.44) } }
+            @{ step = @{ ticks = 70 } }
+            @{ expect = $height + @{ label = 'Lands again'; between = @(-0.05, 0.05) } }
+        ) })
+    }
+    $path = Join-Path $run 'independent-low-jump.json'
+    [IO.File]::WriteAllText($path, ($oracle | ConvertTo-Json -Depth 12 -Compress))
+    return $path
+}
+
+function Check-LowJump($Version, $Suite, $Label, [bool]$Pass) {
+    $runtime = Join-Path (Split-Path -Parent $Version.game_manifest) 'runtime\bin\poima.exe'
+    $path = Join-Path $run "independent-$Label.json"
+    $raw = & $runtime game verify $Version.game_manifest --suite $Suite --report $path --completed-exit true `
+        --expected-bundle-sha256 $Version.bundle_sha256
+    if ($LASTEXITCODE -ne 0) { throw "Independent verification failed to run for $Label." }
+    $raw | Set-Content -LiteralPath (Join-Path $run "independent-$Label.stdout.txt") -Encoding UTF8
+    $result = Get-Content -LiteralPath $path -Raw | ConvertFrom-Json
+    if ($result.passed -ne $Pass -or $result.groups.Count -ne 1 -or $result.groups[0].checks.Count -ne 3 -or
+        $result.bundle_sha256 -cne $Version.bundle_sha256) {
+        throw "The independent jump replay returned the wrong result for $Label."
+    }
+    return $result
+}
+
+function Verify-CodexRetainedLowerJump($Project, $Passing) {
+    $old = $Passing.latest
+    $oracle = Write-LowJumpOracle $Project.entry.controller
+    $oldOracle = Check-LowJump $old $oracle 'original' $false
+    $suite = Join-Path (Split-Path -Parent $manifest) 'game.verify.json'
+    $suiteHash = (Get-FileHash -LiteralPath $suite).Hash.ToLowerInvariant()
+    $worldPath = Join-Path (Split-Path -Parent $manifest) $Project.entry.world
+    $before = Get-Content -LiteralPath $worldPath -Raw | ConvertFrom-Json
+
+    Select-AgentProvider 'Codex'
+    if ($CodexExecutable) { Set-AgentExecutable 'Codex executable' $CodexExecutable }
+    foreach ($controlName in 'Agent allow world edits', 'Agent allow gameplay builds') {
+        $control = Wait-For $controlName { Find-Control $controlName -Enabled }
+        $toggle = $control.GetCurrentPattern([Windows.Automation.TogglePattern]::Pattern)
+        if ($toggle.Current.ToggleState -ne 'Off') { throw "Unexpected existing grant for $controlName." }
+        $toggle.Toggle()
+    }
+    Invoke-Control 'Agent Connect'
+    $null = Wait-For 'the installed Codex connection' { Find-Control 'Agent Send' -Enabled } 65
+    $prompt = ('I approve one change to my already playable first-person room. Lower the player jump speed from 5 to 3 m/s. ' +
+        'Use only native Poima MCP tools. Inspect the current controller and revision, use one guarded world.transact component.set, ' +
+        'and keep every other field, entity and the existing game.verify.json unchanged. Use the configured creator profile and project.poimaproject. ' +
+        'Read the suite hash with project.verification.read. Use development.candidate through poima_build, poll development.inspect until terminal, ' +
+        'and use project.candidate.retain through poima_build for the passing job. Keep the old game running and report the new revision.')
+    $turn = [Diagnostics.Stopwatch]::StartNew()
+    $transcript = Send-CodexPrompt $prompt {
+        $null = Wait-For 'the active agent turn' { Find-Control 'Agent Stop' -Enabled }
+        Start-VerifiedPlayer $old
+        if ((Inspect-Project).revision -ne $Project.revision) {
+            throw 'The agent revised the project before the original game window opened.'
+        }
+    }
+    $turn.Stop()
+    $transcript | Set-Content -LiteralPath (Join-Path $run 'verified-play-codex.txt') -Encoding UTF8
+    $updated = Inspect-Project
+    $latest = Read-PlaytestHistory $Project.project_id
+    if ($updated.revision -ne ($Project.revision + 1) -or $latest.latest.revision -ne $updated.revision -or
+        !$latest.latest_check.passed -or !$latest.latest_check.retained -or $latest.latest.bundle_sha256 -ceq $old.bundle_sha256 -or
+        $latest.latest_check.bundle_sha256 -cne $latest.latest.bundle_sha256 -or $verifiedPlayer.HasExited -or
+        (Get-FileHash -LiteralPath $suite).Hash.ToLowerInvariant() -cne $suiteHash) {
+        throw 'The model turn did not retain a distinct passing version while the original player stayed open.'
+    }
+    $after = Get-Content -LiteralPath $worldPath -Raw | ConvertFrom-Json
+    $controller = $Project.entry.controller
+    $beforeController = $before.entities.PSObject.Properties[$controller].Value.components.CharacterController
+    $afterController = $after.entities.PSObject.Properties[$controller].Value.components.CharacterController
+    if ($beforeController.jump_speed -ne 5 -or $afterController.jump_speed -ne 3 -or
+        $updated.manifest_sha256 -cne $Project.manifest_sha256) { throw 'The authored project did not preserve the intended jump-only edit.' }
+    $beforeController.jump_speed = 3
+    $afterController.jump_speed = 3
+    if (($before.entities | ConvertTo-Json -Depth 50 -Compress) -cne ($after.entities | ConvertTo-Json -Depth 50 -Compress)) {
+        throw 'The live model changed an entity or component besides jump speed.'
+    }
+    $jobs = Verified-PlayRpc 'development.jobs' @{}
+    $candidates = @($jobs.jobs | Where-Object { $_.result.bundle_sha256 -ceq $latest.latest.bundle_sha256 })
+    if ($candidates.Count -ne 1 -or $candidates[0].state -cne 'succeeded') { throw 'The passing native candidate job was not found.' }
+    $candidate = Verified-PlayRpc 'development.inspect' @{ job_id = $candidates[0].job_id; include_output = $false }
+    if (!$candidate.result.passed -or $candidate.result.report_sha256 -cne $latest.latest_check.report_sha256 -or
+        $candidate.result.suite_sha256 -cne $suiteHash) { throw 'The candidate identity did not match the unchanged suite and retained report.' }
+    $newOracle = Check-LowJump $latest.latest $oracle 'revised' $true
+    $null = Wait-For 'the retained result while the original game is open' {
+        $work = Find-ControlId 'preview-status'
+        $work -and $work.Current.Name -match "^Revision $($updated.revision)\b" -and (Find-Control 'View playtest results' -Enabled)
+    } 45
+    Inspect-PlaytestDialog $latest $true
+    $played = Close-VerifiedPlayer $old 'create'
+    Invoke-Control 'Agent Disconnect'
+    $null = Wait-For 'the retired live Codex connection' { Find-Control 'Agent Connect' -Enabled }
+    $report.checks.verified_play_with_codex = [ordered]@{
+        old_player = $played; codex_turn_ms = $turn.ElapsedMilliseconds; candidate_job_id = $candidate.job_id
+        new_revision = $updated.revision; new_bundle_sha256 = $latest.latest.bundle_sha256
+        report_sha256 = $latest.latest_check.report_sha256; unchanged_suite_sha256 = $suiteHash
+        independent_suite_sha256 = $newOracle.suite_sha256; independent_original_passed = $oldOracle.passed
+        independent_revision_passed = $newOracle.passed; only_jump_speed_changed = $true
+    }
+    return $updated
+}
+
 function Check-VerifiedPlayShutdown($Version) {
     Start-VerifiedPlayer $Version
     $handle = [IntPtr]$window.Current.NativeWindowHandle
@@ -1132,6 +1248,10 @@ try {
         }
         if ($VerifiedPlayChat) {
             $project = Exercise-VerifiedPlayChat $project $passing
+            $passing = Read-PlaytestHistory $project.project_id
+        }
+        if ($VerifiedPlayWithCodex) {
+            $project = Verify-CodexRetainedLowerJump $project $passing
             $passing = Read-PlaytestHistory $project.project_id
         }
         $project = Edit-ProjectForExport $project 'Playtested viewpoint'

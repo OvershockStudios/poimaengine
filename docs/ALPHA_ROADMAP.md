@@ -86,6 +86,9 @@ cooked model.
 The [0.0.318 concurrent playback test](evidence/m2-verified-play-chat-318.json)
 keeps a verified build running while chat accepts a reply and displays the
 checks for a newer retained build.
+The [live Codex follow-up](evidence/m2-live-verified-iteration-318.json) makes
+a guarded gameplay edit during that overlap, retains a passing version and
+independently checks the changed jump before and after relocation.
 The [Codex sign-in check](evidence/m2-creator-codex-sign-in-303.json) covers
 opening and cancelling sign-in with an isolated client and continuation after
 a scripted account confirmation. A real browser authorization is still needed.

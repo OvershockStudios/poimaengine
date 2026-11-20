@@ -242,6 +242,23 @@ python tests/desktop_agent_frontend.py --editor EDITOR_EXE --binary POIMA_EXE --
 
 This opt-in check performs one model turn in a disposable project. Raw conversation reports and the render stay in the chosen output directory; they are not public evidence files. Automation windows label themselves **Automated check (viewport input disabled)** because physical viewport input is deliberately excluded during scripted qualification.
 
+### Revise a game during verified play
+
+Use an extracted Poima Windows package, its gameplay tools, and a signed-in
+Codex executable on the interactive Windows desktop.
+
+```powershell
+powershell -NoProfile -File tests/creator_workspace.ps1 -Editor EDITOR_EXE `
+  -Output PRIVATE_OUTPUT_DIRECTORY -CodexExecutable CODEX_EXE `
+  -VerifiedPlayWithCodex -WithShareZip
+```
+
+This run uses one live model turn. The harness opens an earlier passing game
+after the turn starts. Codex edits the project and retains a new candidate
+through MCP. An independent replay checks the change, and the exported ZIP
+plays from a separate location with the original project moved aside.
+[0.0.318 results](evidence/m2-live-verified-iteration-318.json)
+
 ## Agent-built game exercise (development)
 
 One external Codex CLI 0.160.1 session using `gpt-6.1-sol` authored a fresh three-key escape room through guarded transactions, compiled its own C# gameplay, corrected UI input and camera placement, and completed native movement/interaction and checkpoint checks. It used 121 MCP calls, including 102 operation calls, and corrected two rejected contract inputs. This count is neither a token-efficiency target nor a performance measurement.
