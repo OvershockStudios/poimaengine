@@ -6,7 +6,8 @@ Poima is designed to help anyone make a game by describing it, playing a
 build, and directing the next change. The creation framework helps turn an
 idea into a game brief and gives agents a workflow for building, playtesting,
 and revising it. The native engine runs the game and exposes what happened
-during the playtest. The same projects open in the desktop editor.
+during the playtest. You can also open your game in Poima’s visual editor
+and make changes yourself.
 [Roadmap](docs/ROADMAP.md#product-milestones)
 
 ## Winter Village
