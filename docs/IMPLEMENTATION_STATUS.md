@@ -1,8 +1,20 @@
 # Implementation status
 
-Updated 2026-11-20 for **0.0.309**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-20 for **0.0.310**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.310 lets the Windows creator [test its gameplay build tools](WINDOWS_PREVIEW.md#build-c-gameplay).
+It compiles a temporary starter to Native AOT, loads the verified artifact,
+and checks that Use changes its input counter from zero to one. The packaged
+test starts with an empty .NET package directory, cancels an active second
+build, retries successfully and creates a regular project afterward. Native
+AOT publication now stages its notices under the compiler work directory
+to avoid extending deep Windows output paths. The test used installed
+Microsoft tools. Preview, recovery, and relocated export and ZIP playback
+passed on a shorter project path. A separate export from a deeply nested
+history checkpoint failed while validating its input profile.
+[Results](evidence/m2-windows-first-build-310.json)
 
 Version 0.0.309 builds the [Windows release set](WINDOWS_LAUNCHER.md#prepare-release-assets)
 from one configured checkout, including Collection Room compiled from source.

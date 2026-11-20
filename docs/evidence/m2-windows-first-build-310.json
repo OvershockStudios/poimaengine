@@ -1,0 +1,117 @@
+{
+  "version": "0.0.310",
+  "scope": "Windows x64 UI Automation over the release ZIP, with preinstalled Microsoft tools. The launcher profile and NuGet global packages directory started empty, and the editor launch received only the Windows system PATH.",
+  "release": {
+    "version": "0.0.310",
+    "tag": "v0.0.310",
+    "engine_files": 499,
+    "sample_manifest_sha256": "b8a98b7d05f194f9f08320bc234443b5967d6f893fea27ae819c25d3766b0a87",
+    "assets": [
+      {
+        "name": "Poima-0.0.310-Windows-x64.zip",
+        "bytes": 141453132,
+        "sha256": "a0a0f67937c3e8c272bcf014deb7f5e4456ba3e579dae55569f9780455b9a455"
+      },
+      {
+        "name": "Poima-0.0.310-Windows-x64.manifest.json",
+        "bytes": 89315,
+        "sha256": "9bb4b8c1a251ad5d3e2029802ad2f4a14fae6a9c2d86d1dfef46a0e9f1442376"
+      },
+      {
+        "name": "Poima-Launcher-0.0.310-Windows-x64.zip",
+        "bytes": 46080465,
+        "sha256": "0b1f3f2383f0b03bade6663360a10093352190469a89667a267e59f34ab661ff"
+      }
+    ]
+  },
+  "launcher_and_setup": {
+    "installed_inventory_files": 499,
+    "install_staging_empty": true,
+    "gameplay_build_check_first_ms": 37564,
+    "fresh_nuget_packages": 7,
+    "active_build_cancelled": true,
+    "gameplay_retry_passed": true,
+    "gameplay_scratch_removed": true,
+    "portable_project_created": true,
+    "creator_editor_sha256": "4061a8cbb63de877ce4e4df2c83b50096ce7aad76286773fa1f18e5d27763339",
+    "default_launcher_settings_preserved": true,
+    "launcher_exit": 0,
+    "creator_exit": 0,
+    "report_sha256": "69103bf7a47e88eb9790d7f063bf1577136ef52749098c33a438b0f63088d4b0",
+    "launcher_executable_sha256": "c8bdbbc2a582e170855e5ed097a5d4da49b6878a51b4b68b47cdb4814b3b1329"
+  },
+  "gameplay_proof": {
+    "backend": "native_aot",
+    "module": "ProjectGameplay.Game",
+    "input": "Use",
+    "counter_before": 0,
+    "counter_after": 1
+  },
+  "toolchain_detection_and_routing": {
+    "passed": true,
+    "real_windows_prerequisites_ready": true,
+    "windows_sdk": "10.0.26100.0",
+    "winget_available": true,
+    "microsoft_installers_started": 0,
+    "cases": [
+      "fully_missing_prerequisites",
+      "invalid_dotnet_pe_and_older_sdk",
+      "complete_msvc_fallback",
+      "complete_windows_sdk_fallback",
+      "exact_winget_packages",
+      "existing_visual_studio_route",
+      "vendor_download_fallback"
+    ]
+  },
+  "earlier_attempts": [
+    {
+      "engine_archive_sha256": "f0c8a9c8d301773dde467aae4eb098747ebf9ac210004fc7f3a4b96904a62b51",
+      "report_sha256": "3bb7e4370d1ad921f7539dd21f20b862422f7616a5629431bf14ea402cb160f6",
+      "cause": "Native AOT linked, then the notice copy failed at a Windows staging path beyond the legacy length limit.",
+      "native_reproduction_sha256": "9c77934a224df1a02885220cf84f1a183f972235cf539a72ca655774fe3421a5"
+    },
+    {
+      "engine_archive_sha256": "58d61ff67e7a209019e2287131bf6e7c1869f2e1c2985db3fcd80319dfb7aef8",
+      "report_sha256": "9507b110c2cba8fb3c8eec928f3932f86e7a786144477bb55c36c131334436e7",
+      "cause": "Publication and native execution reached the setup assertion. The compact state response omitted the backend field the assertion expected."
+    }
+  ],
+  "open_qualification": [
+    "Windows on a fresh machine",
+    "real Microsoft tool and agent installation/sign-in",
+    "first-time human creator journey",
+    "public tagged download",
+    "verified export from deeply nested history paths"
+  ],
+  "creator_regression": {
+    "same_packaged_editor": true,
+    "shorter_project_root": {
+      "passed": true,
+      "checks": [
+        "closed_during_play_exit_code",
+        "closed_exit_code",
+        "created",
+        "edit_before_export",
+        "export",
+        "export_disabled_during_preview",
+        "first_preview",
+        "playtest_results",
+        "relocated_export",
+        "relocated_zip",
+        "reopened_preview",
+        "share_zip",
+        "stopped"
+      ],
+      "report_sha256": "292b85ec64ff402a7959d7ad54c1804668f487966825d906591ae53001a4fee1",
+      "standalone_frames": 13,
+      "shared_zip_frames": 13
+    },
+    "deep_checkpoint_path": {
+      "passed": false,
+      "source_inspect_succeeded": true,
+      "direct_export_error": "Requested input profile does not exist.",
+      "report_sha256": "7add274e2cff6b4f59c1c528fcd5b1490b5ef8e3e196297a906bf3dd436b452a",
+      "native_reproduction_sha256": "8874a418e8a0dafcdd228efa400d6ccbf25262cd1e79a56290283fa570a04850"
+    }
+  }
+}

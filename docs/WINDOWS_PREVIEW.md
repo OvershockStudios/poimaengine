@@ -41,6 +41,13 @@ with C++** with x64 MSVC and a Windows SDK, then return to Poima and select
 **Check again**. The setup window also has Microsoft download links.
 [Native AOT prerequisites](https://learn.microsoft.com/en-us/dotnet/core/deploying/native-aot/#prerequisites)
 
+Once the tools are installed, choose **Test gameplay build**. Poima creates a
+temporary starter, compiles its packaged C# to Native AOT, and checks that
+the compiled game responds to Use in the native engine. The first build can
+download .NET packages. You can cancel the check and retry from the same
+window. The test leaves your projects untouched and uses your ordinary .NET
+package cache for future builds.
+
 If you already opened a project, select **Set up gameplay builds** in the
 creator, then **Reopen with build tools** when setup is ready. The reopened
 workspace supplies its project-scoped build profile to the connected agent.

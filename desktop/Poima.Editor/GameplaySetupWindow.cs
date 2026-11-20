@@ -6,6 +6,7 @@ using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Poima.AgentHost;
 
 namespace Poima.Editor;
 
@@ -17,10 +18,13 @@ internal sealed class GameplaySetupWindow : Window
     private readonly Button dotnet = new() { Content = "Install .NET 10 SDK", IsVisible = false };
     private readonly Button cpp = new() { Content = "Install C++ build tools", IsVisible = false };
     private readonly Button check = new() { Content = "Check again" };
+    private readonly Button test = new() { Content = "Test gameplay build", IsVisible = false };
+    private readonly Button cancelTest = new() { Content = "Cancel test", IsVisible = false };
     private readonly Button done = new() { Content = "Done" };
     private readonly Button dotnetDownload = new() { Content = "Open .NET downloads", IsVisible = false };
     private readonly Button cppDownload = new() { Content = "Open C++ setup guide", IsVisible = false };
     private WindowsBuildToolchain? current;
+    private CancellationTokenSource? buildTest;
     private bool busy;
 
     public GameplaySetupWindow()
@@ -41,14 +45,22 @@ internal sealed class GameplaySetupWindow : Window
         body.Children.Add(ToolRow("x64 .NET 10 SDK", dotnetState, dotnet, dotnetDownload));
         body.Children.Add(ToolRow("C++ build tools", cppState, cpp, cppDownload));
         body.Children.Add(message);
-        body.Children.Add(new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right,
-            Spacing = 8, Children = { check, done } });
+        body.Children.Add(new WrapPanel { HorizontalAlignment = HorizontalAlignment.Right,
+            ItemSpacing = 8, LineSpacing = 8, Children = { check, test, cancelTest, done } });
         Content = body;
 
         AutomationProperties.SetName(dotnetState, ".NET setup status");
         AutomationProperties.SetName(cppState, "C++ setup status");
+        AutomationProperties.SetAutomationId(message, "gameplay-build-status");
         Opened += async (_, _) => await RunAsync(ProbeAsync);
         check.Click += async (_, _) => await RunAsync(ProbeAsync);
+        test.Click += async (_, _) => await RunAsync(TestBuildAsync);
+        cancelTest.Click += (_, _) =>
+        {
+            buildTest?.Cancel();
+            message.Text = "Cancelling the build test…";
+            UpdateButtons();
+        };
         dotnet.Click += async (_, _) => await RunAsync(() => InstallAsync(WindowsBuildDependency.Dotnet));
         cpp.Click += async (_, _) => await RunAsync(() => InstallAsync(WindowsBuildDependency.Cpp));
         dotnetDownload.Click += async (_, _) => await RunAsync(() => OpenGuideAsync(WindowsBuildDependency.Dotnet));
@@ -80,7 +92,7 @@ internal sealed class GameplaySetupWindow : Window
         busy = true; UpdateButtons();
         try { await action(); }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or InvalidOperationException
-            or System.ComponentModel.Win32Exception or JsonException or TimeoutException)
+            or System.ComponentModel.Win32Exception or JsonException or TimeoutException or AgentRpcException or AgentExchangeException)
         {
             message.Text = error.Message;
             if (current is null) dotnetDownload.IsVisible = cppDownload.IsVisible = true;
@@ -109,7 +121,27 @@ internal sealed class GameplaySetupWindow : Window
         cpp.IsVisible = current.Msvc is null || current.Sdk is null;
         dotnetDownload.IsVisible = dotnet.IsVisible && winget is not null;
         cppDownload.IsVisible = cpp.IsVisible && (winget is not null || WindowsBuildToolchain.VisualStudioInstaller is not null);
-        message.Text = current.Ready ? current.Summary : "Microsoft installers may ask for administrator approval.";
+        message.Text = current.Ready ? "The tools are installed. Test a starter to confirm they can build and run C# gameplay." :
+            "Microsoft installers may ask for administrator approval.";
+    }
+
+    private async Task TestBuildAsync()
+    {
+        if (current is not { Ready: true } tools) return;
+        using var cancellation = new CancellationTokenSource();
+        buildTest = cancellation;
+        message.Text = "Building and testing a starter game. The first build may download .NET packages.";
+        UpdateButtons();
+        try
+        {
+            await WindowsGameplayBuildCheck.RunAsync(tools, cancellation.Token);
+            message.Text = "Build passed. The compiled starter ran and responded to input.";
+        }
+        catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
+        {
+            message.Text = "Build test cancelled.";
+        }
+        finally { buildTest = null; }
     }
 
     private async Task InstallAsync(WindowsBuildDependency dependency)
@@ -138,7 +170,10 @@ internal sealed class GameplaySetupWindow : Window
 
     private void UpdateButtons()
     {
-        check.IsEnabled = done.IsEnabled = dotnet.IsEnabled = cpp.IsEnabled =
+        check.IsEnabled = done.IsEnabled = test.IsEnabled = dotnet.IsEnabled = cpp.IsEnabled =
             dotnetDownload.IsEnabled = cppDownload.IsEnabled = !busy;
+        test.IsVisible = current?.Ready == true;
+        cancelTest.IsVisible = buildTest is not null;
+        cancelTest.IsEnabled = buildTest is { IsCancellationRequested: false };
     }
 }

@@ -288,7 +288,10 @@ def main():
     if pack is not None:
         pack.verify()
     output.parent.mkdir(parents=True, exist_ok=True)
-    stage = Path(tempfile.mkdtemp(prefix='.' + output.name + '-', dir=output.parent))
+    # Keep staging filenames under the compiler's work root. The final output
+    # can already be deep inside a creator project, and a longer staging name
+    # can push Windows notice copies past the filesystem API's path limit.
+    stage = Path(tempfile.mkdtemp(prefix='artifact-', dir=work))
     try:
         shutil.copy2(library, stage / library_name)
         if schema.get("components"):

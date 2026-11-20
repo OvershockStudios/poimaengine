@@ -56,6 +56,10 @@ The [0.0.309 release-set test](evidence/m2-windows-release-set-309.json)
 builds the matching engine and launcher from source, installs the exact
 release ZIP and completes the bundled Collection Room game after moving
 it away from the installation and hiding its authored project path.
+The [0.0.310 build setup test](evidence/m2-windows-first-build-310.json)
+starts the packaged creator with an empty .NET package directory, compiles
+the starter and checks input through its Native AOT module. A second build
+is cancelled while its publisher is active, and the creator retries successfully.
 The [Codex sign-in check](evidence/m2-creator-codex-sign-in-303.json) covers
 opening and cancelling sign-in with an isolated client and continuation after
 a scripted account confirmation. A real browser authorization is still needed.

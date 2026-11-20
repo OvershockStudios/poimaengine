@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.310
+
+- Test Windows gameplay setup by compiling the starter and checking an input in the native engine.
+- Stage Native AOT artifacts in compiler scratch space so deep Windows output paths can keep their license notices.
+
 ## 0.0.309
 
 - Build the Windows engine, launcher and playable sample into one release set.

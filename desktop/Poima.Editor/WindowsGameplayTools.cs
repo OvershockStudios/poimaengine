@@ -6,18 +6,19 @@ namespace Poima.Editor;
 
 internal static class WindowsGameplayTools
 {
-    private const string ProfileName = "creator";
+    internal const string ProfileName = "creator";
     private static string PackageDirectory => AppContext.BaseDirectory;
     private static string Authoring => Path.Combine(PackageDirectory, "authoring");
     public static bool HasAuthoringPack => File.Exists(Path.Combine(Authoring, "authoring.json"));
 
-    public static async Task<LaunchOptions> ConfigureAsync(LaunchOptions options, ProjectLocation project)
+    public static async Task<LaunchOptions> ConfigureAsync(LaunchOptions options, ProjectLocation project,
+        WindowsBuildToolchain? detected = null)
     {
         if (!OperatingSystem.IsWindows() || options.DevelopmentProfiles is not null || !HasAuthoringPack)
             return options;
         try
         {
-            var tools = await WindowsBuildToolchain.DetectAsync().ConfigureAwait(false);
+            var tools = detected ?? await WindowsBuildToolchain.DetectAsync().ConfigureAwait(false);
             if (tools.Dotnet is not { } dotnet || tools.Msvc is not { } msvc || tools.Sdk is not { } sdk)
                 return options with { GameplayToolStatus = tools.Summary };
             var python = Path.Combine(PackageDirectory, "publisher-python", "python.exe");

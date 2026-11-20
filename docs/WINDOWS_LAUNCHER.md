@@ -80,8 +80,14 @@ dotnet run --project tests/windows_launcher -c Release -- --local D:\Releases\Po
 .\tests\windows_launcher_workspace.ps1 -Launcher D:\Releases\Poima.Launcher.exe -EngineZip D:\Releases\Poima-0.0.307-Windows-x64.zip -Output "D:\Launcher Workspace Test"
 ```
 
+For 0.0.310 or later, add `-WithBuildCheck` to exercise **Test gameplay
+build** before creating the project. This check uses the installed Microsoft
+toolchain with an empty .NET package directory and the system PATH. It runs
+the starter, cancels an active second build, and retries through the dialog.
+
 Qualification with a public release, a fresh Windows machine and a first-time
 creator remains open.
 [0.0.298 HTTP installation](evidence/m2-windows-launcher-298.json),
 [0.0.308 local installation and creator tests](evidence/m2-launcher-local-install-308.json),
-[0.0.309 release build and packaged sample](evidence/m2-windows-release-set-309.json).
+[0.0.309 release build and packaged sample](evidence/m2-windows-release-set-309.json),
+[0.0.310 first gameplay build and cancellation](evidence/m2-windows-first-build-310.json).

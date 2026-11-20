@@ -3,7 +3,8 @@
 param(
     [Parameter(Mandatory = $true)][string]$Launcher,
     [Parameter(Mandatory = $true)][string]$EngineZip,
-    [Parameter(Mandatory = $true)][string]$Output
+    [Parameter(Mandatory = $true)][string]$Output,
+    [switch]$WithBuildCheck
 )
 
 $ErrorActionPreference = 'Stop'
@@ -78,6 +79,15 @@ $editorPath = Join-Path $installed 'Poima.Editor.exe'
 $ordinary = Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) 'Poima\installer.json'
 $extraction = $env:DOTNET_BUNDLE_EXTRACT_BASE_DIR
 $env:DOTNET_BUNDLE_EXTRACT_BASE_DIR = Join-Path $run 'launcher-bundle'
+$oldTemp, $oldTmp, $oldPackages, $oldPath = $env:TEMP, $env:TMP, $env:NUGET_PACKAGES, $env:PATH
+$testTemp = Join-Path $run 'temp'
+$testPackages = Join-Path $run 'packages'
+if ($WithBuildCheck) {
+    $null = New-Item -ItemType Directory -Path $testTemp, $testPackages
+    $env:TEMP = $env:TMP = $testTemp
+    $env:NUGET_PACKAGES = $testPackages
+    $env:PATH = "$env:SystemRoot\System32;$env:SystemRoot"
+}
 $owner = $creator = $null
 $report = [ordered]@{ passed = $false; engine_version = $version; checks = [ordered]@{} }
 
@@ -115,6 +125,59 @@ function Close-ProcessWindow($Process) {
     if (!$Process.CloseMainWindow() -or !$Process.WaitForExit(20000) -or $Process.ExitCode -ne 0) {
         throw "Process $($Process.Id) did not close normally."
     }
+}
+
+function Check-GameplayBuild($HomeWindow) {
+    Invoke-Button $HomeWindow 'Set up gameplay builds'
+    $setup = Wait-For 'gameplay setup' { Window $creator 'Set up gameplay builds' }
+    $id = [Windows.Automation.PropertyCondition]::new([Windows.Automation.AutomationElement]::AutomationIdProperty,
+        'gameplay-build-status')
+    $status = Wait-For 'gameplay status' { $setup.FindFirst([Windows.Automation.TreeScope]::Descendants, $id) }
+    $timer = [Diagnostics.Stopwatch]::StartNew()
+    Invoke-Button $setup 'Test gameplay build'
+    $null = Wait-For 'starter build in progress' { Element $setup 'Cancel test' }
+    $success = 'Build passed. The compiled starter ran and responded to input.'
+    $null = Wait-For 'first starter build' {
+        if (Element $setup 'Test gameplay build') {
+            if ($status.Current.Name -cne $success) { throw "Build check failed: $($status.Current.Name)" }
+            $true
+        }
+    } 300
+    $report.checks.gameplay_build_check_first_ms = $timer.ElapsedMilliseconds
+    $report.checks.fresh_nuget_packages = @(Get-ChildItem -LiteralPath $testPackages -Directory).Count
+    if ($report.checks.fresh_nuget_packages -eq 0) { throw 'The first check did not populate its empty package directory.' }
+
+    Invoke-Button $setup 'Test gameplay build'
+    $publisher = Wait-For 'owned native publisher' {
+        Get-CimInstance Win32_Process -Filter "Name='python.exe'" |
+            Where-Object { $_.CommandLine -like "*$testTemp\poima-build-check-*" -and $_.CommandLine -like '*publish_native_gameplay.py*' } |
+            Select-Object -First 1
+    }
+    Invoke-Button $setup 'Cancel test'
+    $null = Wait-For 'cancelled build' {
+        if (Element $setup 'Test gameplay build') {
+            if ($status.Current.Name -cne 'Build test cancelled.') { throw "Build cancel failed: $($status.Current.Name)" }
+            $true
+        }
+    } 300
+    if (Get-Process -Id $publisher.ProcessId -ErrorAction SilentlyContinue) { throw 'The cancelled publisher is still running.' }
+    $report.checks.active_build_cancelled = $true
+
+    Invoke-Button $setup 'Test gameplay build'
+    $null = Wait-For 'starter retry in progress' { Element $setup 'Cancel test' }
+    $null = Wait-For 'starter build retry' {
+        if (Element $setup 'Test gameplay build') {
+            if ($status.Current.Name -cne $success) { throw "Build retry failed: $($status.Current.Name)" }
+            $true
+        }
+    } 300
+    if (Get-ChildItem -LiteralPath $testTemp -Directory -Filter 'poima-build-check-*') { throw 'Build checks left a test project behind.' }
+    if ((Test-Path -LiteralPath $projects) -and (Get-ChildItem -LiteralPath $projects -Force)) {
+        throw 'Build checks wrote to the project library.'
+    }
+    $report.checks.gameplay_retry_passed = $true
+    $report.checks.gameplay_scratch_removed = $true
+    Invoke-Button $setup 'Done'
 }
 
 $before = SettingsHash
@@ -155,6 +218,7 @@ try {
     }
     $null = $creator.Handle
     $creatorHomeWindow = Wait-For 'installed creator home' { Window $creator 'Poima' }
+    if ($WithBuildCheck) { Check-GameplayBuild $creatorHomeWindow }
     $field = Wait-For 'new project name' { Element $creatorHomeWindow 'Project name' }
     Set-Field $field 'Portable Starter'
     Invoke-Button $creatorHomeWindow 'Create project'
@@ -191,6 +255,7 @@ finally {
         }
     }
     $env:DOTNET_BUNDLE_EXTRACT_BASE_DIR = $extraction
+    $env:TEMP, $env:TMP, $env:NUGET_PACKAGES, $env:PATH = $oldTemp, $oldTmp, $oldPackages, $oldPath
     $report | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $run 'report.json') -Encoding UTF8
     Write-Output $run
 }
