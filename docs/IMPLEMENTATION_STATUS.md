@@ -1,8 +1,15 @@
 # Implementation status
 
-Updated 2026-11-20 for **0.0.311**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-20 for **0.0.312**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.312 adds [build history](PROJECT_RECOVERY.md) to the Windows creator.
+An automated packaged run reviewed a failed playtest after reopening the
+project and restored the older of two passing versions as a new project.
+The latest verified build and working project remained available. The native
+history command paged through validated entries, rejected a changed selection,
+and recovered a retained 0.0.311 snapshot. [Results](evidence/m2-creator-build-history-312.json)
 
 Version 0.0.311 fixes [verified Windows exports from deep project histories](PROJECTS.md#publication-and-immutability).
 The native check exports the previously failing checkpoint, verifies its

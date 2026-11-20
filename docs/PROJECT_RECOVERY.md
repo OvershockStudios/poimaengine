@@ -30,6 +30,12 @@ receives a new project identity and keeps the captured world, assets, source,
 input profile and attached native gameplay. Both projects can be edited
 independently.
 
+Open **Build history** to browse completed playtests, including earlier
+passing versions and failed attempts. Choose a row and use **View checks** to
+read its results. **Restore this version as copy** opens only for a retained
+passing result. Poima rechecks the selected source snapshot and build before
+creating the copy. Use **Older** and **Newer** to move between pages.
+
 ## Share a playable ZIP
 
 Choose **Save game ZIP** to save the same build used by **Play verified build**.
@@ -86,6 +92,7 @@ poima project checkpoint .\MyGame\project.poimaproject --output .\History\2026-1
 poima project build .\History\2026-11-20-a\source\project.poimaproject --output .\History\2026-11-20-a\game --runtime .\Runtime
 .\History\2026-11-20-a\game\runtime\bin\poima.exe game verify .\History\2026-11-20-a\game\game.json --suite .\History\2026-11-20-a\source\game.verify.json --report .\History\2026-11-20-a\checks.json
 poima project history .\History --project-id 0123456789abcdef0123456789abcdef
+poima project versions .\History --project-id 0123456789abcdef0123456789abcdef
 poima project recover .\History\2026-11-20-a\checkpoint.json --output .\MyRecoveredGame
 poima project share .\History\2026-11-20-a\checkpoint.json --expected-bundle-sha256 <bundle-sha256> --output .\MyGame.zip
 ```
@@ -99,6 +106,14 @@ For sharing, take the 64-character `bundle_sha256` from the retained passing
 result. The command reports the archive path, byte count, file count and exact
 build identity.
 
+`project versions` checks at most six history directories per page and
+returns valid entries in descending directory order, with an unavailable
+count in `skipped`. Pass a non-null `next_before` as `--before` to inspect
+older directories. Each returned `snapshot_sha256` covers the checkpoint
+manifest and its verification report, which pin the source inventory and
+the tested bundle. Pass it to `project recover` as
+`--expected-snapshot-sha256` to restore the selected snapshot.
+
 Run `python tests/project_recovery_cli.py --runtime <installed-runtime> --output <new-directory>`
 to reproduce the native checkpoint, validation and recovery checks on a matching
 host. The installed runtime must include simulation and the native player.
@@ -106,3 +121,5 @@ On Windows, run `tests/creator_workspace.ps1 -Editor <packaged-editor-exe> -Outp
 to exercise the results dialog, restart, verified play and recovery.
 Use `-WithShareZip` to exercise saving and cancelling through the Windows dialog,
 then extract and launch the shared game.
+Use `-WithBuildHistory` to verify that the creator can inspect a failed check
+and restore the older of two passing revisions.

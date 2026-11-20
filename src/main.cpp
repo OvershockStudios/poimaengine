@@ -112,6 +112,13 @@ poima::Reply run(int argc, char** argv) {
             }
             if(!output.empty() && !bundle.empty())return poima::share_project_build(argv[3],bundle,output);
         }
+        if(action=="versions" && (argc==6 || argc==8) && *argv[3] && std::string_view(argv[4])=="--project-id" && *argv[5]) {
+            if(argc==6)return poima::project_versions(argv[3],argv[5]);
+            if(std::string_view(argv[6])=="--before" && *argv[7])return poima::project_versions(argv[3],argv[5],argv[7]);
+        }
+        if(action=="recover" && argc==8 && *argv[3] && std::string_view(argv[4])=="--output" && *argv[5] &&
+           std::string_view(argv[6])=="--expected-snapshot-sha256" && *argv[7])
+            return poima::recover_project(argv[3],argv[5],argv[7]);
         if(argc==6 && *argv[3] && *argv[5]) {
             const std::string_view flag=argv[4];
             if(action=="checkpoint" && flag=="--output")return poima::checkpoint_project(argv[3],argv[5]);

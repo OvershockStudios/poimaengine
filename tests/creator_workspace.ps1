@@ -10,6 +10,7 @@
 # -WithExport requires a packaged sample runtime and plays a relocated export.
 # -WithPlaytestResults checks passing and failed reports, reopening and recovery.
 # -WithShareZip also exercises the owned save dialog and plays the unpacked ZIP.
+# -WithBuildHistory creates two passing versions and restores the older one through the history dialog.
 param(
     [Parameter(Mandatory = $true)][string]$Editor,
     [Parameter(Mandatory = $true)][string]$Output,
@@ -21,7 +22,8 @@ param(
     [string]$CodexQuestions,
     [switch]$WithExport,
     [switch]$WithPlaytestResults,
-    [switch]$WithShareZip
+    [switch]$WithShareZip,
+    [switch]$WithBuildHistory
 )
 
 $ErrorActionPreference = 'Stop'
@@ -79,6 +81,7 @@ $report = [ordered]@{
     export_requested = [bool]$WithExport
     playtest_results_requested = [bool]$WithPlaytestResults
     share_zip_requested = [bool]$WithShareZip
+    build_history_requested = [bool]$WithBuildHistory
     checks = [ordered]@{}
 }
 
@@ -523,6 +526,71 @@ function Reopen-PlaytestResults($Project, $FailedHistory) {
     }
 }
 
+function Select-BuildVersion($Entry) {
+    $verdict = if ($Entry.passed) { 'passed' } else { 'failed' }
+    $label = "Revision $($Entry.revision) $verdict ($($Entry.bundle_sha256.Substring(0,12)))"
+    $item = Wait-For $label { Find-Control $label }
+    $walker = [System.Windows.Automation.TreeWalker]::ControlViewWalker
+    while ($item -and $item.Current.ControlType -ne [System.Windows.Automation.ControlType]::ListItem) {
+        $item = $walker.GetParent($item)
+    }
+    if (!$item) { throw 'The history row was not selectable.' }
+    $item.GetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern).Select()
+}
+
+function Restore-OlderBuild($Project, $Older, $Latest) {
+    $previous = @(Get-ChildItem -LiteralPath $projects -Directory -Filter "$name - Recovered *" | ForEach-Object FullName)
+    $creator = [IntPtr]$window.Current.NativeWindowHandle
+    Invoke-Control 'Build history'
+    $handle = Wait-For 'build history window' {
+        $found = [CreatorTestWindow]::FindDialog($creator, 'Build history')
+        if ($found -ne [IntPtr]::Zero) { $found }
+    }
+    $window = [System.Windows.Automation.AutomationElement]::FromHandle($handle)
+    Select-BuildVersion $Latest.latest_check
+    if (Find-Control 'Restore this version as copy' -Enabled) { throw 'Build history offered to restore a failed version.' }
+    Invoke-Control 'View checks'
+    $detail = Wait-For 'historical playtest results' {
+        $found = [CreatorTestWindow]::FindDialog($handle, 'Playtest results')
+        if ($found -ne [IntPtr]::Zero) { $found }
+    }
+    & {
+        $window = [System.Windows.Automation.AutomationElement]::FromHandle($detail)
+        $null = Wait-For 'historical failed check group' { Find-Control 'Walk to the marker (failed)' }
+        Invoke-Control 'Done'
+    }
+    $null = Wait-For 'return to build history' { Find-Control 'View checks' -Enabled }
+    Select-BuildVersion $Older.latest_check
+    Invoke-Control 'Restore this version as copy'
+
+    $copy = Wait-For 'a copy of the selected older build' {
+        Get-ChildItem -LiteralPath $projects -Directory -Filter "$name - Recovered *" |
+            Where-Object { $_.FullName -notin $previous } | Select-Object -First 1
+    } 60
+    $manifestPath = Join-Path $copy.FullName 'project.poimaproject'
+    $restored = (& $cli project inspect $manifestPath | ConvertFrom-Json).result
+    $before = (& $cli project inspect $manifest | ConvertFrom-Json).result
+    $live = Read-PlaytestHistory $Project.project_id
+    $source = Get-Content -LiteralPath $Older.latest.checkpoint -Raw | ConvertFrom-Json
+    $world = $source.files | Where-Object { $_.path -ceq 'source/world.json' }
+    if ($restored.project_id -ceq $Project.project_id -or $restored.revision -ne $Older.latest.revision -or
+        $restored.world_sha256 -cne $world.sha256 -or $restored.revision -ge $Latest.latest.revision -or
+        $before.manifest_sha256 -cne $Project.manifest_sha256 -or $before.world_sha256 -cne $Project.world_sha256 -or
+        $live.latest.bundle_sha256 -cne $Latest.latest.bundle_sha256) {
+        throw 'The history restore did not reproduce the selected older build and preserve the working project.'
+    }
+    return [ordered]@{
+        failed_version_disabled_restore = $true
+        failed_checks_opened = $true
+        restored_revision = $restored.revision
+        newer_passing_revision = $Latest.latest.revision
+        restored_world_sha256 = $restored.world_sha256
+        selected_bundle_sha256 = $Older.latest.bundle_sha256
+        latest_bundle_sha256 = $live.latest.bundle_sha256
+        live_project_unchanged = $true
+    }
+}
+
 function Save-GameZip($Archive) {
     $creator = [IntPtr]$window.Current.NativeWindowHandle
     Invoke-Control 'Save game ZIP'
@@ -627,11 +695,16 @@ try {
         $project = Edit-ProjectForExport $project
         $bundle = Export-Project $project
     }
-    if ($WithPlaytestResults -or $WithShareZip) {
+    if ($WithPlaytestResults -or $WithShareZip -or $WithBuildHistory) {
         if ($WithShareZip -and (Find-Control 'Save game ZIP' -Enabled)) {
             throw 'A project with no verified build can offer a verified ZIP.'
         }
         $passing = Export-PlaytestCandidate $project $true
+        if ($WithBuildHistory) {
+            $olderPassing = $passing
+            $project = Edit-ProjectForExport $project 'Second verified viewpoint'
+            $passing = Export-PlaytestCandidate $project $true
+        }
         $project = Edit-ProjectForExport $project 'Playtested viewpoint'
         $failedHistory = Export-PlaytestCandidate $project $false
         if ($failedHistory.latest.bundle_sha256 -cne $passing.latest.bundle_sha256) {
@@ -672,9 +745,10 @@ try {
     if ($reopened.project_id -ne $project.project_id -or $reopened.revision -ne $project.revision) {
         throw 'Project identity or authoring revision changed after reopen.'
     }
-    if ($WithPlaytestResults -or $WithShareZip) {
+    if ($WithPlaytestResults -or $WithShareZip -or $WithBuildHistory) {
         $report.checks.playtest_results = Reopen-PlaytestResults $reopened $failedHistory
     }
+    if ($WithBuildHistory) { $report.checks.build_history = Restore-OlderBuild $reopened $olderPassing $failedHistory }
     if ($WithShareZip) {
         $archive = Join-Path $run ('Recipient & Game ' + [char]0x03a9 + '.zip')
         Save-GameZip $null

@@ -1,0 +1,122 @@
+{
+  "version": "0.0.312",
+  "scope": "Windows x64 native CLI and UI Automation against the exact packaged creator and installed tools. The history exercise generates two passing revisions and one failed revision, restarts, reviews the failed check and restores the older pass.",
+  "release": {
+    "version": "0.0.312",
+    "tag": "v0.0.312",
+    "engine_files": 499,
+    "sample_manifest_sha256": "a9f40a8df7cb1a24386f78d6c97e7f622a40a2fff1c67492d09440a9051fb97c",
+    "assets": [
+      {
+        "name": "Poima-0.0.312-Windows-x64.zip",
+        "bytes": 141478921,
+        "sha256": "036f768bf9b6bdf1b071bfe18bf5d53e4332aadc99883a20a59aae034c767b2e"
+      },
+      {
+        "name": "Poima-0.0.312-Windows-x64.manifest.json",
+        "bytes": 89315,
+        "sha256": "7978916acf27dc5c85b5b8a3bed0447b457a8e53a1c1d81523b0708dc89a502c"
+      },
+      {
+        "name": "Poima-Launcher-0.0.312-Windows-x64.zip",
+        "bytes": 46080458,
+        "sha256": "eade2763049c629ff06a6c7260e3cbd33f2baebe8cc41fabcfa0b8d01088ce04"
+      }
+    ]
+  },
+  "portable_installation": {
+    "installed_inventory_files": 499,
+    "install_staging_empty": true,
+    "portable_project_created": true,
+    "creator_editor_sha256": "b58b05518f495097027a9477ffad5622e98ba10d0e45c3691841bbd6c0f48e8e",
+    "default_launcher_settings_preserved": true,
+    "launcher_exit": 0,
+    "creator_exit": 0,
+    "report_sha256": "a780c60caf7b7e521d4df1a7de5f31acde0bbce333b44656d6f0e03e07b25873"
+  },
+  "history_ui": {
+    "failed_version_disabled_restore": true,
+    "failed_checks_opened": true,
+    "restored_revision": 2,
+    "newer_passing_revision": 3,
+    "restored_world_sha256": "59584a31ef53ff234a1f7f36699a2270951583702f132261136b4874c49a3cf0",
+    "selected_bundle_sha256": "bc0957aa31b339a65f57c1e29b6e1a7f049183492944c7491031a02ce19940c3",
+    "latest_bundle_sha256": "1a8707e4a15a03d33461e1a20d8179a8bdc04eaadb0a104131196ec2f68d1bf9",
+    "live_project_unchanged": true,
+    "report_sha256": "d58beb136bca6d5b740471c6adbfe47aa91ae83418ea54f1f3fc71cc578f6484"
+  },
+  "unchanged_workflow": {
+    "checks": [
+      "build_history",
+      "closed_during_play_exit_code",
+      "closed_exit_code",
+      "created",
+      "edit_before_export",
+      "export",
+      "export_disabled_during_preview",
+      "first_preview",
+      "playtest_results",
+      "relocated_export",
+      "relocated_zip",
+      "reopened_preview",
+      "share_zip",
+      "stopped"
+    ],
+    "newer_verified_player_exit": 0,
+    "standalone_frames": 13,
+    "shared_zip_frames": 13
+  },
+  "native_history": {
+    "checked_cli_responses": 37,
+    "first_page_skipped": 5,
+    "first_page_entries": 1,
+    "second_page_entries": 1,
+    "stale_selection_rejected": true,
+    "restored_unchanged_selection": true,
+    "stale_reply_sha256": "7b4d4db9b8617e1a54e386551bc21b0a69c0615a768418e404cc68bd9bb40e4b",
+    "suite_result": {
+      "passed": true,
+      "source_files": 7,
+      "bundle_sha256": "1523b64ab15416eeff11798da69bcf3affc119568bc1a71b3bf0ac194bc30982",
+      "latest_failed_groups": 2,
+      "archive_sha256": "bd6c06a947b1ef151c8540c03167135fc7b7ef44176bde4b7b68a875969c7e58",
+      "archive_files": 53
+    }
+  },
+  "prior_archive": {
+    "passed": true,
+    "archived_engine_version": "0.0.311",
+    "entries": 2,
+    "restored_revision": 2,
+    "bundle_sha256": "c37ad940fd8eb88bf805cdd44bf4c7445b97973ec4c588f66fe92ee0fc8997fe",
+    "archive_unchanged": true,
+    "native_sha256": "2f9c28b934eb391ba9725556df58398405bf9207ad23d2e9dcce2804a25a3714"
+  },
+  "initial_attempt": {
+    "diagnostics": [
+      {
+        "code": "project.failed",
+        "message": "Path must be nonempty and NUL-free."
+      }
+    ],
+    "report_sha256": "e0cfdbe48167a9c22b3216585a4ab5da3e93294f2afc2558f9522df37fd8dd10",
+    "scope": "The intermediate implementation attempted to parse a path for an absent initial cursor."
+  },
+  "open_qualification": [
+    "public tagged installation",
+    "clean Windows setup",
+    "first-time human creator journey"
+  ],
+  "linux_headless": {
+    "scope": "Read a retained Windows 0.0.311 history and restore source with the snapshot guard. The Linux headless build cannot create a bundle that requires a renderer.",
+    "history_and_restore": {
+      "passed": true,
+      "archived_engine_version": "0.0.311",
+      "listed_failed_revision": 3,
+      "restored_passing_revision": 2,
+      "restored_world_bytes_match": true,
+      "restored_project_has_new_id": true,
+      "native_sha256": "b31399251b37f50f6fa0dc2cd91190a2c229aea483cf92e58a6d92d69d940593"
+    }
+  }
+}

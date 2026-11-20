@@ -29,6 +29,7 @@ internal sealed class CreatorWindow : Window
     private readonly Button shareExport = new() { Content = "Save game ZIP", IsVisible = false };
     private readonly Button showSharedZip = new() { Content = "Open ZIP folder", IsVisible = false };
     private readonly Button showChecks = new() { Content = "View playtest results", IsVisible = false };
+    private readonly Button buildHistory = new() { Content = "Build history", IsVisible = false };
     private readonly Button restore = new() { Content = "Restore verified project as copy", IsVisible = false };
     private readonly Button openRecovered = new() { Content = "Open recovered project", IsVisible = false };
     private readonly Button setupBuilds = new() { Content = "Set up gameplay builds", IsVisible = false };
@@ -96,6 +97,7 @@ internal sealed class CreatorWindow : Window
             }
         };
         showChecks.Click += async (_, _) => await ShowPlaytestResultsAsync();
+        buildHistory.Click += async (_, _) => await ShowBuildHistoryAsync();
         restore.Click += async (_, _) => await RestoreVerifiedAsync();
         openRecovered.Click += (_, _) => OpenRecoveredProject();
         setupBuilds.IsVisible = OperatingSystem.IsWindows() && WindowsGameplayTools.HasAuthoringPack &&
@@ -193,7 +195,7 @@ internal sealed class CreatorWindow : Window
         sharing.Children.Add(shareExport);
         sharing.Children.Add(showSharedZip);
         result.Children.Add(sharing);
-        result.Children.Add(showChecks);
+        result.Children.Add(new WrapPanel { ItemSpacing = 8, LineSpacing = 8, Children = { showChecks, buildHistory } });
         result.Children.Add(restore);
         result.Children.Add(openRecovered);
         Grid.SetRow(result, 2); preview.Children.Add(result);
@@ -407,6 +409,25 @@ internal sealed class CreatorWindow : Window
         catch (Exception failure) { error = failure.Message; UpdateControls(); }
     }
 
+    private async Task ShowBuildHistoryAsync()
+    {
+        if (!buildHistory.IsEnabled) return;
+        try
+        {
+            var selected = await new BuildHistoryWindow(ReadHistoryPage, verifiedBundleHash, exportedRevision)
+                .ShowDialog<BuildHistoryEntry?>(this);
+            if (selected is not null && buildHistory.IsEnabled)
+                await RestoreCheckpointAsync(selected.Checkpoint, selected.Snapshot);
+        }
+        catch (Exception failure) { error = failure.Message; UpdateControls(); }
+    }
+
+    private Task<JsonElement> ReadHistoryPage(string? before, CancellationToken cancellation)
+    {
+        string[] arguments = ["versions", HistoryDirectory(), "--project-id", project.ProjectId];
+        return ProjectFiles.Command(cancellation, before is null ? arguments : [.. arguments, "--before", before]);
+    }
+
     private async Task PlayVerifiedAsync()
     {
         if (!playVerified.IsEnabled || exportedFolder is null || verifiedBundleHash is null) return;
@@ -442,17 +463,20 @@ internal sealed class CreatorWindow : Window
         }, describeEarlierExport: false);
     }
 
-    private async Task RestoreVerifiedAsync()
+    private Task RestoreVerifiedAsync() => restore.IsEnabled && verifiedCheckpoint is { } checkpoint
+        ? RestoreCheckpointAsync(checkpoint) : Task.CompletedTask;
+
+    private async Task RestoreCheckpointAsync(string checkpoint, string? snapshot = null)
     {
-        if (!restore.IsEnabled || verifiedCheckpoint is null) return;
-        var checkpoint = verifiedCheckpoint;
         await ProjectWork("Restoring a copy of the verified project…", async () =>
         {
             var name = Path.GetFileName(project.Root);
             if (name.Length > 140) name = "Poima";
             var suffix = Guid.NewGuid().ToString("N")[..8];
             var destination = Path.Combine(ProjectParent(), $"{name} - Recovered {suffix}");
-            var result = await ProjectFiles.Command("recover", checkpoint, "--output", destination);
+            string[] arguments = ["recover", checkpoint, "--output", destination];
+            if (snapshot is not null) arguments = [.. arguments, "--expected-snapshot-sha256", snapshot];
+            var result = await ProjectFiles.Command(arguments);
             recoveredManifest = result.GetProperty("restored_manifest").GetString();
         });
     }
@@ -610,6 +634,8 @@ internal sealed class CreatorWindow : Window
         showSharedZip.IsEnabled = showExport.IsEnabled;
         showChecks.IsVisible = latestAttempt is not null;
         showChecks.IsEnabled = !closing && !exporting;
+        buildHistory.IsVisible = latestAttempt is not null;
+        buildHistory.IsEnabled = play.IsEnabled;
         restore.IsVisible = verifiedCheckpoint is not null;
         restore.IsEnabled = play.IsEnabled;
         openRecovered.IsVisible = recoveredManifest is not null;

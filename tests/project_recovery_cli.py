@@ -153,6 +153,35 @@ def main():
     manual = run('failed-manual-history', 'project', 'history', history, '--project-id', original['project_id'])
     assert Path(manual['latest_check']['report']) == failed_report
     assert manual['latest_check'] == {**attempt, 'report': manual['latest_check']['report']} and manual['latest'] == latest['latest']
+
+    for suffix in 'abcd':
+        (history / f'20261120-0800-{suffix}').mkdir()
+    page = run('versions-first-page', 'project', 'versions', history, '--project-id', original['project_id'])
+    assert page['skipped'] == 5 and page['next_before'] == newer_path.name
+    assert len(page['entries']) == 1 and not page['entries'][0]['passed'] and not page['entries'][0]['retained']
+    assert Path(page['entries'][0]['checkpoint']) == Path(failure['checkpoint'])
+    params = ('project', 'versions', history, '--project-id', original['project_id'], '--before')
+    older = run('versions-next-page', *params, page['next_before'])
+    assert older['skipped'] == 0 and older['next_before'] is None and len(older['entries']) == 1
+    selection, = older['entries']
+    assert selection['retained'] and selection['directory'] == ready_path.name
+    assert selection['bundle_sha256'] == verified['bundle_sha256'] and Path(selection['checkpoint']) == Path(ready['checkpoint'])
+    run('reject-misplaced-version-cursor', *params, '../bad', code=4)
+
+    # A harmless report serialization change is still a different selection.
+    destination = out / 'Restored selected version'
+    guarded = ('project', 'recover', selection['checkpoint'], '--output', destination,
+               '--expected-snapshot-sha256', selection['snapshot_sha256'])
+    report.write_bytes(saved_report+b'\n')
+    try:
+        run('reject-changed-version', *guarded, code=4)
+        assert not destination.exists()
+    finally:
+        report.write_bytes(saved_report)
+    selected = run('restore-selected-version', *guarded)
+    assert selected['bundle_sha256'] == verified['bundle_sha256']
+    assert (destination / 'Design.txt').read_bytes() == b'Original editable design\n'
+
     fabricated = json.loads(failed_report.read_text(encoding='utf-8'))
     fabricated['groups'][1]['checks'][0]['label'] = 'An assertion from a different suite'
     failed_report.write_text(json.dumps(fabricated), encoding='utf-8')

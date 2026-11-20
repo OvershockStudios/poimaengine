@@ -65,6 +65,7 @@ struct Checkpoint {
     Json report;
     VerifiedGame game;
     std::string report_sha256;
+    std::string snapshot_sha256;
 };
 
 Checkpoint read_checkpoint(const fs::path& checkpoint,const char* report_name,
@@ -72,8 +73,9 @@ Checkpoint read_checkpoint(const fs::path& checkpoint,const char* report_name,
     const auto root = fs::absolute(checkpoint).lexically_normal().parent_path();
     plain_directory(root);
     require(checkpoint.filename() == checkpoint_name, "Expected a checkpoint.json file.");
-    require(!fs::exists(root / ".poima-incomplete"), "Checkpoint publication is incomplete.");
-    const auto info = parse(read(contained(root, checkpoint_name), 4 * 1024 * 1024));
+    require(!fs::exists(project_io_path(root / ".poima-incomplete")), "Checkpoint publication is incomplete.");
+    const auto info_bytes = read(contained(root, checkpoint_name), 4 * 1024 * 1024);
+    const auto info = parse(info_bytes);
     fields(info, {"format", "version", "project_id", "revision", "project", "files"},
         {"format", "version", "project_id", "revision", "project", "files"});
     require(info.at("format") == "poima.project-checkpoint" && integer(info.at("version")) == 1,
@@ -133,7 +135,7 @@ Checkpoint read_checkpoint(const fs::path& checkpoint,const char* report_name,
     require(source.gameplay ? game.definition.gameplay_descriptor_sha256 == source.gameplay->descriptor_sha256 &&
         parse(game.definition.gameplay_values) == source.gameplay_values : game.definition.gameplay_descriptor.empty(),
         "Verified gameplay differs from the checkpoint.");
-    return {root, std::move(source), files, report, std::move(game), report_sha256};
+    return {root, std::move(source), files, report, std::move(game), report_sha256, hash(hash(info_bytes)+report_sha256)};
 }
 
 Checkpoint verified_checkpoint(const fs::path& checkpoint,const char* report_name=check_report_name,
@@ -148,6 +150,45 @@ Json checkpoint_summary(const Checkpoint& value) {
         {"report", text(value.root / check_report_name)}, {"project_id", value.source.spec.at("project_id")},
         {"revision", value.source.content.revision}, {"groups_passed", value.report.at("groups_passed")},
         {"bundle_sha256", value.game.definition.manifest_sha256}};
+}
+
+struct HistoryAttempt {
+    Checkpoint checkpoint;
+    const char* report_name;
+    bool passed;
+    bool retained;
+};
+
+HistoryAttempt read_history_attempt(const fs::path& candidate,const std::string& project_id) {
+    plain_directory(candidate);
+    const bool published=fs::symlink_status(project_io_path(candidate / check_report_name)).type()!=fs::file_type::not_found;
+    const auto* report_name=published ? check_report_name : candidate_report_name;
+    auto checkpoint=read_checkpoint(candidate / checkpoint_name,report_name);
+    require(checkpoint.source.spec.at("project_id")==project_id,"Checkpoint belongs to another project.");
+    const bool passed=checkpoint.report.at("passed").get<bool>();
+    return {std::move(checkpoint),report_name,passed,published && passed};
+}
+
+Json history_attempt_summary(const HistoryAttempt& attempt) {
+    const auto& value=attempt.checkpoint;
+    auto result=checkpoint_summary(value);
+    result.update({{"report",text(value.root / attempt.report_name)},{"report_sha256",value.report_sha256},
+        {"groups_total",value.report.at("groups_total")},{"passed",attempt.passed},{"retained",attempt.retained}});
+    return result;
+}
+
+std::vector<fs::path> history_directories(const fs::path& root) {
+    std::vector<fs::path> candidates;
+    if (!fs::exists(project_io_path(root))) return candidates;
+    plain_directory(root);
+    for (const auto& item : fs::directory_iterator(project_io_path(root))) {
+        if (!fs::is_directory(item.symlink_status())) continue;
+        require(candidates.size() < count_limit, "Checkpoint history exceeds 4096 directories.");
+        const auto name = text(item.path().filename());
+        if (!name.starts_with('.')) candidates.push_back(root / item.path().filename());
+    }
+    std::sort(candidates.rbegin(), candidates.rend());
+    return candidates;
 }
 }
 
@@ -264,34 +305,15 @@ Reply project_history(const std::string& directory, const std::string& project_i
     return operation("project.history", [&] {
         const auto project_id = id(project_id_arg);
         const auto root = fs::absolute(path_of(directory)).lexically_normal();
-        if (!fs::exists(root)) return Json{{"latest", nullptr}, {"latest_check", nullptr}, {"skipped", 0}};
-        plain_directory(root);
-        const auto io = project_io_path(root);
-        std::vector<fs::path> candidates;
-        for (const auto& item : fs::directory_iterator(io)) {
-            if (!fs::is_directory(item.symlink_status())) continue;
-            require(candidates.size() < count_limit, "Checkpoint history exceeds 4096 directories.");
-            const auto name = text(item.path().filename());
-            if (!name.starts_with('.')) candidates.push_back(root / item.path().filename());
-        }
-        std::sort(candidates.rbegin(), candidates.rend());
+        const auto candidates=history_directories(root);
         std::size_t skipped = 0;
         Json latest=nullptr,latest_check=nullptr;
         for (const auto& candidate : candidates) {
             try {
-                plain_directory(candidate);
-                const bool published=fs::symlink_status(project_io_path(candidate / check_report_name)).type()!=fs::file_type::not_found;
-                const auto* report_name=published ? check_report_name : candidate_report_name;
-                const auto checkpoint = read_checkpoint(candidate / checkpoint_name,report_name);
-                require(checkpoint.source.spec.at("project_id") == project_id, "Checkpoint belongs to another project.");
-                const bool passed=checkpoint.report.at("passed").get<bool>();
-                if(latest_check.is_null()) {
-                    latest_check=checkpoint_summary(checkpoint);
-                    latest_check.update({{"report",text(candidate / report_name)},{"report_sha256",checkpoint.report_sha256},
-                        {"groups_total",checkpoint.report.at("groups_total")},{"passed",passed},{"retained",published && passed}});
-                }
-                if(published && passed) {
-                    latest=checkpoint_summary(checkpoint);
+                const auto attempt=read_history_attempt(candidate,project_id);
+                if(latest_check.is_null()) latest_check=history_attempt_summary(attempt);
+                if(attempt.retained) {
+                    latest=checkpoint_summary(attempt.checkpoint);
                     break;
                 }
             } catch (const std::exception&) { }
@@ -301,9 +323,39 @@ Reply project_history(const std::string& directory, const std::string& project_i
     });
 }
 
-Reply recover_project(const std::string& manifest, const std::string& output) {
+Reply project_versions(const std::string& directory,const std::string& project_id_arg,const std::string& before) {
+    return operation("project.versions", [&] {
+        constexpr std::size_t page_size=6;
+        const auto project_id=id(project_id_arg);
+        if(!before.empty()) {
+            const auto cursor=relative_path(before);
+            require(cursor.find('/')==std::string::npos && !cursor.starts_with('.'),"Expected a history directory name as a cursor.");
+        }
+        const auto candidates=history_directories(fs::absolute(path_of(directory)).lexically_normal());
+        const auto cursor=before.empty() ? fs::path{} : path_of(before);
+        auto at=before.empty() ? candidates.begin() : std::find_if(candidates.begin(),candidates.end(),
+            [&](const auto& directory) { return directory.filename()<cursor; });
+        Json entries=Json::array(),next=nullptr;
+        std::size_t visited=0,skipped=0;
+        for(;at!=candidates.end() && visited<page_size;++at,++visited) {
+            try {
+                const auto attempt=read_history_attempt(*at,project_id);
+                auto item=history_attempt_summary(attempt);
+                item["directory"]=text(at->filename());
+                item["snapshot_sha256"]=attempt.checkpoint.snapshot_sha256;
+                entries.push_back(std::move(item));
+            } catch (const std::exception&) { ++skipped; }
+        }
+        if(at!=candidates.end())next=text(std::prev(at)->filename());
+        return Json{{"entries",std::move(entries)},{"next_before",std::move(next)},{"skipped",skipped}};
+    });
+}
+
+Reply recover_project(const std::string& manifest, const std::string& output,const std::string& expected_snapshot) {
     return operation("project.recover", [&] {
+        require(expected_snapshot.empty() || hexadecimal(expected_snapshot,64),"Expected a snapshot SHA-256.");
         const auto checkpoint = verified_checkpoint(path_of(manifest));
+        require(expected_snapshot.empty() || expected_snapshot==checkpoint.snapshot_sha256,"The selected version changed. Refresh build history before restoring it.");
         const auto destination = destination_path(output);
         require(!within(destination, checkpoint.root) && !within(checkpoint.root, destination),
             "Recovery destination must be outside the checkpoint.");

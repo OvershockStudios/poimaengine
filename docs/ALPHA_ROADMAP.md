@@ -63,6 +63,10 @@ is cancelled while its publisher is active, and the creator retries successfully
 The [0.0.311 deep export test](evidence/m2-windows-deep-export-311.json)
 verifies the previously failing history checkpoint and runs the packaged
 creator's recovery and relocated export and ZIP playback from the same depth.
+The [0.0.312 build history test](evidence/m2-creator-build-history-312.json)
+reopens a project with two passing builds and a failed change. The automated
+creator reviews the failed checks and restores the older pass as a separate
+project while keeping the latest pass and working project available.
 The [Codex sign-in check](evidence/m2-creator-codex-sign-in-303.json) covers
 opening and cancelling sign-in with an isolated client and continuation after
 a scripted account confirmation. A real browser authorization is still needed.
