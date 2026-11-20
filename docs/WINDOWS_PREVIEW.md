@@ -85,6 +85,9 @@ and finish in the Claude Code window or browser. For Antigravity, select
 
 If Codex asks to use a Poima tool, review the operation in chat and select
 **Approve once** or **Decline**. The card shows the tool and its arguments.
+Open **Connection settings** for model selection, executable paths and
+session-wide approvals. The conversation and game preview stay visible
+beside each other while the agent works.
 
 Use the bundled `poima.exe` with an installed Codex or Claude Code client.
 Point the client's MCP configuration at the full path to the executable

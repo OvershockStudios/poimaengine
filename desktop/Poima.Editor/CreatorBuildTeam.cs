@@ -83,7 +83,7 @@ internal sealed class CreatorBuildTeam
                         : "Wait for the main chat to finish before adding the report.");
                 });
             workers.Add(pane);
-            var tab = new TabItem { Header = name, Content = pane.View };
+            var tab = CreatorWindow.ConversationTab(name, pane.View);
             conversations.Items.Add(tab);
             conversations.SelectedItem = tab;
             status(null);

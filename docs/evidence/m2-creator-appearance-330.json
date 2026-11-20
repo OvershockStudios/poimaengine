@@ -1,0 +1,74 @@
+{
+  "engine_version": "0.0.330",
+  "windows_desktop": {
+    "frontend_sha256": "09c47ff0c9abe8a46535dedb8dcc94176383a6a9293b0a9713934cd003ea2488",
+    "native_cli_sha256": "88ae362d4672a946b0ee289deb29df83d05e672dfad95a9ff713a4bdabf1968c",
+    "desktop_bridge_sha256": "33c386f5dadc911a864b9fe288db784881a8c44c4e86a3af155aa43e3ebf8ef3",
+    "editor_apphost_sha256": "64726038f804825f246ba4890ed1bb0f922ab83c8f3141f3d659c0b5caae07bc",
+    "scripted_provider_sha256": "a86cbf0b22236e86c438defd9c7649351cee24eac0fb0f6bb21b12860d8bc3b4"
+  },
+  "native_preview": {
+    "first_preview": {
+      "frames": 4,
+      "tick": 5,
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "validation_errors": 0
+    },
+    "reopened_preview": {
+      "frames": 4,
+      "tick": 5,
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "validation_errors": 0
+    }
+  },
+  "scripted_provider_ui": {
+    "adaptive_questions": {
+      "exact_reply_verified_by_peer": true,
+      "custom_unicode": true,
+      "rejected_other_thread": true,
+      "no_automatic_answer": true,
+      "project_unchanged": true,
+      "card_retired": true
+    },
+    "read_only_specialists": true,
+    "editable_workers": {
+      "independent_concurrent_work": true,
+      "handoff_left_draft_unsent": true,
+      "stop_retired_only_one_worker": true,
+      "project_unchanged": true,
+      "closed_creator_joined_build_workers": true
+    },
+    "creator_natural_exit": true
+  },
+  "owned_window_captures": {
+    "disconnected": {
+      "width": 1493,
+      "height": 997,
+      "sha256": "c3ecfafd9379ace2b9e6784ba6b979c52460c37e22626a8119491b8cb9115bab"
+    },
+    "main_chat": {
+      "width": 1493,
+      "height": 997,
+      "sha256": "86bebd0b028b3b6a786811215bbb5225bd45957b3776fa7742788a0107d6f1d7"
+    },
+    "worker_report": {
+      "width": 1493,
+      "height": 997,
+      "sha256": "5d82a489750f4cb4ff8d369038f47bec9c5ae055187170732ce330d7e0d49b3f"
+    },
+    "playing": {
+      "width": 1493,
+      "height": 997,
+      "sha256": "af344b64331dadc4af2f421016cbb00ec532897911a24ced6c370ed3e36800d2"
+    }
+  },
+  "development_failures": [
+    "The first style probe matched a text-only tab label in UI Automation. The corrected template keeps accessible names on the selectable TabItem controls."
+  ],
+  "scope": "The packaged creator was visually inspected on the development laptop. The agent tests used scripted provider peers. Live provider behavior, a user study and clean-machine launcher delivery were not tested in this run.",
+  "reproduction": [
+    "Publish the Windows desktop with scripts/build_desktop.py and the AgentRpc fixture for win-x64.",
+    "Run tests/creator_workspace.ps1 with -CodexReviews and -WithBuildWorkers. Run again with -CodexQuestions.",
+    "Capture the owned creator window during initial setup, Play, Main chat and a worker report. Compare native frame records with the actual playing view."
+  ]
+}

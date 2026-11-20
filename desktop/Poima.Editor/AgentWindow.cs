@@ -92,36 +92,38 @@ internal sealed class AgentChat : UserControl
             allowEdits.IsChecked = false;
             allowEdits.Content = "Allow Poima world calls without asking";
             ToolTip.SetTip(allowEdits, "Pre-approve Codex calls to Poima's world tools for this connection.");
-            setup.Children.Add(new TextBlock { Text = "Game conversation", FontSize = 20, FontWeight = FontWeight.SemiBold });
-            setup.Children.Add(new TextBlock { Text = "Connect with your agent’s sign-in. Start with your idea and agree on what you’ll build.", TextWrapping = TextWrapping.Wrap });
-            if (gameplayToolStatus is not null)
-                setup.Children.Add(new TextBlock { Text = gameplayToolStatus, TextWrapping = TextWrapping.Wrap });
-            setup.Children.Add(provider);
             var settings = new StackPanel { Spacing = 6 };
             settings.Children.Add(executable); settings.Children.Add(agyExecutable); settings.Children.Add(claudeExecutable);
             settings.Children.Add(model); settings.Children.Add(thread);
-            var options = new Expander { Header = "Connection settings", Content = settings };
-            AutomationProperties.SetName(options, "Connection settings");
-            setup.Children.Add(options);
-            setup.Children.Add(allowEdits);
+            settings.Children.Add(allowEdits);
+            if (gameplayToolStatus is not null)
+                settings.Children.Add(new TextBlock { Text = gameplayToolStatus, TextWrapping = TextWrapping.Wrap });
             if (gameplayToolContext is not null)
             {
                 AutomationProperties.SetName(allowSourceEdits, "Agent allow source edits");
                 ToolTip.SetTip(allowSourceEdits, "Pre-approve guarded C# source writes for this Codex connection.");
-                setup.Children.Add(allowSourceEdits);
+                settings.Children.Add(allowSourceEdits);
                 AutomationProperties.SetName(allowBuilds, "Agent allow gameplay builds");
                 ToolTip.SetTip(allowBuilds, "Authorize Codex to run the configured project build tools and attach their outputs for this connection.");
-                setup.Children.Add(allowBuilds);
+                settings.Children.Add(allowBuilds);
                 AutomationProperties.SetName(allowChecks, "Agent allow gameplay checks");
                 ToolTip.SetTip(allowChecks, "Authorize Codex to edit the checks used to verify this project's exported game.");
-                setup.Children.Add(allowChecks);
+                settings.Children.Add(allowChecks);
             }
             var connection = new WrapPanel { ItemSpacing = 8, LineSpacing = 8 };
+            provider.MinWidth = 128;
+            connection.Children.Add(provider);
             connection.Children.Add(connect); connection.Children.Add(disconnect); connection.Children.Add(getAgent);
             connection.Children.Add(signIntoClaude);
             connection.Children.Add(signIntoAntigravity);
             connection.Children.Add(newChat);
             setup.Children.Add(connection);
+            var options = new Expander { Header = "Connection settings", Content = settings };
+            AutomationProperties.SetName(options, "Connection settings");
+            setup.Children.Add(options);
+            disconnect.IsVisible = stop.IsVisible = false;
+            send.Classes.Add("primary");
+            transcript.Classes.Add("conversation");
         }
         else
         {
@@ -322,6 +324,12 @@ internal sealed class AgentChat : UserControl
         getAgent.IsEnabled = signIntoClaude.IsEnabled = connect.IsEnabled;
         signIntoAntigravity.IsEnabled = !Busy && !closing;
         disconnect.IsEnabled = live && !Busy;
+        if (creator)
+        {
+            connect.IsVisible = !live;
+            disconnect.IsVisible = live;
+            stop.IsVisible = activeTurn is not null || submitting;
+        }
         provider.IsEnabled = executable.IsEnabled = agyExecutable.IsEnabled = claudeExecutable.IsEnabled =
             engine.IsEnabled = model.IsEnabled = connect.IsEnabled;
         thread.IsReadOnly = !connect.IsEnabled; thread.IsEnabled = !closing;

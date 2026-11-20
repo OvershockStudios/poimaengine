@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.330
+
+- Refresh the creator workspace with a wine palette, compact connection controls, clearer conversation layout and an idle preview state.
+
 ## 0.0.329
 
 - Give Codex workers separate editable scene drafts beside the main creator chat. Send tasks, follow up and bring completed reports back to the lead.

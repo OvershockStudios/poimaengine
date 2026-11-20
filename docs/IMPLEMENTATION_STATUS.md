@@ -1,8 +1,18 @@
 # Implementation status
 
-Updated 2026-11-20 for **0.0.329**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-20 for **0.0.330**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.330 refreshes the Windows creator workspace. The conversation
+has a compact connection bar, expandable settings and a persistent
+composer. Main chat and worker tabs use wine accents with an understated
+selection line. The preview has an idle state and shows **Stop** during
+play. Windows automation checked actual Vulkan Play, question cards,
+specialist review and editable worker drafts. Owned window captures were
+inspected at the default window size. First-time creator and clean Windows
+launcher qualification remain open.
+[Results](evidence/m2-creator-appearance-330.json)
 
 Version 0.0.329 adds [editable worker tabs](WINDOWS_PREVIEW.md#assign-scene-work-to-a-draft)
 to the Codex creator workspace. Each worker opens a separate

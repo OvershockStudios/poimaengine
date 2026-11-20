@@ -36,7 +36,7 @@ internal sealed class CreatorReviews
             new("Specialist 1", "What should this reviewer check?", OpenReview, EnsureCurrent, UpdateControls),
             new("Specialist 2", "Give this reviewer a different part of the scene.", OpenReview, EnsureCurrent, UpdateControls),
         ];
-        Tabs = panes.Select(pane => new TabItem { Header = pane.Name, Content = pane.View }).ToArray();
+        Tabs = panes.Select(pane => CreatorWindow.ConversationTab(pane.Name, pane.View)).ToArray();
         var actions = new WrapPanel { ItemSpacing = 8, LineSpacing = 6, Children = { use, refresh } };
         Footer = new StackPanel { Spacing = 8, Margin = new Thickness(14, 8, 14, 14), Children = { scopeNote, actions } };
 
@@ -159,6 +159,8 @@ internal sealed class CreatorReviews
             AutomationProperties.SetName(task, editableDraft ? "Worker task" : "Specialist task");
             AutomationProperties.SetName(transcript, editableDraft ? "Worker report" : "Specialist findings");
             AutomationProperties.SetAutomationId(status, editableDraft ? "worker-status" : "specialist-status");
+            transcript.Classes.Add("conversation");
+            ask.Classes.Add("primary");
             var buttons = new WrapPanel { ItemSpacing = 8, Children = { ask, stop } };
             if (useReport is not null)
             {
@@ -166,11 +168,11 @@ internal sealed class CreatorReviews
                 handoff.Click += (_, _) => { if (Finding is { } report) useReport(report); };
                 buttons.Children.Add(handoff);
             }
-            var root = new Grid { RowDefinitions = new RowDefinitions("Auto,Auto,Auto,*"), RowSpacing = 8, Margin = new Thickness(14) };
-            root.Children.Add(task);
-            Grid.SetRow(buttons, 1); root.Children.Add(buttons);
-            Grid.SetRow(status, 2); root.Children.Add(status);
-            Grid.SetRow(transcript, 3); root.Children.Add(transcript);
+            var root = new Grid { RowDefinitions = new RowDefinitions("Auto,*,Auto,Auto"), RowSpacing = 8, Margin = new Thickness(14) };
+            root.Children.Add(status);
+            Grid.SetRow(transcript, 1); root.Children.Add(transcript);
+            Grid.SetRow(task, 2); root.Children.Add(task);
+            Grid.SetRow(buttons, 3); root.Children.Add(buttons);
             View = root;
             ask.Click += async (_, _) =>
             {

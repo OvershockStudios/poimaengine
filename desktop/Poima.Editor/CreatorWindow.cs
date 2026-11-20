@@ -9,6 +9,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Controls.Templates;
 using Avalonia.Layout;
+using Avalonia.Markup.Xaml.Styling;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
@@ -40,7 +41,12 @@ internal sealed class CreatorWindow : Window
     private readonly Button addBuildWorker = new() { Content = "Add build worker" };
     private readonly TextBlock status = new() { TextWrapping = TextWrapping.Wrap };
     private readonly TextBlock verifiedPlayStatus = new() { TextWrapping = TextWrapping.Wrap, IsVisible = false };
-    private readonly Border viewport = new() { Background = EditorTheme.Brush("#161518"), ClipToBounds = true };
+    private readonly Border viewport = new() { Background = EditorTheme.Brush("#190F14"), ClipToBounds = true };
+    private readonly StackPanel emptyPreview = new()
+    {
+        Spacing = 12, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center,
+        IsHitTestVisible = false
+    };
     private bool starting, waitingForPreviewFrame, exporting, closeRequested, verifiedPlayActive, closing, allowClose;
     private bool agentWasBusy, toolsReadyForReopen, ownerDisposed;
     private (ProjectLocation Project, LaunchOptions Options)? reopen;
@@ -71,8 +77,10 @@ internal sealed class CreatorWindow : Window
         FontFamily = new FontFamily("avares://Poima.Editor/Assets#Inter");
         FontSize = 14;
         UseLayoutRounding = true;
-        Background = EditorTheme.Brush("#19191C");
-        Foreground = EditorTheme.Brush("#F2EDEE");
+        Background = EditorTheme.Brush("#211016");
+        Foreground = EditorTheme.Brush("#F7E8EB");
+        Styles.Add(new StyleInclude(new Uri("avares://Poima.Editor/"))
+        { Source = new Uri("avares://Poima.Editor/Themes/CreatorControls.axaml") });
         host = new NativeHost(project.World, options.Endpoint, options.Gpu, options.Samples, options.ActiveDevelopmentProfiles);
         try
         {
@@ -217,11 +225,10 @@ internal sealed class CreatorWindow : Window
 
     private Control BuildContent()
     {
-        var title = new StackPanel { Spacing = 4 };
-        title.Children.Add(new TextBlock { Text = project.Name, FontSize = 24, FontWeight = FontWeight.SemiBold, TextTrimming = TextTrimming.CharacterEllipsis });
-        title.Children.Add(new TextBlock { Text = project.Root, FontSize = 12, Foreground = EditorTheme.Brush("#B4ACB2"),
-            TextTrimming = TextTrimming.CharacterEllipsis });
-        var root = new Grid { RowDefinitions = new RowDefinitions("Auto,*"), Margin = new Thickness(24), RowSpacing = 20 };
+        var title = new TextBlock { Text = project.Name, FontSize = 26, FontWeight = FontWeight.SemiBold,
+            TextTrimming = TextTrimming.CharacterEllipsis, VerticalAlignment = VerticalAlignment.Center };
+        ToolTip.SetTip(title, project.Root);
+        var root = new Grid { RowDefinitions = new RowDefinitions("Auto,*"), Margin = new Thickness(24), RowSpacing = 18 };
         var heading = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto"), ColumnSpacing = 16 };
         heading.Children.Add(title);
         var projectActions = new WrapPanel { ItemSpacing = 8, VerticalAlignment = VerticalAlignment.Top,
@@ -230,7 +237,7 @@ internal sealed class CreatorWindow : Window
         heading.Children.Add(projectActions);
         root.Children.Add(heading);
         var panels = new Grid { ColumnDefinitions = new ColumnDefinitions("5*,7*"), ColumnSpacing = 16 };
-        conversations.Items.Add(new TabItem { Header = "Main chat", Content = chat });
+        conversations.Items.Add(ConversationTab("Main chat", chat));
         conversations.SelectedIndex = 0;
         conversations.SelectionChanged += (_, _) =>
         {
@@ -238,14 +245,13 @@ internal sealed class CreatorWindow : Window
                 team.Footer.IsVisible = conversations.SelectedItem is TabItem selected && team.Tabs.Contains(selected);
         };
         conversationArea.Children.Add(conversations);
-        panels.Children.Add(Card(conversationArea));
-        var preview = new Grid { RowDefinitions = new RowDefinitions("Auto,*,Auto"), RowSpacing = 12, Margin = new Thickness(16) };
+        panels.Children.Add(conversationArea);
+        var preview = new Grid { RowDefinitions = new RowDefinitions("Auto,*,Auto"), RowSpacing = 14, Margin = new Thickness(16) };
         var bar = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto") };
         bar.Children.Add(new TextBlock { Text = "Game preview", FontSize = 20,
             FontWeight = FontWeight.SemiBold, VerticalAlignment = VerticalAlignment.Center });
         var transport = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
-        play.Background = EditorTheme.Brush("#722F37");
-        play.Foreground = EditorTheme.Brush("#F7E8EB");
+        play.Classes.Add("primary");
         AutomationProperties.SetName(play, "Play project");
         AutomationProperties.SetName(stop, "Stop preview");
         AutomationProperties.SetName(export, "Export Windows build");
@@ -254,7 +260,11 @@ internal sealed class CreatorWindow : Window
         transport.Children.Add(export);
         Grid.SetColumn(transport, 1); bar.Children.Add(transport);
         preview.Children.Add(bar);
-        Grid.SetRow(viewport, 1); preview.Children.Add(viewport);
+        var previewSurface = new Grid { Children = { viewport, emptyPreview } };
+        emptyPreview.Children.Add(EditorIcons.Make("play", 28));
+        emptyPreview.Children.Add(new TextBlock { Text = "Preview will appear here", Foreground = EditorTheme.Brush("#EBC7CE"),
+            HorizontalAlignment = HorizontalAlignment.Center });
+        Grid.SetRow(previewSurface, 1); preview.Children.Add(previewSurface);
         AutomationProperties.SetAutomationId(status, "preview-status");
         AutomationProperties.SetAutomationId(verifiedPlayStatus, "verified-play-status");
         var result = new StackPanel { Spacing = 8 };
@@ -276,8 +286,16 @@ internal sealed class CreatorWindow : Window
         return root;
     }
 
-    private static Border Card(Control child) => new() { Child = child, Background = EditorTheme.Brush("#232125"),
-        BorderBrush = EditorTheme.Brush("#41383E"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(8) };
+    private static Border Card(Control child) => new() { Child = child, Background = EditorTheme.Brush("#2B1A23"),
+        BorderBrush = EditorTheme.Brush("#513641"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(9),
+        ClipToBounds = true };
+
+    internal static TabItem ConversationTab(string name, Control content)
+    {
+        var tab = new TabItem { Header = name, Content = content };
+        AutomationProperties.SetName(tab, name);
+        return tab;
+    }
 
     private async Task ImportAssetsAsync()
     {
@@ -762,6 +780,8 @@ internal sealed class CreatorWindow : Window
         var canPreview = ready && !verifiedPlayActive && model.RuntimeId is null;
         play.IsEnabled = canPreview && !chat.Busy;
         stop.IsEnabled = ready && !chat.Busy && model.RuntimeId is not null;
+        stop.IsVisible = model.RuntimeId is not null;
+        emptyPreview.IsVisible = previewSession is null && !starting;
         export.IsEnabled = play.IsEnabled;
         importAssets.IsEnabled = play.IsEnabled;
         reviewSpecialists.IsEnabled = ready && (specialistReviews is not null || chat.ReviewClient is not null);

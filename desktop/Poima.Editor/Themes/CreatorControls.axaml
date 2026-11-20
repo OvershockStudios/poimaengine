@@ -1,0 +1,79 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <Style Selector="Button">
+    <Setter Property="MinHeight" Value="34"/>
+    <Setter Property="Padding" Value="12,7"/>
+    <Setter Property="Background" Value="Transparent"/>
+    <Setter Property="Foreground" Value="#F7E8EB"/>
+    <Setter Property="BorderBrush" Value="Transparent"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="CornerRadius" Value="5"/>
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Name="CreatorButton" Background="{TemplateBinding Background}"
+                BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"
+                CornerRadius="{TemplateBinding CornerRadius}">
+          <ContentPresenter Name="PART_ContentPresenter" Content="{TemplateBinding Content}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}" Padding="{TemplateBinding Padding}"
+                            HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+                            RecognizesAccessKey="True"/>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+  </Style>
+  <Style Selector="Button.primary">
+    <Setter Property="Background" Value="#722F37"/>
+    <Setter Property="BorderBrush" Value="#A45C69"/>
+  </Style>
+  <Style Selector="Button:pointerover /template/ Border#CreatorButton">
+    <Setter Property="Background" Value="#39252F"/>
+  </Style>
+  <Style Selector="Button.primary:pointerover /template/ Border#CreatorButton">
+    <Setter Property="BorderBrush" Value="#D46A7E"/>
+    <Setter Property="Background" Value="#722F37"/>
+  </Style>
+  <Style Selector="Button:pressed /template/ Border#CreatorButton">
+    <Setter Property="Background" Value="#4F1A23"/>
+  </Style>
+  <Style Selector="Button:focus-visible /template/ Border#CreatorButton">
+    <Setter Property="BorderBrush" Value="#D46A7E"/>
+  </Style>
+  <Style Selector="Button:disabled"><Setter Property="Opacity" Value="0.55"/></Style>
+  <Style Selector="TabItem">
+    <Setter Property="Foreground" Value="#EBC7CE"/>
+    <Setter Property="Padding" Value="10,7"/>
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Name="CreatorTab" BorderThickness="0,0,0,2" BorderBrush="Transparent">
+          <ContentPresenter Content="{TemplateBinding Header}" ContentTemplate="{TemplateBinding HeaderTemplate}"
+                            Padding="{TemplateBinding Padding}" HorizontalContentAlignment="Center"
+                            VerticalContentAlignment="Center"/>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+  </Style>
+  <Style Selector="TabItem:pointerover /template/ Border#CreatorTab">
+    <Setter Property="Background" Value="#39252F"/>
+  </Style>
+  <Style Selector="TabItem:selected /template/ Border#CreatorTab">
+    <Setter Property="BorderBrush" Value="#D46A7E"/>
+  </Style>
+  <Style Selector="TabItem:focus-visible /template/ Border#CreatorTab"><Setter Property="BorderBrush" Value="#D46A7E"/></Style>
+  <Style Selector="TextBox">
+    <Setter Property="Background" Value="#20141B"/>
+    <Setter Property="Foreground" Value="#F7E8EB"/>
+    <Setter Property="PlaceholderForeground" Value="#C5AAB5"/>
+    <Setter Property="BorderBrush" Value="#624451"/>
+    <Setter Property="CornerRadius" Value="7"/>
+    <Setter Property="Padding" Value="11,8"/>
+    <Setter Property="CaretBrush" Value="#F7E8EB"/>
+    <Setter Property="SelectionBrush" Value="#722F37"/>
+  </Style>
+  <Style Selector="TextBox:focus /template/ Border#border"><Setter Property="BorderBrush" Value="#D46A7E"/></Style>
+  <Style Selector="TextBox.conversation">
+    <Setter Property="Background" Value="Transparent"/>
+    <Setter Property="BorderThickness" Value="0"/>
+    <Setter Property="Padding" Value="2,6"/>
+  </Style>
+  <Style Selector="CheckBox /template/ Border#border"><Setter Property="CornerRadius" Value="4"/></Style>
+</Styles>

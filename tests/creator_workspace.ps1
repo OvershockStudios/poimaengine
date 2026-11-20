@@ -245,12 +245,18 @@ function Select-ComboValue($Label, $Name) {
 
 function Select-AgentProvider($Name) { Select-ComboValue 'Agent provider' $Name }
 
-function Set-AgentExecutable($Control, $Path, [switch]$AllowMissing) {
+function Open-AgentSettings {
     $settings = Wait-For 'Connection settings' { Find-Control 'Connection settings' -Enabled }
-    $settings.GetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern).Expand()
+    $expander = $settings.GetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern)
+    $expander.Expand()
+    return $expander
+}
+
+function Set-AgentExecutable($Control, $Path, [switch]$AllowMissing) {
+    $settings = Open-AgentSettings
     $absolute = if ($AllowMissing) { [System.IO.Path]::GetFullPath($Path) } else { (Resolve-Path -LiteralPath $Path).Path }
     Set-ControlText $Control $absolute
-    $settings.GetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern).Collapse()
+    $settings.Collapse()
 }
 
 function Send-CodexPrompt($Prompt, [scriptblock]$AfterSubmit) {
@@ -301,12 +307,14 @@ function Exercise-CodexBrief($Project) {
 function Exercise-CodexToolApproval($Project) {
     Select-AgentProvider 'Codex'
     if ($CodexExecutable) { Set-AgentExecutable 'Codex executable' $CodexExecutable }
+    $settings = Open-AgentSettings
     foreach ($controlName in 'Agent allow world edits', 'Agent allow source edits', 'Agent allow gameplay builds', 'Agent allow gameplay checks') {
         $control = Find-Control $controlName -Enabled
         if ($control -and $control.GetCurrentPattern([Windows.Automation.TogglePattern]::Pattern).Current.ToggleState -ne 'Off') {
             throw "Unexpected blanket authorization for $controlName."
         }
     }
+    $settings.Collapse()
     Invoke-Control 'Agent Connect'
     $null = Wait-For 'the connected Codex conversation for tool approval' { Find-Control 'Agent Send' -Enabled } 65
     foreach ($decision in 'Decline', 'Approve once') {
@@ -1499,12 +1507,14 @@ function Verify-CodexRetainedLowerJump($Project, $Passing) {
 
     Select-AgentProvider 'Codex'
     if ($CodexExecutable) { Set-AgentExecutable 'Codex executable' $CodexExecutable }
+    $settings = Open-AgentSettings
     foreach ($controlName in 'Agent allow world edits', 'Agent allow gameplay builds') {
         $control = Wait-For $controlName { Find-Control $controlName -Enabled }
         $toggle = $control.GetCurrentPattern([Windows.Automation.TogglePattern]::Pattern)
         if ($toggle.Current.ToggleState -ne 'Off') { throw "Unexpected existing grant for $controlName." }
         $toggle.Toggle()
     }
+    $settings.Collapse()
     Invoke-Control 'Agent Connect'
     $null = Wait-For 'the installed Codex connection' { Find-Control 'Agent Send' -Enabled } 65
     $prompt = ('I approve one change to my already playable first-person room. Lower the player jump speed from 5 to 3 m/s. ' +
