@@ -3,6 +3,7 @@ namespace {
 constexpr auto checkpoint_name = "checkpoint.json";
 constexpr auto check_report_name = "checks.json";
 constexpr auto candidate_report_name = "candidate-checks.json";
+constexpr auto project_draft_marker = ".poima-draft.json";
 
 fs::path history_root(const Project& source) {
     return source.root.parent_path()/".poima-history"/id(source.spec.at("project_id"));
@@ -23,7 +24,8 @@ std::vector<std::string> editable_files(const Project& project) {
     for (const auto& path : {project.world, project.profile}) {
         if (path.empty()) continue;
         const auto name = folded(text(path.lexically_relative(project.root)));
-        for (const auto* suffix : {".lock", ".pending", ".previous"}) sidecars.insert(name + suffix);
+        for (const auto* suffix : {".lock", ".pending", ".previous", ".previous.pending"})
+            sidecars.insert(name + suffix);
     }
     const auto root = project_io_path(project.root);
     std::vector<std::string> files;
@@ -58,23 +60,29 @@ std::vector<std::string> editable_files(const Project& project) {
     return files;
 }
 
-struct Checkpoint {
+struct SourceCheckpoint {
     fs::path root;
     Project source;
     Json files;
+    std::string source_sha256;
+};
+
+struct Checkpoint : SourceCheckpoint {
     Json report;
     VerifiedGame game;
     std::string report_sha256;
     std::string snapshot_sha256;
 };
 
-Checkpoint read_checkpoint(const fs::path& checkpoint,const char* report_name,
-    const std::string& expected_report={}) {
-    const auto root = fs::absolute(checkpoint).lexically_normal().parent_path();
-    plain_directory(root);
+SourceCheckpoint read_source_checkpoint(const fs::path& checkpoint,const std::string& expected_source={}) {
+    const auto requested=fs::absolute(checkpoint).lexically_normal().parent_path();
+    plain_directory(requested);
+    const auto root=canonical_project_path(requested);
     require(checkpoint.filename() == checkpoint_name, "Expected a checkpoint.json file.");
     require(!fs::exists(project_io_path(root / ".poima-incomplete")), "Checkpoint publication is incomplete.");
     const auto info_bytes = read(contained(root, checkpoint_name), 4 * 1024 * 1024);
+    const auto source_sha256=hash(info_bytes);
+    require(expected_source.empty() || expected_source==source_sha256,"The base source checkpoint changed.");
     const auto info = parse(info_bytes);
     fields(info, {"format", "version", "project_id", "revision", "project", "files"},
         {"format", "version", "project_id", "revision", "project", "files"});
@@ -84,20 +92,8 @@ Checkpoint read_checkpoint(const fs::path& checkpoint,const char* report_name,
     const auto revision = integer(info.at("revision"));
     const auto project_name = relative_path(info.at("project"));
     require(project_name.find('/') == std::string::npos, "Checkpoint project must be a root manifest.");
-    const auto report_bytes = read(contained(root, report_name), 4 * 1024 * 1024);
-    const auto report_sha256=hash(report_bytes);
-    require(expected_report.empty() || report_sha256==expected_report,"Verification report changed after the job completed.");
-    const auto report = parse(report_bytes);
-    require(report.at("format") == "poima.game-verification-result" && integer(report.at("version")) == 1,
-        "Unsupported verification report format or version.");
-    require(report.at("project_id") == project_id && integer(report.at("revision")) == revision,
-        "Verification report belongs to a different project or revision.");
     const auto source_root = root / "source";
     plain_directory(source_root);
-    const auto suite_bytes=read(contained(source_root, suite_name), 1024 * 1024);
-    require(hash(suite_bytes) == report.at("suite_sha256").get<std::string>(),
-        "Checkpoint verification suite bytes changed.");
-    validate_game_verification_groups(report,suite_bytes);
     const auto& files = info.at("files");
     require(files.is_array() && !files.empty() && files.size() <= count_limit, "Invalid checkpoint source inventory.");
     const auto actual = file_tree(source_root);
@@ -117,6 +113,28 @@ Checkpoint read_checkpoint(const fs::path& checkpoint,const char* report_name,
     auto source = project(text(contained(source_root, project_name)));
     require(source.spec.at("project_id") == project_id && source.content.revision == revision,
         "Checkpoint source project identity differs.");
+    return {root, std::move(source), files, source_sha256};
+}
+
+Checkpoint read_checkpoint(const fs::path& checkpoint,const char* report_name,
+    const std::string& expected_report={}) {
+    auto base=read_source_checkpoint(checkpoint);
+    const auto& root=base.root;
+    const auto& source=base.source;
+    const auto report_bytes = read(contained(root, report_name), 4 * 1024 * 1024);
+    const auto report_sha256=hash(report_bytes);
+    require(expected_report.empty() || report_sha256==expected_report,"Verification report changed after the job completed.");
+    const auto report = parse(report_bytes);
+    require(report.at("format") == "poima.game-verification-result" && integer(report.at("version")) == 1,
+        "Unsupported verification report format or version.");
+    const auto project_id=id(source.spec.at("project_id"));
+    const auto revision=source.content.revision;
+    require(report.at("project_id") == project_id && integer(report.at("revision")) == revision,
+        "Verification report belongs to a different project or revision.");
+    const auto suite_bytes=read(contained(source.root, suite_name), 1024 * 1024);
+    require(hash(suite_bytes) == report.at("suite_sha256").get<std::string>(),
+        "Checkpoint verification suite bytes changed.");
+    validate_game_verification_groups(report,suite_bytes);
     plain_directory(root / "game");
     const auto verified_version = report.at("engine_version").get<std::string>();
     require(!verified_version.empty() && verified_version.size() <= 64 &&
@@ -135,7 +153,8 @@ Checkpoint read_checkpoint(const fs::path& checkpoint,const char* report_name,
     require(source.gameplay ? game.definition.gameplay_descriptor_sha256 == source.gameplay->descriptor_sha256 &&
         parse(game.definition.gameplay_values) == source.gameplay_values : game.definition.gameplay_descriptor.empty(),
         "Verified gameplay differs from the checkpoint.");
-    return {root, std::move(source), files, report, std::move(game), report_sha256, hash(hash(info_bytes)+report_sha256)};
+    const auto snapshot_sha256=hash(base.source_sha256+report_sha256);
+    return {std::move(base), report, std::move(game), report_sha256, snapshot_sha256};
 }
 
 Checkpoint verified_checkpoint(const fs::path& checkpoint,const char* report_name=check_report_name,
@@ -223,7 +242,49 @@ Reply checkpoint_project(const std::string& manifest, const std::string& output)
         exclusive_write(stage.path / checkpoint_name, bytes);
         stage.publish(checkpoint_name);
         return Json{{"checkpoint", text(stage.destination / checkpoint_name)},
-            {"source_manifest", text(stage.destination / "source" / project_name)}, {"revision", revision}, {"files", files.size()}};
+            {"source_manifest", text(stage.destination / "source" / project_name)}, {"revision", revision},
+            {"source_sha256", hash(bytes)}, {"files", files.size()}};
+    });
+}
+
+Reply draft_project(const std::string& checkpoint,const std::string& output,const std::string& expected_base) {
+    return operation("project.draft",[&]{
+        require(hexadecimal(expected_base,64),"Expected a base checkpoint SHA-256.");
+        const auto base=read_source_checkpoint(path_of(checkpoint),expected_base);
+        const auto destination=destination_path(output);
+        require(!within(destination,base.root) && !within(base.root,destination),
+            "Draft destination must be outside the base checkpoint.");
+        const auto& source=base.source;
+        const auto name=text(source.manifest.filename());
+        auto fork=source.spec;
+        do { fork["project_id"]=new_id(); } while(fork["project_id"]==source.spec.at("project_id"));
+        const Json marker={{"format","poima.project-draft"},{"version",1},
+            {"base_sha256",base.source_sha256},{"base_project_id",source.spec.at("project_id")},
+            {"base_revision",source.content.revision},{"project_id",fork.at("project_id")},{"project",name}};
+        Stage stage(text(destination));
+        require(stage.destination==destination,"Draft output parent changed before staging.");
+        Inventory inventory{stage};
+        for(const auto& entry:base.files) {
+            const auto path=entry.at("path").get<std::string>().substr(7);
+        require(folded(path.substr(0,path.find('/')))!=project_draft_marker,
+            "Base checkpoint contains a reserved draft marker.");
+            const auto original=contained(source.root,path);
+        const auto size=integer(entry.at("size"),file_limit);
+        const auto bytes=read(original,size);
+        require(bytes.size()==size && hash(bytes)==entry.at("sha256").get<std::string>(),
+                "Base source changed during draft creation: "+path);
+            inventory.add(path,path==name ? fork.dump(2)+"\n" : bytes,"source",
+                fs::status(project_io_path(original)).permissions());
+        }
+        inventory.add(project_draft_marker,marker.dump(2)+"\n","draft");
+        const auto copy=project(text(stage.path/name));
+        require(copy.spec==fork && copy.world_bytes==source.world_bytes && copy.profile_bytes==source.profile_bytes &&
+            copy.gameplay_bytes==source.gameplay_bytes,"Draft project dependency validation failed.");
+        stage.publish(name);
+        return Json{{"manifest",text(stage.destination/name)},{"draft",text(stage.destination/project_draft_marker)},
+            {"project_id",fork.at("project_id")},{"base_project_id",source.spec.at("project_id")},
+            {"base_sha256",base.source_sha256},{"base_revision",source.content.revision},
+            {"revision",copy.content.revision}};
     });
 }
 

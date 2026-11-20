@@ -114,6 +114,64 @@ Source checkpoints share the project's portable path rules and budgets of
 libraries outside the editable project. Poima uses a new, staged destination
 for checkpoint and restore. An existing project or destination is preserved.
 
+## Create worker drafts and stage an integration
+
+Capture the accepted editable project once with `project checkpoint`. Use its
+returned `source_sha256` to pin the inventory. Create a draft for each worker
+in a new sibling workspace with an existing parent directory.
+
+```powershell
+poima project draft .\Base\checkpoint.json --output .\LightingDraft --expected-base-sha256 <source_sha256>
+poima project draft .\Base\checkpoint.json --output .\AudioDraft --expected-base-sha256 <source_sha256>
+```
+
+Each draft starts with the captured world revision, entity IDs, entry
+settings, assets, and gameplay files. It has its own project ID and history.
+Open the returned `manifest` in an independent owner using a unique endpoint
+name. The source checkpoint can be used before any exported build has passed.
+
+The lead selects up to ten drafts and supplies the files to take from each.
+Use the same relative path in the draft and candidate, with the SHA-256 of
+the reviewed draft file. Identical file contributions can be shared.
+Conflicting contributions to one path fail. Scene edits run through one
+ordinary `world.transact` against the captured revision. Save a request like
+the following as `changes.json`.
+
+```json
+{
+  "base_sha256": "<source_sha256>",
+  "drafts": [
+    {"manifest": "D:/Work/AudioDraft/project.poimaproject", "files": [
+      {"path": "audio/ambience.wav", "sha256": "<reviewed file SHA-256>"}
+    ]},
+    {"manifest": "D:/Work/LightingDraft/project.poimaproject", "files": []}
+  ],
+  "transaction": {
+    "request_id": "1234567890abcdef1234567890abcdef",
+    "base_revision": 2,
+    "ops": [{"op": "entity.rename", "id": "00000000000000000000000000000005", "name": "Window light"}]
+  }
+}
+```
+
+```powershell
+poima project integrate .\Base\checkpoint.json --output .\Integrated --request .\changes.json
+```
+
+The native command requires current source and selected file hashes, builds a
+separate candidate, and checks its entry and dependency closure before
+publication. Include the cooked asset payloads referenced by scene edits.
+Editable source may also be included for later reimport. A missing cooked
+asset makes the integration fail. Poima owns the candidate manifest and
+applies scene changes through the transaction. Integration accepts up to
+4,096 selected files, 1 GiB of selected data and a 1 MiB request. The
+candidate also fits the source checkpoint's file and byte limits.
+
+Use the returned candidate manifest to playtest or export the joined work. The
+candidate has its own project ID. The creator can open it separately. The
+checkpoint, draft inputs, and the live project used to make the checkpoint
+stay available for comparison.
+
 ## CLI workflow
 
 Supply a new checkpoint directory in an existing parent outside the source.

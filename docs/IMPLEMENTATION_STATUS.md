@@ -1,8 +1,20 @@
 # Implementation status
 
-Updated 2026-11-20 for **0.0.327**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-20 for **0.0.328**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.328 adds native [worker drafts and staged integration](PROJECT_RECOVERY.md#create-worker-drafts-and-stage-an-integration).
+Linux and Windows CLI tests made two independently editable drafts from a
+single source checkpoint, then applied reviewed file selections and a guarded
+scene transaction to a separate candidate. The tests checked unchanged
+source and draft inputs and rejected missing assets, stale revisions and
+conflicting file selections. The exported Windows candidate passed two
+headless gameplay checks after relocation with the source folders unavailable.
+The lead supplies the selections and transaction.
+Automatic assignment, provider-run authoring and creator activation of a
+verified integrated candidate remain open.
+[Results](evidence/m2-project-drafts-328.json)
 
 Version 0.0.327 opens two [specialist chats beside the main conversation](WINDOWS_PREVIEW.md#ask-specialists-to-review-the-scene).
 Windows automation checked overlapping reviews, follow-ups, draft handoff,

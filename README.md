@@ -1,11 +1,13 @@
 <h1><a href="https://poimaengine.com/"><img src="docs/branding/poima-wordmark.svg" alt="Poima Engine" width="208" height="77"></a></h1>
 
-**An open-source, agent-native 3D game engine.**
+**An open-source 3D game engine and agent-native creation framework.**
 
-Poima's goal is to let anyone make a game by describing it, playing a build,
-and asking for changes. Today Codex or Claude Code can edit, playtest and
-inspect games through Poima's native engine. The same projects open in the
-desktop editor. [Roadmap](docs/ROADMAP.md#product-milestones)
+Poima is designed to help anyone make a game by describing it, playing a
+build, and directing the next change. The creation framework helps turn an
+idea into a game brief and gives agents a workflow for building, playtesting,
+and revising it. The native engine runs the game and exposes what happened
+during the playtest. The same projects open in the desktop editor.
+[Roadmap](docs/ROADMAP.md#product-milestones)
 
 ## Winter Village
 

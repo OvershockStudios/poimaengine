@@ -176,7 +176,9 @@ Budgets are 4,096 payload files, 256 MiB per file and 1 GiB total payload, along
 ## Publication and immutability
 
 [Project recovery](PROJECT_RECOVERY.md) keeps a verified export paired with
-the editable source checkpoint that made it.
+the editable source checkpoint that made it. Leads can also
+[stage changes from separate worker drafts](PROJECT_RECOVERY.md#create-worker-drafts-and-stage-an-integration)
+from an editable source checkpoint.
 
 Existing output directories are never replaced. Successful creation/export reports `publication`:
 

@@ -1,0 +1,351 @@
+#!/usr/bin/env python3
+"""Exercise isolated source drafts and guarded native project integration."""
+# SPDX-License-Identifier: Apache-2.0
+import argparse
+from concurrent.futures import ThreadPoolExecutor
+import hashlib
+import json
+from pathlib import Path
+import struct
+import subprocess
+import tempfile
+import unittest
+import uuid
+import wave
+
+
+ROOT = Path(__file__).resolve().parents[1]
+CALLS = []
+MANIFEST = 'project.poimaproject'
+DRAFT_MARKER = '.poima-draft.json'
+GATE, LIGHT, CUE = (f'{number:032x}' for number in (101, 102, 103))
+
+
+def native(path):
+    path = str(path.resolve())
+    if ARGS.windows_interop:
+        return subprocess.check_output(['wslpath', '-w', path], text=True).strip()
+    return path
+
+
+def read_json(path):
+    return json.loads(path.read_bytes())
+
+
+def sha256(data):
+    return hashlib.sha256(data).hexdigest()
+
+
+def tree(root):
+    return {path.relative_to(root).as_posix(): None if path.is_dir() else path.read_bytes()
+            for path in root.rglob('*')}
+
+
+def tone(path, amplitude):
+    samples = (0, amplitude, -amplitude, 0)
+    with wave.open(str(path), 'wb') as writer:
+        writer.setparams((1, 2, 48000, len(samples), 'NONE', 'not compressed'))
+        writer.writeframes(struct.pack('<4h', *samples))
+
+
+def create(entity, name):
+    return {'op': 'entity.create', 'id': entity, 'name': name}
+
+
+def rename(entity, name):
+    return {'op': 'entity.rename', 'id': entity, 'name': name}
+
+
+def emitter(entity, asset):
+    return {'op': 'component.set', 'id': entity, 'type': 'AudioEmitter',
+            'value': {'asset': asset, 'gain': 1, 'loop': False, 'enabled': False}}
+
+
+class ProjectDraftContract(unittest.TestCase):
+    def setUp(self):
+        if ARGS.scratch_root:
+            self.root = ARGS.scratch_root / self._testMethodName
+            self.root.mkdir()
+        else:
+            scratch = ROOT / 'build/project-draft-contract'
+            scratch.mkdir(parents=True, exist_ok=True)
+            temporary = tempfile.TemporaryDirectory(dir=scratch)
+            self.addCleanup(temporary.cleanup)
+            self.root = Path(temporary.name)
+
+        self.live = self.root / 'Live project'
+        self.cli('project', 'create', native(self.live), '--name', 'Draft contract', '--gameplay')
+        self.spec = read_json(self.live / MANIFEST)
+        self.world_path = self.spec['entry']['world']
+        (self.live / 'Design.txt').write_bytes(b'Base design\n')
+        tone(self.live / 'Base.wav', 100)
+        self.base_asset = self.world(self.live, 'asset.audio.import', source='Base.wav')['asset']
+        changes = [create(GATE, 'Base gate'), create(LIGHT, 'Base light'), emitter(GATE, self.base_asset)]
+        initial_revision = self.world(self.live, 'world.inspect')['revision']
+        self.revision = self.edit(self.live, initial_revision, changes)['revision']
+        self.original = tree(self.live)
+        self.live_summary = self.inspect(self.live)
+
+        self.base = self.root / 'Base checkpoint'
+        summary = self.cli('project', 'checkpoint', native(self.live / MANIFEST), '--output', native(self.base))
+        self.checkpoint = self.base / 'checkpoint.json'
+        self.source = self.base / 'source'
+        self.base_sha256 = summary['source_sha256']
+        self.assertEqual(self.base_sha256, sha256(self.checkpoint.read_bytes()))
+        self.assertEqual(summary['revision'], self.revision)
+        self.assert_path(summary['source_manifest'], self.source / MANIFEST)
+        self.assertFalse((self.base / 'checks.json').exists())
+        sidecars = {path + suffix for path in (self.world_path, self.spec['input_profile'])
+                    for suffix in ('.lock', '.pending', '.previous')}
+        self.assertEqual(tree(self.source), {path: content for path, content in self.original.items()
+                                            if path not in sidecars})
+        self.base_bytes = tree(self.base)
+        self.assertEqual(tree(self.live), self.original)
+
+    def run_native(self, *argv, stdin=None):
+        command = [str(ARGS.binary.resolve()), *argv]
+        completed = subprocess.run(command, input=stdin, capture_output=True, text=True,
+                                   encoding='utf-8', timeout=30)
+        CALLS.append({'test': self._testMethodName, 'command': command, 'stdin': stdin,
+                      'stdout': completed.stdout, 'stderr': completed.stderr, 'exit_code': completed.returncode})
+        try:
+            reply = json.loads(completed.stdout)
+        except ValueError:
+            self.fail(f'Expected a native JSON reply for {command}: {completed.stdout}\n{completed.stderr}')
+        return completed.returncode, reply
+
+    def cli(self, *argv, error=None):
+        code, reply = self.run_native(*argv)
+        self.assertEqual(code, 4 if error else 0, reply)
+        self.assertEqual(reply['status'], 'error' if error else 'ok', reply)
+        if error:
+            diagnostic = reply['diagnostics'][0]
+            self.assertEqual(diagnostic['code'], 'project.failed', reply)
+            self.assertRegex(diagnostic['message'], '(?i)' + error)
+            return None
+        return reply['result']
+
+    def world(self, root, method, **params):
+        request = {'jsonrpc': '2.0', 'id': 1, 'method': method, 'params': params}
+        code, reply = self.run_native('world', native(root / self.world_path), stdin=json.dumps(request) + '\n')
+        self.assertEqual(code, 0, reply)
+        self.assertEqual(reply['id'], 1, reply)
+        self.assertIn('result', reply, reply)
+        return reply['result']
+
+    def inspect(self, root):
+        return self.cli('project', 'inspect', native(root / MANIFEST))
+
+    def assert_path(self, reported, expected):
+        self.assertEqual(reported.replace('\\', '/'), native(expected).replace('\\', '/'))
+
+    def assert_fork(self, root, result):
+        self.assert_path(result['manifest'], root / MANIFEST)
+        self.assertRegex(result['project_id'], '^[0-9a-f]{32}$')
+        self.assertNotEqual(result['project_id'], self.spec['project_id'])
+        self.assertEqual(result['base_sha256'], self.base_sha256)
+        self.assertEqual(result['base_revision'], self.revision)
+        self.assertEqual(read_json(root / MANIFEST), {**self.spec, 'project_id': result['project_id']})
+
+    def reject(self, error, *argv):
+        before = tree(self.root)
+        self.cli(*argv, error=error)
+        self.assertEqual(tree(self.root), before, 'A rejected command changed files or left staging directories.')
+
+    def draft(self, target, *, base_sha256=None, error=None):
+        argv = ('project', 'draft', native(self.checkpoint), '--output', native(target),
+                '--expected-base-sha256', self.base_sha256 if base_sha256 is None else base_sha256)
+        if error:
+            return self.reject(error, *argv)
+        result = self.cli(*argv)
+        self.assert_fork(target, result)
+        self.assertEqual(read_json(target / DRAFT_MARKER), {
+            'format': 'poima.project-draft', 'version': 1, 'base_sha256': self.base_sha256,
+            'base_project_id': self.spec['project_id'], 'base_revision': self.revision,
+            'project_id': result['project_id'], 'project': MANIFEST,
+        })
+        summary = self.inspect(target)
+        for field in ('entry', 'revision', 'world_sha256', 'assets'):
+            self.assertEqual(summary[field], self.live_summary[field])
+        self.assertEqual(summary['project_id'], result['project_id'])
+        untouched = {path: contents for path, contents in tree(target).items()
+                     if path not in (MANIFEST, DRAFT_MARKER)}
+        self.assertEqual(untouched, {path: contents for path, contents in tree(self.source).items()
+                                    if path != MANIFEST})
+        return result
+
+    def transaction(self, revision, ops):
+        return {'request_id': uuid.uuid4().hex, 'base_revision': revision, 'ops': ops}
+
+    def edit(self, root, revision, ops):
+        receipt = self.world(root, 'world.transact', **self.transaction(revision, ops))
+        self.assertIs(receipt['committed'], True)
+        self.assertEqual(receipt['revision'], revision + 1)
+        return receipt
+
+    def pick(self, root, *paths):
+        return {'manifest': native(root / MANIFEST),
+                'files': [{'path': path, 'sha256': sha256((root / path).read_bytes())} for path in paths]}
+
+    def integrate(self, target, request, error=None):
+        request_path = self.root / f'integrate-{uuid.uuid4().hex}.json'
+        payload = request if isinstance(request, str) else json.dumps(request) + '\n'
+        request_path.write_bytes(payload.encode('utf-8'))
+        argv = ('project', 'integrate', native(self.checkpoint), '--output', native(target),
+                '--request', native(request_path))
+        if error:
+            return self.reject(error, *argv)
+        result = self.cli(*argv)
+        self.assert_fork(target, result)
+        return result
+
+    def names(self, root, revision):
+        return {entity['id']: entity['name'] for entity in self.world(root, 'entity.query',
+                                                                   revision=revision)['entities']}
+
+    def test_two_drafts_publish_one_composed_project(self):
+        gate = self.root / 'Gate draft'
+        light = self.root / 'Light draft'
+        with ThreadPoolExecutor(max_workers=2) as workers:
+            gate_id, light_id = [result['project_id'] for result in workers.map(self.draft, (gate, light))]
+        self.assertNotEqual(gate_id, light_id)
+
+        (gate / 'Gate.txt').write_bytes(b'Gate worker design\n')
+        (light / 'Design.txt').write_bytes(b'Light worker design\n')
+        tone(gate / 'Worker.wav', 600)
+        imported = self.world(gate, 'asset.audio.import', source='Worker.wav')
+        asset = imported['asset']
+        self.assertNotEqual(asset, self.base_asset)
+        package = f'{self.world_path}.assets/{asset}.paudio'
+        self.assertEqual(sha256((gate / package).read_bytes()), asset)
+        gate_ops = [rename(GATE, 'Worker gate'), create(CUE, 'Gate cue'), emitter(CUE, asset)]
+        light_ops = [rename(LIGHT, 'Worker light')]
+        with ThreadPoolExecutor(max_workers=2) as workers:
+            gate_edit = workers.submit(self.edit, gate, self.revision, gate_ops)
+            light_edit = workers.submit(self.edit, light, self.revision, light_ops)
+            revised_gate = gate_edit.result()['revision']
+            revised_light = light_edit.result()['revision']
+
+        gate_names = self.names(gate, revised_gate)
+        light_names = self.names(light, revised_light)
+        self.assertEqual([gate_names[key] for key in (GATE, LIGHT, CUE)], ['Worker gate', 'Base light', 'Gate cue'])
+        self.assertEqual([light_names[key] for key in (GATE, LIGHT)], ['Base gate', 'Worker light'])
+        self.assertNotIn(CUE, light_names)
+        self.assertFalse((light / package).exists())
+
+        request = {'base_sha256': self.base_sha256,
+                   'drafts': [self.pick(gate, package, 'Gate.txt'), self.pick(light, 'Design.txt')],
+                   'transaction': self.transaction(self.revision, gate_ops + light_ops)}
+        missing_asset = {**request, 'drafts': [self.pick(gate, 'Gate.txt'), self.pick(light, 'Design.txt')]}
+        candidate = self.root / 'Integrated candidate'
+        self.integrate(candidate, missing_asset, error='asset|cooked|paudio')
+
+        gate_bytes, light_bytes = tree(gate), tree(light)
+        result = self.integrate(candidate, request)
+        self.assertNotIn(result['project_id'], (gate_id, light_id))
+        revision = self.revision + 1
+        self.assertEqual(result['revision'], revision)
+        self.assertIs(result['transaction']['committed'], True)
+        self.assertEqual(result['transaction']['revision'], revision)
+        selected = [selection for draft in request['drafts'] for selection in draft['files']]
+        self.assertEqual(result['merged_files'], sorted(selected, key=lambda selection: selection['path']))
+
+        candidate_bytes = tree(candidate)
+        expected = {**tree(self.source), package: gate_bytes[package], 'Gate.txt': gate_bytes['Gate.txt'],
+                    'Design.txt': light_bytes['Design.txt']}
+        for path in (MANIFEST, self.world_path):
+            self.assertNotEqual(candidate_bytes.pop(path), expected.pop(path))
+        self.assertEqual(candidate_bytes, expected)
+        summary = self.inspect(candidate)
+        self.assertEqual(summary['entry'], self.spec['entry'])
+        self.assertEqual(summary['project_id'], result['project_id'])
+        self.assertEqual(summary['revision'], revision)
+        self.assertEqual({record['sha256'] for record in summary['assets']}, {asset, self.base_asset})
+        names = self.names(candidate, revision)
+        self.assertEqual([names[key] for key in (GATE, LIGHT, CUE)], ['Worker gate', 'Worker light', 'Gate cue'])
+        cue = self.world(candidate, 'entity.get', id=CUE, component='AudioEmitter', revision=revision)
+        self.assertEqual(cue['value'], emitter(CUE, asset)['value'])
+        self.assertEqual(self.world(candidate, 'asset.audio.inspect', asset=asset), imported)
+        self.assertEqual(tree(gate), gate_bytes)
+        self.assertEqual(tree(light), light_bytes)
+        self.assertEqual(tree(self.live), self.original)
+        self.assertEqual(tree(self.base), self.base_bytes)
+
+    def test_draft_requires_verified_source_and_new_nonoverlapping_output(self):
+        target = self.root / 'Draft'
+        self.draft(target, base_sha256='0' * 64, error='base source checkpoint changed')
+        self.draft(self.base / 'Nested draft', error='overlap|outside')
+        target.mkdir()
+        (target / 'Keep.txt').write_bytes(b'Existing destination\n')
+        self.draft(target, error='exist')
+        (self.source / 'Design.txt').write_bytes(b'Corrupted checkpoint file\n')
+        self.draft(self.root / 'Draft from corrupt source', error='Design\\.txt')
+        self.assertEqual(tree(self.live), self.original)
+
+    def test_integration_rejects_unreviewed_or_unsafe_inputs(self):
+        first = self.root / 'First draft'
+        second = self.root / 'Second draft'
+        self.draft(first)
+        self.draft(second)
+        for worker, text in ((first, b'First design\n'), (second, b'Second design\n')):
+            (worker / 'Design.txt').write_bytes(text)
+        request = {'base_sha256': self.base_sha256, 'drafts': [self.pick(first, 'Design.txt')]}
+        target = self.root / 'Candidate'
+        self.integrate(target, {**request, 'base_sha256': '0' * 64}, error='base source checkpoint changed')
+        self.integrate(target, {**request, 'drafts': [*request['drafts'], self.pick(second, 'Design.txt')]},
+                       error='divergent draft files')
+        stale = self.transaction(self.revision + 1, [rename(GATE, 'Stale gate')])
+        self.integrate(target, {**request, 'transaction': stale}, error='base revision')
+
+        (first / 'Design.txt').write_bytes(b'Changed after review\n')
+        self.integrate(target, request, error='draft file hash mismatch')
+        request['drafts'] = [self.pick(first, 'Design.txt')]
+        self.integrate(first / 'Nested candidate', request, error='overlap')
+        self.integrate(self.base / 'Nested candidate', request, error='overlap|outside')
+        target.mkdir()
+        (target / 'Keep.txt').write_bytes(b'Existing candidate\n')
+        self.integrate(target, request, error='exist')
+
+        new_target = self.root / 'New candidate'
+        self.integrate(new_target, {**request, 'unknown': True}, error='unknown')
+        duplicate_key = json.dumps(request).replace('{', '{"base_sha256":null,', 1)
+        self.integrate(new_target, duplicate_key, error='duplicate')
+        preview = {**self.transaction(self.revision, [rename(GATE, 'Preview gate')]), 'preview': False}
+        self.integrate(new_target, {**request, 'transaction': preview}, error='preview')
+        self.integrate(new_target, {**request, 'drafts': [self.pick(first, self.world_path)]},
+                       error='world|authoritative')
+        marker = first / DRAFT_MARKER
+        marker_bytes = marker.read_bytes()
+        lineage = json.loads(marker_bytes)
+        marker.write_text(json.dumps({**lineage, 'base_sha256': '0' * 64}), encoding='utf-8')
+        self.integrate(new_target, request, error='lineage')
+        marker.write_bytes(marker_bytes)
+        self.assertEqual(tree(self.live), self.original)
+        self.assertEqual(tree(self.base), self.base_bytes)
+
+        (self.source / 'Design.txt').write_bytes(b'Corrupted checkpoint file\n')
+        self.integrate(new_target, request, error='Design\\.txt')
+
+
+def main():
+    global ARGS
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('binary', type=Path)
+    parser.add_argument('--windows-interop', action='store_true')
+    parser.add_argument('--scratch-root', type=Path, help='Optional new directory for retaining fixture files.')
+    parser.add_argument('--evidence', type=Path, help='Optional JSON transcript path.')
+    ARGS = parser.parse_args()
+    if ARGS.scratch_root:
+        ARGS.scratch_root.mkdir()
+    result = unittest.TextTestRunner(verbosity=2).run(unittest.defaultTestLoader.loadTestsFromTestCase(ProjectDraftContract))
+    if ARGS.evidence:
+        ARGS.evidence.parent.mkdir(parents=True, exist_ok=True)
+        evidence = {'passed': result.wasSuccessful(), 'tests': result.testsRun,
+                    'binary_sha256': sha256(ARGS.binary.read_bytes()),
+                    'test_sha256': sha256(Path(__file__).read_bytes()), 'calls': CALLS}
+        ARGS.evidence.write_text(json.dumps(evidence, indent=2) + '\n', encoding='utf-8')
+    return 0 if result.wasSuccessful() else 1
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())

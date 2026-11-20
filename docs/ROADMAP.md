@@ -1,9 +1,12 @@
 # Road to Poima 1.0
 
-Poima is for people who want to make a game and may never have made one
-before. They describe it, play what the agent builds, and direct the next
-change. Poima's native 3D engine gives the agent the same project authority,
-observations and recovery operations that power the desktop editor.
+Poima is a native 3D engine and an agent-native game-creation framework for
+people who may never have made a game. The framework asks the questions an
+experienced developer would ask, turns the answers into a brief, breaks the
+work into assignments, and verifies that the pieces work together. The
+creator describes the game, plays each build, and directs the next change.
+The engine gives agents the project operations and playtest observations
+that also power the desktop editor.
 
 The first product is a local Windows creator workspace. Its first release
 gate is a small single-player game made from a blank project and finished as
@@ -77,6 +80,13 @@ exposes a missing contract, then qualify whole-project candidate recovery and
 export. Keep closing performance, physical-input and reliability gates in
 parallel as the work permits. Installable desktop workflows establish the
 product before optional hosting.
+
+For work that can run in parallel, a lead agent coordinates independent
+project drafts. It reviews and combines their contributions in a candidate,
+then verifies the candidate against the shared brief before offering it for
+play. The target is one creator window with the lead conversation and direct
+access to the worker conversations. Assignment, integration and verification
+need to work together before qualifying a multi-agent creation run.
 
 ## Engine capability tracks
 

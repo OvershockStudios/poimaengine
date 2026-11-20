@@ -131,6 +131,27 @@ poima::Reply run(int argc, char** argv) {
         if(action=="recover" && argc==8 && *argv[3] && std::string_view(argv[4])=="--output" && *argv[5] &&
            std::string_view(argv[6])=="--expected-snapshot-sha256" && *argv[7])
             return poima::recover_project(argv[3],argv[5],argv[7]);
+        if(action=="draft" && argc==8 && *argv[3] && std::string_view(argv[4])=="--output" && *argv[5] &&
+           std::string_view(argv[6])=="--expected-base-sha256" && *argv[7])
+            return poima::draft_project(argv[3],argv[5],argv[7]);
+        if(action=="integrate" && argc==8 && *argv[3] && std::string_view(argv[4])=="--output" && *argv[5] &&
+           std::string_view(argv[6])=="--request" && *argv[7]) {
+            const std::string request=argv[7];
+            const auto path=std::filesystem::path(std::u8string(request.begin(),request.end()));
+            std::error_code error;
+            if(!std::filesystem::is_regular_file(std::filesystem::symlink_status(path,error)) || error)
+                return poima::usage_error("Draft integration requires a regular request JSON file without a symlink.");
+            std::ifstream input(path,std::ios::binary|std::ios::ate);
+            if(!input)return poima::usage_error("Cannot read draft integration request.");
+            const auto size=input.tellg();
+            if(size<=0 || size>1024*1024)return poima::usage_error("Draft integration request must contain 1 byte to 1 MiB.");
+            std::string bytes(static_cast<std::size_t>(size),'\0');
+            input.seekg(0);
+            if(!input.read(bytes.data(),static_cast<std::streamsize>(bytes.size())) ||
+               input.peek()!=std::char_traits<char>::eof())
+                return poima::usage_error("Draft integration request changed or failed during read.");
+            return poima::integrate_project_drafts(argv[3],argv[5],bytes);
+        }
         if(argc==6 && *argv[3] && *argv[5]) {
             const std::string_view flag=argv[4];
             if(action=="checkpoint" && flag=="--output")return poima::checkpoint_project(argv[3],argv[5]);

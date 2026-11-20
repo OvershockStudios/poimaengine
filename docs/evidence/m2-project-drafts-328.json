@@ -1,0 +1,76 @@
+{
+  "engine_version": "0.0.328",
+  "native_draft_contract": {
+    "linux": {
+      "native_cli_sha256": "56c7654d0c8014917e4237af9fcc0565c3fe73a0e74c9ab3a980af075adc895d",
+      "test_sha256": "780fab8f31867f5bbf3eaf456761b821df6f180db3a520aacd7478e8be996f93",
+      "tests_passed": 3,
+      "native_calls_succeeded": 36,
+      "expected_native_refusals": 18
+    },
+    "windows": {
+      "native_cli_sha256": "7d22dc03bd546402fc1fba8d64258ee2dbcd398c1586678baba7e0c5ea57ee55",
+      "test_sha256": "780fab8f31867f5bbf3eaf456761b821df6f180db3a520aacd7478e8be996f93",
+      "tests_passed": 3,
+      "native_calls_succeeded": 36,
+      "expected_native_refusals": 18
+    }
+  },
+  "refusal_diagnostics_on_both_platforms": [
+    "The base source checkpoint changed.",
+    "Draft destination must be outside the base checkpoint.",
+    "Output already exists; export never overwrites it.",
+    "Checkpoint source changed: Design.txt",
+    "The base source checkpoint changed.",
+    "Divergent draft files target the same path: Design.txt",
+    "Integration transaction base revision differs from the selected checkpoint.",
+    "Draft file hash mismatch: Design.txt",
+    "Integration output cannot overlap a draft project.",
+    "Integration output cannot overlap the base checkpoint.",
+    "Output already exists; export never overwrites it.",
+    "Unknown field: unknown",
+    "Duplicate JSON field.",
+    "Unknown field: preview",
+    "Draft selection targets a protected project path: world.json",
+    "Project draft lineage does not match the selected base checkpoint.",
+    "Checkpoint source changed: Design.txt",
+    "Asset package must be a regular file, not a link."
+  ],
+  "windows_candidate_export": {
+    "bundle_sha256": "26588dece8a3ec285db67f2ee50ae3ebdeb7381e7d07deaa1f028df8cb760c73",
+    "suite_sha256": "3179ba59966ebd0d80fa0baf3fa16b73b2f44e49747d69bb75bd4f6c66daee15",
+    "source_revision": 3,
+    "cooked_audio_files": 2,
+    "relocated_with_source_unavailable": true,
+    "headless_groups_passed": 2,
+    "headless_groups_total": 2,
+    "observed_group_names": [
+      "Integrated entities are live",
+      "Player moves in integrated project"
+    ]
+  },
+  "windows_recovery_and_share": {
+    "passed": true,
+    "source_files": 7,
+    "bundle_sha256": "343d77e8d751ec2d57b2b2f7cda2e7bccf46b2829df4a7240ce9d0253b98be08",
+    "latest_failed_groups": 2,
+    "archive_sha256": "110328429eaf4153735dfc893f9e866f6c03d1bf456463f28d1f59be88ee15b8",
+    "archive_files": 53
+  },
+  "linux_regression_tests": {
+    "asset_provenance_project_contract": "passed",
+    "mcp_contract": "passed",
+    "project_contract": "passed",
+    "project_gameplay_contract": "passed",
+    "cli_contract": "passed"
+  },
+  "development_failures": [
+    "The first Linux build failed on string-to-JSON equality in three comparisons. The revised code compares the validated string values."
+  ],
+  "scope": "Native CLI authoring, source lineage, selected-file integration, and headless verification. Worker commands were issued by the test harness. Automatic agent assignment, desktop activation, and rendered or audible review were outside this run.",
+  "reproduction": [
+    "Run tests/project_draft_contract.py with the native poima executable. Use --scratch-root and --evidence to retain the test projects and transcripts.",
+    "On Windows, export the fixture Integrated candidate/project.poimaproject from test_two_drafts_publish_one_composed_project using the installed runtime. Relocate the bundle and move the original project fixture aside. Verify the bundle using game verify from its packaged runtime. Check the local positions of entities 0x65, 0x66 and 0x67 at tick zero and move the controller forward for 15 ticks. Require its world Z position to be between 0.5 and 1.8.",
+    "Run tests/project_recovery_cli.py with the installed Windows runtime and a fresh output directory."
+  ]
+}
