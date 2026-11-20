@@ -59,6 +59,8 @@ internal sealed class LauncherWindow : Window
         actions.Children.Add(ActionButton("Open project from disk…", PickProject));
         actions.Children.Add(advanced);
         actions.Children.Add(new Expander { Header = "Project location", Content = ActionButton("Create in another folder…", ChooseFolder) });
+        if (OperatingSystem.IsWindows() && WindowsGameplayTools.HasAuthoringPack && Program.LauncherDevelopmentProfiles is null)
+            actions.Children.Add(ActionButton("Set up gameplay builds", () => new GameplaySetupWindow().ShowDialog<bool>(this)));
         if (File.Exists(ProjectFiles.PreviewSample))
             actions.Children.Add(ActionButton("Play Collection Room", PlaySample));
 

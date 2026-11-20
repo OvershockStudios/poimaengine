@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.299
+
+- Check the Windows C# build prerequisites and start Microsoft setup directly from the creator.
+
 ## 0.0.298
 
 - Install tagged Windows builds through a standalone launcher with package verification, channel updates, remembered project versions and rollback.

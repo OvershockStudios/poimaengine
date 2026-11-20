@@ -33,11 +33,16 @@ Poima or installing a separate .NET runtime.
 ## Build C# gameplay
 
 The creator package includes Poima's C# authoring SDK and its Python publisher.
-Install the x64 .NET 10 SDK and Visual Studio or Build Tools with the Desktop
-development with C++ workload, including x64 MSVC and a Windows SDK. Reopen
-the project after installing the tools. The creator reports when the tools
-are ready and supplies the build profile to the connected agent.
-[Microsoft's Native AOT prerequisites](https://learn.microsoft.com/en-us/dotnet/core/deploying/native-aot/#prerequisites)
+Choose **Set up gameplay builds** before opening a project. Poima checks for
+the x64 .NET 10 SDK, MSVC and a Windows SDK. Use the install buttons to start
+Microsoft's setup. If Visual Studio Installer opens, add **Desktop development
+with C++** with x64 MSVC and a Windows SDK, then return to Poima and select
+**Check again**. The setup window also has Microsoft download links.
+[Native AOT prerequisites](https://learn.microsoft.com/en-us/dotnet/core/deploying/native-aot/#prerequisites)
+
+If you already opened a project, select **Set up gameplay builds** in the
+creator, then **Reopen with build tools** when setup is ready. The reopened
+workspace supplies its project-scoped build profile to the connected agent.
 
 Gameplay compilation packages include a [local gameplay guide](reference/CREATOR_GAMEPLAY.md).
 [Complete gameplay tools guide](https://github.com/OvershockStudios/poimaengine/blob/main/docs/AUTHORING_TOOLS.md)

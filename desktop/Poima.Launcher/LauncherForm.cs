@@ -207,7 +207,11 @@ internal sealed class LauncherForm : Form
         var editor = Install.Executable(version) ??
             throw new InvalidOperationException($"Poima {version ?? "is not installed"}. Choose its installation folder.");
         var start = new ProcessStartInfo(editor) { WorkingDirectory = Path.GetDirectoryName(editor)! };
-        if (manifest is not null) start.ArgumentList.Add(manifest);
+        if (manifest is not null)
+        {
+            start.ArgumentList.Add("--creator");
+            start.ArgumentList.Add(manifest);
+        }
         using var launched = Process.Start(start) ?? throw new InvalidOperationException("Poima could not be started.");
     }
 

@@ -1,0 +1,92 @@
+{
+  "engine_version": "0.0.299",
+  "scope": "Windows creator setup on a machine with Microsoft tooling already installed. Missing or incomplete prerequisites and installer routing were exercised separately with fixtures. WinGet catalog lookups did not change the installation. No clean-machine or public-tag installation is implied.",
+  "release_artifacts": {
+    "engine_archive": {
+      "bytes": 141165944,
+      "sha256": "55e3a75dccd4a4dd9c3a7e3031ca901dbbccb5f4f1ff6886e38c208e00c2513a"
+    },
+    "engine_inventory": {
+      "bytes": 89315,
+      "sha256": "880477b04def80449a9a6822ded49f801c8fa573b6c7336d6c79c3f21c23e56b"
+    },
+    "launcher_archive": {
+      "bytes": 46175415,
+      "sha256": "913b056f043f4136ff19c49fb8bc4f803121255ddad0b94cb18cc6ea74b8631d"
+    },
+    "file_count": 499,
+    "authoring_pack": {
+      "engine_version": "0.0.299",
+      "manifest_sha256": "32744d7891d45bf39a51ebacffe4d246a84d469e480a4a2bf39f5abd7c512043",
+      "files": 17
+    }
+  },
+  "prerequisite_checks": {
+    "passed": true,
+    "real_windows_prerequisites_ready": true,
+    "windows_sdk": "10.0.26100.0",
+    "winget_available": true,
+    "microsoft_installers_started": 0,
+    "cases": [
+      "fully_missing_prerequisites",
+      "invalid_dotnet_pe_and_older_sdk",
+      "complete_msvc_fallback",
+      "complete_windows_sdk_fallback",
+      "exact_winget_packages",
+      "existing_visual_studio_route",
+      "vendor_download_fallback"
+    ]
+  },
+  "vendor_catalog": {
+    "Microsoft.DotNet.SDK.10": "10.0.404",
+    "Microsoft.VisualStudio.2022.BuildTools": "17.14.45",
+    "windows_package_manager_show_exit_codes": [
+      0,
+      0
+    ]
+  },
+  "creator": {
+    "method": "Windows UI Automation and an owned WM_CLOSE message",
+    "setup": {
+      "ready_tools_show_no_install_action": true,
+      "repeat_check_ready": true,
+      "existing_toolchain_recognized": true
+    },
+    "profile": {
+      "workspace_generated_profile": true,
+      "profile_is_project_scoped": true,
+      "python": "Python 3.13.17",
+      "dotnet": "10.0.404",
+      "msvc": "14.44.35207",
+      "windows_sdk": "10.0.26100.0",
+      "authoring_manifest_sha256": "32744d7891d45bf39a51ebacffe4d246a84d469e480a4a2bf39f5abd7c512043"
+    },
+    "new_project_source": {
+      "code_sha256": "80122812c1bfe3364bbe98fb2d5efaff788fb8ff2f44b2ad980cbac7e99a556a",
+      "project_sha256": "03fb8fb8304b9d6b50d7087db7562aa173df3e3fd3df917e6477052f12a0a02e",
+      "scene_revision": 1
+    },
+    "gameplay_backend": "native_aot",
+    "publication_ms": 16354,
+    "native_job_cleanup_requests": 1,
+    "preview": {
+      "tick": 2,
+      "frames": 1,
+      "revision": 1,
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "validation_errors": 0
+    },
+    "natural_close": true
+  },
+  "relocated_export": {
+    "original_source_unavailable": true,
+    "files": 60,
+    "checks_passed": 5,
+    "report": {
+      "bytes": 2008,
+      "sha256": "d211edaa4c4b97e2a4c83758d87de38a999df127c06af3f7aeb95d9dd27d924f"
+    },
+    "bundle_sha256": "3055a11a93d67aaedfc673724dd5d6a5c83dc7986a2c17bf1e6453fd8b39fcef"
+  },
+  "first_ui_harness_failure": "The desktop UI Automation root query did not include the owned setup dialog. The same archive passed after the harness enumerated visible handles belonging to the exact editor process."
+}

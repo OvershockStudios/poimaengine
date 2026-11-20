@@ -1,8 +1,17 @@
 # Implementation status
 
-Updated 2026-11-20 for **0.0.298**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-20 for **0.0.299**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.299 adds [Windows gameplay setup](WINDOWS_PREVIEW.md#build-c-gameplay).
+The launcher and creator can check the installed .NET, MSVC and Windows SDK
+tools and open Microsoft setup when needed. On the development laptop, the
+packaged setup recognized the installed tools. A fresh project then built
+C# to Native AOT, displayed it in Vulkan and passed five checks in a
+relocated standalone export. Fixture cases cover missing components and
+the installer routes. Actual tool installation on a clean Windows machine
+remains open. [Results](evidence/m2-windows-creator-setup-299.json)
 
 Version 0.0.298 adds a standalone [Windows launcher](WINDOWS_LAUNCHER.md).
 The installer uses Preview and Stable release tags and verifies the archive

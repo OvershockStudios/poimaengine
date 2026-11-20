@@ -7,8 +7,11 @@ these installed resources without building Poima's internal managed projects.
 Keep the pack separate from the native runtime distribution and exported games.
 
 The [Windows creator preview](WINDOWS_PREVIEW.md#build-c-gameplay) can ship
-the pack with a Python interpreter and configure gameplay compilation using
-the installed Microsoft tools when opening a project.
+the pack with a Python interpreter. Its setup window discovers the installed
+Microsoft tools, opens an existing Visual Studio Installer when C++ components
+are missing, or starts the exact Microsoft SDK or Build Tools package through
+Windows Package Manager. Poima configures the project when it opens with a
+complete toolchain. [Microsoft package commands](https://learn.microsoft.com/en-us/windows/package-manager/winget/install)
 
 Use Python 3.10+ and a matching .NET 10 SDK. CoreCLR development also needs
 the native host and an explicitly selected hostfxr from its installed .NET

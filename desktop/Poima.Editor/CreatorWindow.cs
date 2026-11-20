@@ -28,10 +28,11 @@ internal sealed class CreatorWindow : Window
     private readonly Button showChecks = new() { Content = "Open check report", IsVisible = false };
     private readonly Button restore = new() { Content = "Restore verified project as copy", IsVisible = false };
     private readonly Button openRecovered = new() { Content = "Open recovered project", IsVisible = false };
+    private readonly Button setupBuilds = new() { Content = "Set up gameplay builds", IsVisible = false };
     private readonly TextBlock status = new() { TextWrapping = TextWrapping.Wrap };
     private readonly Border viewport = new() { Background = EditorTheme.Brush("#161518"), ClipToBounds = true };
     private bool starting, exporting, closeAfterExport, verifiedPlayerRunning, closing, allowClose;
-    private bool agentWasBusy;
+    private bool agentWasBusy, toolsReadyForReopen, reopenWithTools;
     private string? exportedFolder, checkReport, checkSummary, verifiedCheckpoint, verifiedBundleHash, recoveredManifest;
     private string workDescription = "";
     private long exportedRevision;
@@ -78,6 +79,24 @@ internal sealed class CreatorWindow : Window
         showChecks.Click += (_, _) => OpenExportItem(checkReport, File.Exists);
         restore.Click += async (_, _) => await RestoreVerifiedAsync();
         openRecovered.Click += (_, _) => OpenRecoveredProject();
+        setupBuilds.IsVisible = OperatingSystem.IsWindows() && WindowsGameplayTools.HasAuthoringPack &&
+            options.ActiveDevelopmentProfiles is null;
+        setupBuilds.Click += async (_, _) =>
+        {
+            if (toolsReadyForReopen)
+            {
+                reopenWithTools = true;
+                Close();
+                if (!closing) reopenWithTools = false;
+            }
+            else if (await new GameplaySetupWindow().ShowDialog<bool>(this))
+            {
+                toolsReadyForReopen = true;
+                setupBuilds.Content = "Reopen with build tools";
+                error = "Build tools are ready. Reopening will close this conversation.";
+                UpdateControls();
+            }
+        };
         Closing += (_, args) =>
         {
             if (allowClose) return;
@@ -107,6 +126,10 @@ internal sealed class CreatorWindow : Window
             timer.Stop();
             model.Dispose();
             host.Dispose();
+            if (reopenWithTools)
+                try { using var process = Process.Start(CreatorStart(project.Manifest, reuseEndpoint: true)); }
+                catch (Exception failure) when (failure is InvalidOperationException or System.ComponentModel.Win32Exception)
+                { Console.Error.WriteLine(failure.Message); }
         };
     }
 
@@ -117,7 +140,13 @@ internal sealed class CreatorWindow : Window
         title.Children.Add(new TextBlock { Text = project.Root, FontSize = 12, Foreground = EditorTheme.Brush("#B4ACB2"),
             TextTrimming = TextTrimming.CharacterEllipsis });
         var root = new Grid { RowDefinitions = new RowDefinitions("Auto,*"), Margin = new Thickness(24), RowSpacing = 20 };
-        root.Children.Add(title);
+        setupBuilds.HorizontalAlignment = HorizontalAlignment.Right;
+        setupBuilds.VerticalAlignment = VerticalAlignment.Top;
+        var heading = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto"), ColumnSpacing = 16 };
+        heading.Children.Add(title);
+        Grid.SetColumn(setupBuilds, 1);
+        heading.Children.Add(setupBuilds);
+        root.Children.Add(heading);
         var panels = new Grid { ColumnDefinitions = new ColumnDefinitions("5*,7*"), ColumnSpacing = 16 };
         panels.Children.Add(Card(chat));
         var preview = new Grid { RowDefinitions = new RowDefinitions("Auto,*,Auto"), RowSpacing = 12, Margin = new Thickness(16) };
@@ -406,26 +435,37 @@ internal sealed class CreatorWindow : Window
         if (recoveredManifest is null || !openRecovered.IsEnabled) return;
         try
         {
-            var info = new ProcessStartInfo(Path.Combine(AppContext.BaseDirectory, "Poima.Editor.exe")) { UseShellExecute = false };
-            info.ArgumentList.Add("--creator");
-            info.ArgumentList.Add(recoveredManifest);
-            if (options.DevelopmentProfiles is not null)
-            {
-                info.ArgumentList.Add("--development-profiles");
-                info.ArgumentList.Add(options.DevelopmentProfiles);
-            }
-            if (options.SoftwareUi) info.ArgumentList.Add("--software-ui");
-            if (options.Gpu >= 0)
-            {
-                info.ArgumentList.Add("--gpu");
-                info.ArgumentList.Add(options.Gpu.ToString(CultureInfo.InvariantCulture));
-            }
-            info.ArgumentList.Add("--samples");
-            info.ArgumentList.Add(options.Samples.ToString(CultureInfo.InvariantCulture));
-            using var process = Process.Start(info) ?? throw new InvalidOperationException("Poima could not open the recovered project.");
+            using var process = Process.Start(CreatorStart(recoveredManifest)) ??
+                throw new InvalidOperationException("Poima could not open the recovered project.");
             Close();
         }
         catch (Exception failure) { error = failure.Message; UpdateControls(); }
+    }
+
+    private ProcessStartInfo CreatorStart(string manifest, bool reuseEndpoint = false)
+    {
+        var info = new ProcessStartInfo(Path.Combine(AppContext.BaseDirectory, "Poima.Editor.exe")) { UseShellExecute = false };
+        info.ArgumentList.Add("--creator");
+        info.ArgumentList.Add(manifest);
+        if (reuseEndpoint)
+        {
+            info.ArgumentList.Add("--endpoint");
+            info.ArgumentList.Add(options.Endpoint);
+        }
+        if (options.DevelopmentProfiles is not null)
+        {
+            info.ArgumentList.Add("--development-profiles");
+            info.ArgumentList.Add(options.DevelopmentProfiles);
+        }
+        if (options.SoftwareUi) info.ArgumentList.Add("--software-ui");
+        if (options.Gpu >= 0)
+        {
+            info.ArgumentList.Add("--gpu");
+            info.ArgumentList.Add(options.Gpu.ToString(CultureInfo.InvariantCulture));
+        }
+        info.ArgumentList.Add("--samples");
+        info.ArgumentList.Add(options.Samples.ToString(CultureInfo.InvariantCulture));
+        return info;
     }
 
     private async Task ProjectWork(string description, Func<Task> work, bool describeEarlierExport = true)
@@ -494,6 +534,7 @@ internal sealed class CreatorWindow : Window
         play.IsEnabled = ready && model.RuntimeId is null;
         stop.IsEnabled = ready && model.RuntimeId is not null;
         export.IsEnabled = play.IsEnabled;
+        setupBuilds.IsEnabled = play.IsEnabled;
         chat.IsEnabled = !closing && !exporting;
         playVerified.IsVisible = verifiedBundleHash is not null;
         playVerified.IsEnabled = play.IsEnabled;

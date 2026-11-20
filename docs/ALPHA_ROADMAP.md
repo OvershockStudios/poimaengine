@@ -290,8 +290,10 @@ it does not close the thirty-minute mixed-reliability or wider performance gate.
    export using the candidate release artifacts. Include a prebuilt Windows
    launcher that installs a tagged engine package and checks its selected
    release channel for updates. The [0.0.298 launcher qualification](WINDOWS_LAUNCHER.md#qualification)
-   uses the original Windows packages and a controlled feed. Complete the
-   public-release and clean-machine journey without building Poima.
+   uses the original Windows packages and a controlled feed. The
+   [0.0.299 setup qualification](evidence/m2-windows-creator-setup-299.json)
+   exercises the packaged chooser and builds on an installed toolchain.
+   Complete the public-release and clean-machine journey without building Poima.
 
 Independent source/test/review work can run in parallel. Heavy native builds
 and GPU qualification are scheduled to fit the development laptop. Findings
