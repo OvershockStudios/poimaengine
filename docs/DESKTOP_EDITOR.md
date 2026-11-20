@@ -104,6 +104,9 @@ for that project. Build products and configuration are stored in
 profile name and [installed gameplay guide](CREATOR_GAMEPLAY.md) to the agent
 on the first submission. The publisher supplies the installed SDK path when
 it compiles a project that imports from `PoimaAuthoringRoot`.
+Native AOT compiler intermediates use Windows temporary storage. The
+publisher removes them on normal exit. Published artifacts stay beside the
+project.
 
 For a custom toolchain or build location, supply an operator-configured
 [development profile](DEVELOPMENT_PROFILES.md).

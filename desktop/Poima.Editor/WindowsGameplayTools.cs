@@ -165,7 +165,9 @@ internal static class WindowsGameplayTools
         env["DOTNET_CLI_HOME"] = Directory.CreateDirectory(Path.Combine(buildRoot, "dotnet-home")).FullName;
         env["NUGET_PACKAGES"] = Environment.GetEnvironmentVariable("NUGET_PACKAGES") is { Length: > 0 } packages && Path.IsPathFullyQualified(packages)
             ? packages : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".nuget", "packages");
-        env["TMP"] = env["TEMP"] = Directory.CreateDirectory(Path.Combine(buildRoot, "temp")).FullName;
+        // Native AOT linker response paths grow below the temporary directory.
+        // Keep that work independent of the depth of the creator's project.
+        env["TMP"] = env["TEMP"] = Path.GetTempPath();
         env["DOTNET_NOLOGO"] = "1";
         env["DOTNET_CLI_TELEMETRY_OPTOUT"] = "1";
         return env;

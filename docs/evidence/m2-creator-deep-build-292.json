@@ -1,0 +1,41 @@
+{
+  "engine_version": "0.0.292",
+  "scope": "The extracted Windows creator with installed Microsoft build tools. The trial opens a retained starter in a deeply nested project path that reproduced a Native AOT link failure in 0.0.291. The scene contains a real Codex-authored edit. A scripted MCP client publishes and attaches the unmodified starter gameplay.",
+  "package": {
+    "bytes": 140787382,
+    "sha256": "316d22a8e1769576be94493e1529a2412b833d2b3bb2eed9e0b7337accc81d66"
+  },
+  "real_agent_scene": {
+    "provider": "Codex CLI 0.152.1 on Windows",
+    "authoring_engine_version": "0.0.291",
+    "native_mcp_calls": 9,
+    "guarded_transactions": 1,
+    "starting_revision": 1,
+    "committed_revision": 2,
+    "new_entities": [
+      "Breaker",
+      "Radio"
+    ],
+    "preserved_existing_entities": 5,
+    "command_or_file_change_events": 0,
+    "separate_source_trial": "Direct shell reads were blocked by the configured Windows workspace policy. The agent left C# unchanged."
+  },
+  "linker_regression": {
+    "original_error": "MSVC LNK1104 on deep project-local work",
+    "control_change": "The .291 retry changed its child TEMP and TMP variables and succeeded without a source edit.",
+    "automatic_system_temp_selected": true,
+    "temporary_work_removed_after_completion": true,
+    "native_publish_ms": 14051
+  },
+  "standalone": {
+    "original_project_path_unavailable": true,
+    "bundle_sha256": "4f660987a5ffbaead8f2139579c90d561af41f0e1c88f8566e9edc0cd69df65a",
+    "suite_sha256": "05e47ed44e5899c98a204e4165b55cf1c99658d4f0e271e871d97d8cadc00286",
+    "groups_passed": 2,
+    "checks_passed": 11,
+    "vulkan_presented_frames": 21,
+    "vulkan_replay_ticks": 20,
+    "renderer_validation_errors": 0,
+    "last_frame_sha256": "8d1a1a1888191b008eeb9c6a1e48eeb850d65afb590e26eff3d4a5ed545c0a9c"
+  }
+}

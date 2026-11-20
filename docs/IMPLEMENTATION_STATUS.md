@@ -1,8 +1,16 @@
 # Implementation status
 
-Updated 2026-11-20 for **0.0.291**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-20 for **0.0.292**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.292 uses Windows temporary storage for Native AOT intermediates.
+The automatic creator profile published a project at the same location where
+0.0.291 hit a linker error. Codex authored two scene stations through Windows
+MCP. A separate scripted client published the starter C# and the creator
+exported the scene. Eleven standalone checks covered the stations and the
+starter input rule, followed by a Vulkan replay.
+[Results](evidence/m2-creator-deep-build-292.json)
 
 Version 0.0.291 creates [editable C# starter source](CREATOR_GAMEPLAY.md#write-compiled-c-gameplay)
 with new projects in the packaged Windows creator. The CLI offers the same
