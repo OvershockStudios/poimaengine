@@ -1,0 +1,68 @@
+{
+  "checkpoint": "0.0.298",
+  "scope": "Standalone Windows x64 launcher UI and Windows install/update/rollback with a controlled GitHub HTTP feed. The two installed engines were the original 0.0.296 and 0.0.297 Windows packages. The host already had development tools. The public repository listed zero releases at the time of the check.",
+  "launcher": {
+    "target": "win-x64",
+    "dotnet": "10.0.15",
+    "executable": {
+      "bytes": 51689791,
+      "sha256": "bfea7d11eedc2b13ec8d635272757f6060bed1285232002522aa319ebf9cc1b9"
+    },
+    "archive": {
+      "bytes": 46176209,
+      "sha256": "32c6d21833b51ec97f96208175d5c49d782effbd6c64f0c6ff966e72be2421c3"
+    },
+    "ui_smoke": {
+      "accessibly_named_controls": 4,
+      "width": 678,
+      "owner_exited_naturally": true,
+      "height": 449,
+      "passed": true
+    }
+  },
+  "engine_release_assets": {
+    "0.0.296": {
+      "archive": {
+        "name": "Poima-0.0.296-Windows-x64.zip",
+        "bytes": 141073792,
+        "sha256": "87ea88775ae1f687ecfe0944903ba3cdc36e3e33363cc45a79a7a6b9a01a982c"
+      },
+      "inventory": {
+        "bytes": 89315,
+        "sha256": "5199bf2de1dca1bc7a1abe0096032eb6386aab990b9afe04515de2a24472dd66"
+      },
+      "files": 499
+    },
+    "0.0.297": {
+      "archive": {
+        "name": "Poima-0.0.297-Windows-x64.zip",
+        "bytes": 141158087,
+        "sha256": "700383f8b1f552a4e0c849e006c4ab4f2577d5997e0821846efdb8212f864429"
+      },
+      "inventory": {
+        "bytes": 89315,
+        "sha256": "6365da93f349852afe575da35d4e7b0739307c85e9e3ad3301f2c891453a117c"
+      },
+      "files": 499
+    }
+  },
+  "install_regression": {
+    "passed": true,
+    "tests": [
+      "first_preview_install_and_native_engine",
+      "no_download_for_same_version",
+      "empty_stable_channel_preserves_active",
+      "stable_and_preview_selection_with_pagination",
+      "interrupted_download_keeps_active_and_cleans_staging",
+      "corrupt_archive_rejected",
+      "individual_file_digest_rejected_after_archive_passed",
+      "update_preserves_working_prior_engine",
+      "rollback_persists_until_explicit_reactivation",
+      "windows_archive_path_bounds"
+    ],
+    "archive_requests": 5,
+    "inventory_requests": 5,
+    "active": "0.0.297",
+    "previous": "0.0.296"
+  }
+}

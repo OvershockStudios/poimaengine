@@ -1,5 +1,9 @@
 # Poima for Windows
 
+This guide covers running the engine ZIP directly.
+The [Windows launcher](https://github.com/OvershockStudios/poimaengine/blob/main/docs/WINDOWS_LAUNCHER.md)
+installs tagged engine packages and manages updates.
+
 Extract the full ZIP to a writable folder on Windows x64 with an up-to-date
 Vulkan graphics driver. Open `Poima.Editor.exe`.
 

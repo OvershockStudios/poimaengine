@@ -1,8 +1,17 @@
 # Implementation status
 
-Updated 2026-11-20 for **0.0.297**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-20 for **0.0.298**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.298 adds a standalone [Windows launcher](WINDOWS_LAUNCHER.md).
+The installer uses Preview and Stable release tags and verifies the archive
+and its inventory before activating an engine. A controlled feed on Windows
+installed and ran the original 0.0.296 and 0.0.297 native engines. A repeated
+tag requested no assets, a cancelled transfer and damaged files preserved
+the active version, and rollback survived the automatic update check.
+Public release installation, clean-machine toolchain setup and the full
+first-time creator journey remain open. [Results](evidence/m2-windows-launcher-298.json)
 
 Version 0.0.297 adds [recoverable agent builds](PROJECT_RECOVERY.md). A native
 job captures the current project and suite, exports the captured files and

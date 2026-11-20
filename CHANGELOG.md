@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.298
+
+- Install tagged Windows builds through a standalone launcher with package verification, channel updates, remembered project versions and rollback.
+
 ## 0.0.297
 
 - Capture, export and verify an agent build in one job, then keep a passing candidate for play and editable recovery in the creator.
