@@ -4,6 +4,7 @@
 import argparse
 import hashlib
 import json
+import os
 from pathlib import Path
 import queue
 import subprocess
@@ -27,13 +28,15 @@ def native(path):
 
 
 class Client:
-    def __init__(self, path=None, endpoint=None, *, project=None, cwd=None):
+    def __init__(self, path=None, endpoint=None, *, project=None, cwd=None, profiles=None):
         if endpoint:
             target = ['--endpoint', endpoint]
         elif project:
             target = ['--project', native(project)]
         else:
             target = ['--world', native(path)]
+        if profiles:
+            target.extend(['--development-profiles', native(profiles)])
         self.process = subprocess.Popen([BINARY, 'mcp', *target], stdin=subprocess.PIPE,
                                         stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
                                         encoding='utf-8', bufsize=1, cwd=cwd)
@@ -169,6 +172,65 @@ class McpContract(unittest.TestCase):
         self.assertEqual(direct.returncode, 0, direct.stdout + direct.stderr)
         self.assertEqual(json.loads(direct.stdout)['result']['revision'], revision + 1)
 
+    def test_gameplay_source_is_scoped_and_guarded(self):
+        root = Path(self.temp.name)
+        projects = root/'projects'; projects.mkdir()
+        products = root/'products'; products.mkdir()
+        runtime = root/'runtime'; runtime.mkdir()
+        (runtime/'runtime.json').write_text('{}')
+        for name in ('Main', 'Other'):
+            subprocess.run([BINARY, 'project', 'create', native(projects/name), '--name', name, '--gameplay'],
+                           check=True, capture_output=True, timeout=30)
+        manifest = projects/'Main/project.poimaproject'
+        original_manifest = manifest.read_bytes()
+        original_world = (manifest.parent/'world.json').read_bytes()
+        path = manifest.parent/'gameplay-src/Game.cs'
+        fixture_tool = native(Path(BINARY))  # Only pinned, never executed as a compiler.
+        entry = dict(name='local', project_root=native(projects), output_root=native(products),
+                     python=fixture_tool, publisher=fixture_tool, dotnet=fixture_tool,
+                     exporter=fixture_tool, runtime_root=native(runtime), environment=[],
+                     target_rid='win-x64' if args.windows_interop or os.name == 'nt' else 'linux-x64')
+        profiles = root/'profiles.json'
+        profiles.write_text(json.dumps(dict(format='poima.development-profiles', version=1, profiles=[entry])))
+        client = Client(project=manifest, profiles=profiles)
+        self.clients.append(client); client.initialize()
+        self.assertTrue(client.world('development.profiles')['profiles'][0]['gameplay_source'])
+        params = dict(profile='local', project='Main/project.poimaproject', path='gameplay-src/Game.cs')
+        source = client.world('project.source.read', params)
+        self.assertEqual(source['text'].encode(), path.read_bytes())
+        self.assertEqual(source['sha256'], hashlib.sha256(path.read_bytes()).hexdigest())
+
+        def write(options, error=None):
+            return client.tool('poima_source', {'method': 'project.source.write', 'params': options}, error)
+
+        changed = dict(params, expected_sha256=source['sha256'], text=source['text']+'// café\r\n')
+        client.world('project.source.write', changed, error=-32602)
+        client.tool('poima_build', dict(method='project.source.write', params=changed), error=-32602)
+        self.assertTrue(write(changed)['changed'])
+        stamp = path.stat().st_mtime_ns
+        self.assertFalse(write(changed)['changed'])
+        self.assertEqual(path.stat().st_mtime_ns, stamp)
+        self.assertEqual(path.read_bytes(), changed['text'].encode())
+        write(dict(changed, text='stale'), error=-32009)
+        write(dict(changed, text='a\0b'), error=-32602)
+        write(dict(changed, text='a'*131073), error=-32602)
+        for bad in ('gameplay-src/../world.json', 'gameplay-src/Game.csproj', 'AGENTS.md'):
+            client.world('project.source.read', dict(params, path=bad), error=-32602)
+        client.world('project.source.read', dict(params, project='Other/project.poimaproject'), error=-32009)
+        client.world('project.source.read', dict(params, path='gameplay-src/game.cs'), error=-32091)
+
+        new_file = dict(params, path='gameplay-src/Extra.cs')
+        self.assertFalse(client.world('project.source.read', new_file)['exists'])
+        self.assertTrue(write(dict(new_file, expected_sha256=None, text=''))['changed'])
+        alias = path.with_name('Alias.cs')
+        os.link(path, alias)
+        client.world('project.source.read', dict(params, path='gameplay-src/Alias.cs'), error=-32091)
+        alias.unlink()
+        self.assertEqual(sorted(f.name for f in path.parent.iterdir()), ['Extra.cs', 'Game.cs', 'Game.csproj'])
+        self.assertEqual(manifest.read_bytes(), original_manifest)
+        self.assertEqual((manifest.parent/'world.json').read_bytes(), original_world)
+        client.close()
+
     def test_project_mcp_rejects_bad_targets_without_protocol_output(self):
         manifest, world = self.create_project()
         source = manifest.read_bytes()
@@ -194,7 +256,7 @@ class McpContract(unittest.TestCase):
     def test_authoring_receipts_conflicts_undo_and_eof_persistence(self):
         client = self.client()
         tools = client.rpc('tools/list')['tools']
-        self.assertEqual({tool['name'] for tool in tools}, {'poima_discover', 'poima_call', 'poima_build'})
+        self.assertEqual({tool['name'] for tool in tools}, {'poima_discover', 'poima_call', 'poima_build', 'poima_source'})
         catalog = client.tool('poima_discover')
         self.assertEqual(catalog['view'], 'catalog')
         self.assertTrue(catalog['partial'])

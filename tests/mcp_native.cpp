@@ -126,7 +126,7 @@ try {
     error(rpc(session,"initialize"),-32600);
     ignore_responses();
     const auto listed=rpc(session,"tools/list").at("result").at("tools");
-    check(listed.size()==3,"Unexpected tool count");
+    check(listed.size()==4,"Unexpected tool count");
     check(calls==0,"Lifecycle or listing invoked backend");
     check(session.request(R"({"jsonrpc":"2.0","method":"tools/call","params":{"name":"poima_call","arguments":{"method":"world.transact"}}})").empty(),"Tool notification replied");
     check(calls==0,"Tool notification executed backend");

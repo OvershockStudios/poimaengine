@@ -12,6 +12,35 @@ The starter uses `gameplay-src/Game.csproj` and entry type
 `ProjectGameplay.Game`. It counts presses of the Use action after
 publication and adoption. The controller already handles movement and aim.
 
+With a configured creator profile, read a C# source file through
+`poima_call`. Use the current profile and the manifest path relative to that
+profile. The source path is relative to the project directory.
+
+```json
+{
+  "method": "project.source.read",
+  "params": {
+    "profile": "creator",
+    "project": "project.poimaproject",
+    "path": "gameplay-src/Game.cs"
+  }
+}
+```
+
+Use `project.source.write` through the separately approved `poima_source`
+tool. Pass the same selectors, the replacement `text` and
+`expected_sha256` from the read. A missing file returns `exists: false`
+and `sha256: null`. Pass a null guard to create a file in an existing source
+directory. A write whose bytes already match returns `changed: false`.
+A stale hash on a different edit returns `-32009`. Read the current file
+before reconciling that change.
+
+The service accepts up to 128 KiB of UTF-8 per `.cs` file under
+`gameplay-src/` in the open project. File writes complete atomically.
+Wait for running development jobs to finish before changing files through
+this service. Keep external file edits coordinated with the shared owner.
+Compile and attach the written source through the normal publish flow.
+
 In a project without starter source, create a C# project under its source
 tree. The installed publisher supplies `PoimaAuthoringRoot` from the
 selected pack. This import works when the project and preview move to
@@ -51,7 +80,7 @@ Keep mutable gameplay values in the state struct so the engine can inspect,
 save and restore them. In a tick, `context.Pressed(player, GameAction.Use)`
 reads the current press edge. Read a position with
 `context.Get(player).Transform.Position`. This returns a vector with
-`X`, `Y` and `Z` coordinates. For an existing native HUD label, use
+`double` coordinates `X`, `Y` and `Z`. For an existing native HUD label, use
 `context.SetUi(UiId.Parse(labelId), text: "Power on")` when its text changes.
 See the [compiled gameplay API](MANAGED_GAMEPLAY.md#write-gameplay) and
 [native UI guide](GAME_UI.md) for more operations.

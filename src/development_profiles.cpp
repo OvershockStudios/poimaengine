@@ -255,6 +255,9 @@ std::vector<Profile> load_profiles(const std::string& filename) {
         profile.adopt_gameplay=[](const fs::path& manifest,const fs::path& descriptor,const std::string& request) {
             return project_result(poima::adopt_project_gameplay(text(manifest),text(descriptor),request));
         };
+        profile.gameplay_source=[](const fs::path& manifest,const fs::path& world,const std::string& request) {
+            return project_result(poima::project_gameplay_source(text(manifest),text(world),request));
+        };
         result.push_back(std::move(profile));
     }
     return result;

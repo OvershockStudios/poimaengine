@@ -259,15 +259,39 @@ void Service::configure(std::vector<Profile> profiles) {
     }
     profiles_=std::move(selected);configured_=true;
 }
-Json Service::dispatch(const std::string& method,const Json& p) {
+Json Service::dispatch(const std::string& method,const Json& p,const fs::path& owned_world) {
     if(method=="development.profiles") {
         fields(p,{});Json result=Json::array();
         for(const auto& [name,profile]:profiles_) {
             Json item={{"name",name},{"fingerprint",profile.fingerprint},{"target_rid",profile.target_rid},{"publish",bool(profile.verify_publish)},{"export",bool(profile.verify_export)}};
             if(profile.inspect_project || profile.adopt_gameplay)item.update({{"project_inspect",bool(profile.inspect_project)},{"gameplay_adopt",bool(profile.adopt_gameplay)}});
+            if(profile.gameplay_source && !owned_world.empty())item["gameplay_source"]=true;
             result.push_back(std::move(item));
         }
         return {{"profiles",result}};
+    }
+    if(method=="project.source.read" || method=="project.source.write") {
+        const bool write=method=="project.source.write";
+        if(write)fields(p,{"profile","project","path","expected_sha256","text"},{"profile","project","path","expected_sha256","text"});
+        else fields(p,{"profile","project","path"},{"profile","project","path"});
+        const auto selected=profiles_.find(text(p.at("profile"),64));
+        need(selected!=profiles_.end() && selected->second.gameplay_source && !owned_world.empty(),
+             "Gameplay source access requires a configured project owner.",-32004);
+        const auto& profile=selected->second;
+        const auto manifest=contained(profile.project_root,relative(p.at("project")),true);
+        need(project_manifest_extension(lower_extension(manifest)),"Source access expects a project manifest.");
+        Json request={{"path",relative(p.at("path"))}};
+        if(write) {
+            const auto& guard=p.at("expected_sha256");
+            if(!guard.is_null())(void)digest(guard);
+            const auto& source=p.at("text");
+            need(source.is_string() && source.get_ref<const std::string&>().size()<=128*1024,"Gameplay source must be at most 128 KiB of text.");
+            if(jobs_)for(const auto& job:jobs_->list())
+                need(terminal(job.state),"Wait for the current development jobs before writing gameplay source.",-32009);
+            request["expected_sha256"]=guard;
+            request["text"]=source;
+        }
+        return Json::parse(verified_result(profile.gameplay_source(manifest,owned_world,request.dump()),4ULL*1024*1024));
     }
     if(method=="project.inspect" || method=="project.gameplay.adopt") {
         const bool adopt=method=="project.gameplay.adopt";
@@ -433,6 +457,10 @@ Json Service::schemas() {
         timeout={{"type","integer"},{"minimum",100},{"maximum",900000},{"default",900000}};
     return {
         {"development.profiles",object(Json::object())},
+        {"project.source.read",object({{"profile",profile},{"project",portable},{"path",portable}},{"profile","project","path"})},
+        {"project.source.write",object({{"profile",profile},{"project",portable},{"path",portable},
+            {"expected_sha256",{{"type",{"string","null"}},{"pattern","^[0-9a-f]{64}$"}}},
+            {"text",{{"type","string"},{"maxLength",128*1024}}}},{"profile","project","path","expected_sha256","text"})},
         {"project.inspect",object({{"profile",profile},{"project",portable}},{"profile","project"})},
         {"project.gameplay.adopt",object({{"profile",profile},{"project",portable},{"artifact",portable},{"request_id",receipt},
             {"expected_project_sha256",{{"type","string"},{"pattern","^[0-9a-f]{64}$"}}},

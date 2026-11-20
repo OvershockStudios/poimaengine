@@ -61,7 +61,7 @@ internal static class WindowsGameplayTools
             var guide = Path.Combine(PackageDirectory, "reference", "CREATOR_GAMEPLAY.md").Replace('\\', '/');
             var projectFile = Path.GetFileName(project.Manifest);
             var context = $"""
-                Poima configured the native gameplay profile `{ProfileName}` for this project root. The profile-relative manifest is `{projectFile}`. After brief approval, start with the project's `gameplay-src/Game.cs` and `Game.csproj` if present. The installed guide `{guide}` covers the C# API, verification and the build receipts. Use `development.publish` and `project.gameplay.adopt` via `poima_build`. The publisher supplies `PoimaAuthoringRoot` for the project import.
+                Poima configured profile `{ProfileName}` for manifest `{projectFile}`. After brief approval, read `gameplay-src/Game.cs` with `poima_call` method `project.source.read` using profile, project, and path. To edit, submit the complete C# text and returned SHA-256 as `expected_sha256` with `poima_source` method `project.source.write`. The starter project is `gameplay-src/Game.csproj` with type `ProjectGameplay.Game`. Use `poima_build` for publication and adoption. See `{guide}` for C# API and verification details.
                 """;
             return options with { InstalledDevelopmentProfiles = profilePath, GameplayToolStatus = "C# gameplay builds are ready.", GameplayToolContext = context };
         }

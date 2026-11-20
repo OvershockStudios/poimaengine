@@ -1,8 +1,18 @@
 # Implementation status
 
-Updated 2026-11-20 for **0.0.292**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-20 for **0.0.293**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.293 adds [guarded C# source editing](CREATOR_GAMEPLAY.md#write-compiled-c-gameplay)
+through the open project's native service. The configured project owner can
+read and replace bounded source files under `gameplay-src/`. MCP puts source
+writes behind a separate approval from scene edits and native builds.
+Codex used the live project endpoint to author Signal Shelter's scene and C#.
+After a targeted compiler repair prompt, it published and attached the game.
+The creator exported the puzzle. The relocated build reproduced ten gameplay
+checks, restored progress in a fresh process and completed a Vulkan replay.
+[Results](evidence/m2-creator-guarded-source-293.json)
 
 Version 0.0.292 uses Windows temporary storage for Native AOT intermediates.
 The automatic creator profile published a project at the same location where

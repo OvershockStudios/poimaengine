@@ -20,6 +20,10 @@ project through `poima_call`; `project.gameplay.adopt` copies and updates it thr
 launch no compiler. The per-project adoption receipt survives host restart;
 publish/export job submission receipts remain scoped to the running host.
 
+Configured profiles expose [guarded C# source access](CREATOR_GAMEPLAY.md#write-compiled-c-gameplay)
+for the project whose entry world the host owns. Source writes use
+`poima_source`. Compilation and artifact adoption use `poima_build`.
+
 ## Configure a host
 
 Create an owner-controlled JSON file outside public project history. All paths

@@ -17,6 +17,7 @@ struct Profile {
     std::function<std::string(const std::filesystem::path&)> verify_export;
     std::function<std::string(const std::filesystem::path&)> inspect_project;
     std::function<std::string(const std::filesystem::path&,const std::filesystem::path&,const std::string&)> adopt_gameplay;
+    std::function<std::string(const std::filesystem::path&,const std::filesystem::path&,const std::string&)> gameplay_source;
     // Optional installed NativeAOT authoring authority. Host configuration only;
     // the manifest guard is forwarded to the publisher, never selected by RPC.
     std::filesystem::path authoring_pack;

@@ -26,6 +26,7 @@ internal sealed class AgentChat : UserControl
     private readonly TextBox thread = Field("Conversation ID (empty starts a new conversation)", "");
     private readonly TextBox model = Field("Model (empty uses the CLI's advertised default)", "");
     private readonly CheckBox allowEdits = new() { Content = "Allow Poima world edits in this session", IsChecked = true };
+    private readonly CheckBox allowSourceEdits = new() { Content = "Allow gameplay source edits in this session" };
     private readonly TextBox prompt = new() { AcceptsReturn = true, TextWrapping = TextWrapping.Wrap, MinHeight = 85, MaxHeight = 180 };
     private readonly TextBox transcript = new() { IsReadOnly = true, AcceptsReturn = true, TextWrapping = TextWrapping.Wrap };
     private readonly TextBlock status = new() { Text = "Disconnected", TextWrapping = TextWrapping.Wrap };
@@ -56,7 +57,7 @@ internal sealed class AgentChat : UserControl
         {
             executable.Text = FindCodex();
             allowEdits.IsChecked = false;
-            allowEdits.Content = "Allow Poima tools without asking";
+            allowEdits.Content = "Allow Poima world calls without asking";
             ToolTip.SetTip(allowEdits, "Pre-approve Codex calls to Poima's world tools for this connection.");
             setup.Children.Add(new TextBlock { Text = "Game conversation", FontSize = 20, FontWeight = FontWeight.SemiBold });
             setup.Children.Add(new TextBlock { Text = "Connect with your agent’s sign-in. Start with your idea and agree on what you’ll build.", TextWrapping = TextWrapping.Wrap });
@@ -70,6 +71,12 @@ internal sealed class AgentChat : UserControl
             AutomationProperties.SetName(options, "Connection settings");
             setup.Children.Add(options);
             setup.Children.Add(allowEdits);
+            if (gameplayToolContext is not null)
+            {
+                AutomationProperties.SetName(allowSourceEdits, "Agent allow source edits");
+                ToolTip.SetTip(allowSourceEdits, "Pre-approve guarded C# source writes for this Codex connection.");
+                setup.Children.Add(allowSourceEdits);
+            }
             var connection = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
             connection.Children.Add(connect); connection.Children.Add(disconnect);
             setup.Children.Add(connection);
@@ -111,6 +118,7 @@ internal sealed class AgentChat : UserControl
     private void UpdateProvider()
     {
         executable.IsVisible = model.IsVisible = thread.IsVisible = allowEdits.IsVisible = ProviderName == "Codex";
+        allowSourceEdits.IsVisible = ProviderName == "Codex";
         agyExecutable.IsVisible = ProviderName == "Antigravity";
         claudeExecutable.IsVisible = ProviderName == "Claude Code";
         connect.Content = "Connect " + ProviderName;
@@ -175,7 +183,7 @@ internal sealed class AgentChat : UserControl
         provider.IsEnabled = executable.IsEnabled = agyExecutable.IsEnabled = claudeExecutable.IsEnabled =
             engine.IsEnabled = model.IsEnabled = connect.IsEnabled;
         thread.IsReadOnly = !connect.IsEnabled; thread.IsEnabled = !closing;
-        allowEdits.IsEnabled = connect.IsEnabled;
+        allowEdits.IsEnabled = allowSourceEdits.IsEnabled = connect.IsEnabled;
     }
     private async Task Connect()
     {
@@ -193,7 +201,7 @@ internal sealed class AgentChat : UserControl
                 "Claude Code" => await AcpSession.ConnectAsync(claudeExecutable.Text ?? "", [], engine.Text ?? "",
                     endpoint, projectRoot, startup.Token),
                 _ => await CodexSession.ConnectAsync(executable.Text ?? "", engine.Text ?? "",
-                    endpoint, projectRoot, startup.Token, allowEdits.IsChecked == true)
+                    endpoint, projectRoot, startup.Token, allowEdits.IsChecked == true, allowSourceEdits.IsChecked == true)
             };
             session = current;
             if (closing) { await current.DisposeAsync(); return; }

@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.293
+
+- Read and write C# gameplay source through the open project's native service, with content guards and separate MCP source-write approval.
+
 ## 0.0.292
 
 - Use Windows temporary storage for Native AOT compiler intermediates so a deeply nested creator project does not lengthen linker output paths.

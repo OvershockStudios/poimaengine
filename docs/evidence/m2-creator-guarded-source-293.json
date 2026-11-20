@@ -1,0 +1,62 @@
+{
+  "engine_version": "0.0.293",
+  "scope": "Signal Shelter, a small 3D puzzle created in the extracted Windows creator with preinstalled Microsoft build tools. A separate installed Codex CLI connected to the open creator project through its live native MCP endpoint. The test supplied the brief, starter, approvals, a targeted compiler repair prompt and independent verification.",
+  "package": {
+    "bytes": 140846587,
+    "sha256": "4444e89e5df2813eb30a20ffceb94838152295ce608bca0cfcba153813b68542"
+  },
+  "authoring": {
+    "provider": "Codex CLI 0.152.1 on Windows",
+    "native_mcp_calls_by_turn": {
+      "source": 2,
+      "scene": 18,
+      "publish": 6,
+      "repair": 14
+    },
+    "command_or_file_change_tool_events": 0,
+    "source_write_sha256": [
+      "ee426bfd4223d9af0d2f08c56fb8782f4398bd7a6eb247f5f97d1a9e5b553d6d",
+      "f1802d168ff36ea9571da43b095c81b7655e61ccdd6bdf5477686c14865d87c7"
+    ],
+    "source_approval_off_by_default": true,
+    "starting_revision": 1,
+    "committed_revision": 2,
+    "first_build_failure": "Four C# CS1503 errors because position coordinates are double and the new helper took float.",
+    "recovered_publish_ms": 15217,
+    "native_library_sha256": "83b9596139123ad6145fd16a6356dcdfe3135a1c3feb9afa81ddecfbe92d4615",
+    "creator_preview_observed": true
+  },
+  "standalone": {
+    "original_project_path_unavailable": true,
+    "verified_files": 60,
+    "bundle_sha256": "ab5fd64ffc8fc070a6725620409045cb24bc92c5b3d1b0f501374db17fc5220f",
+    "suite_sha256": "213df4cbfd23ea94ae12e73dd0153b245e2d8f026a8bbfde247638abcb123334",
+    "creator_export_and_relocated_report_identical": true,
+    "groups_passed": 1,
+    "assertions_passed": 10,
+    "second_observation_pass": {
+      "observations": 7,
+      "saved_tick": 128,
+      "fresh_process_restored_fields_hud_and_position": true,
+      "fresh_process_completed_objective": true
+    },
+    "vulkan": {
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "ticks": 224,
+      "frames_presented": 225,
+      "validation_errors_reported": 0,
+      "capture_sha256": "a0f3b1a8d383aaada024a37cc5600721b31a9ce85d5732efce7e44a7c0dbdd04"
+    }
+  },
+  "retained_harness_failures": [
+    "The UI Automation harness expected the ordinary export folder name. The verified export lived under the checkpoint. The creator report passed and the same bundle was copied and verified at a new path.",
+    "The first independent save-continuation driver requested compact module inspection and lacked the backend field. The corrected full-schema request completed the same play and save assertions."
+  ],
+  "regression": {
+    "windows_mcp_cli_contract_tests": 12,
+    "windows_mcp_native_adapter_passed": true,
+    "windows_world_ui_tests": 7,
+    "windows_asset_reference_tests": 8,
+    "managed_agent_rpc_and_acp_contract_passed": true
+  }
+}

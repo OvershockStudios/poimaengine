@@ -27,7 +27,7 @@ public:
     void configure(std::vector<Profile> profiles); // Once, before any accepted job.
     void begin_shutdown() { if(jobs_)jobs_->begin_shutdown(); }
     bool shutdown_complete() const noexcept { return !jobs_ || jobs_->shutdown_complete(); }
-    nlohmann::json dispatch(const std::string& method,const nlohmann::json& params);
+    nlohmann::json dispatch(const std::string& method,const nlohmann::json& params,const std::filesystem::path& owned_world={});
     static nlohmann::json schemas();
 };
 }
