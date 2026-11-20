@@ -7,6 +7,7 @@ using Avalonia;
 using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Controls.Templates;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
@@ -36,6 +37,7 @@ internal sealed class CreatorWindow : Window
     private readonly Button setupBuilds = new() { Content = "Set up gameplay builds", IsVisible = false };
     private readonly Button importAssets = new() { Content = "Import assets…" };
     private readonly Button reviewSpecialists = new() { Content = "Specialist reviews" };
+    private readonly Button addBuildWorker = new() { Content = "Add build worker" };
     private readonly TextBlock status = new() { TextWrapping = TextWrapping.Wrap };
     private readonly TextBlock verifiedPlayStatus = new() { TextWrapping = TextWrapping.Wrap, IsVisible = false };
     private readonly Border viewport = new() { Background = EditorTheme.Brush("#161518"), ClipToBounds = true };
@@ -49,9 +51,13 @@ internal sealed class CreatorWindow : Window
     private string workDescription = "";
     private long exportedRevision;
     private Task? agentShutdown;
-    private readonly TabControl conversations = new();
+    private readonly TabControl conversations = new()
+    {
+        ItemsPanel = new FuncTemplate<Panel?>(() => new WrapPanel { ItemSpacing = 4, LineSpacing = 2 })
+    };
     private readonly Grid conversationArea = new() { RowDefinitions = new RowDefinitions("*,Auto") };
     private CreatorReviews? specialistReviews;
+    private CreatorBuildTeam? buildTeam;
     private CancellationTokenSource? checking, checkingVerifiedPlay;
     private string? previewSession, error;
 
@@ -112,7 +118,9 @@ internal sealed class CreatorWindow : Window
         openRecovered.Click += (_, _) => OpenRecoveredProject();
         importAssets.Click += async (_, _) => await ImportAssetsAsync();
         reviewSpecialists.Click += (_, _) => OpenSpecialistReviews();
+        addBuildWorker.Click += async (_, _) => await AddBuildWorkerAsync();
         ToolTip.SetTip(reviewSpecialists, "Connect the main Codex chat to open independent scene reviews.");
+        ToolTip.SetTip(addBuildWorker, "Give a Codex worker its own editable draft.");
         setupBuilds.IsVisible = OperatingSystem.IsWindows() && WindowsGameplayTools.HasAuthoringPack &&
             options.ActiveDevelopmentProfiles is null;
         setupBuilds.Click += async (_, _) =>
@@ -161,7 +169,8 @@ internal sealed class CreatorWindow : Window
                 closing = true;
                 host.RefreshState();
                 viewport.Child = null;
-                agentShutdown = Task.WhenAll(chat.CloseAsync(), specialistReviews?.RetireAsync() ?? Task.CompletedTask);
+                agentShutdown = Task.WhenAll(chat.CloseAsync(), specialistReviews?.RetireAsync() ?? Task.CompletedTask,
+                    buildTeam?.RetireAsync() ?? Task.CompletedTask);
             }
             catch (Exception failure) { error = failure.Message; }
             UpdateControls();
@@ -216,7 +225,7 @@ internal sealed class CreatorWindow : Window
         var heading = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto"), ColumnSpacing = 16 };
         heading.Children.Add(title);
         var projectActions = new WrapPanel { ItemSpacing = 8, VerticalAlignment = VerticalAlignment.Top,
-            Children = { importAssets, reviewSpecialists, setupBuilds } };
+            Children = { importAssets, reviewSpecialists, addBuildWorker, setupBuilds } };
         Grid.SetColumn(projectActions, 1);
         heading.Children.Add(projectActions);
         root.Children.Add(heading);
@@ -226,7 +235,7 @@ internal sealed class CreatorWindow : Window
         conversations.SelectionChanged += (_, _) =>
         {
             if (specialistReviews is { } team)
-                team.Footer.IsVisible = conversations.SelectedIndex > 0;
+                team.Footer.IsVisible = conversations.SelectedItem is TabItem selected && team.Tabs.Contains(selected);
         };
         conversationArea.Children.Add(conversations);
         panels.Children.Add(Card(conversationArea));
@@ -756,6 +765,7 @@ internal sealed class CreatorWindow : Window
         export.IsEnabled = play.IsEnabled;
         importAssets.IsEnabled = play.IsEnabled;
         reviewSpecialists.IsEnabled = ready && (specialistReviews is not null || chat.ReviewClient is not null);
+        addBuildWorker.IsEnabled = ready && chat.ReviewClient is not null && (buildTeam?.CanAdd ?? true);
         setupBuilds.IsEnabled = play.IsEnabled;
         chat.IsEnabled = !closing && !closeRequested && !exporting;
         playVerified.IsVisible = verifiedBundleHash is not null;
@@ -791,9 +801,22 @@ internal sealed class CreatorWindow : Window
                 : "Play opens the current project. Chat changes appear the next time you play.");
     }
 
+    private async Task AddBuildWorkerAsync()
+    {
+        if (!addBuildWorker.IsEnabled || chat.ReviewClient is not { } client) return;
+        buildTeam ??= new CreatorBuildTeam(project, conversations, finding =>
+        {
+            if (!chat.AddReviewToDraft(finding)) return false;
+            conversations.SelectedIndex = 0;
+            return true;
+        }, message => { error = message; UpdateControls(); });
+        await buildTeam.AddAsync(client.Executable, client.Model);
+        UpdateControls();
+    }
+
     private void OpenSpecialistReviews()
     {
-        if (specialistReviews is not null) { conversations.SelectedIndex = 1; return; }
+        if (specialistReviews is not null) { conversations.SelectedItem = specialistReviews.Tabs[0]; return; }
         if (chat.ReviewClient is not { } client) return;
         try
         {
@@ -806,7 +829,7 @@ internal sealed class CreatorWindow : Window
             foreach (var tab in specialistReviews.Tabs) conversations.Items.Add(tab);
             Grid.SetRow(specialistReviews.Footer, 1);
             conversationArea.Children.Add(specialistReviews.Footer);
-            conversations.SelectedIndex = 1;
+            conversations.SelectedItem = specialistReviews.Tabs[0];
         }
         catch (Exception failure) { specialistReviews = null; error = failure.Message; UpdateControls(); }
     }

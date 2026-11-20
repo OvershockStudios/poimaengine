@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "poima/mcp.hpp"
 #include "poima/local_session.hpp"
+#include "poima/project.hpp"
 #include "poima/world.hpp"
 #include <iostream>
 #include <cstdio>
@@ -44,6 +45,12 @@ int run_mcp_world(const std::string& path,const std::string& development_profile
     WorldSession world(path);
     if(!development_profiles.empty())world.configure_development_profiles(development_profiles);
     McpSession session([&world](std::string_view message) {return world.request(message);});
+    return serve_stdio(session);
+}
+int run_mcp_draft(const std::string& manifest) {
+    const auto world_path=project_draft_world_path(manifest);
+    WorldSession world(world_path);
+    McpSession session([&world](std::string_view message) {return world.request(message);},{},world_path);
     return serve_stdio(session);
 }
 int run_mcp_connected(const std::string& endpoint,std::uint32_t timeout_ms,

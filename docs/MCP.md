@@ -125,6 +125,26 @@ This option applies only to shared MCP connections and accepts revisions
 from zero through 2^53−1. It controls which operations the adapter can send.
 Client shell and filesystem permissions are governed by the client.
 
+## Edit a worker draft
+
+Create the copy with [`project draft`](PROJECT_RECOVERY.md#create-worker-drafts-and-stage-an-integration).
+Give each worker its own manifest and stdio connection.
+
+```text
+poima mcp --project /absolute/draft/project.poimaproject --draft
+```
+
+Poima checks the draft's lineage marker and project identity at startup. The
+connection owns the draft's world writer. It exposes `poima_discover`,
+`poima_reference` and a scoped `poima_call` for scene inspection, transactions
+and asset authoring. For model, animation donor, image and audio imports, use
+portable source paths relative to the draft entry world's directory. Use
+discovery for the active method catalog.
+
+Keep build and verification jobs with the lead's candidate workflow. After
+the worker finishes a turn, review its report and compose the selected
+operations and file hashes into a separate integration request.
+
 ## Image observations (development)
 
 To receive an image as well as the native capture receipt, add `"image": {}` to `poima_call`. An optional `max_edge` sets the longest output edge, from 128 to 2048 pixels (default 1280). This adapter option is not forwarded into native operation parameters.

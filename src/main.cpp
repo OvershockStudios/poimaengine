@@ -32,7 +32,8 @@ int run_mcp_cli(int argc,char** argv) {
     // Startup and usage failures must not put the ordinary CLI envelope on
     // MCP stdout. Only the established protocol session writes that stream.
     const auto usage=[](const char* message) {std::cerr<<message<<'\n';return 2;};
-    if(argc<4 || argc>8 || argc%2)return usage("Use: mcp (--project <project-manifest> | --world <world.json>) [--development-profiles file.json] | mcp --endpoint <name> [--timeout-ms N] [--review-revision N].");
+    const bool draft=argc==5 && std::string_view(argv[2])=="--project" && std::string_view(argv[4])=="--draft";
+    if(argc<4 || argc>8 || (!draft && argc%2))return usage("Use: mcp (--project <project-manifest> | --world <world.json>) [--development-profiles file.json] | mcp --project <draft-manifest> --draft | mcp --endpoint <name> [--timeout-ms N] [--review-revision N].");
     const std::string_view kind=argv[2],value=argv[3];
     if(value.empty() || value.starts_with("--"))return usage("Missing MCP project path, world path or endpoint.");
     unsigned timeout=30000;
@@ -65,6 +66,7 @@ int run_mcp_cli(int argc,char** argv) {
     } else return usage("Choose exactly one MCP project path, world path or endpoint.");
     try {
         if(kind=="--endpoint")return poima::run_mcp_connected(std::string(value),timeout,review_revision);
+        if(draft)return poima::run_mcp_draft(std::string(value));
         const auto path=kind=="--project" ? poima::project_world_path(std::string(value)):std::string(value);
         return poima::run_mcp_world(path,profiles);
     } catch(const std::exception& error) {

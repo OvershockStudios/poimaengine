@@ -9,6 +9,7 @@
 #include "input_profile_store.hpp"
 #include "game_verification_report.hpp"
 #include "project_io_path.hpp"
+#include "project_draft_paths.hpp"
 #include "world_storage.hpp"
 #include <nlohmann/json.hpp>
 #include <algorithm>

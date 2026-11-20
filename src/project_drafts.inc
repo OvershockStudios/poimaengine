@@ -12,25 +12,38 @@ std::string draft_digest(const Json& value) {
     return value.get<std::string>();
 }
 
+std::pair<fs::path, Json> read_draft_marker(const fs::path& requested) {
+    adoption_safe_path(requested);
+    regular(requested);
+    const auto manifest = canonical_project_path(requested);
+    const auto root = manifest.parent_path();
+    plain_directory(root);
+    require(fs::symlink_status(project_io_path(root / ".poima-incomplete")).type() == fs::file_type::not_found,
+        "Draft project publication is incomplete.");
+    const auto marker_path = contained(root, project_draft_marker);
+    adoption_safe_path(marker_path);
+    auto marker = parse(read(marker_path, 65536));
+    fields(marker, {"format", "version", "base_sha256", "base_project_id", "base_revision", "project_id", "project"},
+        {"format", "version", "base_sha256", "base_project_id", "base_revision", "project_id", "project"});
+    require(marker.at("format") == "poima.project-draft" && integer(marker.at("version")) == 1 &&
+        id(marker.at("project_id")) != id(marker.at("base_project_id")) &&
+        relative_path(marker.at("project")) == text(manifest.filename()),
+        "Invalid project draft lineage marker.");
+    (void)draft_digest(marker.at("base_sha256"));
+    (void)integer(marker.at("base_revision"));
+    return {manifest, std::move(marker)};
+}
+
 Project draft_input(const Json& manifest, const SourceCheckpoint& base, const std::string& project_name) {
     require(manifest.is_string(), "Draft manifest path must be text.");
     const auto requested = path_of(manifest.get<std::string>()).lexically_normal();
     require(requested.is_absolute() && requested.filename() == path_of(project_name),
         "Expected an absolute draft manifest path with the base project filename.");
-    adoption_safe_path(requested);
+    const auto [canonical, marker] = read_draft_marker(requested);
     Project draft;
-    draft.manifest = canonical_project_path(requested);
-    draft.root = draft.manifest.parent_path();
-    plain_directory(draft.root);
-    require(fs::symlink_status(project_io_path(draft.root / ".poima-incomplete")).type() == fs::file_type::not_found,
-        "Draft project publication is incomplete.");
-    const auto marker_path = contained(draft.root, project_draft_marker);
-    adoption_safe_path(marker_path);
-    const auto marker = parse(read(marker_path, 65536));
-    fields(marker, {"format", "version", "base_sha256", "base_project_id", "base_revision", "project_id", "project"},
-        {"format", "version", "base_sha256", "base_project_id", "base_revision", "project_id", "project"});
-    require(marker.at("format") == "poima.project-draft" && integer(marker.at("version")) == 1 &&
-        marker.at("base_sha256") == base.source_sha256 && marker.at("base_project_id") == base.source.spec.at("project_id") &&
+    draft.manifest = canonical;
+    draft.root = canonical.parent_path();
+    require(marker.at("base_sha256") == base.source_sha256 && marker.at("base_project_id") == base.source.spec.at("project_id") &&
         integer(marker.at("base_revision")) == base.source.content.revision && marker.at("project") == project_name,
         "Project draft lineage does not match the selected base checkpoint.");
     draft.spec = parse(read(draft.manifest, 65536));
@@ -108,6 +121,25 @@ Json apply_draft_transaction(const fs::path& world, const Json& transaction, std
     for (const auto& sidecar : sidecars) fs::remove(sidecar);
     fs::permissions(world_io, mode & fs::perms::all, fs::perm_options::replace);
     return result;
+}
+}
+
+std::string project_draft_world_path(const std::string& manifest) {
+    const auto [canonical, marker] = read_draft_marker(fs::absolute(path_of(manifest)).lexically_normal());
+    const auto draft = project(text(canonical));
+    require(draft.spec.at("project_id") == marker.at("project_id") &&
+        draft.content.revision >= integer(marker.at("base_revision")),
+        "Project draft lineage does not match the draft manifest identity or revision.");
+    adoption_safe_path(draft.world);
+    for (const auto* suffix : draft_world_sidecars)
+        adoption_safe_path(fs::path(draft.world).concat(suffix), true);
+    return text(draft.world);
+}
+
+namespace project_detail {
+void validate_draft_asset_source(const std::string& world, const std::string& source) {
+    const auto path = contained(path_of(world).parent_path(), relative_path(Json(source)));
+    adoption_safe_path(path);
 }
 }
 

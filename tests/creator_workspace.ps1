@@ -11,6 +11,7 @@
 # -CodexBrief runs a two-turn interview on the unchanged starter project.
 # -CodexQuestions uses the local AgentRpc contract executable as a scripted app-server.
 # -CodexReviews uses the AgentRpc contract executable to test two revision-pinned reviewers.
+# -WithBuildWorkers adds two editable drafts using the same peer and the native engine.
 # -CodexToolApproval exercises decline and approve once with the installed Codex.
 # -WithExport requires a packaged sample runtime and plays a relocated export.
 # -WithPlaytestResults checks passing and failed reports, reopening and recovery.
@@ -35,6 +36,7 @@ param(
     [switch]$CodexBrief,
     [string]$CodexQuestions,
     [string]$CodexReviews,
+    [switch]$WithBuildWorkers,
     [switch]$CodexToolApproval,
     [switch]$WithExport,
     [switch]$WithPlaytestResults,
@@ -54,6 +56,7 @@ if ($InstallClaude -and $Claude) { throw 'Run the signed-out installation and th
 if ($InstallAntigravity -and $Antigravity) { throw 'Run the installation and supplied Antigravity client checks separately.' }
 if ($VerifiedPlayChat -and $VerifiedPlayWithCodex) { throw 'Run the scripted and live playback checks separately.' }
 if ($ObserveVerifiedPlayback -and !$VerifiedPlayWithCodex) { throw 'Use -VerifiedPlayWithCodex for the live observation workflow.' }
+if ($WithBuildWorkers -and !$CodexReviews) { throw 'Supply -CodexReviews for the build worker scenario.' }
 if ($CodexReviews -and ($WithCodex -or $CodexQuestions -or $CodexBrief -or $CodexToolApproval -or
     $VerifiedPlayChat -or $VerifiedPlayWithCodex -or $CodexAssetRead)) {
     throw 'Run the specialist review fixture separately from the other Codex scenarios.'
@@ -140,6 +143,7 @@ $report = [ordered]@{
     codex_brief_requested = [bool]$CodexBrief
     codex_questions_requested = ![string]::IsNullOrWhiteSpace($CodexQuestions)
     codex_reviews_requested = ![string]::IsNullOrWhiteSpace($CodexReviews)
+    build_workers_requested = [bool]$WithBuildWorkers
     export_requested = [bool]$WithExport
     playtest_results_requested = [bool]$WithPlaytestResults
     share_zip_requested = [bool]$WithShareZip
@@ -625,6 +629,172 @@ function Exercise-CodexReviews($Project, $Peer) {
     $checks.lead_pid = $beforeSend[0].pid
     $checks.active_reviewer_before_creator_close = $refreshedTurn.pid
     return $refreshed
+}
+
+function Read-BuildWorkerTrace {
+    Get-ChildItem -LiteralPath $workerTrace -Filter 'draft-*.jsonl' -File | ForEach-Object {
+        Get-Content -LiteralPath $_.FullName -Encoding UTF8 -ErrorAction SilentlyContinue |
+            ConvertFrom-Json -ErrorAction SilentlyContinue
+    }
+}
+
+function Start-BuildWorkerTask($TaskText) {
+    Set-ControlText 'Worker task' $TaskText
+    Invoke-Control 'Send to worker'
+}
+
+function Wait-ForBuildWorkerReport($Answer) {
+    $null = Wait-For "the completed worker report '$Answer'" {
+        (Find-ControlId 'worker-status').Current.Name -ceq 'Worker finished' -and
+            (Get-ControlText 'Worker report') -ceq $Answer -and (Find-Control 'Add report to main chat' -Enabled)
+    } 65
+}
+
+function Wait-ForHeldBuildWorker {
+    $null = Wait-For 'the pending worker turn' {
+        (Find-Control 'Stop worker' -Enabled) -and
+            (Get-ControlText 'Worker report') -ceq 'Draft turn is waiting.'
+    } 65
+}
+
+function Get-AuthoredFileHashes {
+    Get-ChildItem -LiteralPath (Split-Path -Parent $manifest) -File -Force -Recurse |
+        Where-Object { $_.Extension -ine '.lock' } |
+        Sort-Object FullName | ForEach-Object { "$((Get-FileHash -LiteralPath $_.FullName).Hash) $($_.FullName)" }
+}
+
+function Exercise-BuildWorkers($Project, $LeadProcess) {
+    $checks = $report.checks.codex_build_workers = [ordered]@{ base_revision = $Project.revision }
+    $before = @(Get-AuthoredFileHashes) -join "`n"
+    $originalDraft = 'Keep this build plan.'
+    Set-ControlText 'Agent prompt' $originalDraft
+    $leadTranscript = Get-ControlText 'Agent transcript'
+    $leadTurnCount = @(Read-ReviewTrace | Where-Object { $_.pid -eq $LeadProcess -and $_.kind -ceq 'turn/start' }).Count
+    $revision = $Project.revision + 1
+    $ids = @('{0:x32}' -f 0xda01; '{0:x32}' -f 0xda02)
+    $names = @('Draft lantern', 'Draft quay bench')
+    $lanternTask = 'Draft a lantern.'
+    $benchTask = 'Draft a quay bench.'
+    $holdTask = 'Hold draft turn.'
+    $lanternReport = "$($names[0]) created at revision $revision. Entity $($ids[0])."
+    $benchReport = "$($names[1]) created at revision $revision. Entity $($ids[1])."
+
+    Invoke-Control 'Add build worker'
+    Wait-ForCreatorChatTab 'Worker 1'
+    if (Find-Control 'Add report to main chat' -Enabled) { throw 'An empty worker report could be handed off.' }
+    Invoke-Control 'Add build worker'
+    Wait-ForCreatorChatTab 'Worker 2'
+    Wait-ForCreatorChatTab 'Worker 1' -Select
+    Start-BuildWorkerTask $lanternTask
+    Wait-ForBuildWorkerReport $lanternReport
+    Invoke-Control 'Add report to main chat'
+    Wait-ForCreatorChatTab 'Main chat'
+    Wait-ForCreatorChatTab 'Worker 1' -Select
+    Start-BuildWorkerTask $holdTask
+    Wait-ForHeldBuildWorker
+    Wait-ForCreatorChatTab 'Worker 2' -Select
+    Start-BuildWorkerTask $benchTask
+    Wait-ForBuildWorkerReport $benchReport
+    Invoke-Control 'Add report to main chat'
+    Wait-ForCreatorChatTab 'Main chat'
+
+    $leadDraft = Get-ControlText 'Agent prompt'
+    if (!$leadDraft.StartsWith($originalDraft, [StringComparison]::Ordinal) -or
+        !$leadDraft.Contains($lanternReport) -or !$leadDraft.Contains($benchReport) -or
+        (Get-ControlText 'Agent transcript') -cne $leadTranscript -or
+        @(Read-ReviewTrace | Where-Object { $_.pid -eq $LeadProcess -and $_.kind -ceq 'turn/start' }).Count -ne $leadTurnCount) {
+        throw 'Worker handoff changed the lead chat or lost either report.'
+    }
+    $leadDraft | Set-Content -LiteralPath (Join-Path $run 'worker-handoff.txt') -Encoding UTF8
+
+    Wait-ForCreatorChatTab 'Worker 1' -Select
+    if (!(Find-Control 'Stop worker' -Enabled) -or (Get-ControlText 'Worker report') -cne 'Draft turn is waiting.') {
+        throw 'The second worker could not finish independently of the first worker.'
+    }
+    $records = @(Read-BuildWorkerTrace)
+    $assignments = @($lanternTask, $benchTask)
+    $manifests = @()
+    $markers = @()
+    $firstPid = $null
+    $secondPid = $null
+    for ($i = 0; $i -lt $assignments.Count; ++$i) {
+        $task = $assignments[$i]
+        $turn = @($records | Where-Object { $_.kind -ceq 'turn/start' -and $_.text.EndsWith($task, [StringComparison]::Ordinal) })
+        if ($turn.Count -ne 1) { throw "Expected exactly one worker turn for '$task'." }
+        $peer = @($records | Where-Object { $_.pid -eq $turn[0].pid })
+        $launch = $peer | Where-Object { $_.kind -ceq 'launch' }
+        $thread = $peer | Where-Object { $_.kind -ceq 'thread/start' }
+        $catalog = $peer | Where-Object { $_.kind -ceq 'native/catalog' }
+        $edit = $peer | Where-Object { $_.kind -ceq 'native/tool' -and $_.request.arguments.method -ceq 'world.transact' }
+        if ($launch.command -cne $cli -or ($launch.args -join '|') -cne "mcp|--project|$($launch.manifest)|--draft" -or
+            $thread.approvalPolicy -cne 'never' -or $thread.sandbox -cne 'workspace-write' -or !$thread.ephemeral -or
+            !$catalog.native -or (($catalog.tools.PSObject.Properties.Name | Sort-Object) -join '|') -cne
+                'poima_call|poima_discover|poima_reference' -or
+            $edit.request.arguments.params.base_revision -ne $Project.revision -or
+            !$edit.reply.structuredContent.result.committed -or $edit.reply.structuredContent.result.revision -ne $revision) {
+            throw "Worker '$task' did not make a native edit through the scoped draft connection."
+        }
+        $workerRoot = Split-Path -Parent $launch.manifest
+        $workerProject = Get-Content -LiteralPath $launch.manifest -Raw -Encoding UTF8 | ConvertFrom-Json
+        $marker = Get-Content -LiteralPath (Join-Path $workerRoot '.poima-draft.json') -Raw -Encoding UTF8 | ConvertFrom-Json
+        $draftWorld = Get-Content -LiteralPath (Join-Path $workerRoot $workerProject.entry.world) -Raw -Encoding UTF8 | ConvertFrom-Json
+        if ($marker.base_project_id -cne $Project.project_id -or $marker.project_id -cne $workerProject.project_id -or
+            $marker.project_id -ceq $Project.project_id -or $marker.base_revision -ne $Project.revision -or
+            $draftWorld.revision -ne $revision -or
+            $draftWorld.entities.PSObject.Properties[$ids[$i]].Value.name -cne $names[$i] -or
+            $null -ne $draftWorld.entities.PSObject.Properties[$ids[1 - $i]]) {
+            throw "Worker '$task' has incorrect lineage or did not make its own isolated scene edit."
+        }
+        $manifests += $launch.manifest
+        $markers += $marker
+        if ($i -eq 0) { $firstPid = $turn[0].pid } else { $secondPid = $turn[0].pid }
+    }
+    $base = Join-Path (Split-Path -Parent (Split-Path -Parent $manifests[0])) 'base\checkpoint.json'
+    $leadPaths = $leadDraft.Replace('\', '/')
+    if ($firstPid -eq $secondPid -or $manifests[0] -ceq $manifests[1] -or
+        $markers[0].project_id -ceq $markers[1].project_id -or
+        $markers[0].base_sha256 -cne $markers[1].base_sha256 -or
+        (Get-FileHash -LiteralPath $base).Hash.ToLowerInvariant() -cne $markers[0].base_sha256 -or
+        !$leadPaths.Contains($base.Replace('\', '/')) -or !$leadDraft.Contains($markers[0].base_sha256) -or
+        !$leadPaths.Contains($manifests[0].Replace('\', '/')) -or !$leadPaths.Contains($manifests[1].Replace('\', '/'))) {
+        throw 'The two drafts or the handoff do not identify the same source checkpoint.'
+    }
+    $checks.base_sha256 = $markers[0].base_sha256
+    $checks.draft_project_ids = @($markers[0].project_id, $markers[1].project_id)
+    $checks.draft_manifests = $manifests
+    $checks.native_edits = $ids
+    $checks.independent_concurrent_work = $true
+    $checks.handoff_left_draft_unsent = $true
+
+    Invoke-Control 'Stop worker'
+    $null = Wait-For 'the stopped worker and its clean exit' {
+        (Find-ControlId 'worker-status').Current.Name -ceq 'Worker stopped' -and
+            !(Get-Process -Id $firstPid -ErrorAction SilentlyContinue) -and
+            (Read-BuildWorkerTrace | Where-Object { $_.pid -eq $firstPid -and $_.kind -ceq 'exit' })
+    }
+    Wait-ForCreatorChatTab 'Worker 2' -Select
+    Wait-ForBuildWorkerReport $benchReport
+    if (!(Get-Process -Id $secondPid -ErrorAction SilentlyContinue)) { throw 'Stopping one worker retired its peer.' }
+    $checks.stop_retired_only_one_worker = $true
+
+    Wait-ForCreatorChatTab 'Worker 1' -Select
+    Start-BuildWorkerTask $holdTask
+    Wait-ForHeldBuildWorker
+    $restarted = Wait-For 'the reopened worker acting in the same draft' {
+        $trace = @(Read-BuildWorkerTrace)
+        $launch = @($trace | Where-Object { $_.kind -ceq 'launch' -and $_.manifest -ceq $manifests[0] -and $_.pid -ne $firstPid })
+        if ($launch.Count -eq 1 -and $launch[0].pid -ne $secondPid -and
+            ($trace | Where-Object { $_.pid -eq $launch[0].pid -and $_.kind -ceq 'turn/start' -and
+                $_.text.EndsWith($holdTask, [StringComparison]::Ordinal) })) { $launch[0] }
+    }
+    Wait-ForCreatorChatTab 'Main chat' -Select
+    if ((Get-ControlText 'Agent prompt') -cne $leadDraft -or (Get-ControlText 'Agent transcript') -cne $leadTranscript -or
+        (@(Get-AuthoredFileHashes) -join "`n") -cne $before) {
+        throw 'Worker conversations changed the live project or the lead chat.'
+    }
+    $checks.project_unchanged = $true
+    $checks.restarted_worker_pid = $restarted.pid
+    $checks.second_worker_pid = $secondPid
 }
 
 function Exercise-Acp($Project, $Provider, $Setting, $Executable, $Key) {
@@ -1646,6 +1816,8 @@ function Play-RelocatedExport($Bundle, $Expected = $report.checks.export, $Kind 
 
 $oldDriverFiles, $oldIcdFiles = $env:VK_DRIVER_FILES, $env:VK_ICD_FILENAMES
 $oldReviewMode, $oldReviewTrace = $env:POIMA_TEST_CODEX_REVIEW, $env:POIMA_TEST_CODEX_REVIEW_TRACE
+$oldWorkerMode, $oldWorkerNative, $oldWorkerTrace =
+    $env:POIMA_TEST_CODEX_DRAFT, $env:POIMA_TEST_CODEX_DRAFT_NATIVE, $env:POIMA_TEST_CODEX_DRAFT_TRACE
 try {
     if ($CodexReviews) {
         $reviewTrace = Join-Path $run 'codex-review-trace'
@@ -1653,6 +1825,13 @@ try {
         $env:POIMA_TEST_CODEX_REVIEW = '1'
         $env:POIMA_TEST_CODEX_REVIEW_TRACE = $reviewTrace
         $report.codex_review_fixture_sha256 = (Get-FileHash -LiteralPath $CodexReviews).Hash.ToLowerInvariant()
+    }
+    if ($WithBuildWorkers) {
+        $workerTrace = Join-Path $run 'codex-worker-trace'
+        New-Item -ItemType Directory -Path $workerTrace | Out-Null
+        $env:POIMA_TEST_CODEX_DRAFT = '1'
+        $env:POIMA_TEST_CODEX_DRAFT_NATIVE = '1'
+        $env:POIMA_TEST_CODEX_DRAFT_TRACE = $workerTrace
     }
     if ($InstallAntigravity) {
         $agyInstallRoot = Join-Path $env:LOCALAPPDATA 'Poima\agents\antigravity'
@@ -1772,12 +1951,19 @@ try {
         Exercise-CodexQuestions $project $CodexQuestions
     }
     $reviewPeers = @()
+    $workerPeers = @()
     try {
         if ($CodexReviews) {
             $project = Exercise-CodexReviews $project $CodexReviews
             $reviewChecks = $report.checks.codex_reviews
             $reviewPeers = @(Get-Process -Id @($reviewChecks.active_reviewer_before_creator_close, $reviewChecks.lead_pid))
             foreach ($peer in $reviewPeers) { $null = $peer.Handle }
+        }
+        if ($WithBuildWorkers) {
+            Exercise-BuildWorkers $project $reviewChecks.lead_pid
+            $workerChecks = $report.checks.codex_build_workers
+            $workerPeers = @(Get-Process -Id @($workerChecks.restarted_worker_pid, $workerChecks.second_worker_pid))
+            foreach ($peer in $workerPeers) { $null = $peer.Handle }
         }
         Close-Owner
         $report.checks.closed_exit_code = $owner.ExitCode
@@ -1790,8 +1976,17 @@ try {
             }
             $reviewChecks.closed_creator_joined_review_and_lead = $true
         }
+        if ($WithBuildWorkers) {
+            $exits = @(Read-BuildWorkerTrace | Where-Object { $_.kind -ceq 'exit' })
+            foreach ($peer in $workerPeers) {
+                if (!$peer.HasExited -or $peer.ExitTime -gt $owner.ExitTime -or $peer.Id -notin $exits.pid) {
+                    throw "Creator closed before the build worker $($peer.Id) exited naturally."
+                }
+            }
+            $workerChecks.closed_creator_joined_build_workers = $true
+        }
     }
-    finally { foreach ($peer in $reviewPeers) { $peer.Dispose() } }
+    finally { foreach ($peer in ($reviewPeers + $workerPeers)) { $peer.Dispose() } }
 
     $owner = Start-Launcher 'reopen'
     $window = Wait-For 'the reopened launcher' { Find-Window 'Poima' }
@@ -1906,6 +2101,8 @@ catch {
 finally {
     $env:VK_DRIVER_FILES, $env:VK_ICD_FILENAMES = $oldDriverFiles, $oldIcdFiles
     $env:POIMA_TEST_CODEX_REVIEW, $env:POIMA_TEST_CODEX_REVIEW_TRACE = $oldReviewMode, $oldReviewTrace
+    $env:POIMA_TEST_CODEX_DRAFT, $env:POIMA_TEST_CODEX_DRAFT_NATIVE, $env:POIMA_TEST_CODEX_DRAFT_TRACE =
+        $oldWorkerMode, $oldWorkerNative, $oldWorkerTrace
     if ($verifiedPlayer -and !$verifiedPlayer.HasExited) {
         $report.forced_player_cleanup = $true
         Stop-Process -Id $verifiedPlayer.Id

@@ -221,7 +221,7 @@ internal static class CodexReviewContract
         throw new InvalidDataException("Unexpected review fixture task.");
     }
 
-    private static async Task CheckInteractiveRequestsAsync(string thread, string turn)
+    internal static async Task CheckInteractiveRequestsAsync(string thread, string turn)
     {
         await Send(new JsonObject { ["id"] = "scoped-approval", ["method"] = "mcpServer/elicitation/request",
             ["params"] = new JsonObject { ["threadId"] = thread, ["turnId"] = turn } });
@@ -237,12 +237,12 @@ internal static class CodexReviewContract
 
     private static bool Is(JsonObject row, string kind) => row["kind"]?.GetValue<string>() == kind;
 
-    private static JsonObject Event(string method, JsonObject parameters) => new() { ["method"] = method, ["params"] = parameters };
+    internal static JsonObject Event(string method, JsonObject parameters) => new() { ["method"] = method, ["params"] = parameters };
 
-    private static JsonObject TurnEvent(string method, string thread, string turn) => Event(method,
+    internal static JsonObject TurnEvent(string method, string thread, string turn) => Event(method,
         new JsonObject { ["threadId"] = thread, ["turn"] = new JsonObject { ["id"] = turn, ["status"] = "completed" } });
 
-    private static async Task Send(JsonObject message)
+    internal static async Task Send(JsonObject message)
     {
         await Console.Out.WriteLineAsync(message.ToJsonString());
         await Console.Out.FlushAsync();

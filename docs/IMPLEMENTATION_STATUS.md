@@ -1,8 +1,21 @@
 # Implementation status
 
-Updated 2026-11-20 for **0.0.328**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-20 for **0.0.329**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.329 adds [editable worker tabs](WINDOWS_PREVIEW.md#assign-scene-work-to-a-draft)
+to the Codex creator workspace. Each worker opens a separate
+[draft-scoped MCP owner](MCP.md#edit-a-worker-draft) and can author scene edits
+and cook local assets. The Windows test used two scripted Codex peers with real
+native drafts. It checked concurrent work, live project integrity, unsent
+handoff and natural shutdown. Separately, two live Codex sessions on Linux
+authored distinct scene edits, and a supervised native integration joined
+the verified changes in a candidate. Both placements passed headless
+verification in a relocated Windows export. The creator still assigns the tasks
+and decides when to hand the reports to the lead. Automatic delegation and
+publication of an integrated candidate from the workspace remain open.
+[Results](evidence/m2-creator-build-workers-329.json)
 
 Version 0.0.328 adds native [worker drafts and staged integration](PROJECT_RECOVERY.md#create-worker-drafts-and-stage-an-integration).
 Linux and Windows CLI tests made two independently editable drafts from a

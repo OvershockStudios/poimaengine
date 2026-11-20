@@ -12,7 +12,9 @@ if (args is ["--codex-login", var client, var engine, var directory])
 }
 if (args.Length > 0 && args[0] == "app-server")
 {
-    if (Environment.GetEnvironmentVariable(CodexReviewContract.ModeVariable) == "1")
+    var draftFixture = Environment.GetEnvironmentVariable(CodexDraftContract.ModeVariable) == "1";
+    if (draftFixture && CodexDraftContract.IsDraftPeer(args)) await CodexDraftContract.RunPeerAsync(args);
+    else if (draftFixture || Environment.GetEnvironmentVariable(CodexReviewContract.ModeVariable) == "1")
         await CodexReviewContract.RunPeerAsync(args);
     else await QuestionPeer.RunAsync();
     return;
@@ -140,6 +142,7 @@ Console.WriteLine("Agent RPC contracts passed: concurrency, Unicode, errors, app
 await AcpContract.VerifyAsync(token);
 await CodexLoginContract.VerifyAsync(Environment.ProcessPath!, Environment.ProcessPath!, Directory.GetCurrentDirectory(), useFixture: true);
 await CodexReviewContract.VerifyAsync(token);
+await CodexDraftContract.VerifyAsync(token);
 await AgentInstallContract.VerifyAsync(WindowsCodexInstall.Package, WindowsCodexInstall.PackageUrl, WindowsCodexInstall.ArchiveBytes);
 await AgentInstallContract.VerifyAsync(WindowsClaudeInstall.Package, WindowsClaudeInstall.PackageUrl, WindowsClaudeInstall.ArchiveBytes);
 await AgentInstallContract.VerifyAsync(WindowsAntigravityInstall.Package, WindowsAntigravityInstall.PackageUrl, WindowsAntigravityInstall.DownloadBytes);

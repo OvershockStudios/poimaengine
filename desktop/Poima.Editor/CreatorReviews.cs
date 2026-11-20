@@ -12,7 +12,7 @@ internal sealed class CreatorReviews
     private sealed record Assignment(string World, long Revision);
     private readonly NativeHost host;
     private readonly Func<string, bool> addToDraft;
-    private readonly ReviewPane[] panes;
+    private readonly WorkerPane[] panes;
     private readonly TextBlock scopeNote = new() { TextWrapping = TextWrapping.Wrap };
     private readonly Button refresh = new() { Content = "Review current revision" };
     private readonly Button use = new() { Content = "Use findings in chat" };
@@ -126,16 +126,18 @@ internal sealed class CreatorReviews
         await Task.WhenAll(panes.Select(pane => pane.ResetAsync()));
     }
 
-    private sealed class ReviewPane
+    internal sealed class WorkerPane
     {
         private readonly Func<CancellationToken, Task<CodexReview>> open;
         private readonly Func<string> scope;
-        private readonly Action changed;
+        private readonly Action? changed;
         private readonly TextBox task = new() { AcceptsReturn = true, TextWrapping = TextWrapping.Wrap, Height = 85, MaxLength = 4000 };
         private readonly TextBox transcript = new() { AcceptsReturn = true, TextWrapping = TextWrapping.Wrap, IsReadOnly = true };
         private readonly TextBlock status = new() { Text = "Ready", TextWrapping = TextWrapping.Wrap };
-        private readonly Button ask = new() { Content = "Send to specialist" };
-        private readonly Button stop = new() { Content = "Stop review", IsEnabled = false };
+        private readonly Button ask = new();
+        private readonly Button stop = new() { IsEnabled = false };
+        private readonly bool editableDraft;
+        private readonly Button? handoff;
         private CodexReview? review;
         private CancellationTokenSource? active;
         private Task? pending;
@@ -145,16 +147,25 @@ internal sealed class CreatorReviews
         public string? Finding { get; private set; }
         public bool Busy => active is not null;
 
-        public ReviewPane(string name, string placeholder, Func<CancellationToken, Task<CodexReview>> open,
-            Func<string> scope, Action changed)
+        public WorkerPane(string name, string placeholder, Func<CancellationToken, Task<CodexReview>> open,
+            Func<string> scope, Action? changed = null, string? draftPath = null, Action<string>? useReport = null)
         {
             Name = name;
             this.open = open; this.scope = scope; this.changed = changed;
+            editableDraft = draftPath is not null;
             task.PlaceholderText = placeholder;
-            AutomationProperties.SetName(task, "Specialist task");
-            AutomationProperties.SetName(transcript, "Specialist findings");
-            AutomationProperties.SetAutomationId(status, "specialist-status");
+            ask.Content = editableDraft ? "Send to worker" : "Send to specialist";
+            stop.Content = editableDraft ? "Stop worker" : "Stop review";
+            AutomationProperties.SetName(task, editableDraft ? "Worker task" : "Specialist task");
+            AutomationProperties.SetName(transcript, editableDraft ? "Worker report" : "Specialist findings");
+            AutomationProperties.SetAutomationId(status, editableDraft ? "worker-status" : "specialist-status");
             var buttons = new WrapPanel { ItemSpacing = 8, Children = { ask, stop } };
+            if (useReport is not null)
+            {
+                handoff = new Button { Content = "Add report to main chat", IsEnabled = false };
+                handoff.Click += (_, _) => { if (Finding is { } report) useReport(report); };
+                buttons.Children.Add(handoff);
+            }
             var root = new Grid { RowDefinitions = new RowDefinitions("Auto,Auto,Auto,*"), RowSpacing = 8, Margin = new Thickness(14) };
             root.Children.Add(task);
             Grid.SetRow(buttons, 1); root.Children.Add(buttons);
@@ -168,12 +179,13 @@ internal sealed class CreatorReviews
             stop.Click += (_, _) =>
             {
                 if (active is null) return;
-                status.Text = "Stopping review…";
+                status.Text = editableDraft ? "Stopping worker…" : "Stopping review…";
                 active.Cancel();
                 Update();
             };
             task.TextChanged += (_, _) => Update();
             ask.IsEnabled = false;
+            if (draftPath is not null) ToolTip.SetTip(status, draftPath);
         }
 
         public void Enable(bool value) { enabled = value; Update(); }
@@ -183,7 +195,8 @@ internal sealed class CreatorReviews
             task.IsReadOnly = Busy || !enabled;
             ask.IsEnabled = enabled && !Busy && !string.IsNullOrWhiteSpace(task.Text);
             stop.IsEnabled = enabled && active is { IsCancellationRequested: false };
-            changed();
+            if (handoff is not null) handoff.IsEnabled = enabled && !Busy && Finding is not null;
+            changed?.Invoke();
         }
 
         private async Task SendAsync(string text)
@@ -191,7 +204,7 @@ internal sealed class CreatorReviews
             using var cancellation = new CancellationTokenSource();
             active = cancellation;
             Finding = null;
-            status.Text = "Reviewing…";
+            status.Text = editableDraft ? "Working in draft…" : "Reviewing…";
             Update();
             try
             {
@@ -209,14 +222,16 @@ internal sealed class CreatorReviews
                 _ = scope();
                 Finding = transcript.Text = answer;
                 task.Text = "";
-                status.Text = "Review complete";
+                status.Text = editableDraft ? "Worker finished" : "Review complete";
             }
             catch (Exception error)
             {
                 try
                 {
                     await DisposeReviewer();
-                    status.Text = cancellation.IsCancellationRequested ? "Review stopped" : error.Message;
+                    status.Text = cancellation.IsCancellationRequested
+                        ? editableDraft ? "Worker stopped" : "Review stopped"
+                        : error.Message;
                 }
                 catch (Exception shutdown) { status.Text = "Couldn’t close the specialist connection. " + shutdown.Message; }
             }

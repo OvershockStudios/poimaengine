@@ -8,6 +8,8 @@ Reply create_project(const std::string& directory,const std::string& name,bool g
 Reply inspect_project(const std::string& manifest);
 // Resolve the entry world only after validating the existing project.
 std::string project_world_path(const std::string& manifest);
+// Resolve a draft's entry only after verifying its local lineage marker and project.
+std::string project_draft_world_path(const std::string& manifest);
 Reply project_gameplay_source(const std::string& manifest,const std::string& owned_world,const std::string& request);
 Reply project_verification_suite(const std::string& manifest,const std::string& owned_world,const std::string& request);
 // Copies a verified native artifact and atomically adopts it into an existing

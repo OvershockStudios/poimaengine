@@ -4,8 +4,8 @@ using System.Text.Json.Nodes;
 
 namespace Poima.AgentHost;
 
-/// <summary>One owned read-only reviewer. The caller serializes its turns and
-/// disposes the connection after cancelling a pending turn.</summary>
+/// <summary>One specialist conversation backed by a scoped Poima connection.
+/// The caller serializes its turns and disposes it after cancelling a pending turn.</summary>
 public sealed class CodexReview : IAsyncDisposable
 {
     public const int MaximumFindingLength = 16000;
@@ -13,24 +13,41 @@ public sealed class CodexReview : IAsyncDisposable
 
     private CodexReview(CodexSession session) => this.session = session;
 
-    public static async Task<CodexReview> OpenAsync(string codexExecutable, string poimaExecutable,
-        string endpoint, string directory, long revision, string? model, CancellationToken cancellation)
+    public static Task<CodexReview> OpenAsync(string codexExecutable, string poimaExecutable,
+        string endpoint, string directory, long revision, string? model, CancellationToken cancellation) =>
+        OpenSpecialistAsync(CodexSession.ConnectReviewAsync(codexExecutable, poimaExecutable, endpoint, directory,
+            revision, cancellation), "poima_inspect", model, cancellation);
+
+    public static Task<CodexReview> OpenDraftAsync(string codexExecutable, string poimaExecutable,
+        string draftManifest, string? model, CancellationToken cancellation) =>
+        OpenSpecialistAsync(CodexSession.ConnectDraftAsync(codexExecutable, poimaExecutable, draftManifest, cancellation),
+            "poima_call", model, cancellation);
+
+    private static async Task<CodexReview> OpenSpecialistAsync(Task<CodexSession> connection, string tool,
+        string? model, CancellationToken cancellation)
     {
-        var session = await CodexSession.ConnectReviewAsync(codexExecutable, poimaExecutable, endpoint, directory,
-            revision, cancellation);
+        var session = await connection;
         try
         {
             await session.OpenAsync(cancellation: cancellation, model: model);
             var servers = await session.ListMcpServersAsync(cancellation);
             if (servers?["data"] is not JsonArray data || !data.Any(node =>
                 node?["name"]?.GetValue<string>() == "poima" && node["toolsError"] is null &&
-                node["tools"] is JsonObject tools && tools.Count == 3 && tools.ContainsKey("poima_inspect") &&
-                tools.ContainsKey("poima_reference") && tools.ContainsKey("poima_discover")))
-                throw new InvalidOperationException("The specialist could not connect to Poima's scoped review tools.");
+                node["tools"] is JsonObject tools && tools.Count == 3 && tools.ContainsKey(tool) &&
+                tools.ContainsKey("poima_reference") && tools.ContainsKey("poima_discover") &&
+                (tool != "poima_call" || HasDraftMethods(tools[tool]))))
+                throw new InvalidOperationException(tool == "poima_call"
+                    ? "The specialist could not connect to Poima's scoped draft tools."
+                    : "The specialist could not connect to Poima's scoped review tools.");
             return new CodexReview(session);
         }
         catch { await session.DisposeAsync(); throw; }
     }
+
+    private static bool HasDraftMethods(JsonNode? tool) =>
+        tool?["inputSchema"]?["properties"]?["method"]?["enum"] is JsonArray methods &&
+        methods.Any(method => method?.GetValue<string>() == "world.inspect") &&
+        methods.Any(method => method?.GetValue<string>() == "world.transact");
 
     public async Task<string> AskAsync(string text, Action<string> showDraft, CancellationToken cancellation)
     {
@@ -45,7 +62,7 @@ public sealed class CodexReview : IAsyncDisposable
                 if (method == "mcpServer/elicitation/request")
                     await session.ReplyAsync(request, new JsonObject { ["action"] = "cancel" }, cancellation);
                 else
-                    await session.RejectAsync(request, "A specialist review has no interactive approvals.", cancellation);
+                    await session.RejectAsync(request, "A specialist session has no interactive approvals.", cancellation);
                 continue;
             }
             var parameters = message["params"];

@@ -115,6 +115,23 @@ to **Main chat**. Review the draft and send it when you want the lead to
 verify the proposals. Closing the creator ends the specialist sessions.
 [Review tools and revision scope](https://github.com/OvershockStudios/poimaengine/blob/main/docs/MCP.md#review-a-shared-revision)
 
+## Assign scene work to a draft
+
+Connect **Codex** and choose **Add build worker**. Poima captures the
+current project when you add the first worker. Each worker gets a separate
+editable copy of that checkpoint. Add up to ten workers and switch between
+their tabs and **Main chat** while tasks run.
+
+Assign a scene change such as placing a lantern or lighting an entrance. Use
+**Stop worker** to end a running session. The draft files stay in the
+project's sibling `.poima-drafts` folder. Closing the workspace retires its
+worker sessions and chat tabs.
+
+When a worker finishes, **Add report to main chat** adds its report, draft path
+and checkpoint hash to the unsent message. The lead uses these pointers to
+inspect the changes, select files and stage an integrated candidate for playtest.
+[Worker draft integration](https://github.com/OvershockStudios/poimaengine/blob/main/docs/PROJECT_RECOVERY.md#create-worker-drafts-and-stage-an-integration)
+
 ## Import assets
 
 Stop Play and choose **Import assets…** in the creator. Pick a file type and

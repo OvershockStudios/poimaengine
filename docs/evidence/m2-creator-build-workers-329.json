@@ -1,0 +1,94 @@
+{
+  "engine_version": "0.0.329",
+  "windows_ui_automation": {
+    "frontend_sha256": "a5b5ecce12320d45517102f4a9482bc2793a5a99375e9c0aa8f5d168296c99ec",
+    "agent_host_sha256": "1108d6cffbe9f47925eacbc3b22b161d43b1115a075324f7aec0b420a42eba84",
+    "native_cli_sha256": "c3dce77232d2e399c8563ac22d1e11562666a81732bf0a2cbb70853f439190f3",
+    "desktop_bridge_sha256": "c92379b96ee5f5a633b8ac2860d13eea45fce327a6c65a8e0faa5d67a9750291",
+    "scripted_peer_sha256": "a86cbf0b22236e86c438defd9c7649351cee24eac0fb0f6bb21b12860d8bc3b4",
+    "base_revision": 2,
+    "base_sha256": "38e10321656f57b1ec566186ec2403a4f7659023cd2d6d2287064bce4b345b92",
+    "checks": {
+      "independent_concurrent_work": true,
+      "handoff_left_draft_unsent": true,
+      "stop_retired_only_one_worker": true,
+      "project_unchanged": true,
+      "closed_creator_joined_build_workers": true
+    },
+    "isolated_worker_count": 2,
+    "native_edits": [
+      "0000000000000000000000000000da01",
+      "0000000000000000000000000000da02"
+    ],
+    "read_only_reviewer_and_lead_shutdown_passed": true,
+    "creator_exit_code": 0,
+    "forced_cleanup": false
+  },
+  "live_codex_linux_authoring": {
+    "client": "Codex CLI 0.170.0",
+    "model": "gpt-6.1-terra",
+    "exact_managed_adapter_matches_windows_candidate": true,
+    "native_cli_sha256": "5a54d11eeeccba9a461e358099ef8743a2eb6176f44c8f9af1a3dc97ae96425d",
+    "results": [
+      {
+        "name": "Lantern post",
+        "entity_id": "0000000000000000000000000000be01",
+        "position": [
+          -1,
+          0,
+          2
+        ],
+        "streamed_updates": 67
+      },
+      {
+        "name": "Quay bench",
+        "entity_id": "0000000000000000000000000000be02",
+        "position": [
+          2,
+          0,
+          2
+        ],
+        "streamed_updates": 65
+      }
+    ],
+    "supervised_integration": {
+      "base_revision": 1,
+      "worker_ids": [
+        "0000000000000000000000000000be01",
+        "0000000000000000000000000000be02"
+      ],
+      "integrated_revision": 2,
+      "verified_exact_entity_composition": true,
+      "source_and_worker_bytes_preserved": true,
+      "guarded_transaction_committed": true,
+      "files_verified_against_base": 5
+    }
+  },
+  "relocated_windows_verification_of_live_integration": {
+    "passed": true,
+    "bundle_sha256": "753ba5160064e4d19c238f121a70e479e27f310119b561f85fd8a876b39879da",
+    "suite_sha256": "6fafbcbc59991105697750a3e8e8ec516eafe6b5557c420745f4d2d3be9fc63b",
+    "groups_passed": 2,
+    "source_unavailable_during_check": true
+  },
+  "regressions": {
+    "linux_native": {
+      "mcp_contract": "passed",
+      "project_draft_contract": "passed",
+      "cli_contract": "passed"
+    },
+    "windows_native_mcp_tests_passed": 16,
+    "managed_agent_rpc_contract_linux": true,
+    "managed_agent_rpc_contract_windows": true
+  },
+  "development_failures": [
+    "The first managed contract build failed on a using declaration in an unbraced switch case. The revised fixture uses a case scope and returns the provider permission fields.",
+    "The first desktop build reported a new nullable annotation warning for the tab panel. The corrected desktop build passed UI automation again."
+  ],
+  "scope": "The Windows UI test uses scripted provider peers and real native draft owners. The live Codex run uses standalone Linux drafts and supervised integration. Worker assignments, report handoff and activation do not yet run as an automatic lead flow.",
+  "reproduction": [
+    "Build the native CLI and run tests/mcp_contract.py to exercise the draft-scoped native transport.",
+    "Publish the Windows desktop and the win-x64 self-contained tests/fixtures/agent_rpc project. Run tests/creator_workspace.ps1 with -Editor, -Output, -CodexReviews and -WithBuildWorkers.",
+    "Create two drafts from one source checkpoint and open separate CodexReview.OpenDraftAsync sessions against them. Create one named entity with a distinct position in each draft. Independently check the changes, stage both in a guarded integration and verify the two positions using game verify from the relocated Windows export."
+  ]
+}

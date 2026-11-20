@@ -8,12 +8,14 @@ import json
 import os
 from pathlib import Path
 import queue
+import struct
 import subprocess
 import tempfile
 import threading
 import time
 import unittest
 import uuid
+import wave
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('binary', type=Path)
@@ -32,7 +34,7 @@ def native(path):
 
 
 class Client:
-    def __init__(self, path=None, endpoint=None, *, project=None, cwd=None, profiles=None, review_revision=None):
+    def __init__(self, path=None, endpoint=None, *, project=None, cwd=None, profiles=None, review_revision=None, draft=False):
         if endpoint:
             target = ['--endpoint', endpoint]
             if review_revision is not None:
@@ -41,6 +43,8 @@ class Client:
             target = ['--project', native(project)]
         else:
             target = ['--world', native(path)]
+        if draft:
+            target.append('--draft')
         if profiles:
             target.extend(['--development-profiles', native(profiles)])
         self.process = subprocess.Popen([BINARY, 'mcp', *target], stdin=subprocess.PIPE,
@@ -177,6 +181,114 @@ class McpContract(unittest.TestCase):
                                 input=json.dumps(request)+'\n', capture_output=True, text=True, timeout=30)
         self.assertEqual(direct.returncode, 0, direct.stdout + direct.stderr)
         self.assertEqual(json.loads(direct.stdout)['result']['revision'], revision + 1)
+
+    def test_draft_mcp_only_edits_the_owned_draft_and_imports_local_assets(self):
+        manifest, world = self.create_project()
+        root = Path(self.temp.name)
+        source = world.parent / 'Tone.wav'
+        with wave.open(str(source), 'wb') as output:
+            output.setparams((1, 2, 48000, 4, 'NONE', 'not compressed'))
+            output.writeframes(struct.pack('<hhhh', 0, 100, -100, 0))
+        (world.parent / 'Model.glb').write_bytes(
+            (Path(__file__).resolve().parents[1] / 'examples/assets/material-sphere.glb').read_bytes())
+        original_manifest = manifest.read_bytes()
+        original_world = world.read_bytes()
+        original_audio = source.read_bytes()
+        initial = json.loads(original_world)
+
+        def run_project(*arguments):
+            result = subprocess.run([BINARY, 'project', *arguments], capture_output=True,
+                                    text=True, encoding='utf-8', timeout=30)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            return json.loads(result.stdout)['result']
+
+        checkpoint = root / 'Base'
+        capture = run_project('checkpoint', native(manifest), '--output', native(checkpoint))
+        draft_root = root / 'Draft'
+        run_project('draft', native(checkpoint / 'checkpoint.json'), '--output', native(draft_root),
+                    '--expected-base-sha256', capture['source_sha256'])
+        draft_manifest = draft_root / manifest.name
+        draft_world = draft_root / world.relative_to(manifest.parent)
+        draft_source = draft_world.parent / source.name
+        marker = draft_root / '.poima-draft.json'
+
+        def refused(exit_code, *arguments):
+            result = subprocess.run([BINARY, 'mcp', *arguments], input='', capture_output=True,
+                                    text=True, encoding='utf-8', timeout=30)
+            self.assertEqual(result.returncode, exit_code, result.stdout + result.stderr)
+            self.assertEqual(result.stdout, '')
+            self.assertTrue(result.stderr)
+
+        refused(4, '--project', native(manifest), '--draft')
+        refused(2, '--world', native(draft_world), '--draft')
+        refused(2, '--endpoint', 'shared-draft-test', '--draft')
+        refused(2, '--project', native(draft_manifest), '--draft', '--development-profiles', 'profiles.json')
+        marker_bytes = marker.read_bytes()
+        marker.write_text(json.dumps({**json.loads(marker_bytes), 'project_id': uuid.uuid4().hex}), encoding='utf-8')
+        refused(4, '--project', native(draft_manifest), '--draft')
+        marker.write_bytes(marker_bytes)
+
+        # Both world owners remain live while the worker authors the draft.
+        lead = Client(project=manifest)
+        self.clients.append(lead)
+        lead.initialize()
+        worker = Client(project=draft_manifest, draft=True)
+        self.clients.append(worker)
+        worker.initialize()
+        tools = {entry['name']: entry for entry in worker.rpc('tools/list')['tools']}
+        self.assertEqual(set(tools), {'poima_call', 'poima_discover', 'poima_reference'})
+        methods = set(tools['poima_call']['inputSchema']['properties']['method']['enum'])
+        self.assertTrue({'world.inspect', 'world.transact', 'asset.import', 'asset.audio.import'} <= methods)
+        catalog = worker.tool('poima_discover')
+        self.assertEqual(catalog['mcp_scope'], 'project_draft')
+        self.assertTrue({'world.inspect', 'world.transact'} <= set(catalog['methods']) <= methods)
+        full = worker.tool('poima_discover', {'view': 'full'})
+        self.assertEqual(set(full['methods']), set(catalog['methods']))
+        selected = worker.tool('poima_discover', {'selection': {'methods': ['entity.get', 'asset.audio.import']}})
+        self.assertEqual(set(selected['methods']), {'entity.get', 'asset.audio.import'})
+
+        for method in ('settings.transact', 'input.transact', 'runtime.play', 'save.write',
+                       'development.publish', 'world.capture', 'project.source.read'):
+            with self.subTest(method=method):
+                self.assertNotIn(method, methods)
+                worker.world(method, error=-32602)
+                worker.tool('poima_discover', {'view': 'method', 'name': method}, error=-32602)
+                worker.tool('poima_discover', {'selection': {'methods': ['world.inspect', method]}}, error=-32602)
+        worker.rpc('tools/call', {'name': 'poima_build', 'arguments': {}}, error=-32602)
+
+        entity = uuid.uuid4().hex
+        edit = {'request_id': uuid.uuid4().hex, 'base_revision': initial['revision'],
+                'ops': [{'op': 'entity.create', 'id': entity, 'name': 'Draft scene fixture'}]}
+        self.assertEqual(worker.world('world.inspect')['world_id'], initial['world_id'])
+        receipt = worker.world('world.transact', edit)
+        self.assertTrue(receipt['committed'])
+        self.assertEqual(receipt['revision'], initial['revision'] + 1)
+        self.assertTrue(worker.world('world.transact', edit)['replayed'])
+        worker.world('world.transact', {**edit, 'request_id': uuid.uuid4().hex}, error=-32009)
+
+        alias = draft_world.parent / 'Alias.wav'
+        os.link(draft_source, alias)
+        try:
+            worker.world('asset.audio.import', {'source': alias.name}, error=-32602)
+        finally:
+            alias.unlink()
+        for external in (native(source), '../Tone.wav'):
+            worker.world('asset.audio.import', {'source': external}, error=-32602)
+            worker.world('asset.import', {'source': 'Model.glb', 'animations': [{'source': external}]}, error=-32602)
+        audio = worker.world('asset.audio.import', {'source': 'Tone.wav'})['asset']
+        model = worker.world('asset.import', {'source': 'Model.glb'})['asset']
+        store = draft_world.with_suffix('.json.assets')
+        self.assertTrue((store / (audio + '.paudio')).is_file())
+        self.assertTrue((store / (model + '.pmodel')).is_file())
+        self.assertEqual(lead.world('world.inspect')['revision'], initial['revision'])
+        lead.world('entity.get', {'id': entity}, error=-32004)
+        worker.close()
+        lead.close()
+        self.assertEqual(manifest.read_bytes(), original_manifest)
+        self.assertEqual(world.read_bytes(), original_world)
+        self.assertEqual(source.read_bytes(), original_audio)
+        self.assertFalse(world.with_suffix('.json.assets').exists())
+        self.assertEqual(json.loads(draft_world.read_bytes())['entities'][entity]['name'], 'Draft scene fixture')
 
     def test_project_files_are_scoped_and_guarded(self):
         root = Path(self.temp.name)

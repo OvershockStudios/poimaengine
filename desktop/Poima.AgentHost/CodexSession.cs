@@ -15,49 +15,70 @@ public sealed record CodexBrowserLogin(string Id, Uri AuthorizationPage);
 /// </summary>
 public sealed class CodexSession : IAgentSession
 {
+    private enum Interaction { Project, Review, Draft }
+
     private readonly AgentRpcProcess rpc;
     private readonly string directory;
-    private readonly bool reviewOnly;
+    private readonly Interaction interaction;
     private readonly SemaphoreSlim opening = new(1, 1);
     public string? ThreadId { get; private set; }
     string? IAgentSession.ConversationId => ThreadId;
     public ChannelReader<JsonObject> Events => rpc.Events;
     public string DiagnosticTail => rpc.DiagnosticTail;
 
-    private CodexSession(AgentRpcProcess rpc, string directory, bool reviewOnly)
+    private CodexSession(AgentRpcProcess rpc, string directory, Interaction interaction)
     {
         this.rpc = rpc;
         this.directory = directory;
-        this.reviewOnly = reviewOnly;
+        this.interaction = interaction;
     }
 
     /// <summary>Attach Poima through its existing endpoint; never open a second world writer.</summary>
     public static Task<CodexSession> ConnectAsync(string codexExecutable, string poimaExecutable,
         string endpoint, string workingDirectory, CancellationToken cancellation = default, bool allowPoimaEdits = false,
         bool allowPoimaSourceEdits = false, bool allowPoimaBuilds = false, bool allowPoimaChecks = false,
-        bool receiveQuestions = false) => ConnectCoreAsync(codexExecutable, poimaExecutable, endpoint, workingDirectory,
+        bool receiveQuestions = false) => ConnectEndpointAsync(codexExecutable, poimaExecutable, endpoint, workingDirectory,
             null, cancellation, allowPoimaEdits, allowPoimaSourceEdits, allowPoimaBuilds, allowPoimaChecks, receiveQuestions);
 
     internal static Task<CodexSession> ConnectReviewAsync(string codexExecutable, string poimaExecutable,
         string endpoint, string workingDirectory, long revision, CancellationToken cancellation)
     {
         if (revision is < 0 or > 9007199254740991L) throw new ArgumentOutOfRangeException(nameof(revision));
-        return ConnectCoreAsync(codexExecutable, poimaExecutable, endpoint, workingDirectory, revision, cancellation,
+        return ConnectEndpointAsync(codexExecutable, poimaExecutable, endpoint, workingDirectory, revision, cancellation,
             false, false, false, false, false);
     }
 
-    private static async Task<CodexSession> ConnectCoreAsync(string codexExecutable, string poimaExecutable,
+    internal static Task<CodexSession> ConnectDraftAsync(string codexExecutable, string poimaExecutable,
+        string draftManifest, CancellationToken cancellation)
+    {
+        cancellation.ThrowIfCancellationRequested();
+        var manifest = CodexDraftTarget.Validate(draftManifest);
+        return ConnectCoreAsync(codexExecutable, poimaExecutable, ["mcp", "--project", manifest, "--draft"],
+            Path.GetDirectoryName(manifest)!, Interaction.Draft, cancellation, allowPoimaEdits: true);
+    }
+
+    private static async Task<CodexSession> ConnectEndpointAsync(string codexExecutable, string poimaExecutable,
         string endpoint, string workingDirectory, long? reviewRevision, CancellationToken cancellation,
         bool allowPoimaEdits, bool allowPoimaSourceEdits, bool allowPoimaBuilds, bool allowPoimaChecks, bool receiveQuestions)
     {
         if (endpoint.Length is < 1 or > 64 || endpoint.Any(c => !char.IsAsciiLetterOrDigit(c) && c != '-' && c != '_'))
             throw new ArgumentException("Invalid Poima endpoint.", nameof(endpoint));
-        if (!Path.IsPathFullyQualified(poimaExecutable) || !File.Exists(poimaExecutable))
-            throw new ArgumentException("An existing absolute Poima executable path is required.", nameof(poimaExecutable));
-        var directory = Path.GetFullPath(workingDirectory);
         var engineArguments = new List<string> { "mcp", "--endpoint", endpoint };
         if (reviewRevision is { } revision)
             engineArguments.AddRange(["--review-revision", revision.ToString(CultureInfo.InvariantCulture)]);
+        return await ConnectCoreAsync(codexExecutable, poimaExecutable, [.. engineArguments], workingDirectory,
+            reviewRevision.HasValue ? Interaction.Review : Interaction.Project, cancellation,
+            allowPoimaEdits, allowPoimaSourceEdits, allowPoimaBuilds, allowPoimaChecks, receiveQuestions);
+    }
+
+    private static async Task<CodexSession> ConnectCoreAsync(string codexExecutable, string poimaExecutable,
+        string[] engineArguments, string workingDirectory, Interaction interaction, CancellationToken cancellation,
+        bool allowPoimaEdits, bool allowPoimaSourceEdits = false, bool allowPoimaBuilds = false,
+        bool allowPoimaChecks = false, bool receiveQuestions = false)
+    {
+        if (!Path.IsPathFullyQualified(poimaExecutable) || !File.Exists(poimaExecutable))
+            throw new ArgumentException("An existing absolute Poima executable path is required.", nameof(poimaExecutable));
+        var directory = Path.GetFullPath(workingDirectory);
         // CLI overrides apply only to this process. No provider account files or
         // global configuration are written. Provider authentication stays in Codex.
         var arguments = new List<string>
@@ -65,6 +86,14 @@ public sealed class CodexSession : IAgentSession
             "app-server", "-c", "mcp_servers.poima.command=" + JsonSerializer.Serialize(poimaExecutable),
             "-c", "mcp_servers.poima.args=" + JsonSerializer.Serialize(engineArguments)
         };
+        if (interaction == Interaction.Draft)
+            arguments.AddRange([
+                "-c", "mcp_servers.poima.enabled_tools=[\"poima_discover\",\"poima_reference\",\"poima_call\"]",
+                "-c", "sandbox_workspace_write.writable_roots=[]",
+                "-c", "sandbox_workspace_write.network_access=false",
+                "-c", "sandbox_workspace_write.exclude_tmpdir_env_var=true",
+                "-c", "sandbox_workspace_write.exclude_slash_tmp=true"
+            ]);
         if (receiveQuestions)
             arguments.AddRange(["-c", "features.default_mode_request_user_input=true"]);
         if (allowPoimaEdits)
@@ -76,7 +105,7 @@ public sealed class CodexSession : IAgentSession
         if (allowPoimaChecks)
             arguments.AddRange(["-c", "mcp_servers.poima.tools.poima_checks.approval_mode=\"approve\""]);
         var rpc = new AgentRpcProcess(codexExecutable, arguments, directory);
-        var session = new CodexSession(rpc, directory, reviewRevision.HasValue);
+        var session = new CodexSession(rpc, directory, interaction);
         try
         {
             var initialization = new JsonObject
@@ -91,11 +120,13 @@ public sealed class CodexSession : IAgentSession
         catch { await session.DisposeAsync(); throw; }
     }
 
-    /// <summary>Start a persistent thread, or resume its provider-owned history without replaying prompts.</summary>
+    /// <summary>Open a scoped specialist thread or start or resume a regular project conversation.</summary>
     public async Task<string> OpenAsync(string? threadId = null, CancellationToken cancellation = default, string? model = null)
     {
         if (threadId is not null) ArgumentException.ThrowIfNullOrWhiteSpace(threadId);
-        if (reviewOnly && threadId is not null) throw new ArgumentException("Reviews open a new scoped conversation.", nameof(threadId));
+        var ephemeral = interaction != Interaction.Project;
+        if (ephemeral && threadId is not null)
+            throw new ArgumentException("Specialists open a new scoped conversation.", nameof(threadId));
         if (model is not null) ArgumentException.ThrowIfNullOrWhiteSpace(model);
         await opening.WaitAsync(cancellation);
         try
@@ -103,20 +134,34 @@ public sealed class CodexSession : IAgentSession
             if (ThreadId is not null) throw new InvalidOperationException("This connection already has an open thread.");
             var parameters = new JsonObject
             {
-                ["cwd"] = directory, ["approvalPolicy"] = reviewOnly ? "never" : "on-request",
-                ["sandbox"] = reviewOnly ? "read-only" : "workspace-write"
+                ["cwd"] = directory, ["approvalPolicy"] = ephemeral ? "never" : "on-request",
+                ["sandbox"] = interaction == Interaction.Review ? "read-only" : "workspace-write"
             };
             if (model is not null) parameters["model"] = model;
-            if (threadId is null) parameters["ephemeral"] = reviewOnly;
+            if (threadId is null) parameters["ephemeral"] = ephemeral;
             else { parameters["threadId"] = threadId; parameters["excludeTurns"] = true; }
             var result = await rpc.RequestAsync(threadId is null ? "thread/start" : "thread/resume", parameters, cancellation);
             var returned = result?["thread"]?["id"]?.GetValue<string>();
             if (string.IsNullOrWhiteSpace(returned) || (threadId is not null && returned != threadId))
                 throw new AgentExchangeException("Provider returned an invalid thread identity.", true);
+            if (interaction == Interaction.Draft && !HasDraftPermissions(result))
+                throw new InvalidOperationException("Codex returned unexpected permissions for the draft workspace.");
             ThreadId = returned;
             return returned;
         }
         finally { opening.Release(); }
+    }
+
+    private bool HasDraftPermissions(JsonNode? response)
+    {
+        if (response is null || response["cwd"]?.GetValue<string>() is not { } cwd || !Path.IsPathFullyQualified(cwd) ||
+            !string.Equals(Path.TrimEndingDirectorySeparator(Path.GetFullPath(cwd)), Path.TrimEndingDirectorySeparator(directory),
+                OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal))
+            return false;
+        return response["approvalPolicy"]?.GetValue<string>() == "never" && response["sandbox"] is JsonObject sandbox &&
+            sandbox["type"]?.GetValue<string>() == "workspaceWrite" && sandbox["writableRoots"] is JsonArray { Count: 0 } &&
+            sandbox["networkAccess"]?.GetValue<bool>() == false && sandbox["excludeTmpdirEnvVar"]?.GetValue<bool>() == true &&
+            sandbox["excludeSlashTmp"]?.GetValue<bool>() == true;
     }
 
     public Task<string> SendAsync(string text, CancellationToken cancellation = default) => SendAsync(text, [], cancellation);
