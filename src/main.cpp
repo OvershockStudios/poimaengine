@@ -102,8 +102,21 @@ poima::Reply run(int argc, char** argv) {
         return poima::usage_error("Invalid project command. Use: schema project");
     }
     if(command=="game") {
-        if(argc<4 || !*argv[3])return poima::usage_error("Use: game inspect <game.json> | run <game.json> [options] | serve <game.json> --endpoint <name> | stdio <game.json> [--save-root external-directory] [--save-write-mode synchronous|background].");
+        if(argc<4 || !*argv[3])return poima::usage_error("Invalid game command. Use: schema game");
         const std::string_view action=argv[2];if(action=="inspect" && argc==4)return poima::inspect_game(argv[3]);
+        if(action=="verify") {
+            std::string suite,report;
+            for(int i=4;i<argc;i+=2) {
+                const std::string_view key=argv[i];
+                if(i+1>=argc || !*argv[i+1] || std::string_view(argv[i+1]).starts_with("--"))
+                    return poima::usage_error("Game verification requires nonempty --suite and optional --report paths.");
+                if(key=="--suite" && suite.empty())suite=argv[i+1];
+                else if(key=="--report" && report.empty())report=argv[i+1];
+                else return poima::usage_error("Unknown or repeated game verification option.");
+            }
+            if(suite.empty())return poima::usage_error("Game verification requires --suite.");
+            return poima::verify_gameplay(argv[3],suite,report);
+        }
         if(action=="stdio") {
             poima::GameStdioOptions options;options.manifest=argv[3];std::set<std::string_view> seen;
             for(int i=4;i<argc;i+=2) {

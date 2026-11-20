@@ -31,4 +31,6 @@ struct GameStdioOptions {
 // Verify and prepare a read-only game, then own its synchronous NDJSON session
 // until session.close or stdin EOF. No endpoint, window or automatic Tick.
 Reply stdio_game(const GameStdioOptions& options);
+// Exercise fixed ticks and typed observations in the bundled runtime.
+Reply verify_gameplay(const std::string& manifest,const std::string& suite,const std::string& report={});
 }

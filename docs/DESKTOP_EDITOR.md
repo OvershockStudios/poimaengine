@@ -78,6 +78,8 @@ Useful arguments are `--gpu N` for both native viewports, `--samples 1|4`, and a
 4. In the portable preview, choose **Export build** after stopping Play and
    finishing the agent turn. Poima copies the saved project into a new
    timestamped folder beside the project and checks the standalone bundle.
+   If the project contains `game.verify.json`, it runs those gameplay checks
+   on the packaged game and shows the result and report. [Write a suite](GAME_VERIFICATION.md)
    Choose **Open build folder** and run `launch.cmd` to play it. Keep the whole
    folder together when sharing it.
 

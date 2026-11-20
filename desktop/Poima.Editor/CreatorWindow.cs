@@ -21,12 +21,14 @@ internal sealed class CreatorWindow : Window
     private readonly Button play = new() { Content = "Play" }, stop = new() { Content = "Stop" };
     private readonly Button export = new() { Content = "Export build" };
     private readonly Button showExport = new() { Content = "Open build folder", IsVisible = false };
+    private readonly Button showChecks = new() { Content = "Open check report", IsVisible = false };
     private readonly TextBlock status = new() { TextWrapping = TextWrapping.Wrap };
     private readonly Border viewport = new() { Background = EditorTheme.Brush("#161518"), ClipToBounds = true };
     private bool starting, exporting, closeAfterExport, closing, allowClose;
-    private string? exportedFolder;
+    private string? exportedFolder, checkReport, checkSummary;
     private long exportedRevision;
     private Task? agentShutdown;
+    private CancellationTokenSource? checking;
     private string? previewSession, error;
 
     public CreatorWindow(ProjectLocation project, LaunchOptions options)
@@ -55,7 +57,8 @@ internal sealed class CreatorWindow : Window
         play.Click += async (_, _) => await PlayAsync();
         stop.Click += (_, _) => ExecuteStop();
         export.Click += async (_, _) => await ExportAsync();
-        showExport.Click += (_, _) => OpenExportFolder();
+        showExport.Click += (_, _) => OpenExportItem(exportedFolder, Directory.Exists);
+        showChecks.Click += (_, _) => OpenExportItem(checkReport, File.Exists);
         Closing += (_, args) =>
         {
             if (allowClose) return;
@@ -64,6 +67,7 @@ internal sealed class CreatorWindow : Window
             if (exporting)
             {
                 closeAfterExport = true;
+                checking?.Cancel();
                 UpdateControls();
                 return;
             }
@@ -117,6 +121,7 @@ internal sealed class CreatorWindow : Window
         var result = new StackPanel { Spacing = 8 };
         result.Children.Add(status);
         result.Children.Add(showExport);
+        result.Children.Add(showChecks);
         Grid.SetRow(result, 2); preview.Children.Add(result);
         var previewCard = Card(preview);
         Grid.SetColumn(previewCard, 1); panels.Children.Add(previewCard);
@@ -213,7 +218,7 @@ internal sealed class CreatorWindow : Window
     private async Task ExportAsync()
     {
         if (!export.IsEnabled || !export.IsVisible) return;
-        exporting = true; error = null; UpdateControls();
+        exporting = true; error = null; checkReport = null; UpdateControls();
         try
         {
             var current = await OpenCurrentProject();
@@ -231,10 +236,41 @@ internal sealed class CreatorWindow : Window
             var folder = Path.Combine(parent, $"{name} - Build {DateTime.Now:yyyy-MM-dd HHmmss} {suffix}");
             var result = await ProjectFiles.Command("build", current.Manifest, "--output", folder,
                 "--runtime", ProjectFiles.PreviewRuntime);
-            exportedFolder = Path.GetFullPath(result.GetProperty("output").GetString()!);
-            exportedRevision = result.GetProperty("revision").GetInt64();
+            var candidate = Path.GetFullPath(result.GetProperty("output").GetString()!);
+            var revision = result.GetProperty("revision").GetInt64();
+            var suite = Path.Combine(current.Root, ProjectFiles.VerificationSuiteName);
+            if (closeAfterExport) return;
+            if (File.Exists(suite))
+            {
+                var report = candidate + ".checks.json";
+                using var cancellation = new CancellationTokenSource();
+                checking = cancellation;
+                UpdateControls();
+                try
+                {
+                    var verification = await ProjectFiles.VerifyExport(candidate, suite, report, cancellation.Token);
+                    var passed = verification.GetProperty("groups_passed").GetInt32();
+                    var total = verification.GetProperty("groups_total").GetInt32();
+                    checkReport = report;
+                    if (!verification.GetProperty("passed").GetBoolean())
+                    {
+                        error = $"Revision {revision} passed {passed} of {total} check groups." + EarlierExportMessage();
+                        return;
+                    }
+                    checkSummary = $"Revision {revision} passed all {total} check groups.";
+                }
+                finally { checking = null; }
+            }
+            else if (checkSummary is not null)
+            {
+                error = $"Revision {revision} was exported without a check suite." + EarlierExportMessage();
+                return;
+            }
+            exportedFolder = candidate;
+            exportedRevision = revision;
         }
-        catch (Exception failure) { error = failure.Message; }
+        catch (OperationCanceledException) when (closeAfterExport) { }
+        catch (Exception failure) { error = failure.Message + EarlierExportMessage(); }
         finally
         {
             exporting = false;
@@ -243,14 +279,16 @@ internal sealed class CreatorWindow : Window
         }
     }
 
-    private void OpenExportFolder()
+    private string EarlierExportMessage() => exportedFolder is null ? "" :
+        $" The earlier export of revision {exportedRevision} is still available.";
+
+    private void OpenExportItem(string? path, Func<string, bool> exists)
     {
-        if (exportedFolder is null || closing || exporting) return;
+        if (path is null || closing || exporting) return;
         try
         {
-            if (!Directory.Exists(exportedFolder))
-                throw new InvalidOperationException("The exported build folder has moved or been removed.");
-            using var process = Process.Start(new ProcessStartInfo(exportedFolder) { UseShellExecute = true });
+            if (!exists(path)) throw new InvalidOperationException("The item has moved or been removed.");
+            using var process = Process.Start(new ProcessStartInfo(path) { UseShellExecute = true });
         }
         catch (Exception failure) { error = failure.Message; UpdateControls(); }
     }
@@ -285,13 +323,16 @@ internal sealed class CreatorWindow : Window
         chat.IsEnabled = !closing && !exporting;
         showExport.IsVisible = exportedFolder is not null;
         showExport.IsEnabled = !closing && !exporting;
+        showChecks.IsVisible = checkReport is not null;
+        showChecks.IsEnabled = !closing && !exporting;
         var gameView = host.State["views"]?["game"];
         status.Text = closing ? "Closing project…" : closeAfterExport ? "Finishing export before closing…" :
-            exporting ? "Exporting the saved project…" : starting ? "Starting preview…" : error ?? host.ViewError("game") ??
+            checking is not null ? "Checking the exported game…" : exporting ? "Exporting the saved project…" :
+            starting ? "Starting preview…" : error ?? host.ViewError("game") ??
             model.PlaybackError ?? (previewSession is not null
                 ? gameView?["presented_tick"] is not null ? "Click the game to take control. Press Esc to release the mouse." : "Waiting for the first game frame…"
                 : model.RuntimeId is not null ? "A playtest is running. Stop it to start a preview."
-                : exportedFolder is not null ? $"Exported revision {exportedRevision}. Open the build folder and run launch.cmd."
+                : exportedFolder is not null ? checkSummary ?? $"Exported revision {exportedRevision}. Open the build folder and run launch.cmd."
                 : "Play opens the current project. Chat changes appear the next time you play.");
     }
 }

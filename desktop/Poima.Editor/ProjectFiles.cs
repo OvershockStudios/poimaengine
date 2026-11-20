@@ -12,6 +12,7 @@ internal static class ProjectFiles
     public const string Extension = ".poimaproject";
     public const string DefaultManifestName = "project" + Extension;
     public const string LegacyManifestName = "project.json";
+    public const string VerificationSuiteName = "game.verify.json";
     public static string PreviewSample => Path.Combine(AppContext.BaseDirectory, "samples", "Collection Room", "game.json");
     public static string PreviewRuntime => Path.Combine(Path.GetDirectoryName(PreviewSample)!, "runtime");
 
@@ -43,17 +44,36 @@ internal static class ProjectFiles
         return Process.Start(info) ?? throw new InvalidOperationException("Poima could not start.");
     }
 
-    public static async Task<JsonElement> Command(params string[] arguments)
+    public static Task<JsonElement> Command(params string[] arguments) =>
+        RunCommand(Path.Combine(AppContext.BaseDirectory, "poima.exe"), ["project", .. arguments]);
+
+    public static Task<JsonElement> VerifyExport(string bundle, string suite, string report, CancellationToken cancellation) =>
+        RunCommand(Path.Combine(bundle, "runtime", "bin", "poima.exe"),
+            ["game", "verify", Path.Combine(bundle, "game.json"), "--suite", suite, "--report", report],
+            allowFailedVerification: true, cancellation: cancellation);
+
+    private static async Task<JsonElement> RunCommand(string executable, string[] arguments,
+        bool allowFailedVerification = false, CancellationToken cancellation = default)
     {
-        using var process = Start(Path.Combine(AppContext.BaseDirectory, "poima.exe"), ["project", .. arguments]);
+        using var process = Start(executable, arguments);
         var output = process.StandardOutput.ReadToEndAsync();
         var error = process.StandardError.ReadToEndAsync();
-        await process.WaitForExitAsync();
+        try { await process.WaitForExitAsync(cancellation); }
+        catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
+        {
+            try { if (!process.HasExited) process.Kill(entireProcessTree: true); }
+            catch (InvalidOperationException) when (process.HasExited) { }
+            await process.WaitForExitAsync();
+            await Task.WhenAll(output, error);
+            throw;
+        }
         var body = await output;
         var stderr = await error;
         if (body.Length == 0) throw new InvalidOperationException(stderr.Length > 0 ? stderr : "Poima did not return a project result.");
         using var response = JsonDocument.Parse(body);
-        if (process.ExitCode != 0)
+        if (process.ExitCode != 0 && !(allowFailedVerification &&
+            response.RootElement.TryGetProperty("result", out var failed) &&
+            failed.ValueKind == JsonValueKind.Object && failed.GetProperty("passed").ValueKind == JsonValueKind.False))
             throw new InvalidOperationException(response.RootElement.GetProperty("diagnostics")[0].GetProperty("message").GetString());
         return response.RootElement.GetProperty("result").Clone();
     }

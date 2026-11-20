@@ -1,0 +1,65 @@
+{
+  "engine_version": "0.0.287",
+  "scope": "Windows x64 portable creator with a copied Observatory project and its retained Native AOT gameplay. Windows UI Automation operates two exports. An unchanged suite describes semantic movement, door collision, typed C# state and visible logical HUD content.",
+  "package": {
+    "bytes": 128723499,
+    "sha256": "67506985fa3d0d5d6074c3edf9fea33f2d1a63053b8d65c3b9147ec45fa5c896"
+  },
+  "passing_candidate": {
+    "revision": 8,
+    "bundle_sha256": "4ca816768da791e76c8236a5697034fdb37f6cf713420143a112d3787e587bd2",
+    "suite_sha256": "25acd8a976e567dbe790e90eea5e86cd05ef27f737b93caee43d4e3b678061f3",
+    "groups": 2,
+    "checked_expectations": 22,
+    "creator_status": "Revision 8 passed all 2 check groups."
+  },
+  "failed_candidate": {
+    "change": "Commit the Observatory door collider as static instead of kinematic through the shared world service.",
+    "revision": 9,
+    "bundle_sha256": "611bef33e932e75da5d8b5f85f4e40320b2f92e2509253b0d4ccf67303f59eec",
+    "suite_sha256": "25acd8a976e567dbe790e90eea5e86cd05ef27f737b93caee43d4e3b678061f3",
+    "groups_passed": 1,
+    "groups_total": 2,
+    "issue": {
+      "message": "runtime.step: Motion target requires a kinematic BoxCollider.",
+      "operation": 61
+    },
+    "creator_status": "Revision 9 passed 1 of 2 check groups. The earlier export of revision 8 is still available.",
+    "previous_report_unchanged": true
+  },
+  "relocated_previous_export": {
+    "original_project_path_unavailable": true,
+    "verification_report_reproduced_exactly": true,
+    "independent_checks": 16,
+    "fresh_process_save_continuation": true,
+    "tick": 632,
+    "presented_frames": 633,
+    "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "validation_errors": 0,
+    "final_capture_sha256": "491c7caf87fc6558bbd241a0e09b6ad1e3af71b719dbfaae463947330be42f98",
+    "validated_files_after_play": 60
+  },
+  "windows_cli_regression": {
+    "test": "tests/game_verification_cli.py",
+    "verified_bundle_files": 53,
+    "checks": [
+      "Forward movement and independent starting state",
+      "Repeat report equality",
+      "Failed assertion and missing JSON pointer",
+      "Duplicate keys and mutation rejection",
+      "Executable identity and output-file guards",
+      "Complete bundle byte preservation"
+    ],
+    "creator_without_suite_export": true
+  },
+  "linux": {
+    "headless_build": "Passed after the configured LLD was placed on the process PATH.",
+    "foreign_bundle_rejection": "Game bundle targets a different platform or architecture.",
+    "export_fixture_failure": "The retained Linux runtime configuration excludes the renderer. Project export requires simulation and renderer support."
+  },
+  "remaining": [
+    "Restart-safe workspace history and restoration of editable source, assets and compiled gameplay",
+    "Suites across fresh provider-authored projects",
+    "Linux bundle verification with a renderer-enabled distribution"
+  ]
+}

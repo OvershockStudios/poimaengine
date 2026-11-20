@@ -446,6 +446,7 @@ struct VerifiedGame { GameDefinition definition;Json spec;fs::path manifest; };
 VerifiedGame verify_game(const std::string& filename) {
     VerifiedGame result;result.manifest=fs::absolute(path_of(filename)).lexically_normal();regular(result.manifest);result.manifest=fs::canonical(result.manifest);require(result.manifest.filename()=="game.json","Game bundle manifest must be named game.json.");const auto root=result.manifest.parent_path();require(fs::symlink_status(root/".poima-incomplete").type()==fs::file_type::not_found,"Game publication is incomplete.");
     const auto manifest_bytes=read(result.manifest,4*1024*1024);result.spec=parse(manifest_bytes);const auto& spec=result.spec;
+    result.definition.manifest_sha256=hash(manifest_bytes);
     fields(spec,{"format","version","project_id","name","engine","entry","audio","input_profile","source","files","gameplay"},{"format","version","project_id","name","engine","entry","audio","source","files"});
     const auto version=integer(spec.at("version"));require(spec.at("format")=="poima.game" && (version==1 || version==2),"Unsupported game bundle format/version.");
     require(spec.contains("gameplay")== (version==2),"Game version 2 requires gameplay; version 1 has no gameplay field.");id(spec.at("project_id"));name_value(spec.at("name"));require(spec.at("audio").is_boolean(),"Game audio flag must be Boolean.");
@@ -463,6 +464,7 @@ VerifiedGame verify_game(const std::string& filename) {
     expect("runtime/runtime.json","runtime");const auto runtime=runtime_spec(read(contained(root,"runtime/runtime.json"),65536));
     require(engine.at("version")==runtime.at("engine_version") && engine.at("target_os")==runtime.at("target_os") && engine.at("target_arch")==runtime.at("target_arch") && engine.at("executable")=="runtime/"+runtime.at("executable").get<std::string>(),"Game engine descriptor differs from runtime descriptor.");
     expect(engine.at("executable"),"runtime");executable_mode(contained(root,engine.at("executable")),runtime.at("target_os"));expect("runtime/share/poima/LICENSE","runtime");expect("runtime/share/poima/THIRD_PARTY_NOTICES.md","runtime");
+    result.definition.executable=text(contained(root,engine.at("executable")));
     fields(spec.at("entry"),{"world","camera","controller"},{"world","camera","controller"});require(spec.at("entry").at("world")=="content/world.json","Bundle world must use content/world.json.");expect("content/world.json","world");
     const auto world=contained(root,"content/world.json");const auto world_bytes=read(world,16*1024*1024);require(hash(world_bytes)==inventory.at("content/world.json").at("sha256").get<std::string>(),"Bundle world changed during verification.");
     WorldPackageContent content;{ WorldSession session(text(world),WorldOpenMode::read_only_runtime);content=session.package_content(); }

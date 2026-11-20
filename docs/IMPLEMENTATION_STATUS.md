@@ -1,8 +1,17 @@
 # Implementation status
 
-Updated 2026-11-20 for **0.0.286**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-20 for **0.0.287**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.287 adds [bundled gameplay verification](GAME_VERIFICATION.md).
+The native verifier runs semantic input and observation groups against an
+exported game and records the exact bundle and suite hashes. Windows creator
+export shows the result and keeps a previous passing export available in the
+current session. The Observatory exercise passes two groups, then detects a
+committed change that breaks the door. The earlier build still verifies and
+plays after relocation. Workspace history and source recovery across restarts
+remain open. [Results](evidence/m2-creator-verify-287.json)
 
 Version 0.0.286 lets the Windows desktop owner use an operator-configured
 [development profile](DESKTOP_EDITOR.md#publish-compiled-gameplay-from-chat).

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "poima/game_launch.hpp"
+#include "poima/assets.hpp"
 #include "poima/project.hpp"
 #include "poima/world.hpp"
 #include "poima/runtime.hpp"
@@ -11,6 +12,7 @@
 #include <nlohmann/json.hpp>
 #include <filesystem>
 #include <fstream>
+#include <initializer_list>
 #include <random>
 #include <set>
 
@@ -140,6 +142,190 @@ std::string prepare_game(WorldSession& world,const GameDefinition& game,const st
         {"values",Json::parse(game.gameplay_values)}});
     return session;
 }
+
+// Keep the exact suite bytes for its identity. Every operation's shape is
+// admitted before loading gameplay, and its detailed parameters use the native
+// runtime's ordinary bounded request validation.
+void suite_fields(const Json& value,std::initializer_list<std::string_view> required,
+    std::initializer_list<std::string_view> optional={}) {
+    require(value.is_object(),"Expected an object in the verification suite.");
+    for(const auto field:required)require(value.contains(field),"Missing verification field: "+std::string(field));
+    for(auto item=value.begin();item!=value.end();++item)
+        require(std::find(required.begin(),required.end(),item.key())!=required.end() ||
+            std::find(optional.begin(),optional.end(),item.key())!=optional.end(),"Unknown verification field: "+item.key());
+}
+
+std::pair<Json,std::string> read_suite(const std::string& name) {
+    const auto path=path_of(name);
+    require(fs::is_regular_file(path),"Verification suite must be a regular file.");
+    std::ifstream input(path,std::ios::binary|std::ios::ate);
+    const auto size=input.tellg();
+    require(size>0 && size<=1024*1024,"Verification suite must contain 1 byte to 1 MiB.");
+    std::string bytes(static_cast<std::size_t>(size),'\0');
+    input.seekg(0);
+    require(bool(input.read(bytes.data(),size)) && input.peek()==std::char_traits<char>::eof(),
+        "Verification suite changed or could not be read.");
+    std::vector<std::set<std::string>> keys;
+    auto suite=Json::parse(bytes,[&](int depth,Json::parse_event_t event,Json& item) {
+        require(depth<=32,"Verification suite nesting exceeds 32 levels.");
+        if(event==Json::parse_event_t::object_start)keys.emplace_back();
+        if(event==Json::parse_event_t::key)require(keys.back().insert(item.get<std::string>()).second,"Duplicate verification field.");
+        if(event==Json::parse_event_t::object_end)keys.pop_back();
+        return true;
+    });
+    suite_fields(suite,{"format","version","groups"});
+    require(suite.at("format")=="poima.game-verification" && suite.at("version").is_number_integer() && suite.at("version")==1,
+        "Unsupported game verification suite format or version.");
+    const auto& groups=suite.at("groups");
+    require(groups.is_array() && !groups.empty() && groups.size()<=32,"Verification requires 1 to 32 groups.");
+    std::set<std::string> names;
+    std::size_t operations=0;
+    std::uint64_t ticks=0;
+    for(const auto& group:groups) {
+        suite_fields(group,{"name","sequence"});
+        const auto label=group.at("name").get<std::string>();
+        require(!label.empty() && label.size()<=96 && names.insert(label).second,"Verification group names must be unique and 1 to 96 bytes.");
+        const auto& sequence=group.at("sequence");
+        require(sequence.is_array() && !sequence.empty(),"Each verification group needs a nonempty sequence.");
+        operations+=sequence.size();
+        require(operations<=512,"Verification suite exceeds 512 operations.");
+        bool has_expectation=false;
+        for(const auto& operation:sequence) {
+            suite_fields(operation,{}, {"step","expect"});
+            require(operation.size()==1,"Each operation must contain one step or expectation.");
+            if(operation.contains("step")) {
+                const auto& step=operation.at("step");
+                suite_fields(step,{"ticks"},{"inputs"});
+                const auto& count=step.at("ticks");
+                require(count.is_number_integer() && count>=1 && count<=600,"Verification step must be 1 to 600 ticks.");
+                require(!step.contains("inputs") || (step.at("inputs").is_array() && step.at("inputs").size()<=32),
+                    "Verification step accepts up to 32 native input objects.");
+                ticks+=count.get<std::uint64_t>();
+                require(ticks<=36000,"Verification suite exceeds 36000 ticks.");
+                continue;
+            }
+            const auto& expect=operation.at("expect");
+            suite_fields(expect,{"label","method","path"},{"params","equals","between"});
+            const auto check=expect.at("label").get<std::string>();
+            require(!check.empty() && check.size()<=96,"Expectation labels must be 1 to 96 bytes.");
+            const auto method=expect.at("method").get<std::string>();
+            static const std::set<std::string_view> observers={"runtime.inspect","runtime.entity","runtime.gameplay.inspect",
+                "runtime.ui.inspect","runtime.component.get","runtime.raycast"};
+            require(observers.contains(method),"Unsupported verification observation: "+method);
+            if(expect.contains("params")) {
+                const auto& params=expect.at("params");
+                require(params.is_object() && !params.contains("session_id") && !params.contains("tick"),
+                    "Observation parameters must omit session_id and tick.");
+            }
+            const auto pointer=expect.at("path").get<std::string>();
+            require(pointer.size()<=512,"Verification JSON pointer exceeds 512 bytes.");
+            (void)Json::json_pointer(pointer);
+            require(expect.contains("equals")!=expect.contains("between"),"Use exactly one equals or between comparison.");
+            if(expect.contains("between")) {
+                const auto& range=expect.at("between");
+                require(range.is_array() && range.size()==2 && range[0].is_number() && range[1].is_number() &&
+                    range[0].get<double>()<=range[1].get<double>(),"Between needs an ordered pair of numbers.");
+            }
+            has_expectation=true;
+        }
+        require(has_expectation,"Each verification group needs an expectation.");
+    }
+    return {std::move(suite),sha256(std::as_bytes(std::span(bytes)))};
+}
+
+fs::path running_executable() {
+#ifdef _WIN32
+    std::wstring path(32768,L'\0');
+    const auto size=GetModuleFileNameW(nullptr,path.data(),static_cast<DWORD>(path.size()));
+    require(size>0 && size<path.size(),"Cannot identify the running game executable.");
+    path.resize(size);
+    return fs::path(path);
+#else
+    return fs::canonical("/proc/self/exe");
+#endif
+}
+
+Json evaluate_group(const GameDefinition& game,const Json& group) {
+    Json result={{"name",group.at("name")},{"passed",true},{"ticks",0},{"checks",Json::array()}};
+    std::size_t index=0;
+    try {
+        WorldSession world(game.world,WorldOpenMode::read_only_runtime,game.root);
+        const auto session=prepare_game(world,game,{},std::nullopt);
+        for(const auto& operation:group.at("sequence")) {
+            ++index;
+            const auto current=world.runtime_status();
+            if(operation.contains("step")) {
+                auto step=operation.at("step");
+                const auto ticks=step.at("ticks").get<std::uint64_t>();
+                step.update({{"session_id",session},{"request_id",id()},{"expected_tick",current.tick},
+                    {"expected_structure_revision",current.structure_revision}});
+                const auto advanced=call(world,"runtime.step",std::move(step));
+                require(advanced.at("current_session_id")==session && advanced.at("current_tick")==current.tick+ticks,
+                    "Runtime replaced or did not advance the requested ticks.");
+                result["ticks"]=current.tick+ticks;
+                continue;
+            }
+            const auto& expect=operation.at("expect");
+            auto params=expect.value("params",Json::object());
+            const auto method=expect.at("method").get<std::string>();
+            params["session_id"]=session;
+            if(method!="runtime.inspect")params["tick"]=current.tick;
+            const auto observed=call(world,method,std::move(params));
+            const Json::json_pointer pointer(expect.at("path").get<std::string>());
+            const bool present=observed.contains(pointer);
+            const Json& value=present ? observed.at(pointer) : Json(nullptr);
+            const bool exact=expect.contains("equals");
+            const auto& comparison=expect.at(exact ? "equals" : "between");
+            const bool matches=present && (exact ? value==comparison : value.is_number() &&
+                value.get<double>()>=comparison[0].get<double>() && value.get<double>()<=comparison[1].get<double>());
+            // Observing a large native collection should not inflate a receipt.
+            const bool omitted=value.dump().size()>2048;
+            result["checks"].push_back({{"label",expect.at("label")},{"tick",current.tick},{"passed",matches},
+                {"method",method},{"path",expect.at("path")},{"observed",present},
+                {"actual",omitted ? Json(nullptr) : value},{"actual_omitted",omitted}});
+            if(!matches)result["passed"]=false;
+        }
+    }catch(const std::exception& error) {
+        result["passed"]=false;
+        result["issue"]={{"operation",index},{"message",std::string(error.what()).substr(0,2048)}};
+    }
+    return result;
+}
+}
+
+Reply verify_gameplay(const std::string& manifest,const std::string& suite_file,const std::string& report) {
+    Json result=nullptr,diagnostics=Json::array();
+    bool passed=false;
+    try {
+        const auto [suite,suite_hash]=read_suite(suite_file);
+        const auto game=load_game(manifest);
+        validate_game_host(game);
+        require(fs::equivalent(running_executable(),path_of(game.executable)),"Run verification with this bundle's own runtime executable.");
+        output_path(report,game,suite_file);
+        Json groups=Json::array();
+        std::size_t count=0;
+        for(const auto& group:suite.at("groups")) {
+            auto observed=evaluate_group(game,group);
+            if(observed.at("passed")==true)++count;
+            groups.push_back(std::move(observed));
+        }
+        require(load_game(manifest).manifest_sha256==game.manifest_sha256,"Game bundle changed during verification.");
+        const auto total=groups.size();
+        const bool all=count==total;
+        result={{"format","poima.game-verification-result"},{"version",1},{"project_id",game.project_id},
+            {"revision",game.revision},{"bundle_sha256",game.manifest_sha256},{"suite_sha256",suite_hash},
+            {"engine_version",build_metadata().version},{"groups_passed",count},{"groups_total",total},{"passed",all},
+            {"groups",std::move(groups)}};
+        if(!all)diagnostics.push_back({{"code","game.verification_failed"},{"message","One or more gameplay check groups failed."}});
+        output_path(report,game,suite_file);
+        write_report(report,result);
+        passed=all;
+    } catch(const std::exception& error) {
+        result=nullptr;
+        diagnostics.push_back({{"code","game.verify_failed"},{"message",error.what()}});
+    }
+    return {passed ? 0 : 4,Json{{"protocol_version",1},{"request_id",nullptr},{"command","game.verify"},
+        {"status",passed ? "ok" : "error"},{"result",result},{"diagnostics",diagnostics}}.dump(-1,' ',false,Json::error_handler_t::replace)};
 }
 Reply serve_game(const GameServeOptions& options) {
     try {
