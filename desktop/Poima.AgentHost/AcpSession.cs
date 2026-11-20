@@ -11,6 +11,7 @@ public sealed class AcpSession : IAgentSession
     private readonly string directory, poimaExecutable, endpoint;
     private int prompting;
     public string? ConversationId { get; private set; }
+    public bool SupportsImages { get; private set; }
     public ChannelReader<JsonObject> Events => rpc.Events;
     public void AcknowledgeEvent() => rpc.AcknowledgeEvent();
 
@@ -44,6 +45,8 @@ public sealed class AcpSession : IAgentSession
             }, cancellation);
             if (reply?["protocolVersion"]?.GetValue<int>() != 1)
                 throw new IOException("The agent must support ACP version 1.");
+            session.SupportsImages = reply?["agentCapabilities"]?["promptCapabilities"]?["image"] is JsonValue image &&
+                image.TryGetValue<bool>(out var supported) && supported;
             return session;
         }
         catch { await session.DisposeAsync(); throw; }
@@ -66,17 +69,23 @@ public sealed class AcpSession : IAgentSession
         ConversationId = id;
     }
 
-    public async Task<string> PromptAsync(string text, CancellationToken cancellation = default)
+    public Task<string> PromptAsync(string text, CancellationToken cancellation = default) => PromptAsync(text, [], cancellation);
+
+    public async Task<string> PromptAsync(string text, IReadOnlyList<AgentImage> images, CancellationToken cancellation)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(text);
+        AgentImage.CheckCount(images);
+        if (images.Count > 0 && !SupportsImages) throw new InvalidOperationException("This agent connection accepts text only.");
         var id = RequireSession();
         if (Interlocked.Exchange(ref prompting, 1) != 0)
             throw new InvalidOperationException("Wait for the current agent turn to finish.");
         try
         {
+            var prompt = new JsonArray(new JsonObject { ["type"] = "text", ["text"] = text });
+            foreach (var image in images) prompt.Add(image.AcpInput());
             var reply = await rpc.RequestAsync("session/prompt", new JsonObject
             {
-                ["sessionId"] = id, ["prompt"] = new JsonArray(new JsonObject { ["type"] = "text", ["text"] = text })
+                ["sessionId"] = id, ["prompt"] = prompt
             }, cancellation);
             await rpc.WaitForEventDeliveryAsync(cancellation);
             return reply?["stopReason"]?.GetValue<string>() ??

@@ -1,0 +1,116 @@
+{
+  "engine_version": "0.0.302",
+  "scope": "Fresh projects in the extracted Windows preview, with two live installed agent clients and Windows UI Automation. A separate native picker confirmation used the owned Windows dialog. The providers had preinstalled tools and sign-in on the development laptop.",
+  "archive": {
+    "name": "Poima-0.0.302-Windows-x64.zip",
+    "bytes": 141387025,
+    "sha256": "1d9c9d13d2f695c36e8192fa8e162eb2113ca06ca68e9390e2cf1ba32ff1eb62"
+  },
+  "release_inventory_files": 499,
+  "authoring_pack": {
+    "engine_version": "0.0.302",
+    "manifest_sha256": "761b3317e22ed6ca93412bf1668c0b0746634019ce644c6685652b2b7d1606f5",
+    "files": 17
+  },
+  "artifacts": {
+    "editor_sha256": "f13ed85fbc3adb2cff88a8e2914d6d0e4525b9cd3022d7ffcdc8253864830a0e",
+    "frontend_sha256": "afca952fe527d278b05456dd6aac6d83c0da197e8ae4f0050c3d738df91f8ff7",
+    "agent_host_sha256": "15c300734c6212a92ee6b27ae57ae92e85d780ef306952d261c5cddd3712c96e",
+    "cli_sha256": "1c7c1b1991c07d4f2aa0227a582b6fa97f3ed033996a78d28e9391fdb52e1a3b"
+  },
+  "references": {
+    "invalid_fixture_rejected": "7f0bc18d57f31a56f0567143b1f1ae7f77eecf521e8a8e2b9979f0ee85fee988",
+    "source_png_1920x1080": "5b5420f886d49cd5b4a05fd84be49897023207023b279cce5932221f43f8e689",
+    "source_jpeg_1350x750_exif_orientation_6": "d40b2e30f6c9003df46f85015396de2194e7bd0cf444d07f84493d7712d5972d"
+  },
+  "live_clients": [
+    {
+      "name": "Codex",
+      "version": "codex-cli 0.163.0-alpha.11",
+      "elapsed_ms": 2761,
+      "checks": {
+        "rejected_invalid_image": true,
+        "removed_image": true,
+        "visual_response": {
+          "count": 2,
+          "first_left": "blue square",
+          "first_right": "orange triangle",
+          "second_top": "red circle",
+          "second_bottom": "green diamond"
+        },
+        "cleared_draft": true,
+        "project_unchanged": true,
+        "project_inventory_unchanged": true,
+        "originals_unchanged": true
+      },
+      "editor_exit": 0
+    },
+    {
+      "name": "Antigravity",
+      "version": "1.5.13",
+      "elapsed_ms": 45195,
+      "checks": {
+        "rejected_invalid_image": true,
+        "removed_image": true,
+        "visual_response": {
+          "count": 2,
+          "first_left": "blue square",
+          "first_right": "orange triangle",
+          "second_top": "red circle",
+          "second_bottom": "green diamond"
+        },
+        "cleared_draft": true,
+        "project_unchanged": true,
+        "project_inventory_unchanged": true,
+        "originals_unchanged": true
+      },
+      "editor_exit": 0
+    }
+  ],
+  "protocol_fixtures": {
+    "windows": true,
+    "linux": true,
+    "acp_exact_image_block": true,
+    "acp_unsupported_image_rejected": true,
+    "approval_and_completion_checked": true
+  },
+  "windows_creator_regression": {
+    "passed": true,
+    "checks": [
+      "closed_during_play_exit_code",
+      "closed_exit_code",
+      "codex_questions",
+      "created",
+      "edit_before_export",
+      "export",
+      "export_disabled_during_preview",
+      "first_preview",
+      "relocated_export",
+      "reopened_preview",
+      "stopped"
+    ],
+    "sha256": "6aaef35785ccc022c082d01830ca0bb0d68c23adaf4f9aee3d34feb6f434cbfe"
+  },
+  "earlier_attempts": {
+    "scope": "Changed managed frontend with the retained 0.0.301 native payload before the full preview build.",
+    "automation_failures": [
+      "Picker lookup timed out twice using the top-level UI Automation tree.",
+      "One probe reached the dialog before its filename edit existed.",
+      "One probe selected the Open menu item instead of the confirmation button."
+    ],
+    "owners_exited_cleanly": true,
+    "subsequent_live_checks": [
+      "Codex",
+      "Antigravity"
+    ]
+  },
+  "packaged_harness_retries": {
+    "first": "The project inventory helper lost its PowerShell pipeline entry during hashing.",
+    "second": "The helper tried to hash the open world writer lock.",
+    "resolved": "Hash every project file except the live world.json.lock through a named file entry."
+  },
+  "open_qualification": [
+    "First-time creator and toolchain on a clean Windows machine",
+    "Live Claude image prompt"
+  ]
+}

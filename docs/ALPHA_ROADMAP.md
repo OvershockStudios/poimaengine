@@ -40,6 +40,8 @@ those steps with an automated creator and the installed Codex client.
 Rainlight Greenhouse began as a blank project. The run verified its first
 build and revision, kept the previous pass after the requested deliberate
 failure, restored its source and completed a save in a relocated export.
+The [image-reference trial](evidence/m2-creator-images-302.json) checks visual
+input through the same Windows chat with Codex and Antigravity.
 Qualification with a first-time creator on clean Windows remains open.
 
 ### Engine and delivery

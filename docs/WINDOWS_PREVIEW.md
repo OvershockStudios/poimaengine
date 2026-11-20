@@ -62,8 +62,9 @@ with the ID from its manifest.
 [Client setup](https://github.com/OvershockStudios/poimaengine/blob/main/docs/AGENT_CLIENTS.md#connect-a-project)
 
 New projects include instructions for the agent to ask you about your game
-before building it. Describe the experience you want to play, or share
-sketches and references. [Plan a game](https://github.com/OvershockStudios/poimaengine/blob/main/docs/GAME_BRIEF.md)
+before building it. Describe the experience you want to play. If your agent
+supports image input, choose **Add images** to send a sketch or screenshot
+with your message. [Plan a game](https://github.com/OvershockStudios/poimaengine/blob/main/docs/GAME_BRIEF.md)
 
 ## Import assets
 

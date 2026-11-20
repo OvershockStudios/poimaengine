@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.302
+
+- Attach PNG and JPEG references to the creator's chat when the connected agent supports images.
+
 ## 0.0.301
 
 - Read the engine's gameplay, UI and verification guides through the shared Poima API.

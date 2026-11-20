@@ -96,13 +96,18 @@ public sealed class CodexSession : IAgentSession
         finally { opening.Release(); }
     }
 
-    public async Task<string> SendAsync(string text, CancellationToken cancellation = default)
+    public Task<string> SendAsync(string text, CancellationToken cancellation = default) => SendAsync(text, [], cancellation);
+
+    public async Task<string> SendAsync(string text, IReadOnlyList<AgentImage> images, CancellationToken cancellation)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(text);
+        AgentImage.CheckCount(images);
+        var input = new JsonArray(new JsonObject { ["type"] = "text", ["text"] = text });
+        foreach (var image in images) input.Add(image.CodexInput());
         var result = await rpc.RequestAsync("turn/start", new JsonObject
         {
             ["threadId"] = RequireThread(),
-            ["input"] = new JsonArray(new JsonObject { ["type"] = "text", ["text"] = text })
+            ["input"] = input
         }, cancellation);
         var id = result?["turn"]?["id"]?.GetValue<string>();
         if (string.IsNullOrWhiteSpace(id)) throw new AgentExchangeException("Provider returned no turn identity.", true);

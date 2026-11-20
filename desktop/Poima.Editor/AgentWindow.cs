@@ -5,6 +5,7 @@ using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
+using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using Poima.AgentHost;
 using System.Text.Json.Nodes;
@@ -34,6 +35,9 @@ internal sealed class AgentChat : UserControl
     private readonly TextBlock status = new() { Text = "Disconnected", TextWrapping = TextWrapping.Wrap };
     private readonly StackPanel approvals = new() { Spacing = 6 };
     private readonly ScrollViewer approvalScroll;
+    private readonly Button addImages = new() { Content = "Add images", IsEnabled = false, IsVisible = false };
+    private readonly StackPanel imageChips = new() { Spacing = 3, IsVisible = false };
+    private readonly List<(string Name, AgentImage Image, Control Chip)> images = [];
     private readonly Button connect = new() { Content = "Connect" }, disconnect = new() { Content = "Disconnect", IsEnabled = false },
         send = new() { Content = "Send", IsEnabled = false }, stop = new() { Content = "Stop", IsEnabled = false };
     private IAgentSession? session;
@@ -43,7 +47,7 @@ internal sealed class AgentChat : UserControl
     private readonly Dictionary<StackPanel, JsonNode> acpPermissions = [];
     private readonly Dictionary<string, string> acpToolDetails = new(StringComparer.Ordinal);
     private bool submitting, closing, connecting, ready, cancelRequested, sentGameplayContext;
-    private bool acpReceivedReply;
+    private bool acpReceivedReply, codexSupportsImages, pickingImages;
     private Task? connectingTask, closingTask, retiringTask;
     public bool Busy => submitting || activeTurn is not null || connecting || retiringTask?.IsCompleted == false;
     private string ProviderName => provider.SelectedItem as string ?? "Codex";
@@ -106,20 +110,24 @@ internal sealed class AgentChat : UserControl
         Grid.SetRow(transcript, 2); root.Children.Add(transcript);
         approvalScroll = new ScrollViewer { Content = approvals, MaxHeight = 200 };
         Grid.SetRow(approvalScroll, 3); root.Children.Add(approvalScroll);
-        Grid.SetRow(prompt, 4); root.Children.Add(prompt);
+        var composer = new StackPanel { Spacing = 6, Children = { imageChips, prompt } };
+        Grid.SetRow(composer, 4); root.Children.Add(composer);
         var actions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
-        actions.Children.Add(send); actions.Children.Add(stop); Grid.SetRow(actions, 5); root.Children.Add(actions);
+        actions.Children.Add(send); actions.Children.Add(stop); actions.Children.Add(addImages);
+        Grid.SetRow(actions, 5); root.Children.Add(actions);
         Content = root;
         AutomationProperties.SetName(prompt, "Agent prompt"); AutomationProperties.SetName(transcript, "Agent transcript");
         AutomationProperties.SetName(connect, "Agent Connect"); AutomationProperties.SetName(send, "Agent Send"); AutomationProperties.SetName(stop, "Agent Stop");
         AutomationProperties.SetName(disconnect, "Agent Disconnect"); AutomationProperties.SetName(status, "Agent status");
         AutomationProperties.SetName(allowEdits, "Agent allow world edits");
+        ToolTip.SetTip(addImages, "Send PNG or JPEG references with your next message.");
         connect.Click += async (_, _) => await (connectingTask = Connect());
         disconnect.Click += async (_, _) =>
         {
             if (session is { } current && !Busy) await Retire(current, "Disconnected.");
         };
         send.Click += async (_, _) => await Send();
+        addImages.Click += async (_, _) => await PickImages();
         stop.Click += async (_, _) => await Stop();
         provider.SelectionChanged += (_, _) => UpdateProvider();
         UpdateProvider();
@@ -186,7 +194,12 @@ internal sealed class AgentChat : UserControl
     private void Controls()
     {
         var live = ready && session?.ConversationId is not null && !closing;
-        send.IsEnabled = live && activeTurn is null && !submitting;
+        send.IsEnabled = live && activeTurn is null && !submitting && !pickingImages;
+        var imageSupport = session is AcpSession acp ? acp.SupportsImages : session is CodexSession && codexSupportsImages;
+        addImages.IsVisible = live && imageSupport;
+        addImages.IsEnabled = addImages.IsVisible && send.IsEnabled && images.Count < AgentImage.MaximumCount;
+        imageChips.IsEnabled = send.IsEnabled;
+        prompt.IsReadOnly = submitting;
         stop.IsEnabled = live && !cancelRequested && (activeTurn is not null || session is AcpSession && submitting);
         connect.IsEnabled = !Busy && session is null && !closing;
         disconnect.IsEnabled = live && !Busy;
@@ -260,6 +273,8 @@ internal sealed class AgentChat : UserControl
         if (string.IsNullOrWhiteSpace(chosen) || !available.Any(item => item["model"]?.GetValue<string>() == chosen))
             throw new InvalidOperationException("Choose a model offered by this Codex CLI: " + string.Join(", ", available.Select(item => item["model"]?.GetValue<string>())));
         model.Text = chosen;
+        codexSupportsImages = available.First(item => item["model"]?.GetValue<string>() == chosen)["inputModalities"] is JsonArray modalities &&
+            modalities.OfType<JsonValue>().Any(value => value.TryGetValue<string>(out var modality) && modality == "image");
         ToolTip.SetTip(model, "Models offered by this CLI: " + string.Join(", ", available.Select(item => item["model"]?.GetValue<string>())));
         var requested = thread.Text?.Trim();
         // An unused conversation does not yet have provider history to resume.
@@ -268,22 +283,90 @@ internal sealed class AgentChat : UserControl
         unusedConversation = resume is null ? id : null;
         thread.Text = id;
     }
+
+    private async Task PickImages()
+    {
+        if (!addImages.IsEnabled || session is not { } connection || TopLevel.GetTopLevel(this) is not { } window) return;
+        pickingImages = true; Controls();
+        try
+        {
+            var files = await window.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+            {
+                Title = "Choose reference images", AllowMultiple = AgentImage.MaximumCount - images.Count > 1,
+                FileTypeFilter = [new FilePickerFileType("PNG and JPEG images") { Patterns = ["*.png", "*.jpg", "*.jpeg"] }]
+            });
+            try
+            {
+                if (closing || !ReferenceEquals(session, connection) || files.Count == 0) return;
+                if (files.Count + images.Count > AgentImage.MaximumCount)
+                    throw new InvalidDataException("Attach up to three images per message.");
+                var selected = new List<(string Name, AgentImage Image)>();
+                foreach (var file in files)
+                    selected.Add((file.Name, await ReferenceImage.ReadAsync(file, lifetime.Token)));
+                if (closing || !ReferenceEquals(session, connection)) return;
+                foreach (var item in selected) AddImage(item.Name, item.Image);
+                status.Text = images.Count == 1 ? "One image ready to send." : $"{images.Count} images ready to send.";
+                prompt.Focus();
+            }
+            finally { foreach (var file in files) file.Dispose(); }
+        }
+        catch (Exception error) when (error is IOException or InvalidDataException or UnauthorizedAccessException or ArgumentException or InvalidOperationException or OperationCanceledException)
+        {
+            if (!closing && ReferenceEquals(session, connection)) status.Text = error.Message;
+        }
+        finally { pickingImages = false; Controls(); }
+    }
+
+    private void AddImage(string name, AgentImage image)
+    {
+        var chip = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto"), ColumnSpacing = 6 };
+        var label = new TextBlock { Text = name, VerticalAlignment = VerticalAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis };
+        ToolTip.SetTip(label, name);
+        var remove = new Button { Content = "×" };
+        AutomationProperties.SetName(remove, "Remove image " + name);
+        Grid.SetColumn(remove, 1);
+        chip.Children.Add(label);
+        chip.Children.Add(remove);
+        var entry = (name, image, (Control)chip);
+        remove.Click += (_, _) =>
+        {
+            images.Remove(entry);
+            imageChips.Children.Remove(chip);
+            imageChips.IsVisible = images.Count != 0;
+            status.Text = "Image removed.";
+            Controls();
+        };
+        images.Add(entry);
+        imageChips.Children.Add(chip);
+        imageChips.IsVisible = true;
+    }
+
+    private void ClearImages()
+    {
+        images.Clear();
+        imageChips.Children.Clear();
+        imageChips.IsVisible = false;
+    }
+
     private async Task Send()
     {
-        if (!ready || session is not { } current || activeTurn is not null || submitting || string.IsNullOrWhiteSpace(prompt.Text)) return;
+        if (!send.IsEnabled || session is not { } current || string.IsNullOrWhiteSpace(prompt.Text)) return;
         completed.Clear();
         var text = prompt.Text; submitting = true; cancelRequested = false; Controls();
+        var attachments = images.Select(entry => entry.Image).ToArray();
+        var names = images.Count == 0 ? "" : "\nImages: " + string.Join(", ", images.Select(entry => entry.Name));
         var payload = !sentGameplayContext && gameplayToolContext is not null ? text + "\n\n" + gameplayToolContext : text;
-        Append("\nYou: " + text + "\n\n" + ProviderName + ": "); prompt.Text = ""; status.Text = "Working…";
+        Append("\nYou: " + text + names + "\n\n" + ProviderName + ": "); status.Text = "Working…";
         try
         {
             if (current is AcpSession acp)
             {
                 acpReceivedReply = false;
-                var reason = await acp.PromptAsync(payload, lifetime.Token);
+                var reason = await acp.PromptAsync(payload, attachments, lifetime.Token);
                 if (ReferenceEquals(session, current))
                 {
                     sentGameplayContext = true;
+                    prompt.Text = ""; ClearImages();
                     status.Text = reason switch
                     {
                         "end_turn" => acpReceivedReply ? "Turn completed" : ProviderName + " ended the turn without a reply.",
@@ -294,10 +377,11 @@ internal sealed class AgentChat : UserControl
                 }
                 return;
             }
-            var id = await ((CodexSession)current).SendAsync(payload, lifetime.Token);
+            var id = await ((CodexSession)current).SendAsync(payload, attachments, lifetime.Token);
             if (ReferenceEquals(session, current))
             {
                 sentGameplayContext = true;
+                prompt.Text = ""; ClearImages();
                 unusedConversation = null;
                 if (!completed.Contains(id)) activeTurn = id;
             }
@@ -376,7 +460,7 @@ internal sealed class AgentChat : UserControl
     {
         if (!ReferenceEquals(session, current)) return;
         session = null; ready = false; activeTurn = null; submitting = false; cancelRequested = false;
-        ClearApprovals(); status.Text = message;
+        ClearApprovals(); ClearImages(); status.Text = message;
         var pending = retiringTask = DisposeSession(current);
         Controls();
         await pending;

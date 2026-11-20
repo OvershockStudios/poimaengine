@@ -4,14 +4,29 @@ using Poima.AgentHost;
 
 internal static class AcpContract
 {
+    private const string Png = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jJxkAAAAASUVORK5CYII=";
+
     public static async Task VerifyAsync(CancellationToken token)
     {
         var executable = Environment.ProcessPath!;
+        var image = new AgentImage(Convert.FromBase64String(Png));
+        await using (var textOnly = await AcpSession.ConnectAsync(executable, ["acp", "text"], executable,
+            "acp-contract", Directory.GetCurrentDirectory(), token))
+        {
+            await textOnly.OpenAsync(token);
+            Check(!textOnly.SupportsImages, "Omitted ACP image capability");
+            try
+            {
+                await textOnly.PromptAsync("Read Poima", [image], token);
+                throw new InvalidDataException("Text-only agent accepted an attachment.");
+            }
+            catch (InvalidOperationException error) when (error.Message == "This agent connection accepts text only.") { }
+        }
         await using var agent = await AcpSession.ConnectAsync(executable, executable, "acp-contract",
             Directory.GetCurrentDirectory(), token);
         await agent.OpenAsync(token);
-        Check(agent.ConversationId == "acp-test", "Session identity");
-        var prompt = agent.PromptAsync("Read Poima", token);
+        Check(agent.ConversationId == "acp-test" && agent.SupportsImages, "Session identity and image capability");
+        var prompt = agent.PromptAsync("Read Poima", [image], token);
         var first = await agent.Events.ReadAsync(token);
         var permission = await agent.Events.ReadAsync(token);
         Check(first["params"]?["update"]?["content"]?["text"]?.GetValue<string>() == "POIMA_", "Initial text delta");
@@ -30,10 +45,10 @@ internal static class AcpContract
         agent.AcknowledgeEvent();
         agent.AcknowledgeEvent();
         Check(await prompt == "end_turn", "Prompt completion after text delivery");
-        Console.WriteLine("ACP v1 session, shared endpoint, exact approval and ordered prompt completion passed.");
+        Console.WriteLine("ACP v1 session, shared endpoint, image capability and payload, exact approval and ordered prompt completion passed.");
     }
 
-    public static async Task RunPeerAsync()
+    public static async Task RunPeerAsync(bool supportsImages = true)
     {
         async Task<JsonObject> Read(string method)
         {
@@ -66,14 +81,27 @@ internal static class AcpContract
 
         var initialize = await Read("initialize");
         Check(initialize["params"]?["protocolVersion"]?.GetValue<int>() == 1, "ACP handshake");
-        await Reply(initialize, new() { ["protocolVersion"] = 1 });
+        var capabilities = new JsonObject { ["protocolVersion"] = 1 };
+        if (supportsImages) capabilities["agentCapabilities"] = new JsonObject
+        {
+            ["promptCapabilities"] = new JsonObject { ["image"] = true }
+        };
+        await Reply(initialize, capabilities);
         var session = await Read("session/new");
         var server = session["params"]!["mcpServers"]![0]!;
         Check(server["name"]?.GetValue<string>() == "poima" &&
             JsonNode.DeepEquals(server["args"], new JsonArray("mcp", "--endpoint", "acp-contract")), "Shared MCP endpoint");
         await Reply(session, new() { ["sessionId"] = "acp-test" });
+        if (!supportsImages)
+        {
+            Check(await Console.In.ReadLineAsync() is null, "Text-only session received an unsupported image request");
+            return;
+        }
         var prompt = await Read("session/prompt");
-        Check(prompt["params"]?["prompt"]?[0]?["text"]?.GetValue<string>() == "Read Poima", "Prompt text");
+        var content = prompt["params"]?["prompt"] as JsonArray;
+        Check(content?.Count == 2 && content[0]?["text"]?.GetValue<string>() == "Read Poima" &&
+            JsonNode.DeepEquals(content[1], new JsonObject { ["type"] = "image", ["mimeType"] = "image/png", ["data"] = Png }),
+            "Prompt text and exact encoded image");
         await Delta("POIMA_");
         await Send(new() { ["id"] = "review-poima-tool", ["method"] = "session/request_permission" });
         var permission = JsonNode.Parse((await Console.In.ReadLineAsync())!)!;

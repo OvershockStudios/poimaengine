@@ -75,6 +75,13 @@ Useful arguments are `--gpu N` for both native viewports, `--samples 1|4`, and a
    and builds.
    Antigravity and Claude display their ACP
    permission requests in the chat. [Agent setup](AGENT_CLIENTS.md)
+   When the selected model or ACP client advertises image support, **Add images**
+   accepts up to three PNG or JPEG references per message. Each source image
+   can be up to 16 MiB and 24 megapixels. Poima applies the stored orientation,
+   strips source metadata and fits each image to 1536 pixels on its longest
+   side and 2 MiB, reducing resolution further when necessary. Remove a
+   reference before sending with the button beside its name. The connected
+   provider receives the prepared images as part of the message.
 3. Choose **Play** when the agent turn finishes. Play uses the project's
    current saved entry, camera, input profile and audio setting. Click the game
    to control it and press Esc to release the mouse. Choose **Stop** before

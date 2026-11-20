@@ -52,7 +52,13 @@ creator’s feedback changes a decision. The same project can be opened in the
 editor whenever direct editing would help.
 
 The [Windows creator workspace](DESKTOP_EDITOR.md#creator-workspace) runs
-the interview in chat. With Codex, questions can appear as a card. Select an
+the interview in chat. Choose **Add images** after connecting an agent that
+supports image input. Attach up to three PNG or JPEG references and include a
+message explaining what the agent should look at. Poima prepares the images
+for the connected provider when you send the message. The attachments belong
+to the conversation. To use an image in the game, [import it as an asset](ASSETS.md).
+
+With Codex, questions can appear as a card. Select an
 answer for each question, or write your own when the card offers that choice.
 Select **Send answers** to continue the interview. For clients that present
 the questions in chat, reply with the numbered choices or your own answers.
