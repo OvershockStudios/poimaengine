@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 using System.Diagnostics;
+using System.Globalization;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using Avalonia;
 using Avalonia.Automation;
@@ -13,6 +15,7 @@ namespace Poima.Editor;
 internal sealed class CreatorWindow : Window
 {
     private readonly ProjectLocation project;
+    private readonly LaunchOptions options;
     private readonly NativeHost host;
     private readonly EditorModel model;
     private readonly GameInput game;
@@ -22,10 +25,13 @@ internal sealed class CreatorWindow : Window
     private readonly Button export = new() { Content = "Export build" };
     private readonly Button showExport = new() { Content = "Open build folder", IsVisible = false };
     private readonly Button showChecks = new() { Content = "Open check report", IsVisible = false };
+    private readonly Button restore = new() { Content = "Restore verified project as copy", IsVisible = false };
+    private readonly Button openRecovered = new() { Content = "Open recovered project", IsVisible = false };
     private readonly TextBlock status = new() { TextWrapping = TextWrapping.Wrap };
     private readonly Border viewport = new() { Background = EditorTheme.Brush("#161518"), ClipToBounds = true };
     private bool starting, exporting, closeAfterExport, closing, allowClose;
-    private string? exportedFolder, checkReport, checkSummary;
+    private string? exportedFolder, checkReport, checkSummary, verifiedCheckpoint, recoveredManifest;
+    private string workDescription = "";
     private long exportedRevision;
     private Task? agentShutdown;
     private CancellationTokenSource? checking;
@@ -34,6 +40,7 @@ internal sealed class CreatorWindow : Window
     public CreatorWindow(ProjectLocation project, LaunchOptions options)
     {
         this.project = project;
+        this.options = options;
         Title = project.Name + " — Poima Creator";
         Width = 1180; Height = 760; MinWidth = 760; MinHeight = 560;
         WindowStartupLocation = WindowStartupLocation.CenterScreen;
@@ -53,12 +60,20 @@ internal sealed class CreatorWindow : Window
         }
         catch { host.Dispose(); throw; }
         timer.Tick += (_, _) => Pump();
-        Opened += (_, _) => { UpdateControls(); timer.Start(); };
+        Opened += async (_, _) =>
+        {
+            UpdateControls();
+            timer.Start();
+            if (Path.GetDirectoryName(project.Root) is not null && Directory.Exists(HistoryDirectory()))
+                await ProjectWork("Finding the last verified build…", LoadLatestVerification);
+        };
         play.Click += async (_, _) => await PlayAsync();
         stop.Click += (_, _) => ExecuteStop();
         export.Click += async (_, _) => await ExportAsync();
         showExport.Click += (_, _) => OpenExportItem(exportedFolder, Directory.Exists);
         showChecks.Click += (_, _) => OpenExportItem(checkReport, File.Exists);
+        restore.Click += async (_, _) => await RestoreVerifiedAsync();
+        openRecovered.Click += (_, _) => OpenRecoveredProject();
         Closing += (_, args) =>
         {
             if (allowClose) return;
@@ -122,6 +137,8 @@ internal sealed class CreatorWindow : Window
         result.Children.Add(status);
         result.Children.Add(showExport);
         result.Children.Add(showChecks);
+        result.Children.Add(restore);
+        result.Children.Add(openRecovered);
         Grid.SetRow(result, 2); preview.Children.Add(result);
         var previewCard = Card(preview);
         Grid.SetColumn(previewCard, 1); panels.Children.Add(previewCard);
@@ -215,11 +232,16 @@ internal sealed class CreatorWindow : Window
         return current;
     }
 
+    private string ProjectParent() => Path.GetDirectoryName(project.Root) ??
+        throw new InvalidOperationException("Move the project into its own folder before creating a build.");
+
+    private string HistoryDirectory() => Path.Combine(ProjectParent(), ".poima-history", project.ProjectId);
+
     private async Task ExportAsync()
     {
         if (!export.IsEnabled || !export.IsVisible) return;
-        exporting = true; error = null; checkReport = null; UpdateControls();
-        try
+        checkReport = null;
+        await ProjectWork("Exporting the saved project…", async () =>
         {
             var current = await OpenCurrentProject();
             host.RefreshState();
@@ -228,51 +250,134 @@ internal sealed class CreatorWindow : Window
             if (host.Call("desktop.gameplay.inspect")["profile"] is not null)
                 throw new InvalidOperationException("Clear the desktop gameplay profile and attach the published Native AOT game before exporting.");
 
-            var parent = Path.GetDirectoryName(current.Root)
-                ?? throw new InvalidOperationException("Move the project into its own folder before exporting.");
             var name = Path.GetFileName(current.Root);
             if (name.Length > 160) name = "Poima";
             var suffix = Guid.NewGuid().ToString("N")[..8];
-            var folder = Path.Combine(parent, $"{name} - Build {DateTime.Now:yyyy-MM-dd HHmmss} {suffix}");
-            var result = await ProjectFiles.Command("build", current.Manifest, "--output", folder,
-                "--runtime", ProjectFiles.PreviewRuntime);
-            var candidate = Path.GetFullPath(result.GetProperty("output").GetString()!);
-            var revision = result.GetProperty("revision").GetInt64();
             var suite = Path.Combine(current.Root, ProjectFiles.VerificationSuiteName);
-            if (closeAfterExport) return;
+            var manifest = current.Manifest;
+            string? checkpoint = null;
+            string folder;
             if (File.Exists(suite))
             {
-                var report = candidate + ".checks.json";
-                using var cancellation = new CancellationTokenSource();
-                checking = cancellation;
-                UpdateControls();
-                try
-                {
-                    var verification = await ProjectFiles.VerifyExport(candidate, suite, report, cancellation.Token);
-                    var passed = verification.GetProperty("groups_passed").GetInt32();
-                    var total = verification.GetProperty("groups_total").GetInt32();
-                    checkReport = report;
-                    if (!verification.GetProperty("passed").GetBoolean())
-                    {
-                        error = $"Revision {revision} passed {passed} of {total} check groups." + EarlierExportMessage();
-                        return;
-                    }
-                    checkSummary = $"Revision {revision} passed all {total} check groups.";
-                }
-                finally { checking = null; }
+                var history = Directory.CreateDirectory(HistoryDirectory()).FullName;
+                var time = DateTime.UtcNow.ToString("yyyyMMdd-HHmmssfff", CultureInfo.InvariantCulture);
+                checkpoint = Path.Combine(history, $"{time}-{suffix}");
+                var captured = await ProjectFiles.Command("checkpoint", manifest, "--output", checkpoint);
+                manifest = captured.GetProperty("source_manifest").GetString()!;
+                suite = Path.Combine(Path.GetDirectoryName(manifest)!, ProjectFiles.VerificationSuiteName);
+                folder = Path.Combine(checkpoint, "game");
             }
-            else if (checkSummary is not null)
+            else folder = Path.Combine(ProjectParent(), $"{name} - Build {DateTime.Now:yyyy-MM-dd HHmmss} {suffix}");
+            if (closeAfterExport) return;
+            var result = await ProjectFiles.Command("build", manifest, "--output", folder, "--runtime", ProjectFiles.PreviewRuntime);
+            var candidate = Path.GetFullPath(result.GetProperty("output").GetString()!);
+            var revision = result.GetProperty("revision").GetInt64();
+            if (closeAfterExport) return;
+            if (checkpoint is null)
             {
-                error = $"Revision {revision} was exported without a check suite." + EarlierExportMessage();
+                if (verifiedCheckpoint is not null)
+                    error = $"Revision {revision} was exported without a check suite." + EarlierExportMessage();
+                else
+                {
+                    exportedFolder = candidate;
+                    exportedRevision = revision;
+                }
                 return;
             }
-            exportedFolder = candidate;
-            exportedRevision = revision;
+            using var cancellation = new CancellationTokenSource();
+            checking = cancellation;
+            workDescription = "Checking the exported game…";
+            UpdateControls();
+            var report = Path.Combine(checkpoint, "checks.json");
+            var verification = await ProjectFiles.VerifyExport(candidate, suite, report, cancellation.Token);
+            var passed = verification.GetProperty("groups_passed").GetInt32();
+            var total = verification.GetProperty("groups_total").GetInt32();
+            checkReport = report;
+            if (!verification.GetProperty("passed").GetBoolean())
+            {
+                error = $"Revision {revision} passed {passed} of {total} check groups." + EarlierExportMessage();
+                return;
+            }
+            await LoadLatestVerification(cancellation.Token);
+            if (verifiedCheckpoint is null || !string.Equals(Path.GetFullPath(verifiedCheckpoint),
+                Path.GetFullPath(Path.Combine(checkpoint, "checkpoint.json")), StringComparison.OrdinalIgnoreCase))
+                throw new InvalidOperationException("The passing game could not be paired with a valid source checkpoint.");
+        });
+    }
+
+    private async Task LoadLatestVerification()
+    {
+        using var cancellation = new CancellationTokenSource();
+        checking = cancellation;
+        await LoadLatestVerification(cancellation.Token);
+    }
+
+    private async Task LoadLatestVerification(CancellationToken cancellation)
+    {
+        var history = await ProjectFiles.Command(cancellation, "history", HistoryDirectory(), "--project-id", project.ProjectId);
+        var latest = history.GetProperty("latest");
+        if (latest.ValueKind != JsonValueKind.Object) return;
+        verifiedCheckpoint = latest.GetProperty("checkpoint").GetString();
+        checkReport = latest.GetProperty("report").GetString();
+        exportedFolder = Path.GetDirectoryName(latest.GetProperty("game_manifest").GetString());
+        exportedRevision = latest.GetProperty("revision").GetInt64();
+        checkSummary = $"Revision {exportedRevision} passed all {latest.GetProperty("groups_passed").GetInt32()} check groups.";
+    }
+
+    private async Task RestoreVerifiedAsync()
+    {
+        if (!restore.IsEnabled || verifiedCheckpoint is null) return;
+        var checkpoint = verifiedCheckpoint;
+        await ProjectWork("Restoring a copy of the verified project…", async () =>
+        {
+            var name = Path.GetFileName(project.Root);
+            if (name.Length > 140) name = "Poima";
+            var suffix = Guid.NewGuid().ToString("N")[..8];
+            var destination = Path.Combine(ProjectParent(), $"{name} - Recovered {suffix}");
+            var result = await ProjectFiles.Command("recover", checkpoint, "--output", destination);
+            recoveredManifest = result.GetProperty("restored_manifest").GetString();
+        });
+    }
+
+    private void OpenRecoveredProject()
+    {
+        if (recoveredManifest is null || !openRecovered.IsEnabled) return;
+        try
+        {
+            var info = new ProcessStartInfo(Path.Combine(AppContext.BaseDirectory, "Poima.Editor.exe")) { UseShellExecute = false };
+            info.ArgumentList.Add("--creator");
+            info.ArgumentList.Add(recoveredManifest);
+            if (options.DevelopmentProfiles is not null)
+            {
+                info.ArgumentList.Add("--development-profiles");
+                info.ArgumentList.Add(options.DevelopmentProfiles);
+            }
+            if (options.SoftwareUi) info.ArgumentList.Add("--software-ui");
+            if (options.Gpu >= 0)
+            {
+                info.ArgumentList.Add("--gpu");
+                info.ArgumentList.Add(options.Gpu.ToString(CultureInfo.InvariantCulture));
+            }
+            info.ArgumentList.Add("--samples");
+            info.ArgumentList.Add(options.Samples.ToString(CultureInfo.InvariantCulture));
+            using var process = Process.Start(info) ?? throw new InvalidOperationException("Poima could not open the recovered project.");
+            Close();
         }
+        catch (Exception failure) { error = failure.Message; UpdateControls(); }
+    }
+
+    private async Task ProjectWork(string description, Func<Task> work)
+    {
+        exporting = true;
+        error = null;
+        workDescription = description;
+        UpdateControls();
+        try { await work(); }
         catch (OperationCanceledException) when (closeAfterExport) { }
         catch (Exception failure) { error = failure.Message + EarlierExportMessage(); }
         finally
         {
+            checking = null;
             exporting = false;
             UpdateControls();
             if (closeAfterExport) { closeAfterExport = false; Close(); }
@@ -325,13 +430,18 @@ internal sealed class CreatorWindow : Window
         showExport.IsEnabled = !closing && !exporting;
         showChecks.IsVisible = checkReport is not null;
         showChecks.IsEnabled = !closing && !exporting;
+        restore.IsVisible = verifiedCheckpoint is not null;
+        restore.IsEnabled = play.IsEnabled;
+        openRecovered.IsVisible = recoveredManifest is not null;
+        openRecovered.IsEnabled = play.IsEnabled;
         var gameView = host.State["views"]?["game"];
-        status.Text = closing ? "Closing project…" : closeAfterExport ? "Finishing export before closing…" :
-            checking is not null ? "Checking the exported game…" : exporting ? "Exporting the saved project…" :
+        status.Text = closing ? "Closing project…" : closeAfterExport ? "Finishing project work before closing…" :
+            exporting ? workDescription :
             starting ? "Starting preview…" : error ?? host.ViewError("game") ??
             model.PlaybackError ?? (previewSession is not null
                 ? gameView?["presented_tick"] is not null ? "Click the game to take control. Press Esc to release the mouse." : "Waiting for the first game frame…"
                 : model.RuntimeId is not null ? "A playtest is running. Stop it to start a preview."
+                : recoveredManifest is not null ? "The verified project was recovered as an editable copy."
                 : exportedFolder is not null ? checkSummary ?? $"Exported revision {exportedRevision}. Open the build folder and run launch.cmd."
                 : "Play opens the current project. Chat changes appear the next time you play.");
     }

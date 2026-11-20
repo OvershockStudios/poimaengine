@@ -3,6 +3,7 @@
 #include "poima/assets.hpp"
 #include "model_import.hpp"
 #include "poima/audio.hpp"
+#include "project_io_path.hpp"
 #include "world_storage.hpp"
 #include <fstream>
 #include <map>
@@ -17,15 +18,16 @@ inline std::filesystem::path asset_package_path(const std::filesystem::path& dir
     namespace fs=std::filesystem;
     if(!valid_asset_id(id))throw std::runtime_error("Invalid cooked asset ID.");
     auto regular=[&](const fs::path& path,bool folder) {
-        std::error_code error;const auto status=fs::symlink_status(path,error);
+        const auto io=project_detail::project_io_path(path);
+        std::error_code error;const auto status=fs::symlink_status(io,error);
         if(error || fs::is_symlink(status) || (folder ? !fs::is_directory(status) : !fs::is_regular_file(status)))
             throw std::runtime_error(folder ? "Asset store must be a regular directory, not a link." : "Asset package must be a regular file, not a link.");
 #ifdef _WIN32
-        const auto attributes=GetFileAttributesW(path.c_str());
+        const auto attributes=GetFileAttributesW(io.c_str());
         if(attributes==INVALID_FILE_ATTRIBUTES || (attributes&FILE_ATTRIBUTE_REPARSE_POINT))throw std::runtime_error("Asset stores and packages cannot be reparse points or junctions.");
 #endif
     };
-    regular(directory,true);const auto path=directory/(id+extension);regular(path,false);return path;
+    regular(directory,true);const auto path=directory/(id+extension);regular(path,false);return project_detail::project_io_path(path);
 }
 // Defined below; asset publication shares exclusive staging.
 inline void write_asset_pending_exclusive(const std::filesystem::path& path,const std::string& bytes);

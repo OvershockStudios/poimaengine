@@ -70,8 +70,8 @@ recorded tick. Very large observations are omitted from the report.
 In the Windows creator, save the suite as `game.verify.json` beside the project
 manifest. **Export build** runs it against the exported candidate and exposes
 **Open check report**. A failed check leaves an earlier export available in the
-current workspace. Output directories and their reports remain on disk. Source
-project restoration and workspace history across restarts have separate gates.
+workspace. The [project checkpoint](PROJECT_RECOVERY.md) keeps the verified
+bundle, report and editable source available across restarts.
 
 Use tests that express the agreed game brief. Coverage is visible in the named
 checks and their exact input hash. Rendered appearance, audible output and

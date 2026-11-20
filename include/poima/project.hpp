@@ -13,6 +13,9 @@ std::string project_world_path(const std::string& manifest);
 // no gameplay module is executed and no live world/runtime is changed.
 Reply adopt_project_gameplay(const std::string& manifest,const std::string& artifact_descriptor,const std::string& request_json);
 Reply build_project(const std::string& manifest,const std::string& output,const std::string& runtime_root);
+Reply checkpoint_project(const std::string& manifest,const std::string& output);
+Reply project_history(const std::string& directory,const std::string& project_id);
+Reply recover_project(const std::string& checkpoint,const std::string& output);
 Reply inspect_game(const std::string& manifest);
 struct GameDefinition {
     std::string root,world,camera,controller,input_profile,name,target_os,target_arch;

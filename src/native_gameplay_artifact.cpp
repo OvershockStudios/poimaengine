@@ -2,6 +2,7 @@
 #include "poima/native_gameplay_artifact.hpp"
 #include "poima/gameplay.hpp"
 #include "poima/assets.hpp"
+#include "project_io_path.hpp"
 #include <nlohmann/json.hpp>
 #include <algorithm>
 #include <filesystem>
@@ -19,6 +20,8 @@ namespace poima {
 namespace {
 using Json=nlohmann::json;
 namespace fs=std::filesystem;
+using project_detail::project_io_path;
+using project_detail::canonical_project_path;
 constexpr std::uint64_t file_limit=256ULL*1024*1024,total_limit=1024ULL*1024*1024;
 void check(bool ok,const std::string& message) { if(!ok)throw std::runtime_error(message); }
 std::string text(const fs::path& p) { const auto s=p.generic_u8string();return {s.begin(),s.end()}; }
@@ -47,24 +50,24 @@ std::string relative(const Json& value) {
     return path;
 }
 void regular(const fs::path& p) {
-    check(fs::is_regular_file(fs::symlink_status(p)),"Native gameplay payload must be an existing regular file: "+text(p));
+    check(fs::is_regular_file(fs::symlink_status(project_io_path(p))),"Native gameplay payload must be an existing regular file: "+text(p));
 #ifdef _WIN32
-    const auto attributes=GetFileAttributesW(p.c_str());check(attributes!=INVALID_FILE_ATTRIBUTES && !(attributes&FILE_ATTRIBUTE_REPARSE_POINT),"Native gameplay payload cannot be a reparse point.");
+    const auto attributes=GetFileAttributesW(project_io_path(p).c_str());check(attributes!=INVALID_FILE_ATTRIBUTES && !(attributes&FILE_ATTRIBUTE_REPARSE_POINT),"Native gameplay payload cannot be a reparse point.");
 #endif
 }
 fs::path contained(const fs::path& root,const std::string& name) {
     relative(name);auto path=root;const fs::path suffix(name);
     for(auto it=suffix.begin();it!=suffix.end();++it) {
-        path/=*it;const auto status=fs::symlink_status(path);check(!fs::is_symlink(status),"Native gameplay content paths cannot contain symlinks.");
+        path/=*it;const auto status=fs::symlink_status(project_io_path(path));check(!fs::is_symlink(status),"Native gameplay content paths cannot contain symlinks.");
         if(std::next(it)!=suffix.end())check(fs::is_directory(status),"Missing native gameplay content directory.");
 #ifdef _WIN32
-        const auto attributes=GetFileAttributesW(path.c_str());check(attributes!=INVALID_FILE_ATTRIBUTES && !(attributes&FILE_ATTRIBUTE_REPARSE_POINT),"Native gameplay content paths cannot contain reparse points.");
+        const auto attributes=GetFileAttributesW(project_io_path(path).c_str());check(attributes!=INVALID_FILE_ATTRIBUTES && !(attributes&FILE_ATTRIBUTE_REPARSE_POINT),"Native gameplay content paths cannot contain reparse points.");
 #endif
     }
     regular(path);return path;
 }
 std::string read(const fs::path& p,std::uint64_t limit=file_limit) {
-    regular(p);std::ifstream file(p,std::ios::binary|std::ios::ate);check(bool(file),"Cannot read native gameplay payload.");const auto end=file.tellg();
+    regular(p);std::ifstream file(project_io_path(p),std::ios::binary|std::ios::ate);check(bool(file),"Cannot read native gameplay payload.");const auto end=file.tellg();
     check(end>=0 && static_cast<std::uint64_t>(end)<=limit,"Native gameplay payload exceeds size limit.");
     std::string result(static_cast<std::size_t>(end),'\0');file.seekg(0);
     if(!result.empty())check(bool(file.read(result.data(),static_cast<std::streamsize>(result.size()))),"Native gameplay file changed while reading.");
@@ -82,9 +85,10 @@ Json parse(const std::string& bytes) {
 }
 std::set<std::string> tree(const fs::path& root) {
     std::set<std::string> result,names;std::size_t entries=0;
-    for(const auto& item:fs::recursive_directory_iterator(root)) {
+    const auto io_root=project_io_path(root);
+    for(const auto& item:fs::recursive_directory_iterator(io_root)) {
         check(++entries<=1024,"Native gameplay directory exceeds entry limit.");
-        const auto name=relative(text(item.path().lexically_relative(root)));
+        const auto name=relative(text(item.path().lexically_relative(io_root)));
         check(names.insert(folded(name)).second,"Case-insensitive native gameplay path collision.");
         const auto status=item.symlink_status();check(!fs::is_symlink(status),"Native gameplay directory contains a symlink.");
 #ifdef _WIN32
@@ -108,7 +112,7 @@ void native_image(const std::string& bytes,const std::string& os) {
 }
 NativeGameplayArtifact load_native_gameplay_artifact(const std::string& filename) {
     check(!filename.empty() && filename.find('\0')==std::string::npos,"Native gameplay descriptor path is invalid.");
-    auto path=fs::absolute(fs::path(std::u8string(filename.begin(),filename.end()))).lexically_normal();regular(path);path=fs::canonical(path);const auto root=path.parent_path();
+    auto path=fs::absolute(fs::path(std::u8string(filename.begin(),filename.end()))).lexically_normal();regular(path);path=canonical_project_path(path);const auto root=path.parent_path();
     const auto bytes=read(path,1024*1024);const auto spec=parse(bytes);
     check(spec.is_object() && spec.contains("version"),"Native gameplay descriptor requires a version.");
     const auto version=integer(spec.at("version"),2);

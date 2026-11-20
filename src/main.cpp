@@ -99,6 +99,12 @@ poima::Reply run(int argc, char** argv) {
             }
             if(!output.empty() && !runtime.empty())return poima::build_project(argv[3],output,runtime);
         }
+        if(argc==6 && *argv[3] && *argv[5]) {
+            const std::string_view flag=argv[4];
+            if(action=="checkpoint" && flag=="--output")return poima::checkpoint_project(argv[3],argv[5]);
+            if(action=="history" && flag=="--project-id")return poima::project_history(argv[3],argv[5]);
+            if(action=="recover" && flag=="--output")return poima::recover_project(argv[3],argv[5]);
+        }
         return poima::usage_error("Invalid project command. Use: schema project");
     }
     if(command=="game") {

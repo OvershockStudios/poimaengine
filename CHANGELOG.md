@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.288
+
+- Keep verified creator exports and their editable source checkpoints across restarts.
+- Recover a verified project as an independent editable copy.
+
 ## 0.0.287
 
 - Run declarative gameplay checks against a standalone game and record the exact tested bundle and suite.

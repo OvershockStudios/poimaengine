@@ -1,0 +1,62 @@
+{
+  "engine_version": "0.0.288",
+  "scope": "Extracted local Windows x64 creator preview with the retained Observatory Native AOT game and one independently imported sample GLB. Windows UI Automation invokes export, closes and reopens the broken source project, restores the earlier verified version as an editable copy, and opens that copy in a separate creator process.",
+  "package": {
+    "sha256": "19edadd807b89f6685c6e6d5b2f16020a69b1374cee0c3be7f6574cf8e86bcdb",
+    "bytes": 128860148
+  },
+  "workspace": {
+    "passing_revision": 9,
+    "passing_expectations": 22,
+    "failed_revision": 10,
+    "failed_change": "Make the door static, rename the source GLB and edit the C# file in the working project.",
+    "failure_status": "Revision 10 passed 1 of 2 check groups. The earlier export of revision 9 is still available.",
+    "after_restart_status": "Revision 9 passed all 2 check groups.",
+    "failed_working_project_preserved": true,
+    "creator_closed_naturally": true
+  },
+  "recovery": {
+    "new_project_identity": true,
+    "recovered_revision": 9,
+    "independent_source_identities": {
+      "source_glb_sha256": "000000f6c2b8a58d024168ffa467e8b24d73314c27f00bf8f37ce6e1417e39de",
+      "cooked_model_sha256": "9d523785bc99760a2c53bc663d6fa36ddf7ed947eeb0974579a652d4ad4fca8e",
+      "editable_csharp_sha256": "559875c392982f836013eb9ac88201eeea96609c09ef56bf2574d4f16138dbf0",
+      "input_profile_sha256": "ae22333956609f8dfbb8748e9168a74999498428603c24cbc50a114261fba41e",
+      "world_sha256": "08331343deb5940287d3de3440b31b45b435087197a9e81f002282c7a816a75b",
+      "native_gameplay_sha256": "03c89ef58565dc1212d1efa67091c7e4c8d150ebfbd305d13b67ea692e5f9f98",
+      "verification_suite_sha256": "25acd8a976e567dbe790e90eea5e86cd05ef27f737b93caee43d4e3b678061f3",
+      "brief_sha256": "287ae7edde8b9015be81ceb32ef3cb6debad3a4333ab84e7ecd7bc2b8ceef042"
+    },
+    "recovered_vulkan_preview_tick": 1,
+    "recovered_edit_committed": true,
+    "archive_unchanged_after_edit": true
+  },
+  "relocated_export": {
+    "original_project_and_checkpoint_paths_unavailable_during_test": true,
+    "verification_report_reproduced_exactly": true,
+    "manifest_sha256": "cf6939bb572dfb4d2ef149558f849f95396634634156fb405ea78e34f13eee14",
+    "independent_gameplay_and_save_groups": 16,
+    "fresh_process_save_continuation": true,
+    "ticks": 632,
+    "presented_frames": 633,
+    "vulkan_gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "reported_nvrhi_errors": 0,
+    "bundle_files_validated_after_play": 61,
+    "last_frame_sha256": "491c7caf87fc6558bbd241a0e09b6ad1e3af71b719dbfaae463947330be42f98"
+  },
+  "regression": {
+    "native_recovery": "Passing checkpoint fallback, source tamper rejection, exclusive destination and restore without original source path.",
+    "existing_windows_project_contract_cases": 15,
+    "ordinary_no_suite_creator_export": true,
+    "windows_long_path_capture": true,
+    "earlier_failures": [
+      "The first creator trial found ordinary Win32 permission calls could not reach a deeply nested gameplay notice. A deeper native capture then found the cooked asset reader had the same limitation. The retained portable build passes both capture paths.",
+      "The initial CLI harness compared a Path to a string when excluding the intentionally forked manifest from byte equality. The corrected test checks every remaining file byte and the manifest with its new project ID."
+    ]
+  },
+  "remaining": [
+    "Fresh creator and provider qualification without preconfigured tools",
+    "Restoring external SDKs or player saves is a separate workflow."
+  ]
+}

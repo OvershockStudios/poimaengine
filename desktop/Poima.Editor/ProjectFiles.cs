@@ -4,7 +4,7 @@ using System.Text.Json;
 
 namespace Poima.Editor;
 
-internal sealed record ProjectLocation(string Manifest, string Name, string World, string Root, string Endpoint,
+internal sealed record ProjectLocation(string Manifest, string Name, string World, string Root, string ProjectId, string Endpoint,
     long Revision, string Camera, string? InputProfile, bool Audio, JsonElement? Gameplay);
 
 internal static class ProjectFiles
@@ -27,8 +27,9 @@ internal static class ProjectFiles
         var root = Path.GetDirectoryName(path)!;
         var entry = project.GetProperty("entry");
         var world = Path.GetFullPath(entry.GetProperty("world").GetString()!, root);
-        return new(path, project.GetProperty("name").GetString()!, world, root,
-            "poima-" + project.GetProperty("project_id").GetString(), project.GetProperty("revision").GetInt64(),
+        var projectId = project.GetProperty("project_id").GetString()!;
+        return new(path, project.GetProperty("name").GetString()!, world, root, projectId,
+            "poima-" + projectId, project.GetProperty("revision").GetInt64(),
             entry.GetProperty("camera").GetString()!, project.GetProperty("input_profile").GetString(),
             project.GetProperty("audio").GetBoolean(), project.TryGetProperty("gameplay", out var gameplay) ? gameplay : null);
     }
@@ -45,7 +46,10 @@ internal static class ProjectFiles
     }
 
     public static Task<JsonElement> Command(params string[] arguments) =>
-        RunCommand(Path.Combine(AppContext.BaseDirectory, "poima.exe"), ["project", .. arguments]);
+        Command(default, arguments);
+
+    public static Task<JsonElement> Command(CancellationToken cancellation, params string[] arguments) =>
+        RunCommand(Path.Combine(AppContext.BaseDirectory, "poima.exe"), ["project", .. arguments], cancellation: cancellation);
 
     public static Task<JsonElement> VerifyExport(string bundle, string suite, string report, CancellationToken cancellation) =>
         RunCommand(Path.Combine(bundle, "runtime", "bin", "poima.exe"),

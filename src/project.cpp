@@ -6,6 +6,7 @@
 #include "poima/native_gameplay_artifact.hpp"
 #include "poima/gameplay.hpp"
 #include "input_profile_store.hpp"
+#include "project_io_path.hpp"
 #include "world_storage.hpp"
 #include <nlohmann/json.hpp>
 #include <algorithm>
@@ -43,22 +44,8 @@ constexpr auto project_manifest_filename="project.poimaproject";
 constexpr auto game_manifest_filename="game.json";
 void require(bool condition,const std::string& detail) { if(!condition)throw std::runtime_error(detail); }
 fs::path path_of(const std::string& value) { require(!value.empty() && value.find('\0')==std::string::npos,"Path must be nonempty and NUL-free.");return fs::path(std::u8string(value.begin(),value.end())); }
-// Only native filesystem calls receive this spelling. Logical paths, journal
-// selectors and returned identities retain their ordinary absolute spelling.
-fs::path project_io_path(const fs::path& path) {
-#ifdef _WIN32
-    // Filesystem iterators can already return an extended IO spelling. Do not
-    // apply ordinary-path normalization to that namespace a second time.
-    if(path.native().starts_with(L"\\\\?\\"))return path;
-    auto native=fs::absolute(path).lexically_normal().make_preferred().native();
-    require(!native.starts_with(L"\\\\.\\"),"Device namespace paths are not project files.");
-    if(native.starts_with(L"\\\\"))return fs::path(L"\\\\?\\UNC\\"+native.substr(2));
-    require(native.size()>=3 && native[1]==L':' && native[2]==L'\\',"Expected a fully qualified Windows filesystem path.");
-    return fs::path(L"\\\\?\\"+native);
-#else
-    return path;
-#endif
-}
+using project_detail::project_io_path;
+using project_detail::canonical_project_path;
 std::string text(const fs::path& path) { const auto value=path.generic_u8string();return {reinterpret_cast<const char*>(value.data()),value.size()}; }
 std::string hash(const std::string& value) { return sha256(std::as_bytes(std::span(value.data(),value.size()))); }
 std::string folded(std::string value) { for(auto& c:value)if(c>='A' && c<='Z')c=static_cast<char>(c-'A'+'a');return value; }
@@ -149,7 +136,7 @@ void exclusive_write(const fs::path& path,const std::string& bytes) {
 fs::path destination_path(const std::string& output) {
     auto requested=fs::absolute(path_of(output)).lexically_normal();
     require(!requested.filename().empty() && requested.filename()!="." && requested.filename()!="..","Output must name a new directory.");
-    const auto destination=fs::canonical(requested.parent_path())/requested.filename();
+    const auto destination=canonical_project_path(requested.parent_path())/requested.filename();
     require(fs::symlink_status(destination).type()==fs::file_type::not_found,"Output already exists; export never overwrites it.");return destination;
 }
 #ifdef _WIN32
@@ -193,12 +180,15 @@ struct Stage {
     unsigned publication_attempts=1;std::uint64_t publication_wait_ms=0;
     explicit Stage(const std::string& output) {
         destination=destination_path(output);
-        for(int attempt=0;attempt<16;++attempt) { path=destination.parent_path()/(".poima-stage-"+new_id());if(fs::create_directory(path)) { owned=true;break; } }
+        for(int attempt=0;attempt<16;++attempt) { path=destination.parent_path()/(".poima-stage-"+new_id());if(fs::create_directory(project_io_path(path))) { owned=true;break; } }
         require(owned,"Cannot reserve staging directory.");
     }
-    ~Stage() { if(owned) { std::error_code error;fs::remove_all(path,error); } }
+    ~Stage() {
+        if(!owned)return;
+        try { std::error_code error;fs::remove_all(project_io_path(path),error); }catch(...) {}
+    }
     void publish(const fs::path& marker) {
-        require(fs::is_regular_file(fs::symlink_status(path/marker)),"Staged manifest is missing.");
+        require(fs::is_regular_file(fs::symlink_status(project_io_path(path/marker))),"Staged manifest is missing.");
 #ifdef _WIN32
         require(owned,"Directory publication has no owned staging directory.");
         const auto fingerprint=publication_fingerprint(path);ULONGLONG started=0,deadline=0;
@@ -228,7 +218,7 @@ struct Stage {
             }
             if(started && GetTickCount64()>=deadline)throw failure("Publication retry deadline reached.");
             ++attempts;
-            if(MoveFileExW(path.c_str(),destination.c_str(),MOVEFILE_WRITE_THROUGH)!=0)break;
+            if(MoveFileExW(project_io_path(path).c_str(),project_io_path(destination).c_str(),MOVEFILE_WRITE_THROUGH)!=0)break;
             move_error=GetLastError(); // Capture before any further OS call.
             if(!started) {started=GetTickCount64();deadline=started+500;}
             inspect();
@@ -313,7 +303,7 @@ struct Project {
     Json gameplay_values=Json::object();
 };
 Project project(const std::string& filename,const std::optional<Json>& prospective=std::nullopt) {
-    Project p;p.manifest=fs::absolute(path_of(filename)).lexically_normal();regular(p.manifest);p.manifest=fs::canonical(p.manifest);p.root=p.manifest.parent_path();require(fs::symlink_status(p.root/".poima-incomplete").type()==fs::file_type::not_found,"Project publication is incomplete; retry with a new destination.");
+    Project p;p.manifest=fs::absolute(path_of(filename)).lexically_normal();regular(p.manifest);p.manifest=canonical_project_path(p.manifest);p.root=p.manifest.parent_path();require(fs::symlink_status(p.root/".poima-incomplete").type()==fs::file_type::not_found,"Project publication is incomplete; retry with a new destination.");
     p.manifest_bytes=read(p.manifest,65536);p.spec=prospective ? *prospective : parse(p.manifest_bytes);
     fields(p.spec,{"format","version","project_id","name","entry","input_profile","audio","gameplay"},{"format","version","project_id","name","entry"});
     const auto version=integer(p.spec.at("version"));
@@ -436,15 +426,15 @@ struct Inventory {
     explicit Inventory(Stage& value):stage(value) {}
     void add(const std::string& relative,const std::string& bytes,const std::string& role,fs::perms permissions=fs::perms::unknown) {
         relative_path(relative);require(files.size()<count_limit && bytes.size()<=file_limit && bytes.size()<=total_limit-total,"Bundle exceeds its file/count/1 GiB budget.");require(names.insert(folded(relative)).second,"Duplicate bundle path.");
-        const auto path=stage.path/fs::path(relative);fs::create_directories(path.parent_path());exclusive_write(path,bytes);
-        if(permissions!=fs::perms::unknown)fs::permissions(path,permissions&fs::perms::all,fs::perm_options::replace);
+        const auto path=stage.path/fs::path(relative);fs::create_directories(project_io_path(path.parent_path()));exclusive_write(path,bytes);
+        if(permissions!=fs::perms::unknown)fs::permissions(project_io_path(path),permissions&fs::perms::all,fs::perm_options::replace);
         require(hash(read(path))==hash(bytes),"Published staging payload failed hash verification.");files.push_back({{"path",relative},{"size",bytes.size()},{"sha256",hash(bytes)},{"role",role}});total+=bytes.size();
     }
     void sort() { std::sort(files.begin(),files.end(),[](const Json& a,const Json& b){return a.at("path").get<std::string>()<b.at("path").get<std::string>();}); }
 };
 struct VerifiedGame { GameDefinition definition;Json spec;fs::path manifest; };
 VerifiedGame verify_game(const std::string& filename) {
-    VerifiedGame result;result.manifest=fs::absolute(path_of(filename)).lexically_normal();regular(result.manifest);result.manifest=fs::canonical(result.manifest);require(result.manifest.filename()=="game.json","Game bundle manifest must be named game.json.");const auto root=result.manifest.parent_path();require(fs::symlink_status(root/".poima-incomplete").type()==fs::file_type::not_found,"Game publication is incomplete.");
+    VerifiedGame result;result.manifest=fs::absolute(path_of(filename)).lexically_normal();regular(result.manifest);result.manifest=canonical_project_path(result.manifest);require(result.manifest.filename()=="game.json","Game bundle manifest must be named game.json.");const auto root=result.manifest.parent_path();require(fs::symlink_status(root/".poima-incomplete").type()==fs::file_type::not_found,"Game publication is incomplete.");
     const auto manifest_bytes=read(result.manifest,4*1024*1024);result.spec=parse(manifest_bytes);const auto& spec=result.spec;
     result.definition.manifest_sha256=hash(manifest_bytes);
     fields(spec,{"format","version","project_id","name","engine","entry","audio","input_profile","source","files","gameplay"},{"format","version","project_id","name","engine","entry","audio","source","files"});
@@ -520,6 +510,7 @@ VerifiedGame verify_game(const std::string& filename) {
 }
 #include "project_gameplay_adoption.inc"
 } // namespace
+#include "project_recovery.inc"
 
 Reply create_project(const std::string& directory,const std::string& name) {
     return operation("project.create",[&] {
