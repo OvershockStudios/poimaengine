@@ -102,6 +102,14 @@ It cannot configure tools through `mcp --endpoint`. The native owner API
 Configuration succeeds once, before the first accepted development job.
 Packaged read-only hosts hide and reject development operations.
 
+The Windows [launcher, creator and full editor](DESKTOP_EDITOR.md#publish-compiled-gameplay-from-chat)
+accept `--development-profiles` at startup. Their native desktop owner uses the
+same policy and exposes it through its project endpoint. Profile files and
+toolchain setup are selected by the operator. At desktop shutdown, the owner
+requests cancellation and waits for its development worker to retire alongside
+audio shutdown. Inspect `development_closed` in the desktop poll result before
+destroying the native host.
+
 Profiles allow at most 16 entries with unique names of 1–64 ASCII letters,
 digits, underscores or hyphens. The loader rejects unknown fields, duplicate
 JSON keys, excessive nesting and files above 1 MiB. Environment validation uses

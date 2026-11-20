@@ -149,6 +149,8 @@ public:
     ~Jobs();
     Jobs(const Jobs&)=delete;
     Jobs& operator=(const Jobs&)=delete;
+    void begin_shutdown(); // Reject new work and request cancellation without joining.
+    bool shutdown_complete() const noexcept; // True after process and worker-owned tool cleanup.
     JobId submit(Request request);
     std::optional<Status> poll(JobId id) const;
     // Same state/metadata snapshot, without copying output tails, compiler log

@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.286
+
+- Let the Windows creator and full editor publish and attach native gameplay through an owner-selected development profile.
+- Keep the desktop responsive while its owned build jobs retire on close.
+
 ## 0.0.285
 
 - Export the saved project as a standalone Windows build from the creator workspace in the portable preview.

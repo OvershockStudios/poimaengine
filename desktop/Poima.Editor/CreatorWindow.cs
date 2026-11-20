@@ -40,7 +40,7 @@ internal sealed class CreatorWindow : Window
         UseLayoutRounding = true;
         Background = EditorTheme.Brush("#19191C");
         Foreground = EditorTheme.Brush("#F2EDEE");
-        host = new NativeHost(project.World, options.Endpoint, options.Gpu, options.Samples);
+        host = new NativeHost(project.World, options.Endpoint, options.Gpu, options.Samples, options.DevelopmentProfiles);
         try
         {
             model = new EditorModel(host);
@@ -261,7 +261,7 @@ internal sealed class CreatorWindow : Window
         host.Pump();
         if (closing)
         {
-            if (agentShutdown?.IsCompleted == true && host.State["audio"]?["closed"]?.GetValue<bool>() == true)
+            if (agentShutdown?.IsCompleted == true && host.WorkersRetired)
             {
                 allowClose = true;
                 Close();

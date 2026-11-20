@@ -20,15 +20,18 @@ public sealed class NativeHost : IDisposable
     public string WorldPath { get; }
     public string Endpoint { get; }
     public JsonObject State { get; private set; } = new();
+    public bool WorkersRetired => State["audio"]?["closed"]?.GetValue<bool>() == true &&
+        State["development_closed"]?.GetValue<bool>() != false;
     public string? LastError => sessionError ?? (ViewError("scene") is string scene ? "Scene: " + scene : ViewError("game") is string game ? "Game: " + game : null);
     public string? ViewError(string view) => viewErrors.GetValueOrDefault(view);
     public event EventHandler? StateChanged;
 
-    public NativeHost(string world, string endpoint, int gpu, uint samples)
+    public NativeHost(string world, string endpoint, int gpu, uint samples, string? developmentProfiles = null)
     {
         Dispatcher.UIThread.VerifyAccess();
         WorldPath = Path.GetFullPath(world); Endpoint = endpoint;
-        handle = Native.Create(WorldPath, endpoint, gpu, samples);
+        handle = developmentProfiles is null ? Native.Create(WorldPath, endpoint, gpu, samples)
+            : Native.CreateWithProfiles(WorldPath, endpoint, gpu, samples, developmentProfiles);
         if (handle == IntPtr.Zero) throw new InvalidOperationException(Error());
         try { State = Read(Native.Poll(handle)); }
         catch { Native.Destroy(handle); handle = IntPtr.Zero; throw; }
@@ -140,6 +143,10 @@ public sealed class NativeHost : IDisposable
         private const string Library = "poima_desktop";
         [DllImport(Library, EntryPoint = "poima_desktop_create", CallingConvention = CallingConvention.Cdecl)]
         internal static extern IntPtr Create([MarshalAs(UnmanagedType.LPUTF8Str)] string world, [MarshalAs(UnmanagedType.LPUTF8Str)] string endpoint, int gpu, uint samples);
+        [DllImport(Library, EntryPoint = "poima_desktop_create_with_profiles", CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr CreateWithProfiles([MarshalAs(UnmanagedType.LPUTF8Str)] string world,
+            [MarshalAs(UnmanagedType.LPUTF8Str)] string endpoint, int gpu, uint samples,
+            [MarshalAs(UnmanagedType.LPUTF8Str)] string profiles);
         [DllImport(Library, EntryPoint = "poima_desktop_call", CallingConvention = CallingConvention.Cdecl)]
         internal static extern IntPtr Call(IntPtr host, [MarshalAs(UnmanagedType.LPUTF8Str)] string json);
         [DllImport(Library, EntryPoint = "poima_desktop_poll", CallingConvention = CallingConvention.Cdecl)] internal static extern IntPtr Poll(IntPtr host);

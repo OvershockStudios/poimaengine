@@ -17,6 +17,9 @@ extern "C" {
 // creating UI thread. Arguments are valid, NUL-terminated UTF-8 strings. Null or
 // empty endpoint disables local IPC; world is required. No graphics at create.
 POIMA_DESKTOP_API void* poima_desktop_create(const char* world,const char* endpoint,int32_t gpu,uint32_t samples);
+// Same host, with an owner-selected development profile JSON file. Applied
+// before accepting local requests. Null or empty retains the default policy.
+POIMA_DESKTOP_API void* poima_desktop_create_with_profiles(const char* world,const char* endpoint,int32_t gpu,uint32_t samples,const char* profiles);
 // Results are owned by the host until its next bridge call. Copy immediately.
 // call returns a JSON-RPC response (empty string for a notification), or NULL on
 // bridge failure. Capture is asynchronous; discover its job API via desktop.describe.
@@ -41,9 +44,9 @@ POIMA_DESKTOP_API void poima_desktop_detach(void* host);
 POIMA_DESKTOP_API int poima_desktop_attach_view(void* host,const char* view,void* hwnd);
 POIMA_DESKTOP_API int poima_desktop_draw_view(void* host,const char* view);
 POIMA_DESKTOP_API void poima_desktop_detach_view(void* host,const char* view);
-// GUI shutdown: call desktop.close.begin, keep polling until audio.closed, then
-// detach/destroy. This keeps the UI responsive while uncancellable acoustic DSP
-// retires. Direct destroy remains synchronous and can wait for an SDK call.
+// GUI shutdown: call desktop.close.begin, then poll until audio.closed and
+// development_closed before detaching and destroying the host. Direct destroy
+// remains synchronous and joins any worker cleanup.
 POIMA_DESKTOP_API void poima_desktop_destroy(void* host);
 // Error text is owned by host (or thread-local for NULL/invalid host), not freed
 // by the caller. Exceptions never cross this ABI. There is no cross-thread API.

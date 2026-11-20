@@ -494,6 +494,25 @@ int test_main(int argc,char** argv) {
             gate.release();destroyer.join();
             check(gate.finished && gate.destroy_done,"Destructor did not join its active verifier.");
         }
+        {
+            VerificationGate gate;dev::Jobs scoped;ReleaseVerification release{gate};
+            auto child=request("echo");child.verify_success=[&]{return gate.verify();};
+            const auto active=scoped.submit(child);gate.await_entry();
+            const auto pending=scoped.submit(request("echo"));
+            scoped.begin_shutdown();
+            scoped.begin_shutdown();
+            check(!scoped.shutdown_complete(),"Shutdown completed with a verifier still running.");
+            bool refused=false;
+            try { (void)scoped.submit(request("echo")); }
+            catch(const std::runtime_error&) { refused=true; }
+            check(refused,"Shutdown admitted a new job.");
+            gate.release();
+            check(await(scoped,active).state==dev::State::cancelled && await(scoped,pending).state==dev::State::cancelled,
+                "Shutdown failed to cancel both active and queued work.");
+            const auto deadline=std::chrono::steady_clock::now()+5s;
+            while(!scoped.shutdown_complete() && std::chrono::steady_clock::now()<deadline)std::this_thread::sleep_for(1ms);
+            check(scoped.shutdown_complete(),"Shutdown failed to retire the worker.");
+        }
         const auto failed=await(jobs,jobs.submit(request("fail")));
         check(failed.state==dev::State::failed && failed.exit_code==7 && failed.standard_error.find("bad source")!=std::string::npos,"Nonzero exit was not reported.");
         const auto& failed_process=observed_process(failed);

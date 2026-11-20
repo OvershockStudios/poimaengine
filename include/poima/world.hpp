@@ -80,6 +80,9 @@ public:
     ~WorldSession();
     // Host-owner startup policy; no RPC can add tools or grant build authority.
     void configure_development_profiles(const std::string& profile_file);
+    // A closing desktop owner can retire its tools without blocking its pump.
+    void begin_development_shutdown();
+    bool development_shutdown_complete() const noexcept;
     WorldSession(const WorldSession&)=delete;
     WorldSession& operator=(const WorldSession&)=delete;
     std::string request(std::string_view json_rpc,WorldRequestScope scope=WorldRequestScope::standalone);

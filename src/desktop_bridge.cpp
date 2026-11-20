@@ -262,11 +262,12 @@ struct Bridge : ViewportState {
     std::vector<Json> audio_receipts;
     std::string audio_capture_error;
     bool audio_seeded=false,closing=false,named_audio_camera=false;
-    Bridge(const std::string& path,const std::string& local_endpoint,int gpu,std::uint32_t samples):endpoint(local_endpoint) {
+    Bridge(const std::string& path,const std::string& local_endpoint,int gpu,std::uint32_t samples,const std::string& profiles):endpoint(local_endpoint) {
         require(gpu>=-1 && gpu<=4095 && (samples==1 || samples==4),"GPU must be -1..4095 and samples must be 1 or 4.");render.gpu=gpu;render.samples=samples;
         world_path=fs::weakly_canonical(fs::absolute(path_of(path)));
         if(!endpoint.empty())server=std::make_unique<LocalSessionServer>(endpoint);
         world=std::make_unique<WorldSession>(path_text(world_path));
+        if(!profiles.empty())world->configure_development_profiles(profiles);
     }
     void thread() const { require(owner==std::this_thread::get_id(),"Desktop bridge calls must run on the creating UI thread.",-32000); }
     Json world_call(const std::string& method,const Json& params=Json::object()) {
@@ -546,7 +547,7 @@ struct Bridge : ViewportState {
         if(!closing) {
             closing=true;playing=false;release_input();cancel_gizmo();
             fail_capture(-32003,"Desktop host is closing.");play_clock.advance(0,false);
-            audio_seeded=false;audio.begin_shutdown();
+            audio_seeded=false;audio.begin_shutdown();world->begin_development_shutdown();
         }
         return inspect();
     }
@@ -1008,7 +1009,7 @@ struct Bridge : ViewportState {
     }
     Json inspect() {
         sync_playback();expire_gizmo();expire_capture();const auto saves=world->save_status();const auto components=world->component_status();
-        return {{"closing",closing},{"audio",audio_json()},{"components",{{"active",components.active},{"session_id",components.active ? Json(components.session_id) : Json(nullptr)},{"tick",components.tick},{"revision",components.revision}}},{"saves",{{"generation",saves.generation},{"root",saves.root.empty() ? Json(nullptr) : Json(saves.root)}}},{"binding_mode",explicit_views ? "explicit" : "legacy"},{"views",views_json()},{"input",input_json()},{"playback",playback_json()},{"gameplay",gameplay_json(false)},{"view",view_json()},{"gizmo",gizmo_state()},{"revision",revision()},{"runtime",runtime_json()},{"selected",selected.empty() ? Json(nullptr) : Json(selected)},
+        return {{"closing",closing},{"development_closed",world->development_shutdown_complete()},{"audio",audio_json()},{"components",{{"active",components.active},{"session_id",components.active ? Json(components.session_id) : Json(nullptr)},{"tick",components.tick},{"revision",components.revision}}},{"saves",{{"generation",saves.generation},{"root",saves.root.empty() ? Json(nullptr) : Json(saves.root)}}},{"binding_mode",explicit_views ? "explicit" : "legacy"},{"views",views_json()},{"input",input_json()},{"playback",playback_json()},{"gameplay",gameplay_json(false)},{"view",view_json()},{"gizmo",gizmo_state()},{"revision",revision()},{"runtime",runtime_json()},{"selected",selected.empty() ? Json(nullptr) : Json(selected)},
             {"attached",bool(viewport)},{"graphics_error",graphics_error.empty() ? Json(nullptr) : Json(graphics_error)},{"camera",camera.json()},
             {"capture",capture ? capture->json() : Json(nullptr)},{"frames_presented",presented_frames},{"render",render_json()},
             {"presented_revision",presented_revision ? Json(*presented_revision) : Json(nullptr)},{"presented_tick",presented_tick ? Json(*presented_tick) : Json(nullptr)},
@@ -1137,7 +1138,7 @@ struct Bridge : ViewportState {
                 {"ownership","Owner captures each committed automatic tick. DSP worker owns immutable snapshots; owner alone submits bounded PCM to SDL. Audio errors never roll back gameplay; inspect error and retry explicitly."},
                 {"reset","Pause, Stop, load, camera change and capture suspension clear queued output and invalidate old results. Resume rebases logical voice phase and resets DSP tails. Muting keeps DSP progression but clears/discards audible PCM. Hardware samples already delivered cannot be recalled."},
                 {"limits","Eight queued tick snapshots; bounded metadata and PCM queues, 4800 SDL stereo frames. Overload drops presentation and reports discontinuities; no waiting for DSP/output drain on poll. Direct acoustics may remain expensive."},
-                {"shutdown","desktop.close.begin stops presentation and starts worker retirement; continue owner poll until audio.closed before native destroy. Read-only inspection remains available; other requests reject. GUI follows this asynchronous close. Direct native destroy is a synchronous compatibility fallback with no SDK-call deadline."}}},
+                {"shutdown","desktop.close.begin stops presentation and starts worker retirement; continue owner poll until audio.closed and development_closed before native destroy. Final inspection remains available while other requests reject. Direct native destroy joins worker cleanup."}}},
             {"gameplay",{{"configuration","Session-local CoreCLR launch profile; configure only while stopped. Paths resolve relative to the world and must name existing regular files; validation executes no code. Semantic type/field checks occur when Play loads the module."},
                 {"limits","Profile at most 64 KiB; paths 4096 UTF-8 bytes, type 512 bytes; at most 128 scalar fields with names at most 64 bytes. No source build or file watcher."},
                 {"receipts","Every accepted configuration increments generation. Latest 32 normalized exact request receipts replay before runtime, generation and file checks; changed request ID payload conflicts. Receipts and configuration do not persist after host destruction."},
@@ -1378,7 +1379,10 @@ template<class T,class F>T guarded(void* handle,T failure,F&& action) noexcept {
 } // namespace
 extern "C" {
 void* poima_desktop_create(const char* world,const char* endpoint,int32_t gpu,uint32_t samples) {
-    try { std::unique_lock lock(host_mutex,std::try_to_lock);if(!lock.owns_lock()) { record_error(nullptr,"Desktop bridge operation is already in progress.");return nullptr; }try { require(!instance,"Only one desktop host is allowed per process.",-32000);auto host=std::make_unique<Bridge>(bounded_string(world,32768),bounded_string(endpoint,64,true),gpu,samples);instance=host.release();last_error.clear();return instance; }
+    return poima_desktop_create_with_profiles(world,endpoint,gpu,samples,nullptr);
+}
+void* poima_desktop_create_with_profiles(const char* world,const char* endpoint,int32_t gpu,uint32_t samples,const char* profiles) {
+    try { std::unique_lock lock(host_mutex,std::try_to_lock);if(!lock.owns_lock()) { record_error(nullptr,"Desktop bridge operation is already in progress.");return nullptr; }try { require(!instance,"Only one desktop host is allowed per process.",-32000);auto host=std::make_unique<Bridge>(bounded_string(world,32768),bounded_string(endpoint,64,true),gpu,samples,bounded_string(profiles,32768,true));instance=host.release();last_error.clear();return instance; }
         catch(const std::exception& error) { record_error(nullptr,error.what()); }catch(...) { record_error(nullptr,"Unknown native exception."); } }
     catch(...) { record_error(nullptr,"Desktop bridge synchronization failed."); }return nullptr;
 }

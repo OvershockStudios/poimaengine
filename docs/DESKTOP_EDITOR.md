@@ -87,6 +87,34 @@ the project in a different window. To open the creator directly, use
 `Poima.Editor.exe --creator <path-to-project>`. To point the launcher at a
 different local project directory, use `Poima.Editor.exe --projects <directory>`.
 
+### Publish compiled gameplay from chat
+
+An operator with a Windows .NET SDK, native linker, matching authoring pack and
+runtime distribution can configure a [development profile](DEVELOPMENT_PROFILES.md).
+Start the launcher with that profile, or select it when opening one project.
+
+```powershell
+.\Poima.Editor.exe --projects D:\Poima\Projects --development-profiles D:\Poima\Toolchain\profiles.json
+.\Poima.Editor.exe --creator D:\Poima\Projects\MyGame\project.poimaproject --development-profiles D:\Poima\Toolchain\profiles.json
+```
+
+The desktop owns the profile for the lifetime of its native session. Use an
+operator-managed profile file outside the project's editable sources. The full
+editor also accepts `--development-profiles` after its project or world path.
+Discovery through the project endpoint returns configured profile names and
+supported operations. Pass the agent the project path relative to the selected
+profile's project root and point the C# project at the selected authoring SDK.
+In the chat client, review `poima_build` requests separately from world edits.
+These run the selected trusted project and toolchain.
+
+Use `development.publish` through `poima_build` and wait for a successful
+`development.inspect` result. Then attach the verified descriptor through
+[`project.gameplay.adopt`](PROJECT_GAMEPLAY_ADOPTION.md). **Play** and **Export
+build** read that saved attachment. Publish success verifies the artifact's
+inventory. Gameplay verification requires a separate playtest. Closing the
+workspace requests cancellation of its outstanding development jobs and waits
+for their processes and workers to retire while the window continues to pump.
+
 The creator can preview an adopted Native AOT module and a configured desktop
 gameplay launch profile. It does not compile gameplay when you press Play.
 Export uses the native [bundle builder](PROJECTS.md#install-a-runtime-and-export)

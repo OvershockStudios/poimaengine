@@ -1,8 +1,17 @@
 # Implementation status
 
-Updated 2026-11-20 for **0.0.285**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-20 for **0.0.286**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.286 lets the Windows desktop owner use an operator-configured
+[development profile](DESKTOP_EDITOR.md#publish-compiled-gameplay-from-chat).
+A scripted MCP client publishes and attaches native gameplay through the
+creator endpoint. The creator previews and exports the attached game. Its
+relocated build passes 16 gameplay groups, including fresh-process save
+continuation. A separate desktop run closes during an observed publisher and
+retires it. Toolchain setup and build verification still require an operator.
+[Results](evidence/m2-creator-build-286.json)
 
 Version 0.0.285 adds [standalone Windows export from the creator workspace](DESKTOP_EDITOR.md#creator-workspace)
 in the portable preview. Windows UI Automation creates a project, previews it,

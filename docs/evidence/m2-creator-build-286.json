@@ -1,0 +1,59 @@
+{
+  "engine_version": "0.0.286",
+  "scope": "Extracted Windows x64 portable creator on the development laptop. Windows UI Automation opens a retained puzzle project with no attached gameplay. A scripted MCP client uses the creator endpoint and an operator-selected installed authoring pack and local SDK/linker.",
+  "package": {
+    "bytes": 128676122,
+    "sha256": "426bcd16e3a7bccbd8f1d91d369d11795f64fc23fd3e48c8fd0cf794fb61f920"
+  },
+  "trusted_build": {
+    "profile_rid": "win-x64",
+    "profile_fingerprint": "fc3ee13826cb5c1af54d28d64c775a262f5af72746d7326abd225bb0cdc91776",
+    "manifest_guard_error": -32009,
+    "ordinary_tool_publish_error": -32602,
+    "verified_publisher_exit": 0,
+    "verified_publisher_elapsed_ms": 13390,
+    "final_publisher_job_active_processes": 0,
+    "exact_publish_and_adopt_retries": true,
+    "world_and_revision_preserved": true,
+    "native_image_sha256": "03c89ef58565dc1212d1efa67091c7e4c8d150ebfbd305d13b67ea692e5f9f98",
+    "descriptor_sha256": "b6d3ffc34102d935680b18ef583e5eaadde8b73418bb227b81e2471546c74dbc"
+  },
+  "close_during_publish": {
+    "direct_creator_startup": true,
+    "observed_running_publisher_then_natural_close": true,
+    "publisher_retired": true,
+    "descriptor_published": false,
+    "manifest_attached": false
+  },
+  "creator_and_relocated_player": {
+    "launcher_profile_forwarded": true,
+    "revision": 8,
+    "native_backend": "native_aot",
+    "vulkan_preview_presented_tick": 2,
+    "source_path_unavailable": true,
+    "assertion_groups": 16,
+    "fresh_process_save_continuation": true,
+    "tick": 632,
+    "frames_presented": 633,
+    "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "renderer_validation_errors": 0,
+    "final_capture_sha256": "491c7caf87fc6558bbd241a0e09b6ad1e3af71b719dbfaae463947330be42f98",
+    "files_validated_after_play": 60
+  },
+  "regression": {
+    "unconfigured_creator": true,
+    "native_jobs_and_capture_reentry": [
+      "Windows x64",
+      "Linux x64"
+    ],
+    "initial_harness_failures": [
+      "A Windows worker test started from an unmapped WSL working directory failed in its first peer check. Its native Windows invocation from the mapped checkout passed.",
+      "The initial creator harness expected -32091 for a stale manifest. The tool returned the existing -32009 revision conflict, and the corrected trial passed."
+    ]
+  },
+  "remaining": [
+    "Operator-free toolchain setup",
+    "A fresh provider-driven game build through the configured creator",
+    "Build verification and restart-safe recovery inside the workspace"
+  ]
+}

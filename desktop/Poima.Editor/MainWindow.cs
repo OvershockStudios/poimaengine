@@ -160,9 +160,9 @@ public sealed partial class MainWindow : Window
     {
         if (!ClosingPending) return;
         if (!closingRequested) { Close(); return; }
-        if (Model.Host.State["audio"]?["closed"]?.GetValue<bool>() != true)
+        if (!Model.Host.WorkersRetired)
         {
-            status.Text = Model.Host.LastError ?? "Closing audio output…";
+            status.Text = Model.Host.LastError ?? "Closing audio and build tools…";
             return;
         }
         closeReady = true; Close();

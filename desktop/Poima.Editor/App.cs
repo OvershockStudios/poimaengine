@@ -34,7 +34,7 @@ public sealed class App : Application
                 var launcher = new LauncherWindow((selected, advanced) =>
                 {
                     var previous = desktop.MainWindow!;
-                    var launch = LaunchOptions.Parse([selected.World], selected);
+                    var launch = LaunchOptions.Parse([selected.World], selected) with { DevelopmentProfiles = Program.LauncherDevelopmentProfiles };
                     if (advanced) OpenEditor(desktop, launch);
                     else desktop.MainWindow = new CreatorWindow(selected, launch);
                     desktop.MainWindow!.Show();
@@ -52,7 +52,7 @@ public sealed class App : Application
         // Preserve the editor's report channel before any game can load.
         var reportOutput = Console.Out;
         var script = new DesktopScript(options.Script, options.Frames);
-        var host = new NativeHost(options.World, options.Endpoint, options.Gpu, options.Samples);
+        var host = new NativeHost(options.World, options.Endpoint, options.Gpu, options.Samples, options.DevelopmentProfiles);
         MainWindow window;
         try { window = new MainWindow(host, options.Layout, options.ProjectRoot); }
         catch { host.Dispose(); throw; }

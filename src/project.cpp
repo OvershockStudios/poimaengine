@@ -562,6 +562,13 @@ Summarize the decisions, open questions, and what counts as a first playable.
 Get agreement on the brief before building. If the creator already gives an
 approved brief or explicitly asks you to implement a defined change, work from
 it directly. The creator can edit these instructions.
+
+After approval, use the shared Poima tools to inspect and edit the project.
+If the game needs compiled C#, check development.profiles. Use a configured
+profile and its matching gameplay SDK to publish through poima_build. Wait for
+successful publication and use project.inspect and the verified artifact hash
+for guarded project.gameplay.adopt. Ask for the profile-relative project path
+if it wasn't supplied. Use gameplay checks before saying a build is verified.
 )");
         exclusive_write(stage.path/"CLAUDE.md","@AGENTS.md\n");
         exclusive_write(stage.path/project_manifest_filename,spec.dump(2)+"\n");

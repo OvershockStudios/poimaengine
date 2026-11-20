@@ -1412,6 +1412,8 @@ public:
         require(!read_only_,"Read-only runtime hosts cannot configure development tools.",-32081);
         development_.configure(development::load_profiles(filename));
     }
+    void begin_development_shutdown() { development_.begin_shutdown(); }
+    bool development_shutdown_complete() const noexcept { return development_.shutdown_complete(); }
     WorldProfilerContext profiler_context() const {
         WorldProfilerContext result;
         if(runtime_) { std::copy(runtime_id_.begin(),runtime_id_.end(),result.session.begin());result.tick=static_cast<std::int64_t>(runtime_->inspect().tick); }
@@ -4518,6 +4520,8 @@ void WorldSession::configure_development_profiles(const std::string& filename) {
     require(!closed(),"World session is closed.",-32001);
     impl_->world.configure_development_profiles(filename);
 }
+void WorldSession::begin_development_shutdown() { impl_->world.begin_development_shutdown(); }
+bool WorldSession::development_shutdown_complete() const noexcept { return impl_->world.development_shutdown_complete(); }
 bool WorldSession::poll_player() {
     require(!closed(),"World session is closed.",-32001);
     profiling::Binding trace(&impl_->world.profiler(),profiling::Source::player);

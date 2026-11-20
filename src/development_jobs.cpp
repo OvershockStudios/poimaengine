@@ -5,6 +5,7 @@
 #include "poima/development_jobs.hpp"
 #include <algorithm>
 #include <array>
+#include <atomic>
 #include <condition_variable>
 #include <cwctype>
 #include <deque>
@@ -169,16 +170,18 @@ struct Jobs::Impl {
     std::deque<std::shared_ptr<Job>> queue;
     JobId next=1;
     bool stopping=false;
+    std::atomic<bool> retired=false;
     std::thread worker;
     explicit Impl(Limits value):limits(value) {
         require(limits.retained_jobs>0 && limits.retained_jobs<=128,"Retained jobs must be between 1 and 128.");
         require(limits.diagnostic_bytes_per_stream>0 && limits.diagnostic_bytes_per_stream<=1048576,"Diagnostic capacity must be between 1 byte and 1 MiB.");
-        worker=std::thread([this]{loop();});
+        worker=std::thread([this]{loop();retired.store(true,std::memory_order_release);});
     }
-    ~Impl() {
+    void begin_shutdown() {
         { std::lock_guard lock(mutex);stopping=true;for(auto& [id,job]:jobs)if(!terminal(job->status.state))job->status.cancellation_requested=true; }
-        wake.notify_one();worker.join();
+        wake.notify_one();
     }
+    ~Impl() { begin_shutdown();worker.join(); }
     void append(Job& job,bool error,const char* bytes,std::size_t count) {
         std::lock_guard lock(mutex);
         auto& text=error?job.status.standard_error:job.status.standard_output;
@@ -593,6 +596,8 @@ struct Jobs::Impl {
 };
 Jobs::Jobs(Limits limits):impl_(std::make_unique<Impl>(limits)) {}
 Jobs::~Jobs()=default;
+void Jobs::begin_shutdown() { impl_->begin_shutdown(); }
+bool Jobs::shutdown_complete() const noexcept { return impl_->retired.load(std::memory_order_acquire); }
 void validate_request(const Request& request) {
     require(request.executable.is_absolute() && request.working_directory.is_absolute(),"Executable and working directory must be absolute paths.");
     require(request.executable.native().find(std::filesystem::path::value_type{})==std::filesystem::path::string_type::npos && request.working_directory.native().find(std::filesystem::path::value_type{})==std::filesystem::path::string_type::npos,"Paths cannot contain NUL.");
