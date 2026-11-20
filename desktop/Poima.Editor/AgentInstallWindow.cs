@@ -5,11 +5,10 @@ using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
-using Avalonia.Threading;
 
 namespace Poima.Editor;
 
-internal sealed class CodexInstallWindow : Window
+internal sealed class AgentInstallWindow : Window
 {
     private readonly CancellationTokenSource cancellation = new(TimeSpan.FromMinutes(10));
     private readonly TextBlock status = new() { Text = "Preparing the download…", TextWrapping = TextWrapping.Wrap };
@@ -17,10 +16,12 @@ internal sealed class CodexInstallWindow : Window
     private readonly Button cancel = new() { Content = "Cancel" };
     private readonly Button guide = new() { Content = "Open setup guide", IsVisible = false };
     private bool installing = true;
+    private readonly WindowsAgentPackage package;
 
-    public CodexInstallWindow()
+    public AgentInstallWindow(WindowsAgentPackage package, string details, string guideUrl)
     {
-        Title = "Install Codex";
+        this.package = package;
+        Title = "Install " + package.Name;
         Width = 480;
         SizeToContent = SizeToContent.Height;
         CanResize = false;
@@ -29,13 +30,13 @@ internal sealed class CodexInstallWindow : Window
         FontSize = 14;
         Background = EditorTheme.Brush("#19191C");
         Foreground = EditorTheme.Brush("#F2EDEE");
-        AutomationProperties.SetName(status, "Codex install status");
+        AutomationProperties.SetName(status, package.Name + " install status");
         Content = new StackPanel
         {
             Margin = new Thickness(24), Spacing = 14, Children =
             {
-                new TextBlock { Text = $"Codex {WindowsCodexInstall.Version}", FontSize = 22, FontWeight = FontWeight.SemiBold },
-                new TextBlock { Text = "205 MiB from OpenAI. Poima keeps the client in your user folder.", TextWrapping = TextWrapping.Wrap },
+                new TextBlock { Text = $"{package.Name} {package.Version}", FontSize = 22, FontWeight = FontWeight.SemiBold },
+                new TextBlock { Text = details, TextWrapping = TextWrapping.Wrap },
                 progress, status,
                 new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Children = { cancel, guide } }
             }
@@ -44,9 +45,9 @@ internal sealed class CodexInstallWindow : Window
         cancel.Click += (_, _) => Stop();
         guide.Click += (_, _) =>
         {
-            try { OpenGuide(); }
+            try { OpenGuide(guideUrl); }
             catch (Exception error) when (error is System.ComponentModel.Win32Exception or InvalidOperationException)
-            { status.Text = "Windows couldn’t open the Codex setup guide."; }
+            { status.Text = $"Windows couldn’t open the {package.Name} setup guide."; }
         };
         Closing += (_, args) =>
         {
@@ -57,9 +58,9 @@ internal sealed class CodexInstallWindow : Window
         Closed += (_, _) => cancellation.Dispose();
     }
 
-    public static void OpenGuide()
+    public static void OpenGuide(string url)
     {
-        using var launched = Process.Start(new ProcessStartInfo("https://learn.chatgpt.com/docs/cli") { UseShellExecute = true });
+        using var launched = Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
     }
 
     public void Stop()
@@ -86,9 +87,9 @@ internal sealed class CodexInstallWindow : Window
                 if (!installing || cancellation.IsCancellationRequested) return;
                 progress.IsIndeterminate = percent == 100;
                 progress.Value = percent;
-                status.Text = percent == 100 ? "Verifying and installing Codex…" : $"Downloading Codex… {percent}%";
+                status.Text = percent == 100 ? $"Verifying and installing {package.Name}…" : $"Downloading {package.Name}… {percent}%";
             });
-            var installed = await WindowsCodexInstall.InstallAsync(http, WindowsCodexInstall.Root, updates, cancellation.Token);
+            var installed = await package.InstallAsync(http, package.Root, updates, cancellation.Token);
             installing = false;
             Close(cancel.IsEnabled ? installed : null);
         }
@@ -102,7 +103,7 @@ internal sealed class CodexInstallWindow : Window
         {
             installing = false;
             progress.IsVisible = false;
-            status.Text = error is OperationCanceledException ? "The Codex download timed out." : error.Message;
+            status.Text = error is OperationCanceledException ? $"The {package.Name} download timed out." : error.Message;
             guide.IsVisible = cancel.IsEnabled = true;
             cancel.Content = "Close";
         }

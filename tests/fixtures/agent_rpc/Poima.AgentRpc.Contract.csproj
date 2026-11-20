@@ -2,6 +2,8 @@
   <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net10.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable><TreatWarningsAsErrors>true</TreatWarningsAsErrors></PropertyGroup>
   <ItemGroup><ProjectReference Include="../../../desktop/Poima.AgentHost/Poima.AgentHost.csproj" /></ItemGroup>
   <ItemGroup><Compile Include="../../../desktop/Poima.Editor/WindowsCodexInstall.cs" Link="WindowsCodexInstall.cs" /></ItemGroup>
+  <ItemGroup><Compile Include="../../../desktop/Poima.Editor/WindowsAgentPackage.cs" Link="WindowsAgentPackage.cs" /></ItemGroup>
+  <ItemGroup><Compile Include="../../../desktop/Poima.Editor/WindowsClaudeInstall.cs" Link="WindowsClaudeInstall.cs" /></ItemGroup>
   <ItemGroup><Compile Include="../../../desktop/Poima.Editor/CreatorConversationStore.cs" Link="CreatorConversationStore.cs" /></ItemGroup>
   <ItemGroup><Compile Include="../../../desktop/Poima.Editor/CodexPoimaApproval.cs" Link="CodexPoimaApproval.cs" /></ItemGroup>
 </Project>

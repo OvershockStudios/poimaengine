@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 using System.Formats.Tar;
 using System.IO.Compression;
-using System.Runtime.InteropServices;
-using System.Security.Cryptography;
 
 namespace Poima.Editor;
 
@@ -17,86 +15,9 @@ internal static class WindowsCodexInstall
     internal const string PackageUrl = $"https://releases.openai.com/codex/releases/{Version}/codex-package-x86_64-pc-windows-msvc.tar.gz";
     private const string Marker = ".poima-codex-installed";
 
-    public static bool Supported => OperatingSystem.IsWindows() && RuntimeInformation.OSArchitecture == Architecture.X64;
-    public static string Root => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Poima", "agents", "codex");
-
-    public static string? Executable(string root)
-    {
-        var folder = Path.Combine(root, Version);
-        var receipt = new FileInfo(Path.Combine(folder, Marker));
-        var executable = new FileInfo(Path.Combine(folder, "bin", "codex.exe"));
-        try
-        {
-            if (!SafeDirectory(root) || !SafeDirectory(folder) || !SafeDirectory(Path.Combine(folder, "bin")) ||
-                !receipt.Exists || receipt.Length != ArchiveSha256.Length || receipt.Attributes.HasFlag(FileAttributes.ReparsePoint) ||
-                File.ReadAllText(receipt.FullName) != ArchiveSha256 || !executable.Exists || executable.Length != 407_421_232 ||
-                executable.Attributes.HasFlag(FileAttributes.ReparsePoint)) return null;
-            return executable.FullName;
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException) { return null; }
-    }
-
-    public static async Task<string> InstallAsync(HttpClient http, string root, IProgress<int>? progress, CancellationToken cancellation)
-    {
-        cancellation.ThrowIfCancellationRequested();
-        Directory.CreateDirectory(root);
-        if (!SafeDirectory(root)) throw new IOException("Choose a local Poima installation folder.");
-        var lockPath = Path.Combine(root, ".install.lock");
-        if (File.Exists(lockPath) && File.GetAttributes(lockPath).HasFlag(FileAttributes.ReparsePoint))
-            throw new IOException("The Codex installation lock is unavailable.");
-        await using var installLock = new FileStream(lockPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
-        if (Executable(root) is { } existing) return existing;
-
-        var destination = Path.Combine(root, Version);
-        if (Directory.Exists(destination) || File.Exists(destination))
-            throw new IOException("An incomplete Codex folder is already present. Open the setup guide or select an existing Codex executable.");
-        var staging = Path.Combine(root, ".install-" + Guid.NewGuid().ToString("N"));
-        var payload = Directory.CreateDirectory(Path.Combine(staging, "payload")).FullName;
-        try
-        {
-            var archivePath = Path.Combine(staging, "codex.tar.gz");
-            await using (var archive = new FileStream(archivePath, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.None,
-                128 * 1024, FileOptions.Asynchronous))
-            {
-                await DownloadAsync(http, archive, progress, cancellation).ConfigureAwait(false);
-                archive.Position = 0;
-                await UnpackAsync(archive, payload, cancellation).ConfigureAwait(false);
-            }
-            await File.WriteAllTextAsync(Path.Combine(payload, Marker), ArchiveSha256, cancellation).ConfigureAwait(false);
-            cancellation.ThrowIfCancellationRequested();
-            Directory.Move(payload, destination);
-            return Path.Combine(destination, "bin", "codex.exe");
-        }
-        finally { Directory.Delete(staging, recursive: true); }
-    }
-
-    private static bool SafeDirectory(string path) => Directory.Exists(path) && !File.GetAttributes(path).HasFlag(FileAttributes.ReparsePoint);
-
-    private static async Task DownloadAsync(HttpClient http, Stream archive, IProgress<int>? progress, CancellationToken cancellation)
-    {
-        using var response = await http.GetAsync(PackageUrl, HttpCompletionOption.ResponseHeadersRead, cancellation).ConfigureAwait(false);
-        response.EnsureSuccessStatusCode();
-        if (response.Content.Headers.ContentLength is { } expected && expected != ArchiveBytes)
-            throw new InvalidDataException("The Codex download has an unexpected size.");
-        await using var input = await response.Content.ReadAsStreamAsync(cancellation).ConfigureAwait(false);
-        using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
-        var buffer = new byte[128 * 1024];
-        long received = 0;
-        int read, reported = -1;
-        while ((read = await input.ReadAsync(buffer, cancellation).ConfigureAwait(false)) != 0)
-        {
-            received += read;
-            if (received > ArchiveBytes) throw new InvalidDataException("The Codex download exceeded its published size.");
-            hash.AppendData(buffer.AsSpan(0, read));
-            await archive.WriteAsync(buffer.AsMemory(0, read), cancellation).ConfigureAwait(false);
-            var percent = (int)(received * 100 / ArchiveBytes);
-            if (percent == reported) continue;
-            progress?.Report(percent);
-            reported = percent;
-        }
-        if (received != ArchiveBytes || Convert.ToHexStringLower(hash.GetHashAndReset()) != ArchiveSha256)
-            throw new InvalidDataException("The Codex download did not match OpenAI’s published checksum.");
-    }
+    public static WindowsAgentPackage Package { get; } = new("Codex", "codex", Version, PackageUrl,
+        ArchiveBytes, ArchiveSha256, Marker, "bin/codex.exe",
+        new Dictionary<string, long> { ["bin/codex.exe"] = 407_421_232 }, UnpackAsync);
 
     private static async Task UnpackAsync(Stream archive, string payload, CancellationToken cancellation)
     {

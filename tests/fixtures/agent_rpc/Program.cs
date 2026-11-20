@@ -2,6 +2,7 @@
 using System.Reflection;
 using System.Text.Json.Nodes;
 using Poima.AgentHost;
+using Poima.Editor;
 
 if (args.Length > 0 && args[0] == "--codex") { await CodexIntegration.RunAsync(args); return; }
 if (args is ["--codex-login", var client, var engine, var directory])
@@ -127,5 +128,6 @@ foreach (var disposeDuringWrite in new[] { false, true })
 Console.WriteLine("Agent RPC contracts passed: concurrency, Unicode, errors, approval IDs, cancellation, late replies, diagnostics, EOF, malformed/oversized frames, event overflow, partial-write shutdown and concurrent disposal.");
 await AcpContract.VerifyAsync(token);
 await CodexLoginContract.VerifyAsync(Environment.ProcessPath!, Environment.ProcessPath!, Directory.GetCurrentDirectory(), useFixture: true);
-await CodexInstallContract.VerifyAsync();
+await AgentInstallContract.VerifyAsync(WindowsCodexInstall.Package, WindowsCodexInstall.PackageUrl, WindowsCodexInstall.ArchiveBytes);
+await AgentInstallContract.VerifyAsync(WindowsClaudeInstall.Package, WindowsClaudeInstall.PackageUrl, WindowsClaudeInstall.ArchiveBytes);
 CreatorConversationContract.Verify();

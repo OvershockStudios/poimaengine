@@ -5,6 +5,7 @@
 # Codex connection with the installed client and submits no model turn.
 # -CodexExecutable selects an exact client for that installed-client check.
 # -Antigravity and -Claude use the supplied ACP clients for one MCP read each.
+# -InstallClaude downloads the official adapter into an unused per-user install folder and uses an isolated signed-out profile.
 # -CodexBrief runs a two-turn interview on the unchanged starter project.
 # -CodexQuestions uses the local AgentRpc contract executable as a scripted app-server.
 # -CodexToolApproval exercises decline and approve once with the installed Codex.
@@ -25,6 +26,7 @@ param(
     [string]$CodexExecutable,
     [string]$Antigravity,
     [string]$Claude,
+    [switch]$InstallClaude,
     [switch]$CodexBrief,
     [string]$CodexQuestions,
     [switch]$CodexToolApproval,
@@ -42,6 +44,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 if ($CodexAssetRead -and !$AssetFixtures) { throw 'Supply -AssetFixtures for the Codex asset handoff check.' }
+if ($InstallClaude -and $Claude) { throw 'Run the signed-out installation and the supplied Claude client checks separately.' }
 if ($VerifiedPlayChat -and $VerifiedPlayWithCodex) { throw 'Run the scripted and live playback checks separately.' }
 if ($ObserveVerifiedPlayback -and !$VerifiedPlayWithCodex) { throw 'Use -VerifiedPlayWithCodex for the live observation workflow.' }
 if ($VerifiedPlayChat -or $VerifiedPlayWithCodex) { $WithPlaytestResults = $true }
@@ -120,6 +123,7 @@ $report = [ordered]@{
     codex_connection_requested = [bool]$WithCodex
     antigravity_turn_requested = ![string]::IsNullOrEmpty($Antigravity)
     claude_turn_requested = ![string]::IsNullOrEmpty($Claude)
+    claude_install_requested = [bool]$InstallClaude
     codex_brief_requested = [bool]$CodexBrief
     codex_questions_requested = ![string]::IsNullOrWhiteSpace($CodexQuestions)
     export_requested = [bool]$WithExport
@@ -420,6 +424,73 @@ function Exercise-Acp($Project, $Provider, $Setting, $Executable, $Key) {
     Invoke-Control 'Agent Disconnect'
     $null = Wait-For "the retired $Provider connection" { Find-Control 'Agent Connect' -Enabled }
     $report.checks["${Key}_disconnected"] = $true
+}
+
+function Check-ClaudeSignIn {
+    Select-AgentProvider 'Claude Code'
+    Invoke-Control 'Agent Connect'
+    $null = Wait-For 'Claude Code sign-in' { Find-Control 'Sign in to Claude Code' -Enabled } 65
+    if (Find-Control 'Agent Send' -Enabled) { throw 'The signed-out client can send a turn.' }
+}
+
+function Exercise-ClaudeInstall($Project) {
+    Select-AgentProvider 'Claude Code'
+    $settings = Wait-For 'Connection settings' { Find-Control 'Connection settings' -Enabled }
+    $expander = $settings.GetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern)
+    $expander.Expand()
+    Set-ControlText 'Claude ACP executable' (Join-Path $run 'missing-claude.exe')
+    $expander.Collapse()
+    Invoke-Control 'Agent Connect'
+    $null = Wait-For 'missing adapter recovery' { Find-Control 'Install Claude Code' -Enabled }
+    $creator = $window
+    function Claude-Installer {
+        $handle = [CreatorTestWindow]::FindDialog([IntPtr]$creator.Current.NativeWindowHandle, 'Install Claude Code')
+        if ($handle -ne [IntPtr]::Zero) {
+            $dialog = [System.Windows.Automation.AutomationElement]::FromHandle($handle)
+            if ($dialog.Current.ProcessId -eq $owner.Id) { return $dialog }
+        }
+    }
+    Invoke-Control 'Install Claude Code'
+    $window = Wait-For 'the installer window' { Claude-Installer }
+    Invoke-Control 'Cancel'
+    $null = Wait-For 'the cancelled installer to close' { !(Claude-Installer) }
+    $window = $creator
+    if (Test-Path -LiteralPath (Join-Path $claudeInstallRoot '0.106.0')) { throw 'Cancellation published an installation.' }
+    if (Get-ChildItem -LiteralPath $claudeInstallRoot -Force -Directory -Filter '.install-*' -ErrorAction SilentlyContinue) {
+        throw 'Cancelled installation left staging files.'
+    }
+    $report.checks.claude_install_cancelled = $true
+    Invoke-Control 'Install Claude Code'
+    $null = Wait-For 'the installed adapter sign-in' {
+        if ($dialog = Claude-Installer) {
+            $condition = [System.Windows.Automation.PropertyCondition]::new(
+                [System.Windows.Automation.AutomationElement]::NameProperty, 'Open setup guide')
+            if ($dialog.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $condition)) {
+                $labels = $dialog.FindAll([System.Windows.Automation.TreeScope]::Descendants,
+                    [System.Windows.Automation.Condition]::TrueCondition)
+                throw ('Claude installer failed. ' + (($labels | ForEach-Object { $_.Current.Name }) -join ' | '))
+            }
+        }
+        Find-Control 'Sign in to Claude Code' -Enabled
+    } 240
+    if (Find-Control 'Agent Send' -Enabled) { throw 'Installation bypassed sign-in.' }
+    $installed = Join-Path $claudeInstallRoot '0.106.0'
+    $adapter = (Get-FileHash -LiteralPath (Join-Path $installed 'claude-agent-acp.exe')).Hash.ToLowerInvariant()
+    $cliHash = (Get-FileHash -LiteralPath (Join-Path $installed 'claude.exe')).Hash.ToLowerInvariant()
+    if ($adapter -cne 'e8dac89c93f2003894eb375c0a6c5a2c3613e94629b6661d5a2ffd4dd4a60f88' -or
+        $cliHash -cne '345996b4bdbae21d817f750fae2f34cbf8d81224a5444c78136091d121beb298') {
+        throw 'Installed executables differ from the pinned archive.'
+    }
+    if (Get-ChildItem -LiteralPath $claudeInstallRoot -Force -Directory -Filter '.install-*') {
+        throw 'Successful installation left staging files.'
+    }
+    $current = Inspect-Project
+    if ($current.manifest_sha256 -cne $Project.manifest_sha256 -or $current.world_sha256 -cne $Project.world_sha256) {
+        throw 'Claude Code setup changed the project.'
+    }
+    $report.checks.claude_install = @{
+        adapter_sha256 = $adapter; cli_sha256 = $cliHash; sign_in_available = $true; project_unchanged = $true
+    }
 }
 
 function Start-Launcher($Phase, [string]$ProjectPath) {
@@ -1238,6 +1309,14 @@ function Play-RelocatedExport($Bundle, $Expected = $report.checks.export, $Kind 
 
 $oldDriverFiles, $oldIcdFiles = $env:VK_DRIVER_FILES, $env:VK_ICD_FILENAMES
 try {
+    if ($InstallClaude) {
+        $claudeInstallRoot = Join-Path $env:LOCALAPPDATA 'Poima\agents\claude'
+        if (Test-Path -LiteralPath $claudeInstallRoot) { throw 'The per-user Claude install folder must be unused.' }
+        Get-ChildItem Env: | Where-Object { $_.Name -match '^(ANTHROPIC_|CLAUDE_CODE_|CLAUDE_AGENT_ACP_)' } |
+            ForEach-Object { Remove-Item ('Env:' + $_.Name) }
+        $env:CLAUDE_CONFIG_DIR = Join-Path $run 'isolated-claude'
+        New-Item -ItemType Directory -Path $env:CLAUDE_CONFIG_DIR | Out-Null
+    }
     if ($WithoutVulkan) {
         $env:VK_DRIVER_FILES = $env:VK_ICD_FILENAMES = Join-Path $run 'missing-driver.json'
     }
@@ -1315,6 +1394,7 @@ try {
     }
     if ($Antigravity) { Exercise-Acp $project 'Antigravity' 'Antigravity CLI executable' $Antigravity 'antigravity' }
     if ($Claude) { Exercise-Acp $project 'Claude Code' 'Claude ACP executable' $Claude 'claude' }
+    if ($InstallClaude) { Exercise-ClaudeInstall $project }
     if ($CodexBrief) { Exercise-CodexBrief $project }
     if ($CodexToolApproval) { $project = Exercise-CodexToolApproval $project }
     if ($WithCodex) {
@@ -1344,6 +1424,10 @@ try {
     $window = Wait-For 'the reopened launcher' { Find-Window 'Poima' }
     Invoke-Control 'Open selected project'
     $window = Wait-For 'the reopened creator' { Find-Window "$name*Poima Creator" }
+    if ($InstallClaude) {
+        Check-ClaudeSignIn
+        $report.checks.claude_install_reopened = $true
+    }
     $reopened = Inspect-Project
     if ($reopened.project_id -ne $project.project_id -or $reopened.revision -ne $project.revision) {
         throw 'Project identity or authoring revision changed after reopen.'

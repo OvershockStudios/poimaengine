@@ -1,8 +1,16 @@
 # Implementation status
 
-Updated 2026-11-20 for **0.0.319**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-20 for **0.0.320**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.320 installs the [official Claude ACP adapter](AGENT_CLIENTS.md#claude-code-in-poima)
+from the Windows x64 creator. The packaged test cancels setup, retries from
+an unused install folder, matches both published executables and reaches the
+Claude Code sign-in action. Reopening finds the installed adapter and
+preserves the project. Authenticated Claude chat through this setup and
+qualification on clean Windows remain open.
+[Results](evidence/m2-creator-claude-install-320.json)
 
 Version 0.0.319 adds [verified player observation](PROJECT_RECOVERY.md#inspect-the-verified-player)
 to the Windows creator endpoint. Codex inspected the original player's

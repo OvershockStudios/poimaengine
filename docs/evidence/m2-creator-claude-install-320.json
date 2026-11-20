@@ -1,0 +1,67 @@
+{
+  "engine_version": "0.0.320",
+  "scope": "Windows UI Automation against the exact 499-file package on the development laptop. The Claude run uses an unused per-user install directory and an isolated signed-out profile. No Claude prompt was submitted.",
+  "archive": {
+    "name": "Poima-0.0.320-Windows-x64.zip",
+    "bytes": 141561537,
+    "sha256": "795c60aa9e4cc0fbed8b3461e592a04c178a49cbb3c515e89f40b67200c2e3bc"
+  },
+  "release_files_verified": 499,
+  "artifacts": {
+    "Poima.Editor.exe": "77d5aabbc7cd90fcab6237ad4300376a8fd966742c1b7215a86b2273117e228c",
+    "Poima.Editor.dll": "62b6b25eb1a74a1153e70c0888a00dc9ec8f1efab2391b52979055c832cb1bc9",
+    "poima.exe": "47c9624bb05065f0a84efe7ee39f4491d9666a6024b86ef9f476b5a743cec08d",
+    "poima_desktop.dll": "a04fa7478fcc89bc1fd0c34fb84347af764e13f452667cbc720c58b302f8efec"
+  },
+  "vendor_release": {
+    "source": "https://github.com/agentclientprotocol/claude-agent-acp/releases/tag/v0.106.0",
+    "adapter_version": "0.106.0",
+    "claude_code_version": "2.1.322",
+    "archive_bytes": 219220423,
+    "archive_sha256": "5de09fe80ac78260eb56964b92e698bd4c467092f0c88e042438a8e05974903c",
+    "adapter_sha256": "e8dac89c93f2003894eb375c0a6c5a2c3613e94629b6661d5a2ffd4dd4a60f88",
+    "cli_sha256": "345996b4bdbae21d817f750fae2f34cbf8d81224a5444c78136091d121beb298"
+  },
+  "signed_out_adapter_probe": {
+    "auth_status_exit": 1,
+    "acp_protocol_version": 1,
+    "session_new_succeeded_without_authentication": true,
+    "adapter_shutdown_exit": -1,
+    "adapter_shutdown_note": "The probe closed stdin and allowed five seconds before forced cleanup. Natural adapter shutdown was not established.",
+    "log_sha256": "ad87d0ad71d42100f44cebde588ac2d214e1c61d8609399149b88f5f7e37c91f"
+  },
+  "packaged_creator": {
+    "cancel_left_no_install_or_stage": true,
+    "retry_installed_exact_files": true,
+    "signed_out_client_showed_sign_in_and_blocked_send": true,
+    "found_installed_adapter_on_reopen": true,
+    "project_unchanged_during_setup": true,
+    "codex_connected_and_reconnected_without_prompt": true,
+    "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "native_preview_frames": [
+      5,
+      4
+    ],
+    "clean_creator_exit": true,
+    "report_sha256": "4db557c353a1fe2348b34c363bf49e4b76efbfdafe54ac356793b2a3a2d49a13"
+  },
+  "earlier_run": {
+    "passed": false,
+    "cause": "After reaching sign-in and matching the executables, a test variable shadowed the Poima CLI path. The test forced its own editor to close. The corrected run used the same engine archive.",
+    "report_sha256": "1ac806c1cd6f3d436524852456e2c91c84b17532738899134532ad48679f9867"
+  },
+  "agent_protocol_and_installer_contracts": {
+    "linux": {
+      "passed": true,
+      "log_sha256": "a15ed1edaa48596b58853183af829b09bd9694cd1f2e1a6ec050830261b9b381"
+    },
+    "windows": {
+      "passed": true,
+      "log_sha256": "8381e02d4c20ed1097285977343794947e6bc5d38d4458bc99eef37d2ed0069a"
+    }
+  },
+  "open_qualification": [
+    "Claude browser authorization and first authenticated chat with the pinned package",
+    "First-time creator on clean Windows"
+  ]
+}

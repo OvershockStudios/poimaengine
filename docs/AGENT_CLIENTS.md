@@ -95,10 +95,23 @@ Launch the official CLI with `--mcp-config PATH`. For an isolated test, `--stric
 
 ## Claude Code in Poima
 
-Extract a [Claude ACP adapter Windows release](https://github.com/agentclientprotocol/claude-agent-acp/releases)
-and keep its executables together. Sign in through Claude Code. Then select
-**Claude Code** in Poima's creator or Agent window, set the path to
-`claude-agent-acp.exe`, and connect. Poima also looks in
+Select **Claude Code** in the Windows creator or the editor’s Agent window
+and choose **Connect Claude Code**. When the adapter is missing, select
+**Install Claude Code**. On Windows x64, Poima downloads the pinned
+Claude ACP 0.106.0 release, verifies its SHA-256 and installs the adapter
+and the bundled Claude CLI together under
+`%LOCALAPPDATA%\Poima\agents\claude\0.106.0`. The download is 209 MiB and
+the final installation uses about 444 MiB.
+[Official Windows release](https://github.com/agentclientprotocol/claude-agent-acp/releases/tag/v0.106.0)
+
+If prompted, select **Sign in to Claude Code**. Finish in the Claude Code
+window or your browser. Poima checks sign-in again and opens the conversation
+when the login command completes successfully. If you close sign-in early,
+you can retry from the same project.
+
+You can also extract a release yourself and keep its executables together.
+Sign in through Claude Code, then choose `claude-agent-acp.exe` in
+**Connection settings**. Poima also looks in
 `%LOCALAPPDATA%\Poima\agents\claude` and on PATH.
 
 The adapter uses the Claude Agent SDK and its configured account and model.

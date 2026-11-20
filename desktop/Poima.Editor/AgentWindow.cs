@@ -42,11 +42,12 @@ internal sealed class AgentChat : UserControl
     private readonly List<(string Name, AgentImage Image, Control Chip)> images = [];
     private readonly Button connect = new() { Content = "Connect" }, disconnect = new() { Content = "Disconnect", IsEnabled = false },
         send = new() { Content = "Send", IsEnabled = false }, stop = new() { Content = "Stop", IsEnabled = false };
-    private readonly Button getCodex = new() { Content = WindowsCodexInstall.Supported ? "Install Codex" : "Get Codex", IsVisible = false };
+    private readonly Button getAgent = new() { IsVisible = false };
+    private readonly Button signIntoClaude = new() { Content = "Sign in to Claude Code", IsVisible = false };
     private readonly Button newChat = new() { Content = "New chat", IsVisible = false };
     private IAgentSession? session;
     private CodexSignInWindow? signIn;
-    private CodexInstallWindow? codexInstall;
+    private AgentInstallWindow? agentInstall;
     private CodexQuestionCard? questionCard;
     private string? activeTurn, unusedConversation;
     private string? rememberedThread, displayedThread, submittedCodexTurn, lastSuccessfulCodexTurn;
@@ -56,9 +57,9 @@ internal sealed class AgentChat : UserControl
     private readonly Dictionary<StackPanel, JsonNode> codexPoimaApprovals = [];
     private readonly Dictionary<string, string> acpToolDetails = new(StringComparer.Ordinal);
     private bool submitting, closing, connecting, ready, cancelRequested, sentGameplayContext;
-    private bool acpReceivedReply, codexSupportsImages, pickingImages, codexMissing;
+    private bool acpReceivedReply, codexSupportsImages, pickingImages, codexMissing, claudeMissing, claudeNeedsSignIn;
     private Task? connectingTask, closingTask, retiringTask, installingTask;
-    public bool Busy => submitting || activeTurn is not null || connecting || codexInstall is not null || retiringTask?.IsCompleted == false;
+    public bool Busy => submitting || activeTurn is not null || connecting || agentInstall is not null || retiringTask?.IsCompleted == false;
     private string ProviderName => provider.SelectedItem as string ?? "Codex";
     private string? ResumeThread => string.IsNullOrWhiteSpace(thread.Text) || thread.Text.Trim() == unusedConversation
         ? null : thread.Text.Trim();
@@ -110,7 +111,8 @@ internal sealed class AgentChat : UserControl
                 setup.Children.Add(allowChecks);
             }
             var connection = new WrapPanel { ItemSpacing = 8, LineSpacing = 8 };
-            connection.Children.Add(connect); connection.Children.Add(disconnect); connection.Children.Add(getCodex);
+            connection.Children.Add(connect); connection.Children.Add(disconnect); connection.Children.Add(getAgent);
+            connection.Children.Add(signIntoClaude);
             connection.Children.Add(newChat);
             setup.Children.Add(connection);
         }
@@ -121,8 +123,9 @@ internal sealed class AgentChat : UserControl
             setup.Children.Add(provider); setup.Children.Add(executable); setup.Children.Add(agyExecutable);
             setup.Children.Add(claudeExecutable); setup.Children.Add(engine);
             setup.Children.Add(model); setup.Children.Add(thread); setup.Children.Add(allowEdits);
-            var connection = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
-            connection.Children.Add(connect); connection.Children.Add(disconnect); connection.Children.Add(getCodex);
+            var connection = new WrapPanel { ItemSpacing = 8, LineSpacing = 8 };
+            connection.Children.Add(connect); connection.Children.Add(disconnect); connection.Children.Add(getAgent);
+            connection.Children.Add(signIntoClaude);
             setup.Children.Add(connection);
         }
         root.Children.Add(setup); Grid.SetRow(status, 1); root.Children.Add(status);
@@ -154,7 +157,8 @@ internal sealed class AgentChat : UserControl
         send.Click += async (_, _) => await Send();
         addImages.Click += async (_, _) => await PickImages();
         stop.Click += async (_, _) => await Stop();
-        getCodex.Click += async (_, _) => await (installingTask = InstallCodex());
+        getAgent.Click += async (_, _) => await (installingTask = InstallAgent());
+        signIntoClaude.Click += async (_, _) => await (connectingTask = SignIntoClaude());
         provider.SelectionChanged += (_, _) => UpdateProvider();
         thread.TextChanged += (_, _) => UpdateConversationButtons();
         UpdateProvider();
@@ -166,8 +170,15 @@ internal sealed class AgentChat : UserControl
         allowSourceEdits.IsVisible = allowBuilds.IsVisible = allowChecks.IsVisible = ProviderName == "Codex";
         agyExecutable.IsVisible = ProviderName == "Antigravity";
         claudeExecutable.IsVisible = ProviderName == "Claude Code";
-        getCodex.IsVisible = codexMissing && ProviderName == "Codex";
+        UpdateSetupButtons();
         UpdateConversationButtons();
+    }
+
+    private void UpdateSetupButtons()
+    {
+        getAgent.Content = (WindowsAgentPackage.Supported ? "Install " : "Get ") + ProviderName;
+        getAgent.IsVisible = ProviderName switch { "Codex" => codexMissing, "Claude Code" => claudeMissing, _ => false };
+        signIntoClaude.IsVisible = ProviderName == "Claude Code" && claudeNeedsSignIn;
     }
 
     private void UpdateConversationButtons()
@@ -187,8 +198,9 @@ internal sealed class AgentChat : UserControl
 
     private static string FindClaudeAdapter()
     {
-        var installed = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "Poima", "agents", "claude", "claude-agent-acp.exe");
+        var package = WindowsClaudeInstall.Package;
+        if (package.Executable(package.Root) is { } managed) return managed;
+        var installed = Path.Combine(package.Root, "claude-agent-acp.exe");
         return File.Exists(installed) ? installed : "claude-agent-acp.exe";
     }
 
@@ -210,7 +222,8 @@ internal sealed class AgentChat : UserControl
         catch (IOException) { }
         catch (UnauthorizedAccessException) { }
         var standalone = Path.Combine(local, "Programs", "OpenAI", "Codex", "bin", "codex.exe");
-        return File.Exists(standalone) ? standalone : WindowsCodexInstall.Executable(WindowsCodexInstall.Root) ?? "codex.exe";
+        var package = WindowsCodexInstall.Package;
+        return File.Exists(standalone) ? standalone : package.Executable(package.Root) ?? "codex.exe";
     }
 
     public Task CloseAsync() => closingTask ??= CloseCoreAsync();
@@ -228,7 +241,7 @@ internal sealed class AgentChat : UserControl
     private async Task CloseCoreAsync()
     {
         closing = true; Controls(); lifetime.Cancel();
-        codexInstall?.Stop();
+        agentInstall?.Stop();
         if (signIn is { } dialog) await dialog.CancelAsync();
         if (installingTask is not null) await installingTask;
         if (connectingTask is not null) await connectingTask;
@@ -257,7 +270,7 @@ internal sealed class AgentChat : UserControl
         prompt.IsReadOnly = submitting;
         stop.IsEnabled = live && !cancelRequested && (activeTurn is not null || session is AcpSession && submitting);
         connect.IsEnabled = !Busy && session is null && !closing;
-        getCodex.IsEnabled = connect.IsEnabled;
+        getAgent.IsEnabled = signIntoClaude.IsEnabled = connect.IsEnabled;
         disconnect.IsEnabled = live && !Busy;
         provider.IsEnabled = executable.IsEnabled = agyExecutable.IsEnabled = claudeExecutable.IsEnabled =
             engine.IsEnabled = model.IsEnabled = connect.IsEnabled;
@@ -271,12 +284,25 @@ internal sealed class AgentChat : UserControl
         status.Text = "Connecting…";
         historyUnavailable = false;
         if (ProviderName == "Codex" && executable.Text == "codex.exe") executable.Text = FindCodex();
-        codexMissing = getCodex.IsVisible = false;
+        if (ProviderName == "Codex") codexMissing = false;
+        if (ProviderName == "Claude Code")
+        {
+            claudeMissing = claudeNeedsSignIn = false;
+            if (claudeExecutable.Text == "claude-agent-acp.exe") claudeExecutable.Text = FindClaudeAdapter();
+        }
+        UpdateSetupButtons();
         IAgentSession? current = null;
         using var startup = CancellationTokenSource.CreateLinkedTokenSource(lifetime.Token);
         startup.CancelAfter(TimeSpan.FromSeconds(60));
         try
         {
+            if (ProviderName == "Claude Code" && WindowsClaudeInstall.ManagedCli(claudeExecutable.Text) is { } cli &&
+                !await WindowsClaudeInstall.IsSignedInAsync(cli, startup.Token))
+            {
+                claudeNeedsSignIn = true;
+                status.Text = "Sign in to Claude Code to connect.";
+                return;
+            }
             current = ProviderName switch
             {
                 "Antigravity" => await AcpSession.ConnectAsync(agyExecutable.Text ?? "", engine.Text ?? "",
@@ -319,44 +345,77 @@ internal sealed class AgentChat : UserControl
             if (ReferenceEquals(session, current)) { session = null; ready = false; }
             if (!closing)
             {
-                codexMissing = ProviderName == "Codex" && error is System.ComponentModel.Win32Exception { NativeErrorCode: 2 or 3 };
-                getCodex.IsVisible = codexMissing;
+                var executableMissing = error is System.ComponentModel.Win32Exception { NativeErrorCode: 2 or 3 };
+                if (ProviderName == "Codex") codexMissing = executableMissing;
+                if (ProviderName == "Claude Code") claudeMissing = executableMissing;
                 status.Text = error switch
                 {
-                    _ when codexMissing => "Poima couldn’t find Codex. Install it or choose its executable in Connection settings.",
+                    _ when executableMissing && ProviderName == "Codex" =>
+                        "Poima couldn’t find Codex. Install it or choose its executable in Connection settings.",
+                    _ when executableMissing && ProviderName == "Claude Code" =>
+                        "Poima couldn’t find the Claude Code adapter. Install it or choose its executable in Connection settings.",
                     AgentRpcException problem when current is AcpSession &&
                         problem.Error["code"]?.GetValue<int>() == -32000 &&
                         problem.Message.Contains("auth", StringComparison.OrdinalIgnoreCase) =>
                         ProviderName == "Claude Code" ? "Sign in with claude in a terminal, then connect again."
                             : "Sign in with agy in a terminal, then connect again.",
-                    System.ComponentModel.Win32Exception problem when ProviderName == "Claude Code" && problem.NativeErrorCode == 2 =>
-                        "Install the Claude ACP adapter and select its executable in the connection settings.",
                     _ => error.Message
                 };
             }
         }
-        finally { connecting = false; Controls(); }
+        finally { connecting = false; UpdateSetupButtons(); Controls(); }
     }
 
-    private async Task InstallCodex()
+    private async Task InstallAgent()
     {
-        if (!getCodex.IsEnabled || !getCodex.IsVisible) return;
-        if (!WindowsCodexInstall.Supported)
+        if (!getAgent.IsEnabled || !getAgent.IsVisible) return;
+        var claude = ProviderName == "Claude Code";
+        var package = claude ? WindowsClaudeInstall.Package : WindowsCodexInstall.Package;
+        var guideUrl = claude ? WindowsClaudeInstall.GuideUrl : "https://learn.chatgpt.com/docs/cli";
+        if (!WindowsAgentPackage.Supported)
         {
-            try { CodexInstallWindow.OpenGuide(); }
+            try { AgentInstallWindow.OpenGuide(guideUrl); }
             catch (Exception error) when (error is System.ComponentModel.Win32Exception or InvalidOperationException)
-            { status.Text = "Windows couldn’t open the Codex setup guide."; }
+            { status.Text = $"Windows couldn’t open the {package.Name} setup guide."; }
             return;
         }
         if (TopLevel.GetTopLevel(this) is not Window owner) return;
-        var dialog = codexInstall = new CodexInstallWindow();
+        var details = claude
+            ? "209 MiB from the Claude ACP project. Poima installs the adapter and Claude Code together in your user folder."
+            : "205 MiB from OpenAI. Poima keeps the client in your user folder.";
+        var dialog = agentInstall = new AgentInstallWindow(package, details, guideUrl);
         Controls();
         string? installed;
         try { installed = await dialog.ShowDialog<string?>(owner); }
-        finally { codexInstall = null; Controls(); }
+        finally { agentInstall = null; Controls(); }
         if (installed is null || closing) return;
-        executable.Text = installed;
+        if (claude) claudeExecutable.Text = installed;
+        else executable.Text = installed;
         await (connectingTask = Connect());
+    }
+
+    private async Task SignIntoClaude()
+    {
+        if (!signIntoClaude.IsEnabled || !signIntoClaude.IsVisible) return;
+        if (WindowsClaudeInstall.ManagedCli(claudeExecutable.Text) is not { } cli)
+        {
+            status.Text = "Use the selected adapter’s Claude Code sign-in, then connect again.";
+            return;
+        }
+        connecting = true; Controls();
+        status.Text = "Finish sign-in in the Claude Code window or browser.";
+        bool signedIn;
+        try { signedIn = await WindowsClaudeInstall.SignInAsync(cli, lifetime.Token); }
+        catch (OperationCanceledException) when (closing) { return; }
+        catch (Exception error) when (error is System.ComponentModel.Win32Exception or IOException or InvalidOperationException)
+        {
+            status.Text = "Windows couldn’t open Claude Code sign-in. You can try again or sign in from Claude Code.";
+            return;
+        }
+        finally { connecting = false; Controls(); }
+        if (closing) return;
+        if (signedIn) await Connect();
+        else status.Text = "Claude Code sign-in did not finish. Try again when you’re ready.";
     }
 
     private async Task SignInAsync(CodexSession codex, CancellationToken cancellation)

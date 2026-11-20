@@ -98,6 +98,11 @@ a scripted account confirmation. A real browser authorization is still needed.
 The [Codex installation check](evidence/m2-creator-codex-install-304.json)
 reaches the same sign-in dialog from an empty per-user Codex install folder
 through Poima’s UI, using OpenAI’s published Windows x64 client.
+The [Claude Code installation check](evidence/m2-creator-claude-install-320.json)
+reaches the sign-in action with the official Windows x64 adapter, verifies
+cancellation and retry, and finds the installed pair after restarting Poima.
+Browser authorization and the first authenticated chat through this setup
+remain open.
 The [conversation continuation check](evidence/m2-creator-conversations-305.json)
 reopens a live Codex conversation after restarting the creator and checks recall
 of an earlier brief and isolation of a copied project.
