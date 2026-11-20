@@ -1,0 +1,110 @@
+{
+  "version": "0.0.315",
+  "scope": "Windows x64 development laptop. Exact engine archive, Windows UI Automation and native reports.",
+  "release": {
+    "version": "0.0.315",
+    "tag": "v0.0.315",
+    "engine_files": 499,
+    "sample_manifest_sha256": "23bec5227d75e49ccd290357f1543764d51d2bc42909e266fe2df6928db62b2d",
+    "assets": [
+      {
+        "name": "Poima-0.0.315-Windows-x64.zip",
+        "bytes": 141482639,
+        "sha256": "12de698bdcc28392f5be0583e84551055cf3046ae0adef7fc5fe0a5a6e5e6ec1"
+      },
+      {
+        "name": "Poima-0.0.315-Windows-x64.manifest.json",
+        "bytes": 89315,
+        "sha256": "7170a346bff0ac246bb44481954dbdee1c11749cadbcc528f34a9c7c5c306bb6"
+      },
+      {
+        "name": "Poima-Launcher-0.0.315-Windows-x64.zip",
+        "bytes": 46080480,
+        "sha256": "9fd108b0a909aaaeb77e8ee2c202f1fb1b91c90a7f82e93d3f2fa3437249e40e"
+      }
+    ]
+  },
+  "previous_0_0_314": {
+    "editor_terminated_on_vulkan_ui_startup": true,
+    "exit_code": 4,
+    "old_editor_report_sha256": "6c2408eaf51bfeac9e606891c4bb72f9e0f04d200cfdb830eaa0b3cf20adc8f3",
+    "native_driver_error": "SDL window: Installed Vulkan doesn't implement the VK_KHR_surface extension"
+  },
+  "no_driver_fixture": "VK_DRIVER_FILES and VK_ICD_FILENAMES pointed at an absent manifest for test processes. Driver installation was untouched.",
+  "creator": {
+    "no-driver": {
+      "report_sha256": "0ed65fb3cfe6db5a62e69f35723fc8e6f72a3b5efcaa149183ed5c19afb83e1e",
+      "checks": {
+        "gameplay_setup_opened": true,
+        "first_preview_failure": {
+          "diagnostic": "Couldn\u2019t start the Vulkan game preview. Check your graphics driver and try again. SDL window: Installed Vulkan doesn't implement the VK_KHR_surface extension",
+          "runtime_active": false,
+          "game_attached": false,
+          "frames_presented": 0,
+          "unchanged_project": true
+        },
+        "reopened_preview_failure": {
+          "diagnostic": "Couldn\u2019t start the Vulkan game preview. Check your graphics driver and try again. SDL window: Installed Vulkan doesn't implement the VK_KHR_surface extension",
+          "runtime_active": false,
+          "game_attached": false,
+          "frames_presented": 0,
+          "unchanged_project": true
+        },
+        "authoring_revision_after_failure": 2,
+        "first_failure_native_report_sha256": "b771308f77a5a41219b1de064f212d6b00668c79094b37d9d9b9428994ac8c36",
+        "reopened_failure_native_report_sha256": "81f031ca4a085dc30ad9bb1b7135ff38483a2ee112bc0e08adf20cfb09e5b1ff"
+      }
+    },
+    "hardware": {
+      "report_sha256": "5737f57237d27d8f440b8f7ce5d94e6e9b8658bb49ae868bf0cd45f53509b02b",
+      "checks": {
+        "first_preview_frames": 4,
+        "first_preview_tick": 6,
+        "reopened_preview_frames": 4,
+        "relocated_export_frames": 13,
+        "relocated_original_unavailable": true,
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU"
+      }
+    }
+  },
+  "full_editor": {
+    "normal": {
+      "ui": "Avalonia.Vulkan.VulkanPlatformGraphics",
+      "requested": "Vulkan, software fallback",
+      "exit": 0,
+      "native_frames": 10,
+      "native_gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "diagnostic": null
+    },
+    "software": {
+      "ui": "software",
+      "requested": "software",
+      "exit": 0,
+      "native_frames": 10,
+      "native_gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "diagnostic": null
+    },
+    "missing": {
+      "ui": "software",
+      "requested": "Vulkan, software fallback",
+      "exit": 4,
+      "native_frames": 0,
+      "native_gpu": "",
+      "diagnostic": "Scene: SDL window: Installed Vulkan doesn't implement the VK_KHR_surface extension"
+    }
+  },
+  "initial_test_attempts": [
+    {
+      "report_sha256": "9887ab71694c5cf1483cbe67b9f97657a62669f62c555b378c6f1ebe7160435e",
+      "failure": "The PowerShell test attempted to assign a reserved variable."
+    },
+    {
+      "report_sha256": "77ce5cae73248897a15a2260aa04823022bece10064ddac8fe2eb55a01a345d2",
+      "failure": "The test searched the desktop automation root for an owned modal. The rerun uses the parent window handle."
+    }
+  ],
+  "open_qualification": [
+    "clean Windows first-time creator journey",
+    "driver crash and device-loss recovery"
+  ]
+}

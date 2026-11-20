@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.315
+
+- Open Windows desktop controls with software rendering when Vulkan UI startup fails.
+- Wait for the first presented Game frame before resuming a creator preview, and stop a failed graphics startup with a driver diagnostic.
+
 ## 0.0.314
 
 - Review and approve individual Poima tool requests from Codex in chat.

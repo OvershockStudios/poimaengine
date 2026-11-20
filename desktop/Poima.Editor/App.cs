@@ -34,7 +34,11 @@ public sealed class App : Application
                 var launcher = new LauncherWindow(async (selected, advanced, tools) =>
                 {
                     var previous = desktop.MainWindow!;
-                    var launch = LaunchOptions.Parse([selected.World], selected) with { DevelopmentProfiles = Program.LauncherDevelopmentProfiles };
+                    var launch = LaunchOptions.Parse([selected.World], selected) with
+                    {
+                        DevelopmentProfiles = Program.LauncherDevelopmentProfiles,
+                        SoftwareUi = Program.LauncherSoftwareUi
+                    };
                     launch = await WindowsGameplayTools.ConfigureAsync(launch, selected, tools);
                     if (!previous.IsVisible) return;
                     if (advanced) OpenEditor(desktop, launch);
@@ -86,8 +90,8 @@ public sealed class App : Application
                 var failure = script.Error ?? (script.Completed ? host.LastError : "Qualification ended before all scripted actions completed.");
                 if (failure != null) exit.ApplicationExitCode = 4;
                 var report = new JsonObject { ["success"] = failure == null, ["error"] = failure,
-                    ["frontend"] = "Avalonia 12.1.3 / Dock 12.1.0.6", ["ui_backend_requested"] = options.SoftwareUi ? "software" : "Vulkan only",
-                    ["ui_backend_actual"] = PlatformGraphicsType(),
+                    ["frontend"] = "Avalonia 12.1.3 / Dock 12.1.0.6", ["ui_backend_requested"] = options.SoftwareUi ? "software" : "Vulkan, software fallback",
+                    ["ui_backend_actual"] = PlatformGraphicsType() ?? "software",
                     ["font_resolved"] = FontManager.Current.TryGetGlyphTypeface(new Typeface(window.FontFamily), out var glyphs) ? glyphs.FamilyName : null,
                     ["render_scaling"] = renderScaling, ["base_font_dip"] = window.FontSize,
                     ["elapsed_ms"] = watch.Elapsed.TotalMilliseconds, ["pump_frames"] = frames, ["shutdown_pumps"] = closingPumps,

@@ -1,8 +1,15 @@
 # Implementation status
 
-Updated 2026-11-20 for **0.0.314**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-20 for **0.0.315**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.315 opens the [Windows desktop controls](WINDOWS_PREVIEW.md) with
+software rendering if Vulkan UI initialization fails. With the drivers masked
+for the test process, the packaged creator opens setup, stops a failed preview
+with a visible diagnostic, accepts a guarded edit, and reopens the project.
+With a working driver the same package presents Vulkan frames and plays a
+relocated export. [Results](evidence/m2-windows-graphics-start-315.json)
 
 Version 0.0.314 shows [individual Poima tool approvals](AGENT_CLIENTS.md#connect-a-project)
 in Codex chat. The packaged Windows run declined one guarded edit without

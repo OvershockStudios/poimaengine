@@ -73,6 +73,9 @@ and the recovery choices after a controlled SDK probe failure.
 The [0.0.314 Codex approval test](evidence/m2-windows-poima-tool-approval-314.json)
 checks that a creator can inspect, decline and approve individual Poima
 operations without authorizing a whole connection.
+The [0.0.315 graphics startup test](evidence/m2-windows-graphics-start-315.json)
+keeps setup and authoring accessible with a driver failure and exercises
+native preview and standalone playback with the hardware driver available.
 The [Codex sign-in check](evidence/m2-creator-codex-sign-in-303.json) covers
 opening and cancelling sign-in with an isolated client and continuation after
 a scripted account confirmation. A real browser authorization is still needed.

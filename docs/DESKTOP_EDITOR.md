@@ -61,7 +61,7 @@ The retained frontend now uses embedded Inter Regular/SemiBold at 12 DIP, with c
 
 The world's parent directory must exist. An empty world can be opened; successful authoring edits persist through the native service. Close another writer/editor that owns that world before opening it here. The published application includes its .NET runtime and does not require a separately installed .NET runtime to start; clean-machine distribution qualification is still pending.
 
-Useful arguments are `--gpu N` for both native viewports, `--samples 1|4`, and a distinct `--endpoint name` for each desktop process. The default UI configuration requests **Vulkan only**, with no automatic graphics fallback. `--software-ui` explicitly uses software rendering for desktop controls; the Scene and Game viewports still require Vulkan. The native GPU selector does not select Avalonia's UI graphics device.
+Useful arguments are `--gpu N` for both native viewports, `--samples 1|4`, and a distinct `--endpoint name` for each desktop process. Desktop controls try Vulkan first and use software when Avalonia cannot initialize Vulkan. Pass `--software-ui` on the home, creator or full editor command line to choose software controls directly. Both native viewports require Vulkan and use the device selected by `--gpu`. [Avalonia rendering fallback](https://github.com/AvaloniaUI/Avalonia/blob/12.1.3/src/Windows/Avalonia.Win32/Win32GlManager.cs)
 
 ## Creator workspace
 

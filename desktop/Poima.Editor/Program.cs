@@ -72,24 +72,32 @@ internal static class Program
     internal static ProjectLocation? CreatorProject { get; private set; }
     internal static string? ProjectsDirectory { get; private set; }
     internal static string? LauncherDevelopmentProfiles { get; private set; }
+    internal static bool LauncherSoftwareUi { get; private set; }
     [STAThread]
     public static int Main(string[] args)
     {
         try
         {
             if (!OperatingSystem.IsWindows()) throw new PlatformNotSupportedException("This desktop prototype currently targets Windows.");
-            if (args.Length != 0 && args[0] is "--projects" or "--development-profiles")
+            if (args.Length != 0 && args[0] is "--projects" or "--development-profiles" or "--software-ui")
             {
-                for (var i = 0; i < args.Length; i += 2)
+                for (var i = 0; i < args.Length;)
                 {
-                    if (i + 1 >= args.Length) throw new ArgumentException("Missing value: " + args[i]);
-                    switch (args[i])
+                    var option = args[i++];
+                    if (option == "--software-ui" && !LauncherSoftwareUi)
+                    {
+                        LauncherSoftwareUi = true;
+                        continue;
+                    }
+                    if (i >= args.Length) throw new ArgumentException("Missing value or repeated launcher option: " + option);
+                    var value = args[i++];
+                    switch (option)
                     {
                         case "--projects" when ProjectsDirectory is null:
-                            ProjectsDirectory = Path.GetFullPath(args[i + 1]); break;
+                            ProjectsDirectory = Path.GetFullPath(value); break;
                         case "--development-profiles" when LauncherDevelopmentProfiles is null:
-                            LauncherDevelopmentProfiles = LaunchOptions.ProfilePath(args[i + 1]); break;
-                        default: throw new ArgumentException("Unknown or repeated launcher option: " + args[i]);
+                            LauncherDevelopmentProfiles = LaunchOptions.ProfilePath(value); break;
+                        default: throw new ArgumentException("Unknown or repeated launcher option: " + option);
                     }
                 }
             }
@@ -103,7 +111,8 @@ internal static class Program
             }
             else if (args.Length != 0) Options = LaunchOptions.Parse(args);
             return AppBuilder.Configure<App>().UsePlatformDetect()
-                .With(new Win32PlatformOptions { RenderingMode = [Options?.SoftwareUi == true ? Win32RenderingMode.Software : Win32RenderingMode.Vulkan] })
+                .With(new Win32PlatformOptions { RenderingMode = (Options?.SoftwareUi ?? LauncherSoftwareUi)
+                    ? [Win32RenderingMode.Software] : [Win32RenderingMode.Vulkan, Win32RenderingMode.Software] })
                 .LogToTrace().StartWithClassicDesktopLifetime(args);
         }
         catch (Exception error)

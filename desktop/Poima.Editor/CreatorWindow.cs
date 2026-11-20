@@ -35,7 +35,7 @@ internal sealed class CreatorWindow : Window
     private readonly Button setupBuilds = new() { Content = "Set up gameplay builds", IsVisible = false };
     private readonly TextBlock status = new() { TextWrapping = TextWrapping.Wrap };
     private readonly Border viewport = new() { Background = EditorTheme.Brush("#161518"), ClipToBounds = true };
-    private bool starting, exporting, closeAfterExport, verifiedPlayerRunning, closing, allowClose;
+    private bool starting, waitingForPreviewFrame, exporting, closeAfterExport, verifiedPlayerRunning, closing, allowClose;
     private bool agentWasBusy, toolsReadyForReopen, reopenWithTools;
     private string? exportedFolder, verifiedCheckpoint, verifiedBundleHash, recoveredManifest;
     private string? sharedZip, shareNotice;
@@ -186,7 +186,7 @@ internal sealed class CreatorWindow : Window
         Grid.SetColumn(transport, 1); bar.Children.Add(transport);
         preview.Children.Add(bar);
         Grid.SetRow(viewport, 1); preview.Children.Add(viewport);
-        AutomationProperties.SetName(status, "Preview status");
+        AutomationProperties.SetAutomationId(status, "preview-status");
         var result = new StackPanel { Spacing = 8 };
         result.Children.Add(status);
         result.Children.Add(playVerified);
@@ -244,20 +244,15 @@ internal sealed class CreatorWindow : Window
                     ["expected_generation"] = audio["generation"]!.DeepClone(), ["enabled"] = current.Audio,
                     ["muted"] = audio["config"]!["muted"]!.DeepClone(), ["volume"] = audio["config"]!["volume"]!.DeepClone() });
             }
-            host.Call("desktop.play.resume", new() { ["session_id"] = session });
             host.RefreshState();
             viewport.Child = new VulkanView(host, "game", game);
             previewSession = session;
+            waitingForPreviewFrame = true;
         }
         catch (Exception failure)
         {
-            error = failure.Message;
-            viewport.Child = null;
-            if (started is not null)
-            {
-                try { StopRuntime(started); }
-                catch (Exception cleanup) { error += " Unable to stop the preview. " + cleanup.Message; }
-            }
+            if (started is not null) AbandonPreview(started, failure.Message);
+            else { error = failure.Message; ClearPreview(); }
         }
         finally { starting = false; UpdateControls(); }
     }
@@ -270,7 +265,7 @@ internal sealed class CreatorWindow : Window
         {
             host.RefreshState();
             if (model.RuntimeId is string session) StopRuntime(session);
-            viewport.Child = null; previewSession = null;
+            ClearPreview();
         }
         catch (Exception failure) { error = failure.Message; }
         UpdateControls();
@@ -281,6 +276,39 @@ internal sealed class CreatorWindow : Window
         game.Release();
         host.Call("desktop.play.stop", new() { ["session_id"] = session });
         host.RefreshState();
+    }
+
+    private void ClearPreview()
+    {
+        viewport.Child = null;
+        previewSession = null;
+        waitingForPreviewFrame = false;
+    }
+
+    private void StartAfterFirstFrame(string session)
+    {
+        var view = host.State["views"]?["game"];
+        if (view?["graphics_error"]?.GetValue<string>() is { } fault)
+        {
+            AbandonPreview(session, "Couldn’t start the Vulkan game preview. Check your graphics driver and try again. " + fault);
+            return;
+        }
+        if (view?["presented_tick"] is null) return;
+        try
+        {
+            host.Call("desktop.play.resume", new() { ["session_id"] = session });
+            waitingForPreviewFrame = false;
+            host.RefreshState();
+        }
+        catch (Exception failure) { AbandonPreview(session, failure.Message); }
+    }
+
+    private void AbandonPreview(string session, string reason)
+    {
+        error = reason;
+        try { StopRuntime(session); }
+        catch (Exception cleanup) { error += " Unable to stop the preview. " + cleanup.Message; }
+        finally { ClearPreview(); }
     }
 
     private async Task<ProjectLocation> OpenCurrentProject()
@@ -601,11 +629,9 @@ internal sealed class CreatorWindow : Window
             }
             return;
         }
-        if (previewSession is not null && model.RuntimeId != previewSession)
-        {
-            viewport.Child = null; previewSession = null;
-        }
-        if (previewSession is not null) game.Tick();
+        if (previewSession is not null && model.RuntimeId != previewSession) ClearPreview();
+        if (waitingForPreviewFrame && previewSession is string session) StartAfterFirstFrame(session);
+        if (previewSession is not null && !waitingForPreviewFrame) game.Tick();
         if (chat.Busy) agentWasBusy = true;
         else if (agentWasBusy && !starting && !exporting && model.RuntimeId is null)
         {

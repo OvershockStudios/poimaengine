@@ -12,6 +12,7 @@
 # -WithPlaytestResults checks passing and failed reports, reopening and recovery.
 # -WithShareZip also exercises the owned save dialog and plays the unpacked ZIP.
 # -WithBuildHistory creates two passing versions and restores the older one through the history dialog.
+# -WithoutVulkan masks drivers for the owned processes and checks preview failure recovery.
 param(
     [Parameter(Mandatory = $true)][string]$Editor,
     [Parameter(Mandatory = $true)][string]$Output,
@@ -25,10 +26,14 @@ param(
     [switch]$WithExport,
     [switch]$WithPlaytestResults,
     [switch]$WithShareZip,
-    [switch]$WithBuildHistory
+    [switch]$WithBuildHistory,
+    [switch]$WithoutVulkan
 )
 
 $ErrorActionPreference = 'Stop'
+if ($WithoutVulkan -and ($WithExport -or $WithPlaytestResults -or $WithShareZip -or $WithBuildHistory)) {
+    throw 'Run the no-driver check separately from export and hardware playback checks.'
+}
 Add-Type -AssemblyName UIAutomationClient, UIAutomationTypes
 Add-Type @'
 using System;
@@ -84,6 +89,7 @@ $report = [ordered]@{
     playtest_results_requested = [bool]$WithPlaytestResults
     share_zip_requested = [bool]$WithShareZip
     build_history_requested = [bool]$WithBuildHistory
+    vulkan_masked = [bool]$WithoutVulkan
     checks = [ordered]@{}
 }
 
@@ -416,6 +422,24 @@ function Play-Preview($Revision) {
     }
 }
 
+function Check-UnavailablePreview($Project, $Phase) {
+    Invoke-Control 'Play project'
+    $message = Wait-For 'a driver diagnostic with Play available again' {
+        $control = Find-ControlId 'preview-status'
+        if ($control -and $control.Current.Name -like '*start the Vulkan game preview*graphics driver*' -and
+            (Find-Control 'Play project' -Enabled)) { $control.Current.Name }
+    }
+    $state = Inspect-Desktop
+    $current = Inspect-Project
+    if ($state.runtime.active -or $state.views.game.attached -or $state.views.game.frames_presented -ne 0 -or
+        $current.world_sha256 -cne $Project.world_sha256 -or $current.manifest_sha256 -cne $Project.manifest_sha256) {
+        throw 'The failed graphics startup left a preview active or changed the project.'
+    }
+    $state | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath (Join-Path $run "$Phase-no-graphics-state.json") -Encoding UTF8
+    return [ordered]@{ diagnostic = $message; runtime_active = $state.runtime.active; game_attached = $state.views.game.attached;
+        frames_presented = $state.views.game.frames_presented; unchanged_project = $true }
+}
+
 function Export-Project($Project) {
     Invoke-Control 'Export Windows build'
     $null = Wait-For 'the exported build folder control' { Find-Control 'Open build folder' -Enabled } 60
@@ -445,7 +469,7 @@ function Export-Project($Project) {
     return $bundle
 }
 
-function Edit-ProjectForExport($Project, $CameraName = 'Export viewpoint') {
+function Rename-ProjectCamera($Project, $CameraName) {
     $request = @{
         jsonrpc = '2.0'; id = 1; method = 'world.transact'
         params = @{
@@ -455,13 +479,18 @@ function Edit-ProjectForExport($Project, $CameraName = 'Export viewpoint') {
     } | ConvertTo-Json -Depth 6 -Compress
     $response = $request | & $cli connect $endpoint --timeout-ms 2000 | ConvertFrom-Json
     if ($LASTEXITCODE -ne 0 -or !$response.result -or $response.result.revision -ne ($Project.revision + 1)) {
-        throw 'The shared owner did not commit the export test edit.'
+        throw 'The shared owner did not commit the camera edit.'
     }
     $saved = Inspect-Project
     if ($saved.revision -ne $response.result.revision -or $saved.world_sha256 -ceq $Project.world_sha256 -or
         $saved.manifest_sha256 -cne $Project.manifest_sha256) {
         throw 'The shared edit did not produce the expected saved project revision.'
     }
+    return $saved
+}
+
+function Edit-ProjectForExport($Project, $CameraName = 'Export viewpoint') {
+    $saved = Rename-ProjectCamera $Project $CameraName
     $report.checks.edit_before_export = [ordered]@{ revision = $saved.revision; world_sha256 = $saved.world_sha256 }
     return $saved
 }
@@ -726,9 +755,26 @@ function Play-RelocatedExport($Bundle, $Expected = $report.checks.export, $Kind 
     }
 }
 
+$oldDriverFiles, $oldIcdFiles = $env:VK_DRIVER_FILES, $env:VK_ICD_FILENAMES
 try {
+    if ($WithoutVulkan) {
+        $env:VK_DRIVER_FILES = $env:VK_ICD_FILENAMES = Join-Path $run 'missing-driver.json'
+    }
     $owner = Start-Launcher 'create'
     $window = Wait-For 'the launcher window' { Find-Window 'Poima' }
+    if ($WithoutVulkan) {
+        $homeWindow = $window
+        $homeHandle = [IntPtr]$homeWindow.Current.NativeWindowHandle
+        Invoke-Control 'Set up gameplay builds'
+        $dialog = Wait-For 'the gameplay setup window' {
+            $handle = [CreatorTestWindow]::FindDialog($homeHandle, 'Set up gameplay builds')
+            if ($handle -ne [IntPtr]::Zero) { $handle }
+        }
+        $window = [Windows.Automation.AutomationElement]::FromHandle($dialog)
+        Invoke-Control 'Done'
+        $window = $homeWindow
+        $report.checks.gameplay_setup_opened = $true
+    }
     $field = Wait-For 'Project name' { Find-Control 'Project name' -Enabled }
     $field.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern).SetValue($name)
     Invoke-Control 'Create project'
@@ -737,18 +783,25 @@ try {
     $endpoint = 'poima-' + $project.project_id
     $report.checks.created = [ordered]@{ id = $project.project_id; revision = $project.revision }
 
-    $report.checks.first_preview = Play-Preview $project.revision
-    if ($WithExport) {
-        if (!(Find-Control 'Export Windows build') -or (Find-Control 'Export Windows build' -Enabled)) {
-            throw 'The Windows export control should be unavailable while Play is active.'
-        }
-        $report.checks.export_disabled_during_preview = $true
+    if ($WithoutVulkan) {
+        $report.checks.first_preview_failure = Check-UnavailablePreview $project 'first'
+        $project = Rename-ProjectCamera $project 'Authored after driver failure'
+        $report.checks.authoring_after_graphics_failure = [ordered]@{ revision = $project.revision; world_sha256 = $project.world_sha256 }
     }
-    Invoke-Control 'Stop preview'
-    $report.checks.stopped = [bool](Wait-For 'the stopped Game preview' {
-        $state = Inspect-Desktop
-        !$state.runtime.active -and !$state.views.game.attached
-    })
+    else {
+        $report.checks.first_preview = Play-Preview $project.revision
+        if ($WithExport) {
+            if (!(Find-Control 'Export Windows build') -or (Find-Control 'Export Windows build' -Enabled)) {
+                throw 'The Windows export control should be unavailable while Play is active.'
+            }
+            $report.checks.export_disabled_during_preview = $true
+        }
+        Invoke-Control 'Stop preview'
+        $report.checks.stopped = [bool](Wait-For 'the stopped Game preview' {
+            $state = Inspect-Desktop
+            !$state.runtime.active -and !$state.views.game.attached
+        })
+    }
     if ($WithExport) {
         $project = Edit-ProjectForExport $project
         $bundle = Export-Project $project
@@ -827,12 +880,18 @@ try {
             archive_bytes = (Get-Item -LiteralPath $archive).Length
         }
     }
-    $report.checks.reopened_preview = Play-Preview $reopened.revision
-    if ($report.checks.reopened_preview.session -eq $report.checks.first_preview.session) {
-        throw 'Reopening reused the retired play session.'
+    if ($WithoutVulkan) {
+        $report.checks.reopened_preview_failure = Check-UnavailablePreview $reopened 'reopened'
+        Close-Owner
+        $report.checks.closed_after_graphics_failure = $owner.ExitCode
+    } else {
+        $report.checks.reopened_preview = Play-Preview $reopened.revision
+        if ($report.checks.reopened_preview.session -eq $report.checks.first_preview.session) {
+            throw 'Reopening reused the retired play session.'
+        }
+        Close-Owner
+        $report.checks.closed_during_play_exit_code = $owner.ExitCode
     }
-    Close-Owner
-    $report.checks.closed_during_play_exit_code = $owner.ExitCode
     if ($WithExport) { Play-RelocatedExport $bundle }
     if ($WithShareZip) {
         $archiveRoot = Join-Path $projects '.poima-history'
@@ -849,6 +908,7 @@ catch {
     throw
 }
 finally {
+    $env:VK_DRIVER_FILES, $env:VK_ICD_FILENAMES = $oldDriverFiles, $oldIcdFiles
     if ($verifiedPlayer -and !$verifiedPlayer.HasExited) {
         $report.forced_player_cleanup = $true
         Stop-Process -Id $verifiedPlayer.Id

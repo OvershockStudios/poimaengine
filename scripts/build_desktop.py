@@ -362,7 +362,7 @@ def main():
                     'runtime': rid+', self-contained CoreCLR', 'packages': package_rows, 'runtime_packs': runtime_rows,
                     'gameplay_bridge': 'gameplay/Poima.ManagedBridge.dll',
                     'limitations': ['Prototype; complete source-level license audit and clean-machine distribution qualification remain required.',
-                                    'Windows native viewport only; GUI and Scene request Vulkan. Explicit --software-ui affects chrome only.'],
+                                    'Windows Scene and Game require Vulkan. Desktop controls prefer Vulkan and can use software.'],
                     'files': inventory(stage)}
         (stage/MANIFEST).write_text(json.dumps(manifest, indent=2)+'\n')
         try:

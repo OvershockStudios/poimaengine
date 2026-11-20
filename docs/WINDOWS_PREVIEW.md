@@ -5,8 +5,10 @@ The [Windows launcher](https://github.com/OvershockStudios/poimaengine/blob/main
 installs tagged engine packages, or installs a local engine ZIP and matching
 manifest through **Install from ZIP…**.
 
-Extract the full ZIP to a writable folder on Windows x64 with an up-to-date
-Vulkan graphics driver. Open `Poima.Editor.exe`.
+Extract the full ZIP to a writable folder on Windows x64 and open
+`Poima.Editor.exe`. Use an up-to-date Vulkan graphics driver to view and play
+games. Desktop controls can use software if Vulkan UI startup fails, so you
+can still open projects and run gameplay build setup.
 
 - **Play Collection Room** opens the bundled game. Use WASD and the mouse
   to move and aim, E to collect the three green cells, and Esc to exit.
@@ -30,6 +32,11 @@ You can also open a project directly from PowerShell.
 
 The included editor, CLI, sample, and Windows exporter run without compiling
 Poima or installing a separate .NET runtime.
+
+**Play** waits for the first Vulkan frame before resuming gameplay. If the
+renderer fails during startup, the creator stops that preview and shows the
+driver error. `Poima.Editor.exe --software-ui` opens the home screen with
+software controls. Scene, Game and standalone play require Vulkan.
 
 ## Build C# gameplay
 
