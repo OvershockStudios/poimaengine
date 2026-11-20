@@ -203,6 +203,13 @@ Official references: [Codex MCP configuration](https://learn.chatgpt.com/docs/ex
 
 ## Embedded workspace transport (development)
 
+The Windows creator can open two independent Codex specialist tabs beside
+the main Codex conversation. Both use revision-pinned MCP connections with
+read-only scene and reference tools. Follow-ups keep their own specialist
+context. Completed findings can be added to the main chat draft for review
+and explicit submission. See
+[the creator workflow](WINDOWS_PREVIEW.md#ask-specialists-to-review-the-scene).
+
 `desktop/Poima.AgentHost` provides a reusable .NET 10 stdio JSON-RPC process transport with no external packages. It correlates concurrent requests, forwards provider notifications and approval requests, preserves server request IDs in replies, and bounds incoming frames and retained diagnostics. The owner must continuously consume its bounded event stream and explicitly handle approvals. Event overflow closes the connection explicitly instead of blocking response dispatch. A failed or canceled partial write also closes the connection, and concurrent disposal waits for the writer and process cleanup. Transport cancellation does not imply that a provider or engine mutation was rolled back; a missing response after sending is reported as an unknown outcome and is never automatically retried.
 
 `CodexSession` adds official app-server initialization, persistent thread creation/resume, text turns, interrupt requests, paginated history and Poima MCP discovery. Its process-local MCP configuration attaches to an existing shared endpoint. Codex retains account ownership and its existing user configuration; Poima does not manage credentials or write global provider configuration. Approval requests remain explicit events for the caller to handle.

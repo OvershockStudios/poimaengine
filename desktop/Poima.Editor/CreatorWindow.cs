@@ -35,6 +35,7 @@ internal sealed class CreatorWindow : Window
     private readonly Button openRecovered = new() { Content = "Open recovered project", IsVisible = false };
     private readonly Button setupBuilds = new() { Content = "Set up gameplay builds", IsVisible = false };
     private readonly Button importAssets = new() { Content = "Import assets…" };
+    private readonly Button reviewSpecialists = new() { Content = "Specialist reviews" };
     private readonly TextBlock status = new() { TextWrapping = TextWrapping.Wrap };
     private readonly TextBlock verifiedPlayStatus = new() { TextWrapping = TextWrapping.Wrap, IsVisible = false };
     private readonly Border viewport = new() { Background = EditorTheme.Brush("#161518"), ClipToBounds = true };
@@ -48,6 +49,9 @@ internal sealed class CreatorWindow : Window
     private string workDescription = "";
     private long exportedRevision;
     private Task? agentShutdown;
+    private readonly TabControl conversations = new();
+    private readonly Grid conversationArea = new() { RowDefinitions = new RowDefinitions("*,Auto") };
+    private CreatorReviews? specialistReviews;
     private CancellationTokenSource? checking, checkingVerifiedPlay;
     private string? previewSession, error;
 
@@ -107,6 +111,8 @@ internal sealed class CreatorWindow : Window
         restore.Click += async (_, _) => await RestoreVerifiedAsync();
         openRecovered.Click += (_, _) => OpenRecoveredProject();
         importAssets.Click += async (_, _) => await ImportAssetsAsync();
+        reviewSpecialists.Click += (_, _) => OpenSpecialistReviews();
+        ToolTip.SetTip(reviewSpecialists, "Connect the main Codex chat to open independent scene reviews.");
         setupBuilds.IsVisible = OperatingSystem.IsWindows() && WindowsGameplayTools.HasAuthoringPack &&
             options.ActiveDevelopmentProfiles is null;
         setupBuilds.Click += async (_, _) =>
@@ -155,7 +161,7 @@ internal sealed class CreatorWindow : Window
                 closing = true;
                 host.RefreshState();
                 viewport.Child = null;
-                agentShutdown = chat.CloseAsync();
+                agentShutdown = Task.WhenAll(chat.CloseAsync(), specialistReviews?.RetireAsync() ?? Task.CompletedTask);
             }
             catch (Exception failure) { error = failure.Message; }
             UpdateControls();
@@ -210,12 +216,20 @@ internal sealed class CreatorWindow : Window
         var heading = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto"), ColumnSpacing = 16 };
         heading.Children.Add(title);
         var projectActions = new WrapPanel { ItemSpacing = 8, VerticalAlignment = VerticalAlignment.Top,
-            Children = { importAssets, setupBuilds } };
+            Children = { importAssets, reviewSpecialists, setupBuilds } };
         Grid.SetColumn(projectActions, 1);
         heading.Children.Add(projectActions);
         root.Children.Add(heading);
         var panels = new Grid { ColumnDefinitions = new ColumnDefinitions("5*,7*"), ColumnSpacing = 16 };
-        panels.Children.Add(Card(chat));
+        conversations.Items.Add(new TabItem { Header = "Main chat", Content = chat });
+        conversations.SelectedIndex = 0;
+        conversations.SelectionChanged += (_, _) =>
+        {
+            if (specialistReviews is { } team)
+                team.Footer.IsVisible = conversations.SelectedIndex > 0;
+        };
+        conversationArea.Children.Add(conversations);
+        panels.Children.Add(Card(conversationArea));
         var preview = new Grid { RowDefinitions = new RowDefinitions("Auto,*,Auto"), RowSpacing = 12, Margin = new Thickness(16) };
         var bar = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto") };
         bar.Children.Add(new TextBlock { Text = "Game preview", FontSize = 20,
@@ -741,6 +755,7 @@ internal sealed class CreatorWindow : Window
         stop.IsEnabled = ready && !chat.Busy && model.RuntimeId is not null;
         export.IsEnabled = play.IsEnabled;
         importAssets.IsEnabled = play.IsEnabled;
+        reviewSpecialists.IsEnabled = ready && (specialistReviews is not null || chat.ReviewClient is not null);
         setupBuilds.IsEnabled = play.IsEnabled;
         chat.IsEnabled = !closing && !closeRequested && !exporting;
         playVerified.IsVisible = verifiedBundleHash is not null;
@@ -774,5 +789,25 @@ internal sealed class CreatorWindow : Window
                     ? $" The last verified build, revision {exportedRevision}, is still playable." : "")
                 : exportedFolder is not null ? $"Exported revision {exportedRevision}. Open the build folder and run launch.cmd."
                 : "Play opens the current project. Chat changes appear the next time you play.");
+    }
+
+    private void OpenSpecialistReviews()
+    {
+        if (specialistReviews is not null) { conversations.SelectedIndex = 1; return; }
+        if (chat.ReviewClient is not { } client) return;
+        try
+        {
+            specialistReviews = new CreatorReviews(host, project.Root, client.Executable, client.Model, finding =>
+            {
+                if (!chat.AddReviewToDraft(finding)) return false;
+                conversations.SelectedIndex = 0;
+                return true;
+            });
+            foreach (var tab in specialistReviews.Tabs) conversations.Items.Add(tab);
+            Grid.SetRow(specialistReviews.Footer, 1);
+            conversationArea.Children.Add(specialistReviews.Footer);
+            conversations.SelectedIndex = 1;
+        }
+        catch (Exception failure) { specialistReviews = null; error = failure.Message; UpdateControls(); }
     }
 }

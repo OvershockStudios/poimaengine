@@ -273,6 +273,19 @@ internal sealed class AgentChat : UserControl
         prompt.CaretIndex = prompt.Text.Length;
         prompt.Focus();
     }
+
+    internal (string Executable, string? Model)? ReviewClient =>
+        ready && !closing && session is CodexSession && executable.Text is { Length: > 0 } program
+            ? (program, string.IsNullOrWhiteSpace(model.Text) ? null : model.Text.Trim()) : null;
+
+    internal bool AddReviewToDraft(string finding)
+    {
+        if (Busy || closing) return false;
+        prompt.Text = string.IsNullOrWhiteSpace(prompt.Text) ? finding : prompt.Text.TrimEnd() + "\n\n" + finding;
+        prompt.CaretIndex = prompt.Text.Length;
+        prompt.Focus();
+        return true;
+    }
     private async Task CloseCoreAsync()
     {
         closing = true; Controls(); lifetime.Cancel();

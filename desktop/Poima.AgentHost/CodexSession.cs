@@ -2,6 +2,7 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading.Channels;
+using System.Globalization;
 
 namespace Poima.AgentHost;
 
@@ -16,35 +17,53 @@ public sealed class CodexSession : IAgentSession
 {
     private readonly AgentRpcProcess rpc;
     private readonly string directory;
+    private readonly bool reviewOnly;
     private readonly SemaphoreSlim opening = new(1, 1);
     public string? ThreadId { get; private set; }
     string? IAgentSession.ConversationId => ThreadId;
     public ChannelReader<JsonObject> Events => rpc.Events;
     public string DiagnosticTail => rpc.DiagnosticTail;
 
-    private CodexSession(AgentRpcProcess rpc, string directory)
+    private CodexSession(AgentRpcProcess rpc, string directory, bool reviewOnly)
     {
         this.rpc = rpc;
         this.directory = directory;
+        this.reviewOnly = reviewOnly;
     }
 
     /// <summary>Attach Poima through its existing endpoint; never open a second world writer.</summary>
-    public static async Task<CodexSession> ConnectAsync(string codexExecutable, string poimaExecutable,
+    public static Task<CodexSession> ConnectAsync(string codexExecutable, string poimaExecutable,
         string endpoint, string workingDirectory, CancellationToken cancellation = default, bool allowPoimaEdits = false,
         bool allowPoimaSourceEdits = false, bool allowPoimaBuilds = false, bool allowPoimaChecks = false,
-        bool receiveQuestions = false)
+        bool receiveQuestions = false) => ConnectCoreAsync(codexExecutable, poimaExecutable, endpoint, workingDirectory,
+            null, cancellation, allowPoimaEdits, allowPoimaSourceEdits, allowPoimaBuilds, allowPoimaChecks, receiveQuestions);
+
+    internal static Task<CodexSession> ConnectReviewAsync(string codexExecutable, string poimaExecutable,
+        string endpoint, string workingDirectory, long revision, CancellationToken cancellation)
+    {
+        if (revision is < 0 or > 9007199254740991L) throw new ArgumentOutOfRangeException(nameof(revision));
+        return ConnectCoreAsync(codexExecutable, poimaExecutable, endpoint, workingDirectory, revision, cancellation,
+            false, false, false, false, false);
+    }
+
+    private static async Task<CodexSession> ConnectCoreAsync(string codexExecutable, string poimaExecutable,
+        string endpoint, string workingDirectory, long? reviewRevision, CancellationToken cancellation,
+        bool allowPoimaEdits, bool allowPoimaSourceEdits, bool allowPoimaBuilds, bool allowPoimaChecks, bool receiveQuestions)
     {
         if (endpoint.Length is < 1 or > 64 || endpoint.Any(c => !char.IsAsciiLetterOrDigit(c) && c != '-' && c != '_'))
             throw new ArgumentException("Invalid Poima endpoint.", nameof(endpoint));
         if (!Path.IsPathFullyQualified(poimaExecutable) || !File.Exists(poimaExecutable))
             throw new ArgumentException("An existing absolute Poima executable path is required.", nameof(poimaExecutable));
         var directory = Path.GetFullPath(workingDirectory);
+        var engineArguments = new List<string> { "mcp", "--endpoint", endpoint };
+        if (reviewRevision is { } revision)
+            engineArguments.AddRange(["--review-revision", revision.ToString(CultureInfo.InvariantCulture)]);
         // CLI overrides apply only to this process. No provider account files or
         // global configuration are written. Provider authentication stays in Codex.
         var arguments = new List<string>
         {
             "app-server", "-c", "mcp_servers.poima.command=" + JsonSerializer.Serialize(poimaExecutable),
-            "-c", "mcp_servers.poima.args=" + JsonSerializer.Serialize(new[] { "mcp", "--endpoint", endpoint })
+            "-c", "mcp_servers.poima.args=" + JsonSerializer.Serialize(engineArguments)
         };
         if (receiveQuestions)
             arguments.AddRange(["-c", "features.default_mode_request_user_input=true"]);
@@ -57,7 +76,7 @@ public sealed class CodexSession : IAgentSession
         if (allowPoimaChecks)
             arguments.AddRange(["-c", "mcp_servers.poima.tools.poima_checks.approval_mode=\"approve\""]);
         var rpc = new AgentRpcProcess(codexExecutable, arguments, directory);
-        var session = new CodexSession(rpc, directory);
+        var session = new CodexSession(rpc, directory, reviewRevision.HasValue);
         try
         {
             var initialization = new JsonObject
@@ -76,6 +95,7 @@ public sealed class CodexSession : IAgentSession
     public async Task<string> OpenAsync(string? threadId = null, CancellationToken cancellation = default, string? model = null)
     {
         if (threadId is not null) ArgumentException.ThrowIfNullOrWhiteSpace(threadId);
+        if (reviewOnly && threadId is not null) throw new ArgumentException("Reviews open a new scoped conversation.", nameof(threadId));
         if (model is not null) ArgumentException.ThrowIfNullOrWhiteSpace(model);
         await opening.WaitAsync(cancellation);
         try
@@ -83,10 +103,11 @@ public sealed class CodexSession : IAgentSession
             if (ThreadId is not null) throw new InvalidOperationException("This connection already has an open thread.");
             var parameters = new JsonObject
             {
-                ["cwd"] = directory, ["approvalPolicy"] = "on-request", ["sandbox"] = "workspace-write"
+                ["cwd"] = directory, ["approvalPolicy"] = reviewOnly ? "never" : "on-request",
+                ["sandbox"] = reviewOnly ? "read-only" : "workspace-write"
             };
             if (model is not null) parameters["model"] = model;
-            if (threadId is null) parameters["ephemeral"] = false;
+            if (threadId is null) parameters["ephemeral"] = reviewOnly;
             else { parameters["threadId"] = threadId; parameters["excludeTurns"] = true; }
             var result = await rpc.RequestAsync(threadId is null ? "thread/start" : "thread/resume", parameters, cancellation);
             var returned = result?["thread"]?["id"]?.GetValue<string>();

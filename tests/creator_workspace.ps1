@@ -10,6 +10,7 @@
 # -InstallClaude downloads the official adapter into an unused per-user install folder and uses an isolated signed-out profile.
 # -CodexBrief runs a two-turn interview on the unchanged starter project.
 # -CodexQuestions uses the local AgentRpc contract executable as a scripted app-server.
+# -CodexReviews uses the AgentRpc contract executable to test two revision-pinned reviewers.
 # -CodexToolApproval exercises decline and approve once with the installed Codex.
 # -WithExport requires a packaged sample runtime and plays a relocated export.
 # -WithPlaytestResults checks passing and failed reports, reopening and recovery.
@@ -33,6 +34,7 @@ param(
     [switch]$InstallClaude,
     [switch]$CodexBrief,
     [string]$CodexQuestions,
+    [string]$CodexReviews,
     [switch]$CodexToolApproval,
     [switch]$WithExport,
     [switch]$WithPlaytestResults,
@@ -52,6 +54,10 @@ if ($InstallClaude -and $Claude) { throw 'Run the signed-out installation and th
 if ($InstallAntigravity -and $Antigravity) { throw 'Run the installation and supplied Antigravity client checks separately.' }
 if ($VerifiedPlayChat -and $VerifiedPlayWithCodex) { throw 'Run the scripted and live playback checks separately.' }
 if ($ObserveVerifiedPlayback -and !$VerifiedPlayWithCodex) { throw 'Use -VerifiedPlayWithCodex for the live observation workflow.' }
+if ($CodexReviews -and ($WithCodex -or $CodexQuestions -or $CodexBrief -or $CodexToolApproval -or
+    $VerifiedPlayChat -or $VerifiedPlayWithCodex -or $CodexAssetRead)) {
+    throw 'Run the specialist review fixture separately from the other Codex scenarios.'
+}
 if ($VerifiedPlayChat -or $VerifiedPlayWithCodex) { $WithPlaytestResults = $true }
 if ($WithoutVulkan -and ($WithExport -or $WithPlaytestResults -or $WithShareZip -or $WithBuildHistory)) {
     throw 'Run the no-driver check separately from export and hardware playback checks.'
@@ -133,6 +139,7 @@ $report = [ordered]@{
     claude_install_requested = [bool]$InstallClaude
     codex_brief_requested = [bool]$CodexBrief
     codex_questions_requested = ![string]::IsNullOrWhiteSpace($CodexQuestions)
+    codex_reviews_requested = ![string]::IsNullOrWhiteSpace($CodexReviews)
     export_requested = [bool]$WithExport
     playtest_results_requested = [bool]$WithPlaytestResults
     share_zip_requested = [bool]$WithShareZip
@@ -390,6 +397,236 @@ function Exercise-CodexQuestions($Project, $Peer) {
     $null = Wait-For 'the retired question connection' { Find-Control 'Agent Connect' -Enabled }
 }
 
+function Wait-ForCreatorChatTab($TabName, [switch]$Select) {
+    $tab = Wait-For "the $TabName chat tab" { Find-Control $TabName -Enabled }
+    $selection = $tab.GetCurrentPattern([Windows.Automation.SelectionItemPattern]::Pattern)
+    if ($Select) { $selection.Select() }
+    $null = Wait-For "$TabName selected" { $selection.Current.IsSelected }
+}
+
+function Wait-ForReviewFinding($Finding) {
+    $null = Wait-For "the completed finding '$Finding'" {
+        (Find-ControlId 'specialist-status').Current.Name -ceq 'Review complete' -and
+            (Get-ControlText 'Specialist findings') -ceq $Finding
+    } 65
+}
+
+function Start-ReviewTask($TaskText) {
+    Set-ControlText 'Specialist task' $TaskText
+    Invoke-Control 'Send to specialist'
+}
+
+function Wait-ForReviewDraft($DraftText) {
+    $null = Wait-For "the active review streaming '$DraftText'" {
+        (Find-Control 'Stop review' -Enabled) -and (Get-ControlText 'Specialist findings') -ceq $DraftText
+    } 65
+}
+
+function Read-ReviewTrace {
+    Get-ChildItem -LiteralPath $reviewTrace -Filter 'codex-*.jsonl' -File | ForEach-Object {
+        Get-Content -LiteralPath $_.FullName -Encoding UTF8 -ErrorAction SilentlyContinue |
+            ConvertFrom-Json -ErrorAction SilentlyContinue
+    }
+}
+
+function Find-ReviewTurn($TaskText) {
+    Read-ReviewTrace | Where-Object {
+        $_.kind -ceq 'turn/start' -and $_.text.EndsWith($TaskText, [StringComparison]::Ordinal)
+    }
+}
+
+function Wait-ForReviewExit($ProcessId) {
+    $null = Wait-For "reviewer $ProcessId exiting after stdin closes" {
+        !(Get-Process -Id $ProcessId -ErrorAction SilentlyContinue) -and
+            (Read-ReviewTrace | Where-Object { $_.pid -eq $ProcessId -and $_.kind -ceq 'exit' })
+    }
+}
+
+function Exercise-CodexReviews($Project, $Peer) {
+    $checks = $report.checks.codex_reviews = [ordered]@{ original_revision = $Project.revision }
+    if (Find-Control 'Specialist reviews' -Enabled) { throw 'Specialist reviews can open before Codex connects.' }
+    Select-AgentProvider 'Codex'
+    Set-AgentExecutable 'Codex executable' $Peer
+    Invoke-Control 'Agent Connect'
+    $null = Wait-For 'the scripted lead Codex connection' { Find-Control 'Agent Send' -Enabled } 65
+    $originalDraft = 'Keep this lead draft.'
+    Set-ControlText 'Agent prompt' $originalDraft
+    $leadTranscript = Get-ControlText 'Agent transcript'
+    Invoke-Control 'Specialist reviews'
+    Wait-ForCreatorChatTab 'Specialist 1'
+    $checks.same_workspace_chat_tabs = $true
+    $worldPath = Join-Path (Split-Path -Parent $manifest) $Project.entry.world
+    $worldId = (Get-Content -LiteralPath $worldPath -Raw | ConvertFrom-Json).world_id
+    $null = Wait-For 'the original review revision' {
+        (Find-ControlId 'specialist-scope').Current.Name -clike "Reviewing revision $($Project.revision).*"
+    }
+    if (Find-Control 'Use findings in chat' -Enabled) { throw 'An empty review can be handed to chat.' }
+    $crateTask = 'Review the crate position.'
+    $lightTask = 'Review the light intensity.'
+    $followUpTask = 'Explain the crate finding.'
+    $slowTask = 'Wait for cancellation.'
+    $slowDraft = 'Waiting for cancellation.'
+    $lightFinding = 'The light is too bright.'
+    $followUpFinding = 'The crate blocks the doorway.'
+
+    Start-ReviewTask $crateTask
+    Wait-ForReviewDraft 'Reviewing the crate.'
+    $crateTurn = Find-ReviewTurn $crateTask
+    if (!$crateTurn) { throw 'The first specialist turn was not recorded.' }
+    Wait-ForCreatorChatTab 'Main chat' -Select
+    $null = Wait-For 'the lead chat available during the review' { Find-Control 'Agent Send' -Enabled }
+    if ((Get-ControlText 'Agent prompt') -cne $originalDraft -or (Get-ControlText 'Agent transcript') -cne $leadTranscript) {
+        throw 'The active specialist changed the lead draft or transcript.'
+    }
+    Wait-ForCreatorChatTab 'Specialist 2' -Select
+    Start-ReviewTask $lightTask
+    Wait-ForReviewFinding $lightFinding
+    Wait-ForCreatorChatTab 'Specialist 1' -Select
+    if (!(Find-Control 'Stop review' -Enabled) -or (Get-ControlText 'Specialist findings') -cne 'Reviewing the crate.' -or
+        (Find-Control 'Use findings in chat' -Enabled)) {
+        throw 'The second specialist did not finish independently while the first specialist was still streaming.'
+    }
+    Wait-ForCreatorChatTab 'Main chat' -Select
+    [IO.File]::WriteAllText((Join-Path $reviewTrace 'release-crate'), '')
+    $null = Wait-For 'the first review completing while Main chat is selected' {
+        Read-ReviewTrace | Where-Object {
+            $_.pid -eq $crateTurn.pid -and $_.turn -ceq $crateTurn.turn -and $_.kind -ceq 'turn/completed'
+        }
+    }
+    Wait-ForCreatorChatTab 'Main chat'
+    $checks.review_completed_while_main_chat_selected = $true
+    Wait-ForCreatorChatTab 'Specialist 1' -Select
+    Wait-ForReviewFinding 'The crate needs more clearance.'
+    $findings = Find-Control 'Specialist findings'
+    if (!$findings.GetCurrentPattern([Windows.Automation.ValuePattern]::Pattern).Current.IsReadOnly) {
+        throw 'Specialist findings are editable.'
+    }
+    $checks.independent_streaming = $true
+    Start-ReviewTask $followUpTask
+    Wait-ForReviewFinding $followUpFinding
+    Wait-ForCreatorChatTab 'Specialist 2' -Select
+    Wait-ForReviewFinding $lightFinding
+
+    $lightTurn = Find-ReviewTurn $lightTask
+    $followUpTurn = Find-ReviewTurn $followUpTask
+    if (!$lightTurn -or !$followUpTurn -or $crateTurn.pid -eq $lightTurn.pid -or
+        $crateTurn.thread -ceq $lightTurn.thread -or $followUpTurn.pid -ne $crateTurn.pid -or
+        $followUpTurn.thread -cne $crateTurn.thread -or $followUpTurn.turn -ceq $crateTurn.turn) {
+        throw 'The two reviewers or the follow-up did not use the expected independent processes, threads and turns.'
+    }
+    $checks.reviewers = @($crateTurn, $lightTurn, $followUpTurn)
+
+    Invoke-Control 'Use findings in chat'
+    Wait-ForCreatorChatTab 'Main chat'
+    $checks.handoff_selected_main_chat = $true
+    $draft = Wait-For 'both findings in the unsent lead draft' {
+        [string]$text = Get-ControlText 'Agent prompt'
+        if ($text.StartsWith($originalDraft) -and $text.Contains($followUpFinding) -and $text.Contains($lightFinding) -and
+            $text.Contains("world $worldId, revision $($Project.revision).")) { $text }
+    }
+    $draft | Set-Content -LiteralPath (Join-Path $run 'review-draft.txt') -Encoding UTF8
+    $beforeSend = @(Read-ReviewTrace | Where-Object { $_.kind -ceq 'launch' -and $null -eq $_.revision })
+    if ($beforeSend.Count -ne 1 -or (Get-ControlText 'Agent transcript') -cne $leadTranscript -or
+        (Read-ReviewTrace | Where-Object { $_.pid -eq $beforeSend[0].pid -and $_.kind -ceq 'turn/start' })) {
+        throw 'Handing off findings sent a lead turn before Agent Send.'
+    }
+    $checks.handoff_left_draft_unsent = $true
+    Invoke-Control 'Agent Send'
+    $null = Wait-For 'the lead responding to the explicit send' {
+        (Find-Control 'Agent Send' -Enabled) -and
+            (Get-ControlText 'Agent transcript').Contains('Lead received the findings.')
+    } 65
+    $leadTurn = @(Read-ReviewTrace | Where-Object { $_.pid -eq $beforeSend[0].pid -and $_.kind -ceq 'turn/start' })
+    if ($leadTurn.Count -ne 1 -or ($leadTurn[0].text -cne $draft -and
+        !$leadTurn[0].text.StartsWith($draft + "`n`n", [StringComparison]::Ordinal))) {
+        throw 'The explicit send changed the handoff draft.'
+    }
+    (Get-ControlText 'Agent transcript') | Set-Content -LiteralPath (Join-Path $run 'review-lead-transcript.txt') -Encoding UTF8
+    $checks.explicit_lead_send = $true
+
+    Invoke-Control 'Specialist reviews'
+    $null = Wait-For 'the existing specialist review visible again' { Find-ControlId 'specialist-scope' }
+    Wait-ForCreatorChatTab 'Specialist 1' -Select
+    Start-ReviewTask $slowTask
+    Wait-ForReviewDraft $slowDraft
+    Invoke-Control 'Stop review'
+    $null = Wait-For 'the stopped review status' { (Find-ControlId 'specialist-status').Current.Name -ceq 'Review stopped' }
+    Wait-ForReviewExit $crateTurn.pid
+    Wait-ForCreatorChatTab 'Specialist 2' -Select
+    Wait-ForReviewFinding $lightFinding
+    if (!(Get-Process -Id $lightTurn.pid -ErrorAction SilentlyContinue)) { throw 'Stop retired the other reviewer.' }
+    Invoke-Control 'Use findings in chat'
+    Wait-ForCreatorChatTab 'Main chat'
+    $remainingDraft = Wait-For 'only the remaining completed finding in the lead draft' {
+        [string]$text = Get-ControlText 'Agent prompt'
+        if ($text.Contains($lightFinding)) { $text }
+    }
+    if ($remainingDraft.Contains($slowDraft) -or $remainingDraft.Contains($followUpFinding)) {
+        throw 'The stopped reviewer contributed a finding to the lead draft.'
+    }
+    Set-ControlText 'Agent prompt' ''
+    Wait-ForCreatorChatTab 'Specialist 2' -Select
+    $checks.stopped_one_reviewer = $true
+
+    $saved = Inspect-Project
+    if ($saved.revision -ne $Project.revision -or $saved.world_sha256 -cne $Project.world_sha256 -or
+        $saved.manifest_sha256 -cne $Project.manifest_sha256) {
+        throw 'The reviews or handoff changed the authored project.'
+    }
+    $refreshed = Rename-ProjectCamera $Project 'Camera changed between specialist reviews'
+    Invoke-Control 'Use findings in chat'
+    $null = Wait-For 'the stale findings refusal' {
+        (Find-ControlId 'specialist-scope').Current.Name -ceq 'The scene changed. Review the current revision to continue.'
+    }
+    Wait-ForCreatorChatTab 'Main chat' -Select
+    if (![string]::IsNullOrEmpty((Get-ControlText 'Agent prompt'))) { throw 'Stale findings reached the lead draft.' }
+    Wait-ForCreatorChatTab 'Specialist 2' -Select
+    Invoke-Control 'Review current revision'
+    $null = Wait-For 'the refreshed revision and cleared findings' {
+        (Find-ControlId 'specialist-scope').Current.Name -clike "Reviewing revision $($refreshed.revision).*" -and
+            !(Find-Control 'Use findings in chat' -Enabled) -and
+            [string]::IsNullOrEmpty((Get-ControlText 'Specialist findings'))
+    }
+    Wait-ForReviewExit $lightTurn.pid
+    $checks.stale_handoff_rejected = $true
+    $checks.refreshed_revision = $refreshed.revision
+
+    Start-ReviewTask $slowTask
+    Wait-ForReviewDraft $slowDraft
+    $refreshedTurn = @(Find-ReviewTurn $slowTask | Where-Object { $_.pid -ne $crateTurn.pid })
+    if ($refreshedTurn.Count -ne 1 -or $refreshedTurn[0].pid -eq $lightTurn.pid) {
+        throw 'The fresh review did not start in a fresh process.'
+    }
+    $refreshedTurn = $refreshedTurn[0]
+
+    $records = @(Read-ReviewTrace)
+    foreach ($turn in $crateTurn, $lightTurn, $refreshedTurn) {
+        $launch = $records | Where-Object { $_.pid -eq $turn.pid -and $_.kind -ceq 'launch' }
+        $thread = $records | Where-Object { $_.pid -eq $turn.pid -and $_.kind -ceq 'thread/start' }
+        $revision = if ($turn.pid -eq $refreshedTurn.pid) { $refreshed.revision } else { $Project.revision }
+        if ($launch.endpoint -cne $endpoint -or $launch.revision -ne $revision -or
+            $thread.thread -cne $turn.thread -or $thread.approvalPolicy -cne 'never' -or
+            $thread.sandbox -cne 'read-only' -or $thread.ephemeral -ne $true -or
+            !$turn.text.Contains("world $worldId at authored revision $revision.")) {
+            throw 'A reviewer did not open a read-only, ephemeral thread at its assigned project revision.'
+        }
+    }
+    $saved = Inspect-Project
+    if ($saved.revision -ne $refreshed.revision -or $saved.world_sha256 -cne $refreshed.world_sha256 -or
+        $saved.manifest_sha256 -cne $refreshed.manifest_sha256) {
+        throw 'The refreshed review changed the authored project.'
+    }
+    $checks.refreshed_reviewer = $refreshedTurn
+    $checks.pinned_read_only_threads = $true
+    $checks.project_unchanged_by_reviews = $true
+    Wait-ForCreatorChatTab 'Main chat' -Select
+    $null = Wait-For 'the lead chat ready with an active specialist' { Find-Control 'Agent Send' -Enabled }
+    $checks.lead_stayed_connected = $true
+    $checks.lead_pid = $beforeSend[0].pid
+    $checks.active_reviewer_before_creator_close = $refreshedTurn.pid
+    return $refreshed
+}
+
 function Exercise-Acp($Project, $Provider, $Setting, $Executable, $Key) {
     $world = Get-Content -LiteralPath (Join-Path (Split-Path -Parent $manifest) $Project.entry.world) -Raw | ConvertFrom-Json
     Select-AgentProvider $Provider
@@ -589,7 +826,25 @@ function Close-Owner {
     if (![CreatorTestWindow]::PostMessage($handle, 0x0010, [IntPtr]::Zero, [IntPtr]::Zero)) {
         throw 'Could not close the test window.'
     }
-    if (!$owner.WaitForExit(20000)) { throw 'The creator owner failed to retire.' }
+    if (!$owner.WaitForExit(20000)) {
+        if ($CodexReviews) {
+            $diagnostics = $report.checks.codex_review_close_diagnostics = [ordered]@{}
+            try {
+                $diagnostics.creator_status = (Find-ControlId 'preview-status').Current.Name
+                $mainChat = Find-Control 'Main chat'
+                if ($mainChat) {
+                    $diagnostics.main_chat_selected = $mainChat.GetCurrentPattern(
+                        [Windows.Automation.SelectionItemPattern]::Pattern).Current.IsSelected
+                }
+            } catch { $diagnostics.ui_error = $_.ToString() }
+            try {
+                $state = Inspect-Desktop
+                $diagnostics.native_state = @{ closing = $state.closing; audio_closed = $state.audio.closed;
+                    development_closed = $state.development_closed }
+            } catch { $diagnostics.native_error = $_.ToString() }
+        }
+        throw 'The creator owner failed to retire.'
+    }
     if ($owner.ExitCode -ne 0) { throw "The creator owner exited with $($owner.ExitCode)." }
 }
 
@@ -1390,7 +1645,15 @@ function Play-RelocatedExport($Bundle, $Expected = $report.checks.export, $Kind 
 }
 
 $oldDriverFiles, $oldIcdFiles = $env:VK_DRIVER_FILES, $env:VK_ICD_FILENAMES
+$oldReviewMode, $oldReviewTrace = $env:POIMA_TEST_CODEX_REVIEW, $env:POIMA_TEST_CODEX_REVIEW_TRACE
 try {
+    if ($CodexReviews) {
+        $reviewTrace = Join-Path $run 'codex-review-trace'
+        New-Item -ItemType Directory -Path $reviewTrace | Out-Null
+        $env:POIMA_TEST_CODEX_REVIEW = '1'
+        $env:POIMA_TEST_CODEX_REVIEW_TRACE = $reviewTrace
+        $report.codex_review_fixture_sha256 = (Get-FileHash -LiteralPath $CodexReviews).Hash.ToLowerInvariant()
+    }
     if ($InstallAntigravity) {
         $agyInstallRoot = Join-Path $env:LOCALAPPDATA 'Poima\agents\antigravity'
         if (Test-Path -LiteralPath $agyInstallRoot) { throw 'The per-user Antigravity install folder must be unused.' }
@@ -1508,8 +1771,27 @@ try {
         }
         Exercise-CodexQuestions $project $CodexQuestions
     }
-    Close-Owner
-    $report.checks.closed_exit_code = $owner.ExitCode
+    $reviewPeers = @()
+    try {
+        if ($CodexReviews) {
+            $project = Exercise-CodexReviews $project $CodexReviews
+            $reviewChecks = $report.checks.codex_reviews
+            $reviewPeers = @(Get-Process -Id @($reviewChecks.active_reviewer_before_creator_close, $reviewChecks.lead_pid))
+            foreach ($peer in $reviewPeers) { $null = $peer.Handle }
+        }
+        Close-Owner
+        $report.checks.closed_exit_code = $owner.ExitCode
+        if ($CodexReviews) {
+            $exits = @(Read-ReviewTrace | Where-Object { $_.kind -ceq 'exit' })
+            foreach ($peer in $reviewPeers) {
+                if (!$peer.HasExited -or $peer.ExitTime -gt $owner.ExitTime -or $peer.Id -notin $exits.pid) {
+                    throw "Creator closed before the Codex peer $($peer.Id) exited naturally."
+                }
+            }
+            $reviewChecks.closed_creator_joined_review_and_lead = $true
+        }
+    }
+    finally { foreach ($peer in $reviewPeers) { $peer.Dispose() } }
 
     $owner = Start-Launcher 'reopen'
     $window = Wait-For 'the reopened launcher' { Find-Window 'Poima' }
@@ -1610,10 +1892,20 @@ try {
 }
 catch {
     $report.error = $_.ToString()
+    if ($CodexReviews -and $owner -and !$owner.HasExited -and $window) {
+        try {
+            $nodes = $window.FindAll([System.Windows.Automation.TreeScope]::Descendants,
+                [System.Windows.Automation.Condition]::TrueCondition)
+            $report.review_failure_controls = @($nodes | Select-Object -First 100 | ForEach-Object {
+                @{ label = $_.Current.Name; id = $_.Current.AutomationId; type = $_.Current.ControlType.ProgrammaticName }
+            })
+        } catch { $report.review_failure_ui_error = $_.ToString() }
+    }
     throw
 }
 finally {
     $env:VK_DRIVER_FILES, $env:VK_ICD_FILENAMES = $oldDriverFiles, $oldIcdFiles
+    $env:POIMA_TEST_CODEX_REVIEW, $env:POIMA_TEST_CODEX_REVIEW_TRACE = $oldReviewMode, $oldReviewTrace
     if ($verifiedPlayer -and !$verifiedPlayer.HasExited) {
         $report.forced_player_cleanup = $true
         Stop-Process -Id $verifiedPlayer.Id

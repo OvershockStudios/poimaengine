@@ -10,7 +10,13 @@ if (args is ["--codex-login", var client, var engine, var directory])
     await CodexLoginContract.VerifyAsync(client, engine, directory, useFixture: false);
     return;
 }
-if (args.Length > 0 && args[0] == "app-server") { await QuestionPeer.RunAsync(); return; }
+if (args.Length > 0 && args[0] == "app-server")
+{
+    if (Environment.GetEnvironmentVariable(CodexReviewContract.ModeVariable) == "1")
+        await CodexReviewContract.RunPeerAsync(args);
+    else await QuestionPeer.RunAsync();
+    return;
+}
 if (args is ["acp"])
 {
     await AcpContract.RunPeerAsync(requiresAuth: Environment.GetEnvironmentVariable("POIMA_ACP_SIGN_IN_FIXTURE") == "1");
@@ -133,6 +139,7 @@ foreach (var disposeDuringWrite in new[] { false, true })
 Console.WriteLine("Agent RPC contracts passed: concurrency, Unicode, errors, approval IDs, cancellation, late replies, diagnostics, EOF, malformed/oversized frames, event overflow, partial-write shutdown and concurrent disposal.");
 await AcpContract.VerifyAsync(token);
 await CodexLoginContract.VerifyAsync(Environment.ProcessPath!, Environment.ProcessPath!, Directory.GetCurrentDirectory(), useFixture: true);
+await CodexReviewContract.VerifyAsync(token);
 await AgentInstallContract.VerifyAsync(WindowsCodexInstall.Package, WindowsCodexInstall.PackageUrl, WindowsCodexInstall.ArchiveBytes);
 await AgentInstallContract.VerifyAsync(WindowsClaudeInstall.Package, WindowsClaudeInstall.PackageUrl, WindowsClaudeInstall.ArchiveBytes);
 await AgentInstallContract.VerifyAsync(WindowsAntigravityInstall.Package, WindowsAntigravityInstall.PackageUrl, WindowsAntigravityInstall.DownloadBytes);

@@ -99,6 +99,22 @@ before building it. Describe the experience you want to play. If your agent
 supports image input, choose **Add images** to send a sketch or screenshot
 with your message. [Plan a game](https://github.com/OvershockStudios/poimaengine/blob/main/docs/GAME_BRIEF.md)
 
+## Ask specialists to review the scene
+
+Connect the main **Codex** chat, then choose **Specialist reviews** to add
+two tabs beside **Main chat** in the creator. Enter a task such as checking
+point-light intensity or looking for objects that block a route. Both
+specialists can work at the same time. Switch tabs to see replies as they
+arrive, send a follow-up, or choose **Stop review** to close that specialist's
+active connection.
+
+The window assigns both reviewers the same authored scene revision. If the
+scene changes, choose **Review current revision** to open fresh reviews.
+**Use findings in chat** adds completed suggestions to the draft and returns
+to **Main chat**. Review the draft and send it when you want the lead to
+verify the proposals. Closing the creator ends the specialist sessions.
+[Review tools and revision scope](https://github.com/OvershockStudios/poimaengine/blob/main/docs/MCP.md#review-a-shared-revision)
+
 ## Import assets
 
 Stop Play and choose **Import assets…** in the creator. Pick a file type and

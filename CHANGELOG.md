@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.327
+
+- Run two scoped Codex reviews beside the main chat in the creator workspace. Follow up, stop either review, and bring completed findings into the main chat draft.
+
 ## 0.0.326
 
 - Connect specialist agents to a shared world with read-only tools pinned to their assigned authored revision. An intervening edit requires a fresh review.

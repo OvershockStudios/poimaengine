@@ -349,11 +349,12 @@ Give different agent clients one engine-owned workflow for a game brief,
 guarded edits, playtests, evidence and build export. Track checkpoints,
 interrupted jobs and verified results across provider sessions. Use the existing
 [agent client boundary](AGENT_CLIENTS.md) for model access and conversation.
-Support a lead agent that delegates scoped reviews against an agreed project
-revision, consolidates findings with the creator, and verifies a guarded
-integration. Let creators see active specialist tasks and direct an individual
-specialist in chat. Preserve the task scope, evidence and cancellation state
-with the project so the lead can reconcile a reopened session.
+Support a lead agent that can assign five to ten workers different parts of
+the game. Give build workers isolated drafts from an agreed project revision.
+Let the lead review their artifacts, resolve overlaps, and verify a guarded
+integration. Keep the lead and individual worker chats in the same creator
+window so the creator can see tasks and direct any worker. Preserve the scope,
+evidence, and cancellation state so the lead can reconcile a reopened session.
 Start new creators with an adaptive [game brief interview](GAME_BRIEF.md).
 Accept descriptions and visual references, ask short rounds of follow-up
 questions, record delegated choices, and agree on the game before building it.

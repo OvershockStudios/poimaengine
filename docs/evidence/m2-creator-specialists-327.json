@@ -1,0 +1,69 @@
+{
+  "engine_version": "0.0.327",
+  "windows_candidate": {
+    "editor_apphost_sha256": "86801e1e6951cd3e2a83ed3843fa848dc2b79a932141adf8ce71093168439da7",
+    "frontend_sha256": "0d126946fe64efcff1207335739c317ed87a504737a78dba86904437693c4e3a",
+    "agent_host_sha256": "e50aa6232359b6dc79756db18b593aef509eb2ed8a8288a14b06880708b54275",
+    "native_cli_sha256": "6cc4a4cd7e4dfeabee6229ed4cc1462323a10f56e06f881da4e0809cc4c46646",
+    "desktop_bridge_sha256": "743d5cc57b0717174f66e3de9676e236e45fe669fc99551fbdd62ff2d53f77d2",
+    "review_fixture_sha256": "547cfc8afc8e3a440dd75ea0bd5d3469b2df6b9caf68a273a1b2fb59417e5d1a",
+    "input": "Windows UI Automation and an owned WM_CLOSE message",
+    "original_revision": 1,
+    "refreshed_revision": 2,
+    "checks": {
+      "same_workspace_chat_tabs": true,
+      "review_completed_while_main_chat_selected": true,
+      "independent_streaming": true,
+      "handoff_selected_main_chat": true,
+      "handoff_left_draft_unsent": true,
+      "explicit_lead_send": true,
+      "stopped_one_reviewer": true,
+      "stale_handoff_rejected": true,
+      "pinned_read_only_threads": true,
+      "project_unchanged_by_reviews": true,
+      "lead_stayed_connected": true,
+      "closed_creator_joined_review_and_lead": true
+    },
+    "creator_exit_code": 0,
+    "creator_exit_during_reopened_preview": 0,
+    "forced_cleanup": false
+  },
+  "live_provider": {
+    "client": "Codex CLI 0.170.0",
+    "model": "gpt-6.1-terra",
+    "scope": "Two app-server sessions in Linux using the candidate managed agent assembly and a native 0.0.326 shared owner.",
+    "candidate_agent_assembly_matches": true,
+    "scene_file_unchanged": true,
+    "results": [
+      {
+        "task": "corridor",
+        "finding": "CORRIDOR_X=0.5",
+        "streamed_updates": 8,
+        "follow_up_retained_context": true
+      },
+      {
+        "task": "light",
+        "finding": "LIGHT_CD=25",
+        "streamed_updates": 4,
+        "follow_up_retained_context": true
+      }
+    ]
+  },
+  "contracts": {
+    "linux_synthetic_agent_rpc": true,
+    "windows_synthetic_agent_rpc": true,
+    "windows_native_mcp_cases_passed": 15
+  },
+  "development_failures": [
+    "The initial owned-window prototype cancelled its parent close. Native closing stayed false in the diagnostic reproduction. The final implementation uses tabs in the creator with explicit retirement.",
+    "The first tabbed test mistook a PowerShell probe label for the tab name. UI Automation showed the correct tab. The corrected harness passed against the same binaries."
+  ],
+  "limitations": [
+    "The Windows UI run used a deterministic app-server peer. The live provider trial ran separately on Linux.",
+    "Users enter review tasks. Automatic delegation, editable worker drafts, multi-provider specialists and persisted specialist sessions are outside this checkpoint."
+  ],
+  "reproduction": [
+    "Publish the Windows desktop with scripts/build_desktop.py and the AgentRpc fixture for win-x64.",
+    "Run tests/creator_workspace.ps1 with -Editor, -Output and -CodexReviews pointing to the published fixture."
+  ]
+}
