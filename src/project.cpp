@@ -2,6 +2,7 @@
 #include "poima/project.hpp"
 #include "poima/assets.hpp"
 #include "poima/build_metadata.hpp"
+#include "poima/game_launch.hpp"
 #include "poima/world.hpp"
 #include "poima/native_gameplay_artifact.hpp"
 #include "poima/gameplay.hpp"
@@ -42,6 +43,7 @@ constexpr std::uint64_t file_limit=256ULL*1024*1024,total_limit=1024ULL*1024*102
 constexpr std::size_t count_limit=4096;
 constexpr auto project_manifest_filename="project.poimaproject";
 constexpr auto game_manifest_filename="game.json";
+constexpr auto suite_name="game.verify.json";
 void require(bool condition,const std::string& detail) { if(!condition)throw std::runtime_error(detail); }
 fs::path path_of(const std::string& value) { require(!value.empty() && value.find('\0')==std::string::npos,"Path must be nonempty and NUL-free.");return fs::path(std::u8string(value.begin(),value.end())); }
 using project_detail::project_io_path;
@@ -511,16 +513,21 @@ VerifiedGame verify_game(const std::string& filename,std::string_view expected_v
 }
 #include "project_gameplay_adoption.inc"
 
-Json gameplay_source(const std::string& manifest,const std::string& owned_world,const Json& request) {
-    constexpr std::size_t source_limit=128*1024;
+Json project_text_file(const std::string& manifest,const std::string& owned_world,const Json& request,bool verification) {
+    const std::size_t limit=verification ? 1024*1024 : 128*1024;
     const bool write=request.contains("text");
-    std::string relative;
+    std::string relative=suite_name;
     try {
-        if(write)fields(request,{"path","expected_sha256","text"},{"path","expected_sha256","text"});
-        else fields(request,{"path"},{"path"});
-        relative=relative_path(request.at("path"));
-        require(relative.starts_with("gameplay-src/") && fs::path(relative).extension()==".cs",
-                "Select a .cs file within gameplay-src/.");
+        if(verification) {
+            if(write)fields(request,{"expected_sha256","text"},{"expected_sha256","text"});
+            else fields(request,{});
+        } else {
+            if(write)fields(request,{"path","expected_sha256","text"},{"path","expected_sha256","text"});
+            else fields(request,{"path"},{"path"});
+            relative=relative_path(request.at("path"));
+            require(relative.starts_with("gameplay-src/") && fs::path(relative).extension()==".cs",
+                    "Select a .cs file within gameplay-src/.");
+        }
         if(write && !request.at("expected_sha256").is_null())adoption_digest(request.at("expected_sha256"));
     } catch(const std::exception& error) {throw AdoptionError(-32602,error.what());}
 
@@ -528,14 +535,14 @@ Json gameplay_source(const std::string& manifest,const std::string& owned_world,
     const auto current=project(manifest);
     const auto owner=canonical_project_path(path_of(owned_world));
     adoption_require(within(owner,current.world) && within(current.world,owner),
-                     "Source edits and reads require this owner's entry world.",-32009);
-    const auto source_root=current.root/"gameplay-src";
-    adoption_require(!within(current.world,source_root) && (current.profile.empty() || !within(current.profile,source_root)),
-                     "Gameplay source cannot contain the entry world or input profile.");
+                     "Project file access requires this owner's entry world.",-32009);
+    const auto scope=current.root/(verification ? suite_name : "gameplay-src");
+    adoption_require(!within(current.world,scope) && (current.profile.empty() || !within(current.profile,scope)),
+                     "The authoring scope cannot contain the entry world or input profile.");
     if(current.gameplay) {
         const auto artifact=path_of(current.gameplay->root);
-        adoption_require(!within(artifact,source_root) && !within(source_root,artifact),
-                         "Gameplay source cannot overlap the adopted artifact.");
+        adoption_require(!within(artifact,scope) && !within(scope,artifact),
+                         "The authoring scope cannot overlap the adopted gameplay artifact.");
     }
     auto path=current.root;
     const fs::path suffix(relative);
@@ -544,28 +551,32 @@ Json gameplay_source(const std::string& manifest,const std::string& owned_world,
         adoption_safe_path(path,true);
         adoption_case_name(path);
     }
-    const auto read_source=[&]() -> std::optional<std::string> {
+    const auto read_text=[&]() -> std::optional<std::string> {
         adoption_safe_path(path,true);
         const auto status=fs::symlink_status(project_io_path(path));
         if(status.type()==fs::file_type::not_found)return std::nullopt;
-        auto bytes=read(path,source_limit);
-        adoption_require(bytes.find('\0')==std::string::npos,"Source contains NUL bytes.");
+        auto bytes=read(path,limit);
+        adoption_require(bytes.find('\0')==std::string::npos,"The project file contains NUL bytes.");
         (void)Json(bytes).dump(); // Validate UTF-8 before returning exact bytes as JSON text.
         return bytes;
     };
-    const auto before=read_source();
+    const auto before=read_text();
     const auto previous=before ? Json(hash(*before)):Json(nullptr);
     if(!write) return {{"path",relative},{"exists",bool(before)},{"sha256",previous},{"text",before ? Json(*before):Json(nullptr)}};
-    const auto& source=request.at("text");
-    adoption_require(source.is_string(),"Gameplay source must be UTF-8 text.",-32602);
-    const auto& bytes=source.get_ref<const std::string&>();
-    adoption_require(bytes.size()<=source_limit && bytes.find('\0')==std::string::npos,
-                     "Gameplay source must be at most 128 KiB without NUL bytes.",-32602);
+    const auto& replacement=request.at("text");
+    adoption_require(replacement.is_string(),"Replacement must be UTF-8 text.",-32602);
+    const auto& bytes=replacement.get_ref<const std::string&>();
+    adoption_require(bytes.size()<=limit && bytes.find('\0')==std::string::npos,
+                     "Replacement exceeds its byte limit or contains NUL bytes.",-32602);
+    if(verification) {
+        try { validate_game_verification_suite(bytes); }
+        catch(const std::exception& error) { throw AdoptionError(-32602,error.what()); }
+    }
     const auto result=hash(bytes);
     if(before && *before==bytes)return {{"path",relative},{"sha256",result},{"changed",false}};
-    adoption_require(previous==request.at("expected_sha256"),"Gameplay source hash conflict. Read the file again.",-32009);
+    adoption_require(previous==request.at("expected_sha256"),"Project file hash conflict. Read the file again.",-32009);
     const auto stage=path.parent_path()/(".poima-source-"+new_id());
-    adoption_require(fs::create_directory(project_io_path(stage)),"Cannot reserve gameplay source staging.");
+    adoption_require(fs::create_directory(project_io_path(stage)),"Cannot reserve project file staging.");
     const auto payload=stage/"source.pending";
     const auto clean_stage=[&] {
         std::error_code ignored;
@@ -578,12 +589,23 @@ Json gameplay_source(const std::string& manifest,const std::string& owned_world,
         if(before)fs::permissions(payload,fs::status(path).permissions(),fs::perm_options::replace);
 #endif
         adoption_case_name(path);
-        adoption_require(read_source()==before,"Gameplay source changed during publication.",-32009);
+        adoption_require(read_text()==before,"Project file changed during publication.",-32009);
         if(before)adoption_replace_file(payload,path);
         else adoption_publish_new(payload,path);
     } catch(...) {clean_stage();throw;}
     clean_stage();
     return {{"path",relative},{"sha256",result},{"changed",true}};
+}
+
+Reply project_text_reply(const std::string& manifest,const std::string& owned_world,const std::string& request,bool verification) {
+    const auto method=verification ? "project.verification" : "project.source";
+    try {return {0,result_reply(method,project_text_file(manifest,owned_world,parse(request),verification)).dump()};}
+    catch(const std::exception& error) {
+        const auto* classified=dynamic_cast<const AdoptionError*>(&error);
+        auto reply=result_reply(method,Json::object(),false,error.what());
+        reply["diagnostics"][0]["error_code"]=classified ? classified->code : -32091;
+        return {4,reply.dump()};
+    }
 }
 } // namespace
 #include "project_recovery.inc"
@@ -692,14 +714,10 @@ state. Movement and aim already work through the starter controller.
 Reply inspect_project(const std::string& manifest) { return operation("project.inspect",[&]{return project_summary(project(manifest));}); }
 std::string project_world_path(const std::string& manifest) { return text(project(manifest).world); }
 Reply project_gameplay_source(const std::string& manifest,const std::string& owned_world,const std::string& request) {
-    const auto method="project.source";
-    try {return {0,result_reply(method,gameplay_source(manifest,owned_world,parse(request))).dump()};}
-    catch(const std::exception& error) {
-        const auto* classified=dynamic_cast<const AdoptionError*>(&error);
-        auto reply=result_reply(method,Json::object(),false,error.what());
-        reply["diagnostics"][0]["error_code"]=classified ? classified->code : -32091;
-        return {4,reply.dump()};
-    }
+    return project_text_reply(manifest,owned_world,request,false);
+}
+Reply project_verification_suite(const std::string& manifest,const std::string& owned_world,const std::string& request) {
+    return project_text_reply(manifest,owned_world,request,true);
 }
 Reply adopt_project_gameplay(const std::string& manifest,const std::string& artifact_descriptor,const std::string& request_json) {
     try {return {0,result_reply("project.gameplay.adopt",adoption_apply(manifest,artifact_descriptor,request_json)).dump()};}

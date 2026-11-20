@@ -155,16 +155,9 @@ void suite_fields(const Json& value,std::initializer_list<std::string_view> requ
             std::find(optional.begin(),optional.end(),item.key())!=optional.end(),"Unknown verification field: "+item.key());
 }
 
-std::pair<Json,std::string> read_suite(const std::string& name) {
-    const auto path=path_of(name);
-    require(fs::is_regular_file(path),"Verification suite must be a regular file.");
-    std::ifstream input(path,std::ios::binary|std::ios::ate);
-    const auto size=input.tellg();
-    require(size>0 && size<=1024*1024,"Verification suite must contain 1 byte to 1 MiB.");
-    std::string bytes(static_cast<std::size_t>(size),'\0');
-    input.seekg(0);
-    require(bool(input.read(bytes.data(),size)) && input.peek()==std::char_traits<char>::eof(),
-        "Verification suite changed or could not be read.");
+Json parse_suite(std::string_view bytes) {
+    require(!bytes.empty() && bytes.size()<=1024*1024 && bytes.find('\0')==std::string_view::npos,
+        "Verification suite must contain 1 byte to 1 MiB of JSON without NUL bytes.");
     std::vector<std::set<std::string>> keys;
     auto suite=Json::parse(bytes,[&](int depth,Json::parse_event_t event,Json& item) {
         require(depth<=32,"Verification suite nesting exceeds 32 levels.");
@@ -230,7 +223,20 @@ std::pair<Json,std::string> read_suite(const std::string& name) {
         }
         require(has_expectation,"Each verification group needs an expectation.");
     }
-    return {std::move(suite),sha256(std::as_bytes(std::span(bytes)))};
+    return suite;
+}
+
+std::pair<Json,std::string> read_suite(const std::string& name) {
+    const auto path=path_of(name);
+    require(fs::is_regular_file(path),"Verification suite must be a regular file.");
+    std::ifstream input(path,std::ios::binary|std::ios::ate);
+    const auto size=input.tellg();
+    require(size>0 && size<=1024*1024,"Verification suite must contain 1 byte to 1 MiB.");
+    std::string bytes(static_cast<std::size_t>(size),'\0');
+    input.seekg(0);
+    require(bool(input.read(bytes.data(),size)) && input.peek()==std::char_traits<char>::eof(),
+        "Verification suite changed or could not be read.");
+    return {parse_suite(bytes),sha256(std::as_bytes(std::span(bytes)))};
 }
 
 fs::path running_executable() {
@@ -292,6 +298,8 @@ Json evaluate_group(const GameDefinition& game,const Json& group) {
     return result;
 }
 }
+
+void validate_game_verification_suite(std::string_view bytes) { (void)parse_suite(bytes); }
 
 Reply verify_gameplay(const std::string& manifest,const std::string& suite_file,const std::string& report) {
     Json result=nullptr,diagnostics=Json::array();

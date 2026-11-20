@@ -31,19 +31,25 @@ Startup failures and diagnostics go to stderr. Stdout contains only MCP messages
 
 ## Tools and workflow
 
-The tools expose discovery, world operations, source writes and build-job
-submission with independent approval.
+The tools expose discovery, world operations, source edits, gameplay checks
+and build-job submission with separate approval for each kind of write.
 
 | Tool | Arguments | Result |
 | --- | --- | --- |
 | `poima_discover` | Optional `view` and `name`, or mutation `operation` and `type`, as in [focused discovery](WORLD_SERVICE.md#focused-discovery-development). Defaults to `catalog`. | Available operation names, a selected schema or contract section. |
 | `poima_call` | Required `method`, optional object `params` and capture-only `image`. | The native operation result or error. |
 | `poima_source` | `project.source.write` with project selectors, exact guard and replacement text. | A guarded write receipt and resulting SHA-256. |
+| `poima_checks` | `project.verification.write` with project selectors, exact guard and complete suite JSON text. | A guarded suite write receipt and resulting SHA-256. |
 | `poima_build` | Required build `method` and object `params`. | A session-local job receipt for a trusted build; inspect it through the world API. |
 
 Read editable C# with `project.source.read` through `poima_call`.
 The host's profile and open world govern the source selectors.
 [Source and build workflow](CREATOR_GAMEPLAY.md#write-compiled-c-gameplay)
+
+Read the editable suite with `project.verification.read` through `poima_call`.
+Check writes select only `game.verify.json` in the open project. The adapter
+accepts up to 1 MiB per JSON-RPC request, including the encoded suite and
+request envelope. [Suite authoring and execution](GAME_VERIFICATION.md)
 
 [Host-configured development profiles](DEVELOPMENT_PROFILES.md) authorize native
 publishing and export. Their execution tool requires separate provider consent;

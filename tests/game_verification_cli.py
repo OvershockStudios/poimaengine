@@ -49,6 +49,17 @@ def main():
     packaged = bundle / 'runtime' / runtime['executable']
     inventory = {str(path.relative_to(bundle)): sha(path) for path in bundle.rglob('*') if path.is_file()}
 
+    requests = [{'jsonrpc': '2.0', 'id': 1, 'method': 'world.describe', 'params': {'view': 'full'}},
+                {'jsonrpc': '2.0', 'id': 2, 'method': 'project.verification.write', 'params': {}}]
+    session = subprocess.run([packaged, 'game', 'stdio', game],
+                             input=''.join(json.dumps(request) + '\n' for request in requests),
+                             capture_output=True, text=True, timeout=30, check=True)
+    (out / 'read-only.stdout.ndjson').write_text(session.stdout, encoding='utf-8')
+    description, refused = [json.loads(line) for line in session.stdout.splitlines()]
+    require(all(method not in description['result']['methods'] for method in
+                ('project.verification.read', 'project.verification.write')), 'Packaged world advertises suite authoring')
+    require(refused['error']['code'] == -32081, 'Packaged world did not reject suite authoring')
+
     def expect(label, path, comparison, value):
         return {'expect': {'label': label, 'method': 'runtime.entity', 'params': {'id': controller},
                            'path': path, comparison: value}}

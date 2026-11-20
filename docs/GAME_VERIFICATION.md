@@ -9,6 +9,17 @@ runtime. The verifier checks that inventory before and after the test.
 
 ## Write a suite
 
+An agent connected to a host with a configured development profile can read
+the project's `game.verify.json` with `project.verification.read` through
+`poima_call`. Pass `profile` and the profile-relative `project` manifest.
+To create or replace the suite, call `project.verification.write` through
+`poima_checks` with the same selectors, the complete suite JSON in `text`
+and the returned `sha256` as `expected_sha256`. Use a null guard if the file
+is absent. The service validates the suite format before publishing it.
+Read the file again if a concurrent edit changes its hash. In the creator,
+Codex's **Allow gameplay check edits in this session** authorizes these
+writes. Run **Export build** to execute the saved suite.
+
 Use `poima.game-verification` version 1. A group starts in its own fresh game
 session with the bundle's normal initial gameplay values. Groups may share the
 same conditions or exercise different paths from the start. Each group needs

@@ -22,6 +22,7 @@ struct Profile {
     // the manifest guard is forwarded to the publisher, never selected by RPC.
     std::filesystem::path authoring_pack;
     std::string authoring_manifest_sha256;
+    std::function<std::string(const std::filesystem::path&,const std::filesystem::path&,const std::string&)> verification_suite;
 };
 // Owner-side loader supplies canonical paths, explicit environment, content
 // fingerprints and native result verifiers. No tool discovery or installation.

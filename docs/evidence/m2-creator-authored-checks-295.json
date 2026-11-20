@@ -1,0 +1,95 @@
+{
+  "engine_version": "0.0.295",
+  "scope": "Windows UI Automation supplied an acceptance brief and example input route to the installed Codex 0.152.1 session in the packaged creator. Codex used the guarded project service to author a suite for the retained Signal Shelter game. The test operated Export build and made the deliberate movement regression.",
+  "package": {
+    "bytes": 141008619,
+    "sha256": "220f7003008eee9b06274d78eecdd59b7286e117d1465b35f855a70251edd249"
+  },
+  "authoring": {
+    "suite_initially_absent": true,
+    "separate_suite_approval_enabled_from_off": true,
+    "source_and_build_approvals_stayed_off": true,
+    "manifest_scene_and_csharp_unchanged": true,
+    "suite_sha256": "1e0ba5ab0f8d5aac4fd8a5d3a8d2ecfb7a403b44677a4804a42e8dcfe655e097",
+    "observations": [
+      {
+        "actual": 0,
+        "actual_omitted": false,
+        "label": "Radio use before power leaves signal off",
+        "method": "runtime.gameplay.inspect",
+        "observed": true,
+        "passed": true,
+        "path": "/module/values/SignalRestored",
+        "tick": 42
+      },
+      {
+        "actual": 1,
+        "actual_omitted": false,
+        "label": "Breaker turns power on",
+        "method": "runtime.gameplay.inspect",
+        "observed": true,
+        "passed": true,
+        "path": "/module/values/PowerOn",
+        "tick": 88
+      },
+      {
+        "actual": "Power on - use the radio",
+        "actual_omitted": false,
+        "label": "Powered HUD directs player to radio",
+        "method": "runtime.ui.inspect",
+        "observed": true,
+        "passed": true,
+        "path": "/elements/0/text",
+        "tick": 88
+      },
+      {
+        "actual": 1,
+        "actual_omitted": false,
+        "label": "Powered radio restores signal",
+        "method": "runtime.gameplay.inspect",
+        "observed": true,
+        "passed": true,
+        "path": "/module/values/SignalRestored",
+        "tick": 134
+      }
+    ]
+  },
+  "passing_revision": {
+    "revision": 3,
+    "bundle_sha256": "4c2bc6ef09605762a66d0c73491138279116bfe5f6567821b7f4af3da255c5fe",
+    "groups_passed": 1
+  },
+  "failing_revision": {
+    "revision": 4,
+    "bundle_sha256": "fdb8594a71f8efc3bbe97242dbda1ffa8c39f26f33ec6f4f23bc70ce61fa4777",
+    "groups_passed": 0,
+    "failed_assertions": [
+      "Breaker turns power on",
+      "Powered HUD directs player to radio",
+      "Powered radio restores signal"
+    ],
+    "suite_bytes_unchanged": true,
+    "previous_passing_bundle_preserved": true
+  },
+  "relocated": {
+    "original_project_path_unavailable": true,
+    "same_report_as_creator_export": true,
+    "independent_suite_sha256": "dd32d41f01a03cc133117c9b867fa18bba423b3abdeae16fd07e35e67c52ef29",
+    "independent_assertions_passed": 11,
+    "fresh_process_restored_saved_progress_and_completed_objective": true,
+    "vulkan_gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "vulkan_presented_frames": 225,
+    "vulkan_ticks": 224,
+    "renderer_validation_errors_reported": 0,
+    "capture_sha256": "a0f3b1a8d383aaada024a37cc5600721b31a9ce85d5732efce7e44a7c0dbdd04"
+  },
+  "regression": {
+    "windows_mcp_cli_contract_tests": 12,
+    "windows_mcp_native_adapter_passed": true,
+    "windows_game_verifier_and_read_only_boundary_passed": true,
+    "windows_project_recovery_passed": true,
+    "windows_world_ui_tests": 7,
+    "windows_asset_reference_tests": 8,
+    "managed_agent_transport_contract_passed": true
+  }
+}

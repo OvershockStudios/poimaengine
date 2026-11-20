@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 namespace {
 constexpr auto checkpoint_name = "checkpoint.json";
-constexpr auto suite_name = "game.verify.json";
 constexpr auto check_report_name = "checks.json";
 
 void plain_directory(const fs::path& path) {

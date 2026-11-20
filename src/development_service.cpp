@@ -266,32 +266,42 @@ Json Service::dispatch(const std::string& method,const Json& p,const fs::path& o
             Json item={{"name",name},{"fingerprint",profile.fingerprint},{"target_rid",profile.target_rid},{"publish",bool(profile.verify_publish)},{"export",bool(profile.verify_export)}};
             if(profile.inspect_project || profile.adopt_gameplay)item.update({{"project_inspect",bool(profile.inspect_project)},{"gameplay_adopt",bool(profile.adopt_gameplay)}});
             if(profile.gameplay_source && !owned_world.empty())item["gameplay_source"]=true;
+            if(profile.verification_suite && !owned_world.empty())item["verification_suite"]=true;
             result.push_back(std::move(item));
         }
         return {{"profiles",result}};
     }
-    if(method=="project.source.read" || method=="project.source.write") {
-        const bool write=method=="project.source.write";
-        if(write)fields(p,{"profile","project","path","expected_sha256","text"},{"profile","project","path","expected_sha256","text"});
-        else fields(p,{"profile","project","path"},{"profile","project","path"});
+    const bool verification=method=="project.verification.read" || method=="project.verification.write";
+    if(verification || method=="project.source.read" || method=="project.source.write") {
+        const bool write=method.ends_with(".write");
+        if(verification) {
+            if(write)fields(p,{"profile","project","expected_sha256","text"},{"profile","project","expected_sha256","text"});
+            else fields(p,{"profile","project"},{"profile","project"});
+        } else {
+            if(write)fields(p,{"profile","project","path","expected_sha256","text"},{"profile","project","path","expected_sha256","text"});
+            else fields(p,{"profile","project","path"},{"profile","project","path"});
+        }
         const auto selected=profiles_.find(text(p.at("profile"),64));
-        need(selected!=profiles_.end() && selected->second.gameplay_source && !owned_world.empty(),
-             "Gameplay source access requires a configured project owner.",-32004);
+        need(selected!=profiles_.end() && !owned_world.empty(),"Project file access requires a configured project owner.",-32004);
         const auto& profile=selected->second;
+        const auto& edit_file=verification ? profile.verification_suite : profile.gameplay_source;
+        need(bool(edit_file),"This profile does not provide the selected project file operation.",-32004);
         const auto manifest=contained(profile.project_root,relative(p.at("project")),true);
-        need(project_manifest_extension(lower_extension(manifest)),"Source access expects a project manifest.");
-        Json request={{"path",relative(p.at("path"))}};
+        need(project_manifest_extension(lower_extension(manifest)),"File access expects a project manifest.");
+        Json request=Json::object();
+        if(!verification)request["path"]=relative(p.at("path"));
         if(write) {
             const auto& guard=p.at("expected_sha256");
             if(!guard.is_null())(void)digest(guard);
-            const auto& source=p.at("text");
-            need(source.is_string() && source.get_ref<const std::string&>().size()<=128*1024,"Gameplay source must be at most 128 KiB of text.");
+            const auto& replacement=p.at("text");
+            const std::size_t limit=verification ? 1024*1024 : 128*1024;
+            need(replacement.is_string() && replacement.get_ref<const std::string&>().size()<=limit,"Replacement must be text within the authoring byte limit.");
             if(jobs_)for(const auto& job:jobs_->list())
-                need(terminal(job.state),"Wait for the current development jobs before writing gameplay source.",-32009);
+                need(terminal(job.state),"Wait for the current development jobs before editing project files.",-32009);
             request["expected_sha256"]=guard;
-            request["text"]=source;
+            request["text"]=replacement;
         }
-        return Json::parse(verified_result(profile.gameplay_source(manifest,owned_world,request.dump()),4ULL*1024*1024));
+        return Json::parse(verified_result(edit_file(manifest,owned_world,request.dump()),4ULL*1024*1024));
     }
     if(method=="project.inspect" || method=="project.gameplay.adopt") {
         const bool adopt=method=="project.gameplay.adopt";
@@ -461,6 +471,11 @@ Json Service::schemas() {
         {"project.source.write",object({{"profile",profile},{"project",portable},{"path",portable},
             {"expected_sha256",{{"type",{"string","null"}},{"pattern","^[0-9a-f]{64}$"}}},
             {"text",{{"type","string"},{"maxLength",128*1024}}}},{"profile","project","path","expected_sha256","text"})},
+        {"project.verification.read",object({{"profile",profile},{"project",portable}},{"profile","project"})},
+        {"project.verification.write",object({{"profile",profile},{"project",portable},
+            {"expected_sha256",{{"type",{"string","null"}},{"pattern","^[0-9a-f]{64}$"}}},
+            {"text",{{"type","string"},{"maxLength",1024*1024},{"description","Complete JSON text for the project's game.verify.json, using poima.game-verification version 1."}}}},
+            {"profile","project","expected_sha256","text"})},
         {"project.inspect",object({{"profile",profile},{"project",portable}},{"profile","project"})},
         {"project.gameplay.adopt",object({{"profile",profile},{"project",portable},{"artifact",portable},{"request_id",receipt},
             {"expected_project_sha256",{{"type","string"},{"pattern","^[0-9a-f]{64}$"}}},

@@ -2,6 +2,7 @@
 #pragma once
 #include "poima/core.hpp"
 #include <string>
+#include <string_view>
 #include <optional>
 namespace poima {
 struct GameLaunchOptions {
@@ -33,4 +34,6 @@ struct GameStdioOptions {
 Reply stdio_game(const GameStdioOptions& options);
 // Exercise fixed ticks and typed observations in the bundled runtime.
 Reply verify_gameplay(const std::string& manifest,const std::string& suite,const std::string& report={});
+// Validate the verifier's input format without opening a game or running ticks.
+void validate_game_verification_suite(std::string_view bytes);
 }

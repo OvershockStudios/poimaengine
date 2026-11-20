@@ -258,6 +258,9 @@ std::vector<Profile> load_profiles(const std::string& filename) {
         profile.gameplay_source=[](const fs::path& manifest,const fs::path& world,const std::string& request) {
             return project_result(poima::project_gameplay_source(text(manifest),text(world),request));
         };
+        profile.verification_suite=[](const fs::path& manifest,const fs::path& world,const std::string& request) {
+            return project_result(poima::project_verification_suite(text(manifest),text(world),request));
+        };
         result.push_back(std::move(profile));
     }
     return result;

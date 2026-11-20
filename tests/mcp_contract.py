@@ -172,7 +172,7 @@ class McpContract(unittest.TestCase):
         self.assertEqual(direct.returncode, 0, direct.stdout + direct.stderr)
         self.assertEqual(json.loads(direct.stdout)['result']['revision'], revision + 1)
 
-    def test_gameplay_source_is_scoped_and_guarded(self):
+    def test_project_files_are_scoped_and_guarded(self):
         root = Path(self.temp.name)
         projects = root/'projects'; projects.mkdir()
         products = root/'products'; products.mkdir()
@@ -194,7 +194,9 @@ class McpContract(unittest.TestCase):
         profiles.write_text(json.dumps(dict(format='poima.development-profiles', version=1, profiles=[entry])))
         client = Client(project=manifest, profiles=profiles)
         self.clients.append(client); client.initialize()
-        self.assertTrue(client.world('development.profiles')['profiles'][0]['gameplay_source'])
+        configured = client.world('development.profiles')['profiles'][0]
+        self.assertTrue(configured['gameplay_source'])
+        self.assertTrue(configured['verification_suite'])
         params = dict(profile='local', project='Main/project.poimaproject', path='gameplay-src/Game.cs')
         source = client.world('project.source.read', params)
         self.assertEqual(source['text'].encode(), path.read_bytes())
@@ -227,6 +229,42 @@ class McpContract(unittest.TestCase):
         client.world('project.source.read', dict(params, path='gameplay-src/Alias.cs'), error=-32091)
         alias.unlink()
         self.assertEqual(sorted(f.name for f in path.parent.iterdir()), ['Extra.cs', 'Game.cs', 'Game.csproj'])
+
+        selectors = dict(profile='local', project='Main/project.poimaproject')
+        checks_path = manifest.parent/'game.verify.json'
+        self.assertEqual(client.world('project.verification.read', selectors),
+                         dict(path=checks_path.name, exists=False, sha256=None, text=None))
+        checks = dict(format='poima.game-verification', version=1, groups=[dict(name='Prenez le courant ⚡', sequence=[
+            dict(expect=dict(label='Player begins at spawn', method='runtime.entity',
+                             params={'id': '0'*31+'2'}, path='/world_matrix/14', equals=2))])])
+        replacement = dict(selectors, expected_sha256=None, text=json.dumps(checks, ensure_ascii=False) + '\r\n')
+
+        def put_checks(options, error=None, tool='poima_checks'):
+            return client.tool(tool, {'method': 'project.verification.write', 'params': options}, error)
+
+        for tool in ('poima_call', 'poima_build', 'poima_source'):
+            put_checks(replacement, error=-32602, tool=tool)
+        put_checks(dict(replacement, path='world.json'), error=-32602)
+        put_checks(dict(replacement, project='Other/project.poimaproject'), error=-32009)
+        for bad in ('{}', replacement['text'].replace('"version": 1', '"version": 1, "version": 1'),
+                    replacement['text'].replace('runtime.entity', 'runtime.gameplay.edit')):
+            put_checks(dict(replacement, text=bad), error=-32602)
+        self.assertFalse(checks_path.exists())
+        stored = put_checks(replacement)
+        self.assertTrue(stored['changed'])
+        self.assertEqual(stored['sha256'], hashlib.sha256(checks_path.read_bytes()).hexdigest())
+        self.assertEqual(client.world('project.verification.read', selectors)['text'], replacement['text'])
+        stamp = checks_path.stat().st_mtime_ns
+        self.assertFalse(put_checks(replacement)['changed'])
+        self.assertEqual(checks_path.stat().st_mtime_ns, stamp)
+        revised = dict(replacement, text=replacement['text'].replace('"equals": 2', '"equals": 3'))
+        put_checks(revised, error=-32009)
+        self.assertTrue(put_checks(dict(revised, expected_sha256=stored['sha256']))['changed'])
+        alias = checks_path.with_name('suite-alias.json')
+        os.link(checks_path, alias)
+        client.world('project.verification.read', selectors, error=-32091)
+        alias.unlink()
+        self.assertFalse(any(manifest.parent.glob('.poima-source-*')))
         self.assertEqual(manifest.read_bytes(), original_manifest)
         self.assertEqual((manifest.parent/'world.json').read_bytes(), original_world)
         client.close()
@@ -256,7 +294,7 @@ class McpContract(unittest.TestCase):
     def test_authoring_receipts_conflicts_undo_and_eof_persistence(self):
         client = self.client()
         tools = client.rpc('tools/list')['tools']
-        self.assertEqual({tool['name'] for tool in tools}, {'poima_discover', 'poima_call', 'poima_build', 'poima_source'})
+        self.assertEqual({tool['name'] for tool in tools}, {'poima_discover', 'poima_call', 'poima_build', 'poima_source', 'poima_checks'})
         catalog = client.tool('poima_discover')
         self.assertEqual(catalog['view'], 'catalog')
         self.assertTrue(catalog['partial'])

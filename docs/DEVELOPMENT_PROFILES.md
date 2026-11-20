@@ -22,7 +22,9 @@ publish/export job submission receipts remain scoped to the running host.
 
 Configured profiles expose [guarded C# source access](CREATOR_GAMEPLAY.md#write-compiled-c-gameplay)
 for the project whose entry world the host owns. Source writes use
-`poima_source`. Compilation and artifact adoption use `poima_build`.
+`poima_source`. The [project verification suite](GAME_VERIFICATION.md) has
+its own guarded write tool, `poima_checks`. Compilation and artifact adoption
+use `poima_build`.
 
 ## Configure a host
 

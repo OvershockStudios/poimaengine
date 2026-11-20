@@ -123,11 +123,11 @@ project's selected tools.
 
 ## Check the playable build
 
-Write a [verification suite](GAME_VERIFICATION.md) as `game.verify.json`
-beside the project manifest. Use the game's normal input and include both an
-expected success and a failure or boundary case from the brief. Verify the
-results with native observations and keep the report tied to the exact
-export. Stop the preview and choose **Export Windows build**. Use
+Use `poima_checks` to write a [verification suite](GAME_VERIFICATION.md) as
+`game.verify.json` beside the project manifest. Use the game's normal input
+and include both an expected success and a failure or boundary case from the
+brief. Verify the results with native observations and keep the report tied
+to the exact export. Stop the preview and choose **Export Windows build**. Use
 **Open check report** to inspect the result. Recover a verified copy from
 the creator when you want to edit an earlier passing project.
 

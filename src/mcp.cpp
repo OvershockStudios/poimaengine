@@ -87,6 +87,9 @@ Json tools(){
         {{"name","poima_source"},{"description","Write one C# source file in the open host-configured project. First read project.source.read through poima_call and use its SHA-256 as the write guard. This operation publishes text without compiling it."},
          {"inputSchema",schema({{"method",{{"enum",{"project.source.write"}}}},{"params",{{"type","object"}}}},{"method","params"})},
          {"annotations",{{"readOnlyHint",false},{"destructiveHint",true},{"idempotentHint",true},{"openWorldHint",false}}}},
+        {{"name","poima_checks"},{"description","Write the open project's gameplay verification suite. Read project.verification.read through poima_call and use its SHA-256 as the write guard. A successful write validates the suite format; the game has to run the checks separately."},
+         {"inputSchema",schema({{"method",{{"enum",{"project.verification.write"}}}},{"params",{{"type","object"}}}},{"method","params"})},
+         {"annotations",{{"readOnlyHint",false},{"destructiveHint",true},{"idempotentHint",true},{"openWorldHint",false}}}},
         {{"name","poima_build"},{"description","Submit trusted compile, native publish or export jobs, or synchronously adopt verified native gameplay into a project. Publishing/export/adoption use host-configured profiles; legacy compilation uses an explicit SDK executable. This grants build/process/filesystem authority separately from world edits. Inspect development.profiles first. Compile/publish/export return jobs polled through development.inspect; project.gameplay.adopt returns a durable project receipt and launches no compiler. No automatic gameplay activation or undo of emitted files."},
          {"inputSchema",schema({{"method",{{"enum",{"development.compile","development.publish","development.export","project.gameplay.adopt"}}}},{"params",{{"type","object"}}}},{"method","params"})},
          {"annotations",{{"readOnlyHint",false},{"destructiveHint",true},{"idempotentHint",false},{"openWorldHint",true}}}}
@@ -117,12 +120,16 @@ struct McpSession::Impl {
             if(!params.is_object())return tool_result({{"error",error(-32602,"Native params must be an object.")}},true);
             const bool build=method=="development.compile" || method=="development.publish" || method=="development.export" || method=="project.gameplay.adopt";
             const bool source=method=="project.source.write";
+            const bool checks=method=="project.verification.write";
             if(name=="poima_build") {
                 if(!build || !arguments.contains("params") || arguments.contains("image"))return tool_result({{"error",error(-32602,"poima_build requires compile/publish/export/adopt parameters and accepts no image option.")}},true);
             } else if(name=="poima_source") {
                 if(!source || !arguments.contains("params") || arguments.contains("image"))return tool_result({{"error",error(-32602,"poima_source expects project.source.write parameters.")}},true);
+            } else if(name=="poima_checks") {
+                if(!checks || !arguments.contains("params") || arguments.contains("image"))return tool_result({{"error",error(-32602,"poima_checks expects project.verification.write parameters.")}},true);
             } else if(build) return tool_result({{"error",error(-32602,"Use the separately authorized poima_build tool for compilation, native publishing, export and project gameplay adoption.")}},true);
             else if(source) return tool_result({{"error",error(-32602,"Use the separately authorized poima_source tool for source writes.")}},true);
+            else if(checks) return tool_result({{"error",error(-32602,"Use the separately authorized poima_checks tool for verification suite writes.")}},true);
             if(arguments.contains("image")) {
                 const auto& image=arguments["image"];
                 if(!image.is_object())return tool_result({{"error",error(-32602,"image must be an object.")}},true);
@@ -208,7 +215,7 @@ std::string McpSession::request(std::string_view message) {
                 require(!params.contains("task"),-32602,"Task execution is unsupported.");
                 require(params.contains("name") && params["name"].is_string(),-32602,"Tool name is required.");
                 const auto name=params["name"].get<std::string>();
-                require(name=="poima_discover" || name=="poima_call" || name=="poima_build" || name=="poima_source",-32602,"Unknown tool.");
+                require(name=="poima_discover" || name=="poima_call" || name=="poima_build" || name=="poima_source" || name=="poima_checks",-32602,"Unknown tool.");
                 require(!params.contains("arguments") || params["arguments"].is_object(),-32602,"Tool arguments must be an object.");
                 result=impl_->call(name,params.value("arguments",Json::object()));
             } else throw ProtocolError(-32601,"Unknown MCP method.");

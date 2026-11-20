@@ -61,7 +61,7 @@ internal static class WindowsGameplayTools
             var guide = Path.Combine(PackageDirectory, "reference", "CREATOR_GAMEPLAY.md").Replace('\\', '/');
             var projectFile = Path.GetFileName(project.Manifest);
             var context = $"""
-                Poima configured profile `{ProfileName}` for manifest `{projectFile}`. After brief approval, read `gameplay-src/Game.cs` with `poima_call` method `project.source.read` using profile, project, and path. To edit, submit the complete C# text and returned SHA-256 as `expected_sha256` with `poima_source` method `project.source.write`. The starter project is `gameplay-src/Game.csproj` with type `ProjectGameplay.Game`. Use `poima_build` for publication and adoption. See `{guide}` for C# API and verification details.
+                Poima configured profile `{ProfileName}` for manifest `{projectFile}`. After brief approval, read `gameplay-src/Game.cs` with `poima_call` method `project.source.read` using profile, project, and path. To edit, submit the complete C# text and returned SHA-256 as `expected_sha256` with `poima_source` method `project.source.write`. The starter project is `gameplay-src/Game.csproj` with type `ProjectGameplay.Game`. Use `poima_build` for publication and adoption. To write game checks, read `project.verification.read` through `poima_call` using profile and project. Submit the suite JSON text and returned hash (null for new) through `poima_checks`, method `project.verification.write`. Export build runs the checks. See `{guide}` for C# API and verification details.
                 """;
             return options with { InstalledDevelopmentProfiles = profilePath, GameplayToolStatus = "C# gameplay builds are ready.", GameplayToolContext = context };
         }
