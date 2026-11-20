@@ -53,6 +53,12 @@ public sealed class NativeHost : IDisposable
             throw new InvalidOperationException($"{error["message"]} ({error["code"]})");
         return reply["result"]?.DeepClone().AsObject() ?? new JsonObject();
     }
+    internal void PublishVerifiedPlayback(JsonObject snapshot)
+    {
+        Dispatcher.UIThread.VerifyAccess();
+        if (Native.SetVerifiedPlayback(handle, snapshot.ToJsonString()) == 0)
+            throw new InvalidOperationException(Error());
+    }
     public void Pump()
     {
         Dispatcher.UIThread.VerifyAccess(); if (handle == IntPtr.Zero) return;
@@ -141,6 +147,8 @@ public sealed class NativeHost : IDisposable
     private static class Native
     {
         private const string Library = "poima_desktop";
+        [DllImport(Library, EntryPoint = "poima_desktop_set_verified_playback", CallingConvention = CallingConvention.Cdecl)]
+        internal static extern int SetVerifiedPlayback(IntPtr host, [MarshalAs(UnmanagedType.LPUTF8Str)] string snapshot);
         [DllImport(Library, EntryPoint = "poima_desktop_create", CallingConvention = CallingConvention.Cdecl)]
         internal static extern IntPtr Create([MarshalAs(UnmanagedType.LPUTF8Str)] string world, [MarshalAs(UnmanagedType.LPUTF8Str)] string endpoint, int gpu, uint samples);
         [DllImport(Library, EntryPoint = "poima_desktop_create_with_profiles", CallingConvention = CallingConvention.Cdecl)]

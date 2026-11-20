@@ -14,6 +14,7 @@
 # -WithBuildHistory creates two passing versions and restores the older one through the history dialog.
 # -VerifiedPlayChat tests live workspace chat and native candidate publication while playing a verified build.
 # -VerifiedPlayWithCodex uses an installed, signed-in Codex model to author and retain a new version during playback.
+# -ObserveVerifiedPlayback checks the live progress and closure read through the same project endpoint.
 # -WithoutVulkan masks drivers for the owned processes and checks preview failure recovery.
 # -AssetFixtures imports model, color/data image and WAV fixtures through the file picker.
 # -CodexAssetRead asks the real Codex client to inspect the model ID in the draft.
@@ -33,6 +34,7 @@ param(
     [switch]$WithBuildHistory,
     [string]$VerifiedPlayChat,
     [switch]$VerifiedPlayWithCodex,
+    [switch]$ObserveVerifiedPlayback,
     [switch]$WithoutVulkan,
     [string]$AssetFixtures,
     [switch]$CodexAssetRead
@@ -41,6 +43,7 @@ param(
 $ErrorActionPreference = 'Stop'
 if ($CodexAssetRead -and !$AssetFixtures) { throw 'Supply -AssetFixtures for the Codex asset handoff check.' }
 if ($VerifiedPlayChat -and $VerifiedPlayWithCodex) { throw 'Run the scripted and live playback checks separately.' }
+if ($ObserveVerifiedPlayback -and !$VerifiedPlayWithCodex) { throw 'Use -VerifiedPlayWithCodex for the live observation workflow.' }
 if ($VerifiedPlayChat -or $VerifiedPlayWithCodex) { $WithPlaytestResults = $true }
 if ($WithoutVulkan -and ($WithExport -or $WithPlaytestResults -or $WithShareZip -or $WithBuildHistory)) {
     throw 'Run the no-driver check separately from export and hardware playback checks.'
@@ -905,6 +908,16 @@ function Verify-CodexRetainedLowerJump($Project, $Passing) {
     $suiteHash = (Get-FileHash -LiteralPath $suite).Hash.ToLowerInvariant()
     $worldPath = Join-Path (Split-Path -Parent $manifest) $Project.entry.world
     $before = Get-Content -LiteralPath $worldPath -Raw | ConvertFrom-Json
+    $observations = [ordered]@{}
+    if ($ObserveVerifiedPlayback) {
+        $discovery = Verified-PlayRpc 'world.describe' @{ view = 'catalog' }
+        $desktop = Verified-PlayRpc 'desktop.describe' @{}
+        if ($discovery.verified_playback_inspection -cne 'desktop.verified.inspect' -or
+            !$desktop.methods.'desktop.verified.inspect' -or
+            $null -ne (Verified-PlayRpc 'desktop.verified.inspect' @{}).playback) {
+            throw 'The creator did not advertise an initially empty verified player observation.'
+        }
+    }
 
     Select-AgentProvider 'Codex'
     if ($CodexExecutable) { Set-AgentExecutable 'Codex executable' $CodexExecutable }
@@ -921,12 +934,28 @@ function Verify-CodexRetainedLowerJump($Project, $Passing) {
         'and keep every other field, entity and the existing game.verify.json unchanged. Use the configured creator profile and project.poimaproject. ' +
         'Read the suite hash with project.verification.read. Use development.candidate through poima_build, poll development.inspect until terminal, ' +
         'and use project.candidate.retain through poima_build for the passing job. Keep the old game running and report the new revision.')
+    if ($ObserveVerifiedPlayback) {
+        $prompt += (' Use desktop.verified.inspect through poima_call before editing and after retaining. Wait until the separately ' +
+            'opened verified game has a native presented frame before editing. Use the returned play_id, revision and frame count ' +
+            'to tell me whether the earlier verified player stayed open during your work.')
+    }
     $turn = [Diagnostics.Stopwatch]::StartNew()
     $transcript = Send-CodexPrompt $prompt {
         $null = Wait-For 'the active agent turn' { Find-Control 'Agent Stop' -Enabled }
         Start-VerifiedPlayer $old
         if ((Inspect-Project).revision -ne $Project.revision) {
             throw 'The agent revised the project before the original game window opened.'
+        }
+        if ($ObserveVerifiedPlayback) {
+            $observations.initial = Wait-For 'native presentation from the original verified player' {
+                $sample = (Verified-PlayRpc 'desktop.verified.inspect' @{}).playback
+                if ($sample.observation.frames_presented -gt 0) { return $sample }
+            } 20
+            if ($observations.initial.bundle_sha256 -cne $old.bundle_sha256 -or
+                $observations.initial.revision -ne $old.revision -or $observations.initial.state -cne 'running' -or
+                $null -eq $observations.initial.observation_age_ms -or $null -eq $observations.initial.observation.focused) {
+                throw 'The original observation did not identify the running verified build and its native progress.'
+            }
         }
     }
     $turn.Stop()
@@ -962,7 +991,31 @@ function Verify-CodexRetainedLowerJump($Project, $Passing) {
         $work -and $work.Current.Name -match "^Revision $($updated.revision)\b" -and (Find-Control 'View playtest results' -Enabled)
     } 45
     Inspect-PlaytestDialog $latest $true
+    if ($ObserveVerifiedPlayback) {
+        $observations.after_retention = (Verified-PlayRpc 'desktop.verified.inspect' @{}).playback
+        if ($observations.after_retention.play_id -cne $observations.initial.play_id -or
+            $observations.after_retention.bundle_sha256 -cne $old.bundle_sha256 -or
+            $observations.after_retention.revision -ne $old.revision -or $observations.after_retention.state -cne 'running' -or
+            $observations.after_retention.observation.frames_presented -le $observations.initial.observation.frames_presented -or
+            (Verified-PlayRpc 'player.inspect' @{}).active) {
+            throw 'The running observation changed ownership or build when the newer candidate was retained.'
+        }
+    }
     $played = Close-VerifiedPlayer $old 'create'
+    if ($ObserveVerifiedPlayback) {
+        $observations.closed = Wait-For 'retained native closure observation' {
+            $last = (Verified-PlayRpc 'desktop.verified.inspect' @{}).playback
+            if ($last.state -ceq 'closed') { return $last }
+        }
+        if ($observations.closed.play_id -cne $observations.initial.play_id -or
+            $observations.closed.bundle_sha256 -cne $played.bundle_sha256 -or
+            $observations.closed.observation.tick -ne $played.tick -or
+            $observations.closed.observation.frames_presented -ne $played.frames_presented -or
+            $observations.closed.stop_reason -cne 'window_closed') {
+            throw 'The retained verified player observation did not match native closure.'
+        }
+        $report.checks.verified_playback_observations = $observations
+    }
     Invoke-Control 'Agent Disconnect'
     $null = Wait-For 'the retired live Codex connection' { Find-Control 'Agent Connect' -Enabled }
     $report.checks.verified_play_with_codex = [ordered]@{
@@ -1294,6 +1347,12 @@ try {
     $reopened = Inspect-Project
     if ($reopened.project_id -ne $project.project_id -or $reopened.revision -ne $project.revision) {
         throw 'Project identity or authoring revision changed after reopen.'
+    }
+    if ($ObserveVerifiedPlayback) {
+        if ($null -ne (Verified-PlayRpc 'desktop.verified.inspect' @{}).playback) {
+            throw 'The reopened creator reported playback from a previous owner.'
+        }
+        $report.checks.verified_observations_owner_scoped = $true
     }
     if ($AssetFixtures) { Check-ReopenedAssetLibrary }
     if ($WithPlaytestResults -or $WithShareZip -or $WithBuildHistory) {

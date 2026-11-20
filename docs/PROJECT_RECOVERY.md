@@ -26,9 +26,30 @@ close. When started with standard output redirected, the workspace emits a
 `verified_play_closed` event with the build identity, last tick, presented
 frame count and stop reason.
 
-The project endpoint's `player.inspect` describes the working preview.
-The separately launched verified game keeps its own runtime and produces the
-closure receipt above.
+### Inspect the verified player
+
+On a creator endpoint, call `desktop.verified.inspect` with empty parameters.
+Discover its name in `world.describe` or its request schema in
+`desktop.describe`. From MCP, use `poima_call`.
+
+```json
+{"method":"desktop.verified.inspect","params":{}}
+```
+
+`playback` is null until the first request to play a verified build. It then
+includes a `play_id` for this launch, the pinned `bundle_sha256`, `revision`,
+and `state`. `checking` means the creator is rechecking the selection.
+`running` means its game process launched. A nonzero
+`observation.frames_presented` confirms a native presentation. The player
+samples `tick`, `frames_presented`, `focused` and `paused` about four times a
+second. `observation_age_ms` reports the age of the last published sample.
+A save load can replace the runtime and change its tick.
+
+When an earlier packaged runtime supplies only a closure receipt,
+`observation` stays null during play. The receipt still supplies final ticks
+and frames after the runtime closes. The creator retains the most recent
+`closed`, `failed`, or `cancelled` state until the next launch or workspace
+close. The working preview keeps its own `player.inspect` contract.
 
 Choose **View playtest results** to see the latest completed attempt and
 expand its named groups. Failed checks show the recorded tick and observation.

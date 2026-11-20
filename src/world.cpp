@@ -1212,6 +1212,7 @@ constexpr std::array authoring_methods{"component.schema.import","world.referenc
 class World {
     profiling::Service profiler_;
     frame_performance::Service performance_;
+    PlayerProgressObserver player_progress_;
     fs::path path_;
     bool read_only_=false;
     std::unique_ptr<WriterLock> lock_;
@@ -1422,6 +1423,7 @@ public:
         if(runtime_) { std::copy(runtime_id_.begin(),runtime_id_.end(),result.session.begin());result.tick=static_cast<std::int64_t>(runtime_->inspect().tick); }
         return result;
     }
+    void observe_blocking_player(PlayerProgressObserver observer) { player_progress_=std::move(observer); }
     explicit World(const std::string& utf8_path,WorldOpenMode mode,const std::string& protected_root) :
         path_(std::u8string(utf8_path.begin(), utf8_path.end())),
         read_only_(mode==WorldOpenMode::read_only_runtime) {
@@ -3695,7 +3697,7 @@ public:
         receipts.push_back({{"params",normalized},{"result",Json::object()}});
         PlayerSessionAdapter session(*this);
         BlockingPreferenceScope preference_scope(*this,prepared.gameplay_preferences);
-        const auto report=run_player(prepared.options,session);
+        const auto report=run_player(prepared.options,session,player_progress_);
         // A final Tick can accept a write immediately before playback ends.
         // Observe completed work without adding storage waits to the player.
         session.owner_poll();
@@ -4565,6 +4567,10 @@ struct WorldSession::Impl {
 };
 WorldSession::WorldSession(const std::string& path,WorldOpenMode mode,const std::string& protected_root):impl_(std::make_unique<Impl>(path,mode,protected_root)) {}
 WorldSession::~WorldSession()=default;
+void WorldSession::observe_blocking_player(PlayerProgressObserver observer) {
+    require(!closed(),"World session is closed.",-32001);
+    impl_->world.observe_blocking_player(std::move(observer));
+}
 void WorldSession::configure_development_profiles(const std::string& filename) {
     require(!closed(),"World session is closed.",-32001);
     impl_->world.configure_development_profiles(filename);

@@ -40,6 +40,7 @@ internal sealed class CreatorWindow : Window
     private bool starting, waitingForPreviewFrame, exporting, closeRequested, verifiedPlayActive, closing, allowClose;
     private bool agentWasBusy, toolsReadyForReopen, reopenWithTools;
     private string? exportedFolder, verifiedCheckpoint, verifiedBundleHash, recoveredManifest;
+    private VerifiedPlayback? verifiedPlayback;
     private string? sharedZip, shareNotice;
     private PlaytestAttempt? latestAttempt;
     private string workDescription = "";
@@ -475,11 +476,13 @@ internal sealed class CreatorWindow : Window
         var manifest = Path.GetFullPath(Path.Combine(exportedFolder, "game.json"));
         var bundleHash = verifiedBundleHash;
         var revision = exportedRevision;
+        var playback = verifiedPlayback = new VerifiedPlayback(bundleHash, revision);
         verifiedPlayActive = true;
         verifiedPlayStatus.Text = $"Checking verified revision {revision}…";
         UpdateControls();
         try
         {
+            PublishVerifiedPlayback();
             using (var cancellation = new CancellationTokenSource())
             {
                 checkingVerifiedPlay = cancellation;
@@ -493,15 +496,16 @@ internal sealed class CreatorWindow : Window
                 }
                 finally { checkingVerifiedPlay = null; }
             }
-            if (closeRequested) return;
+            if (closeRequested) { playback.Ended("cancelled"); return; }
             var local = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
             if (!Path.IsPathFullyQualified(local))
                 throw new InvalidOperationException("Poima could not locate local storage for playtest saves.");
             var saves = Directory.CreateDirectory(Path.Combine(local, "Poima", "Playtests", project.ProjectId, bundleHash)).FullName;
             verifiedPlayStatus.Text = $"Verified revision {revision} is running in a separate window.";
             UpdateControls();
-            var result = await ProjectFiles.PlayExport(manifest, saves, options.Gpu, options.Samples);
+            var result = await ProjectFiles.PlayExport(manifest, saves, options.Gpu, options.Samples, playback);
             var played = result.GetProperty("play");
+            playback.Closed(played);
             Console.WriteLine(JsonSerializer.Serialize(new
             {
                 event_type = "verified_play_closed", revision, bundle_sha256 = bundleHash,
@@ -509,15 +513,23 @@ internal sealed class CreatorWindow : Window
                 stop_reason = played.GetProperty("stop_reason")
             }));
         }
-        catch (OperationCanceledException) when (closeRequested) { }
-        catch (Exception failure) { error = failure.Message; }
+        catch (OperationCanceledException) when (closeRequested) { playback.Ended("cancelled"); }
+        catch (Exception failure) { playback.Ended("failed"); error = failure.Message; }
         finally
         {
+            PublishVerifiedPlayback();
             verifiedPlayStatus.Text = null;
             verifiedPlayActive = false;
             UpdateControls();
             CloseWhenWorkEnds();
         }
+    }
+
+    private void PublishVerifiedPlayback()
+    {
+        if (verifiedPlayback?.TakeSnapshot() is not { } snapshot) return;
+        try { host.PublishVerifiedPlayback(snapshot); }
+        catch (InvalidOperationException failure) { error = failure.Message; }
     }
 
     private Task RestoreVerifiedAsync() => restore.IsEnabled && verifiedCheckpoint is { } checkpoint
@@ -655,6 +667,7 @@ internal sealed class CreatorWindow : Window
     private void Pump()
     {
         if (!closing) game.ValidateCapture();
+        if (verifiedPlayActive) PublishVerifiedPlayback();
         host.Pump();
         if (closing)
         {

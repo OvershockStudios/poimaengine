@@ -89,6 +89,9 @@ checks for a newer retained build.
 The [live Codex follow-up](evidence/m2-live-verified-iteration-318.json) makes
 a guarded gameplay edit during that overlap, retains a passing version and
 independently checks the changed jump before and after relocation.
+In the [0.0.319 observation test](evidence/m2-verified-player-observation-319.json),
+Codex reads the older player's pinned identity and its increasing frame count
+through the project endpoint before the edit and after retaining the newer build.
 The [Codex sign-in check](evidence/m2-creator-codex-sign-in-303.json) covers
 opening and cancelling sign-in with an isolated client and continuation after
 a scripted account confirmation. A real browser authorization is still needed.

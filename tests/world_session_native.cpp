@@ -144,7 +144,8 @@ void discovery_projection(poima::WorldSession& session,poima::WorldRequestScope 
                 camera_branches.push_back(branch);
         }
         check(camera_branches.size()==1 && camera_branches.at(0).at("properties").at("value").at("dependentRequired")==
-              Json{{"viewmodel_clearance",{"viewmodel"}}},"Missing Camera dependency discovery witness.");
+              Json{{"viewmodel_clearance",{"viewmodel"}},{"viewmodel_match_world_fov",{"viewmodel"}},
+                   {"viewmodel_world_depth",{"viewmodel"}}},"Missing Camera dependency discovery witness.");
         camera_projected["properties"]["ops"]["items"]["oneOf"]=camera_branches;
         auto camera_expected=metadata;camera_expected["partial"]=true;camera_expected["view"]="mutation";
         camera_expected["selection"]={{"operation","component.set"},{"type","Camera"}};

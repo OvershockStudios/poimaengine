@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 using System.Diagnostics;
+using System.Text;
 using System.Text.Json;
 
 namespace Poima.Editor;
@@ -36,7 +37,10 @@ internal static class ProjectFiles
 
     public static Process Start(string executable, params string[] arguments) => Start(executable, null, arguments);
 
-    public static Process Start(string executable, System.Text.Encoding? outputEncoding, params string[] arguments)
+    public static Process Start(string executable, Encoding? outputEncoding, params string[] arguments) =>
+        Process.Start(StartInfo(executable, outputEncoding, arguments)) ?? throw new InvalidOperationException("Poima could not start.");
+
+    private static ProcessStartInfo StartInfo(string executable, Encoding? outputEncoding, string[] arguments)
     {
         var info = new ProcessStartInfo(executable)
         {
@@ -44,7 +48,7 @@ internal static class ProjectFiles
             RedirectStandardOutput = true, RedirectStandardError = true, StandardOutputEncoding = outputEncoding
         };
         foreach (var argument in arguments) info.ArgumentList.Add(argument);
-        return Process.Start(info) ?? throw new InvalidOperationException("Poima could not start.");
+        return info;
     }
 
     public static Task<JsonElement> Command(params string[] arguments) =>
@@ -58,21 +62,36 @@ internal static class ProjectFiles
             ["game", "verify", Path.Combine(bundle, "game.json"), "--suite", suite, "--report", report],
             allowFailedVerification: true, cancellation: cancellation);
 
-    public static Task<JsonElement> PlayExport(string manifest, string saves, int gpu, uint samples)
+    public static Task<JsonElement> PlayExport(string manifest, string saves, int gpu, uint samples, VerifiedPlayback playback)
     {
         var executable = Path.Combine(Path.GetDirectoryName(manifest)!, "runtime", "bin", "poima.exe");
         var arguments = new List<string> { "game", "run", manifest, "--save-root", saves,
             "--samples", samples.ToString(System.Globalization.CultureInfo.InvariantCulture) };
         if (gpu >= 0)
             arguments.AddRange(["--gpu", gpu.ToString(System.Globalization.CultureInfo.InvariantCulture)]);
-        return RunCommand(executable, [.. arguments]);
+        return RunCommand(executable, [.. arguments], playback: playback);
+    }
+
+    private static async Task<string> ReadPlaybackOutput(StreamReader reader, VerifiedPlayback playback)
+    {
+        var result = new StringBuilder();
+        while (await reader.ReadLineAsync().ConfigureAwait(false) is { } line)
+        {
+            if (line.StartsWith(VerifiedPlayback.ProgressPrefix, StringComparison.Ordinal))
+                playback.Receive(line.AsMemory(VerifiedPlayback.ProgressPrefix.Length));
+            else result.AppendLine(line);
+        }
+        return result.ToString();
     }
 
     private static async Task<JsonElement> RunCommand(string executable, string[] arguments,
-        bool allowFailedVerification = false, CancellationToken cancellation = default)
+        bool allowFailedVerification = false, CancellationToken cancellation = default, VerifiedPlayback? playback = null)
     {
-        using var process = Start(executable, arguments);
-        var output = process.StandardOutput.ReadToEndAsync();
+        var info = StartInfo(executable, playback is null ? null : Encoding.UTF8, arguments);
+        if (playback is not null) info.Environment["POIMA_VERIFIED_PLAY_SHA256"] = playback.BundleHash;
+        using var process = Process.Start(info) ?? throw new InvalidOperationException("Poima could not start.");
+        playback?.Started();
+        var output = playback is null ? process.StandardOutput.ReadToEndAsync() : ReadPlaybackOutput(process.StandardOutput, playback);
         var error = process.StandardError.ReadToEndAsync();
         try { await process.WaitForExitAsync(cancellation); }
         catch (OperationCanceledException) when (cancellation.IsCancellationRequested)

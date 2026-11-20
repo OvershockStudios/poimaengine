@@ -11,9 +11,11 @@
 #include "world_stdio.hpp"
 #include "world_storage.hpp"
 #include <nlohmann/json.hpp>
+#include <cstdlib>
 #include <filesystem>
 #include <fstream>
 #include <initializer_list>
+#include <iostream>
 #include <random>
 #include <set>
 
@@ -436,6 +438,8 @@ Reply run_game(const GameLaunchOptions& options) {
         validate_save_launch(options.save_root,options.save_write_mode,options.default_save_root);
         const auto game=load_game(options.manifest);
         validate_game_host(game);
+        const auto* expected=std::getenv("POIMA_VERIFIED_PLAY_SHA256");
+        require(!expected || game.manifest_sha256==expected,"The verified game changed before launch.");
         require(POIMA_RENDER_SMOKE,"Game launch requires the Vulkan player in this executable.");
         require(options.max_frames<=36000,"Interactive frame limit must be 0..36000.");
         require(options.replay.empty() || !options.max_frames,"Replay and an interactive frame limit cannot be combined.");
@@ -443,6 +447,14 @@ Reply run_game(const GameLaunchOptions& options) {
         if(!options.render.capture.empty() && !options.report.empty())require(!world_detail::same_path_name(normalized(options.render.capture),normalized(options.report)),"Game capture and report must differ.");
         Json sequence;if(!options.replay.empty())sequence=replay_file(options.replay);
         WorldSession world(game.world,WorldOpenMode::read_only_runtime,game.root);
+        if(expected)world.observe_blocking_player([&](const PlayerProgress& sample) {
+            const auto& readiness=sample.readiness;
+            const Json line={{"bundle_sha256",game.manifest_sha256},{"revision",game.revision},
+                {"tick",sample.tick},{"frames_presented",sample.frames_presented},
+                {"focused",readiness.focused ? Json(*readiness.focused) : Json(nullptr)},
+                {"paused",readiness.initialized ? Json(readiness.paused()) : Json(nullptr)}};
+            std::cout<<"POIMA_VERIFIED_PROGRESS "<<line.dump()<<std::endl;
+        });
         const auto save_root=launch_save_root(options,game);
         const auto session=prepare_game(world,game,save_root,options.save_write_mode);
         Json params={{"session_id",session},{"request_id",id()},{"expected_tick",0},{"controller",game.controller},{"camera",game.camera},

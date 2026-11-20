@@ -4533,6 +4533,9 @@ bool PlayerWindow::finished() const {impl_->check_thread();return impl_->done;}
 bool PlayerWindow::ready() const {impl_->check_thread();return impl_->readiness().ready();}
 PlayerReport PlayerWindow::report() const {impl_->check_thread();return impl_->result;}
 PlayerReadiness PlayerWindow::readiness() const {impl_->check_thread();return impl_->readiness();}
+PlayerProgress PlayerWindow::progress() const {
+    impl_->check_thread();return {impl_->result.final_tick,impl_->result.render.frames_presented,impl_->readiness()};
+}
 const std::optional<PlayerUiObservation>& PlayerWindow::ui_observation() const {
     impl_->check_thread();return impl_->ui_observation;
 }
@@ -4617,11 +4620,18 @@ RenderReport PlayerWindow::capture(const std::string& path,const PlayerCaptureSn
         state.ui_ready=false;state.ui_presented=false;state.previous=SDL_GetTicksNS();throw;
     }
 }
-PlayerReport run_player(const PlayerOptions& options, PlayerSession& session) {
+PlayerReport run_player(const PlayerOptions& options, PlayerSession& session,const PlayerProgressObserver& observer) {
     profiling::SourceScope source(profiling::Source::player);
     profiling::Scope scope("player.run");
     PlayerWindow window(options,session);
-    while(window.poll()) {}
+    auto next=std::chrono::steady_clock::time_point::min();
+    while(window.poll()) {
+        if(!observer)continue;
+        const auto now=std::chrono::steady_clock::now();
+        if(now<next)continue;
+        next=now+std::chrono::milliseconds(250);
+        observer(window.progress());
+    }
     return window.report();
 }
 } // namespace poima

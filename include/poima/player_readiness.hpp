@@ -2,6 +2,7 @@
 #pragma once
 #include <array>
 #include <cstdint>
+#include <functional>
 #include <optional>
 
 namespace poima {
@@ -32,6 +33,11 @@ struct PlayerReadiness {
     constexpr bool ready() const noexcept {return ready_conditions()==0;}
     constexpr bool paused() const noexcept {return pause_conditions()!=0;}
 };
+struct PlayerProgress {
+    std::uint64_t tick=0,frames_presented=0;
+    PlayerReadiness readiness;
+};
+using PlayerProgressObserver=std::function<void(const PlayerProgress&)>;
 namespace player_readiness {
 inline constexpr const char* initial_detail="Native player awaits its first owner poll.";
 inline constexpr const char* initialized_detail="Native player initialized; awaiting its first successful presentation.";

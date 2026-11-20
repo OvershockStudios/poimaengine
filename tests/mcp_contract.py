@@ -19,8 +19,11 @@ parser.add_argument('binary', type=Path)
 parser.add_argument('--windows-interop', action='store_true')
 args = parser.parse_args()
 BINARY = str(args.binary.resolve())
-ROOT = Path(__file__).resolve().parents[1] / 'build/mcp-contract'
-ROOT.mkdir(parents=True, exist_ok=True)
+# Use the native Linux temporary filesystem for atomic publication. Windows
+# interop needs a scratch path shared between WSL and the Windows subprocess.
+ROOT = Path(__file__).resolve().parents[1] / 'build/mcp-contract' if args.windows_interop or os.name == 'nt' else None
+if ROOT is not None:
+    ROOT.mkdir(parents=True, exist_ok=True)
 
 
 def native(path):
@@ -106,7 +109,7 @@ class Client:
 
 class McpContract(unittest.TestCase):
     def setUp(self):
-        self.temp = tempfile.TemporaryDirectory(dir=ROOT)
+        self.temp = tempfile.TemporaryDirectory(prefix='poima-mcp-', dir=ROOT)
         self.path = Path(self.temp.name) / 'world.json'
         self.clients = []
 

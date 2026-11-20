@@ -1,0 +1,173 @@
+{
+  "version": "0.0.319",
+  "scope": "One live installed Codex turn on the development laptop. The automation supplied sole change approval and independent verification. Native standalone play used the packaged Windows Vulkan runtime.",
+  "engine_archive_sha256": "ddc951f7ed5cb082cb6b5a59f0e44838895cb09c39284f4e24af3aa887ad25ed",
+  "provider": {
+    "provider": "codex-cli 0.163.0-alpha.11",
+    "model": "gpt-6.1-terra",
+    "mcp_calls": 34,
+    "mcp_errors": 0,
+    "world_transactions": 1,
+    "candidate_jobs": 1,
+    "candidate_retentions": 1,
+    "trace_sha256": "998cb6948d190f4648d4b6dca16d87ae0efeafe8efbc1f9a202f2dd24ebe09dc"
+  },
+  "checks": {
+    "old_player": {
+      "event_type": "verified_play_closed",
+      "revision": 1,
+      "bundle_sha256": "e6aa1a62d4e9a2caf0de622b5474d129d5a3454778880c863ede1e8a22203c5c",
+      "tick": 2216,
+      "frames_presented": 5325,
+      "stop_reason": "window_closed"
+    },
+    "codex_turn_ms": 36744,
+    "candidate_job_id": 1,
+    "new_revision": 2,
+    "new_bundle_sha256": "0dd024619871a41ae801b327937d9718d57946cd29245e580f486e78554a2f6f",
+    "report_sha256": "4f9b1ad77141037ae771979d22ee5dba0a90c3655b0f2a34137182e747750a48",
+    "unchanged_suite_sha256": "e19edf05e56f518d6e2a595f3d0e6fe5a4974a2025fe0dd5fe3c7e930153a289",
+    "independent_suite_sha256": "5bc31ff53a07039a10dab8bc10c77c780bab640c702b6f2ba941002e05d1a578",
+    "independent_original_passed": false,
+    "independent_revision_passed": true,
+    "only_jump_speed_changed": true
+  },
+  "project_endpoint_observations": {
+    "initial": {
+      "bundle_sha256": "e6aa1a62d4e9a2caf0de622b5474d129d5a3454778880c863ede1e8a22203c5c",
+      "observation": {
+        "focused": true,
+        "frames_presented": 1,
+        "paused": false,
+        "tick": 0
+      },
+      "observation_age_ms": 120,
+      "play_id": "834da959fdab45eb86360d618ce48309",
+      "revision": 1,
+      "state": "running",
+      "stop_reason": null
+    },
+    "after_retention": {
+      "bundle_sha256": "e6aa1a62d4e9a2caf0de622b5474d129d5a3454778880c863ede1e8a22203c5c",
+      "observation": {
+        "focused": false,
+        "frames_presented": 5320,
+        "paused": true,
+        "tick": 2216
+      },
+      "observation_age_ms": 0,
+      "play_id": "834da959fdab45eb86360d618ce48309",
+      "revision": 1,
+      "state": "running",
+      "stop_reason": null
+    },
+    "closed": {
+      "bundle_sha256": "e6aa1a62d4e9a2caf0de622b5474d129d5a3454778880c863ede1e8a22203c5c",
+      "observation": {
+        "focused": null,
+        "frames_presented": 5325,
+        "paused": null,
+        "tick": 2216
+      },
+      "observation_age_ms": 203,
+      "play_id": "834da959fdab45eb86360d618ce48309",
+      "revision": 1,
+      "state": "closed",
+      "stop_reason": "window_closed"
+    }
+  },
+  "codex_observations": {
+    "before_edit": {
+      "bundle_sha256": "e6aa1a62d4e9a2caf0de622b5474d129d5a3454778880c863ede1e8a22203c5c",
+      "observation": {
+        "focused": true,
+        "frames_presented": 256,
+        "paused": false,
+        "tick": 110
+      },
+      "observation_age_ms": 72,
+      "play_id": "834da959fdab45eb86360d618ce48309",
+      "revision": 1,
+      "state": "running",
+      "stop_reason": null
+    },
+    "after_retention": {
+      "bundle_sha256": "e6aa1a62d4e9a2caf0de622b5474d129d5a3454778880c863ede1e8a22203c5c",
+      "observation": {
+        "focused": true,
+        "frames_presented": 4386,
+        "paused": false,
+        "tick": 1832
+      },
+      "observation_age_ms": 120,
+      "play_id": "834da959fdab45eb86360d618ce48309",
+      "revision": 1,
+      "state": "running",
+      "stop_reason": null
+    }
+  },
+  "legacy_318_playback": {
+    "passed": true,
+    "running": {
+      "bundle_sha256": "7cfeefd46fcc21ebcfe3ace2583bdfac1ec4720d2717cd1d863906ecd808181a",
+      "observation": null,
+      "play_id": "09b7737728b64118acd1ad5543a8fdcc",
+      "revision": 2,
+      "state": "running",
+      "stop_reason": null
+    },
+    "closed": {
+      "bundle_sha256": "7cfeefd46fcc21ebcfe3ace2583bdfac1ec4720d2717cd1d863906ecd808181a",
+      "observation": {
+        "focused": null,
+        "frames_presented": 80,
+        "paused": null,
+        "tick": 36
+      },
+      "observation_age_ms": 57,
+      "play_id": "09b7737728b64118acd1ad5543a8fdcc",
+      "revision": 2,
+      "state": "closed",
+      "stop_reason": "window_closed"
+    }
+  },
+  "mismatched_bundle_rejected": true,
+  "jump_at_tick_57_m": {
+    "original": 0.7628741688256679,
+    "revised": 0.36503402843825206
+  },
+  "relocated_independent_replay_matches": true,
+  "relocated_zip": {
+    "original_project_unavailable": true,
+    "exit_code": 0,
+    "tick": 12,
+    "presented_frames": 13,
+    "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "external_save_directory_created": true,
+    "capture_sha256": "816bfad621be36bf1454a9f1ca37dd3c14726d03b49953665005fb70649580b4"
+  },
+  "creator_test_sha256": "3d0ae3a79442a7cfdfc7b728c2c7c0df0353b156aae063ce02d972e526438e55",
+  "creator_report_sha256": "a630413414a9f838dd6902a4b8388a74333891f9909f915384c769247b9b08c7",
+  "earlier_attempts": [],
+  "open_qualification": [
+    "first-time creator on clean Windows",
+    "long-run observation overhead at production scale"
+  ],
+  "regressions": {
+    "windows_mcp_cases": 13,
+    "windows_mcp_report_sha256": "3f97592707208d5280741823906f28e671eabf80076770f0d9a9386a8651c153",
+    "linux_headless_suites": [
+      "player_readiness_native",
+      "world_session_native",
+      "mcp_contract",
+      "world_ui_contract"
+    ],
+    "linux_junit_sha256": "5bef58df43b91ffb04b69e73845ef1f3b59c0118bdef6246b75a3955a5084289",
+    "linux_initial_report_sha256": "0e86b3ad0f58a0e19a8915be996282bd72b531579151a6d4c75e14469c5f9933",
+    "linux_initial_failures": [
+      "The Camera fixture expected just one of the current three dependency rules.",
+      "The MCP fixture scratch was on DrvFS, which rejected the atomic publication probe."
+    ]
+  },
+  "reopened_observation_cleared": true
+}

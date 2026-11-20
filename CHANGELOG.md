@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.319
+
+- Inspect the creator's separate verified player's build, playback state, ticks, and presented frames through the project endpoint.
+
 ## 0.0.318
 
 - Play a verified game in its own window while the creator stays available for chat and new playtest results.

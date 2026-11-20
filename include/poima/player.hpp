@@ -234,6 +234,7 @@ public:
     bool ready() const; // Initialized, with a current successful presentation.
     PlayerReport report() const; // Owned partial/final CPU state; no graphics drain.
     PlayerReadiness readiness() const; // Cached CPU facts only; no synchronization or platform query.
+    PlayerProgress progress() const;
     // Owner-only bounded CPU/clock/audio history; no poll, device read or GPU drain.
     player_diagnostics::Snapshot diagnostics() const;
     // Last presented immutable UI sample; null before a UI frame.
@@ -250,5 +251,5 @@ public:
     // Sticky measurement flags for external save/owner operations; diagnostic only.
     void note_performance_intervention(std::uint32_t flags);
 };
-PlayerReport run_player(const PlayerOptions& options, PlayerSession& session);
+PlayerReport run_player(const PlayerOptions& options, PlayerSession& session,const PlayerProgressObserver& observer={});
 }

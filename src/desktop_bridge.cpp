@@ -262,6 +262,8 @@ struct Bridge : ViewportState {
     std::vector<Json> audio_receipts;
     std::string audio_capture_error;
     bool audio_seeded=false,closing=false,named_audio_camera=false;
+    Json verified_playback=nullptr;
+    std::chrono::steady_clock::time_point verified_playback_observed{};
     Bridge(const std::string& path,const std::string& local_endpoint,int gpu,std::uint32_t samples,const std::string& profiles):endpoint(local_endpoint) {
         require(gpu>=-1 && gpu<=4095 && (samples==1 || samples==4),"GPU must be -1..4095 and samples must be 1 or 4.");render.gpu=gpu;render.samples=samples;
         world_path=fs::weakly_canonical(fs::absolute(path_of(path)));
@@ -270,6 +272,31 @@ struct Bridge : ViewportState {
         if(!profiles.empty())world->configure_development_profiles(profiles);
     }
     void thread() const { require(owner==std::this_thread::get_id(),"Desktop bridge calls must run on the creating UI thread.",-32000); }
+    void set_verified_playback(Json snapshot) {
+        fields(snapshot,{"play_id","bundle_sha256","revision","state","observation","stop_reason"},
+            {"play_id","bundle_sha256","revision","state","observation","stop_reason"});
+        identifier(snapshot.at("play_id"));integer(snapshot.at("revision"));
+        const auto& hash=snapshot.at("bundle_sha256").get_ref<const std::string&>();
+        require(hash.size()==64 && hash.find_first_not_of("0123456789abcdef")==std::string::npos,"Expected a verified bundle SHA-256.");
+        const auto& state=snapshot.at("state");
+        require(state=="checking" || state=="running" || state=="closed" || state=="failed" || state=="cancelled","Invalid verified playback state.");
+        const auto& stop=snapshot.at("stop_reason");
+        require(stop.is_null() || (state=="closed" && stop.is_string() && stop.get_ref<const std::string&>().size()<=64),"Invalid verified playback stop reason.");
+        const auto& observation=snapshot.at("observation");
+        if(!observation.is_null()) {
+            fields(observation,{"tick","frames_presented","focused","paused"},{"tick","frames_presented","focused","paused"});
+            integer(observation.at("tick"));integer(observation.at("frames_presented"));
+            for(const auto* key:{"focused","paused"})require(observation.at(key).is_null() || observation.at(key).is_boolean(),"Expected a nullable playback flag.");
+            if(state=="running" || state=="closed")verified_playback_observed=std::chrono::steady_clock::now();
+        }
+        verified_playback=std::move(snapshot);
+    }
+    Json verified_playback_status() const {
+        auto snapshot=verified_playback;
+        if(!snapshot.is_null() && !snapshot.at("observation").is_null())
+            snapshot["observation_age_ms"]=std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now()-verified_playback_observed).count();
+        return {{"playback",std::move(snapshot)}};
+    }
     Json world_call(const std::string& method,const Json& params=Json::object()) {
         const auto response=Json::parse(world->request(Json{{"jsonrpc","2.0"},{"id",1},{"method",method},{"params",params}}.dump(),WorldRequestScope::shared_editor));
         if(response.contains("error"))throw Failure(response.at("error").at("code"),response.at("error").at("message"));
@@ -1077,6 +1104,8 @@ struct Bridge : ViewportState {
         auto object=[](Json properties,Json required=Json::array()) { return Json{{"type","object"},{"properties",properties},{"required",required},{"additionalProperties",false}}; };
         const Json integer_schema={{"type","integer"},{"minimum",0},{"maximum",max_integer}};
         Json methods=Json::object();methods["desktop.describe"]=object(Json::object());methods["desktop.inspect"]=object(Json::object());
+        methods["desktop.verified.inspect"]=object(Json::object());
+        methods["desktop.verified.inspect"]["description"]="Observe the Windows creator's most recent separate verified player. Reports its pinned build, process state and last native progress; the working preview is independent.";
         const Json id_schema={{"type","string"},{"pattern","^[0-9a-f]{32}$"}};
         methods["desktop.play.start"]=object({{"revision",integer_schema},{"session_id",id_schema},{"paused",{{"type","boolean"}}},{"expected_gameplay_generation",integer_schema}},{"revision","session_id"});
         const Json gameplay_path={{"type","string"},{"minLength",1},{"maxLength",4096}};
@@ -1168,7 +1197,7 @@ struct Bridge : ViewportState {
             const auto message=parse(bytes);require(message.is_object() && message.value("jsonrpc",Json())=="2.0" && message.contains("method") && message.at("method").is_string(),"Invalid JSON-RPC 2.0 request.",-32600);
             if(message.contains("id")) { id=message.at("id");require(id.is_null() || id.is_string() || id.is_number_integer(),"Invalid JSON-RPC ID.",-32600); }else notification=true;
             const auto method=message.at("method").get<std::string>();
-            require(!closing || method=="desktop.close.begin" || method=="desktop.inspect" || method=="desktop.describe" || method=="desktop.audio.inspect" || method=="world.inspect" || method=="world.describe",
+            require(!closing || method=="desktop.close.begin" || method=="desktop.inspect" || method=="desktop.describe" || method=="desktop.verified.inspect" || method=="desktop.audio.inspect" || method=="world.inspect" || method=="world.describe",
                 "Desktop host is closing; only final inspection and close polling are available.",-32009);
             // The generic world service has a standalone device host. Route
             // discovery through the hosted owner as well, including this alias.
@@ -1192,7 +1221,10 @@ struct Bridge : ViewportState {
                 auto response=world->request(forwarded.empty() ? bytes : forwarded,WorldRequestScope::shared_editor);
                 if(method=="world.describe" && !notification) {
                     auto value=Json::parse(response);
-                    if(value.contains("result"))value["result"]["editor_discovery"]="desktop.describe";
+                    if(value.contains("result")) {
+                        value["result"]["editor_discovery"]="desktop.describe";
+                        value["result"]["verified_playback_inspection"]="desktop.verified.inspect";
+                    }
                     response=value.dump();
                 }
                 sync_playback();
@@ -1205,6 +1237,7 @@ struct Bridge : ViewportState {
             fields(message,{"jsonrpc","id","method","params"},{"jsonrpc","method"});const auto params=message.value("params",Json::object());Json result;
             if(method=="desktop.describe") { fields(params,{});result=describe(); }
             else if(method=="desktop.inspect") { fields(params,{});result=inspect(); }
+            else if(method=="desktop.verified.inspect") { fields(params,{});result=verified_playback_status(); }
             else if(method=="desktop.close.begin")result=begin_close(params);
             else if(method.starts_with("desktop.audio."))result=audio_command(method,params);
             else if(method.starts_with("desktop.play."))result=play_command(method,params);
@@ -1387,6 +1420,7 @@ void* poima_desktop_create_with_profiles(const char* world,const char* endpoint,
     catch(...) { record_error(nullptr,"Desktop bridge synchronization failed."); }return nullptr;
 }
 const char* poima_desktop_call(void* host,const char* jsonrpc) { return guarded<const char*>(host,nullptr,[&](Bridge& value){value.output=value.request(bounded_string(jsonrpc,local_session_request_limit));return value.output.c_str();}); }
+int poima_desktop_set_verified_playback(void* host,const char* snapshot) { return guarded<int>(host,0,[&](Bridge& value){value.set_verified_playback(parse(bounded_string(snapshot,2048)));return 1;}); }
 const char* poima_desktop_poll(void* host) { return guarded<const char*>(host,nullptr,[](Bridge& value){value.output=value.poll().dump();return value.output.c_str();}); }
 int poima_desktop_attach(void* host,void* hwnd) { return guarded<int>(host,0,[&](Bridge& value){value.attach(hwnd);return 1;}); }
 int poima_desktop_draw(void* host) { return guarded<int>(host,-1,[](Bridge& value){return value.draw();}); }

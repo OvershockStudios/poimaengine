@@ -82,6 +82,7 @@ PlayerReadiness PlayerWindow::readiness() const {
     impl_->check_thread();PlayerReadiness out;out.finished=impl_->done;out.closing=impl_->stopping;
     out.owner_paused=impl_->is_paused;out.replay=impl_->replay;out.background=impl_->background;return out;
 }
+PlayerProgress PlayerWindow::progress() const {return {impl_->result.final_tick,0,readiness()};}
 const std::optional<PlayerUiObservation>& PlayerWindow::ui_observation() const {
     impl_->check_thread();static const std::optional<PlayerUiObservation> unavailable;return unavailable;
 }
@@ -95,7 +96,7 @@ RenderReport PlayerWindow::capture(const std::string& path,const PlayerCaptureSn
 RenderReport PlayerWindow::capture(const std::string&) {
     impl_->check_thread();throw std::runtime_error("This build has no native player rendering.");
 }
-PlayerReport run_player(const PlayerOptions& options, PlayerSession& session) {
+PlayerReport run_player(const PlayerOptions& options, PlayerSession& session,const PlayerProgressObserver&) {
     PlayerWindow window(options,session);
     while(window.poll()) {}
     return window.report();

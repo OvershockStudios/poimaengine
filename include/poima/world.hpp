@@ -3,6 +3,7 @@
 #include "poima/scene.hpp"
 #include "poima/profiler.hpp"
 #include "poima/player_poll.hpp"
+#include "poima/player_readiness.hpp"
 #include "poima/runtime.hpp"
 #include <memory>
 #include <string>
@@ -80,6 +81,8 @@ public:
     ~WorldSession();
     // Host-owner startup policy; no RPC can add tools or grant build authority.
     void configure_development_profiles(const std::string& profile_file);
+    // Owner-only observer for synchronous playback; RPC cannot register it.
+    void observe_blocking_player(PlayerProgressObserver observer);
     // A closing desktop owner can retire its tools without blocking its pump.
     void begin_development_shutdown();
     bool development_shutdown_complete() const noexcept;

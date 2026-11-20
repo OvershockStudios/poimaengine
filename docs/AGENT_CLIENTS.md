@@ -259,6 +259,11 @@ through MCP. An independent replay checks the change, and the exported ZIP
 plays from a separate location with the original project moved aside.
 [0.0.318 results](evidence/m2-live-verified-iteration-318.json)
 
+In 0.0.319 or later, add `-ObserveVerifiedPlayback` to check progress and
+closure through `desktop.verified.inspect`. The call observes the pinned
+standalone build while the project and its check results advance.
+[Playback observation contract](PROJECT_RECOVERY.md#inspect-the-verified-player)
+
 ## Agent-built game exercise (development)
 
 One external Codex CLI 0.160.1 session using `gpt-6.1-sol` authored a fresh three-key escape room through guarded transactions, compiled its own C# gameplay, corrected UI input and camera placement, and completed native movement/interaction and checkpoint checks. It used 121 MCP calls, including 102 operation calls, and corrected two rejected contract inputs. This count is neither a token-efficiency target nor a performance measurement.

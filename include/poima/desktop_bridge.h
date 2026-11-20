@@ -24,6 +24,8 @@ POIMA_DESKTOP_API void* poima_desktop_create_with_profiles(const char* world,con
 // call returns a JSON-RPC response (empty string for a notification), or NULL on
 // bridge failure. Capture is asynchronous; discover its job API via desktop.describe.
 POIMA_DESKTOP_API const char* poima_desktop_call(void* host,const char* jsonrpc);
+// Creator owner only. Accepts a bounded snapshot of its separate verified player.
+POIMA_DESKTOP_API int poima_desktop_set_verified_playback(void* host,const char* snapshot);
 // Pumps bounded local IPC and returns revision/runtime/presentation/capture state.
 POIMA_DESKTOP_API const char* poima_desktop_poll(void* host);
 // HWND remains owned by the frontend, valid until detach returns. Attach returns

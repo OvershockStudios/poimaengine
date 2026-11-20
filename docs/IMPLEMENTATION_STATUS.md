@@ -1,8 +1,15 @@
 # Implementation status
 
-Updated 2026-11-20 for **0.0.318**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-20 for **0.0.319**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.319 adds [verified player observation](PROJECT_RECOVERY.md#inspect-the-verified-player)
+to the Windows creator endpoint. Codex inspected the original player's
+identity and presented frames before editing and after retaining the newer
+build. The endpoint kept the same identity through natural closure. A
+retained 0.0.318 export also played and returned its final frame count.
+[Results](evidence/m2-verified-player-observation-319.json)
 
 Version 0.0.318 lets the Windows creator [play the verified game while the
 agent works](PROJECT_RECOVERY.md). A scripted chat question remained available
