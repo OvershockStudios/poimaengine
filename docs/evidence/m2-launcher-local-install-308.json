@@ -1,0 +1,96 @@
+{
+  "launcher_version": "0.0.308",
+  "scope": "Windows x64 on the development laptop with existing agent and toolchain installations. The portable launcher profile started empty. The creator checks use UI Automation, installed Codex connection, scripted question cards and a starter game.",
+  "launcher_archive": {
+    "name": "Poima-Launcher-0.0.308-Windows-x64.zip",
+    "bytes": 46080462,
+    "sha256": "358b7d80c4d7bc9a2cae03e9cacbdf3e894ed35efba81a0188e1cd6d738b5d4d"
+  },
+  "launcher_executable_sha256": "8b3a2ca4d7888e5f553e405b3c81928c2f4552a2da6696e303cd296e71c9521b",
+  "installed_archive": {
+    "name": "Poima-0.0.307-Windows-x64.zip",
+    "bytes": 141448560,
+    "sha256": "3a72e0957fb54e20319fa5633a67d67bbb41d0052e200cb4538bd6d062426e0e"
+  },
+  "portable_launcher_and_creator": {
+    "installed_inventory_files": 499,
+    "install_staging_empty": true,
+    "portable_project_created": true,
+    "creator_editor_sha256": "f8db39f2ef24dd5157efc0c813a74da460b43f5be412757dd02c399cd1235406",
+    "default_launcher_settings_preserved": true,
+    "launcher_exit": 0,
+    "creator_exit": 0,
+    "report_sha256": "5f0e398f611b10929bd2dd0c53f0c93a04cd35b39610d5380668a4dc1cd5e431"
+  },
+  "local_installation_regression": {
+    "passed": true,
+    "first": "0.0.306",
+    "active": "0.0.307",
+    "previous": "0.0.306",
+    "http_requests": 0,
+    "cases": [
+      "install",
+      "reuse",
+      "missing_manifest",
+      "wrong_length",
+      "corrupt_zip",
+      "corrupt_member_inventory",
+      "cancel",
+      "update",
+      "rollback",
+      "reactivate"
+    ]
+  },
+  "feed_installation_regression": {
+    "passed": true,
+    "tests": [
+      "first_preview_install_and_native_engine",
+      "no_download_for_same_version",
+      "empty_stable_channel_preserves_active",
+      "stable_and_preview_selection_with_pagination",
+      "interrupted_download_keeps_active_and_cleans_staging",
+      "corrupt_archive_rejected",
+      "individual_file_digest_rejected_after_archive_passed",
+      "update_preserves_working_prior_engine",
+      "rollback_persists_until_explicit_reactivation",
+      "windows_archive_path_bounds"
+    ],
+    "archive_requests": 5,
+    "inventory_requests": 5,
+    "file_counts": {
+      "0.0.296": 499,
+      "0.0.297": 499
+    },
+    "active": "0.0.297",
+    "previous": "0.0.296",
+    "scope": "Windows installation and native process startup with a controlled GitHub HTTP fixture and original archives"
+  },
+  "installed_creator_regression": {
+    "report_sha256": "60d557b87fd75e8cd4062cc5d2a43213d21ef968b1771116c9d17e007cc95177",
+    "checks": [
+      "closed_during_play_exit_code",
+      "closed_exit_code",
+      "codex_disconnected",
+      "codex_questions",
+      "codex_ready",
+      "codex_reconnected",
+      "created",
+      "edit_before_export",
+      "first_preview",
+      "playtest_results",
+      "relocated_zip",
+      "reopened_preview",
+      "share_zip",
+      "stopped"
+    ],
+    "relocated_zip": {
+      "original_project_unavailable": true,
+      "exit_code": 0,
+      "tick": 12,
+      "presented_frames": 13,
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "external_save_directory_created": true,
+      "capture_sha256": "816bfad621be36bf1454a9f1ca37dd3c14726d03b49953665005fb70649580b4"
+    }
+  }
+}

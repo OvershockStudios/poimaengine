@@ -1,8 +1,16 @@
 # Implementation status
 
-Updated 2026-11-20 for **0.0.307**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-20 for **0.0.308**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+The 0.0.308 [Windows launcher](WINDOWS_LAUNCHER.md) installs an engine ZIP
+and its matching inventory from disk. An automated run installed all 499
+files of the 0.0.307 engine into a blank portable profile, opened the
+installed creator and made a project there. The installed creator passed
+Codex connection, scripted question cards, restart, recovery and relocated
+game ZIP checks on the development laptop.
+[Results](evidence/m2-launcher-local-install-308.json)
 
 Version 0.0.307 adds [Save game ZIP](PROJECT_RECOVERY.md#share-a-playable-zip)
 and the native `project share` command. An automated Windows run saved the

@@ -12,9 +12,9 @@ internal sealed class LauncherForm : Form
     private static readonly Color Muted = Color.FromArgb(204, 188, 194);
     private static readonly Color Wine = Color.FromArgb(114, 47, 55);
     private static readonly Color Accent = Color.FromArgb(212, 106, 126);
-    private static readonly string UserRoot = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Poima");
-    private static readonly string Preferences = Path.Combine(UserRoot, "installer.json");
+    private readonly string userRoot;
+    private readonly string preferences;
+    private readonly string? projectsRoot;
     private readonly HttpClient http = ReleaseFeed.NewClient();
     private readonly TextBox location = new() { ReadOnly = true, AccessibleName = "Install location" };
     private readonly ComboBox channel = new() { DropDownStyle = ComboBoxStyle.DropDownList, AccessibleName = "Release channel" };
@@ -22,6 +22,7 @@ internal sealed class LauncherForm : Form
     private readonly Label status = new() { AutoSize = false, Height = 44, AccessibleName = "Install status" };
     private readonly ProgressBar progress = new() { Height = 6, AccessibleName = "Download progress" };
     private readonly Button update = Button("Check and install", primary: true);
+    private readonly Button installPackage = Button("Install from ZIP…");
     private readonly Button browse = Button("Browse…");
     private readonly Button open = Button("Open Poima", primary: true);
     private readonly Button project = Button("Open project…");
@@ -32,26 +33,31 @@ internal sealed class LauncherForm : Form
 
     private sealed record Settings(string Location, ReleaseChannel Channel, Dictionary<string, string> Projects);
 
-    public LauncherForm()
+    public LauncherForm(bool portable)
     {
+        userRoot = portable ? Path.Combine(AppContext.BaseDirectory, "PoimaData") :
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Poima");
+        preferences = Path.Combine(userRoot, "installer.json");
+        projectsRoot = portable ? Path.Combine(userRoot, "Projects") : null;
         Text = "Poima Launcher";
         Font = new Font("Segoe UI", 10);
         ForeColor = TextColor;
         BackColor = Surface;
-        ClientSize = new Size(660, 402);
-        MinimumSize = new Size(570, 446);
+        ClientSize = new Size(660, 445);
+        MinimumSize = new Size(570, 489);
         StartPosition = FormStartPosition.CenterScreen;
         var settings = LoadSettings();
         pins = new(settings.Projects, StringComparer.OrdinalIgnoreCase);
 
         var layout = new TableLayoutPanel
         {
-            Dock = DockStyle.Fill, Padding = new Padding(26, 22, 26, 18), ColumnCount = 1, RowCount = 7
+            Dock = DockStyle.Fill, Padding = new Padding(26, 22, 26, 18), ColumnCount = 1, RowCount = 8
         };
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 84));
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 35));
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 49));
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 49));
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 43));
         layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 16));
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 47));
@@ -73,20 +79,24 @@ internal sealed class LauncherForm : Form
         location.Dock = DockStyle.Fill;
         layout.Controls.Add(Row("Install location", location, browse), 0, 2);
         layout.Controls.Add(Row("Release channel", channel, update, cancel), 0, 3);
+        var local = new FlowLayoutPanel { Dock = DockStyle.Fill };
+        local.Controls.Add(installPackage);
+        layout.Controls.Add(local, 0, 4);
 
         status.Dock = DockStyle.Fill;
         status.ForeColor = Muted;
-        layout.Controls.Add(status, 0, 4);
+        layout.Controls.Add(status, 0, 5);
         progress.Dock = DockStyle.Fill;
         progress.Visible = false;
-        layout.Controls.Add(progress, 0, 5);
+        layout.Controls.Add(progress, 0, 6);
         var actions = new FlowLayoutPanel { Dock = DockStyle.Fill, WrapContents = false };
         actions.Controls.AddRange([open, project, rollback]);
-        layout.Controls.Add(actions, 0, 6);
+        layout.Controls.Add(actions, 0, 7);
 
         browse.Click += (_, _) => PickInstallFolder();
         channel.SelectedIndexChanged += (_, _) => RunWithStatus(SaveSettings);
         update.Click += async (_, _) => await UpdateAsync(automatic: false);
+        installPackage.Click += async (_, _) => await PickPackageAsync();
         cancel.Click += (_, _) => pending?.Cancel();
         rollback.Click += (_, _) => RunWithStatus(() => { status.Text = $"Poima {Install.Rollback()} is active."; RefreshInstall(); });
         open.Click += (_, _) => RunWithStatus(() => Launch(Install.State().Active));
@@ -157,13 +167,24 @@ internal sealed class LauncherForm : Form
         RunWithStatus(() => { SaveSettings(); status.Text = ""; RefreshInstall(); });
     }
 
-    private async Task UpdateAsync(bool automatic)
+    private async Task PickPackageAsync()
+    {
+        using var dialog = new OpenFileDialog
+        {
+            Title = "Select a Poima engine ZIP", Filter = "Poima Windows engine|Poima-*-Windows-x64.zip",
+            CheckFileExists = true, RestoreDirectory = true
+        };
+        if (dialog.ShowDialog(this) == DialogResult.OK)
+            await UpdateAsync(automatic: false, archive: dialog.FileName);
+    }
+
+    private async Task UpdateAsync(bool automatic, string? archive = null)
     {
         using var work = new CancellationTokenSource(TimeSpan.FromMinutes(15));
         pending = work;
         try
         {
-            browse.Enabled = channel.Enabled = update.Enabled = rollback.Enabled = false;
+            browse.Enabled = channel.Enabled = update.Enabled = rollback.Enabled = installPackage.Enabled = false;
             cancel.Visible = progress.Visible = true;
             progress.Value = 0;
             status.ForeColor = Muted;
@@ -172,7 +193,9 @@ internal sealed class LauncherForm : Form
             var selected = (ReleaseChannel)channel.SelectedItem!;
             var messages = new Progress<string>(message => status.Text = message);
             var download = new Progress<double>(fraction => progress.Value = (int)Math.Round(fraction * 100));
-            var result = await Task.Run(() => install.UpdateAsync(selected, automatic, messages, download, work.Token));
+            var result = await Task.Run(() => archive is null
+                ? install.UpdateAsync(selected, automatic, messages, download, work.Token)
+                : install.InstallPackageAsync(archive, messages, download, work.Token));
             status.Text = result.Version is null ? $"No {selected.ToString().ToLowerInvariant()} Windows releases are available." :
                 result.Held ? $"Poima {result.Version} is available. Check and install to switch back." :
                 result.Downloaded ? $"Poima {result.Version} is installed." : $"Poima {result.Version} is already installed.";
@@ -182,7 +205,7 @@ internal sealed class LauncherForm : Form
         finally
         {
             pending = null;
-            browse.Enabled = channel.Enabled = update.Enabled = true;
+            browse.Enabled = channel.Enabled = update.Enabled = installPackage.Enabled = true;
             progress.Visible = false;
             RunWithStatus(RefreshInstall);
         }
@@ -212,31 +235,36 @@ internal sealed class LauncherForm : Form
             start.ArgumentList.Add("--creator");
             start.ArgumentList.Add(manifest);
         }
+        else if (projectsRoot is not null)
+        {
+            start.ArgumentList.Add("--projects");
+            start.ArgumentList.Add(projectsRoot);
+        }
         using var launched = Process.Start(start) ?? throw new InvalidOperationException("Poima could not be started.");
     }
 
-    private static Settings LoadSettings()
+    private Settings LoadSettings()
     {
         try
         {
-            var info = new FileInfo(Preferences);
+            var info = new FileInfo(preferences);
             if (info.Exists && info.Length <= 256 * 1024 &&
-                JsonSerializer.Deserialize<Settings>(File.ReadAllBytes(Preferences)) is { Projects: not null } saved &&
+                JsonSerializer.Deserialize<Settings>(File.ReadAllBytes(preferences)) is { Projects: not null } saved &&
                 Path.IsPathFullyQualified(saved.Location) && Enum.IsDefined(saved.Channel)) return saved;
         }
         catch (Exception error) when (Expected(error)) { }
-        return new(Path.Combine(UserRoot, "Engines"), ReleaseChannel.Preview, new());
+        return new(Path.Combine(userRoot, "Engines"), ReleaseChannel.Preview, new());
     }
 
     private void SaveSettings()
     {
-        Directory.CreateDirectory(UserRoot);
-        var temporary = Path.Combine(UserRoot, $"installer-{Guid.NewGuid():N}.tmp");
+        Directory.CreateDirectory(userRoot);
+        var temporary = Path.Combine(userRoot, $"installer-{Guid.NewGuid():N}.tmp");
         try
         {
             File.WriteAllBytes(temporary, JsonSerializer.SerializeToUtf8Bytes(
                 new Settings(location.Text, (ReleaseChannel)channel.SelectedItem!, pins)));
-            File.Move(temporary, Preferences, overwrite: true);
+            File.Move(temporary, preferences, overwrite: true);
         }
         finally { File.Delete(temporary); }
     }

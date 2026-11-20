@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.308
+
+- Install a local Windows engine ZIP from the launcher and keep portable launcher settings and projects beside it.
+
 ## 0.0.307
 
 - Save a standalone game ZIP directly from the creator's last verified build.

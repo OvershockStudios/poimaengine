@@ -48,6 +48,10 @@ and restores the earlier verified build.
 The [0.0.307 sharing test](evidence/m2-creator-share-307.json) saves the
 passing build through the Windows dialog and plays it after extracting the
 ZIP with the original project and history paths unavailable.
+The [0.0.308 launcher test](evidence/m2-launcher-local-install-308.json)
+starts with a blank portable profile, installs the current ZIP from disk
+and opens the installed creator. It uses the development laptop's existing
+toolchain and agent installation.
 The [Codex sign-in check](evidence/m2-creator-codex-sign-in-303.json) covers
 opening and cancelling sign-in with an isolated client and continuation after
 a scripted account confirmation. A real browser authorization is still needed.

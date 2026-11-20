@@ -5,6 +5,12 @@ using System.Security.Cryptography;
 using System.Text.Json;
 using Poima.Launcher;
 
+if (args is ["--local", var firstArchive, var nextArchive, var root])
+{
+    await LocalInstallTests.RunAsync(firstArchive, nextArchive, root);
+    return;
+}
+
 if (args.Length != 2) throw new ArgumentException("Expected a release asset folder and a new installation root.");
 Directory.CreateDirectory(args[1]);
 Require(!Directory.EnumerateFileSystemEntries(args[1]).Any(), "The test installation root must be empty.");
