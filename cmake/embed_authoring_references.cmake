@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: Apache-2.0
+# Encode the public Markdown bytes independently of the C++ source charset.
+set(output "// Generated from the public authoring guides.\n")
+foreach(guide IN ITEMS CREATOR_GAMEPLAY MANAGED_GAMEPLAY GAME_UI GAME_VERIFICATION)
+    file(READ "${INPUT_DIR}/${guide}.md" data HEX)
+    string(LENGTH "${data}" length)
+    if(length LESS 2 OR length GREATER 262144)
+        message(FATAL_ERROR "Invalid embedded guide size: ${guide}")
+    endif()
+    string(TOLOWER "${guide}" symbol)
+    string(APPEND output "constexpr unsigned char ${symbol}[] = {\n")
+    # Keep the generated source lines short on compilers with line limits.
+    math(EXPR last "${length} - 1")
+    foreach(position RANGE 0 ${last} 128)
+        string(SUBSTRING "${data}" ${position} 128 row)
+        string(REGEX REPLACE "([a-f0-9][a-f0-9])" "0x\\1," row "${row}")
+        string(APPEND output "    ${row}\n")
+    endforeach()
+    string(APPEND output "};\n")
+endforeach()
+file(WRITE "${OUTPUT}" "${output}")

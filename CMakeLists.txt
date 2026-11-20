@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.24)
 if(CMAKE_LINKER_TYPE STREQUAL "LLD" AND CMAKE_VERSION VERSION_LESS "3.29")
     message(FATAL_ERROR "LLD linker selection requires CMake 3.29 or newer.")
 endif()
-project(Poima VERSION 0.0.300 LANGUAGES C CXX)
+project(Poima VERSION 0.0.301 LANGUAGES C CXX)
 
 option(POIMA_ENABLE_VULKAN_PROBE "Build the optional Vulkan device inspection" ON)
 option(POIMA_BUILD_TESTS "Build and register CLI contract tests (Python is test-only)" ON)
@@ -35,7 +35,15 @@ if(POIMA_TARGET_ARCH MATCHES "^(amd64|x86_64|x64)$")
     set(POIMA_TARGET_ARCH x86_64)
 endif()
 configure_file(cmake/build_info.hpp.in generated/poima/build_info.hpp @ONLY)
+set(POIMA_REFERENCE_DATA "${CMAKE_CURRENT_BINARY_DIR}/generated/poima/authoring_reference_data.inc")
+add_custom_command(OUTPUT "${POIMA_REFERENCE_DATA}"
+    COMMAND "${CMAKE_COMMAND}" "-DINPUT_DIR=${CMAKE_CURRENT_SOURCE_DIR}/docs"
+        "-DOUTPUT=${POIMA_REFERENCE_DATA}" -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/embed_authoring_references.cmake"
+    DEPENDS cmake/embed_authoring_references.cmake docs/CREATOR_GAMEPLAY.md docs/MANAGED_GAMEPLAY.md
+        docs/GAME_UI.md docs/GAME_VERIFICATION.md
+    VERBATIM)
 add_library(poima_core STATIC src/core.cpp src/host.cpp src/world.cpp src/world_schema.cpp src/scene.cpp src/player.cpp src/player_lens.cpp src/player_pose.cpp src/collision_queries.cpp src/input_profile.cpp src/input_profile_store.cpp src/player_settings_store.cpp src/player_preferences.cpp src/gameplay_player_preferences.cpp src/hash.cpp src/gltf.cpp src/model_codec.cpp src/texture.cpp src/tangents.cpp src/lighting.cpp src/shadows.cpp src/visibility.cpp src/gameplay.cpp src/audio_clip.cpp src/audio.cpp src/audio_events.cpp src/audio_stream.cpp src/animation.cpp)
+target_sources(poima_core PRIVATE src/authoring_reference.cpp "${POIMA_REFERENCE_DATA}")
 if(POIMA_USE_THIN_ARCHIVES)
     if(NOT CMAKE_SYSTEM_NAME STREQUAL "Linux" OR CMAKE_CROSSCOMPILING)
         message(FATAL_ERROR "POIMA_USE_THIN_ARCHIVES requires a native Linux development build.")

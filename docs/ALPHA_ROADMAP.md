@@ -35,6 +35,13 @@ Record first-play time, setup and assistance needed, failed attempts, and
 whether the creator could recognize a verified build and recover it.
 The technical release gates below still apply.
 
+The [0.0.301 Windows trial](evidence/m2-creator-references-301.json) exercised
+those steps with an automated creator and the installed Codex client.
+Rainlight Greenhouse began as a blank project. The run verified its first
+build and revision, kept the previous pass after the requested deliberate
+failure, restored its source and completed a save in a relocated export.
+Qualification with a first-time creator on clean Windows remains open.
+
 ### Engine and delivery
 
 | Gate | Current evidence | What must be closed for Alpha 1 |

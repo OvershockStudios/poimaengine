@@ -44,6 +44,7 @@
 #include "player_settings_store.hpp"
 #include "mutation_discovery.hpp"
 #include "asset_references.hpp"
+#include "authoring_reference.hpp"
 #include "material_service.hpp"
 #include "poima/jobs.hpp"
 #include "navigation_geometry.hpp"
@@ -1205,7 +1206,7 @@ void validate(const Json& doc) {
     }
 }
 
-constexpr std::array authoring_methods{"component.schema.import","world.transact","world.undo","world.redo","asset.import","asset.image.import","asset.audio.import","input.transact","settings.transact","development.compile","development.profiles","development.publish","development.export","development.verify","development.candidate","project.candidate.retain","development.jobs","development.inspect","development.diagnostics","development.cancel","development.forget","project.inspect","project.gameplay.adopt","project.source.read","project.source.write","project.verification.read","project.verification.write","asset.material.generate","asset.material.job","asset.material.jobs","asset.material.cancel","asset.material.forget","world.navigation.bake","asset.provenance.create","asset.animation.author","asset.mesh.extract_rigid"};
+constexpr std::array authoring_methods{"component.schema.import","world.reference","world.transact","world.undo","world.redo","asset.import","asset.image.import","asset.audio.import","input.transact","settings.transact","development.compile","development.profiles","development.publish","development.export","development.verify","development.candidate","project.candidate.retain","development.jobs","development.inspect","development.diagnostics","development.cancel","development.forget","project.inspect","project.gameplay.adopt","project.source.read","project.source.write","project.verification.read","project.verification.write","asset.material.generate","asset.material.job","asset.material.jobs","asset.material.cancel","asset.material.forget","world.navigation.bake","asset.provenance.create","asset.animation.author","asset.mesh.extract_rigid"};
 class World {
     profiling::Service profiler_;
     frame_performance::Service performance_;
@@ -1737,6 +1738,10 @@ public:
         // This authored metadata read deliberately bypasses cache pruning and
         // every package/snapshot resolver. Other dispatch behavior is unchanged.
         if(method=="world.asset.references")return asset_reference_dispatch(params);
+        if(method=="world.reference") {
+            try { return authoring_reference::read(params); }
+            catch(const std::invalid_argument& error) { throw Error(-32602,error.what()); }
+        }
         if(method=="world.asset.provenance" || method.starts_with("asset.provenance."))return provenance_dispatch(method,params);
         if(method.starts_with("world.navigation."))return navigation_dispatch(method,params);
         prune_model_cache();

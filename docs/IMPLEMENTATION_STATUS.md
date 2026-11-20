@@ -1,8 +1,19 @@
 # Implementation status
 
-Updated 2026-11-20 for **0.0.300**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-20 for **0.0.301**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.301 serves four [build-matched authoring guides](CREATOR_GAMEPLAY.md)
+through the native `world.reference` operation. Codex used that route in the
+Windows creator to build Rainlight Greenhouse from a fresh project. The
+first verified play opened after 2 minutes and 16 seconds in the scripted
+creator run. The revised build passed 14 assertions. A deliberate regression
+failed seven of the same checks, and the creator kept the passing build
+playable and recovered its source after restart. The relocated game repeated
+the report, continued a partial save in a fresh process and completed the
+Vulkan replay. The test used installed tools and a scripted creator on the
+development laptop. [Results](evidence/m2-creator-references-301.json)
 
 Version 0.0.300 displays [Codex question cards](GAME_BRIEF.md) in the creator.
 An installed Codex client asked a question and read back the answer selected

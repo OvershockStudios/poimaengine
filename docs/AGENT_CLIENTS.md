@@ -165,6 +165,12 @@ alongside the packaged editor and a new output directory. This uses a
 scripted peer and checks both the native reply and the desktop controls.
 [Qualification](evidence/m2-creator-questions-300.json)
 
+For gameplay authoring, use `poima_call` with `world.reference` to read
+the reference text bundled in the running build. List the guides with empty
+parameters, pass a `guide` to see its headings, and pass the heading's line
+number to read that page. The reply includes the exact guide hash and
+continuation line. [Creator gameplay guide](CREATOR_GAMEPLAY.md)
+
 A Linux integration check with Codex CLI 0.160.1 discovered both Poima tools, completed one short text turn, restarted the app-server process, resumed the same thread and retrieved the exact saved assistant response. Streaming notifications were received. The development desktop integration below separately qualifies one Windows chat edit. Approval-card interaction, interrupt completion and Claude's persistent adapter remain unqualified or unfinished. The interrupt response alone does not establish that a turn finished or an engine edit was undone.
 
 The process-level contract fixture launches a synthetic peer and exercises concurrent correlation, Unicode, RPC errors, approval replies, cancellation, late responses, bounded diagnostics, truncated output, malformed responses, oversized frames, event overflow, cancellation during a blocked pipe write and concurrent disposal. It checks that disposal leaves no live peer process:

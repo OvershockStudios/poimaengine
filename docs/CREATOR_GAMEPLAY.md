@@ -5,6 +5,13 @@ native schema through `poima_discover`. Start with the selected methods and
 components. Inspect the current world and use revision guards for scene edits.
 Keep the player's controls and authored entity IDs available for replay tests.
 
+Read these guides from `poima_call` with `method: "world.reference"`.
+Use `{"guide":"creator-gameplay","line":1}` for this guide, or call with
+an empty parameter object to list the references. A guide name by itself
+lists headings with their starting lines. Set `line` to read up to 8192
+UTF-8 bytes of complete lines, and use `next_line` for the following page.
+The text and SHA-256 come from the running engine build.
+
 ## Write compiled C# gameplay
 
 In a new packaged creator project, start by editing `gameplay-src/Game.cs`.
@@ -84,6 +91,26 @@ reads the current press edge. Read a position with
 `context.SetUi(UiId.Parse(labelId), text: "Power on")` when its text changes.
 See the [compiled gameplay API](MANAGED_GAMEPLAY.md#write-gameplay) and
 [native UI guide](GAME_UI.md) for more operations.
+
+For a first-person Use interaction, cast along the authored camera and
+compare the hit's entity with the exact ID of your interactive collider.
+Pass the controller ID in the ignore set. Call this during `Tick` after a
+Use press, then use the result to update integer game state and the HUD.
+
+```csharp
+var view = context.Get(camera).Transform;
+ReadOnlySpan<EntityId> ignore = stackalloc EntityId[] { player };
+var hit = context.Raycast(view.Position, view.Forward, 2.5, ignore);
+if (hit is RayHit surface && surface.Entity == valve)
+{
+    state.PowerOn = 1;
+    context.SetUi(UiId.Parse(labelId), text: "Power on");
+}
+```
+
+This example uses `System` for `ReadOnlySpan`. Use actual authored IDs for
+the player, camera, valve and HUD. A game with a proximity interaction can
+compare the player's world position with the interactive prop instead.
 
 ## Publish and attach
 

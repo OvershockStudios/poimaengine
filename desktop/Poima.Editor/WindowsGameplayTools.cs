@@ -46,10 +46,13 @@ internal static class WindowsGameplayTools
             }
             finally { if (File.Exists(temporary)) File.Delete(temporary); }
 
-            var guide = Path.Combine(PackageDirectory, "reference", "CREATOR_GAMEPLAY.md").Replace('\\', '/');
             var projectFile = Path.GetFileName(project.Manifest);
-            var context = $"""
-                Poima configured profile `{ProfileName}` for manifest `{projectFile}`. After brief approval, read `gameplay-src/Game.cs` with `poima_call` method `project.source.read` using profile, project, and path. To edit, submit the complete C# text and returned SHA-256 as `expected_sha256` with `poima_source` method `project.source.write`. The starter project is `gameplay-src/Game.csproj` with type `ProjectGameplay.Game`. Use `poima_build` for publication and adoption. To write game checks, read `project.verification.read` through `poima_call` using profile and project. Submit suite JSON text and the returned hash (null for new) through `poima_checks`, method `project.verification.write`. To build a playable, recoverable candidate, use `poima_build` with `development.candidate`, the project selectors, the suite hash as `expected_suite_sha256`, and a fresh `request_id`. Poll `development.inspect` with `include_output: false`. When `result.passed` is true, call `poima_build` with `project.candidate.retain`, the same selectors and the candidate `job_id`. The creator can then play and restore that build. See `{guide}` for details.
+            var context = $$"""
+                Poima configured profile `{{ProfileName}}` for manifest `{{projectFile}}`. Use Poima's MCP tools for the project.
+                Read the matching gameplay guide with `poima_call`, method `world.reference` and params `{"guide":"creator-gameplay","line":1}`.
+                Use the same call for `game-verification`, `managed-gameplay` and `game-ui`. The guide names alone give heading indexes.
+                After brief approval, inspect the world and the starter C# file, then use the guide's guarded scene, source and verification operations.
+                Use the configured profile to publish and adopt C#, run the game's checks and retain a passing candidate for Play.
                 """;
             return options with { InstalledDevelopmentProfiles = profilePath, GameplayToolStatus = tools.Summary, GameplayToolContext = context };
         }

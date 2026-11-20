@@ -9,6 +9,7 @@
 #include "material_service.hpp"
 #include "navigation_schema.hpp"
 #include "asset_provenance.hpp"
+#include "authoring_reference.hpp"
 #include "model_import.hpp"
 #include "ui_authoring_schema.hpp"
 #include <nlohmann/json.hpp>
@@ -229,7 +230,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 167}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 168}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -239,6 +240,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
             {"world.dependencies",object_schema(Json::object())},
             {"jobs.status",object_schema(Json::object())},
             {"world.asset.references",references_schema},
+            {"world.reference",authoring_reference::schema()},
             {"session.close", object_schema(Json::object())},
             {"entity.get", object_schema({{"id", id}, {"revision", rev}, {"component", component_type}}, {"id"})},
             {"entity.world_transform", object_schema({{"id", id}, {"revision", rev}}, {"id"})},

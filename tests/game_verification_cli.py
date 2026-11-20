@@ -53,7 +53,8 @@ def main():
                 {'jsonrpc': '2.0', 'id': 2, 'method': 'project.verification.write', 'params': {}},
                 {'jsonrpc': '2.0', 'id': 3, 'method': 'development.verify', 'params': {}},
                 {'jsonrpc': '2.0', 'id': 4, 'method': 'development.candidate', 'params': {}},
-                {'jsonrpc': '2.0', 'id': 5, 'method': 'project.candidate.retain', 'params': {}}]
+                {'jsonrpc': '2.0', 'id': 5, 'method': 'project.candidate.retain', 'params': {}},
+                {'jsonrpc': '2.0', 'id': 6, 'method': 'world.reference', 'params': {}}]
     session = subprocess.run([packaged, 'game', 'stdio', game],
                              input=''.join(json.dumps(request) + '\n' for request in requests),
                              capture_output=True, text=True, timeout=30, check=True)
@@ -61,9 +62,9 @@ def main():
     description, *refusals = [json.loads(line) for line in session.stdout.splitlines()]
     require(all(method not in description['result']['methods'] for method in
                 ('project.verification.read', 'project.verification.write', 'development.verify',
-                 'development.candidate', 'project.candidate.retain')),
+                 'development.candidate', 'project.candidate.retain', 'world.reference')),
             'Packaged world advertises authoring or development verification')
-    require(len(refusals) == 4 and all(reply['error']['code'] == -32081 for reply in refusals),
+    require(len(refusals) == 5 and all(reply['error']['code'] == -32081 for reply in refusals),
             'Packaged world did not reject authoring and verification requests')
 
     def expect(label, path, comparison, value):

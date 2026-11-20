@@ -1,0 +1,200 @@
+{
+  "engine_version": "0.0.301",
+  "discovery_schema": 168,
+  "scope": "Windows UI Automation played the creator role using a fresh project and an installed signed-in Codex client. The harness supplied an idea, brief choices, approval, a revision and a deliberate regression. Codex authored the scene, C# and its verification suite. This was a development laptop with installed tools. A novice study and a tagged clean-machine installation remain separate.",
+  "package": {
+    "bytes": 141380673,
+    "sha256": "e3786071c894b66bbd7e113f473c25308093592018cdd643be5e6694d126375d"
+  },
+  "references": {
+    "creator-gameplay": "20d655e8e052fcb082a9cfd34893056525c9bf328c9c097b1f26003dd2e2bffd",
+    "managed-gameplay": "7c4a4dca46ac2e0ffb8fea27cb4c4e3b6807f8b04675324e6a95df0b9a577948",
+    "game-ui": "ab555d39c0dc70783c4ba779f5008093c15a6201288512b505e1f271839614bf",
+    "game-verification": "a806bffa141e0b055d816325743cf1e52293764a5b44336089cea23dfa919e83"
+  },
+  "reference_verification": {
+    "exact_paged_bytes_all_guides": true,
+    "mcp_windows_cases": 13,
+    "asset_reference_windows_cases": 8,
+    "ui_windows_cases": 7,
+    "frozen_authoring_request_projection_passed": true,
+    "readonly_export_hides_and_rejects_authoring_references": true,
+    "live_codex_returned_both_requested_exact_hashes": true,
+    "live_reference_turn_ms": 11520,
+    "project_unchanged_during_read": true,
+    "reader_trace": {
+      "observed_poima_tools": [
+        "poima_call"
+      ],
+      "explicit_method_literals": {
+        "world.reference": 1
+      },
+      "tool_executor_calls": 2,
+      "command_runner_calls": 0
+    }
+  },
+  "fresh_game": {
+    "name": "Rainlight Greenhouse",
+    "provider_cli": "Codex 0.163.0-alpha.11, default model",
+    "brief_preserved_starter": true,
+    "brief_used_text_rounds": true,
+    "first_verified_play_ms": 135650,
+    "build_turn_ms": 106642,
+    "revision_turn_ms": 57585,
+    "regression_turn_ms": 53444,
+    "initial": {
+      "elapsed_ms": 6133,
+      "revision": 2,
+      "passed": true,
+      "checks_observed": 13,
+      "groups_passed": 3,
+      "groups_total": 3,
+      "bundle_sha256": "4bfdf4286a522597fe2c1cfb5ae1580f4aab587a0e2a544ced9467898c7331f9",
+      "suite_sha256": "0be50f11fabe8f1f2e4279484f56d024f62d41414d9ee3ef7232710281834cf1",
+      "report_sha256": "571295ec1723fdba67d90a2435891949c8325be5c53692fc2dc02ded12c65762",
+      "failures": []
+    },
+    "revision": {
+      "elapsed_ms": 6284,
+      "revision": 3,
+      "passed": true,
+      "checks_observed": 14,
+      "groups_passed": 3,
+      "groups_total": 3,
+      "bundle_sha256": "54158cd1e7475ad8e0fd54850ee3d68a0f5f3ca3952aac1036116cf6ee213a66",
+      "suite_sha256": "148f48017fdabe3f7fde6eb2f4ff371c80cd26c277685d9204cb45fc9b981ebb",
+      "report_sha256": "ec972176cb268c9de462912cf3b999f017c535bc7ce38d3408b21189fe42dd95",
+      "failures": []
+    },
+    "deliberate_failure": {
+      "elapsed_ms": 6485,
+      "revision": 3,
+      "passed": false,
+      "checks_observed": 14,
+      "groups_passed": 1,
+      "groups_total": 3,
+      "bundle_sha256": "855bb8a3737154e6bcf4d89ec90238829ee38cb60f44bb16291370c0a88cca47",
+      "suite_sha256": "148f48017fdabe3f7fde6eb2f4ff371c80cd26c277685d9204cb45fc9b981ebb",
+      "report_sha256": "8f04b25fe6f62ca02f08e77cb8bc4ecf5a3feba397c4a034d849421dbcda17c6",
+      "failures": [
+        {
+          "actual": 0,
+          "actual_omitted": false,
+          "group": "Valve first then misting",
+          "label": "Valve turns water on",
+          "observed": true,
+          "tick": 49
+        },
+        {
+          "actual": 0,
+          "actual_omitted": false,
+          "group": "Valve first then misting",
+          "label": "Mister starts after water",
+          "observed": true,
+          "tick": 86
+        },
+        {
+          "actual": "THE MISTER NEEDS WATER\nWASD: move  |  Mouse: look  |  E: use nearby control\nTurn on the blue valve first, then return to this console.",
+          "actual_omitted": false,
+          "group": "Valve first then misting",
+          "label": "Completion is explained",
+          "observed": true,
+          "tick": 86
+        },
+        {
+          "actual": "THE MISTER NEEDS WATER\nWASD: move  |  Mouse: look  |  E: use nearby control\nTurn on the blue valve first, then return to this console.",
+          "actual_omitted": false,
+          "group": "Valve first then misting",
+          "label": "Completion remains visible after another use",
+          "observed": true,
+          "tick": 88
+        },
+        {
+          "actual": 0,
+          "actual_omitted": false,
+          "group": "Console first can recover",
+          "label": "Valve fixes the problem",
+          "observed": true,
+          "tick": 86
+        },
+        {
+          "actual": 0,
+          "actual_omitted": false,
+          "group": "Console first can recover",
+          "label": "Mister starts after recovery",
+          "observed": true,
+          "tick": 123
+        },
+        {
+          "actual": "THE MISTER NEEDS WATER\nWASD: move  |  Mouse: look  |  E: use nearby control\nTurn on the blue valve first, then return to this console.",
+          "actual_omitted": false,
+          "group": "Console first can recover",
+          "label": "Recovery completes the game",
+          "observed": true,
+          "tick": 123
+        }
+      ]
+    },
+    "verified_players_exited_naturally": true,
+    "failed_build_kept_last_pass": true,
+    "same_passing_build_opened_after_restart": true,
+    "restored_world_suite_code_and_native_image": true,
+    "owner_exited_naturally": true,
+    "trace": {
+      "observed_poima_tools": [
+        "poima_build",
+        "poima_call",
+        "poima_checks",
+        "poima_discover",
+        "poima_source"
+      ],
+      "explicit_method_literals": {
+        "development.candidate": 3,
+        "development.inspect": 17,
+        "development.publish": 3,
+        "entity.get": 2,
+        "entity.query": 2,
+        "input.inspect": 2,
+        "project.candidate.retain": 2,
+        "project.gameplay.adopt": 4,
+        "project.inspect": 3,
+        "project.source.read": 4,
+        "project.source.write": 4,
+        "project.verification.read": 3,
+        "project.verification.write": 2,
+        "runtime.entity": 2,
+        "runtime.gameplay.inspect": 3,
+        "runtime.gameplay.load_native": 1,
+        "runtime.start": 1,
+        "runtime.step": 4,
+        "runtime.stop": 1,
+        "runtime.ui.inspect": 4,
+        "world.inspect": 1,
+        "world.reference": 3,
+        "world.transact": 2
+      },
+      "tool_executor_calls": 56,
+      "command_runner_calls": 0
+    }
+  },
+  "relocated_game": {
+    "source_path_unavailable": true,
+    "report_matches_retained_bytes": true,
+    "verification_assertions_passed": 14,
+    "independent_gameplay_and_save_observations": [
+      "Initial game is unsolved",
+      "Use away from the controls has no effect",
+      "Misting before water gives a useful hint",
+      "Valve turns water on while misting stays off",
+      "Return to the console and complete the puzzle",
+      "Fresh process restores the partially solved game",
+      "Fresh process completes from the saved state"
+    ],
+    "vulkan_gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "vulkan_ticks": 292,
+    "vulkan_presented_frames": 293,
+    "reported_validation_errors": 0,
+    "capture_sha256": "16ebe1bf2ad28b92214e4d91df6712d81f1c686b9db683745b23c87d4e4dc837",
+    "completed_from_partial_save_in_fresh_process": true
+  }
+}

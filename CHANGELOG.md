@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.301
+
+- Read the engine's gameplay, UI and verification guides through the shared Poima API.
+
 ## 0.0.300
 
 - Answer Codex's game-brief questions directly in the creator, with choices and custom answers.

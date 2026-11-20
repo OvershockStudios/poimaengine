@@ -58,6 +58,12 @@ is a JSON Pointer into the result. Use `equals` for JSON value equality or
 `between` for an inclusive numeric interval. A missing path fails even when
 `equals` is `null`.
 
+Try interactions with `"use": true` in the controller input. Leave at
+least one tick without Use between separate presses. To check compiled
+state, read `runtime.gameplay.inspect` and make assertions on
+`/module/values/<field>`. For a visible instruction, inspect
+`runtime.ui.inspect` and check the observed label's text.
+
 The suite is limited to 1 MiB, 32 named groups, 512 operations, 36,000 total
 ticks and a nesting depth of 32. Each `step` accepts up to 32 input records.
 The verifier uses headless simulation with saving disabled. Use the [game

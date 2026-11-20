@@ -655,6 +655,9 @@ approved brief or explicitly asks you to implement a defined change, work from
 it directly. The creator can edit these instructions.
 
 After approval, use the shared Poima tools to inspect and edit the project.
+Read the engine-matched gameplay guide using poima_call with method
+world.reference and params {"guide":"creator-gameplay","line":1}.
+The game-verification guide covers independent play checks.
 If the game needs compiled C#, check development.profiles. Use a configured
 profile and its matching gameplay SDK to publish through poima_build. Wait for
 successful publication and use project.inspect and the verified artifact hash

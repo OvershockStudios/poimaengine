@@ -116,8 +116,8 @@ class McpContract(unittest.TestCase):
                 client.close()
         self.temp.cleanup()
 
-    def client(self):
-        client = Client(self.path)
+    def client(self, *, cwd=None):
+        client = Client(self.path, cwd=cwd)
         self.clients.append(client)
         client.initialize()
         return client
@@ -370,6 +370,51 @@ class McpContract(unittest.TestCase):
                                       'scale': [1, 1, 1]}}]})
         self.assertTrue(result['committed'])
         self.assertEqual(client.world('entity.get', {'id': entity, 'component': 'Transform'})['value']['position'], [1, 2, 3])
+
+    def test_engine_reference_pages_match_built_public_guides(self):
+        client = self.client(cwd=self.temp.name)
+        method = 'world.reference'
+        before = client.world('world.inspect')
+        discovery = client.tool('poima_discover', {'view': 'method', 'name': method})
+        catalog = client.world(method)
+        examples = Path(__file__).resolve().parents[1] / 'docs'
+        expected = {'creator-gameplay': 'CREATOR_GAMEPLAY.md', 'managed-gameplay': 'MANAGED_GAMEPLAY.md',
+                    'game-ui': 'GAME_UI.md', 'game-verification': 'GAME_VERIFICATION.md'}
+        self.assertEqual(set(discovery['methods'][method]['properties']['guide']['enum']), set(expected))
+        self.assertEqual({guide['guide'] for guide in catalog['guides']}, set(expected))
+        for guide in catalog['guides']:
+            key = guide['guide']
+            data = (examples / expected[key]).read_bytes()
+            with self.subTest(guide=key):
+                self.assertEqual(guide['sha256'], hashlib.sha256(data).hexdigest())
+                self.assertEqual(guide['bytes'], len(data))
+                headings = client.world(method, {'guide': key})['headings']
+                self.assertTrue(headings)
+                lines = data.splitlines(keepends=True)
+                for heading in headings:
+                    prefix = b'#' * heading['level'] + b' '
+                    self.assertEqual(lines[heading['line']-1].rstrip(), prefix + heading['title'].encode('utf-8'))
+                pages = []
+                line = 1
+                while line is not None:
+                    page = client.world(method, {'guide': key, 'line': line, 'lines': 180})
+                    payload = page['text'].encode('utf-8')
+                    self.assertTrue(0 < len(payload) <= catalog['page_bytes'])
+                    self.assertEqual(page['sha256'], guide['sha256'])
+                    self.assertEqual(page['engine_version'], catalog['engine_version'])
+                    self.assertEqual(page['line'], line)
+                    following = line + page['line_count']
+                    self.assertEqual(page['next_line'], following if following <= guide['line_count'] else None)
+                    pages.append(payload)
+                    line = page['next_line']
+                self.assertEqual(b''.join(pages), data)
+        for invalid in ({'guide': '../authoring.json'}, {'path': 'reference'}, {'line': 1},
+                        {'guide': 'game-ui', 'lines': 1}, {'guide': 'game-ui', 'line': True},
+                        {'guide': 'game-ui', 'line': 9999}, {'guide': 'game-ui', 'line': 1, 'lines': 181}):
+            with self.subTest(params=invalid):
+                client.world(method, invalid, error=-32602)
+        self.assertEqual(client.world('world.inspect'), before)
+        self.assertFalse(self.path.exists())
 
     def test_asset_reference_discovery_reads_and_stale_error_translation(self):
         client = self.client()
