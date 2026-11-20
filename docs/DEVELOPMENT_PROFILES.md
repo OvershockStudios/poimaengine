@@ -55,8 +55,9 @@ The environment example is illustrative: provide the selected SDK/linker's
 actual dependencies and usable profile/cache directories. Native Windows also
 needs its machine configuration paths, `OS=Windows_NT`, `SystemRoot` and the
 selected C++ toolchain's `PATH`, `INCLUDE`, `LIB` and `LIBPATH`. See the
-[environment contract](DEVELOPMENT_JOBS.md#per-job-environments). Poima does not
-discover, install or activate a toolchain automatically.
+[environment contract](DEVELOPMENT_JOBS.md#per-job-environments). The packaged
+[Windows creator](DESKTOP_EDITOR.md#publish-compiled-gameplay-from-chat) can
+generate a profile for the open project using the installed Windows tools.
 
 For an [installed authoring pack](AUTHORING_TOOLS.md), add the optional
 host-only `authoring_pack` directory and select its inventoried publisher:

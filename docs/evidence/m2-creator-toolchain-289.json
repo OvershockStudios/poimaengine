@@ -1,0 +1,62 @@
+{
+  "engine_version": "0.0.289",
+  "scope": "Extracted Windows x64 creator preview on a machine with Microsoft build tools already installed. The launcher is started without development-profile arguments. A scripted MCP client publishes retained Observatory C# source, then UI Automation previews and exports it. A separate fresh project uses a real Antigravity read-only turn.",
+  "package": {
+    "sha256": "aa77e252d453a5a57860dbe3f0083fc8b752a39a696c5fad7c60b0c35da4f878",
+    "bytes": 140743467,
+    "embedded_python_archive_sha256": "9e35319bffedab8b36ad44d8f377cb4f1733bcec257a0b6d04d94f01486ddb38",
+    "embedded_python": "Python 3.13.17",
+    "authoring_manifest_sha256": "fcb70bdd3861c44e6f1f20ec3d983bc32a6c89e21921edc6dc3d0b895ddba378"
+  },
+  "discovered_tools": {
+    "dotnet_sdk": "10.0.404",
+    "msvc": "14.44.35207",
+    "windows_sdk": "10.0.26100.0",
+    "workspace_generated_profile": true,
+    "profile_is_project_scoped": true
+  },
+  "native_gameplay_build": {
+    "profile": "creator",
+    "rid": "win-x64",
+    "elapsed_ms": 16235,
+    "publisher_exit_code": 0,
+    "remaining_build_processes": 0,
+    "ordinary_tool_publish_error": -32602,
+    "stale_adopt_error": -32009,
+    "exact_publish_and_adopt_retries": true,
+    "world_and_revision_preserved": true,
+    "descriptor_sha256": "186bd6526d310e8f6d3777decbf2c6d4704db325d4b1c2273dd086f1d7d14dd5",
+    "native_image_sha256": "b10e48a6584eee2b9062a1a86f3ece98419c295ad48e539b4183d8c27abeffac"
+  },
+  "provider": {
+    "client": "Antigravity CLI 1.5.13",
+    "workspace_profile_context_received": true,
+    "native_mcp_read": "world.inspect",
+    "project_files_unchanged_during_turn": true,
+    "disconnect_passed": true
+  },
+  "creator_and_relocated_export": {
+    "revision": 8,
+    "native_backend": "native_aot",
+    "creator_preview_presented_tick": 15,
+    "original_project_path_unavailable": true,
+    "game_manifest_sha256": "943806e30576b011cb3305faec3cbc010258328c203556986949148397774a44",
+    "independent_gameplay_and_save_groups": 16,
+    "fresh_process_save_continuation": true,
+    "vulkan_gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "ticks": 632,
+    "presented_frames": 633,
+    "renderer_validation_errors": 0,
+    "capture_sha256": "491c7caf87fc6558bbd241a0e09b6ad1e3af71b719dbfaae463947330be42f98",
+    "files_validated_after_play": 60
+  },
+  "regression": {
+    "authoring_pack_tests": 20,
+    "publisher_authoring_pack_tests": 13,
+    "fresh_project_create_preview_reopen": true
+  },
+  "remaining": [
+    "Provisioning the Microsoft SDK and linker on an unconfigured computer.",
+    "A fresh provider-authored project that builds, iterates, verifies and exports end to end from this package."
+  ]
+}

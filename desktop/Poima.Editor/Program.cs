@@ -7,6 +7,10 @@ namespace Poima.Editor;
 internal sealed record LaunchOptions(string World, string Endpoint, int Gpu, uint Samples, int Frames, string? Report,
     bool SoftwareUi, string? Script, string? Layout, string? ProjectRoot, string? DevelopmentProfiles)
 {
+    public string? InstalledDevelopmentProfiles { get; init; }
+    public string? GameplayToolStatus { get; init; }
+    public string? GameplayToolContext { get; init; }
+    public string? ActiveDevelopmentProfiles => DevelopmentProfiles ?? InstalledDevelopmentProfiles;
     public static LaunchOptions Parse(string[] args, ProjectLocation? project = null)
     {
         if (args.Length == 0 || args[0].StartsWith("--"))
@@ -95,6 +99,7 @@ internal static class Program
                 Options = LaunchOptions.Parse(args[1..], CreatorProject);
                 if (Options.Script is not null || Options.Report is not null || Options.Frames != 0 || Options.Layout is not null)
                     throw new ArgumentException("Creator startup accepts --endpoint, --gpu, --samples, --software-ui and --development-profiles.");
+                Options = WindowsGameplayTools.ConfigureAsync(Options, CreatorProject).GetAwaiter().GetResult();
             }
             else if (args.Length != 0) Options = LaunchOptions.Parse(args);
             return AppBuilder.Configure<App>().UsePlatformDetect()

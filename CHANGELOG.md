@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.289
+
+- Include the authoring SDK and publisher in the Windows creator preview and configure gameplay builds from installed Microsoft tools.
+
 ## 0.0.288
 
 - Keep verified creator exports and their editable source checkpoints across restarts.

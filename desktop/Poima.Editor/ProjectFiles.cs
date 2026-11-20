@@ -34,12 +34,14 @@ internal static class ProjectFiles
             project.GetProperty("audio").GetBoolean(), project.TryGetProperty("gameplay", out var gameplay) ? gameplay : null);
     }
 
-    public static Process Start(string executable, params string[] arguments)
+    public static Process Start(string executable, params string[] arguments) => Start(executable, null, arguments);
+
+    public static Process Start(string executable, System.Text.Encoding? outputEncoding, params string[] arguments)
     {
         var info = new ProcessStartInfo(executable)
         {
             WorkingDirectory = AppContext.BaseDirectory, UseShellExecute = false, CreateNoWindow = true,
-            RedirectStandardOutput = true, RedirectStandardError = true
+            RedirectStandardOutput = true, RedirectStandardError = true, StandardOutputEncoding = outputEncoding
         };
         foreach (var argument in arguments) info.ArgumentList.Add(argument);
         return Process.Start(info) ?? throw new InvalidOperationException("Poima could not start.");

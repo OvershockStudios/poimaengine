@@ -16,6 +16,7 @@ internal sealed class AgentChat : UserControl
 {
     private readonly string projectRoot, endpoint;
     private readonly bool creator;
+    private readonly string? gameplayToolContext;
     private readonly CancellationTokenSource lifetime = new();
     private readonly ComboBox provider = new() { ItemsSource = new[] { "Codex", "Antigravity", "Claude Code" }, SelectedIndex = 0 };
     private readonly TextBox executable = Field("Codex executable", "codex.exe");
@@ -36,13 +37,15 @@ internal sealed class AgentChat : UserControl
     private readonly HashSet<string> completed = new(StringComparer.Ordinal);
     private readonly Dictionary<StackPanel, JsonNode> acpPermissions = [];
     private readonly Dictionary<string, string> acpToolDetails = new(StringComparer.Ordinal);
-    private bool submitting, closing, connecting, ready, cancelRequested;
+    private bool submitting, closing, connecting, ready, cancelRequested, sentGameplayContext;
     private Task? connectingTask, closingTask, retiringTask;
     public bool Busy => submitting || activeTurn is not null || connecting || retiringTask?.IsCompleted == false;
     private string ProviderName => provider.SelectedItem as string ?? "Codex";
-    public AgentChat(string projectRoot, string endpoint, bool creator = false)
+    public AgentChat(string projectRoot, string endpoint, bool creator = false,
+        string? gameplayToolStatus = null, string? gameplayToolContext = null)
     {
         this.projectRoot = projectRoot; this.endpoint = endpoint; this.creator = creator;
+        this.gameplayToolContext = gameplayToolContext;
         FontFamily = new FontFamily("avares://Poima.Editor/Assets#Inter"); FontSize = creator ? 14 : 12;
         var root = new Grid { RowDefinitions = new RowDefinitions("Auto,Auto,*,Auto,Auto,Auto"), Margin = new Thickness(14), RowSpacing = 8 };
         prompt.PlaceholderText = creator ? "Describe the game you want to make…" : "Ask about this project…";
@@ -56,6 +59,8 @@ internal sealed class AgentChat : UserControl
             ToolTip.SetTip(allowEdits, "Pre-approve Codex calls to Poima's world tools for this connection.");
             setup.Children.Add(new TextBlock { Text = "Game conversation", FontSize = 20, FontWeight = FontWeight.SemiBold });
             setup.Children.Add(new TextBlock { Text = "Connect with your agent’s sign-in. Start with your idea and agree on what you’ll build.", TextWrapping = TextWrapping.Wrap });
+            if (gameplayToolStatus is not null)
+                setup.Children.Add(new TextBlock { Text = gameplayToolStatus, TextWrapping = TextWrapping.Wrap });
             setup.Children.Add(provider);
             var settings = new StackPanel { Spacing = 6 };
             settings.Children.Add(executable); settings.Children.Add(agyExecutable); settings.Children.Add(claudeExecutable);
@@ -198,6 +203,7 @@ internal sealed class AgentChat : UserControl
             if (current is AcpSession && !string.IsNullOrEmpty(transcript.Text))
                 Append("\nNew " + ProviderName + " conversation\n");
             ready = true;
+            sentGameplayContext = false;
             status.Text = "Connected to " + ProviderName + ".";
             Controls();
         }
@@ -247,14 +253,16 @@ internal sealed class AgentChat : UserControl
         if (!ready || session is not { } current || activeTurn is not null || submitting || string.IsNullOrWhiteSpace(prompt.Text)) return;
         completed.Clear();
         var text = prompt.Text; submitting = true; cancelRequested = false; Controls();
+        var payload = !sentGameplayContext && gameplayToolContext is not null ? text + "\n\n" + gameplayToolContext : text;
         Append("\nYou: " + text + "\n\n" + ProviderName + ": "); prompt.Text = ""; status.Text = "Working…";
         try
         {
             if (current is AcpSession acp)
             {
-                var reason = await acp.PromptAsync(text, lifetime.Token);
+                var reason = await acp.PromptAsync(payload, lifetime.Token);
                 if (ReferenceEquals(session, current))
                 {
+                    sentGameplayContext = true;
                     status.Text = reason switch
                     {
                         "end_turn" => "Turn completed",
@@ -265,9 +273,10 @@ internal sealed class AgentChat : UserControl
                 }
                 return;
             }
-            var id = await ((CodexSession)current).SendAsync(text, lifetime.Token);
+            var id = await ((CodexSession)current).SendAsync(payload, lifetime.Token);
             if (ReferenceEquals(session, current))
             {
+                sentGameplayContext = true;
                 unusedConversation = null;
                 if (!completed.Contains(id)) activeTurn = id;
             }

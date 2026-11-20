@@ -6,6 +6,10 @@ bridge supports installed development and compatible reload. Games reference
 these installed resources without building Poima's internal managed projects.
 Keep the pack separate from the native runtime distribution and exported games.
 
+The [Windows creator preview](WINDOWS_PREVIEW.md#build-c-gameplay) can ship
+the pack with a Python interpreter and configure gameplay compilation using
+the installed Microsoft tools when opening a project.
+
 Use Python 3.10+ and a matching .NET 10 SDK. CoreCLR development also needs
 the native host and an explicitly selected hostfxr from its installed .NET
 runtime. NativeAOT publishing additionally needs an x64 native linker toolchain

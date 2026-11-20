@@ -22,8 +22,18 @@ You can also open a project directly from PowerShell.
 ```
 
 The included editor, CLI, sample, and Windows exporter run without compiling
-Poima or installing a separate .NET runtime. Compiling new gameplay modules
-requires the gameplay toolchain. [Gameplay tools](https://github.com/OvershockStudios/poimaengine/blob/main/docs/AUTHORING_TOOLS.md)
+Poima or installing a separate .NET runtime.
+
+## Build C# gameplay
+
+The creator package includes Poima's C# authoring SDK and its Python publisher.
+Install the x64 .NET 10 SDK and Visual Studio or Build Tools with the Desktop
+development with C++ workload, including x64 MSVC and a Windows SDK. Reopen
+the project after installing the tools. The creator reports when the tools
+are ready and supplies the build profile to the connected agent.
+[Microsoft's Native AOT prerequisites](https://learn.microsoft.com/en-us/dotnet/core/deploying/native-aot/#prerequisites)
+
+[Gameplay tools](https://github.com/OvershockStudios/poimaengine/blob/main/docs/AUTHORING_TOOLS.md)
 
 ## Connect an agent
 

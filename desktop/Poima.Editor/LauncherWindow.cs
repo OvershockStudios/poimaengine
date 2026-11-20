@@ -10,14 +10,14 @@ namespace Poima.Editor;
 
 internal sealed class LauncherWindow : Window
 {
-    private readonly Action<ProjectLocation, bool> openProject;
+    private readonly Func<ProjectLocation, bool, Task> openProject;
     private readonly string projectsDirectory;
     private readonly TextBox projectName = new() { PlaceholderText = "Project name", MaxLength = 96, MinHeight = 34 };
     private readonly StackPanel actions = new() { Spacing = 10 };
     private readonly TextBlock status = new() { TextWrapping = TextWrapping.Wrap };
     private readonly CheckBox advanced = new() { Content = "Open in the full editor" };
 
-    public LauncherWindow(Action<ProjectLocation, bool> openProject, string? projectsDirectory = null)
+    public LauncherWindow(Func<ProjectLocation, bool, Task> openProject, string? projectsDirectory = null)
     {
         this.openProject = openProject;
         this.projectsDirectory = projectsDirectory ?? Path.Combine(
@@ -128,7 +128,7 @@ internal sealed class LauncherWindow : Window
     private async Task Open(string manifest)
     {
         var selected = await ProjectFiles.Open(manifest);
-        if (IsVisible) openProject(selected, advanced.IsChecked == true);
+        if (IsVisible) await openProject(selected, advanced.IsChecked == true);
     }
 
     private async Task ChooseFolder()

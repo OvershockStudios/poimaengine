@@ -161,6 +161,8 @@ def main():
     if args.authoring_pack is not None:
         # Importing a validator from the pack must leave its exact inventory intact.
         sys.dont_write_bytecode = True
+        # Windows embeddable Python isolates sys.path from the script location.
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
         from authoring_pack import load_pack
         pack = load_pack(args.authoring_pack, expected_sha256=args.authoring_sha256)
     project = args.project.resolve(strict=True)

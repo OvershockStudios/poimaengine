@@ -49,13 +49,14 @@ internal sealed class CreatorWindow : Window
         UseLayoutRounding = true;
         Background = EditorTheme.Brush("#19191C");
         Foreground = EditorTheme.Brush("#F2EDEE");
-        host = new NativeHost(project.World, options.Endpoint, options.Gpu, options.Samples, options.DevelopmentProfiles);
+        host = new NativeHost(project.World, options.Endpoint, options.Gpu, options.Samples, options.ActiveDevelopmentProfiles);
         try
         {
             model = new EditorModel(host);
             game = new GameInput(model);
             game.Error += message => { error = message; UpdateControls(); };
-            chat = new AgentChat(project.Root, host.Endpoint, creator: true);
+            chat = new AgentChat(project.Root, host.Endpoint, creator: true,
+                gameplayToolStatus: options.GameplayToolStatus, gameplayToolContext: options.GameplayToolContext);
             Content = BuildContent();
         }
         catch { host.Dispose(); throw; }

@@ -42,6 +42,9 @@ The [Windows preview](WINDOWS_PREVIEW.md) adds a playable sample to the launcher
 To assemble the preview from a packaged editor and a Windows x64
 Collection Room export at the same engine version, run
 `python scripts/package_windows_preview.py --desktop EDITOR_DIR --sample GAME_BUNDLE --output NEW.zip`.
+To include gameplay compilation, pass `--authoring AUTHORING_DIR` with a
+matching pack and `--python-embed python-3.13.17-embed-amd64.zip` with the
+[official Python archive](https://www.python.org/downloads/release/python-31317/).
 [Preview qualification](evidence/m2-windows-preview.json)
 
 From a source checkout, **`launch-editor.cmd`** (or `launch-desktop.cmd`) opens
@@ -93,9 +96,15 @@ different local project directory, use `Poima.Editor.exe --projects <directory>`
 
 ### Publish compiled gameplay from chat
 
-An operator with a Windows .NET SDK, native linker, matching authoring pack and
-runtime distribution can configure a [development profile](DEVELOPMENT_PROFILES.md).
-Start the launcher with that profile, or select it when opening one project.
+The [Windows creator preview](WINDOWS_PREVIEW.md#build-c-gameplay) includes the
+authoring SDK and publisher. On project open it discovers the installed x64
+.NET 10 SDK, MSVC and Windows SDK, then configures a profile named `creator`
+for that project. Build products and configuration are stored in
+`.poima-build/<project_id>` beside the project folder. The chat passes the
+profile name and installed SDK path to the agent on the first submission.
+
+For a custom toolchain or build location, supply an operator-configured
+[development profile](DEVELOPMENT_PROFILES.md).
 
 ```powershell
 .\Poima.Editor.exe --projects D:\Poima\Projects --development-profiles D:\Poima\Toolchain\profiles.json

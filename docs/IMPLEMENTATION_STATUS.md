@@ -1,8 +1,17 @@
 # Implementation status
 
-Updated 2026-11-20 for **0.0.288**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-20 for **0.0.289**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.289 packages the [C# authoring SDK and publisher](WINDOWS_PREVIEW.md#build-c-gameplay)
+with the Windows creator. The launcher discovers installed Microsoft tools and
+creates a project-scoped profile. A scripted MCP client publishes and adopts
+the Observatory gameplay, and its relocated export passes 16 gameplay and
+save groups and a Vulkan replay. A separate Antigravity turn on a fresh project
+receives the profile context and reads the native world. The Windows machine
+already had the .NET SDK, MSVC and a Windows SDK installed.
+[Results](evidence/m2-creator-toolchain-289.json)
 
 Version 0.0.288 adds [recovery of verified projects](PROJECT_RECOVERY.md). The
 Windows creator exports and checks a captured project, then finds the last

@@ -31,10 +31,12 @@ public sealed class App : Application
             else if (Program.Options is { } options) OpenEditor(desktop, options);
             else
             {
-                var launcher = new LauncherWindow((selected, advanced) =>
+                var launcher = new LauncherWindow(async (selected, advanced) =>
                 {
                     var previous = desktop.MainWindow!;
                     var launch = LaunchOptions.Parse([selected.World], selected) with { DevelopmentProfiles = Program.LauncherDevelopmentProfiles };
+                    launch = await WindowsGameplayTools.ConfigureAsync(launch, selected);
+                    if (!previous.IsVisible) return;
                     if (advanced) OpenEditor(desktop, launch);
                     else desktop.MainWindow = new CreatorWindow(selected, launch);
                     desktop.MainWindow!.Show();
@@ -52,7 +54,7 @@ public sealed class App : Application
         // Preserve the editor's report channel before any game can load.
         var reportOutput = Console.Out;
         var script = new DesktopScript(options.Script, options.Frames);
-        var host = new NativeHost(options.World, options.Endpoint, options.Gpu, options.Samples, options.DevelopmentProfiles);
+        var host = new NativeHost(options.World, options.Endpoint, options.Gpu, options.Samples, options.ActiveDevelopmentProfiles);
         MainWindow window;
         try { window = new MainWindow(host, options.Layout, options.ProjectRoot); }
         catch { host.Dispose(); throw; }
