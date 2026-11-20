@@ -1,0 +1,72 @@
+{
+  "engine_version": "0.0.326",
+  "authoring_schema_revision": 171,
+  "live_supervised_trial": {
+    "client": "Codex CLI 0.170.0",
+    "model": "gpt-6.1-terra",
+    "host": "One native Linux shared world owner with a disposable workshop scene",
+    "specialist_processes": 2,
+    "both_workers_observed_active": true,
+    "same_world_identity_verified": true,
+    "assigned_revision": 1,
+    "verified_revision": 2,
+    "workspace_unchanged_during_reviews_and_preview": true,
+    "roles": [
+      {
+        "task": "Corridor clearance against a specified crate footprint",
+        "native_reads": [
+          "world.inspect",
+          "entity.get"
+        ],
+        "observed_center_x_m": 0.5,
+        "proposed_center_x_m": 2
+      },
+      {
+        "task": "Workshop point-light intensity",
+        "native_reads": [
+          "world.inspect",
+          "world.lighting"
+        ],
+        "observed_candela": 25,
+        "proposed_candela": 60
+      }
+    ],
+    "one_guarded_lead_commit": {
+      "changed_ids": [
+        "66666666666666666666666666666666",
+        "77777777777777777777777777777777"
+      ],
+      "committed": true,
+      "history_recorded": true,
+      "replayed": false,
+      "revision": 2
+    },
+    "verified_after_commit": true,
+    "stale_reads_rejected": true
+  },
+  "qualification": {
+    "linux_ctest_passed": [
+      "authoring_api_compatibility",
+      "authoring_api_projection",
+      "mcp_native",
+      "mcp_contract",
+      "cli_contract"
+    ],
+    "compiled_authoring_core_v1_request_projection_matches_frozen_baseline": true,
+    "windows_mcp_contract_cases_passed": 15,
+    "windows_native_desktop_bridge": {
+      "desktop_owner": true,
+      "schema_revision": 171,
+      "review_revision": 0,
+      "identity_and_scene_reads_agree": true,
+      "write_selector_rejected": true,
+      "review_detached": true,
+      "world_and_history_unchanged": true
+    }
+  },
+  "limitations": [
+    "A supervised driver assigned the two prompts and checked the joined transaction. Provider workers proposed changes without receiving edit authority.",
+    "The trial checked authored transforms, specified bounds and light intensity. Rendered brightness, actual collision clearance and long-running swarm coordination require separate verification.",
+    "The Windows check exercised the native desktop owner over local IPC. Creator chat, provider switching and task recovery were outside the trial."
+  ]
+}

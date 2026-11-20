@@ -32,27 +32,39 @@ int run_mcp_cli(int argc,char** argv) {
     // Startup and usage failures must not put the ordinary CLI envelope on
     // MCP stdout. Only the established protocol session writes that stream.
     const auto usage=[](const char* message) {std::cerr<<message<<'\n';return 2;};
-    if(argc!=4 && argc!=6)return usage("Use: mcp (--project <project-manifest> | --world <world.json>) [--development-profiles file.json] | mcp --endpoint <name> [--timeout-ms N].");
+    if(argc<4 || argc>8 || argc%2)return usage("Use: mcp (--project <project-manifest> | --world <world.json>) [--development-profiles file.json] | mcp --endpoint <name> [--timeout-ms N] [--review-revision N].");
     const std::string_view kind=argv[2],value=argv[3];
     if(value.empty() || value.starts_with("--"))return usage("Missing MCP project path, world path or endpoint.");
     unsigned timeout=30000;
+    std::optional<std::uint64_t> review_revision;
     std::string profiles;
     if(kind=="--world" || kind=="--project") {
+        if(argc>6)return usage("Standalone MCP accepts only one development profiles file.");
         if(argc==6) {
             if(std::string_view(argv[4])!="--development-profiles" || !*argv[5] || std::string_view(argv[5]).starts_with("--"))return usage("Standalone MCP accepts only --development-profiles file.json after the target.");
             profiles=argv[5];
         }
     } else if(kind=="--endpoint") {
         if(!endpoint_name(value))return usage("Invalid MCP endpoint name.");
-        if(argc==6) {
-            const std::string_view number=argv[5];
-            const auto parsed=std::from_chars(number.data(),number.data()+number.size(),timeout);
-            if(std::string_view(argv[4])!="--timeout-ms" || parsed.ec!=std::errc{} || parsed.ptr!=number.data()+number.size() || timeout<100 || timeout>600000)
-                return usage("MCP connection timeout must be 100..600000 milliseconds.");
+        bool timeout_set=false;
+        for(int i=4;i<argc;i+=2) {
+            const std::string_view option=argv[i],number=argv[i+1];
+            std::uint64_t parsed_number=0;
+            const auto parsed=std::from_chars(number.data(),number.data()+number.size(),parsed_number);
+            if(parsed.ec!=std::errc{} || parsed.ptr!=number.data()+number.size())
+                return usage("MCP endpoint options require nonnegative integers.");
+            if(option=="--timeout-ms" && !timeout_set) {
+                if(parsed_number<100 || parsed_number>600000)return usage("MCP connection timeout must be 100..600000 milliseconds.");
+                timeout=static_cast<unsigned>(parsed_number);
+                timeout_set=true;
+            } else if(option=="--review-revision" && !review_revision) {
+                if(parsed_number>poima::mcp_max_review_revision)return usage("MCP review revision exceeds the safe JSON integer range.");
+                review_revision=parsed_number;
+            } else return usage("Unknown or repeated MCP endpoint option.");
         }
     } else return usage("Choose exactly one MCP project path, world path or endpoint.");
     try {
-        if(kind=="--endpoint")return poima::run_mcp_connected(std::string(value),timeout);
+        if(kind=="--endpoint")return poima::run_mcp_connected(std::string(value),timeout,review_revision);
         const auto path=kind=="--project" ? poima::project_world_path(std::string(value)):std::string(value);
         return poima::run_mcp_world(path,profiles);
     } catch(const std::exception& error) {

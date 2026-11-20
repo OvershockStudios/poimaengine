@@ -46,9 +46,11 @@ int run_mcp_world(const std::string& path,const std::string& development_profile
     McpSession session([&world](std::string_view message) {return world.request(message);});
     return serve_stdio(session);
 }
-int run_mcp_connected(const std::string& endpoint,std::uint32_t timeout_ms) {
+int run_mcp_connected(const std::string& endpoint,std::uint32_t timeout_ms,
+                      std::optional<std::uint64_t> review_revision) {
     LocalSessionClient client(endpoint,timeout_ms);
-    McpSession session([&client,timeout_ms](std::string_view message) {return client.exchange(message,timeout_ms);});
+    McpSession session([&client,timeout_ms](std::string_view message) {return client.exchange(message,timeout_ms);},
+                       review_revision);
     return serve_stdio(session);
 }
 }

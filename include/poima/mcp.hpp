@@ -3,18 +3,22 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <string>
 #include <string_view>
 namespace poima {
 // Synchronous owner-thread MCP adapter. The backend accepts one native JSON-RPC
 // request and returns its response. Calls are never retried or interrupted.
 int run_mcp_world(const std::string& path,const std::string& development_profiles={});
-int run_mcp_connected(const std::string& endpoint, std::uint32_t timeout_ms=30000);
+inline constexpr std::uint64_t mcp_max_review_revision = 9007199254740991ULL;
+int run_mcp_connected(const std::string& endpoint, std::uint32_t timeout_ms=30000,
+                      std::optional<std::uint64_t> review_revision={});
 class McpSession {
     struct Impl;
     std::unique_ptr<Impl> impl_;
 public:
-    explicit McpSession(std::function<std::string(std::string_view)> backend);
+    explicit McpSession(std::function<std::string(std::string_view)> backend,
+                        std::optional<std::uint64_t> review_revision={});
     ~McpSession();
     McpSession(const McpSession&)=delete;
     McpSession& operator=(const McpSession&)=delete;

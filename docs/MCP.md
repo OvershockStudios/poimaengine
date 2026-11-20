@@ -93,6 +93,38 @@ If the native response is lost or invalid, the result reports `outcome_unknown: 
 
 Shared editor restrictions still apply. Use `desktop.describe` through `poima_call` to discover editor operations. Captures retain their native file-based output. The image-observation extension below passed its Linux codec and MCP tests, including conversion of an archived SDL capture. [Image qualification evidence](evidence/m2-mcp-images.json). Windows engine, desktop bridge and image/MCP test fixtures also cross-compile. Fresh rendered image consumption and simple color identification pass with both tested agent CLIs. General visual reasoning remains unqualified.
 
+## Review a shared revision
+
+A lead can get the open world's ID and revision from `world.inspect`. Give
+each reviewer the same endpoint, world ID and revision. Connect each
+reviewer with its own MCP stdio process:
+
+```text
+poima mcp --endpoint poima-desktop --review-revision 12
+```
+
+This connection exposes `poima_discover`, `poima_reference` and
+`poima_inspect`. Use `poima_inspect` with
+`{"method":"world.inspect"}` to confirm the assignment. Other available
+methods are `entity.query`, `entity.get`, `entity.world_transform`,
+`world.lighting`, `world.asset.references`, `world.ui.list` and
+`world.ui.get`. Pass their native arguments as `params` and use the
+read-only `poima_discover` tool to find the current schemas. The adapter
+sets the revision on each guarded request. If explicitly supplied, the
+revision must match the assignment. Discovery and bundled guide reads
+remain available throughout the review.
+
+Report the inspected world ID, revision and entity IDs with the findings.
+The lead uses its authoring connection to verify the proposals and submit a
+transaction with the same `base_revision`. After an intervening commit,
+inspections return `-32009`. Assign the new live revision in a fresh
+connection and repeat the affected reads. The connection holds neither a
+snapshot nor the writer lock. Closing its stdin detaches the reviewer.
+
+This option applies only to shared MCP connections and accepts revisions
+from zero through 2^53−1. It controls which operations the adapter can send.
+Client shell and filesystem permissions are governed by the client.
+
 ## Image observations (development)
 
 To receive an image as well as the native capture receipt, add `"image": {}` to `poima_call`. An optional `max_edge` sets the longest output edge, from 128 to 2048 pixels (default 1280). This adapter option is not forwarded into native operation parameters.

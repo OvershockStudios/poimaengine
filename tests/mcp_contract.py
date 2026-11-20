@@ -2,6 +2,7 @@
 """Real stdio MCP authoring/persistence and shared-host checks; no GPU qualification."""
 # SPDX-License-Identifier: Apache-2.0
 import argparse
+from concurrent.futures import ThreadPoolExecutor
 import hashlib
 import json
 import os
@@ -31,9 +32,11 @@ def native(path):
 
 
 class Client:
-    def __init__(self, path=None, endpoint=None, *, project=None, cwd=None, profiles=None):
+    def __init__(self, path=None, endpoint=None, *, project=None, cwd=None, profiles=None, review_revision=None):
         if endpoint:
             target = ['--endpoint', endpoint]
+            if review_revision is not None:
+                target.extend(['--review-revision', str(review_revision), '--timeout-ms', '5000'])
         elif project:
             target = ['--project', native(project)]
         else:
@@ -647,6 +650,7 @@ class McpContract(unittest.TestCase):
             return subprocess.run([BINARY, 'connect', endpoint, '--timeout-ms', str(timeout)],
                                   input=json.dumps(request)+'\n', capture_output=True, text=True, timeout=10)
         client = None
+        reviewers = []
         try:
             deadline = time.monotonic() + 15
             while True:
@@ -669,9 +673,53 @@ class McpContract(unittest.TestCase):
             reference = direct('world.reference', guide)
             self.assertEqual(reference.returncode, 0, reference.stderr)
             self.assertEqual(client.tool('poima_reference', guide), json.loads(reference.stdout)['result'])
+            before = client.world('world.inspect')
+            for _ in range(2):
+                reviewer = Client(endpoint=endpoint, review_revision=revision)
+                reviewers.append(reviewer)
+                reviewer.initialize()
+                tools = {tool['name']: tool for tool in reviewer.rpc('tools/list')['tools']}
+                self.assertEqual(set(tools), {'poima_discover', 'poima_reference', 'poima_inspect'})
+                self.assertTrue(tools['poima_inspect']['annotations']['readOnlyHint'])
+                self.assertEqual(reviewer.tool('poima_inspect', {'method': 'world.inspect'}), before)
+            with ThreadPoolExecutor(max_workers=2) as workers:
+                scene_query = workers.submit(reviewers[0].tool, 'poima_inspect', {'method': 'entity.query'})
+                light_query = workers.submit(reviewers[1].tool, 'poima_inspect', {'method': 'world.lighting'})
+                scene, lights = scene_query.result(), light_query.result()
+            self.assertEqual((scene['revision'], lights['revision']), (revision, revision))
+            self.assertEqual(len(scene['entities']), before['entity_count'])
+            self.assertIsInstance(lights['lights'], list)
             transaction = {'request_id': uuid.uuid4().hex, 'base_revision': revision,
                            'ops': [{'op': 'entity.create', 'id': uuid.uuid4().hex, 'name': 'Shared MCP entity'}]}
+            for write_tool in ('poima_call', 'poima_source', 'poima_checks', 'poima_build'):
+                reviewers[0].rpc('tools/call', {'name': write_tool, 'arguments': {'method': 'world.transact',
+                                  'params': transaction}}, error=-32602)
+            for method in ('world.transact', 'project.source.write', 'project.verification.write',
+                           'development.publish', 'world.capture', 'host.shutdown'):
+                reviewers[1].tool('poima_inspect', {'method': method, 'params': transaction}, error=-32602)
+            for incorrect in (revision + 1, float(revision), str(revision), True, None):
+                reviewers[0].tool('poima_inspect', {'method': 'entity.query', 'params': {'revision': incorrect}}, error=-32602)
+            self.assertEqual(client.world('world.inspect'), before)
+            preview = client.world('world.transact', {**transaction, 'preview': True})
+            self.assertFalse(preview['committed'])
             self.assertEqual(client.world('world.transact', transaction)['revision'], revision + 1)
+            changed = transaction['ops'][0]['id']
+            self.assertEqual(client.world('entity.get', {'id': changed, 'revision': revision + 1})['value']['name'],
+                             transaction['ops'][0]['name'])
+            guarded_reads = {
+                'world.inspect': {}, 'world.lighting': {}, 'entity.query': {},
+                'entity.get': {'id': changed}, 'entity.world_transform': {'id': changed},
+                'world.asset.references': {}, 'world.ui.list': {}, 'world.ui.get': {'id': changed},
+            }
+            for reviewer in reviewers:
+                for method, params in guarded_reads.items():
+                    reviewer.tool('poima_inspect', {'method': method, 'params': params}, error=-32009)
+            refreshed = Client(endpoint=endpoint, review_revision=revision + 1)
+            reviewers.append(refreshed)
+            refreshed.initialize()
+            params = {'id': changed, 'revision': revision + 1}
+            self.assertEqual(refreshed.tool('poima_inspect', {'method': 'entity.get', 'params': params}),
+                             client.world('entity.get', params))
             receipt = direct('world.transact', transaction)
             self.assertEqual(receipt.returncode, 0, receipt.stderr)
             self.assertTrue(json.loads(receipt.stdout)['result']['replayed'])
@@ -684,6 +732,8 @@ class McpContract(unittest.TestCase):
             self.assertEqual(json.loads(state.stdout)['result']['revision'], revision + 1)
             self.assertEqual(json.loads(world.read_text())['revision'], revision + 1)
         finally:
+            for reviewer in reviewers:
+                reviewer.close()
             if client is not None:
                 client.close()
             if host.poll() is None:
@@ -696,6 +746,24 @@ class McpContract(unittest.TestCase):
                         host.wait(timeout=5)
             host.communicate()
         self.assertEqual(host.returncode, 0)
+
+    def test_review_revision_cli_validation(self):
+        bad_args = (
+            ['--world', native(self.path), '--review-revision', '0'],
+            ['--endpoint', 'unused', '--review-revision'],
+            ['--endpoint', 'unused', '--review-revision', '9007199254740992'],
+            ['--endpoint', 'unused', '--review-revision', '-1'],
+            ['--endpoint', 'unused', '--review-revision', '1.0'],
+            ['--endpoint', 'unused', '--review-revision', '0', '--review-revision', '1'],
+            ['--endpoint', 'unused', '--timeout-ms', '100', '--timeout-ms', '100'],
+        )
+        for arguments in bad_args:
+            with self.subTest(arguments=arguments):
+                result = subprocess.run([BINARY, 'mcp', *arguments], input='', capture_output=True, timeout=10)
+                self.assertEqual(result.returncode, 2, result.stderr)
+                self.assertFalse(result.stdout)
+                self.assertTrue(result.stderr)
+        self.assertFalse(self.path.exists())
 
     def test_writer_exclusion_and_startup_stdout_cleanliness(self):
         client = self.client()

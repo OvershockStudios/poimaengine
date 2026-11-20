@@ -1,8 +1,16 @@
 # Implementation status
 
-Updated 2026-11-20 for **0.0.325**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-20 for **0.0.326**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.326 adds [revision-pinned specialist review connections](MCP.md#review-a-shared-revision).
+Two live Codex workers inspected one workshop revision and proposed changes
+to crate placement and point-light intensity. A supervised lead checked the
+findings, previewed the combined edit and applied one guarded transaction.
+The Windows desktop owner accepted review reads and rejected edit requests.
+Creator-side assignment, cancellation and specialist chat remain open.
+[Results](evidence/m2-revision-review-326.json)
 
 Version 0.0.325 exposes [bundled guides through a read-only MCP tool](MCP.md#tools-and-workflow).
 With its approval policy set to `never`, Codex read two exact sections and

@@ -5,6 +5,8 @@
 #include "poima/capture_image.hpp"
 #include "authoring_reference.hpp"
 #include "discovery_selection.hpp"
+#include <algorithm>
+#include <array>
 #include <filesystem>
 #include <fstream>
 #include <limits>
@@ -78,14 +80,32 @@ Json observation(const std::string& method,const Json& receipt,std::uint32_t max
     }
 }
 Json schema(Json properties,Json required=Json::array()) {return {{"type","object"},{"properties",std::move(properties)},{"required",std::move(required)},{"additionalProperties",false}};}
-Json tools(){
-    return Json::array({
+constexpr std::array review_methods{
+    std::string_view("world.inspect"), std::string_view("world.lighting"),
+    std::string_view("entity.query"), std::string_view("entity.get"), std::string_view("entity.world_transform"),
+    std::string_view("world.asset.references"), std::string_view("world.ui.list"), std::string_view("world.ui.get")
+};
+bool available_tool(std::string_view name, bool review) {
+    if(name=="poima_discover" || name=="poima_reference")return true;
+    if(review)return name=="poima_inspect";
+    return name=="poima_call" || name=="poima_build" || name=="poima_source" || name=="poima_checks";
+}
+Json tools(bool review){
+    auto catalog=Json::array({
         {{"name","poima_discover"},{"description","Discover the current native world API. Defaults to its compact catalog. Use selection alone to retrieve up to 12 exact method, component, section or scoped mutation schemas in one reply. Read invariants before editing. Select specific operations for transactions."},
          {"inputSchema",schema({{"view",{{"type","string"},{"enum",{"full","catalog","method","component","section","mutation"}},{"default","catalog"}}},{"name",{{"type","string"},{"minLength",1}}},{"operation",{{"type","string"},{"minLength",1},{"maxLength",128}}},{"type",{{"type","string"},{"minLength",1},{"maxLength",128}}},{"selection",discovery_detail::selection_parameters_schema()}})},
          {"annotations",{{"readOnlyHint",true},{"destructiveHint",false},{"idempotentHint",true},{"openWorldHint",false}}}},
         {{"name","poima_reference"},{"description","Read gameplay and verification guides bundled in the world owner's engine. Pass guide and an exact section heading for focused instructions. A guide alone lists its headings. Empty arguments list guides."},
          {"inputSchema",authoring_reference::schema()},
          {"annotations",{{"readOnlyHint",true},{"destructiveHint",false},{"idempotentHint",true},{"openWorldHint",false}}}},
+    });
+    if(review) {
+        catalog.push_back({{"name","poima_inspect"},{"description","Inspect authored scene data at this connection's assigned revision. Use poima_discover for exact native parameter schemas. The tool adds the revision guard. A later revision requires a new review assignment."},
+            {"inputSchema",schema({{"method",{{"type","string"},{"enum",review_methods}}},{"params",{{"type","object"}}}},{"method"})},
+            {"annotations",{{"readOnlyHint",true},{"destructiveHint",false},{"idempotentHint",true},{"openWorldHint",false}}}});
+        return catalog;
+    }
+    for(auto& tool:Json::array({
         {{"name","poima_call"},{"description","Call one native world operation using discovered parameters. Preserve native request_id and base_revision for edits. Calls are synchronous and never retried; transport failure may leave the outcome unknown."},
          {"inputSchema",schema({{"method",{{"type","string"},{"minLength",1}}},{"params",{{"type","object"}}},{"image",schema({{"max_edge",{{"type","integer"},{"minimum",128},{"maximum",2048},{"default",1280}}}})}},{"method"})},
          {"annotations",{{"readOnlyHint",false},{"destructiveHint",true},{"idempotentHint",false},{"openWorldHint",true}}}},
@@ -98,14 +118,19 @@ Json tools(){
         {{"name","poima_build"},{"description","Submit trusted compile, native publish, export, verification or candidate jobs, or synchronously retain a passing candidate or adopt native gameplay. Publishing/export/adoption use host-configured profiles; legacy compilation uses an explicit SDK executable. This grants build/process/filesystem authority separately from world edits. Inspect development.profiles first. Compile, publish, export and verification return jobs polled through development.inspect; project.gameplay.adopt returns a durable project receipt and launches no compiler. No automatic gameplay activation or undo of emitted files."},
          {"inputSchema",schema({{"method",{{"enum",{"development.compile","development.publish","development.export","development.verify","development.candidate","project.candidate.retain","project.gameplay.adopt"}}}},{"params",{{"type","object"}}}},{"method","params"})},
          {"annotations",{{"readOnlyHint",false},{"destructiveHint",true},{"idempotentHint",false},{"openWorldHint",true}}}}
-    });
+    }))catalog.push_back(std::move(tool));
+    return catalog;
 }
 }
 struct McpSession::Impl {
     std::function<std::string(std::string_view)> backend;
+    const std::optional<std::uint64_t> review_revision;
     bool initialized=false,ready=false;
-    explicit Impl(std::function<std::string(std::string_view)> value):backend(std::move(value)) {
+    Impl(std::function<std::string(std::string_view)> value,std::optional<std::uint64_t> revision)
+        :backend(std::move(value)),review_revision(revision) {
         if(!backend)throw std::invalid_argument("MCP backend is absent.");
+        if(review_revision && *review_revision>mcp_max_review_revision)
+            throw std::invalid_argument("MCP review revision exceeds the safe JSON integer range.");
     }
     Json call(const std::string& name,const Json& arguments) {
         // Tool argument failures are tool errors, not malformed MCP envelopes.
@@ -124,12 +149,22 @@ struct McpSession::Impl {
         } else {
             for(const auto& [key,value]:arguments.items()) {
                 (void)value;
-                if(key!="method" && key!="params" && key!="image")return tool_result({{"error",error(-32602,"Unknown call argument.")}},true);
+                if(key!="method" && key!="params" && (key!="image" || review_revision))return tool_result({{"error",error(-32602,"Unknown call argument.")}},true);
             }
             if(!arguments.contains("method") || !arguments["method"].is_string() || arguments["method"].get_ref<const std::string&>().empty())
                 return tool_result({{"error",error(-32602,"A nonempty native method is required.")}},true);
             method=arguments["method"].get<std::string>();params=arguments.value("params",Json::object());
             if(!params.is_object())return tool_result({{"error",error(-32602,"Native params must be an object.")}},true);
+            if(review_revision) {
+                if(std::find(review_methods.begin(),review_methods.end(),method)==review_methods.end())
+                    return tool_result({{"error",error(-32602,"Native method is unavailable to a review connection.")}},true);
+                if(params.contains("revision") && (!params["revision"].is_number_integer() || params["revision"]!=*review_revision))
+                    return tool_result({{"error",error(-32602,"Requested revision differs from the assigned review revision.")}},true);
+                // world.inspect is itself a single atomic read of identity and
+                // revision. Its result is checked below before forwarding it.
+                if(method=="world.inspect")params.erase("revision");
+                else params["revision"]=*review_revision;
+            }
             const bool build=method=="development.compile" || method=="development.publish" || method=="development.export" || method=="development.verify" || method=="development.candidate" || method=="project.candidate.retain" || method=="project.gameplay.adopt";
             const bool source=method=="project.source.write";
             const bool checks=method=="project.verification.write";
@@ -167,14 +202,22 @@ struct McpSession::Impl {
                 require(problem.is_object() && problem.contains("code") && problem["code"].is_number_integer() && problem.contains("message") && problem["message"].is_string(),-32603,"Invalid backend error envelope.");
                 return tool_result({{"error",problem}},true);
             }
-            return image_requested ? observation(method,reply["result"],max_edge) : tool_result({{"result",reply["result"]}},false);
+            const auto& result=reply["result"];
+            if(name=="poima_inspect") {
+                require(result.is_object() && result.contains("revision") && result["revision"].is_number_integer(),
+                        -32603,"Review result lacks a native revision.");
+                if(result["revision"]!=*review_revision)
+                    return tool_result({{"error",error(-32009,"Review revision is stale. Request a new review assignment.")}},true);
+            }
+            return image_requested ? observation(method,result,max_edge) : tool_result({{"result",result}},false);
         } catch(const std::exception& failure) {
             std::cerr<<"MCP backend response failed: "<<failure.what()<<'\n';
         } catch(...) {std::cerr<<"MCP backend response failed with an unknown exception.\n";}
         return tool_result({{"error",error(-32603,"Backend response unavailable or invalid; do not retry blindly.")},{"outcome_unknown",true}},true);
     }
 };
-McpSession::McpSession(std::function<std::string(std::string_view)> backend):impl_(std::make_unique<Impl>(std::move(backend))){}
+McpSession::McpSession(std::function<std::string(std::string_view)> backend,std::optional<std::uint64_t> review_revision)
+    :impl_(std::make_unique<Impl>(std::move(backend),review_revision)){}
 McpSession::~McpSession()=default;
 std::string McpSession::request(std::string_view message) {
     Json id=nullptr;bool notification=false;
@@ -215,6 +258,9 @@ std::string McpSession::request(std::string_view message) {
             const auto& info=params["clientInfo"];
             require(info.contains("name") && info["name"].is_string() && info.contains("version") && info["version"].is_string(),-32602,"Invalid clientInfo.");
             result={{"protocolVersion","2025-11-25"},{"capabilities",{{"tools",Json::object()}}},{"serverInfo",{{"name","Poima"},{"version",build_metadata().version}}},{"instructions","Use poima_discover for current native schemas. Preserve engine revision guards and durable request IDs. Calls are synchronous; cancellation and automatic retries are not supported."}};
+            if(impl_->review_revision)
+                result["instructions"]="This connection can inspect authored revision "+std::to_string(*impl_->review_revision)
+                    +". Use poima_inspect for scene reads and poima_discover for their schemas. A stale read requires a new assignment from the lead.";
             impl_->initialized=true;
         } else if(method=="ping")result=Json::object();
         else {
@@ -222,12 +268,12 @@ std::string McpSession::request(std::string_view message) {
             require(impl_->ready,-32002,"Complete MCP initialization before using tools.");
             if(method=="tools/list") {
                 require(!params.contains("cursor"),-32602,"Tool catalog is not paginated.");
-                result={{"tools",tools()}};
+                result={{"tools",tools(impl_->review_revision.has_value())}};
             } else if(method=="tools/call") {
                 require(!params.contains("task"),-32602,"Task execution is unsupported.");
                 require(params.contains("name") && params["name"].is_string(),-32602,"Tool name is required.");
                 const auto name=params["name"].get<std::string>();
-                require(name=="poima_discover" || name=="poima_reference" || name=="poima_call" || name=="poima_build" || name=="poima_source" || name=="poima_checks",-32602,"Unknown tool.");
+                require(available_tool(name,impl_->review_revision.has_value()),-32602,"Unknown tool.");
                 require(!params.contains("arguments") || params["arguments"].is_object(),-32602,"Tool arguments must be an object.");
                 result=impl_->call(name,params.value("arguments",Json::object()));
             } else throw ProtocolError(-32601,"Unknown MCP method.");
