@@ -258,6 +258,7 @@ static_assert(sizeof(GpuLight)==80 && sizeof(GpuShadow)==80 && sizeof(FrameConst
 struct Geometry { nvrhi::BufferHandle vertices,indices;std::uint32_t count=0;render_schedule::GeometrySlice stream{}; };
 struct SpriteInstance {
     std::array<float,4> center_and_size,linear_rgba,fade_and_reserved;
+    std::array<std::uint32_t,4> texel_rect;
 };
 struct SpriteConstants {
     std::array<float,16> view_projection;

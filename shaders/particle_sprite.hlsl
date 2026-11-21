@@ -3,6 +3,7 @@ struct GpuSprite {
     float4 center_and_size;
     float4 linear_rgba;
     float4 fade_and_reserved;
+    uint4 texel_rect;
 };
 struct SpriteConstants {
     column_major float4x4 view_projection;
@@ -21,6 +22,7 @@ struct SpriteVertex {
     nointerpolation float4 linear_rgba : COLOR0;
     nointerpolation float depth_fade_m : TEXCOORD1;
     nointerpolation float view_distance_m : TEXCOORD2;
+    nointerpolation uint4 texel_rect : TEXCOORD3;
 };
 SpriteVertex vertex_main(uint vertex : SV_VertexID, uint instance : SV_InstanceID) {
     const float2 corners[6] = {
@@ -40,6 +42,7 @@ SpriteVertex vertex_main(uint vertex : SV_VertexID, uint instance : SV_InstanceI
     // A camera-aligned card has one view depth. Keep that exact value through
     // rasterization instead of reconstructing its distance from screen depth.
     output.view_distance_m = mul(sprite_constants.view_projection, float4(center, 1)).w;
+    output.texel_rect = sprite.texel_rect;
     return output;
 }
 
@@ -55,14 +58,13 @@ float4 load_premultiplied(int2 texel) {
     return float4(rgba.rgb * rgba.a, rgba.a);
 }
 
-float4 sample_sprite(float2 uv) {
-    uint width, height;
-    sprite_atlas.GetDimensions(width, height);
-    const int2 extent = int2(width, height);
+float4 sample_sprite(float2 uv, uint4 rect) {
+    const int2 origin = int2(rect.xy);
+    const int2 extent = int2(rect.zw);
     const float2 texel = uv * float2(extent) - .5;
     const float2 base = floor(texel);
-    const int2 low = clamp(int2(base), int2(0, 0), extent - 1);
-    const int2 high = clamp(int2(base) + 1, int2(0, 0), extent - 1);
+    const int2 low = origin + clamp(int2(base), int2(0, 0), extent - 1);
+    const int2 high = origin + clamp(int2(base) + 1, int2(0, 0), extent - 1);
     // Interpolate after premultiplication so transparent texel RGB stays hidden.
     const float2 weight = texel - base;
     const float4 top = lerp(load_premultiplied(low), load_premultiplied(int2(high.x, low.y)), weight.x);
@@ -83,6 +85,6 @@ float4 pixel_main(SpriteVertex input) : SV_Target0 {
             visibility = saturate(gap / input.depth_fade_m);
         }
     }
-    const float4 sampled = sample_sprite(input.uv);
+    const float4 sampled = sample_sprite(input.uv, input.texel_rect);
     return sampled * float4(input.linear_rgba.rgb, 1) * (input.linear_rgba.a * visibility);
 }

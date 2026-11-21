@@ -34,6 +34,30 @@ float mesh_coordinate(double value) {
     return static_cast<float>(value);
 }
 
+void validate_sprite_curve(std::span<const RuntimeParticleCurveKnot> curve, double max_multiplier) {
+    if (curve.empty()) return;
+    require(curve.size() >= 2 && curve.size() <= max_runtime_particle_curve_knots &&
+        curve.front().phase == 0 && curve.back().phase == 1,
+        "Particle sprite lifetime curves require 2..8 knots with phases 0 and 1 at the endpoints.");
+    double previous = -1;
+    for (const auto& knot : curve) {
+        require(knot.phase > previous && knot.phase <= 1, "Particle sprite phases must strictly increase.");
+        require(knot.multiplier >= 0 && knot.multiplier <= max_multiplier, "Particle sprite curve multiplier is out of bounds.");
+        previous = knot.phase;
+    }
+}
+
+double sample_curve(std::span<const RuntimeParticleCurveKnot> curve, double phase) {
+    if (curve.empty()) return 1;
+    for (std::size_t i = 1; i < curve.size(); ++i) {
+        const auto& right = curve[i];
+        if (phase > right.phase) continue;
+        const auto& left = curve[i - 1];
+        return std::lerp(left.multiplier, right.multiplier, (phase - left.phase) / (right.phase - left.phase));
+    }
+    return curve.back().multiplier;
+}
+
 void append_quad(MeshAsset& mesh, const Instance& particle, const Matrix4& model,
     const Vec3& right, const Vec3& up, const Vec3& normal) {
     require(std::isfinite(particle.size_m) && particle.size_m > 0, "Particle size must be finite and positive.");
@@ -67,6 +91,39 @@ std::size_t sprite_texture_base_bytes(const TextureImage& texture) {
     return base.rgba.size();
 }
 
+void validate_sprite_flipbook(const RuntimeParticleFlipbook& flipbook, const TextureMip& base) {
+    require(flipbook.columns >= 1 && flipbook.columns <= max_runtime_particle_flipbook_side &&
+        flipbook.rows >= 1 && flipbook.rows <= max_runtime_particle_flipbook_side,
+        "Particle sprite flipbook grid dimensions must be 1..32.");
+    const auto cells = flipbook.columns * flipbook.rows;
+    require(flipbook.first_frame < cells && flipbook.frame_count >= 1 && flipbook.frame_count <= cells - flipbook.first_frame,
+        "Particle sprite flipbook frame range must fit inside its grid.");
+    require(flipbook.ticks_per_frame >= 1 && flipbook.ticks_per_frame <= max_runtime_particle_frame_ticks,
+        "Particle sprite flipbook ticks per frame must be 1..36000.");
+    require(base.width >= flipbook.columns && base.height >= flipbook.rows &&
+        base.width % flipbook.columns == 0 && base.height % flipbook.rows == 0,
+        "Particle sprite flipbook grid must evenly divide the base texture into positive whole texels.");
+}
+
+SpriteSample sample_sprite(const Instance& particle, const RuntimeParticleSprite& sprite, const TextureMip& base) {
+    SpriteSample result{particle.size_m, particle.linear_rgba[3], {0, 0, base.width, base.height}, {}};
+    if (!sprite.size_over_life.empty() || !sprite.opacity_over_life.empty()) {
+        const auto phase = static_cast<double>(particle.age_ticks) / particle.lifetime_ticks;
+        result.size_m = static_cast<float>(result.size_m * sample_curve(sprite.size_over_life, phase));
+        result.opacity = static_cast<float>(result.opacity * sample_curve(sprite.opacity_over_life, phase));
+    }
+    if (sprite.flipbook) {
+        const auto& book = *sprite.flipbook;
+        const auto elapsed_frames = particle.age_ticks / book.ticks_per_frame;
+        const auto frame = book.first_frame + (book.loop ? elapsed_frames % book.frame_count :
+            std::min(elapsed_frames, book.frame_count - 1));
+        const auto width = base.width / book.columns, height = base.height / book.rows;
+        result.frame = frame;
+        result.texel_rect = {(frame % book.columns) * width, (frame / book.columns) * height, width, height};
+    }
+    return result;
+}
+
 SpriteCatalog build_sprite_catalog(const RuntimeDefinition& definition) {
     const auto& textures = definition.particle_sprite_textures;
     require(textures.size() <= max_scene_particle_sprite_textures, "Particle sprites exceed the 16-texture budget.");
@@ -88,7 +145,11 @@ SpriteCatalog build_sprite_catalog(const RuntimeDefinition& definition) {
         require(std::isfinite(opacity) && opacity >= 0 && opacity <= 1, "Particle sprite opacity must be 0..1.");
         require(std::isfinite(sprite.depth_fade_m) && sprite.depth_fade_m >= 0 && sprite.depth_fade_m <= 10,
             "Particle sprite depth fade must be 0..10 m.");
-        require(textures.contains(sprite.texture_sha256), "Particle sprite texture is absent from frozen assets.");
+        validate_sprite_curve(sprite.size_over_life, 8);
+        validate_sprite_curve(sprite.opacity_over_life, 1);
+        const auto texture = textures.find(sprite.texture_sha256);
+        require(texture != textures.end(), "Particle sprite texture is absent from frozen assets.");
+        if (sprite.flipbook) validate_sprite_flipbook(*sprite.flipbook, texture->second->mips.front());
         result.indices.emplace(std::pair(sprite.texture_sha256, sprite.depth_fade_m), 0);
     };
     for (const auto& entity : definition.entities) collect(entity);

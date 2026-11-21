@@ -184,6 +184,7 @@ struct SceneParticleSprite {
     std::array<double,3> position_m{};
     float size_m=0;
     std::array<float,4> linear_rgba{};
+    std::array<std::uint32_t,4> texel_rect{}; // Base mip x, y, width, height.
 };
 struct SceneParticleSprites {
     // Includes frozen root and template styles even with no live instances.

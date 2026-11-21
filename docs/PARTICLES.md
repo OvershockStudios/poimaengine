@@ -86,6 +86,42 @@ frozen world and are prepared even before an emitter's first burst. Up to 16
 distinct sprite images may be referenced by the world and its templates. Each
 image is at most 1024×1024, with a combined 16 MiB limit for the base levels.
 
+### Animate size, opacity, and the sprite sheet
+
+Add `size_over_life`, `opacity_over_life`, or `flipbook` inside the emitter's
+`sprite` object. This example starts small, grows, fades, and plays six cells
+from a four-column, two-row texture.
+
+```json
+{
+  "texture": "<cooked image SHA-256>",
+  "size_over_life": [[0, 0.4], [0.25, 1], [1, 1.5]],
+  "opacity_over_life": [[0, 0], [0.25, 1], [1, 0]],
+  "flipbook": {
+    "columns": 4,
+    "rows": 2,
+    "first_frame": 1,
+    "frame_count": 6,
+    "ticks_per_frame": 4,
+    "loop": false
+  }
+}
+```
+
+Curves have two to eight knots. Phases start at 0, increase strictly, and end
+at 1. The renderer multiplies the base size and opacity by linearly
+interpolated values at `age_ticks / lifetime_ticks`. Size multipliers range
+from 0 to 8 and opacity multipliers from 0 to 1. An omitted curve supplies 1.
+A particle with zero displayed size or opacity still ages and counts toward
+the simulation limit.
+
+Sprite-sheet frames are numbered from zero, left to right and then top to
+bottom. The source image must divide evenly into the grid, which can have up
+to 32 columns and 32 rows. `first_frame` defaults to 0. The active range must
+fit inside the sheet. `ticks_per_frame` sets the hold time at 60 Hz. Looping is
+on by default. With looping off, the sprite holds its last frame until expiry.
+Bilinear taps stay inside the selected cell, including one-texel cells.
+
 ## Observe and verify
 
 After a completed tick, call `runtime.particles.inspect` with that tick and
@@ -95,6 +131,12 @@ Read up to 64 particles per page. To continue, send the decimal-string
 `next_after` value as `after` and keep the same session and tick. A changed
 tick fails the guard. The counts distinguish capacity drops from particles
 that expired or were removed.
+
+Sprite observations include a `presentation` object with the cooked texture,
+sampled size and opacity, `texel_rect` as `[x, y, width, height]`, and
+`visible` for nonzero size and opacity. The `frame` field is null when the
+sprite uses the entire image. These values derive from the frozen emitter
+and saved particle age.
 
 The simulation carries source identities, seeds, positions, velocities and
 remaining lifetimes through rollback and durable saves. Use replay to compare
@@ -115,6 +157,16 @@ texture fringes, and the final color at the selected pixels.
 ```sh
 python3 tests/sprite_particles_capture.py "$runtime/bin/poima.exe" \
   --windows-interop --runtime-root "$runtime" --output build/sprite-captures --gpu 0
+```
+
+Run the lifetime fixture to verify curve samples, atlas boundaries, and
+fresh-process continuation at specific particle ages.
+
+```sh
+python3 tests/sprite_lifetime_capture.py build/linux-game/poima \
+  --headless --output build/sprite-lifetimes
+python3 tests/sprite_lifetime_capture.py "$runtime/bin/poima.exe" \
+  --windows-interop --runtime-root "$runtime" --output build/sprite-lifetimes --gpu 0
 ```
 
 Surface deposition, mesh and ribbon rendering, general VFX graphs, translucent

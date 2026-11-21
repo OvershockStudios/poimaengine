@@ -167,6 +167,69 @@ void frozen_sprite_catalog() {
     check(!rejected(invalid), "A sprite catalog rejected the exact distinct-texture count limit.");
     invalid.particle_sprite_textures.emplace(std::string(63, '0') + "f", image);
     check(rejected(invalid), "A sprite catalog exceeded the distinct-texture count limit.");
+
+    invalid = definition;
+    invalid.entities.front().particle_emitter->sprite->size_over_life = {{0, 1}, {.5, 1}, {.5, 2}, {1, 1}};
+    check(rejected(invalid), "The native sprite catalog admitted non-increasing phases.");
+    invalid = definition;
+    invalid.templates.front().particle_emitter->sprite->opacity_over_life = {{0, 1}, {1, 2}};
+    check(rejected(invalid), "The native sprite catalog admitted an out-of-range opacity multiplier.");
+    invalid = definition;
+    invalid.templates.front().entities.emplace_back().particle_emitter = *invalid.templates.front().particle_emitter;
+    auto& flipbook = invalid.templates.front().entities.front().particle_emitter->sprite->flipbook;
+    invalid.particle_sprite_textures[first_digest] = std::make_shared<const TextureImage>(
+        TextureImage{true, {{6, 4, std::vector<std::uint8_t>(6*4*4)}}});
+    flipbook = RuntimeParticleFlipbook{3, 2, 4, 3, 2};
+    check(build_sprite_catalog(invalid).indices == catalog.indices,
+        "A flipbook on the same atlas and fade created a redundant texture style.");
+    flipbook->columns = 4;
+    check(rejected(invalid), "A second use of a frozen texture bypassed flipbook divisibility checks.");
+    flipbook->columns = 8;
+    check(rejected(invalid), "An atlas passed with fewer than one texel per column.");
+    flipbook->columns = 3;
+    flipbook->first_frame = 3;
+    check(rejected(invalid), "A flipbook range escaped its atlas grid.");
+}
+
+void sampled_sprite_lifetime() {
+    const TextureMip base{12, 6, {}};
+    Instance particle{3, 4, {0, 0, -3}, {}, 0, 16, .75f, {.5f, .25f, 1, .5f}};
+    RuntimeParticleSprite sprite{std::string(64, 'a')};
+    const auto plain = sample_sprite(particle, sprite, base);
+    check(plain.size_m == particle.size_m && plain.opacity == particle.linear_rgba[3] &&
+        plain.texel_rect == std::array{0u, 0u, 12u, 6u} && !plain.frame && plain.visible(),
+        "A plain sprite changed base properties or sampled less than its full extent.");
+
+    sprite.size_over_life = {{0, 0}, {.25, 2}, {.5, 4}, {1, 0}};
+    sprite.opacity_over_life = {{0, 1}, {.5, 0}, {1, .5}};
+    sprite.flipbook = RuntimeParticleFlipbook{3, 2, 3, 2, 2};
+    const auto birth = sample_sprite(particle, sprite, base);
+    check(birth.size_m == 0 && birth.opacity == .5f && !birth.visible() && birth.frame == 2 &&
+        birth.texel_rect == std::array{8u, 0u, 4u, 3u}, "The birth sample did not use its initial knots and starting cell.");
+
+    particle.age_ticks = 1;
+    check(sample_sprite(particle, sprite, base).frame == 2, "A flipbook skipped its first frame before a complete interval.");
+    particle.age_ticks = 2;
+    const auto next = sample_sprite(particle, sprite, base);
+    check(next.size_m == .75f && next.opacity == .375f && next.visible() && next.frame == 3 &&
+        next.texel_rect == std::array{0u, 3u, 4u, 3u}, "A sprite lost interpolation or row-major progression.");
+    particle.age_ticks = 4;
+    const auto knot = sample_sprite(particle, sprite, base);
+    check(knot.size_m == 1.5f && knot.opacity == .25f && knot.frame == 4 &&
+        knot.texel_rect == std::array{4u, 3u, 4u, 3u}, "A sprite missed an exact interior knot or frame boundary.");
+    particle.age_ticks = 6;
+    check(sample_sprite(particle, sprite, base).frame == 2, "The animated cell range did not wrap to first_frame.");
+    sprite.flipbook->loop = false;
+    particle.age_ticks = 8;
+    const auto transparent = sample_sprite(particle, sprite, base);
+    check(transparent.size_m == 3 && transparent.opacity == 0 && !transparent.visible() && transparent.frame == 4,
+        "The clamped flipbook or zero-opacity knot changed the committed appearance.");
+    particle.age_ticks = 15;
+    const auto last_live = sample_sprite(particle, sprite, base);
+    check(last_live.size_m == .375f && last_live.opacity == .21875f && last_live.visible() && last_live.frame == 4,
+        "The last live tick reached the endpoint prematurely or lost later curve interpolation.");
+    check(particle.size_m == .75f && particle.linear_rgba == Color{.5f, .25f, 1, .5f},
+        "Sampling changed the simulation instance's base appearance.");
 }
 }
 
@@ -175,7 +238,8 @@ int main() {
         moving_emitters_and_camera();
         precision_and_invalid_inputs();
         frozen_sprite_catalog();
-        std::cout << "Particle scene camera, bounds, ownership, opaque projection and frozen sprite catalog checks passed.\n";
+        sampled_sprite_lifetime();
+        std::cout << "Particle camera, bounds, ownership, opaque projection, frozen styles and sprite lifetime checks passed.\n";
         return 0;
     } catch (const std::exception& error) {
         std::cerr << error.what() << '\n';

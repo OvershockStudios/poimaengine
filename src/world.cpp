@@ -1658,16 +1658,22 @@ public:
             if(sprite==emitter.end())return;
             result.needs_sprite_particles=true;
             const auto& id=sprite->at("texture").get_ref<const std::string&>();
-            if(sprite_textures.contains(id))return;
-            require(sprite_textures.size()<max_scene_particle_sprite_textures,
-                "Particle sprites exceed the 16-texture budget.",-32050);
             try {
-                const auto texture=image(id);
-                const auto bytes=particles::sprite_texture_base_bytes(*texture);
-                require(bytes<=max_scene_particle_sprite_texture_bytes-sprite_base_bytes,
-                    "Particle sprites exceed the 16 MiB base-level budget.",-32050);
-                sprite_base_bytes+=bytes;
-                sprite_textures.emplace(id,texture);
+                auto texture=sprite_textures.find(id);
+                if(texture==sprite_textures.end()) {
+                    require(sprite_textures.size()<max_scene_particle_sprite_textures,
+                        "Particle sprites exceed the 16-texture budget.",-32050);
+                    const auto cooked=image(id);
+                    const auto bytes=particles::sprite_texture_base_bytes(*cooked);
+                    require(bytes<=max_scene_particle_sprite_texture_bytes-sprite_base_bytes,
+                        "Particle sprites exceed the 16 MiB base-level budget.",-32050);
+                    sprite_base_bytes+=bytes;
+                    texture=sprite_textures.emplace(id,cooked).first;
+                }
+                if(sprite->contains("flipbook")) {
+                    const auto style=parse_particle_emitter(emitter);
+                    particles::validate_sprite_flipbook(*style.sprite->flipbook,texture->second->mips.front());
+                }
             } catch(const std::exception& error) {
                 throw Error(-32050,"Particle sprite texture "+id+": "+error.what());
             }

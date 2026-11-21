@@ -61,6 +61,37 @@ particles::Space space(const Json& value) {
     return value == "local" ? particles::Space::Local : particles::Space::World;
 }
 
+std::vector<RuntimeParticleCurveKnot> parse_curve(const Json& value, double max_multiplier) {
+    require(value.is_array() && value.size() >= 2 && value.size() <= max_runtime_particle_curve_knots,
+        "Particle sprite lifetime curves require 2..8 knots.");
+    std::vector<RuntimeParticleCurveKnot> result;
+    result.reserve(value.size());
+    for (const auto& knot : value) {
+        require(knot.is_array() && knot.size() == 2, "Particle sprite curve knots require [phase, multiplier].");
+        const auto phase = number(knot[0], 0, 1);
+        require(result.empty() || phase > result.back().phase, "Particle sprite curve phases must strictly increase.");
+        result.push_back({phase, number(knot[1], 0, max_multiplier)});
+    }
+    require(result.front().phase == 0 && result.back().phase == 1, "Particle sprite curves require phases 0 and 1 at the endpoints.");
+    return result;
+}
+
+RuntimeParticleFlipbook parse_flipbook(const Json& value) {
+    fields(value, {"columns", "rows", "frame_count", "ticks_per_frame"}, {"first_frame", "loop"});
+    RuntimeParticleFlipbook result;
+    result.columns = integer(value.at("columns"), 1, max_runtime_particle_flipbook_side);
+    result.rows = integer(value.at("rows"), 1, max_runtime_particle_flipbook_side);
+    const auto cells = result.columns * result.rows;
+    if (value.contains("first_frame")) result.first_frame = integer(value.at("first_frame"), 0, cells - 1);
+    result.frame_count = integer(value.at("frame_count"), 1, cells - result.first_frame);
+    result.ticks_per_frame = integer(value.at("ticks_per_frame"), 1, max_runtime_particle_frame_ticks);
+    if (value.contains("loop")) {
+        require(value.at("loop").is_boolean(), "Particle sprite flipbook loop must be Boolean.");
+        result.loop = value.at("loop").get<bool>();
+    }
+    return result;
+}
+
 Json object(Json properties, Json required) {
     return {{"type", "object"}, {"properties", std::move(properties)}, {"required", std::move(required)}, {"additionalProperties", false}};
 }
@@ -69,6 +100,12 @@ Json range(const char* type, double minimum, double maximum) {
 }
 Json vec_schema(double minimum, double maximum) {
     return {{"type", "array"}, {"items", range("number", minimum, maximum)}, {"minItems", 3}, {"maxItems", 3}};
+}
+Json curve_schema(double max_multiplier) {
+    const Json knot = {{"type", "array"}, {"minItems", 2}, {"maxItems", 2},
+        {"prefixItems", {range("number", 0, 1), range("number", 0, max_multiplier)}}};
+    return {{"type", "array"}, {"items", knot}, {"minItems", 2}, {"maxItems", max_runtime_particle_curve_knots},
+        {"description", "Linear [phase, multiplier] knots with phases strictly increasing from exactly 0 to 1. Phase is committed age divided by lifetime. Omission uses multiplier 1."}};
 }
 }
 
@@ -113,17 +150,21 @@ RuntimeParticleEmitter parse_particle_emitter(const Json& value) {
     }
     if (value.contains("sprite")) {
         const auto& sprite = value.at("sprite");
-        fields(sprite, {"texture"}, {"opacity", "depth_fade_m"});
+        fields(sprite, {"texture"}, {"opacity", "depth_fade_m", "size_over_life", "opacity_over_life", "flipbook"});
         const auto& texture = sprite.at("texture");
         require(texture.is_string(), "Particle sprite texture must be a lowercase cooked image SHA-256.");
         const auto& digest = texture.get_ref<const std::string&>();
         require(digest.size() == 64 && digest.find_first_not_of("0123456789abcdef") == std::string::npos,
             "Particle sprite texture must be a lowercase cooked image SHA-256.");
-        result.sprite = RuntimeParticleSprite{digest};
+        auto& style = result.sprite.emplace();
+        style.texture_sha256 = digest;
         if (sprite.contains("opacity"))
             config.linear_rgba[3] = static_cast<float>(number(sprite.at("opacity"), 0, 1));
         if (sprite.contains("depth_fade_m"))
-            result.sprite->depth_fade_m = static_cast<float>(number(sprite.at("depth_fade_m"), 0, 10));
+            style.depth_fade_m = static_cast<float>(number(sprite.at("depth_fade_m"), 0, 10));
+        if (sprite.contains("size_over_life")) style.size_over_life = parse_curve(sprite.at("size_over_life"), 8);
+        if (sprite.contains("opacity_over_life")) style.opacity_over_life = parse_curve(sprite.at("opacity_over_life"), 1);
+        if (sprite.contains("flipbook")) style.flipbook = parse_flipbook(sprite.at("flipbook"));
     }
     return result;
 }
@@ -134,8 +175,16 @@ Json particle_emitter_schema() {
     const auto limits = object({{"minimum", v}, {"maximum", v}}, {"minimum", "maximum"});
     const auto burst = object({{"action", {{"type", "string"}, {"pattern", "^[a-z][a-z0-9_.-]{0,63}$"}}},
         {"count", range("integer", 1, particles::max_burst)}}, {"action", "count"});
+    constexpr auto max_cells = max_runtime_particle_flipbook_side * max_runtime_particle_flipbook_side;
+    auto flipbook = object({{"columns", range("integer", 1, max_runtime_particle_flipbook_side)},
+        {"rows", range("integer", 1, max_runtime_particle_flipbook_side)}, {"frame_count", range("integer", 1, max_cells)},
+        {"ticks_per_frame", range("integer", 1, max_runtime_particle_frame_ticks)}, {"first_frame", range("integer", 0, max_cells - 1)},
+        {"loop", {{"type", "boolean"}, {"default", true}}}}, {"columns", "rows", "frame_count", "ticks_per_frame"});
+    flipbook["properties"]["first_frame"]["default"] = 0;
+    flipbook["description"] = "Row-major frames from the top left. The frame range must fit in the grid, which must divide the cooked texture's base dimensions into positive whole texels.";
     auto sprite = object({{"texture", {{"type", "string"}, {"pattern", "^[0-9a-f]{64}$"}}},
-        {"opacity", range("number", 0, 1)}, {"depth_fade_m", range("number", 0, 10)}}, {"texture"});
+        {"opacity", range("number", 0, 1)}, {"depth_fade_m", range("number", 0, 10)},
+        {"size_over_life", curve_schema(8)}, {"opacity_over_life", curve_schema(1)}, {"flipbook", std::move(flipbook)}}, {"texture"});
     sprite["properties"]["opacity"]["default"] = 1;
     sprite["properties"]["depth_fade_m"]["default"] = 0;
     auto result = object({{"spawn_space", spaces}, {"simulation_space", spaces}, {"lifetime_ticks", range("integer", 1, particles::max_lifetime_ticks)},
@@ -154,7 +203,7 @@ Json particle_observation_schema() {
         {"tick", {{"type", "integer"}, {"minimum", 0}, {"maximum", 9007199254740991ULL}}},
         {"after", {{"type", "string"}, {"pattern", "^[1-9][0-9]{0,19}$"}}},
         {"limit", {{"type", "integer"}, {"minimum", 1}, {"maximum", 64}, {"default", 32}}}}, {"session_id", "tick"});
-    result["description"] = "Read committed particle counts, source poses and ordered world-space instances. Continue after the returned decimal ID at the same tick.";
+    result["description"] = "Read committed counts, source poses and ordered world-space particles. Sprite rows include sampled presentation. Continue after the returned decimal ID at the same tick.";
     return result;
 }
 } // namespace poima

@@ -1,8 +1,18 @@
 # Implementation status
 
-Updated 2026-11-21 for **0.0.356**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-21 for **0.0.357**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.357 adds [size and opacity curves and sprite sheets](PARTICLES.md#animate-size-opacity-and-the-sprite-sheet).
+Particle observations show the sampled size, opacity, frame, and texel rectangle
+at a completed tick. The Windows fixture checked 400 pixel positions in 40
+standalone captures across forward and deferred rendering on AMD integrated
+graphics and an RTX 4070 Laptop GPU. Fresh processes reproduced the frames
+and continued saves byte for byte. The headless fixture verified that particles
+from a removed template emitter keep animating through save restoration and
+expiry. The sprite pass requires one world sample with reconstruction disabled.
+[Results](evidence/m2-sprite-lifetimes-357.json)
 
 Version 0.0.356 adds [textured particle sprites](PARTICLES.md#add-a-translucent-sprite)
 with per-emitter opacity and soft depth fade. A relocated Windows fixture

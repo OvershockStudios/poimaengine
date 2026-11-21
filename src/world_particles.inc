@@ -22,10 +22,12 @@
             return Json{{"live", c.live}, {"spawned", c.spawned}, {"dropped", c.dropped}, {"expired", c.expired}, {"removed", c.removed}};
         };
         auto sources = Json::array();
+        std::map<particles::EmitterId, const RuntimeParticleSource*> sprite_sources;
         for (const auto& source : observed.sources) {
             sources.push_back({{"id", std::to_string(source.id)}, {"entity", source.entity}, {"draining", source.draining},
                 {"position_m", source.status.pose.position_m}, {"rotation", source.status.pose.rotation},
                 {"emitting", source.status.emitting}, {"counts", counts(source.status.particles)}});
+            if (source.sprite) sprite_sources.emplace(source.id, &source);
         }
         auto instances = Json::array();
         Json next = nullptr;
@@ -36,6 +38,13 @@
             instances.push_back({{"id", std::to_string(instance.id)}, {"emitter", std::to_string(instance.emitter)},
                 {"position_m", instance.position_m}, {"velocity_m_s", instance.velocity_m_s}, {"age_ticks", instance.age_ticks},
                 {"lifetime_ticks", instance.lifetime_ticks}, {"size_m", instance.size_m}, {"linear_rgba", instance.linear_rgba}});
+            if (const auto found = sprite_sources.find(instance.emitter); found != sprite_sources.end()) {
+                const auto& source = *found->second;
+                const auto sample = particles::sample_sprite(instance, *source.sprite, source.sprite_texture->mips.front());
+                instances.back()["presentation"] = {{"texture", source.sprite->texture_sha256}, {"size_m", sample.size_m},
+                    {"opacity", sample.opacity}, {"texel_rect", sample.texel_rect},
+                    {"frame", sample.frame ? Json(*sample.frame) : Json(nullptr)}, {"visible", sample.visible()}};
+            }
             last = instance.id;
         }
         return {{"session_id", runtime_id_}, {"tick", tick}, {"active", observed.active},

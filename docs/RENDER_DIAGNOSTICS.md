@@ -119,8 +119,9 @@ the idle-wait counts with those of the closed gate.
 Textured scene particles use a frame-slot instance upload before the
 `render.pass.particle_sprites` HDR pass. `last_draws.sprite_instances` reports
 the submitted sprites. `last_draws.sprite_batches` counts consecutive runs
-sharing one texture in the global depth order. The instance stride is
-48 bytes, with a maximum of 4,096 instances per frame.
+sharing one texture in the global depth order. The instance packet includes
+the selected sprite-sheet texel bounds and uses a 64-byte stride, with a
+maximum of 4,096 instances per frame.
 
 ## Evidence and reproduction
 

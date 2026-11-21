@@ -386,9 +386,21 @@ struct RuntimeHitRegion {
 };
 inline constexpr std::size_t max_runtime_hit_regions=4096;
 inline constexpr particles::Limits runtime_particle_limits{16,4096};
+inline constexpr std::size_t max_runtime_particle_curve_knots=8;
+inline constexpr std::uint32_t max_runtime_particle_flipbook_side=32;
+inline constexpr std::uint32_t max_runtime_particle_frame_ticks=36'000;
+struct RuntimeParticleCurveKnot {
+    double phase=0,multiplier=1;
+};
+struct RuntimeParticleFlipbook {
+    std::uint32_t columns=1,rows=1,frame_count=1,ticks_per_frame=1,first_frame=0;
+    bool loop=true;
+};
 struct RuntimeParticleSprite {
     std::string texture_sha256;
     float depth_fade_m=0;
+    std::vector<RuntimeParticleCurveKnot> size_over_life{},opacity_over_life{};
+    std::optional<RuntimeParticleFlipbook> flipbook{};
 };
 struct RuntimeParticleEmitter {
     particles::EmitterConfig config;
@@ -401,6 +413,8 @@ struct RuntimeParticleSource {
     std::string entity;
     bool draining=false;
     particles::EmitterStatus status;
+    std::optional<RuntimeParticleSprite> sprite{};
+    std::shared_ptr<const TextureImage> sprite_texture{};
 };
 struct RuntimeParticleObservation {
     bool active=false;

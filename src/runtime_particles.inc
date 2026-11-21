@@ -98,7 +98,14 @@
         const auto& state=*particle_runtime;
         RuntimeParticleObservation result{true,state.system.status(),{},particle_instances()};
         result.sources.reserve(state.sources.size());
-        for(const auto& [id,source]:state.sources)
-            result.sources.push_back({id,source.entity,source.draining,state.system.emitter_status(id)});
+        for(const auto& [id,source]:state.sources) {
+            std::shared_ptr<const TextureImage> texture;
+            const auto& sprite=source.definition.sprite;
+            if(sprite) {
+                const auto index=particle_sprites.indices.at({sprite->texture_sha256,sprite->depth_fade_m});
+                texture=particle_sprites.styles.at(index).texture;
+            }
+            result.sources.push_back({id,source.entity,source.draining,state.system.emitter_status(id),sprite,std::move(texture)});
+        }
         return result;
     }

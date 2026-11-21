@@ -2626,16 +2626,25 @@ void Runtime::append_particles(SceneSnapshot& scene) const {
     require(scene.particle_sprites.styles.empty() && scene.particle_sprites.instances.empty(), "Particle sprite scene batches already exist.");
     SceneParticleSprites sprites;
     sprites.styles=catalog.styles;
-    std::map<particles::EmitterId,std::uint32_t> styles_by_emitter;
+    std::map<particles::EmitterId,std::pair<const RuntimeParticleSprite*,std::uint32_t>> styles_by_emitter;
     for(const auto& [id,source]:impl_->particle_runtime->sources)if(source.definition.sprite) {
         const auto& sprite=*source.definition.sprite;
-        styles_by_emitter.emplace(id,catalog.indices.at({sprite.texture_sha256,sprite.depth_fade_m}));
+        styles_by_emitter.emplace(id,std::pair(&sprite,catalog.indices.at({sprite.texture_sha256,sprite.depth_fade_m})));
     }
     std::vector<particles::Instance> opaque;
     for(const auto& particle:instances) {
         const auto style=styles_by_emitter.find(particle.emitter);
-        if(style==styles_by_emitter.end())opaque.push_back(particle);
-        else sprites.instances.push_back({particle.id,style->second,particle.position_m,particle.size_m,particle.linear_rgba});
+        if(style==styles_by_emitter.end()) {
+            opaque.push_back(particle);
+            continue;
+        }
+        const auto& [authored,index]=style->second;
+        const auto sample=particles::sample_sprite(particle,*authored,sprites.styles.at(index).texture->mips.front());
+        if(sample.visible()) {
+            auto color=particle.linear_rgba;
+            color[3]=sample.opacity;
+            sprites.instances.push_back({particle.id,index,particle.position_m,sample.size_m,color,sample.texel_rect});
+        }
     }
     particles::append_scene_particles(scene,opaque);
     scene.particle_sprites=std::move(sprites);

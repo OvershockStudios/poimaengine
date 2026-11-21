@@ -106,6 +106,12 @@
             const auto& sprite=*candidate.sprite;
             const auto& style=layer.styles[sprite.style];
             const auto& image=texture_cache.at(style.texture.get());
+            const auto& base=style.texture->mips.front();
+            auto rect=sprite.texel_rect;
+            if(rect==std::array<std::uint32_t,4>{})rect={0,0,base.width,base.height};
+            require(rect[2] && rect[3] && rect[0]<base.width && rect[1]<base.height &&
+                rect[2]<=base.width-rect[0] && rect[3]<=base.height-rect[1],
+                "Particle sprite texel rectangle is outside its texture.");
             const auto found=std::find(sprite_textures.begin(),sprite_textures.end(),image);
             const auto texture=static_cast<std::uint32_t>(found-sprite_textures.begin());
             if(found==sprite_textures.end())sprite_textures.push_back(image);
@@ -113,7 +119,7 @@
                 sprite_batches.push_back({static_cast<std::uint32_t>(sprite_instances.size()),0,texture});
             ++sprite_batches.back().count;
             sprite_instances.push_back({{static_cast<float>(sprite.position_m[0]),static_cast<float>(sprite.position_m[1]),
-                static_cast<float>(sprite.position_m[2]),sprite.size_m},sprite.linear_rgba,{style.depth_fade_m,0,0,0}});
+                static_cast<float>(sprite.position_m[2]),sprite.size_m},sprite.linear_rgba,{style.depth_fade_m,0,0,0},rect});
         }
         prepare_sprite_pipeline();
         const auto size=sprite_instances.size()*sizeof(SpriteInstance);
