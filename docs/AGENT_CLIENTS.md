@@ -65,9 +65,12 @@ gets a `poima_workers` tool. The permission applies to that connection. Each
 worker uses the same configured client and model in a separate draft.
 Scene workers inspect and edit through Poima's draft tools. Their Codex
 threads open without a shell environment and must confirm that restriction
-before Poima sends work. The lead conversation retains its existing tool
-permissions. If a different Codex version cannot open a worker, select the
-client supplied by Poima in **Connection settings**.
+before Poima sends work. For the lead, enable **Disable Codex shell access**
+before connecting. This keeps the selected Poima tool permissions and
+excludes the local command and file editing environment. Select it again
+when reconnecting to a conversation. If a different Codex version cannot
+confirm the scope, select the client supplied by Poima in
+**Connection settings**.
 [Scene worker checks](evidence/m2-codex-draft-scope-342.json)
 
 Use the revision from `world.inspect` to start a parallel assignment.
@@ -343,6 +346,8 @@ dotnet run --project tests/fixtures/agent_rpc/Poima.AgentRpc.Contract.csproj -- 
 ```
 
 This uses the installed Codex account, performs one short model turn and creates provider-owned conversation history. It rejects server approval requests during the check. Raw provider history stays outside the repository.
+Use `--codex-no-shell` for the same check with local execution disabled,
+including verification of the restored thread after restarting the provider.
 
 ## Desktop Agent window (development)
 

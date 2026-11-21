@@ -102,6 +102,31 @@ internal static class CodexReviewContract
                 turns.Select(row => row["turn"]!.GetValue<string>()).Distinct().Count() == 3 &&
                 cratePeer.Count(row => Is(row, "turn/completed")) == 2,
                 "Follow-up and cancellation were not correlated to distinct turns in the original review thread.");
+
+            Task<CodexSession> NoShell(string name) =>
+                CodexSession.ConnectAsync(client, client, name, trace, cancellation, disableShell: true);
+            string leadThread;
+            await using (var lead = await NoShell("no-shell-lead"))
+            {
+                leadThread = await lead.OpenAsync(cancellation: cancellation, model: Model, offerWorkers: true);
+                await lead.SendAsync("A project turn without a shell.", cancellation);
+            }
+            await using (var restored = await NoShell("no-shell-lead"))
+            {
+                Check(await restored.OpenAsync(leadThread, cancellation, Model) == leadThread,
+                    "Reconnecting did not confirm the shell was removed from the original thread.");
+                await restored.SendAsync("A resumed turn without a shell.", cancellation);
+            }
+            await using (var refused = await NoShell("no-shell-unconfirmed"))
+            {
+                try
+                {
+                    await refused.OpenAsync(cancellation: cancellation, model: Model);
+                    throw new InvalidDataException("The lead opened with an unconfirmed executor scope.");
+                }
+                catch (InvalidOperationException error) when (error.Message.Contains("shell access is disabled", StringComparison.Ordinal))
+                { Check(refused.ThreadId is null, "The lead accepted turns following a scope failure."); }
+            }
         }
         finally
         {
@@ -109,7 +134,7 @@ internal static class CodexReviewContract
             Environment.SetEnvironmentVariable(TraceVariable, savedTrace);
             Directory.Delete(trace, recursive: true);
         }
-        Console.WriteLine("Codex revision pin, scoped tools, review permissions, independent turns, follow-up and cancellation passed.");
+        Console.WriteLine("Codex review permissions, independent turns, cancellation, and confirmed no-shell lead scope on start and resume passed.");
     }
 
     // This peer also drives the Windows creator UI fixture. It does not launch Poima MCP.
@@ -126,6 +151,12 @@ internal static class CodexReviewContract
         Check(revision is null ? engineArgs.Count == 3 : arguments.Length == 5, "Unexpected launch flags on the Poima connection.");
         var pid = Environment.ProcessId;
         var thread = Guid.NewGuid().ToString("N");
+        var noShell = arguments.Contains("features.shell_tool=false", StringComparer.Ordinal);
+        if (noShell)
+            Check(arguments.Contains("sandbox_mode=\"read-only\"", StringComparer.Ordinal) &&
+                arguments.Contains("features.shell_snapshot=false", StringComparer.Ordinal) &&
+                arguments.Contains("features.memories=false", StringComparer.Ordinal), "Shell-less lead launch retained local tool setup.");
+        var hasExecutor = !noShell;
         var traceDirectory = Environment.GetEnvironmentVariable(TraceVariable);
         var traceFile = traceDirectory is null ? null : Path.Combine(Directory.CreateDirectory(traceDirectory).FullName, $"codex-{pid}.jsonl");
         JsonArray? dynamicTools = null;
@@ -153,11 +184,30 @@ internal static class CodexReviewContract
                 case "thread/start":
                     Check(parameters["cwd"]?.GetValue<string>() == Directory.GetCurrentDirectory(), "The thread opened outside the project directory.");
                     Check(revision is not null || parameters["approvalPolicy"]?.GetValue<string>() == "on-request" &&
-                        parameters["sandbox"]?.GetValue<string>() == "workspace-write" && parameters["ephemeral"]?.GetValue<bool>() == false,
+                        parameters["sandbox"]?.GetValue<string>() == (noShell ? "read-only" : "workspace-write") &&
+                        parameters["ephemeral"]?.GetValue<bool>() == false &&
+                        (!noShell || parameters["environments"] is JsonArray { Count: 0 }),
                         "The lead thread lost its normal settings.");
+                    hasExecutor |= endpoint == "no-shell-unconfirmed";
                     dynamicTools = parameters["dynamicTools"] as JsonArray;
                     await Trace(method, parameters);
-                    await Reply(new JsonObject { ["thread"] = new JsonObject { ["id"] = thread } });
+                    await Reply(noShell ? NoShellResponse() : new JsonObject { ["thread"] = new JsonObject { ["id"] = thread } });
+                    break;
+                case "thread/resume" when noShell:
+                    Check(parameters["sandbox"]?.GetValue<string>() == "read-only" &&
+                        parameters["approvalPolicy"]?.GetValue<string>() == "on-request", "The resumed lead lost its scope.");
+                    thread = parameters["threadId"]!.GetValue<string>();
+                    hasExecutor = true; // The provider can attach its default on resume.
+                    await Reply(NoShellResponse());
+                    break;
+                case "thread/settings/update" when noShell:
+                    Check(parameters["threadId"]?.GetValue<string>() == thread &&
+                        parameters["environments"] is JsonArray { Count: 0 }, "The lead did not detach the resumed executor.");
+                    hasExecutor = false;
+                    await Reply(new JsonObject());
+                    break;
+                case "thread/read" when noShell:
+                    await Reply(NoShellResponse());
                     break;
                 case "mcpServerStatus/list":
                     Check(parameters["serverName"]?.GetValue<string>() == "poima" && parameters["threadId"]?.GetValue<string>() == thread,
@@ -168,6 +218,7 @@ internal static class CodexReviewContract
                     break;
                 case "turn/start":
                     Check(parameters["threadId"]?.GetValue<string>() == thread, "A turn entered a different thread.");
+                    Check(!noShell || !hasExecutor, "A shell-less thread submitted a turn with a local executor.");
                     var turn = Guid.NewGuid().ToString("N");
                     var text = parameters["input"]![0]!["text"]!.GetValue<string>();
                     await Trace(method, new JsonObject { ["turn"] = turn, ["text"] = text });
@@ -206,6 +257,18 @@ internal static class CodexReviewContract
             }
         }
         await Trace("exit", new JsonObject());
+
+        JsonObject NoShellResponse() => new()
+        {
+            ["thread"] = new JsonObject
+            {
+                ["id"] = thread,
+                ["environments"] = hasExecutor ? new JsonArray(new JsonObject { ["environmentId"] = "local" }) : new JsonArray()
+            },
+            ["cwd"] = Directory.GetCurrentDirectory(),
+            ["approvalPolicy"] = "on-request",
+            ["sandbox"] = new JsonObject { ["type"] = "readOnly", ["networkAccess"] = false }
+        };
 
         Task Trace(string kind, JsonObject details)
         {

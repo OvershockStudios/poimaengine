@@ -1,0 +1,120 @@
+{
+  "engine_version": "0.0.344",
+  "archive": {
+    "name": "Poima-0.0.344-Windows-x64.zip",
+    "bytes": 142319950,
+    "sha256": "3ee0bc2db2756b54242a991bb0a4c3ac33ebb0700d694ca54a99f8b71f61d4ea"
+  },
+  "windows_codex": {
+    "version": "0.171.0",
+    "sha256": "cefea4ffee1fff04983a99c0dda99944d8b380e891e740a28b32f4b815a6e0b7"
+  },
+  "signed_in_worker_pilot": {
+    "engine_version": "0.0.343",
+    "model": "gpt-6.2-sol",
+    "draft_revision": 2,
+    "verified_components": [
+      "Transform",
+      "MeshRenderer",
+      "BoxCollider"
+    ],
+    "source_identical_to_checkpoint": true,
+    "sandbox_setup_log_events": 0,
+    "report_sha256": "af06715eb402ce560c79e60c82097c0affd7d724ba21273f3a6e348897e214bd",
+    "draft_world_sha256": "d51421e216a232de75bef0b71250c9d855d3cc86193da6afa1b6ef1deacee555"
+  },
+  "signed_in_lead_reconnect": {
+    "native_poima_cli": "0.0.343",
+    "managed_adapter": "0.0.344 source",
+    "verified_empty_executor_selection_on_start_and_resume": true,
+    "persistent_thread_and_history_after_provider_restart": true,
+    "scoped_poima_catalog_discovered": true,
+    "report_sha256": "b11c9a6a10c807169342eb0eef16876841c6de4681af8f325f2e5c4168830bd9"
+  },
+  "managed_contracts": {
+    "linux": {
+      "passed": true,
+      "log_sha256": "c553528c30de1b12926dbe02666572d122cba9eb040b643fe33a4938d9db643c"
+    },
+    "windows": {
+      "passed": true,
+      "log_sha256": "4889ea2e04ebf61e22a5ead5422b51af850ab6d5676ccea85a6f48edc8aafbba"
+    }
+  },
+  "signed_in_windows_team": {
+    "passed": true,
+    "report_sha256": "08aa4320ac609baa00049ef98aed12f42af104a5e8d8abbb994eec4cb2a333a0",
+    "binaries": {
+      "editor_sha256": "94c81ea692cc8a7f2419392c4c12b0a8488ae1548e170ba04c56d452379d3320",
+      "frontend_sha256": "ef9261742f9157d4caa2a22a4ca43243b570baf1b658da9bca72231e02953a3d",
+      "cli_sha256": "0cbc5f1ae1a3e1b019ef49e95c50ee0917b0755190c046f98cc0d796240ba39a",
+      "bridge_sha256": "aa4cf660fb3032851dbaba34e152fd6b158fa90a447a6ed4f2441b0865141bc6"
+    },
+    "model": "gpt-6.2-sol",
+    "codex_version": "codex-cli 0.171.0",
+    "count": 5,
+    "simultaneous_native_draft_owners": 5,
+    "simultaneous_codex_app_servers": 6,
+    "assignment_wall_ms": 52945,
+    "verify_and_repair_wall_ms": 56071,
+    "available_windows_memory_kib_at_sample": 440800,
+    "child_private_bytes_at_sample": 422715392,
+    "worker_scene_hashes": [
+      "ea47c801f43f9147b377ebb8764558d85ae77e1af8748fef3d8bb817ddadde0e",
+      "9982f7c027a52e85c05c9a22ec58d6d9690d3a66e5ddbfd8600bd83fe5145cc8",
+      "7a404090117d99b4ea56066f59aebd2a612c97339b9e42c430d5c40211f4e6de",
+      "f211d6cd1dfec9b3363c4e238e1560cfd0613a4e1e5e41e38da86f28c5589f0b",
+      "2ab25ba8ffd35357c15b039f80d0db3624314b561bf0994723bb3ec84f5bb7ff"
+    ],
+    "repair_request_id": "967eef24d496d7c60be5972ce0a20fbf",
+    "approved_bundle_sha256": "5cf5a6f4d813be57cc4c4eceaf5761e62cbf573d7a6d036c1c9bdcf7426e065b",
+    "approved_report_sha256": "31316269f0a817c373d18c2661daf35124292a9efe24f09a6da4311d4748034b",
+    "original_unchanged": true,
+    "children_exited_before_creator": true,
+    "playback_after_reopen": {
+      "event_type": "verified_play_closed",
+      "revision": 2,
+      "bundle_sha256": "5cf5a6f4d813be57cc4c4eceaf5761e62cbf573d7a6d036c1c9bdcf7426e065b",
+      "tick": 26,
+      "frames_presented": 55,
+      "stop_reason": "window_closed"
+    },
+    "relocated": {
+      "groups_passed": 6,
+      "report_sha256": "31316269f0a817c373d18c2661daf35124292a9efe24f09a6da4311d4748034b",
+      "suite_sha256": "32b9b4aebbca95acf19d37c3faf6b5f43d3435b6c62e19d5e87f0a7283587659",
+      "unchanged_bundle_files": 54,
+      "original_unavailable": true
+    },
+    "runner_sha256": "d5710c7a12210d453e2119ed862462c67006c4cc784cc53e56e6df39331bba26",
+    "scenario_sha256": "966e49853de60e8fca89e856a862e9446c3128477a645ce853e2f8973d0523e0",
+    "sandbox_setup_trace_detected": false,
+    "sandbox_log_delta_sha256": "a261d9b868fac04df30261d2c25c28d1e8e518ec083d2d2fd77d900d861dd7bf",
+    "independent_raycast_groups_before_repair": 5,
+    "independent_raycast_groups_after_repair": 6
+  },
+  "packaged_scripted_lead": {
+    "passed": true,
+    "report_sha256": "cf12ca810e7a107884c6179313fc6a5a231204e4fd10645a33c51b912123d694",
+    "binaries": {
+      "editor_sha256": "94c81ea692cc8a7f2419392c4c12b0a8488ae1548e170ba04c56d452379d3320",
+      "frontend_sha256": "ef9261742f9157d4caa2a22a4ca43243b570baf1b658da9bca72231e02953a3d",
+      "cli_sha256": "0cbc5f1ae1a3e1b019ef49e95c50ee0917b0755190c046f98cc0d796240ba39a",
+      "bridge_sha256": "aa4cf660fb3032851dbaba34e152fd6b158fa90a447a6ed4f2441b0865141bc6"
+    },
+    "recovered_worker_after_reopen": {
+      "rejected_before_first_turn": true,
+      "original_hashes_unchanged": true,
+      "recovered_draft_revision": 4,
+      "original_receipt_preserved": true
+    },
+    "playback": {
+      "event_type": "verified_play_closed",
+      "revision": 2,
+      "bundle_sha256": "98aab3d273b839ccb280bf02a762ec2ae0df56ca8d17407da2cf58b3d0763678",
+      "tick": 22,
+      "frames_presented": 43,
+      "stop_reason": "window_closed"
+    }
+  }
+}

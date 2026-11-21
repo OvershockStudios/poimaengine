@@ -1,8 +1,23 @@
 # Implementation status
 
-Updated 2026-11-20 for **0.0.343**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-20 for **0.0.344**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.344 adds [shell-disabled Codex connections](AGENT_CLIENTS.md#delegate-scene-work-from-codex)
+for the main creator chat. A signed-in Codex client confirmed the execution
+scope on a new thread and after a provider restart that restored its history.
+In the Windows package, a GPT-6.2 Sol lead assigned five concurrent workers
+to independent scene drafts. The first combination passed five of six
+raycast check groups. The lead used the failed check to send a guarded fix to
+the original worker, and the second combination passed all six groups. The
+creator approved it and played it after reopening. The relocated export
+reproduced the exact verification report with the original project
+unavailable and all 54 bundle files unchanged. The Windows sandbox log
+recorded no setup activity in this run. This covers a five-worker scene
+fixture with a supplied suite. A signed-in ten-worker run and broader
+workloads remain open.
+[Results](evidence/m2-windows-lead-no-shell-344.json)
 
 Version 0.0.343 lets the [lead inspect a worker draft directly](AGENT_CLIENTS.md#delegate-scene-work-from-codex).
 The packaged Windows creator rejected a worker with an unconfirmed execution

@@ -4,7 +4,8 @@ using System.Text.Json.Nodes;
 using Poima.AgentHost;
 using Poima.Editor;
 
-if (args.Length > 0 && args[0] == "--codex") { await CodexIntegration.RunAsync(args); return; }
+if (args.Length > 0 && args[0] is "--codex" or "--codex-no-shell")
+{ await CodexIntegration.RunAsync(args); return; }
 if (args is ["--codex-login", var client, var engine, var directory])
 {
     await CodexLoginContract.VerifyAsync(client, engine, directory, useFixture: false);

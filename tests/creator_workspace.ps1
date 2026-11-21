@@ -900,6 +900,9 @@ function Grant-LeadWorkerPermission {
     $toggle = $setting.GetCurrentPattern([Windows.Automation.TogglePattern]::Pattern)
     if ($toggle.Current.ToggleState -ne [Windows.Automation.ToggleState]::Off) { throw 'Scene workers must default to off.' }
     $toggle.Toggle()
+    $shell = (Find-Control 'Disable Codex shell access' -Enabled).GetCurrentPattern([Windows.Automation.TogglePattern]::Pattern)
+    if ($shell.Current.ToggleState -ne [Windows.Automation.ToggleState]::Off) { throw 'Disabling shell access should be opt-in.' }
+    $shell.Toggle()
     $expander.Collapse()
 }
 
@@ -930,7 +933,9 @@ function Exercise-LeadWorkers($Project, $Peer) {
     $calls = @(Read-ReviewTrace | Where-Object { $_.kind -ceq 'worker/tool' })
     $launches = @(Read-BuildWorkerTrace | Where-Object { $_.kind -ceq 'launch' })
     $edits = @(Read-BuildWorkerTrace | Where-Object { $_.kind -ceq 'native/tool' -and $_.request.arguments.method -ceq 'world.transact' })
-    if ($lead.Count -ne 1 -or $launches.Count -ne 2 -or $edits.Count -ne 2 -or
+    if ($lead.Count -ne 1 -or $lead[0].sandbox -cne 'read-only' -or
+        $null -eq $lead[0].environments -or @($lead[0].environments).Count -ne 0 -or
+        $launches.Count -ne 2 -or $edits.Count -ne 2 -or
         ($launches.manifest | Select-Object -Unique).Count -ne 2 -or
         ($edits | Where-Object { !$_.reply.structuredContent.result.committed -or
             $_.reply.structuredContent.result.revision -ne $Project.revision + 1 }) -or

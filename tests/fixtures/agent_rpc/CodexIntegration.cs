@@ -7,7 +7,8 @@ static class CodexIntegration
     // Explicit opt-in: uses the installed CLI's account and runs one short turn.
     public static async Task RunAsync(string[] args)
     {
-        if (args.Length != 5) throw new ArgumentException("--codex CODEX POIMA ENDPOINT WORKING_DIRECTORY");
+        if (args.Length != 5) throw new ArgumentException("(--codex | --codex-no-shell) CODEX POIMA ENDPOINT WORKING_DIRECTORY");
+        var disableShell = args[0] == "--codex-no-shell";
         using var deadline = new CancellationTokenSource(TimeSpan.FromMinutes(3));
         var token = deadline.Token;
         var completion = new TaskCompletionSource<JsonObject>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -32,7 +33,7 @@ static class CodexIntegration
             catch (Exception e) { if (capture) completion.TrySetException(e); else throw; }
         }, token);
 
-        await using (var session = await CodexSession.ConnectAsync(args[1], args[2], args[3], args[4], token))
+        await using (var session = await CodexSession.ConnectAsync(args[1], args[2], args[3], args[4], token, disableShell: disableShell))
         {
             var draining = Drain(session, true);
             thread = await session.OpenAsync(cancellation: token);
@@ -49,10 +50,12 @@ static class CodexIntegration
             await session.DisposeAsync();
             await draining;
         }
-        await using (var resumed = await CodexSession.ConnectAsync(args[1], args[2], args[3], args[4], token))
+        await using (var resumed = await CodexSession.ConnectAsync(args[1], args[2], args[3], args[4], token, disableShell: disableShell))
         {
             var draining = Drain(resumed, false);
             await resumed.OpenAsync(thread, token);
+            if (disableShell && (await resumed.ReadThreadAsync(thread, token))?["thread"]?["environments"] is not JsonArray { Count: 0 })
+                throw new Exception("The resumed thread did not confirm removal of its local executor.");
             var turns = await resumed.ListTurnsAsync(cancellation: token);
             if (turns?["data"] is not JsonArray data || !data.Any(n => n?["id"]?.GetValue<string>() == turn))
                 throw new Exception("Persisted turn missing after reopening.");
@@ -65,5 +68,6 @@ static class CodexIntegration
             await draining;
         }
         Console.WriteLine($"Codex integration passed: Poima MCP listed, completed turn, process restart, persistent thread, paginated history; {methods.Count} notification kinds.");
+        if (disableShell) Console.WriteLine("Codex confirmed an empty executor selection on the original and resumed connection.");
     }
 }

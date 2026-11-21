@@ -124,7 +124,9 @@ To let the main Codex chat assign work, open **Connection settings**, enable
 **Allow Codex to assign scene workers**, and start a new chat. Describe the
 scene work you want delegated. Each worker gets a tab that you can open to
 follow its work, send a follow-up, or stop its current turn. The main Codex
-chat can collect the reports itself.
+chat can collect the reports itself. Enable **Disable Codex shell access**
+before connecting when you want the main chat to work through Poima
+without a local shell or file editing environment.
 [Worker tool](https://github.com/OvershockStudios/poimaengine/blob/main/docs/AGENT_CLIENTS.md#delegate-scene-work-from-codex)
 
 Connect **Codex** and choose **Add build worker**. Poima captures the
