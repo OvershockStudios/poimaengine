@@ -1,0 +1,2169 @@
+{
+  "engine_version": "0.0.361",
+  "world_schema_revision": 182,
+  "sources_sha256": {
+    ".gitignore": "2e9782d2f86ed7a3789894baa95ae510f69ecf9cc26387f6f92afdd7f944afbb",
+    "CMakeLists.txt": "8efa6e3a40448124933d4dec68cc07ca82dfb2d214e4b49132d3c0ec8f38e45d",
+    "include/poima/gameplay_abi.h": "85c9e746e59f28fed42cf747bdcd42fb3e838b530e6639d6114121323e5f6bcf",
+    "include/poima/gameplay_compatibility.hpp": "4041998ebf035e7e9a03b9182627b55b7fcac2c42a3043bf0272f721b4e18c6e",
+    "include/poima/runtime.hpp": "170158dad68591d3c2990b8ab1b3abb8106599a48e1e91edbfbb681617f23154",
+    "managed/Poima.Gameplay/GameplayRequirements.cs": "54e04fcac9e2688cdc380f9eef1951832bc61b349992dc60b95fa582de7d5d9e",
+    "managed/Poima.Gameplay/SurfaceMarks.cs": "d792fe4bfe24b7839f045ca1c796119230620d39dc5e854e877f6207d5800282",
+    "managed/Poima.ManagedBridge/Entry.cs": "1be814c9b14a1dc84e83f8724db561eaa843d0e62bcd405a478d7f015de7d6d4",
+    "managed/Poima.NativeGame.Generator/Program.cs": "d2d18a2721d80f349e8c682bf2281dbc5387c0c15ad5409e82f9b12eb0f6b65d",
+    "scripts/publish_native_gameplay.py": "33ddb354a83dc25b2c65e427ad79e22f16a54cec49dcd77da76bc7239043da36",
+    "src/gameplay.cpp": "aeb22c877b147b35db1504db536d04cf473d9f18b4eefaca1f43ca2eb354994f",
+    "src/runtime.cpp": "98cb242780ad91eaa9e5c8fb9e4faf4aac480f0f9b6edb5447969fed7fddb955",
+    "src/runtime_surface_marks.inc": "e52553b5b90f8c7e4ec6d0643f6b5a11327addda240a29bfccb34462255c7d18",
+    "src/runtime_ui.inc": "23ecb3c3d09f70d7b222d481d627b4a9f2de399e294ff71aef7b98df34b87467",
+    "src/world_schema.cpp": "274e90d5bbe8005a0a733242a336abdbb62296a9748dd874ad4a5fe8de252093",
+    "src/world_surface_marks.inc": "ed1efa54512c15cc3645551ed6f22430a115d24a4b88a0d34abc66cb6b23d795",
+    "tests/asset_references_contract.py": "453f26bca57acf9b6315c8697709bba25c271fdb163e91b1084963c1b5ebd656",
+    "tests/gameplay_compatibility_native.cpp": "eb6d506bf3716717fe820532b9df58855093a2526f5f5ffefd40ad6452fed535",
+    "tests/gameplay_directional_surface_mark_contract.py": "b45786f2189a7aa1d1d9d6e18b85a9ec77c834b2bde32291a5931478d5847c5b",
+    "tests/gameplay_player_preferences_native.cpp": "87a8c84003703cce50c2fc78e9fb2c32aad469272845422a2b7b82d469fc79cb",
+    "tests/managed_directional_surface_mark_gameplay/ManagedDirectionalSurfaceMarkGame.cs": "0c63ab31c34c444d100468be5768386e7bae8298756e5909b6500d874a057fb6",
+    "tests/managed_directional_surface_mark_gameplay/Poima.ManagedDirectionalSurfaceMarkGame.csproj": "d962388628932261c075561f0f7b1ead35ea9cbbcaf3cabd2475bbfe016e645f",
+    "tests/managed_service_abi/DirectionalSurfaceMarksExtension.cs": "bf0a72ba7fc6b97903391b9f4bc7f34ef8f621e66924d30302caf52ff9b2ffe3",
+    "tests/managed_service_abi/Program.cs": "1c35503a6b33918d98823db6a6074b27844083ab9d33a162ffc4237f8e4c9266",
+    "tests/managed_service_abi/SurfaceMarksExtension.cs": "ae0e0e789156ebe60b8a5f0d8e4a25f5cbb7aa9c78c1946a2e605ab0bb7ff1ea",
+    "tests/runtime_descriptor_contract.py": "0082ebec417b860a7b4f2eba8564c9d6fcad99c4ff740c99b645fe64fe2197c8",
+    "tests/world_ui_contract.py": "fee4c625067b6fd0e6b53d4937966d9143ecc9771da85825d622b5c866dffb4c",
+    "docs/MANAGED_GAMEPLAY.md": "b24e18e25a6cffa1be184a9654f212f65ef5d56ad65429970f36f294743bfb1d"
+  },
+  "service": {
+    "feature": "surface_mark_direction_v2",
+    "epoch": 7,
+    "extent_bytes": 552,
+    "command_bytes": 160
+  },
+  "managed_abi": {
+    "report_sha256": "7eeac04f0114581ea8728ee396a0279a11963ed69c290ea149cfc01e1a408128",
+    "checks": 115,
+    "generator_and_publisher": {
+      "SurfaceMarkProbe": {
+        "call_version": 1,
+        "call_bytes": 80,
+        "services_version": 7,
+        "services_bytes": 544,
+        "features": [
+          "baseline_v7",
+          "surface_mark_v1"
+        ]
+      },
+      "DirectionalSurfaceMarkProbe": {
+        "call_version": 1,
+        "call_bytes": 80,
+        "services_version": 7,
+        "services_bytes": 552,
+        "features": [
+          "baseline_v7",
+          "surface_mark_direction_v2"
+        ]
+      },
+      "DirectionalSurfaceMarkCombinedProbe": {
+        "call_version": 1,
+        "call_bytes": 80,
+        "services_version": 7,
+        "services_bytes": 552,
+        "features": [
+          "baseline_v7",
+          "particle_burst_v1",
+          "surface_mark_v1",
+          "surface_mark_direction_v2"
+        ]
+      }
+    }
+  },
+  "descriptor_checks": {
+    "file_only_checks": 49,
+    "generated_navigation_false_and_true_checked": true,
+    "old_528_missing_contact_rejected": true,
+    "old_528_missing_surface_rejected": true,
+    "passed": true,
+    "retained_400_descriptor_rejected": true,
+    "retained_424_descriptor_rejected": true,
+    "retained_448_descriptor_rejected": true,
+    "retained_496_and_512_descriptors_rejected": true,
+    "retained_and_spoofed_528_rejected": true,
+    "retained_and_spoofed_536_rejected": true,
+    "retained_and_spoofed_544_rejected": true,
+    "retained_stale_descriptor_rejected": true,
+    "unnamed_496_and_missing_physical_dependencies_rejected": true,
+    "unnamed_536_rejected": true,
+    "unnamed_544_rejected": true,
+    "unnamed_552_rejected": true
+  },
+  "retained_0_0_360_save": {
+    "executable_sha256": "d4ecc62f4f33cb37a8f6796ea2a305c7db49d333ba00f02db7da7032d49464e7",
+    "retained_report_sha256": "fb25def6392da91390be828b9965e9c3b8777d7688ce1ff2b452d27b26428264",
+    "byte_identical_checkpoint_sha256": "cb00768ceab49728920cb8ccaf0c3cf65d42eddc7d7ef61fe4c11cf62f7b4ac6",
+    "byte_identical_final_sha256": "69caacc2e548f642f36a7a3071da26693e3b6d41f30e01e0bee479e16ff91e9b"
+  },
+  "earlier_fixture_build_failure": {
+    "report_sha256": "7b088bdc083335ba249f21197c8e75bcc0c528df51adebb74ec140dbf53faed1",
+    "cause": "The fixture omitted the required Game<TState>.Initialize override (CS0534)."
+  },
+  "linux": {
+    "version": {
+      "version": "0.0.361",
+      "compiler": "GNU",
+      "compiler_version": "16.2.0",
+      "target_os": "Linux",
+      "target_arch": "x86_64"
+    },
+    "executable_sha256": "d4ecc62f4f33cb37a8f6796ea2a305c7db49d333ba00f02db7da7032d49464e7",
+    "descriptor": {
+      "call_bytes": 80,
+      "call_version": 1,
+      "feature_count": 40,
+      "navigation": true,
+      "passed": true,
+      "services_bytes": 552,
+      "services_version": 7
+    },
+    "junit_sha256": "975cae8ddb91293be1f420b889f90cf39f28129cde06d246f391b54463e554ea",
+    "suites": [
+      "surface_marks_contract",
+      "world_particles_contract",
+      "sprite_lifetime_contract",
+      "authoring_core_conformance",
+      "authoring_contract_identity",
+      "gameplay_compatibility_policy",
+      "gameplay_service_contract",
+      "native_gameplay_publish_requirements",
+      "save_upgrade_snapshot_native",
+      "gameplay_player_preferences_native",
+      "mcp_contract",
+      "world_ui_contract",
+      "physical_gameplay_publish_requirements",
+      "project_contract",
+      "asset_references_contract"
+    ],
+    "compiled_fixtures": [
+      {
+        "report_sha256": "4f932a12d04b3b2c0a2c0a25ac92586e38122aea2b59c01df5a8785ab968f1c4",
+        "earlier_failed_report_sha256": [],
+        "backend": "coreclr",
+        "gameplay_artifact": {
+          "10.0.15/libhostfxr.so": "342ccc53ed77b71fb097f548098ea5b4190069099dfd8dfef31976d308edf32b",
+          "bridge/Poima.ManagedBridge.dll": "a3e08d199b8d66883ea48278a5ff258efe9110872ca28a1e227d419fcb8b48f3",
+          "coreclr-game/Poima.ManagedDirectionalSurfaceMarkGame.dll": "12455e9445a2d038523393bdea59d712cdf8ed5ed955be141361a28b554979fd",
+          "bridge/Poima.Gameplay.dll": "0d959f80b45daef0fcdea35b7b9c51ccdd69218b09d0a7628bac765710223ae2",
+          "coreclr-game/Poima.Gameplay.dll": "d07867054bbf621f9fa6526344c16bfffb68b0adc9c0f1af1c2916264502390f"
+        },
+        "receiver_poses": {
+          "checkpoint": [
+            2.220446049250313e-16,
+            0.9999999999999998,
+            0.0,
+            0.0,
+            -0.9999999999999998,
+            2.220446049250313e-16,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            -1.25,
+            1.0,
+            -4.5,
+            1.0
+          ],
+          "final": [
+            -0.9999999999999716,
+            2.384185791015591e-07,
+            0.0,
+            0.0,
+            -2.384185791015591e-07,
+            -0.9999999999999716,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            -2.375,
+            1.0,
+            -4.5,
+            1.0
+          ]
+        },
+        "source_poses": {
+          "checkpoint": [
+            2.0230485926475694e-06,
+            0.0,
+            -0.9999999999979535,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.9999999999979535,
+            0.0,
+            2.0230485926475694e-06,
+            0.0,
+            -1.0624999761581422,
+            1.25,
+            -1.0,
+            1.0
+          ],
+          "final": null
+        },
+        "saved_frames": [
+          {
+            "id": "1",
+            "receiver": "00000000000000000000000000000064",
+            "center_m": [
+              -0.25,
+              0.1875,
+              0.5
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "tangent": [
+              2.220446049250313e-16,
+              -1.0,
+              0.0
+            ],
+            "half_extent_m": [
+              0.25,
+              0.0625
+            ]
+          },
+          {
+            "id": "2",
+            "receiver": "00000000000000000000000000000065",
+            "center_m": [
+              -0.25,
+              0.25,
+              0.5
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "tangent": [
+              1.0,
+              0.0,
+              0.0
+            ],
+            "half_extent_m": [
+              0.25,
+              0.0625
+            ]
+          },
+          {
+            "id": "3",
+            "receiver": "00000000000000000000000000000064",
+            "center_m": [
+              0.25,
+              -0.18750609457492828,
+              0.5
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "tangent": [
+              0.5999996066093445,
+              -0.8000003099441528,
+              0.0
+            ],
+            "half_extent_m": [
+              0.25,
+              0.0625
+            ]
+          },
+          {
+            "id": "4",
+            "receiver": "00000000000000000000000000000065",
+            "center_m": [
+              0.25,
+              -0.25,
+              0.5
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "tangent": [
+              1.0,
+              0.0,
+              0.0
+            ],
+            "half_extent_m": [
+              0.1875,
+              0.0625
+            ]
+          }
+        ],
+        "archives": {
+          "checkpoint": {
+            "tick": 1,
+            "bytes": 10824,
+            "sha256": "d843e4ad793ceb9b7c2dbc4ec1fa0275e1745b4a71ac74390c72a8e8c7acb0ab"
+          },
+          "zero-direction": {
+            "tick": 1,
+            "bytes": 10824,
+            "sha256": "d843e4ad793ceb9b7c2dbc4ec1fa0275e1745b4a71ac74390c72a8e8c7acb0ab"
+          },
+          "out-of-range": {
+            "tick": 1,
+            "bytes": 10824,
+            "sha256": "d843e4ad793ceb9b7c2dbc4ec1fa0275e1745b4a71ac74390c72a8e8c7acb0ab"
+          },
+          "miss-after-valid": {
+            "tick": 1,
+            "bytes": 10824,
+            "sha256": "d843e4ad793ceb9b7c2dbc4ec1fa0275e1745b4a71ac74390c72a8e8c7acb0ab"
+          },
+          "final": {
+            "tick": 7,
+            "bytes": 9728,
+            "sha256": "b645c0e896c9d6acab4183004785ca7231354698468fa7fbb65be68925515d5c"
+          },
+          "restored-checkpoint": {
+            "tick": 1,
+            "bytes": 10824,
+            "sha256": "d843e4ad793ceb9b7c2dbc4ec1fa0275e1745b4a71ac74390c72a8e8c7acb0ab"
+          },
+          "restored-final": {
+            "tick": 7,
+            "bytes": 9728,
+            "sha256": "b645c0e896c9d6acab4183004785ca7231354698468fa7fbb65be68925515d5c"
+          }
+        },
+        "rejected_commands": [
+          "miss-after-valid",
+          "out-of-range",
+          "zero-direction"
+        ]
+      },
+      {
+        "report_sha256": "2772e869c5277bc27ce50a82e4cfa51787d5523430f16c41763cd84574b6e062",
+        "earlier_failed_report_sha256": [],
+        "backend": "native_aot",
+        "gameplay_artifact": {
+          "descriptor_sha256": "a554933677840f7f7785f3fdea418acf3c3629542e467595a87514a19f6b2d29",
+          "files": [
+            {
+              "path": "Poima.NativeGame.so",
+              "size": 1615688,
+              "sha256": "1d7ce21b10c8326889816b8deae43d297ab8f50fd6f0c49985d003d022b2ce2b",
+              "role": "library"
+            },
+            {
+              "path": "notices/DOTNET-NATIVEAOT-10.0.15-LICENSE.txt",
+              "size": 1116,
+              "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310",
+              "role": "notice"
+            },
+            {
+              "path": "notices/DOTNET-NATIVEAOT-10.0.15-THIRD-PARTY-NOTICES.txt",
+              "size": 76623,
+              "sha256": "66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54",
+              "role": "notice"
+            },
+            {
+              "path": "notices/DOTNET-RUNTIME-10.0.15-LICENSE.txt",
+              "size": 1116,
+              "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310",
+              "role": "notice"
+            },
+            {
+              "path": "notices/DOTNET-RUNTIME-10.0.15-THIRD-PARTY-NOTICES.txt",
+              "size": 76623,
+              "sha256": "66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54",
+              "role": "notice"
+            },
+            {
+              "path": "notices/POIMA-LICENSE.txt",
+              "size": 11358,
+              "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+              "role": "notice"
+            },
+            {
+              "path": "notices/POIMA-THIRD-PARTY-NOTICES.md",
+              "size": 23949,
+              "sha256": "7d364ecf908a603cdc58efecf0a19e8d20b1a51ee0179ce3b9885d05327664a7",
+              "role": "notice"
+            }
+          ]
+        },
+        "receiver_poses": {
+          "checkpoint": [
+            2.220446049250313e-16,
+            0.9999999999999998,
+            0.0,
+            0.0,
+            -0.9999999999999998,
+            2.220446049250313e-16,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            -1.25,
+            1.0,
+            -4.5,
+            1.0
+          ],
+          "final": [
+            -0.9999999999999716,
+            2.384185791015591e-07,
+            0.0,
+            0.0,
+            -2.384185791015591e-07,
+            -0.9999999999999716,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            -2.375,
+            1.0,
+            -4.5,
+            1.0
+          ]
+        },
+        "source_poses": {
+          "checkpoint": [
+            2.0230485926475694e-06,
+            0.0,
+            -0.9999999999979535,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.9999999999979535,
+            0.0,
+            2.0230485926475694e-06,
+            0.0,
+            -1.0624999761581422,
+            1.25,
+            -1.0,
+            1.0
+          ],
+          "final": null
+        },
+        "saved_frames": [
+          {
+            "id": "1",
+            "receiver": "00000000000000000000000000000064",
+            "center_m": [
+              -0.25,
+              0.1875,
+              0.5
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "tangent": [
+              2.220446049250313e-16,
+              -1.0,
+              0.0
+            ],
+            "half_extent_m": [
+              0.25,
+              0.0625
+            ]
+          },
+          {
+            "id": "2",
+            "receiver": "00000000000000000000000000000065",
+            "center_m": [
+              -0.25,
+              0.25,
+              0.5
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "tangent": [
+              1.0,
+              0.0,
+              0.0
+            ],
+            "half_extent_m": [
+              0.25,
+              0.0625
+            ]
+          },
+          {
+            "id": "3",
+            "receiver": "00000000000000000000000000000064",
+            "center_m": [
+              0.25,
+              -0.18750609457492828,
+              0.5
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "tangent": [
+              0.5999996066093445,
+              -0.8000003099441528,
+              0.0
+            ],
+            "half_extent_m": [
+              0.25,
+              0.0625
+            ]
+          },
+          {
+            "id": "4",
+            "receiver": "00000000000000000000000000000065",
+            "center_m": [
+              0.25,
+              -0.25,
+              0.5
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "tangent": [
+              1.0,
+              0.0,
+              0.0
+            ],
+            "half_extent_m": [
+              0.1875,
+              0.0625
+            ]
+          }
+        ],
+        "archives": {
+          "checkpoint": {
+            "tick": 1,
+            "bytes": 10827,
+            "sha256": "0c248c7a7faa2220c9e2464e6300134ba4c691c555bdf857f0021269528eb6bb"
+          },
+          "zero-direction": {
+            "tick": 1,
+            "bytes": 10827,
+            "sha256": "0c248c7a7faa2220c9e2464e6300134ba4c691c555bdf857f0021269528eb6bb"
+          },
+          "out-of-range": {
+            "tick": 1,
+            "bytes": 10827,
+            "sha256": "0c248c7a7faa2220c9e2464e6300134ba4c691c555bdf857f0021269528eb6bb"
+          },
+          "miss-after-valid": {
+            "tick": 1,
+            "bytes": 10827,
+            "sha256": "0c248c7a7faa2220c9e2464e6300134ba4c691c555bdf857f0021269528eb6bb"
+          },
+          "final": {
+            "tick": 7,
+            "bytes": 9731,
+            "sha256": "28f2389a1ece49678683ff8eac9334dd2489987009ebf56bea8e12e21452b448"
+          },
+          "restored-checkpoint": {
+            "tick": 1,
+            "bytes": 10827,
+            "sha256": "0c248c7a7faa2220c9e2464e6300134ba4c691c555bdf857f0021269528eb6bb"
+          },
+          "restored-final": {
+            "tick": 7,
+            "bytes": 9731,
+            "sha256": "28f2389a1ece49678683ff8eac9334dd2489987009ebf56bea8e12e21452b448"
+          }
+        },
+        "rejected_commands": [
+          "miss-after-valid",
+          "out-of-range",
+          "zero-direction"
+        ]
+      }
+    ],
+    "legacy_surface_marks": {
+      "report_sha256": "b6420b5590662640ce8504e245d36d23dd71f4b9c4a7dba7fbb983488cd76e4a",
+      "descriptor_sha256": "f6c331f3727cbe42a3a53545b216ec7bbebc291cd501159df4420761f45ac96c",
+      "minimum_services_bytes": 544
+    },
+    "legacy_176_byte_aot": {
+      "report_sha256": "586f7a5104c5e79fcf9fbfed4d6f738f779ad1caec7eec458c3eefdefc132cef"
+    }
+  },
+  "windows": {
+    "version": {
+      "version": "0.0.361",
+      "compiler": "Clang",
+      "compiler_version": "23.1.2",
+      "target_os": "Windows",
+      "target_arch": "x86_64"
+    },
+    "executable_sha256": "c01c7249899af383db5b15239602496740cc06d562ab783767edfcae5ab15a14",
+    "descriptor": {
+      "call_bytes": 80,
+      "call_version": 1,
+      "feature_count": 40,
+      "navigation": true,
+      "passed": true,
+      "services_bytes": 552,
+      "services_version": 7
+    },
+    "descriptor_sha256": "4da50da34f4fbf9987cf9b0431d339d02465d679d379652fad9831e54b1d6a60",
+    "desktop_bridge_sha256": "9de1fa333df3ec77f5d1c7d3497861101ee8a4deb38d0226545463a519a6bba5",
+    "mcp_report_sha256": "afee442aead764be8ff68c39785a8225d025fd9c64a286a2aebdeb5115fff0b5",
+    "relocated_native_aot": [
+      {
+        "report_sha256": "f11410f9e20ac6c09a7b32fa27f8f0449ac15306906c0baee363bbf77bf8de97",
+        "earlier_failed_report_sha256": [],
+        "backend": "native_aot",
+        "gameplay_artifact": {
+          "descriptor_sha256": "2e999bdf1114d047ef9a819388b5b68b4f2169ff8685ea0b374903834c38829d",
+          "files": [
+            {
+              "path": "notices/DOTNET-NATIVEAOT-10.0.15-LICENSE.txt",
+              "size": 1139,
+              "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+              "role": "notice"
+            },
+            {
+              "path": "notices/DOTNET-NATIVEAOT-10.0.15-THIRD-PARTY-NOTICES.txt",
+              "size": 78041,
+              "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+              "role": "notice"
+            },
+            {
+              "path": "notices/DOTNET-RUNTIME-10.0.15-LICENSE.txt",
+              "size": 1139,
+              "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+              "role": "notice"
+            },
+            {
+              "path": "notices/DOTNET-RUNTIME-10.0.15-THIRD-PARTY-NOTICES.txt",
+              "size": 78041,
+              "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+              "role": "notice"
+            },
+            {
+              "path": "notices/POIMA-LICENSE.txt",
+              "size": 11358,
+              "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+              "role": "notice"
+            },
+            {
+              "path": "notices/POIMA-THIRD-PARTY-NOTICES.md",
+              "size": 23949,
+              "sha256": "7d364ecf908a603cdc58efecf0a19e8d20b1a51ee0179ce3b9885d05327664a7",
+              "role": "notice"
+            },
+            {
+              "path": "Poima.NativeGame.dll",
+              "size": 1361920,
+              "sha256": "1ce597dcf4dc39f8d229842ac2ec6b7f35407d1df09011ee79c542ba304b1e39",
+              "role": "library"
+            }
+          ]
+        },
+        "receiver_poses": {
+          "checkpoint": [
+            2.220446049250313e-16,
+            0.9999999999999998,
+            0.0,
+            0.0,
+            -0.9999999999999998,
+            2.220446049250313e-16,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            -1.25,
+            1.0,
+            -4.5,
+            1.0
+          ],
+          "final": [
+            -0.9999999999999716,
+            2.384185791015591e-07,
+            0.0,
+            0.0,
+            -2.384185791015591e-07,
+            -0.9999999999999716,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            -2.375,
+            1.0,
+            -4.5,
+            1.0
+          ]
+        },
+        "source_poses": {
+          "checkpoint": [
+            2.0230485926475694e-06,
+            0.0,
+            -0.9999999999979535,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.9999999999979535,
+            0.0,
+            2.0230485926475694e-06,
+            0.0,
+            -1.0624999761581422,
+            1.25,
+            -1.0,
+            1.0
+          ],
+          "final": null
+        },
+        "saved_frames": [
+          {
+            "id": "1",
+            "receiver": "00000000000000000000000000000064",
+            "center_m": [
+              -0.25,
+              0.1875,
+              0.5
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "tangent": [
+              2.220446049250313e-16,
+              -1.0,
+              0.0
+            ],
+            "half_extent_m": [
+              0.25,
+              0.0625
+            ]
+          },
+          {
+            "id": "2",
+            "receiver": "00000000000000000000000000000065",
+            "center_m": [
+              -0.25,
+              0.25,
+              0.5
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "tangent": [
+              1.0,
+              0.0,
+              0.0
+            ],
+            "half_extent_m": [
+              0.25,
+              0.0625
+            ]
+          },
+          {
+            "id": "3",
+            "receiver": "00000000000000000000000000000064",
+            "center_m": [
+              0.25,
+              -0.18750609457492828,
+              0.5
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "tangent": [
+              0.5999996066093445,
+              -0.8000003099441528,
+              0.0
+            ],
+            "half_extent_m": [
+              0.25,
+              0.0625
+            ]
+          },
+          {
+            "id": "4",
+            "receiver": "00000000000000000000000000000065",
+            "center_m": [
+              0.25,
+              -0.25,
+              0.5
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "tangent": [
+              1.0,
+              0.0,
+              0.0
+            ],
+            "half_extent_m": [
+              0.1875,
+              0.0625
+            ]
+          }
+        ],
+        "archives": {
+          "checkpoint": {
+            "tick": 1,
+            "bytes": 10827,
+            "sha256": "527c2122911457a75899965c56b1614267b7630e1fa0916c778bf24aad074429"
+          },
+          "final": {
+            "tick": 7,
+            "bytes": 9731,
+            "sha256": "e057f5b26d6a0bfe94f81ce638d9b24d4b0ff57c17aed6fd26d4affda047fae9"
+          },
+          "restored-checkpoint": {
+            "tick": 1,
+            "bytes": 10827,
+            "sha256": "527c2122911457a75899965c56b1614267b7630e1fa0916c778bf24aad074429"
+          },
+          "restored-final": {
+            "tick": 7,
+            "bytes": 9731,
+            "sha256": "e057f5b26d6a0bfe94f81ce638d9b24d4b0ff57c17aed6fd26d4affda047fae9"
+          }
+        },
+        "gpu": "AMD Radeon(TM) Graphics",
+        "lighting_path": "forward",
+        "manifest_sha256": "9a55425d13b2908cd9a8994f42cadcd6de9cc1e5ec59b1a2a72795e7e72d20b4",
+        "relocated_bundle_files": 66,
+        "capture_count": 4,
+        "captures": {
+          "checkpoint": {
+            "sha256": "49255ef7c93f10d35eb434d6658566db898ab0115c35a3113c18766af4400ef4",
+            "tick": 1,
+            "samples": 16,
+            "max_abs_hdr_error": 0.0004694028616227808,
+            "max_abs_srgb_error": 1,
+            "witnesses": {
+              "caller_major": {
+                "hdr": [
+                  0.5283203125,
+                  0.1727294921875,
+                  0.1900634765625
+                ],
+                "expected_hdr": [
+                  0.5286588604584092,
+                  0.1727420304553779,
+                  0.19010382704089163
+                ],
+                "bmp_rgb": [
+                  159,
+                  107,
+                  111
+                ],
+                "expected_bmp": [
+                  159,
+                  107,
+                  111
+                ],
+                "pixel": [
+                  318,
+                  191
+                ],
+                "depth": 0.8333333730697632,
+                "base": [
+                  0.78125,
+                  0.140625,
+                  0.171875
+                ],
+                "roughness": 0.421875
+              },
+              "caller_minor_outside": {
+                "hdr": [
+                  0.0794677734375,
+                  0.14892578125,
+                  0.28759765625
+                ],
+                "expected_hdr": [
+                  0.07948647420808094,
+                  0.14893366055013582,
+                  0.28782803323424555
+                ],
+                "bmp_rgb": [
+                  77,
+                  101,
+                  130
+                ],
+                "expected_bmp": [
+                  77,
+                  101,
+                  130
+                ],
+                "pixel": [
+                  311,
+                  185
+                ],
+                "depth": 0.8333333730697632,
+                "base": [
+                  0.125,
+                  0.25,
+                  0.5
+                ],
+                "roughness": 0.75
+              }
+            }
+          },
+          "final": {
+            "sha256": "6b28084a9b5566f4970abf877a598596c1f8b9854b472b9ec1431adba5a5bcd0",
+            "tick": 7,
+            "samples": 16,
+            "max_abs_hdr_error": 0.0004694028616227808,
+            "max_abs_srgb_error": 1,
+            "witnesses": {
+              "caller_major": {
+                "hdr": [
+                  0.489990234375,
+                  0.134033203125,
+                  0.1513671875
+                ],
+                "expected_hdr": [
+                  0.4899981858322451,
+                  0.13408135583053857,
+                  0.1514431524159877
+                ],
+                "bmp_rgb": [
+                  155,
+                  97,
+                  102
+                ],
+                "expected_bmp": [
+                  155,
+                  96,
+                  102
+                ],
+                "pixel": [
+                  280,
+                  181
+                ],
+                "depth": 0.8333333730697632,
+                "base": [
+                  0.78125,
+                  0.140625,
+                  0.171875
+                ],
+                "roughness": 0.421875
+              },
+              "caller_minor_outside": {
+                "hdr": [
+                  0.0791015625,
+                  0.1485595703125,
+                  0.287353515625
+                ],
+                "expected_hdr": [
+                  0.07912680460421793,
+                  0.14857399094531068,
+                  0.28746836362749617
+                ],
+                "bmp_rgb": [
+                  77,
+                  101,
+                  130
+                ],
+                "expected_bmp": [
+                  77,
+                  101,
+                  130
+                ],
+                "pixel": [
+                  275,
+                  188
+                ],
+                "depth": 0.8333333730697632,
+                "base": [
+                  0.125,
+                  0.25,
+                  0.5
+                ],
+                "roughness": 0.75
+              }
+            }
+          }
+        }
+      },
+      {
+        "report_sha256": "76e97a59acd18000623ceff11b6026941b5904ae1882127fe6c9621b08ec43c9",
+        "earlier_failed_report_sha256": [],
+        "backend": "native_aot",
+        "gameplay_artifact": {
+          "descriptor_sha256": "2e999bdf1114d047ef9a819388b5b68b4f2169ff8685ea0b374903834c38829d",
+          "files": [
+            {
+              "path": "notices/DOTNET-NATIVEAOT-10.0.15-LICENSE.txt",
+              "size": 1139,
+              "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+              "role": "notice"
+            },
+            {
+              "path": "notices/DOTNET-NATIVEAOT-10.0.15-THIRD-PARTY-NOTICES.txt",
+              "size": 78041,
+              "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+              "role": "notice"
+            },
+            {
+              "path": "notices/DOTNET-RUNTIME-10.0.15-LICENSE.txt",
+              "size": 1139,
+              "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+              "role": "notice"
+            },
+            {
+              "path": "notices/DOTNET-RUNTIME-10.0.15-THIRD-PARTY-NOTICES.txt",
+              "size": 78041,
+              "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+              "role": "notice"
+            },
+            {
+              "path": "notices/POIMA-LICENSE.txt",
+              "size": 11358,
+              "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+              "role": "notice"
+            },
+            {
+              "path": "notices/POIMA-THIRD-PARTY-NOTICES.md",
+              "size": 23949,
+              "sha256": "7d364ecf908a603cdc58efecf0a19e8d20b1a51ee0179ce3b9885d05327664a7",
+              "role": "notice"
+            },
+            {
+              "path": "Poima.NativeGame.dll",
+              "size": 1361920,
+              "sha256": "1ce597dcf4dc39f8d229842ac2ec6b7f35407d1df09011ee79c542ba304b1e39",
+              "role": "library"
+            }
+          ]
+        },
+        "receiver_poses": {
+          "checkpoint": [
+            2.220446049250313e-16,
+            0.9999999999999998,
+            0.0,
+            0.0,
+            -0.9999999999999998,
+            2.220446049250313e-16,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            -1.25,
+            1.0,
+            -4.5,
+            1.0
+          ],
+          "final": [
+            -0.9999999999999716,
+            2.384185791015591e-07,
+            0.0,
+            0.0,
+            -2.384185791015591e-07,
+            -0.9999999999999716,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            -2.375,
+            1.0,
+            -4.5,
+            1.0
+          ]
+        },
+        "source_poses": {
+          "checkpoint": [
+            2.0230485926475694e-06,
+            0.0,
+            -0.9999999999979535,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.9999999999979535,
+            0.0,
+            2.0230485926475694e-06,
+            0.0,
+            -1.0624999761581422,
+            1.25,
+            -1.0,
+            1.0
+          ],
+          "final": null
+        },
+        "saved_frames": [
+          {
+            "id": "1",
+            "receiver": "00000000000000000000000000000064",
+            "center_m": [
+              -0.25,
+              0.1875,
+              0.5
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "tangent": [
+              2.220446049250313e-16,
+              -1.0,
+              0.0
+            ],
+            "half_extent_m": [
+              0.25,
+              0.0625
+            ]
+          },
+          {
+            "id": "2",
+            "receiver": "00000000000000000000000000000065",
+            "center_m": [
+              -0.25,
+              0.25,
+              0.5
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "tangent": [
+              1.0,
+              0.0,
+              0.0
+            ],
+            "half_extent_m": [
+              0.25,
+              0.0625
+            ]
+          },
+          {
+            "id": "3",
+            "receiver": "00000000000000000000000000000064",
+            "center_m": [
+              0.25,
+              -0.18750609457492828,
+              0.5
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "tangent": [
+              0.5999996066093445,
+              -0.8000003099441528,
+              0.0
+            ],
+            "half_extent_m": [
+              0.25,
+              0.0625
+            ]
+          },
+          {
+            "id": "4",
+            "receiver": "00000000000000000000000000000065",
+            "center_m": [
+              0.25,
+              -0.25,
+              0.5
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "tangent": [
+              1.0,
+              0.0,
+              0.0
+            ],
+            "half_extent_m": [
+              0.1875,
+              0.0625
+            ]
+          }
+        ],
+        "archives": {
+          "checkpoint": {
+            "tick": 1,
+            "bytes": 10827,
+            "sha256": "4ae2dcdb0c29c08a10fa482016176e06e5926b487446c784ac5c6cac268a05ef"
+          },
+          "final": {
+            "tick": 7,
+            "bytes": 9731,
+            "sha256": "a4c16cfc153abe2da2832123d67bb02bb66fc19ba102dc375f1bedb1f7536012"
+          },
+          "restored-checkpoint": {
+            "tick": 1,
+            "bytes": 10827,
+            "sha256": "4ae2dcdb0c29c08a10fa482016176e06e5926b487446c784ac5c6cac268a05ef"
+          },
+          "restored-final": {
+            "tick": 7,
+            "bytes": 9731,
+            "sha256": "a4c16cfc153abe2da2832123d67bb02bb66fc19ba102dc375f1bedb1f7536012"
+          }
+        },
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "lighting_path": "forward",
+        "manifest_sha256": "16db4d2c85fb921270e426b20cb3ba3755c504a0eca713916486a2728862aa06",
+        "relocated_bundle_files": 66,
+        "capture_count": 4,
+        "captures": {
+          "checkpoint": {
+            "sha256": "125210ba1d5876b3b36f656098ee23b175a550169f93cee6583bd641d9de413f",
+            "tick": 1,
+            "samples": 16,
+            "max_abs_hdr_error": 0.0004694028616227808,
+            "max_abs_srgb_error": 1,
+            "witnesses": {
+              "caller_major": {
+                "hdr": [
+                  0.5283203125,
+                  0.1727294921875,
+                  0.1900634765625
+                ],
+                "expected_hdr": [
+                  0.5286588604584092,
+                  0.1727420304553779,
+                  0.19010382704089163
+                ],
+                "bmp_rgb": [
+                  159,
+                  107,
+                  111
+                ],
+                "expected_bmp": [
+                  159,
+                  107,
+                  111
+                ],
+                "pixel": [
+                  318,
+                  191
+                ],
+                "depth": 0.8333333730697632,
+                "base": [
+                  0.78125,
+                  0.140625,
+                  0.171875
+                ],
+                "roughness": 0.421875
+              },
+              "caller_minor_outside": {
+                "hdr": [
+                  0.0794677734375,
+                  0.14892578125,
+                  0.28759765625
+                ],
+                "expected_hdr": [
+                  0.07948647420808094,
+                  0.14893366055013582,
+                  0.28782803323424555
+                ],
+                "bmp_rgb": [
+                  77,
+                  101,
+                  130
+                ],
+                "expected_bmp": [
+                  77,
+                  101,
+                  130
+                ],
+                "pixel": [
+                  311,
+                  185
+                ],
+                "depth": 0.8333333730697632,
+                "base": [
+                  0.125,
+                  0.25,
+                  0.5
+                ],
+                "roughness": 0.75
+              }
+            }
+          },
+          "final": {
+            "sha256": "9a2eaccff8a4f2d51b7323ac061120f2f784a357d1a33ae12758d3695089e893",
+            "tick": 7,
+            "samples": 16,
+            "max_abs_hdr_error": 0.0004694028616227808,
+            "max_abs_srgb_error": 1,
+            "witnesses": {
+              "caller_major": {
+                "hdr": [
+                  0.489990234375,
+                  0.134033203125,
+                  0.1513671875
+                ],
+                "expected_hdr": [
+                  0.4899981858322451,
+                  0.13408135583053857,
+                  0.1514431524159877
+                ],
+                "bmp_rgb": [
+                  155,
+                  97,
+                  102
+                ],
+                "expected_bmp": [
+                  155,
+                  96,
+                  102
+                ],
+                "pixel": [
+                  280,
+                  181
+                ],
+                "depth": 0.8333333730697632,
+                "base": [
+                  0.78125,
+                  0.140625,
+                  0.171875
+                ],
+                "roughness": 0.421875
+              },
+              "caller_minor_outside": {
+                "hdr": [
+                  0.0791015625,
+                  0.1485595703125,
+                  0.287353515625
+                ],
+                "expected_hdr": [
+                  0.07912680460421793,
+                  0.14857399094531068,
+                  0.28746836362749617
+                ],
+                "bmp_rgb": [
+                  77,
+                  101,
+                  130
+                ],
+                "expected_bmp": [
+                  77,
+                  101,
+                  130
+                ],
+                "pixel": [
+                  275,
+                  188
+                ],
+                "depth": 0.8333333730697632,
+                "base": [
+                  0.125,
+                  0.25,
+                  0.5
+                ],
+                "roughness": 0.75
+              }
+            }
+          }
+        }
+      },
+      {
+        "report_sha256": "dc064f54a7c18ea682eb21d8a073c37b6d4fe2c9c023a22929548854f851ce32",
+        "earlier_failed_report_sha256": [],
+        "backend": "native_aot",
+        "gameplay_artifact": {
+          "descriptor_sha256": "2e999bdf1114d047ef9a819388b5b68b4f2169ff8685ea0b374903834c38829d",
+          "files": [
+            {
+              "path": "notices/DOTNET-NATIVEAOT-10.0.15-LICENSE.txt",
+              "size": 1139,
+              "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+              "role": "notice"
+            },
+            {
+              "path": "notices/DOTNET-NATIVEAOT-10.0.15-THIRD-PARTY-NOTICES.txt",
+              "size": 78041,
+              "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+              "role": "notice"
+            },
+            {
+              "path": "notices/DOTNET-RUNTIME-10.0.15-LICENSE.txt",
+              "size": 1139,
+              "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+              "role": "notice"
+            },
+            {
+              "path": "notices/DOTNET-RUNTIME-10.0.15-THIRD-PARTY-NOTICES.txt",
+              "size": 78041,
+              "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+              "role": "notice"
+            },
+            {
+              "path": "notices/POIMA-LICENSE.txt",
+              "size": 11358,
+              "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+              "role": "notice"
+            },
+            {
+              "path": "notices/POIMA-THIRD-PARTY-NOTICES.md",
+              "size": 23949,
+              "sha256": "7d364ecf908a603cdc58efecf0a19e8d20b1a51ee0179ce3b9885d05327664a7",
+              "role": "notice"
+            },
+            {
+              "path": "Poima.NativeGame.dll",
+              "size": 1361920,
+              "sha256": "1ce597dcf4dc39f8d229842ac2ec6b7f35407d1df09011ee79c542ba304b1e39",
+              "role": "library"
+            }
+          ]
+        },
+        "receiver_poses": {
+          "checkpoint": [
+            2.220446049250313e-16,
+            0.9999999999999998,
+            0.0,
+            0.0,
+            -0.9999999999999998,
+            2.220446049250313e-16,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            -1.25,
+            1.0,
+            -4.5,
+            1.0
+          ],
+          "final": [
+            -0.9999999999999716,
+            2.384185791015591e-07,
+            0.0,
+            0.0,
+            -2.384185791015591e-07,
+            -0.9999999999999716,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            -2.375,
+            1.0,
+            -4.5,
+            1.0
+          ]
+        },
+        "source_poses": {
+          "checkpoint": [
+            2.0230485926475694e-06,
+            0.0,
+            -0.9999999999979535,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.9999999999979535,
+            0.0,
+            2.0230485926475694e-06,
+            0.0,
+            -1.0624999761581422,
+            1.25,
+            -1.0,
+            1.0
+          ],
+          "final": null
+        },
+        "saved_frames": [
+          {
+            "id": "1",
+            "receiver": "00000000000000000000000000000064",
+            "center_m": [
+              -0.25,
+              0.1875,
+              0.5
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "tangent": [
+              2.220446049250313e-16,
+              -1.0,
+              0.0
+            ],
+            "half_extent_m": [
+              0.25,
+              0.0625
+            ]
+          },
+          {
+            "id": "2",
+            "receiver": "00000000000000000000000000000065",
+            "center_m": [
+              -0.25,
+              0.25,
+              0.5
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "tangent": [
+              1.0,
+              0.0,
+              0.0
+            ],
+            "half_extent_m": [
+              0.25,
+              0.0625
+            ]
+          },
+          {
+            "id": "3",
+            "receiver": "00000000000000000000000000000064",
+            "center_m": [
+              0.25,
+              -0.18750609457492828,
+              0.5
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "tangent": [
+              0.5999996066093445,
+              -0.8000003099441528,
+              0.0
+            ],
+            "half_extent_m": [
+              0.25,
+              0.0625
+            ]
+          },
+          {
+            "id": "4",
+            "receiver": "00000000000000000000000000000065",
+            "center_m": [
+              0.25,
+              -0.25,
+              0.5
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "tangent": [
+              1.0,
+              0.0,
+              0.0
+            ],
+            "half_extent_m": [
+              0.1875,
+              0.0625
+            ]
+          }
+        ],
+        "archives": {
+          "checkpoint": {
+            "tick": 1,
+            "bytes": 10827,
+            "sha256": "92c3d0d5ff9ec8efc20d746995e5e08da9f93e82c671b57b95d3b03b3a447d19"
+          },
+          "final": {
+            "tick": 7,
+            "bytes": 9731,
+            "sha256": "fbadf11140779bc4424452dbb93baf2b3e7c44eee18f85b4260695fa4b99aefd"
+          },
+          "restored-checkpoint": {
+            "tick": 1,
+            "bytes": 10827,
+            "sha256": "92c3d0d5ff9ec8efc20d746995e5e08da9f93e82c671b57b95d3b03b3a447d19"
+          },
+          "restored-final": {
+            "tick": 7,
+            "bytes": 9731,
+            "sha256": "fbadf11140779bc4424452dbb93baf2b3e7c44eee18f85b4260695fa4b99aefd"
+          }
+        },
+        "gpu": "AMD Radeon(TM) Graphics",
+        "lighting_path": "deferred",
+        "manifest_sha256": "0f7917d5b8d306e055e10c44189e46521908ddb36c3b8d20dff2359b73b2687b",
+        "relocated_bundle_files": 66,
+        "capture_count": 4,
+        "captures": {
+          "checkpoint": {
+            "sha256": "3024578771d3adbe0bfbb9b5586c7ef450263eeb8674f3b4c06ab5488f45a9d5",
+            "tick": 1,
+            "samples": 16,
+            "max_abs_hdr_error": 0.0004694028616227808,
+            "max_abs_srgb_error": 1,
+            "witnesses": {
+              "caller_major": {
+                "hdr": [
+                  0.5283203125,
+                  0.1727294921875,
+                  0.1900634765625
+                ],
+                "expected_hdr": [
+                  0.5286588604584092,
+                  0.1727420304553779,
+                  0.19010382704089163
+                ],
+                "bmp_rgb": [
+                  159,
+                  107,
+                  111
+                ],
+                "expected_bmp": [
+                  159,
+                  107,
+                  111
+                ],
+                "pixel": [
+                  318,
+                  191
+                ],
+                "depth": 0.8333333730697632,
+                "base": [
+                  0.78125,
+                  0.140625,
+                  0.171875
+                ],
+                "roughness": 0.421875
+              },
+              "caller_minor_outside": {
+                "hdr": [
+                  0.0794677734375,
+                  0.14892578125,
+                  0.28759765625
+                ],
+                "expected_hdr": [
+                  0.07948647420808094,
+                  0.14893366055013582,
+                  0.28782803323424555
+                ],
+                "bmp_rgb": [
+                  77,
+                  101,
+                  130
+                ],
+                "expected_bmp": [
+                  77,
+                  101,
+                  130
+                ],
+                "pixel": [
+                  311,
+                  185
+                ],
+                "depth": 0.8333333730697632,
+                "base": [
+                  0.125,
+                  0.25,
+                  0.5
+                ],
+                "roughness": 0.75
+              }
+            }
+          },
+          "final": {
+            "sha256": "2d3f7cf099060cc46d2f3b1a27bd57b08bda1af1e7dad5806e0ede396c5e5294",
+            "tick": 7,
+            "samples": 16,
+            "max_abs_hdr_error": 0.0004694028616227808,
+            "max_abs_srgb_error": 1,
+            "witnesses": {
+              "caller_major": {
+                "hdr": [
+                  0.489990234375,
+                  0.134033203125,
+                  0.1513671875
+                ],
+                "expected_hdr": [
+                  0.4899981858322451,
+                  0.13408135583053857,
+                  0.1514431524159877
+                ],
+                "bmp_rgb": [
+                  155,
+                  97,
+                  102
+                ],
+                "expected_bmp": [
+                  155,
+                  96,
+                  102
+                ],
+                "pixel": [
+                  280,
+                  181
+                ],
+                "depth": 0.8333333730697632,
+                "base": [
+                  0.78125,
+                  0.140625,
+                  0.171875
+                ],
+                "roughness": 0.421875
+              },
+              "caller_minor_outside": {
+                "hdr": [
+                  0.0791015625,
+                  0.1485595703125,
+                  0.287353515625
+                ],
+                "expected_hdr": [
+                  0.07912680460421793,
+                  0.14857399094531068,
+                  0.28746836362749617
+                ],
+                "bmp_rgb": [
+                  77,
+                  101,
+                  130
+                ],
+                "expected_bmp": [
+                  77,
+                  101,
+                  130
+                ],
+                "pixel": [
+                  275,
+                  188
+                ],
+                "depth": 0.8333333730697632,
+                "base": [
+                  0.125,
+                  0.25,
+                  0.5
+                ],
+                "roughness": 0.75
+              }
+            }
+          }
+        }
+      },
+      {
+        "report_sha256": "9c15235292d5f11049b169d811c788068f88fd2ecb51caae8d4d5dd9f5c721e6",
+        "earlier_failed_report_sha256": [],
+        "backend": "native_aot",
+        "gameplay_artifact": {
+          "descriptor_sha256": "2e999bdf1114d047ef9a819388b5b68b4f2169ff8685ea0b374903834c38829d",
+          "files": [
+            {
+              "path": "notices/DOTNET-NATIVEAOT-10.0.15-LICENSE.txt",
+              "size": 1139,
+              "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+              "role": "notice"
+            },
+            {
+              "path": "notices/DOTNET-NATIVEAOT-10.0.15-THIRD-PARTY-NOTICES.txt",
+              "size": 78041,
+              "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+              "role": "notice"
+            },
+            {
+              "path": "notices/DOTNET-RUNTIME-10.0.15-LICENSE.txt",
+              "size": 1139,
+              "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+              "role": "notice"
+            },
+            {
+              "path": "notices/DOTNET-RUNTIME-10.0.15-THIRD-PARTY-NOTICES.txt",
+              "size": 78041,
+              "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+              "role": "notice"
+            },
+            {
+              "path": "notices/POIMA-LICENSE.txt",
+              "size": 11358,
+              "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+              "role": "notice"
+            },
+            {
+              "path": "notices/POIMA-THIRD-PARTY-NOTICES.md",
+              "size": 23949,
+              "sha256": "7d364ecf908a603cdc58efecf0a19e8d20b1a51ee0179ce3b9885d05327664a7",
+              "role": "notice"
+            },
+            {
+              "path": "Poima.NativeGame.dll",
+              "size": 1361920,
+              "sha256": "1ce597dcf4dc39f8d229842ac2ec6b7f35407d1df09011ee79c542ba304b1e39",
+              "role": "library"
+            }
+          ]
+        },
+        "receiver_poses": {
+          "checkpoint": [
+            2.220446049250313e-16,
+            0.9999999999999998,
+            0.0,
+            0.0,
+            -0.9999999999999998,
+            2.220446049250313e-16,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            -1.25,
+            1.0,
+            -4.5,
+            1.0
+          ],
+          "final": [
+            -0.9999999999999716,
+            2.384185791015591e-07,
+            0.0,
+            0.0,
+            -2.384185791015591e-07,
+            -0.9999999999999716,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            -2.375,
+            1.0,
+            -4.5,
+            1.0
+          ]
+        },
+        "source_poses": {
+          "checkpoint": [
+            2.0230485926475694e-06,
+            0.0,
+            -0.9999999999979535,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.9999999999979535,
+            0.0,
+            2.0230485926475694e-06,
+            0.0,
+            -1.0624999761581422,
+            1.25,
+            -1.0,
+            1.0
+          ],
+          "final": null
+        },
+        "saved_frames": [
+          {
+            "id": "1",
+            "receiver": "00000000000000000000000000000064",
+            "center_m": [
+              -0.25,
+              0.1875,
+              0.5
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "tangent": [
+              2.220446049250313e-16,
+              -1.0,
+              0.0
+            ],
+            "half_extent_m": [
+              0.25,
+              0.0625
+            ]
+          },
+          {
+            "id": "2",
+            "receiver": "00000000000000000000000000000065",
+            "center_m": [
+              -0.25,
+              0.25,
+              0.5
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "tangent": [
+              1.0,
+              0.0,
+              0.0
+            ],
+            "half_extent_m": [
+              0.25,
+              0.0625
+            ]
+          },
+          {
+            "id": "3",
+            "receiver": "00000000000000000000000000000064",
+            "center_m": [
+              0.25,
+              -0.18750609457492828,
+              0.5
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "tangent": [
+              0.5999996066093445,
+              -0.8000003099441528,
+              0.0
+            ],
+            "half_extent_m": [
+              0.25,
+              0.0625
+            ]
+          },
+          {
+            "id": "4",
+            "receiver": "00000000000000000000000000000065",
+            "center_m": [
+              0.25,
+              -0.25,
+              0.5
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "tangent": [
+              1.0,
+              0.0,
+              0.0
+            ],
+            "half_extent_m": [
+              0.1875,
+              0.0625
+            ]
+          }
+        ],
+        "archives": {
+          "checkpoint": {
+            "tick": 1,
+            "bytes": 10827,
+            "sha256": "0c3784f9d7b3ed032d6c06d643c9b45529884876807b249a8afa79942b7e0fe6"
+          },
+          "final": {
+            "tick": 7,
+            "bytes": 9731,
+            "sha256": "5d3467ab6d6737318c18e4a4d990eb1ea888cba2ef929963649492f49a1498b9"
+          },
+          "restored-checkpoint": {
+            "tick": 1,
+            "bytes": 10827,
+            "sha256": "0c3784f9d7b3ed032d6c06d643c9b45529884876807b249a8afa79942b7e0fe6"
+          },
+          "restored-final": {
+            "tick": 7,
+            "bytes": 9731,
+            "sha256": "5d3467ab6d6737318c18e4a4d990eb1ea888cba2ef929963649492f49a1498b9"
+          }
+        },
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "lighting_path": "deferred",
+        "manifest_sha256": "55ab1596acecc17de66cde7555f591cdd7825219382b60cc691f106f8aff2e0f",
+        "relocated_bundle_files": 66,
+        "capture_count": 4,
+        "captures": {
+          "checkpoint": {
+            "sha256": "4334abff8ffb52a74b7b8003b8cdc7bf9ad2193a256a656bedcb8eb44890144e",
+            "tick": 1,
+            "samples": 16,
+            "max_abs_hdr_error": 0.0004694028616227808,
+            "max_abs_srgb_error": 1,
+            "witnesses": {
+              "caller_major": {
+                "hdr": [
+                  0.5283203125,
+                  0.1727294921875,
+                  0.1900634765625
+                ],
+                "expected_hdr": [
+                  0.5286588604584092,
+                  0.1727420304553779,
+                  0.19010382704089163
+                ],
+                "bmp_rgb": [
+                  159,
+                  107,
+                  111
+                ],
+                "expected_bmp": [
+                  159,
+                  107,
+                  111
+                ],
+                "pixel": [
+                  318,
+                  191
+                ],
+                "depth": 0.8333333730697632,
+                "base": [
+                  0.78125,
+                  0.140625,
+                  0.171875
+                ],
+                "roughness": 0.421875
+              },
+              "caller_minor_outside": {
+                "hdr": [
+                  0.0794677734375,
+                  0.14892578125,
+                  0.28759765625
+                ],
+                "expected_hdr": [
+                  0.07948647420808094,
+                  0.14893366055013582,
+                  0.28782803323424555
+                ],
+                "bmp_rgb": [
+                  77,
+                  101,
+                  130
+                ],
+                "expected_bmp": [
+                  77,
+                  101,
+                  130
+                ],
+                "pixel": [
+                  311,
+                  185
+                ],
+                "depth": 0.8333333730697632,
+                "base": [
+                  0.125,
+                  0.25,
+                  0.5
+                ],
+                "roughness": 0.75
+              }
+            }
+          },
+          "final": {
+            "sha256": "690440319ba0d56ecbf2eba824253eb34ffcf5568f6ac7dc10aaa660c98d1791",
+            "tick": 7,
+            "samples": 16,
+            "max_abs_hdr_error": 0.0004694028616227808,
+            "max_abs_srgb_error": 1,
+            "witnesses": {
+              "caller_major": {
+                "hdr": [
+                  0.489990234375,
+                  0.134033203125,
+                  0.1513671875
+                ],
+                "expected_hdr": [
+                  0.4899981858322451,
+                  0.13408135583053857,
+                  0.1514431524159877
+                ],
+                "bmp_rgb": [
+                  155,
+                  97,
+                  102
+                ],
+                "expected_bmp": [
+                  155,
+                  96,
+                  102
+                ],
+                "pixel": [
+                  280,
+                  181
+                ],
+                "depth": 0.8333333730697632,
+                "base": [
+                  0.78125,
+                  0.140625,
+                  0.171875
+                ],
+                "roughness": 0.421875
+              },
+              "caller_minor_outside": {
+                "hdr": [
+                  0.0791015625,
+                  0.1485595703125,
+                  0.287353515625
+                ],
+                "expected_hdr": [
+                  0.07912680460421793,
+                  0.14857399094531068,
+                  0.28746836362749617
+                ],
+                "bmp_rgb": [
+                  77,
+                  101,
+                  130
+                ],
+                "expected_bmp": [
+                  77,
+                  101,
+                  130
+                ],
+                "pixel": [
+                  275,
+                  188
+                ],
+                "depth": 0.8333333730697632,
+                "base": [
+                  0.125,
+                  0.25,
+                  0.5
+                ],
+                "roughness": 0.75
+              }
+            }
+          }
+        }
+      }
+    ]
+  },
+  "scope": "Bounded directional ellipses on rigid opaque receivers. Linux CoreCLR and Native AOT plus relocated Windows Native AOT with single-sample Vulkan forward and deferred and reconstruction disabled."
+}

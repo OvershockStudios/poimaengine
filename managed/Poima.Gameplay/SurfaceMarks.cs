@@ -7,6 +7,9 @@ namespace Poima;
 /// <summary>Opts into persistent surface mark placement during Tick.</summary>
 public interface ISurfaceMarkGame { }
 
+/// <summary>Opts into persistent surface marks aligned to a direction of travel during Tick.</summary>
+public interface IDirectionalSurfaceMarkGame { }
+
 /// <summary>Defines the ellipse, falloff and material blend of a surface mark.
 /// A zero edge fraction produces a hard edge.</summary>
 public readonly record struct SurfaceMarkStyle(Vector2 HalfExtentMetres, float HalfDepthMetres,
@@ -32,15 +35,33 @@ internal unsafe struct NativeSurfaceMarkServicesV1
     public delegate* unmanaged[Cdecl]<void*, NativeSurfaceMarkCommandV1*, NativeError*, int> Place;
 }
 
+[StructLayout(LayoutKind.Sequential)]
+internal struct NativeSurfaceMarkCommandV2
+{
+    public NativeSurfaceMarkCommandV1 Mark;
+    public Vector3d TravelDirection;
+}
+
+[StructLayout(LayoutKind.Sequential)]
+internal unsafe struct NativeSurfaceMarkDirectionServicesV2
+{
+    public NativeSurfaceMarkServicesV1 Marks;
+    public delegate* unmanaged[Cdecl]<void*, NativeSurfaceMarkCommandV2*, NativeError*, int> PlaceDirectional;
+}
+
 internal static unsafe class SurfaceMarkServiceAbi
 {
     internal const uint RequiredBytes = 544;
     internal const string Feature = "surface_mark_v1";
+    internal const uint DirectionRequiredBytes = 552;
+    internal const string DirectionFeature = "surface_mark_direction_v2";
 
     internal static bool LayoutValid()
     {
         NativeSurfaceMarkServicesV1 services = default;
         NativeSurfaceMarkCommandV1 command = default;
+        NativeSurfaceMarkDirectionServicesV2 directionServices = default;
+        NativeSurfaceMarkCommandV2 directionCommand = default;
         return sizeof(NativeSurfaceMarkServicesV1) == RequiredBytes &&
             (byte*)&services.Place - (byte*)&services == 536 &&
             sizeof(NativeSurfaceMarkCommandV1) == 136 &&
@@ -55,7 +76,13 @@ internal static unsafe class SurfaceMarkServiceAbi
             (byte*)&command.EdgeFraction - (byte*)&command == 112 &&
             (byte*)&command.LinearColor - (byte*)&command == 116 &&
             (byte*)&command.Opacity - (byte*)&command == 128 &&
-            (byte*)&command.Roughness - (byte*)&command == 132;
+            (byte*)&command.Roughness - (byte*)&command == 132 &&
+            sizeof(NativeSurfaceMarkDirectionServicesV2) == DirectionRequiredBytes &&
+            (byte*)&directionServices.Marks - (byte*)&directionServices == 0 &&
+            (byte*)&directionServices.PlaceDirectional - (byte*)&directionServices == RequiredBytes &&
+            sizeof(NativeSurfaceMarkCommandV2) == 160 &&
+            (byte*)&directionCommand.Mark - (byte*)&directionCommand == 0 &&
+            (byte*)&directionCommand.TravelDirection - (byte*)&directionCommand == 136;
     }
 
     internal static NativeSurfaceMarkServicesV1* Validate(NativeServices* services)
@@ -68,8 +95,18 @@ internal static unsafe class SurfaceMarkServiceAbi
         return api;
     }
 
-    internal static void ValidateCommand(EntityId receiver, Vector3d origin, Vector3d direction, double distance,
-        SurfaceMarkStyle style)
+    internal static NativeSurfaceMarkDirectionServicesV2* ValidateDirectional(NativeServices* services)
+    {
+        if (services == null || services->Version != ServiceAbi.Epoch || services->Bytes < DirectionRequiredBytes)
+            throw new ArgumentException("Directional surface marks require services epoch 7 with at least 552 bytes.");
+        var api = (NativeSurfaceMarkDirectionServicesV2*)services;
+        if (api->PlaceDirectional == null)
+            throw new ArgumentException("Gameplay directional surface mark callback is absent.");
+        return api;
+    }
+
+    internal static NativeSurfaceMarkCommandV1 EncodeMark(EntityId receiver, Vector3d origin, Vector3d direction,
+        double distance, SurfaceMarkStyle style, EntityId source, uint version, uint bytes)
     {
         if (receiver == default)
             throw new ArgumentException("A surface mark requires a nonzero receiver entity ID.", nameof(receiver));
@@ -85,6 +122,32 @@ internal static unsafe class SurfaceMarkServiceAbi
             !UnitInterval(style.MinimumNormalDot) || !UnitInterval(style.EdgeFraction) || !UnitInterval(style.Opacity) ||
             !UnitInterval(style.LinearColor.X) || !UnitInterval(style.LinearColor.Y) || !UnitInterval(style.LinearColor.Z))
             throw new ArgumentOutOfRangeException(nameof(style), "Surface mark style is outside the bounded material ranges.");
+
+        return new NativeSurfaceMarkCommandV1
+        {
+            Version = version,
+            Bytes = bytes,
+            Receiver = receiver,
+            Source = source,
+            Origin = origin,
+            Direction = direction,
+            Distance = distance,
+            HalfExtentMetres = style.HalfExtentMetres,
+            HalfDepthMetres = style.HalfDepthMetres,
+            MinimumNormalDot = style.MinimumNormalDot,
+            EdgeFraction = style.EdgeFraction,
+            LinearColor = style.LinearColor,
+            Opacity = style.Opacity,
+            Roughness = style.Roughness
+        };
+    }
+
+    internal static void ValidateTravelDirection(Vector3d travelDirection)
+    {
+        if (!BoundedVector(travelDirection) || travelDirection.X * travelDirection.X +
+            travelDirection.Y * travelDirection.Y + travelDirection.Z * travelDirection.Z < 1e-16)
+            throw new ArgumentOutOfRangeException(nameof(travelDirection),
+                "Surface mark travel direction must be finite, within ±1000000 per axis and at least 1e-8 in length.");
     }
 
     private static bool BoundedVector(Vector3d value) =>
@@ -102,27 +165,29 @@ public readonly unsafe ref partial struct GameContext
         SurfaceMarkStyle style, EntityId source = default)
     {
         RequireFeature(GameplayRequiredFeatures.SurfaceMark, nameof(ISurfaceMarkGame));
-        SurfaceMarkServiceAbi.ValidateCommand(receiver, origin, direction, distance, style);
-
+        var command = SurfaceMarkServiceAbi.EncodeMark(receiver, origin, direction, distance, style, source,
+            1, (uint)sizeof(NativeSurfaceMarkCommandV1));
         var api = SurfaceMarkServiceAbi.Validate(services);
-        NativeSurfaceMarkCommandV1 command = new()
-        {
-            Version = 1,
-            Bytes = (uint)sizeof(NativeSurfaceMarkCommandV1),
-            Receiver = receiver,
-            Source = source,
-            Origin = origin,
-            Direction = direction,
-            Distance = distance,
-            HalfExtentMetres = style.HalfExtentMetres,
-            HalfDepthMetres = style.HalfDepthMetres,
-            MinimumNormalDot = style.MinimumNormalDot,
-            EdgeFraction = style.EdgeFraction,
-            LinearColor = style.LinearColor,
-            Opacity = style.Opacity,
-            Roughness = style.Roughness
-        };
         NativeError error = default;
         Check(api->Place(services->Context, &command, &error), &error);
+    }
+
+    /// <summary>Queues a ray-placed mark whose first axis follows travel projected onto the hit plane.
+    /// With a source entity, the ray and travel direction use its final local frame.
+    /// Otherwise they use world space. Nearly normal travel uses the default tangent.</summary>
+    public void PlaceDirectionalSurfaceMark(EntityId receiver, Vector3d origin, Vector3d direction, double distance,
+        SurfaceMarkStyle style, Vector3d travelDirection, EntityId source = default)
+    {
+        RequireFeature(GameplayRequiredFeatures.SurfaceMarkDirection, nameof(IDirectionalSurfaceMarkGame));
+        SurfaceMarkServiceAbi.ValidateTravelDirection(travelDirection);
+        NativeSurfaceMarkCommandV2 command = new()
+        {
+            Mark = SurfaceMarkServiceAbi.EncodeMark(receiver, origin, direction, distance, style, source,
+                2, (uint)sizeof(NativeSurfaceMarkCommandV2)),
+            TravelDirection = travelDirection
+        };
+        var api = SurfaceMarkServiceAbi.ValidateDirectional(services);
+        NativeError error = default;
+        Check(api->PlaceDirectional(services->Context, &command, &error), &error);
     }
 }

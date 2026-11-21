@@ -13,11 +13,12 @@
         for(const auto& row:raw) {
             const std::initializer_list<const char*> keys={"receiver","ray","half_extent_m","half_depth_m",
                 "minimum_normal_dot","edge_fraction","linear_rgb","opacity","roughness"};
-            fields(row,{"receiver","source","ray","half_extent_m","half_depth_m","minimum_normal_dot","edge_fraction",
+            fields(row,{"receiver","source","ray","travel_direction","half_extent_m","half_depth_m","minimum_normal_dot","edge_fraction",
                 "linear_rgb","opacity","roughness"},keys);
             RuntimeSurfaceMarkCommand command;
             command.receiver=identifier(row.at("receiver"));
             if(row.contains("source"))command.source=identifier(row.at("source"));
+            if(row.contains("travel_direction"))command.travel_direction=query_vector(row.at("travel_direction"));
             const auto& ray=row.at("ray");
             fields(ray,{"origin","direction","distance"},{"origin","direction","distance"});
             command.ray.origin=query_vector(ray.at("origin"));

@@ -121,8 +121,15 @@ static unsafe partial class Program
     static int PlaceSurfaceMark(void* context, SurfaceMarkWire* command, void* error)
     {
         ++surfaceMarkCalls;
+        badSurfaceMarkPayload |= !SurfaceMarkPayloadMatches(command) || (nint)context != 0x1234 ||
+            command->Version != 1 || command->Bytes != 136;
+        return refuseSurfaceMark ? LifecycleError(error) : 0;
+    }
+
+    static bool SurfaceMarkPayloadMatches(SurfaceMarkWire* command)
+    {
         bool world = (command->Receiver.High, command->Receiver.Low) == (23UL, 71UL);
-        bool valid = world
+        return world
             ? (command->Source.High, command->Source.Low) == (0UL, 0UL) &&
                 (command->Origin[0], command->Origin[1], command->Origin[2]) == (10, 20, -30) &&
                 (command->Direction[0], command->Direction[1], command->Direction[2]) == (0, -1, 0) &&
@@ -138,8 +145,6 @@ static unsafe partial class Program
                 (command->HalfDepth, command->MinimumNormalDot, command->EdgeFraction) == (.25f, 0, 1) &&
                 (command->LinearColor[0], command->LinearColor[1], command->LinearColor[2]) == (1, 1, 1) &&
                 (command->Opacity, command->Roughness) == (1, .045f);
-        badSurfaceMarkPayload |= !valid || (nint)context != 0x1234 || command->Version != 1 || command->Bytes != 136;
-        return refuseSurfaceMark ? LifecycleError(error) : 0;
     }
 
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
@@ -262,8 +267,9 @@ static unsafe partial class Program
         var root = document.RootElement;
         var names = root.GetProperty("features");
         int count = names.GetArrayLength();
-        Check(count > 24 && count <= 64 && root.GetProperty("services_bytes").GetInt32() == 544 &&
-            names[count - 1].GetString() == "surface_mark_v1", "Generated surface mark feature-union mismatch.");
+        Check(count > 24 && count <= 64 && root.GetProperty("services_bytes").GetInt32() == 552 &&
+            names[count - 2].GetString() == "surface_mark_v1" &&
+            names[count - 1].GetString() == "surface_mark_direction_v2", "Generated surface mark feature-union mismatch.");
         var parsed = parse.Invoke(null, [manifest]);
         Check(Convert.ToUInt64(parsed) == mask && Equals(serialize.Invoke(null, [parsed]), manifest),
             "Generated feature union failed the Native AOT manifest round trip.");

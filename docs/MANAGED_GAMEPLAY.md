@@ -88,6 +88,7 @@ public sealed class CounterGame : Game<CounterState>
 | `PlaySound(emitter, gain)` / `StopSound(voice)` | Create/stop a native voice in the gameplay transaction; [event/recording contract](AUDIO_EVENTS.md). |
 | `BurstParticles(emitter, count)` | Stage a [particle burst](PARTICLES.md#trigger-a-burst-from-gameplay) at the emitter's final pose in the tick. Requires `IParticleBurstGame`. |
 | `PlaceSurfaceMark(receiver, origin, direction, distance, style, source)` | Stage a [persistent material mark](SURFACE_MARKS.md#place-marks-from-gameplay) using a world ray or the completed frame of a source entity. Requires `ISurfaceMarkGame`. |
+| `PlaceDirectionalSurfaceMark(receiver, origin, direction, distance, style, travelDirection, source)` | Align the first axis of a [surface mark](SURFACE_MARKS.md#place-marks-from-gameplay) to the projected direction of travel. Requires `IDirectionalSurfaceMarkGame`. |
 | `MoveKinematic(entity, position, rotation, ticks)` | Queue a validated native kinematic target for this tick. |
 | `GetTwoBoneIk(entity, slot)` | Tick-only current controls and phase-dependent pose diagnostics; requires independent `ITwoBoneIkGame`. |
 | `SetTwoBoneIk(entity, slot, target, pole, enabled, space, weight)` | Stage complete persistent controls for a configured chain slot; requires `ITwoBoneIkGame`. |

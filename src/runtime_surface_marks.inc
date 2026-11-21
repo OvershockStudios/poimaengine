@@ -9,33 +9,64 @@
     std::vector<RuntimeSurfaceMarkCommand> gameplay_surface_marks;
     std::size_t surface_mark_attempts=0;
 
+    void check_surface_mark_request(const PoimaGameSurfaceMarkCommandV1* request,std::uint32_t version,std::size_t bytes) {
+        require_tick();
+        require(surface_mark_attempts<max_surface_mark_commands,"Gameplay exceeded 16 surface mark requests in one tick.");
+        ++surface_mark_attempts;
+        require(request && request->version==version && request->bytes==bytes &&
+            (request->receiver.high || request->receiver.low),"Invalid gameplay surface mark request.");
+    }
+
+    static double travel_direction_length(const pose_frames::Vector& direction) {
+        require(std::all_of(direction.begin(),direction.end(),[](double value) {
+            return std::isfinite(value) && std::abs(value)<=1e6;
+        }),"Surface mark travel direction must be finite and within 1e6.");
+        const auto length=std::hypot(direction[0],direction[1],direction[2]);
+        require(length>=1e-8,"Surface mark travel direction must have length at least 1e-8.");
+        return length;
+    }
+
+    void queue_surface_mark(const PoimaGameSurfaceMarkCommandV1& request,
+        std::optional<pose_frames::Vector> travel_direction={}) {
+        RuntimeSurfaceMarkCommand command;
+        command.receiver=gameplay_id(request.receiver);
+        if(request.source.high || request.source.low)command.source=gameplay_id(request.source);
+        std::copy_n(request.origin,3,command.ray.origin.begin());
+        std::copy_n(request.direction,3,command.ray.direction.begin());
+        command.ray.distance=request.distance;
+        command.travel_direction=travel_direction;
+        auto& mark=command.style;
+        std::copy_n(request.half_extent_m,2,mark.half_extent_m.begin());
+        std::copy_n(request.linear_rgb,3,mark.linear_rgb.begin());
+        mark.half_depth_m=request.half_depth_m;
+        mark.minimum_normal_dot=request.minimum_normal_dot;
+        mark.edge_fraction=request.edge_fraction;
+        mark.opacity=request.opacity;
+        mark.roughness=request.roughness;
+        validate_surface_mark_fields(mark,false);
+        gameplay_surface_marks.push_back(std::move(command));
+    }
+
     static int32_t POIMA_CALL stage_surface_mark(void* context,const PoimaGameSurfaceMarkCommandV1* request,
         PoimaGameError* error) {
         return callback(error,[&] {
             require(context,"Surface mark context is absent.");
             auto& self=*static_cast<Impl*>(context);
-            self.require_tick();
-            require(self.surface_mark_attempts<max_surface_mark_commands,"Gameplay exceeded 16 surface mark requests in one tick.");
-            ++self.surface_mark_attempts;
-            require(request && request->version==1 && request->bytes==sizeof(PoimaGameSurfaceMarkCommandV1) &&
-                (request->receiver.high || request->receiver.low),"Invalid gameplay surface mark request.");
+            self.check_surface_mark_request(request,1,sizeof(PoimaGameSurfaceMarkCommandV1));
+            self.queue_surface_mark(*request);
+        });
+    }
 
-            RuntimeSurfaceMarkCommand command;
-            command.receiver=gameplay_id(request->receiver);
-            if(request->source.high || request->source.low)command.source=gameplay_id(request->source);
-            std::copy_n(request->origin,3,command.ray.origin.begin());
-            std::copy_n(request->direction,3,command.ray.direction.begin());
-            command.ray.distance=request->distance;
-            auto& mark=command.style;
-            std::copy_n(request->half_extent_m,2,mark.half_extent_m.begin());
-            std::copy_n(request->linear_rgb,3,mark.linear_rgb.begin());
-            mark.half_depth_m=request->half_depth_m;
-            mark.minimum_normal_dot=request->minimum_normal_dot;
-            mark.edge_fraction=request->edge_fraction;
-            mark.opacity=request->opacity;
-            mark.roughness=request->roughness;
-            validate_surface_mark_fields(mark,false);
-            self.gameplay_surface_marks.push_back(std::move(command));
+    static int32_t POIMA_CALL stage_directional_surface_mark(void* context,const PoimaGameSurfaceMarkCommandV2* request,
+        PoimaGameError* error) {
+        return callback(error,[&] {
+            require(context,"Surface mark context is absent.");
+            auto& self=*static_cast<Impl*>(context);
+            self.check_surface_mark_request(request ? &request->mark : nullptr,2,sizeof(PoimaGameSurfaceMarkCommandV2));
+            const auto& direction=request->travel_direction;
+            const pose_frames::Vector travel{direction[0],direction[1],direction[2]};
+            travel_direction_length(travel);
+            self.queue_surface_mark(request->mark,travel);
         });
     }
 
@@ -121,6 +152,38 @@
         return ray;
     }
 
+    pose_frames::Vector surface_mark_tangent(const RuntimeSurfaceMarkCommand& command,
+        const pose_frames::Axes& receiver_basis,const pose_frames::Vector& normal) const {
+        if(command.travel_direction) {
+            auto travel=*command.travel_direction;
+            const auto length=travel_direction_length(travel);
+            for(auto& value:travel)value/=length;
+            if(!command.source.empty()) {
+                // The ray has already validated the same final source pose.
+                const auto source_basis=pose_frames::axes(registry.get<Node>(find(command.source)).world);
+                const auto local=travel;
+                for(std::size_t row=0;row<3;++row) {
+                    travel[row]=source_basis.direction[0][row]*local[0]+source_basis.direction[1][row]*local[1]+
+                        source_basis.direction[2][row]*local[2];
+                }
+            }
+            travel=pose_frames::project(receiver_basis,travel);
+            const auto normal_dot=pose_frames::dot(normal,travel);
+            for(std::size_t k=0;k<3;++k)travel[k]-=normal[k]*normal_dot;
+            const auto projected_length=std::hypot(travel[0],travel[1],travel[2]);
+            if(projected_length>1e-6) {
+                for(auto& value:travel)value/=projected_length;
+                return travel;
+            }
+        }
+        const std::size_t axis=std::abs(normal[0])<.9 ? 0 : 2;
+        pose_frames::Vector tangent{};
+        for(std::size_t k=0;k<3;++k)tangent[k]=(k==axis ? 1. : 0.)-normal[k]*normal[axis];
+        const auto length=std::hypot(tangent[0],tangent[1],tangent[2]);
+        for(auto& value:tangent)value/=length;
+        return tangent;
+    }
+
     void place_surface_marks(std::span<const RuntimeSurfaceMarkCommand> caller) {
         const std::span<const RuntimeSurfaceMarkCommand> gameplay=gameplay_surface_marks;
         if(caller.empty() && gameplay.empty())return;
@@ -169,16 +232,13 @@
             const auto normal_length=std::hypot(normal[0],normal[1],normal[2]);
             require(std::isfinite(normal_length) && normal_length>1e-8,"Surface mark hit normal is invalid.");
             for(auto& value:normal)value/=facing>0 ? -normal_length : normal_length;
-            const std::size_t axis=std::abs(normal[0])<.9 ? 0 : 2;
-            pose_frames::Vector tangent{};
-            for(std::size_t k=0;k<3;++k)tangent[k]=(k==axis ? 1. : 0.)-normal[k]*normal[axis];
-            const auto tangent_length=std::hypot(tangent[0],tangent[1],tangent[2]);
+            const auto tangent=surface_mark_tangent(command,basis,normal);
 
             auto mark=command.style;
             for(std::size_t k=0;k<3;++k) {
                 mark.center_m[k]=static_cast<float>(center[k]);
                 mark.normal[k]=static_cast<float>(normal[k]);
-                mark.tangent[k]=static_cast<float>(tangent[k]/tangent_length);
+                mark.tangent[k]=static_cast<float>(tangent[k]);
             }
             validate_surface_mark_fields(mark,bool(mesh.mesh));
             next->rows.push_back({next->next_id++,tick,command.receiver,mark});

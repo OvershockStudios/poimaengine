@@ -77,6 +77,7 @@ void policy() {
     auto old_attachment_host=capable;old_attachment_host.services_bytes=512;
     std::erase(old_attachment_host.features,std::string(particle_burst_feature));
     std::erase(old_attachment_host.features,std::string(surface_mark_feature));
+    std::erase(old_attachment_host.features,std::string(surface_mark_direction_feature));
     std::erase(old_attachment_host.features,std::string(item_attachment_feature));
     std::erase(old_attachment_host.features,std::string(item_attachment_contact_feature));
     std::erase(old_attachment_host.features,std::string(item_attachment_surface_feature));
@@ -99,6 +100,7 @@ void policy() {
     check(!compatibility_error(burst,missing_burst).empty(),"Opaque allocation granted particle bursts.");
     missing_burst.services_bytes=item_attachment_services_bytes;
     std::erase(missing_burst.features,std::string(surface_mark_feature));
+    std::erase(missing_burst.features,std::string(surface_mark_direction_feature));
     check(compatibility_error(attachment,missing_burst).empty() && !compatibility_error(burst,missing_burst).empty(),
         "Previous attachment runtime compatibility changed.");
     auto short_burst=burst;short_burst.services_bytes=item_attachment_services_bytes;
@@ -112,11 +114,36 @@ void policy() {
     auto missing_mark=capable;std::erase(missing_mark.features,std::string(surface_mark_feature));
     check(!compatibility_error(mark,missing_mark).empty(),"Opaque allocation granted surface marks.");
     missing_mark.services_bytes=particle_services_bytes;
+    std::erase(missing_mark.features,std::string(surface_mark_direction_feature));
     check(compatibility_error(burst,missing_mark).empty() && !compatibility_error(mark,missing_mark).empty(),
         "Previous particle host compatibility changed.");
     auto short_mark=mark;short_mark.services_bytes=particle_services_bytes;
     check(!compatibility_error(short_mark,capable).empty() && !compatibility_error(baseline,short_mark).empty(),
         "Short allocation was accepted for surface marks.");
+    auto directional=baseline;
+    directional.services_bytes=surface_mark_direction_services_bytes;
+    directional.features.push_back(surface_mark_direction_feature);
+    check(compatibility_error(directional,capable).empty() && compatibility_error(directional,directional).empty(),
+        "Directional placement requires an unrelated optional service.");
+    auto previous_mark_host=capable;
+    previous_mark_host.services_bytes=surface_mark_services_bytes;
+    std::erase(previous_mark_host.features,std::string(surface_mark_direction_feature));
+    check(compatibility_error(mark,previous_mark_host).empty() && !compatibility_error(directional,previous_mark_host).empty(),
+        "The 544-byte host lost V1 support or granted directional placement.");
+    auto opaque_direction_host=previous_mark_host;
+    opaque_direction_host.services_bytes=surface_mark_direction_services_bytes;
+    check(!compatibility_error(directional,opaque_direction_host).empty(),"Opaque allocation granted directional placement.");
+    auto short_direction=directional;
+    short_direction.services_bytes=surface_mark_services_bytes;
+    check(!compatibility_error(short_direction,capable).empty() && !compatibility_error(baseline,short_direction).empty(),
+        "Short allocation was accepted for directional placement.");
+    auto unnamed_direction=mark;
+    unnamed_direction.services_bytes=surface_mark_direction_services_bytes;
+    check(!compatibility_error(unnamed_direction,capable).empty(),"Unnamed directional requirement was accepted.");
+    auto mixed_direction=all_effects;
+    mixed_direction.services_bytes=surface_mark_direction_services_bytes;
+    mixed_direction.features.push_back(surface_mark_direction_feature);
+    check(compatibility_error(mixed_direction,capable).empty(),"Directional and legacy marks cannot coexist with earlier effects.");
     auto contact=attachment;contact.features.push_back(item_attachment_contact_feature);
     check(compatibility_error(contact,capable).empty(),"Contact requires no longer service table.");
     auto before_pickup=capable;std::erase(before_pickup.features,std::string(item_attachment_pickup_feature));
@@ -211,7 +238,10 @@ void policy() {
         "Attachment prefix was accepted without both its name and extent.");
     check(physical_rig_drive_services_bytes==448u,"Frozen physical drive extent changed.");
     check(physical_rig_animation_services_bytes==496u,"Frozen physical animation extent changed.");
-    check(capable.services_version==7 && capable.services_bytes==surface_mark_services_bytes && capable.services_bytes==544u &&
+    check(surface_mark_services_bytes==544u,"Frozen surface mark extent changed.");
+    check(capable.services_version==7 && capable.services_bytes==surface_mark_direction_services_bytes && capable.services_bytes==552u &&
+        std::find(capable.features.begin(),capable.features.end(),surface_mark_direction_feature)!=capable.features.end() &&
+        std::find(capable.features.begin(),capable.features.end(),surface_mark_feature)!=capable.features.end() &&
         std::find(capable.features.begin(),capable.features.end(),item_attachment_feature)!=capable.features.end() &&
         std::find(capable.features.begin(),capable.features.end(),physical_recovery_feature)!=capable.features.end() &&
         std::find(capable.features.begin(),capable.features.end(),physical_rig_drive_feature)!=capable.features.end() &&

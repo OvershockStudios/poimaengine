@@ -251,7 +251,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 181}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 182}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -596,23 +596,27 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     const auto mark_ray_vector=vector(mark_range(-1e6,1e6),3);
     const auto mark_ray=object_schema({{"origin",mark_ray_vector},{"direction",mark_ray_vector},
         {"distance",mark_range(.001,10000)}},{"origin","direction","distance"});
-    const auto mark_command=object_schema({{"receiver",id},{"source",id},{"ray",mark_ray},
+    const auto mark_command=object_schema({{"receiver",id},{"source",id},{"ray",mark_ray},{"travel_direction",mark_ray_vector},
         {"half_extent_m",vector(mark_range(.005,4),2)},{"half_depth_m",mark_range(.001,.25)},
         {"minimum_normal_dot",unit},{"edge_fraction",unit},{"linear_rgb",vector(unit,3)},
         {"opacity",unit},{"roughness",mark_range(.045,1)}},
         {"receiver","ray","half_extent_m","half_depth_m","minimum_normal_dot","edge_fraction","linear_rgb","opacity","roughness"});
     methods["runtime.step"]["properties"]["surface_marks"]={{"type","array"},{"maxItems",max_surface_mark_commands},
-        {"items",mark_command},{"description","Deposit marks in list order after final motion on the first simulated tick. Optional source makes the ray relative to its final unscaled rigid frame. Each ray must hit its named rigid opaque receiver first. Budget and rollback are shared with gameplay. Outside runtime-game-session v1."}};
+        {"items",mark_command},{"description","Deposit marks in list order after final motion on the first simulated tick. Optional source makes the ray and travel direction relative to its final unscaled rigid frame. Each ray must hit its named rigid opaque receiver first. Budget and rollback are shared with gameplay. Outside runtime-game-session v1."}};
     methods["runtime.surface_marks.inspect"]=object_schema({{"session_id",id},{"tick",rev},{"structure_revision",rev},{"entity",id}},
         {"session_id","tick","structure_revision"});
     methods["runtime.surface_marks.inspect"]["description"]="Read persistent receiver-local mark frames and material parameters in placement order. The optional entity filter selects one receiver. Outside runtime-game-session v1.";
     result["surface_marks"]={{"available",Runtime::available()},{"commands_per_step",max_surface_mark_commands},
         {"marks_per_receiver",max_surface_marks_per_receiver},{"marks_per_scene",max_scene_surface_marks},
         {"receiver","Unscaled opaque world drawable with a matching built-in box or cooked triangle collider."},
+        {"orientation","Optional travel_direction aligns the first half extent along the contact plane. Minimum length 1e-8. A normalized projection of length at most 1e-6 uses the default receiver-local axes."},
         {"persistence","Optional surface_marks v1 runtime snapshot extension. Removing a receiver retires its marks."}};
     result["gameplay_surface_marks"]={{"feature",gameplay_abi::surface_mark_feature},
         {"services_abi",gameplay_abi::services_version},{"services_bytes",gameplay_abi::surface_mark_services_bytes},
         {"command_bytes",sizeof(PoimaGameSurfaceMarkCommandV1)},{"command_version",1},
+        {"directional",{{"feature",gameplay_abi::surface_mark_direction_feature},
+            {"services_bytes",gameplay_abi::surface_mark_direction_services_bytes},
+            {"command_bytes",sizeof(PoimaGameSurfaceMarkCommandV2)},{"command_version",2}}},
         {"attempts_per_tick",max_surface_mark_commands},{"combined_commands_per_tick",max_surface_mark_commands},
         {"order","Caller commands, then gameplay commands in callback order."},
         {"placement","Tick only. Ray starts in world coordinates or in the final unscaled rigid frame of a source entity."}};

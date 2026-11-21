@@ -544,6 +544,7 @@ struct RuntimeSurfaceMarkCommand {
     RuntimeRay ray;
     SceneSurfaceMark style; // Placement supplies the position, normal and tangent.
     std::string source; // Empty uses world coordinates. Otherwise use its final local frame.
+    std::optional<std::array<double,3>> travel_direction; // Same frame as ray.direction.
 };
 struct RuntimeSurfaceMark {
     std::uint64_t id=0,tick=0;

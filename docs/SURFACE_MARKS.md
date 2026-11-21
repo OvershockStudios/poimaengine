@@ -44,6 +44,15 @@ fraction of the radius used for a smooth falloff. Set it to zero for a hard
 edge. Overlapping marks blend base color and roughness in placement order,
 oldest first, before the surface is lit.
 
+For a directional scuff, add `"travel_direction": [0, 0, 1]` and give the
+first half extent the desired length. Use the same world or source-local
+frame as the ray. The engine normalizes the direction and projects it onto
+the hit plane to set the first ellipse axis. Each component must be finite
+and within ±1,000,000, and the vector length must be at least `1e-8`.
+A projected unit direction of length `1e-6` or less uses the same stable
+receiver-local axis as a request with no travel direction. The saved frame
+follows the receiver's rotation and survives removal of the source.
+
 Submit up to 16 placements per tick across caller and gameplay commands.
 The engine places caller marks first, then gameplay marks in callback order.
 A scene retains up to 256 marks with at most four per receiver. Capacity
@@ -72,6 +81,13 @@ The optional `surface_mark_v1` service uses a 136-byte command and a
 attempts per tick. Placement joins the same batch as motion, particles,
 and gameplay state, including save continuation.
 
+Implement `IDirectionalSurfaceMarkGame` to call
+`context.PlaceDirectionalSurfaceMark(receiver, origin, direction, distance, style, travelDirection, source)`.
+Discover `surface_mark_direction_v2` and its 160-byte command under
+`gameplay_surface_marks.directional`. It uses a 552-byte epoch-7 prefix.
+A game can declare both interfaces to place both kinds of marks in the
+same tick. Both commands share the bounds and save format.
+
 ## Inspect and restore
 
 Read `runtime.surface_marks.inspect` using the current runtime session ID,
@@ -91,3 +107,9 @@ python3 tests/surface_marks_capture.py "$runtime/bin/poima.exe" \
   --windows-interop --runtime-root "$runtime" --output build/surface-marks-vulkan \
   --gpu 0 --lighting-path forward
 ```
+
+The [directional gameplay fixture](../tests/gameplay_directional_surface_mark_contract.py)
+uses the compiled game in `tests/managed_directional_surface_mark_gameplay`.
+Publish it with `scripts/publish_native_gameplay.py` and pass the resulting
+`native-gameplay.json` as `--native-descriptor`. Its standalone route checks
+the ellipse along and across the saved axis before and after a receiver turn.

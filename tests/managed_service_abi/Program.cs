@@ -510,6 +510,7 @@ static unsafe partial class Program
             InputActionsContract(output,state,good,checks);
             ParticleBurstContract(output,state,good,checks);
             SurfaceMarkContract(output,state,good,checks);
+            DirectionalSurfaceMarkContract(output,state,good,checks);
             HitRegionsContract(output,state,good,checks);
             TwoBoneIkContract(output,state,good,checks);
             RootMotionContract(output,state,good,checks);

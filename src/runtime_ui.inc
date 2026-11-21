@@ -75,8 +75,10 @@
             require(self.control_intent==RuntimeControlIntent::none || self.control_intent==next,"Conflicting playback intents in one Control callback.");self.control_intent=next;
         });
     }
-    PoimaGameSurfaceMarkServicesV1 services() {
-        PoimaGameSurfaceMarkServicesV1 api{};auto& particles=api.particles;auto& attachments=particles.attachments;auto& recovery=attachments.recovery;auto& full=recovery.animation;auto& drive=full.drive;auto& physical=drive.physical;auto& capsule=physical.capsule;auto& camera_pose=capsule.camera_pose;auto& rate=camera_pose.animation_rate;auto& grounding=rate.grounding;auto& orientation=grounding.orientation;auto& extended=orientation.character_stance;auto& result=extended.camera_lens;
+    PoimaGameSurfaceMarkDirectionServicesV2 services() {
+        PoimaGameSurfaceMarkDirectionServicesV2 api{};
+        auto& marks=api.marks;
+        auto& particles=marks.particles;auto& attachments=particles.attachments;auto& recovery=attachments.recovery;auto& full=recovery.animation;auto& drive=full.drive;auto& physical=drive.physical;auto& capsule=physical.capsule;auto& camera_pose=capsule.camera_pose;auto& rate=camera_pose.animation_rate;auto& grounding=rate.grounding;auto& orientation=grounding.orientation;auto& extended=orientation.character_stance;auto& result=extended.camera_lens;
         result.root_motion.ik.regions.actions.preferences.instances.navigation={{{{{7,sizeof(api),this,&get_entity,&cast_ray,&move_body,&sound_event,&get_animation,&set_animation,
             &save_info,&save_request,&save_result,&component_query,&component_get,&component_set,&entity_alive,
             &spawn_entity,&despawn_entity,&template_component_get,&get_ui,&edit_ui,&get_control,&request_control},
@@ -94,7 +96,8 @@
         recovery.physical_recovery_get=&get_physical_recovery;recovery.physical_recovery_request=&request_physical_recovery;
         attachments.attachment_get=&get_game_attachment;attachments.attachment_set=&set_game_attachment;
         particles.particle_burst=&burst_game_particles;
-        api.surface_mark=&stage_surface_mark;
+        marks.surface_mark=&stage_surface_mark;
+        api.surface_mark_direction=&stage_directional_surface_mark;
         return api;
     }
     std::shared_ptr<ui::Model> prepare_ui_commands() const {
@@ -116,7 +119,7 @@
         const auto numeric=gameplay_id(id);control_event.element={numeric.high,numeric.low};control_event.sequence=control_sequence+1;
         control_event.action_bytes=static_cast<uint32_t>(definition.action.size());std::copy(definition.action.begin(),definition.action.end(),control_event.action);
         try {
-            game_phase=GamePhase::control;auto api=services();game->control(gameplay_abi::physical_rig_drive_baseline(api.particles.attachments.recovery.animation.drive),tick);game_phase=GamePhase::idle;
+            game_phase=GamePhase::control;auto api=services();game->control(gameplay_abi::physical_rig_drive_baseline(api.marks.particles.attachments.recovery.animation.drive),tick);game_phase=GamePhase::idle;
             game->validate_entity_references([](void* context,PoimaEntityId entity){return static_cast<RuntimeComponents*>(context)->alive(entity);},components.get());
             auto candidate=prepare_ui_commands();
             validate_player_preferences_boundary();
