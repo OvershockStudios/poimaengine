@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "poima/core.hpp"
 #include "poima/scene.hpp"
+#include "poima/post_effect.hpp"
 #include "poima/environment_ibl.hpp"
 #include "poima/player.hpp"
 #include "poima/player_preferences.hpp"
@@ -451,6 +452,16 @@ struct Context {
     bool output_bloom_bound=false;
     const nvrhi::ITexture* output_source_bound=nullptr;
     nvrhi::GraphicsPipelineHandle output_pipeline;
+    struct PostEffectPass {
+        std::shared_ptr<const PostEffect> artifact;
+        nvrhi::BindingLayoutHandle layout;
+        nvrhi::GraphicsPipelineHandle pipeline;
+        nvrhi::TextureHandle target;
+        nvrhi::FramebufferHandle framebuffer;
+        nvrhi::BindingSetHandle bindings;
+        const nvrhi::ITexture* source=nullptr;
+        bool active=false;
+    } post_effect;
     struct BloomTargets {
         std::array<nvrhi::TextureHandle,2> images;
         std::array<nvrhi::FramebufferHandle,2> framebuffers;
@@ -610,6 +621,7 @@ struct Context {
         sky_pipeline=nullptr;sky_bindings=nullptr;sky_layout=nullptr;sky_vs=nullptr;sky_ps=nullptr;
         output_pipeline=nullptr;output_bindings=nullptr;output_layout=nullptr;output_vs=nullptr;output_ps=nullptr;
         bloom_pipeline=nullptr;bloom_targets.reset();bloom_layout=nullptr;bloom_vs=nullptr;bloom_ps=nullptr;bloom_sampler=nullptr;
+        post_effect={};
         vertex_shader = nullptr;
         pixel_shader = nullptr;
         reconstruction.reset();reconstructed=nullptr;dense_motion=nullptr;reactive=nullptr;dilated_depth=nullptr;dilated_motion=nullptr;reconstructed_depth=nullptr;temporal_bindings=nullptr;temporal_pipeline=nullptr;temporal_layout=nullptr;temporal_cs=nullptr;
@@ -2063,6 +2075,85 @@ struct Context {
         commands->setGraphicsState(state);commands->draw(nvrhi::DrawArguments().setVertexCount(3));
     }
 
+    void retire_post_effect_target() {
+        if(!post_effect.target)return;
+        retire_frames(true);
+        output_bindings=nullptr;
+        output_source_bound=nullptr;
+        if(bloom_targets && bloom_targets->source==post_effect.target.Get()) {
+            bloom_targets->bindings[0]=nullptr;
+            bloom_targets->source=nullptr;
+        }
+        post_effect.framebuffer=nullptr;
+        post_effect.target=nullptr;
+    }
+    void prepare_post_effect(nvrhi::ITexture* source) {
+        const auto& image=source->getDesc();
+        require(image.format==nvrhi::Format::RGBA16_FLOAT && image.sampleCount==1 && image.isShaderResource,
+            "Project post effect requires a resolved, shader-readable HDR image.");
+        require(std::uint64_t(image.width)*image.height<=render_schedule::post_effect_budget_bytes/8,
+            "Project post-effect attachment exceeds the 128 MiB payload budget.");
+        const auto& artifact=scene->post_effect;
+        const bool replace_shader=!post_effect.artifact || post_effect.artifact->sha256!=artifact->sha256;
+        if(replace_shader) {
+            validate_post_effect_vulkan(*artifact);
+        } else if(artifact!=post_effect.artifact) {
+            require(artifact->id==post_effect.artifact->id && artifact->words==post_effect.artifact->words,
+                "Project post-effect cache identity has different shader content.");
+        }
+        if(!post_effect.target || post_effect.target->getDesc().width!=image.width || post_effect.target->getDesc().height!=image.height) {
+            retire_post_effect_target();
+            nvrhi::TextureDesc desc;
+            desc.width=image.width;desc.height=image.height;desc.format=nvrhi::Format::RGBA16_FLOAT;
+            desc.isRenderTarget=true;desc.isShaderResource=true;
+            desc.initialState=nvrhi::ResourceStates::ShaderResource;desc.keepInitialState=true;
+            desc.debugName="Project post effect radiance";
+            auto target=checked->createTexture(desc);
+            require(bool(target),"Project post-effect texture allocation failed.");
+            auto framebuffer=checked->createFramebuffer(nvrhi::FramebufferDesc().addColorAttachment(target));
+            require(bool(framebuffer),"Project post-effect framebuffer creation failed.");
+            post_effect.target=std::move(target);
+            post_effect.framebuffer=std::move(framebuffer);
+        }
+        if(!post_effect.layout) {
+            post_effect.layout=checked->createBindingLayout(nvrhi::BindingLayoutDesc().setVisibility(nvrhi::ShaderType::Pixel)
+                .addItem(nvrhi::BindingLayoutItem::Texture_SRV(0)));
+            require(bool(post_effect.layout),"Project post-effect input layout creation failed.");
+        }
+        if(replace_shader) {
+            // Retire in-flight use before replacing the cached pipeline.
+            if(post_effect.pipeline)retire_frames(true);
+            const auto vertex=create_embedded_shader(checked,nvrhi::ShaderDesc(nvrhi::ShaderType::Vertex).setEntryName("vertex_main"),poima_scene_output_vs);
+            const auto pixel=checked->createShader(nvrhi::ShaderDesc(nvrhi::ShaderType::Pixel).setEntryName("poima_project_post_v1"),
+                artifact->words.data(),artifact->words.size()*sizeof(std::uint32_t));
+            require(vertex && pixel,"Project post-effect shader creation failed.");
+            nvrhi::GraphicsPipelineDesc desc;
+            desc.VS=vertex;desc.PS=pixel;desc.bindingLayouts.push_back(post_effect.layout);
+            desc.renderState.depthStencilState.depthTestEnable=false;
+            desc.renderState.depthStencilState.depthWriteEnable=false;
+            desc.renderState.rasterState.cullMode=nvrhi::RasterCullMode::None;
+            auto effect_pipeline=checked->createGraphicsPipeline(desc,post_effect.framebuffer->getFramebufferInfo());
+            require(bool(effect_pipeline),"Project post-effect graphics pipeline creation failed.");
+            post_effect.pipeline=std::move(effect_pipeline);
+        }
+        post_effect.artifact=artifact;
+        if(post_effect.source!=source) {
+            auto effect_bindings=checked->createBindingSet(nvrhi::BindingSetDesc()
+                .addItem(nvrhi::BindingSetItem::Texture_SRV(0,source)),post_effect.layout);
+            require(bool(effect_bindings),"Project post-effect HDR binding creation failed.");
+            post_effect.bindings=std::move(effect_bindings);
+            post_effect.source=source;
+        }
+    }
+    void render_post_effect() {
+        const auto& target=post_effect.target->getDesc();
+        nvrhi::GraphicsState state;
+        state.pipeline=post_effect.pipeline;state.framebuffer=post_effect.framebuffer;
+        state.bindings.push_back(post_effect.bindings);
+        state.viewport.addViewportAndScissorRect(nvrhi::Viewport(float(target.width),float(target.height)));
+        commands->setGraphicsState(state);
+        commands->draw(nvrhi::DrawArguments().setVertexCount(3));
+    }
     void prepare_bloom(nvrhi::ITexture* source) {
         namespace rs=render_schedule;
         const auto& input=source->getDesc();
@@ -2138,7 +2229,16 @@ struct Context {
     void prepare_scene_output() {
         if(!scene)return;
         const bool use_reconstructed=(reconstruction && scene_visible) || viewmodel_enabled;
-        const auto source=viewmodel_enabled ? viewmodel->composite.Get() : (reconstruction && scene_visible) ? reconstructed.Get() : scene_hdr.Get();
+        auto* source=viewmodel_enabled ? viewmodel->composite.Get() : (reconstruction && scene_visible) ? reconstructed.Get() : scene_hdr.Get();
+        post_effect.active=scene_visible && scene_debug_view==SceneDebugView::color && bool(scene->post_effect);
+        if(post_effect.active) {
+            prepare_post_effect(source);
+            source=post_effect.target.Get();
+        } else {
+            post_effect.bindings=nullptr;
+            post_effect.source=nullptr;
+            if(!scene->post_effect)retire_post_effect_target();
+        }
         const auto& bloom=scene->lighting.environment.bloom;
         require(std::isfinite(bloom.intensity) && bloom.intensity>=0 && bloom.intensity<=1 &&
             std::isfinite(bloom.threshold) && bloom.threshold>=0 && bloom.threshold<=65504 &&
@@ -2389,6 +2489,7 @@ struct Context {
         viewmodel.reset();viewmodel_enabled=false;viewmodel_draws.clear();viewmodel_objects.clear();output_source_bound=nullptr;
         commands=nullptr;
         sky_pipeline=nullptr;output_pipeline=nullptr;output_bindings=nullptr;bloom_targets.reset();
+        post_effect.framebuffer=nullptr;post_effect.target=nullptr;post_effect.bindings=nullptr;post_effect.source=nullptr;post_effect.active=false;
         overlay_framebuffers.clear();overlay_pipeline=nullptr;
         game_ui_framebuffers.clear();game_ui_pipeline=nullptr;
 #if POIMA_EDITOR
@@ -3119,7 +3220,8 @@ struct Context {
         rs::FrameResources f;
         rs::Settings settings;settings.scene=scene!=nullptr;settings.clustered=scene && pending_lights.active;
         settings.viewmodel=viewmodel_enabled;settings.viewmodel_clustered=viewmodel_enabled && viewmodel_lights.active;settings.viewmodel_samples=viewmodel_samples;
-        settings.bloom=output_bloom_bound;
+        settings.bloom=scene && output_bloom_bound;
+        settings.post_effect=scene && post_effect.active;
         settings.sky=scene && scene_visible && sky_enabled;settings.products=bool(scene_normal);settings.products_debug=scene_debug_view!=SceneDebugView::color;settings.editor=editor;settings.capture=capture_frame;settings.reconstruction=pending_reconstruction.active;settings.deferred=deferred;settings.ambient_occlusion=ao_enabled;
         settings.slot=static_cast<std::uint32_t>(next_slot%diagnostics.frame_execution.limit);settings.history_sequence=history.sequence;
         std::unordered_map<std::uintptr_t,rs::ResourceId> ids;
@@ -3234,6 +3336,7 @@ struct Context {
                 f.viewmodel_draws.push_back(std::move(input));
             }
         }
+        if(settings.post_effect)f.post_effect=texture(post_effect.target,rs::Lifetime::shared,false);
         if(settings.bloom) {
             f.bloom=texture(bloom_targets->images[0],rs::Lifetime::shared,false);
             f.bloom_scratch=texture(bloom_targets->images[1],rs::Lifetime::shared,false);
@@ -3400,6 +3503,13 @@ struct Context {
                 }
             }
             framebuffer(game_ui_framebuffers.at(index),f.output,rs::none);
+            if(plan.settings.post_effect) {
+                framebuffer(post_effect.framebuffer,f.post_effect,rs::none);
+                const auto& inputs=post_effect.bindings->getDesc()->bindings;
+                require(inputs.size()==1 && inputs[0].type==nvrhi::ResourceType::Texture_SRV && inputs[0].slot==0,
+                    "Project post-effect input differs from the admitted shader interface.");
+                identity(rs::scene_linear_radiance(f,plan.settings),inputs[0].resourceHandle);
+            }
             if(plan.settings.bloom) {
                 const auto& bloom=*bloom_targets;
                 framebuffer(bloom.framebuffers[0],f.bloom,rs::none);
@@ -3584,6 +3694,7 @@ struct Context {
             case render_schedule::PassId::viewmodel_opaque:render_viewmodel();break;
             case render_schedule::PassId::viewmodel_resolve:resolve_viewmodel();break;
             case render_schedule::PassId::viewmodel_composite:composite_viewmodel();break;
+            case render_schedule::PassId::post_effect:render_post_effect();break;
             case render_schedule::PassId::bloom_extract:render_bloom(0);break;
             case render_schedule::PassId::bloom_horizontal:render_bloom(1);break;
             case render_schedule::PassId::bloom_vertical:render_bloom(2);break;

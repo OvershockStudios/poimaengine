@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 include(FetchContent)
+include("${CMAKE_CURRENT_LIST_DIR}/spirv_validation.cmake")
 set(NVRHI_WITH_VULKAN ON CACHE BOOL "" FORCE)
 set(NVRHI_WITH_DX11 OFF CACHE BOOL "" FORCE)
 set(NVRHI_WITH_DX12 OFF CACHE BOOL "" FORCE)

@@ -2586,6 +2586,7 @@ std::optional<SceneObject> Runtime::indexed_drawable(const std::string& id) cons
 }
 SceneSnapshot Runtime::snapshot() const {
     SceneSnapshot result;result.presentation_source_id=impl_->presentation_source_id;result.camera_world=identity_matrix();result.lighting=lighting();result.world_id=impl_->world_id;result.revision=impl_->revision;result.material_revision=impl_->material_revision;result.presentation_generation=impl_->material_revision;
+    result.post_effect=result.lighting.environment.post_effect;
     for(auto object:impl_->topology->order)
         if(const auto* mesh=impl_->registry.try_get<RuntimeMesh>(object);mesh && mesh->visible)
             result.objects.push_back(impl_->drawable(object,*mesh));

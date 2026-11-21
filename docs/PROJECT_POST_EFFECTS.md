@@ -1,9 +1,9 @@
 # Project post effects
 
 Poima’s offline post-effect compiler accepts a project-owned HLSL color effect
-and emits a versioned `.poimapost` artifact with its SPIR-V and source
-identity. The current workflow ends at compilation and admission. The player,
-editor and project exporter still need to consume the artifact.
+and emits a versioned `.poimapost` artifact with its SPIR-V and source identity.
+Import that artifact into a world and select it by hash. Vulkan capture and
+playback can use the compiled effect without the shader source or DXC.
 
 ## Compile the sample
 
@@ -30,6 +30,27 @@ returned `source_sha256` through `--expected-source-sha256` to compile the
 reviewed snapshot. A changed manifest or include fails the guard before
 compilation or publication.
 
+## Add the effect to a world
+
+Call `asset.post-effect.import` through the world service with `source` set to
+the compiled `.poimapost` path and `expected_sha256` set to the compiler’s
+`artifact_sha256`. The reply’s `asset` is the ID to author. The service
+checks the exact artifact bytes and publishes them into the world’s asset
+store. Import a new artifact after a shader change. Imports leave the world
+revision unchanged.
+
+Use `world.transact` at the current revision to replace the scene’s complete
+`LightingEnvironment` component. Add `"post_effect": "<asset>"` to its value.
+Read back the selection with `world.lighting`. `world.dependencies` and the
+project export inventory include the selected `.poimapost` by its exact hash.
+Omit `post_effect` to disable it. A fresh load requires the selected file and
+matching hash. An already running simulation owns the validated bytes it
+loaded. Restart the scene preview or player to apply a changed selection.
+
+Headless tools can author and verify package dependencies. Rendering requires
+the Vulkan renderer. The installed runtime must advertise
+`features.project_post_effects` for `project build` to export affected worlds.
+
 ## Author the effect
 
 The [sample](../tests/fixtures/project_post_effect/effect.json) declares the
@@ -52,13 +73,18 @@ binding 0. The function sees its scene-linear RGB and normalized
 upper-left-origin pixel-center coordinates. The wrapper writes finite
 RGB in the range 0–65,504 at color location 0.
 
-The slot acts on resolved, unexposed linear radiance before exposure and
-tone mapping. The vignette attenuates radiance toward the corners.
-A film grade evaluated on exposed colors requires a different slot.
+The slot acts on resolved, unexposed linear radiance after world reconstruction
+and viewmodel composition, before bloom, exposure and tone mapping. Bloom
+uses the effect’s output as its input. HUD and overlays draw after tone
+mapping, and diagnostic views bypass the effect. The target has the same
+extent as the selected HDR input and a 128 MiB payload cap per renderer
+context. UVs are relative to that input texture.
+
+The vignette attenuates radiance toward the corners. An exposed-HDR film grade
+would use a separate slot after scene exposure and before tone mapping.
 Effects such as depth of field and motion blur need declared depth, motion
-or neighboring samples and their own render-stage contract. The existing
-scene pipeline applies its display transform once and composes UI
-afterward. [Scene HDR composition](HDR_COMPOSITION.md)
+or neighboring samples and their own render-stage contract.
+[Scene HDR composition](HDR_COMPOSITION.md)
 
 The manifest directory is the source root. Include a portable `.hlsli` path
 relative to its containing shader with a quoted `#include`. The compiler
@@ -85,9 +111,11 @@ Admission checks SPIR-V 1.6 instruction framing, the fixed fragment entry
 and exact resource interface. The accepted profile is one HDR fetch and
 one color write, with bounded arithmetic and branching. Loops, extra
 descriptor bindings, storage resources and additional stages are rejected.
-The check operates on output from the pinned compiler. Use trusted local
-project sources. General SPIR-V validation, driver isolation, GPU scheduling
-and runtime trust policy require separate work.
+The native reader repeats the artifact, provenance and instruction-profile
+checks. The renderer runs Khronos SPIRV-Tools validation for Vulkan 1.3
+before creating a shader module. Use trusted project sources. Bounded
+instruction admission and semantic validation leave GPU driver isolation and
+whole-scene performance qualification to separate controls.
 [SPIR-V specification](https://registry.khronos.org/SPIR-V/specs/unified1/SPIRV.html)
 
 ## Verify compilation
@@ -98,5 +126,20 @@ python3 tests/project_post_effect_contract.py -v
 
 The test runs the pinned compiler and checks relocation, changed include
 identity, source and resource scope, portable diagnostics, and publication
-without overwrite. Rendering the sample and qualifying its frame cost
-require the runtime integration.
+without overwrite. Run `tests/world_post_effect_contract.py` with the native
+CLI and compiled artifact to verify authoring, dependency closure and restart
+behavior.
+
+On a Windows graphics host, the native image fixture compares a compiled
+vignette against an independent linear-color reference. It checks the order
+with bloom, the exact restored baseline, optional native UI, and a relocated
+export. Pass the runtime installed from the same build as the executable.
+
+```sh
+python3 tests/project_post_effect_capture.py build/installed/bin/poima.exe \
+    --artifact build/vignette.poimapost --output build/post-effect-captures \
+    --runtime build/installed --check-ui --windows-interop
+```
+
+The command uses WSL path translation. Omit `--windows-interop` when running
+Python directly on Windows. [Windows fixture results](evidence/m2-project-post-effect-350.json)

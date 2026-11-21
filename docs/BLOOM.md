@@ -20,7 +20,8 @@ pipeline. The component applies to scene capture and to game and editor views
 that render that scene.
 
 The Vulkan path runs after world MSAA resolve, temporal reconstruction when
-selected, and the foreground viewmodel composite when enabled. It thresholds
+selected, the foreground viewmodel composite when enabled, and any authored
+[project post effect](PROJECT_POST_EFFECTS.md). It thresholds
 the final HDR radiance and averages each nonoverlapping 4×4 source block,
 including the valid texels of partial edge blocks. Two separable five-tap blur
 passes use that reduced image. The output shader adds its filtered signal in

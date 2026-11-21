@@ -7,6 +7,7 @@
 #include "world_stdio.hpp"
 #include "poima/animation.hpp"
 #include "poima/scene.hpp"
+#include "poima/post_effect.hpp"
 #include "poima/runtime.hpp"
 #include "physical_rig_json.hpp"
 #include "physical_pose_diagnostics.hpp"
@@ -424,7 +425,7 @@ SkySettings sky_value(const Json& value) {
     return result;
 }
 LightingEnvironment environment_value(const Json& value) {
-    fields(value,{"ambient","exposure","shadow_resolution","shadow_filter","sky","ibl","bloom"},{"ambient","exposure"});require(value.at("ambient").is_array() && value.at("ambient").size()==3,"Ambient fill needs three values.");
+    fields(value,{"ambient","exposure","shadow_resolution","shadow_filter","sky","ibl","bloom","post_effect"},{"ambient","exposure"});require(value.at("ambient").is_array() && value.at("ambient").size()==3,"Ambient fill needs three values.");
     for(const auto& x:value.at("ambient"))require(x.is_number() && std::isfinite(x.get<double>()) && x>=0 && x<=1e6,"Ambient fill must be in [0,1e6].");
     require(value.at("exposure").is_number() && std::isfinite(value.at("exposure").get<double>()) && value.at("exposure")>=0 && value.at("exposure")<=1e6,"Exposure must be in [0,1e6].");
     if(value.contains("shadow_resolution"))require(value.at("shadow_resolution").is_number_integer() && (value.at("shadow_resolution")==256 || value.at("shadow_resolution")==512 || value.at("shadow_resolution")==1024 || value.at("shadow_resolution")==2048),"Shadow resolution must be 256, 512, 1024 or 2048.");
@@ -460,8 +461,61 @@ LightingEnvironment environment_value(const Json& value) {
         result.bloom.threshold=read_field("threshold",result.bloom.threshold,0,65504);
         result.bloom.radius=read_field("radius",result.bloom.radius,2,32);
     }
+    if(value.contains("post_effect")) {
+        const auto& digest=value.at("post_effect");
+        require(digest.is_string() && valid_asset_id(digest.get_ref<const std::string&>()),
+            "Post effect must be a 64-character lowercase SHA-256.");
+        result.post_effect_asset=digest.get<std::string>();
+    }
     try { validate_environment(result); }catch(const std::runtime_error& error) { throw Error(-32602,error.what()); }
     return result;
+}
+struct LoadedPostEffect {
+    std::shared_ptr<const PostEffect> effect;
+    std::size_t bytes=0;
+};
+std::string read_post_effect_file(const fs::path& path) {
+    const auto io=project_detail::project_io_path(path);
+    require(fs::is_regular_file(fs::symlink_status(io)) && fs::hard_link_count(io)==1,
+        "Post-effect artifacts must be ordinary files.",-32050);
+#ifdef _WIN32
+    const auto attributes=GetFileAttributesW(io.c_str());
+    require(attributes!=INVALID_FILE_ATTRIBUTES && !(attributes&FILE_ATTRIBUTE_REPARSE_POINT),
+        "Post-effect artifacts cannot be reparse points.",-32050);
+#endif
+    const auto length=fs::file_size(io);
+    require(length>0 && length<=max_post_effect_bytes,"Post-effect artifact exceeds its byte budget.",-32050);
+    std::string bytes(static_cast<std::size_t>(length),'\0');
+    std::ifstream input(io,std::ios::binary);
+    require(bool(input.read(bytes.data(),static_cast<std::streamsize>(length))) && input.peek()==std::char_traits<char>::eof(),
+        "Post-effect artifact read failed or changed size.",-32050);
+    return bytes;
+}
+void publish_post_effect(const fs::path& directory,const std::string& digest,const std::string& bytes) {
+    if(!asset_catalog::plain_directory(directory))fs::create_directory(project_detail::project_io_path(directory));
+    require(asset_catalog::plain_directory(directory),"Expected an ordinary post-effect asset directory.",-32050);
+    const auto target=project_detail::project_io_path(directory/(digest+".poimapost"));
+    if(fs::symlink_status(target).type()!=fs::file_type::not_found) {
+        require(read_post_effect_file(asset_package_path(directory,digest,".poimapost"))==bytes,
+            "Stored post-effect bytes differ from the admitted source.",-32050);
+        return;
+    }
+    const auto pending=fs::path(target).concat(".pending");
+    write_asset_pending_exclusive(pending,bytes);
+    try {
+        require(asset_catalog::plain_directory(directory),"Expected an ordinary post-effect asset directory.",-32050);
+#ifdef _WIN32
+        require(MoveFileExW(pending.c_str(),target.c_str(),MOVEFILE_WRITE_THROUGH)!=0,
+            "Cannot exclusively publish the post effect.",-32050);
+#else
+        require(::link(pending.c_str(),target.c_str())==0,"Cannot exclusively publish the post effect.",-32050);
+        fs::remove(pending);
+#endif
+    } catch(...) {
+        std::error_code ignored;
+        fs::remove(pending,ignored);
+        throw;
+    }
 }
 AcousticMaterial acoustic_value(const Json& v) {
     fields(v,{"absorption","transmission","scattering","enabled"},{"absorption","transmission","scattering","enabled"});
@@ -1270,7 +1324,7 @@ void validate(const Json& doc) {
     }
 }
 
-constexpr std::array authoring_methods{"component.schema.import","world.reference","world.transact","world.undo","world.redo","asset.import","asset.image.import","asset.audio.import","asset.label","input.transact","settings.transact","development.compile","development.profiles","development.publish","development.export","development.verify","development.candidate","project.candidate.retain","development.jobs","development.inspect","development.diagnostics","development.cancel","development.forget","project.inspect","project.gameplay.adopt","project.source.read","project.source.write","project.verification.read","project.verification.write","asset.material.generate","asset.material.job","asset.material.jobs","asset.material.cancel","asset.material.forget","world.navigation.bake","asset.provenance.create","asset.animation.author","asset.mesh.extract_rigid"};
+constexpr std::array authoring_methods{"component.schema.import","world.reference","world.transact","world.undo","world.redo","asset.import","asset.image.import","asset.audio.import","asset.post-effect.import","asset.label","input.transact","settings.transact","development.compile","development.profiles","development.publish","development.export","development.verify","development.candidate","project.candidate.retain","development.jobs","development.inspect","development.diagnostics","development.cancel","development.forget","project.inspect","project.gameplay.adopt","project.source.read","project.source.write","project.verification.read","project.verification.write","asset.material.generate","asset.material.job","asset.material.jobs","asset.material.cancel","asset.material.forget","world.navigation.bake","asset.provenance.create","asset.animation.author","asset.mesh.extract_rigid"};
 class World {
     profiling::Service profiler_;
     frame_performance::Service performance_;
@@ -1545,6 +1599,7 @@ public:
     FrozenContent freeze_content(const Json& source) const {
         WorldPackageContent result;result.revision=revision(source.at("revision"));
         std::map<std::string,WorldPackageAsset> files;ModelCache assets;AudioCache audio;
+        std::map<std::string,LoadedPostEffect> post_effects;
         auto add=[&](const std::string& id,const char* extension,std::size_t bytes) {
             const auto filename=id+extension;files.emplace(filename,WorldPackageAsset{filename,id,static_cast<std::uint64_t>(bytes)});
         };
@@ -1577,6 +1632,17 @@ public:
                 result.needs_audio=true;const auto id=components.at("AudioEmitter").at("asset").get<std::string>();
                 if(!files.contains(id+".paudio")) { (void)audio.get(asset_directory(),id);add(id,".paudio",audio.clips.at(id).bytes); }
             }
+            if(components.contains("LightingEnvironment")) {
+                const auto& environment=components.at("LightingEnvironment");
+                if(environment.contains("post_effect")) {
+                    const auto& digest=environment.at("post_effect").get_ref<const std::string&>();
+                    if(!post_effects.contains(digest)) {
+                        auto loaded=load_post_effect(digest);
+                        add(digest,".poimapost",loaded.bytes);
+                        post_effects.emplace(digest,std::move(loaded));
+                    }
+                }
+            }
         };
         for(const auto& entity:source.at("entities"))collect_components(entity.at("components"));
         if(source.contains("templates"))for(const auto& recipe:source.at("templates")) {
@@ -1585,7 +1651,7 @@ public:
         }
         // Includes mesh/UV/material compatibility, complete rig ownership,
         // weighted primitive bindings and enabled-audio aggregate limits.
-        auto definition=runtime_definition(false,&source,false,&assets,&audio);
+        auto definition=runtime_definition(false,&source,false,&assets,&audio,&post_effects);
         resolve_ui_images(definition.ui,assets);
         for(const auto& element:definition.ui)if(element.style && element.style->image) {
             const auto& id=element.style->image->asset;
@@ -1670,6 +1736,7 @@ public:
             const auto matrices=world_matrices(document.at("entities"));
             result.world_id=definition.world_id;result.revision=definition.authored_revision;
             result.lighting=authored_lighting(matrices);
+            resolve_scene_post_effect(result);
             std::map<std::string,const RuntimeEntityDefinition*> entities;
             std::map<std::string,std::map<std::uint32_t,std::string>> nodes;
             for(const auto& e:definition.entities) { entities[e.id]=&e;if(e.rig_node)nodes[e.rig_node->rig][e.rig_node->node]=e.id; }
@@ -2132,7 +2199,22 @@ public:
             const auto& ibl=*lighting.environment.ibl;
             result["ibl"]={{"enabled",ibl.enabled},{"diffuse_intensity",ibl.diffuse_intensity},{"specular_intensity",ibl.specular_intensity}};
         }
+        if(!lighting.environment.post_effect_asset.empty())result["post_effect"]=lighting.environment.post_effect_asset;
         return result;
+    }
+    LoadedPostEffect load_post_effect(const std::string& digest) const {
+        try {
+            const auto path=asset_package_path(asset_directory(),digest,".poimapost");
+            const auto bytes=read_post_effect_file(path);
+            return {std::make_shared<const PostEffect>(parse_post_effect(bytes,digest)),bytes.size()};
+        } catch(const Error&) { throw; }
+        catch(const std::exception& error) { throw Error(-32050,error.what()); }
+    }
+    void resolve_scene_post_effect(SceneSnapshot& snapshot) const {
+        auto& environment=snapshot.lighting.environment;
+        if(environment.post_effect_asset.empty())return;
+        environment.post_effect=load_post_effect(environment.post_effect_asset).effect;
+        snapshot.post_effect=environment.post_effect;
     }
     SceneLighting authored_lighting(const std::map<std::string,Matrix4>& matrices) const {
         SceneLighting result;
@@ -2251,6 +2333,27 @@ public:
             Json mips=Json::array();for(const auto& mip:loaded.image->mips)mips.push_back({{"width",mip.width},{"height",mip.height},{"bytes",mip.rgba.size()}});
             return {{"asset",loaded.id},{"format","poima.image.v1"},{"bytes",loaded.bytes},{"color_space",loaded.image->srgb ? "srgb" : "linear"},{"mips",mips}};
         } catch(const Error&) { throw; }catch(const std::exception& error) { throw Error(-32050,error.what()); }
+    }
+    Json import_post_effect(const Json& params) const {
+        fields(params,{"source","expected_sha256"},{"source","expected_sha256"});
+        const auto& source=params.at("source");const auto& hash=params.at("expected_sha256");
+        require(source.is_string(),"Post-effect source must be a file path.");
+        const auto& name=source.get_ref<const std::string&>();
+        require(!name.empty() && name.find('\0')==std::string::npos,"Invalid post-effect source path.");
+        require(hash.is_string() && valid_asset_id(hash.get_ref<const std::string&>()),
+            "Expected source SHA-256 must contain 64 lowercase hexadecimal characters.");
+        const auto& digest=hash.get_ref<const std::string&>();
+        try {
+            auto path=fs::path(std::u8string(name.begin(),name.end()));
+            require(path.extension()==".poimapost","Post-effect source must have a .poimapost extension.");
+            if(path.is_relative())path=path_.parent_path()/path;
+            const auto bytes=read_post_effect_file(path);
+            require(content_hash(bytes)==digest,"Post-effect source SHA-256 conflict.",-32009);
+            const auto effect=parse_post_effect(bytes,digest);
+            publish_post_effect(asset_directory(),effect.sha256,bytes);
+            return {{"asset",effect.sha256},{"id",effect.id},{"bytes",bytes.size()},{"words",effect.words.size()}};
+        } catch(const Error&) { throw; }
+        catch(const std::exception& error) { throw Error(-32050,error.what()); }
     }
     Json audio_asset_dispatch(const std::string& method,const Json& params) const {
         try {
@@ -2651,6 +2754,7 @@ public:
         if(method=="asset.animation.capture")return capture(params,false,true);
         if(method.starts_with("asset.animation."))return animation_dispatch(method,params);
         if(method=="asset.audio.import" || method=="asset.audio.inspect")return audio_asset_dispatch(method,params);
+        if(method=="asset.post-effect.import")return import_post_effect(params);
         if(method=="asset.image.import" || method=="asset.image.inspect")return image_dispatch(method,params);
         if(method=="asset.source.inspect")return source_model_inspection(params);
         if(method=="asset.mesh.triangles") {
@@ -3106,6 +3210,7 @@ public:
             snapshot.vertical_fov = lens.at("vertical_fov"); snapshot.near_plane = lens.at("near"); snapshot.far_plane = lens.at("far");
             const auto matrices = world_matrices(doc_.at("entities"));
             snapshot.camera_world = matrices.at(camera_id);snapshot.lighting=authored_lighting(matrices);
+            resolve_scene_post_effect(snapshot);
             require(rigid_transform(snapshot.camera_world), "Camera hierarchy must not scale or shear the camera.");
             if(asset_preview) {
                 require(params.at("asset").is_string() && valid_asset_id(params.at("asset").get<std::string>()),"Invalid asset ID.");
@@ -3301,13 +3406,15 @@ public:
         }
         result["templates"]=std::move(rows);result["next_after"]=next;return result;
     }
-    std::vector<RuntimeSpawnTemplate> template_definitions(const Json& document,ModelCache& cache,const std::vector<components::Schema>& schemas,AudioCache* supplied_audio=nullptr) const {
+    std::vector<RuntimeSpawnTemplate> template_definitions(const Json& document,ModelCache& cache,
+        const std::vector<components::Schema>& schemas,AudioCache* supplied_audio=nullptr,
+        const std::map<std::string,LoadedPostEffect>* post_effects=nullptr) const {
         std::vector<RuntimeSpawnTemplate> result;if(!document.contains("templates"))return result;
         for(const auto& [id,recipe]:document.at("templates").items()) {
             RuntimeSpawnTemplate value;value.id=id;value.name=recipe.at("name");
             if(recipe.contains("entities")) {
                 auto mini=template_document(document,recipe.at("entities"));
-                auto parsed=runtime_definition(false,&mini,false,&cache,supplied_audio);
+                auto parsed=runtime_definition(false,&mini,false,&cache,supplied_audio,post_effects);
                 value.root=identifier(recipe.at("root"));value.entities=std::move(parsed.entities);
                 const auto root=std::find_if(value.entities.begin(),value.entities.end(),[&](const auto& e){return e.id==value.root;});
                 require(root!=value.entities.end(),"Template root does not exist.");value.transform=root->transform;
@@ -3340,7 +3447,9 @@ public:
             }
         }
     }
-    RuntimeDefinition runtime_definition(bool audio_only=false,const Json* source=nullptr,bool animation_only=false,ModelCache* supplied_models=nullptr,AudioCache* supplied_audio=nullptr) const {
+    RuntimeDefinition runtime_definition(bool audio_only=false,const Json* source=nullptr,bool animation_only=false,
+        ModelCache* supplied_models=nullptr,AudioCache* supplied_audio=nullptr,
+        const std::map<std::string,LoadedPostEffect>* post_effects=nullptr) const {
         const auto& document=source ? *source : doc_;
         auto& cache=supplied_models ? *supplied_models : model_cache_;AudioCache local_audio;auto& audio_cache=supplied_audio ? *supplied_audio : local_audio;
         std::set<std::string> rig_assets;
@@ -3397,7 +3506,12 @@ public:
             if(components.contains("AcousticMaterial"))value.acoustics=acoustic_value(components.at("AcousticMaterial"));
             if(!animation_only && components.contains("AudioEmitter")) { value.emitter=emitter_value(components.at("AudioEmitter"));if(value.emitter->enabled)value.emitter->clip=audio_cache.get(asset_directory(),value.emitter->asset); }
             if(components.contains("Light"))value.light=light_value(components.at("Light"));
-            if(components.contains("LightingEnvironment"))value.environment=environment_value(components.at("LightingEnvironment"));
+            if(components.contains("LightingEnvironment")) {
+                value.environment=environment_value(components.at("LightingEnvironment"));
+                const auto& digest=value.environment->post_effect_asset;
+                if(!audio_only && !animation_only && !digest.empty())
+                    value.environment->post_effect=post_effects ? post_effects->at(digest).effect : load_post_effect(digest).effect;
+            }
             if(components.contains("BoxCollider")) { const auto& c=components.at("BoxCollider"); value.collider=BoxCollider{c.at("half_extents").get<std::array<float,3>>(),c.at("motion")=="dynamic" ? BodyMotion::Dynamic : c.at("motion")=="kinematic" ? BodyMotion::Kinematic : BodyMotion::Static,c.at("mass"),c.at("friction"),c.at("restitution")}; }
             if(components.contains("MeshCollider")) {
                 const auto& c=components.at("MeshCollider");MeshCollider collider;
@@ -3443,7 +3557,7 @@ public:
                 "PhysicalRig joint parent must be a model ancestor of its child part.");
         }
         if(!animation_only && !audio_only) {
-            result.templates=template_definitions(document,cache,result.component_schemas,&audio_cache);
+            result.templates=template_definitions(document,cache,result.component_schemas,&audio_cache,post_effects);
             result.ui=component_checked([&]{return ui::parse_definition(document.value("ui",Json::object()).dump());});
         }
         try { validate_runtime_animation(result);if(!animation_only && !audio_only) {validate_runtime_camera_draw(result);validate_runtime_mesh_colliders(result);validate_runtime_templates(result);} }

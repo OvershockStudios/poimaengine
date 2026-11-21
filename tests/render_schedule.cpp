@@ -72,6 +72,17 @@ void environment_inputs(Fixture& fixture,bool dummy=false) {
 Pass& pass(Schedule& p,PassId id){auto i=std::find_if(p.passes.begin(),p.passes.end(),[&](const auto& v){return v.id==id;});check(i!=p.passes.end(),"Fixture required pass absent");return *i;}
 void erase_access(Schedule& p,PassId id,ResourceId resource,Use use){auto& accesses=pass(p,id).accesses;const auto n=std::erase_if(accesses,[&](const auto& a){return a.resource==resource && a.use==use;});check(n>0,"Fixture mutation did not remove an access");}
 Settings rich(){Settings s;s.scene=s.clustered=s.sky=s.game_ui=s.capture=true;s.slot=1;s.image=2;return s;}
+void setup_post_effect(Fixture& fixture) {
+    auto& f=fixture.f;
+    fixture.settings.post_effect=true;
+    const auto source=scene_linear_radiance(f,fixture.settings);
+    f.resources[source].format=Format::rgba16_float;
+    f.post_effect=fixture.add(Kind::texture,Lifetime::shared);
+    auto& target=f.resources[f.post_effect];
+    target.format=Format::rgba16_float;
+    target.width=f.resources[source].width;
+    target.height=f.resources[source].height;
+}
 void setup_bloom(Fixture& fixture) {
     auto& f=fixture.f;
     fixture.settings.bloom=true;
@@ -84,6 +95,47 @@ void setup_bloom(Fixture& fixture) {
         return id;
     };
     f.bloom=image();f.bloom_scratch=image();
+}
+void post_effect_contracts() {
+    for(bool editor:{false,true})for(unsigned samples:{1u,4u})for(bool deferred:{false,true})for(bool bloom:{false,true}) {
+        if(deferred && samples!=1)continue;
+        auto settings=rich();settings.editor=editor;settings.deferred=deferred;
+        Fixture fixture(settings,samples);
+        setup_post_effect(fixture);
+        if(bloom)setup_bloom(fixture);
+        auto plan=fixture.plan();plan.validate();++accepted;
+        const auto& f=plan.frame;
+        const auto& effect=pass(plan,PassId::post_effect);
+        check(effect.accesses.front().resource==f.hdr && effect.accesses.back().resource==f.post_effect,
+            "Post-effect pass does not exclusively transform resolved HDR");
+        check(pass(plan,PassId::output).accesses.front().resource==f.post_effect,"Output bypassed the post effect");
+        if(bloom)check(pass(plan,PassId::bloom_extract).accesses.front().resource==f.post_effect,"Bloom bypassed the post effect");
+        auto bad=[&](const char* label,const auto& change){auto p=plan;change(p);rejects(label,[&]{p.validate();});};
+        bad("post effect run on debug view",[](auto& p){p.settings.products_debug=true;});
+        bad("post effect absent with target",[](auto& p){p.settings.post_effect=false;});
+        bad("post-effect target aliases HDR source",[](auto& p){p.frame.post_effect=p.frame.hdr;});
+        bad("post-effect target aliases capture",[](auto& p){p.frame.post_effect=p.frame.capture;});
+        bad("post-effect target is multisampled",[](auto& p){p.frame.resources[p.frame.post_effect].samples=4;});
+        bad("post-effect target extent differs",[](auto& p){--p.frame.resources[p.frame.post_effect].width;});
+        bad("post-effect target is not HDR",[](auto& p){p.frame.resources[p.frame.post_effect].format=Format::rgba8_unorm;});
+        bad("post-effect target exceeds budget",[](auto& p) {
+            for(auto id:{p.frame.hdr,p.frame.post_effect})p.frame.resources[id].width=p.frame.resources[id].height=8192;
+        });
+        bad("post-effect sampling bypasses resolved HDR",[](auto& p){pass(p,PassId::post_effect).accesses[0].resource=p.frame.depth;});
+        bad("post-effect output not fully initialized",[](auto& p){pass(p,PassId::post_effect).accesses[1].initialize=false;});
+        bad("post-effect pass missing",[](auto& p){std::erase_if(p.passes,[](const auto& work){return work.id==PassId::post_effect;});});
+        bad("post-effect image leaked to UI",[](auto& p){pass(p,PassId::game_ui).accesses.push_back({p.frame.post_effect,Use::sampled,false});});
+        bad("post-effect image bypassed by output",[](auto& p){pass(p,PassId::output).accesses[0].resource=p.frame.hdr;});
+        if(samples!=1)bad("post effect precedes world resolve",[](auto& p){std::swap(pass(p,PassId::resolve),pass(p,PassId::post_effect));});
+        if(bloom) {
+            bad("bloom bypasses post effect",[](auto& p){pass(p,PassId::bloom_extract).accesses[0].resource=p.frame.hdr;});
+            bad("post-effect target aliases bloom",[](auto& p){p.frame.post_effect=p.frame.bloom;});
+        }
+    }
+    auto standard=Fixture(rich(),4).plan();standard.validate();
+    check(standard.frame.post_effect==none,"Default graph acquired a post-effect target");
+    check(std::none_of(standard.passes.begin(),standard.passes.end(),[](const auto& work){return work.id==PassId::post_effect;}),
+        "Default graph acquired a post-effect pass");
 }
 void bloom_contracts() {
     for(bool editor:{false,true})for(unsigned samples:{1u,4u})for(bool deferred:{false,true}) {
@@ -291,6 +343,10 @@ void reconstruction_contracts(){
     setup_bloom(fixture);
     auto bloomed=fixture.plan();bloomed.validate();++accepted;
     check(pass(bloomed,PassId::bloom_extract).accesses.front().resource==f.reconstructed,"Bloom bypassed reconstruction");
+    setup_post_effect(fixture);
+    auto with_effect=fixture.plan();with_effect.validate();++accepted;
+    check(pass(with_effect,PassId::post_effect).accesses.front().resource==f.reconstructed,"Post effect bypassed reconstruction");
+    check(pass(with_effect,PassId::bloom_extract).accesses.front().resource==f.post_effect,"Bloom bypassed reconstructed post effect");
     auto bad=[&](const char* label,const auto& edit){auto p=original;edit(p);rejects(label,[&]{p.validate();});};
     bad("reconstruction non-HDR input",[](auto& p){p.frame.resources[p.frame.hdr].format=Format::r8_unorm;});
     bad("reconstruction downsamples width",[](auto& p){--p.frame.resources[p.frame.reconstructed].width;});
@@ -423,6 +479,13 @@ void viewmodel_contracts(){
         check(pass(plan,PassId::bloom_extract).accesses.front().resource==f.composite,"Bloom bypassed the composed viewmodel");
         auto broken=plan;std::erase_if(broken.passes,[](const Pass& work){return work.id==PassId::reconstruction;});rejects("foreground before reconstruction",[&]{broken.validate();});
         broken=plan;++broken.frame.resources[f.viewmodel_color].width;rejects("foreground FSR output extent mismatch",[&]{broken.validate();});
+        setup_post_effect(fsr);
+        auto with_effect=fsr.plan();with_effect.validate();++accepted;
+        check(pass(with_effect,PassId::post_effect).accesses.front().resource==f.composite,"Post effect bypassed composed foreground");
+        check(pass(with_effect,PassId::bloom_extract).accesses.front().resource==f.post_effect,"Bloom bypassed composed HDR post effect");
+        broken=with_effect;
+        pass(broken,PassId::post_effect).accesses[0].resource=f.reconstructed;
+        rejects("post effect samples reconstructed HDR before foreground",[&]{broken.validate();});
     }
     // Default omission retains the old graph with no new pass/resources.
     auto ordinary=Fixture(rich(),4,true).plan();ordinary.validate();check(std::none_of(ordinary.passes.begin(),ordinary.passes.end(),[](const Pass& work){return work.id>=PassId::viewmodel_lights && work.id<=PassId::viewmodel_composite;}),"Default graph acquired foreground passes");
@@ -646,4 +709,4 @@ void environment_contracts(){
     auto ordinary=Fixture(rich(),4).plan();ordinary.validate();check(ordinary.frame.ibl_diffuse==none && ordinary.frame.ibl_specular==none && ordinary.frame.ibl_brdf==none,"Legacy graph acquired IBL roles");
 }
 }
-int main(){try{matrix();faults();products();motion_contracts();reconstruction_contracts();deferred_contracts();deferred_color_contracts();viewmodel_contracts();ambient_occlusion_contracts();masked_shadow_contracts();environment_contracts();bloom_contracts();std::cout<<"Production render schedule: "<<accepted<<" valid variants, "<<rejected<<" rejected contract mutations.\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}
+int main(){try{matrix();faults();products();motion_contracts();reconstruction_contracts();deferred_contracts();deferred_color_contracts();viewmodel_contracts();ambient_occlusion_contracts();masked_shadow_contracts();environment_contracts();bloom_contracts();post_effect_contracts();std::cout<<"Production render schedule: "<<accepted<<" valid variants, "<<rejected<<" rejected contract mutations.\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}

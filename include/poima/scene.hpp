@@ -16,6 +16,7 @@
 namespace poima {
 struct RenderOptions;
 struct RenderReport;
+struct PostEffect;
 // Column-major matrices multiplying column vectors. Right-handed, Y-up,
 // camera looks along local -Z; projection depth is [0, 1].
 using Matrix4 = std::array<double, 16>;
@@ -82,6 +83,9 @@ struct LightingEnvironment {
     ShadowFilter shadow_filter=ShadowFilter::pcf3_point;
     std::optional<IblSettings> ibl;
     BloomSettings bloom;
+    std::string post_effect_asset;
+    // Runtime lighting retains the artifact admitted when the scene was frozen.
+    std::shared_ptr<const PostEffect> post_effect;
 };
 struct SceneLight { std::string entity_id;Light light;std::array<double,3> position{},direction{0,0,-1}; };
 struct SceneLighting {
@@ -191,6 +195,7 @@ struct SceneSnapshot {
     std::optional<double> authored_vertical_fov;
     // Opt-in receipt of actual prepared camera and foreground matrices.
     bool camera_pose_receipt=false;
+    std::shared_ptr<const PostEffect> post_effect;
 
     SceneLens world_lens() const { return {vertical_fov,near_plane,far_plane}; }
     std::span<const SceneObject> world_viewmodel_draws() const {

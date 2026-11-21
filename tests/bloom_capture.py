@@ -84,7 +84,7 @@ def main():
             component(2, 'LightingEnvironment', environment(1, 0)),
             component(3, 'Transform', {'position': [0, 0, 0], 'rotation': [0, 0, 0, 1], 'scale': [.5, .5, .1]}),
             component(3, 'MeshRenderer', {'primitive': 'box', 'albedo': [0, 0, 0], 'visible': True}),
-            component(3, 'PbrMaterial', {'base_color': [0, 0, 0], 'emissive': [12, 4, 0], 'roughness': 1,
+            component(3, 'PbrMaterial', {'base_color': [0, 0, 0], 'emissive': [1, 1/3, 0], 'roughness': 1,
                                         'metallic': 0, 'double_sided': False}),
             component(4, 'Light', {'kind': 'directional', 'color': [1, 1, 1], 'intensity': 0, 'enabled': True}),
         ])
@@ -95,7 +95,7 @@ def main():
             check(capture(f'disabled-{samples}', samples) == baseline, 'Zero intensity changed output pixels')
             setup_light({'intensity': .5, 'threshold': 65504, 'radius': 20})
             check(capture(f'suppressed-{samples}', samples) == baseline, 'Clipped highlights still bloomed')
-            setup_light({'intensity': .5, 'threshold': 1, 'radius': 20})
+            setup_light({'intensity': .5, 'threshold': .25, 'radius': 20})
             blurred = capture(f'bloom-{samples}', samples)
             halo = [(x, y) for y in range(height) for x in range(width)
                     if baseline[y][x] == (0, 0, 0) and blurred[y][x][0] >= 10]
@@ -104,7 +104,7 @@ def main():
                   'Bloom lost the emitter color')
             check(all(abs(x - width // 2) <= 42 and abs(y - height // 2) <= 42 for x, y in halo),
                   'Bloom leaked beyond the bounded filter footprint')
-            setup_light({'intensity': .5, 'threshold': 1, 'radius': 20}, exposure=0)
+            setup_light({'intensity': .5, 'threshold': .25, 'radius': 20}, exposure=0)
             check(all(color == (0, 0, 0) for row in capture(f'exposure-zero-{samples}', samples) for color in row),
                   'Bloom bypassed exposure')
             report['captures'][f'bloom-{samples}']['halo_pixels'] = len(halo)

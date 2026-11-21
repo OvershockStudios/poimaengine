@@ -14,6 +14,7 @@
     "asset_provenance": true,
     "simulation": @POIMA_RUNTIME_SIMULATION@,
     "renderer": @POIMA_RUNTIME_RENDER_SMOKE@,
+    "project_post_effects": @POIMA_RUNTIME_RENDER_SMOKE@,
     "audio": @POIMA_RUNTIME_AUDIO@,
     "managed": @POIMA_RUNTIME_MANAGED_GAMEPLAY@,
     "native_gameplay": @POIMA_RUNTIME_NATIVE_GAMEPLAY@,

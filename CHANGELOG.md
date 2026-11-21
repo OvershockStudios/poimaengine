@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.350
+
+- Author one project-owned HDR post effect by content hash and preserve its compiled artifact in project exports. Validate the shader before creating its Vulkan module and render it ahead of bloom and scene exposure.
+
 ## 0.0.349
 
 - Add reusable native terrain tiles, terrain-aware foliage placement, a deterministic particle simulator, and localized water flow with controllable gates and volume accounting.

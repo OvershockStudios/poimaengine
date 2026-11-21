@@ -85,6 +85,12 @@ Original Poima source is licensed under Apache-2.0; see [LICENSE](LICENSE).
 - License: MIT; original `LICENSE.txt` is installed.
 - Statically linked Vulkan backend and NVRHI validation layer. DirectX, NVAPI, RTXMU and Aftermath integrations are disabled.
 
+## SPIRV-Tools and SPIRV-Headers (optional render build)
+
+- Publisher: The Khronos Group. [SPIRV-Tools v2026.4](https://github.com/KhronosGroup/SPIRV-Tools/tree/v2026.4) and [pinned SPIRV-Headers](https://github.com/KhronosGroup/SPIRV-Headers/tree/496543121ce6419f23d6fa5d7194ba66c36212d2).
+- Poima statically links the Apache-2.0 validator to check project-authored shaders for Vulkan 1.3. The pinned headers include grammar data under the upstream terms.
+- Original notices are installed in `share/poima/licenses/SPIRV-Tools` and `share/poima/licenses/SPIRV-Headers`.
+
 ## SDL3 (optional render build)
 
 - Publisher: Sam Lantinga and contributors; [source](https://github.com/libsdl-org/SDL).

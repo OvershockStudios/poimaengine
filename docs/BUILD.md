@@ -31,7 +31,10 @@ ctest --preset headless
 
 This route requires no display, graphics driver, .NET SDK, optional middleware or downloaded engine dependencies. Configure with `-DPOIMA_BUILD_TESTS=OFF` for a C/C++/CMake/Ninja-only build. Use `dev` instead of `headless` to add Vulkan device inspection, then run `./build/dev/poima doctor --graphics`; that preset downloads the pinned Vulkan headers.
 
-The dependency-free headless checks do not qualify simulation-enabled builds, Windows graphics drivers, either editor, or binary distribution. Optional GPU/GUI suites require a suitable machine and are run separately. Hosted CI is not currently configured in this public snapshot.
+The [Linux headless authoring workflow](../.github/workflows/linux-headless.yml)
+builds the native CLI and runs five authoring suites on pull requests and pushes
+to `main`. Simulation-enabled builds, Windows graphics drivers, editors, and
+binary distribution have separate qualification.
 
 ### Headless game systems on Linux
 
@@ -241,7 +244,7 @@ cmake --build --preset windows-render
 python3 tests/render_capture.py build/windows-render/poima.exe --windows-interop --gpu 0 --output build/render-evidence
 ```
 
-The bootstrap script requires Linux x64 and Python with tarfile's `data` extraction filter (Python 3.12+ recommended). It downloads verified official archives into `.cache`, without modifying system packages or PATH. CMake fetches pinned Vulkan-Headers, NVRHI and SDL3 sources. An accessible Windows desktop and WSL executable interoperability are required for the final two commands; use Windows directly if interop is unavailable. The capture test converts its Linux output path to a Windows path automatically.
+The bootstrap script requires Linux x64 and Python with tarfile's `data` extraction filter (Python 3.12+ recommended). It downloads verified official archives into `.cache`, without modifying system packages or PATH. CMake fetches pinned Vulkan-Headers, NVRHI, SDL3, SPIRV-Headers and SPIRV-Tools sources. An accessible Windows desktop and WSL executable interoperability are required for the final two commands. Use Windows directly if interop is unavailable. The capture test converts its Linux output path to a Windows path automatically.
 
 The default 120-frame smoke test opens a window and prefers a discrete GPU. `--gpu` selects the Vulkan enumeration index; inspect `doctor --graphics` first. `--capture` saves the final rendered image to an explicit BMP path; its parent must exist, and an existing file is overwritten. The shader is embedded in the executable, so there is no runtime source/shader working-directory dependency. For direct invocation on Windows:
 

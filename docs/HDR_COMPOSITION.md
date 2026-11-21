@@ -3,10 +3,10 @@
 The development renderer stores scene-linear RGB in an RGBA16_FLOAT attachment. When MSAA is enabled, it resolves that attachment before applying exposure and the display transform. Geometry, procedural sky and the flat scene background use this common path. Native game UI and editor overlays are composed afterward, so scene exposure does not change their authored colors.
 
 This is an internal HDR rendering stage with SDR output. Optional [bloom](BLOOM.md)
-uses the same radiance before exposure and tone mapping. [Project post effects](PROJECT_POST_EFFECTS.md)
-can compile a custom scene-linear effect offline. The renderer does not load
-these artifacts yet. HDR monitor output, automatic exposure, and GI have
-separate implementation and qualification scopes.
+uses the same radiance before exposure and tone mapping. An authored
+[project post effect](PROJECT_POST_EFFECTS.md) processes resolved scene-linear
+radiance before bloom, exposure and tone mapping. HDR monitor output,
+automatic exposure, and GI have separate implementation and qualification scopes.
 
 ## Output contract
 

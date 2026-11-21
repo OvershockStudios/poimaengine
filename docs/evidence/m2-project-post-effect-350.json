@@ -1,0 +1,130 @@
+{
+  "engine_version": "0.0.350",
+  "world_schema_revision": 172,
+  "sources_sha256": {
+    "cmake/runtime.json.in": "dc77ed08613fe05f906818b7590dbb05b583986d8f1262f83bdfd1c4eb2bc1a9",
+    "cmake/spirv_validation.cmake": "345a87ac5bcd5e5ae9305e6b2569243234ce7d5ec55782de6bd69de564078a35",
+    "include/poima/post_effect.hpp": "0f4fee9641aa6b83e00339e5118245c534ab9ba5a11cc25f66f6cf8bf1ab8f04",
+    "include/poima/render_schedule.hpp": "4045774ae302adc1372cc7a1032a4645b32b99f3e55036cd3e45ae07df5c13bf",
+    "src/post_effect.cpp": "eee5f08c4d80a251a2968e0f360937bacebf6f889c211f97979602a3a9c5c9c1",
+    "src/post_effect_vulkan.cpp": "f7d91bac1102dae0dbb1c905ccf4a9c242c9a269f320e65024b9217af20c294a",
+    "src/project.cpp": "b509fcb5e840404aaebcb773d76a35490e87c5ac63dbee40643e5ff1de7bea81",
+    "src/render_smoke.cpp": "e47392e5d0a594b7d9cdffb9b6b1e7249bf8b5f903b8c5597df78c272f446519",
+    "src/runtime.cpp": "94da34a570fd54dd0d60f8df947a3ae9aaa5c90184ec4335bb07ed8d0c64f1d3",
+    "src/world.cpp": "3490d28fb4c6eb3ba92970dfc4c528f7c564b21bdb562348a22cd263c5aa96f8",
+    "tests/bloom_capture.py": "0107e8be92a387046d8446d47d7f0145f89fd52a8304b29083ea483d9f9af73d",
+    "tests/post_effect_native.cpp": "2d7111e0cf01c0240f6d2a368013e382b4035af3aa9019685c10f36eefe56c8e",
+    "tests/project_post_effect_capture.py": "5f0b83d2e4afb7ba856dda78a58c09f63f786216ddcdec4181b559755789cebf",
+    "tests/world_post_effect_contract.py": "5a4d5dd72842c8ec2ee6fcdde24debf4ad69351ac75bb2f241d547ee31408e64"
+  },
+  "windows_installed": {
+    "target": "Windows x86_64",
+    "compiler": "Clang 23.1.2",
+    "executable_sha256": "65dc1b6bfc720d9cfe7979faa6d993c1da986fbc6c5fb2c9badf6606b3675eb1",
+    "desktop_bridge_sha256": "b697e10b3e51ddfea595c4659789d395e0acac56bb1b31610591ddb12c411f89",
+    "runtime_descriptor_sha256": "84291897cb5d95d5ee3ce27e5e104dde0f9842ac92d2da585cf05bc0885f7a8b",
+    "spirv_tools": "v2026.4",
+    "validation_target": "Vulkan 1.3"
+  },
+  "windows_vulkan_forward": [
+    {
+      "gpu": "AMD Radeon(TM) Graphics",
+      "gpu_index": 0,
+      "report_sha256": "d66301b53012f3cd9bea51382ded509f94aab6d86c810719cae3a9465aa31518",
+      "captures": 16,
+      "frames_presented_in_relocated_replay": 2,
+      "disabled_restore_byte_identical": true,
+      "nvrhi_errors": 0,
+      "maximum_authored_reference_error_srgb_codes": 1,
+      "post_before_bloom_witness_pixels_4x": 37714,
+      "artifact_sha256": "457ad18548e2de71d07add094043953eacf23f13a2ec5b45c6bca587be0425e0",
+      "relocated_export": {
+        "tick": 1,
+        "inventory_files": 58,
+        "source_path_unavailable": true,
+        "maximum_reference_error_srgb_codes": 1,
+        "output_bmp_sha256": "71940bf280d23de7bf5cbee39e5f134a0611c520653d544fd6b65bf9cabfc692"
+      },
+      "bloom_only": {
+        "captures": 10,
+        "report_sha256": "a080257c8ccbd8b1953a3718b6143d4585fb4db6d9da6b16ccde4a91746f20de",
+        "halo_pixels_1x": 3808,
+        "halo_pixels_4x": 3631
+      }
+    },
+    {
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "gpu_index": 1,
+      "report_sha256": "82ae903437d0c64d3559b27d877517c6f4b215f430815dd6afa145b14e3474b1",
+      "captures": 16,
+      "frames_presented_in_relocated_replay": 2,
+      "disabled_restore_byte_identical": true,
+      "nvrhi_errors": 0,
+      "maximum_authored_reference_error_srgb_codes": 1,
+      "post_before_bloom_witness_pixels_4x": 37713,
+      "artifact_sha256": "457ad18548e2de71d07add094043953eacf23f13a2ec5b45c6bca587be0425e0",
+      "relocated_export": {
+        "tick": 1,
+        "inventory_files": 58,
+        "source_path_unavailable": true,
+        "maximum_reference_error_srgb_codes": 1,
+        "output_bmp_sha256": "3db22fd899d6faf022600c277012b043eeb7d4bee1acdf1745b74a952a7bf538"
+      },
+      "bloom_only": {
+        "captures": 10,
+        "report_sha256": "9427711ee17ad0cfdd8844dbcb38c1a4275b4cb6e353ae5767e82947f4152e22",
+        "halo_pixels_1x": 3808,
+        "halo_pixels_4x": 3631
+      }
+    }
+  ],
+  "native_contracts": {
+    "asset_references": {
+      "passed": 8,
+      "log_sha256": "9298a9ef6d2295b0eaf67694f599e7ae98bd11ac4c77f0e0b21c3e81a3fe5d7e"
+    },
+    "world_ui": {
+      "passed": 7,
+      "log_sha256": "949cc73a67c7c959df772115a9cf30f7ed975169bdf5d5b8428e90ed445c3581"
+    },
+    "project": {
+      "passed": 18,
+      "log_sha256": "7b5ba5027aefc30febd3d14cfe71cde3e9ea44d7b5d9f46832fcf83282c4025b"
+    },
+    "mcp": {
+      "passed": 17,
+      "log_sha256": "151a21b4622e75f0b8189997ab1163af471d040ade3dcc98ca820395fb9bfbfb"
+    }
+  },
+  "world_import_and_snapshot": {
+    "log_sha256": "cb42cc1dbea04dffb4a9b6657b36530761cbe620aadc131a183c8495847ad8c9",
+    "runtime_checked": true
+  },
+  "draft_mcp": {
+    "owned_relative_import": true,
+    "outside_paths_rejected": 2,
+    "receipts_sha256": "03187c51baf11f21cece01a10d64ee015797b411c8ce1ad04ee56cb25596471c"
+  },
+  "offline_compiler_tests": {
+    "passed": 5,
+    "log_sha256": "1c1d1c144b283d528a654019f9a66551f842a847c0e18739675d858b2f299303"
+  },
+  "render_schedule": {
+    "accepted_variants": 388,
+    "rejected_mutations": 1009,
+    "includes_fsr_and_viewmodel_product_order": true
+  },
+  "retained_failures": [
+    {
+      "stage": "Windows configure",
+      "reason": "Disconnected CMake cache was missing two new, pinned upstream sources. Both archives were verified and supplied before reconfiguring.",
+      "log_sha256": "35983d65c7d781ef472035348e0ec6ef02f288d8c683dce2cfcc646e8553f1cb"
+    },
+    {
+      "stage": "Bloom-only fixture authoring",
+      "reason": "The original fixture used out-of-range emissive material colors. The corrected fixture uses the allowed range and an appropriate positive threshold without changing measurement assertions.",
+      "report_sha256": "bdc363db1270d995a7a6cfa119c102e6e5ff657cf15944228e3ac5207e306a1e"
+    }
+  ],
+  "scope": "One trusted project-authored color-only effect in forward captures and a relocated game. FSR, deferred, viewmodel combination and representative frame-time qualification are separate."
+}

@@ -23,7 +23,7 @@ enum class Region { whole,prefix,cluster_members,probe_pixels };
 enum class Use { upload,storage_read,storage_write,vertex,index,constant,sampled,color,color_overwrite,depth,clear_color,clear_depth,copy_source,copy_destination,resolve_source,resolve_destination,present,image_write,image_read_write };
 using Uses=std::uint64_t;
 constexpr Uses use_bit(Use use) {return Uses{1}<<static_cast<unsigned>(use);}
-enum class PassId { skinning,light_assignment,shadows,scene_clear,sky,opaque,ambient_occlusion,ambient_occlusion_filter,deferred_lighting,resolve,temporal_inputs,reconstruction,viewmodel_lights,viewmodel_clear,viewmodel_opaque,viewmodel_resolve,viewmodel_composite,bloom_extract,bloom_horizontal,bloom_vertical,output,game_ui,overlay,editor_clear,editor_ui,product_probes,capture,present };
+enum class PassId { skinning,light_assignment,shadows,scene_clear,sky,opaque,ambient_occlusion,ambient_occlusion_filter,deferred_lighting,resolve,temporal_inputs,reconstruction,viewmodel_lights,viewmodel_clear,viewmodel_opaque,viewmodel_resolve,viewmodel_composite,post_effect,bloom_extract,bloom_horizontal,bloom_vertical,output,game_ui,overlay,editor_clear,editor_ui,product_probes,capture,present };
 inline const char* pass_name(PassId id) {
     switch(id) {
     case PassId::skinning:return "render.pass.skinning";case PassId::light_assignment:return "render.pass.light_assignment";
@@ -35,6 +35,7 @@ inline const char* pass_name(PassId id) {
     case PassId::temporal_inputs:return "render.pass.temporal_inputs";case PassId::reconstruction:return "render.pass.reconstruction";
     case PassId::viewmodel_lights:return "render.pass.viewmodel_lights";case PassId::viewmodel_clear:return "render.pass.viewmodel_clear";
     case PassId::viewmodel_opaque:return "render.pass.viewmodel_opaque";case PassId::viewmodel_resolve:return "render.pass.viewmodel_resolve";case PassId::viewmodel_composite:return "render.pass.viewmodel_composite";
+    case PassId::post_effect:return "render.pass.post_effect";
     case PassId::bloom_extract:return "render.pass.bloom_extract";
     case PassId::bloom_horizontal:return "render.pass.bloom_horizontal";
     case PassId::bloom_vertical:return "render.pass.bloom_vertical";
@@ -81,6 +82,7 @@ struct FrameResources {
     std::vector<DrawInputs> camera_draws,shadow_draws,viewmodel_draws;
     ResourceId viewmodel_frame=none,viewmodel_objects=none,viewmodel_counts=none,viewmodel_indices=none,viewmodel_readback=none,viewmodel_color=none,viewmodel_depth=none,composite=none;
     ResourceId viewmodel_resolved=none;
+    ResourceId post_effect=none;
     ResourceId bloom=none,bloom_scratch=none;
 };
 struct Settings {
@@ -89,11 +91,15 @@ struct Settings {
     std::uint64_t history_sequence=0;
     bool viewmodel=false,viewmodel_clustered=false;
     std::uint32_t viewmodel_samples=1;
-    bool bloom=false;
+    bool bloom=false,post_effect=false;
 };
-inline constexpr ResourceId display_radiance(const FrameResources& frame,const Settings& settings) {
+inline constexpr ResourceId scene_linear_radiance(const FrameResources& frame,const Settings& settings) {
     return settings.viewmodel ? frame.composite : settings.reconstruction ? frame.reconstructed : frame.hdr;
 }
+inline constexpr ResourceId display_radiance(const FrameResources& frame,const Settings& settings) {
+    return settings.post_effect ? frame.post_effect : scene_linear_radiance(frame,settings);
+}
+inline constexpr std::uint64_t post_effect_budget_bytes=128u*1024u*1024u;
 inline constexpr std::uint32_t bloom_extent(std::uint32_t size) {return size/4+(size%4!=0);}
 inline constexpr std::uint64_t bloom_budget_bytes=32u*1024u*1024u;
 struct Schedule {
@@ -227,6 +233,24 @@ struct Schedule {
                 if(resource(frame.viewmodel_counts).bytes!=16u*9u*24u*4u || resource(frame.viewmodel_indices).bytes!=16u*9u*24u*64u*4u || resource(frame.viewmodel_indices).region!=Region::cluster_members || resource(frame.viewmodel_indices).counts!=frame.viewmodel_counts)fail("invalid foreground cluster capacity");
             }
         } else if(settings.viewmodel_clustered || !frame.viewmodel_draws.empty() || frame.viewmodel_color!=none || frame.viewmodel_depth!=none || frame.viewmodel_resolved!=none || frame.composite!=none || frame.viewmodel_frame!=none || frame.viewmodel_objects!=none || frame.viewmodel_counts!=none || frame.viewmodel_indices!=none || frame.viewmodel_readback!=none)fail("foreground resources without foreground output");
+        if(settings.post_effect) {
+            if(!settings.scene || settings.products_debug)fail("post effect requires color scene output");
+            const auto source=scene_linear_radiance(frame,settings);
+            required(source);
+            required(frame.post_effect);
+            const auto& hdr=resource(source);
+            const auto& target=resource(frame.post_effect);
+            if(hdr.kind!=Kind::texture || hdr.format!=Format::rgba16_float || hdr.samples!=1)fail("post effect requires single-sample HDR input");
+            for(auto id:{frame.color,frame.depth,frame.normal,frame.motion,frame.motion_valid,frame.hdr,frame.output,frame.swapchain,
+                frame.material_base,frame.material_surface,frame.material_correspondence,frame.ao_raw,frame.ao_filtered,frame.ibl_diffuse,frame.ibl_specular,frame.ibl_brdf,
+                frame.reconstructed,frame.dense_motion,frame.reactive,frame.dilated_depth,frame.dilated_motion,frame.reconstructed_depth,frame.shadow,
+                frame.viewmodel_color,frame.viewmodel_depth,frame.viewmodel_resolved,frame.composite,frame.capture,frame.bloom,frame.bloom_scratch})
+                if(id==frame.post_effect)fail("post effect aliases another image role");
+            if(target.kind!=Kind::texture || target.format!=Format::rgba16_float || target.lifetime!=Lifetime::shared ||
+                target.region!=Region::whole || target.initialized || target.samples!=1 ||
+                target.width!=hdr.width || target.height!=hdr.height)fail("invalid post-effect attachment");
+            if(std::uint64_t(hdr.width)*hdr.height>post_effect_budget_bytes/8)fail("post-effect attachment payload exceeds limit");
+        } else if(frame.post_effect!=none)fail("post-effect attachment without post-effect pass");
         if(settings.bloom) {
             if(!settings.scene || settings.products_debug)fail("bloom requires color scene output");
             const auto source=display_radiance(frame,settings);
@@ -277,7 +301,8 @@ struct Schedule {
             initialized.push_back(r.initialized);
         }
         bool world_resolved=false,world_opaque=false,foreground_lights=false,foreground_cleared=false,foreground_drawn=false,foreground_resolved=false,foreground_composed=false;
-        bool exported=false,captured=false,probed=false,prepared=false,reconstructed=false,deferred_lit=false,deferred_opaque=false,ao_generated=false,ao_filtered=false;unsigned previous=0;bool first=true;
+        bool exported=false,captured=false,probed=false,prepared=false,reconstructed=false,deferred_lit=false,deferred_opaque=false,ao_generated=false,ao_filtered=false;
+        bool post_effect_applied=false;unsigned previous=0;bool first=true;
         unsigned bloom_stage=0;
         for(const auto& pass:passes) {
             const auto order=static_cast<unsigned>(pass.id);
@@ -337,7 +362,7 @@ struct Schedule {
                 reconstructed=true;
             }
             if(pass.id==PassId::output && settings.ambient_occlusion && settings.products_debug && !has(frame.ao_filtered,Use::sampled))fail("missing ambient occlusion diagnostic input");
-            if(pass.id==PassId::output && settings.reconstruction && (!reconstructed || !has(settings.viewmodel ? frame.composite : frame.reconstructed,Use::sampled)))fail("display precedes reconstruction");
+            if(pass.id==PassId::output && settings.reconstruction && (!reconstructed || !has(display_radiance(frame,settings),Use::sampled)))fail("display precedes reconstruction");
             if(pass.id==PassId::skinning && settings.viewmodel && (!has(frame.viewmodel_frame,Use::upload) || !has(frame.viewmodel_objects,Use::upload)))fail("missing foreground constant upload");
             if(pass.id==PassId::viewmodel_lights) {
                 if(!settings.viewmodel || !settings.viewmodel_clustered || !has(frame.viewmodel_frame,Use::constant) || !has(frame.lights,Use::storage_read) || !has(frame.viewmodel_counts,Use::storage_write) || !has(frame.viewmodel_indices,Use::storage_write))fail("invalid foreground cluster assignment");
@@ -365,14 +390,27 @@ struct Schedule {
                 if(pass.accesses.size()!=3)fail("foreground composite must have exactly two sources and a distinct output");
                 foreground_composed=true;
             }
-            if(pass.id==PassId::output && settings.viewmodel && (!foreground_composed || !has(frame.composite,Use::sampled)))fail("display precedes foreground composition");
+            if(pass.id==PassId::output && settings.viewmodel && (!foreground_composed || !has(display_radiance(frame,settings),Use::sampled)))fail("display precedes foreground composition");
+            if(pass.id==PassId::post_effect) {
+                if(!settings.post_effect || !world_opaque || (frame.color!=frame.hdr && !world_resolved) ||
+                    (settings.deferred && !deferred_lit) || (settings.reconstruction && !reconstructed) ||
+                    (settings.viewmodel && !foreground_composed) || pass.accesses.size()!=2 ||
+                    !has(scene_linear_radiance(frame,settings),Use::sampled) ||
+                    !has(frame.post_effect,Use::color_overwrite))fail("invalid or premature post effect pass");
+                for(const auto& access:pass.accesses)if(access.initialize!=(access.resource==frame.post_effect))fail("post effect must initialize its complete output");
+                post_effect_applied=true;
+            }
+            if(pass.id==PassId::output && settings.post_effect &&
+                (!post_effect_applied || !has(frame.post_effect,Use::sampled) ||
+                 has(scene_linear_radiance(frame,settings),Use::sampled)))fail("display bypasses post effect");
             if(pass.id>=PassId::bloom_extract && pass.id<=PassId::bloom_vertical) {
                 const auto stage=static_cast<unsigned>(pass.id)-static_cast<unsigned>(PassId::bloom_extract);
                 const auto input=stage==0 ? display_radiance(frame,settings) : stage==1 ? frame.bloom : frame.bloom_scratch;
                 const auto output=stage==1 ? frame.bloom_scratch : frame.bloom;
                 if(!settings.bloom || stage!=bloom_stage || !world_opaque || (frame.color!=frame.hdr && !world_resolved) ||
                     (settings.deferred && !deferred_lit) || (settings.reconstruction && !reconstructed) ||
-                    (settings.viewmodel && !foreground_composed) || pass.accesses.size()!=2 || !has(input,Use::sampled) ||
+                    (settings.viewmodel && !foreground_composed) || (settings.post_effect && !post_effect_applied) ||
+                    pass.accesses.size()!=2 || !has(input,Use::sampled) ||
                     !has(output,Use::color_overwrite))fail("invalid or premature bloom pass");
                 for(const auto& access:pass.accesses)if(access.initialize!=(access.resource==output))fail("bloom must initialize its complete output");
                 ++bloom_stage;
@@ -404,6 +442,9 @@ struct Schedule {
             std::uint32_t attachment_width=0,attachment_height=0,attachment_samples=0;
             for(const auto& a:pass.accesses) {
                 const auto& r=resource(a.resource);
+                if(settings.post_effect && a.resource==frame.post_effect && pass.id!=PassId::post_effect &&
+                    !((pass.id==PassId::bloom_extract || pass.id==PassId::output) && a.use==Use::sampled))
+                    fail("post-effect image used outside scene color composition");
                 if(settings.bloom && (a.resource==frame.bloom || a.resource==frame.bloom_scratch) &&
                     (pass.id<PassId::bloom_extract || pass.id>PassId::bloom_vertical) &&
                     !(a.resource==frame.bloom && pass.id==PassId::output && a.use==Use::sampled))fail("bloom resource used outside its filter and display passes");
@@ -447,6 +488,7 @@ struct Schedule {
         if(settings.ambient_occlusion && (!ao_generated || !ao_filtered))fail("missing ambient occlusion passes");
         if(settings.deferred && !deferred_lit)fail("missing deferred lighting pass");
         if(settings.reconstruction && !reconstructed)fail("missing reconstruction pass");
+        if(settings.post_effect && !post_effect_applied)fail("missing post effect pass");
         if(settings.bloom && bloom_stage!=3)fail("missing bloom pass");
         if(settings.viewmodel && (!foreground_cleared || !foreground_drawn || !foreground_composed || (settings.viewmodel_samples!=1 && !foreground_resolved) || (settings.viewmodel_clustered && !foreground_lights)))fail("missing foreground passes");
         if(!exported)fail("missing presentation export");
@@ -524,6 +566,11 @@ inline Schedule build(FrameResources frame,Settings settings) {
         for(const auto& d:f.viewmodel_draws) {add(draw,d.vertices,Use::vertex);add(draw,d.indices,Use::index);for(auto t:d.textures)add(draw,t,Use::sampled);}
         if(settings.viewmodel_samples!=1) {auto& resolve=pass(PassId::viewmodel_resolve);add(resolve,f.viewmodel_color,Use::sampled);add(resolve,f.viewmodel_resolved,Use::color_overwrite,true);}
         auto& compose=pass(PassId::viewmodel_composite);add(compose,settings.reconstruction ? f.reconstructed : f.hdr,Use::sampled);add(compose,f.viewmodel_resolved,Use::sampled);add(compose,f.composite,Use::color_overwrite,true);
+    }
+    if(settings.post_effect) {
+        auto& effect=pass(PassId::post_effect);
+        add(effect,scene_linear_radiance(f,settings),Use::sampled);
+        add(effect,f.post_effect,Use::color_overwrite,true);
     }
     if(settings.bloom) {
         auto& extract=pass(PassId::bloom_extract);add(extract,display_radiance(f,settings),Use::sampled);add(extract,f.bloom,Use::color_overwrite,true);

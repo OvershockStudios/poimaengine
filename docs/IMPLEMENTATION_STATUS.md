@@ -1,8 +1,21 @@
 # Implementation status
 
-Updated 2026-11-21 for **0.0.349**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-21 for **0.0.350**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.350 imports a pinned [project post effect](PROJECT_POST_EFFECTS.md)
+as a world asset and includes that artifact in standalone exports. The native
+renderer validates its SPIR-V before creating the shader module. The effect
+reads resolved scene-linear radiance before bloom and exposure. Windows Vulkan
+captures on AMD integrated graphics and an RTX 4070 Laptop GPU matched the
+sample's analytic vignette and bloom reference within one sRGB code value at
+1× and 4× MSAA. Removing the effect restored the exact baseline BMPs. HUD
+witnesses remained unchanged, and both GPUs rendered a one-tick replay from
+relocated exports with the original project paths unavailable. Separate bloom
+captures checked visible halos and exposure. FSR and viewmodel ordering have
+schedule tests. GPU image qualification covers the forward fixture.
+[Results](evidence/m2-project-post-effect-350.json)
 
 Version 0.0.349 adds native [terrain tiles](TERRAIN.md), [foliage scattering](FOLIAGE_SCATTER.md),
 [CPU particles](PARTICLES.md), and a [localized water grid](SHALLOW_WATER.md).
@@ -21,11 +34,11 @@ and stopped when a moving collider interrupted the path.
 Linux fixtures cover [early acoustic reflections](EARLY_REFLECTIONS.md),
 [passive joint damping](PHYSICAL_RIGS.md), [keyboard chords](INPUT_ACTIONS.md),
 [game UI focus](GAME_UI.md), and [draft change inspection](PROJECT_RECOVERY.md).
-The live Windows creator still assigns scene-only worker tasks. [HDR bloom](BLOOM.md)
-has shader, render-schedule, and Windows-target syntax checks. Native Vulkan
-capture remains open. The [project post-effect compiler](PROJECT_POST_EFFECTS.md)
-produced identical pinned vignette artifacts after relocation on Linux and
-rejected stale source. Its output still requires player and export integration.
+The live Windows creator still assigns scene-only worker tasks. At 0.0.349,
+[HDR bloom](BLOOM.md) passed shader, render-schedule, and Windows-target syntax
+checks. The [project post-effect compiler](PROJECT_POST_EFFECTS.md) produced
+identical pinned vignette artifacts after relocation on Linux and rejected stale
+source. The subsequent 0.0.350 checkpoint covers native capture and export.
 [Results](evidence/m2-parallel-engine-349.json)
 
 Version 0.0.348 adds [guarded C# source edits in worker drafts](MCP.md#edit-compiled-gameplay-in-a-draft).
