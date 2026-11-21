@@ -1,8 +1,17 @@
 # Implementation status
 
-Updated 2026-11-20 for **0.0.337**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-20 for **0.0.338**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.338 [restores the active worker round on reopen](PROJECT_RECOVERY.md#check-selected-scenes-in-the-creator).
+Scripted Windows creator tests recovered completed reports, replayed the same
+assignment without starting duplicate workers, and played the original passing
+build after reopening a round with a later failed check. A separate deliberate
+termination recorded the pending turn as interrupted on reopen and excluded a
+draft edited after its report. Starting a new round preserved the previous
+round's files. Worker processes start on an explicit task.
+[Results](evidence/m2-creator-round-338.json)
 
 Version 0.0.337 formats [agent replies and worker reports](AGENT_CLIENTS.md#connect-a-project)
 with headings, emphasis, lists, code, tables and quotes. The Windows transcript

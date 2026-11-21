@@ -23,6 +23,9 @@ public sealed class CodexReview : IAsyncDisposable
         OpenSpecialistAsync(CodexSession.ConnectDraftAsync(codexExecutable, poimaExecutable, draftManifest, cancellation),
             "poima_call", model, cancellation);
 
+    public static string ValidateDraft(string manifest, string draft, string project, string baseHash, long revision) =>
+        CodexDraftTarget.Validate(manifest, draft, project, baseHash, revision);
+
     private static async Task<CodexReview> OpenSpecialistAsync(Task<CodexSession> connection, string tool,
         string? model, CancellationToken cancellation)
     {

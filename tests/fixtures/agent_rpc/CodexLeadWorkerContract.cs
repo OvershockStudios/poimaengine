@@ -7,6 +7,7 @@ internal static class CodexLeadWorkerContract
 {
     public const string DisabledPrompt = "Confirm disabled worker permission at revision ";
     public const string DelegatePrompt = "Delegate scene work at revision ";
+    public const string ReplayPrompt = "Replay worker assignment ";
     public const string Finished = "Lead collected both worker reports.";
     public const string MarkdownReport = """
         ## Review notes
@@ -31,11 +32,13 @@ internal static class CodexLeadWorkerContract
         Func<string, JsonObject, Task> trace)
     {
         var disabled = prompt.StartsWith(DisabledPrompt, StringComparison.Ordinal);
-        if (!disabled && !prompt.StartsWith(DelegatePrompt, StringComparison.Ordinal)) return null;
+        var replay = prompt.StartsWith(ReplayPrompt, StringComparison.Ordinal);
+        if (!disabled && !replay && !prompt.StartsWith(DelegatePrompt, StringComparison.Ordinal)) return null;
         var prefix = disabled ? DisabledPrompt : DelegatePrompt;
         var firstLine = prompt.Split('\n', 2)[0].TrimEnd();
-        var revision = long.Parse(firstLine.AsSpan(prefix.Length).TrimEnd('.'), CultureInfo.InvariantCulture);
-        var id = Guid.NewGuid().ToString("N");
+        var revision = long.Parse(firstLine.AsSpan(replay ? ReplayPrompt.Length + 32 + " at revision ".Length : prefix.Length).TrimEnd('.'),
+            CultureInfo.InvariantCulture);
+        var id = replay ? firstLine.Substring(ReplayPrompt.Length, 32) : Guid.NewGuid().ToString("N");
         var request = new JsonObject
         {
             ["action"] = "assign", ["request_id"] = id, ["expected_revision"] = revision,
@@ -51,6 +54,15 @@ internal static class CodexLeadWorkerContract
         }
         Check(tools is { Count: 1 } && tools[0]?["name"]?.GetValue<string>() == CodexWorkerTool.Name &&
             tools[0]?["type"]?.GetValue<string>() == "function", "The enabled lead did not register the worker tool.");
+        if (replay)
+        {
+            var original = await Call(new JsonObject { ["action"] = "inspect", ["request_id"] = id }, success: true);
+            var replayed = await Call(request, success: true);
+            Check(original["state"]?.GetValue<string>() == "completed" && replayed["replayed"]?.GetValue<bool>() == true &&
+                JsonNode.DeepEquals(original["workers"], replayed["workers"]) && replayed["workers"] is JsonArray { Count: 2 },
+                "The reopened creator did not return the original assignment result.");
+            return "Reopened assignment receipt verified.";
+        }
         await Call(request, success: false, threadId: "different-thread");
         await Call(request, success: false, turnId: "previous-turn");
         var invalid = request.DeepClone().AsObject();

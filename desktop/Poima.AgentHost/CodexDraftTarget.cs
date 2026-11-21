@@ -8,7 +8,8 @@ internal static class CodexDraftTarget
     private const int MaximumMetadataBytes = 65536;
     private const long MaximumRevision = 9007199254740991L;
 
-    public static string Validate(string manifestPath)
+    public static string Validate(string manifestPath, string? expectedDraft = null, string? expectedBase = null,
+        string? expectedHash = null, long? expectedRevision = null)
     {
         if (!Path.IsPathFullyQualified(manifestPath))
             throw new ArgumentException("An absolute draft manifest path is required.", nameof(manifestPath));
@@ -31,7 +32,10 @@ internal static class CodexDraftTarget
             !LowerHex(baseId, 32) || draftId == baseId || !LowerHex(StringValue(draft, "base_sha256"), 64) ||
             IntegerValue(draft, "base_revision") is not (>= 0 and <= MaximumRevision) ||
             StringValue(project, "format") != "poima.project" || IntegerValue(project, "version") is not (1 or 2) ||
-            StringValue(project, "project_id") != draftId)
+            StringValue(project, "project_id") != draftId ||
+            expectedDraft is not null && draftId != expectedDraft || expectedBase is not null && baseId != expectedBase ||
+            expectedHash is not null && StringValue(draft, "base_sha256") != expectedHash ||
+            expectedRevision is not null && IntegerValue(draft, "base_revision") != expectedRevision)
             throw new InvalidDataException("The project manifest does not match its draft metadata.");
         return path;
     }

@@ -1,0 +1,93 @@
+{
+  "engine_version": "0.0.338",
+  "scope": "Windows UI Automation on the exact extracted package with scripted Codex peers, native draft editors and a native Vulkan player. The test owner for the crash scenario is a fresh scratch creator process.",
+  "archive": {
+    "name": "Poima-0.0.338-Windows-x64.zip",
+    "bytes": 142293861,
+    "sha256": "ad4b76adcb58dbf4ea9657691400503e424ed828f47ddcd3f4cbb1e448e5c3a1"
+  },
+  "build": {
+    "editor_sha256": "842ed0fcf0fb9076fffa17e61ebabcb8c6422732ec561b7a81e3d82435756ed3",
+    "frontend_sha256": "40647a9752a8d96775911bfbdbb1558c5b82b76f695142830bb6a2a85c93ca5d",
+    "cli_sha256": "485e1748f8ab67af2f350eb0967522b7dee14809cb96fc4fd4705843cae2a066",
+    "codex_review_fixture_sha256": "b477017f6cfe56ca229d9d4375064bc90ec7da37c9b3ebe232730d724c1ccf03"
+  },
+  "runner": {
+    "path": "tests/creator_workspace.ps1",
+    "sha256": "d1e59de3392f8ad99712d0a7e88cdfe8e5662a597fe00b0063418214d5804915"
+  },
+  "normal_close_and_reopen": {
+    "options": [
+      "WithLeadWorkers",
+      "WithCombinedDrafts",
+      "WithWorkerReopen"
+    ],
+    "report_sha256": "b4141ec432050f3d9b7579fdb618ccc52bb57fb90b47bb9c60bd56ff0b7570cb",
+    "ordinary_close_exit_code": 0,
+    "closed_creator_joined_workers": true,
+    "combined_checks": {
+      "passing_report": {
+        "groups_passed": 2,
+        "groups_total": 2,
+        "passed": true,
+        "bundle_sha256": "64ab4244b568744e14a9a869c18dcbc48565457433a13bb3958b5246d7495f96",
+        "report_sha256": "4768b5bc4a5b4e6e8863794e2ebfec48710b264bf17ecfb86172d99a6b566736"
+      },
+      "failed_report": {
+        "groups_passed": 1,
+        "groups_total": 2,
+        "passed": false,
+        "bundle_sha256": "de27c5a2af633df1dcc181f59dd707d209b279e5ca48d22d6154913e721ca6a0",
+        "report_sha256": "abacc115c18ea63a5c6718256311b204ad75a2019f3ec27479441d103d7f199a"
+      }
+    },
+    "reopened_playback": {
+      "event_type": "verified_play_closed",
+      "revision": 2,
+      "bundle_sha256": "64ab4244b568744e14a9a869c18dcbc48565457433a13bb3958b5246d7495f96",
+      "tick": 24,
+      "frames_presented": 49,
+      "stop_reason": "window_closed"
+    },
+    "retained_assignment": "ec6c816bbcb242cca9fa2ecaf7baf924",
+    "draft_sha256": [
+      "67a8f37fe25655fcbe3f118717111ed29e853d5a7214f4a0a7702f8bf0185850",
+      "6314cc0f56f1e361522ac5ed588687cb822057cccde31b7e5423c5136381292c"
+    ],
+    "stopped_task_restored": true,
+    "replayed_without_spawning_workers": true,
+    "finished_builds_reopened": true,
+    "old_round_sha256": "996e893eb7a7168115a5ff8c162cc93d0df469eaa00719d82a1d5edc77294a7d",
+    "new_round_retained_old_files": true
+  },
+  "abrupt_exit_and_reopen": {
+    "options": [
+      "WithLeadWorkers",
+      "WithCombinedDrafts",
+      "WithWorkerCrash"
+    ],
+    "report_sha256": "86b50f15a511d475c454c206ca7aeeeea32bbd2f43b45f86eaa5959d4490edcc",
+    "deliberate_termination": true,
+    "child_exit_count": 4,
+    "running_receipt_sha256": "9c0b4c90b90a65c31b3ab5fe241378204d69434174a30386694071856f573ece",
+    "edited_world_sha256": "ed00335cb96f9fba7824dc3d3e88f7a7373ac6f8d733b771d98207c3cfae89d7",
+    "interrupted_task_restored": true,
+    "stale_report_excluded": true,
+    "original_receipt_retained": true,
+    "workers_not_automatically_restarted": true
+  },
+  "regressions": {
+    "markdown": {
+      "rendered_lead": true,
+      "rendered_worker": true,
+      "source_preserved": true,
+      "report_sha256": "96a17836da76adc4f8aa987e701fca20bbdf2e21180032741729f1c8b5cbcee0"
+    },
+    "manual_worker_and_specialist": {
+      "passed": true,
+      "report_sha256": "b0d5ead23958a43d920a13444c58ea1c507083c87ff143f3e3b12a28ec6556f0"
+    },
+    "agent_protocol_windows_sha256": "7e2325fdbab1f5aecc7000a1eb5027b95b16b25ee07cc3a5646a9704a805c3e2",
+    "agent_protocol_linux_sha256": "29b517d2b8624c6b7618ba6918f057eb87f7c142b512e697c01681170a951e37"
+  }
+}

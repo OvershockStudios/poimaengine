@@ -144,8 +144,17 @@ runs the most recent passing combination from this workspace, even after
 a later selection fails. **Open combined project as copy** opens an editable
 copy of the verified source in a new creator window. It gets its own project
 identity. The original project's build history and chat stay with the original
-workspace. Combined checks and exports are stored alongside their worker
-drafts under `.poima-drafts`. The buttons are scoped to the open worker round.
+workspace. Combined checks, exports and worker receipts are stored alongside
+the drafts under `.poima-drafts`. Reopen the original project to restore that
+round's worker tabs, most recent checks and last passing build. If an unfinished
+task was interrupted, inspect its draft before sending a follow-up. A report
+whose scene changed after completion needs a new review before combining.
+
+Choose **Start new worker round** when the current workers are idle to use a
+new checkpoint for later assignments. The previous draft and build files stay
+in their round folder. Copied and relocated projects have their own round
+selection. Drafts made before Poima recorded worker rounds remain available
+through their saved manifests.
 
 The creator combines scene changes and their cooked dependencies. Use the CLI
 when the integration also needs selected source files.

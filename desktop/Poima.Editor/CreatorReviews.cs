@@ -132,6 +132,8 @@ internal sealed class CreatorReviews
         private readonly Func<CancellationToken, Task<CodexReview>> open;
         private readonly Func<string> scope;
         private readonly Action? changed;
+        private readonly Action<string>? recordStart;
+        private readonly Func<TurnResult, Task<TurnResult>>? recordFinish;
         private readonly TextBox task = new() { AcceptsReturn = true, TextWrapping = TextWrapping.Wrap, Height = 85, MaxLength = 4000 };
         private readonly AgentTranscript transcript = new();
         private readonly TextBlock status = new() { Text = "Ready", TextWrapping = TextWrapping.Wrap };
@@ -142,17 +144,19 @@ internal sealed class CreatorReviews
         private CodexReview? review;
         private CancellationTokenSource? active;
         private Task<TurnResult>? pending;
-        private bool enabled = true;
+        private bool enabled = true, canStart = true;
         public string Name { get; }
         public Control View { get; }
         public string? Finding { get; private set; }
         public bool Busy => active is not null;
 
         public WorkerPane(string name, string placeholder, Func<CancellationToken, Task<CodexReview>> open,
-            Func<string> scope, Action? changed = null, string? draftPath = null, Action<string>? useReport = null)
+            Func<string> scope, Action? changed = null, string? draftPath = null, Action<string>? useReport = null,
+            Action<string>? recordStart = null, Func<TurnResult, Task<TurnResult>>? recordFinish = null)
         {
             Name = name;
             this.open = open; this.scope = scope; this.changed = changed;
+            this.recordStart = recordStart; this.recordFinish = recordFinish;
             editableDraft = draftPath is not null;
             task.PlaceholderText = placeholder;
             ask.Content = editableDraft ? "Send to worker" : "Send to specialist";
@@ -192,9 +196,25 @@ internal sealed class CreatorReviews
 
         public void Enable(bool value) { enabled = value; Update(); }
 
+        public void SetCanStart(bool value)
+        {
+            if (canStart == value) return;
+            canStart = value;
+            Update();
+        }
+
+        public void Restore(string lastTask, string? report, string summary)
+        {
+            Finding = report;
+            transcript.SetMarkdown(report ?? "");
+            task.Text = report is null ? lastTask : "";
+            status.Text = summary;
+            Update();
+        }
+
         public Task<TurnResult> RunAsync(string text)
         {
-            if (!enabled || Busy) throw new InvalidOperationException("This worker is unavailable.");
+            if (!enabled || !canStart || Busy) throw new InvalidOperationException("This worker is unavailable.");
             task.Text = text;
             return pending = SendAsync(text);
         }
@@ -202,7 +222,7 @@ internal sealed class CreatorReviews
         private void Update()
         {
             task.IsReadOnly = Busy || !enabled;
-            ask.IsEnabled = enabled && !Busy && !string.IsNullOrWhiteSpace(task.Text);
+            ask.IsEnabled = enabled && canStart && !Busy && !string.IsNullOrWhiteSpace(task.Text);
             stop.IsEnabled = enabled && active is { IsCancellationRequested: false };
             if (handoff is not null) handoff.IsEnabled = enabled && !Busy && Finding is not null;
             changed?.Invoke();
@@ -215,8 +235,12 @@ internal sealed class CreatorReviews
             Finding = null;
             status.Text = editableDraft ? "Working in draft…" : "Reviewing…";
             Update();
+            var started = false;
+            TurnResult result;
             try
             {
+                recordStart?.Invoke(text.Trim());
+                started = true;
                 var context = scope();
                 if (review is null)
                 {
@@ -229,11 +253,7 @@ internal sealed class CreatorReviews
                     transcript.SetMarkdown, cancellation.Token);
                 cancellation.Token.ThrowIfCancellationRequested();
                 _ = scope();
-                Finding = answer;
-                transcript.SetMarkdown(answer);
-                task.Text = "";
-                status.Text = editableDraft ? "Worker finished" : "Review complete";
-                return new("completed", answer, null);
+                result = new("completed", answer, null);
             }
             catch (Exception error)
             {
@@ -245,7 +265,25 @@ internal sealed class CreatorReviews
                         : error.Message;
                 }
                 catch (Exception shutdown) { status.Text = "Couldn’t close the specialist connection. " + shutdown.Message; }
-                return new(cancellation.IsCancellationRequested ? "stopped" : "failed", null, status.Text);
+                result = new(cancellation.IsCancellationRequested ? "stopped" : "failed", null, status.Text);
+            }
+            try
+            {
+                if (started && recordFinish is not null) result = await recordFinish(result);
+                if (result.Report is { } report)
+                {
+                    Finding = report;
+                    transcript.SetMarkdown(report);
+                    task.Text = "";
+                    status.Text = editableDraft ? "Worker finished" : "Review complete";
+                }
+                else status.Text = result.Error ?? "The worker ended without a report.";
+                return result;
+            }
+            catch (Exception error)
+            {
+                status.Text = "Couldn’t save the worker result. " + error.Message;
+                return new("failed", null, status.Text);
             }
             finally { active = null; Update(); }
         }

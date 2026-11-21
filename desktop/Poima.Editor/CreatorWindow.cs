@@ -42,6 +42,7 @@ internal sealed class CreatorWindow : Window
     private readonly Button reviewSpecialists = new() { Content = "Specialist reviews" };
     private readonly Button addBuildWorker = new() { Content = "Add build worker" };
     private readonly Button reviewDrafts = new() { Content = "Review worker scenes", IsVisible = false };
+    private readonly Button newWorkerRound = new() { Content = "Start new worker round", IsVisible = false };
     private readonly Button showCombined = new() { Content = "Combined game checks", IsVisible = false };
     private readonly Button playCombined = new() { Content = "Play combined game", IsVisible = false };
     private readonly Button openCombined = new() { Content = "Open combined project as copy", IsVisible = false };
@@ -108,8 +109,21 @@ internal sealed class CreatorWindow : Window
         {
             UpdateControls();
             timer.Start();
-            if (Path.GetDirectoryName(project.Root) is not null && Directory.Exists(HistoryDirectory()))
-                await ProjectWork("Finding the last verified build…", LoadLatestVerification);
+            await ProjectWork("Restoring the workspace…", async () =>
+            {
+                using var cancellation = new CancellationTokenSource();
+                checking = cancellation;
+                try
+                {
+                    if (Path.GetDirectoryName(project.Root) is not null && Directory.Exists(HistoryDirectory()))
+                        await LoadLatestVerification(cancellation.Token);
+                }
+                finally
+                {
+                    if (!closeRequested)
+                        (combinedCheck, verifiedCombined) = await BuildTeam().RestoreAsync(cancellation.Token);
+                }
+            });
         };
         play.Click += async (_, _) => await PlayAsync();
         stop.Click += (_, _) => ExecuteStop();
@@ -137,6 +151,15 @@ internal sealed class CreatorWindow : Window
         reviewSpecialists.Click += (_, _) => OpenSpecialistReviews();
         addBuildWorker.Click += async (_, _) => await AddBuildWorkerAsync();
         reviewDrafts.Click += async (_, _) => await ReviewDraftsAsync();
+        newWorkerRound.Click += async (_, _) =>
+        {
+            if (!newWorkerRound.IsEnabled || buildTeam is not { } team) return;
+            await ProjectWork("Starting a new worker round…", async () =>
+            {
+                await team.StartRoundAsync();
+                combinedCheck = verifiedCombined = null;
+            });
+        };
         showCombined.Click += async (_, _) => await ShowCombinedChecksAsync();
         playCombined.Click += async (_, _) => await PlayCombinedAsync();
         openCombined.Click += async (_, _) => await OpenCombinedAsync();
@@ -262,6 +285,7 @@ internal sealed class CreatorWindow : Window
         };
         conversationArea.Children.Add(conversations);
         conversationActions.Children.Add(reviewDrafts);
+        conversationActions.Children.Add(newWorkerRound);
         Grid.SetRow(conversationActions, 1);
         conversationArea.Children.Add(conversationActions);
         panels.Children.Add(conversationArea);
@@ -855,9 +879,13 @@ internal sealed class CreatorWindow : Window
         export.IsEnabled = play.IsEnabled;
         importAssets.IsEnabled = play.IsEnabled;
         reviewSpecialists.IsEnabled = ready && (specialistReviews is not null || chat.ReviewClient is not null);
-        addBuildWorker.IsEnabled = ready && chat.ReviewClient is not null && (buildTeam?.CanAdd ?? true);
-        reviewDrafts.IsVisible = buildTeam is not null && export.IsVisible;
+        var codexConnected = chat.ReviewClient is not null;
+        buildTeam?.UpdateConnection(codexConnected);
+        addBuildWorker.IsEnabled = ready && codexConnected && buildTeam?.CanAdd == true;
+        reviewDrafts.IsVisible = buildTeam?.HasWorkers == true && export.IsVisible;
         reviewDrafts.IsEnabled = play.IsEnabled && buildTeam?.CanReview == true;
+        newWorkerRound.IsVisible = buildTeam?.CanStartRound == true;
+        newWorkerRound.IsEnabled = play.IsEnabled && newWorkerRound.IsVisible;
         showCombined.IsVisible = combinedCheck is not null;
         showCombined.IsEnabled = ready;
         playCombined.IsVisible = openCombined.IsVisible = verifiedCombined is not null;
@@ -899,8 +927,8 @@ internal sealed class CreatorWindow : Window
 
     private async Task AddBuildWorkerAsync()
     {
-        if (!addBuildWorker.IsEnabled || chat.ReviewClient is not { } client) return;
-        await BuildTeam().AddAsync(client.Executable, client.Model);
+        if (!addBuildWorker.IsEnabled || chat.ReviewClient is null) return;
+        await BuildTeam().AddAsync();
         UpdateControls();
     }
 
@@ -909,11 +937,11 @@ internal sealed class CreatorWindow : Window
             if (!chat.AddReviewToDraft(finding)) return false;
             conversations.SelectedIndex = 0;
             return true;
-        }, message => { error = message; UpdateControls(); });
+        }, message => { error = message; UpdateControls(); }, () => chat.ReviewClient);
 
     private Task<JsonObject> CoordinateWorkersAsync(CodexWorkerRequest request, CancellationToken cancellation)
     {
-        if (closing || closeRequested || chat.ReviewClient is not { } client)
+        if (closing || closeRequested || chat.ReviewClient is null)
             throw new InvalidOperationException("Connect the main Codex chat in an open creator workspace.");
         if (request.ExpectedRevision is not null)
         {
@@ -921,7 +949,7 @@ internal sealed class CreatorWindow : Window
             if (exporting || starting || model.RuntimeId is not null)
                 throw new InvalidOperationException("Stop the project preview or wait for project work before assigning scene workers.");
         }
-        return BuildTeam().CoordinateAsync(request, client.Executable, client.Model, cancellation);
+        return BuildTeam().CoordinateAsync(request, cancellation);
     }
 
     private Task ReviewDraftsAsync()

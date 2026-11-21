@@ -15,6 +15,8 @@
 # -WithLeadWorkers uses the active Codex tool protocol to assign those drafts from main chat.
 # -CheckMarkdown inspects formatted lead and worker replies and their original text.
 # -WithCombinedDrafts checks selected worker scenes and plays the retained combined export.
+# -WithWorkerReopen closes a working round and checks restored reports, receipts and combined playback.
+# -WithWorkerCrash terminates the owned test creator during a worker turn and checks recovery after a draft edit.
 # -CodexToolApproval exercises decline and approve once with the installed Codex.
 # -WithExport requires a packaged sample runtime and plays a relocated export.
 # -WithPlaytestResults checks passing and failed reports, reopening and recovery.
@@ -43,6 +45,8 @@ param(
     [switch]$WithLeadWorkers,
     [switch]$CheckMarkdown,
     [switch]$WithCombinedDrafts,
+    [switch]$WithWorkerReopen,
+    [switch]$WithWorkerCrash,
     [switch]$CodexToolApproval,
     [switch]$WithExport,
     [switch]$WithPlaytestResults,
@@ -67,6 +71,10 @@ if ($WithLeadWorkers -and (!$CodexReviews -or $WithBuildWorkers)) {
     throw 'Supply -CodexReviews and run lead assignments separately from manual worker assignments.'
 }
 if ($CheckMarkdown -and !$WithLeadWorkers) { throw 'Run the Markdown checks with -WithLeadWorkers.' }
+if (($WithWorkerReopen -or $WithWorkerCrash) -and (!$WithLeadWorkers -or !$WithCombinedDrafts -or $CheckMarkdown -or
+    ($WithWorkerReopen -and $WithWorkerCrash))) {
+    throw 'Run worker recovery with lead assignments and combined drafts, separately from the Markdown follow-up.'
+}
 if ($WithCombinedDrafts -and ((!$WithBuildWorkers -and !$WithLeadWorkers) -or $WithoutVulkan)) {
     throw 'Run combined drafts with build workers, a packaged sample runtime and Windows Vulkan.'
 }
@@ -161,6 +169,8 @@ $report = [ordered]@{
     lead_workers_requested = [bool]$WithLeadWorkers
     markdown_requested = [bool]$CheckMarkdown
     combined_drafts_requested = [bool]$WithCombinedDrafts
+    worker_reopen_requested = [bool]$WithWorkerReopen
+    worker_crash_requested = [bool]$WithWorkerCrash
     export_requested = [bool]$WithExport
     playtest_results_requested = [bool]$WithPlaytestResults
     share_zip_requested = [bool]$WithShareZip
@@ -859,6 +869,17 @@ function Inspect-MarkdownTranscript($Label) {
     }
 }
 
+function Grant-LeadWorkerPermission {
+    $settings = Wait-For 'Connection settings' { Find-Control 'Connection settings' }
+    $expander = $settings.GetCurrentPattern([Windows.Automation.ExpandCollapsePattern]::Pattern)
+    $expander.Expand()
+    $setting = Wait-For 'worker assignment permission' { Find-Control 'Allow Codex to assign scene workers' -Enabled }
+    $toggle = $setting.GetCurrentPattern([Windows.Automation.TogglePattern]::Pattern)
+    if ($toggle.Current.ToggleState -ne [Windows.Automation.ToggleState]::Off) { throw 'Scene workers must default to off.' }
+    $toggle.Toggle()
+    $expander.Collapse()
+}
+
 function Exercise-LeadWorkers($Project, $Peer) {
     $checks = $report.checks.lead_workers = [ordered]@{ base_revision = $Project.revision }
     $ids = @('{0:x32}' -f 0xda01; '{0:x32}' -f 0xda02)
@@ -875,14 +896,7 @@ function Exercise-LeadWorkers($Project, $Peer) {
     }
     Invoke-Control 'Agent Disconnect'
     $null = Wait-For 'the disconnected lead' { Find-Control 'New chat' -Enabled }
-    $settings = Wait-For 'Connection settings' { Find-Control 'Connection settings' }
-    $expander = $settings.GetCurrentPattern([Windows.Automation.ExpandCollapsePattern]::Pattern)
-    $expander.Expand()
-    $setting = Wait-For 'worker assignment permission' { Find-Control 'Allow Codex to assign scene workers' -Enabled }
-    $toggle = $setting.GetCurrentPattern([Windows.Automation.TogglePattern]::Pattern)
-    if ($toggle.Current.ToggleState -ne [Windows.Automation.ToggleState]::Off) { throw 'Scene workers must default to off.' }
-    $toggle.Toggle()
-    $expander.Collapse()
+    Grant-LeadWorkerPermission
     Invoke-Control 'New chat'
     $null = Wait-For 'the lead with worker permission granted' { Find-Control 'Agent Send' -Enabled } 65
     $done = Send-CodexPrompt "Delegate scene work at revision $($Project.revision)."
@@ -925,6 +939,171 @@ function Exercise-LeadWorkers($Project, $Peer) {
     $checks.rejected_tool_calls = 5
     $checks.completed_workers = 2
     $checks.project_unchanged = $true
+    if ($WithWorkerReopen -or $WithWorkerCrash) {
+        $receipt = @($calls | Where-Object { $_.reply.result.success } |
+            ForEach-Object { $_.reply.result.contentItems[0].text | ConvertFrom-Json } |
+            Where-Object { $_.state -ceq 'completed' })[-1]
+        $checks.assignment_id = $receipt.request_id
+        $checks.worker_scene_hashes = @($receipt.workers.world_sha256)
+        Invoke-Control 'Add build worker'
+        Wait-ForCreatorChatTab 'Worker 3' -Select
+        Start-BuildWorkerTask 'Hold draft turn.'
+        Wait-ForHeldBuildWorker
+        $held = @(Read-BuildWorkerTrace | Where-Object { $_.kind -ceq 'turn/start' -and $_.text.EndsWith('Hold draft turn.') })[0]
+        if (!$held) { throw 'The third worker did not start its owned provider turn.' }
+        $checks.worker_pids += $held.pid
+        Wait-ForCreatorChatTab 'Main chat' -Select
+    }
+}
+
+function Exercise-ReopenedWorkers($Project, $Peer, $LeadChecks) {
+    $sceneChecks = $report.checks.worker_reopen = [ordered]@{}
+    $group = Split-Path -Parent (Split-Path -Parent $LeadChecks.worker_manifests[0])
+    $ledger = Join-Path $group 'round.json'
+    $before = (Get-FileHash -LiteralPath $ledger).Hash.ToLowerInvariant()
+    $draftHashes = @($LeadChecks.worker_manifests | ForEach-Object {
+        (& $cli project inspect $_ | ConvertFrom-Json).result.world_sha256
+    })
+    if (($draftHashes -join ',') -cne ($LeadChecks.worker_scene_hashes -join ',')) {
+        throw 'The retained drafts differ from the original assignment receipt.'
+    }
+
+    $names = @('Draft lantern', 'Draft quay bench')
+    $ids = @('{0:x32}' -f 0xda01; '{0:x32}' -f 0xda02)
+    for ($i = 1; $i -le 2; ++$i) {
+        Wait-ForCreatorChatTab "Worker $i" -Select
+        Wait-ForBuildWorkerReport "$($names[$i-1]) created at revision $($Project.revision + 1). Entity $($ids[$i-1])."
+    }
+    Wait-ForCreatorChatTab 'Worker 3' -Select
+    if ((Find-ControlId 'worker-status').Current.Name -cne 'Worker stopped' -or
+        (Get-ControlText 'Worker task') -cne 'Hold draft turn.' -or (Find-Control 'Send to worker' -Enabled)) {
+        throw 'The stopped worker did not retain its task with the connection off.'
+    }
+    Wait-ForCreatorChatTab 'Main chat' -Select
+    $launches = @(Read-BuildWorkerTrace | Where-Object { $_.kind -ceq 'launch' }).Count
+    Select-AgentProvider 'Codex'
+    Set-AgentExecutable 'Codex executable' $Peer
+    Grant-LeadWorkerPermission
+    Invoke-Control 'New chat'
+    $null = Wait-For 'the reopened lead connected' { Find-Control 'Agent Send' -Enabled } 65
+    $answer = Send-CodexPrompt "Replay worker assignment $($LeadChecks.assignment_id) at revision $($Project.revision)."
+    if (!$answer.Contains('Reopened assignment receipt verified.') -or
+        @(Read-BuildWorkerTrace | Where-Object { $_.kind -ceq 'launch' }).Count -ne $launches) {
+        throw 'Exact replay on reopen launched duplicate workers or lost the receipt.'
+    }
+
+    $creator = $window
+    Invoke-Control 'Combined game checks'
+    $window = Wait-For 'the restored combined results' { Find-OwnedDialog $creator 'Playtest results' }
+    $null = Wait-For 'the retained failed check' { Find-Control 'Draft quay bench (failed)' }
+    Invoke-Control 'Done'
+    $window = $creator
+    $combined = $report.checks.combined_drafts
+    $candidate = Get-Content -LiteralPath $combined.passing_report -Raw | ConvertFrom-Json
+    $runtime = Join-Path (Split-Path -Parent $combined.passing_report) 'game\runtime\bin\poima.exe'
+    Invoke-Control 'Play combined game'
+    $script:verifiedPlayer = Wait-For 'the restored combined player' {
+        Get-Process -Name poima -ErrorAction SilentlyContinue | Where-Object {
+            $_.Path -ieq $runtime -and $_.MainWindowHandle -ne [IntPtr]::Zero
+        } | Select-Object -First 1
+    } 45
+    $null = $verifiedPlayer.Handle
+    $tick = Wait-For 'the restored combined bundle presenting' {
+        $playing = (Verified-PlayRpc 'desktop.verified.inspect' @{}).playback
+        if ($playing.bundle_sha256 -ceq $candidate.bundle_sha256 -and $playing.observation.frames_presented -ge 1) {
+            ,@($playing.observation.tick)
+        }
+    } 25
+    $sceneChecks.reopened_playback = Close-VerifiedPlayer $candidate 'reopen' $(if ($tick[0] -ge 1) { 1 } else { 0 })
+
+    $pointer = @(Get-ChildItem -File -LiteralPath (Split-Path -Parent $group) -Filter '*.current')[0].FullName
+    Invoke-Control 'Start new worker round'
+    $null = Wait-For 'the new round selected and previous tabs retired' {
+        !(Find-Control 'Worker 1') -and (Find-Control 'Add build worker' -Enabled)
+    }
+    $newId = [IO.File]::ReadAllText($pointer)
+    if ($newId -ceq (Split-Path -Leaf $group) -or (Get-FileHash -LiteralPath $ledger).Hash.ToLowerInvariant() -cne $before -or
+        (Find-Control 'Play combined game' -Enabled)) { throw 'Starting a new round lost or reused previous round state.' }
+    $sceneChecks.retained_assignment = $LeadChecks.assignment_id
+    $sceneChecks.draft_sha256 = $draftHashes
+    $sceneChecks.stopped_task_restored = $true
+    $sceneChecks.replayed_without_spawning_workers = $true
+    $sceneChecks.finished_builds_reopened = $true
+    $sceneChecks.old_round_sha256 = $before
+    $sceneChecks.new_round_retained_old_files = $true
+}
+
+function Stop-OwnedCreatorDuringWorkerTurn($LeadChecks, $Children) {
+    $manifest = $LeadChecks.worker_manifests[0]
+    $group = Split-Path -Parent (Split-Path -Parent $manifest)
+    $ledger = Join-Path $group 'round.json'
+    $before = Get-Content -LiteralPath $ledger -Raw | ConvertFrom-Json
+    if ($before.workers[2].latest.state -cne 'running' -or $before.workers[2].latest.task -cne 'Hold draft turn.') {
+        throw 'The held worker turn was not durably recorded before the crash.'
+    }
+    $hash = (Get-FileHash -LiteralPath $ledger).Hash.ToLowerInvariant()
+    Stop-Process -Id $owner.Id -Force
+    if (!$owner.WaitForExit(20000)) { throw 'The terminated test creator did not exit.' }
+    foreach ($child in $Children) {
+        if (!$child.WaitForExit(20000)) { throw "The dead test creator left its worker peer $($child.Id) running." }
+    }
+    if ((Get-FileHash -LiteralPath $ledger).Hash.ToLowerInvariant() -cne $hash) {
+        throw 'The interrupted creator rewrote the running receipt after termination.'
+    }
+    $draft = (& $cli project inspect $manifest | ConvertFrom-Json).result
+    $request = @{
+        jsonrpc='2.0'; id=1; method='world.transact'; params=@{
+            request_id=[guid]::NewGuid().ToString('N'); base_revision=$draft.revision
+            ops=@(@{op='entity.rename'; id=('{0:x32}' -f 0xda01); name='Changed after the report'})
+        }
+    } | ConvertTo-Json -Depth 6 -Compress
+    $reply = $request | & $cli world --project $manifest | ConvertFrom-Json
+    $after = (& $cli project inspect $manifest | ConvertFrom-Json).result
+    if ($reply.result.revision -ne $draft.revision + 1 -or $after.revision -ne $reply.result.revision -or
+        $after.world_sha256 -ceq $draft.world_sha256) { throw 'The independent draft change failed.' }
+    $report.checks.worker_crash = [ordered]@{
+        deliberate_termination = $true; child_exit_count = $Children.Count
+        running_receipt_sha256 = $hash; edited_world_sha256 = $after.world_sha256
+    }
+}
+
+function Exercise-CrashRecovery($LeadChecks) {
+    $launches = @(Read-BuildWorkerTrace | Where-Object { $_.kind -ceq 'launch' }).Count
+    Wait-ForCreatorChatTab 'Worker 3' -Select
+    $null = Wait-For 'the interrupted worker status' {
+        (Find-ControlId 'worker-status').Current.Name -ceq 'Worker interrupted. Review its draft before sending a follow-up.'
+    }
+    if ((Get-ControlText 'Worker task') -cne 'Hold draft turn.' -or (Find-Control 'Send to worker' -Enabled)) {
+        throw 'Crash recovery did not preserve the task with automatic execution disabled.'
+    }
+    Wait-ForCreatorChatTab 'Worker 1' -Select
+    $null = Wait-For 'the changed draft status' {
+        (Find-ControlId 'worker-status').Current.Name -ceq 'Draft changed after its report. Review the current scene in a follow-up.'
+    }
+    if (Find-Control 'Add report to main chat' -Enabled) { throw 'A stale report could be handed off as current.' }
+    $creator = $window
+    Invoke-Control 'Review worker scenes'
+    $window = Wait-For 'the restored review options' { Find-OwnedDialog $creator 'Review worker scenes' }
+    $null = Wait-For 'the unchanged worker eligible for review' { Find-Control 'Include Worker 2' }
+    if ((Find-Control 'Include Worker 1') -or (Find-Control 'Include Worker 3')) {
+        throw 'A stale or interrupted worker could enter a review.'
+    }
+    Invoke-Control 'Cancel'
+    $window = $creator
+    Wait-ForCreatorChatTab 'Main chat' -Select
+    $ledger = Join-Path (Split-Path -Parent (Split-Path -Parent $LeadChecks.worker_manifests[0])) 'round.json'
+    $after = Get-Content -LiteralPath $ledger -Raw | ConvertFrom-Json
+    if ($after.workers[2].latest.state -cne 'interrupted' -or
+        $after.workers[0].assigned.world_hash -cne $LeadChecks.worker_scene_hashes[0] -or
+        !$after.workers[0].assigned.report -or
+        @(Read-BuildWorkerTrace | Where-Object { $_.kind -ceq 'launch' }).Count -ne $launches) {
+        throw 'The creator reran interrupted work or replaced the original completed receipt.'
+    }
+    $checks = $report.checks.worker_crash
+    $checks.interrupted_task_restored = $true
+    $checks.stale_report_excluded = $true
+    $checks.original_receipt_retained = $true
+    $checks.workers_not_automatically_restarted = $true
 }
 
 function Select-CombinedDrafts([string[]]$Workers) {
@@ -2217,35 +2396,40 @@ try {
             $workerPeers = @(Get-Process -Id $leadChecks.worker_pids)
             foreach ($peer in ($reviewPeers + $workerPeers)) { $null = $peer.Handle }
         }
-        Close-Owner
-        $report.checks.closed_exit_code = $owner.ExitCode
-        if ($CodexReviews) {
-            $exits = @(Read-ReviewTrace | Where-Object { $_.kind -ceq 'exit' })
-            foreach ($peer in $reviewPeers) {
-                if (!$peer.HasExited -or $peer.ExitTime -gt $owner.ExitTime -or $peer.Id -notin $exits.pid) {
-                    throw "Creator closed before the Codex peer $($peer.Id) exited naturally."
+        if ($WithWorkerCrash) { Stop-OwnedCreatorDuringWorkerTurn $leadChecks ($reviewPeers + $workerPeers) }
+        else {
+            Close-Owner
+            $report.checks.closed_exit_code = $owner.ExitCode
+            if ($CodexReviews) {
+                $exits = @(Read-ReviewTrace | Where-Object { $_.kind -ceq 'exit' })
+                foreach ($peer in $reviewPeers) {
+                    if (!$peer.HasExited -or $peer.ExitTime -gt $owner.ExitTime -or $peer.Id -notin $exits.pid) {
+                        throw "Creator closed before the Codex peer $($peer.Id) exited naturally."
+                    }
                 }
+                if ($WithLeadWorkers) { $leadChecks.closed_creator_joined_lead = $true }
+                else { $reviewChecks.closed_creator_joined_review_and_lead = $true }
             }
-            if ($WithLeadWorkers) { $leadChecks.closed_creator_joined_lead = $true }
-            else { $reviewChecks.closed_creator_joined_review_and_lead = $true }
-        }
-        if ($WithBuildWorkers -or $WithLeadWorkers) {
-            $exits = @(Read-BuildWorkerTrace | Where-Object { $_.kind -ceq 'exit' })
-            foreach ($peer in $workerPeers) {
-                if (!$peer.HasExited -or $peer.ExitTime -gt $owner.ExitTime -or $peer.Id -notin $exits.pid) {
-                    throw "Creator closed before the build worker $($peer.Id) exited naturally."
+            if ($WithBuildWorkers -or $WithLeadWorkers) {
+                $exits = @(Read-BuildWorkerTrace | Where-Object { $_.kind -ceq 'exit' })
+                foreach ($peer in $workerPeers) {
+                    if (!$peer.HasExited -or $peer.ExitTime -gt $owner.ExitTime -or $peer.Id -notin $exits.pid) {
+                        throw "Creator closed before the build worker $($peer.Id) exited naturally."
+                    }
                 }
+                if ($WithLeadWorkers) { $leadChecks.closed_creator_joined_workers = $true }
+                else { $workerChecks.closed_creator_joined_build_workers = $true }
             }
-            if ($WithLeadWorkers) { $leadChecks.closed_creator_joined_workers = $true }
-            else { $workerChecks.closed_creator_joined_build_workers = $true }
         }
     }
     finally { foreach ($peer in ($reviewPeers + $workerPeers)) { $peer.Dispose() } }
 
-    $owner = Start-Launcher 'reopen'
-    $window = Wait-For 'the reopened launcher' { Find-Window 'Poima' }
-    if ($WithCombinedDrafts) { Select-ComboValue 'Local projects' $name }
-    Invoke-Control 'Open selected project'
+    if ($WithCombinedDrafts) { $owner = Start-Launcher 'reopen' $manifest }
+    else {
+        $owner = Start-Launcher 'reopen'
+        $window = Wait-For 'the reopened launcher' { Find-Window 'Poima' }
+        Invoke-Control 'Open selected project'
+    }
     $window = Wait-For 'the reopened creator' { Find-Window "$name*Poima Creator" }
     if ($InstallAntigravity) {
         Select-AgentProvider 'Antigravity'
@@ -2269,6 +2453,8 @@ try {
     if ($reopened.project_id -ne $project.project_id -or $reopened.revision -ne $project.revision) {
         throw 'Project identity or authoring revision changed after reopen.'
     }
+    if ($WithWorkerReopen) { Exercise-ReopenedWorkers $reopened $CodexReviews $report.checks.lead_workers }
+    if ($WithWorkerCrash) { Exercise-CrashRecovery $report.checks.lead_workers }
     if ($ObserveVerifiedPlayback) {
         if ($null -ne (Verified-PlayRpc 'desktop.verified.inspect' @{}).playback) {
             throw 'The reopened creator reported playback from a previous owner.'

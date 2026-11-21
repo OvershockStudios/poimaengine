@@ -87,8 +87,10 @@ state. Changing the tasks or revision under an existing ID fails. One round
 can hold ten workers, including manually added workers, and a task can use up
 to 4,000 characters. Worker reports in tool replies are limited to 4,000
 characters each. Read the full report in its worker tab. A round retains up
-to 64 request IDs. Request IDs and running conversations belong to the open
-creator workspace. Draft files remain available after close.
+to 64 request IDs and the scene hashes returned with completed work. Reopen
+the project and use `inspect` or replay the exact `assign` to get the saved
+receipt. Reopening restores the reports and draft files. Worker processes
+start only when a new task is sent.
 
 A completed worker turn supplies a report. Use **Review worker scenes** to
 select and verify the combined game from the saved checkpoint.

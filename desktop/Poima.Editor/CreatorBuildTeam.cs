@@ -4,74 +4,169 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Avalonia.Controls;
 using Poima.AgentHost;
+using static Poima.Editor.CreatorWorkerRoundStore;
 
 namespace Poima.Editor;
 
 internal sealed class CreatorBuildTeam
 {
-    private const int MaximumAssignments = 64;
     private readonly ProjectLocation project;
     private readonly TabControl conversations;
     private readonly Func<string, bool> addToDraft;
     private readonly Action<string?> status;
-    private readonly List<WorkerDraft> workers = [];
-    private readonly Dictionary<string, LeadBatch> batches = new(StringComparer.Ordinal);
-    private string? groupDirectory;
-    private (string Checkpoint, string Hash, long Revision, string Source)? snapshot;
+    private readonly Func<(string Executable, string? Model)?> client;
+    private readonly CreatorWorkerRoundStore store;
+    private readonly List<WorkerTab> tabs = [];
+    private readonly List<Task> assignedFinishes = [];
+    private Round? round;
     private Task? provision, retirement;
-    private bool closing, adding;
-    public bool CanAdd => !closing && !adding && workers.Count < CodexWorkerTool.MaximumWorkers;
-    public bool CanReview => !closing && !adding && workers.Any(worker => !worker.Pane.Busy && worker.Pane.Finding is not null);
-    public long BaseRevision => snapshot?.Revision ?? throw new InvalidOperationException("There is no worker checkpoint.");
+    private TaskCompletionSource changed = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    private bool closing, adding, loaded, restoreFailed;
 
-    private sealed record WorkerDraft(CreatorReviews.WorkerPane Pane, string Manifest);
-    private sealed record Assignment(WorkerDraft Worker, Task<CreatorReviews.WorkerPane.TurnResult> Turn);
+    public bool HasWorkers => tabs.Count != 0;
+    public bool CanAdd => loaded && !restoreFailed && !closing && !adding && tabs.Count < CodexWorkerTool.MaximumWorkers;
+    public bool CanReview => !closing && !adding && tabs.Any(tab => !tab.Pane.Busy && tab.Pane.Finding is not null);
+    public bool CanStartRound => loaded && round is not null && !adding && !closing &&
+        tabs.All(tab => !tab.Pane.Busy) && assignedFinishes.All(task => task.IsCompleted);
+    public long BaseRevision => round?.Base?.Revision ?? throw new InvalidOperationException("There is no worker checkpoint.");
 
-    private sealed class LeadBatch(CodexWorkerRequest request)
-    {
-        public CodexWorkerRequest Request { get; } = request;
-        public Assignment[] Assignments { get; set; } = [];
-        public string? Error { get; set; }
-        public TaskCompletionSource Changed { get; private set; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        public bool Pending => Error is null && (Assignments.Length == 0 || Assignments.Any(work => !work.Turn.IsCompleted));
-
-        public void SignalChange()
-        {
-            var previous = Changed;
-            Changed = new(TaskCreationOptions.RunContinuationsAsynchronously);
-            previous.TrySetResult();
-        }
-    }
+    private sealed record WorkerTab(CreatorReviews.WorkerPane Pane, TabItem Tab, bool Available);
     public sealed record ReviewedDraft(string Name, string Manifest, long Revision, string WorldHash, string Report);
     public sealed record CombinedCheck(string ProjectId, string History, string Checkpoint, string Snapshot,
         string GameManifest, PlaytestAttempt Attempt);
 
     public CreatorBuildTeam(ProjectLocation project, TabControl conversations, Func<string, bool> addToDraft,
-        Action<string?> status)
+        Action<string?> status, Func<(string Executable, string? Model)?> client)
     {
         this.project = project;
         this.conversations = conversations;
         this.addToDraft = addToDraft;
         this.status = status;
+        this.client = client;
+        store = new(project.Manifest, project.ProjectId);
     }
 
-    public Task AddAsync(string executable, string? model)
+    public void UpdateConnection(bool connected)
+    {
+        foreach (var tab in tabs) tab.Pane.SetCanStart(connected && tab.Available);
+    }
+
+    public async Task<(CombinedCheck? Latest, CombinedCheck? Passing)> RestoreAsync(CancellationToken cancellation)
+    {
+        try
+        {
+            round = store.Read();
+            if (round is null) return (null, null);
+            if (round.Base is { } checkpoint)
+            {
+                var path = CheckpointPath(checkpoint);
+                RequireDirectory(Path.GetDirectoryName(path)!);
+                if (Hash(ReadFile(path, 4 * 1024 * 1024)) != checkpoint.Hash)
+                    throw new InvalidDataException("The worker checkpoint changed.");
+                var source = await ProjectFiles.Command(cancellation, "inspect", CheckpointSource(checkpoint));
+                if (source.GetProperty("project_id").GetString() != project.ProjectId ||
+                    source.GetProperty("revision").GetInt64() != checkpoint.Revision)
+                    throw new InvalidDataException("The worker checkpoint belongs to a different revision or project.");
+            }
+            if (round.Workers.Any(worker => worker.Latest?.State == "running" || worker.Assigned?.State == "running") ||
+                round.Batches.Any(Preparing))
+            {
+                Save(round with
+                {
+                    Workers = round.Workers.Select(worker => worker with
+                    {
+                        Latest = Interrupt(worker.Latest), Assigned = Interrupt(worker.Assigned)
+                    }).ToArray(),
+                    Batches = round.Batches.Select(batch => Preparing(batch) ? batch with
+                    {
+                        Interrupted = true,
+                        Error = "The workspace closed before preparing these workers."
+                    } : batch).ToArray()
+                });
+            }
+            foreach (var worker in round.Workers)
+            {
+                string? problem = null;
+                var available = false;
+                try
+                {
+                    var current = await InspectWorkerAsync(worker, cancellation);
+                    available = true;
+                    if (worker.Latest?.WorldHash is { } hash && hash != current.GetProperty("world_sha256").GetString())
+                        problem = "Draft changed after its report. Review the current scene in a follow-up.";
+                }
+                catch (Exception failure) when (!cancellation.IsCancellationRequested) { problem = failure.Message; }
+                AddTab(worker, available, problem);
+            }
+            var latest = await RestoreCombinedAsync(round.Latest, cancellation);
+            var passing = round.Passing == round.Latest ? latest : await RestoreCombinedAsync(round.Passing, cancellation);
+            return (latest, passing?.Attempt.Retained == true ? passing : null);
+        }
+        catch
+        {
+            restoreFailed = true;
+            throw;
+        }
+        finally { loaded = true; }
+    }
+
+    private static bool Preparing(Batch batch) => batch.Workers.Length == 0 && batch.Error is null && !batch.Interrupted;
+    private static Turn? Interrupt(Turn? turn) => turn?.State == "running"
+        ? turn with { State = "interrupted", Error = "Worker interrupted. Review its draft before sending a follow-up." } : turn;
+
+    public async Task StartRoundAsync()
+    {
+        if (!CanStartRound) return;
+        var next = store.NewRound();
+        store.Write(next, replacing: round!.Id);
+        round = next;
+        restoreFailed = false;
+        conversations.SelectedIndex = 0;
+        foreach (var tab in tabs)
+        {
+            tab.Pane.Enable(false);
+            conversations.Items.Remove(tab.Tab);
+        }
+        var retiring = tabs.Select(tab => tab.Pane.ResetAsync()).ToArray();
+        tabs.Clear();
+        assignedFinishes.Clear();
+        await Task.WhenAll(retiring);
+    }
+
+    private Round Current => round ?? throw new InvalidOperationException("There is no worker round.");
+    private Checkpoint Base => Current.Base ?? throw new InvalidOperationException("There is no worker checkpoint.");
+    private string RoundPath => store.DirectoryFor(Current.Id);
+    private string CheckpointPath(Checkpoint checkpoint) => Path.Combine(RoundPath, checkpoint.Folder, "checkpoint.json");
+    private string CheckpointSource(Checkpoint checkpoint) => Path.Combine(RoundPath, checkpoint.Folder, "source", checkpoint.Manifest);
+    private string Manifest(Worker worker) => Path.Combine(RoundPath, worker.Folder, Base.Manifest);
+
+    private void Save(Round next)
+    {
+        store.Write(next);
+        round = next;
+        var previous = changed;
+        changed = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        previous.TrySetResult();
+    }
+
+    public Task AddAsync()
     {
         if (!CanAdd) return Task.CompletedTask;
-        return provision = AddCoreAsync(executable, model);
+        return provision = AddCoreAsync();
     }
 
-    private async Task AddCoreAsync(string executable, string? model)
+    private async Task AddCoreAsync()
     {
         adding = true;
         status("Preparing a worker draft…");
         try
         {
+            if (round is null) Save(store.NewRound());
             await CaptureAsync(null);
             if (closing) return;
-            var worker = await DraftAsync(workers.Count + 1, executable, model);
-            if (closing) return;
-            conversations.SelectedItem = AddTab(worker);
+            var worker = await DraftAsync(Current.Workers.Length + 1);
+            Save(Current with { Workers = [.. Current.Workers, worker] });
+            if (!closing) conversations.SelectedItem = AddTab(worker, available: true);
             status(null);
         }
         catch (Exception failure) { if (!closing) status(failure.Message); }
@@ -80,10 +175,10 @@ internal sealed class CreatorBuildTeam
 
     private async Task CaptureAsync(long? expectedRevision)
     {
-        if (snapshot is { } existing)
+        if (Current.Base is { } existing)
         {
             if (expectedRevision is not null && expectedRevision != existing.Revision)
-                throw new InvalidOperationException($"This worker round uses revision {existing.Revision}. Reopen the project to start a round from the current scene.");
+                throw new InvalidOperationException($"This worker round uses revision {existing.Revision}. Start a new worker round to use the current scene.");
             return;
         }
         if (expectedRevision is long expected)
@@ -94,157 +189,226 @@ internal sealed class CreatorBuildTeam
                 throw new InvalidOperationException("The project or scene revision changed. Inspect the current project before assigning work.");
         }
         if (closing) return;
-        if (groupDirectory is null)
-        {
-            var parent = Path.GetDirectoryName(project.Root) ??
-                throw new InvalidOperationException("The project needs a parent folder for worker drafts.");
-            var drafts = Directory.CreateDirectory(Path.Combine(parent, ".poima-drafts"));
-            if ((drafts.Attributes & FileAttributes.ReparsePoint) != 0)
-                throw new InvalidOperationException("Choose an ordinary folder for worker drafts.");
-            groupDirectory = Directory.CreateDirectory(Path.Combine(drafts.FullName, Guid.NewGuid().ToString("N")[..12])).FullName;
-        }
+        var folder = Directory.Exists(Path.Combine(RoundPath, "base")) ? "base-" + Guid.NewGuid().ToString("N")[..8] : "base";
         var checkpoint = await ProjectFiles.Command("checkpoint", project.Manifest,
-            "--output", Path.Combine(groupDirectory, "base"));
+            "--output", Path.Combine(RoundPath, folder));
         if (closing) return;
         var revision = checkpoint.GetProperty("revision").GetInt64();
         var source = checkpoint.GetProperty("source_manifest").GetString()!;
         var captured = await ProjectFiles.Command("inspect", source);
         if (captured.GetProperty("project_id").GetString() != project.ProjectId ||
             expectedRevision is not null && expectedRevision != revision)
-        {
-            groupDirectory = null;
             throw new InvalidOperationException("The project changed while capturing the worker checkpoint. Check the current project and revision.");
-        }
-        snapshot = (checkpoint.GetProperty("checkpoint").GetString()!,
-            checkpoint.GetProperty("source_sha256").GetString()!, revision, source);
+        Save(Current with { Base = new(folder, Path.GetFileName(source), checkpoint.GetProperty("source_sha256").GetString()!, revision) });
     }
 
-    private async Task<WorkerDraft> DraftAsync(int number, string executable, string? model)
+    private async Task<Worker> DraftAsync(int number)
     {
-        var captured = snapshot!.Value;
         var suffix = Guid.NewGuid().ToString("N")[..8];
-        var draft = await ProjectFiles.Command("draft", captured.Checkpoint,
-            "--output", Path.Combine(groupDirectory!, $"w{number}-{suffix}"),
-            "--expected-base-sha256", captured.Hash);
-        var manifest = draft.GetProperty("manifest").GetString()!;
-        var projectId = draft.GetProperty("project_id").GetString()!;
-        var name = "Worker " + number;
+        var folder = $"w{number}-{suffix}";
+        var result = await ProjectFiles.Command("draft", CheckpointPath(Base),
+            "--output", Path.Combine(RoundPath, folder), "--expected-base-sha256", Base.Hash);
+        return new(folder, result.GetProperty("project_id").GetString()!);
+    }
+
+    private TabItem AddTab(Worker worker, bool available, string? problem = null)
+    {
+        var manifest = Manifest(worker);
+        var checkpoint = Base;
+        var checkpointPath = CheckpointPath(checkpoint);
+        var name = "Worker " + (tabs.Count + 1);
         var engine = Path.Combine(AppContext.BaseDirectory, "poima.exe");
-        var scope = $"You are editing Poima draft {projectId}, forked from authored revision {captured.Revision}. " +
+        var scope = $"You are editing Poima draft {worker.ProjectId}, forked from authored revision {checkpoint.Revision}. " +
             "Make the assigned change using the draft Poima tools. Verify the resulting draft revision and entities. " +
             "Report the changed entity IDs, verification results, and any separate source files the lead should select. " +
             "The lead reviews the pinned draft scene and verifies the assembled candidate.";
         var pane = new CreatorReviews.WorkerPane(name, "Assign part of the game to this worker.",
-            cancellation => CodexReview.OpenDraftAsync(executable, engine, manifest, model, cancellation),
+            cancellation =>
+            {
+                var provider = client() ?? throw new InvalidOperationException("Connect the main Codex chat to run this worker.");
+                var validated = ValidateWorker(worker);
+                return CodexReview.OpenDraftAsync(provider.Executable, engine, validated, provider.Model, cancellation);
+            },
             () => scope, draftPath: manifest, useReport: report =>
             {
                 if (closing) return;
                 var message = $"{name} completed a task on an independent Poima draft.\n" +
-                    $"The base is `{captured.Checkpoint}` at authored revision {captured.Revision}.\n" +
-                    $"Its SHA-256 is `{captured.Hash}`. The worker manifest is `{manifest}`.\n\n" +
+                    $"The base is `{checkpointPath}` at authored revision {checkpoint.Revision}.\n" +
+                    $"Its SHA-256 is `{checkpoint.Hash}`. The worker manifest is `{manifest}`.\n\n" +
                     "Review the draft, then use project inspect to get its world_sha256 for project integrate. " +
                     "Poima combines pinned scene edits and copies their cooked dependencies. Select other source files by hash. " +
                     "Build and verify the resulting candidate before offering it for play.\n\n" + report;
                 status(addToDraft(message) ? "Worker report added to the main chat draft."
                     : "Wait for the main chat to finish before adding the report.");
-            });
-        return new(pane, manifest);
-    }
-
-    private TabItem AddTab(WorkerDraft worker)
-    {
-        workers.Add(worker);
-        var tab = CreatorWindow.ConversationTab(worker.Pane.Name, worker.Pane.View);
+            },
+            recordStart: task => RememberStart(worker.ProjectId, task),
+            recordFinish: result => RememberFinishAsync(worker.ProjectId, result));
+        pane.SetCanStart(available && client() is not null);
+        if (worker.Latest is { } turn)
+            pane.Restore(turn.Task, problem is null ? turn.Report : null,
+                problem ?? (turn.State == "completed" ? "Worker finished" : turn.Error ?? "Ready"));
+        else if (problem is not null) pane.Restore("", null, problem);
+        var tab = CreatorWindow.ConversationTab(name, pane.View);
+        tabs.Add(new(pane, tab, available));
         conversations.Items.Add(tab);
         return tab;
     }
 
-    public async Task<JsonObject> CoordinateAsync(CodexWorkerRequest request, string executable, string? model,
-        CancellationToken cancellation)
+    private string ValidateWorker(Worker worker) =>
+        CodexReview.ValidateDraft(Manifest(worker), worker.ProjectId, project.ProjectId, Base.Hash, Base.Revision);
+
+    private async Task<JsonElement> InspectWorkerAsync(Worker worker, CancellationToken cancellation = default)
     {
-        if (batches.TryGetValue(request.RequestId, out var existing))
-        {
-            if (request.ExpectedRevision is not null &&
-                (existing.Request.ExpectedRevision != request.ExpectedRevision || !existing.Request.Tasks.SequenceEqual(request.Tasks)))
-                throw new InvalidOperationException("This request_id already identifies a different assignment.");
-            if (request.WaitMilliseconds > 0 && existing.Pending)
-            {
-                try { await existing.Changed.Task.WaitAsync(TimeSpan.FromMilliseconds(request.WaitMilliseconds), cancellation); }
-                catch (TimeoutException) { }
-            }
-            return Describe(existing, replayed: request.ExpectedRevision is not null);
-        }
-        if (request.ExpectedRevision is null) throw new InvalidOperationException("Unknown worker assignment. Inspect a request_id returned by assign.");
-        if (!CanAdd || workers.Count + request.Tasks.Length > CodexWorkerTool.MaximumWorkers)
-            throw new InvalidOperationException("Wait for draft preparation or assign within the workspace limit of ten workers.");
-        if (batches.Count >= MaximumAssignments) throw new InvalidOperationException("Reopen the project to start a new worker round.");
-        var batch = new LeadBatch(request);
-        batches.Add(request.RequestId, batch);
-        provision = StartBatchAsync(batch, executable, model);
-        return Describe(batch, replayed: false);
+        var info = await ProjectFiles.Command(cancellation, "inspect", ValidateWorker(worker));
+        if (info.GetProperty("project_id").GetString() != worker.ProjectId)
+            throw new InvalidDataException("The worker draft identity changed.");
+        return info;
     }
 
-    private async Task StartBatchAsync(LeadBatch batch, string executable, string? model)
+    private Worker FindWorker(string id) => Current.Workers.Single(worker => worker.ProjectId == id);
+
+    private void RememberStart(string id, string task)
+    {
+        var worker = FindWorker(id);
+        UpdateWorker(worker with { Latest = new(task, "running") });
+    }
+
+    private async Task<CreatorReviews.WorkerPane.TurnResult> RememberFinishAsync(string id, CreatorReviews.WorkerPane.TurnResult result)
+    {
+        var worker = FindWorker(id);
+        string? world = null;
+        if (result.State == "completed")
+        {
+            try { world = (await InspectWorkerAsync(worker)).GetProperty("world_sha256").GetString(); }
+            catch (Exception failure) { result = new("failed", null, "Couldn’t inspect the finished draft. " + failure.Message); }
+        }
+        var turn = new Turn(worker.Latest!.Task, result.State, result.Report, ShortError(result.Error), world);
+        UpdateWorker(worker with { Latest = turn, Assigned = worker.Assigned?.State == "running" ? turn : worker.Assigned });
+        return result;
+    }
+
+    private void UpdateWorker(Worker replacement) =>
+        Save(Current with { Workers = Current.Workers.Select(worker => worker.ProjectId == replacement.ProjectId ? replacement : worker).ToArray() });
+
+    private static string? ShortError(string? value) => value is { Length: > 2000 } ? value[..2000] : value;
+    private Batch? FindBatch(string id) => round?.Batches.FirstOrDefault(batch => batch.Id == id);
+    private static string PayloadHash(CodexWorkerRequest request) =>
+        Hash(JsonSerializer.SerializeToUtf8Bytes(new { revision = request.ExpectedRevision, request.Tasks }));
+
+    public async Task<JsonObject> CoordinateAsync(CodexWorkerRequest request, CancellationToken cancellation)
+    {
+        if (!loaded || restoreFailed) throw new InvalidOperationException("The worker round could not be loaded.");
+        if (FindBatch(request.RequestId) is { } existing)
+        {
+            if (request.ExpectedRevision is not null && existing.PayloadHash != PayloadHash(request))
+                throw new InvalidOperationException("This request_id already identifies a different assignment.");
+            if (request.WaitMilliseconds > 0 && Pending(existing))
+            {
+                try { await changed.Task.WaitAsync(TimeSpan.FromMilliseconds(request.WaitMilliseconds), cancellation); }
+                catch (TimeoutException) { }
+            }
+            return Describe(FindBatch(request.RequestId) ??
+                throw new InvalidOperationException("The worker round changed."), replayed: request.ExpectedRevision is not null);
+        }
+        if (request.ExpectedRevision is not long revision) throw new InvalidOperationException("Unknown worker assignment. Inspect a request_id returned by assign.");
+        if (!CanAdd || (round?.Workers.Length ?? 0) + request.Tasks.Length > CodexWorkerTool.MaximumWorkers)
+            throw new InvalidOperationException("Wait for draft preparation or assign within the workspace limit of ten workers.");
+        if (round?.Batches.Length >= MaximumAssignments) throw new InvalidOperationException("Start a new worker round to assign more work.");
+        var current = round ?? store.NewRound();
+        var batch = new Batch(request.RequestId, revision, PayloadHash(request), []);
+        Save(current with { Batches = [.. current.Batches, batch] });
+        provision = StartBatchAsync(batch, request.Tasks);
+        return Describe(FindBatch(batch.Id)!, replayed: false);
+    }
+
+    private async Task StartBatchAsync(Batch batch, string[] tasks)
     {
         adding = true;
         status("Preparing worker drafts…");
         try
         {
-            await CaptureAsync(batch.Request.ExpectedRevision);
+            await CaptureAsync(batch.Revision);
             if (closing) return;
-            var staged = new List<WorkerDraft>();
-            foreach (var _ in batch.Request.Tasks)
+            var staged = new List<Worker>();
+            foreach (var task in tasks)
             {
-                staged.Add(await DraftAsync(workers.Count + staged.Count + 1, executable, model));
+                var worker = await DraftAsync(Current.Workers.Length + staged.Count + 1);
                 if (closing) return;
+                var turn = new Turn(task, "running");
+                staged.Add(worker with { Latest = turn, Assigned = turn });
             }
-            foreach (var worker in staged) AddTab(worker);
-            batch.Assignments = staged.Select((worker, index) =>
-                new Assignment(worker, FinishAssignmentAsync(batch, worker, batch.Request.Tasks[index]))).ToArray();
+            var prepared = batch with { Workers = staged.Select(worker => worker.ProjectId).ToArray() };
+            Save(Current with { Workers = [.. Current.Workers, .. staged], Batches = Replaced(prepared) });
+            foreach (var worker in staged)
+            {
+                AddTab(worker, available: true);
+                assignedFinishes.Add(RunAssignedAsync(tabs[^1].Pane, worker));
+            }
             status(null);
         }
         catch (Exception failure)
         {
-            batch.Error = failure.Message;
+            if (FindBatch(batch.Id) is { } saved && Preparing(saved)) TrySetBatchFailure(saved, failure.Message, interrupted: false);
             if (!closing) status(failure.Message);
         }
         finally
         {
             adding = false;
-            if (closing && batch.Assignments.Length == 0) batch.Error ??= "The workspace closed during draft preparation.";
-            batch.SignalChange();
+            if (closing && FindBatch(batch.Id) is { } saved && Preparing(saved))
+                TrySetBatchFailure(saved, "The workspace closed during draft preparation.", interrupted: true);
         }
     }
 
-    private static async Task<CreatorReviews.WorkerPane.TurnResult> FinishAssignmentAsync(
-        LeadBatch batch, WorkerDraft worker, string task)
+    private async Task RunAssignedAsync(CreatorReviews.WorkerPane pane, Worker worker)
     {
-        try { return await worker.Pane.RunAsync(task); }
-        catch (Exception failure) { return new("failed", null, failure.Message); }
-        finally { batch.SignalChange(); }
+        CreatorReviews.WorkerPane.TurnResult result;
+        try { result = await pane.RunAsync(worker.Assigned!.Task); }
+        catch (Exception failure) { result = new("failed", null, failure.Message); }
+        try
+        {
+            if (FindWorker(worker.ProjectId).Assigned?.State == "running")
+                await RememberFinishAsync(worker.ProjectId, result);
+        }
+        catch (Exception failure) { if (!closing) status(failure.Message); }
     }
 
-    private static JsonObject Describe(LeadBatch batch, bool replayed)
+    private Batch[] Replaced(Batch replacement) =>
+        Current.Batches.Select(batch => batch.Id == replacement.Id ? replacement : batch).ToArray();
+
+    private void TrySetBatchFailure(Batch batch, string error, bool interrupted)
+    {
+        try { Save(Current with { Batches = Replaced(batch with { Error = ShortError(error), Interrupted = interrupted }) }); }
+        catch (Exception failure) { if (!closing) status(failure.Message); }
+    }
+
+    private bool Pending(Batch batch) => Preparing(batch) ||
+        batch.Workers.Any(id => FindWorker(id).Assigned?.State == "running");
+
+    private JsonObject Describe(Batch batch, bool replayed)
     {
         var rows = new JsonArray();
         var allCompleted = true;
-        foreach (var assignment in batch.Assignments)
+        var interrupted = batch.Interrupted;
+        foreach (var id in batch.Workers)
         {
-            var turn = assignment.Turn.IsCompletedSuccessfully ? assignment.Turn.Result : null;
-            var row = new JsonObject { ["worker"] = assignment.Worker.Pane.Name, ["manifest"] = assignment.Worker.Manifest,
-                ["state"] = turn?.State ?? "running" };
-            allCompleted &= turn?.State == "completed";
-            if (turn?.Report is { } report)
+            var worker = FindWorker(id);
+            var turn = worker.Assigned!;
+            var number = Array.FindIndex(Current.Workers, item => item.ProjectId == id) + 1;
+            var row = new JsonObject { ["worker"] = "Worker " + number, ["manifest"] = Manifest(worker), ["state"] = turn.State };
+            allCompleted &= turn.State == "completed";
+            interrupted |= turn.State == "interrupted";
+            if (turn.Report is { } report)
             {
                 row["report"] = report.Length <= 4000 ? report : report[..4000];
                 if (report.Length > 4000) row["report_truncated"] = true;
+                row["world_sha256"] = turn.WorldHash;
             }
-            if (turn?.Error is { } error) row["error"] = error;
+            if (turn.Error is { } error) row["error"] = error;
             rows.Add(row);
         }
-        var state = batch.Error is not null ? "failed" : rows.Count == 0 ? "preparing" :
-            batch.Pending ? "running" : allCompleted ? "completed" : "failed";
-        var result = new JsonObject { ["request_id"] = batch.Request.RequestId, ["base_revision"] = batch.Request.ExpectedRevision,
+        var state = Preparing(batch) ? "preparing" : Pending(batch) ? "running" : interrupted ? "interrupted" :
+            batch.Error is null && allCompleted ? "completed" : "failed";
+        var result = new JsonObject { ["request_id"] = batch.Id, ["base_revision"] = batch.Revision,
             ["state"] = state, ["replayed"] = replayed, ["workers"] = rows };
         if (batch.Error is not null) result["error"] = batch.Error;
         return result;
@@ -252,18 +416,24 @@ internal sealed class CreatorBuildTeam
 
     public async Task<ReviewedDraft[]> ReviewAsync(CancellationToken cancellation)
     {
-        var baseSource = snapshot?.Source ?? throw new InvalidOperationException("There is no worker checkpoint.");
+        var baseSource = CheckpointSource(Base);
         if (!File.Exists(Path.Combine(Path.GetDirectoryName(baseSource)!, ProjectFiles.VerificationSuiteName)))
-            throw new InvalidOperationException("This worker round started without a playtest suite. Add game.verify.json, then reopen the project and start a new round.");
+            throw new InvalidOperationException("This worker round started without a playtest suite. Add game.verify.json and start a new worker round.");
 
         var result = new List<ReviewedDraft>();
-        foreach (var worker in workers)
+        for (var index = 0; index < tabs.Count; index++)
         {
-            if (worker.Pane.Busy || worker.Pane.Finding is not { } report) continue;
-            var draft = await ProjectFiles.Command(cancellation, "inspect", worker.Manifest);
-            if (worker.Pane.Busy || worker.Pane.Finding != report) continue;
-            result.Add(new(worker.Pane.Name, worker.Manifest, draft.GetProperty("revision").GetInt64(),
-                draft.GetProperty("world_sha256").GetString()!, report));
+            var pane = tabs[index].Pane;
+            var worker = Current.Workers[index];
+            if (pane.Busy || pane.Finding is not { } report || worker.Latest?.WorldHash is not { } hash) continue;
+            var draft = await InspectWorkerAsync(worker, cancellation);
+            if (pane.Busy || pane.Finding != report) continue;
+            if (draft.GetProperty("world_sha256").GetString() != hash)
+            {
+                pane.Restore(worker.Latest.Task, null, "Draft changed after its report. Review the current scene in a follow-up.");
+                continue;
+            }
+            result.Add(new(pane.Name, Manifest(worker), draft.GetProperty("revision").GetInt64(), hash, report));
         }
         return [.. result];
     }
@@ -271,19 +441,21 @@ internal sealed class CreatorBuildTeam
     public async Task<CombinedCheck> CombineAsync(ReviewedDraft[] selected, Action<string> setProgress,
         CancellationToken cancellation)
     {
-        var captured = snapshot ?? throw new InvalidOperationException("There is no worker checkpoint.");
-        if (selected.Length == 0 || !selected.All(draft => workers.Any(worker =>
-                worker.Manifest == draft.Manifest && !worker.Pane.Busy && worker.Pane.Finding == draft.Report)))
+        var captured = Base;
+        if (selected.Length == 0 || !selected.All(draft => Current.Workers.Select((worker, index) => (worker, pane: tabs[index].Pane))
+                .Any(item => Manifest(item.worker) == draft.Manifest && item.worker.Latest?.WorldHash == draft.WorldHash &&
+                    !item.pane.Busy && item.pane.Finding == draft.Report)))
             throw new InvalidOperationException("A selected worker has changed its report. Review the drafts again.");
 
-        var root = Directory.CreateDirectory(Path.Combine(groupDirectory!, "combined-" + Guid.NewGuid().ToString("N")[..12])).FullName;
+        var candidateFolder = "combined-" + Guid.NewGuid().ToString("N")[..12];
+        var root = Directory.CreateDirectory(Path.Combine(RoundPath, candidateFolder)).FullName;
         var request = Path.Combine(root, "selection.json");
         await File.WriteAllTextAsync(request, JsonSerializer.Serialize(new
         {
             base_sha256 = captured.Hash,
             drafts = selected.Select(draft => new { manifest = draft.Manifest, world_sha256 = draft.WorldHash, files = Array.Empty<string>() })
         }), cancellation);
-        var merged = await ProjectFiles.Command("integrate", captured.Checkpoint,
+        var merged = await ProjectFiles.Command("integrate", CheckpointPath(captured),
             "--output", Path.Combine(root, "project"), "--request", request);
         cancellation.ThrowIfCancellationRequested();
         var manifest = merged.GetProperty("manifest").GetString()!;
@@ -313,18 +485,46 @@ internal sealed class CreatorBuildTeam
             entry.GetProperty("passed").GetBoolean() != verification.GetProperty("passed").GetBoolean())
             throw new InvalidOperationException("The combined game's results could not be paired with its source checkpoint.");
 
-        return new(projectId, history, entry.GetProperty("checkpoint").GetString()!,
+        var check = ReadCombined(projectId, history, entry);
+        var candidate = new Candidate(candidateFolder, projectId, check.Snapshot, check.Attempt.Build);
+        Save(Current with { Latest = candidate, Passing = check.Attempt.Retained ? candidate : Current.Passing });
+        return check;
+    }
+
+    private async Task<CombinedCheck?> RestoreCombinedAsync(Candidate? candidate, CancellationToken cancellation)
+    {
+        if (candidate is null) return null;
+        try
+        {
+            var history = Path.Combine(RoundPath, candidate.Folder, ".poima-history", candidate.ProjectId);
+            RequireDirectory(history);
+            var versions = await ProjectFiles.Command(cancellation, "versions", history, "--project-id", candidate.ProjectId);
+            var entry = versions.GetProperty("entries").EnumerateArray().SingleOrDefault();
+            if (entry.ValueKind != JsonValueKind.Object || entry.GetProperty("snapshot_sha256").GetString() != candidate.Snapshot ||
+                entry.GetProperty("bundle_sha256").GetString() != candidate.Bundle)
+                throw new InvalidDataException("A saved combined build or verification report changed.");
+            return ReadCombined(candidate.ProjectId, history, entry);
+        }
+        catch (Exception failure) when (!cancellation.IsCancellationRequested)
+        {
+            status(failure.Message);
+            return null;
+        }
+    }
+
+    private static CombinedCheck ReadCombined(string projectId, string history, JsonElement entry) =>
+        new(projectId, history, entry.GetProperty("checkpoint").GetString()!,
             entry.GetProperty("snapshot_sha256").GetString()!, entry.GetProperty("game_manifest").GetString()!,
             PlaytestAttempt.FromHistory(entry));
-    }
 
     public Task RetireAsync() => retirement ??= RetireCoreAsync();
 
     private async Task RetireCoreAsync()
     {
         closing = true;
-        foreach (var worker in workers) worker.Pane.Enable(false);
+        foreach (var tab in tabs) tab.Pane.Enable(false);
         if (provision is { } pending) await pending;
-        await Task.WhenAll(workers.Select(worker => worker.Pane.ResetAsync()));
+        await Task.WhenAll(tabs.Select(tab => tab.Pane.ResetAsync()));
+        await Task.WhenAll(assignedFinishes);
     }
 }
