@@ -13,6 +13,7 @@
   "features": {
     "asset_provenance": true,
     "simulation": @POIMA_RUNTIME_SIMULATION@,
+    "physics_checkpoint": @POIMA_RUNTIME_SIMULATION@,
     "water_regions": @POIMA_RUNTIME_SIMULATION@,
     "snow_water_regions": @POIMA_RUNTIME_SIMULATION@,
     "water_rain": @POIMA_RUNTIME_SIMULATION@,

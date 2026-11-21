@@ -367,7 +367,7 @@ void Runtime::Impl::restore_particles(const RuntimeDefinition& definition,const 
 std::string Runtime::save_snapshot(const std::string& content_sha256) const {
     require(save_digest(content_sha256),"Snapshot content identity must be a lowercase SHA-256.");
     const auto& s=*impl_;
-    const bool joined_physics=s.physical_content || Impl::has_released_attachment(s.attachment_graph.get());
+    const bool joined_physics=s.topology->live.physics_checkpoint || s.physical_content || Impl::has_released_attachment(s.attachment_graph.get());
     const bool stance_state=save_stance_definition(s.topology->live);
     const bool motor_state=save_locomotion_definition(s.topology->live);
     (void)save_text(s.world_id);(void)save_integer(s.revision);(void)save_integer(s.tick);(void)save_integer(s.game_revision);
@@ -653,9 +653,10 @@ std::unique_ptr<Runtime> Runtime::restore_snapshot_data(const RuntimeDefinition&
         }
         data.erase("attachments");
     }
-    const bool joined_physics=physical_content || Impl::has_released_attachment(attachment_graph.get());
+    const bool joined_physics=definition.physics_checkpoint || physical_content || Impl::has_released_attachment(attachment_graph.get());
     require(data.contains("physical")==joined_physics,
-        "Physical rigs and released items require their complete versioned physics extension.");
+        definition.physics_checkpoint ? "Physics checkpoint profile requires its complete versioned physics extension." :
+            "Physical rigs and released items require their complete versioned physics extension.");
     require(!joined_physics || kinematic_sleep.is_null(),"Joined physical snapshots already own kinematic sleep tracking.");
     SaveJson physical_extension=nullptr;
     if(joined_physics) {
@@ -1044,6 +1045,19 @@ std::unique_ptr<Runtime> Runtime::restore_snapshot_data(const RuntimeDefinition&
         validate_runtime_physics_state_joined(s.physics,physical_extension.at("physics"),physical_checkpoint->owner);
         save_physical_lineage(physical_extension.at("physics"),physical_bootstrap->ledger);
         restore_runtime_physics_state_joined(s.physics,physical_extension.at("physics"),physical_checkpoint->owner);
+        if(definition.physics_checkpoint)for(const auto& row:rows) {
+            const auto& saved=row.at("body");
+            if(saved.is_null())continue;
+            const auto entity=s.find(row.at("id").get<std::string>());
+            const auto* body=s.registry.try_get<Body>(entity);
+            const auto id=body ? body->id : s.registry.get<Controller>(entity).character->GetBodyID();
+            JPH::RVec3 position;JPH::Quat rotation;
+            bodies.GetPositionAndRotation(id,position,rotation);
+            require(saved.at("position")==save_xyz(position) && saved.at("rotation")==save_xyzw(rotation) &&
+                saved.at("linear_velocity")==save_xyz(bodies.GetLinearVelocity(id)) &&
+                saved.at("angular_velocity")==save_xyz(bodies.GetAngularVelocity(id)) &&
+                saved.at("active")==bodies.IsActive(id),"Physics checkpoint body differs from its ordinary saved witness.");
+        }
         s.sync(); // publishes solved physical locals before final comparisons
         for(const auto& id:s.topology->physical_rigs)
             if(s.animations->procedural_enabled(id) && !s.animations->procedural_suspended(id) &&

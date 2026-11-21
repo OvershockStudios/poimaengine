@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.383
+
+- Add an opt-in world save profile for rigid-body contact caches, sleep timers and solver state.
+
 ## 0.0.382
 
 - Add an optional C# dialogue package with authored branches, tick delays, revision guards and saveable progress.

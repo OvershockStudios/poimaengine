@@ -353,6 +353,28 @@ class ProjectDraftContract(unittest.TestCase):
         self.assertEqual(tree(self.live), self.original)
         self.assertEqual(tree(self.base), self.base_bytes)
 
+    def test_pinned_scenes_merge_exact_physics_checkpoint(self):
+        left, right = (self.root / name for name in ('Physics draft', 'Physics and design draft'))
+        for root in (left, right):
+            self.draft(root)
+        checkpoint = dict(op='physics_checkpoint.set', definition={'version': 1})
+        self.edit(left, self.revision, [checkpoint])
+        self.edit(right, self.revision, [rename(GATE, 'Marked gate'), checkpoint])
+        selections = [self.pick_scene(left), self.pick_scene(right)]
+        originals = {root: tree(root) for root in (left, right, self.live, self.base)}
+        digests = []
+        for index, order in enumerate((selections, list(reversed(selections)))):
+            candidate = self.root / f'Checkpoint candidate {index}'
+            result = self.integrate(candidate, {'base_sha256': self.base_sha256, 'drafts': order})
+            digests.append(result['world_sha256'])
+            document = read_json(candidate / self.world_path)
+            self.assertEqual(document['entities'][GATE]['name'], 'Marked gate')
+            self.assertEqual(document['physics_checkpoint'], {'version': 1})
+            self.assertIs(self.inspect(candidate)['needs_physics_checkpoint'], True)
+        self.assertEqual(*digests)
+        for root, baseline in originals.items():
+            self.assertEqual(tree(root), baseline)
+
     def test_surface_mark_profiles_merge_by_id_with_frozen_mask_dependencies(self):
         left, right = (self.root / name for name in ('Left mask draft', 'Right mask draft'))
         for draft in (left, right):

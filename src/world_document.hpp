@@ -57,5 +57,6 @@ void upgrade_templates(Json& doc);
 void upgrade_ui(Json& doc);
 Json template_document(const Json& document, const Json& entities);
 void validate(const Json& doc);
+void validate_physics_checkpoint_profile(const Json& profile);
 
 } // namespace poima::world_detail

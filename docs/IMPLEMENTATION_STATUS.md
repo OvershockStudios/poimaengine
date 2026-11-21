@@ -1,8 +1,16 @@
 # Implementation status
 
-Updated 2026-11-21 for **0.0.382**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-21 for **0.0.383**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.383 adds opt-in [contact-preserving checkpoints](RUNTIME.md#contact-preserving-checkpoints)
+for rigid bodies and rigid-body characters. The same-build Ubuntu and Windows
+slope tests reproduced 46 consecutive tick observations and byte-identical
+warm and cold saves with the profile enabled. Both refused corrupted checkpoints
+without changing the live session. Windows also resumed a retained 0.0.382
+logical save and checked the profile through draft composition and standalone export.
+[Results](evidence/m2-physics-checkpoint-383.json)
 
 Version 0.0.382 adds the optional [branching dialogue package](../packages/dialogue/README.md)
 for compiled C# gameplay. It evaluates authored node and choice IDs with

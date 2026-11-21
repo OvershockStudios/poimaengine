@@ -546,6 +546,7 @@ public:
         }
         if(definition.snow)component_checked([&]{(void)snow::Region(definition);});
         result.needs_snow_water=definition.snow.has_value() && definition.water.has_value();
+        result.needs_physics_checkpoint=definition.physics_checkpoint;
         auto document=source;document["receipts"]=Json::array();document["retired_ids"]=Json::array();if(document.contains("retired_component_schemas"))document["retired_component_schemas"]=Json::array();if(document.contains("retired_template_ids"))document["retired_template_ids"]=Json::array();if(document.contains("retired_ui_ids"))document["retired_ui_ids"]=Json::array();result.document=document.dump(2)+'\n';
         for(auto& [filename,file]:files) { (void)filename;result.assets.push_back(std::move(file)); }
         freeze_provenance(source,result);
@@ -898,6 +899,7 @@ public:
             if(content.needs_water_rain)result["needs_water_rain"]=true;
             if(content.needs_water_ripples)result["needs_water_ripples"]=true;
             if(content.needs_snow_water)result["needs_snow_water"]=true;
+            if(content.needs_physics_checkpoint)result["needs_physics_checkpoint"]=true;
             if(content.needs_output_grade)result["needs_output_grade"]=true;
             if(content.needs_screen_reflections)result["needs_screen_reflections"]=true;
             if(content.needs_foliage_motion)result["needs_foliage_motion"]=true;
@@ -917,6 +919,7 @@ public:
             if(doc_.contains("navigation"))result["navigation"]=doc_.at("navigation");
             if(doc_.contains("water"))result["water"]=doc_.at("water");
             if(doc_.contains("snow"))result["snow"]=doc_.at("snow");
+            if(doc_.contains("physics_checkpoint"))result["physics_checkpoint"]=doc_.at("physics_checkpoint");
             if(doc_.contains("surface_mark_profiles"))result["surface_mark_profiles"]=doc_.at("surface_mark_profiles");
             if(doc_.contains("audio_buses"))result["audio_buses"]=doc_.at("audio_buses");
             return result;
@@ -2367,6 +2370,9 @@ public:
         if(target_state.contains("water"))staged["water"]=target_state.at("water");else staged.erase("water");
         const bool snow_changed=optional_authored_value_differs(doc_,target_state,"snow");
         if(target_state.contains("snow"))staged["snow"]=target_state.at("snow");else staged.erase("snow");
+        const bool checkpoint_changed=optional_authored_value_differs(doc_,target_state,"physics_checkpoint");
+        if(target_state.contains("physics_checkpoint"))staged["physics_checkpoint"]=target_state.at("physics_checkpoint");
+        else staged.erase("physics_checkpoint");
         const bool provenance_changed=doc_.contains("asset_provenance")!=target_state.contains("asset_provenance") ||
             (doc_.contains("asset_provenance") && target_state.contains("asset_provenance") && doc_.at("asset_provenance")!=target_state.at("asset_provenance"));
         if(target_state.contains("asset_provenance"))staged["asset_provenance"]=target_state.at("asset_provenance");else staged.erase("asset_provenance");
@@ -2421,6 +2427,7 @@ public:
         if(navigation_changed)result["changed_world_fields"]=Json::array({"navigation"});
         if(water_changed) {if(!result.contains("changed_world_fields"))result["changed_world_fields"]=Json::array();result["changed_world_fields"].push_back("water");}
         if(snow_changed) {if(!result.contains("changed_world_fields"))result["changed_world_fields"]=Json::array();result["changed_world_fields"].push_back("snow");}
+        if(checkpoint_changed) {if(!result.contains("changed_world_fields"))result["changed_world_fields"]=Json::array();result["changed_world_fields"].push_back("physics_checkpoint");}
         if(provenance_changed) {if(!result.contains("changed_world_fields"))result["changed_world_fields"]=Json::array();result["changed_world_fields"].push_back("asset_provenance");}
         if(mark_profiles_changed) {if(!result.contains("changed_world_fields"))result["changed_world_fields"]=Json::array();result["changed_world_fields"].push_back("surface_mark_profiles");}
         if(audio_buses_changed) {if(!result.contains("changed_world_fields"))result["changed_world_fields"]=Json::array();result["changed_world_fields"].push_back("audio_buses");}
@@ -2440,7 +2447,8 @@ public:
         for (const auto& receipt : doc_.at("receipts")) {
             if (receipt.at("params").at("request_id") != params.at("request_id")) continue;
             bool custom=false;for(const auto& op:params.at("ops"))if(op.is_object() && op.contains("op") &&
-                (op.at("op")=="ui.element.set" || op.at("op")=="ui.element.remove" || op.at("op")=="template.set" || op.at("op")=="template.remove" || op.at("op")=="component.schema.set" || op.at("op")=="component.schema.remove" || (op.contains("type") && op.at("type").is_string() && custom_component(op.at("type").get<std::string>()))))custom=true;
+                (op.at("op")=="ui.element.set" || op.at("op")=="ui.element.remove" || op.at("op")=="template.set" || op.at("op")=="template.remove" || op.at("op")=="component.schema.set" || op.at("op")=="component.schema.remove" ||
+                    op.at("op")=="physics_checkpoint.set" || (op.contains("type") && op.at("type").is_string() && custom_component(op.at("type").get<std::string>()))))custom=true;
             require(custom ? receipt.at("params").dump()==params.dump() : receipt.at("params")==params,"Transaction ID was already used with different parameters.",-32010);
             auto result = receipt.at("result"); result["replayed"] = true; return result;
         }
@@ -2456,6 +2464,15 @@ public:
         for (const auto& op : ops) {
             require(op.is_object() && op.contains("op") && op.at("op").is_string(),"Operation needs op.");
             const auto name=op.at("op").get<std::string>();
+            if(name=="physics_checkpoint.set") {
+                fields(op,{"op","definition"},{"op","definition"});
+                if(op.at("definition").is_null())staged.erase("physics_checkpoint");
+                else {
+                    validate_physics_checkpoint_profile(op.at("definition"));
+                    staged["physics_checkpoint"]=op.at("definition");
+                }
+                continue;
+            }
             if(name=="asset.provenance.set") {
                 fields(op,{"op","asset","records"},{"op","asset","records"});
                 require(op.at("asset").is_string() && valid_asset_id(op.at("asset")),"Provenance asset must be64 lowercase hexadecimal digits.");
@@ -2625,6 +2642,7 @@ public:
         const bool water_changed=doc_.contains("water")!=staged.contains("water") ||
             (doc_.contains("water") && staged.contains("water") && doc_.at("water")!=staged.at("water"));
         const bool snow_changed=optional_authored_value_differs(doc_,staged,"snow");
+        const bool checkpoint_changed=optional_authored_value_differs(doc_,staged,"physics_checkpoint");
         const bool mark_profiles_changed=optional_authored_value_differs(doc_,staged,"surface_mark_profiles");
         const bool audio_buses_changed=optional_authored_value_differs(doc_,staged,"audio_buses");
         Json result = {{"revision", staged["revision"]}, {"committed", !params["preview"].get<bool>()},
@@ -2634,6 +2652,7 @@ public:
         if(navigation_changed)result["changed_world_fields"]=Json::array({"navigation"});
         if(water_changed) {if(!result.contains("changed_world_fields"))result["changed_world_fields"]=Json::array();result["changed_world_fields"].push_back("water");}
         if(snow_changed) {if(!result.contains("changed_world_fields"))result["changed_world_fields"]=Json::array();result["changed_world_fields"].push_back("snow");}
+        if(checkpoint_changed) {if(!result.contains("changed_world_fields"))result["changed_world_fields"]=Json::array();result["changed_world_fields"].push_back("physics_checkpoint");}
         if(provenance_changed) {if(!result.contains("changed_world_fields"))result["changed_world_fields"]=Json::array();result["changed_world_fields"].push_back("asset_provenance");}
         if(mark_profiles_changed) {if(!result.contains("changed_world_fields"))result["changed_world_fields"]=Json::array();result["changed_world_fields"].push_back("surface_mark_profiles");}
         if(audio_buses_changed) {if(!result.contains("changed_world_fields"))result["changed_world_fields"]=Json::array();result["changed_world_fields"].push_back("audio_buses");}

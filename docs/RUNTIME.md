@@ -224,7 +224,12 @@ The host supplies the lowercase SHA-256 of its **complete frozen authored conten
 | Sound | Logical voices, IDs, allocator, start/stop times and gains; clips resolve against trusted emitter content hashes. |
 | Gameplay | Exact module/schema binding, complete supported scalar/entity values and gameplay revision. |
 
-`from_snapshot` constructs a separate runtime and returns it only after validation. Failures destroy the candidate and leave an existing runtime untouched. It does not deserialize bytes through Jolt's internal recorder. Physics solver warm starts, contact caches, sleep timers, rendering resources and audio DSP history are rebuilt, rather than persisted. Future contact trajectories need not be bit-identical after loading. A host activating the candidate must separately reset presentation/audio streams, input, session IDs and retry receipts; this function does not replace a `WorldSession` or editor session itself.
+`from_snapshot` constructs and validates a detached runtime before publication.
+By default the logical profile rebuilds contact caches, solver warm starts and
+sleep timers from body state. Select [contact-preserving checkpoints](#contact-preserving-checkpoints)
+when those caches matter to the game. Rendering resources and device audio DSP
+are rebuilt during restore. The host resets presentation, input, session IDs
+and retry receipts when it activates the candidate.
 
 [Version 3 lifecycle evidence](evidence/m2-runtime-lifecycle-save.json) covers spawned dynamic/static/kinematic/bodyless props, repaired references, retired-ID continuity after restoring an empty world, malformed snapshots, and separate-process fixture exchange. [Batch lifecycle evidence](evidence/m2-runtime-lifecycle-batch.json) additionally covers actual CoreCLR and NativeAOT writes, exceptions, queued save intents and v3 continuation. See the [current hierarchy checks](RUNTIME_INSTANCES.md#checks-and-current-human-workflow) for later Windows coverage.
 
@@ -235,6 +240,41 @@ The diagnostic JSON envelope carries a SHA-256 of its canonical payload. UI-free
 This synchronous implementation allocates JSON and a staged runtime; it is not a hitch-free asynchronous save system. Supported frozen hierarchy instances use version 6 with complete member maps and allocation history. It has no persistence policy for arbitrary component membership, general inventory systems, streamed regions or future environmental systems. Migrations, cancellation, performance budgets and platform storage adapters remain separate work.
 
 Native tests cover motion/character continuation, interrupted animation, sound, corrupt data and content binding. `poima-runtime-save-test --write-fixture PATH` and a separate `--read-fixture PATH` process qualify an explicit test file round trip; those test-only file operations do not implement engine save slots. The separate `poima-runtime-save-gameplay-test HOSTFXR BRIDGE ASSEMBLY TYPE` (or `--native DESCRIPTOR` for Native AOT) uses the checked-in managed fixture to exercise real C# tick continuation and collectible module lifetimes. [Snapshot evidence](evidence/m2-runtime-snapshot.json) records the qualified configurations and limits.
+
+### Contact-preserving checkpoints
+
+Send this operation in a guarded `world.transact` to make the joined physics
+profile part of that world's frozen content.
+
+```json
+{"op":"physics_checkpoint.set","definition":{"version":1}}
+```
+
+`world.inspect` reports the selected profile. `world.dependencies`,
+`project inspect`, and `game inspect` report `needs_physics_checkpoint` when
+the profile is selected. The installed game runtime must advertise
+`features.physics_checkpoint: true`. Restart the session to adopt an authored
+change. Set `definition` to `null` to select logical saves for future sessions.
+
+Version 1 supports rigid bodies and rigid-body character controllers. Worlds
+with a virtual character locomotion profile or a `PhysicalRig`, including in
+spawn templates, use their existing save profiles. The joined extension
+records stable body allocation, activation and sleep state, the solver's
+global step state, and validated contact manifolds. It stores typed fields
+and checks them against body witnesses and identity history before publishing
+a restored world. Contacts and manifolds share the native cap of 8,192 each
+and the entire archive retains the normal save size bound.
+
+The world setting participates in the frozen content fingerprint. A save
+uses the setting and physics geometry of its original frozen content.
+Save-upgrade plans operate on the logical profile. Continuation evidence is
+scoped to the tested runtime build and input sequences.
+
+Run `python3 tests/physics_checkpoint_contract.py build/runtime-headless/poima`
+to compare this profile with a logical save on the same pair of slopes. For
+a Windows runtime invoked from WSL, supply its executable and add
+`--windows-interop`. Use `--output` with a fresh directory to retain the
+native requests, observations, and archives.
 
 ## Durable save slots
 

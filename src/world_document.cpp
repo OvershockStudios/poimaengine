@@ -805,6 +805,7 @@ Json history_state(const Json& doc) {
     if(doc.contains("navigation"))result["navigation"]=doc.at("navigation");
     if(doc.contains("water"))result["water"]=doc.at("water");
     if(doc.contains("snow"))result["snow"]=doc.at("snow");
+    if(doc.contains("physics_checkpoint"))result["physics_checkpoint"]=doc.at("physics_checkpoint");
     if(doc.contains("asset_provenance"))result["asset_provenance"]=doc.at("asset_provenance");
     if(doc.contains("surface_mark_profiles"))result["surface_mark_profiles"]=doc.at("surface_mark_profiles");
     if(doc.contains("audio_buses"))result["audio_buses"]=doc.at("audio_buses");
@@ -816,7 +817,7 @@ bool optional_authored_value_differs(const Json& a,const Json& b,const char* key
 }
 bool same_authored_state(const Json& a,const Json& b) {
     if(a.at("entities")!=b.at("entities"))return false;
-    for(const auto* key:{"asset_provenance","navigation","water","snow","surface_mark_profiles","audio_buses"}) {
+    for(const auto* key:{"asset_provenance","navigation","water","snow","physics_checkpoint","surface_mark_profiles","audio_buses"}) {
         if(optional_authored_value_differs(a,b,key))return false;
     }
     for(const auto* key:{"component_schemas","templates","ui"}) {
@@ -846,6 +847,7 @@ Json template_document(const Json& document,const Json& entities) {
         {"receipts",Json::array()},{"component_schemas",document.value("component_schemas",Json::object())},
         {"retired_component_schemas",Json::array()}};
     if(document.contains("audio_buses"))result["audio_buses"]=document.at("audio_buses");
+    if(document.contains("physics_checkpoint"))result["physics_checkpoint"]=document.at("physics_checkpoint");
     return result;
 }
 static void validate_template_graph(const Json& document,const Json& recipe,
@@ -906,17 +908,24 @@ static void validate_template_graph(const Json& document,const Json& recipe,
     // catalogs, borrowed definitions or collision between world and local IDs.
     validate(template_document(document,validation));
 }
+void validate_physics_checkpoint_profile(const Json& profile) {
+    fields(profile,{"version"},{"version"});
+    require(profile.at("version").is_number_integer() && profile.at("version")==1,
+        "Physics checkpoint profile requires integer version 1.");
+}
 void validate(const Json& doc) {
     require(doc.is_object() && doc.contains("version") && doc.at("version").is_number_integer(),"Unsupported world format/version.");
     const bool user_interface=doc.at("version")==4,catalog=user_interface || doc.at("version")==3,custom=catalog || doc.at("version")==2;
-    if(user_interface)fields(doc,{"format","version","world_id","revision","entities","retired_ids","receipts","component_schemas","retired_component_schemas","templates","retired_template_ids","ui","retired_ui_ids","navigation","asset_provenance","water","snow","surface_mark_profiles","audio_buses"},
+    if(user_interface)fields(doc,{"format","version","world_id","revision","entities","retired_ids","receipts","component_schemas","retired_component_schemas","templates","retired_template_ids","ui","retired_ui_ids","navigation","asset_provenance","water","snow","physics_checkpoint","surface_mark_profiles","audio_buses"},
         {"format","version","world_id","revision","entities","retired_ids","receipts","component_schemas","retired_component_schemas","templates","retired_template_ids","ui","retired_ui_ids"});
-    else if(catalog)fields(doc,{"format","version","world_id","revision","entities","retired_ids","receipts","component_schemas","retired_component_schemas","templates","retired_template_ids","navigation","asset_provenance","water","snow","surface_mark_profiles","audio_buses"},
+    else if(catalog)fields(doc,{"format","version","world_id","revision","entities","retired_ids","receipts","component_schemas","retired_component_schemas","templates","retired_template_ids","navigation","asset_provenance","water","snow","physics_checkpoint","surface_mark_profiles","audio_buses"},
         {"format","version","world_id","revision","entities","retired_ids","receipts","component_schemas","retired_component_schemas","templates","retired_template_ids"});
-    else if(custom)fields(doc,{"format","version","world_id","revision","entities","retired_ids","receipts","component_schemas","retired_component_schemas","navigation","asset_provenance","water","snow","surface_mark_profiles","audio_buses"},
+    else if(custom)fields(doc,{"format","version","world_id","revision","entities","retired_ids","receipts","component_schemas","retired_component_schemas","navigation","asset_provenance","water","snow","physics_checkpoint","surface_mark_profiles","audio_buses"},
         {"format","version","world_id","revision","entities","retired_ids","receipts","component_schemas","retired_component_schemas"});
-    else fields(doc,{"format","version","world_id","revision","entities","retired_ids","receipts","navigation","asset_provenance","water","snow","surface_mark_profiles","audio_buses"},{"format","version","world_id","revision","entities","retired_ids","receipts"});
+    else fields(doc,{"format","version","world_id","revision","entities","retired_ids","receipts","navigation","asset_provenance","water","snow","physics_checkpoint","surface_mark_profiles","audio_buses"},{"format","version","world_id","revision","entities","retired_ids","receipts"});
     require(doc.at("format")=="poima.authored-world" && (doc.at("version")==1 || custom),"Unsupported world format/version.");
+    const bool physics_checkpoint=doc.contains("physics_checkpoint");
+    if(physics_checkpoint)validate_physics_checkpoint_profile(doc.at("physics_checkpoint"));
     const auto buses=authored_audio_buses(doc);
     if(doc.contains("navigation")) {
         const auto& binding=doc.at("navigation");fields(binding,{"asset"},{"asset"});
@@ -1001,6 +1010,12 @@ void validate(const Json& doc) {
             require(entities.contains(identifier(entity.at("parent"))), "Parent entity does not exist.");
         require(entity.at("components").is_object() && entity.at("components").contains("Transform"),"Entity requires a component object with Transform.");
         const auto& audio_components=entity.at("components");
+        if(physics_checkpoint) {
+            require(!audio_components.contains("PhysicalRig"),"Physics checkpoint version 1 cannot include PhysicalRig content.");
+            const auto character=audio_components.find("CharacterController");
+            require(character==audio_components.end() || !character->contains("locomotion"),
+                "Physics checkpoint version 1 requires rigid-body character controllers.");
+        }
         require(!audio_components.contains("CameraDraw") || !audio_components.contains("StaticMesh") ||
             !audio_components.at("StaticMesh").contains("lods"),"Mesh LOD requires a world drawable without CameraDraw.");
         require(!audio_components.contains("MeshCollider") || (!audio_components.contains("BoxCollider") && !audio_components.contains("CharacterController")),"MeshCollider cannot combine with BoxCollider or CharacterController.");

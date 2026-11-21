@@ -151,6 +151,7 @@ RuntimeDefinition resolve_runtime_definition(const Json& document, const std::fi
     if(animation_only)for(const auto& e:document.at("entities"))
         if(e.at("components").contains("AnimationRig"))rig_assets.insert(e.at("components").at("AnimationRig").at("asset").get<std::string>());
     RuntimeDefinition result; result.world_id=document.at("world_id"); result.authored_revision=revision(document.at("revision"));
+    result.physics_checkpoint=document.contains("physics_checkpoint");
     result.component_schemas=authored_component_schemas(document);
     const auto buses=animation_only ? audio_buses::Catalog{} : authored_audio_buses(document);
     for(const auto& [id,e]:document.at("entities").items()) {

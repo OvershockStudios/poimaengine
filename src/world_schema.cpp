@@ -344,6 +344,9 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     snow_definition["description"]="Bind two existing cooked terrain entities in west-east order. Each must use the same visible static primitive for rendering and collision. A water region may use separate terrain and an XZ grid with no positive-area overlap with the snow. Null clears the binding.";
     ops.push_back(object_schema({{"op",{{"const","snow.set"}}},
         {"definition",{{"anyOf",Json::array({snow_definition,Json{{"type","null"}}})}}}},{"op","definition"}));
+    const auto checkpoint_profile=object_schema({{"version",{{"type","integer"},{"const",1}}}},{"version"});
+    ops.push_back(object_schema({{"op",{{"const","physics_checkpoint.set"}}},
+        {"definition",{{"anyOf",Json::array({checkpoint_profile,Json{{"type","null"}}})}}}},{"op","definition"}));
     ops.push_back(object_schema({{"op",{{"const","audio.buses.set"}}},
         {"buses",{{"anyOf",Json::array({audio_bus_catalog,Json{{"type","null"}}})}}}},{"op","buses"}));
     ops.push_back(object_schema({{"op",{{"const","surface_mark.profile.set"}}},{"id",mark_profile_id},
@@ -388,7 +391,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 198}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 199}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -742,6 +745,9 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"foot_release",std::move(foot_release)},
         {"foot_release_limits",{{"holding",snow::max_held_releases},{"ready",snow::max_ready_releases},
             {"attempts_per_tick",1},{"snapshot_version",2},{"sole_snapshot_version",3}}}};
+    result["physics_checkpoint"]={{"available",Runtime::available()},{"binding_operation","physics_checkpoint.set"},
+        {"profile_version",1},{"profile",checkpoint_profile},
+        {"scope","Preserve named rigid-body contact, sleep and solver state in a portable save. Virtual controllers and PhysicalRig content use their existing profiles."}};
     if(Runtime::available()) {
         const Json sample={{"type","array"},{"minItems",2},{"maxItems",2},
             {"prefixItems",Json::array({unsigned_range(0,snow::samples_x-1),unsigned_range(0,snow::samples_z-1)})}};

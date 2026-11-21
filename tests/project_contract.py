@@ -259,6 +259,62 @@ class ProjectContract(unittest.TestCase):
             self.assertEqual(tree(runtime), original)
         self.assertEqual(tree(self.project), source)
 
+    def test_exact_physics_checkpoint_requires_explicit_runtime_capability(self):
+        runtime, spec = self.metadata_runtime()
+        descriptor = runtime/'runtime.json'
+        descriptor.write_text(json.dumps(spec), encoding='utf-8')
+        build = ('project', 'build', native(self.manifest), '--runtime', native(runtime))
+        legacy = self.root/'Legacy checkpoint bundle'
+        self.assertNotIn('needs_physics_checkpoint', self.inspect())
+        self.run_cli(*build, '--output', native(legacy))
+        self.assertNotIn('needs_physics_checkpoint', self.run_cli('game', 'inspect', native(legacy/'game.json')))
+
+        world = self.project/self.document['entry']['world']
+        self.world_rpc('world.transact', request_id=uuid.uuid4().hex, base_revision=json.loads(world.read_bytes())['revision'],
+                       ops=[dict(op='physics_checkpoint.set', definition={'version': 1})])
+        self.assertIs(self.inspect()['needs_physics_checkpoint'], True)
+        self.assertIs(self.world_rpc('world.dependencies')['needs_physics_checkpoint'], True)
+        source = tree(self.project)
+        requirement = 'Exact physics checkpoints require a compatible simulation runtime.'
+        output = self.root/'Exact checkpoint bundle'
+        for flag, expected in ((None, requirement), (False, requirement), ('true', 'Runtime feature flags must be Boolean.')):
+            with self.subTest(flag=flag):
+                if flag is None:
+                    spec['features'].pop('physics_checkpoint', None)
+                else:
+                    spec['features']['physics_checkpoint'] = flag
+                descriptor.write_text(json.dumps(spec), encoding='utf-8')
+                self.run_cli(*build, '--output', native(output), success=False)
+                self.assertEqual(CALLS[-1]['reply']['diagnostics'], [dict(code='project.failed', message=expected)])
+                self.assertFalse(output.exists(), 'Unsupported checkpoint export published a bundle.')
+
+        spec['features']['physics_checkpoint'] = True
+        descriptor.write_text(json.dumps(spec), encoding='utf-8')
+        runtime_source = tree(runtime)
+        self.run_cli(*build, '--output', native(output))
+        relocated = self.root/'Relocated exact checkpoint bundle'
+        output.rename(relocated)
+        manifest = relocated/'game.json'
+        self.assertIs(self.run_cli('game', 'inspect', native(manifest))['needs_physics_checkpoint'], True)
+        self.assertEqual(json.loads(manifest.read_bytes())['version'], 1)
+        self.assertEqual(json.loads((relocated/'content/world.json').read_bytes())['physics_checkpoint'], {'version': 1})
+
+        # Update the listed hash and size so the unsupported profile admission
+        # runs even when bundle inventory integrity is intact.
+        del spec['features']['physics_checkpoint']
+        bundled_descriptor = relocated/'runtime/runtime.json'
+        bundled_descriptor.write_text(json.dumps(spec), encoding='utf-8')
+        bundle_value = json.loads(manifest.read_bytes())
+        entry = next(row for row in bundle_value['files'] if row['path'] == 'runtime/runtime.json')
+        entry.update(size=bundled_descriptor.stat().st_size, sha256=hashlib.sha256(bundled_descriptor.read_bytes()).hexdigest())
+        manifest.write_text(json.dumps(bundle_value), encoding='utf-8')
+        rejected_bundle = tree(relocated)
+        self.run_cli('game', 'inspect', native(manifest), success=False)
+        self.assertEqual(CALLS[-1]['reply']['diagnostics'], [dict(code='game.failed', message=requirement)])
+        self.assertEqual(tree(relocated), rejected_bundle)
+        self.assertEqual(tree(runtime), runtime_source)
+        self.assertEqual(tree(self.project), source)
+
     def test_splash_toggle_is_guarded_and_exported(self):
         initial = self.inspect()
         world = self.project / self.document['entry']['world']

@@ -523,6 +523,8 @@ struct RuntimeDefinition {
     std::map<std::string,std::shared_ptr<const TextureImage>> particle_sprite_textures;
     std::map<std::string,RuntimeSurfaceMarkProfile> surface_mark_profiles;
     std::optional<snow::Definition> snow;
+    // Opt in to the joined portable rigid-body checkpoint for ordinary worlds.
+    bool physics_checkpoint=false;
 };
 // Shared authoring/native validation, also available without Jolt.
 void validate_runtime_animation(const RuntimeDefinition& definition);

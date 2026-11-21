@@ -1,0 +1,135 @@
+{
+  "release": "0.0.383",
+  "scope": "Opt-in rigid body contact and sleep checkpoint on synthetic slopes; local checkpoint and deployment qualification.",
+  "source_inventory_sha256": "16b8498671a5b7e270ca6ada4809253881d5524421433d4bae84604cf5a23484",
+  "verifier_sha256": "197b31b0c8ccc7b174890ea2d2cdd0c06923a69aae7b0aa2749e5c4124c61a0c",
+  "authoring": {
+    "schema_revision": 199,
+    "profile_version": 1,
+    "refused_profile_count": 5,
+    "guarded_preview_and_identical_retry": true,
+    "profile_undo_and_redo": true,
+    "virtual_controller_refused": true
+  },
+  "public_slope_fixture": {
+    "commit_tick": 75,
+    "last_checked_tick": 120,
+    "matching_observations_when_enabled": 46,
+    "legacy_first_difference_tick": 76,
+    "legacy_final_displacement_m": 0.005692751865787916,
+    "joined_final_displacement_m": 0.0,
+    "exact_immediate_first_tick_and_final_archives": true,
+    "physics_and_sleep_witnesses": "Grounded capsule on cooked triangle mesh and a moving dynamic body on an independent angled support.",
+    "atomic_corrupt_archives_refused": [
+      {
+        "slot": "bad-joined-version",
+        "code": -32070,
+        "message": "Physical snapshot extension version differs from frozen ownership policy."
+      },
+      {
+        "slot": "bad-body-witness",
+        "code": -32070,
+        "message": "Physics checkpoint body differs from its ordinary saved witness."
+      }
+    ]
+  },
+  "linux": {
+    "binary_sha256": "c19df0a730b524e711ab09ecbbc8799bcf33c4f7291fc165b307d6b4d338d13c",
+    "source_overlay_sha256": "6e46e1335b120fa5a104b4960e97617f26625af869f8858df7f717e0fb6c33b4",
+    "contact_proof_sha256": "3d39fa4ccdb1f707899310677d29c9b868d005d8f1899c6109a62498262b4ce7",
+    "junit_sha256": "5a8f2b92e8dc15eb891c18140a718da55d71c3df5250ddd4e56361c4bdf4f8be",
+    "joined_and_legacy_rig_junit_sha256": "c2d044276fe50ae6268c90e9f1b207cd73b66bb14ee9bf1bb2823323fcaa533b",
+    "suites": [
+      {
+        "name": "save_upgrade_document_native",
+        "seconds": 1.9
+      },
+      {
+        "name": "project_draft_contract",
+        "seconds": 2.34
+      },
+      {
+        "name": "project_contract",
+        "seconds": 0.65
+      },
+      {
+        "name": "runtime_save_contract",
+        "seconds": 0.6
+      },
+      {
+        "name": "runtime_contract",
+        "seconds": 0.51
+      },
+      {
+        "name": "authoring_contract_identity",
+        "seconds": 0.68
+      },
+      {
+        "name": "world_save_native",
+        "seconds": 0.02
+      },
+      {
+        "name": "authoring_core_conformance",
+        "seconds": 0.12
+      },
+      {
+        "name": "runtime_character_stance_native",
+        "seconds": 0.09
+      },
+      {
+        "name": "runtime_character_locomotion_native",
+        "seconds": 0.19
+      },
+      {
+        "name": "runtime_physics_state_native",
+        "seconds": 1.37
+      },
+      {
+        "name": "runtime_save_native",
+        "seconds": 0.39
+      },
+      {
+        "name": "world_contract",
+        "seconds": 5.11
+      },
+      {
+        "name": "runtime_save_fixture",
+        "seconds": 0.06
+      },
+      {
+        "name": "project_gameplay_contract",
+        "seconds": 1.83
+      },
+      {
+        "name": "world_physical_contract",
+        "seconds": 0.37
+      },
+      {
+        "name": "runtime_physics_bootstrap_json_native",
+        "seconds": 0.05
+      },
+      {
+        "name": "runtime_body_ids_snapshot_native",
+        "seconds": 0.0
+      },
+      {
+        "name": "runtime_physics_joined_native",
+        "seconds": 0.45
+      },
+      {
+        "name": "runtime_physical_integration_native",
+        "seconds": 0.53
+      }
+    ]
+  },
+  "windows": {
+    "binary_sha256": "269280380561e371bec3ec5a6eefbeaeb145a328e8bcf745f4f6e5e4fc2ee4c2",
+    "installed_descriptor_sha256": "5a506a7518a188349964f41b05e9a914ac9cc4a79eeb5ac23e5cf4dce9bd4f6a",
+    "contact_proof_sha256": "00e31cb30b5f6a1a8d78cc60490a3bb462777d79fa0e98142bbc53236396698a",
+    "producer_382_legacy_exchange_proof_sha256": "ec1efb137651ae3e67e8d6a16e975e93db6adc861d5c5afadcf07630beb47c24",
+    "retained_382_dialogue_aot_proof_sha256": "b766128ba38fc9910b800ec489a37adc650edec661664cb76209dec8a3a8c16d",
+    "project_proof_sha256": "0b890a0101c8f76c149a3b6b696bc6107c503694b8dc1210fd03eaa308184ff5",
+    "draft_composition_proof_sha256": "dc3e02ca42056f8fb39ceff0574a015ce75ce73b9b3c7c190a1217e01e016897",
+    "unchanged_shader_modules": 55
+  }
+}

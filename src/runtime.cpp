@@ -754,6 +754,19 @@ struct Runtime::Impl {
         world_id=definition.world_id; revision=definition.authored_revision;
         initialize_surface_mark_profiles(definition);
         physical_content=definition_has_physical(definition);validate_physical_ownership(definition);
+        if(definition.physics_checkpoint) {
+            require(!physical_content,"Physics checkpoint version 1 cannot include PhysicalRig content.");
+            const auto uses_virtual_motor=[](const auto& entity) {
+                return entity.character && entity.character->locomotion;
+            };
+            require(std::none_of(definition.entities.begin(),definition.entities.end(),uses_virtual_motor),
+                "Physics checkpoint version 1 requires rigid-body character controllers.");
+            for(const auto& recipe:definition.templates)
+                require(std::none_of(recipe.entities.begin(),recipe.entities.end(),uses_virtual_motor),
+                    "Physics checkpoint version 1 requires rigid-body character controllers.");
+            require(!restored || restored->next_collision_group==1,
+                "Ordinary physics checkpoint cannot advance the physical rig collision-group frontier.");
+        }
         if(restored) {validate_physical_bootstrap(definition,*restored);body_ids=restored->ledger;physical_next_collision_group=restored->next_collision_group;}
         initialize_navigation(definition.navigation);
         if(definition.water)water_region.emplace(*definition.water);

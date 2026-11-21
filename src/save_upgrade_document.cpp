@@ -199,6 +199,7 @@ void graph_references(const Json& rows) {
 Registry normalize(Json& doc) {
     check(doc.is_object() && doc.contains("version") && doc.at("version").is_number_integer(),"Missing authored document version.");
     const auto version=doc.at("version");check(version>=1 && version<=4,"Unsupported authored document version.");
+    check(!doc.contains("physics_checkpoint"),"Save upgrades require the logical save profile without a joined physics checkpoint.");
     // Navigation is optional authored content, not a component schema migration.
     // Validate its shape here; final exact-content comparison still forbids any
     // unexplained binding/topology change and freeze_content checks the package.
