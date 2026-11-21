@@ -184,7 +184,7 @@ Region::Region(const RuntimeDefinition& runtime) {
     require(runtime.snow.has_value(), "Snow region needs a frozen binding.");
     definition_ = *runtime.snow;
     validate_definition(definition_);
-    require(!runtime.water && !runtime.navigation, "Snow cannot share a world with a baked water or navigation region.");
+    require(!runtime.navigation, "Snow cannot share a world with a baked navigation region.");
     for (unsigned tile = 0; tile < base_meshes_.size(); ++tile) {
         const auto entity = std::ranges::find(runtime.entities, definition_.tiles[tile], &RuntimeEntityDefinition::id);
         require(entity != runtime.entities.end(), "Snow tile entity is absent from the frozen world.");
@@ -244,6 +244,22 @@ Region::Region(const RuntimeDefinition& runtime) {
                 "Snow tiles need position-derived normals and UVs from one complete 65 by 33 cooked field.");
         }
         for (const auto index : mesh.indices) ++incident_faces_[sample_index(tile * tile_cells + index % samples_z, index / samples_z)];
+    }
+
+    if (runtime.water) {
+        const auto& grid = runtime.water->config;
+        // Use the same outer cell edges as the water grid's world-space query.
+        const auto water_end_x = grid.origin_x_m + grid.cells_x * grid.cell_size_m;
+        const auto water_end_z = grid.origin_z_m + grid.cells_z * grid.cell_size_m;
+        require(grid.cells_x <= water::max_region_side && grid.cells_z <= water::max_region_side &&
+            std::isfinite(water_end_x) && std::isfinite(water_end_z) &&
+            water_end_x > grid.origin_x_m && water_end_z > grid.origin_z_m,
+            "Invalid shallow-water grid dimensions or configuration.");
+        const auto snow_end_x = origin_[0] + (samples_x - 1) * spacing_m;
+        const auto snow_end_z = origin_[1] + (samples_z - 1) * spacing_m;
+        require(snow_end_x <= grid.origin_x_m || water_end_x <= origin_[0] ||
+            snow_end_z <= grid.origin_z_m || water_end_z <= origin_[1],
+            "Snow and water must occupy separate terrain areas.");
     }
 }
 

@@ -14,6 +14,7 @@
     "asset_provenance": true,
     "simulation": @POIMA_RUNTIME_SIMULATION@,
     "water_regions": @POIMA_RUNTIME_SIMULATION@,
+    "snow_water_regions": @POIMA_RUNTIME_SIMULATION@,
     "water_rain": @POIMA_RUNTIME_SIMULATION@,
     "water_ripples": @POIMA_RUNTIME_RENDER_SMOKE@,
     "scene_particles": @POIMA_RUNTIME_SIMULATION@,

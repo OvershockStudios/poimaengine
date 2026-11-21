@@ -544,6 +544,8 @@ public:
             result.needs_water_ripples=asset.definition.surface_ripples.has_value();
             definition.water=std::move(asset.definition);
         }
+        if(definition.snow)component_checked([&]{(void)snow::Region(definition);});
+        result.needs_snow_water=definition.snow.has_value() && definition.water.has_value();
         auto document=source;document["receipts"]=Json::array();document["retired_ids"]=Json::array();if(document.contains("retired_component_schemas"))document["retired_component_schemas"]=Json::array();if(document.contains("retired_template_ids"))document["retired_template_ids"]=Json::array();if(document.contains("retired_ui_ids"))document["retired_ui_ids"]=Json::array();result.document=document.dump(2)+'\n';
         for(auto& [filename,file]:files) { (void)filename;result.assets.push_back(std::move(file)); }
         freeze_provenance(source,result);
@@ -895,6 +897,7 @@ public:
             if(content.needs_mesh_lod)result["needs_mesh_lod"]=true;
             if(content.needs_water_rain)result["needs_water_rain"]=true;
             if(content.needs_water_ripples)result["needs_water_ripples"]=true;
+            if(content.needs_snow_water)result["needs_snow_water"]=true;
             if(content.needs_output_grade)result["needs_output_grade"]=true;
             if(content.needs_screen_reflections)result["needs_screen_reflections"]=true;
             if(content.needs_foliage_motion)result["needs_foliage_motion"]=true;
@@ -1997,10 +2000,8 @@ public:
         if(!animation_only && !audio_only) {
             result.templates=template_definitions(document,cache,result.component_schemas,&audio_cache,post_effects);
             result.ui=component_checked([&]{return ui::parse_definition(document.value("ui",Json::object()).dump());});
-            if(document.contains("snow")) {
+            if(document.contains("snow"))
                 result.snow=component_checked([&]{return snow::parse_definition(document.at("snow"));});
-                component_checked([&]{(void)snow::Region(result);});
-            }
         }
         try { validate_runtime_animation(result);if(!animation_only && !audio_only) {validate_runtime_camera_draw(result);validate_runtime_mesh_colliders(result);validate_runtime_templates(result);} }
         catch(const std::runtime_error& error) { throw Error(-32602,error.what()); }
@@ -2805,7 +2806,7 @@ public:
         }
         for(const auto& [id,value]:target.items()) { (void)value;retired.erase(id);if(!doc_.at("entities").contains(id))changed.insert(id); }
         staged["retired_ids"]=retired;validate(staged);validate_animation_document(staged);
-        validate_snow_edit(staged,changed,snow_changed);
+        validate_snow_edit(staged,changed,snow_changed,water_changed);
         validate_mesh_lod_edit(staged,changed);
         if(mark_profiles_changed)validate_surface_mark_assets(staged);
         Json result={{"revision",staged.at("revision")},{"committed",true},{"replayed",false},{"changed_ids",changed},{"history_recorded",true},{"history_action",undo ? "undo" : "redo"}};
@@ -3005,8 +3006,8 @@ public:
         validate(staged);
         validate_animation_document(staged);
         if(navigation_touched && staged.contains("navigation"))(void)navigation_binding(staged);
-        if(water_touched && staged.contains("water"))(void)water_binding(staged);
-        validate_snow_edit(staged,changed,snow_touched);
+        if(water_touched && staged.contains("water") && !staged.contains("snow"))(void)water_binding(staged);
+        validate_snow_edit(staged,changed,snow_touched,water_touched);
         validate_mesh_lod_edit(staged,changed);
         if(mark_profiles_touched)validate_surface_mark_assets(staged);
         for(const auto& asset:provenance_touched)if(staged.contains("asset_provenance") && staged.at("asset_provenance").contains(asset))

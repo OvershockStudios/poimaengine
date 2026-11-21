@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.379
+
+- Support compactable snow and a baked shallow-water grid in separate areas of one world, with guarded authoring, save restoration, and standalone export.
+- Report the combined terrain requirement through world, project, game and runtime discovery.
+
 ## 0.0.378
 
 - Split model source inspection, model import and animation cooking, and compiled post-effect asset storage into separate native compilation units.

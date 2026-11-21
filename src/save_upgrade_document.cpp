@@ -256,7 +256,7 @@ Registry normalize(Json& doc) {
     };
     instances(doc.at("entities"),false);graph_parents(doc.at("entities"));
     if(doc.contains("snow")) {
-        check(!doc.contains("water") && !doc.contains("navigation"),"Snow cannot be combined with authored water or navigation.");
+        check(!doc.contains("navigation"),"Snow cannot be combined with authored navigation.");
         const auto binding=snow::parse_definition(doc.at("snow"));
         for(const auto& tile:binding.tiles)check(doc.at("entities").contains(tile),"Snow tile entity does not exist.");
     }

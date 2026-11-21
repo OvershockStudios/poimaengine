@@ -981,7 +981,7 @@ void validate(const Json& doc) {
     const auto& entities = doc.at("entities");
     require(entities.is_object() && entities.size() <= 10000, "World must contain at most 10,000 entities.");
     if(doc.contains("snow")) {
-        require(!doc.contains("water") && !doc.contains("navigation"),"Snow cannot be combined with authored water or navigation.");
+        require(!doc.contains("navigation"),"Snow cannot be combined with authored navigation.");
         const auto snow_binding=component_checked([&]{return snow::parse_definition(doc.at("snow"));});
         for(const auto& tile:snow_binding.tiles) {
             require(entities.contains(tile),"Snow tile entity does not exist.");

@@ -341,7 +341,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     foot_release["description"]="Choose a radius or shaped sole. A qualifying lift queues the footprint for the next eligible tick.";
     auto snow_definition=object_schema({{"tiles",snow_tiles},{"thickness_units",unsigned_range(1,snow::max_depth_units)},
         {"foot_release",foot_release}},{"tiles","thickness_units"});
-    snow_definition["description"]="Bind two existing cooked terrain entities in west-east order. Each must use the same visible static primitive for rendering and collision. Null clears the binding.";
+    snow_definition["description"]="Bind two existing cooked terrain entities in west-east order. Each must use the same visible static primitive for rendering and collision. A water region may use separate terrain and an XZ grid with no positive-area overlap with the snow. Null clears the binding.";
     ops.push_back(object_schema({{"op",{{"const","snow.set"}}},
         {"definition",{{"anyOf",Json::array({snow_definition,Json{{"type","null"}}})}}}},{"op","definition"}));
     ops.push_back(object_schema({{"op",{{"const","audio.buses.set"}}},
@@ -388,7 +388,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 197}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 198}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -736,7 +736,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"depth_units",unsigned_range(1,snow::max_depth_units)}},
         {"expected_generation","receiver","triangle","ray","radius_units","depth_units"});
     snow_stamp["description"]="On the first tick, compact the committed snow surface hit by the ray. Its first hit must match the receiver and cooked triangle at the expected generation. A failed stamp rejects the batch. Outside runtime-game-session v1.";
-    result["snow"]={{"available",Runtime::available()},{"binding_operation","snow.set"},
+    result["snow"]={{"available",Runtime::available()},{"binding_operation","snow.set"},{"water_coexistence",true},
         {"samples_x",snow::samples_x},{"samples_z",snow::samples_z},{"spacing_m",snow::spacing_m},
         {"depth_unit_m",snow::unit_m},{"volume_unit_m3",snow::volume_unit_m3},{"stamps_per_step",1},
         {"foot_release",std::move(foot_release)},

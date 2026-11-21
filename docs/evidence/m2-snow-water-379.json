@@ -1,0 +1,380 @@
+{
+  "release": "0.0.379",
+  "source_inventory_sha256": "78fb4906ca6617095fab10f545f18be87fbb5b195f13166cdeb9f33b8b1663f6",
+  "linux_simulation": {
+    "binary_sha256": "ce1326df51ed8d4569c3960b602a4b4cadb98d3b035fd14fed8a454ca61d07c3",
+    "suites": [
+      {
+        "name": "world_terrain_contract",
+        "seconds": 0.34
+      },
+      {
+        "name": "world_foliage_contract",
+        "seconds": 0.57
+      },
+      {
+        "name": "world_water_contract",
+        "seconds": 0.44
+      },
+      {
+        "name": "world_water_rain_contract",
+        "seconds": 0.92
+      },
+      {
+        "name": "world_precipitation_contract",
+        "seconds": 0.34
+      },
+      {
+        "name": "snow_compaction_contract",
+        "seconds": 1.43
+      },
+      {
+        "name": "authoring_core_conformance",
+        "seconds": 0.12
+      },
+      {
+        "name": "authoring_contract_identity",
+        "seconds": 0.69
+      },
+      {
+        "name": "save_upgrade_document_native",
+        "seconds": 1.91
+      },
+      {
+        "name": "save_upgrade_snapshot_native",
+        "seconds": 0.34
+      },
+      {
+        "name": "world_templates_contract",
+        "seconds": 0.31
+      },
+      {
+        "name": "world_ui_contract",
+        "seconds": 0.32
+      },
+      {
+        "name": "runtime_save_contract",
+        "seconds": 0.62
+      },
+      {
+        "name": "lighting_contract",
+        "seconds": 1.66
+      },
+      {
+        "name": "cli_contract",
+        "seconds": 0.13
+      },
+      {
+        "name": "world_contract",
+        "seconds": 5.39
+      },
+      {
+        "name": "asset_references_contract",
+        "seconds": 0.46
+      }
+    ],
+    "junit_sha256": "8fb5da77096bd19e326e3bed3861f098513648dabacb171f0b69922f14a40611",
+    "mixed_terrain_contract_sha256": "cd535714e1ed905d2fd9896d64d2e77c0d07a524b1529c856e667efba85b2321"
+  },
+  "linux_authoring": {
+    "binary_sha256": "aea1e07626c50b384484b766528b925438591a1faac6a426579eab580441e648",
+    "suites": [
+      {
+        "name": "authoring_core_conformance",
+        "seconds": 0.09
+      },
+      {
+        "name": "authoring_contract_identity",
+        "seconds": 0.25
+      },
+      {
+        "name": "mcp_contract",
+        "seconds": 0.64
+      },
+      {
+        "name": "world_ui_contract",
+        "seconds": 0.13
+      },
+      {
+        "name": "shared_session_contract",
+        "seconds": 0.44
+      },
+      {
+        "name": "lighting_contract",
+        "seconds": 0.41
+      },
+      {
+        "name": "cli_contract",
+        "seconds": 0.09
+      },
+      {
+        "name": "asset_references_contract",
+        "seconds": 0.22
+      }
+    ],
+    "junit_sha256": "bd736c2bc786672c58908ba6029e10ab40b61c00c5662108c6ab1ec6d0459282",
+    "mixed_terrain_contract_sha256": "0c3618d83e9db7462e038b621d7ef886d7037d737f746693685314c992289614"
+  },
+  "windows": {
+    "binary_sha256": "1b0f8bbee6acdca10b8806cec3c1e282bd9059f05514116a0981431e1bf4c649",
+    "runtime_descriptor_sha256": "0ec90078b420dfdb36356560579127273e00b71e9ab442f7433af56dad9f08e8",
+    "matching_spirv_modules": 55,
+    "mixed_terrain_contract": {
+      "report_sha256": "24d663ffdd068fdba8f9fc6e36bbe91fae861540580d949e917fdd8443f47d5b",
+      "fixture_sha256": "6647a07e9c3c1f9bf091733252007c36efa8aba6670f9f0eea0795a2773da1d6",
+      "checks": [
+        "disjoint and shared boundaries",
+        "overlap and shared bed refusal",
+        "undo and redo",
+        "late rollback",
+        "cold continuation",
+        "runtime feature flags",
+        "relocated export"
+      ]
+    },
+    "stock_378_rejects_combined_binding_sha256": "3ef84ea033798fe251fb954d953192f8e0976844a1104456deaf9a751494eae5",
+    "captures": [
+      {
+        "adapter": "AMD Radeon(TM) Graphics",
+        "path": "deferred",
+        "captures": 6,
+        "probes": 48,
+        "presented_frames": 12,
+        "report_sha256": "4e4815040b21c65b51a51a074af818104d956430a14f177b780e893231c31624",
+        "fixture_sha256": "dc11cf62904f0734b9a751d96761e648f7323f4eb22334e37bf310b1d80656b8",
+        "pixel_and_archives_reproduced_after_cold_load": true,
+        "contrasts": {
+          "snow_west": {
+            "device_depth_delta": 0.0005342960357666016
+          },
+          "snow_east": {
+            "device_depth_delta": 0.0005351901054382324
+          },
+          "water_near": {
+            "dry_depth": 0.9652076363563538,
+            "newly_wet_depth": 0.9639776349067688,
+            "stamped_tick_depth": 0.9626784324645996
+          },
+          "water_far": {
+            "dry_depth": 0.9652076363563538,
+            "newly_wet_depth": 0.9639776349067688,
+            "stamped_tick_depth": 0.9626784324645996
+          },
+          "shadow_west": {
+            "shadowed": [
+              0.044952392578125,
+              0.044952392578125,
+              0.05096435546875
+            ],
+            "cleared": [
+              0.66650390625,
+              0.66650390625,
+              0.67236328125
+            ]
+          },
+          "shadow_east": {
+            "shadowed": [
+              0.044952392578125,
+              0.044952392578125,
+              0.05096435546875
+            ],
+            "cleared": [
+              0.6669921875,
+              0.6669921875,
+              0.6728515625
+            ]
+          }
+        },
+        "image_sha256": {
+          "dry-pristine": "408ee070c6180bb9636e577acf8994dc24c5f36cd47de2672123a8588278ac94",
+          "wet-pristine": "7d63e04dcdbb270bba7e9ce72468013edfe4c62d444a41a03d247fd6bb59498d",
+          "wet-compacted": "e25d0ebdb0d921457a922d6616428a1f416e5d600198f8c690eb89e9b65162dd",
+          "warm-continued": "3dd0918ff011212e7ff4174fc0cbb6af921ebdcd701a8afc43e510014d1c9a2e",
+          "cold-checkpoint": "e25d0ebdb0d921457a922d6616428a1f416e5d600198f8c690eb89e9b65162dd",
+          "cold-continued": "3dd0918ff011212e7ff4174fc0cbb6af921ebdcd701a8afc43e510014d1c9a2e"
+        }
+      },
+      {
+        "adapter": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "path": "deferred",
+        "captures": 6,
+        "probes": 48,
+        "presented_frames": 12,
+        "report_sha256": "cc1c2fe2727efa815844aaade0ee607ffb2266a66eea3a5ec1a7ade48ef82463",
+        "fixture_sha256": "dc11cf62904f0734b9a751d96761e648f7323f4eb22334e37bf310b1d80656b8",
+        "pixel_and_archives_reproduced_after_cold_load": true,
+        "contrasts": {
+          "snow_west": {
+            "device_depth_delta": 0.000534355640411377
+          },
+          "snow_east": {
+            "device_depth_delta": 0.0005351901054382324
+          },
+          "water_near": {
+            "dry_depth": 0.9652076363563538,
+            "newly_wet_depth": 0.9639776945114136,
+            "stamped_tick_depth": 0.9626784324645996
+          },
+          "water_far": {
+            "dry_depth": 0.9652076363563538,
+            "newly_wet_depth": 0.9639776945114136,
+            "stamped_tick_depth": 0.9626784324645996
+          },
+          "shadow_west": {
+            "shadowed": [
+              0.044952392578125,
+              0.044952392578125,
+              0.05096435546875
+            ],
+            "cleared": [
+              0.66650390625,
+              0.66650390625,
+              0.67236328125
+            ]
+          },
+          "shadow_east": {
+            "shadowed": [
+              0.044952392578125,
+              0.044952392578125,
+              0.05096435546875
+            ],
+            "cleared": [
+              0.6669921875,
+              0.6669921875,
+              0.6728515625
+            ]
+          }
+        },
+        "image_sha256": {
+          "dry-pristine": "5d0bc460a79e46e03af81a5bd35b3cb2e097dd6ce58abe0a765a81e3a272d01e",
+          "wet-pristine": "b838aef07b25b90b77f8ca4a95a9ce5e69a94345de823ba652e3a4350d9f9f5f",
+          "wet-compacted": "f42af89c08a25fdf881b634c6408a87d1d180ed0bd3abdd6af314a2fa7615c4a",
+          "warm-continued": "d54c26311da04a31571f3d7830606d0b10f7e7196b0d51deb4104b8c10bacfc8",
+          "cold-checkpoint": "f42af89c08a25fdf881b634c6408a87d1d180ed0bd3abdd6af314a2fa7615c4a",
+          "cold-continued": "d54c26311da04a31571f3d7830606d0b10f7e7196b0d51deb4104b8c10bacfc8"
+        }
+      },
+      {
+        "adapter": "AMD Radeon(TM) Graphics",
+        "path": "forward",
+        "captures": 6,
+        "probes": 48,
+        "presented_frames": 12,
+        "report_sha256": "22f02b167613830ad66406458a0d525a67cf452ed60c08d020571cae8884963c",
+        "fixture_sha256": "dc11cf62904f0734b9a751d96761e648f7323f4eb22334e37bf310b1d80656b8",
+        "pixel_and_archives_reproduced_after_cold_load": true,
+        "contrasts": {
+          "snow_west": {
+            "device_depth_delta": 0.0005342960357666016
+          },
+          "snow_east": {
+            "device_depth_delta": 0.0005351901054382324
+          },
+          "water_near": {
+            "dry_depth": 0.9652076363563538,
+            "newly_wet_depth": 0.9639776349067688,
+            "stamped_tick_depth": 0.9626784324645996
+          },
+          "water_far": {
+            "dry_depth": 0.9652076363563538,
+            "newly_wet_depth": 0.9639776349067688,
+            "stamped_tick_depth": 0.9626784324645996
+          },
+          "shadow_west": {
+            "shadowed": [
+              0.04498291015625,
+              0.04498291015625,
+              0.050994873046875
+            ],
+            "cleared": [
+              0.6669921875,
+              0.6669921875,
+              0.6728515625
+            ]
+          },
+          "shadow_east": {
+            "shadowed": [
+              0.04498291015625,
+              0.04498291015625,
+              0.050994873046875
+            ],
+            "cleared": [
+              0.66748046875,
+              0.66748046875,
+              0.67333984375
+            ]
+          }
+        },
+        "image_sha256": {
+          "dry-pristine": "380d1d803123829e40821dfb05816e2e71e16ce942efb066d14a81bd866f9b29",
+          "wet-pristine": "d8c8b0821400f16a29919bfe8219ec29bc7e5790a356ee9b546a2301593408dd",
+          "wet-compacted": "ea5393e1bdd035edb7cc8792d1556f16c535976fe80dd9bd18a26d4978f5c509",
+          "warm-continued": "ac378c0aeb0c3fb2e60a23b7539c13d4ba07791fadba3a2dd72a098aa76b0998",
+          "cold-checkpoint": "ea5393e1bdd035edb7cc8792d1556f16c535976fe80dd9bd18a26d4978f5c509",
+          "cold-continued": "ac378c0aeb0c3fb2e60a23b7539c13d4ba07791fadba3a2dd72a098aa76b0998"
+        }
+      },
+      {
+        "adapter": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "path": "forward",
+        "captures": 6,
+        "probes": 48,
+        "presented_frames": 12,
+        "report_sha256": "25a263fce6e627d201a1b94bad7c3ee2884d0a6acf0b714663383ed63d199017",
+        "fixture_sha256": "dc11cf62904f0734b9a751d96761e648f7323f4eb22334e37bf310b1d80656b8",
+        "pixel_and_archives_reproduced_after_cold_load": true,
+        "contrasts": {
+          "snow_west": {
+            "device_depth_delta": 0.000534355640411377
+          },
+          "snow_east": {
+            "device_depth_delta": 0.0005351901054382324
+          },
+          "water_near": {
+            "dry_depth": 0.9652076363563538,
+            "newly_wet_depth": 0.9639776945114136,
+            "stamped_tick_depth": 0.9626784324645996
+          },
+          "water_far": {
+            "dry_depth": 0.9652076363563538,
+            "newly_wet_depth": 0.9639776945114136,
+            "stamped_tick_depth": 0.9626784324645996
+          },
+          "shadow_west": {
+            "shadowed": [
+              0.04498291015625,
+              0.04498291015625,
+              0.050994873046875
+            ],
+            "cleared": [
+              0.6669921875,
+              0.6669921875,
+              0.6728515625
+            ]
+          },
+          "shadow_east": {
+            "shadowed": [
+              0.04498291015625,
+              0.04498291015625,
+              0.050994873046875
+            ],
+            "cleared": [
+              0.66748046875,
+              0.66748046875,
+              0.67333984375
+            ]
+          }
+        },
+        "image_sha256": {
+          "dry-pristine": "c50c9d85987b8e0294053570cc494334a182803f579989f75d89997c2ddc098c",
+          "wet-pristine": "a9522a07c5fa8f2c012a2e9cd1d9384daecbd19020274edb91c0f3a44c4d1c83",
+          "wet-compacted": "bdac0e7ead3965a5adae812852fb2cf2f808a958642c774b1eae09369b660a42",
+          "warm-continued": "6840ff2196e101e5eaa88d9aa480af619e9f2c1bd84b520930269528bcdb0acf",
+          "cold-checkpoint": "bdac0e7ead3965a5adae812852fb2cf2f808a958642c774b1eae09369b660a42",
+          "cold-continued": "6840ff2196e101e5eaa88d9aa480af619e9f2c1bd84b520930269528bcdb0acf"
+        }
+      }
+    ],
+    "retained_build_interruption_sha256": "6a5c517c4a0d0b822dc9e34930e15087c5c9f73a5364aebb656d5fe11ec25e8a"
+  }
+}

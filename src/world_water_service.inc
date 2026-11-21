@@ -3,7 +3,10 @@
 
     void validate_water_tiles(const Json& document, const std::vector<water::TileBinding>& tiles) const {
         const auto& entities = document.at("entities");
+        const auto* snow_tiles = document.contains("snow") ? &document.at("snow").at("tiles") : nullptr;
         for (const auto& tile : tiles) {
+            require(!snow_tiles || (snow_tiles->at(0) != tile.entity && snow_tiles->at(1) != tile.entity),
+                "Water terrain tiles cannot also be bound to snow.", -32009);
             const auto found = entities.find(tile.entity);
             require(found != entities.end() && found->at("parent").is_null(), "Water terrain binding is missing a root tile.", -32009);
             const auto& components = found->at("components");

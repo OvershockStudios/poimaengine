@@ -96,10 +96,24 @@ substrate under the authored snow. Add this operation to `world.transact`:
 
 Each unit is 1/4096 m. The example permits up to 6.25 cm of compaction.
 The supported thickness is 1–512 units. Use `definition: null` to remove
-the binding. A snow world currently uses terrain configured without a
-baked water or navigation region. The selected tiles use the snow geometry
-path, so reserve material footprint stamps and acoustic meshes for other
-receivers.
+the binding. From 0.0.379, snow and [baked shallow water](SHALLOW_WATER.md)
+can share a world. Use distinct terrain entities for each binding. Their XZ
+footprints may meet at a boundary. Interior overlap is rejected even when
+every water cell is dry. Configure baked navigation in a world without a
+snow binding. Use other receivers for material footprint stamps and
+acoustic meshes.
+
+The world dependency and project inspection results report `needs_snow_water`
+for the combined scene. Export with an installed simulation runtime that
+advertises `features.snow_water_regions`. Snow compaction and the water
+solver save their state at the same committed tick. A failed step restores
+both. Use separate requests for explicit snow stamps and rain doses.
+
+Run [the combined terrain contract](../tests/snow_water_contract.py) against
+a simulation build. Pass `--runtime-root` with an installed runtime to check
+export and relocation. The [Vulkan fixture](../tests/snow_water_capture.py)
+compares the snow surface, its shadows and the adjacent water across
+compaction and a fresh-process save load.
 
 The `snow` section of `world.describe` reports the lattice dimensions,
 physical units, and supported mutation. Select `runtime.snow.step` to

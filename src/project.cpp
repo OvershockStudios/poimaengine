@@ -351,6 +351,7 @@ Json project_summary(const Project& p) {
     if(p.content.needs_screen_reflections)result["needs_screen_reflections"]=true;
     if(p.content.needs_foliage_motion)result["needs_foliage_motion"]=true;
     if(p.content.needs_height_fog)result["needs_height_fog"]=true;
+    if(p.content.needs_snow_water)result["needs_snow_water"]=true;
     result["startup_splash"]=p.spec.value("startup_splash",true);
     if(!p.content.provenance_records.empty()) {
         Json records=Json::array();for(const auto& record:p.content.provenance_records)records.push_back({{"filename",record.filename},{"sha256",record.sha256},{"bytes",record.bytes}});
@@ -435,6 +436,8 @@ void require_scene_feature_support(const WorldPackageContent& content, const Jso
         "Height fog requires a compatible Vulkan runtime.");
     require(!selected(".pwater") || runtime.at("features").value("water_regions", false),
         "Project water regions require a compatible simulation runtime.");
+    require(!content.needs_snow_water || runtime.at("features").value("snow_water_regions", false),
+        "Coexisting snow and water require a compatible simulation runtime.");
     require(!content.needs_water_rain || runtime.at("features").value("water_rain", false),
         "Rain-enabled water regions require a compatible simulation runtime.");
     require(!content.needs_water_ripples || runtime.at("features").value("water_ripples", false),
@@ -459,7 +462,7 @@ Json runtime_spec(const std::string& bytes,std::string_view expected_version=bui
     if(contract_fields==4)(void)runtime_gameplay_contract(value);
     require((value.at("target_os")=="Windows" || value.at("target_os")=="Linux") && value.at("target_arch")=="x86_64","Only Windows/Linux x86_64 runtime targets are supported.");
     require(value.at("executable")== (value.at("target_os")=="Windows" ? "bin/poima.exe" : "bin/poima"),"Runtime executable path does not match target.");
-    const auto& features=value.at("features");fields(features,{"simulation","renderer","audio","managed","editor","native_gameplay","game_ui","navigation","navigation_obstacles","asset_provenance","project_post_effects","water_regions","water_rain","water_ripples","scene_particles","scene_particle_sprites","surface_marks","surface_mark_masks","mesh_lod","output_grade","screen_reflections","foliage_motion","height_fog"},{"simulation","renderer","audio","managed","editor"});for(const auto& v:features)require(v.is_boolean(),"Runtime feature flags must be Boolean.");
+    const auto& features=value.at("features");fields(features,{"simulation","renderer","audio","managed","editor","native_gameplay","game_ui","navigation","navigation_obstacles","asset_provenance","project_post_effects","water_regions","water_rain","water_ripples","snow_water_regions","scene_particles","scene_particle_sprites","surface_marks","surface_mark_masks","mesh_lod","output_grade","screen_reflections","foliage_motion","height_fog"},{"simulation","renderer","audio","managed","editor"});for(const auto& v:features)require(v.is_boolean(),"Runtime feature flags must be Boolean.");
     require(features.at("simulation")==true && features.at("renderer")==true,"Game bundles require a simulation and renderer runtime.");return value;
 }
 std::vector<std::string> file_tree(const fs::path& root) {
@@ -496,6 +499,7 @@ struct VerifiedGame {
     bool needs_screen_reflections=false;
     bool needs_foliage_motion=false;
     bool needs_height_fog=false;
+    bool needs_snow_water=false;
 };
 VerifiedGame verify_game(const std::string& filename,std::string_view expected_version=build_metadata().version,
     std::string_view expected_bundle={}) {
@@ -542,6 +546,7 @@ VerifiedGame verify_game(const std::string& filename,std::string_view expected_v
     result.needs_screen_reflections=content.needs_screen_reflections;
     result.needs_foliage_motion=content.needs_foliage_motion;
     result.needs_height_fog=content.needs_height_fog;
+    result.needs_snow_water=content.needs_snow_water;
     std::set<std::string> required_assets;for(const auto& asset:content.assets) { const auto path="content/world.json.assets/"+asset.filename;expect(path,"asset");require(inventory.at(path).at("sha256")==asset.sha256 && inventory.at(path).at("size")==asset.bytes,"Asset closure differs from inventory.");required_assets.insert(path); }
     std::set<std::string> required_provenance;
     for(const auto& record:content.provenance_records) {
@@ -932,6 +937,7 @@ Reply inspect_game(const std::string& manifest,const std::string& expected_bundl
         if(game.needs_screen_reflections)result["needs_screen_reflections"]=true;
         if(game.needs_foliage_motion)result["needs_foliage_motion"]=true;
         if(game.needs_height_fog)result["needs_height_fog"]=true;
+        if(game.needs_snow_water)result["needs_snow_water"]=true;
         if(game.spec.contains("gameplay"))result["gameplay"]=game.spec.at("gameplay");
         if(game.spec.contains("input_profile"))result["input_profile"]=game.spec.at("input_profile");
         return result;

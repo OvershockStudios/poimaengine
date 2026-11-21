@@ -1,8 +1,18 @@
 # Implementation status
 
-Updated 2026-11-21 for **0.0.378**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-21 for **0.0.379**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.379 runs [compactable snow and shallow water](TERRAIN.md#compact-snow-on-cooked-tiles)
+in one world on separate terrain entities. Touching footprints are supported.
+Positive XZ overlap is rejected before publishing the edit. Linux and Windows
+checked authoring, history and cold saves. Windows also checked runtime
+feature guards and relocated export. On AMD and NVIDIA, 24 Vulkan captures
+and 192 probes checked
+rising water, snow depth and shadow changes with forward and deferred
+lighting. Cold restoration reproduced the captured pixels and saved state.
+[Results](evidence/m2-snow-water-379.json)
 
 Version 0.0.378 separates [model assets and renderer resources](BUILD.md#world-service-and-schema-compilation)
 into their own compilation units. The split moved model intake, animation

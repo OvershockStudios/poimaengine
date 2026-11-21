@@ -1,9 +1,32 @@
 // SPDX-License-Identifier: Apache-2.0
-    void validate_snow_edit(const Json& document,const std::set<std::string>& changed,bool binding_touched) const {
-        if(!document.contains("snow"))return;
-        const auto binding=component_checked([&]{return snow::parse_definition(document.at("snow"));});
-        if(binding_touched || changed.contains(binding.tiles[0]) || changed.contains(binding.tiles[1]))
-            (void)runtime_definition(false,&document);
+    void validate_snow_edit(const Json& document, const std::set<std::string>& changed,
+        bool snow_touched, bool water_touched) const {
+        if (!document.contains("snow")) return;
+        const auto& snow_tiles = document.at("snow").at("tiles");
+        const bool snow_edit = snow_touched || changed.contains(snow_tiles.at(0).get_ref<const std::string&>()) ||
+            changed.contains(snow_tiles.at(1).get_ref<const std::string&>());
+        std::optional<water::RegionDefinition> water;
+        if (document.contains("water")) {
+            const auto mesh_collider = [](const Json& world, const std::string& id) {
+                const auto& entities = world.at("entities");
+                const auto entity = entities.find(id);
+                return entity != entities.end() && entity->at("components").contains("MeshCollider");
+            };
+            // Check both sides of the edit so removing a collider or tile is held to the same guard.
+            if (!snow_edit && !water_touched && !std::any_of(changed.begin(), changed.end(), [&](const auto& id) {
+                return mesh_collider(document, id) || mesh_collider(doc_, id);
+            })) return;
+
+            auto [asset, bytes] = water_binding(document);
+            if (!snow_edit && !water_touched && !std::any_of(asset.tiles.begin(), asset.tiles.end(), [&](const auto& tile) {
+                return changed.contains(tile.entity);
+            })) return;
+            water = std::move(asset.definition);
+        } else if (!snow_edit) return;
+
+        auto definition = runtime_definition(false, &document);
+        definition.water = std::move(water);
+        component_checked([&] { (void)snow::Region(definition); });
     }
 
     static RuntimeSnowStamp parse_snow_stamp(const Json& raw) {

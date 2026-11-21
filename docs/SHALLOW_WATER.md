@@ -85,6 +85,11 @@ cells can receive runoff across open faces. Film retention, drying, and
 moving shelter affect drawable receivers. These settings do not affect
 catchment supply.
 
+Cook a separate bed to use water beside [compactable snow](TERRAIN.md#compact-snow-on-cooked-tiles).
+The water grid rectangle and the snow lattice must have disjoint interiors
+in XZ. They can share a boundary. The exported game reports the combined
+requirement as `needs_snow_water`.
+
 ## Author surface ripples
 
 Use Poima 0.0.374 or later. Add `surface_ripples` to the plan and cook request
