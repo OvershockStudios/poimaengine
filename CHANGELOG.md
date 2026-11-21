@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.341
+
+- Verify and play deeply nested Windows bundles through a temporary copy checked against the original inventory.
+- Report the selected verified player's process ID and native exit details to the creator and agents.
+
 ## 0.0.340
 
 - Let the lead Codex agent send a guarded follow-up to an existing scene worker and verify its revised draft.

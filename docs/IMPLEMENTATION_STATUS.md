@@ -1,8 +1,18 @@
 # Implementation status
 
-Updated 2026-11-20 for **0.0.340**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-20 for **0.0.341**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.341 [verifies and plays deeply nested builds in the Windows creator](PROJECT_RECOVERY.md#inspect-the-verified-player)
+through temporary copies validated against the original bundle. The
+packaged test verified and approved a combination whose original executable
+path was 264 characters. A retained 0.0.340 bundle also presented frames
+and closed cleanly through its original runtime. The test injected an exit
+into an owned player and observed its PID, exact exit code and last native
+frame through the creator endpoint. Both child exits removed their temporary
+copies. The earlier startup crash's underlying cause remains undetermined.
+[Results](evidence/m2-windows-child-launch-341.json)
 
 Version 0.0.340 lets the [lead Codex agent revise a worker's draft](AGENT_CLIENTS.md#delegate-scene-work-from-codex)
 using its current scene hash. Follow-ups keep their own receipts and leave

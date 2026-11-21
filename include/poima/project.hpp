@@ -29,7 +29,7 @@ Reply project_history(const std::string& directory,const std::string& project_id
 Reply project_versions(const std::string& directory,const std::string& project_id,const std::string& before={});
 Reply recover_project(const std::string& checkpoint,const std::string& output,const std::string& expected_snapshot={});
 Reply share_project_build(const std::string& checkpoint,const std::string& expected_bundle,const std::string& output);
-Reply inspect_game(const std::string& manifest);
+Reply inspect_game(const std::string& manifest,const std::string& expected_bundle={});
 struct GameDefinition {
     std::string root,world,camera,controller,input_profile,name,target_os,target_arch;
     std::string project_id;

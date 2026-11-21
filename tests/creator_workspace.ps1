@@ -17,6 +17,7 @@
 # -WithCombinedDrafts checks selected worker scenes and plays the retained combined export.
 # -WithLeadVerification checks tool-driven proposals and approves one after reopening.
 # -WithLeadRepair uses failed playtest feedback to revise a draft, verify it and reopen its receipt.
+# -WithLongChild checks long Windows bundle paths and native failure observations after approval.
 # -WithWorkerReopen closes a working round and checks restored reports, receipts and combined playback.
 # -WithWorkerCrash terminates the owned test creator during a worker turn and checks recovery after a draft edit.
 # -CodexToolApproval exercises decline and approve once with the installed Codex.
@@ -49,6 +50,7 @@ param(
     [switch]$WithCombinedDrafts,
     [switch]$WithLeadVerification,
     [switch]$WithLeadRepair,
+    [switch]$WithLongChild,
     [switch]$WithWorkerReopen,
     [switch]$WithWorkerCrash,
     [switch]$CodexToolApproval,
@@ -86,6 +88,7 @@ if ($WithLeadVerification -and (!$WithLeadWorkers -or !$WithCombinedDrafts -or $
     throw 'Run lead verification with lead assignments and combined drafts, as a separate recovery scenario.'
 }
 if ($WithLeadRepair -and !$WithLeadVerification) { throw 'Run lead repair with -WithLeadVerification.' }
+if ($WithLongChild -and !$WithLeadVerification) { throw 'Run the long child test with -WithLeadVerification.' }
 if ($CodexReviews -and ($WithCodex -or $CodexQuestions -or $CodexBrief -or $CodexToolApproval -or
     $VerifiedPlayChat -or $VerifiedPlayWithCodex -or $CodexAssetRead)) {
     throw 'Run the specialist review fixture separately from the other Codex scenarios.'
@@ -99,6 +102,8 @@ Add-Type @'
 using System;
 using System.Runtime.InteropServices;
 public static class CreatorTestWindow {
+    [DllImport("kernel32.dll", SetLastError = true)]
+    public static extern bool TerminateProcess(IntPtr process, uint exitCode);
     [DllImport("user32.dll", SetLastError = true)]
     public static extern bool PostMessage(IntPtr window, uint message, IntPtr wparam, IntPtr lparam);
     private delegate bool WindowCallback(IntPtr window, IntPtr context);
@@ -150,6 +155,12 @@ $package = Split-Path -Parent $exe
 $cli = Join-Path $package 'poima.exe'
 $run = Join-Path ([System.IO.Path]::GetFullPath($Output)) ([guid]::NewGuid().ToString('N'))
 $projects = Join-Path $run 'projects'
+if ($WithLongChild) {
+    # 112 characters here yields a 264-character combined runtime executable path.
+    $padding = 112 - $run.Length - 1
+    if ($padding -lt 1) { throw 'Use a shorter scratch output for the fixed-depth long child test.' }
+    $projects = Join-Path $run ('p' * $padding)
+}
 $name = 'Creator Workspace'
 $manifest = Join-Path (Join-Path $projects $name) 'project.poimaproject'
 New-Item -ItemType Directory -Path $projects | Out-Null
@@ -179,6 +190,7 @@ $report = [ordered]@{
     combined_drafts_requested = [bool]$WithCombinedDrafts
     lead_verification_requested = [bool]$WithLeadVerification
     lead_repair_requested = [bool]$WithLeadRepair
+    long_child_requested = [bool]$WithLongChild
     worker_reopen_requested = [bool]$WithWorkerReopen
     worker_crash_requested = [bool]$WithWorkerCrash
     export_requested = [bool]$WithExport
@@ -1092,6 +1104,7 @@ function Approve-ReopenedProposal {
     $checks.approved_after_reopen = $true
     $checks.observation = $played.observation
     $checks.playback = $played.playback
+    if ($WithLongChild) { Exercise-LongChild $game $candidate $played }
 }
 
 function Replay-ReopenedRepair($Peer) {
@@ -1155,16 +1168,10 @@ function Exercise-ReopenedWorkers($Project, $Peer, $LeadChecks) {
     $combined = $report.checks.combined_drafts
     $candidate = Get-Content -LiteralPath $combined.passing_report -Raw | ConvertFrom-Json
     $runtime = Join-Path (Split-Path -Parent $combined.passing_report) 'game\runtime\bin\poima.exe'
-    Invoke-Control 'Play combined game'
-    $script:verifiedPlayer = Wait-For 'the restored combined player' {
-        Get-Process -Name poima -ErrorAction SilentlyContinue | Where-Object {
-            $_.Path -ieq $runtime -and $_.MainWindowHandle -ne [IntPtr]::Zero
-        } | Select-Object -First 1
-    } 45
-    $null = $verifiedPlayer.Handle
+    $beforePlay = Start-TrackedPlayer 'Play combined game' $candidate.bundle_sha256 $runtime
     $tick = Wait-For 'the restored combined bundle presenting' {
-        $playing = (Verified-PlayRpc 'desktop.verified.inspect' @{}).playback
-        if ($playing.bundle_sha256 -ceq $candidate.bundle_sha256 -and $playing.observation.frames_presented -ge 1) {
+        $playing = Read-TrackedPlayback $candidate.bundle_sha256 $beforePlay
+        if ($playing.observation.frames_presented -ge 1) {
             ,@($playing.observation.tick)
         }
     } 25
@@ -1359,23 +1366,85 @@ function Exercise-CombinedDrafts($Group, $Ids, $Project) {
 
 function Play-CheckedCombination($Game, $Candidate, $Phase) {
     $runtime = Join-Path $Game 'runtime\bin\poima.exe'
-    Invoke-Control 'Play combined game'
-    $script:verifiedPlayer = Wait-For 'the passing combined player' {
-        Get-Process -Name poima -ErrorAction SilentlyContinue | Where-Object {
-            $_.Path -ieq $runtime -and $_.MainWindowHandle -ne [IntPtr]::Zero
-        } | Select-Object -First 1
-    } 45
-    $null = $verifiedPlayer.Handle
+    $before = Start-TrackedPlayer 'Play combined game' $Candidate.bundle_sha256 $runtime
+    $launched = $verifiedPlayer.Path
     $observation = Wait-For 'native combined playback presentation' {
-        $playback = (Verified-PlayRpc 'desktop.verified.inspect' @{}).playback
-        if ($playback.bundle_sha256 -ceq $Candidate.bundle_sha256 -and $playback.observation.frames_presented -ge 1 -and
+        $playback = Read-TrackedPlayback $Candidate.bundle_sha256 $before
+        if ($playback.observation.frames_presented -ge 1 -and
             ($playback.observation.tick -ge 1 -or (!$playback.observation.focused -and $playback.observation.paused))) {
             $playback.observation
         }
     } 20
     # This automation does not take foreground focus from another application.
     $playback = Close-VerifiedPlayer $Candidate $Phase $(if ($observation.tick -ge 1) { 1 } else { 0 })
-    return @{ observation = $observation; playback = $playback }
+    return @{ observation = $observation; playback = $playback; launched_path = $launched }
+}
+
+function Read-TrackedPlayback($Bundle, $PreviousPlay, [switch]$AcceptFailure) {
+    $sample = (Verified-PlayRpc 'desktop.verified.inspect' @{}).playback
+    if (!$sample -or $sample.bundle_sha256 -cne $Bundle -or $sample.play_id -ceq $PreviousPlay) { return }
+    if (!$AcceptFailure -and $sample.state -ceq 'failed') {
+        $report.checks.native_player_failure = $sample
+        throw "The verified player ended during $($sample.failure.stage). $($sample.failure.message)"
+    }
+    return $sample
+}
+
+function Start-TrackedPlayer($Control, $Bundle, $Runtime) {
+    $before = (Verified-PlayRpc 'desktop.verified.inspect' @{}).playback.play_id
+    Invoke-Control $Control
+    $script:verifiedPlayer = Wait-For 'the selected verified player window' {
+        $sample = Read-TrackedPlayback $Bundle $before
+        if ($sample.process_id) {
+            Get-Process -Id $sample.process_id -ErrorAction SilentlyContinue | Where-Object {
+                $_.ProcessName -ieq 'poima' -and $_.MainWindowHandle -ne [IntPtr]::Zero
+            }
+        }
+        elseif ($sample.state -ceq 'running') {
+            Get-Process -Name poima -ErrorAction SilentlyContinue | Where-Object {
+                $_.Path -ieq $Runtime -and $_.MainWindowHandle -ne [IntPtr]::Zero
+            } | Select-Object -First 1
+        }
+    } 45
+    $null = $verifiedPlayer.Handle
+    return $before
+}
+
+function Exercise-LongChild($Game, $Candidate, $Closed) {
+    $runtime = Join-Path $Game 'runtime\bin\poima.exe'
+    $closedStage = Split-Path -Parent (Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $Closed.launched_path)))
+    if ($runtime.Length -lt 260 -or $Closed.launched_path -ieq $runtime -or $Closed.launched_path.Length -ge 260 -or
+        (Test-Path -LiteralPath $closedStage)) {
+        throw 'The long-path player did not launch and retire a short-lived copy.'
+    }
+    $before = Start-TrackedPlayer 'Play combined game' $Candidate.bundle_sha256 $runtime
+    $ready = Wait-For 'a presented frame before the injected child exit' {
+        $sample = Read-TrackedPlayback $Candidate.bundle_sha256 $before
+        if ($sample.observation.frames_presented -ge 1) { $sample }
+    } 25
+    $process = $verifiedPlayer.Id
+    $stage = Split-Path -Parent (Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $verifiedPlayer.Path)))
+    $code = [uint32]3221226505
+    if ($ready.process_id -ne $process -or ![CreatorTestWindow]::TerminateProcess($verifiedPlayer.Handle, $code) -or
+        !$verifiedPlayer.WaitForExit(20000)) { throw 'Could not inject the expected exit into the owned test player.' }
+    $failed = Wait-For 'the structured failure from the same verified player' {
+        $sample = Read-TrackedPlayback $Candidate.bundle_sha256 $before -AcceptFailure
+        if ($sample.state -ceq 'failed') { $sample }
+    }
+    if ($failed.process_id -ne $process -or $failed.play_id -cne $ready.play_id -or
+        $failed.failure.stage -cne 'result' -or $failed.failure.exit_code -ne $code -or
+        $failed.failure.message -cnotmatch '0xC0000409' -or $failed.observation.frames_presented -lt 1 -or
+        (Test-Path -LiteralPath $stage)) { throw 'The exact failed child exit or retirement was not observed.' }
+    $null = Wait-For 'the saved build remains playable' { Find-Control 'Play combined game' -Enabled }
+    $report.checks.long_child = [ordered]@{
+        original_executable_characters = $runtime.Length
+        staged_executable_characters = $Closed.launched_path.Length
+        native_report_in_original_history = $true
+        staged_copy_removed_after_close = $true
+        injected_process_exit_code = $code
+        failure = $failed
+        staged_copy_removed_after_failure = $true
+    }
 }
 
 function Exercise-Acp($Project, $Provider, $Setting, $Executable, $Key) {
@@ -1942,13 +2011,7 @@ function Verified-PlayRpc($Method, $Params) {
 
 function Start-VerifiedPlayer($Version) {
     $runtime = Join-Path (Split-Path -Parent $Version.game_manifest) 'runtime\bin\poima.exe'
-    Invoke-Control 'Play verified build'
-    $script:verifiedPlayer = Wait-For 'the selected standalone player window' {
-        Get-Process -Name poima -ErrorAction SilentlyContinue | Where-Object {
-            $_.Path -ieq $runtime -and $_.MainWindowHandle -ne [IntPtr]::Zero
-        } | Select-Object -First 1
-    } 45
-    $null = $verifiedPlayer.Handle
+    $null = Start-TrackedPlayer 'Play verified build' $Version.bundle_sha256 $runtime
     if ((Find-Control 'Play verified build' -Enabled) -or (Find-Control 'Play project' -Enabled)) {
         throw 'A second interactive player was offered while verified playback was active.'
     }

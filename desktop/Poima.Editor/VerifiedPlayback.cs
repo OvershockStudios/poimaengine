@@ -15,6 +15,8 @@ internal sealed class VerifiedPlayback(string bundleHash, long revision)
     private Progress? pending, observed;
     private string state = "checking";
     private string? stopReason;
+    private int? processId;
+    private (string Stage, uint? Code, string Message)? failure;
     private bool changed = true;
 
     public string BundleHash { get; } = bundleHash;
@@ -40,11 +42,18 @@ internal sealed class VerifiedPlayback(string bundleHash, long revision)
         { /* An unusable progress line is never a playback observation. */ }
     }
 
-    public void Started() { state = "running"; changed = true; }
+    public void Started(int pid) { processId = pid; state = "running"; changed = true; }
 
-    public void Ended(string outcome)
+    public void Ended(string outcome, Exception? error = null)
     {
-        // A failed launch keeps the last published native sample, if any.
+        Consume();
+        if (error is not null)
+        {
+            var native = error as NativeCommandFailure;
+            var message = error.Message.Trim();
+            failure = (native?.Stage ?? "workspace", native?.ExitCode,
+                message.Length > 256 ? message[..256] : message);
+        }
         state = outcome;
         changed = true;
     }
@@ -70,7 +79,7 @@ internal sealed class VerifiedPlayback(string bundleHash, long revision)
         if (state == "running") Consume();
         if (!changed) return null;
         changed = false;
-        return new JsonObject
+        var snapshot = new JsonObject
         {
             ["play_id"] = id, ["bundle_sha256"] = BundleHash, ["revision"] = revision, ["state"] = state,
             ["observation"] = observed is { } sample ? new JsonObject
@@ -80,5 +89,12 @@ internal sealed class VerifiedPlayback(string bundleHash, long revision)
             } : null,
             ["stop_reason"] = stopReason
         };
+        if (processId is int pid) snapshot["process_id"] = pid;
+        if (failure is { } details)
+            snapshot["failure"] = new JsonObject
+            {
+                ["stage"] = details.Stage, ["exit_code"] = details.Code, ["message"] = details.Message
+            };
+        return snapshot;
     }
 }

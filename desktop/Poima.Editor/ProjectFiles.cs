@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 using System.Diagnostics;
+using System.ComponentModel;
 using System.Text;
 using System.Text.Json;
 
@@ -7,6 +8,13 @@ namespace Poima.Editor;
 
 internal sealed record ProjectLocation(string Manifest, string Name, string World, string Root, string ProjectId, string Endpoint,
     long Revision, string Camera, string? InputProfile, bool Audio, JsonElement? Gameplay);
+
+internal sealed class NativeCommandFailure(string stage, uint? exitCode, string message, Exception? inner = null)
+    : InvalidOperationException(message, inner)
+{
+    public string Stage { get; } = stage;
+    public uint? ExitCode { get; } = exitCode;
+}
 
 internal static class ProjectFiles
 {
@@ -57,20 +65,36 @@ internal static class ProjectFiles
     public static Task<JsonElement> Command(CancellationToken cancellation, params string[] arguments) =>
         RunCommand(Path.Combine(AppContext.BaseDirectory, "poima.exe"), ["project", .. arguments], cancellation: cancellation);
 
-    public static Task<JsonElement> VerifyExport(string bundle, string suite, string report, CancellationToken cancellation) =>
-        RunCommand(Path.Combine(bundle, "runtime", "bin", "poima.exe"),
-            ["game", "verify", Path.Combine(bundle, "game.json"), "--suite", suite, "--report", report],
-            allowFailedVerification: true, cancellation: cancellation);
+    internal static Task<JsonElement> InspectGameAsync(string manifest, string bundle, CancellationToken cancellation) =>
+        RunCommand(Path.Combine(AppContext.BaseDirectory, "poima.exe"),
+            ["game", "inspect", manifest, "--expected-bundle-sha256", bundle], cancellation: cancellation);
 
-    public static Task<JsonElement> PlayExport(string manifest, string saves, int gpu, uint samples, VerifiedPlayback playback)
+    public static async Task<JsonElement> VerifyExport(string bundle, string suite, string report, CancellationToken cancellation)
     {
-        var executable = Path.Combine(Path.GetDirectoryName(manifest)!, "runtime", "bin", "poima.exe");
+        var manifest = Path.Combine(bundle, "game.json");
+        using var stage = await GameChildWorkspace.PrepareAsync(manifest, suite, report, null, cancellation);
+        var game = stage?.Manifest ?? manifest;
+        var arguments = new List<string> { "game", "verify", game, "--suite", stage?.Suite ?? suite, "--report", stage?.Report ?? report };
+        if (stage is not null) arguments.AddRange(["--expected-bundle-sha256", stage.BundleHash]);
+        var result = await RunCommand(GameExecutable(game), [.. arguments], allowFailedVerification: true, cancellation: cancellation);
+        if (stage is not null) await stage.PublishReportAsync(report, cancellation);
+        return result;
+    }
+
+    public static async Task<JsonElement> PlayExport(string manifest, string saves, int gpu, uint samples, VerifiedPlayback playback,
+        CancellationToken preparation, Action launched)
+    {
+        using var stage = await GameChildWorkspace.PrepareAsync(manifest, null, null, playback.BundleHash, preparation);
+        preparation.ThrowIfCancellationRequested();
+        manifest = stage?.Manifest ?? manifest;
         var arguments = new List<string> { "game", "run", manifest, "--save-root", saves,
             "--samples", samples.ToString(System.Globalization.CultureInfo.InvariantCulture) };
         if (gpu >= 0)
             arguments.AddRange(["--gpu", gpu.ToString(System.Globalization.CultureInfo.InvariantCulture)]);
-        return RunCommand(executable, [.. arguments], playback: playback);
+        return await RunCommand(GameExecutable(manifest), [.. arguments], playback: playback, launched: launched);
     }
+
+    private static string GameExecutable(string manifest) => Path.Combine(Path.GetDirectoryName(manifest)!, "runtime", "bin", "poima.exe");
 
     private static async Task<string> ReadPlaybackOutput(StreamReader reader, VerifiedPlayback playback)
     {
@@ -85,12 +109,14 @@ internal static class ProjectFiles
     }
 
     private static async Task<JsonElement> RunCommand(string executable, string[] arguments,
-        bool allowFailedVerification = false, CancellationToken cancellation = default, VerifiedPlayback? playback = null)
+        bool allowFailedVerification = false, CancellationToken cancellation = default, VerifiedPlayback? playback = null,
+        Action? launched = null)
     {
         var info = StartInfo(executable, playback is null ? null : Encoding.UTF8, arguments);
         if (playback is not null) info.Environment["POIMA_VERIFIED_PLAY_SHA256"] = playback.BundleHash;
-        using var process = Process.Start(info) ?? throw new InvalidOperationException("Poima could not start.");
-        playback?.Started();
+        using var process = Launch(info);
+        playback?.Started(process.Id);
+        launched?.Invoke();
         var output = playback is null ? process.StandardOutput.ReadToEndAsync() : ReadPlaybackOutput(process.StandardOutput, playback);
         var error = process.StandardError.ReadToEndAsync();
         try { await process.WaitForExitAsync(cancellation); }
@@ -104,12 +130,40 @@ internal static class ProjectFiles
         }
         var body = await output;
         var stderr = await error;
-        if (body.Length == 0) throw new InvalidOperationException(stderr.Length > 0 ? stderr : "Poima did not return a project result.");
-        using var response = JsonDocument.Parse(body);
-        if (process.ExitCode != 0 && !(allowFailedVerification &&
-            response.RootElement.TryGetProperty("result", out var failed) &&
-            failed.ValueKind == JsonValueKind.Object && failed.GetProperty("passed").ValueKind == JsonValueKind.False))
-            throw new InvalidOperationException(response.RootElement.GetProperty("diagnostics")[0].GetProperty("message").GetString());
-        return response.RootElement.GetProperty("result").Clone();
+        var code = unchecked((uint)process.ExitCode);
+        if (string.IsNullOrWhiteSpace(body))
+            throw InvalidResult(code, stderr, "Poima returned no result.");
+        try
+        {
+            using var response = JsonDocument.Parse(body);
+            var root = response.RootElement;
+            var result = root.GetProperty("result");
+            if (code != 0 && !(allowFailedVerification && code == 4 &&
+                result.ValueKind == JsonValueKind.Object && result.GetProperty("passed").ValueKind == JsonValueKind.False))
+            {
+                var message = root.GetProperty("diagnostics")[0].GetProperty("message").GetString() ?? "Poima reported a native error.";
+                throw new NativeCommandFailure("command", code, $"{message} (exit 0x{code:X8})");
+            }
+            if (result.ValueKind != JsonValueKind.Object) throw new JsonException("Expected a project result object.");
+            return result.Clone();
+        }
+        catch (Exception failure) when ((failure is JsonException or KeyNotFoundException or InvalidOperationException or IndexOutOfRangeException)
+            && failure is not NativeCommandFailure)
+        {
+            throw InvalidResult(code, stderr, "Poima returned an invalid result.", failure);
+        }
+    }
+
+    private static Process Launch(ProcessStartInfo info)
+    {
+        try { return Process.Start(info) ?? throw new NativeCommandFailure("launch", null, "Poima could not start."); }
+        catch (Win32Exception error) { throw new NativeCommandFailure("launch", null, $"Poima could not start (Windows error {error.NativeErrorCode}). {error.Message}", error); }
+    }
+
+    private static NativeCommandFailure InvalidResult(uint code, string stderr, string reason, Exception? inner = null)
+    {
+        var detail = stderr.Trim();
+        if (detail.Length > 512) detail = detail[^512..];
+        return new("result", code, $"{reason} (exit 0x{code:X8})" + (detail.Length == 0 ? "" : " " + detail), inner);
     }
 }

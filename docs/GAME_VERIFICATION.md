@@ -117,6 +117,12 @@ returns group counts, simulated ticks, individual observations and issues.
 Missing or invalid setup returns diagnostics. An assertion failure leaves the
 other groups available to run. Review `actual` and `observed` at the check's
 recorded tick. Very large observations are omitted from the report.
+
+Use `game inspect <game.json> --expected-bundle-sha256 <sha256>` to inspect a
+retained bundle using an installed engine from a different checkpoint. The
+hash pins the manifest and its declared runtime inventory. Verification and
+playback still use the executable packaged with that bundle.
+
 Pass `--expected-bundle-sha256` and `--expected-suite-sha256` to pin the exact
 inputs. `--completed-exit true` requires `--report` and exits zero once it
 writes a complete verdict, including a failed suite. Read `result.passed`

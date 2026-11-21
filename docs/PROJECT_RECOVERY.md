@@ -39,7 +39,8 @@ Discover its name in `world.describe` or its request schema in
 `playback` is null until the first request to play a verified build. It then
 includes a `play_id` for this launch, the pinned `bundle_sha256`, `revision`,
 and `state`. `checking` means the creator is rechecking the selection.
-`running` means its game process launched. A nonzero
+`running` means its game process launched. `process_id` identifies that
+process once started. A nonzero
 `observation.frames_presented` confirms a native presentation. The player
 samples `tick`, `frames_presented`, `focused` and `paused` about four times a
 second. `observation_age_ms` reports the age of the last published sample.
@@ -50,6 +51,18 @@ When an earlier packaged runtime supplies only a closure receipt,
 and frames after the runtime closes. The creator retains the most recent
 `closed`, `failed`, or `cancelled` state until the next launch or workspace
 close. The working preview keeps its own `player.inspect` contract.
+
+After a failure, `failure` includes a `stage`, an unsigned `exit_code` when
+a process exited, and a short message. The last presented frame remains
+available if the native player reported one.
+
+The creator uses a temporary copy for Windows paths that exceed the
+bundled process's launch requirements. Poima validates the source and copy,
+then runs the copy's own executable with the same bundle hash. A completed
+verification publishes the exact report beside the original build. Playback
+keeps the same save location. The workspace removes its temporary copy
+after the child exits. Deep builds require temporary free space for the copy.
+[Windows process launch limits](https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-createprocessw)
 
 Choose **View playtest results** to see the latest completed attempt and
 expand its named groups. Failed checks show the recorded tick and observation.
@@ -176,6 +189,8 @@ for `win-x64` and run the creator test with that executable.
 
 Add `-WithLeadRepair` to test a failed playtest, targeted worker follow-up,
 reverification and receipt replay after reopening.
+`-WithLongChild` tests a deep combined build and the exit details from
+an injected failure of the owned test player.
 
 Choose **Start new worker round** when the current workers are idle to use a
 new checkpoint for later assignments. The previous draft and build files stay

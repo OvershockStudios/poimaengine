@@ -170,7 +170,13 @@ poima::Reply run(int argc, char** argv) {
     }
     if(command=="game") {
         if(argc<4 || !*argv[3])return poima::usage_error("Invalid game command. Use: schema game");
-        const std::string_view action=argv[2];if(action=="inspect" && argc==4)return poima::inspect_game(argv[3]);
+        const std::string_view action=argv[2];
+        if(action=="inspect") {
+            if(argc==4)return poima::inspect_game(argv[3]);
+            if(argc==6 && std::string_view(argv[4])=="--expected-bundle-sha256" && *argv[5])
+                return poima::inspect_game(argv[3],argv[5]);
+            return poima::usage_error("Game inspect accepts optional --expected-bundle-sha256.");
+        }
         if(action=="verify") {
             std::string suite,report;
             poima::GameVerificationOptions options;std::set<std::string_view> seen;

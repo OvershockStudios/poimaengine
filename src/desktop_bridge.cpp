@@ -273,7 +273,7 @@ struct Bridge : ViewportState {
     }
     void thread() const { require(owner==std::this_thread::get_id(),"Desktop bridge calls must run on the creating UI thread.",-32000); }
     void set_verified_playback(Json snapshot) {
-        fields(snapshot,{"play_id","bundle_sha256","revision","state","observation","stop_reason"},
+        fields(snapshot,{"play_id","bundle_sha256","revision","state","observation","stop_reason","process_id","failure"},
             {"play_id","bundle_sha256","revision","state","observation","stop_reason"});
         identifier(snapshot.at("play_id"));integer(snapshot.at("revision"));
         const auto& hash=snapshot.at("bundle_sha256").get_ref<const std::string&>();
@@ -282,6 +282,20 @@ struct Bridge : ViewportState {
         require(state=="checking" || state=="running" || state=="closed" || state=="failed" || state=="cancelled","Invalid verified playback state.");
         const auto& stop=snapshot.at("stop_reason");
         require(stop.is_null() || (state=="closed" && stop.is_string() && stop.get_ref<const std::string&>().size()<=64),"Invalid verified playback stop reason.");
+        if(snapshot.contains("process_id")) {
+            const auto pid=integer(snapshot.at("process_id"));
+            require(pid>0 && pid<=UINT32_MAX,"Invalid verified player process ID.");
+        }
+        if(snapshot.contains("failure")) {
+            const auto& failure=snapshot.at("failure");
+            fields(failure,{"stage","exit_code","message"},{"stage","exit_code","message"});
+            const auto& stage=failure.at("stage");
+            const auto& code=failure.at("exit_code");
+            const auto& message=failure.at("message");
+            require(state=="failed" && (stage=="launch" || stage=="result" || stage=="command" || stage=="workspace") &&
+                (code.is_null() || integer(code)<=UINT32_MAX) &&
+                message.is_string() && message.get_ref<const std::string&>().size()<=1024,"Invalid verified playback failure.");
+        }
         const auto& observation=snapshot.at("observation");
         if(!observation.is_null()) {
             fields(observation,{"tick","frames_presented","focused","paused"},{"tick","frames_presented","focused","paused"});
@@ -1105,7 +1119,7 @@ struct Bridge : ViewportState {
         const Json integer_schema={{"type","integer"},{"minimum",0},{"maximum",max_integer}};
         Json methods=Json::object();methods["desktop.describe"]=object(Json::object());methods["desktop.inspect"]=object(Json::object());
         methods["desktop.verified.inspect"]=object(Json::object());
-        methods["desktop.verified.inspect"]["description"]="Observe the Windows creator's most recent separate verified player. Reports its pinned build, process state and last native progress; the working preview is independent.";
+        methods["desktop.verified.inspect"]["description"]="Observe the Windows creator's most recent separate verified player. Reports its pinned build, process state, last native progress and exit details on failure.";
         const Json id_schema={{"type","string"},{"pattern","^[0-9a-f]{32}$"}};
         methods["desktop.play.start"]=object({{"revision",integer_schema},{"session_id",id_schema},{"paused",{{"type","boolean"}}},{"expected_gameplay_generation",integer_schema}},{"revision","session_id"});
         const Json gameplay_path={{"type","string"},{"minLength",1},{"maxLength",4096}};
@@ -1420,7 +1434,7 @@ void* poima_desktop_create_with_profiles(const char* world,const char* endpoint,
     catch(...) { record_error(nullptr,"Desktop bridge synchronization failed."); }return nullptr;
 }
 const char* poima_desktop_call(void* host,const char* jsonrpc) { return guarded<const char*>(host,nullptr,[&](Bridge& value){value.output=value.request(bounded_string(jsonrpc,local_session_request_limit));return value.output.c_str();}); }
-int poima_desktop_set_verified_playback(void* host,const char* snapshot) { return guarded<int>(host,0,[&](Bridge& value){value.set_verified_playback(parse(bounded_string(snapshot,2048)));return 1;}); }
+int poima_desktop_set_verified_playback(void* host,const char* snapshot) { return guarded<int>(host,0,[&](Bridge& value){value.set_verified_playback(parse(bounded_string(snapshot,4096)));return 1;}); }
 const char* poima_desktop_poll(void* host) { return guarded<const char*>(host,nullptr,[](Bridge& value){value.output=value.poll().dump();return value.output.c_str();}); }
 int poima_desktop_attach(void* host,void* hwnd) { return guarded<int>(host,0,[&](Bridge& value){value.attach(hwnd);return 1;}); }
 int poima_desktop_draw(void* host) { return guarded<int>(host,-1,[](Bridge& value){return value.draw();}); }

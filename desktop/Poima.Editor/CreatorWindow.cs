@@ -679,9 +679,12 @@ internal sealed class CreatorWindow : Window
             if (!Path.IsPathFullyQualified(local))
                 throw new InvalidOperationException("Poima could not locate local storage for playtest saves.");
             var saves = Directory.CreateDirectory(Path.Combine(local, "Poima", "Playtests", projectId, bundleHash)).FullName;
-            verifiedPlayStatus.Text = $"Verified revision {revision} is running in a separate window.";
+            verifiedPlayStatus.Text = $"Preparing verified revision {revision}…";
             UpdateControls();
-            var result = await ProjectFiles.PlayExport(manifest, saves, options.Gpu, options.Samples, playback);
+            using var preparation = new CancellationTokenSource();
+            checkingVerifiedPlay = preparation;
+            var result = await ProjectFiles.PlayExport(manifest, saves, options.Gpu, options.Samples, playback,
+                preparation.Token, () => checkingVerifiedPlay = null);
             var played = result.GetProperty("play");
             playback.Closed(played);
             Console.WriteLine(JsonSerializer.Serialize(new
@@ -692,9 +695,10 @@ internal sealed class CreatorWindow : Window
             }));
         }
         catch (OperationCanceledException) when (closeRequested) { playback.Ended("cancelled"); }
-        catch (Exception failure) { playback.Ended("failed"); error = failure.Message; }
+        catch (Exception failure) { playback.Ended("failed", failure); error = failure.Message; }
         finally
         {
+            checkingVerifiedPlay = null;
             PublishVerifiedPlayback();
             verifiedPlayStatus.Text = null;
             verifiedPlayActive = false;
@@ -706,6 +710,8 @@ internal sealed class CreatorWindow : Window
     private void PublishVerifiedPlayback()
     {
         if (verifiedPlayback?.TakeSnapshot() is not { } snapshot) return;
+        if (snapshot["state"]?.GetValue<string>() == "running")
+            verifiedPlayStatus.Text = $"Verified revision {snapshot["revision"]!.GetValue<long>()} is running in a separate window.";
         try { host.PublishVerifiedPlayback(snapshot); }
         catch (InvalidOperationException failure) { error = failure.Message; }
     }

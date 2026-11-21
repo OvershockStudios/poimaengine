@@ -1,0 +1,148 @@
+{
+  "engine_version": "0.0.341",
+  "scope": "Exact Windows package, two scripted Codex workers with native repair, verified creator playback, retained 0.0.340 runtime, and an injected child exit.",
+  "archive": {
+    "name": "Poima-0.0.341-Windows-x64.zip",
+    "bytes": 142318775,
+    "sha256": "a9d01b40748891b5d3393544890f944d63614ca75e702bea8519ceb7fc12f629"
+  },
+  "build": {
+    "editor_sha256": "250d98ab074f8ae50a6ccf96bd509fbb906f32a319a27cefbfda3d3fbe0d4539",
+    "native_bridge_sha256": "7a78b6a0cb5bb1bf15fdeab4b886e7638227b5638900da8f9fb7a6dd8981882b",
+    "cli_sha256": "266649341f4736659c027ee419b899145f014ef3a91b6a748cc3738dfd89a39b",
+    "codex_fixture_sha256": "6bb97a2c9b8e6d2493114254bb328b5185f0e1c1c402003d7fa2a4c4668ccb01"
+  },
+  "baseline": {
+    "engine_version": "0.0.340",
+    "same_deep_bundle_launched_with_explicit_win32_application_path": true,
+    "native_exit_without_report": 3221226505,
+    "deep_probe_sha256": "d0125b48ca5d8799947c3a1095bb8f79f3eb4c5979ba2f3b5ff0024ad1303385",
+    "unchanged_copy_presented_frames": 8,
+    "short_probe_sha256": "b4bd089064923939f4d1fece8703f55b561b7c2e2338c6f17523c0dc633e8fe9",
+    "undetermined_original_crash_root_cause": true
+  },
+  "creator_deep_path": {
+    "runner": "tests/creator_workspace.ps1",
+    "runner_sha256": "1da5603599a7a096b9293f7ec290139ae43033b5d955c65753a3ee7b208ab3a5",
+    "arguments": [
+      "WithLeadWorkers",
+      "WithCombinedDrafts",
+      "WithLeadVerification",
+      "WithLeadRepair",
+      "WithLongChild"
+    ],
+    "report_sha256": "b99082e30c3c5c41c2cd4abe89fa6ca116a4c0aa7e90785838be89f0d4b16460",
+    "repair_request_id": "1dd4e03966274ed09c80f0768ba2b08c",
+    "check_groups_passed": 3,
+    "check_groups_total": 3,
+    "native_report_sha256": "59f2b131da5d3ea48e92a657462837db6450eacfbc12bf0efd0b2a18d884be55",
+    "approved_after_reopen": true,
+    "normal_playback": {
+      "event_type": "verified_play_closed",
+      "revision": 2,
+      "bundle_sha256": "568059f9322e8b9d7c3cc3fa94c18788717de38f2f9185e83f8422c748d0286e",
+      "tick": 0,
+      "frames_presented": 3,
+      "stop_reason": "window_closed"
+    },
+    "relocated": {
+      "source_unavailable": true,
+      "bundle_unchanged": true,
+      "bundle_files": 54,
+      "bundle_sha256": "568059f9322e8b9d7c3cc3fa94c18788717de38f2f9185e83f8422c748d0286e",
+      "suite_sha256": "e2a6605987d0a55bbd32805bc3d76ab25c8061934fec6e5a509013417199b349",
+      "groups_passed": 3,
+      "check_tick": 2,
+      "report_sha256": "59f2b131da5d3ea48e92a657462837db6450eacfbc12bf0efd0b2a18d884be55"
+    },
+    "original_project_unchanged": true,
+    "original_executable_characters": 264,
+    "staged_executable_characters": 83,
+    "native_report_in_original_history": true,
+    "staged_copy_removed_after_close": true,
+    "injected_process_exit_code": 3221226505,
+    "failure": {
+      "bundle_sha256": "568059f9322e8b9d7c3cc3fa94c18788717de38f2f9185e83f8422c748d0286e",
+      "failure": {
+        "exit_code": 3221226505,
+        "message": "Poima returned no result. (exit 0xC0000409)",
+        "stage": "result"
+      },
+      "observation": {
+        "focused": false,
+        "frames_presented": 1,
+        "paused": true,
+        "tick": 0
+      },
+      "observation_age_ms": 275,
+      "play_id": "172d83bc62b04262b39f5cc0b4ad8992",
+      "process_id": 26228,
+      "revision": 2,
+      "state": "failed",
+      "stop_reason": null
+    },
+    "staged_copy_removed_after_failure": true
+  },
+  "older_retained_bundle": {
+    "report_sha256": "70c7101c501dac692eb6063358c9dae893fad1f1622599775a74bd7f903a4948",
+    "runner_sha256": "43dc41a665ebc8d7c883140fc195ae2c8939d7f1f32b82fea627ec3d2dc90fa0",
+    "passed": true,
+    "owner_close_message_sent": true,
+    "owner_exit_observed": true,
+    "owner_exit_code": 0,
+    "original_executable_characters": 264,
+    "staged_executable_characters": 83,
+    "historical_engine": "0.0.340",
+    "bundle_sha256": "e78ffb0e65834064813fecd5132b939d48911d160f5fe7d4b8d42e16cd59ba66",
+    "unpinned_inspection_rejected": true,
+    "wrong_hash_rejected": true,
+    "process_exit_code": 0,
+    "terminal": {
+      "bundle_sha256": "e78ffb0e65834064813fecd5132b939d48911d160f5fe7d4b8d42e16cd59ba66",
+      "observation": {
+        "focused": null,
+        "frames_presented": 7,
+        "paused": null,
+        "tick": 5
+      },
+      "observation_age_ms": 2,
+      "play_id": "417749a8faca472d835e1df2f12c8933",
+      "process_id": 5832,
+      "revision": 2,
+      "state": "closed",
+      "stop_reason": "window_closed"
+    },
+    "staged_copy_removed": true,
+    "first_attempt": {
+      "passed": false,
+      "report_sha256": "aa15b38ca400ae1eacc9bf8fe170ea1de8b70910dbfcae58db4a5bb425c71529",
+      "failure": "The historical player presented frames and closed normally. The harness did not confirm the creator exit. The retry retained the owner process handle and recorded the exit code."
+    }
+  },
+  "windows_native_tests": {
+    "project_contract_count": 18,
+    "project_contract_log_sha256": "285782d6a967806dcb495376a7588f61228f40574a8441b52b8d9d2e275a9ecc",
+    "verification_contract": {
+      "passed": true,
+      "platform": "nt",
+      "passed_groups": 2,
+      "bundle_sha256": "f1bed0072fd2830c10c7967e8acfa8e41cacd8417a0a3d6d66c00d743774c2bc",
+      "bundle_files": 54
+    },
+    "unpinned_older_bundle_inspection_rejected": true,
+    "wrong_bundle_pin_rejected": true,
+    "pinned_older_bundle_inspection_passed": true
+  },
+  "normal_windows_creator_regression": {
+    "passed": true,
+    "report_sha256": "8ef6fb54606583044605c8520b82001d2350e7119a653dae0fc4ad3f754f55bd",
+    "arguments": [
+      "WithPlaytestResults"
+    ],
+    "first_attempt": {
+      "passed": false,
+      "report_sha256": "512126c857851580b73bc98426d673f05c544c02037f0803b9e8d07473230266",
+      "failure": "The local session read timed out during the first preview. The same package passed the ordinary export, verification and recovery run on retry."
+    }
+  }
+}
