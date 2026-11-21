@@ -5,6 +5,7 @@
 #include "pose_frames.hpp"
 #include "poima/scene.hpp"
 #include "poima/terrain_asset.hpp"
+#include "foliage_authoring.hpp"
 #include "input_profile_store.hpp"
 #include "player_settings_store.hpp"
 #include "material_service.hpp"
@@ -241,7 +242,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 173}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 174}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -764,6 +765,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"source","expected_sha256"});
     methods["asset.post-effect.import"]["description"]="Admit a local .poimapost file using its whole-file SHA-256 and publish the exact reviewed bytes in this world's asset store. Returns the asset, effect ID, artifact byte count, and SPIR-V word count. Import preserves the authored revision.";
     methods.update(terrain::authoring_schemas());
+    methods.update(foliage::authoring::authoring_schemas());
     methods["asset.image.inspect"]=object_schema({{"asset",asset_id}}, {"asset"});
     const Json reference_pose={{"oneOf",Json::array({
         object_schema({{"kind",{{"const","rest"}}}},{"kind"}),

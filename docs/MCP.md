@@ -137,8 +137,10 @@ poima mcp --project /absolute/draft/project.poimaproject --draft
 Poima checks the draft's lineage marker and project identity at startup. The
 connection owns the draft's world writer. It exposes `poima_discover`,
 `poima_reference` and a scoped `poima_call` for scene inspection, transactions
-and asset authoring. For model, animation donor, image and audio imports, use
-portable source paths relative to the draft entry world's directory. Use
+and asset authoring. For model, animation donor, image, audio and terrain
+sources, use portable paths relative to the draft entry world's directory.
+The same rule applies to the nested `terrain.source` in
+[`world.foliage.plan`](FOLIAGE_SCATTER.md#place-foliage-in-a-world). Use
 discovery for the active method catalog.
 
 ### Edit compiled gameplay in a draft

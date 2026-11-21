@@ -10,6 +10,7 @@
 #include "poima/post_effect.hpp"
 #include "poima/runtime.hpp"
 #include "poima/terrain_asset.hpp"
+#include "foliage_authoring.hpp"
 #include "physical_rig_json.hpp"
 #include "physical_pose_diagnostics.hpp"
 #include "poima/physical_target.hpp"
@@ -1325,7 +1326,7 @@ void validate(const Json& doc) {
     }
 }
 
-constexpr std::array authoring_methods{"component.schema.import","world.reference","world.transact","world.undo","world.redo","asset.import","asset.image.import","asset.audio.import","asset.post-effect.import","asset.label","input.transact","settings.transact","development.compile","development.profiles","development.publish","development.export","development.verify","development.candidate","project.candidate.retain","development.jobs","development.inspect","development.diagnostics","development.cancel","development.forget","project.inspect","project.gameplay.adopt","project.source.read","project.source.write","project.verification.read","project.verification.write","asset.material.generate","asset.material.job","asset.material.jobs","asset.material.cancel","asset.material.forget","world.navigation.bake","asset.provenance.create","asset.animation.author","asset.mesh.extract_rigid","world.terrain.inspect","world.terrain.cook"};
+constexpr std::array authoring_methods{"component.schema.import","world.reference","world.transact","world.undo","world.redo","asset.import","asset.image.import","asset.audio.import","asset.post-effect.import","asset.label","input.transact","settings.transact","development.compile","development.profiles","development.publish","development.export","development.verify","development.candidate","project.candidate.retain","development.jobs","development.inspect","development.diagnostics","development.cancel","development.forget","project.inspect","project.gameplay.adopt","project.source.read","project.source.write","project.verification.read","project.verification.write","asset.material.generate","asset.material.job","asset.material.jobs","asset.material.cancel","asset.material.forget","world.navigation.bake","asset.provenance.create","asset.animation.author","asset.mesh.extract_rigid","world.terrain.inspect","world.terrain.cook","world.foliage.plan"};
 class World {
     profiling::Service profiler_;
     frame_performance::Service performance_;
@@ -1894,6 +1895,7 @@ public:
         if(method=="world.asset.provenance" || method.starts_with("asset.provenance."))return provenance_dispatch(method,params);
         if(method.starts_with("world.navigation."))return navigation_dispatch(method,params);
         if(method.starts_with("world.terrain."))return terrain_dispatch(method,params);
+        if(method=="world.foliage.plan")return foliage_plan(params);
         prune_model_cache();
         if(method.starts_with("profiler.")) {
             try { return profiler_.dispatch(method,params); }
@@ -2723,6 +2725,7 @@ public:
     }
 #include "world_rigid_mesh.inc"
 #include "world_terrain_service.inc"
+#include "world_foliage_service.inc"
     Json asset_dispatch(const std::string& method,const Json& params) const {
         if(method=="asset.catalog" || method=="asset.label") {
             const bool label=method=="asset.label";

@@ -2,6 +2,7 @@
 #pragma once
 #include "poima/terrain.hpp"
 #include <nlohmann/json.hpp>
+#include <memory>
 #include <string>
 #include <string_view>
 
@@ -28,6 +29,15 @@ struct CookedHeightfield {
     std::uint32_t tiles_x = 0, tiles_z = 0;
     std::vector<CookedTile> tiles; // Ordered by increasing Z, then X.
 };
+
+struct SampledHeightfield {
+    std::unique_ptr<const Heightfield> field;
+    std::string recipe_sha256;
+};
+
+// Parse the same recipe used by the cooker for read-only surface queries.
+// This validates recipe and grid bounds without generating model packages.
+SampledHeightfield load_heightfield_recipe(std::string_view recipe);
 
 // V1 requires format, version, samples_x, samples_z, tile_cells, origin_m,
 // spacing_m and heights_m. Each result contains one unweighted .pmodel

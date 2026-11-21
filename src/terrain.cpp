@@ -147,12 +147,17 @@ std::optional<SurfaceSample> Heightfield::sample(double world_x, double world_z)
     const auto triangle = cell_triangles(x, z)[first ? 0 : 1];
     const auto weights = first ? Point{1 - u, v, u - v} : Point{1 - v, v - u, u};
     SurfaceSample surface;
-    Point shading{};
+    Point shading{}, heights{};
     for (std::size_t i = 0; i < triangle.size(); ++i) {
-        surface.height += weights[i] * position(triangle[i])[1];
+        heights[i] = position(triangle[i])[1];
+        surface.height += weights[i] * heights[i];
         const auto normal = vertex_normal(triangle[i]);
         for (std::size_t axis = 0; axis < shading.size(); ++axis) shading[axis] += weights[i] * normal[axis];
     }
+    // Interpolated heights stay within the triangle, including at the world
+    // coordinate limit where rounding the weighted sum can overshoot by an ULP.
+    const auto [minimum, maximum] = std::minmax_element(heights.begin(), heights.end());
+    surface.height = std::clamp(surface.height, *minimum, *maximum);
     surface.geometric_normal = unit(face_area_normal(triangle));
     surface.shading_normal = unit(shading);
     return surface;

@@ -56,6 +56,28 @@ Non-null binding admission freshly reads and hashes the regular `.pnav` file, de
 
 `world.inspect` reports the authored binding without loading packages. Frozen dependencies add `needs_navigation:true` and the actual `.pnav` hash/length; typed [asset references](ASSET_REFERENCES.md) expose a world-owned `navigation` edge at `/asset`. An unbound world omits the binding and navigation-only result fields. A backend-disabled build can inspect, query authored references and clear a shaped binding, while binding admission and frozen use require the actual backend.
 
+### Verify a terrain route after editing a slope
+
+[Cooked terrain](TERRAIN.md) participates when its tiles have `MeshCollider`
+bindings. Use the same polygonal surface for collision and rendering. After a
+terrain edit, replace the affected tile bindings, bake at the resulting
+revision, then bind the new navigation asset in a separate transaction. Verify
+the path endpoints and downward ray hits before starting gameplay or exporting.
+
+Run the ramp contract with a built headless simulation and navigation backend.
+It checks the route and ground height on either side of a tile seam, rejects
+the stale binding and verifies the new dependency closure after rebaking.
+
+```sh
+python3 tests/terrain_navigation_contract.py --binary build/linux-game/poima \
+  --output build/terrain-navigation-run
+```
+
+Choose an unused output directory each time. To include standalone bundle
+verification, pass `--runtime-root` with a matching installed renderer and
+navigation runtime. The test moves the exported game away from the source
+project and inspects its selected terrain models and navigation package.
+
 ## Query from compiled gameplay
 
 A game declares `INavigationGame` independently of animation and movement markers. The callback is Tick-only and plans from a live native `CharacterController` foot position. It rejects dead/non-character handles and a capsule larger than the baked clearance. Reads see committed prephysics state; a staged `SetCharacterInput` command has not yet moved the character. A route does not provide stair assistance, jumping or a collision bypass.

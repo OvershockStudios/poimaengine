@@ -90,6 +90,13 @@ void verify_tile(const Heightfield& field, const MeshAsset& mesh, std::size_t ce
 }
 
 void verify_surface() {
+    const std::array<float, 4> flat{};
+    for (const auto elevation : {-1'000'000., 1'000'000.}) {
+        const Heightfield edge({2, 2, 1, {0, elevation, 0}, {2, 2}}, flat);
+        const auto sample = edge.sample(.8399688896536827, .511607224047184);
+        check(sample && sample->height == elevation, "A flat triangle sample escaped its height bound.");
+    }
+
     const std::array<float, 4> saddle{0, 0, 0, 4};
     const Heightfield field({2, 2, 1, {-4, 12, 7}, {2, 4}}, saddle);
     const auto tile = field.build_tile(0, 0);

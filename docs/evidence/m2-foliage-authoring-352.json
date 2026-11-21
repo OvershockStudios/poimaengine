@@ -1,0 +1,367 @@
+{
+  "engine_version": "0.0.352",
+  "world_schema_revision": 174,
+  "sources_sha256": {
+    "CMakeLists.txt": "b15a87bc7d77b5499357e252d261e87778a32569ba70135a179d9167d8b8280f",
+    "include/poima/terrain_asset.hpp": "17d66dd32ff76cc5622730d7a656b32e90bb1e1fcf377914354f98cf11e589cb",
+    "src/foliage.cpp": "ff317c6b46b1dab83a706aa838e818e7a2f6cdc42d4262a06ed9d8eed2ab95b4",
+    "src/foliage_authoring.cpp": "9263d19fa782707f214e1982e7c293bfea3535338f8375582c2fc70299a50e48",
+    "src/foliage_authoring.hpp": "3c9c83d145cc6d8d6a29422c9fdde68c28b27c1bc7e6c140426810e93fb3ddba",
+    "src/mcp.cpp": "9488faf294aca709a5995091802ac6c5bb959b0e0f323a9d24c6823936a446e3",
+    "src/terrain.cpp": "275a03433ed792c72f901d57151e63992ff92c5e615c9c927b8ff3e5da6fbd85",
+    "src/terrain_asset.cpp": "ef92208a100693c744b91a94145bf700e6f2d1bf2312d08468cc8c35fc9d676c",
+    "src/world.cpp": "e4c8b8e357cf64dc0bb746af2ae2af6fa585c5f201e4d310b400ce250a025b06",
+    "src/world_foliage_service.inc": "f0ee04653818ba57cb62367e18e5e393be1f2be06169e8b94847692bbc1ce8e3",
+    "src/world_schema.cpp": "e32d3876094a7525cece73922b9579a2419e53073cf127c221657a800f6b4123",
+    "src/world_terrain_service.inc": "6be1f4c54fd0c5dd01a811598140fb90815d683d6dc7d5079901123c7a093023",
+    "tests/foliage_authoring_native.cpp": "55355441c65b4080e46a4a4dbf7ab1148d3abc08e8bd99f5406d2938fd96794f",
+    "tests/mcp_contract.py": "aa9a2af3ddb27461050f90cd8f8d8a9a4cbdc63b29dab457a72d35a708400a6a",
+    "tests/terrain_native.cpp": "705eb94155f83eb268599503dd326d9418d71a072320d566798b460e83916a02",
+    "tests/terrain_navigation_contract.py": "a1501cca2292932b93e4ba815ceb0d0e3300fde2f379a215454d79c6940b2dc4",
+    "tests/world_foliage_contract.py": "81215b44afee172589f7296e3c7dfdcb6f4d665d18e4fa9003f24ac9a68f36ba"
+  },
+  "linux": {
+    "version": {
+      "version": "0.0.352",
+      "compiler": "GNU",
+      "compiler_version": "16.2.0",
+      "target_os": "Linux",
+      "target_arch": "x86_64"
+    },
+    "executable_sha256": "a16fb055dea6c08138d22ca3188a433e54444e3a836df06ec6f6974eec04754f",
+    "junit_sha256": "a7caa57309269bdc64898be6fcb2d6a3ddb5975ef8fc135e72cb6ae46190e3fa",
+    "suites": [
+      "terrain_native",
+      "foliage_scatter_native",
+      "terrain_asset_native",
+      "foliage_authoring_native",
+      "world_terrain_contract",
+      "authoring_core_conformance",
+      "authoring_contract_identity",
+      "mcp_contract",
+      "world_ui_contract",
+      "asset_references_contract"
+    ],
+    "foliage": {
+      "report_sha256": "764e53c8ee44b18de296f1845d545e21a4ee684cb5b594e5d67be1ed4fa4046d",
+      "native_cli_calls": 31,
+      "terrain_recipe_sha256": "9f5fb70ff6d9e1ab0579f8e97a120dfd7671129a9d4f19c15cfe37d53b41ae7b",
+      "plan_sha256": "b44484628cfe7483ff2efe2a01a808fec11a0b55f5a5979aa3d017f87a0a19e8",
+      "counts": {
+        "cells": 60,
+        "density_rejected": 0,
+        "manual_suppressed": 3,
+        "outside_terrain": 27,
+        "placed": 17,
+        "rectangle_excluded": 1,
+        "slope_rejected": 10,
+        "spacing_rejected": 2
+      },
+      "native_contact_witnesses": {
+        "0123456789abcdef0000000100000001": {
+          "distance": 15.710259974002838,
+          "entity": "00000000000000000000000000000064",
+          "fraction": 0.6284103989601135,
+          "normal": [
+            -0.4364357590675354,
+            0.8728715181350708,
+            -0.21821819245815277
+          ],
+          "position": [
+            10.480299815535545,
+            4.289739608764648,
+            -3.8016403168439865
+          ],
+          "triangle": 0
+        },
+        "0123456789abcdef0000000100000007": {
+          "distance": 13.766826689243317,
+          "entity": "00000000000000000000000000000065",
+          "fraction": 0.5506730675697327,
+          "normal": [
+            -0.696310818195343,
+            0.6963105201721191,
+            -0.17407754063606262
+          ],
+          "position": [
+            13.190366670489311,
+            6.233173370361328,
+            -3.8287767618894577
+          ],
+          "triangle": 2
+        }
+      },
+      "relocated_project_reopened": true,
+      "model_dependencies": [
+        "3a4d3158e0e376efafbd691b06db2b47db0093faab683a883157eca6226baf99",
+        "3deefc41288cf0586ee753222550e9f48e428da6a9213b0d42f965a468e63043",
+        "42b4d591df9dc3d19184f0a9285aa3868f1c33d0384f6491357178aa3532dbce",
+        "aef2430afe66780f65242fdaa454d9ae3aa0529a24b4be9754c5f64e2640729f"
+      ]
+    }
+  },
+  "windows": {
+    "version": {
+      "version": "0.0.352",
+      "compiler": "Clang",
+      "compiler_version": "23.1.2",
+      "target_os": "Windows",
+      "target_arch": "x86_64"
+    },
+    "executable_sha256": "675d9ee72070161e3f149fd0e3210d20b1797382465903e2b9a4958e1e82b2b3",
+    "desktop_bridge_sha256": "ede478de92e912f5fb192c6ef675bd2a5f8d58fe2bbe9388e37b9dc8cf09332d",
+    "descriptor_sha256": "2e302c1ebc3d85fb5227f466a8118f6ae0e0edbc761d6c87ef3224d074a40aa2",
+    "scoped_mcp_log_sha256": "6b1d6bff813430826ce40253ec7a988c0fcebb614eb60e3b2afd754ee2d0d2a7",
+    "vulkan": [
+      {
+        "report_sha256": "01b18e9e6e67ea15901c90afbe30c8834e5bb9560433e6b7d90b05aaa7121357",
+        "native_cli_calls": 35,
+        "terrain_recipe_sha256": "9f5fb70ff6d9e1ab0579f8e97a120dfd7671129a9d4f19c15cfe37d53b41ae7b",
+        "plan_sha256": "d47e9ad9e200803fdb20531a9615988c470db603350a26424df3c8969a87b7ab",
+        "counts": {
+          "cells": 60,
+          "density_rejected": 0,
+          "manual_suppressed": 3,
+          "outside_terrain": 27,
+          "placed": 17,
+          "rectangle_excluded": 1,
+          "slope_rejected": 10,
+          "spacing_rejected": 2
+        },
+        "native_contact_witnesses": {
+          "0123456789abcdef0000000100000001": {
+            "distance": 15.710259974002838,
+            "entity": "00000000000000000000000000000064",
+            "fraction": 0.6284103989601135,
+            "normal": [
+              -0.4364357590675354,
+              0.8728715181350708,
+              -0.21821819245815277
+            ],
+            "position": [
+              10.480299815535545,
+              4.289739608764648,
+              -3.8016403168439865
+            ],
+            "triangle": 0
+          },
+          "0123456789abcdef0000000100000007": {
+            "distance": 13.766826689243317,
+            "entity": "00000000000000000000000000000065",
+            "fraction": 0.5506730675697327,
+            "normal": [
+              -0.696310818195343,
+              0.6963105201721191,
+              -0.17407754063606262
+            ],
+            "position": [
+              13.190366670489311,
+              6.233173370361328,
+              -3.8287767618894577
+            ],
+            "triangle": 2
+          }
+        },
+        "relocated_project_reopened": true,
+        "model_dependencies": [
+          "3a4d3158e0e376efafbd691b06db2b47db0093faab683a883157eca6226baf99",
+          "3deefc41288cf0586ee753222550e9f48e428da6a9213b0d42f965a468e63043",
+          "42b4d591df9dc3d19184f0a9285aa3868f1c33d0384f6491357178aa3532dbce",
+          "aef2430afe66780f65242fdaa454d9ae3aa0529a24b4be9754c5f64e2640729f"
+        ],
+        "standalone": {
+          "gpu": "AMD Radeon(TM) Graphics",
+          "bundle_inventory_files": 62,
+          "source_unavailable": true,
+          "bundle_inventory_unchanged": true,
+          "tick": 1,
+          "frames_presented": 2,
+          "executable_sha256": "675d9ee72070161e3f149fd0e3210d20b1797382465903e2b9a4958e1e82b2b3",
+          "bmp_sha256": "3f640f303869c963f619a1e115711ec6882bd25d544ab277e26197fba0ddb8c9",
+          "capture_size": [
+            640,
+            360
+          ],
+          "nvrhi_errors": 0,
+          "drawn_objects": 19,
+          "triangles": 1716,
+          "colored_pixels": [
+            1096,
+            1594
+          ],
+          "exact_projected_marker_centres": 17,
+          "projected_markers": 17
+        }
+      },
+      {
+        "report_sha256": "bd11f5f44dcbde86b7faf4dbb0ee1c44e3303de0474d3040163c5e924d0618ee",
+        "native_cli_calls": 35,
+        "terrain_recipe_sha256": "9f5fb70ff6d9e1ab0579f8e97a120dfd7671129a9d4f19c15cfe37d53b41ae7b",
+        "plan_sha256": "d47e9ad9e200803fdb20531a9615988c470db603350a26424df3c8969a87b7ab",
+        "counts": {
+          "cells": 60,
+          "density_rejected": 0,
+          "manual_suppressed": 3,
+          "outside_terrain": 27,
+          "placed": 17,
+          "rectangle_excluded": 1,
+          "slope_rejected": 10,
+          "spacing_rejected": 2
+        },
+        "native_contact_witnesses": {
+          "0123456789abcdef0000000100000001": {
+            "distance": 15.710259974002838,
+            "entity": "00000000000000000000000000000064",
+            "fraction": 0.6284103989601135,
+            "normal": [
+              -0.4364357590675354,
+              0.8728715181350708,
+              -0.21821819245815277
+            ],
+            "position": [
+              10.480299815535545,
+              4.289739608764648,
+              -3.8016403168439865
+            ],
+            "triangle": 0
+          },
+          "0123456789abcdef0000000100000007": {
+            "distance": 13.766826689243317,
+            "entity": "00000000000000000000000000000065",
+            "fraction": 0.5506730675697327,
+            "normal": [
+              -0.696310818195343,
+              0.6963105201721191,
+              -0.17407754063606262
+            ],
+            "position": [
+              13.190366670489311,
+              6.233173370361328,
+              -3.8287767618894577
+            ],
+            "triangle": 2
+          }
+        },
+        "relocated_project_reopened": true,
+        "model_dependencies": [
+          "3a4d3158e0e376efafbd691b06db2b47db0093faab683a883157eca6226baf99",
+          "3deefc41288cf0586ee753222550e9f48e428da6a9213b0d42f965a468e63043",
+          "42b4d591df9dc3d19184f0a9285aa3868f1c33d0384f6491357178aa3532dbce",
+          "aef2430afe66780f65242fdaa454d9ae3aa0529a24b4be9754c5f64e2640729f"
+        ],
+        "standalone": {
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "bundle_inventory_files": 62,
+          "source_unavailable": true,
+          "bundle_inventory_unchanged": true,
+          "tick": 1,
+          "frames_presented": 2,
+          "executable_sha256": "675d9ee72070161e3f149fd0e3210d20b1797382465903e2b9a4958e1e82b2b3",
+          "bmp_sha256": "3f640f303869c963f619a1e115711ec6882bd25d544ab277e26197fba0ddb8c9",
+          "capture_size": [
+            640,
+            360
+          ],
+          "nvrhi_errors": 0,
+          "drawn_objects": 19,
+          "triangles": 1716,
+          "colored_pixels": [
+            1096,
+            1594
+          ],
+          "exact_projected_marker_centres": 17,
+          "projected_markers": 17
+        }
+      }
+    ]
+  },
+  "terrain_navigation": {
+    "report_sha256": "c153ab04b9c0a1abcd5c574704abaf1f2b6f7f1e9828957b468e2856cf4d7e62",
+    "native_cli_calls": 27,
+    "engine": {
+      "version": "0.0.352",
+      "compiler": "GNU",
+      "compiler_version": "16.2.0",
+      "target_os": "Linux",
+      "target_arch": "x86_64"
+    },
+    "linux_executable_sha256": "a16fb055dea6c08138d22ca3188a433e54444e3a836df06ec6f6974eec04754f",
+    "stale": {
+      "path": -32009,
+      "dependencies": -32009,
+      "project": "project.failed",
+      "export": "project.failed"
+    },
+    "export": "validated_relocated_bundle",
+    "baseline": {
+      "asset": "cea76e8b2009755bb8a74c4bb0ee8475fd749029848740f456e85433dc313f5f",
+      "source_fingerprint": "721db4f65b556e57c69e5ef0aac528a283fb7ceabf98d0ca27dd7bcc281422ff",
+      "complete_routes": 4,
+      "endpoint": [
+        4.5,
+        0.7941558361053467,
+        0.0
+      ],
+      "native_ray_hits": 3,
+      "model_dependencies": [
+        {
+          "filename": "41c09454942f3aa8ed8535c30824b983c2debe4049f9c8807a105cbd393ef389.pmodel",
+          "sha256": "41c09454942f3aa8ed8535c30824b983c2debe4049f9c8807a105cbd393ef389",
+          "bytes": 5949
+        },
+        {
+          "filename": "a239f6d23f417066b7886b283ba4dc61c447d405b14e835a1621917da23f5b87.pmodel",
+          "sha256": "a239f6d23f417066b7886b283ba4dc61c447d405b14e835a1621917da23f5b87",
+          "bytes": 5949
+        },
+        {
+          "filename": "cea76e8b2009755bb8a74c4bb0ee8475fd749029848740f456e85433dc313f5f.pnav",
+          "sha256": "cea76e8b2009755bb8a74c4bb0ee8475fd749029848740f456e85433dc313f5f",
+          "bytes": 962
+        }
+      ]
+    },
+    "revised": {
+      "asset": "e20f2c02db3ba29bae077a06a5743512a0d503e914f22c5564f4764c9cfc9a6b",
+      "source_fingerprint": "e6c904da2040d2a5dca4ff6b9e4404b451031b5348c30a4f7d105c4d13f5aae1",
+      "complete_routes": 4,
+      "endpoint": [
+        4.5,
+        1.5729928016662598,
+        0.0
+      ],
+      "native_ray_hits": 3,
+      "model_dependencies": [
+        {
+          "filename": "1f73315c8f5a26472f770a4452ce3bb4fd9c21caccd0b9de33d20aa9df6cc48f.pmodel",
+          "sha256": "1f73315c8f5a26472f770a4452ce3bb4fd9c21caccd0b9de33d20aa9df6cc48f",
+          "bytes": 5949
+        },
+        {
+          "filename": "570c54899dd76453aa44d548f612e2f3b5e107046c410ae916b401a12c881218.pmodel",
+          "sha256": "570c54899dd76453aa44d548f612e2f3b5e107046c410ae916b401a12c881218",
+          "bytes": 5949
+        },
+        {
+          "filename": "e20f2c02db3ba29bae077a06a5743512a0d503e914f22c5564f4764c9cfc9a6b.pnav",
+          "sha256": "e20f2c02db3ba29bae077a06a5743512a0d503e914f22c5564f4764c9cfc9a6b",
+          "bytes": 1300
+        }
+      ]
+    },
+    "standalone_manifest_sha256": "da37c2acdd39dd7e623e4de63350fe805b6ce46dabcda4f5f46010aa1c18ee7f",
+    "standalone_runtime_sha256": "675d9ee72070161e3f149fd0e3210d20b1797382465903e2b9a4958e1e82b2b3",
+    "runtime_target": "Windows"
+  },
+  "build_recovery": {
+    "linux_initial_log_sha256": "09fa6c95be8d937944c4a8c6c2d1f61fcd5ce022fb2695f3056d620230faef24",
+    "linux_fixed_log_sha256": "9672846289d5fe41769e5ae65ca4a4830366079e01f71ef49ff4d6e4b866ee22",
+    "linux_final_log_sha256": "00bae0a57c9f00c1f9f85821096d116fa31836f7811137b95e7807b83ce34f2a",
+    "linux_fix": "Retain the non-movable terrain grid through owned const storage.",
+    "terrain_height_bound_original_rejection_sha256": "83aed0273b1a5ffbc95c93a0724dc70ae847a4af32f21c0a7040a8d01e588651",
+    "windows_initial_log_sha256": "9a782f1f3ef1812a0b49acdcfa4b9a96876a7c8451bc9a1a2e27ade8daefe7cb",
+    "windows_final_log_sha256": "b80e8e9209ca04f41973bd3e0e8778388eb68d5188ed9c6441bc5a94f8f8b9b1",
+    "windows_retried_with": "The configured windows-runtime tree supplies simulation, graphics and the bridge."
+  },
+  "scope": "Static foliage placement through ordinary authored scene entities and static terrain navigation. The two-slope fixture is a correctness run. It does not measure vegetation scale, wind or streamed terrain."
+}

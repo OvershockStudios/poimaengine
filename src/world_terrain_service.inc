@@ -23,15 +23,18 @@
             "Terrain recipe read failed or changed size.", -32050);
         return bytes;
     }
+    std::string terrain_recipe_input(const Json& params) const {
+        const bool inline_recipe = params.contains("recipe");
+        require(inline_recipe != params.contains("source"), "Provide exactly one of recipe or source.");
+        if (!inline_recipe) return terrain_recipe_file(params.at("source"));
+        require(params.at("recipe").is_string(), "Terrain recipe must be JSON text.");
+        return params.at("recipe").get<std::string>();
+    }
     Json terrain_dispatch(const std::string& method, const Json& params) const {
         const bool publish = method == "world.terrain.cook";
         require(publish || method == "world.terrain.inspect", "Unknown terrain method.", -32601);
         if (publish) fields(params, {"recipe", "source", "expected_recipe_sha256"}, {"expected_recipe_sha256"});
         else fields(params, {"recipe", "source"});
-        const bool inline_recipe = params.contains("recipe");
-        require(inline_recipe != params.contains("source"), "Provide exactly one of recipe or source.");
-        if (inline_recipe) require(params.at("recipe").is_string(), "Terrain recipe must be JSON text.");
-
         std::string expected;
         if (publish) {
             require(params.at("expected_recipe_sha256").is_string(), "Expected terrain recipe SHA-256 must be text.");
@@ -39,9 +42,7 @@
             require(valid_asset_id(expected), "Expected terrain recipe SHA-256 must be 64 lowercase hexadecimal digits.");
         }
         try {
-            const auto source_bytes = inline_recipe ? std::string{} : terrain_recipe_file(params.at("source"));
-            const auto& text = inline_recipe ? params.at("recipe").get_ref<const std::string&>() : source_bytes;
-            const auto cooked = terrain::cook_heightfield_json(text);
+            const auto cooked = terrain::cook_heightfield_json(terrain_recipe_input(params));
             if (publish && expected != cooked.recipe_sha256)
                 throw Error(-32009, "Terrain recipe changed since inspection.",
                     {{"expected_recipe_sha256", expected}, {"recipe_sha256", cooked.recipe_sha256}});

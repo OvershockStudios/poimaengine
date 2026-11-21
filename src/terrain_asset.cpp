@@ -105,16 +105,26 @@ Json parse_recipe(std::string_view bytes) {
         throw std::invalid_argument("Invalid terrain recipe JSON.");
     }
 }
+SampledHeightfield load_recipe(const Json& input) {
+    const auto recipe = read_recipe(input);
+    auto field = std::make_unique<const Heightfield>(recipe.layout, recipe.heights);
+    const auto tiles = static_cast<std::size_t>(field->tile_count_x()) * field->tile_count_z();
+    require(tiles <= max_cook_tiles, "Terrain cook exceeds 64 tiles.");
+    return {std::move(field), recipe_digest(recipe)};
+}
 } // namespace
 
+SampledHeightfield load_heightfield_recipe(std::string_view recipe) {
+    return load_recipe(parse_recipe(recipe));
+}
+
 CookedHeightfield cook_heightfield(const nlohmann::json& input) {
-    const auto recipe = read_recipe(input);
-    const Heightfield field(recipe.layout, recipe.heights);
+    auto sampled = load_recipe(input);
+    const auto& field = *sampled.field;
     CookedHeightfield result;
     result.tiles_x = field.tile_count_x();
     result.tiles_z = field.tile_count_z();
     const auto total_tiles = static_cast<std::size_t>(result.tiles_x) * result.tiles_z;
-    require(total_tiles <= max_cook_tiles, "Terrain cook exceeds 64 tiles.");
 
     // Apply the existing identity-transform collision admission to the exact
     // meshes being encoded, including the combined triangle and vertex budget.
@@ -131,7 +141,7 @@ CookedHeightfield cook_heightfield(const nlohmann::json& input) {
     try { validate_runtime_mesh_colliders(collision); }
     catch (const std::runtime_error& error) { throw std::invalid_argument(error.what()); }
 
-    result.recipe_sha256 = recipe_digest(recipe);
+    result.recipe_sha256 = std::move(sampled.recipe_sha256);
     result.tiles.reserve(total_tiles);
     std::size_t total_bytes = 0;
     for (std::uint32_t z = 0; z < result.tiles_z; ++z) {

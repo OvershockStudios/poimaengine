@@ -1,8 +1,22 @@
 # Implementation status
 
-Updated 2026-11-21 for **0.0.351**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-21 for **0.0.352**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.352 adds [terrain-aware foliage placement](FOLIAGE_SCATTER.md)
+through the world service and MCP. Plans report reasons for skipped cells and
+return paged, pinned placements for ordinary scene transactions. The native
+fixture checked 17 placements across two slopes, contact against Jolt and exact
+model dependency closure. Windows standalone replay on AMD and NVIDIA rendered
+all 17 marker instances and matched their projected centers with the original
+source project absent. The fixture exercises static meshes and a small scene.
+Wind and vegetation-scale rendering remain further work. The
+[terrain navigation fixture](NAVIGATION.md#verify-a-terrain-route-after-editing-a-slope)
+checked Recast routes and Jolt ray hits across two tiles. Changing the slope
+invalidated the bound route package. Rebaking restored the route, and bundle
+inspection verified the relocated export with the replacement package.
+[Results](evidence/m2-foliage-authoring-352.json)
 
 Version 0.0.351 adds [terrain authoring](TERRAIN.md) through the world service
 and MCP. A reviewed heightfield cooks to immutable model tiles shared by static
@@ -32,8 +46,8 @@ Version 0.0.349 adds native [terrain tiles](TERRAIN.md), [foliage scattering](FO
 [CPU particles](PARTICLES.md), and a [localized water grid](SHALLOW_WATER.md).
 These APIs cover terrain seams and sampling, stable CPU placements, fixed-tick
 emission, and bounded water flow and snapshots. Terrain authoring and rendering
-were integrated in 0.0.351. Foliage, particles and localized water still require
-scene and renderer integration.
+were integrated in 0.0.351, followed by static foliage placement in 0.0.352.
+Particles and localized water still require scene and renderer integration.
 
 The [weather package](WEATHER_CYCLE.md) adds solar and seasonal state, storms,
 lightning, and rainfall queries. Games own its clock and the visible effects.

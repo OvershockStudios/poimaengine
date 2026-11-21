@@ -1,12 +1,112 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Foliage scatter
 
-`poima::foliage::scatter` evaluates where instances of existing foliage assets
-should sit on a supplied surface. The CPU authoring API works without a render
-device and returns placements plus counts explaining why other cells were
-rejected.
+Place existing meshes such as stones, ferns and trees on a heightfield. The
+world service returns positions grounded on the terrain triangles, together
+with counts explaining which cells were skipped.
 
-## Sample a terrain patch
+## Place foliage in a world
+
+Use Poima 0.0.352 or later. Select `world.foliage.plan` in `world.describe`
+or MCP `poima_discover` for the request schema. Cook and bind the terrain
+using the [terrain guide](TERRAIN.md#author-terrain-in-a-world). Import a model
+for each plant or rock variant. Select a static primitive whose local origin
+sits at its intended ground contact. Direct `StaticMesh` bindings use the
+primitive coordinates and material. Model node transforms are separate.
+
+Call `world.foliage.plan` with parameters like these. Replace the two hash
+placeholders with the reviewed terrain recipe digest and a cooked model ID.
+
+```json
+{
+  "terrain": {"source": "terrain/coast.json"},
+  "expected_terrain_recipe_sha256": "<recipe SHA-256 from world.terrain.inspect>",
+  "scatter": {
+    "patch_key": "53edc1ae3c4d0001",
+    "seed": "0000000000000396",
+    "origin_m": [4, 12],
+    "cell_size_m": 0.75,
+    "grid": [12, 8],
+    "density": 0.65,
+    "minimum_spacing_m": 0.6,
+    "species": [{
+      "id": 10,
+      "slope_degrees": [0, 30],
+      "uniform_scale": [0.8, 1.2],
+      "variants": [{"asset": "<cooked model SHA-256>", "primitive": 0}]
+    }],
+    "exclude_rectangles_m": [[9, 15, 14, 19]],
+    "suppressed_cells": [[5, 3]]
+  },
+  "limit": 32
+}
+```
+
+Use the same terrain file and digest as the bound tile meshes. `terrain` also
+accepts `recipe` with the inline JSON text within the request size limit. Draft
+MCP connections resolve `.json` sources from the entry world's directory. The
+plan samples the recipe and reports the current authored `revision`. Terrain
+cooking also checks collider limits. Verify that the world binds the reviewed
+tile identities with identity transforms before applying the plan.
+
+Each placement gives a `key`, zero-based `[column, row]`, chosen species and
+variant, and complete `transform` and `static_mesh` component values. The mesh
+stays upright with a Y-up yaw and uniform scale. The lower edges of broad or
+irregular meshes may need a placement adjustment beyond the single point
+where the pivot meets the terrain. Inspect the plan counts to diagnose density,
+manual suppression, rectangle exclusion, terrain bounds, slope and spacing.
+
+Continue with the original input, `offset` set to the previous `next_offset`,
+and `expected_plan_sha256` set to the previous `plan_sha256`. A null
+`next_offset` marks the last page. A changed terrain or plan pin returns
+`-32009` with the current digest. Inspect the new source and restart at offset
+zero after confirming the change. A malformed recipe returns `-32602`. An
+unavailable or unsuitable variant returns `-32050` with its asset and primitive.
+Each page recomputes the
+same bounded plan and validates the referenced packages.
+
+Create root entities and set their `Transform` and `StaticMesh` in a
+[guarded world transaction](WORLD_SERVICE.md#iteration-conflicts-and-retries)
+using the reviewed revision. Allocate entity IDs separately from the logical
+placement keys. Reuse the matching entity when revising an existing placement.
+For a deleted entity, undo its removal or allocate a fresh ID. Keep the
+scatter recipe and any key-to-entity mapping in the source project for later
+edits. Changes larger than the transaction operation limit need multiple
+guarded commits. The plan itself leaves the world unchanged.
+
+Check the placed entities with `entity.world_transform` and use a downward
+`runtime.raycast` against the terrain to compare the sampled height. On
+Windows Vulkan, capture the placed meshes in the scene and play the relocated
+export. The export uses the selected ordinary mesh references. It can render
+the placements with the terrain and scatter recipes absent. A placed
+`StaticMesh` is visual geometry. Add an explicit collider to plants or rocks
+that need physical interaction or should affect a navigation bake.
+
+The world planner supports up to 4,096 cells, 16 species, 32 variant entries,
+32 rectangle exclusions, 256 cell suppressions and 64 rows per page. A new
+plan admits up to 256 MiB of distinct cooked model packages. Spacing applies
+across the selected patch. To change a path exclusion or suppress a cell,
+recompute the whole patch, then compare the placement keys and components to
+decide which edits to apply.
+
+Run the native planner and world contract from a built simulation checkout.
+
+```sh
+ctest --test-dir build/linux-game -R '^(foliage_scatter_native|foliage_authoring_native|world_foliage_contract)$' --output-on-failure
+```
+
+From WSL, the same fixture can capture a relocated Windows standalone game
+using a matching installed runtime.
+
+```sh
+python3 tests/world_foliage_contract.py "$runtime/bin/poima.exe" \
+  --windows-interop --runtime-root "$runtime" --gpu 0 \
+  --capture-output build/foliage-captures
+```
+
+[Qualification results](evidence/m2-foliage-authoring-352.json)
+
+## Sample a terrain patch from C++
 
 Use a metre-based, Y-up grid. The caller supplies the terrain height and the
 geometric unit normal's Y component at the chosen XZ position. The callback can
@@ -54,14 +154,12 @@ The same seed, patch, configuration and sampler repeat on the same numeric
 platform and build. Species input order does not affect the result. Boundary
 decisions depend on floating-point height, slope and spacing calculations.
 
-## Author scene instances
+## Use placements from the C++ API
 
 Reserve a unique nonzero 64-bit namespace for each scatter patch within a world.
-Use `poima::foliage::entity_id(instance.id)` to obtain a 32-digit hexadecimal
-entity ID from the namespace, row and column. Seeds and species choices never
-change the ID assigned to a cell. Preserve those IDs when applying an edit to
-the same patch, and resolve collisions with unrelated authored IDs before
-applying a transaction. Use a distinct namespace when creating a separate patch.
+Use `poima::foliage::entity_id(instance.id)` to encode the logical key from
+the namespace, row and column. Seeds and species choices preserve the key
+assigned to a cell. Use a distinct namespace when creating a separate patch.
 
 Map the returned species ID and variation index to your approved mesh or prefab
 choice. Use `instance.position_m` directly on a root entity. A Y-up quaternion

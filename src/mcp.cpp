@@ -87,14 +87,14 @@ constexpr std::array review_methods{
     std::string_view("entity.query"), std::string_view("entity.get"), std::string_view("entity.world_transform"),
     std::string_view("world.asset.references"), std::string_view("world.ui.list"), std::string_view("world.ui.get")
 };
-constexpr std::array<std::string_view, 38> draft_methods{
+constexpr std::array<std::string_view, 39> draft_methods{
     "asset.animation.author", "asset.animation.bounds", "asset.animation.channel", "asset.animation.sample",
     "asset.animation.skin", "asset.audio.import", "asset.audio.inspect", "asset.catalog",
     "asset.image.import", "asset.image.inspect", "asset.import", "asset.inspect", "asset.label",
     "asset.mesh.extract_rigid", "asset.mesh.triangles", "asset.post-effect.import", "asset.provenance.create", "asset.provenance.inspect",
     "asset.source.inspect", "component.schema.import", "component.schemas",
     "entity.get", "entity.material", "entity.query", "entity.world_transform",
-    "world.asset.provenance", "world.asset.references", "world.dependencies", "world.history",
+    "world.asset.provenance", "world.asset.references", "world.dependencies", "world.foliage.plan", "world.history",
     "world.inspect", "world.lighting", "world.redo", "world.terrain.cook", "world.terrain.inspect",
     "world.transact", "world.ui.get", "world.ui.list", "world.undo"
 };
@@ -123,6 +123,10 @@ void check_draft_request(std::string_view method,const Json& params,const std::s
     };
     if(method=="world.terrain.inspect" || method=="world.terrain.cook") {
         if(params.contains("source"))check_source(params.at("source"));
+        return;
+    }
+    if(method=="world.foliage.plan") {
+        if(params.contains("terrain") && params.at("terrain").contains("source"))check_source(params.at("terrain").at("source"));
         return;
     }
     if(method!="asset.import" && method!="asset.source.inspect" && method!="asset.audio.import" &&

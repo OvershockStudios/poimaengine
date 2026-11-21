@@ -368,7 +368,7 @@ class McpContract(unittest.TestCase):
         tools = {entry['name']: entry for entry in worker.rpc('tools/list')['tools']}
         self.assertEqual(set(tools), {'poima_call', 'poima_discover', 'poima_reference'})
         methods = set(tools['poima_call']['inputSchema']['properties']['method']['enum'])
-        self.assertTrue({'world.inspect', 'world.transact', 'asset.import', 'asset.audio.import'} <= methods)
+        self.assertTrue({'world.inspect', 'world.transact', 'asset.import', 'asset.audio.import', 'world.foliage.plan'} <= methods)
         catalog = worker.tool('poima_discover')
         self.assertEqual(catalog['mcp_scope'], 'project_draft')
         self.assertTrue({'world.inspect', 'world.transact'} <= set(catalog['methods']) <= methods)
@@ -407,6 +407,27 @@ class McpContract(unittest.TestCase):
             worker.world('asset.import', {'source': 'Model.glb', 'animations': [{'source': external}]}, error=-32602)
         audio = worker.world('asset.audio.import', {'source': 'Tone.wav'})['asset']
         model = worker.world('asset.import', {'source': 'Model.glb'})['asset']
+        terrain = json.dumps(dict(format='poima.terrain.heightfield', version=1,
+            samples_x=2, samples_z=2, tile_cells=1, origin_m=[0, 0, 0],
+            spacing_m=[2, 2], heights_m=[0, 0, 0, 0]))
+        terrain_path = draft_world.parent / 'Terrain.json'
+        terrain_path.write_text(terrain, encoding='utf-8')
+        terrain_pin = worker.world('world.terrain.inspect', {'source': terrain_path.name})['recipe_sha256']
+        plan = dict(terrain={'source': terrain_path.name}, expected_terrain_recipe_sha256=terrain_pin,
+            scatter=dict(patch_key='0000000000000001', seed='0000000000000000', origin_m=[0, 0],
+                cell_size_m=1, grid=[2, 2], species=[dict(id=1, variants=[dict(asset=model, primitive=0)])]))
+        prepared = worker.world('world.foliage.plan', plan)
+        self.assertEqual(prepared['revision'], initial['revision'] + 1)
+        self.assertEqual(prepared['counts']['placed'], 4)
+        self.assertEqual(worker.world('world.foliage.plan', {**plan, 'terrain': {'recipe': terrain}}), prepared)
+        terrain_alias = draft_world.parent / 'Alias.json'
+        os.link(terrain_path, terrain_alias)
+        try:
+            for invalid in (native(terrain_path), '../Terrain.json', terrain_alias.name):
+                with self.subTest(foliage_source=invalid):
+                    worker.world('world.foliage.plan', {**plan, 'terrain': {'source': invalid}}, error=-32602)
+        finally:
+            terrain_alias.unlink()
         store = draft_world.with_suffix('.json.assets')
         self.assertTrue((store / (audio + '.paudio')).is_file())
         self.assertTrue((store / (model + '.pmodel')).is_file())

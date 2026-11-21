@@ -50,6 +50,11 @@ load the surface without the source recipe. Save the recipe in the source
 project for further editing. Streaming, deformation and automatic terrain LOD
 are separate work.
 
+Use the reviewed recipe for [grounded foliage placement](FOLIAGE_SCATTER.md)
+and the bound collider geometry for [navigation baking](NAVIGATION.md).
+After replacing tile geometry, bake and bind a new navigation asset before
+starting gameplay or exporting.
+
 The world contract checks guarded publication, render and collider asset
 references, project relocation and a fresh-process save continuation. The
 Windows Vulkan run also compares scene captures against the projected surface,

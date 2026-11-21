@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.352
+
+- Plan terrain-aware foliage and rock placement through the world service and MCP. Review stable placement keys, exclusions, mesh variants and paged results before applying normal scene edits.
+
 ## 0.0.351
 
 - Inspect and cook authored heightfield recipes through the world service and MCP. Use the generated model tiles for rendering, static collision and standalone export.
