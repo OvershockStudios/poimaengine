@@ -1,8 +1,19 @@
 # Implementation status
 
-Updated 2026-11-21 for **0.0.350**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-21 for **0.0.351**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.351 adds [terrain authoring](TERRAIN.md) through the world service
+and MCP. A reviewed heightfield cooks to immutable model tiles shared by static
+render meshes and Jolt mesh colliders. A two-tile fixture hit both interiors and
+the seam at the expected heights. Fresh-process save continuation reproduced
+the complete warm save payload and all three terrain ray hits. Windows Vulkan
+captures on AMD and NVIDIA matched the projected surface, including depth
+witnesses near the seam. Both devices replayed the relocated standalone bundle
+with the original project unavailable. Terrain streaming, automatic LOD and
+deformation are separate work.
+[Results](evidence/m2-terrain-authoring-351.json)
 
 Version 0.0.350 imports a pinned [project post effect](PROJECT_POST_EFFECTS.md)
 as a world asset and includes that artifact in standalone exports. The native
@@ -20,8 +31,9 @@ schedule tests. GPU image qualification covers the forward fixture.
 Version 0.0.349 adds native [terrain tiles](TERRAIN.md), [foliage scattering](FOLIAGE_SCATTER.md),
 [CPU particles](PARTICLES.md), and a [localized water grid](SHALLOW_WATER.md).
 These APIs cover terrain seams and sampling, stable CPU placements, fixed-tick
-emission, and bounded water flow and snapshots. Scene authoring, runtime
-composition, and GPU rendering for these modules require further integration.
+emission, and bounded water flow and snapshots. Terrain authoring and rendering
+were integrated in 0.0.351. Foliage, particles and localized water still require
+scene and renderer integration.
 
 The [weather package](WEATHER_CYCLE.md) adds solar and seasonal state, storms,
 lightning, and rainfall queries. Games own its clock and the visible effects.

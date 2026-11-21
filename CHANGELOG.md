@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.351
+
+- Inspect and cook authored heightfield recipes through the world service and MCP. Use the generated model tiles for rendering, static collision and standalone export.
+
 ## 0.0.350
 
 - Author one project-owned HDR post effect by content hash and preserve its compiled artifact in project exports. Validate the shader before creating its Vulkan module and render it ahead of bloom and scene exposure.

@@ -1,0 +1,311 @@
+{
+  "engine_version": "0.0.351",
+  "world_schema_revision": 173,
+  "sources_sha256": {
+    "CMakeLists.txt": "b4737f7b083849f3959734d6e735e71f6024c8e6fcd4b341575d23d4773b7188",
+    "include/poima/terrain.hpp": "ab041a04f474001bd95d2008f99131b3862102b73bd5fa04591a114574d10d2e",
+    "include/poima/terrain_asset.hpp": "832f3a995191b671e0bb96ca8e04ab037e8a1046bba3e61b9d5059479997f6fa",
+    "src/asset_store.hpp": "74013d5a2676eeb30de262264cb6b280356597d89fff6b07cec4c785a02fa14c",
+    "src/mcp.cpp": "dee6e7c0db36907cdafdd8f7db1d5eb26d67230fdefb84779bec7f6351b7e41a",
+    "src/runtime.cpp": "94da34a570fd54dd0d60f8df947a3ae9aaa5c90184ec4335bb07ed8d0c64f1d3",
+    "src/terrain.cpp": "01e624c6c4d6039fb4de0457528a8ee21e9a94b60b2fda94cee6abc311a4a8d1",
+    "src/terrain_asset.cpp": "d01ee839b90b6c58f1064f28a8c87a22a6f9fd41dae4e3b9b30e22ac1947c6c4",
+    "src/world.cpp": "9b6e8e8af87ae93f54960413395e042ec374d3db4977c7f7bb8bd31e5a2f2eb3",
+    "src/world_schema.cpp": "c88fae47c0ee009a35f8058b6c533539df9330f235d93ed59f458e95d6d9241b",
+    "src/world_terrain_service.inc": "a4fd8f3df81c322585eeb42453310ab2b06d3fe28272ee5313232f2ab018518c",
+    "tests/asset_references_contract.py": "98b332ba497fcbca16d4f1588d7fe4db33669ea206303c8cfa7e02a12d30b6cb",
+    "tests/terrain_asset_native.cpp": "dc804ac530a0795004a379745d7953cbd010c4a58ae044ab8aaaa9bcdc7446b5",
+    "tests/world_terrain_contract.py": "08bcf8c5c65fed1157a52734cc5c32ec1c866e3825ca775523ae0be70ac90322",
+    "tests/world_ui_contract.py": "cfa2a9b6ee48b2a642636ea284ea06dc4e0bb9029bbfabafaa5143bdc83ce7d7"
+  },
+  "windows_installed": {
+    "version": {
+      "version": "0.0.351",
+      "compiler": "Clang",
+      "compiler_version": "23.1.2",
+      "target_os": "Windows",
+      "target_arch": "x86_64"
+    },
+    "executable_sha256": "3338f86b345a21ec67dd8753d917179296e4acc18aed268040112f471bd47f23",
+    "desktop_bridge_sha256": "674d388a00a0cd7838cc352d95102b12311a04a77e5873f9e26b47e407dc93f0",
+    "descriptor_sha256": "042abb7fbcb6bf38d0d91eeacf7e6e32b30cc3ff85e57a22459e6b7eaad2efc4"
+  },
+  "fixture": {
+    "recipe_sha256": "9f5fb70ff6d9e1ab0579f8e97a120dfd7671129a9d4f19c15cfe37d53b41ae7b",
+    "tiles": [
+      {
+        "asset": "3deefc41288cf0586ee753222550e9f48e428da6a9213b0d42f965a468e63043",
+        "bounds": {
+          "max": [
+            12.0,
+            5.5,
+            -2.0
+          ],
+          "min": [
+            10.0,
+            4.0,
+            -4.0
+          ]
+        },
+        "bytes": 1050,
+        "primitive": 0,
+        "triangles": 8,
+        "vertices": 9,
+        "x": 0,
+        "z": 0
+      },
+      {
+        "asset": "aef2430afe66780f65242fdaa454d9ae3aa0529a24b4be9754c5f64e2640729f",
+        "bounds": {
+          "max": [
+            14.0,
+            7.5,
+            -2.0
+          ],
+          "min": [
+            12.0,
+            5.0,
+            -4.0
+          ]
+        },
+        "bytes": 1050,
+        "primitive": 0,
+        "triangles": 8,
+        "vertices": 9,
+        "x": 1,
+        "z": 0
+      }
+    ],
+    "rays": {
+      "left interior": {
+        "expected_height_m": 4.5,
+        "hit": {
+          "distance": 15.50000011920929,
+          "entity": "00000000000000000000000000000064",
+          "fraction": 0.6200000047683716,
+          "normal": [
+            -0.4364357590675354,
+            0.8728715181350708,
+            -0.21821819245815277
+          ],
+          "position": [
+            10.75,
+            4.5,
+            -3.5
+          ],
+          "triangle": 0
+        }
+      },
+      "tile seam": {
+        "expected_height_m": 5.3125,
+        "hit": {
+          "distance": 14.687499403953552,
+          "entity": "00000000000000000000000000000064",
+          "fraction": 0.5874999761581421,
+          "normal": [
+            -0.43643543124198914,
+            0.8728716969490051,
+            -0.21821802854537964
+          ],
+          "position": [
+            12.0,
+            5.312500953674316,
+            -2.75
+          ],
+          "triangle": 6
+        }
+      },
+      "right interior": {
+        "expected_height_m": 5.6875,
+        "hit": {
+          "distance": 14.312499761581421,
+          "entity": "00000000000000000000000000000065",
+          "fraction": 0.5724999904632568,
+          "normal": [
+            -0.696310818195343,
+            0.6963105201721191,
+            -0.17407754063606262
+          ],
+          "position": [
+            12.5,
+            5.6875,
+            -3.25
+          ],
+          "triangle": 1
+        }
+      }
+    }
+  },
+  "windows_headless": {
+    "report_sha256": "202827aa9b3d87d0781b0fe40f694665517fd8aed253011639b443df5d04c47e",
+    "cold_save": {
+      "checkpoint_tick": 3,
+      "continuation_tick": 5,
+      "matching_rays": 3,
+      "checkpoint_sha256": "3b33adad5047bdb8d35073871685484613c5730bab6c83bfb2fbba1d018b0914",
+      "continuation_sha256": "b5101d482644c269a23bc0ed6127095db1bc49f8953562320b0d613f2700006a",
+      "continuation_bytes": 5527
+    },
+    "scoped_mcp": {
+      "report_sha256": "a268c122bfe7fdf268ab960f99a095bf05d489788054e38945f604b83836988a",
+      "source_bytes": 1048819,
+      "receipts": 12,
+      "checked": [
+        "scoped discovery",
+        "large local recipe equivalent to inline",
+        "absolute and traversal source rejection",
+        "stale recipe conflict",
+        "owned draft publication"
+      ]
+    },
+    "prior_contracts": {
+      "asset-references": {
+        "passed": 8,
+        "log_sha256": "afeb09c3b83a8e07438baf193e1589f93b99932590220ee6335cba2144f23889"
+      },
+      "world-ui": {
+        "passed": 7,
+        "log_sha256": "c264a0dad6605e5fbddb854d3f0e8ddb23371f7fd0a2c58e17cd66a58b5135d9"
+      },
+      "mcp-contract": {
+        "passed": 17,
+        "log_sha256": "149cf90a49aab3faa42d6cdf60090a1ddc3297647da81a12cbc934a4290a717d"
+      }
+    }
+  },
+  "windows_vulkan_forward": [
+    {
+      "gpu_index": 0,
+      "gpu": "AMD Radeon(TM) Graphics",
+      "report_sha256": "1dda3a4eec834f8d79f1b4265140ef39d58a747f9a5c15e52e2ef683aa9a477a",
+      "recorded_cli_calls": 29,
+      "captures": {
+        "authored": {
+          "bmp_sha256": "2cae24437ebf7ecbd04af8fb973e843c7ce00a5c954014bbe17730598788b7ab",
+          "frames_presented": 2,
+          "projected_interior_pixels": [
+            4279,
+            6865
+          ],
+          "checked_seam_pixels": 189,
+          "silhouette_mismatches": 0,
+          "nvrhi_errors": 0
+        },
+        "relocated_game": {
+          "bmp_sha256": "79d58fa3f5166d1cfc1d6b0d19deab1300a4eac76723d8ae7acf5de1e8590ac2",
+          "frames_presented": 2,
+          "projected_interior_pixels": [
+            4276,
+            6867
+          ],
+          "checked_seam_pixels": 190,
+          "silhouette_mismatches": 0,
+          "nvrhi_errors": 0
+        }
+      },
+      "authored_depth_witnesses": 4,
+      "max_depth_error": 2.1919977577500305e-07,
+      "cold_save": {
+        "checkpoint_tick": 3,
+        "continuation_tick": 5,
+        "matching_rays": 3,
+        "checkpoint_sha256": "7df0ff4acc3050d9cc6ec9e87a76445ad4872bb6ed3127e84664bdf4ad234ed9",
+        "continuation_sha256": "d72091ba4831e4b2d191e41ad4ff48e235a35d39bb1443d72695833a33a25e39",
+        "continuation_bytes": 5527
+      },
+      "relocated_game": {
+        "manifest_sha256": "b48819e9b17ba4cbfb20002c847731da0ad21d07871e46ad0e9e413abbefe3cb",
+        "exe_sha256": "3338f86b345a21ec67dd8753d917179296e4acc18aed268040112f471bd47f23",
+        "tick": 1,
+        "files": 60,
+        "selected_models": [
+          "3deefc41288cf0586ee753222550e9f48e428da6a9213b0d42f965a468e63043",
+          "aef2430afe66780f65242fdaa454d9ae3aa0529a24b4be9754c5f64e2640729f"
+        ],
+        "original_project_path_unavailable": true,
+        "bundle_inventory_unchanged": true
+      }
+    },
+    {
+      "gpu_index": 1,
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "report_sha256": "1467ef7e2e6d4b214f866f97f97f7def0ef31addb5298c45bcae290087d0fa07",
+      "recorded_cli_calls": 29,
+      "captures": {
+        "authored": {
+          "bmp_sha256": "2cae24437ebf7ecbd04af8fb973e843c7ce00a5c954014bbe17730598788b7ab",
+          "frames_presented": 2,
+          "projected_interior_pixels": [
+            4279,
+            6865
+          ],
+          "checked_seam_pixels": 189,
+          "silhouette_mismatches": 0,
+          "nvrhi_errors": 0
+        },
+        "relocated_game": {
+          "bmp_sha256": "79d58fa3f5166d1cfc1d6b0d19deab1300a4eac76723d8ae7acf5de1e8590ac2",
+          "frames_presented": 2,
+          "projected_interior_pixels": [
+            4276,
+            6867
+          ],
+          "checked_seam_pixels": 190,
+          "silhouette_mismatches": 0,
+          "nvrhi_errors": 0
+        }
+      },
+      "authored_depth_witnesses": 4,
+      "max_depth_error": 2.1919977577500305e-07,
+      "cold_save": {
+        "checkpoint_tick": 3,
+        "continuation_tick": 5,
+        "matching_rays": 3,
+        "checkpoint_sha256": "a79a7b229ba0b086ac11111d6d3799320f6e80b7841134ff357d915ebeee4fbf",
+        "continuation_sha256": "49a84ab822e20eb1d48a07276589c188db9c1e86230fb43a99544e47b41066ce",
+        "continuation_bytes": 5527
+      },
+      "relocated_game": {
+        "manifest_sha256": "440912ee06ca33bf57f712f77d771c26d5cd2bafccc313d08afd7f7f4e4e1e98",
+        "exe_sha256": "3338f86b345a21ec67dd8753d917179296e4acc18aed268040112f471bd47f23",
+        "tick": 1,
+        "files": 60,
+        "selected_models": [
+          "3deefc41288cf0586ee753222550e9f48e428da6a9213b0d42f965a468e63043",
+          "aef2430afe66780f65242fdaa454d9ae3aa0529a24b4be9754c5f64e2640729f"
+        ],
+        "original_project_path_unavailable": true,
+        "bundle_inventory_unchanged": true
+      }
+    }
+  ],
+  "linux": {
+    "version": {
+      "version": "0.0.351",
+      "compiler": "GNU",
+      "compiler_version": "16.2.0",
+      "target_os": "Linux",
+      "target_arch": "x86_64"
+    },
+    "executable_sha256": "ea09daea604ece020c756232b0c873b598b4a9b89fe4df334de6495238aded03",
+    "junit_sha256": "707d2cedc73cd0f1c3649c60088d167cf14fd32c2ad0ecb79cf9cd73c3b04abb",
+    "suites": [
+      "terrain_native",
+      "terrain_asset_native",
+      "world_terrain_contract",
+      "authoring_core_conformance",
+      "authoring_contract_identity",
+      "mcp_contract",
+      "world_ui_contract",
+      "asset_references_contract"
+    ]
+  },
+  "build_recovery": {
+    "windows_initial_exit": 139,
+    "initial_log_sha256": "244a6abb2129018a6b28f8060d695eabc02190ff1af703faa2d49ab45132aaf0",
+    "retry_exit": 0,
+    "retry_log_sha256": "aa66f4001e01a8f619eacdb334f69f9c22450610b095309767433f74668c3062",
+    "observed": "The first Windows cross-build exited during compilation with invalid source-encoding diagnostics. An unchanged invocation completed."
+  },
+  "scope": "Two static terrain tiles in a Windows Vulkan forward fixture and Linux headless contracts. Performance, streaming, automatic LOD, and deformation remain outside this qualification."
+}

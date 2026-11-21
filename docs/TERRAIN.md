@@ -1,11 +1,84 @@
 # Native terrain geometry
 
+## Author terrain in a world
+
+Create a `poima.terrain.heightfield` v1 recipe. This example makes a sloped
+tile two metres wide and two metres deep. Heights are offsets from the origin.
+
+```json
+{
+  "format": "poima.terrain.heightfield",
+  "version": 1,
+  "samples_x": 2,
+  "samples_z": 2,
+  "tile_cells": 1,
+  "origin_m": [0, 0, 0],
+  "spacing_m": [2, 2],
+  "heights_m": [0, 0.5, 0, 0.5]
+}
+```
+
+1. Call `world.terrain.inspect` with `source` pointing to the `.json` file,
+   or pass the JSON text as `recipe`. The result lists the canonical
+   `recipe_sha256`, ordered tiles, codec asset IDs, primitive indices and bounds.
+2. Call `world.terrain.cook` with the same input and `expected_recipe_sha256`
+   from the preview. A changed recipe returns a conflict before publication.
+   A successful cook publishes standard `.pmodel` files in the world asset
+   store. An exact retry reuses those files.
+3. Use `world.transact` at the current revision to create an entity for each
+   tile. Leave the transform at identity because the vertices are in world
+   space. Give `StaticMesh` and `MeshCollider` the same `asset` and `primitive`
+   from the tile. Set `StaticMesh.visible` to `true` and supply the collider's
+   friction and restitution.
+4. Read `world.dependencies` to check the selected tile hashes. Capture the
+   surface with `world.capture` and raycast from above with `runtime.raycast`.
+   Check an interior point on each tile and a point on the shared edge.
+
+`source` is relative to the world file's directory or absolute in an unrestricted
+authoring session. A scoped MCP draft accepts paths relative to that directory.
+Use a source file for recipes approaching the shared session's 1 MiB request limit. Both calls
+compute the recipe synchronously. They leave authored entities and the revision
+unchanged. If publication stops partway through a cook, retry with the same
+reviewed digest before binding the tiles. Successfully written packages are
+immutable and can be reused.
+
+The cooker accepts at most 4 MiB of source text, 131,072 height samples, 64
+tiles, 250,000 triangles and 32 MiB of encoded models. The generated meshes also
+pass the static collider geometry admission checks. Export includes referenced
+tiles through the ordinary model dependency closure, so the shipped game can
+load the surface without the source recipe. Save the recipe in the source
+project for further editing. Streaming, deformation and automatic terrain LOD
+are separate work.
+
+The world contract checks guarded publication, render and collider asset
+references, project relocation and a fresh-process save continuation. The
+Windows Vulkan run also compares scene captures against the projected surface,
+checks depth at both sides of the seam and replays a relocated standalone build.
+[Qualification results](evidence/m2-terrain-authoring-351.json)
+
+Run the world and native contracts from a built simulation checkout.
+
+```sh
+ctest --test-dir build/linux-game -R '^(terrain_native|terrain_asset_native|world_terrain_contract)$' --output-on-failure
+```
+
+From WSL, use an installed Windows runtime of the same build for the capture
+and export checks. Repeat with each available GPU index.
+
+```sh
+python3 tests/world_terrain_contract.py "$runtime/bin/poima.exe" \
+  --windows-interop --runtime-root "$runtime" --gpu 0 \
+  --capture-output build/terrain-captures
+```
+
+## Generate and sample geometry from C++
+
 [`poima::terrain::Heightfield`](../include/poima/terrain.hpp) builds indexed
 terrain tiles and samples their surface. It takes one rectangular grid of
 heights and owns the sample data. Use the same heightfield for both tile
 generation and queries.
 
-## Define a heightfield
+### Define a heightfield
 
 Set `samples_x` and `samples_z` to the number of vertices on each axis. The
 grid has one fewer cell than vertex on each axis. The height array starts with
@@ -37,7 +110,7 @@ vertex positions once to the float representation in `MeshAsset`. It rejects
 spacing that would collapse neighboring rounded X or Z coordinates. The
 heightfield owns at most 16 MiB of height samples plus two coordinate arrays.
 
-## Build tiles and query the surface
+### Build tiles and query the surface
 
 `tile_count_x()` and `tile_count_z()` give the valid range of zero-based tile
 indices. `build_tile()` throws `std::out_of_range` for an invalid tile index.
