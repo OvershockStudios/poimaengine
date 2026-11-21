@@ -1,8 +1,20 @@
 # Implementation status
 
-Updated 2026-11-21 for **0.0.375**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-21 for **0.0.376**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.376 adds [foliage motion](FOLIAGE_SCATTER.md#bend-foliage-with-wind-and-character-proximity)
+from a world-space wind wave and an authored character controller. The
+runtime reports the same bend sampled by the forward and deferred vertex
+paths. Forty relocated Windows captures checked anchored roots, moving
+silhouettes and shadows, and exact cold save and image continuation on AMD
+and NVIDIA. Twenty-four separate captures checked signed motion on both
+axes and valid zero motion when a bent pose repeats. Thirty-two control
+images and 128 probes matched 0.0.375. Seventeen Linux simulation suites,
+the focused foliage contract and six authoring-only suites passed. The
+authoring run verified the corrected MCP profile-tool fixture on a large
+debug build. [Results](evidence/m2-foliage-motion-376.json)
 
 Version 0.0.375 puts world discovery, presentation-report serialization and
 shared Vulkan instance ownership in their own [compilation units](BUILD.md#world-service-and-schema-compilation).

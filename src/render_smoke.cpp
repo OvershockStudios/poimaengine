@@ -130,8 +130,10 @@ struct ObjectData {
     float previous_model[3][4]{};
     // Motion and surface change flags, receive-shadows disabled, mark offset, mark count.
     std::uint32_t history[4]{};
+    std::array<float,4> foliage_current{},foliage_previous{};
 };
-static_assert(sizeof(DrawIndices)==16 && sizeof(ObjectData)==208);
+static_assert(sizeof(DrawIndices)==16 && sizeof(ObjectData)==240);
+static_assert(offsetof(ObjectData,foliage_current)==208 && offsetof(ObjectData,foliage_previous)==224);
 struct GpuSurfaceMark {
     float center_depth[4],normal_minimum_dot[4],tangent_half_width[4],color_opacity[4],half_height_roughness_edge[3];
     std::uint32_t mask=0;
@@ -205,6 +207,7 @@ struct DrawItem {
     // Borrowed from the current snapshot during draw preparation and submission.
     std::span<const SceneSurfaceMark> local_surface_marks;
     SceneWetness wetness;
+    std::array<float,4> foliage{};
 };
 using SteadyClock=std::chrono::steady_clock;
 namespace fp=frame_performance;
@@ -403,6 +406,7 @@ struct Context {
         std::uint32_t mark_offset=0,mark_count=0;
         bool skinned=false,mutable_geometry=false;
         SceneWetness wetness;
+        std::array<float,4> foliage{};
     };
     struct ViewHistory {
         std::string source,world,camera;
@@ -1034,6 +1038,8 @@ struct Context {
             }
             if(item.skin)valid=valid && item.skin->accepted_sequence==history.sequence;
             std::copy_n(valid ? previous->second.model.data() : &item.constants.model[0][0],12,&gpu_object.previous_model[0][0]);
+            gpu_object.foliage_current=item.foliage;
+            gpu_object.foliage_previous=valid ? previous->second.foliage : item.foliage;
             bool surface_changed=valid && previous->second.wetness!=item.wetness;
             if(valid && !surface_changed && (previous->second.mark_count || !item.local_surface_marks.empty())) {
                 const auto previous_marks=std::span(history.surface_marks).subspan(previous->second.mark_offset,previous->second.mark_count);
@@ -1050,6 +1056,7 @@ struct Context {
             ObjectHistory accepted;std::copy_n(&item.constants.model[0][0],12,accepted.model.begin());
             accepted.incarnation=item.incarnation;accepted.mesh=item.mesh;accepted.skinned=bool(item.skin);accepted.mutable_geometry=item.mutable_geometry;
             accepted.wetness=item.wetness;
+            accepted.foliage=item.foliage;
             if(scene_motion && !item.local_surface_marks.empty()) {
                 accepted.mark_offset=static_cast<std::uint32_t>(pending_history.surface_marks.size());
                 accepted.mark_count=item.surface_mark_count;
@@ -2507,6 +2514,7 @@ struct Context {
             require(!object.wetness,"Surface wetness is limited to world drawables.");
             require(!object.lods,"Mesh LOD is limited to ordinary world drawables.");
             require(!object.water_ripple_surface,"Water ripples are limited to the world region surface.");
+            require(!object.foliage_motion,"Foliage motion is limited to ordinary world drawables.");
         }
     }
     void update_scene() {
@@ -2724,7 +2732,13 @@ struct Context {
                 auto [entry,inserted]=bounds_cache.try_emplace(item.mesh.get());if(inserted)entry->second=mesh_bounds(item.mesh.get());
                 local_bounds=entry->second;
             }
-            const auto bounds=transform_bounds(local_bounds,object.world);
+            auto bounds=transform_bounds(local_bounds,object.world);
+            if(object.foliage_motion) {
+                require(list==0 && !object.camera_draw && object.mesh && !object.skin && !item.stream_geometry,
+                    "Foliage motion requires a rigid world mesh.");
+                item.foliage=object.foliage_motion->deformation;
+                bounds=foliage_displaced_bounds(bounds,object.world,*object.foliage_motion);
+            }
             item.camera_visible=object.camera_visible && (!diagnostics.culling || intersects(bounds,camera_frustum));
             if(item.camera_visible) { ++pending_draws.camera_draws;pending_draws.camera_triangles+=item.geometry.count/3; }
             else if(object.camera_visible)++pending_draws.camera_culled;

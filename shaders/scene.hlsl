@@ -11,6 +11,7 @@ struct ObjectData {
     float4 alpha; // x opacity, y cutoff, z mask mode; w water ripple surface
     float4 previous_model_row0,previous_model_row1,previous_model_row2;
     uint4 history; // x: motion/mark history flags; y: receive-shadows disabled; zw: mark offset and count
+    float4 foliage_current, foliage_previous; // local X/Z offset, root Y, reciprocal height
 };
 struct SurfaceMark {
     float4 center_depth;
@@ -30,6 +31,7 @@ Texture2DArray<float> surface_mark_masks : register(t1, space1);
 [[vk::binding(128, 1)]] SamplerState surface_mark_mask_sampler : register(s0, space1);
 #include "scene_surface.hlsli"
 #include "water_ripple_normal.hlsli"
+#include "foliage_motion.hlsli"
 #if POIMA_SCENE_PRODUCTS
 #include "scene_correspondence.hlsli"
 #endif
@@ -68,26 +70,30 @@ VertexOutput vertex_main(VertexInput input,uint instance_id : SV_InstanceID) {
     const uint object_index=draw_indices.object_index+instance_id;
     const ObjectData draw=objects[object_index];
     VertexOutput output;output.object_index=object_index;
-    const float4 local_position=float4(input.position,1);
+    float3 position = input.position;
+    float3 normal = input.normal;
+    float3 tangent = input.tangent.xyz;
+    foliage_bend_frame(position, normal, tangent, draw.foliage_current);
+    const float4 local_position=float4(position,1);
     output.world_position=float3(dot(draw.model_row0,local_position),dot(draw.model_row1,local_position),dot(draw.model_row2,local_position));
     output.position=mul(view_projection,float4(output.world_position,1));
-    output.normal=float3(dot(draw.normal_row0.xyz,input.normal),dot(draw.normal_row1.xyz,input.normal),dot(draw.normal_row2.xyz,input.normal));
+    output.normal=float3(dot(draw.normal_row0.xyz,normal),dot(draw.normal_row1.xyz,normal),dot(draw.normal_row2.xyz,normal));
 #if POIMA_SCENE_PRODUCTS
     output.current_clip=output.position;
-    const float4 previous_local=float4(input.previous_position,1);
+    const float4 previous_local=float4(foliage_bend_position(input.previous_position,draw.foliage_previous),1);
     const float3 previous_world=float3(dot(draw.previous_model_row0,previous_local),dot(draw.previous_model_row1,previous_local),dot(draw.previous_model_row2,previous_local));
     output.previous_clip=mul(previous_view_projection,float4(previous_world,1));output.history_flags=draw.history.x;
 #endif
     output.position.xy+=float2(2,-2)*temporal_jitter.xy/cluster_viewport.zw*output.position.w;
     output.uv=input.uv;
-    output.tangent=float4(dot(draw.model_row0.xyz,input.tangent.xyz),dot(draw.model_row1.xyz,input.tangent.xyz),dot(draw.model_row2.xyz,input.tangent.xyz),input.tangent.w);
+    output.tangent=float4(dot(draw.model_row0.xyz,tangent),dot(draw.model_row1.xyz,tangent),dot(draw.model_row2.xyz,tangent),input.tangent.w);
     return output;
 }
 struct ShadowVertexOutput {float4 position : SV_Position;float2 uv : TEXCOORD0;nointerpolation uint object_index : TEXCOORD1;};
 ShadowVertexOutput shadow_vertex_main(VertexInput input,uint instance_id : SV_InstanceID) {
     const uint object_index=draw_indices.object_index+instance_id;
     const ObjectData draw=objects[object_index];
-    const float4 p=float4(input.position,1);
+    const float4 p=float4(foliage_bend_position(input.position,draw.foliage_current),1);
     const float3 world=float3(dot(draw.model_row0,p),dot(draw.model_row1,p),dot(draw.model_row2,p));
     ShadowVertexOutput output;output.object_index=object_index;output.position=mul(shadows[draw_indices.shadow_layer].view_projection,float4(world,1));output.uv=input.uv;return output;
 }

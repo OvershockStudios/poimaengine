@@ -3,6 +3,7 @@
 
 #include "asset_provenance.hpp"
 #include "asset_store.hpp"
+#include "foliage_motion_json.hpp"
 #include "particle_emitter_json.hpp"
 #include "physical_rig_json.hpp"
 #include "poima/navigation.hpp"
@@ -553,6 +554,43 @@ wetness::Profile surface_wetness_value(const Json& value) {
     profile.roughness_factor=static_cast<float>(bounded(value.at("roughness_factor"),0,1));
     return profile;
 }
+FoliageMotion foliage_motion_value(const Json& value) {
+    fields(value,{"root_y","tip_y","wind","touch"},{"root_y","tip_y"});
+    const auto number=[](const Json& field) {
+        require(field.is_number() && std::isfinite(field.get<double>()),"Foliage motion requires finite numbers.");
+        return field.get<double>();
+    };
+    FoliageMotion motion;
+    motion.root_y=number(value.at("root_y"));
+    motion.tip_y=number(value.at("tip_y"));
+    if(value.contains("wind")) {
+        const auto& wind=value.at("wind");
+        fields(wind,{"direction","tip_m","period_ticks","wavelength_m"},{"direction","tip_m","period_ticks","wavelength_m"});
+        const auto& direction=wind.at("direction");
+        require(direction.is_array() && direction.size()==2,"Foliage wind direction needs two XZ coefficients.");
+        const auto& ticks=wind.at("period_ticks");
+        require(ticks.is_number_integer() && ticks>=2 && ticks<=3600,"Foliage wind period_ticks must be an integer in [2,3600].");
+        motion.wind=FoliageWindMotion{{number(direction.at(0)),number(direction.at(1))},
+            number(wind.at("tip_m")),ticks.get<std::uint32_t>(),number(wind.at("wavelength_m"))};
+    }
+    if(value.contains("touch")) {
+        const auto& touch=value.at("touch");
+        fields(touch,{"actor","radius_m","tip_m"},{"actor","radius_m","tip_m"});
+        motion.touch=FoliageTouchMotion{identifier(touch.at("actor")),number(touch.at("radius_m")),number(touch.at("tip_m"))};
+    }
+    component_checked([&]{validate_foliage_motion(motion);});
+    return motion;
+}
+static const Json* authored_foliage_motion(const Json& components) {
+    const auto mesh=components.find("StaticMesh");
+    if(mesh==components.end())return nullptr;
+    const auto motion=mesh->find("foliage_motion");
+    return motion==mesh->end() ? nullptr : &*motion;
+}
+static void validate_template_foliage_motion(const Json& components) {
+    const auto* motion=authored_foliage_motion(components);
+    require(!motion || !motion->contains("touch"),"Foliage touch requires an authored world drawable outside the spawn catalog.");
+}
 void validate_component(const std::string& type, const Json& value) {
     if(type=="PhysicalRig") { (void)physical_rig_value(value);return; }
     if(type=="HitRegion") { (void)hit_region_value(value);return; }
@@ -602,7 +640,7 @@ void validate_component(const std::string& type, const Json& value) {
         return;
     }
     if(type=="StaticMesh") {
-        fields(value,{"asset","primitive","visible","cast_shadows","receive_shadows","lods"},{"asset","primitive","visible"});
+        fields(value,{"asset","primitive","visible","cast_shadows","receive_shadows","lods","foliage_motion"},{"asset","primitive","visible"});
         require(value.at("asset").is_string() && valid_asset_id(value.at("asset").get<std::string>()),"StaticMesh requires a 64-character lowercase content hash.");
         require(revision(value.at("primitive"))<10000 && value.at("visible").is_boolean(),"Invalid StaticMesh primitive/visibility.");
         if(value.contains("lods")) {
@@ -620,6 +658,7 @@ void validate_component(const std::string& type, const Json& value) {
                 previous=distance;
             }
         }
+        if(value.contains("foliage_motion"))(void)foliage_motion_value(value.at("foliage_motion"));
         return;
     }
     if(type=="PbrTextures") {
@@ -798,6 +837,7 @@ static void validate_template_graph(const Json& document,const Json& recipe,
         require(!bag.contains("ParticleEmitter") || !bag.at("ParticleEmitter").contains("rain"),
             "Rain emitters require an authored world entity outside the spawn catalog.");
         for(const auto& [type,value]:bag.items())if(!custom_component(type))validate_component(type,value);
+        validate_template_foliage_motion(bag);
         if(bag.contains("BoxCollider"))require(!bag.at("BoxCollider").value("navigation_obstacle",false),"Navigation obstacles require authored world entities.");
         auto local_reference=[&](const Json& target,const char* expected) {
             if(target.is_null())return;
@@ -888,6 +928,7 @@ void validate(const Json& doc) {
                     require(payload.size()<=max_runtime_template_payload_bytes-bytes,"Template custom payload budget exceeded.");bytes+=payload.size();
                 }
             }
+            validate_template_foliage_motion(bag);
             if(bag.contains("BoxCollider"))require(!bag.at("BoxCollider").value("navigation_obstacle",false),"Navigation obstacles require authored world entities.");
             if(bag.contains("ParticleEmitter")) {
                 require(!bag.at("ParticleEmitter").contains("rain"),
@@ -905,7 +946,13 @@ void validate(const Json& doc) {
     if(doc.contains("snow")) {
         require(!doc.contains("water") && !doc.contains("navigation"),"Snow cannot be combined with authored water or navigation.");
         const auto snow_binding=component_checked([&]{return snow::parse_definition(doc.at("snow"));});
-        for(const auto& tile:snow_binding.tiles)require(entities.contains(tile),"Snow tile entity does not exist.");
+        for(const auto& tile:snow_binding.tiles) {
+            require(entities.contains(tile),"Snow tile entity does not exist.");
+            const auto& entity=entities.at(tile);
+            const auto components=entity.find("components");
+            require(components==entity.end() || !authored_foliage_motion(*components),
+                "Snow tiles cannot use foliage motion.");
+        }
     }
     std::size_t audio_sources=0,wetness_receivers=0;
     std::vector<std::string> particle_sources;
@@ -934,6 +981,17 @@ void validate(const Json& doc) {
                 const auto payload=component_checked([&]{return components::parse_values(schema,value.dump());});
                 component_checked([&]{components::validate_payload(schema,payload,&authored_reference_exists,const_cast<Json*>(&entities));});
                 require(++component_count<=components::max_instances && payload.size()<=components::max_payload_bytes-component_bytes,"Authored component instance/byte budget exceeded.");component_bytes+=payload.size();
+            }
+        }
+        if(const auto* motion=authored_foliage_motion(audio_components)) {
+            require(!audio_components.contains("CameraDraw"),"Foliage motion requires a world drawable without CameraDraw.");
+            if(motion->contains("touch")) {
+                const auto& actor=motion->at("touch").at("actor").get_ref<const std::string&>();
+                require(actor!=id && entities.contains(actor),"Foliage touch requires a distinct authored CharacterController.");
+                const auto& entity=entities.at(actor);
+                const auto components=entity.find("components");
+                require(components!=entity.end() && components->contains("CharacterController"),
+                    "Foliage touch requires a distinct authored CharacterController.");
             }
         }
         if(audio_components.contains("AudioEmitter")) {

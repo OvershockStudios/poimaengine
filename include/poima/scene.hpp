@@ -3,6 +3,7 @@
 #include "poima/ui.hpp"
 #include "poima/ui_model.hpp"
 #include "poima/collision_queries.hpp"
+#include "poima/foliage_motion.hpp"
 #include <array>
 #include <cstddef>
 #include <cstdint>
@@ -136,6 +137,7 @@ struct Bounds { std::array<double,3> minimum{},maximum{}; };
 using Frustum=std::array<std::array<double,4>,6>;
 Bounds mesh_bounds(const MeshAsset* mesh); // null selects the built-in unit box
 Bounds transform_bounds(const Bounds& local,const Matrix4& world);
+Bounds foliage_displaced_bounds(Bounds world_bounds, const Matrix4& world, const FoliageMotionSample& pose);
 Frustum make_frustum(const Matrix4& view_projection);
 bool intersects(const Bounds& world,const Frustum& frustum);
 struct MaterialTextures;
@@ -211,6 +213,7 @@ struct SceneObject {
     // Additional fixed rigid geometry. The base mesh always owns material inputs.
     std::shared_ptr<const MeshLodChain> lods{};
     bool water_ripple_surface=false;
+    std::optional<FoliageMotionSample> foliage_motion{};
 };
 struct SceneViewmodel {
     SceneLens lens;

@@ -9,6 +9,7 @@
 #include <cmath>
 #include <iostream>
 #include <numbers>
+#include <string_view>
 #include <thread>
 using namespace poima;
 using Json=nlohmann::json;
@@ -37,10 +38,54 @@ SceneSnapshot scene(const std::shared_ptr<const MeshAsset>& mesh){
 }
 Json sample(const SceneProductSample& p){return {{"x",p.x},{"y",p.y},{"depth",p.depth},{"normal",p.shading_normal},{"motion",p.motion},{"surface_valid",p.surface_valid},{"motion_valid",p.motion_valid}};}
 void check_near(double actual,double expected,double tolerance,const char* why){check(std::isfinite(actual)&&std::abs(actual-expected)<=tolerance,why);}
+
+using Bend = std::array<float,2>;
+
+FoliageMotionSample foliage_pose(Bend tip) {
+    return {{tip[0],tip[1],-1,.5f},{tip[0],0,tip[1]},0};
+}
+
+struct FoliageWitness {
+    double camera_depth;
+    double motion_x;
+    double motion_y;
+};
+
+FoliageWitness foliage_witness(unsigned x, unsigned y, Bend previous, Bend current) {
+    constexpr double width=320, height=240, eye_z=4;
+    const double half_height=std::tan(std::numbers::pi/6);
+    const double half_width=half_height*width/height;
+    const double ray_x=(2*(x+.5)/width-1)*half_width;
+    const double ray_y=(1-2*(y+.5)/height)*half_height;
+
+    // Only the upper vertices move. Between the two rows the rasterized
+    // triangle interpolates the endpoint slide, with t=(unbent_y+1)/2.
+    // Solve the ray/plane intersection at the center of the probed pixel.
+    const double depth=(eye_z-current[1]/2)/(1+current[1]*ray_y/2);
+    const double world_y=ray_y*depth;
+    const double t=(world_y+1)/2;
+    const double unbent_x=ray_x*depth-current[0]*t;
+    check(std::abs(unbent_x)<.8 && std::abs(world_y)<.8 && std::abs(unbent_x-world_y)>.15,
+          "Foliage motion witness is too close to a triangle edge");
+
+    // Reproject the same source point under the preceding accepted bend.
+    const double previous_depth=eye_z-previous[1]*t;
+    const double previous_x=unbent_x+previous[0]*t;
+    const double previous_u=.5+previous_x/(2*previous_depth*half_width);
+    const double previous_v=.5-world_y/(2*previous_depth*half_height);
+    return {depth,previous_u-(x+.5)/width,previous_v-(y+.5)/height};
+}
 }
 int main(int argc,char** argv){Json evidence={{"passed",false},{"modes",Json::array()}};
     try{
-        check(argc==3 || (argc==4 && std::string(argv[3])=="deferred"),"Usage: scene-motion-test OUTPUT_PREFIX GPU [deferred]");const bool deferred=argc==4;evidence["deferred"]=deferred;SetProcessDPIAware();const std::string prefix=argv[1];const int gpu=std::stoi(argv[2]);std::string gpu_name;
+        const std::string_view first=argc>=4 ? argv[3] : "";
+        const bool deferred=first=="deferred";
+        const bool foliage=first=="foliage" || (deferred && argc==5 && std::string_view(argv[4])=="foliage");
+        check(argc==3 || (argc==4 && (deferred || foliage)) || (argc==5 && deferred && foliage),
+              "Usage: scene-motion-test OUTPUT_PREFIX GPU [deferred] [foliage]");
+        evidence["deferred"]=deferred;
+        if(foliage)evidence["foliage"]=true;
+        SetProcessDPIAware();const std::string prefix=argv[1];const int gpu=std::stoi(argv[2]);std::string gpu_name;
         const auto rigid=quad(false),skinned=quad(true);
         // Independent pinhole oracle. Motion stores previous minus current UV;
         // positive world X moves right, positive world Y moves up on screen.
@@ -50,7 +95,10 @@ int main(int argc,char** argv){Json evidence={{"passed",false},{"modes",Json::ar
         for(unsigned limit:{1u,2u}){
             evidence["modes"].push_back({{"slots",limit},{"captures",Json::array()}});auto& mode=evidence["modes"].back();
             Window window;auto state=scene(rigid);RenderOptions options;options.deferred=deferred;options.gpu=gpu;options.samples=1;options.width=320;options.height=240;options.frames_in_flight=limit;
-            options.scene_debug_view=SceneDebugView::motion;options.scene_product_probes={{160,120},{3,235}};options.capture_exclusive=true;
+            constexpr Bend initial_bend{-.125f,.25f}, moved_bend{.375f,-.5f};
+            const unsigned probe_x=foliage?153:160,probe_y=foliage?99:120;
+            if(foliage)state.objects.front().foliage_motion=foliage_pose(initial_bend);
+            options.scene_debug_view=SceneDebugView::motion;options.scene_product_probes={{probe_x,probe_y},{3,235}};options.capture_exclusive=true;
             HostedViewport view(options,state,window.hwnd);std::uint64_t submitted=0;unsigned ordinal=0;
             auto draw=[&](const std::string* path=nullptr){const auto deadline=std::chrono::steady_clock::now()+std::chrono::seconds(5);
                 for(;;){pump();const auto before=view.report().diagnostics.frame_execution.submitted;
@@ -61,10 +109,12 @@ int main(int argc,char** argv){Json evidence={{"passed",false},{"modes",Json::ar
                     check(after.diagnostics.frame_execution.submitted==before,"Unexpected submission count during unpresented attempt");
                     check(std::chrono::steady_clock::now()<deadline,"Timed out acquiring visible image");std::this_thread::sleep_for(std::chrono::milliseconds(1));}
             };
-            auto capture=[&](const char* label,bool history,bool valid,double dx=0,double dy=0){
+            auto capture=[&](const char* label,bool history,bool valid,double dx=0,double dy=0,double eye_depth=4){
                 const auto path=prefix+"-"+std::to_string(limit)+"-"+std::to_string(++ordinal)+"-"+label+".bmp";draw(&path);const auto r=view.report();check(r.diagnostics.deferred==deferred,"Lighting path differs");const auto& d=r.diagnostics.scene_products;
+                const double device_depth=100.0/99.9-10.0/99.9/eye_depth;
                 Json row={{"label",label},{"path",path},{"gpu",r.gpu_name},{"width",r.width},{"height",r.height},{"samples",r.samples},{"errors",r.validation_errors},
                     {"history_valid",d.history_valid},{"history_sequence",d.history_sequence},{"reset_reason",d.history_reset_reason},{"expected_motion",{dx,dy}},{"expected_valid",valid},{"probes",Json::array()}};
+                if(foliage)row["expected_depth"]=device_depth;
                 for(const auto& p:d.probes)row["probes"].push_back(sample(p));mode["captures"].push_back(std::move(row));
                 check(r.success&&r.hardware&&r.capture_written&&r.validation_errors==0&&r.samples==1,"Capture hardware/validation failure");
                 if(gpu_name.empty())gpu_name=r.gpu_name;check(!gpu_name.empty()&&gpu_name==r.gpu_name,"Actual GPU changed");
@@ -73,13 +123,23 @@ int main(int argc,char** argv){Json evidence={{"passed",false},{"modes",Json::ar
                 check(r.diagnostics.frame_execution.submitted==submitted && r.diagnostics.completed_submissions==submitted && r.diagnostics.frame_execution.outstanding==0,"Capture failed to drain exact accepted cohort");
                 check(d.normal_buffer_bytes==std::uint64_t(r.width)*r.height*8,"Resized normal product allocation differs");
                 check(d.probes.size()==2,"Probe count differs");const auto& p=d.probes[0];const auto& background=d.probes[1];
-                check(p.x==160&&p.y==120&&p.surface_valid&&p.motion_valid==valid,"Foreground validity differs");
-                check_near(p.depth,100.0/99.9-10.0/99.9/4,2e-6,"Raw device depth differs from analytic plane");
+                check(p.x==probe_x&&p.y==probe_y&&p.surface_valid&&p.motion_valid==valid,"Foreground validity differs");
+                check_near(p.depth,device_depth,2e-6,"Raw device depth differs from analytic plane");
                 check_near(p.shading_normal[0],0,1e-6,"Normal X differs");check_near(p.shading_normal[1],0,1e-6,"Normal Y differs");check_near(p.shading_normal[2],1,1e-6,"Normal Z differs");
                 check_near(p.motion[0],valid?dx:0,std::max(3e-6,std::abs(dx)*.002),"Numeric motion X differs");check_near(p.motion[1],valid?dy:0,std::max(3e-6,std::abs(dy)*.002),"Numeric motion Y differs");
                 check(background.x==3&&background.y==235&&!background.surface_valid&&!background.motion_valid,"Background inherited surface motion validity");
                 check_near(background.motion[0],0,1e-6,"Background motion X not cleared");check_near(background.motion[1],0,1e-6,"Background motion Y not cleared");
             };
+            if(foliage) {
+                const auto initial=foliage_witness(probe_x,probe_y,initial_bend,initial_bend);
+                capture("foliage-first",false,false,0,0,initial.camera_depth);
+                state.objects.front().foliage_motion=foliage_pose(moved_bend);
+                const auto moved=foliage_witness(probe_x,probe_y,initial_bend,moved_bend);
+                check(moved.motion_x<-.05 && moved.motion_y<-.005,"Foliage oracle must witness both motion axes");
+                capture("foliage-bent",true,true,moved.motion_x,moved.motion_y,moved.camera_depth);
+                capture("foliage-repeated",true,true,0,0,moved.camera_depth);
+                continue;
+            }
             capture("first",false,false);capture("static",true,true);
             state.objects[0].world[12]=.125;capture("rigid-right",true,true,mx(.125));
             state.objects[0].world[13]=.125;capture("rigid-up",true,true,0,my(.125));

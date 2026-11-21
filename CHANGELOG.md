@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.376
+
+- Let rigid foliage bend in a travelling wind wave and move away from a nearby character. Capture, shadows and motion vectors use the same foliage pose, and the world service reports the live tip offset.
+- Use small profile-tool fixtures for MCP source-control tests so debug CLI size does not determine whether the authoring suite runs.
+
 ## 0.0.375
 
 - Compile world discovery, presentation reports and shared Vulkan instance ownership in separate translation units.

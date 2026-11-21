@@ -13,6 +13,7 @@
 #include "poima/surface_wetness.hpp"
 #include "poima/terrain_asset.hpp"
 #include "foliage_authoring.hpp"
+#include "foliage_motion_json.hpp"
 #include "water_asset.hpp"
 #include "water_region_scene.hpp"
 #include "particle_emitter_json.hpp"
@@ -630,6 +631,8 @@ public:
             if(components.contains("ParticleEmitter"))collect_particle_emitter(components.at("ParticleEmitter"));
             for(const auto* type:{"StaticMesh","SkinnedMesh","AnimationRig","MeshCollider"})if(components.contains(type)) {
                 const auto& ref=components.at(type);const auto value=model(ref.at("asset").get<std::string>());
+                if(type==std::string_view("StaticMesh") && ref.contains("foliage_motion"))
+                    result.needs_foliage_motion=true;
                 if(type==std::string_view("StaticMesh") && ref.contains("lods")) {
                     result.needs_mesh_lod=true;
                     for(const auto& lod:ref.at("lods"))(void)model(lod.at("asset").get_ref<const std::string&>());
@@ -786,6 +789,7 @@ public:
                 result.objects.push_back({e.id,matrices.at(e.id),mesh->albedo,mesh->mesh,mesh->material,mesh->textures,skin,0,
                     mesh->cast_shadows && (!e.camera_draw || e.camera_draw->mode!=CameraDrawMode::Viewmodel),mesh->receive_shadows,true,e.camera_draw});
                 result.objects.back().lods=mesh->lods;
+                result.objects.back().foliage_motion=authored_foliage_motion(*mesh,document,matrices,e.id);
             }
             if(document.contains("water") && !preview) {
                 try { water::append_region_scene(water::Region(water_binding(document).first.definition), result); }
@@ -1045,6 +1049,7 @@ public:
             if(content.needs_water_ripples)result["needs_water_ripples"]=true;
             if(content.needs_output_grade)result["needs_output_grade"]=true;
             if(content.needs_screen_reflections)result["needs_screen_reflections"]=true;
+            if(content.needs_foliage_motion)result["needs_foliage_motion"]=true;
             if(!content.provenance_records.empty()) {
                 Json records=Json::array();
                 for(const auto& f:content.provenance_records)records.push_back({{"filename",f.filename},{"sha256",f.sha256},{"bytes",f.bytes}});
@@ -1200,6 +1205,8 @@ public:
             require(skinned ? !mesh.mesh->influences.empty() : mesh.mesh->influences.empty(),"Weighted primitives require SkinnedMesh; unweighted primitives require StaticMesh.",-32050);
             mesh.material=mesh.mesh->material;mesh.visible=ref.at("visible");
             mesh.cast_shadows=ref.value("cast_shadows",true);mesh.receive_shadows=ref.value("receive_shadows",true);
+            if(!skinned && !geometry_only && ref.contains("foliage_motion"))
+                mesh.foliage_motion=foliage_motion_value(ref.at("foliage_motion"));
         } else if(components.contains("MeshRenderer")) {
             const auto& ref=components.at("MeshRenderer");mesh.albedo=ref.at("albedo").get<std::array<float,3>>();mesh.visible=ref.at("visible");
             mesh.cast_shadows=ref.value("cast_shadows",true);mesh.receive_shadows=ref.value("receive_shadows",true);
@@ -1228,6 +1235,18 @@ public:
             mesh.lods=std::move(lods);
         }
         return mesh;
+    }
+    static std::optional<FoliageMotionSample> authored_foliage_motion(const RuntimeMesh& mesh,
+        const Json& document,const std::map<std::string,Matrix4>& matrices,const std::string& id) {
+        if(!mesh.foliage_motion)return std::nullopt;
+        const auto& motion=*mesh.foliage_motion;
+        std::optional<FoliageActor> actor;
+        if(motion.touch) {
+            const auto& feet=matrices.at(motion.touch->actor);
+            const auto& controller=document.at("entities").at(motion.touch->actor).at("components").at("CharacterController");
+            actor=FoliageActor{{feet[12],feet[13],feet[14]},controller.at("height").get<double>()};
+        }
+        return sample_foliage_motion(motion,matrices.at(id),0,actor);
     }
     void validate_mesh_lod_edit(const Json& document,const std::set<std::string>& changed) const {
         const auto& entities=document.at("entities");
@@ -2223,6 +2242,7 @@ public:
                     snapshot.objects.push_back({id,matrices.at(id),mesh->albedo,mesh->mesh,mesh->material,mesh->textures,skin,0,
                         mesh->cast_shadows && (!owner.camera_draw || owner.camera_draw->mode!=CameraDrawMode::Viewmodel),mesh->receive_shadows,true,owner.camera_draw});
                     snapshot.objects.back().lods=mesh->lods;
+                    snapshot.objects.back().foliage_motion=authored_foliage_motion(*mesh,doc_,matrices,id);
                 }
                 if(doc_.contains("water"))water::append_region_scene(water::Region(water_binding(doc_).first.definition), snapshot);
             }
@@ -2879,6 +2899,7 @@ public:
         if(method.starts_with("runtime.material."))return material_dispatch(method,params);
         if(method.starts_with("runtime.texture."))return texture_dispatch(method,params);
         if(method=="runtime.water.inspect")return water_inspect(params);
+        if(method=="runtime.foliage.inspect")return foliage_inspect(params);
         if(method=="runtime.snow.inspect")return inspect_snow(params);
         if(method=="runtime.wetness.inspect")return inspect_wetness(params);
         if(method=="runtime.particles.inspect")return inspect_particles(params);
@@ -3508,6 +3529,7 @@ public:
                 fields(op, {"op", "id", "type", "value"}, {"op", "id", "type", "value"});
                 require(op.at("type").is_string(), "Component type must be a string.");
                 const auto type=op.at("type").get<std::string>();
+                if(type=="StaticMesh" && op.at("value").contains("foliage_motion"))water_touched=true;
                 if(custom_component(type)) {
                     const auto schemas=authored_component_schemas(staged);const auto type_id=custom_type(type);const auto& schema=authored_schema(schemas,type_id);
                     const auto payload=component_checked([&]{return components::parse_values(schema,op.at("value").dump());});

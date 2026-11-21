@@ -98,10 +98,30 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     const Json lod_level=object_schema({{"asset",asset_id},{"primitive",{{"type","integer"},{"minimum",0},{"maximum",9999}}},
         {"min_distance_m",{{"type","number"},{"exclusiveMinimum",0},{"maximum",max_mesh_lod_distance_m}}}},
         {"asset","primitive","min_distance_m"});
+    const Json foliage_tip={{"type","number"},{"minimum",0},{"maximum",2}};
+    const Json foliage_height={{"type","number"},{"minimum",-1024},{"maximum",1024}};
+    const Json foliage_wind=object_schema({
+        {"direction",vector({{"type","number"},{"minimum",-1},{"maximum",1}},2)},
+        {"tip_m",foliage_tip},{"period_ticks",unsigned_range(2,3600)},
+        {"wavelength_m",{{"type","number"},{"minimum",.5},{"maximum",256}}}},
+        {"direction","tip_m","period_ticks","wavelength_m"});
+    const Json foliage_touch=object_schema({
+        {"actor",id},{"radius_m",{{"type","number"},{"minimum",.05},{"maximum",8}}},{"tip_m",foliage_tip}},
+        {"actor","radius_m","tip_m"});
+    auto foliage_motion=object_schema({{"root_y",foliage_height},{"tip_y",foliage_height},
+        {"wind",foliage_wind},{"touch",foliage_touch}},{"root_y","tip_y"});
+    foliage_motion["anyOf"]=Json::array({Json{{"required",{"wind"}}},Json{{"required",{"touch"}}}});
+    foliage_motion["description"]="Optional deformation for a rigid world drawable. Local tip_y must exceed root_y by 0.05..128 m. Wind direction uses XZ coefficients with length at least 0.0001. Touch requires a distinct authored CharacterController. CameraDraw and snow or water terrain tiles are excluded.";
+    auto template_foliage_motion=foliage_motion;
+    template_foliage_motion.erase("anyOf");
+    template_foliage_motion["properties"].erase("touch");
+    template_foliage_motion["required"].push_back("wind");
+    template_foliage_motion["description"]="Wind-only deformation for a rigid spawned drawable. Local tip_y must exceed root_y by 0.05..128 m. Wind direction uses XZ coefficients with length at least 0.0001.";
     const Json static_mesh=object_schema({{"asset",asset_id},{"primitive",{{"type","integer"},{"minimum",0},{"maximum",9999}}},{"visible",{{"type","boolean"}}},
         {"cast_shadows",{{"type","boolean"},{"default",true}}},{"receive_shadows",{{"type","boolean"},{"default",true}}},
         {"lods",{{"type","array"},{"minItems",1},{"maxItems",max_mesh_lod_levels},{"items",lod_level},
-          {"description","Optional alternate rigid geometry. Distances increase and triangle counts decrease from LOD0. Base materials and collision stay independent of visual tiers."}}}},
+          {"description","Optional alternate rigid geometry. Distances increase and triangle counts decrease from LOD0. Base materials and collision stay independent of visual tiers."}}},
+        {"foliage_motion",foliage_motion}},
         {"asset","primitive","visible"});
     const Json mesh_collider=object_schema({{"asset",asset_id},{"primitive",{{"type","integer"},{"minimum",0},{"maximum",9999}}},
         {"friction",{{"type","number"},{"minimum",0},{"maximum",2}}},{"restitution",unit}}, {"asset","primitive","friction","restitution"});
@@ -156,7 +176,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     rig_fields["root_motion"]=std::move(root_profile);
     const auto animation_rig=object_schema(rig_fields,{"asset","clip","time","speed","loop","playing"});
     const auto rig_node=object_schema({{"rig",id},{"node",model_node}},{"rig","node"});
-    auto skin_fields=static_mesh.at("properties");skin_fields.erase("lods");skin_fields["rig"]=id;skin_fields["node"]=model_node;
+    auto skin_fields=static_mesh.at("properties");skin_fields.erase("lods");skin_fields.erase("foliage_motion");skin_fields["rig"]=id;skin_fields["node"]=model_node;
     const auto skinned_mesh=object_schema(skin_fields,{"asset","primitive","visible","rig","node"});
     Json pbr=object_schema({{"base_color",vector(unit,3)},{"emissive",vector(unit,3)},{"metallic",unit},{"roughness",unit},{"double_sided",{{"type","boolean"}}},
         {"alpha_mode",{{"enum",{"opaque","mask"}},{"default","opaque"}}},
@@ -354,7 +374,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 195}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 196}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -915,6 +935,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     result["invariants"].push_back("Capture/play draw_instancing defaults true. Adjacent visible objects share a command only with consecutive GPU object slots and identical geometry, previous-position stream, bindings and pipeline. camera_draws/shadow_draws retain object/view-instance counts; camera_batches/shadow_batches count geometry commands, excluding sky/composition/UI. Direct false is a reference; this is CPU-planned instancing, not GPU visibility/indirect execution or resident-scene updates.");
     result["invariants"].push_back("Capture/play culling defaults true; camera and each shadow view cull independently. Profile defaults false. Render diagnostics report submitted draws and optional CPU/GPU intervals, not a qualified game frame time.");
     result["invariants"].push_back("Kinematic targets begin on the first tick of step/replay segments and persist across batches. Targets must be unique roots, normalized, at most 100 m/s and 20 rad/s. Raycasts query physics, including hidden colliders; ties use stable IDs. Primitive origin-inside hits have no surface normal; mesh hits retain triangle winding normals.");
+    result["invariants"].push_back("StaticMesh.foliage_motion optionally adds local-height wind and touch deformation. The profile can coexist with rigid LOD and collision proxies, which continue to use the authored collision shape. CameraDraw, snow tiles and terrain tiles bound to water cannot use it. A touch actor is a distinct authored CharacterController. Spawn templates support wind profiles only.");
     result["invariants"].push_back("StaticMesh.lods optionally declares one to four indexed rigid primitives with increasing min_distance_m thresholds and decreasing triangle counts. Camera distance from the object's world origin selects the same tier for all camera and shadow views. LOD0 retains material ownership and physics/navigation use their authored colliders. Completed draw diagnostics report selected tiers for LOD-enabled objects.");
     result["invariants"].push_back("MeshCollider is an explicit static indexed model primitive, independent of rendering visibility. It cannot combine with BoxCollider/CharacterController or inherit moving/animation-owned transforms. Physics contacts use triangle front faces; rays query both sides and return the source triangle ordinal (null for non-mesh hits), retaining winding normals. No convexification, texture-cutout collision or deforming meshes. Limits: 100000 triangles/300000 vertices per body and 250000 triangles/750000 vertices per world. Geometry/material/transform validation runs at runtime preparation and export; malformed or degenerate geometry rejects.");
     result["invariants"].push_back("Managed gameplay is optional trusted project code. One module per runtime; typed native state is inspected/edited separately from authoring. Load/edit use tick/revision guards and shared retry receipts. Use input is a first-tick edge. Gameplay updates and queued motion join physics batch rollback.");
@@ -960,7 +981,12 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     methods.update(terrain::authoring_schemas());
     methods.update(foliage::authoring::authoring_schemas());
     methods.update(water::region_authoring_schemas());
-    if(Runtime::available())methods["runtime.water.inspect"]=water::region_runtime_schema();
+    if(Runtime::available()) {
+        methods["runtime.water.inspect"]=water::region_runtime_schema();
+        methods["runtime.foliage.inspect"]=object_schema({{"session_id",id},{"tick",rev},{"entity",id},
+            {"structure_revision",rev}},{"session_id","tick","entity"});
+        methods["runtime.foliage.inspect"]["description"]="Read the named drawable at a committed tick. Reports session_id, tick, structure_revision, entity, tip_local_xz, tip_world_offset_m and touch_weight. Include structure_revision when runtime membership has changed. Outside runtime-game-session v1.";
+    }
     if(Runtime::available())methods["runtime.particles.inspect"]=particle_observation_schema();
     methods["asset.image.inspect"]=object_schema({{"asset",asset_id}}, {"asset"});
     const Json reference_pose={{"oneOf",Json::array({
@@ -1272,12 +1298,14 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"save_guard","save.write/load require expected_component_revision when replacing or saving an active runtime with declared custom schemas. Stopped restore accepts absent or null."}};
     Json recipe_properties=Json::object();for(const auto* type:{"Transform","BoxCollider","MeshRenderer","StaticMesh","PbrMaterial","PbrTextures","ParticleEmitter"})recipe_properties[type]=components.at(type);
     recipe_properties["ParticleEmitter"]["properties"].erase("rain");
+    recipe_properties["StaticMesh"]["properties"]["foliage_motion"]=template_foliage_motion;
     auto recipe_components=object_schema(recipe_properties,{"Transform"});recipe_components["patternProperties"]={{"^game:[0-9a-f]{32}$",custom_values}};
     mutations.push_back(object_schema({{"op",{{"const","template.set"}}},{"id",stable_type},{"name",name},{"components",recipe_components}},{"op","id","name","components"}));
     auto member_components=object_schema(components,{"Transform"});
     member_components["properties"].erase("FootprintSurface");
     member_components["properties"].erase("SurfaceWetness");
     member_components["properties"]["ParticleEmitter"]["properties"].erase("rain");
+    member_components["properties"]["StaticMesh"]["properties"]["foliage_motion"]=template_foliage_motion;
     member_components["patternProperties"]={{"^game:[0-9a-f]{32}$",custom_values}};
     const auto template_member=object_schema({{"name",name},{"parent",{{"anyOf",Json::array({stable_type,Json{{"type","null"}}})}}},
         {"components",member_components}},{"name","parent","components"});

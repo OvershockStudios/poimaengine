@@ -201,6 +201,7 @@ struct RuntimeMesh {
     std::shared_ptr<const MaterialTextures> textures;
     bool cast_shadows=true,receive_shadows=true;
     std::shared_ptr<const MeshLodChain> lods{};
+    std::optional<FoliageMotion> foliage_motion{};
 };
 // Trusted owner proves the complete authored delta and explicit PbrMaterial provenance.
 // Native staging changes scalar factors only; mesh/texture owners stay immutable.

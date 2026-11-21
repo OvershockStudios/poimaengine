@@ -530,6 +530,11 @@ struct Runtime::Impl {
         if(d.mesh) {
             if(d.mesh->material)validate_material_alpha(*d.mesh->material);
             if(d.mesh->mesh)validate_material_alpha(d.mesh->mesh->material);
+            if(d.mesh->foliage_motion) {
+                require(d.mesh->mesh && d.mesh->mesh->influences.empty() && !d.camera_draw && !d.skinned_mesh,
+                    "Foliage motion requires a rigid world mesh without CameraDraw.");
+                validate_foliage_motion(*d.mesh->foliage_motion);
+            }
             if(d.mesh->lods) {
                 require(!d.camera_draw && !d.skinned_mesh,"Mesh LOD requires a rigid world drawable without CameraDraw.");
                 validate_mesh_lod_geometry(d.mesh->mesh.get(),*d.mesh->lods);
@@ -2154,6 +2159,20 @@ struct Runtime::Impl {
         result.mutable_geometry=snow_binding && snow_binding->contains(node.id);
         result.wetness=scene_wetness(node.id);
         result.lods=mesh.lods;
+        if(const auto& motion=mesh.foliage_motion) {
+            std::optional<FoliageActor> actor;
+            if(motion->touch) {
+                const auto driver=topology->identities.find(motion->touch->actor);
+                if(driver!=topology->identities.end())if(const auto* controller=registry.try_get<Controller>(driver->second)) {
+                    const auto& feet=world(motion->touch->actor);
+                    const auto& settings=controller->settings;
+                    actor=FoliageActor{{feet[12],feet[13],feet[14]},
+                        controller->crouched && settings.stance ? settings.stance->crouched_height : settings.height};
+                }
+            }
+            require(!result.mutable_geometry,"Foliage motion requires an immutable mesh.");
+            result.foliage_motion=sample_foliage_motion(*motion,result.world,tick,actor);
+        }
         if(attachment_graph && !attachment_graph->world_draws.empty() && attachment_graph->world_draws.contains(node.id))
             result.camera_draw.reset();
         if(result.camera_draw && result.camera_draw->mode==CameraDrawMode::Viewmodel)result.cast_shadows=false;

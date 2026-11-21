@@ -16,6 +16,8 @@
                 require(binding != components.end() && binding->at("asset") == tile.asset && binding->at("primitive") == 0,
                     "Water terrain model binding is stale. Recook the water region for the current terrain.", -32009);
             }
+            require(!components.at("StaticMesh").contains("foliage_motion"),
+                "Water terrain tiles cannot use foliage motion.",-32009);
         }
     }
 

@@ -475,7 +475,12 @@ class McpContract(unittest.TestCase):
         original_manifest = manifest.read_bytes()
         original_world = (manifest.parent/'world.json').read_bytes()
         path = manifest.parent/'gameplay-src/Game.cs'
-        fixture_tool = native(Path(BINARY))  # Only pinned, never executed as a compiler.
+        # This suite fingerprints the tool slots and never runs them. The
+        # CLI's debug information can exceed the selected-tool byte limit.
+        tool_file = root / 'tools' / 'profile-tool.txt'
+        tool_file.parent.mkdir()
+        tool_file.write_bytes(b'MCP profile fingerprint fixture.\n')
+        fixture_tool = native(tool_file)
         entry = dict(name='local', project_root=native(projects), output_root=native(products),
                      python=fixture_tool, publisher=fixture_tool, dotnet=fixture_tool,
                      exporter=fixture_tool, runtime_root=native(runtime), environment=[],

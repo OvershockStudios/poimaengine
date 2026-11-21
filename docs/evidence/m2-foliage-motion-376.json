@@ -1,0 +1,584 @@
+{
+  "release": "0.0.376",
+  "production_inputs_sha256": "c633c8b8e36eae0b31fcbd9cb589413de00a53ba547d701c4b69d8feeb77e03e",
+  "headless_simulation": {
+    "binary_sha256": "8c5a76ca25aff8fc00fc89211ae0e75320092a0f2554af93eb38d72f4c603c87",
+    "suites": [
+      {
+        "name": "foliage_authoring_native",
+        "seconds": 0.02
+      },
+      {
+        "name": "world_foliage_contract",
+        "seconds": 0.59
+      },
+      {
+        "name": "world_water_contract",
+        "seconds": 0.45
+      },
+      {
+        "name": "world_water_rain_contract",
+        "seconds": 0.92
+      },
+      {
+        "name": "authoring_core_conformance",
+        "seconds": 0.12
+      },
+      {
+        "name": "authoring_contract_identity",
+        "seconds": 0.7
+      },
+      {
+        "name": "render_schedule_native",
+        "seconds": 0.04
+      },
+      {
+        "name": "output_grade_authoring_contract",
+        "seconds": 0.22
+      },
+      {
+        "name": "world_schema_native",
+        "seconds": 51.39
+      },
+      {
+        "name": "mcp_contract",
+        "seconds": 12.27
+      },
+      {
+        "name": "world_ui_contract",
+        "seconds": 0.39
+      },
+      {
+        "name": "player_service_contract",
+        "seconds": 0.21
+      },
+      {
+        "name": "lighting_contract",
+        "seconds": 1.62
+      },
+      {
+        "name": "runtime_contract",
+        "seconds": 0.54
+      },
+      {
+        "name": "cli_contract",
+        "seconds": 0.14
+      },
+      {
+        "name": "world_contract",
+        "seconds": 5.33
+      },
+      {
+        "name": "asset_references_contract",
+        "seconds": 0.43
+      }
+    ],
+    "strict_foliage_and_cold_save": {
+      "fixture_result_sha256": "aa58338db92fb6737f758bbb136ad96551994d18ef0e016074c30d1ad4712b98",
+      "keys": [
+        "format",
+        "passed",
+        "binary_sha256",
+        "fixture_sha256",
+        "owners",
+        "authoring",
+        "continuation"
+      ],
+      "passed": true,
+      "fixture_sha256": "345f571201e682dd290b93720056c880c6ad509bca357e9bb2b1d7867c425ff3"
+    }
+  },
+  "headless_authoring": {
+    "binary_sha256": "65180e1e0e1ee3b8d352e79e78337270333de3a3074698a63ef3173088402e07",
+    "executable_bytes": 333472744,
+    "suites": [
+      {
+        "name": "world_foliage_contract",
+        "seconds": 0.13
+      },
+      {
+        "name": "authoring_core_conformance",
+        "seconds": 0.08
+      },
+      {
+        "name": "authoring_contract_identity",
+        "seconds": 0.24
+      },
+      {
+        "name": "mcp_contract",
+        "seconds": 0.64
+      },
+      {
+        "name": "shared_session_contract",
+        "seconds": 0.44
+      },
+      {
+        "name": "cli_contract",
+        "seconds": 0.09
+      }
+    ],
+    "mcp_fixture_fix": {
+      "prior_hosted_run": 44945228518,
+      "old_fixture_failure": "Profile input exceeds its byte limit.",
+      "retained_original_log_sha256": "2391a95eef32d30178aea19afac3ca971488936d80fce0210f1a02bf89a5ccee",
+      "fixed_test_sha256": "29267ce235784c8de8f360aaf6a0fe47335e2a227189c776ccc384149cc489a0",
+      "configured_tool_max_bytes": 268435456
+    }
+  },
+  "windows": {
+    "binary_sha256": "6f9a40a4cfac0b10069dc86897c568f9e47a55bafd0b979e4e7086aab278c7a6",
+    "runtime_descriptor_sha256": "415857360cf3ed9ee4ca2abd5bffeb00680de69b7fd66f32b89595c362a371b3",
+    "schedule": "Production render schedule: 439 valid variants, 1221 rejected contract mutations.",
+    "relocated_captures": [
+      {
+        "adapter": "AMD Radeon(TM) Graphics",
+        "lighting_path": "forward",
+        "image_count": 10,
+        "probes": 89,
+        "checks": {
+          "unchanged_static_bitmap": true,
+          "static_root_geometry": true,
+          "live_touch_outside_after_pass": true,
+          "cold_checkpoint_bitmap_and_save_bytes": true,
+          "cold_continuation_bitmap_and_save_bytes": true,
+          "stationary_spectator_independent_touch": true
+        },
+        "frame_sha256": {
+          "omitted initial": "cc4f53250389b29246c5db9733e9362b4148b000618e7ad177db423d9c191264",
+          "omitted checkpoint": "cc4f53250389b29246c5db9733e9362b4148b000618e7ad177db423d9c191264",
+          "omitted spectator": "4cf638038b1a06453f92eb765ad6d0ef8d06f90c1b0add427042b93db77ab8de",
+          "omitted final": "cc4f53250389b29246c5db9733e9362b4148b000618e7ad177db423d9c191264",
+          "enabled initial": "1c83b8dd68013c6ee5440da373f7a668c99727083349e6b4f5b3a723e4f42314",
+          "enabled checkpoint": "545a61f474f1254046165b4ad9fca835b56b51340c0fabf1b8818189dc4c8d7d",
+          "enabled spectator": "7da6cd4c8acd8938d9d9f8e0b8cb4af4875393640ae0c800a3a6d34feb4779e5",
+          "enabled final": "ab4aedf57fd9223887ac9f4a0faca404fb3043d9b5a30ec0aa80a6d9425cf551",
+          "enabled restored": "545a61f474f1254046165b4ad9fca835b56b51340c0fabf1b8818189dc4c8d7d",
+          "enabled cold final": "ab4aedf57fd9223887ac9f4a0faca404fb3043d9b5a30ec0aa80a6d9425cf551"
+        },
+        "test_sha256": "47ffec0874c69720ad0eab8b6adcc2fdc1c180d5304dfca1f69f9ea2d0cbd2bd",
+        "report_sha256": "b47dcb2bfdb817169ab178bf8e7a34454284f37073daefaf1c4d18e7cd55102c"
+      },
+      {
+        "adapter": "AMD Radeon(TM) Graphics",
+        "lighting_path": "deferred",
+        "image_count": 10,
+        "probes": 89,
+        "checks": {
+          "unchanged_static_bitmap": true,
+          "static_root_geometry": true,
+          "live_touch_outside_after_pass": true,
+          "cold_checkpoint_bitmap_and_save_bytes": true,
+          "cold_continuation_bitmap_and_save_bytes": true,
+          "stationary_spectator_independent_touch": true
+        },
+        "frame_sha256": {
+          "omitted initial": "618b5f7210ab8a2a317c14d3d39bb5f11cf6fd3ad8b134485891f74815fcb821",
+          "omitted checkpoint": "618b5f7210ab8a2a317c14d3d39bb5f11cf6fd3ad8b134485891f74815fcb821",
+          "omitted spectator": "7ec194b9e68e51e73562d7a558361c980751f0117b0c713f2efe752f5c6b69df",
+          "omitted final": "618b5f7210ab8a2a317c14d3d39bb5f11cf6fd3ad8b134485891f74815fcb821",
+          "enabled initial": "26f041ffac997a23b2490df187f9f21fd01b26b51262c3902808b3bfcac0f978",
+          "enabled checkpoint": "efc280bf457a7d285db1c5f625ee74a87a5c95e5ea79361adf86fd7b2a323360",
+          "enabled spectator": "6a16f6919bdc42032cdde1fc1f456a9f030542070d501e36f899168bc13bacc8",
+          "enabled final": "13dcbca1f53d4a3f87b6acc0bd057605427e4f1fdcc494ba0c92be7169b21b3f",
+          "enabled restored": "efc280bf457a7d285db1c5f625ee74a87a5c95e5ea79361adf86fd7b2a323360",
+          "enabled cold final": "13dcbca1f53d4a3f87b6acc0bd057605427e4f1fdcc494ba0c92be7169b21b3f"
+        },
+        "test_sha256": "47ffec0874c69720ad0eab8b6adcc2fdc1c180d5304dfca1f69f9ea2d0cbd2bd",
+        "report_sha256": "5ee00c02a1f52741655d2721f7c6fe36c9d0a936ed8a8963f376621509b984fe"
+      },
+      {
+        "adapter": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "lighting_path": "forward",
+        "image_count": 10,
+        "probes": 89,
+        "checks": {
+          "unchanged_static_bitmap": true,
+          "static_root_geometry": true,
+          "live_touch_outside_after_pass": true,
+          "cold_checkpoint_bitmap_and_save_bytes": true,
+          "cold_continuation_bitmap_and_save_bytes": true,
+          "stationary_spectator_independent_touch": true
+        },
+        "frame_sha256": {
+          "omitted initial": "a0e59846560a4e4b43dbc6ef7c0da8d11b800cf9123f3fa9c078dbdabe05ce8d",
+          "omitted checkpoint": "a0e59846560a4e4b43dbc6ef7c0da8d11b800cf9123f3fa9c078dbdabe05ce8d",
+          "omitted spectator": "fc81ea50a2eb106f37ede9645cbce1463a4c38e15e57d93573f920f4c18e04c5",
+          "omitted final": "a0e59846560a4e4b43dbc6ef7c0da8d11b800cf9123f3fa9c078dbdabe05ce8d",
+          "enabled initial": "672e9ce9d7773dbc6272ab283352cb3ff7b1c49c03530b8297c901d6d5598d7b",
+          "enabled checkpoint": "c6acf602510c47fc0d63aec1f4a2abd08a3b8fe1f09b855e0e0f3ddfca6c1ca4",
+          "enabled spectator": "e7caae27d04a281a48120a52d8c671f1bdab8bfee9467b7cb3f65bc005638b7c",
+          "enabled final": "3e2373bf69e6b4ce4b3aa2b39e43143fb427c6ad2c40e8c99071e84fe5db6d0a",
+          "enabled restored": "c6acf602510c47fc0d63aec1f4a2abd08a3b8fe1f09b855e0e0f3ddfca6c1ca4",
+          "enabled cold final": "3e2373bf69e6b4ce4b3aa2b39e43143fb427c6ad2c40e8c99071e84fe5db6d0a"
+        },
+        "test_sha256": "47ffec0874c69720ad0eab8b6adcc2fdc1c180d5304dfca1f69f9ea2d0cbd2bd",
+        "report_sha256": "8e3c86c94ff43e7e2c3f726d3161b9a05b33a47043868e0cd6955add0192c851"
+      },
+      {
+        "adapter": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "lighting_path": "deferred",
+        "image_count": 10,
+        "probes": 89,
+        "checks": {
+          "unchanged_static_bitmap": true,
+          "static_root_geometry": true,
+          "live_touch_outside_after_pass": true,
+          "cold_checkpoint_bitmap_and_save_bytes": true,
+          "cold_continuation_bitmap_and_save_bytes": true,
+          "stationary_spectator_independent_touch": true
+        },
+        "frame_sha256": {
+          "omitted initial": "618b5f7210ab8a2a317c14d3d39bb5f11cf6fd3ad8b134485891f74815fcb821",
+          "omitted checkpoint": "618b5f7210ab8a2a317c14d3d39bb5f11cf6fd3ad8b134485891f74815fcb821",
+          "omitted spectator": "f26311b3a0aa745dc5b63e122fe6c9961920ca6a693c8e74c3b85c7ef33bbef8",
+          "omitted final": "618b5f7210ab8a2a317c14d3d39bb5f11cf6fd3ad8b134485891f74815fcb821",
+          "enabled initial": "26f041ffac997a23b2490df187f9f21fd01b26b51262c3902808b3bfcac0f978",
+          "enabled checkpoint": "efc280bf457a7d285db1c5f625ee74a87a5c95e5ea79361adf86fd7b2a323360",
+          "enabled spectator": "bed48fbcf9cf92fee7db204e809610ab06b28ed976b05bb0879332c0063b63ef",
+          "enabled final": "13dcbca1f53d4a3f87b6acc0bd057605427e4f1fdcc494ba0c92be7169b21b3f",
+          "enabled restored": "efc280bf457a7d285db1c5f625ee74a87a5c95e5ea79361adf86fd7b2a323360",
+          "enabled cold final": "13dcbca1f53d4a3f87b6acc0bd057605427e4f1fdcc494ba0c92be7169b21b3f"
+        },
+        "test_sha256": "47ffec0874c69720ad0eab8b6adcc2fdc1c180d5304dfca1f69f9ea2d0cbd2bd",
+        "report_sha256": "182d05414ea916ca212076fb2a2c2315701144f6539a1d0696cf93407a2f8864"
+      }
+    ],
+    "motion_vector_captures": [
+      {
+        "adapter": "AMD Radeon(TM) Graphics",
+        "lighting_path": "forward",
+        "captured_images": 6,
+        "samples": [
+          {
+            "slots": 1,
+            "moved_uv": [
+              -0.06360668689012527,
+              -0.011985057033598423
+            ],
+            "expected_uv": [
+              -0.06360643134721516,
+              -0.011984882643989947
+            ],
+            "expected_depth": 0.9780287974503123,
+            "actual_depth": 0.9780287742614746,
+            "repeated_uv": [
+              -5.450573326015729e-10,
+              -5.741931374814158e-10
+            ],
+            "first_valid": false
+          },
+          {
+            "slots": 2,
+            "moved_uv": [
+              -0.06360668689012527,
+              -0.011985057033598423
+            ],
+            "expected_uv": [
+              -0.06360643134721516,
+              -0.011984882643989947
+            ],
+            "expected_depth": 0.9780287974503123,
+            "actual_depth": 0.9780287742614746,
+            "repeated_uv": [
+              -5.450573326015729e-10,
+              -5.741931374814158e-10
+            ],
+            "first_valid": false
+          }
+        ],
+        "report_sha256": "5592a83f10b05851d662f64a706166fd11b868f6c57c077c23fb15c859a80aa5",
+        "validation_log_sha256": "fb9deb202f38fdfe4ba26c2a61bc1184d0bd43e3b157cce77f0a07d5745f1e9d"
+      },
+      {
+        "adapter": "AMD Radeon(TM) Graphics",
+        "lighting_path": "deferred",
+        "captured_images": 6,
+        "samples": [
+          {
+            "slots": 1,
+            "moved_uv": [
+              -0.06360668689012527,
+              -0.011985057033598423
+            ],
+            "expected_uv": [
+              -0.06360643134721516,
+              -0.011984882643989947
+            ],
+            "expected_depth": 0.9780287974503123,
+            "actual_depth": 0.9780287742614746,
+            "repeated_uv": [
+              -5.450573326015729e-10,
+              -5.741931374814158e-10
+            ],
+            "first_valid": false
+          },
+          {
+            "slots": 2,
+            "moved_uv": [
+              -0.06360668689012527,
+              -0.011985057033598423
+            ],
+            "expected_uv": [
+              -0.06360643134721516,
+              -0.011984882643989947
+            ],
+            "expected_depth": 0.9780287974503123,
+            "actual_depth": 0.9780287742614746,
+            "repeated_uv": [
+              -5.450573326015729e-10,
+              -5.741931374814158e-10
+            ],
+            "first_valid": false
+          }
+        ],
+        "report_sha256": "53e8546e72dd71b1bd4968f2ed5d965723488fb00d1060c8a0fac9f1d45bcc57",
+        "validation_log_sha256": "fb9deb202f38fdfe4ba26c2a61bc1184d0bd43e3b157cce77f0a07d5745f1e9d"
+      },
+      {
+        "adapter": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "lighting_path": "forward",
+        "captured_images": 6,
+        "samples": [
+          {
+            "slots": 1,
+            "moved_uv": [
+              -0.06360669434070587,
+              -0.011985079385340214
+            ],
+            "expected_uv": [
+              -0.06360643134721516,
+              -0.011984882643989947
+            ],
+            "expected_depth": 0.9780287974503123,
+            "actual_depth": 0.9780288338661194,
+            "repeated_uv": [
+              -5.4887427936023414e-11,
+              -1.0437899433668463e-09
+            ],
+            "first_valid": false
+          },
+          {
+            "slots": 2,
+            "moved_uv": [
+              -0.06360669434070587,
+              -0.011985079385340214
+            ],
+            "expected_uv": [
+              -0.06360643134721516,
+              -0.011984882643989947
+            ],
+            "expected_depth": 0.9780287974503123,
+            "actual_depth": 0.9780288338661194,
+            "repeated_uv": [
+              -5.4887427936023414e-11,
+              -1.0437899433668463e-09
+            ],
+            "first_valid": false
+          }
+        ],
+        "report_sha256": "c550edbb9b16f68780e14405327880d8e99e81aff451b88588db5da52cbe8ac2",
+        "validation_log_sha256": "6b0921d347d317e69abd9176eaac2ffc11c581674c995817af8ad4d4c4c0e34e"
+      },
+      {
+        "adapter": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "lighting_path": "deferred",
+        "captured_images": 6,
+        "samples": [
+          {
+            "slots": 1,
+            "moved_uv": [
+              -0.06360669434070587,
+              -0.011985079385340214
+            ],
+            "expected_uv": [
+              -0.06360643134721516,
+              -0.011984882643989947
+            ],
+            "expected_depth": 0.9780287974503123,
+            "actual_depth": 0.9780288338661194,
+            "repeated_uv": [
+              -5.4887427936023414e-11,
+              -1.0437899433668463e-09
+            ],
+            "first_valid": false
+          },
+          {
+            "slots": 2,
+            "moved_uv": [
+              -0.06360669434070587,
+              -0.011985079385340214
+            ],
+            "expected_uv": [
+              -0.06360643134721516,
+              -0.011984882643989947
+            ],
+            "expected_depth": 0.9780287974503123,
+            "actual_depth": 0.9780288338661194,
+            "repeated_uv": [
+              -5.4887427936023414e-11,
+              -1.0437899433668463e-09
+            ],
+            "first_valid": false
+          }
+        ],
+        "report_sha256": "17b7cb3b3412846e5e68cdb08dd8b9de591ebdd0a3f46e4e812f3480d83eaab0",
+        "validation_log_sha256": "6b0921d347d317e69abd9176eaac2ffc11c581674c995817af8ad4d4c4c0e34e"
+      }
+    ],
+    "legacy_exact_image_and_probe_comparison": {
+      "forward-0": {
+        "reference_report_sha256": "92f053d169a00763de8a820ae11c9ff14478ea14ddd87461919b079898df3222",
+        "candidate_report_sha256": "7249dd9448d8eb94b6101dc554393fef309c1ea7e6d9733ad1bffcd8fb68b762",
+        "images": {
+          "omitted": {
+            "bitmap_sha256": "ab4a3cee6ee092884cbca9217a2799f264e7891b88319ea283f89ed270ee2ff0",
+            "probe_count": 4
+          },
+          "retained-371": {
+            "bitmap_sha256": "ab4a3cee6ee092884cbca9217a2799f264e7891b88319ea283f89ed270ee2ff0",
+            "probe_count": 4
+          },
+          "explicit-zero": {
+            "bitmap_sha256": "ab4a3cee6ee092884cbca9217a2799f264e7891b88319ea283f89ed270ee2ff0",
+            "probe_count": 4
+          },
+          "exposed-low": {
+            "bitmap_sha256": "2a0b8ebe2633b89c8b57fa1d7fc012d220d4a4d9f709612bac4464cfd138f28d",
+            "probe_count": 4
+          },
+          "exposed-tail": {
+            "bitmap_sha256": "1ac69bb861052b0121f626103437369689117ebe81ac61c60c082222b2679ec6",
+            "probe_count": 4
+          },
+          "black": {
+            "bitmap_sha256": "d403f7f03ff8236fdc70b056a0283159897b3a0bbb31cd53df4d2c3c9114589c",
+            "probe_count": 4
+          },
+          "graded-bloom": {
+            "bitmap_sha256": "47f4661aff0fe873d6d2b35105118f85ba626e9727495ea1d63a103d40672bd0",
+            "probe_count": 4
+          },
+          "fsr3_native-omitted": {
+            "bitmap_sha256": "a8093d9dc18fcfd72e826a5e87eed06badf75154198de36e962675ab32d2f5b1",
+            "probe_count": 4
+          },
+          "fsr3_native-graded": {
+            "bitmap_sha256": "2a0b8ebe2633b89c8b57fa1d7fc012d220d4a4d9f709612bac4464cfd138f28d",
+            "probe_count": 4
+          },
+          "fsr3_quality-omitted": {
+            "bitmap_sha256": "a8093d9dc18fcfd72e826a5e87eed06badf75154198de36e962675ab32d2f5b1",
+            "probe_count": 4
+          },
+          "fsr3_quality-graded": {
+            "bitmap_sha256": "2a0b8ebe2633b89c8b57fa1d7fc012d220d4a4d9f709612bac4464cfd138f28d",
+            "probe_count": 4
+          },
+          "hud-omitted": {
+            "bitmap_sha256": "bf232951c451c77316c8ab049299ee5e4f8d2258806037bdf5da7c029281c6ef",
+            "probe_count": 4
+          },
+          "hud-active": {
+            "bitmap_sha256": "58c0f513066fc7eb9b9d630d059336af0da5a5f727a2b2b7aa32c21daf30a20d",
+            "probe_count": 4
+          },
+          "hud-black": {
+            "bitmap_sha256": "105dde43150ae42fe3a7d2f6230219de56cc6ade5a00d4608bd4b4e23c41e945",
+            "probe_count": 4
+          },
+          "diagnostic-omitted": {
+            "bitmap_sha256": "ba6f143c418da48011113c361fd6e8627aec38e0c00550202a217026f7266867",
+            "probe_count": 4
+          },
+          "diagnostic-graded": {
+            "bitmap_sha256": "ba6f143c418da48011113c361fd6e8627aec38e0c00550202a217026f7266867",
+            "probe_count": 4
+          }
+        }
+      },
+      "deferred-1": {
+        "reference_report_sha256": "3ee27ccbae43ef365c7dd392b3527a67e71efde3c59a15c7f09db32912b24f18",
+        "candidate_report_sha256": "e71eea2ec8ca25c41c0c07462db35bd4dba32a50cad0c7b34eeb985f10f0b7e7",
+        "images": {
+          "omitted": {
+            "bitmap_sha256": "ab4a3cee6ee092884cbca9217a2799f264e7891b88319ea283f89ed270ee2ff0",
+            "probe_count": 4
+          },
+          "retained-371": {
+            "bitmap_sha256": "ab4a3cee6ee092884cbca9217a2799f264e7891b88319ea283f89ed270ee2ff0",
+            "probe_count": 4
+          },
+          "explicit-zero": {
+            "bitmap_sha256": "ab4a3cee6ee092884cbca9217a2799f264e7891b88319ea283f89ed270ee2ff0",
+            "probe_count": 4
+          },
+          "exposed-low": {
+            "bitmap_sha256": "2a0b8ebe2633b89c8b57fa1d7fc012d220d4a4d9f709612bac4464cfd138f28d",
+            "probe_count": 4
+          },
+          "exposed-tail": {
+            "bitmap_sha256": "1ac69bb861052b0121f626103437369689117ebe81ac61c60c082222b2679ec6",
+            "probe_count": 4
+          },
+          "black": {
+            "bitmap_sha256": "d403f7f03ff8236fdc70b056a0283159897b3a0bbb31cd53df4d2c3c9114589c",
+            "probe_count": 4
+          },
+          "graded-bloom": {
+            "bitmap_sha256": "bb4fd33365a741f07a3241b1bb9b0dae28563559d28649568d9123cb6e04bccd",
+            "probe_count": 4
+          },
+          "fsr3_native-omitted": {
+            "bitmap_sha256": "a8093d9dc18fcfd72e826a5e87eed06badf75154198de36e962675ab32d2f5b1",
+            "probe_count": 4
+          },
+          "fsr3_native-graded": {
+            "bitmap_sha256": "2a0b8ebe2633b89c8b57fa1d7fc012d220d4a4d9f709612bac4464cfd138f28d",
+            "probe_count": 4
+          },
+          "fsr3_quality-omitted": {
+            "bitmap_sha256": "a8093d9dc18fcfd72e826a5e87eed06badf75154198de36e962675ab32d2f5b1",
+            "probe_count": 4
+          },
+          "fsr3_quality-graded": {
+            "bitmap_sha256": "2a0b8ebe2633b89c8b57fa1d7fc012d220d4a4d9f709612bac4464cfd138f28d",
+            "probe_count": 4
+          },
+          "hud-omitted": {
+            "bitmap_sha256": "bf232951c451c77316c8ab049299ee5e4f8d2258806037bdf5da7c029281c6ef",
+            "probe_count": 4
+          },
+          "hud-active": {
+            "bitmap_sha256": "58c0f513066fc7eb9b9d630d059336af0da5a5f727a2b2b7aa32c21daf30a20d",
+            "probe_count": 4
+          },
+          "hud-black": {
+            "bitmap_sha256": "105dde43150ae42fe3a7d2f6230219de56cc6ade5a00d4608bd4b4e23c41e945",
+            "probe_count": 4
+          },
+          "diagnostic-omitted": {
+            "bitmap_sha256": "ba6f143c418da48011113c361fd6e8627aec38e0c00550202a217026f7266867",
+            "probe_count": 4
+          },
+          "diagnostic-graded": {
+            "bitmap_sha256": "ba6f143c418da48011113c361fd6e8627aec38e0c00550202a217026f7266867",
+            "probe_count": 4
+          }
+        }
+      }
+    },
+    "refused_export_when_runtime_flag": [
+      "missing",
+      "disabled"
+    ],
+    "refusal_report_sha256": "c29f62e194e01628783b2cf5af45c024e0cfe07cf0f1455714de78f506b819bb"
+  },
+  "direct_shader_abi_rebuild": {
+    "variants": 10,
+    "object_stride": 240,
+    "current_offset": 208,
+    "previous_offset": 224,
+    "report_sha256": "6f390174a74916ad99b1bc161bed7f41cb2bfcb011a035d167e31a8df9da9889"
+  },
+  "scope": "Single-sample Windows Vulkan correctness and Linux headless guards. Mesh bending uses committed time and a selected controller pose with rigid collision proxies."
+}

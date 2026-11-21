@@ -106,6 +106,63 @@ python3 tests/world_foliage_contract.py "$runtime/bin/poima.exe" \
 
 [Qualification results](evidence/m2-foliage-authoring-352.json)
 
+## Bend foliage with wind and character proximity
+
+Add `foliage_motion` to an ordinary rigid `StaticMesh`. The two local heights
+are measured in the model primitive's coordinates. Place the root at the
+plant's ground contact and the tip at the height that should receive the
+full offset. Use the same heights and pivot for every authored detail tier.
+
+```json
+{
+  "root_y": 0,
+  "tip_y": 0.8,
+  "wind": {"direction": [1, 0.25], "tip_m": 0.15, "period_ticks": 120, "wavelength_m": 8},
+  "touch": {"actor": "00000000000000000000000000000002", "radius_m": 0.85, "tip_m": 0.3}
+}
+```
+
+Supply either profile or both. Root and tip must be in `[-1024, 1024]`
+with a height difference of 0.05 to 128 local units. Wind direction is a
+nonzero world XZ vector with coefficients in `[-1, 1]`. The period is an
+integer from 2 to 3,600 committed ticks and the wavelength is 0.5 to 256
+metres. Both tip amplitudes accept 0 to 2 metres. Touch has a radius from
+0.05 to 8 metres and names a distinct authored character controller.
+
+Wind travels across the world using the plant's root position and the
+committed simulation tick. Touch uses the world-space feet and current
+stance height of the selected character. It contributes when the stem and
+character overlap vertically and the character is within the touch radius.
+The bend follows a smooth local height curve. Vertices at or below the root
+stay fixed. The renderer bends shading frames and shadow casters with
+the same shape. Motion products use the preceding accepted pose. [Crytek
+production notes on height-weighted bending](https://developer.nvidia.com/gpugems/gpugems3/part-iii-rendering/chapter-16-vegetation-procedural-animation-and-shading-crysis)
+
+The authored preview samples tick zero. A runtime save restores the tick
+and character state used to reproduce the pose. `runtime.foliage.inspect`
+takes `session_id`, `tick`, `entity` and optional `structure_revision`.
+It reports the local XZ and world-space tip offsets plus the touch weight.
+Use the session and tick from the corresponding render capture. Runtime
+queries use the frozen world even if authoring changes the profile later.
+
+The bend is visual. Keep a rigid collider where the plant needs physical
+contact. The character response follows the current pose continuously.
+Spawn templates accept wind profiles. The touch target belongs to the
+authored world. Camera-routed drawables, bound water tiles and deformable
+snow tiles reject foliage motion.
+
+Exports report `needs_foliage_motion` when the world or a spawn template
+contains a profile. Build and bundle verification check
+`features.foliage_motion` in the installed runtime descriptor.
+
+Run `python3 tests/foliage_motion_contract.py POIMA --output DIRECTORY`
+for the headless checks. Run
+`python3 tests/foliage_motion_capture.py POIMA --runtime-root RUNTIME
+--output DIRECTORY --gpu GPU_INDEX --lighting-path deferred` on an
+installed Windows build for the relocated Vulkan checks. Use
+`--lighting-path forward` for the forward path and `--windows-interop`
+when invoking Windows from WSL.
+
 ## Sample a terrain patch from C++
 
 Use a metre-based, Y-up grid. The caller supplies the terrain height and the
