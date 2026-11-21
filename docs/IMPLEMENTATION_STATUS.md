@@ -1,8 +1,18 @@
 # Implementation status
 
-Updated 2026-11-21 for **0.0.354**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-21 for **0.0.355**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.355 streams [changing water geometry](SHALLOW_WATER.md) through
+the Vulkan buffers shared with scene particles. A relocated game replay
+opened a sluice and spawned a spark on the same input edge. It verified
+water depth and particle position and continued both from a fresh process
+with byte-identical saves. Each GPU kept its closed-gate device idle-wait
+count through the open-gate replay. Compared with the 0.0.353 captures, only
+the 342 pixels covered by the new spark changed in the open-gate frame.
+The fixture checks small-scene rendering and retirement behavior.
+[Results](evidence/m2-shared-water-particle-stream-355.json)
 
 Version 0.0.354 adds [scene particles](PARTICLES.md) with independently
 authored spawn and simulation spaces, seeded ranges, named bursts and

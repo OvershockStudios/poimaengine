@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: Apache-2.0
-"""Exercise terrain-bound water, semantic actions, rollback, saves and optional Vulkan."""
+"""Exercise terrain-bound water, rollback, saves and optional water-and-particle Vulkan replay."""
 import argparse
 from contextlib import contextmanager
 import json
@@ -15,7 +15,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]/'tools/python'))
 from poima_client import WorldClient
 from scene_capture import pixels
 from world_terrain_contract import (CAPTURE_LENS, CAPTURE_SIZE, TerrainContract, encode, error, file_hash,
-                                    projection, read_inventory, rpc, success, tree_hashes, uid)
+                                    projection, read_inventory, rpc, success, tagged, tree_hashes, uid)
 
 
 CELLS = [(x, z) for z in range(2) for x in range(4)]
@@ -24,7 +24,13 @@ DOWNSTREAM = (2, 0)
 GATE = 'sluice'
 SILL = 5.75
 CHECKPOINT = 4
+OPENED = 14
 FINAL = 16
+SPARK = uid(102)
+SPARK_ORIGIN = [12, 6.75, -3.5]
+SPARK_VELOCITY = [6, 0, 0]
+VERTEX_BYTES_PER_QUAD = 4 * (3 + 3 + 2 + 4) * 4  # MeshVertex float fields
+INDEX_BYTES_PER_QUAD = 6 * 4  # uint32 indices
 
 
 def bed(x, z):
@@ -44,8 +50,13 @@ def action(pressed):
 
 
 def replay_profiles():
-    return [('closed', 3, [dict(ticks=3, actions=[action(False)])]),
-            ('opened', 14, [dict(ticks=3, actions=[action(False)]), dict(ticks=11, actions=[action(True)])])]
+    held = dict(ticks=CHECKPOINT-1, actions=[action(False)])
+    return [('closed', CHECKPOINT-1, [held]),
+            ('opened', OPENED, [held, dict(ticks=OPENED-CHECKPOINT+1, actions=[action(True)])])]
+
+
+def spark_position(age):
+    return [origin + velocity*age/60 for origin, velocity in zip(SPARK_ORIGIN, SPARK_VELOCITY, strict=True)]
 
 
 def component(entity, kind, value):
@@ -60,7 +71,7 @@ def reference():
     edges = [(low, low+1, x == 1, z) for low, (x, z) in enumerate(CELLS) if x < 3]
     edges += [(low, low+4, False, z) for low, (_, z) in enumerate(CELLS) if z == 0]
     for tick in range(1, FINAL+1):
-        opened = CHECKPOINT <= tick <= 14
+        opened = CHECKPOINT <= tick <= OPENED
         exchanged = depths.copy()
         supply, drain = .6/60, min(exchanged[3], .24/60)
         exchanged[0] += supply
@@ -336,15 +347,22 @@ class WaterContract(TerrainContract):
         assert output['close']['closed']
         self.measurements['late_rollback'] = output
 
-    def prepare_camera(self, revision):
-        pitch = math.radians(-40)/2
-        ops = [component(uid(3), 'Transform', dict(position=[12, 9, 0], scale=[1, 1, 1],
-                   rotation=[math.sin(pitch), 0, 0, math.cos(pitch)])), component(uid(3), 'Camera', CAPTURE_LENS),
-               component(uid(4), 'LightingEnvironment', dict(ambient=[1, 1, 1], exposure=1)),
-               dict(op='component.remove', id=uid(5), type='Light'), dict(op='component.remove', id=uid(1), type='MeshRenderer')]
-        for tile in TILES:
-            ops.append(component(tile, 'PbrMaterial', dict(base_color=[0, 0, 0], emissive=[.12]*3,
-                metallic=0, roughness=1, double_sided=False)))
+    def prepare_standalone(self, revision):
+        ops = [dict(op='entity.create', id=SPARK, name='Sluice spark'),
+               component(SPARK, 'Transform', dict(position=SPARK_ORIGIN, rotation=[0, 0, 0, 1], scale=[1, 1, 1])),
+               component(SPARK, 'ParticleEmitter', dict(spawn_space='world', simulation_space='world',
+                   lifetime_ticks=24, size_m=.32, linear_rgb=[1, .015, .015], burst=dict(action=GATE, count=1),
+                   velocity_m_s=dict(minimum=SPARK_VELOCITY, maximum=SPARK_VELOCITY)))]
+        if self.args.capture_output:
+            pitch = math.radians(-40)/2
+            ops.extend([component(uid(3), 'Transform', dict(position=[12, 9, 0], scale=[1, 1, 1],
+                            rotation=[math.sin(pitch), 0, 0, math.cos(pitch)])), component(uid(3), 'Camera', CAPTURE_LENS),
+                        component(uid(4), 'LightingEnvironment', dict(ambient=[1, 1, 1], exposure=1)),
+                        dict(op='component.remove', id=uid(5), type='Light'),
+                        dict(op='component.remove', id=uid(1), type='MeshRenderer')])
+            for tile in TILES:
+                ops.append(component(tile, 'PbrMaterial', dict(base_color=[0, 0, 0], emissive=[.12]*3,
+                    metallic=0, roughness=1, double_sided=False)))
         result = success(self.world_calls(self.transaction(revision, 2700, *ops))[0])
         assert result['committed'] and result['revision'] == revision+1
         return revision+1
@@ -368,6 +386,18 @@ class WaterContract(TerrainContract):
             sequence.extend(dict(expect=dict(label=check_label, method='runtime.water.inspect', path=path,
                                               params=dict(cells=[cell]), **comparison))
                             for check_label, path, comparison in checks)
+            live = int(tick >= CHECKPOINT)
+            particle_checks = [('Authored spark source', '/sources/0/entity', dict(equals=SPARK)),
+                               ('Sparks spawned', '/counts/spawned', dict(equals=live)),
+                               ('Live sparks', '/counts/live', dict(equals=live))]
+            if live:
+                age = tick-CHECKPOINT
+                particle_checks.append(('Ticks since the sluice press', '/particles/0/age_ticks', dict(equals=age)))
+                for axis, position in enumerate(spark_position(age)):
+                    particle_checks.append((f'Spark position in metres ({"XYZ"[axis]})', f'/particles/0/position_m/{axis}',
+                                            dict(between=[position-2e-11, position+2e-11])))
+            sequence.extend(dict(expect=dict(label=name, method='runtime.particles.inspect', path=path, **comparison))
+                            for name, path, comparison in particle_checks)
             groups.append(dict(name=label, sequence=sequence))
         specification = dict(format='poima.game-verification', version=1, groups=groups)
         suite.write_text(encode(specification), encoding='utf-8')
@@ -383,11 +413,21 @@ class WaterContract(TerrainContract):
         assert result['groups_passed'] == result['groups_total'] == len(profiles), result
         for group, (label, tick, _) in zip(result['groups'], profiles, strict=True):
             assert (group['name'], group['ticks'], group['passed']) == (label, tick, True), group
-            address, measured = group['checks']
+            checks = group['checks']
             assert all(check['tick'] == tick and check['passed'] and check['observed'] and not check['actual_omitted']
-                       for check in (address, measured)), group
+                       for check in checks), group
+            address, measured, source, spawned, live, *particle = checks
             assert address['actual'] == cell, group
             near(measured['actual'], self.oracle[tick]['depths'][CELLS.index(DOWNSTREAM)])
+            expected_live = int(tick >= CHECKPOINT)
+            assert source['actual'] == SPARK and spawned['actual'] == live['actual'] == expected_live, group
+            if expected_live:
+                age, *position = [check['actual'] for check in particle]
+                assert age == tick-CHECKPOINT, group
+                for actual, expected in zip(position, spark_position(age), strict=True):
+                    near(actual, expected)
+            else:
+                assert not particle, group
         assert tree_hashes(bundle) == frozen and tree_hashes(detached) == authored
 
     def standalone_save(self, bundle, detached, revision):
@@ -444,6 +484,16 @@ class WaterContract(TerrainContract):
             decoded = json.loads(raw)['snapshot']['payload']
             assert decoded['tick'] == decoded['water']['tick'] == tick
             assert decoded['water']['plan_sha256'] == self.plan['plan_sha256']
+            effects = decoded['particles']
+            assert [source['entity'] for source in effects['sources']] == [SPARK]
+            state = effects['state']
+            assert state['status']['tick'] == tick
+            ages = [0] if tick == CHECKPOINT else [FINAL-CHECKPOINT, FINAL-(OPENED+1)]
+            assert state['status']['particles'] == dict(live=len(ages), spawned=len(ages), dropped=0, expired=0, removed=0)
+            for particle, age in zip(state['particles'], ages, strict=True):
+                assert particle['age_ticks'] == age
+                for actual, position in zip(particle['position_m'], spark_position(age), strict=True):
+                    near(actual, position)
             return raw
 
         with owner('original') as game_client:
@@ -499,7 +549,8 @@ class WaterContract(TerrainContract):
             width, height = CAPTURE_SIZE
             result = success(json.loads(self.cli('game', 'run', self.native(game), '--gpu', self.args.gpu,
                 '--replay', self.native(replay), '--capture', self.native(bmp), '--report', self.native(receipt),
-                '--width', width, '--height', height, '--samples', 1, executable=executable, cwd=external)))
+                '--width', width, '--height', height, '--samples', 1, '--frames-in-flight', 2,
+                executable=executable, cwd=external)))
             play = result['play']
             item = captures[label] = dict(play=play, image=str(bmp), image_sha256=file_hash(bmp))
             assert json.loads(receipt.read_bytes()) == result and result['runtime']['tick'] == play['tick'] == tick
@@ -509,8 +560,15 @@ class WaterContract(TerrainContract):
             diagnostics = play['render_diagnostics']
             draws = diagnostics['last_draws']
             wet = sum(depth > 0 for depth in self.oracle[tick]['depths'])
-            assert diagnostics['completed_submissions'] > 0 and draws['objects'] == draws['camera_draws'] == 3, draws
-            assert draws['camera_triangles'] == 16 + 2*wet, draws
+            live = int(tick >= CHECKPOINT)
+            assert diagnostics['completed_submissions'] > 0 and draws['objects'] == draws['camera_draws'] == 3+live, draws
+            assert draws['camera_triangles'] == 16 + 2*(wet+live), draws
+            assert draws['streamed_draws'] == 1+live, draws
+            assert draws['streamed_vertex_bytes'] == (wet+live)*VERTEX_BYTES_PER_QUAD, draws
+            assert draws['streamed_index_bytes'] == (wet+live)*INDEX_BYTES_PER_QUAD, draws
+            execution = diagnostics['frame_execution']
+            assert execution['limit'] == 2, execution
+            assert play['materials']['presented']['tick'] == tick, play['materials']
             presented = diagnostics['scene_receipts']['presented']
             assert presented['camera_id'] == uid(3) and presented['camera_lens'] == CAPTURE_LENS
             camera = presented.get('camera_pose', {}).get('camera_world') or play['camera_world']
@@ -527,7 +585,20 @@ class WaterContract(TerrainContract):
                 blue = sum(b > 70 and b > r+20 and b > g+4 for r, g, b in neighborhood)
                 samples[channel] = dict(world=point, pixel=[u, v], depth_m=depth, colors=neighborhood, water_pixels=blue)
                 assert blue == (9 if depth > 0 else 0), samples[channel]
+            witnesses = item['particle_witnesses'] = {}
+            for name, age, expected in [('birth', 0, False), ('advanced', OPENED-CHECKPOINT, live == 1)]:
+                point = spark_position(age)
+                u, v = map(math.floor, projection(camera, CAPTURE_LENS, point))
+                assert 1 <= u < width-1 and 1 <= v < height-1, (point, u, v)
+                colors = [image[y][x] for y in range(v-1, v+2) for x in range(u-1, u+2)]
+                red = sum(tagged(color, 0) for color in colors)
+                witnesses[name] = dict(world=point, pixel=[u, v], expected=expected, colors=colors, particle_pixels=red)
+                assert red == (9 if expected else 0), witnesses[name]
             assert tree_hashes(bundle) == frozen and tree_hashes(detached) == authored
+        closed, opened = (captures[label]['play'] for label in ('closed', 'opened'))
+        assert closed['gpu'] == opened['gpu'], (closed['gpu'], opened['gpu'])
+        idle_waits = [play['render_diagnostics']['frame_execution']['device_idle_waits'] for play in (closed, opened)]
+        assert idle_waits[0] == idle_waits[1], idle_waits
 
     def export(self, revision):
         output = self.root/'Initial water export'
@@ -594,8 +665,8 @@ class WaterContract(TerrainContract):
             assert self.world.read_bytes() == before
         self.measurements['source_recipe_unavailable'] = True
         if self.args.runtime_root:
-            if self.args.capture_output:
-                revision = self.prepare_camera(revision)
+            if self.args.runtime:
+                revision = self.prepare_standalone(revision)
             self.export(revision)
 
 
@@ -605,7 +676,7 @@ def main():
     parser.add_argument('--runtime', type=int, choices=[0, 1], default=1)
     parser.add_argument('--runtime-root', type=Path, help='Matching installed standalone runtime.')
     parser.add_argument('--windows-interop', action='store_true')
-    parser.add_argument('--capture-output', type=Path, help='Retain closed and opened Windows Vulkan replay captures.')
+    parser.add_argument('--capture-output', type=Path, help='Retain closed and opened Windows Vulkan water and particle captures.')
     parser.add_argument('--gpu', type=int, default=0)
     parser.add_argument('--evidence', type=Path)
     args = parser.parse_args()

@@ -21,11 +21,13 @@ struct SurfaceCell {
 };
 
 // Linear RGB. Cell depth blends between these two swatches in one draw.
-std::shared_ptr<const TextureImage> depth_palette() {
+std::shared_ptr<const MaterialTextures> depth_palette() {
     static const auto palette = [] {
         auto image = std::make_shared<TextureImage>();
         image->mips.push_back({2, 1, {4, 116, 144, 255, 3, 27, 86, 255}});
-        return std::shared_ptr<const TextureImage>(std::move(image));
+        auto textures = std::make_shared<MaterialTextures>();
+        textures->maps[0] = {std::move(image), 33071, 33071, 9729, 9729};
+        return std::shared_ptr<const MaterialTextures>(std::move(textures));
     }();
     return palette;
 }
@@ -49,7 +51,6 @@ std::shared_ptr<const MeshAsset> surface_mesh(double cell_size, std::span<const 
     mesh->has_uv = true;
     mesh->material.metallic = 0.0f;
     mesh->material.roughness = 0.3f;
-    mesh->textures[0] = {depth_palette(), 33071, 33071, 9729, 9729};
     for (const auto& cell : cells) {
         const auto x0 = static_cast<float>(cell.x * cell_size);
         const auto x1 = static_cast<float>((cell.x + 1) * cell_size);
@@ -104,7 +105,9 @@ void append_region_scene(const Region& region, SceneSnapshot& scene) {
     object.albedo = {0.016f, 0.30f, 0.46f};
     object.mesh = surface_mesh(config.cell_size_m, std::span(wet).first(count));
     object.material = object.mesh->material;
+    object.textures = depth_palette();
     object.cast_shadows = false;
+    object.stream_geometry = true;
     // Leave incarnation zero because a cell's triangles can appear or disappear.
     scene.objects.push_back(std::move(object));
 }

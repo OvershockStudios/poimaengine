@@ -2171,7 +2171,8 @@ public:
     static Json draw_counts_json(const DrawCounts& c) {
         return {{"skinned_instances",c.skinned_instances},{"skinned_vertices",c.skinned_vertices},{"objects",c.objects},{"camera_draws",c.camera_draws},{"camera_culled",c.camera_culled},{"camera_triangles",c.camera_triangles},
             {"camera_batches",c.camera_batches},{"shadow_batches",c.shadow_batches},
-            {"shadow_views",c.shadow_views},{"shadow_candidates",c.shadow_candidates},{"shadow_draws",c.shadow_draws},{"shadow_culled",c.shadow_culled},{"shadow_triangles",c.shadow_triangles}};
+            {"shadow_views",c.shadow_views},{"shadow_candidates",c.shadow_candidates},{"shadow_draws",c.shadow_draws},{"shadow_culled",c.shadow_culled},{"shadow_triangles",c.shadow_triangles},
+            {"streamed_draws",c.streamed_draws},{"streamed_vertex_bytes",c.streamed_vertex_bytes},{"streamed_index_bytes",c.streamed_index_bytes}};
     }
     static Json light_assignment_json(const LightAssignmentDiagnostics& l) {
         return {{"requested",l.requested},{"active",l.active},{"statistics_available",l.statistics_available},

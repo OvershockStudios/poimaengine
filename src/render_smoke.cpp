@@ -1351,6 +1351,9 @@ struct Context {
         require(!slot.occupied,"Streamed geometry requires a retired frame slot.");
         stream_vertices.clear();
         stream_indices.clear();
+        pending_draws.streamed_draws=0;
+        pending_draws.streamed_vertex_bytes=0;
+        pending_draws.streamed_index_bytes=0;
         if(!scene_visible)return;
         std::size_t draw_count=0;
         for(auto& draw:draws) {
@@ -1385,9 +1388,11 @@ struct Context {
             draw.geometry.vertices=slot.streamed_vertices;
             draw.geometry.indices=slot.streamed_indices;
         }
-        profiling::counter("renderer.streamed_geometry_draws",draw_count);
-        profiling::counter("renderer.streamed_geometry_upload_bytes",
-            stream_vertices.size()*sizeof(Vertex)+stream_indices.size()*sizeof(std::uint32_t));
+        pending_draws.streamed_draws=draw_count;
+        pending_draws.streamed_vertex_bytes=stream_vertices.size()*sizeof(Vertex);
+        pending_draws.streamed_index_bytes=stream_indices.size()*sizeof(std::uint32_t);
+        profiling::counter("renderer.streamed_geometry_draws",pending_draws.streamed_draws);
+        profiling::counter("renderer.streamed_geometry_upload_bytes",pending_draws.streamed_vertex_bytes+pending_draws.streamed_index_bytes);
     }
     void prepare_skin_pipeline() {
         if(skin_pipeline_ready)return;

@@ -1,0 +1,415 @@
+{
+  "engine_version": "0.0.355",
+  "world_schema_revision": 176,
+  "sources_sha256": {
+    "CMakeLists.txt": "8ff9f798e5f6b54dcd0441b623cb6ab2bebb00f45782183ab460031d03c3761c",
+    "include/poima/core.hpp": "a8634a0cb604b23297245d0938efc1a8905765651ca47eb3c87c8cd2bfd7182e",
+    "src/render_smoke.cpp": "46f6fda5eca881554228eadb4377f2655544933b7900d94953abe1b41d0404ca",
+    "src/water_region_scene.cpp": "8fadb0ba16e4c12edc9e947a90c974cae6cc6d7f4d0d41f3e39112a29189dde4",
+    "src/world.cpp": "a46c27d757d44a29bd20d47da23f99cfa66b08c87034f1e837d22d809df04427",
+    "tests/water_region_scene_native.cpp": "58c80b01a340dea18dceb6dcd3750c1711b817a6c3443e7e07b32a83eda8bb44",
+    "tests/world_water_contract.py": "35d0b752ed033ad6f26567d457be708cb05c1886dc752241d7897d253bdfe00e"
+  },
+  "linux": {
+    "version": {
+      "version": "0.0.355",
+      "compiler": "GNU",
+      "compiler_version": "16.2.0",
+      "target_os": "Linux",
+      "target_arch": "x86_64"
+    },
+    "executable_sha256": "8ea6f67e712526a765506070287ac4aad21d2a541e142e586c69b7a411926ffb",
+    "junit_sha256": "47dfcc016182e4b7798ec20b98947050fdecbb2fef3382cd7930c0527b43bb93",
+    "suites": [
+      "particles_native",
+      "shallow_water_native",
+      "water_region_native",
+      "water_region_scene_native",
+      "particle_scene_native",
+      "world_terrain_contract",
+      "world_foliage_contract",
+      "world_water_contract",
+      "world_particles_contract",
+      "authoring_core_conformance",
+      "authoring_contract_identity",
+      "render_batches_native",
+      "render_schedule_native",
+      "mcp_contract",
+      "world_ui_contract",
+      "project_contract",
+      "asset_references_contract"
+    ],
+    "simultaneous_projection": {
+      "draws": 17,
+      "quads": 5120,
+      "vertex_bytes": 983040,
+      "index_bytes": 122880
+    }
+  },
+  "windows": {
+    "version": {
+      "version": "0.0.355",
+      "compiler": "Clang",
+      "compiler_version": "23.1.2",
+      "target_os": "Windows",
+      "target_arch": "x86_64"
+    },
+    "executable_sha256": "c7721a6cf18cb0f006c368ddc0b94db22b9d9cb4f350fab85ed6800b50c7b215",
+    "descriptor_sha256": "111a49341edca1cb15839f15c36ff598dca8268436a1b69c4b36902d5c98f9e6",
+    "bridge_sha256": "da29d089738d55c6db8526f382a4d69b504a68108c65f99d5d976921a07eccca",
+    "mcp_log_sha256": "946eacea6897b3565df358f91a28ff6f23c28ce7bf6a7899926d3ed90a051071",
+    "devices": [
+      {
+        "device": "AMD Radeon(TM) Graphics",
+        "qualification_sha256": "50a6995deb5018facb2c6ad10b1119ee7a45295807c6168f2793f55e00a4390d",
+        "reference_sha256": "810ee1edcb45a57e457a3ecf5a5104b138872a760f9a737b638e0da8fcf64560",
+        "standalone": {
+          "bundle_sha256": "5e7378a2eb17ac2884c6176c18ef0008a2777af4caac510b3c6fdbfb85530d25",
+          "suite_sha256": "522c7681b6ff801d8109179592fb773f0e147967808961f8c384e3c3c63e2c34",
+          "groups": {
+            "closed": {
+              "tick": 3,
+              "asserted": 5,
+              "depth_m": 0.0,
+              "spawned": 0,
+              "live": 0
+            },
+            "opened": {
+              "tick": 14,
+              "asserted": 9,
+              "depth_m": 0.20094330096568347,
+              "spawned": 1,
+              "live": 1,
+              "particle_age_ticks": 10,
+              "particle_position_m": [
+                12.999999999999996,
+                6.75,
+                -3.5
+              ]
+            }
+          },
+          "save_tick": 16,
+          "continued_archive_sha256": "a5a65e0214187623dba6bceaca424c85621b9be4f491e997d539699918b33fa8",
+          "continued_archive_bytes": 17338,
+          "saved_particle_ages": [
+            12,
+            1
+          ]
+        },
+        "captures": {
+          "closed": {
+            "tick": 3,
+            "frames_presented": 4,
+            "nvrhi_errors": 0,
+            "frame_slots": 2,
+            "total_device_idle_waits": 7,
+            "prior_device_idle_waits": 11,
+            "streamed_draws": 1,
+            "streamed_vertex_bytes": 768,
+            "streamed_index_bytes": 96,
+            "camera_triangles": 24,
+            "pixels_vs_prior": {
+              "pixels_changed": 0,
+              "newly_red_pixels": 0,
+              "bounds_xyxy": null,
+              "old_sha256": "b23522dfcc87c4409845dd7a992ef01ade0850acbdd725f099048c42341fefc6",
+              "new_sha256": "b23522dfcc87c4409845dd7a992ef01ade0850acbdd725f099048c42341fefc6"
+            },
+            "surface_witnesses": {
+              "upstream": {
+                "pixel": [
+                  239,
+                  132
+                ],
+                "depth_m": 1.5827000000000002,
+                "water_pixels": 9
+              },
+              "downstream": {
+                "pixel": [
+                  342,
+                  211
+                ],
+                "depth_m": 0.0,
+                "water_pixels": 0
+              }
+            },
+            "particle_witnesses": {
+              "birth": {
+                "pixel": [
+                  320,
+                  121
+                ],
+                "world": [
+                  12.0,
+                  6.75,
+                  -3.5
+                ],
+                "particle_pixels": 0,
+                "expected": false
+              },
+              "advanced": {
+                "pixel": [
+                  374,
+                  121
+                ],
+                "world": [
+                  13.0,
+                  6.75,
+                  -3.5
+                ],
+                "particle_pixels": 0,
+                "expected": false
+              }
+            }
+          },
+          "opened": {
+            "tick": 14,
+            "frames_presented": 15,
+            "nvrhi_errors": 0,
+            "frame_slots": 2,
+            "total_device_idle_waits": 7,
+            "prior_device_idle_waits": 22,
+            "streamed_draws": 2,
+            "streamed_vertex_bytes": 1728,
+            "streamed_index_bytes": 216,
+            "camera_triangles": 34,
+            "pixels_vs_prior": {
+              "pixels_changed": 342,
+              "newly_red_pixels": 342,
+              "bounds_xyxy": [
+                367,
+                100,
+                385,
+                117
+              ],
+              "old_sha256": "c69d802d776ce28e69275ace032ad0bc43dada328574e33ff19eba05939ebe62",
+              "new_sha256": "c289b35afc560838ceb746a79bb50bb3c080bb2e2f58c1277a4fe07165b0b062"
+            },
+            "surface_witnesses": {
+              "upstream": {
+                "pixel": [
+                  237,
+                  121
+                ],
+                "depth_m": 1.5490850889721548,
+                "water_pixels": 9
+              },
+              "downstream": {
+                "pixel": [
+                  343,
+                  196
+                ],
+                "depth_m": 0.20094330096568347,
+                "water_pixels": 9
+              }
+            },
+            "particle_witnesses": {
+              "birth": {
+                "pixel": [
+                  320,
+                  108
+                ],
+                "world": [
+                  12.0,
+                  6.75,
+                  -3.5
+                ],
+                "particle_pixels": 0,
+                "expected": false
+              },
+              "advanced": {
+                "pixel": [
+                  376,
+                  108
+                ],
+                "world": [
+                  13.0,
+                  6.75,
+                  -3.5
+                ],
+                "particle_pixels": 9,
+                "expected": true
+              }
+            }
+          }
+        }
+      },
+      {
+        "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "qualification_sha256": "296cd46e9bc15a62145336058986a47943459d3bff474251280e54adcdd4368a",
+        "reference_sha256": "abbad59cf43991f742319a5f3afbc552b102085a06916fab812d10e276a7090d",
+        "standalone": {
+          "bundle_sha256": "a7a92e5083dfefdb2da9c8f404989f45712ab713c1f99337d9cc9ac8fd3718ca",
+          "suite_sha256": "522c7681b6ff801d8109179592fb773f0e147967808961f8c384e3c3c63e2c34",
+          "groups": {
+            "closed": {
+              "tick": 3,
+              "asserted": 5,
+              "depth_m": 0.0,
+              "spawned": 0,
+              "live": 0
+            },
+            "opened": {
+              "tick": 14,
+              "asserted": 9,
+              "depth_m": 0.20094330096568347,
+              "spawned": 1,
+              "live": 1,
+              "particle_age_ticks": 10,
+              "particle_position_m": [
+                12.999999999999996,
+                6.75,
+                -3.5
+              ]
+            }
+          },
+          "save_tick": 16,
+          "continued_archive_sha256": "6233064ae016531e7aa92581a1327d536368b865f8e28d4d06e331b8550caf49",
+          "continued_archive_bytes": 17338,
+          "saved_particle_ages": [
+            12,
+            1
+          ]
+        },
+        "captures": {
+          "closed": {
+            "tick": 3,
+            "frames_presented": 4,
+            "nvrhi_errors": 0,
+            "frame_slots": 2,
+            "total_device_idle_waits": 6,
+            "prior_device_idle_waits": 10,
+            "streamed_draws": 1,
+            "streamed_vertex_bytes": 768,
+            "streamed_index_bytes": 96,
+            "camera_triangles": 24,
+            "pixels_vs_prior": {
+              "pixels_changed": 0,
+              "newly_red_pixels": 0,
+              "bounds_xyxy": null,
+              "old_sha256": "b23522dfcc87c4409845dd7a992ef01ade0850acbdd725f099048c42341fefc6",
+              "new_sha256": "b23522dfcc87c4409845dd7a992ef01ade0850acbdd725f099048c42341fefc6"
+            },
+            "surface_witnesses": {
+              "upstream": {
+                "pixel": [
+                  239,
+                  132
+                ],
+                "depth_m": 1.5827000000000002,
+                "water_pixels": 9
+              },
+              "downstream": {
+                "pixel": [
+                  342,
+                  211
+                ],
+                "depth_m": 0.0,
+                "water_pixels": 0
+              }
+            },
+            "particle_witnesses": {
+              "birth": {
+                "pixel": [
+                  320,
+                  121
+                ],
+                "world": [
+                  12.0,
+                  6.75,
+                  -3.5
+                ],
+                "particle_pixels": 0,
+                "expected": false
+              },
+              "advanced": {
+                "pixel": [
+                  374,
+                  121
+                ],
+                "world": [
+                  13.0,
+                  6.75,
+                  -3.5
+                ],
+                "particle_pixels": 0,
+                "expected": false
+              }
+            }
+          },
+          "opened": {
+            "tick": 14,
+            "frames_presented": 15,
+            "nvrhi_errors": 0,
+            "frame_slots": 2,
+            "total_device_idle_waits": 6,
+            "prior_device_idle_waits": 21,
+            "streamed_draws": 2,
+            "streamed_vertex_bytes": 1728,
+            "streamed_index_bytes": 216,
+            "camera_triangles": 34,
+            "pixels_vs_prior": {
+              "pixels_changed": 342,
+              "newly_red_pixels": 342,
+              "bounds_xyxy": [
+                367,
+                100,
+                385,
+                117
+              ],
+              "old_sha256": "c69d802d776ce28e69275ace032ad0bc43dada328574e33ff19eba05939ebe62",
+              "new_sha256": "0cb89bd272156f5c8f59f6fb5b45f1cf919e7efd29d616af99f5d6f8b7bd72f7"
+            },
+            "surface_witnesses": {
+              "upstream": {
+                "pixel": [
+                  237,
+                  121
+                ],
+                "depth_m": 1.5490850889721548,
+                "water_pixels": 9
+              },
+              "downstream": {
+                "pixel": [
+                  343,
+                  196
+                ],
+                "depth_m": 0.20094330096568347,
+                "water_pixels": 9
+              }
+            },
+            "particle_witnesses": {
+              "birth": {
+                "pixel": [
+                  320,
+                  108
+                ],
+                "world": [
+                  12.0,
+                  6.75,
+                  -3.5
+                ],
+                "particle_pixels": 0,
+                "expected": false
+              },
+              "advanced": {
+                "pixel": [
+                  376,
+                  108
+                ],
+                "world": [
+                  13.0,
+                  6.75,
+                  -3.5
+                ],
+                "particle_pixels": 9,
+                "expected": true
+              }
+            }
+          }
+        }
+      }
+    ]
+  },
+  "scope": "Forward rendering at 640 by 360 and one sample, two frame slots. One terrain-bound basin and one detached particle on the same named action. Exact stream payload and sample output checks describe this fixture."
+}

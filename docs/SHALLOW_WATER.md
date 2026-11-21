@@ -75,11 +75,15 @@ Fresh-process loads verify the identity and restore the water tick before more
 input. The package includes the selected `.pwater` and cooked terrain meshes.
 Keep the editable heightfield recipe for later revisions.
 
-The renderer projects wet cells into one opaque, depth-tested mesh. Compare
-captures taken before and after opening a gate from a view that exposes the
-downstream bed. Terrain can obscure the shallow edges of cells where its slope
-rises above the local water surface. Wave momentum, vertical stacking,
-buoyancy, optical effects and large water bodies are separate work.
+The renderer projects wet cells into one opaque, depth-tested mesh.
+From 0.0.355, changing geometry uploads through frame-owned vertex and index
+buffers. The depth-color palette stays bound across changes in cell heights.
+Compare captures taken before and after opening a gate from a view that
+exposes the downstream bed. Use [the draw report](RENDER_DIAGNOSTICS.md#submission-and-presentation-lifetime)
+to check the water and particle payloads together. Terrain can obscure shallow
+edges where its slope rises above the local water surface. Wave momentum,
+vertical stacking, buoyancy, optical effects and large water bodies are
+separate work.
 
 Run the integrated checks from a built simulation checkout.
 
@@ -96,7 +100,8 @@ python3 tests/world_water_contract.py "$runtime/bin/poima.exe" \
   --capture-output build/water-captures
 ```
 
-[Qualification results](evidence/m2-terrain-water-353.json)
+[Water qualification](evidence/m2-terrain-water-353.json).
+[Combined water and particle replay](evidence/m2-shared-water-particle-stream-355.json).
 
 ## Build a basin
 

@@ -141,6 +141,7 @@ struct DrawCounts {
     std::uint64_t camera_batches=0,shadow_batches=0; // Actual geometry commands; draws retain instance counts.
     std::uint64_t skinned_instances=0,skinned_vertices=0;
     std::uint64_t shadow_views=0,shadow_candidates=0,shadow_draws=0,shadow_culled=0,shadow_triangles=0;
+    std::uint64_t streamed_draws=0,streamed_vertex_bytes=0,streamed_index_bytes=0;
 };
 struct LightAssignmentDiagnostics {
     bool requested=true,active=false,statistics_available=false;

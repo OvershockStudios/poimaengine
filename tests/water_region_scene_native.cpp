@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
+#include "particle_scene.hpp"
 #include "poima/assets.hpp"
+#include "poima/render_schedule.hpp"
+#include "poima/runtime.hpp"
 #include "poima/water_region.hpp"
 #include "water_region_scene.hpp"
 
@@ -9,6 +12,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <string_view>
+#include <vector>
 
 namespace {
 using namespace poima;
@@ -37,7 +41,8 @@ void uneven_bed_and_footprint() {
     const auto& object = scene.objects.front();
     check(object.entity_id == "water-region/" + definition.plan_sha256,
           "Water presentation identity differs from the selected region.");
-    check(object.camera_visible && !object.cast_shadows && object.receive_shadows && !object.skin && object.incarnation == 0,
+    check(object.camera_visible && object.stream_geometry && !object.cast_shadows &&
+          object.receive_shadows && !object.skin && object.incarnation == 0,
           "Water must be visible world geometry with no shadow casting, pose skin or motion correspondence.");
     check(object.material && object.material->alpha_mode == MaterialAlphaMode::opaque &&
           object.material->metallic == 0 && !object.material->double_sided,
@@ -45,9 +50,10 @@ void uneven_bed_and_footprint() {
     const auto& mesh = *object.mesh;
     check(mesh.vertices.size() == 12 && mesh.indices.size() == 18 && mesh.influences.empty(),
           "Water generated an unexpected number of vertices or indices for the three wet cells.");
-    check(mesh.has_uv && mesh.textures[0].image && !mesh.textures[0].image->srgb &&
-          mesh.textures[0].image->mips.size() == 1, "Water must use one linear depth color palette.");
-    const auto& palette = mesh.textures[0].image->mips.front();
+    check(mesh.has_uv && !mesh.textures[0].image && object.textures && object.textures->maps[0].image &&
+          !object.textures->maps[0].image->srgb && object.textures->maps[0].image->mips.size() == 1,
+          "Streamed water must use one immutable linear depth palette.");
+    const auto& palette = object.textures->maps[0].image->mips.front();
     check(palette.width == 2 && palette.height == 1 && palette.rgba.size() == 8 &&
           palette.rgba[2] > palette.rgba[1] && palette.rgba[6] > palette.rgba[5] &&
           palette.rgba[1] > palette.rgba[5],
@@ -99,6 +105,7 @@ void gate_and_dry_state() {
     const auto opened = capture(region);
     check(opened.objects.size() == 1 && opened.objects.front().mesh != closed.objects.front().mesh &&
           opened.objects.front().entity_id == closed.objects.front().entity_id &&
+          opened.objects.front().textures == closed.objects.front().textures &&
           opened.objects.front().mesh->vertices.size() == 8 && closed.objects.front().mesh->vertices.size() == 4,
           "Opening the gate did not publish an independent two-cell surface under the same identity.");
     const auto& second_cell = opened.objects.front().mesh->vertices.at(4);
@@ -114,13 +121,48 @@ void gate_and_dry_state() {
     check(existing.objects.size() == 1 && existing.objects.front().entity_id == "authored",
           "A completely dry region emitted a drawable or disturbed authored objects.");
 }
+
+void combined_stream_budget() {
+    RegionDefinition definition{};
+    definition.config.cells_x = definition.config.cells_z = max_region_side;
+    constexpr auto cell_count = max_region_side * max_region_side;
+    definition.floor_heights_m.assign(cell_count, 2.0);
+    definition.initial_depths_m.assign(cell_count, 0.25);
+    definition.plan_sha256 = std::string(64, 'd');
+    const Region region(definition);
+    auto scene = capture(region);
+    scene.camera_world = identity_matrix();
+    std::vector<particles::Instance> live(runtime_particle_limits.particles);
+    for (std::size_t i = 0; i < live.size(); ++i) {
+        live[i].id = i + 1;
+        live[i].emitter = i % runtime_particle_limits.emitters + 1;
+        live[i].size_m = 0.1f;
+        live[i].position_m = {double(i % 32) / 10, double(i / 32) / 10, -6};
+        live[i].linear_rgba = {0.1f, 0.4f, 0.6f, 1};
+    }
+    particles::append_scene_particles(scene, live);
+    std::size_t vertices = 0, indices = 0;
+    for (const auto& object : scene.objects) {
+        check(object.stream_geometry && object.mesh, "Combined projection omitted a streamed mesh.");
+        vertices += object.mesh->vertices.size();
+        indices += object.mesh->indices.size();
+    }
+    const auto quad_count = cell_count + live.size();
+    check(scene.objects.size() == 1 + runtime_particle_limits.emitters &&
+          scene.objects.size() <= render_schedule::max_stream_draws &&
+          vertices == quad_count * 4 && indices == quad_count * 6 &&
+          vertices * sizeof(MeshVertex) <= render_schedule::stream_vertex_budget &&
+          indices * sizeof(std::uint32_t) <= render_schedule::stream_index_budget,
+          "Full water and particle projections exceed the shared stream budget.");
+}
 }
 
 int main() {
     try {
         uneven_bed_and_footprint();
         gate_and_dry_state();
-        std::cout << "Water region scene geometry, depth palette, cache, gate and dry-state checks passed.\n";
+        combined_stream_budget();
+        std::cout << "Water scene checks passed, including the combined water and particle stream budget.\n";
         return 0;
     } catch (const std::exception& error) {
         std::cerr << error.what() << '\n';
