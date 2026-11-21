@@ -128,7 +128,8 @@ void validate_offered_contract(const gameplay_abi::Contract& offered,const gamep
         }) && names.insert(feature).second,"Offered gameplay feature is malformed or duplicated.");
         const bool known=feature==gameplay_abi::baseline_feature || feature==gameplay_abi::persistence_feature ||
             feature==gameplay_abi::collections_feature || feature==gameplay_abi::animation_feature ||
-            feature==gameplay_abi::animation_layers_feature || feature==gameplay_abi::character_input_feature || feature==gameplay_abi::navigation_feature || feature==gameplay_abi::instances_feature || feature==gameplay_abi::player_preferences_feature || feature==gameplay_abi::input_actions_feature || feature==gameplay_abi::hit_regions_feature || feature==gameplay_abi::two_bone_ik_feature || feature==gameplay_abi::root_motion_feature || feature==gameplay_abi::camera_lens_feature || feature==gameplay_abi::character_stance_feature || feature==gameplay_abi::two_bone_ik_orientation_feature || feature==gameplay_abi::grounding_control_feature || feature==gameplay_abi::animation_rate_feature || feature==gameplay_abi::camera_pose_feature || feature==gameplay_abi::capsule_cast_feature || feature==gameplay_abi::physical_rig_feature || feature==gameplay_abi::physical_rig_drive_feature || feature==gameplay_abi::physical_rig_animation_feature || feature==gameplay_abi::physical_recovery_feature || feature==gameplay_abi::item_attachment_feature || feature==gameplay_abi::item_attachment_contact_feature || feature==gameplay_abi::item_attachment_surface_feature || feature==gameplay_abi::item_attachment_recovery_feature || feature==gameplay_abi::item_attachment_release_feature || feature==gameplay_abi::item_attachment_pickup_feature || feature==gameplay_abi::item_attachment_aim_feature || feature==gameplay_abi::ik_clearance_feature || feature==gameplay_abi::item_pickup_clearance_feature || feature==gameplay_abi::item_pickup_pose_feature || feature==gameplay_abi::item_pickup_blend_feature || feature==gameplay_abi::item_pickup_steering_feature || feature==gameplay_abi::item_pickup_hand_fallback_feature;
+            feature==gameplay_abi::animation_layers_feature || feature==gameplay_abi::character_input_feature || feature==gameplay_abi::navigation_feature || feature==gameplay_abi::instances_feature || feature==gameplay_abi::player_preferences_feature || feature==gameplay_abi::input_actions_feature || feature==gameplay_abi::hit_regions_feature || feature==gameplay_abi::two_bone_ik_feature || feature==gameplay_abi::root_motion_feature || feature==gameplay_abi::camera_lens_feature || feature==gameplay_abi::character_stance_feature || feature==gameplay_abi::two_bone_ik_orientation_feature || feature==gameplay_abi::grounding_control_feature || feature==gameplay_abi::animation_rate_feature || feature==gameplay_abi::camera_pose_feature || feature==gameplay_abi::capsule_cast_feature || feature==gameplay_abi::physical_rig_feature || feature==gameplay_abi::physical_rig_drive_feature || feature==gameplay_abi::physical_rig_animation_feature || feature==gameplay_abi::physical_recovery_feature || feature==gameplay_abi::item_attachment_feature || feature==gameplay_abi::item_attachment_contact_feature || feature==gameplay_abi::item_attachment_surface_feature || feature==gameplay_abi::item_attachment_recovery_feature || feature==gameplay_abi::item_attachment_release_feature || feature==gameplay_abi::item_attachment_pickup_feature || feature==gameplay_abi::item_attachment_aim_feature || feature==gameplay_abi::ik_clearance_feature || feature==gameplay_abi::item_pickup_clearance_feature || feature==gameplay_abi::item_pickup_pose_feature || feature==gameplay_abi::item_pickup_blend_feature || feature==gameplay_abi::item_pickup_steering_feature || feature==gameplay_abi::item_pickup_hand_fallback_feature ||
+            feature==gameplay_abi::particle_burst_feature;
         check(!known || std::find(actual.features.begin(),actual.features.end(),feature)!=actual.features.end(),
             "Offered gameplay feature is unavailable in the compiled runtime.");
     }
@@ -652,7 +653,7 @@ template<class F>void with_prefix_service_view(const gameplay_abi::Contract& req
     check(extended.animation_get_extended && extended.animation_set_extended,"Gameplay animation extension callback is absent.");
     callback(&extended.baseline);
 }
-template<class F>void with_service_view(const gameplay_abi::Contract& prefix,bool has_attachments,const PoimaGameServices& provided,F&& callback) {
+template<class F>void with_attachment_service_view(const gameplay_abi::Contract& prefix,bool has_attachments,const PoimaGameServices& provided,F&& callback) {
     if(!has_attachments) {
         with_prefix_service_view(prefix,provided,callback);
         return;
@@ -670,6 +671,26 @@ template<class F>void with_service_view(const gameplay_abi::Contract& prefix,boo
         std::memcpy(&view.recovery,services,services->bytes);
     });
     auto& baseline=gameplay_abi::physical_rig_drive_baseline(view.recovery.animation.drive);
+    baseline.bytes=sizeof(view);
+    callback(&baseline);
+}
+template<class F>void with_service_view(const gameplay_abi::Contract& prefix,bool has_attachments,bool has_particle_bursts,
+    const PoimaGameServices& provided,F&& callback) {
+    if(!has_particle_bursts) {
+        with_attachment_service_view(prefix,has_attachments,provided,callback);
+        return;
+    }
+    check(provided.version==gameplay_abi::services_version && provided.bytes>=sizeof(PoimaGameParticleServicesV1),
+        "Gameplay requires services epoch 7 and the 536-byte particle burst extension.");
+    PoimaGameParticleServicesV1 view{};
+    std::memcpy(&view,&provided,sizeof(view));
+    check(view.particle_burst,"Gameplay particle burst callback is absent.");
+    view.attachments={};
+    with_attachment_service_view(prefix,has_attachments,provided,[&](const PoimaGameServices* services) {
+        check(services->bytes<=sizeof(view.attachments),"Projected gameplay services exceed the particle burst prefix.");
+        std::memcpy(&view.attachments,services,services->bytes);
+    });
+    auto& baseline=gameplay_abi::physical_rig_drive_baseline(view.attachments.recovery.animation.drive);
     baseline.bytes=sizeof(view);
     callback(&baseline);
 }
@@ -879,6 +900,7 @@ struct Gameplay::Impl {
     std::uint64_t handle=0;std::uint32_t bytes=0;std::string assembly_hash;Json manifest,migration;GameplayConfig config;std::vector<std::uint64_t> storage;std::vector<std::pair<std::size_t,bool>> floating_fields;
     std::vector<std::pair<std::size_t,std::string>> entity_fields;
     gameplay_abi::Contract requirements,prefix_requirements;
+    bool has_particle_bursts=false;
     bool has_attachments=false,has_attachment_contact=false,has_attachment_surface=false,has_attachment_recovery=false,has_attachment_release=false,has_attachment_pickup=false,has_attachment_aim=false;
     bool has_ik_clearance=false;
     bool has_item_pickup_clearance=false,has_item_pickup_pose=false,has_item_pickup_blend=false,has_item_pickup_steering=false,has_item_pickup_hand_fallback=false;
@@ -934,6 +956,7 @@ Gameplay::Gameplay(const GameplayConfig& config,const Gameplay* previous,Gamepla
     require_compatible(impl_->requirements,host_available);
     impl_->prefix_requirements=impl_->requirements;
     auto& prefix=impl_->prefix_requirements;
+    impl_->has_particle_bursts=std::erase(prefix.features,std::string(gameplay_abi::particle_burst_feature))!=0;
     impl_->has_attachments=std::erase(prefix.features,std::string(gameplay_abi::item_attachment_feature))!=0;
     impl_->has_attachment_contact=std::erase(prefix.features,std::string(gameplay_abi::item_attachment_contact_feature))!=0;
     impl_->has_attachment_surface=std::erase(prefix.features,std::string(gameplay_abi::item_attachment_surface_feature))!=0;
@@ -1063,12 +1086,12 @@ std::string validate_gameplay_values(const std::string& schema,const std::string
     return apply_values(metadata,storage,values).dump();
 }
 void Gameplay::control(const PoimaGameServices& services,std::uint64_t tick) {
-    with_service_view(impl_->prefix_requirements,impl_->has_attachments,services,[&](const PoimaGameServices* view) {
+    with_service_view(impl_->prefix_requirements,impl_->has_attachments,impl_->has_particle_bursts,services,[&](const PoimaGameServices* view) {
         PoimaGameCall call{};call.operation=6;call.handle=impl_->handle;call.state=impl_->storage.data();call.state_bytes=impl_->bytes;call.services=view;call.tick=tick;(void)invoke(impl_->entry,call);impl_->validate();
     });
 }
 void Gameplay::tick(const PoimaGameServices& services,std::span<const PoimaGameInput> inputs,std::uint64_t tick) {
-    with_service_view(impl_->prefix_requirements,impl_->has_attachments,services,[&](const PoimaGameServices* view) {
+    with_service_view(impl_->prefix_requirements,impl_->has_attachments,impl_->has_particle_bursts,services,[&](const PoimaGameServices* view) {
         PoimaGameCall call{};call.operation=3;call.handle=impl_->handle;call.state=impl_->storage.data();call.state_bytes=impl_->bytes;call.services=view;call.inputs=inputs.data();call.input_count=static_cast<std::uint32_t>(inputs.size());call.tick=tick;(void)invoke(impl_->entry,call);impl_->validate();
     });
 }

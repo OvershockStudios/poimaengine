@@ -87,6 +87,8 @@ __pycache__/
 /tests/managed_capsule_cast_gameplay/**/obj/
 /tests/managed_item_attachment_gameplay/**/bin/
 /tests/managed_item_attachment_gameplay/**/obj/
+/tests/managed_particle_burst_gameplay/bin/
+/tests/managed_particle_burst_gameplay/obj/
 
 /examples/projectile-range/bin/
 /examples/projectile-range/obj/

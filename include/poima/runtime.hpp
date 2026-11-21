@@ -386,6 +386,7 @@ struct RuntimeHitRegion {
 };
 inline constexpr std::size_t max_runtime_hit_regions=4096;
 inline constexpr particles::Limits runtime_particle_limits{16,4096};
+inline constexpr std::uint32_t max_gameplay_particle_burst_attempts=32;
 inline constexpr std::size_t max_runtime_particle_curve_knots=8;
 inline constexpr std::uint32_t max_runtime_particle_flipbook_side=32;
 inline constexpr std::uint32_t max_runtime_particle_frame_ticks=36'000;

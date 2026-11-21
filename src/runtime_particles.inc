@@ -17,6 +17,34 @@
     };
     std::unique_ptr<ParticleRuntime> particle_runtime;
     particles::SpriteCatalog particle_sprites;
+    struct GameParticleBurst {
+        std::string emitter;
+        std::uint32_t count;
+    };
+    std::vector<GameParticleBurst> game_particle_bursts;
+    std::size_t game_particle_burst_calls=0;
+
+    static int32_t POIMA_CALL burst_game_particles(void* context,const PoimaGameParticleBurstV1* command,
+        PoimaGameError* error) {
+        return callback(error,[&] {
+            require(context,"Particle burst context is absent.");
+            auto& self=*static_cast<Impl*>(context);
+            self.require_tick();
+            require(self.game_particle_burst_calls<max_gameplay_particle_burst_attempts,
+                "Gameplay exceeded 32 particle burst requests in one tick.");
+            ++self.game_particle_burst_calls;
+            require(command && command->version==1 && command->bytes==sizeof(PoimaGameParticleBurstV1) &&
+                command->reserved==0 && (command->emitter.high || command->emitter.low) &&
+                command->count>=1 && command->count<=particles::max_burst,"Invalid particle burst request.");
+
+            auto id=gameplay_id(command->emitter);
+            const auto active=self.topology->definitions.find(id);
+            const auto* target=active==self.topology->definitions.end() ? self.pending_entity(id) : &active->second;
+            require(target && target->particle_emitter,"Particle burst requires a live or staged ParticleEmitter.");
+            self.game_particle_bursts.push_back({std::move(id),command->count});
+        });
+    }
+
     void restore_particles(const RuntimeDefinition&,const nlohmann::json&);
     static bool definition_has_particles(const RuntimeDefinition& definition) {
         const auto has_emitter=[](const auto& entry){return entry.particle_emitter.has_value();};
@@ -80,6 +108,18 @@
         for(const auto& [id,source]:state.sources)if(!source.draining && source.definition.burst_count &&
             std::binary_search(pressed.begin(),pressed.end(),source.definition.burst_action))
             state.system.burst(id,source.definition.burst_count);
+        // Synchronization above includes gameplay spawns and the finalized pose.
+        // Both request paths feed the same native per-emitter budget.
+        for(const auto& command:game_particle_bursts) {
+            const auto found=std::find_if(state.sources.begin(),state.sources.end(),[&](const auto& entry) {
+                return !entry.second.draining && entry.second.entity==command.emitter;
+            });
+            require(found!=state.sources.end(),"Particle burst target did not survive this tick.");
+            const auto pending=state.system.emitter_status(found->first).pending_burst;
+            require(command.count<=particles::max_burst-pending,"Particle burst exceeds the per-emitter tick budget.");
+            state.system.burst(found->first,command.count);
+        }
+        game_particle_bursts.clear();
         state.system.step();
         for(auto entry=state.sources.begin();entry!=state.sources.end();) {
             if(entry->second.draining && !state.system.emitter_status(entry->first).particles.live) {

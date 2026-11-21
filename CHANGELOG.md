@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.358
+
+- Trigger particle bursts from C# gameplay, including on emitters spawned during the same tick. Bursts use the completed pose and roll back with the simulation.
+
 ## 0.0.357
 
 - Animate textured sprites with size and opacity curves and tick-driven sprite sheets. Particle observations report the current appearance and sheet frame.

@@ -1,8 +1,19 @@
 # Implementation status
 
-Updated 2026-11-21 for **0.0.357**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-21 for **0.0.358**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.358 lets [C# gameplay trigger scene particles](PARTICLES.md#trigger-a-burst-from-gameplay).
+The compiled fixture emits sparks from a press after its final translation
+and rotation, and from a template emitter moved on its first tick. CoreCLR
+and Native AOT pass the same Linux scenario. Seven rejected batches preserve
+the previous save bytes, including a batch that fails after its first tick.
+Replaying a successful request leaves the particle counts unchanged. Two
+relocated Windows Native AOT games reproduce their checkpoint and final
+captures and saves across fresh processes on AMD and NVIDIA. The scene
+covers bounded rigid emitters and single-sample Vulkan.
+[Results](evidence/m2-gameplay-particle-bursts-358.json)
 
 Version 0.0.357 adds [size and opacity curves and sprite sheets](PARTICLES.md#animate-size-opacity-and-the-sprite-sheet).
 Particle observations show the sampled size, opacity, frame, and texel rectangle

@@ -508,6 +508,7 @@ static unsafe partial class Program
             InstanceContract(output,state,good,checks);
             PlayerPreferencesContract(output,state,good,checks);
             InputActionsContract(output,state,good,checks);
+            ParticleBurstContract(output,state,good,checks);
             HitRegionsContract(output,state,good,checks);
             TwoBoneIkContract(output,state,good,checks);
             RootMotionContract(output,state,good,checks);

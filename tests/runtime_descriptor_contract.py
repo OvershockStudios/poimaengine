@@ -20,7 +20,7 @@ KNOWN_FEATURES = frozenset((
     'hierarchical_instances_v1', 'player_preferences_v1', 'input_actions_v1',
     'hit_regions_v1', 'animation_ik_v1', 'animation_ik_clearance_v1', 'animation_root_motion_v1',
     'camera_lens_v1', 'character_stance_v1', 'animation_ik_end_orientation_v1', 'animation_grounding_control_v1', 'animation_rate_v1', 'camera_pose_v1', 'capsule_cast_v1', 'physical_rig_v1', 'physical_rig_drive_v1', 'physical_rig_animation_v1', 'physical_recovery_v1', 'item_attachment_v1',
-    'item_attachment_contact_v1', 'item_attachment_surface_v1', 'item_attachment_recovery_v1', 'item_attachment_release_v1', 'item_attachment_pickup_v1', 'item_attachment_pickup_clearance_v1', 'item_attachment_pickup_pose_v1', 'item_attachment_pickup_blend_v1', 'item_attachment_pickup_hand_fallback_v1', 'item_attachment_pickup_steering_v1', 'item_attachment_aim_v1', 'navigation_query_v1'))
+    'item_attachment_contact_v1', 'item_attachment_surface_v1', 'item_attachment_recovery_v1', 'item_attachment_release_v1', 'item_attachment_pickup_v1', 'item_attachment_pickup_clearance_v1', 'item_attachment_pickup_pose_v1', 'item_attachment_pickup_blend_v1', 'item_attachment_pickup_hand_fallback_v1', 'item_attachment_pickup_steering_v1', 'item_attachment_aim_v1', 'particle_burst_v1', 'navigation_query_v1'))
 NAVIGATION = 'navigation_query_v1'
 
 
@@ -64,13 +64,13 @@ def canonical(header):
     refs = ['baseline_feature', *re.findall(r'result\.features\.push_back\(([a-z_]+)\);', body)]
     need(len(refs) == len(set(refs)) and all(name in symbols for name in refs), 'Canonical native feature symbols are incomplete or duplicated.')
     features = [symbols[name] for name in refs]
-    need(set(features) == KNOWN_FEATURES and len(features) == 37 and refs.count('navigation_feature') == 1,
+    need(set(features) == KNOWN_FEATURES and len(features) == 38 and refs.count('navigation_feature') == 1,
          'Known native availability feature contract changed.')
     extents = re.findall(r'result\.services_bytes=([a-z_]+);', body)
-    need(extents and extents[-1] == 'item_attachment_services_bytes' and all(name in numbers for name in extents),
+    need(extents and extents[-1] == 'particle_services_bytes' and all(name in numbers for name in extents),
          'Canonical service allocation endpoint changed.')
     need((numbers.get('call_version'), numbers.get('call_bytes'), numbers.get('services_version'),
-          numbers.get(extents[-1])) == (1, 80, 7, 528), 'Known native call/epoch/extent contract changed.')
+          numbers.get(extents[-1])) == (1, 80, 7, 536), 'Known native call/epoch/extent contract changed.')
     return dict(call_version=numbers['call_version'], call_bytes=numbers['call_bytes'],
                 services_version=numbers['services_version'], services_bytes=numbers[extents[-1]], features=features)
 
@@ -125,7 +125,7 @@ def self_test(header, cmake, stale_runtime=None):
         generated = copy.deepcopy(seed);generated['features']['navigation'] = navigation
         generated.update(generated_fields(cmake, navigation))
         result = validate(generated, header)
-        need(result['feature_count'] == (37 if navigation else 36), 'Generated descriptor has the wrong feature count.')
+        need(result['feature_count'] == (38 if navigation else 37), 'Generated descriptor has the wrong feature count.')
         cases += 1
     good = copy.deepcopy(seed);good.update(generated_fields(cmake, False))
     def reject(value):
@@ -136,7 +136,15 @@ def self_test(header, cmake, stale_runtime=None):
             cases += 1
             return
         raise AssertionError('Invalid descriptor was accepted.')
-    old_496 = copy.deepcopy(good)
+    unnamed_536 = copy.deepcopy(good)
+    unnamed_536['gameplay_features'].remove('particle_burst_v1')
+    reject(unnamed_536)
+    previous_528 = copy.deepcopy(unnamed_536)
+    previous_528['gameplay_services_bytes'] = 528
+    need(len(previous_528['gameplay_features']) == 36, 'Retained528 witness changed its frozen feature membership.')
+    reject(previous_528)
+    short_528 = copy.deepcopy(good);short_528['gameplay_services_bytes'] = 528;reject(short_528)
+    old_496 = copy.deepcopy(previous_528)
     old_496['gameplay_services_bytes'] = 496
     for feature in ('item_attachment_pickup_hand_fallback_v1', 'item_attachment_pickup_steering_v1', 'item_attachment_pickup_blend_v1', 'item_attachment_pickup_pose_v1', 'item_attachment_pickup_clearance_v1', 'animation_ik_clearance_v1', 'physical_recovery_v1', 'item_attachment_v1', 'item_attachment_contact_v1', 'item_attachment_surface_v1', 'item_attachment_recovery_v1', 'item_attachment_release_v1', 'item_attachment_pickup_v1', 'item_attachment_aim_v1'):
         old_496['gameplay_features'].remove(feature)
@@ -144,7 +152,7 @@ def self_test(header, cmake, stale_runtime=None):
     reject(old_496)
     old_512 = copy.deepcopy(old_496);old_512['gameplay_services_bytes'] = 512
     old_512['gameplay_features'].append('physical_recovery_v1');reject(old_512)
-    pre_hand = copy.deepcopy(good);pre_hand['gameplay_features'].remove('item_attachment_pickup_hand_fallback_v1');reject(pre_hand)
+    pre_hand = copy.deepcopy(previous_528);pre_hand['gameplay_features'].remove('item_attachment_pickup_hand_fallback_v1');reject(pre_hand)
     pre_steer = copy.deepcopy(pre_hand);pre_steer['gameplay_features'].remove('item_attachment_pickup_steering_v1');reject(pre_steer)
     pre_blend = copy.deepcopy(pre_steer);pre_blend['gameplay_features'].remove('item_attachment_pickup_blend_v1');reject(pre_blend)
     pre_pose = copy.deepcopy(pre_blend);pre_pose['gameplay_features'].remove('item_attachment_pickup_pose_v1');reject(pre_pose)
@@ -212,11 +220,12 @@ def self_test(header, cmake, stale_runtime=None):
         bad = copy.deepcopy(good);bad['gameplay_features'] = features;reject(bad)
     bad = copy.deepcopy(good);bad['features']['navigation'] = True;reject(bad)
     bad['gameplay_features'].append(NAVIGATION);bad['features']['simulation'] = False;reject(bad)
-    need(policy['services_bytes'] == 528, 'Canonical extent changed during file-only tests.')
+    need(policy['services_bytes'] == 536, 'Canonical extent changed during file-only tests.')
     return dict(passed=True, file_only_checks=cases, retained_stale_descriptor_rejected=True, retained_400_descriptor_rejected=True,
                 retained_424_descriptor_rejected=True, retained_448_descriptor_rejected=True,
                 unnamed_496_and_missing_physical_dependencies_rejected=True, retained_496_and_512_descriptors_rejected=True,
                 old_528_missing_contact_rejected=True, old_528_missing_surface_rejected=True,
+                retained_and_spoofed_528_rejected=True, unnamed_536_rejected=True,
                 generated_navigation_false_and_true_checked=True)
 
 

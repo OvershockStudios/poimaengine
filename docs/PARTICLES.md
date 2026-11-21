@@ -122,6 +122,49 @@ fit inside the sheet. `ticks_per_frame` sets the hold time at 60 Hz. Looping is
 on by default. With looping off, the sprite holds its last frame until expiry.
 Bilinear taps stay inside the selected cell, including one-texel cells.
 
+## Trigger a burst from gameplay
+
+Implement `IParticleBurstGame` on a C# game module to declare the optional
+`particle_burst_v1` service. Inside `Tick`, call
+`context.BurstParticles(emitter, count)` with the entity ID of a
+`ParticleEmitter`. This also accepts an emitter created by a template spawn
+earlier in the callback. Use this for effects tied to gameplay, such as dust
+when a character lands or sparks when a moving switch reaches its stop.
+
+Requests take effect after motion, physics, and attachment updates. A burst
+uses the emitter's final world pose for that tick. If its target is removed
+before then, the entire step batch rolls back. A failed tick also rolls back
+particles created on earlier ticks of the same batch.
+
+Each request takes 1 to 1,024 particles. The engine accepts up to 32 callback
+attempts per tick. Each emitter's gameplay requests and named input burst
+share the 1,024-particle burst limit. Exceeding the combined limit rejects
+the batch. Global and per-emitter live-particle limits still apply, and
+`runtime.particles.inspect` counts births dropped at capacity. Query
+`gameplay_particle_bursts` in `world.describe` for these limits.
+
+The callback uses a 32-byte request and the optional 536-byte epoch-7
+service prefix. Earlier gameplay modules keep their negotiated service
+views. Pending gameplay requests exist only during a tick. Committed
+particles continue through the same replay and save format.
+
+To reproduce the compiled fixture, publish it with a serviced .NET 10 SDK
+on the target operating system. Set `$dotnet` to that SDK's executable.
+The build and test paths below run on Linux.
+
+```sh
+python3 scripts/publish_native_gameplay.py \
+  --project tests/managed_particle_burst_gameplay/Poima.ManagedParticleBurstGame.csproj \
+  --type Poima.Tests.ManagedParticleBurstGame --dotnet "$dotnet" \
+  --output build/press-native
+python3 tests/gameplay_particle_burst_contract.py build/linux-game/poima \
+  --native-descriptor build/press-native/native-gameplay.json --output build/press-checks
+```
+
+The fixture also accepts `--hostfxr`, `--bridge`, and `--assembly` for the
+CoreCLR route. Pass an installed Windows `--runtime-root` to check a
+relocated Native AOT build and `--gpu` to capture its output.
+
 ## Observe and verify
 
 After a completed tick, call `runtime.particles.inspect` with that tick and

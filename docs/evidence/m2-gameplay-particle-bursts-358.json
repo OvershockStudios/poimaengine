@@ -1,0 +1,1380 @@
+{
+  "engine_version": "0.0.358",
+  "world_schema_revision": 179,
+  "sources_sha256": {
+    ".gitignore": "5250a3e75dca3275ae42deffb9a96678ae64c5194ffdbdbd9b7e40716f075963",
+    "CMakeLists.txt": "78b34258bed59beaf428d883bfab76411080c4394ab16b1bf4920ef065620a8e",
+    "include/poima/gameplay_abi.h": "c962a886d5121def3fb87e2804cc4fa3dbd5743d5b71bddb41405ce608dec07f",
+    "include/poima/gameplay_compatibility.hpp": "f346d2f00b9c0c3266ad5fbe91513b390ecd9a300eee6700b73c5a99f182cc69",
+    "include/poima/runtime.hpp": "480862b4c8c6e5c2e04fd00357f74e21cba55e116e4414803658b08159b701e5",
+    "managed/Poima.Gameplay/GameplayRequirements.cs": "533241c4e81150c15975975a2e51481f7430ace129af3eb880c166bf8ca1b387",
+    "managed/Poima.Gameplay/ParticleBursts.cs": "20e0b0ebe74d09afb047e7a808c38797e1af5e2be7efef019f04159be23103b9",
+    "managed/Poima.ManagedBridge/Entry.cs": "07d8aa1046d36322639cbabe65720b9886bfa249ec4dd9ffd20229c85e808879",
+    "managed/Poima.NativeGame.Generator/Program.cs": "9ba9ec7f0e879af0139e633ef9938f7e9abbbe8eeb5fdea1b1820031ac6e6a4f",
+    "managed/Poima.NativeGame/Entry.cs": "a891250d334de83ae76038d8246fd0306b46f1f79757aa0b370113a9c955a0b8",
+    "scripts/publish_native_gameplay.py": "1ce54cb9ea529d9b1b9f2f82a1896375c2556cc72584ec04ce75f3322ddea90c",
+    "src/gameplay.cpp": "ff12d46b3a677a2cebd6f7e129730ece4eb1bcd903f7d378e0a0436a765cf66d",
+    "src/runtime.cpp": "a6ae9e0931e2326ff7a999de19b3d6c44b37ec227beebd2f226c093bfe7d1ea1",
+    "src/runtime_particles.inc": "87e7d46f7b2e60ca355ea0e1e582645b2ee05360537699382f7c247794ed67f6",
+    "src/runtime_ui.inc": "82a5d8a8fb4bd4d65076c908aab9f712eca4d8f497d8831ca0a09d303c422899",
+    "src/world_schema.cpp": "e16db013b6b38f0af72750527d9196f99375e3bd433cda5c10171b3a13d8901f",
+    "tests/asset_references_contract.py": "3b6016f46c76c4618b82c535176b53580d583991d99d6200a8074cf985ca83f6",
+    "tests/gameplay_compatibility_native.cpp": "93d733ad97c0c5c631bdeee56920bbed58a9cd146c344fbad7079e74d7c0f57b",
+    "tests/gameplay_particle_burst_contract.py": "f95b15b497d1789b0744165e8f5b33e3e03218d7277d9f8a7d6305e9af6f4724",
+    "tests/gameplay_player_preferences_native.cpp": "e72cf0220b7daa4b50e3f0137b4522ac55ebb6c33e38b93755557b77b0412a4f",
+    "tests/managed_particle_burst_gameplay/ManagedParticleBurstGame.cs": "862210d67b4ca8b113483f273715eae0d843d6372fa359bb86c12cd1ac385b39",
+    "tests/managed_particle_burst_gameplay/Poima.ManagedParticleBurstGame.csproj": "d962388628932261c075561f0f7b1ead35ea9cbbcaf3cabd2475bbfe016e645f",
+    "tests/managed_service_abi/ParticleBurstsExtension.cs": "3bbe27b13feaa9d47c371b16d1da76f55a3920376b725e3fbb2cb4861a9c28b4",
+    "tests/managed_service_abi/Program.cs": "73eb25731be5e7b11d573fb40024592ad88fe458102bc0483f39b328585764f8",
+    "tests/runtime_descriptor_contract.py": "3a2ef37b561e8bf315e2e46e4e25d42f7374b2fff9fc714f9fbda5c34191145a",
+    "tests/world_ui_contract.py": "9e7886ec406ac06665ec5ea15a811faad6865c5d3fcd609af6a380335da399a3",
+    "docs/MANAGED_GAMEPLAY.md": "e4e55e0a67a08b576e1b60a7e702f538fad45287469768e1b9899923a4593fa8"
+  },
+  "gameplay_service": {
+    "feature": "particle_burst_v1",
+    "services_epoch": 7,
+    "minimum_bytes": 536,
+    "command_bytes": 32
+  },
+  "managed_abi": {
+    "report_sha256": "089ebfbcc81c1e823b206287c55211657efba678c10610e047ebc8c75a15840c",
+    "checks": 111
+  },
+  "descriptor_file_checks": {
+    "file_only_checks": 43,
+    "generated_navigation_false_and_true_checked": true,
+    "old_528_missing_contact_rejected": true,
+    "old_528_missing_surface_rejected": true,
+    "passed": true,
+    "retained_400_descriptor_rejected": true,
+    "retained_424_descriptor_rejected": true,
+    "retained_448_descriptor_rejected": true,
+    "retained_496_and_512_descriptors_rejected": true,
+    "retained_and_spoofed_528_rejected": true,
+    "retained_stale_descriptor_rejected": true,
+    "unnamed_496_and_missing_physical_dependencies_rejected": true,
+    "unnamed_536_rejected": true
+  },
+  "linux": {
+    "version": {
+      "version": "0.0.358",
+      "compiler": "GNU",
+      "compiler_version": "16.2.0",
+      "target_os": "Linux",
+      "target_arch": "x86_64"
+    },
+    "executable_sha256": "68206a75d42785fc94f9b2e4428078d87d94a84b6ac04d392ff98e7934e740a0",
+    "runtime_descriptor": {
+      "call_bytes": 80,
+      "call_version": 1,
+      "feature_count": 38,
+      "navigation": true,
+      "passed": true,
+      "services_bytes": 536,
+      "services_version": 7
+    },
+    "junit_sha256": "b59c86db0cb03c9a4025f6ec172ed200bdc88dc8b38c4aedb6d92442f4a00564",
+    "suites": [
+      "particles_native",
+      "particle_scene_native",
+      "world_particles_contract",
+      "sprite_particle_authoring_contract",
+      "sprite_lifetime_contract",
+      "authoring_core_conformance",
+      "authoring_contract_identity",
+      "gameplay_compatibility_policy",
+      "gameplay_service_contract",
+      "native_gameplay_publish_requirements",
+      "gameplay_player_preferences_native",
+      "mcp_contract",
+      "world_ui_contract",
+      "physical_gameplay_publish_requirements",
+      "project_contract",
+      "asset_references_contract"
+    ],
+    "retained_baseline_aot": {
+      "engine_version": "0.0.39",
+      "report_sha256": "586f7a5104c5e79fcf9fbfed4d6f738f779ad1caec7eec458c3eefdefc132cef"
+    },
+    "compiled_fixtures": [
+      {
+        "report_sha256": "5b964e3ed7e418d2416554d66139d15376f11ce396ac45a0b4604432b6443023",
+        "backend": "coreclr",
+        "standalone": false,
+        "artifact": {
+          "10.0.15/libhostfxr.so": "342ccc53ed77b71fb097f548098ea5b4190069099dfd8dfef31976d308edf32b",
+          "bridge/Poima.ManagedBridge.dll": "0a6685ae297c52fdb07f8c702d02bbddfdd2c6bcbf182db4eefe53fc33f6e373",
+          "coreclr-game/Poima.ManagedParticleBurstGame.dll": "235d986c3564ae91aa56e7f3f25b26463a6996ceaeb2373d85b6904d861b942d",
+          "bridge/Poima.Gameplay.dll": "4101c432fcd5be396c7429dedf47b55505908f0db4e7dce36eab1ffbef7d11ea",
+          "coreclr-game/Poima.Gameplay.dll": "e98b485e4f26e8372e76514ac284b12dad6d950356712919098ee5dff9a9c736"
+        },
+        "ticks": [
+          {
+            "tick": 1,
+            "counts": {
+              "dropped": 0,
+              "expired": 0,
+              "live": 5,
+              "removed": 0,
+              "spawned": 5
+            },
+            "structure_revision": 1
+          },
+          {
+            "tick": 2,
+            "counts": {
+              "dropped": 0,
+              "expired": 0,
+              "live": 5,
+              "removed": 0,
+              "spawned": 5
+            },
+            "structure_revision": 1
+          },
+          {
+            "tick": 3,
+            "counts": {
+              "dropped": 1,
+              "expired": 0,
+              "live": 6,
+              "removed": 0,
+              "spawned": 6
+            },
+            "structure_revision": 1
+          },
+          {
+            "tick": 4,
+            "counts": {
+              "dropped": 3,
+              "expired": 0,
+              "live": 6,
+              "removed": 0,
+              "spawned": 6
+            },
+            "structure_revision": 1
+          },
+          {
+            "tick": 7,
+            "counts": {
+              "dropped": 3,
+              "expired": 5,
+              "live": 1,
+              "removed": 0,
+              "spawned": 6
+            },
+            "structure_revision": 1
+          }
+        ],
+        "births": [
+          {
+            "id": "1",
+            "position_m": [
+              -1.755000008349943,
+              1.0497494129761555,
+              -4.0
+            ],
+            "velocity_m_s": [
+              -0.11939859114277326,
+              0.5879999799601364,
+              0.0
+            ]
+          },
+          {
+            "id": "2",
+            "position_m": [
+              -1.755000008349943,
+              1.0497494129761555,
+              -4.0
+            ],
+            "velocity_m_s": [
+              -0.11939859114277326,
+              0.5879999799601364,
+              0.0
+            ]
+          },
+          {
+            "id": "3",
+            "position_m": [
+              -1.755000008349943,
+              1.0497494129761555,
+              -4.0
+            ],
+            "velocity_m_s": [
+              -0.11939859114277326,
+              0.5879999799601364,
+              0.0
+            ]
+          },
+          {
+            "id": "4",
+            "position_m": [
+              -1.755000008349943,
+              1.0497494129761555,
+              -4.0
+            ],
+            "velocity_m_s": [
+              -0.11939859114277326,
+              0.5879999799601364,
+              0.0
+            ]
+          },
+          {
+            "id": "5",
+            "position_m": [
+              1.25,
+              1.0,
+              -4.0
+            ],
+            "velocity_m_s": [
+              0.0,
+              0.6,
+              0.0
+            ]
+          }
+        ],
+        "byte_identical_archives": {
+          "checkpoint": {
+            "sha256": "65537612f6c158e4b1492af455b211546c97c260e66ca986f2de886e37aa9aeb",
+            "bytes": 19314
+          },
+          "final": {
+            "sha256": "98aada43b342182c2a3ea476d2cb6bed488da85f7e6534b5488ac6527c988740",
+            "bytes": 18571
+          },
+          "restored-checkpoint": {
+            "sha256": "65537612f6c158e4b1492af455b211546c97c260e66ca986f2de886e37aa9aeb",
+            "bytes": 19314
+          },
+          "restored-final": {
+            "sha256": "98aada43b342182c2a3ea476d2cb6bed488da85f7e6534b5488ac6527c988740",
+            "bytes": 18571
+          },
+          "reject-2-before": {
+            "sha256": "7fb405c07b5620f35061945a22eebc10d27e2e3f72b5c3e1ecaa585d2ab0bdcf",
+            "bytes": 17220
+          },
+          "reject-2-after": {
+            "sha256": "7fb405c07b5620f35061945a22eebc10d27e2e3f72b5c3e1ecaa585d2ab0bdcf",
+            "bytes": 17220
+          },
+          "reject-4-before": {
+            "sha256": "6db382cca53929b5765238d4f58931c51c82b76dbdd99a57a8efb71c63031ce4",
+            "bytes": 17220
+          },
+          "reject-4-after": {
+            "sha256": "6db382cca53929b5765238d4f58931c51c82b76dbdd99a57a8efb71c63031ce4",
+            "bytes": 17220
+          },
+          "reject-5-before": {
+            "sha256": "56b81d9498881e84bb3f9a00b6f12c7abba25e91eb7608151cc3807eff99cb6c",
+            "bytes": 17220
+          },
+          "reject-5-after": {
+            "sha256": "56b81d9498881e84bb3f9a00b6f12c7abba25e91eb7608151cc3807eff99cb6c",
+            "bytes": 17220
+          },
+          "reject-6-before": {
+            "sha256": "88d0bd7b07071122445fb949d3096667e1ff8fb7a344ae5c783ca1de080fa68b",
+            "bytes": 17220
+          },
+          "reject-6-after": {
+            "sha256": "88d0bd7b07071122445fb949d3096667e1ff8fb7a344ae5c783ca1de080fa68b",
+            "bytes": 17220
+          },
+          "reject-7-before": {
+            "sha256": "6137c9f1183625f03cf779e4519e06e0647880f252971a962288e2c0506f2404",
+            "bytes": 17220
+          },
+          "reject-7-after": {
+            "sha256": "6137c9f1183625f03cf779e4519e06e0647880f252971a962288e2c0506f2404",
+            "bytes": 17220
+          },
+          "reject-8-before": {
+            "sha256": "e0f915b7dcd9da7a16ae7458b6eaef802c94693e1c26144190f9fff59443f72b",
+            "bytes": 17220
+          },
+          "reject-8-after": {
+            "sha256": "e0f915b7dcd9da7a16ae7458b6eaef802c94693e1c26144190f9fff59443f72b",
+            "bytes": 17220
+          },
+          "reject-0-before": {
+            "sha256": "7a3f97d3c67529c6e65ffe55c246f203b6163888b2b93f7d039d578ec11e2ee9",
+            "bytes": 17219
+          },
+          "reject-0-after": {
+            "sha256": "7a3f97d3c67529c6e65ffe55c246f203b6163888b2b93f7d039d578ec11e2ee9",
+            "bytes": 17219
+          }
+        },
+        "rejected_requests": [
+          {
+            "mode": 2,
+            "ticks": 1,
+            "native_code": -32040,
+            "native_message": "Particle burst exceeds the per-emitter tick budget."
+          },
+          {
+            "mode": 4,
+            "ticks": 1,
+            "native_code": -32040,
+            "native_message": "C# gameplay: Gameplay exceeded 32 particle burst requests in one tick."
+          },
+          {
+            "mode": 5,
+            "ticks": 1,
+            "native_code": -32040,
+            "native_message": "C# gameplay: Particle burst requires a live or staged ParticleEmitter."
+          },
+          {
+            "mode": 6,
+            "ticks": 1,
+            "native_code": -32040,
+            "native_message": "Particle burst target did not survive this tick."
+          },
+          {
+            "mode": 7,
+            "ticks": 1,
+            "native_code": -32040,
+            "native_message": "C# gameplay: Particle burst count must be 1..1024. (Parameter 'count')"
+          },
+          {
+            "mode": 8,
+            "ticks": 1,
+            "native_code": -32040,
+            "native_message": "C# gameplay: Particle burst count must be 1..1024. (Parameter 'count')"
+          },
+          {
+            "mode": 0,
+            "ticks": 2,
+            "native_code": -32040,
+            "native_message": "C# gameplay: Particle fixture later-tick failure."
+          }
+        ],
+        "accepted_bounds": [
+          {
+            "requested": 1024,
+            "counts": {
+              "dropped": 1019,
+              "expired": 0,
+              "live": 5,
+              "removed": 0,
+              "spawned": 5
+            }
+          },
+          {
+            "requested": 34,
+            "counts": {
+              "dropped": 29,
+              "expired": 0,
+              "live": 5,
+              "removed": 0,
+              "spawned": 5
+            }
+          }
+        ]
+      },
+      {
+        "report_sha256": "a0519d6286c5cb30483e59d88177fcacab4c4b7bd7c442f0ee5448a4d2ce0359",
+        "backend": "native_aot",
+        "standalone": false,
+        "artifact": {
+          "descriptor_sha256": "78c077c6d600759dcff0b7ddcfdd7f9f74f56da5efe0617fdbb6e647349f6eda",
+          "files": [
+            {
+              "path": "Poima.NativeGame.so",
+              "size": 1607496,
+              "sha256": "f17ea01c20fc126f1ddd456bf453f992c7e286a4e93948ef7e351327bbc02e50",
+              "role": "library"
+            },
+            {
+              "path": "notices/DOTNET-NATIVEAOT-10.0.15-LICENSE.txt",
+              "size": 1116,
+              "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310",
+              "role": "notice"
+            },
+            {
+              "path": "notices/DOTNET-NATIVEAOT-10.0.15-THIRD-PARTY-NOTICES.txt",
+              "size": 76623,
+              "sha256": "66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54",
+              "role": "notice"
+            },
+            {
+              "path": "notices/DOTNET-RUNTIME-10.0.15-LICENSE.txt",
+              "size": 1116,
+              "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310",
+              "role": "notice"
+            },
+            {
+              "path": "notices/DOTNET-RUNTIME-10.0.15-THIRD-PARTY-NOTICES.txt",
+              "size": 76623,
+              "sha256": "66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54",
+              "role": "notice"
+            },
+            {
+              "path": "notices/POIMA-LICENSE.txt",
+              "size": 11358,
+              "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+              "role": "notice"
+            },
+            {
+              "path": "notices/POIMA-THIRD-PARTY-NOTICES.md",
+              "size": 23949,
+              "sha256": "7d364ecf908a603cdc58efecf0a19e8d20b1a51ee0179ce3b9885d05327664a7",
+              "role": "notice"
+            }
+          ]
+        },
+        "ticks": [
+          {
+            "tick": 1,
+            "counts": {
+              "dropped": 0,
+              "expired": 0,
+              "live": 5,
+              "removed": 0,
+              "spawned": 5
+            },
+            "structure_revision": 1
+          },
+          {
+            "tick": 2,
+            "counts": {
+              "dropped": 0,
+              "expired": 0,
+              "live": 5,
+              "removed": 0,
+              "spawned": 5
+            },
+            "structure_revision": 1
+          },
+          {
+            "tick": 3,
+            "counts": {
+              "dropped": 1,
+              "expired": 0,
+              "live": 6,
+              "removed": 0,
+              "spawned": 6
+            },
+            "structure_revision": 1
+          },
+          {
+            "tick": 4,
+            "counts": {
+              "dropped": 3,
+              "expired": 0,
+              "live": 6,
+              "removed": 0,
+              "spawned": 6
+            },
+            "structure_revision": 1
+          },
+          {
+            "tick": 7,
+            "counts": {
+              "dropped": 3,
+              "expired": 5,
+              "live": 1,
+              "removed": 0,
+              "spawned": 6
+            },
+            "structure_revision": 1
+          }
+        ],
+        "births": [
+          {
+            "id": "1",
+            "position_m": [
+              -1.755000008349943,
+              1.0497494129761555,
+              -4.0
+            ],
+            "velocity_m_s": [
+              -0.11939859114277326,
+              0.5879999799601364,
+              0.0
+            ]
+          },
+          {
+            "id": "2",
+            "position_m": [
+              -1.755000008349943,
+              1.0497494129761555,
+              -4.0
+            ],
+            "velocity_m_s": [
+              -0.11939859114277326,
+              0.5879999799601364,
+              0.0
+            ]
+          },
+          {
+            "id": "3",
+            "position_m": [
+              -1.755000008349943,
+              1.0497494129761555,
+              -4.0
+            ],
+            "velocity_m_s": [
+              -0.11939859114277326,
+              0.5879999799601364,
+              0.0
+            ]
+          },
+          {
+            "id": "4",
+            "position_m": [
+              -1.755000008349943,
+              1.0497494129761555,
+              -4.0
+            ],
+            "velocity_m_s": [
+              -0.11939859114277326,
+              0.5879999799601364,
+              0.0
+            ]
+          },
+          {
+            "id": "5",
+            "position_m": [
+              1.25,
+              1.0,
+              -4.0
+            ],
+            "velocity_m_s": [
+              0.0,
+              0.6,
+              0.0
+            ]
+          }
+        ],
+        "byte_identical_archives": {
+          "checkpoint": {
+            "sha256": "6ce7627ec22225b8a95f888b91c398423b228ebbc9eff6ac969dfa4ecc1f5e3e",
+            "bytes": 19317
+          },
+          "final": {
+            "sha256": "e21cc2e585f47793d30c3da38c6088a8eae25544251750ad0fe9664e18c0e95f",
+            "bytes": 18574
+          },
+          "restored-checkpoint": {
+            "sha256": "6ce7627ec22225b8a95f888b91c398423b228ebbc9eff6ac969dfa4ecc1f5e3e",
+            "bytes": 19317
+          },
+          "restored-final": {
+            "sha256": "e21cc2e585f47793d30c3da38c6088a8eae25544251750ad0fe9664e18c0e95f",
+            "bytes": 18574
+          },
+          "reject-2-before": {
+            "sha256": "ecfef730b8681888b462afdba01b40f84ecc1091b8618f7d7c4a0d7393edfb53",
+            "bytes": 17223
+          },
+          "reject-2-after": {
+            "sha256": "ecfef730b8681888b462afdba01b40f84ecc1091b8618f7d7c4a0d7393edfb53",
+            "bytes": 17223
+          },
+          "reject-4-before": {
+            "sha256": "733063abb3dae2819084bf41e871d81d3b755d0870859a8bb241a7f0e92d081d",
+            "bytes": 17223
+          },
+          "reject-4-after": {
+            "sha256": "733063abb3dae2819084bf41e871d81d3b755d0870859a8bb241a7f0e92d081d",
+            "bytes": 17223
+          },
+          "reject-5-before": {
+            "sha256": "7c952252b9569ea7ee031eafc126e9df91995fb6b649c4c892720433259e37fc",
+            "bytes": 17223
+          },
+          "reject-5-after": {
+            "sha256": "7c952252b9569ea7ee031eafc126e9df91995fb6b649c4c892720433259e37fc",
+            "bytes": 17223
+          },
+          "reject-6-before": {
+            "sha256": "79becef6771e35745dd27a8694ab8c3b9c2b09c58a68d0b7fc8329e56c6b1d82",
+            "bytes": 17223
+          },
+          "reject-6-after": {
+            "sha256": "79becef6771e35745dd27a8694ab8c3b9c2b09c58a68d0b7fc8329e56c6b1d82",
+            "bytes": 17223
+          },
+          "reject-7-before": {
+            "sha256": "cf84941bc2c17351f09ce5fc3334e72b7c36adf59484b04003311f06a1a62517",
+            "bytes": 17223
+          },
+          "reject-7-after": {
+            "sha256": "cf84941bc2c17351f09ce5fc3334e72b7c36adf59484b04003311f06a1a62517",
+            "bytes": 17223
+          },
+          "reject-8-before": {
+            "sha256": "352389d5ec0ce77468a01fd5308c2b7779ad3ec5688aedcc0a581f74be704659",
+            "bytes": 17223
+          },
+          "reject-8-after": {
+            "sha256": "352389d5ec0ce77468a01fd5308c2b7779ad3ec5688aedcc0a581f74be704659",
+            "bytes": 17223
+          },
+          "reject-0-before": {
+            "sha256": "6767bae5bc4d17b7c11f7064954cfa19b7bbfa1a34f3408f9b4e724bc4e41d00",
+            "bytes": 17222
+          },
+          "reject-0-after": {
+            "sha256": "6767bae5bc4d17b7c11f7064954cfa19b7bbfa1a34f3408f9b4e724bc4e41d00",
+            "bytes": 17222
+          }
+        },
+        "rejected_requests": [
+          {
+            "mode": 2,
+            "ticks": 1,
+            "native_code": -32040,
+            "native_message": "Particle burst exceeds the per-emitter tick budget."
+          },
+          {
+            "mode": 4,
+            "ticks": 1,
+            "native_code": -32040,
+            "native_message": "C# gameplay: Gameplay exceeded 32 particle burst requests in one tick."
+          },
+          {
+            "mode": 5,
+            "ticks": 1,
+            "native_code": -32040,
+            "native_message": "C# gameplay: Particle burst requires a live or staged ParticleEmitter."
+          },
+          {
+            "mode": 6,
+            "ticks": 1,
+            "native_code": -32040,
+            "native_message": "Particle burst target did not survive this tick."
+          },
+          {
+            "mode": 7,
+            "ticks": 1,
+            "native_code": -32040,
+            "native_message": "C# gameplay: Particle burst count must be 1..1024. (Parameter 'count')"
+          },
+          {
+            "mode": 8,
+            "ticks": 1,
+            "native_code": -32040,
+            "native_message": "C# gameplay: Particle burst count must be 1..1024. (Parameter 'count')"
+          },
+          {
+            "mode": 0,
+            "ticks": 2,
+            "native_code": -32040,
+            "native_message": "C# gameplay: Particle fixture later-tick failure."
+          }
+        ],
+        "accepted_bounds": [
+          {
+            "requested": 1024,
+            "counts": {
+              "dropped": 1019,
+              "expired": 0,
+              "live": 5,
+              "removed": 0,
+              "spawned": 5
+            }
+          },
+          {
+            "requested": 34,
+            "counts": {
+              "dropped": 29,
+              "expired": 0,
+              "live": 5,
+              "removed": 0,
+              "spawned": 5
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "windows": {
+    "version": {
+      "version": "0.0.358",
+      "compiler": "Clang",
+      "compiler_version": "23.1.2",
+      "target_os": "Windows",
+      "target_arch": "x86_64"
+    },
+    "executable_sha256": "bdc78adec764f4fd0313f19de36f3d51680ec0c9e9d1d3479dc5a2d06854345c",
+    "runtime_descriptor": {
+      "call_bytes": 80,
+      "call_version": 1,
+      "feature_count": 38,
+      "navigation": true,
+      "passed": true,
+      "services_bytes": 536,
+      "services_version": 7
+    },
+    "descriptor_sha256": "c834711b06d864c226d70c3a2326d43525870d455cf6ec91a33da7e899219344",
+    "bridge_sha256": "d53b161fccabb67abd8330a58273ea2b2c6d1f5dfd869f36ebea4324b4673d8b",
+    "mcp_report_sha256": "d21db25626c7c513b9c0f85ad2020ae8a2840c3c9b533bc2d565653e1ae4ab87",
+    "compiled_standalone_fixtures": [
+      {
+        "report_sha256": "68afa9acd0932e78dfc5d73c673bf5d0836d3926799dcebb73d21320cd0a48c7",
+        "backend": "native_aot",
+        "standalone": true,
+        "artifact": {
+          "descriptor_sha256": "05f34bd2131848552fd4fa4241609c07003cdb9081be5cd6534626875096f452",
+          "files": [
+            {
+              "path": "notices/DOTNET-NATIVEAOT-10.0.15-LICENSE.txt",
+              "size": 1139,
+              "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+              "role": "notice"
+            },
+            {
+              "path": "notices/DOTNET-NATIVEAOT-10.0.15-THIRD-PARTY-NOTICES.txt",
+              "size": 78041,
+              "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+              "role": "notice"
+            },
+            {
+              "path": "notices/DOTNET-RUNTIME-10.0.15-LICENSE.txt",
+              "size": 1139,
+              "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+              "role": "notice"
+            },
+            {
+              "path": "notices/DOTNET-RUNTIME-10.0.15-THIRD-PARTY-NOTICES.txt",
+              "size": 78041,
+              "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+              "role": "notice"
+            },
+            {
+              "path": "notices/POIMA-LICENSE.txt",
+              "size": 11358,
+              "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+              "role": "notice"
+            },
+            {
+              "path": "notices/POIMA-THIRD-PARTY-NOTICES.md",
+              "size": 23949,
+              "sha256": "7d364ecf908a603cdc58efecf0a19e8d20b1a51ee0179ce3b9885d05327664a7",
+              "role": "notice"
+            },
+            {
+              "path": "Poima.NativeGame.dll",
+              "size": 1355776,
+              "sha256": "94d8c5f095fdfdba03e515b719b63827eac39a1bb5bf424c4c0ad25a2fe94fb1",
+              "role": "library"
+            }
+          ]
+        },
+        "ticks": [
+          {
+            "tick": 1,
+            "counts": {
+              "dropped": 0,
+              "expired": 0,
+              "live": 5,
+              "removed": 0,
+              "spawned": 5
+            },
+            "structure_revision": 1
+          },
+          {
+            "tick": 2,
+            "counts": {
+              "dropped": 0,
+              "expired": 0,
+              "live": 5,
+              "removed": 0,
+              "spawned": 5
+            },
+            "structure_revision": 1
+          },
+          {
+            "tick": 3,
+            "counts": {
+              "dropped": 1,
+              "expired": 0,
+              "live": 6,
+              "removed": 0,
+              "spawned": 6
+            },
+            "structure_revision": 1
+          },
+          {
+            "tick": 4,
+            "counts": {
+              "dropped": 3,
+              "expired": 0,
+              "live": 6,
+              "removed": 0,
+              "spawned": 6
+            },
+            "structure_revision": 1
+          },
+          {
+            "tick": 7,
+            "counts": {
+              "dropped": 3,
+              "expired": 5,
+              "live": 1,
+              "removed": 0,
+              "spawned": 6
+            },
+            "structure_revision": 1
+          }
+        ],
+        "births": [
+          {
+            "id": "1",
+            "position_m": [
+              -1.755000008349943,
+              1.0497494129761555,
+              -4.0
+            ],
+            "velocity_m_s": [
+              -0.11939859114277326,
+              0.5879999799601364,
+              0.0
+            ]
+          },
+          {
+            "id": "2",
+            "position_m": [
+              -1.755000008349943,
+              1.0497494129761555,
+              -4.0
+            ],
+            "velocity_m_s": [
+              -0.11939859114277326,
+              0.5879999799601364,
+              0.0
+            ]
+          },
+          {
+            "id": "3",
+            "position_m": [
+              -1.755000008349943,
+              1.0497494129761555,
+              -4.0
+            ],
+            "velocity_m_s": [
+              -0.11939859114277326,
+              0.5879999799601364,
+              0.0
+            ]
+          },
+          {
+            "id": "4",
+            "position_m": [
+              -1.755000008349943,
+              1.0497494129761555,
+              -4.0
+            ],
+            "velocity_m_s": [
+              -0.11939859114277326,
+              0.5879999799601364,
+              0.0
+            ]
+          },
+          {
+            "id": "5",
+            "position_m": [
+              1.25,
+              1.0,
+              -4.0
+            ],
+            "velocity_m_s": [
+              0.0,
+              0.6,
+              0.0
+            ]
+          }
+        ],
+        "byte_identical_archives": {
+          "checkpoint": {
+            "sha256": "dafd69866b60b3158a062d33aa97791d48ad2f8300e8815b1d5174fadd1fba63",
+            "bytes": 19317
+          },
+          "final": {
+            "sha256": "fe177b9b03716f271204e5147607c1c5a247368f11e4d03fcfdcf3f98ca8954a",
+            "bytes": 18574
+          },
+          "restored-checkpoint": {
+            "sha256": "dafd69866b60b3158a062d33aa97791d48ad2f8300e8815b1d5174fadd1fba63",
+            "bytes": 19317
+          },
+          "restored-final": {
+            "sha256": "fe177b9b03716f271204e5147607c1c5a247368f11e4d03fcfdcf3f98ca8954a",
+            "bytes": 18574
+          }
+        },
+        "rejected_requests": [],
+        "accepted_bounds": [],
+        "captures": {
+          "checkpoint-warm": {
+            "gpu": "AMD Radeon(TM) Graphics",
+            "tick": 2,
+            "sha256": "02373b1d0a02a00fe1de58289349809726f8590e94b31bcc5e00b71f301ebd77",
+            "witnesses": [
+              {
+                "pixel": [
+                  168,
+                  174
+                ],
+                "color": [
+                  188,
+                  33,
+                  33
+                ],
+                "visible": true
+              },
+              {
+                "pixel": [
+                  428,
+                  179
+                ],
+                "color": [
+                  33,
+                  188,
+                  33
+                ],
+                "visible": true
+              }
+            ]
+          },
+          "final-warm": {
+            "gpu": "AMD Radeon(TM) Graphics",
+            "tick": 7,
+            "sha256": "4b0ec4d87c29b31235867981aa286f8a29a01fa4c3827f477d12d75216b20113",
+            "witnesses": [
+              {
+                "pixel": [
+                  82,
+                  176
+                ],
+                "color": [
+                  188,
+                  33,
+                  33
+                ],
+                "visible": true
+              },
+              {
+                "pixel": [
+                  428,
+                  179
+                ],
+                "color": [
+                  43,
+                  52,
+                  65
+                ],
+                "visible": false
+              }
+            ]
+          },
+          "checkpoint-cold": {
+            "gpu": "AMD Radeon(TM) Graphics",
+            "tick": 2,
+            "sha256": "02373b1d0a02a00fe1de58289349809726f8590e94b31bcc5e00b71f301ebd77",
+            "witnesses": [
+              {
+                "pixel": [
+                  168,
+                  174
+                ],
+                "color": [
+                  188,
+                  33,
+                  33
+                ],
+                "visible": true
+              },
+              {
+                "pixel": [
+                  428,
+                  179
+                ],
+                "color": [
+                  33,
+                  188,
+                  33
+                ],
+                "visible": true
+              }
+            ]
+          },
+          "final-cold": {
+            "gpu": "AMD Radeon(TM) Graphics",
+            "tick": 7,
+            "sha256": "4b0ec4d87c29b31235867981aa286f8a29a01fa4c3827f477d12d75216b20113",
+            "witnesses": [
+              {
+                "pixel": [
+                  82,
+                  176
+                ],
+                "color": [
+                  188,
+                  33,
+                  33
+                ],
+                "visible": true
+              },
+              {
+                "pixel": [
+                  428,
+                  179
+                ],
+                "color": [
+                  43,
+                  52,
+                  65
+                ],
+                "visible": false
+              }
+            ]
+          }
+        },
+        "relocated_bundle_files": 66,
+        "bundle_manifest_sha256": "263a17877f9ac2619b15b43b613216ab0298cc739e56606bade841c9763a04cb"
+      },
+      {
+        "report_sha256": "49b372a5723d661e0a930fd8a35a25d56c9161ed20c7badb8ea5ec0d2d8ec6ce",
+        "backend": "native_aot",
+        "standalone": true,
+        "artifact": {
+          "descriptor_sha256": "05f34bd2131848552fd4fa4241609c07003cdb9081be5cd6534626875096f452",
+          "files": [
+            {
+              "path": "notices/DOTNET-NATIVEAOT-10.0.15-LICENSE.txt",
+              "size": 1139,
+              "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+              "role": "notice"
+            },
+            {
+              "path": "notices/DOTNET-NATIVEAOT-10.0.15-THIRD-PARTY-NOTICES.txt",
+              "size": 78041,
+              "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+              "role": "notice"
+            },
+            {
+              "path": "notices/DOTNET-RUNTIME-10.0.15-LICENSE.txt",
+              "size": 1139,
+              "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+              "role": "notice"
+            },
+            {
+              "path": "notices/DOTNET-RUNTIME-10.0.15-THIRD-PARTY-NOTICES.txt",
+              "size": 78041,
+              "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+              "role": "notice"
+            },
+            {
+              "path": "notices/POIMA-LICENSE.txt",
+              "size": 11358,
+              "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+              "role": "notice"
+            },
+            {
+              "path": "notices/POIMA-THIRD-PARTY-NOTICES.md",
+              "size": 23949,
+              "sha256": "7d364ecf908a603cdc58efecf0a19e8d20b1a51ee0179ce3b9885d05327664a7",
+              "role": "notice"
+            },
+            {
+              "path": "Poima.NativeGame.dll",
+              "size": 1355776,
+              "sha256": "94d8c5f095fdfdba03e515b719b63827eac39a1bb5bf424c4c0ad25a2fe94fb1",
+              "role": "library"
+            }
+          ]
+        },
+        "ticks": [
+          {
+            "tick": 1,
+            "counts": {
+              "dropped": 0,
+              "expired": 0,
+              "live": 5,
+              "removed": 0,
+              "spawned": 5
+            },
+            "structure_revision": 1
+          },
+          {
+            "tick": 2,
+            "counts": {
+              "dropped": 0,
+              "expired": 0,
+              "live": 5,
+              "removed": 0,
+              "spawned": 5
+            },
+            "structure_revision": 1
+          },
+          {
+            "tick": 3,
+            "counts": {
+              "dropped": 1,
+              "expired": 0,
+              "live": 6,
+              "removed": 0,
+              "spawned": 6
+            },
+            "structure_revision": 1
+          },
+          {
+            "tick": 4,
+            "counts": {
+              "dropped": 3,
+              "expired": 0,
+              "live": 6,
+              "removed": 0,
+              "spawned": 6
+            },
+            "structure_revision": 1
+          },
+          {
+            "tick": 7,
+            "counts": {
+              "dropped": 3,
+              "expired": 5,
+              "live": 1,
+              "removed": 0,
+              "spawned": 6
+            },
+            "structure_revision": 1
+          }
+        ],
+        "births": [
+          {
+            "id": "1",
+            "position_m": [
+              -1.755000008349943,
+              1.0497494129761555,
+              -4.0
+            ],
+            "velocity_m_s": [
+              -0.11939859114277326,
+              0.5879999799601364,
+              0.0
+            ]
+          },
+          {
+            "id": "2",
+            "position_m": [
+              -1.755000008349943,
+              1.0497494129761555,
+              -4.0
+            ],
+            "velocity_m_s": [
+              -0.11939859114277326,
+              0.5879999799601364,
+              0.0
+            ]
+          },
+          {
+            "id": "3",
+            "position_m": [
+              -1.755000008349943,
+              1.0497494129761555,
+              -4.0
+            ],
+            "velocity_m_s": [
+              -0.11939859114277326,
+              0.5879999799601364,
+              0.0
+            ]
+          },
+          {
+            "id": "4",
+            "position_m": [
+              -1.755000008349943,
+              1.0497494129761555,
+              -4.0
+            ],
+            "velocity_m_s": [
+              -0.11939859114277326,
+              0.5879999799601364,
+              0.0
+            ]
+          },
+          {
+            "id": "5",
+            "position_m": [
+              1.25,
+              1.0,
+              -4.0
+            ],
+            "velocity_m_s": [
+              0.0,
+              0.6,
+              0.0
+            ]
+          }
+        ],
+        "byte_identical_archives": {
+          "checkpoint": {
+            "sha256": "df97e9956824ce4107c22ceebe8ca0192b61f9e8a1b316c649c6379e1946d540",
+            "bytes": 19317
+          },
+          "final": {
+            "sha256": "eeded7bf2651e7cc64e0650164fc3714486022e9b9144b285475659837918c78",
+            "bytes": 18574
+          },
+          "restored-checkpoint": {
+            "sha256": "df97e9956824ce4107c22ceebe8ca0192b61f9e8a1b316c649c6379e1946d540",
+            "bytes": 19317
+          },
+          "restored-final": {
+            "sha256": "eeded7bf2651e7cc64e0650164fc3714486022e9b9144b285475659837918c78",
+            "bytes": 18574
+          }
+        },
+        "rejected_requests": [],
+        "accepted_bounds": [],
+        "captures": {
+          "checkpoint-warm": {
+            "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+            "tick": 2,
+            "sha256": "6b69e35d27856c679e21b9c232311ad3e3ead5c79c70810d4d1046ba2f882998",
+            "witnesses": [
+              {
+                "pixel": [
+                  168,
+                  174
+                ],
+                "color": [
+                  188,
+                  32,
+                  32
+                ],
+                "visible": true
+              },
+              {
+                "pixel": [
+                  428,
+                  179
+                ],
+                "color": [
+                  32,
+                  188,
+                  32
+                ],
+                "visible": true
+              }
+            ]
+          },
+          "final-warm": {
+            "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+            "tick": 7,
+            "sha256": "21697c303b8d5acc9d5ae9897354cf44a4a0a3d8d5dd71c02e8727e70c3cfb36",
+            "witnesses": [
+              {
+                "pixel": [
+                  82,
+                  176
+                ],
+                "color": [
+                  188,
+                  32,
+                  32
+                ],
+                "visible": true
+              },
+              {
+                "pixel": [
+                  428,
+                  179
+                ],
+                "color": [
+                  43,
+                  52,
+                  65
+                ],
+                "visible": false
+              }
+            ]
+          },
+          "checkpoint-cold": {
+            "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+            "tick": 2,
+            "sha256": "6b69e35d27856c679e21b9c232311ad3e3ead5c79c70810d4d1046ba2f882998",
+            "witnesses": [
+              {
+                "pixel": [
+                  168,
+                  174
+                ],
+                "color": [
+                  188,
+                  32,
+                  32
+                ],
+                "visible": true
+              },
+              {
+                "pixel": [
+                  428,
+                  179
+                ],
+                "color": [
+                  32,
+                  188,
+                  32
+                ],
+                "visible": true
+              }
+            ]
+          },
+          "final-cold": {
+            "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+            "tick": 7,
+            "sha256": "21697c303b8d5acc9d5ae9897354cf44a4a0a3d8d5dd71c02e8727e70c3cfb36",
+            "witnesses": [
+              {
+                "pixel": [
+                  82,
+                  176
+                ],
+                "color": [
+                  188,
+                  32,
+                  32
+                ],
+                "visible": true
+              },
+              {
+                "pixel": [
+                  428,
+                  179
+                ],
+                "color": [
+                  43,
+                  52,
+                  65
+                ],
+                "visible": false
+              }
+            ]
+          }
+        },
+        "relocated_bundle_files": 66,
+        "bundle_manifest_sha256": "108cece6a14071e94a1f8fea550c6add743886d1a39a25fb77c49a3e4fd14e70"
+      }
+    ]
+  },
+  "recovered_attempts": {
+    "fixture_motion": {
+      "report_sha256": "03767d61d2e1115bf35c6c642c32b67ff84044e5e8642545312ade7a3892c6e6",
+      "cause": "The first version of the fixture requested a 180-degree turn in one tick.",
+      "correction": "Use a bounded turn and independently calculate the rotated offset and velocity."
+    },
+    "linux_aot_toolchain": {
+      "report_sha256": "4a676d381406ceda9d4d2c316fbe55050c277c10a097f6493d875c9f5584a9ac",
+      "rejected_package": "Microsoft.DotNet.ILCompiler 10.0.12",
+      "sdk_used": "10.0.404",
+      "advisory": "https://github.com/advisories/GHSA-p3jp-9v83-76w9"
+    }
+  },
+  "scope": "Gameplay and input bursts in one small fixed-tick scene. Headless CoreCLR and Native AOT plus relocated Windows Native AOT with single-sample Vulkan."
+}

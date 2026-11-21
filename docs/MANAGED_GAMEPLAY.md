@@ -86,6 +86,7 @@ public sealed class CounterGame : Game<CounterState>
 | `Get(entity)` | Live world transform, velocity, body motion kind and remaining motion ticks. |
 | `Raycast(origin, direction, distance, ignore)` | Closest collider hit, or null; see the [native ray contract](PHYSICS_INTERACTIONS.md). |
 | `PlaySound(emitter, gain)` / `StopSound(voice)` | Create/stop a native voice in the gameplay transaction; [event/recording contract](AUDIO_EVENTS.md). |
+| `BurstParticles(emitter, count)` | Stage a [particle burst](PARTICLES.md#trigger-a-burst-from-gameplay) at the emitter's final pose in the tick. Requires `IParticleBurstGame`. |
 | `MoveKinematic(entity, position, rotation, ticks)` | Queue a validated native kinematic target for this tick. |
 | `GetTwoBoneIk(entity, slot)` | Tick-only current controls and phase-dependent pose diagnostics; requires independent `ITwoBoneIkGame`. |
 | `SetTwoBoneIk(entity, slot, target, pole, enabled, space, weight)` | Stage complete persistent controls for a configured chain slot; requires `ITwoBoneIkGame`. |

@@ -710,6 +710,18 @@ typedef struct PoimaGameItemAttachmentServicesV1 {
     int32_t (POIMA_CALL *attachment_set)(void*,const PoimaGameItemAttachmentCommandV1*,PoimaGameError*);
 } PoimaGameItemAttachmentServicesV1;
 
+/* Tick-only burst staged on an authored particle emitter. The emitter is an
+ * entity ID, including a template node created in the current Tick. */
+typedef struct PoimaGameParticleBurstV1 {
+    uint32_t version,bytes;
+    PoimaEntityId emitter;
+    uint32_t count,reserved;
+} PoimaGameParticleBurstV1;
+typedef struct PoimaGameParticleServicesV1 {
+    PoimaGameItemAttachmentServicesV1 attachments;
+    int32_t (POIMA_CALL *particle_burst)(void*,const PoimaGameParticleBurstV1*,PoimaGameError*);
+} PoimaGameParticleServicesV1;
+
 typedef struct PoimaGameCall {
     uint32_t version,operation; uint64_t handle;
     const char* text; void* state; uint32_t state_bytes,input_count;
@@ -758,6 +770,11 @@ static_assert(sizeof(PoimaGameItemAttachmentCommandV2)==256 && alignof(PoimaGame
 static_assert(sizeof(PoimaGameItemAttachmentServicesV1)==528 && alignof(PoimaGameItemAttachmentServicesV1)==8 &&
     offsetof(PoimaGameItemAttachmentServicesV1,recovery)==0 && offsetof(PoimaGameItemAttachmentServicesV1,attachment_get)==512 &&
     offsetof(PoimaGameItemAttachmentServicesV1,attachment_set)==520);
+static_assert(sizeof(PoimaGameParticleBurstV1)==32 && alignof(PoimaGameParticleBurstV1)==8 &&
+    offsetof(PoimaGameParticleBurstV1,emitter)==8 && offsetof(PoimaGameParticleBurstV1,count)==24 &&
+    offsetof(PoimaGameParticleBurstV1,reserved)==28);
+static_assert(sizeof(PoimaGameParticleServicesV1)==536 && alignof(PoimaGameParticleServicesV1)==8 &&
+    offsetof(PoimaGameParticleServicesV1,attachments)==0 && offsetof(PoimaGameParticleServicesV1,particle_burst)==528);
 static_assert(sizeof(PoimaGameReleasedItemAimV4)==208 && alignof(PoimaGameReleasedItemAimV4)==8 &&
     offsetof(PoimaGameReleasedItemAimV4,ray)==16 && offsetof(PoimaGameReleasedItemAimV4,hit)==88 &&
     offsetof(PoimaGameReleasedItemAimV4,item)==176 && offsetof(PoimaGameReleasedItemAimV4,sampled_tick)==192 &&
