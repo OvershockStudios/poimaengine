@@ -210,7 +210,7 @@ void merge_draft_scene(Json& combined, const Json& base, const Json& input) {
         });
 
     const auto empty = Json::object();
-    for (const auto* field : {"component_schemas", "templates", "ui", "asset_provenance", "surface_mark_profiles"}) {
+    for (const auto* field : {"component_schemas", "templates", "ui", "asset_provenance", "surface_mark_profiles", "audio_buses"}) {
         const auto* before = draft_member(base, field);
         const auto* after = draft_member(input, field);
         if (!before && !after) continue;
@@ -223,6 +223,8 @@ void merge_draft_scene(Json& combined, const Json& base, const Json& input) {
         combined.erase("asset_provenance");
     if (combined.contains("surface_mark_profiles") && combined.at("surface_mark_profiles").empty())
         combined.erase("surface_mark_profiles");
+    if (combined.contains("audio_buses") && combined.at("audio_buses").empty())
+        combined.erase("audio_buses");
     merge_draft_value(combined, "navigation", draft_member(base, "navigation"),
         draft_member(input, "navigation"), "/navigation");
     merge_draft_value(combined, "water", draft_member(base, "water"),

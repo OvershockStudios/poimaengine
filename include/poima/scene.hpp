@@ -168,6 +168,14 @@ struct SceneWetness {
 
     bool operator==(const SceneWetness&) const=default;
 };
+inline constexpr std::size_t max_mesh_lod_levels=4;
+inline constexpr double max_mesh_lod_distance_m=1000000;
+struct MeshLodLevel {
+    double min_distance_m=0;
+    std::shared_ptr<const MeshAsset> mesh;
+};
+using MeshLodChain=std::vector<MeshLodLevel>;
+
 struct SceneObject {
     std::string entity_id;
     Matrix4 world;
@@ -190,6 +198,8 @@ struct SceneObject {
     bool mutable_geometry=false;
     // Linear factors applied to the drawable's base tint and roughness.
     std::optional<SceneWetness> wetness{};
+    // Additional fixed rigid geometry. The base mesh always owns material inputs.
+    std::shared_ptr<const MeshLodChain> lods{};
 };
 struct SceneViewmodel {
     SceneLens lens;

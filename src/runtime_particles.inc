@@ -5,15 +5,18 @@
         std::string entity,template_id,template_node;
         RuntimeParticleEmitter definition;
         bool draining=false;
+        RuntimeParticleRainSample rain{};
     };
     struct ParticleRuntime {
         ParticleRuntime()=default;
         ParticleRuntime(const ParticleRuntime& other)
-            :system(other.system.clone()),sources(other.sources),next_id(other.next_id),membership(other.membership) {}
+            :system(other.system.clone()),sources(other.sources),next_id(other.next_id),membership(other.membership),
+            rain(other.rain) {}
         particles::System system{runtime_particle_limits};
         std::map<particles::EmitterId,ParticleBinding> sources;
         particles::EmitterId next_id=1;
         std::shared_ptr<const Topology> membership;
+        std::optional<RuntimeParticleRainWindow> rain;
     };
     std::unique_ptr<ParticleRuntime> particle_runtime;
     particles::SpriteCatalog particle_sprites;
@@ -41,11 +44,19 @@
             const auto active=self.topology->definitions.find(id);
             const auto* target=active==self.topology->definitions.end() ? self.pending_entity(id) : &active->second;
             require(target && target->particle_emitter,"Particle burst requires a live or staged ParticleEmitter.");
+            require(!target->particle_emitter->rain,"Rain emitters only accept weather-driven emission.");
             self.game_particle_bursts.push_back({std::move(id),command->count});
         });
     }
 
     void restore_particles(const RuntimeDefinition&,const nlohmann::json&);
+    void restore_precipitation(const nlohmann::json&);
+    nlohmann::json archive_precipitation() const;
+    static bool definition_has_rain(const RuntimeDefinition& definition) {
+        return std::ranges::any_of(definition.entities,[](const auto& entity) {
+            return entity.particle_emitter && entity.particle_emitter->rain;
+        });
+    }
     static bool definition_has_particles(const RuntimeDefinition& definition) {
         const auto has_emitter=[](const auto& entry){return entry.particle_emitter.has_value();};
         return std::any_of(definition.entities.begin(),definition.entities.end(),has_emitter) ||
@@ -100,7 +111,34 @@
         for(const auto& [id,source]:state.sources)if(!source.draining)
             state.system.commit_pose(id,particle_pose(registry.get<Node>(find(source.entity)).world));
     }
-    void step_particles(std::span<const std::string_view> pressed) {
+    void step_precipitation(std::optional<std::uint32_t> rain_nm) {
+        auto& state=*particle_runtime;
+        if(!state.rain)return;
+        auto& window=*state.rain;
+        if(rain_nm) {
+            window.rain_nm=rain_nm;
+            window.ticks_remaining=*rain_nm ? rain_particle_window_ticks : 0;
+        }
+        if(!window.ticks_remaining)return;
+        --window.ticks_remaining;
+        window.sample_tick=tick;
+        for(auto& [id,source]:state.sources) {
+            if(source.draining || !source.definition.rain || !source.definition.config.emitting)continue;
+            const auto& profile=*source.definition.rain;
+            auto& sample=source.rain;
+            // One game-second depth funds a finite window at the simulation rate.
+            // Covered ticks spend the same phase without placing deferred births.
+            const auto denominator=profile.nm_per_particle*rain_particle_window_ticks;
+            const auto numerator=std::min(*window.rain_nm,denominator*profile.max_particles_per_tick);
+            const auto phase=sample.phase+numerator;
+            sample.phase=phase%denominator;
+            sample.scheduled_births=phase/denominator;
+            const auto pose=state.system.emitter_status(id).pose;
+            sample.blocker=rain_shelter(source.entity,pose.position_m);
+            if(!sample.blocker && sample.scheduled_births)state.system.burst(id,sample.scheduled_births);
+        }
+    }
+    void step_particles(std::span<const std::string_view> pressed,std::optional<std::uint32_t> rain_nm) {
         if(!particle_runtime)return;
         profiling::Scope profile("runtime.particles",static_cast<std::int64_t>(tick));
         synchronize_particles();
@@ -120,6 +158,7 @@
             state.system.burst(found->first,command.count);
         }
         game_particle_bursts.clear();
+        step_precipitation(rain_nm);
         state.system.step();
         for(auto entry=state.sources.begin();entry!=state.sources.end();) {
             if(entry->second.draining && !state.system.emitter_status(entry->first).particles.live) {
@@ -136,7 +175,7 @@
     RuntimeParticleObservation observe_particles() const {
         if(!particle_runtime)return {false,{runtime_particle_limits,tick,0,{}},{},{}};
         const auto& state=*particle_runtime;
-        RuntimeParticleObservation result{true,state.system.status(),{},particle_instances()};
+        RuntimeParticleObservation result{true,state.system.status(),{},particle_instances(),state.rain};
         result.sources.reserve(state.sources.size());
         for(const auto& [id,source]:state.sources) {
             std::shared_ptr<const TextureImage> texture;
@@ -145,7 +184,8 @@
                 const auto index=particle_sprites.indices.at({sprite->texture_sha256,sprite->depth_fade_m});
                 texture=particle_sprites.styles.at(index).texture;
             }
-            result.sources.push_back({id,source.entity,source.draining,state.system.emitter_status(id),sprite,std::move(texture)});
+            result.sources.push_back({id,source.entity,source.draining,state.system.emitter_status(id),sprite,
+                std::move(texture),source.definition.rain ? std::optional(source.rain) : std::nullopt});
         }
         return result;
     }

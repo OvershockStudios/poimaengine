@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <span>
 #include <string>
 #include <vector>
 
@@ -12,7 +13,9 @@ inline constexpr std::size_t max_triangles=250000,max_vertices=750000,max_cells=
 inline constexpr std::size_t max_package_bytes=16*1024*1024,max_bake_memory=512*1024*1024,max_detour_memory=32*1024*1024;
 // Detour adds one to neighbor indices and reserves bit 15 for external links.
 inline constexpr int max_mesh_polygons=0x7fff;
+inline constexpr std::size_t max_obstacles=64;
 using Point=std::array<float,3>;
+struct ObstacleBounds { Point minimum{},maximum{}; };
 struct Profile {
     double radius=.3,height=1.8,climb=.3,slope=45,cell_size=.15,cell_height=.1;
 };
@@ -31,6 +34,7 @@ struct Path {
     std::vector<Point> corners;
     std::uint32_t polygons=0;
     bool start_found=false,end_found=false;
+    bool obstacle_filtered=false;
 };
 bool available() noexcept;
 std::string profile_json(const Profile&);
@@ -50,6 +54,7 @@ public:
     std::string encode() const;
     std::string metadata() const;
     std::string source_fingerprint() const;
-    Path path(const PathRequest&,std::size_t allocation_limit=max_detour_memory) const;
+    Path path(const PathRequest&,std::size_t allocation_limit=max_detour_memory,
+        std::span<const ObstacleBounds> obstacles={}) const;
 };
 }

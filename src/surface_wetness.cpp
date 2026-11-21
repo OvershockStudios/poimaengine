@@ -51,13 +51,30 @@ void validate(const Dose& dose) {
 namespace poima {
 
 void validate_runtime_surface_wetness(const RuntimeDefinition& definition) {
-    for (const auto& recipe : definition.templates)
-        for (const auto& entity : recipe.entities)
+    const auto has_rain = [](const auto& entity) {
+        return entity.particle_emitter && entity.particle_emitter->rain;
+    };
+    for (const auto& recipe : definition.templates) {
+        if (has_rain(recipe) || std::ranges::any_of(recipe.entities, has_rain))
+            throw std::invalid_argument("Rain emitters require an authored world entity outside the spawn catalog.");
+        for (const auto& entity : recipe.entities) {
             if (entity.surface_wetness)
                 throw std::invalid_argument("SurfaceWetness is unavailable in runtime template '"+recipe.id+"'.");
+        }
+    }
 
     std::size_t receivers = 0;
     for (const auto& entity : definition.entities) {
+        if (has_rain(entity)) {
+            const auto& emitter = *entity.particle_emitter;
+            const auto& profile = *emitter.rain;
+            if (emitter.config.spawn_space != particles::Space::World ||
+                emitter.config.simulation_space != particles::Space::World ||
+                emitter.config.particles_per_second || emitter.burst_count ||
+                profile.nm_per_particle == 0 || profile.nm_per_particle > wetness::max_rain_nm ||
+                profile.max_particles_per_tick == 0 || profile.max_particles_per_tick > max_rain_particles_per_tick)
+                throw std::invalid_argument("Rain emitter needs world spaces, bounded rates and weather-driven emission.");
+        }
         if (!entity.surface_wetness) continue;
         if (++receivers > wetness::max_receivers)
             throw std::invalid_argument("A world supports at most 64 SurfaceWetness receivers.");

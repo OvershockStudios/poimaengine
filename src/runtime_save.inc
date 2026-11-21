@@ -186,13 +186,29 @@ void save_stance_flags(bool requested,bool crouched,bool blocked) {
 
 #include "runtime_physical_save.inc"
 
+std::optional<std::string> Runtime::Impl::restore_rain_shelter(const SaveJson& value,const std::string& source) const {
+    if(value.is_null())return {};
+    auto blocker=save_text(value,32);
+    require(blocker.size()==32 && blocker!=source &&
+        blocker.find_first_not_of("0123456789abcdef")==std::string::npos &&
+        blocker.find_first_not_of('0')!=std::string::npos,"Invalid saved wetness shelter identity.");
+    const auto live=topology->definitions.find(blocker);
+    if(live!=topology->definitions.end()) {
+        const auto& entity=live->second;
+        require(entity.mesh_collider || (entity.collider && entity.collider->motion!=BodyMotion::Dynamic),
+            "Saved wetness shelter must be static or kinematic collision.");
+    } else require(entity_ids->allocated(gameplay_id(blocker)),
+        "Saved wetness shelter has no allocated identity.");
+    return blocker;
+}
+
 void Runtime::Impl::restore_wetness(const SaveJson& archive) {
     save_fields(archive,{"version","next_quantum","receivers"});
     require(save_integer(archive.at("version"))==1,"Unsupported wetness snapshot version.");
     auto state=std::make_shared<wetness::State>(*wetness_live);
     if(!archive.at("next_quantum").is_null()) {
         const auto next=save_integer(archive.at("next_quantum"),wetness::max_quantum+1);
-        require(next>0,"Saved wetness clock must follow an accepted game second.");
+        require(tick>0 && next>0,"Saved wetness clock must follow an accepted game second.");
         state->next_quantum=next;
     }
     const auto& rows=archive.at("receivers");
@@ -206,24 +222,71 @@ void Runtime::Impl::restore_wetness(const SaveJson& archive) {
         auto& receiver=expected++->second;
         const auto capacity=std::uint64_t(wetness_profile(id)->capacity_nm)*wetness::units_per_nm;
         receiver.film_nm_q16=save_integer(row.at("film_nm_q16"),capacity);
-        if(!row.at("blocker").is_null()) {
-            const auto blocker=save_text(row.at("blocker"),32);
-            require(blocker.size()==32 && blocker!=id &&
-                blocker.find_first_not_of("0123456789abcdef")==std::string::npos &&
-                blocker.find_first_not_of('0')!=std::string::npos,"Invalid saved wetness shelter identity.");
-            const auto live=topology->definitions.find(blocker);
-            if(live!=topology->definitions.end()) {
-                const auto& entity=live->second;
-                require(entity.mesh_collider || (entity.collider && entity.collider->motion!=BodyMotion::Dynamic),
-                    "Saved wetness shelter must be static or kinematic collision.");
-            } else require(entity_ids->allocated(gameplay_id(blocker)),
-                "Saved wetness shelter has no allocated identity.");
-            receiver.blocker=blocker;
-        }
+        receiver.blocker=restore_rain_shelter(row.at("blocker"),id);
         require(state->next_quantum || (!receiver.film_nm_q16 && !receiver.blocker),
             "A saved wetness receiver needs an accepted game second before it can record film or shelter.");
     }
     wetness_live=std::move(state);
+}
+
+SaveJson Runtime::Impl::archive_precipitation() const {
+    const auto& state=*particle_runtime;
+    const auto& window=*state.rain;
+    auto sources=SaveJson::array();
+    for(const auto& [id,source]:state.sources)if(source.definition.rain) {
+        const auto& rain=source.rain;
+        sources.push_back({{"id",id},{"phase",rain.phase},{"scheduled_births",rain.scheduled_births},
+            {"blocker",rain.blocker ? SaveJson(*rain.blocker) : SaveJson(nullptr)}});
+    }
+    return {{"version",1},{"rain_nm",window.rain_nm ? SaveJson(*window.rain_nm) : SaveJson(nullptr)},
+        {"ticks_remaining",window.ticks_remaining},
+        {"sample_tick",window.sample_tick ? SaveJson(*window.sample_tick) : SaveJson(nullptr)},
+        {"sources",std::move(sources)}};
+}
+
+void Runtime::Impl::restore_precipitation(const SaveJson& archive) {
+    save_fields(archive,{"version","rain_nm","ticks_remaining","sample_tick","sources"});
+    require(save_integer(archive.at("version"))==1,"Unsupported precipitation snapshot version.");
+    auto& state=*particle_runtime;
+    auto& window=*state.rain;
+    if(!archive.at("rain_nm").is_null())
+        window.rain_nm=static_cast<std::uint32_t>(save_integer(archive.at("rain_nm"),wetness::max_rain_nm));
+    window.ticks_remaining=static_cast<std::uint32_t>(
+        save_integer(archive.at("ticks_remaining"),rain_particle_window_ticks-1));
+    if(!archive.at("sample_tick").is_null())window.sample_tick=save_integer(archive.at("sample_tick"),tick);
+    require(window.rain_nm.has_value()==wetness_live->next_quantum.has_value() &&
+        (!window.sample_tick || (window.rain_nm && *window.sample_tick>0)) &&
+        (!window.rain_nm || !*window.rain_nm || window.sample_tick) &&
+        (!window.ticks_remaining || (window.rain_nm && *window.rain_nm && window.sample_tick==tick)),
+        "Saved precipitation window differs from its committed clock.");
+    if(window.rain_nm && *window.rain_nm) {
+        require(*window.sample_tick>=rain_particle_window_ticks-window.ticks_remaining,
+            "Saved precipitation window could not have elapsed by its last sample.");
+    }
+    if(water_region && !water_region->rain_cells().empty()) {
+        require(window.rain_nm.value_or(0)<=water_region->cumulative_rain_nm(),
+            "Saved precipitation depth exceeds the water region's cumulative rainfall.");
+    }
+    const auto& rows=archive.at("sources");
+    require(rows.is_array(),"Saved precipitation sources must be an array.");
+    auto row=rows.begin();
+    for(auto& [id,source]:state.sources)if(source.definition.rain) {
+        require(row!=rows.end(),"Saved precipitation sources differ from frozen content.");
+        save_fields(*row,{"id","phase","scheduled_births","blocker"});
+        require(save_integer(row->at("id"))==id,"Saved precipitation sources differ from frozen emitter order.");
+        const auto& profile=*source.definition.rain;
+        auto& rain=source.rain;
+        rain.phase=static_cast<std::uint32_t>(save_integer(row->at("phase"),
+            profile.nm_per_particle*rain_particle_window_ticks-1));
+        rain.scheduled_births=static_cast<std::uint32_t>(save_integer(row->at("scheduled_births"),
+            profile.max_particles_per_tick));
+        rain.blocker=restore_rain_shelter(row->at("blocker"),source.entity);
+        require((window.sample_tick && source.definition.config.emitting) ||
+            (!rain.phase && !rain.scheduled_births && !rain.blocker),
+            "Saved precipitation needs a sampled window and an enabled source.");
+        ++row;
+    }
+    require(row==rows.end(),"Saved precipitation sources differ from frozen content.");
 }
 
 void Runtime::Impl::restore_particles(const RuntimeDefinition& definition,const SaveJson& particle_extension) {
@@ -298,6 +361,7 @@ void Runtime::Impl::restore_particles(const RuntimeDefinition& definition,const 
     auto& state=*particle_runtime;
     state.system=particles::System::restore(typed);
     state.sources=std::move(sources);state.next_id=frontier;state.membership=topology;
+    if(state.rain)restore_precipitation(particle_extension.at("precipitation"));
 }
 
 std::string Runtime::save_snapshot(const std::string& content_sha256) const {
@@ -465,6 +529,7 @@ std::string Runtime::save_snapshot(const std::string& content_sha256) const {
                 {"template_node",source.template_node},{"draining",source.draining}});
         payload["particles"]={{"version",1},{"next_emitter_id",particles->next_id},{"sources",std::move(sources)},
             {"state",poima::particles::snapshot_json(particles->system.snapshot())}};
+        if(particles->rain)payload["particles"]["precipitation"]=s.archive_precipitation();
     }
     if(s.surface_marks) {
         SaveJson rows=SaveJson::array();
@@ -512,9 +577,11 @@ std::unique_ptr<Runtime> Runtime::restore_snapshot_data(const RuntimeDefinition&
         snow_extension=std::move(data.at("snow"));
         data.erase("snow");
     }
-    const bool wetness_content=std::ranges::any_of(definition.entities,[](const auto& entity) {
-        return entity.surface_wetness.has_value();
-    });
+    const bool rain_content=Impl::definition_has_rain(definition);
+    const bool wetness_content=rain_content || Impl::rain_water_content(definition) ||
+        std::ranges::any_of(definition.entities,[](const auto& entity) {
+            return entity.surface_wetness.has_value();
+        });
     require(data.contains("wetness")==wetness_content,"Snapshot wetness membership differs from frozen content.");
     SaveJson wetness_extension;
     if(wetness_content) {
@@ -526,7 +593,8 @@ std::unique_ptr<Runtime> Runtime::restore_snapshot_data(const RuntimeDefinition&
     SaveJson particle_extension;
     if(particle_content) {
         particle_extension=std::move(data.at("particles"));data.erase("particles");
-        save_fields(particle_extension,{"version","next_emitter_id","sources","state"});
+        if(rain_content)save_fields(particle_extension,{"version","next_emitter_id","sources","state","precipitation"});
+        else save_fields(particle_extension,{"version","next_emitter_id","sources","state"});
         require(save_integer(particle_extension.at("version"))==1,"Unsupported runtime particle extension version.");
     }
     SaveJson surface_extension=nullptr;
@@ -719,7 +787,6 @@ std::unique_ptr<Runtime> Runtime::restore_snapshot_data(const RuntimeDefinition&
     // Exact IDs/generations are installed at first allocation, never remapped.
     // The private constructor also initializes Jolt before owner-vector parsing.
     auto candidate=std::unique_ptr<Runtime>(new Runtime(restored_definition,std::move(executor),physical_bootstrap ? &*physical_bootstrap : nullptr));auto& s=*candidate->impl_;s.tick=tick;
-    if(s.water_region)s.water_region->restore(water_extension,tick);
     if(s.snow_binding)s.restore_snow(std::move(snow_extension));
     std::optional<Impl::PhysicalCheckpoint> physical_checkpoint;
     if(joined_physics)physical_checkpoint=save_physical_checkpoint(s,physical_extension,*physical_bootstrap,tick);
@@ -730,6 +797,8 @@ std::unique_ptr<Runtime> Runtime::restore_snapshot_data(const RuntimeDefinition&
         auto topology=std::make_shared<Impl::Topology>(*s.topology);topology->spawned=std::move(origins);s.topology=std::move(topology);
     }
     if(s.wetness_live)s.restore_wetness(wetness_extension);
+    if(s.water_region)s.water_region->restore(water_extension,tick,
+        s.wetness_live ? s.wetness_live->next_quantum : std::nullopt);
     if(custom || structural || logical_ui || version>=7)s.components->load(data.at("components").dump());
     if(logical_ui)s.ui_model->load(data.at("ui").dump());
     if(version>=5)s.control_sequence=save_integer(data.at("control_sequence"));

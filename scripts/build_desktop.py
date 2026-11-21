@@ -241,7 +241,7 @@ def main():
     if not args.no_activate and ROOT/'build' not in output.parents:
         parser.error('Use --no-activate to publish outside this checkout build directory.')
     previous = prior_output(output)
-    sdk = ROOT/'.cache/toolchains/dotnet-10.0.401/dotnet'
+    sdk = ROOT/'.cache/toolchains/dotnet-10.0.404/dotnet'
     if not sdk.is_file():
         parser.error('Bootstrap the pinned .NET SDK with scripts/bootstrap_tools.py --only dotnet first.')
     environment = dict(os.environ)
@@ -253,7 +253,7 @@ def main():
         subprocess.run(list(map(str, command)), cwd=ROOT, env=environment, check=True)
 
     if not args.skip_native:
-        host_headers = sdk.parent/'packs/Microsoft.NETCore.App.Host.linux-x64/10.0.12/runtimes/linux-x64/native'
+        host_headers = sdk.parent/'packs/Microsoft.NETCore.App.Host.linux-x64/10.0.15/runtimes/linux-x64/native'
         if not all((host_headers/name).is_file() for name in ('hostfxr.h', 'coreclr_delegates.h')):
             parser.error('The pinned SDK host headers are missing; rerun the .NET bootstrap.')
         run(['cmake', '--preset', 'windows-runtime', '-DPOIMA_BUILD_DESKTOP_BRIDGE=ON',

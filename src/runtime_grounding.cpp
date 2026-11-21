@@ -138,6 +138,11 @@ void validate(const RuntimeGroundingDefinition& d) {
     check(std::isfinite(d.plant_height)&&std::isfinite(d.lift_height)&&d.plant_height>=0&&
         d.plant_height<=10&&d.lift_height>d.plant_height&&d.lift_height<=10,
         "Grounding plant/lift heights require 0<=plant<lift<=10 model units.");
+    if(d.plant_release_height) {
+        check(d.plant_lock&&std::isfinite(*d.plant_release_height)&&
+            *d.plant_release_height>d.plant_height&&*d.plant_release_height<d.lift_height,
+            "Grounding plant_release_height requires plant_lock and plant_height < plant_release_height < lift_height.");
+    }
     check(std::isfinite(d.probe_above)&&std::isfinite(d.probe_below)&&d.probe_above>=.001&&d.probe_above<=10&&
         d.probe_below>=.001&&d.probe_below<=10,"Grounding probes must be .001..10 metres.");
     check(std::isfinite(d.max_correction)&&d.max_correction>0&&d.max_correction<=10,
@@ -175,10 +180,14 @@ Decision prepare(std::span<const int> parents,const ModelPose& pose,const Runtim
     if(height>=d.lift_height) {
         s.status="lifted";if(s.planting)clear_plant(*s.planting,"lifted",true);return result;
     }
-    double weight=chain.weight;
-    if(height>d.plant_height) { const auto t=(height-d.plant_height)/(d.lift_height-d.plant_height);weight*=1-t*t*(3-2*t); }
-    if(weight<=0) { s.status="lifted";if(s.planting)clear_plant(*s.planting,"lifted",true);return result; }
     const bool held=s.planting&&s.planting->anchor.has_value();
+    const auto fade_start=held?d.plant_release_height.value_or(d.plant_height):d.plant_height;
+    double weight=chain.weight;
+    if(height>fade_start) {
+        const auto t=(height-fade_start)/(d.lift_height-fade_start);
+        weight*=1-t*t*(3-2*t);
+    }
+    if(weight<=0) { s.status="lifted";if(s.planting)clear_plant(*s.planting,"lifted",true);return result; }
     V target_sole=s.input_sole,anchor_normal{},anchor_forward{};
     auto reject=[&](const char* status,const char* reason=nullptr) {
         s.status=status;

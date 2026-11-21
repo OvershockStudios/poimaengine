@@ -19,11 +19,15 @@ struct AcousticMaterial {
     bool enabled=true;
 };
 void validate_acoustic_material(const AcousticMaterial& material);
+struct AudioBusRoute { std::string name;float gain=1; };
 struct AudioEmitter {
     std::string asset;
     std::shared_ptr<const AudioClip> clip;
     float gain=1;
     bool loop=false,enabled=true;
+    // Authored route resolved from the frozen world. Omission selects unity gain.
+    std::optional<AudioBusRoute> bus{};
+    float bus_gain() const { return bus ? bus->gain : 1.0f; }
 };
 struct AcousticGeometry {
     std::string entity;

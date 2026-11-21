@@ -73,11 +73,12 @@ Continue with the returned revision and the same selector. `after` is an exclusi
 | `AudioEmitter.asset` | audio | null |
 | `MeshCollider.asset` | model | authored primitive |
 | `StaticMesh.asset` | model | authored primitive |
+| `StaticMesh.lods[].asset` | model | authored alternate primitive |
 | `SkinnedMesh.asset` | model | authored primitive |
 | `PbrTextures.<slot>.asset`, without `image` | image | null |
 | `PbrTextures.<slot>.asset`, with `image` | model | authored embedded image |
 
-Direct component cursors use `/asset`. Texture slots are `base_color`, `emissive`, `metallic_roughness`, `normal` and `occlusion`. Their cursor paths are `/<slot>/asset`. A world owner uses the current `world_id` from `world.inspect`. Navigation and water use components `navigation` and `water` with path `/asset`. UI images use component `ui` and path `/ui/<element-id>/style/image/asset`. [Navigation](NAVIGATION.md#bind-a-world), [Water binding](SHALLOW_WATER.md#author-a-terrain-bound-region), [UI images](GAME_UI.md#use-cooked-images).
+Direct component cursors use `/asset`. Static mesh alternates use `/lods/<index>/asset` with an index from 0 through 3. For hierarchical templates the path begins with `/entities/<member-id>/components/StaticMesh`. Texture slots are `base_color`, `emissive`, `metallic_roughness`, `normal` and `occlusion`. Their cursor paths are `/<slot>/asset`. A world owner uses the current `world_id` from `world.inspect`. Navigation and water use components `navigation` and `water` with path `/asset`. UI images use component `ui` and path `/ui/<element-id>/style/image/asset`. [Navigation](NAVIGATION.md#bind-a-world), [Water binding](SHALLOW_WATER.md#author-a-terrain-bound-region), [UI images](GAME_UI.md#use-cooked-images).
 
 Invisible meshes, collision-only geometry, disabled emitters and frozen template references are included. Omitted texture slots inherit imported maps; null slots disable them. Neither creates another explicit edge. Imported material images, skins, curves and layer/reference clips live inside the referenced model package; this operation does not decode them into an effective material graph. Use [effective material inspection](MATERIAL_AUTHORING.md#inspect-the-effective-material) when that is needed.
 
@@ -89,7 +90,7 @@ The existing `world.dependencies` operation remains the resource-validation/expo
 
 The method is available to standalone, shared-headless, shared-editor and read-only packaged sessions. All observe one owner-serialized loaded document revision; an active runtime does not redirect the read into its frozen definition. The operation does not reread external world-file edits, write receipts/history/storage, modify caches or advance simulation. Ordinary diagnostic tracing can record the read.
 
-Current loaded documents permit 10,000 entities and 256 templates. The conservative typed scan bound is 101,537 references; pages retain at most `limit + 1` records. Results are limited to 1 MiB of serialized UTF-8 result JSON before the JSON-RPC wrapper; overflow fails without truncation. These bounds do not establish maximum-content performance or a process-memory ceiling.
+Current loaded documents permit 10,000 entities and 256 templates. The typed scan has a fixed bound that includes up to four LOD edges per static mesh; pages retain at most `limit + 1` records. Results are limited to 1 MiB of serialized UTF-8 result JSON before the JSON-RPC wrapper; overflow fails without truncation. These bounds do not establish maximum-content performance or a process-memory ceiling.
 
 Malformed requests and invalid continuation shape use `-32602`; stale revision uses `-32009`; unknown owner uses `-32004`. An unused valid hash is an empty result, not a resource-resolution error.
 

@@ -62,6 +62,10 @@ bool valid_cursor(const Cursor& value) noexcept {
     }
     if(value.owner.kind=="template" && !member && value.component!="StaticMesh" && value.component!="PbrTextures" && value.component!="ParticleEmitter")return false;
     if(value.component=="ParticleEmitter")return path=="/sprite/texture";
+    if(value.component=="StaticMesh" && path.starts_with("/lods/")) {
+        return path.size()==13 && path[6]>='0' && path[6]-'0'<static_cast<int>(max_mesh_lod_levels) &&
+            path.substr(7)=="/asset";
+    }
     if(value.component=="PbrTextures") {
         for(const auto slot:texture_slots)
             if(path.size()==slot.size()+7 && path.front()=='/' && path.substr(1,slot.size())==slot && path.substr(slot.size()+1)=="/asset")return true;
@@ -134,7 +138,19 @@ Page collect(const Json& entities,const Json* templates,const Query& query,const
                     need(component.contains("primitive"),"Authored mesh primitive reference is absent.");
                     subresource=Subresource{"primitive",index(component.at("primitive"),9999)};
                 }
-                emit(owner,type,prefix+(!prefix.empty() ? std::string(type):std::string{})+"/asset",component.at("asset"),type=="AudioEmitter" ? "audio":"model",subresource);
+                const auto base_path=prefix+(!prefix.empty() ? std::string(type):std::string{});
+                emit(owner,type,base_path+"/asset",component.at("asset"),type=="AudioEmitter" ? "audio":"model",subresource);
+                if(type=="StaticMesh" && component.contains("lods")) {
+                    const auto& lods=component.at("lods");
+                    need(lods.is_array() && !lods.empty() && lods.size()<=max_mesh_lod_levels,"Malformed mesh LOD asset references.");
+                    for(std::size_t level=0;level<lods.size();++level) {
+                        if(result.edges.size()>query.limit)return;
+                        const auto& lod=lods.at(level);
+                        need(lod.is_object() && lod.contains("asset") && lod.contains("primitive"),"Malformed mesh LOD asset reference.");
+                        emit(owner,type,base_path+"/lods/"+std::to_string(level)+"/asset",lod.at("asset"),"model",
+                            Subresource{"primitive",index(lod.at("primitive"),9999)});
+                    }
+                }
             }
             if(result.edges.size()>query.limit)return;
         }

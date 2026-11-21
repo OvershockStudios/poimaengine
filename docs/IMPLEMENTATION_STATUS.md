@@ -1,8 +1,39 @@
 # Implementation status
 
-Updated 2026-11-21 for **0.0.370**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-21 for **0.0.371**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.371 moves [authored document validation and the SDL player loop](BUILD.md#world-service-and-schema-compilation)
+into separate compilation units. Twelve reference image pairs from a native
+Windows replay match 0.0.370 pixel for pixel across both tested adapters and
+lighting paths. Cooperative presentation checks passed on both adapters. The
+foreground fixture could not acquire an interactive tick in either run.
+
+[Rigid-mesh LOD](MESH_LOD.md) selects authored detail tiers for camera and
+shadow draws. Windows Vulkan checks cover selection, collision and relocated
+exports on both adapters and both lighting paths. Authored
+[navigation obstacles](NAVIGATION.md) can change a route when a static or
+kinematic blocker occupies the baked mesh. A fresh native owner reproduces the
+saved door poses and route choices. [Audio buses](AUDIO_EVENTS.md#route-emitters-through-named-buses)
+group fixed gains for captures and continuous playback. Exact PCM checks cover
+zero-gain routes and fresh-process save continuation.
+
+The [weather clock](SURFACE_WETNESS.md) drives [rain emitters](PARTICLES.md)
+and [water catchments](SHALLOW_WATER.md) alongside surface wetness. A single
+late failure preserves the complete save across all three consumers. Windows
+checks cover relocated content and separately exercised compiled weather
+consumers. The [planted-foot profile](FOOT_PLANTING.md) can retain its anchor
+through more of the early rise before the original lift threshold. Its native
+fixture checks fixed limb lengths, one contact query per held tick, and exact
+cold-save continuation.
+
+The [Inspector](DESKTOP_EDITOR.md) gains Back, Forward and ancestor selection.
+The creator can [keep an already tested build](PROJECT_RECOVERY.md) after
+reopening the project. The matching Windows CLI qualifies guarded retention
+and recovery with the exact verified bundle. The default Linux SDK is now .NET
+10.0.404. Twenty-five selected Linux suites, the desktop selection model and
+the locked Windows desktop package build passed. [Results](evidence/m2-parallel-engine-371.json)
 
 Version 0.0.370 adds [shelter-aware surface wetness](SURFACE_WETNESS.md). An
 exposed plate takes on rain while a sheltered plate stays dry. A wet prop
@@ -5054,7 +5085,9 @@ Cinematic authoring, comprehensive post-processing and a general package manager
 
 The [native profiler](PROFILER.md) now provides bounded shared captures, an editor CPU timeline, subsystem summaries, native job-worker intervals, separate GPU duration samples and trace export. [Optional CoreCLR callback aggregates](MANAGED_CALLBACK_METRICS.md) provide current-thread allocation and runtime-wide GC observations separately from native captures. General worker-stack sampling, arbitrary managed allocation/call-stack tracking, GPU residency, calibrated GPU-clock correlation and a sustained benchmark workflow remain unfinished. Experimental [GPU memory diagnostics](GPU_MEMORY.md) separately expose allocation estimates and budgets; they are not residency measurements. Existing [render diagnostics](RENDER_DIAGNOSTICS.md) also retain capture/player aggregates and draw counters. Scene transform handles are implemented; orientation/axis-view controls, camera frustums and light/component icons remain planned. The current Console is a log tab beside Project.
 
-Planned editor workflow improvements include configurable hierarchy/folder styling, component isolation/search/copy-paste, focused object/asset tabs, persistent favorites, fullscreen panels, configurable smooth navigation, hover highlighting and overlap selection, a live preferences inspector, clickable breadcrumbs/back-forward history/context locking, and integrated Git/GitHub workflows. Existing striping, automatic icons, basic geometry picking and dock panels cover only the initial subset.
+The desktop Inspector has [selection history and entity breadcrumbs](DESKTOP_EDITOR.md). Back/Forward and ancestor selection use the existing draft guards and shared selection. The linked managed selection fixture covers history branching, deleted targets and failed read recovery. Presented controls and physical input still need qualification.
+
+Planned editor workflow improvements include configurable hierarchy/folder styling, component isolation/search/copy-paste, focused object/asset tabs, persistent favorites, fullscreen panels, configurable smooth navigation, hover highlighting and overlap selection, a live preferences inspector, context locking, and integrated Git/GitHub workflows. Existing striping, automatic icons, basic geometry picking and dock panels cover only the initial subset.
 
 Runtime collision supports boxes, capsule controllers and explicit [static triangle meshes](MESH_COLLISION.md), preserving openings present in source geometry. Moving/deforming mesh colliders, distinct movement versus weapon-query shapes, finite-radius projectile sweeps and texture-cutout collision masks remain unfinished. Contacts use triangle front faces; rays hit both sides. Numeric/resource bounds and synthetic fixture results do not establish exact arithmetic or game-scale collision performance.
 

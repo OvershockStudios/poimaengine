@@ -2,6 +2,15 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.371
+
+- Compile authored world validation and the SDL player loop in their own translation units. Native world publication and Vulkan resource ownership retain their existing interfaces.
+- Select authored rigid-mesh detail tiers for camera and shadow draws and export every referenced tier. Let static and kinematic obstacles affect routes on a cooked navigation mesh.
+- Route sounds through named gain buses. Feed authored precipitation emitters and terrain water catchments from the guarded weather clock alongside surface wetness.
+- Let planted feet hold through a configurable part of the early rise before blending toward the lifted pose.
+- Revisit Inspector selections with Back and Forward, and select ancestors from the breadcrumb. Keep a tested candidate after reopening the creator workspace.
+- Pin the Linux-hosted .NET SDK to 10.0.404 for gameplay and desktop packaging.
+
 ## 0.0.370
 
 - Accumulate and dry saved surface wetness from rain and measured shelter. CLI and compiled gameplay submit fixed game-clock doses to the same material state.

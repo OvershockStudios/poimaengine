@@ -105,25 +105,72 @@
             require(mesh->source_fingerprint()==fingerprint,"Navigation source fingerprint is stale; bake the current collision topology.",-32009);
         }
         Json result={{"revision",doc_.at("revision")},{"scope","authored"},{"asset",id},{"source_fingerprint",fingerprint},{"metadata",Json::parse(mesh->metadata())}};
-        if(method=="world.navigation.bake") {result["reused"]=reused;result["ignored_moving_colliders"]=source.ignored_moving_colliders;return result;}
+        if(method=="world.navigation.bake") {
+            result["reused"]=reused;
+            result["ignored_moving_colliders"]=source.ignored_moving_colliders;
+            if(source.ignored_runtime_obstacles)result["ignored_runtime_obstacles"]=source.ignored_runtime_obstacles;
+            return result;
+        }
         if(method=="world.navigation.inspect")return result;
         navigation::PathRequest request;
-        auto vector=[](const Json& value,double lo,double hi) {
-            require(value.is_array() && value.size()==3,"Navigation vector requires three numbers.");navigation::Point point;
-            for(std::size_t k=0;k<3;++k){require(value[k].is_number(),"Navigation vector needs numeric coordinates.");const auto number=value[k].get<double>();require(std::isfinite(number) && number>=lo && number<=hi,"Navigation vector coordinate is out of bounds.");point[k]=static_cast<float>(number);}return point;
-        };
-        request.start=vector(params.at("start"),-1000000,1000000);request.end=vector(params.at("end"),-1000000,1000000);
-        if(params.contains("extents"))request.extents=vector(params.at("extents"),.01,100);
-        for(auto [key,destination]:{std::pair{"max_polygons",&request.max_polygons},{"max_corners",&request.max_corners},{"max_nodes",&request.max_nodes}})if(params.contains(key)) {
-            const auto value=revision(params.at(key));require(value<=4096 && value>=(std::string_view(key)=="max_corners" ? 2u : std::string_view(key)=="max_nodes" ? 32u : 1u),"Navigation query budget is out of bounds.");*destination=static_cast<std::uint32_t>(value);
-        }
-        try {
-            const auto path=mesh->path(request);
-            result["path"]={{"status",path.status},{"complete",path.status=="complete"},{"requested_start",path.requested_start},{"requested_end",path.requested_end},
-                {"projected_start",path.start_found ? Json(path.projected_start) : Json(nullptr)},{"projected_end",path.end_found ? Json(path.projected_end) : Json(nullptr)},
-                {"start_projection_distance",path.start_found ? Json(path.start_distance) : Json(nullptr)},{"end_projection_distance",path.end_found ? Json(path.end_distance) : Json(nullptr)},
-                {"reachable_end",path.polygons ? Json(path.reachable_end) : Json(nullptr)},{"polygons",path.polygons},{"corners",path.corners},
-                {"limits",{{"max_polygons",request.max_polygons},{"max_corners",request.max_corners},{"max_nodes",request.max_nodes}}}};
-        }catch(const std::exception& error){throw Error(-32602,navigation_diagnostic(error.what()));}
+        request.start=navigation_vector(params.at("start"),-1000000,1000000);
+        request.end=navigation_vector(params.at("end"),-1000000,1000000);
+        navigation_limits(params,request,4096);
+        try { result["path"]=navigation_path_json(mesh->path(request),request); }
+        catch(const std::exception& error){throw Error(-32602,navigation_diagnostic(error.what()));}
         return result;
+    }
+    static navigation::Point navigation_vector(const Json& value,double lo,double hi) {
+        require(value.is_array() && value.size()==3,"Navigation vector requires three numbers.");
+        navigation::Point point;
+        for(std::size_t k=0;k<3;++k) {
+            require(value[k].is_number(),"Navigation vector needs numeric coordinates.");
+            const auto number=value[k].get<double>();
+            require(std::isfinite(number) && number>=lo && number<=hi,"Navigation vector coordinate is out of bounds.");
+            point[k]=static_cast<float>(number);
+        }
+        return point;
+    }
+    template<class Request>
+    static void navigation_limits(const Json& params,Request& request,std::uint32_t output_limit) {
+        if(params.contains("extents"))request.extents=navigation_vector(params.at("extents"),.01,100);
+        const auto budget=[&](const char* key,std::uint32_t lo,std::uint32_t hi,std::uint32_t& target) {
+            if(!params.contains(key))return;
+            const auto value=revision(params.at(key));
+            require(value>=lo && value<=hi,"Navigation query budget is out of bounds.");
+            target=static_cast<std::uint32_t>(value);
+        };
+        budget("max_polygons",1,output_limit,request.max_polygons);
+        budget("max_corners",2,output_limit,request.max_corners);
+        budget("max_nodes",32,4096,request.max_nodes);
+    }
+    template<class Request>
+    static Json navigation_path_json(const navigation::Path& path,const Request& request) {
+        return {{"status",path.status},{"complete",path.status=="complete"},{"requested_start",path.requested_start},{"requested_end",path.requested_end},
+            {"projected_start",path.start_found ? Json(path.projected_start) : Json(nullptr)},{"projected_end",path.end_found ? Json(path.projected_end) : Json(nullptr)},
+            {"start_projection_distance",path.start_found ? Json(path.start_distance) : Json(nullptr)},{"end_projection_distance",path.end_found ? Json(path.end_distance) : Json(nullptr)},
+            {"reachable_end",path.polygons ? Json(path.reachable_end) : Json(nullptr)},{"polygons",path.polygons},{"corners",path.corners},
+            {"limits",{{"max_polygons",request.max_polygons},{"max_corners",request.max_corners},{"max_nodes",request.max_nodes}}}};
+    }
+    Json runtime_navigation_dispatch(const Json& params) const {
+        fields(params,{"session_id","tick","structure_revision","entity","goal","extents","max_polygons","max_corners","max_nodes"},
+            {"session_id","tick","structure_revision","entity","goal"});
+        require(runtime_navigation_available(),"Runtime navigation backend is not built.",-32003);
+        runtime_guard(params);
+        const auto tick=revision(params.at("tick"));
+        require(tick==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
+        structure_read_guard(params);
+        RuntimeNavigationRequest request;
+        request.entity=identifier(params.at("entity"));
+        request.goal=navigation_vector(params.at("goal"),-1000000,1000000);
+        navigation_limits(params,request,256);
+        try {
+            const auto route=runtime_->navigation_path(request);
+            Json blockers=Json::array();
+            for(const auto& obstacle:route.obstacles)blockers.push_back({{"entity",obstacle.entity},
+                {"minimum",obstacle.bounds.minimum},{"maximum",obstacle.bounds.maximum}});
+            return {{"session_id",runtime_id_},{"tick",tick},{"structure_revision",runtime_->structure_revision()},
+                {"scope","runtime"},{"entity",request.entity},{"asset",route.asset},{"path",navigation_path_json(route.path,request)},
+                {"obstacles",std::move(blockers)},{"obstacle_filtered",route.path.obstacle_filtered},{"blocked",route.blocked}};
+        }catch(const std::exception& error){throw Error(-32602,navigation_diagnostic(error.what()));}
     }

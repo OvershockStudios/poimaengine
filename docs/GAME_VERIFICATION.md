@@ -81,7 +81,9 @@ the source and suite, builds that snapshot and runs the tests. Inspect the
 result has `passed: true`, call `project.candidate.retain` through `poima_build`
 with the same profile, project and candidate `job_id`. The history then holds
 the exact playable build and its editable source. The creator refreshes that
-history after the turn. [Project recovery](PROJECT_RECOVERY.md)
+history after the turn. If the workspace closes after a passing report was
+saved and before the agent keeps the build, **Keep tested build** resumes from
+that report when the project reopens. [Project recovery](PROJECT_RECOVERY.md)
 
 For an export or check run without a source checkpoint, use separate jobs.
 The selected profile supplies the installed runtime and output directory.

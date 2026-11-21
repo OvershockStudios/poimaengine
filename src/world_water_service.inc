@@ -74,7 +74,7 @@
         const bool cook = method == "world.water.cook";
         require(cook || method == "world.water.plan", "Unknown water authoring method.", -32601);
         fields(params, {"revision", "terrain", "expected_terrain_recipe_sha256", "expected_plan_sha256", "tile_entities",
-            "grid", "initial_depths_m", "faces", "exchanges"},
+            "grid", "initial_depths_m", "faces", "exchanges", "rain_cells"},
             {"revision", "terrain", "expected_terrain_recipe_sha256", "tile_entities", "grid"});
         require(cook == params.contains("expected_plan_sha256"), "Water cooking requires a reviewed plan SHA-256.");
         current_revision(params);
@@ -154,5 +154,14 @@
         if (const auto& step = region->last_report())
             result["last_step"] = {{"tick", step->tick}, {"volume_before_m3", step->volume_before_m3}, {"supplied_m3", step->supplied_m3},
                 {"drained_m3", step->drained_m3}, {"volume_after_m3", step->volume_after_m3}};
+        if (!region->rain_cells().empty()) {
+            auto cells = Json::array();
+            for (const auto cell : region->rain_cells())
+                cells.push_back({cell.x, cell.z});
+            result["rain"] = {{"cells", std::move(cells)}, {"cumulative_depth_nm", region->cumulative_rain_nm()},
+                {"cumulative_m3", region->cumulative_rain_m3()}};
+            if (const auto& step = region->last_report())
+                result["last_step"]["rain_m3"] = step->rain_m3;
+        }
         return result;
     }

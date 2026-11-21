@@ -1,0 +1,414 @@
+{
+  "format": "poima.engine-integration-evidence",
+  "version": 1,
+  "checkpoint": "0.0.371",
+  "source_base": "83ba2bfdffe5aaf5aa0e77de21ce437e2141f2bb",
+  "source_sha256": {
+    "CMakeLists.txt": "d0bb85bb0d1677b46a31573470638e5b097316e4d9f393750312803973db4371",
+    "CMakePresets.json": "8def379af30f340d08d837fe32431cd33ae6f830e1867854c973ba573253ba95",
+    "cmake/navigation.cmake": "23114c71d21adc01b811431d5272104a6e82ec5a582cf4b044c1cc809c03d0d7",
+    "cmake/render_smoke.cmake": "5bf7218a6666fb44c92f29d3eb1f35201b7888a0aabac7fa03d5734034f50600",
+    "cmake/runtime.json.in": "174367316960d74a96f75267758ef30736ccaf2ee6e7f07332c50ad802153936",
+    "desktop/Poima.Editor/CreatorWindow.cs": "3d624af96d93477fa58d5399c79093631456dbccd6b25923e0f7c3753eaa4967",
+    "desktop/Poima.Editor/EditorModel.cs": "3744a0f6c35d5c6076526a10812f326cc62da2a3cd0fe05427b3d35e0237c759",
+    "desktop/Poima.Editor/EditorTheme.cs": "6d53355c9cf8a96c024323f782fae4c5bdbefd1d8de0ba0c6f14d50c66ae7189",
+    "desktop/Poima.Editor/MainWindow.InspectorNavigation.cs": "5a964190a9660d768b38198eb89276663d4dd99f2cdb721eac40f38a2f7bd187",
+    "desktop/Poima.Editor/MainWindow.cs": "d3ab509bd980cc66a689b5a1832f622ca979cf13a55ae4430f203a9f153b11bd",
+    "desktop/Poima.Editor/PlaytestResultsWindow.cs": "81a0db22a4054fa2d43c9a89de65faf1cfd9a4a1865f411b10b4d766cff92f95",
+    "include/poima/audio.hpp": "f59b797d33bb9e0bbf35d8148c169800ce9b83b856586643e50028db444ee29c",
+    "include/poima/core.hpp": "71bfaa3b6356524ebbc286afaf9f437469035b2611d669ea871b829ecaeb8b26",
+    "include/poima/navigation.hpp": "94a05803659c97dbc3d87110d89ece35cbc3636587bd3a503894004e40d10eac",
+    "include/poima/project.hpp": "7ad19d4f2cfaacedc7795242fea7b13cb4415b208b7d7724351d4956c44981b1",
+    "include/poima/runtime.hpp": "92dad87b671a16b0c5898982bd7c7e69cf22d29291b29f8a196b820dbd44699e",
+    "include/poima/scene.hpp": "f1122ac22c3d39ae4c9d045132eb5d87bb20691a4ba2b720a5216032fdd9a94c",
+    "include/poima/shallow_water.hpp": "62350b268cd4438499d8230252e83671e7835ca052b85934e48a69e080c4b832",
+    "include/poima/water_region.hpp": "e4af9dc70a2641a641595ed83fc3af74e15bb5d8353137829f9c711b4873b74a",
+    "include/poima/water_region_definition.hpp": "0139d09e9025939859144804082964d68c6101de965619ffd70fe04195b84f86",
+    "include/poima/world.hpp": "a4ff547d8716ebe294027178ab1d07a9dc61c78e19717d8445eef33563b302f4",
+    "scripts/bootstrap_tools.py": "bda22bc39a641543f9cf22ac46d95590332917e7f8fc675d36d9cd79c6b03d0a",
+    "scripts/build_desktop.py": "135201eee4ddb30e955124aa2472e0a2c2301f6345ed13ef2f92a6e410a6e9f3",
+    "scripts/build_windows_release.py": "106d3b5aab729aec7645b348f4d8685ac82c17672a3ae4573f4a52d0501e609e",
+    "scripts/verify_managed_shipping.py": "0644977a41277249895e6b663248d1e760850721182885cafbb87fe61dc440ce",
+    "src/asset_references.cpp": "8a5b044ddfa09c07dbbc9d6ab15577bdd5fab9dfce0f8bd1e4d356e6b91f7206",
+    "src/asset_references.hpp": "7855982d228fcd2e961cba947de90572fd1b2ffaad17f70794ccf30f334289e6",
+    "src/audio.cpp": "be51fad487a3efc2671c0144dfdaa1d6c82e5d6ffac775c496c31dd9c45da15c",
+    "src/audio_buses.hpp": "218f152c8c38e3d09587bb4cd771d1e829a0c27ef54b974aba1acf99f2e06897",
+    "src/audio_stream.cpp": "a39450646813c61119719fa646282a6454e0d7127dad712976320caf474186ef",
+    "src/core.cpp": "8a1ed6d8669ae0713db6c00832c273848c11486761d72932517a3add0bc92293",
+    "src/editor_audio.cpp": "f3714fde988a306b1cbf62eb5a7c85e7dc241c9f4a4104b088d474f61248ae45",
+    "src/frame_wall_scope.hpp": "42790d03fdabc164f12418bbd0da114d854bd25de994d2cd2995b1279b5cfe64",
+    "src/main.cpp": "a010176b75919d08916e6895d3f3034e83030e39f6247af9b0d44b93eaaa1e58",
+    "src/mesh_lod.hpp": "eb3f7816cce2abd39832643830cdcabe151bf01bad3478634ce62e35b01bf83a",
+    "src/navigation.cpp": "a38d676e6c6a5f21333c01995206a1033d8af61b37e88bd0ec38f4a2874bd3f5",
+    "src/navigation_disabled.cpp": "56cfaee02985b8074e13656aaa5da7299cf028a8b787a6c71b4926129b7b2d6d",
+    "src/navigation_geometry.cpp": "d6729cd3c178c4275579f0f4c9cefb9cf7914204b62b826f4e3c62ba160e71fe",
+    "src/navigation_geometry.hpp": "caaadf8853e30d9ebea412e571fde3cede419e0c97988cdb9f6abbb6eaace6da",
+    "src/navigation_schema.hpp": "0390c4c8995e292155d11df7031456b6517032e9e6d6b2e8d101758d4c0b341f",
+    "src/particle_emitter_json.cpp": "2fdcfe9b037ff4673ec2be4d4a3d97828b995ccd4368691fc1219337272272f3",
+    "src/player_renderer.hpp": "3b269c5a77afcc24bd8e77acf537cccdb2f55b982b62f3dcd31cac8354756397",
+    "src/player_window.cpp": "e192ff13c8880a9d651d48b847656d80a99db621611e77c2fc30f7f7bf880162",
+    "src/project.cpp": "05e34ece25a730b9a1b861ec601adb706929c20bde08c823330460d62f8675e8",
+    "src/project_drafts.inc": "541bfa3dda8e73404cebdf85396bcfe7316abd454b9070195f58774aa1a8ca62",
+    "src/project_recovery.inc": "74bd41dab54b4b4da237fdbce457b51cc8d01a8a477fd24b29e8f8eef65b2003",
+    "src/render_smoke.cpp": "49f5aab881482ef8c1f6187c225abd6b788654ad14a5f745ee1ca090be311663",
+    "src/runtime.cpp": "129c69d90285eaa654b50226e41387e724356f3428de684272d8feca67577062",
+    "src/runtime_animation.cpp": "d119b4f8bf3c1f546c25117fb971a72131fda25173de5d81a8d4a6b4392c1171",
+    "src/runtime_grounding.cpp": "28200578b760111e76ce56c729222be5a9bb544e590a8a67a2d04d4f819da06e",
+    "src/runtime_navigation.inc": "8f79e06660bf3dd13c64d48eefe24a9ddb670c7132faabbe3f2519be8b76e709",
+    "src/runtime_particles.inc": "3a4591343b8c807c20a9e0c9a683cc958c3173deea9e2cae4f787dd8e9a6dd06",
+    "src/runtime_save.inc": "0a9011ed826f736e5d0be5214e94c915ef9b5c13291109db1d03ade3509ac112",
+    "src/runtime_wetness.inc": "53c12846d60326969d102a294adbab49421bb4bd6f1b2c51b9ddbe365edff73f",
+    "src/save_upgrade_document.cpp": "0d179651a63e221e7d6f92a0c0caf8b6f7f2775129fba6bd891347ee004e5e0c",
+    "src/shallow_water.cpp": "97b0999c64ee747b5b23338eb47ba2ce164635d304428841eac0da186f2cfd24",
+    "src/snow.cpp": "21d29d4fd09a831aed8b893deca2498befe5614e62f91883584d3aa370061ab5",
+    "src/surface_wetness.cpp": "a9b8e5baa00de1fde43cc03c7d4ed51107f1149f98f5336c7b6b81d086b7e287",
+    "src/water_asset.cpp": "873afe24ef395ebdb84dae5cfe7ec09670a4b8b6a44d22fcd8b7b6956ead5e9a",
+    "src/water_region.cpp": "dd8a19f1c211fd31845da0b488f483586c4fadf3bc2294273713eb4a7a6bca3b",
+    "src/world.cpp": "c878b575b1304f49254a664825d22447d3388bdef8f971dc3d1470c0715300c5",
+    "src/world_document.cpp": "644e0f7b28ad250fbf6356c3b0dd0c8fb4d1e9a5e1910041a088460b07a63bfd",
+    "src/world_document.hpp": "59cea780bc2069e7b10020ef1347321cce8c9a14f08cbf26891fbcc59482c587",
+    "src/world_json.hpp": "6590abf1c57a00d3cce19562d81eb9d2d0a1410505abda9ae73fb9f1886358eb",
+    "src/world_navigation.inc": "47a27433d184e1dd48b17456bc807c5ca24107ba7df865e8fd95d944a6137330",
+    "src/world_particles.inc": "88617cde0624fec67a63a642c03aa56c015dabff37b54dbeb9b603c884c6f661",
+    "src/world_player_service.inc": "e2846d6d0276fbc9415a63f744cbe5ffa91bfe99398998471378530062011efc",
+    "src/world_schema.cpp": "f0ac7c2915b859e74531733332af838fdcd10b170cd375a0446fa88840c1ff0c",
+    "src/world_water_service.inc": "c37ac4eb3ca5d62d6781f7e9a8ef7e70b611a37f35998dd5257862a396dbfc85",
+    "tests/asset_references_contract.py": "a3e426a9d4ce08e32ff8dd273945ac19ce98bd087f9551c462b1af5ee8abfb9b",
+    "tests/audio_contract.py": "e46ad49ae4824d3d0fd1c56faaf2036ba14f3748199055514a4996e2d290e2fc",
+    "tests/character_shadow_probe.py": "5d3b9e385b16d196f846eb3d02b91d3bc1f8bc514696875e2c2e133a8d539e84",
+    "tests/creator_workspace.ps1": "983481799cd5101a0274ba8b5e03fe9e2340ded5032398417f3511e031542869",
+    "tests/desktop_audio_contract.py": "aac218405410ccdd29dad42889fe968547a599e0ff8b90a4fa47d072148546d5",
+    "tests/desktop_native_payload.py": "070786ea3e5f3f2d43e4eebdec0c8e3250a97146ffac34831d788d9af34c811e",
+    "tests/dynamic_navigation_contract.py": "db7a05a073b7403fabcd8758514ab59b22108295f90b588a7fd61c856b3f0888",
+    "tests/fixtures/editor_selection_model/Program.cs": "49c0304d1b04d90316677bcb0fd704bc8bc1620dcbba48f293dd3983dff5a1f5",
+    "tests/fixtures/editor_selection_model/README.md": "4e53e77b061236c9e40884de875ca0b32f6378d4e02f9950071f79b3fb21700a",
+    "tests/project_recovery_cli.py": "031bb2ec8688d535c9c9a6884e349600c73fc46bb2f2c433cf61f5dca97657cd",
+    "tests/rigid_mesh_lod_capture.py": "d81a03843cd6775198fa44d8b4dac7e56c6c2e7bb1dcdfff8191c5f6f6fb20a6",
+    "tests/runtime_foot_planting_native.cpp": "d87df9739f75f9bd6e0c1286b8d849c84deeb100fbfd4992a14e175acc3c57a1",
+    "tests/world_precipitation_contract.py": "c491fc274a1339fd5877ff028041d40a9072987afff576485241e702bd259cd9",
+    "tests/world_ui_contract.py": "deb1f5ec3128806eb7eaf427d43d6633658428c0fc37dcb7891ed437c94a8cea",
+    "tests/world_water_rain_contract.py": "3150f37291c3f4e1cad5bba0deef027e3a6ac106f8a3e46f6890c88b68b41ea3"
+  },
+  "source_split": {
+    "world_service_lines": {
+      "0.0.370": 5304,
+      "0.0.371": 4326
+    },
+    "render_smoke_lines": {
+      "0.0.370": 5301,
+      "0.0.371": 4479
+    },
+    "world_document_lines": 1097,
+    "player_window_lines": 985
+  },
+  "linux": {
+    "os": "Ubuntu 26.04.1",
+    "compiler": "GCC 15.2.0",
+    "profile": "linux-game, Debug, -O0 -g0, thin archives",
+    "workers": 4,
+    "runtime_sha256": "b9ed5d64ddd1dffb4f1a5096cee0d3892299a8c79b176f52fdda4f55ed533182",
+    "junit_sha256": "0cb1ac9d1a9ae18c6cd86a8523fdbb2252261cfe656c9dfa0f4ac633580b3deb",
+    "passed": true,
+    "tests": [
+      {
+        "name": "world_audio_native",
+        "seconds": 0.02
+      },
+      {
+        "name": "editor_audio_native",
+        "seconds": 0.12
+      },
+      {
+        "name": "world_terrain_contract",
+        "seconds": 0.33
+      },
+      {
+        "name": "world_water_contract",
+        "seconds": 0.43
+      },
+      {
+        "name": "world_water_rain_contract",
+        "seconds": 0.74
+      },
+      {
+        "name": "world_precipitation_contract",
+        "seconds": 0.35
+      },
+      {
+        "name": "authoring_core_conformance",
+        "seconds": 0.13
+      },
+      {
+        "name": "authoring_contract_identity",
+        "seconds": 0.66
+      },
+      {
+        "name": "audio_save_native",
+        "seconds": 0.19
+      },
+      {
+        "name": "world_save_native",
+        "seconds": 0.03
+      },
+      {
+        "name": "world_session_native",
+        "seconds": 22.41
+      },
+      {
+        "name": "world_schema_native",
+        "seconds": 50.21
+      },
+      {
+        "name": "mcp_contract",
+        "seconds": 12.34
+      },
+      {
+        "name": "runtime_grounding_native",
+        "seconds": 0.07
+      },
+      {
+        "name": "runtime_foot_planting_native",
+        "seconds": 0.16
+      },
+      {
+        "name": "runtime_grounding_control_native",
+        "seconds": 0.16
+      },
+      {
+        "name": "world_ui_contract",
+        "seconds": 0.35
+      },
+      {
+        "name": "project_contract",
+        "seconds": 0.54
+      },
+      {
+        "name": "project_draft_contract",
+        "seconds": 2.27
+      },
+      {
+        "name": "audio_contract",
+        "seconds": 1.73
+      },
+      {
+        "name": "cli_contract",
+        "seconds": 0.14
+      },
+      {
+        "name": "asset_references_contract",
+        "seconds": 0.43
+      },
+      {
+        "name": "rigid_mesh_lod_contract",
+        "seconds": 0.19
+      },
+      {
+        "name": "runtime-navigation-native",
+        "seconds": 0.03
+      },
+      {
+        "name": "dynamic_navigation_contract",
+        "seconds": 0.17
+      }
+    ],
+    "joined_weather": [
+      "one caller dose feeds water volume, films, and finite particle emission",
+      "late failure preserves selected observations and complete save bytes",
+      "a fresh owner reproduces continued state and complete saves"
+    ],
+    "baseline_offload_pilot": {
+      "checkpoint": "0.0.370",
+      "profile": "runtime-headless with navigation",
+      "workers": 4,
+      "selected_tests_passed": 6,
+      "fetch_seconds": 2.65,
+      "configure_seconds": 3.74,
+      "compile_seconds": 66.98,
+      "test_seconds": 52.13,
+      "scope": "One cold four-worker trial. No scaling or gameplay performance comparison."
+    }
+  },
+  "windows": {
+    "runtime_sha256": "be9a21009875bb8f7bd238b6a45abc8b69f90cc3a6c9b4fe73fc0813b1dc83f1",
+    "runtime_descriptor_sha256": "4431e7c5248d0d94fea72b292441eed43d752d19f70c221633ead2a2250c74ea",
+    "version": {
+      "version": "0.0.371",
+      "compiler": "Clang",
+      "compiler_version": "23.1.2",
+      "target_os": "Windows",
+      "target_arch": "x86_64"
+    },
+    "mcp": {
+      "executed": 17,
+      "skipped": 0,
+      "transcript_sha256": "f629f7f7d007d40dbac5b734b9470cd36c571e7a490d44295bf00e02ec60734d"
+    },
+    "audio": {
+      "executed": 22,
+      "skipped": 7,
+      "transcript_sha256": "d1490e0f4677b8a58ba4a9fc779e052579fa411144d400a8ea6121641edf0683"
+    },
+    "project": {
+      "executed": 18,
+      "skipped": 0,
+      "transcript_sha256": "178b51969e24a482a1f6052623b7dfa83217cfe4d0b4d99d7569420385db4aab"
+    },
+    "checkpoint_recovery": {
+      "passed": true,
+      "source_files": 7,
+      "bundle_sha256": "549f84a3659ef3288703c14cf23428d707804fc5b07570128de8f9c2bd60f971",
+      "latest_failed_groups": 2,
+      "archive_sha256": "c5015ffa8a3b8398adc849b5a9690b60c7124e2421bee862b3b82ef226efeefe",
+      "archive_files": 58
+    },
+    "shipping_actor": {
+      "retained_native_aot_checkpoint": "0.0.370",
+      "compiled_rain_evidence_sha256": "ab82a1cd91cb9717c90fc3218d4dfc1323ae476802586f7d3c8ea95c02a7cd0a"
+    },
+    "retained_wetness_evidence_sha256": "84a61a73607465d38472f39550986167afe05c70c2347c102c68d0deb7c3bc40",
+    "dynamic_navigation_evidence_sha256": "7a5f6d643e23f8a9842f082b907d8caaae6c69cb67e3e747b04fc00da3ff0f01",
+    "water_rain_evidence_sha256": "61c21a489db04b919ab1a6fb90ae2b6e49079fdbbcbe3b8030ebaba2d89c7198",
+    "render_paths": {
+      "gpu-0-forward": {
+        "adapter": "AMD Radeon(TM) Graphics",
+        "presented_frames": 30,
+        "final_tick": 29,
+        "exact_image_pairs": 3
+      },
+      "gpu-0-deferred": {
+        "adapter": "AMD Radeon(TM) Graphics",
+        "presented_frames": 30,
+        "final_tick": 29,
+        "exact_image_pairs": 3
+      },
+      "gpu-1-forward": {
+        "adapter": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "presented_frames": 30,
+        "final_tick": 29,
+        "exact_image_pairs": 3
+      },
+      "gpu-1-deferred": {
+        "adapter": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "presented_frames": 30,
+        "final_tick": 29,
+        "exact_image_pairs": 3
+      }
+    },
+    "strict_vulkan_validation": "Layer insertion witnessed for compared runs with synchronization validation enabled.",
+    "cooperative_native_fixture": {
+      "native-gpu-0": {
+        "passed": true,
+        "basic_groups": 5,
+        "graphics_groups": 0,
+        "lens_admission_groups": 1,
+        "lens_capture_token_groups": 0,
+        "lens_catchup_groups": 0,
+        "cooperative_groups": 3,
+        "cooperative_lease_attempts": 1,
+        "cooperative_tick_attempts": 1,
+        "cooperative_replacement_attempts": 1,
+        "sdl_gain_groups": 0,
+        "audible_qualification": false,
+        "physical_input": false,
+        "physics_oracle": false
+      },
+      "native-gpu-1": {
+        "passed": true,
+        "basic_groups": 5,
+        "graphics_groups": 0,
+        "lens_admission_groups": 1,
+        "lens_capture_token_groups": 0,
+        "lens_catchup_groups": 0,
+        "cooperative_groups": 3,
+        "cooperative_lease_attempts": 1,
+        "cooperative_tick_attempts": 1,
+        "cooperative_replacement_attempts": 1,
+        "sdl_gain_groups": 0,
+        "audible_qualification": false,
+        "physical_input": false,
+        "physics_oracle": false
+      }
+    },
+    "features": {
+      "forward-0": {
+        "device": "AMD Radeon(TM) Graphics",
+        "lod_evidence_sha256": "0244b2a0852b47ce92c054f395430c6b09d362350ad03ae03d79d99feceadd55",
+        "lod_images": 6,
+        "rain_evidence_sha256": "ba41ea4e1868dc5c7b652c9778554da02cf8dfcb1af1cfccb4ac7ad49d74de2c"
+      },
+      "deferred-0": {
+        "device": "AMD Radeon(TM) Graphics",
+        "lod_evidence_sha256": "2daaed86e977df3c269276a43b8a522a90a3bc71254b67b1462f2457895e1b57",
+        "lod_images": 6,
+        "rain_evidence_sha256": "987b1c4f28d265113a2536b8713dddb720b30a117ab10320b5ee39e1f50a21a0"
+      },
+      "forward-1": {
+        "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "lod_evidence_sha256": "b6e97bbbed94bc2db48b76b912190bd9fba35b87324cc1bd80e30b3dc163d7e0",
+        "lod_images": 6,
+        "rain_evidence_sha256": "fbf8d04f49fd8f430108418cf9c9aa9a101e79a1a4079cd94bfb732bdb28f29e"
+      },
+      "deferred-1": {
+        "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "lod_evidence_sha256": "4c4393c73b78d6cd68c6c9dbd15835cdcd7d15e63155f93b98ac918159f24a36",
+        "lod_images": 6,
+        "rain_evidence_sha256": "7b704c97c740b4d282db71d6de1df5d34a1900f3d0c05be462efa5fb31e2fd2b"
+      }
+    },
+    "foreground_attempt": {
+      "passed": false,
+      "reason": "The native window did not acquire an active owner tick on either adapter.",
+      "original_evidence_sha256": "87e12fc9237a62f6ea67cfb3faf3faf5084acf26ea25f58773a5a01b950e5ad9"
+    }
+  },
+  "managed": {
+    "linux_sdk": "10.0.404",
+    "runtime": "10.0.15",
+    "shipping_lab_checks": {
+      "independent_checkpoint_matches_cpp_and_recorded_coreclr": true,
+      "jit_aot_initialization_and_all_1000_entities_match_oracle": true,
+      "both_schemas_roundtrip": true,
+      "cross_runtime_resume_and_schema_upgrade": true,
+      "downgrade_rejected_without_overwriting_output": true,
+      "malformed_checkpoints_rejected_without_overwriting_output": true,
+      "invalid_ticks_and_output_errors_reported": true,
+      "20_process_restarts_each_runtime_preserve_expected_behavior": true
+    },
+    "desktop_lock_restore": "Windows x64 self-contained restore and publish from the Linux SDK.",
+    "desktop_executable_sha256": "260f4dfbc51d775949d683b15322568cff6738caa14c07275a74c6205be989a0",
+    "editor_selection_model": {
+      "scenarios": 41,
+      "checks": 449,
+      "failed": 0,
+      "scope": "linked production EditorModel and ComponentEditorModel; fake RPC transport; no native/GUI/input qualification"
+    }
+  },
+  "retained_attempts": {
+    "initial_linux": {
+      "failed": [
+        "rain discovery at the wrong JSON level",
+        "noncanonical key duration in the gait fixture",
+        "nonzero HRTF contribution from muted sources",
+        "conflicting owner argument in the LOD fixture"
+      ],
+      "raw_sha256": "5419e91ee5a397e6319cc41cf9abfcce74907495d68c5dbd9dc3fdd9f9a100db"
+    },
+    "rain_velocity_fixture": {
+      "failed": "An authored roof movement exceeded the runtime speed limit before the intended late-failure check.",
+      "raw_sha256": "95ae13c9f82b031701d9bf413acf15073b46c3ac46c0f0265c6d0c0ff8c971d1"
+    },
+    "windows_fixture_invocation": {
+      "dynamic_navigation_unc_root_refused": "e0f58fdf78713603533febf22becb9055c603292383bb5121658c4b267803c9d",
+      "wrong_precipitation_option_combination": "5000d12c5133911d87eafebd28f75668e604cf83107fa93a179d30bb6c1315c1",
+      "recovery": "Use a drive-backed navigation fixture and separate compiled weather and export processes."
+    },
+    "offload_recovery": [
+      "A server reboot interrupted the first integrated build.",
+      "The first recovery detected an incomplete Steam Audio extraction. A fresh pinned extraction resolved it."
+    ]
+  },
+  "limits": [
+    "Bounded fixtures. No representative frame rate, physical input, audible sound or Windows installer qualification.",
+    "Inspector model checks use a fake RPC transport. Cooperative presentation does not qualify foreground interaction."
+  ]
+}

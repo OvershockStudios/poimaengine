@@ -20,11 +20,11 @@ TOOLS = {
         "ready": ".cache/sdk/steam-audio-4.8.1/steamaudio/include/phonon.h",
     },
     "dotnet": {
-        "url": "https://builds.dotnet.microsoft.com/dotnet/Sdk/10.0.401/dotnet-sdk-10.0.401-linux-x64.tar.gz",
-        "sha512": "51c8b999af9e8dd9998c9edc5944e19a90788862068acd38694e098889054ce8c23d4f0c5cccfa16bf187d044562359e5ee69a9f8ad0bbe913ba90311fbce25b",
-        "archive": "dotnet-sdk-10.0.401-linux-x64.tar.gz",
-        "destination": ".cache/toolchains/dotnet-10.0.401",
-        "ready": ".cache/toolchains/dotnet-10.0.401/dotnet",
+        "url": "https://builds.dotnet.microsoft.com/dotnet/Sdk/10.0.404/dotnet-sdk-10.0.404-linux-x64.tar.gz",
+        "sha512": "577d0eb17fec33d029104c5c63a1ab0accc3e28776274abef2218dbac5af18d2109b5406d26b31d76f5c245215e3ba0926a94c20246c672c41847c9e1eb1dc50",
+        "archive": "dotnet-sdk-10.0.404-linux-x64.tar.gz",
+        "destination": ".cache/toolchains/dotnet-10.0.404",
+        "ready": ".cache/toolchains/dotnet-10.0.404/dotnet",
     },
     "compiler": {
         "url": "https://github.com/mstorsjo/llvm-mingw/releases/download/20260922/llvm-mingw-20260922-ucrt-ubuntu-22.04-x86_64.tar.xz",

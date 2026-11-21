@@ -10,13 +10,17 @@ using Avalonia.Media;
 namespace Poima.Editor;
 
 internal sealed record PlaytestAttempt(string Report, string Sha256, string Build, long Revision, int PassedGroups,
-    int TotalGroups, bool Passed, bool Retained)
+    int TotalGroups, bool Passed, bool Retained, string? Checkpoint, string? Snapshot)
 {
     public static PlaytestAttempt FromHistory(JsonElement result) => new(
         result.GetProperty("report").GetString()!, result.GetProperty("report_sha256").GetString()!,
         result.GetProperty("bundle_sha256").GetString()!, result.GetProperty("revision").GetInt64(),
         result.GetProperty("groups_passed").GetInt32(), result.GetProperty("groups_total").GetInt32(),
-        result.GetProperty("passed").GetBoolean(), result.GetProperty("retained").GetBoolean());
+        result.GetProperty("passed").GetBoolean(), result.GetProperty("retained").GetBoolean(),
+        result.GetProperty("checkpoint").GetString(),
+        result.TryGetProperty("snapshot_sha256", out var snapshot) ? snapshot.GetString() : null);
+
+    public bool CanKeep => Passed && !Retained && Checkpoint is not null && Snapshot is not null;
 
     public string Summary => Passed
         ? $"Revision {Revision} passed all {TotalGroups} check groups."
@@ -39,7 +43,7 @@ internal sealed record PlaytestAttempt(string Report, string Sha256, string Buil
 internal sealed class PlaytestResultsWindow : Window
 {
     public PlaytestResultsWindow(PlaytestAttempt attempt, JsonElement report, string? workingBuild, long workingRevision,
-        bool approveBuild = false)
+        bool approveBuild = false, bool canKeepBuild = false)
     {
         Title = "Playtest results";
         Width = 620;
@@ -63,8 +67,10 @@ internal sealed class PlaytestResultsWindow : Window
                 : $"Approve this build to replace the current playable build ({workingBuild[..12]}).", muted: true));
         else if (!attempt.Retained && workingBuild is not null)
             header.Children.Add(Text($"Revision {workingRevision} is still playable ({workingBuild[..12]}).", muted: true));
-        else if (attempt.Passed && !attempt.Retained)
+        else if (attempt.Passed && !attempt.Retained && !canKeepBuild)
             header.Children.Add(Text("Use Export build to save a playable copy.", muted: true));
+        if (canKeepBuild)
+            header.Children.Add(Text("Choose Keep tested build in the workspace to make this exact version playable.", muted: true));
 
         var groups = new StackPanel { Spacing = 8, Margin = new Thickness(0, 0, 8, 0) };
         foreach (var group in report.GetProperty("groups").EnumerateArray())

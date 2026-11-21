@@ -26,6 +26,7 @@ struct RegionDefinition {
     std::vector<RegionFace> faces;
     std::vector<CellExchange> exchanges;
     std::string plan_sha256;
+    std::vector<Cell> rain_cells;
 };
 
 }

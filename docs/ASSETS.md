@@ -7,6 +7,8 @@ opacity factors and cutoff through authoring, cooked reopening and rendering.
 Nondefault alpha semantics use cooked model version 5; legacy opaque encodings
 remain unchanged. Raster cutouts do not modify collision geometry.
 
+Use [rigid mesh LODs](MESH_LOD.md) to author progressively smaller cooked primitives for distant static meshes.
+
 ## Bring assets from an existing library
 
 Choose the source files you want to use and keep any referenced buffers and

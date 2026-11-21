@@ -82,6 +82,9 @@ AudioReport observe_audio(const AudioSnapshot& s,std::uint32_t frames) {
     for(const auto& source:s.sources) {
         check(source.emitter.clip && !source.emitter.clip->samples.empty() && source.emitter.clip->samples.size()<=max_audio_clip_frames,"Emitter requires a bounded clip.");
         check(std::isfinite(source.emitter.gain) && source.emitter.gain>=0 && source.emitter.gain<=4,"Audio gain must be in [0,4].");
+        const float bus_gain=source.emitter.bus_gain();
+        check(std::isfinite(bus_gain) && bus_gain>=0 && bus_gain<=1,
+            "Audio bus gain must be in [0,1].");
         sources.emplace_back();IPLSourceSettings source_settings{};source_settings.flags=IPL_SIMULATIONFLAGS_DIRECT;status(iplSourceCreate(simulator.value,&source_settings,&sources.back().value));iplSourceAdd(sources.back().value,simulator.value);
         IPLSimulationInputs inputs{};inputs.flags=IPL_SIMULATIONFLAGS_DIRECT;inputs.directFlags=static_cast<IPLDirectSimulationFlags>(IPL_DIRECTSIMULATIONFLAGS_DISTANCEATTENUATION|IPL_DIRECTSIMULATIONFLAGS_AIRABSORPTION|IPL_DIRECTSIMULATIONFLAGS_OCCLUSION|IPL_DIRECTSIMULATIONFLAGS_TRANSMISSION);
         // Initial sources are omnidirectional points. Object scale/shear does
@@ -121,8 +124,9 @@ AudioReport observe_audio(const AudioSnapshot& s,std::uint32_t frames) {
         IPLAudioBuffer input{1,audio_block,input_channels},middle{1,audio_block,filtered_channels},output{2,audio_block,output_channels};
         IPLBinauralEffectParams spatial_params{};spatial_params.direction=vector(direction);spatial_params.interpolation=IPL_HRTFINTERPOLATION_BILINEAR;spatial_params.spatialBlend=1;spatial_params.hrtf=hrtf.value;
         const auto& clip=emitter.clip->samples;
+        const float gain=emitter.gain*emitter.bus_gain();
         for(std::uint32_t first=0;first<frames;first+=audio_block) {
-            for(std::uint32_t k=0;k<audio_block;++k) { const auto sample=first+k;mono[k]=sample>=delay && (emitter.loop || sample-delay<clip.size()) ? clip[(sample-delay)%clip.size()]*emitter.gain : 0; }
+            for(std::uint32_t k=0;k<audio_block;++k) { const auto sample=first+k;mono[k]=sample>=delay && (emitter.loop || sample-delay<clip.size()) ? clip[(sample-delay)%clip.size()]*gain : 0; }
             iplDirectEffectApply(filter.value,&params,&input,&middle);iplBinauralEffectApply(spatial.value,&spatial_params,&middle,&output);
             // FFT/filter roundoff can produce tiny values before an impulse.
             // The engine's explicit propagation delay guarantees exact silence
@@ -131,10 +135,13 @@ AudioReport observe_audio(const AudioSnapshot& s,std::uint32_t frames) {
         }
     };
     for(std::size_t i=0;i<s.sources.size();++i) {
+        const auto& emitter=s.sources[i].emitter;
+        // A muted route contributes nothing. The HRTF can produce numerical
+        // noise even from a zero input buffer, so skip its mix altogether.
+        if(emitter.bus_gain()==0)continue;
         auto params=direct[i];params.flags=static_cast<IPLDirectEffectFlags>(IPL_DIRECTEFFECTFLAGS_APPLYDISTANCEATTENUATION|IPL_DIRECTEFFECTFLAGS_APPLYAIRABSORPTION|IPL_DIRECTEFFECTFLAGS_APPLYOCCLUSION|IPL_DIRECTEFFECTFLAGS_APPLYTRANSMISSION);
         params.transmissionType=IPL_TRANSMISSIONTYPE_FREQDEPENDENT;
         const auto& path=report.paths[i];
-        const auto& emitter=s.sources[i].emitter;
         mix_path(emitter,path.propagation_delay_samples,path.direction,params);
         if(path.reflection)mix_path(emitter,path.reflection->propagation_delay_samples,path.reflection->direction,
                                     audio_detail::reflection_filter(*path.reflection));

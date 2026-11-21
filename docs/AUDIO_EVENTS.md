@@ -105,13 +105,53 @@ Logical events and cooked audio assets do not depend on Steam Audio types. Each 
 
 Complete 512-frame blocks are generated only through committed time, leaving at most 511 frames pending. Finalization renders/trims a partial block. Source onset/stop uses sample time, so a clip shorter than a simulation tick is retained and rendered. Distance delay is latched when a stream first attaches to a voice; moving endpoints update attenuation and direction, but not travel time or Doppler. The latest committed snapshot supplies each block's path parameters; this is not sample-accurate moving geometry.
 
-Unchanged source/listener/geometry snapshots reuse acoustic path reports. Changed snapshots currently rebuild the reference acoustic scene synchronously. The optional native [early reflection model](EARLY_REFLECTIONS.md) adds a separately timed binaural bounce. Persistent instanced scene updates, coherent worker results, late reverberation, diffraction, general path transitions, device changes, speaker mixes, buses/ducking, compressed streaming, virtual voices, captions, environmental transitions and proximity voice remain open.
+Unchanged source/listener/geometry snapshots reuse acoustic path reports. Changed snapshots currently rebuild the reference acoustic scene synchronously. The optional native [early reflection model](EARLY_REFLECTIONS.md) adds a separately timed binaural bounce. Persistent instanced scene updates, coherent worker results, late reverberation, diffraction, general path transitions, device changes, speaker mixes, ducking, compressed streaming, virtual voices, captions, environmental transitions and proximity voice remain open.
 
 Valve's public supported-platform list does not include Xbox or PlayStation. The current Steam Audio backend is a PC integration. Its source availability permits investigating a port, but dependency/platform qualification requires licensed SDK access; a replacement acoustics backend may be needed. Poima's game/authoring API should remain stable across that change. No console audio implementation or compatibility is claimed. [Valve platform documentation](https://valvesoftware.github.io/steam-audio/doc/capi/getting-started.html), [Steam Audio source](https://github.com/ValveSoftware/steam-audio).
+
+## Route emitters through named buses
+
+Use an `audio.buses.set` operation inside `world.transact` to replace the
+world's named gains. Add a `bus` field to each `AudioEmitter` that should
+follow a shared gain. The transaction can update both the catalog and the
+emitters. Its final candidate must resolve every named route, including routes
+on disabled emitters and hierarchical template members.
+
+```json
+{"op":"audio.buses.set","buses":{"ambience":0.5,"effects":0.75}}
+```
+
+The catalog accepts 1–16 names matching `[a-z][a-z0-9_]{0,31}`, each with a
+linear gain from 0 to 1. A zero gain excludes its group's samples from the
+mix while voices keep their cursors. Omitting `AudioEmitter.bus` selects unity gain. To clear the catalog,
+send `"buses":null` after removing all named references, or remove the
+references in the same transaction. `world.inspect` shows the authored
+catalog. Existing revisions, preview, undo and redo cover these edits.
+
+Bus gain scales the emitter gain in frozen captures and scales the emitter
+and event gains in the continuous mixer used by replay, player and editor.
+It covers the direct path and optional early reflection. For routed sources,
+`world.audio.inspect` and `runtime.audio.inspect` show `bus`, `bus_gain` and
+`effective_gain`. `runtime.audio.voices` includes the event gain in that
+effective value. These fields report mix levels before distance, occlusion and
+device output. The separate player `audio.master_gain` preference controls
+the audio sink.
+
+Routing and gains belong to the frozen authored world. Restart the runtime
+to preview a different authored mix. Restoring a save restores its frozen
+mix and reconstructs routes for retained voices from that definition. The
+logical voice save format stays at version 1. This first slice offers direct
+gain routes. Nested buses, live bus controls, effects and metering remain
+future work.
 
 ## Verification
 
 `tests/audio_contract.py` extends the frozen acoustic suite with logical budgets/history, receipt replay, invalid commands, short one-shot onset/silence, loop phase, gain, midgame attachment, live moving geometry, partial-progress errors, C# creation/stop rollback and reload. Build the fixture with `.cache/toolchains/dotnet-10.0.401/dotnet build tests/fixtures/audio_game -c Release`, then supply `--sound-game tests/fixtures/audio_game/bin/Release/net10.0/Poima.AudioProbe.dll` plus the hostfxr/bridge paths to run it. The test injects a failure after sound and door movement and verifies joint rollback.
+
+The bus fixture generates three distinct signals. It calculates the expected
+frozen and continuous mixes from independent solo captures, checks that
+muting the two buses preserves the unrouted capture, and compares voices,
+capture and save bytes after a fresh restore.
 
 `tests/audio_player.py` opens the real native player/device, plays a moving source, stops it, retries the completed request and compares mixer statistics with an independent headless replay. It rejects dummy/disk drivers. `--fail-device` selects an intentionally nonexistent SDL driver and checks failure receipts/tick preservation followed by successful headless recording; run that variant through native Windows Python when testing Windows, so its child inherits the intended environment directly. This verifies device submission and stream drain, not a recording from physical speakers. Build/test evidence and limitations are recorded with the implementation checkpoint.
 

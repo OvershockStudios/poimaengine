@@ -123,6 +123,7 @@ struct BoxCollider {
     std::array<float,3> half_extents{0.5f,0.5f,0.5f};
     BodyMotion motion = BodyMotion::Static;
     float mass = 1, friction = 0.5f, restitution = 0;
+    bool navigation_obstacle=false;
 };
 struct MeshCollider {
     std::shared_ptr<const MeshAsset> mesh;
@@ -199,6 +200,7 @@ struct RuntimeMesh {
     std::optional<PbrMaterial> material;
     std::shared_ptr<const MaterialTextures> textures;
     bool cast_shadows=true,receive_shadows=true;
+    std::shared_ptr<const MeshLodChain> lods{};
 };
 // Trusted owner proves the complete authored delta and explicit PbrMaterial provenance.
 // Native staging changes scalar factors only; mesh/texture owners stay immutable.
@@ -235,6 +237,8 @@ struct RuntimeGroundingDefinition {
     double reference_height=0,plant_height=.03,lift_height=.15;
     double probe_above=.3,probe_below=.6,max_correction=.25,max_slope_degrees=55;
     bool plant_lock=false;
+    // Optional separate start of the height fade for an already held anchor.
+    std::optional<double> plant_release_height;
     bool operator==(const RuntimeGroundingDefinition&) const = default;
 };
 struct RuntimeGroundingHit {
@@ -393,6 +397,20 @@ inline constexpr std::uint32_t max_gameplay_particle_burst_attempts=32;
 inline constexpr std::size_t max_runtime_particle_curve_knots=8;
 inline constexpr std::uint32_t max_runtime_particle_flipbook_side=32;
 inline constexpr std::uint32_t max_runtime_particle_frame_ticks=36'000;
+inline constexpr std::uint32_t rain_particle_window_ticks=particles::ticks_per_second;
+inline constexpr std::uint32_t max_rain_particles_per_tick=32;
+struct RuntimeParticleRainProfile {
+    std::uint32_t nm_per_particle=0, max_particles_per_tick=0;
+};
+struct RuntimeParticleRainSample {
+    std::uint32_t phase=0, scheduled_births=0;
+    std::optional<std::string> blocker;
+};
+struct RuntimeParticleRainWindow {
+    std::optional<std::uint32_t> rain_nm;
+    std::uint32_t ticks_remaining=0;
+    std::optional<std::uint64_t> sample_tick;
+};
 struct RuntimeParticleCurveKnot {
     double phase=0,multiplier=1;
 };
@@ -411,6 +429,7 @@ struct RuntimeParticleEmitter {
     std::string burst_action;
     std::uint32_t burst_count=0;
     std::optional<RuntimeParticleSprite> sprite;
+    std::optional<RuntimeParticleRainProfile> rain;
 };
 struct RuntimeParticleSource {
     particles::EmitterId id=0;
@@ -419,12 +438,14 @@ struct RuntimeParticleSource {
     particles::EmitterStatus status;
     std::optional<RuntimeParticleSprite> sprite{};
     std::shared_ptr<const TextureImage> sprite_texture{};
+    std::optional<RuntimeParticleRainSample> rain{};
 };
 struct RuntimeParticleObservation {
     bool active=false;
     particles::Status status;
     std::vector<RuntimeParticleSource> sources;
     std::vector<particles::Instance> instances;
+    std::optional<RuntimeParticleRainWindow> rain{};
 };
 struct RuntimeFootprintSurface {
     SceneSurfaceMark style;
@@ -605,7 +626,16 @@ struct RuntimeNavigationRequest {
     navigation::Point goal{},extents{2,4,2};
     std::uint32_t max_polygons=256,max_corners=256,max_nodes=4096;
 };
-struct RuntimeNavigationPath { std::string asset;navigation::Path path; };
+struct RuntimeNavigationObstacle {
+    std::string entity;
+    navigation::ObstacleBounds bounds;
+};
+struct RuntimeNavigationPath {
+    std::string asset;
+    navigation::Path path;
+    std::vector<RuntimeNavigationObstacle> obstacles;
+    bool blocked=false;
+};
 struct RuntimeEntityState {
     std::string id;
     RuntimeTransform local;

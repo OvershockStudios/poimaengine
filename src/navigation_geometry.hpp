@@ -9,6 +9,7 @@ namespace poima::navigation {
 struct Source {
     nlohmann::json colliders=nlohmann::json::array();
     std::size_t ignored_moving_colliders=0;
+    std::size_t ignored_runtime_obstacles=0;
 };
 using MeshResolver=std::function<std::shared_ptr<const MeshAsset>(const std::string&,std::uint32_t)>;
 Source collision_source(const nlohmann::json& entities,const std::map<std::string,Matrix4>& matrices);

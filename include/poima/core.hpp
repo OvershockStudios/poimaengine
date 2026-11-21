@@ -139,6 +139,15 @@ struct RenderOptions {
 };
 
 struct TimingSummary { std::uint64_t samples=0;double total_ms=0,min_ms=0,max_ms=0,last_ms=0; };
+inline constexpr std::size_t max_mesh_lod_observations=64;
+struct MeshLodObservation {
+    std::string id;
+    std::uint32_t tier=0;
+};
+struct MeshLodDiagnostics {
+    std::array<std::uint32_t,max_mesh_lod_levels+1> tier_counts{};
+    std::vector<MeshLodObservation> sample;
+};
 struct DrawCounts {
     std::uint64_t objects=0,camera_draws=0,camera_culled=0,camera_triangles=0;
     std::uint64_t camera_batches=0,shadow_batches=0; // Actual geometry commands; draws retain instance counts.
@@ -146,6 +155,7 @@ struct DrawCounts {
     std::uint64_t shadow_views=0,shadow_candidates=0,shadow_draws=0,shadow_culled=0,shadow_triangles=0;
     std::uint64_t streamed_draws=0,streamed_vertex_bytes=0,streamed_index_bytes=0;
     std::uint64_t sprite_instances=0,sprite_batches=0;
+    std::shared_ptr<const MeshLodDiagnostics> mesh_lod{};
 };
 struct LightAssignmentDiagnostics {
     bool requested=true,active=false,statistics_available=false;

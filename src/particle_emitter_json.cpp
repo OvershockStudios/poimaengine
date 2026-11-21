@@ -111,7 +111,8 @@ Json curve_schema(double max_multiplier) {
 
 RuntimeParticleEmitter parse_particle_emitter(const Json& value) {
     fields(value, {"spawn_space", "simulation_space", "lifetime_ticks", "size_m", "linear_rgb"},
-        {"seed", "particles_per_second", "live_limit", "emitting", "offset_m", "velocity_m_s", "acceleration_m_s2", "burst", "sprite"});
+        {"seed", "particles_per_second", "live_limit", "emitting", "offset_m", "velocity_m_s", "acceleration_m_s2",
+            "burst", "sprite", "rain"});
     RuntimeParticleEmitter result;
     auto& config = result.config;
     config.spawn_space = space(value.at("spawn_space"));
@@ -166,6 +167,16 @@ RuntimeParticleEmitter parse_particle_emitter(const Json& value) {
         if (sprite.contains("opacity_over_life")) style.opacity_over_life = parse_curve(sprite.at("opacity_over_life"), 1);
         if (sprite.contains("flipbook")) style.flipbook = parse_flipbook(sprite.at("flipbook"));
     }
+    if (value.contains("rain")) {
+        const auto& rain = value.at("rain");
+        fields(rain, {"nm_per_particle", "max_particles_per_tick"});
+        require(config.spawn_space == particles::Space::World && config.simulation_space == particles::Space::World &&
+            config.particles_per_second == 0 && !result.burst_count,
+            "Rain emitters require world spaces and only accept weather-driven emission.");
+        result.rain = RuntimeParticleRainProfile{
+            integer(rain.at("nm_per_particle"), 1, wetness::max_rain_nm),
+            integer(rain.at("max_particles_per_tick"), 1, max_rain_particles_per_tick)};
+    }
     return result;
 }
 
@@ -187,14 +198,19 @@ Json particle_emitter_schema() {
         {"size_over_life", curve_schema(8)}, {"opacity_over_life", curve_schema(1)}, {"flipbook", std::move(flipbook)}}, {"texture"});
     sprite["properties"]["opacity"]["default"] = 1;
     sprite["properties"]["depth_fade_m"]["default"] = 0;
+    auto rain = object({{"nm_per_particle", range("integer", 1, wetness::max_rain_nm)},
+        {"max_particles_per_tick", range("integer", 1, max_rain_particles_per_tick)}},
+        {"nm_per_particle", "max_particles_per_tick"});
+    rain["description"] = "Authored world-space rain source driven by accepted weather doses. Shelter is sampled at the emitter origin each active tick.";
     auto result = object({{"spawn_space", spaces}, {"simulation_space", spaces}, {"lifetime_ticks", range("integer", 1, particles::max_lifetime_ticks)},
         {"size_m", range("number", min_size, max_size)}, {"linear_rgb", vec_schema(0, 1)},
         {"seed", {{"type", "string"}, {"pattern", "^[0-9a-f]{16}$"}, {"default", "0000000000000000"}}},
         {"particles_per_second", range("integer", 0, particles::max_rate)}, {"live_limit", range("integer", 0, live_capacity)},
         {"emitting", {{"type", "boolean"}, {"default", true}}}, {"offset_m", limits},
-        {"velocity_m_s", limits}, {"acceleration_m_s2", v}, {"burst", burst}, {"sprite", std::move(sprite)}},
+        {"velocity_m_s", limits}, {"acceleration_m_s2", v}, {"burst", burst}, {"sprite", std::move(sprite)},
+        {"rain", std::move(rain)}},
         {"spawn_space", "simulation_space", "lifetime_ticks", "size_m", "linear_rgb"});
-    result["description"] = "Fixed-tick billboards with optional translucent cooked image sprites. Spawn space selects birth axes. Simulation space selects whether live particles follow the source. Burst actions use named pressed edges.";
+    result["description"] = "Fixed-tick billboards with optional translucent cooked image sprites. Spawn space selects birth axes. Simulation space selects whether live particles follow the source. Burst actions use named pressed edges. Authored rain uses world spaces, zero continuous rate and no explicit bursts.";
     return result;
 }
 
@@ -203,7 +219,7 @@ Json particle_observation_schema() {
         {"tick", {{"type", "integer"}, {"minimum", 0}, {"maximum", 9007199254740991ULL}}},
         {"after", {{"type", "string"}, {"pattern", "^[1-9][0-9]{0,19}$"}}},
         {"limit", {{"type", "integer"}, {"minimum", 1}, {"maximum", 64}, {"default", 32}}}}, {"session_id", "tick"});
-    result["description"] = "Read committed counts, source poses and ordered world-space particles. Sprite rows include sampled presentation. Continue after the returned decimal ID at the same tick.";
+    result["description"] = "Read committed counts, source poses and ordered world-space particles. Sprite rows include sampled presentation. Authored rain adds its current window and last sampled shelter, phase and scheduled births. Continue after the returned decimal ID at the same tick.";
     return result;
 }
 } // namespace poima

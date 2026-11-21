@@ -14,5 +14,5 @@ std::shared_ptr<const Mesh> Mesh::decode(const std::string&,std::size_t) {unavai
 std::string Mesh::encode() const {unavailable();}
 std::string Mesh::metadata() const {unavailable();}
 std::string Mesh::source_fingerprint() const {unavailable();}
-Path Mesh::path(const PathRequest&,std::size_t) const {unavailable();}
+Path Mesh::path(const PathRequest&,std::size_t,std::span<const ObstacleBounds>) const {unavailable();}
 }

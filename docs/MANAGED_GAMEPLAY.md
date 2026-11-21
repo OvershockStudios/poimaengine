@@ -19,26 +19,26 @@ From the repository root, obtain the optional workspace-local Linux .NET SDK if 
 
 ```sh
 python3 scripts/bootstrap_tools.py --only dotnet
-.cache/toolchains/dotnet-10.0.401/dotnet build managed/Poima.ManagedBridge/Poima.ManagedBridge.csproj -c Release
-.cache/toolchains/dotnet-10.0.401/dotnet build examples/managed/DoorGame/Poima.DoorGame.csproj -c Release
+.cache/toolchains/dotnet-10.0.404/dotnet build managed/Poima.ManagedBridge/Poima.ManagedBridge.csproj -c Release
+.cache/toolchains/dotnet-10.0.404/dotnet build examples/managed/DoorGame/Poima.DoorGame.csproj -c Release
 cmake --preset runtime-headless -DPOIMA_ENABLE_MANAGED_GAMEPLAY=ON \
   -DPOIMA_ENABLE_GAME_UI=ON \
-  -DPOIMA_DOTNET_HOST_HEADERS="$PWD/.cache/toolchains/dotnet-10.0.401/packs/Microsoft.NETCore.App.Host.linux-x64/10.0.12/runtimes/linux-x64/native"
+  -DPOIMA_DOTNET_HOST_HEADERS="$PWD/.cache/toolchains/dotnet-10.0.404/packs/Microsoft.NETCore.App.Host.linux-x64/10.0.15/runtimes/linux-x64/native"
 cmake --build --preset runtime-headless
 ctest --preset runtime-headless
 ```
 
-For the Windows player, configure and build `windows-runtime` with the same `-D` options after completing the [Windows toolchain setup](BUILD.md). The host headers contain conditional Windows/Linux definitions and were used for both tested builds. These paths identify the measured SDK; another SDK requires its matching header path and separate qualification. The basic `headless`, `runtime-headless` and Windows presets leave managed gameplay and game UI off by default. The [Linux game profile](BUILD.md#headless-game-systems-on-linux) enables both with simulation, navigation and audio. The authoring-only `headless` build needs no .NET installation. Enable the UI option for samples that author native panels or controls, including Collection Room and Patrol Room.
+For the Windows player, configure and build `windows-runtime` with the same `-D` options after completing the [Windows toolchain setup](BUILD.md). The pinned host headers contain both Windows and Linux definitions. Use headers matching the selected SDK. Each verification record identifies the SDK and runtime used for its measurements. The basic `headless`, `runtime-headless` and Windows presets leave managed gameplay and game UI off by default. The [Linux game profile](BUILD.md#headless-game-systems-on-linux) enables both with simulation, navigation and audio. The authoring-only `headless` build needs no .NET installation. Enable the UI option for samples that author native panels or controls, including Collection Room and Patrol Room.
 
 An [installed format-v2 authoring pack](AUTHORING_TOOLS.md#compile-and-reload-with-coreclr)
 provides the binary SDK, component analyzer and matching CoreCLR bridge without
 engine-project references. Its .NET SDK/runtime remain explicit prerequisites.
 
-Keep the bridge's output directory together, including `Poima.Gameplay.dll`, its dependency metadata and `Poima.ManagedBridge.runtimeconfig.json`. The game assembly is portable IL; the native executable must load a CoreCLR installation for its own operating system. Tested installations:
+Keep the bridge's output directory together, including `Poima.Gameplay.dll`, its dependency metadata and `Poima.ManagedBridge.runtimeconfig.json`. The game assembly is portable IL; the native executable must load a CoreCLR installation for its own operating system. Example hostfxr paths:
 
 | Native engine | Explicit hostfxr path |
 | --- | --- |
-| Linux x64 | `.cache/toolchains/dotnet-10.0.401/host/fxr/10.0.12/libhostfxr.so` |
+| Linux x64 | `.cache/toolchains/dotnet-10.0.404/host/fxr/10.0.15/libhostfxr.so` |
 | Windows x64 | `C:/Program Files/dotnet/host/fxr/10.0.14/hostfxr.dll` |
 
 No runtime is installed or redistributed by the engine build. Hostfxr and the stable bridge remain loaded for the process lifetime. Changing their selected paths requires restarting the engine process; only game assemblies are replaced during gameplay reload.
@@ -243,7 +243,7 @@ First author [interaction-room.jsonl](../examples/interaction-room.jsonl) into a
 
 ```jsonl
 {"jsonrpc":"2.0","id":2,"method":"runtime.start","params":{"session_id":"00000000000000000000000000000384","revision":1}}
-{"jsonrpc":"2.0","id":3,"method":"runtime.gameplay.load","params":{"session_id":"00000000000000000000000000000384","request_id":"000000000000000000000000000007d0","expected_tick":0,"expected_revision":0,"hostfxr":"C:/Program Files/dotnet/host/fxr/10.0.12/hostfxr.dll","bridge":"D:/poimaengine/managed/Poima.ManagedBridge/bin/Release/net10.0/Poima.ManagedBridge.dll","assembly":"D:/poimaengine/examples/managed/DoorGame/bin/Release/net10.0/Poima.DoorGame.dll","type":"Poima.Examples.DoorGame","values":{"UseDistance":10}}}
+{"jsonrpc":"2.0","id":3,"method":"runtime.gameplay.load","params":{"session_id":"00000000000000000000000000000384","request_id":"000000000000000000000000000007d0","expected_tick":0,"expected_revision":0,"hostfxr":"C:/Program Files/dotnet/host/fxr/10.0.15/hostfxr.dll","bridge":"D:/poimaengine/managed/Poima.ManagedBridge/bin/Release/net10.0/Poima.ManagedBridge.dll","assembly":"D:/poimaengine/examples/managed/DoorGame/bin/Release/net10.0/Poima.DoorGame.dll","type":"Poima.Examples.DoorGame","values":{"UseDistance":10}}}
 {"jsonrpc":"2.0","id":4,"method":"runtime.step","params":{"session_id":"00000000000000000000000000000384","request_id":"000000000000000000000000000007d1","expected_tick":0,"ticks":120}}
 {"jsonrpc":"2.0","id":5,"method":"runtime.step","params":{"session_id":"00000000000000000000000000000384","request_id":"000000000000000000000000000007d2","expected_tick":120,"ticks":120,"inputs":[{"entity":"00000000000000000000000000000064","use":true}]}}
 {"jsonrpc":"2.0","id":6,"method":"runtime.gameplay.inspect","params":{"session_id":"00000000000000000000000000000384","tick":240,"fields":["Open","Activations"]}}
@@ -302,8 +302,8 @@ Run the actual compiler/reload/rollback fixture on Linux:
 ```sh
 python3 scripts/verify_gameplay.py \
   --binary build/runtime-headless/poima \
-  --dotnet .cache/toolchains/dotnet-10.0.401/dotnet \
-  --hostfxr .cache/toolchains/dotnet-10.0.401/host/fxr/10.0.12/libhostfxr.so \
+  --dotnet .cache/toolchains/dotnet-10.0.404/dotnet \
+  --hostfxr .cache/toolchains/dotnet-10.0.404/host/fxr/10.0.15/libhostfxr.so \
   --bridge managed/Poima.ManagedBridge/bin/Release/net10.0/Poima.ManagedBridge.dll \
   --output build/gameplay-contract-linux --reloads 100
 ```

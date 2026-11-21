@@ -140,7 +140,7 @@ class InstalledPayloadTests(unittest.TestCase):
         output = checkout/'build/desktop'
         output.mkdir(parents=True)
         (checkout/'CMakeLists.txt').write_text('project(Poima VERSION 0.0.191 LANGUAGES C CXX)\n')
-        sdk = checkout/'.cache/toolchains/dotnet-10.0.401/dotnet'
+        sdk = checkout/'.cache/toolchains/dotnet-10.0.404/dotnet'
         sdk.parent.mkdir(parents=True)
         sdk.write_bytes(b'not executed')
         (output/'Poima.Editor.exe').write_bytes(b'previous public candidate')

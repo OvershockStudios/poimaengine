@@ -26,6 +26,7 @@ Reply build_project_candidate(const std::string& manifest,const std::string& out
     const std::string& request);
 Reply retain_project_candidate(const std::string& manifest,const std::string& owned_world,const std::string& checkpoint,
     const std::string& report_sha256);
+Reply keep_project_candidate(const std::string& manifest,const std::string& checkpoint,const std::string& expected_snapshot);
 Reply project_history(const std::string& directory,const std::string& project_id);
 Reply project_versions(const std::string& directory,const std::string& project_id,const std::string& before={});
 Reply recover_project(const std::string& checkpoint,const std::string& output,const std::string& expected_snapshot={});

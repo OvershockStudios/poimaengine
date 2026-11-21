@@ -197,8 +197,8 @@ Region::Region(const RuntimeDefinition& runtime) {
         require(!entity->footprint_surface && (!entity->acoustics || !entity->acoustics->enabled),
             "Snow tiles cannot receive FootprintSurface or AcousticMaterial geometry.");
         require(entity->mesh && entity->mesh->visible && entity->mesh->mesh && entity->mesh_collider &&
-            entity->mesh->mesh == entity->mesh_collider->mesh,
-            "Snow tiles need the same visible cooked primitive for rendering and triangle collision.");
+            entity->mesh->mesh == entity->mesh_collider->mesh && !entity->mesh->lods,
+            "Snow tiles need the same visible cooked primitive for rendering and triangle collision, without mesh LODs.");
         const auto& base = *entity->mesh->mesh;
         require(base.influences.empty() && base.has_uv && base.material.alpha_mode == MaterialAlphaMode::opaque &&
             (!entity->mesh->material || entity->mesh->material->alpha_mode == MaterialAlphaMode::opaque) &&

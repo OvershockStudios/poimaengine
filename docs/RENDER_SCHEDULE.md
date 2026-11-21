@@ -4,6 +4,12 @@ The renderer builds and validates a typed schedule before recording each frame. 
 
 The portable builder lives in [render_schedule.hpp](../include/poima/render_schedule.hpp). It uses resource descriptions and identities without depending on Vulkan or NVRHI. The renderer supplies descriptions from its actual buffers, textures, draw inputs and selected frame slot after preparation. The swapchain image is bound after acquisition, then the renderer checks the actual framebuffer and helper bindings against the validated schedule before recording commands.
 
+The SDL player loop owns input, fixed-step polling, and presentation receipts.
+Its private rendering interface borrows the player's scene snapshot for frame
+preparation and keeps Vulkan objects, render-pass recording, and retirement
+inside the rendering lifetime. [Player loop](../src/player_window.cpp)
+[Player rendering interface](../src/player_renderer.hpp)
+
 ## Passes
 
 The fixed order is skinning, light assignment, shadows, scene clear, sky, opaque geometry, MSAA resolve, display output, game UI, hosted overlay, legacy editor composition, sparse product probes, capture and presentation export. Settings determine which optional passes and resource accesses are present. Stage boundaries can remain even when no corresponding work is needed.

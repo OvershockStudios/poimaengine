@@ -42,6 +42,9 @@ session, request ID, tick and structure guards as for `runtime.step`.
 The initial tick of a `runtime.wetness.step` applies the full batch at its
 final poses. Replay a moving roof or receiver at the intended sampling
 times. Group consecutive seconds when their exposure is held constant.
+An authored [rain particle source](PARTICLES.md#place-a-roof-aware-rain-source)
+uses the same accepted clock. Surface films apply the entire batch while
+the particle window represents its latest depth.
 
 ```json
 {"first_quantum":800,"rain_nm":[5000,5000,0]}
@@ -75,7 +78,9 @@ tint and roughness factor applied per draw. Textures and existing surface
 marks still contribute to the final surface. The renderer compares the
 effective factors against its last accepted draw, using the existing local
 surface-change signal. The authored material and collision stay intact.
-Shallow water and snow geometry retain their own state.
+[Rain-enabled shallow water](SHALLOW_WATER.md#collect-precipitation) uses
+the same dose to add volume to its authored catchment. Film and water
+advance together in the runtime transaction and keep separate state.
 
 Run the [shelter contract](../tests/world_wetness_contract.py) against a
 simulation build to inspect exposure, uptake, drying, rollback and saved

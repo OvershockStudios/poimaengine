@@ -37,6 +37,7 @@ record correlated evidence, and identify a useful impossibility check.
 | Leave footprints with an imported character | [Planted footprints](SURFACE_MARKS.md#place-footprints-from-planted-feet) | Compare new prints with solved contact and heading, then move the support and reopen a save. |
 | Compact snow under a boot | [Shaped snow soles](TERRAIN.md#shape-the-sole) | Compare the planted heading, released print, terrain depth, and collision through save restoration. |
 | Wet a scene during rain | [Surface wetness](SURFACE_WETNESS.md) | Check exposed and sheltered materials, then move a wet prop under cover and restore during drying. |
+| Show rain around shelter | [Rain particles](PARTICLES.md#place-a-roof-aware-rain-source) | Follow accepted weather doses, inspect moving cover, and resume falling particles from a save. |
 
 ## Start with a complete example
 

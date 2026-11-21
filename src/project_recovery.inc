@@ -192,7 +192,8 @@ Json history_attempt_summary(const HistoryAttempt& attempt) {
     const auto& value=attempt.checkpoint;
     auto result=checkpoint_summary(value);
     result.update({{"report",text(value.root / attempt.report_name)},{"report_sha256",value.report_sha256},
-        {"groups_total",value.report.at("groups_total")},{"passed",attempt.passed},{"retained",attempt.retained}});
+        {"snapshot_sha256",value.snapshot_sha256},{"groups_total",value.report.at("groups_total")},
+        {"passed",attempt.passed},{"retained",attempt.retained}});
     return result;
 }
 
@@ -326,6 +327,45 @@ Reply build_project_candidate(const std::string& manifest,const std::string& out
     });
 }
 
+namespace {
+Json retain_candidate(const Project& current,const std::string& checkpoint,
+    const std::string& expected_report,const std::string& expected_snapshot) {
+    const auto info=fs::absolute(path_of(checkpoint)).lexically_normal().make_preferred();
+    const auto root=history_root(current),folder=info.parent_path();
+    require(within(folder.parent_path(),root) && within(root,folder.parent_path()),"Candidate is outside project history.");
+    adoption_safe_path(info);
+    const auto final_report=folder/check_report_name;
+    adoption_safe_path(final_report,true);adoption_case_name(final_report);
+    bool replayed=fs::is_regular_file(fs::symlink_status(project_io_path(final_report)));
+    const auto verified=verified_checkpoint(info,replayed ? check_report_name : candidate_report_name,expected_report);
+    require(verified.source.spec.at("project_id")==current.spec.at("project_id"),"Candidate belongs to another project.");
+    require(expected_snapshot.empty() || expected_snapshot==verified.snapshot_sha256,
+        "The tested snapshot changed. Refresh build history before keeping it.");
+    if(!replayed) {
+        const auto incoming=folder/candidate_report_name;
+        adoption_safe_path(incoming);
+        const auto bytes=read(incoming,4*1024*1024);
+        require(hash(bytes)==verified.report_sha256,"Verification report changed before retention.");
+        const auto temporary=folder/(".checks-"+new_id()+".pending");
+        try {
+            exclusive_write(temporary,bytes);
+            adoption_publish_new(temporary,final_report);
+        } catch(...) {
+            std::error_code ignored;fs::remove(project_io_path(temporary),ignored);
+            if(!fs::is_regular_file(fs::symlink_status(project_io_path(final_report)))) throw;
+            adoption_safe_path(final_report);
+            const auto winner=verified_checkpoint(info,check_report_name,verified.report_sha256);
+            require(winner.snapshot_sha256==verified.snapshot_sha256,"A different tested snapshot was kept.");
+            replayed=true;
+        }
+    }
+    auto result=checkpoint_summary(verified);
+    result["replayed"]=replayed;
+    result["report_sha256"]=verified.report_sha256;
+    return result;
+}
+}
+
 Reply retain_project_candidate(const std::string& manifest,const std::string& owned_world,const std::string& checkpoint,
     const std::string& report_sha256) {
     return operation("project.candidate.retain",[&] {
@@ -333,32 +373,14 @@ Reply retain_project_candidate(const std::string& manifest,const std::string& ow
         const auto owner=canonical_project_path(path_of(owned_world));
         require(within(owner,current.world) && within(current.world,owner),"Retaining a build requires the open project owner.");
         require(hexadecimal(report_sha256,64),"Expected verification report SHA-256.");
-        const auto info=fs::absolute(path_of(checkpoint)).lexically_normal().make_preferred();
-        const auto root=history_root(current),folder=info.parent_path();
-        require(within(folder.parent_path(),root) && within(root,folder.parent_path()),"Candidate is outside project history.");
-        adoption_safe_path(info);
-        const auto final_report=folder/check_report_name;
-        adoption_safe_path(final_report,true);adoption_case_name(final_report);
-        const bool already=fs::is_regular_file(fs::symlink_status(project_io_path(final_report)));
-        const auto verified=verified_checkpoint(info,already ? check_report_name : candidate_report_name,report_sha256);
-        require(verified.source.spec.at("project_id")==current.spec.at("project_id"),"Candidate belongs to another project.");
-        if(!already) {
-            const auto incoming=folder/candidate_report_name;
-            adoption_safe_path(incoming);
-            const auto bytes=read(incoming,4*1024*1024);
-            require(hash(bytes)==report_sha256,"Verification report changed before retention.");
-            const auto temporary=folder/(".checks-"+new_id()+".pending");
-            try {
-                exclusive_write(temporary,bytes);
-                adoption_publish_new(temporary,final_report);
-            } catch(...) {
-                std::error_code ignored;fs::remove(project_io_path(temporary),ignored);throw;
-            }
-        }
-        auto result=checkpoint_summary(verified);
-        result["replayed"]=already;
-        result["report_sha256"]=report_sha256;
-        return result;
+        return retain_candidate(current,checkpoint,report_sha256,{});
+    });
+}
+
+Reply keep_project_candidate(const std::string& manifest,const std::string& checkpoint,const std::string& expected_snapshot) {
+    return operation("project.keep",[&] {
+        require(hexadecimal(expected_snapshot,64),"Expected tested snapshot SHA-256 from project history.");
+        return retain_candidate(project(manifest),checkpoint,{},expected_snapshot);
     });
 }
 
@@ -403,7 +425,6 @@ Reply project_versions(const std::string& directory,const std::string& project_i
                 const auto attempt=read_history_attempt(*at,project_id);
                 auto item=history_attempt_summary(attempt);
                 item["directory"]=text(at->filename());
-                item["snapshot_sha256"]=attempt.checkpoint.snapshot_sha256;
                 entries.push_back(std::move(item));
             } catch (const std::exception&) { ++skipped; }
         }

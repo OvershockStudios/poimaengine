@@ -33,6 +33,7 @@ internal sealed class CreatorWindow : Window
     private readonly Button shareExport = new() { Content = "Save game ZIP", IsVisible = false };
     private readonly Button showSharedZip = new() { Content = "Open ZIP folder", IsVisible = false };
     private readonly Button showChecks = new() { Content = "View playtest results", IsVisible = false };
+    private readonly Button keepTestedBuild = new() { Content = "Keep tested build", IsVisible = false };
     private readonly Button buildHistory = new() { Content = "Build history", IsVisible = false };
     private readonly Button restore = new() { Content = "Restore verified project as copy", IsVisible = false };
     private readonly Button openRecovered = new() { Content = "Open recovered project", IsVisible = false };
@@ -145,6 +146,7 @@ internal sealed class CreatorWindow : Window
             }
         };
         showChecks.Click += async (_, _) => await ShowPlaytestResultsAsync();
+        keepTestedBuild.Click += async (_, _) => await KeepTestedBuildAsync();
         buildHistory.Click += async (_, _) => await ShowBuildHistoryAsync();
         restore.Click += async (_, _) => await RestoreVerifiedAsync();
         openRecovered.Click += (_, _) => OpenRecoveredProject();
@@ -321,7 +323,7 @@ internal sealed class CreatorWindow : Window
         sharing.Children.Add(shareExport);
         sharing.Children.Add(showSharedZip);
         result.Children.Add(sharing);
-        result.Children.Add(new WrapPanel { ItemSpacing = 8, LineSpacing = 8, Children = { showChecks, buildHistory } });
+        result.Children.Add(new WrapPanel { ItemSpacing = 8, LineSpacing = 8, Children = { showChecks, keepTestedBuild, buildHistory } });
         result.Children.Add(new WrapPanel { ItemSpacing = 8, LineSpacing = 8,
             Children = { reviewProposal, showCombined, playCombined, openCombined } });
         result.Children.Add(restore);
@@ -608,6 +610,17 @@ internal sealed class CreatorWindow : Window
     private Task<JsonElement> ReadHistory(CancellationToken cancellation) =>
         ProjectFiles.Command(cancellation, "history", HistoryDirectory(), "--project-id", project.ProjectId);
 
+    private async Task KeepTestedBuildAsync()
+    {
+        if (!keepTestedBuild.IsEnabled || latestAttempt is not { CanKeep: true } attempt) return;
+        await ProjectWork("Keeping the tested build…", async () =>
+        {
+            await ProjectFiles.Command("keep", project.Manifest, "--checkpoint", attempt.Checkpoint!,
+                "--expected-snapshot-sha256", attempt.Snapshot!);
+            if (!closeRequested) await LoadLatestVerification();
+        });
+    }
+
     private async Task ShowPlaytestResultsAsync()
     {
         if (latestAttempt is not { } attempt || closing || exporting) return;
@@ -615,7 +628,8 @@ internal sealed class CreatorWindow : Window
         {
             using var report = await attempt.ReadReportAsync();
             if (closing || exporting || latestAttempt != attempt) return;
-            await new PlaytestResultsWindow(attempt, report.RootElement, verifiedBundleHash, exportedRevision).ShowDialog(this);
+            await new PlaytestResultsWindow(attempt, report.RootElement, verifiedBundleHash, exportedRevision,
+                canKeepBuild: attempt.CanKeep).ShowDialog(this);
         }
         catch (Exception failure) { error = failure.Message; UpdateControls(); }
     }
@@ -914,6 +928,8 @@ internal sealed class CreatorWindow : Window
         showSharedZip.IsEnabled = showExport.IsEnabled;
         showChecks.IsVisible = latestAttempt is not null;
         showChecks.IsEnabled = !closing && !closeRequested && !exporting;
+        keepTestedBuild.IsVisible = latestAttempt?.CanKeep == true;
+        keepTestedBuild.IsEnabled = keepTestedBuild.IsVisible && play.IsEnabled;
         buildHistory.IsVisible = latestAttempt is not null;
         buildHistory.IsEnabled = play.IsEnabled;
         restore.IsVisible = verifiedCheckpoint is not null;
@@ -930,7 +946,8 @@ internal sealed class CreatorWindow : Window
                 : model.RuntimeId is not null ? "A playtest is running. Stop it to start a preview."
                 : shareNotice is not null ? shareNotice
                 : recoveredManifest is not null ? "The verified project was recovered as an editable copy."
-                : latestAttempt is { } attempt ? attempt.Summary + (!attempt.Retained && verifiedCheckpoint is not null
+                : latestAttempt is { } attempt ? attempt.Summary + (attempt.CanKeep ? " The tested build is ready to keep." : "") +
+                    (!attempt.Retained && verifiedCheckpoint is not null
                     ? $" The last verified build, revision {exportedRevision}, is still playable." : "")
                 : exportedFolder is not null ? $"Exported revision {exportedRevision}. Open the build folder and run launch.cmd."
                 : "Play opens the current project. Chat changes appear the next time you play.");

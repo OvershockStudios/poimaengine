@@ -20,6 +20,8 @@ public sealed record AnimationClipChoice(int? Index, string Label)
 
 public sealed class EditorModel : IDisposable
 {
+    private const int SelectionHistoryLimit = 64;
+
     public NativeHost Host { get; }
     public GameplayEditorModel? Gameplay { get; set; }
     private ComponentEditorModel? components;
@@ -71,6 +73,9 @@ public sealed class EditorModel : IDisposable
     private bool selectionSynchronized;
     private bool reconcilingSelection;
     private string? selectionError;
+    private readonly List<string?> selectionHistory = [];
+    private int selectionHistoryIndex = -1;
+    private int? pendingHistoryIndex;
     private readonly HashSet<string> invalid = [];
     private readonly Dictionary<string, string> rawFields = new(StringComparer.Ordinal);
 
@@ -97,6 +102,8 @@ public sealed class EditorModel : IDisposable
     private void ObserveSelection(string? selected)
     {
         if (selected != observedSelection) SceneChanging?.Invoke();
+        if (pendingHistoryIndex is int index && selectionHistory[index] != selected)
+            pendingHistoryIndex = null;
         observedSelection = selected;
         pendingSelection = selected;
         selectionPending = true;
@@ -222,8 +229,59 @@ public sealed class EditorModel : IDisposable
         DraftSchemas = schemas;
         invalid.Clear(); rawFields.Clear();
         ++DraftGeneration;
+        if (selected == observedSelection) RecordSelection(selected);
     }
-    public void Select(string? id)
+    private void RecordSelection(string? selected)
+    {
+        if (pendingHistoryIndex is int destination && selectionHistory[destination] == selected)
+        {
+            selectionHistoryIndex = destination;
+            pendingHistoryIndex = null;
+            return;
+        }
+        if (selectionHistoryIndex == -1 ? selected is null : selectionHistory[selectionHistoryIndex] == selected)
+            return;
+        var firstForward = selectionHistoryIndex + 1;
+        selectionHistory.RemoveRange(firstForward, selectionHistory.Count - firstForward);
+        selectionHistory.Add(selected);
+        if (selectionHistory.Count > SelectionHistoryLimit)
+            selectionHistory.RemoveAt(0);
+        selectionHistoryIndex = selectionHistory.Count - 1;
+        pendingHistoryIndex = null;
+    }
+    private int? FindSelectionHistoryTarget(bool forward)
+    {
+        if (!selectionSynchronized) return null;
+        var step = forward ? 1 : -1;
+        for (var index = selectionHistoryIndex + step; index >= 0 && index < selectionHistory.Count; index += step)
+        {
+            var id = selectionHistory[index];
+            if (id != Selected && (id is null || Entities.Exists(entity => entity.Id == id)))
+                return index;
+        }
+        return null;
+    }
+    public bool CanNavigateSelection(bool forward) => FindSelectionHistoryTarget(forward) is not null;
+    public void NavigateSelection(bool forward)
+    {
+        if (FindSelectionHistoryTarget(forward) is int destination)
+            Select(selectionHistory[destination], destination);
+    }
+    public IReadOnlyList<EntityRow> SelectionPath()
+    {
+        var path = new List<EntityRow>();
+        var visited = new HashSet<string>(StringComparer.Ordinal);
+        for (var id = Selected; id is not null && visited.Add(id);)
+        {
+            if (Entities.Find(entity => entity.Id == id) is not EntityRow row) break;
+            path.Add(row);
+            id = row.Parent;
+        }
+        path.Reverse();
+        return path;
+    }
+    public void Select(string? id) => Select(id, null);
+    private void Select(string? id, int? historyDestination)
     {
         if (id == Selected && !selectionPending && selectionSynchronized) return;
         RequireClean();
@@ -232,6 +290,7 @@ public sealed class EditorModel : IDisposable
         selectionSynchronized = false;
         var accepted = Host.Call("desktop.select", new() { ["id"] = id });
         ObserveSelection(accepted["selected"]?.GetValue<string>());
+        pendingHistoryIndex = pendingSelection == id ? historyDestination : null;
         LoadSelected(pendingSelection); selectionPending = false; selectionSynchronized = true; selectionError = null;
         Changed?.Invoke(this, EventArgs.Empty);
     }

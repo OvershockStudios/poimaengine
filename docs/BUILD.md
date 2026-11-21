@@ -149,16 +149,22 @@ still requires its matching native target.
 
 ## World service and schema compilation
 
-Base API discovery lives in `src/world_schema.cpp`, while `src/world.cpp`
-retains world state, validation, dispatch and session filtering. Editing either
-source recompiles its own unit; shared headers can still rebuild both. The
-schema receives the world's serialized sky defaults and numeric limits, and
-returns a fresh JSON value for owner and scope filtering.
+Base API discovery lives in `src/world_schema.cpp`. The schema receives
+the world's serialized sky defaults and numeric limits, and returns fresh JSON
+for owner and scope filtering. `src/world_document.cpp` validates authored
+documents and decodes typed components for scene and runtime construction.
+`src/world.cpp` owns state, publication, dispatch and session filtering.
 
-The compiler's optimization, debug information and warning settings are
-unchanged. This separates incremental work; a clean build still compiles both
-units. Test scoped discovery with `world_schema_native`, which covers writable
+Each source compiles separately with the same optimization, debug information
+and warning settings. Changes to a private shared header may rebuild its
+consumers. Test scoped discovery with `world_schema_native`, which covers writable
 and read-only worlds through standalone, shared CLI and shared editor scopes.
+
+On Vulkan builds, `src/player_window.cpp` owns the SDL player loop, input,
+preferences and presentation receipts. It prepares a borrowed scene snapshot
+through the private `PlayerRenderer` interface. `src/render_smoke.cpp` owns
+the GPU context, frame submission and retirement. The native player-window
+fixture checks the presentation boundary separately from offscreen captures.
 
 The [0.0.67 evidence](evidence/m2-world-schema-extraction.json) records unchanged
 compile flags, separate command timings and synthetic dirty-source scheduling

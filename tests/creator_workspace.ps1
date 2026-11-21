@@ -23,7 +23,7 @@
 # -WithWorkerCrash terminates the owned test creator during a worker turn and checks recovery after a draft edit.
 # -CodexToolApproval exercises decline and approve once with the installed Codex.
 # -WithExport requires a packaged sample runtime and plays a relocated export.
-# -WithPlaytestResults checks passing and failed reports, reopening and recovery.
+# -WithPlaytestResults checks passing and failed reports, reopening, recovery and keeping a completed candidate.
 # -WithShareZip also exercises the owned save dialog and plays the unpacked ZIP.
 # -WithBuildHistory creates two passing versions and restores the older one through the history dialog.
 # -VerifiedPlayChat tests live workspace chat and native candidate publication while playing a verified build.
@@ -2143,6 +2143,25 @@ function Export-PlaytestCandidate($Project, [bool]$Passed) {
     return $current
 }
 
+function New-UnkeptPlaytest($Project) {
+    Write-PlaytestSuite $Project.entry.controller @(0.5, 1.8)
+    $history = Join-Path $projects (Join-Path '.poima-history' $Project.project_id)
+    $stamp = [DateTime]::UtcNow.ToString('yyyyMMdd-HHmmssfff', [Globalization.CultureInfo]::InvariantCulture)
+    $checkpoint = Join-Path $history "$stamp-unkept"
+    $capture = & $cli project checkpoint $manifest --output $checkpoint | ConvertFrom-Json
+    if ($LASTEXITCODE -ne 0) { throw 'Could not capture the candidate for the reopened workspace.' }
+    $bundle = Join-Path $checkpoint 'game'
+    $previewRuntime = Join-Path $package 'samples\Collection Room\runtime'
+    $build = & $cli project build $capture.result.source_manifest --output $bundle --runtime $previewRuntime | ConvertFrom-Json
+    if ($LASTEXITCODE -ne 0) { throw 'Could not build the candidate for the reopened workspace.' }
+    $runtime = Join-Path $bundle 'runtime\bin\poima.exe'
+    $suite = Join-Path (Split-Path -Parent $capture.result.source_manifest) 'game.verify.json'
+    $reportPath = Join-Path $checkpoint 'candidate-checks.json'
+    $verdict = & $runtime game verify $build.result.game_manifest --suite $suite --report $reportPath | ConvertFrom-Json
+    if ($LASTEXITCODE -ne 0 -or !$verdict.result.passed) { throw 'The candidate failed its independent playtest.' }
+    return Read-PlaytestHistory $Project.project_id
+}
+
 function Verified-PlayRpc($Method, $Params) {
     $request = @{ jsonrpc = '2.0'; id = 1; method = $Method; params = $Params } | ConvertTo-Json -Depth 8 -Compress
     $request | Add-Content -LiteralPath (Join-Path $run 'verified-play-requests.jsonl') -Encoding UTF8
@@ -2881,6 +2900,37 @@ try {
         $owner = Start-Launcher 'verified-close' $manifest
         $window = Wait-For 'the creator for the verified close check' { Find-Window "$name*Poima Creator" }
         Check-VerifiedPlayShutdown $passing.latest
+    }
+    if ($WithPlaytestResults) {
+        $pending = New-UnkeptPlaytest $reopened
+        if (!$pending.latest_check.passed -or $pending.latest_check.retained -or
+            $pending.latest.bundle_sha256 -cne $passing.latest.bundle_sha256 -or
+            $pending.latest_check.bundle_sha256 -ceq $passing.latest.bundle_sha256) {
+            throw 'The completed candidate replaced the last playable build before it was kept.'
+        }
+        $owner = Start-Launcher 'keep-test-build' $manifest
+        $window = Wait-For 'the creator with unkept playtest results' { Find-Window "$name*Poima Creator" }
+        $null = Wait-For 'the restored pending build and the earlier playable build' {
+            (Find-Control 'Keep tested build' -Enabled) -and (Find-Control 'Play verified build' -Enabled)
+        }
+        Invoke-Control 'Keep tested build'
+        $null = Wait-For 'the exact build to become playable' {
+            (Find-Control 'Play verified build' -Enabled) -and !(Find-Control 'Keep tested build')
+        }
+        $kept = Read-PlaytestHistory $reopened.project_id
+        if (!$kept.latest_check.retained -or $kept.latest_check.snapshot_sha256 -cne $pending.latest_check.snapshot_sha256 -or
+            $kept.latest_check.report_sha256 -cne $pending.latest_check.report_sha256 -or
+            $kept.latest.bundle_sha256 -cne $pending.latest_check.bundle_sha256 -or
+            (Inspect-Project).manifest_sha256 -cne $reopened.manifest_sha256) {
+            throw 'Keeping did not publish the selected snapshot and preserve the editable project.'
+        }
+        $report.checks.kept_tested_build = [ordered]@{
+            earlier_bundle_sha256 = $pending.latest.bundle_sha256
+            restored_snapshot_sha256 = $kept.latest_check.snapshot_sha256
+            report_sha256 = $kept.latest_check.report_sha256
+            playable_bundle_sha256 = $kept.latest.bundle_sha256
+        }
+        Close-Owner
     }
     if ($WithExport) {
         Play-RelocatedExport $bundle

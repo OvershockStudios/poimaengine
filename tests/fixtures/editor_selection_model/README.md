@@ -16,6 +16,9 @@ original-target transactions, failed reads and fail-closed gizmo commits. Live
 component Apply/Reload/Discard and edit-back resolution exercise the actual
 production component model. Selection-only scenarios compare complete fake
 authored documents, revision and transaction history before and after navigation.
+Inspector Back/Forward coverage exercises its bounded history, branching after
+a new selection, deleted-target skipping, and draft and read-failure recovery.
+An ancestry case follows the same parent selection used by the breadcrumb.
 
 Run with an installed .NET 10 SDK:
 

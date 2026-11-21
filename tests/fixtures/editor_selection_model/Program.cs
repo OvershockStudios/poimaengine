@@ -84,7 +84,7 @@ public sealed class NativeHost
             case "entity.query":
                 Require(args["revision"]!.GetValue<long>() == Revision && args["limit"]!.GetValue<int>() == 256, "Invalid query guard.");
                 return new() { ["entities"] = new JsonArray(Documents.OrderBy(pair => pair.Key, StringComparer.Ordinal).Select(pair => (JsonNode?)new JsonObject
-                    { ["id"] = pair.Key, ["name"] = pair.Value["name"]!.DeepClone(), ["parent"] = null,
+                    { ["id"] = pair.Key, ["name"] = pair.Value["name"]!.DeepClone(), ["parent"] = pair.Value["parent"]?.DeepClone(),
                         ["components"] = new JsonArray(pair.Value["components"]!.AsObject().Select(field => (JsonNode?)JsonValue.Create(field.Key)).ToArray()) }).ToArray()), ["next_after"] = null };
             case "entity.get":
                 Keys(args, "id"); return new() { ["value"] = Documents.TryGetValue(args["id"]!.GetValue<string>(), out var entity) ? entity.DeepClone() : throw new InvalidOperationException("Entity absent.") };
@@ -385,6 +385,119 @@ internal static class Program
         Check(c.Components.Dirty && c.Model.Selected == NativeHost.A && c.Host.ActualSelected == NativeHost.B, "Read failure lost component draft or pending choice.");
         c.Components.Reload(); Selected(c, NativeHost.B); Check(c.Host.ComponentEdits.Count == 1, "Read recovery replayed component mutation.");
     }
+    private static void SelectionHistory()
+    {
+        using var c = new Context();
+        var world = c.Host.AuthoredSnapshot();
+        c.Model.Select(NativeHost.B);
+        c.Host.RemoteSelect(NativeHost.C);
+        c.Model.Refresh();
+        c.Model.NavigateSelection(forward: false);
+        Selected(c, NativeHost.B);
+        c.Model.NavigateSelection(forward: false);
+        Selected(c, NativeHost.A);
+        Check(!c.Model.CanNavigateSelection(forward: false), "Refresh inserted a duplicate history entry.");
+        c.Model.NavigateSelection(forward: true);
+        Selected(c, NativeHost.B);
+        c.Model.Select(null);
+        Selected(c, null);
+        Check(!c.Model.CanNavigateSelection(forward: true), "A new selection retained its old forward branch.");
+        c.Model.NavigateSelection(forward: false);
+        Selected(c, NativeHost.B);
+        c.Model.NavigateSelection(forward: true);
+        Selected(c, null);
+        Equal(c.Host.AuthoredSnapshot(), world, "Navigating selection authored changes.");
+    }
+    private static void SelectionBreadcrumb()
+    {
+        using var c = new Context();
+        c.Host.Documents[NativeHost.B]["parent"] = NativeHost.A;
+        c.Host.Documents[NativeHost.C]["parent"] = NativeHost.B;
+        c.Host.ExternalRevision();
+        var world = c.Host.AuthoredSnapshot();
+        c.Model.Select(NativeHost.C);
+        var path = c.Model.SelectionPath();
+        Check(path.Select(row => row.Name).SequenceEqual(new[] { "Alpha", "Bravo", "Charlie" }), "Breadcrumb is not ordered by ancestry.");
+        c.Model.Select(path[^2].Id);
+        Selected(c, NativeHost.B);
+        Check(c.Model.SelectionPath().Select(row => row.Id).SequenceEqual(new[] { NativeHost.A, NativeHost.B }), "Ancestor selection did not update the path.");
+        c.Model.NavigateSelection(forward: false);
+        Selected(c, NativeHost.C);
+        Equal(c.Host.AuthoredSnapshot(), world, "Selecting an ancestor authored changes.");
+    }
+    private static void SelectionHistoryDraftGuard()
+    {
+        using var c = new Context();
+        c.Model.Select(NativeHost.C);
+        c.Model.SetName("Unapplied changes");
+        c.Host.RemoteSelect(NativeHost.B);
+        var draft = Draft(c.Model);
+        var world = c.Host.AuthoredSnapshot();
+        var selections = c.Host.Count("desktop.select");
+        Throws(() => c.Model.NavigateSelection(forward: false), "History bypassed the Inspector draft guard.");
+        Check(c.Host.Count("desktop.select") == selections, "Blocked navigation reached the transport.");
+        Equal(Draft(c.Model), draft, "History discarded a draft while a remote selection was deferred.");
+        c.Model.Reload();
+        Selected(c, NativeHost.B);
+        c.Model.NavigateSelection(forward: false);
+        Selected(c, NativeHost.C);
+        Equal(c.Host.AuthoredSnapshot(), world, "Draft/history resolution authored changes.");
+    }
+    private static void SelectionHistoryDeletion()
+    {
+        using var c = new Context();
+        c.Model.Select(NativeHost.B);
+        c.Model.Select(NativeHost.C);
+        c.Host.Delete(NativeHost.B);
+        var world = c.Host.AuthoredSnapshot();
+        c.Model.NavigateSelection(forward: false);
+        Selected(c, NativeHost.A);
+        c.Model.NavigateSelection(forward: true);
+        Selected(c, NativeHost.C);
+        Check(!c.Host.Calls.TakeLast(2).Any(call => call.Parameters["id"]?.GetValue<string>() == NativeHost.B), "History targeted a deleted object.");
+        Equal(c.Host.AuthoredSnapshot(), world, "Skipping a deleted history entry authored changes.");
+    }
+    private static void SelectionHistoryReadFailure(bool superseded)
+    {
+        using var c = new Context();
+        c.Model.Select(NativeHost.B);
+        c.Model.Select(NativeHost.C);
+        var world = c.Host.AuthoredSnapshot();
+        c.Host.FailOnce("entity.get");
+        Throws(() => c.Model.NavigateSelection(forward: false), "Accepted navigation read failure missing.");
+        Check(c.Host.ActualSelected == NativeHost.B && c.Model.Selected == NativeHost.C, "Failed read lost the retained selection.");
+        Check(!c.Model.CanNavigateSelection(forward: false) && !c.Model.CanNavigateSelection(forward: true), "Unknown selection permitted history navigation.");
+        if (superseded)
+        {
+            c.Host.RemoteSelect(NativeHost.A);
+            Selected(c, NativeHost.A);
+            c.Model.NavigateSelection(forward: false);
+            Selected(c, NativeHost.C);
+        }
+        else
+        {
+            c.Model.Reload();
+            Selected(c, NativeHost.B);
+            c.Model.NavigateSelection(forward: true);
+            Selected(c, NativeHost.C);
+        }
+        Equal(c.Host.AuthoredSnapshot(), world, "Recovering selection navigation authored changes.");
+    }
+    private static void SelectionHistoryBound()
+    {
+        using var c = new Context();
+        var world = c.Host.AuthoredSnapshot();
+        for (var i = 0; i < 70; ++i)
+            c.Model.Select(i % 2 == 0 ? NativeHost.B : NativeHost.C);
+        var moves = 0;
+        while (c.Model.CanNavigateSelection(forward: false))
+        {
+            Check(++moves <= 63, "Selection history exceeded 64 entries.");
+            c.Model.NavigateSelection(forward: false);
+        }
+        Check(moves == 63 && c.Host.ActualSelected == NativeHost.B, "History discarded recent entries instead of its oldest entries.");
+        Equal(c.Host.AuthoredSnapshot(), world, "Bounded selection history authored changes.");
+    }
     private static int Main()
     {
         Case("dirty_reload", ReloadDraft); Case("original_entity_apply", ApplyOriginal);
@@ -404,6 +517,13 @@ internal static class Program
         Case("authored_reload_during_live_draft", AuthoredReloadDuringLiveDraft);
         Case("deleted_retained_original_valid_pending", DeletedRetainedOriginal); Case("deleted_pending_clear_failure", DeletedClearFailure);
         Case("local_accepted_read_failure", LocalAcceptedReadFailure); Case("live_component_committed_read_failure", ComponentCommittedReadFailure);
+        Case("selection_history_and_new_branch", SelectionHistory);
+        Case("selection_parent_breadcrumb", SelectionBreadcrumb);
+        Case("selection_history_draft_guard", SelectionHistoryDraftGuard);
+        Case("selection_history_skip_deleted", SelectionHistoryDeletion);
+        Case("selection_history_failed_read_recovery", () => SelectionHistoryReadFailure(false));
+        Case("selection_history_failed_read_superseded", () => SelectionHistoryReadFailure(true));
+        Case("selection_history_bound", SelectionHistoryBound);
         var failed = results.Count(item => item!["status"]!.GetValue<string>() == "fail");
         Console.WriteLine(new JsonObject { ["format"] = "poima.editor-selection-model", ["version"] = 1,
             ["scope"] = "linked production EditorModel and ComponentEditorModel; fake RPC transport; no native/GUI/input qualification",

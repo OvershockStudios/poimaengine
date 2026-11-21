@@ -1459,16 +1459,19 @@ StateJson state_grounding_definition(const RuntimeGroundingDefinition& value) {
         {"probe_above",value.probe_above},{"probe_below",value.probe_below},
         {"max_correction",value.max_correction},{"max_slope_degrees",value.max_slope_degrees}};
     if(value.plant_lock)result["plant_lock"]=true;
+    if(value.plant_release_height)result["plant_release_height"]=*value.plant_release_height;
     return result;
 }
 RuntimeGroundingDefinition read_grounding_definition(const StateJson& value) {
-    if(value.contains("plant_lock"))state_fields(value,{"sole_offset","sole_up","sole_forward","reference_height","plant_height","lift_height","probe_above","probe_below","max_correction","max_slope_degrees","plant_lock"});
+    if(value.contains("plant_lock"))state_fields(value,{"sole_offset","sole_up","sole_forward","reference_height","plant_height","lift_height","probe_above","probe_below","max_correction","max_slope_degrees","plant_lock"},
+        value.contains("plant_release_height")?"plant_release_height":nullptr);
     else state_fields(value,{"sole_offset","sole_up","sole_forward","reference_height","plant_height","lift_height","probe_above","probe_below","max_correction","max_slope_degrees"});
     RuntimeGroundingDefinition result;
     if(value.contains("plant_lock")) {
         result.plant_lock=state_bool(value.at("plant_lock"));
         check(result.plant_lock,"Saved false plant_lock must retain the legacy definition shape.");
     }
+    if(value.contains("plant_release_height"))result.plant_release_height=state_number(value.at("plant_release_height"));
     result.sole_offset=state_vector<3>(value.at("sole_offset"));result.sole_up=state_vector<3>(value.at("sole_up"));result.sole_forward=state_vector<3>(value.at("sole_forward"));
     result.reference_height=state_number(value.at("reference_height"));result.plant_height=state_number(value.at("plant_height"));result.lift_height=state_number(value.at("lift_height"));
     result.probe_above=state_number(value.at("probe_above"));result.probe_below=state_number(value.at("probe_below"));

@@ -63,6 +63,13 @@ class AudioContract(unittest.TestCase):
         return replies
     def result(self,r):self.assertIn('result',r,r);return r['result']
     def error(self,r,code):self.assertEqual(r['error']['code'],code,r)
+    def assert_pcm_equal(self, actual, expected, context):
+        self.assertEqual(len(actual), len(expected), f'{context}: interleaved sample count')
+        for index, (got, want) in enumerate(zip(actual, expected)):
+            if got != want:
+                channel = 'left' if index % 2 == 0 else 'right'
+                self.fail(f'{context}: first mismatch at frame {index//2}, {channel}: '
+                          f'{got!r} != {want!r}, absolute error {abs(got-want):.9g}')
     def import_clip(self,samples=None):
         if samples is None:samples=[.12*sum(math.sin(2*math.pi*f*i/48000) for f in [200,1000,6000]) for i in range(4800)]
         source=self.directory/'original.wav';source.write_bytes(wave(samples));info=self.result(self.requests([rpc('asset.audio.import',{'source':native(source)})])[0]);self.asset=info['asset'];return info
@@ -105,7 +112,7 @@ class AudioContract(unittest.TestCase):
         self.assertEqual(path['propagation_delay_samples'], arrival)
         self.assertAlmostEqual(path['distance_m'], math.sqrt(13))
         dry, wet = [pcm(self.directory / name) for name in ('direct.wav', 'reflected.wav')]
-        self.assertEqual(dry[:arrival * 2], wet[:arrival * 2])
+        self.assert_pcm_equal(dry[:arrival * 2], wet[:arrival * 2], 'dry and reflected audio before reflection arrival')
         self.assertNotEqual(dry[arrival * 2:], wet[arrival * 2:])
 
     def test_clip_import_is_source_independent_and_hash_checked(self):
@@ -271,6 +278,143 @@ class AudioContract(unittest.TestCase):
         self.assertIn('world.audio.capture',self.result(r[0])['methods']);self.result(r[1]);self.assertFalse(self.result(r[2])['committed']);self.assertEqual(self.result(r[3])['value']['gain'],1);self.error(r[4],-32602);self.error(r[5],-32602)
         if not CAPS['audio_capture']:self.error(self.requests([self.inspect()])[0],-32003)
 
+    @staticmethod
+    def buses(values):
+        return {'op': 'audio.buses.set', 'buses': values}
+
+    def test_audio_bus_admission_and_history(self):
+        self.import_clip()
+        catalog = {'effects': .25, 'ambience': .5}
+        route = component(101, 'AudioEmitter', dict(emitter(self.asset), bus='effects'))
+        dormant_route = component(101, 'AudioEmitter', dict(emitter(self.asset, enabled=False), bus='missing'))
+        invalid = [{}, [], {'Effects': 1}, {'a'*33: 1}, {'effects': True}, {'effects': 1.01},
+                   {'effects': -.01}, {f'bus{i}': 1 for i in range(17)}]
+        invalid_edits = [transaction(1, [self.buses(values)]) for values in invalid]
+        replies = iter(self.requests([rpc('world.describe', {}), self.room(False),
+            *invalid_edits, transaction(1, [route]), transaction(1, [self.buses(catalog), dormant_route]),
+            transaction(1, [route, self.buses(catalog)], True), rpc('world.inspect', {}),
+            transaction(1, [route, self.buses(catalog)]), transaction(2, [self.buses(None)]),
+            transaction(2, [self.buses({'ambience': 1})]),
+            rpc('world.undo', {'base_revision': 2, 'request_id': uid(700)}), rpc('world.inspect', {}),
+            rpc('world.redo', {'base_revision': 3, 'request_id': uid(701)}), rpc('world.inspect', {})]))
+        description = self.result(next(replies))
+        self.assertEqual(description['audio_buses']['catalog']['maxProperties'], 16)
+        self.result(next(replies))
+        for _ in range(len(invalid)+2):
+            self.error(next(replies), -32602)
+        self.assertFalse(self.result(next(replies))['committed'])
+        self.assertNotIn('audio_buses', self.result(next(replies)))
+        self.assertEqual(self.result(next(replies))['changed_world_fields'], ['audio_buses'])
+        self.error(next(replies), -32602)
+        self.error(next(replies), -32602)
+        self.assertEqual(self.result(next(replies))['changed_world_fields'], ['audio_buses'])
+        self.assertNotIn('audio_buses', self.result(next(replies)))
+        self.assertEqual(self.result(next(replies))['changed_world_fields'], ['audio_buses'])
+        self.assertEqual(self.result(next(replies))['audio_buses'], catalog)
+
+    @unittest.skipUnless(CAPS['audio_capture'] and CAPS['simulation'], 'Requires native simulation and Steam Audio')
+    def test_audio_bus_signal_and_frozen_save_continuation(self):
+        # Isolated captures are independent references for each path. The test
+        # computes the expected mix externally, including an unrouted emitter.
+        ids = (101, 102, 103)
+        gains = (.5, .75, 1.)
+        event_gains = (.5, .25, .75)
+        names = ('effects', 'ambience', None)
+        bus_gains = (.25, .5, 1.)
+        assets = [self.import_clip([.15*math.sin(2*math.pi*f*i/48000) for i in range(4800)])['asset']
+                  for f in (197, 523, 1117)]
+        def sources(enabled, routed=False):
+            values = [emitter(asset, gain, enabled=entity in enabled)
+                      for asset, gain, entity in zip(assets, gains, ids)]
+            for value, name in zip(values, names):
+                if routed and name is not None:
+                    value['bus'] = name
+            return [component(entity, 'AudioEmitter', value) for entity, value in zip(ids, values)]
+        def start(revision, session_id):
+            return rpc('runtime.start', {'session_id': session_id, 'revision': revision})
+        sounds = [{'op': 'play', 'emitter': uid(entity), 'gain': gain}
+                  for entity, gain in zip(ids, event_gains)]
+        def record(name, session_id, events):
+            request = self.replay_audio(name, 0, [{'ticks': 12, 'sounds': events}])
+            request['params']['session_id'] = session_id
+            return request
+        def assert_mix(actual, references, multipliers):
+            expected = [sum(sample*gain for sample, gain in zip(samples, multipliers))
+                        for samples in zip(*references)]
+            self.assertEqual(len(actual), len(expected))
+            self.assertLess(max(abs(got-want) for got, want in zip(actual, expected)), 1e-6)
+        reqs = [transaction(0, [create(100, 'Listener')] +
+            [op for entity, x in zip(ids, (-1, 0, 1))
+             for op in (create(entity, f'Source {entity}'), transform(entity, (x, 0, -2)))])]
+        for rev, (entity, sound) in enumerate(zip(ids, sounds), start=2):
+            session_id = uid(900+rev)
+            reqs += [transaction(rev-1, sources([entity])), self.capture(f'solo-{entity}', rev, 9600),
+                start(rev, session_id), record(f'stream-{entity}', session_id, [sound]),
+                rpc('runtime.stop', {'session_id': session_id})]
+        live_sources = self.inspect(6, live=True)
+        live_voices = self.voices(12)
+        muted_session = uid(906)
+        muted_voices = self.voices(12)
+        muted_voices['params']['session_id'] = muted_session
+        reqs += [transaction(4, sources(ids, True) + [self.buses(dict(zip(names[:2], bus_gains[:2])))]),
+            self.capture('routed', 5, 9600), start(5, uid(900)),
+            transaction(5, [self.buses({'effects': 0, 'ambience': 0})]),
+            self.capture('muted', 6, 9600), live_sources,
+            record('routed-stream', uid(900), sounds), live_voices]
+        save_root = self.directory/'saves'
+        save_root.mkdir()
+        configure = rpc('save.configure', {'request_id': uid(710), 'expected_generation': 0, 'root': native(save_root)})
+        write = rpc('save.write', {'request_id': uid(711), 'configuration_generation': 1,
+            'slot': 'routed', 'expected_generation': 0, 'session_id': uid(900), 'expected_tick': 12,
+            'expected_gameplay_revision': 0, 'expected_structure_revision': 0})
+        reqs += [configure, write, self.replay_audio('continued', 12, [{'ticks': 12}]),
+            rpc('runtime.stop', {'session_id': uid(900)}), start(6, muted_session),
+            record('muted-stream', muted_session, sounds), muted_voices]
+        replies = [self.result(reply) for reply in self.requests(reqs)]
+        for request, result in zip(reqs, replies):
+            if request['method'] == 'runtime.audio.replay':
+                self.assertTrue(result['success'], result)
+        def captured(name):
+            return pcm(self.directory/(name+'.wav'))
+        for entity in ids:
+            self.assertGreater(rms(captured(f'solo-{entity}')), 1e-4)
+            self.assertGreater(rms(captured(f'stream-{entity}')), 1e-4)
+        assert_mix(captured('routed'), [captured(f'solo-{entity}') for entity in ids], bus_gains)
+        self.assert_pcm_equal(captured('muted'), captured('solo-103'), 'muted buses and unrouted solo')
+        self.assert_pcm_equal(captured('muted-stream'), captured('stream-103'), 'muted buses and unrouted continuous solo')
+        assert_mix(captured('routed-stream'), [captured(f'stream-{entity}') for entity in ids], bus_gains)
+        routed_sources = replies[reqs.index(live_sources)]['sources']
+        prior = replies[reqs.index(live_voices)]['voices']
+        muted_state = replies[reqs.index(muted_voices)]
+        self.assertEqual(muted_state['emitting'], 3)
+        self.assertEqual([voice['effective_gain'] for voice in muted_state['voices'][:2]], [0,0])
+        self.assertEqual([voice['clip_frame'] for voice in muted_state['voices']],
+                         [voice['clip_frame'] for voice in prior])
+        for i, name in enumerate(names):
+            if name is None:
+                for key in ('bus', 'bus_gain', 'effective_gain'):
+                    self.assertNotIn(key, prior[i]);self.assertNotIn(key, routed_sources[i])
+                continue
+            self.assertEqual(prior[i]['bus'], name)
+            self.assertEqual(prior[i]['bus_gain'], bus_gains[i])
+            self.assertEqual(prior[i]['effective_gain'], gains[i]*event_gains[i]*bus_gains[i])
+            self.assertEqual(routed_sources[i]['effective_gain'], gains[i]*bus_gains[i])
+        load = rpc('save.load', {'request_id': uid(712), 'configuration_generation': 1, 'slot': 'routed',
+            'expected_generation': 1, 'revision': 6, 'expected_session_id': None, 'expected_tick': None,
+            'expected_gameplay_revision': None, 'expected_structure_revision': None, 'new_session_id': uid(900)})
+        fresh = [self.result(reply) for reply in self.requests([configure, load, self.voices(12),
+            self.capture('restored', live=True, tick=12, frames=9600),
+            rpc('save.write', {'request_id': uid(713), 'configuration_generation': 1, 'slot': 'routed',
+                'expected_generation': 1, 'session_id': uid(900), 'expected_tick': 12,
+                'expected_gameplay_revision': 0, 'expected_structure_revision': 0}),
+            self.replay_audio('restored-continued', 12, [{'ticks': 12}])])]
+        self.assertEqual(fresh[2]['voices'], prior)
+        self.assert_pcm_equal(captured('restored'), captured('routed'), 'restored and original frozen mix')
+        self.assertEqual(fresh[-2]['sha256'], replies[reqs.index(write)]['sha256'])
+        self.assertTrue(fresh[-1]['success'], fresh[-1])
+        self.assertGreater(rms(captured('continued')), 1e-4)
+        self.assert_pcm_equal(captured('restored-continued'), captured('continued'), 'restored and original continuous mix')
+
     @unittest.skipUnless(CAPS['audio_capture'],'Optional Steam Audio not built')
     def test_stationary_endpoints_door_opening_and_material_filter(self):
         self.import_clip()
@@ -279,7 +423,7 @@ class AudioContract(unittest.TestCase):
         a,b=closed['sources'][0],opened['sources'][0];self.assertEqual(a['source_position'],b['source_position']);self.assertEqual(a['listener_position'],b['listener_position']);self.assertEqual(a['direct_visibility'],0);self.assertEqual(b['direct_visibility'],1)
         self.assertLess(a['transmission'][2],a['transmission'][0]);self.assertEqual(closed['triangles'],12)
         blocked=pcm(self.directory/'closed.wav');clear=pcm(self.directory/'open.wav');quiet=pcm(self.directory/'quiet.wav')
-        self.assertGreater(rms(clear[4096:]),rms(blocked[4096:])*2);self.assertEqual(clear,pcm(self.directory/'repeat.wav'));self.assertAlmostEqual(rms(quiet)/rms(clear),.25,places=5)
+        self.assertGreater(rms(clear[4096:]),rms(blocked[4096:])*2);self.assert_pcm_equal(clear,pcm(self.directory/'repeat.wav'),'repeated open-door capture');self.assertAlmostEqual(rms(quiet)/rms(clear),.25,places=5)
         def band(values,f):
             # Integer periods after filter startup; independent frequency measurement.
             left=values[2*4800:2*14400:2];return abs(sum(x*complex(math.cos(2*math.pi*f*i/48000),math.sin(2*math.pi*f*i/48000)) for i,x in enumerate(left)))
@@ -340,7 +484,7 @@ class AudioContract(unittest.TestCase):
         self.import_clip();r=self.requests([self.room(),transaction(1,[component(2,'AcousticMaterial',material(enabled=False))]),self.capture('single',2),transaction(2,[create(102,'Second emitter'),transform(102,[0,1.5,-6]),component(102,'AudioEmitter',emitter(self.asset))]),self.capture('double',3),transaction(3,[component(102,'AudioEmitter',emitter(self.asset,enabled=False))]),self.capture('one-again',4),self.capture('single',4)])
         for item in r[:-1]:self.result(item)
         self.error(r[-1],-32602);self.assertEqual(self.result(r[2])['triangles'],0)
-        single=pcm(self.directory/'single.wav');double=pcm(self.directory/'double.wav');self.assertEqual(single,pcm(self.directory/'one-again.wav'));self.assertLess(max(abs(b-2*a) for a,b in zip(single,double)),1e-7)
+        single=pcm(self.directory/'single.wav');double=pcm(self.directory/'double.wav');self.assert_pcm_equal(single,pcm(self.directory/'one-again.wav'),'single source before and after disabling the other source');self.assertLess(max(abs(b-2*a) for a,b in zip(single,double)),1e-7)
         bad=self.capture('bad',4);bad['params']['path']=native(self.world)
         asset_path=next(self.directory.rglob(self.asset+'.paudio'));reserved=self.capture('bad',4);reserved['params']['path']=native(asset_path.parent/'new.wav')
         r=self.requests([bad,reserved]);self.error(r[0],-32602);self.error(r[1],-32602)

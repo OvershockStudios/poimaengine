@@ -36,8 +36,8 @@ def main():
     (project / 'code/obj/project.assets.json').write_text('{}', encoding='utf-8')
     (project / '.git').mkdir()
     (project / '.git/config').write_text('Git metadata\n', encoding='utf-8')
-    history = out / 'History'
-    history.mkdir()
+    history = out / '.poima-history' / original['project_id']
+    history.mkdir(parents=True)
     suite = project / 'game.verify.json'
     suite.write_text(json.dumps({'format': 'poima.game-verification', 'version': 1, 'groups': [
         {'name': 'The player can move', 'sequence': [
@@ -65,8 +65,21 @@ def main():
     assert pending['latest_check']['report_sha256'] == hashlib.sha256(candidate_report.read_bytes()).hexdigest()
     run('reject-unretained', 'project', 'recover', ready['checkpoint'], '--output', out / 'Unretained', code=4)
     assert not (out / 'Unretained').exists()
-    candidate_report.rename(ready_path / 'checks.json')
     creator_file.write_bytes(b'A later working copy edit\n')
+    captured_report = candidate_report.read_bytes()
+    keep = ('project', 'keep', manifest, '--checkpoint', ready['checkpoint'], '--expected-snapshot-sha256',
+            pending['latest_check']['snapshot_sha256'])
+    candidate_report.write_bytes(captured_report + b'\n')
+    try:
+        run('reject-changed-candidate', *keep, code=4)
+        assert not (ready_path / 'checks.json').exists()
+    finally:
+        candidate_report.write_bytes(captured_report)
+    kept = run('keep-after-verifier-exit', *keep)
+    assert not kept['replayed'] and kept['bundle_sha256'] == verified['bundle_sha256']
+    assert (ready_path / 'checks.json').read_bytes() == candidate_report.read_bytes() == captured_report
+    assert run('replay-keep', *keep) == {**kept, 'replayed': True}
+    assert creator_file.read_bytes() == b'A later working copy edit\n'
     newer_path = history / '20261120-0600-b'
     run('newer-unverified', 'project', 'checkpoint', manifest, '--output', newer_path)
     latest = run('history', 'project', 'history', history, '--project-id', original['project_id'])
@@ -146,6 +159,9 @@ def main():
     assert not attempt['passed'] and not attempt['retained'] and attempt['groups_total'] == 3
     assert attempt['report_sha256'] == hashlib.sha256(failed_report.read_bytes()).hexdigest()
     assert attempt['bundle_sha256'] == failed['bundle_sha256']
+    run('reject-keep-failed', 'project', 'keep', old / manifest.name, '--checkpoint', attempt['checkpoint'],
+        '--expected-snapshot-sha256', attempt['snapshot_sha256'], code=4)
+    assert not (failed_path / 'checks.json').exists()
     failed_report.rename(failed_path / 'checks.json')
     failed_report = failed_path / 'checks.json'
     run('reject-failed', 'project', 'recover', failure['checkpoint'], '--output', out / 'Failed', code=4)

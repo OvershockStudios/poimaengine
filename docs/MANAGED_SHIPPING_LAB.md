@@ -13,7 +13,7 @@ python3 scripts/bootstrap_tools.py --only dotnet
 python3 scripts/verify_managed_shipping.py
 ```
 
-The bootstrap verifies and extracts SDK **10.0.401** in `.cache/toolchains`. The verifier uses runtime **10.0.12**, restores packages from nuget.org into `.cache/nuget/packages`, and keeps its CLI home in `.cache/dotnet-user`. It builds fresh copies of the source under `build/managed-shipping-evidence` and changes only the copied game source for the second layout. Build logs, commands, source/binary hashes and outcomes go to `results.json`. Initial restoration requires network access. Nothing installs into the main engine package or changes the system SDK.
+The bootstrap verifies and extracts SDK **10.0.404** in `.cache/toolchains`. The verifier uses runtime **10.0.15**, restores packages from nuget.org into `.cache/nuget/packages`, and keeps its CLI home in `.cache/dotnet-user`. It builds fresh copies of the source under `build/managed-shipping-evidence` and changes only the copied game source for the second layout. Build logs, commands, source/binary hashes and outcomes go to `results.json`. Initial restoration requires network access. Nothing installs into the main engine package or changes the system SDK.
 
 The AOT publish directories contain an ELF executable, the C++ service library, debug symbols and notices. They contain no managed DLLs and execute directly with `DOTNET_ROOT` pointing to an absent directory. Native system libraries are still required; building on Kali does not establish an older Linux distribution compatibility floor. The executable's `RuntimeFeature` diagnostics report dynamic code support/compilation as false. The matching CoreCLR build reports true.
 

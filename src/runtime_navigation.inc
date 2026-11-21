@@ -25,7 +25,7 @@
         }
         navigation_binding=binding;navigation_asset=words;navigation_radius=radius;navigation_height=height;
     }
-    RuntimeNavigationPath navigation_query(const RuntimeNavigationRequest& request) const {
+    RuntimeNavigationPath navigation_query(const RuntimeNavigationRequest& request,bool observe_obstacles=false) const {
         require(runtime_navigation_available(),"Runtime navigation backend is not built.");
         require(bool(navigation_binding),"Runtime has no frozen navigation binding.");
         require(request.max_polygons>=1 && request.max_polygons<=256 && request.max_corners>=2 && request.max_corners<=256 &&
@@ -48,7 +48,29 @@
         }
         query.end=request.goal;query.extents=request.extents;query.max_polygons=request.max_polygons;
         query.max_corners=request.max_corners;query.max_nodes=request.max_nodes;
-        return {navigation_binding->asset,navigation_binding->mesh->path(query)};
+        RuntimeNavigationPath result;
+        result.asset=navigation_binding->asset;
+        std::array<navigation::ObstacleBounds,navigation::max_obstacles> occupied;
+        std::size_t count=0;
+        for(const auto& id:navigation_obstacles) {
+            const auto& owner=registry.get<Body>(find(id));
+            JPH::BodyLockRead lock(physics.GetBodyLockInterface(),owner.id);
+            require(lock.Succeeded(),"Navigation obstacle body could not be inspected.");
+            const auto& body=lock.GetBody();
+            const auto bounds=body.GetShape()->GetWorldSpaceBounds(body.GetCenterOfMassTransform(),JPH::Vec3::sOne());
+            const auto& points=occupied[count++]={
+                {bounds.mMin.GetX(),bounds.mMin.GetY(),bounds.mMin.GetZ()},
+                {bounds.mMax.GetX(),bounds.mMax.GetY(),bounds.mMax.GetZ()}};
+            if(observe_obstacles)result.obstacles.push_back({id,points});
+        }
+        result.path=navigation_binding->mesh->path(query,navigation::max_detour_memory,{occupied.data(),count});
+        if(observe_obstacles && result.path.obstacle_filtered &&
+            (result.path.status=="partial" || result.path.status=="unreachable")) {
+            // An independent static search distinguishes a closed route from
+            // an already disconnected goal or a search that exceeded budgets.
+            result.blocked=navigation_binding->mesh->path(query).status=="complete";
+        }
+        return result;
     }
     static int32_t POIMA_CALL query_navigation(void* context,const PoimaGameNavigationRequestV1* input,
         PoimaGameNavigationPointV1* corners,uint32_t capacity,PoimaGameNavigationResultV1* output,PoimaGameError* error) {

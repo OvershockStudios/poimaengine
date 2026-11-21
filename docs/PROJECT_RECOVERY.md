@@ -76,6 +76,13 @@ receives a new project identity and keeps the captured world, assets, source,
 input profile and attached native gameplay. Both projects can be edited
 independently.
 
+If checks finished successfully before an agent kept its build, reopen the
+project and choose **Keep tested build**. Poima validates the exact saved
+source, game bundle and test report, then makes that build available through
+**Play verified build**. This works without reconnecting the agent or rerunning
+the checks. The current project and earlier builds stay available. A failed
+check or an interrupted run without a passing report needs a new playtest.
+
 Open **Build history** to browse completed playtests, including earlier
 passing versions and failed attempts. Choose a row and use **View checks** to
 read its results. **Restore this version as copy** opens only for a retained
@@ -322,12 +329,19 @@ older directories. Each returned `snapshot_sha256` covers the checkpoint
 manifest and its verification report, which pin the source inventory and
 the tested bundle. Pass it to `project recover` as
 `--expected-snapshot-sha256` to restore the selected snapshot.
+For a passing `latest_check` with `retained: false` in the project's own
+`.poima-history/<project_id>/` directory, `project keep <project-manifest>
+--checkpoint <checkpoint.json> --expected-snapshot-sha256 <snapshot-sha256>`
+keeps the candidate as a playable build. Use the `checkpoint` and
+`snapshot_sha256` from `latest_check`. Repeating the same command returns the
+already kept build.
 
 Run `python tests/project_recovery_cli.py --runtime <installed-runtime> --output <new-directory>`
 to reproduce the native checkpoint, validation and recovery checks on a matching
 host. The installed runtime must include simulation and the native player.
 On Windows, run `tests/creator_workspace.ps1 -Editor <packaged-editor-exe> -Output <new-directory> -WithPlaytestResults`
-to exercise the results dialog, restart, verified play and recovery.
+to exercise the results dialog, restart, verified play, recovery and keeping
+the exact passing candidate after reopening.
 Use `-WithShareZip` to exercise saving and cancelling through the Windows dialog,
 then extract and launch the shared game.
 Use `-WithBuildHistory` to verify that the creator can inspect a failed check

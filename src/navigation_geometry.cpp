@@ -27,7 +27,14 @@ Source collision_source(const Json& entities,const std::map<std::string,Matrix4>
     check(entities.is_object() && entities.size()<=10000,"Navigation entity limit exceeded.");Source result;
     for(const auto& [id,entity]:entities.items()) {
         const auto& components=entity.at("components");
-        if(components.contains("BoxCollider") && components.at("BoxCollider").at("motion")!="static") {++result.ignored_moving_colliders;continue;}
+        if(components.contains("BoxCollider")) {
+            const auto& box=components.at("BoxCollider");
+            const bool moving=box.at("motion")!="static";
+            const bool obstacle=box.value("navigation_obstacle",false);
+            if(moving)++result.ignored_moving_colliders;
+            if(obstacle)++result.ignored_runtime_obstacles;
+            if(moving || obstacle)continue;
+        }
         const auto kind=components.contains("MeshCollider") ? "MeshCollider" : components.contains("BoxCollider") ? "BoxCollider" : nullptr;
         if(!kind)continue;
         check(!(components.contains("MeshCollider") && components.contains("BoxCollider")) && !components.contains("CharacterController"),"Navigation collider has incompatible collision components.");
@@ -43,7 +50,7 @@ Source collision_source(const Json& entities,const std::map<std::string,Matrix4>
         const auto matrix=matrices.at(id);rigid(matrix);
         Json shape=components.at(kind);
         // Friction, restitution, mass and names cannot alter baked topology.
-        for(auto key:{"friction","restitution","mass","motion"})shape.erase(key);
+        for(auto key:{"friction","restitution","mass","motion","navigation_obstacle"})shape.erase(key);
         result.colliders.push_back({{"id",id},{"kind",kind},{"matrix",matrix},{"shape",std::move(shape)}});
     }
     return result;

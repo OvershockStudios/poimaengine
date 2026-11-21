@@ -54,6 +54,7 @@ struct StepReport {
     double supplied_m3;
     double drained_m3;
     double volume_after_m3;
+    double rain_m3 = 0;
 };
 
 struct Snapshot {
@@ -82,9 +83,11 @@ public:
     FaceControl face(Cell lower_cell, FaceAxis axis) const;
     void set_face(Cell lower_cell, FaceAxis axis, FaceControl control);
 
-    // Supply, then drain up to the available amount, then exchange water over
-    // interior faces. Rejected steps leave the whole observable state intact.
-    StepReport step(std::span<const CellExchange> exchanges = {});
+    // Apply rain to unique cells in row-major order, process the authored
+    // exchanges, then move water across interior faces. Rejected steps leave
+    // the whole observable state intact.
+    StepReport step(std::span<const CellExchange> exchanges = {},
+                    std::span<const Cell> rain_cells = {}, double rain_depth_m = 0);
 
     Snapshot snapshot() const;
     static Grid restore(const Snapshot& snapshot);

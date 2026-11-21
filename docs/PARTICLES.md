@@ -53,6 +53,74 @@ last particle expires. A runtime attachment transfer updates local particle
 positions at the same tick, with their ages unchanged. The renderer uses
 frame-owned Vulkan buffers for the changing quad geometry.
 
+## Place a roof-aware rain source
+
+Give an authored world entity a `ParticleEmitter` with world spawn and
+simulation spaces. Weather drives its births through the same guarded
+[rain doses](SURFACE_WETNESS.md#apply-rain-and-drying) used for surface films.
+Rain-only worlds can receive doses. A rain source uses zero continuous rate.
+All of its births originate from weather.
+
+```json
+{
+  "spawn_space": "world",
+  "simulation_space": "world",
+  "seed": "0000000000000721",
+  "lifetime_ticks": 12,
+  "size_m": 0.03,
+  "linear_rgb": [0.24, 0.31, 0.42],
+  "live_limit": 96,
+  "offset_m": {"minimum": [-1.1, 0, -0.9], "maximum": [1.1, 0, 0.9]},
+  "velocity_m_s": {"minimum": [0.1, -10, 0], "maximum": [0.4, -7, 0.2]},
+  "rain": {"nm_per_particle": 30, "max_particles_per_tick": 6}
+}
+```
+
+The last complete game second in a dose batch sets the current visual
+intensity. It takes effect on the accepted tick and lasts up to 60 simulation
+ticks, including that tick. A new dose replaces the window. Zero closes it.
+All seconds in the batch contribute to wetness. During an active window,
+the emitter turns one depth increment per tick into a bounded integer birth
+count. Dividing the dose's nanometres by `nm_per_particle` gives the scheduled
+births across a full window, subject to the tick cap and carry-over.
+The native phase retains the fractional part across active windows. Set
+`nm_per_particle` between 1 and 1,000,000 and `max_particles_per_tick`
+between 1 and 32. Particle capacity and `emitting: false` also apply.
+
+Place the emitter's origin within the same area as its spawn offsets.
+The physics roof test casts up 100 m from that origin each active tick and
+uses the final physics pose. Static and kinematic collision can block the
+source. Covered ticks spend their scheduled births. Live drops keep aging
+and moving in world space when the window ends or a roof slides over the
+source. Place separate emitters on opposite sides of a shelter boundary.
+This pass samples one exposure point per emitter and handles birth and
+motion through the established particle path.
+
+To keep rain active during play, implement `ISurfaceWetnessGame` and call
+`context.AdvanceSurfaceWetness` with successive complete game seconds.
+With a one-to-one game clock, send one dose every 60 gameplay ticks. Save
+the game's clock and forecast using gameplay state. Configure a zero dose
+for a dry second. Add a translucent sprite for a visible streak.
+
+`runtime.particles.inspect` returns a `rain` window with the last dose depth,
+remaining ticks, and the last active sample tick. Each enabled rain
+source includes its phase, blocker and scheduled births from that sample.
+The phase denominator is `nm_per_particle * 60`.
+The native counts report actual spawn and capacity outcomes. The scheduled
+count belongs to `sample_tick` after a dry dose or the window's expiry.
+The rain clock, birth window, phase, shelter witness and live drops
+participate in rollback and save continuation.
+
+```sh
+python3 tests/world_precipitation_contract.py build/linux-game/poima
+python3 tests/world_precipitation_contract.py "$runtime/bin/poima.exe" \
+  --windows-interop --runtime-root "$runtime" --gpu 0 --output build/rain-captures
+```
+
+Pass `--native-descriptor` with the descriptor from the
+[compiled weather fixture](SURFACE_WETNESS.md#drive-it-from-compiled-gameplay)
+to test a rain-only world through the existing gameplay service.
+
 ## Add a translucent sprite
 
 Import a PNG or JPEG through `asset.image.import`. Choose `srgb` for ordinary

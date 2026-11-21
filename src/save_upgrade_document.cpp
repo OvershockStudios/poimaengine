@@ -5,6 +5,7 @@
 #include "surface_mark_profiles.hpp"
 #include "poima/snow.hpp"
 #include "asset_provenance.hpp"
+#include "audio_buses.hpp"
 #include <nlohmann/json.hpp>
 #include <algorithm>
 #include <cmath>
@@ -29,7 +30,8 @@ Json parse(const std::string& text) {
 void keys(const Json& value,std::initializer_list<const char*> expected,bool optional_world_content=false) {
     const auto extra=optional_world_content ? static_cast<unsigned>(value.contains("navigation"))
         +static_cast<unsigned>(value.contains("asset_provenance"))+static_cast<unsigned>(value.contains("water"))
-        +static_cast<unsigned>(value.contains("snow"))+static_cast<unsigned>(value.contains("surface_mark_profiles")) : 0u;
+        +static_cast<unsigned>(value.contains("snow"))+static_cast<unsigned>(value.contains("surface_mark_profiles"))
+        +static_cast<unsigned>(value.contains("audio_buses")) : 0u;
     check(value.is_object() && value.size()==expected.size()+extra,"Unexpected save upgrade authored document members.");
     for(const auto* key:expected)check(value.contains(key),"Missing save upgrade authored document member.");
 }
@@ -219,6 +221,7 @@ Registry normalize(Json& doc) {
     // removing origins through an otherwise valid component upgrade.
     if(doc.contains("asset_provenance"))provenance::validate_bindings(doc.at("asset_provenance"));
     if(doc.contains("surface_mark_profiles"))surface_mark_profiles::validate_catalog(doc.at("surface_mark_profiles"));
+    if(doc.contains("audio_buses"))(void)audio_buses::parse(doc.at("audio_buses"));
     if(version==1)keys(doc,{"format","version","world_id","revision","entities","retired_ids","receipts"},true);
     else if(version==2)keys(doc,{"format","version","world_id","revision","entities","retired_ids","receipts","component_schemas","retired_component_schemas"},true);
     else if(version==3)keys(doc,{"format","version","world_id","revision","entities","retired_ids","receipts","component_schemas","retired_component_schemas","templates","retired_template_ids"},true);
@@ -292,6 +295,9 @@ DocumentMappingResult map_authored_document(const std::string& source_document,c
     const auto old_snow=source.find("snow"),new_snow=target.find("snow");
     check(old_snow==source.end() ? new_snow==target.end() :
         new_snow!=target.end() && *old_snow==*new_snow,"Save upgrade cannot change the snow binding.");
+    const auto old_buses=source.find("audio_buses"),new_buses=target.find("audio_buses");
+    check(old_buses==source.end() ? new_buses==target.end() :
+        new_buses!=target.end() && *old_buses==*new_buses,"Save upgrade cannot change the audio bus catalog.");
     check(old.size()+plan.add_components.size()==next.size(),"Save upgrade component additions do not cover the target catalog.");
     for(const auto& [id,schema]:old) {(void)schema;check(next.contains(id),"Save upgrade cannot remove component types.");}
     check(plan.add_components.size()<=components::max_types,"Added component type budget exceeded.");

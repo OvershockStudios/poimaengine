@@ -144,11 +144,22 @@ void Grid::set_face(Cell lower_cell, FaceAxis axis, FaceControl control) {
     (axis == FaceAxis::x ? x_faces_ : z_faces_)[index] = control;
 }
 
-StepReport Grid::step(std::span<const CellExchange> exchanges) {
+StepReport Grid::step(std::span<const CellExchange> exchanges,
+                      std::span<const Cell> rain_cells, double rain_depth_m) {
     if (tick_ == std::numeric_limits<std::uint64_t>::max())
         throw std::overflow_error("Shallow-water tick limit reached.");
     if (exchanges.size() > depths_.size())
         throw std::invalid_argument("Too many shallow-water exchanges.");
+
+    if (!bounded(rain_depth_m, 0, max_height_m) || (rain_depth_m > 0 && rain_cells.empty()))
+        throw std::invalid_argument("Invalid shallow-water rain depth or coverage.");
+    std::size_t previous_rain = no_exchange;
+    for (const Cell cell : rain_cells) {
+        const auto index = cell_index(cell);
+        if (previous_rain != no_exchange && previous_rain >= index)
+            throw std::invalid_argument("Shallow-water rain cells must be unique and ordered.");
+        previous_rain = index;
+    }
 
     std::fill(exchange_indices_.begin(), exchange_indices_.end(), no_exchange);
     for (std::size_t i = 0; i < exchanges.size(); ++i) {
@@ -165,9 +176,16 @@ StepReport Grid::step(std::span<const CellExchange> exchanges) {
     Sum supplied;
     Sum drained;
     const double depth_per_rate = step_seconds / cell_area_m2_;
+    auto rain = rain_cells.begin();
     for (std::size_t i = 0; i < depths_.size(); ++i) {
-        const double depth = depths_[i];
+        double depth = depths_[i];
         before.add(depth);
+        if (rain != rain_cells.end() && i == static_cast<std::size_t>(rain->z) * config_.cells_x + rain->x) {
+            depth += rain_depth_m;
+            if (!bounded(depth, 0, max_height_m))
+                throw std::overflow_error("Shallow-water rain exceeds the supported depth.");
+            ++rain;
+        }
         staged_depths_[i] = depth;
         const auto input = exchange_indices_[i];
         if (input == no_exchange)
@@ -222,7 +240,8 @@ StepReport Grid::step(std::span<const CellExchange> exchanges) {
     }
     depths_.swap(staged_depths_);
     return {++tick_, before.value() * cell_area_m2_, supplied.value() * cell_area_m2_,
-            drained.value() * cell_area_m2_, after.value() * cell_area_m2_};
+            drained.value() * cell_area_m2_, after.value() * cell_area_m2_,
+            rain_depth_m * static_cast<double>(rain_cells.size()) * cell_area_m2_};
 }
 
 Snapshot Grid::snapshot() const {

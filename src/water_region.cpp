@@ -2,6 +2,7 @@
 #include "poima/water_region.hpp"
 
 #include "poima/input_action.hpp"
+#include "poima/surface_wetness.hpp"
 
 #include <algorithm>
 #include <array>
@@ -20,6 +21,9 @@ using Json = nlohmann::json;
 constexpr char snapshot_format[] = "poima.water-region-state";
 constexpr double max_depth_m = 1'000'000;
 constexpr double max_exchange_rate = 1'000'000;
+constexpr double nm_to_m = 1e-9;
+constexpr std::uint64_t max_tick_rain_nm = wetness::max_batch * wetness::max_rain_nm;
+constexpr std::uint64_t max_total_rain_nm = (wetness::max_quantum + 1) * wetness::max_rain_nm;
 
 bool unit_interval(double value) noexcept {
     return value >= 0 && value <= 1;
@@ -44,8 +48,12 @@ auto face_key(const RegionFace& rule) noexcept {
     return std::tuple{rule.cell.z, rule.cell.x, rule.axis};
 }
 
+auto cell_key(Cell cell) noexcept {
+    return std::pair{cell.z, cell.x};
+}
+
 auto exchange_key(const CellExchange& rule) noexcept {
-    return std::pair{rule.cell.z, rule.cell.x};
+    return cell_key(rule.cell);
 }
 
 bool exact_fields(const Json& object, std::initializer_list<const char*> fields) {
@@ -70,27 +78,35 @@ double finite_nonnegative(const Json& value) {
     throw std::invalid_argument("Water snapshot values must be finite nonnegative numbers.");
 }
 
-Json report_json(const std::optional<StepReport>& report) {
+Json report_json(const std::optional<StepReport>& report, bool rain_enabled) {
     if (!report)
         return nullptr;
-    return {{"tick", report->tick}, {"volume_before_m3", report->volume_before_m3},
+    Json result{{"tick", report->tick}, {"volume_before_m3", report->volume_before_m3},
         {"supplied_m3", report->supplied_m3}, {"drained_m3", report->drained_m3},
         {"volume_after_m3", report->volume_after_m3}};
+    if (rain_enabled)
+        result["rain_m3"] = report->rain_m3;
+    return result;
 }
 
 std::optional<StepReport> validated_report(const Json& report, const Grid& grid,
-                                          std::span<const CellExchange> exchanges) {
+                                          std::span<const CellExchange> exchanges,
+                                          std::optional<double> rain_m3) {
     if (grid.tick() == 0) {
         if (!report.is_null())
             throw std::invalid_argument("Initial water snapshot cannot have a step receipt.");
         return std::nullopt;
     }
-    if (!exact_fields(report, {"tick", "volume_before_m3", "supplied_m3", "drained_m3", "volume_after_m3"}))
+    if (rain_m3
+            ? !exact_fields(report, {"tick", "volume_before_m3", "supplied_m3", "drained_m3", "volume_after_m3", "rain_m3"})
+            : !exact_fields(report, {"tick", "volume_before_m3", "supplied_m3", "drained_m3", "volume_after_m3"}))
         throw std::invalid_argument("Water snapshot has an incomplete step receipt.");
     const StepReport result{unsigned_integer(report.at("tick")),
         finite_nonnegative(report.at("volume_before_m3")), finite_nonnegative(report.at("supplied_m3")),
-        finite_nonnegative(report.at("drained_m3")), finite_nonnegative(report.at("volume_after_m3"))};
-    if (result.tick != grid.tick() || result.volume_after_m3 != grid.volume_m3())
+        finite_nonnegative(report.at("drained_m3")), finite_nonnegative(report.at("volume_after_m3")),
+        rain_m3 ? finite_nonnegative(report.at("rain_m3")) : 0.0};
+    if (result.tick != grid.tick() || result.volume_after_m3 != grid.volume_m3() ||
+        result.rain_m3 != rain_m3.value_or(0.0))
         throw std::invalid_argument("Water step receipt does not match the restored tick and volume.");
 
     double supply_limit = 0;
@@ -110,9 +126,9 @@ std::optional<StepReport> validated_report(const Json& report, const Grid& grid,
         throw std::invalid_argument("Water step receipt exceeds the region's volume or exchange rates.");
 
     const double actual_scale = std::max({1.0, result.volume_before_m3, result.volume_after_m3,
-        result.supplied_m3, result.drained_m3});
+        result.supplied_m3, result.drained_m3, result.rain_m3});
     const double volume_rounding = 64 * std::numeric_limits<double>::epsilon() * actual_scale;
-    const double expected_after = result.volume_before_m3 + result.supplied_m3 - result.drained_m3;
+    const double expected_after = result.volume_before_m3 + result.supplied_m3 + result.rain_m3 - result.drained_m3;
     if (std::abs(result.volume_after_m3 - expected_after) > volume_rounding)
         throw std::invalid_argument("Water step receipt does not balance.");
     return result;
@@ -122,7 +138,8 @@ std::optional<StepReport> validated_report(const Json& report, const Grid& grid,
 
 Region::Region(const RegionDefinition& definition)
     : grid_(initial_grid(definition)), initial_depths_m_(definition.initial_depths_m),
-      faces_(definition.faces), exchanges_(definition.exchanges), plan_sha256_(definition.plan_sha256) {
+      faces_(definition.faces), exchanges_(definition.exchanges), plan_sha256_(definition.plan_sha256),
+      rain_cells_(definition.rain_cells) {
     const auto& config = grid_.config();
     if (initial_depths_m_.empty())
         initial_depths_m_.resize(static_cast<std::size_t>(config.cells_x) * config.cells_z);
@@ -145,9 +162,34 @@ Region::Region(const RegionDefinition& definition)
             !(rule.drain_m3_per_second >= 0 && rule.drain_m3_per_second <= max_exchange_rate))
             throw std::invalid_argument("Invalid or duplicate authored water exchange.");
     }
+
+    if (rain_cells_.size() > initial_depths_m_.size())
+        throw std::invalid_argument("Rain coverage exceeds the authored water grid.");
+    std::ranges::sort(rain_cells_, {}, cell_key);
+    for (std::size_t index = 0; index < rain_cells_.size(); ++index) {
+        const auto cell = rain_cells_[index];
+        if (cell.x >= config.cells_x || cell.z >= config.cells_z ||
+            (index > 0 && cell_key(rain_cells_[index - 1]) == cell_key(cell)))
+            throw std::invalid_argument("Invalid or duplicate authored water rain cell.");
+    }
 }
 
-StepReport Region::step(std::span<const std::string_view> pressed) {
+double Region::rain_volume_m3(std::uint64_t depth_nm) const noexcept {
+    const double size = grid_.config().cell_size_m;
+    return (static_cast<double>(depth_nm) * nm_to_m) *
+        static_cast<double>(rain_cells_.size()) * (size * size);
+}
+
+double Region::cumulative_rain_m3() const noexcept {
+    return rain_volume_m3(cumulative_rain_nm_);
+}
+
+StepReport Region::step(std::span<const std::string_view> pressed, std::uint32_t rain_depth_nm,
+                        std::optional<std::uint64_t> first_quantum) {
+    if ((first_quantum && (rain_cells_.empty() || *first_quantum > wetness::max_quantum)) ||
+        (rain_depth_nm > 0 && !first_quantum) || rain_depth_nm > max_tick_rain_nm ||
+        rain_depth_nm > max_total_rain_nm - cumulative_rain_nm_)
+        throw std::invalid_argument("Rainfall exceeds the water region's coverage, clock or volume bounds.");
     struct ChangedFace { std::size_t index; FaceControl previous; };
     std::array<ChangedFace, max_region_faces> changes;
     std::size_t changed = 0;
@@ -163,7 +205,8 @@ StepReport Region::step(std::span<const std::string_view> pressed) {
             grid_.set_face(rule.cell, rule.axis, updated);
             changes[changed++] = {index, previous};
         }
-        last_report_ = grid_.step(exchanges_);
+        const auto rain_cells = rain_depth_nm ? std::span<const Cell>(rain_cells_) : std::span<const Cell>{};
+        last_report_ = grid_.step(exchanges_, rain_cells, rain_depth_nm * nm_to_m);
     } catch (...) {
         // Only previously validated face values enter this buffer. Grid::step
         // leaves cells and its tick untouched when it rejects a step.
@@ -174,6 +217,10 @@ StepReport Region::step(std::span<const std::string_view> pressed) {
         }
         throw;
     }
+    if (!first_rain_quantum_)
+        first_rain_quantum_ = first_quantum;
+    last_rain_nm_ = rain_depth_nm;
+    cumulative_rain_nm_ += rain_depth_nm;
     return *last_report_;
 }
 
@@ -183,14 +230,24 @@ Json Region::save() const {
         if (!rule.action.empty())
             action_faces.push_back(grid_.face(rule.cell, rule.axis).openness);
     auto snapshot = grid_.snapshot();
-    return {{"format", snapshot_format}, {"version", 1}, {"plan_sha256", plan_sha256_},
+    const bool rain_enabled = !rain_cells_.empty();
+    Json result{{"format", snapshot_format}, {"version", rain_enabled ? 2 : 1}, {"plan_sha256", plan_sha256_},
         {"tick", snapshot.tick}, {"depths_m", std::move(snapshot.depths_m)},
-        {"action_face_openness", std::move(action_faces)}, {"last_report", report_json(last_report_)}};
+        {"action_face_openness", std::move(action_faces)}, {"last_report", report_json(last_report_, rain_enabled)}};
+    if (rain_enabled)
+        result["rain"] = {{"first_quantum", first_rain_quantum_ ? Json(*first_rain_quantum_) : Json(nullptr)},
+            {"cumulative_depth_nm", cumulative_rain_nm_}, {"last_step_depth_nm", last_rain_nm_}};
+    return result;
 }
 
-void Region::restore(const Json& saved, std::uint64_t expected_tick) {
-    if (!exact_fields(saved, {"format", "version", "plan_sha256", "tick", "depths_m", "action_face_openness", "last_report"}) ||
-        saved.at("format") != snapshot_format || unsigned_integer(saved.at("version")) != 1 ||
+void Region::restore(const Json& saved, std::uint64_t expected_tick,
+                     std::optional<std::uint64_t> next_quantum) {
+    const bool rain_enabled = !rain_cells_.empty();
+    const bool fields_match = rain_enabled
+        ? exact_fields(saved, {"format", "version", "plan_sha256", "tick", "depths_m", "action_face_openness", "last_report", "rain"})
+        : exact_fields(saved, {"format", "version", "plan_sha256", "tick", "depths_m", "action_face_openness", "last_report"});
+    if (!fields_match || saved.at("format") != snapshot_format ||
+        unsigned_integer(saved.at("version")) != (rain_enabled ? 2u : 1u) ||
         saved.at("plan_sha256") != plan_sha256_ || unsigned_integer(saved.at("tick")) != expected_tick)
         throw std::invalid_argument("Water snapshot format, plan identity or tick does not match.");
 
@@ -223,9 +280,33 @@ void Region::restore(const Json& saved, std::uint64_t expected_tick) {
         }
         candidate.set_face(rule.cell, rule.axis, control);
     }
-    const auto receipt = validated_report(saved.at("last_report"), candidate, exchanges_);
+    std::optional<std::uint64_t> first_quantum;
+    std::uint64_t cumulative_rain_nm = 0;
+    std::uint64_t last_rain_nm = 0;
+    if (rain_enabled) {
+        const auto& rain = saved.at("rain");
+        if (!exact_fields(rain, {"first_quantum", "cumulative_depth_nm", "last_step_depth_nm"}))
+            throw std::invalid_argument("Water snapshot has an incomplete rain receipt.");
+        if (!rain.at("first_quantum").is_null())
+            first_quantum = unsigned_integer(rain.at("first_quantum"));
+        cumulative_rain_nm = unsigned_integer(rain.at("cumulative_depth_nm"));
+        last_rain_nm = unsigned_integer(rain.at("last_step_depth_nm"));
+        if (first_quantum.has_value() != next_quantum.has_value() ||
+            (first_quantum && (!expected_tick || *first_quantum >= *next_quantum || *next_quantum > wetness::max_quantum + 1)))
+            throw std::invalid_argument("Water snapshot rain receipt differs from the saved weather clock.");
+        const auto quanta = first_quantum ? *next_quantum - *first_quantum : 0;
+        if ((quanta && (quanta + wetness::max_batch - 1) / wetness::max_batch > expected_tick) ||
+            cumulative_rain_nm > quanta * wetness::max_rain_nm ||
+            last_rain_nm > max_tick_rain_nm || last_rain_nm > cumulative_rain_nm)
+            throw std::invalid_argument("Water snapshot rain receipt exceeds the weather clock or tick bounds.");
+    }
+    const auto rain_m3 = rain_enabled ? std::optional(rain_volume_m3(last_rain_nm)) : std::nullopt;
+    const auto receipt = validated_report(saved.at("last_report"), candidate, exchanges_, rain_m3);
     grid_ = std::move(candidate);
     last_report_ = receipt;
+    first_rain_quantum_ = first_quantum;
+    cumulative_rain_nm_ = cumulative_rain_nm;
+    last_rain_nm_ = static_cast<std::uint32_t>(last_rain_nm);
 }
 
 }

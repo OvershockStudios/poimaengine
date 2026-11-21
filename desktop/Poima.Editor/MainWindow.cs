@@ -506,20 +506,22 @@ public sealed partial class MainWindow : Window
     }
     private Control BuildInspector()
     {
-        var root = new Grid { RowDefinitions = new RowDefinitions("*,Auto") };
+        var root = new Grid { RowDefinitions = new RowDefinitions("Auto,*,Auto") };
         AutomationProperties.SetName(root, "Inspector contents");
+        root.Children.Add(BuildInspectorNavigation());
         var fields = new StackPanel { Spacing = 0 };
         var live = new StackPanel { Spacing = 0 };
         var content = new StackPanel(); content.Children.Add(live); content.Children.Add(fields);
         content.Children.Insert(0, BuildComponentTools());
-        root.Children.Add(new ScrollViewer { Content = content, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled });
+        var scroll = new ScrollViewer { Content = content, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled };
+        Grid.SetRow(scroll, 1); root.Children.Add(scroll);
         var footer = new StackPanel { Spacing = 5, Margin = new Thickness(8) };
         var message = new TextBlock { TextWrapping = TextWrapping.Wrap, FontSize = 12 };
         var actions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 5 };
         var applyDraft = Button("Apply", Model.Apply); AutomationProperties.SetName(applyDraft, "Inspector Apply");
         var reloadDraft = Button("Reload", Model.Reload); AutomationProperties.SetName(reloadDraft, "Inspector Reload");
         actions.Children.Add(applyDraft); actions.Children.Add(reloadDraft);
-        footer.Children.Add(message); footer.Children.Add(actions); Grid.SetRow(footer, 1); root.Children.Add(footer);
+        footer.Children.Add(message); footer.Children.Add(actions); Grid.SetRow(footer, 2); root.Children.Add(footer);
         string last = "", liveKey = "";
         void RefreshLive()
         {

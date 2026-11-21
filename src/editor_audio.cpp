@@ -77,6 +77,7 @@ FrameBudget metadata(const EditorAudioFrame& frame) {
     auto text=[&](const std::string& value) { require(value.size()<=128 && value.capacity()<=1024,"Editor audio snapshot string exceeds budget.");result+=value.capacity(); };
     auto clip=[&](const AudioEmitter& emitter) {
         text(emitter.asset);
+        if(emitter.bus)text(emitter.bus->name);
         if(emitter.clip && assets->identities.insert(emitter.clip.get()).second) {
             require(emitter.clip->samples.size()<=max_audio_clip_frames && emitter.clip->samples.capacity()<=64*1024*1024/sizeof(float),"Editor audio clip exceeds frame budget.");
             clip_bytes+=sizeof(AudioClip)+emitter.clip->samples.capacity()*sizeof(float);

@@ -467,10 +467,12 @@ protection against another process ignoring the cooperative lock.
 | `-32080` | Wrong player service scope or intervening settings change during recorded replay. |
 
 This subset does not supply display-mode confirmation, monitor selection,
-resolution/preset management, audio bus/mixer authoring, upscaler selection, cloud sync,
+resolution/preset management, live bus controls, upscaler selection, cloud sync,
 automatic schema migration or a general settings menu. It changes no input,
 gameplay or save ABI. Headless persistence observations do not establish physical
 mouse/controller feel, graphical presentation or deployment qualification.
+Use the [authored audio bus catalog](AUDIO_EVENTS.md#route-emitters-through-named-buses)
+for project mix levels. The player setting remains an output-device preference.
 
 ## Verify the workflow
 

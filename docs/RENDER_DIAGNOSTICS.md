@@ -57,6 +57,7 @@ Successful capture and all returned player reports include `render_diagnostics`:
 | `camera_batches` | Actual camera geometry draw commands in the completed submission. |
 | `shadow_batches` | Actual shadow geometry draw commands summed across shadow views. |
 | `camera_triangles` | Triangles submitted to the camera. Back-face/depth rejection can reduce rasterized work further. |
+| `mesh_lod` | Selected tier counts and the first 64 LOD-enabled entity decisions in draw order. Present when the submission has an authored [rigid mesh LOD chain](MESH_LOD.md). |
 | `shadow_views` | Active depth views for this camera/light configuration. |
 | `shadow_candidates` | Eligible visible cast-enabled drawable/view pairs before shadow-frustum rejection: cast-enabled snapshot objects × active `shadow_views`. Equals `objects * shadow_views` when all snapshot objects cast. |
 | `shadow_draws`, `shadow_culled` | Submitted and frustum-rejected eligible object/view pairs; their sum equals `shadow_candidates`. Cast-disabled drawables are neither submitted nor counted as rejects. |

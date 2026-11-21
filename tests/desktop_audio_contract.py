@@ -115,7 +115,8 @@ def main():
     run.mkdir(parents=True)
     world = run / 'world.json'
     source_files = ['src/desktop_bridge.cpp', 'src/editor_audio.cpp', 'src/editor_audio.hpp',
-                    'src/world.cpp', 'include/poima/world.hpp', 'src/audio_stream.cpp']
+                    'src/world.cpp', 'src/world_document.cpp', 'src/world_document.hpp', 'src/world_json.hpp',
+                    'include/poima/world.hpp', 'src/audio_stream.cpp']
     record = {'success': False, 'driver_requested': args.driver, 'actual_output_forced_muted': muted,
               'binary_sha256': digest(args.binary), 'bridge_sha256': digest(args.bridge),
               'test_sha256': digest(Path(__file__)),

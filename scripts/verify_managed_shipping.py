@@ -39,7 +39,7 @@ def expected(schema, tick, energy=0):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--dotnet', type=Path, default=ROOT / '.cache/toolchains/dotnet-10.0.401/dotnet')
+    parser.add_argument('--dotnet', type=Path, default=ROOT / '.cache/toolchains/dotnet-10.0.404/dotnet')
     parser.add_argument('--output', type=Path, default=ROOT / 'build/managed-shipping-evidence')
     args = parser.parse_args()
     if platform.system() != 'Linux' or platform.machine() != 'x86_64':
@@ -73,7 +73,7 @@ def main():
     try:
         record['sdk'] = command('Inspect SDK', [dotnet, '--info'])
         record['clang'] = command('Inspect native toolchain', ['clang', '--version'])
-        headers = dotnet.parent / 'packs/Microsoft.NETCore.App.Host.linux-x64/10.0.12/runtimes/linux-x64/native'
+        headers = dotnet.parent / 'packs/Microsoft.NETCore.App.Host.linux-x64/10.0.15/runtimes/linux-x64/native'
         command('Configure native kernel', ['cmake', '-S', ROOT / 'experiments/managed_gameplay',
                 '-B', run / 'native', '-G', 'Ninja', '-DCMAKE_BUILD_TYPE=Release',
                 f'-DPOIMA_DOTNET_HOST_HEADERS={headers}'])
@@ -98,7 +98,7 @@ def main():
             for mode in ['jit', 'aot']:
                 publish = run / f'schema-{schema}/{mode}'
                 argv = [dotnet, 'publish', project, '-c', 'Release', '-r', 'linux-x64',
-                        '-o', publish, '--nologo', '-p:RuntimeFrameworkVersion=10.0.12',
+                        '-o', publish, '--nologo', '-p:RuntimeFrameworkVersion=10.0.15',
                         '-p:UseSharedCompilation=false', '-m:2',
                         f'-p:PublishAot={str(mode == "aot").lower()}',
                         '--self-contained', str(mode == 'aot').lower()]

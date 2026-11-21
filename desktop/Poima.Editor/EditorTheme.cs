@@ -47,6 +47,8 @@ public static class EditorIcons
             "frame" => ("M1,5 L1,1 L5,1 M11,1 L15,1 L15,5 M15,11 L15,15 L11,15 M5,15 L1,15 L1,11 M5,8 L11,8 M8,5 L8,11", "#C8CAD0"),
             "import" => ("M8,1 L8,10 M4,6 L8,10 L12,6 M2,10 L2,14 L14,14 L14,10", "#C8CAD0"),
             "search" => ("M11,7 A4,4 0 1 1 3,7 A4,4 0 1 1 11,7 M10,10 L15,15", "#AAAAAA"),
+            "back" => ("M14,8 L2,8 M7,3 L2,8 L7,13", "#C8CAD0"),
+            "forward" => ("M2,8 L14,8 M9,3 L14,8 L9,13", "#C8CAD0"),
             "chevron" => ("M5,3 L10,8 L5,13", "#AAAAAA"),
             "expanded" => ("M3,5 L8,10 L13,5", "#AAAAAA"),
             "undo" => ("M6,3 L2,7 L6,11 M2,7 L10,7 Q14,7 14,12", "#C8CAD0"),

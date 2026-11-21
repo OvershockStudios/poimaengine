@@ -35,6 +35,7 @@
 #include "water_region_scene.hpp"
 #include "poima/profiler.hpp"
 #include "poima/assets.hpp"
+#include "mesh_lod.hpp"
 #include <nlohmann/json.hpp>
 #include <Jolt/Jolt.h>
 #include <Jolt/RegisterTypes.h>
@@ -261,6 +262,7 @@ struct Runtime::Impl {
 #include "runtime_wetness.inc"
     std::uint32_t game_sound_calls=0,game_navigation_calls=0;
     std::optional<RuntimeNavigationDefinition> navigation_binding;
+    std::vector<std::string> navigation_obstacles;
     std::array<std::uint64_t,4> navigation_asset{};
     float navigation_radius=0,navigation_height=0;
     const std::string presentation_source_id=new_presentation_source_id();
@@ -528,6 +530,11 @@ struct Runtime::Impl {
         if(d.mesh) {
             if(d.mesh->material)validate_material_alpha(*d.mesh->material);
             if(d.mesh->mesh)validate_material_alpha(d.mesh->mesh->material);
+            if(d.mesh->lods) {
+                require(!d.camera_draw && !d.skinned_mesh,"Mesh LOD requires a rigid world drawable without CameraDraw.");
+                validate_mesh_lod_geometry(d.mesh->mesh.get(),*d.mesh->lods);
+                validate_mesh_lod_textures(*d.mesh->mesh,*d.mesh->lods,d.mesh->textures.get());
+            }
         }
         if(d.camera) {
             require(d.camera->world_pose==RuntimeCameraPose{} && d.camera->viewmodel_pose==RuntimeCameraPose{},"Authored cameras require identity effect defaults; use runtime camera pose commands.");
@@ -749,8 +756,11 @@ struct Runtime::Impl {
         require(definition.entities.size()<=10000,"Runtime entity limit exceeded.");
         validate_runtime_templates(definition);templates=definition.templates;
         particle_sprites=particles::build_sprite_catalog(definition);
-        for(const auto& recipe:templates)for(const auto& entity:recipe.entities)if(entity.camera && entity.camera->viewmodel_clearance) {
-            require(entity.camera->viewmodel.has_value(),"Viewmodel clearance requires a foreground lens.");validate_viewmodel_clearance_profile(*entity.camera->viewmodel_clearance);
+        for(const auto& recipe:templates)for(const auto& entity:recipe.entities) {
+            require(!entity.collider || !entity.collider->navigation_obstacle,"Navigation obstacles require authored world entities.");
+            if(entity.camera && entity.camera->viewmodel_clearance) {
+                require(entity.camera->viewmodel.has_value(),"Viewmodel clearance requires a foreground lens.");validate_viewmodel_clearance_profile(*entity.camera->viewmodel_clearance);
+            }
         }
         validate_runtime_hit_regions(definition);
         validate_runtime_camera_draw(definition);
@@ -771,6 +781,11 @@ struct Runtime::Impl {
         owned_entities.reserve(definitions.size());
         std::size_t body_count=0;
         for (const auto& d : definitions) {
+            if(d.collider && d.collider->navigation_obstacle) {
+                require(d.collider->motion!=BodyMotion::Dynamic,"Navigation obstacles must be static or kinematic boxes.");
+                require(navigation_obstacles.size()<navigation::max_obstacles,"At most 64 navigation obstacles are supported.");
+                navigation_obstacles.push_back(d.id);
+            }
             create_entity(d,*candidate);
             if(d.collider || d.character || d.mesh_collider)++body_count;
             body_count+=physical_part_count(d);
@@ -861,6 +876,7 @@ struct Runtime::Impl {
         for(const auto& id:candidate->physical_rigs)record_recovery_final(id,*physical_owners.at(id));
         if(definition_has_particles(definition)) {
             particle_runtime=std::make_unique<ParticleRuntime>();
+            if(definition_has_rain(definition))particle_runtime->rain.emplace();
             synchronize_particles();
         }
     }
@@ -2060,14 +2076,20 @@ struct Runtime::Impl {
                         registry.get<Controller>(e).character->PostSimulation(0.05f);
                 }
                 commit_root_motion_intervals(root_intervals,tick+1);
-                if(water_region)water_region->step(pressed_actions);
+                const auto* weather=selected_wetness_dose(frame==0 && wetness_dose ? &*wetness_dose : nullptr);
+                if(water_region) {
+                    if(weather && !water_region->rain_cells().empty()) {
+                        const auto rain_nm=std::accumulate(weather->rain_nm.begin(),weather->rain_nm.end(),std::uint32_t{0});
+                        water_region->step(pressed_actions,rain_nm,weather->first_quantum);
+                    } else water_region->step(pressed_actions);
+                }
                 prune_snow_holds();
                 ++tick;animation_locals(true);sync();physical_record_final();
                 finish_game_attachments();
                 for(const auto e:topology->characters)registry.get<Controller>(e).character->EndTick();
-                step_particles(pressed_actions);
+                const auto rain_nm=advance_wetness(weather);
+                step_particles(pressed_actions,rain_nm);
                 record_snow_foot_decisions();
-                advance_wetness(frame==0 && wetness_dose ? &*wetness_dose : nullptr);
                 advance_surface_marks(frame==0 ? mark_commands : std::span<const RuntimeSurfaceMarkCommand>{});
                 pressed_actions.clear();
             }
@@ -2131,6 +2153,7 @@ struct Runtime::Impl {
             1,mesh.cast_shadows,mesh.receive_shadows,true,topology->definitions.at(node.id).camera_draw};
         result.mutable_geometry=snow_binding && snow_binding->contains(node.id);
         result.wetness=scene_wetness(node.id);
+        result.lods=mesh.lods;
         if(attachment_graph && !attachment_graph->world_draws.empty() && attachment_graph->world_draws.contains(node.id))
             result.camera_draw.reset();
         if(result.camera_draw && result.camera_draw->mode==CameraDrawMode::Viewmodel)result.cast_shadows=false;
@@ -2288,6 +2311,7 @@ Runtime::PreparedTextureUpdate Runtime::prepare_textures(std::uint64_t expected,
             }
             textures=std::move(copy);
         }
+        if(mesh->lods)validate_mesh_lod_textures(*mesh->mesh,*mesh->lods,textures.get());
         auto& definition=candidate->definitions.at(edit.id);
         require(definition.mesh && definition.mesh->material.has_value(),"Texture definition is not a PBR drawable.");
         definition.mesh->textures=textures;data->edits.emplace_back(found->second,std::move(textures));
@@ -2506,7 +2530,7 @@ std::optional<RuntimeGroundingCommand> Runtime::grounding(const std::string& id,
 std::optional<RuntimeRootMotionState> Runtime::root_motion(const std::string& id) const {
     (void)impl_->find(id);return impl_->animations->root_motion_state(id);
 }
-RuntimeNavigationPath Runtime::navigation_path(const RuntimeNavigationRequest& request) const {return impl_->navigation_query(request);}
+RuntimeNavigationPath Runtime::navigation_path(const RuntimeNavigationRequest& request) const {return impl_->navigation_query(request,true);}
 const water::Region* Runtime::water_region() const noexcept {
     return impl_->water_region ? &*impl_->water_region : nullptr;
 }

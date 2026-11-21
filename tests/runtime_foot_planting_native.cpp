@@ -149,6 +149,106 @@ void strict_v10_and_legacy_profiles(){
     a.apply({playing},1);a.sample(2,world,p.query(),p.resolver());a.apply({},2,{{id(1),2,{}}});a.sample(3,world,p.query(),p.resolver());const auto timed=retain("retimed-v10",a.save_state(3));check(Json::parse(timed)["version"]==10&&Json::parse(timed)["retimed"]==true,"Retimed planting lost its profile/history.");RuntimeAnimations cold(d);cold.load_state(timed,3);cold.sample(3,world);check(cold.save_state(3)==timed,"Retimed v10 complete state changed cold.");
 }
 V sole(Runtime& r,unsigned slot){return point(r.entity(id(12+3*(slot-1))).world,{0,-.2,0});}
+void native_delayed_release_and_restore() {
+    auto d=definition(true,1);
+    auto& rig=*d.entities.front().animation_rig;
+    auto model=std::make_shared<ModelAsset>(*rig.model);
+    // Exact float keys bracket the 60 Hz samples without interpolation drift.
+    const AnimationChannel hips{0,AnimationPath::translation,AnimationInterpolation::step,
+        {0,1.f/64,2.f/64,3.f/64,4.f/64,5.f/64},
+        {{-.25f,1.8125f,0,0},{-.25f,1.8125f,0,0},{-.125f,1.875f,0,0},
+         {-.125f,1.9375f,0,0},{-.125f,1.984375f,0,0},{-.125f,1.8125f,0,0}}};
+    model->animations.push_back({"Toe-off",hips.times.back(),{hips}});
+    rig.model=std::move(model);
+    rig.clip=2;
+    rig.loop=false;
+    rig.playing=true;
+    entity(d,100).transform.position[1]=-.4;
+    auto& profile=*rig.ik[0].grounding;
+    profile.reference_height=.2125;
+    profile.lift_height=.15625;
+    auto legacy_definition=d;
+    profile.plant_release_height=.09375;
+    for(const double invalid:{.029,.03,.15625,.157,std::numeric_limits<double>::infinity()}) {
+        auto rejected=profile;
+        rejected.plant_release_height=invalid;
+        rejects([&]{grounding::validate(rejected);});
+    }
+    auto unheld_profile=profile;
+    unheld_profile.plant_lock=false;
+    rejects([&]{grounding::validate(unheld_profile);});
+
+    Runtime delayed(d),legacy(legacy_definition);
+    delayed.step(1,{});
+    legacy.step(1,{});
+    const auto acquisition=state(delayed);
+    locked(acquisition);
+    const auto anchor=*acquisition.planting->target_sole;
+    near(anchor,{-.25,.1,0});
+    near(*state(legacy).planting->target_sole,anchor,0);
+    check(acquisition.planting->anchor->acquired_tick==1,"Delayed fade changed the acquisition tick.");
+
+    delayed.step(1,{});
+    legacy.step(1,{});
+    const auto toe_off=state(delayed),earlier=state(legacy);
+    locked(toe_off);
+    locked(earlier);
+    near(toe_off.input_sole,{-.125,.275,0},2e-12);
+    near(toe_off.input_sole,earlier.input_sole,0);
+    near(toe_off.weight,1,0);
+    near(sole(delayed,1),anchor);
+    near(*toe_off.planting->position_error,0);
+    const auto hip=point(delayed.entity(id(10)).world,{});
+    const auto knee=point(delayed.entity(id(11)).world,{});
+    const auto ankle=point(delayed.entity(id(12)).world,{});
+    near(magnitude(subtract(hip,knee)),std::hypot(.5,.7),2e-12);
+    near(magnitude(subtract(knee,ankle)),std::hypot(.5,.7),2e-12);
+    check(magnitude(subtract(sole(legacy,1),anchor))>.025,
+        "Legacy blended release did not exercise measurable sole separation.");
+    check(toe_off.casts==2&&earlier.casts==2,"Delayed fade added a contact query.");
+    Runtime fresh_above_plant(d),fresh_legacy(legacy_definition);
+    const std::vector<AnimationCommand> start_above_plant{{id(1),2,1./60,1,false,true}};
+    fresh_above_plant.step(1,{}, {}, {},start_above_plant);
+    fresh_legacy.step(1,{}, {}, {},start_above_plant);
+    const auto seeking=state(fresh_above_plant);
+    check(seeking.status=="contact"&&planted(seeking).status=="seeking"&&!seeking.planting->anchor,
+        "The higher release threshold acquired a new stance.");
+    near(seeking.weight,state(fresh_legacy).weight,0);
+    near(sole(fresh_above_plant,1),sole(fresh_legacy,1),0);
+
+    delayed.step(1,{});
+    const auto fading=state(delayed);
+    locked(fading);
+    near(fading.input_sole,{-.125,.3375,0},2e-12);
+    near(fading.weight,.5,2e-12);
+    near(*fading.planting->position_error,magnitude(subtract(sole(delayed,1),anchor)),2e-12);
+    check(fading.casts==3&&fading.planting->anchor->acquired_tick==1&&*fading.planting->position_error>.02,
+        "Partial fade lost its original stance or its measured separation.");
+    const auto mid=retain("delayed-release-fading",delayed.save_snapshot(content_hash));
+    const auto serialized=Json::parse(mid);
+    const auto& anim=serialized["payload"]["animation"];
+    check(anim["version"]==10&&anim["rigs"][0]["ik"][0]["grounding"]["definition"]["plant_release_height"]==.09375,
+        "Delayed-fade calibration was lost from the frozen save profile.");
+    rejects([&]{Runtime::from_snapshot(legacy_definition,content_hash,mid);});
+    auto cold=Runtime::from_snapshot(d,content_hash,mid);
+    check(retain("delayed-release-restored",cold->save_snapshot(content_hash))==mid,
+        "A cold restore changed the complete fading state.");
+    for(auto* runtime:{&delayed,cold.get()}) {
+        runtime->step(1,{});
+        const auto swing=state(*runtime);
+        check(swing.status=="lifted"&&swing.casts==3&&planted(swing).armed&&!swing.planting->anchor,
+            "The lift threshold no longer released without a query.");
+        near(sole(*runtime,1),swing.input_sole,2e-12);
+        runtime->step(1,{});
+        const auto replanted=state(*runtime);
+        locked(replanted);
+        check(replanted.casts==4&&replanted.planting->anchor->acquired_tick==5,
+            "A subsequent low stance did not acquire after lift.");
+    }
+    check(retain("delayed-release-warm-future",delayed.save_snapshot(content_hash))==
+        retain("delayed-release-cold-future",cold->save_snapshot(content_hash)),
+        "Delayed fade changed the complete save after cold continuation.");
+}
 void inspect_locked(Runtime& r,unsigned slot,const Matrix4& support,const V& anchor){
     const auto s=state(r,slot);locked(s);const auto plant=*s.planting;
     near(plant.anchor->local_point,anchor);near(*plant.target_sole,point(support,anchor));near(sole(r,slot),point(support,anchor));near(local_point(support,sole(r,slot)),anchor);
@@ -207,5 +307,7 @@ int main(int argc,char** argv){try{
     if(argc!=1){check(argc==3&&std::string(argv[1])=="--output","Use optional --output FRESH.");output=std::filesystem::absolute(argv[2]);check(!std::filesystem::exists(output)&&std::filesystem::is_directory(output.parent_path()),"Output must be fresh with existing parent.");check(std::filesystem::create_directory(output),"Cannot create checkpoint directory.");}
     portable_owner_barrier_and_queryless_restore();portable_release_latch_and_fade();strict_v10_and_legacy_profiles();
     if(!Runtime::available()){std::cout<<"3 portable foot-planting groups passed; native physics unavailable\n";return 0;}
-    native_wrapper_drift_positive_control();native_moving_support_and_complete_cold();native_second_tick_whole_rollback();std::cout<<"6 foot-planting groups passed (3 portable, 3 actual native physics)\n";return 0;
+    native_wrapper_drift_positive_control();native_moving_support_and_complete_cold();native_second_tick_whole_rollback();
+    native_delayed_release_and_restore();
+    std::cout<<"7 foot-planting groups passed (3 portable, 4 actual native physics)\n";return 0;
 }catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}

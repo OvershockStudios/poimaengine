@@ -105,6 +105,9 @@ void parse_rules(const Json& object, RegionDefinition& definition) {
         return CellExchange{cell(value.at("cell"), grid), number(value.at("source_m3_per_second")),
             number(value.at("drain_m3_per_second"))};
     });
+    read("rain_cells", static_cast<std::size_t>(definition.config.cells_x) * definition.config.cells_z,
+        definition.rain_cells, cell);
+    std::ranges::sort(definition.rain_cells, {}, [](Cell cell) { return std::pair{cell.z, cell.x}; });
     std::sort(definition.faces.begin(), definition.faces.end(), [](const auto& left, const auto& right) {
         return std::tie(left.cell.z, left.cell.x, left.axis) < std::tie(right.cell.z, right.cell.x, right.axis);
     });
@@ -128,11 +131,19 @@ Json artifact_document(const RegionAsset& asset) {
     auto exchanges = Json::array();
     for (const auto& exchange : definition.exchanges) exchanges.push_back({{"cell", {exchange.cell.x, exchange.cell.z}},
         {"source_m3_per_second", exchange.source_m3_per_second}, {"drain_m3_per_second", exchange.drain_m3_per_second}});
-    return {{"format", artifact_format}, {"version", 1}, {"terrain_recipe_sha256", asset.terrain_recipe_sha256},
+    Json document{{"format", artifact_format}, {"version", definition.rain_cells.empty() ? 1 : 2},
+        {"terrain_recipe_sha256", asset.terrain_recipe_sha256},
         {"tiles", std::move(tiles)}, {"grid", {{"cells_x", grid.cells_x}, {"cells_z", grid.cells_z}, {"cell_size_m", grid.cell_size_m},
             {"origin_x_m", grid.origin_x_m}, {"origin_z_m", grid.origin_z_m}, {"relaxation_per_second", grid.relaxation_per_second}}},
         {"floor_heights_m", definition.floor_heights_m}, {"initial_depths_m", definition.initial_depths_m},
         {"faces", std::move(faces)}, {"exchanges", std::move(exchanges)}};
+    if (!definition.rain_cells.empty()) {
+        auto rain_cells = Json::array();
+        for (const auto cell : definition.rain_cells)
+            rain_cells.push_back({cell.x, cell.z});
+        document["rain_cells"] = std::move(rain_cells);
+    }
+    return document;
 }
 
 std::string digest(std::string_view data) {
@@ -180,8 +191,11 @@ RegionAsset decode_region_asset(std::string_view bytes) {
         require(depth <= 8, "Water asset nesting exceeds its bound.");
         return true;
     });
-    fields(object, {"format", "version", "terrain_recipe_sha256", "tiles", "grid", "floor_heights_m", "initial_depths_m", "faces", "exchanges"});
-    require(object.at("format") == artifact_format && integer(object.at("version"), 1, 1) == 1, "Unsupported water asset format.");
+    fields(object, {"format", "version", "terrain_recipe_sha256", "tiles", "grid", "floor_heights_m",
+        "initial_depths_m", "faces", "exchanges"}, {"rain_cells"});
+    require(object.at("format") == artifact_format &&
+        integer(object.at("version"), 1, 2) == (object.contains("rain_cells") ? 2u : 1u),
+        "Unsupported water asset format.");
     RegionAsset asset;
     asset.terrain_recipe_sha256 = hex(object.at("terrain_recipe_sha256"), 64);
     auto& definition = asset.definition;
@@ -243,8 +257,12 @@ Json region_authoring_schemas() {
     auto plan = object({{"revision", tick_schema}, {"terrain", std::move(source)}, {"expected_terrain_recipe_sha256", sha_schema},
         {"tile_entities", array(id_schema, 1, terrain::max_cook_tiles)}, {"grid", grid},
         {"initial_depths_m", array(range("number", 0, 1'000'000), 0, max_region_side * max_region_side)},
-        {"faces", array(std::move(faces), 0, max_region_faces)}, {"exchanges", array(exchange, 0, max_region_exchanges)}},
+        {"faces", array(std::move(faces), 0, max_region_faces)}, {"exchanges", array(exchange, 0, max_region_exchanges)},
+        {"rain_cells", array(cell, 0, max_region_side * max_region_side)}},
         {"revision", "terrain", "expected_terrain_recipe_sha256", "tile_entities", "grid"});
+    plan["properties"]["rain_cells"]["uniqueItems"] = true;
+    plan["properties"]["rain_cells"]["description"] =
+        "Cells designated to collect precipitation. Duplicate or out-of-grid cells are invalid. Omit or leave empty for no precipitation.";
     plan["description"] = "Plan one local water region on the ordered root terrain tile entities. Samples the reviewed terrain beds without publishing an asset.";
     auto cook = plan;
     cook["properties"]["expected_plan_sha256"] = sha_schema;
@@ -256,7 +274,7 @@ Json region_authoring_schemas() {
 Json region_runtime_schema() {
     auto result = object({{"session_id", id_schema}, {"tick", tick_schema},
         {"cells", array(array(range("integer", 0, max_region_side - 1), 2, 2), 0, 64)}}, {"session_id", "tick"});
-    result["description"] = "Read the region identity, latest volume receipt, authored face controls and up to 64 addressed cells at a committed tick.";
+    result["description"] = "Read the region identity, latest volume receipt, authored face controls and up to 64 addressed cells at a committed tick. Rain-enabled regions also report catchment cells and per-step and cumulative rain supply.";
     return result;
 }
 } // namespace poima::water

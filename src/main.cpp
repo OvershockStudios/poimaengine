@@ -134,6 +134,9 @@ poima::Reply run(int argc, char** argv) {
         if(action=="recover" && argc==8 && *argv[3] && std::string_view(argv[4])=="--output" && *argv[5] &&
            std::string_view(argv[6])=="--expected-snapshot-sha256" && *argv[7])
             return poima::recover_project(argv[3],argv[5],argv[7]);
+        if(action=="keep" && argc==8 && *argv[3] && std::string_view(argv[4])=="--checkpoint" && *argv[5] &&
+           std::string_view(argv[6])=="--expected-snapshot-sha256" && *argv[7])
+            return poima::keep_project_candidate(argv[3],argv[5],argv[7]);
         if(action=="splash" && argc==8 && *argv[3] && std::string_view(argv[4])=="--enabled" &&
            std::string_view(argv[6])=="--expected-manifest-sha256" && *argv[7]) {
             const std::string_view value=argv[5];

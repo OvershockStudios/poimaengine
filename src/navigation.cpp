@@ -15,6 +15,7 @@
 #include <cstring>
 #include <limits>
 #include <mutex>
+#include <optional>
 #include <set>
 #include <stdexcept>
 
@@ -336,11 +337,82 @@ std::string Mesh::metadata() const {
     return value.dump();
 }
 std::string Mesh::source_fingerprint() const {return impl_->document.at("source_fingerprint");}
-Path Mesh::path(const PathRequest& request,std::size_t allocation_limit) const {
+namespace {
+// The capsule's horizontal radius expands a conservative XZ box. Polygon
+// height includes the detail verts and the baked capsule's full headroom.
+bool overlaps_obstacle(const dtMeshTile& tile,const dtPoly& poly,
+    const ObstacleBounds& bounds,float radius,float height) {
+    const auto vertex=[&](unsigned index) {return tile.verts+3*poly.verts[index];};
+    const auto* first=vertex(0);
+    Point low{first[0],first[1],first[2]},high=low;
+    for(unsigned i=1;i<poly.vertCount;++i) {
+        const auto* point=vertex(i);
+        for(unsigned axis=0;axis<3;++axis) {
+            low[axis]=std::min(low[axis],point[axis]);
+            high[axis]=std::max(high[axis],point[axis]);
+        }
+    }
+    const auto& detail=tile.detailMeshes[&poly-tile.polys];
+    for(unsigned i=0;i<detail.vertCount;++i) {
+        const float y=tile.detailVerts[3*(detail.vertBase+i)+1];
+        low[1]=std::min(low[1],y);
+        high[1]=std::max(high[1],y);
+    }
+    if(bounds.maximum[1]<low[1] || bounds.minimum[1]>high[1]+height)return false;
+    const double x0=double(bounds.minimum[0])-radius,x1=double(bounds.maximum[0])+radius;
+    const double z0=double(bounds.minimum[2])-radius,z1=double(bounds.maximum[2])+radius;
+    if(x1<low[0] || x0>high[0] || z1<low[2] || z0>high[2])return false;
+    // A diagonal polygon's bounding rectangle is larger than its footprint.
+    // Test its edge normals too, so that empty rectangle corners stay open.
+    for(unsigned i=0;i<poly.vertCount;++i) {
+        const auto* a=vertex(i);
+        const auto* b=vertex((i+1)%poly.vertCount);
+        const double nx=double(b[2])-a[2],nz=double(a[0])-b[0];
+        double poly_min=nx*a[0]+nz*a[2],poly_max=poly_min;
+        for(unsigned j=0;j<poly.vertCount;++j) {
+            const auto* point=vertex(j);
+            const double projection=nx*point[0]+nz*point[2];
+            poly_min=std::min(poly_min,projection);
+            poly_max=std::max(poly_max,projection);
+        }
+        const double box_min=nx*(nx>=0 ? x0 : x1)+nz*(nz>=0 ? z0 : z1);
+        const double box_max=nx*(nx>=0 ? x1 : x0)+nz*(nz>=0 ? z1 : z0);
+        if(box_max<poly_min || box_min>poly_max)return false;
+    }
+    return true;
+}
+class ObstacleFilter final : public dtQueryFilter {
+    std::span<const ObstacleBounds> obstacles_;
+    float radius_,height_;
+    // One immutable tile. Memoize only polygons Detour actually visits.
+    mutable std::vector<unsigned char> states_;
+public:
+    mutable bool filtered=false;
+    ObstacleFilter(std::span<const ObstacleBounds> obstacles,float radius,float height,std::size_t polygons)
+        : obstacles_(obstacles),radius_(radius),height_(height),states_(polygons) {
+        setIncludeFlags(1);
+    }
+    bool passFilter(dtPolyRef ref,const dtMeshTile* tile,const dtPoly* poly) const override {
+        if(!dtQueryFilter::passFilter(ref,tile,poly))return false;
+        auto& state=states_[static_cast<std::size_t>(poly-tile->polys)];
+        if(state==0)state=std::ranges::any_of(obstacles_,[&](const auto& bounds) {
+            return overlaps_obstacle(*tile,*poly,bounds,radius_,height_);
+        }) ? 2 : 1;
+        if(state==2)filtered=true;
+        return state==1;
+    }
+};
+}
+Path Mesh::path(const PathRequest& request,std::size_t allocation_limit,
+    std::span<const ObstacleBounds> obstacles) const {
     DetourScope allocation(allocation_limit);
     for(auto v:request.start)check(std::isfinite(v) && std::abs(v)<=1000000,"Invalid navigation start.");
     for(auto v:request.end)check(std::isfinite(v) && std::abs(v)<=1000000,"Invalid navigation end.");
     for(auto v:request.extents)check(std::isfinite(v) && v>=.01f && v<=100,"Navigation projection extents must be .01..100 meters.");
+    check(obstacles.size()<=max_obstacles,"Navigation obstacle limit exceeded.");
+    for(const auto& bounds:obstacles)for(unsigned axis=0;axis<3;++axis)
+        check(std::isfinite(bounds.minimum[axis]) && std::isfinite(bounds.maximum[axis]) &&
+            bounds.minimum[axis]<=bounds.maximum[axis],"Invalid navigation obstacle bounds.");
     check(request.max_polygons>=1 && request.max_polygons<=4096 && request.max_corners>=2 && request.max_corners<=4096 && request.max_nodes>=32 && request.max_nodes<=4096,"Navigation path/query budget exceeds bounds.");
     std::unique_ptr<dtNavMeshQuery,QueryFree> query(dtAllocNavMeshQuery());check(bool(query) && dtStatusSucceed(query->init(impl_->mesh.get(),static_cast<int>(request.max_nodes))),"Cannot allocate navigation query.");
     dtQueryFilter filter;filter.setIncludeFlags(1);filter.setExcludeFlags(0);Path result;result.requested_start=request.start;result.requested_end=request.end;
@@ -348,8 +420,27 @@ Path Mesh::path(const PathRequest& request,std::size_t allocation_limit) const {
     result.start_found=start!=0;result.end_found=end!=0;
     result.start_distance=result.start_found ? distance(request.start,result.projected_start) : 0;result.end_distance=result.end_found ? distance(request.end,result.projected_end) : 0;
     if(!start || !end){result.status="unreachable";return result;}
+    std::optional<ObstacleFilter> blocker_filter;
+    if(!obstacles.empty()) {
+        const auto& clearance=impl_->document.at("clearance");
+        blocker_filter.emplace(obstacles,clearance.at("radius").get<float>(),clearance.at("height").get<float>(),impl_->tile.polygons.size()/12);
+        // First project against static geometry, then reject occupied endpoints.
+        // Reprojecting could silently move a goal onto the far side of a door.
+        for(const auto ref:{start,end}) {
+            const dtMeshTile* tile=nullptr;
+            const dtPoly* poly=nullptr;
+            check(dtStatusSucceed(impl_->mesh->getTileAndPolyByRef(ref,&tile,&poly)),"Cannot resolve navigation endpoint polygon.");
+            if(!blocker_filter->passFilter(ref,tile,poly)) {
+                result.status="unreachable";
+                result.obstacle_filtered=true;
+                return result;
+            }
+        }
+    }
+    const dtQueryFilter* route_filter=blocker_filter ? static_cast<const dtQueryFilter*>(&*blocker_filter) : &filter;
     std::vector<dtPolyRef> corridor(request.max_polygons);int count=0;
-    const auto status=query->findPath(start,end,result.projected_start.data(),result.projected_end.data(),&filter,corridor.data(),&count,static_cast<int>(request.max_polygons));
+    const auto status=query->findPath(start,end,result.projected_start.data(),result.projected_end.data(),route_filter,corridor.data(),&count,static_cast<int>(request.max_polygons));
+    result.obstacle_filtered=blocker_filter && blocker_filter->filtered;
     check(!dtStatusFailed(status) && count>=0 && static_cast<std::uint32_t>(count)<=request.max_polygons,"Navigation path query failed or returned an invalid count.");result.polygons=static_cast<std::uint32_t>(count);
     if(!count){result.status="unreachable";return result;}
     result.reachable_end=result.projected_end;

@@ -211,6 +211,13 @@ These selection changes create no authored revision or undo entry. The
 [selection checks](evidence/m2-editor-selection-reconciliation.json) distinguish
 managed model tests, native bridge checks and displayed/physical interaction.
 
+Inspector Back and Forward revisit up to 64 selections in the current
+workspace. History includes explicit deselection, skips deleted objects, and
+replaces its forward path when you choose a different object. The breadcrumb
+shows the selected object and its parent. Click the parent or open the ancestor
+menu to select a higher-level object. These controls use the same draft guards
+and shared Scene/Hierarchy selection as a direct pick.
+
 The Project browser starts in the opened manifest's directory. When you open a
 world directly, it looks up to 16 levels for `project.poimaproject` or
 `project.json` and falls back to the world directory. It supports lazy folder

@@ -60,19 +60,52 @@ Named input presses flip each matching face between its initial and action
 openness. Held inputs leave the gate in place. One press can operate several
 faces. Authored source and drain rates apply each committed 60 Hz tick.
 
+## Collect precipitation
+
+Set optional `rain_cells` in the plan and cook requests to designate an open
+catchment, for example `"rain_cells":[[0,0],[1,0]]`. Addresses must be unique
+and within the grid. The plan orders them by Z then X before hashing.
+An absent or empty list keeps the original region format and behavior.
+A nonempty list uses `.pwater` v2 and requires an export runtime with
+`features.water_rain`.
+
+Give the runtime the same one-second precipitation samples used for
+[surface wetness](SURFACE_WETNESS.md#apply-rain-and-drying), through
+`runtime.wetness.step` or compiled gameplay's `AdvanceSurfaceWetness`.
+A catchment can use the clock without a `SurfaceWetness` receiver.
+The summed batch depth in nanometres becomes water depth in each designated
+cell on the first simulation tick. Existing source and drain rules run next,
+then water flows across open faces. A batch advances the weather cursor by
+its number of game seconds and uses the requested number of 60 Hz simulation
+ticks. Identical doses produce the same total supplied volume at the same
+catchment area. Drain and flow results follow the actual simulation cadence.
+
+The authored list defines which cells collect direct precipitation. Adjacent
+cells can receive runoff across open faces. Film retention, drying, and
+moving shelter affect drawable receivers. These settings do not affect
+catchment supply.
+
 ## Observe and verify local flow
 
 Discover `runtime.water.inspect` in a simulation build. Pass `session_id`, the
 exact `tick`, and up to 64 `cells` as `[x,z]` pairs. An observation reports the
 plan SHA-256, sampled depths and surface heights, face controls, and the latest
-tick's volume receipt. Check a dry cell beyond the closed sluice, replay a
+tick's volume receipt. A catchment also reports its sorted `rain.cells`,
+`rain.cumulative_depth_nm`, `rain.cumulative_m3`, and `last_step.rain_m3`.
+The cumulative depth counts across the shared weather clock. Multiply it
+by 10⁻⁹, the selected cell count and the area of each cell in square metres
+to obtain cubic metres supplied. Check that the latest volume equals the
+previous volume plus authored supply and rain supply minus the drain, within
+floating-point tolerance. Check a dry cell beyond the closed sluice, replay a
 `pressed:true` named input on the controller, and check for downstream depth.
 The same read is available to a [standalone verification suite](GAME_VERIFICATION.md).
 
 The fixed tick owns water state. A failed batch restores depths, gate settings
 and receipts. Durable saves store the state under the frozen region identity.
 Fresh-process loads verify the identity and restore the water tick before more
-input. The package includes the selected `.pwater` and cooked terrain meshes.
+input. Rain-enabled saves include the water depths and cumulative supply
+ledger, whose bounds depend on the saved weather cursor and simulation tick.
+The package includes the selected `.pwater` and cooked terrain meshes.
 Keep the editable heightfield recipe for later revisions.
 
 The renderer projects wet cells into one opaque, depth-tested mesh.
@@ -88,7 +121,7 @@ separate work.
 Run the integrated checks from a built simulation checkout.
 
 ```sh
-ctest --test-dir build/linux-game -R '^(shallow_water_native|water_region_native|water_region_scene_native|world_water_contract)$' --output-on-failure
+ctest --test-dir build/linux-game -R '^(shallow_water_native|water_region_native|water_region_scene_native|world_water(_rain)?_contract)$' --output-on-failure
 ```
 
 From WSL, use an installed Windows runtime of the same build for capture and

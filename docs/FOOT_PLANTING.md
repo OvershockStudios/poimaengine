@@ -110,6 +110,27 @@ The solver never moves the pelvis or stretches a limb to hide an unreachable
 anchor. Natural lift uses the existing height fade; forced failure release has
 no additional inertial transition and can be abrupt.
 
+### Calibrate the start of toe-off
+
+An optional `plant_release_height` lets an already anchored foot keep its
+requested correction through a small rise in the source pose. It requires
+`plant_lock: true` and a finite value strictly between `plant_height` and
+`lift_height`, in model units above `reference_height`. For example, a rig
+with a 0.03 plant height and a 0.15 lift height can set its release height to
+0.09. An anchored foot then retains its requested correction through 0.09
+and smoothstep fades over the remaining interval to 0.15. Acquisition and
+unheld terrain conformance continue to use 0.03.
+
+Use the measured source sole rise and committed stance to calibrate this
+setting for each rig. Compare `grounding.weight` with the effective requested
+weight before interpreting `planting.position_error`. At full influence a
+locked sole should track its support within the solver tolerance. At partial
+influence the distance includes its intentional departure toward the source
+pose. A higher start keeps the sole fixed longer and concentrates the fade
+into a narrower height interval. Inspect normal-speed motion and check reach
+and correction limits through turns. Support failures still release
+immediately. The profile uses the same per-foot probe and height policy.
+
 ## State and failures
 
 Planting statuses are `uninitialized`, `disabled`, `lifted`, `seeking`,
@@ -138,6 +159,8 @@ requested controls, anchor/latch, cached contact, targets and residuals. Its
 selects the existing rate-overlay fields. Version 9 remains the separate
 rate-overlay encoding. Sessions without planting retain their earlier 1–9
 formats and shapes.
+Version 10 stores `plant_release_height` in the frozen grounding definition
+when supplied. Omit the field to keep the original fade and snapshot shape.
 
 Restore preserves saved numbers. Animation reconstruction checks achieved sole
 geometry and both contact/anchor residuals without invoking contact or support
@@ -183,6 +206,11 @@ compares complete checkpoint bytes. Run it under a bounded process-tree owner.
 It requires neither a renderer nor a new C# build. Windows rendering is a
 separate observation scope; headless success does not establish rendered gait
 quality or physical interaction.
+
+The native foot-planting test includes a separate analytic toe-off clip on a
+physical support. It compares the two fade calibrations during the same rise,
+checks the committed sole rather than only the requested weight, then restores
+from the middle of a partial fade and compares complete saves after replanting.
 
 This is a sole-point and orientation constraint. Whole-shoe clearance, heel/toe
 articulation, pelvis/full-body balance, dynamic-body support, general contact

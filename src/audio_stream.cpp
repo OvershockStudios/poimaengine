@@ -112,10 +112,19 @@ struct AudioStream::Impl {
             } else dsp.direct_done=iplDirectEffectGetTail(dsp.direct,&middle)==IPL_AUDIOEFFECTSTATE_TAILCOMPLETE;
             iplBinauralEffectApply(dsp.spatial,&spatial,&middle,&out);
         }
+        const float bus_gain=state.sound.bus_gain();
+        // Keep filter/tail advancement and retirement identical for muted
+        // voices, without touching the output assigned to other sources.
+        if(bus_gain==0)return;
         for(std::size_t k=0;k<audio_block;++k)if(cursor+k>=begin) {
             const float audibility=std::lerp(start_audibility,end_audibility,float(k+1)/audio_block);
-            mix[2*k]+=left[k]*state.sound.gain*state.gain*audibility;
-            mix[2*k+1]+=right[k]*state.sound.gain*state.gain*audibility;
+            if(bus_gain==1) {
+                mix[2*k]+=left[k]*state.sound.gain*state.gain*audibility;
+                mix[2*k+1]+=right[k]*state.sound.gain*state.gain*audibility;
+            } else {
+                mix[2*k]+=left[k]*state.sound.gain*state.gain*audibility*bus_gain;
+                mix[2*k+1]+=right[k]*state.sound.gain*state.gain*audibility*bus_gain;
+            }
         }
     }
     void block(std::span<float> mix) {

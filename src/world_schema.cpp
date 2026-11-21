@@ -9,6 +9,7 @@
 #include "pose_frames.hpp"
 #include "poima/scene.hpp"
 #include "surface_mark_validation.hpp"
+#include "audio_buses.hpp"
 #include "poima/terrain_asset.hpp"
 #include "foliage_authoring.hpp"
 #include "water_asset.hpp"
@@ -76,9 +77,13 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     const Json mesh = object_schema({{"primitive", {{"const", "box"}}}, {"albedo", vector({{"type", "number"}, {"minimum", 0}, {"maximum", 1}}, 3)},
         {"visible", {{"type", "boolean"}}},
         {"cast_shadows",{{"type","boolean"},{"default",true}}},{"receive_shadows",{{"type","boolean"},{"default",true}}}}, {"primitive", "albedo", "visible"});
-    const Json collider = object_schema({{"half_extents", vector({{"type","number"},{"minimum",0.001},{"maximum",10000}},3)},
+    Json collider = object_schema({{"half_extents", vector({{"type","number"},{"minimum",0.001},{"maximum",10000}},3)},
         {"motion",{{"enum",{"static","dynamic","kinematic"}}}}, {"mass",{{"type","number"},{"exclusiveMinimum",0},{"maximum",1e6}}},
-        {"friction",{{"type","number"},{"minimum",0},{"maximum",2}}}, {"restitution",{{"type","number"},{"minimum",0},{"maximum",1}}}}, {"half_extents","motion","mass","friction","restitution"});
+        {"friction",{{"type","number"},{"minimum",0},{"maximum",2}}}, {"restitution",{{"type","number"},{"minimum",0},{"maximum",1}}},
+        {"navigation_obstacle",{{"type","boolean"},{"default",false},{"description","Exclude this authored box from the static navigation bake and filter runtime routes using its live physics bounds."}}}},
+        {"half_extents","motion","mass","friction","restitution"});
+    collider["if"]={{"required",{"navigation_obstacle"}},{"properties",{{"navigation_obstacle",{{"const",true}}}}}};
+    collider["then"]={{"properties",{{"motion",{{"enum",{"static","kinematic"}}}}}}};
     const Json stance=object_schema({{"crouched_height",{{"type","number"},{"exclusiveMinimum",0},{"maximum",4},{"default",1}}},
         {"crouched_speed",{{"type","number"},{"exclusiveMinimum",0},{"maximum",30},{"default",2}}},
         {"camera_drop",{{"type","number"},{"minimum",0},{"maximum",4},{"default",0.8}}}},{});
@@ -90,8 +95,14 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"jump_speed",{{"type","number"},{"minimum",0},{"maximum",20}}}, {"camera",parent},{"stance",stance},{"locomotion",locomotion}}, {"radius","height","speed","jump_speed","camera"});
     const Json asset_id={{"type","string"},{"pattern","^[0-9a-f]{64}$"}};
     const Json unit={{"type","number"},{"minimum",0},{"maximum",1}};
+    const Json lod_level=object_schema({{"asset",asset_id},{"primitive",{{"type","integer"},{"minimum",0},{"maximum",9999}}},
+        {"min_distance_m",{{"type","number"},{"exclusiveMinimum",0},{"maximum",max_mesh_lod_distance_m}}}},
+        {"asset","primitive","min_distance_m"});
     const Json static_mesh=object_schema({{"asset",asset_id},{"primitive",{{"type","integer"},{"minimum",0},{"maximum",9999}}},{"visible",{{"type","boolean"}}},
-        {"cast_shadows",{{"type","boolean"},{"default",true}}},{"receive_shadows",{{"type","boolean"},{"default",true}}}}, {"asset","primitive","visible"});
+        {"cast_shadows",{{"type","boolean"},{"default",true}}},{"receive_shadows",{{"type","boolean"},{"default",true}}},
+        {"lods",{{"type","array"},{"minItems",1},{"maxItems",max_mesh_lod_levels},{"items",lod_level},
+          {"description","Optional alternate rigid geometry. Distances increase and triangle counts decrease from LOD0. Base materials and collision stay independent of visual tiers."}}}},
+        {"asset","primitive","visible"});
     const Json mesh_collider=object_schema({{"asset",asset_id},{"primitive",{{"type","integer"},{"minimum",0},{"maximum",9999}}},
         {"friction",{{"type","number"},{"minimum",0},{"maximum",2}}},{"restitution",unit}}, {"asset","primitive","friction","restitution"});
     const Json model_node={{"type","integer"},{"minimum",0},{"maximum",9999}};
@@ -122,6 +133,8 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"sole_forward",vector(Json{{"type","number"},{"minimum",-1.000001},{"maximum",1.000001}},3)},
         {"reference_height",{{"type","number"},{"minimum",-1000},{"maximum",1000}}},
         {"plant_height",{{"type","number"},{"minimum",0},{"maximum",10},{"default",.03}}},
+        {"plant_release_height",{{"type","number"},{"exclusiveMinimum",0},{"exclusiveMaximum",10},
+            {"description","Optional fade start for a held plant, in model units above reference_height. Requires plant_lock=true and plant_height < plant_release_height < lift_height. Acquisition and unheld conformance still use plant_height."}}},
         {"lift_height",{{"type","number"},{"exclusiveMinimum",0},{"maximum",10},{"default",.15}}},
         {"probe_above",{{"type","number"},{"minimum",.001},{"maximum",10},{"default",.3}}},
         {"probe_below",{{"type","number"},{"minimum",.001},{"maximum",10},{"default",.6}}},
@@ -130,6 +143,8 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"plant_lock",{{"type","boolean"},{"default",false},
             {"description","Optional support-relative planted-foot anchor. Capture at plant_height; release/rearm on lift or disabled control. Support/constraint failures disarm until release, preventing repeated stance reacquisition. Uses one fresh validation ray and the rigid static/kinematic body frame; no pelvis or dynamic-body balance."}}}},
         {"sole_offset","sole_up","sole_forward","reference_height"});
+    ik_chain["grounding"]["if"]={{"required",{"plant_release_height"}}};
+    ik_chain["grounding"]["then"]={{"required",{"plant_lock"}},{"properties",{{"plant_lock",{{"const",true}}}}}};
     ik_chain["grounding"]["description"]="Optional native foot contact owner. Unit orthogonal sole axes and plant_height < lift_height required. At most two feet per rig, 64 per world. Only final post-physics sampling probes static/kinematic supports; misses and raised feet preserve animation. Requires upright positive uniform wrapper. Manual controls and explicit end_orientation are rejected for owned slots.";
     rig_fields["ik"]={{"type","array"},{"maxItems",8},{"items",object_schema(ik_chain,{"slot","root","middle","end","target","pole"})}};
     Json root_fields={{"node",model_node},{"mode",{{"enum",{"extract","character"}},{"default","extract"}}},
@@ -141,7 +156,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     rig_fields["root_motion"]=std::move(root_profile);
     const auto animation_rig=object_schema(rig_fields,{"asset","clip","time","speed","loop","playing"});
     const auto rig_node=object_schema({{"rig",id},{"node",model_node}},{"rig","node"});
-    auto skin_fields=static_mesh.at("properties");skin_fields["rig"]=id;skin_fields["node"]=model_node;
+    auto skin_fields=static_mesh.at("properties");skin_fields.erase("lods");skin_fields["rig"]=id;skin_fields["node"]=model_node;
     const auto skinned_mesh=object_schema(skin_fields,{"asset","primitive","visible","rig","node"});
     Json pbr=object_schema({{"base_color",vector(unit,3)},{"emissive",vector(unit,3)},{"metallic",unit},{"roughness",unit},{"double_sided",{{"type","boolean"}}},
         {"alpha_mode",{{"enum",{"opaque","mask"}},{"default","opaque"}}},
@@ -196,7 +211,10 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"required",Json::array({"enabled"})},{"properties",Json{{"enabled",Json{{"const",true}}}}}}}}}};
     lighting_environment["allOf"]=Json::array({Json{{"if",enabled_ibl},{"then",enabled_sky}}});
     const Json acoustic=object_schema({{"absorption",vector(unit,3)},{"transmission",vector(unit,3)},{"scattering",unit},{"enabled",{{"type","boolean"}}}}, {"absorption","transmission","scattering","enabled"});
-    const Json emitter=object_schema({{"asset",asset_id},{"gain",{{"type","number"},{"minimum",0},{"maximum",4}}},{"loop",{{"type","boolean"}}},{"enabled",{{"type","boolean"}}}}, {"asset","gain","loop","enabled"});
+    const Json audio_bus_name={{"type","string"},{"pattern",audio_buses::name_pattern}};
+    const Json audio_bus_catalog={{"type","object"},{"propertyNames",audio_bus_name},{"minProperties",1},
+        {"maxProperties",audio_buses::max_buses},{"additionalProperties",{{"type","number"},{"minimum",0},{"maximum",1}}}};
+    const Json emitter=object_schema({{"asset",asset_id},{"gain",{{"type","number"},{"minimum",0},{"maximum",4}}},{"loop",{{"type","boolean"}}},{"enabled",{{"type","boolean"}}},{"bus",audio_bus_name}}, {"asset","gain","loop","enabled"});
     Json hit_variants=Json::array();
     for(const auto* shape:{"sphere","box","capsule"}) {
         Json props={{"owner",id},{"name",{{"type","string"},{"pattern","^[a-z][a-z0-9_.-]{0,63}$"}}},
@@ -276,6 +294,8 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     snow_definition["description"]="Bind two existing cooked terrain entities in west-east order. Each must use the same visible static primitive for rendering and collision. Null clears the binding.";
     ops.push_back(object_schema({{"op",{{"const","snow.set"}}},
         {"definition",{{"anyOf",Json::array({snow_definition,Json{{"type","null"}}})}}}},{"op","definition"}));
+    ops.push_back(object_schema({{"op",{{"const","audio.buses.set"}}},
+        {"buses",{{"anyOf",Json::array({audio_bus_catalog,Json{{"type","null"}}})}}}},{"op","buses"}));
     ops.push_back(object_schema({{"op",{{"const","surface_mark.profile.set"}}},{"id",mark_profile_id},
         {"mask",{{"anyOf",Json::array({asset_id,Json{{"type","null"}}})}}}},{"op","id","mask"}));
     ops.push_back(object_schema({{"op",{{"const","asset.provenance.set"}}},{"asset",asset_id},{"records",{{"type","array"},{"maxItems",8},{"uniqueItems",true},{"items",asset_id}}}},{"op","asset","records"}));
@@ -287,11 +307,16 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     const Json texture_paths={{"enum",{"/base_color/asset","/emissive/asset","/metallic_roughness/asset","/normal/asset","/occlusion/asset"}}};
     const Json texture_type={{"const","PbrTextures"}},direct_path={{"const","/asset"}};
     const Json sprite_type={{"const","ParticleEmitter"}},sprite_path={{"const","/sprite/texture"}};
+    const Json lod_type={{"const","StaticMesh"}};
+    const Json lod_path={{"type","string"},{"pattern","^/lods/[0-3]/asset$"}};
     Json reference_cursor={{"oneOf",Json::array({
         reference_cursor_variant("entity",{{"enum",{"AnimationRig","AudioEmitter","MeshCollider","SkinnedMesh","StaticMesh"}}},direct_path),
         reference_cursor_variant("entity",texture_type,texture_paths),
         reference_cursor_variant("entity",sprite_type,sprite_path),
+        reference_cursor_variant("entity",lod_type,lod_path),
         reference_cursor_variant("template",{{"const","StaticMesh"}},direct_path),
+        reference_cursor_variant("template",lod_type,lod_path),
+        reference_cursor_variant("template",lod_type,{{"type","string"},{"pattern","^/entities/(?!0{32}/)[0-9a-f]{32}/components/StaticMesh/lods/[0-3]/asset$"}}),
         reference_cursor_variant("template",texture_type,texture_paths),
         reference_cursor_variant("template",sprite_type,sprite_path),
         reference_cursor_variant("template",sprite_type,{{"type","string"},{"pattern","^/entities/(?!0{32}/)[0-9a-f]{32}/components/ParticleEmitter/sprite/texture$"}}),
@@ -313,7 +338,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 191}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 192}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -872,6 +897,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     result["invariants"].push_back("Capture/play draw_instancing defaults true. Adjacent visible objects share a command only with consecutive GPU object slots and identical geometry, previous-position stream, bindings and pipeline. camera_draws/shadow_draws retain object/view-instance counts; camera_batches/shadow_batches count geometry commands, excluding sky/composition/UI. Direct false is a reference; this is CPU-planned instancing, not GPU visibility/indirect execution or resident-scene updates.");
     result["invariants"].push_back("Capture/play culling defaults true; camera and each shadow view cull independently. Profile defaults false. Render diagnostics report submitted draws and optional CPU/GPU intervals, not a qualified game frame time.");
     result["invariants"].push_back("Kinematic targets begin on the first tick of step/replay segments and persist across batches. Targets must be unique roots, normalized, at most 100 m/s and 20 rad/s. Raycasts query physics, including hidden colliders; ties use stable IDs. Primitive origin-inside hits have no surface normal; mesh hits retain triangle winding normals.");
+    result["invariants"].push_back("StaticMesh.lods optionally declares one to four indexed rigid primitives with increasing min_distance_m thresholds and decreasing triangle counts. Camera distance from the object's world origin selects the same tier for all camera and shadow views. LOD0 retains material ownership and physics/navigation use their authored colliders. Completed draw diagnostics report selected tiers for LOD-enabled objects.");
     result["invariants"].push_back("MeshCollider is an explicit static indexed model primitive, independent of rendering visibility. It cannot combine with BoxCollider/CharacterController or inherit moving/animation-owned transforms. Physics contacts use triangle front faces; rays query both sides and return the source triangle ordinal (null for non-mesh hits), retaining winding normals. No convexification, texture-cutout collision or deforming meshes. Limits: 100000 triangles/300000 vertices per body and 250000 triangles/750000 vertices per world. Geometry/material/transform validation runs at runtime preparation and export; malformed or degenerate geometry rejects.");
     result["invariants"].push_back("Managed gameplay is optional trusted project code. One module per runtime; typed native state is inspected/edited separately from authoring. Load/edit use tick/revision guards and shared retry receipts. Use input is a first-tick edge. Gameplay updates and queued motion join physics batch rollback.");
     result["input_actions"]={{"maximum_controllers",32},{"maximum_actions_per_controller",32},{"name_pattern","^[a-z][a-z0-9_.-]{0,63}$"},
@@ -894,6 +920,10 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         methods[method]=object_schema(props,required);
     }
     methods["runtime.audio.voices"]=object_schema({{"session_id",id},{"tick",rev},{"after",rev},{"limit",{{"type","integer"},{"minimum",1},{"maximum",256},{"default",64}}}}, {"session_id","tick"});
+    result["audio_buses"]={{"operation","audio.buses.set"},{"catalog",audio_bus_catalog},
+        {"routing","Optional AudioEmitter.bus refers to one authored name. Unrouted sources keep unity gain."},
+        {"runtime","The mix and routes freeze at session start and persist in the saved authored definition."},
+        {"observation","Routed sources and voices report bus, bus_gain and effective_gain before acoustic path attenuation and output-sink gain."}};
     const auto audio_segment=object_schema({{"ticks",{{"type","integer"},{"minimum",1},{"maximum",600}}},
         {"inputs",{{"type","array"},{"maxItems",32},{"items",input}}},{"motions",motions},{"sounds",sounds}}, {"ticks"});
     methods["runtime.audio.replay"]=object_schema({{"session_id",id},{"request_id",id},{"expected_tick",rev},{"listener",id},
@@ -1223,11 +1253,13 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"runtime","Native-owned membership; queries sorted by entity ID; writes publish after Tick and before physics. Whole batch rollback includes payloads and component revision."},
         {"save_guard","save.write/load require expected_component_revision when replacing or saving an active runtime with declared custom schemas. Stopped restore accepts absent or null."}};
     Json recipe_properties=Json::object();for(const auto* type:{"Transform","BoxCollider","MeshRenderer","StaticMesh","PbrMaterial","PbrTextures","ParticleEmitter"})recipe_properties[type]=components.at(type);
+    recipe_properties["ParticleEmitter"]["properties"].erase("rain");
     auto recipe_components=object_schema(recipe_properties,{"Transform"});recipe_components["patternProperties"]={{"^game:[0-9a-f]{32}$",custom_values}};
     mutations.push_back(object_schema({{"op",{{"const","template.set"}}},{"id",stable_type},{"name",name},{"components",recipe_components}},{"op","id","name","components"}));
     auto member_components=object_schema(components,{"Transform"});
     member_components["properties"].erase("FootprintSurface");
     member_components["properties"].erase("SurfaceWetness");
+    member_components["properties"]["ParticleEmitter"]["properties"].erase("rain");
     member_components["patternProperties"]={{"^game:[0-9a-f]{32}$",custom_values}};
     const auto template_member=object_schema({{"name",name},{"parent",{{"anyOf",Json::array({stable_type,Json{{"type","null"}}})}}},
         {"components",member_components}},{"name","parent","components"});
@@ -1305,7 +1337,9 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     result["wetness"]={{"available",Runtime::available()},{"component","SurfaceWetness"},
         {"seconds_per_quantum",1},{"max_receivers",wetness::max_receivers},{"max_batch",wetness::max_batch},
         {"max_rain_nm",wetness::max_rain_nm},{"film_units_per_nm",wetness::units_per_nm},
-        {"shelter_distance_m",wetness::shelter_distance_m},{"snapshot_version",1}};
+        {"shelter_distance_m",wetness::shelter_distance_m},{"snapshot_version",1},
+        {"precipitation",{{"component","ParticleEmitter.rain"},{"window_ticks",rain_particle_window_ticks},
+            {"max_particles_per_tick",max_rain_particles_per_tick},{"observation","runtime.particles.inspect"}}}};
     if(Runtime::available()) {
         auto snow_step=methods.at("runtime.step");
         snow_step["properties"]["snow_stamp"]=std::move(snow_stamp);
@@ -1320,7 +1354,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
                 {"items",unsigned_range(0,wetness::max_rain_nm)}}}},
             {"first_quantum","rain_nm"});
         wetness_step["required"].push_back("wetness_dose");
-        wetness_step["description"]="Advance a guarded runtime step with contiguous rain depths in nanometres per game second. The first simulated tick supplies the committed receiver poses. Outside runtime-game-session v1.";
+        wetness_step["description"]="Advance a guarded runtime step with contiguous rain depths in nanometres per game second. The first simulated tick adds the batch depth to authored water rain_cells and supplies the committed poses for film receivers. The latest depth sets the authored precipitation rate. Outside runtime-game-session v1.";
         methods["runtime.wetness.step"]=std::move(wetness_step);
         methods["runtime.wetness.inspect"]=object_schema({{"session_id",id},{"tick",rev},
             {"structure_revision",rev},{"entity",id}},{"session_id","tick","structure_revision"});

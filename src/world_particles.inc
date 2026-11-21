@@ -27,6 +27,11 @@
             sources.push_back({{"id", std::to_string(source.id)}, {"entity", source.entity}, {"draining", source.draining},
                 {"position_m", source.status.pose.position_m}, {"rotation", source.status.pose.rotation},
                 {"emitting", source.status.emitting}, {"counts", counts(source.status.particles)}});
+            if(source.rain) {
+                const auto& rain=*source.rain;
+                sources.back()["rain"]={{"phase",rain.phase},{"scheduled_births",rain.scheduled_births},
+                    {"blocker",rain.blocker ? Json(*rain.blocker) : Json(nullptr)}};
+            }
             if (source.sprite) sprite_sources.emplace(source.id, &source);
         }
         auto instances = Json::array();
@@ -47,7 +52,14 @@
             }
             last = instance.id;
         }
-        return {{"session_id", runtime_id_}, {"tick", tick}, {"active", observed.active},
+        Json result={{"session_id", runtime_id_}, {"tick", tick}, {"active", observed.active},
             {"counts", counts(observed.status.particles)}, {"sources", std::move(sources)},
             {"particles", std::move(instances)}, {"next_after", std::move(next)}};
+        if(observed.rain) {
+            const auto& rain=*observed.rain;
+            result["rain"]={{"rain_nm",rain.rain_nm ? Json(*rain.rain_nm) : Json(nullptr)},
+                {"ticks_remaining",rain.ticks_remaining},
+                {"sample_tick",rain.sample_tick ? Json(*rain.sample_tick) : Json(nullptr)}};
+        }
+        return result;
     }

@@ -17,12 +17,18 @@ public:
     std::span<const RegionFace> face_rules() const noexcept { return faces_; }
     const std::string& plan_sha256() const noexcept { return plan_sha256_; }
     const std::optional<StepReport>& last_report() const noexcept { return last_report_; }
+    std::span<const Cell> rain_cells() const noexcept { return rain_cells_; }
+    std::uint64_t cumulative_rain_nm() const noexcept { return cumulative_rain_nm_; }
+    double cumulative_rain_m3() const noexcept;
 
     // An action toggles each assigned face once, even if it appears more
     // than once within the pressed edges for this tick.
-    StepReport step(std::span<const std::string_view> pressed = {});
+    StepReport step(std::span<const std::string_view> pressed = {},
+                    std::uint32_t rain_depth_nm = 0,
+                    std::optional<std::uint64_t> first_quantum = {});
     nlohmann::json save() const;
-    void restore(const nlohmann::json& saved, std::uint64_t expected_tick);
+    void restore(const nlohmann::json& saved, std::uint64_t expected_tick,
+                 std::optional<std::uint64_t> next_quantum = {});
 
 private:
     Grid grid_;
@@ -31,6 +37,11 @@ private:
     std::vector<CellExchange> exchanges_;
     std::string plan_sha256_;
     std::optional<StepReport> last_report_;
+    std::vector<Cell> rain_cells_;
+    std::uint64_t cumulative_rain_nm_ = 0;
+    std::uint32_t last_rain_nm_ = 0;
+    std::optional<std::uint64_t> first_rain_quantum_;
+    double rain_volume_m3(std::uint64_t depth_nm) const noexcept;
 };
 
 }

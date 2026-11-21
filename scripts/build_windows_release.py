@@ -18,7 +18,7 @@ from windows_release_inventory import build_inventory
 
 COLLECTION = ROOT / 'examples/collection-game'
 LAUNCHER = ROOT / 'desktop/Poima.Launcher/Poima.Launcher.csproj'
-SDK = ROOT / '.cache/toolchains/dotnet-10.0.401/dotnet'
+SDK = ROOT / '.cache/toolchains/dotnet-10.0.404/dotnet'
 RUNTIME_PACKS = {
     'microsoft.netcore.app.runtime.win-x64': ('LICENSE.TXT', 'THIRD-PARTY-NOTICES.TXT'),
     'microsoft.windowsdesktop.app.runtime.win-x64': ('LICENSE',),
