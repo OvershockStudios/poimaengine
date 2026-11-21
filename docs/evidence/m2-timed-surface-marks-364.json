@@ -1,0 +1,3487 @@
+{
+  "engine_version": "0.0.364",
+  "world_schema_revision": 185,
+  "sources_sha256": {
+    ".gitignore": "e4b1f8f066baabc57ee998c02d7c30e640f1f44abaeb0efaa71c59f96f1054d2",
+    "CMakeLists.txt": "6bf943ab843c4dfed4f254b37caed4b626dd67a1def0403959921d694654e681",
+    "include/poima/gameplay_abi.h": "9207aeb2eb5cbc6ae980df8ad9f94faf25d748a6e572629a9ba39b05808646c3",
+    "include/poima/gameplay_compatibility.hpp": "89ee59a9139981367aff86104614bacc30f759ff190e835877d867f4e88dcbd9",
+    "include/poima/runtime.hpp": "9c1894baa5f8535e9f485d22e0d145527d9ab1ffa33d5f09857a25dbdd46b9d1",
+    "managed/Poima.Gameplay/GameplayRequirements.cs": "eed97eab68096f65fb66ba4f3856a0f717fdebaa76a822896617655a38b3f6a4",
+    "managed/Poima.Gameplay/SurfaceMarks.cs": "094cda50623a27c42be3e55743758504b0c1aa04b9058aad369c551e4aaf0d60",
+    "managed/Poima.ManagedBridge/Entry.cs": "822f3fe6d59c4da057a4d29a6a06d1d096a5fd189d32c9b96a8e97a3b0816243",
+    "managed/Poima.NativeGame.Generator/Program.cs": "96245dbf1728d4dc56c0ac2591d407913aacfa0f2004bd84672dad1d5a5ed979",
+    "scripts/publish_native_gameplay.py": "a4fef80ec7c18eff82c314a951d851078259a293a49505b77e65f8bf891b0eb1",
+    "src/gameplay.cpp": "d26d3c8e9aecfbb29fa4de80ec95c46604193b9c2e9912db985f920bb7537659",
+    "src/runtime.cpp": "a59c691969ff15ef41079a0911582e5327e3a107edb4c3a54130f6b6016d848f",
+    "src/runtime_disabled.cpp": "0c1a7fc4fa4da65548475aad04b06ee6f6405fc5f6624e70b87304ffc86f73ad",
+    "src/runtime_save.inc": "6e28783fc06ab03426ae202cf9bd01e438065c20634bac0d4af7afa7ceeac167",
+    "src/runtime_surface_marks.inc": "ecf6ceda84d64b3b6008d8f3781e29cdc6108da9c0459d525131bcbb0a4295b6",
+    "src/runtime_ui.inc": "87b1b2697916b6cd4a14724342719cea74c6ad91fbbe0ca26585ec66c7651935",
+    "src/surface_marks_json.hpp": "6e8e50366d1502a043b41df3aaa62a7bf6d2a7908db92c369a64d172c0536695",
+    "src/world_schema.cpp": "31b550a9a524ffe65e47e0457fcf9954c78722bfdcd15af8db5dec19a00d5c3e",
+    "src/world_surface_marks.inc": "9d7c6c231d935132fe7dbed6e60859472d99a1cc0ec7fb47e96ac08ac438a106",
+    "tests/asset_references_contract.py": "7190c97fbd4f089a9620e30126f123eb6f14b488b3d7c26791b76177611e8187",
+    "tests/gameplay_compatibility_native.cpp": "df763bcd9b5e84e8c928acbb98d0d097b4f75f09e407d5f50ffa80d97408a321",
+    "tests/gameplay_player_preferences_native.cpp": "1311fbb91b1ef8665875370432a9ce5a38f3150ef66a4bd29376d0e1c3b672eb",
+    "tests/managed_service_abi/Program.cs": "dac4c323cb6049cf02788f284822f314471e7a119723a821938472a8884f227d",
+    "tests/managed_service_abi/SurfaceMarksExtension.cs": "ae63ed3650478a9df3a521d1f3a66797151b68cd3329ccb9ce8300cbdf25c07f",
+    "tests/managed_service_abi/TimedSurfaceMarksExtension.cs": "c6136970e45f057e850908bfc162a0cb1ff4060cc923457843c76ab49f337818",
+    "tests/managed_timed_surface_mark_gameplay/ManagedTimedSurfaceMarkGame.cs": "fe5036848c64319deaff102127745569760ae709e9046c414b01f7758a0d128b",
+    "tests/managed_timed_surface_mark_gameplay/Poima.ManagedTimedSurfaceMarkGame.csproj": "d962388628932261c075561f0f7b1ead35ea9cbbcaf3cabd2475bbfe016e645f",
+    "tests/runtime_descriptor_contract.py": "46bb1321d9093a3ff6968d2dd80d9e8ec7487b622051a5d667fa1287a1047985",
+    "tests/timed_surface_marks_contract.py": "abbe030e0e05f21771aeac860d33a2da0203c4d1f8a8a5614030fe88ca5223e0",
+    "tests/world_ui_contract.py": "9eef252b26fb946ecd161e872774502562477fa5e4fda3e724c37fb4ba10fd5c",
+    "docs/MANAGED_GAMEPLAY.md": "71a83b83327ade2bf0c8ebef73e3780316c5644069038e43c1e06b997dc927ab"
+  },
+  "service": {
+    "command_bytes": 184,
+    "command_version": 4,
+    "feature": "surface_mark_timed_v4",
+    "services_bytes": 568
+  },
+  "baseline_terrain_capacity": {
+    "passed": true,
+    "engine_version": "0.0.363",
+    "executable_sha256": "f4f05112aa87cd51e637a755dcb066c04fcdf539e103c6ba2e04b1a8da642f11",
+    "terrain_asset": "910dd756be7668e3c12239d5159341efee3b19c4800e3414730877eeb0856f96",
+    "triangle": 1,
+    "active_before_fifth": 4,
+    "fifth_error_code": -32040,
+    "save_unchanged_after_refusal": true,
+    "archives": {
+      "filled": {
+        "tick": 1,
+        "bytes": 10364,
+        "sha256": "973806578c371ced729922c744c03433061763b5f9d79253d41b891e2af4162d"
+      },
+      "after-refusal": {
+        "tick": 1,
+        "bytes": 10364,
+        "sha256": "973806578c371ced729922c744c03433061763b5f9d79253d41b891e2af4162d"
+      }
+    }
+  },
+  "managed_abi": {
+    "checks": 119,
+    "report_sha256": "f81ad11ef0023446eecc909c2a70029ec486048fa5ce939e843f49956afda65e",
+    "generator_and_publisher": {
+      "SurfaceMarkProbe": {
+        "call_version": 1,
+        "call_bytes": 80,
+        "services_version": 7,
+        "services_bytes": 544,
+        "features": [
+          "baseline_v7",
+          "surface_mark_v1"
+        ]
+      },
+      "DirectionalSurfaceMarkProbe": {
+        "call_version": 1,
+        "call_bytes": 80,
+        "services_version": 7,
+        "services_bytes": 552,
+        "features": [
+          "baseline_v7",
+          "surface_mark_direction_v2"
+        ]
+      },
+      "TexturedSurfaceMarkProbe": {
+        "call_version": 1,
+        "call_bytes": 80,
+        "services_version": 7,
+        "services_bytes": 560,
+        "features": [
+          "baseline_v7",
+          "surface_mark_texture_v3"
+        ]
+      },
+      "TimedSurfaceMarkProbe": {
+        "call_version": 1,
+        "call_bytes": 80,
+        "services_version": 7,
+        "services_bytes": 568,
+        "features": [
+          "baseline_v7",
+          "surface_mark_timed_v4"
+        ]
+      },
+      "TimedSurfaceMarkCombinedProbe": {
+        "call_version": 1,
+        "call_bytes": 80,
+        "services_version": 7,
+        "services_bytes": 568,
+        "features": [
+          "baseline_v7",
+          "particle_burst_v1",
+          "surface_mark_v1",
+          "surface_mark_direction_v2",
+          "surface_mark_texture_v3",
+          "surface_mark_timed_v4"
+        ]
+      }
+    }
+  },
+  "descriptor_checks": {
+    "file_only_checks": 55,
+    "generated_navigation_false_and_true_checked": true,
+    "old_528_missing_contact_rejected": true,
+    "old_528_missing_surface_rejected": true,
+    "passed": true,
+    "retained_400_descriptor_rejected": true,
+    "retained_424_descriptor_rejected": true,
+    "retained_448_descriptor_rejected": true,
+    "retained_496_and_512_descriptors_rejected": true,
+    "retained_and_spoofed_528_rejected": true,
+    "retained_and_spoofed_536_rejected": true,
+    "retained_and_spoofed_544_rejected": true,
+    "retained_stale_descriptor_rejected": true,
+    "unnamed_496_and_missing_physical_dependencies_rejected": true,
+    "unnamed_536_rejected": true,
+    "unnamed_544_rejected": true,
+    "unnamed_552_rejected": true
+  },
+  "linux": {
+    "version": {
+      "version": "0.0.364",
+      "compiler": "GNU",
+      "compiler_version": "16.2.0",
+      "target_os": "Linux",
+      "target_arch": "x86_64"
+    },
+    "executable_sha256": "a174b5212dd5d55fa8c4ee19bc306ac481555488c68e2323d0019bd09b5aba3c",
+    "descriptor": {
+      "call_bytes": 80,
+      "call_version": 1,
+      "feature_count": 42,
+      "navigation": true,
+      "passed": true,
+      "services_bytes": 568,
+      "services_version": 7
+    },
+    "test_receipt_sha256": "7fc4d54798e0c1adeb317632be94e07ec544e131612503fe81a54769b18c4a39",
+    "suites": [
+      "surface_marks_contract",
+      "world_particles_contract",
+      "sprite_lifetime_contract",
+      "authoring_core_conformance",
+      "authoring_contract_identity",
+      "gameplay_compatibility_policy",
+      "gameplay_service_contract",
+      "native_gameplay_publish_requirements",
+      "save_upgrade_snapshot_native",
+      "gameplay_player_preferences_native",
+      "mcp_contract",
+      "world_ui_contract",
+      "physical_gameplay_publish_requirements",
+      "project_contract",
+      "asset_references_contract"
+    ],
+    "compiled_fixtures": [
+      {
+        "report_sha256": "7e46d2803ff9104ec989d5098100e285d9eb39256ebfa27c67912983fd78e2b3",
+        "earlier_failed_report_sha256": [],
+        "artifact": {
+          "10.0.15/libhostfxr.so": "342ccc53ed77b71fb097f548098ea5b4190069099dfd8dfef31976d308edf32b",
+          "bridge/Poima.ManagedBridge.dll": "f365f79b9d45960ef566cb8507cc099cceee7996a40969bd39cb23bca022f750",
+          "coreclr-game/Poima.ManagedTimedSurfaceMarkGame.dll": "6353797d6e9a652f8c1f3297e2f02f6bde304d70a2acc58869be20ca3b64c306",
+          "bridge/Poima.Gameplay.dll": "90381999757c97a09dd54db6a191d76cd86a2e03335336dcf133a54dc171c676",
+          "coreclr-game/Poima.Gameplay.dll": "9e44bea7737ff93e04888eedd09ca6312bda5dbb1f914ea9efdcc629e02e3ff0"
+        },
+        "mask": {
+          "id": "00000000000000000000000000000084",
+          "sha256": "e3d8f5ad96011d0c52c9b76999dc1c2146162e6e10fe5a80528457ac33d490a0"
+        },
+        "archives": {
+          "initial-timed": {
+            "tick": 1,
+            "bytes": 66280,
+            "sha256": "3f164827662c873d3fed6d431b5ad354e26d5d14cfc2028f47faefecf99bcd64"
+          },
+          "checkpoint": {
+            "tick": 2,
+            "bytes": 66278,
+            "sha256": "5950d6e72f35cc55f22f4416b2c1c91787d08c9a225b9c835caaaea34c30024f"
+          },
+          "after-refusals": {
+            "tick": 2,
+            "bytes": 66278,
+            "sha256": "5950d6e72f35cc55f22f4416b2c1c91787d08c9a225b9c835caaaea34c30024f"
+          },
+          "final": {
+            "tick": 9,
+            "bytes": 65488,
+            "sha256": "320604a08a6636de1fcd9e90465a0fa5c79ca800cab4d9ba5cf292ec9425df1b"
+          },
+          "restored-checkpoint": {
+            "tick": 2,
+            "bytes": 66278,
+            "sha256": "5950d6e72f35cc55f22f4416b2c1c91787d08c9a225b9c835caaaea34c30024f"
+          },
+          "restored-final": {
+            "tick": 9,
+            "bytes": 65488,
+            "sha256": "320604a08a6636de1fcd9e90465a0fa5c79ca800cab4d9ba5cf292ec9425df1b"
+          },
+          "terrain-middle": {
+            "tick": 450,
+            "bytes": 65274,
+            "sha256": "93970f7d3d84df9c09ff422b2ca8a783fa96bdda1c6c31cf81bcf42d6a10c775"
+          },
+          "terrain-final": {
+            "tick": 900,
+            "bytes": 65274,
+            "sha256": "fe1e3a26aeaa1d365e832c9e909ac2cab800a099482b72410ebd232a4d18a622"
+          },
+          "terrain-middle-cold": {
+            "tick": 450,
+            "bytes": 65274,
+            "sha256": "93970f7d3d84df9c09ff422b2ca8a783fa96bdda1c6c31cf81bcf42d6a10c775"
+          },
+          "terrain-final-cold": {
+            "tick": 900,
+            "bytes": 65274,
+            "sha256": "fe1e3a26aeaa1d365e832c9e909ac2cab800a099482b72410ebd232a4d18a622"
+          },
+          "capacity-final": {
+            "tick": 20,
+            "bytes": 145517,
+            "sha256": "0eb0af07cac6a58a7bbc601f15838115a7930ae9018a8c49826165e387311be8"
+          },
+          "capacity-after-refusals": {
+            "tick": 20,
+            "bytes": 145517,
+            "sha256": "0eb0af07cac6a58a7bbc601f15838115a7930ae9018a8c49826165e387311be8"
+          },
+          "legacy-v1": {
+            "tick": 1,
+            "bytes": 65124,
+            "sha256": "df838fab99147bbfd7217a9db215e9878df0a1f8ca8467e25ef9a32d78c5c174"
+          },
+          "legacy-v2": {
+            "tick": 2,
+            "bytes": 65565,
+            "sha256": "3e66a03a427cb4e913e7b92376d6ae8e28e16123c761954c81610ee05daf48f9"
+          },
+          "legacy-v1-cold": {
+            "tick": 1,
+            "bytes": 65124,
+            "sha256": "df838fab99147bbfd7217a9db215e9878df0a1f8ca8467e25ef9a32d78c5c174"
+          },
+          "legacy-v2-continued": {
+            "tick": 2,
+            "bytes": 65565,
+            "sha256": "3e66a03a427cb4e913e7b92376d6ae8e28e16123c761954c81610ee05daf48f9"
+          },
+          "legacy-v2-cold": {
+            "tick": 2,
+            "bytes": 65565,
+            "sha256": "3e66a03a427cb4e913e7b92376d6ae8e28e16123c761954c81610ee05daf48f9"
+          }
+        },
+        "boundaries": {
+          "checkpoint": {
+            "tick": 2,
+            "lifecycle": {
+              "dropped": 0,
+              "expired": 0,
+              "recycled": 1
+            },
+            "marks": [
+              {
+                "id": "1",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 1
+              },
+              {
+                "id": "2",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 1
+              },
+              {
+                "id": "4",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 1,
+                "expires_tick": 3,
+                "profile": "00000000000000000000000000000084",
+                "mask_sha256": "e3d8f5ad96011d0c52c9b76999dc1c2146162e6e10fe5a80528457ac33d490a0"
+              },
+              {
+                "id": "5",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 2,
+                "expires_tick": 6
+              }
+            ]
+          },
+          "final": {
+            "tick": 9,
+            "lifecycle": {
+              "dropped": 0,
+              "expired": 5,
+              "recycled": 1
+            },
+            "marks": [
+              {
+                "id": "1",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 1
+              },
+              {
+                "id": "2",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 1
+              }
+            ]
+          },
+          "initial": {
+            "tick": 1,
+            "lifecycle": {
+              "dropped": 0,
+              "expired": 0,
+              "recycled": 0
+            },
+            "marks": [
+              {
+                "id": "1",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 1
+              },
+              {
+                "id": "2",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 1
+              },
+              {
+                "id": "3",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 1,
+                "expires_tick": 10
+              },
+              {
+                "id": "4",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 1,
+                "expires_tick": 3,
+                "profile": "00000000000000000000000000000084",
+                "mask_sha256": "e3d8f5ad96011d0c52c9b76999dc1c2146162e6e10fe5a80528457ac33d490a0"
+              }
+            ]
+          },
+          "expiry": {
+            "tick": 3,
+            "lifecycle": {
+              "dropped": 0,
+              "expired": 1,
+              "recycled": 1
+            },
+            "marks": [
+              {
+                "id": "1",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 1
+              },
+              {
+                "id": "2",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 1
+              },
+              {
+                "id": "5",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 2,
+                "expires_tick": 6
+              },
+              {
+                "id": "6",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 3,
+                "expires_tick": 4
+              }
+            ]
+          },
+          "replacement": {
+            "tick": 6,
+            "lifecycle": {
+              "dropped": 0,
+              "expired": 3,
+              "recycled": 1
+            },
+            "marks": [
+              {
+                "id": "1",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 1
+              },
+              {
+                "id": "2",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 1
+              },
+              {
+                "id": "7",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 6,
+                "expires_tick": 8
+              },
+              {
+                "id": "8",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 6,
+                "expires_tick": 9
+              }
+            ]
+          }
+        },
+        "service": {
+          "command_bytes": 184,
+          "command_version": 4,
+          "feature": "surface_mark_timed_v4",
+          "services_bytes": 568
+        },
+        "sustained_terrain": {
+          "ticks": 900,
+          "attempts": 600,
+          "retained_ids": [
+            "1"
+          ],
+          "next_id": 602,
+          "lifecycle": {
+            "dropped": 0,
+            "expired": 90,
+            "recycled": 510
+          },
+          "sampled_checkpoints": [
+            {
+              "tick": 20,
+              "ids": [
+                "1",
+                "19",
+                "20",
+                "21"
+              ],
+              "lifecycle": {
+                "dropped": 0,
+                "expired": 0,
+                "recycled": 17
+              }
+            },
+            {
+              "tick": 30,
+              "ids": [
+                "1"
+              ],
+              "lifecycle": {
+                "dropped": 0,
+                "expired": 3,
+                "recycled": 17
+              }
+            },
+            {
+              "tick": 450,
+              "ids": [
+                "1"
+              ],
+              "lifecycle": {
+                "dropped": 0,
+                "expired": 45,
+                "recycled": 255
+              }
+            }
+          ],
+          "triangle_hit": {
+            "distance": 6.625000476837158,
+            "entity": "0000000000000000000000000000006e",
+            "fraction": 0.5520833730697632,
+            "normal": [
+              -0.21821843087673187,
+              0.8728716373443604,
+              -0.43643540143966675
+            ],
+            "position": [
+              10.25,
+              1.3749995231628418,
+              -4.375
+            ],
+            "triangle": 1
+          },
+          "wall_interval_ns": 351141880,
+          "interval_kind": "harness wall time through batch advances and intermediate save",
+          "cold_continuation_exact": true
+        },
+        "legacy_saves": {
+          "v1": true,
+          "v2": true,
+          "bytes_exact": true
+        },
+        "rejected_requests": [
+          "expiry-then-ray-miss",
+          "fractional-lifetime",
+          "large-lifetime",
+          "recycle-permanent",
+          "unknown-overflow",
+          "zero-lifetime"
+        ],
+        "capacity": {
+          "full_scene": {
+            "live": 256,
+            "recycled_receiver": "5",
+            "recycled_scene": "1",
+            "new_ids": [
+              "257",
+              "258"
+            ],
+            "counters": {
+              "dropped": 0,
+              "expired": 0,
+              "recycled": 2
+            }
+          },
+          "no_local_victim": {
+            "live": 256,
+            "counters": {
+              "dropped": 1,
+              "expired": 0,
+              "recycled": 2
+            },
+            "next_id": 259
+          },
+          "no_scene_victim": {
+            "live": 256,
+            "counters": {
+              "dropped": 2,
+              "expired": 2,
+              "recycled": 2
+            },
+            "next_id": 261
+          }
+        },
+        "capacity_rejections": [
+          "drop-still-validates-profile",
+          "drop-still-validates-ray",
+          "drop-still-validates-style",
+          "reject-policy"
+        ]
+      },
+      {
+        "report_sha256": "4254048d5eb1f82cd620ee71325b6cdc9d90d54fe38fdd6a230bc9ffa1e89306",
+        "earlier_failed_report_sha256": [],
+        "artifact": {
+          "descriptor_sha256": "0ccbcab79ae2db5e05a8e824cc0cab76d3624cb76cfdac20c2905abc552ddfab",
+          "files": [
+            {
+              "path": "Poima.NativeGame.so",
+              "size": 1607496,
+              "sha256": "b1ddb6ffcd458ba7cc63d91329c27c2ed408c2de0bf019918bfc527cf0789e8c",
+              "role": "library"
+            },
+            {
+              "path": "notices/DOTNET-NATIVEAOT-10.0.15-LICENSE.txt",
+              "size": 1116,
+              "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310",
+              "role": "notice"
+            },
+            {
+              "path": "notices/DOTNET-NATIVEAOT-10.0.15-THIRD-PARTY-NOTICES.txt",
+              "size": 76623,
+              "sha256": "66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54",
+              "role": "notice"
+            },
+            {
+              "path": "notices/DOTNET-RUNTIME-10.0.15-LICENSE.txt",
+              "size": 1116,
+              "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310",
+              "role": "notice"
+            },
+            {
+              "path": "notices/DOTNET-RUNTIME-10.0.15-THIRD-PARTY-NOTICES.txt",
+              "size": 76623,
+              "sha256": "66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54",
+              "role": "notice"
+            },
+            {
+              "path": "notices/POIMA-LICENSE.txt",
+              "size": 11358,
+              "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+              "role": "notice"
+            },
+            {
+              "path": "notices/POIMA-THIRD-PARTY-NOTICES.md",
+              "size": 23949,
+              "sha256": "7d364ecf908a603cdc58efecf0a19e8d20b1a51ee0179ce3b9885d05327664a7",
+              "role": "notice"
+            }
+          ]
+        },
+        "mask": {
+          "id": "00000000000000000000000000000084",
+          "sha256": "e3d8f5ad96011d0c52c9b76999dc1c2146162e6e10fe5a80528457ac33d490a0"
+        },
+        "archives": {
+          "initial-timed": {
+            "tick": 1,
+            "bytes": 66283,
+            "sha256": "2a84751beb4689dabbfee03f5d8a646c77ac2d5ad896e6719676a7fa246252ad"
+          },
+          "checkpoint": {
+            "tick": 2,
+            "bytes": 66281,
+            "sha256": "4b75a3d23f80a368693d406130bf691e8742fe1a2f95b8f424b106a46f27c88e"
+          },
+          "after-refusals": {
+            "tick": 2,
+            "bytes": 66281,
+            "sha256": "4b75a3d23f80a368693d406130bf691e8742fe1a2f95b8f424b106a46f27c88e"
+          },
+          "final": {
+            "tick": 9,
+            "bytes": 65491,
+            "sha256": "54fc305e7425648855e9e297b38ce3dafa8b2842ea32b4c21aa9ccde2a7cd97a"
+          },
+          "restored-checkpoint": {
+            "tick": 2,
+            "bytes": 66281,
+            "sha256": "4b75a3d23f80a368693d406130bf691e8742fe1a2f95b8f424b106a46f27c88e"
+          },
+          "restored-final": {
+            "tick": 9,
+            "bytes": 65491,
+            "sha256": "54fc305e7425648855e9e297b38ce3dafa8b2842ea32b4c21aa9ccde2a7cd97a"
+          },
+          "terrain-middle": {
+            "tick": 450,
+            "bytes": 65277,
+            "sha256": "a4f29b12a235d69ed66e26ed8e5201f578503a6dfdf484f9cbd4b232eae95abf"
+          },
+          "terrain-final": {
+            "tick": 900,
+            "bytes": 65277,
+            "sha256": "5afff062138fa0617a4035824222303d2399048663bba99d66aa58080750380c"
+          },
+          "terrain-middle-cold": {
+            "tick": 450,
+            "bytes": 65277,
+            "sha256": "a4f29b12a235d69ed66e26ed8e5201f578503a6dfdf484f9cbd4b232eae95abf"
+          },
+          "terrain-final-cold": {
+            "tick": 900,
+            "bytes": 65277,
+            "sha256": "5afff062138fa0617a4035824222303d2399048663bba99d66aa58080750380c"
+          },
+          "capacity-final": {
+            "tick": 20,
+            "bytes": 145520,
+            "sha256": "74cf8053eb0c4e46a8ef8ca8b41357508595ab9529753699da4c12b2ab070dc8"
+          },
+          "capacity-after-refusals": {
+            "tick": 20,
+            "bytes": 145520,
+            "sha256": "74cf8053eb0c4e46a8ef8ca8b41357508595ab9529753699da4c12b2ab070dc8"
+          },
+          "legacy-v1": {
+            "tick": 1,
+            "bytes": 65127,
+            "sha256": "c2e31deec16832fbf696eb305a85601abc82ab80c4e648b858ed96ad648e8ef5"
+          },
+          "legacy-v2": {
+            "tick": 2,
+            "bytes": 65568,
+            "sha256": "501fcc1690c090096a9fb89e1324dfa1bc47199340347f6a544142d2566d7ab8"
+          },
+          "legacy-v1-cold": {
+            "tick": 1,
+            "bytes": 65127,
+            "sha256": "c2e31deec16832fbf696eb305a85601abc82ab80c4e648b858ed96ad648e8ef5"
+          },
+          "legacy-v2-continued": {
+            "tick": 2,
+            "bytes": 65568,
+            "sha256": "501fcc1690c090096a9fb89e1324dfa1bc47199340347f6a544142d2566d7ab8"
+          },
+          "legacy-v2-cold": {
+            "tick": 2,
+            "bytes": 65568,
+            "sha256": "501fcc1690c090096a9fb89e1324dfa1bc47199340347f6a544142d2566d7ab8"
+          }
+        },
+        "boundaries": {
+          "checkpoint": {
+            "tick": 2,
+            "lifecycle": {
+              "dropped": 0,
+              "expired": 0,
+              "recycled": 1
+            },
+            "marks": [
+              {
+                "id": "1",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 1
+              },
+              {
+                "id": "2",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 1
+              },
+              {
+                "id": "4",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 1,
+                "expires_tick": 3,
+                "profile": "00000000000000000000000000000084",
+                "mask_sha256": "e3d8f5ad96011d0c52c9b76999dc1c2146162e6e10fe5a80528457ac33d490a0"
+              },
+              {
+                "id": "5",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 2,
+                "expires_tick": 6
+              }
+            ]
+          },
+          "final": {
+            "tick": 9,
+            "lifecycle": {
+              "dropped": 0,
+              "expired": 5,
+              "recycled": 1
+            },
+            "marks": [
+              {
+                "id": "1",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 1
+              },
+              {
+                "id": "2",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 1
+              }
+            ]
+          },
+          "initial": {
+            "tick": 1,
+            "lifecycle": {
+              "dropped": 0,
+              "expired": 0,
+              "recycled": 0
+            },
+            "marks": [
+              {
+                "id": "1",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 1
+              },
+              {
+                "id": "2",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 1
+              },
+              {
+                "id": "3",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 1,
+                "expires_tick": 10
+              },
+              {
+                "id": "4",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 1,
+                "expires_tick": 3,
+                "profile": "00000000000000000000000000000084",
+                "mask_sha256": "e3d8f5ad96011d0c52c9b76999dc1c2146162e6e10fe5a80528457ac33d490a0"
+              }
+            ]
+          },
+          "expiry": {
+            "tick": 3,
+            "lifecycle": {
+              "dropped": 0,
+              "expired": 1,
+              "recycled": 1
+            },
+            "marks": [
+              {
+                "id": "1",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 1
+              },
+              {
+                "id": "2",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 1
+              },
+              {
+                "id": "5",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 2,
+                "expires_tick": 6
+              },
+              {
+                "id": "6",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 3,
+                "expires_tick": 4
+              }
+            ]
+          },
+          "replacement": {
+            "tick": 6,
+            "lifecycle": {
+              "dropped": 0,
+              "expired": 3,
+              "recycled": 1
+            },
+            "marks": [
+              {
+                "id": "1",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 1
+              },
+              {
+                "id": "2",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 1
+              },
+              {
+                "id": "7",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 6,
+                "expires_tick": 8
+              },
+              {
+                "id": "8",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 6,
+                "expires_tick": 9
+              }
+            ]
+          }
+        },
+        "service": {
+          "command_bytes": 184,
+          "command_version": 4,
+          "feature": "surface_mark_timed_v4",
+          "services_bytes": 568
+        },
+        "sustained_terrain": {
+          "ticks": 900,
+          "attempts": 600,
+          "retained_ids": [
+            "1"
+          ],
+          "next_id": 602,
+          "lifecycle": {
+            "dropped": 0,
+            "expired": 90,
+            "recycled": 510
+          },
+          "sampled_checkpoints": [
+            {
+              "tick": 20,
+              "ids": [
+                "1",
+                "19",
+                "20",
+                "21"
+              ],
+              "lifecycle": {
+                "dropped": 0,
+                "expired": 0,
+                "recycled": 17
+              }
+            },
+            {
+              "tick": 30,
+              "ids": [
+                "1"
+              ],
+              "lifecycle": {
+                "dropped": 0,
+                "expired": 3,
+                "recycled": 17
+              }
+            },
+            {
+              "tick": 450,
+              "ids": [
+                "1"
+              ],
+              "lifecycle": {
+                "dropped": 0,
+                "expired": 45,
+                "recycled": 255
+              }
+            }
+          ],
+          "triangle_hit": {
+            "distance": 6.625000476837158,
+            "entity": "0000000000000000000000000000006e",
+            "fraction": 0.5520833730697632,
+            "normal": [
+              -0.21821843087673187,
+              0.8728716373443604,
+              -0.43643540143966675
+            ],
+            "position": [
+              10.25,
+              1.3749995231628418,
+              -4.375
+            ],
+            "triangle": 1
+          },
+          "wall_interval_ns": 355424623,
+          "interval_kind": "harness wall time through batch advances and intermediate save",
+          "cold_continuation_exact": true
+        },
+        "legacy_saves": {
+          "v1": true,
+          "v2": true,
+          "bytes_exact": true
+        },
+        "rejected_requests": [
+          "expiry-then-ray-miss",
+          "fractional-lifetime",
+          "large-lifetime",
+          "recycle-permanent",
+          "unknown-overflow",
+          "zero-lifetime"
+        ],
+        "capacity": {
+          "full_scene": {
+            "live": 256,
+            "recycled_receiver": "5",
+            "recycled_scene": "1",
+            "new_ids": [
+              "257",
+              "258"
+            ],
+            "counters": {
+              "dropped": 0,
+              "expired": 0,
+              "recycled": 2
+            }
+          },
+          "no_local_victim": {
+            "live": 256,
+            "counters": {
+              "dropped": 1,
+              "expired": 0,
+              "recycled": 2
+            },
+            "next_id": 259
+          },
+          "no_scene_victim": {
+            "live": 256,
+            "counters": {
+              "dropped": 2,
+              "expired": 2,
+              "recycled": 2
+            },
+            "next_id": 261
+          }
+        },
+        "capacity_rejections": [
+          "drop-still-validates-profile",
+          "drop-still-validates-ray",
+          "drop-still-validates-style",
+          "reject-policy"
+        ]
+      }
+    ],
+    "malformed_lifecycle_restore": {
+      "passed": true,
+      "cases": [
+        {
+          "case": "due-active-mark",
+          "sealed_sha256": "c271c724d11c2a78c30c87e3589cdf1316a175af8195f10d5b14bff09d38308d",
+          "rejection_code": -32070,
+          "verified_storage": true
+        },
+        {
+          "case": "invented-recycles",
+          "sealed_sha256": "5eca6be8dd0f6e1a5fc672a739a38586b1f1a7f4f7c64d85a568600bd8f940cf",
+          "rejection_code": -32070,
+          "verified_storage": true
+        },
+        {
+          "case": "invented-drops",
+          "sealed_sha256": "57c8e2e876ba6396ab5d2b3f376861e25ac3ec5be51b3db8e957f761e2ebfd5c",
+          "rejection_code": -32070,
+          "verified_storage": true
+        }
+      ],
+      "active_save_sha256": "4b75a3d23f80a368693d406130bf691e8742fe1a2f95b8f424b106a46f27c88e",
+      "active_save_byte_identical": true,
+      "executable_sha256": "a174b5212dd5d55fa8c4ee19bc306ac481555488c68e2323d0019bd09b5aba3c",
+      "source_receipt_sha256": "4254048d5eb1f82cd620ee71325b6cdc9d90d54fe38fdd6a230bc9ffa1e89306"
+    },
+    "legacy_textured_module": {
+      "report_sha256": "b0759c584af5cd8e86c3c30117dbff67430185816d97ecf4fd6c22f9e8fdb1ea",
+      "descriptor_sha256": "e087dfac57db761d3354c7f1006256a07fe48a81858a8dcc9ed0e5537c930898",
+      "minimum_services_bytes": 560
+    },
+    "legacy_baseline_aot_sha256": "586f7a5104c5e79fcf9fbfed4d6f738f779ad1caec7eec458c3eefdefc132cef"
+  },
+  "windows": {
+    "version": {
+      "version": "0.0.364",
+      "compiler": "Clang",
+      "compiler_version": "23.1.2",
+      "target_os": "Windows",
+      "target_arch": "x86_64"
+    },
+    "executable_sha256": "3efaf4ef95e8895ccf6cf4824aa7e6a8bcd33be617fa9b4ba3b2cad6e06ef5d9",
+    "descriptor": {
+      "call_bytes": 80,
+      "call_version": 1,
+      "feature_count": 42,
+      "navigation": true,
+      "passed": true,
+      "services_bytes": 568,
+      "services_version": 7
+    },
+    "runtime_sha256": "7675d3fc07a3b473e506a757cf0c9a9b422fd658764213846b33f9b93c7708da",
+    "desktop_bridge_sha256": "1299890c9dca70096ea3674f99468907a8acc6f2954a40133fff4bf62e7c67d3",
+    "mcp_log_sha256": "4642193d4eb513a21c8a321f6dba0f621eb00c408cf928028724a776138ce971",
+    "relocated_native_aot": [
+      {
+        "report_sha256": "a999d31f9fa313a9b516ef556be92c5f4347a3bcbfa013d3afd77b6d91811f33",
+        "earlier_failed_report_sha256": [],
+        "artifact": {
+          "descriptor_sha256": "32cd2d243e900d54c898d5fe9f4d4684d0a5fca9f6e39d663434941611796f89",
+          "files": [
+            {
+              "path": "notices/DOTNET-NATIVEAOT-10.0.15-LICENSE.txt",
+              "size": 1139,
+              "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+              "role": "notice"
+            },
+            {
+              "path": "notices/DOTNET-NATIVEAOT-10.0.15-THIRD-PARTY-NOTICES.txt",
+              "size": 78041,
+              "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+              "role": "notice"
+            },
+            {
+              "path": "notices/DOTNET-RUNTIME-10.0.15-LICENSE.txt",
+              "size": 1139,
+              "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+              "role": "notice"
+            },
+            {
+              "path": "notices/DOTNET-RUNTIME-10.0.15-THIRD-PARTY-NOTICES.txt",
+              "size": 78041,
+              "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+              "role": "notice"
+            },
+            {
+              "path": "notices/POIMA-LICENSE.txt",
+              "size": 11358,
+              "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+              "role": "notice"
+            },
+            {
+              "path": "notices/POIMA-THIRD-PARTY-NOTICES.md",
+              "size": 23949,
+              "sha256": "7d364ecf908a603cdc58efecf0a19e8d20b1a51ee0179ce3b9885d05327664a7",
+              "role": "notice"
+            },
+            {
+              "path": "Poima.NativeGame.dll",
+              "size": 1360384,
+              "sha256": "30be56ffe4d8fac0a0614add2c8467276a74b52953f3901fcee476e24cff3772",
+              "role": "library"
+            }
+          ]
+        },
+        "mask": {
+          "id": "00000000000000000000000000000084",
+          "sha256": "e3d8f5ad96011d0c52c9b76999dc1c2146162e6e10fe5a80528457ac33d490a0"
+        },
+        "archives": {
+          "initial-timed": {
+            "tick": 1,
+            "bytes": 9414,
+            "sha256": "26ed9b98eeaa87d44f52d6f50c5dcee3a1e5ee456a9315c2e16834b36efcba2a"
+          },
+          "checkpoint": {
+            "tick": 2,
+            "bytes": 9412,
+            "sha256": "d30bb26fc9aa2e28c8d0dd8627b2e31bbf39eec26a3604ab01dfac7e10a11fd6"
+          },
+          "final": {
+            "tick": 9,
+            "bytes": 8622,
+            "sha256": "fa7c3cd8fa65dff43b3fd6e37e2349b43e25f0681e555bfb3c2cf13f182e939a"
+          },
+          "restored-checkpoint": {
+            "tick": 2,
+            "bytes": 9412,
+            "sha256": "d30bb26fc9aa2e28c8d0dd8627b2e31bbf39eec26a3604ab01dfac7e10a11fd6"
+          },
+          "restored-final": {
+            "tick": 9,
+            "bytes": 8622,
+            "sha256": "fa7c3cd8fa65dff43b3fd6e37e2349b43e25f0681e555bfb3c2cf13f182e939a"
+          }
+        },
+        "boundaries": {
+          "checkpoint": {
+            "tick": 2,
+            "lifecycle": {
+              "dropped": 0,
+              "expired": 0,
+              "recycled": 1
+            },
+            "marks": [
+              {
+                "id": "1",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 1
+              },
+              {
+                "id": "2",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 1
+              },
+              {
+                "id": "4",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 1,
+                "expires_tick": 3,
+                "profile": "00000000000000000000000000000084",
+                "mask_sha256": "e3d8f5ad96011d0c52c9b76999dc1c2146162e6e10fe5a80528457ac33d490a0"
+              },
+              {
+                "id": "5",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 2,
+                "expires_tick": 6
+              }
+            ]
+          },
+          "final": {
+            "tick": 9,
+            "lifecycle": {
+              "dropped": 0,
+              "expired": 5,
+              "recycled": 1
+            },
+            "marks": [
+              {
+                "id": "1",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 1
+              },
+              {
+                "id": "2",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 1
+              }
+            ]
+          },
+          "initial": {
+            "tick": 1,
+            "lifecycle": {
+              "dropped": 0,
+              "expired": 0,
+              "recycled": 0
+            },
+            "marks": [
+              {
+                "id": "1",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 1
+              },
+              {
+                "id": "2",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 1
+              },
+              {
+                "id": "3",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 1,
+                "expires_tick": 10
+              },
+              {
+                "id": "4",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 1,
+                "expires_tick": 3,
+                "profile": "00000000000000000000000000000084",
+                "mask_sha256": "e3d8f5ad96011d0c52c9b76999dc1c2146162e6e10fe5a80528457ac33d490a0"
+              }
+            ]
+          },
+          "expiry": {
+            "tick": 3,
+            "lifecycle": {
+              "dropped": 0,
+              "expired": 1,
+              "recycled": 1
+            },
+            "marks": [
+              {
+                "id": "1",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 1
+              },
+              {
+                "id": "2",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 1
+              },
+              {
+                "id": "5",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 2,
+                "expires_tick": 6
+              },
+              {
+                "id": "6",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 3,
+                "expires_tick": 4
+              }
+            ]
+          },
+          "replacement": {
+            "tick": 6,
+            "lifecycle": {
+              "dropped": 0,
+              "expired": 3,
+              "recycled": 1
+            },
+            "marks": [
+              {
+                "id": "1",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 1
+              },
+              {
+                "id": "2",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 1
+              },
+              {
+                "id": "7",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 6,
+                "expires_tick": 8
+              },
+              {
+                "id": "8",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 6,
+                "expires_tick": 9
+              }
+            ]
+          }
+        },
+        "service": {
+          "command_bytes": 184,
+          "command_version": 4,
+          "feature": "surface_mark_timed_v4",
+          "services_bytes": 568
+        },
+        "gpu": "AMD Radeon(TM) Graphics",
+        "lighting_path": "forward",
+        "capture_count": 6,
+        "bundle_files": 67,
+        "bundle_manifest_sha256": "7814cf8760fac7ec9bd9ad4f734ced2dd7210a2b9bfdd9d549eab212cc5f8477",
+        "captures": {
+          "checkpoint-warm": {
+            "sha256": "b815ee2f262c473ce1f23585a960ecf046a4ed7be998b2456811fe0fd15bf0e5",
+            "tick": 2,
+            "witnesses": 7,
+            "max_abs_srgb_error": 0,
+            "max_abs_hdr_error": 0.0004386005696637163,
+            "selected_samples": {
+              "upper_left": {
+                "pixel": [
+                  275,
+                  168
+                ],
+                "raw_hdr": [
+                  0.0791015625,
+                  0.1485595703125,
+                  0.287353515625
+                ],
+                "resolved_hdr": [
+                  0.0791015625,
+                  0.1485595703125,
+                  0.287353515625
+                ],
+                "expected_hdr": [
+                  0.07911676372634159,
+                  0.14856395006729192,
+                  0.2874583227491926
+                ],
+                "bmp_rgb": [
+                  77,
+                  101,
+                  130
+                ],
+                "expected_bmp": [
+                  77,
+                  101,
+                  130
+                ],
+                "base": [
+                  0.125,
+                  0.25,
+                  0.5
+                ],
+                "roughness": 0.75
+              },
+              "lower_left": {
+                "pixel": [
+                  283,
+                  191
+                ],
+                "raw_hdr": [
+                  0.10784912109375,
+                  0.5244140625,
+                  0.10784912109375
+                ],
+                "resolved_hdr": [
+                  0.10784912109375,
+                  0.5244140625,
+                  0.10784912109375
+                ],
+                "expected_hdr": [
+                  0.10785187062506393,
+                  0.5245349886762601,
+                  0.10785187062506393
+                ],
+                "bmp_rgb": [
+                  88,
+                  158,
+                  88
+                ],
+                "expected_bmp": [
+                  88,
+                  158,
+                  88
+                ],
+                "base": [
+                  0.125,
+                  0.875,
+                  0.125
+                ],
+                "roughness": 0.5
+              },
+              "neighbor": {
+                "pixel": [
+                  359,
+                  180
+                ],
+                "raw_hdr": [
+                  0.07916259765625,
+                  0.1485595703125,
+                  0.287353515625
+                ],
+                "resolved_hdr": [
+                  0.07916259765625,
+                  0.1485595703125,
+                  0.287353515625
+                ],
+                "expected_hdr": [
+                  0.07921129967285528,
+                  0.14865848601465326,
+                  0.2875528586982492
+                ],
+                "bmp_rgb": [
+                  77,
+                  101,
+                  130
+                ],
+                "expected_bmp": [
+                  77,
+                  101,
+                  130
+                ],
+                "base": [
+                  0.125,
+                  0.25,
+                  0.5
+                ],
+                "roughness": 0.75
+              }
+            }
+          },
+          "expiry-warm": {
+            "sha256": "25668fd34decf0c1b66c4f5b21cb252d44f05b61d04aa92d7c74492899e61890",
+            "tick": 3,
+            "witnesses": 7,
+            "max_abs_srgb_error": 1,
+            "max_abs_hdr_error": 0.0004386005696637163,
+            "selected_samples": {
+              "upper_left": {
+                "pixel": [
+                  275,
+                  168
+                ],
+                "raw_hdr": [
+                  0.5205078125,
+                  0.5205078125,
+                  0.10394287109375
+                ],
+                "resolved_hdr": [
+                  0.5205078125,
+                  0.5205078125,
+                  0.10394287109375
+                ],
+                "expected_hdr": [
+                  0.5206609521404599,
+                  0.5206609521404599,
+                  0.10397783409475797
+                ],
+                "bmp_rgb": [
+                  158,
+                  158,
+                  86
+                ],
+                "expected_bmp": [
+                  158,
+                  158,
+                  87
+                ],
+                "base": [
+                  0.875,
+                  0.875,
+                  0.125
+                ],
+                "roughness": 0.5
+              },
+              "lower_left": {
+                "pixel": [
+                  283,
+                  191
+                ],
+                "raw_hdr": [
+                  0.0792236328125,
+                  0.1485595703125,
+                  0.287353515625
+                ],
+                "resolved_hdr": [
+                  0.0792236328125,
+                  0.1485595703125,
+                  0.287353515625
+                ],
+                "expected_hdr": [
+                  0.0792282484947798,
+                  0.14867543483664583,
+                  0.28756980752037786
+                ],
+                "bmp_rgb": [
+                  77,
+                  101,
+                  130
+                ],
+                "expected_bmp": [
+                  77,
+                  101,
+                  130
+                ],
+                "base": [
+                  0.125,
+                  0.25,
+                  0.5
+                ],
+                "roughness": 0.75
+              },
+              "neighbor": {
+                "pixel": [
+                  359,
+                  180
+                ],
+                "raw_hdr": [
+                  0.07916259765625,
+                  0.1485595703125,
+                  0.287353515625
+                ],
+                "resolved_hdr": [
+                  0.07916259765625,
+                  0.1485595703125,
+                  0.287353515625
+                ],
+                "expected_hdr": [
+                  0.07921129967285528,
+                  0.14865848601465326,
+                  0.2875528586982492
+                ],
+                "bmp_rgb": [
+                  77,
+                  101,
+                  130
+                ],
+                "expected_bmp": [
+                  77,
+                  101,
+                  130
+                ],
+                "base": [
+                  0.125,
+                  0.25,
+                  0.5
+                ],
+                "roughness": 0.75
+              }
+            }
+          },
+          "final-warm": {
+            "sha256": "070b11dffd2c74cb96133815717df473814a68a5b883ef85b50de5b926514d83",
+            "tick": 9,
+            "witnesses": 7,
+            "max_abs_srgb_error": 0,
+            "max_abs_hdr_error": 0.0004386005696637163,
+            "selected_samples": {
+              "upper_left": {
+                "pixel": [
+                  275,
+                  168
+                ],
+                "raw_hdr": [
+                  0.0791015625,
+                  0.1485595703125,
+                  0.287353515625
+                ],
+                "resolved_hdr": [
+                  0.0791015625,
+                  0.1485595703125,
+                  0.287353515625
+                ],
+                "expected_hdr": [
+                  0.07911676372634159,
+                  0.14856395006729192,
+                  0.2874583227491926
+                ],
+                "bmp_rgb": [
+                  77,
+                  101,
+                  130
+                ],
+                "expected_bmp": [
+                  77,
+                  101,
+                  130
+                ],
+                "base": [
+                  0.125,
+                  0.25,
+                  0.5
+                ],
+                "roughness": 0.75
+              },
+              "lower_left": {
+                "pixel": [
+                  283,
+                  191
+                ],
+                "raw_hdr": [
+                  0.0792236328125,
+                  0.1485595703125,
+                  0.287353515625
+                ],
+                "resolved_hdr": [
+                  0.0792236328125,
+                  0.1485595703125,
+                  0.287353515625
+                ],
+                "expected_hdr": [
+                  0.0792282484947798,
+                  0.14867543483664583,
+                  0.28756980752037786
+                ],
+                "bmp_rgb": [
+                  77,
+                  101,
+                  130
+                ],
+                "expected_bmp": [
+                  77,
+                  101,
+                  130
+                ],
+                "base": [
+                  0.125,
+                  0.25,
+                  0.5
+                ],
+                "roughness": 0.75
+              },
+              "neighbor": {
+                "pixel": [
+                  359,
+                  180
+                ],
+                "raw_hdr": [
+                  0.07916259765625,
+                  0.1485595703125,
+                  0.287353515625
+                ],
+                "resolved_hdr": [
+                  0.07916259765625,
+                  0.1485595703125,
+                  0.287353515625
+                ],
+                "expected_hdr": [
+                  0.07921129967285528,
+                  0.14865848601465326,
+                  0.2875528586982492
+                ],
+                "bmp_rgb": [
+                  77,
+                  101,
+                  130
+                ],
+                "expected_bmp": [
+                  77,
+                  101,
+                  130
+                ],
+                "base": [
+                  0.125,
+                  0.25,
+                  0.5
+                ],
+                "roughness": 0.75
+              }
+            }
+          }
+        }
+      },
+      {
+        "report_sha256": "f0e302851c50bb32562f7d13a8e57c7ec696fa71d479f66fa78b4416e887949d",
+        "earlier_failed_report_sha256": [],
+        "artifact": {
+          "descriptor_sha256": "32cd2d243e900d54c898d5fe9f4d4684d0a5fca9f6e39d663434941611796f89",
+          "files": [
+            {
+              "path": "notices/DOTNET-NATIVEAOT-10.0.15-LICENSE.txt",
+              "size": 1139,
+              "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+              "role": "notice"
+            },
+            {
+              "path": "notices/DOTNET-NATIVEAOT-10.0.15-THIRD-PARTY-NOTICES.txt",
+              "size": 78041,
+              "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+              "role": "notice"
+            },
+            {
+              "path": "notices/DOTNET-RUNTIME-10.0.15-LICENSE.txt",
+              "size": 1139,
+              "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+              "role": "notice"
+            },
+            {
+              "path": "notices/DOTNET-RUNTIME-10.0.15-THIRD-PARTY-NOTICES.txt",
+              "size": 78041,
+              "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+              "role": "notice"
+            },
+            {
+              "path": "notices/POIMA-LICENSE.txt",
+              "size": 11358,
+              "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+              "role": "notice"
+            },
+            {
+              "path": "notices/POIMA-THIRD-PARTY-NOTICES.md",
+              "size": 23949,
+              "sha256": "7d364ecf908a603cdc58efecf0a19e8d20b1a51ee0179ce3b9885d05327664a7",
+              "role": "notice"
+            },
+            {
+              "path": "Poima.NativeGame.dll",
+              "size": 1360384,
+              "sha256": "30be56ffe4d8fac0a0614add2c8467276a74b52953f3901fcee476e24cff3772",
+              "role": "library"
+            }
+          ]
+        },
+        "mask": {
+          "id": "00000000000000000000000000000084",
+          "sha256": "e3d8f5ad96011d0c52c9b76999dc1c2146162e6e10fe5a80528457ac33d490a0"
+        },
+        "archives": {
+          "initial-timed": {
+            "tick": 1,
+            "bytes": 9414,
+            "sha256": "0f1f25ede96df32e7ac796dc94bcdde54c9582fb648a25971112e129e0e01ddb"
+          },
+          "checkpoint": {
+            "tick": 2,
+            "bytes": 9412,
+            "sha256": "ae6901923caf4bd3f31ed1aabac684440a624a62b756c4c04d53063ee55c8c5c"
+          },
+          "final": {
+            "tick": 9,
+            "bytes": 8622,
+            "sha256": "b61e2210952912b9930e676cf8db9424d176545fff7a966c0f1ebbfd70637ae7"
+          },
+          "restored-checkpoint": {
+            "tick": 2,
+            "bytes": 9412,
+            "sha256": "ae6901923caf4bd3f31ed1aabac684440a624a62b756c4c04d53063ee55c8c5c"
+          },
+          "restored-final": {
+            "tick": 9,
+            "bytes": 8622,
+            "sha256": "b61e2210952912b9930e676cf8db9424d176545fff7a966c0f1ebbfd70637ae7"
+          }
+        },
+        "boundaries": {
+          "checkpoint": {
+            "tick": 2,
+            "lifecycle": {
+              "dropped": 0,
+              "expired": 0,
+              "recycled": 1
+            },
+            "marks": [
+              {
+                "id": "1",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 1
+              },
+              {
+                "id": "2",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 1
+              },
+              {
+                "id": "4",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 1,
+                "expires_tick": 3,
+                "profile": "00000000000000000000000000000084",
+                "mask_sha256": "e3d8f5ad96011d0c52c9b76999dc1c2146162e6e10fe5a80528457ac33d490a0"
+              },
+              {
+                "id": "5",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 2,
+                "expires_tick": 6
+              }
+            ]
+          },
+          "final": {
+            "tick": 9,
+            "lifecycle": {
+              "dropped": 0,
+              "expired": 5,
+              "recycled": 1
+            },
+            "marks": [
+              {
+                "id": "1",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 1
+              },
+              {
+                "id": "2",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 1
+              }
+            ]
+          },
+          "initial": {
+            "tick": 1,
+            "lifecycle": {
+              "dropped": 0,
+              "expired": 0,
+              "recycled": 0
+            },
+            "marks": [
+              {
+                "id": "1",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 1
+              },
+              {
+                "id": "2",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 1
+              },
+              {
+                "id": "3",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 1,
+                "expires_tick": 10
+              },
+              {
+                "id": "4",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 1,
+                "expires_tick": 3,
+                "profile": "00000000000000000000000000000084",
+                "mask_sha256": "e3d8f5ad96011d0c52c9b76999dc1c2146162e6e10fe5a80528457ac33d490a0"
+              }
+            ]
+          },
+          "expiry": {
+            "tick": 3,
+            "lifecycle": {
+              "dropped": 0,
+              "expired": 1,
+              "recycled": 1
+            },
+            "marks": [
+              {
+                "id": "1",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 1
+              },
+              {
+                "id": "2",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 1
+              },
+              {
+                "id": "5",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 2,
+                "expires_tick": 6
+              },
+              {
+                "id": "6",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 3,
+                "expires_tick": 4
+              }
+            ]
+          },
+          "replacement": {
+            "tick": 6,
+            "lifecycle": {
+              "dropped": 0,
+              "expired": 3,
+              "recycled": 1
+            },
+            "marks": [
+              {
+                "id": "1",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 1
+              },
+              {
+                "id": "2",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 1
+              },
+              {
+                "id": "7",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 6,
+                "expires_tick": 8
+              },
+              {
+                "id": "8",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 6,
+                "expires_tick": 9
+              }
+            ]
+          }
+        },
+        "service": {
+          "command_bytes": 184,
+          "command_version": 4,
+          "feature": "surface_mark_timed_v4",
+          "services_bytes": 568
+        },
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "lighting_path": "forward",
+        "capture_count": 6,
+        "bundle_files": 67,
+        "bundle_manifest_sha256": "1195ac52269fb859644f9b906fe7ecb659ba6f56433b105d687ec9414a3ea1ff",
+        "captures": {
+          "checkpoint-warm": {
+            "sha256": "06581091ba7f7ffc41904d9564f812563d8d293ce7b0ee7d570e1eb4b226bd01",
+            "tick": 2,
+            "witnesses": 7,
+            "max_abs_srgb_error": 0,
+            "max_abs_hdr_error": 0.0004386005696637163,
+            "selected_samples": {
+              "upper_left": {
+                "pixel": [
+                  275,
+                  168
+                ],
+                "raw_hdr": [
+                  0.0791015625,
+                  0.1485595703125,
+                  0.287353515625
+                ],
+                "resolved_hdr": [
+                  0.0791015625,
+                  0.1485595703125,
+                  0.287353515625
+                ],
+                "expected_hdr": [
+                  0.07911676372634159,
+                  0.14856395006729192,
+                  0.2874583227491926
+                ],
+                "bmp_rgb": [
+                  77,
+                  101,
+                  130
+                ],
+                "expected_bmp": [
+                  77,
+                  101,
+                  130
+                ],
+                "base": [
+                  0.125,
+                  0.25,
+                  0.5
+                ],
+                "roughness": 0.75
+              },
+              "lower_left": {
+                "pixel": [
+                  283,
+                  191
+                ],
+                "raw_hdr": [
+                  0.10784912109375,
+                  0.5244140625,
+                  0.10784912109375
+                ],
+                "resolved_hdr": [
+                  0.10784912109375,
+                  0.5244140625,
+                  0.10784912109375
+                ],
+                "expected_hdr": [
+                  0.10785187062506393,
+                  0.5245349886762601,
+                  0.10785187062506393
+                ],
+                "bmp_rgb": [
+                  88,
+                  158,
+                  88
+                ],
+                "expected_bmp": [
+                  88,
+                  158,
+                  88
+                ],
+                "base": [
+                  0.125,
+                  0.875,
+                  0.125
+                ],
+                "roughness": 0.5
+              },
+              "neighbor": {
+                "pixel": [
+                  359,
+                  180
+                ],
+                "raw_hdr": [
+                  0.07916259765625,
+                  0.1485595703125,
+                  0.287353515625
+                ],
+                "resolved_hdr": [
+                  0.07916259765625,
+                  0.1485595703125,
+                  0.287353515625
+                ],
+                "expected_hdr": [
+                  0.07921129967285528,
+                  0.14865848601465326,
+                  0.2875528586982492
+                ],
+                "bmp_rgb": [
+                  77,
+                  101,
+                  130
+                ],
+                "expected_bmp": [
+                  77,
+                  101,
+                  130
+                ],
+                "base": [
+                  0.125,
+                  0.25,
+                  0.5
+                ],
+                "roughness": 0.75
+              }
+            }
+          },
+          "expiry-warm": {
+            "sha256": "df91d0507839a2b771767d26e38718706258d0a3a64a9ba97c971f47045db69d",
+            "tick": 3,
+            "witnesses": 7,
+            "max_abs_srgb_error": 1,
+            "max_abs_hdr_error": 0.0004386005696637163,
+            "selected_samples": {
+              "upper_left": {
+                "pixel": [
+                  275,
+                  168
+                ],
+                "raw_hdr": [
+                  0.5205078125,
+                  0.5205078125,
+                  0.10394287109375
+                ],
+                "resolved_hdr": [
+                  0.5205078125,
+                  0.5205078125,
+                  0.10394287109375
+                ],
+                "expected_hdr": [
+                  0.5206609521404599,
+                  0.5206609521404599,
+                  0.10397783409475797
+                ],
+                "bmp_rgb": [
+                  158,
+                  158,
+                  86
+                ],
+                "expected_bmp": [
+                  158,
+                  158,
+                  87
+                ],
+                "base": [
+                  0.875,
+                  0.875,
+                  0.125
+                ],
+                "roughness": 0.5
+              },
+              "lower_left": {
+                "pixel": [
+                  283,
+                  191
+                ],
+                "raw_hdr": [
+                  0.0792236328125,
+                  0.1485595703125,
+                  0.287353515625
+                ],
+                "resolved_hdr": [
+                  0.0792236328125,
+                  0.1485595703125,
+                  0.287353515625
+                ],
+                "expected_hdr": [
+                  0.0792282484947798,
+                  0.14867543483664583,
+                  0.28756980752037786
+                ],
+                "bmp_rgb": [
+                  77,
+                  101,
+                  130
+                ],
+                "expected_bmp": [
+                  77,
+                  101,
+                  130
+                ],
+                "base": [
+                  0.125,
+                  0.25,
+                  0.5
+                ],
+                "roughness": 0.75
+              },
+              "neighbor": {
+                "pixel": [
+                  359,
+                  180
+                ],
+                "raw_hdr": [
+                  0.07916259765625,
+                  0.1485595703125,
+                  0.287353515625
+                ],
+                "resolved_hdr": [
+                  0.07916259765625,
+                  0.1485595703125,
+                  0.287353515625
+                ],
+                "expected_hdr": [
+                  0.07921129967285528,
+                  0.14865848601465326,
+                  0.2875528586982492
+                ],
+                "bmp_rgb": [
+                  77,
+                  101,
+                  130
+                ],
+                "expected_bmp": [
+                  77,
+                  101,
+                  130
+                ],
+                "base": [
+                  0.125,
+                  0.25,
+                  0.5
+                ],
+                "roughness": 0.75
+              }
+            }
+          },
+          "final-warm": {
+            "sha256": "1f7edac3db4938327b6497e4a79a6f0a4c4bdecdbebad27e04e13a086ba83e71",
+            "tick": 9,
+            "witnesses": 7,
+            "max_abs_srgb_error": 0,
+            "max_abs_hdr_error": 0.0004386005696637163,
+            "selected_samples": {
+              "upper_left": {
+                "pixel": [
+                  275,
+                  168
+                ],
+                "raw_hdr": [
+                  0.0791015625,
+                  0.1485595703125,
+                  0.287353515625
+                ],
+                "resolved_hdr": [
+                  0.0791015625,
+                  0.1485595703125,
+                  0.287353515625
+                ],
+                "expected_hdr": [
+                  0.07911676372634159,
+                  0.14856395006729192,
+                  0.2874583227491926
+                ],
+                "bmp_rgb": [
+                  77,
+                  101,
+                  130
+                ],
+                "expected_bmp": [
+                  77,
+                  101,
+                  130
+                ],
+                "base": [
+                  0.125,
+                  0.25,
+                  0.5
+                ],
+                "roughness": 0.75
+              },
+              "lower_left": {
+                "pixel": [
+                  283,
+                  191
+                ],
+                "raw_hdr": [
+                  0.0792236328125,
+                  0.1485595703125,
+                  0.287353515625
+                ],
+                "resolved_hdr": [
+                  0.0792236328125,
+                  0.1485595703125,
+                  0.287353515625
+                ],
+                "expected_hdr": [
+                  0.0792282484947798,
+                  0.14867543483664583,
+                  0.28756980752037786
+                ],
+                "bmp_rgb": [
+                  77,
+                  101,
+                  130
+                ],
+                "expected_bmp": [
+                  77,
+                  101,
+                  130
+                ],
+                "base": [
+                  0.125,
+                  0.25,
+                  0.5
+                ],
+                "roughness": 0.75
+              },
+              "neighbor": {
+                "pixel": [
+                  359,
+                  180
+                ],
+                "raw_hdr": [
+                  0.07916259765625,
+                  0.1485595703125,
+                  0.287353515625
+                ],
+                "resolved_hdr": [
+                  0.07916259765625,
+                  0.1485595703125,
+                  0.287353515625
+                ],
+                "expected_hdr": [
+                  0.07921129967285528,
+                  0.14865848601465326,
+                  0.2875528586982492
+                ],
+                "bmp_rgb": [
+                  77,
+                  101,
+                  130
+                ],
+                "expected_bmp": [
+                  77,
+                  101,
+                  130
+                ],
+                "base": [
+                  0.125,
+                  0.25,
+                  0.5
+                ],
+                "roughness": 0.75
+              }
+            }
+          }
+        }
+      },
+      {
+        "report_sha256": "00083c219265b0d60eddd04dd2be17a37ca1c5f51a5a82cc2d539289216cb2b7",
+        "earlier_failed_report_sha256": [],
+        "artifact": {
+          "descriptor_sha256": "32cd2d243e900d54c898d5fe9f4d4684d0a5fca9f6e39d663434941611796f89",
+          "files": [
+            {
+              "path": "notices/DOTNET-NATIVEAOT-10.0.15-LICENSE.txt",
+              "size": 1139,
+              "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+              "role": "notice"
+            },
+            {
+              "path": "notices/DOTNET-NATIVEAOT-10.0.15-THIRD-PARTY-NOTICES.txt",
+              "size": 78041,
+              "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+              "role": "notice"
+            },
+            {
+              "path": "notices/DOTNET-RUNTIME-10.0.15-LICENSE.txt",
+              "size": 1139,
+              "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+              "role": "notice"
+            },
+            {
+              "path": "notices/DOTNET-RUNTIME-10.0.15-THIRD-PARTY-NOTICES.txt",
+              "size": 78041,
+              "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+              "role": "notice"
+            },
+            {
+              "path": "notices/POIMA-LICENSE.txt",
+              "size": 11358,
+              "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+              "role": "notice"
+            },
+            {
+              "path": "notices/POIMA-THIRD-PARTY-NOTICES.md",
+              "size": 23949,
+              "sha256": "7d364ecf908a603cdc58efecf0a19e8d20b1a51ee0179ce3b9885d05327664a7",
+              "role": "notice"
+            },
+            {
+              "path": "Poima.NativeGame.dll",
+              "size": 1360384,
+              "sha256": "30be56ffe4d8fac0a0614add2c8467276a74b52953f3901fcee476e24cff3772",
+              "role": "library"
+            }
+          ]
+        },
+        "mask": {
+          "id": "00000000000000000000000000000084",
+          "sha256": "e3d8f5ad96011d0c52c9b76999dc1c2146162e6e10fe5a80528457ac33d490a0"
+        },
+        "archives": {
+          "initial-timed": {
+            "tick": 1,
+            "bytes": 9414,
+            "sha256": "fd0e403e03da1cc41b4545dce8edaa4da0a381a06bf72cde0e59b74a07ec7ec1"
+          },
+          "checkpoint": {
+            "tick": 2,
+            "bytes": 9412,
+            "sha256": "73160e2d2ca916c9cc54e38d2a1a8c080e70ad551b11ff6573de81e56a8b9c63"
+          },
+          "final": {
+            "tick": 9,
+            "bytes": 8622,
+            "sha256": "939d6355d31e5555ec61fbff0bf5bfd27cd74e5ff79162198f1b98dae37970e9"
+          },
+          "restored-checkpoint": {
+            "tick": 2,
+            "bytes": 9412,
+            "sha256": "73160e2d2ca916c9cc54e38d2a1a8c080e70ad551b11ff6573de81e56a8b9c63"
+          },
+          "restored-final": {
+            "tick": 9,
+            "bytes": 8622,
+            "sha256": "939d6355d31e5555ec61fbff0bf5bfd27cd74e5ff79162198f1b98dae37970e9"
+          }
+        },
+        "boundaries": {
+          "checkpoint": {
+            "tick": 2,
+            "lifecycle": {
+              "dropped": 0,
+              "expired": 0,
+              "recycled": 1
+            },
+            "marks": [
+              {
+                "id": "1",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 1
+              },
+              {
+                "id": "2",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 1
+              },
+              {
+                "id": "4",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 1,
+                "expires_tick": 3,
+                "profile": "00000000000000000000000000000084",
+                "mask_sha256": "e3d8f5ad96011d0c52c9b76999dc1c2146162e6e10fe5a80528457ac33d490a0"
+              },
+              {
+                "id": "5",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 2,
+                "expires_tick": 6
+              }
+            ]
+          },
+          "final": {
+            "tick": 9,
+            "lifecycle": {
+              "dropped": 0,
+              "expired": 5,
+              "recycled": 1
+            },
+            "marks": [
+              {
+                "id": "1",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 1
+              },
+              {
+                "id": "2",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 1
+              }
+            ]
+          },
+          "initial": {
+            "tick": 1,
+            "lifecycle": {
+              "dropped": 0,
+              "expired": 0,
+              "recycled": 0
+            },
+            "marks": [
+              {
+                "id": "1",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 1
+              },
+              {
+                "id": "2",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 1
+              },
+              {
+                "id": "3",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 1,
+                "expires_tick": 10
+              },
+              {
+                "id": "4",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 1,
+                "expires_tick": 3,
+                "profile": "00000000000000000000000000000084",
+                "mask_sha256": "e3d8f5ad96011d0c52c9b76999dc1c2146162e6e10fe5a80528457ac33d490a0"
+              }
+            ]
+          },
+          "expiry": {
+            "tick": 3,
+            "lifecycle": {
+              "dropped": 0,
+              "expired": 1,
+              "recycled": 1
+            },
+            "marks": [
+              {
+                "id": "1",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 1
+              },
+              {
+                "id": "2",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 1
+              },
+              {
+                "id": "5",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 2,
+                "expires_tick": 6
+              },
+              {
+                "id": "6",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 3,
+                "expires_tick": 4
+              }
+            ]
+          },
+          "replacement": {
+            "tick": 6,
+            "lifecycle": {
+              "dropped": 0,
+              "expired": 3,
+              "recycled": 1
+            },
+            "marks": [
+              {
+                "id": "1",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 1
+              },
+              {
+                "id": "2",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 1
+              },
+              {
+                "id": "7",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 6,
+                "expires_tick": 8
+              },
+              {
+                "id": "8",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 6,
+                "expires_tick": 9
+              }
+            ]
+          }
+        },
+        "service": {
+          "command_bytes": 184,
+          "command_version": 4,
+          "feature": "surface_mark_timed_v4",
+          "services_bytes": 568
+        },
+        "gpu": "AMD Radeon(TM) Graphics",
+        "lighting_path": "deferred",
+        "capture_count": 6,
+        "bundle_files": 67,
+        "bundle_manifest_sha256": "26fc576487d1697fb572d3f1ab697fd6aeec2625d20e33f62419137bfdfe6283",
+        "captures": {
+          "checkpoint-warm": {
+            "sha256": "32a89396498ed0d3cfae09b6b338a9a6785493d94de7e6b8860810d4df359b73",
+            "tick": 2,
+            "witnesses": 7,
+            "max_abs_srgb_error": 0,
+            "max_abs_hdr_error": 0.0004386005696637163,
+            "selected_samples": {
+              "upper_left": {
+                "pixel": [
+                  275,
+                  168
+                ],
+                "raw_hdr": [
+                  0.0791015625,
+                  0.1485595703125,
+                  0.287353515625
+                ],
+                "resolved_hdr": [
+                  0.0791015625,
+                  0.1485595703125,
+                  0.287353515625
+                ],
+                "expected_hdr": [
+                  0.07911676372634159,
+                  0.14856395006729192,
+                  0.2874583227491926
+                ],
+                "bmp_rgb": [
+                  77,
+                  101,
+                  130
+                ],
+                "expected_bmp": [
+                  77,
+                  101,
+                  130
+                ],
+                "base": [
+                  0.125,
+                  0.25,
+                  0.5
+                ],
+                "roughness": 0.75
+              },
+              "lower_left": {
+                "pixel": [
+                  283,
+                  191
+                ],
+                "raw_hdr": [
+                  0.10784912109375,
+                  0.5244140625,
+                  0.10784912109375
+                ],
+                "resolved_hdr": [
+                  0.10784912109375,
+                  0.5244140625,
+                  0.10784912109375
+                ],
+                "expected_hdr": [
+                  0.10785187062506393,
+                  0.5245349886762601,
+                  0.10785187062506393
+                ],
+                "bmp_rgb": [
+                  88,
+                  158,
+                  88
+                ],
+                "expected_bmp": [
+                  88,
+                  158,
+                  88
+                ],
+                "base": [
+                  0.125,
+                  0.875,
+                  0.125
+                ],
+                "roughness": 0.5
+              },
+              "neighbor": {
+                "pixel": [
+                  359,
+                  180
+                ],
+                "raw_hdr": [
+                  0.07916259765625,
+                  0.1485595703125,
+                  0.287353515625
+                ],
+                "resolved_hdr": [
+                  0.07916259765625,
+                  0.1485595703125,
+                  0.287353515625
+                ],
+                "expected_hdr": [
+                  0.07921129967285528,
+                  0.14865848601465326,
+                  0.2875528586982492
+                ],
+                "bmp_rgb": [
+                  77,
+                  101,
+                  130
+                ],
+                "expected_bmp": [
+                  77,
+                  101,
+                  130
+                ],
+                "base": [
+                  0.125,
+                  0.25,
+                  0.5
+                ],
+                "roughness": 0.75
+              }
+            }
+          },
+          "expiry-warm": {
+            "sha256": "707266c3bbd0e09caf50ab6586224cb95bd2fc95245a21bd5acd203da52e288f",
+            "tick": 3,
+            "witnesses": 7,
+            "max_abs_srgb_error": 1,
+            "max_abs_hdr_error": 0.0004386005696637163,
+            "selected_samples": {
+              "upper_left": {
+                "pixel": [
+                  275,
+                  168
+                ],
+                "raw_hdr": [
+                  0.5205078125,
+                  0.5205078125,
+                  0.10394287109375
+                ],
+                "resolved_hdr": [
+                  0.5205078125,
+                  0.5205078125,
+                  0.10394287109375
+                ],
+                "expected_hdr": [
+                  0.5206609521404599,
+                  0.5206609521404599,
+                  0.10397783409475797
+                ],
+                "bmp_rgb": [
+                  158,
+                  158,
+                  86
+                ],
+                "expected_bmp": [
+                  158,
+                  158,
+                  87
+                ],
+                "base": [
+                  0.875,
+                  0.875,
+                  0.125
+                ],
+                "roughness": 0.5
+              },
+              "lower_left": {
+                "pixel": [
+                  283,
+                  191
+                ],
+                "raw_hdr": [
+                  0.0792236328125,
+                  0.1485595703125,
+                  0.287353515625
+                ],
+                "resolved_hdr": [
+                  0.0792236328125,
+                  0.1485595703125,
+                  0.287353515625
+                ],
+                "expected_hdr": [
+                  0.0792282484947798,
+                  0.14867543483664583,
+                  0.28756980752037786
+                ],
+                "bmp_rgb": [
+                  77,
+                  101,
+                  130
+                ],
+                "expected_bmp": [
+                  77,
+                  101,
+                  130
+                ],
+                "base": [
+                  0.125,
+                  0.25,
+                  0.5
+                ],
+                "roughness": 0.75
+              },
+              "neighbor": {
+                "pixel": [
+                  359,
+                  180
+                ],
+                "raw_hdr": [
+                  0.07916259765625,
+                  0.1485595703125,
+                  0.287353515625
+                ],
+                "resolved_hdr": [
+                  0.07916259765625,
+                  0.1485595703125,
+                  0.287353515625
+                ],
+                "expected_hdr": [
+                  0.07921129967285528,
+                  0.14865848601465326,
+                  0.2875528586982492
+                ],
+                "bmp_rgb": [
+                  77,
+                  101,
+                  130
+                ],
+                "expected_bmp": [
+                  77,
+                  101,
+                  130
+                ],
+                "base": [
+                  0.125,
+                  0.25,
+                  0.5
+                ],
+                "roughness": 0.75
+              }
+            }
+          },
+          "final-warm": {
+            "sha256": "070b11dffd2c74cb96133815717df473814a68a5b883ef85b50de5b926514d83",
+            "tick": 9,
+            "witnesses": 7,
+            "max_abs_srgb_error": 0,
+            "max_abs_hdr_error": 0.0004386005696637163,
+            "selected_samples": {
+              "upper_left": {
+                "pixel": [
+                  275,
+                  168
+                ],
+                "raw_hdr": [
+                  0.0791015625,
+                  0.1485595703125,
+                  0.287353515625
+                ],
+                "resolved_hdr": [
+                  0.0791015625,
+                  0.1485595703125,
+                  0.287353515625
+                ],
+                "expected_hdr": [
+                  0.07911676372634159,
+                  0.14856395006729192,
+                  0.2874583227491926
+                ],
+                "bmp_rgb": [
+                  77,
+                  101,
+                  130
+                ],
+                "expected_bmp": [
+                  77,
+                  101,
+                  130
+                ],
+                "base": [
+                  0.125,
+                  0.25,
+                  0.5
+                ],
+                "roughness": 0.75
+              },
+              "lower_left": {
+                "pixel": [
+                  283,
+                  191
+                ],
+                "raw_hdr": [
+                  0.0792236328125,
+                  0.1485595703125,
+                  0.287353515625
+                ],
+                "resolved_hdr": [
+                  0.0792236328125,
+                  0.1485595703125,
+                  0.287353515625
+                ],
+                "expected_hdr": [
+                  0.0792282484947798,
+                  0.14867543483664583,
+                  0.28756980752037786
+                ],
+                "bmp_rgb": [
+                  77,
+                  101,
+                  130
+                ],
+                "expected_bmp": [
+                  77,
+                  101,
+                  130
+                ],
+                "base": [
+                  0.125,
+                  0.25,
+                  0.5
+                ],
+                "roughness": 0.75
+              },
+              "neighbor": {
+                "pixel": [
+                  359,
+                  180
+                ],
+                "raw_hdr": [
+                  0.07916259765625,
+                  0.1485595703125,
+                  0.287353515625
+                ],
+                "resolved_hdr": [
+                  0.07916259765625,
+                  0.1485595703125,
+                  0.287353515625
+                ],
+                "expected_hdr": [
+                  0.07921129967285528,
+                  0.14865848601465326,
+                  0.2875528586982492
+                ],
+                "bmp_rgb": [
+                  77,
+                  101,
+                  130
+                ],
+                "expected_bmp": [
+                  77,
+                  101,
+                  130
+                ],
+                "base": [
+                  0.125,
+                  0.25,
+                  0.5
+                ],
+                "roughness": 0.75
+              }
+            }
+          }
+        }
+      },
+      {
+        "report_sha256": "5c7f40f0cb805f819c5e38976cbc367d1f2e50917d58ddd8954ec8850b7f08a1",
+        "earlier_failed_report_sha256": [],
+        "artifact": {
+          "descriptor_sha256": "32cd2d243e900d54c898d5fe9f4d4684d0a5fca9f6e39d663434941611796f89",
+          "files": [
+            {
+              "path": "notices/DOTNET-NATIVEAOT-10.0.15-LICENSE.txt",
+              "size": 1139,
+              "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+              "role": "notice"
+            },
+            {
+              "path": "notices/DOTNET-NATIVEAOT-10.0.15-THIRD-PARTY-NOTICES.txt",
+              "size": 78041,
+              "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+              "role": "notice"
+            },
+            {
+              "path": "notices/DOTNET-RUNTIME-10.0.15-LICENSE.txt",
+              "size": 1139,
+              "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+              "role": "notice"
+            },
+            {
+              "path": "notices/DOTNET-RUNTIME-10.0.15-THIRD-PARTY-NOTICES.txt",
+              "size": 78041,
+              "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+              "role": "notice"
+            },
+            {
+              "path": "notices/POIMA-LICENSE.txt",
+              "size": 11358,
+              "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+              "role": "notice"
+            },
+            {
+              "path": "notices/POIMA-THIRD-PARTY-NOTICES.md",
+              "size": 23949,
+              "sha256": "7d364ecf908a603cdc58efecf0a19e8d20b1a51ee0179ce3b9885d05327664a7",
+              "role": "notice"
+            },
+            {
+              "path": "Poima.NativeGame.dll",
+              "size": 1360384,
+              "sha256": "30be56ffe4d8fac0a0614add2c8467276a74b52953f3901fcee476e24cff3772",
+              "role": "library"
+            }
+          ]
+        },
+        "mask": {
+          "id": "00000000000000000000000000000084",
+          "sha256": "e3d8f5ad96011d0c52c9b76999dc1c2146162e6e10fe5a80528457ac33d490a0"
+        },
+        "archives": {
+          "initial-timed": {
+            "tick": 1,
+            "bytes": 9414,
+            "sha256": "b9781e25d8bef37f5e4623ad85b7c7b2f8662273b48ac1ff10eef4f33742169b"
+          },
+          "checkpoint": {
+            "tick": 2,
+            "bytes": 9412,
+            "sha256": "72aedfa29bd2d44c32cca6b30d5cb359a57a3aea6a4402ac02e953fd8e722e3d"
+          },
+          "final": {
+            "tick": 9,
+            "bytes": 8622,
+            "sha256": "a2d6199416335598a9c33eb905f17af9daa35ef8f7a8cf4b4d8d313afdd73667"
+          },
+          "restored-checkpoint": {
+            "tick": 2,
+            "bytes": 9412,
+            "sha256": "72aedfa29bd2d44c32cca6b30d5cb359a57a3aea6a4402ac02e953fd8e722e3d"
+          },
+          "restored-final": {
+            "tick": 9,
+            "bytes": 8622,
+            "sha256": "a2d6199416335598a9c33eb905f17af9daa35ef8f7a8cf4b4d8d313afdd73667"
+          }
+        },
+        "boundaries": {
+          "checkpoint": {
+            "tick": 2,
+            "lifecycle": {
+              "dropped": 0,
+              "expired": 0,
+              "recycled": 1
+            },
+            "marks": [
+              {
+                "id": "1",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 1
+              },
+              {
+                "id": "2",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 1
+              },
+              {
+                "id": "4",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 1,
+                "expires_tick": 3,
+                "profile": "00000000000000000000000000000084",
+                "mask_sha256": "e3d8f5ad96011d0c52c9b76999dc1c2146162e6e10fe5a80528457ac33d490a0"
+              },
+              {
+                "id": "5",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 2,
+                "expires_tick": 6
+              }
+            ]
+          },
+          "final": {
+            "tick": 9,
+            "lifecycle": {
+              "dropped": 0,
+              "expired": 5,
+              "recycled": 1
+            },
+            "marks": [
+              {
+                "id": "1",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 1
+              },
+              {
+                "id": "2",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 1
+              }
+            ]
+          },
+          "initial": {
+            "tick": 1,
+            "lifecycle": {
+              "dropped": 0,
+              "expired": 0,
+              "recycled": 0
+            },
+            "marks": [
+              {
+                "id": "1",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 1
+              },
+              {
+                "id": "2",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 1
+              },
+              {
+                "id": "3",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 1,
+                "expires_tick": 10
+              },
+              {
+                "id": "4",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 1,
+                "expires_tick": 3,
+                "profile": "00000000000000000000000000000084",
+                "mask_sha256": "e3d8f5ad96011d0c52c9b76999dc1c2146162e6e10fe5a80528457ac33d490a0"
+              }
+            ]
+          },
+          "expiry": {
+            "tick": 3,
+            "lifecycle": {
+              "dropped": 0,
+              "expired": 1,
+              "recycled": 1
+            },
+            "marks": [
+              {
+                "id": "1",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 1
+              },
+              {
+                "id": "2",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 1
+              },
+              {
+                "id": "5",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 2,
+                "expires_tick": 6
+              },
+              {
+                "id": "6",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 3,
+                "expires_tick": 4
+              }
+            ]
+          },
+          "replacement": {
+            "tick": 6,
+            "lifecycle": {
+              "dropped": 0,
+              "expired": 3,
+              "recycled": 1
+            },
+            "marks": [
+              {
+                "id": "1",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 1
+              },
+              {
+                "id": "2",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 1
+              },
+              {
+                "id": "7",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 6,
+                "expires_tick": 8
+              },
+              {
+                "id": "8",
+                "receiver": "00000000000000000000000000000064",
+                "tick": 6,
+                "expires_tick": 9
+              }
+            ]
+          }
+        },
+        "service": {
+          "command_bytes": 184,
+          "command_version": 4,
+          "feature": "surface_mark_timed_v4",
+          "services_bytes": 568
+        },
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "lighting_path": "deferred",
+        "capture_count": 6,
+        "bundle_files": 67,
+        "bundle_manifest_sha256": "e83e5c7406b8da20f7e8eb6d7303259ca3796506b98dc9ba8f51f8e7c8cf2705",
+        "captures": {
+          "checkpoint-warm": {
+            "sha256": "cd234d474c357407c3df16c6f27f37023d1e8868859159f7a8c4ed210fe17c30",
+            "tick": 2,
+            "witnesses": 7,
+            "max_abs_srgb_error": 0,
+            "max_abs_hdr_error": 0.0004386005696637163,
+            "selected_samples": {
+              "upper_left": {
+                "pixel": [
+                  275,
+                  168
+                ],
+                "raw_hdr": [
+                  0.0791015625,
+                  0.1485595703125,
+                  0.287353515625
+                ],
+                "resolved_hdr": [
+                  0.0791015625,
+                  0.1485595703125,
+                  0.287353515625
+                ],
+                "expected_hdr": [
+                  0.07911676372634159,
+                  0.14856395006729192,
+                  0.2874583227491926
+                ],
+                "bmp_rgb": [
+                  77,
+                  101,
+                  130
+                ],
+                "expected_bmp": [
+                  77,
+                  101,
+                  130
+                ],
+                "base": [
+                  0.125,
+                  0.25,
+                  0.5
+                ],
+                "roughness": 0.75
+              },
+              "lower_left": {
+                "pixel": [
+                  283,
+                  191
+                ],
+                "raw_hdr": [
+                  0.10784912109375,
+                  0.5244140625,
+                  0.10784912109375
+                ],
+                "resolved_hdr": [
+                  0.10784912109375,
+                  0.5244140625,
+                  0.10784912109375
+                ],
+                "expected_hdr": [
+                  0.10785187062506393,
+                  0.5245349886762601,
+                  0.10785187062506393
+                ],
+                "bmp_rgb": [
+                  88,
+                  158,
+                  88
+                ],
+                "expected_bmp": [
+                  88,
+                  158,
+                  88
+                ],
+                "base": [
+                  0.125,
+                  0.875,
+                  0.125
+                ],
+                "roughness": 0.5
+              },
+              "neighbor": {
+                "pixel": [
+                  359,
+                  180
+                ],
+                "raw_hdr": [
+                  0.07916259765625,
+                  0.1485595703125,
+                  0.287353515625
+                ],
+                "resolved_hdr": [
+                  0.07916259765625,
+                  0.1485595703125,
+                  0.287353515625
+                ],
+                "expected_hdr": [
+                  0.07921129967285528,
+                  0.14865848601465326,
+                  0.2875528586982492
+                ],
+                "bmp_rgb": [
+                  77,
+                  101,
+                  130
+                ],
+                "expected_bmp": [
+                  77,
+                  101,
+                  130
+                ],
+                "base": [
+                  0.125,
+                  0.25,
+                  0.5
+                ],
+                "roughness": 0.75
+              }
+            }
+          },
+          "expiry-warm": {
+            "sha256": "da388e100874547dbce62eaac178066948dac5502cedbbd36860144dd38d3b41",
+            "tick": 3,
+            "witnesses": 7,
+            "max_abs_srgb_error": 1,
+            "max_abs_hdr_error": 0.0004386005696637163,
+            "selected_samples": {
+              "upper_left": {
+                "pixel": [
+                  275,
+                  168
+                ],
+                "raw_hdr": [
+                  0.5205078125,
+                  0.5205078125,
+                  0.10394287109375
+                ],
+                "resolved_hdr": [
+                  0.5205078125,
+                  0.5205078125,
+                  0.10394287109375
+                ],
+                "expected_hdr": [
+                  0.5206609521404599,
+                  0.5206609521404599,
+                  0.10397783409475797
+                ],
+                "bmp_rgb": [
+                  158,
+                  158,
+                  86
+                ],
+                "expected_bmp": [
+                  158,
+                  158,
+                  87
+                ],
+                "base": [
+                  0.875,
+                  0.875,
+                  0.125
+                ],
+                "roughness": 0.5
+              },
+              "lower_left": {
+                "pixel": [
+                  283,
+                  191
+                ],
+                "raw_hdr": [
+                  0.0792236328125,
+                  0.1485595703125,
+                  0.287353515625
+                ],
+                "resolved_hdr": [
+                  0.0792236328125,
+                  0.1485595703125,
+                  0.287353515625
+                ],
+                "expected_hdr": [
+                  0.0792282484947798,
+                  0.14867543483664583,
+                  0.28756980752037786
+                ],
+                "bmp_rgb": [
+                  77,
+                  101,
+                  130
+                ],
+                "expected_bmp": [
+                  77,
+                  101,
+                  130
+                ],
+                "base": [
+                  0.125,
+                  0.25,
+                  0.5
+                ],
+                "roughness": 0.75
+              },
+              "neighbor": {
+                "pixel": [
+                  359,
+                  180
+                ],
+                "raw_hdr": [
+                  0.07916259765625,
+                  0.1485595703125,
+                  0.287353515625
+                ],
+                "resolved_hdr": [
+                  0.07916259765625,
+                  0.1485595703125,
+                  0.287353515625
+                ],
+                "expected_hdr": [
+                  0.07921129967285528,
+                  0.14865848601465326,
+                  0.2875528586982492
+                ],
+                "bmp_rgb": [
+                  77,
+                  101,
+                  130
+                ],
+                "expected_bmp": [
+                  77,
+                  101,
+                  130
+                ],
+                "base": [
+                  0.125,
+                  0.25,
+                  0.5
+                ],
+                "roughness": 0.75
+              }
+            }
+          },
+          "final-warm": {
+            "sha256": "1f7edac3db4938327b6497e4a79a6f0a4c4bdecdbebad27e04e13a086ba83e71",
+            "tick": 9,
+            "witnesses": 7,
+            "max_abs_srgb_error": 0,
+            "max_abs_hdr_error": 0.0004386005696637163,
+            "selected_samples": {
+              "upper_left": {
+                "pixel": [
+                  275,
+                  168
+                ],
+                "raw_hdr": [
+                  0.0791015625,
+                  0.1485595703125,
+                  0.287353515625
+                ],
+                "resolved_hdr": [
+                  0.0791015625,
+                  0.1485595703125,
+                  0.287353515625
+                ],
+                "expected_hdr": [
+                  0.07911676372634159,
+                  0.14856395006729192,
+                  0.2874583227491926
+                ],
+                "bmp_rgb": [
+                  77,
+                  101,
+                  130
+                ],
+                "expected_bmp": [
+                  77,
+                  101,
+                  130
+                ],
+                "base": [
+                  0.125,
+                  0.25,
+                  0.5
+                ],
+                "roughness": 0.75
+              },
+              "lower_left": {
+                "pixel": [
+                  283,
+                  191
+                ],
+                "raw_hdr": [
+                  0.0792236328125,
+                  0.1485595703125,
+                  0.287353515625
+                ],
+                "resolved_hdr": [
+                  0.0792236328125,
+                  0.1485595703125,
+                  0.287353515625
+                ],
+                "expected_hdr": [
+                  0.0792282484947798,
+                  0.14867543483664583,
+                  0.28756980752037786
+                ],
+                "bmp_rgb": [
+                  77,
+                  101,
+                  130
+                ],
+                "expected_bmp": [
+                  77,
+                  101,
+                  130
+                ],
+                "base": [
+                  0.125,
+                  0.25,
+                  0.5
+                ],
+                "roughness": 0.75
+              },
+              "neighbor": {
+                "pixel": [
+                  359,
+                  180
+                ],
+                "raw_hdr": [
+                  0.07916259765625,
+                  0.1485595703125,
+                  0.287353515625
+                ],
+                "resolved_hdr": [
+                  0.07916259765625,
+                  0.1485595703125,
+                  0.287353515625
+                ],
+                "expected_hdr": [
+                  0.07921129967285528,
+                  0.14865848601465326,
+                  0.2875528586982492
+                ],
+                "bmp_rgb": [
+                  77,
+                  101,
+                  130
+                ],
+                "expected_bmp": [
+                  77,
+                  101,
+                  130
+                ],
+                "base": [
+                  0.125,
+                  0.25,
+                  0.5
+                ],
+                "roughness": 0.75
+              }
+            }
+          }
+        }
+      }
+    ]
+  },
+  "scope": "Fixed-tick expiry and capacity policy on bounded scenes. Sustained cooked-terrain workload is headless, with harness wall time. Windows Vulkan captures use rigid opaque receivers, one sample, and reconstruction disabled."
+}

@@ -1,8 +1,17 @@
 # Implementation status
 
-Updated 2026-11-21 for **0.0.363**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-21 for **0.0.364**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.364 gives [temporary surface marks](SURFACE_MARKS.md#expire-and-recycle-marks)
+fixed-tick deadlines and an optional overflow policy that protects permanent
+marks. Linux CoreCLR and Native AOT each processed 600 temporary placements
+on cooked terrain over 900 ticks. Of those marks, 510 were recycled and 90
+expired. The permanent mark survived and fresh processes reproduced the
+final save bytes. Relocated Windows builds produced 24 matching warm and
+cold captures across AMD and NVIDIA in forward and deferred Vulkan, using
+one sample with reconstruction disabled. [Results](evidence/m2-timed-surface-marks-364.json)
 
 Version 0.0.363 feeds [receiver-local surface mark changes into FSR history](RECONSTRUCTION.md#coordinates-history-and-composition)
 for one accepted submission while preserving geometric motion. A continuous

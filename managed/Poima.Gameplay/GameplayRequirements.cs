@@ -3,7 +3,7 @@ using System.Globalization;
 using System.Text.Json;
 namespace Poima;
 
-[Flags] internal enum GameplayRequiredFeatures : ulong { None=0,InertialAnimation=1,MaskedAnimation=2,CharacterInput=4,Navigation=8,HierarchicalInstances=16,PlayerPreferences=32,InputActions=64,HitRegions=128,TwoBoneIk=256,RootMotion=512,CameraLens=1024,CharacterStance=2048,TwoBoneIkOrientation=4096,GroundingControl=8192,AnimationRate=16384,CameraPose=32768,CapsuleCast=65536,PhysicalRig=131072,PhysicalRigDrive=262144,PhysicalRigAnimation=524288,PhysicalRecovery=1048576,ItemAttachment=2097152,ItemAttachmentContact=4194304,ItemAttachmentSurface=8388608,ItemAttachmentRecovery=16777216,ItemAttachmentRelease=33554432,ItemAttachmentPickup=67108864,ItemAttachmentAim=134217728,IkClearance=268435456,ItemPickupClearance=536870912,ItemPickupPose=1073741824,ItemPickupBlend=2147483648u,ItemPickupSteering=4294967296ul,ItemPickupHandFallback=8589934592ul,ParticleBurst=1ul<<34,SurfaceMark=1ul<<35,SurfaceMarkDirection=1ul<<36,SurfaceMarkTexture=1ul<<37 }
+[Flags] internal enum GameplayRequiredFeatures : ulong { None=0,InertialAnimation=1,MaskedAnimation=2,CharacterInput=4,Navigation=8,HierarchicalInstances=16,PlayerPreferences=32,InputActions=64,HitRegions=128,TwoBoneIk=256,RootMotion=512,CameraLens=1024,CharacterStance=2048,TwoBoneIkOrientation=4096,GroundingControl=8192,AnimationRate=16384,CameraPose=32768,CapsuleCast=65536,PhysicalRig=131072,PhysicalRigDrive=262144,PhysicalRigAnimation=524288,PhysicalRecovery=1048576,ItemAttachment=2097152,ItemAttachmentContact=4194304,ItemAttachmentSurface=8388608,ItemAttachmentRecovery=16777216,ItemAttachmentRelease=33554432,ItemAttachmentPickup=67108864,ItemAttachmentAim=134217728,IkClearance=268435456,ItemPickupClearance=536870912,ItemPickupPose=1073741824,ItemPickupBlend=2147483648u,ItemPickupSteering=4294967296ul,ItemPickupHandFallback=8589934592ul,ParticleBurst=1ul<<34,SurfaceMark=1ul<<35,SurfaceMarkDirection=1ul<<36,SurfaceMarkTexture=1ul<<37,SurfaceMarkTimed=1ul<<38 }
 internal static unsafe class GameplayRequirements
 {
     internal const string Baseline="{\"call_version\":1,\"call_bytes\":80,\"services_version\":7,\"services_bytes\":176,\"features\":[\"baseline_v7\"]}";
@@ -43,7 +43,7 @@ internal static unsafe class GameplayRequirements
     internal static string Json(GameplayRequiredFeatures features)
     {
         ValidateRequired(features);
-        if((features & (GameplayRequiredFeatures.Navigation|GameplayRequiredFeatures.HierarchicalInstances|GameplayRequiredFeatures.PlayerPreferences|GameplayRequiredFeatures.InputActions|GameplayRequiredFeatures.HitRegions|GameplayRequiredFeatures.TwoBoneIk|GameplayRequiredFeatures.RootMotion|GameplayRequiredFeatures.CameraLens|GameplayRequiredFeatures.CharacterStance|GameplayRequiredFeatures.TwoBoneIkOrientation|GameplayRequiredFeatures.GroundingControl|GameplayRequiredFeatures.AnimationRate|GameplayRequiredFeatures.CameraPose|GameplayRequiredFeatures.CapsuleCast|GameplayRequiredFeatures.PhysicalRig|GameplayRequiredFeatures.PhysicalRigDrive|GameplayRequiredFeatures.PhysicalRigAnimation|GameplayRequiredFeatures.PhysicalRecovery|GameplayRequiredFeatures.ItemAttachment|GameplayRequiredFeatures.ParticleBurst|GameplayRequiredFeatures.SurfaceMark|GameplayRequiredFeatures.SurfaceMarkDirection|GameplayRequiredFeatures.SurfaceMarkTexture))!=0)
+        if((features & (GameplayRequiredFeatures.Navigation|GameplayRequiredFeatures.HierarchicalInstances|GameplayRequiredFeatures.PlayerPreferences|GameplayRequiredFeatures.InputActions|GameplayRequiredFeatures.HitRegions|GameplayRequiredFeatures.TwoBoneIk|GameplayRequiredFeatures.RootMotion|GameplayRequiredFeatures.CameraLens|GameplayRequiredFeatures.CharacterStance|GameplayRequiredFeatures.TwoBoneIkOrientation|GameplayRequiredFeatures.GroundingControl|GameplayRequiredFeatures.AnimationRate|GameplayRequiredFeatures.CameraPose|GameplayRequiredFeatures.CapsuleCast|GameplayRequiredFeatures.PhysicalRig|GameplayRequiredFeatures.PhysicalRigDrive|GameplayRequiredFeatures.PhysicalRigAnimation|GameplayRequiredFeatures.PhysicalRecovery|GameplayRequiredFeatures.ItemAttachment|GameplayRequiredFeatures.ParticleBurst|GameplayRequiredFeatures.SurfaceMark|GameplayRequiredFeatures.SurfaceMarkDirection|GameplayRequiredFeatures.SurfaceMarkTexture|GameplayRequiredFeatures.SurfaceMarkTimed))!=0)
         {
             // Known names only; avoid reflection-based JSON serialization in AOT.
             var names=new List<string>();
@@ -86,6 +86,7 @@ internal static unsafe class GameplayRequirements
             if((features & GameplayRequiredFeatures.SurfaceMark)!=0)names.Add(SurfaceMarkServiceAbi.Feature);
             if((features & GameplayRequiredFeatures.SurfaceMarkDirection)!=0)names.Add(SurfaceMarkServiceAbi.DirectionFeature);
             if((features & GameplayRequiredFeatures.SurfaceMarkTexture)!=0)names.Add(SurfaceMarkServiceAbi.TextureFeature);
+            if((features & GameplayRequiredFeatures.SurfaceMarkTimed)!=0)names.Add(SurfaceMarkServiceAbi.TimedFeature);
             string bytes=RequiredServiceBytes(features).ToString(CultureInfo.InvariantCulture);
             return "{\"call_version\":1,\"call_bytes\":80,\"services_version\":7,\"services_bytes\":"+bytes+",\"features\":["+string.Join(",",names.Select(name=>"\""+name+"\""))+"]}";
         }
@@ -96,7 +97,7 @@ internal static unsafe class GameplayRequirements
     }
     private static void ValidateRequired(GameplayRequiredFeatures required)
     {
-        if((required & ~(GameplayRequiredFeatures.InertialAnimation|GameplayRequiredFeatures.MaskedAnimation|GameplayRequiredFeatures.CharacterInput|GameplayRequiredFeatures.Navigation|GameplayRequiredFeatures.HierarchicalInstances|GameplayRequiredFeatures.PlayerPreferences|GameplayRequiredFeatures.InputActions|GameplayRequiredFeatures.HitRegions|GameplayRequiredFeatures.TwoBoneIk|GameplayRequiredFeatures.RootMotion|GameplayRequiredFeatures.CameraLens|GameplayRequiredFeatures.CharacterStance|GameplayRequiredFeatures.TwoBoneIkOrientation|GameplayRequiredFeatures.GroundingControl|GameplayRequiredFeatures.AnimationRate|GameplayRequiredFeatures.CameraPose|GameplayRequiredFeatures.CapsuleCast|GameplayRequiredFeatures.PhysicalRig|GameplayRequiredFeatures.PhysicalRigDrive|GameplayRequiredFeatures.PhysicalRigAnimation|GameplayRequiredFeatures.PhysicalRecovery|GameplayRequiredFeatures.ItemAttachment|GameplayRequiredFeatures.ItemAttachmentContact|GameplayRequiredFeatures.ItemAttachmentSurface|GameplayRequiredFeatures.ItemAttachmentRecovery|GameplayRequiredFeatures.ItemAttachmentRelease|GameplayRequiredFeatures.ItemAttachmentPickup|GameplayRequiredFeatures.ItemAttachmentAim|GameplayRequiredFeatures.IkClearance|GameplayRequiredFeatures.ItemPickupClearance|GameplayRequiredFeatures.ItemPickupPose|GameplayRequiredFeatures.ItemPickupBlend|GameplayRequiredFeatures.ItemPickupSteering|GameplayRequiredFeatures.ItemPickupHandFallback|GameplayRequiredFeatures.ParticleBurst|GameplayRequiredFeatures.SurfaceMark|GameplayRequiredFeatures.SurfaceMarkDirection|GameplayRequiredFeatures.SurfaceMarkTexture))!=0 ||
+        if((required & ~(GameplayRequiredFeatures.InertialAnimation|GameplayRequiredFeatures.MaskedAnimation|GameplayRequiredFeatures.CharacterInput|GameplayRequiredFeatures.Navigation|GameplayRequiredFeatures.HierarchicalInstances|GameplayRequiredFeatures.PlayerPreferences|GameplayRequiredFeatures.InputActions|GameplayRequiredFeatures.HitRegions|GameplayRequiredFeatures.TwoBoneIk|GameplayRequiredFeatures.RootMotion|GameplayRequiredFeatures.CameraLens|GameplayRequiredFeatures.CharacterStance|GameplayRequiredFeatures.TwoBoneIkOrientation|GameplayRequiredFeatures.GroundingControl|GameplayRequiredFeatures.AnimationRate|GameplayRequiredFeatures.CameraPose|GameplayRequiredFeatures.CapsuleCast|GameplayRequiredFeatures.PhysicalRig|GameplayRequiredFeatures.PhysicalRigDrive|GameplayRequiredFeatures.PhysicalRigAnimation|GameplayRequiredFeatures.PhysicalRecovery|GameplayRequiredFeatures.ItemAttachment|GameplayRequiredFeatures.ItemAttachmentContact|GameplayRequiredFeatures.ItemAttachmentSurface|GameplayRequiredFeatures.ItemAttachmentRecovery|GameplayRequiredFeatures.ItemAttachmentRelease|GameplayRequiredFeatures.ItemAttachmentPickup|GameplayRequiredFeatures.ItemAttachmentAim|GameplayRequiredFeatures.IkClearance|GameplayRequiredFeatures.ItemPickupClearance|GameplayRequiredFeatures.ItemPickupPose|GameplayRequiredFeatures.ItemPickupBlend|GameplayRequiredFeatures.ItemPickupSteering|GameplayRequiredFeatures.ItemPickupHandFallback|GameplayRequiredFeatures.ParticleBurst|GameplayRequiredFeatures.SurfaceMark|GameplayRequiredFeatures.SurfaceMarkDirection|GameplayRequiredFeatures.SurfaceMarkTexture|GameplayRequiredFeatures.SurfaceMarkTimed))!=0 ||
             ((required & GameplayRequiredFeatures.MaskedAnimation)!=0 && (required & GameplayRequiredFeatures.InertialAnimation)==0) ||
             ((required & GameplayRequiredFeatures.TwoBoneIkOrientation)!=0 && (required & GameplayRequiredFeatures.TwoBoneIk)==0) ||
             ((required & GameplayRequiredFeatures.GroundingControl)!=0 && (required & GameplayRequiredFeatures.TwoBoneIkOrientation)==0) ||
@@ -167,6 +168,7 @@ internal static unsafe class GameplayRequirements
                 case SurfaceMarkServiceAbi.Feature:result|=GameplayRequiredFeatures.SurfaceMark;break;
                 case SurfaceMarkServiceAbi.DirectionFeature:result|=GameplayRequiredFeatures.SurfaceMarkDirection;break;
                 case SurfaceMarkServiceAbi.TextureFeature:result|=GameplayRequiredFeatures.SurfaceMarkTexture;break;
+                case SurfaceMarkServiceAbi.TimedFeature:result|=GameplayRequiredFeatures.SurfaceMarkTimed;break;
                 case "physical_recovery_v1":result|=GameplayRequiredFeatures.PhysicalRecovery;break;
                 case "physical_rig_animation_v1":result|=GameplayRequiredFeatures.PhysicalRigAnimation;break;
                 case "physical_rig_drive_v1":result|=GameplayRequiredFeatures.PhysicalRigDrive;break;
@@ -188,6 +190,7 @@ internal static unsafe class GameplayRequirements
         return result;
     }
     private static uint RequiredServiceBytes(GameplayRequiredFeatures features) =>
+        (features & GameplayRequiredFeatures.SurfaceMarkTimed)!=0 ? SurfaceMarkServiceAbi.TimedRequiredBytes :
         (features & GameplayRequiredFeatures.SurfaceMarkTexture)!=0 ? SurfaceMarkServiceAbi.TextureRequiredBytes :
         (features & GameplayRequiredFeatures.SurfaceMarkDirection)!=0 ? SurfaceMarkServiceAbi.DirectionRequiredBytes :
         (features & GameplayRequiredFeatures.SurfaceMark)!=0 ? SurfaceMarkServiceAbi.RequiredBytes :
@@ -324,6 +327,9 @@ internal static unsafe class GameplayRequirements
         if((required & GameplayRequiredFeatures.SurfaceMarkTexture)!=0 &&
             (Integer(host,"services_bytes")<SurfaceMarkServiceAbi.TextureRequiredBytes || !features.Contains(SurfaceMarkServiceAbi.TextureFeature)))
             throw new ArgumentException("Gameplay host lacks surface_mark_texture_v3 with at least 560 service bytes.");
+        if((required & GameplayRequiredFeatures.SurfaceMarkTimed)!=0 &&
+            (Integer(host,"services_bytes")<SurfaceMarkServiceAbi.TimedRequiredBytes || !features.Contains(SurfaceMarkServiceAbi.TimedFeature)))
+            throw new ArgumentException("Gameplay host lacks surface_mark_timed_v4 with at least 568 service bytes.");
         if((required & GameplayRequiredFeatures.ItemAttachmentContact)!=0 && !features.Contains("item_attachment_contact_v1"))
             throw new ArgumentException("Gameplay host lacks item_attachment_contact_v1.");
         if((required & GameplayRequiredFeatures.ItemAttachmentSurface)!=0 && !features.Contains("item_attachment_surface_v1"))
@@ -374,6 +380,7 @@ internal static unsafe class GameplayRequirements
         if((required & GameplayRequiredFeatures.SurfaceMark)!=0)_=SurfaceMarkServiceAbi.Validate(services);
         if((required & GameplayRequiredFeatures.SurfaceMarkDirection)!=0)_=SurfaceMarkServiceAbi.ValidateDirectional(services);
         if((required & GameplayRequiredFeatures.SurfaceMarkTexture)!=0)_=SurfaceMarkServiceAbi.ValidateTextured(services);
+        if((required & GameplayRequiredFeatures.SurfaceMarkTimed)!=0)_=SurfaceMarkServiceAbi.ValidateTimed(services);
         if((required & GameplayRequiredFeatures.PhysicalRecovery)!=0)_=PhysicalRecoveryServiceAbi.Validate(services);
         if((required & GameplayRequiredFeatures.PhysicalRigAnimation)!=0)_=PhysicalRigAnimationServiceAbi.Validate(services);
         else if((required & GameplayRequiredFeatures.PhysicalRigDrive)!=0)_=PhysicalRigDriveServiceAbi.Validate(services);

@@ -59,6 +59,28 @@ A scene retains up to 256 marks with at most four per receiver. Capacity
 and ray failures roll back the step batch. A retry of the same successful
 request uses the existing receipt.
 
+## Expire and recycle marks
+
+Set `lifetime_ticks` to an integer from 1 to 216,000 for a temporary mark.
+A mark placed on tick 10 with a lifetime of 3 can be seen on ticks 10
+through 12. It expires before any new placement on tick 13. A placement
+without a lifetime is permanent until its receiver is removed.
+
+Set `overflow` to `recycle_oldest_timed` to keep footprints and impacts
+flowing when a receiver fills up. A full receiver reuses its own oldest
+timed slot. When only the scene is full, it reuses the oldest timed slot
+in the scene. Oldest means lowest placement ID. If the applicable slots
+are all permanent, a valid new request is counted as dropped. Successful
+recycling allocates a new ID and enters the normal blend order. The
+default `reject` policy rolls the batch back when capacity is exceeded.
+
+Inspection shows each timed mark's `expires_tick`. The scene-wide
+`lifecycle` counters report expired, recycled, and dropped marks, including
+in receiver-filtered queries. They appear while a timed mark exists or a
+lifecycle event has occurred. A dropped request still checks its receiver,
+ray, and style, and it uses one command slot. It consumes no placement ID.
+Deadlines and counters resume from the saved tick in a fresh process.
+
 ## Author a mask profile
 
 Import a PNG or JPEG with `asset.image.import` and `color_space: "linear"`.
@@ -124,6 +146,12 @@ Discover `surface_mark_texture_v3` and its 176-byte command under
 The game supplies the profile and direction of travel. The mark still
 uses the same placement budget and rollback as the other commands.
 
+Implement `ITimedSurfaceMarkGame` to call
+`context.PlaceTimedSurfaceMark(receiver, origin, direction, distance, style, travelDirection, lifetimeTicks, overflow, source, profile)`.
+Omit the profile for an analytic mark. Discover `surface_mark_timed_v4`
+under `gameplay_surface_marks.timed`. It uses a 184-byte command and
+a 568-byte epoch-7 prefix.
+
 ## Inspect and restore
 
 Read `runtime.surface_marks.inspect` using the current runtime session ID,
@@ -137,6 +165,9 @@ stores the profile ID and exact cooked mask digest. Restoring uses the
 catalog in the saved authored world, including after a profile has been
 reassigned in the current project. Keep that original cooked file available
 for existing saves. A new export includes the current catalog's images.
+The snapshot uses version 3 of the mark extension while timed rows or
+lifecycle counters exist. Permanent analytic and textured marks retain
+their respective version 1 and version 2 representations.
 
 ```sh
 python3 tests/surface_marks_capture.py build/linux-game/poima \
@@ -156,3 +187,8 @@ The [textured gameplay fixture](../tests/textured_surface_marks_contract.py)
 uses the compiled game in `tests/managed_textured_surface_mark_gameplay`.
 It checks filtered coverage in relocated builds and checks that replacing
 a profile in the project preserves the original mask in an existing save.
+
+The [timed gameplay fixture](../tests/timed_surface_marks_contract.py) uses
+`tests/managed_timed_surface_mark_gameplay`. Its headless route checks capacity,
+rollback, and 900 ticks of placements on cooked terrain. Its standalone route
+checks mark coverage before and after expiry, including fresh-process restores.

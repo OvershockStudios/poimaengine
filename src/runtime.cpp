@@ -1857,7 +1857,7 @@ struct Runtime::Impl {
                     {
                         profiling::Scope gameplay_profile("runtime.gameplay.tick");
                         build_controller_preview();
-                        game->tick(gameplay_abi::physical_rig_drive_baseline(api.directional.marks.particles.attachments.recovery.animation.drive),std::span<const PoimaGameInput>(frame_inputs.data(),input_count),tick);
+                        game->tick(gameplay_abi::physical_rig_drive_baseline(api.textured.directional.marks.particles.attachments.recovery.animation.drive),std::span<const PoimaGameInput>(frame_inputs.data(),input_count),tick);
                         clear_controller_preview();game_phase=GamePhase::idle;game_input_source=nullptr;game_input_edges=false;
                     }
                     if(auto candidate=prepare_ui_commands())ui_model.swap(candidate);
@@ -2049,8 +2049,7 @@ struct Runtime::Impl {
                 finish_game_attachments();
                 for(const auto e:topology->characters)registry.get<Controller>(e).character->EndTick();
                 step_particles(pressed_actions);
-                retire_surface_marks();
-                place_surface_marks(frame==0 ? mark_commands : std::span<const RuntimeSurfaceMarkCommand>{});
+                advance_surface_marks(frame==0 ? mark_commands : std::span<const RuntimeSurfaceMarkCommand>{});
                 pressed_actions.clear();
             }
             sync();
@@ -2389,6 +2388,10 @@ std::vector<RuntimeStructureResult> Runtime::step(std::uint32_t ticks,const std:
 std::span<const RuntimeSurfaceMark> Runtime::surface_marks() const {
     if(!impl_->surface_marks)return {};
     return impl_->surface_marks->rows;
+}
+std::optional<RuntimeSurfaceMarkLifecycle> Runtime::surface_mark_lifecycle() const {
+    if(!impl_->surface_marks || !impl_->surface_marks->has_lifecycle())return std::nullopt;
+    return impl_->surface_marks->lifecycle;
 }
 std::optional<PhysicalRigObservation> Runtime::physical_rig(const std::string& id,bool include_parts,bool include_joints) const {
     (void)impl_->find(id);if(!impl_->physical_owners.contains(id))return {};

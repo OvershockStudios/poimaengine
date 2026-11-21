@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.364
+
+- Expire temporary footprints and impact marks at a fixed tick, with optional recycling that protects permanent marks. Save continuation preserves deadlines and lifecycle counts.
+
 ## 0.0.363
 
 - Signal FSR when a receiver's surface marks change so the new appearance can replace old history while its motion vectors stay valid.

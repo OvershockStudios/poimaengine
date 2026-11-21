@@ -13,7 +13,7 @@
         for(const auto& row:raw) {
             const std::initializer_list<const char*> keys={"receiver","ray","half_extent_m","half_depth_m",
                 "minimum_normal_dot","edge_fraction","linear_rgb","opacity","roughness"};
-            fields(row,{"receiver","source","ray","travel_direction","profile","half_extent_m","half_depth_m","minimum_normal_dot","edge_fraction",
+            fields(row,{"receiver","source","ray","travel_direction","profile","lifetime_ticks","overflow","half_extent_m","half_depth_m","minimum_normal_dot","edge_fraction",
                 "linear_rgb","opacity","roughness"},keys);
             RuntimeSurfaceMarkCommand command;
             command.receiver=identifier(row.at("receiver"));
@@ -22,6 +22,17 @@
             if(row.contains("profile")) {
                 command.profile=identifier(row.at("profile"));
                 require(command.profile!=std::string(32,'0'),"Surface mark profile identity cannot be zero.");
+            }
+            if(row.contains("lifetime_ticks")) {
+                const auto lifetime=revision(row.at("lifetime_ticks"));
+                require(lifetime>0 && lifetime<=max_surface_mark_lifetime_ticks,"Surface mark lifetime must be 1..216000 ticks.");
+                command.lifetime_ticks=static_cast<std::uint32_t>(lifetime);
+            }
+            if(row.contains("overflow")) {
+                const auto& overflow=row.at("overflow");
+                require(overflow=="reject" || (overflow=="recycle_oldest_timed" && command.lifetime_ticks),
+                    "Surface mark overflow must be reject or use recycle_oldest_timed with a lifetime.");
+                if(overflow=="recycle_oldest_timed")command.overflow=SurfaceMarkOverflowPolicy::recycle_oldest_timed;
             }
             const auto& ray=row.at("ray");
             fields(ray,{"origin","direction","distance"},{"origin","direction","distance"});
@@ -58,7 +69,9 @@
             record["id"]=std::to_string(row.id);
             marks.push_back(std::move(record));
         }
-        return {{"session_id",runtime_id_},{"tick",tick},{"structure_revision",runtime_->structure_revision()},
+        Json result={{"session_id",runtime_id_},{"tick",tick},{"structure_revision",runtime_->structure_revision()},
             {"limits",{{"commands_per_step",max_surface_mark_commands},{"marks_per_receiver",max_surface_marks_per_receiver},
                 {"marks_per_scene",max_scene_surface_marks}}},{"marks",std::move(marks)}};
+        if(const auto counts=runtime_->surface_mark_lifecycle())result["lifecycle"]=surface_mark_lifecycle_json(*counts);
+        return result;
     }

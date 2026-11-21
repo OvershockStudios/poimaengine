@@ -17,7 +17,12 @@ inline nlohmann::json surface_mark_json(const RuntimeSurfaceMark& row) {
         result["profile"]=row.profile;
         result["mask_sha256"]=mark.mask_sha256;
     }
+    if(row.expires_tick)result["expires_tick"]=row.expires_tick;
     return result;
+}
+
+inline nlohmann::json surface_mark_lifecycle_json(const RuntimeSurfaceMarkLifecycle& counts) {
+    return {{"expired",counts.expired},{"recycled",counts.recycled},{"dropped",counts.dropped}};
 }
 
 }

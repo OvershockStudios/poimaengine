@@ -75,9 +75,10 @@
             require(self.control_intent==RuntimeControlIntent::none || self.control_intent==next,"Conflicting playback intents in one Control callback.");self.control_intent=next;
         });
     }
-    PoimaGameSurfaceMarkTextureServicesV3 services() {
-        PoimaGameSurfaceMarkTextureServicesV3 api{};
-        auto& directional=api.directional;
+    PoimaGameSurfaceMarkTimedServicesV4 services() {
+        PoimaGameSurfaceMarkTimedServicesV4 api{};
+        auto& textured=api.textured;
+        auto& directional=textured.directional;
         auto& marks=directional.marks;
         auto& particles=marks.particles;auto& attachments=particles.attachments;auto& recovery=attachments.recovery;auto& full=recovery.animation;auto& drive=full.drive;auto& physical=drive.physical;auto& capsule=physical.capsule;auto& camera_pose=capsule.camera_pose;auto& rate=camera_pose.animation_rate;auto& grounding=rate.grounding;auto& orientation=grounding.orientation;auto& extended=orientation.character_stance;auto& result=extended.camera_lens;
         result.root_motion.ik.regions.actions.preferences.instances.navigation={{{{{7,sizeof(api),this,&get_entity,&cast_ray,&move_body,&sound_event,&get_animation,&set_animation,
@@ -99,7 +100,8 @@
         particles.particle_burst=&burst_game_particles;
         marks.surface_mark=&stage_surface_mark;
         directional.surface_mark_direction=&stage_directional_surface_mark;
-        api.surface_mark_texture=&stage_textured_surface_mark;
+        textured.surface_mark_texture=&stage_textured_surface_mark;
+        api.surface_mark_timed=&stage_timed_surface_mark;
         return api;
     }
     std::shared_ptr<ui::Model> prepare_ui_commands() const {
@@ -121,7 +123,7 @@
         const auto numeric=gameplay_id(id);control_event.element={numeric.high,numeric.low};control_event.sequence=control_sequence+1;
         control_event.action_bytes=static_cast<uint32_t>(definition.action.size());std::copy(definition.action.begin(),definition.action.end(),control_event.action);
         try {
-            game_phase=GamePhase::control;auto api=services();game->control(gameplay_abi::physical_rig_drive_baseline(api.directional.marks.particles.attachments.recovery.animation.drive),tick);game_phase=GamePhase::idle;
+            game_phase=GamePhase::control;auto api=services();game->control(gameplay_abi::physical_rig_drive_baseline(api.textured.directional.marks.particles.attachments.recovery.animation.drive),tick);game_phase=GamePhase::idle;
             game->validate_entity_references([](void* context,PoimaEntityId entity){return static_cast<RuntimeComponents*>(context)->alive(entity);},components.get());
             auto candidate=prepare_ui_commands();
             validate_player_preferences_boundary();

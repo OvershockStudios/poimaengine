@@ -4,6 +4,11 @@
     struct SurfaceMarksState {
         std::uint64_t next_id=1;
         std::vector<RuntimeSurfaceMark> rows;
+        RuntimeSurfaceMarkLifecycle lifecycle;
+
+        bool has_lifecycle() const {
+            return lifecycle.has_events() || std::ranges::any_of(rows,[](const auto& row){return row.expires_tick!=0;});
+        }
     };
     std::shared_ptr<const SurfaceMarksState> surface_marks;
     std::vector<RuntimeSurfaceMarkCommand> gameplay_surface_marks;
@@ -109,6 +114,25 @@
         });
     }
 
+    static int32_t POIMA_CALL stage_timed_surface_mark(void* context,const PoimaGameSurfaceMarkCommandV4* request,
+        PoimaGameError* error) {
+        return callback(error,[&] {
+            require(context,"Surface mark context is absent.");
+            auto& self=*static_cast<Impl*>(context);
+            self.check_surface_mark_request(request ? &request->textured.directional.mark : nullptr,4,sizeof(PoimaGameSurfaceMarkCommandV4));
+            require(request->lifetime_ticks>0 && request->lifetime_ticks<=max_surface_mark_lifetime_ticks,
+                "Surface mark lifetime must be 1..216000 ticks.");
+            require(request->overflow<=static_cast<std::uint32_t>(SurfaceMarkOverflowPolicy::recycle_oldest_timed),
+                "Invalid surface mark overflow policy.");
+            const auto& profile=request->textured.profile;
+            self.queue_directional_surface_mark(request->textured.directional,
+                profile.high || profile.low ? gameplay_id(profile) : std::string{});
+            auto& command=self.gameplay_surface_marks.back();
+            command.lifetime_ticks=request->lifetime_ticks;
+            command.overflow=static_cast<SurfaceMarkOverflowPolicy>(request->overflow);
+        });
+    }
+
     entt::entity surface_mark_receiver(const std::string& id) const {
         const auto entity=find(id);
         const auto& definition=topology->definitions.at(id);
@@ -163,6 +187,8 @@
     void validate_surface_mark(const RuntimeSurfaceMark& row) const {
         require(row.id>0 && row.id<max_surface_mark_id && row.tick>0 && row.tick<=tick,
             "Invalid surface mark identity or placement tick.");
+        require(!row.expires_tick || (row.expires_tick>tick && row.expires_tick<=max_surface_mark_id &&
+            row.expires_tick-row.tick<=max_surface_mark_lifetime_ticks),"Invalid saved surface mark expiry.");
         const auto receiver=surface_mark_receiver(row.receiver);
         validate_surface_mark_fields(row.mark,bool(registry.get<RuntimeMesh>(receiver).mesh));
         require(row.profile.empty()==row.mark.mask_sha256.empty(),"Surface mark profile and mask must be paired.");
@@ -226,22 +252,57 @@
         return tangent;
     }
 
-    void place_surface_marks(std::span<const RuntimeSurfaceMarkCommand> caller) {
+    bool surface_mark_expired(const RuntimeSurfaceMark& row) const {
+        return row.expires_tick && row.expires_tick<=tick;
+    }
+
+    void erase_retired_surface_marks(SurfaceMarksState& state) const {
+        std::erase_if(state.rows,[&](const auto& row) {
+            if(surface_mark_expired(row)) {
+                ++state.lifecycle.expired;
+                return true;
+            }
+            return !topology->identities.contains(row.receiver);
+        });
+    }
+
+    void advance_surface_marks(std::span<const RuntimeSurfaceMarkCommand> caller) {
         const std::span<const RuntimeSurfaceMarkCommand> gameplay=gameplay_surface_marks;
-        if(caller.empty() && gameplay.empty())return;
+        if(caller.empty() && gameplay.empty()) {
+            retire_surface_marks();
+            return;
+        }
         require(caller.size()<=max_surface_mark_commands && gameplay.size()<=max_surface_mark_commands-caller.size(),
             "Surface mark command budget exceeded.");
         const auto requested=caller.size()+gameplay.size();
         auto next=surface_marks ? std::make_shared<SurfaceMarksState>(*surface_marks) : std::make_shared<SurfaceMarksState>();
-        require(requested<=max_scene_surface_marks-next->rows.size(),"Scene surface mark capacity exceeded.");
-        next->rows.reserve(next->rows.size()+requested);
+        erase_retired_surface_marks(*next);
+        const auto recycles=[](const auto& command){return command.overflow==SurfaceMarkOverflowPolicy::recycle_oldest_timed;};
+        if(requested>max_scene_surface_marks-next->rows.size())
+            require(std::ranges::any_of(caller,recycles) || std::ranges::any_of(gameplay,recycles),"Scene surface mark capacity exceeded.");
+        next->rows.reserve(std::min(max_scene_surface_marks,next->rows.size()+requested));
         // Caller marks receive earlier IDs than gameplay marks on the same tick.
         for(const auto commands:{caller,gameplay})for(const auto& command:commands) {
+            const bool recycle=recycles(command);
+            require((command.overflow==SurfaceMarkOverflowPolicy::reject || (recycle && command.lifetime_ticks)) &&
+                command.lifetime_ticks<=max_surface_mark_lifetime_ticks && tick<=max_surface_mark_id-command.lifetime_ticks,
+                "Invalid surface mark lifetime or overflow policy at this tick.");
             const auto count=std::count_if(next->rows.begin(),next->rows.end(),[&](const auto& row) {
                 return row.receiver==command.receiver;
             });
-            require(count<static_cast<std::ptrdiff_t>(max_surface_marks_per_receiver),"Surface mark receiver capacity exceeded.");
-            require(next->next_id<max_surface_mark_id,"Surface mark identity space exhausted.");
+            const bool receiver_full=count>=static_cast<std::ptrdiff_t>(max_surface_marks_per_receiver);
+            const bool scene_full=next->rows.size()>=max_scene_surface_marks;
+            auto replaced=next->rows.end();
+            bool dropped=false;
+            if(receiver_full || scene_full) {
+                require(recycle || !receiver_full,"Surface mark receiver capacity exceeded.");
+                require(recycle || !scene_full,"Scene surface mark capacity exceeded.");
+                replaced=std::find_if(next->rows.begin(),next->rows.end(),[&](const auto& row) {
+                    return row.expires_tick && (!receiver_full || row.receiver==command.receiver);
+                });
+                dropped=replaced==next->rows.end();
+            }
+            require(dropped || next->next_id<max_surface_mark_id,"Surface mark identity space exhausted.");
             const auto receiver=surface_mark_receiver(command.receiver);
             const auto& mesh=registry.get<RuntimeMesh>(receiver);
             const auto ray=surface_mark_ray(command);
@@ -284,18 +345,26 @@
                 mark.tangent[k]=static_cast<float>(tangent[k]);
             }
             validate_surface_mark_fields(mark,bool(mesh.mesh));
-            next->rows.push_back({next->next_id++,tick,command.receiver,std::move(mark),command.profile});
+            if(dropped) {
+                if(next->lifecycle.dropped<max_surface_mark_id)++next->lifecycle.dropped;
+                continue;
+            }
+            if(replaced!=next->rows.end()) {
+                next->rows.erase(replaced);
+                ++next->lifecycle.recycled;
+            }
+            const auto expiry=command.lifetime_ticks ? tick+command.lifetime_ticks : 0;
+            next->rows.push_back({next->next_id++,tick,command.receiver,std::move(mark),command.profile,expiry});
         }
         surface_marks=std::move(next);
         gameplay_surface_marks.clear();
     }
 
     void retire_surface_marks() {
-        const auto retired=[&](const RuntimeSurfaceMark& row) {
-            return !topology->identities.contains(row.receiver);
-        };
-        if(!surface_marks || std::none_of(surface_marks->rows.begin(),surface_marks->rows.end(),retired))return;
+        if(!surface_marks || std::ranges::none_of(surface_marks->rows,[&](const auto& row) {
+            return surface_mark_expired(row) || !topology->identities.contains(row.receiver);
+        }))return;
         auto next=std::make_shared<SurfaceMarksState>(*surface_marks);
-        std::erase_if(next->rows,retired);
+        erase_retired_surface_marks(*next);
         surface_marks=std::move(next);
     }

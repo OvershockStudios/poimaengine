@@ -544,6 +544,8 @@ struct RuntimeRayHit {
     std::optional<std::uint32_t> triangle; // Original mesh indices triple ordinal; absent for primitives.
 };
 inline constexpr std::size_t max_surface_mark_commands=16;
+inline constexpr std::uint32_t max_surface_mark_lifetime_ticks=216000;
+enum class SurfaceMarkOverflowPolicy : std::uint32_t { reject=0, recycle_oldest_timed=1 };
 struct RuntimeSurfaceMarkCommand {
     std::string receiver;
     RuntimeRay ray;
@@ -551,12 +553,19 @@ struct RuntimeSurfaceMarkCommand {
     std::string source; // Empty uses world coordinates. Otherwise use its final local frame.
     std::optional<std::array<double,3>> travel_direction; // Same frame as ray.direction.
     std::string profile; // Optional ID from the frozen surface mark profile catalog.
+    std::uint32_t lifetime_ticks=0; // Zero represents a permanent mark.
+    SurfaceMarkOverflowPolicy overflow=SurfaceMarkOverflowPolicy::reject;
 };
 struct RuntimeSurfaceMark {
     std::uint64_t id=0,tick=0;
     std::string receiver;
     SceneSurfaceMark mark;
     std::string profile;
+    std::uint64_t expires_tick=0;
+};
+struct RuntimeSurfaceMarkLifecycle {
+    std::uint64_t expired=0,recycled=0,dropped=0;
+    bool has_events() const { return expired || recycled || dropped; }
 };
 struct ReleasedItemAim {
     std::optional<RuntimeRayHit> hit;
@@ -733,6 +742,7 @@ public:
         const std::vector<PhysicalRigCommand>& physical_rigs={},
         std::span<const RuntimeSurfaceMarkCommand> surface_marks={});
     std::span<const RuntimeSurfaceMark> surface_marks() const;
+    std::optional<RuntimeSurfaceMarkLifecycle> surface_mark_lifecycle() const;
     std::optional<RuntimeCharacterStanceState> character_stance(const std::string& id) const;
     std::optional<RuntimeAnimationState> animation(const std::string& id) const;
     std::optional<PhysicalRigObservation> physical_rig(const std::string& id,

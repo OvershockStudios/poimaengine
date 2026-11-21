@@ -13,6 +13,16 @@ public interface IDirectionalSurfaceMarkGame { }
 /// <summary>Opts into persistent surface marks that use an authored coverage mask.</summary>
 public interface ITexturedSurfaceMarkGame { }
 
+/// <summary>Opts into surface marks with a fixed tick lifetime.</summary>
+public interface ITimedSurfaceMarkGame { }
+
+/// <summary>Controls admission when a surface mark budget is full.</summary>
+public enum SurfaceMarkOverflowPolicy : uint
+{
+    Reject = 0,
+    RecycleOldestTimed = 1
+}
+
 /// <summary>Defines the ellipse, falloff and material blend of a surface mark.
 /// A zero edge fraction produces a hard edge.</summary>
 public readonly record struct SurfaceMarkStyle(Vector2 HalfExtentMetres, float HalfDepthMetres,
@@ -66,6 +76,20 @@ internal unsafe struct NativeSurfaceMarkTextureServicesV3
     public delegate* unmanaged[Cdecl]<void*, NativeSurfaceMarkCommandV3*, NativeError*, int> PlaceTextured;
 }
 
+[StructLayout(LayoutKind.Sequential)]
+internal struct NativeSurfaceMarkCommandV4
+{
+    public NativeSurfaceMarkCommandV3 Textured;
+    public uint LifetimeTicks, Overflow;
+}
+
+[StructLayout(LayoutKind.Sequential)]
+internal unsafe struct NativeSurfaceMarkTimedServicesV4
+{
+    public NativeSurfaceMarkTextureServicesV3 Textured;
+    public delegate* unmanaged[Cdecl]<void*, NativeSurfaceMarkCommandV4*, NativeError*, int> PlaceTimed;
+}
+
 internal static unsafe class SurfaceMarkServiceAbi
 {
     internal const uint RequiredBytes = 544;
@@ -74,6 +98,9 @@ internal static unsafe class SurfaceMarkServiceAbi
     internal const string DirectionFeature = "surface_mark_direction_v2";
     internal const uint TextureRequiredBytes = 560;
     internal const string TextureFeature = "surface_mark_texture_v3";
+    internal const uint TimedRequiredBytes = 568;
+    internal const string TimedFeature = "surface_mark_timed_v4";
+    internal const uint MaxLifetimeTicks = 216000;
 
     internal static bool LayoutValid()
     {
@@ -83,6 +110,8 @@ internal static unsafe class SurfaceMarkServiceAbi
         NativeSurfaceMarkCommandV2 directionCommand = default;
         NativeSurfaceMarkTextureServicesV3 textureServices = default;
         NativeSurfaceMarkCommandV3 textureCommand = default;
+        NativeSurfaceMarkTimedServicesV4 timedServices = default;
+        NativeSurfaceMarkCommandV4 timedCommand = default;
         return sizeof(NativeSurfaceMarkServicesV1) == RequiredBytes &&
             (byte*)&services.Place - (byte*)&services == 536 &&
             sizeof(NativeSurfaceMarkCommandV1) == 136 &&
@@ -109,7 +138,14 @@ internal static unsafe class SurfaceMarkServiceAbi
             (byte*)&textureServices.PlaceTextured - (byte*)&textureServices == DirectionRequiredBytes &&
             sizeof(NativeSurfaceMarkCommandV3) == 176 &&
             (byte*)&textureCommand.Directional - (byte*)&textureCommand == 0 &&
-            (byte*)&textureCommand.Profile - (byte*)&textureCommand == 160;
+            (byte*)&textureCommand.Profile - (byte*)&textureCommand == 160 &&
+            sizeof(NativeSurfaceMarkTimedServicesV4) == TimedRequiredBytes &&
+            (byte*)&timedServices.Textured - (byte*)&timedServices == 0 &&
+            (byte*)&timedServices.PlaceTimed - (byte*)&timedServices == TextureRequiredBytes &&
+            sizeof(NativeSurfaceMarkCommandV4) == 184 &&
+            (byte*)&timedCommand.Textured - (byte*)&timedCommand == 0 &&
+            (byte*)&timedCommand.LifetimeTicks - (byte*)&timedCommand == 176 &&
+            (byte*)&timedCommand.Overflow - (byte*)&timedCommand == 180;
     }
 
     internal static NativeSurfaceMarkServicesV1* Validate(NativeServices* services)
@@ -139,6 +175,16 @@ internal static unsafe class SurfaceMarkServiceAbi
         var api = (NativeSurfaceMarkTextureServicesV3*)services;
         if (api->PlaceTextured == null)
             throw new ArgumentException("Gameplay textured surface mark callback is absent.");
+        return api;
+    }
+
+    internal static NativeSurfaceMarkTimedServicesV4* ValidateTimed(NativeServices* services)
+    {
+        if (services == null || services->Version != ServiceAbi.Epoch || services->Bytes < TimedRequiredBytes)
+            throw new ArgumentException("Timed surface marks require services epoch 7 with at least 568 bytes.");
+        var api = (NativeSurfaceMarkTimedServicesV4*)services;
+        if (api->PlaceTimed == null)
+            throw new ArgumentException("Gameplay timed surface mark callback is absent.");
         return api;
     }
 
@@ -250,5 +296,36 @@ public readonly unsafe ref partial struct GameContext
         var api = SurfaceMarkServiceAbi.ValidateTextured(services);
         NativeError error = default;
         Check(api->PlaceTextured(services->Context, &command, &error), &error);
+    }
+
+    /// <summary>Queues a mark that expires after the supplied number of ticks.
+    /// A zero profile uses analytic ellipse coverage. The ray and travel direction use the
+    /// source's final local frame when a source is supplied. Otherwise they use world space.
+    /// The recycle policy may replace an old timed mark or skip a placement when all eligible slots are permanent.</summary>
+    public void PlaceTimedSurfaceMark(EntityId receiver, Vector3d origin, Vector3d direction, double distance,
+        SurfaceMarkStyle style, Vector3d travelDirection, uint lifetimeTicks,
+        SurfaceMarkOverflowPolicy overflow = SurfaceMarkOverflowPolicy.Reject, EntityId source = default,
+        EntityId profile = default)
+    {
+        RequireFeature(GameplayRequiredFeatures.SurfaceMarkTimed, nameof(ITimedSurfaceMarkGame));
+        if (lifetimeTicks is < 1 or > SurfaceMarkServiceAbi.MaxLifetimeTicks)
+            throw new ArgumentOutOfRangeException(nameof(lifetimeTicks), "Surface mark lifetime must be 1..216000 ticks.");
+        if (overflow is not (SurfaceMarkOverflowPolicy.Reject or SurfaceMarkOverflowPolicy.RecycleOldestTimed))
+            throw new ArgumentOutOfRangeException(nameof(overflow), "Surface mark overflow policy is unknown.");
+
+        NativeSurfaceMarkCommandV4 command = new()
+        {
+            Textured = new()
+            {
+                Directional = SurfaceMarkServiceAbi.EncodeDirectionalMark(receiver, origin, direction, distance,
+                    style, travelDirection, source, 4, (uint)sizeof(NativeSurfaceMarkCommandV4)),
+                Profile = profile
+            },
+            LifetimeTicks = lifetimeTicks,
+            Overflow = (uint)overflow
+        };
+        var api = SurfaceMarkServiceAbi.ValidateTimed(services);
+        NativeError error = default;
+        Check(api->PlaceTimed(services->Context, &command, &error), &error);
     }
 }

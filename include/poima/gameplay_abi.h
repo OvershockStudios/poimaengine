@@ -759,6 +759,19 @@ typedef struct PoimaGameSurfaceMarkTextureServicesV3 {
     int32_t (POIMA_CALL *surface_mark_texture)(void*,const PoimaGameSurfaceMarkCommandV3*,PoimaGameError*);
 } PoimaGameSurfaceMarkTextureServicesV3;
 
+/* surface_mark_timed_v4 has a 1..216000 tick lifetime. A zero profile
+ * selects analytic coverage. Overflow 0 rejects a full receiver or scene.
+ * Overflow 1 recycles the oldest eligible timed mark, or skips placement if
+ * none is eligible. The nested command header uses version 4 and the V4 size. */
+typedef struct PoimaGameSurfaceMarkCommandV4 {
+    PoimaGameSurfaceMarkCommandV3 textured;
+    uint32_t lifetime_ticks,overflow;
+} PoimaGameSurfaceMarkCommandV4;
+typedef struct PoimaGameSurfaceMarkTimedServicesV4 {
+    PoimaGameSurfaceMarkTextureServicesV3 textured;
+    int32_t (POIMA_CALL *surface_mark_timed)(void*,const PoimaGameSurfaceMarkCommandV4*,PoimaGameError*);
+} PoimaGameSurfaceMarkTimedServicesV4;
+
 typedef struct PoimaGameCall {
     uint32_t version,operation; uint64_t handle;
     const char* text; void* state; uint32_t state_bytes,input_count;
@@ -832,6 +845,12 @@ static_assert(sizeof(PoimaGameSurfaceMarkCommandV3)==176 && alignof(PoimaGameSur
 static_assert(sizeof(PoimaGameSurfaceMarkTextureServicesV3)==560 && alignof(PoimaGameSurfaceMarkTextureServicesV3)==8 &&
     offsetof(PoimaGameSurfaceMarkTextureServicesV3,directional)==0 &&
     offsetof(PoimaGameSurfaceMarkTextureServicesV3,surface_mark_texture)==552);
+static_assert(sizeof(PoimaGameSurfaceMarkCommandV4)==184 && alignof(PoimaGameSurfaceMarkCommandV4)==8 &&
+    offsetof(PoimaGameSurfaceMarkCommandV4,textured)==0 && offsetof(PoimaGameSurfaceMarkCommandV4,lifetime_ticks)==176 &&
+    offsetof(PoimaGameSurfaceMarkCommandV4,overflow)==180);
+static_assert(sizeof(PoimaGameSurfaceMarkTimedServicesV4)==568 && alignof(PoimaGameSurfaceMarkTimedServicesV4)==8 &&
+    offsetof(PoimaGameSurfaceMarkTimedServicesV4,textured)==0 &&
+    offsetof(PoimaGameSurfaceMarkTimedServicesV4,surface_mark_timed)==560);
 static_assert(sizeof(PoimaGameReleasedItemAimV4)==208 && alignof(PoimaGameReleasedItemAimV4)==8 &&
     offsetof(PoimaGameReleasedItemAimV4,ray)==16 && offsetof(PoimaGameReleasedItemAimV4,hit)==88 &&
     offsetof(PoimaGameReleasedItemAimV4,item)==176 && offsetof(PoimaGameReleasedItemAimV4,sampled_tick)==192 &&

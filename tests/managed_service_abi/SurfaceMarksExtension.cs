@@ -267,10 +267,11 @@ static unsafe partial class Program
         var root = document.RootElement;
         var names = root.GetProperty("features");
         int count = names.GetArrayLength();
-        Check(count > 24 && count <= 64 && root.GetProperty("services_bytes").GetInt32() == 560 &&
-            names[count - 3].GetString() == "surface_mark_v1" &&
-            names[count - 2].GetString() == "surface_mark_direction_v2" &&
-            names[count - 1].GetString() == "surface_mark_texture_v3", "Generated surface mark feature-union mismatch.");
+        Check(count > 24 && count <= 64 && root.GetProperty("services_bytes").GetInt32() == 568 &&
+            names[count - 4].GetString() == "surface_mark_v1" &&
+            names[count - 3].GetString() == "surface_mark_direction_v2" &&
+            names[count - 2].GetString() == "surface_mark_texture_v3" &&
+            names[count - 1].GetString() == "surface_mark_timed_v4", "Generated surface mark feature-union mismatch.");
         var parsed = parse.Invoke(null, [manifest]);
         Check(Convert.ToUInt64(parsed) == mask && Equals(serialize.Invoke(null, [parsed]), manifest),
             "Generated feature union failed the Native AOT manifest round trip.");
