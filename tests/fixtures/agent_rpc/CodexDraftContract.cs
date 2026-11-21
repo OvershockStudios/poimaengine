@@ -18,6 +18,9 @@ internal static class CodexDraftContract
     private const string WaitForRelease = "Wait for the release signal.";
     private const string HoldTask = "Hold draft turn.";
     private const string Holding = "Draft turn is waiting.";
+    private const string MissingScope = "Missing execution scope";
+    private const string LocalExecutor = "Unexpected local executor";
+    private const string WritableScope = "Unexpected write access";
     private static readonly string[] ToolNames = ["poima_call", "poima_discover", "poima_reference"];
 
     public static bool IsDraftPeer(string[] arguments) =>
@@ -40,6 +43,8 @@ internal static class CodexDraftContract
             var wrong = WriteDraft(scratch, "Wrong marker", wrongProjectId: true);
             var noMarker = WriteDraft(scratch, "Missing marker");
             var wrongCatalog = WriteDraft(scratch, "Wrong catalog");
+            var unsafeDrafts = new[] { MissingScope, LocalExecutor, WritableScope }
+                .Select(name => WriteDraft(scratch, name)).ToArray();
             File.Delete(Path.Combine(Path.GetDirectoryName(noMarker)!, MarkerName));
             Task<CodexReview> Open(string manifest) =>
                 CodexReview.OpenDraftAsync(client, client, manifest, Model, cancellation);
@@ -54,6 +59,15 @@ internal static class CodexDraftContract
             }
             Check(!Directory.EnumerateFiles(scratch, "draft-*.jsonl").Any(),
                 "An invalid draft started a provider process before validation.");
+
+            foreach (var unsafeDraft in unsafeDrafts)
+            {
+                var rejected = false;
+                try { await using var unexpected = await Open(unsafeDraft); }
+                catch (InvalidOperationException error) when (error.Message.Contains("could not confirm an isolated scene worker", StringComparison.Ordinal))
+                { rejected = true; }
+                Check(rejected, "A scene worker opened with an unconfirmed local execution scope.");
+            }
 
             var rejectedTools = false;
             try { await using var unexpected = await Open(wrongCatalog); }
@@ -83,14 +97,21 @@ internal static class CodexDraftContract
 
             var peers = Directory.GetFiles(scratch, "draft-*.jsonl")
                 .Select(file => File.ReadLines(file).Select(line => JsonNode.Parse(line)!.AsObject()).ToArray()).ToArray();
-            Check(peers.Length == 3 && peers.Select(peer => peer[0]["thread"]!.GetValue<string>()).Distinct().Count() == 3,
-                "Drafts and the rejected tool catalog did not own independent provider threads.");
+            Check(peers.Length == 3 + unsafeDrafts.Length &&
+                peers.Select(peer => peer[0]["thread"]!.GetValue<string>()).Distinct().Count() == peers.Length,
+                "Drafts did not own independent provider threads.");
             foreach (var peer in peers)
             {
                 var launch = peer[0];
                 var manifest = launch["manifest"]!.GetValue<string>();
-                Check((manifest == first || manifest == second || manifest == wrongCatalog) && launch["command"]?.GetValue<string>() == client,
+                var unsafeScope = unsafeDrafts.Contains(manifest, StringComparer.Ordinal);
+                Check((manifest == first || manifest == second || manifest == wrongCatalog || unsafeScope) &&
+                    launch["command"]?.GetValue<string>() == client,
                     "The draft launched with a different project or executable.");
+                if (unsafeScope)
+                    Check(peer.Select(row => row["kind"]!.GetValue<string>())
+                        .SequenceEqual(["launch", "native/catalog", "thread/start", "exit"]),
+                        "An unsafe draft connection was used after the thread scope was returned.");
                 Check(peer[^1]["kind"]?.GetValue<string>() == "exit", "Draft peer did not close on EOF.");
                 try
                 {
@@ -107,7 +128,7 @@ internal static class CodexDraftContract
             Environment.SetEnvironmentVariable(TraceVariable, trace);
             Directory.Delete(scratch, recursive: true);
         }
-        Console.WriteLine("Codex draft project target, draft marker guards, separate threads, restricted approvals, streaming and retirement passed.");
+        Console.WriteLine("Codex draft targets, separate threads, no-executor scope, restricted approvals, streaming and retirement passed.");
     }
 
     private static string WriteDraft(string scratch, string name, bool wrongProjectId = false)
@@ -151,11 +172,12 @@ internal static class CodexDraftContract
             Override(arguments, "mcp_servers.poima.tools.poima_call.approval_mode")?.GetValue<string>() == "approve" &&
             arguments.Count(arg => arg.StartsWith("mcp_servers.poima.tools.", StringComparison.Ordinal)) == 1,
             "Draft session approval or enabled tools differ from the scoped authoring catalog.");
-        Check(Override(arguments, "sandbox_workspace_write.writable_roots") is JsonArray { Count: 0 } &&
-            Override(arguments, "sandbox_workspace_write.network_access")?.GetValue<bool>() == false &&
-            Override(arguments, "sandbox_workspace_write.exclude_tmpdir_env_var")?.GetValue<bool>() == true &&
-            Override(arguments, "sandbox_workspace_write.exclude_slash_tmp")?.GetValue<bool>() == true,
-            "Draft launch did not remove additional workspace-write grants.");
+        Check(Override(arguments, "sandbox_mode")?.GetValue<string>() == "read-only" &&
+            Override(arguments, "features.shell_tool")?.GetValue<bool>() == false &&
+            Override(arguments, "features.shell_snapshot")?.GetValue<bool>() == false &&
+            Override(arguments, "features.memories")?.GetValue<bool>() == false,
+            "Draft launch did not disable shell tooling and provider memory.");
+        var fixture = Path.GetFileName(cwd);
         var thread = Guid.NewGuid().ToString("N");
         var pid = Environment.ProcessId;
         var traceDirectory = Environment.GetEnvironmentVariable(TraceVariable);
@@ -171,7 +193,7 @@ internal static class CodexDraftContract
         {
             using var startup = new CancellationTokenSource(TimeSpan.FromSeconds(30));
             var tools = await ReadToolsAsync(native, startup.Token);
-            if (native is null && Path.GetFileName(cwd) == "Wrong catalog") tools["poima_build"] = new JsonObject();
+            if (native is null && fixture == "Wrong catalog") tools["poima_build"] = new JsonObject();
             await Trace("native/catalog", new JsonObject { ["native"] = native is not null, ["tools"] = tools.DeepClone() });
             while (await Console.In.ReadLineAsync() is { } line)
             {
@@ -182,28 +204,38 @@ internal static class CodexDraftContract
                 switch (method)
                 {
                     case "initialize":
-                        Check(parameters["capabilities"] is null, "Draft worker enabled interactive requests.");
+                        Check(parameters["capabilities"]?["experimentalApi"]?.GetValue<bool>() == true,
+                            "Draft worker needs the provider environment-selection protocol.");
                         await Reply(new JsonObject());
                         break;
                     case "initialized": break;
                     case "thread/start":
+                    {
                         Check(string.Equals(parameters["cwd"]?.GetValue<string>(), cwd, pathComparison) &&
                             parameters["approvalPolicy"]?.GetValue<string>() == "never" &&
-                            parameters["sandbox"]?.GetValue<string>() == "workspace-write" &&
-                            parameters["ephemeral"]?.GetValue<bool>() == true, "Draft thread has incorrect workspace, approval, or persistence settings.");
+                            parameters["sandbox"]?.GetValue<string>() == "read-only" &&
+                            parameters["ephemeral"]?.GetValue<bool>() == true &&
+                            parameters["environments"] is JsonArray { Count: 0 },
+                            "Draft thread has incorrect workspace, execution, approval or persistence settings.");
                         await Trace(method, parameters);
+                        var identity = new JsonObject { ["id"] = thread };
+                        if (fixture != MissingScope)
+                            identity["environments"] = fixture == LocalExecutor
+                                ? new JsonArray(new JsonObject { ["environmentId"] = "local", ["cwd"] = cwd })
+                                : new JsonArray();
                         await Reply(new JsonObject
                         {
-                            ["thread"] = new JsonObject { ["id"] = thread },
+                            ["thread"] = identity,
                             ["cwd"] = cwd,
                             ["approvalPolicy"] = "never",
                             ["sandbox"] = new JsonObject
                             {
-                                ["type"] = "workspaceWrite", ["writableRoots"] = new JsonArray(),
-                                ["networkAccess"] = false, ["excludeTmpdirEnvVar"] = true, ["excludeSlashTmp"] = true
+                                ["type"] = fixture == WritableScope ? "workspaceWrite" : "readOnly",
+                                ["networkAccess"] = false
                             }
                         });
                         break;
+                    }
                     case "mcpServerStatus/list":
                         Check(parameters["threadId"]?.GetValue<string>() == thread && parameters["serverName"]?.GetValue<string>() == "poima",
                             "Draft worker did not verify tools for its own thread.");

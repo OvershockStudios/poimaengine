@@ -89,10 +89,12 @@ public sealed class CodexSession : IAgentSession
         if (interaction == Interaction.Draft)
             arguments.AddRange([
                 "-c", "mcp_servers.poima.enabled_tools=[\"poima_discover\",\"poima_reference\",\"poima_call\"]",
-                "-c", "sandbox_workspace_write.writable_roots=[]",
-                "-c", "sandbox_workspace_write.network_access=false",
-                "-c", "sandbox_workspace_write.exclude_tmpdir_env_var=true",
-                "-c", "sandbox_workspace_write.exclude_slash_tmp=true"
+                // Scene edits are made by the native draft MCP host. A worker
+                // does not need Codex shell execution or shell initialization.
+                "-c", "sandbox_mode=\"read-only\"",
+                "-c", "features.shell_tool=false",
+                "-c", "features.shell_snapshot=false",
+                "-c", "features.memories=false"
             ]);
         if (receiveQuestions)
             arguments.AddRange(["-c", "features.default_mode_request_user_input=true"]);
@@ -112,7 +114,8 @@ public sealed class CodexSession : IAgentSession
             {
                 ["clientInfo"] = new JsonObject { ["name"] = "poima", ["version"] = "0.0.40", ["title"] = "Poima" }
             };
-            if (receiveQuestions) initialization["capabilities"] = new JsonObject { ["experimentalApi"] = true };
+            if (receiveQuestions || interaction == Interaction.Draft)
+                initialization["capabilities"] = new JsonObject { ["experimentalApi"] = true };
             await rpc.RequestAsync("initialize", initialization, cancellation);
             await rpc.NotifyAsync("initialized", cancellation: cancellation);
             return session;
@@ -138,8 +141,9 @@ public sealed class CodexSession : IAgentSession
             var parameters = new JsonObject
             {
                 ["cwd"] = directory, ["approvalPolicy"] = ephemeral ? "never" : "on-request",
-                ["sandbox"] = interaction == Interaction.Review ? "read-only" : "workspace-write"
+                ["sandbox"] = ephemeral ? "read-only" : "workspace-write"
             };
+            if (interaction == Interaction.Draft) parameters["environments"] = new JsonArray();
             if (model is not null) parameters["model"] = model;
             if (threadId is null) parameters["ephemeral"] = ephemeral;
             else { parameters["threadId"] = threadId; parameters["excludeTurns"] = true; }
@@ -149,7 +153,7 @@ public sealed class CodexSession : IAgentSession
             if (string.IsNullOrWhiteSpace(returned) || (threadId is not null && returned != threadId))
                 throw new AgentExchangeException("Provider returned an invalid thread identity.", true);
             if (interaction == Interaction.Draft && !HasDraftPermissions(result))
-                throw new InvalidOperationException("Codex returned unexpected permissions for the draft workspace.");
+                throw new InvalidOperationException("This Codex client could not confirm an isolated scene worker. Select Poima's installed Codex client in Connection settings.");
             ThreadId = returned;
             return returned;
         }
@@ -162,10 +166,10 @@ public sealed class CodexSession : IAgentSession
             !string.Equals(Path.TrimEndingDirectorySeparator(Path.GetFullPath(cwd)), Path.TrimEndingDirectorySeparator(directory),
                 OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal))
             return false;
-        return response["approvalPolicy"]?.GetValue<string>() == "never" && response["sandbox"] is JsonObject sandbox &&
-            sandbox["type"]?.GetValue<string>() == "workspaceWrite" && sandbox["writableRoots"] is JsonArray { Count: 0 } &&
-            sandbox["networkAccess"]?.GetValue<bool>() == false && sandbox["excludeTmpdirEnvVar"]?.GetValue<bool>() == true &&
-            sandbox["excludeSlashTmp"]?.GetValue<bool>() == true;
+        return response["approvalPolicy"]?.GetValue<string>() == "never" &&
+            response["thread"]?["environments"] is JsonArray { Count: 0 } &&
+            response["sandbox"] is JsonObject sandbox && sandbox["type"]?.GetValue<string>() == "readOnly" &&
+            sandbox["networkAccess"]?.GetValue<bool>() == false;
     }
 
     public Task<string> SendAsync(string text, CancellationToken cancellation = default) => SendAsync(text, [], cancellation);

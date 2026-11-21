@@ -1,0 +1,44 @@
+{
+  "engine_checkpoint": "0.0.342",
+  "date": "2026-11-20",
+  "managed_contracts": {
+    "command": "dotnet run --project tests/fixtures/agent_rpc/Poima.AgentRpc.Contract.csproj -c Release",
+    "platform": "Linux x86_64",
+    "passed": true,
+    "scope_rejections_before_first_turn": [
+      "missing environment selection",
+      "local environment selected",
+      "write-capable sandbox returned"
+    ]
+  },
+  "official_client_probe": {
+    "platform": "Linux x86_64",
+    "codex_cli": "0.171.0",
+    "codex_executable_sha256": "b76a027d6b210f9a8da7aaf321dd235c700f0ef7a794d4a5314b9af6c134f0f0",
+    "native_poima_cli": "0.0.334",
+    "native_poima_executable_sha256": "c61ca81496e5a3687377c3d5b70e3e3b1ce8e08618be3f23b121c663480c3ca5",
+    "model_endpoint": "loopback scripted Responses API",
+    "concurrent_worker_sessions": 10,
+    "completed_worker_turns": 10,
+    "shell_calls_rejected": 10,
+    "direct_patch_calls_rejected": 10,
+    "scoped_world_transactions_committed": 10,
+    "scoped_entity_reads_confirmed": 10,
+    "original_authored_file_hashes_unchanged": true,
+    "cross_draft_marker_leaks": 0,
+    "run_scope": "The production managed session adapter opened the pinned Linux CLI. A local fixture discovered Poima, attempted the unavailable shell and direct file editing, then committed one entity through the native draft MCP and read it back. Independent native project inspection checked every draft revision and all original project hashes.",
+    "earlier_attempts": [
+      "Fixture draft invocation omitted the required base checkpoint hash.",
+      "Initial model stub assumed every tool descriptor had a name.",
+      "Initial model stub expected deferred MCP tools before discovery."
+    ]
+  },
+  "windows_editor": {
+    "project": "desktop/Poima.Editor/Poima.Editor.csproj",
+    "target": "win-x64",
+    "build_host": "Linux",
+    "compiled": true,
+    "live_provider_run": "pending",
+    "previous_checkpoint": "Ten signed-in scene workers were stopped after Windows sandbox setup prompted for elevation during shell requests. The combined verification did not run."
+  }
+}

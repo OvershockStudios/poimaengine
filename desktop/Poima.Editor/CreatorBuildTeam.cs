@@ -235,7 +235,7 @@ internal sealed class CreatorBuildTeam
         var engine = Path.Combine(AppContext.BaseDirectory, "poima.exe");
         var scope = $"You are editing Poima draft {worker.ProjectId}, forked from authored revision {checkpoint.Revision}. " +
             "Make the assigned change using the draft Poima tools. Verify the resulting draft revision and entities. " +
-            "Report the changed entity IDs, verification results, and any separate source files the lead should select. " +
+            "Use poima_discover and poima_reference for context. Report the changed entity IDs and verification results. " +
             "The lead reviews the pinned draft scene and verifies the assembled candidate.";
         var pane = new CreatorReviews.WorkerPane(name, "Assign part of the game to this worker.",
             cancellation =>

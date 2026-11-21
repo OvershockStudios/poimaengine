@@ -1,8 +1,18 @@
 # Implementation status
 
-Updated 2026-11-20 for **0.0.341**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-20 for **0.0.342**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.342 [opens Codex scene workers without a shell environment](AGENT_CLIENTS.md#delegate-scene-work-from-codex).
+Poima checks the returned scope before sending an assignment. On Linux, ten
+concurrent Codex 0.171.0 app servers used a scripted model endpoint and real
+Poima draft tools. Each rejected a shell call, committed and read back its
+own scene edit, and retired. All original project files kept their hashes.
+Live Windows qualification for the new scope remains open. The earlier
+ten-worker Windows run was stopped after shell commands triggered
+administrator prompts during Codex sandbox setup.
+[Results](evidence/m2-codex-draft-scope-342.json)
 
 Version 0.0.341 [verifies and plays deeply nested builds in the Windows creator](PROJECT_RECOVERY.md#inspect-the-verified-player)
 through temporary copies validated against the original bundle. The

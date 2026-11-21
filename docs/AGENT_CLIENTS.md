@@ -63,9 +63,12 @@ In the Windows creator, enable **Allow Codex to assign scene workers** in
 **Connection settings** before starting a new chat. The main Codex thread
 gets a `poima_workers` tool. The permission applies to that connection. Each
 worker uses the same configured client and model in a separate draft.
-The Windows worker flow has a live check with the pinned Codex CLI 0.171.0.
-If your installed client cannot connect to the scoped tools, choose that
-release's executable in **Connection settings**.
+Scene workers inspect and edit through Poima's draft tools. Their Codex
+threads open without a shell environment and must confirm that restriction
+before Poima sends work. The lead conversation retains its existing tool
+permissions. If a different Codex version cannot open a worker, select the
+client supplied by Poima in **Connection settings**.
+[Scene worker checks](evidence/m2-codex-draft-scope-342.json)
 
 Use the revision from `world.inspect` to start a parallel assignment.
 Each action accepts a 32-character lowercase hex request ID.
