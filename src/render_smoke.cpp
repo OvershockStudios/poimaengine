@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "poima/core.hpp"
 #include "poima/scene.hpp"
-#include "poima/environment_ibl.hpp"
+#include "render_environment_ibl.hpp"
 #include "poima/player.hpp"
 #include "poima/assets.hpp"
 #include "mesh_lod.hpp"
@@ -12,6 +12,7 @@
 #include "frame_wall_scope.hpp"
 #include "player_renderer.hpp"
 #include "render_readback.hpp"
+#include "render_ui.hpp"
 #include "poima/frame_performance.hpp"
 #include "poima/render_schedule.hpp"
 #include "poima/render_batches.hpp"
@@ -19,19 +20,10 @@
 #include "poima/temporal_clock.hpp"
 #include "poima/temporal_inputs_cs.hpp"
 #include <unordered_map>
-#if POIMA_GAME_UI
-#include "poima/ui_presenter.hpp"
-#endif
 #if POIMA_EDITOR
 #include <imgui.h>
-#include "poima/editor_ui_vs.hpp"
-#include "poima/editor_ui_ps.hpp"
 #endif
 #include "poima/skinning_cs.hpp"
-#include "poima/editor_overlay_vs.hpp"
-#include "poima/editor_overlay_ps.hpp"
-#include "poima/game_ui_vs.hpp"
-#include "poima/game_ui_ps.hpp"
 #include <set>
 #include <map>
 #include "poima/scene_vs.hpp"
@@ -479,62 +471,17 @@ struct Context {
     std::map<std::array<int,4>,nvrhi::SamplerHandle> sampler_cache;
     std::shared_ptr<const TextureImage> white_image;
     std::size_t texture_bytes=0;
-    struct EnvironmentResources {
-        nvrhi::TextureHandle diffuse,specular,brdf;
-        std::array<float,10> key{};
-        std::uint64_t bytes=0;
-        double prepare_cpu_ms=0;
-    };
-    EnvironmentResources environment_dummy,environment_resources;
-    nvrhi::SamplerHandle environment_sampler;
-    std::uint64_t environment_generation=0;
+    render_environment_ibl::Resources environment_ibl;
     bool hardware = false;
     std::string gpu_name;
     bool swapchain_dirty=false;
     bool shadow_ready=false,skin_pipeline_ready=false,renderer_fault=false;
     bool editor=false,hosted=false,player_context=false,scene_visible=true,capture_exclusive=false;
     std::optional<nvrhi::Viewport> scene_viewport;
-    std::vector<EditorOverlayVertex> overlay_data;
-    nvrhi::ShaderHandle overlay_vs,overlay_ps;
-    nvrhi::InputLayoutHandle overlay_input;
-    nvrhi::BindingLayoutHandle overlay_layout;
-    nvrhi::BindingSetHandle overlay_bindings;
-    nvrhi::GraphicsPipelineHandle overlay_pipeline;
-    nvrhi::BufferHandle overlay_vertices;
-    std::vector<nvrhi::FramebufferHandle> overlay_framebuffers;
-    std::shared_ptr<const UiFrame> game_ui_frame,startup_overlay;
-    std::shared_ptr<const UiFrame> game_ui_source,game_ui_layout_frame,game_ui_composed_frame;
-    std::array<std::int32_t,4> game_ui_layout_rect{};
-    std::array<std::uint32_t,2> game_ui_layout_extent{};
-#if POIMA_GAME_UI
-    std::unique_ptr<UiPresenter> game_ui_presenter;
-    std::shared_ptr<const UiLayoutObservation> game_ui_observation;
-#endif
-    nvrhi::ShaderHandle game_ui_vs,game_ui_ps;
-    nvrhi::InputLayoutHandle game_ui_input;
-    nvrhi::BindingLayoutHandle game_ui_layout;
-    nvrhi::GraphicsPipelineHandle game_ui_pipeline;
-    nvrhi::SamplerHandle game_ui_sampler;
-    nvrhi::BufferHandle game_ui_vertices,game_ui_indices;
-    std::size_t game_ui_vertex_capacity=0,game_ui_index_capacity=0;
-    std::vector<nvrhi::TextureHandle> game_ui_textures;
-    std::vector<nvrhi::BindingSetHandle> game_ui_bindings;
-    std::vector<nvrhi::FramebufferHandle> game_ui_framebuffers;
+    render_ui::Game game_ui;
+    render_ui::Overlay overlay;
 #if POIMA_EDITOR
-    nvrhi::ShaderHandle ui_vs,ui_ps;
-    nvrhi::InputLayoutHandle ui_input;
-    nvrhi::BindingLayoutHandle ui_layout;
-    nvrhi::BindingSetHandle ui_bindings,ui_scene_bindings;
-    nvrhi::GraphicsPipelineHandle ui_pipeline;
-    nvrhi::TextureHandle ui_font,ui_scene;
-    nvrhi::SamplerHandle ui_sampler;
-    nvrhi::BufferHandle ui_vertices,ui_indices;
-    std::vector<nvrhi::FramebufferHandle> ui_framebuffers;
-    std::vector<ImDrawVert> ui_vertex_data;
-    std::vector<ImDrawIdx> ui_index_data;
-    const ImDrawData* ui_data=nullptr;
-    ImGuiContext* ui_context=nullptr;
-    std::size_t ui_vertex_capacity=0,ui_index_capacity=0;
+    render_ui::Editor editor_ui;
 #endif
 
     ~Context() {
@@ -545,21 +492,10 @@ struct Context {
             if(renderer_fault)try {++diagnostics.frame_execution.device_idle_waits;device.waitIdle(dispatch);} catch(...) {}
         }
         commands = nullptr;viewmodel.reset();viewmodel_draws.clear();viewmodel_objects.clear();for(auto& slot:slots)slot.viewmodel.reset();
-        game_ui_framebuffers.clear();game_ui_pipeline=nullptr;game_ui_bindings.clear();game_ui_textures.clear();
-        game_ui_vertices=nullptr;game_ui_indices=nullptr;game_ui_sampler=nullptr;game_ui_input=nullptr;
-        game_ui_layout=nullptr;game_ui_vs=nullptr;game_ui_ps=nullptr;game_ui_frame.reset();
-        overlay_framebuffers.clear();overlay_pipeline=nullptr;overlay_bindings=nullptr;overlay_layout=nullptr;
-        overlay_vertices=nullptr;overlay_input=nullptr;overlay_vs=nullptr;overlay_ps=nullptr;
+        game_ui.release_gpu();
+        overlay.release_gpu();
 #if POIMA_EDITOR
-        if(ui_context && ImGui::GetCurrentContext()==ui_context) {
-            auto& io=ImGui::GetIO();
-            if(io.BackendRendererName && std::strcmp(io.BackendRendererName,"poima_nvrhi")==0) {
-                if(io.Fonts->TexID==static_cast<ImTextureID>(1))io.Fonts->SetTexID(0);
-                io.BackendFlags&=~ImGuiBackendFlags_RendererHasVtxOffset;io.BackendRendererName=nullptr;
-            }
-        }
-        ui_framebuffers.clear();ui_pipeline=nullptr;ui_bindings=nullptr;ui_scene_bindings=nullptr;ui_layout=nullptr;
-        ui_vertices=nullptr;ui_indices=nullptr;ui_font=nullptr;ui_sampler=nullptr;ui_input=nullptr;ui_vs=nullptr;ui_ps=nullptr;
+        editor_ui.release_gpu();
 #endif
         skin_instances.clear();skin_sources.clear();skin_pipeline=nullptr;skin_layout=nullptr;skin_shader=nullptr;skin_errors=nullptr;skin_readback=nullptr;
         masked_shadow_cache.clear();masked_shadow_pipeline=nullptr;masked_shadow_layout=nullptr;masked_shadow_shader=nullptr;
@@ -585,10 +521,10 @@ struct Context {
         cluster_pipeline=nullptr;cluster_bindings=nullptr;cluster_layout=nullptr;cluster_shader=nullptr;
         light_buffer=nullptr;cluster_counts=nullptr;cluster_indices=nullptr;cluster_readback=nullptr;
         vertices = nullptr; frame_buffer=nullptr; draws.clear(); geometry_cache.clear(); material_cache.clear();texture_cache.clear();sampler_cache.clear();
-        environment_resources={};environment_dummy={};environment_sampler=nullptr;
+        environment_ibl={};
         framebuffers.clear();sky_framebuffers.clear();
 #if POIMA_EDITOR
-        ui_scene=nullptr;
+        editor_ui.release_scene_image();
 #endif
         images.clear();
         depth = nullptr;
@@ -1313,7 +1249,9 @@ struct Context {
 
     void prepare_scene() {
         auto white=std::make_shared<TextureImage>();white->mips.push_back({1,1,{255,255,255,255}});white_image=white;
-        prepare_environment_dummy();
+        environment_ibl.prepare_dummy(*checked.Get(),[this](const render_environment_ibl::RecordUpload& record) {
+            submit_environment_upload(record);
+        });
         bindings=mesh_bindings(nullptr,nullptr);
         const auto mesh = box_vertices();
         nvrhi::BufferDesc desc;
@@ -1508,40 +1446,17 @@ struct Context {
             throw std::runtime_error("GPU skinning rejected instance "+id+" vertex "+std::to_string(errors[2])+": singular, nonfinite or out-of-range result; capture was not published.");
         }
     }
-    const EnvironmentResources& bound_environment() const {
-        return environment_resources.diffuse ? environment_resources : environment_dummy;
-    }
-    nvrhi::BindingSetDesc& bind_environment(nvrhi::BindingSetDesc& desc) const {
-        const auto& value=bound_environment();
-        require(value.diffuse && value.specular && value.brdf && environment_sampler,"Environment bindings are unavailable.");
-        return desc.addItem(nvrhi::BindingSetItem::Texture_SRV(10,value.diffuse))
-            .addItem(nvrhi::BindingSetItem::Texture_SRV(11,value.specular))
-            .addItem(nvrhi::BindingSetItem::Texture_SRV(12,value.brdf))
-            .addItem(nvrhi::BindingSetItem::Sampler(5,environment_sampler));
-    }
-    EnvironmentResources allocate_environment(std::uint32_t diffuse_size,std::uint32_t specular_size,std::uint32_t levels,std::uint32_t brdf_size) {
+    void require_environment_float_sampling() const {
         const auto features=vk::FormatFeatureFlagBits::eSampledImage|vk::FormatFeatureFlagBits::eSampledImageFilterLinear|vk::FormatFeatureFlagBits::eTransferDst;
         for(auto format:{vk::Format::eR32G32B32A32Sfloat,vk::Format::eR32G32Sfloat})
             require((physical.getFormatProperties(format,dispatch).optimalTilingFeatures&features)==features,"Linear floating-point environment texture sampling is unavailable.");
-        EnvironmentResources value;
-        auto cube=[&](std::uint32_t size,std::uint32_t mips,const char* name) {
-            nvrhi::TextureDesc desc;desc.width=desc.height=size;desc.arraySize=6;desc.mipLevels=mips;
-            desc.dimension=nvrhi::TextureDimension::TextureCube;desc.format=nvrhi::Format::RGBA32_FLOAT;
-            desc.initialState=nvrhi::ResourceStates::ShaderResource;desc.keepInitialState=true;desc.debugName=name;
-            auto image=checked->createTexture(desc);require(bool(image),"Environment cube allocation failed.");return image;
-        };
-        value.diffuse=cube(diffuse_size,1,"Diffuse environment E over pi");
-        value.specular=cube(specular_size,levels,"Roughness-prefiltered environment");
-        nvrhi::TextureDesc desc;desc.width=desc.height=brdf_size;desc.format=nvrhi::Format::RG32_FLOAT;
-        desc.initialState=nvrhi::ResourceStates::ShaderResource;desc.keepInitialState=true;desc.debugName="Environment split-sum BRDF";
-        value.brdf=checked->createTexture(desc);require(bool(value.brdf),"Environment BRDF allocation failed.");
-        value.bytes=std::uint64_t(diffuse_size)*diffuse_size*6*16+std::uint64_t(brdf_size)*brdf_size*8;
-        for(std::uint32_t level=0,size=specular_size;level<levels;++level,size=std::max(1u,size/2))value.bytes+=std::uint64_t(size)*size*6*16;
-        require(value.bytes<=1024*1024,"Environment texture payload exceeds one MiB.");return value;
     }
-    template<class Upload> void upload_environment(Upload&& upload) {
+    void submit_environment_upload(const render_environment_ibl::RecordUpload& record) {
         try {
-            commands->open();upload();commands->close();checked->executeCommandList(commands);
+            commands->open();
+            record(*commands.Get());
+            commands->close();
+            checked->executeCommandList(commands);
             ++diagnostics.frame_execution.device_idle_waits;
             require(checked->waitForIdle(),"Environment upload did not retire.");
             require(messages.errors==0,"Environment upload reported a validation/backend error.");
@@ -1553,75 +1468,24 @@ struct Context {
             throw;
         }
     }
-    void prepare_environment_dummy() {
-        if(environment_dummy.diffuse)return;
-        // Disabled legacy worlds must not acquire a new float32 filtering
-        // requirement. Normalized black dummies satisfy the float SRV types.
-        EnvironmentResources candidate;
-        nvrhi::TextureDesc desc;desc.width=desc.height=1;desc.arraySize=6;desc.dimension=nvrhi::TextureDimension::TextureCube;
-        desc.format=nvrhi::Format::RGBA8_UNORM;desc.initialState=nvrhi::ResourceStates::ShaderResource;desc.keepInitialState=true;
-        desc.debugName="Disabled diffuse environment";candidate.diffuse=checked->createTexture(desc);
-        desc.debugName="Disabled specular environment";candidate.specular=checked->createTexture(desc);
-        desc.arraySize=1;desc.dimension=nvrhi::TextureDimension::Texture2D;desc.debugName="Disabled environment BRDF";candidate.brdf=checked->createTexture(desc);
-        require(candidate.diffuse && candidate.specular && candidate.brdf,"Disabled environment binding allocation failed.");candidate.bytes=52;
-        nvrhi::SamplerDesc sd;sd.addressU=sd.addressV=sd.addressW=nvrhi::SamplerAddressMode::Clamp;
-        sd.minFilter=sd.magFilter=sd.mipFilter=true;
-        auto sampler=checked->createSampler(sd);require(bool(sampler),"Environment sampler allocation failed.");
-        const std::array<std::uint8_t,4> black{};
-        upload_environment([&] {
-            for(unsigned face=0;face<6;++face) {
-                commands->writeTexture(candidate.diffuse,face,0,black.data(),sizeof(black));
-                commands->writeTexture(candidate.specular,face,0,black.data(),sizeof(black));
-            }
-            commands->writeTexture(candidate.brdf,0,0,black.data(),sizeof(black));
-        });
-        environment_dummy=std::move(candidate);environment_sampler=std::move(sampler);
-    }
     void invalidate_environment_bindings() {
         material_cache.clear();bindings=nullptr;deferred_bindings=nullptr;deferred_binding_key={};
         viewmodel_draws.clear();if(viewmodel)viewmodel->materials.clear();
     }
     void prepare_environment(const LightingEnvironment& lighting) {
         std::fill_n(frame_constants.ibl_parameters,4,0.0f);
-        const bool enabled=lighting.ibl && lighting.ibl->enabled;
-        if(!enabled) {
-            if(environment_resources.diffuse) {retire_frames(true);invalidate_environment_bindings();environment_resources={};checked->runGarbageCollection();}
-            diagnostics.environment_ibl.reset();
-            if(lighting.ibl) {diagnostics.environment_ibl.emplace();diagnostics.environment_ibl->generation=environment_generation;}
-            return;
+        diagnostics.environment_ibl=environment_ibl.prepare(*checked.Get(),lighting,{
+            .retire_frames=[this] { retire_frames(true); },
+            .require_float_sampling=[this] { require_environment_float_sampling(); },
+            .upload=[this](const render_environment_ibl::RecordUpload& record) { submit_environment_upload(record); },
+            .invalidate_bindings=[this] { invalidate_environment_bindings(); },
+        });
+        if(diagnostics.environment_ibl && diagnostics.environment_ibl->enabled) {
+            frame_constants.ibl_parameters[0]=1;
+            frame_constants.ibl_parameters[1]=lighting.ibl->diffuse_intensity;
+            frame_constants.ibl_parameters[2]=lighting.ibl->specular_intensity;
+            frame_constants.ibl_parameters[3]=float(diagnostics.environment_ibl->specular_levels-1);
         }
-        require(lighting.sky.enabled,"Enabled environment IBL requires the procedural sky.");
-        const auto& sky=lighting.sky;
-        const std::array<float,10> key={sky.zenith[0],sky.zenith[1],sky.zenith[2],sky.horizon[0],sky.horizon[1],sky.horizon[2],sky.ground[0],sky.ground[1],sky.ground[2],sky.horizon_falloff};
-        if(!environment_resources.diffuse || environment_resources.key!=key) {
-            require(environment_generation<std::numeric_limits<std::uint64_t>::max(),"Environment generation exhausted.");
-            const auto started=SteadyClock::now();
-            const auto baked=bake_environment_ibl(sky);
-            const auto prepare_cpu_ms=elapsed_ms(started);
-            require(baked.diffuse.size==ibl_diffuse_size && baked.diffuse.texels.size()==std::size_t(ibl_diffuse_size)*ibl_diffuse_size*6 && baked.brdf.size()==std::size_t(ibl_brdf_size)*ibl_brdf_size,"Environment bake dimensions differ from the fixed profile.");
-            // CPU preparation can overlap completion of the last old frame;
-            // replacing any image/binding waits for every old consumer.
-            retire_frames(true);
-            EnvironmentResources candidate=allocate_environment(ibl_diffuse_size,ibl_specular_size,ibl_specular_levels,ibl_brdf_size);
-            require(candidate.bytes==581600 && candidate.bytes+environment_resources.bytes<=2*581600,"Environment staged payload exceeds the two-generation bound.");
-            upload_environment([&] {
-                const auto write_cube=[&](nvrhi::ITexture* image,const EnvironmentIblLevel& level,unsigned mip) {
-                    require(level.texels.size()==std::size_t(level.size)*level.size*6,"Malformed environment face payload.");
-                    for(unsigned face=0;face<6;++face)commands->writeTexture(image,face,mip,level.texels.data()+std::size_t(face)*level.size*level.size,std::size_t(level.size)*16);
-                };
-                write_cube(candidate.diffuse.Get(),baked.diffuse,0);
-                for(unsigned level=0;level<ibl_specular_levels;++level) {
-                    require(baked.specular[level].size==std::max(1u,ibl_specular_size>>level),"Malformed environment mip size.");
-                    write_cube(candidate.specular.Get(),baked.specular[level],level);
-                }
-                commands->writeTexture(candidate.brdf,0,0,baked.brdf.data(),std::size_t(ibl_brdf_size)*8);
-            });
-            candidate.key=key;candidate.prepare_cpu_ms=prepare_cpu_ms;
-            invalidate_environment_bindings();environment_resources=std::move(candidate);++environment_generation;checked->runGarbageCollection();
-        }
-        frame_constants.ibl_parameters[0]=1;frame_constants.ibl_parameters[1]=lighting.ibl->diffuse_intensity;
-        frame_constants.ibl_parameters[2]=lighting.ibl->specular_intensity;frame_constants.ibl_parameters[3]=float(ibl_specular_levels-1);
-        diagnostics.environment_ibl=EnvironmentIblDiagnostics{true,ibl_diffuse_size,ibl_specular_size,ibl_specular_levels,ibl_brdf_size,environment_resources.bytes,environment_generation,environment_resources.prepare_cpu_ms};
     }
     nvrhi::TextureHandle upload_texture(const std::shared_ptr<const TextureImage>& image) {
         if(const auto found=texture_cache.find(image.get());found!=texture_cache.end())return found->second;
@@ -1661,7 +1525,7 @@ struct Context {
             .addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(6,light_buffer))
             .addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(7,foreground ? viewmodel->counts : cluster_counts))
             .addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(8,foreground ? viewmodel->indices : cluster_indices)).addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(9,foreground ? viewmodel->objects : object_buffer));
-        bind_environment(desc);
+        environment_ibl.bind(desc);
         auto result=checked->createBindingSet(desc,binding_layout);require(bool(result),"Material texture bindings failed.");cache.emplace(key_material,result);return result;
     }
     nvrhi::BindingSetHandle masked_shadow_material(const MeshAsset* mesh,const MaterialTextures* textures,const nvrhi::BindingSetHandle& material) {
@@ -1854,10 +1718,10 @@ struct Context {
                     require((roughness&required)==required && (radiance&color_required)==color_required,
                         "Selected GPU lacks screen reflection image format support.");
                 }
-                const auto& environment=bound_environment();
+                const auto environment=environment_ibl.bound();
                 reflections.prepare(*checked.Get(),{frame_buffer.Get(),scene_hdr.Get(),material_base.Get(),
-                    material_surface.Get(),depth.Get(),ao_filtered.Get(),environment.specular.Get(),
-                    environment.brdf.Get(),environment_sampler.Get()});
+                    material_surface.Get(),depth.Get(),ao_filtered.Get(),environment.specular,
+                    environment.brdf,environment.sampler});
             }
             diagnostics.screen_reflections=ScreenReflectionsDiagnostics{active,reason,active ? reflections.buffer_bytes() : 0};
             if(active)return;
@@ -1950,8 +1814,8 @@ struct Context {
             deferred_pipeline=checked->createComputePipeline(nvrhi::ComputePipelineDesc().setComputeShader(deferred_cs).addBindingLayout(deferred_layout));
             require(bool(deferred_pipeline),"Deferred lighting pipeline creation failed.");
         }
-        const auto& environment=bound_environment();
-        const std::array<const void*,19> key={frame_buffer.Get(),material_base.Get(),material_surface.Get(),material_correspondence.Get(),depth.Get(),shadow_texture.Get(),light_buffer.Get(),cluster_counts.Get(),cluster_indices.Get(),scene_hdr.Get(),scene_normal.Get(),scene_motion.Get(),scene_motion_valid.Get(),ao_filtered.Get(),environment.diffuse.Get(),environment.specular.Get(),environment.brdf.Get(),environment_sampler.Get(),reflections.roughness()};
+        const auto environment=environment_ibl.bound();
+        const std::array<const void*,19> key={frame_buffer.Get(),material_base.Get(),material_surface.Get(),material_correspondence.Get(),depth.Get(),shadow_texture.Get(),light_buffer.Get(),cluster_counts.Get(),cluster_indices.Get(),scene_hdr.Get(),scene_normal.Get(),scene_motion.Get(),scene_motion_valid.Get(),ao_filtered.Get(),environment.diffuse,environment.specular,environment.brdf,environment.sampler,reflections.roughness()};
         if(deferred_bindings && key==deferred_binding_key)return;
         auto desc=nvrhi::BindingSetDesc().addItem(nvrhi::BindingSetItem::ConstantBuffer(1,frame_buffer))
             .addItem(nvrhi::BindingSetItem::Texture_SRV(0,material_base)).addItem(nvrhi::BindingSetItem::Texture_SRV(1,material_surface))
@@ -1963,7 +1827,7 @@ struct Context {
             .addItem(nvrhi::BindingSetItem::Texture_UAV(2,scene_motion)).addItem(nvrhi::BindingSetItem::Texture_UAV(3,scene_motion_valid));
         if(ao_enabled)desc.addItem(nvrhi::BindingSetItem::Texture_SRV(4,ao_filtered));
         if(reflection_variant)desc.addItem(nvrhi::BindingSetItem::Texture_UAV(4,reflections.roughness()));
-        bind_environment(desc);
+        environment_ibl.bind(desc);
         deferred_bindings=checked->createBindingSet(desc,deferred_layout);require(bool(deferred_bindings),"Deferred lighting binding creation failed.");deferred_binding_key=key;
     }
     void dispatch_deferred_lighting() {
@@ -2271,7 +2135,7 @@ struct Context {
             nvrhi::GraphicsPipelineDesc description;description.VS=output_vs;description.PS=output_ps;description.bindingLayouts.push_back(output_layout);
             description.renderState.depthStencilState.depthTestEnable=false;description.renderState.depthStencilState.depthWriteEnable=false;
             description.renderState.rasterState.cullMode=nvrhi::RasterCullMode::None;
-            output_pipeline=checked->createGraphicsPipeline(description,game_ui_framebuffers.front()->getFramebufferInfo());
+            output_pipeline=checked->createGraphicsPipeline(description,game_ui.framebuffer(0)->getFramebufferInfo());
             require(bool(output_pipeline),"Scene output pipeline creation failed.");
         }
     }
@@ -2285,7 +2149,7 @@ struct Context {
                 std::copy(grade.knots[i].begin(),grade.knots[i].end(),constants.knots[i].begin());
             commands->writeBuffer(grade_buffer,&constants,sizeof(constants));
         }
-        nvrhi::GraphicsState state;state.pipeline=output_pipeline;state.framebuffer=game_ui_framebuffers.at(image_index);state.bindings.push_back(output_bindings);
+        nvrhi::GraphicsState state;state.pipeline=output_pipeline;state.framebuffer=game_ui.framebuffer(image_index);state.bindings.push_back(output_bindings);
         state.viewport.addViewportAndScissorRect(nvrhi::Viewport(static_cast<float>(extent.width),static_cast<float>(extent.height)));
         const auto display=scene_viewport.value_or(nvrhi::Viewport(static_cast<float>(extent.width),static_cast<float>(extent.height)));
         const float parameters[16]={frame_constants.ambient_exposure[3],
@@ -2342,7 +2206,7 @@ struct Context {
                 for(float value:object.material->emissive)require(std::isfinite(value) && std::abs(value)<=65504,"Deferred emission exceeds half-float storage.");
             }
         }
-        prepare_reconstruction();validate_game_ui();prepare_object_buffer();
+        prepare_reconstruction();game_ui.validate(scene,ui_target());prepare_object_buffer();
         profiling::Scope profile_scope("renderer.prepare");
         const auto started=SteadyClock::now();draws.clear();object_data.clear();surface_marks.clear();pending_draws={};
         validate_surface_mark_catalog();
@@ -2563,7 +2427,7 @@ struct Context {
         profiling::counter("renderer.images",texture_cache.size());
         profiling::counter("renderer.skin_instances",skin_instances.size());
         profiling::counter("renderer.texture_payload_bytes",texture_bytes);
-        profiling::counter("renderer.environment_texture_payload_bytes",environment_resources.bytes);
+        profiling::counter("renderer.environment_texture_payload_bytes",environment_ibl.payload_bytes());
         profiling::counter("renderer.skin_buffer_bytes",skin_bytes);
         diagnostics.scene_observed=renderer_scene_result(*scene);
     }
@@ -2592,10 +2456,10 @@ struct Context {
         post_effect.clear_target();
         post_effect.detach_source();
         post_effect_active=false;
-        overlay_framebuffers.clear();overlay_pipeline=nullptr;
-        game_ui_framebuffers.clear();game_ui_pipeline=nullptr;
+        overlay.detach_targets();
+        game_ui.detach_targets();
 #if POIMA_EDITOR
-        ui_framebuffers.clear();ui_scene_bindings=nullptr;
+        editor_ui.detach_targets();
 #endif
         sprite_framebuffer=nullptr;
         for(auto& slot:slots) {slot.sprite_depth=nullptr;slot.sprite_bindings.clear();}
@@ -2605,7 +2469,7 @@ struct Context {
         history={};
         diagnostics.scene_products.available=false;diagnostics.scene_products.motion_available=false;diagnostics.scene_products.normal_buffer_bytes=0;diagnostics.scene_products.motion_buffer_bytes=0;
 #if POIMA_EDITOR
-        ui_scene=nullptr;
+        editor_ui.release_scene_image();
 #endif
         checked->runGarbageCollection();
         for(auto semaphore:finished) device.destroySemaphore(semaphore,nullptr,dispatch);
@@ -2665,7 +2529,7 @@ struct Context {
         require(extent.width > 0 && extent.height > 0, "The window has an empty rendering extent.");
         if(player_context)require(extent.width<=4096 && extent.height<=4096,
             "Player drawable exceeds the initial 4096-pixel limit.");
-        validate_game_ui();
+        game_ui.validate(scene,ui_target());
         if(editor || hosted)require(std::uint64_t(extent.width)*extent.height<=128u*1024u*1024u/4u,
             "GUI surface exceeds the 128 MiB RGBA staging budget.");
         std::uint32_t count = caps.minImageCount + 1;
@@ -2696,19 +2560,7 @@ struct Context {
         texture_desc.isRenderTarget = true;
         texture_desc.isShaderResource = false;
 #if POIMA_EDITOR
-        if(editor) {
-            // One full-window image keeps Scene UVs stable within this frame,
-            // including docking, floating panels and framebuffer DPI scaling.
-            // The existing extent limit bounds this additional image to 128 MiB.
-            auto scene_image_desc=texture_desc;
-            scene_image_desc.isShaderResource=true;
-            scene_image_desc.initialState=nvrhi::ResourceStates::ShaderResource;
-            scene_image_desc.keepInitialState=true;
-            scene_image_desc.debugName="Editor Scene compositing image";
-            ui_scene=checked->createTexture(scene_image_desc);
-            require(bool(ui_scene),"Editor Scene compositing image creation failed.");
-            if(ui_layout)create_ui_scene_bindings();
-        }
+        if(editor)editor_ui.create_scene_target(*checked.Get(),texture_desc);
 #endif
         if (scene) {
             // Scene radiance and MSAA resolve stay linear until the output pass.
@@ -2784,7 +2636,7 @@ struct Context {
             images.push_back(texture);
             auto* scene_target=texture.Get();
 #if POIMA_EDITOR
-            if(editor)scene_target=ui_scene.Get();
+            if(editor)scene_target=editor_ui.scene_image();
 #endif
             auto framebuffer_desc = nvrhi::FramebufferDesc().addColorAttachment(scene ? (multisample_color ? multisample_color.Get() : scene_hdr.Get()) : scene_target);
             if(scene_normal)framebuffer_desc.addColorAttachment(scene_normal).addColorAttachment(scene_motion).addColorAttachment(scene_motion_valid);
@@ -2799,18 +2651,10 @@ struct Context {
                 auto sky_desc=nvrhi::FramebufferDesc().addColorAttachment(multisample_color ? multisample_color.Get() : scene_hdr.Get()).setDepthAttachment(depth);
                 auto sky_framebuffer=checked->createFramebuffer(sky_desc);require(bool(sky_framebuffer),"Sky framebuffer creation failed.");sky_framebuffers.push_back(sky_framebuffer);
             }
-            auto game_ui_framebuffer=checked->createFramebuffer(nvrhi::FramebufferDesc().addColorAttachment(scene_target));
-            require(bool(game_ui_framebuffer),"Game UI composition framebuffer creation failed.");
-            game_ui_framebuffers.push_back(game_ui_framebuffer);
-            if(hosted) {
-                auto overlay_framebuffer=checked->createFramebuffer(nvrhi::FramebufferDesc().addColorAttachment(texture));
-                require(bool(overlay_framebuffer),"Hosted overlay framebuffer creation failed.");overlay_framebuffers.push_back(overlay_framebuffer);
-            }
+            game_ui.add_framebuffer(*checked.Get(),scene_target);
+            if(hosted)overlay.add_framebuffer(*checked.Get(),texture.Get());
 #if POIMA_EDITOR
-            if(editor) {
-                auto ui_framebuffer=checked->createFramebuffer(nvrhi::FramebufferDesc().addColorAttachment(texture));
-                require(bool(ui_framebuffer),"Editor UI framebuffer creation failed.");ui_framebuffers.push_back(ui_framebuffer);
-            }
+            if(editor)editor_ui.add_framebuffer(*checked.Get(),texture.Get());
 #endif
             finished.push_back(device.createSemaphore({},nullptr,dispatch));
             if(maintenance1) {present_fences.push_back(device.createFence({},nullptr,dispatch));present_pending.push_back(false);}
@@ -2886,327 +2730,28 @@ struct Context {
             bgra,editor || capture_exclusive,path);
     }
 
-    void validate_game_ui() const {
-        if(!scene)return;
-        require(!scene->ui || !scene->logical_ui,"A scene cannot supply both a UI packet and a logical UI presentation.");
-#if !POIMA_GAME_UI
-        require(!scene->logical_ui || scene->logical_ui->elements.empty(),"This renderer was built without native game UI presentation support.");
-#endif
-        if(!scene || !scene->ui)return;
-        validate_ui_frame(*scene->ui);
-        require(scene->ui->width==extent.width && scene->ui->height==extent.height,"Game UI packet extent differs from the render target; relayout before drawing.");
-        if(!scene->ui->draws.empty())require(format==vk::Format::eB8G8R8A8Srgb || format==vk::Format::eR8G8B8A8Srgb,
-            "Game UI requires an sRGB composition attachment; UNORM composition is not supported.");
+    render_ui::Target ui_target() const noexcept {
+        return {extent.width,extent.height,format==vk::Format::eB8G8R8A8Srgb || format==vk::Format::eR8G8B8A8Srgb};
     }
     float effective_game_ui_scale() const {
-        if(player_ui_scale)return *player_ui_scale;
-        return window ? std::clamp(SDL_GetWindowDisplayScale(window),.25f,8.f) : 1.f;
+        return render_ui::effective_scale(window,player_ui_scale);
     }
-    void resolve_game_ui() {
-        if(startup_overlay) {game_ui_source=startup_overlay;return;}
-        game_ui_source=scene ? scene->ui : nullptr;
-#if POIMA_GAME_UI
-        if(!scene || !scene->logical_ui || scene->logical_ui->elements.empty()) {
-            game_ui_presenter.reset();game_ui_layout_frame.reset();game_ui_composed_frame.reset();game_ui_observation.reset();return;
-        }
-        if(!scene_visible) {game_ui_source.reset();game_ui_observation.reset();return;}
-        const auto view=scene_viewport.value_or(nvrhi::Viewport(static_cast<float>(extent.width),static_cast<float>(extent.height)));
-        const std::array<std::int32_t,4> rect{static_cast<std::int32_t>(std::floor(view.minX)),static_cast<std::int32_t>(std::floor(view.minY)),
-            static_cast<std::int32_t>(std::ceil(view.maxX)),static_cast<std::int32_t>(std::ceil(view.maxY))};
-        if(rect[0]>=rect[2] || rect[1]>=rect[3]) {game_ui_source.reset();game_ui_observation.reset();return;}
-        if(!game_ui_presenter)game_ui_presenter=std::make_unique<UiPresenter>();
-        const float scale=effective_game_ui_scale();
-        const auto layout=game_ui_presenter->frame(scene->logical_ui,static_cast<std::uint32_t>(rect[2]-rect[0]),static_cast<std::uint32_t>(rect[3]-rect[1]),scale);
-        game_ui_observation=game_ui_presenter->layout_observation();
-        const std::array<std::uint32_t,2> target_extent{extent.width,extent.height};
-        if(game_ui_layout_frame!=layout || game_ui_layout_rect!=rect || game_ui_layout_extent!=target_extent) {
-            auto packet=*layout;packet.width=extent.width;packet.height=extent.height;
-            for(auto& draw:packet.draws) {
-                // Translate homogeneous coordinates after the layout transform.
-                for(std::size_t col=0;col<4;++col) {
-                    draw.transform[col*4]+=static_cast<float>(rect[0])*draw.transform[col*4+3];
-                    draw.transform[col*4+1]+=static_cast<float>(rect[1])*draw.transform[col*4+3];
-                }
-                draw.scissor[0]+=rect[0];draw.scissor[2]+=rect[0];draw.scissor[1]+=rect[1];draw.scissor[3]+=rect[1];
-            }
-            game_ui_source=freeze_ui_frame(std::move(packet));game_ui_composed_frame=game_ui_source;game_ui_layout_frame=layout;game_ui_layout_rect=rect;game_ui_layout_extent=target_extent;
-        }else game_ui_source=game_ui_composed_frame;
-#endif
-    }
-    void reset_game_ui_input() {
-#if POIMA_GAME_UI
-        if(game_ui_presenter)game_ui_presenter->reset_input();
-#endif
-    }
+    void reset_game_ui_input() { game_ui.reset_input(); }
     UiInputResult dispatch_game_ui_input(const UiInput& event,bool activate=true) {
-#if POIMA_GAME_UI
-        if(game_ui_presenter && game_ui_source && scene_visible) {
-            auto local=event;
-            local.x-=static_cast<float>(game_ui_layout_rect[0]);
-            local.y-=static_cast<float>(game_ui_layout_rect[1]);
-            return game_ui_presenter->input(local,activate);
-        }
-#else
-        (void)event;(void)activate;
-#endif
-        return {};
+        return game_ui.input(event,scene_visible,activate);
     }
     void prepare_game_ui() {
-        validate_game_ui();
-        resolve_game_ui();
-        const auto& packet=game_ui_source;
-        if(packet) {
-            validate_ui_frame(*packet);
-            require(packet->width==extent.width && packet->height==extent.height,"Resolved UI packet extent differs from target.");
-            if(!packet->draws.empty())require(format==vk::Format::eB8G8R8A8Srgb || format==vk::Format::eR8G8B8A8Srgb,"Game UI requires an sRGB composition attachment; UNORM composition is not supported.");
-        }
-        if(!packet || packet->draws.empty()) {
-            game_ui_frame.reset();game_ui_bindings.clear();game_ui_textures.clear();game_ui_vertices=nullptr;game_ui_indices=nullptr;
-            game_ui_vertex_capacity=game_ui_index_capacity=0;return;
-        }
+        const auto target=ui_target();
+        game_ui.validate(scene,target);
+        game_ui.resolve(scene,scene_visible,scene_viewport,target,window,player_ui_scale);
         try {
-        if(!game_ui_layout) {
-            game_ui_vs=create_embedded_shader(checked,nvrhi::ShaderDesc(nvrhi::ShaderType::Vertex).setEntryName("vertex_main"),poima_game_ui_vs);
-            game_ui_ps=create_embedded_shader(checked,nvrhi::ShaderDesc(nvrhi::ShaderType::Pixel).setEntryName("pixel_main"),poima_game_ui_ps);
-            const nvrhi::VertexAttributeDesc attributes[]={
-                nvrhi::VertexAttributeDesc().setName("POSITION").setFormat(nvrhi::Format::RG32_FLOAT).setOffset(offsetof(UiVertex,x)).setElementStride(sizeof(UiVertex)),
-                nvrhi::VertexAttributeDesc().setName("TEXCOORD").setFormat(nvrhi::Format::RG32_FLOAT).setOffset(offsetof(UiVertex,u)).setElementStride(sizeof(UiVertex)),
-                nvrhi::VertexAttributeDesc().setName("COLOR").setFormat(nvrhi::Format::RGBA8_UNORM).setOffset(offsetof(UiVertex,color)).setElementStride(sizeof(UiVertex))};
-            game_ui_input=checked->createInputLayout(attributes,3,game_ui_vs);
-            game_ui_layout=checked->createBindingLayout(nvrhi::BindingLayoutDesc().setVisibility(nvrhi::ShaderType::All)
-                .addItem(nvrhi::BindingLayoutItem::PushConstants(0,80)).addItem(nvrhi::BindingLayoutItem::Texture_SRV(0)).addItem(nvrhi::BindingLayoutItem::Sampler(0)));
-            nvrhi::SamplerDesc sampler;sampler.addressU=sampler.addressV=nvrhi::SamplerAddressMode::Clamp;sampler.minFilter=sampler.magFilter=true;
-            game_ui_sampler=checked->createSampler(sampler);
-            require(game_ui_vs && game_ui_ps && game_ui_input && game_ui_layout && game_ui_sampler,"Game UI shader/layout creation failed.");
-        }
-        if(!game_ui_pipeline) {
-            nvrhi::GraphicsPipelineDesc description;description.VS=game_ui_vs;description.PS=game_ui_ps;
-            description.inputLayout=game_ui_input;description.bindingLayouts.push_back(game_ui_layout);
-            description.renderState.depthStencilState.depthTestEnable=false;description.renderState.depthStencilState.depthWriteEnable=false;
-            description.renderState.rasterState.cullMode=nvrhi::RasterCullMode::None;description.renderState.rasterState.scissorEnable=true;
-            auto& blend=description.renderState.blendState.targets[0];blend.blendEnable=true;
-            blend.srcBlend=blend.srcBlendAlpha=nvrhi::BlendFactor::One;
-            blend.destBlend=blend.destBlendAlpha=nvrhi::BlendFactor::InvSrcAlpha;
-            game_ui_pipeline=checked->createGraphicsPipeline(description,game_ui_framebuffers.front()->getFramebufferInfo());
-            require(bool(game_ui_pipeline),"Game UI composition pipeline creation failed.");
-        }
-        if(game_ui_frame==packet)return;
-        // Reuse capacity and unchanged atlas slots across layout packets. Retain
-        // only the current packet/resources; replacement is bounded by two packets.
-        auto buffer=[&](nvrhi::BufferHandle& target,std::size_t& capacity,std::size_t bytes,bool vertex) {
-            if(target && capacity>=bytes)return;
-            nvrhi::BufferDesc desc;desc.byteSize=std::max<std::size_t>(bytes,4);desc.isVertexBuffer=vertex;desc.isIndexBuffer=!vertex;
-            desc.initialState=vertex ? nvrhi::ResourceStates::VertexBuffer : nvrhi::ResourceStates::IndexBuffer;desc.keepInitialState=true;
-            auto result=checked->createBuffer(desc);require(bool(result),"Game UI buffer creation failed.");target=std::move(result);capacity=desc.byteSize;
-        };
-        buffer(game_ui_vertices,game_ui_vertex_capacity,packet->vertices.size()*sizeof(UiVertex),true);
-        buffer(game_ui_indices,game_ui_index_capacity,packet->indices.size()*sizeof(std::uint32_t),false);
-        std::vector<nvrhi::TextureHandle> textures;std::vector<nvrhi::BindingSetHandle> texture_bindings;
-        textures.reserve(packet->textures.size()+1);texture_bindings.reserve(packet->textures.size()+1);
-        bool uploads=false;
-        auto upload_texture=[&](const UiTexture& source) {
-            // Linear premultiplied half floats ensure filtering occurs in linear light.
-            std::vector<std::uint16_t> pixels;pixels.reserve(source.rgba.size());
-            auto half=[](float value)->std::uint16_t {
-                if(value==0)return 0;
-                if(value<0x1p-14f)return static_cast<std::uint16_t>(std::lround(std::ldexp(value,24)));
-                int exponent=0;const float mantissa=std::frexp(value,&exponent);
-                return static_cast<std::uint16_t>((exponent+14)*1024+std::lround((mantissa*2-1)*1024));
-            };
-            for(std::size_t i=0;i<source.rgba.size();i+=4) {
-                const auto c=ui_linear_color({source.rgba[i],source.rgba[i+1],source.rgba[i+2],source.rgba[i+3]});
-                for(auto value:c)pixels.push_back(half(value));
-            }
-            nvrhi::TextureDesc desc;desc.width=source.width;desc.height=source.height;desc.format=nvrhi::Format::RGBA16_FLOAT;
-            desc.initialState=nvrhi::ResourceStates::ShaderResource;desc.keepInitialState=true;
-            auto texture=checked->createTexture(desc);require(bool(texture),"Game UI texture creation failed.");
-            auto binding=checked->createBindingSet(nvrhi::BindingSetDesc().addItem(nvrhi::BindingSetItem::PushConstants(0,80))
-                .addItem(nvrhi::BindingSetItem::Texture_SRV(0,texture)).addItem(nvrhi::BindingSetItem::Sampler(0,game_ui_sampler)),game_ui_layout);
-            require(bool(binding),"Game UI texture binding failed.");
-            if(!uploads) {commands->open();uploads=true;}
-            commands->writeTexture(texture,0,0,pixels.data(),std::size_t(source.width)*8);
-            textures.push_back(std::move(texture));texture_bindings.push_back(std::move(binding));
-        };
-        for(std::size_t i=0;i<packet->textures.size();++i) {
-            const auto& texture=packet->textures[i];
-            if(game_ui_frame && i<game_ui_frame->textures.size() && texture.width==game_ui_frame->textures[i].width &&
-                texture.height==game_ui_frame->textures[i].height && texture.rgba==game_ui_frame->textures[i].rgba) {
-                textures.push_back(game_ui_textures[i]);texture_bindings.push_back(game_ui_bindings[i]);
-            }else upload_texture(texture);
-        }
-        if(game_ui_frame) {textures.push_back(game_ui_textures.back());texture_bindings.push_back(game_ui_bindings.back());}
-        else upload_texture(UiTexture{1,1,{255,255,255,255}});
-        if(uploads) {
-            commands->close();checked->executeCommandList(commands);++diagnostics.frame_execution.device_idle_waits;require(checked->waitForIdle(),"Game UI texture upload failed.");
-        }
-        game_ui_textures.swap(textures);game_ui_bindings.swap(texture_bindings);
-        game_ui_frame=packet;
+            game_ui.prepare(*checked.Get(),*commands.Get(),diagnostics.frame_execution.device_idle_waits);
         } catch(...) {
             // Allocation/resource failures can interrupt an open upload command
             // list or submission. Retrying this Context cannot safely recover it.
             renderer_fault=true;throw;
         }
     }
-    void render_game_ui(std::uint32_t image_index) {
-        if(!game_ui_frame)return;
-        const auto& frame=*game_ui_frame;
-        if(!frame.vertices.empty())commands->writeBuffer(game_ui_vertices,frame.vertices.data(),frame.vertices.size()*sizeof(UiVertex));
-        if(!frame.indices.empty())commands->writeBuffer(game_ui_indices,frame.indices.data(),frame.indices.size()*sizeof(std::uint32_t));
-        for(const auto& draw:frame.draws) {
-            const auto& clip=draw.scissor;if(!draw.index_count || clip[0]==clip[2] || clip[1]==clip[3])continue;
-            nvrhi::GraphicsState state;state.pipeline=game_ui_pipeline;state.framebuffer=game_ui_framebuffers.at(image_index);
-            state.bindings.push_back(game_ui_bindings.at(draw.texture==ui_white_texture ? frame.textures.size() : draw.texture));
-            state.vertexBuffers.push_back(nvrhi::VertexBufferBinding().setBuffer(game_ui_vertices));
-            state.indexBuffer=nvrhi::IndexBufferBinding(game_ui_indices,nvrhi::Format::R32_UINT,0);
-            state.viewport.addViewport(nvrhi::Viewport(static_cast<float>(extent.width),static_cast<float>(extent.height)));
-            state.viewport.addScissorRect(nvrhi::Rect(clip[0],clip[2],clip[1],clip[3]));
-            std::array<float,20> constants{};std::copy(draw.transform.begin(),draw.transform.end(),constants.begin());
-            constants[16]=draw.translation[0];constants[17]=draw.translation[1];constants[18]=static_cast<float>(frame.width);constants[19]=static_cast<float>(frame.height);
-            commands->setGraphicsState(state);commands->setPushConstants(constants.data(),sizeof(constants));
-            commands->drawIndexed(nvrhi::DrawArguments().setVertexCount(draw.index_count).setStartIndexLocation(draw.first_index));
-        }
-    }
-    void prepare_overlay() {
-        if(!hosted || overlay_data.empty())return;
-        if(!overlay_vertices) {
-            overlay_vs=create_embedded_shader(checked,nvrhi::ShaderDesc(nvrhi::ShaderType::Vertex).setEntryName("vertex_main"),poima_editor_overlay_vs);
-            overlay_ps=create_embedded_shader(checked,nvrhi::ShaderDesc(nvrhi::ShaderType::Pixel).setEntryName("pixel_main"),poima_editor_overlay_ps);
-            const nvrhi::VertexAttributeDesc attributes[]={
-                nvrhi::VertexAttributeDesc().setName("POSITION").setFormat(nvrhi::Format::RG32_FLOAT).setOffset(offsetof(EditorOverlayVertex,x)).setElementStride(sizeof(EditorOverlayVertex)),
-                nvrhi::VertexAttributeDesc().setName("COLOR").setFormat(nvrhi::Format::RGBA32_FLOAT).setOffset(offsetof(EditorOverlayVertex,color)).setElementStride(sizeof(EditorOverlayVertex))};
-            overlay_input=checked->createInputLayout(attributes,2,overlay_vs);
-            overlay_layout=checked->createBindingLayout(nvrhi::BindingLayoutDesc().setVisibility(nvrhi::ShaderType::All).addItem(nvrhi::BindingLayoutItem::PushConstants(0,16)));
-            require(overlay_vs && overlay_ps && overlay_input && overlay_layout,"Hosted overlay shader/layout creation failed.");
-            overlay_bindings=checked->createBindingSet(nvrhi::BindingSetDesc().addItem(nvrhi::BindingSetItem::PushConstants(0,16)),overlay_layout);
-            nvrhi::BufferDesc buffer;buffer.byteSize=max_editor_overlay_vertices*sizeof(EditorOverlayVertex);buffer.isVertexBuffer=true;
-            buffer.initialState=nvrhi::ResourceStates::VertexBuffer;buffer.keepInitialState=true;buffer.debugName="Hosted editor overlay vertices";
-            overlay_vertices=checked->createBuffer(buffer);
-            require(overlay_bindings && overlay_vertices,"Hosted overlay bindings/buffer creation failed.");
-        }
-        if(!overlay_pipeline) {
-            nvrhi::GraphicsPipelineDesc description;description.VS=overlay_vs;description.PS=overlay_ps;description.inputLayout=overlay_input;description.bindingLayouts.push_back(overlay_layout);
-            description.renderState.depthStencilState.depthTestEnable=false;description.renderState.depthStencilState.depthWriteEnable=false;
-            description.renderState.rasterState.cullMode=nvrhi::RasterCullMode::None;description.renderState.rasterState.scissorEnable=true;
-            auto& blend=description.renderState.blendState.targets[0];blend.blendEnable=true;
-            blend.srcBlend=nvrhi::BlendFactor::SrcAlpha;blend.destBlend=nvrhi::BlendFactor::InvSrcAlpha;
-            blend.srcBlendAlpha=nvrhi::BlendFactor::One;blend.destBlendAlpha=nvrhi::BlendFactor::InvSrcAlpha;
-            overlay_pipeline=checked->createGraphicsPipeline(description,overlay_framebuffers.front()->getFramebufferInfo());
-            require(bool(overlay_pipeline),"Hosted overlay pipeline creation failed.");
-        }
-    }
-    void render_overlay(std::uint32_t image_index) {
-        if(!hosted || overlay_data.empty())return;
-        commands->writeBuffer(overlay_vertices,overlay_data.data(),overlay_data.size()*sizeof(EditorOverlayVertex));
-        nvrhi::GraphicsState state;state.pipeline=overlay_pipeline;state.framebuffer=overlay_framebuffers.at(image_index);state.bindings.push_back(overlay_bindings);
-        state.vertexBuffers.push_back(nvrhi::VertexBufferBinding().setBuffer(overlay_vertices));
-        state.viewport.addViewportAndScissorRect(nvrhi::Viewport(static_cast<float>(extent.width),static_cast<float>(extent.height)));
-        const float constants[4]={(format==vk::Format::eB8G8R8A8Srgb || format==vk::Format::eR8G8B8A8Srgb) ? 1.0f : 0.0f,0,0,0};
-        commands->setGraphicsState(state);commands->setPushConstants(constants,sizeof(constants));
-        commands->draw(nvrhi::DrawArguments().setVertexCount(static_cast<std::uint32_t>(overlay_data.size())));
-    }
-
-#if POIMA_EDITOR
-    void create_ui_scene_bindings() {
-        ui_scene_bindings=checked->createBindingSet(nvrhi::BindingSetDesc().addItem(nvrhi::BindingSetItem::PushConstants(0,64))
-            .addItem(nvrhi::BindingSetItem::Texture_SRV(0,ui_scene)).addItem(nvrhi::BindingSetItem::Sampler(0,ui_sampler)),ui_layout);
-        require(bool(ui_scene_bindings),"Editor Scene compositing bindings failed.");
-    }
-    void prepare_ui() {
-        require(ImGui::GetCurrentContext()!=nullptr,"Create an ImGui context before the editor viewport.");
-        ui_context=ImGui::GetCurrentContext();
-        unsigned char* pixels=nullptr;int width=0,height=0;
-        auto& io=ImGui::GetIO();io.Fonts->GetTexDataAsRGBA32(&pixels,&width,&height);
-        require(pixels && width>0 && height>0,"Editor font atlas is empty.");
-        nvrhi::TextureDesc td;td.width=static_cast<std::uint32_t>(width);td.height=static_cast<std::uint32_t>(height);
-        td.format=nvrhi::Format::RGBA8_UNORM;td.initialState=nvrhi::ResourceStates::ShaderResource;td.keepInitialState=true;td.debugName="Editor font atlas";
-        ui_font=checked->createTexture(td);require(bool(ui_font),"Editor font texture creation failed.");
-        commands->open();commands->writeTexture(ui_font,0,0,pixels,static_cast<std::size_t>(width)*4);commands->close();checked->executeCommandList(commands);
-        ++diagnostics.frame_execution.device_idle_waits;require(checked->waitForIdle(),"Editor font upload failed.");
-        nvrhi::SamplerDesc sd;sd.addressU=sd.addressV=nvrhi::SamplerAddressMode::Clamp;sd.minFilter=sd.magFilter=true;
-        ui_sampler=checked->createSampler(sd);
-        ui_vs=create_embedded_shader(checked,nvrhi::ShaderDesc(nvrhi::ShaderType::Vertex).setEntryName("vertex_main"),poima_editor_ui_vs);
-        ui_ps=create_embedded_shader(checked,nvrhi::ShaderDesc(nvrhi::ShaderType::Pixel).setEntryName("pixel_main"),poima_editor_ui_ps);
-        const nvrhi::VertexAttributeDesc attrs[]={
-            nvrhi::VertexAttributeDesc().setName("POSITION").setFormat(nvrhi::Format::RG32_FLOAT).setOffset(offsetof(ImDrawVert,pos)).setElementStride(sizeof(ImDrawVert)),
-            nvrhi::VertexAttributeDesc().setName("TEXCOORD").setFormat(nvrhi::Format::RG32_FLOAT).setOffset(offsetof(ImDrawVert,uv)).setElementStride(sizeof(ImDrawVert)),
-            nvrhi::VertexAttributeDesc().setName("COLOR").setFormat(nvrhi::Format::RGBA8_UNORM).setOffset(offsetof(ImDrawVert,col)).setElementStride(sizeof(ImDrawVert))};
-        ui_input=checked->createInputLayout(attrs,3,ui_vs);
-        ui_layout=checked->createBindingLayout(nvrhi::BindingLayoutDesc().setVisibility(nvrhi::ShaderType::All)
-            .addItem(nvrhi::BindingLayoutItem::PushConstants(0,64)).addItem(nvrhi::BindingLayoutItem::Texture_SRV(0)).addItem(nvrhi::BindingLayoutItem::Sampler(0)));
-        require(ui_vs && ui_ps && ui_input && ui_layout && ui_sampler,"Editor UI shader/layout creation failed.");
-        ui_bindings=checked->createBindingSet(nvrhi::BindingSetDesc().addItem(nvrhi::BindingSetItem::PushConstants(0,64))
-            .addItem(nvrhi::BindingSetItem::Texture_SRV(0,ui_font)).addItem(nvrhi::BindingSetItem::Sampler(0,ui_sampler)),ui_layout);
-        create_ui_scene_bindings();
-        nvrhi::GraphicsPipelineDesc pd;pd.VS=ui_vs;pd.PS=ui_ps;pd.inputLayout=ui_input;pd.bindingLayouts.push_back(ui_layout);
-        pd.renderState.depthStencilState.depthTestEnable=false;pd.renderState.depthStencilState.depthWriteEnable=false;
-        pd.renderState.rasterState.cullMode=nvrhi::RasterCullMode::None;
-        pd.renderState.rasterState.scissorEnable=true;
-        auto& blend=pd.renderState.blendState.targets[0];blend.blendEnable=true;blend.srcBlend=nvrhi::BlendFactor::SrcAlpha;blend.destBlend=nvrhi::BlendFactor::InvSrcAlpha;
-        blend.srcBlendAlpha=nvrhi::BlendFactor::One;blend.destBlendAlpha=nvrhi::BlendFactor::InvSrcAlpha;
-        ui_pipeline=checked->createGraphicsPipeline(pd,ui_framebuffers.front()->getFramebufferInfo());
-        require(ui_bindings && ui_pipeline,"Editor UI pipeline creation failed.");
-        io.Fonts->SetTexID(static_cast<ImTextureID>(1));io.BackendFlags|=ImGuiBackendFlags_RendererHasVtxOffset;
-        io.BackendRendererName="poima_nvrhi";
-    }
-    void prepare_ui_frame(const ImDrawData* data) {
-        ui_data=data;ui_vertex_data.clear();ui_index_data.clear();
-        if(!data || data->TotalVtxCount==0)return;
-        require(data->Valid && data->TotalVtxCount>=0 && data->TotalIdxCount>=0 && data->TotalVtxCount<=4000000 && data->TotalIdxCount<=12000000,"Invalid or oversized editor UI draw data.");
-        require(std::isfinite(data->DisplaySize.x) && std::isfinite(data->DisplaySize.y) && data->DisplaySize.x>0 && data->DisplaySize.y>0,"Invalid editor UI display size.");
-        ui_vertex_data.reserve(static_cast<std::size_t>(data->TotalVtxCount));ui_index_data.reserve(static_cast<std::size_t>(data->TotalIdxCount));
-        for(int list=0;list<data->CmdListsCount;++list) {
-            const auto* source=data->CmdLists[list];
-            ui_vertex_data.insert(ui_vertex_data.end(),source->VtxBuffer.begin(),source->VtxBuffer.end());
-            ui_index_data.insert(ui_index_data.end(),source->IdxBuffer.begin(),source->IdxBuffer.end());
-            for(const auto& command:source->CmdBuffer) {
-                require(!command.UserCallback || command.UserCallback==ImDrawCallback_ResetRenderState,"Custom editor UI draw callbacks are unavailable.");
-                if(command.UserCallback)continue;
-                require(command.GetTexID()==static_cast<ImTextureID>(1) || command.GetTexID()==static_cast<ImTextureID>(2),
-                    "Editor UI accepts only the font atlas (1) and Scene image (2).");
-                require(std::isfinite(command.ClipRect.x) && std::isfinite(command.ClipRect.y) && std::isfinite(command.ClipRect.z) && std::isfinite(command.ClipRect.w),"Editor UI clip rectangle must be finite.");
-                require(std::uint64_t(command.IdxOffset)+command.ElemCount<=static_cast<std::uint64_t>(source->IdxBuffer.Size) && command.VtxOffset<=static_cast<unsigned>(source->VtxBuffer.Size),"Editor UI command exceeds its draw list.");
-            }
-        }
-        require(ui_vertex_data.size()==static_cast<std::size_t>(data->TotalVtxCount) && ui_index_data.size()==static_cast<std::size_t>(data->TotalIdxCount),"Editor UI totals do not match draw lists.");
-        auto allocate=[&](nvrhi::BufferHandle& buffer,std::size_t& capacity,std::size_t bytes,bool vertex) {
-            if(buffer && capacity>=bytes)return;
-            capacity=bytes+16384;nvrhi::BufferDesc desc;desc.byteSize=capacity;desc.isVertexBuffer=vertex;desc.isIndexBuffer=!vertex;
-            desc.initialState=vertex ? nvrhi::ResourceStates::VertexBuffer : nvrhi::ResourceStates::IndexBuffer;desc.keepInitialState=true;
-            buffer=checked->createBuffer(desc);require(bool(buffer),"Editor UI buffer allocation failed.");
-        };
-        allocate(ui_vertices,ui_vertex_capacity,ui_vertex_data.size()*sizeof(ImDrawVert),true);
-        allocate(ui_indices,ui_index_capacity,ui_index_data.size()*sizeof(ImDrawIdx),false);
-    }
-    void render_ui(std::uint32_t image_index) {
-        if(!ui_data || ui_vertex_data.empty())return;
-        commands->writeBuffer(ui_vertices,ui_vertex_data.data(),ui_vertex_data.size()*sizeof(ImDrawVert));
-        if(!ui_index_data.empty())commands->writeBuffer(ui_indices,ui_index_data.data(),ui_index_data.size()*sizeof(ImDrawIdx));
-        const float sx=2.0f/ui_data->DisplaySize.x,sy=-2.0f/ui_data->DisplaySize.y;
-        float constants[8]={sx,sy,-1.0f-ui_data->DisplayPos.x*sx,1.0f-ui_data->DisplayPos.y*sy,
-            (format==vk::Format::eB8G8R8A8Srgb || format==vk::Format::eR8G8B8A8Srgb) ? 1.0f : 0.0f,0,0,0};
-        std::uint32_t vertex_offset=0,index_offset=0;
-        for(int list=0;list<ui_data->CmdListsCount;++list) {
-            const auto* source=ui_data->CmdLists[list];
-            for(const auto& draw:source->CmdBuffer) {
-                if(draw.UserCallback || draw.ElemCount==0)continue;
-                auto x=[&](float value){return std::clamp((value-ui_data->DisplayPos.x)*ui_data->FramebufferScale.x,0.0f,static_cast<float>(extent.width));};
-                auto y=[&](float value){return std::clamp((value-ui_data->DisplayPos.y)*ui_data->FramebufferScale.y,0.0f,static_cast<float>(extent.height));};
-                const int left=static_cast<int>(std::floor(x(draw.ClipRect.x))),right=static_cast<int>(std::ceil(x(draw.ClipRect.z)));
-                const int top=static_cast<int>(std::floor(y(draw.ClipRect.y))),bottom=static_cast<int>(std::ceil(y(draw.ClipRect.w)));
-                if(right<=left || bottom<=top)continue;
-                const bool scene_image=draw.GetTexID()==static_cast<ImTextureID>(2);
-                constants[5]=scene_image ? 1.0f : 0.0f;
-                nvrhi::GraphicsState state;state.pipeline=ui_pipeline;state.framebuffer=ui_framebuffers.at(image_index);state.bindings.push_back(scene_image ? ui_scene_bindings : ui_bindings);
-                state.vertexBuffers.push_back(nvrhi::VertexBufferBinding().setBuffer(ui_vertices));
-                state.indexBuffer=nvrhi::IndexBufferBinding(ui_indices,sizeof(ImDrawIdx)==2 ? nvrhi::Format::R16_UINT : nvrhi::Format::R32_UINT,0);
-                state.viewport.addViewport(nvrhi::Viewport(static_cast<float>(extent.width),static_cast<float>(extent.height)));
-                state.viewport.addScissorRect(nvrhi::Rect(left,right,top,bottom));commands->setGraphicsState(state);commands->setPushConstants(constants,sizeof(constants));
-                commands->drawIndexed(nvrhi::DrawArguments().setVertexCount(draw.ElemCount).setStartIndexLocation(index_offset+draw.IdxOffset).setStartVertexLocation(vertex_offset+draw.VtxOffset));
-            }
-            vertex_offset+=static_cast<std::uint32_t>(source->VtxBuffer.Size);index_offset+=static_cast<std::uint32_t>(source->IdxBuffer.Size);
-        }
-    }
-#endif
     // NVRHI retains submitted command buffers and referenced resources until its
     // graphics timeline completes. Reopening the command list obtains another
     // tracked native buffer; writeBuffer upload chunks are submission-versioned.
@@ -3309,7 +2854,7 @@ struct Context {
         swap.supported=rs::use_bit(rs::Use::color)|rs::use_bit(rs::Use::color_overwrite)|rs::use_bit(rs::Use::clear_color)|rs::use_bit(rs::Use::copy_source)|rs::use_bit(rs::Use::present);
         f.swapchain=insert(std::move(swap));f.output=f.swapchain;
 #if POIMA_EDITOR
-        if(editor)f.output=texture(ui_scene,rs::Lifetime::shared,false);
+        if(editor)f.output=texture(editor_ui.scene_image(),rs::Lifetime::shared,false);
 #endif
         f.color=f.output;
         if(scene) {
@@ -3332,7 +2877,7 @@ struct Context {
                 f.streamed_indices=buffer(slot.streamed_indices,rs::Lifetime::slot,false,stream_indices.size()*sizeof(std::uint32_t));
             }
             f.frame=buffer(frame_buffer,rs::Lifetime::shared,false);f.objects=buffer(object_buffer,rs::Lifetime::shared,false,object_data.size()*sizeof(ObjectData));
-            const auto& environment=bound_environment();
+            const auto environment=environment_ibl.bound();
             f.ibl_diffuse=texture(environment.diffuse,rs::Lifetime::imported,true);
             f.ibl_specular=texture(environment.specular,rs::Lifetime::imported,true);
             f.ibl_brdf=texture(environment.brdf,rs::Lifetime::imported,true);
@@ -3408,23 +2953,25 @@ struct Context {
             f.bloom=texture(bloom.radiance(),rs::Lifetime::shared,false);
             f.bloom_scratch=texture(bloom.scratch(),rs::Lifetime::shared,false);
         }
+        const auto* game_ui_frame=game_ui.packet();
         settings.game_ui=game_ui_frame && (!game_ui_frame->vertices.empty() || !game_ui_frame->indices.empty());
         if(settings.game_ui) {
-            if(!game_ui_frame->vertices.empty())f.game_vertices=buffer(game_ui_vertices,rs::Lifetime::shared,false,game_ui_frame->vertices.size()*sizeof(UiVertex));
-            if(!game_ui_frame->indices.empty())f.game_indices=buffer(game_ui_indices,rs::Lifetime::shared,false,game_ui_frame->indices.size()*sizeof(std::uint32_t));
+            if(!game_ui_frame->vertices.empty())f.game_vertices=buffer(game_ui.vertices(),rs::Lifetime::shared,false,game_ui_frame->vertices.size()*sizeof(UiVertex));
+            if(!game_ui_frame->indices.empty())f.game_indices=buffer(game_ui.indices(),rs::Lifetime::shared,false,game_ui_frame->indices.size()*sizeof(std::uint32_t));
             for(const auto& draw:game_ui_frame->draws)if(draw.index_count && draw.scissor[0]!=draw.scissor[2] && draw.scissor[1]!=draw.scissor[3])
-                for(const auto& binding:game_ui_bindings.at(draw.texture==ui_white_texture ? game_ui_frame->textures.size() : draw.texture)->getDesc()->bindings)
+                for(const auto& binding:game_ui.draw_binding(draw)->getDesc()->bindings)
                     if(binding.type==nvrhi::ResourceType::Texture_SRV)f.game_textures.push_back(texture(static_cast<nvrhi::ITexture*>(binding.resourceHandle),rs::Lifetime::imported,true));
         }
-        settings.overlay=hosted && !overlay_data.empty();
-        if(settings.overlay)f.overlay_vertices=buffer(overlay_vertices,rs::Lifetime::shared,false,overlay_data.size()*sizeof(EditorOverlayVertex));
+        settings.overlay=hosted && overlay.active();
+        if(settings.overlay)f.overlay_vertices=buffer(overlay.vertices(),rs::Lifetime::shared,false,overlay.vertex_bytes());
 #if POIMA_EDITOR
-        if(editor && ui_data && !ui_vertex_data.empty()) {
-            f.editor_vertices=buffer(ui_vertices,rs::Lifetime::shared,false,ui_vertex_data.size()*sizeof(ImDrawVert));
-            if(!ui_index_data.empty())f.editor_indices=buffer(ui_indices,rs::Lifetime::shared,false,ui_index_data.size()*sizeof(ImDrawIdx));
+        const auto* ui_data=editor_ui.draw_data();
+        if(editor && ui_data && editor_ui.vertex_bytes()) {
+            f.editor_vertices=buffer(editor_ui.vertices(),rs::Lifetime::shared,false,editor_ui.vertex_bytes());
+            if(editor_ui.index_bytes())f.editor_indices=buffer(editor_ui.indices(),rs::Lifetime::shared,false,editor_ui.index_bytes());
             for(int list=0;list<ui_data->CmdListsCount;++list)for(const auto& draw:ui_data->CmdLists[list]->CmdBuffer) {
                 if(draw.UserCallback || !draw.ElemCount)continue;
-                f.editor_textures.push_back(draw.GetTexID()==static_cast<ImTextureID>(2) ? f.output : texture(ui_font,rs::Lifetime::imported,true));
+                f.editor_textures.push_back(draw.GetTexID()==static_cast<ImTextureID>(2) ? f.output : texture(editor_ui.font(),rs::Lifetime::imported,true));
             }
         }
 #endif
@@ -3495,7 +3042,7 @@ struct Context {
                 }
             }
         } else framebuffer(framebuffers.at(index),f.color,f.depth,f.normal);
-        if(plan.settings.screen_reflections)reflections.verify_bindings(plan,environment_sampler.Get());
+        if(plan.settings.screen_reflections)reflections.verify_bindings(plan,environment_ibl.bound().sampler);
         if(plan.settings.height_fog)fog.verify_bindings(plan);
         if(ao_enabled) {
             identity(f.ao_raw,ao_raw.Get());identity(f.ao_filtered,ao_filtered.Get());identity(f.ao_constants,ao_buffer.Get());
@@ -3602,7 +3149,7 @@ struct Context {
                     if(binding.type==nvrhi::ResourceType::StructuredBuffer_UAV)identity(binding.slot==0 ? f.viewmodel_counts : f.viewmodel_indices,binding.resourceHandle);
                 }
             }
-            framebuffer(game_ui_framebuffers.at(index),f.output,rs::none);
+            framebuffer(game_ui.framebuffer(index),f.output,rs::none);
             if(plan.settings.post_effect) {
                 framebuffer(post_effect.framebuffer(),f.post_effect,rs::none);
                 const auto& inputs=post_effect.bindings()->getDesc()->bindings;
@@ -3630,15 +3177,15 @@ struct Context {
             }
             require(grade_bound==(f.output_grade!=rs::none),"Scene output grade binding differs from its schedule.");
         }
-        if(f.game_vertices!=rs::none)identity(f.game_vertices,game_ui_vertices.Get());
-        if(f.game_indices!=rs::none)identity(f.game_indices,game_ui_indices.Get());
-        if(plan.settings.game_ui)framebuffer(game_ui_framebuffers.at(index),f.output,rs::none);
-        if(plan.settings.overlay) {identity(f.overlay_vertices,overlay_vertices.Get());framebuffer(overlay_framebuffers.at(index),f.swapchain,rs::none);}
+        if(f.game_vertices!=rs::none)identity(f.game_vertices,game_ui.vertices());
+        if(f.game_indices!=rs::none)identity(f.game_indices,game_ui.indices());
+        if(plan.settings.game_ui)framebuffer(game_ui.framebuffer(index),f.output,rs::none);
+        if(plan.settings.overlay) {identity(f.overlay_vertices,overlay.vertices());framebuffer(overlay.framebuffer(index),f.swapchain,rs::none);}
 #if POIMA_EDITOR
         if(editor) {
-            identity(f.output,ui_scene.Get());framebuffer(ui_framebuffers.at(index),f.swapchain,rs::none);
-            if(f.editor_vertices!=rs::none)identity(f.editor_vertices,ui_vertices.Get());
-            if(f.editor_indices!=rs::none)identity(f.editor_indices,ui_indices.Get());
+            identity(f.output,editor_ui.scene_image());framebuffer(editor_ui.framebuffer(index),f.swapchain,rs::none);
+            if(f.editor_vertices!=rs::none)identity(f.editor_vertices,editor_ui.vertices());
+            if(f.editor_indices!=rs::none)identity(f.editor_indices,editor_ui.indices());
         }
 #endif
         if(plan.settings.reconstruction) {
@@ -3840,13 +3387,13 @@ struct Context {
             case render_schedule::PassId::output:
                 render_scene_output(index,resources.output_grade!=render_schedule::none ? planned_buffer(resources.output_grade) : nullptr);
                 break;
-            case render_schedule::PassId::game_ui:render_game_ui(index);break;
-            case render_schedule::PassId::overlay:render_overlay(index);break;
+            case render_schedule::PassId::game_ui:game_ui.record(*commands.Get(),ui_target(),index);break;
+            case render_schedule::PassId::overlay:overlay.record(*commands.Get(),ui_target(),index);break;
             case render_schedule::PassId::editor_clear:
                 commands->clearTextureFloat(planned_texture(resources.swapchain),nvrhi::AllSubresources,nvrhi::Color(0.025f,0.035f,0.055f,1.0f));break;
             case render_schedule::PassId::editor_ui:
 #if POIMA_EDITOR
-                render_ui(index);
+                editor_ui.record(*commands.Get(),ui_target(),index);
 #endif
                 break;
             case render_schedule::PassId::product_probes:
@@ -4037,7 +3584,7 @@ void HostedViewport::set_overlay(const std::vector<EditorOverlayVertex>& triangl
         require(std::isfinite(vertex.x) && std::isfinite(vertex.y) && vertex.x>=0 && vertex.x<=1 && vertex.y>=0 && vertex.y<=1,"Hosted overlay coordinates must be finite and in [0,1].");
         for(float channel:vertex.color)require(std::isfinite(channel) && channel>=0 && channel<=1,"Hosted overlay colors must be finite linear RGBA in [0,1].");
     }
-    auto copy=triangles;impl_->context.overlay_data.swap(copy);
+    impl_->context.overlay.set_vertices(triangles);
 }
 bool HostedViewport::draw(const SceneSnapshot& scene,bool capture) { return draw_frame(scene,capture ? &impl_->options.capture : nullptr); }
 bool HostedViewport::draw_capture(const SceneSnapshot& scene,const std::string& path) { return draw_frame(scene,&path); }
@@ -4061,7 +3608,7 @@ bool HostedViewport::draw_frame(const SceneSnapshot& scene,const std::string* ca
                 if(!context.rebuild(options))return false;
             }
             context.update_scene();
-            context.prepare_overlay();
+            if(context.hosted)context.overlay.prepare(*context.checked.Get());
         } catch(...) { context.renderer_fault=true;throw; }
         if(!context.frame(capture_path!=nullptr)) {context.reset_game_ui_input();return false;}
         ++state.result.frames_presented;state.result.width=context.extent.width;state.result.height=context.extent.height;
@@ -4084,7 +3631,8 @@ struct EditorViewport::Impl {
     RenderReport result;
     Impl(const RenderOptions& requested,const SceneSnapshot& scene):options(requested),snapshot(scene) {
         require(ImGui::GetCurrentContext()!=nullptr,"Create an ImGui context before the editor viewport.");
-        context.editor=true;context.initialize(options,&snapshot,true);context.prepare_ui();
+        context.editor=true;context.initialize(options,&snapshot,true);
+        context.editor_ui.prepare(*context.checked.Get(),*context.commands.Get(),context.diagnostics.frame_execution.device_idle_waits);
         SDL_SetWindowTitle(context.window,"Poima Editor");
         result.hardware=context.hardware;result.gpu_name=context.gpu_name;result.samples=context.samples;
         result.width=context.extent.width;result.height=context.extent.height;
@@ -4106,7 +3654,7 @@ bool EditorViewport::draw_frame(const SceneSnapshot& scene,EditorRect viewport,c
     auto& state=*impl_;auto& context=state.context;
     try {
         require(!context.renderer_fault && context.messages.errors==0,"Renderer fault; recreate the editor viewport before drawing again.");
-        require(ImGui::GetCurrentContext()==context.ui_context,"The editor viewport's ImGui context must remain current until teardown.");
+        require(context.editor_ui.context_is_current(),"The editor viewport's ImGui context must remain current until teardown.");
         require(!capture_path || (!capture_path->empty() && capture_path->find('\0')==std::string::npos),"Editor capture requires a nonempty, NUL-free output path.");
         for(float value:{viewport.x,viewport.y,viewport.width,viewport.height})require(std::isfinite(value),"Editor viewport rectangle must be finite.");
         float scale_x=1,scale_y=1,origin_x=0,origin_y=0;
@@ -4130,7 +3678,7 @@ bool EditorViewport::draw_frame(const SceneSnapshot& scene,EditorRect viewport,c
         // Preparation can upload resources using this command list. Its failure
         // may occur after opening/submitting work, so conservatively invalidate
         // this graphics lifetime rather than attempting an unsafe retry.
-        try { context.update_scene();context.prepare_ui_frame(ui); }
+        try { context.update_scene();context.editor_ui.prepare_frame(*context.checked.Get(),ui); }
         catch(...) { context.renderer_fault=true;throw; }
         if(!context.frame(capture_path!=nullptr))return false;
         ++state.result.frames_presented;state.result.width=context.extent.width;state.result.height=context.extent.height;
@@ -4226,16 +3774,16 @@ UiInputResult PlayerRenderer::dispatch_game_ui_input(const UiInput& event, bool 
 PlayerRenderer::UiLayout PlayerRenderer::ui_layout() const noexcept {
 #if POIMA_GAME_UI
     const auto& context = impl_->context;
-    return {context.game_ui_observation, context.game_ui_layout_rect};
+    return {context.game_ui.observation(), context.game_ui.layout_rect()};
 #else
     return {};
 #endif
 }
 
-bool PlayerRenderer::has_startup_overlay() const noexcept { return bool(impl_->context.startup_overlay); }
+bool PlayerRenderer::has_startup_overlay() const noexcept { return impl_->context.game_ui.has_startup(); }
 
 void PlayerRenderer::set_startup_overlay(std::shared_ptr<const UiFrame> overlay) noexcept {
-    impl_->context.startup_overlay = std::move(overlay);
+    impl_->context.game_ui.set_startup(std::move(overlay));
 }
 
 void PlayerRenderer::reset_temporal_history() {

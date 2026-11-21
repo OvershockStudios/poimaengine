@@ -1,8 +1,17 @@
 # Implementation status
 
-Updated 2026-11-21 for **0.0.380**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-21 for **0.0.381**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.381 compiles [runtime scene construction, capture handling, screen
+UI, sky lighting and render scheduling](BUILD.md#world-service-and-schema-compilation)
+in separate units. Twenty Ubuntu suites passed. On AMD and NVIDIA, 85 Windows
+Vulkan captures matched the 0.0.380 baseline byte-for-byte across environment
+lighting, game UI, skinned asset previews and hosted overlays. The legacy
+editor's push-constant repair passed 75 scripted actions on each adapter.
+The Windows player comparison exercised cooperative presentation and replay.
+[Results](evidence/m2-source-ownership-381.json)
 
 Version 0.0.380 adds the optional [focused interaction package](../packages/interaction/README.md).
 Compiled C# gameplay can check the current camera ray against a bounded target

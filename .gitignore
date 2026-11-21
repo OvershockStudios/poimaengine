@@ -26,6 +26,8 @@ __pycache__/
 /packages/ai/obj/
 /packages/weather/bin/
 /packages/weather/obj/
+/packages/interaction/bin/
+/packages/interaction/obj/
 /tests/ai_behavior_tree/bin/
 /tests/ai_behavior_tree/obj/
 /tests/fps_traversal_gameplay/bin/

@@ -160,8 +160,11 @@ animation and motion observations. `src/world_presentation_json.cpp`
 serializes lighting, capture and player presentation reports.
 `src/world_model_assets.cpp` owns model source inspection, model import and
 animation cooking. `src/world_post_effect_assets.cpp` verifies and publishes
-compiled post-effect artifacts. `src/world.cpp` owns world state, revisioned
-publication, dispatch and session filtering.
+compiled post-effect artifacts. `src/world_runtime_definition.cpp` resolves
+authored entities, rig and template definitions, and mesh and material bindings.
+`src/world_capture.cpp` validates capture options and output destinations and
+builds animated asset previews. `src/world.cpp` owns world state, revisioned
+publication, capture revision guards, dispatch and session filtering.
 
 Each source compiles separately with the same optimization, debug information
 and warning settings. Changes to a private shared header may rebuild its
@@ -179,7 +182,11 @@ own resources, such as `src/render_screen_reflections.cpp` and
 fullscreen resolve and composition draws. `src/render_hdr_effects.cpp` owns
 project post-effect and bloom GPU resources and draw commands. The context
 selects the input image, checks frame budgets and retires earlier frames
-before replacing live resources. The native player-window fixture checks
+before replacing live resources. `src/render_ui.cpp` owns the native game UI,
+hosted overlay and ImGui resource staging and compositing.
+`src/render_environment_ibl.cpp` owns the procedural sky lighting bake
+and its texture bindings. `src/render_schedule.cpp` constructs and validates
+the frame schedule. The native player-window fixture checks
 the presentation boundary separately from offscreen captures.
 
 The [0.0.67 evidence](evidence/m2-world-schema-extraction.json) records unchanged

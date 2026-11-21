@@ -2,6 +2,12 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.381
+
+- Compile authored runtime scene construction and capture handling separately from the world service.
+- Compile screen UI composition, sky environment lighting and frame-schedule validation separately from the Vulkan frame context.
+- Match the legacy editor's Vulkan push-constant declarations to its shader and draw payload.
+
 ## 0.0.380
 
 - Add the optional `Poima.Interaction` package for camera-directed Use interactions with native range and first-collider checks.

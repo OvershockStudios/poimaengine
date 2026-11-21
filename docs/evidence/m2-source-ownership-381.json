@@ -1,0 +1,203 @@
+{
+  "release": "0.0.381",
+  "scope": "World and Vulkan source ownership and legacy editor constant-layout repair.",
+  "baseline_commit": "2f03fbb919b016c3399667a6ecce913f455121ad",
+  "owner_lines": {
+    "src/world.cpp": {
+      "before": 3248,
+      "after": 2854
+    },
+    "src/render_smoke.cpp": {
+      "before": 4263,
+      "after": 3811
+    },
+    "include/poima/render_schedule.hpp": {
+      "before": 1015,
+      "after": 172
+    }
+  },
+  "final_source_inventory_sha256": "44e8a6f97358f4d5fd3a3b28e820ae7bd61a4eb6bc83a947edcf725f1af3167c",
+  "linux_simulation": {
+    "source_inventory_sha256": "ab35a3818ef430605653ed2ce8e1afd91c4402162c8fe5ac2fed6b9163ab5423",
+    "binary_sha256": "f40a9c514c8107590ea97b9fad553076b3c5b1c556f7592302290a9a44e622b5",
+    "junit_sha256": "699e801445afd54439abf34b88bf5e8972eb9e5067ead4af70103eaec963dafa",
+    "suites": [
+      {
+        "name": "world_session_native",
+        "seconds": 23.0
+      },
+      {
+        "name": "snow_compaction_contract",
+        "seconds": 1.38
+      },
+      {
+        "name": "world_contract",
+        "seconds": 5.1
+      },
+      {
+        "name": "audio_contract",
+        "seconds": 1.7
+      },
+      {
+        "name": "asset_contract",
+        "seconds": 0.4
+      },
+      {
+        "name": "runtime_save_contract",
+        "seconds": 0.6
+      },
+      {
+        "name": "lighting_contract",
+        "seconds": 1.63
+      },
+      {
+        "name": "world_foliage_contract",
+        "seconds": 0.57
+      },
+      {
+        "name": "runtime_animation_contract",
+        "seconds": 0.35
+      },
+      {
+        "name": "world_templates_contract",
+        "seconds": 0.25
+      },
+      {
+        "name": "world_asset_cache_native",
+        "seconds": 0.08
+      },
+      {
+        "name": "authoring_contract_identity",
+        "seconds": 0.69
+      },
+      {
+        "name": "asset_references_contract",
+        "seconds": 0.48
+      },
+      {
+        "name": "world_ui_contract",
+        "seconds": 0.32
+      },
+      {
+        "name": "authoring_core_conformance",
+        "seconds": 0.12
+      },
+      {
+        "name": "render_schedule_native",
+        "seconds": 0.04
+      },
+      {
+        "name": "world_physical_contract",
+        "seconds": 0.28
+      },
+      {
+        "name": "runtime_ui_contract",
+        "seconds": 0.22
+      },
+      {
+        "name": "animation_contract",
+        "seconds": 0.23
+      },
+      {
+        "name": "world_schema_native",
+        "seconds": 52.09
+      }
+    ],
+    "retained_coreclr_fixture_sha256": "d6d65a6f9bfce0e4a061cfd1c544773946c4b0932f29c3f485ffa5a145e7834e",
+    "final_windows_only_edit": "src/render_ui.cpp"
+  },
+  "schedule": {
+    "accepted": 488,
+    "rejected": 1265,
+    "before_after_rejection_messages_sha256": "23686b457ae56c93348ea32fd970116a27043461e68a8e57ba35e1736cee08d4"
+  },
+  "windows": {
+    "version": {
+      "version": "0.0.381",
+      "compiler": "Clang",
+      "compiler_version": "23.1.2",
+      "target_os": "Windows",
+      "target_arch": "x86_64"
+    },
+    "baseline_binary_sha256": "e537b7653840b85951095cf3bb9315847972381d809b7127db618fb8de1d21ba",
+    "binary_sha256": "2bb33b69ac0cfb309e831745e42ee5be9d962d51364a0b9bda647d429aa20fb5",
+    "desktop_bridge_sha256": "91ca86224b7bcbd765aaa8e446eb01ebd998a9c28e7b4ed78512cfdac8689853",
+    "ibl_test_sha256": "c05a56817aea0b815169635186d83de1ed78975ce035e05955b58ff8881facf5",
+    "runtime_descriptor_sha256": "55491b8496f2aaa085c0903d2bddac52ade517452f81662b8095059f75051939",
+    "retained_native_aot_fixture_sha256": "3c30c5d75f51d0fee7e409b91b4543512e3802f0bace7319b5bc56be4da136d1",
+    "identical_shader_modules": 55,
+    "gpu_parity": {
+      "ibl": {
+        "ibl-0-4-0": {
+          "gpu": "AMD Radeon(TM) Graphics",
+          "equal_frames": 27,
+          "equal_oracles": 17,
+          "before_sha256": "e29e3f38cb774a88dfb9ca17f1b46d4a662ff6cfbd4357235839c8d7fb666c26",
+          "after_sha256": "1e81efcbb23637ad75210a54b03bfa67b4e6f445024b13ac38a295cb7e1f74f8"
+        },
+        "ibl-1-1-1": {
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "equal_frames": 27,
+          "equal_oracles": 17,
+          "before_sha256": "213d60aef0cb9fbeabf79c4465ae795abf7bdda0a2123026cf572dad0604f9ce",
+          "after_sha256": "07527590eb6b4e87778b55cd8f197736024e1a7a28904befc53d1fe69c444af2"
+        }
+      },
+      "passes": {
+        "ui-amd": {
+          "equal_frames": 7,
+          "before_sha256": "3e9899c24f7765f20f18693e1d1524cfcd1989c31efefbd282f47e1b654d68c5",
+          "after_sha256": "56fbd7be7d92ec6fa34c6db2b8daf4ea6fbfda02b894fa0763198747d7436faf"
+        },
+        "ui-nvidia": {
+          "equal_frames": 7,
+          "before_sha256": "4a0ec942bbda5faa8fbf5696cd3c4ac24715daf8be3ef359cd5f25c243d7d52c",
+          "after_sha256": "a20b9df805fd34300df781e0a8e475ceb8f80ecd9d89c8c8845c9a7bb562162b"
+        },
+        "skinning": {
+          "equal_frames": 12,
+          "before_sha256": "4e9a377ea25937256f0af3e774b750913fef4667d4811555d87f2fa5390a26f7",
+          "after_sha256": "8e71f42216beb0844067387325db3720d897927b02814a05b62cc8f160125e2c"
+        },
+        "hosted-overlay": {
+          "equal_frames": 5,
+          "checks": 8,
+          "before_sha256": "1f77e7a6996fb6c3f1db11ec6c009b9ad4147be8e64722462b288f2d2e3a2a23",
+          "after_sha256": "051faaf8ad2c471f5b4f2944497614393fbc798945e912e0588011415c55ec36"
+        }
+      },
+      "continuous_player": {
+        "before_sha256": "1f896bc0cd781c39130169baa90ef57b75b6e32c40d9fdffdf9df02f9abb5e3c",
+        "after_sha256": "1f896bc0cd781c39130169baa90ef57b75b6e32c40d9fdffdf9df02f9abb5e3c",
+        "graphics_groups": 0,
+        "cooperative_groups": 3
+      },
+      "equal_images": 85
+    },
+    "legacy_editor_push_constant_bytes": 32,
+    "legacy_editor_baseline_and_extraction_only_rejections": {
+      "before": "125e0f47169b9c090b636624324deb777a741e18883906d900ca7cf8b7a77de0",
+      "after": "11f91d5108f4acb0f4636dcaf8747142227cb5d4f5391652d6a638f0980d08d7"
+    },
+    "legacy_editor_after_repair": [
+      {
+        "gpu_index": 0,
+        "actions": 75,
+        "resource_samples": 55,
+        "frame_sha256": "f9c84316df636cbcfefb149eb6fddbad85b4e8bef1d6faa3a873cf0ad638a929",
+        "proof_sha256": "ca920b9db1b3edf8f684c7c17fd5fc7c3be79b1d90c26b29923d87eee4c3eb17"
+      },
+      {
+        "gpu_index": 1,
+        "actions": 75,
+        "resource_samples": 55,
+        "frame_sha256": "e4bf0cc208dfb39def02c69f4b66263a92df7447ec2b20cd5dc8b78df1d23677",
+        "proof_sha256": "a95a0cae83df83cffa05db0ecfc42ffb8a5af0bed4df67b5753628daf24da330"
+      }
+    ],
+    "interactive_focus": {
+      "baseline_full_player_fixture": "Did not acquire an active owner tick in the interactive focus group.",
+      "paired_player_scope": "Cooperative native owner, capture, and replay groups."
+    }
+  }
+}

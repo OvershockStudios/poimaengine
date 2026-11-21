@@ -29,7 +29,7 @@
             auto result = foliage::authoring::plan(*sampled.field, sampled.recipe_sha256, plan_params,
                 [&](std::string_view asset, std::uint32_t primitive) {
                     const Json components = {{"StaticMesh", {{"asset", asset}, {"primitive", primitive}, {"visible", true}}}};
-                    try { (void)mesh_component(components, models, true); }
+                    try { (void)resolve_mesh_component(components, asset_directory(), models, true); }
                     catch (const Error& error) {
                         throw Error(error.code, error.what(), {{"asset", asset}, {"primitive", primitive}});
                     }

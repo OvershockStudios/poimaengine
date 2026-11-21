@@ -24,7 +24,7 @@
             water = std::move(asset.definition);
         } else if (!snow_edit) return;
 
-        auto definition = runtime_definition(false, &document);
+        auto definition = resolve_runtime_definition(document, asset_directory(), model_cache_);
         definition.water = std::move(water);
         component_checked([&] { (void)snow::Region(definition); });
     }

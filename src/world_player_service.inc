@@ -725,7 +725,7 @@
         material_guard(params,"expected_material_revision");
         if(params.contains("expected_ui_revision"))require(revision(params.at("expected_ui_revision"))==runtime_->ui_model().revision(),"Runtime UI revision conflict.",-32009);
         require(player_owner_->window->ready(),"Player has no successful presentation yet.",-32003);
-        const auto output=render_options(Json{{"path",params.at("path")}}).capture;
+        const auto output=capture_output_path(params.at("path"),path_,asset_directory());
         const auto frozen=player_owner_->window->capture_snapshot();
         const auto& snapshot=frozen.snapshot();
         require(runtime_->inspect().tick==captured_tick,"Player capture preparation advanced its native Tick.",-32020);

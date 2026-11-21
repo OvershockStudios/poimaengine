@@ -51,7 +51,7 @@
             const std::string setting=std::string("graphics.")+key;
             if(values.contains(setting))rendering[key]=values.at(setting);
         }
-        options.render=render_options(rendering); // Validate combined renderer dependencies before opening a player.
+        options.render=decode_render_options(rendering,path_,asset_directory());
         InputProfile input=*options.input_profile;
         if(values.contains("input.sensitivity_x"))input.sensitivity_x=values.at("input.sensitivity_x").get<double>();
         if(values.contains("input.sensitivity_y"))input.sensitivity_y=values.at("input.sensitivity_y").get<double>();

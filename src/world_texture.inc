@@ -128,7 +128,7 @@
             if(old.contains("PbrTextures"))normalized_components["PbrTextures"]=old.at("PbrTextures");else normalized_components.erase("PbrTextures");
             const auto old_dependencies=texture_dependencies(old),new_dependencies=texture_dependencies(next);
             before.insert(old_dependencies.begin(),old_dependencies.end());after.insert(new_dependencies.begin(),new_dependencies.end());
-            auto replacement=resolve_textures(next,found->mesh->mesh,textures);
+            auto replacement=resolve_textures(next,found->mesh->mesh,asset_directory(),textures);
             if(replacement) {
                 // Sampler-only edits retain existing immutable image owners.
                 // Omitted slots already inherit the ORIGINAL MeshAsset owners.
