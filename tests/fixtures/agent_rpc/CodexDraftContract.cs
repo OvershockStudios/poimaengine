@@ -218,9 +218,13 @@ internal static class CodexDraftContract
                             parameters["environments"] is JsonArray { Count: 0 },
                             "Draft thread has incorrect workspace, execution, approval or persistence settings.");
                         await Trace(method, parameters);
+                        var forcedFailure = traceDirectory is null ? null :
+                            Path.Combine(traceDirectory, "reject-scope-" + fixture);
+                        var rejectScope = File.Exists(forcedFailure);
+                        if (rejectScope) File.Delete(forcedFailure!);
                         var identity = new JsonObject { ["id"] = thread };
                         if (fixture != MissingScope)
-                            identity["environments"] = fixture == LocalExecutor
+                            identity["environments"] = fixture == LocalExecutor || rejectScope
                                 ? new JsonArray(new JsonObject { ["environmentId"] = "local", ["cwd"] = cwd })
                                 : new JsonArray();
                         await Reply(new JsonObject
@@ -314,6 +318,7 @@ internal static class CodexDraftContract
             if (task.Contains(LanternTask, StringComparison.Ordinal)) assignment = (0xda01, "Draft lantern");
             else if (task.Contains(BenchTask, StringComparison.Ordinal)) assignment = (0xda02, "Draft quay bench");
             else if (task.Contains(CodexLeadWorkerContract.RepairTask, StringComparison.Ordinal)) assignment = (0xda03, "Draft lantern brace");
+            else if (task.Contains(CodexLeadWorkerContract.RecoverTask, StringComparison.Ordinal)) assignment = (0xda04, "Worker recovery marker");
             else if (task.Contains(ReportTask, StringComparison.Ordinal)) return CodexLeadWorkerContract.MarkdownReport;
             else return "Draft is ready to review.";
             if (native is null) return assignment.Name + " created at revision 3.";

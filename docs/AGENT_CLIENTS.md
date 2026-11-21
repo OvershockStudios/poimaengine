@@ -96,9 +96,17 @@ receipt. Reopening restores the reports and draft files. Worker processes
 start only when a new task is sent.
 
 A completed worker turn supplies a report and pins its `draft_id` and
-`world_sha256`. The lead can send a focused change to an existing worker
-with `revise`. Use the current scene hash from the worker report, or inspect
-the worker's manifest with `poima project inspect` after other edits.
+`world_sha256`. After a failed or stopped turn or another edit, the lead can
+read the draft directly through the same tool.
+
+```json
+{"action":"inspect_draft","request_id":"8bd855c2bd784de4aa028932e641a8a0","draft_id":"8ee6b99412f04b7eb54227a25622f1f2"}
+```
+
+This read returns the current revision and scene hash, the latest turn
+state, and whether a completed worker report matches the current scene.
+It always reads the current draft and leaves the assignment receipts intact.
+Use the current hash in a guarded `revise` with a new request ID.
 
 ```json
 {"action":"revise","request_id":"b6d227aded0b444b808c58a5f2952814","draft_id":"8ee6b99412f04b7eb54227a25622f1f2","world_sha256":"a2e67aa65f4e7a699f28d1098bdca2f278ecfc320f505c56b68c7a8ea54e9204","task":"Add the missing lantern brace, then check its position."}

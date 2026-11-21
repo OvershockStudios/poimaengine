@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.343
+
+- Let the lead agent inspect the current revision and hash of a scene worker's draft, including after a failed or stopped turn.
+
 ## 0.0.342
 
 - Run Codex scene workers through scoped Poima tools without attaching a shell environment. Reject worker connections that fail to confirm this restriction.

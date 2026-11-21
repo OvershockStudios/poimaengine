@@ -1,8 +1,21 @@
 # Implementation status
 
-Updated 2026-11-20 for **0.0.342**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-20 for **0.0.343**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.343 lets the [lead inspect a worker draft directly](AGENT_CLIENTS.md#delegate-scene-work-from-codex).
+The packaged Windows creator rejected a worker with an unconfirmed execution
+scope before sending the task. The scripted lead read the draft's unchanged
+hash and used it for a guarded retry in the same draft. The earlier receipts
+and original project kept their contents. The approved Vulkan build also
+passed three checks after relocation with the source project unavailable.
+Separately, ten pinned Windows Codex processes reached a local scripted
+model endpoint concurrently, rejected shell and direct patch requests, and
+completed their scoped scene edits. The isolated profile selected the
+elevated sandbox mode, with no setup activity recorded. Signed-in Windows
+team qualification remains open.
+[Results](evidence/m2-windows-worker-scope-recovery-343.json)
 
 Version 0.0.342 [opens Codex scene workers without a shell environment](AGENT_CLIENTS.md#delegate-scene-work-from-codex).
 Poima checks the returned scope before sending an assignment. On Linux, ten

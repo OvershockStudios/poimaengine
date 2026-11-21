@@ -11,7 +11,9 @@ internal static class CodexLeadWorkerContract
     public const string VerifyPrompt = "Verify drafts for assignment ";
     public const string RepairPrompt = "Repair failed checks for assignment ";
     public const string ReplayRepairPrompt = "Replay worker follow-up ";
+    public const string RecoverScopePrompt = "Recover blocked scene worker after ";
     public const string RepairTask = "Add the lantern brace missing from the playtest.";
+    public const string RecoverTask = "Add a worker recovery marker.";
     public const string Finished = "Lead collected both worker reports.";
     public const string MarkdownReport = """
         ## Review notes
@@ -40,10 +42,17 @@ internal static class CodexLeadWorkerContract
         var verify = prompt.StartsWith(VerifyPrompt, StringComparison.Ordinal);
         var repair = prompt.StartsWith(RepairPrompt, StringComparison.Ordinal);
         var replayRepair = prompt.StartsWith(ReplayRepairPrompt, StringComparison.Ordinal);
-        if (!disabled && !replay && !verify && !repair && !replayRepair && !prompt.StartsWith(DelegatePrompt, StringComparison.Ordinal)) return null;
+        var recoverScope = prompt.StartsWith(RecoverScopePrompt, StringComparison.Ordinal);
+        if (!disabled && !replay && !verify && !repair && !replayRepair && !recoverScope &&
+            !prompt.StartsWith(DelegatePrompt, StringComparison.Ordinal)) return null;
         var prefix = disabled ? DisabledPrompt : DelegatePrompt;
         var firstLine = prompt.Split('\n', 2)[0].TrimEnd();
         using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(100));
+        if (recoverScope)
+        {
+            await RecoverScopeAsync(firstLine.Substring(RecoverScopePrompt.Length, 32));
+            return "Lead recovered the scene worker after its scope was rejected.";
+        }
         if (verify)
         {
             await VerifyAsync(firstLine.Substring(VerifyPrompt.Length, 32));
@@ -127,6 +136,40 @@ internal static class CodexLeadWorkerContract
             "The lead did not read both native worker reports.");
         return Finished + "\n\n" + MarkdownReport;
 
+        async Task RecoverScopeAsync(string priorId)
+        {
+            var prior = await InspectUntil(priorId, row => row["state"]?.GetValue<string>() == "completed");
+            var draftId = prior["draft_id"]!;
+            var originalHash = prior["world_sha256"]!;
+            var traces = Environment.GetEnvironmentVariable("POIMA_TEST_CODEX_DRAFT_TRACE") ??
+                throw new InvalidDataException("The lead fixture requires draft traces.");
+            var folder = Path.GetFileName(Path.GetDirectoryName(prior["manifest"]!.GetValue<string>()));
+            await File.WriteAllTextAsync(Path.Combine(traces, "reject-scope-" + folder), "once", deadline.Token);
+
+            var failedId = Guid.NewGuid().ToString("N");
+            await Call(FollowUp(failedId, draftId, originalHash, RecoverTask), success: true);
+            var failed = await InspectUntil(failedId, row => row["state"]?.GetValue<string>() != "running");
+            Check(failed["state"]?.GetValue<string>() == "failed" &&
+                failed["error"]?.GetValue<string>()?.Contains("could not confirm an isolated scene worker", StringComparison.Ordinal) == true &&
+                failed["world_sha256"] is null,
+                "A rejected worker connection was not recorded as an unsuccessful follow-up.");
+            var current = await Call(new JsonObject
+            {
+                ["action"] = "inspect_draft", ["request_id"] = Guid.NewGuid().ToString("N"), ["draft_id"] = draftId.DeepClone()
+            }, success: true);
+            Check(JsonNode.DeepEquals(current["world_sha256"], originalHash) &&
+                current["latest_state"]?.GetValue<string>() == "failed" && current["matches_report"]?.GetValue<bool>() == false,
+                "The rejected worker connection changed the draft or made its previous report eligible.");
+            var id = Guid.NewGuid().ToString("N");
+            await Call(FollowUp(id, draftId, current["world_sha256"]!, RecoverTask), success: true);
+            var recovered = await InspectUntil(id, row => row["state"]?.GetValue<string>() == "completed");
+            Check(!JsonNode.DeepEquals(recovered["world_sha256"], originalHash) &&
+                recovered["report"]?.GetValue<string>()?.Contains("Worker recovery marker created", StringComparison.Ordinal) == true,
+                "A guarded follow-up did not recover the same worker draft.");
+            Check(JsonNode.DeepEquals(prior, await InspectUntil(priorId, row => row["state"]?.GetValue<string>() == "completed")),
+                "Recovering the worker changed the prior completed receipt.");
+        }
+
         async Task RepairAsync(string assignment)
         {
             var original = await InspectUntil(assignment, row => row["state"]?.GetValue<string>() == "completed");
@@ -145,8 +188,26 @@ internal static class CodexLeadWorkerContract
                 stale["error"]?.GetValue<string>()?.Contains("The draft changed.", StringComparison.Ordinal) == true,
                 "A stale draft was allowed to start a follow-up.");
 
+            var inspection = new JsonObject
+            {
+                ["action"] = "inspect_draft", ["request_id"] = Guid.NewGuid().ToString("N"),
+                ["draft_id"] = new string('f', 32)
+            };
+            await Call(inspection, success: false);
+            inspection["draft_id"] = draftId.DeepClone();
+            inspection["wait_ms"] = 500;
+            await Call(inspection, success: false);
+            inspection.Remove("wait_ms");
+            var current = await Call(inspection, success: true);
+            Check(JsonNode.DeepEquals(current["draft_id"], draftId) &&
+                JsonNode.DeepEquals(current["world_sha256"], originalHash) &&
+                current["revision"]?.GetValue<long>() == original["base_revision"]!.GetValue<long>() + 1 &&
+                current["latest_state"]?.GetValue<string>() == "failed" &&
+                current["matches_report"]?.GetValue<bool>() == false,
+                "The failed worker receipt did not permit independent draft inspection.");
+
             var repairId = Guid.NewGuid().ToString("N");
-            var request = FollowUp(repairId, draftId, originalHash, RepairTask);
+            var request = FollowUp(repairId, draftId, current["world_sha256"]!, RepairTask);
             await Call(FollowUp(assignment, draftId, originalHash, RepairTask), success: false);
             await Call(request, success: true);
             var replayed = await Call(request, success: true);
@@ -157,6 +218,12 @@ internal static class CodexLeadWorkerContract
                 !JsonNode.DeepEquals(revised["world_sha256"], originalHash) &&
                 revised["report"]?.GetValue<string>()?.Contains("Draft lantern brace created", StringComparison.Ordinal) == true,
                 "The repaired worker did not supply the current draft hash.");
+            var repairedDraft = await Call(inspection, success: true);
+            Check(JsonNode.DeepEquals(repairedDraft["world_sha256"], revised["world_sha256"]) &&
+                repairedDraft["revision"]?.GetValue<long>() == current["revision"]!.GetValue<long>() + 1 &&
+                repairedDraft["latest_state"]?.GetValue<string>() == "completed" &&
+                repairedDraft["matches_report"]?.GetValue<bool>() == true,
+                "Draft inspection did not see the newly verified worker report.");
             await Call(new JsonObject
             {
                 ["action"] = "verify", ["request_id"] = Guid.NewGuid().ToString("N"),

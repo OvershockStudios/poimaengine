@@ -1,0 +1,100 @@
+{
+  "engine_version": "0.0.343",
+  "scope": "Packaged Windows creator recovery and a separate Windows Codex process probe with scripted Responses API replies.",
+  "archive": {
+    "name": "Poima-0.0.343-Windows-x64.zip",
+    "bytes": 142319444,
+    "sha256": "3dc5db28ce24df74772da8abf4247c18d01dd6107eb4821fd71a1be12aeee112"
+  },
+  "build": {
+    "editor_sha256": "5251be4f3e5d0328677a1f6addbceaac0bed25202610bccee1461d391281d34d",
+    "frontend_sha256": "ae336e043294b8b0161e874015c5ccaa6c0cc47fe96098f1d2c15939a72bcdef",
+    "cli_sha256": "5b31d821af4b9d7efdd60cf78cc03e03a1d76bb1e6f9e665a110eae549d40de8",
+    "bridge_sha256": "703e24ae6cefedcacb802caaaef3bef4be20a3be8db01785f0d2b794056ac898"
+  },
+  "official_windows_client_probe": {
+    "codex_cli": "0.171.0",
+    "codex_sha256": "cefea4ffee1fff04983a99c0dda99944d8b380e891e740a28b32f4b815a6e0b7",
+    "native_poima_cli": "0.0.341",
+    "native_poima_sha256": "266649341f4736659c027ee419b899145f014ef3a91b6a748cc3738dfd89a39b",
+    "managed_adapter": "0.0.342 source",
+    "model_endpoint": "loopback scripted Responses API",
+    "simultaneous_workers_at_first_model_request": 10,
+    "completed_worker_turns": 10,
+    "shell_calls_rejected": 10,
+    "direct_patches_rejected": 10,
+    "independent_world_transactions_committed_and_read_back": 10,
+    "cross_draft_marker_leaks": 0,
+    "original_authored_file_hashes_unchanged": true,
+    "isolated_provider_config": "windows.sandbox=elevated",
+    "sandbox_setup_trace_or_marker_present": false,
+    "sandbox_log_sha256": "3440d24b419419e9958887700b3655ce259ac9f8a1c61b3fa7eee9c694a4ae31",
+    "raw_model_exchange_sha256": "bce8b036a95fe84298cf56d704a9cb1ea101ec6407227508b67783a5b963f7a2",
+    "signed_in_model_used": false
+  },
+  "packaged_creator": {
+    "runner": "tests/creator_workspace.ps1",
+    "runner_sha256": "aabf2e8dcf7a1d6fd4c176ce9512eb42017212c8b74ac97aba0b60d8c4a7c982",
+    "codex_fixture_sha256": "f52e1feb64b13dbdcdfcb11a42734cdd098712382021edb982adb2dc028aa21c",
+    "arguments": [
+      "WithLeadWorkers",
+      "WithCombinedDrafts",
+      "WithLeadVerification",
+      "WithLeadRepair"
+    ],
+    "passed": true,
+    "report_sha256": "2ee84234c414ba15a6af3360d653025e22b3217aecf974ae8a64bea3ddb0d61c",
+    "unknown_draft_and_invalid_read_rejected": true,
+    "failed_scope_receipt": {
+      "state": "failed",
+      "request_id": "b1e83642e6f242399bc71879f934f08f",
+      "expected_world_sha256": "6ab991a3b95c3752ed6cecbe94d1ce36c36ecb20ed0f062ff77c3601e35d475d"
+    },
+    "guarded_recovery": {
+      "rejected_before_first_turn": true,
+      "original_hashes_unchanged": true,
+      "recovered_draft_revision": 4,
+      "original_receipt_preserved": true,
+      "request_id": "4b9644d79b2a43e5bf053aa630a572ae",
+      "draft_id": "3f30c2c61c4d3214008c2fbd2d4c90c2",
+      "after_world_sha256": "ad578f8eb1ff77659a2f5065605a0a0238615537d1d6f6a76ec6c323b6c478b4"
+    },
+    "approved_after_reopen": true,
+    "playback": {
+      "event_type": "verified_play_closed",
+      "revision": 2,
+      "bundle_sha256": "ae8bb21cf2ea6502f177c0fa8520ed6b3264965f291b94c60c5cdc491a5a91c6",
+      "tick": 22,
+      "frames_presented": 43,
+      "stop_reason": "window_closed"
+    },
+    "relocated": {
+      "source_unavailable": true,
+      "bundle_unchanged": true,
+      "bundle_files": 54,
+      "bundle_sha256": "ae8bb21cf2ea6502f177c0fa8520ed6b3264965f291b94c60c5cdc491a5a91c6",
+      "suite_sha256": "e2a6605987d0a55bbd32805bc3d76ab25c8061934fec6e5a509013417199b349",
+      "groups_passed": 3,
+      "check_tick": 2,
+      "report_sha256": "05db85054740dbdd8a841429979da5d4d47c4dc9d51dd95bdca3622f878e7e50"
+    }
+  },
+  "managed_contracts": {
+    "linux": {
+      "passed": true,
+      "log_sha256": "8fdeb5cf3cef24c7c66a6b6a6db3e1b4dda3f265fe3452934a6707e978e942e7"
+    },
+    "windows": {
+      "passed": true,
+      "log_sha256": "4c846b0508785d95fda29f963e083d9af40e3d04eab9107007dfa6d37029e2b2"
+    }
+  },
+  "manual_worker_regression": {
+    "arguments": [
+      "WithBuildWorkers"
+    ],
+    "passed": true,
+    "verified_independent_drafts_and_closed_workers": true,
+    "report_sha256": "92132b046244e467b49c48691e8db14d3082fd7c93eb0d7d982ca3f8173953d7"
+  }
+}

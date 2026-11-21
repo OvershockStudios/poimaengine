@@ -326,6 +326,8 @@ internal sealed class CreatorBuildTeam
         CancellationToken cancellation)
     {
         if (!loaded || restoreFailed) throw new InvalidOperationException("The worker round could not be loaded.");
+        if (request.InspectDraftId is { } draftId)
+            return await CoordinateDraftInspectionAsync(request.RequestId, draftId, cancellation);
         if (request.FollowUp is not null || FindFollowUp(request.RequestId) is not null)
             return await CoordinateFollowUpAsync(request, canStart, cancellation);
         if (request.Drafts is not null || FindVerification(request.RequestId) is not null)
@@ -351,6 +353,26 @@ internal sealed class CreatorBuildTeam
         Save(current with { Batches = [.. current.Batches, batch] });
         provision = StartBatchAsync(batch, request.Tasks);
         return Describe(FindBatch(batch.Id)!, replayed: false);
+    }
+
+    private async Task<JsonObject> CoordinateDraftInspectionAsync(string requestId, string draftId, CancellationToken cancellation)
+    {
+        if (closing || round is not { } snapshot || snapshot.Workers.FirstOrDefault(worker => worker.ProjectId == draftId) is not { } selected)
+            throw new InvalidOperationException("The selected draft is outside the current worker round.");
+        var current = await InspectWorkerAsync(selected, cancellation);
+        if (closing || round?.Id != snapshot.Id)
+            throw new InvalidOperationException("The worker round changed during inspection.");
+        var worldHash = current.GetProperty("world_sha256").GetString()!;
+        var latest = FindWorker(draftId).Latest;
+        return new JsonObject
+        {
+            ["request_id"] = requestId,
+            ["draft_id"] = draftId,
+            ["revision"] = current.GetProperty("revision").GetInt64(),
+            ["world_sha256"] = worldHash,
+            ["latest_state"] = latest?.State,
+            ["matches_report"] = latest?.State == "completed" && latest.WorldHash == worldHash
+        };
     }
 
     private async Task StartBatchAsync(Batch batch, string[] tasks)

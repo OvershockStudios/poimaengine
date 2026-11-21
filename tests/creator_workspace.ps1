@@ -799,7 +799,8 @@ function Exercise-BuildWorkers($Project, $LeadProcess) {
         $catalog = $peer | Where-Object { $_.kind -ceq 'native/catalog' }
         $edit = $peer | Where-Object { $_.kind -ceq 'native/tool' -and $_.request.arguments.method -ceq 'world.transact' }
         if ($launch.command -cne $cli -or ($launch.args -join '|') -cne "mcp|--project|$($launch.manifest)|--draft" -or
-            $thread.approvalPolicy -cne 'never' -or $thread.sandbox -cne 'workspace-write' -or !$thread.ephemeral -or
+            $thread.approvalPolicy -cne 'never' -or $thread.sandbox -cne 'read-only' -or !$thread.ephemeral -or
+            $null -eq $thread.environments -or @($thread.environments).Count -ne 0 -or
             !$catalog.native -or (($catalog.tools.PSObject.Properties.Name | Sort-Object) -join '|') -cne
                 'poima_call|poima_discover|poima_reference' -or
             $edit.request.arguments.params.base_revision -ne $Project.revision -or
@@ -1109,7 +1110,7 @@ function Approve-ReopenedProposal {
 
 function Replay-ReopenedRepair($Peer) {
     $checks = $report.checks.lead_repair
-    $launches = @(Read-BuildWorkerTrace | Where-Object { $_.kind -ceq 'launch' }).Count
+    $earlier = @(Read-BuildWorkerTrace | Where-Object { $_.kind -ceq 'launch' })
     Select-AgentProvider 'Codex'
     Set-AgentExecutable 'Codex executable' $Peer
     Grant-LeadWorkerPermission
@@ -1117,10 +1118,36 @@ function Replay-ReopenedRepair($Peer) {
     $null = Wait-For 'the reopened lead connected' { Find-Control 'Agent Send' -Enabled } 65
     $reply = Send-CodexPrompt "Replay worker follow-up $($checks.request_id)."
     if (!$reply.Contains('Reopened worker follow-up receipt verified.') -or
-        @(Read-BuildWorkerTrace | Where-Object { $_.kind -ceq 'launch' }).Count -ne $launches) {
+        @(Read-BuildWorkerTrace | Where-Object { $_.kind -ceq 'launch' }).Count -ne $earlier.Count) {
         throw 'Replaying the repaired receipt did not preserve the exact turn without starting workers.'
     }
     $checks.replayed_after_reopen_without_new_worker = $true
+
+    $before = @(Get-AuthoredFileHashes) -join "`n"
+    $reply = Send-CodexPrompt "Recover blocked scene worker after $($checks.request_id)."
+    $records = @(Read-BuildWorkerTrace)
+    $peers = @($records | Where-Object { $_.kind -ceq 'launch' -and $_.thread -notin $earlier.thread })
+    $unused = @($peers | Where-Object {
+        $thread = $_.thread
+        $trace = @($records | Where-Object { $_.thread -ceq $thread })
+        ($trace.kind -join '|') -ceq 'launch|native/catalog|thread/start|exit'
+    })
+    $recovery = @($records | Where-Object { $_.kind -ceq 'native/tool' -and
+        $_.request.arguments.method -ceq 'world.transact' -and
+        $_.request.arguments.params.ops[0].name -ceq 'Worker recovery marker' })
+    if (!$reply.Contains('Lead recovered the scene worker after its scope was rejected.') -or
+        $peers.Count -ne 2 -or $unused.Count -ne 1 -or $recovery.Count -ne 1 -or
+        $peers[0].manifest -cne $peers[1].manifest -or $recovery[0].pid -notin $peers.pid -or
+        !$recovery[0].reply.structuredContent.result.committed -or
+        (@(Get-AuthoredFileHashes) -join "`n") -cne $before) {
+        throw 'Creator did not preserve the failed scope receipt and recover the same independent draft.'
+    }
+    $checks.worker_scope_recovery = [ordered]@{
+        rejected_before_first_turn = $true
+        original_hashes_unchanged = $true
+        recovered_draft_revision = $recovery[0].reply.structuredContent.result.revision
+        original_receipt_preserved = $true
+    }
 }
 
 function Exercise-ReopenedWorkers($Project, $Peer, $LeadChecks) {
