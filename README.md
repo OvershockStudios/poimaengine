@@ -14,7 +14,8 @@ and make changes yourself.
 
 [![Watch the Winter Village showcase](https://i.ytimg.com/vi/JH9HWhj7jpE/maxresdefault.jpg)](https://www.youtube.com/watch?v=JH9HWhj7jpE)
 
-A one-minute gameplay showcase built and playtested with Codex in Poima.
+A one-minute gameplay showcase built and playtested with Codex in a custom
+Poima build with winter weather, water, and post effects made for this scene.
 [Watch on YouTube](https://www.youtube.com/watch?v=JH9HWhj7jpE)
 
 ## Get started
