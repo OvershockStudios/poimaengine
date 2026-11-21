@@ -1,0 +1,83 @@
+{
+  "engine_version": "0.0.337",
+  "scope": "Windows UI Automation against the exact extracted desktop package and scripted Codex peers. Real native draft owners and preview sessions. The Markdown assertions inspect visible automation text and the transcript source exposed to assistive software.",
+  "archive": {
+    "name": "Poima-0.0.337-Windows-x64.zip",
+    "bytes": 142280994,
+    "sha256": "82f1f558f132681bbeaf6ef01688a9d49ccd94ad1f6b87bfc484580ee8a10f77"
+  },
+  "release_inventory_files": 507,
+  "markdown_dependency": {
+    "version": "1.6.0",
+    "package": "Markdig",
+    "license": "BSD-2-Clause",
+    "installed_files": [
+      {
+        "path": "Markdig.dll",
+        "bytes": 513024,
+        "sha256": "c438c1b57432c18b5ca7b7ec41ea3b2486f303d9ca761e28e114d6c84822871f"
+      },
+      {
+        "path": "licenses/nuget/markdig/1.6.0/LICENSE.upstream.txt",
+        "bytes": 1318,
+        "sha256": "7423242b4ae72bccdf19a06cd3c20790df8519a164a08f37b31cb4a40034d827"
+      },
+      {
+        "path": "licenses/nuget/markdig/1.6.0/Markdig.nuspec",
+        "bytes": 1379,
+        "sha256": "98c959d284799a51ff1e556908a21ec6e1c0dd90c4e3c61ac6d2ed3fb30a5a79"
+      },
+      {
+        "path": "licenses/upstream/Markdig/license.txt",
+        "bytes": 1318,
+        "sha256": "7423242b4ae72bccdf19a06cd3c20790df8519a164a08f37b31cb4a40034d827"
+      }
+    ]
+  },
+  "runner": {
+    "path": "tests/creator_workspace.ps1",
+    "sha256": "953fdb8bdfad8cf40d186192ccd5e760ffa24f321b0c534ea9ca9ed1f7ef4a6b",
+    "options": [
+      "WithLeadWorkers",
+      "CheckMarkdown"
+    ]
+  },
+  "windows": {
+    "editor_sha256": "f91402bbd65e5317be116737c071fefc2728c978f1c8fe87e876e35a7c91e674",
+    "frontend_sha256": "e61cea5e3a662c82ee8ef61f6fce0bdff0b626852e35580542f3f9f3a88e1a17",
+    "cli_sha256": "701d59c81b6969d4bf768e8161fb2b7dbe276899d01a534c410f07c9cf6537f5",
+    "fixture_sha256": "adcf540f7ab5cfed38625ce881cc21c0ba5cc594522617c3bbc2a051db985d2c",
+    "markdown": {
+      "rendered_lead": true,
+      "rendered_worker": true,
+      "source_preserved": true
+    },
+    "display_assertions": [
+      "heading",
+      "emphasis in a list",
+      "inline and fenced code",
+      "table header and cell",
+      "quote",
+      "literal HTML"
+    ],
+    "fragmented_worker_reply": true,
+    "natural_main_and_worker_retirement": true,
+    "packaged_report_sha256": "25a3121f869dacff03e1214bf857538665164e80a59c8c9d0d2da576785b88f1",
+    "desktop_report_sha256": "901ed4a46d6a867b165dc5b86bc42f32e68af39e6621cfad9e1f740cdc4cbdb6",
+    "manual_worker_and_specialist_regression_sha256": "6a5b64cb4da372f072cf25f82307046e86cbed80597ead837f0c1011a3e61460"
+  },
+  "earlier_attempts": [
+    {
+      "passed": false,
+      "stage": "desktop build",
+      "cause": "Initial clipboard and font-weight calls used the wrong Avalonia API surface. The correct namespace and attached font property compiled."
+    },
+    {
+      "passed": false,
+      "stage": "compound combined-game test after formatting and playback",
+      "cause": "The launcher automation did not expose the original project option after creating a verified copy. The full compound test remains recorded as failed.",
+      "markdown_assertions_completed": true,
+      "report_sha256": "04c294916b0cfbf80e90f44d97344d542e0e5024a2dfcfee5f1329fff5269e0e"
+    }
+  ]
+}

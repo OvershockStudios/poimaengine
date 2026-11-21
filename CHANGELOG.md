@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.337
+
+- Render Markdown in agent replies and worker reports. Preserve the source text for copying.
+
 ## 0.0.336
 
 - Let Codex assign parallel scene work from the main creator chat and collect reports from the same worker tabs.

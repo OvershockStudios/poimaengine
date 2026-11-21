@@ -1,8 +1,14 @@
 # Implementation status
 
-Updated 2026-11-20 for **0.0.336**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-20 for **0.0.337**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.337 formats [agent replies and worker reports](AGENT_CLIENTS.md#connect-a-project)
+with headings, emphasis, lists, code, tables and quotes. The Windows transcript
+checks cover a fragmented worker reply, literal HTML and unchanged source text.
+The context menu can copy that source.
+[Results](evidence/m2-creator-markdown-337.json)
 
 Version 0.0.336 lets the main creator conversation
 [assign and inspect scene workers](AGENT_CLIENTS.md#delegate-scene-work-from-codex).

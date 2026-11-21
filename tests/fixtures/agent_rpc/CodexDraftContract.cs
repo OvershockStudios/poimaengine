@@ -14,6 +14,7 @@ internal static class CodexDraftContract
     private const string Model = "draft-fixture";
     private const string LanternTask = "Draft a lantern.";
     private const string BenchTask = "Draft a quay bench.";
+    private const string ReportTask = "Show Markdown report.";
     private const string WaitForRelease = "Wait for the release signal.";
     private const string HoldTask = "Hold draft turn.";
     private const string Holding = "Draft turn is waiting.";
@@ -232,7 +233,12 @@ internal static class CodexDraftContract
                             while (!File.Exists(Path.Combine(traceDirectory, "release-draft")))
                                 await Task.Delay(25, operation.Token);
                         }
-                        await Delta(finding, thread);
+                        if (task.Contains(ReportTask, StringComparison.Ordinal))
+                        {
+                            await Delta(finding[..12], thread);
+                            await Delta(finding[12..], thread);
+                        }
+                        else await Delta(finding, thread);
                         await CodexReviewContract.Send(CodexReviewContract.Event("item/completed", new JsonObject
                         {
                             ["threadId"] = thread, ["turnId"] = turn, ["item"] = new JsonObject { ["type"] = "agentMessage", ["text"] = finding }
@@ -275,6 +281,7 @@ internal static class CodexDraftContract
             (int Number, string Name) assignment;
             if (task.Contains(LanternTask, StringComparison.Ordinal)) assignment = (0xda01, "Draft lantern");
             else if (task.Contains(BenchTask, StringComparison.Ordinal)) assignment = (0xda02, "Draft quay bench");
+            else if (task.Contains(ReportTask, StringComparison.Ordinal)) return CodexLeadWorkerContract.MarkdownReport;
             else return "Draft is ready to review.";
             if (native is null) return assignment.Name + " created at revision 3.";
 

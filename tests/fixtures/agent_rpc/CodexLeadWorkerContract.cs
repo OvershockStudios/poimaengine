@@ -8,6 +8,24 @@ internal static class CodexLeadWorkerContract
     public const string DisabledPrompt = "Confirm disabled worker permission at revision ";
     public const string DelegatePrompt = "Delegate scene work at revision ";
     public const string Finished = "Lead collected both worker reports.";
+    public const string MarkdownReport = """
+        ## Review notes
+
+        - **Lighting** uses `draft`.
+        - *Placement* stays separate.
+
+        ```cs
+        var ready = true;
+        ```
+
+        | Item | State |
+        | --- | --- |
+        | Lantern | Verified |
+
+        > Keep the original project.
+
+        <b>Literal HTML</b>
+        """;
 
     public static async Task<string?> ExerciseAsync(string prompt, JsonArray? tools, string thread, string turn,
         Func<string, JsonObject, Task> trace)
@@ -67,7 +85,7 @@ internal static class CodexLeadWorkerContract
             results[0]?["report"]?.GetValue<string>()?.Contains("Draft lantern created", StringComparison.Ordinal) == true &&
             results[1]?["report"]?.GetValue<string>()?.Contains("Draft quay bench created", StringComparison.Ordinal) == true,
             "The lead did not read both native worker reports.");
-        return Finished;
+        return Finished + "\n\n" + MarkdownReport;
 
         async Task<JsonObject> Call(JsonObject arguments, bool success, string? threadId = null, string? turnId = null)
         {

@@ -70,10 +70,5 @@
     <Setter Property="SelectionBrush" Value="#722F37"/>
   </Style>
   <Style Selector="TextBox:focus /template/ Border#border"><Setter Property="BorderBrush" Value="#D46A7E"/></Style>
-  <Style Selector="TextBox.conversation">
-    <Setter Property="Background" Value="Transparent"/>
-    <Setter Property="BorderThickness" Value="0"/>
-    <Setter Property="Padding" Value="2,6"/>
-  </Style>
   <Style Selector="CheckBox /template/ Border#border"><Setter Property="CornerRadius" Value="4"/></Style>
 </Styles>

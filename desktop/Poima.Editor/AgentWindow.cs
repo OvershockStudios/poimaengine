@@ -38,7 +38,7 @@ internal sealed class AgentChat : UserControl
     private readonly CheckBox allowChecks = new() { Content = "Allow gameplay check edits in this session" };
     private readonly CheckBox allowWorkers = new() { Content = "Allow Codex to assign scene workers" };
     private readonly TextBox prompt = new() { AcceptsReturn = true, TextWrapping = TextWrapping.Wrap, MinHeight = 85, MaxHeight = 180 };
-    private readonly TextBox transcript = new() { IsReadOnly = true, AcceptsReturn = true, TextWrapping = TextWrapping.Wrap };
+    private readonly AgentTranscript transcript = new();
     private readonly TextBlock status = new() { Text = "Disconnected", TextWrapping = TextWrapping.Wrap };
     private readonly StackPanel approvals = new() { Spacing = 6 };
     private readonly ScrollViewer approvalScroll;
@@ -132,7 +132,6 @@ internal sealed class AgentChat : UserControl
             setup.Children.Add(options);
             disconnect.IsVisible = stop.IsVisible = false;
             send.Classes.Add("primary");
-            transcript.Classes.Add("conversation");
         }
         else
         {
@@ -314,12 +313,7 @@ internal sealed class AgentChat : UserControl
         var box = new TextBox { Text = value, PlaceholderText = name };
         ToolTip.SetTip(box, name); AutomationProperties.SetName(box, name); return box;
     }
-    private void Append(string text)
-    {
-        var value = transcript.Text + text;
-        transcript.Text = value.Length > 100000 ? value[^100000..] : value;
-        transcript.CaretIndex = transcript.Text.Length;
-    }
+    private void Append(string text, bool markdown = false) => transcript.Append(text, markdown);
     private void Controls()
     {
         var live = ready && session?.ConversationId is not null && !closing;
@@ -583,7 +577,7 @@ internal sealed class AgentChat : UserControl
         thread.Text = id;
         if (conversationStore is not null && displayedThread != id)
         {
-            transcript.Text = "";
+            transcript.Clear();
             displayedThread = id;
             if (resume is not null) await ShowRecentMessages(current, cancellation);
         }
@@ -614,7 +608,11 @@ internal sealed class AgentChat : UserControl
                 {
                     var kind = item["type"]?.GetValue<string>();
                     if (kind == "agentMessage" && item["text"]?.GetValue<string>() is { Length: > 0 } reply)
-                        Append("\nCodex: " + reply + "\n");
+                    {
+                        Append("\nCodex: ");
+                        Append(reply, markdown: true);
+                        Append("\n");
+                    }
                     if (kind != "userMessage" || item["content"] is not JsonArray blocks) continue;
                     var text = string.Join("\n", blocks.OfType<JsonObject>().Select(block => block["type"]?.GetValue<string>() switch
                     {
@@ -887,7 +885,7 @@ internal sealed class AgentChat : UserControl
             return;
         }
         if (parameters?["threadId"]?.GetValue<string>() != current.ConversationId) return;
-        if (method == "item/agentMessage/delta") Append(parameters?["delta"]?.GetValue<string>() ?? "");
+        if (method == "item/agentMessage/delta") Append(parameters?["delta"]?.GetValue<string>() ?? "", markdown: true);
         else if (method == "serverRequest/resolved" && questionCard is { } card &&
             JsonNode.DeepEquals(card.RequestId, parameters?["requestId"]))
         {
@@ -1004,7 +1002,7 @@ internal sealed class AgentChat : UserControl
             {
                 var text = content["text"]?.GetValue<string>() ?? "";
                 if (!string.IsNullOrWhiteSpace(text)) acpReceivedReply = true;
-                Append(text);
+                Append(text, markdown: true);
             }
             else if (kind is "tool_call" or "tool_call_update" && submitting &&
                 update["toolCallId"]?.GetValue<string>() is { } toolId)

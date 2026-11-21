@@ -4,6 +4,17 @@
   "retrieved": "2026-09-26",
   "sources": [
     {
+      "file": "Markdig/license.txt",
+      "repository": "https://github.com/xoofx/markdig",
+      "commit": "8b4ffd59be3c5d7e80b5c097ec384e7c583ceb0f",
+      "upstream_path": "license.txt",
+      "url": "https://raw.githubusercontent.com/xoofx/markdig/8b4ffd59be3c5d7e80b5c097ec384e7c583ceb0f/license.txt",
+      "sha256": "7423242b4ae72bccdf19a06cd3c20790df8519a164a08f37b31cb4a40034d827",
+      "license": "BSD-2-Clause",
+      "retrieved": "2026-11-20",
+      "packages": { "Markdig": "1.6.0" }
+    },
+    {
       "file": "Avalonia/licence.md",
       "repository": "https://github.com/AvaloniaUI/Avalonia",
       "commit": "8eeda4f6f546165b3f72e63c9f42247abb306905",

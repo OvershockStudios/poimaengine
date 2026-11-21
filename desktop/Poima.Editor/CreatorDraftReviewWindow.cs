@@ -41,6 +41,8 @@ internal sealed class CreatorDraftReviewWindow : Window
         foreach (var draft in drafts)
         {
             var choice = new CheckBox { Content = "Include " + draft.Name };
+            var report = new AgentTranscript { MaxHeight = 132 };
+            report.SetMarkdown(draft.Report);
             ToolTip.SetTip(choice, draft.WorldHash);
             choices.Add(choice, draft);
             choice.IsCheckedChanged += (_, _) => build.IsEnabled = choices.Keys.Any(box => box.IsChecked == true);
@@ -51,7 +53,7 @@ internal sealed class CreatorDraftReviewWindow : Window
                 {
                     choice,
                     new TextBlock { Text = $"Draft revision {draft.Revision} ({draft.WorldHash[..12]})", Foreground = EditorTheme.Brush("#EBC7CE") },
-                    new TextBox { Text = draft.Report, IsReadOnly = true, AcceptsReturn = true, TextWrapping = TextWrapping.Wrap, MaxHeight = 132 }
+                    report
                 }
             });
         }

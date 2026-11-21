@@ -13,6 +13,7 @@
 # -CodexReviews uses the AgentRpc contract executable to test two revision-pinned reviewers.
 # -WithBuildWorkers adds two editable drafts using the same peer and the native engine.
 # -WithLeadWorkers uses the active Codex tool protocol to assign those drafts from main chat.
+# -CheckMarkdown inspects formatted lead and worker replies and their original text.
 # -WithCombinedDrafts checks selected worker scenes and plays the retained combined export.
 # -CodexToolApproval exercises decline and approve once with the installed Codex.
 # -WithExport requires a packaged sample runtime and plays a relocated export.
@@ -40,6 +41,7 @@ param(
     [string]$CodexReviews,
     [switch]$WithBuildWorkers,
     [switch]$WithLeadWorkers,
+    [switch]$CheckMarkdown,
     [switch]$WithCombinedDrafts,
     [switch]$CodexToolApproval,
     [switch]$WithExport,
@@ -64,6 +66,7 @@ if ($WithBuildWorkers -and !$CodexReviews) { throw 'Supply -CodexReviews for the
 if ($WithLeadWorkers -and (!$CodexReviews -or $WithBuildWorkers)) {
     throw 'Supply -CodexReviews and run lead assignments separately from manual worker assignments.'
 }
+if ($CheckMarkdown -and !$WithLeadWorkers) { throw 'Run the Markdown checks with -WithLeadWorkers.' }
 if ($WithCombinedDrafts -and ((!$WithBuildWorkers -and !$WithLeadWorkers) -or $WithoutVulkan)) {
     throw 'Run combined drafts with build workers, a packaged sample runtime and Windows Vulkan.'
 }
@@ -156,6 +159,7 @@ $report = [ordered]@{
     codex_reviews_requested = ![string]::IsNullOrWhiteSpace($CodexReviews)
     build_workers_requested = [bool]$WithBuildWorkers
     lead_workers_requested = [bool]$WithLeadWorkers
+    markdown_requested = [bool]$CheckMarkdown
     combined_drafts_requested = [bool]$WithCombinedDrafts
     export_requested = [bool]$WithExport
     playtest_results_requested = [bool]$WithPlaytestResults
@@ -839,6 +843,22 @@ function Exercise-BuildWorkers($Project, $LeadProcess) {
     $checks.second_worker_pid = $secondPid
 }
 
+function Inspect-MarkdownTranscript($Label) {
+    $control = Wait-For $Label { Find-Control $Label }
+    $value = $control.GetCurrentPattern([Windows.Automation.ValuePattern]::Pattern).Current
+    foreach ($literal in @('## Review notes', '**Lighting**', '```cs', '| Item | State |', '<b>Literal HTML</b>')) {
+        if (!$value.IsReadOnly -or !$value.Value.Contains($literal)) { throw "Transcript source changed at $literal." }
+    }
+    $display = @('Review notes', 'Lighting uses draft.', 'Placement stays separate.', 'var ready = true;',
+        'Item', 'Verified', 'Keep the original project.', '<b>Literal HTML</b>')
+    foreach ($text in $display) {
+        $null = Wait-For "rendered transcript text $text" { Find-Control $text }
+    }
+    if ((Find-Control '## Review notes') -or (Find-Control '```cs')) {
+        throw 'Rendered Markdown exposed syntax markers as transcript blocks.'
+    }
+}
+
 function Exercise-LeadWorkers($Project, $Peer) {
     $checks = $report.checks.lead_workers = [ordered]@{ base_revision = $Project.revision }
     $ids = @('{0:x32}' -f 0xda01; '{0:x32}' -f 0xda02)
@@ -867,6 +887,7 @@ function Exercise-LeadWorkers($Project, $Peer) {
     $null = Wait-For 'the lead with worker permission granted' { Find-Control 'Agent Send' -Enabled } 65
     $done = Send-CodexPrompt "Delegate scene work at revision $($Project.revision)."
     if (!$done.Contains('Lead collected both worker reports.')) { throw 'The lead did not collect its assigned worker results.' }
+    if ($CheckMarkdown) { Inspect-MarkdownTranscript 'Agent transcript' }
     $lead = @(Read-ReviewTrace | Where-Object { $_.kind -ceq 'thread/start' -and $_.dynamicTools.Count -eq 1 })
     $calls = @(Read-ReviewTrace | Where-Object { $_.kind -ceq 'worker/tool' })
     $launches = @(Read-BuildWorkerTrace | Where-Object { $_.kind -ceq 'launch' })
@@ -887,6 +908,14 @@ function Exercise-LeadWorkers($Project, $Peer) {
     if ($WithCombinedDrafts) {
         $group = Split-Path -Parent (Split-Path -Parent $launches[0].manifest)
         Exercise-CombinedDrafts $group $ids $Project
+    }
+    if ($CheckMarkdown) {
+        Wait-ForCreatorChatTab 'Worker 1' -Select
+        Start-BuildWorkerTask 'Show Markdown report.'
+        $null = Wait-For 'the completed Markdown report' { (Find-ControlId 'worker-status').Current.Name -ceq 'Worker finished' }
+        Inspect-MarkdownTranscript 'Worker report'
+        Wait-ForCreatorChatTab 'Main chat' -Select
+        $report.checks.markdown = [ordered]@{ rendered_lead = $true; rendered_worker = $true; source_preserved = $true }
     }
     if ((@(Get-AuthoredFileHashes) -join "`n") -cne $before) { throw 'The lead workers changed the active source project.' }
     $checks.lead_pid = $lead[0].pid

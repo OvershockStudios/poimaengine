@@ -35,6 +35,10 @@ from Codex. A new conversation becomes the default after its first completed
 turn. Project copies and relocated manifests each start with their own local
 selection. The Codex client holds the history and the account. [Thread history](https://learn.chatgpt.com/docs/app-server#threads)
 
+The editor formats Markdown in agent replies, specialist findings, and
+worker reports. Right-click the transcript and choose **Copy source text**
+to copy the original content. Links and image captions are displayed as text.
+
 When Codex asks to use a Poima tool, its chat card shows the tool and exact
 arguments. Select **Approve once** to run the operation or **Decline** to
 leave it unapproved. These choices apply to the pending call. The existing

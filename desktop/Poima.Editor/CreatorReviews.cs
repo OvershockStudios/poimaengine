@@ -133,7 +133,7 @@ internal sealed class CreatorReviews
         private readonly Func<string> scope;
         private readonly Action? changed;
         private readonly TextBox task = new() { AcceptsReturn = true, TextWrapping = TextWrapping.Wrap, Height = 85, MaxLength = 4000 };
-        private readonly TextBox transcript = new() { AcceptsReturn = true, TextWrapping = TextWrapping.Wrap, IsReadOnly = true };
+        private readonly AgentTranscript transcript = new();
         private readonly TextBlock status = new() { Text = "Ready", TextWrapping = TextWrapping.Wrap };
         private readonly Button ask = new();
         private readonly Button stop = new() { IsEnabled = false };
@@ -160,7 +160,6 @@ internal sealed class CreatorReviews
             AutomationProperties.SetName(task, editableDraft ? "Worker task" : "Specialist task");
             AutomationProperties.SetName(transcript, editableDraft ? "Worker report" : "Specialist findings");
             AutomationProperties.SetAutomationId(status, editableDraft ? "worker-status" : "specialist-status");
-            transcript.Classes.Add("conversation");
             ask.Classes.Add("primary");
             var buttons = new WrapPanel { ItemSpacing = 8, Children = { ask, stop } };
             if (useReport is not null)
@@ -225,12 +224,13 @@ internal sealed class CreatorReviews
                     startup.CancelAfter(TimeSpan.FromSeconds(60));
                     review = await open(startup.Token);
                 }
-                transcript.Text = "";
+                transcript.Clear();
                 var answer = await review.AskAsync(context + "\n\n" + text.Trim(),
-                    draft => transcript.Text = draft, cancellation.Token);
+                    transcript.SetMarkdown, cancellation.Token);
                 cancellation.Token.ThrowIfCancellationRequested();
                 _ = scope();
-                Finding = transcript.Text = answer;
+                Finding = answer;
+                transcript.SetMarkdown(answer);
                 task.Text = "";
                 status.Text = editableDraft ? "Worker finished" : "Review complete";
                 return new("completed", answer, null);
@@ -256,7 +256,7 @@ internal sealed class CreatorReviews
             if (pending is { } job) await job;
             await DisposeReviewer();
             Finding = null;
-            transcript.Text = "";
+            transcript.Clear();
             status.Text = "Ready";
         }
 
