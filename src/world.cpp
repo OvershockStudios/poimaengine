@@ -21,6 +21,7 @@
 #include "poima/physical_target.hpp"
 #include "pose_frames.hpp"
 #include "surface_measure.hpp"
+#include "surface_mark_profiles.hpp"
 #include "surface_marks_json.hpp"
 #include "attachment_outcome_json.hpp"
 #include "poima/runtime_ik.hpp"
@@ -1014,12 +1015,17 @@ Json history_state(const Json& doc) {
     if(doc.contains("navigation"))result["navigation"]=doc.at("navigation");
     if(doc.contains("water"))result["water"]=doc.at("water");
     if(doc.contains("asset_provenance"))result["asset_provenance"]=doc.at("asset_provenance");
+    if(doc.contains("surface_mark_profiles"))result["surface_mark_profiles"]=doc.at("surface_mark_profiles");
     return result;
+}
+bool optional_authored_value_differs(const Json& a,const Json& b,const char* key) {
+    const auto left=a.find(key),right=b.find(key);
+    return left==a.end() ? right!=b.end() : right==b.end() || *left!=*right;
 }
 bool same_authored_state(const Json& a,const Json& b) {
     if(a.at("entities")!=b.at("entities"))return false;
-    for(const auto* key:{"asset_provenance","navigation","water"}) {
-        if(a.contains(key)!=b.contains(key) || (a.contains(key) && a.at(key)!=b.at(key)))return false;
+    for(const auto* key:{"asset_provenance","navigation","water","surface_mark_profiles"}) {
+        if(optional_authored_value_differs(a,b,key))return false;
     }
     for(const auto* key:{"component_schemas","templates","ui"}) {
         const auto left=a.find(key),right=b.find(key);
@@ -1099,13 +1105,13 @@ void validate_template_graph(const Json& document,const Json& recipe,
 void validate(const Json& doc) {
     require(doc.is_object() && doc.contains("version") && doc.at("version").is_number_integer(),"Unsupported world format/version.");
     const bool user_interface=doc.at("version")==4,catalog=user_interface || doc.at("version")==3,custom=catalog || doc.at("version")==2;
-    if(user_interface)fields(doc,{"format","version","world_id","revision","entities","retired_ids","receipts","component_schemas","retired_component_schemas","templates","retired_template_ids","ui","retired_ui_ids","navigation","asset_provenance","water"},
+    if(user_interface)fields(doc,{"format","version","world_id","revision","entities","retired_ids","receipts","component_schemas","retired_component_schemas","templates","retired_template_ids","ui","retired_ui_ids","navigation","asset_provenance","water","surface_mark_profiles"},
         {"format","version","world_id","revision","entities","retired_ids","receipts","component_schemas","retired_component_schemas","templates","retired_template_ids","ui","retired_ui_ids"});
-    else if(catalog)fields(doc,{"format","version","world_id","revision","entities","retired_ids","receipts","component_schemas","retired_component_schemas","templates","retired_template_ids","navigation","asset_provenance","water"},
+    else if(catalog)fields(doc,{"format","version","world_id","revision","entities","retired_ids","receipts","component_schemas","retired_component_schemas","templates","retired_template_ids","navigation","asset_provenance","water","surface_mark_profiles"},
         {"format","version","world_id","revision","entities","retired_ids","receipts","component_schemas","retired_component_schemas","templates","retired_template_ids"});
-    else if(custom)fields(doc,{"format","version","world_id","revision","entities","retired_ids","receipts","component_schemas","retired_component_schemas","navigation","asset_provenance","water"},
+    else if(custom)fields(doc,{"format","version","world_id","revision","entities","retired_ids","receipts","component_schemas","retired_component_schemas","navigation","asset_provenance","water","surface_mark_profiles"},
         {"format","version","world_id","revision","entities","retired_ids","receipts","component_schemas","retired_component_schemas"});
-    else fields(doc,{"format","version","world_id","revision","entities","retired_ids","receipts","navigation","asset_provenance","water"},{"format","version","world_id","revision","entities","retired_ids","receipts"});
+    else fields(doc,{"format","version","world_id","revision","entities","retired_ids","receipts","navigation","asset_provenance","water","surface_mark_profiles"},{"format","version","world_id","revision","entities","retired_ids","receipts"});
     require(doc.at("format")=="poima.authored-world" && (doc.at("version")==1 || custom),"Unsupported world format/version.");
     if(doc.contains("navigation")) {
         const auto& binding=doc.at("navigation");fields(binding,{"asset"},{"asset"});
@@ -1114,6 +1120,10 @@ void validate(const Json& doc) {
     if(doc.contains("water")) {
         const auto& binding=doc.at("water");fields(binding,{"asset"},{"asset"});
         require(binding.at("asset").is_string() && valid_asset_id(binding.at("asset")),"Water binding asset must be a lowercase SHA-256.");
+    }
+    if(doc.contains("surface_mark_profiles")) {
+        try { surface_mark_profiles::validate_catalog(doc.at("surface_mark_profiles")); }
+        catch(const std::invalid_argument& error) { throw Error(-32602,error.what()); }
     }
     if(doc.contains("asset_provenance"))component_checked([&]{provenance::validate_bindings(doc.at("asset_provenance"));return true;});
     const auto schemas=authored_component_schemas(doc);
@@ -1636,6 +1646,30 @@ public:
             }
         }
     }
+    template<class LoadImage>
+    static std::map<std::string,RuntimeSurfaceMarkProfile> resolve_surface_mark_profiles(
+        const Json& document,LoadImage&& load_image) {
+        std::map<std::string,RuntimeSurfaceMarkProfile> profiles;
+        const auto catalog=document.find("surface_mark_profiles");
+        if(catalog==document.end())return profiles;
+        for(const auto& [id,profile]:catalog->items()) {
+            const auto& mask=profile.at("mask").get_ref<const std::string&>();
+            try {
+                auto image=load_image(mask);
+                surface_mark_profiles::validate_image(*image);
+                profiles.emplace(id,RuntimeSurfaceMarkProfile{mask,std::move(image)});
+            } catch(const fs::filesystem_error&) {
+                throw Error(-32050,"Cannot read cooked surface mark mask "+mask+" for profile "+id+".");
+            } catch(const std::exception& error) {
+                throw Error(-32050,"Surface mark profile "+id+" mask "+mask+": "+error.what());
+            }
+        }
+        return profiles;
+    }
+    void validate_surface_mark_assets(const Json& document) const {
+        ModelCache assets;
+        (void)resolve_surface_mark_profiles(document,[&](const auto& id) { return assets.image(asset_directory(),id); });
+    }
     FrozenContent freeze_content(const Json& source) const {
         WorldPackageContent result;result.revision=revision(source.at("revision"));
         std::map<std::string,WorldPackageAsset> files;ModelCache assets;AudioCache audio;
@@ -1722,6 +1756,8 @@ public:
         // weighted primitive bindings and enabled-audio aggregate limits.
         auto definition=runtime_definition(false,&source,false,&assets,&audio,&post_effects);
         definition.particle_sprite_textures=std::move(sprite_textures);
+        definition.surface_mark_profiles=resolve_surface_mark_profiles(source,image);
+        result.needs_surface_mark_masks=!definition.surface_mark_profiles.empty();
         resolve_ui_images(definition.ui,assets);
         for(const auto& element:definition.ui)if(element.style && element.style->image) {
             const auto& id=element.style->image->asset;
@@ -1925,7 +1961,12 @@ public:
         auto owner_json=[](const asset_references::Owner& owner) { return Json{{"kind",owner.kind},{"id",owner.id}}; };
         auto cursor_json=[&](const asset_references::Cursor& cursor) { return Json{{"owner",owner_json(cursor.owner)},{"component",cursor.component},{"path",cursor.path}}; };
         asset_references::Page page;
-        try { page=asset_references::collect(doc_.at("entities"),doc_.contains("templates") ? &doc_.at("templates"):nullptr,query,doc_.at("world_id").get<std::string>(),doc_.contains("navigation") ? &doc_.at("navigation"):nullptr,doc_.contains("ui") ? &doc_.at("ui"):nullptr,doc_.contains("water") ? &doc_.at("water"):nullptr); }
+        try {
+            page=asset_references::collect(doc_.at("entities"),doc_.contains("templates") ? &doc_.at("templates"):nullptr,
+                query,doc_.at("world_id").get<std::string>(),doc_.contains("navigation") ? &doc_.at("navigation"):nullptr,
+                doc_.contains("ui") ? &doc_.at("ui"):nullptr,doc_.contains("water") ? &doc_.at("water"):nullptr,
+                doc_.contains("surface_mark_profiles") ? &doc_.at("surface_mark_profiles"):nullptr);
+        }
         catch(const asset_references::Error& error) { throw Error(error.code,error.what()); }
         Json selection=Json::object();if(query.asset)selection["asset"]=*query.asset;if(query.owner)selection["owner"]=owner_json(*query.owner);
         Json edges=Json::array();
@@ -2076,6 +2117,7 @@ public:
             if(content.needs_navigation)result["needs_navigation"]=true;
             if(content.needs_particles)result["needs_particles"]=true;
             if(content.needs_sprite_particles)result["needs_sprite_particles"]=true;
+            if(content.needs_surface_mark_masks)result["needs_surface_mark_masks"]=true;
             if(!content.provenance_records.empty()) {
                 Json records=Json::array();
                 for(const auto& f:content.provenance_records)records.push_back({{"filename",f.filename},{"sha256",f.sha256},{"bytes",f.bytes}});
@@ -2090,6 +2132,7 @@ public:
                     {"coordinate_system", "right-handed Y-up; meters; local XYZW quaternion transforms"}};
             if(doc_.contains("navigation"))result["navigation"]=doc_.at("navigation");
             if(doc_.contains("water"))result["water"]=doc_.at("water");
+            if(doc_.contains("surface_mark_profiles"))result["surface_mark_profiles"]=doc_.at("surface_mark_profiles");
             return result;
         }
         if(method=="world.history") {
@@ -4656,6 +4699,9 @@ public:
         const bool provenance_changed=doc_.contains("asset_provenance")!=target_state.contains("asset_provenance") ||
             (doc_.contains("asset_provenance") && target_state.contains("asset_provenance") && doc_.at("asset_provenance")!=target_state.at("asset_provenance"));
         if(target_state.contains("asset_provenance"))staged["asset_provenance"]=target_state.at("asset_provenance");else staged.erase("asset_provenance");
+        const bool mark_profiles_changed=optional_authored_value_differs(doc_,target_state,"surface_mark_profiles");
+        if(target_state.contains("surface_mark_profiles"))staged["surface_mark_profiles"]=target_state.at("surface_mark_profiles");
+        else staged.erase("surface_mark_profiles");
         if(staged.at("version")>=2) {
             std::set<std::string> retired;for(const auto& id:staged.at("retired_component_schemas"))retired.insert(id.get<std::string>());
             const auto& schemas=target_state.at("component_schemas");
@@ -4693,12 +4739,14 @@ public:
         }
         for(const auto& [id,value]:target.items()) { (void)value;retired.erase(id);if(!doc_.at("entities").contains(id))changed.insert(id); }
         staged["retired_ids"]=retired;validate(staged);validate_animation_document(staged);
+        if(mark_profiles_changed)validate_surface_mark_assets(staged);
         Json result={{"revision",staged.at("revision")},{"committed",true},{"replayed",false},{"changed_ids",changed},{"history_recorded",true},{"history_action",undo ? "undo" : "redo"}};
         if(!changed_templates.empty())result["changed_template_ids"]=changed_templates;
         if(!changed_ui.empty())result["changed_ui_ids"]=changed_ui;
         if(navigation_changed)result["changed_world_fields"]=Json::array({"navigation"});
         if(water_changed) {if(!result.contains("changed_world_fields"))result["changed_world_fields"]=Json::array();result["changed_world_fields"].push_back("water");}
         if(provenance_changed) {if(!result.contains("changed_world_fields"))result["changed_world_fields"]=Json::array();result["changed_world_fields"].push_back("asset_provenance");}
+        if(mark_profiles_changed) {if(!result.contains("changed_world_fields"))result["changed_world_fields"]=Json::array();result["changed_world_fields"].push_back("surface_mark_profiles");}
         auto& receipts=staged["receipts"];if(receipts.size()==128)receipts.erase(receipts.begin());receipts.push_back({{"params",params},{"result",result}});
         auto next_undo=undo_,next_redo=redo_;
         if(undo) { next_redo.push_back(next_undo.back());next_undo.pop_back(); }
@@ -4725,7 +4773,9 @@ public:
         require(ops.is_array() && !ops.empty() && ops.size() <= 256, "Transaction needs 1..256 operations.");
         Json staged = doc_;
         auto& entities = staged["entities"];
-        std::set<std::string> changed,changed_templates,changed_ui;bool navigation_touched=false,water_touched=false;std::set<std::string> provenance_touched;
+        std::set<std::string> changed,changed_templates,changed_ui;
+        bool navigation_touched=false,water_touched=false,mark_profiles_touched=false;
+        std::set<std::string> provenance_touched;
         for (const auto& op : ops) {
             require(op.is_object() && op.contains("op") && op.at("op").is_string(),"Operation needs op.");
             const auto name=op.at("op").get<std::string>();
@@ -4751,6 +4801,22 @@ public:
                 require(op.at("asset").is_null() || (op.at("asset").is_string() && valid_asset_id(op.at("asset"))),"Water asset must be null or a lowercase SHA-256.");
                 if(op.at("asset").is_null())staged.erase("water");else staged["water"]={{"asset",op.at("asset")}};
                 water_touched=true;continue;
+            }
+            if(name=="surface_mark.profile.set") {
+                fields(op,{"op","id","mask"},{"op","id","mask"});
+                const auto id=identifier(op.at("id"));
+                require(surface_mark_profiles::valid_id(id),"Surface mark profile ID must be nonzero lowercase hexadecimal.");
+                const auto& mask=op.at("mask");
+                require(mask.is_null() || (mask.is_string() && valid_asset_id(mask)),"Surface mark mask must be null or a lowercase SHA-256.");
+                if(mask.is_null()) {
+                    auto catalog=staged.find("surface_mark_profiles");
+                    if(catalog!=staged.end()) {
+                        catalog->erase(id);
+                        if(catalog->empty())staged.erase(catalog);
+                    }
+                } else staged["surface_mark_profiles"][id]={{"mask",mask}};
+                mark_profiles_touched=true;
+                continue;
             }
             if(name=="ui.element.set" || name=="ui.element.remove") {
                 if(name=="ui.element.set")fields(op,{"op","id","element"},{"op","id","element"});else fields(op,{"op","id"},{"op","id"});
@@ -4858,6 +4924,7 @@ public:
         validate_animation_document(staged);
         if(navigation_touched && staged.contains("navigation"))(void)navigation_binding(staged);
         if(water_touched && staged.contains("water"))(void)water_binding(staged);
+        if(mark_profiles_touched)validate_surface_mark_assets(staged);
         for(const auto& asset:provenance_touched)if(staged.contains("asset_provenance") && staged.at("asset_provenance").contains(asset))
             check_provenance_binding(asset,staged.at("asset_provenance").at(asset),true);
         const bool provenance_changed=doc_.contains("asset_provenance")!=staged.contains("asset_provenance") ||
@@ -4866,6 +4933,7 @@ public:
             (doc_.contains("navigation") && staged.contains("navigation") && doc_.at("navigation")!=staged.at("navigation"));
         const bool water_changed=doc_.contains("water")!=staged.contains("water") ||
             (doc_.contains("water") && staged.contains("water") && doc_.at("water")!=staged.at("water"));
+        const bool mark_profiles_changed=optional_authored_value_differs(doc_,staged,"surface_mark_profiles");
         Json result = {{"revision", staged["revision"]}, {"committed", !params["preview"].get<bool>()},
                        {"replayed", false}, {"changed_ids", changed}};
         if(!changed_templates.empty())result["changed_template_ids"]=changed_templates;
@@ -4873,6 +4941,7 @@ public:
         if(navigation_changed)result["changed_world_fields"]=Json::array({"navigation"});
         if(water_changed) {if(!result.contains("changed_world_fields"))result["changed_world_fields"]=Json::array();result["changed_world_fields"].push_back("water");}
         if(provenance_changed) {if(!result.contains("changed_world_fields"))result["changed_world_fields"]=Json::array();result["changed_world_fields"].push_back("asset_provenance");}
+        if(mark_profiles_changed) {if(!result.contains("changed_world_fields"))result["changed_world_fields"]=Json::array();result["changed_world_fields"].push_back("surface_mark_profiles");}
         if (!params["preview"].get<bool>()) {
             auto next_undo=undo_;History next_redo;
             auto edit=std::make_shared<Edit>(Edit{history_state(doc_),history_state(staged),0,params.at("request_id").get<std::string>()});

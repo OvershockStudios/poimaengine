@@ -59,6 +59,35 @@ A scene retains up to 256 marks with at most four per receiver. Capacity
 and ray failures roll back the step batch. A retry of the same successful
 request uses the existing receipt.
 
+## Author a mask profile
+
+Import a PNG or JPEG with `asset.image.import` and `color_space: "linear"`.
+The mask uses the red channel as coverage, from zero for a clear area to
+one for full strength. Use an image from 1 to 256 pixels on each side.
+Create a profile in a guarded `world.transact` request with a nonzero
+32-digit lowercase hexadecimal ID and the cooked image's SHA-256.
+
+```json
+{
+  "op": "surface_mark.profile.set",
+  "id": "00000000000000000000000000000092",
+  "mask": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+}
+```
+
+Use that ID in the placement command's `profile` field. The ellipse
+still controls falloff and the mask multiplies its coverage. The mask is
+bilinearly sampled at mip zero. The first axis points toward the right of
+the image and the positive second axis points toward the top. The full
+image fits inside the enclosing rectangle of the ellipse.
+
+A world can define 32 profiles and use 16 distinct mask images. Profiles
+that point to the same cooked image share it in the standalone export.
+`world.inspect` lists profiles and `world.asset.references` reports their
+image links. Submit `mask: null` to remove a profile. Changes take effect
+when a new runtime freezes the edited world. Exports containing profiles
+require a Vulkan package advertising `features.surface_mark_masks`.
+
 ## Place marks from gameplay
 
 Implement `ISurfaceMarkGame` on the C# game module. During `Tick`, use
@@ -88,6 +117,13 @@ Discover `surface_mark_direction_v2` and its 160-byte command under
 A game can declare both interfaces to place both kinds of marks in the
 same tick. Both commands share the bounds and save format.
 
+Implement `ITexturedSurfaceMarkGame` to call
+`context.PlaceTexturedSurfaceMark(profile, receiver, origin, direction, distance, style, travelDirection, source)`.
+Discover `surface_mark_texture_v3` and its 176-byte command under
+`gameplay_surface_marks.textured`. It uses a 560-byte epoch-7 prefix.
+The game supplies the profile and direction of travel. The mark still
+uses the same placement budget and rollback as the other commands.
+
 ## Inspect and restore
 
 Read `runtime.surface_marks.inspect` using the current runtime session ID,
@@ -96,9 +132,11 @@ receiver. The response includes the saved receiver-local frame and material
 parameters for each mark in placement order. Removing a receiver retires its
 marks and leaves their IDs used.
 
-Saves carry marks in a versioned snapshot extension. Before any placement,
-the save uses its earlier shape. The simulation state survives a fresh
-process and supplies the renderer with the same ordered material changes.
+Saves carry marks in a versioned snapshot extension. A textured record
+stores the profile ID and exact cooked mask digest. Restoring uses the
+catalog in the saved authored world, including after a profile has been
+reassigned in the current project. Keep that original cooked file available
+for existing saves. A new export includes the current catalog's images.
 
 ```sh
 python3 tests/surface_marks_capture.py build/linux-game/poima \
@@ -113,3 +151,8 @@ uses the compiled game in `tests/managed_directional_surface_mark_gameplay`.
 Publish it with `scripts/publish_native_gameplay.py` and pass the resulting
 `native-gameplay.json` as `--native-descriptor`. Its standalone route checks
 the ellipse along and across the saved axis before and after a receiver turn.
+
+The [textured gameplay fixture](../tests/textured_surface_marks_contract.py)
+uses the compiled game in `tests/managed_textured_surface_mark_gameplay`.
+It checks filtered coverage in relocated builds and checks that replacing
+a profile in the project preserves the original mask in an existing save.

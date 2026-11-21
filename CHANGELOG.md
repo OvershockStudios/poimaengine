@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.362
+
+- Author persistent surface mark profiles from cooked image masks. Runtime requests and C# gameplay can stamp textured footprints and scuffs that stay with the receiver through saves and standalone export.
+
 ## 0.0.361
 
 - Align persistent surface marks with a direction of travel supplied by runtime requests or C# gameplay. The saved mark keeps its orientation in receiver space.

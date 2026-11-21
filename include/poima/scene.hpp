@@ -143,6 +143,13 @@ struct CameraDrawBinding {
 };
 inline constexpr std::size_t max_surface_marks_per_receiver=4;
 inline constexpr std::size_t max_scene_surface_marks=256;
+inline constexpr std::size_t max_surface_mark_profiles=32;
+inline constexpr std::size_t max_surface_mark_masks=16;
+inline constexpr std::uint32_t max_surface_mark_mask_side=256;
+struct SceneSurfaceMarkMask {
+    std::string sha256;
+    std::shared_ptr<const TextureImage> image;
+};
 struct SceneSurfaceMark {
     // Position and orthonormal projection axes in rigid mesh-local space.
     std::array<float,3> center_m{},normal{0,0,1},tangent{1,0,0};
@@ -150,6 +157,7 @@ struct SceneSurfaceMark {
     float half_depth_m=.01f,minimum_normal_dot=.8f,edge_fraction=.25f;
     std::array<float,3> linear_rgb{.2f,.2f,.2f};
     float opacity=1,roughness=1;
+    std::string mask_sha256; // Empty is the analytic ellipse.
 };
 struct SceneObject {
     std::string entity_id;
@@ -232,6 +240,7 @@ struct SceneSnapshot {
     bool camera_pose_receipt=false;
     std::shared_ptr<const PostEffect> post_effect;
     SceneParticleSprites particle_sprites;
+    std::vector<SceneSurfaceMarkMask> surface_mark_masks; // Frozen, sorted by unique cooked image digest.
 
     SceneLens world_lens() const { return {vertical_fov,near_plane,far_plane}; }
     std::span<const SceneObject> world_viewmodel_draws() const {

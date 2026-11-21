@@ -1,8 +1,19 @@
 # Implementation status
 
-Updated 2026-11-21 for **0.0.361**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-21 for **0.0.362**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.362 adds [textured surface mark profiles](SURFACE_MARKS.md#author-a-mask-profile)
+for runtime requests and C# gameplay. The standalone fixture packages two
+cooked masks for three profiles and checks asymmetric coverage and filtering
+after receiver rotation. Sixteen captures on AMD and NVIDIA match the independent
+display calculation at all 224 sampled pixels. Fresh processes reproduce the
+frames and save bytes. Sixteen analytic control captures match 0.0.361.
+Linux CoreCLR and Native AOT preserve the original mask through profile
+reassignment and reject a mismatched saved digest. The Vulkan fixture uses
+one sample with reconstruction disabled in forward and deferred rendering.
+[Results](evidence/m2-textured-surface-marks-362.json)
 
 Version 0.0.361 lets [runtime callers and C# gameplay align surface marks](SURFACE_MARKS.md)
 to travel along the contact plane. Linux CoreCLR and Native AOT preserve

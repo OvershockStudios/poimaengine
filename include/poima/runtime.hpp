@@ -474,6 +474,10 @@ struct RuntimeNavigationDefinition {
     navigation::Profile profile;
     std::shared_ptr<const navigation::Mesh> mesh;
 };
+struct RuntimeSurfaceMarkProfile {
+    std::string mask_sha256;
+    std::shared_ptr<const TextureImage> image;
+};
 struct RuntimeDefinition {
     std::string world_id;
     std::uint64_t authored_revision=0;
@@ -484,6 +488,7 @@ struct RuntimeDefinition {
     std::optional<RuntimeNavigationDefinition> navigation;
     std::optional<water::RegionDefinition> water;
     std::map<std::string,std::shared_ptr<const TextureImage>> particle_sprite_textures;
+    std::map<std::string,RuntimeSurfaceMarkProfile> surface_mark_profiles;
 };
 // Shared authoring/native validation, also available without Jolt.
 void validate_runtime_animation(const RuntimeDefinition& definition);
@@ -545,11 +550,13 @@ struct RuntimeSurfaceMarkCommand {
     SceneSurfaceMark style; // Placement supplies the position, normal and tangent.
     std::string source; // Empty uses world coordinates. Otherwise use its final local frame.
     std::optional<std::array<double,3>> travel_direction; // Same frame as ray.direction.
+    std::string profile; // Optional ID from the frozen surface mark profile catalog.
 };
 struct RuntimeSurfaceMark {
     std::uint64_t id=0,tick=0;
     std::string receiver;
     SceneSurfaceMark mark;
+    std::string profile;
 };
 struct ReleasedItemAim {
     std::optional<RuntimeRayHit> hit;

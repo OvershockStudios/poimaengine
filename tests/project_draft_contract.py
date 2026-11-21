@@ -14,6 +14,8 @@ import unittest
 import uuid
 import wave
 
+from texture_fixture import png
+
 
 ROOT = Path(__file__).resolve().parents[1]
 CALLS = []
@@ -348,6 +350,55 @@ class ProjectDraftContract(unittest.TestCase):
         self.integrate(candidate, request(a_pick, b_pick), error='world hash mismatch')
         for order in ((a_pick, self.pick_scene(b)), (self.pick_scene(b), a_pick)):
             self.integrate(candidate, request(*order), error=f'/entities/{GATE}')
+        self.assertEqual(tree(self.live), self.original)
+        self.assertEqual(tree(self.base), self.base_bytes)
+
+    def test_surface_mark_profiles_merge_by_id_with_frozen_mask_dependencies(self):
+        left, right = (self.root / name for name in ('Left mask draft', 'Right mask draft'))
+        for draft in (left, right):
+            self.draft(draft)
+
+        def import_mask(draft, red):
+            (draft / 'Mask.png').write_bytes(png(1, 1, bytes((red, 0, 0, 255))))
+            digest = self.world(draft, 'asset.image.import', source='Mask.png', color_space='linear')['asset']
+            relative = f'{self.world_path}.assets/{digest}.pimage'
+            self.assertEqual(sha256((draft / relative).read_bytes()), digest)
+            return digest, relative
+
+        def bind(profile, mask):
+            return {'op': 'surface_mark.profile.set', 'id': profile, 'mask': mask}
+
+        left_mask, left_file = import_mask(left, 64)
+        right_mask, right_file = import_mask(right, 192)
+        self.assertNotEqual(left_mask, right_mask)
+        self.edit(left, self.revision, [bind(GATE, left_mask)])
+        self.edit(right, self.revision, [bind(LIGHT, right_mask)])
+        left_pick, right_pick = self.pick_scene(left), self.pick_scene(right)
+        incomplete = {'base_sha256': self.base_sha256, 'drafts': [self.pick(left, left_file)],
+                      'transaction': self.transaction(self.revision, [bind(GATE, left_mask), bind(LIGHT, right_mask)])}
+        self.integrate(self.root / 'Missing mask candidate', incomplete, error='surface mark profile')
+
+        profiles = {GATE: {'mask': left_mask}, LIGHT: {'mask': right_mask}}
+        world_digests = []
+        for index, picks in enumerate(([left_pick, right_pick], [right_pick, left_pick])):
+            candidate = self.root / f'Profile candidate {index}'
+            result = self.integrate(candidate, {'base_sha256': self.base_sha256, 'drafts': picks})
+            world_digests.append(result['world_sha256'])
+            self.assertEqual({record['path']: record['sha256'] for record in result['merged_files']},
+                             {left_file: left_mask, right_file: right_mask})
+            self.assertEqual(self.world(candidate, 'world.inspect')['surface_mark_profiles'], profiles)
+            dependencies = self.world(candidate, 'world.dependencies')
+            self.assertTrue(dependencies['needs_surface_mark_masks'])
+            self.assertEqual({record['sha256'] for record in dependencies['assets']},
+                             {self.base_asset, left_mask, right_mask})
+        self.assertEqual(*world_digests)
+
+        self.edit(right, self.revision + 1, [bind(GATE, right_mask)])
+        right_pick = self.pick_scene(right)
+        for picks in ([left_pick, right_pick], [right_pick, left_pick]):
+            self.integrate(self.root / 'Conflicted profile candidate',
+                           {'base_sha256': self.base_sha256, 'drafts': picks},
+                           error=f'/surface_mark_profiles/{GATE}')
         self.assertEqual(tree(self.live), self.original)
         self.assertEqual(tree(self.base), self.base_bytes)
 

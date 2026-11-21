@@ -16,6 +16,7 @@
     "water_regions": @POIMA_RUNTIME_SIMULATION@,
     "scene_particles": @POIMA_RUNTIME_SIMULATION@,
     "surface_marks": @POIMA_RUNTIME_SIMULATION@,
+    "surface_mark_masks": @POIMA_RUNTIME_SURFACE_MARK_MASKS@,
     "scene_particle_sprites": @POIMA_RUNTIME_SCENE_PARTICLE_SPRITES@,
     "renderer": @POIMA_RUNTIME_RENDER_SMOKE@,
     "project_post_effects": @POIMA_RUNTIME_RENDER_SMOKE@,

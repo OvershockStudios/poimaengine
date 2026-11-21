@@ -174,7 +174,7 @@ void independent_feature_policy() {
     Contract required;required.services_bytes=256;required.features.push_back(player_preferences_feature);
     check(physical_rig_drive_services_bytes==448u,"Frozen physical drive extent changed.");
     check(physical_rig_animation_services_bytes==496u,"Frozen physical animation extent changed.");
-    const auto available=available_contract();check(available.services_bytes==surface_mark_direction_services_bytes && available.services_bytes==552u &&
+    const auto available=available_contract();check(available.services_bytes==surface_mark_texture_services_bytes && available.services_bytes==560u &&
         std::find(available.features.begin(),available.features.end(),physical_recovery_feature)!=available.features.end() &&
         std::find(available.features.begin(),available.features.end(),physical_rig_feature)!=available.features.end() && compatibility_error(required,available).empty(),
         "Default host lacks named preference extension.");

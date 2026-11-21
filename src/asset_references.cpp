@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "asset_references.hpp"
+#include "surface_mark_profiles.hpp"
 #include <nlohmann/json.hpp>
 #include <array>
 #include <string_view>
@@ -34,6 +35,11 @@ bool valid_cursor(const Cursor& value) noexcept {
     if(!valid_owner(value.owner))return false;
     if(value.owner.kind=="world") {
         if(value.component=="navigation" || value.component=="water")return value.path=="/asset";
+        if(value.component=="surface_mark_profiles") {
+            const std::string_view path=value.path;
+            return path.size()==38 && path.front()=='/' && path.ends_with("/mask") &&
+                surface_mark_profiles::valid_id(path.substr(1,32));
+        }
         constexpr std::string_view suffix="/style/image/asset";
         if(value.component!="ui" || value.path.size()!=4+32+suffix.size() ||
             !value.path.starts_with("/ui/") || !value.path.ends_with(suffix))return false;
@@ -68,13 +74,18 @@ bool before(const Cursor& a,const Cursor& b) noexcept {
     return std::tie(a.owner.kind,a.owner.id,a.component,a.path)<std::tie(b.owner.kind,b.owner.id,b.component,b.path);
 }
 Page collect(const Json& entities,const Json* templates,const Query& query,const std::string& world_id,const Json* navigation,const Json* ui,
-    const Json* water) {
+    const Json* water,const Json* mark_profiles) {
     need(world_id.empty() || hex(world_id,32),"Malformed authored world identity.");
     need(!navigation || (!world_id.empty() && navigation->is_object() && navigation->size()==1 && navigation->contains("asset")),"Malformed authored navigation binding.");
     need(!water || (!world_id.empty() && water->is_object() && water->size()==1 && water->contains("asset")),"Malformed authored water binding.");
     need(entities.is_object() && entities.size()<=max_entities,"Asset-reference entity map exceeds bounds.");
     need(!templates || (templates->is_object() && templates->size()<=max_templates),"Asset-reference template map exceeds bounds.");
     need(!ui || (!world_id.empty() && ui->is_object() && ui->size()<=max_ui_elements),"Asset-reference UI map exceeds bounds.");
+    if(mark_profiles) {
+        need(!world_id.empty(),"Authored surface mark profiles need a world identity.");
+        try { surface_mark_profiles::validate_catalog(*mark_profiles); }
+        catch(const std::invalid_argument& error) { throw Error(error.what()); }
+    }
     need(query.limit>=1 && query.limit<=max_page,"Asset-reference page limit must be 1..256.");
     need(!(query.asset && query.owner),"Asset and owner selectors are mutually exclusive.");
     need(!query.asset || valid_asset(*query.asset),"Invalid asset-reference asset selector.");
@@ -142,6 +153,10 @@ Page collect(const Json& entities,const Json* templates,const Query& query,const
     };
     auto visit_world=[&](const Owner& owner) {
         if(navigation)emit(owner,"navigation","/asset",navigation->at("asset"),"navigation",std::nullopt);
+        if(mark_profiles)for(const auto& [id,profile]:mark_profiles->items()) {
+            if(result.edges.size()>query.limit)return;
+            emit(owner,"surface_mark_profiles","/"+id+"/mask",profile.at("mask"),"image",std::nullopt);
+        }
         if(ui)for(const auto& [id,element]:ui->items()) {
             if(result.edges.size()>query.limit)return;
             need(hex(id,32) && id.find_first_not_of('0')!=std::string::npos && element.is_object(),
@@ -164,7 +179,7 @@ Page collect(const Json& entities,const Json* templates,const Query& query,const
         for(const auto& [id,value]:entities.items()) { visit_owner({"entity",id},value);if(result.edges.size()>query.limit)break; }
         if(result.edges.size()<=query.limit && templates)
             for(const auto& [id,value]:templates->items()) { visit_owner({"template",id},value);if(result.edges.size()>query.limit)break; }
-        if(result.edges.size()<=query.limit && (navigation || ui || water))visit_world({"world",world_id});
+        if(result.edges.size()<=query.limit && (navigation || ui || water || mark_profiles))visit_world({"world",world_id});
     }
     if(result.edges.size()>query.limit) { result.edges.pop_back();result.next_after=result.edges.back().source; }
     return result;

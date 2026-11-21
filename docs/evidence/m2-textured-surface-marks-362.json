@@ -1,0 +1,3965 @@
+{
+  "engine_version": "0.0.362",
+  "world_schema_revision": 183,
+  "sources_sha256": {
+    ".gitignore": "61b5b6bf034f6ad44c9f9d11d9d4cd68ff589ef1e3191d6beded84e28b32d498",
+    "CMakeLists.txt": "d42ca7e06e5d4421ac0286e597c5d7c0198cad43a695fc93b75e56567bff834a",
+    "cmake/runtime.json.in": "bc7949fd0456f02ceda8c2b6649957c03f0a6b238ed1a1e56fa7070d4437c435",
+    "include/poima/gameplay_abi.h": "2abd83eb30c98988e5fdb16dd5dd9f6695bcad73396f25bf8c42e20a2a85e213",
+    "include/poima/gameplay_compatibility.hpp": "0d68e32be42fa3525e077c7e14f09d5331d16c1577f21c23a96fbd071fc6af02",
+    "include/poima/render_schedule.hpp": "86fb3593952c963a7fdc301e093c13d30dfe25abd444d3483fdda0b5b347dfe3",
+    "include/poima/runtime.hpp": "f8351828b4ecefd209f1e06a61efb0e450c69836ded3cf42375c38ca0dbd5904",
+    "include/poima/scene.hpp": "4b1eac9aa03531663802c1ecc493c4d089a5d5c8c2c0b590bb1cccc0502d7379",
+    "include/poima/world.hpp": "17a5c71272874bf192ac68ec35bb9bcdb0cf27833fbdd1083c9e1f1a5f6e556e",
+    "managed/Poima.Gameplay/GameplayRequirements.cs": "9d96db35cf91197b4586f89464fc7f96fbd637d1c66f044e965849cbef62b271",
+    "managed/Poima.Gameplay/SurfaceMarks.cs": "66ecd1a0763e2419d20e7187b54012576cc905a8c604297fd688617b4f509a2f",
+    "managed/Poima.ManagedBridge/Entry.cs": "bdf74e4b199ad6eec27ad8703ce541671c517214c5ae82b04867904850b738f8",
+    "managed/Poima.NativeGame.Generator/Program.cs": "b10d7c2d0e871ab2f38da8ea6b8ae8e5966d7ab4ae63c7272aba051201339f3a",
+    "scripts/publish_native_gameplay.py": "2fe7b193d3a7c162206d632a849fb15f673e318a254a676ddcbfcd6d667149f5",
+    "shaders/scene.hlsl": "aac1fc3842d109d950e2d62273b6f69e5d4b7488aeb5e5b9b7209ac729e9b3b2",
+    "src/asset_references.cpp": "0b7680fe0ccb7eec923625b2343cf10f385d3db6d9279e5f7614383b9caee3fd",
+    "src/asset_references.hpp": "208271750f92988dfbf720e7bad391182ef7ae0fefe3115df18e54f6883cdda6",
+    "src/gameplay.cpp": "07f1693b0819dab45148167a3d829de5281e8e70b5e766efe97e34dee6839996",
+    "src/project.cpp": "32603955c44667e5db17ae8228189a5e167afe890bce91ebed1ceb4bf00f97c0",
+    "src/project_drafts.inc": "ebb329ecb8de274d5f6b7ceea9ecdf5083b479dd79b8c14010148cfc6efc4d3a",
+    "src/render_smoke.cpp": "d4c99fd80642e8113140df9a68eceb2e801c8b4d75f7a624eec0108a6f0f962c",
+    "src/render_surface_marks.inc": "c826bb7bc22edfccb1f9eaa10f5727e2d26bdf88b30c5fd1b59c21a9b32a729e",
+    "src/runtime.cpp": "cd6f6d2b642b91501131a09056f3ee7bc2ae5a909f53b7e39b1fdbdb921bb297",
+    "src/runtime_save.inc": "026fcf0b969f44543adaf15ef2385b6f29309703124bde1fad6eaa816b8feaf9",
+    "src/runtime_surface_marks.inc": "5beaf4052cd412ed67b5e5d64dad65848e76fbe8850ff5912ee547bb31d06f1a",
+    "src/runtime_ui.inc": "41639f494e7f0c9fe8d4817fc6ad969133df2e0631b44f1e60b81f2238e481a2",
+    "src/save_upgrade_document.cpp": "2ac4fe95c2cecc9b869970163803af7932aa5a4f301640ce84b256f40af5ad05",
+    "src/surface_mark_profiles.hpp": "cd6a6f728be63d92e9da022cbaa9d4e8cd466cc7c3318cfc9860fda9758be682",
+    "src/surface_marks_json.hpp": "adfe9bffb7d37f5a8d162a6a2cbb2986b5dde15afe2c848f00a43d182441d60e",
+    "src/world.cpp": "40f249a8eb1776392983dd8b3cd999be4cc8364f00d28ff92fd303674719f727",
+    "src/world_schema.cpp": "d1eda5fd16ab6e27117dea1f10fce11fdd396d18b0740d421e73ea2a212613da",
+    "src/world_surface_marks.inc": "0934796b6542dc37ff89ce875612711f96face83b22845479fbb84283282199e",
+    "tests/asset_references_contract.py": "862439c7622bb47618e613e59f00985af1a6ac18790dd10f0f7203e07fedbdd4",
+    "tests/gameplay_compatibility_native.cpp": "28a4d683da88ee32a093ecf440f281e4c07035baece3c785da5d6c4bd81841ff",
+    "tests/gameplay_player_preferences_native.cpp": "ec15101134bef20b32eef3567d2e272743e7d0f6eafcd14f4c209cdba2f8213e",
+    "tests/managed_service_abi/Program.cs": "9831aaa9728d657af004f519424edcfc462b662933cfe4e62073f4ebe5ab2e8e",
+    "tests/managed_service_abi/SurfaceMarksExtension.cs": "6a289f50fdeeec8b5fcdbb66e967eb74c698f1c47de422a8541de07c68757e29",
+    "tests/managed_service_abi/TexturedSurfaceMarksExtension.cs": "465fa758d93a0b6e5ccbb6d337aaee3139c13effded1078f35bef4b277ecd0c2",
+    "tests/managed_textured_surface_mark_gameplay/ManagedTexturedSurfaceMarkGame.cs": "a83d687c7c63e262ad696e90e2467535c6d34fd1d764a0e02f77c26ac3ee7e66",
+    "tests/managed_textured_surface_mark_gameplay/Poima.ManagedTexturedSurfaceMarkGame.csproj": "d962388628932261c075561f0f7b1ead35ea9cbbcaf3cabd2475bbfe016e645f",
+    "tests/project_draft_contract.py": "533bc0ff786d1c72596288d37b1bf09d562ab8f734423185f15f83ba17047dc5",
+    "tests/render_schedule.cpp": "f095a920377aaf60d77bb69f1e730727861b4b5f1c11b49df7f473ba5b4c4495",
+    "tests/runtime_descriptor_contract.py": "d8c52b1f59d4a86574d03d05ad6e429c2b2a0bb1755b5a65f0a4b9bfed83aabf",
+    "tests/textured_surface_marks_contract.py": "5fbf9ef78ae7617ea1486be1131f24fc71ec0c006556c090d3caa8f10bf71044",
+    "tests/world_ui_contract.py": "8ea8a82c397474398efa42da1138fe3fb64235c413bc53fd7a2f21645e282dc2",
+    "docs/MANAGED_GAMEPLAY.md": "92ab2f9c644a6d20d99abb78c613d1d3dfbae32f12448131677b2ef6bbdaa068"
+  },
+  "service": {
+    "feature": "surface_mark_texture_v3",
+    "epoch": 7,
+    "extent_bytes": 560,
+    "command_bytes": 176
+  },
+  "descriptor_checks": {
+    "file_only_checks": 52,
+    "generated_navigation_false_and_true_checked": true,
+    "old_528_missing_contact_rejected": true,
+    "old_528_missing_surface_rejected": true,
+    "passed": true,
+    "retained_400_descriptor_rejected": true,
+    "retained_424_descriptor_rejected": true,
+    "retained_448_descriptor_rejected": true,
+    "retained_496_and_512_descriptors_rejected": true,
+    "retained_and_spoofed_528_rejected": true,
+    "retained_and_spoofed_536_rejected": true,
+    "retained_and_spoofed_544_rejected": true,
+    "retained_stale_descriptor_rejected": true,
+    "unnamed_496_and_missing_physical_dependencies_rejected": true,
+    "unnamed_536_rejected": true,
+    "unnamed_544_rejected": true,
+    "unnamed_552_rejected": true
+  },
+  "retained_0_0_361_save": {
+    "executable_sha256": "2bf6d22893d52838b84075f05cb4e8a07eebd571110e930bcf464a1efd40edad",
+    "retained_report_sha256": "2772e869c5277bc27ce50a82e4cfa51787d5523430f16c41763cd84574b6e062",
+    "checkpoint_sha256": "0c248c7a7faa2220c9e2464e6300134ba4c691c555bdf857f0021269528eb6bb",
+    "final_sha256": "28f2389a1ece49678683ff8eac9334dd2489987009ebf56bea8e12e21452b448",
+    "exact": true
+  },
+  "managed_abi": {
+    "report_sha256": "d85abda2261e817548f1c811586e4240aa0699e7306269867a281912abdd8771",
+    "checks": 117,
+    "generator_and_publisher": {
+      "SurfaceMarkProbe": {
+        "call_version": 1,
+        "call_bytes": 80,
+        "services_version": 7,
+        "services_bytes": 544,
+        "features": [
+          "baseline_v7",
+          "surface_mark_v1"
+        ]
+      },
+      "DirectionalSurfaceMarkProbe": {
+        "call_version": 1,
+        "call_bytes": 80,
+        "services_version": 7,
+        "services_bytes": 552,
+        "features": [
+          "baseline_v7",
+          "surface_mark_direction_v2"
+        ]
+      },
+      "TexturedSurfaceMarkProbe": {
+        "call_version": 1,
+        "call_bytes": 80,
+        "services_version": 7,
+        "services_bytes": 560,
+        "features": [
+          "baseline_v7",
+          "surface_mark_texture_v3"
+        ]
+      },
+      "TexturedSurfaceMarkCombinedProbe": {
+        "call_version": 1,
+        "call_bytes": 80,
+        "services_version": 7,
+        "services_bytes": 560,
+        "features": [
+          "baseline_v7",
+          "particle_burst_v1",
+          "surface_mark_v1",
+          "surface_mark_direction_v2",
+          "surface_mark_texture_v3"
+        ]
+      }
+    }
+  },
+  "linux": {
+    "version": {
+      "version": "0.0.362",
+      "compiler": "GNU",
+      "compiler_version": "16.2.0",
+      "target_os": "Linux",
+      "target_arch": "x86_64"
+    },
+    "executable_sha256": "2bf6d22893d52838b84075f05cb4e8a07eebd571110e930bcf464a1efd40edad",
+    "descriptor": {
+      "call_bytes": 80,
+      "call_version": 1,
+      "feature_count": 41,
+      "navigation": true,
+      "passed": true,
+      "services_bytes": 560,
+      "services_version": 7
+    },
+    "junit_sha256": "24fc488000bdcaf46e28333aae33a697b3b88b2c663cd02f6896e222b2a2e3cf",
+    "suites": [
+      "surface_marks_contract",
+      "world_particles_contract",
+      "sprite_lifetime_contract",
+      "authoring_core_conformance",
+      "authoring_contract_identity",
+      "gameplay_compatibility_policy",
+      "gameplay_service_contract",
+      "native_gameplay_publish_requirements",
+      "save_upgrade_snapshot_native",
+      "render_schedule_native",
+      "gameplay_player_preferences_native",
+      "mcp_contract",
+      "world_ui_contract",
+      "physical_gameplay_publish_requirements",
+      "project_contract",
+      "project_draft_contract",
+      "asset-references-native",
+      "asset_references_contract"
+    ],
+    "compiled_fixtures": [
+      {
+        "report_sha256": "91eee8a55ab743dc2529fcc19b81ee893ca4bc6be5ce61ee35c509b9b12ef531",
+        "earlier_failed_report_sha256": [
+          "ac0e277cadc20f4d51c277c5fdddffb03247081ed27e924e5724b76d9b97dd38",
+          "8248944aa6e41308ae1def14797b1c33c0a51511e8f68aea01238752bfe8b37e"
+        ],
+        "backend": "coreclr",
+        "gameplay_artifact": {
+          "10.0.15/libhostfxr.so": "342ccc53ed77b71fb097f548098ea5b4190069099dfd8dfef31976d308edf32b",
+          "bridge/Poima.ManagedBridge.dll": "e5f32ae477babb9ae1f15e9eb0f4a745c9117fa2c3a907c9a30a714604245d20",
+          "game/Poima.ManagedTexturedSurfaceMarkGame.dll": "344091f0185a3cfd45ea45c85ec43b423d9fc50727a3fe2cd51bfa15fcee8449",
+          "bridge/Poima.Gameplay.dll": "6047c01123a9870ce966e5bf8928be7bb768363220e61146984a37a3416256c5",
+          "game/Poima.Gameplay.dll": "ca93d89b45174e6ee37fafc41ae8e2f84bdf2da50fd8d4bdc4cbef15cb63808a"
+        },
+        "saved_frames": [
+          {
+            "center_m": [
+              -0.25,
+              0.1875,
+              0.5
+            ],
+            "edge_fraction": 0.25,
+            "half_depth_m": 0.125,
+            "half_extent_m": [
+              0.25,
+              0.0625
+            ],
+            "id": "1",
+            "linear_rgb": [
+              0.875,
+              0.125,
+              0.125
+            ],
+            "mask_sha256": "0e1a2a1915bd22a35b00334c323f308175729c5e7fc35b950e1dce567df2395a",
+            "minimum_normal_dot": 0.800000011920929,
+            "normal": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "opacity": 0.875,
+            "profile": "00000000000000000000000000000082",
+            "receiver": "00000000000000000000000000000064",
+            "roughness": 0.375,
+            "tangent": [
+              2.220446049250313e-16,
+              -1.0,
+              0.0
+            ],
+            "tick": 1
+          },
+          {
+            "center_m": [
+              -0.25,
+              0.25,
+              0.5
+            ],
+            "edge_fraction": 0.25,
+            "half_depth_m": 0.125,
+            "half_extent_m": [
+              0.25,
+              0.0625
+            ],
+            "id": "2",
+            "linear_rgb": [
+              0.125,
+              0.125,
+              0.875
+            ],
+            "mask_sha256": "0e1a2a1915bd22a35b00334c323f308175729c5e7fc35b950e1dce567df2395a",
+            "minimum_normal_dot": 0.800000011920929,
+            "normal": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "opacity": 0.875,
+            "profile": "00000000000000000000000000000083",
+            "receiver": "00000000000000000000000000000065",
+            "roughness": 0.625,
+            "tangent": [
+              1.0,
+              0.0,
+              0.0
+            ],
+            "tick": 1
+          },
+          {
+            "center_m": [
+              0.25,
+              -0.18750609457492828,
+              0.5
+            ],
+            "edge_fraction": 0.25,
+            "half_depth_m": 0.125,
+            "half_extent_m": [
+              0.25,
+              0.0625
+            ],
+            "id": "3",
+            "linear_rgb": [
+              0.125,
+              0.875,
+              0.125
+            ],
+            "mask_sha256": "aa2a60ce3f52542c1f30467483c685b78d0f9cc80bc033cf3517efac8250cc72",
+            "minimum_normal_dot": 0.800000011920929,
+            "normal": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "opacity": 0.8125,
+            "profile": "00000000000000000000000000000084",
+            "receiver": "00000000000000000000000000000064",
+            "roughness": 0.5,
+            "tangent": [
+              0.5999996066093445,
+              -0.8000003099441528,
+              0.0
+            ],
+            "tick": 1
+          },
+          {
+            "center_m": [
+              0.25,
+              -0.25,
+              0.5
+            ],
+            "edge_fraction": 0.25,
+            "half_depth_m": 0.125,
+            "half_extent_m": [
+              0.1875,
+              0.0625
+            ],
+            "id": "4",
+            "linear_rgb": [
+              0.875,
+              0.625,
+              0.125
+            ],
+            "minimum_normal_dot": 0.800000011920929,
+            "normal": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "opacity": 1.0,
+            "receiver": "00000000000000000000000000000065",
+            "roughness": 0.375,
+            "tangent": [
+              1.0,
+              0.0,
+              0.0
+            ],
+            "tick": 1
+          }
+        ],
+        "archives": {
+          "checkpoint": {
+            "tick": 1,
+            "bytes": 11555,
+            "sha256": "f4133a2127c7e46340746718bc4bf67f4c21c66a693e2a8699367a2a70c9d7f0"
+          },
+          "unknown-profile": {
+            "tick": 1,
+            "bytes": 11555,
+            "sha256": "f4133a2127c7e46340746718bc4bf67f4c21c66a693e2a8699367a2a70c9d7f0"
+          },
+          "after-mask-mismatch": {
+            "tick": 1,
+            "bytes": 11555,
+            "sha256": "f4133a2127c7e46340746718bc4bf67f4c21c66a693e2a8699367a2a70c9d7f0"
+          },
+          "final": {
+            "tick": 7,
+            "bytes": 10459,
+            "sha256": "5d6b851bf4c3555cbaabd7f47c981fcd1a453cdee55b526e0b7bffb7482c7674"
+          },
+          "restored-checkpoint": {
+            "tick": 1,
+            "bytes": 11555,
+            "sha256": "f4133a2127c7e46340746718bc4bf67f4c21c66a693e2a8699367a2a70c9d7f0"
+          },
+          "restored-final": {
+            "tick": 7,
+            "bytes": 10459,
+            "sha256": "5d6b851bf4c3555cbaabd7f47c981fcd1a453cdee55b526e0b7bffb7482c7674"
+          },
+          "reauthored-checkpoint": {
+            "tick": 1,
+            "bytes": 11555,
+            "sha256": "f4133a2127c7e46340746718bc4bf67f4c21c66a693e2a8699367a2a70c9d7f0"
+          },
+          "reauthored-final": {
+            "tick": 7,
+            "bytes": 10459,
+            "sha256": "5d6b851bf4c3555cbaabd7f47c981fcd1a453cdee55b526e0b7bffb7482c7674"
+          }
+        },
+        "catalog": {
+          "profiles": {
+            "00000000000000000000000000000082": "0e1a2a1915bd22a35b00334c323f308175729c5e7fc35b950e1dce567df2395a",
+            "00000000000000000000000000000083": "0e1a2a1915bd22a35b00334c323f308175729c5e7fc35b950e1dce567df2395a",
+            "00000000000000000000000000000084": "aa2a60ce3f52542c1f30467483c685b78d0f9cc80bc033cf3517efac8250cc72"
+          },
+          "assets": [
+            "0e1a2a1915bd22a35b00334c323f308175729c5e7fc35b950e1dce567df2395a",
+            "aa2a60ce3f52542c1f30467483c685b78d0f9cc80bc033cf3517efac8250cc72"
+          ],
+          "edges": [
+            {
+              "asset": "0e1a2a1915bd22a35b00334c323f308175729c5e7fc35b950e1dce567df2395a",
+              "component": "surface_mark_profiles",
+              "kind": "image",
+              "owner": {
+                "id": "be521a5e59a1abbe8cdc12f0b8dcd23e",
+                "kind": "world"
+              },
+              "path": "/00000000000000000000000000000082/mask",
+              "subresource": null
+            },
+            {
+              "asset": "0e1a2a1915bd22a35b00334c323f308175729c5e7fc35b950e1dce567df2395a",
+              "component": "surface_mark_profiles",
+              "kind": "image",
+              "owner": {
+                "id": "be521a5e59a1abbe8cdc12f0b8dcd23e",
+                "kind": "world"
+              },
+              "path": "/00000000000000000000000000000083/mask",
+              "subresource": null
+            },
+            {
+              "asset": "aa2a60ce3f52542c1f30467483c685b78d0f9cc80bc033cf3517efac8250cc72",
+              "component": "surface_mark_profiles",
+              "kind": "image",
+              "owner": {
+                "id": "be521a5e59a1abbe8cdc12f0b8dcd23e",
+                "kind": "world"
+              },
+              "path": "/00000000000000000000000000000084/mask",
+              "subresource": null
+            }
+          ],
+          "first_mask_red": [
+            [
+              0,
+              0,
+              255,
+              255
+            ],
+            [
+              0,
+              0,
+              255,
+              255
+            ],
+            [
+              255,
+              255,
+              0,
+              0
+            ]
+          ],
+          "second_mask_red": [
+            [
+              255,
+              255,
+              0
+            ],
+            [
+              0,
+              0,
+              255
+            ]
+          ]
+        },
+        "authoring_refusals": [
+          "missing",
+          "srgb",
+          "too-many-profiles",
+          "too-wide"
+        ],
+        "replacement_restore": {
+          "original_revision": 4,
+          "replacement_revision": 5,
+          "replacement_catalog": {
+            "00000000000000000000000000000082": "aa2a60ce3f52542c1f30467483c685b78d0f9cc80bc033cf3517efac8250cc72",
+            "00000000000000000000000000000084": "aa2a60ce3f52542c1f30467483c685b78d0f9cc80bc033cf3517efac8250cc72"
+          },
+          "fresh_mask": "aa2a60ce3f52542c1f30467483c685b78d0f9cc80bc033cf3517efac8250cc72",
+          "restored_mask": "0e1a2a1915bd22a35b00334c323f308175729c5e7fc35b950e1dce567df2395a",
+          "checkpoint_exact": true,
+          "continued_exact": true
+        },
+        "missing_original_mask_rejected": true,
+        "runtime_refusals": [
+          "unknown_profile"
+        ],
+        "mask_mismatch_restore": {
+          "profile": "00000000000000000000000000000082",
+          "original_mask": "0e1a2a1915bd22a35b00334c323f308175729c5e7fc35b950e1dce567df2395a",
+          "substituted_mask": "aa2a60ce3f52542c1f30467483c685b78d0f9cc80bc033cf3517efac8250cc72",
+          "payload_sha256": "4fc6d53b65385c40682b7ae485df24b77566ecbd2d21027eae975c18a52038a8",
+          "manifest_sha256": "af3e115a5681b8854846aa9bc8ba163c7a233a94abb111e97380532abb79d82b",
+          "store_verified": true,
+          "active_archive_exact": true
+        }
+      },
+      {
+        "report_sha256": "be517855f202023f87ece767c1a9e4a1e21cc9538cdd6a119ff6142b95a7a4ba",
+        "earlier_failed_report_sha256": [],
+        "backend": "native_aot",
+        "gameplay_artifact": {
+          "descriptor_sha256": "e087dfac57db761d3354c7f1006256a07fe48a81858a8dcc9ed0e5537c930898",
+          "files": [
+            {
+              "path": "Poima.NativeGame.so",
+              "size": 1615688,
+              "sha256": "1b6e2b180bbc8d5e20cf081473f5180471a7734c28157402a43076a474724c33",
+              "role": "library"
+            },
+            {
+              "path": "notices/DOTNET-NATIVEAOT-10.0.15-LICENSE.txt",
+              "size": 1116,
+              "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310",
+              "role": "notice"
+            },
+            {
+              "path": "notices/DOTNET-NATIVEAOT-10.0.15-THIRD-PARTY-NOTICES.txt",
+              "size": 76623,
+              "sha256": "66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54",
+              "role": "notice"
+            },
+            {
+              "path": "notices/DOTNET-RUNTIME-10.0.15-LICENSE.txt",
+              "size": 1116,
+              "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310",
+              "role": "notice"
+            },
+            {
+              "path": "notices/DOTNET-RUNTIME-10.0.15-THIRD-PARTY-NOTICES.txt",
+              "size": 76623,
+              "sha256": "66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54",
+              "role": "notice"
+            },
+            {
+              "path": "notices/POIMA-LICENSE.txt",
+              "size": 11358,
+              "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+              "role": "notice"
+            },
+            {
+              "path": "notices/POIMA-THIRD-PARTY-NOTICES.md",
+              "size": 23949,
+              "sha256": "7d364ecf908a603cdc58efecf0a19e8d20b1a51ee0179ce3b9885d05327664a7",
+              "role": "notice"
+            }
+          ]
+        },
+        "saved_frames": [
+          {
+            "center_m": [
+              -0.25,
+              0.1875,
+              0.5
+            ],
+            "edge_fraction": 0.25,
+            "half_depth_m": 0.125,
+            "half_extent_m": [
+              0.25,
+              0.0625
+            ],
+            "id": "1",
+            "linear_rgb": [
+              0.875,
+              0.125,
+              0.125
+            ],
+            "mask_sha256": "0e1a2a1915bd22a35b00334c323f308175729c5e7fc35b950e1dce567df2395a",
+            "minimum_normal_dot": 0.800000011920929,
+            "normal": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "opacity": 0.875,
+            "profile": "00000000000000000000000000000082",
+            "receiver": "00000000000000000000000000000064",
+            "roughness": 0.375,
+            "tangent": [
+              2.220446049250313e-16,
+              -1.0,
+              0.0
+            ],
+            "tick": 1
+          },
+          {
+            "center_m": [
+              -0.25,
+              0.25,
+              0.5
+            ],
+            "edge_fraction": 0.25,
+            "half_depth_m": 0.125,
+            "half_extent_m": [
+              0.25,
+              0.0625
+            ],
+            "id": "2",
+            "linear_rgb": [
+              0.125,
+              0.125,
+              0.875
+            ],
+            "mask_sha256": "0e1a2a1915bd22a35b00334c323f308175729c5e7fc35b950e1dce567df2395a",
+            "minimum_normal_dot": 0.800000011920929,
+            "normal": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "opacity": 0.875,
+            "profile": "00000000000000000000000000000083",
+            "receiver": "00000000000000000000000000000065",
+            "roughness": 0.625,
+            "tangent": [
+              1.0,
+              0.0,
+              0.0
+            ],
+            "tick": 1
+          },
+          {
+            "center_m": [
+              0.25,
+              -0.18750609457492828,
+              0.5
+            ],
+            "edge_fraction": 0.25,
+            "half_depth_m": 0.125,
+            "half_extent_m": [
+              0.25,
+              0.0625
+            ],
+            "id": "3",
+            "linear_rgb": [
+              0.125,
+              0.875,
+              0.125
+            ],
+            "mask_sha256": "aa2a60ce3f52542c1f30467483c685b78d0f9cc80bc033cf3517efac8250cc72",
+            "minimum_normal_dot": 0.800000011920929,
+            "normal": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "opacity": 0.8125,
+            "profile": "00000000000000000000000000000084",
+            "receiver": "00000000000000000000000000000064",
+            "roughness": 0.5,
+            "tangent": [
+              0.5999996066093445,
+              -0.8000003099441528,
+              0.0
+            ],
+            "tick": 1
+          },
+          {
+            "center_m": [
+              0.25,
+              -0.25,
+              0.5
+            ],
+            "edge_fraction": 0.25,
+            "half_depth_m": 0.125,
+            "half_extent_m": [
+              0.1875,
+              0.0625
+            ],
+            "id": "4",
+            "linear_rgb": [
+              0.875,
+              0.625,
+              0.125
+            ],
+            "minimum_normal_dot": 0.800000011920929,
+            "normal": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "opacity": 1.0,
+            "receiver": "00000000000000000000000000000065",
+            "roughness": 0.375,
+            "tangent": [
+              1.0,
+              0.0,
+              0.0
+            ],
+            "tick": 1
+          }
+        ],
+        "archives": {
+          "checkpoint": {
+            "tick": 1,
+            "bytes": 11558,
+            "sha256": "5e9eb13d96fa145eb1dc619ba3e2d426e25341f9d3a0fca02ac83673efeafaf5"
+          },
+          "unknown-profile": {
+            "tick": 1,
+            "bytes": 11558,
+            "sha256": "5e9eb13d96fa145eb1dc619ba3e2d426e25341f9d3a0fca02ac83673efeafaf5"
+          },
+          "after-mask-mismatch": {
+            "tick": 1,
+            "bytes": 11558,
+            "sha256": "5e9eb13d96fa145eb1dc619ba3e2d426e25341f9d3a0fca02ac83673efeafaf5"
+          },
+          "final": {
+            "tick": 7,
+            "bytes": 10462,
+            "sha256": "58a61954a3219e29afac2484efca1e51fd25490d087a3de2f004c63442f73281"
+          },
+          "restored-checkpoint": {
+            "tick": 1,
+            "bytes": 11558,
+            "sha256": "5e9eb13d96fa145eb1dc619ba3e2d426e25341f9d3a0fca02ac83673efeafaf5"
+          },
+          "restored-final": {
+            "tick": 7,
+            "bytes": 10462,
+            "sha256": "58a61954a3219e29afac2484efca1e51fd25490d087a3de2f004c63442f73281"
+          },
+          "reauthored-checkpoint": {
+            "tick": 1,
+            "bytes": 11558,
+            "sha256": "5e9eb13d96fa145eb1dc619ba3e2d426e25341f9d3a0fca02ac83673efeafaf5"
+          },
+          "reauthored-final": {
+            "tick": 7,
+            "bytes": 10462,
+            "sha256": "58a61954a3219e29afac2484efca1e51fd25490d087a3de2f004c63442f73281"
+          }
+        },
+        "catalog": {
+          "profiles": {
+            "00000000000000000000000000000082": "0e1a2a1915bd22a35b00334c323f308175729c5e7fc35b950e1dce567df2395a",
+            "00000000000000000000000000000083": "0e1a2a1915bd22a35b00334c323f308175729c5e7fc35b950e1dce567df2395a",
+            "00000000000000000000000000000084": "aa2a60ce3f52542c1f30467483c685b78d0f9cc80bc033cf3517efac8250cc72"
+          },
+          "assets": [
+            "0e1a2a1915bd22a35b00334c323f308175729c5e7fc35b950e1dce567df2395a",
+            "aa2a60ce3f52542c1f30467483c685b78d0f9cc80bc033cf3517efac8250cc72"
+          ],
+          "edges": [
+            {
+              "asset": "0e1a2a1915bd22a35b00334c323f308175729c5e7fc35b950e1dce567df2395a",
+              "component": "surface_mark_profiles",
+              "kind": "image",
+              "owner": {
+                "id": "683fc83df8214ea8ac7aa6772296d145",
+                "kind": "world"
+              },
+              "path": "/00000000000000000000000000000082/mask",
+              "subresource": null
+            },
+            {
+              "asset": "0e1a2a1915bd22a35b00334c323f308175729c5e7fc35b950e1dce567df2395a",
+              "component": "surface_mark_profiles",
+              "kind": "image",
+              "owner": {
+                "id": "683fc83df8214ea8ac7aa6772296d145",
+                "kind": "world"
+              },
+              "path": "/00000000000000000000000000000083/mask",
+              "subresource": null
+            },
+            {
+              "asset": "aa2a60ce3f52542c1f30467483c685b78d0f9cc80bc033cf3517efac8250cc72",
+              "component": "surface_mark_profiles",
+              "kind": "image",
+              "owner": {
+                "id": "683fc83df8214ea8ac7aa6772296d145",
+                "kind": "world"
+              },
+              "path": "/00000000000000000000000000000084/mask",
+              "subresource": null
+            }
+          ],
+          "first_mask_red": [
+            [
+              0,
+              0,
+              255,
+              255
+            ],
+            [
+              0,
+              0,
+              255,
+              255
+            ],
+            [
+              255,
+              255,
+              0,
+              0
+            ]
+          ],
+          "second_mask_red": [
+            [
+              255,
+              255,
+              0
+            ],
+            [
+              0,
+              0,
+              255
+            ]
+          ]
+        },
+        "authoring_refusals": [
+          "missing",
+          "srgb",
+          "too-many-profiles",
+          "too-wide"
+        ],
+        "replacement_restore": {
+          "original_revision": 4,
+          "replacement_revision": 5,
+          "replacement_catalog": {
+            "00000000000000000000000000000082": "aa2a60ce3f52542c1f30467483c685b78d0f9cc80bc033cf3517efac8250cc72",
+            "00000000000000000000000000000084": "aa2a60ce3f52542c1f30467483c685b78d0f9cc80bc033cf3517efac8250cc72"
+          },
+          "fresh_mask": "aa2a60ce3f52542c1f30467483c685b78d0f9cc80bc033cf3517efac8250cc72",
+          "restored_mask": "0e1a2a1915bd22a35b00334c323f308175729c5e7fc35b950e1dce567df2395a",
+          "checkpoint_exact": true,
+          "continued_exact": true
+        },
+        "missing_original_mask_rejected": true,
+        "runtime_refusals": [
+          "unknown_profile"
+        ],
+        "mask_mismatch_restore": {
+          "profile": "00000000000000000000000000000082",
+          "original_mask": "0e1a2a1915bd22a35b00334c323f308175729c5e7fc35b950e1dce567df2395a",
+          "substituted_mask": "aa2a60ce3f52542c1f30467483c685b78d0f9cc80bc033cf3517efac8250cc72",
+          "payload_sha256": "fd2e1d145d0f8cd90f2f333d7c5346208338240284139c0d7a8f645a864a4513",
+          "manifest_sha256": "6c998ade1f5a1381d1b6304b8238d248bc61d06bd7efaadfb7ca5a38c080a152",
+          "store_verified": true,
+          "active_archive_exact": true
+        }
+      }
+    ],
+    "legacy_module": {
+      "report_sha256": "85f0bb54d6fa0250002b9b21dd194fccb1737c9370f3bb0fa4055243d298b553",
+      "descriptor_sha256": "a554933677840f7f7785f3fdea418acf3c3629542e467595a87514a19f6b2d29",
+      "minimum_services_bytes": 552
+    },
+    "legacy_baseline_aot_sha256": "586f7a5104c5e79fcf9fbfed4d6f738f779ad1caec7eec458c3eefdefc132cef"
+  },
+  "windows": {
+    "version": {
+      "version": "0.0.362",
+      "compiler": "Clang",
+      "compiler_version": "23.1.2",
+      "target_os": "Windows",
+      "target_arch": "x86_64"
+    },
+    "executable_sha256": "750f9bf85ad8cbaf76bcf6d2330e238fb9a01cff947cdf0a4e5fb51eb0252b89",
+    "descriptor": {
+      "call_bytes": 80,
+      "call_version": 1,
+      "feature_count": 41,
+      "navigation": true,
+      "passed": true,
+      "services_bytes": 560,
+      "services_version": 7
+    },
+    "descriptor_sha256": "2fa1ee49358605f05f6606cdfab76712bcae4c4d39adbe5fe6833529cfc2d3ee",
+    "desktop_bridge_sha256": "1d6027f893c78f133d6ecdf98615c08555db15a957522f701c7253932ba69095",
+    "mcp_log_sha256": "6066675ca449f43d12c4946d7a1f1b934994bd03da1606ae44ce3eb631de2a05",
+    "relocated_native_aot": [
+      {
+        "report_sha256": "78a00f851443bb82a8b3aa21d90558a6548f36261f9281989bab9fabaa47c4e7",
+        "earlier_failed_report_sha256": [],
+        "backend": "native_aot",
+        "gameplay_artifact": {
+          "descriptor_sha256": "40725992c1e010ce6b370b86263a23d01866e2fe9b1dad441589116f1330c99c",
+          "files": [
+            {
+              "path": "notices/DOTNET-NATIVEAOT-10.0.15-LICENSE.txt",
+              "size": 1139,
+              "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+              "role": "notice"
+            },
+            {
+              "path": "notices/DOTNET-NATIVEAOT-10.0.15-THIRD-PARTY-NOTICES.txt",
+              "size": 78041,
+              "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+              "role": "notice"
+            },
+            {
+              "path": "notices/DOTNET-RUNTIME-10.0.15-LICENSE.txt",
+              "size": 1139,
+              "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+              "role": "notice"
+            },
+            {
+              "path": "notices/DOTNET-RUNTIME-10.0.15-THIRD-PARTY-NOTICES.txt",
+              "size": 78041,
+              "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+              "role": "notice"
+            },
+            {
+              "path": "notices/POIMA-LICENSE.txt",
+              "size": 11358,
+              "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+              "role": "notice"
+            },
+            {
+              "path": "notices/POIMA-THIRD-PARTY-NOTICES.md",
+              "size": 23949,
+              "sha256": "7d364ecf908a603cdc58efecf0a19e8d20b1a51ee0179ce3b9885d05327664a7",
+              "role": "notice"
+            },
+            {
+              "path": "Poima.NativeGame.dll",
+              "size": 1363456,
+              "sha256": "b285e64a62604e67a83b7fd308da8d5e7808ded4a646de9f4b7393232f686deb",
+              "role": "library"
+            }
+          ]
+        },
+        "saved_frames": [
+          {
+            "center_m": [
+              -0.25,
+              0.1875,
+              0.5
+            ],
+            "edge_fraction": 0.25,
+            "half_depth_m": 0.125,
+            "half_extent_m": [
+              0.25,
+              0.0625
+            ],
+            "id": "1",
+            "linear_rgb": [
+              0.875,
+              0.125,
+              0.125
+            ],
+            "mask_sha256": "0e1a2a1915bd22a35b00334c323f308175729c5e7fc35b950e1dce567df2395a",
+            "minimum_normal_dot": 0.800000011920929,
+            "normal": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "opacity": 0.875,
+            "profile": "00000000000000000000000000000082",
+            "receiver": "00000000000000000000000000000064",
+            "roughness": 0.375,
+            "tangent": [
+              2.220446049250313e-16,
+              -1.0,
+              0.0
+            ],
+            "tick": 1
+          },
+          {
+            "center_m": [
+              -0.25,
+              0.25,
+              0.5
+            ],
+            "edge_fraction": 0.25,
+            "half_depth_m": 0.125,
+            "half_extent_m": [
+              0.25,
+              0.0625
+            ],
+            "id": "2",
+            "linear_rgb": [
+              0.125,
+              0.125,
+              0.875
+            ],
+            "mask_sha256": "0e1a2a1915bd22a35b00334c323f308175729c5e7fc35b950e1dce567df2395a",
+            "minimum_normal_dot": 0.800000011920929,
+            "normal": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "opacity": 0.875,
+            "profile": "00000000000000000000000000000083",
+            "receiver": "00000000000000000000000000000065",
+            "roughness": 0.625,
+            "tangent": [
+              1.0,
+              0.0,
+              0.0
+            ],
+            "tick": 1
+          },
+          {
+            "center_m": [
+              0.25,
+              -0.18750609457492828,
+              0.5
+            ],
+            "edge_fraction": 0.25,
+            "half_depth_m": 0.125,
+            "half_extent_m": [
+              0.25,
+              0.0625
+            ],
+            "id": "3",
+            "linear_rgb": [
+              0.125,
+              0.875,
+              0.125
+            ],
+            "mask_sha256": "aa2a60ce3f52542c1f30467483c685b78d0f9cc80bc033cf3517efac8250cc72",
+            "minimum_normal_dot": 0.800000011920929,
+            "normal": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "opacity": 0.8125,
+            "profile": "00000000000000000000000000000084",
+            "receiver": "00000000000000000000000000000064",
+            "roughness": 0.5,
+            "tangent": [
+              0.5999996066093445,
+              -0.8000003099441528,
+              0.0
+            ],
+            "tick": 1
+          },
+          {
+            "center_m": [
+              0.25,
+              -0.25,
+              0.5
+            ],
+            "edge_fraction": 0.25,
+            "half_depth_m": 0.125,
+            "half_extent_m": [
+              0.1875,
+              0.0625
+            ],
+            "id": "4",
+            "linear_rgb": [
+              0.875,
+              0.625,
+              0.125
+            ],
+            "minimum_normal_dot": 0.800000011920929,
+            "normal": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "opacity": 1.0,
+            "receiver": "00000000000000000000000000000065",
+            "roughness": 0.375,
+            "tangent": [
+              1.0,
+              0.0,
+              0.0
+            ],
+            "tick": 1
+          }
+        ],
+        "archives": {
+          "checkpoint": {
+            "tick": 1,
+            "bytes": 11558,
+            "sha256": "e68dc849b19d5544f207971166f8d0c43fbe3df06b8ea020688e4d07c12a26f1"
+          },
+          "final": {
+            "tick": 7,
+            "bytes": 10462,
+            "sha256": "6c13f433afb3b04e9635427359e9d8b613f6e1e9c48070abb05d6be44ce323a0"
+          },
+          "restored-checkpoint": {
+            "tick": 1,
+            "bytes": 11558,
+            "sha256": "e68dc849b19d5544f207971166f8d0c43fbe3df06b8ea020688e4d07c12a26f1"
+          },
+          "restored-final": {
+            "tick": 7,
+            "bytes": 10462,
+            "sha256": "6c13f433afb3b04e9635427359e9d8b613f6e1e9c48070abb05d6be44ce323a0"
+          }
+        },
+        "catalog": {
+          "profiles": {
+            "00000000000000000000000000000082": "0e1a2a1915bd22a35b00334c323f308175729c5e7fc35b950e1dce567df2395a",
+            "00000000000000000000000000000083": "0e1a2a1915bd22a35b00334c323f308175729c5e7fc35b950e1dce567df2395a",
+            "00000000000000000000000000000084": "aa2a60ce3f52542c1f30467483c685b78d0f9cc80bc033cf3517efac8250cc72"
+          },
+          "assets": [
+            "0e1a2a1915bd22a35b00334c323f308175729c5e7fc35b950e1dce567df2395a",
+            "aa2a60ce3f52542c1f30467483c685b78d0f9cc80bc033cf3517efac8250cc72"
+          ],
+          "edges": [
+            {
+              "asset": "0e1a2a1915bd22a35b00334c323f308175729c5e7fc35b950e1dce567df2395a",
+              "component": "surface_mark_profiles",
+              "kind": "image",
+              "owner": {
+                "id": "c111433f991e55eea9b45256f5dd2c89",
+                "kind": "world"
+              },
+              "path": "/00000000000000000000000000000082/mask",
+              "subresource": null
+            },
+            {
+              "asset": "0e1a2a1915bd22a35b00334c323f308175729c5e7fc35b950e1dce567df2395a",
+              "component": "surface_mark_profiles",
+              "kind": "image",
+              "owner": {
+                "id": "c111433f991e55eea9b45256f5dd2c89",
+                "kind": "world"
+              },
+              "path": "/00000000000000000000000000000083/mask",
+              "subresource": null
+            },
+            {
+              "asset": "aa2a60ce3f52542c1f30467483c685b78d0f9cc80bc033cf3517efac8250cc72",
+              "component": "surface_mark_profiles",
+              "kind": "image",
+              "owner": {
+                "id": "c111433f991e55eea9b45256f5dd2c89",
+                "kind": "world"
+              },
+              "path": "/00000000000000000000000000000084/mask",
+              "subresource": null
+            }
+          ],
+          "first_mask_red": [
+            [
+              0,
+              0,
+              255,
+              255
+            ],
+            [
+              0,
+              0,
+              255,
+              255
+            ],
+            [
+              255,
+              255,
+              0,
+              0
+            ]
+          ],
+          "second_mask_red": [
+            [
+              255,
+              255,
+              0
+            ],
+            [
+              0,
+              0,
+              255
+            ]
+          ]
+        },
+        "authoring_refusals": [
+          "missing",
+          "srgb",
+          "too-many-profiles",
+          "too-wide"
+        ],
+        "gpu": "AMD Radeon(TM) Graphics",
+        "lighting_path": "forward",
+        "bundle": {
+          "files": 68,
+          "manifest_sha256": "c2892d9b55148bc0cff9d18ffe9dbddd59af213152c734a6b01547adcda3182c",
+          "masks": {
+            "content/world.json.assets/0e1a2a1915bd22a35b00334c323f308175729c5e7fc35b950e1dce567df2395a.pimage": "0e1a2a1915bd22a35b00334c323f308175729c5e7fc35b950e1dce567df2395a",
+            "content/world.json.assets/aa2a60ce3f52542c1f30467483c685b78d0f9cc80bc033cf3517efac8250cc72.pimage": "aa2a60ce3f52542c1f30467483c685b78d0f9cc80bc033cf3517efac8250cc72"
+          }
+        },
+        "capture_count": 4,
+        "captures": {
+          "checkpoint": {
+            "sha256": "870f76005fce03d2202045e224113a4af5d84528015cd36cd6cab44cf7f912a2",
+            "tick": 1,
+            "samples": 14,
+            "max_abs_hdr_error": 0.0004694028616227808,
+            "max_abs_srgb_error": 0,
+            "witnesses": {
+              "caller_black": {
+                "hdr": [
+                  0.07940673828125,
+                  0.1488037109375,
+                  0.28759765625
+                ],
+                "expected_hdr": [
+                  0.07943684287009085,
+                  0.14888402921214558,
+                  0.28777840189625503
+                ],
+                "bmp_rgb": [
+                  77,
+                  101,
+                  130
+                ],
+                "expected_bmp": [
+                  77,
+                  101,
+                  130
+                ],
+                "pixel": [
+                  304,
+                  190
+                ],
+                "depth": 0.8333333730697632,
+                "base": [
+                  0.125,
+                  0.25,
+                  0.5
+                ],
+                "roughness": 0.75,
+                "coverage": 0.0,
+                "edge": 1.0,
+                "weight": 0.0
+              },
+              "caller_filtered": {
+                "hdr": [
+                  0.273193359375,
+                  0.135009765625,
+                  0.214599609375
+                ],
+                "expected_hdr": [
+                  0.2735769759548563,
+                  0.13506842097264685,
+                  0.21454686756410965
+                ],
+                "bmp_rgb": [
+                  128,
+                  97,
+                  117
+                ],
+                "expected_bmp": [
+                  128,
+                  97,
+                  117
+                ],
+                "pixel": [
+                  311,
+                  190
+                ],
+                "depth": 0.8333333730697632,
+                "base": [
+                  0.4458333333333333,
+                  0.19652777777777777,
+                  0.33958333333333335
+                ],
+                "roughness": 0.5895833333333333,
+                "coverage": 0.4888888888888889,
+                "edge": 1.0,
+                "weight": 0.42777777777777776
+              },
+              "near-normal_black": {
+                "hdr": [
+                  0.07916259765625,
+                  0.1485595703125,
+                  0.287353515625
+                ],
+                "expected_hdr": [
+                  0.07919764187752179,
+                  0.1486448282192514,
+                  0.2875392009027107
+                ],
+                "bmp_rgb": [
+                  77,
+                  101,
+                  130
+                ],
+                "expected_bmp": [
+                  77,
+                  101,
+                  130
+                ],
+                "pixel": [
+                  358,
+                  167
+                ],
+                "depth": 0.8333333730697632,
+                "base": [
+                  0.125,
+                  0.25,
+                  0.5
+                ],
+                "roughness": 0.75,
+                "coverage": 0.0,
+                "edge": 1.0,
+                "weight": 0.0
+              },
+              "near-normal_filtered": {
+                "hdr": [
+                  0.08270263671875,
+                  0.11627197265625,
+                  0.3984375
+                ],
+                "expected_hdr": [
+                  0.08271254769378258,
+                  0.11637514218389589,
+                  0.3984078822672506
+                ],
+                "bmp_rgb": [
+                  78,
+                  91,
+                  145
+                ],
+                "expected_bmp": [
+                  78,
+                  91,
+                  145
+                ],
+                "pixel": [
+                  365,
+                  167
+                ],
+                "depth": 0.8333333730697632,
+                "base": [
+                  0.125,
+                  0.185590277777778,
+                  0.693229166666666
+                ],
+                "roughness": 0.685590277777778,
+                "coverage": 0.5888888888888868,
+                "edge": 1.0,
+                "weight": 0.515277777777776
+              },
+              "compiled_black": {
+                "hdr": [
+                  0.0794677734375,
+                  0.14892578125,
+                  0.28759765625
+                ],
+                "expected_hdr": [
+                  0.07948728486427406,
+                  0.1489344712063289,
+                  0.2878288438904387
+                ],
+                "bmp_rgb": [
+                  77,
+                  101,
+                  130
+                ],
+                "expected_bmp": [
+                  77,
+                  101,
+                  130
+                ],
+                "pixel": [
+                  326,
+                  172
+                ],
+                "depth": 0.8333333730697632,
+                "base": [
+                  0.125,
+                  0.25,
+                  0.5
+                ],
+                "roughness": 0.75,
+                "coverage": 0.0,
+                "edge": 1.0,
+                "weight": 0.0
+              },
+              "compiled_filtered": {
+                "hdr": [
+                  0.08709716796875,
+                  0.294189453125,
+                  0.2127685546875
+                ],
+                "expected_hdr": [
+                  0.0870858441179809,
+                  0.2938359051238064,
+                  0.21304567834588317
+                ],
+                "bmp_rgb": [
+                  80,
+                  131,
+                  116
+                ],
+                "expected_bmp": [
+                  80,
+                  131,
+                  116
+                ],
+                "pixel": [
+                  323,
+                  172
+                ],
+                "depth": 0.8333333730697632,
+                "base": [
+                  0.125,
+                  0.49713541666666594,
+                  0.3517187500000004
+                ],
+                "roughness": 0.6511458333333336,
+                "coverage": 0.48666666666666525,
+                "edge": 1.0,
+                "weight": 0.39541666666666553
+              }
+            }
+          },
+          "final": {
+            "sha256": "97a7923941510ad8cc5e7ba9298c26cb5c7f3ee8a951a79448bb5305e032f184",
+            "tick": 7,
+            "samples": 14,
+            "max_abs_hdr_error": 0.0004694028616227808,
+            "max_abs_srgb_error": 0,
+            "witnesses": {
+              "caller_black": {
+                "hdr": [
+                  0.0791015625,
+                  0.1485595703125,
+                  0.287353515625
+                ],
+                "expected_hdr": [
+                  0.07915590132933752,
+                  0.14860308767076041,
+                  0.2874974603536061
+                ],
+                "bmp_rgb": [
+                  77,
+                  101,
+                  130
+                ],
+                "expected_bmp": [
+                  77,
+                  101,
+                  130
+                ],
+                "pixel": [
+                  279,
+                  195
+                ],
+                "depth": 0.8333333730697632,
+                "base": [
+                  0.125,
+                  0.25,
+                  0.5
+                ],
+                "roughness": 0.75,
+                "coverage": 0.0,
+                "edge": 1.0,
+                "weight": 0.0
+              },
+              "caller_filtered": {
+                "hdr": [
+                  0.27001953125,
+                  0.1317138671875,
+                  0.2113037109375
+                ],
+                "expected_hdr": [
+                  0.2703062512822315,
+                  0.13179769630082497,
+                  0.211276142891827
+                ],
+                "bmp_rgb": [
+                  127,
+                  96,
+                  116
+                ],
+                "expected_bmp": [
+                  127,
+                  96,
+                  116
+                ],
+                "pixel": [
+                  279,
+                  188
+                ],
+                "depth": 0.8333333730697632,
+                "base": [
+                  0.4458333333333334,
+                  0.19652777777777777,
+                  0.3395833333333333
+                ],
+                "roughness": 0.5895833333333333,
+                "coverage": 0.488888888888889,
+                "edge": 1.0,
+                "weight": 0.42777777777777787
+              },
+              "near-normal_black": {
+                "hdr": [
+                  0.07916259765625,
+                  0.1485595703125,
+                  0.287353515625
+                ],
+                "expected_hdr": [
+                  0.07919764187752179,
+                  0.1486448282192514,
+                  0.2875392009027107
+                ],
+                "bmp_rgb": [
+                  77,
+                  101,
+                  130
+                ],
+                "expected_bmp": [
+                  77,
+                  101,
+                  130
+                ],
+                "pixel": [
+                  358,
+                  167
+                ],
+                "depth": 0.8333333730697632,
+                "base": [
+                  0.125,
+                  0.25,
+                  0.5
+                ],
+                "roughness": 0.75,
+                "coverage": 0.0,
+                "edge": 1.0,
+                "weight": 0.0
+              },
+              "near-normal_filtered": {
+                "hdr": [
+                  0.08270263671875,
+                  0.11627197265625,
+                  0.3984375
+                ],
+                "expected_hdr": [
+                  0.08271254769378258,
+                  0.11637514218389589,
+                  0.3984078822672506
+                ],
+                "bmp_rgb": [
+                  78,
+                  91,
+                  145
+                ],
+                "expected_bmp": [
+                  78,
+                  91,
+                  145
+                ],
+                "pixel": [
+                  365,
+                  167
+                ],
+                "depth": 0.8333333730697632,
+                "base": [
+                  0.125,
+                  0.185590277777778,
+                  0.693229166666666
+                ],
+                "roughness": 0.685590277777778,
+                "coverage": 0.5888888888888868,
+                "edge": 1.0,
+                "weight": 0.515277777777776
+              },
+              "compiled_black": {
+                "hdr": [
+                  0.078857421875,
+                  0.1483154296875,
+                  0.287109375
+                ],
+                "expected_hdr": [
+                  0.07890449921440981,
+                  0.14835168554499692,
+                  0.2872460582061711
+                ],
+                "bmp_rgb": [
+                  76,
+                  101,
+                  130
+                ],
+                "expected_bmp": [
+                  76,
+                  101,
+                  130
+                ],
+                "pixel": [
+                  261,
+                  173
+                ],
+                "depth": 0.8333333730697632,
+                "base": [
+                  0.125,
+                  0.25,
+                  0.5
+                ],
+                "roughness": 0.75,
+                "coverage": 0.0,
+                "edge": 1.0,
+                "weight": 0.0
+              },
+              "compiled_filtered": {
+                "hdr": [
+                  0.08599853515625,
+                  0.32275390625,
+                  0.19384765625
+                ],
+                "expected_hdr": [
+                  0.08602018564638755,
+                  0.3228640273628819,
+                  0.19392375140824603
+                ],
+                "bmp_rgb": [
+                  80,
+                  135,
+                  112
+                ],
+                "expected_bmp": [
+                  80,
+                  135,
+                  112
+                ],
+                "pixel": [
+                  261,
+                  176
+                ],
+                "depth": 0.8333333730697632,
+                "base": [
+                  0.125,
+                  0.5513020833333324,
+                  0.31921875000000055
+                ],
+                "roughness": 0.629479166666667,
+                "coverage": 0.5933333333333316,
+                "edge": 1.0,
+                "weight": 0.4820833333333319
+              }
+            }
+          }
+        },
+        "maskless_export_descriptor_sha256": "44a4e64afbd06030225a973e023c321115a3703c4350338e1bbfde8833bf1697"
+      },
+      {
+        "report_sha256": "f181a21dcc0ab9c056bffa3f630fea592b8b39bb1fce5a21ea8cdc96a613b263",
+        "earlier_failed_report_sha256": [],
+        "backend": "native_aot",
+        "gameplay_artifact": {
+          "descriptor_sha256": "40725992c1e010ce6b370b86263a23d01866e2fe9b1dad441589116f1330c99c",
+          "files": [
+            {
+              "path": "notices/DOTNET-NATIVEAOT-10.0.15-LICENSE.txt",
+              "size": 1139,
+              "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+              "role": "notice"
+            },
+            {
+              "path": "notices/DOTNET-NATIVEAOT-10.0.15-THIRD-PARTY-NOTICES.txt",
+              "size": 78041,
+              "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+              "role": "notice"
+            },
+            {
+              "path": "notices/DOTNET-RUNTIME-10.0.15-LICENSE.txt",
+              "size": 1139,
+              "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+              "role": "notice"
+            },
+            {
+              "path": "notices/DOTNET-RUNTIME-10.0.15-THIRD-PARTY-NOTICES.txt",
+              "size": 78041,
+              "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+              "role": "notice"
+            },
+            {
+              "path": "notices/POIMA-LICENSE.txt",
+              "size": 11358,
+              "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+              "role": "notice"
+            },
+            {
+              "path": "notices/POIMA-THIRD-PARTY-NOTICES.md",
+              "size": 23949,
+              "sha256": "7d364ecf908a603cdc58efecf0a19e8d20b1a51ee0179ce3b9885d05327664a7",
+              "role": "notice"
+            },
+            {
+              "path": "Poima.NativeGame.dll",
+              "size": 1363456,
+              "sha256": "b285e64a62604e67a83b7fd308da8d5e7808ded4a646de9f4b7393232f686deb",
+              "role": "library"
+            }
+          ]
+        },
+        "saved_frames": [
+          {
+            "center_m": [
+              -0.25,
+              0.1875,
+              0.5
+            ],
+            "edge_fraction": 0.25,
+            "half_depth_m": 0.125,
+            "half_extent_m": [
+              0.25,
+              0.0625
+            ],
+            "id": "1",
+            "linear_rgb": [
+              0.875,
+              0.125,
+              0.125
+            ],
+            "mask_sha256": "0e1a2a1915bd22a35b00334c323f308175729c5e7fc35b950e1dce567df2395a",
+            "minimum_normal_dot": 0.800000011920929,
+            "normal": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "opacity": 0.875,
+            "profile": "00000000000000000000000000000082",
+            "receiver": "00000000000000000000000000000064",
+            "roughness": 0.375,
+            "tangent": [
+              2.220446049250313e-16,
+              -1.0,
+              0.0
+            ],
+            "tick": 1
+          },
+          {
+            "center_m": [
+              -0.25,
+              0.25,
+              0.5
+            ],
+            "edge_fraction": 0.25,
+            "half_depth_m": 0.125,
+            "half_extent_m": [
+              0.25,
+              0.0625
+            ],
+            "id": "2",
+            "linear_rgb": [
+              0.125,
+              0.125,
+              0.875
+            ],
+            "mask_sha256": "0e1a2a1915bd22a35b00334c323f308175729c5e7fc35b950e1dce567df2395a",
+            "minimum_normal_dot": 0.800000011920929,
+            "normal": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "opacity": 0.875,
+            "profile": "00000000000000000000000000000083",
+            "receiver": "00000000000000000000000000000065",
+            "roughness": 0.625,
+            "tangent": [
+              1.0,
+              0.0,
+              0.0
+            ],
+            "tick": 1
+          },
+          {
+            "center_m": [
+              0.25,
+              -0.18750609457492828,
+              0.5
+            ],
+            "edge_fraction": 0.25,
+            "half_depth_m": 0.125,
+            "half_extent_m": [
+              0.25,
+              0.0625
+            ],
+            "id": "3",
+            "linear_rgb": [
+              0.125,
+              0.875,
+              0.125
+            ],
+            "mask_sha256": "aa2a60ce3f52542c1f30467483c685b78d0f9cc80bc033cf3517efac8250cc72",
+            "minimum_normal_dot": 0.800000011920929,
+            "normal": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "opacity": 0.8125,
+            "profile": "00000000000000000000000000000084",
+            "receiver": "00000000000000000000000000000064",
+            "roughness": 0.5,
+            "tangent": [
+              0.5999996066093445,
+              -0.8000003099441528,
+              0.0
+            ],
+            "tick": 1
+          },
+          {
+            "center_m": [
+              0.25,
+              -0.25,
+              0.5
+            ],
+            "edge_fraction": 0.25,
+            "half_depth_m": 0.125,
+            "half_extent_m": [
+              0.1875,
+              0.0625
+            ],
+            "id": "4",
+            "linear_rgb": [
+              0.875,
+              0.625,
+              0.125
+            ],
+            "minimum_normal_dot": 0.800000011920929,
+            "normal": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "opacity": 1.0,
+            "receiver": "00000000000000000000000000000065",
+            "roughness": 0.375,
+            "tangent": [
+              1.0,
+              0.0,
+              0.0
+            ],
+            "tick": 1
+          }
+        ],
+        "archives": {
+          "checkpoint": {
+            "tick": 1,
+            "bytes": 11558,
+            "sha256": "d7588d21411470682046fa09ef0207b45211d4f686f5b750be0a8dc7341ae3a9"
+          },
+          "final": {
+            "tick": 7,
+            "bytes": 10462,
+            "sha256": "c66fd2532953f8a84d9695accb834e0d4776dd86c2c6ea1b834c18b2f77b39d0"
+          },
+          "restored-checkpoint": {
+            "tick": 1,
+            "bytes": 11558,
+            "sha256": "d7588d21411470682046fa09ef0207b45211d4f686f5b750be0a8dc7341ae3a9"
+          },
+          "restored-final": {
+            "tick": 7,
+            "bytes": 10462,
+            "sha256": "c66fd2532953f8a84d9695accb834e0d4776dd86c2c6ea1b834c18b2f77b39d0"
+          }
+        },
+        "catalog": {
+          "profiles": {
+            "00000000000000000000000000000082": "0e1a2a1915bd22a35b00334c323f308175729c5e7fc35b950e1dce567df2395a",
+            "00000000000000000000000000000083": "0e1a2a1915bd22a35b00334c323f308175729c5e7fc35b950e1dce567df2395a",
+            "00000000000000000000000000000084": "aa2a60ce3f52542c1f30467483c685b78d0f9cc80bc033cf3517efac8250cc72"
+          },
+          "assets": [
+            "0e1a2a1915bd22a35b00334c323f308175729c5e7fc35b950e1dce567df2395a",
+            "aa2a60ce3f52542c1f30467483c685b78d0f9cc80bc033cf3517efac8250cc72"
+          ],
+          "edges": [
+            {
+              "asset": "0e1a2a1915bd22a35b00334c323f308175729c5e7fc35b950e1dce567df2395a",
+              "component": "surface_mark_profiles",
+              "kind": "image",
+              "owner": {
+                "id": "53b1298184359bf363d426e1b488c27d",
+                "kind": "world"
+              },
+              "path": "/00000000000000000000000000000082/mask",
+              "subresource": null
+            },
+            {
+              "asset": "0e1a2a1915bd22a35b00334c323f308175729c5e7fc35b950e1dce567df2395a",
+              "component": "surface_mark_profiles",
+              "kind": "image",
+              "owner": {
+                "id": "53b1298184359bf363d426e1b488c27d",
+                "kind": "world"
+              },
+              "path": "/00000000000000000000000000000083/mask",
+              "subresource": null
+            },
+            {
+              "asset": "aa2a60ce3f52542c1f30467483c685b78d0f9cc80bc033cf3517efac8250cc72",
+              "component": "surface_mark_profiles",
+              "kind": "image",
+              "owner": {
+                "id": "53b1298184359bf363d426e1b488c27d",
+                "kind": "world"
+              },
+              "path": "/00000000000000000000000000000084/mask",
+              "subresource": null
+            }
+          ],
+          "first_mask_red": [
+            [
+              0,
+              0,
+              255,
+              255
+            ],
+            [
+              0,
+              0,
+              255,
+              255
+            ],
+            [
+              255,
+              255,
+              0,
+              0
+            ]
+          ],
+          "second_mask_red": [
+            [
+              255,
+              255,
+              0
+            ],
+            [
+              0,
+              0,
+              255
+            ]
+          ]
+        },
+        "authoring_refusals": [
+          "missing",
+          "srgb",
+          "too-many-profiles",
+          "too-wide"
+        ],
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "lighting_path": "forward",
+        "bundle": {
+          "files": 68,
+          "manifest_sha256": "8c84c8cbcc6b522cd6fe412619991768ff924a741519248077e8fdfae8c18eb4",
+          "masks": {
+            "content/world.json.assets/0e1a2a1915bd22a35b00334c323f308175729c5e7fc35b950e1dce567df2395a.pimage": "0e1a2a1915bd22a35b00334c323f308175729c5e7fc35b950e1dce567df2395a",
+            "content/world.json.assets/aa2a60ce3f52542c1f30467483c685b78d0f9cc80bc033cf3517efac8250cc72.pimage": "aa2a60ce3f52542c1f30467483c685b78d0f9cc80bc033cf3517efac8250cc72"
+          }
+        },
+        "capture_count": 4,
+        "captures": {
+          "checkpoint": {
+            "sha256": "a7bea2ac0abf7e607f87824a449433f091aead3acfd8a84c1f971c61974a9c99",
+            "tick": 1,
+            "samples": 14,
+            "max_abs_hdr_error": 0.0004694028616227808,
+            "max_abs_srgb_error": 0,
+            "witnesses": {
+              "caller_black": {
+                "hdr": [
+                  0.07940673828125,
+                  0.1488037109375,
+                  0.28759765625
+                ],
+                "expected_hdr": [
+                  0.07943684287009085,
+                  0.14888402921214558,
+                  0.28777840189625503
+                ],
+                "bmp_rgb": [
+                  77,
+                  101,
+                  130
+                ],
+                "expected_bmp": [
+                  77,
+                  101,
+                  130
+                ],
+                "pixel": [
+                  304,
+                  190
+                ],
+                "depth": 0.8333333730697632,
+                "base": [
+                  0.125,
+                  0.25,
+                  0.5
+                ],
+                "roughness": 0.75,
+                "coverage": 0.0,
+                "edge": 1.0,
+                "weight": 0.0
+              },
+              "caller_filtered": {
+                "hdr": [
+                  0.273193359375,
+                  0.135009765625,
+                  0.214599609375
+                ],
+                "expected_hdr": [
+                  0.2735769759548563,
+                  0.13506842097264685,
+                  0.21454686756410965
+                ],
+                "bmp_rgb": [
+                  128,
+                  97,
+                  117
+                ],
+                "expected_bmp": [
+                  128,
+                  97,
+                  117
+                ],
+                "pixel": [
+                  311,
+                  190
+                ],
+                "depth": 0.8333333730697632,
+                "base": [
+                  0.4458333333333333,
+                  0.19652777777777777,
+                  0.33958333333333335
+                ],
+                "roughness": 0.5895833333333333,
+                "coverage": 0.4888888888888889,
+                "edge": 1.0,
+                "weight": 0.42777777777777776
+              },
+              "near-normal_black": {
+                "hdr": [
+                  0.07916259765625,
+                  0.1485595703125,
+                  0.287353515625
+                ],
+                "expected_hdr": [
+                  0.07919764187752179,
+                  0.1486448282192514,
+                  0.2875392009027107
+                ],
+                "bmp_rgb": [
+                  77,
+                  101,
+                  130
+                ],
+                "expected_bmp": [
+                  77,
+                  101,
+                  130
+                ],
+                "pixel": [
+                  358,
+                  167
+                ],
+                "depth": 0.8333333730697632,
+                "base": [
+                  0.125,
+                  0.25,
+                  0.5
+                ],
+                "roughness": 0.75,
+                "coverage": 0.0,
+                "edge": 1.0,
+                "weight": 0.0
+              },
+              "near-normal_filtered": {
+                "hdr": [
+                  0.08270263671875,
+                  0.11627197265625,
+                  0.3984375
+                ],
+                "expected_hdr": [
+                  0.08271254769378258,
+                  0.11637514218389589,
+                  0.3984078822672506
+                ],
+                "bmp_rgb": [
+                  78,
+                  91,
+                  145
+                ],
+                "expected_bmp": [
+                  78,
+                  91,
+                  145
+                ],
+                "pixel": [
+                  365,
+                  167
+                ],
+                "depth": 0.8333333730697632,
+                "base": [
+                  0.125,
+                  0.185590277777778,
+                  0.693229166666666
+                ],
+                "roughness": 0.685590277777778,
+                "coverage": 0.5888888888888868,
+                "edge": 1.0,
+                "weight": 0.515277777777776
+              },
+              "compiled_black": {
+                "hdr": [
+                  0.0794677734375,
+                  0.14892578125,
+                  0.28759765625
+                ],
+                "expected_hdr": [
+                  0.07948728486427406,
+                  0.1489344712063289,
+                  0.2878288438904387
+                ],
+                "bmp_rgb": [
+                  77,
+                  101,
+                  130
+                ],
+                "expected_bmp": [
+                  77,
+                  101,
+                  130
+                ],
+                "pixel": [
+                  326,
+                  172
+                ],
+                "depth": 0.8333333730697632,
+                "base": [
+                  0.125,
+                  0.25,
+                  0.5
+                ],
+                "roughness": 0.75,
+                "coverage": 0.0,
+                "edge": 1.0,
+                "weight": 0.0
+              },
+              "compiled_filtered": {
+                "hdr": [
+                  0.08709716796875,
+                  0.294189453125,
+                  0.2127685546875
+                ],
+                "expected_hdr": [
+                  0.0870858441179809,
+                  0.2938359051238064,
+                  0.21304567834588317
+                ],
+                "bmp_rgb": [
+                  80,
+                  131,
+                  116
+                ],
+                "expected_bmp": [
+                  80,
+                  131,
+                  116
+                ],
+                "pixel": [
+                  323,
+                  172
+                ],
+                "depth": 0.8333333730697632,
+                "base": [
+                  0.125,
+                  0.49713541666666594,
+                  0.3517187500000004
+                ],
+                "roughness": 0.6511458333333336,
+                "coverage": 0.48666666666666525,
+                "edge": 1.0,
+                "weight": 0.39541666666666553
+              }
+            }
+          },
+          "final": {
+            "sha256": "f405d3c68a6e1cd40ea9f3a1c57839f2412f29ce3304367df820a02f934971c3",
+            "tick": 7,
+            "samples": 14,
+            "max_abs_hdr_error": 0.0004694028616227808,
+            "max_abs_srgb_error": 0,
+            "witnesses": {
+              "caller_black": {
+                "hdr": [
+                  0.0791015625,
+                  0.1485595703125,
+                  0.287353515625
+                ],
+                "expected_hdr": [
+                  0.07915590132933752,
+                  0.14860308767076041,
+                  0.2874974603536061
+                ],
+                "bmp_rgb": [
+                  77,
+                  101,
+                  130
+                ],
+                "expected_bmp": [
+                  77,
+                  101,
+                  130
+                ],
+                "pixel": [
+                  279,
+                  195
+                ],
+                "depth": 0.8333333730697632,
+                "base": [
+                  0.125,
+                  0.25,
+                  0.5
+                ],
+                "roughness": 0.75,
+                "coverage": 0.0,
+                "edge": 1.0,
+                "weight": 0.0
+              },
+              "caller_filtered": {
+                "hdr": [
+                  0.27001953125,
+                  0.1317138671875,
+                  0.2113037109375
+                ],
+                "expected_hdr": [
+                  0.2703062512822315,
+                  0.13179769630082497,
+                  0.211276142891827
+                ],
+                "bmp_rgb": [
+                  127,
+                  96,
+                  116
+                ],
+                "expected_bmp": [
+                  127,
+                  96,
+                  116
+                ],
+                "pixel": [
+                  279,
+                  188
+                ],
+                "depth": 0.8333333730697632,
+                "base": [
+                  0.4458333333333334,
+                  0.19652777777777777,
+                  0.3395833333333333
+                ],
+                "roughness": 0.5895833333333333,
+                "coverage": 0.488888888888889,
+                "edge": 1.0,
+                "weight": 0.42777777777777787
+              },
+              "near-normal_black": {
+                "hdr": [
+                  0.07916259765625,
+                  0.1485595703125,
+                  0.287353515625
+                ],
+                "expected_hdr": [
+                  0.07919764187752179,
+                  0.1486448282192514,
+                  0.2875392009027107
+                ],
+                "bmp_rgb": [
+                  77,
+                  101,
+                  130
+                ],
+                "expected_bmp": [
+                  77,
+                  101,
+                  130
+                ],
+                "pixel": [
+                  358,
+                  167
+                ],
+                "depth": 0.8333333730697632,
+                "base": [
+                  0.125,
+                  0.25,
+                  0.5
+                ],
+                "roughness": 0.75,
+                "coverage": 0.0,
+                "edge": 1.0,
+                "weight": 0.0
+              },
+              "near-normal_filtered": {
+                "hdr": [
+                  0.08270263671875,
+                  0.11627197265625,
+                  0.3984375
+                ],
+                "expected_hdr": [
+                  0.08271254769378258,
+                  0.11637514218389589,
+                  0.3984078822672506
+                ],
+                "bmp_rgb": [
+                  78,
+                  91,
+                  145
+                ],
+                "expected_bmp": [
+                  78,
+                  91,
+                  145
+                ],
+                "pixel": [
+                  365,
+                  167
+                ],
+                "depth": 0.8333333730697632,
+                "base": [
+                  0.125,
+                  0.185590277777778,
+                  0.693229166666666
+                ],
+                "roughness": 0.685590277777778,
+                "coverage": 0.5888888888888868,
+                "edge": 1.0,
+                "weight": 0.515277777777776
+              },
+              "compiled_black": {
+                "hdr": [
+                  0.078857421875,
+                  0.1483154296875,
+                  0.287109375
+                ],
+                "expected_hdr": [
+                  0.07890449921440981,
+                  0.14835168554499692,
+                  0.2872460582061711
+                ],
+                "bmp_rgb": [
+                  76,
+                  101,
+                  130
+                ],
+                "expected_bmp": [
+                  76,
+                  101,
+                  130
+                ],
+                "pixel": [
+                  261,
+                  173
+                ],
+                "depth": 0.8333333730697632,
+                "base": [
+                  0.125,
+                  0.25,
+                  0.5
+                ],
+                "roughness": 0.75,
+                "coverage": 0.0,
+                "edge": 1.0,
+                "weight": 0.0
+              },
+              "compiled_filtered": {
+                "hdr": [
+                  0.08599853515625,
+                  0.32275390625,
+                  0.19384765625
+                ],
+                "expected_hdr": [
+                  0.08602018564638755,
+                  0.3228640273628819,
+                  0.19392375140824603
+                ],
+                "bmp_rgb": [
+                  80,
+                  135,
+                  112
+                ],
+                "expected_bmp": [
+                  80,
+                  135,
+                  112
+                ],
+                "pixel": [
+                  261,
+                  176
+                ],
+                "depth": 0.8333333730697632,
+                "base": [
+                  0.125,
+                  0.5513020833333324,
+                  0.31921875000000055
+                ],
+                "roughness": 0.629479166666667,
+                "coverage": 0.5933333333333316,
+                "edge": 1.0,
+                "weight": 0.4820833333333319
+              }
+            }
+          }
+        },
+        "maskless_export_descriptor_sha256": "44a4e64afbd06030225a973e023c321115a3703c4350338e1bbfde8833bf1697"
+      },
+      {
+        "report_sha256": "5fff20a654f7913b21649142d3399932e0a5bcc3f0d21cbe598c5ce1f1714011",
+        "earlier_failed_report_sha256": [],
+        "backend": "native_aot",
+        "gameplay_artifact": {
+          "descriptor_sha256": "40725992c1e010ce6b370b86263a23d01866e2fe9b1dad441589116f1330c99c",
+          "files": [
+            {
+              "path": "notices/DOTNET-NATIVEAOT-10.0.15-LICENSE.txt",
+              "size": 1139,
+              "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+              "role": "notice"
+            },
+            {
+              "path": "notices/DOTNET-NATIVEAOT-10.0.15-THIRD-PARTY-NOTICES.txt",
+              "size": 78041,
+              "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+              "role": "notice"
+            },
+            {
+              "path": "notices/DOTNET-RUNTIME-10.0.15-LICENSE.txt",
+              "size": 1139,
+              "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+              "role": "notice"
+            },
+            {
+              "path": "notices/DOTNET-RUNTIME-10.0.15-THIRD-PARTY-NOTICES.txt",
+              "size": 78041,
+              "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+              "role": "notice"
+            },
+            {
+              "path": "notices/POIMA-LICENSE.txt",
+              "size": 11358,
+              "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+              "role": "notice"
+            },
+            {
+              "path": "notices/POIMA-THIRD-PARTY-NOTICES.md",
+              "size": 23949,
+              "sha256": "7d364ecf908a603cdc58efecf0a19e8d20b1a51ee0179ce3b9885d05327664a7",
+              "role": "notice"
+            },
+            {
+              "path": "Poima.NativeGame.dll",
+              "size": 1363456,
+              "sha256": "b285e64a62604e67a83b7fd308da8d5e7808ded4a646de9f4b7393232f686deb",
+              "role": "library"
+            }
+          ]
+        },
+        "saved_frames": [
+          {
+            "center_m": [
+              -0.25,
+              0.1875,
+              0.5
+            ],
+            "edge_fraction": 0.25,
+            "half_depth_m": 0.125,
+            "half_extent_m": [
+              0.25,
+              0.0625
+            ],
+            "id": "1",
+            "linear_rgb": [
+              0.875,
+              0.125,
+              0.125
+            ],
+            "mask_sha256": "0e1a2a1915bd22a35b00334c323f308175729c5e7fc35b950e1dce567df2395a",
+            "minimum_normal_dot": 0.800000011920929,
+            "normal": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "opacity": 0.875,
+            "profile": "00000000000000000000000000000082",
+            "receiver": "00000000000000000000000000000064",
+            "roughness": 0.375,
+            "tangent": [
+              2.220446049250313e-16,
+              -1.0,
+              0.0
+            ],
+            "tick": 1
+          },
+          {
+            "center_m": [
+              -0.25,
+              0.25,
+              0.5
+            ],
+            "edge_fraction": 0.25,
+            "half_depth_m": 0.125,
+            "half_extent_m": [
+              0.25,
+              0.0625
+            ],
+            "id": "2",
+            "linear_rgb": [
+              0.125,
+              0.125,
+              0.875
+            ],
+            "mask_sha256": "0e1a2a1915bd22a35b00334c323f308175729c5e7fc35b950e1dce567df2395a",
+            "minimum_normal_dot": 0.800000011920929,
+            "normal": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "opacity": 0.875,
+            "profile": "00000000000000000000000000000083",
+            "receiver": "00000000000000000000000000000065",
+            "roughness": 0.625,
+            "tangent": [
+              1.0,
+              0.0,
+              0.0
+            ],
+            "tick": 1
+          },
+          {
+            "center_m": [
+              0.25,
+              -0.18750609457492828,
+              0.5
+            ],
+            "edge_fraction": 0.25,
+            "half_depth_m": 0.125,
+            "half_extent_m": [
+              0.25,
+              0.0625
+            ],
+            "id": "3",
+            "linear_rgb": [
+              0.125,
+              0.875,
+              0.125
+            ],
+            "mask_sha256": "aa2a60ce3f52542c1f30467483c685b78d0f9cc80bc033cf3517efac8250cc72",
+            "minimum_normal_dot": 0.800000011920929,
+            "normal": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "opacity": 0.8125,
+            "profile": "00000000000000000000000000000084",
+            "receiver": "00000000000000000000000000000064",
+            "roughness": 0.5,
+            "tangent": [
+              0.5999996066093445,
+              -0.8000003099441528,
+              0.0
+            ],
+            "tick": 1
+          },
+          {
+            "center_m": [
+              0.25,
+              -0.25,
+              0.5
+            ],
+            "edge_fraction": 0.25,
+            "half_depth_m": 0.125,
+            "half_extent_m": [
+              0.1875,
+              0.0625
+            ],
+            "id": "4",
+            "linear_rgb": [
+              0.875,
+              0.625,
+              0.125
+            ],
+            "minimum_normal_dot": 0.800000011920929,
+            "normal": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "opacity": 1.0,
+            "receiver": "00000000000000000000000000000065",
+            "roughness": 0.375,
+            "tangent": [
+              1.0,
+              0.0,
+              0.0
+            ],
+            "tick": 1
+          }
+        ],
+        "archives": {
+          "checkpoint": {
+            "tick": 1,
+            "bytes": 11558,
+            "sha256": "03871543862c627b453be102c6dfe6f2c304ddd25f61cf19460e2cafa8a6e6ab"
+          },
+          "final": {
+            "tick": 7,
+            "bytes": 10462,
+            "sha256": "d5b5e999271c691f85a43abcb19905afd62256555e39798c8a6fada68d9abcb4"
+          },
+          "restored-checkpoint": {
+            "tick": 1,
+            "bytes": 11558,
+            "sha256": "03871543862c627b453be102c6dfe6f2c304ddd25f61cf19460e2cafa8a6e6ab"
+          },
+          "restored-final": {
+            "tick": 7,
+            "bytes": 10462,
+            "sha256": "d5b5e999271c691f85a43abcb19905afd62256555e39798c8a6fada68d9abcb4"
+          }
+        },
+        "catalog": {
+          "profiles": {
+            "00000000000000000000000000000082": "0e1a2a1915bd22a35b00334c323f308175729c5e7fc35b950e1dce567df2395a",
+            "00000000000000000000000000000083": "0e1a2a1915bd22a35b00334c323f308175729c5e7fc35b950e1dce567df2395a",
+            "00000000000000000000000000000084": "aa2a60ce3f52542c1f30467483c685b78d0f9cc80bc033cf3517efac8250cc72"
+          },
+          "assets": [
+            "0e1a2a1915bd22a35b00334c323f308175729c5e7fc35b950e1dce567df2395a",
+            "aa2a60ce3f52542c1f30467483c685b78d0f9cc80bc033cf3517efac8250cc72"
+          ],
+          "edges": [
+            {
+              "asset": "0e1a2a1915bd22a35b00334c323f308175729c5e7fc35b950e1dce567df2395a",
+              "component": "surface_mark_profiles",
+              "kind": "image",
+              "owner": {
+                "id": "43cd1d72d95298e9efb1a7e38c722f7a",
+                "kind": "world"
+              },
+              "path": "/00000000000000000000000000000082/mask",
+              "subresource": null
+            },
+            {
+              "asset": "0e1a2a1915bd22a35b00334c323f308175729c5e7fc35b950e1dce567df2395a",
+              "component": "surface_mark_profiles",
+              "kind": "image",
+              "owner": {
+                "id": "43cd1d72d95298e9efb1a7e38c722f7a",
+                "kind": "world"
+              },
+              "path": "/00000000000000000000000000000083/mask",
+              "subresource": null
+            },
+            {
+              "asset": "aa2a60ce3f52542c1f30467483c685b78d0f9cc80bc033cf3517efac8250cc72",
+              "component": "surface_mark_profiles",
+              "kind": "image",
+              "owner": {
+                "id": "43cd1d72d95298e9efb1a7e38c722f7a",
+                "kind": "world"
+              },
+              "path": "/00000000000000000000000000000084/mask",
+              "subresource": null
+            }
+          ],
+          "first_mask_red": [
+            [
+              0,
+              0,
+              255,
+              255
+            ],
+            [
+              0,
+              0,
+              255,
+              255
+            ],
+            [
+              255,
+              255,
+              0,
+              0
+            ]
+          ],
+          "second_mask_red": [
+            [
+              255,
+              255,
+              0
+            ],
+            [
+              0,
+              0,
+              255
+            ]
+          ]
+        },
+        "authoring_refusals": [
+          "missing",
+          "srgb",
+          "too-many-profiles",
+          "too-wide"
+        ],
+        "gpu": "AMD Radeon(TM) Graphics",
+        "lighting_path": "deferred",
+        "bundle": {
+          "files": 68,
+          "manifest_sha256": "3f35464245ca236294116b0a1f6a0d1d514062569b7bbe5c1bfeaa2b55c1aa18",
+          "masks": {
+            "content/world.json.assets/0e1a2a1915bd22a35b00334c323f308175729c5e7fc35b950e1dce567df2395a.pimage": "0e1a2a1915bd22a35b00334c323f308175729c5e7fc35b950e1dce567df2395a",
+            "content/world.json.assets/aa2a60ce3f52542c1f30467483c685b78d0f9cc80bc033cf3517efac8250cc72.pimage": "aa2a60ce3f52542c1f30467483c685b78d0f9cc80bc033cf3517efac8250cc72"
+          }
+        },
+        "capture_count": 4,
+        "captures": {
+          "checkpoint": {
+            "sha256": "d20d81ebe4fb74166b25f19e134eb758d84fa62c4124a387e55d4149968568d2",
+            "tick": 1,
+            "samples": 14,
+            "max_abs_hdr_error": 0.0004694028616227808,
+            "max_abs_srgb_error": 0,
+            "witnesses": {
+              "caller_black": {
+                "hdr": [
+                  0.07940673828125,
+                  0.1488037109375,
+                  0.28759765625
+                ],
+                "expected_hdr": [
+                  0.07943684287009085,
+                  0.14888402921214558,
+                  0.28777840189625503
+                ],
+                "bmp_rgb": [
+                  77,
+                  101,
+                  130
+                ],
+                "expected_bmp": [
+                  77,
+                  101,
+                  130
+                ],
+                "pixel": [
+                  304,
+                  190
+                ],
+                "depth": 0.8333333730697632,
+                "base": [
+                  0.125,
+                  0.25,
+                  0.5
+                ],
+                "roughness": 0.75,
+                "coverage": 0.0,
+                "edge": 1.0,
+                "weight": 0.0
+              },
+              "caller_filtered": {
+                "hdr": [
+                  0.273193359375,
+                  0.135009765625,
+                  0.2144775390625
+                ],
+                "expected_hdr": [
+                  0.2735769759548563,
+                  0.13506842097264685,
+                  0.21454686756410965
+                ],
+                "bmp_rgb": [
+                  128,
+                  97,
+                  117
+                ],
+                "expected_bmp": [
+                  128,
+                  97,
+                  117
+                ],
+                "pixel": [
+                  311,
+                  190
+                ],
+                "depth": 0.8333333730697632,
+                "base": [
+                  0.4458333333333333,
+                  0.19652777777777777,
+                  0.33958333333333335
+                ],
+                "roughness": 0.5895833333333333,
+                "coverage": 0.4888888888888889,
+                "edge": 1.0,
+                "weight": 0.42777777777777776
+              },
+              "near-normal_black": {
+                "hdr": [
+                  0.07916259765625,
+                  0.1485595703125,
+                  0.287353515625
+                ],
+                "expected_hdr": [
+                  0.07919764187752179,
+                  0.1486448282192514,
+                  0.2875392009027107
+                ],
+                "bmp_rgb": [
+                  77,
+                  101,
+                  130
+                ],
+                "expected_bmp": [
+                  77,
+                  101,
+                  130
+                ],
+                "pixel": [
+                  358,
+                  167
+                ],
+                "depth": 0.8333333730697632,
+                "base": [
+                  0.125,
+                  0.25,
+                  0.5
+                ],
+                "roughness": 0.75,
+                "coverage": 0.0,
+                "edge": 1.0,
+                "weight": 0.0
+              },
+              "near-normal_filtered": {
+                "hdr": [
+                  0.08270263671875,
+                  0.11627197265625,
+                  0.3984375
+                ],
+                "expected_hdr": [
+                  0.08271254769378258,
+                  0.11637514218389589,
+                  0.3984078822672506
+                ],
+                "bmp_rgb": [
+                  78,
+                  91,
+                  145
+                ],
+                "expected_bmp": [
+                  78,
+                  91,
+                  145
+                ],
+                "pixel": [
+                  365,
+                  167
+                ],
+                "depth": 0.8333333730697632,
+                "base": [
+                  0.125,
+                  0.185590277777778,
+                  0.693229166666666
+                ],
+                "roughness": 0.685590277777778,
+                "coverage": 0.5888888888888868,
+                "edge": 1.0,
+                "weight": 0.515277777777776
+              },
+              "compiled_black": {
+                "hdr": [
+                  0.0794677734375,
+                  0.14892578125,
+                  0.28759765625
+                ],
+                "expected_hdr": [
+                  0.07948728486427406,
+                  0.1489344712063289,
+                  0.2878288438904387
+                ],
+                "bmp_rgb": [
+                  77,
+                  101,
+                  130
+                ],
+                "expected_bmp": [
+                  77,
+                  101,
+                  130
+                ],
+                "pixel": [
+                  326,
+                  172
+                ],
+                "depth": 0.8333333730697632,
+                "base": [
+                  0.125,
+                  0.25,
+                  0.5
+                ],
+                "roughness": 0.75,
+                "coverage": 0.0,
+                "edge": 1.0,
+                "weight": 0.0
+              },
+              "compiled_filtered": {
+                "hdr": [
+                  0.087158203125,
+                  0.294189453125,
+                  0.2127685546875
+                ],
+                "expected_hdr": [
+                  0.0870858441179809,
+                  0.2938359051238064,
+                  0.21304567834588317
+                ],
+                "bmp_rgb": [
+                  80,
+                  131,
+                  116
+                ],
+                "expected_bmp": [
+                  80,
+                  131,
+                  116
+                ],
+                "pixel": [
+                  323,
+                  172
+                ],
+                "depth": 0.8333333730697632,
+                "base": [
+                  0.125,
+                  0.49713541666666594,
+                  0.3517187500000004
+                ],
+                "roughness": 0.6511458333333336,
+                "coverage": 0.48666666666666525,
+                "edge": 1.0,
+                "weight": 0.39541666666666553
+              }
+            }
+          },
+          "final": {
+            "sha256": "d76a9f2958b9cd209a040f87446dd7dab8499df0165bc9e2ff3a8246b3240fe7",
+            "tick": 7,
+            "samples": 14,
+            "max_abs_hdr_error": 0.0004694028616227808,
+            "max_abs_srgb_error": 0,
+            "witnesses": {
+              "caller_black": {
+                "hdr": [
+                  0.0791015625,
+                  0.1485595703125,
+                  0.287353515625
+                ],
+                "expected_hdr": [
+                  0.07915590132933752,
+                  0.14860308767076041,
+                  0.2874974603536061
+                ],
+                "bmp_rgb": [
+                  77,
+                  101,
+                  130
+                ],
+                "expected_bmp": [
+                  77,
+                  101,
+                  130
+                ],
+                "pixel": [
+                  279,
+                  195
+                ],
+                "depth": 0.8333333730697632,
+                "base": [
+                  0.125,
+                  0.25,
+                  0.5
+                ],
+                "roughness": 0.75,
+                "coverage": 0.0,
+                "edge": 1.0,
+                "weight": 0.0
+              },
+              "caller_filtered": {
+                "hdr": [
+                  0.27001953125,
+                  0.1317138671875,
+                  0.2113037109375
+                ],
+                "expected_hdr": [
+                  0.2703062512822315,
+                  0.13179769630082497,
+                  0.211276142891827
+                ],
+                "bmp_rgb": [
+                  127,
+                  96,
+                  116
+                ],
+                "expected_bmp": [
+                  127,
+                  96,
+                  116
+                ],
+                "pixel": [
+                  279,
+                  188
+                ],
+                "depth": 0.8333333730697632,
+                "base": [
+                  0.4458333333333334,
+                  0.19652777777777777,
+                  0.3395833333333333
+                ],
+                "roughness": 0.5895833333333333,
+                "coverage": 0.488888888888889,
+                "edge": 1.0,
+                "weight": 0.42777777777777787
+              },
+              "near-normal_black": {
+                "hdr": [
+                  0.07916259765625,
+                  0.1485595703125,
+                  0.287353515625
+                ],
+                "expected_hdr": [
+                  0.07919764187752179,
+                  0.1486448282192514,
+                  0.2875392009027107
+                ],
+                "bmp_rgb": [
+                  77,
+                  101,
+                  130
+                ],
+                "expected_bmp": [
+                  77,
+                  101,
+                  130
+                ],
+                "pixel": [
+                  358,
+                  167
+                ],
+                "depth": 0.8333333730697632,
+                "base": [
+                  0.125,
+                  0.25,
+                  0.5
+                ],
+                "roughness": 0.75,
+                "coverage": 0.0,
+                "edge": 1.0,
+                "weight": 0.0
+              },
+              "near-normal_filtered": {
+                "hdr": [
+                  0.08270263671875,
+                  0.11627197265625,
+                  0.3984375
+                ],
+                "expected_hdr": [
+                  0.08271254769378258,
+                  0.11637514218389589,
+                  0.3984078822672506
+                ],
+                "bmp_rgb": [
+                  78,
+                  91,
+                  145
+                ],
+                "expected_bmp": [
+                  78,
+                  91,
+                  145
+                ],
+                "pixel": [
+                  365,
+                  167
+                ],
+                "depth": 0.8333333730697632,
+                "base": [
+                  0.125,
+                  0.185590277777778,
+                  0.693229166666666
+                ],
+                "roughness": 0.685590277777778,
+                "coverage": 0.5888888888888868,
+                "edge": 1.0,
+                "weight": 0.515277777777776
+              },
+              "compiled_black": {
+                "hdr": [
+                  0.078857421875,
+                  0.1483154296875,
+                  0.287109375
+                ],
+                "expected_hdr": [
+                  0.07890449921440981,
+                  0.14835168554499692,
+                  0.2872460582061711
+                ],
+                "bmp_rgb": [
+                  76,
+                  101,
+                  130
+                ],
+                "expected_bmp": [
+                  76,
+                  101,
+                  130
+                ],
+                "pixel": [
+                  261,
+                  173
+                ],
+                "depth": 0.8333333730697632,
+                "base": [
+                  0.125,
+                  0.25,
+                  0.5
+                ],
+                "roughness": 0.75,
+                "coverage": 0.0,
+                "edge": 1.0,
+                "weight": 0.0
+              },
+              "compiled_filtered": {
+                "hdr": [
+                  0.08599853515625,
+                  0.32275390625,
+                  0.19384765625
+                ],
+                "expected_hdr": [
+                  0.08602018564638755,
+                  0.3228640273628819,
+                  0.19392375140824603
+                ],
+                "bmp_rgb": [
+                  80,
+                  135,
+                  112
+                ],
+                "expected_bmp": [
+                  80,
+                  135,
+                  112
+                ],
+                "pixel": [
+                  261,
+                  176
+                ],
+                "depth": 0.8333333730697632,
+                "base": [
+                  0.125,
+                  0.5513020833333324,
+                  0.31921875000000055
+                ],
+                "roughness": 0.629479166666667,
+                "coverage": 0.5933333333333316,
+                "edge": 1.0,
+                "weight": 0.4820833333333319
+              }
+            }
+          }
+        },
+        "maskless_export_descriptor_sha256": "44a4e64afbd06030225a973e023c321115a3703c4350338e1bbfde8833bf1697"
+      },
+      {
+        "report_sha256": "91036b7af2a4f40bde1415f3d3859a08353f27ae327f5ab0c4d3594c2e2c7225",
+        "earlier_failed_report_sha256": [],
+        "backend": "native_aot",
+        "gameplay_artifact": {
+          "descriptor_sha256": "40725992c1e010ce6b370b86263a23d01866e2fe9b1dad441589116f1330c99c",
+          "files": [
+            {
+              "path": "notices/DOTNET-NATIVEAOT-10.0.15-LICENSE.txt",
+              "size": 1139,
+              "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+              "role": "notice"
+            },
+            {
+              "path": "notices/DOTNET-NATIVEAOT-10.0.15-THIRD-PARTY-NOTICES.txt",
+              "size": 78041,
+              "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+              "role": "notice"
+            },
+            {
+              "path": "notices/DOTNET-RUNTIME-10.0.15-LICENSE.txt",
+              "size": 1139,
+              "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+              "role": "notice"
+            },
+            {
+              "path": "notices/DOTNET-RUNTIME-10.0.15-THIRD-PARTY-NOTICES.txt",
+              "size": 78041,
+              "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+              "role": "notice"
+            },
+            {
+              "path": "notices/POIMA-LICENSE.txt",
+              "size": 11358,
+              "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+              "role": "notice"
+            },
+            {
+              "path": "notices/POIMA-THIRD-PARTY-NOTICES.md",
+              "size": 23949,
+              "sha256": "7d364ecf908a603cdc58efecf0a19e8d20b1a51ee0179ce3b9885d05327664a7",
+              "role": "notice"
+            },
+            {
+              "path": "Poima.NativeGame.dll",
+              "size": 1363456,
+              "sha256": "b285e64a62604e67a83b7fd308da8d5e7808ded4a646de9f4b7393232f686deb",
+              "role": "library"
+            }
+          ]
+        },
+        "saved_frames": [
+          {
+            "center_m": [
+              -0.25,
+              0.1875,
+              0.5
+            ],
+            "edge_fraction": 0.25,
+            "half_depth_m": 0.125,
+            "half_extent_m": [
+              0.25,
+              0.0625
+            ],
+            "id": "1",
+            "linear_rgb": [
+              0.875,
+              0.125,
+              0.125
+            ],
+            "mask_sha256": "0e1a2a1915bd22a35b00334c323f308175729c5e7fc35b950e1dce567df2395a",
+            "minimum_normal_dot": 0.800000011920929,
+            "normal": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "opacity": 0.875,
+            "profile": "00000000000000000000000000000082",
+            "receiver": "00000000000000000000000000000064",
+            "roughness": 0.375,
+            "tangent": [
+              2.220446049250313e-16,
+              -1.0,
+              0.0
+            ],
+            "tick": 1
+          },
+          {
+            "center_m": [
+              -0.25,
+              0.25,
+              0.5
+            ],
+            "edge_fraction": 0.25,
+            "half_depth_m": 0.125,
+            "half_extent_m": [
+              0.25,
+              0.0625
+            ],
+            "id": "2",
+            "linear_rgb": [
+              0.125,
+              0.125,
+              0.875
+            ],
+            "mask_sha256": "0e1a2a1915bd22a35b00334c323f308175729c5e7fc35b950e1dce567df2395a",
+            "minimum_normal_dot": 0.800000011920929,
+            "normal": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "opacity": 0.875,
+            "profile": "00000000000000000000000000000083",
+            "receiver": "00000000000000000000000000000065",
+            "roughness": 0.625,
+            "tangent": [
+              1.0,
+              0.0,
+              0.0
+            ],
+            "tick": 1
+          },
+          {
+            "center_m": [
+              0.25,
+              -0.18750609457492828,
+              0.5
+            ],
+            "edge_fraction": 0.25,
+            "half_depth_m": 0.125,
+            "half_extent_m": [
+              0.25,
+              0.0625
+            ],
+            "id": "3",
+            "linear_rgb": [
+              0.125,
+              0.875,
+              0.125
+            ],
+            "mask_sha256": "aa2a60ce3f52542c1f30467483c685b78d0f9cc80bc033cf3517efac8250cc72",
+            "minimum_normal_dot": 0.800000011920929,
+            "normal": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "opacity": 0.8125,
+            "profile": "00000000000000000000000000000084",
+            "receiver": "00000000000000000000000000000064",
+            "roughness": 0.5,
+            "tangent": [
+              0.5999996066093445,
+              -0.8000003099441528,
+              0.0
+            ],
+            "tick": 1
+          },
+          {
+            "center_m": [
+              0.25,
+              -0.25,
+              0.5
+            ],
+            "edge_fraction": 0.25,
+            "half_depth_m": 0.125,
+            "half_extent_m": [
+              0.1875,
+              0.0625
+            ],
+            "id": "4",
+            "linear_rgb": [
+              0.875,
+              0.625,
+              0.125
+            ],
+            "minimum_normal_dot": 0.800000011920929,
+            "normal": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "opacity": 1.0,
+            "receiver": "00000000000000000000000000000065",
+            "roughness": 0.375,
+            "tangent": [
+              1.0,
+              0.0,
+              0.0
+            ],
+            "tick": 1
+          }
+        ],
+        "archives": {
+          "checkpoint": {
+            "tick": 1,
+            "bytes": 11558,
+            "sha256": "000fee8baea84fa0112fd93d913b5fceab229c7840a07dd91220c25910e130d3"
+          },
+          "final": {
+            "tick": 7,
+            "bytes": 10462,
+            "sha256": "111d2c24ed3392781516ae73c186add261469086c83021c2d7af5118eda86181"
+          },
+          "restored-checkpoint": {
+            "tick": 1,
+            "bytes": 11558,
+            "sha256": "000fee8baea84fa0112fd93d913b5fceab229c7840a07dd91220c25910e130d3"
+          },
+          "restored-final": {
+            "tick": 7,
+            "bytes": 10462,
+            "sha256": "111d2c24ed3392781516ae73c186add261469086c83021c2d7af5118eda86181"
+          }
+        },
+        "catalog": {
+          "profiles": {
+            "00000000000000000000000000000082": "0e1a2a1915bd22a35b00334c323f308175729c5e7fc35b950e1dce567df2395a",
+            "00000000000000000000000000000083": "0e1a2a1915bd22a35b00334c323f308175729c5e7fc35b950e1dce567df2395a",
+            "00000000000000000000000000000084": "aa2a60ce3f52542c1f30467483c685b78d0f9cc80bc033cf3517efac8250cc72"
+          },
+          "assets": [
+            "0e1a2a1915bd22a35b00334c323f308175729c5e7fc35b950e1dce567df2395a",
+            "aa2a60ce3f52542c1f30467483c685b78d0f9cc80bc033cf3517efac8250cc72"
+          ],
+          "edges": [
+            {
+              "asset": "0e1a2a1915bd22a35b00334c323f308175729c5e7fc35b950e1dce567df2395a",
+              "component": "surface_mark_profiles",
+              "kind": "image",
+              "owner": {
+                "id": "122daaaca216781e83b4015177aaeeee",
+                "kind": "world"
+              },
+              "path": "/00000000000000000000000000000082/mask",
+              "subresource": null
+            },
+            {
+              "asset": "0e1a2a1915bd22a35b00334c323f308175729c5e7fc35b950e1dce567df2395a",
+              "component": "surface_mark_profiles",
+              "kind": "image",
+              "owner": {
+                "id": "122daaaca216781e83b4015177aaeeee",
+                "kind": "world"
+              },
+              "path": "/00000000000000000000000000000083/mask",
+              "subresource": null
+            },
+            {
+              "asset": "aa2a60ce3f52542c1f30467483c685b78d0f9cc80bc033cf3517efac8250cc72",
+              "component": "surface_mark_profiles",
+              "kind": "image",
+              "owner": {
+                "id": "122daaaca216781e83b4015177aaeeee",
+                "kind": "world"
+              },
+              "path": "/00000000000000000000000000000084/mask",
+              "subresource": null
+            }
+          ],
+          "first_mask_red": [
+            [
+              0,
+              0,
+              255,
+              255
+            ],
+            [
+              0,
+              0,
+              255,
+              255
+            ],
+            [
+              255,
+              255,
+              0,
+              0
+            ]
+          ],
+          "second_mask_red": [
+            [
+              255,
+              255,
+              0
+            ],
+            [
+              0,
+              0,
+              255
+            ]
+          ]
+        },
+        "authoring_refusals": [
+          "missing",
+          "srgb",
+          "too-many-profiles",
+          "too-wide"
+        ],
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "lighting_path": "deferred",
+        "bundle": {
+          "files": 68,
+          "manifest_sha256": "eff6a55f2b919c7c31940d76f3a31723b258c5b8ad93387aef29a601262f0eb2",
+          "masks": {
+            "content/world.json.assets/0e1a2a1915bd22a35b00334c323f308175729c5e7fc35b950e1dce567df2395a.pimage": "0e1a2a1915bd22a35b00334c323f308175729c5e7fc35b950e1dce567df2395a",
+            "content/world.json.assets/aa2a60ce3f52542c1f30467483c685b78d0f9cc80bc033cf3517efac8250cc72.pimage": "aa2a60ce3f52542c1f30467483c685b78d0f9cc80bc033cf3517efac8250cc72"
+          }
+        },
+        "capture_count": 4,
+        "captures": {
+          "checkpoint": {
+            "sha256": "7f44bf0186be34a785a6c581abbdfe3262c25081fb584955a8b9d5fdb81fc265",
+            "tick": 1,
+            "samples": 14,
+            "max_abs_hdr_error": 0.0004694028616227808,
+            "max_abs_srgb_error": 0,
+            "witnesses": {
+              "caller_black": {
+                "hdr": [
+                  0.07940673828125,
+                  0.1488037109375,
+                  0.28759765625
+                ],
+                "expected_hdr": [
+                  0.07943684287009085,
+                  0.14888402921214558,
+                  0.28777840189625503
+                ],
+                "bmp_rgb": [
+                  77,
+                  101,
+                  130
+                ],
+                "expected_bmp": [
+                  77,
+                  101,
+                  130
+                ],
+                "pixel": [
+                  304,
+                  190
+                ],
+                "depth": 0.8333333730697632,
+                "base": [
+                  0.125,
+                  0.25,
+                  0.5
+                ],
+                "roughness": 0.75,
+                "coverage": 0.0,
+                "edge": 1.0,
+                "weight": 0.0
+              },
+              "caller_filtered": {
+                "hdr": [
+                  0.273193359375,
+                  0.135009765625,
+                  0.2144775390625
+                ],
+                "expected_hdr": [
+                  0.2735769759548563,
+                  0.13506842097264685,
+                  0.21454686756410965
+                ],
+                "bmp_rgb": [
+                  128,
+                  97,
+                  117
+                ],
+                "expected_bmp": [
+                  128,
+                  97,
+                  117
+                ],
+                "pixel": [
+                  311,
+                  190
+                ],
+                "depth": 0.8333333730697632,
+                "base": [
+                  0.4458333333333333,
+                  0.19652777777777777,
+                  0.33958333333333335
+                ],
+                "roughness": 0.5895833333333333,
+                "coverage": 0.4888888888888889,
+                "edge": 1.0,
+                "weight": 0.42777777777777776
+              },
+              "near-normal_black": {
+                "hdr": [
+                  0.07916259765625,
+                  0.1485595703125,
+                  0.287353515625
+                ],
+                "expected_hdr": [
+                  0.07919764187752179,
+                  0.1486448282192514,
+                  0.2875392009027107
+                ],
+                "bmp_rgb": [
+                  77,
+                  101,
+                  130
+                ],
+                "expected_bmp": [
+                  77,
+                  101,
+                  130
+                ],
+                "pixel": [
+                  358,
+                  167
+                ],
+                "depth": 0.8333333730697632,
+                "base": [
+                  0.125,
+                  0.25,
+                  0.5
+                ],
+                "roughness": 0.75,
+                "coverage": 0.0,
+                "edge": 1.0,
+                "weight": 0.0
+              },
+              "near-normal_filtered": {
+                "hdr": [
+                  0.08270263671875,
+                  0.11627197265625,
+                  0.3984375
+                ],
+                "expected_hdr": [
+                  0.08271254769378258,
+                  0.11637514218389589,
+                  0.3984078822672506
+                ],
+                "bmp_rgb": [
+                  78,
+                  91,
+                  145
+                ],
+                "expected_bmp": [
+                  78,
+                  91,
+                  145
+                ],
+                "pixel": [
+                  365,
+                  167
+                ],
+                "depth": 0.8333333730697632,
+                "base": [
+                  0.125,
+                  0.185590277777778,
+                  0.693229166666666
+                ],
+                "roughness": 0.685590277777778,
+                "coverage": 0.5888888888888868,
+                "edge": 1.0,
+                "weight": 0.515277777777776
+              },
+              "compiled_black": {
+                "hdr": [
+                  0.0794677734375,
+                  0.14892578125,
+                  0.28759765625
+                ],
+                "expected_hdr": [
+                  0.07948728486427406,
+                  0.1489344712063289,
+                  0.2878288438904387
+                ],
+                "bmp_rgb": [
+                  77,
+                  101,
+                  130
+                ],
+                "expected_bmp": [
+                  77,
+                  101,
+                  130
+                ],
+                "pixel": [
+                  326,
+                  172
+                ],
+                "depth": 0.8333333730697632,
+                "base": [
+                  0.125,
+                  0.25,
+                  0.5
+                ],
+                "roughness": 0.75,
+                "coverage": 0.0,
+                "edge": 1.0,
+                "weight": 0.0
+              },
+              "compiled_filtered": {
+                "hdr": [
+                  0.087158203125,
+                  0.294189453125,
+                  0.2127685546875
+                ],
+                "expected_hdr": [
+                  0.0870858441179809,
+                  0.2938359051238064,
+                  0.21304567834588317
+                ],
+                "bmp_rgb": [
+                  80,
+                  131,
+                  116
+                ],
+                "expected_bmp": [
+                  80,
+                  131,
+                  116
+                ],
+                "pixel": [
+                  323,
+                  172
+                ],
+                "depth": 0.8333333730697632,
+                "base": [
+                  0.125,
+                  0.49713541666666594,
+                  0.3517187500000004
+                ],
+                "roughness": 0.6511458333333336,
+                "coverage": 0.48666666666666525,
+                "edge": 1.0,
+                "weight": 0.39541666666666553
+              }
+            }
+          },
+          "final": {
+            "sha256": "f50c410b5fefb8d88180ea9f49806eec833e73be25fef05aab333756c63272b9",
+            "tick": 7,
+            "samples": 14,
+            "max_abs_hdr_error": 0.0004694028616227808,
+            "max_abs_srgb_error": 0,
+            "witnesses": {
+              "caller_black": {
+                "hdr": [
+                  0.0791015625,
+                  0.1485595703125,
+                  0.287353515625
+                ],
+                "expected_hdr": [
+                  0.07915590132933752,
+                  0.14860308767076041,
+                  0.2874974603536061
+                ],
+                "bmp_rgb": [
+                  77,
+                  101,
+                  130
+                ],
+                "expected_bmp": [
+                  77,
+                  101,
+                  130
+                ],
+                "pixel": [
+                  279,
+                  195
+                ],
+                "depth": 0.8333333730697632,
+                "base": [
+                  0.125,
+                  0.25,
+                  0.5
+                ],
+                "roughness": 0.75,
+                "coverage": 0.0,
+                "edge": 1.0,
+                "weight": 0.0
+              },
+              "caller_filtered": {
+                "hdr": [
+                  0.27001953125,
+                  0.1317138671875,
+                  0.2113037109375
+                ],
+                "expected_hdr": [
+                  0.2703062512822315,
+                  0.13179769630082497,
+                  0.211276142891827
+                ],
+                "bmp_rgb": [
+                  127,
+                  96,
+                  116
+                ],
+                "expected_bmp": [
+                  127,
+                  96,
+                  116
+                ],
+                "pixel": [
+                  279,
+                  188
+                ],
+                "depth": 0.8333333730697632,
+                "base": [
+                  0.4458333333333334,
+                  0.19652777777777777,
+                  0.3395833333333333
+                ],
+                "roughness": 0.5895833333333333,
+                "coverage": 0.488888888888889,
+                "edge": 1.0,
+                "weight": 0.42777777777777787
+              },
+              "near-normal_black": {
+                "hdr": [
+                  0.07916259765625,
+                  0.1485595703125,
+                  0.287353515625
+                ],
+                "expected_hdr": [
+                  0.07919764187752179,
+                  0.1486448282192514,
+                  0.2875392009027107
+                ],
+                "bmp_rgb": [
+                  77,
+                  101,
+                  130
+                ],
+                "expected_bmp": [
+                  77,
+                  101,
+                  130
+                ],
+                "pixel": [
+                  358,
+                  167
+                ],
+                "depth": 0.8333333730697632,
+                "base": [
+                  0.125,
+                  0.25,
+                  0.5
+                ],
+                "roughness": 0.75,
+                "coverage": 0.0,
+                "edge": 1.0,
+                "weight": 0.0
+              },
+              "near-normal_filtered": {
+                "hdr": [
+                  0.08270263671875,
+                  0.11627197265625,
+                  0.3984375
+                ],
+                "expected_hdr": [
+                  0.08271254769378258,
+                  0.11637514218389589,
+                  0.3984078822672506
+                ],
+                "bmp_rgb": [
+                  78,
+                  91,
+                  145
+                ],
+                "expected_bmp": [
+                  78,
+                  91,
+                  145
+                ],
+                "pixel": [
+                  365,
+                  167
+                ],
+                "depth": 0.8333333730697632,
+                "base": [
+                  0.125,
+                  0.185590277777778,
+                  0.693229166666666
+                ],
+                "roughness": 0.685590277777778,
+                "coverage": 0.5888888888888868,
+                "edge": 1.0,
+                "weight": 0.515277777777776
+              },
+              "compiled_black": {
+                "hdr": [
+                  0.078857421875,
+                  0.1483154296875,
+                  0.287109375
+                ],
+                "expected_hdr": [
+                  0.07890449921440981,
+                  0.14835168554499692,
+                  0.2872460582061711
+                ],
+                "bmp_rgb": [
+                  76,
+                  101,
+                  130
+                ],
+                "expected_bmp": [
+                  76,
+                  101,
+                  130
+                ],
+                "pixel": [
+                  261,
+                  173
+                ],
+                "depth": 0.8333333730697632,
+                "base": [
+                  0.125,
+                  0.25,
+                  0.5
+                ],
+                "roughness": 0.75,
+                "coverage": 0.0,
+                "edge": 1.0,
+                "weight": 0.0
+              },
+              "compiled_filtered": {
+                "hdr": [
+                  0.08599853515625,
+                  0.32275390625,
+                  0.19384765625
+                ],
+                "expected_hdr": [
+                  0.08602018564638755,
+                  0.3228640273628819,
+                  0.19392375140824603
+                ],
+                "bmp_rgb": [
+                  80,
+                  135,
+                  112
+                ],
+                "expected_bmp": [
+                  80,
+                  135,
+                  112
+                ],
+                "pixel": [
+                  261,
+                  176
+                ],
+                "depth": 0.8333333730697632,
+                "base": [
+                  0.125,
+                  0.5513020833333324,
+                  0.31921875000000055
+                ],
+                "roughness": 0.629479166666667,
+                "coverage": 0.5933333333333316,
+                "edge": 1.0,
+                "weight": 0.4820833333333319
+              }
+            }
+          }
+        },
+        "maskless_export_descriptor_sha256": "44a4e64afbd06030225a973e023c321115a3703c4350338e1bbfde8833bf1697"
+      }
+    ],
+    "retained_analytic_runs": [
+      {
+        "gpu": "AMD Radeon(TM) Graphics",
+        "lighting_path": "forward",
+        "unchanged_captures": 4,
+        "before_report_sha256": "f11410f9e20ac6c09a7b32fa27f8f0449ac15306906c0baee363bbf77bf8de97",
+        "after_report_sha256": "5f94f8d8ab16d9cf435b40afc0d5ecb649acab17d320db6049c46f528581fbed",
+        "checkpoint_sha256": "49255ef7c93f10d35eb434d6658566db898ab0115c35a3113c18766af4400ef4",
+        "final_sha256": "6b28084a9b5566f4970abf877a598596c1f8b9854b472b9ec1431adba5a5bcd0"
+      },
+      {
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "lighting_path": "forward",
+        "unchanged_captures": 4,
+        "before_report_sha256": "76e97a59acd18000623ceff11b6026941b5904ae1882127fe6c9621b08ec43c9",
+        "after_report_sha256": "fa0d3438036cac27794a22aaf00c7a59e1e9b80f9d316632084222854373fa94",
+        "checkpoint_sha256": "125210ba1d5876b3b36f656098ee23b175a550169f93cee6583bd641d9de413f",
+        "final_sha256": "9a2eaccff8a4f2d51b7323ac061120f2f784a357d1a33ae12758d3695089e893"
+      },
+      {
+        "gpu": "AMD Radeon(TM) Graphics",
+        "lighting_path": "deferred",
+        "unchanged_captures": 4,
+        "before_report_sha256": "dc064f54a7c18ea682eb21d8a073c37b6d4fe2c9c023a22929548854f851ce32",
+        "after_report_sha256": "1ea8fa1bf53dc39fb99be634d79a7269f0a19955b6b45fbdfa63d09d4dbf593e",
+        "checkpoint_sha256": "3024578771d3adbe0bfbb9b5586c7ef450263eeb8674f3b4c06ab5488f45a9d5",
+        "final_sha256": "2d3f7cf099060cc46d2f3b1a27bd57b08bda1af1e7dad5806e0ede396c5e5294"
+      },
+      {
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "lighting_path": "deferred",
+        "unchanged_captures": 4,
+        "before_report_sha256": "9c15235292d5f11049b169d811c788068f88fd2ecb51caae8d4d5dd9f5c721e6",
+        "after_report_sha256": "a007b8612cb2f68fe41cd652381347c15dc8e892669d06276455bf655fda67ba",
+        "checkpoint_sha256": "4334abff8ffb52a74b7b8003b8cdc7bf9ad2193a256a656bedcb8eb44890144e",
+        "final_sha256": "690440319ba0d56ecbf2eba824253eb34ffcf5568f6ac7dc10aaa660c98d1791"
+      }
+    ]
+  },
+  "scope": "Bounded linear mip-zero masks on rigid opaque receivers, Linux CoreCLR and Native AOT, relocated Windows Native AOT using single-sample forward and deferred Vulkan with reconstruction disabled."
+}

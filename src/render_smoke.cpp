@@ -247,10 +247,14 @@ struct ObjectData {
 };
 static_assert(sizeof(DrawIndices)==16 && sizeof(ObjectData)==208);
 struct GpuSurfaceMark {
-    float center_depth[4],normal_minimum_dot[4],tangent_half_width[4],color_opacity[4],half_height_roughness_edge[4];
+    float center_depth[4],normal_minimum_dot[4],tangent_half_width[4],color_opacity[4],half_height_roughness_edge[3];
+    std::uint32_t mask=0;
 };
 static_assert(sizeof(GpuSurfaceMark)==render_schedule::surface_mark_stride);
+static_assert(offsetof(GpuSurfaceMark,mask)==76);
 static_assert(max_scene_surface_marks*sizeof(GpuSurfaceMark)==render_schedule::surface_mark_budget);
+static_assert(max_surface_mark_masks==render_schedule::max_surface_mark_mask_layers);
+static_assert(max_surface_mark_mask_side==render_schedule::max_surface_mark_mask_side);
 struct SkyConstants {
     float right_tan[4],up_tan[4],forward_srgb[4],zenith_exposure[4];
     float horizon_falloff[4],ground_radius[4],sun_intensity[4],sun_color[4];
@@ -384,6 +388,7 @@ struct Context {
         nvrhi::BufferHandle cluster_readback,skin_readback;
         nvrhi::BufferHandle streamed_vertices,streamed_indices;
         nvrhi::BufferHandle surface_marks;
+        nvrhi::TextureHandle surface_mark_masks;
         nvrhi::BindingSetHandle surface_mark_binding;
         nvrhi::BufferHandle sprite_instances;
         nvrhi::TextureHandle sprite_depth;
@@ -411,8 +416,17 @@ struct Context {
     std::vector<Vertex> stream_vertices;
     std::vector<std::uint32_t> stream_indices;
     std::vector<GpuSurfaceMark> surface_marks;
+    struct SurfaceMarkMaskArray {
+        std::vector<std::string> digests;
+        nvrhi::TextureHandle texture;
+        std::vector<std::uint8_t> pending_texels;
+    };
+    SurfaceMarkMaskArray surface_mark_array;
+    bool sampled_surface_mark_masks=false;
     nvrhi::BindingLayoutHandle surface_mark_layout;
     nvrhi::BufferHandle empty_surface_marks;
+    nvrhi::TextureHandle white_surface_mark_mask;
+    nvrhi::SamplerHandle surface_mark_mask_sampler;
     nvrhi::BindingSetHandle empty_surface_mark_binding;
     std::vector<SpriteInstance> sprite_instances;
     std::vector<SpriteBatch> sprite_batches;
@@ -685,7 +699,8 @@ struct Context {
         staging = nullptr;for(auto& texture:probe_staging)texture=nullptr;fsr3_history_readback=nullptr;object_buffer=nullptr;history={};pending_history={};
         bindings = nullptr;
         binding_layout = nullptr;
-        empty_surface_mark_binding=nullptr;empty_surface_marks=nullptr;surface_mark_layout=nullptr;
+        empty_surface_mark_binding=nullptr;empty_surface_marks=nullptr;white_surface_mark_mask=nullptr;
+        surface_mark_mask_sampler=nullptr;surface_mark_array={};surface_mark_layout=nullptr;
         input_layout = nullptr;
         cluster_pipeline=nullptr;cluster_bindings=nullptr;cluster_layout=nullptr;cluster_shader=nullptr;
         light_buffer=nullptr;cluster_counts=nullptr;cluster_indices=nullptr;cluster_readback=nullptr;
@@ -701,7 +716,7 @@ struct Context {
         for(auto& slot:slots) {
             slot.completion=nullptr;slot.cluster_readback=nullptr;slot.skin_readback=nullptr;
             slot.streamed_vertices=nullptr;slot.streamed_indices=nullptr;
-            slot.surface_mark_binding=nullptr;slot.surface_marks=nullptr;
+            slot.surface_mark_binding=nullptr;slot.surface_marks=nullptr;slot.surface_mark_masks=nullptr;
             slot.sprite_instances=nullptr;slot.sprite_depth=nullptr;slot.sprite_bindings.clear();
         }
         sprite_framebuffer=nullptr;sprite_pipeline=nullptr;sprite_layout=nullptr;sprite_textures.clear();
@@ -983,7 +998,9 @@ struct Context {
             require(static_cast<bool>(binding_layout), "Scene push constant layout creation failed.");
             surface_mark_layout=checked->createBindingLayout(nvrhi::BindingLayoutDesc()
                 .setVisibility(nvrhi::ShaderType::Pixel).setRegisterSpaceAndDescriptorSet(1)
-                .addItem(nvrhi::BindingLayoutItem::StructuredBuffer_SRV(0)));
+                .addItem(nvrhi::BindingLayoutItem::StructuredBuffer_SRV(0))
+                .addItem(nvrhi::BindingLayoutItem::Texture_SRV(1))
+                .addItem(nvrhi::BindingLayoutItem::Sampler(0)));
             require(bool(surface_mark_layout),"Surface mark layout creation failed.");
             nvrhi::BufferDesc frame_desc;frame_desc.byteSize=sizeof(FrameConstants);frame_desc.isConstantBuffer=true;
             frame_desc.initialState=nvrhi::ResourceStates::ConstantBuffer;frame_desc.keepInitialState=true;frame_desc.debugName="Scene frame uniforms";
@@ -1389,11 +1406,19 @@ struct Context {
         vertices = checked->createBuffer(desc);
         require(static_cast<bool>(vertices), "Scene vertex buffer creation failed.");
         empty_surface_marks=make_surface_mark_buffer(1);
-        empty_surface_mark_binding=make_surface_mark_binding(empty_surface_marks);
+        white_surface_mark_mask=make_surface_mark_mask_texture(1,1,1);
+        nvrhi::SamplerDesc mark_sampler;
+        mark_sampler.setAllAddressModes(nvrhi::SamplerAddressMode::Clamp);
+        mark_sampler.minFilter=mark_sampler.magFilter=true;mark_sampler.mipFilter=false;
+        surface_mark_mask_sampler=checked->createSampler(mark_sampler);
+        require(bool(surface_mark_mask_sampler),"Surface mark mask sampler creation failed.");
+        empty_surface_mark_binding=make_surface_mark_binding(empty_surface_marks,white_surface_mark_mask);
         const GpuSurfaceMark unused_mark{};
+        const std::uint8_t white_mask_texel=255;
         commands->open();
         commands->writeBuffer(vertices,mesh.data(),mesh.size()*sizeof(Vertex));
         commands->writeBuffer(empty_surface_marks,&unused_mark,sizeof(unused_mark));
+        commands->writeTexture(white_surface_mark_mask,0,0,&white_mask_texel,1);
         commands->close();
         checked->executeCommandList(commands);
         ++diagnostics.frame_execution.device_idle_waits;require(checked->waitForIdle(), "Scene geometry upload failed.");
@@ -2463,6 +2488,7 @@ struct Context {
         prepare_reconstruction();validate_game_ui();prepare_object_buffer();
         profiling::Scope profile_scope("renderer.prepare");
         const auto started=SteadyClock::now();draws.clear();object_data.clear();surface_marks.clear();pending_draws={};
+        validate_surface_mark_catalog();
         retain_scene_resources();warm_particle_sprites();prepare_shadows();
         auto lighting=scene->lighting;finalize_lighting(lighting);
         prepare_environment(lighting.environment);bindings=mesh_bindings(nullptr,nullptr);
@@ -3367,6 +3393,7 @@ struct Context {
                 ++diagnostics.completed_submissions;--diagnostics.frame_execution.outstanding;
                 profiling::deferred_counter(slot.profile,"renderer.completed_submissions",diagnostics.completed_submissions);
                 checked->resetEventQuery(slot.completion);slot.occupied=false;slot.viewmodel.reset();slot.performance=nullptr;slot.performance_ticket={};++retire_slot;
+                release_stale_surface_mark_binding(slot);
                 if(reuse && !drain)break;
             }
             checked->runGarbageCollection();
@@ -3417,7 +3444,8 @@ struct Context {
             if(desc.format==nvrhi::Format::RGBA32_FLOAT)r.format=rs::Format::rgba32_float;
             if(desc.format==nvrhi::Format::RGBA8_UNORM)r.format=rs::Format::rgba8_unorm;
             if(desc.format==nvrhi::Format::R16_FLOAT)r.format=rs::Format::r16_float;
-            r.lifetime=lifetime;r.initialized=initial_contents;r.width=desc.width;r.height=desc.height;r.samples=desc.sampleCount;
+            r.lifetime=lifetime;r.initialized=initial_contents;r.width=desc.width;r.height=desc.height;
+            r.samples=desc.sampleCount;r.layers=desc.arraySize;
             r.supported=rs::use_bit(rs::Use::copy_source)|rs::use_bit(rs::Use::copy_destination);
             if(desc.isShaderResource)r.supported|=rs::use_bit(rs::Use::sampled);
             if(desc.isUAV)r.supported|=rs::use_bit(rs::Use::image_write)|rs::use_bit(rs::Use::image_read_write);
@@ -3436,9 +3464,14 @@ struct Context {
 #endif
         f.color=f.output;
         if(scene) {
-            if(scene_visible && !surface_marks.empty())
-                f.surface_marks=buffer(slots[settings.slot].surface_marks,rs::Lifetime::slot,false,
-                    surface_marks.size()*sizeof(GpuSurfaceMark));
+            if(scene_visible && !surface_marks.empty()) {
+                const auto& slot=slots[settings.slot];
+                f.surface_marks=buffer(slot.surface_marks,rs::Lifetime::slot,false,surface_marks.size()*sizeof(GpuSurfaceMark));
+                if(sampled_surface_mark_masks) {
+                    const bool initialized=surface_mark_array.pending_texels.empty();
+                    f.surface_mark_masks=texture(slot.surface_mark_masks,initialized ? rs::Lifetime::imported : rs::Lifetime::shared,initialized);
+                }
+            }
             if(settings.particle_sprites) {
                 f.sprite_instances=buffer(slots[settings.slot].sprite_instances,rs::Lifetime::slot,false,
                     sprite_instances.size()*sizeof(SpriteInstance));
@@ -3614,10 +3647,15 @@ struct Context {
         if(scene) {
             const auto& slot=slots.at(plan.settings.slot);
             const auto& mark_bindings=world_surface_mark_binding(slot)->getDesc()->bindings;
-            require(mark_bindings.size()==1 && mark_bindings[0].type==nvrhi::ResourceType::StructuredBuffer_SRV &&
-                mark_bindings[0].slot==0,"Opaque material mark binding differs from its shader interface.");
+            require(mark_bindings.size()==3 && mark_bindings[0].type==nvrhi::ResourceType::StructuredBuffer_SRV &&
+                mark_bindings[0].slot==0 && mark_bindings[1].type==nvrhi::ResourceType::Texture_SRV &&
+                mark_bindings[1].slot==1 && mark_bindings[2].type==nvrhi::ResourceType::Sampler &&
+                mark_bindings[2].slot==0 && mark_bindings[2].resourceHandle==surface_mark_mask_sampler.Get(),
+                "Opaque material mark binding differs from its shader interface.");
             if(f.surface_marks!=rs::none)identity(f.surface_marks,mark_bindings[0].resourceHandle);
             else require(mark_bindings[0].resourceHandle==empty_surface_marks.Get(),"Unmarked scene requires the empty surface mark binding.");
+            if(f.surface_mark_masks!=rs::none)identity(f.surface_mark_masks,mark_bindings[1].resourceHandle);
+            else require(mark_bindings[1].resourceHandle==white_surface_mark_mask.Get(),"Analytic marks require the white mask binding.");
             identity(f.frame,frame_buffer.Get());identity(f.objects,object_buffer.Get());identity(f.hdr,scene_hdr.Get());identity(f.shadow,shadow_texture.Get());if(f.normal!=rs::none) {identity(f.normal,scene_normal.Get());identity(f.motion,scene_motion.Get());identity(f.motion_valid,scene_motion_valid.Get());}
             if(f.lights!=rs::none)identity(f.lights,light_buffer.Get());
             if(plan.settings.clustered) {identity(f.counts,cluster_counts.Get());identity(f.indices,cluster_indices.Get());identity(f.cluster_readback,cluster_readback.Get());}
@@ -3871,6 +3909,8 @@ struct Context {
                 break;
             case render_schedule::PassId::surface_mark_upload:
                 commands->writeBuffer(planned_buffer(resources.surface_marks),surface_marks.data(),surface_marks.size()*sizeof(GpuSurfaceMark));
+                if(resources.surface_mark_masks!=render_schedule::none && !plan.resource(resources.surface_mark_masks).initialized)
+                    record_surface_mark_mask_upload(planned_texture(resources.surface_mark_masks));
                 break;
             case render_schedule::PassId::skinning:
                 if(scene) {if(viewmodel_enabled) {commands->writeBuffer(planned_buffer(resources.viewmodel_frame),&viewmodel_frame,sizeof(viewmodel_frame));commands->writeBuffer(planned_buffer(resources.viewmodel_objects),viewmodel_objects.data(),viewmodel_objects.size()*sizeof(ObjectData));}commands->writeBuffer(planned_buffer(resources.frame),&frame_constants,sizeof(frame_constants));commands->writeBuffer(planned_buffer(resources.objects),object_data.data(),object_data.size()*sizeof(ObjectData));dispatch_skinning();if(ao_enabled)commands->writeBuffer(planned_buffer(resources.ao_constants),ao_settings.data(),sizeof(ao_settings));}
@@ -3967,6 +4007,8 @@ struct Context {
         slot.performance=performance;slot.performance_ticket={};
         if(slot.submission && performance)slot.performance_ticket=performance->gpu_submit(performance_token);
         require(slot.submission!=0 && messages.errors==0,"Frame submission was not accepted; history was not advanced.");
+        if(plan.frame.surface_mark_masks!=render_schedule::none && !plan.resource(plan.frame.surface_mark_masks).initialized)
+            std::vector<std::uint8_t>{}.swap(surface_mark_array.pending_texels);
         for(auto* receipt:{&submitted_scene,&presented_scene,&slot_scene})if(*receipt)(*receipt)->submission_id=slot.submission;
         slot.scene.swap(slot_scene);diagnostics.scene_submitted.swap(submitted_scene);
         commit_history();

@@ -2,6 +2,7 @@
 #include "poima/save_upgrade_document.hpp"
 #include "poima/save_upgrade.hpp"
 #include "poima/runtime.hpp"
+#include "surface_mark_profiles.hpp"
 #include "asset_provenance.hpp"
 #include <nlohmann/json.hpp>
 #include <algorithm>
@@ -26,7 +27,8 @@ Json parse(const std::string& text) {
 }
 void keys(const Json& value,std::initializer_list<const char*> expected,bool optional_world_content=false) {
     const auto extra=optional_world_content ? static_cast<unsigned>(value.contains("navigation"))
-        +static_cast<unsigned>(value.contains("asset_provenance"))+static_cast<unsigned>(value.contains("water")) : 0u;
+        +static_cast<unsigned>(value.contains("asset_provenance"))+static_cast<unsigned>(value.contains("water"))
+        +static_cast<unsigned>(value.contains("surface_mark_profiles")) : 0u;
     check(value.is_object() && value.size()==expected.size()+extra,"Unexpected save upgrade authored document members.");
     for(const auto* key:expected)check(value.contains(key),"Missing save upgrade authored document member.");
 }
@@ -215,6 +217,7 @@ Registry normalize(Json& doc) {
     // The final exact document comparison also prevents adding, replacing or
     // removing origins through an otherwise valid component upgrade.
     if(doc.contains("asset_provenance"))provenance::validate_bindings(doc.at("asset_provenance"));
+    if(doc.contains("surface_mark_profiles"))surface_mark_profiles::validate_catalog(doc.at("surface_mark_profiles"));
     if(version==1)keys(doc,{"format","version","world_id","revision","entities","retired_ids","receipts"},true);
     else if(version==2)keys(doc,{"format","version","world_id","revision","entities","retired_ids","receipts","component_schemas","retired_component_schemas"},true);
     else if(version==3)keys(doc,{"format","version","world_id","revision","entities","retired_ids","receipts","component_schemas","retired_component_schemas","templates","retired_template_ids"},true);
@@ -277,6 +280,9 @@ DocumentMappingResult map_authored_document(const std::string& source_document,c
     auto source=parse(source_document),target=parse(target_document);
     const auto old=normalize(source),next=normalize(target);
     check(source.at("world_id")==plan.source.world_id && target.at("world_id")==plan.target.world_id && plan.source.world_id==plan.target.world_id,"Upgrade document world differs from plan.");
+    const auto old_profiles=source.find("surface_mark_profiles"),new_profiles=target.find("surface_mark_profiles");
+    check(old_profiles==source.end() ? new_profiles==target.end() :
+        new_profiles!=target.end() && *old_profiles==*new_profiles,"Save upgrade cannot change the surface mark profile catalog.");
     check(old.size()+plan.add_components.size()==next.size(),"Save upgrade component additions do not cover the target catalog.");
     for(const auto& [id,schema]:old) {(void)schema;check(next.contains(id),"Save upgrade cannot remove component types.");}
     check(plan.add_components.size()<=components::max_types,"Added component type budget exceeded.");

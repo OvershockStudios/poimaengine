@@ -8,11 +8,16 @@ namespace poima {
 
 inline nlohmann::json surface_mark_json(const RuntimeSurfaceMark& row) {
     const auto& mark=row.mark;
-    return {{"id",row.id},{"receiver",row.receiver},{"tick",row.tick},
+    nlohmann::json result={{"id",row.id},{"receiver",row.receiver},{"tick",row.tick},
         {"center_m",mark.center_m},{"normal",mark.normal},{"tangent",mark.tangent},
         {"half_extent_m",mark.half_extent_m},{"half_depth_m",mark.half_depth_m},
         {"minimum_normal_dot",mark.minimum_normal_dot},{"edge_fraction",mark.edge_fraction},
         {"linear_rgb",mark.linear_rgb},{"opacity",mark.opacity},{"roughness",mark.roughness}};
+    if(!row.profile.empty()) {
+        result["profile"]=row.profile;
+        result["mask_sha256"]=mark.mask_sha256;
+    }
+    return result;
 }
 
 }

@@ -17,12 +17,16 @@ struct SurfaceMark {
     float4 normal_minimum_dot;
     float4 tangent_half_width;
     float4 color_opacity;
-    float4 half_height_roughness_edge;
+    float3 half_height_roughness_edge;
+    uint mask; // one-based layer in bits 0..4, then width-1 and height-1 in eight bits each
 };
 struct DrawIndices {uint object_index;uint shadow_layer;uint2 reserved;};
 [[vk::push_constant]] ConstantBuffer<DrawIndices> draw_indices;
 StructuredBuffer<ObjectData> objects : register(t9);
 StructuredBuffer<SurfaceMark> surface_marks : register(t0, space1);
+Texture2DArray<float> surface_mark_masks : register(t1, space1);
+// DXC shifts samplers in space 0. Match NVRHI's sampler offset in set 1 as well.
+[[vk::binding(128, 1)]] SamplerState surface_mark_mask_sampler : register(s0, space1);
 #include "scene_surface.hlsli"
 Texture2D base_map : register(t0);
 Texture2D mr_map : register(t1);
@@ -106,7 +110,18 @@ void apply_surface_marks(inout SceneSurface material,float3 position,uint offset
                 // rounds both smoothstep endpoints to the same float.
                 const float ramp=edge>0 ? saturate((1-sqrt(radius_squared))/edge) : 1;
                 const float coverage=ramp*ramp*(3-2*ramp);
-                const float weight=mark.color_opacity.w*coverage;
+                float weight=mark.color_opacity.w*coverage;
+                if(mark.mask!=0) {
+                    const uint layer=(mark.mask & 31u)-1u;
+                    const float2 mask_extent=float2(((mark.mask>>5u) & 255u)+1u,((mark.mask>>13u) & 255u)+1u);
+                    uint array_width,array_height,array_layers;
+                    surface_mark_masks.GetDimensions(array_width,array_height,array_layers);
+                    const float2 uv=0.5+0.5*float2(sample_position.x,-sample_position.y);
+                    // Keep the filter inside the actual subimage of this padded slice.
+                    const float2 texel=clamp(uv*mask_extent,0.5,mask_extent-0.5);
+                    const float2 array_uv=texel/float2(array_width,array_height);
+                    weight*=surface_mark_masks.SampleLevel(surface_mark_mask_sampler,float3(array_uv,layer),0);
+                }
                 material.base=lerp(material.base,mark.color_opacity.rgb,weight);
                 material.roughness=lerp(material.roughness,max(mark.half_height_roughness_edge.y,0.045),weight);
             }

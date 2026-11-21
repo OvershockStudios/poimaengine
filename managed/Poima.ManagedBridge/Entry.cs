@@ -166,6 +166,7 @@ public static unsafe class Entry
             if(typeof(IParticleBurstGame).IsAssignableFrom(type))required|=GameplayRequiredFeatures.ParticleBurst;
             if(typeof(ISurfaceMarkGame).IsAssignableFrom(type))required|=GameplayRequiredFeatures.SurfaceMark;
             if(typeof(IDirectionalSurfaceMarkGame).IsAssignableFrom(type))required|=GameplayRequiredFeatures.SurfaceMarkDirection;
+            if(typeof(ITexturedSurfaceMarkGame).IsAssignableFrom(type))required|=GameplayRequiredFeatures.SurfaceMarkTexture;
             GameplayRequirements.ValidateHost(request.RootElement,required);
             for(Type? current=type;current!=null;current=current.BaseType)
                 if(current.GetFields(BindingFlags.Instance|BindingFlags.Public|BindingFlags.NonPublic|BindingFlags.DeclaredOnly).Length!=0)

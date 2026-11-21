@@ -93,6 +93,8 @@ __pycache__/
 /tests/managed_surface_mark_gameplay/obj/
 /tests/managed_directional_surface_mark_gameplay/bin/
 /tests/managed_directional_surface_mark_gameplay/obj/
+/tests/managed_textured_surface_mark_gameplay/bin/
+/tests/managed_textured_surface_mark_gameplay/obj/
 
 /examples/projectile-range/bin/
 /examples/projectile-range/obj/

@@ -747,6 +747,18 @@ typedef struct PoimaGameSurfaceMarkDirectionServicesV2 {
     int32_t (POIMA_CALL *surface_mark_direction)(void*,const PoimaGameSurfaceMarkCommandV2*,PoimaGameError*);
 } PoimaGameSurfaceMarkDirectionServicesV2;
 
+/* surface_mark_texture_v3 selects a nonzero profile ID in the frozen world
+ * catalog. With a required travel direction, the profile follows the saved
+ * mark axes. The nested command header uses version 3 and the V3 byte count. */
+typedef struct PoimaGameSurfaceMarkCommandV3 {
+    PoimaGameSurfaceMarkCommandV2 directional;
+    PoimaEntityId profile;
+} PoimaGameSurfaceMarkCommandV3;
+typedef struct PoimaGameSurfaceMarkTextureServicesV3 {
+    PoimaGameSurfaceMarkDirectionServicesV2 directional;
+    int32_t (POIMA_CALL *surface_mark_texture)(void*,const PoimaGameSurfaceMarkCommandV3*,PoimaGameError*);
+} PoimaGameSurfaceMarkTextureServicesV3;
+
 typedef struct PoimaGameCall {
     uint32_t version,operation; uint64_t handle;
     const char* text; void* state; uint32_t state_bytes,input_count;
@@ -815,6 +827,11 @@ static_assert(sizeof(PoimaGameSurfaceMarkCommandV2)==160 && alignof(PoimaGameSur
 static_assert(sizeof(PoimaGameSurfaceMarkDirectionServicesV2)==552 && alignof(PoimaGameSurfaceMarkDirectionServicesV2)==8 &&
     offsetof(PoimaGameSurfaceMarkDirectionServicesV2,marks)==0 &&
     offsetof(PoimaGameSurfaceMarkDirectionServicesV2,surface_mark_direction)==544);
+static_assert(sizeof(PoimaGameSurfaceMarkCommandV3)==176 && alignof(PoimaGameSurfaceMarkCommandV3)==8 &&
+    offsetof(PoimaGameSurfaceMarkCommandV3,directional)==0 && offsetof(PoimaGameSurfaceMarkCommandV3,profile)==160);
+static_assert(sizeof(PoimaGameSurfaceMarkTextureServicesV3)==560 && alignof(PoimaGameSurfaceMarkTextureServicesV3)==8 &&
+    offsetof(PoimaGameSurfaceMarkTextureServicesV3,directional)==0 &&
+    offsetof(PoimaGameSurfaceMarkTextureServicesV3,surface_mark_texture)==552);
 static_assert(sizeof(PoimaGameReleasedItemAimV4)==208 && alignof(PoimaGameReleasedItemAimV4)==8 &&
     offsetof(PoimaGameReleasedItemAimV4,ray)==16 && offsetof(PoimaGameReleasedItemAimV4,hit)==88 &&
     offsetof(PoimaGameReleasedItemAimV4,item)==176 && offsetof(PoimaGameReleasedItemAimV4,sampled_tick)==192 &&

@@ -10,6 +10,9 @@ public interface ISurfaceMarkGame { }
 /// <summary>Opts into persistent surface marks aligned to a direction of travel during Tick.</summary>
 public interface IDirectionalSurfaceMarkGame { }
 
+/// <summary>Opts into persistent surface marks that use an authored coverage mask.</summary>
+public interface ITexturedSurfaceMarkGame { }
+
 /// <summary>Defines the ellipse, falloff and material blend of a surface mark.
 /// A zero edge fraction produces a hard edge.</summary>
 public readonly record struct SurfaceMarkStyle(Vector2 HalfExtentMetres, float HalfDepthMetres,
@@ -49,12 +52,28 @@ internal unsafe struct NativeSurfaceMarkDirectionServicesV2
     public delegate* unmanaged[Cdecl]<void*, NativeSurfaceMarkCommandV2*, NativeError*, int> PlaceDirectional;
 }
 
+[StructLayout(LayoutKind.Sequential)]
+internal struct NativeSurfaceMarkCommandV3
+{
+    public NativeSurfaceMarkCommandV2 Directional;
+    public EntityId Profile;
+}
+
+[StructLayout(LayoutKind.Sequential)]
+internal unsafe struct NativeSurfaceMarkTextureServicesV3
+{
+    public NativeSurfaceMarkDirectionServicesV2 Directional;
+    public delegate* unmanaged[Cdecl]<void*, NativeSurfaceMarkCommandV3*, NativeError*, int> PlaceTextured;
+}
+
 internal static unsafe class SurfaceMarkServiceAbi
 {
     internal const uint RequiredBytes = 544;
     internal const string Feature = "surface_mark_v1";
     internal const uint DirectionRequiredBytes = 552;
     internal const string DirectionFeature = "surface_mark_direction_v2";
+    internal const uint TextureRequiredBytes = 560;
+    internal const string TextureFeature = "surface_mark_texture_v3";
 
     internal static bool LayoutValid()
     {
@@ -62,6 +81,8 @@ internal static unsafe class SurfaceMarkServiceAbi
         NativeSurfaceMarkCommandV1 command = default;
         NativeSurfaceMarkDirectionServicesV2 directionServices = default;
         NativeSurfaceMarkCommandV2 directionCommand = default;
+        NativeSurfaceMarkTextureServicesV3 textureServices = default;
+        NativeSurfaceMarkCommandV3 textureCommand = default;
         return sizeof(NativeSurfaceMarkServicesV1) == RequiredBytes &&
             (byte*)&services.Place - (byte*)&services == 536 &&
             sizeof(NativeSurfaceMarkCommandV1) == 136 &&
@@ -82,7 +103,13 @@ internal static unsafe class SurfaceMarkServiceAbi
             (byte*)&directionServices.PlaceDirectional - (byte*)&directionServices == RequiredBytes &&
             sizeof(NativeSurfaceMarkCommandV2) == 160 &&
             (byte*)&directionCommand.Mark - (byte*)&directionCommand == 0 &&
-            (byte*)&directionCommand.TravelDirection - (byte*)&directionCommand == 136;
+            (byte*)&directionCommand.TravelDirection - (byte*)&directionCommand == 136 &&
+            sizeof(NativeSurfaceMarkTextureServicesV3) == TextureRequiredBytes &&
+            (byte*)&textureServices.Directional - (byte*)&textureServices == 0 &&
+            (byte*)&textureServices.PlaceTextured - (byte*)&textureServices == DirectionRequiredBytes &&
+            sizeof(NativeSurfaceMarkCommandV3) == 176 &&
+            (byte*)&textureCommand.Directional - (byte*)&textureCommand == 0 &&
+            (byte*)&textureCommand.Profile - (byte*)&textureCommand == 160;
     }
 
     internal static NativeSurfaceMarkServicesV1* Validate(NativeServices* services)
@@ -102,6 +129,16 @@ internal static unsafe class SurfaceMarkServiceAbi
         var api = (NativeSurfaceMarkDirectionServicesV2*)services;
         if (api->PlaceDirectional == null)
             throw new ArgumentException("Gameplay directional surface mark callback is absent.");
+        return api;
+    }
+
+    internal static NativeSurfaceMarkTextureServicesV3* ValidateTextured(NativeServices* services)
+    {
+        if (services == null || services->Version != ServiceAbi.Epoch || services->Bytes < TextureRequiredBytes)
+            throw new ArgumentException("Textured surface marks require services epoch 7 with at least 560 bytes.");
+        var api = (NativeSurfaceMarkTextureServicesV3*)services;
+        if (api->PlaceTextured == null)
+            throw new ArgumentException("Gameplay textured surface mark callback is absent.");
         return api;
     }
 
@@ -142,12 +179,20 @@ internal static unsafe class SurfaceMarkServiceAbi
         };
     }
 
-    internal static void ValidateTravelDirection(Vector3d travelDirection)
+    internal static NativeSurfaceMarkCommandV2 EncodeDirectionalMark(EntityId receiver, Vector3d origin,
+        Vector3d direction, double distance, SurfaceMarkStyle style, Vector3d travelDirection, EntityId source,
+        uint version, uint bytes)
     {
         if (!BoundedVector(travelDirection) || travelDirection.X * travelDirection.X +
             travelDirection.Y * travelDirection.Y + travelDirection.Z * travelDirection.Z < 1e-16)
             throw new ArgumentOutOfRangeException(nameof(travelDirection),
                 "Surface mark travel direction must be finite, within ±1000000 per axis and at least 1e-8 in length.");
+
+        return new NativeSurfaceMarkCommandV2
+        {
+            Mark = EncodeMark(receiver, origin, direction, distance, style, source, version, bytes),
+            TravelDirection = travelDirection
+        };
     }
 
     private static bool BoundedVector(Vector3d value) =>
@@ -179,15 +224,31 @@ public readonly unsafe ref partial struct GameContext
         SurfaceMarkStyle style, Vector3d travelDirection, EntityId source = default)
     {
         RequireFeature(GameplayRequiredFeatures.SurfaceMarkDirection, nameof(IDirectionalSurfaceMarkGame));
-        SurfaceMarkServiceAbi.ValidateTravelDirection(travelDirection);
-        NativeSurfaceMarkCommandV2 command = new()
-        {
-            Mark = SurfaceMarkServiceAbi.EncodeMark(receiver, origin, direction, distance, style, source,
-                2, (uint)sizeof(NativeSurfaceMarkCommandV2)),
-            TravelDirection = travelDirection
-        };
+        var command = SurfaceMarkServiceAbi.EncodeDirectionalMark(receiver, origin, direction, distance,
+            style, travelDirection, source, 2, (uint)sizeof(NativeSurfaceMarkCommandV2));
         var api = SurfaceMarkServiceAbi.ValidateDirectional(services);
         NativeError error = default;
         Check(api->PlaceDirectional(services->Context, &command, &error), &error);
+    }
+
+    /// <summary>Queues a mark using a frozen authored coverage mask profile.
+    /// The ray and travel direction use the source's final local frame when a source is supplied.
+    /// Otherwise they use world space. Nearly normal travel uses the default tangent.</summary>
+    public void PlaceTexturedSurfaceMark(EntityId profile, EntityId receiver, Vector3d origin, Vector3d direction,
+        double distance, SurfaceMarkStyle style, Vector3d travelDirection, EntityId source = default)
+    {
+        RequireFeature(GameplayRequiredFeatures.SurfaceMarkTexture, nameof(ITexturedSurfaceMarkGame));
+        if (profile == default)
+            throw new ArgumentException("A textured surface mark requires a nonzero profile ID.", nameof(profile));
+
+        NativeSurfaceMarkCommandV3 command = new()
+        {
+            Directional = SurfaceMarkServiceAbi.EncodeDirectionalMark(receiver, origin, direction, distance,
+                style, travelDirection, source, 3, (uint)sizeof(NativeSurfaceMarkCommandV3)),
+            Profile = profile
+        };
+        var api = SurfaceMarkServiceAbi.ValidateTextured(services);
+        NativeError error = default;
+        Check(api->PlaceTextured(services->Context, &command, &error), &error);
     }
 }

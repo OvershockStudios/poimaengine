@@ -78,6 +78,7 @@ void policy() {
     std::erase(old_attachment_host.features,std::string(particle_burst_feature));
     std::erase(old_attachment_host.features,std::string(surface_mark_feature));
     std::erase(old_attachment_host.features,std::string(surface_mark_direction_feature));
+    std::erase(old_attachment_host.features,std::string(surface_mark_texture_feature));
     std::erase(old_attachment_host.features,std::string(item_attachment_feature));
     std::erase(old_attachment_host.features,std::string(item_attachment_contact_feature));
     std::erase(old_attachment_host.features,std::string(item_attachment_surface_feature));
@@ -101,6 +102,7 @@ void policy() {
     missing_burst.services_bytes=item_attachment_services_bytes;
     std::erase(missing_burst.features,std::string(surface_mark_feature));
     std::erase(missing_burst.features,std::string(surface_mark_direction_feature));
+    std::erase(missing_burst.features,std::string(surface_mark_texture_feature));
     check(compatibility_error(attachment,missing_burst).empty() && !compatibility_error(burst,missing_burst).empty(),
         "Previous attachment runtime compatibility changed.");
     auto short_burst=burst;short_burst.services_bytes=item_attachment_services_bytes;
@@ -115,6 +117,7 @@ void policy() {
     check(!compatibility_error(mark,missing_mark).empty(),"Opaque allocation granted surface marks.");
     missing_mark.services_bytes=particle_services_bytes;
     std::erase(missing_mark.features,std::string(surface_mark_direction_feature));
+    std::erase(missing_mark.features,std::string(surface_mark_texture_feature));
     check(compatibility_error(burst,missing_mark).empty() && !compatibility_error(mark,missing_mark).empty(),
         "Previous particle host compatibility changed.");
     auto short_mark=mark;short_mark.services_bytes=particle_services_bytes;
@@ -128,6 +131,7 @@ void policy() {
     auto previous_mark_host=capable;
     previous_mark_host.services_bytes=surface_mark_services_bytes;
     std::erase(previous_mark_host.features,std::string(surface_mark_direction_feature));
+    std::erase(previous_mark_host.features,std::string(surface_mark_texture_feature));
     check(compatibility_error(mark,previous_mark_host).empty() && !compatibility_error(directional,previous_mark_host).empty(),
         "The 544-byte host lost V1 support or granted directional placement.");
     auto opaque_direction_host=previous_mark_host;
@@ -144,6 +148,36 @@ void policy() {
     mixed_direction.services_bytes=surface_mark_direction_services_bytes;
     mixed_direction.features.push_back(surface_mark_direction_feature);
     check(compatibility_error(mixed_direction,capable).empty(),"Directional and legacy marks cannot coexist with earlier effects.");
+    auto textured=baseline;
+    textured.services_bytes=surface_mark_texture_services_bytes;
+    textured.features.push_back(surface_mark_texture_feature);
+    check(compatibility_error(textured,capable).empty() && compatibility_error(textured,textured).empty(),
+        "Textured placement requires an unrelated optional service.");
+    auto previous_direction_host=capable;
+    previous_direction_host.services_bytes=surface_mark_direction_services_bytes;
+    std::erase(previous_direction_host.features,std::string(surface_mark_texture_feature));
+    check(compatibility_error(mixed_direction,previous_direction_host).empty() &&
+        !compatibility_error(textured,previous_direction_host).empty(),"The 552-byte host lost directional support or granted textured placement.");
+    auto opaque_texture_host=previous_direction_host;
+    opaque_texture_host.services_bytes=surface_mark_texture_services_bytes;
+    check(!compatibility_error(textured,opaque_texture_host).empty(),"Opaque allocation granted textured placement.");
+    auto short_texture_host=capable;
+    short_texture_host.services_bytes=559;
+    check(!compatibility_error(baseline,short_texture_host).empty(),"Short allocation advertised textured placement.");
+    auto unnamed_texture=mixed_direction;
+    unnamed_texture.services_bytes=surface_mark_texture_services_bytes;
+    check(!compatibility_error(unnamed_texture,capable).empty(),"Unnamed textured requirement was accepted.");
+    constexpr auto effect_features=std::array{item_attachment_feature,particle_burst_feature,surface_mark_feature,surface_mark_direction_feature};
+    for(unsigned mask=0;mask<16;++mask) {
+        auto combined=textured;
+        for(std::size_t index=0;index<effect_features.size();++index)
+            if(mask&(1u<<index))combined.features.push_back(effect_features[index]);
+        check(compatibility_error(combined,capable).empty(),"Textured placement displaced another named extension.");
+        for(const auto wrong_extent:{544u,552u,559u,561u}) {
+            combined.services_bytes=wrong_extent;
+            check(!compatibility_error(combined,capable).empty(),"Textured placement accepted a noncanonical prefix.");
+        }
+    }
     auto contact=attachment;contact.features.push_back(item_attachment_contact_feature);
     check(compatibility_error(contact,capable).empty(),"Contact requires no longer service table.");
     auto before_pickup=capable;std::erase(before_pickup.features,std::string(item_attachment_pickup_feature));
@@ -239,7 +273,9 @@ void policy() {
     check(physical_rig_drive_services_bytes==448u,"Frozen physical drive extent changed.");
     check(physical_rig_animation_services_bytes==496u,"Frozen physical animation extent changed.");
     check(surface_mark_services_bytes==544u,"Frozen surface mark extent changed.");
-    check(capable.services_version==7 && capable.services_bytes==surface_mark_direction_services_bytes && capable.services_bytes==552u &&
+    check(surface_mark_direction_services_bytes==552u,"Frozen directional mark extent changed.");
+    check(capable.services_version==7 && capable.services_bytes==surface_mark_texture_services_bytes && capable.services_bytes==560u &&
+        std::find(capable.features.begin(),capable.features.end(),surface_mark_texture_feature)!=capable.features.end() &&
         std::find(capable.features.begin(),capable.features.end(),surface_mark_direction_feature)!=capable.features.end() &&
         std::find(capable.features.begin(),capable.features.end(),surface_mark_feature)!=capable.features.end() &&
         std::find(capable.features.begin(),capable.features.end(),item_attachment_feature)!=capable.features.end() &&

@@ -8,6 +8,29 @@
     std::shared_ptr<const SurfaceMarksState> surface_marks;
     std::vector<RuntimeSurfaceMarkCommand> gameplay_surface_marks;
     std::size_t surface_mark_attempts=0;
+    std::vector<SceneSurfaceMarkMask> surface_mark_masks;
+
+    void initialize_surface_mark_profiles(const RuntimeDefinition& definition) {
+        require(definition.surface_mark_profiles.size()<=max_surface_mark_profiles,"Surface mark profile budget exceeded.");
+        std::map<std::string,std::shared_ptr<const TextureImage>> masks;
+        for(const auto& [id,profile]:definition.surface_mark_profiles) {
+            require(surface_mark_profiles::valid_id(id) && surface_mark_profiles::lowercase_hex(profile.mask_sha256,64) &&
+                bool(profile.image),"Invalid frozen surface mark profile.");
+            const auto [entry,inserted]=masks.try_emplace(profile.mask_sha256,profile.image);
+            require(inserted || entry->second==profile.image,"Frozen surface mark aliases must share their cooked image.");
+            if(inserted)surface_mark_profiles::validate_image(*profile.image);
+        }
+        require(masks.size()<=max_surface_mark_masks,"Surface mark mask budget exceeded.");
+        surface_mark_masks.reserve(masks.size());
+        for(const auto& [sha256,image]:masks)surface_mark_masks.push_back({sha256,image});
+    }
+
+    const RuntimeSurfaceMarkProfile& surface_mark_profile(const std::string& id) const {
+        const auto& profiles=topology->live.surface_mark_profiles;
+        const auto found=profiles.find(id);
+        require(found!=profiles.end(),"Surface mark profile does not exist in the frozen catalog.");
+        return found->second;
+    }
 
     void check_surface_mark_request(const PoimaGameSurfaceMarkCommandV1* request,std::uint32_t version,std::size_t bytes) {
         require_tick();
@@ -27,7 +50,7 @@
     }
 
     void queue_surface_mark(const PoimaGameSurfaceMarkCommandV1& request,
-        std::optional<pose_frames::Vector> travel_direction={}) {
+        std::optional<pose_frames::Vector> travel_direction={},std::string profile={}) {
         RuntimeSurfaceMarkCommand command;
         command.receiver=gameplay_id(request.receiver);
         if(request.source.high || request.source.low)command.source=gameplay_id(request.source);
@@ -35,6 +58,7 @@
         std::copy_n(request.direction,3,command.ray.direction.begin());
         command.ray.distance=request.distance;
         command.travel_direction=travel_direction;
+        command.profile=std::move(profile);
         auto& mark=command.style;
         std::copy_n(request.half_extent_m,2,mark.half_extent_m.begin());
         std::copy_n(request.linear_rgb,3,mark.linear_rgb.begin());
@@ -45,6 +69,13 @@
         mark.roughness=request.roughness;
         validate_surface_mark_fields(mark,false);
         gameplay_surface_marks.push_back(std::move(command));
+    }
+
+    void queue_directional_surface_mark(const PoimaGameSurfaceMarkCommandV2& request,std::string profile={}) {
+        const auto& direction=request.travel_direction;
+        const pose_frames::Vector travel{direction[0],direction[1],direction[2]};
+        travel_direction_length(travel);
+        queue_surface_mark(request.mark,travel,std::move(profile));
     }
 
     static int32_t POIMA_CALL stage_surface_mark(void* context,const PoimaGameSurfaceMarkCommandV1* request,
@@ -63,10 +94,18 @@
             require(context,"Surface mark context is absent.");
             auto& self=*static_cast<Impl*>(context);
             self.check_surface_mark_request(request ? &request->mark : nullptr,2,sizeof(PoimaGameSurfaceMarkCommandV2));
-            const auto& direction=request->travel_direction;
-            const pose_frames::Vector travel{direction[0],direction[1],direction[2]};
-            travel_direction_length(travel);
-            self.queue_surface_mark(request->mark,travel);
+            self.queue_directional_surface_mark(*request);
+        });
+    }
+
+    static int32_t POIMA_CALL stage_textured_surface_mark(void* context,const PoimaGameSurfaceMarkCommandV3* request,
+        PoimaGameError* error) {
+        return callback(error,[&] {
+            require(context,"Surface mark context is absent.");
+            auto& self=*static_cast<Impl*>(context);
+            self.check_surface_mark_request(request ? &request->directional.mark : nullptr,3,sizeof(PoimaGameSurfaceMarkCommandV3));
+            require(request->profile.high || request->profile.low,"Textured surface marks require a nonzero profile ID.");
+            self.queue_directional_surface_mark(request->directional,gameplay_id(request->profile));
         });
     }
 
@@ -126,6 +165,9 @@
             "Invalid surface mark identity or placement tick.");
         const auto receiver=surface_mark_receiver(row.receiver);
         validate_surface_mark_fields(row.mark,bool(registry.get<RuntimeMesh>(receiver).mesh));
+        require(row.profile.empty()==row.mark.mask_sha256.empty(),"Surface mark profile and mask must be paired.");
+        if(!row.profile.empty())require(surface_mark_profile(row.profile).mask_sha256==row.mark.mask_sha256,
+            "Saved surface mark mask does not match its frozen profile.");
     }
 
     RuntimeRay surface_mark_ray(const RuntimeSurfaceMarkCommand& command) const {
@@ -235,13 +277,14 @@
             const auto tangent=surface_mark_tangent(command,basis,normal);
 
             auto mark=command.style;
+            mark.mask_sha256=command.profile.empty() ? std::string{} : surface_mark_profile(command.profile).mask_sha256;
             for(std::size_t k=0;k<3;++k) {
                 mark.center_m[k]=static_cast<float>(center[k]);
                 mark.normal[k]=static_cast<float>(normal[k]);
                 mark.tangent[k]=static_cast<float>(tangent[k]);
             }
             validate_surface_mark_fields(mark,bool(mesh.mesh));
-            next->rows.push_back({next->next_id++,tick,command.receiver,mark});
+            next->rows.push_back({next->next_id++,tick,command.receiver,std::move(mark),command.profile});
         }
         surface_marks=std::move(next);
         gameplay_surface_marks.clear();

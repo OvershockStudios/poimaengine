@@ -24,6 +24,7 @@
 #include "pose_frames.hpp"
 #include "surface_measure.hpp"
 #include "surface_marks_json.hpp"
+#include "surface_mark_profiles.hpp"
 #include "attachment_outcome_json.hpp"
 #include "particle_state_json.hpp"
 #include "particle_scene.hpp"
@@ -744,6 +745,7 @@ struct Runtime::Impl {
         // while only this local builder may mutate its indices.
         auto candidate=std::make_shared<Topology>();candidate->live=definition;topology=candidate;
         world_id=definition.world_id; revision=definition.authored_revision;
+        initialize_surface_mark_profiles(definition);
         physical_content=definition_has_physical(definition);validate_physical_ownership(definition);
         if(restored) {validate_physical_bootstrap(definition,*restored);body_ids=restored->ledger;physical_next_collision_group=restored->next_collision_group;}
         initialize_navigation(definition.navigation);
@@ -1855,7 +1857,7 @@ struct Runtime::Impl {
                     {
                         profiling::Scope gameplay_profile("runtime.gameplay.tick");
                         build_controller_preview();
-                        game->tick(gameplay_abi::physical_rig_drive_baseline(api.marks.particles.attachments.recovery.animation.drive),std::span<const PoimaGameInput>(frame_inputs.data(),input_count),tick);
+                        game->tick(gameplay_abi::physical_rig_drive_baseline(api.directional.marks.particles.attachments.recovery.animation.drive),std::span<const PoimaGameInput>(frame_inputs.data(),input_count),tick);
                         clear_controller_preview();game_phase=GamePhase::idle;game_input_source=nullptr;game_input_edges=false;
                     }
                     if(auto candidate=prepare_ui_commands())ui_model.swap(candidate);
@@ -2688,6 +2690,7 @@ SceneSnapshot Runtime::snapshot() const {
     return result;
 }
 void Runtime::append_scene_surface_marks(SceneSnapshot& result) const {
+    result.surface_mark_masks=impl_->surface_mark_masks;
     if(const auto marks=surface_marks();!marks.empty()) {
         std::map<std::string_view,std::vector<SceneSurfaceMark>> by_receiver;
         for(const auto& row:marks)by_receiver[row.receiver].push_back(row.mark);

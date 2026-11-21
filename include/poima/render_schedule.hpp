@@ -64,6 +64,7 @@ struct Resource {
     std::uint64_t bytes=0,allocation_bytes=0;
     ResourceId counts=none;
     std::uint64_t version=0;
+    std::uint32_t layers=1;
 };
 struct Access {ResourceId resource=none;Use use=Use::sampled;bool initialize=false;};
 struct Pass {PassId id;std::vector<Access> accesses;};
@@ -96,7 +97,7 @@ struct FrameResources {
     ResourceId streamed_vertices=none,streamed_indices=none;
     ResourceId sprite_instances=none;
     std::vector<ResourceId> sprite_textures;
-    ResourceId surface_marks=none;
+    ResourceId surface_marks=none,surface_mark_masks=none;
 };
 struct Settings {
     bool scene=false,clustered=false,sky=false,game_ui=false,overlay=false,editor=false,capture=false,products=false,products_debug=false,reconstruction=false,deferred=false,ambient_occlusion=false;
@@ -125,6 +126,7 @@ inline constexpr std::uint64_t sprite_instance_budget=sprite_instance_stride*max
 inline constexpr std::size_t max_sprite_textures=16;
 inline constexpr std::size_t surface_mark_stride=80;
 inline constexpr std::uint64_t surface_mark_budget=surface_mark_stride*256;
+inline constexpr std::uint32_t max_surface_mark_mask_side=256,max_surface_mark_mask_layers=16;
 struct Schedule {
     FrameResources frame;
     Settings settings;
@@ -190,6 +192,20 @@ struct Schedule {
                 frame.surface_marks==frame.streamed_vertices || frame.surface_marks==frame.streamed_indices ||
                 frame.surface_marks==frame.sprite_instances)
                 fail("invalid surface mark buffer");
+        }
+        const bool surface_mark_masks=frame.surface_mark_masks!=none;
+        bool upload_surface_mark_masks=false;
+        if(surface_mark_masks) {
+            required(frame.surface_mark_masks);
+            const auto& masks=resource(frame.surface_mark_masks);
+            upload_surface_mark_masks=!masks.initialized;
+            if(!surface_marks || masks.kind!=Kind::texture || masks.region!=Region::whole ||
+                masks.format!=Format::r8_unorm || masks.samples!=1 ||
+                masks.lifetime!=(upload_surface_mark_masks ? Lifetime::shared : Lifetime::imported) ||
+                !masks.width || masks.width>max_surface_mark_mask_side ||
+                !masks.height || masks.height>max_surface_mark_mask_side ||
+                !masks.layers || masks.layers>max_surface_mark_mask_layers)
+                fail("invalid surface mark mask array");
         }
         if(settings.particle_sprites) {
             if(!settings.scene || settings.reconstruction || frame.color!=frame.hdr)
@@ -417,8 +433,11 @@ struct Schedule {
                 sprites_uploaded=true;
             }
             if(pass.id==PassId::surface_mark_upload) {
-                if(!surface_marks || pass.accesses.size()!=1 || !has(frame.surface_marks,Use::upload) ||
-                    !pass.accesses.front().initialize)fail("invalid surface mark upload");
+                if(!surface_marks || pass.accesses.size()!=(upload_surface_mark_masks ? 2u : 1u) ||
+                    !has(frame.surface_marks,Use::upload) ||
+                    (upload_surface_mark_masks && !has(frame.surface_mark_masks,Use::copy_destination)) ||
+                    !std::all_of(pass.accesses.begin(),pass.accesses.end(),[](const Access& a){return a.initialize;}))
+                    fail("invalid surface mark upload");
                 surface_marks_uploaded=true;
             }
             if(pass.id==PassId::opaque && stream && (!stream_uploaded || !has(frame.streamed_vertices,Use::vertex) ||
@@ -430,6 +449,8 @@ struct Schedule {
                     fail("particle sprites require opaque HDR and world depth outputs");
                 if(surface_marks && (!surface_marks_uploaded || !has(frame.surface_marks,Use::storage_read)))
                     fail("opaque materials require uploaded surface marks");
+                if(surface_mark_masks && !has(frame.surface_mark_masks,Use::sampled))
+                    fail("opaque materials require the surface mark mask array");
                 world_opaque=true;
             }
             if((pass.id==PassId::opaque && !settings.deferred) || pass.id==PassId::deferred_lighting || pass.id==PassId::viewmodel_opaque)
@@ -582,6 +603,10 @@ struct Schedule {
                 if(mark_instances && !(pass.id==PassId::surface_mark_upload && a.use==Use::upload) &&
                     !(pass.id==PassId::opaque && a.use==Use::storage_read))
                     fail("surface marks used outside upload and opaque draw");
+                if(surface_mark_masks && a.resource==frame.surface_mark_masks &&
+                    !(pass.id==PassId::surface_mark_upload && a.use==Use::copy_destination && upload_surface_mark_masks) &&
+                    !(pass.id==PassId::opaque && a.use==Use::sampled))
+                    fail("surface mark masks used outside upload and opaque draw");
                 if(settings.post_effect && a.resource==frame.post_effect && pass.id!=PassId::post_effect &&
                     !((pass.id==PassId::bloom_extract || pass.id==PassId::output) && a.use==Use::sampled))
                     fail("post-effect image used outside scene color composition");
@@ -658,6 +683,8 @@ inline Schedule build(FrameResources frame,Settings settings) {
     }
     if(f.surface_marks!=none) {
         auto& upload=pass(PassId::surface_mark_upload);add(upload,f.surface_marks,Use::upload,true);
+        if(f.surface_mark_masks!=none && !result.resource(f.surface_mark_masks).initialized)
+            add(upload,f.surface_mark_masks,Use::copy_destination,true);
     }
     auto& skin=pass(PassId::skinning);
     if(settings.scene) {add(skin,f.frame,Use::upload,true);add(skin,f.objects,Use::upload,true);}
@@ -681,6 +708,7 @@ inline Schedule build(FrameResources frame,Settings settings) {
     if(settings.sky) {auto& sky=pass(PassId::sky);add(sky,f.color,Use::color);add(sky,f.depth,Use::depth);add(sky,f.frame,Use::constant);}
     auto& opaque=pass(PassId::opaque);add(opaque,f.color,Use::color);add(opaque,f.depth,Use::depth);if(settings.products && !settings.deferred) {add(opaque,f.normal,Use::color);add(opaque,f.motion,Use::color);add(opaque,f.motion_valid,Use::color);}
     add(opaque,f.surface_marks,Use::storage_read);
+    add(opaque,f.surface_mark_masks,Use::sampled);
     if(settings.scene) {add(opaque,f.frame,Use::constant);add(opaque,f.objects,Use::storage_read);if(!settings.deferred) {add(opaque,f.lights,Use::storage_read);add(opaque,f.shadow,Use::sampled);for(auto id:{f.ibl_diffuse,f.ibl_specular,f.ibl_brdf})add(opaque,id,Use::sampled);}geometry(opaque,f.camera_draws,true);if(settings.clustered && !settings.deferred) {add(opaque,f.counts,Use::storage_read);add(opaque,f.indices,Use::storage_read);}}
     if(settings.deferred) {
         for(auto id:{f.material_base,f.material_surface,f.material_correspondence})add(opaque,id,Use::color);

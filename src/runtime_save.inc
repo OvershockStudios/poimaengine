@@ -426,8 +426,12 @@ std::string Runtime::save_snapshot(const std::string& content_sha256) const {
     }
     if(s.surface_marks) {
         SaveJson rows=SaveJson::array();
-        for(const auto& row:s.surface_marks->rows)rows.push_back(surface_mark_json(row));
-        payload["surface_marks"]={{"version",1},{"next_id",s.surface_marks->next_id},{"marks",std::move(rows)}};
+        bool textured=false;
+        for(const auto& row:s.surface_marks->rows) {
+            textured|=!row.profile.empty();
+            rows.push_back(surface_mark_json(row));
+        }
+        payload["surface_marks"]={{"version",textured ? 2 : 1},{"next_id",s.surface_marks->next_id},{"marks",std::move(rows)}};
     }
     const SaveJson envelope={{"format","poima.runtime-snapshot"},{"version",motor_state ? 9 : stance_state ? 8 : camera_state ? 7 : hierarchical ? 6 : logical_ui ? 5 : structural ? 3 : custom ? 2 : 1},{"sha256",save_hash(payload.dump())},{"payload",payload}};
     std::size_t tokens=0;save_budget(envelope,0,tokens);const auto result=envelope.dump();
@@ -467,7 +471,8 @@ std::unique_ptr<Runtime> Runtime::restore_snapshot_data(const RuntimeDefinition&
     if(data.contains("surface_marks")) {
         surface_extension=std::move(data.at("surface_marks"));data.erase("surface_marks");
         save_fields(surface_extension,{"version","next_id","marks"});
-        require(save_integer(surface_extension.at("version"))==1 && save_integer(surface_extension.at("next_id"))>1,
+        const auto surface_version=save_integer(surface_extension.at("version"));
+        require((surface_version==1 || surface_version==2) && save_integer(surface_extension.at("next_id"))>1,
             "Invalid runtime surface mark extension version or identity frontier.");
         const auto& rows=surface_extension.at("marks");
         require(rows.is_array() && rows.size()<=max_scene_surface_marks,"Invalid saved surface mark count.");
@@ -970,10 +975,22 @@ std::unique_ptr<Runtime> Runtime::restore_snapshot_data(const RuntimeDefinition&
             std::transform(values.begin(),values.end(),result.begin(),[](double member){return static_cast<float>(member);});
             return result;
         };
+        bool textured=false;
         for(const auto& saved:surface_extension.at("marks")) {
-            save_fields(saved,{"id","receiver","tick","center_m","normal","tangent","half_extent_m",
-                "half_depth_m","minimum_normal_dot","edge_fraction","linear_rgb","opacity","roughness"});
             RuntimeSurfaceMark row;
+            auto values=saved;
+            if(saved.contains("profile") || saved.contains("mask_sha256")) {
+                require(saved.contains("profile") && saved.contains("mask_sha256"),"Saved surface mark profile and mask must be paired.");
+                row.profile=save_text(saved.at("profile"),32);
+                row.mark.mask_sha256=save_text(saved.at("mask_sha256"),64);
+                require(surface_mark_profiles::valid_id(row.profile) && save_digest(row.mark.mask_sha256),
+                    "Invalid saved surface mark profile or mask identity.");
+                values.erase("profile");
+                values.erase("mask_sha256");
+                textured=true;
+            }
+            save_fields(values,{"id","receiver","tick","center_m","normal","tangent","half_extent_m",
+                "half_depth_m","minimum_normal_dot","edge_fraction","linear_rgb","opacity","roughness"});
             row.id=save_integer(saved.at("id"),state->next_id-1);
             row.tick=save_integer(saved.at("tick"),s.tick);
             row.receiver=save_text(saved.at("receiver"),32);
@@ -995,6 +1012,8 @@ std::unique_ptr<Runtime> Runtime::restore_snapshot_data(const RuntimeDefinition&
             require(surface_mark_json(row)==saved,"Saved surface marks must use canonical native values.");
             state->rows.push_back(std::move(row));
         }
+        require(save_integer(surface_extension.at("version"))==(textured ? 2u : 1u),
+            "Saved surface mark extension version does not match mask membership.");
         s.surface_marks=std::move(state);
     }
     if(!kinematic_sleep.is_null()) {

@@ -243,6 +243,41 @@ void surface_mark_contracts() {
         bad("surface mark upload repeats a resource",[&](auto& plan) {
             pass(plan,PassId::surface_mark_upload).accesses.push_back({marks,Use::upload,true});
         });
+
+        const auto masks=fixture.f.surface_mark_masks=fixture.add(Kind::texture,Lifetime::shared);
+        auto& array=fixture.f.resources[masks];
+        array.format=Format::r8_unorm;array.width=64;array.height=128;array.layers=3;
+        auto first=fixture.plan();first.validate();++accepted;
+        check(pass(first,PassId::surface_mark_upload).accesses.size()==2,
+            "First textured frame must upload both the mark data and the new mask array");
+        auto bad_mask=[&](const char* label,const auto& edit) {
+            auto plan=first;edit(plan);rejects(label,[&]{plan.validate();});
+        };
+        bad_mask("mask texture has no mark consumer",[](auto& plan) {plan.frame.surface_marks=none;});
+        bad_mask("mask texture is not linear single-channel",[&](auto& plan) {plan.frame.resources[masks].format=Format::rgba8_unorm;});
+        bad_mask("mask texture is multisampled",[&](auto& plan) {plan.frame.resources[masks].samples=4;});
+        bad_mask("mask texture layer budget exceeded",[&](auto& plan) {plan.frame.resources[masks].layers=max_surface_mark_mask_layers+1;});
+        bad_mask("mask texture dimension budget exceeded",[&](auto& plan) {plan.frame.resources[masks].width=max_surface_mark_mask_side+1;});
+        bad_mask("mask texture was never uploaded",[&](auto& plan) {
+            erase_access(plan,PassId::surface_mark_upload,masks,Use::copy_destination);
+        });
+        bad_mask("mask texture upload left contents uninitialized",[&](auto& plan) {
+            auto& upload=pass(plan,PassId::surface_mark_upload);
+            for(auto& access:upload.accesses)if(access.resource==masks)access.initialize=false;
+        });
+        bad_mask("mask texture is absent from opaque shading",[&](auto& plan) {
+            erase_access(plan,PassId::opaque,masks,Use::sampled);
+        });
+        bad_mask("mask texture sampled by shadows",[&](auto& plan) {
+            pass(plan,PassId::shadows).accesses.push_back({masks,Use::sampled});
+        });
+
+        array.initialized=true;array.lifetime=Lifetime::imported;
+        auto cached=fixture.plan();cached.validate();++accepted;
+        check(pass(cached,PassId::surface_mark_upload).accesses.size()==1,
+            "Cached mask array must not be rewritten with the per-frame mark data");
+        pass(cached,PassId::surface_mark_upload).accesses.push_back({masks,Use::copy_destination,true});
+        rejects("cached mask texture written again",[&]{cached.validate();});
     }
 }
 void post_effect_contracts() {
