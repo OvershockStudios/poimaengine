@@ -1,8 +1,18 @@
 # Implementation status
 
-Updated 2026-11-21 for **0.0.377**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-21 for **0.0.378**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.378 separates [model assets and renderer resources](BUILD.md#world-service-and-schema-compilation)
+into their own compilation units. The split moved model intake, animation
+cooking, post-effect asset storage, first-person GPU resources, bloom and
+project post-effect passes. On AMD and NVIDIA, 86 viewmodel captures and
+their selected renderer observations matched 0.0.377 exactly. Another 32
+post-processing images and 128 probes matched. Fifteen Linux simulation
+suites, seven Linux authoring suites and the native Windows model import and
+compiled post-effect contracts passed.
+[Results](evidence/m2-source-ownership-378.json)
 
 Version 0.0.377 adds authored [height fog](HEIGHT_FOG.md) with ambient light
 and up to two shadowed spotlights. Fifty-six relocated Windows captures and

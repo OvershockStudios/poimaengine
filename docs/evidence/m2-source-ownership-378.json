@@ -1,0 +1,227 @@
+{
+  "release": "0.0.378",
+  "owner_source_inventory_sha256": "c908b2e216fc5c16c24d5d6dc790262688a9b6996afb5c67d0a7a88b86a27e94",
+  "owner_lines": {
+    "src/world.cpp": {
+      "before": 3804,
+      "after": 3247
+    },
+    "src/render_smoke.cpp": {
+      "before": 4517,
+      "after": 4263
+    }
+  },
+  "linux_simulation": {
+    "suites": [
+      {
+        "name": "animation_frame_transfer_protocol",
+        "seconds": 0.36
+      },
+      {
+        "name": "animation_rotation_retarget_protocol",
+        "seconds": 0.88
+      },
+      {
+        "name": "source_inspection_topology_protocol",
+        "seconds": 1.74
+      },
+      {
+        "name": "fbx_contract",
+        "seconds": 1.68
+      },
+      {
+        "name": "fbx_material_profile_contract",
+        "seconds": 0.98
+      },
+      {
+        "name": "authoring_core_conformance",
+        "seconds": 0.14
+      },
+      {
+        "name": "authoring_contract_identity",
+        "seconds": 0.7
+      },
+      {
+        "name": "model_source_fingerprint_protocol",
+        "seconds": 1.0
+      },
+      {
+        "name": "render_schedule_native",
+        "seconds": 0.04
+      },
+      {
+        "name": "world_asset_cache_native",
+        "seconds": 0.1
+      },
+      {
+        "name": "runtime_templates_native",
+        "seconds": 0.23
+      },
+      {
+        "name": "lighting_contract",
+        "seconds": 1.66
+      },
+      {
+        "name": "asset_contract",
+        "seconds": 0.41
+      },
+      {
+        "name": "world_contract",
+        "seconds": 5.52
+      },
+      {
+        "name": "asset_references_contract",
+        "seconds": 0.46
+      }
+    ],
+    "binary_sha256": "0536cb6e560318573060fb976cccfe09972906d623abb820b69bc115ee478a2e",
+    "junit_sha256": "4417530006a31fa43c58eab7a9e44db3b5a0675699ce5cd6de93e3e198587619",
+    "identical_compiled_post_effect_result_sha256": "cb42cc1dbea04dffb4a9b6657b36530761cbe620aadc131a183c8495847ad8c9"
+  },
+  "linux_authoring": {
+    "suites": [
+      {
+        "name": "authoring_core_conformance",
+        "seconds": 0.1
+      },
+      {
+        "name": "authoring_contract_identity",
+        "seconds": 0.24
+      },
+      {
+        "name": "mcp_contract",
+        "seconds": 0.66
+      },
+      {
+        "name": "shared_session_contract",
+        "seconds": 0.45
+      },
+      {
+        "name": "lighting_contract",
+        "seconds": 0.43
+      },
+      {
+        "name": "asset_contract",
+        "seconds": 0.17
+      },
+      {
+        "name": "cli_contract",
+        "seconds": 0.09
+      }
+    ],
+    "binary_sha256": "4707426690cfa58dfa8c14f65835c7b5e02e4f798bc36d86c567fce05d36bff6",
+    "junit_sha256": "df22f39ad464e13976992b4590fac56b7272c1e046b452350300f2fbc77cf620",
+    "compiled_post_effect_result_sha256": "c34e05ae3450480a8213af599d7cb1dcf974f683e7fb43be22bc86d4cafb9293"
+  },
+  "windows": {
+    "reference_binary_sha256": "2d9a67ca0d900f4e6652ae0a2f00f416ccf99ca4297ffca83bdbb135dadcdc61",
+    "binary_sha256": "f7b72b9e0829d682dc4c07a4657a333fdb59f45c7542b7391d37c308ccda150d",
+    "runtime_descriptor_sha256": "3b0c4547ee7c35aba8be84a1f7e4bbbe988b3be349c0bd0544133824120252f9",
+    "schedule": "Production render schedule: 488 valid variants, 1265 rejected contract mutations.",
+    "matching_spirv_modules": 55,
+    "viewmodel": {
+      "report_sha256": "77d5757c3673920e8417c3caf08ec66b732888db81b0bbdbe6d90e4a5d5be5db",
+      "cohorts": [
+        {
+          "name": "foreground-forward",
+          "gpu": "AMD Radeon(TM) Graphics",
+          "exact_bmps": 6,
+          "exact_capture_products": 6
+        },
+        {
+          "name": "msaa-deferred",
+          "gpu": "AMD Radeon(TM) Graphics",
+          "exact_bmps": 5,
+          "exact_capture_products": 5
+        },
+        {
+          "name": "world-depth-forward",
+          "gpu": "AMD Radeon(TM) Graphics",
+          "exact_bmps": 9,
+          "exact_capture_products": 9
+        },
+        {
+          "name": "world-depth-deferred-scene-anchor",
+          "gpu": "AMD Radeon(TM) Graphics",
+          "exact_bmps": 9,
+          "exact_capture_products": 9
+        },
+        {
+          "name": "matched-fov-forward",
+          "gpu": "AMD Radeon(TM) Graphics",
+          "exact_bmps": 9,
+          "exact_capture_products": 9
+        },
+        {
+          "name": "msaa-forward-fsr-quality",
+          "gpu": "AMD Radeon(TM) Graphics",
+          "exact_bmps": 5,
+          "exact_capture_products": 5
+        },
+        {
+          "name": "foreground-forward",
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "exact_bmps": 6,
+          "exact_capture_products": 6
+        },
+        {
+          "name": "msaa-deferred",
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "exact_bmps": 5,
+          "exact_capture_products": 5
+        },
+        {
+          "name": "world-depth-forward",
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "exact_bmps": 9,
+          "exact_capture_products": 9
+        },
+        {
+          "name": "world-depth-deferred-scene-anchor",
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "exact_bmps": 9,
+          "exact_capture_products": 9
+        },
+        {
+          "name": "matched-fov-forward",
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "exact_bmps": 9,
+          "exact_capture_products": 9
+        },
+        {
+          "name": "msaa-forward-fsr-quality",
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "exact_bmps": 5,
+          "exact_capture_products": 5
+        }
+      ]
+    },
+    "post_effect_bloom_grade": {
+      "images": 32,
+      "probes": 128,
+      "report_sha256": "430ed111a40969b5ee5d32271d0edc913483f0d2e712e169cb9c49dc605a9d21"
+    },
+    "model_import": {
+      "tests": 3,
+      "rpc_count": 596,
+      "reported_checks": 48,
+      "exact_package_and_response_comparison": true,
+      "report_sha256": "29a612f7747467357bd22ab8026799c22edde19417216d9e40a5ccad5008c2c2"
+    },
+    "compiled_post_effect_world_contract_sha256": "cb42cc1dbea04dffb4a9b6657b36530761cbe620aadc131a183c8495847ad8c9",
+    "retained_attempts": [
+      {
+        "scope": "effect reference selection",
+        "outcome": "Fixture requires its pinned 0.0.371 reference. Both later captures were compared to that reference and then to each other.",
+        "report_sha256": "b1225d111bc914d219b6649a9f401ebbbc137d92cc72dc4d1337a5e5150634f7"
+      },
+      {
+        "scope": "model intake through WSL",
+        "outcome": "Work deadline expired. Native Windows Python passed the original fixture with the same deadline.",
+        "deadline_seconds": 180,
+        "rpc_count": 395,
+        "report_sha256": "1c3c3f2f382f105e33866f5d23c7dc045dded6c92b114edf7204a8120dc69252"
+      }
+    ]
+  }
+}

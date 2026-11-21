@@ -157,8 +157,11 @@ selectors, identifies stable contracts, and projects selected results.
 documents and decodes typed components for scene and runtime construction.
 `src/world_runtime_json.cpp` decodes runtime command payloads and serializes
 animation and motion observations. `src/world_presentation_json.cpp`
-serializes lighting, capture and player presentation reports. `src/world.cpp`
-owns state, publication, dispatch and session filtering.
+serializes lighting, capture and player presentation reports.
+`src/world_model_assets.cpp` owns model source inspection, model import and
+animation cooking. `src/world_post_effect_assets.cpp` verifies and publishes
+compiled post-effect artifacts. `src/world.cpp` owns world state, revisioned
+publication, dispatch and session filtering.
 
 Each source compiles separately with the same optimization, debug information
 and warning settings. Changes to a private shared header may rebuild its
@@ -170,9 +173,14 @@ preferences and presentation receipts. It prepares a borrowed scene snapshot
 through the private `PlayerRenderer` interface. `src/render_smoke.cpp` owns
 the GPU context, frame submission and retirement. `src/render_vulkan_instance.cpp`
 owns the shared Vulkan instance and its loader dispatch. Render passes with their
-own resources, such as `src/render_screen_reflections.cpp`, use the context's
-device and command list. The native player-window fixture checks the presentation
-boundary separately from offscreen captures.
+own resources, such as `src/render_screen_reflections.cpp` and
+`src/render_height_fog.cpp`, use the context's device and command list.
+`src/render_viewmodel.cpp` stages viewmodel GPU resources and records the
+fullscreen resolve and composition draws. `src/render_hdr_effects.cpp` owns
+project post-effect and bloom GPU resources and draw commands. The context
+selects the input image, checks frame budgets and retires earlier frames
+before replacing live resources. The native player-window fixture checks
+the presentation boundary separately from offscreen captures.
 
 The [0.0.67 evidence](evidence/m2-world-schema-extraction.json) records unchanged
 compile flags, separate command timings and synthetic dirty-source scheduling

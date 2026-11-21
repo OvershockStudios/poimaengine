@@ -2,6 +2,12 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.378
+
+- Split model source inspection, model import and animation cooking, and compiled post-effect asset storage into separate native compilation units.
+- Split first-person GPU resources, bloom and project post-effect GPU resources from the Vulkan frame context.
+- Document the source ownership boundaries in the [build guide](docs/BUILD.md).
+
 ## 0.0.377
 
 - Author height fog with distance limits, scene-linear haze color and scattering from up to two shadowed spotlights. Capture diagnostics report the selected path and sparse HDR probes expose the composed world color.

@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "poima/core.hpp"
 #include "poima/scene.hpp"
-#include "poima/post_effect.hpp"
 #include "poima/environment_ibl.hpp"
 #include "poima/player.hpp"
 #include "poima/assets.hpp"
@@ -52,6 +51,8 @@
 #include "render_embedded_shader.hpp"
 #include "render_screen_reflections.hpp"
 #include "render_height_fog.hpp"
+#include "render_viewmodel.hpp"
+#include "render_hdr_effects.hpp"
 #include "poima/ambient_occlusion_cs.hpp"
 #include "poima/ambient_occlusion_filter_cs.hpp"
 #include "poima/scene_output_ao_ps.hpp"
@@ -62,12 +63,6 @@
 #include "poima/scene_output_products_bloom_ps.hpp"
 #include "poima/scene_output_grade_ps.hpp"
 #include "poima/scene_output_grade_bloom_ps.hpp"
-#include "poima/bloom_vs.hpp"
-#include "poima/bloom_ps.hpp"
-#include "poima/viewmodel_composite_vs.hpp"
-#include "poima/viewmodel_composite_ps.hpp"
-#include "poima/viewmodel_resolve_vs.hpp"
-#include "poima/viewmodel_resolve_ps.hpp"
 #include "poima/scene_output_vs.hpp"
 #include "poima/scene_output_ps.hpp"
 #include "poima/particle_sprite_vs.hpp"
@@ -254,23 +249,7 @@ struct Context {
     vk::SwapchainKHR swapchain;
     vk::Extent2D extent;
     vk::Format format = vk::Format::eUndefined;
-    // One serial-queue scratch bundle; accepted slots retain its exact handles.
-    // Replacement stages a complete bundle and counts old+new logical payload.
-    struct ViewmodelResources {
-        std::uint32_t width=0,height=0,samples=1;
-        std::uint64_t bytes=0;
-        nvrhi::TextureHandle color,depth,resolved,composite;
-        nvrhi::BufferHandle frame,objects,counts,indices;
-        std::array<nvrhi::BufferHandle,2> readbacks;
-        nvrhi::ShaderHandle vertex,pixel,compose_vertex,compose_pixel,resolve_vertex,resolve_pixel;
-        nvrhi::InputLayoutHandle input;
-        nvrhi::BindingLayoutHandle compose_layout,resolve_layout;
-        nvrhi::BindingSetHandle cluster_bindings,compose_bindings,resolve_bindings;
-        nvrhi::GraphicsPipelineHandle pipeline,culled_pipeline,compose_pipeline,resolve_pipeline;
-        nvrhi::FramebufferHandle framebuffer,compose_framebuffer,resolve_framebuffer;
-        std::map<std::pair<const MeshAsset*,const MaterialTextures*>,nvrhi::BindingSetHandle> materials;
-    };
-    std::shared_ptr<ViewmodelResources> viewmodel;
+    std::shared_ptr<render_viewmodel::Resources> viewmodel;
     std::vector<DrawItem> viewmodel_draws;
     std::vector<ObjectData> viewmodel_objects;
     FrameConstants viewmodel_frame{};
@@ -292,7 +271,7 @@ struct Context {
         nvrhi::EventQueryHandle completion;
         std::uint64_t submission=0;
         bool occupied=false,timing=false,has_skin=false,screen_reflections=false,height_fog=false;
-        std::shared_ptr<ViewmodelResources> viewmodel;
+        std::shared_ptr<render_viewmodel::Resources> viewmodel;
         std::optional<ViewmodelDiagnostics> viewmodel_diagnostics;
         SteadyClock::time_point started;
         DrawCounts draws;
@@ -440,27 +419,9 @@ struct Context {
     nvrhi::BufferHandle output_grade_buffer;
     const nvrhi::ITexture* output_source_bound=nullptr;
     nvrhi::GraphicsPipelineHandle output_pipeline;
-    struct PostEffectPass {
-        std::shared_ptr<const PostEffect> artifact;
-        nvrhi::BindingLayoutHandle layout;
-        nvrhi::GraphicsPipelineHandle pipeline;
-        nvrhi::TextureHandle target;
-        nvrhi::FramebufferHandle framebuffer;
-        nvrhi::BindingSetHandle bindings;
-        const nvrhi::ITexture* source=nullptr;
-        bool active=false;
-    } post_effect;
-    struct BloomTargets {
-        std::array<nvrhi::TextureHandle,2> images;
-        std::array<nvrhi::FramebufferHandle,2> framebuffers;
-        std::array<nvrhi::BindingSetHandle,3> bindings;
-        const nvrhi::ITexture* source=nullptr;
-    };
-    std::optional<BloomTargets> bloom_targets;
-    nvrhi::ShaderHandle bloom_vs,bloom_ps;
-    nvrhi::BindingLayoutHandle bloom_layout;
-    nvrhi::GraphicsPipelineHandle bloom_pipeline;
-    nvrhi::SamplerHandle bloom_sampler;
+    hdr_effects::ProjectPostPass post_effect;
+    hdr_effects::BloomPass bloom;
+    bool post_effect_active=false;
     nvrhi::BufferHandle vertices;
     nvrhi::InputLayoutHandle input_layout;
     nvrhi::BindingLayoutHandle binding_layout;
@@ -610,7 +571,7 @@ struct Context {
         sky_pipeline=nullptr;sky_bindings=nullptr;sky_layout=nullptr;sky_vs=nullptr;sky_ps=nullptr;
         output_pipeline=nullptr;output_bindings=nullptr;output_layout=nullptr;output_vs=nullptr;output_ps=nullptr;
         output_grade_buffer=nullptr;
-        bloom_pipeline=nullptr;bloom_targets.reset();bloom_layout=nullptr;bloom_vs=nullptr;bloom_ps=nullptr;bloom_sampler=nullptr;
+        bloom={};
         post_effect={};
         vertex_shader = nullptr;
         pixel_shader = nullptr;
@@ -1910,9 +1871,9 @@ struct Context {
     }
     void detach_world_outputs(const nvrhi::ITexture* source) {
         sprite_framebuffer=nullptr;
-        detach_bloom_source(source);
+        bloom.detach_source(source);
         if(output_source_bound==source) {output_bindings=nullptr;output_source_bound=nullptr;}
-        if(post_effect.source==source) {post_effect.bindings=nullptr;post_effect.source=nullptr;}
+        post_effect.detach_source(source);
         if(viewmodel)viewmodel->compose_bindings=nullptr;
     }
     void prepare_height_fog(const SceneLighting& lighting) {
@@ -2114,10 +2075,10 @@ struct Context {
         // Its commands invalidate bindings, while NVRHI state tracking remains valid.
         commands->clearState();
     }
-    std::uint64_t viewmodel_resident_bytes(const std::shared_ptr<ViewmodelResources>& staged={}) const {
-        std::set<const ViewmodelResources*> identities;std::uint64_t bytes=0;
-        auto count=[&](const std::shared_ptr<ViewmodelResources>& bundle) {if(bundle && identities.insert(bundle.get()).second)bytes+=bundle->bytes;};
-        count(viewmodel);for(const auto& slot:slots)count(slot.viewmodel);count(staged);return bytes;
+    std::uint64_t viewmodel_resident_bytes() const {
+        std::set<const render_viewmodel::Resources*> identities;std::uint64_t bytes=0;
+        auto count=[&](const std::shared_ptr<render_viewmodel::Resources>& bundle) {if(bundle && identities.insert(bundle.get()).second)bytes+=bundle->bytes;};
+        count(viewmodel);for(const auto& slot:slots)count(slot.viewmodel);return bytes;
     }
     void validate_viewmodel_budget(std::uint64_t foreground_bytes) const {
         require(foreground_bytes<=viewmodel_cap,"Foreground resident and staged payload exceeds the 384 MiB budget.");
@@ -2131,89 +2092,14 @@ struct Context {
             require(world+foreground_bytes<=512ull*1024*1024,"World and foreground HDR attachments exceed the 512 MiB budget.");
         }
     }
-    std::shared_ptr<ViewmodelResources> stage_viewmodel(std::uint32_t width,std::uint32_t height,std::uint32_t sample_count) {
-        auto bundle=std::make_shared<ViewmodelResources>();bundle->width=width;bundle->height=height;bundle->samples=sample_count;
-        // One-sample resolved/color aliases count once. Multisample bundles
-        // own color(8*N), depth(4*N), resolved(8) and composite(8) per pixel.
-        bundle->bytes=std::uint64_t(width)*height*(sample_count==1 ? 20u : 12u*sample_count+16u)+sizeof(FrameConstants)+32*sizeof(ObjectData)+cluster_cells*(cluster_capacity+1+diagnostics.frame_execution.limit)*sizeof(std::uint32_t);
-        validate_viewmodel_budget(viewmodel_resident_bytes(bundle));
-        auto support=[&](nvrhi::Format format,vk::Format vk_format,std::uint32_t count) {
-            const auto supported=physical.getFormatProperties(vk_format,dispatch).optimalTilingFeatures;
-            const auto attachment=format==nvrhi::Format::D32 ? vk::FormatFeatureFlagBits::eDepthStencilAttachment : vk::FormatFeatureFlagBits::eColorAttachment;
-            const auto needed=vk::FormatFeatureFlagBits::eSampledImage|vk::FormatFeatureFlagBits::eTransferSrc|vk::FormatFeatureFlagBits::eTransferDst|attachment;
-            require((supported&needed)==needed,"Foreground image format is unsupported.");
-            const auto usage=vk::ImageUsageFlagBits::eSampled|vk::ImageUsageFlagBits::eTransferSrc|vk::ImageUsageFlagBits::eTransferDst|
-                (format==nvrhi::Format::D32 ? vk::ImageUsageFlagBits::eDepthStencilAttachment : vk::ImageUsageFlagBits::eColorAttachment);
-            const auto properties=physical.getImageFormatProperties(vk_format,vk::ImageType::e2D,vk::ImageTiling::eOptimal,usage,{},dispatch);
-            require(bool(properties.sampleCounts&static_cast<vk::SampleCountFlagBits>(count)) && width<=properties.maxExtent.width &&
-                height<=properties.maxExtent.height && properties.maxExtent.depth>=1 && properties.maxMipLevels>=1 && properties.maxArrayLayers>=1,
-                "Selected GPU lacks requested foreground format/extent/sample support.");
-        };
-        // Validate every distinct format/sample usage before the first image
-        // allocation; a global framebuffer sample mask does not prove these.
-        support(nvrhi::Format::RGBA16_FLOAT,vk::Format::eR16G16B16A16Sfloat,sample_count);
-        support(nvrhi::Format::D32,vk::Format::eD32Sfloat,sample_count);
-        if(sample_count>1)support(nvrhi::Format::RGBA16_FLOAT,vk::Format::eR16G16B16A16Sfloat,1);
-        auto image=[&](nvrhi::Format format,std::uint32_t count,const char* name) {
-            nvrhi::TextureDesc desc;desc.width=width;desc.height=height;desc.format=format;desc.sampleCount=count;desc.isRenderTarget=true;desc.isShaderResource=true;
-            desc.dimension=count>1 ? nvrhi::TextureDimension::Texture2DMS : nvrhi::TextureDimension::Texture2D;
-            desc.initialState=nvrhi::ResourceStates::ShaderResource;desc.keepInitialState=true;desc.debugName=name;
-            auto result=checked->createTexture(desc);require(bool(result),std::string("Foreground allocation failed: ")+name);return result;
-        };
-        bundle->color=image(nvrhi::Format::RGBA16_FLOAT,sample_count,"Foreground output-local HDR coverage");
-        bundle->depth=image(nvrhi::Format::D32,sample_count,"Foreground independent self depth");
-        bundle->resolved=sample_count==1 ? bundle->color : image(nvrhi::Format::RGBA16_FLOAT,1,"Foreground arithmetic-average HDR coverage");
-        bundle->composite=image(nvrhi::Format::RGBA16_FLOAT,1,"World plus foreground linear HDR");
-        nvrhi::BufferDesc frame;frame.byteSize=sizeof(FrameConstants);frame.isConstantBuffer=true;frame.initialState=nvrhi::ResourceStates::ConstantBuffer;frame.keepInitialState=true;frame.debugName="Foreground frame constants";
-        bundle->frame=checked->createBuffer(frame);
-        nvrhi::BufferDesc objects;objects.byteSize=32*sizeof(ObjectData);objects.structStride=sizeof(ObjectData);objects.initialState=nvrhi::ResourceStates::ShaderResource;objects.keepInitialState=true;objects.debugName="Foreground immutable submission objects";
-        bundle->objects=checked->createBuffer(objects);
-        nvrhi::BufferDesc cells;cells.byteSize=cluster_cells*sizeof(std::uint32_t);cells.structStride=sizeof(std::uint32_t);cells.canHaveUAVs=true;cells.initialState=nvrhi::ResourceStates::ShaderResource;cells.keepInitialState=true;cells.debugName="Foreground cluster counts";
-        bundle->counts=checked->createBuffer(cells);cells.byteSize=cluster_cells*cluster_capacity*sizeof(std::uint32_t);cells.debugName="Foreground sorted cluster indices";bundle->indices=checked->createBuffer(cells);
-        nvrhi::BufferDesc readback;readback.byteSize=cluster_cells*sizeof(std::uint32_t);readback.cpuAccess=nvrhi::CpuAccessMode::Read;readback.initialState=nvrhi::ResourceStates::CopyDest;readback.keepInitialState=true;readback.debugName="Foreground slot cluster count readback";
-        for(std::size_t slot=0;slot<diagnostics.frame_execution.limit;++slot) {bundle->readbacks[slot]=checked->createBuffer(readback);require(bool(bundle->readbacks[slot]),"Foreground readback allocation failed.");}
-        require(bundle->frame && bundle->objects && bundle->counts && bundle->indices,"Foreground buffer allocation failed.");
-        bundle->cluster_bindings=checked->createBindingSet(nvrhi::BindingSetDesc().addItem(nvrhi::BindingSetItem::ConstantBuffer(1,bundle->frame))
-            .addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(6,light_buffer)).addItem(nvrhi::BindingSetItem::StructuredBuffer_UAV(0,bundle->counts)).addItem(nvrhi::BindingSetItem::StructuredBuffer_UAV(1,bundle->indices)),cluster_layout);
-        bundle->vertex=create_embedded_shader(checked,nvrhi::ShaderDesc(nvrhi::ShaderType::Vertex).setEntryName("vertex_main"),poima_scene_vs);
-        bundle->pixel=create_embedded_shader(checked,nvrhi::ShaderDesc(nvrhi::ShaderType::Pixel).setEntryName("pixel_main"),poima_scene_ps);
-        const nvrhi::VertexAttributeDesc attributes[]={
-            nvrhi::VertexAttributeDesc().setName("POSITION").setFormat(nvrhi::Format::RGB32_FLOAT).setOffset(0).setElementStride(sizeof(Vertex)),
-            nvrhi::VertexAttributeDesc().setName("NORMAL").setFormat(nvrhi::Format::RGB32_FLOAT).setOffset(12).setElementStride(sizeof(Vertex)),
-            nvrhi::VertexAttributeDesc().setName("TEXCOORD").setFormat(nvrhi::Format::RG32_FLOAT).setOffset(24).setElementStride(sizeof(Vertex)),
-            nvrhi::VertexAttributeDesc().setName("TANGENT").setFormat(nvrhi::Format::RGBA32_FLOAT).setOffset(32).setElementStride(sizeof(Vertex))};
-        bundle->input=checked->createInputLayout(attributes,4,bundle->vertex);
-        bundle->framebuffer=checked->createFramebuffer(nvrhi::FramebufferDesc().addColorAttachment(bundle->color).setDepthAttachment(bundle->depth));
-        bundle->compose_framebuffer=checked->createFramebuffer(nvrhi::FramebufferDesc().addColorAttachment(bundle->composite));
-        require(bundle->vertex && bundle->pixel && bundle->input && bundle->framebuffer && bundle->compose_framebuffer && bundle->cluster_bindings,"Foreground immutable bindings are unavailable.");
-        nvrhi::GraphicsPipelineDesc pipeline;pipeline.VS=bundle->vertex;pipeline.PS=bundle->pixel;pipeline.inputLayout=bundle->input;pipeline.bindingLayouts.push_back(binding_layout);
-        pipeline.bindingLayouts.push_back(surface_mark_layout);
-        pipeline.renderState.depthStencilState.depthTestEnable=true;pipeline.renderState.depthStencilState.depthWriteEnable=true;pipeline.renderState.depthStencilState.depthFunc=nvrhi::ComparisonFunc::LessOrEqual;
-        pipeline.renderState.rasterState.frontCounterClockwise=true;pipeline.renderState.rasterState.cullMode=nvrhi::RasterCullMode::None;
-        bundle->pipeline=checked->createGraphicsPipeline(pipeline,bundle->framebuffer->getFramebufferInfo());pipeline.renderState.rasterState.cullMode=nvrhi::RasterCullMode::Back;
-        bundle->culled_pipeline=checked->createGraphicsPipeline(pipeline,bundle->framebuffer->getFramebufferInfo());
-        bundle->compose_vertex=create_embedded_shader(checked,nvrhi::ShaderDesc(nvrhi::ShaderType::Vertex).setEntryName("vertex_main"),poima_viewmodel_composite_vs);
-        bundle->compose_pixel=create_embedded_shader(checked,nvrhi::ShaderDesc(nvrhi::ShaderType::Pixel).setEntryName("pixel_main"),poima_viewmodel_composite_ps);
-        bundle->compose_layout=checked->createBindingLayout(nvrhi::BindingLayoutDesc().setVisibility(nvrhi::ShaderType::All).addItem(nvrhi::BindingLayoutItem::PushConstants(0,32)).addItem(nvrhi::BindingLayoutItem::Texture_SRV(0)).addItem(nvrhi::BindingLayoutItem::Texture_SRV(1)));
-        nvrhi::GraphicsPipelineDesc composite;composite.VS=bundle->compose_vertex;composite.PS=bundle->compose_pixel;composite.bindingLayouts.push_back(bundle->compose_layout);
-        composite.renderState.depthStencilState.depthTestEnable=false;composite.renderState.depthStencilState.depthWriteEnable=false;composite.renderState.rasterState.cullMode=nvrhi::RasterCullMode::None;
-        bundle->compose_pipeline=checked->createGraphicsPipeline(composite,bundle->compose_framebuffer->getFramebufferInfo());
-        require(bundle->pipeline && bundle->culled_pipeline && bundle->compose_vertex && bundle->compose_pixel && bundle->compose_layout && bundle->compose_pipeline,"Foreground pipeline allocation failed.");
-        if(sample_count>1) {
-            bundle->resolve_vertex=create_embedded_shader(checked,nvrhi::ShaderDesc(nvrhi::ShaderType::Vertex).setEntryName("vertex_main"),poima_viewmodel_resolve_vs);
-            bundle->resolve_pixel=create_embedded_shader(checked,nvrhi::ShaderDesc(nvrhi::ShaderType::Pixel).setEntryName("pixel_main"),poima_viewmodel_resolve_ps);
-            bundle->resolve_layout=checked->createBindingLayout(nvrhi::BindingLayoutDesc().setVisibility(nvrhi::ShaderType::Pixel).addItem(nvrhi::BindingLayoutItem::Texture_SRV(0)));
-            bundle->resolve_bindings=checked->createBindingSet(nvrhi::BindingSetDesc().addItem(nvrhi::BindingSetItem::Texture_SRV(0,bundle->color)),bundle->resolve_layout);
-            bundle->resolve_framebuffer=checked->createFramebuffer(nvrhi::FramebufferDesc().addColorAttachment(bundle->resolved));
-            require(bundle->resolve_vertex && bundle->resolve_pixel && bundle->resolve_layout && bundle->resolve_bindings && bundle->resolve_framebuffer,"Foreground resolve resources unavailable.");
-            nvrhi::GraphicsPipelineDesc resolve;resolve.VS=bundle->resolve_vertex;resolve.PS=bundle->resolve_pixel;resolve.bindingLayouts.push_back(bundle->resolve_layout);
-            resolve.renderState.depthStencilState.depthTestEnable=false;resolve.renderState.depthStencilState.depthWriteEnable=false;resolve.renderState.rasterState.cullMode=nvrhi::RasterCullMode::None;
-            bundle->resolve_pipeline=checked->createGraphicsPipeline(resolve,bundle->resolve_framebuffer->getFramebufferInfo());
-            require(bool(bundle->resolve_pipeline),"Foreground resolve pipeline allocation failed.");
-        }
-        bundle->compose_bindings=checked->createBindingSet(nvrhi::BindingSetDesc().addItem(nvrhi::BindingSetItem::PushConstants(0,32)).addItem(nvrhi::BindingSetItem::Texture_SRV(0,reconstruction ? reconstructed.Get() : world_radiance_texture())).addItem(nvrhi::BindingSetItem::Texture_SRV(1,bundle->resolved)),bundle->compose_layout);
-        require(bool(bundle->compose_bindings),"Foreground staged composition bindings unavailable.");
-        return bundle;
+    std::shared_ptr<render_viewmodel::Resources> stage_viewmodel(std::uint32_t width,std::uint32_t height,std::uint32_t sample_count) {
+        const render_viewmodel::Configuration config{width,height,sample_count,sizeof(FrameConstants),sizeof(ObjectData),
+            32,cluster_cells,cluster_capacity,diagnostics.frame_execution.limit};
+        // Stage only after the existing and replacement bundles fit together.
+        validate_viewmodel_budget(viewmodel_resident_bytes()+render_viewmodel::logical_bytes(config));
+        return render_viewmodel::stage(*checked.Get(),physical,dispatch,config,
+            {light_buffer.Get(),cluster_layout.Get(),binding_layout.Get(),surface_mark_layout.Get(),
+             reconstruction ? reconstructed.Get() : world_radiance_texture()});
     }
     void prepare_viewmodel(std::set<std::string>& active_skins) {
         viewmodel_draws.clear();viewmodel_objects.clear();pending_viewmodel.reset();
@@ -2267,8 +2153,8 @@ struct Context {
                 if(item.camera_visible) {++pending_viewmodel->draws.camera_draws;pending_viewmodel->draws.camera_triangles+=item.geometry.count/3;if(item.skin) {++pending_viewmodel->draws.skinned_instances;pending_viewmodel->draws.skinned_vertices+=object.mesh->vertices.size();}}else ++pending_viewmodel->draws.camera_culled;
                 viewmodel_draws.push_back(std::move(item));
             }
-            auto composition=checked->createBindingSet(nvrhi::BindingSetDesc().addItem(nvrhi::BindingSetItem::PushConstants(0,32)).addItem(nvrhi::BindingSetItem::Texture_SRV(0,reconstruction ? reconstructed.Get() : world_radiance_texture())).addItem(nvrhi::BindingSetItem::Texture_SRV(1,viewmodel->resolved)),viewmodel->compose_layout);
-            require(bool(composition),"Foreground composition bindings unavailable.");viewmodel->compose_bindings=std::move(composition);
+            render_viewmodel::bind_composition(*checked.Get(),*viewmodel,
+                reconstruction ? reconstructed.Get() : world_radiance_texture());
         } catch(...) {renderer_fault=true;throw;}
     }
     void render_viewmodel() {
@@ -2286,172 +2172,19 @@ struct Context {
     }
     void composite_viewmodel() {
         const auto display=scene_viewport.value_or(nvrhi::Viewport(float(extent.width),float(extent.height)));
-        const float parameters[8]={reconstruction ? 0.0f : display.minX,reconstruction ? 0.0f : display.minY,
-            reconstruction ? float(output_extent.width) : display.maxX-display.minX,reconstruction ? float(output_extent.height) : display.maxY-display.minY,float(viewmodel->width),float(viewmodel->height),0,0};
-        nvrhi::GraphicsState state;state.pipeline=viewmodel->compose_pipeline;state.framebuffer=viewmodel->compose_framebuffer;state.bindings.push_back(viewmodel->compose_bindings);state.viewport.addViewportAndScissorRect(nvrhi::Viewport(float(viewmodel->width),float(viewmodel->height)));
-        commands->setGraphicsState(state);commands->setPushConstants(parameters,sizeof(parameters));commands->draw(nvrhi::DrawArguments().setVertexCount(3));
-    }
-    void resolve_viewmodel() {
-        require(viewmodel->samples>1 && viewmodel->resolved.Get()!=viewmodel->color.Get(),"Foreground resolve requires distinct multisample and single-sample images.");
-        nvrhi::GraphicsState state;state.pipeline=viewmodel->resolve_pipeline;state.framebuffer=viewmodel->resolve_framebuffer;
-        state.bindings.push_back(viewmodel->resolve_bindings);state.viewport.addViewportAndScissorRect(nvrhi::Viewport(float(viewmodel->width),float(viewmodel->height)));
-        commands->setGraphicsState(state);commands->draw(nvrhi::DrawArguments().setVertexCount(3));
+        render_viewmodel::record_composition(*commands.Get(),*viewmodel,
+            {reconstruction ? 0.0f : display.minX,reconstruction ? 0.0f : display.minY,
+             reconstruction ? float(output_extent.width) : display.maxX-display.minX,
+             reconstruction ? float(output_extent.height) : display.maxY-display.minY});
     }
 
-    void detach_bloom_source(const nvrhi::ITexture* source) {
-        if(bloom_targets && bloom_targets->source==source) {
-            bloom_targets->bindings[0]=nullptr;
-            bloom_targets->source=nullptr;
-        }
-    }
-    void retire_post_effect_target() {
-        if(!post_effect.target)return;
+    void retire_post_effect_consumers(const nvrhi::ITexture* source) {
         retire_frames(true);
         output_bindings=nullptr;
         output_source_bound=nullptr;
-        detach_bloom_source(post_effect.target.Get());
-        post_effect.framebuffer=nullptr;
-        post_effect.target=nullptr;
+        bloom.detach_source(source);
     }
-    void prepare_post_effect(nvrhi::ITexture* source) {
-        const auto& image=source->getDesc();
-        require(image.format==nvrhi::Format::RGBA16_FLOAT && image.sampleCount==1 && image.isShaderResource,
-            "Project post effect requires a resolved, shader-readable HDR image.");
-        require(std::uint64_t(image.width)*image.height<=render_schedule::post_effect_budget_bytes/8,
-            "Project post-effect attachment exceeds the 128 MiB payload budget.");
-        const auto& artifact=scene->post_effect;
-        const bool replace_shader=!post_effect.artifact || post_effect.artifact->sha256!=artifact->sha256;
-        if(replace_shader) {
-            validate_post_effect_vulkan(*artifact);
-        } else if(artifact!=post_effect.artifact) {
-            require(artifact->id==post_effect.artifact->id && artifact->words==post_effect.artifact->words,
-                "Project post-effect cache identity has different shader content.");
-        }
-        if(!post_effect.target || post_effect.target->getDesc().width!=image.width || post_effect.target->getDesc().height!=image.height) {
-            retire_post_effect_target();
-            nvrhi::TextureDesc desc;
-            desc.width=image.width;desc.height=image.height;desc.format=nvrhi::Format::RGBA16_FLOAT;
-            desc.isRenderTarget=true;desc.isShaderResource=true;
-            desc.initialState=nvrhi::ResourceStates::ShaderResource;desc.keepInitialState=true;
-            desc.debugName="Project post effect radiance";
-            auto target=checked->createTexture(desc);
-            require(bool(target),"Project post-effect texture allocation failed.");
-            auto framebuffer=checked->createFramebuffer(nvrhi::FramebufferDesc().addColorAttachment(target));
-            require(bool(framebuffer),"Project post-effect framebuffer creation failed.");
-            post_effect.target=std::move(target);
-            post_effect.framebuffer=std::move(framebuffer);
-        }
-        if(!post_effect.layout) {
-            post_effect.layout=checked->createBindingLayout(nvrhi::BindingLayoutDesc().setVisibility(nvrhi::ShaderType::Pixel)
-                .addItem(nvrhi::BindingLayoutItem::Texture_SRV(0)));
-            require(bool(post_effect.layout),"Project post-effect input layout creation failed.");
-        }
-        if(replace_shader) {
-            // Retire in-flight use before replacing the cached pipeline.
-            if(post_effect.pipeline)retire_frames(true);
-            const auto vertex=create_embedded_shader(checked,nvrhi::ShaderDesc(nvrhi::ShaderType::Vertex).setEntryName("vertex_main"),poima_scene_output_vs);
-            const auto pixel=checked->createShader(nvrhi::ShaderDesc(nvrhi::ShaderType::Pixel).setEntryName("poima_project_post_v1"),
-                artifact->words.data(),artifact->words.size()*sizeof(std::uint32_t));
-            require(vertex && pixel,"Project post-effect shader creation failed.");
-            nvrhi::GraphicsPipelineDesc desc;
-            desc.VS=vertex;desc.PS=pixel;desc.bindingLayouts.push_back(post_effect.layout);
-            desc.renderState.depthStencilState.depthTestEnable=false;
-            desc.renderState.depthStencilState.depthWriteEnable=false;
-            desc.renderState.rasterState.cullMode=nvrhi::RasterCullMode::None;
-            auto effect_pipeline=checked->createGraphicsPipeline(desc,post_effect.framebuffer->getFramebufferInfo());
-            require(bool(effect_pipeline),"Project post-effect graphics pipeline creation failed.");
-            post_effect.pipeline=std::move(effect_pipeline);
-        }
-        post_effect.artifact=artifact;
-        if(post_effect.source!=source) {
-            auto effect_bindings=checked->createBindingSet(nvrhi::BindingSetDesc()
-                .addItem(nvrhi::BindingSetItem::Texture_SRV(0,source)),post_effect.layout);
-            require(bool(effect_bindings),"Project post-effect HDR binding creation failed.");
-            post_effect.bindings=std::move(effect_bindings);
-            post_effect.source=source;
-        }
-    }
-    void render_post_effect() {
-        const auto& target=post_effect.target->getDesc();
-        nvrhi::GraphicsState state;
-        state.pipeline=post_effect.pipeline;state.framebuffer=post_effect.framebuffer;
-        state.bindings.push_back(post_effect.bindings);
-        state.viewport.addViewportAndScissorRect(nvrhi::Viewport(float(target.width),float(target.height)));
-        commands->setGraphicsState(state);
-        commands->draw(nvrhi::DrawArguments().setVertexCount(3));
-    }
-    void prepare_bloom(nvrhi::ITexture* source) {
-        namespace rs=render_schedule;
-        const auto& input=source->getDesc();
-        const auto width=rs::bloom_extent(input.width),height=rs::bloom_extent(input.height);
-        require(std::uint64_t(width)*height<=rs::bloom_budget_bytes/16,"Bloom attachments exceed the 32 MiB budget.");
-        if(!bloom_layout) {
-            const auto format_properties=physical.getFormatProperties(vk::Format::eR16G16B16A16Sfloat,dispatch).optimalTilingFeatures;
-            require(bool(format_properties&vk::FormatFeatureFlagBits::eSampledImageFilterLinear),"Bloom requires linear filtering of RGBA16_FLOAT textures.");
-            bloom_vs=create_embedded_shader(checked,nvrhi::ShaderDesc(nvrhi::ShaderType::Vertex).setEntryName("vertex_main"),poima_bloom_vs);
-            bloom_ps=create_embedded_shader(checked,nvrhi::ShaderDesc(nvrhi::ShaderType::Pixel).setEntryName("pixel_main"),poima_bloom_ps);
-            bloom_layout=checked->createBindingLayout(nvrhi::BindingLayoutDesc().setVisibility(nvrhi::ShaderType::All)
-                .addItem(nvrhi::BindingLayoutItem::PushConstants(0,32)).addItem(nvrhi::BindingLayoutItem::Texture_SRV(0))
-                .addItem(nvrhi::BindingLayoutItem::Sampler(0)));
-            nvrhi::SamplerDesc sampler;
-            sampler.addressU=sampler.addressV=sampler.addressW=nvrhi::SamplerAddressMode::Clamp;
-            sampler.minFilter=sampler.magFilter=true;
-            bloom_sampler=checked->createSampler(sampler);
-            require(bloom_vs && bloom_ps && bloom_layout && bloom_sampler,"Bloom shaders, layout or sampler creation failed.");
-        }
-        if(!bloom_targets || bloom_targets->images[0]->getDesc().width!=width || bloom_targets->images[0]->getDesc().height!=height) {
-            if(bloom_targets)retire_frames(true);
-            BloomTargets staged;
-            nvrhi::TextureDesc desc;
-            desc.width=width;desc.height=height;desc.format=nvrhi::Format::RGBA16_FLOAT;
-            desc.isRenderTarget=true;desc.isShaderResource=true;
-            desc.initialState=nvrhi::ResourceStates::ShaderResource;desc.keepInitialState=true;
-            for(std::size_t i=0;i<staged.images.size();++i) {
-                desc.debugName=i==0 ? "Bloom filtered radiance" : "Bloom scratch radiance";
-                staged.images[i]=checked->createTexture(desc);
-                require(bool(staged.images[i]),"Bloom texture allocation failed.");
-                staged.framebuffers[i]=checked->createFramebuffer(nvrhi::FramebufferDesc().addColorAttachment(staged.images[i]));
-                require(bool(staged.framebuffers[i]),"Bloom framebuffer creation failed.");
-            }
-            bloom_targets=std::move(staged);
-            output_bindings=nullptr;
-        }
-        auto& targets=*bloom_targets;
-        if(!bloom_pipeline) {
-            nvrhi::GraphicsPipelineDesc desc;
-            desc.VS=bloom_vs;desc.PS=bloom_ps;desc.bindingLayouts.push_back(bloom_layout);
-            desc.renderState.depthStencilState.depthTestEnable=false;
-            desc.renderState.depthStencilState.depthWriteEnable=false;
-            desc.renderState.rasterState.cullMode=nvrhi::RasterCullMode::None;
-            bloom_pipeline=checked->createGraphicsPipeline(desc,targets.framebuffers[0]->getFramebufferInfo());
-            require(bool(bloom_pipeline),"Bloom pipeline creation failed.");
-        }
-        if(targets.source!=source) {
-            const std::array<nvrhi::ITexture*,3> inputs={source,targets.images[0].Get(),targets.images[1].Get()};
-            for(std::size_t pass=0;pass<inputs.size();++pass) {
-                const auto desc=nvrhi::BindingSetDesc().addItem(nvrhi::BindingSetItem::PushConstants(0,32))
-                    .addItem(nvrhi::BindingSetItem::Texture_SRV(0,inputs[pass])).addItem(nvrhi::BindingSetItem::Sampler(0,bloom_sampler));
-                targets.bindings[pass]=checked->createBindingSet(desc,bloom_layout);
-                require(bool(targets.bindings[pass]),"Bloom input binding creation failed.");
-            }
-            targets.source=source;
-        }
-    }
-    void render_bloom(std::size_t pass) {
-        const auto& targets=*bloom_targets;
-        const auto& source=(pass==0 ? targets.source : targets.images[0].Get())->getDesc();
-        const auto& destination=targets.images[0]->getDesc();
-        const auto& bloom=scene->lighting.environment.bloom;
-        const float parameters[8]={float(source.width),float(source.height),bloom.threshold,bloom.radius,
-            pass==1 ? 1.f : 0.f,pass==2 ? 1.f : 0.f,0,0};
-        nvrhi::GraphicsState state;
-        state.pipeline=bloom_pipeline;state.framebuffer=targets.framebuffers[pass==1 ? 1 : 0];
-        state.bindings.push_back(targets.bindings[pass]);
-        state.viewport.addViewportAndScissorRect(nvrhi::Viewport(float(destination.width),float(destination.height)));
-        commands->setGraphicsState(state);
-        commands->setPushConstants(parameters,sizeof(parameters));
-        commands->draw(nvrhi::DrawArguments().setVertexCount(3));
-    }
+
     struct OutputGradeConstants {
         std::array<float, 4> parameters{};
         std::array<std::array<float, 4>, output_grade_knot_count> knots{};
@@ -2462,21 +2195,30 @@ struct Context {
         if(!scene)return;
         const bool use_reconstructed=(reconstruction && scene_visible) || viewmodel_enabled;
         auto* source=viewmodel_enabled ? viewmodel->composite.Get() : (reconstruction && scene_visible) ? reconstructed.Get() : world_radiance_texture();
-        post_effect.active=scene_visible && scene_debug_view==SceneDebugView::color && bool(scene->post_effect);
-        if(post_effect.active) {
-            prepare_post_effect(source);
-            source=post_effect.target.Get();
+        post_effect_active=scene_visible && scene_debug_view==SceneDebugView::color && bool(scene->post_effect);
+        if(post_effect_active) {
+            post_effect.prepare(*checked.Get(),source,scene->post_effect,
+                [this](const nvrhi::ITexture* target) { retire_post_effect_consumers(target); },
+                [this] { retire_frames(true); });
+            source=post_effect.radiance();
         } else {
-            post_effect.bindings=nullptr;
-            post_effect.source=nullptr;
-            if(!scene->post_effect)retire_post_effect_target();
+            post_effect.detach_source();
+            if(!scene->post_effect && post_effect.radiance()) {
+                retire_post_effect_consumers(post_effect.radiance());
+                post_effect.clear_target();
+            }
         }
-        const auto& bloom=scene->lighting.environment.bloom;
-        require(std::isfinite(bloom.intensity) && bloom.intensity>=0 && bloom.intensity<=1 &&
-            std::isfinite(bloom.threshold) && bloom.threshold>=0 && bloom.threshold<=65504 &&
-            std::isfinite(bloom.radius) && bloom.radius>=2 && bloom.radius<=32,"Invalid snapshot bloom settings.");
-        const bool use_bloom=scene_visible && scene_debug_view==SceneDebugView::color && bloom.intensity>0;
-        if(use_bloom)prepare_bloom(source);
+        const auto& bloom_settings=scene->lighting.environment.bloom;
+        require(std::isfinite(bloom_settings.intensity) && bloom_settings.intensity>=0 && bloom_settings.intensity<=1 &&
+            std::isfinite(bloom_settings.threshold) && bloom_settings.threshold>=0 && bloom_settings.threshold<=65504 &&
+            std::isfinite(bloom_settings.radius) && bloom_settings.radius>=2 && bloom_settings.radius<=32,"Invalid snapshot bloom settings.");
+        const bool use_bloom=scene_visible && scene_debug_view==SceneDebugView::color && bloom_settings.intensity>0;
+        if(use_bloom) {
+            bloom.prepare(*checked.Get(),source,[this] {
+                const auto properties=physical.getFormatProperties(vk::Format::eR16G16B16A16Sfloat,dispatch);
+                return bool(properties.optimalTilingFeatures&vk::FormatFeatureFlagBits::eSampledImageFilterLinear);
+            },[this] { retire_frames(true); },[this] { output_bindings=nullptr; });
+        }
         const auto& grade=scene->lighting.environment.output_grade;
         const bool use_grade=scene_visible && scene_debug_view==SceneDebugView::color && grade && grade->strength>0;
         if(use_grade && !output_grade_buffer) {
@@ -2520,7 +2262,7 @@ struct Context {
                 .addItem(nvrhi::BindingSetItem::Texture_SRV(0,source));
             if(scene_normal)bindings_desc.addItem(nvrhi::BindingSetItem::Texture_SRV(1,depth)).addItem(nvrhi::BindingSetItem::Texture_SRV(2,scene_normal)).addItem(nvrhi::BindingSetItem::Texture_SRV(3,scene_motion)).addItem(nvrhi::BindingSetItem::Texture_SRV(4,scene_motion_valid));
             if(scene_debug_view==SceneDebugView::ambient_occlusion)bindings_desc.addItem(nvrhi::BindingSetItem::Texture_SRV(5,ao_filtered));
-            if(use_bloom)bindings_desc.addItem(nvrhi::BindingSetItem::Texture_SRV(6,bloom_targets->images[0])).addItem(nvrhi::BindingSetItem::Sampler(0,bloom_sampler));
+            if(use_bloom)bindings_desc.addItem(nvrhi::BindingSetItem::Texture_SRV(6,bloom.radiance())).addItem(nvrhi::BindingSetItem::Sampler(0,bloom.sampler()));
             if(use_grade)bindings_desc.addItem(nvrhi::BindingSetItem::ConstantBuffer(1,output_grade_buffer));
             output_bindings=checked->createBindingSet(bindings_desc,output_layout);
             require(bool(output_bindings),"Scene output HDR bindings creation failed.");
@@ -2846,8 +2588,10 @@ struct Context {
         reconstruction.reset();temporal_bindings=nullptr;reconstructed=nullptr;dense_motion=nullptr;reactive=nullptr;dilated_depth=nullptr;dilated_motion=nullptr;reconstructed_depth=nullptr;render_extent={};output_extent={};temporal_phase=0;temporal_clock.reset();
         viewmodel.reset();viewmodel_enabled=false;viewmodel_draws.clear();viewmodel_objects.clear();output_source_bound=nullptr;
         commands=nullptr;
-        sky_pipeline=nullptr;output_pipeline=nullptr;output_bindings=nullptr;bloom_targets.reset();
-        post_effect.framebuffer=nullptr;post_effect.target=nullptr;post_effect.bindings=nullptr;post_effect.source=nullptr;post_effect.active=false;
+        sky_pipeline=nullptr;output_pipeline=nullptr;output_bindings=nullptr;bloom.clear_targets();
+        post_effect.clear_target();
+        post_effect.detach_source();
+        post_effect_active=false;
         overlay_framebuffers.clear();overlay_pipeline=nullptr;
         game_ui_framebuffers.clear();game_ui_pipeline=nullptr;
 #if POIMA_EDITOR
@@ -3508,7 +3252,7 @@ struct Context {
         rs::Settings settings;settings.scene=scene!=nullptr;settings.clustered=scene && pending_lights.active;
         settings.viewmodel=viewmodel_enabled;settings.viewmodel_clustered=viewmodel_enabled && viewmodel_lights.active;settings.viewmodel_samples=viewmodel_samples;
         settings.bloom=scene && output_bloom_bound;
-        settings.post_effect=scene && post_effect.active;
+        settings.post_effect=scene && post_effect_active;
         settings.screen_reflections=scene && scene_visible && reflections.radiance();
         settings.height_fog=scene && scene_visible && fog.radiance();
         settings.height_fog_spots=settings.height_fog && (fog_spots[0]!=0 || fog_spots[1]!=0);
@@ -3658,11 +3402,11 @@ struct Context {
                 f.viewmodel_draws.push_back(std::move(input));
             }
         }
-        if(settings.post_effect)f.post_effect=texture(post_effect.target,rs::Lifetime::shared,false);
+        if(settings.post_effect)f.post_effect=texture(post_effect.radiance(),rs::Lifetime::shared,false);
         if(settings.scene && output_grade_bound)f.output_grade=buffer(output_grade_buffer,rs::Lifetime::shared,false);
         if(settings.bloom) {
-            f.bloom=texture(bloom_targets->images[0],rs::Lifetime::shared,false);
-            f.bloom_scratch=texture(bloom_targets->images[1],rs::Lifetime::shared,false);
+            f.bloom=texture(bloom.radiance(),rs::Lifetime::shared,false);
+            f.bloom_scratch=texture(bloom.scratch(),rs::Lifetime::shared,false);
         }
         settings.game_ui=game_ui_frame && (!game_ui_frame->vertices.empty() || !game_ui_frame->indices.empty());
         if(settings.game_ui) {
@@ -3860,19 +3604,18 @@ struct Context {
             }
             framebuffer(game_ui_framebuffers.at(index),f.output,rs::none);
             if(plan.settings.post_effect) {
-                framebuffer(post_effect.framebuffer,f.post_effect,rs::none);
-                const auto& inputs=post_effect.bindings->getDesc()->bindings;
+                framebuffer(post_effect.framebuffer(),f.post_effect,rs::none);
+                const auto& inputs=post_effect.bindings()->getDesc()->bindings;
                 require(inputs.size()==1 && inputs[0].type==nvrhi::ResourceType::Texture_SRV && inputs[0].slot==0,
                     "Project post-effect input differs from the admitted shader interface.");
                 identity(rs::scene_linear_radiance(f,plan.settings),inputs[0].resourceHandle);
             }
             if(plan.settings.bloom) {
-                const auto& bloom=*bloom_targets;
-                framebuffer(bloom.framebuffers[0],f.bloom,rs::none);
-                framebuffer(bloom.framebuffers[1],f.bloom_scratch,rs::none);
+                framebuffer(bloom.framebuffer(0),f.bloom,rs::none);
+                framebuffer(bloom.framebuffer(1),f.bloom_scratch,rs::none);
                 const std::array<rs::ResourceId,3> inputs={rs::display_radiance(f,plan.settings),f.bloom,f.bloom_scratch};
                 for(std::size_t pass=0;pass<inputs.size();++pass)
-                    for(const auto& binding:bloom.bindings[pass]->getDesc()->bindings)
+                    for(const auto& binding:bloom.bindings(pass)->getDesc()->bindings)
                         if(binding.type==nvrhi::ResourceType::Texture_SRV)identity(inputs[pass],binding.resourceHandle);
             }
             const std::array<rs::ResourceId,7> output_resources={rs::display_radiance(f,plan.settings),f.depth,f.normal,f.motion,f.motion_valid,f.ao_filtered,f.bloom};
@@ -4085,12 +3828,15 @@ struct Context {
             case render_schedule::PassId::viewmodel_clear:
                 commands->clearTextureFloat(planned_texture(resources.viewmodel_color),nvrhi::AllSubresources,nvrhi::Color(0,0,0,0));commands->clearDepthStencilTexture(planned_texture(resources.viewmodel_depth),nvrhi::AllSubresources,true,1.0f,false,0);break;
             case render_schedule::PassId::viewmodel_opaque:render_viewmodel();break;
-            case render_schedule::PassId::viewmodel_resolve:resolve_viewmodel();break;
+            case render_schedule::PassId::viewmodel_resolve:render_viewmodel::record_resolve(*commands.Get(),*viewmodel);break;
             case render_schedule::PassId::viewmodel_composite:composite_viewmodel();break;
-            case render_schedule::PassId::post_effect:render_post_effect();break;
-            case render_schedule::PassId::bloom_extract:render_bloom(0);break;
-            case render_schedule::PassId::bloom_horizontal:render_bloom(1);break;
-            case render_schedule::PassId::bloom_vertical:render_bloom(2);break;
+            case render_schedule::PassId::post_effect:post_effect.record(*commands.Get());break;
+            case render_schedule::PassId::bloom_extract:
+                bloom.record(*commands.Get(),scene->lighting.environment.bloom,hdr_effects::BloomStage::extract);break;
+            case render_schedule::PassId::bloom_horizontal:
+                bloom.record(*commands.Get(),scene->lighting.environment.bloom,hdr_effects::BloomStage::horizontal);break;
+            case render_schedule::PassId::bloom_vertical:
+                bloom.record(*commands.Get(),scene->lighting.environment.bloom,hdr_effects::BloomStage::vertical);break;
             case render_schedule::PassId::output:
                 render_scene_output(index,resources.output_grade!=render_schedule::none ? planned_buffer(resources.output_grade) : nullptr);
                 break;
