@@ -1,8 +1,20 @@
 # Implementation status
 
-Updated 2026-11-21 for **0.0.368**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-21 for **0.0.369**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.369 adds [asymmetric boot impressions](TERRAIN.md#shape-the-sole)
+with a wider toe and the heading captured at plant acquisition. Four Linux
+pose orientations passed an independent terrain and collision comparison.
+An imported walk at 1× on a fitted kinematic path left three impressions
+through a quarter turn and stop. Fresh restoration reproduced all 94
+remaining ticks and the final save. The late lift fade reached 96 mm of
+sole-to-target separation on this path. Thirty-six relocated Vulkan captures
+verify shape, depth, normals and save continuation in controlled poses on AMD
+and NVIDIA with forward and deferred rendering. The retained circular save
+from 0.0.368 still restores and reaches its original final bytes.
+[Results](evidence/m2-snow-sole-shape-369.json)
 
 Version 0.0.368 supports [automatic snow impressions from a planted foot lift](TERRAIN.md#leave-depressions-with-planted-feet).
 An eligible footprint can proceed while an older one would disturb another

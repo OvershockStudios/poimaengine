@@ -52,7 +52,11 @@ bool same_acquisition(const FootReleaseIntent& a, const FootReleaseIntent& b) no
     return a.acquired_tick == b.acquired_tick && holding_key(a) == holding_key(b);
 }
 
-void validate_intent(const FootReleaseIntent& intent, bool ready, std::uint64_t tick) {
+bool uses_heading(const Definition& definition) noexcept {
+    return definition.foot_release && definition.foot_release->sole.has_value();
+}
+
+void validate_intent(const FootReleaseIntent& intent, bool ready, bool shaped, std::uint64_t tick) {
     require(valid_rig(rig_id(intent.rig)), "Snow foot release rig must be a nonzero lowercase entity ID.");
     require(intent.slot >= 1 && intent.slot <= max_ik_slot, "Snow foot release IK slot is out of range.");
     require(intent.acquired_tick >= 1 && intent.acquired_tick <= tick, "Snow foot release acquisition tick is out of range.");
@@ -60,9 +64,10 @@ void validate_intent(const FootReleaseIntent& intent, bool ready, std::uint64_t 
         "Snow foot release tick is out of range.");
     require(release_center_in_triangle(intent.tile, intent.triangle, intent.center),
         "Snow foot release center is outside the frozen receiver triangle.");
+    require(intent.heading_bin.has_value() == shaped, "Snow foot release heading must match the frozen sole profile.");
 }
 
-void validate_state(const FootReleaseState& state, std::uint64_t tick) {
+void validate_state(const FootReleaseState& state, bool shaped, std::uint64_t tick) {
     require(tick <= max_exact_integer, "Snow foot release snapshot tick is out of range.");
     require(state.held_count <= state.holding.size() && state.ready_count <= state.ready.size(),
         "Snow foot release snapshot exceeds its queue bounds.");
@@ -76,13 +81,13 @@ void validate_state(const FootReleaseState& state, std::uint64_t tick) {
 
     for (std::size_t i = 0; i < state.held_count; ++i) {
         const auto& intent = state.holding[i];
-        validate_intent(intent, false, tick);
+        validate_intent(intent, false, shaped, tick);
         require(i == 0 || holding_key(state.holding[i - 1]) < holding_key(intent),
             "Snow held releases must be ordered by rig and slot without duplicate slots.");
     }
     for (std::size_t i = 0; i < state.ready_count; ++i) {
         const auto& intent = state.ready[i];
-        validate_intent(intent, true, tick);
+        validate_intent(intent, true, shaped, tick);
         require(i == 0 || ready_key(state.ready[i - 1]) < ready_key(intent),
             "Snow ready releases must be in release order without duplicate rows.");
         const auto duplicate = [&](const auto& row) { return same_acquisition(row, intent); };
@@ -102,17 +107,16 @@ Json save_intent(const FootReleaseIntent& intent, const Definition& definition, 
     Json row = {{"rig", rig_id(intent.rig)}, {"slot", intent.slot}, {"acquired_tick", intent.acquired_tick},
         {"receiver", definition.tiles[intent.tile]}, {"triangle", intent.triangle}, {"center_units", intent.center}};
     if (ready) row["released_tick"] = intent.released_tick;
+    if (intent.heading_bin) row["heading_bin"] = static_cast<unsigned>(*intent.heading_bin);
     return row;
 }
 
-FootReleaseIntent read_intent(const Json& row, const Definition& definition, bool ready) {
-    if (ready) {
-        require_fields(row, {"rig", "slot", "acquired_tick", "receiver", "triangle", "center_units", "released_tick"},
-            "Snow ready release has invalid fields.");
-    } else {
-        require_fields(row, {"rig", "slot", "acquired_tick", "receiver", "triangle", "center_units"},
-            "Snow held release has invalid fields.");
-    }
+FootReleaseIntent read_intent(const Json& row, const Definition& definition, bool ready, bool shaped) {
+    constexpr std::array fields{"rig", "slot", "acquired_tick", "receiver", "triangle", "center_units"};
+    require(row.is_object() && row.size() == fields.size() + ready + shaped &&
+        std::ranges::all_of(fields, [&](const char* field) { return row.contains(field); }) &&
+        row.contains("released_tick") == ready && row.contains("heading_bin") == shaped,
+        ready ? "Snow ready release has invalid fields." : "Snow held release has invalid fields.");
     require(row.at("rig").is_string(), "Snow foot release rig must be an entity ID string.");
     require(row.at("receiver").is_string(), "Snow foot release receiver must be a tile entity ID string.");
     const auto& receiver = row.at("receiver").get_ref<const std::string&>();
@@ -132,6 +136,8 @@ FootReleaseIntent read_intent(const Json& row, const Definition& definition, boo
                    static_cast<std::uint16_t>(integer(center[1], (samples_z - 1) * cell_units,
                        "Snow foot release center Z is out of range."))},
         .released_tick = ready ? integer(row.at("released_tick"), max_exact_integer, "Invalid snow released_tick.") : 0,
+        .heading_bin = shaped ? std::optional{static_cast<std::uint8_t>(integer(row.at("heading_bin"), 255,
+            "Snow sole heading_bin must be an integer from 0 to 255."))} : std::nullopt,
     };
 }
 
@@ -159,7 +165,7 @@ bool release_center_in_triangle(unsigned tile, std::uint32_t triangle, StampCent
 }
 
 Json save_foot_releases(const FootReleaseState& state, const Definition& definition) {
-    validate_state(state, max_exact_integer);
+    validate_state(state, uses_heading(definition), max_exact_integer);
     auto holding = Json::array(), ready = Json::array();
     for (std::size_t i = 0; i < state.held_count; ++i) holding.push_back(save_intent(state.holding[i], definition, false));
     for (std::size_t i = 0; i < state.ready_count; ++i) ready.push_back(save_intent(state.ready[i], definition, true));
@@ -184,9 +190,10 @@ FootReleaseState restore_foot_releases(const Json& saved, const Definition& defi
         .cancelled = integer(counts.at("cancelled"), max_exact_integer, "Invalid snow foot release cancelled count."),
         .overflow = integer(counts.at("overflow"), max_exact_integer, "Invalid snow foot release overflow count."),
     };
-    for (const auto& row : holding) state.holding[state.held_count++] = read_intent(row, definition, false);
-    for (const auto& row : ready) state.ready[state.ready_count++] = read_intent(row, definition, true);
-    validate_state(state, tick);
+    const bool shaped = uses_heading(definition);
+    for (const auto& row : holding) state.holding[state.held_count++] = read_intent(row, definition, false, shaped);
+    for (const auto& row : ready) state.ready[state.ready_count++] = read_intent(row, definition, true, shaped);
+    validate_state(state, shaped, tick);
     return state;
 }
 

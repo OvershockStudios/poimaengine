@@ -5,6 +5,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <optional>
 #include <string_view>
 
 namespace poima::snow {
@@ -24,6 +25,7 @@ struct FootReleaseIntent {
     unsigned tile = 0;
     StampCenter center{};
     std::uint64_t released_tick = 0;
+    std::optional<std::uint8_t> heading_bin = std::nullopt;
 };
 
 struct FootReleaseCounts {
@@ -38,7 +40,8 @@ struct FootReleaseState {
 };
 
 // Holding rows are ordered by (rig, slot), ready rows by (release tick,
-// acquisition tick, rig, slot). The caller validates live rig membership.
+// acquisition tick, rig, slot). Shaped rows carry the acquired heading; radial
+// rows omit it. The caller validates live rig membership and held headings.
 nlohmann::json save_foot_releases(const FootReleaseState& state, const Definition& definition);
 FootReleaseState restore_foot_releases(const nlohmann::json& saved, const Definition& definition, std::uint64_t tick);
 

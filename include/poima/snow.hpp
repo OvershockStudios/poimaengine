@@ -52,6 +52,8 @@ public:
     bool changes_samples(const State& state, StampCenter center,
                          std::uint32_t radius_units, std::uint32_t depth_units,
                          const SampleMask& samples) const;
+    bool footprint_changes_samples(const State& state, StampCenter center,
+                                   std::optional<std::uint8_t> heading, const SampleMask& samples) const;
 
     // Mutate a detached state. A successful change advances generation once.
     // Mask 1 selects the west tile, mask 2 selects east, including normal-only edits.
@@ -59,12 +61,17 @@ public:
                       std::uint32_t radius_units, std::uint32_t depth_units) const;
     std::uint8_t apply(State& state, StampCenter center,
                       std::uint32_t radius_units, std::uint32_t depth_units) const;
+    std::uint8_t apply_footprint(State& state, StampCenter center, std::optional<std::uint8_t> heading) const;
     std::shared_ptr<const MeshAsset> mesh(unsigned tile, const State& state) const;
 
     nlohmann::json save(const State& state) const;
     State restore(const nlohmann::json& saved) const;
 
 private:
+    struct Stamp;
+    Stamp footprint_stamp(StampCenter center, std::optional<std::uint8_t> heading) const;
+    bool changes_samples(const State& state, const Stamp& stamp, const SampleMask& samples) const;
+    std::uint8_t apply(State& state, const Stamp& stamp) const;
     void validate(const State& state) const;
 
     Definition definition_;

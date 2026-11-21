@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "poima/snow.hpp"
+#include "poima/snow_sole.hpp"
 #include "poima/runtime.hpp"
 #include "poima/terrain.hpp"
 #include <algorithm>
@@ -35,8 +36,19 @@ void validate_definition(const Definition& definition) {
         "Snow thickness_units must be in 1..512.");
     if (definition.foot_release) {
         const auto& profile = *definition.foot_release;
-        require(profile.radius_units >= min_radius_units && profile.radius_units <= max_radius_units,
-            "Snow foot_release radius_units must be in 128..1536.");
+        if (profile.sole) {
+            const auto& sole = *profile.sole;
+            require(profile.radius_units == 0, "Snow foot_release sole excludes radius_units.");
+            require(sole.half_length_units >= min_sole_half_length_units && sole.half_length_units <= max_sole_half_length_units,
+                "Snow sole half_length_units must be in 256..1024.");
+            require(sole.half_width_units >= min_sole_half_width_units && sole.half_width_units <= max_sole_half_width_units,
+                "Snow sole half_width_units must be in 128..512.");
+            require(sole.half_length_units + sole.half_width_units + sole_radius_rounding_units <= max_radius_units,
+                "Snow sole half_length_units plus half_width_units plus 2 must be at most 1536.");
+        } else {
+            require(profile.radius_units >= min_radius_units && profile.radius_units <= max_radius_units,
+                "Snow foot_release radius_units must be in 128..1536.");
+        }
         require(profile.depth_units >= 1 && profile.depth_units <= max_depth_units,
             "Snow foot_release depth_units must be in 1..512.");
         require(std::isfinite(profile.sole_tolerance_m) && profile.sole_tolerance_m >= min_sole_tolerance_m &&
@@ -103,8 +115,13 @@ StampArea stamp_area(StampCenter center, std::uint32_t radius, std::uint32_t dep
 }
 
 std::uint16_t compacted_depth(std::uint16_t old, unsigned x, unsigned z, StampCenter center,
-    std::int64_t radius_squared, std::uint32_t depth, std::uint32_t thickness) {
+    std::int64_t radius_squared, std::uint32_t depth, std::uint32_t thickness, const SoleShape* sole, std::uint8_t heading) {
     const auto dx = x * sample_spacing_units - center[0], dz = z * sample_spacing_units - center[1];
+    if (sole) {
+        const auto weight = sole_sample_weight(dx, dz, *sole, heading);
+        const auto increment = (depth * weight + sole_weight_scale / 2) / sole_weight_scale;
+        return static_cast<std::uint16_t>(std::min(old + increment, thickness));
+    }
     const auto distance_squared = dx * dx + dz * dz;
     if (distance_squared >= radius_squared) return old;
     const auto increment = static_cast<std::uint32_t>((depth * (radius_squared - distance_squared) +
@@ -113,6 +130,13 @@ std::uint16_t compacted_depth(std::uint16_t old, unsigned x, unsigned z, StampCe
 }
 
 } // namespace
+
+struct Region::Stamp {
+    StampCenter center;
+    std::uint32_t radius_units, depth_units;
+    const SoleShape* sole = nullptr;
+    std::uint8_t heading = 0;
+};
 
 Definition parse_definition(const Json& json) {
     const auto profile = json.find("foot_release");
@@ -126,17 +150,31 @@ Definition parse_definition(const Json& json) {
     Definition result{tiles.get<std::array<std::string, 2>>(), static_cast<std::uint32_t>(
         integer(json.at("thickness_units"), 1, max_depth_units, "Snow thickness_units must be in 1..512.")), std::nullopt};
     if (has_profile) {
-        require(profile->is_object() && profile->size() == 3 && profile->contains("radius_units") &&
+        const bool shaped = profile->contains("sole");
+        require(profile->is_object() && profile->size() == 3 && profile->contains("radius_units") != shaped &&
             profile->contains("depth_units") && profile->contains("sole_tolerance_m"),
-            "Snow foot_release requires exactly radius_units, depth_units and sole_tolerance_m.");
-        const auto radius = integer(profile->at("radius_units"), min_radius_units, max_radius_units,
-            "Snow foot_release radius_units must be in 128..1536.");
+            "Snow foot_release requires depth_units, sole_tolerance_m and exactly one of radius_units or sole.");
+        std::uint32_t radius = 0;
+        std::optional<SoleShape> sole_shape;
+        if (shaped) {
+            const auto& sole = profile->at("sole");
+            require(sole.is_object() && sole.size() == 2 && sole.contains("half_length_units") && sole.contains("half_width_units"),
+                "Snow sole requires exactly half_length_units and half_width_units.");
+            const auto half_length = integer(sole.at("half_length_units"), min_sole_half_length_units,
+                max_sole_half_length_units, "Snow sole half_length_units must be in 256..1024.");
+            const auto half_width = integer(sole.at("half_width_units"), min_sole_half_width_units,
+                max_sole_half_width_units, "Snow sole half_width_units must be in 128..512.");
+            sole_shape = SoleShape{static_cast<std::uint32_t>(half_length), static_cast<std::uint32_t>(half_width)};
+        } else {
+            radius = static_cast<std::uint32_t>(integer(profile->at("radius_units"), min_radius_units, max_radius_units,
+                "Snow foot_release radius_units must be in 128..1536."));
+        }
         const auto depth = integer(profile->at("depth_units"), 1, max_depth_units,
             "Snow foot_release depth_units must be in 1..512.");
         const auto& tolerance = profile->at("sole_tolerance_m");
         require(tolerance.is_number(), "Snow foot_release sole_tolerance_m must be numeric.");
         result.foot_release = FootReleaseProfile{
-            static_cast<std::uint32_t>(radius), static_cast<std::uint32_t>(depth), tolerance.get<double>()};
+            radius, static_cast<std::uint32_t>(depth), tolerance.get<double>(), sole_shape};
     }
     validate_definition(result);
     return result;
@@ -258,23 +296,53 @@ StampCenter Region::quantize_center(double world_x, double world_z) const {
 
 bool Region::changes_samples(const State& state, StampCenter center, std::uint32_t radius_units,
                              std::uint32_t depth_units, const SampleMask& samples) const {
-    const auto area = stamp_area(center, radius_units, depth_units);
+    return changes_samples(state, Stamp{center,radius_units,depth_units}, samples);
+}
+
+Region::Stamp Region::footprint_stamp(StampCenter center, std::optional<std::uint8_t> heading) const {
+    require(definition_.foot_release.has_value(), "Snow region needs a foot-release profile to apply a footprint.");
+    const auto& profile = *definition_.foot_release;
+    require(profile.sole.has_value() == heading.has_value(), "Snow footprint heading differs from its frozen profile.");
+    if (profile.sole) {
+        const auto& sole = *profile.sole;
+        return {center,sole.half_length_units+sole.half_width_units+sole_radius_rounding_units,
+            profile.depth_units,&sole,*heading};
+    }
+    return {center,profile.radius_units,profile.depth_units};
+}
+
+bool Region::footprint_changes_samples(const State& state, StampCenter center, std::optional<std::uint8_t> heading,
+                                      const SampleMask& samples) const {
+    return changes_samples(state, footprint_stamp(center,heading), samples);
+}
+
+bool Region::changes_samples(const State& state, const Stamp& stamp, const SampleMask& samples) const {
+    const auto area = stamp_area(stamp.center, stamp.radius_units, stamp.depth_units);
     for (unsigned z = area.min_z; z <= area.max_z; ++z) for (unsigned x = area.min_x; x <= area.max_x; ++x) {
         const auto index = sample_index(x, z);
-        if (samples[index] && compacted_depth(state.compaction[index], x, z, center, area.radius_squared,
-                depth_units, definition_.thickness_units) != state.compaction[index]) return true;
+        if (samples[index] && compacted_depth(state.compaction[index], x, z, stamp.center, area.radius_squared,
+                stamp.depth_units, definition_.thickness_units, stamp.sole, stamp.heading) != state.compaction[index]) return true;
     }
     return false;
 }
 
 std::uint8_t Region::apply(State& state, StampCenter center,
                           std::uint32_t radius_units, std::uint32_t depth_units) const {
-    const auto area = stamp_area(center, radius_units, depth_units);
+    return apply(state, Stamp{center,radius_units,depth_units});
+}
+
+std::uint8_t Region::apply_footprint(State& state, StampCenter center, std::optional<std::uint8_t> heading) const {
+    return apply(state, footprint_stamp(center,heading));
+}
+
+std::uint8_t Region::apply(State& state, const Stamp& stamp) const {
+    const auto area = stamp_area(stamp.center, stamp.radius_units, stamp.depth_units);
     validate(state);
     std::uint8_t dirty = 0;
     for (unsigned z = area.min_z; z <= area.max_z; ++z) for (unsigned x = area.min_x; x <= area.max_x; ++x) {
         auto& depth = state.compaction[sample_index(x, z)];
-        const auto next = compacted_depth(depth, x, z, center, area.radius_squared, depth_units, definition_.thickness_units);
+        const auto next = compacted_depth(depth, x, z, stamp.center, area.radius_squared, stamp.depth_units,
+            definition_.thickness_units, stamp.sole, stamp.heading);
         if (next == depth) continue;
         depth = next;
         dirty |= affected_tiles(x);

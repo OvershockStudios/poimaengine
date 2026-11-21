@@ -250,11 +250,18 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     ops.push_back(object_schema({{"op",{{"const","water.set"}}},{"asset",{{"anyOf",Json::array({asset_id,Json{{"type","null"}}})}}}},{"op","asset"}));
     auto snow_tiles=vector(snow_tile_id,2);
     snow_tiles["uniqueItems"]=true;
+    auto sole_shape=object_schema({
+        {"half_length_units",unsigned_range(snow::min_sole_half_length_units,snow::max_sole_half_length_units)},
+        {"half_width_units",unsigned_range(snow::min_sole_half_width_units,snow::max_sole_half_width_units)}},
+        {"half_length_units","half_width_units"});
+    sole_shape["description"]="Projected half extents. Their sum plus 2 must fit within 1536 units.";
     auto foot_release=object_schema({{"radius_units",unsigned_range(snow::min_radius_units,snow::max_radius_units)},
+        {"sole",std::move(sole_shape)},
         {"depth_units",unsigned_range(1,snow::max_depth_units)},
         {"sole_tolerance_m",mark_range(snow::min_sole_tolerance_m,snow::max_sole_tolerance_m)}},
-        {"radius_units","depth_units","sole_tolerance_m"});
-    foot_release["description"]="Opt-in compaction from grounded feet. A qualifying locked sole creates an intent on a lift reported by grounding. The intent becomes eligible for a pre-physics stamp on the next tick.";
+        {"depth_units","sole_tolerance_m"});
+    foot_release["oneOf"]=Json::array({Json{{"required",{"radius_units"}}},Json{{"required",{"sole"}}}});
+    foot_release["description"]="Choose a radius or shaped sole. A qualifying lift queues the footprint for the next eligible tick.";
     auto snow_definition=object_schema({{"tiles",snow_tiles},{"thickness_units",unsigned_range(1,snow::max_depth_units)},
         {"foot_release",foot_release}},{"tiles","thickness_units"});
     snow_definition["description"]="Bind two existing cooked terrain entities in west-east order. Each must use the same visible static primitive for rendering and collision. Null clears the binding.";
@@ -297,7 +304,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 189}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 190}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -650,7 +657,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"depth_unit_m",snow::unit_m},{"volume_unit_m3",snow::volume_unit_m3},{"stamps_per_step",1},
         {"foot_release",std::move(foot_release)},
         {"foot_release_limits",{{"holding",snow::max_held_releases},{"ready",snow::max_ready_releases},
-            {"attempts_per_tick",1},{"snapshot_version",2}}}};
+            {"attempts_per_tick",1},{"snapshot_version",2},{"sole_snapshot_version",3}}}};
     if(Runtime::available()) {
         const Json sample={{"type","array"},{"minItems",2},{"maxItems",2},
             {"prefixItems",Json::array({unsigned_range(0,snow::samples_x-1),unsigned_range(0,snow::samples_z-1)})}};

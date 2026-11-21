@@ -199,18 +199,47 @@ grid. Loading a save taken during a hold or after a lift preserves the same
 next eligible footprint. Restoration checks the contact timeline against
 the saved IK state for live rigs and the allocation history for retired IDs.
 
+#### Shape the sole
+
+Use `sole` in place of `radius_units` for a narrower heel and a wider toe.
+This profile describes a boot about 28 cm long and 12.5 cm wide at the toe.
+
+```json
+{"sole":{"half_length_units":576,"half_width_units":256},"depth_units":96,"sole_tolerance_m":0.002}
+```
+
+The length and width are half extents in 1/4096 m units. The allowed length
+is 256–1024 units and the width is 128–512 units. Their sum plus two units
+must fit within 1536 units. The stamp samples the same cooked snow lattice
+and uses the larger pressure from its two rounded lobes at each sample.
+
+A shaped contact records the sole's heading in the tile's XZ plane when it
+locks. In `runtime.snow.inspect`, shaped rows report `heading_bin` from
+0 to 255, starting at +Z and increasing toward +X at 64. Turning after
+lift leaves the queued heading intact. Shaped snow uses snapshot version 3.
+Circular profiles use version 2, and regions without automatic footprints
+use version 1.
+
 Run the [plant and release contract](../tests/snow_foot_release_contract.py)
-with the pinned Original Knight GLB and CC0 notice.
+or the [shaped sole contract](../tests/snow_sole_shape_contract.py) with the
+pinned Original Knight GLB and CC0 notice.
 
 ```sh
 python3 tests/snow_foot_release_contract.py build/linux-game/poima \
   --source "$knight_glb" --license "$knight_notice" --output build/snow-sole-check
 ```
 
-The [Vulkan contract](../tests/snow_foot_release_capture.py) also checks the
-visible terrain and the actor in a relocated Windows export. Supply the
-installed Windows runtime with `--runtime-root` and select the adapter and
-rendering path with `--gpu` and `--lighting-path`.
+The [walking fixture](../tests/snow_sole_locomotion_contract.py) uses the same
+arguments and plays the original walk at 1×. It follows a fitted kinematic
+path through a quarter turn, then blends to idle. It compares the committed
+soles, footprint geometry and save continuation. When using a new character,
+fit the pace and mount height to its planted reach before evaluating prints.
+
+The [circular](../tests/snow_foot_release_capture.py) and
+[shaped](../tests/snow_sole_shape_capture.py) Vulkan contracts check the
+visible terrain and actor in a relocated Windows export. Supply the installed
+Windows runtime with `--runtime-root` and select the adapter and rendering
+path with `--gpu` and `--lighting-path`.
 
 ## Generate and sample geometry from C++
 

@@ -122,12 +122,10 @@
         return pinned;
     }
 
-    bool compact_snow(snow::StampCenter center,std::uint32_t radius_units,std::uint32_t depth_units) {
-        auto compacted=snow_live->state;
-        const auto dirty=snow_binding->apply(compacted,center,radius_units,depth_units);
+    bool publish_snow_compaction(snow::State&& compacted,std::uint8_t dirty) {
         if(!dirty)return false;
         auto candidate=std::make_shared<SnowSurface>(*snow_live);
-        candidate->state=compacted;
+        candidate->state=std::move(compacted);
         build_snow_geometry(*candidate,dirty);
         publish_snow(std::move(candidate),true);
         return true;
@@ -144,13 +142,15 @@
         const auto center=snow_binding->quantize_center(hit->position[0],hit->position[2]);
         require(!snow_binding->changes_samples(snow_live->state,center,stamp.radius_units,stamp.depth_units,held_snow_samples()),
             "Snow compaction would alter a held foot anchor. Release it before stamping.");
-        (void)compact_snow(center,stamp.radius_units,stamp.depth_units);
+        auto compacted=snow_live->state;
+        const auto dirty=snow_binding->apply(compacted,center,stamp.radius_units,stamp.depth_units);
+        (void)publish_snow_compaction(std::move(compacted),dirty);
     }
 
     nlohmann::json archive_snow() const {
         auto archived=snow_binding->save(snow_live->state);
         if(snow_releases) {
-            archived["version"]=2;
+            archived["version"]=snow_binding->definition().foot_release->sole ? 3 : 2;
             archived["foot_release"]=snow::save_foot_releases(*snow_releases,snow_binding->definition());
         }
         return archived;
@@ -158,9 +158,11 @@
 
     void restore_snow(nlohmann::json archived) {
         if(snow_releases) {
+            const bool shaped=snow_binding->definition().foot_release->sole.has_value();
             require(archived.is_object() && archived.contains("version") && archived.at("version").is_number_integer() &&
-                archived.at("version")==2 && archived.contains("foot_release"),
-                "Snow foot-release snapshot needs version 2 and its intent ledger.");
+                archived.at("version")== (shaped ? 3 : 2) && archived.contains("foot_release"),
+                shaped ? "Shaped snow foot-release snapshot needs version 3 and its intent ledger." :
+                         "Snow foot-release snapshot needs version 2 and its intent ledger.");
             *snow_releases=snow::restore_foot_releases(archived.at("foot_release"),snow_binding->definition(),tick);
             archived.erase("foot_release");
             archived["version"]=1;

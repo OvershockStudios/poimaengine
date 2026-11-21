@@ -21,7 +21,8 @@
             plant.anchor->support!=snow_binding->definition().tiles[intent.tile] || plant.anchor->triangle!=intent.triangle)
             return false;
         const auto& point=plant.anchor->local_point;
-        return snow_binding->quantize_center(point[0],point[2])==intent.center;
+        return snow_binding->quantize_center(point[0],point[2])==intent.center &&
+            (!intent.heading_bin || snow::quantize_sole_heading(plant.anchor->local_forward)==intent.heading_bin);
     }
 
     static void add_snow_release_count(std::uint64_t& counter,std::size_t count=1) noexcept {
@@ -62,7 +63,12 @@
         const auto tile=static_cast<unsigned>(support-tiles.begin());
         const auto center=snow_binding->quantize_center(anchor.local_point[0],anchor.local_point[2]);
         if(!snow::release_center_in_triangle(tile,*anchor.triangle,center))return {};
-        return snow::FootReleaseIntent{snow::release_rig_key(foot.rig),foot.slot,tick,*anchor.triangle,tile,center,0};
+        std::optional<std::uint8_t> heading;
+        if(snow_binding->definition().foot_release->sole) {
+            heading=snow::quantize_sole_heading(anchor.local_forward);
+            if(!heading)return {};
+        }
+        return snow::FootReleaseIntent{snow::release_rig_key(foot.rig),foot.slot,tick,*anchor.triangle,tile,center,0,heading};
     }
 
     void record_snow_foot_decisions() {
@@ -107,13 +113,14 @@
     void apply_ready_snow_foot() {
         if(!snow_releases || !snow_releases->ready_count)return;
         auto& ledger=*snow_releases;
-        const auto& profile=*snow_binding->definition().foot_release;
         const auto pinned=held_snow_samples();
         for(std::size_t i=0;i<ledger.ready_count;++i) {
             const auto& intent=ledger.ready[i];
-            if(snow_binding->changes_samples(snow_live->state,intent.center,profile.radius_units,profile.depth_units,pinned))
+            if(snow_binding->footprint_changes_samples(snow_live->state,intent.center,intent.heading_bin,pinned))
                 continue;
-            const bool changed=compact_snow(intent.center,profile.radius_units,profile.depth_units);
+            auto compacted=snow_live->state;
+            const auto dirty=snow_binding->apply_footprint(compacted,intent.center,intent.heading_bin);
+            const bool changed=publish_snow_compaction(std::move(compacted),dirty);
             add_snow_release_count(changed ? ledger.counts.applied : ledger.counts.saturated);
             std::move(ledger.ready.begin()+i+1,ledger.ready.begin()+ledger.ready_count,ledger.ready.begin()+i);
             --ledger.ready_count;

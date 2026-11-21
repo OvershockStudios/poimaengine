@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.369
+
+- Add an optional asymmetric sole for physical snow impressions. Each pending impression retains its planted heading through save and load.
+
 ## 0.0.368
 
 - Queue physical snow impressions when a planted sole lifts. Pending impressions survive save and load, and compaction waits for other planted feet to clear the affected samples.

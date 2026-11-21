@@ -7,6 +7,7 @@
 #include "poima/water_region.hpp"
 #include "poima/snow.hpp"
 #include "poima/snow_releases.hpp"
+#include "poima/snow_sole.hpp"
 #include "runtime_components.hpp"
 #include "runtime_body_ids.hpp"
 #include "runtime_physical_restore.hpp"
