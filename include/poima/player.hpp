@@ -116,6 +116,8 @@ struct PlayerOptions {
     // Live elapsed-time simulation and presentation without hardware input or
     // window activation. Explicit audio output remains optional; replay conflicts.
     bool background=false;
+    // Used only by a standalone interactive export at startup.
+    bool startup_splash=false;
 };
 // Obtain a fresh owner snapshot, validate player presentation preferences, then
 // compose neutral FOV with gameplay zoom on the copy. No borrowed runtime survives.
@@ -186,6 +188,8 @@ struct PlayerReport {
     RenderReport render;
     std::uint64_t initial_tick=0, final_tick=0;
     std::uint32_t swapchain_rebuilds=0;
+    std::uint32_t startup_frames_presented=0;
+    std::uint32_t startup_visible_ms=0;
     double dropped_seconds=0;
     double effective_ui_scale=1; // Absolute player UI scale or actual window density.
     PlayerPreferenceReport preferences;

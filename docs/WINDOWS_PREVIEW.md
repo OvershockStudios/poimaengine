@@ -150,3 +150,10 @@ New imports keep their names. Older unnamed assets appear by short ID.
 Use **Load more** for additional entries and **Refresh** to pick up imports
 made by another client.
 [Supported formats and asset handoff](https://github.com/OvershockStudios/poimaengine/blob/main/docs/ASSETS.md#bring-assets-from-an-existing-library)
+
+## Change the game splash
+
+Open the **Project settings** icon to choose whether exported games open with
+the Poima wordmark. Save the choice before exporting a new build. In-editor
+Play starts at the game scene.
+[Startup splash settings](PROJECTS.md#change-the-startup-splash)

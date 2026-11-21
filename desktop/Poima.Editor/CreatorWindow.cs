@@ -36,6 +36,7 @@ internal sealed class CreatorWindow : Window
     private readonly Button restore = new() { Content = "Restore verified project as copy", IsVisible = false };
     private readonly Button openRecovered = new() { Content = "Open recovered project", IsVisible = false };
     private readonly Button setupBuilds = new() { Content = "Set up gameplay builds", IsVisible = false };
+    private readonly Button projectSettings = new() { Content = EditorIcons.Make("settings") };
     private readonly Button importAssets = new() { Content = "Import assets…" };
     private readonly Button reviewSpecialists = new() { Content = "Specialist reviews" };
     private readonly Button addBuildWorker = new() { Content = "Add build worker" };
@@ -127,6 +128,9 @@ internal sealed class CreatorWindow : Window
         importAssets.Click += async (_, _) => await ImportAssetsAsync();
         reviewSpecialists.Click += (_, _) => OpenSpecialistReviews();
         addBuildWorker.Click += async (_, _) => await AddBuildWorkerAsync();
+        projectSettings.Click += async (_, _) => await OpenProjectSettingsAsync();
+        AutomationProperties.SetName(projectSettings, "Project settings");
+        ToolTip.SetTip(projectSettings, "Project settings");
         ToolTip.SetTip(reviewSpecialists, "Connect the main Codex chat to open independent scene reviews.");
         ToolTip.SetTip(addBuildWorker, "Give a Codex worker its own editable draft.");
         setupBuilds.IsVisible = OperatingSystem.IsWindows() && WindowsGameplayTools.HasAuthoringPack &&
@@ -232,7 +236,7 @@ internal sealed class CreatorWindow : Window
         var heading = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto"), ColumnSpacing = 16 };
         heading.Children.Add(title);
         var projectActions = new WrapPanel { ItemSpacing = 8, VerticalAlignment = VerticalAlignment.Top,
-            Children = { importAssets, reviewSpecialists, addBuildWorker, setupBuilds } };
+            Children = { importAssets, reviewSpecialists, addBuildWorker, setupBuilds, projectSettings } };
         Grid.SetColumn(projectActions, 1);
         heading.Children.Add(projectActions);
         root.Children.Add(heading);
@@ -303,6 +307,46 @@ internal sealed class CreatorWindow : Window
         var selected = await new CreatorAssetWindow(host).ShowDialog<CreatorAsset[]?>(this);
         if (!closing && selected is { Length: > 0 }) chat.AddAssetReferences(selected);
     }
+
+    private Task OpenProjectSettingsAsync() => ProjectWork("Opening project settings…", async () =>
+    {
+        var current = await ProjectFiles.Command("inspect", project.Manifest);
+        if (closeRequested || closing) return;
+        var hash = current.GetProperty("manifest_sha256").GetString()!;
+        var splash = new CheckBox
+        {
+            Content = "Show the Poima splash in exported games",
+            IsChecked = current.GetProperty("startup_splash").GetBoolean()
+        };
+        AutomationProperties.SetName(splash, "Show the Poima splash in exported games");
+        var save = new Button { Content = "Save", IsDefault = true };
+        save.Classes.Add("primary");
+        var cancel = new Button { Content = "Cancel", IsCancel = true };
+        var dialog = new Window
+        {
+            Title = "Project settings", Width = 460, SizeToContent = SizeToContent.Height, CanResize = false,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner, ShowInTaskbar = false,
+            FontFamily = FontFamily, Background = Background, Foreground = Foreground,
+            Content = new StackPanel
+            {
+                Spacing = 16, Margin = new Thickness(24), Children =
+                {
+                    splash,
+                    new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right,
+                        Spacing = 8, Children = { cancel, save } }
+                }
+            }
+        };
+        dialog.Styles.Add(new StyleInclude(new Uri("avares://Poima.Editor/"))
+        { Source = new Uri("avares://Poima.Editor/Themes/CreatorControls.axaml") });
+        save.Click += (_, _) => dialog.Close(splash.IsChecked == true);
+        cancel.Click += (_, _) => dialog.Close();
+        if (await dialog.ShowDialog<bool?>(this) is bool enabled)
+        {
+            await ProjectFiles.Command("splash", project.Manifest, "--enabled", enabled ? "true" : "false",
+                "--expected-manifest-sha256", hash);
+        }
+    });
 
     private async Task PlayAsync()
     {
@@ -777,6 +821,7 @@ internal sealed class CreatorWindow : Window
     private void UpdateControls()
     {
         var ready = !closing && !closeRequested && !starting && !exporting;
+        projectSettings.IsEnabled = ready;
         var canPreview = ready && !verifiedPlayActive && model.RuntimeId is null;
         play.IsEnabled = canPreview && !chat.Busy;
         stop.IsEnabled = ready && !chat.Busy && model.RuntimeId is not null;

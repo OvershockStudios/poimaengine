@@ -6,6 +6,7 @@
 namespace poima {
 Reply create_project(const std::string& directory,const std::string& name,bool gameplay_source=false);
 Reply inspect_project(const std::string& manifest);
+Reply set_project_startup_splash(const std::string& manifest,bool enabled,const std::string& expected_manifest);
 // Resolve the entry world only after validating the existing project.
 std::string project_world_path(const std::string& manifest);
 // Resolve a draft's entry only after verifying its local lineage marker and project.
@@ -35,7 +36,7 @@ struct GameDefinition {
     std::string manifest_sha256,executable;
     std::string gameplay_descriptor,gameplay_descriptor_sha256,gameplay_values="{}";
     std::uint64_t revision=0;
-    bool audio=false;
+    bool audio=false, startup_splash=true;
 };
 // Verifies all bundle files and their dependency closure before returning paths.
 GameDefinition load_game(const std::string& manifest);

@@ -47,7 +47,7 @@ Project draft_input(const Json& manifest, const SourceCheckpoint& base, const st
         integer(marker.at("base_revision")) == base.source.content.revision && marker.at("project") == project_name,
         "Project draft lineage does not match the selected base checkpoint.");
     draft.spec = parse(read(draft.manifest, 65536));
-    fields(draft.spec, {"format", "version", "project_id", "name", "entry", "input_profile", "audio", "gameplay"},
+    fields(draft.spec, {"format", "version", "project_id", "name", "entry", "input_profile", "audio", "gameplay", "startup_splash"},
         {"format", "version", "project_id", "name", "entry"});
     const auto version = integer(draft.spec.at("version"));
     require(draft.spec.at("format") == "poima.project" && (version == 1 || version == 2) &&

@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.333
+
+- Show the Poima wordmark when an exported game opens. Turn it off in Project settings or through the CLI.
+
 ## 0.0.332
 
 - Give the Windows launcher and project picker the website's landscape and wine gradient.

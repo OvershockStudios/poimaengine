@@ -95,6 +95,8 @@ the project with setup still available.
 For 0.0.331 or later, add `-ExpectCompactStart -WithFirstPlay` to check the
 first-run actions, local package install, accessible icon names and first
 presented game frame from the installed creator.
+For 0.0.333 or later, `-WithSplashSettings` checks the default game splash
+setting, saving a change, and canceling further edits.
 
 Qualification with a public release, a fresh Windows machine and a first-time
 creator remains open.

@@ -60,6 +60,29 @@ A project manifest has this shape; actual generated identities differ:
 
 `input_profile` is optional; `audio` is optional and defaults to `false`. Unknown fields, duplicate JSON keys, unsupported versions and incorrect types are rejected. Version 1 has no gameplay field. Version 2 requires `gameplay: {"descriptor":"gameplay/native-gameplay.json","values":{}}`, where `values` is optional. The descriptor names an inventoried native compiled game artifact; development IL and hostfxr are not shipped by this route. See [native gameplay](NATIVE_GAMEPLAY.md) for schema, target and module lifetime rules.
 
+### Change the startup splash
+
+Standalone interactive games show a brief Poima wordmark during startup.
+The optional Boolean `startup_splash` defaults to `true` and exports with the
+project. In the creator, open the **Project settings** icon and clear
+**Show the Poima splash in exported games** before building again.
+For CLI authoring, use the manifest SHA-256 from a fresh `project inspect`.
+
+```sh
+poima project splash MyRoom/project.poimaproject --enabled false --expected-manifest-sha256 SHA256
+```
+
+The command checks the manifest identity and writes only when the value
+changes. A stale digest requires another inspection. Exports already built
+keep their captured settings. `game inspect` reports the effective setting.
+The window holds the wordmark for about 850 milliseconds after its first
+presentation. Gameplay ticks, audio initialization and gameplay input begin
+afterward. Escape and window close work during the splash. A display that
+offers only a UNORM surface starts directly. Editor play,
+verified preview, headless runs, replay and capture or frame-bounded commands
+start directly. An interactive report counts splash presentations separately
+from gameplay frames.
+
 Paths resolve relative to the manifest's directory, independently of the process working directory. Relative content paths use `/` separators and ASCII letters, digits, spaces, `_`, `-` and `.`. Absolute paths, backslashes, traversal components, Windows device names, trailing dots/spaces, symlinks and content-path junctions are rejected. Display names and the containing project directory can use UTF-8. Relative paths are bounded to 1,024 bytes and components to 128 bytes; project manifests are bounded to 64 KiB.
 
 The entry IDs must identify a `CharacterController` and `Camera`. The controller must be an unscaled hierarchy root with only Y-axis rotation. Its configured camera must be the selected camera and a direct child. World validation also checks the existing component and reference rules.

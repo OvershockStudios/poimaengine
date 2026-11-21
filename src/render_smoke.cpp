@@ -30,6 +30,7 @@
 #include "poima/editor_overlay_ps.hpp"
 #include "poima/game_ui_vs.hpp"
 #include "poima/game_ui_ps.hpp"
+#include "poima/startup_wordmark.hpp"
 #include <set>
 #include <map>
 #include "poima/scene_vs.hpp"
@@ -525,7 +526,7 @@ struct Context {
     nvrhi::GraphicsPipelineHandle overlay_pipeline;
     nvrhi::BufferHandle overlay_vertices;
     std::vector<nvrhi::FramebufferHandle> overlay_framebuffers;
-    std::shared_ptr<const UiFrame> game_ui_frame;
+    std::shared_ptr<const UiFrame> game_ui_frame,startup_overlay;
     std::shared_ptr<const UiFrame> game_ui_source,game_ui_layout_frame,game_ui_composed_frame;
     std::array<std::int32_t,4> game_ui_layout_rect{};
     std::array<std::uint32_t,2> game_ui_layout_extent{};
@@ -2664,6 +2665,7 @@ struct Context {
         return window ? std::clamp(SDL_GetWindowDisplayScale(window),.25f,8.f) : 1.f;
     }
     void resolve_game_ui() {
+        if(startup_overlay) {game_ui_source=startup_overlay;return;}
         game_ui_source=scene ? scene->ui : nullptr;
 #if POIMA_GAME_UI
         if(!scene || !scene->logical_ui || scene->logical_ui->elements.empty()) {
@@ -3768,6 +3770,33 @@ EditorViewportResources EditorViewport::resources() const {
 }
 #endif
 
+std::shared_ptr<const UiFrame> player_startup_overlay(std::uint32_t width,std::uint32_t height,float density) {
+    const auto image=decode_texture(std::as_bytes(std::span(startup_wordmark_png)),true);
+    const auto& pixels=image->mips.front();
+    const float screen_width=static_cast<float>(width),screen_height=static_cast<float>(height);
+    const auto scale=std::min({1.25f*density,.65f*screen_width/static_cast<float>(pixels.width),
+        .35f*screen_height/static_cast<float>(pixels.height)});
+    const float logo_width=scale*static_cast<float>(pixels.width),logo_height=scale*static_cast<float>(pixels.height);
+    const float x=(screen_width-logo_width)*.5f,y=(screen_height-logo_height)*.5f;
+    UiFrame frame;frame.width=width;frame.height=height;
+    auto add_quad=[&](float left,float top,float right,float bottom,std::array<std::uint8_t,4> color,std::uint32_t texture) {
+        const auto first_vertex=static_cast<std::uint32_t>(frame.vertices.size());
+        const auto first_index=static_cast<std::uint32_t>(frame.indices.size());
+        frame.vertices.insert(frame.vertices.end(),{{left,top,0,0,color},{right,top,1,0,color},
+            {right,bottom,1,1,color},{left,bottom,0,1,color}});
+        for(auto index:{0u,1u,2u,0u,2u,3u})frame.indices.push_back(first_vertex+index);
+        UiDraw draw;draw.first_index=first_index;draw.index_count=6;draw.texture=texture;
+        draw.scissor={0,0,static_cast<std::int32_t>(width),static_cast<std::int32_t>(height)};
+        frame.draws.push_back(draw);
+    };
+    UiTexture logo{pixels.width,pixels.height,pixels.rgba};
+    for(std::size_t i=0;i<logo.rgba.size();i+=4)for(std::size_t c=0;c<3;++c)
+        logo.rgba[i+c]=static_cast<std::uint8_t>((static_cast<unsigned>(logo.rgba[i+c])*logo.rgba[i+3]+127)/255);
+    frame.textures.push_back(std::move(logo));
+    add_quad(0,0,screen_width,screen_height,{0x21,0x10,0x16,255},ui_white_texture);
+    add_quad(x,y,x+logo_width,y+logo_height,{255,255,255,255},0);
+    return freeze_ui_frame(std::move(frame));
+}
 struct PlayerWindow::Impl {
     PlayerOptions options;
     PlayerSession& session;
@@ -3800,6 +3829,8 @@ struct PlayerWindow::Impl {
     bool initialized=false,done=false,quit=false,owner_paused=false;
     bool focused=false,captured=false,active=false,ui_ready=false,ui_presented=false;
     bool ui_scale_pending=false;
+    bool splash_pending=false;
+    std::uint64_t splash_started_ns=0;
     bool audio_gain_failed=false;
     PlayerReadiness::FocusObservation focus_observation=PlayerReadiness::FocusObservation::none;
     std::optional<bool> last_drawable,focusable;
@@ -4010,6 +4041,11 @@ struct PlayerWindow::Impl {
         initialized=true;
         result.effective_ui_scale=context.effective_game_ui_scale();
         SDL_SetWindowTitle(context.window,options.background ? "Poima player — background — agent-controlled" : options.replay ? "Poima player — recorded input replay" : "Poima player — configured controls — Esc exits, Tab pauses, click or gamepad Start resumes");
+        splash_pending=options.startup_splash &&
+            (context.format==vk::Format::eB8G8R8A8Srgb || context.format==vk::Format::eR8G8B8A8Srgb);
+        if(!splash_pending)start_controls();
+    }
+    void start_controls() {
         if(options.audio) {
             try {audio=std::make_unique<PlayerAudio>(session.audio_state(options.camera),audio_work,result.preferences.requested_master_gain);}
             catch(...) {result.preferences.audio_outcome="initialization_failed";throw;}
@@ -4026,6 +4062,57 @@ struct PlayerWindow::Impl {
         if(gamepads) { gamepad_binding.host=gamepads;gamepads->start(input,options.gamepad_selection);gamepads->activate(active); }
         if(captured) require(SDL_SetWindowRelativeMouseMode(context.window,true),SDL_GetError());
         previous=SDL_GetTicksNS();
+    }
+    void splash_frame() {
+        constexpr std::uint64_t duration_ns=850'000'000;
+        const auto window_id=SDL_GetWindowID(context.window);
+        bool redraw=!context.startup_overlay;
+        SDL_Event event;
+        for(unsigned events=0;events<256 && SDL_PollEvent(&event);++events) {
+            if(event.type==SDL_EVENT_QUIT ||
+                (event.type==SDL_EVENT_WINDOW_CLOSE_REQUESTED && event.window.windowID==window_id)) {
+                quit=true;result.stop_reason="window_closed";
+            }
+            if(event.type==SDL_EVENT_KEY_DOWN && event.key.windowID==window_id && event.key.scancode==SDL_SCANCODE_ESCAPE) {
+                quit=true;result.stop_reason="escape";
+            }
+            if(event.type==SDL_EVENT_WINDOW_EXPOSED && event.window.windowID==window_id)redraw=true;
+            if((event.type==SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED || event.type==SDL_EVENT_WINDOW_DISPLAY_SCALE_CHANGED) &&
+                event.window.windowID==window_id) {
+                context.swapchain_dirty=true;context.startup_overlay.reset();redraw=true;
+            }
+        }
+        const auto now=SDL_GetTicksNS();
+        if(splash_started_ns)result.startup_visible_ms=static_cast<std::uint32_t>((now-splash_started_ns)/1'000'000);
+        if(quit)return;
+        if(splash_started_ns && now-splash_started_ns>=duration_ns) {
+            context.startup_overlay.reset();splash_pending=false;
+            // The first gameplay render owns a fresh temporal history.
+            context.history={};context.temporal_phase=0;context.temporal_clock.reset();
+            start_controls();
+            return;
+        }
+        int width=0,height=0;
+        require(SDL_GetWindowSizeInPixels(context.window,&width,&height),SDL_GetError());
+        if(width>0 && height>0 && !(SDL_GetWindowFlags(context.window)&SDL_WINDOW_MINIMIZED)) {
+            require(width<=4096 && height<=4096,"Player drawable exceeds the initial 4096-pixel limit.");
+            if(context.swapchain_dirty || context.extent.width!=static_cast<std::uint32_t>(width) ||
+                context.extent.height!=static_cast<std::uint32_t>(height)) {
+                auto resized=options.render;resized.width=static_cast<std::uint32_t>(width);resized.height=static_cast<std::uint32_t>(height);
+                if(!context.rebuild(resized)) {pace_idle(16);return;}
+                ++result.swapchain_rebuilds;context.startup_overlay.reset();redraw=true;
+                context.update_scene();
+            }
+            if(redraw) {
+                if(!context.startup_overlay)context.startup_overlay=player_startup_overlay(context.extent.width,context.extent.height,
+                    std::clamp(SDL_GetWindowDisplayScale(context.window),.25f,8.f));
+                if(context.frame(false)) {
+                    if(!splash_started_ns)splash_started_ns=SDL_GetTicksNS();
+                    ++result.startup_frames_presented;
+                }else context.startup_overlay.reset();
+            }
+        }
+        pace_idle(16);
     }
     void record_runtime_replacement(const std::string& identity) {
         result.final_session=identity;
@@ -4223,6 +4310,7 @@ struct PlayerWindow::Impl {
         if(!quit && options.max_frames && result.render.frames_presented>=options.max_frames) {quit=true;result.stop_reason="frame_limit";}
     }
     void frame() {
+        if(splash_pending) {splash_frame();return;}
         if(options.background) {background_frame();return;}
         std::uint64_t events_started=context.performance_cpu?fp::Recorder::now_ns():0;
         apply_preferences();

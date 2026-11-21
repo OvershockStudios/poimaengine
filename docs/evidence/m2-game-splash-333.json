@@ -1,0 +1,212 @@
+{
+  "scope": "Windows x64 Vulkan hardware on the development laptop. Two standalone starter-game bundles were relocated and run with the original source path unavailable. Desktop screenshots capture the owned foreground game's presented client pixels. Settings UI uses Windows UI Automation and a fresh install from the exact ZIPs.",
+  "release": {
+    "version": "0.0.333",
+    "tag": "v0.0.333",
+    "engine_files": 503,
+    "sample_manifest_sha256": "0b0658358d7a27a94d1c75ef46d16e05553122f2b2ddaaaa05a273a6a597cadd",
+    "assets": [
+      {
+        "name": "Poima-0.0.333-Windows-x64.zip",
+        "bytes": 142001127,
+        "sha256": "36868607ff3e7a81b66fa59a5f7514b9703ca159b741176533800e91e83883d2"
+      },
+      {
+        "name": "Poima-0.0.333-Windows-x64.manifest.json",
+        "bytes": 90035,
+        "sha256": "ebea06b108cd0e60fdcbdf21c9047d4e345a31852d656429d3a3d4f33411de7b"
+      },
+      {
+        "name": "Poima-Launcher-0.0.333-Windows-x64.zip",
+        "bytes": 46194742,
+        "sha256": "81041957774325cf0cd181c5b0a10197d23247d8a0018e8d5729f5f791f6ccdf"
+      }
+    ]
+  },
+  "release_receipt_sha256": "9fbd8610d15a4fc1bcd7f24ee7ce41872f52a1bfd6bfc8fe485a849f82a90d8d",
+  "standalone": {
+    "passed": true,
+    "close_during_splash": {
+      "splash": {
+        "elapsed_ms": 2967,
+        "width": 640,
+        "height": 360,
+        "dpi": 120
+      },
+      "play": {
+        "previous_tick": 0,
+        "tick": 0,
+        "frames": 0,
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "stop_reason": "window_closed",
+        "sprite": {
+          "frames_presented": 1,
+          "tick": 0,
+          "visible_ms": 65
+        }
+      },
+      "report_sha256": "f0d09e93f3882018c56ad2061635a51b0d6ab72f79b78d88b509c5973d9981dd"
+    },
+    "default_continue": {
+      "splash": {
+        "elapsed_ms": 1863,
+        "width": 640,
+        "height": 360,
+        "dpi": 120
+      },
+      "scene": {
+        "elapsed_ms": 833,
+        "width": 640,
+        "height": 360,
+        "dpi": 120
+      },
+      "play": {
+        "previous_tick": 0,
+        "tick": 14,
+        "frames": 39,
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "stop_reason": "window_closed",
+        "sprite": {
+          "frames_presented": 1,
+          "tick": 0,
+          "visible_ms": 857
+        }
+      },
+      "report_sha256": "94399cc7c7da4fb188d6c52747b99965f7ab65dc342ed794782e787b830b5e43"
+    },
+    "small_drawable": {
+      "splash": {
+        "elapsed_ms": 1844,
+        "width": 320,
+        "height": 240,
+        "dpi": 120
+      },
+      "play": {
+        "previous_tick": 0,
+        "tick": 0,
+        "frames": 0,
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "stop_reason": "window_closed",
+        "sprite": {
+          "frames_presented": 1,
+          "tick": 0,
+          "visible_ms": 49
+        }
+      },
+      "report_sha256": "613e3c2e16611c6d44f39e9676846d0ad54bfe4de284b0473c76b756deceda09"
+    },
+    "disabled_continue": {
+      "scene": {
+        "elapsed_ms": 1848,
+        "width": 640,
+        "height": 360,
+        "dpi": 120
+      },
+      "play": {
+        "previous_tick": 0,
+        "tick": 19,
+        "frames": 38,
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "stop_reason": "window_closed",
+        "sprite": null
+      },
+      "report_sha256": "bfce7a1d1830939754449a5f8b933f0e90b3a9877982b4d512ea5a38edb5fb6f"
+    },
+    "replay_default": {
+      "tick": 22,
+      "frames": 23,
+      "pixels_sha256": "da5177f7650f76c2fc0271495dd2528a8326de736a4c613dc0f5ec33ff7cbf73",
+      "report_sha256": "2f2e9c52949a83d443a527cb5a8bcd4e9d285821b1dc5418b0d01d567c1df7b8"
+    },
+    "replay_disabled": {
+      "tick": 22,
+      "frames": 23,
+      "pixels_sha256": "da5177f7650f76c2fc0271495dd2528a8326de736a4c613dc0f5ec33ff7cbf73",
+      "report_sha256": "10602d16ec835214bd0093bdfdbeb511686b05097ba1d61ff82c8b7b542c6704"
+    },
+    "bundle_default_sha256": "d291f08683a13a7311103c881e73afbc0996f58844092688f1119434f397eebe",
+    "bundle_disabled_sha256": "99eac7ea018dc9480cea6160b3b5ca7b052e45d1d08e3a760401cdc8c65ad08d",
+    "original_source_unavailable": true,
+    "report_sha256": "3418007a752e241a349bbf57f238b047b966496d7afdc77085a9d722e976792b",
+    "captures_sha256": {
+      "early-close-splash.png": "0400e0c6efd8365d3afa9aa660a28099794ef6ae10e2bfec7ed01b793c93a595",
+      "normal-launch-splash.png": "ee9d37ea3d75c70966ab01a89715ca68c5e2e5a601f44c507bab02e3ef8aa0ef",
+      "normal-launch-scene.png": "d0a9b0e24ff9425870d33e3af4b07dac6ef86e86ad64f39db7efb76d4b290137",
+      "small-splash-splash.png": "913e7b49b417b24429640cf83caba8e652e122d5a95ff39ce114fe4019664b88",
+      "disabled-launch-scene.png": "cc58d89a9287d68238b8a6d4855fd9312ba19869c5a11116dda6ed854968d6e3"
+    },
+    "replay_controller_camera_state_equal_except_session_ids": true
+  },
+  "installed_creator": {
+    "passed": true,
+    "engine_version": "0.0.333",
+    "checks": {
+      "compact_first_run": true,
+      "installation_options_opened": true,
+      "compact_installed": true,
+      "installed_inventory_files": 503,
+      "install_staging_empty": true,
+      "portable_project_created": true,
+      "creator_editor_sha256": "67876987182715369c96df9e2d1dd7b57c5aefef24cb08c4428b3ca97a3fb9bd",
+      "first_play": {
+        "project_id": "cb5b74047080dfe8e617fa736c4669c5",
+        "revision": 1,
+        "session": "5c1c547d1f9d4d2fb685fe0e26e4a50b",
+        "tick": 7,
+        "frames": 5,
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "validation_errors": 0,
+        "stopped": true
+      },
+      "splash_settings": {
+        "default_enabled": true,
+        "persisted_disabled": true,
+        "cancel_preserved_manifest": true
+      },
+      "default_launcher_settings_preserved": true,
+      "launcher_exit": 0,
+      "creator_exit": 0
+    },
+    "archive_sha256": "36868607ff3e7a81b66fa59a5f7514b9703ca159b741176533800e91e83883d2",
+    "launcher_sha256": "30f29eb859d33556a17b4694557f42e7f04b387fa0cc10f78577ea4e7a3976b3",
+    "report_sha256": "124c23f77e9027c59c94ef2230564a2d7e66b1c4e839387c691cabcf32a7838d"
+  },
+  "headless_deployment": {
+    "owners": 2,
+    "start_tick": 0,
+    "eof_exit_codes": [
+      0,
+      0
+    ],
+    "report_sha256": "dbd7cedf2aff0d3ae1dea8f9856736b53a732f99339119b5e29ff7c3751e164f"
+  },
+  "native_contracts": {
+    "windows-project": {
+      "reported_tests": 18,
+      "skipped": 2,
+      "native_executable_sha256": "fffa4a8c1ed50faf196d5bbbef89e60ffe706a3a81e8ff3467a034f2ea5dc8c3",
+      "report_sha256": "0a8fc4a1e0312fabdff01b2c55bfc8eb6d5c5a0900794f22138492030fa521a7"
+    },
+    "windows-drafts": {
+      "reported_tests": 3,
+      "skipped": 0,
+      "native_executable_sha256": "fffa4a8c1ed50faf196d5bbbef89e60ffe706a3a81e8ff3467a034f2ea5dc8c3",
+      "report_sha256": "26c2dd46df52996e3275892f02b42a71efab47bf1a4642aafc7706b753284e89"
+    },
+    "linux-project": {
+      "reported_tests": 18,
+      "skipped": 3,
+      "native_executable_sha256": "3c4816ab658576a47405f704c34bc5e307767341114072c4c62a6f54e53922e6",
+      "report_sha256": "0f8f7cc142f235c7e57f4905b67675bc0fc44429cb5eaa52ae55ea1241cd36a7"
+    }
+  },
+  "earlier_attempts": [
+    "The first draft contract invocation supplied a pre-created scratch directory. The fixture refused it before running any scenarios. The retry used a fresh directory and passed.",
+    "The Linux build compiled but initially lacked ld.lld on PATH. Selecting the existing cached linker in the owned shell completed the link without changing flags or source."
+  ],
+  "limits": [
+    "The standalone proof uses the starter scene and one Windows GPU at 125 percent display scaling.",
+    "The contract tests use metadata-only exports where the service reports no installed runtime argument. The standalone proof uses the installed native runtime.",
+    "Clean-machine deployment and the first-time human journey remain open."
+  ]
+}

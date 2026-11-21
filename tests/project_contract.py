@@ -104,6 +104,7 @@ class ProjectContract(unittest.TestCase):
         self.assertTrue(sun['enabled'])
         self.assertEqual(sun['shadow'],{'enabled':True,'distance':80,'bias':.0001,'normal_bias':.005})
         inspected = self.inspect()
+        self.assertIs(inspected['startup_splash'], True)
         self.assertEqual(inspected['revision'], world['revision'])
         self.assertEqual(inspected['project_id'], doc['project_id'])
         self.assertFalse(list(self.project.rglob('*.lock')), 'Starter/inspection unexpectedly created a lock sidecar.')
@@ -165,6 +166,7 @@ class ProjectContract(unittest.TestCase):
         self.manifest.write_text(raw.replace('{', '{"version":1,', 1), encoding='utf-8')
         self.inspect(False)
         for field, value in [('version', 2), ('name', 19), ('project_id', 'BAD'), ('audio', 'true'),
+                             ('startup_splash', 'false'),
                              ('unknown', True), ('gameplay', {'assembly': 'unimplemented.dll'})]:
             with self.subTest(field=field):
                 doc = copy.deepcopy(self.document)
@@ -256,6 +258,33 @@ class ProjectContract(unittest.TestCase):
             self.run_cli('game', 'inspect', native(bundle/'game.json'))
             self.assertEqual(tree(runtime), original)
         self.assertEqual(tree(self.project), source)
+
+    def test_splash_toggle_is_guarded_and_exported(self):
+        initial = self.inspect()
+        world = self.project / self.document['entry']['world']
+        original_world = world.read_bytes()
+        arguments = ('project', 'splash', native(self.manifest))
+        self.run_cli(*arguments, '--enabled', 'false', '--expected-manifest-sha256', '0' * 64, success=False)
+        self.assertEqual(json.loads(self.manifest.read_bytes()), self.document)
+        self.assertFalse(list(self.project.rglob('*.lock')))
+        off = self.run_cli(*arguments, '--enabled', 'false', '--expected-manifest-sha256', initial['manifest_sha256'])
+        self.assertIs(off['changed'], True)
+        self.assertIs(self.inspect()['startup_splash'], False)
+        self.assertEqual(json.loads(self.manifest.read_bytes()), {**self.document, 'startup_splash': False})
+        self.assertEqual(world.read_bytes(), original_world)
+        stable = tree(self.project)
+        self.run_cli(*arguments, '--enabled', 'true', '--expected-manifest-sha256', initial['manifest_sha256'], success=False)
+        replay = self.run_cli(*arguments, '--enabled', 'false', '--expected-manifest-sha256', off['manifest_sha256'])
+        self.assertIs(replay['changed'], False)
+        self.assertEqual(tree(self.project), stable)
+        runtime, spec = self.metadata_runtime()
+        (runtime/'runtime.json').write_text(json.dumps(spec))
+        bundle = self.root / 'Splash disabled'
+        self.run_cli('project', 'build', native(self.manifest), '--runtime', native(runtime), '--output', native(bundle))
+        manifest = bundle / 'game.json'
+        self.assertIs(json.loads(manifest.read_bytes())['startup_splash'], False)
+        self.assertIs(self.run_cli('game', 'inspect', native(manifest))['startup_splash'], False)
+        self.assertEqual(tree(self.project), stable)
 
     @unittest.skipUnless(args.windows_interop or os.name == 'nt', 'Reproduces the Windows staging path limit.')
     def test_windows_export_reads_world_and_profile_in_deep_staging_paths(self):

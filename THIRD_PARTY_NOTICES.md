@@ -29,6 +29,9 @@ Poima ships the wordmark artwork and does not bundle the font.
 
 ## Desktop editor
 
+The Poima wordmark uses Playball. The font's [Open Font License](docs/branding/Playball-OFL.txt)
+is bundled with the Windows launcher, editor and native Vulkan runtime.
+
 The Windows installer and project picker use the
 [startup landscape by Abigail Ducote](https://unsplash.com/photos/E79BIjgHXTg)
 under the [Unsplash License](https://unsplash.com/license). See the

@@ -1261,6 +1261,7 @@ class World {
     profiling::Service profiler_;
     frame_performance::Service performance_;
     PlayerProgressObserver player_progress_;
+    bool startup_splash_=false;
     fs::path path_;
     bool read_only_=false;
     std::unique_ptr<WriterLock> lock_;
@@ -1472,6 +1473,7 @@ public:
         return result;
     }
     void observe_blocking_player(PlayerProgressObserver observer) { player_progress_=std::move(observer); }
+    void enable_startup_splash() { startup_splash_=true; }
     explicit World(const std::string& utf8_path,WorldOpenMode mode,const std::string& protected_root) :
         path_(std::u8string(utf8_path.begin(), utf8_path.end())),
         read_only_(mode==WorldOpenMode::read_only_runtime) {
@@ -3742,6 +3744,8 @@ public:
             auto result=receipt["result"];result["replayed"]=true;return result;
         }
         auto prepared=prepare_player(params);
+        prepared.options.startup_splash=startup_splash_ && !prepared.options.replay && !prepared.options.background;
+        startup_splash_=false;
         // Reserve the retry slot before any operation that may advance state.
         auto receipts=playback_receipts_;if(receipts.size()==32)receipts.erase(receipts.begin());
         receipts.push_back({{"params",normalized},{"result",Json::object()}});
@@ -4620,6 +4624,10 @@ WorldSession::~WorldSession()=default;
 void WorldSession::observe_blocking_player(PlayerProgressObserver observer) {
     require(!closed(),"World session is closed.",-32001);
     impl_->world.observe_blocking_player(std::move(observer));
+}
+void WorldSession::enable_startup_splash() {
+    require(!closed(),"World session is closed.",-32001);
+    impl_->world.enable_startup_splash();
 }
 void WorldSession::configure_development_profiles(const std::string& filename) {
     require(!closed(),"World session is closed.",-32001);

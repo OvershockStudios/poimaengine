@@ -1,8 +1,16 @@
 # Implementation status
 
-Updated 2026-11-20 for **0.0.332**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-20 for **0.0.333**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.333 adds a [startup splash for exported games](PROJECTS.md#change-the-startup-splash).
+The creator's **Project settings** icon and CLI can turn it off. Two
+relocated Windows exports exercised default startup and opt-out at 125%
+display scaling. Closing during the splash ended at tick zero. Both exports
+produced identical pixels after the same 22-tick replay. The installed
+creator saved the opt-out and preserved it when a subsequent edit was
+cancelled. [Results](evidence/m2-game-splash-333.json)
 
 Version 0.0.332 uses the website's landscape and wine gradient in the
 [Windows launcher and project picker](WINDOWS_LAUNCHER.md). Both windows

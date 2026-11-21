@@ -457,6 +457,8 @@ Reply run_game(const GameLaunchOptions& options) {
         });
         const auto save_root=launch_save_root(options,game);
         const auto session=prepare_game(world,game,save_root,options.save_write_mode);
+        if(game.startup_splash && !expected && options.replay.empty() && !options.max_frames &&
+            options.render.capture.empty())world.enable_startup_splash();
         Json params={{"session_id",session},{"request_id",id()},{"expected_tick",0},{"controller",game.controller},{"camera",game.camera},
             {"mode",options.replay.empty() ? "interactive" : "replay"},{"audio",game.audio},{"width",options.render.width},{"height",options.render.height},
             {"samples",options.render.samples},{"culling",options.render.culling},{"draw_instancing",options.render.draw_instancing},{"profile",options.render.profile}};

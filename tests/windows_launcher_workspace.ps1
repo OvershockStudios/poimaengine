@@ -8,7 +8,8 @@ param(
     [switch]$WithBuildCheck,
     [switch]$ExpectBuildSetup,
     [switch]$ExpectCompactStart,
-    [switch]$WithFirstPlay
+    [switch]$WithFirstPlay,
+    [switch]$WithSplashSettings
 )
 
 $ErrorActionPreference = 'Stop'
@@ -256,6 +257,38 @@ function Check-GameplayBuild($HomeWindow) {
     Invoke-Button $setup 'Done'
 }
 
+function Check-SplashSettings($Workspace, $ProjectPath) {
+    $cli = Join-Path $installed 'poima.exe'
+    $original = (& $cli project inspect $ProjectPath | ConvertFrom-Json).result
+    if (!$original.startup_splash) { throw 'A fresh project did not enable the splash by default.' }
+    Invoke-Button $Workspace 'Project settings'
+    $settings = Wait-For 'project settings window' { Window $creator 'Project settings' }
+    $control = Wait-For 'splash toggle' { Element $settings 'Show the Poima splash in exported games' }
+    $toggle = $control.GetCurrentPattern([Windows.Automation.TogglePattern]::Pattern)
+    if ($toggle.Current.ToggleState -ne [Windows.Automation.ToggleState]::On) { throw 'The default splash toggle was off.' }
+    $toggle.Toggle()
+    Invoke-Button $settings 'Save'
+    $changed = Wait-For 'saved splash choice' {
+        $current = (& $cli project inspect $ProjectPath | ConvertFrom-Json).result
+        if ($current.startup_splash -eq $false) { $current }
+    }
+    if ($changed.project_id -cne $original.project_id -or $changed.world_sha256 -cne $original.world_sha256 -or
+        $changed.manifest_sha256 -ceq $original.manifest_sha256) { throw 'The splash edit touched the wrong project boundary.' }
+    Invoke-Button $Workspace 'Project settings'
+    $settings = Wait-For 'reopened project settings' { Window $creator 'Project settings' }
+    $control = Wait-For 'reopened splash toggle' { Element $settings 'Show the Poima splash in exported games' }
+    $toggle = $control.GetCurrentPattern([Windows.Automation.TogglePattern]::Pattern)
+    if ($toggle.Current.ToggleState -ne [Windows.Automation.ToggleState]::Off) { throw 'The splash toggle did not persist.' }
+    $toggle.Toggle()
+    Invoke-Button $settings 'Cancel'
+    $null = Wait-For 'dismissed project settings' { !(Window $creator 'Project settings') }
+    $afterCancel = (& $cli project inspect $ProjectPath | ConvertFrom-Json).result
+    if ($afterCancel.manifest_sha256 -cne $changed.manifest_sha256) { throw 'Cancel changed the saved manifest.' }
+    $report.checks.splash_settings = [ordered]@{
+        default_enabled = $true; persisted_disabled = $true; cancel_preserved_manifest = $true
+    }
+}
+
 $before = SettingsHash
 try {
     if (Test-Path -LiteralPath $root) { throw 'The portable install root must be empty.' }
@@ -369,6 +402,7 @@ try {
     $report.checks.portable_project_created = $true
     $report.checks.creator_editor_sha256 = Hash $editorPath
     if ($WithFirstPlay) { Check-FirstPlay $workspace $projectPath }
+    if ($WithSplashSettings) { Check-SplashSettings $workspace $projectPath }
     Close-ProcessWindow $creator
     Close-ProcessWindow $owner
     if ((SettingsHash) -cne $before) { throw 'Portable mode modified normal launcher settings.' }

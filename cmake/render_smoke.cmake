@@ -111,11 +111,18 @@ foreach(stage IN LISTS shader_stages)
     target_sources(poima_core PRIVATE "${header}")
 endforeach()
 endforeach()
-target_sources(poima_core PRIVATE src/render_smoke.cpp src/gamepad_sdl.cpp)
+set(poima_startup_wordmark "${CMAKE_CURRENT_BINARY_DIR}/generated/poima/startup_wordmark.hpp")
+set(poima_startup_png "${CMAKE_CURRENT_SOURCE_DIR}/desktop/Poima.Launcher/Poima.png")
+add_custom_command(OUTPUT "${poima_startup_wordmark}"
+    COMMAND "${CMAKE_COMMAND}" "-DINPUT=${poima_startup_png}" "-DOUTPUT=${poima_startup_wordmark}"
+        -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/embed_startup_wordmark.cmake"
+    DEPENDS "${poima_startup_png}" cmake/embed_startup_wordmark.cmake VERBATIM)
+target_sources(poima_core PRIVATE src/render_smoke.cpp src/gamepad_sdl.cpp "${poima_startup_wordmark}")
 target_link_libraries(poima_core PRIVATE nvrhi nvrhi_vk SDL3::SDL3-static)
 target_compile_definitions(poima_core PRIVATE NOMINMAX WIN32_LEAN_AND_MEAN)
 
 install(FILES "${nvrhi_SOURCE_DIR}/LICENSE.txt" DESTINATION share/poima/licenses/NVRHI)
+install(FILES docs/branding/Playball-OFL.txt DESTINATION share/poima/licenses/Playball)
 include("${CMAKE_CURRENT_LIST_DIR}/sdl_notices.cmake")
 poima_install_sdl_notices("${sdl3_SOURCE_DIR}")
 

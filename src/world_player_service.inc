@@ -201,6 +201,8 @@
             result["input_profile"]["effective_content_hash"]=content_hash(input_profiles::profile_json(effective_input).dump());
         }
         result["live_settings"]=player_live_settings(options,report,camera);
+        if(options.startup_splash)result["startup_splash"]={{"frames_presented",report.startup_frames_presented},
+            {"visible_ms",report.startup_visible_ms},{"tick",report.initial_tick}};
         const auto& audio=report.audio;result["audio"]={{"enabled",audio.enabled},{"driver",audio.driver},{"submitted_frames",audio.submitted_frames},{"max_queued_frames",audio.max_queued_frames},{"empty_queue_observations",audio.empty_queue_observations},{"backpressure_ms",audio.backpressure_ms},{"stream_drained",audio.stream_drained},{"timeline_resets",audio.timeline_resets},{"voices_started",audio.stream.voices_started},{"peak",audio.stream.peak},{"over_range_samples",audio.stream.over_range_samples},{"dsp_ms",audio.stream.dsp_ms}};
         return result;
     }

@@ -309,11 +309,12 @@ struct Project {
 Project project(const std::string& filename,const std::optional<Json>& prospective=std::nullopt) {
     Project p;p.manifest=fs::absolute(path_of(filename)).lexically_normal();regular(p.manifest);p.manifest=canonical_project_path(p.manifest);p.root=p.manifest.parent_path();require(fs::symlink_status(project_io_path(p.root/".poima-incomplete")).type()==fs::file_type::not_found,"Project publication is incomplete; retry with a new destination.");
     p.manifest_bytes=read(p.manifest,65536);p.spec=prospective ? *prospective : parse(p.manifest_bytes);
-    fields(p.spec,{"format","version","project_id","name","entry","input_profile","audio","gameplay"},{"format","version","project_id","name","entry"});
+    fields(p.spec,{"format","version","project_id","name","entry","input_profile","audio","gameplay","startup_splash"},{"format","version","project_id","name","entry"});
     const auto version=integer(p.spec.at("version"));
     require(p.spec.at("format")=="poima.project" && (version==1 || version==2),"Unsupported project format/version.");
     require(p.spec.contains("gameplay")== (version==2),"Project version 2 requires gameplay; version 1 has no gameplay field.");id(p.spec.at("project_id"));name_value(p.spec.at("name"));
     require(!p.spec.contains("audio") || p.spec.at("audio").is_boolean(),"audio must be Boolean.");
+    require(!p.spec.contains("startup_splash") || p.spec.at("startup_splash").is_boolean(),"startup_splash must be Boolean.");
     fields(p.spec.at("entry"),{"world","camera","controller"},{"world","camera","controller"});p.world=contained(p.root,relative_path(p.spec.at("entry").at("world")));
     require(p.world!=p.manifest,"World path overlaps project manifest.");p.world_bytes=read(p.world,16*1024*1024);
     { WorldSession session(text(p.world),WorldOpenMode::read_only_runtime);p.content=session.package_content(); }
@@ -340,6 +341,7 @@ Json project_summary(const Project& p) {
     Json assets=Json::array();for(const auto& asset:p.content.assets)assets.push_back({{"filename",asset.filename},{"sha256",asset.sha256},{"bytes",asset.bytes}});
     Json result={{"manifest",text(p.manifest)},{"manifest_sha256",hash(p.manifest_bytes)},{"world_sha256",hash(p.world_bytes)},{"project_id",p.spec.at("project_id")},{"name",p.spec.at("name")},{"entry",p.spec.at("entry")},{"revision",p.content.revision},{"assets",assets},{"needs_audio",p.content.needs_audio},{"audio",p.spec.value("audio",false)},{"input_profile",p.profile.empty() ? Json(nullptr) : Json(text(p.profile))}};
     if(p.content.needs_navigation)result["needs_navigation"]=true;
+    result["startup_splash"]=p.spec.value("startup_splash",true);
     if(!p.content.provenance_records.empty()) {
         Json records=Json::array();for(const auto& record:p.content.provenance_records)records.push_back({{"filename",record.filename},{"sha256",record.sha256},{"bytes",record.bytes}});
         result["provenance_records"]=std::move(records);
@@ -442,9 +444,10 @@ VerifiedGame verify_game(const std::string& filename,std::string_view expected_v
     VerifiedGame result;result.manifest=fs::absolute(path_of(filename)).lexically_normal();regular(result.manifest);result.manifest=canonical_project_path(result.manifest);require(result.manifest.filename()=="game.json","Game bundle manifest must be named game.json.");const auto root=result.manifest.parent_path();require(fs::symlink_status(project_io_path(root/".poima-incomplete")).type()==fs::file_type::not_found,"Game publication is incomplete.");
     const auto manifest_bytes=read(result.manifest,4*1024*1024);result.spec=parse(manifest_bytes);const auto& spec=result.spec;
     result.definition.manifest_sha256=hash(manifest_bytes);
-    fields(spec,{"format","version","project_id","name","engine","entry","audio","input_profile","source","files","gameplay"},{"format","version","project_id","name","engine","entry","audio","source","files"});
+    fields(spec,{"format","version","project_id","name","engine","entry","audio","input_profile","source","files","gameplay","startup_splash"},{"format","version","project_id","name","engine","entry","audio","source","files"});
     const auto version=integer(spec.at("version"));require(spec.at("format")=="poima.game" && (version==1 || version==2),"Unsupported game bundle format/version.");
     require(spec.contains("gameplay")== (version==2),"Game version 2 requires gameplay; version 1 has no gameplay field.");id(spec.at("project_id"));name_value(spec.at("name"));require(spec.at("audio").is_boolean(),"Game audio flag must be Boolean.");
+    require(!spec.contains("startup_splash") || spec.at("startup_splash").is_boolean(),"startup_splash must be Boolean.");
     const auto& engine=spec.at("engine");fields(engine,{"version","target_os","target_arch","executable"},{"version","target_os","target_arch","executable"});
     fields(spec.at("source"),{"revision","world_sha256"},{"revision","world_sha256"});const auto revision=integer(spec.at("source").at("revision"));require(spec.at("source").at("world_sha256").is_string() && hexadecimal(spec.at("source").at("world_sha256").get<std::string>(),64),"Invalid source world hash.");
     require(spec.at("files").is_array() && !spec.at("files").empty() && spec.at("files").size()<=count_limit,"Invalid bundle inventory.");
@@ -511,7 +514,7 @@ VerifiedGame verify_game(const std::string& filename,std::string_view expected_v
     require(read(result.manifest,4*1024*1024)==manifest_bytes,"Game manifest changed during verification.");
     for(const auto& [path,item]:inventory) { const auto bytes=read(contained(root,path));require(bytes.size()==item.at("size") && hash(bytes)==item.at("sha256").get<std::string>(),"Bundle changed during validation: "+path); }
     require(file_tree(root)==actual,"Bundle file set changed during validation.");
-    auto& game=result.definition;game.root=text(root);game.world=text(world);game.camera=spec.at("entry").at("camera");game.controller=spec.at("entry").at("controller");game.name=spec.at("name");game.project_id=spec.at("project_id");game.target_os=engine.at("target_os");game.target_arch=engine.at("target_arch");game.revision=revision;game.audio=spec.at("audio");return result;
+    auto& game=result.definition;game.root=text(root);game.world=text(world);game.camera=spec.at("entry").at("camera");game.controller=spec.at("entry").at("controller");game.name=spec.at("name");game.project_id=spec.at("project_id");game.target_os=engine.at("target_os");game.target_arch=engine.at("target_arch");game.revision=revision;game.audio=spec.at("audio");game.startup_splash=spec.value("startup_splash",true);return result;
 }
 #include "project_gameplay_adoption.inc"
 
@@ -719,6 +722,46 @@ state. Movement and aim already work through the starter controller.
     });
 }
 Reply inspect_project(const std::string& manifest) { return operation("project.inspect",[&]{return project_summary(project(manifest));}); }
+Reply set_project_startup_splash(const std::string& filename,bool enabled,const std::string& expected_manifest) {
+    return operation("project.splash",[&] {
+        require(hexadecimal(expected_manifest,64),"Expected a lowercase manifest SHA-256.");
+        const auto requested=fs::absolute(path_of(filename)).lexically_normal();
+        adoption_safe_path(requested);
+        const auto manifest=canonical_project_path(requested);
+        const auto root=manifest.parent_path();
+        require(hash(read(manifest,65536))==expected_manifest,"Project manifest changed; inspect it again.");
+        // Serialize manifest changes with gameplay adoption. An unpublished
+        // adoption still checks its original manifest hash on retry.
+        const auto lock_path=root/".poima-gameplay-adoptions.lock";
+        adoption_safe_path(lock_path,true);adoption_case_name(lock_path);
+        world_detail::WriterLock lock(project_io_path(lock_path));
+        auto current=project(text(manifest));
+        require(hash(current.manifest_bytes)==expected_manifest,"Project manifest changed; inspect it again.");
+        const bool changed=current.spec.value("startup_splash",true)!=enabled;
+        if(!changed)return Json{{"startup_splash",enabled},{"manifest_sha256",expected_manifest},{"changed",false}};
+        current.spec["startup_splash"]=enabled;
+        const auto next=current.spec.dump(2)+"\n";
+        require(next.size()<=65536,"Updated project manifest exceeds 64 KiB.");
+        const auto stage=root/(".poima-splash-"+new_id());
+        require(fs::create_directory(project_io_path(stage)),"Cannot reserve splash setting staging.");
+        const auto payload=stage/"manifest.pending";
+        const auto clean=[&] {
+            std::error_code ignored;
+            fs::remove(project_io_path(payload),ignored);
+            fs::remove(project_io_path(stage),ignored);
+        };
+        try {
+            exclusive_write(payload,next);
+            fs::permissions(project_io_path(payload),fs::status(project_io_path(manifest)).permissions()&fs::perms::all,
+                fs::perm_options::replace);
+            adoption_safe_path(manifest);
+            require(read(manifest,65536)==current.manifest_bytes,"Project manifest changed during publication.");
+            adoption_replace_file(payload,manifest);
+        }catch(...) {clean();throw;}
+        clean();
+        return Json{{"startup_splash",enabled},{"manifest_sha256",hash(next)},{"changed",true}};
+    });
+}
 std::string project_world_path(const std::string& manifest) { return text(project(manifest).world); }
 Reply project_gameplay_source(const std::string& manifest,const std::string& owned_world,const std::string& request) {
     return project_text_reply(manifest,owned_world,request,false);
@@ -786,6 +829,7 @@ Reply build_project(const std::string& manifest,const std::string& output,const 
         if(windows)inventory.add("launch.cmd","@echo off\r\nsetlocal DisableDelayedExpansion\r\n\"%~dp0runtime\\bin\\poima.exe\" game run \"%~dp0game.json\" --default-save-root true %*\r\nexit /b %errorlevel%\r\n","launcher");
         else inventory.add("launch.sh","#!/bin/sh\nset -eu\nroot=$(CDPATH= cd -- \"$(dirname -- \"$0\")\" && pwd)\nexec \"$root/runtime/bin/poima\" game run \"$root/game.json\"\n","launcher",fs::perms::owner_all|fs::perms::group_read|fs::perms::group_exec|fs::perms::others_read|fs::perms::others_exec);
         inventory.sort();Json spec={{"format","poima.game"},{"version",1},{"project_id",p.spec.at("project_id")},{"name",p.spec.at("name")},{"engine",{{"version",runtime.at("engine_version")},{"target_os",runtime.at("target_os")},{"target_arch",runtime.at("target_arch")},{"executable","runtime/"+runtime.at("executable").get<std::string>()}}},{"entry",{{"world","content/world.json"},{"camera",p.spec.at("entry").at("camera")},{"controller",p.spec.at("entry").at("controller")}}},{"audio",p.spec.value("audio",false)},{"source",{{"revision",p.content.revision},{"world_sha256",hash(p.world_bytes)}}},{"files",inventory.files}};
+        if(p.spec.contains("startup_splash"))spec["startup_splash"]=p.spec.at("startup_splash");
         if(!p.profile.empty())spec["input_profile"]="content/default.poima-input.json";
         if(p.gameplay) { spec["version"]=2;spec["gameplay"]={{"descriptor","gameplay/native-gameplay.json"},{"values",p.gameplay_values}}; }
         exclusive_write(stage.path/"game.json",spec.dump(2)+"\n");verify_game(text(stage.path/"game.json"));
@@ -807,6 +851,6 @@ Reply build_project(const std::string& manifest,const std::string& output,const 
 }
 GameDefinition load_game(const std::string& manifest) { return verify_game(manifest).definition; }
 Reply inspect_game(const std::string& manifest) {
-    return operation("game.inspect",[&] { const auto game=verify_game(manifest);Json result={{"manifest",text(game.manifest)},{"name",game.definition.name},{"project_id",game.spec.at("project_id")},{"revision",game.definition.revision},{"target_os",game.definition.target_os},{"target_arch",game.definition.target_arch},{"entry",game.spec.at("entry")},{"audio",game.definition.audio},{"files",game.spec.at("files")}};if(game.spec.contains("gameplay"))result["gameplay"]=game.spec.at("gameplay");if(game.spec.contains("input_profile"))result["input_profile"]=game.spec.at("input_profile");return result; });
+    return operation("game.inspect",[&] { const auto game=verify_game(manifest);Json result={{"manifest",text(game.manifest)},{"name",game.definition.name},{"project_id",game.spec.at("project_id")},{"revision",game.definition.revision},{"target_os",game.definition.target_os},{"target_arch",game.definition.target_arch},{"entry",game.spec.at("entry")},{"audio",game.definition.audio},{"startup_splash",game.definition.startup_splash},{"files",game.spec.at("files")}};if(game.spec.contains("gameplay"))result["gameplay"]=game.spec.at("gameplay");if(game.spec.contains("input_profile"))result["input_profile"]=game.spec.at("input_profile");return result; });
 }
 }

@@ -83,6 +83,8 @@ public:
     void configure_development_profiles(const std::string& profile_file);
     // Owner-only observer for synchronous playback; RPC cannot register it.
     void observe_blocking_player(PlayerProgressObserver observer);
+    // Standalone bundle owner only. The next blocking play consumes this flag.
+    void enable_startup_splash();
     // A closing desktop owner can retire its tools without blocking its pump.
     void begin_development_shutdown();
     bool development_shutdown_complete() const noexcept;

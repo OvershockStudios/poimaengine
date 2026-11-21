@@ -133,6 +133,12 @@ poima::Reply run(int argc, char** argv) {
         if(action=="recover" && argc==8 && *argv[3] && std::string_view(argv[4])=="--output" && *argv[5] &&
            std::string_view(argv[6])=="--expected-snapshot-sha256" && *argv[7])
             return poima::recover_project(argv[3],argv[5],argv[7]);
+        if(action=="splash" && argc==8 && *argv[3] && std::string_view(argv[4])=="--enabled" &&
+           std::string_view(argv[6])=="--expected-manifest-sha256" && *argv[7]) {
+            const std::string_view value=argv[5];
+            if(value!="true" && value!="false")return poima::usage_error("Splash setting expects true or false.");
+            return poima::set_project_startup_splash(argv[3],value=="true",argv[7]);
+        }
         if(action=="draft" && argc==8 && *argv[3] && std::string_view(argv[4])=="--output" && *argv[5] &&
            std::string_view(argv[6])=="--expected-base-sha256" && *argv[7])
             return poima::draft_project(argv[3],argv[5],argv[7]);
