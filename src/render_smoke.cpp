@@ -40,13 +40,12 @@
 #include "poima/deferred_lighting_ao_reflection_cs.hpp"
 #include "poima/deferred_lighting_color_reflection_cs.hpp"
 #include "poima/deferred_lighting_color_ao_reflection_cs.hpp"
+#include "render_ambient_occlusion.hpp"
 #include "render_embedded_shader.hpp"
 #include "render_screen_reflections.hpp"
 #include "render_height_fog.hpp"
 #include "render_viewmodel.hpp"
 #include "render_hdr_effects.hpp"
-#include "poima/ambient_occlusion_cs.hpp"
-#include "poima/ambient_occlusion_filter_cs.hpp"
 #include "poima/scene_output_ao_ps.hpp"
 #include "poima/scene_products_ps.hpp"
 #include "poima/scene_products_vs.hpp"
@@ -348,17 +347,10 @@ struct Context {
     nvrhi::ITexture* world_radiance_texture() const noexcept {
         return fog.radiance() ? fog.radiance() : surface_radiance_texture();
     }
-    AmbientOcclusionOptions ambient_occlusion;
     ShadowFilter shadow_filter=ShadowFilter::pcf3_point;
     std::optional<ShadowFilter> shadow_filter_override;
     bool ao_enabled=false;
-    nvrhi::TextureHandle ao_raw,ao_filtered;
-    nvrhi::BufferHandle ao_buffer;
-    std::array<float,4> ao_settings{};
-    std::array<nvrhi::ShaderHandle,2> ao_shaders;
-    std::array<nvrhi::BindingLayoutHandle,2> ao_layouts;
-    std::array<nvrhi::BindingSetHandle,2> ao_bindings;
-    std::array<nvrhi::ComputePipelineHandle,2> ao_pipelines;
+    ambient_occlusion::Pass occlusion;
     std::vector<SceneProductProbe> product_probes;
     std::array<nvrhi::StagingTextureHandle,8> probe_staging;
     bool fsr3_history_probes=false;
@@ -500,7 +492,7 @@ struct Context {
         skin_instances.clear();skin_sources.clear();skin_pipeline=nullptr;skin_layout=nullptr;skin_shader=nullptr;skin_errors=nullptr;skin_readback=nullptr;
         masked_shadow_cache.clear();masked_shadow_pipeline=nullptr;masked_shadow_layout=nullptr;masked_shadow_shader=nullptr;
         shadow_pipeline=nullptr;shadow_bindings=nullptr;shadow_layout=nullptr;shadow_shader=nullptr;shadow_framebuffers.clear();shadow_texture=nullptr;
-        ao_bindings={};ao_pipelines={};ao_layouts={};ao_shaders={};ao_raw=nullptr;ao_filtered=nullptr;ao_buffer=nullptr;
+        occlusion.reset();
         deferred_bindings=nullptr;deferred_pipeline=nullptr;deferred_layout=nullptr;deferred_cs=nullptr;material_base=nullptr;material_surface=nullptr;material_correspondence=nullptr;
         fog={};reflections={};
         pipeline = nullptr; culled_pipeline=nullptr;
@@ -573,14 +565,13 @@ struct Context {
         diagnostics.shadow_max_comparisons=contact_shadows ? contact_shadow_max_comparisons : 0;
         diagnostics.shadow_max_radius_texels=contact_shadows ? contact_shadow_max_radius_texels : 0;
         diagnostics.shadow_guard_texels=contact_shadows ? contact_shadow_guard_texels : 0;
-        ambient_occlusion=options.ambient_occlusion;diagnostics.ambient_occlusion=ambient_occlusion;
-        require(ambient_occlusion.mode==AmbientOcclusionMode::none || ambient_occlusion.mode==AmbientOcclusionMode::gtao,"Invalid ambient occlusion mode.");
-        require(ambient_occlusion.quality==AmbientOcclusionQuality::low || ambient_occlusion.quality==AmbientOcclusionQuality::medium || ambient_occlusion.quality==AmbientOcclusionQuality::high,"Invalid ambient occlusion quality.");
-        require(std::isfinite(ambient_occlusion.radius) && ambient_occlusion.radius>=.01f && ambient_occlusion.radius<=100,"Ambient occlusion radius must be in [0.01,100] meters.");
-        ao_enabled=ambient_occlusion.mode!=AmbientOcclusionMode::none;
+        const auto& ao_options=options.ambient_occlusion;
+        diagnostics.ambient_occlusion=ao_options;
+        ambient_occlusion::validate_options(ao_options);
+        ao_enabled=ao_options.mode!=AmbientOcclusionMode::none;
         require(!ao_enabled || (deferred && source && options.samples==1),"Ambient occlusion requires deferred single-sample rendering.");
         require(options.scene_debug_view!=SceneDebugView::ambient_occlusion || ao_enabled,"Ambient occlusion view requires enabled ambient occlusion.");
-        ao_settings={ambient_occlusion.radius,ambient_occlusion.radius*.01f,ambient_occlusion.quality==AmbientOcclusionQuality::low ? 2.f : ambient_occlusion.quality==AmbientOcclusionQuality::medium ? 4.f : 8.f,ambient_occlusion.quality==AmbientOcclusionQuality::high ? 8.f : 4.f};
+        occlusion.configure(ao_options);
         require(!deferred || (source && options.samples==1),"Deferred lighting requires a scene and samples=1.");
         hosted=external_window!=nullptr;
         live_temporal=live_temporal_clock(player,hosted,replay);
@@ -1652,50 +1643,12 @@ struct Context {
             ? allocate(nvrhi::Format::RGBA32_FLOAT,vk::Format::eR32G32B32A32Sfloat,"Deferred geometric normal and motion")
             : allocate(nvrhi::Format::RG32_FLOAT,vk::Format::eR32G32Sfloat,"Deferred geometric normal");
         diagnostics.deferred_buffer_bytes=std::uint64_t(hdr.width)*hdr.height*deferred_material_bytes_per_pixel();
-        ao_bindings={};
+        occlusion.clear_bindings();
         if(ao_enabled) {
             const auto needed=vk::FormatFeatureFlagBits::eSampledImage|vk::FormatFeatureFlagBits::eStorageImage|vk::FormatFeatureFlagBits::eTransferSrc;
             require((physical.getFormatProperties(vk::Format::eR16Sfloat,dispatch).optimalTilingFeatures&needed)==needed,"Ambient visibility storage format is unavailable.");
-            auto desc=hdr;desc.format=nvrhi::Format::R16_FLOAT;desc.isUAV=true;desc.isRenderTarget=false;desc.debugName="Raw ambient visibility";
-            ao_raw=checked->createTexture(desc);desc.debugName="Filtered ambient visibility";ao_filtered=checked->createTexture(desc);
-            require(ao_raw && ao_filtered,"Ambient visibility allocation failed.");diagnostics.ambient_occlusion_buffer_bytes=std::uint64_t(hdr.width)*hdr.height*4;
+            diagnostics.ambient_occlusion_buffer_bytes=occlusion.allocate_targets(*checked.Get(),hdr);
         }
-    }
-    void prepare_ambient_occlusion() {
-        if(!ao_enabled)return;
-        if(!ao_buffer) {
-            nvrhi::BufferDesc desc;desc.byteSize=sizeof(ao_settings);desc.isConstantBuffer=true;
-            desc.initialState=nvrhi::ResourceStates::ConstantBuffer;desc.keepInitialState=true;desc.debugName="Ambient occlusion settings";
-            ao_buffer=checked->createBuffer(desc);require(bool(ao_buffer),"Ambient settings allocation failed.");
-        }
-        for(unsigned pass=0;pass<2;++pass) {
-            if(!ao_layouts[pass]) {
-                const auto shader=nvrhi::ShaderDesc(nvrhi::ShaderType::Compute).setEntryName("compute_main");
-                ao_shaders[pass]=pass==0 ? create_embedded_shader(checked,shader,poima_ambient_occlusion_cs) : create_embedded_shader(checked,shader,poima_ambient_occlusion_filter_cs);
-                auto layout=nvrhi::BindingLayoutDesc().setVisibility(nvrhi::ShaderType::Compute)
-                    .addItem(nvrhi::BindingLayoutItem::ConstantBuffer(1)).addItem(nvrhi::BindingLayoutItem::ConstantBuffer(2))
-                    .addItem(nvrhi::BindingLayoutItem::Texture_SRV(0)).addItem(nvrhi::BindingLayoutItem::Texture_SRV(1))
-                    .addItem(nvrhi::BindingLayoutItem::Texture_SRV(2)).addItem(nvrhi::BindingLayoutItem::Texture_UAV(0));
-                if(pass==1)layout.addItem(nvrhi::BindingLayoutItem::Texture_SRV(3));
-                ao_layouts[pass]=checked->createBindingLayout(layout);require(ao_shaders[pass] && ao_layouts[pass],"Ambient visibility shader/layout creation failed.");
-                ao_pipelines[pass]=checked->createComputePipeline(nvrhi::ComputePipelineDesc().setComputeShader(ao_shaders[pass]).addBindingLayout(ao_layouts[pass]));
-                require(bool(ao_pipelines[pass]),"Ambient visibility pipeline creation failed.");
-            }
-            if(!ao_bindings[pass]) {
-                auto desc=nvrhi::BindingSetDesc().addItem(nvrhi::BindingSetItem::ConstantBuffer(1,frame_buffer)).addItem(nvrhi::BindingSetItem::ConstantBuffer(2,ao_buffer))
-                    .addItem(nvrhi::BindingSetItem::Texture_SRV(0,depth)).addItem(nvrhi::BindingSetItem::Texture_SRV(1,material_surface))
-                    .addItem(nvrhi::BindingSetItem::Texture_SRV(2,material_correspondence)).addItem(nvrhi::BindingSetItem::Texture_UAV(0,pass==0 ? ao_raw.Get() : ao_filtered.Get()));
-                if(pass==1)desc.addItem(nvrhi::BindingSetItem::Texture_SRV(3,ao_raw));
-                ao_bindings[pass]=checked->createBindingSet(desc,ao_layouts[pass]);require(bool(ao_bindings[pass]),"Ambient visibility binding creation failed.");
-            }
-        }
-    }
-    void dispatch_ambient_occlusion(unsigned pass) {
-        timestamp(pass==0 ? 10 : 12);
-        // The shaders initialize every pixel, including background and inactive viewport margins.
-        nvrhi::ComputeState state;state.pipeline=ao_pipelines[pass];state.bindings.push_back(ao_bindings[pass]);commands->setComputeState(state);
-        const auto& desc=ao_raw->getDesc();commands->dispatch((desc.width+7)/8,(desc.height+7)/8,1);
-        timestamp(pass==0 ? 11 : 13);
     }
     void prepare_screen_reflections(const std::optional<ScreenReflections>& selected) {
         diagnostics.screen_reflections.reset();
@@ -1720,7 +1673,7 @@ struct Context {
                 }
                 const auto environment=environment_ibl.bound();
                 reflections.prepare(*checked.Get(),{frame_buffer.Get(),scene_hdr.Get(),material_base.Get(),
-                    material_surface.Get(),depth.Get(),ao_filtered.Get(),environment.specular,
+                    material_surface.Get(),depth.Get(),occlusion.filtered(),environment.specular,
                     environment.brdf,environment.sampler});
             }
             diagnostics.screen_reflections=ScreenReflectionsDiagnostics{active,reason,active ? reflections.buffer_bytes() : 0};
@@ -1815,7 +1768,7 @@ struct Context {
             require(bool(deferred_pipeline),"Deferred lighting pipeline creation failed.");
         }
         const auto environment=environment_ibl.bound();
-        const std::array<const void*,19> key={frame_buffer.Get(),material_base.Get(),material_surface.Get(),material_correspondence.Get(),depth.Get(),shadow_texture.Get(),light_buffer.Get(),cluster_counts.Get(),cluster_indices.Get(),scene_hdr.Get(),scene_normal.Get(),scene_motion.Get(),scene_motion_valid.Get(),ao_filtered.Get(),environment.diffuse,environment.specular,environment.brdf,environment.sampler,reflections.roughness()};
+        const std::array<const void*,19> key={frame_buffer.Get(),material_base.Get(),material_surface.Get(),material_correspondence.Get(),depth.Get(),shadow_texture.Get(),light_buffer.Get(),cluster_counts.Get(),cluster_indices.Get(),scene_hdr.Get(),scene_normal.Get(),scene_motion.Get(),scene_motion_valid.Get(),occlusion.filtered(),environment.diffuse,environment.specular,environment.brdf,environment.sampler,reflections.roughness()};
         if(deferred_bindings && key==deferred_binding_key)return;
         auto desc=nvrhi::BindingSetDesc().addItem(nvrhi::BindingSetItem::ConstantBuffer(1,frame_buffer))
             .addItem(nvrhi::BindingSetItem::Texture_SRV(0,material_base)).addItem(nvrhi::BindingSetItem::Texture_SRV(1,material_surface))
@@ -1825,7 +1778,7 @@ struct Context {
             .addItem(nvrhi::BindingSetItem::Texture_UAV(0,scene_hdr));
         if(scene_products_enabled)desc.addItem(nvrhi::BindingSetItem::Texture_UAV(1,scene_normal))
             .addItem(nvrhi::BindingSetItem::Texture_UAV(2,scene_motion)).addItem(nvrhi::BindingSetItem::Texture_UAV(3,scene_motion_valid));
-        if(ao_enabled)desc.addItem(nvrhi::BindingSetItem::Texture_SRV(4,ao_filtered));
+        if(ao_enabled)desc.addItem(nvrhi::BindingSetItem::Texture_SRV(4,occlusion.filtered()));
         if(reflection_variant)desc.addItem(nvrhi::BindingSetItem::Texture_UAV(4,reflections.roughness()));
         environment_ibl.bind(desc);
         deferred_bindings=checked->createBindingSet(desc,deferred_layout);require(bool(deferred_bindings),"Deferred lighting binding creation failed.");deferred_binding_key=key;
@@ -2125,7 +2078,7 @@ struct Context {
             auto bindings_desc=nvrhi::BindingSetDesc().addItem(nvrhi::BindingSetItem::PushConstants(0,64))
                 .addItem(nvrhi::BindingSetItem::Texture_SRV(0,source));
             if(scene_normal)bindings_desc.addItem(nvrhi::BindingSetItem::Texture_SRV(1,depth)).addItem(nvrhi::BindingSetItem::Texture_SRV(2,scene_normal)).addItem(nvrhi::BindingSetItem::Texture_SRV(3,scene_motion)).addItem(nvrhi::BindingSetItem::Texture_SRV(4,scene_motion_valid));
-            if(scene_debug_view==SceneDebugView::ambient_occlusion)bindings_desc.addItem(nvrhi::BindingSetItem::Texture_SRV(5,ao_filtered));
+            if(scene_debug_view==SceneDebugView::ambient_occlusion)bindings_desc.addItem(nvrhi::BindingSetItem::Texture_SRV(5,occlusion.filtered()));
             if(use_bloom)bindings_desc.addItem(nvrhi::BindingSetItem::Texture_SRV(6,bloom.radiance())).addItem(nvrhi::BindingSetItem::Sampler(0,bloom.sampler()));
             if(use_grade)bindings_desc.addItem(nvrhi::BindingSetItem::ConstantBuffer(1,output_grade_buffer));
             output_bindings=checked->createBindingSet(bindings_desc,output_layout);
@@ -2463,7 +2416,7 @@ struct Context {
 #endif
         sprite_framebuffer=nullptr;
         for(auto& slot:slots) {slot.sprite_depth=nullptr;slot.sprite_bindings.clear();}
-        framebuffers.clear();sky_framebuffers.clear(); images.clear(); depth=nullptr; multisample_color=nullptr; scene_hdr=nullptr; scene_normal=nullptr; scene_motion=nullptr;scene_motion_valid=nullptr;material_base=nullptr;material_surface=nullptr;material_correspondence=nullptr;ao_raw=nullptr;ao_filtered=nullptr;ao_bindings={};deferred_bindings=nullptr;deferred_binding_key={};staging=nullptr;
+        framebuffers.clear();sky_framebuffers.clear(); images.clear(); depth=nullptr; multisample_color=nullptr; scene_hdr=nullptr; scene_normal=nullptr; scene_motion=nullptr;scene_motion_valid=nullptr;material_base=nullptr;material_surface=nullptr;material_correspondence=nullptr;occlusion.clear_targets();deferred_bindings=nullptr;deferred_binding_key={};staging=nullptr;
         for(auto& texture:probe_staging)texture=nullptr;
         fsr3_history_readback=nullptr;
         history={};
@@ -2883,7 +2836,7 @@ struct Context {
             f.ibl_brdf=texture(environment.brdf,rs::Lifetime::imported,true);
             if(!gpu_lights.empty())f.lights=buffer(light_buffer,rs::Lifetime::shared,false,gpu_lights.size()*sizeof(GpuLight));
             if(settings.reconstruction) {f.reconstructed=texture(reconstructed,rs::Lifetime::shared,false);f.dense_motion=texture(dense_motion,rs::Lifetime::shared,false);f.reactive=texture(reactive,rs::Lifetime::shared,false);f.dilated_depth=texture(dilated_depth,rs::Lifetime::shared,false);f.dilated_motion=texture(dilated_motion,rs::Lifetime::shared,false);f.reconstructed_depth=texture(reconstructed_depth,rs::Lifetime::shared,false);}
-            if(ao_enabled) {f.ao_raw=texture(ao_raw,rs::Lifetime::shared,false);f.ao_filtered=texture(ao_filtered,rs::Lifetime::shared,false);f.ao_constants=buffer(ao_buffer,rs::Lifetime::shared,false);}
+            if(ao_enabled) {f.ao_raw=texture(occlusion.raw(),rs::Lifetime::shared,false);f.ao_filtered=texture(occlusion.filtered(),rs::Lifetime::shared,false);f.ao_constants=buffer(occlusion.constants(),rs::Lifetime::shared,false);}
             if(deferred) {f.material_base=texture(material_base,rs::Lifetime::shared,false);f.material_surface=texture(material_surface,rs::Lifetime::shared,false);f.material_correspondence=texture(material_correspondence,rs::Lifetime::shared,false);}
             f.hdr=texture(scene_hdr,rs::Lifetime::shared,false);f.color=multisample_color ? texture(multisample_color,rs::Lifetime::shared,false) : f.hdr;
             if(settings.screen_reflections) {
@@ -3045,10 +2998,11 @@ struct Context {
         if(plan.settings.screen_reflections)reflections.verify_bindings(plan,environment_ibl.bound().sampler);
         if(plan.settings.height_fog)fog.verify_bindings(plan);
         if(ao_enabled) {
-            identity(f.ao_raw,ao_raw.Get());identity(f.ao_filtered,ao_filtered.Get());identity(f.ao_constants,ao_buffer.Get());
-            for(unsigned pass=0;pass<2;++pass)for(const auto& binding:ao_bindings[pass]->getDesc()->bindings) {
+            using ambient_occlusion::Stage;
+            identity(f.ao_raw,occlusion.raw());identity(f.ao_filtered,occlusion.filtered());identity(f.ao_constants,occlusion.constants());
+            for(const auto stage:{Stage::horizon,Stage::filter})for(const auto& binding:occlusion.binding_desc(stage).bindings) {
                 if(binding.type==nvrhi::ResourceType::ConstantBuffer)identity(binding.slot==1 ? f.frame : f.ao_constants,binding.resourceHandle);
-                else if(binding.type==nvrhi::ResourceType::Texture_UAV)identity(pass==0 ? f.ao_raw : f.ao_filtered,binding.resourceHandle);
+                else if(binding.type==nvrhi::ResourceType::Texture_UAV)identity(stage==Stage::horizon ? f.ao_raw : f.ao_filtered,binding.resourceHandle);
                 else if(binding.type==nvrhi::ResourceType::Texture_SRV)identity(binding.slot==0 ? f.depth : binding.slot==1 ? f.material_surface : binding.slot==2 ? f.material_correspondence : f.ao_raw,binding.resourceHandle);
             }
         }
@@ -3255,7 +3209,9 @@ struct Context {
         cluster_readback=slot.cluster_readback;skin_readback=slot.skin_readback;
         if(capture_frame)prepare_capture_staging();
         prepare_game_ui();prepare_sprite_frame(slot);prepare_surface_mark_frame(slot);prepare_submission_history();prepare_stream_geometry(slot);
-        prepare_draw_batches();prepare_temporal_submission();prepare_ambient_occlusion();prepare_deferred_lighting();
+        prepare_draw_batches();prepare_temporal_submission();
+        if(ao_enabled)occlusion.prepare(*checked.Get(),{frame_buffer.Get(),depth.Get(),material_surface.Get(),material_correspondence.Get()});
+        prepare_deferred_lighting();
         // Query storage belongs to this Context. Create it before acquiring an
         // image; stopped traces leave it allocated but perform no query work.
         if((profiling::active() || bool(performance_token)) && !timestamp_prepared)prepare_timestamps();
@@ -3328,7 +3284,7 @@ struct Context {
                     record_surface_mark_mask_upload(planned_texture(resources.surface_mark_masks));
                 break;
             case render_schedule::PassId::skinning:
-                if(scene) {if(viewmodel_enabled) {commands->writeBuffer(planned_buffer(resources.viewmodel_frame),&viewmodel_frame,sizeof(viewmodel_frame));commands->writeBuffer(planned_buffer(resources.viewmodel_objects),viewmodel_objects.data(),viewmodel_objects.size()*sizeof(ObjectData));}commands->writeBuffer(planned_buffer(resources.frame),&frame_constants,sizeof(frame_constants));commands->writeBuffer(planned_buffer(resources.objects),object_data.data(),object_data.size()*sizeof(ObjectData));dispatch_skinning();if(ao_enabled)commands->writeBuffer(planned_buffer(resources.ao_constants),ao_settings.data(),sizeof(ao_settings));}
+                if(scene) {if(viewmodel_enabled) {commands->writeBuffer(planned_buffer(resources.viewmodel_frame),&viewmodel_frame,sizeof(viewmodel_frame));commands->writeBuffer(planned_buffer(resources.viewmodel_objects),viewmodel_objects.data(),viewmodel_objects.size()*sizeof(ObjectData));}commands->writeBuffer(planned_buffer(resources.frame),&frame_constants,sizeof(frame_constants));commands->writeBuffer(planned_buffer(resources.objects),object_data.data(),object_data.size()*sizeof(ObjectData));dispatch_skinning();if(ao_enabled)occlusion.upload(*commands.Get(),planned_buffer(resources.ao_constants));}
                 timestamp(1);break;
             case render_schedule::PassId::light_assignment:
                 if(scene) {
@@ -3351,8 +3307,16 @@ struct Context {
                 break;
             case render_schedule::PassId::sky:render_sky(index);break;
             case render_schedule::PassId::opaque:render_opaque(index,slot);timestamp(4);if(!ao_enabled) {timestamp(10);timestamp(11);timestamp(12);timestamp(13);}if(!deferred) {timestamp(8);timestamp(9);}if(!pending_reconstruction.active) {timestamp(6);timestamp(7);}if(!plan.settings.screen_reflections) {timestamp(14);timestamp(15);}if(!plan.settings.height_fog) {timestamp(16);timestamp(17);}break;
-            case render_schedule::PassId::ambient_occlusion:dispatch_ambient_occlusion(0);break;
-            case render_schedule::PassId::ambient_occlusion_filter:dispatch_ambient_occlusion(1);break;
+            case render_schedule::PassId::ambient_occlusion:
+                timestamp(10);
+                occlusion.dispatch(*commands.Get(),ambient_occlusion::Stage::horizon);
+                timestamp(11);
+                break;
+            case render_schedule::PassId::ambient_occlusion_filter:
+                timestamp(12);
+                occlusion.dispatch(*commands.Get(),ambient_occlusion::Stage::filter);
+                timestamp(13);
+                break;
             case render_schedule::PassId::deferred_lighting:dispatch_deferred_lighting();break;
             case render_schedule::PassId::screen_reflections:
                 timestamp(14);

@@ -13,7 +13,6 @@
 #include "foliage_authoring.hpp"
 #include "water_asset.hpp"
 #include "water_region_scene.hpp"
-#include "particle_emitter_json.hpp"
 #include "particle_scene.hpp"
 #include <charconv>
 #include "physical_rig_json.hpp"
@@ -23,7 +22,6 @@
 #include "surface_measure.hpp"
 #include "surface_mark_profiles.hpp"
 #include "audio_buses.hpp"
-#include "surface_mark_validation.hpp"
 #include "surface_marks_json.hpp"
 #include "attachment_outcome_json.hpp"
 #include "poima/runtime_ik.hpp"
@@ -34,14 +32,16 @@
 #include "poima/ui_document.hpp"
 #endif
 #include "world_capture.hpp"
+#include "world_content.hpp"
 #include "world_discovery.hpp"
 #include "world_document.hpp"
 #include "world_model_assets.hpp"
 #include "world_presentation_json.hpp"
 #include "world_post_effect_assets.hpp"
-#include "world_schema.hpp"
+#include "world_region_assets.hpp"
 #include "world_runtime_definition.hpp"
 #include "world_runtime_json.hpp"
+#include "world_schema.hpp"
 #include "poima/player.hpp"
 #include "poima/player_diagnostics.hpp"
 #include "poima/player_preferences.hpp"
@@ -164,7 +164,6 @@ class World {
     fs::path protected_root_,save_root_;
     std::uint64_t save_configuration_generation_=0;
     Json save_receipts_=Json::array();
-    struct FrozenContent { RuntimeDefinition definition;WorldPackageContent package;Json document;std::string hash; };
     std::string runtime_id_, stopped_runtime_id_;
     std::set<std::string> used_runtime_ids_;
     Json runtime_start_params_, runtime_start_result_;
@@ -377,185 +376,8 @@ public:
                      {"revision", 0}, {"entities", Json::object()}, {"retired_ids", Json::array()}, {"receipts", Json::array()}};
         presentation_shapes_=next_presentation_shapes(doc_,presentation_incarnation_cursor_);
     }
-    void resolve_ui_images(ui::Definition& elements,ModelCache& assets) const {
-        std::set<std::string> seen;
-        std::size_t bytes=0;
-        for(auto& element:elements) {
-            if(!element.style || !element.style->image)continue;
-            auto& image=*element.style->image;
-            try {
-                const bool first=seen.insert(image.asset).second;
-                require(seen.size()<=ui::max_images,"UI exceeds the 32-image budget.",-32050);
-                image.texture=assets.image(asset_directory(),image.asset);
-                require(image.texture->srgb && !image.texture->mips.empty(),
-                    "UI images require a cooked sRGB texture.",-32050);
-                const auto& mip=image.texture->mips.front();
-                if(image.slice_insets_px) {
-                    const auto [top,right,bottom,left]=*image.slice_insets_px;
-                    require(left+right<mip.width && top+bottom<mip.height,
-                        "UI slice insets must leave a positive center in the source image.",-32050);
-                }
-                if(first) {
-                    require(mip.width<=ui::max_image_side && mip.height<=ui::max_image_side && mip.rgba.size()<=ui::max_image_bytes-bytes,
-                        "UI image extent or 16 MiB base-level budget exceeded.",-32050);
-                    bytes+=mip.rgba.size();
-                }
-            } catch(const std::exception& error) {
-                throw Error(-32050,"UI image "+image.asset+" for element "+element.id+": "+error.what());
-            }
-        }
-    }
-    template<class LoadImage>
-    static std::map<std::string,RuntimeSurfaceMarkProfile> resolve_surface_mark_profiles(
-        const Json& document,LoadImage&& load_image) {
-        std::map<std::string,RuntimeSurfaceMarkProfile> profiles;
-        const auto catalog=document.find("surface_mark_profiles");
-        if(catalog==document.end())return profiles;
-        for(const auto& [id,profile]:catalog->items()) {
-            const auto& mask=profile.at("mask").get_ref<const std::string&>();
-            try {
-                auto image=load_image(mask);
-                surface_mark_profiles::validate_image(*image);
-                profiles.emplace(id,RuntimeSurfaceMarkProfile{mask,std::move(image)});
-            } catch(const fs::filesystem_error&) {
-                throw Error(-32050,"Cannot read cooked surface mark mask "+mask+" for profile "+id+".");
-            } catch(const std::exception& error) {
-                throw Error(-32050,"Surface mark profile "+id+" mask "+mask+": "+error.what());
-            }
-        }
-        return profiles;
-    }
-    void validate_surface_mark_assets(const Json& document) const {
-        ModelCache assets;
-        (void)resolve_surface_mark_profiles(document,[&](const auto& id) { return assets.image(asset_directory(),id); });
-    }
     FrozenContent freeze_content(const Json& source) const {
-        WorldPackageContent result;result.revision=revision(source.at("revision"));
-        std::map<std::string,WorldPackageAsset> files;ModelCache assets;AudioCache audio;
-        std::map<std::string,LoadedPostEffect> post_effects;
-        std::map<std::string,std::shared_ptr<const TextureImage>> sprite_textures;
-        std::size_t sprite_base_bytes=0;
-        auto add=[&](const std::string& id,const char* extension,std::size_t bytes) {
-            const auto filename=id+extension;files.emplace(filename,WorldPackageAsset{filename,id,static_cast<std::uint64_t>(bytes)});
-        };
-        auto model=[&](const std::string& id) {
-            try { const auto value=assets.get(asset_directory(),id);add(id,".pmodel",assets.models.at(id).bytes);return value; }
-            catch(const Error&) { throw; }
-            catch(const std::exception& error) { throw Error(-32050,error.what()); }
-        };
-        auto image=[&](const std::string& id) {
-            const auto value=assets.image(asset_directory(),id);add(id,".pimage",assets.images.at(id).bytes);return value;
-        };
-        auto collect_particle_emitter=[&](const Json& emitter) {
-            result.needs_particles=true;
-            const auto sprite=emitter.find("sprite");
-            if(sprite==emitter.end())return;
-            result.needs_sprite_particles=true;
-            const auto& id=sprite->at("texture").get_ref<const std::string&>();
-            try {
-                auto texture=sprite_textures.find(id);
-                if(texture==sprite_textures.end()) {
-                    require(sprite_textures.size()<max_scene_particle_sprite_textures,
-                        "Particle sprites exceed the 16-texture budget.",-32050);
-                    const auto cooked=image(id);
-                    const auto bytes=particles::sprite_texture_base_bytes(*cooked);
-                    require(bytes<=max_scene_particle_sprite_texture_bytes-sprite_base_bytes,
-                        "Particle sprites exceed the 16 MiB base-level budget.",-32050);
-                    sprite_base_bytes+=bytes;
-                    texture=sprite_textures.emplace(id,cooked).first;
-                }
-                if(sprite->contains("flipbook")) {
-                    const auto style=parse_particle_emitter(emitter);
-                    particles::validate_sprite_flipbook(*style.sprite->flipbook,texture->second->mips.front());
-                }
-            } catch(const std::exception& error) {
-                throw Error(-32050,"Particle sprite texture "+id+": "+error.what());
-            }
-        };
-        // Only active component references are dependencies. Receipt/history
-        // payloads may mention retired assets and are deliberately not scanned.
-        auto collect_components=[&](const Json& components) {
-            if(components.contains("ParticleEmitter"))collect_particle_emitter(components.at("ParticleEmitter"));
-            for(const auto* type:{"StaticMesh","SkinnedMesh","AnimationRig","MeshCollider"})if(components.contains(type)) {
-                const auto& ref=components.at(type);const auto value=model(ref.at("asset").get<std::string>());
-                if(type==std::string_view("StaticMesh") && ref.contains("foliage_motion"))
-                    result.needs_foliage_motion=true;
-                if(type==std::string_view("StaticMesh") && ref.contains("lods")) {
-                    result.needs_mesh_lod=true;
-                    for(const auto& lod:ref.at("lods"))(void)model(lod.at("asset").get_ref<const std::string&>());
-                }
-                if(ref.contains("primitive"))require(revision(ref.at("primitive"))<value->primitives.size(),"Package mesh primitive index does not exist.",-32050);
-                if(ref.contains("clip") && !ref.at("clip").is_null())require(revision(ref.at("clip"))<value->animations.size(),"Package animation clip index does not exist.",-32050);
-            }
-            if(components.contains("PbrTextures")) {
-                const auto& textures=components.at("PbrTextures");const std::array<const char*,5> names{"base_color","metallic_roughness","emissive","occlusion","normal"};
-                for(std::size_t slot=0;slot<names.size();++slot)if(textures.contains(names[slot]) && !textures.at(names[slot]).is_null()) {
-                    const auto& ref=textures.at(names[slot]);std::shared_ptr<const TextureImage> value;
-                    if(ref.contains("image")) { const auto source_model=model(ref.at("asset").get<std::string>());const auto index=revision(ref.at("image"));require(index<source_model->images.size(),"Package texture image index does not exist.",-32050);value=source_model->images[static_cast<std::size_t>(index)]; }
-                    else value=image(ref.at("asset").get<std::string>());
-                    require(value->srgb==(slot==0 || slot==2),"Package texture color space does not match its material slot.",-32050);
-                }
-            }
-            if(components.contains("AudioEmitter")) {
-                result.needs_audio=true;const auto id=components.at("AudioEmitter").at("asset").get<std::string>();
-                if(!files.contains(id+".paudio")) { (void)audio.get(asset_directory(),id);add(id,".paudio",audio.clips.at(id).bytes); }
-            }
-            if(components.contains("LightingEnvironment")) {
-                const auto& environment=components.at("LightingEnvironment");
-                if(environment.contains("output_grade"))result.needs_output_grade=true;
-                if(environment.contains("screen_reflections"))result.needs_screen_reflections=true;
-                if(environment.contains("height_fog"))result.needs_height_fog=true;
-                if(environment.contains("post_effect")) {
-                    const auto& digest=environment.at("post_effect").get_ref<const std::string&>();
-                    if(!post_effects.contains(digest)) {
-                        auto loaded=load_post_effect_asset(asset_directory(), digest);
-                        add(digest,".poimapost",loaded.bytes);
-                        post_effects.emplace(digest,std::move(loaded));
-                    }
-                }
-            }
-        };
-        for(const auto& entity:source.at("entities"))collect_components(entity.at("components"));
-        if(source.contains("templates"))for(const auto& recipe:source.at("templates")) {
-            if(recipe.contains("entities"))for(const auto& member:recipe.at("entities"))collect_components(member.at("components"));
-            else collect_components(recipe.at("components"));
-        }
-        // Includes mesh/UV/material compatibility, complete rig ownership,
-        // weighted primitive bindings and enabled-audio aggregate limits.
-        auto definition=resolve_runtime_definition(source, asset_directory(), assets, AuthoredRuntimeView::complete, &audio, &post_effects);
-        definition.particle_sprite_textures=std::move(sprite_textures);
-        definition.surface_mark_profiles=resolve_surface_mark_profiles(source,image);
-        component_checked([&]{ validate_runtime_footprint_surfaces(definition); });
-        component_checked([&]{ validate_runtime_surface_wetness(definition); });
-        result.needs_surface_mark_masks=!definition.surface_mark_profiles.empty();
-        resolve_ui_images(definition.ui,assets);
-        for(const auto& element:definition.ui)if(element.style && element.style->image) {
-            const auto& id=element.style->image->asset;
-            add(id,".pimage",assets.images.at(id).bytes);
-        }
-        if(source.contains("navigation")) {
-            auto checked=navigation_binding(source);definition.navigation=checked.definition;result.needs_navigation=true;
-            add(checked.definition.asset,".pnav",checked.bytes);
-        }
-        if(source.contains("water")) {
-            auto [asset, bytes]=water_binding(source);
-            add(asset.definition.plan_sha256,".pwater",bytes);
-            result.needs_water_rain=!asset.definition.rain_cells.empty();
-            result.needs_water_ripples=asset.definition.surface_ripples.has_value();
-            definition.water=std::move(asset.definition);
-        }
-        if(definition.snow)component_checked([&]{(void)snow::Region(definition);});
-        result.needs_snow_water=definition.snow.has_value() && definition.water.has_value();
-        result.needs_physics_checkpoint=definition.physics_checkpoint;
-        auto document=source;document["receipts"]=Json::array();document["retired_ids"]=Json::array();if(document.contains("retired_component_schemas"))document["retired_component_schemas"]=Json::array();if(document.contains("retired_template_ids"))document["retired_template_ids"]=Json::array();if(document.contains("retired_ui_ids"))document["retired_ui_ids"]=Json::array();result.document=document.dump(2)+'\n';
-        for(auto& [filename,file]:files) { (void)filename;result.assets.push_back(std::move(file)); }
-        freeze_provenance(source,result);
-        auto identity=document;identity.erase("receipts");identity.erase("retired_ids");identity.erase("retired_component_schemas");identity.erase("retired_template_ids");identity.erase("retired_ui_ids");
-        Json inventory=Json::array();for(const auto& f:result.assets)inventory.push_back({{"filename",f.filename},{"sha256",f.sha256},{"bytes",f.bytes}});
-        Json content_identity={{"format","poima.runtime-content"},{"version",1},{"document",identity},{"assets",inventory}};
-        if(!result.provenance_records.empty()) {Json records=Json::array();for(const auto& f:result.provenance_records)records.push_back({{"filename",f.filename},{"sha256",f.sha256},{"bytes",f.bytes}});content_identity["provenance_records"]=std::move(records);content_identity["asset_credits_sha256"]=content_hash(result.asset_credits);}
-        const auto hash=content_hash(content_identity.dump());
-        return {std::move(definition),std::move(result),std::move(document),hash};
+        return freeze_world_content(source, asset_directory());
     }
     WorldPackageContent package_content() const { return freeze_content(doc_).package; }
     std::shared_ptr<const ui::Presentation> runtime_ui_presentation() const {
@@ -643,7 +465,7 @@ public:
                 result.objects.back().foliage_motion=authored_foliage_motion(*mesh,document,matrices,e.id);
             }
             if(document.contains("water") && !preview) {
-                try { water::append_region_scene(water::Region(water_binding(document).first.definition), result); }
+                try { water::append_region_scene(water::Region(resolve_water_binding(document,asset_directory()).first.definition), result); }
                 catch(const Error& error) { if(error.code!=-32009)throw; }
             }
             if(!preview)authored_cache_=result;
@@ -839,7 +661,7 @@ public:
 #if POIMA_GAME_UI
             auto definition=ui::parse_definition(doc_.value("ui",Json::object()).dump());
             ModelCache assets;
-            resolve_ui_images(definition,assets);
+            resolve_ui_images(definition,asset_directory(),assets);
             const ui::Model model(definition);
             UiPresenter presenter;
             (void)presenter.frame(model.presentation(),static_cast<std::uint32_t>(width),static_cast<std::uint32_t>(height),static_cast<float>(scale));
@@ -1477,7 +1299,7 @@ public:
                     snapshot.objects.back().lods=mesh->lods;
                     snapshot.objects.back().foliage_motion=authored_foliage_motion(*mesh,doc_,matrices,id);
                 }
-                if(doc_.contains("water"))water::append_region_scene(water::Region(water_binding(doc_).first.definition), snapshot);
+                if(doc_.contains("water"))water::append_region_scene(water::Region(resolve_water_binding(doc_,asset_directory()).first.definition), snapshot);
             }
             }
         } catch(const Error&) { throw; }
@@ -2420,7 +2242,7 @@ public:
         staged["retired_ids"]=retired;validate(staged);validate_animation_document(staged,asset_directory(),model_cache_);
         validate_snow_edit(staged,changed,snow_changed,water_changed);
         validate_mesh_lod_edit(staged,changed);
-        if(mark_profiles_changed)validate_surface_mark_assets(staged);
+        if(mark_profiles_changed)validate_surface_mark_assets(staged,asset_directory());
         Json result={{"revision",staged.at("revision")},{"committed",true},{"replayed",false},{"changed_ids",changed},{"history_recorded",true},{"history_action",undo ? "undo" : "redo"}};
         if(!changed_templates.empty())result["changed_template_ids"]=changed_templates;
         if(!changed_ui.empty())result["changed_ui_ids"]=changed_ui;
@@ -2628,13 +2450,13 @@ public:
         staged["revision"] = revision(doc_.at("revision")) + 1;
         validate(staged);
         validate_animation_document(staged,asset_directory(),model_cache_);
-        if(navigation_touched && staged.contains("navigation"))(void)navigation_binding(staged);
-        if(water_touched && staged.contains("water") && !staged.contains("snow"))(void)water_binding(staged);
+        if(navigation_touched && staged.contains("navigation"))(void)resolve_navigation_binding(staged,asset_directory());
+        if(water_touched && staged.contains("water") && !staged.contains("snow"))(void)resolve_water_binding(staged,asset_directory());
         validate_snow_edit(staged,changed,snow_touched,water_touched);
         validate_mesh_lod_edit(staged,changed);
-        if(mark_profiles_touched)validate_surface_mark_assets(staged);
+        if(mark_profiles_touched)validate_surface_mark_assets(staged,asset_directory());
         for(const auto& asset:provenance_touched)if(staged.contains("asset_provenance") && staged.at("asset_provenance").contains(asset))
-            check_provenance_binding(asset,staged.at("asset_provenance").at(asset),true);
+            validate_provenance_binding(asset_directory(),asset,staged.at("asset_provenance").at(asset));
         const bool provenance_changed=doc_.contains("asset_provenance")!=staged.contains("asset_provenance") ||
             (doc_.contains("asset_provenance") && staged.contains("asset_provenance") && doc_.at("asset_provenance")!=staged.at("asset_provenance"));
         const bool navigation_changed=doc_.contains("navigation")!=staged.contains("navigation") ||

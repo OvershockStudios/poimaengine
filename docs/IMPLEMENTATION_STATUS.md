@@ -1,8 +1,17 @@
 # Implementation status
 
-Updated 2026-11-21 for **0.0.383**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-21 for **0.0.384**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.384 compiles [frozen world packaging, regional asset checks and
+GTAO](BUILD.md#world-service-and-schema-compilation) in separate units.
+Twenty-two Ubuntu simulation suites and nine authoring-only suites passed.
+Windows reproduced 23 frozen
+content files, all 55 shader binaries, and 48 Vulkan images with 2,468
+sampled rows exactly. Hosted resize and rendering with GTAO and FSR 3 passed
+eight mode and frame-slot combinations on both AMD and NVIDIA.
+[Results](evidence/m2-source-ownership-384.json)
 
 Version 0.0.383 adds opt-in [contact-preserving checkpoints](RUNTIME.md#contact-preserving-checkpoints)
 for rigid bodies and rigid-body characters. The same-build Ubuntu and Windows

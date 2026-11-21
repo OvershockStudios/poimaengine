@@ -21,7 +21,7 @@ namespace world_detail {
 enum class AuthoredRuntimeView { complete, animation_only, audio_only };
 
 // Project validated authored data using the caller's immutable-asset cache.
-// Session identity, region binding and runtime publication stay with World.
+// The caller supplies region bindings and owns session identity and runtime publication.
 RuntimeDefinition resolve_runtime_definition(const Json& document, const std::filesystem::path& assets,
     ModelCache& cache, AuthoredRuntimeView view = AuthoredRuntimeView::complete,
     AudioCache* supplied_audio = nullptr, const std::map<std::string, LoadedPostEffect>* post_effects = nullptr);

@@ -17,7 +17,7 @@
                 return mesh_collider(document, id) || mesh_collider(doc_, id);
             })) return;
 
-            auto [asset, bytes] = water_binding(document);
+            auto [asset, bytes] = resolve_water_binding(document, asset_directory());
             if (!snow_edit && !water_touched && !std::any_of(asset.tiles.begin(), asset.tiles.end(), [&](const auto& tile) {
                 return changed.contains(tile.entity);
             })) return;

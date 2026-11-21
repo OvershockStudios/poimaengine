@@ -1,38 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
 // Included inside the serialized native World owner; no world threads/jobs.
-    static std::string navigation_diagnostic(const char* message) {
-        // POSIX filesystem paths may contain non-UTF-8 bytes. Bound before
-        // replacement, then truncate only at a valid output codepoint boundary.
-        auto text=Json::parse(Json(std::string(message).substr(0,1024)).dump(-1,' ',false,Json::error_handler_t::replace)).get<std::string>();
-        auto length=std::min<std::size_t>(text.size(),1024);
-        while(length<text.size() && length>0 && (static_cast<unsigned char>(text[length])&0xc0u)==0x80u)--length;
-        text.resize(length);return text;
-    }
-    struct CheckedNavigation {RuntimeNavigationDefinition definition;std::uint64_t bytes=0;};
-    CheckedNavigation navigation_read(const std::string& id) const {
-        require(navigation::available(),"Navigation binding requires POIMA_ENABLE_NAVIGATION=ON.",-32003);
-        try {
-            const auto path=asset_package_path(asset_directory(),id,".pnav");const auto length=fs::file_size(path);
-            require(length>0 && length<=navigation::max_package_bytes,"Navigation package must contain1..16MiB.",-32050);
-            std::string bytes(static_cast<std::size_t>(length),'\0');std::ifstream file(path,std::ios::binary);
-            require(bool(file.read(bytes.data(),static_cast<std::streamsize>(length))) && content_hash(bytes)==id,"Navigation package hash mismatch/read failure.",-32050);
-            auto mesh=navigation::Mesh::decode(bytes);require(mesh->encode()==bytes,"Navigation package must use canonical checked encoding.",-32050);
-            const auto metadata=Json::parse(mesh->metadata());
-            RuntimeNavigationDefinition definition{id,mesh->source_fingerprint(),navigation::parse_profile(metadata.at("profile").dump()),std::move(mesh)};
-            return {std::move(definition),static_cast<std::uint64_t>(length)};
-        }catch(const Error& error){throw Error(error.code,navigation_diagnostic(error.what()));}
-        catch(const std::exception& error){throw Error(-32050,navigation_diagnostic(error.what()));}
-    }
-    CheckedNavigation navigation_binding(const Json& source) const {
-        const auto& binding=source.at("navigation");fields(binding,{"asset"},{"asset"});
-        require(binding.at("asset").is_string() && valid_asset_id(binding.at("asset")),"Navigation binding asset must be64 lowercase hexadecimal digits.");
-        auto checked=navigation_read(binding.at("asset").get<std::string>());
-        std::string fingerprint;
-        try {fingerprint=navigation::source_fingerprint(navigation::collision_source(source.at("entities"),world_matrices(source.at("entities"))));}
-        catch(const std::exception& error){throw Error(-32602,navigation_diagnostic(error.what()));}
-        require(checked.definition.source_fingerprint==fingerprint,"Navigation binding topology is stale; bake and explicitly bind the current static collision source.",-32009);
-        return checked;
-    }
     std::string navigation_cache_id_;
     std::shared_ptr<const navigation::Mesh> navigation_cache_;
     std::optional<std::uint64_t> navigation_source_revision_;
@@ -50,7 +17,7 @@
                 auto candidate=navigation::Mesh::decode(bytes);navigation_cache_=std::move(candidate);navigation_cache_id_=id;
             }
             return navigation_cache_;
-        } catch(const Error& error) {throw Error(error.code,navigation_diagnostic(error.what()));}catch(const std::exception& error){throw Error(-32050,navigation_diagnostic(error.what()));}
+        } catch(const Error& error) {throw Error(error.code,asset_diagnostic(error.what()));}catch(const std::exception& error){throw Error(-32050,asset_diagnostic(error.what()));}
     }
     Json navigation_dispatch(const std::string& method,const Json& params) {
         if(method=="world.navigation.bake")fields(params,{"revision","profile"},{"revision"});
@@ -65,7 +32,7 @@
                 auto candidate=navigation::collision_source(doc_.at("entities"),world_matrices(doc_.at("entities")));
                 auto digest=navigation::source_fingerprint(candidate);
                 navigation_source_cache_=std::move(candidate);navigation_source_hash_=std::move(digest);navigation_source_revision_=authored_revision;
-            }catch(const std::exception& error){throw Error(-32602,navigation_diagnostic(error.what()));}
+            }catch(const std::exception& error){throw Error(-32602,asset_diagnostic(error.what()));}
         }
         const auto& source=navigation_source_cache_;
         const auto& fingerprint=navigation_source_hash_;
@@ -80,7 +47,7 @@
                     ModelCache collision_models;
                     auto geometry=navigation::collision_geometry(source,[&](const std::string& asset,std::uint32_t primitive) {
                         try {const auto model=collision_models.get(asset_directory(),asset);require(primitive<model->primitives.size(),"Navigation MeshCollider primitive does not exist.",-32050);return model->primitives[primitive];}
-                        catch(const Error& error){throw Error(error.code,navigation_diagnostic(error.what()));}catch(const std::exception& error){throw Error(-32050,navigation_diagnostic(error.what()));}
+                        catch(const Error& error){throw Error(error.code,asset_diagnostic(error.what()));}catch(const std::exception& error){throw Error(-32050,asset_diagnostic(error.what()));}
                     });
                     mesh=navigation::Mesh::bake(geometry,profile,fingerprint);const auto bytes=mesh->encode();id=content_hash(bytes);
                     fs::create_directories(asset_directory());const auto package=asset_directory()/(id+".pnav");
@@ -97,9 +64,9 @@
                     }
                     navigation_cache_=mesh;navigation_cache_id_=id;
                 }
-            }catch(const Error& error){throw Error(error.code,navigation_diagnostic(error.what()));}
-            catch(const fs::filesystem_error& error){throw Error(-32050,navigation_diagnostic(error.what()));}
-            catch(const std::exception& error){throw Error(-32602,navigation_diagnostic(error.what()));}
+            }catch(const Error& error){throw Error(error.code,asset_diagnostic(error.what()));}
+            catch(const fs::filesystem_error& error){throw Error(-32050,asset_diagnostic(error.what()));}
+            catch(const std::exception& error){throw Error(-32602,asset_diagnostic(error.what()));}
         } else {
             require(params.at("asset").is_string() && valid_asset_id(params.at("asset")),"Navigation asset must be a 64-hex identity.");id=params.at("asset");mesh=navigation_load(id);
             require(mesh->source_fingerprint()==fingerprint,"Navigation source fingerprint is stale; bake the current collision topology.",-32009);
@@ -117,7 +84,7 @@
         request.end=navigation_vector(params.at("end"),-1000000,1000000);
         navigation_limits(params,request,4096);
         try { result["path"]=navigation_path_json(mesh->path(request),request); }
-        catch(const std::exception& error){throw Error(-32602,navigation_diagnostic(error.what()));}
+        catch(const std::exception& error){throw Error(-32602,asset_diagnostic(error.what()));}
         return result;
     }
     static navigation::Point navigation_vector(const Json& value,double lo,double hi) {
@@ -172,5 +139,5 @@
             return {{"session_id",runtime_id_},{"tick",tick},{"structure_revision",runtime_->structure_revision()},
                 {"scope","runtime"},{"entity",request.entity},{"asset",route.asset},{"path",navigation_path_json(route.path,request)},
                 {"obstacles",std::move(blockers)},{"obstacle_filtered",route.path.obstacle_filtered},{"blocked",route.blocked}};
-        }catch(const std::exception& error){throw Error(-32602,navigation_diagnostic(error.what()));}
+        }catch(const std::exception& error){throw Error(-32602,asset_diagnostic(error.what()));}
     }

@@ -162,6 +162,10 @@ serializes lighting, capture and player presentation reports.
 animation cooking. `src/world_post_effect_assets.cpp` verifies and publishes
 compiled post-effect artifacts. `src/world_runtime_definition.cpp` resolves
 authored entities, rig and template definitions, and mesh and material bindings.
+`src/world_content.cpp` validates frozen runtime and package dependencies,
+collects the selected provenance and credits, and computes the frozen content
+identity. `src/world_region_assets.cpp` verifies cooked navigation and water
+packages and their authored bindings.
 `src/world_capture.cpp` validates capture options and output destinations and
 builds animated asset previews. `src/world.cpp` owns world state, revisioned
 publication, capture revision guards, dispatch and session filtering.
@@ -178,6 +182,9 @@ the GPU context, frame submission and retirement. `src/render_vulkan_instance.cp
 owns the shared Vulkan instance and its loader dispatch. Render passes with their
 own resources, such as `src/render_screen_reflections.cpp` and
 `src/render_height_fog.cpp`, use the context's device and command list.
+`src/render_ambient_occlusion.cpp` owns the GTAO and bilateral filter GPU
+resources and commands. The context orders both stages and supplies the frame
+constants, depth and deferred material textures.
 `src/render_viewmodel.cpp` stages viewmodel GPU resources and records the
 fullscreen resolve and composition draws. `src/render_hdr_effects.cpp` owns
 project post-effect and bloom GPU resources and draw commands. The context

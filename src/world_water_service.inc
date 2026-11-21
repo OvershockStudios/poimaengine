@@ -1,60 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 // Included in World. One immutable region binds to reviewed terrain geometry.
 
-    void validate_water_tiles(const Json& document, const std::vector<water::TileBinding>& tiles) const {
-        const auto& entities = document.at("entities");
-        const auto* snow_tiles = document.contains("snow") ? &document.at("snow").at("tiles") : nullptr;
-        for (const auto& tile : tiles) {
-            require(!snow_tiles || (snow_tiles->at(0) != tile.entity && snow_tiles->at(1) != tile.entity),
-                "Water terrain tiles cannot also be bound to snow.", -32009);
-            const auto found = entities.find(tile.entity);
-            require(found != entities.end() && found->at("parent").is_null(), "Water terrain binding is missing a root tile.", -32009);
-            const auto& components = found->at("components");
-            const auto& transform = components.at("Transform");
-            require(transform.at("position") == Json::array({0, 0, 0}) && transform.at("scale") == Json::array({1, 1, 1}) &&
-                (transform.at("rotation") == Json::array({0, 0, 0, 1}) || transform.at("rotation") == Json::array({0, 0, 0, -1})),
-                "Water terrain tile transform is stale. Restore identity transforms or recook the water region.", -32009);
-            for (const auto* kind : {"StaticMesh", "MeshCollider"}) {
-                const auto binding = components.find(kind);
-                require(binding != components.end() && binding->at("asset") == tile.asset && binding->at("primitive") == 0,
-                    "Water terrain model binding is stale. Recook the water region for the current terrain.", -32009);
-            }
-            require(!components.at("StaticMesh").contains("foliage_motion"),
-                "Water terrain tiles cannot use foliage motion.",-32009);
-        }
-    }
-
-    std::string read_water_bytes(const std::string& id) const {
-        const auto path = asset_package_path(asset_directory(), id, ".pwater");
-        const auto length = fs::file_size(path);
-        require(length > 0 && length <= water::max_region_asset_bytes && fs::hard_link_count(path) == 1,
-            "Water asset must be a bounded ordinary package.", -32050);
-        std::ifstream input(path, std::ios::binary);
-        std::string bytes(static_cast<std::size_t>(length), '\0');
-        require(bool(input.read(bytes.data(), static_cast<std::streamsize>(length))) &&
-            input.peek() == std::char_traits<char>::eof() && content_hash(bytes) == id,
-            "Water asset hash or size differs from the binding.", -32050);
-        return bytes;
-    }
-
-    std::pair<water::RegionAsset, std::size_t> water_binding(const Json& document) const {
-        try {
-            const auto id = document.at("water").at("asset").get<std::string>();
-            const auto bytes = read_water_bytes(id);
-            auto asset = water::decode_region_asset(bytes);
-            validate_water_tiles(document, asset.tiles);
-            return {std::move(asset), bytes.size()};
-        } catch (const Error&) { throw; }
-        catch (const std::exception& error) { throw Error(-32050, asset_diagnostic(error.what())); }
-    }
-
     void publish_water(const std::string& id, const std::string& bytes) const {
         const auto directory = asset_directory();
         if (!asset_catalog::plain_directory(directory)) fs::create_directory(project_detail::project_io_path(directory));
         require(asset_catalog::plain_directory(directory), "Water publication requires an ordinary asset directory.", -32050);
         const auto target = project_detail::project_io_path(directory / (id + ".pwater"));
         if (fs::symlink_status(target).type() != fs::file_type::not_found) {
-            require(read_water_bytes(id) == bytes, "Existing water asset differs from the plan.", -32050);
+            require(read_water_package(directory, id) == bytes, "Existing water asset differs from the plan.", -32050);
             return;
         }
         const auto pending = fs::path(target).concat(".pending");

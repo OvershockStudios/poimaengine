@@ -1,0 +1,113 @@
+{
+  "release": "0.0.384",
+  "scope": "Frozen content and regional asset compilation boundaries, and the Vulkan GTAO horizon and bilateral filter pass.",
+  "baseline_commit": "76ae8258742a5d4a2a0570f464f7d5052b479b84",
+  "main_file_lines": {
+    "src/world.cpp": {
+      "peak_370": 5304,
+      "before_383": 2873,
+      "after_384": 2695
+    },
+    "src/render_smoke.cpp": {
+      "peak_370": 5301,
+      "before_383": 3811,
+      "after_384": 3775
+    }
+  },
+  "source_change_inventory_sha256": "b803a87c69212a1247b1e5c389f127dcbd6ba5616aaa184df82d9f485da2246a",
+  "linux": {
+    "binary_sha256": "fa81993184a03f36ca10da0c3430e037e8c5102591202ca2f3addff4fa630303",
+    "junit_sha256": "c23b663d9c2af1d81889f84c6336fa6e4578ae675b4f3122ce0088c7478b5fdd",
+    "suites": [
+      "world_ui_contract",
+      "asset_references_contract",
+      "project_gameplay_contract",
+      "project_draft_contract",
+      "asset_provenance_project_contract",
+      "ui_authoring_contract",
+      "project_contract",
+      "world_particles_contract",
+      "navigation_contract",
+      "runtime_save_contract",
+      "asset_provenance_contract",
+      "world_contract",
+      "world_water_rain_contract",
+      "runtime_ui_contract",
+      "navigation_binding_contract",
+      "authoring_contract_identity",
+      "world_terrain_contract",
+      "asset-provenance-native",
+      "authoring_core_conformance",
+      "navigation-binding-native",
+      "world_save_native",
+      "world_water_contract"
+    ],
+    "mixed_snow_water_evidence_sha256": "4f7686ba0e30395cd3bbef9ecd66fa12e938ff643419419cce36f77a499168c3",
+    "contact_checkpoint_evidence_sha256": "d6ac20c49bdfdb649ecea3cad1a697367148ec44f34bf03e155136c65356794a",
+    "corrected_schema_fixture_pins": [
+      "world_ui_contract",
+      "asset_references_contract"
+    ]
+  },
+  "windows": {
+    "binary_sha256": "5c8638ae3eff9a62c4e5da170a64d3f2b714d4b2de32dddd335376ec3c72cd0d",
+    "runtime_descriptor_sha256": "c56936d0bb392d01f3e0d6f12902c9e30aa82141dbc6334226251ce51486f031",
+    "matched_spirv_modules": 55,
+    "schedule_variants": 488,
+    "schedule_refusals": 1265,
+    "exact_ao_captures": [
+      {
+        "device": "AMD Radeon(TM) Graphics",
+        "exact_images": 24,
+        "exact_probe_rows": 1234,
+        "previous_evidence_sha256": "d1170c5b0d98ffabad10d9b229499f360df2fa472e2ae9fbd7416fc9f294796b",
+        "evidence_sha256": "f847ceb91a385f4683ffe1f7848a73ddf3edee05329058ffbdaa7619d4757c34"
+      },
+      {
+        "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "exact_images": 24,
+        "exact_probe_rows": 1234,
+        "previous_evidence_sha256": "f827fe703858b1bfed2b4eb8ed7d1ee505af545f1ca9fc1d62c1694a0f0d32d6",
+        "evidence_sha256": "601e89be2658f0cea40e497227ab0ac5f6c959f9e88ab9998ae8fc355b54b8ca"
+      }
+    ],
+    "deferred_gtao_reconstruction": [
+      {
+        "device": "AMD Radeon(TM) Graphics",
+        "mode_slot_cases": 8,
+        "raw_evidence_sha256": "d829ba43d3135f35ed4ac2447102af465e251e59365d19464a5d9a269bbfaa7f"
+      },
+      {
+        "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "mode_slot_cases": 8,
+        "raw_evidence_sha256": "15e260cd0c7929bb657bab19b0ef166c5ed61c41cfdd0fd628937905a514fcfd"
+      }
+    ],
+    "mixed_snow_water_evidence_sha256": "70a549cc7bf9f40b07710a69e34a55325d7c283ea8d864af31f677d25d6224ce",
+    "contact_checkpoint_evidence_sha256": "a9e2d72c578fec63b3f32c184ae4c3e2c2040f2eecad0dfdad4ecf4ee424208e",
+    "retained_export_dependency_files_equal": 23,
+    "retained_export_project_inspection_equal": true
+  },
+  "reproduction": [
+    "Build the Windows runtime preset and install it into a fresh runtime root.",
+    "Run tests/ambient_occlusion_equivalence.py through Windows Python against each runtime on each GPU with --odd-extent and --rotated-camera. Use --reference for the candidate and compare the full probe rows and BMP hashes.",
+    "Run poima-reconstruction-test.exe with the same GPU index and deferred gtao.",
+    "Run tests/snow_water_contract.py and tests/physics_checkpoint_contract.py against the native binaries."
+  ],
+  "linux_authoring": {
+    "binary_sha256": "bbccb8e0e0951b5ff2f80a623de2232e57ba7f85617e252131b6e9eaa3dd3a28",
+    "junit_sha256": "7ae39b1dc9cb95754a036cd63b4af3cb45cf99ed2513242601defde1ac49314c",
+    "suites": [
+      "world_ui_contract",
+      "authoring_contract_identity",
+      "authoring_core_conformance",
+      "world_terrain_contract",
+      "world_particles_contract",
+      "asset_provenance_contract",
+      "ui_authoring_contract",
+      "navigation_contract",
+      "world_contract"
+    ]
+  },
+  "source_lines_added_net": 327
+}
