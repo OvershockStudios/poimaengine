@@ -29,6 +29,7 @@ struct Pose {
 
 struct VectorRange {
     Vec3 minimum{}, maximum{};
+    bool operator==(const VectorRange&) const = default;
 };
 
 struct EmitterConfig {
@@ -43,6 +44,7 @@ struct EmitterConfig {
     float size_m = 0.1f;
     Color linear_rgba{1, 1, 1, 1};
     bool emitting = true; // Applies to the continuous rate. Bursts are explicit.
+    bool operator==(const EmitterConfig&) const = default;
 };
 
 struct Limits {
@@ -82,6 +84,29 @@ struct Instance {
     bool operator==(const Instance&) const = default;
 };
 
+struct SnapshotEmitter {
+    EmitterId id = 0;
+    EmitterConfig config{};
+    Pose next_pose{};
+    EmitterStatus status{};
+    bool operator==(const SnapshotEmitter&) const = default;
+};
+
+struct SnapshotParticle {
+    std::uint64_t id = 0;
+    std::size_t slot = 0;
+    Vec3 position{}, velocity{}; // Simulation coordinates.
+    std::uint32_t age = 0;
+    bool operator==(const SnapshotParticle&) const = default;
+};
+
+struct Snapshot {
+    Status status{};
+    std::vector<SnapshotEmitter> emitters; // Slot order, including vacant slots.
+    std::vector<SnapshotParticle> particles; // Live particles in spawn order.
+    bool operator==(const Snapshot&) const = default;
+};
+
 // One owner calls or inspects the system at a time. Accepted operations use
 // the storage reserved at construction. Particle overflow drops new spawns.
 class System {
@@ -90,10 +115,14 @@ public:
     ~System();
     System(const System&) = delete;
     System& operator=(const System&) = delete;
+    // A moved-from system can be destroyed or assigned a new system.
+    System(System&&) noexcept;
+    System& operator=(System&&) noexcept;
 
     void add_emitter(EmitterId id, const EmitterConfig& config, const Pose& pose = {});
     void remove_emitter(EmitterId id); // Immediately retires this emitter's particles.
     void set_pose(EmitterId id, const Pose& pose); // Applied on the next step.
+    void commit_pose(EmitterId id, const Pose& pose); // Updates both poses without advancing time.
     void set_emitting(EmitterId id, bool emitting);
     void burst(EmitterId id, std::uint32_t count); // Queues up to max_burst for the next step.
     void step();
@@ -103,14 +132,19 @@ public:
     // Writes all live instances in spawn order. Rejects short buffers before writing.
     std::span<Instance> write_instances(std::span<Instance> output) const;
 
+    Snapshot snapshot() const;
+    // Validates the complete state before constructing an independent simulation.
+    static System restore(const Snapshot& snapshot);
+    // Copies trusted state into storage reserved to the current limits.
+    System clone() const;
+
 private:
-    struct Emitter;
-    struct Particle;
+    System(const Status& status, std::span<const SnapshotEmitter> emitters, std::span<const SnapshotParticle> particles);
     std::size_t find(EmitterId id) const;
     void spawn(std::size_t slot);
 
     Status status_;
-    std::vector<Emitter> emitters_;
-    std::vector<Particle> particles_;
+    std::vector<SnapshotEmitter> emitters_;
+    std::vector<SnapshotParticle> particles_;
 };
 }

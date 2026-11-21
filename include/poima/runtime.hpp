@@ -12,6 +12,7 @@
 #include "poima/audio.hpp"
 #include "poima/components.hpp"
 #include "poima/ui_model.hpp"
+#include "poima/particles.hpp"
 #include "poima/water_region_definition.hpp"
 #include <map>
 #include <memory>
@@ -384,6 +385,24 @@ struct RuntimeHitRegion {
     bool enabled=true;
 };
 inline constexpr std::size_t max_runtime_hit_regions=4096;
+inline constexpr particles::Limits runtime_particle_limits{16,4096};
+struct RuntimeParticleEmitter {
+    particles::EmitterConfig config;
+    std::string burst_action;
+    std::uint32_t burst_count=0;
+};
+struct RuntimeParticleSource {
+    particles::EmitterId id=0;
+    std::string entity;
+    bool draining=false;
+    particles::EmitterStatus status;
+};
+struct RuntimeParticleObservation {
+    bool active=false;
+    particles::Status status;
+    std::vector<RuntimeParticleSource> sources;
+    std::vector<particles::Instance> instances;
+};
 struct RuntimeEntityDefinition {
     std::string id, parent;
     RuntimeTransform transform;
@@ -403,6 +422,7 @@ struct RuntimeEntityDefinition {
     std::map<std::string,components::Payload> components;
     std::optional<RuntimeHitRegion> hit_region;
     std::optional<CameraDrawBinding> camera_draw;
+    std::optional<RuntimeParticleEmitter> particle_emitter;
 };
 inline constexpr std::size_t max_runtime_spawn_templates=256;
 inline constexpr std::size_t max_runtime_template_payload_bytes=2*1024*1024;
@@ -420,6 +440,7 @@ struct RuntimeSpawnTemplate {
     // Immutable assets are shared; references to local nodes remap on birth.
     std::string root;
     std::vector<RuntimeEntityDefinition> entities;
+    std::optional<RuntimeParticleEmitter> particle_emitter;
 };
 inline constexpr std::size_t max_runtime_template_entities=1024;
 inline constexpr std::size_t max_runtime_template_total_entities=4096;
@@ -713,6 +734,7 @@ public:
     RuntimeNavigationPath navigation_path(const RuntimeNavigationRequest&) const;
     // The optional region advances at the same committed tick as this runtime.
     const water::Region* water_region() const noexcept;
+    RuntimeParticleObservation particle_observation() const;
     // The serialized owner installs a fresh epoch and a ledger that outlives
     // this runtime. Direct runtimes start with saving disabled. Pending intents
     // are part of whole-batch rollback; storage is serviced only by the owner.
@@ -742,6 +764,8 @@ public:
     // Live geometry/lighting, independent of an authored camera entity.
     SceneSnapshot snapshot() const;
     SceneSnapshot snapshot(const std::string& camera) const;
+    // Appends committed instances after the caller has selected a scene camera.
+    void append_particles(SceneSnapshot&) const;
     // Pure owned presentation copy. Replace only this camera's two pose
     // channels while deriving geometry, skin palettes and lights from current
     // committed local transforms; simulation/query/save state is untouched.

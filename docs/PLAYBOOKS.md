@@ -32,6 +32,7 @@ record correlated evidence, and identify a useful impossibility check.
 | Interactions | [Input actions](INPUT_ACTIONS.md) and [physics queries](PHYSICS_INTERACTIONS.md) | Confirm the same input both changes the intended object and gives legible feedback. Check overlap, interruption, and save continuation where required. |
 | Game UI | [Native UI authoring](GAME_UI.md) and [presented UI inspection](PLAYER_UI_OBSERVATION.md) | Check the creator's licensed artwork for a cohesive set of frames and icons. Verify the rendered layout, contrast, focus, clipping and navigation at the target resolutions and input modes. |
 | Effects and lighting | [Render diagnostics](RENDER_DIAGNOSTICS.md), then the supported effect or light guide | Capture the effect with its trigger visible. Check repeated execution, depth, readability and the cost at the relevant quality tier. |
+| Emit attached or detached particles | [Scene particles](PARTICLES.md) | Compare source pose and live trajectories at committed ticks. Check named bursts, expiry and fresh save continuation, then capture the visible effect in the exported game. |
 
 ## Start with a complete example
 

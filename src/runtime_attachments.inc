@@ -89,7 +89,7 @@
         }
     }
     static bool is_release_template(const RuntimeSpawnTemplate& recipe) {
-        return recipe.entities.empty() && !recipe.mesh && recipe.components.empty() &&
+        return recipe.entities.empty() && !recipe.mesh && !recipe.particle_emitter && recipe.components.empty() &&
             recipe.collider && recipe.collider->motion==BodyMotion::Dynamic;
     }
     using AttachmentContacts=std::map<std::string,const RuntimeAttachmentContact*>;

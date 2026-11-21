@@ -62,5 +62,6 @@ SceneSnapshot Runtime::snapshot(const std::string& camera,const RuntimeCameraPos
         for(auto& object:result.viewmodel->objects) {object.world=multiply(delta,object.world);bounded(object.world);}
     }
     impl_->apply_viewmodel_clearance(result,viewmodel.value_or(RuntimeCameraPose{}));
+    append_particles(result);
     return result;
 }

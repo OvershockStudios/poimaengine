@@ -13,6 +13,8 @@
 #include "foliage_authoring.hpp"
 #include "water_asset.hpp"
 #include "water_region_scene.hpp"
+#include "particle_emitter_json.hpp"
+#include <charconv>
 #include "physical_rig_json.hpp"
 #include "physical_pose_diagnostics.hpp"
 #include "poima/physical_target.hpp"
@@ -902,6 +904,11 @@ void validate_component(const std::string& type, const Json& value) {
         require(value.at("mass")>0 && value.at("mass")<=1e6 && value.at("friction")>=0 && value.at("friction")<=2 && value.at("restitution")>=0 && value.at("restitution")<=1,"Collider material/mass out of range.");
         return;
     }
+    if (type == "ParticleEmitter") {
+        try { (void)parse_particle_emitter(value); }
+        catch (const std::invalid_argument& error) { throw Error(-32602, error.what()); }
+        return;
+    }
     if (type == "CharacterController") {
         fields(value, {"radius","height","speed","jump_speed","camera","stance","locomotion"}, {"radius","height","speed","jump_speed","camera"});
         if(!value.at("camera").is_null())identifier(value.at("camera"));
@@ -934,6 +941,13 @@ std::map<std::string, Matrix4> world_matrices(const Json& entities) {
         }
     }
     return result;
+}
+void validate_particle_pose(const Matrix4& world, const std::string& id) {
+    require(rigid_transform(world) && pose_frames::axes(world).basis == pose_frames::Basis::regular,
+        "Particle emitter " + id + " requires a rigid, proper world transform.");
+    require(std::all_of(world.begin() + 12, world.begin() + 15, [](double value) {
+        return std::isfinite(value) && std::abs(value) <= 1e9;
+    }), "Particle emitter " + id + " exceeds the world position bound.");
 }
 Json default_transform() {
     return {{"position", {0, 0, 0}}, {"rotation", {0, 0, 0, 1}}, {"scale", {1, 1, 1}}};
@@ -1024,7 +1038,7 @@ void upgrade_ui(Json& doc) {
     if(doc.at("version")==3) {doc["version"]=4;doc["ui"]=Json::object();doc["retired_ui_ids"]=Json::array();}
 }
 bool template_component(const std::string& type) {
-    return type=="Transform" || type=="BoxCollider" || type=="MeshRenderer" || type=="StaticMesh" || type=="PbrMaterial" || type=="PbrTextures" || custom_component(type);
+    return type=="Transform" || type=="BoxCollider" || type=="MeshRenderer" || type=="StaticMesh" || type=="PbrMaterial" || type=="PbrTextures" || type=="ParticleEmitter" || custom_component(type);
 }
 void validate(const Json& doc);
 Json template_document(const Json& document,const Json& entities) {
@@ -1134,6 +1148,11 @@ void validate(const Json& doc) {
                     require(payload.size()<=max_runtime_template_payload_bytes-bytes,"Template custom payload budget exceeded.");bytes+=payload.size();
                 }
             }
+            if(bag.contains("ParticleEmitter")) {
+                const auto& transform=bag.at("Transform");
+                validate_particle_pose(local_matrix(transform.at("position").get<std::array<double,3>>(),
+                    transform.at("rotation").get<std::array<double,4>>(), transform.at("scale").get<std::array<double,3>>()), id);
+            }
         }
     }
     std::size_t component_count=0,component_bytes=0;
@@ -1141,6 +1160,7 @@ void validate(const Json& doc) {
     const auto& entities = doc.at("entities");
     require(entities.is_object() && entities.size() <= 10000, "World must contain at most 10,000 entities.");
     std::size_t audio_sources=0;
+    std::vector<std::string> particle_sources;
     for (const auto& [id, entity] : entities.items()) {
         identifier(id);require(schemas.empty() || id!=std::string(32,'0'),"Custom component worlds reserve the zero entity identity as unset.");
         fields(entity, {"name", "parent", "components"}, {"name", "parent", "components"});
@@ -1152,6 +1172,10 @@ void validate(const Json& doc) {
         require(!audio_components.contains("MeshCollider") || (!audio_components.contains("BoxCollider") && !audio_components.contains("CharacterController")),"MeshCollider cannot combine with BoxCollider or CharacterController.");
         if(audio_components.contains("AcousticMaterial"))require(audio_components.contains("BoxCollider") || audio_components.contains("MeshRenderer") || audio_components.contains("StaticMesh"),"AcousticMaterial requires box collider or mesh geometry.");
         if(audio_components.contains("AudioEmitter") && audio_components.at("AudioEmitter").at("enabled")==true)require(++audio_sources<=max_audio_sources,"At most 64 enabled audio emitters.");
+        if(audio_components.contains("ParticleEmitter")) {
+            require(particle_sources.size() < runtime_particle_limits.emitters, "Scene exceeds the particle emitter capacity.");
+            particle_sources.push_back(id);
+        }
         require(int(audio_components.contains("MeshRenderer"))+int(audio_components.contains("StaticMesh"))+int(audio_components.contains("SkinnedMesh"))<=1,"An entity can have only one mesh component.");
         require(!audio_components.contains("SkinnedMesh") || !audio_components.contains("AcousticMaterial"),"Skinned mesh acoustics are not supported; use a separate explicit collision/acoustic proxy.");
         for (const auto& [type,value]:entity.at("components").items()) {
@@ -1192,6 +1216,10 @@ void validate(const Json& doc) {
             current = parent.is_null() ? "" : parent.get<std::string>();
         }
         for (const auto& item : chain) colors[item] = 2;
+    }
+    if(!particle_sources.empty()) {
+        const auto matrices=world_matrices(entities);
+        for(const auto& id:particle_sources)validate_particle_pose(matrices.at(id), id);
     }
     for(const auto& [id,entity]:entities.items()) {
         const auto& bag=entity.at("components");
@@ -1624,6 +1652,7 @@ public:
         // Only active component references are dependencies. Receipt/history
         // payloads may mention retired assets and are deliberately not scanned.
         auto collect_components=[&](const Json& components) {
+            if(components.contains("ParticleEmitter"))result.needs_particles=true;
             for(const auto* type:{"StaticMesh","SkinnedMesh","AnimationRig","MeshCollider"})if(components.contains(type)) {
                 const auto& ref=components.at(type);const auto value=model(ref.at("asset").get<std::string>());
                 if(ref.contains("primitive"))require(revision(ref.at("primitive"))<value->primitives.size(),"Package mesh primitive index does not exist.",-32050);
@@ -1777,6 +1806,7 @@ public:
         }
         if(!live)stamp_authored(result);
         result.camera_id="editor";result.camera_world=camera.world;result.vertical_fov=camera.vertical_fov;result.near_plane=camera.near_plane;result.far_plane=camera.far_plane;
+        if(live)runtime_->append_particles(result);
         return result;
     }
     SceneSnapshot editor_preview(const EditorCamera& camera,const std::string& id,const Json& transform) const {
@@ -2008,7 +2038,7 @@ public:
             Json ops=Json::array();for(const auto& schema:schemas)ops.push_back({{"op","component.schema.set"},{"schema",Json::parse(components::schema_json(schema))}});
             return transact({{"request_id",params.at("request_id")},{"base_revision",params.at("base_revision")},{"ops",ops}},"component.schema.import");
         }
-        if(method=="world.dependencies") { fields(params,{});const auto content=package_content();Json assets=Json::array();for(const auto& asset:content.assets)assets.push_back({{"filename",asset.filename},{"sha256",asset.sha256},{"bytes",asset.bytes}});Json result={{"revision",content.revision},{"needs_audio",content.needs_audio},{"assets",assets}};if(content.needs_navigation)result["needs_navigation"]=true;if(!content.provenance_records.empty()) {Json records=Json::array();for(const auto& f:content.provenance_records)records.push_back({{"filename",f.filename},{"sha256",f.sha256},{"bytes",f.bytes}});result["provenance_records"]=std::move(records);result["asset_credits_sha256"]=content_hash(content.asset_credits);}return result; }
+        if(method=="world.dependencies") { fields(params,{});const auto content=package_content();Json assets=Json::array();for(const auto& asset:content.assets)assets.push_back({{"filename",asset.filename},{"sha256",asset.sha256},{"bytes",asset.bytes}});Json result={{"revision",content.revision},{"needs_audio",content.needs_audio},{"assets",assets}};if(content.needs_navigation)result["needs_navigation"]=true;if(content.needs_particles)result["needs_particles"]=true;if(!content.provenance_records.empty()) {Json records=Json::array();for(const auto& f:content.provenance_records)records.push_back({{"filename",f.filename},{"sha256",f.sha256},{"bytes",f.bytes}});result["provenance_records"]=std::move(records);result["asset_credits_sha256"]=content_hash(content.asset_credits);}return result; }
         if (method == "world.inspect") {
             fields(params, {});
             Json result={{"world_id", doc_.at("world_id")}, {"revision", doc_.at("revision")},
@@ -2038,7 +2068,7 @@ public:
             fields(params, {"revision", "parent", "after", "limit", "component"}); current_revision(params);
             if(params.contains("component") && params.at("component").is_string() && custom_component(params.at("component").get<std::string>())) {
                 const auto schemas=authored_component_schemas(doc_);(void)authored_schema(schemas,custom_type(params.at("component").get<std::string>()));
-            } else if (params.contains("component")) require(params["component"] == "Transform" || params["component"] == "Camera" || params["component"] == "CameraDraw" || params["component"] == "MeshRenderer" || params["component"] == "BoxCollider" || params["component"] == "MeshCollider" || params["component"] == "CharacterController" || params["component"] == "StaticMesh" || params["component"] == "PbrMaterial" || params["component"] == "PbrTextures" || params["component"] == "Light" || params["component"] == "LightingEnvironment" || params["component"] == "AcousticMaterial" || params["component"] == "AudioEmitter" || params["component"] == "AnimationRig" || params["component"] == "PhysicalRig" || params["component"] == "RigNode" || params["component"] == "SkinnedMesh" || params["component"] == "HitRegion", "Unknown component type.");
+            } else if (params.contains("component")) require(params["component"] == "Transform" || params["component"] == "Camera" || params["component"] == "CameraDraw" || params["component"] == "MeshRenderer" || params["component"] == "BoxCollider" || params["component"] == "MeshCollider" || params["component"] == "CharacterController" || params["component"] == "StaticMesh" || params["component"] == "PbrMaterial" || params["component"] == "PbrTextures" || params["component"] == "Light" || params["component"] == "LightingEnvironment" || params["component"] == "AcousticMaterial" || params["component"] == "AudioEmitter" || params["component"] == "AnimationRig" || params["component"] == "PhysicalRig" || params["component"] == "RigNode" || params["component"] == "SkinnedMesh" || params["component"] == "HitRegion" || params["component"] == "ParticleEmitter", "Unknown component type.");
             const auto after = params.contains("after") ? identifier(params.at("after")) : std::string{};
             if (params.contains("after")) require(params.contains("revision"), "Pagination requires a revision.");
             if (params.contains("parent") && !params.at("parent").is_null()) identifier(params.at("parent"));
@@ -2746,6 +2776,7 @@ public:
 #include "world_terrain_service.inc"
 #include "world_foliage_service.inc"
 #include "world_water_service.inc"
+#include "world_particles.inc"
     Json asset_dispatch(const std::string& method,const Json& params) const {
         if(method=="asset.catalog" || method=="asset.label") {
             const bool label=method=="asset.label";
@@ -3451,6 +3482,7 @@ public:
             value.transform={t.at("position").get<std::array<double,3>>(),t.at("rotation").get<std::array<double,4>>(),t.at("scale").get<std::array<double,3>>()};
             if(bag.contains("BoxCollider")) {const auto& c=bag.at("BoxCollider");value.collider=BoxCollider{c.at("half_extents").get<std::array<float,3>>(),c.at("motion")=="dynamic" ? BodyMotion::Dynamic : c.at("motion")=="kinematic" ? BodyMotion::Kinematic : BodyMotion::Static,c.at("mass"),c.at("friction"),c.at("restitution")};}
             value.mesh=mesh_component(bag,cache);
+            if(bag.contains("ParticleEmitter"))value.particle_emitter=parse_particle_emitter(bag.at("ParticleEmitter"));
             for(const auto& [type,data]:bag.items())if(custom_component(type)) {
                 const auto key=custom_type(type);const auto& schema=authored_schema(schemas,key);
                 value.components[key]=component_checked([&]{return components::parse_values(schema,data.dump());});
@@ -3499,6 +3531,7 @@ public:
                 if(c.contains("viewmodel_clearance"))value.camera->viewmodel_clearance=viewmodel_clearance_value(c.at("viewmodel_clearance"));
             }
             if(components.contains("CameraDraw"))value.camera_draw=camera_draw_value(components.at("CameraDraw"));
+            if(components.contains("ParticleEmitter"))value.particle_emitter=parse_particle_emitter(components.at("ParticleEmitter"));
             if(components.contains("AnimationRig")) {
                 const auto& ref=components.at("AnimationRig");const auto state=animation_value(ref);RuntimeAnimationRig rig;
                 try { rig.model=cache.get(asset_directory(),ref.at("asset")); }
@@ -4173,6 +4206,7 @@ public:
         if(method.starts_with("runtime.material."))return material_dispatch(method,params);
         if(method.starts_with("runtime.texture."))return texture_dispatch(method,params);
         if(method=="runtime.water.inspect")return water_inspect(params);
+        if(method=="runtime.particles.inspect")return inspect_particles(params);
         if(method=="runtime.components" || method.starts_with("runtime.component."))return component_dispatch(method,params);
         if(method=="runtime.status") {
             fields(params,{});const auto s=runtime_status();
@@ -4751,7 +4785,7 @@ public:
                 } else {validate_component(type,op.at("value"));entity(staged,id)["components"][type]=op.at("value");}
             } else if (name == "component.remove") {
                 fields(op, {"op", "id", "type"}, {"op", "id", "type"});
-                require((op.at("type").is_string() && custom_component(op.at("type").get<std::string>())) || op.at("type") == "Camera" || op.at("type") == "CameraDraw" || op.at("type") == "MeshRenderer" || op.at("type") == "BoxCollider" || op.at("type") == "MeshCollider" || op.at("type") == "CharacterController" || op.at("type") == "StaticMesh" || op.at("type") == "PbrMaterial" || op.at("type") == "PbrTextures" || op.at("type") == "Light" || op.at("type") == "LightingEnvironment" || op.at("type") == "AcousticMaterial" || op.at("type") == "AudioEmitter" || op.at("type") == "AnimationRig" || op.at("type") == "PhysicalRig" || op.at("type") == "RigNode" || op.at("type") == "SkinnedMesh" || op.at("type") == "HitRegion", "Only optional built-in or registered custom components can be removed.");
+                require((op.at("type").is_string() && custom_component(op.at("type").get<std::string>())) || op.at("type") == "Camera" || op.at("type") == "CameraDraw" || op.at("type") == "MeshRenderer" || op.at("type") == "BoxCollider" || op.at("type") == "MeshCollider" || op.at("type") == "CharacterController" || op.at("type") == "StaticMesh" || op.at("type") == "PbrMaterial" || op.at("type") == "PbrTextures" || op.at("type") == "Light" || op.at("type") == "LightingEnvironment" || op.at("type") == "AcousticMaterial" || op.at("type") == "AudioEmitter" || op.at("type") == "AnimationRig" || op.at("type") == "PhysicalRig" || op.at("type") == "RigNode" || op.at("type") == "SkinnedMesh" || op.at("type") == "HitRegion" || op.at("type") == "ParticleEmitter", "Only optional built-in or registered custom components can be removed.");
                 auto& components = entity(staged, id)["components"];
                 require(components.erase(op.at("type").get<std::string>()) == 1, "Component does not exist.", -32004);
             } else if (name == "entity.delete") {

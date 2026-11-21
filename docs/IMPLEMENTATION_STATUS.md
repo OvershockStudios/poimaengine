@@ -1,8 +1,22 @@
 # Implementation status
 
-Updated 2026-11-21 for **0.0.353**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-21 for **0.0.354**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.354 adds [scene particles](PARTICLES.md) with independently
+authored spawn and simulation spaces, seeded ranges, named bursts and
+tick-guarded observations. The fixture verified moving emitters, same-tick
+attachments, capacity rollback and detached particles that keep moving
+after source removal. Fresh processes reproduced the original final and
+drained saves byte for byte. Relocated Windows builds passed five
+independent gameplay assertions and cold save continuation with the source
+project absent. Captures on AMD integrated graphics and an RTX 4070 Laptop
+GPU verified the predicted centers at birth and after seven ticks. The
+changing opaque billboards used frame-owned buffers with the same device
+idle-wait counts as the empty particle frame on each GPU. General VFX
+graphs, translucent effects and game-scale frame costs remain further work.
+[Results](evidence/m2-scene-particles-354.json)
 
 Version 0.0.353 adds a [terrain-bound water region](SHALLOW_WATER.md) with
 metered sources, drains, sills and gates controlled by named inputs. The
@@ -57,9 +71,8 @@ Version 0.0.349 adds native [terrain tiles](TERRAIN.md), [foliage scattering](FO
 [CPU particles](PARTICLES.md), and a [localized water grid](SHALLOW_WATER.md).
 These APIs cover terrain seams and sampling, stable CPU placements, fixed-tick
 emission, and bounded water flow and snapshots. Terrain authoring and rendering
-were integrated in 0.0.351, followed by static foliage placement in 0.0.352
-and local water regions in 0.0.353. Particles still require scene and renderer
-integration.
+were integrated in 0.0.351, followed by static foliage placement in 0.0.352,
+local water regions in 0.0.353 and authored scene particles in 0.0.354.
 
 The [weather package](WEATHER_CYCLE.md) adds solar and seasonal state, storms,
 lightning, and rainfall queries. Games own its clock and the visible effects.

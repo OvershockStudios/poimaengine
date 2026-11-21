@@ -58,6 +58,7 @@ std::optional<RuntimeCharacterStanceState> Runtime::character_stance(const std::
 std::optional<RuntimeRootMotionState> Runtime::root_motion(const std::string&) const { throw std::runtime_error("Simulation is not built."); }
 RuntimeNavigationPath Runtime::navigation_path(const RuntimeNavigationRequest&) const { throw std::runtime_error("Simulation is not built."); }
 const water::Region* Runtime::water_region() const noexcept { return nullptr; }
+RuntimeParticleObservation Runtime::particle_observation() const { throw std::runtime_error("Simulation is not built."); }
 std::optional<RuntimeRayHit> Runtime::raycast(const RuntimeRay&) const { throw std::runtime_error("Simulation is not built."); }
 RuntimeIkClearance Runtime::ik_clearance(const RuntimeIkClearanceRequest&) const {throw std::runtime_error("Simulation is not built.");}
 std::vector<RuntimePoseSegmentClearance> Runtime::pose_clearance(std::span<const RuntimePoseClearanceSegment>,
@@ -95,6 +96,7 @@ std::optional<SceneObject> Runtime::indexed_drawable(const std::string&) const {
 SceneSnapshot Runtime::snapshot() const { throw std::runtime_error("Simulation is not built."); }
 SceneSnapshot Runtime::snapshot(const std::string&) const { throw std::runtime_error("Simulation is not built."); }
 SceneSnapshot Runtime::snapshot(const std::string&,const RuntimeCameraPose&,const std::optional<RuntimeCameraPose>&) const { throw std::runtime_error("Simulation is not built."); }
+void Runtime::append_particles(SceneSnapshot&) const { throw std::runtime_error("Simulation is not built."); }
 }
 
 namespace poima { std::optional<PhysicalRigDriveObservation> Runtime::physical_drive(const std::string&,const std::string&) const { throw std::runtime_error("Simulation support is not built."); } }

@@ -72,6 +72,38 @@ void environment_inputs(Fixture& fixture,bool dummy=false) {
 Pass& pass(Schedule& p,PassId id){auto i=std::find_if(p.passes.begin(),p.passes.end(),[&](const auto& v){return v.id==id;});check(i!=p.passes.end(),"Fixture required pass absent");return *i;}
 void erase_access(Schedule& p,PassId id,ResourceId resource,Use use){auto& accesses=pass(p,id).accesses;const auto n=std::erase_if(accesses,[&](const auto& a){return a.resource==resource && a.use==use;});check(n>0,"Fixture mutation did not remove an access");}
 Settings rich(){Settings s;s.scene=s.clustered=s.sky=s.game_ui=s.capture=true;s.slot=1;s.image=2;return s;}
+void streamed_geometry_contracts() {
+    for(bool products:{false,true}) {
+        auto settings=rich();settings.products=products;
+        Fixture fixture(settings);
+        auto& f=fixture.f;
+        f.streamed_vertices=fixture.add(Kind::buffer,Lifetime::slot);
+        f.streamed_indices=fixture.add(Kind::buffer,Lifetime::slot);
+        f.resources[f.streamed_vertices].bytes=384;
+        f.resources[f.streamed_indices].bytes=48;
+        const auto previous=products ? f.streamed_vertices : none;
+        f.camera_draws.push_back({f.streamed_vertices,f.streamed_indices,{},previous,{0,0,192,24}});
+        f.camera_draws.push_back({f.streamed_vertices,f.streamed_indices,{},previous,{192,24,192,24}});
+        const auto valid=fixture.plan();valid.validate();++accepted;
+        check(std::string(pass_name(valid.passes.front().id))=="render.pass.stream_geometry","Stream upload must precede draw work.");
+        auto bad=[&](const char* label,const auto& change){auto p=valid;change(p);rejects(label,[&]{p.validate();});};
+        bad("stream upload missing",[](auto& p){p.passes.erase(p.passes.begin());});
+        bad("stream upload incomplete",[](auto& p){p.passes.front().accesses.back().initialize=false;});
+        bad("stream upload on wrong slot",[](auto& p){++p.frame.resources[p.frame.streamed_vertices].owner;});
+        bad("stream falsely imported",[](auto& p){p.frame.resources[p.frame.streamed_vertices].initialized=true;});
+        bad("stream capacity exceeds fixed budget",[](auto& p){p.frame.resources[p.frame.streamed_indices].allocation_bytes=stream_index_budget+1;});
+        bad("stream incomplete vertex prefix",[](auto& p){p.frame.resources[p.frame.streamed_vertices].bytes+=4;});
+        bad("stream overlapping vertex offsets",[](auto& p){p.frame.camera_draws.back().stream.vertex_offset=0;});
+        bad("stream unmatched index offset",[](auto& p){++p.frame.camera_draws.back().stream.index_offset;});
+        bad("stream out of range index bytes",[](auto& p){p.frame.camera_draws.back().stream.index_bytes+=4;});
+        bad("stream separate previous history",[](auto& p){p.frame.camera_draws.back().previous_vertices=p.frame.camera_draws.front().vertices;});
+        bad("stream extra shadow draw",[](auto& p){p.frame.shadow_draws.push_back(p.frame.camera_draws.back());});
+        bad("other pass peeks at stream",[](auto& p){pass(p,PassId::game_ui).accesses.push_back({p.frame.streamed_vertices,Use::vertex,false});});
+        bad("stream read omitted",[](auto& p){erase_access(p,PassId::opaque,p.frame.streamed_indices,Use::index);});
+    }
+    auto legacy=Fixture(rich()).plan();legacy.validate();
+    check(legacy.passes.front().id==PassId::skinning,"Default rendering acquired a streamed upload pass.");
+}
 void setup_post_effect(Fixture& fixture) {
     auto& f=fixture.f;
     fixture.settings.post_effect=true;
@@ -709,4 +741,4 @@ void environment_contracts(){
     auto ordinary=Fixture(rich(),4).plan();ordinary.validate();check(ordinary.frame.ibl_diffuse==none && ordinary.frame.ibl_specular==none && ordinary.frame.ibl_brdf==none,"Legacy graph acquired IBL roles");
 }
 }
-int main(){try{matrix();faults();products();motion_contracts();reconstruction_contracts();deferred_contracts();deferred_color_contracts();viewmodel_contracts();ambient_occlusion_contracts();masked_shadow_contracts();environment_contracts();bloom_contracts();post_effect_contracts();std::cout<<"Production render schedule: "<<accepted<<" valid variants, "<<rejected<<" rejected contract mutations.\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}
+int main(){try{matrix();faults();products();motion_contracts();reconstruction_contracts();deferred_contracts();deferred_color_contracts();viewmodel_contracts();ambient_occlusion_contracts();masked_shadow_contracts();environment_contracts();bloom_contracts();post_effect_contracts();streamed_geometry_contracts();std::cout<<"Production render schedule: "<<accepted<<" valid variants, "<<rejected<<" rejected contract mutations.\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}

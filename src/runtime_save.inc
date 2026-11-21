@@ -186,6 +186,80 @@ void save_stance_flags(bool requested,bool crouched,bool blocked) {
 
 #include "runtime_physical_save.inc"
 
+void Runtime::Impl::restore_particles(const RuntimeDefinition& definition,const SaveJson& particle_extension) {
+    const auto typed=particles::parse_snapshot_json(particle_extension.at("state"));
+    require(typed.status.limits==runtime_particle_limits && typed.status.tick==tick,
+        "Saved particle limits or tick differ from their runtime.");
+    std::map<particles::EmitterId,const particles::SnapshotEmitter*> emitters;
+    for(const auto& emitter:typed.emitters)if(emitter.id)
+        require(emitters.emplace(emitter.id,&emitter).second,"Saved particle emitter IDs must be unique.");
+    const auto& source_rows=particle_extension.at("sources");
+    require(source_rows.is_array() && source_rows.size()==emitters.size() && source_rows.size()<=runtime_particle_limits.emitters,
+        "Saved particle sources differ from their emitter slots.");
+    std::map<std::string,particles::EmitterId> authored;
+    for(const auto& entity:definition.entities)if(entity.particle_emitter)authored.emplace(entity.id,0);
+    particles::EmitterId authored_count=0;
+    for(auto& [name,id]:authored) { (void)name;id=++authored_count; }
+    const auto frontier=save_integer(particle_extension.at("next_emitter_id"));
+    require(frontier>authored_count && (structure_revision!=0 || frontier==authored_count+1),
+        "Saved particle emitter identity frontier differs from its source history.");
+    std::set<std::string> source_entities;
+    particles::EmitterId previous_id=0;
+    std::size_t active_count=0;
+    std::map<particles::EmitterId,ParticleBinding> sources;
+    for(const auto& row:source_rows) {
+        save_fields(row,{"id","entity","template_id","template_node","draining"});
+        const auto id=save_integer(row.at("id"));
+        require(id>previous_id && id<frontier && emitters.contains(id),"Saved particle sources must be in allocated emitter order.");
+        previous_id=id;
+        const auto entity=save_text(row.at("entity"));
+        const auto template_id=save_text(row.at("template_id"),256,true);
+        const auto template_node=save_text(row.at("template_node"),256,true);
+        require(source_entities.insert(entity).second && row.at("draining").is_boolean(),"Invalid or duplicate saved particle source.");
+        const auto draining=row.at("draining").get<bool>();
+        const auto& emitter=*emitters.at(id);
+        const auto active=topology->definitions.find(entity);
+        const auto original=authored.find(entity);
+        require(original==authored.end() ? id>authored_count : id==original->second,
+            "Saved particle emitter identity differs from its authored allocation.");
+        const RuntimeParticleEmitter* frozen=nullptr;
+        if(draining) {
+            const auto retired=gameplay_id(entity);
+            require(entity==gameplay_id(retired) && active==topology->definitions.end() && original==authored.end() &&
+                entity_ids->allocated(retired),"Draining particle source needs a retired allocated entity.");
+            const auto& recipe=spawn_template(template_id);
+            if(recipe.entities.empty()) {
+                if(template_node==recipe.id && recipe.particle_emitter)frozen=&*recipe.particle_emitter;
+            } else {
+                const auto found=std::find_if(recipe.entities.begin(),recipe.entities.end(),[&](const auto& node){return node.id==template_node;});
+                if(found!=recipe.entities.end() && found->particle_emitter)frozen=&*found->particle_emitter;
+            }
+            require(frozen && frozen->config.simulation_space==particles::Space::World && emitter.status.particles.live,
+                "Saved draining particle source must retain live world particles from a frozen template node.");
+        } else {
+            require(active!=topology->definitions.end() && active->second.particle_emitter &&
+                particle_origin(entity)==std::pair(template_id,template_node),
+                "Saved active particle source differs from frozen entity or template membership.");
+            frozen=&*active->second.particle_emitter;
+            auto pose=particle_pose(registry.get<Node>(find(entity)).world);
+            if(std::inner_product(pose.rotation.begin(),pose.rotation.end(),emitter.status.pose.rotation.begin(),0.)<0)
+                for(auto& value:pose.rotation)value=-value;
+            require(save_near(pose.position_m,emitter.status.pose.position_m) && save_near(pose.rotation,emitter.status.pose.rotation),
+                "Saved particle source pose differs from its reconstructed entity.");
+            ++active_count;
+        }
+        require(emitter.config==frozen->config && emitter.status.emitting==(!draining && frozen->config.emitting) &&
+            emitter.status.pending_burst==0 && emitter.next_pose==emitter.status.pose,
+            "Saved particle source configuration, rate state or pose differs from its committed definition.");
+        sources.emplace(id,ParticleBinding{entity,template_id,template_node,*frozen,draining});
+    }
+    require(active_count==static_cast<std::size_t>(std::count_if(topology->definitions.begin(),topology->definitions.end(),
+        [](const auto& row){return row.second.particle_emitter.has_value();})),"Saved active particle source membership is incomplete.");
+    auto& state=*particle_runtime;
+    state.system=particles::System::restore(typed);
+    state.sources=std::move(sources);state.next_id=frontier;state.membership=topology;
+}
+
 std::string Runtime::save_snapshot(const std::string& content_sha256) const {
     require(save_digest(content_sha256),"Snapshot content identity must be a lowercase SHA-256.");
     const auto& s=*impl_;
@@ -341,6 +415,15 @@ std::string Runtime::save_snapshot(const std::string& content_sha256) const {
         require(s.water_region->grid().tick()==s.tick,"Water region tick differs from its runtime.");
         payload["water"]=s.water_region->save();
     }
+    if(const auto* particles=s.particle_runtime.get()) {
+        require(particles->system.status().tick==s.tick,"Particle system tick differs from its runtime.");
+        SaveJson sources=SaveJson::array();
+        for(const auto& [id,source]:particles->sources)
+            sources.push_back({{"id",id},{"entity",source.entity},{"template_id",source.template_id},
+                {"template_node",source.template_node},{"draining",source.draining}});
+        payload["particles"]={{"version",1},{"next_emitter_id",particles->next_id},{"sources",std::move(sources)},
+            {"state",poima::particles::snapshot_json(particles->system.snapshot())}};
+    }
     const SaveJson envelope={{"format","poima.runtime-snapshot"},{"version",motor_state ? 9 : stance_state ? 8 : camera_state ? 7 : hierarchical ? 6 : logical_ui ? 5 : structural ? 3 : custom ? 2 : 1},{"sha256",save_hash(payload.dump())},{"payload",payload}};
     std::size_t tokens=0;save_budget(envelope,0,tokens);const auto result=envelope.dump();
     require(result.size()<=snapshot_bytes_limit,"Runtime snapshot exceeds 64 MiB.");return result;
@@ -366,6 +449,14 @@ std::unique_ptr<Runtime> Runtime::restore_snapshot_data(const RuntimeDefinition&
     if(definition.water) {
         water_extension=std::move(data.at("water"));
         data.erase("water");
+    }
+    const bool particle_content=Impl::definition_has_particles(definition);
+    require(data.contains("particles")==particle_content,"Snapshot particle membership differs from frozen content.");
+    SaveJson particle_extension;
+    if(particle_content) {
+        particle_extension=std::move(data.at("particles"));data.erase("particles");
+        save_fields(particle_extension,{"version","next_emitter_id","sources","state"});
+        require(save_integer(particle_extension.at("version"))==1,"Unsupported runtime particle extension version.");
     }
     const bool physical_content=Impl::definition_has_physical(definition);
     SaveJson pose_extension=nullptr;
@@ -852,6 +943,7 @@ std::unique_ptr<Runtime> Runtime::restore_snapshot_data(const RuntimeDefinition&
     }
     if(attachment_graph)s.publish_attachment_transforms(std::move(attachment_graph));
     s.attachment_outcomes=std::move(attachment_outcomes);
+    if(particle_content)s.restore_particles(definition,particle_extension);
     if(!kinematic_sleep.is_null()) {
         // Install last: restoring public body pose/activation and rebuilding
         // controller support can otherwise reset the sleep test spheres/timer.

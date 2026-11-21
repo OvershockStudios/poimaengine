@@ -24,6 +24,8 @@
 #include "pose_frames.hpp"
 #include "surface_measure.hpp"
 #include "attachment_outcome_json.hpp"
+#include "particle_state_json.hpp"
+#include "particle_scene.hpp"
 #include "water_region_scene.hpp"
 #include "poima/profiler.hpp"
 #include "poima/assets.hpp"
@@ -114,6 +116,12 @@ struct Controller {
     bool requested_crouch=false,crouched=false,stand_blocked=false;
 };
 struct Pose { JPH::RVec3 position; JPH::Quat rotation; std::array<double,3> scale; };
+JPH::Quat runtime_quaternion(const Matrix4& rotation) {
+    JPH::Mat44 matrix(JPH::Vec4(static_cast<float>(rotation[0]),static_cast<float>(rotation[1]),static_cast<float>(rotation[2]),0),
+        JPH::Vec4(static_cast<float>(rotation[4]),static_cast<float>(rotation[5]),static_cast<float>(rotation[6]),0),
+        JPH::Vec4(static_cast<float>(rotation[8]),static_cast<float>(rotation[9]),static_cast<float>(rotation[10]),0), JPH::Vec4(0,0,0,1));
+    return matrix.GetQuaternion().Normalized();
+}
 Pose pose(const Matrix4& world) {
     auto rotation = world;
     std::array<double,3> scale{};
@@ -126,10 +134,7 @@ Pose pose(const Matrix4& world) {
     }
     require(rigid_transform(rotation), "Physics colliders cannot represent a sheared hierarchy.");
     for (std::size_t k=12;k<15;++k) require(std::isfinite(world[k]) && std::abs(world[k])<=1e6, "Initial physics position exceeds the current 1000 km bound.");
-    JPH::Mat44 matrix(JPH::Vec4(static_cast<float>(rotation[0]),static_cast<float>(rotation[1]),static_cast<float>(rotation[2]),0),
-        JPH::Vec4(static_cast<float>(rotation[4]),static_cast<float>(rotation[5]),static_cast<float>(rotation[6]),0),
-        JPH::Vec4(static_cast<float>(rotation[8]),static_cast<float>(rotation[9]),static_cast<float>(rotation[10]),0), JPH::Vec4(0,0,0,1));
-    return {JPH::RVec3(world[12],world[13],world[14]), matrix.GetQuaternion().Normalized(), scale};
+    return {JPH::RVec3(world[12],world[13],world[14]),runtime_quaternion(rotation),scale};
 }
 JPH::ShapeRefC box_shape(const BoxCollider& collider,const std::array<double,3>& scale) {
     float extent[3];
@@ -731,6 +736,7 @@ struct Runtime::Impl {
     }
 #include "runtime_capsule_query.inc"
 #include "runtime_viewmodel_clearance.inc"
+#include "runtime_particles.inc"
     void initialize(const RuntimeDefinition& definition,const RuntimePhysicsBootstrap* restored=nullptr) {
         // Construction is private to this Runtime; helpers read the same root
         // while only this local builder may mutate its indices.
@@ -845,6 +851,10 @@ struct Runtime::Impl {
             if(animations->procedural_enabled(id) && !animations->procedural_suspended(id))
                 animations->record_procedural_final(id,tick,registry.get<Node>(find(id)).world);
         for(const auto& id:candidate->physical_rigs)record_recovery_final(id,*physical_owners.at(id));
+        if(definition_has_particles(definition)) {
+            particle_runtime=std::make_unique<ParticleRuntime>();
+            synchronize_particles();
+        }
     }
     std::map<entt::entity,Motion> prepare_motions(const std::vector<KinematicTarget>& motions) {
         require(motions.size()<=128,"At most 128 kinematic targets per batch.");
@@ -1630,6 +1640,7 @@ struct Runtime::Impl {
         require(!save_queue.pending(),"Resolve pending gameplay save intent before structural edits.");
         const auto saved=checkpoint_structure();auto physical_checkpoint=checkpoint_physical(release_pending);auto animation_checkpoint=animations->checkpoint();
         auto sound_checkpoint=sounds;
+        auto particle_checkpoint=particle_runtime ? std::make_unique<ParticleRuntime>(*particle_runtime) : nullptr;
         std::vector<std::pair<entt::entity,RuntimeTransform>> local_checkpoint;local_checkpoint.reserve(topology->order.size());
         for(const auto e:topology->order)local_checkpoint.emplace_back(e,registry.get<Node>(e).local);
         JPH::StateRecorderImpl checkpoint;physics.SaveState(checkpoint);
@@ -1638,8 +1649,10 @@ struct Runtime::Impl {
         components->begin_batch();
         try {
             auto result=publish();
+            synchronize_particles();
             components->commit_batch();commit_structure(saved);return result;
         } catch(...) {
+            particle_runtime=std::move(particle_checkpoint);
             components->rollback_batch();rollback_structure(saved);animations->restore(animation_checkpoint);
             for(const auto& [e,local]:local_checkpoint)registry.get<Node>(e).local=local;
             sounds=std::move(sound_checkpoint);
@@ -1777,14 +1790,14 @@ struct Runtime::Impl {
         auto game_checkpoint=game ? game->state() : std::vector<std::uint64_t>{};
         auto sound_checkpoint=sounds;
         auto water_checkpoint=water_region;
-        // The region is shared by all controllers. Coalesce their first-tick
-        // edges before stepping so a common action toggles each gate once.
-        std::vector<std::string_view> water_actions;
-        if(water_region) {
+        auto particle_checkpoint=particle_runtime ? std::make_unique<ParticleRuntime>(*particle_runtime) : nullptr;
+        // World systems share controller input and consume each pressed name once.
+        std::vector<std::string_view> pressed_actions;
+        if(water_region || particle_runtime) {
             for(const auto& input:inputs)for(const auto& action:input.actions)
-                if(action.pressed)water_actions.push_back(action.name);
-            std::sort(water_actions.begin(),water_actions.end());
-            water_actions.erase(std::unique(water_actions.begin(),water_actions.end()),water_actions.end());
+                if(action.pressed)pressed_actions.push_back(action.name);
+            std::sort(pressed_actions.begin(),pressed_actions.end());
+            pressed_actions.erase(std::unique(pressed_actions.begin(),pressed_actions.end()),pressed_actions.end());
         }
         auto animation_checkpoint=animations->checkpoint();
         std::vector<std::pair<entt::entity,RuntimeTransform>> local_checkpoint;local_checkpoint.reserve(topology->order.size());
@@ -2021,13 +2034,12 @@ struct Runtime::Impl {
                         registry.get<Controller>(e).character->PostSimulation(0.05f);
                 }
                 commit_root_motion_intervals(root_intervals,tick+1);
-                if(water_region) {
-                    water_region->step(water_actions);
-                    water_actions.clear();
-                }
+                if(water_region)water_region->step(pressed_actions);
                 ++tick;animation_locals(true);sync();physical_record_final();
                 finish_game_attachments();
                 for(const auto e:topology->characters)registry.get<Controller>(e).character->EndTick();
+                step_particles(pressed_actions);
+                pressed_actions.clear();
             }
             sync();
             validate_player_preferences_boundary();
@@ -2038,6 +2050,7 @@ struct Runtime::Impl {
             clear_controller_preview();deferred_controller_inputs.clear();game_phase=GamePhase::idle;game_input_source=nullptr;game_input_edges=false;game_input_action_calls=0;game_hit_region_calls=0;game_ik_read_calls=game_ik_write_calls=0;game_grounding_read_calls=game_grounding_write_calls=0;game_ik_commands.clear();game_grounding_commands.clear();game_root_motion_reads=game_root_motion_writes=0;game_root_motion_commands.clear();game_camera_lens_commands.clear();game_camera_pose_commands.clear();game_camera_lens_reads=game_camera_lens_writes=0;game_camera_pose_reads=game_camera_pose_writes=0;game_stance_reads=game_stance_writes=0;game_stance_commands.clear();
             {
             profiling::Scope rollback_profile("runtime.rollback",static_cast<std::int64_t>(previous_tick));
+            particle_runtime=std::move(particle_checkpoint);
             clear_player_preferences_commands();
             components->rollback_batch();
             rollback_structure(structure_checkpoint);
@@ -2344,7 +2357,7 @@ std::map<std::string,RuntimeAttachmentOutcome> Runtime::attachment_outcomes() co
 }
 void Runtime::change_attachments(std::uint64_t expected,const std::vector<RuntimeAttachmentCommand>& commands) {
     require(!impl_->save_queue.pending(),"Resolve pending gameplay save intent before transferring attachments.");
-    if(std::any_of(commands.begin(),commands.end(),[](const auto& command){return command.mode==RuntimeAttachmentMode::Pickup;})) {
+    if(impl_->particle_runtime || std::any_of(commands.begin(),commands.end(),[](const auto& command){return command.mode==RuntimeAttachmentMode::Pickup;})) {
         (void)impl_->change_structure_transaction(expected,[&] {return impl_->change_attachments(expected,commands);});
         return;
     }
@@ -2444,6 +2457,7 @@ RuntimeNavigationPath Runtime::navigation_path(const RuntimeNavigationRequest& r
 const water::Region* Runtime::water_region() const noexcept {
     return impl_->water_region ? &*impl_->water_region : nullptr;
 }
+RuntimeParticleObservation Runtime::particle_observation() const { return impl_->observe_particles(); }
 std::optional<RuntimeRayHit> Runtime::raycast(const RuntimeRay& query) const {
     return impl_->physics_raycast(query);
 }
@@ -2597,7 +2611,13 @@ SceneSnapshot Runtime::snapshot(const std::string& camera) const {
         for(auto& object:result.viewmodel->objects)object.world=multiply(delta,object.world);
     }
     impl_->apply_viewmodel_clearance(result,effect);
+    append_particles(result);
     return result;
+}
+void Runtime::append_particles(SceneSnapshot& scene) const {
+    if(!impl_->particle_runtime)return;
+    const auto instances=impl_->particle_instances();
+    if(!instances.empty())particles::append_scene_particles(scene,instances);
 }
 const std::string& Runtime::presentation_source_id() const { return impl_->presentation_source_id; }
 std::optional<SceneObject> Runtime::indexed_drawable(const std::string& id) const {

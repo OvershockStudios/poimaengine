@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #pragma once
 #include <algorithm>
+#include <cstddef>
 #include <cstdint>
 #include <limits>
 #include <stdexcept>
@@ -23,9 +24,10 @@ enum class Region { whole,prefix,cluster_members,probe_pixels };
 enum class Use { upload,storage_read,storage_write,vertex,index,constant,sampled,color,color_overwrite,depth,clear_color,clear_depth,copy_source,copy_destination,resolve_source,resolve_destination,present,image_write,image_read_write };
 using Uses=std::uint64_t;
 constexpr Uses use_bit(Use use) {return Uses{1}<<static_cast<unsigned>(use);}
-enum class PassId { skinning,light_assignment,shadows,scene_clear,sky,opaque,ambient_occlusion,ambient_occlusion_filter,deferred_lighting,resolve,temporal_inputs,reconstruction,viewmodel_lights,viewmodel_clear,viewmodel_opaque,viewmodel_resolve,viewmodel_composite,post_effect,bloom_extract,bloom_horizontal,bloom_vertical,output,game_ui,overlay,editor_clear,editor_ui,product_probes,capture,present };
+enum class PassId { stream_geometry,skinning,light_assignment,shadows,scene_clear,sky,opaque,ambient_occlusion,ambient_occlusion_filter,deferred_lighting,resolve,temporal_inputs,reconstruction,viewmodel_lights,viewmodel_clear,viewmodel_opaque,viewmodel_resolve,viewmodel_composite,post_effect,bloom_extract,bloom_horizontal,bloom_vertical,output,game_ui,overlay,editor_clear,editor_ui,product_probes,capture,present };
 inline const char* pass_name(PassId id) {
     switch(id) {
+    case PassId::stream_geometry:return "render.pass.stream_geometry";
     case PassId::skinning:return "render.pass.skinning";case PassId::light_assignment:return "render.pass.light_assignment";
     case PassId::shadows:return "render.pass.shadows";case PassId::scene_clear:return "render.pass.scene_clear";
     case PassId::sky:return "render.pass.sky";case PassId::opaque:return "render.pass.opaque";
@@ -63,7 +65,11 @@ struct Resource {
 struct Access {ResourceId resource=none;Use use=Use::sampled;bool initialize=false;};
 struct Pass {PassId id;std::vector<Access> accesses;};
 struct SkinInputs {ResourceId source=none,influences=none,palette=none,output=none;};
-struct DrawInputs {ResourceId vertices=none,indices=none;std::vector<ResourceId> textures;ResourceId previous_vertices=none;};
+struct GeometrySlice {
+    std::uint64_t vertex_offset=0,index_offset=0,vertex_bytes=0,index_bytes=0;
+    friend bool operator==(const GeometrySlice&,const GeometrySlice&)=default;
+};
+struct DrawInputs {ResourceId vertices=none,indices=none;std::vector<ResourceId> textures;ResourceId previous_vertices=none;GeometrySlice stream{};};
 struct ProbePoint {std::uint32_t x=0,y=0;};
 struct ProbeCopy {ResourceId source=none,destination=none;};
 struct FrameResources {
@@ -84,6 +90,7 @@ struct FrameResources {
     ResourceId viewmodel_resolved=none;
     ResourceId post_effect=none;
     ResourceId bloom=none,bloom_scratch=none;
+    ResourceId streamed_vertices=none,streamed_indices=none;
 };
 struct Settings {
     bool scene=false,clustered=false,sky=false,game_ui=false,overlay=false,editor=false,capture=false,products=false,products_debug=false,reconstruction=false,deferred=false,ambient_occlusion=false;
@@ -102,6 +109,9 @@ inline constexpr ResourceId display_radiance(const FrameResources& frame,const S
 inline constexpr std::uint64_t post_effect_budget_bytes=128u*1024u*1024u;
 inline constexpr std::uint32_t bloom_extent(std::uint32_t size) {return size/4+(size%4!=0);}
 inline constexpr std::uint64_t bloom_budget_bytes=32u*1024u*1024u;
+inline constexpr std::uint64_t stream_vertex_budget=4u*1024u*1024u;
+inline constexpr std::uint64_t stream_index_budget=1u*1024u*1024u;
+inline constexpr std::size_t max_stream_draws=128;
 struct Schedule {
     FrameResources frame;
     Settings settings;
@@ -118,6 +128,42 @@ struct Schedule {
         auto fail=[](const char* message) {throw std::runtime_error(std::string("Render schedule: ")+message);};
         auto required=[&](ResourceId id) {if(id==none || id>=frame.resources.size())fail("required resource role is absent");};
         required(frame.swapchain);required(frame.color);required(frame.output);
+        const bool stream=frame.streamed_vertices!=none || frame.streamed_indices!=none;
+        if(stream) {
+            if(!settings.scene || frame.streamed_vertices==frame.streamed_indices)fail("invalid streamed geometry roles");
+            required(frame.streamed_vertices);required(frame.streamed_indices);
+            const auto& vertices=resource(frame.streamed_vertices);
+            const auto& indices=resource(frame.streamed_indices);
+            auto valid_buffer=[](const Resource& r,std::uint64_t budget) {
+                return r.kind==Kind::buffer && r.lifetime==Lifetime::slot && r.region==Region::prefix &&
+                    !r.initialized && r.allocation_bytes<=budget && r.bytes%4==0;
+            };
+            if(!valid_buffer(vertices,stream_vertex_budget) || !valid_buffer(indices,stream_index_budget))
+                fail("invalid streamed geometry buffers");
+        }
+        std::uint64_t streamed_vertices=0,streamed_indices=0;
+        std::size_t streamed_draws=0;
+        for(const auto* list:{&frame.camera_draws,&frame.shadow_draws,&frame.viewmodel_draws})for(const auto& draw:*list) {
+            const bool streamed=stream && (draw.vertices==frame.streamed_vertices || draw.indices==frame.streamed_indices);
+            if(!streamed) {
+                if(draw.stream!=GeometrySlice{})fail("static geometry has a streaming slice");
+                continue;
+            }
+            if(list!=&frame.camera_draws || ++streamed_draws>max_stream_draws || draw.vertices!=frame.streamed_vertices ||
+                draw.indices!=frame.streamed_indices || draw.previous_vertices!=(settings.products ? draw.vertices : none))
+                fail("streamed mesh must have one opaque camera draw without separate history");
+            const auto& slice=draw.stream;
+            const auto vertex_end=resource(frame.streamed_vertices).bytes,index_end=resource(frame.streamed_indices).bytes;
+            if(!slice.vertex_bytes || !slice.index_bytes || slice.vertex_bytes%4 || slice.index_bytes%4 ||
+                slice.vertex_offset!=streamed_vertices || slice.index_offset!=streamed_indices ||
+                slice.vertex_offset>vertex_end || slice.vertex_bytes>vertex_end-slice.vertex_offset ||
+                slice.index_offset>index_end || slice.index_bytes>index_end-slice.index_offset)
+                fail("streamed geometry has noncontiguous or out-of-range slices");
+            streamed_vertices+=slice.vertex_bytes;
+            streamed_indices+=slice.index_bytes;
+        }
+        if(stream && (!streamed_draws || streamed_vertices!=resource(frame.streamed_vertices).bytes ||
+            streamed_indices!=resource(frame.streamed_indices).bytes))fail("streamed prefix differs from opaque draw slices");
         if(settings.editor && settings.overlay)fail("editor composition and hosted overlay are mutually exclusive");
         if(settings.sky && !settings.scene)fail("sky pass without a scene");
         if(settings.overlay)required(frame.overlay_vertices);
@@ -302,13 +348,22 @@ struct Schedule {
         }
         bool world_resolved=false,world_opaque=false,foreground_lights=false,foreground_cleared=false,foreground_drawn=false,foreground_resolved=false,foreground_composed=false;
         bool exported=false,captured=false,probed=false,prepared=false,reconstructed=false,deferred_lit=false,deferred_opaque=false,ao_generated=false,ao_filtered=false;
-        bool post_effect_applied=false;unsigned previous=0;bool first=true;
+        bool post_effect_applied=false,stream_uploaded=false;unsigned previous=0;bool first=true;
         unsigned bloom_stage=0;
         for(const auto& pass:passes) {
             const auto order=static_cast<unsigned>(pass.id);
             if((!first && order<=previous) || exported)fail("pass order is not the fixed rendering order");
             first=false;previous=order;
             auto has=[&](ResourceId id,Use use) {return std::any_of(pass.accesses.begin(),pass.accesses.end(),[&](const Access& a){return a.resource==id && a.use==use;});};
+            if(pass.id==PassId::stream_geometry) {
+                if(!stream || pass.accesses.size()!=2 || !has(frame.streamed_vertices,Use::upload) ||
+                    !has(frame.streamed_indices,Use::upload) ||
+                    !std::all_of(pass.accesses.begin(),pass.accesses.end(),[](const Access& a){return a.initialize;}))
+                    fail("invalid streamed geometry upload");
+                stream_uploaded=true;
+            }
+            if(pass.id==PassId::opaque && stream && (!stream_uploaded || !has(frame.streamed_vertices,Use::vertex) ||
+                !has(frame.streamed_indices,Use::index)))fail("opaque draw requires uploaded geometry");
             if(pass.id==PassId::shadows)for(const auto& draw:frame.shadow_draws)
                 for(auto texture:draw.textures)if(!has(texture,Use::sampled))fail("missing masked shadow material input");
             if(pass.id==PassId::opaque)world_opaque=true;
@@ -442,6 +497,10 @@ struct Schedule {
             std::uint32_t attachment_width=0,attachment_height=0,attachment_samples=0;
             for(const auto& a:pass.accesses) {
                 const auto& r=resource(a.resource);
+                const bool streamed=stream && (a.resource==frame.streamed_vertices || a.resource==frame.streamed_indices);
+                if(streamed && !(pass.id==PassId::stream_geometry && a.use==Use::upload) &&
+                    !(pass.id==PassId::opaque && a.use==(a.resource==frame.streamed_vertices ? Use::vertex : Use::index)))
+                    fail("streamed geometry used outside upload and opaque draw");
                 if(settings.post_effect && a.resource==frame.post_effect && pass.id!=PassId::post_effect &&
                     !((pass.id==PassId::bloom_extract || pass.id==PassId::output) && a.use==Use::sampled))
                     fail("post-effect image used outside scene color composition");
@@ -472,7 +531,7 @@ struct Schedule {
                     if(settings.capture && !captured)fail("presentation precedes requested capture");
                     exported=true;
                 }
-                if(r.lifetime==Lifetime::slot && a.use!=Use::copy_destination)fail("slot readback used by a GPU consumer");
+                if(r.lifetime==Lifetime::slot && !streamed && a.use!=Use::copy_destination)fail("slot readback used by a GPU consumer");
                 if(r.lifetime==Lifetime::capture && ((pass.id!=PassId::capture && pass.id!=PassId::product_probes) || a.use!=Use::copy_destination))fail("capture storage used outside capture copy");
             }
             if(pass.id==PassId::resolve || pass.id==PassId::capture) {
@@ -488,6 +547,7 @@ struct Schedule {
         if(settings.ambient_occlusion && (!ao_generated || !ao_filtered))fail("missing ambient occlusion passes");
         if(settings.deferred && !deferred_lit)fail("missing deferred lighting pass");
         if(settings.reconstruction && !reconstructed)fail("missing reconstruction pass");
+        if(stream && !stream_uploaded)fail("missing streamed geometry upload");
         if(settings.post_effect && !post_effect_applied)fail("missing post effect pass");
         if(settings.bloom && bloom_stage!=3)fail("missing bloom pass");
         if(settings.viewmodel && (!foreground_cleared || !foreground_drawn || !foreground_composed || (settings.viewmodel_samples!=1 && !foreground_resolved) || (settings.viewmodel_clustered && !foreground_lights)))fail("missing foreground passes");
@@ -506,6 +566,10 @@ inline Schedule build(FrameResources frame,Settings settings) {
     auto geometry=[&](Pass& p,const std::vector<DrawInputs>& draws,bool materials) {
         for(const auto& d:draws) {add(p,d.vertices,Use::vertex);add(p,d.indices,Use::index);if(materials) {for(auto t:d.textures)add(p,t,Use::sampled);if(settings.products)add(p,d.previous_vertices,Use::vertex);}}
     };
+    if(f.streamed_vertices!=none || f.streamed_indices!=none) {
+        auto& upload=pass(PassId::stream_geometry);
+        add(upload,f.streamed_vertices,Use::upload,true);add(upload,f.streamed_indices,Use::upload,true);
+    }
     auto& skin=pass(PassId::skinning);
     if(settings.scene) {add(skin,f.frame,Use::upload,true);add(skin,f.objects,Use::upload,true);}
     if(settings.viewmodel) {add(skin,f.viewmodel_frame,Use::upload,true);add(skin,f.viewmodel_objects,Use::upload,true);}

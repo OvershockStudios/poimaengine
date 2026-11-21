@@ -82,6 +82,7 @@
 
 #include <algorithm>
 #include <atomic>
+#include <bit>
 #include <cstring>
 #include <cmath>
 #include <chrono>
@@ -252,7 +253,7 @@ struct FrameConstants {
     GpuShadow shadows[max_shadow_views];float cluster_viewport[4],cluster_depth[4];std::uint32_t cluster_grid[4];float previous_view_projection[16];float temporal_jitter[4]{},temporal_right[4]{},temporal_up[4]{},temporal_forward[4]{},ibl_parameters[4]{};
 };
 static_assert(sizeof(GpuLight)==80 && sizeof(GpuShadow)==80 && sizeof(FrameConstants)==1600);
-struct Geometry { nvrhi::BufferHandle vertices,indices;std::uint32_t count=0; };
+struct Geometry { nvrhi::BufferHandle vertices,indices;std::uint32_t count=0;render_schedule::GeometrySlice stream{}; };
 struct GpuInfluence { std::uint32_t joints[4];float weights[4]; };
 struct GpuJoint { float rows[3][4]; };
 static_assert(sizeof(GpuInfluence)==32 && sizeof(GpuJoint)==48);
@@ -268,7 +269,7 @@ struct SkinInstance {
     std::vector<GpuJoint> joints;
     std::size_t bytes=0;
 };
-struct DrawItem { std::uint32_t object_index=0;std::uint64_t incarnation=0;std::shared_ptr<const MeshAsset> mesh; nvrhi::BufferHandle previous_vertices;std::string entity_id;SkinInstance* skin=nullptr; DrawConstants constants{};Geometry geometry;nvrhi::BindingSetHandle bindings,masked_shadow_bindings;bool cull=false,camera_visible=true,receive_shadows=true;std::uint32_t shadow_mask=0; };
+struct DrawItem { std::uint32_t object_index=0;std::uint64_t incarnation=0;std::shared_ptr<const MeshAsset> mesh; nvrhi::BufferHandle previous_vertices;std::string entity_id;SkinInstance* skin=nullptr; DrawConstants constants{};Geometry geometry;nvrhi::BindingSetHandle bindings,masked_shadow_bindings;bool cull=false,camera_visible=true,receive_shadows=true,stream_geometry=false;std::uint32_t shadow_mask=0; };
 using SteadyClock=std::chrono::steady_clock;
 namespace fp=frame_performance;
 struct PerformanceWallScope {
@@ -345,6 +346,7 @@ struct Context {
         vk::Semaphore acquired;
         vk::QueryPool timestamps;
         nvrhi::BufferHandle cluster_readback,skin_readback;
+        nvrhi::BufferHandle streamed_vertices,streamed_indices;
         nvrhi::EventQueryHandle completion;
         std::uint64_t submission=0;
         bool occupied=false,timing=false,has_skin=false;
@@ -363,6 +365,10 @@ struct Context {
         std::optional<RendererSceneResult> scene;
     };
     std::array<FrameSlot,2> slots;
+    // NVRHI copies these CPU prefixes during recording into command-owned
+    // storage. Only the two GPU buffers are retained by each completion slot.
+    std::vector<Vertex> stream_vertices;
+    std::vector<std::uint32_t> stream_indices;
     // Borrowed only during a player poll. Slots retain detached generation
     // tickets; the session recorder outlives renderer teardown.
     fp::Recorder* performance=nullptr;fp::FrameToken performance_token;fp::CpuSample* performance_cpu=nullptr;
@@ -640,7 +646,10 @@ struct Context {
         images.clear();
         depth = nullptr;
         multisample_color = nullptr;scene_hdr=nullptr;scene_normal=nullptr;scene_motion=nullptr;scene_motion_valid=nullptr;
-        for(auto& slot:slots) {slot.completion=nullptr;slot.cluster_readback=nullptr;slot.skin_readback=nullptr;}
+        for(auto& slot:slots) {
+            slot.completion=nullptr;slot.cluster_readback=nullptr;slot.skin_readback=nullptr;
+            slot.streamed_vertices=nullptr;slot.streamed_indices=nullptr;
+        }
         checked = nullptr;
         native = nullptr;
         if (device) {
@@ -1029,6 +1038,7 @@ struct Context {
             gpu_object.history[1]=item.receive_shadows ? 0u : 1u;
             item.previous_vertices=item.skin && valid ? item.skin->outputs[item.skin->accepted_index] : item.geometry.vertices;
             object_data.push_back(gpu_object);
+            if(item.stream_geometry)continue;
             ObjectHistory accepted;std::copy_n(&item.constants.model[0][0],12,accepted.model.begin());
             accepted.incarnation=item.incarnation;accepted.mesh=item.mesh;accepted.skinned=bool(item.skin);
             require(pending_history.objects.emplace(item.entity_id,std::move(accepted)).second,"Scene object IDs must be unique within a submission.");
@@ -1057,7 +1067,8 @@ struct Context {
             return render_batches::Key{reinterpret_cast<std::uintptr_t>(draw.geometry.vertices.Get()),
                 reinterpret_cast<std::uintptr_t>(draw.geometry.indices.Get()),
                 previous ? reinterpret_cast<std::uintptr_t>(draw.previous_vertices.Get()) : 0,
-                reinterpret_cast<std::uintptr_t>(bindings),draw.geometry.count,pipeline};
+                reinterpret_cast<std::uintptr_t>(bindings),draw.geometry.count,pipeline,
+                draw.geometry.stream.vertex_offset,draw.geometry.stream.index_offset};
         };
         // Pipeline values are exact local selectors of the two immutable pipeline
         // handles in each pass, never truncated pointers or hashed identities.
@@ -1334,6 +1345,49 @@ struct Context {
         commands->writeBuffer(result.indices,mesh->indices.data(),index_desc.byteSize);commands->close();checked->executeCommandList(commands);
         ++diagnostics.frame_execution.device_idle_waits;require(checked->waitForIdle(),"Imported geometry upload failed.");
         geometry_cache.emplace(mesh.get(),result);return result;
+    }
+    void prepare_stream_geometry(FrameSlot& slot) {
+        namespace rs=render_schedule;
+        require(!slot.occupied,"Streamed geometry requires a retired frame slot.");
+        stream_vertices.clear();
+        stream_indices.clear();
+        if(!scene_visible)return;
+        std::size_t draw_count=0;
+        for(auto& draw:draws) {
+            if(!draw.stream_geometry || !draw.camera_visible)continue;
+            const auto& mesh=*draw.mesh;
+            require(++draw_count<=rs::max_stream_draws &&
+                mesh.vertices.size()<=rs::stream_vertex_budget/sizeof(Vertex)-stream_vertices.size() &&
+                mesh.indices.size()<=rs::stream_index_budget/sizeof(std::uint32_t)-stream_indices.size(),
+                "Streamed world geometry exceeds its per-frame budget.");
+            draw.geometry.stream={stream_vertices.size()*sizeof(Vertex),stream_indices.size()*sizeof(std::uint32_t),
+                mesh.vertices.size()*sizeof(Vertex),mesh.indices.size()*sizeof(std::uint32_t)};
+            draw.geometry.vertices=nullptr;draw.geometry.indices=nullptr;draw.previous_vertices=nullptr;
+            stream_vertices.insert(stream_vertices.end(),mesh.vertices.begin(),mesh.vertices.end());
+            stream_indices.insert(stream_indices.end(),mesh.indices.begin(),mesh.indices.end());
+        }
+        if(!draw_count)return;
+        auto grow=[&](nvrhi::BufferHandle& buffer,std::size_t bytes,bool vertex) {
+            if(buffer && buffer->getDesc().byteSize>=bytes)return;
+            nvrhi::BufferDesc desc;
+            desc.byteSize=std::bit_ceil(bytes);
+            desc.isVertexBuffer=vertex;desc.isIndexBuffer=!vertex;
+            desc.initialState=vertex ? nvrhi::ResourceStates::VertexBuffer : nvrhi::ResourceStates::IndexBuffer;
+            desc.keepInitialState=true;
+            desc.debugName=vertex ? "Frame-owned streamed vertices" : "Frame-owned streamed indices";
+            buffer=nullptr;
+            buffer=checked->createBuffer(desc);
+            require(bool(buffer),"Streamed world geometry allocation failed.");
+        };
+        grow(slot.streamed_vertices,stream_vertices.size()*sizeof(Vertex),true);
+        grow(slot.streamed_indices,stream_indices.size()*sizeof(std::uint32_t),false);
+        for(auto& draw:draws)if(draw.stream_geometry && draw.camera_visible) {
+            draw.geometry.vertices=slot.streamed_vertices;
+            draw.geometry.indices=slot.streamed_indices;
+        }
+        profiling::counter("renderer.streamed_geometry_draws",draw_count);
+        profiling::counter("renderer.streamed_geometry_upload_bytes",
+            stream_vertices.size()*sizeof(Vertex)+stream_indices.size()*sizeof(std::uint32_t));
     }
     void prepare_skin_pipeline() {
         if(skin_pipeline_ready)return;
@@ -1615,11 +1669,12 @@ struct Context {
         samplers.insert({fallback.wrap_s,fallback.wrap_t,fallback.min_filter,fallback.mag_filter});
         auto retain_objects=[&](const std::vector<SceneObject>& objects) {for(const auto& object:objects) {
             if(object.skin)skin_ids.insert(object.entity_id);
-            if(object.mesh) { meshes.insert(object.mesh.get());mesh_owners[object.mesh.get()]=object.mesh; }
+            const auto* bound_mesh=object.stream_geometry ? nullptr : object.mesh.get();
+            if(bound_mesh) { meshes.insert(bound_mesh);mesh_owners[bound_mesh]=object.mesh; }
             if(object.textures) { materials.insert(object.textures.get());material_owners[object.textures.get()]=object.textures; }
-            combinations.emplace(object.mesh.get(),object.textures.get());
+            combinations.emplace(bound_mesh,object.textures.get());
             for(std::size_t slot=0;slot<5;++slot) {
-                const auto map=object.textures ? object.textures->maps[slot] : object.mesh ? object.mesh->textures[slot] : TextureMap{};
+                const auto map=object.textures ? object.textures->maps[slot] : bound_mesh ? bound_mesh->textures[slot] : TextureMap{};
                 retain_image(map.image);samplers.insert({map.wrap_s,map.wrap_t,map.min_filter,map.mag_filter});
             }
         }
@@ -2024,6 +2079,7 @@ struct Context {
             Matrix4 rounded;std::copy_n(viewmodel_frame.view_projection,16,rounded.begin());const auto frustum=make_frustum(rounded);
             auto number=[](double value) {require(std::isfinite(value) && std::abs(value)<=std::numeric_limits<float>::max(),"Foreground transform exceeds float range.");return static_cast<float>(value);};
             for(const auto& object:foreground.objects) {
+                require(!object.stream_geometry,"Streamed geometry is limited to opaque world draws.");
                 if(object.material)validate_material_alpha(*object.material);
                 if(object.mesh)validate_material_alpha(object.mesh->material);
                 DrawItem item;item.object_index=static_cast<std::uint32_t>(viewmodel_draws.size());item.incarnation=object.incarnation;item.mesh=object.mesh;item.entity_id=object.entity_id;item.receive_shadows=object.receive_shadows;
@@ -2424,14 +2480,30 @@ struct Context {
             draw.normal[0][3]=object.textures ? object.textures->occlusion_strength : object.mesh ? object.mesh->occlusion_strength : 1.0f;
             draw.normal[1][3]=object.textures ? object.textures->normal_scale : object.mesh ? object.mesh->normal_scale : 1.0f;
             draw.normal[2][3]=(object.textures ? bool(object.textures->maps[4].image) : object.mesh && object.mesh->textures[4].image) ? 1.0f : 0.0f;
-            item.bindings=mesh_bindings(object.mesh.get(),object.textures.get());
+            item.stream_geometry=object.stream_geometry;
+            if(item.stream_geometry) {
+                require(list==0 && object.mesh && !object.skin && !object.cast_shadows && !object.camera_draw && !object.incarnation &&
+                    draw.alpha[2]==0 && !object.mesh->vertices.empty() && !object.mesh->indices.empty() &&
+                    object.mesh->indices.size()%3==0 && object.mesh->vertices.size()<=render_schedule::stream_vertex_budget/sizeof(Vertex) &&
+                    object.mesh->indices.size()<=render_schedule::stream_index_budget/sizeof(std::uint32_t),
+                    "Streamed geometry requires a bounded, indexed, opaque world mesh without shadow casting or motion correspondence.");
+                require(std::none_of(object.mesh->textures.begin(),object.mesh->textures.end(),[](const auto& map){return bool(map.image);}),
+                    "Streamed mesh textures require an explicit immutable material texture set.");
+                require(std::all_of(object.mesh->indices.begin(),object.mesh->indices.end(),[&](auto index){return index<object.mesh->vertices.size();}),
+                    "Streamed mesh index is outside its vertex range.");
+                item.geometry.count=static_cast<std::uint32_t>(object.mesh->indices.size());
+            }
+            item.bindings=mesh_bindings(item.stream_geometry ? nullptr : object.mesh.get(),object.textures.get());
             if(draw.alpha[2]>.5f)item.masked_shadow_bindings=masked_shadow_material(object.mesh.get(),object.textures.get(),item.bindings);
-            item.geometry=mesh_geometry(object.mesh);
+            if(!item.stream_geometry)item.geometry=mesh_geometry(object.mesh);
             Bounds local_bounds;
             if(object.skin) {
                 require(object.mesh && !object.mesh->influences.empty() && active_skins.insert(object.entity_id).second,"Skin snapshot requires a weighted mesh and unique instance ID.");
                 auto& source=skin_source(object.mesh);local_bounds=posed_bounds(source.bounds,object.skin->palette);
                 item.skin=&skin_instance(object,item.geometry,source);item.geometry.vertices=item.skin->vertices;
+            } else if(item.stream_geometry) {
+                require(object.mesh->influences.empty(),"Streamed geometry does not support skin weights.");
+                local_bounds=mesh_bounds(object.mesh.get());
             } else {
                 require(!object.mesh || object.mesh->influences.empty(),"Weighted geometry requires a skin pose.");
                 auto [entry,inserted]=bounds_cache.try_emplace(object.mesh.get());if(inserted)entry->second=mesh_bounds(object.mesh.get());
@@ -3277,6 +3349,11 @@ struct Context {
 #endif
         f.color=f.output;
         if(scene) {
+            if(!stream_vertices.empty()) {
+                const auto& slot=slots[settings.slot];
+                f.streamed_vertices=buffer(slot.streamed_vertices,rs::Lifetime::slot,false,stream_vertices.size()*sizeof(Vertex));
+                f.streamed_indices=buffer(slot.streamed_indices,rs::Lifetime::slot,false,stream_indices.size()*sizeof(std::uint32_t));
+            }
             f.frame=buffer(frame_buffer,rs::Lifetime::shared,false);f.objects=buffer(object_buffer,rs::Lifetime::shared,false,object_data.size()*sizeof(ObjectData));
             const auto& environment=bound_environment();
             f.ibl_diffuse=texture(environment.diffuse,rs::Lifetime::imported,true);
@@ -3305,11 +3382,17 @@ struct Context {
             for(const auto& draw:draws) {
                 const bool camera=scene_visible && draw.camera_visible;const bool shadow=draw.shadow_mask!=0;
                 if(!camera && !shadow)continue;
-                rs::DrawInputs input;input.vertices=buffer(draw.geometry.vertices,draw.skin ? rs::Lifetime::shared : rs::Lifetime::imported,!draw.skin);
-                if(draw.geometry.indices)input.indices=buffer(draw.geometry.indices,rs::Lifetime::imported,true);
-                if(settings.products) {
-                    const bool prior=draw.skin && draw.previous_vertices!=draw.geometry.vertices;
-                    input.previous_vertices=buffer(draw.previous_vertices,prior ? rs::Lifetime::history : draw.skin ? rs::Lifetime::shared : rs::Lifetime::imported,prior || !draw.skin);
+                rs::DrawInputs input;
+                if(draw.stream_geometry) {
+                    input.vertices=f.streamed_vertices;input.indices=f.streamed_indices;input.stream=draw.geometry.stream;
+                    if(settings.products)input.previous_vertices=f.streamed_vertices;
+                } else {
+                    input.vertices=buffer(draw.geometry.vertices,draw.skin ? rs::Lifetime::shared : rs::Lifetime::imported,!draw.skin);
+                    if(draw.geometry.indices)input.indices=buffer(draw.geometry.indices,rs::Lifetime::imported,true);
+                    if(settings.products) {
+                        const bool prior=draw.skin && draw.previous_vertices!=draw.geometry.vertices;
+                        input.previous_vertices=buffer(draw.previous_vertices,prior ? rs::Lifetime::history : draw.skin ? rs::Lifetime::shared : rs::Lifetime::imported,prior || !draw.skin);
+                    }
                 }
                 if(shadow) {
                     auto shadow_input=input;
@@ -3442,7 +3525,10 @@ struct Context {
                         if(binding.type==nvrhi::ResourceType::StructuredBuffer_UAV)identity(s.output,binding.resourceHandle);
                     }
                 }
-                auto geometry=[&](const rs::DrawInputs& input) {identity(input.vertices,draw.geometry.vertices.Get());if(input.indices!=rs::none)identity(input.indices,draw.geometry.indices.Get());if(input.previous_vertices!=rs::none)identity(input.previous_vertices,draw.previous_vertices.Get());};
+                auto geometry=[&](const rs::DrawInputs& input) {
+                    identity(input.vertices,draw.geometry.vertices.Get());if(input.indices!=rs::none)identity(input.indices,draw.geometry.indices.Get());if(input.previous_vertices!=rs::none)identity(input.previous_vertices,draw.previous_vertices.Get());
+                    require(input.stream==draw.geometry.stream,"Streamed geometry slice differs from its draw binding.");
+                };
                 if(draw.shadow_mask) {
                     const auto& input=f.shadow_draws.at(shadow_index++);geometry(input);
                     require(input.textures.size()==(draw.masked_shadow_bindings ? 1u : 0u),"Shadow material schedule differs from the actual alpha pipeline.");
@@ -3553,9 +3639,10 @@ struct Context {
             for(const auto& batch:camera_batch_plan) {
                 const auto& draw=draws.at(batch.first);
                 state.pipeline=draw.cull ? culled_pipeline : pipeline;state.bindings[0]=draw.bindings;
-                state.vertexBuffers[0].buffer=draw.geometry.vertices;
-                if(scene_products_enabled)state.vertexBuffers[1].buffer=draw.previous_vertices;
-                state.indexBuffer=draw.geometry.indices ? nvrhi::IndexBufferBinding(draw.geometry.indices,nvrhi::Format::R32_UINT,0) : nvrhi::IndexBufferBinding();
+                state.vertexBuffers[0].setBuffer(draw.geometry.vertices).setOffset(draw.geometry.stream.vertex_offset);
+                if(scene_products_enabled)state.vertexBuffers[1].setBuffer(draw.previous_vertices).setOffset(draw.geometry.stream.vertex_offset);
+                state.indexBuffer=draw.geometry.indices ? nvrhi::IndexBufferBinding(draw.geometry.indices,nvrhi::Format::R32_UINT,
+                    static_cast<std::uint32_t>(draw.geometry.stream.index_offset)) : nvrhi::IndexBufferBinding();
                 commands->setGraphicsState(state);const DrawIndices indices{draw.object_index};commands->setPushConstants(&indices,sizeof(indices));
                 if(draw.geometry.indices)commands->drawIndexed(nvrhi::DrawArguments().setVertexCount(draw.geometry.count).setInstanceCount(batch.count).setStartInstanceLocation(0));
                 else commands->draw(nvrhi::DrawArguments().setVertexCount(draw.geometry.count).setInstanceCount(batch.count).setStartInstanceLocation(0));
@@ -3595,7 +3682,7 @@ struct Context {
         }
         cluster_readback=slot.cluster_readback;skin_readback=slot.skin_readback;
         if(capture_frame)prepare_capture_staging();
-        prepare_game_ui();prepare_submission_history();prepare_draw_batches();prepare_temporal_submission();prepare_ambient_occlusion();prepare_deferred_lighting();
+        prepare_game_ui();prepare_stream_geometry(slot);prepare_submission_history();prepare_draw_batches();prepare_temporal_submission();prepare_ambient_occlusion();prepare_deferred_lighting();
         // Query storage belongs to this Context. Create it before acquiring an
         // image; stopped traces leave it allocated but perform no query work.
         if((profiling::active() || bool(performance_token)) && !timestamp_prepared)prepare_timestamps();
@@ -3655,6 +3742,10 @@ struct Context {
         plan.execute([&](const render_schedule::Pass& pass,const render_schedule::Schedule&) {
             profiling::Scope pass_scope(render_schedule::pass_name(pass.id));
             switch(pass.id) {
+            case render_schedule::PassId::stream_geometry:
+                commands->writeBuffer(planned_buffer(resources.streamed_vertices),stream_vertices.data(),stream_vertices.size()*sizeof(Vertex));
+                commands->writeBuffer(planned_buffer(resources.streamed_indices),stream_indices.data(),stream_indices.size()*sizeof(std::uint32_t));
+                break;
             case render_schedule::PassId::skinning:
                 if(scene) {if(viewmodel_enabled) {commands->writeBuffer(planned_buffer(resources.viewmodel_frame),&viewmodel_frame,sizeof(viewmodel_frame));commands->writeBuffer(planned_buffer(resources.viewmodel_objects),viewmodel_objects.data(),viewmodel_objects.size()*sizeof(ObjectData));}commands->writeBuffer(planned_buffer(resources.frame),&frame_constants,sizeof(frame_constants));commands->writeBuffer(planned_buffer(resources.objects),object_data.data(),object_data.size()*sizeof(ObjectData));dispatch_skinning();if(ao_enabled)commands->writeBuffer(planned_buffer(resources.ao_constants),ao_settings.data(),sizeof(ao_settings));}
                 timestamp(1);break;

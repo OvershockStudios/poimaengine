@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.354
+
+- Author fixed-tick particle emitters on scene and template entities. Inspect seeded bursts, observe attached and detached particles, save live effects, and stream camera-facing geometry during play.
+
 ## 0.0.353
 
 - Cook a terrain-bound local water region, control its gates through named inputs, and observe flow, depth and volume at committed ticks. Water participates in runtime rollback, saves and standalone rendering.

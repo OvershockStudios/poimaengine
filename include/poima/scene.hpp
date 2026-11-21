@@ -155,6 +155,8 @@ struct SceneObject {
     // Camera exclusion is independent of frustum culling and shadow eligibility.
     bool camera_visible=true;
     std::optional<CameraDrawBinding> camera_draw;
+    // Indexed opaque world geometry replaced by the next presentation.
+    bool stream_geometry=false;
 };
 struct SceneViewmodel {
     SceneLens lens;

@@ -4,14 +4,21 @@
 #include <cmath>
 #include <functional>
 #include <limits>
+#include <numeric>
 #include <stdexcept>
 
 namespace poima::particles {
 namespace {
 constexpr double tick_dt = 1.0 / ticks_per_second;
 constexpr double component_limit = 1.0e9;
-constexpr auto max_attempts_per_tick = max_emitters * (max_rate / ticks_per_second + max_burst);
+constexpr auto max_attempts_per_emitter_tick = max_rate / ticks_per_second + max_burst;
+constexpr auto max_attempts_per_tick = max_emitters * max_attempts_per_emitter_tick;
 constexpr auto last_tick = std::numeric_limits<std::uint64_t>::max() / max_attempts_per_tick;
+
+void validate_limits(Limits limits) {
+    if (limits.emitters == 0 || limits.emitters > max_emitters || limits.particles == 0 || limits.particles > max_particles)
+        throw std::invalid_argument("Particle system capacity is outside its bounds.");
+}
 
 Vec3 add(const Vec3& a, const Vec3& b) noexcept {
     return {a[0] + b[0], a[1] + b[1], a[2] + b[2]};
@@ -41,13 +48,17 @@ bool bounded(const Vec3& value) noexcept {
     });
 }
 
-Pose canonical_pose(Pose pose) {
+double checked_pose_norm_squared(const Pose& pose, double tolerance) {
     if (!bounded(pose.position_m)) throw std::invalid_argument("Particle emitter position is outside its bounds.");
     double norm_squared = 0;
     for (const auto component : pose.rotation) norm_squared += component * component;
-    if (!std::isfinite(norm_squared) || std::abs(norm_squared - 1) > 1.0e-6)
+    if (!std::isfinite(norm_squared) || std::abs(norm_squared - 1) > tolerance)
         throw std::invalid_argument("Particle emitter rotation must be a unit quaternion.");
-    const auto length = std::sqrt(norm_squared);
+    return norm_squared;
+}
+
+Pose canonical_pose(Pose pose) {
+    const auto length = std::sqrt(checked_pose_norm_squared(pose, 1.0e-6));
     for (auto& component : pose.rotation) component /= length;
     return pose;
 }
@@ -93,35 +104,120 @@ Vec3 sample(const VectorRange& range, std::uint64_t seed, std::uint64_t index) n
         result[axis] = std::lerp(range.minimum[axis], range.maximum[axis], unit_sample(seed, index + axis));
     return result;
 }
+
+void require_snapshot(bool condition, const char* message) {
+    if (!condition) throw std::invalid_argument(message);
 }
 
-struct System::Emitter {
-    EmitterId id = 0;
-    EmitterConfig config;
-    Pose next_pose;
-    EmitterStatus status;
+void validate_counts(const Counts& counts, std::uint64_t attempt_budget, std::uint64_t spawn_budget) {
+    require_snapshot(counts.spawned <= spawn_budget && counts.spawned <= attempt_budget &&
+        counts.dropped <= attempt_budget - counts.spawned, "Particle snapshot spawn counts exceed the completed tick budget.");
+    require_snapshot(counts.live <= counts.spawned && counts.expired <= counts.spawned - counts.live &&
+        counts.removed == counts.spawned - counts.live - counts.expired, "Particle snapshot counts do not balance.");
+}
+
+std::uint64_t possible_emitting_ticks(std::uint64_t tick, std::uint32_t rate, std::uint32_t phase) {
+    const auto period = ticks_per_second / std::gcd(ticks_per_second, rate);
+    for (std::uint64_t skipped = 0; skipped < period && skipped <= tick; ++skipped) {
+        const auto emitting_ticks = tick - skipped;
+        if (emitting_ticks * rate % ticks_per_second == phase) return emitting_ticks;
+    }
+    throw std::invalid_argument("Particle snapshot rate phase is impossible for the completed ticks.");
+}
+
+Vec3 range_magnitudes(const VectorRange& range, bool rotated) {
+    Vec3 bounds{};
+    for (std::size_t i = 0; i < bounds.size(); ++i)
+        bounds[i] = std::max(std::abs(range.minimum[i]), std::abs(range.maximum[i]));
+    if (rotated) bounds.fill(std::hypot(bounds[0], bounds[1], bounds[2]));
+    return bounds;
+}
+
+struct RestoreSlot {
+    std::size_t live = 0;
+    std::uint64_t spawns_per_tick = 0;
+    Vec3 initial_position_bound{}, initial_velocity_bound{};
 };
 
-struct System::Particle {
-    std::uint64_t id = 0;
-    std::size_t emitter = 0;
-    Vec3 position{}, velocity{};
-    std::uint32_t age = 0;
-};
+RestoreSlot validate_emitter(const SnapshotEmitter& emitter, const Status& status, Counts& historical) {
+    const auto& config = emitter.config;
+    const auto& state = emitter.status;
+    const auto& counts = state.particles;
+    validate(config, status.limits.particles);
+    constexpr auto unit_tolerance = 16 * std::numeric_limits<double>::epsilon();
+    checked_pose_norm_squared(state.pose, unit_tolerance);
+    checked_pose_norm_squared(emitter.next_pose, unit_tolerance);
+    require_snapshot(state.pending_burst <= max_burst && state.rate_phase < ticks_per_second && counts.removed == 0,
+        "Particle snapshot emitter queue or counters are invalid.");
+    const auto emitting_ticks = possible_emitting_ticks(status.tick, config.particles_per_second, state.rate_phase);
+    const auto attempt_budget = status.tick * max_burst + emitting_ticks * config.particles_per_second / ticks_per_second;
+    const auto capacity = config.live_limit == 0 ? status.limits.particles : config.live_limit;
+    const auto peak_rate = (config.particles_per_second + ticks_per_second - 1) / ticks_per_second;
+    const auto spawns_per_tick = std::min<std::uint64_t>(capacity, max_burst + peak_rate);
+    validate_counts(counts, attempt_budget, status.tick * spawns_per_tick);
+    const auto expiring_ticks = status.tick - std::min<std::uint64_t>(status.tick, config.lifetime_ticks);
+    require_snapshot(counts.live <= capacity && counts.expired <= expiring_ticks * spawns_per_tick,
+        "Particle snapshot emitter live count or expiry exceeds its bounds.");
+
+    require_snapshot(counts.live <= historical.live && counts.spawned <= historical.spawned &&
+        counts.dropped <= historical.dropped && counts.expired <= historical.expired,
+        "Particle snapshot emitter counters exceed system counters.");
+    historical.live -= counts.live;
+    historical.spawned -= counts.spawned;
+    historical.dropped -= counts.dropped;
+    historical.expired -= counts.expired;
+
+    const auto rotated = config.spawn_space != config.simulation_space;
+    auto initial_position = range_magnitudes(config.offset_m, rotated);
+    if (config.simulation_space == Space::World)
+        for (auto& component : initial_position) component += component_limit;
+    return {0, spawns_per_tick, initial_position, range_magnitudes(config.velocity_m_s, rotated)};
+}
+
+bool within_integrated_bound(double value, double offset, double radius) noexcept {
+    // Allow accumulated rounding in a full lifetime of fixed-tick updates.
+    constexpr double relative_guard = 1.0e-9;
+    constexpr double underflow_guard = std::numeric_limits<double>::denorm_min() *
+        max_lifetime_ticks * max_lifetime_ticks;
+    const auto guard = relative_guard * (std::abs(offset) + radius) + underflow_guard;
+    return std::isfinite(value) && std::abs(value - offset) <= radius + guard;
+}
+
+void validate_motion(const SnapshotParticle& particle, const EmitterConfig& config, const RestoreSlot& bounds) {
+    const auto seconds = particle.age * tick_dt;
+    const auto acceleration_scale = seconds * (seconds + tick_dt) * 0.5;
+    for (std::size_t axis = 0; axis < particle.position.size(); ++axis) {
+        const auto acceleration = config.acceleration_m_s2[axis];
+        const auto initial_speed = bounds.initial_velocity_bound[axis];
+        const auto position_radius = bounds.initial_position_bound[axis] + seconds * initial_speed;
+        require_snapshot(within_integrated_bound(particle.velocity[axis], acceleration * seconds, initial_speed) &&
+            within_integrated_bound(particle.position[axis], acceleration * acceleration_scale, position_radius),
+            "Particle snapshot motion exceeds the integration bounds for its age.");
+    }
+}
+}
 
 System::System(Limits limits) {
-    if (limits.emitters == 0 || limits.emitters > max_emitters || limits.particles == 0 || limits.particles > max_particles)
-        throw std::invalid_argument("Particle system capacity is outside its bounds.");
+    validate_limits(limits);
     status_.limits = limits;
     emitters_.resize(limits.emitters);
     particles_.reserve(limits.particles);
 }
 
+System::System(const Status& status, std::span<const SnapshotEmitter> emitters, std::span<const SnapshotParticle> particles)
+    : System(status.limits) {
+    status_ = status;
+    std::copy(emitters.begin(), emitters.end(), emitters_.begin());
+    particles_.insert(particles_.end(), particles.begin(), particles.end());
+}
+
 System::~System() = default;
+System::System(System&&) noexcept = default;
+System& System::operator=(System&&) noexcept = default;
 
 std::size_t System::find(EmitterId id) const {
     if (id == 0) throw std::invalid_argument("Particle emitter identity must be nonzero.");
-    const auto entry = std::find_if(emitters_.begin(), emitters_.end(), [id](const Emitter& emitter) { return emitter.id == id; });
+    const auto entry = std::find_if(emitters_.begin(), emitters_.end(), [id](const SnapshotEmitter& emitter) { return emitter.id == id; });
     if (entry == emitters_.end()) throw std::out_of_range("Unknown particle emitter identity.");
     return static_cast<std::size_t>(entry - emitters_.begin());
 }
@@ -136,23 +232,29 @@ void System::add_emitter(EmitterId id, const EmitterConfig& config, const Pose& 
     if (available == emitters_.end()) throw std::length_error("Particle emitter capacity is exhausted.");
     validate(config, status_.limits.particles);
     const auto normalized = canonical_pose(pose);
-    *available = Emitter{id, config, normalized, EmitterStatus{.pose = normalized, .emitting = config.emitting}};
+    *available = SnapshotEmitter{id, config, normalized, EmitterStatus{.pose = normalized, .emitting = config.emitting}};
     ++status_.emitter_count;
 }
 
 void System::remove_emitter(EmitterId id) {
     const auto slot = find(id);
     auto& emitter = emitters_[slot];
-    std::erase_if(particles_, [slot](const Particle& particle) { return particle.emitter == slot; });
+    std::erase_if(particles_, [slot](const SnapshotParticle& particle) { return particle.slot == slot; });
     status_.particles.removed += emitter.status.particles.live;
     status_.particles.live -= emitter.status.particles.live;
-    emitter = Emitter{};
+    emitter = SnapshotEmitter{};
     --status_.emitter_count;
 }
 
 void System::set_pose(EmitterId id, const Pose& pose) {
     auto& emitter = emitters_[find(id)];
     emitter.next_pose = canonical_pose(pose);
+}
+
+void System::commit_pose(EmitterId id, const Pose& pose) {
+    auto& emitter = emitters_[find(id)];
+    const auto normalized = canonical_pose(pose);
+    emitter.status.pose = emitter.next_pose = normalized;
 }
 
 void System::set_emitting(EmitterId id, bool emitting) {
@@ -197,7 +299,7 @@ void System::spawn(std::size_t slot) {
             velocity = rotate(conversion, velocity);
         }
         const auto position = world ? add(state.pose.position_m, offset) : offset;
-        particles_.push_back(Particle{++total.spawned, slot, position, velocity, 0});
+        particles_.push_back(SnapshotParticle{++total.spawned, slot, position, velocity, 0});
     }
     state.particles.spawned += admitted;
     state.particles.live += admitted;
@@ -208,7 +310,7 @@ void System::step() {
     if (status_.tick == last_tick) throw std::overflow_error("Particle system tick counter is exhausted.");
     auto kept = particles_.begin();
     for (auto& particle : particles_) {
-        auto& emitter = emitters_[particle.emitter];
+        auto& emitter = emitters_[particle.slot];
         if (++particle.age == emitter.config.lifetime_ticks) {
             ++emitter.status.particles.expired;
             --emitter.status.particles.live;
@@ -234,12 +336,75 @@ Status System::status() const noexcept { return status_; }
 
 EmitterStatus System::emitter_status(EmitterId id) const { return emitters_[find(id)].status; }
 
+Snapshot System::snapshot() const { return {status_, emitters_, particles_}; }
+
+System System::clone() const { return System(status_, emitters_, particles_); }
+
+System System::restore(const Snapshot& snapshot) {
+    const auto& status = snapshot.status;
+    const auto& totals = status.particles;
+    validate_limits(status.limits);
+    require_snapshot(status.tick <= last_tick && status.emitter_count <= status.limits.emitters &&
+        snapshot.emitters.size() == status.limits.emitters && totals.live <= status.limits.particles &&
+        snapshot.particles.size() == totals.live, "Particle snapshot shape or tick exceeds its bounds.");
+    const auto max_attempts = status.limits.emitters * max_attempts_per_emitter_tick;
+    const auto max_births = std::min<std::uint64_t>(max_attempts, status.limits.particles);
+    validate_counts(totals, status.tick * max_attempts, status.tick * max_births);
+    require_snapshot(status.tick > 1 || totals.expired == 0, "Particle snapshot expires particles before any lifetime elapses.");
+
+    std::array<RestoreSlot, max_emitters> slots{};
+    std::array<EmitterId, max_emitters> ids{};
+    std::size_t active = 0;
+    auto historical = totals;
+    for (std::size_t slot = 0; slot < snapshot.emitters.size(); ++slot) {
+        const auto& emitter = snapshot.emitters[slot];
+        if (emitter.id == 0) {
+            require_snapshot(emitter == SnapshotEmitter{}, "Particle snapshot vacant slot contains emitter state.");
+            continue;
+        }
+        ids[active++] = emitter.id;
+        slots[slot] = validate_emitter(emitter, status, historical);
+    }
+    const auto active_ids = std::span(ids).first(active);
+    std::sort(active_ids.begin(), active_ids.end());
+    require_snapshot(active == status.emitter_count && historical.live == 0 &&
+        std::adjacent_find(active_ids.begin(), active_ids.end()) == active_ids.end(),
+        "Particle snapshot active emitter count, membership or identity is invalid.");
+
+    std::uint64_t last_id = 0, cohort_size = 0;
+    std::uint32_t last_age = max_lifetime_ticks;
+    std::size_t last_slot = 0;
+    for (const auto& particle : snapshot.particles) {
+        require_snapshot(particle.slot < snapshot.emitters.size() && particle.id > last_id && particle.id <= totals.spawned,
+            "Particle snapshot live identity, order or slot is invalid.");
+        const auto& emitter = snapshot.emitters[particle.slot];
+        require_snapshot(emitter.id != 0 && particle.age < emitter.config.lifetime_ticks && particle.age < status.tick &&
+            (particle.age < last_age || (particle.age == last_age && particle.slot >= last_slot)),
+            "Particle snapshot live membership or chronology is invalid.");
+        const auto birth_tick = status.tick - particle.age;
+        require_snapshot(particle.id <= max_births * birth_tick &&
+            totals.spawned - particle.id < max_births * (particle.age + 1),
+            "Particle snapshot live identity does not fit its birth tick.");
+        if (particle.age != last_age || particle.slot != last_slot) cohort_size = 0;
+        auto& slot = slots[particle.slot];
+        require_snapshot(++cohort_size <= slot.spawns_per_tick && ++slot.live <= emitter.status.particles.live,
+            "Particle snapshot live membership exceeds its emitter or birth budget.");
+        validate_motion(particle, emitter.config, slot);
+        last_id = particle.id;
+        last_age = particle.age;
+        last_slot = particle.slot;
+    }
+    // Slot counts can never be exceeded by a live particle. Their sum already
+    // equals the live array size, so every slot's count must now be exact.
+    return System(status, snapshot.emitters, snapshot.particles);
+}
+
 std::span<Instance> System::write_instances(std::span<Instance> output) const {
     if (output.size() < particles_.size()) throw std::invalid_argument("Particle instance buffer is too small.");
     auto instances = output.first(particles_.size());
     for (std::size_t index = 0; index < instances.size(); ++index) {
         const auto& particle = particles_[index];
-        const auto& emitter = emitters_[particle.emitter];
+        const auto& emitter = emitters_[particle.slot];
         const auto& config = emitter.config;
         const auto& pose = emitter.status.pose;
         const bool local = config.simulation_space == Space::Local;

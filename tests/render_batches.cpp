@@ -67,9 +67,10 @@ void small_tables() {
 
 void every_key_field() {
     const Key original=key();
-    std::array<Key,6> changed{original,original,original,original,original,original};
+    std::array<Key,8> changed{original,original,original,original,original,original,original,original};
     changed[0].vertices=17;changed[1].indices=18;changed[2].previous_vertices=19;
     changed[3].bindings=20;changed[4].count=37;changed[5].pipeline=6;
+    changed[6].vertex_offset=144;changed[7].index_offset=12;
     for(const auto& different:changed) {
         check(different!=original,"Fixture failed to distinguish one exact key member");
         expect({draw(0,true,original),draw(1,true,different),draw(2,true,different),draw(3,true,original)},{{0,1},{1,2},{3,1}});

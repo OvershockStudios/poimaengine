@@ -103,6 +103,14 @@ Acquire semaphores, completion tracking, timestamps and diagnostic readbacks bel
 
 Normal warmed frames avoid device-wide idle waits. Existing geometry, texture and font uploads can still wait, as can lifecycle cleanup. `device_idle_waits` includes those calls; two slots alone do not eliminate streaming stalls or guarantee higher frame rates.
 
+[Scene particles](PARTICLES.md) upload visible quad geometry in
+`render.pass.stream_geometry` on the graphics command list. Each completed
+frame slot can reuse its vertex and index buffers. The per-frame limits are
+4 MiB of vertices and 1 MiB of indices. The profiler reports
+`renderer.streamed_geometry_draws` and `renderer.streamed_geometry_upload_bytes`
+for the upload. The particle replay compares idle-wait counts with the same
+scene before its first burst.
+
 ## Evidence and reproduction
 
 The [frame-retirement evidence](evidence/m2-frame-retirement.json) records one/two-slot parity, stable-resource idle counts, changing-frame attribution and strict Vulkan validation on both laptop GPUs. Reproduce the native owned-window fixture after building `poima-frame-execution-test`:

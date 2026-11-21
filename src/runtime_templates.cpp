@@ -100,6 +100,7 @@ std::vector<RuntimeEntityDefinition> runtime_template_entities(const RuntimeSpaw
     if(recipe.entities.empty()) {
         RuntimeEntityDefinition entity;entity.id=nodes.at(recipe.id);entity.transform=root_transform;
         entity.collider=recipe.collider;entity.mesh=recipe.mesh;entity.components=recipe.components;
+        entity.particle_emitter=recipe.particle_emitter;
         return {std::move(entity)};
     }
     std::map<std::string,const RuntimeEntityDefinition*> definitions;
@@ -166,7 +167,7 @@ void validate_runtime_templates(const RuntimeDefinition& definition) {
         check(!recipe.name.empty() && recipe.name.size()<=256,"Template name requires 1..256 UTF-8 bytes.");
         const auto locals=runtime_template_members(recipe);
         check(locals.size()<=max_runtime_template_entities && locals.size()<=max_runtime_template_total_entities-total_nodes,"Template entity budgets are 1024 per recipe and 4096 total.");total_nodes+=locals.size();
-        if(!recipe.entities.empty())check(!recipe.collider && !recipe.mesh && recipe.components.empty(),"Hierarchical templates cannot also use legacy root components.");
+        if(!recipe.entities.empty())check(!recipe.collider && !recipe.mesh && !recipe.particle_emitter && recipe.components.empty(),"Hierarchical templates cannot also use legacy root components.");
         std::map<std::string,std::string> identity_map;for(const auto& id:locals)identity_map.emplace(id,id);
         const auto root=recipe.entities.empty() ? recipe.entities.end() : std::find_if(recipe.entities.begin(),recipe.entities.end(),[&](const auto& entity){return entity.id==recipe.root;});
         const auto entities=runtime_template_entities(recipe,identity_map,recipe.entities.empty() ? recipe.transform : root->transform,schemas);

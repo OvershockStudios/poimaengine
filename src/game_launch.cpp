@@ -206,7 +206,7 @@ Json parse_suite(std::string_view bytes) {
             require(!check.empty() && check.size()<=96,"Expectation labels must be 1 to 96 bytes.");
             const auto method=expect.at("method").get<std::string>();
             static const std::set<std::string_view> observers={"runtime.inspect","runtime.entity","runtime.gameplay.inspect",
-                "runtime.ui.inspect","runtime.component.get","runtime.raycast","runtime.water.inspect"};
+                "runtime.ui.inspect","runtime.component.get","runtime.raycast","runtime.water.inspect","runtime.particles.inspect"};
             require(observers.contains(method),"Unsupported verification observation: "+method);
             if(expect.contains("params")) {
                 const auto& params=expect.at("params");

@@ -1,10 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "poima/particles.hpp"
 #include <array>
+#include <bit>
 #include <cmath>
 #include <iostream>
 #include <limits>
 #include <stdexcept>
+#include <type_traits>
+#include <utility>
 #include <vector>
 
 using namespace poima::particles;
@@ -232,6 +235,186 @@ void lifecycle_and_validation() {
     check(instances(system)[0].id > buffer[1].id, "A recycled emitter slot reused particle identities.");
     check_counts(system.status().particles, "Particle conservation failed after removal.");
 }
+
+template<class T, std::size_t N> bool same_bits(const std::array<T, N>& a, const std::array<T, N>& b) {
+    using Bits = std::conditional_t<std::is_same_v<T, float>, std::uint32_t, std::uint64_t>;
+    for (std::size_t i = 0; i < a.size(); ++i)
+        if (std::bit_cast<Bits>(a[i]) != std::bit_cast<Bits>(b[i])) return false;
+    return true;
+}
+
+bool same_pose_bits(const Pose& a, const Pose& b) {
+    return same_bits(a.position_m, b.position_m) && same_bits(a.rotation, b.rotation);
+}
+
+void check_exact(const Snapshot& expected, const Snapshot& actual) {
+    check(expected == actual, "Checkpoint changed an emitter, particle or counter.");
+    for (std::size_t i = 0; i < expected.emitters.size(); ++i) {
+        const auto& a = expected.emitters[i];
+        const auto& b = actual.emitters[i];
+        check(same_pose_bits(a.next_pose, b.next_pose) && same_pose_bits(a.status.pose, b.status.pose),
+            "Checkpoint changed sampled or pending pose bits.");
+        check(same_bits(a.config.linear_rgba, b.config.linear_rgba) &&
+            std::bit_cast<std::uint32_t>(a.config.size_m) == std::bit_cast<std::uint32_t>(b.config.size_m) &&
+            same_bits(a.config.offset_m.minimum, b.config.offset_m.minimum) &&
+            same_bits(a.config.offset_m.maximum, b.config.offset_m.maximum) &&
+            same_bits(a.config.velocity_m_s.minimum, b.config.velocity_m_s.minimum) &&
+            same_bits(a.config.velocity_m_s.maximum, b.config.velocity_m_s.maximum) &&
+            same_bits(a.config.acceleration_m_s2, b.config.acceleration_m_s2), "Checkpoint changed emitter config bits.");
+    }
+    for (std::size_t i = 0; i < expected.particles.size(); ++i) {
+        const auto& a = expected.particles[i];
+        const auto& b = actual.particles[i];
+        check(same_bits(a.position, b.position) && same_bits(a.velocity, b.velocity), "Checkpoint changed particle motion bits.");
+    }
+}
+
+void committed_pose() {
+    System system({2, 2});
+    EmitterConfig config;
+    config.offset_m = {{1, 0, 0}, {1, 0, 0}};
+    config.simulation_space = Space::Local;
+    system.add_emitter(3, config);
+    config.simulation_space = Space::World;
+    system.add_emitter(4, config);
+    for (const auto id : {EmitterId{3}, EmitterId{4}}) system.burst(id, 1);
+    system.step();
+    const auto before = instances(system);
+    const auto status = system.status();
+    system.set_pose(3, {{100, 0, 0}});
+    const Pose attached{{20, 0, 0}};
+    system.commit_pose(3, attached);
+    system.commit_pose(4, attached);
+    const auto after = instances(system);
+    check(after[0].position_m == Vec3{21, 0, 0} && after[0].age_ticks == before[0].age_ticks && after[1] == before[1] &&
+        system.status() == status, "Synchronous pose commit advanced simulation or changed world particles.");
+    const auto frozen = system.snapshot();
+    check(frozen.emitters[0].next_pose == attached && frozen.emitters[0].status.pose == attached,
+        "Pose commit did not replace the previously queued pose.");
+    rejects<std::invalid_argument>([&] { system.commit_pose(3, {{}, {0, 0, 0, 0}}); }, "Pose commit accepted a nonunit quaternion.");
+    check_exact(frozen, system.snapshot());
+    system.step();
+    check(instances(system)[0].position_m == Vec3{21, 0, 0}, "Stale queued pose overwrote the synchronous commit.");
+}
+
+void exact_checkpoint() {
+    static_assert(std::is_nothrow_move_constructible_v<System>);
+    static_assert(std::is_nothrow_move_assignable_v<System>);
+    System system({4, 6});
+    const auto empty = system.snapshot();
+    check_exact(empty, System::restore(empty).snapshot());
+    check_exact(empty, system.clone().snapshot());
+
+    auto config = random_emitter(567);
+    config.simulation_space = Space::Local;
+    config.lifetime_ticks = 5;
+    config.live_limit = 2;
+    config.particles_per_second = 30;
+    config.acceleration_m_s2[2] = -0.0;
+    const Pose original{{1, -0.0, 3}, {0.005, 0.01, -0.0, 0.9999376980342524}};
+    system.add_emitter(11, config, original);
+    config.simulation_space = Space::World;
+    config.particles_per_second = 0;
+    system.add_emitter(22, config, original);
+    system.add_emitter(33, config, original);
+    system.burst(11, 3);
+    system.burst(22, 2);
+    system.burst(33, 2);
+    system.step();
+    system.remove_emitter(22);
+    system.set_emitting(33, false);
+    system.set_pose(11, {{10, -0.0, 0}});
+    system.burst(11, 3);
+    const auto saved = system.snapshot();
+    check(saved.emitters.size() == 4 && saved.emitters[0].status.pending_burst == 3 &&
+        saved.emitters[0].status.rate_phase == 30 && std::signbit(saved.emitters[0].status.pose.rotation[2]) &&
+        saved.emitters[1] == SnapshotEmitter{} && saved.emitters[2].id == 33 &&
+        saved.status.particles == Counts{4, 6, 1, 0, 2}, "Checkpoint fixture lacks queued work, holes or historical counters.");
+
+    auto restored = System::restore(saved);
+    System moved(std::move(restored));
+    restored = std::move(moved);
+    auto rollback = system.clone();
+    check_exact(saved, restored.snapshot());
+    check_exact(saved, rollback.snapshot());
+    check(instances(system) == instances(restored), "Restored projection differs at the exact checkpoint.");
+    for (unsigned frame = 0; frame < 31; ++frame) {
+        for (auto* branch : {&system, &restored, &rollback}) {
+            if (frame == 1) branch->add_emitter(44, config);
+            if (frame >= 1) branch->burst(44, frame % 4);
+            if (frame == 8) branch->remove_emitter(33);
+            if (frame % 2 == 1) branch->burst(11, 2);
+            branch->step();
+        }
+        const auto state = system.snapshot();
+        check_exact(state, restored.snapshot());
+        check_exact(state, rollback.snapshot());
+        check_exact(state, System::restore(state).snapshot());
+        check(instances(system) == instances(restored), "Restored and uninterrupted instances diverged.");
+    }
+    check(saved.emitters[1] == SnapshotEmitter{} && saved.emitters[0].status.pending_burst == 3 &&
+        saved.status.tick == 1, "Continuation changed the owned checkpoint.");
+}
+
+void malformed_checkpoints() {
+    System system({3, 4});
+    auto config = random_emitter(2);
+    config.particles_per_second = 30;
+    system.add_emitter(10, config);
+    system.add_emitter(20, config);
+    system.burst(10, 1);
+    system.burst(20, 1);
+    system.step();
+    system.step();
+    const auto saved = system.snapshot();
+    const auto rejected = [&](auto alter, const char* message) {
+        auto invalid = saved;
+        alter(invalid);
+        rejects<std::invalid_argument>([&] { system = System::restore(invalid); }, message);
+    };
+    rejected([](auto& s) { s.status.tick = std::numeric_limits<std::uint64_t>::max(); }, "Restore accepted a tick overflow.");
+    rejected([](auto& s) { s.status.limits.emitters = max_emitters + 1; }, "Restore accepted excessive emitter capacity.");
+    rejected([](auto& s) { s.emitters.pop_back(); }, "Restore accepted truncated slots.");
+    rejected([](auto& s) { s.particles.pop_back(); }, "Restore accepted truncated live particles.");
+    rejected([](auto& s) { s.emitters[2].status.pending_burst = 1; }, "Restore accepted a nonempty vacant slot.");
+    rejected([](auto& s) { s.emitters[1].id = s.emitters[0].id; }, "Restore accepted duplicate emitter IDs.");
+    rejected([](auto& s) { s.emitters[0].next_pose.rotation[3] = 1.0000001; }, "Restore reparsed a noncanonical queued pose.");
+    rejected([](auto& s) { s.emitters[0].status.rate_phase = 1; }, "Restore accepted an impossible continuous rate phase.");
+    rejected([](auto& s) { s.emitters[0].status.pending_burst = max_burst + 1; }, "Restore accepted an oversized queued burst.");
+    rejected([](auto& s) { s.emitters[0].config.live_limit = 1; }, "Restore accepted live particles above an emitter's capacity.");
+    rejected([](auto& s) { ++s.status.particles.removed; }, "Restore accepted unbalanced system counts.");
+    rejected([](auto& s) { s.status.particles.dropped = std::numeric_limits<std::uint64_t>::max(); }, "Restore accepted overflowing spawn counts.");
+    rejected([](auto& s) { s.particles[0].slot = 2; }, "Restore accepted a live particle in a vacant slot.");
+    rejected([](auto& s) { s.particles[0].age = 2; }, "Restore accepted a live particle born before its first tick.");
+    rejected([](auto& s) { ++s.particles[2].age; }, "Restore accepted live entries outside their birth order.");
+    rejected([](auto& s) { s.particles[1].id = s.particles[0].id; }, "Restore accepted duplicate live IDs.");
+    rejected([](auto& s) { s.particles[0].position[0] = 1.0e30; }, "Restore accepted impossible finite position.");
+    rejected([](auto& s) { s.particles[0].velocity[0] = std::numeric_limits<double>::quiet_NaN(); }, "Restore accepted NaN motion.");
+    check_exact(saved, system.snapshot());
+}
+
+void maximum_lifetime_checkpoint() {
+    System system({1, 1});
+    EmitterConfig config;
+    config.lifetime_ticks = max_lifetime_ticks;
+    config.offset_m = {{1.0e9, 1.0e9, -1.0e9}, {1.0e9, 1.0e9, -1.0e9}};
+    config.velocity_m_s = config.offset_m;
+    config.acceleration_m_s2 = {1.0e9, -1.0e9, 1.0e9};
+    const auto turn = std::sqrt(0.5);
+    system.add_emitter(1, config, {{1.0e9, -1.0e9, 0}, {0, turn, 0, turn}});
+    system.burst(1, 1);
+    for (std::uint32_t tick = 0; tick < max_lifetime_ticks; ++tick) system.step();
+    const auto saved = system.snapshot();
+    check(saved.particles.size() == 1 && saved.particles[0].age == max_lifetime_ticks - 1 &&
+        saved.particles[0].position[0] > 1.0e14 && saved.particles[0].velocity[0] > 1.0e11,
+        "Long-lived particle fixture did not reach the integrated coordinate range.");
+    auto restored = System::restore(saved);
+    check_exact(saved, restored.snapshot());
+    system.step();
+    restored.step();
+    check_exact(system.snapshot(), restored.snapshot());
+    check(restored.status().particles == Counts{0, 1, 0, 1, 0}, "Restored long-lived particle missed its expiry.");
+}
 }
 
 int main() {
@@ -240,7 +423,11 @@ int main() {
         world_aligned_spawns();
         replay_and_overflow();
         lifecycle_and_validation();
-        std::cout << "CPU particles passed moving-source, replay, capacity and lifecycle checks.\n";
+        committed_pose();
+        exact_checkpoint();
+        malformed_checkpoints();
+        maximum_lifetime_checkpoint();
+        std::cout << "CPU particles passed moving-source, replay, capacity, lifecycle and exact checkpoint checks.\n";
     } catch (const std::exception& error) {
         std::cerr << error.what() << '\n';
         return 1;
