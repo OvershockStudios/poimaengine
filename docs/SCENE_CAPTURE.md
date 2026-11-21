@@ -55,6 +55,11 @@ Each capture creates and destroys its own graphics context, serializes GPU work 
 
 Poima 0.0.12 adds independent camera/shadow frustum rejection and a `render_diagnostics` result. Optional Boolean `culling` (default true) and `profile` (default false) enable comparison and CPU/GPU intervals. See [the diagnostics contract](RENDER_DIAGNOSTICS.md) for counter definitions and timing boundaries.
 
+The Vulkan context owns capture-copy scheduling, coordinate mapping, and
+submission retirement. The readback module allocates the staging resources,
+decodes retired probe values, and writes the BMP with the selected overwrite
+policy. [Readback implementation](../src/render_readback.cpp)
+
 ## Verification
 
 Headless CTest includes independent affine inverse/projection math checks and world-contract cases. Those cover a rotated/scaled parent hierarchy, component schema validation, component removal and persistence, filtering, capture preconditions and the explicit unbuilt-renderer error, alongside existing transaction/recovery cases.

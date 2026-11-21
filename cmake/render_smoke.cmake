@@ -132,7 +132,8 @@ add_custom_command(OUTPUT "${poima_startup_wordmark}"
         -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/embed_startup_wordmark.cmake"
     DEPENDS "${poima_startup_png}" cmake/embed_startup_wordmark.cmake VERBATIM)
 target_sources(poima_core PRIVATE
-    src/render_smoke.cpp src/player_window.cpp src/gamepad_sdl.cpp "${poima_startup_wordmark}")
+    src/render_smoke.cpp src/render_readback.cpp src/player_window.cpp src/gamepad_sdl.cpp
+    "${poima_startup_wordmark}")
 target_link_libraries(poima_core PRIVATE nvrhi nvrhi_vk SDL3::SDL3-static)
 target_compile_definitions(poima_core PRIVATE NOMINMAX WIN32_LEAN_AND_MEAN)
 

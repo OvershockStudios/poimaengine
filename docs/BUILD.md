@@ -153,7 +153,9 @@ Base API discovery lives in `src/world_schema.cpp`. The schema receives
 the world's serialized sky defaults and numeric limits, and returns fresh JSON
 for owner and scope filtering. `src/world_document.cpp` validates authored
 documents and decodes typed components for scene and runtime construction.
-`src/world.cpp` owns state, publication, dispatch and session filtering.
+`src/world_runtime_json.cpp` decodes runtime command payloads and serializes
+animation and motion observations. `src/world.cpp` owns state, publication,
+dispatch and session filtering.
 
 Each source compiles separately with the same optimization, debug information
 and warning settings. Changes to a private shared header may rebuild its

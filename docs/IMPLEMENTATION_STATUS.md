@@ -1,8 +1,15 @@
 # Implementation status
 
-Updated 2026-11-21 for **0.0.372**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-21 for **0.0.373**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.373 moves [runtime command decoding](BUILD.md#world-service-and-schema-compilation)
+and [Vulkan capture readback](SCENE_CAPTURE.md) into separate compilation
+units. Nine native Linux suites passed. Windows Vulkan captures matched
+0.0.372 byte for byte across 86 BMPs and returned identical values for 256
+scene product probes. A separate AMD run presented 96 frames with FSR
+history probes. [Results](evidence/m2-source-ownership-373.json)
 
 Version 0.0.372 adds an [authored RGB grade](PROJECT_POST_EFFECTS.md#grade-exposed-scene-color)
 between exposure and tone mapping. Windows Vulkan qualification produced 86

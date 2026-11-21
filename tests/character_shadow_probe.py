@@ -384,7 +384,8 @@ def main():
     sources += sorted((ROOT/'tools/python/poima_client').glob('*.py'))
     sources += sorted((ROOT/'shaders').glob('*.hlsl')) + sorted((ROOT/'shaders').glob('*.hlsli'))
     sources += [ROOT/name for name in ('src/world.cpp', 'src/world_document.cpp', 'src/world_document.hpp',
-        'src/world_json.hpp', 'src/world_observe.inc', 'src/runtime.cpp',
+        'src/world_json.hpp', 'src/world_runtime_json.cpp', 'src/world_runtime_json.hpp',
+        'src/world_observe.inc', 'src/runtime.cpp',
         'src/runtime_animation.cpp', 'src/runtime_geometry.cpp', 'src/render_smoke.cpp', 'src/shadows.cpp', 'src/scene.cpp')]
     pins = {path.relative_to(ROOT).as_posix(): sha(path) for path in sources}
     dependencies = {path.name: sha(path) for path in (binary.parent/'phonon.dll', binary.parent/'runtime.json')}

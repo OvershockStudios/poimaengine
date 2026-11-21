@@ -1,0 +1,206 @@
+{
+  "format": "poima.qualification-summary",
+  "version": 1,
+  "engine_checkpoint": "0.0.373",
+  "comparison_commit": "2848c7472c0f1a102b168c631340f194bd76b9b6",
+  "line_counts": {
+    "before_first_extraction": {
+      "src/world.cpp": 5304,
+      "src/render_smoke.cpp": 5301
+    },
+    "before_second_extraction": {
+      "src/world.cpp": 4332,
+      "src/render_smoke.cpp": 4525
+    },
+    "after_second_extraction": {
+      "src/world.cpp": 4086,
+      "src/render_smoke.cpp": 4395
+    }
+  },
+  "native_source_sha256": {
+    "CMakeLists.txt": "f84b2fb378be8a92c9762e6fd4ee8bbf5c0ec4ba5d3ef4bd6f1410aaa56857d0",
+    "cmake/render_smoke.cmake": "c74e3afa489c8275f0dc79922193f13907d9062615cb8207f47c9c3b5df2b69f",
+    "src/world.cpp": "6c7f4f59bbd7e42dcbc3edcbba4e5fc2300afd4c5fdf587e626696d0757f093a",
+    "src/world_runtime_json.cpp": "9a14280e9321d378f5405b573052f3bc11bba9be154b605ab2e277142ba7637a",
+    "src/world_runtime_json.hpp": "d442340f704ea78000bfec0890a5ca3756b5703232aeb8982d7289623f1b22e1",
+    "src/render_smoke.cpp": "f5cb2f8bb3c33dc26c93171a39c89e38b601ea82f924f6b0989a36bdc81f46a5",
+    "src/render_readback.cpp": "ac72447e258330e26cb94522243b637f6164e669bed97fbb42b163914a26a30e",
+    "src/render_readback.hpp": "db7ee7c822e016adb9ad766d99e03c44ff1a0abc428fea7aad5d6deac7f48b46"
+  },
+  "linux_native": {
+    "tests": [
+      "render_schedule_native",
+      "output_grade_authoring_contract",
+      "world_session_native",
+      "audio_contract",
+      "runtime_animation_contract",
+      "runtime_animation_blend_contract",
+      "runtime_animation_layers_contract",
+      "runtime_animation_inertial_contract",
+      "runtime_contract"
+    ],
+    "binary_sha256": "db8805f9d5fc621de24cee10b61c0f2ff00747b015369271954ec056d41a5a14",
+    "junit_sha256": "2db5b627784a2f157c9ae8ffbc04df08e3f52ad090349ceb2ef44ffaf5dbb435",
+    "source_inventory_sha256": "2b697dc1136d3e1bd7ec09a794309cf718143382baaab64560c09090cad4cbb3"
+  },
+  "windows_native": {
+    "binary_sha256": "751c5bd5bf8a5c41aeec17eebf9781b5c36434fdecbf7e19043ebe0676020b8b",
+    "described_output_shader_sha256": {
+      "scene_output_ao_ps.spv": "a6de3fd3ce2e6c50b296a2158f61a6c98b5dff0e93ccf72a9d712df7345a998c",
+      "scene_output_ao_vs.spv": "5bbb490801f61bb9a2aa0a21c45321020ba912617693aa0b79814cca7f676817",
+      "scene_output_bloom_ps.spv": "5d8b0e4c2a9107668db1db6bbbd9ddde068bed3264eb471d6923d336471cccec",
+      "scene_output_bloom_vs.spv": "5bbb490801f61bb9a2aa0a21c45321020ba912617693aa0b79814cca7f676817",
+      "scene_output_grade_bloom_ps.spv": "b66647d547d4200f5fee812a4390a863d0b584e8b99a3ce18eefd224534d5861",
+      "scene_output_grade_ps.spv": "e940c1246f7cb70f9d5d817d612114a2692ac23f4342e4ec4544226b64daa1cb",
+      "scene_output_products_bloom_ps.spv": "22291627fc2408e4c216b1e6dbf8eaa123252cfaf1e7d857dc47edce8b36f779",
+      "scene_output_products_bloom_vs.spv": "5bbb490801f61bb9a2aa0a21c45321020ba912617693aa0b79814cca7f676817",
+      "scene_output_products_ps.spv": "65c833b2adc969e53039f48c59422f2449c1bd08e97b35977b005fc4c6bea858",
+      "scene_output_products_vs.spv": "5bbb490801f61bb9a2aa0a21c45321020ba912617693aa0b79814cca7f676817",
+      "scene_output_ps.spv": "36c56e452d1245d00ef870a8a4911695c6aff418bc4b9ad51bbcd0631b3a3e5d",
+      "scene_output_vs.spv": "5bbb490801f61bb9a2aa0a21c45321020ba912617693aa0b79814cca7f676817"
+    },
+    "schedule": "Production render schedule: 407 valid variants, 1144 rejected contract mutations.",
+    "matches": [
+      {
+        "lane": "forward-0",
+        "gpu": "AMD Radeon(TM) Graphics",
+        "sha256": "ee45677d5abf04245a84da6a0ab65aad27910acfc5311a726789ecbd1f67811b",
+        "identical_capture_sha256": {
+          "omitted": "ab4a3cee6ee092884cbca9217a2799f264e7891b88319ea283f89ed270ee2ff0",
+          "retained-371": "ab4a3cee6ee092884cbca9217a2799f264e7891b88319ea283f89ed270ee2ff0",
+          "explicit-zero": "ab4a3cee6ee092884cbca9217a2799f264e7891b88319ea283f89ed270ee2ff0",
+          "exposed-low": "2a0b8ebe2633b89c8b57fa1d7fc012d220d4a4d9f709612bac4464cfd138f28d",
+          "exposed-tail": "1ac69bb861052b0121f626103437369689117ebe81ac61c60c082222b2679ec6",
+          "black": "d403f7f03ff8236fdc70b056a0283159897b3a0bbb31cd53df4d2c3c9114589c",
+          "graded-bloom": "47f4661aff0fe873d6d2b35105118f85ba626e9727495ea1d63a103d40672bd0",
+          "fsr3_native-omitted": "a8093d9dc18fcfd72e826a5e87eed06badf75154198de36e962675ab32d2f5b1",
+          "fsr3_native-graded": "2a0b8ebe2633b89c8b57fa1d7fc012d220d4a4d9f709612bac4464cfd138f28d",
+          "fsr3_quality-omitted": "a8093d9dc18fcfd72e826a5e87eed06badf75154198de36e962675ab32d2f5b1",
+          "fsr3_quality-graded": "2a0b8ebe2633b89c8b57fa1d7fc012d220d4a4d9f709612bac4464cfd138f28d",
+          "relocated-forward": "47f4661aff0fe873d6d2b35105118f85ba626e9727495ea1d63a103d40672bd0",
+          "hud-omitted": "bf232951c451c77316c8ab049299ee5e4f8d2258806037bdf5da7c029281c6ef",
+          "hud-active": "58c0f513066fc7eb9b9d630d059336af0da5a5f727a2b2b7aa32c21daf30a20d",
+          "hud-black": "105dde43150ae42fe3a7d2f6230219de56cc6ade5a00d4608bd4b4e23c41e945",
+          "diagnostic-omitted": "ba6f143c418da48011113c361fd6e8627aec38e0c00550202a217026f7266867",
+          "diagnostic-graded": "ba6f143c418da48011113c361fd6e8627aec38e0c00550202a217026f7266867"
+        },
+        "identical_scene_product_probes": 64
+      },
+      {
+        "lane": "deferred-0",
+        "gpu": "AMD Radeon(TM) Graphics",
+        "sha256": "b80895ac5aff7e66fc7a42081e04cf4e637569d136fe85f181779419e6ebc987",
+        "identical_capture_sha256": {
+          "omitted": "ab4a3cee6ee092884cbca9217a2799f264e7891b88319ea283f89ed270ee2ff0",
+          "retained-371": "ab4a3cee6ee092884cbca9217a2799f264e7891b88319ea283f89ed270ee2ff0",
+          "explicit-zero": "ab4a3cee6ee092884cbca9217a2799f264e7891b88319ea283f89ed270ee2ff0",
+          "exposed-low": "2a0b8ebe2633b89c8b57fa1d7fc012d220d4a4d9f709612bac4464cfd138f28d",
+          "exposed-tail": "1ac69bb861052b0121f626103437369689117ebe81ac61c60c082222b2679ec6",
+          "black": "d403f7f03ff8236fdc70b056a0283159897b3a0bbb31cd53df4d2c3c9114589c",
+          "graded-bloom": "47f4661aff0fe873d6d2b35105118f85ba626e9727495ea1d63a103d40672bd0",
+          "fsr3_native-omitted": "a8093d9dc18fcfd72e826a5e87eed06badf75154198de36e962675ab32d2f5b1",
+          "fsr3_native-graded": "2a0b8ebe2633b89c8b57fa1d7fc012d220d4a4d9f709612bac4464cfd138f28d",
+          "fsr3_quality-omitted": "a8093d9dc18fcfd72e826a5e87eed06badf75154198de36e962675ab32d2f5b1",
+          "fsr3_quality-graded": "2a0b8ebe2633b89c8b57fa1d7fc012d220d4a4d9f709612bac4464cfd138f28d",
+          "hud-omitted": "bf232951c451c77316c8ab049299ee5e4f8d2258806037bdf5da7c029281c6ef",
+          "hud-active": "58c0f513066fc7eb9b9d630d059336af0da5a5f727a2b2b7aa32c21daf30a20d",
+          "hud-black": "105dde43150ae42fe3a7d2f6230219de56cc6ade5a00d4608bd4b4e23c41e945",
+          "diagnostic-omitted": "ba6f143c418da48011113c361fd6e8627aec38e0c00550202a217026f7266867",
+          "diagnostic-graded": "ba6f143c418da48011113c361fd6e8627aec38e0c00550202a217026f7266867"
+        },
+        "identical_scene_product_probes": 64
+      },
+      {
+        "lane": "forward-4x-0",
+        "gpu": "AMD Radeon(TM) Graphics",
+        "sha256": "b92ae5ef7cda89c3b71a4bd5e3ee4296573238d10ae40c8fbe5b0dec4c9605cc",
+        "identical_capture_sha256": {
+          "omitted": "ab4a3cee6ee092884cbca9217a2799f264e7891b88319ea283f89ed270ee2ff0",
+          "retained-371": "ab4a3cee6ee092884cbca9217a2799f264e7891b88319ea283f89ed270ee2ff0",
+          "explicit-zero": "ab4a3cee6ee092884cbca9217a2799f264e7891b88319ea283f89ed270ee2ff0",
+          "exposed-low": "2a0b8ebe2633b89c8b57fa1d7fc012d220d4a4d9f709612bac4464cfd138f28d",
+          "exposed-tail": "1ac69bb861052b0121f626103437369689117ebe81ac61c60c082222b2679ec6",
+          "black": "d403f7f03ff8236fdc70b056a0283159897b3a0bbb31cd53df4d2c3c9114589c",
+          "graded-bloom": "47f4661aff0fe873d6d2b35105118f85ba626e9727495ea1d63a103d40672bd0",
+          "hud-omitted": "bf232951c451c77316c8ab049299ee5e4f8d2258806037bdf5da7c029281c6ef",
+          "hud-active": "58c0f513066fc7eb9b9d630d059336af0da5a5f727a2b2b7aa32c21daf30a20d",
+          "hud-black": "105dde43150ae42fe3a7d2f6230219de56cc6ade5a00d4608bd4b4e23c41e945"
+        },
+        "identical_scene_product_probes": 0
+      },
+      {
+        "lane": "forward-1",
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "sha256": "0b3221e78c32c70330ca084fe8f489842806050efcbf26de0daf69e1cb7cd1f0",
+        "identical_capture_sha256": {
+          "omitted": "ab4a3cee6ee092884cbca9217a2799f264e7891b88319ea283f89ed270ee2ff0",
+          "retained-371": "ab4a3cee6ee092884cbca9217a2799f264e7891b88319ea283f89ed270ee2ff0",
+          "explicit-zero": "ab4a3cee6ee092884cbca9217a2799f264e7891b88319ea283f89ed270ee2ff0",
+          "exposed-low": "2a0b8ebe2633b89c8b57fa1d7fc012d220d4a4d9f709612bac4464cfd138f28d",
+          "exposed-tail": "1ac69bb861052b0121f626103437369689117ebe81ac61c60c082222b2679ec6",
+          "black": "d403f7f03ff8236fdc70b056a0283159897b3a0bbb31cd53df4d2c3c9114589c",
+          "graded-bloom": "bb4fd33365a741f07a3241b1bb9b0dae28563559d28649568d9123cb6e04bccd",
+          "fsr3_native-omitted": "a8093d9dc18fcfd72e826a5e87eed06badf75154198de36e962675ab32d2f5b1",
+          "fsr3_native-graded": "2a0b8ebe2633b89c8b57fa1d7fc012d220d4a4d9f709612bac4464cfd138f28d",
+          "fsr3_quality-omitted": "a8093d9dc18fcfd72e826a5e87eed06badf75154198de36e962675ab32d2f5b1",
+          "fsr3_quality-graded": "2a0b8ebe2633b89c8b57fa1d7fc012d220d4a4d9f709612bac4464cfd138f28d",
+          "relocated-forward": "bb4fd33365a741f07a3241b1bb9b0dae28563559d28649568d9123cb6e04bccd",
+          "hud-omitted": "bf232951c451c77316c8ab049299ee5e4f8d2258806037bdf5da7c029281c6ef",
+          "hud-active": "58c0f513066fc7eb9b9d630d059336af0da5a5f727a2b2b7aa32c21daf30a20d",
+          "hud-black": "105dde43150ae42fe3a7d2f6230219de56cc6ade5a00d4608bd4b4e23c41e945",
+          "diagnostic-omitted": "ba6f143c418da48011113c361fd6e8627aec38e0c00550202a217026f7266867",
+          "diagnostic-graded": "ba6f143c418da48011113c361fd6e8627aec38e0c00550202a217026f7266867"
+        },
+        "identical_scene_product_probes": 64
+      },
+      {
+        "lane": "deferred-1",
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "sha256": "5c02fe6ff2fae734fd0444bba3dccff2e8630cc6a4b42ed6ad221f21ade8b0ff",
+        "identical_capture_sha256": {
+          "omitted": "ab4a3cee6ee092884cbca9217a2799f264e7891b88319ea283f89ed270ee2ff0",
+          "retained-371": "ab4a3cee6ee092884cbca9217a2799f264e7891b88319ea283f89ed270ee2ff0",
+          "explicit-zero": "ab4a3cee6ee092884cbca9217a2799f264e7891b88319ea283f89ed270ee2ff0",
+          "exposed-low": "2a0b8ebe2633b89c8b57fa1d7fc012d220d4a4d9f709612bac4464cfd138f28d",
+          "exposed-tail": "1ac69bb861052b0121f626103437369689117ebe81ac61c60c082222b2679ec6",
+          "black": "d403f7f03ff8236fdc70b056a0283159897b3a0bbb31cd53df4d2c3c9114589c",
+          "graded-bloom": "bb4fd33365a741f07a3241b1bb9b0dae28563559d28649568d9123cb6e04bccd",
+          "fsr3_native-omitted": "a8093d9dc18fcfd72e826a5e87eed06badf75154198de36e962675ab32d2f5b1",
+          "fsr3_native-graded": "2a0b8ebe2633b89c8b57fa1d7fc012d220d4a4d9f709612bac4464cfd138f28d",
+          "fsr3_quality-omitted": "a8093d9dc18fcfd72e826a5e87eed06badf75154198de36e962675ab32d2f5b1",
+          "fsr3_quality-graded": "2a0b8ebe2633b89c8b57fa1d7fc012d220d4a4d9f709612bac4464cfd138f28d",
+          "hud-omitted": "bf232951c451c77316c8ab049299ee5e4f8d2258806037bdf5da7c029281c6ef",
+          "hud-active": "58c0f513066fc7eb9b9d630d059336af0da5a5f727a2b2b7aa32c21daf30a20d",
+          "hud-black": "105dde43150ae42fe3a7d2f6230219de56cc6ade5a00d4608bd4b4e23c41e945",
+          "diagnostic-omitted": "ba6f143c418da48011113c361fd6e8627aec38e0c00550202a217026f7266867",
+          "diagnostic-graded": "ba6f143c418da48011113c361fd6e8627aec38e0c00550202a217026f7266867"
+        },
+        "identical_scene_product_probes": 64
+      },
+      {
+        "lane": "forward-4x-1",
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "sha256": "faf6363db0b8af9b98f8a9d43aeafaf14ee0d84052e7fe8f72be642f770ebfd1",
+        "identical_capture_sha256": {
+          "omitted": "ab4a3cee6ee092884cbca9217a2799f264e7891b88319ea283f89ed270ee2ff0",
+          "retained-371": "ab4a3cee6ee092884cbca9217a2799f264e7891b88319ea283f89ed270ee2ff0",
+          "explicit-zero": "ab4a3cee6ee092884cbca9217a2799f264e7891b88319ea283f89ed270ee2ff0",
+          "exposed-low": "2a0b8ebe2633b89c8b57fa1d7fc012d220d4a4d9f709612bac4464cfd138f28d",
+          "exposed-tail": "1ac69bb861052b0121f626103437369689117ebe81ac61c60c082222b2679ec6",
+          "black": "d403f7f03ff8236fdc70b056a0283159897b3a0bbb31cd53df4d2c3c9114589c",
+          "graded-bloom": "bb4fd33365a741f07a3241b1bb9b0dae28563559d28649568d9123cb6e04bccd",
+          "hud-omitted": "bf232951c451c77316c8ab049299ee5e4f8d2258806037bdf5da7c029281c6ef",
+          "hud-active": "58c0f513066fc7eb9b9d630d059336af0da5a5f727a2b2b7aa32c21daf30a20d",
+          "hud-black": "105dde43150ae42fe3a7d2f6230219de56cc6ade5a00d4608bd4b4e23c41e945"
+        },
+        "identical_scene_product_probes": 0
+      }
+    ],
+    "fsr_history_capture": {
+      "adapter": "AMD Radeon(TM) Graphics",
+      "frames": 96,
+      "sha256": "9c2ca7c4abc77ee6c2942709b6d6cb76f4cb9a9d0e026576cfd7671021d6ea10"
+    }
+  },
+  "retained_failures": []
+}
