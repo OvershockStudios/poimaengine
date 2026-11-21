@@ -8,6 +8,8 @@
 
 namespace poima::water {
 
+nlohmann::json surface_ripples_json(const SurfaceRipples& ripples);
+
 // Advances one frozen authored region at the runtime's fixed tick rate.
 class Region {
 public:
@@ -18,6 +20,7 @@ public:
     const std::string& plan_sha256() const noexcept { return plan_sha256_; }
     const std::optional<StepReport>& last_report() const noexcept { return last_report_; }
     std::span<const Cell> rain_cells() const noexcept { return rain_cells_; }
+    const std::optional<SurfaceRipples>& surface_ripples() const noexcept { return surface_ripples_; }
     std::uint64_t cumulative_rain_nm() const noexcept { return cumulative_rain_nm_; }
     double cumulative_rain_m3() const noexcept;
 
@@ -38,6 +41,7 @@ private:
     std::string plan_sha256_;
     std::optional<StepReport> last_report_;
     std::vector<Cell> rain_cells_;
+    std::optional<SurfaceRipples> surface_ripples_;
     std::uint64_t cumulative_rain_nm_ = 0;
     std::uint32_t last_rain_nm_ = 0;
     std::optional<std::uint64_t> first_rain_quantum_;

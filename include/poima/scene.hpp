@@ -206,6 +206,7 @@ struct SceneObject {
     std::optional<SceneWetness> wetness{};
     // Additional fixed rigid geometry. The base mesh always owns material inputs.
     std::shared_ptr<const MeshLodChain> lods{};
+    bool water_ripple_surface=false;
 };
 struct SceneViewmodel {
     SceneLens lens;
@@ -239,6 +240,10 @@ struct SceneParticleSprites {
     std::vector<SceneParticleSpriteStyle> styles;
     std::vector<SceneParticleSprite> instances;
 };
+struct SceneWaterRipples {
+    std::array<float,2> direction{1,0};
+    float slope=0,radians_per_metre=0,phase_radians=0;
+};
 // An immutable presentation copy; no pointers into authored or simulation state.
 struct SceneSnapshot {
     std::string world_id;
@@ -270,6 +275,7 @@ struct SceneSnapshot {
     std::shared_ptr<const PostEffect> post_effect;
     SceneParticleSprites particle_sprites;
     std::vector<SceneSurfaceMarkMask> surface_mark_masks; // Frozen, sorted by unique cooked image digest.
+    std::optional<SceneWaterRipples> water_ripples{};
 
     SceneLens world_lens() const { return {vertical_fov,near_plane,far_plane}; }
     std::span<const SceneObject> world_viewmodel_draws() const {

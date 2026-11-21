@@ -66,8 +66,8 @@ Set optional `rain_cells` in the plan and cook requests to designate an open
 catchment, for example `"rain_cells":[[0,0],[1,0]]`. Addresses must be unique
 and within the grid. The plan orders them by Z then X before hashing.
 An absent or empty list keeps the original region format and behavior.
-A nonempty list uses `.pwater` v2 and requires an export runtime with
-`features.water_rain`.
+A nonempty list requires an export runtime with `features.water_rain`.
+Rain-only regions use `.pwater` v2.
 
 Give the runtime the same one-second precipitation samples used for
 [surface wetness](SURFACE_WETNESS.md#apply-rain-and-drying), through
@@ -84,6 +84,44 @@ The authored list defines which cells collect direct precipitation. Adjacent
 cells can receive runoff across open faces. Film retention, drying, and
 moving shelter affect drawable receivers. These settings do not affect
 catchment supply.
+
+## Author surface ripples
+
+Use Poima 0.0.374 or later. Add `surface_ripples` to the plan and cook request
+to change the shading normals of wet cells. All four fields are required when
+selected.
+
+```json
+{"surface_ripples":{"wavelength_m":0.75,"slope":0.14,"period_ticks":60,"heading_degrees":30}}
+```
+
+Choose a wavelength from 0.10 to 8 metres, a normal slope from 0 to 0.4,
+an integer period from 8 to 3600 ticks, and a heading from −180 to 180 degrees.
+The heading is zero along world +X and rotates toward +Z for positive angles.
+Phase follows the committed simulation tick, so replay, pause and save restore
+retain the same phase at the same tick. The solver still determines depths,
+volume and the water mesh. The terrain retains its authored collision.
+A slope of zero keeps the original shading and retains the authored profile.
+The renderer combines two directional waves and fades their slopes as the
+projected wavelength approaches pixel scale. Forward and deferred lighting
+use the resulting shading normals.
+
+Plan, cook and `runtime.water.inspect` return the selected profile. It uses
+`.pwater` v3, including when combined with a rain catchment. Omission preserves
+the earlier region encodings. A different profile produces a different
+region hash. Save restoration checks the region hash from the save.
+Dependency and project inspection report
+`needs_water_ripples` for selected profiles. Build and bundle verification
+require a Vulkan runtime with `features.water_ripples`.
+
+The Vulkan fixture checks normals, terrain collision and save continuation in
+relocated builds. With a matching installed Windows runtime, run it from WSL.
+
+```sh
+python3 tests/water_ripples_capture.py build/installed/bin/poima.exe \
+    --runtime-root build/installed --output build/ripple-captures \
+    --windows-interop --lighting-path deferred
+```
 
 ## Observe and verify local flow
 

@@ -136,10 +136,27 @@ std::optional<StepReport> validated_report(const Json& report, const Grid& grid,
 
 }
 
+nlohmann::json surface_ripples_json(const SurfaceRipples& ripples) {
+    return {{"wavelength_m", ripples.wavelength_m}, {"slope", ripples.slope},
+        {"period_ticks", ripples.period_ticks}, {"heading_degrees", ripples.heading_degrees}};
+}
+
 Region::Region(const RegionDefinition& definition)
     : grid_(initial_grid(definition)), initial_depths_m_(definition.initial_depths_m),
       faces_(definition.faces), exchanges_(definition.exchanges), plan_sha256_(definition.plan_sha256),
-      rain_cells_(definition.rain_cells) {
+      rain_cells_(definition.rain_cells), surface_ripples_(definition.surface_ripples) {
+    if (surface_ripples_) {
+        const auto& ripples = *surface_ripples_;
+        if (!(ripples.wavelength_m >= .10 && ripples.wavelength_m <= 8.0))
+            throw std::invalid_argument("Water surface ripple wavelength_m must be finite and in [0.10,8].");
+        if (!(ripples.slope >= 0 && ripples.slope <= .4))
+            throw std::invalid_argument("Water surface ripple slope must be finite and in [0,0.4].");
+        if (ripples.period_ticks < 8 || ripples.period_ticks > 3600)
+            throw std::invalid_argument("Water surface ripple period_ticks must be in [8,3600].");
+        if (!(ripples.heading_degrees >= -180 && ripples.heading_degrees <= 180))
+            throw std::invalid_argument("Water surface ripple heading_degrees must be finite and in [-180,180].");
+    }
+
     const auto& config = grid_.config();
     if (initial_depths_m_.empty())
         initial_depths_m_.resize(static_cast<std::size_t>(config.cells_x) * config.cells_z);

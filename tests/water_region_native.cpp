@@ -16,6 +16,7 @@ using namespace std::string_view_literals;
 using poima::water::FaceAxis;
 using poima::water::Region;
 using poima::water::RegionDefinition;
+using poima::water::SurfaceRipples;
 
 constexpr std::array toggle{"use.sluice"sv};
 constexpr std::array repeated_toggle{"ignored"sv, "use.sluice"sv, "use.sluice"sv};
@@ -128,6 +129,42 @@ void invalid_definitions_are_rejected() {
     rejects<std::invalid_argument>([&] { const Region region(bad); }, "An invalid exchange was accepted.");
 }
 
+void surface_ripples_are_frozen_presentation_data() {
+    auto definition = canal();
+    const SurfaceRipples profile{8, .4, 3600, 180};
+    Region plain(definition);
+    definition.surface_ripples = profile;
+    Region rippled(definition);
+    require(!plain.surface_ripples() && rippled.surface_ripples() == profile,
+            "Water surface ripple selection changed at construction.");
+    definition.surface_ripples = SurfaceRipples{.10, 0, 8, -180};
+    Region zero_slope(definition);
+    require(zero_slope.surface_ripples() == definition.surface_ripples && rippled.surface_ripples() == profile,
+            "The frozen ripple profile changed with the authored definition or dropped zero slope.");
+    for (const auto& settings : std::array{
+            SurfaceRipples{.09, 0, 8, 0}, SurfaceRipples{8.1, 0, 8, 0},
+            SurfaceRipples{1, -.01, 8, 0}, SurfaceRipples{1, .41, 8, 0},
+            SurfaceRipples{1, 0, 7, 0}, SurfaceRipples{1, 0, 3601, 0},
+            SurfaceRipples{1, 0, 8, -181}, SurfaceRipples{1, 0, 8, 181},
+            SurfaceRipples{1, std::numeric_limits<double>::quiet_NaN(), 8, 0}}) {
+        definition.surface_ripples = settings;
+        rejects<std::invalid_argument>([&] { const Region region(definition); },
+            "Out-of-bounds ripple settings reached a frozen water region.");
+    }
+    definition.surface_ripples = profile;
+    // A shared synthetic plan pin isolates the physical data from styling.
+    for (int tick = 0; tick < 65; ++tick) {
+        const auto actions = tick == 12 ? std::span<const std::string_view>{toggle} : std::span<const std::string_view>{};
+        plain.step(actions);
+        rippled.step(actions);
+        require(plain.save() == rippled.save(), "Ripple settings changed the water simulation or save layout.");
+    }
+    Region restored(definition);
+    restored.restore(rippled.save(), rippled.grid().tick());
+    require(restored.grid().tick() == 65 && restored.surface_ripples() == profile &&
+            restored.save() == rippled.save(), "Cold restore changed the committed water tick or profile.");
+}
+
 void restore_and_step_are_atomic() {
     Region original(canal());
     const auto initial = original.save();
@@ -196,6 +233,7 @@ int main() {
     try {
         flood_through_authored_actions();
         invalid_definitions_are_rejected();
+        surface_ripples_are_frozen_presentation_data();
         restore_and_step_are_atomic();
         std::cout << "Water region tests passed.\n";
     } catch (const std::exception& error) {

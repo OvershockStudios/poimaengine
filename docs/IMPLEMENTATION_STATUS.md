@@ -1,8 +1,17 @@
 # Implementation status
 
-Updated 2026-11-21 for **0.0.373**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-21 for **0.0.374**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.374 adds [authored water ripples](SHALLOW_WATER.md#author-surface-ripples)
+with direction, slope, wavelength and period. The water tick determines the
+shading phase. Windows Vulkan checked 95 relocated captures and 460 sampled
+pixels across AMD and NVIDIA, forward and deferred lighting, and FSR Native AA
+on NVIDIA. Each route verified exact cold continuation and byte-identical
+legacy and zero-slope images. The water solver and terrain collision matched
+across profiles. Thirty-two ordinary scene captures matched 0.0.373 byte for
+byte. Fourteen selected Linux suites passed. [Results](evidence/m2-water-ripples-374.json)
 
 Version 0.0.373 moves [runtime command decoding](BUILD.md#world-service-and-schema-compilation)
 and [Vulkan capture readback](SCENE_CAPTURE.md) into separate compilation

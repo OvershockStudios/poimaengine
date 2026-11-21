@@ -115,6 +115,57 @@ class RainContract(WaterContract):
             assert self.world.read_bytes() == document
             path.unlink()
 
+    def ripple_profiles(self, dry, wet, revision):
+        profile = dict(wavelength_m=.10, slope=0, period_ticks=8, heading_degrees=-180)
+        wet = wet | dict(revision=revision)
+        dry = dry | dict(revision=revision)
+        legacy = self.world_call('world.water.plan', **wet)
+        assert legacy['plan_sha256'] == self.pin and 'surface_ripples' not in legacy, legacy
+        assert 'needs_water_ripples' not in self.world_call('world.dependencies')
+        plan_args = wet | dict(surface_ripples=profile)
+        plan = self.world_call('world.water.plan', **plan_args)
+        assert plan['surface_ripples'] == profile and plan['plan_sha256'] != legacy['plan_sha256'], plan
+        inventory, document = read_inventory(self.assets), self.world.read_bytes()
+        invalid = (None, {}, profile | dict(unexpected=0), profile | dict(wavelength_m=.099),
+                   profile | dict(wavelength_m=8.1), profile | dict(slope=True), profile | dict(slope=.41),
+                   profile | dict(period_ticks=8.0), profile | dict(period_ticks=3601),
+                   profile | dict(heading_degrees=-181))
+        self.cases(*[(f'bad-ripples-{i}', rpc('world.water.plan', **(wet | dict(surface_ripples=value))), -32602)
+                     for i, value in enumerate(invalid)],
+                   ('stale-ripple-plan', rpc('world.water.cook', **(wet | dict(
+                       surface_ripples=profile | dict(period_ticks=32))), expected_plan_sha256=plan['plan_sha256']), -32009))
+        assert read_inventory(self.assets) == inventory and self.world.read_bytes() == document
+
+        self.pin = self.cook(plan_args)
+        path = self.assets/(self.pin+'.pwater')
+        decoded = json.loads(path.read_bytes())
+        assert file_hash(path) == self.pin
+        assert decoded['version'] == 3 and decoded['surface_ripples'] == profile and decoded['rain_cells'] == CATCHMENT
+        dry_pin = self.cook(dry | dict(surface_ripples=profile))
+        dry_package = json.loads((self.assets/(dry_pin+'.pwater')).read_bytes())
+        assert dry_package['version'] == 3 and dry_package['surface_ripples'] == profile
+        assert 'rain_cells' not in dry_package
+
+        bad = encode(decoded | dict(version=2)).encode()
+        bad_pin = hashlib.sha256(bad).hexdigest()
+        bad_path = self.assets/(bad_pin+'.pwater')
+        bad_path.write_bytes(bad)
+        self.cases(('ripple-version-mismatch', self.transaction(revision, 7670,
+                    dict(op='water.set', asset=bad_pin)), -32050))
+        bad_path.unlink()
+        assert self.world.read_bytes() == document
+
+        revision = self.bind(revision, self.pin, 7671)
+        dependencies = self.world_call('world.dependencies')
+        assert dependencies['needs_water_ripples'] is True and dependencies['needs_water_rain'] is True
+        session = uid(7173)
+        observed = self.cases(('start', self.start(session, revision)), ('ripples', self.reading(session, 0)),
+                              ('close', rpc('session.close')))['ripples']
+        assert observed['surface_ripples'] == profile
+        self.verify(observed, 0, 0)
+        self.measurements['surface_ripples'] = dict(plan=plan, observed=observed, dependencies=dependencies)
+        return revision
+
     def configure(self, saves, request):
         return rpc('save.configure', request_id=uid(request), expected_generation=0, root=self.native(saves))
 
@@ -133,6 +184,7 @@ class RainContract(WaterContract):
             ('continued', self.reading(batch, 2)), ('save', self.write(batch, 2, 'original', 7203)),
             ('close', rpc('session.close')))
         self.verify(result['initial'], 0, 0)
+        assert 'surface_ripples' not in result['initial'], result['initial']
         assert result['initial_clock']['receivers'] == [] and result['initial_clock']['next_quantum'] is None
         self.verify(result['catchment'], sum(RAIN), sum(RAIN))
         assert result['clock']['receivers'] == [] and result['clock']['next_quantum'] == FIRST+len(RAIN)
@@ -329,20 +381,22 @@ class RainContract(WaterContract):
         runtime = self.args.runtime_root
         if not runtime:
             return
-        unsupported = self.root/'Missing rain capability'
-        unsupported.mkdir()
-        spec = json.loads((runtime/'runtime.json').read_bytes())
-        assert spec['features'].pop('water_rain') is True, spec
-        (unsupported/'runtime.json').write_text(encode(spec), encoding='utf-8')
         output = self.root/'Rain bundle'
-        command = [str(self.args.binary.resolve()), 'project', 'build', self.native(self.manifest),
-                   '--output', self.native(output), '--runtime', self.native(unsupported)]
-        child = subprocess.run(command, capture_output=True, text=True, encoding='utf-8', timeout=90)
-        self.calls.append(dict(argv=command, exit=child.returncode, stdout=child.stdout, stderr=child.stderr))
-        assert child.returncode == 4 and not output.exists(), child
-        diagnostic = json.loads(child.stdout)['diagnostics']
-        assert diagnostic == [dict(code='project.failed',
-            message='Rain-enabled water regions require a compatible simulation runtime.')], diagnostic
+        for feature, message in (
+                ('water_rain', 'Rain-enabled water regions require a compatible simulation runtime.'),
+                ('water_ripples', 'Water surface ripples require a compatible Vulkan runtime.')):
+            unsupported = self.root/('Missing '+feature)
+            unsupported.mkdir()
+            spec = json.loads((runtime/'runtime.json').read_bytes())
+            assert spec['features'].pop(feature) is True, spec
+            (unsupported/'runtime.json').write_text(encode(spec), encoding='utf-8')
+            command = [str(self.args.binary.resolve()), 'project', 'build', self.native(self.manifest),
+                       '--output', self.native(output), '--runtime', self.native(unsupported)]
+            child = subprocess.run(command, capture_output=True, text=True, encoding='utf-8', timeout=90)
+            self.calls.append(dict(argv=command, exit=child.returncode, stdout=child.stdout, stderr=child.stderr))
+            assert child.returncode == 4 and not output.exists(), child
+            diagnostic = json.loads(child.stdout)['diagnostics']
+            assert diagnostic == [dict(code='project.failed', message=message)], diagnostic
         success(json.loads(self.cli('project', 'build', self.native(self.manifest),
             '--output', self.native(output), '--runtime', self.native(runtime))))
         bundle, detached = self.root/'Relocated rain bundle', self.root/'Detached source'
@@ -354,7 +408,7 @@ class RainContract(WaterContract):
         manifest = bundle/'game.json'
         executable = bundle/json.loads(manifest.read_bytes())['engine']['executable']
         info = success(json.loads(self.cli('game', 'inspect', self.native(manifest), executable=executable)))
-        assert info['revision'] == revision
+        assert info['revision'] == revision and info['needs_water_ripples'] is True, info
         self.measurements['bundle_sha256'] = file_hash(manifest)
 
     def run(self):
@@ -403,6 +457,7 @@ class RainContract(WaterContract):
         assert 'needs_water_rain' not in self.world_call('world.dependencies')
         self.measurements['dry_control'] = control
         revision = self.joined_rollback(revision)
+        revision = self.ripple_profiles(dry, wet, revision)
         self.export(revision)
 
 

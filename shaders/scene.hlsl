@@ -8,7 +8,7 @@ struct ObjectData {
     float4 normal_row2;
     float4 base_metallic; // negative metallic selects the legacy preview material
     float4 emissive_roughness;
-    float4 alpha; // x opacity, y cutoff, z mask mode; w reserved
+    float4 alpha; // x opacity, y cutoff, z mask mode; w water ripple surface
     float4 previous_model_row0,previous_model_row1,previous_model_row2;
     uint4 history; // x: motion/mark history flags; y: receive-shadows disabled; zw: mark offset and count
 };
@@ -29,6 +29,7 @@ Texture2DArray<float> surface_mark_masks : register(t1, space1);
 // DXC shifts samplers in space 0. Match NVRHI's sampler offset in set 1 as well.
 [[vk::binding(128, 1)]] SamplerState surface_mark_mask_sampler : register(s0, space1);
 #include "scene_surface.hlsli"
+#include "water_ripple_normal.hlsli"
 #if POIMA_SCENE_PRODUCTS
 #include "scene_correspondence.hlsli"
 #endif
@@ -215,6 +216,11 @@ SceneSurface evaluate_material(VertexOutput input,bool front) {
             sampled.xy*=draw.normal_row1.w;
             const float3 mapped=t*sampled.x+b*sampled.y+n*sampled.z;
             if(dot(mapped,mapped)>1e-12)n=normalize(mapped);
+        }
+        if(draw.alpha.w>0.5) {
+            const float2 origin=float2(draw.model_row0.w,draw.model_row2.w);
+            n=water_ripple_normal(water_ripple_shape,water_ripple_motion.x,
+                input.world_position.xz-origin,position_dx.xz,position_dy.xz);
         }
         if(!front)n=-n;
         const float3 base=draw.base_metallic.rgb*base_map.Sample(base_sampler,input.uv).rgb;

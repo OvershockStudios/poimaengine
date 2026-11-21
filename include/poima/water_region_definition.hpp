@@ -3,6 +3,7 @@
 
 #include "poima/shallow_water.hpp"
 
+#include <optional>
 #include <string>
 
 namespace poima::water {
@@ -19,6 +20,14 @@ struct RegionFace {
     double action_openness = 1;
 };
 
+struct SurfaceRipples {
+    double wavelength_m = 1;
+    double slope = 0;
+    std::uint32_t period_ticks = 60;
+    double heading_degrees = 0;
+    bool operator==(const SurfaceRipples&) const = default;
+};
+
 struct RegionDefinition {
     GridConfig config;
     std::vector<double> floor_heights_m;
@@ -27,6 +36,7 @@ struct RegionDefinition {
     std::vector<CellExchange> exchanges;
     std::string plan_sha256;
     std::vector<Cell> rain_cells;
+    std::optional<SurfaceRipples> surface_ripples;
 };
 
 }

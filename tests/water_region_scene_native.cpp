@@ -10,6 +10,7 @@
 #include <array>
 #include <cmath>
 #include <iostream>
+#include <numbers>
 #include <stdexcept>
 #include <string_view>
 #include <vector>
@@ -122,6 +123,42 @@ void gate_and_dry_state() {
           "A completely dry region emitted a drawable or disturbed authored objects.");
 }
 
+void ripple_phase_uses_only_committed_time() {
+    RegionDefinition definition{};
+    definition.config = {.cells_x = 1, .cells_z = 1, .origin_x_m = -42};
+    definition.floor_heights_m = {2};
+    definition.initial_depths_m = {.25};
+    definition.plan_sha256 = std::string(64, 'e');
+    definition.surface_ripples = SurfaceRipples{.5, .25, 12, 90};
+    Region region(definition);
+    const auto first = capture(region);
+    check(first.objects.front().water_ripple_surface && first.water_ripples.has_value(),
+        "The selected wave profile did not reach the drawable.");
+    const auto start = *first.water_ripples;
+    check(std::abs(start.direction[0]) < 1e-6f && start.direction[1] == 1 &&
+        start.slope == .25f && std::abs(start.radians_per_metre - 4*std::numbers::pi) < 1e-6 &&
+        start.phase_radians == 0,
+        "The presentation did not translate the authored ripple parameters.");
+    for (unsigned i = 0; i < 3; ++i) region.step();
+    const auto quarter = capture(region);
+    check(quarter.objects.front().mesh == first.objects.front().mesh &&
+        std::abs(quarter.water_ripples->phase_radians - std::numbers::pi/2) < 1e-6 &&
+        region.grid().sample({0,0}).depth_m == .25,
+        "Advancing only the ripple phase replaced geometry or changed physical depth.");
+    Region restored(definition);
+    restored.restore(region.save(), 3);
+    check(capture(restored).water_ripples->phase_radians == quarter.water_ripples->phase_radians,
+        "Cold restoration changed the committed ripple phase.");
+    for (unsigned i = 0; i < 9; ++i) restored.step();
+    check(capture(restored).water_ripples->phase_radians == start.phase_radians,
+        "A complete authored period failed to wrap exactly.");
+    definition.surface_ripples->slope = 0;
+    const auto zero = capture(Region(definition));
+    check(!zero.water_ripples && !zero.objects.front().water_ripple_surface &&
+        zero.objects.front().mesh == first.objects.front().mesh,
+        "An explicit zero-slope profile altered the legacy projection.");
+}
+
 void combined_stream_budget() {
     RegionDefinition definition{};
     definition.config.cells_x = definition.config.cells_z = max_region_side;
@@ -161,6 +198,7 @@ int main() {
     try {
         uneven_bed_and_footprint();
         gate_and_dry_state();
+        ripple_phase_uses_only_committed_time();
         combined_stream_budget();
         std::cout << "Water scene checks passed, including the combined water and particle stream budget.\n";
         return 0;

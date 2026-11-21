@@ -830,6 +830,7 @@ public:
             auto [asset, bytes]=water_binding(source);
             add(asset.definition.plan_sha256,".pwater",bytes);
             result.needs_water_rain=!asset.definition.rain_cells.empty();
+            result.needs_water_ripples=asset.definition.surface_ripples.has_value();
             definition.water=std::move(asset.definition);
         }
         auto document=source;document["receipts"]=Json::array();document["retired_ids"]=Json::array();if(document.contains("retired_component_schemas"))document["retired_component_schemas"]=Json::array();if(document.contains("retired_template_ids"))document["retired_template_ids"]=Json::array();if(document.contains("retired_ui_ids"))document["retired_ui_ids"]=Json::array();result.document=document.dump(2)+'\n';
@@ -1181,6 +1182,7 @@ public:
             if(content.needs_surface_mark_masks)result["needs_surface_mark_masks"]=true;
             if(content.needs_mesh_lod)result["needs_mesh_lod"]=true;
             if(content.needs_water_rain)result["needs_water_rain"]=true;
+            if(content.needs_water_ripples)result["needs_water_ripples"]=true;
             if(content.needs_output_grade)result["needs_output_grade"]=true;
             if(!content.provenance_records.empty()) {
                 Json records=Json::array();

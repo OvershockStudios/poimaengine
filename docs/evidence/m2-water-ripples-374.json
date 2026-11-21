@@ -1,0 +1,303 @@
+{
+  "format": "poima.qualification-summary",
+  "version": 1,
+  "engine_checkpoint": "0.0.374",
+  "comparison_commit": "67fb7da86dd77ef1a93a55bafd6f1b6f4fa98f47",
+  "source_sha256": {
+    "CMakeLists.txt": "f098db4f1830d37ab343507e8fb305129089177bf681465b82ebb8edfd4387da",
+    "include/poima/scene.hpp": "145eb9d553357c12273b88acb92d55b7799273e9c4c17f196a691d98047cb777",
+    "include/poima/water_region_definition.hpp": "87fb966bf29120799f38e7ff9e3910107cae6e9a84f32a61222dcff5e418d6e0",
+    "cmake/render_smoke.cmake": "ad37fd2c7b76f8f0297fd13e2327cf4df9f96a4eac082ae91bfffd5687bb17dc",
+    "src/world_schema.cpp": "5c39325240545d1d45ccd99f3b51f4db4a2adeed3e5c077e6024754e8c88ee52",
+    "src/water_region_scene.cpp": "05767bc912f3b583a8ab26e4c1b906136077a4dafc6b25ee41224fab378fd84e",
+    "src/water_asset.cpp": "c7eb32506ec2149cc31eac74f53e30518b8cd6293f04d676cc3f6b8a554add94",
+    "src/water_region.cpp": "718c7f92e007e7b1136f6bb4dff82c7e9c5bae9e50c0e500cad0f4509e9d8e12",
+    "src/render_smoke.cpp": "4e8884b27b86e43ad35ac95f93ec7fd6065ff9d61037308641d20a9a57fef0de",
+    "shaders/scene.hlsl": "1935d348d17b36ebe346850ea74054fdc7716b32ffaa0b40997fe5fde9b2edcb",
+    "shaders/scene_frame.hlsli": "c7172be74f4a44df6cc6b174e0719728c97bc46de34e0ee850561ba092473a02",
+    "shaders/water_ripple_normal.hlsli": "a52cfafbbaa40459a31955d766b7f16c73b1910a1db139d8587e956527a0f331",
+    "tests/water_ripples_capture.py": "658fefe5c239335e04018a0080e8b6746206c56b65c6888ca72ac13befa3d83a",
+    "tests/world_water_rain_contract.py": "8e130b67e16c38abba48c6175d57868d13311a74855e560036c729b3dd957551"
+  },
+  "linux_native": {
+    "tests": [
+      "shallow_water_native",
+      "water_region_native",
+      "water_region_scene_native",
+      "world_terrain_contract",
+      "world_water_contract",
+      "world_water_rain_contract",
+      "world_precipitation_contract",
+      "authoring_core_conformance",
+      "render_schedule_native",
+      "output_grade_authoring_contract",
+      "mcp_contract",
+      "world_ui_contract",
+      "cli_contract",
+      "asset_references_contract"
+    ],
+    "binary_sha256": "0a37c2fcc442d410a73f085cfdbd9de30f5bf4bdccbcb25ac39d760690cefe2d",
+    "junit_sha256": "ecdfd83975f5aa0b89ac7c9503ceffd96184d66e98b14bc61052588c49fd07df",
+    "source_inventory_sha256": "3b47571d6a750f7edbad8974f561a17771b45c89447723dd2be8486f8ea74776"
+  },
+  "windows_native": {
+    "legacy_pwater_sha256": "d63181362a1307fad328fc8780b7a27a1027e40efb2e4c8f7efeb4a04c7a67a1",
+    "binary_sha256": "b9d6461ba43d911f0f3214f60e3b406a8b6a67662b4706c035e0481023b48565",
+    "runtime_sha256": "4c7cb8687154de2b55b9813745db15a200bdf601114a3aa471f733a8618fd304",
+    "render_schedule": "Production render schedule: 407 valid variants, 1144 rejected contract mutations.",
+    "authoring_closure_log_sha256": "21a6fa318cc20c70ed133f20f07b2c948efe11cb1358ea328d67812d831bf1b4",
+    "controls": [
+      {
+        "route": "forward-0",
+        "matched_capture_count": 16,
+        "raw_report_sha256": "69839a17260afcade70d1700f037a386f503b628ee48262daa580d7d1f244c75"
+      },
+      {
+        "route": "deferred-1",
+        "matched_capture_count": 16,
+        "raw_report_sha256": "bfed07ae2c557ce218506e0af86131e2e377b93f3414050d27d3c0450889e0f4"
+      }
+    ],
+    "routes": [
+      {
+        "route": "forward-0",
+        "gpu": "AMD Radeon(TM) Graphics",
+        "lighting_path": "forward",
+        "reconstruction": "none",
+        "raw_report_sha256": "2747efbb7f798357512460f4bb8bf49d6608097c68f0b778c875ba254c9f9c9b",
+        "captures": {
+          "legacy-initial-near": "f0b8ea6adf77cedcd58cd7692a0353a55ce6dec007836395fa3ca2650d6bb76d",
+          "legacy-checkpoint-near": "610dbfe8da9e8b6b481f2d6935e9e28bb8a114577531abf8ea39fd35b40bae5b",
+          "legacy-checkpoint-far": "140fd89c067ced2bbfb8a568b2dc8b6202e5035c8c8bfae8e570133231bf0f2a",
+          "legacy-checkpoint-moved": "e5cd195d8c5b19c439d8a6e0237b676b04f7831418532e2e45fb4e96d8b40862",
+          "legacy-final-near": "4a98f6a2307737de3e0c81ea80dc4dac169921e84f156d41cae77864bb2ea355",
+          "zero-initial-near": "f0b8ea6adf77cedcd58cd7692a0353a55ce6dec007836395fa3ca2650d6bb76d",
+          "zero-checkpoint-near": "610dbfe8da9e8b6b481f2d6935e9e28bb8a114577531abf8ea39fd35b40bae5b",
+          "zero-checkpoint-far": "140fd89c067ced2bbfb8a568b2dc8b6202e5035c8c8bfae8e570133231bf0f2a",
+          "zero-checkpoint-moved": "e5cd195d8c5b19c439d8a6e0237b676b04f7831418532e2e45fb4e96d8b40862",
+          "zero-final-near": "4a98f6a2307737de3e0c81ea80dc4dac169921e84f156d41cae77864bb2ea355",
+          "enabled-initial-near": "27dd5453cd2b45006c82904a36153b5c9c23514c86d69b138c10c072fea55443",
+          "enabled-checkpoint-near": "e1016fc0f3442eb3e8bf0f72b1eb566029d81ae1a411ce4d720063ad74830048",
+          "enabled-checkpoint-far": "b654677541d0c2f723345051062f695db9c9572c33fb88551fc3e03fbf73d9e5",
+          "enabled-checkpoint-moved": "2d2e3b4978ae34ba3c33d3d7809dd5e36bb0b55cc9bac95b0e83f84e93c25605",
+          "enabled-final-near": "c90f572eedb6ccdaf940013a15bbd1af875749d1ded2b6b450f66a44de231ac9",
+          "enabled-restored-near": "e1016fc0f3442eb3e8bf0f72b1eb566029d81ae1a411ce4d720063ad74830048",
+          "enabled-restored-far": "b654677541d0c2f723345051062f695db9c9572c33fb88551fc3e03fbf73d9e5",
+          "enabled-restored-moved": "2d2e3b4978ae34ba3c33d3d7809dd5e36bb0b55cc9bac95b0e83f84e93c25605",
+          "enabled-cold-final-near": "c90f572eedb6ccdaf940013a15bbd1af875749d1ded2b6b450f66a44de231ac9"
+        },
+        "guarded_presentations": 38,
+        "validated_owners": 4,
+        "sampled_pixels": 92,
+        "max_component_normal_error": 0.000483579903361675,
+        "max_depth_error_m": 0.0008562975522963256,
+        "diagnostics": {
+          "max_hdr_delta": 0.03148204733926756,
+          "frozen_phase_gap": 0.3725876986361184,
+          "wrong_origin_gap": 0.13432853587291518,
+          "unfiltered_gap": 0.10794221406778913,
+          "zero_legacy_exact": true
+        },
+        "exact_cold_restore_tick": 4,
+        "exact_cold_final_sha256": "8897a16165029849d7598d7214bc8a682e452ecaca92cfc24ab5ad1374b6c2f4"
+      },
+      {
+        "route": "deferred-0",
+        "gpu": "AMD Radeon(TM) Graphics",
+        "lighting_path": "deferred",
+        "reconstruction": "none",
+        "raw_report_sha256": "b6fda5a0950032968391f7a09092d4eb71e0b27891a403549d780db9b9f7db56",
+        "captures": {
+          "legacy-initial-near": "6d0b6e209b0de37f356a8e57ae12eb8bc2085a37c40431bf1b6f47310a14dc4a",
+          "legacy-checkpoint-near": "f36427ff63c8aa0cc566817506aa4834eb55ea7a7ce37b62020af76d85e22939",
+          "legacy-checkpoint-far": "f72befef87b79282b04eb4dcecb08711dc0356c7fcf978f73f86fb4daf3f5391",
+          "legacy-checkpoint-moved": "e538dadeeee3303331129b3339c69ba784d3710b5c99f7208436db44164440e0",
+          "legacy-final-near": "c5372a335eef660a168fe2545af86399fb096ed6f426177bd1f3c42545208b01",
+          "zero-initial-near": "6d0b6e209b0de37f356a8e57ae12eb8bc2085a37c40431bf1b6f47310a14dc4a",
+          "zero-checkpoint-near": "f36427ff63c8aa0cc566817506aa4834eb55ea7a7ce37b62020af76d85e22939",
+          "zero-checkpoint-far": "f72befef87b79282b04eb4dcecb08711dc0356c7fcf978f73f86fb4daf3f5391",
+          "zero-checkpoint-moved": "e538dadeeee3303331129b3339c69ba784d3710b5c99f7208436db44164440e0",
+          "zero-final-near": "c5372a335eef660a168fe2545af86399fb096ed6f426177bd1f3c42545208b01",
+          "enabled-initial-near": "4e4f4efaee5ebbe2ef20daa0d4897058655266c190a1287af9a652bcb05c96e8",
+          "enabled-checkpoint-near": "3e324d73cf9faeb3c3de4e0c5f6c4b1c1a0c7eb2e20ede3fcdb997539ccdd8b4",
+          "enabled-checkpoint-far": "e82196b852e7357aa7ba41ed99068ac26f330e899ad7938f7b2609ec8c6e121d",
+          "enabled-checkpoint-moved": "6dcf44eaa5294a804e4eaac9f4909971a8c6d53c54fa2d3c2e1f15f7d24e6b4b",
+          "enabled-final-near": "b9c73b7348169522d3613860f8e6ec3b4ba8fb4f02c42f131d37f9fcb13962bf",
+          "enabled-restored-near": "3e324d73cf9faeb3c3de4e0c5f6c4b1c1a0c7eb2e20ede3fcdb997539ccdd8b4",
+          "enabled-restored-far": "e82196b852e7357aa7ba41ed99068ac26f330e899ad7938f7b2609ec8c6e121d",
+          "enabled-restored-moved": "6dcf44eaa5294a804e4eaac9f4909971a8c6d53c54fa2d3c2e1f15f7d24e6b4b",
+          "enabled-cold-final-near": "b9c73b7348169522d3613860f8e6ec3b4ba8fb4f02c42f131d37f9fcb13962bf"
+        },
+        "guarded_presentations": 38,
+        "validated_owners": 4,
+        "sampled_pixels": 92,
+        "max_component_normal_error": 0.000717307530292477,
+        "max_depth_error_m": 0.0008562975522963256,
+        "diagnostics": {
+          "max_hdr_delta": 0.03167375093262376,
+          "frozen_phase_gap": 0.3729713711817583,
+          "wrong_origin_gap": 0.13396150730202924,
+          "unfiltered_gap": 0.10763998934751388,
+          "zero_legacy_exact": true
+        },
+        "exact_cold_restore_tick": 4,
+        "exact_cold_final_sha256": "5fa73360078962b60d1bc3210bd05fb1d65aa21fcccc98d432ac1c321757587b"
+      },
+      {
+        "route": "forward-1",
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "lighting_path": "forward",
+        "reconstruction": "none",
+        "raw_report_sha256": "27c23464cd2700420c50aeab305ebf5cad3f1862b9060de426ed6a1bfe69edb7",
+        "captures": {
+          "legacy-initial-near": "f0b8ea6adf77cedcd58cd7692a0353a55ce6dec007836395fa3ca2650d6bb76d",
+          "legacy-checkpoint-near": "610dbfe8da9e8b6b481f2d6935e9e28bb8a114577531abf8ea39fd35b40bae5b",
+          "legacy-checkpoint-far": "d5dd4503a62ec773083154efc8daecf3a3ca632151b64ad4c7f172d733119e0d",
+          "legacy-checkpoint-moved": "da77b88d4e100e2d64371fa4b5d98ec16e91379993e775cbebae69acf84089b4",
+          "legacy-final-near": "a67dda91dc068ccbe489e7d628209473a4a86ddb9c9246be146048b2e063294b",
+          "zero-initial-near": "f0b8ea6adf77cedcd58cd7692a0353a55ce6dec007836395fa3ca2650d6bb76d",
+          "zero-checkpoint-near": "610dbfe8da9e8b6b481f2d6935e9e28bb8a114577531abf8ea39fd35b40bae5b",
+          "zero-checkpoint-far": "d5dd4503a62ec773083154efc8daecf3a3ca632151b64ad4c7f172d733119e0d",
+          "zero-checkpoint-moved": "da77b88d4e100e2d64371fa4b5d98ec16e91379993e775cbebae69acf84089b4",
+          "zero-final-near": "a67dda91dc068ccbe489e7d628209473a4a86ddb9c9246be146048b2e063294b",
+          "enabled-initial-near": "c2818401e9adc312e05f76e49a14f7807d935be653e8753111422ffc5d88eff0",
+          "enabled-checkpoint-near": "58ba69d017d4e6f3390b78384405cc9f8ac06d2283587f73db89a65cf09be91a",
+          "enabled-checkpoint-far": "4b554ae4d1f820bfa7949b76aa1f1ae9d4699af64358ae9f2c79ec49d73d0927",
+          "enabled-checkpoint-moved": "5fd1fb407070a1606eca6cbb917aa40220e94667c4d61ee22639c7bd8f840048",
+          "enabled-final-near": "215af6c1381549431a625a13a2d96f67d385c37b899416c61453acbcd9397c89",
+          "enabled-restored-near": "58ba69d017d4e6f3390b78384405cc9f8ac06d2283587f73db89a65cf09be91a",
+          "enabled-restored-far": "4b554ae4d1f820bfa7949b76aa1f1ae9d4699af64358ae9f2c79ec49d73d0927",
+          "enabled-restored-moved": "5fd1fb407070a1606eca6cbb917aa40220e94667c4d61ee22639c7bd8f840048",
+          "enabled-cold-final-near": "215af6c1381549431a625a13a2d96f67d385c37b899416c61453acbcd9397c89"
+        },
+        "guarded_presentations": 38,
+        "validated_owners": 4,
+        "sampled_pixels": 92,
+        "max_component_normal_error": 0.00048828125,
+        "max_depth_error_m": 0.0004912780027552799,
+        "diagnostics": {
+          "max_hdr_delta": 0.03148204733926756,
+          "frozen_phase_gap": 0.3725876986361184,
+          "wrong_origin_gap": 0.13432853587291518,
+          "unfiltered_gap": 0.10794221406778913,
+          "zero_legacy_exact": true
+        },
+        "exact_cold_restore_tick": 4,
+        "exact_cold_final_sha256": "93ef0aa9bd52bc541ea8d655cc0d809fe1870e6a733e438a7c7d2ce1f2f4806f"
+      },
+      {
+        "route": "deferred-1",
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "lighting_path": "deferred",
+        "reconstruction": "none",
+        "raw_report_sha256": "32b531fcb1c283b087f7f851f28731cc4d69ef9918ec6c9c1a311d8303abd75c",
+        "captures": {
+          "legacy-initial-near": "6d0b6e209b0de37f356a8e57ae12eb8bc2085a37c40431bf1b6f47310a14dc4a",
+          "legacy-checkpoint-near": "f36427ff63c8aa0cc566817506aa4834eb55ea7a7ce37b62020af76d85e22939",
+          "legacy-checkpoint-far": "95019f8f60047e63e474444cca7d777f90cb21702f8669d801034e1ebd397ebd",
+          "legacy-checkpoint-moved": "e538dadeeee3303331129b3339c69ba784d3710b5c99f7208436db44164440e0",
+          "legacy-final-near": "294c789df67b074d8e7fa4411d578c208244beb8e2eb48ada0eeb31d48ed7c76",
+          "zero-initial-near": "6d0b6e209b0de37f356a8e57ae12eb8bc2085a37c40431bf1b6f47310a14dc4a",
+          "zero-checkpoint-near": "f36427ff63c8aa0cc566817506aa4834eb55ea7a7ce37b62020af76d85e22939",
+          "zero-checkpoint-far": "95019f8f60047e63e474444cca7d777f90cb21702f8669d801034e1ebd397ebd",
+          "zero-checkpoint-moved": "e538dadeeee3303331129b3339c69ba784d3710b5c99f7208436db44164440e0",
+          "zero-final-near": "294c789df67b074d8e7fa4411d578c208244beb8e2eb48ada0eeb31d48ed7c76",
+          "enabled-initial-near": "099231311176a8b92ab4440469b2eca76e8a87c134c68ddc958ddcb3a2507435",
+          "enabled-checkpoint-near": "32fd2ef4f181ad6ec653dea261aaabbc330c8ab53a94673535232b626be61cae",
+          "enabled-checkpoint-far": "a79384834d56c700c4f99954f3b8c1f3ff589f14dbe49da2b00c71d1516aa6ac",
+          "enabled-checkpoint-moved": "3e413173d0d0248b67ab5933644191e44b60487c132b0ad13ca721ac4459ed40",
+          "enabled-final-near": "0caef4df752e5cb500a9c8eb88bf129b589762671b20511a0a4e6419555f3366",
+          "enabled-restored-near": "32fd2ef4f181ad6ec653dea261aaabbc330c8ab53a94673535232b626be61cae",
+          "enabled-restored-far": "a79384834d56c700c4f99954f3b8c1f3ff589f14dbe49da2b00c71d1516aa6ac",
+          "enabled-restored-moved": "3e413173d0d0248b67ab5933644191e44b60487c132b0ad13ca721ac4459ed40",
+          "enabled-cold-final-near": "0caef4df752e5cb500a9c8eb88bf129b589762671b20511a0a4e6419555f3366"
+        },
+        "guarded_presentations": 38,
+        "validated_owners": 4,
+        "sampled_pixels": 92,
+        "max_component_normal_error": 0.000717307530292477,
+        "max_depth_error_m": 0.0004912780027552799,
+        "diagnostics": {
+          "max_hdr_delta": 0.03167375093262376,
+          "frozen_phase_gap": 0.3729713711817583,
+          "wrong_origin_gap": 0.13396150730202924,
+          "unfiltered_gap": 0.10763998934751388,
+          "zero_legacy_exact": true
+        },
+        "exact_cold_restore_tick": 4,
+        "exact_cold_final_sha256": "05f9ea37a25e044b37da96cd32982600215fc079dafaa67b3d0277e9f6edfb27"
+      },
+      {
+        "route": "fsr-native-1",
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "lighting_path": "deferred",
+        "reconstruction": "fsr3_native",
+        "raw_report_sha256": "fb41f588efc1876136853e239844c86f6e486c2c9c67acda717c49695cf06b99",
+        "captures": {
+          "legacy-initial-near": "abc616952e192bed461b7a18f5b721c373a10bf510390c4d3751341ce03ce1b8",
+          "legacy-checkpoint-near": "6f424497ce72016a30f844c4e75c70b1a232f63c5836e49d6c802dbb46bbd74a",
+          "legacy-checkpoint-far": "1a73866f451c2858d40d72f5af8347f9d287de4bd01526bfe74cd30404e1579e",
+          "legacy-checkpoint-moved": "431b116928c5124f0bbdead654d8751e81f9c6cb96adaf059acd5f246c3cdf77",
+          "legacy-final-near": "45a06b234571e9c712832a37a21b9376d692b903ea0cca075a6ac44026c5377f",
+          "zero-initial-near": "abc616952e192bed461b7a18f5b721c373a10bf510390c4d3751341ce03ce1b8",
+          "zero-checkpoint-near": "6f424497ce72016a30f844c4e75c70b1a232f63c5836e49d6c802dbb46bbd74a",
+          "zero-checkpoint-far": "1a73866f451c2858d40d72f5af8347f9d287de4bd01526bfe74cd30404e1579e",
+          "zero-checkpoint-moved": "431b116928c5124f0bbdead654d8751e81f9c6cb96adaf059acd5f246c3cdf77",
+          "zero-final-near": "45a06b234571e9c712832a37a21b9376d692b903ea0cca075a6ac44026c5377f",
+          "enabled-initial-near": "d56a48d0e2ca86292133452af3fa1ab742ce951937b27d01bf71596e3191c477",
+          "enabled-checkpoint-near": "2dd703da84e4b14398d02da690ce7231cc6ac5618b150bcf01b20dd1f783fd69",
+          "enabled-checkpoint-far": "f4b7763ad2d0a99f16b79e1686e889f0b4dcc144b37b933a5da3eca0fa0e479b",
+          "enabled-checkpoint-moved": "f0d45f42bd0aab5353f93c184595c79842302cb30c230c2ef34146f04531c37e",
+          "enabled-final-near": "f4861531c4a63a11fe752a2192c88d34a551d8f9595c0716570cf66d893a4cf3",
+          "enabled-restored-near": "2dd703da84e4b14398d02da690ce7231cc6ac5618b150bcf01b20dd1f783fd69",
+          "enabled-restored-far": "f4b7763ad2d0a99f16b79e1686e889f0b4dcc144b37b933a5da3eca0fa0e479b",
+          "enabled-restored-moved": "f0d45f42bd0aab5353f93c184595c79842302cb30c230c2ef34146f04531c37e",
+          "enabled-cold-final-near": "f4861531c4a63a11fe752a2192c88d34a551d8f9595c0716570cf66d893a4cf3"
+        },
+        "guarded_presentations": 38,
+        "validated_owners": 4,
+        "sampled_pixels": 92,
+        "max_component_normal_error": 0.0007559648589428869,
+        "max_depth_error_m": 0.0004912780027552799,
+        "diagnostics": {
+          "max_hdr_delta": 0.033177986866935696,
+          "frozen_phase_gap": 0.3703356564813574,
+          "wrong_origin_gap": 0.13465097197380385,
+          "unfiltered_gap": 0.11620117848953115,
+          "zero_legacy_exact": true
+        },
+        "exact_cold_restore_tick": 4,
+        "exact_cold_final_sha256": "76b8b079fec935a89a87243bb4bffc7fa76d197437830ced59ddafac3fd4eeb9"
+      }
+    ]
+  },
+  "retained_attempts": [
+    {
+      "host": "Linux",
+      "reason": "Incorrect standalone native test target name",
+      "log_sha256": "c99e10fb82416887e35ab91d777704e94a374dd37c3617f4cc2ec5b541f54e95"
+    },
+    {
+      "host": "Linux",
+      "reason": "Transferred inputs had old modification times and the attempt reused incompatible 0.0.373 objects",
+      "log_sha256": "cd3cbc1651bd71aac888be686d30d77c8288620672b07ca638e3e1fc767beee5"
+    },
+    {
+      "host": "Windows cross-build",
+      "reason": "The configured product has no standalone water unit-test targets",
+      "log_sha256": "3391930d28c894439172eac3ff165bc8e68e43583383b8060d2b03ce99d8f467"
+    },
+    {
+      "host": "Windows Vulkan",
+      "route": "forward-0",
+      "report_sha256": "916333c37137bae51e3dce8d8ec6d31fe66e370d0d08520eec8a3d39257c7d03",
+      "failure_category": "The independent test quantized a root camera pose that the runtime stores in double precision."
+    },
+    {
+      "host": "Windows Vulkan",
+      "route": "forward-0",
+      "report_sha256": "d1038ec86d9aa36f3fca00c39694b5b37255ec50fb5cac2d704f931ad8885b74",
+      "failure_category": "The near diagnostic camera inherited the default controller offset."
+    }
+  ]
+}

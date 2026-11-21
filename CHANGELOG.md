@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.374
+
+- Author directional ripples on terrain-bound water. Replay and save restoration recover the same water shading phase from the simulation tick.
+
 ## 0.0.373
 
 - Compile runtime command decoding and Vulkan capture readback in their own translation units.

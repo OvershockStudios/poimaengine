@@ -5,8 +5,10 @@
 
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <cstddef>
 #include <memory>
+#include <numbers>
 #include <span>
 #include <stdexcept>
 #include <utility>
@@ -108,6 +110,20 @@ void append_region_scene(const Region& region, SceneSnapshot& scene) {
     object.textures = depth_palette();
     object.cast_shadows = false;
     object.stream_geometry = true;
+    if (const auto& ripples = region.surface_ripples(); ripples && static_cast<float>(ripples->slope) > 0) {
+        constexpr auto tau = 2 * std::numbers::pi;
+        const auto heading = ripples->heading_degrees * std::numbers::pi / 180;
+        // Reduce the integer tick before conversion so long-lived saves retain
+        // the same phase as a short run. Camera and presentation time are irrelevant.
+        const auto phase_tick = grid.tick() % ripples->period_ticks;
+        scene.water_ripples = SceneWaterRipples{
+            {static_cast<float>(std::cos(heading)), static_cast<float>(std::sin(heading))},
+            static_cast<float>(ripples->slope),
+            static_cast<float>(tau / ripples->wavelength_m),
+            static_cast<float>(tau * static_cast<double>(phase_tick) / ripples->period_ticks),
+        };
+        object.water_ripple_surface = true;
+    }
     // Leave incarnation zero because a cell's triangles can appear or disappear.
     scene.objects.push_back(std::move(object));
 }

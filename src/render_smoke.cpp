@@ -93,6 +93,7 @@
 #include <iostream>
 #include <limits>
 #include <mutex>
+#include <numbers>
 #include <stdexcept>
 #include <thread>
 #ifdef _WIN32
@@ -218,8 +219,10 @@ inline constexpr std::uint32_t cluster_cells=cluster_x*cluster_y*cluster_z;
 struct FrameConstants {
     float view_projection[16];float camera[4];float ambient_exposure[4];std::uint32_t light_count[4];float camera_forward[4];
     GpuShadow shadows[max_shadow_views];float cluster_viewport[4],cluster_depth[4];std::uint32_t cluster_grid[4];float previous_view_projection[16];float temporal_jitter[4]{},temporal_right[4]{},temporal_up[4]{},temporal_forward[4]{},ibl_parameters[4]{};
+    std::array<float,4> water_ripple_shape{},water_ripple_motion{};
 };
-static_assert(sizeof(GpuLight)==80 && sizeof(GpuShadow)==80 && sizeof(FrameConstants)==1600);
+static_assert(sizeof(GpuLight)==80 && sizeof(GpuShadow)==80 && sizeof(FrameConstants)==1632);
+static_assert(offsetof(FrameConstants,water_ripple_shape)==1600);
 struct Geometry { nvrhi::BufferHandle vertices,indices;std::uint32_t count=0;render_schedule::GeometrySlice stream{}; };
 struct SpriteInstance {
     std::array<float,4> center_and_size,linear_rgba,fade_and_reserved;
@@ -2501,6 +2504,7 @@ struct Context {
             require(object.surface_marks.empty(),"Surface marks are limited to opaque world receivers.");
             require(!object.wetness,"Surface wetness is limited to world drawables.");
             require(!object.lods,"Mesh LOD is limited to ordinary world drawables.");
+            require(!object.water_ripple_surface,"Water ripples are limited to the world region surface.");
         }
     }
     void update_scene() {
@@ -2511,6 +2515,21 @@ struct Context {
                 "Scene diagnostic projection requires finite float near/far values with 0 < near < far.");
         }
         require(!deferred || rigid_transform(scene->camera_world),"Deferred lighting requires a rigid camera transform.");
+        frame_constants.water_ripple_shape={};
+        frame_constants.water_ripple_motion={};
+        if(const auto& ripple=scene->water_ripples) {
+            const auto& direction=ripple->direction;
+            const float length=std::hypot(direction[0],direction[1]);
+            constexpr auto tau=2*std::numbers::pi;
+            require(std::isfinite(length) && std::abs(length-1)<.0001f &&
+                ripple->slope>0 && ripple->slope<=.4f &&
+                ripple->radians_per_metre>=static_cast<float>(tau/8) &&
+                ripple->radians_per_metre<=static_cast<float>(tau/.1) &&
+                ripple->phase_radians>=0 && ripple->phase_radians<static_cast<float>(tau),
+                "Invalid water ripple presentation parameters.");
+            frame_constants.water_ripple_shape={direction[0],direction[1],ripple->slope,ripple->radians_per_metre};
+            frame_constants.water_ripple_motion[0]=ripple->phase_radians;
+        }
         const std::array<std::span<const SceneObject>,2> world_drawables{scene->objects,scene->world_viewmodel_draws()};
         if(deferred)for(const auto objects:world_drawables)for(const auto& object:objects) {
             for(float value:object.albedo)require(std::isfinite(value) && std::abs(value)<=65504,"Deferred preview base exceeds half-float storage.");
@@ -2605,6 +2624,7 @@ struct Context {
         pending_draws.objects=scene->world_object_count();pending_draws.shadow_views=shadow_plan.size();pending_draws.shadow_candidates=0;
         std::set<std::string> active_skins;
         std::size_t mutable_stream_count=0;
+        bool found_water_ripples=false;
         std::shared_ptr<MeshLodDiagnostics> mesh_lod;
         for(std::size_t list=0;list<world_drawables.size();++list)for(const auto& object:world_drawables[list]) {
             if(object.material)validate_material_alpha(*object.material);
@@ -2656,6 +2676,14 @@ struct Context {
             draw.normal[0][3]=object.textures ? object.textures->occlusion_strength : object.mesh ? object.mesh->occlusion_strength : 1.0f;
             draw.normal[1][3]=object.textures ? object.textures->normal_scale : object.mesh ? object.mesh->normal_scale : 1.0f;
             draw.normal[2][3]=(object.textures ? bool(object.textures->maps[4].image) : object.mesh && object.mesh->textures[4].image) ? 1.0f : 0.0f;
+            if(object.water_ripple_surface) {
+                require(list==0 && scene->water_ripples && !found_water_ripples && object.material &&
+                    object.stream_geometry && !object.mutable_geometry && !object.incarnation && !object.skin &&
+                    !object.camera_draw && !object.lods && !object.cast_shadows,
+                    "Water ripple parameters require one transient world water surface.");
+                found_water_ripples=true;
+                draw.alpha[3]=1;
+            }
             item.mutable_geometry=object.mutable_geometry;
             item.stream_geometry=object.stream_geometry || item.mutable_geometry;
             if(item.stream_geometry) {
@@ -2707,6 +2735,7 @@ struct Context {
             draws.push_back(std::move(item));
         }
         pending_draws.mesh_lod=std::move(mesh_lod);
+        require(found_water_ripples==scene->water_ripples.has_value(),"Water ripple surface is missing.");
         prepare_viewmodel(active_skins);prepare_scene_output();
         for(auto it=skin_instances.begin();it!=skin_instances.end();) {
             if(!active_skins.contains(it->first)) { skin_bytes-=it->second.bytes;it=skin_instances.erase(it); }else ++it;

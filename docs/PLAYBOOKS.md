@@ -38,6 +38,7 @@ record correlated evidence, and identify a useful impossibility check.
 | Compact snow under a boot | [Shaped snow soles](TERRAIN.md#shape-the-sole) | Compare the planted heading, released print, terrain depth, and collision through save restoration. |
 | Wet a scene during rain | [Surface wetness](SURFACE_WETNESS.md) | Check exposed and sheltered materials, then move a wet prop under cover and restore during drying. |
 | Show rain around shelter | [Rain particles](PARTICLES.md#place-a-roof-aware-rain-source) | Follow accepted weather doses, inspect moving cover, and resume falling particles from a save. |
+| Shape a local water surface | [Water regions and ripples](SHALLOW_WATER.md#author-surface-ripples) | Verify water levels and terrain collision, then compare the visible normals at the same tick after restoring a save. |
 
 ## Start with a complete example
 
