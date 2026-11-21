@@ -87,13 +87,25 @@ state. Changing the tasks or revision under an existing ID fails. One round
 can hold ten workers, including manually added workers, and a task can use up
 to 4,000 characters. Worker reports in tool replies are limited to 4,000
 characters each. Read the full report in its worker tab. A round retains up
-to 64 request IDs and the scene hashes returned with completed work. Reopen
+to 64 assignment request IDs and the scene hashes returned with completed work. Reopen
 the project and use `inspect` or replay the exact `assign` to get the saved
 receipt. Reopening restores the reports and draft files. Worker processes
 start only when a new task is sent.
 
-A completed worker turn supplies a report. Use **Review worker scenes** to
-select and verify the combined game from the saved checkpoint.
+A completed worker turn supplies a report and pins its `draft_id` and
+`world_sha256`. With a playtest suite saved before starting the round, the
+lead can send `verify` with a fresh request ID and one to ten selected drafts.
+
+```json
+{"action":"verify","request_id":"a0c9340c357a4df8a57b8fbf907c1fed","drafts":[{"draft_id":"8ee6b99412f04b7eb54227a25622f1f2","world_sha256":"a2e67aa65f4e7a699f28d1098bdca2f278ecfc320f505c56b68c7a8ea54e9204"}]}
+```
+
+Use `inspect` on the verification ID to read its state, passed group counts,
+the exact build and report hashes, and up to twelve failed-group summaries.
+The round saves up to 64 verification receipts. Retrying the same ID with the
+same set of draft IDs and hashes reuses that receipt. A different selection
+requires a new ID. A passing result appears in **Review proposed build**.
+The creator approves its exact verified build before it becomes playable.
 [Combine and play the selected scenes](PROJECT_RECOVERY.md#check-selected-scenes-in-the-creator)
 
 ### Connect from a CLI

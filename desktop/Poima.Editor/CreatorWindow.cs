@@ -44,6 +44,7 @@ internal sealed class CreatorWindow : Window
     private readonly Button reviewDrafts = new() { Content = "Review worker scenes", IsVisible = false };
     private readonly Button newWorkerRound = new() { Content = "Start new worker round", IsVisible = false };
     private readonly Button showCombined = new() { Content = "Combined game checks", IsVisible = false };
+    private readonly Button reviewProposal = new() { Content = "Review proposed build", IsVisible = false };
     private readonly Button playCombined = new() { Content = "Play combined game", IsVisible = false };
     private readonly Button openCombined = new() { Content = "Open combined project as copy", IsVisible = false };
     private readonly TextBlock status = new() { TextWrapping = TextWrapping.Wrap };
@@ -161,6 +162,7 @@ internal sealed class CreatorWindow : Window
             });
         };
         showCombined.Click += async (_, _) => await ShowCombinedChecksAsync();
+        reviewProposal.Click += async (_, _) => await ReviewProposalAsync();
         playCombined.Click += async (_, _) => await PlayCombinedAsync();
         openCombined.Click += async (_, _) => await OpenCombinedAsync();
         projectSettings.Click += async (_, _) => await OpenProjectSettingsAsync();
@@ -320,7 +322,8 @@ internal sealed class CreatorWindow : Window
         sharing.Children.Add(showSharedZip);
         result.Children.Add(sharing);
         result.Children.Add(new WrapPanel { ItemSpacing = 8, LineSpacing = 8, Children = { showChecks, buildHistory } });
-        result.Children.Add(new WrapPanel { ItemSpacing = 8, LineSpacing = 8, Children = { showCombined, playCombined, openCombined } });
+        result.Children.Add(new WrapPanel { ItemSpacing = 8, LineSpacing = 8,
+            Children = { reviewProposal, showCombined, playCombined, openCombined } });
         result.Children.Add(restore);
         result.Children.Add(openRecovered);
         Grid.SetRow(result, 2); preview.Children.Add(result);
@@ -869,7 +872,7 @@ internal sealed class CreatorWindow : Window
 
     private void UpdateControls()
     {
-        var ready = !closing && !closeRequested && !starting && !exporting;
+        var ready = !closing && !closeRequested && !starting && !exporting && buildTeam?.IsVerifying != true;
         projectSettings.IsEnabled = ready;
         var canPreview = ready && !verifiedPlayActive && model.RuntimeId is null;
         play.IsEnabled = canPreview && !chat.Busy;
@@ -886,7 +889,9 @@ internal sealed class CreatorWindow : Window
         reviewDrafts.IsEnabled = play.IsEnabled && buildTeam?.CanReview == true;
         newWorkerRound.IsVisible = buildTeam?.CanStartRound == true;
         newWorkerRound.IsEnabled = play.IsEnabled && newWorkerRound.IsVisible;
-        showCombined.IsVisible = combinedCheck is not null;
+        reviewProposal.IsVisible = buildTeam?.Proposal is not null;
+        reviewProposal.IsEnabled = canPreview;
+        showCombined.IsVisible = combinedCheck is not null && combinedCheck != buildTeam?.Proposal;
         showCombined.IsEnabled = ready;
         playCombined.IsVisible = openCombined.IsVisible = verifiedCombined is not null;
         playCombined.IsEnabled = openCombined.IsEnabled = play.IsEnabled;
@@ -937,19 +942,20 @@ internal sealed class CreatorWindow : Window
             if (!chat.AddReviewToDraft(finding)) return false;
             conversations.SelectedIndex = 0;
             return true;
-        }, message => { error = message; UpdateControls(); }, () => chat.ReviewClient);
+        }, message => { error = message; UpdateControls(); },
+        result => combinedCheck = result, () => chat.ReviewClient);
 
     private Task<JsonObject> CoordinateWorkersAsync(CodexWorkerRequest request, CancellationToken cancellation)
     {
         if (closing || closeRequested || chat.ReviewClient is null)
             throw new InvalidOperationException("Connect the main Codex chat in an open creator workspace.");
-        if (request.ExpectedRevision is not null)
+        if (request.ExpectedRevision is not null || request.Drafts is not null)
         {
             host.RefreshState();
-            if (exporting || starting || model.RuntimeId is not null)
+            if (request.ExpectedRevision is not null && (exporting || starting || model.RuntimeId is not null))
                 throw new InvalidOperationException("Stop the project preview or wait for project work before assigning scene workers.");
         }
-        return BuildTeam().CoordinateAsync(request, cancellation);
+        return BuildTeam().CoordinateAsync(request, !exporting && !starting && !verifiedPlayActive && model.RuntimeId is null, cancellation);
     }
 
     private Task ReviewDraftsAsync()
@@ -990,6 +996,23 @@ internal sealed class CreatorWindow : Window
                 verifiedCombined?.Attempt.Build, verifiedCombined?.Attempt.Revision ?? 0).ShowDialog(this);
         }
         catch (Exception failure) { error = failure.Message; UpdateControls(); }
+    }
+
+    private Task ReviewProposalAsync()
+    {
+        if (!reviewProposal.IsEnabled || buildTeam is not { Proposal: { } proposal } team) return Task.CompletedTask;
+        return ProjectWork("Opening the proposed build results…", async () =>
+        {
+            using var cancellation = new CancellationTokenSource();
+            checking = cancellation;
+            using var report = await proposal.Attempt.ReadReportAsync();
+            if (closeRequested) return;
+            var review = new PlaytestResultsWindow(proposal.Attempt, report.RootElement, verifiedCombined?.Attempt.Build,
+                verifiedCombined?.Attempt.Revision ?? 0, approveBuild: true);
+            if (!await review.ShowDialog<bool>(this) || closeRequested) return;
+            verifiedCombined = await team.AcceptAsync(proposal, cancellation.Token);
+            shareNotice = "The approved build is ready to play.";
+        });
     }
 
     private Task OpenCombinedAsync()

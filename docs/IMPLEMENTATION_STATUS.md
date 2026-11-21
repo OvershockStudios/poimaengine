@@ -1,8 +1,18 @@
 # Implementation status
 
-Updated 2026-11-20 for **0.0.338**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-20 for **0.0.339**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.339 lets the [lead Codex agent verify selected worker scenes](AGENT_CLIENTS.md#delegate-scene-work-from-codex).
+Poima builds the pinned combination separately and runs the saved playtest
+suite. The creator can review a passing proposal after reopening and must
+approve it before playing it from the workspace. The Windows fixture covered
+exact retries, a failed check with an earlier passing proposal, and rejection
+of a changed report. A live run with Codex 0.171.0 and GPT-6.2 Sol delegated
+two scene edits and verified both in the combined build. The creator then
+approved it and the native player presented frames.
+[Results](evidence/m2-creator-verification-339.json)
 
 Version 0.0.338 [restores the active worker round on reopen](PROJECT_RECOVERY.md#check-selected-scenes-in-the-creator).
 Scripted Windows creator tests recovered completed reports, replayed the same

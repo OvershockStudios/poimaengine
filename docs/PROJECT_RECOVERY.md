@@ -139,16 +139,34 @@ scene revisions to combine. **Check combined game** builds the selection in a
 separate folder and runs the suite captured with the round. Later edits in the
 main project stay in that project.
 
+With lead-worker permission enabled, Codex can submit the pinned reports
+directly for verification. **Review proposed build** shows the successful
+checks and the build identity. **Approve this build** revalidates the build,
+checkpoint and report, then makes it playable. **Keep for later** leaves the
+proposal pending, including after reopening. A failed check preserves both
+the earlier passing proposal and any previously approved build.
+
 Use **Combined game checks** to inspect the outcome. **Play combined game**
-runs the most recent passing combination from this workspace, even after
-a later selection fails. **Open combined project as copy** opens an editable
+runs the last approved or manually verified combination from this workspace.
+**Open combined project as copy** opens an editable
 copy of the verified source in a new creator window. It gets its own project
 identity. The original project's build history and chat stay with the original
 workspace. Combined checks, exports and worker receipts are stored alongside
 the drafts under `.poima-drafts`. Reopen the original project to restore that
-round's worker tabs, most recent checks and last passing build. If an unfinished
+round's worker tabs, most recent checks and playable build. If an unfinished
 task was interrupted, inspect its draft before sending a follow-up. A report
 whose scene changed after completion needs a new review before combining.
+An interrupted verification keeps its receipt and can be checked again with
+a new request ID.
+
+To reproduce the packaged Windows approval and reopening checks, build the
+scripted peer from `tests/fixtures/agent_rpc/Poima.AgentRpc.Contract.csproj`
+for `win-x64` and run the creator test with that executable.
+
+```powershell
+.\tests\creator_workspace.ps1 -Editor <Poima.Editor.exe> -Output <scratch> `
+  -CodexReviews <Poima.AgentRpc.Contract.exe> -WithLeadWorkers -WithCombinedDrafts -WithLeadVerification
+```
 
 Choose **Start new worker round** when the current workers are idle to use a
 new checkpoint for later assignments. The previous draft and build files stay

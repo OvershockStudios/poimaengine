@@ -1,0 +1,133 @@
+{
+  "engine_version": "0.0.339",
+  "scope": "Exact extracted Windows package, scripted Codex app-server and a live Codex client, native checkpoint integration, isolated standalone builds, creator approval and Vulkan playback.",
+  "archive": {
+    "name": "Poima-0.0.339-Windows-x64.zip",
+    "bytes": 142304447,
+    "sha256": "9c97499369d3b2bf1557c849580b90ab5b827c0f7991fe21da38ada5f49eeb84"
+  },
+  "build": {
+    "editor_sha256": "0c80d21e3601f2c1926c7b637a900e650e02c9271b70c71eb074b6727f934e2f",
+    "frontend_sha256": "b2d96e198c96a6c70932fc7c616871d25cce8b8b09bdf4aa6fd07682f77ef629",
+    "cli_sha256": "18c5c51792933cab87617ed07d72d38560e2125c4fe4b2c512ee5c60ffb70dae",
+    "codex_fixture_sha256": "60bacff2e235ce4ecf26f6c54711a77dbb3b25e173375b76bded56b1ef315a5f"
+  },
+  "runner": {
+    "path": "tests/creator_workspace.ps1",
+    "sha256": "c677b1450e732a08239bfe20c8be22b5622093b3e76f94d6be960e4ee101dc27"
+  },
+  "scripted_run": {
+    "arguments": [
+      "WithLeadWorkers",
+      "WithCombinedDrafts",
+      "WithLeadVerification"
+    ],
+    "report_sha256": "a77fb7a41307aa0fa45051d04adbb77e3162219206af6b86d0879a8dd1c2b191",
+    "runner_sha256": "36270af809a3824b721260f40bd55ccf89a049ce1fed794352f3950bcfae13df",
+    "native_combinations_built": 2,
+    "rejected_verification_calls": 4,
+    "replayed_reordered_selection": true,
+    "proposal_request_id": "b1a0ff7ecb1b405ea647412bca7e2b9f",
+    "failed_request_id": "9f9cf72ce30e4205939d0ef1f942ed7e",
+    "proposal_playtest": {
+      "passed": true,
+      "groups_passed": 2,
+      "groups_total": 2,
+      "bundle_sha256": "c4ac33b4864045ccbebe9fcc655f828a3fabde475ba8e1b6ca231a9eef00425b",
+      "report_sha256": "3a72a23ba2f1dd0ebff7684365452865242a6b4b7fdd446499b7443a4aa11985"
+    },
+    "failed_playtest": {
+      "passed": false,
+      "groups_passed": 1,
+      "groups_total": 2,
+      "bundle_sha256": "4f16e33ca94f380f8f5b8d686cf603ca76978a5f9cc8efa0e0abdfb6c07b892f",
+      "report_sha256": "848b91b8c77ce3b8ed72413a0555d1da37da2b722ae688034f6b498c9c3ebe99"
+    },
+    "failed_group": {
+      "group": "Draft quay bench",
+      "check": null,
+      "tick": null,
+      "issue": "runtime.entity: Runtime entity does not exist."
+    },
+    "left_pending_after_review": true,
+    "changed_report_rejected": true,
+    "approved_after_reopen": true,
+    "playback": {
+      "event_type": "verified_play_closed",
+      "revision": 2,
+      "bundle_sha256": "c4ac33b4864045ccbebe9fcc655f828a3fabde475ba8e1b6ca231a9eef00425b",
+      "tick": 22,
+      "frames_presented": 45,
+      "stop_reason": "window_closed"
+    },
+    "original_project_unchanged": true,
+    "ordinary_creator_exit": 0,
+    "ordinary_worker_exits": true,
+    "relocated": {
+      "source_unavailable": true,
+      "bundle_unchanged": true,
+      "bundle_files": 54,
+      "bundle_sha256": "c4ac33b4864045ccbebe9fcc655f828a3fabde475ba8e1b6ca231a9eef00425b",
+      "suite_sha256": "2fad5e78ab03f4503bd437b525dd54c9c8701296fd4261329b75ce9a4115e96d",
+      "groups_passed": 2,
+      "check_tick": 2,
+      "report_sha256": "3a72a23ba2f1dd0ebff7684365452865242a6b4b7fdd446499b7443a4aa11985"
+    }
+  },
+  "first_scripted_attempt": {
+    "report_sha256": "7233ac9cf28a250fba48d116b5914b45cc0d2fedca68db0d5bb9d5f012936c5c",
+    "passed": false,
+    "failure": "The scripted peer expected a failed comparison when the native verifier instead reported an interrupted group with a missing runtime entity. The harness timed out waiting for the peer reply. The corrected assertion uses the native issue message."
+  },
+  "live_run": {
+    "report_sha256": "b69f3129001a1ed1731dbc7e2dffc7d9fd6fa2466a9224de1c3d144661814f7f",
+    "passed": true,
+    "runner_sha256": "f1238bb29045f67b9890318cb1a74a6c0604f28ebb23750dffb726fd6ca2ded1",
+    "codex_version": "codex-cli 0.171.0",
+    "model": "gpt-6.2-sol",
+    "assignment_request_id": "feb0960adee14d67668d0f466a467f31",
+    "verification_request_id": "75e93863a2f84986439c483fd8d1c62d",
+    "verification": {
+      "passed": true,
+      "groups_passed": 2,
+      "groups_total": 2,
+      "bundle_sha256": "326a01e88d623afecc7efe98b70ef83158dc1cf7cbda144614100ef07d7ae80f",
+      "report_sha256": "0ffaae6d2754ca5dfb2d94465188de511cdce3cc0de7ecade791152e5dd88457"
+    },
+    "approved": true,
+    "playback": {
+      "event_type": "verified_play_closed",
+      "revision": 2,
+      "bundle_sha256": "326a01e88d623afecc7efe98b70ef83158dc1cf7cbda144614100ef07d7ae80f",
+      "tick": 0,
+      "frames_presented": 9,
+      "stop_reason": "window_closed"
+    },
+    "source_unchanged": true,
+    "relocated": {
+      "source_unavailable": true,
+      "bundle_unchanged": true,
+      "bundle_files": 54,
+      "bundle_sha256": "326a01e88d623afecc7efe98b70ef83158dc1cf7cbda144614100ef07d7ae80f",
+      "suite_sha256": "2fad5e78ab03f4503bd437b525dd54c9c8701296fd4261329b75ce9a4115e96d",
+      "groups_passed": 2,
+      "check_tick": 2,
+      "report_sha256": "0ffaae6d2754ca5dfb2d94465188de511cdce3cc0de7ecade791152e5dd88457"
+    }
+  },
+  "manual_regression": {
+    "arguments": [
+      "WithLeadWorkers",
+      "WithCombinedDrafts",
+      "WithWorkerReopen"
+    ],
+    "report_sha256": "b4f009f5c5103b63a1413da858928364ab48e556ff0bfdef3efd3e6a79119f2a",
+    "passing_combination_reopened": true,
+    "stopped_worker_task_restored": true,
+    "first_attempt": {
+      "report_sha256": "6ad869a83293c197b9b863e5a4fd149d4fefe1cabd12983658d5e4a20f8101cc",
+      "passed": false,
+      "failure": "The harness compared drafts in trace-file order with hashes in assignment order. Per-draft world hashes matched. The corrected runner pairs manifests and hashes by the assignment receipt."
+    }
+  }
+}

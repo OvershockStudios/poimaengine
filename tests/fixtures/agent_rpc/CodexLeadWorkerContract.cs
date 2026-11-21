@@ -8,6 +8,7 @@ internal static class CodexLeadWorkerContract
     public const string DisabledPrompt = "Confirm disabled worker permission at revision ";
     public const string DelegatePrompt = "Delegate scene work at revision ";
     public const string ReplayPrompt = "Replay worker assignment ";
+    public const string VerifyPrompt = "Verify drafts for assignment ";
     public const string Finished = "Lead collected both worker reports.";
     public const string MarkdownReport = """
         ## Review notes
@@ -33,9 +34,16 @@ internal static class CodexLeadWorkerContract
     {
         var disabled = prompt.StartsWith(DisabledPrompt, StringComparison.Ordinal);
         var replay = prompt.StartsWith(ReplayPrompt, StringComparison.Ordinal);
-        if (!disabled && !replay && !prompt.StartsWith(DelegatePrompt, StringComparison.Ordinal)) return null;
+        var verify = prompt.StartsWith(VerifyPrompt, StringComparison.Ordinal);
+        if (!disabled && !replay && !verify && !prompt.StartsWith(DelegatePrompt, StringComparison.Ordinal)) return null;
         var prefix = disabled ? DisabledPrompt : DelegatePrompt;
         var firstLine = prompt.Split('\n', 2)[0].TrimEnd();
+        using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(100));
+        if (verify)
+        {
+            await VerifyAsync(firstLine.Substring(VerifyPrompt.Length, 32));
+            return "Lead checked both combinations.";
+        }
         var revision = long.Parse(firstLine.AsSpan(replay ? ReplayPrompt.Length + 32 + " at revision ".Length : prefix.Length).TrimEnd('.'),
             CultureInfo.InvariantCulture);
         var id = replay ? firstLine.Substring(ReplayPrompt.Length, 32) : Guid.NewGuid().ToString("N");
@@ -44,7 +52,6 @@ internal static class CodexLeadWorkerContract
             ["action"] = "assign", ["request_id"] = id, ["expected_revision"] = revision,
             ["tasks"] = new JsonArray("Draft a lantern. Wait for the release signal.", "Draft a quay bench.")
         };
-        using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(65));
 
         if (disabled)
         {
@@ -98,6 +105,50 @@ internal static class CodexLeadWorkerContract
             results[1]?["report"]?.GetValue<string>()?.Contains("Draft quay bench created", StringComparison.Ordinal) == true,
             "The lead did not read both native worker reports.");
         return Finished + "\n\n" + MarkdownReport;
+
+        async Task VerifyAsync(string assignment)
+        {
+            var ready = await Call(new JsonObject { ["action"] = "inspect", ["request_id"] = assignment }, success: true);
+            Check(ready["state"]?.GetValue<string>() == "completed", "The assignment had no finished drafts.");
+            var drafts = ready["workers"]!.AsArray().Select(row => new JsonObject
+            {
+                ["draft_id"] = row!["draft_id"]!.DeepClone(), ["world_sha256"] = row["world_sha256"]!.DeepClone()
+            }).ToArray();
+            var id = Guid.NewGuid().ToString("N");
+            JsonObject Selection(string requestId, params JsonObject[] selected) => new()
+            {
+                ["action"] = "verify", ["request_id"] = requestId,
+                ["drafts"] = new JsonArray(selected.Select(draft => draft.DeepClone()).ToArray())
+            };
+            await Call(Selection(assignment, drafts), success: false);
+            await Call(Selection(id, drafts[0], drafts[0]), success: false);
+            var stale = drafts[0].DeepClone().AsObject();
+            stale["world_sha256"] = new string('0', 64);
+            await Call(Selection(id, stale), success: false);
+
+            var accepted = await Call(Selection(id, drafts), success: true);
+            Check(accepted["request_id"]?.GetValue<string>() == id && accepted["replayed"]?.GetValue<bool>() == false,
+                "The proposed combination has no receipt.");
+            var repeated = await Call(Selection(id, drafts.Reverse().ToArray()), success: true);
+            Check(repeated["replayed"]?.GetValue<bool>() == true, "Retrying the selection in a different order queued a new check.");
+            await Call(Selection(id, drafts[0]), success: false);
+            var passed = await InspectUntil(id, row => row["state"]?.GetValue<string>() is "passed" or "failed");
+            Check(passed["state"]?.GetValue<string>() == "passed" && passed["groups_passed"]?.GetValue<int>() == 2 &&
+                passed["groups_total"]?.GetValue<int>() == 2 && passed["report_sha256"]?.GetValue<string>()?.Length == 64 &&
+                passed["awaiting_review"]?.GetValue<bool>() == true && passed["playable"]?.GetValue<bool>() == false,
+                "A passing result did not become a reviewable proposal.");
+
+            var subset = Guid.NewGuid().ToString("N");
+            await Call(Selection(subset, drafts[0]), success: true);
+            var failed = await InspectUntil(subset, row => row["state"]?.GetValue<string>() is "passed" or "failed");
+            Check(failed["state"]?.GetValue<string>() == "failed" && failed["groups_passed"]?.GetValue<int>() == 1 &&
+                failed["groups_total"]?.GetValue<int>() == 2 && failed["awaiting_review"]?.GetValue<bool>() == false &&
+                failed["failures"]?[0]?["group"]?.GetValue<string>() == "Draft quay bench" &&
+                failed["failures"]?[0]?["issue"]?.GetValue<string>() == "runtime.entity: Runtime entity does not exist.",
+                "A failing selection did not identify its failed gameplay check.");
+            var pending = await Call(new JsonObject { ["action"] = "inspect", ["request_id"] = id }, success: true);
+            Check(JsonNode.DeepEquals(passed, pending), "A failing result altered the earlier verified proposal.");
+        }
 
         async Task<JsonObject> Call(JsonObject arguments, bool success, string? threadId = null, string? turnId = null)
         {

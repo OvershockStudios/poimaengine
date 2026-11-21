@@ -13,11 +13,20 @@ internal sealed class CreatorWorkerRoundStore
     public sealed record Turn(string Task, string State, string? Report = null, string? Error = null, string? WorldHash = null);
     public sealed record Worker(string Folder, string ProjectId, Turn? Latest = null, Turn? Assigned = null);
     public sealed record Batch(string Id, long Revision, string PayloadHash, string[] Workers, string? Error = null, bool Interrupted = false);
-    public sealed record Candidate(string Folder, string ProjectId, string Snapshot, string Bundle);
+    public sealed record Candidate(string Folder, string ProjectId, string Snapshot, string Bundle, string? ReportHash = null);
+    public sealed record FailedCheck(string Group, string? Check, long? Tick, string? Issue);
+    public sealed record VerificationResult(Candidate Build, bool Passed, int PassedGroups, int TotalGroups, FailedCheck[] Failures);
+    public sealed record Verification(string Id, string PayloadHash, VerificationResult? Result = null, string? Error = null,
+        bool Interrupted = false)
+    {
+        [JsonIgnore]
+        public bool Pending => Result is null && Error is null;
+    }
     public sealed record Round(int Version, string Owner, string Id, Checkpoint? Base, Worker[] Workers, Batch[] Batches,
-        Candidate? Latest = null, Candidate? Passing = null);
+        Candidate? Latest = null, Candidate? Passing = null, Verification[]? Verifications = null, string? Proposed = null);
 
     public const int MaximumAssignments = 64;
+    public const int MaximumVerificationFailures = 12;
     private const int MaximumBytes = 4 * 1024 * 1024;
     private const long MaximumRevision = 9007199254740991L;
     private static readonly JsonSerializerOptions JsonOptions = new()
@@ -86,10 +95,12 @@ internal sealed class CreatorWorkerRoundStore
         if (round.Version != 1 || round.Owner != owner || !Hex(round.Id, 12) ||
             round.Workers is null || round.Workers.Length > CodexWorkerTool.MaximumWorkers ||
             round.Batches is null || round.Batches.Length > MaximumAssignments ||
+            round.Verifications is { Length: > MaximumAssignments } ||
             !ValidCandidate(round.Latest) || !ValidCandidate(round.Passing))
             throw new InvalidDataException("The saved worker round is invalid for this project.");
         var checkpoint = round.Base;
-        if (checkpoint is null ? round.Workers.Length != 0 || round.Latest is not null || round.Passing is not null :
+        if (checkpoint is null ? round.Workers.Length != 0 || round.Latest is not null || round.Passing is not null ||
+            round.Verifications is { Length: > 0 } :
             !Leaf(checkpoint.Folder) || !ProjectName(checkpoint.Manifest) || !Hex(checkpoint.Hash, 64) || !Revision(checkpoint.Revision))
             throw new InvalidDataException("The saved worker checkpoint is invalid.");
 
@@ -110,6 +121,17 @@ internal sealed class CreatorWorkerRoundStore
         }
         if (round.Workers.Any(worker => assigned.Contains(worker.ProjectId) != (worker.Assigned is not null)))
             throw new InvalidDataException("A worker's assigned turn does not match its receipt.");
+        foreach (var verification in round.Verifications ?? [])
+        {
+            if (verification is null || !Hex(verification.Id, 32) || !batches.Add(verification.Id) ||
+                !Hex(verification.PayloadHash, 64) || verification.Error is { Length: > 2000 } ||
+                (verification.Result is { } result ? !ValidResult(result) || verification.Error is not null || verification.Interrupted :
+                    verification.Interrupted && verification.Error is null))
+                throw new InvalidDataException("The saved round contains an invalid verification.");
+        }
+        if (round.Proposed is not null && round.Verifications?.Any(check =>
+                check.Id == round.Proposed && check.Result?.Passed == true) != true)
+            throw new InvalidDataException("The proposed build is missing its passing verification.");
     }
 
     private static bool ValidTurn(Turn? turn) => turn is null ||
@@ -120,7 +142,14 @@ internal sealed class CreatorWorkerRoundStore
             turn.Report is null && turn.WorldHash is null);
 
     private static bool ValidCandidate(Candidate? value) => value is null ||
-        Leaf(value.Folder) && Hex(value.ProjectId, 32) && Hex(value.Snapshot, 64) && Hex(value.Bundle, 64);
+        Leaf(value.Folder) && Hex(value.ProjectId, 32) && Hex(value.Snapshot, 64) && Hex(value.Bundle, 64) &&
+        (value.ReportHash is null || Hex(value.ReportHash, 64));
+    private static bool ValidResult(VerificationResult result) =>
+        result.Build is { ReportHash: not null } && ValidCandidate(result.Build) &&
+        result.TotalGroups > 0 && result.PassedGroups >= 0 && result.PassedGroups <= result.TotalGroups &&
+        result.Passed == (result.PassedGroups == result.TotalGroups) && result.Failures is { Length: <= MaximumVerificationFailures } &&
+        result.Failures.All(failure => failure is not null && failure.Group is { Length: > 0 and <= 256 } &&
+            failure.Check is not { Length: > 256 } && failure.Issue is not { Length: > 512 });
     private static bool Revision(long value) => value is >= 0 and <= MaximumRevision;
     internal static bool Hex(string? value, int count) => value is not null && value.Length == count &&
         value.All(c => c is (>= '0' and <= '9') or (>= 'a' and <= 'f'));

@@ -38,7 +38,8 @@ internal sealed record PlaytestAttempt(string Report, string Sha256, string Buil
 
 internal sealed class PlaytestResultsWindow : Window
 {
-    public PlaytestResultsWindow(PlaytestAttempt attempt, JsonElement report, string? workingBuild, long workingRevision)
+    public PlaytestResultsWindow(PlaytestAttempt attempt, JsonElement report, string? workingBuild, long workingRevision,
+        bool approveBuild = false)
     {
         Title = "Playtest results";
         Width = 620;
@@ -56,7 +57,11 @@ internal sealed class PlaytestResultsWindow : Window
         header.Children.Add(new TextBlock { Text = "Playtest results", FontSize = 23, FontWeight = FontWeight.SemiBold });
         header.Children.Add(Text(attempt.Summary));
         header.Children.Add(Text($"Tested build {attempt.Build[..12]}", muted: true));
-        if (!attempt.Retained && workingBuild is not null)
+        if (approveBuild)
+            header.Children.Add(Text(workingBuild is null
+                ? "Approve this build to make it playable from the creator."
+                : $"Approve this build to replace the current playable build ({workingBuild[..12]}).", muted: true));
+        else if (!attempt.Retained && workingBuild is not null)
             header.Children.Add(Text($"Revision {workingRevision} is still playable ({workingBuild[..12]}).", muted: true));
         else if (attempt.Passed && !attempt.Retained)
             header.Children.Add(Text("Use Export build to save a playable copy.", muted: true));
@@ -93,14 +98,22 @@ internal sealed class PlaytestResultsWindow : Window
             groups.Children.Add(section);
         }
         var scroll = new ScrollViewer { Content = groups, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled };
-        var done = new Button { Content = "Done", HorizontalAlignment = HorizontalAlignment.Right, IsCancel = true };
+        var done = new Button { Content = approveBuild ? "Keep for later" : "Done", IsCancel = true };
         done.Click += (_, _) => Close();
+        var actions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8,
+            HorizontalAlignment = HorizontalAlignment.Right, Children = { done } };
+        if (approveBuild)
+        {
+            var approve = new Button { Content = "Approve this build" };
+            approve.Click += (_, _) => Close(true);
+            actions.Children.Add(approve);
+        }
         var layout = new Grid { RowDefinitions = new RowDefinitions("Auto,*,Auto"), RowSpacing = 16, Margin = new Thickness(20) };
         layout.Children.Add(header);
         Grid.SetRow(scroll, 1);
         layout.Children.Add(scroll);
-        Grid.SetRow(done, 2);
-        layout.Children.Add(done);
+        Grid.SetRow(actions, 2);
+        layout.Children.Add(actions);
         Content = layout;
     }
 

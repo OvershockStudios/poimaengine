@@ -15,6 +15,7 @@
 # -WithLeadWorkers uses the active Codex tool protocol to assign those drafts from main chat.
 # -CheckMarkdown inspects formatted lead and worker replies and their original text.
 # -WithCombinedDrafts checks selected worker scenes and plays the retained combined export.
+# -WithLeadVerification checks tool-driven proposals and approves one after reopening.
 # -WithWorkerReopen closes a working round and checks restored reports, receipts and combined playback.
 # -WithWorkerCrash terminates the owned test creator during a worker turn and checks recovery after a draft edit.
 # -CodexToolApproval exercises decline and approve once with the installed Codex.
@@ -45,6 +46,7 @@ param(
     [switch]$WithLeadWorkers,
     [switch]$CheckMarkdown,
     [switch]$WithCombinedDrafts,
+    [switch]$WithLeadVerification,
     [switch]$WithWorkerReopen,
     [switch]$WithWorkerCrash,
     [switch]$CodexToolApproval,
@@ -77,6 +79,9 @@ if (($WithWorkerReopen -or $WithWorkerCrash) -and (!$WithLeadWorkers -or !$WithC
 }
 if ($WithCombinedDrafts -and ((!$WithBuildWorkers -and !$WithLeadWorkers) -or $WithoutVulkan)) {
     throw 'Run combined drafts with build workers, a packaged sample runtime and Windows Vulkan.'
+}
+if ($WithLeadVerification -and (!$WithLeadWorkers -or !$WithCombinedDrafts -or $WithWorkerReopen -or $WithWorkerCrash)) {
+    throw 'Run lead verification with lead assignments and combined drafts, as a separate recovery scenario.'
 }
 if ($CodexReviews -and ($WithCodex -or $CodexQuestions -or $CodexBrief -or $CodexToolApproval -or
     $VerifiedPlayChat -or $VerifiedPlayWithCodex -or $CodexAssetRead)) {
@@ -169,6 +174,7 @@ $report = [ordered]@{
     lead_workers_requested = [bool]$WithLeadWorkers
     markdown_requested = [bool]$CheckMarkdown
     combined_drafts_requested = [bool]$WithCombinedDrafts
+    lead_verification_requested = [bool]$WithLeadVerification
     worker_reopen_requested = [bool]$WithWorkerReopen
     worker_crash_requested = [bool]$WithWorkerCrash
     export_requested = [bool]$WithExport
@@ -921,7 +927,13 @@ function Exercise-LeadWorkers($Project, $Peer) {
     Wait-ForCreatorChatTab 'Main chat' -Select
     if ($WithCombinedDrafts) {
         $group = Split-Path -Parent (Split-Path -Parent $launches[0].manifest)
-        Exercise-CombinedDrafts $group $ids $Project
+        if ($WithLeadVerification) {
+            $completed = @($calls | Where-Object { $_.reply.result.success } |
+                ForEach-Object { $_.reply.result.contentItems[0].text | ConvertFrom-Json } |
+                Where-Object { $_.state -ceq 'completed' })[-1]
+            Exercise-LeadVerification $group $completed.request_id
+        }
+        else { Exercise-CombinedDrafts $group $ids $Project }
     }
     if ($CheckMarkdown) {
         Wait-ForCreatorChatTab 'Worker 1' -Select
@@ -943,6 +955,11 @@ function Exercise-LeadWorkers($Project, $Peer) {
         $receipt = @($calls | Where-Object { $_.reply.result.success } |
             ForEach-Object { $_.reply.result.contentItems[0].text | ConvertFrom-Json } |
             Where-Object { $_.state -ceq 'completed' })[-1]
+        if ((@($receipt.workers.manifest | Sort-Object) -join "`n") -cne
+            (@($launches.manifest | Sort-Object) -join "`n")) {
+            throw 'The assignment receipt identifies different drafts from the launched workers.'
+        }
+        $checks.worker_manifests = @($receipt.workers.manifest)
         $checks.assignment_id = $receipt.request_id
         $checks.worker_scene_hashes = @($receipt.workers.world_sha256)
         Invoke-Control 'Add build worker'
@@ -954,6 +971,89 @@ function Exercise-LeadWorkers($Project, $Peer) {
         $checks.worker_pids += $held.pid
         Wait-ForCreatorChatTab 'Main chat' -Select
     }
+}
+
+function Exercise-LeadVerification($Group, $Assignment) {
+    $reply = Send-CodexPrompt "Verify drafts for assignment $Assignment."
+    if (!$reply.Contains('Lead checked both combinations.')) { throw 'The lead did not verify the exact requested combinations.' }
+    $ledgerPath = Join-Path $Group 'round.json'
+    $ledger = Get-Content -LiteralPath $ledgerPath -Raw | ConvertFrom-Json
+    $builds = @(Get-ChildItem -LiteralPath $Group -Directory -Filter 'combined-*')
+    $candidate = @($ledger.verifications | Where-Object { $_.id -ceq $ledger.proposed })[0]
+    $rejected = @($ledger.verifications | Where-Object { $_.result.passed -eq $false })[0]
+    if ($builds.Count -ne 2 -or $ledger.verifications.Count -ne 2 -or !$candidate.result.passed -or
+        $ledger.latest.bundle -cne $rejected.result.build.bundle -or $ledger.passing -or (Find-Control 'Play combined game')) {
+        throw 'Verification duplicated a build or made the proposal playable before approval.'
+    }
+    $passingReport = @(Get-ChildItem -File -Path (Join-Path $Group "$($candidate.result.build.folder)\.poima-history\*\*\checks.json"))[0]
+    if ((Get-FileHash -LiteralPath $passingReport.FullName).Hash.ToLowerInvariant() -cne $candidate.result.build.report_hash) {
+        throw 'The proposed receipt does not identify the written native report.'
+    }
+    $creator = $window
+    Invoke-Control 'Review proposed build'
+    try {
+        $window = Wait-For 'the proposed build report' { Find-OwnedDialog $creator 'Playtest results' }
+        $null = Wait-For 'both proposed check groups' {
+            (Find-Control 'Draft lantern (passed)') -and (Find-Control 'Draft quay bench (passed)')
+        }
+        Invoke-Control 'Keep for later'
+    }
+    finally { $window = $creator }
+    $report.checks.lead_verification = [ordered]@{
+        ledger = $ledgerPath
+        proposal = $candidate.id
+        failed_check = $rejected.id
+        passing_report = $passingReport.FullName
+        passing_bundle = $candidate.result.build.bundle
+        exact_combinations_built = $builds.Count
+        reviewed_and_left_pending = $true
+    }
+}
+
+function Approve-ReopenedProposal {
+    $checks = $report.checks.lead_verification
+    $creator = $window
+    $null = Wait-For 'the restored proposal and failed check' {
+        (Find-Control 'Review proposed build' -Enabled) -and (Find-Control 'Combined game checks' -Enabled)
+    }
+    if (Find-Control 'Play combined game') { throw 'Reopening activated the pending proposal.' }
+    $reportBefore = [IO.File]::ReadAllBytes($checks.passing_report)
+    Invoke-Control 'Review proposed build'
+    try {
+        $window = Wait-For 'the reopened proposed build' { Find-OwnedDialog $creator 'Playtest results' }
+        $null = Wait-For 'the exact reopened build results' { Find-Control "Tested build $($checks.passing_bundle.Substring(0,12))" }
+        [IO.File]::WriteAllBytes($checks.passing_report, [byte[]]($reportBefore + [byte]32))
+        Invoke-Control 'Approve this build'
+        $window = $creator
+        $null = Wait-For 'changed report rejection' {
+            (Find-ControlId 'preview-status').Current.Name -match 'proposed build or its playtest report changed'
+        }
+        if (Find-Control 'Play combined game') { throw 'A modified playtest report activated the pending proposal.' }
+    }
+    finally {
+        [IO.File]::WriteAllBytes($checks.passing_report, $reportBefore)
+        $window = $creator
+    }
+    $checks.changed_report_rejected = $true
+
+    Invoke-Control 'Review proposed build'
+    try {
+        $window = Wait-For 'the restored exact playtest report' { Find-OwnedDialog $creator 'Playtest results' }
+        Invoke-Control 'Approve this build'
+    }
+    finally { $window = $creator }
+    $null = Wait-For 'the approved playable build' { Find-Control 'Play combined game' -Enabled }
+    $ledger = Get-Content -LiteralPath $checks.ledger -Raw | ConvertFrom-Json
+    if ($ledger.proposed -or $ledger.passing.bundle -cne $checks.passing_bundle -or
+        $ledger.latest.bundle -ceq $ledger.passing.bundle) {
+        throw 'Approval did not retain the exact proposal alongside the latest failed check.'
+    }
+    $candidate = Get-Content -LiteralPath $checks.passing_report -Raw | ConvertFrom-Json
+    $game = Join-Path (Split-Path -Parent $checks.passing_report) 'game'
+    $played = Play-CheckedCombination $game $candidate 'reopen'
+    $checks.approved_after_reopen = $true
+    $checks.observation = $played.observation
+    $checks.playback = $played.playback
 }
 
 function Exercise-ReopenedWorkers($Project, $Peer, $LeadChecks) {
@@ -1164,23 +1264,7 @@ function Exercise-CombinedDrafts($Group, $Ids, $Project) {
         }
     }
 
-    $runtime = Join-Path $game 'runtime\bin\poima.exe'
-    Invoke-Control 'Play combined game'
-    $script:verifiedPlayer = Wait-For 'the passing combined player after the later failed build' {
-        Get-Process -Name poima -ErrorAction SilentlyContinue | Where-Object {
-            $_.Path -ieq $runtime -and $_.MainWindowHandle -ne [IntPtr]::Zero
-        } | Select-Object -First 1
-    } 45
-    $null = $verifiedPlayer.Handle
-    $observation = Wait-For 'native combined playback presentation' {
-        $playback = (Verified-PlayRpc 'desktop.verified.inspect' @{}).playback
-        if ($playback.bundle_sha256 -ceq $candidate.bundle_sha256 -and $playback.observation.frames_presented -ge 1 -and
-            ($playback.observation.tick -ge 1 -or (!$playback.observation.focused -and $playback.observation.paused))) {
-            $playback.observation
-        }
-    } 20
-    # This automation does not take foreground focus from another application.
-    $played = Close-VerifiedPlayer $candidate 'create' $(if ($observation.tick -ge 1) { 1 } else { 0 })
+    $played = Play-CheckedCombination $game $candidate 'create'
 
     Invoke-Control 'Open combined project as copy'
     $copy = Wait-For 'the editable combined project' {
@@ -1212,11 +1296,32 @@ function Exercise-CombinedDrafts($Group, $Ids, $Project) {
         passing_report = $attempts[0]
         failed_report = $attempts[1]
         passing_bundle = $candidate.bundle_sha256
-        observation = $observation
-        playback = $played
+        observation = $played.observation
+        playback = $played.playback
         editable_project = $opened.project_id
         editable_close_exit_code = $combinedEditor.ExitCode
     }
+}
+
+function Play-CheckedCombination($Game, $Candidate, $Phase) {
+    $runtime = Join-Path $Game 'runtime\bin\poima.exe'
+    Invoke-Control 'Play combined game'
+    $script:verifiedPlayer = Wait-For 'the passing combined player' {
+        Get-Process -Name poima -ErrorAction SilentlyContinue | Where-Object {
+            $_.Path -ieq $runtime -and $_.MainWindowHandle -ne [IntPtr]::Zero
+        } | Select-Object -First 1
+    } 45
+    $null = $verifiedPlayer.Handle
+    $observation = Wait-For 'native combined playback presentation' {
+        $playback = (Verified-PlayRpc 'desktop.verified.inspect' @{}).playback
+        if ($playback.bundle_sha256 -ceq $Candidate.bundle_sha256 -and $playback.observation.frames_presented -ge 1 -and
+            ($playback.observation.tick -ge 1 -or (!$playback.observation.focused -and $playback.observation.paused))) {
+            $playback.observation
+        }
+    } 20
+    # This automation does not take foreground focus from another application.
+    $playback = Close-VerifiedPlayer $Candidate $Phase $(if ($observation.tick -ge 1) { 1 } else { 0 })
+    return @{ observation = $observation; playback = $playback }
 }
 
 function Exercise-Acp($Project, $Provider, $Setting, $Executable, $Key) {
@@ -2455,6 +2560,7 @@ try {
     }
     if ($WithWorkerReopen) { Exercise-ReopenedWorkers $reopened $CodexReviews $report.checks.lead_workers }
     if ($WithWorkerCrash) { Exercise-CrashRecovery $report.checks.lead_workers }
+    if ($WithLeadVerification) { Approve-ReopenedProposal }
     if ($ObserveVerifiedPlayback) {
         if ($null -ne (Verified-PlayRpc 'desktop.verified.inspect' @{}).playback) {
             throw 'The reopened creator reported playback from a previous owner.'

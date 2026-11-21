@@ -102,7 +102,7 @@ internal sealed class AgentChat : UserControl
             settings.Children.Add(allowEdits);
             if (coordinateWorkers is not null)
             {
-                ToolTip.SetTip(allowWorkers, "Authorize up to ten independent Codex workers in this workspace. Set this before starting a new chat.");
+                ToolTip.SetTip(allowWorkers, "Authorize up to ten independent Codex workers and let Codex check their combined builds. Set this before starting a new chat.");
                 settings.Children.Add(allowWorkers);
             }
             if (gameplayToolStatus is not null)

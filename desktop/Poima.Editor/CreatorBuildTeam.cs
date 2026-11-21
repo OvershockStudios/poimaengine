@@ -14,19 +14,23 @@ internal sealed class CreatorBuildTeam
     private readonly TabControl conversations;
     private readonly Func<string, bool> addToDraft;
     private readonly Action<string?> status;
+    private readonly Action<CombinedCheck> checkedBuild;
     private readonly Func<(string Executable, string? Model)?> client;
     private readonly CreatorWorkerRoundStore store;
     private readonly List<WorkerTab> tabs = [];
     private readonly List<Task> assignedFinishes = [];
     private Round? round;
-    private Task? provision, retirement;
+    private Task? provision, verificationWork, retirement;
+    private CancellationTokenSource? verifying;
     private TaskCompletionSource changed = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private bool closing, adding, loaded, restoreFailed;
 
     public bool HasWorkers => tabs.Count != 0;
-    public bool CanAdd => loaded && !restoreFailed && !closing && !adding && tabs.Count < CodexWorkerTool.MaximumWorkers;
-    public bool CanReview => !closing && !adding && tabs.Any(tab => !tab.Pane.Busy && tab.Pane.Finding is not null);
-    public bool CanStartRound => loaded && round is not null && !adding && !closing &&
+    public bool IsVerifying => verifying is not null;
+    public CombinedCheck? Proposal { get; private set; }
+    public bool CanAdd => loaded && !restoreFailed && !closing && !adding && !IsVerifying && tabs.Count < CodexWorkerTool.MaximumWorkers;
+    public bool CanReview => !closing && !adding && !IsVerifying && tabs.Any(tab => !tab.Pane.Busy && tab.Pane.Finding is not null);
+    public bool CanStartRound => loaded && round is not null && !adding && !closing && !IsVerifying &&
         tabs.All(tab => !tab.Pane.Busy) && assignedFinishes.All(task => task.IsCompleted);
     public long BaseRevision => round?.Base?.Revision ?? throw new InvalidOperationException("There is no worker checkpoint.");
 
@@ -36,12 +40,13 @@ internal sealed class CreatorBuildTeam
         string GameManifest, PlaytestAttempt Attempt);
 
     public CreatorBuildTeam(ProjectLocation project, TabControl conversations, Func<string, bool> addToDraft,
-        Action<string?> status, Func<(string Executable, string? Model)?> client)
+        Action<string?> status, Action<CombinedCheck> checkedBuild, Func<(string Executable, string? Model)?> client)
     {
         this.project = project;
         this.conversations = conversations;
         this.addToDraft = addToDraft;
         this.status = status;
+        this.checkedBuild = checkedBuild;
         this.client = client;
         store = new(project.Manifest, project.ProjectId);
     }
@@ -69,7 +74,7 @@ internal sealed class CreatorBuildTeam
                     throw new InvalidDataException("The worker checkpoint belongs to a different revision or project.");
             }
             if (round.Workers.Any(worker => worker.Latest?.State == "running" || worker.Assigned?.State == "running") ||
-                round.Batches.Any(Preparing))
+                round.Batches.Any(Preparing) || round.Verifications?.Any(check => check.Pending) == true)
             {
                 Save(round with
                 {
@@ -81,7 +86,12 @@ internal sealed class CreatorBuildTeam
                     {
                         Interrupted = true,
                         Error = "The workspace closed before preparing these workers."
-                    } : batch).ToArray()
+                    } : batch).ToArray(),
+                    Verifications = round.Verifications?.Select(check => check.Pending ? check with
+                    {
+                        Interrupted = true,
+                        Error = "The workspace closed before verification completed. Submit a new request to check these drafts again."
+                    } : check).ToArray()
                 });
             }
             foreach (var worker in round.Workers)
@@ -100,6 +110,9 @@ internal sealed class CreatorBuildTeam
             }
             var latest = await RestoreCombinedAsync(round.Latest, cancellation);
             var passing = round.Passing == round.Latest ? latest : await RestoreCombinedAsync(round.Passing, cancellation);
+            var proposed = round.Verifications?.FirstOrDefault(check => check.Id == round.Proposed)?.Result?.Build;
+            var proposal = proposed == round.Latest ? latest : await RestoreCombinedAsync(proposed, cancellation);
+            Proposal = proposal?.Attempt.Retained == true ? proposal : null;
             return (latest, passing?.Attempt.Retained == true ? passing : null);
         }
         catch
@@ -120,6 +133,7 @@ internal sealed class CreatorBuildTeam
         var next = store.NewRound();
         store.Write(next, replacing: round!.Id);
         round = next;
+        Proposal = null;
         restoreFailed = false;
         conversations.SelectedIndex = 0;
         foreach (var tab in tabs)
@@ -292,12 +306,16 @@ internal sealed class CreatorBuildTeam
 
     private static string? ShortError(string? value) => value is { Length: > 2000 } ? value[..2000] : value;
     private Batch? FindBatch(string id) => round?.Batches.FirstOrDefault(batch => batch.Id == id);
+    private Verification? FindVerification(string id) => round?.Verifications?.FirstOrDefault(check => check.Id == id);
     private static string PayloadHash(CodexWorkerRequest request) =>
         Hash(JsonSerializer.SerializeToUtf8Bytes(new { revision = request.ExpectedRevision, request.Tasks }));
 
-    public async Task<JsonObject> CoordinateAsync(CodexWorkerRequest request, CancellationToken cancellation)
+    public async Task<JsonObject> CoordinateAsync(CodexWorkerRequest request, bool canStartVerification,
+        CancellationToken cancellation)
     {
         if (!loaded || restoreFailed) throw new InvalidOperationException("The worker round could not be loaded.");
+        if (request.Drafts is not null || FindVerification(request.RequestId) is not null)
+            return await CoordinateVerificationAsync(request, canStartVerification, cancellation);
         if (FindBatch(request.RequestId) is { } existing)
         {
             if (request.ExpectedRevision is not null && existing.PayloadHash != PayloadHash(request))
@@ -310,7 +328,7 @@ internal sealed class CreatorBuildTeam
             return Describe(FindBatch(request.RequestId) ??
                 throw new InvalidOperationException("The worker round changed."), replayed: request.ExpectedRevision is not null);
         }
-        if (request.ExpectedRevision is not long revision) throw new InvalidOperationException("Unknown worker assignment. Inspect a request_id returned by assign.");
+        if (request.ExpectedRevision is not long revision) throw new InvalidOperationException("Unknown worker request. Inspect a request_id used with assign or verify.");
         if (!CanAdd || (round?.Workers.Length ?? 0) + request.Tasks.Length > CodexWorkerTool.MaximumWorkers)
             throw new InvalidOperationException("Wait for draft preparation or assign within the workspace limit of ten workers.");
         if (round?.Batches.Length >= MaximumAssignments) throw new InvalidOperationException("Start a new worker round to assign more work.");
@@ -394,7 +412,8 @@ internal sealed class CreatorBuildTeam
             var worker = FindWorker(id);
             var turn = worker.Assigned!;
             var number = Array.FindIndex(Current.Workers, item => item.ProjectId == id) + 1;
-            var row = new JsonObject { ["worker"] = "Worker " + number, ["manifest"] = Manifest(worker), ["state"] = turn.State };
+            var row = new JsonObject { ["worker"] = "Worker " + number, ["draft_id"] = id,
+                ["manifest"] = Manifest(worker), ["state"] = turn.State };
             allCompleted &= turn.State == "completed";
             interrupted |= turn.State == "interrupted";
             if (turn.Report is { } report)
@@ -414,11 +433,155 @@ internal sealed class CreatorBuildTeam
         return result;
     }
 
+    private async Task<JsonObject> CoordinateVerificationAsync(CodexWorkerRequest request, bool canStart,
+        CancellationToken cancellation)
+    {
+        if (request.ExpectedRevision is not null || FindBatch(request.RequestId) is not null)
+            throw new InvalidOperationException("This request_id belongs to a different worker operation.");
+        var hash = request.Drafts is { } drafts ? Hash(JsonSerializer.SerializeToUtf8Bytes(drafts)) : null;
+        if (FindVerification(request.RequestId) is { } existing)
+        {
+            if (hash is not null && hash != existing.PayloadHash)
+                throw new InvalidOperationException("This request_id already identifies a different verification.");
+            if (request.WaitMilliseconds > 0 && existing.Pending)
+            {
+                try { await changed.Task.WaitAsync(TimeSpan.FromMilliseconds(request.WaitMilliseconds), cancellation); }
+                catch (TimeoutException) { }
+            }
+            return Describe(FindVerification(request.RequestId) ??
+                throw new InvalidOperationException("The worker round changed."), replayed: hash is not null);
+        }
+        if (!canStart || closing || adding || IsVerifying)
+            throw new InvalidOperationException("Stop the game or wait for current project work before checking a combination.");
+        if (!File.Exists(Path.Combine(ProjectFiles.PreviewRuntime, "runtime.json")))
+            throw new InvalidOperationException("Install the Windows player to check a combined build.");
+        RequireSuite();
+        var receipts = Current.Verifications ?? [];
+        if (receipts.Length >= MaximumAssignments)
+            throw new InvalidOperationException("Start a new worker round to check more combinations.");
+
+        var selected = request.Drafts!.Select(draft =>
+        {
+            var index = Array.FindIndex(Current.Workers, worker => worker.ProjectId == draft.DraftId);
+            if (index < 0) throw new InvalidOperationException("A selected draft is outside the current worker round.");
+            var pane = tabs[index].Pane;
+            var worker = Current.Workers[index];
+            if (pane.Busy || pane.Finding is not { } report || worker.Latest?.WorldHash != draft.WorldSha256)
+                throw new InvalidOperationException($"Review the latest finished report for {pane.Name} before verifying its draft.");
+            return new ReviewedDraft(pane.Name, Manifest(worker), Base.Revision, draft.WorldSha256, report);
+        }).ToArray();
+        cancellation.ThrowIfCancellationRequested();
+        var receipt = new Verification(request.RequestId, hash!);
+        Save(Current with { Verifications = [.. receipts, receipt] });
+        verifying = new CancellationTokenSource();
+        verificationWork = RunVerificationAsync(receipt, selected, verifying);
+        return Describe(FindVerification(receipt.Id)!, replayed: false);
+    }
+
+    private async Task RunVerificationAsync(Verification receipt, ReviewedDraft[] selected, CancellationTokenSource source)
+    {
+        var cancellation = source.Token;
+        string? finalMessage = null;
+        try
+        {
+            status("Combining the selected scenes…");
+            var (check, candidate) = await BuildCombinationAsync(selected, status, cancellation);
+            var attempt = check.Attempt;
+            using var report = await attempt.ReadReportAsync();
+            var result = new VerificationResult(candidate, attempt.Passed, attempt.PassedGroups, attempt.TotalGroups,
+                DescribeFailures(report.RootElement));
+            cancellation.ThrowIfCancellationRequested();
+            Save(Current with
+            {
+                Latest = candidate,
+                Proposed = attempt.Passed ? receipt.Id : Current.Proposed,
+                Verifications = ReplaceVerification(receipt with { Result = result })
+            });
+            if (attempt.Passed) Proposal = check;
+            checkedBuild(check);
+            finalMessage = "Combined game. " + attempt.Summary;
+        }
+        catch (Exception failure)
+        {
+            var message = cancellation.IsCancellationRequested ? "The workspace closed before verification completed." : failure.Message;
+            try
+            {
+                Save(Current with { Verifications = ReplaceVerification(receipt with
+                {
+                    Error = ShortError(message), Interrupted = cancellation.IsCancellationRequested
+                }) });
+            }
+            catch (Exception saveFailure) { message += " The receipt could not be saved. " + saveFailure.Message; }
+            finalMessage = message;
+        }
+        finally
+        {
+            verifying = null;
+            source.Dispose();
+            if (!closing) status(finalMessage);
+        }
+    }
+
+    private Verification[] ReplaceVerification(Verification replacement) =>
+        Current.Verifications!.Select(check => check.Id == replacement.Id ? replacement : check).ToArray();
+
+    private JsonObject Describe(Verification receipt, bool replayed)
+    {
+        var result = receipt.Result;
+        var reply = new JsonObject
+        {
+            ["request_id"] = receipt.Id,
+            ["state"] = receipt.Pending ? "running" : receipt.Interrupted ? "interrupted" : result?.Passed == true ? "passed" : "failed",
+            ["replayed"] = replayed
+        };
+        if (receipt.Error is { } error) reply["error"] = error;
+        if (result is null) return reply;
+        reply["bundle_sha256"] = result.Build.Bundle;
+        reply["snapshot_sha256"] = result.Build.Snapshot;
+        reply["report_sha256"] = result.Build.ReportHash;
+        reply["groups_passed"] = result.PassedGroups;
+        reply["groups_total"] = result.TotalGroups;
+        reply["awaiting_review"] = Current.Proposed == receipt.Id;
+        reply["playable"] = Current.Passing == result.Build;
+        reply["failures"] = JsonSerializer.SerializeToNode(result.Failures.Select(failure => new
+        {
+            group = failure.Group, check = failure.Check, tick = failure.Tick, issue = failure.Issue
+        }));
+        return reply;
+    }
+
+    private static FailedCheck[] DescribeFailures(JsonElement report)
+    {
+        var failures = new List<FailedCheck>();
+        foreach (var group in report.GetProperty("groups").EnumerateArray())
+        {
+            if (group.GetProperty("passed").GetBoolean()) continue;
+            var name = Limit(group.GetProperty("name").GetString()!, 256);
+            if (group.TryGetProperty("issue", out var issue))
+                failures.Add(new(name, null, null, Limit(issue.GetProperty("message").GetString()!, 512)));
+            else
+            {
+                var first = group.GetProperty("checks").EnumerateArray().FirstOrDefault(check => !check.GetProperty("passed").GetBoolean());
+                failures.Add(first.ValueKind == JsonValueKind.Object
+                    ? new(name, Limit(first.GetProperty("label").GetString()!, 256), first.GetProperty("tick").GetInt64(), null)
+                    : new(name, null, null, null));
+            }
+            if (failures.Count == MaximumVerificationFailures) break;
+        }
+        return [.. failures];
+    }
+
+    private static string Limit(string value, int length) => value.Length <= length ? value : value[..length];
+
+    private void RequireSuite()
+    {
+        if (!File.Exists(Path.Combine(Path.GetDirectoryName(CheckpointSource(Base))!, ProjectFiles.VerificationSuiteName)))
+            throw new InvalidOperationException("This worker round started without a playtest suite. Add game.verify.json and start a new worker round.");
+    }
+
     public async Task<ReviewedDraft[]> ReviewAsync(CancellationToken cancellation)
     {
-        var baseSource = CheckpointSource(Base);
-        if (!File.Exists(Path.Combine(Path.GetDirectoryName(baseSource)!, ProjectFiles.VerificationSuiteName)))
-            throw new InvalidOperationException("This worker round started without a playtest suite. Add game.verify.json and start a new worker round.");
+        RequireSuite();
 
         var result = new List<ReviewedDraft>();
         for (var index = 0; index < tabs.Count; index++)
@@ -440,6 +603,28 @@ internal sealed class CreatorBuildTeam
 
     public async Task<CombinedCheck> CombineAsync(ReviewedDraft[] selected, Action<string> setProgress,
         CancellationToken cancellation)
+    {
+        var (check, candidate) = await BuildCombinationAsync(selected, setProgress, cancellation);
+        Save(Current with { Latest = candidate, Passing = check.Attempt.Retained ? candidate : Current.Passing });
+        return check;
+    }
+
+    public async Task<CombinedCheck> AcceptAsync(CombinedCheck reviewed, CancellationToken cancellation)
+    {
+        if (IsVerifying || reviewed != Proposal || Current.Proposed is not { } id ||
+            FindVerification(id)?.Result is not { Passed: true } result)
+            throw new InvalidOperationException("The proposed build changed. Review the current results.");
+        var checkedBuild = await RestoreCombinedAsync(result.Build, cancellation);
+        if (checkedBuild != reviewed || !checkedBuild.Attempt.Retained)
+            throw new InvalidOperationException("The proposed build or its playtest report changed.");
+        cancellation.ThrowIfCancellationRequested();
+        Save(Current with { Passing = result.Build, Proposed = null });
+        Proposal = null;
+        return checkedBuild;
+    }
+
+    private async Task<(CombinedCheck Check, Candidate Build)> BuildCombinationAsync(ReviewedDraft[] selected,
+        Action<string> setProgress, CancellationToken cancellation)
     {
         var captured = Base;
         if (selected.Length == 0 || !selected.All(draft => Current.Workers.Select((worker, index) => (worker, pane: tabs[index].Pane))
@@ -486,9 +671,8 @@ internal sealed class CreatorBuildTeam
             throw new InvalidOperationException("The combined game's results could not be paired with its source checkpoint.");
 
         var check = ReadCombined(projectId, history, entry);
-        var candidate = new Candidate(candidateFolder, projectId, check.Snapshot, check.Attempt.Build);
-        Save(Current with { Latest = candidate, Passing = check.Attempt.Retained ? candidate : Current.Passing });
-        return check;
+        var candidate = new Candidate(candidateFolder, projectId, check.Snapshot, check.Attempt.Build, check.Attempt.Sha256);
+        return (check, candidate);
     }
 
     private async Task<CombinedCheck?> RestoreCombinedAsync(Candidate? candidate, CancellationToken cancellation)
@@ -501,7 +685,8 @@ internal sealed class CreatorBuildTeam
             var versions = await ProjectFiles.Command(cancellation, "versions", history, "--project-id", candidate.ProjectId);
             var entry = versions.GetProperty("entries").EnumerateArray().SingleOrDefault();
             if (entry.ValueKind != JsonValueKind.Object || entry.GetProperty("snapshot_sha256").GetString() != candidate.Snapshot ||
-                entry.GetProperty("bundle_sha256").GetString() != candidate.Bundle)
+                entry.GetProperty("bundle_sha256").GetString() != candidate.Bundle ||
+                candidate.ReportHash is { } hash && entry.GetProperty("report_sha256").GetString() != hash)
                 throw new InvalidDataException("A saved combined build or verification report changed.");
             return ReadCombined(candidate.ProjectId, history, entry);
         }
@@ -522,8 +707,10 @@ internal sealed class CreatorBuildTeam
     private async Task RetireCoreAsync()
     {
         closing = true;
+        verifying?.Cancel();
         foreach (var tab in tabs) tab.Pane.Enable(false);
         if (provision is { } pending) await pending;
+        if (verificationWork is { } checking) await checking;
         await Task.WhenAll(tabs.Select(tab => tab.Pane.ResetAsync()));
         await Task.WhenAll(assignedFinishes);
     }
