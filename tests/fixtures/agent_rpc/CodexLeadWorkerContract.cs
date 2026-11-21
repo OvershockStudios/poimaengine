@@ -12,6 +12,7 @@ internal static class CodexLeadWorkerContract
     public const string RepairPrompt = "Repair failed checks for assignment ";
     public const string ReplayRepairPrompt = "Replay worker follow-up ";
     public const string RecoverScopePrompt = "Recover blocked scene worker after ";
+    public const string QueuePrompt = "Queue scene work at revision ";
     public const string RepairTask = "Add the lantern brace missing from the playtest.";
     public const string RecoverTask = "Add a worker recovery marker.";
     public const string Finished = "Lead collected both worker reports.";
@@ -43,11 +44,32 @@ internal static class CodexLeadWorkerContract
         var repair = prompt.StartsWith(RepairPrompt, StringComparison.Ordinal);
         var replayRepair = prompt.StartsWith(ReplayRepairPrompt, StringComparison.Ordinal);
         var recoverScope = prompt.StartsWith(RecoverScopePrompt, StringComparison.Ordinal);
-        if (!disabled && !replay && !verify && !repair && !replayRepair && !recoverScope &&
+        var queue = prompt.StartsWith(QueuePrompt, StringComparison.Ordinal);
+        if (!disabled && !replay && !verify && !repair && !replayRepair && !recoverScope && !queue &&
             !prompt.StartsWith(DelegatePrompt, StringComparison.Ordinal)) return null;
         var prefix = disabled ? DisabledPrompt : DelegatePrompt;
         var firstLine = prompt.Split('\n', 2)[0].TrimEnd();
         using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(100));
+        if (queue)
+        {
+            var queuedRevision = long.Parse(firstLine.AsSpan(QueuePrompt.Length).TrimEnd('.'), CultureInfo.InvariantCulture);
+            var queueId = Guid.NewGuid().ToString("N");
+            var assignment = new JsonObject
+            {
+                ["action"] = "assign", ["request_id"] = queueId, ["expected_revision"] = queuedRevision,
+                ["tasks"] = new JsonArray("Hold draft turn.", "Hold draft turn.", "Hold draft turn.", "Hold draft turn.",
+                    "Hold draft turn.", "Draft a quay bench.", "Cancel this queued task.")
+            };
+            await Call(assignment, success: true);
+            var waiting = await InspectUntil(queueId, row => row["workers"] is JsonArray { Count: 7 } workers &&
+                workers.Select(worker => worker?["state"]?.GetValue<string>())
+                    .SequenceEqual(["running", "running", "running", "running", "running", "queued", "queued"]));
+            Check(waiting["active_worker_limit"]?.GetValue<int>() == 5, "The assignment did not describe the active limit.");
+            var replayed = await Call(assignment, success: true);
+            Check(replayed["replayed"]?.GetValue<bool>() == true && JsonNode.DeepEquals(waiting["workers"], replayed["workers"]),
+                "Replaying a queued assignment changed its worker receipts.");
+            return "Five workers active and two queued.";
+        }
         if (recoverScope)
         {
             await RecoverScopeAsync(firstLine.Substring(RecoverScopePrompt.Length, 32));
@@ -148,7 +170,7 @@ internal static class CodexLeadWorkerContract
 
             var failedId = Guid.NewGuid().ToString("N");
             await Call(FollowUp(failedId, draftId, originalHash, RecoverTask), success: true);
-            var failed = await InspectUntil(failedId, row => row["state"]?.GetValue<string>() != "running");
+            var failed = await InspectUntil(failedId, row => row["state"]?.GetValue<string>() is not ("running" or "queued"));
             Check(failed["state"]?.GetValue<string>() == "failed" &&
                 failed["error"]?.GetValue<string>()?.Contains("could not confirm an isolated scene worker", StringComparison.Ordinal) == true &&
                 failed["world_sha256"] is null,
@@ -183,7 +205,7 @@ internal static class CodexLeadWorkerContract
             var originalHash = rows[0]!["world_sha256"]!;
             var staleId = Guid.NewGuid().ToString("N");
             await Call(FollowUp(staleId, draftId, JsonValue.Create(new string('0', 64))!, RepairTask), success: true);
-            var stale = await InspectUntil(staleId, row => row["state"]?.GetValue<string>() != "running");
+            var stale = await InspectUntil(staleId, row => row["state"]?.GetValue<string>() is not ("running" or "queued"));
             Check(stale["state"]?.GetValue<string>() == "failed" &&
                 stale["error"]?.GetValue<string>()?.Contains("The draft changed.", StringComparison.Ordinal) == true,
                 "A stale draft was allowed to start a follow-up.");

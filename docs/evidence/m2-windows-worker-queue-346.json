@@ -1,0 +1,108 @@
+{
+  "engine_version": "0.0.346",
+  "archive": {
+    "name": "Poima-0.0.346-Windows-x64.zip",
+    "bytes": 142320798,
+    "sha256": "b774ba769f81b984304a217baf81d9c9abf32b2136f5c837b16bc8ccdd5f0326"
+  },
+  "binaries": {
+    "editor_sha256": "70fd336b106a793521c57031445f9539ca2d60e24eb297d7302a0b34af6fba3b",
+    "frontend_sha256": "5668aac9e2aa70e39e7c72cbc10e98ee6e7c9daefc069a32a51debf35fe6a733",
+    "cli_sha256": "f302f35e6262660710a7e79d6aa410de62285ae2e4eaa984d12bb759fbf2fa78",
+    "bridge_sha256": "941301ef249f279560ef0e2de6ebe1b009c1e5036c0e234f3d2249e054f783cb"
+  },
+  "scripted_workspace_queue": {
+    "report_sha256": "e482e166a4954987ffd3e88f5c021dab55493bd12e6f050264a87261b9ddf331",
+    "runner_sha256": "13bfd5d5f62a9bdad46b205b8d21b4b51230eb492c1c82dcefb36b294b67c98a",
+    "active_while_two_wait": 5,
+    "exact_assignment_retry_preserved_receipts": true,
+    "cancelled_before_launch": true,
+    "promoted_one_task": true,
+    "manually_queued_follow_up": true,
+    "close_cancelled_queued_work": true,
+    "original_unchanged": true,
+    "closed_creator_joined_workers": true
+  },
+  "scripted_lead_regression": {
+    "report_sha256": "73cb18c20032146ce2d810341bb4c883e74378b176a0efa00eea5177c9163512",
+    "passed": true
+  },
+  "signed_in_windows_team": {
+    "report_sha256": "ef8de41576e2258bba11e8aea6ec754b23c58741eb90fd8bc7ac67ca89e18ab7",
+    "runner_sha256": "5c9197fa92304530b0b344dd3c740d21b3fe3800ed872903b8a393fc370547ab",
+    "scenario_sha256": "089a803e6fea75102da69cb257bd91a1f2bce79a7e66db21f3c9fe4565dfea11",
+    "model": "gpt-6.2-sol",
+    "codex_version": "codex-cli 0.171.0",
+    "count": 10,
+    "simultaneous_native_draft_owners": 5,
+    "simultaneous_codex_app_servers": 6,
+    "queued_at_sample": 5,
+    "child_private_bytes_at_sample": 435769344,
+    "available_windows_memory_kib_at_sample": 1615116,
+    "child_private_bytes_before_verify": 95744000,
+    "sampled_worker_processes_retired_before_verify": 10,
+    "assignment_wall_ms": 76531,
+    "verify_and_repair_wall_ms": 70803,
+    "worker_scene_hashes": [
+      "cabe350faa59e2a97d6c4458beba8e045ae9839f43ff8da17b4729507a2d3505",
+      "23d70822acc75eafb302035f67b00d74d493b299268524abc70b440e6402e2fc",
+      "24f5b6779f835fa63b0b708c9a6f725ab59d14e1aac896c5ddcd319f7091c42f",
+      "4742740b76fa094d3182c904c55de6adc240d38d3fcf917a67a9f053679d41be",
+      "58b548aaa80179603aad49b2d124bcb2e8822f23cc4f2a6331e07daac9ce22f9",
+      "ebd1386287804fc347c0772c70386ac00fcc344dec3188063236598795608284",
+      "8f32fa7eac3850a4bc7f05f9607efe0506cbdcd1cc8a2c88416751ca9d18241d",
+      "0600c8078c53c0bb1fa195d08c3554d1d452c16e883c71009d9372d6c1dd4d89",
+      "580f3c048ca46e396cbc9db1fe13edaa47f30c807ec85767cc941e1d84b8ea95",
+      "28c3843ab8b49b54445bea14c9c7ec0c837255656d16e1f9f5c6d0d553e93832"
+    ],
+    "repair_request_id": "f6e299b382bf4a348c6570e9cf3ee10c",
+    "original_unchanged": true,
+    "repair_worker_retired": true,
+    "children_exited_before_creator": true,
+    "playback_after_reopen": {
+      "event_type": "verified_play_closed",
+      "revision": 2,
+      "bundle_sha256": "e94f619f982a582a45e34158b0f77b62bd5873a5cabdb3e4ce50231ae9cd0320",
+      "tick": 25,
+      "frames_presented": 52,
+      "stop_reason": "window_closed"
+    },
+    "relocated": {
+      "groups_passed": 11,
+      "report_sha256": "d041542ff421327d630eba70d9b0be7761101c7d4f03a8c143695a5b3ffb5760",
+      "suite_sha256": "da9fb2a035853cb4dc745b923cb9ae6039512d90dff1df9df53bd31772a7a67a",
+      "unchanged_bundle_files": 54,
+      "original_unavailable": true
+    },
+    "first_native_checks": {
+      "passed_groups": 10,
+      "total_groups": 11,
+      "report_sha256": "2dcbfa398a1eca88887393a9694ee995b2d942cdba9060d898e956a267d741b6"
+    },
+    "repaired_native_checks": {
+      "passed_groups": 11,
+      "total_groups": 11,
+      "report_sha256": "d041542ff421327d630eba70d9b0be7761101c7d4f03a8c143695a5b3ffb5760"
+    },
+    "sandbox_setup_trace_detected": false,
+    "sandbox_log_delta_sha256": "58317bb3f7d1f9dd25faafb24435ac55ebcb7367939a7ff9b9fd7117d284a2e8"
+  },
+  "managed_contracts": {
+    "linux": {
+      "passed": true,
+      "log_sha256": "c553528c30de1b12926dbe02666572d122cba9eb040b643fe33a4938d9db643c"
+    },
+    "windows": {
+      "passed": true,
+      "log_sha256": "4889ea2e04ebf61e22a5ead5422b51af850ab6d5676ccea85a6f48edc8aafbba"
+    }
+  },
+  "interrupted_workspace_queue": {
+    "passed": true,
+    "queued_task_saved_before_termination": true,
+    "restored_as_interrupted_without_launch": true,
+    "completed_assignment_preserved": true,
+    "report_sha256": "ddb122070169f77a4ba14c7ee6087e705836034b7caf890c54f85689d558414f",
+    "runner_sha256": "1652b9f16f71c250987a5d3a6aca6b18b90f05e502b9898c4e30ba858c17b161"
+  }
+}

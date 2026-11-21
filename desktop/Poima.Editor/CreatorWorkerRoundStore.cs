@@ -141,19 +141,21 @@ internal sealed class CreatorWorkerRoundStore
             if (followup is null || !Hex(followup.Id, 32) || !batches.Add(followup.Id) ||
                 !Hex(followup.DraftId, 32) || !ids.Contains(followup.DraftId) ||
                 !Hex(followup.ExpectedWorldHash, 64) || followup.Turn is null || !ValidTurn(followup.Turn) ||
-                (followup.Turn.State == "running" && (!active.Add(followup.DraftId) ||
+                (IsPendingTurn(followup.Turn) && (!active.Add(followup.DraftId) ||
                     !round.Workers.Any(worker => worker.ProjectId == followup.DraftId && worker.Latest == followup.Turn &&
-                        worker.Assigned?.State != "running"))))
+                        !IsPendingTurn(worker.Assigned)))))
                 throw new InvalidDataException("The saved round contains an invalid worker follow-up.");
         }
     }
 
     private static bool ValidTurn(Turn? turn) => turn is null ||
         turn.Task is { Length: > 0 and <= CodexWorkerTool.MaximumTaskLength } &&
-        turn.State is ("running" or "completed" or "failed" or "stopped" or "interrupted") &&
+        turn.State is ("queued" or "running" or "completed" or "failed" or "stopped" or "interrupted") &&
         turn.Error is not { Length: > 2000 } &&
         (turn.State == "completed" ? turn.Report is { Length: > 0 and <= CodexReview.MaximumFindingLength } && Hex(turn.WorldHash, 64) :
             turn.Report is null && turn.WorldHash is null);
+
+    internal static bool IsPendingTurn(Turn? turn) => turn?.State is "queued" or "running";
 
     private static bool ValidCandidate(Candidate? value) => value is null ||
         Leaf(value.Folder) && Hex(value.ProjectId, 32) && Hex(value.Snapshot, 64) && Hex(value.Bundle, 64) &&

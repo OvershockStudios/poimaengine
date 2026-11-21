@@ -12,6 +12,7 @@ public static class CodexWorkerTool
 {
     public const string Name = "poima_workers";
     public const int MaximumWorkers = 10;
+    public const int MaximumActiveWorkers = 5;
     public const int MaximumTaskLength = 4000;
 
     public static JsonObject Definition() => new()
@@ -20,7 +21,8 @@ public static class CodexWorkerTool
         ["name"] = Name,
         ["description"] = "Assign and verify independent scene work in this Poima project. " +
             "Use assign with a fresh 32-hex request_id, the world.inspect revision and an array of focused tasks. " +
-            "Workers start from one saved checkpoint and write to separate drafts. Use inspect with the same request_id " +
+            "Workers start from one saved checkpoint and write to separate drafts. Work above the active worker limit stays queued. " +
+            "Use inspect with the same request_id " +
             "to collect statuses and reports. Use inspect_draft with a draft_id to read its current revision and world_sha256, " +
             "including when a worker failed or stopped. Use revise with a fresh request_id, draft_id, its current world_sha256, and a focused task " +
             "to follow up with the same worker. Inspect the follow-up request for the new report and exact scene hash. " +

@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.346
+
+- Queue scene worker tasks above the five active slots in each creator workspace. Show queued tasks in the worker tabs and assignment results.
+
 ## 0.0.345
 
 - Retire each scene worker's connection after its turn and use the retained draft and report for follow-ups.

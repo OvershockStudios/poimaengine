@@ -13,6 +13,7 @@
 # -CodexReviews uses the AgentRpc contract executable to test two revision-pinned reviewers.
 # -WithBuildWorkers adds two editable drafts using the same peer and the native engine.
 # -WithLeadWorkers uses the active Codex tool protocol to assign those drafts from main chat.
+# -WithWorkerQueue fills all worker slots and exercises queued start, cancellation, and shutdown.
 # -CheckMarkdown inspects formatted lead and worker replies and their original text.
 # -WithCombinedDrafts checks selected worker scenes and plays the retained combined export.
 # -WithLeadVerification checks tool-driven proposals and approves one after reopening.
@@ -46,6 +47,7 @@ param(
     [string]$CodexReviews,
     [switch]$WithBuildWorkers,
     [switch]$WithLeadWorkers,
+    [switch]$WithWorkerQueue,
     [switch]$CheckMarkdown,
     [switch]$WithCombinedDrafts,
     [switch]$WithLeadVerification,
@@ -75,6 +77,9 @@ if ($ObserveVerifiedPlayback -and !$VerifiedPlayWithCodex) { throw 'Use -Verifie
 if ($WithBuildWorkers -and !$CodexReviews) { throw 'Supply -CodexReviews for the build worker scenario.' }
 if ($WithLeadWorkers -and (!$CodexReviews -or $WithBuildWorkers)) {
     throw 'Supply -CodexReviews and run lead assignments separately from manual worker assignments.'
+}
+if ($WithWorkerQueue -and (!$WithLeadWorkers -or $WithCombinedDrafts -or $CheckMarkdown)) {
+    throw 'Run queued workers with -WithLeadWorkers as a separate scenario.'
 }
 if ($CheckMarkdown -and !$WithLeadWorkers) { throw 'Run the Markdown checks with -WithLeadWorkers.' }
 if (($WithWorkerReopen -or $WithWorkerCrash) -and (!$WithLeadWorkers -or !$WithCombinedDrafts -or $CheckMarkdown -or
@@ -945,6 +950,10 @@ function Exercise-LeadWorkers($Project, $Peer) {
     Grant-LeadWorkerPermission
     Invoke-Control 'New chat'
     $null = Wait-For 'the lead with worker permission granted' { Find-Control 'Agent Send' -Enabled } 65
+    if ($WithWorkerQueue) {
+        Exercise-WorkerQueue $Project $checks
+        return
+    }
     $done = Send-CodexPrompt "Delegate scene work at revision $($Project.revision)."
     if (!$done.Contains('Lead collected both worker reports.')) { throw 'The lead did not collect its assigned worker results.' }
     if ($CheckMarkdown) { Inspect-MarkdownTranscript 'Agent transcript' }
@@ -1014,6 +1023,71 @@ function Exercise-LeadWorkers($Project, $Peer) {
         $checks.active_worker_pid = $held.pid
         Wait-ForCreatorChatTab 'Main chat' -Select
     }
+}
+
+function Exercise-WorkerQueue($Project, $Checks) {
+    $before = @(Get-AuthoredFileHashes) -join "`n"
+    $reply = Send-CodexPrompt "Queue scene work at revision $($Project.revision)."
+    if (!$reply.Contains('Five workers active and two queued.')) { throw 'The lead did not see both queued workers.' }
+    $null = Wait-For 'exactly five started worker turns' {
+        @(Read-BuildWorkerTrace | Where-Object { $_.kind -ceq 'turn/start' }).Count -eq 5
+    }
+    $held = @(Read-BuildWorkerTrace | Where-Object { $_.kind -ceq 'launch' })
+    if ($held.Count -ne 5) { throw 'Queued drafts started provider processes.' }
+    $group = Split-Path -Parent (Split-Path -Parent $held[0].manifest)
+    $ledger = Join-Path $group 'round.json'
+    $beforeTurns = (Get-Content -LiteralPath $ledger -Raw | ConvertFrom-Json).workers
+
+    Wait-ForCreatorChatTab 'Worker 7' -Select
+    $null = Wait-For 'the queued seventh worker' {
+        (Find-ControlId 'worker-status').Current.Name -like 'Waiting for a worker slot*'
+    }
+    Invoke-Control 'Stop worker'
+    $null = Wait-For 'the cancelled queued task' { (Find-ControlId 'worker-status').Current.Name -ceq 'Worker stopped' }
+    if (@(Read-BuildWorkerTrace | Where-Object { $_.kind -ceq 'launch' }).Count -ne 5) {
+        throw 'Cancelling a queued task started a provider or released an active slot.'
+    }
+    Wait-ForCreatorChatTab 'Worker 1' -Select
+    Invoke-Control 'Stop worker'
+    $null = Wait-For 'the stopped first worker' { (Find-ControlId 'worker-status').Current.Name -ceq 'Worker stopped' }
+    Wait-ForCreatorChatTab 'Worker 6' -Select
+    $id = '{0:x32}' -f 0xda02
+    Wait-ForBuildWorkerReport "Draft quay bench created at revision $($Project.revision + 1). Entity $id."
+    $current = (Get-Content -LiteralPath $ledger -Raw | ConvertFrom-Json).workers
+    if ($current[5].project_id -cne $beforeTurns[5].project_id -or $current[6].assigned.state -cne 'stopped') {
+        throw 'Promotion or cancellation changed a draft identity.'
+    }
+    $bench = @(Read-BuildWorkerTrace | Where-Object { $_.kind -ceq 'launch' -and $_.manifest -like "*$($current[5].folder)*" })
+    if ($bench.Count -ne 1) { throw 'A queued assignment did not start exactly one provider.' }
+    Confirm-WorkerExits $bench
+
+    Invoke-Control 'Add build worker'
+    Wait-ForCreatorChatTab 'Worker 8' -Select
+    Start-BuildWorkerTask 'Hold draft turn.'
+    Wait-ForHeldBuildWorker
+    Wait-ForCreatorChatTab 'Worker 6' -Select
+    Start-BuildWorkerTask 'Check the draft when a slot opens.'
+    $null = Wait-For 'the queued manual follow-up' {
+        (Find-ControlId 'worker-status').Current.Name -like 'Waiting for a worker slot*'
+    }
+    $records = @(Read-BuildWorkerTrace)
+    $launches = @($records | Where-Object { $_.kind -ceq 'launch' })
+    $exits = @($records | Where-Object { $_.kind -ceq 'exit' })
+    $active = @($launches | Where-Object { $_.thread -notin $exits.thread })
+    if ($launches.Count -ne 7 -or $active.Count -ne 5 -or
+        (@(Get-AuthoredFileHashes) -join "`n") -cne $before) {
+        throw 'Manual and lead tasks did not share their slots or changed the main project.'
+    }
+    $lead = @(Read-ReviewTrace | Where-Object { $_.kind -ceq 'thread/start' -and $_.dynamicTools.Count -eq 1 })
+    $Checks.lead_pid = $lead[0].pid
+    $Checks.active_worker_pids = @($active.pid)
+    $Checks.queue_ledger = $ledger
+    $Checks.launches_before_close = $launches.Count
+    $Checks.cancelled_before_launch = $true
+    $Checks.original_unchanged = $true
+    $Checks.promoted_one_task = $true
+    $Checks.manually_queued_follow_up = $true
+    Wait-ForCreatorChatTab 'Main chat' -Select
 }
 
 function Exercise-LeadVerification($Group, $Assignment, $Revision) {
@@ -2681,7 +2755,8 @@ try {
             Exercise-LeadWorkers $project $CodexReviews
             $leadChecks = $report.checks.lead_workers
             $reviewPeers = @(Get-Process -Id $leadChecks.lead_pid)
-            if ($leadChecks.active_worker_pid) { $workerPeers = @(Get-Process -Id $leadChecks.active_worker_pid) }
+            if ($WithWorkerQueue) { $workerPeers = @(Get-Process -Id $leadChecks.active_worker_pids) }
+            elseif ($leadChecks.active_worker_pid) { $workerPeers = @(Get-Process -Id $leadChecks.active_worker_pid) }
             foreach ($peer in ($reviewPeers + $workerPeers)) { $null = $peer.Handle }
         }
         if ($WithWorkerCrash) { Stop-OwnedCreatorDuringWorkerTurn $leadChecks ($reviewPeers + $workerPeers) }
@@ -2712,13 +2787,23 @@ try {
     }
     finally { foreach ($peer in ($reviewPeers + $workerPeers)) { $peer.Dispose() } }
 
-    if ($WithCombinedDrafts) { $owner = Start-Launcher 'reopen' $manifest }
+    if ($WithCombinedDrafts -or $WithWorkerQueue) { $owner = Start-Launcher 'reopen' $manifest }
     else {
         $owner = Start-Launcher 'reopen'
         $window = Wait-For 'the reopened launcher' { Find-Window 'Poima' }
         Invoke-Control 'Open selected project'
     }
     $window = Wait-For 'the reopened creator' { Find-Window "$name*Poima Creator" }
+    if ($WithWorkerQueue) {
+        $checks = $report.checks.lead_workers
+        $round = Get-Content -LiteralPath $checks.queue_ledger -Raw | ConvertFrom-Json
+        if (@(Read-BuildWorkerTrace | Where-Object { $_.kind -ceq 'launch' }).Count -ne $checks.launches_before_close -or
+            $round.workers[5].latest.state -cne 'stopped' -or $round.workers[5].assigned.state -cne 'completed' -or
+            $round.workers[5].latest.task -cne 'Check the draft when a slot opens.') {
+            throw 'Closing a creator launched queued work or lost the previous assignment result.'
+        }
+        $checks.close_cancelled_queued_work = $true
+    }
     if ($InstallAntigravity) {
         Select-AgentProvider 'Antigravity'
         $settings = Wait-For 'Connection settings after reopening' { Find-Control 'Connection settings' -Enabled }

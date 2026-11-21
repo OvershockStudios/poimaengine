@@ -1,8 +1,23 @@
 # Implementation status
 
-Updated 2026-11-20 for **0.0.345**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-20 for **0.0.346**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.346 [queues scene work above five active tasks](AGENT_CLIENTS.md#delegate-scene-work-from-codex)
+per creator workspace. The packaged test checked exact assignment retry,
+cancelling before a provider launches, promotion after releasing a slot,
+manual work sharing the same limit, and cancellation on workspace close.
+Reopening after forced termination kept the queued task as interrupted
+without starting it.
+In the signed-in Windows test, GPT-6.2 Sol assigned ten independent edits.
+The first sample showed five active native draft owners and five queued
+tasks. All ten finished. The lead fixed the missing group. The creator
+approved the repaired build, then played it after reopening. The relocated
+game passed all eleven checks with the original project unavailable and all
+54 bundle files unchanged. The Windows sandbox log recorded no setup
+activity during this scene fixture.
+[Results](evidence/m2-windows-worker-queue-346.json)
 
 Version 0.0.345 [releases completed scene worker connections](AGENT_CLIENTS.md#delegate-scene-work-from-codex).
 In the signed-in Windows test, all ten worker processes had exited before

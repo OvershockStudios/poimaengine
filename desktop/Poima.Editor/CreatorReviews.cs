@@ -133,8 +133,9 @@ internal sealed class CreatorReviews
         private readonly Func<CancellationToken, Task<CodexReview>> open;
         private readonly Func<string> scope;
         private readonly Action? changed;
-        private readonly Action<string>? recordStart;
+        private readonly Action<string, string>? recordStage;
         private readonly Func<TurnResult, Task<TurnResult>>? recordFinish;
+        private readonly SemaphoreSlim? workerSlots;
         private readonly TextBox task = new() { AcceptsReturn = true, TextWrapping = TextWrapping.Wrap, Height = 85, MaxLength = 4000 };
         private readonly AgentTranscript transcript = new();
         private readonly TextBlock status = new() { Text = "Ready", TextWrapping = TextWrapping.Wrap };
@@ -154,11 +155,12 @@ internal sealed class CreatorReviews
 
         public WorkerPane(string name, string placeholder, Func<CancellationToken, Task<CodexReview>> open,
             Func<string> scope, Action? changed = null, string? draftPath = null, Action<string>? useReport = null,
-            Action<string>? recordStart = null, Func<TurnResult, Task<TurnResult>>? recordFinish = null)
+            Action<string, string>? recordStage = null, Func<TurnResult, Task<TurnResult>>? recordFinish = null,
+            SemaphoreSlim? workerSlots = null)
         {
             Name = name;
             this.open = open; this.scope = scope; this.changed = changed;
-            this.recordStart = recordStart; this.recordFinish = recordFinish;
+            this.recordStage = recordStage; this.recordFinish = recordFinish; this.workerSlots = workerSlots;
             editableDraft = draftPath is not null;
             task.PlaceholderText = placeholder;
             ask.Content = editableDraft ? "Send to worker" : "Send to specialist";
@@ -197,6 +199,7 @@ internal sealed class CreatorReviews
         }
 
         public void Enable(bool value) { enabled = value; Update(); }
+        public void Cancel() => active?.Cancel();
 
         public void SetCanStart(bool value)
         {
@@ -239,15 +242,24 @@ internal sealed class CreatorReviews
             var assignment = text.Trim();
             active = cancellation;
             Finding = null;
-            status.Text = editableDraft ? "Working in draft…" : "Reviewing…";
+            status.Text = editableDraft ? "Waiting for a worker slot…" : "Reviewing…";
             Update();
-            var started = false;
+            var recorded = false;
+            var admitted = false;
             var closeOnFailure = validate is null;
             TurnResult result;
             try
             {
-                recordStart?.Invoke(assignment);
-                started = true;
+                if (workerSlots is not null)
+                {
+                    recordStage?.Invoke(assignment, "queued");
+                    recorded = true;
+                    await workerSlots.WaitAsync(cancellation.Token);
+                    admitted = true;
+                    cancellation.Token.ThrowIfCancellationRequested();
+                    recordStage?.Invoke(assignment, "running");
+                    status.Text = "Working in draft…";
+                }
                 var context = scope();
                 if (editableDraft)
                 {
@@ -288,7 +300,7 @@ internal sealed class CreatorReviews
             }
             try
             {
-                if (started && recordFinish is not null) result = await recordFinish(result);
+                if (recorded && recordFinish is not null) result = await recordFinish(result);
                 if (result.Report is { } report)
                 {
                     Finding = report;
@@ -305,7 +317,12 @@ internal sealed class CreatorReviews
                 status.Text = "Couldn’t save the worker result. " + error.Message;
                 return new("failed", null, status.Text);
             }
-            finally { active = null; Update(); }
+            finally
+            {
+                if (admitted) workerSlots!.Release();
+                active = null;
+                Update();
+            }
         }
 
         public async Task ResetAsync()

@@ -90,9 +90,12 @@ up to ten seconds.
 Poima returns preparation and turn states, draft manifests and completed
 reports. An exact assignment retry returns the original batch's current
 state. Changing the tasks or revision under an existing ID fails. One round
-can hold ten workers, including manually added workers, and a task can use up
-to 4,000 characters. Worker reports in tool replies are limited to 4,000
-characters each. Read the full report in its worker tab. A round retains up
+can hold ten workers, including manually added workers. Up to five tasks run
+at a time in the creator workspace. The rest are `queued` and start as slots
+become available. Use **Stop worker** on a queued tab to cancel its task.
+Queued and running tasks are interrupted after an unexpected close.
+A task can use up to 4,000 characters. Worker reports in tool replies are
+limited to 4,000 characters each. Read the full report in its worker tab. A round retains up
 to 64 assignment request IDs and the scene hashes returned with completed work. Reopen
 the project and use `inspect` or replay the exact `assign` to get the saved
 receipt. Reopening restores the reports and draft files. Worker processes

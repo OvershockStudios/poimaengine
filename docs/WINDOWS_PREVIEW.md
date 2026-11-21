@@ -132,10 +132,11 @@ without a local shell or file editing environment.
 Connect **Codex** and choose **Add build worker**. Poima captures the
 current project when you add the first worker. Each worker gets a separate
 editable copy of that checkpoint. Add up to ten workers and switch between
-their tabs and **Main chat** while tasks run.
+their tabs and **Main chat** while tasks run. The first five active tasks
+take the available slots. Later tasks wait in their worker tabs.
 
 Assign a scene change such as placing a lantern or lighting an entrance. Use
-**Stop worker** to end a running session. The draft files stay in the
+**Stop worker** to cancel a queued or running task. The draft files stay in the
 project's sibling `.poima-drafts` folder. Closing the workspace retires its
 worker sessions and chat tabs.
 
