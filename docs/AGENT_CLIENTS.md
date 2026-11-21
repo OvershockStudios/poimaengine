@@ -63,13 +63,14 @@ In the Windows creator, enable **Allow Codex to assign scene workers** in
 **Connection settings** before starting a new chat. The main Codex thread
 gets a `poima_workers` tool. The permission applies to that connection. Each
 worker uses the same configured client and model in a separate draft.
-Scene workers inspect and edit through Poima's draft tools. Their Codex
-threads open without a shell environment and must confirm that restriction
-before Poima sends work. For the lead, enable **Disable Codex shell access**
-before connecting. This keeps the selected Poima tool permissions and
-excludes the local command and file editing environment. Select it again
-when reconnecting to a conversation. If a different Codex version cannot
-confirm the scope, select the client supplied by Poima in
+The lead and workers use Poima tools without a local command or file editing
+environment. Their Codex threads must confirm that scope before Poima sends
+work. The lead keeps its selected Poima tool permissions. The creator opens
+Codex chats without a shell by default, including when reconnecting. For an
+individual chat, you can enable **Allow Codex shell access** before connecting.
+Enabling scene delegation turns off that option. Windows can require sandbox
+setup when shell access is enabled. If Codex cannot confirm the requested
+scope, choose **Install Codex** or select a compatible executable in
 **Connection settings**.
 [Scene worker checks](evidence/m2-codex-draft-scope-342.json)
 

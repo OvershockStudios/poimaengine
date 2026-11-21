@@ -923,10 +923,15 @@ function Grant-LeadWorkerPermission {
     $setting = Wait-For 'worker assignment permission' { Find-Control 'Allow Codex to assign scene workers' -Enabled }
     $toggle = $setting.GetCurrentPattern([Windows.Automation.TogglePattern]::Pattern)
     if ($toggle.Current.ToggleState -ne [Windows.Automation.ToggleState]::Off) { throw 'Scene workers must default to off.' }
-    $toggle.Toggle()
-    $shell = (Find-Control 'Disable Codex shell access' -Enabled).GetCurrentPattern([Windows.Automation.TogglePattern]::Pattern)
-    if ($shell.Current.ToggleState -ne [Windows.Automation.ToggleState]::Off) { throw 'Disabling shell access should be opt-in.' }
+    $shellControl = Find-Control 'Allow Codex shell access' -Enabled
+    $shell = $shellControl.GetCurrentPattern([Windows.Automation.TogglePattern]::Pattern)
+    if ($shell.Current.ToggleState -ne [Windows.Automation.ToggleState]::Off) { throw 'Shell access must default to off.' }
     $shell.Toggle()
+    if ($shell.Current.ToggleState -ne [Windows.Automation.ToggleState]::On) { throw 'The creator could not opt into solo shell access.' }
+    $toggle.Toggle()
+    if ($shell.Current.ToggleState -ne [Windows.Automation.ToggleState]::Off -or $shellControl.Current.IsEnabled) {
+        throw 'Enabling scene delegation did not clear and lock out local shell access.'
+    }
     $expander.Collapse()
 }
 

@@ -86,7 +86,8 @@ internal static class CodexReviewContract
                         "--review-revision", revision.ToString(CultureInfo.InvariantCulture))), "The launch did not pin the expected endpoint, revision and executable.");
                 var thread = peer.Single(row => Is(row, "thread/start"));
                 Check(thread["approvalPolicy"]?.GetValue<string>() == "never" && thread["sandbox"]?.GetValue<string>() == "read-only" &&
-                    thread["ephemeral"]?.GetValue<bool>() == true && thread["model"]?.GetValue<string>() == Model,
+                    thread["ephemeral"]?.GetValue<bool>() == true && thread["model"]?.GetValue<string>() == Model &&
+                    thread["environments"] is JsonArray { Count: 0 },
                     "The review thread had incorrect permissions, persistence, or model.");
                 Check(peer[^1]["kind"]?.GetValue<string>() == "exit", "The review peer did not close its connection.");
                 try
@@ -105,6 +106,20 @@ internal static class CodexReviewContract
 
             Task<CodexSession> NoShell(string name) =>
                 CodexSession.ConnectAsync(client, client, name, trace, cancellation, disableShell: true);
+            await using (var withShell = await CodexSession.ConnectAsync(client, client, "shell-lead", trace, cancellation))
+            {
+                try
+                {
+                    await withShell.OpenAsync(cancellation: cancellation, model: Model, offerWorkers: true);
+                    throw new InvalidDataException("A lead with shell access was allowed to delegate scene work.");
+                }
+                catch (InvalidOperationException error) when (error.Message.Contains("Scene delegation requires", StringComparison.Ordinal)) { }
+                Check(withShell.ThreadId is null && withShell.ShellAccessEnabled, "The rejected lead changed its requested scope.");
+                await withShell.OpenAsync(cancellation: cancellation, model: Model);
+                await withShell.SendAsync("A solo project turn with shell access.", cancellation);
+            }
+            try { await using var review = await Open("review-unconfirmed"); throw new InvalidDataException("A reviewer accepted a local executor."); }
+            catch (CodexScopeException error) when (error.Message.Contains("isolated scene reviewer", StringComparison.Ordinal)) { }
             string leadThread;
             await using (var lead = await NoShell("no-shell-lead"))
             {
@@ -124,8 +139,21 @@ internal static class CodexReviewContract
                     await refused.OpenAsync(cancellation: cancellation, model: Model);
                     throw new InvalidDataException("The lead opened with an unconfirmed executor scope.");
                 }
-                catch (InvalidOperationException error) when (error.Message.Contains("shell access is disabled", StringComparison.Ordinal))
+                catch (CodexScopeException error) when (error.Message.Contains("shell access is disabled", StringComparison.Ordinal))
                 { Check(refused.ThreadId is null, "The lead accepted turns following a scope failure."); }
+            }
+            await using (var older = await NoShell("no-shell-unsupported"))
+            {
+                try
+                {
+                    await older.OpenAsync(cancellation: cancellation, model: Model);
+                    throw new InvalidDataException("The lead opened after the client rejected execution scope parameters.");
+                }
+                catch (CodexScopeException error) when (error.InnerException is AgentRpcException)
+                {
+                    Check(older.ThreadId is null && error.Message.Contains("Install Codex", StringComparison.Ordinal),
+                        "Clients without scope support did not get an installation route.");
+                }
             }
         }
         finally
@@ -134,7 +162,7 @@ internal static class CodexReviewContract
             Environment.SetEnvironmentVariable(TraceVariable, savedTrace);
             Directory.Delete(trace, recursive: true);
         }
-        Console.WriteLine("Codex review permissions, independent turns, cancellation, and confirmed no-shell lead scope on start and resume passed.");
+        Console.WriteLine("Codex review and worker lead scopes, solo shell opt-in, independent turns, cancellation, and no-shell resume passed.");
     }
 
     // This peer also drives the Windows creator UI fixture. It does not launch Poima MCP.
@@ -148,10 +176,11 @@ internal static class CodexReviewContract
         var endpoint = engineArgs[2]!.GetValue<string>();
         long? revision = engineArgs.Count == 5 && engineArgs[3]?.GetValue<string>() == "--review-revision"
             ? long.Parse(engineArgs[4]!.GetValue<string>(), CultureInfo.InvariantCulture) : null;
-        Check(revision is null ? engineArgs.Count == 3 : arguments.Length == 5, "Unexpected launch flags on the Poima connection.");
+        Check(revision is not null || engineArgs.Count == 3, "Unexpected launch flags on the Poima connection.");
         var pid = Environment.ProcessId;
         var thread = Guid.NewGuid().ToString("N");
         var noShell = arguments.Contains("features.shell_tool=false", StringComparer.Ordinal);
+        Check(revision is null || noShell && arguments.Length == 13, "Scoped reviews must start without shell tooling.");
         if (noShell)
             Check(arguments.Contains("sandbox_mode=\"read-only\"", StringComparer.Ordinal) &&
                 arguments.Contains("features.shell_snapshot=false", StringComparer.Ordinal) &&
@@ -171,7 +200,10 @@ internal static class CodexReviewContract
             switch (method)
             {
                 case "initialize":
-                    Check(revision is null || parameters["capabilities"] is null, "A review enabled interactive requests.");
+                    Check(!noShell || parameters["capabilities"]?["experimentalApi"]?.GetValue<bool>() == true,
+                        "The client did not request execution scope support.");
+                    Check(revision is null || !arguments.Contains("features.default_mode_request_user_input=true", StringComparer.Ordinal),
+                        "A review enabled interactive questions.");
                     await Reply(new JsonObject());
                     break;
                 case "initialized": break;
@@ -183,14 +215,21 @@ internal static class CodexReviewContract
                     break;
                 case "thread/start":
                     Check(parameters["cwd"]?.GetValue<string>() == Directory.GetCurrentDirectory(), "The thread opened outside the project directory.");
-                    Check(revision is not null || parameters["approvalPolicy"]?.GetValue<string>() == "on-request" &&
+                    Check(parameters["approvalPolicy"]?.GetValue<string>() == (revision is null ? "on-request" : "never") &&
                         parameters["sandbox"]?.GetValue<string>() == (noShell ? "read-only" : "workspace-write") &&
-                        parameters["ephemeral"]?.GetValue<bool>() == false &&
+                        parameters["ephemeral"]?.GetValue<bool>() == revision.HasValue &&
                         (!noShell || parameters["environments"] is JsonArray { Count: 0 }),
-                        "The lead thread lost its normal settings.");
-                    hasExecutor |= endpoint == "no-shell-unconfirmed";
+                        "The thread lost its expected settings.");
+                    hasExecutor |= endpoint is "no-shell-unconfirmed" or "review-unconfirmed";
                     dynamicTools = parameters["dynamicTools"] as JsonArray;
+                    Check(noShell || dynamicTools is null, "An unscoped lead was offered worker tools.");
                     await Trace(method, parameters);
+                    if (endpoint == "no-shell-unsupported")
+                    {
+                        await Send(new JsonObject { ["id"] = call["id"]?.DeepClone(), ["error"] = new JsonObject
+                            { ["code"] = -32602, ["message"] = "Unknown environments parameter." } });
+                        break;
+                    }
                     await Reply(noShell ? NoShellResponse() : new JsonObject { ["thread"] = new JsonObject { ["id"] = thread } });
                     break;
                 case "thread/resume" when noShell:
@@ -266,7 +305,7 @@ internal static class CodexReviewContract
                 ["environments"] = hasExecutor ? new JsonArray(new JsonObject { ["environmentId"] = "local" }) : new JsonArray()
             },
             ["cwd"] = Directory.GetCurrentDirectory(),
-            ["approvalPolicy"] = "on-request",
+            ["approvalPolicy"] = revision is null ? "on-request" : "never",
             ["sandbox"] = new JsonObject { ["type"] = "readOnly", ["networkAccess"] = false }
         };
 

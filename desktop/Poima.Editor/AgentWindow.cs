@@ -37,7 +37,7 @@ internal sealed class AgentChat : UserControl
     private readonly CheckBox allowBuilds = new() { Content = "Allow gameplay builds in this session" };
     private readonly CheckBox allowChecks = new() { Content = "Allow gameplay check edits in this session" };
     private readonly CheckBox allowWorkers = new() { Content = "Allow Codex to assign scene workers" };
-    private readonly CheckBox disableShell = new() { Content = "Disable Codex shell access" };
+    private readonly CheckBox allowShell = new() { Content = "Allow Codex shell access" };
     private readonly TextBox prompt = new() { AcceptsReturn = true, TextWrapping = TextWrapping.Wrap, MinHeight = 85, MaxHeight = 180 };
     private readonly AgentTranscript transcript = new();
     private readonly TextBlock status = new() { Text = "Disconnected", TextWrapping = TextWrapping.Wrap };
@@ -65,7 +65,8 @@ internal sealed class AgentChat : UserControl
     private readonly Dictionary<StackPanel, JsonNode> codexPoimaApprovals = [];
     private readonly Dictionary<string, string> acpToolDetails = new(StringComparer.Ordinal);
     private bool submitting, closing, connecting, ready, cancelRequested, sentGameplayContext;
-    private bool acpReceivedReply, codexSupportsImages, pickingImages, codexMissing, claudeMissing, antigravityMissing, claudeNeedsSignIn;
+    private bool acpReceivedReply, codexSupportsImages, pickingImages, codexMissing, codexNeedsUpdate;
+    private bool claudeMissing, antigravityMissing, claudeNeedsSignIn;
     private Task? connectingTask, closingTask, retiringTask, installingTask;
     public bool Busy => submitting || activeTurn is not null || connecting || pickingImages ||
         agentInstall is not null || retiringTask?.IsCompleted == false;
@@ -101,8 +102,8 @@ internal sealed class AgentChat : UserControl
             settings.Children.Add(executable); settings.Children.Add(agyExecutable); settings.Children.Add(claudeExecutable);
             settings.Children.Add(model); settings.Children.Add(thread);
             settings.Children.Add(allowEdits);
-            ToolTip.SetTip(disableShell, "Keep this connection’s Poima tools and open Codex without a local command or file editing environment.");
-            settings.Children.Add(disableShell);
+            ToolTip.SetTip(allowShell, "Give this chat a local command and file editing environment. Windows may ask you to set up the Codex sandbox. Scene delegation requires shell access to be off.");
+            settings.Children.Add(allowShell);
             if (coordinateWorkers is not null)
             {
                 ToolTip.SetTip(allowWorkers, "Authorize up to ten independent Codex workers and let Codex check their combined builds. Set this before starting a new chat.");
@@ -183,6 +184,11 @@ internal sealed class AgentChat : UserControl
         signIntoAntigravity.Click += async (_, _) => await (connectingTask = OpenAntigravitySignIn());
         provider.SelectionChanged += (_, _) => UpdateProvider();
         thread.TextChanged += (_, _) => UpdateConversationButtons();
+        allowWorkers.IsCheckedChanged += (_, _) =>
+        {
+            if (allowWorkers.IsChecked == true) allowShell.IsChecked = false;
+            Controls();
+        };
         UpdateProvider();
     }
 
@@ -190,7 +196,7 @@ internal sealed class AgentChat : UserControl
     {
         executable.IsVisible = model.IsVisible = thread.IsVisible = allowEdits.IsVisible = ProviderName == "Codex";
         allowSourceEdits.IsVisible = allowBuilds.IsVisible = allowChecks.IsVisible = ProviderName == "Codex";
-        disableShell.IsVisible = allowWorkers.IsVisible = ProviderName == "Codex";
+        allowShell.IsVisible = allowWorkers.IsVisible = ProviderName == "Codex";
         agyExecutable.IsVisible = ProviderName == "Antigravity";
         claudeExecutable.IsVisible = ProviderName == "Claude Code";
         UpdateSetupButtons();
@@ -202,7 +208,7 @@ internal sealed class AgentChat : UserControl
         getAgent.Content = (WindowsAgentPackage.Supported ? "Install " : "Get ") + ProviderName;
         getAgent.IsVisible = ProviderName switch
         {
-            "Codex" => codexMissing,
+            "Codex" => codexMissing || codexNeedsUpdate,
             "Claude Code" => claudeMissing,
             "Antigravity" => antigravityMissing,
             _ => false
@@ -341,7 +347,8 @@ internal sealed class AgentChat : UserControl
             engine.IsEnabled = model.IsEnabled = connect.IsEnabled;
         thread.IsReadOnly = !connect.IsEnabled; thread.IsEnabled = !closing;
         allowEdits.IsEnabled = allowSourceEdits.IsEnabled = allowBuilds.IsEnabled = allowChecks.IsEnabled =
-            disableShell.IsEnabled = allowWorkers.IsEnabled = connect.IsEnabled;
+            allowWorkers.IsEnabled = connect.IsEnabled;
+        allowShell.IsEnabled = connect.IsEnabled && allowWorkers.IsChecked != true;
         UpdateConversationButtons();
     }
     private async Task Connect(bool authenticateAntigravity = false)
@@ -350,7 +357,7 @@ internal sealed class AgentChat : UserControl
         status.Text = "Connecting…";
         historyUnavailable = false;
         if (ProviderName == "Codex" && executable.Text == "codex.exe") executable.Text = FindCodex();
-        if (ProviderName == "Codex") codexMissing = false;
+        if (ProviderName == "Codex") codexMissing = codexNeedsUpdate = false;
         if (ProviderName == "Antigravity")
         {
             antigravityMissing = false;
@@ -383,7 +390,7 @@ internal sealed class AgentChat : UserControl
                 _ => await CodexSession.ConnectAsync(executable.Text ?? "", engine.Text ?? "",
                     endpoint, projectRoot, startup.Token, allowEdits.IsChecked == true, allowSourceEdits.IsChecked == true,
                     allowBuilds.IsChecked == true, allowChecks.IsChecked == true, receiveQuestions: true,
-                    disableShell: disableShell.IsChecked == true)
+                    disableShell: creator && (allowShell.IsChecked != true || allowWorkers.IsChecked == true))
             };
             session = current;
             if (closing) { await current.DisposeAsync(); return; }
@@ -433,7 +440,11 @@ internal sealed class AgentChat : UserControl
             if (!closing)
             {
                 var executableMissing = error is System.ComponentModel.Win32Exception { NativeErrorCode: 2 or 3 };
-                if (ProviderName == "Codex") codexMissing = executableMissing;
+                if (ProviderName == "Codex")
+                {
+                    codexMissing = executableMissing;
+                    codexNeedsUpdate = error is CodexScopeException;
+                }
                 if (ProviderName == "Claude Code") claudeMissing = executableMissing;
                 if (ProviderName == "Antigravity") antigravityMissing = executableMissing;
                 status.Text = error switch
@@ -880,10 +891,13 @@ internal sealed class AgentChat : UserControl
                 }
                 else _ = Reply(current, requestId, new JsonObject { ["action"] = "cancel" });
             }
-            else if (method is "item/commandExecution/requestApproval" or "item/fileChange/requestApproval" && approvals.Children.Count < 16)
+            else if (method is "item/commandExecution/requestApproval" or "item/fileChange/requestApproval")
             {
-                ShowApproval(current, requestId, method + "\n" + parameters?.ToJsonString(),
-                    new JsonObject { ["decision"] = "accept" }, new JsonObject { ["decision"] = "decline" });
+                var decline = new JsonObject { ["decision"] = "decline" };
+                if (current is CodexSession { ShellAccessEnabled: true } && approvals.Children.Count < 16)
+                    ShowApproval(current, requestId, method + "\n" + parameters?.ToJsonString(),
+                        new JsonObject { ["decision"] = "accept" }, decline);
+                else _ = Reply(current, requestId, decline);
             }
             else _ = RejectUnsupported(current, requestId, method);
             return;
@@ -925,7 +939,8 @@ internal sealed class AgentChat : UserControl
         try
         {
             if (parameters is null || CodexWorkerTool.Text(parameters["tool"]) != CodexWorkerTool.Name ||
-                parameters["namespace"] is not null || coordinateWorkers is null || allowWorkers.IsChecked != true)
+                parameters["namespace"] is not null || coordinateWorkers is null || allowWorkers.IsChecked != true ||
+                current is not CodexSession { ShellAccessEnabled: false })
                 throw new InvalidOperationException("Enable scene workers in Connection settings and start a new Codex chat.");
             if (cancelRequested || activeTurn is null ||
                 CodexWorkerTool.Text(parameters["threadId"]) != current.ConversationId ||

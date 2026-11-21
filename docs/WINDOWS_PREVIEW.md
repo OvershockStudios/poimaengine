@@ -89,6 +89,11 @@ Open **Connection settings** for model selection, executable paths and
 session-wide approvals. The conversation and game preview stay visible
 beside each other while the agent works.
 
+Codex creator chats use Poima tools without a local shell by default. To
+give an individual chat a local command and file editing environment, enable
+**Allow Codex shell access** before connecting. That mode may require Windows
+sandbox setup. Scene delegation turns off the shell option.
+
 Use the bundled `poima.exe` with an installed Codex or Claude Code client.
 Point the client's MCP configuration at the full path to the executable
 with arguments `mcp --project <full path to project.poimaproject>` in Poima
@@ -113,6 +118,7 @@ active connection.
 
 The window assigns both reviewers the same authored scene revision. If the
 scene changes, choose **Review current revision** to open fresh reviews.
+Reviewers read the scene through their scoped Poima tools without a shell.
 **Use findings in chat** adds completed suggestions to the draft and returns
 to **Main chat**. Review the draft and send it when you want the lead to
 verify the proposals. Closing the creator ends the specialist sessions.
@@ -124,9 +130,8 @@ To let the main Codex chat assign work, open **Connection settings**, enable
 **Allow Codex to assign scene workers**, and start a new chat. Describe the
 scene work you want delegated. Each worker gets a tab that you can open to
 follow its work, send a follow-up, or stop its current turn. The main Codex
-chat can collect the reports itself. Enable **Disable Codex shell access**
-before connecting when you want the main chat to work through Poima
-without a local shell or file editing environment.
+chat can collect the reports itself. Both the lead and workers use scoped
+Poima tools for their work.
 [Worker tool](https://github.com/OvershockStudios/poimaengine/blob/main/docs/AGENT_CLIENTS.md#delegate-scene-work-from-codex)
 
 Connect **Codex** and choose **Add build worker**. Poima captures the

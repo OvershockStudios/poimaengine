@@ -7,6 +7,7 @@ using System.Globalization;
 namespace Poima.AgentHost;
 
 public sealed record CodexBrowserLogin(string Id, Uri AuthorizationPage);
+public sealed class CodexScopeException(string message, Exception? inner = null) : InvalidOperationException(message, inner) { }
 
 /// <summary>
 /// An official Codex app-server connection. The owner consumes Events continuously,
@@ -26,6 +27,7 @@ public sealed class CodexSession : IAgentSession
     string? IAgentSession.ConversationId => ThreadId;
     public ChannelReader<JsonObject> Events => rpc.Events;
     public string DiagnosticTail => rpc.DiagnosticTail;
+    public bool ShellAccessEnabled => !disableShell;
 
     private CodexSession(AgentRpcProcess rpc, string directory, Interaction interaction, bool disableShell)
     {
@@ -48,7 +50,7 @@ public sealed class CodexSession : IAgentSession
     {
         if (revision is < 0 or > 9007199254740991L) throw new ArgumentOutOfRangeException(nameof(revision));
         return ConnectEndpointAsync(codexExecutable, poimaExecutable, endpoint, workingDirectory, revision, cancellation,
-            false, false, false, false, false);
+            false, false, false, false, false, disableShell: true);
     }
 
     internal static Task<CodexSession> ConnectDraftAsync(string codexExecutable, string poimaExecutable,
@@ -136,6 +138,8 @@ public sealed class CodexSession : IAgentSession
             throw new ArgumentException("Specialists open a new scoped conversation.", nameof(threadId));
         if (offerWorkers && (ephemeral || threadId is not null))
             throw new ArgumentException("Worker tools can only be added when starting a new project conversation.", nameof(offerWorkers));
+        if (offerWorkers && ShellAccessEnabled)
+            throw new InvalidOperationException("Scene delegation requires a Codex chat without shell access.");
         if (model is not null) ArgumentException.ThrowIfNullOrWhiteSpace(model);
         await opening.WaitAsync(cancellation);
         try
@@ -158,12 +162,8 @@ public sealed class CodexSession : IAgentSession
                 throw new AgentExchangeException("Provider returned an invalid thread identity.", true);
             if (disableShell)
             {
-                var error = ephemeral
-                    ? "This Codex client could not confirm an isolated scene worker."
-                    : "This Codex client could not confirm that shell access is disabled.";
-                const string UpdateClient = " Select Poima's installed Codex client in Connection settings.";
                 if (!HasReadOnlyScope(result!, approvalPolicy))
-                    throw new InvalidOperationException(error + UpdateClient);
+                    throw ScopeError();
                 var thread = result!["thread"];
                 if (threadId is not null && thread?["environments"] is not JsonArray { Count: 0 })
                 {
@@ -176,12 +176,26 @@ public sealed class CodexSession : IAgentSession
                 }
                 if (thread is not JsonObject scoped || scoped["id"]?.GetValue<string>() != returned ||
                     scoped["environments"] is not JsonArray { Count: 0 })
-                    throw new InvalidOperationException(error + UpdateClient);
+                    throw ScopeError();
             }
             ThreadId = returned;
             return returned;
         }
+        catch (AgentRpcException error) when (disableShell && error.Error["code"] is JsonValue code &&
+            code.TryGetValue<int>(out var number) && number is -32601 or -32602)
+        { throw ScopeError(error); }
         finally { opening.Release(); }
+    }
+
+    private CodexScopeException ScopeError(Exception? inner = null)
+    {
+        var message = interaction switch
+        {
+            Interaction.Draft => "This Codex client could not confirm an isolated scene worker.",
+            Interaction.Review => "This Codex client could not confirm an isolated scene reviewer.",
+            _ => "This Codex client could not confirm that shell access is disabled."
+        };
+        return new(message + " Use Install Codex or choose a compatible executable in Connection settings.", inner);
     }
 
     private bool HasReadOnlyScope(JsonNode response, string approvalPolicy)

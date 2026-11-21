@@ -1,0 +1,50 @@
+{
+  "engine_source_version": "0.0.347",
+  "sources_sha256": {
+    "desktop/Poima.AgentHost/CodexSession.cs": "e2782d986d3d63e44597c2143ad94a0f8ffc8ff98eb4fb142cb9fd7d41548e1e",
+    "desktop/Poima.Editor/AgentWindow.cs": "4ae1969abd5053bb5c00d7352575c1813554ccfce9521c0a52aff6c9664818be",
+    "tests/fixtures/agent_rpc/CodexReviewContract.cs": "5e667720eb3cbe0c2349a87b5d65c030b952124539b0379b0310462f769fe59e",
+    "tests/fixtures/agent_rpc/QuestionPeer.cs": "cea5cdea9d256ee43f160ca7c1b14376b249a680427897d1eaffc0df600ab544",
+    "tests/creator_workspace.ps1": "30b63287e8a43aef21dd70915690c6f6e5bfa5e0632a2b3b52766906c80c61b9"
+  },
+  "linux_managed_contracts": {
+    "passed": true,
+    "log_sha256": "cb585ce750e148ace70c153b0bbe5d07c457ee435fe98593e3ac05e6094c2633"
+  },
+  "linux_hosted_windows_desktop_build": {
+    "target": "win-x64",
+    "passed": true,
+    "log_sha256": "f4d69656c1401c73f483c14643a45c5e4a31ed22c578cb9a66feaf564d9fef49",
+    "managed_editor_sha256": "f3f3bbec963c6c4eabcc16ed505864cc33979fc39b69b52e8cecdb2f4d1e7422"
+  },
+  "native_linux_workflow": {
+    "passed": true,
+    "native_engine_version": "0.0.334",
+    "native_engine_sha256": "c61ca81496e5a3687377c3d5b70e3e3b1ce8e08618be3f23b121c663480c3ca5",
+    "codex_cli_version": "0.171.0",
+    "codex_cli_sha256": "b76a027d6b210f9a8da7aaf321dd235c700f0ef7a794d4a5314b9af6c134f0f0",
+    "model_backend": "local scripted responses fixture",
+    "reports_sha256": "2a3d18fee77b2ee38bc22f784f242491e096394d8228af01280ce75b0711b6dc",
+    "lead": {
+      "model_requests": 6,
+      "shell_advertised": false,
+      "shell_request_rejected": true,
+      "patch_request_rejected": true,
+      "read_revision": 2,
+      "mutation_committed_revision": 2
+    },
+    "review": {
+      "model_requests": 6,
+      "shell_advertised": false,
+      "shell_request_rejected": true,
+      "patch_request_rejected": true,
+      "read_revision": 2,
+      "mutation_refused_status": -32602
+    },
+    "files_unchanged_after_review": true,
+    "host_exited_after_shutdown": true
+  },
+  "windows_interactive_qualification": {
+    "run": false
+  }
+}

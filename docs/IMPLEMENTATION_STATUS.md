@@ -1,8 +1,19 @@
 # Implementation status
 
-Updated 2026-11-20 for **0.0.346**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-20 for **0.0.347**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.347 opens Codex creator chats and specialist reviews without a
+local shell by default. The creator can opt in to shell access for an
+individual chat. Scene delegation requires a shell-free connection. Linux
+protocol tests covered scope rejection, reconnect and solo opt-in. The
+pinned Codex client used a local scripted model and a retained Linux native
+host to commit a lead edit and inspect it in a scoped review. Both threads
+rejected direct shell and file patch requests. The review also rejected a
+native scene write. The Windows desktop cross-build passed. Windows
+interactive behavior for this change remains to be verified.
+[Results](evidence/m2-creator-shell-default-347.json)
 
 Version 0.0.346 [queues scene work above five active tasks](AGENT_CLIENTS.md#delegate-scene-work-from-codex)
 per creator workspace. The packaged test checked exact assignment retry,

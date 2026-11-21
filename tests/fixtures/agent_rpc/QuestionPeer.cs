@@ -81,7 +81,17 @@ static class QuestionPeer
                         new JsonObject { ["model"] = "question-fixture", ["isDefault"] = true }) }));
                     break;
                 case "thread/start":
-                    await Send(Response(new JsonObject { ["thread"] = new JsonObject { ["id"] = thread } }));
+                    var result = new JsonObject { ["thread"] = new JsonObject { ["id"] = thread } };
+                    if (call["params"]?["sandbox"]?.GetValue<string>() == "read-only")
+                    {
+                        if (call["params"]?["environments"] is not JsonArray { Count: 0 })
+                            throw new InvalidDataException("The question thread retained a local executor.");
+                        result["thread"]!["environments"] = new JsonArray();
+                        result["cwd"] = Directory.GetCurrentDirectory();
+                        result["approvalPolicy"] = "on-request";
+                        result["sandbox"] = new JsonObject { ["type"] = "readOnly", ["networkAccess"] = false };
+                    }
+                    await Send(Response(result));
                     break;
                 case "turn/start":
                     turn = Guid.NewGuid().ToString("N");
