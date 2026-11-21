@@ -309,6 +309,8 @@ struct DrawItem {
     DrawConstants constants{};Geometry geometry;nvrhi::BindingSetHandle bindings,masked_shadow_bindings;
     bool cull=false,camera_visible=true,receive_shadows=true,stream_geometry=false;
     std::uint32_t shadow_mask=0,surface_mark_offset=0,surface_mark_count=0;
+    // Borrowed from the current snapshot during draw preparation and submission.
+    std::span<const SceneSurfaceMark> local_surface_marks;
 };
 using SteadyClock=std::chrono::steady_clock;
 namespace fp=frame_performance;
@@ -499,7 +501,13 @@ struct Context {
     ReconstructionDiagnostics pending_reconstruction;
     TemporalClock temporal_clock;
     bool live_temporal=false;
-    struct ObjectHistory {std::array<float,12> model{};std::uint64_t incarnation=0;std::shared_ptr<const MeshAsset> mesh;bool skinned=false;};
+    struct ObjectHistory {
+        std::array<float,12> model{};
+        std::uint64_t incarnation=0;
+        std::shared_ptr<const MeshAsset> mesh;
+        std::uint32_t mark_offset=0,mark_count=0;
+        bool skinned=false;
+    };
     struct ViewHistory {
         std::string source,world,camera;
         std::uint64_t generation=0,cut=0,sequence=0,material_revision=0;
@@ -508,6 +516,7 @@ struct Context {
         std::array<double,3> lens{};
         std::optional<RendererCameraDrawResult> camera_draw;
         std::map<std::string,ObjectHistory> objects;
+        std::vector<SceneSurfaceMark> surface_marks;
     } history,pending_history;
     bool pending_history_valid=false;
     std::string pending_history_reset;
@@ -1101,6 +1110,7 @@ struct Context {
     void prepare_submission_history() {
         if(!scene)return;
         prepare_history();object_data.clear();
+        if(scene_motion)pending_history.surface_marks.reserve(surface_marks.size());
         for(auto& item:draws) {
             if(item.skin) {
                 auto& skin=*item.skin;skin.write_index=samples==1 && skin.accepted_sequence ? 1u-skin.accepted_index : 0u;
@@ -1111,7 +1121,13 @@ struct Context {
             bool valid=pending_history_valid && item.incarnation && previous!=history.objects.end() && previous->second.incarnation==item.incarnation && previous->second.mesh==item.mesh && previous->second.skinned==bool(item.skin);
             if(item.skin)valid=valid && item.skin->accepted_sequence==history.sequence;
             std::copy_n(valid ? previous->second.model.data() : &item.constants.model[0][0],12,&gpu_object.previous_model[0][0]);
-            gpu_object.history[0]=valid ? 1u : 0u;
+            bool marks_changed=false;
+            if(valid && (previous->second.mark_count || !item.local_surface_marks.empty())) {
+                const auto previous_marks=std::span(history.surface_marks).subspan(previous->second.mark_offset,previous->second.mark_count);
+                marks_changed=!std::ranges::equal(previous_marks,item.local_surface_marks);
+            }
+            // Keep geometry correspondence when only the surface appearance changed.
+            gpu_object.history[0]=valid ? (marks_changed ? 3u : 1u) : 0u;
             gpu_object.history[1]=item.receive_shadows ? 0u : 1u;
             gpu_object.history[2]=item.surface_mark_offset;
             gpu_object.history[3]=item.surface_mark_count;
@@ -1120,6 +1136,12 @@ struct Context {
             if(item.stream_geometry)continue;
             ObjectHistory accepted;std::copy_n(&item.constants.model[0][0],12,accepted.model.begin());
             accepted.incarnation=item.incarnation;accepted.mesh=item.mesh;accepted.skinned=bool(item.skin);
+            if(scene_motion && !item.local_surface_marks.empty()) {
+                accepted.mark_offset=static_cast<std::uint32_t>(pending_history.surface_marks.size());
+                accepted.mark_count=item.surface_mark_count;
+                pending_history.surface_marks.insert(pending_history.surface_marks.end(),
+                    item.local_surface_marks.begin(),item.local_surface_marks.end());
+            }
             require(pending_history.objects.emplace(item.entity_id,std::move(accepted)).second,"Scene object IDs must be unique within a submission.");
         }
         if(object_data.empty())object_data.push_back({});
@@ -2967,7 +2989,10 @@ struct Context {
                     std::uint16_t components[4]{};std::memcpy(components,pixel,8);
                     for(std::size_t k=0;k<3;++k)sample.shading_normal[k]=half(components[k]);sample.surface_valid=half(components[3])>.5f;
                 } else if(product==2)std::memcpy(sample.motion.data(),pixel,8);
-                else if(product==3)sample.motion_valid=*pixel>=128;
+                else if(product==3) {
+                    sample.motion_validity_code=*pixel;
+                    sample.motion_valid=*pixel>=surface_mark_reactive_code;
+                }
                 else if(product>=6) {std::uint16_t value{};std::memcpy(&value,pixel,2);(product==6 ? sample.raw_ambient_visibility : sample.ambient_visibility)=half(value);}
                 else {std::uint16_t components[4]{};std::memcpy(components,pixel,8);auto& color=product==4 ? sample.raw_hdr : sample.resolved_hdr;for(std::size_t k=0;k<3;++k)color[k]=half(components[k]);}
             }

@@ -1,8 +1,16 @@
 # Implementation status
 
-Updated 2026-11-21 for **0.0.362**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-21 for **0.0.363**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.363 feeds [receiver-local surface mark changes into FSR history](RECONSTRUCTION.md#coordinates-history-and-composition)
+for one accepted submission while preserving geometric motion. A continuous
+fixture passed 96 frames and 40 mark changes on AMD and NVIDIA in forward
+and deferred Vulkan with Native AA and Quality. It verifies the receiver's
+signal on mark birth, edit, and removal, and checks stable marks, neighboring
+geometry, and sky. All 16 single-sample textured control captures match 0.0.362.
+[Results](evidence/m2-surface-mark-reactivity-363.json)
 
 Version 0.0.362 adds [textured surface mark profiles](SURFACE_MARKS.md#author-a-mask-profile)
 for runtime requests and C# gameplay. The standalone fixture packages two

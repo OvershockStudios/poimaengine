@@ -72,6 +72,14 @@ First use, resize and changes to source identity/generation, camera cut, camera 
 
 A separate input pass supplies background motion for the procedural sky using camera rotation, with translation ignored. Raw surface normals and their validity remain surface products; sky is not assigned a geometric normal. Reactive input marks unavailable correspondence. These inputs need temporal quality testing at silhouettes, newly revealed regions, animated shading and the sun edge. Continuously changing sky or lighting is not treated as a camera cut every frame.
 
+When a rigid receiver's [surface marks](SURFACE_MARKS.md) differ from its
+preceding accepted submission, FSR receives a one-submission reactive
+signal over the receiver's visible surface. The renderer compares ordered
+marks in receiver-local space, including the mask identities. Moving the
+receiver with the same marks preserves its normal history behavior. A mark
+change preserves geometric motion and does not reset the view. The signal
+uses the existing correspondence attachment and temporal input pass.
+
 FSR consumes scene-linear HDR before exposure and display mapping. Output exposure and the existing display transform follow reconstruction; game UI, overlays and editor composition follow those operations. Exposure changes therefore do not rescale stored scene radiance. This path does not establish reconstruction coverage for future transparent scene effects or arbitrary texture animation.
 
 ## Numeric observations and diagnostics
@@ -79,6 +87,7 @@ FSR consumes scene-linear HDR before exposure and display mapping. Output exposu
 `scene_product_probes` remains bounded to 64 positions. With reconstruction enabled, `x` and `y` are **render-input pixels**, not window or reconstruction-output pixels. The renderer rejects positions outside the actual render extent. Each capture result includes:
 
 - Existing depth, shading normal, raw geometric motion and validity values, sampled from that frame's jittered raster products.
+- `surface_mark_reactive: true` when a geometrically valid sample carries the receiver's mark-change signal for that submission.
 - `raw_hdr`: scene-linear RGB before reconstruction, exposure and display mapping.
 - `resolved_hdr`: reconstructed scene-linear RGB before exposure and display mapping.
 - `resolved_x` and `resolved_y`: the output pixel selected by mapping the input pixel center to the output grid.
@@ -111,3 +120,13 @@ GPU tools require a native Windows graphics session. Configure the Khronos valid
 For native SDK investigation, `poima-reconstruction-quality-test OUTPUT_PREFIX GPU --history-probes` captures bounded internal samples around the known boundary case. This uses the pinned SDK's private resource layout and is not a portable authoring API. Samples distinguish previous and current history, reactive/disocclusion/shading-change/accumulation channels, and luma instability. Previous history is unavailable on the first dispatch. Diagnostic reads restore the SDK's tracked image layouts and use the capture completion drain before CPU mapping; image parity must be checked separately to establish that observation did not change rendering.
 
 Two control variants retain the moving occluder's trajectory and sampling sequence: `--uniform-background-history` removes the stationary diagonal, while `--flat-diagonal-history` retains its geometry but matches its radiance to the background. The latter allows depth and motion observations to be compared with the original case. Color-derived SDK masks can still differ; these controls do not isolate a single internal shader operation.
+
+Run the continuous surface-mark fixture with an output prefix in an existing
+directory and a GPU index. It checks the encoded motion-validity byte, raw
+and resolved HDR, and the SDK's shading-change mask over 12 submissions.
+The fixture exercises mark edits and removal on detached scene snapshots.
+
+```text
+poima-reconstruction-quality-test OUTPUT_PREFIX GPU --surface-mark-reactivity forward fsr3_native
+poima-reconstruction-quality-test OUTPUT_PREFIX GPU --surface-mark-reactivity deferred fsr3_quality
+```

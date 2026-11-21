@@ -77,6 +77,12 @@ This is a parameter fragment: existing camera, revision/session/tick and output-
 
 Results are under `render_diagnostics.scene_products.probes`. Each entry contains `x`, `y`, device `depth`, world-space `shading_normal`, UV `motion`, `surface_valid`, and `motion_valid`. These are captured attachment values, with `RGBA16_FLOAT` normal precision and `RG32_FLOAT` motion precision, rather than values recovered from the BMP visualization. They provide sparse samples, not a full floating-point image export. Overlaid UI does not become scene depth or motion data.
 
+When a surviving receiver's local marks have changed since the last accepted
+submission, its geometrically valid samples additionally report
+`surface_mark_reactive: true`. The motion-validity display still shows those
+samples as valid. The optional field describes the receiver's appearance
+change for the current submission.
+
 Additional diagnostics report `motion_available`, `motion_buffer_bytes`, `history_valid`, `history_sequence`, `history_reset_reason`, `motion_convention`, and `motion_visualization`. History diagnostics describe the correspondence used by the completed submission, and `history_sequence` counts accepted submissions. View-level `history_valid` does not imply that every pixel has valid object correspondence; inspect per-pixel `motion_valid` where needed. These fields describe geometric correspondence, not a completed temporal reconstruction or vendor upscaler integration.
 
 ## Reproduce checks

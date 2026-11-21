@@ -158,6 +158,8 @@ struct SceneSurfaceMark {
     std::array<float,3> linear_rgb{.2f,.2f,.2f};
     float opacity=1,roughness=1;
     std::string mask_sha256; // Empty is the analytic ellipse.
+
+    bool operator==(const SceneSurfaceMark&) const=default;
 };
 struct SceneObject {
     std::string entity_id;

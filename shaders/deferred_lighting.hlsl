@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "scene_surface.hlsli"
+#if POIMA_SCENE_PRODUCTS
+#include "scene_correspondence.hlsli"
+#endif
 Texture2D<float4> material_buffer : register(t0);
 Texture2D<float4> surface_buffer : register(t1);
 Texture2D<float4> correspondence_buffer : register(t2);
@@ -52,6 +55,8 @@ void compute_main(uint3 id : SV_DispatchThreadID) {
     scene_hdr[id.xy]=float4(shade_surface(material,world,pixel,visibility),1);
 #if POIMA_SCENE_PRODUCTS
     shading_normal[id.xy]=float4(material.normal,normal_is_valid ? 1 : 0);
-    surface_motion[id.xy]=correspondence.zw;motion_valid[id.xy]=normal_is_valid && (flags&4u)!=0 ? 1 : 0;
+    surface_motion[id.xy]=correspondence.zw;
+    motion_valid[id.xy]=encode_correspondence(normal_is_valid && (flags&deferred_motion_valid)!=0,
+        (flags&deferred_surface_marks_changed)!=0);
 #endif
 }

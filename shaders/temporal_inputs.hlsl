@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "scene_frame.hlsli"
+#include "scene_correspondence.hlsli"
 Texture2D<float4> surface_normal : register(t0);
 Texture2D<float2> surface_motion : register(t1);
 Texture2D<float> correspondence_valid : register(t2);
@@ -10,9 +11,11 @@ RWTexture2D<float2> dense_motion : register(u0);
 void compute_main(uint3 id : SV_DispatchThreadID) {
     if(any(id.xy>=uint2(cluster_viewport.zw)))return;
     float2 motion=surface_motion.Load(int3(id.xy,0));
-    bool valid=correspondence_valid.Load(int3(id.xy,0))>.5;
+    const float code=correspondence_valid.Load(int3(id.xy,0));
+    bool valid=correspondence_is_valid(code);
+    bool marks_changed=correspondence_is_reactive(code);
     if(surface_normal.Load(int3(id.xy,0)).a<.5) {
-        motion=0;valid=true;
+        motion=0;valid=true;marks_changed=false;
         if(temporal_jitter.w>.5) {
             const float2 uv=(float2(id.xy)+.5-temporal_jitter.xy)/cluster_viewport.zw;
             const float2 ndc=float2(uv.x*2-1,1-uv.y*2);
@@ -26,5 +29,5 @@ void compute_main(uint3 id : SV_DispatchThreadID) {
         }
     }
     dense_motion[id.xy]=valid ? motion : 0;
-    reactive[id.xy]=valid ? 0 : 1;
+    reactive[id.xy]=(!valid || marks_changed) ? 1 : 0;
 }

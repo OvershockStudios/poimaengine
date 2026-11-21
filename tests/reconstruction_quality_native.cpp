@@ -31,7 +31,7 @@ std::shared_ptr<const MeshAsset> polygon(const std::array<std::array<float,3>,4>
     auto mesh=std::make_shared<MeshAsset>();for(auto p:points){MeshVertex v;v.position=p;v.normal={0,0,1};v.tangent={1,0,0,1};mesh->vertices.push_back(v);}
     mesh->indices={0,1,2,0,2,3};mesh->material.base_color={0,0,0};mesh->material.metallic=0;mesh->material.emissive=radiance;return mesh;
 }
-SceneObject object(const char* id,const std::shared_ptr<const MeshAsset>& mesh){SceneObject o;o.entity_id=id;o.world=identity_matrix();o.mesh=mesh;o.material=mesh->material;o.incarnation=1;return o;}
+SceneObject object(const char* id,const std::shared_ptr<const MeshAsset>& mesh){SceneObject o{};o.entity_id=id;o.world=identity_matrix();o.mesh=mesh;o.material=mesh->material;o.incarnation=1;return o;}
 SceneSnapshot initial(bool moving,bool uniform=false,bool flat=false){
     const auto diagonal=polygon({{{-.85f,-.5f,0},{.65f,-.2f,0},{.35f,.7f,0},{-1.f,.4f,0}}},flat ? clear_radiance : std::array<float,3>{1.f,.25f,.0625f});
     SceneSnapshot s;s.world_id=moving?"quality-disocclusion":"quality-static";s.camera_id="camera";s.presentation_source_id=new_presentation_source_id();s.camera_world=local_matrix({0,0,4},{0,0,0,1},{1,1,1});s.vertical_fov=60;s.near_plane=.1;s.far_plane=100;
@@ -47,9 +47,14 @@ Json ground_truth(const SceneSnapshot& scene,unsigned sequence){
     return {{"sequence",sequence},{"camera",{{"world",scene.camera_world},{"vertical_fov",scene.vertical_fov},{"near",scene.near_plane},{"far",scene.far_plane}}},
         {"layers",layers},{"background",clear_radiance},{"exposure",scene.lighting.environment.exposure},{"captures",Json::object()},{"observations",Json::object()}};
 }
+#include "reconstruction_mark_reactivity.inc"
 }
 int main(int argc,char** argv){Json evidence={{"passed",false},{"quality_qualified",false},{"sequences",Json::array()}};
     try{
+        if(argc>=4 && std::string_view(argv[3])=="--surface-mark-reactivity") {
+            run_surface_mark_reactivity(argc,argv,evidence);
+            std::cout<<evidence.dump(2)<<'\n';return 0;
+        }
         check(argc==3 || (argc==4 && (std::string(argv[3])=="--history-probes" || std::string(argv[3])=="--uniform-background-history" || std::string(argv[3])=="--flat-diagonal-history")),"Usage: reconstruction-quality-test OUTPUT_PREFIX GPU [--history-probes|--uniform-background-history|--flat-diagonal-history]");SetProcessDPIAware();const fs::path prefix=fs::absolute(argv[1]);const int gpu=std::stoi(argv[2]);const bool history_probes=argc==4;const bool uniform=history_probes && std::string(argv[3])=="--uniform-background-history";const bool flat=history_probes && std::string(argv[3])=="--flat-diagonal-history";
         evidence["sdk_history_probes"]=history_probes;evidence["uniform_background_control"]=uniform;evidence["flat_diagonal_control"]=flat;
         check(fs::is_directory(prefix.parent_path()),"Output parent must exist");std::string gpu_name;

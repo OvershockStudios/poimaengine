@@ -2275,8 +2275,12 @@ public:
             {"min_ms",t.samples ? Json(t.min_ms) : Json(nullptr)},{"max_ms",t.samples ? Json(t.max_ms) : Json(nullptr)},{"last_ms",t.samples ? Json(t.last_ms) : Json(nullptr)}}; };
         const auto& f=d.frame_execution;
         Json probes=Json::array();
-        for(const auto& p:d.scene_products.probes)probes.push_back({{"x",p.x},{"y",p.y},{"depth",p.depth},
-            {"raw_ambient_visibility",p.raw_ambient_visibility},{"ambient_visibility",p.ambient_visibility},{"shading_normal",p.shading_normal},{"motion",p.motion},{"surface_valid",p.surface_valid},{"motion_valid",p.motion_valid},{"raw_hdr",p.raw_hdr},{"resolved_hdr",p.resolved_hdr},{"resolved_x",p.resolved_x},{"resolved_y",p.resolved_y}});
+        for(const auto& p:d.scene_products.probes) {
+            auto sample=Json{{"x",p.x},{"y",p.y},{"depth",p.depth},
+                {"raw_ambient_visibility",p.raw_ambient_visibility},{"ambient_visibility",p.ambient_visibility},{"shading_normal",p.shading_normal},{"motion",p.motion},{"surface_valid",p.surface_valid},{"motion_valid",p.motion_valid},{"raw_hdr",p.raw_hdr},{"resolved_hdr",p.resolved_hdr},{"resolved_x",p.resolved_x},{"resolved_y",p.resolved_y}};
+            if(p.motion_validity_code==surface_mark_reactive_code)sample["surface_mark_reactive"]=true;
+            probes.push_back(std::move(sample));
+        }
         const auto& reconstruction=d.reconstruction;
         Json result={{"memory_budget",gpu_memory::to_json(d.memory_budget)},
             {"scene_receipts",{{"observed",renderer_scene_optional_json(d.scene_observed)},{"submitted",renderer_scene_optional_json(d.scene_submitted)},{"presented",renderer_scene_optional_json(d.scene_presented)}}},

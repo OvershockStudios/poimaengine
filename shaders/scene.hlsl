@@ -10,7 +10,7 @@ struct ObjectData {
     float4 emissive_roughness;
     float4 alpha; // x opacity, y cutoff, z mask mode; w reserved
     float4 previous_model_row0,previous_model_row1,previous_model_row2;
-    uint4 history; // x: motion correspondence; y: receive-shadows disabled; zw: mark offset and count
+    uint4 history; // x: motion/mark history flags; y: receive-shadows disabled; zw: mark offset and count
 };
 struct SurfaceMark {
     float4 center_depth;
@@ -28,6 +28,9 @@ Texture2DArray<float> surface_mark_masks : register(t1, space1);
 // DXC shifts samplers in space 0. Match NVRHI's sampler offset in set 1 as well.
 [[vk::binding(128, 1)]] SamplerState surface_mark_mask_sampler : register(s0, space1);
 #include "scene_surface.hlsli"
+#if POIMA_SCENE_PRODUCTS
+#include "scene_correspondence.hlsli"
+#endif
 Texture2D base_map : register(t0);
 Texture2D mr_map : register(t1);
 Texture2D emissive_map : register(t2);
@@ -55,7 +58,7 @@ struct VertexOutput {
     nointerpolation uint object_index : TEXCOORD7;
 #if POIMA_SCENE_PRODUCTS
     float4 previous_clip : TEXCOORD4;
-    nointerpolation uint motion_valid : TEXCOORD5;
+    nointerpolation uint history_flags : TEXCOORD5;
     float4 current_clip : TEXCOORD6;
 #endif
 };
@@ -71,7 +74,7 @@ VertexOutput vertex_main(VertexInput input,uint instance_id : SV_InstanceID) {
     output.current_clip=output.position;
     const float4 previous_local=float4(input.previous_position,1);
     const float3 previous_world=float3(dot(draw.previous_model_row0,previous_local),dot(draw.previous_model_row1,previous_local),dot(draw.previous_model_row2,previous_local));
-    output.previous_clip=mul(previous_view_projection,float4(previous_world,1));output.motion_valid=draw.history.x;
+    output.previous_clip=mul(previous_view_projection,float4(previous_world,1));output.history_flags=draw.history.x;
 #endif
     output.position.xy+=float2(2,-2)*temporal_jitter.xy/cluster_viewport.zw*output.position.w;
     output.uv=input.uv;
@@ -199,15 +202,17 @@ float4 pixel_main(VertexOutput input, bool front : SV_IsFrontFace) : SV_Target0 
     const bool normal_valid=all(isfinite(n)) && dot(n,n)>1e-20;
 #endif
 #if POIMA_SCENE_PRODUCTS
-    float2 motion=0;float motion_valid=0;
-    if(normal_valid && input.motion_valid!=0 && all(isfinite(input.previous_clip)) && input.previous_clip.w>0 && all(isfinite(input.current_clip)) && input.current_clip.w>0) {
+    float2 motion=0;
+    bool motion_valid=false;
+    const bool marks_changed=(input.history_flags&object_surface_marks_changed)!=0;
+    if(normal_valid && (input.history_flags&object_motion_valid)!=0 && all(isfinite(input.previous_clip)) && input.previous_clip.w>0 && all(isfinite(input.current_clip)) && input.current_clip.w>0) {
         const float2 previous_ndc=input.previous_clip.xy/input.previous_clip.w;
         const float2 previous_uv=float2(previous_ndc.x*.5+.5,.5-previous_ndc.y*.5);
         // Match the same interpolated material point, without raster snapping bias.
         const float2 current_ndc=input.current_clip.xy/input.current_clip.w;
         const float2 current_uv=float2(current_ndc.x*.5+.5,.5-current_ndc.y*.5);
         const float2 displacement=previous_uv-current_uv;
-        if(all(isfinite(displacement))) {motion=displacement;motion_valid=1;}
+        if(all(isfinite(displacement))) {motion=displacement;motion_valid=true;}
     }
 #endif
 #if POIMA_SCENE_DEFERRED
@@ -216,7 +221,8 @@ float4 pixel_main(VertexOutput input, bool front : SV_IsFrontFace) : SV_Target0 
     // Presence and valid shading normal are distinct: bad geometry must not become sky.
     uint flags=1u | (material.legacy ? 2u : 0u) | (normal_valid ? 8u : 0u) | (material.receive_shadows ? 0u : 16u);
 #if POIMA_SCENE_PRODUCTS
-    flags|=motion_valid>.5 ? 4u : 0u;
+    flags|=motion_valid ? deferred_motion_valid : 0u;
+    flags|=motion_valid && marks_changed ? deferred_surface_marks_changed : 0u;
     result.correspondence=float4(encode_normal(material.geometric_normal),motion);
 #else
     result.geometric_normal=encode_normal(material.geometric_normal);
@@ -229,7 +235,9 @@ float4 pixel_main(VertexOutput input, bool front : SV_IsFrontFace) : SV_Target0 
 #if POIMA_SCENE_PRODUCTS
     ScenePixel result;result.color=float4(color,1);
     result.shading_normal=normal_valid ? float4(n,1) : float4(0,0,0,0);
-    result.motion=motion;result.motion_valid=motion_valid;return result;
+    result.motion=motion;
+    result.motion_valid=encode_correspondence(motion_valid,marks_changed);
+    return result;
 #else
     return float4(color,1);
 #endif

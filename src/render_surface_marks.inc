@@ -72,6 +72,7 @@
 
         item.surface_mark_offset=static_cast<std::uint32_t>(surface_marks.size());
         item.surface_mark_count=static_cast<std::uint32_t>(object.surface_marks.size());
+        item.local_surface_marks=object.surface_marks;
         for(const auto& mark:object.surface_marks) {
             require(std::abs(dot(mark.normal,mark.normal)-1)<1e-4f &&
                 std::abs(dot(mark.tangent,mark.tangent)-1)<1e-4f &&

@@ -92,6 +92,8 @@ constexpr std::string_view reconstruction_mode_name(ReconstructionMode mode) {
 }
 
 struct SceneProductProbe { std::uint32_t x=0,y=0; };
+inline constexpr std::uint8_t motion_valid_code=255;
+inline constexpr std::uint8_t surface_mark_reactive_code=128;
 // Native qualification data from the pinned SDK; not a portable radiance format.
 struct Fsr3HistorySample {
     std::array<float,4> masks{},previous_history{},current_history{};
@@ -110,6 +112,7 @@ struct SceneProductSample {
     std::array<float,3> raw_hdr{},resolved_hdr{};
     std::uint32_t resolved_x=0,resolved_y=0;
     std::optional<Fsr3HistorySample> fsr3_history;
+    std::uint8_t motion_validity_code=0; // Exact byte from the R8 correspondence image.
 };
 struct RenderOptions {
     std::uint32_t frames = 120;

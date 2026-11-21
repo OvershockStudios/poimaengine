@@ -1,0 +1,2897 @@
+{
+  "engine_version": "0.0.363",
+  "world_schema_revision": 184,
+  "sources_sha256": {
+    "CMakeLists.txt": "f5b50b1ee85a35a700a6170238db9c41fa89e13514cd25abe9c9d17708e87e91",
+    "cmake/render_smoke.cmake": "091b04dee65712896db2b1cec531b6e9028ef44fb25af9eea28dfa48f77e2280",
+    "include/poima/core.hpp": "70e13f6e157d974ecf152ac4bdf9fc74439f7ec53dd623e7fa2f23aedb66ca9d",
+    "include/poima/scene.hpp": "3807ba83014b2e75a584a102456722fc1b61e100bb4fe622b96ed77163708be2",
+    "shaders/deferred_lighting.hlsl": "2b965e0bf95f5ab03d54fb22e520dfcdae2907262a869a8319cbac324109f5a0",
+    "shaders/scene.hlsl": "4dcd95b1198f54dd903beadc3daa392b1031c5a1c0adc54638f68003a4227b99",
+    "shaders/scene_correspondence.hlsli": "007c9465b7d34c52825c0bc9f87410a8b9b6a6e140fe6d8684021a4422eac960",
+    "shaders/temporal_inputs.hlsl": "b7cc6f9430ca1995b7dcc54c61b4ced89e0ab790c3875b81d1298be1df6ecf16",
+    "src/render_smoke.cpp": "0c930eabd1274cec669da27d5a10ab1e38c98b58bd3690fb0cfa8461f01bde63",
+    "src/render_surface_marks.inc": "89a811bad26e370fc7cb0a90c285da1179e9e657743dfed68b910811d4dede10",
+    "src/world.cpp": "18127645fa858a9f10c00dfe7604d0f0743b681090b698a11e76cfb9a7f55e48",
+    "src/world_schema.cpp": "2ab73458d71fed3a0f337ca7903cd0e80f4986ff17d4d12e5b94a5f901eac182",
+    "tests/asset_references_contract.py": "3a1ca3d392dff6bda4a57e36db43f508752867c98019c14c8ebe853f7c3c1a3b",
+    "tests/reconstruction_mark_reactivity.inc": "38b227ba7f51bd976041069c5280753256822ffaee4d10c70abbc85be0de18a6",
+    "tests/reconstruction_quality_native.cpp": "2dc7821f8eec5787c664f76991c3a3f3c2d00a01298593c094ecc788e38f8e74",
+    "tests/world_ui_contract.py": "7d1c1e379dac9dea195a9eb570b32f78b4fb1627c13578cf929e43b4ec22120c"
+  },
+  "correspondence": {
+    "invalid": 0,
+    "valid_reactive": 128,
+    "valid_ordinary": 255
+  },
+  "initial_fixture": {
+    "executable_sha256": "4bc6bf9932a037dea20d88a0971125770e33306df4f6d99fdcebbe24bfffd5e1",
+    "failed_route": "FSR Native AA, deferred, NVIDIA",
+    "reason": "Uninitialized synthetic albedo failed deferred half-float admission.",
+    "failed_report_sha256": "f67fdffac4892b92eb7bd145fa17d7ab71ea6f687859a6f5e7c39259fc62b119"
+  },
+  "linux": {
+    "version": {
+      "version": "0.0.363",
+      "compiler": "GNU",
+      "compiler_version": "16.2.0",
+      "target_os": "Linux",
+      "target_arch": "x86_64"
+    },
+    "executable_sha256": "f4f05112aa87cd51e637a755dcb066c04fcdf539e103c6ba2e04b1a8da642f11",
+    "junit_sha256": "5661d260940c169db69b3a6444c69bf33d6cc3c4e6e739e96b3cd36b920b9560",
+    "suites": [
+      "surface_marks_contract",
+      "authoring_core_conformance",
+      "authoring_contract_identity",
+      "render_schedule_native",
+      "reconstruction_quality_oracle",
+      "mcp_contract",
+      "world_ui_contract",
+      "asset_references_contract"
+    ],
+    "retained_textured_native_aot_report_sha256": "603a5b507676e90731497de80bbcd296eec01088c25aea7b416d48f9652de64c"
+  },
+  "windows": {
+    "version": {
+      "version": "0.0.363",
+      "compiler": "Clang",
+      "compiler_version": "23.1.2",
+      "target_os": "Windows",
+      "target_arch": "x86_64"
+    },
+    "executable_sha256": "315342fd9d1dcbfdc27f750f820d3d465d2f452f7abb5a0de99e2fddcbed0378",
+    "installed_descriptor": {
+      "call_bytes": 80,
+      "call_version": 1,
+      "feature_count": 41,
+      "navigation": true,
+      "passed": true,
+      "services_bytes": 560,
+      "services_version": 7
+    },
+    "runtime_sha256": "68997183caa9802c05f0ad8e658f5ad7192585e476f48362ed234a83fcea2209",
+    "desktop_bridge_sha256": "a95dc1d7a54d5b11ed137e326c2e1d4a307a88ccd88458d0cb61e9d3acda66c0",
+    "native_fixture_sha256": "3b1ac95b352d9d5f77ff75375dcd6eea92460c345a29ff52bf2b0864eff7a178",
+    "mcp_log_sha256": "1f609a9741167cb37f203fa9db1e1cfd00d2b4f09c473c5139798105208b698b",
+    "reactive_sequences": [
+      {
+        "gpu": "AMD Radeon(TM) Graphics",
+        "sdk": "FSR 3.1.4 / FidelityFX SDK 1.1.4",
+        "mode": "fsr3_native",
+        "lighting_path": "forward",
+        "input_extent": [
+          320,
+          180
+        ],
+        "output_extent": [
+          320,
+          180
+        ],
+        "report_sha256": "cf956fc1c03f5e9aa62357b84d594226417fcbfc3701daced8876de7755ed70b",
+        "file_report_sha256": "8a35a0bbdf22da4e205aeba622fb9b39ed7dc34e1ff5f1fd212eebc4520a34f4",
+        "validation_log_sha256": "109998f14c9bc45939d832ec0a409198e372a14266f164168f79b3d5574efa37",
+        "earlier_failed_reports": [],
+        "mask_sha256": "1c931a5c71f02a079a9a3c30af91db911f56eb0cf9ca38c35720471600471df5",
+        "frames": [
+          {
+            "phase": "first",
+            "sequence": 1,
+            "freshly_reactive": false,
+            "history_reset": true,
+            "image_sha256": "b27cdbdfa990572a52d16a539e1cab21ae09042b72871b633d52f734384ff7ea",
+            "motion_error": 0.0,
+            "validity_codes": {
+              "covered": 0,
+              "masked": 0,
+              "outside": 0,
+              "neighbor": 0,
+              "sky": 0
+            },
+            "motion_x": 0.0,
+            "input_jitter": [
+              0.0,
+              -0.1666666567325592
+            ],
+            "max_resolved_hdr_error": 6.103515625e-05,
+            "covered_radiance": [
+              0.0625,
+              0.125,
+              0.1875
+            ],
+            "masked_sdk_shading_change": 1.0
+          },
+          {
+            "phase": "absent",
+            "sequence": 2,
+            "freshly_reactive": false,
+            "history_reset": false,
+            "image_sha256": "c031243d4e3645ed0f70bfb1462940ef37ee801cbb2a9a1b91b681886ece43c5",
+            "motion_error": 0.0,
+            "validity_codes": {
+              "covered": 255,
+              "masked": 255,
+              "outside": 255,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": 0.0,
+            "input_jitter": [
+              -0.25,
+              0.1666666865348816
+            ],
+            "max_resolved_hdr_error": 1.52587890625e-05,
+            "covered_radiance": [
+              0.0625,
+              0.125,
+              0.1875
+            ],
+            "masked_sdk_shading_change": 0.0
+          },
+          {
+            "phase": "born-moving",
+            "sequence": 3,
+            "freshly_reactive": true,
+            "history_reset": false,
+            "image_sha256": "970966bf80126734c8096bfc16ac0aa0241e089c759386c467744d5e1bd70b92",
+            "motion_error": 3.725290298461914e-09,
+            "validity_codes": {
+              "covered": 128,
+              "masked": 128,
+              "outside": 128,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": -0.024356961250305176,
+            "input_jitter": [
+              0.25,
+              -0.3888888955116272
+            ],
+            "max_resolved_hdr_error": 6.103515625e-05,
+            "covered_radiance": [
+              0.4375,
+              0.3125,
+              0.0625
+            ],
+            "masked_sdk_shading_change": 1.0
+          },
+          {
+            "phase": "held-moving",
+            "sequence": 4,
+            "freshly_reactive": false,
+            "history_reset": false,
+            "image_sha256": "31452ba9eb852ef06d74229e1ec67cd5cb3a5f223705ebe21fa2f561d08308aa",
+            "motion_error": 1.862645149230957e-09,
+            "validity_codes": {
+              "covered": 255,
+              "masked": 255,
+              "outside": 255,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": -0.012178480625152588,
+            "input_jitter": [
+              -0.375,
+              -0.0555555522441864
+            ],
+            "max_resolved_hdr_error": 6.103515625e-05,
+            "covered_radiance": [
+              0.4375,
+              0.3125,
+              0.0625
+            ],
+            "masked_sdk_shading_change": 0.0
+          },
+          {
+            "phase": "edited",
+            "sequence": 5,
+            "freshly_reactive": true,
+            "history_reset": false,
+            "image_sha256": "211312f38f6df38211c8333f8aebfefc28bcacc1177024bbfaeb4881374233b6",
+            "motion_error": 0.0,
+            "validity_codes": {
+              "covered": 128,
+              "masked": 128,
+              "outside": 128,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": 0.0,
+            "input_jitter": [
+              0.125,
+              0.2777777910232544
+            ],
+            "max_resolved_hdr_error": 1.52587890625e-05,
+            "covered_radiance": [
+              0.3125,
+              0.0625,
+              0.4375
+            ],
+            "masked_sdk_shading_change": 1.0
+          },
+          {
+            "phase": "held-edited",
+            "sequence": 6,
+            "freshly_reactive": false,
+            "history_reset": false,
+            "image_sha256": "4cc716d019bf8dd27f5dc4e25e5955631ce2dcb17d03ec83128bcc129d3e5a17",
+            "motion_error": 0.0,
+            "validity_codes": {
+              "covered": 255,
+              "masked": 255,
+              "outside": 255,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": 0.0,
+            "input_jitter": [
+              -0.125,
+              -0.2777777910232544
+            ],
+            "max_resolved_hdr_error": 1.52587890625e-05,
+            "covered_radiance": [
+              0.3125,
+              0.0625,
+              0.4375
+            ],
+            "masked_sdk_shading_change": 0.0
+          },
+          {
+            "phase": "removed-moving",
+            "sequence": 7,
+            "freshly_reactive": true,
+            "history_reset": false,
+            "image_sha256": "31d3a085b8eff28732bd2e1d46d9950b081420451b1f9ce2cc159fd8f8842327",
+            "motion_error": 1.862645149230957e-09,
+            "validity_codes": {
+              "covered": 128,
+              "masked": 128,
+              "outside": 128,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": 0.012178480625152588,
+            "input_jitter": [
+              0.375,
+              0.05555558204650879
+            ],
+            "max_resolved_hdr_error": 6.103515625e-05,
+            "covered_radiance": [
+              0.0625,
+              0.125,
+              0.1875
+            ],
+            "masked_sdk_shading_change": 1.0
+          },
+          {
+            "phase": "held-absent",
+            "sequence": 8,
+            "freshly_reactive": false,
+            "history_reset": false,
+            "image_sha256": "ad896d56dacd78341c6ce96931610de8730a217aa17aac1aa036bac037029175",
+            "motion_error": 0.0,
+            "validity_codes": {
+              "covered": 255,
+              "masked": 255,
+              "outside": 255,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": 0.0,
+            "input_jitter": [
+              -0.4375,
+              0.3888888955116272
+            ],
+            "max_resolved_hdr_error": 6.103515625e-05,
+            "covered_radiance": [
+              0.0625,
+              0.125,
+              0.1875
+            ],
+            "masked_sdk_shading_change": 0.0
+          },
+          {
+            "phase": "born-static",
+            "sequence": 9,
+            "freshly_reactive": true,
+            "history_reset": false,
+            "image_sha256": "a6199cc82ceb9fca7699bfa9882ad9325fb239b5e20ccbd4b2684455f2d9b709",
+            "motion_error": 0.0,
+            "validity_codes": {
+              "covered": 128,
+              "masked": 128,
+              "outside": 128,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": 0.0,
+            "input_jitter": [
+              0.0,
+              -0.1666666567325592
+            ],
+            "max_resolved_hdr_error": 6.103515625e-05,
+            "covered_radiance": [
+              0.4375,
+              0.3125,
+              0.0625
+            ],
+            "masked_sdk_shading_change": 1.0
+          },
+          {
+            "phase": "held-static",
+            "sequence": 10,
+            "freshly_reactive": false,
+            "history_reset": false,
+            "image_sha256": "f46c2bff706b927c8a8af438fad43038222f3730adadfa3e91919fc808e61b7a",
+            "motion_error": 0.0,
+            "validity_codes": {
+              "covered": 255,
+              "masked": 255,
+              "outside": 255,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": 0.0,
+            "input_jitter": [
+              -0.25,
+              0.1666666865348816
+            ],
+            "max_resolved_hdr_error": 1.52587890625e-05,
+            "covered_radiance": [
+              0.4375,
+              0.3125,
+              0.0625
+            ],
+            "masked_sdk_shading_change": 0.0
+          },
+          {
+            "phase": "removed-static",
+            "sequence": 11,
+            "freshly_reactive": true,
+            "history_reset": false,
+            "image_sha256": "9dc3af4a7b531e536d8bc568452ef1f083218c78837dbeaaf514b23e9fd0b072",
+            "motion_error": 0.0,
+            "validity_codes": {
+              "covered": 128,
+              "masked": 128,
+              "outside": 128,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": 0.0,
+            "input_jitter": [
+              0.25,
+              -0.3888888955116272
+            ],
+            "max_resolved_hdr_error": 6.103515625e-05,
+            "covered_radiance": [
+              0.0625,
+              0.125,
+              0.1875
+            ],
+            "masked_sdk_shading_change": 1.0
+          },
+          {
+            "phase": "settled-absent",
+            "sequence": 12,
+            "freshly_reactive": false,
+            "history_reset": false,
+            "image_sha256": "b5ebfed2279c2b250b72571e1aaa80c6dcba15df920a3da37a3234df0e484109",
+            "motion_error": 0.0,
+            "validity_codes": {
+              "covered": 255,
+              "masked": 255,
+              "outside": 255,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": 0.0,
+            "input_jitter": [
+              -0.375,
+              -0.0555555522441864
+            ],
+            "max_resolved_hdr_error": 6.103515625e-05,
+            "covered_radiance": [
+              0.0625,
+              0.125,
+              0.1875
+            ],
+            "masked_sdk_shading_change": 0.0
+          }
+        ]
+      },
+      {
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "sdk": "FSR 3.1.4 / FidelityFX SDK 1.1.4",
+        "mode": "fsr3_native",
+        "lighting_path": "forward",
+        "input_extent": [
+          320,
+          180
+        ],
+        "output_extent": [
+          320,
+          180
+        ],
+        "report_sha256": "d3da08748249cded94978e34cdbff0435b2ac6235e42fd5e6cb88d031be62706",
+        "file_report_sha256": "6c352dae587defddba33d81ca88283ef260962029480b1c622c7f9b7cd672e3d",
+        "validation_log_sha256": "44036f1015396de3db9f0f67e32289f6cfb6a12d960d125da8a44e21b769b2dd",
+        "earlier_failed_reports": [],
+        "mask_sha256": "1c931a5c71f02a079a9a3c30af91db911f56eb0cf9ca38c35720471600471df5",
+        "frames": [
+          {
+            "phase": "first",
+            "sequence": 1,
+            "freshly_reactive": false,
+            "history_reset": true,
+            "image_sha256": "b27cdbdfa990572a52d16a539e1cab21ae09042b72871b633d52f734384ff7ea",
+            "motion_error": 0.0,
+            "validity_codes": {
+              "covered": 0,
+              "masked": 0,
+              "outside": 0,
+              "neighbor": 0,
+              "sky": 0
+            },
+            "motion_x": 0.0,
+            "input_jitter": [
+              0.0,
+              -0.1666666567325592
+            ],
+            "max_resolved_hdr_error": 0.000244140625,
+            "covered_radiance": [
+              0.0625,
+              0.125,
+              0.1875
+            ],
+            "masked_sdk_shading_change": 1.0
+          },
+          {
+            "phase": "absent",
+            "sequence": 2,
+            "freshly_reactive": false,
+            "history_reset": false,
+            "image_sha256": "e0b305a10e20aeb8fb20e569041b2a274b2b482ee30ba830f74541f5f6d8bca1",
+            "motion_error": 0.0,
+            "validity_codes": {
+              "covered": 255,
+              "masked": 255,
+              "outside": 255,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": 0.0,
+            "input_jitter": [
+              -0.25,
+              0.1666666865348816
+            ],
+            "max_resolved_hdr_error": 0.000244140625,
+            "covered_radiance": [
+              0.0625,
+              0.125,
+              0.1875
+            ],
+            "masked_sdk_shading_change": 0.0
+          },
+          {
+            "phase": "born-moving",
+            "sequence": 3,
+            "freshly_reactive": true,
+            "history_reset": false,
+            "image_sha256": "f26144d35706262a72b7619da2587bd3a56aaf5dd0dbbb03e3a267f9408c885b",
+            "motion_error": 3.725290298461914e-09,
+            "validity_codes": {
+              "covered": 128,
+              "masked": 128,
+              "outside": 128,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": -0.024356961250305176,
+            "input_jitter": [
+              0.25,
+              -0.3888888955116272
+            ],
+            "max_resolved_hdr_error": 6.103515625e-05,
+            "covered_radiance": [
+              0.4375,
+              0.3125,
+              0.0625
+            ],
+            "masked_sdk_shading_change": 1.0
+          },
+          {
+            "phase": "held-moving",
+            "sequence": 4,
+            "freshly_reactive": false,
+            "history_reset": false,
+            "image_sha256": "b20d10a338eb0db963dd242ed65318407b4fb4bb376bd418ce923928b63d3bee",
+            "motion_error": 1.862645149230957e-09,
+            "validity_codes": {
+              "covered": 255,
+              "masked": 255,
+              "outside": 255,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": -0.012178480625152588,
+            "input_jitter": [
+              -0.375,
+              -0.0555555522441864
+            ],
+            "max_resolved_hdr_error": 6.103515625e-05,
+            "covered_radiance": [
+              0.4375,
+              0.3125,
+              0.0625
+            ],
+            "masked_sdk_shading_change": 0.0
+          },
+          {
+            "phase": "edited",
+            "sequence": 5,
+            "freshly_reactive": true,
+            "history_reset": false,
+            "image_sha256": "28f989b702c72ce5b74da25d30cbd240284e839d5a71abdde7fea01c545c3b55",
+            "motion_error": 0.0,
+            "validity_codes": {
+              "covered": 128,
+              "masked": 128,
+              "outside": 128,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": 0.0,
+            "input_jitter": [
+              0.125,
+              0.2777777910232544
+            ],
+            "max_resolved_hdr_error": 1.52587890625e-05,
+            "covered_radiance": [
+              0.3125,
+              0.0625,
+              0.4375
+            ],
+            "masked_sdk_shading_change": 1.0
+          },
+          {
+            "phase": "held-edited",
+            "sequence": 6,
+            "freshly_reactive": false,
+            "history_reset": false,
+            "image_sha256": "8079b41c623d36f7a373d6b43827cdd77337cc3ae11cd5c676e9dc2a7e1fbe4e",
+            "motion_error": 0.0,
+            "validity_codes": {
+              "covered": 255,
+              "masked": 255,
+              "outside": 255,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": 0.0,
+            "input_jitter": [
+              -0.125,
+              -0.2777777910232544
+            ],
+            "max_resolved_hdr_error": 1.52587890625e-05,
+            "covered_radiance": [
+              0.3125,
+              0.0625,
+              0.4375
+            ],
+            "masked_sdk_shading_change": 0.0
+          },
+          {
+            "phase": "removed-moving",
+            "sequence": 7,
+            "freshly_reactive": true,
+            "history_reset": false,
+            "image_sha256": "4bab2bb3684e5623bae1e8f596ac5c82729588a86640f558cb99d810bcce588b",
+            "motion_error": 1.6763806343078613e-08,
+            "validity_codes": {
+              "covered": 128,
+              "masked": 128,
+              "outside": 128,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": 0.012178465723991394,
+            "input_jitter": [
+              0.375,
+              0.05555558204650879
+            ],
+            "max_resolved_hdr_error": 6.103515625e-05,
+            "covered_radiance": [
+              0.062469482421875,
+              0.12493896484375,
+              0.1875
+            ],
+            "masked_sdk_shading_change": 1.0
+          },
+          {
+            "phase": "held-absent",
+            "sequence": 8,
+            "freshly_reactive": false,
+            "history_reset": false,
+            "image_sha256": "291dd2815a60f7d4e43af97a239ca53646d1cb1e0f23857a758d2c3732f4ec4a",
+            "motion_error": 0.0,
+            "validity_codes": {
+              "covered": 255,
+              "masked": 255,
+              "outside": 255,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": 0.0,
+            "input_jitter": [
+              -0.4375,
+              0.3888888955116272
+            ],
+            "max_resolved_hdr_error": 6.103515625e-05,
+            "covered_radiance": [
+              0.0625,
+              0.125,
+              0.1875
+            ],
+            "masked_sdk_shading_change": 0.0
+          },
+          {
+            "phase": "born-static",
+            "sequence": 9,
+            "freshly_reactive": true,
+            "history_reset": false,
+            "image_sha256": "8881f014805ec2a4c9a26d46386eb425fe40f702880b7c795d5acc470f904e7f",
+            "motion_error": 0.0,
+            "validity_codes": {
+              "covered": 128,
+              "masked": 128,
+              "outside": 128,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": 0.0,
+            "input_jitter": [
+              0.0,
+              -0.1666666567325592
+            ],
+            "max_resolved_hdr_error": 6.103515625e-05,
+            "covered_radiance": [
+              0.4375,
+              0.3125,
+              0.0625
+            ],
+            "masked_sdk_shading_change": 1.0
+          },
+          {
+            "phase": "held-static",
+            "sequence": 10,
+            "freshly_reactive": false,
+            "history_reset": false,
+            "image_sha256": "893a9ca0d6ce10387eaa6e09a2a24aa4c6dd6206fd159d9ffedcbe50d5be1328",
+            "motion_error": 0.0,
+            "validity_codes": {
+              "covered": 255,
+              "masked": 255,
+              "outside": 255,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": 0.0,
+            "input_jitter": [
+              -0.25,
+              0.1666666865348816
+            ],
+            "max_resolved_hdr_error": 6.103515625e-05,
+            "covered_radiance": [
+              0.4375,
+              0.3125,
+              0.0625
+            ],
+            "masked_sdk_shading_change": 0.0
+          },
+          {
+            "phase": "removed-static",
+            "sequence": 11,
+            "freshly_reactive": true,
+            "history_reset": false,
+            "image_sha256": "074ca898ff4c5b2644fee1af45e843ac497e77637c127269e56657c4cd082f82",
+            "motion_error": 0.0,
+            "validity_codes": {
+              "covered": 128,
+              "masked": 128,
+              "outside": 128,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": 0.0,
+            "input_jitter": [
+              0.25,
+              -0.3888888955116272
+            ],
+            "max_resolved_hdr_error": 6.103515625e-05,
+            "covered_radiance": [
+              0.0625,
+              0.125,
+              0.1875
+            ],
+            "masked_sdk_shading_change": 1.0
+          },
+          {
+            "phase": "settled-absent",
+            "sequence": 12,
+            "freshly_reactive": false,
+            "history_reset": false,
+            "image_sha256": "b5ebfed2279c2b250b72571e1aaa80c6dcba15df920a3da37a3234df0e484109",
+            "motion_error": 0.0,
+            "validity_codes": {
+              "covered": 255,
+              "masked": 255,
+              "outside": 255,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": 0.0,
+            "input_jitter": [
+              -0.375,
+              -0.0555555522441864
+            ],
+            "max_resolved_hdr_error": 6.103515625e-05,
+            "covered_radiance": [
+              0.0625,
+              0.125,
+              0.1875
+            ],
+            "masked_sdk_shading_change": 0.0
+          }
+        ]
+      },
+      {
+        "gpu": "AMD Radeon(TM) Graphics",
+        "sdk": "FSR 3.1.4 / FidelityFX SDK 1.1.4",
+        "mode": "fsr3_native",
+        "lighting_path": "deferred",
+        "input_extent": [
+          320,
+          180
+        ],
+        "output_extent": [
+          320,
+          180
+        ],
+        "report_sha256": "67c0543f2bd5494373f1ddcf9e315fc1c0b1d0ff0b73562d15cd4d6cca0e9f55",
+        "file_report_sha256": "a3fe0a323c53d8c175feae6c07306341e0f349ed723f05be2725ebae53a094d4",
+        "validation_log_sha256": "109998f14c9bc45939d832ec0a409198e372a14266f164168f79b3d5574efa37",
+        "earlier_failed_reports": [],
+        "mask_sha256": "1c931a5c71f02a079a9a3c30af91db911f56eb0cf9ca38c35720471600471df5",
+        "frames": [
+          {
+            "phase": "first",
+            "sequence": 1,
+            "freshly_reactive": false,
+            "history_reset": true,
+            "image_sha256": "b27cdbdfa990572a52d16a539e1cab21ae09042b72871b633d52f734384ff7ea",
+            "motion_error": 0.0,
+            "validity_codes": {
+              "covered": 0,
+              "masked": 0,
+              "outside": 0,
+              "neighbor": 0,
+              "sky": 0
+            },
+            "motion_x": 0.0,
+            "input_jitter": [
+              0.0,
+              -0.1666666567325592
+            ],
+            "max_resolved_hdr_error": 6.103515625e-05,
+            "covered_radiance": [
+              0.0625,
+              0.125,
+              0.1875
+            ],
+            "masked_sdk_shading_change": 1.0
+          },
+          {
+            "phase": "absent",
+            "sequence": 2,
+            "freshly_reactive": false,
+            "history_reset": false,
+            "image_sha256": "c031243d4e3645ed0f70bfb1462940ef37ee801cbb2a9a1b91b681886ece43c5",
+            "motion_error": 0.0,
+            "validity_codes": {
+              "covered": 255,
+              "masked": 255,
+              "outside": 255,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": 0.0,
+            "input_jitter": [
+              -0.25,
+              0.1666666865348816
+            ],
+            "max_resolved_hdr_error": 1.52587890625e-05,
+            "covered_radiance": [
+              0.0625,
+              0.125,
+              0.1875
+            ],
+            "masked_sdk_shading_change": 0.0
+          },
+          {
+            "phase": "born-moving",
+            "sequence": 3,
+            "freshly_reactive": true,
+            "history_reset": false,
+            "image_sha256": "970966bf80126734c8096bfc16ac0aa0241e089c759386c467744d5e1bd70b92",
+            "motion_error": 3.725290298461914e-09,
+            "validity_codes": {
+              "covered": 128,
+              "masked": 128,
+              "outside": 128,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": -0.024356961250305176,
+            "input_jitter": [
+              0.25,
+              -0.3888888955116272
+            ],
+            "max_resolved_hdr_error": 6.103515625e-05,
+            "covered_radiance": [
+              0.4375,
+              0.3125,
+              0.0625
+            ],
+            "masked_sdk_shading_change": 1.0
+          },
+          {
+            "phase": "held-moving",
+            "sequence": 4,
+            "freshly_reactive": false,
+            "history_reset": false,
+            "image_sha256": "31452ba9eb852ef06d74229e1ec67cd5cb3a5f223705ebe21fa2f561d08308aa",
+            "motion_error": 1.862645149230957e-09,
+            "validity_codes": {
+              "covered": 255,
+              "masked": 255,
+              "outside": 255,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": -0.012178480625152588,
+            "input_jitter": [
+              -0.375,
+              -0.0555555522441864
+            ],
+            "max_resolved_hdr_error": 6.103515625e-05,
+            "covered_radiance": [
+              0.4375,
+              0.3125,
+              0.0625
+            ],
+            "masked_sdk_shading_change": 0.0
+          },
+          {
+            "phase": "edited",
+            "sequence": 5,
+            "freshly_reactive": true,
+            "history_reset": false,
+            "image_sha256": "211312f38f6df38211c8333f8aebfefc28bcacc1177024bbfaeb4881374233b6",
+            "motion_error": 0.0,
+            "validity_codes": {
+              "covered": 128,
+              "masked": 128,
+              "outside": 128,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": 0.0,
+            "input_jitter": [
+              0.125,
+              0.2777777910232544
+            ],
+            "max_resolved_hdr_error": 1.52587890625e-05,
+            "covered_radiance": [
+              0.3125,
+              0.0625,
+              0.4375
+            ],
+            "masked_sdk_shading_change": 1.0
+          },
+          {
+            "phase": "held-edited",
+            "sequence": 6,
+            "freshly_reactive": false,
+            "history_reset": false,
+            "image_sha256": "4cc716d019bf8dd27f5dc4e25e5955631ce2dcb17d03ec83128bcc129d3e5a17",
+            "motion_error": 0.0,
+            "validity_codes": {
+              "covered": 255,
+              "masked": 255,
+              "outside": 255,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": 0.0,
+            "input_jitter": [
+              -0.125,
+              -0.2777777910232544
+            ],
+            "max_resolved_hdr_error": 1.52587890625e-05,
+            "covered_radiance": [
+              0.3125,
+              0.0625,
+              0.4375
+            ],
+            "masked_sdk_shading_change": 0.0
+          },
+          {
+            "phase": "removed-moving",
+            "sequence": 7,
+            "freshly_reactive": true,
+            "history_reset": false,
+            "image_sha256": "31d3a085b8eff28732bd2e1d46d9950b081420451b1f9ce2cc159fd8f8842327",
+            "motion_error": 1.862645149230957e-09,
+            "validity_codes": {
+              "covered": 128,
+              "masked": 128,
+              "outside": 128,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": 0.012178480625152588,
+            "input_jitter": [
+              0.375,
+              0.05555558204650879
+            ],
+            "max_resolved_hdr_error": 6.103515625e-05,
+            "covered_radiance": [
+              0.0625,
+              0.125,
+              0.1875
+            ],
+            "masked_sdk_shading_change": 1.0
+          },
+          {
+            "phase": "held-absent",
+            "sequence": 8,
+            "freshly_reactive": false,
+            "history_reset": false,
+            "image_sha256": "ad896d56dacd78341c6ce96931610de8730a217aa17aac1aa036bac037029175",
+            "motion_error": 0.0,
+            "validity_codes": {
+              "covered": 255,
+              "masked": 255,
+              "outside": 255,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": 0.0,
+            "input_jitter": [
+              -0.4375,
+              0.3888888955116272
+            ],
+            "max_resolved_hdr_error": 6.103515625e-05,
+            "covered_radiance": [
+              0.0625,
+              0.125,
+              0.1875
+            ],
+            "masked_sdk_shading_change": 0.0
+          },
+          {
+            "phase": "born-static",
+            "sequence": 9,
+            "freshly_reactive": true,
+            "history_reset": false,
+            "image_sha256": "a6199cc82ceb9fca7699bfa9882ad9325fb239b5e20ccbd4b2684455f2d9b709",
+            "motion_error": 0.0,
+            "validity_codes": {
+              "covered": 128,
+              "masked": 128,
+              "outside": 128,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": 0.0,
+            "input_jitter": [
+              0.0,
+              -0.1666666567325592
+            ],
+            "max_resolved_hdr_error": 6.103515625e-05,
+            "covered_radiance": [
+              0.4375,
+              0.3125,
+              0.0625
+            ],
+            "masked_sdk_shading_change": 1.0
+          },
+          {
+            "phase": "held-static",
+            "sequence": 10,
+            "freshly_reactive": false,
+            "history_reset": false,
+            "image_sha256": "f46c2bff706b927c8a8af438fad43038222f3730adadfa3e91919fc808e61b7a",
+            "motion_error": 0.0,
+            "validity_codes": {
+              "covered": 255,
+              "masked": 255,
+              "outside": 255,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": 0.0,
+            "input_jitter": [
+              -0.25,
+              0.1666666865348816
+            ],
+            "max_resolved_hdr_error": 1.52587890625e-05,
+            "covered_radiance": [
+              0.4375,
+              0.3125,
+              0.0625
+            ],
+            "masked_sdk_shading_change": 0.0
+          },
+          {
+            "phase": "removed-static",
+            "sequence": 11,
+            "freshly_reactive": true,
+            "history_reset": false,
+            "image_sha256": "9dc3af4a7b531e536d8bc568452ef1f083218c78837dbeaaf514b23e9fd0b072",
+            "motion_error": 0.0,
+            "validity_codes": {
+              "covered": 128,
+              "masked": 128,
+              "outside": 128,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": 0.0,
+            "input_jitter": [
+              0.25,
+              -0.3888888955116272
+            ],
+            "max_resolved_hdr_error": 6.103515625e-05,
+            "covered_radiance": [
+              0.0625,
+              0.125,
+              0.1875
+            ],
+            "masked_sdk_shading_change": 1.0
+          },
+          {
+            "phase": "settled-absent",
+            "sequence": 12,
+            "freshly_reactive": false,
+            "history_reset": false,
+            "image_sha256": "b5ebfed2279c2b250b72571e1aaa80c6dcba15df920a3da37a3234df0e484109",
+            "motion_error": 0.0,
+            "validity_codes": {
+              "covered": 255,
+              "masked": 255,
+              "outside": 255,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": 0.0,
+            "input_jitter": [
+              -0.375,
+              -0.0555555522441864
+            ],
+            "max_resolved_hdr_error": 6.103515625e-05,
+            "covered_radiance": [
+              0.0625,
+              0.125,
+              0.1875
+            ],
+            "masked_sdk_shading_change": 0.0
+          }
+        ]
+      },
+      {
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "sdk": "FSR 3.1.4 / FidelityFX SDK 1.1.4",
+        "mode": "fsr3_native",
+        "lighting_path": "deferred",
+        "input_extent": [
+          320,
+          180
+        ],
+        "output_extent": [
+          320,
+          180
+        ],
+        "report_sha256": "9c76fba31eb425de0fa93c4de6d29ea3b5da6c2b93182f96a6ad8dbded36807c",
+        "file_report_sha256": "951b49c7562f76458bffe4220a09da2665689ca6ed842881a6dffbc0ef51cfb3",
+        "validation_log_sha256": "44036f1015396de3db9f0f67e32289f6cfb6a12d960d125da8a44e21b769b2dd",
+        "earlier_failed_reports": [],
+        "mask_sha256": "1c931a5c71f02a079a9a3c30af91db911f56eb0cf9ca38c35720471600471df5",
+        "frames": [
+          {
+            "phase": "first",
+            "sequence": 1,
+            "freshly_reactive": false,
+            "history_reset": true,
+            "image_sha256": "b27cdbdfa990572a52d16a539e1cab21ae09042b72871b633d52f734384ff7ea",
+            "motion_error": 0.0,
+            "validity_codes": {
+              "covered": 0,
+              "masked": 0,
+              "outside": 0,
+              "neighbor": 0,
+              "sky": 0
+            },
+            "motion_x": 0.0,
+            "input_jitter": [
+              0.0,
+              -0.1666666567325592
+            ],
+            "max_resolved_hdr_error": 0.000244140625,
+            "covered_radiance": [
+              0.0625,
+              0.125,
+              0.1875
+            ],
+            "masked_sdk_shading_change": 1.0
+          },
+          {
+            "phase": "absent",
+            "sequence": 2,
+            "freshly_reactive": false,
+            "history_reset": false,
+            "image_sha256": "e0b305a10e20aeb8fb20e569041b2a274b2b482ee30ba830f74541f5f6d8bca1",
+            "motion_error": 0.0,
+            "validity_codes": {
+              "covered": 255,
+              "masked": 255,
+              "outside": 255,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": 0.0,
+            "input_jitter": [
+              -0.25,
+              0.1666666865348816
+            ],
+            "max_resolved_hdr_error": 0.000244140625,
+            "covered_radiance": [
+              0.0625,
+              0.125,
+              0.1875
+            ],
+            "masked_sdk_shading_change": 0.0
+          },
+          {
+            "phase": "born-moving",
+            "sequence": 3,
+            "freshly_reactive": true,
+            "history_reset": false,
+            "image_sha256": "f26144d35706262a72b7619da2587bd3a56aaf5dd0dbbb03e3a267f9408c885b",
+            "motion_error": 3.725290298461914e-09,
+            "validity_codes": {
+              "covered": 128,
+              "masked": 128,
+              "outside": 128,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": -0.024356961250305176,
+            "input_jitter": [
+              0.25,
+              -0.3888888955116272
+            ],
+            "max_resolved_hdr_error": 6.103515625e-05,
+            "covered_radiance": [
+              0.4375,
+              0.3125,
+              0.0625
+            ],
+            "masked_sdk_shading_change": 1.0
+          },
+          {
+            "phase": "held-moving",
+            "sequence": 4,
+            "freshly_reactive": false,
+            "history_reset": false,
+            "image_sha256": "b20d10a338eb0db963dd242ed65318407b4fb4bb376bd418ce923928b63d3bee",
+            "motion_error": 1.862645149230957e-09,
+            "validity_codes": {
+              "covered": 255,
+              "masked": 255,
+              "outside": 255,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": -0.012178480625152588,
+            "input_jitter": [
+              -0.375,
+              -0.0555555522441864
+            ],
+            "max_resolved_hdr_error": 6.103515625e-05,
+            "covered_radiance": [
+              0.4375,
+              0.3125,
+              0.0625
+            ],
+            "masked_sdk_shading_change": 0.0
+          },
+          {
+            "phase": "edited",
+            "sequence": 5,
+            "freshly_reactive": true,
+            "history_reset": false,
+            "image_sha256": "28f989b702c72ce5b74da25d30cbd240284e839d5a71abdde7fea01c545c3b55",
+            "motion_error": 0.0,
+            "validity_codes": {
+              "covered": 128,
+              "masked": 128,
+              "outside": 128,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": 0.0,
+            "input_jitter": [
+              0.125,
+              0.2777777910232544
+            ],
+            "max_resolved_hdr_error": 1.52587890625e-05,
+            "covered_radiance": [
+              0.3125,
+              0.0625,
+              0.4375
+            ],
+            "masked_sdk_shading_change": 1.0
+          },
+          {
+            "phase": "held-edited",
+            "sequence": 6,
+            "freshly_reactive": false,
+            "history_reset": false,
+            "image_sha256": "8079b41c623d36f7a373d6b43827cdd77337cc3ae11cd5c676e9dc2a7e1fbe4e",
+            "motion_error": 0.0,
+            "validity_codes": {
+              "covered": 255,
+              "masked": 255,
+              "outside": 255,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": 0.0,
+            "input_jitter": [
+              -0.125,
+              -0.2777777910232544
+            ],
+            "max_resolved_hdr_error": 1.52587890625e-05,
+            "covered_radiance": [
+              0.3125,
+              0.0625,
+              0.4375
+            ],
+            "masked_sdk_shading_change": 0.0
+          },
+          {
+            "phase": "removed-moving",
+            "sequence": 7,
+            "freshly_reactive": true,
+            "history_reset": false,
+            "image_sha256": "4bab2bb3684e5623bae1e8f596ac5c82729588a86640f558cb99d810bcce588b",
+            "motion_error": 1.6763806343078613e-08,
+            "validity_codes": {
+              "covered": 128,
+              "masked": 128,
+              "outside": 128,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": 0.012178465723991394,
+            "input_jitter": [
+              0.375,
+              0.05555558204650879
+            ],
+            "max_resolved_hdr_error": 6.103515625e-05,
+            "covered_radiance": [
+              0.062469482421875,
+              0.12493896484375,
+              0.1875
+            ],
+            "masked_sdk_shading_change": 1.0
+          },
+          {
+            "phase": "held-absent",
+            "sequence": 8,
+            "freshly_reactive": false,
+            "history_reset": false,
+            "image_sha256": "291dd2815a60f7d4e43af97a239ca53646d1cb1e0f23857a758d2c3732f4ec4a",
+            "motion_error": 0.0,
+            "validity_codes": {
+              "covered": 255,
+              "masked": 255,
+              "outside": 255,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": 0.0,
+            "input_jitter": [
+              -0.4375,
+              0.3888888955116272
+            ],
+            "max_resolved_hdr_error": 6.103515625e-05,
+            "covered_radiance": [
+              0.0625,
+              0.125,
+              0.1875
+            ],
+            "masked_sdk_shading_change": 0.0
+          },
+          {
+            "phase": "born-static",
+            "sequence": 9,
+            "freshly_reactive": true,
+            "history_reset": false,
+            "image_sha256": "8881f014805ec2a4c9a26d46386eb425fe40f702880b7c795d5acc470f904e7f",
+            "motion_error": 0.0,
+            "validity_codes": {
+              "covered": 128,
+              "masked": 128,
+              "outside": 128,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": 0.0,
+            "input_jitter": [
+              0.0,
+              -0.1666666567325592
+            ],
+            "max_resolved_hdr_error": 6.103515625e-05,
+            "covered_radiance": [
+              0.4375,
+              0.3125,
+              0.0625
+            ],
+            "masked_sdk_shading_change": 1.0
+          },
+          {
+            "phase": "held-static",
+            "sequence": 10,
+            "freshly_reactive": false,
+            "history_reset": false,
+            "image_sha256": "893a9ca0d6ce10387eaa6e09a2a24aa4c6dd6206fd159d9ffedcbe50d5be1328",
+            "motion_error": 0.0,
+            "validity_codes": {
+              "covered": 255,
+              "masked": 255,
+              "outside": 255,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": 0.0,
+            "input_jitter": [
+              -0.25,
+              0.1666666865348816
+            ],
+            "max_resolved_hdr_error": 6.103515625e-05,
+            "covered_radiance": [
+              0.4375,
+              0.3125,
+              0.0625
+            ],
+            "masked_sdk_shading_change": 0.0
+          },
+          {
+            "phase": "removed-static",
+            "sequence": 11,
+            "freshly_reactive": true,
+            "history_reset": false,
+            "image_sha256": "074ca898ff4c5b2644fee1af45e843ac497e77637c127269e56657c4cd082f82",
+            "motion_error": 0.0,
+            "validity_codes": {
+              "covered": 128,
+              "masked": 128,
+              "outside": 128,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": 0.0,
+            "input_jitter": [
+              0.25,
+              -0.3888888955116272
+            ],
+            "max_resolved_hdr_error": 6.103515625e-05,
+            "covered_radiance": [
+              0.0625,
+              0.125,
+              0.1875
+            ],
+            "masked_sdk_shading_change": 1.0
+          },
+          {
+            "phase": "settled-absent",
+            "sequence": 12,
+            "freshly_reactive": false,
+            "history_reset": false,
+            "image_sha256": "b5ebfed2279c2b250b72571e1aaa80c6dcba15df920a3da37a3234df0e484109",
+            "motion_error": 0.0,
+            "validity_codes": {
+              "covered": 255,
+              "masked": 255,
+              "outside": 255,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": 0.0,
+            "input_jitter": [
+              -0.375,
+              -0.0555555522441864
+            ],
+            "max_resolved_hdr_error": 6.103515625e-05,
+            "covered_radiance": [
+              0.0625,
+              0.125,
+              0.1875
+            ],
+            "masked_sdk_shading_change": 0.0
+          }
+        ]
+      },
+      {
+        "gpu": "AMD Radeon(TM) Graphics",
+        "sdk": "FSR 3.1.4 / FidelityFX SDK 1.1.4",
+        "mode": "fsr3_quality",
+        "lighting_path": "forward",
+        "input_extent": [
+          213,
+          120
+        ],
+        "output_extent": [
+          320,
+          180
+        ],
+        "report_sha256": "a7ef5e0dfb906fa44f0d38db1f7bc8ca9c91bfeeffee5260c1e4d7f395c06dee",
+        "file_report_sha256": "e10620b2f76b5985870fb8232c67194fa13ba3adf9637e4b848820a559aac57f",
+        "validation_log_sha256": "109998f14c9bc45939d832ec0a409198e372a14266f164168f79b3d5574efa37",
+        "earlier_failed_reports": [],
+        "mask_sha256": "1c931a5c71f02a079a9a3c30af91db911f56eb0cf9ca38c35720471600471df5",
+        "frames": [
+          {
+            "phase": "first",
+            "sequence": 1,
+            "freshly_reactive": false,
+            "history_reset": true,
+            "image_sha256": "fd779f7a53648b5752120df00c7f9ae79098b7ec50ece7a07b9351e7cd1686c8",
+            "motion_error": 0.0,
+            "validity_codes": {
+              "covered": 0,
+              "masked": 0,
+              "outside": 0,
+              "neighbor": 0,
+              "sky": 0
+            },
+            "motion_x": 0.0,
+            "input_jitter": [
+              0.0,
+              -0.1666666567325592
+            ],
+            "max_resolved_hdr_error": 0.000244140625,
+            "covered_radiance": [
+              0.0625,
+              0.125,
+              0.1875
+            ],
+            "masked_sdk_shading_change": 1.0
+          },
+          {
+            "phase": "absent",
+            "sequence": 2,
+            "freshly_reactive": false,
+            "history_reset": false,
+            "image_sha256": "07f03f8821485ab853d70d970f51db8dba509aad9a7de5f69e9ce90b090aafff",
+            "motion_error": 0.0,
+            "validity_codes": {
+              "covered": 255,
+              "masked": 255,
+              "outside": 255,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": 0.0,
+            "input_jitter": [
+              -0.25,
+              0.1666666865348816
+            ],
+            "max_resolved_hdr_error": 3.0517578125e-05,
+            "covered_radiance": [
+              0.0625,
+              0.125,
+              0.1875
+            ],
+            "masked_sdk_shading_change": 0.0
+          },
+          {
+            "phase": "born-moving",
+            "sequence": 3,
+            "freshly_reactive": true,
+            "history_reset": false,
+            "image_sha256": "5297f687267a3ebcc1ef103cee13348ad196bc43d2a9ba2cae4d0199cbc10a4a",
+            "motion_error": 3.725290298461914e-09,
+            "validity_codes": {
+              "covered": 128,
+              "masked": 128,
+              "outside": 128,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": -0.024356961250305176,
+            "input_jitter": [
+              0.25,
+              -0.3888888955116272
+            ],
+            "max_resolved_hdr_error": 0.000244140625,
+            "covered_radiance": [
+              0.437255859375,
+              0.312255859375,
+              0.062469482421875
+            ],
+            "masked_sdk_shading_change": 1.0
+          },
+          {
+            "phase": "held-moving",
+            "sequence": 4,
+            "freshly_reactive": false,
+            "history_reset": false,
+            "image_sha256": "38ba8c67a2bb752ca6e65f32bd059baab4f4c6d466def078049ba61596bb40d9",
+            "motion_error": 1.862645149230957e-09,
+            "validity_codes": {
+              "covered": 255,
+              "masked": 255,
+              "outside": 255,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": -0.012178480625152588,
+            "input_jitter": [
+              -0.375,
+              -0.0555555522441864
+            ],
+            "max_resolved_hdr_error": 0.000244140625,
+            "covered_radiance": [
+              0.437255859375,
+              0.312255859375,
+              0.062469482421875
+            ],
+            "masked_sdk_shading_change": 0.0
+          },
+          {
+            "phase": "edited",
+            "sequence": 5,
+            "freshly_reactive": true,
+            "history_reset": false,
+            "image_sha256": "c7d1f2f30dda270c3abad5a1c88d0a5d057f3beaeb6413866e78981287934d0b",
+            "motion_error": 0.0,
+            "validity_codes": {
+              "covered": 128,
+              "masked": 128,
+              "outside": 128,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": 0.0,
+            "input_jitter": [
+              0.125,
+              0.2777777910232544
+            ],
+            "max_resolved_hdr_error": 0.0001220703125,
+            "covered_radiance": [
+              0.3125,
+              0.0625,
+              0.4375
+            ],
+            "masked_sdk_shading_change": 1.0
+          },
+          {
+            "phase": "held-edited",
+            "sequence": 6,
+            "freshly_reactive": false,
+            "history_reset": false,
+            "image_sha256": "d4912fa4ffa636adc9e9e110bd941cb5fd442526689c4b950a3a2d3fd7f1ee66",
+            "motion_error": 0.0,
+            "validity_codes": {
+              "covered": 255,
+              "masked": 255,
+              "outside": 255,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": 0.0,
+            "input_jitter": [
+              -0.125,
+              -0.2777777910232544
+            ],
+            "max_resolved_hdr_error": 6.103515625e-05,
+            "covered_radiance": [
+              0.3125,
+              0.0625,
+              0.4375
+            ],
+            "masked_sdk_shading_change": 0.0
+          },
+          {
+            "phase": "removed-moving",
+            "sequence": 7,
+            "freshly_reactive": true,
+            "history_reset": false,
+            "image_sha256": "5353eacc4bcf9c78dc34bf4730f531e11f0a3a98e0ac701752e13e8c5d8a6325",
+            "motion_error": 1.862645149230957e-09,
+            "validity_codes": {
+              "covered": 128,
+              "masked": 128,
+              "outside": 128,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": 0.012178480625152588,
+            "input_jitter": [
+              0.375,
+              0.05555558204650879
+            ],
+            "max_resolved_hdr_error": 6.103515625e-05,
+            "covered_radiance": [
+              0.0625,
+              0.125,
+              0.1875
+            ],
+            "masked_sdk_shading_change": 1.0
+          },
+          {
+            "phase": "held-absent",
+            "sequence": 8,
+            "freshly_reactive": false,
+            "history_reset": false,
+            "image_sha256": "f8a005e472607f63deab5182e501c7bb8efc82d930054f61dc511b4c9cd3c195",
+            "motion_error": 0.0,
+            "validity_codes": {
+              "covered": 255,
+              "masked": 255,
+              "outside": 255,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": 0.0,
+            "input_jitter": [
+              -0.4375,
+              0.3888888955116272
+            ],
+            "max_resolved_hdr_error": 6.103515625e-05,
+            "covered_radiance": [
+              0.0625,
+              0.125,
+              0.1875
+            ],
+            "masked_sdk_shading_change": 0.0
+          },
+          {
+            "phase": "born-static",
+            "sequence": 9,
+            "freshly_reactive": true,
+            "history_reset": false,
+            "image_sha256": "5f488613395c07476aa56a09317516e4ca2fa236d08082f422d656b0f6df86c0",
+            "motion_error": 0.0,
+            "validity_codes": {
+              "covered": 128,
+              "masked": 128,
+              "outside": 128,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": 0.0,
+            "input_jitter": [
+              0.0625,
+              -0.46296295523643494
+            ],
+            "max_resolved_hdr_error": 6.103515625e-05,
+            "covered_radiance": [
+              0.4375,
+              0.3125,
+              0.0625
+            ],
+            "masked_sdk_shading_change": 1.0
+          },
+          {
+            "phase": "held-static",
+            "sequence": 10,
+            "freshly_reactive": false,
+            "history_reset": false,
+            "image_sha256": "c81967a1d5c94ec32edcde1be50acfc813c445383228d7419d55078147483182",
+            "motion_error": 0.0,
+            "validity_codes": {
+              "covered": 255,
+              "masked": 255,
+              "outside": 255,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": 0.0,
+            "input_jitter": [
+              -0.1875,
+              -0.12962961196899414
+            ],
+            "max_resolved_hdr_error": 0.0001220703125,
+            "covered_radiance": [
+              0.4375,
+              0.3125,
+              0.0625
+            ],
+            "masked_sdk_shading_change": 0.0
+          },
+          {
+            "phase": "removed-static",
+            "sequence": 11,
+            "freshly_reactive": true,
+            "history_reset": false,
+            "image_sha256": "b1d96bc54b2af61646acc0850d0b3a9ea3aee6a22b771ed6652093067e1d4812",
+            "motion_error": 0.0,
+            "validity_codes": {
+              "covered": 128,
+              "masked": 128,
+              "outside": 128,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": 0.0,
+            "input_jitter": [
+              0.3125,
+              0.20370370149612427
+            ],
+            "max_resolved_hdr_error": 6.103515625e-05,
+            "covered_radiance": [
+              0.0625,
+              0.125,
+              0.1875
+            ],
+            "masked_sdk_shading_change": 1.0
+          },
+          {
+            "phase": "settled-absent",
+            "sequence": 12,
+            "freshly_reactive": false,
+            "history_reset": false,
+            "image_sha256": "abb0dda881386194f4d8a00dc7d47910fbfbdc4379a5e19a5cec561414c43446",
+            "motion_error": 0.0,
+            "validity_codes": {
+              "covered": 255,
+              "masked": 255,
+              "outside": 255,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": 0.0,
+            "input_jitter": [
+              -0.3125,
+              -0.35185185074806213
+            ],
+            "max_resolved_hdr_error": 6.103515625e-05,
+            "covered_radiance": [
+              0.0625,
+              0.125,
+              0.1875
+            ],
+            "masked_sdk_shading_change": 0.0
+          }
+        ]
+      },
+      {
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "sdk": "FSR 3.1.4 / FidelityFX SDK 1.1.4",
+        "mode": "fsr3_quality",
+        "lighting_path": "forward",
+        "input_extent": [
+          213,
+          120
+        ],
+        "output_extent": [
+          320,
+          180
+        ],
+        "report_sha256": "d3b2ae8ac299f0efc9de018673d757abb7920c4655601e43f49ced38f80aa88f",
+        "file_report_sha256": "a24d7a9d5dba0ce65cb951ac41b8e888024e1eda6b91ae522bb04617e4147a0b",
+        "validation_log_sha256": "44036f1015396de3db9f0f67e32289f6cfb6a12d960d125da8a44e21b769b2dd",
+        "earlier_failed_reports": [],
+        "mask_sha256": "1c931a5c71f02a079a9a3c30af91db911f56eb0cf9ca38c35720471600471df5",
+        "frames": [
+          {
+            "phase": "first",
+            "sequence": 1,
+            "freshly_reactive": false,
+            "history_reset": true,
+            "image_sha256": "969b2b8fd418f414dbe14f330c918d24332df7fd0a9a6d20a455a23d1ae6b518",
+            "motion_error": 0.0,
+            "validity_codes": {
+              "covered": 0,
+              "masked": 0,
+              "outside": 0,
+              "neighbor": 0,
+              "sky": 0
+            },
+            "motion_x": 0.0,
+            "input_jitter": [
+              0.0,
+              -0.1666666567325592
+            ],
+            "max_resolved_hdr_error": 1.52587890625e-05,
+            "covered_radiance": [
+              0.0625,
+              0.125,
+              0.1875
+            ],
+            "masked_sdk_shading_change": 1.0
+          },
+          {
+            "phase": "absent",
+            "sequence": 2,
+            "freshly_reactive": false,
+            "history_reset": false,
+            "image_sha256": "2174ea4f1f48354e76161bb5212f3ffcedd6b26edeb370bc48fa74b9780729b0",
+            "motion_error": 0.0,
+            "validity_codes": {
+              "covered": 255,
+              "masked": 255,
+              "outside": 255,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": 0.0,
+            "input_jitter": [
+              -0.25,
+              0.1666666865348816
+            ],
+            "max_resolved_hdr_error": 3.0517578125e-05,
+            "covered_radiance": [
+              0.0625,
+              0.125,
+              0.1875
+            ],
+            "masked_sdk_shading_change": 0.0
+          },
+          {
+            "phase": "born-moving",
+            "sequence": 3,
+            "freshly_reactive": true,
+            "history_reset": false,
+            "image_sha256": "28f727cef8aeaa9f0b2f431b68c3db783fa8748dfca9a1ed679e0d60f79d9791",
+            "motion_error": 3.725290298461914e-09,
+            "validity_codes": {
+              "covered": 128,
+              "masked": 128,
+              "outside": 128,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": -0.024356961250305176,
+            "input_jitter": [
+              0.25,
+              -0.3888888955116272
+            ],
+            "max_resolved_hdr_error": 1.52587890625e-05,
+            "covered_radiance": [
+              0.4375,
+              0.3125,
+              0.0625
+            ],
+            "masked_sdk_shading_change": 1.0
+          },
+          {
+            "phase": "held-moving",
+            "sequence": 4,
+            "freshly_reactive": false,
+            "history_reset": false,
+            "image_sha256": "748ad6148617794c43d877deaeae282bd3a3ba4d18fc145b5fdf053c9b5eccc8",
+            "motion_error": 1.862645149230957e-09,
+            "validity_codes": {
+              "covered": 255,
+              "masked": 255,
+              "outside": 255,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": -0.012178480625152588,
+            "input_jitter": [
+              -0.375,
+              -0.0555555522441864
+            ],
+            "max_resolved_hdr_error": 0.0001220703125,
+            "covered_radiance": [
+              0.4375,
+              0.3125,
+              0.0625
+            ],
+            "masked_sdk_shading_change": 0.0
+          },
+          {
+            "phase": "edited",
+            "sequence": 5,
+            "freshly_reactive": true,
+            "history_reset": false,
+            "image_sha256": "b435d6b4fe12826fcee33bba20d76c25ec877120458089d66a93e0009a08aed1",
+            "motion_error": 0.0,
+            "validity_codes": {
+              "covered": 128,
+              "masked": 128,
+              "outside": 128,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": 0.0,
+            "input_jitter": [
+              0.125,
+              0.2777777910232544
+            ],
+            "max_resolved_hdr_error": 6.103515625e-05,
+            "covered_radiance": [
+              0.3125,
+              0.0625,
+              0.4375
+            ],
+            "masked_sdk_shading_change": 1.0
+          },
+          {
+            "phase": "held-edited",
+            "sequence": 6,
+            "freshly_reactive": false,
+            "history_reset": false,
+            "image_sha256": "65ab79219e2620aeaa83840e949e60230699fbd43a1799b22d0cc673b3bcfbf1",
+            "motion_error": 0.0,
+            "validity_codes": {
+              "covered": 255,
+              "masked": 255,
+              "outside": 255,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": 0.0,
+            "input_jitter": [
+              -0.125,
+              -0.2777777910232544
+            ],
+            "max_resolved_hdr_error": 6.103515625e-05,
+            "covered_radiance": [
+              0.3125,
+              0.0625,
+              0.4375
+            ],
+            "masked_sdk_shading_change": 0.0
+          },
+          {
+            "phase": "removed-moving",
+            "sequence": 7,
+            "freshly_reactive": true,
+            "history_reset": false,
+            "image_sha256": "910f85b7f6723efb0f63425554307e2a20d5818bfd468d884dbed5d8d1c2f779",
+            "motion_error": 1.862645149230957e-09,
+            "validity_codes": {
+              "covered": 128,
+              "masked": 128,
+              "outside": 128,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": 0.012178480625152588,
+            "input_jitter": [
+              0.375,
+              0.05555558204650879
+            ],
+            "max_resolved_hdr_error": 0.0001220703125,
+            "covered_radiance": [
+              0.062469482421875,
+              0.12493896484375,
+              0.1873779296875
+            ],
+            "masked_sdk_shading_change": 1.0
+          },
+          {
+            "phase": "held-absent",
+            "sequence": 8,
+            "freshly_reactive": false,
+            "history_reset": false,
+            "image_sha256": "c5bb1528917b5ab2ca6a42ef866595c075ce60646f05dc3396e0cc8f374b8530",
+            "motion_error": 0.0,
+            "validity_codes": {
+              "covered": 255,
+              "masked": 255,
+              "outside": 255,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": 0.0,
+            "input_jitter": [
+              -0.4375,
+              0.3888888955116272
+            ],
+            "max_resolved_hdr_error": 1.52587890625e-05,
+            "covered_radiance": [
+              0.0625,
+              0.125,
+              0.1875
+            ],
+            "masked_sdk_shading_change": 0.0
+          },
+          {
+            "phase": "born-static",
+            "sequence": 9,
+            "freshly_reactive": true,
+            "history_reset": false,
+            "image_sha256": "cad61c150a14f25871303df1fc0339c5ddb96fadf2642c591b00a0dd7faec7d3",
+            "motion_error": 0.0,
+            "validity_codes": {
+              "covered": 128,
+              "masked": 128,
+              "outside": 128,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": 0.0,
+            "input_jitter": [
+              0.0625,
+              -0.46296295523643494
+            ],
+            "max_resolved_hdr_error": 3.0517578125e-05,
+            "covered_radiance": [
+              0.4375,
+              0.3125,
+              0.062469482421875
+            ],
+            "masked_sdk_shading_change": 1.0
+          },
+          {
+            "phase": "held-static",
+            "sequence": 10,
+            "freshly_reactive": false,
+            "history_reset": false,
+            "image_sha256": "462acad05a2ef0f5ece0ff511470d671c7714ccef2df4c3b579d46467d10befa",
+            "motion_error": 0.0,
+            "validity_codes": {
+              "covered": 255,
+              "masked": 255,
+              "outside": 255,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": 0.0,
+            "input_jitter": [
+              -0.1875,
+              -0.12962961196899414
+            ],
+            "max_resolved_hdr_error": 0.000244140625,
+            "covered_radiance": [
+              0.4375,
+              0.312255859375,
+              0.062469482421875
+            ],
+            "masked_sdk_shading_change": 0.0
+          },
+          {
+            "phase": "removed-static",
+            "sequence": 11,
+            "freshly_reactive": true,
+            "history_reset": false,
+            "image_sha256": "6ebb8054c58e564abd2e61e23f588049e9fd5a2f37f598778e11875632cc46ac",
+            "motion_error": 0.0,
+            "validity_codes": {
+              "covered": 128,
+              "masked": 128,
+              "outside": 128,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": 0.0,
+            "input_jitter": [
+              0.3125,
+              0.20370370149612427
+            ],
+            "max_resolved_hdr_error": 3.0517578125e-05,
+            "covered_radiance": [
+              0.0625,
+              0.125,
+              0.1875
+            ],
+            "masked_sdk_shading_change": 1.0
+          },
+          {
+            "phase": "settled-absent",
+            "sequence": 12,
+            "freshly_reactive": false,
+            "history_reset": false,
+            "image_sha256": "cb242e3886b9c765d9c941c6ec6aaa072252c78a56ede49d100372c1562cbc60",
+            "motion_error": 0.0,
+            "validity_codes": {
+              "covered": 255,
+              "masked": 255,
+              "outside": 255,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": 0.0,
+            "input_jitter": [
+              -0.3125,
+              -0.35185185074806213
+            ],
+            "max_resolved_hdr_error": 1.52587890625e-05,
+            "covered_radiance": [
+              0.0625,
+              0.125,
+              0.1875
+            ],
+            "masked_sdk_shading_change": 0.0
+          }
+        ]
+      },
+      {
+        "gpu": "AMD Radeon(TM) Graphics",
+        "sdk": "FSR 3.1.4 / FidelityFX SDK 1.1.4",
+        "mode": "fsr3_quality",
+        "lighting_path": "deferred",
+        "input_extent": [
+          213,
+          120
+        ],
+        "output_extent": [
+          320,
+          180
+        ],
+        "report_sha256": "528a6af07a0c31807ff342ad1cdf3291e57c4f048697f64e073e4273533dd376",
+        "file_report_sha256": "8669da4aa829224dae8c83ef773df001292b3ba85c6a7445bb1596e8f6220e97",
+        "validation_log_sha256": "109998f14c9bc45939d832ec0a409198e372a14266f164168f79b3d5574efa37",
+        "earlier_failed_reports": [],
+        "mask_sha256": "1c931a5c71f02a079a9a3c30af91db911f56eb0cf9ca38c35720471600471df5",
+        "frames": [
+          {
+            "phase": "first",
+            "sequence": 1,
+            "freshly_reactive": false,
+            "history_reset": true,
+            "image_sha256": "fd779f7a53648b5752120df00c7f9ae79098b7ec50ece7a07b9351e7cd1686c8",
+            "motion_error": 0.0,
+            "validity_codes": {
+              "covered": 0,
+              "masked": 0,
+              "outside": 0,
+              "neighbor": 0,
+              "sky": 0
+            },
+            "motion_x": 0.0,
+            "input_jitter": [
+              0.0,
+              -0.1666666567325592
+            ],
+            "max_resolved_hdr_error": 0.000244140625,
+            "covered_radiance": [
+              0.0625,
+              0.125,
+              0.1875
+            ],
+            "masked_sdk_shading_change": 1.0
+          },
+          {
+            "phase": "absent",
+            "sequence": 2,
+            "freshly_reactive": false,
+            "history_reset": false,
+            "image_sha256": "07f03f8821485ab853d70d970f51db8dba509aad9a7de5f69e9ce90b090aafff",
+            "motion_error": 0.0,
+            "validity_codes": {
+              "covered": 255,
+              "masked": 255,
+              "outside": 255,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": 0.0,
+            "input_jitter": [
+              -0.25,
+              0.1666666865348816
+            ],
+            "max_resolved_hdr_error": 3.0517578125e-05,
+            "covered_radiance": [
+              0.0625,
+              0.125,
+              0.1875
+            ],
+            "masked_sdk_shading_change": 0.0
+          },
+          {
+            "phase": "born-moving",
+            "sequence": 3,
+            "freshly_reactive": true,
+            "history_reset": false,
+            "image_sha256": "5297f687267a3ebcc1ef103cee13348ad196bc43d2a9ba2cae4d0199cbc10a4a",
+            "motion_error": 3.725290298461914e-09,
+            "validity_codes": {
+              "covered": 128,
+              "masked": 128,
+              "outside": 128,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": -0.024356961250305176,
+            "input_jitter": [
+              0.25,
+              -0.3888888955116272
+            ],
+            "max_resolved_hdr_error": 0.000244140625,
+            "covered_radiance": [
+              0.437255859375,
+              0.312255859375,
+              0.062469482421875
+            ],
+            "masked_sdk_shading_change": 1.0
+          },
+          {
+            "phase": "held-moving",
+            "sequence": 4,
+            "freshly_reactive": false,
+            "history_reset": false,
+            "image_sha256": "38ba8c67a2bb752ca6e65f32bd059baab4f4c6d466def078049ba61596bb40d9",
+            "motion_error": 1.862645149230957e-09,
+            "validity_codes": {
+              "covered": 255,
+              "masked": 255,
+              "outside": 255,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": -0.012178480625152588,
+            "input_jitter": [
+              -0.375,
+              -0.0555555522441864
+            ],
+            "max_resolved_hdr_error": 0.000244140625,
+            "covered_radiance": [
+              0.437255859375,
+              0.312255859375,
+              0.062469482421875
+            ],
+            "masked_sdk_shading_change": 0.0
+          },
+          {
+            "phase": "edited",
+            "sequence": 5,
+            "freshly_reactive": true,
+            "history_reset": false,
+            "image_sha256": "c7d1f2f30dda270c3abad5a1c88d0a5d057f3beaeb6413866e78981287934d0b",
+            "motion_error": 0.0,
+            "validity_codes": {
+              "covered": 128,
+              "masked": 128,
+              "outside": 128,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": 0.0,
+            "input_jitter": [
+              0.125,
+              0.2777777910232544
+            ],
+            "max_resolved_hdr_error": 0.0001220703125,
+            "covered_radiance": [
+              0.3125,
+              0.0625,
+              0.4375
+            ],
+            "masked_sdk_shading_change": 1.0
+          },
+          {
+            "phase": "held-edited",
+            "sequence": 6,
+            "freshly_reactive": false,
+            "history_reset": false,
+            "image_sha256": "d4912fa4ffa636adc9e9e110bd941cb5fd442526689c4b950a3a2d3fd7f1ee66",
+            "motion_error": 0.0,
+            "validity_codes": {
+              "covered": 255,
+              "masked": 255,
+              "outside": 255,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": 0.0,
+            "input_jitter": [
+              -0.125,
+              -0.2777777910232544
+            ],
+            "max_resolved_hdr_error": 6.103515625e-05,
+            "covered_radiance": [
+              0.3125,
+              0.0625,
+              0.4375
+            ],
+            "masked_sdk_shading_change": 0.0
+          },
+          {
+            "phase": "removed-moving",
+            "sequence": 7,
+            "freshly_reactive": true,
+            "history_reset": false,
+            "image_sha256": "5353eacc4bcf9c78dc34bf4730f531e11f0a3a98e0ac701752e13e8c5d8a6325",
+            "motion_error": 1.862645149230957e-09,
+            "validity_codes": {
+              "covered": 128,
+              "masked": 128,
+              "outside": 128,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": 0.012178480625152588,
+            "input_jitter": [
+              0.375,
+              0.05555558204650879
+            ],
+            "max_resolved_hdr_error": 6.103515625e-05,
+            "covered_radiance": [
+              0.0625,
+              0.125,
+              0.1875
+            ],
+            "masked_sdk_shading_change": 1.0
+          },
+          {
+            "phase": "held-absent",
+            "sequence": 8,
+            "freshly_reactive": false,
+            "history_reset": false,
+            "image_sha256": "f8a005e472607f63deab5182e501c7bb8efc82d930054f61dc511b4c9cd3c195",
+            "motion_error": 0.0,
+            "validity_codes": {
+              "covered": 255,
+              "masked": 255,
+              "outside": 255,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": 0.0,
+            "input_jitter": [
+              -0.4375,
+              0.3888888955116272
+            ],
+            "max_resolved_hdr_error": 6.103515625e-05,
+            "covered_radiance": [
+              0.0625,
+              0.125,
+              0.1875
+            ],
+            "masked_sdk_shading_change": 0.0
+          },
+          {
+            "phase": "born-static",
+            "sequence": 9,
+            "freshly_reactive": true,
+            "history_reset": false,
+            "image_sha256": "5f488613395c07476aa56a09317516e4ca2fa236d08082f422d656b0f6df86c0",
+            "motion_error": 0.0,
+            "validity_codes": {
+              "covered": 128,
+              "masked": 128,
+              "outside": 128,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": 0.0,
+            "input_jitter": [
+              0.0625,
+              -0.46296295523643494
+            ],
+            "max_resolved_hdr_error": 6.103515625e-05,
+            "covered_radiance": [
+              0.4375,
+              0.3125,
+              0.0625
+            ],
+            "masked_sdk_shading_change": 1.0
+          },
+          {
+            "phase": "held-static",
+            "sequence": 10,
+            "freshly_reactive": false,
+            "history_reset": false,
+            "image_sha256": "c81967a1d5c94ec32edcde1be50acfc813c445383228d7419d55078147483182",
+            "motion_error": 0.0,
+            "validity_codes": {
+              "covered": 255,
+              "masked": 255,
+              "outside": 255,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": 0.0,
+            "input_jitter": [
+              -0.1875,
+              -0.12962961196899414
+            ],
+            "max_resolved_hdr_error": 0.0001220703125,
+            "covered_radiance": [
+              0.4375,
+              0.3125,
+              0.0625
+            ],
+            "masked_sdk_shading_change": 0.0
+          },
+          {
+            "phase": "removed-static",
+            "sequence": 11,
+            "freshly_reactive": true,
+            "history_reset": false,
+            "image_sha256": "b1d96bc54b2af61646acc0850d0b3a9ea3aee6a22b771ed6652093067e1d4812",
+            "motion_error": 0.0,
+            "validity_codes": {
+              "covered": 128,
+              "masked": 128,
+              "outside": 128,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": 0.0,
+            "input_jitter": [
+              0.3125,
+              0.20370370149612427
+            ],
+            "max_resolved_hdr_error": 6.103515625e-05,
+            "covered_radiance": [
+              0.0625,
+              0.125,
+              0.1875
+            ],
+            "masked_sdk_shading_change": 1.0
+          },
+          {
+            "phase": "settled-absent",
+            "sequence": 12,
+            "freshly_reactive": false,
+            "history_reset": false,
+            "image_sha256": "abb0dda881386194f4d8a00dc7d47910fbfbdc4379a5e19a5cec561414c43446",
+            "motion_error": 0.0,
+            "validity_codes": {
+              "covered": 255,
+              "masked": 255,
+              "outside": 255,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": 0.0,
+            "input_jitter": [
+              -0.3125,
+              -0.35185185074806213
+            ],
+            "max_resolved_hdr_error": 6.103515625e-05,
+            "covered_radiance": [
+              0.0625,
+              0.125,
+              0.1875
+            ],
+            "masked_sdk_shading_change": 0.0
+          }
+        ]
+      },
+      {
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "sdk": "FSR 3.1.4 / FidelityFX SDK 1.1.4",
+        "mode": "fsr3_quality",
+        "lighting_path": "deferred",
+        "input_extent": [
+          213,
+          120
+        ],
+        "output_extent": [
+          320,
+          180
+        ],
+        "report_sha256": "54d2036f97b566c6f389f1995235e646e05528dd150597de98d8673bdd6fa611",
+        "file_report_sha256": "5aa09ed6e9e8f2a8627927271713f32cffe346848240bc57dc1f2757bd5c1912",
+        "validation_log_sha256": "44036f1015396de3db9f0f67e32289f6cfb6a12d960d125da8a44e21b769b2dd",
+        "earlier_failed_reports": [],
+        "mask_sha256": "1c931a5c71f02a079a9a3c30af91db911f56eb0cf9ca38c35720471600471df5",
+        "frames": [
+          {
+            "phase": "first",
+            "sequence": 1,
+            "freshly_reactive": false,
+            "history_reset": true,
+            "image_sha256": "969b2b8fd418f414dbe14f330c918d24332df7fd0a9a6d20a455a23d1ae6b518",
+            "motion_error": 0.0,
+            "validity_codes": {
+              "covered": 0,
+              "masked": 0,
+              "outside": 0,
+              "neighbor": 0,
+              "sky": 0
+            },
+            "motion_x": 0.0,
+            "input_jitter": [
+              0.0,
+              -0.1666666567325592
+            ],
+            "max_resolved_hdr_error": 1.52587890625e-05,
+            "covered_radiance": [
+              0.0625,
+              0.125,
+              0.1875
+            ],
+            "masked_sdk_shading_change": 1.0
+          },
+          {
+            "phase": "absent",
+            "sequence": 2,
+            "freshly_reactive": false,
+            "history_reset": false,
+            "image_sha256": "2174ea4f1f48354e76161bb5212f3ffcedd6b26edeb370bc48fa74b9780729b0",
+            "motion_error": 0.0,
+            "validity_codes": {
+              "covered": 255,
+              "masked": 255,
+              "outside": 255,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": 0.0,
+            "input_jitter": [
+              -0.25,
+              0.1666666865348816
+            ],
+            "max_resolved_hdr_error": 3.0517578125e-05,
+            "covered_radiance": [
+              0.0625,
+              0.125,
+              0.1875
+            ],
+            "masked_sdk_shading_change": 0.0
+          },
+          {
+            "phase": "born-moving",
+            "sequence": 3,
+            "freshly_reactive": true,
+            "history_reset": false,
+            "image_sha256": "28f727cef8aeaa9f0b2f431b68c3db783fa8748dfca9a1ed679e0d60f79d9791",
+            "motion_error": 3.725290298461914e-09,
+            "validity_codes": {
+              "covered": 128,
+              "masked": 128,
+              "outside": 128,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": -0.024356961250305176,
+            "input_jitter": [
+              0.25,
+              -0.3888888955116272
+            ],
+            "max_resolved_hdr_error": 1.52587890625e-05,
+            "covered_radiance": [
+              0.4375,
+              0.3125,
+              0.0625
+            ],
+            "masked_sdk_shading_change": 1.0
+          },
+          {
+            "phase": "held-moving",
+            "sequence": 4,
+            "freshly_reactive": false,
+            "history_reset": false,
+            "image_sha256": "748ad6148617794c43d877deaeae282bd3a3ba4d18fc145b5fdf053c9b5eccc8",
+            "motion_error": 1.862645149230957e-09,
+            "validity_codes": {
+              "covered": 255,
+              "masked": 255,
+              "outside": 255,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": -0.012178480625152588,
+            "input_jitter": [
+              -0.375,
+              -0.0555555522441864
+            ],
+            "max_resolved_hdr_error": 0.0001220703125,
+            "covered_radiance": [
+              0.4375,
+              0.3125,
+              0.0625
+            ],
+            "masked_sdk_shading_change": 0.0
+          },
+          {
+            "phase": "edited",
+            "sequence": 5,
+            "freshly_reactive": true,
+            "history_reset": false,
+            "image_sha256": "b435d6b4fe12826fcee33bba20d76c25ec877120458089d66a93e0009a08aed1",
+            "motion_error": 0.0,
+            "validity_codes": {
+              "covered": 128,
+              "masked": 128,
+              "outside": 128,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": 0.0,
+            "input_jitter": [
+              0.125,
+              0.2777777910232544
+            ],
+            "max_resolved_hdr_error": 6.103515625e-05,
+            "covered_radiance": [
+              0.3125,
+              0.0625,
+              0.4375
+            ],
+            "masked_sdk_shading_change": 1.0
+          },
+          {
+            "phase": "held-edited",
+            "sequence": 6,
+            "freshly_reactive": false,
+            "history_reset": false,
+            "image_sha256": "65ab79219e2620aeaa83840e949e60230699fbd43a1799b22d0cc673b3bcfbf1",
+            "motion_error": 0.0,
+            "validity_codes": {
+              "covered": 255,
+              "masked": 255,
+              "outside": 255,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": 0.0,
+            "input_jitter": [
+              -0.125,
+              -0.2777777910232544
+            ],
+            "max_resolved_hdr_error": 6.103515625e-05,
+            "covered_radiance": [
+              0.3125,
+              0.0625,
+              0.4375
+            ],
+            "masked_sdk_shading_change": 0.0
+          },
+          {
+            "phase": "removed-moving",
+            "sequence": 7,
+            "freshly_reactive": true,
+            "history_reset": false,
+            "image_sha256": "910f85b7f6723efb0f63425554307e2a20d5818bfd468d884dbed5d8d1c2f779",
+            "motion_error": 1.862645149230957e-09,
+            "validity_codes": {
+              "covered": 128,
+              "masked": 128,
+              "outside": 128,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": 0.012178480625152588,
+            "input_jitter": [
+              0.375,
+              0.05555558204650879
+            ],
+            "max_resolved_hdr_error": 0.0001220703125,
+            "covered_radiance": [
+              0.062469482421875,
+              0.12493896484375,
+              0.1873779296875
+            ],
+            "masked_sdk_shading_change": 1.0
+          },
+          {
+            "phase": "held-absent",
+            "sequence": 8,
+            "freshly_reactive": false,
+            "history_reset": false,
+            "image_sha256": "c5bb1528917b5ab2ca6a42ef866595c075ce60646f05dc3396e0cc8f374b8530",
+            "motion_error": 0.0,
+            "validity_codes": {
+              "covered": 255,
+              "masked": 255,
+              "outside": 255,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": 0.0,
+            "input_jitter": [
+              -0.4375,
+              0.3888888955116272
+            ],
+            "max_resolved_hdr_error": 1.52587890625e-05,
+            "covered_radiance": [
+              0.0625,
+              0.125,
+              0.1875
+            ],
+            "masked_sdk_shading_change": 0.0
+          },
+          {
+            "phase": "born-static",
+            "sequence": 9,
+            "freshly_reactive": true,
+            "history_reset": false,
+            "image_sha256": "cad61c150a14f25871303df1fc0339c5ddb96fadf2642c591b00a0dd7faec7d3",
+            "motion_error": 0.0,
+            "validity_codes": {
+              "covered": 128,
+              "masked": 128,
+              "outside": 128,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": 0.0,
+            "input_jitter": [
+              0.0625,
+              -0.46296295523643494
+            ],
+            "max_resolved_hdr_error": 3.0517578125e-05,
+            "covered_radiance": [
+              0.4375,
+              0.3125,
+              0.062469482421875
+            ],
+            "masked_sdk_shading_change": 1.0
+          },
+          {
+            "phase": "held-static",
+            "sequence": 10,
+            "freshly_reactive": false,
+            "history_reset": false,
+            "image_sha256": "462acad05a2ef0f5ece0ff511470d671c7714ccef2df4c3b579d46467d10befa",
+            "motion_error": 0.0,
+            "validity_codes": {
+              "covered": 255,
+              "masked": 255,
+              "outside": 255,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": 0.0,
+            "input_jitter": [
+              -0.1875,
+              -0.12962961196899414
+            ],
+            "max_resolved_hdr_error": 0.000244140625,
+            "covered_radiance": [
+              0.4375,
+              0.312255859375,
+              0.062469482421875
+            ],
+            "masked_sdk_shading_change": 0.0
+          },
+          {
+            "phase": "removed-static",
+            "sequence": 11,
+            "freshly_reactive": true,
+            "history_reset": false,
+            "image_sha256": "6ebb8054c58e564abd2e61e23f588049e9fd5a2f37f598778e11875632cc46ac",
+            "motion_error": 0.0,
+            "validity_codes": {
+              "covered": 128,
+              "masked": 128,
+              "outside": 128,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": 0.0,
+            "input_jitter": [
+              0.3125,
+              0.20370370149612427
+            ],
+            "max_resolved_hdr_error": 3.0517578125e-05,
+            "covered_radiance": [
+              0.0625,
+              0.125,
+              0.1875
+            ],
+            "masked_sdk_shading_change": 1.0
+          },
+          {
+            "phase": "settled-absent",
+            "sequence": 12,
+            "freshly_reactive": false,
+            "history_reset": false,
+            "image_sha256": "cb242e3886b9c765d9c941c6ec6aaa072252c78a56ede49d100372c1562cbc60",
+            "motion_error": 0.0,
+            "validity_codes": {
+              "covered": 255,
+              "masked": 255,
+              "outside": 255,
+              "neighbor": 255,
+              "sky": 0
+            },
+            "motion_x": 0.0,
+            "input_jitter": [
+              -0.3125,
+              -0.35185185074806213
+            ],
+            "max_resolved_hdr_error": 1.52587890625e-05,
+            "covered_radiance": [
+              0.0625,
+              0.125,
+              0.1875
+            ],
+            "masked_sdk_shading_change": 0.0
+          }
+        ]
+      }
+    ],
+    "textured_regressions": [
+      {
+        "lighting_path": "forward",
+        "gpu": "AMD Radeon(TM) Graphics",
+        "report_sha256": "7d0290183f0718d32e28f3f01cc7f8b3d663fa7887df084817996a81e0b91185",
+        "reference_report_sha256": "78a00f851443bb82a8b3aa21d90558a6548f36261f9281989bab9fabaa47c4e7",
+        "captures_identical": 4
+      },
+      {
+        "lighting_path": "forward",
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "report_sha256": "a2d87bec00e4eefbe0d144de995f0ad405e6a59485c6fed4aaab58234d75697c",
+        "reference_report_sha256": "f181a21dcc0ab9c056bffa3f630fea592b8b39bb1fce5a21ea8cdc96a613b263",
+        "captures_identical": 4
+      },
+      {
+        "lighting_path": "deferred",
+        "gpu": "AMD Radeon(TM) Graphics",
+        "report_sha256": "5a4b700091d48ddea0220d8ca0f83f4befec8f1660a9d8f4a968f983d4d0bb6d",
+        "reference_report_sha256": "5fff20a654f7913b21649142d3399932e0a5bcc3f0d21cbe598c5ce1f1714011",
+        "captures_identical": 4
+      },
+      {
+        "lighting_path": "deferred",
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "report_sha256": "968606ab772d38d267df96b24a7d03c755a92acbe6fa5c1112d691aabdbdb35c",
+        "reference_report_sha256": "91036b7af2a4f40bde1415f3d3859a08353f27ae327f5ab0c4d3594c2e2c7225",
+        "captures_identical": 4
+      }
+    ],
+    "lifecycle_and_sky": [
+      {
+        "test": "lifecycle",
+        "gpu_index": 0,
+        "report_sha256": "9b61d102fd3745271b02d5b85aaf435edd32118d8aef3b11c5ba51cf73ea9b4b",
+        "validation_log_sha256": "c880ced244af51fac7e413f038f61dd7c2bd722c7dec911f68c0af5348be5bdd"
+      },
+      {
+        "test": "lifecycle",
+        "gpu_index": 1,
+        "report_sha256": "be26c3f63281004c97cd2b7ebfd7749c036d78c160563896d92c96b039082b94",
+        "validation_log_sha256": "11df551518cddd93c4b3829a6abddbc814a60b8964252ad0add359b3e0dea7d9"
+      },
+      {
+        "test": "sky",
+        "gpu_index": 0,
+        "report_sha256": "87d74f83683e67602c6b93e88535b99dfdc665123ae858741c1f81a40e4a7175",
+        "validation_log_sha256": "7102721d92f04661965e063f95a3d7fa60d877671434669024c46a964c228c83"
+      },
+      {
+        "test": "sky",
+        "gpu_index": 1,
+        "report_sha256": "514f004b1ce950421db7c42bcac93a616f1bc2d9fc8d27033907aeaa0f7f8c9a",
+        "validation_log_sha256": "18603ca6be7f85fb4df31e58d3f457955ec011b51f4b72790b659066ef8736fd"
+      }
+    ]
+  },
+  "scope": "Small continuous single-sample rigid-receiver Vulkan scenes. Forward and deferred FSR Native AA and Quality on two laptop GPUs. Geometric motion and bounded HDR probes."
+}
