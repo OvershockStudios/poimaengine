@@ -85,6 +85,17 @@ struct OutputGrade {
 struct ScreenReflections {
     float strength=0,max_distance_m=8,thickness_m=.1f;
 };
+struct FogSpotLight {
+    std::string entity;
+    float scattering=0;
+};
+struct HeightFog {
+    float density_per_m=0,base_height_m=0,height_falloff_per_m=0;
+    float start_distance_m=0,max_distance_m=100;
+    std::array<float,3> ambient_radiance{};
+    float anisotropy=0;
+    std::vector<FogSpotLight> spot_lights;
+};
 struct LightingEnvironment {
     std::array<float,3> ambient{};
     float exposure=1;
@@ -98,6 +109,7 @@ struct LightingEnvironment {
     std::shared_ptr<const PostEffect> post_effect;
     std::optional<OutputGrade> output_grade;
     std::optional<ScreenReflections> screen_reflections;
+    std::optional<HeightFog> height_fog;
 };
 struct SceneLight { std::string entity_id;Light light;std::array<double,3> position{},direction{0,0,-1}; };
 struct SceneLighting {

@@ -58,6 +58,28 @@ void validate_environment(const LightingEnvironment& e) {
         require(std::isfinite(reflections.thickness_m) && reflections.thickness_m>=.01f && reflections.thickness_m<=.5f,
                 "Screen reflections thickness_m must be finite and in [0.01,0.5].");
     }
+    if(e.height_fog) {
+        const auto& fog=*e.height_fog;
+        const auto finite_between=[](float value,float minimum,float maximum) {
+            return std::isfinite(value) && value>=minimum && value<=maximum;
+        };
+        require(finite_between(fog.density_per_m,0,.75f),"Height fog density_per_m must be finite and in [0,0.75].");
+        require(finite_between(fog.base_height_m,-8192,8192),"Height fog base_height_m must be finite and in [-8192,8192].");
+        require(finite_between(fog.height_falloff_per_m,0,4),"Height fog height_falloff_per_m must be finite and in [0,4].");
+        require(finite_between(fog.start_distance_m,0,300),"Height fog start_distance_m must be finite and in [0,300].");
+        require(finite_between(fog.max_distance_m,.1f,512) && fog.max_distance_m>fog.start_distance_m,
+            "Height fog max_distance_m must be finite, in [0.1,512], and greater than start_distance_m.");
+        for(float channel:fog.ambient_radiance)
+            require(finite_between(channel,0,32),"Height fog ambient_radiance must be finite linear RGB in [0,32].");
+        require(finite_between(fog.anisotropy,-.8f,.8f),"Height fog anisotropy must be finite and in [-0.8,0.8].");
+        require(fog.spot_lights.size()<=2,"Height fog accepts at most two spot lights.");
+        for(const auto& spot:fog.spot_lights) {
+            require(!spot.entity.empty(),"Height fog spot light needs an entity ID.");
+            require(finite_between(spot.scattering,0,1),"Height fog spot light scattering must be finite and in [0,1].");
+        }
+        require(fog.spot_lights.size()<2 || fog.spot_lights.front().entity!=fog.spot_lights.back().entity,
+            "Height fog spot light entities must be distinct.");
+    }
     require(e.shadow_filter==ShadowFilter::pcf3_point || e.shadow_filter==ShadowFilter::pcf3_fractional || e.shadow_filter==ShadowFilter::pcss_directional,"Invalid environment shadow filter.");
     require(e.shadow_resolution==256 || e.shadow_resolution==512 || e.shadow_resolution==1024 || e.shadow_resolution==2048,"Shadow resolution must be 256, 512, 1024 or 2048.");
     for(const auto& color:{e.sky.zenith,e.sky.horizon,e.sky.ground})

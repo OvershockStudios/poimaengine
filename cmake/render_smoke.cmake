@@ -43,9 +43,9 @@ find_program(POIMA_DXC NAMES dxc
 file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/generated/poima")
 foreach(shader smoke scene scene_products scene_deferred scene_deferred_color deferred_lighting deferred_lighting_ao deferred_lighting_color deferred_lighting_color_ao
         deferred_lighting_reflection deferred_lighting_ao_reflection
-        deferred_lighting_color_reflection deferred_lighting_color_ao_reflection screen_reflections
+        deferred_lighting_color_reflection deferred_lighting_color_ao_reflection screen_reflections height_fog
         ambient_occlusion ambient_occlusion_filter scene_output scene_output_ao scene_output_products scene_output_bloom scene_output_products_bloom scene_output_grade scene_output_grade_bloom bloom viewmodel_composite viewmodel_resolve sky shadow skinning cluster_lights temporal_inputs editor_overlay game_ui particle_sprite)
-if(shader MATCHES "^(skinning|cluster_lights|temporal_inputs|deferred_lighting.*|ambient_occlusion.*|screen_reflections)$")
+if(shader MATCHES "^(skinning|cluster_lights|temporal_inputs|deferred_lighting.*|ambient_occlusion.*|screen_reflections|height_fog)$")
     set(shader_stages cs)
 elseif(shader MATCHES "^scene_output_grade")
     set(shader_stages ps)
@@ -112,7 +112,7 @@ foreach(stage IN LISTS shader_stages)
         list(APPEND shader_dependencies "${CMAKE_SOURCE_DIR}/shaders/water_ripple_normal.hlsli"
             "${CMAKE_SOURCE_DIR}/shaders/foliage_motion.hlsli")
     endif()
-    if(shader MATCHES "^(ambient_occlusion.*|deferred_lighting.*|scene_deferred.*|scene|scene_products|shadow|cluster_lights|temporal_inputs|sky|screen_reflections)$")
+    if(shader MATCHES "^(ambient_occlusion.*|deferred_lighting.*|scene_deferred.*|scene|scene_products|shadow|cluster_lights|temporal_inputs|sky|screen_reflections|height_fog)$")
         list(APPEND shader_dependencies "${CMAKE_SOURCE_DIR}/shaders/scene_frame.hlsli")
     endif()
     if(shader MATCHES "^(deferred_lighting.*|scene_deferred.*|scene|scene_products|shadow|temporal_inputs)$")
@@ -145,7 +145,7 @@ add_custom_command(OUTPUT "${poima_startup_wordmark}"
         -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/embed_startup_wordmark.cmake"
     DEPENDS "${poima_startup_png}" cmake/embed_startup_wordmark.cmake VERBATIM)
 target_sources(poima_core PRIVATE
-    src/render_smoke.cpp src/render_readback.cpp src/render_screen_reflections.cpp
+    src/render_smoke.cpp src/render_readback.cpp src/render_screen_reflections.cpp src/render_height_fog.cpp
     src/render_vulkan_instance.cpp src/player_window.cpp src/gamepad_sdl.cpp
     "${poima_startup_wordmark}")
 target_link_libraries(poima_core PRIVATE nvrhi nvrhi_vk SDL3::SDL3-static)

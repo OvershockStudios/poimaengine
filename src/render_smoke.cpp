@@ -51,6 +51,7 @@
 #include "poima/deferred_lighting_color_ao_reflection_cs.hpp"
 #include "render_embedded_shader.hpp"
 #include "render_screen_reflections.hpp"
+#include "render_height_fog.hpp"
 #include "poima/ambient_occlusion_cs.hpp"
 #include "poima/ambient_occlusion_filter_cs.hpp"
 #include "poima/scene_output_ao_ps.hpp"
@@ -290,7 +291,7 @@ struct Context {
         std::vector<SpriteBinding> sprite_bindings;
         nvrhi::EventQueryHandle completion;
         std::uint64_t submission=0;
-        bool occupied=false,timing=false,has_skin=false,screen_reflections=false;
+        bool occupied=false,timing=false,has_skin=false,screen_reflections=false,height_fog=false;
         std::shared_ptr<ViewmodelResources> viewmodel;
         std::optional<ViewmodelDiagnostics> viewmodel_diagnostics;
         SteadyClock::time_point started;
@@ -368,8 +369,13 @@ struct Context {
     std::array<const void*,19> deferred_binding_key{};
     bool deferred_reflection_variant=false;
     screen_reflections::Pass reflections;
-    nvrhi::ITexture* world_radiance_texture() const noexcept {
+    height_fog::Pass fog;
+    std::array<std::uint32_t,2> fog_spots{};
+    nvrhi::ITexture* surface_radiance_texture() const noexcept {
         return reflections.radiance() ? reflections.radiance() : scene_hdr.Get();
+    }
+    nvrhi::ITexture* world_radiance_texture() const noexcept {
+        return fog.radiance() ? fog.radiance() : surface_radiance_texture();
     }
     AmbientOcclusionOptions ambient_occlusion;
     ShadowFilter shadow_filter=ShadowFilter::pcf3_point;
@@ -599,7 +605,7 @@ struct Context {
         shadow_pipeline=nullptr;shadow_bindings=nullptr;shadow_layout=nullptr;shadow_shader=nullptr;shadow_framebuffers.clear();shadow_texture=nullptr;
         ao_bindings={};ao_pipelines={};ao_layouts={};ao_shaders={};ao_raw=nullptr;ao_filtered=nullptr;ao_buffer=nullptr;
         deferred_bindings=nullptr;deferred_pipeline=nullptr;deferred_layout=nullptr;deferred_cs=nullptr;material_base=nullptr;material_surface=nullptr;material_correspondence=nullptr;
-        reflections={};
+        fog={};reflections={};
         pipeline = nullptr; culled_pipeline=nullptr;
         sky_pipeline=nullptr;sky_bindings=nullptr;sky_layout=nullptr;sky_vs=nullptr;sky_ps=nullptr;
         output_pipeline=nullptr;output_bindings=nullptr;output_layout=nullptr;output_vs=nullptr;output_ps=nullptr;
@@ -761,7 +767,7 @@ struct Context {
             if (scene && !features13.shaderDemoteToHelperInvocation) continue;
             const auto queues = candidate.getQueueFamilyProperties(dispatch);
             for (std::uint32_t family = 0; family < queues.size(); ++family) {
-                if ((deferred || reconstruction_mode!=ReconstructionMode::none) && !(queues[family].queueFlags & vk::QueueFlagBits::eCompute))continue;
+                if ((scene || reconstruction_mode!=ReconstructionMode::none) && !(queues[family].queueFlags & vk::QueueFlagBits::eCompute))continue;
                 if (!(queues[family].queueFlags & vk::QueueFlagBits::eGraphics) || !candidate.getSurfaceSupportKHR(family,surface,dispatch)) continue;
                 const int score = props.deviceType == vk::PhysicalDeviceType::eDiscreteGpu ? 30 : (is_hardware ? 20 : 10);
                 if (score > best_score) {
@@ -1204,7 +1210,7 @@ struct Context {
         if(!(limits.timestampPeriod>0) || diagnostics.timestamp_valid_bits==0) {
             diagnostics.gpu_timing_detail="Selected graphics queue does not support timestamps.";return;
         }
-        for(auto& slot:slots)slot.timestamps=device.createQueryPool(vk::QueryPoolCreateInfo({},vk::QueryType::eTimestamp,16),nullptr,dispatch);
+        for(auto& slot:slots)slot.timestamps=device.createQueryPool(vk::QueryPoolCreateInfo({},vk::QueryType::eTimestamp,18),nullptr,dispatch);
         diagnostics.gpu_timestamps=true;
         diagnostics.gpu_timing_detail="64-bit graphics-queue timestamps; approximate pass intervals, not presentation latency or game frame time.";
     }
@@ -1221,7 +1227,7 @@ struct Context {
             if(slot.performance)slot.performance->gpu_drop(slot.performance_ticket,fp::GpuDropReason::query_unavailable);
             return;
         }
-        std::array<std::uint64_t,16> values{};
+        std::array<std::uint64_t,18> values{};
         const auto status=device.getQueryPoolResults(slot.timestamps,0,static_cast<std::uint32_t>(values.size()),sizeof(values),values.data(),sizeof(values[0]),vk::QueryResultFlagBits::e64,dispatch);
         const auto bits=diagnostics.timestamp_valid_bits;
         const double wrap_ms=std::ldexp(diagnostics.timestamp_period_ns*1e-6,static_cast<int>(bits));
@@ -1239,6 +1245,7 @@ struct Context {
             if(ao_enabled) {timing_sample(diagnostics.ambient_occlusion_gpu,ms(10,11));timing_sample(diagnostics.ambient_occlusion_filter_gpu,ms(12,13));}
             if(slot.reconstruction.active)timing_sample(diagnostics.reconstruction.gpu,ms(6,7));
             if(slot.screen_reflections)timing_sample(diagnostics.screen_reflections_gpu,ms(14,15));
+            if(slot.height_fog)timing_sample(diagnostics.height_fog_gpu,ms(16,17));
             timing_sample(diagnostics.post_gpu,ms(4,5));timing_sample(diagnostics.total_gpu,ms(0,5));
         }
         // GPU values are queue durations observed after completion, not CPU
@@ -1253,6 +1260,7 @@ struct Context {
         if(ao_enabled) {sample("gpu.ambient_occlusion.ns",10,11);sample("gpu.ambient_occlusion_filter.ns",12,13);}
         if(slot.reconstruction.active)sample("gpu.reconstruction.ns",6,7);
         if(slot.screen_reflections)sample("gpu.screen_reflections.ns",14,15);
+        if(slot.height_fog)sample("gpu.height_fog.ns",16,17);
         sample("gpu.post.ns",4,5);sample("gpu.total.ns",0,5);
         if(slot.performance) {
             fp::GpuTiming timing;bool valid=true;
@@ -1896,12 +1904,56 @@ struct Context {
         if(auto* source=reflections.radiance()) {
             retire_frames(true);
             deferred_bindings=nullptr;
-            sprite_framebuffer=nullptr;
-            detach_bloom_source(source);
-            if(output_source_bound==source) {output_bindings=nullptr;output_source_bound=nullptr;}
-            if(post_effect.source==source) {post_effect.bindings=nullptr;post_effect.source=nullptr;}
-            if(viewmodel) viewmodel->compose_bindings=nullptr;
+            detach_world_outputs(source);
             reflections.clear_targets();
+        }
+    }
+    void detach_world_outputs(const nvrhi::ITexture* source) {
+        sprite_framebuffer=nullptr;
+        detach_bloom_source(source);
+        if(output_source_bound==source) {output_bindings=nullptr;output_source_bound=nullptr;}
+        if(post_effect.source==source) {post_effect.bindings=nullptr;post_effect.source=nullptr;}
+        if(viewmodel)viewmodel->compose_bindings=nullptr;
+    }
+    void prepare_height_fog(const SceneLighting& lighting) {
+        diagnostics.height_fog.reset();
+        fog_spots={};
+        if(const auto& selected=lighting.environment.height_fog) {
+            const std::string_view reason=
+                selected->density_per_m==0 ? "zero_density" :
+                !scene_visible ? "scene_hidden" :
+                scene_debug_view!=SceneDebugView::color ? "diagnostic" :
+                samples!=1 ? "multisample" :
+                reconstruction_mode!=ReconstructionMode::none ? "reconstruction" :
+                !rigid_transform(scene->camera_world) ? "camera_non_rigid" :
+                !scene->world_viewmodel_draws().empty() ? "world_depth_foreground" : "active";
+            const bool active=reason=="active";
+            if(active) {
+                if(!fog.radiance()) {
+                    const auto needed=vk::FormatFeatureFlagBits::eSampledImage|vk::FormatFeatureFlagBits::eStorageImage|
+                        vk::FormatFeatureFlagBits::eTransferSrc|vk::FormatFeatureFlagBits::eTransferDst|
+                        vk::FormatFeatureFlagBits::eColorAttachment|vk::FormatFeatureFlagBits::eColorAttachmentBlend;
+                    const auto support=physical.getFormatProperties(vk::Format::eR16G16B16A16Sfloat,dispatch).optimalTilingFeatures;
+                    require((support&needed)==needed,"Selected GPU lacks height fog image format support.");
+                }
+                for(std::size_t slot=0;slot<selected->spot_lights.size();++slot) {
+                    const auto& spot=selected->spot_lights[slot];
+                    if(spot.scattering==0)continue;
+                    const auto light=std::ranges::find(lighting.lights,spot.entity,&SceneLight::entity_id);
+                    if(light!=lighting.lights.end() && light->light.kind==LightKind::spot && light->light.intensity>0)
+                        fog_spots[slot]=static_cast<std::uint32_t>(light-lighting.lights.begin()+1);
+                }
+                fog.prepare(*checked.Get(),{frame_buffer.Get(),surface_radiance_texture(),depth.Get(),shadow_texture.Get(),light_buffer.Get()});
+            }
+            const auto light_count=static_cast<std::uint32_t>(std::ranges::count_if(fog_spots,[](auto ordinal){return ordinal!=0;}));
+            diagnostics.height_fog=HeightFogDiagnostics{active,reason,fog.buffer_bytes(),light_count};
+            if(active)return;
+            diagnostics.height_fog->buffer_bytes=0;
+        }
+        if(auto* source=fog.radiance()) {
+            retire_frames(true);
+            detach_world_outputs(source);
+            fog.clear_targets();
         }
     }
     void prepare_deferred_lighting() {
@@ -2024,7 +2076,7 @@ struct Context {
     }
     void prepare_temporal_submission() {
         std::fill_n(frame_constants.temporal_jitter,4,0.0f);pending_reconstruction={};pending_reconstruction.mode=reconstruction_mode;
-        if(deferred || reconstruction) {
+        if(deferred || reconstruction || fog.radiance()) {
         const double aspect=scene_viewport ? static_cast<double>(scene_viewport->maxX-scene_viewport->minX)/(scene_viewport->maxY-scene_viewport->minY) : static_cast<double>(extent.width)/extent.height;
         const double tan_y=std::tan(scene->vertical_fov*0.0087266462599716478846);
         for(std::size_t k=0;k<3;++k) {frame_constants.temporal_right[k]=static_cast<float>(scene->camera_world[k]);frame_constants.temporal_up[k]=static_cast<float>(scene->camera_world[4+k]);frame_constants.temporal_forward[k]=static_cast<float>(-scene->camera_world[8+k]);}
@@ -2075,7 +2127,7 @@ struct Context {
             require(world+foreground_bytes+reconstruction->gpu_bytes()<=1536ull*1024*1024,"World, foreground and FSR payload exceeds the 1536 MiB budget.");
         } else {
             const auto pixels=std::uint64_t(extent.width)*extent.height;
-            const auto world=pixels*(8u*(samples>1 ? samples+1u : 1u)+(scene_products_enabled ? 17u : 0u)+deferred_material_bytes_per_pixel()+(ao_enabled ? 4u : 0u))+reflections.buffer_bytes();
+            const auto world=pixels*(8u*(samples>1 ? samples+1u : 1u)+(scene_products_enabled ? 17u : 0u)+deferred_material_bytes_per_pixel()+(ao_enabled ? 4u : 0u))+reflections.buffer_bytes()+fog.buffer_bytes();
             require(world+foreground_bytes<=512ull*1024*1024,"World and foreground HDR attachments exceed the 512 MiB budget.");
         }
     }
@@ -2625,6 +2677,7 @@ struct Context {
             view.splits[2]=number(source.depth_span);view.splits[3]=number(source.world_units_per_texel);
         }
         configure_light_assignment();
+        prepare_height_fog(lighting);
         // Use the actual rounded GPU matrices for clipping decisions.
         auto frustum=[](const float* matrix) { Matrix4 value;std::copy_n(matrix,16,value.begin());return make_frustum(value); };
         std::array<float,16> culling_projection;std::copy_n(frame_constants.view_projection,16,culling_projection.begin());
@@ -2789,7 +2842,7 @@ struct Context {
         swapchain_dirty=true;
         retire_frames(true);
         retire_presentation();
-        reflections.clear_targets();
+        fog.clear_targets();reflections.clear_targets();
         reconstruction.reset();temporal_bindings=nullptr;reconstructed=nullptr;dense_motion=nullptr;reactive=nullptr;dilated_depth=nullptr;dilated_motion=nullptr;reconstructed_depth=nullptr;render_extent={};output_extent={};temporal_phase=0;temporal_clock.reset();
         viewmodel.reset();viewmodel_enabled=false;viewmodel_draws.clear();viewmodel_objects.clear();output_source_bound=nullptr;
         commands=nullptr;
@@ -3457,6 +3510,8 @@ struct Context {
         settings.bloom=scene && output_bloom_bound;
         settings.post_effect=scene && post_effect.active;
         settings.screen_reflections=scene && scene_visible && reflections.radiance();
+        settings.height_fog=scene && scene_visible && fog.radiance();
+        settings.height_fog_spots=settings.height_fog && (fog_spots[0]!=0 || fog_spots[1]!=0);
         settings.particle_sprites=!sprite_instances.empty();
         settings.sky=scene && scene_visible && sky_enabled;settings.products=bool(scene_normal);settings.products_debug=scene_debug_view!=SceneDebugView::color;settings.editor=editor;settings.capture=capture_frame;settings.reconstruction=pending_reconstruction.active;settings.deferred=deferred;settings.ambient_occlusion=ao_enabled;
         settings.slot=static_cast<std::uint32_t>(next_slot%diagnostics.frame_execution.limit);settings.history_sequence=history.sequence;
@@ -3546,6 +3601,7 @@ struct Context {
                 f.reflection_roughness=texture(reflections.roughness(),rs::Lifetime::shared,false);
                 f.reflected_hdr=texture(reflections.radiance(),rs::Lifetime::shared,false);
             }
+            if(settings.height_fog)f.fogged_hdr=texture(fog.radiance(),rs::Lifetime::shared,false);
             f.depth=texture(depth,rs::Lifetime::shared,false);if(scene_normal) {f.normal=texture(scene_normal,rs::Lifetime::shared,false);f.motion=texture(scene_motion,rs::Lifetime::shared,false);f.motion_valid=texture(scene_motion_valid,rs::Lifetime::shared,false);}f.shadow=texture(shadow_texture,rs::Lifetime::shared,false);
             if(settings.clustered) {
                 f.counts=buffer(cluster_counts,rs::Lifetime::shared,false);f.indices=buffer(cluster_indices,rs::Lifetime::shared,false);
@@ -3696,6 +3752,7 @@ struct Context {
             }
         } else framebuffer(framebuffers.at(index),f.color,f.depth,f.normal);
         if(plan.settings.screen_reflections)reflections.verify_bindings(plan,environment_sampler.Get());
+        if(plan.settings.height_fog)fog.verify_bindings(plan);
         if(ao_enabled) {
             identity(f.ao_raw,ao_raw.Get());identity(f.ao_filtered,ao_filtered.Get());identity(f.ao_constants,ao_buffer.Get());
             for(unsigned pass=0;pass<2;++pass)for(const auto& binding:ao_bindings[pass]->getDesc()->bindings) {
@@ -3952,7 +4009,7 @@ struct Context {
             vk::AccessFlagBits::eMemoryRead|vk::AccessFlagBits::eMemoryWrite);
         native_commands().pipelineBarrier(vk::PipelineStageFlagBits::eAllCommands,vk::PipelineStageFlagBits::eAllCommands,
             {},1,&scratch_dependency,0,nullptr,0,nullptr,dispatch);
-        if(timestamp_recording)native_commands().resetQueryPool(timestamp_pool,0,16,dispatch);
+        if(timestamp_recording)native_commands().resetQueryPool(timestamp_pool,0,18,dispatch);
         timestamp(0);
         // Only the acquired image is late-bound. All other resources were
         // resolved after preparation; no recording pass allocates/rebinds them.
@@ -4003,7 +4060,7 @@ struct Context {
                 if(resources.depth!=render_schedule::none)commands->clearDepthStencilTexture(planned_texture(resources.depth),nvrhi::AllSubresources,true,1.0f,false,0);
                 break;
             case render_schedule::PassId::sky:render_sky(index);break;
-            case render_schedule::PassId::opaque:render_opaque(index,slot);timestamp(4);if(!ao_enabled) {timestamp(10);timestamp(11);timestamp(12);timestamp(13);}if(!deferred) {timestamp(8);timestamp(9);}if(!pending_reconstruction.active) {timestamp(6);timestamp(7);}if(!plan.settings.screen_reflections) {timestamp(14);timestamp(15);}break;
+            case render_schedule::PassId::opaque:render_opaque(index,slot);timestamp(4);if(!ao_enabled) {timestamp(10);timestamp(11);timestamp(12);timestamp(13);}if(!deferred) {timestamp(8);timestamp(9);}if(!pending_reconstruction.active) {timestamp(6);timestamp(7);}if(!plan.settings.screen_reflections) {timestamp(14);timestamp(15);}if(!plan.settings.height_fog) {timestamp(16);timestamp(17);}break;
             case render_schedule::PassId::ambient_occlusion:dispatch_ambient_occlusion(0);break;
             case render_schedule::PassId::ambient_occlusion_filter:dispatch_ambient_occlusion(1);break;
             case render_schedule::PassId::deferred_lighting:dispatch_deferred_lighting();break;
@@ -4011,6 +4068,11 @@ struct Context {
                 timestamp(14);
                 reflections.dispatch(*commands.Get(),*scene->lighting.environment.screen_reflections,ao_enabled);
                 timestamp(15);
+                break;
+            case render_schedule::PassId::height_fog:
+                timestamp(16);
+                fog.dispatch(*commands.Get(),*scene->lighting.environment.height_fog,fog_spots);
+                timestamp(17);
                 break;
             case render_schedule::PassId::particle_sprites:render_particle_sprites(slot);break;
             case render_schedule::PassId::temporal_inputs:timestamp(6);dispatch_temporal_inputs();break;
@@ -4072,7 +4134,7 @@ struct Context {
         slot.started=frame_started;slot.draws=pending_draws;slot.lights=submitted_lights;
         if(slot_viewmodel && pending_viewmodel)slot_viewmodel->draws.camera_batches=pending_viewmodel->draws.camera_batches;
         slot.viewmodel_diagnostics.swap(slot_viewmodel);slot.has_skin=has_skin_draws();slot.viewmodel=viewmodel_enabled ? viewmodel : nullptr;
-        slot.skin_ids.swap(submitted_skin_ids);slot.screen_reflections=plan.settings.screen_reflections;
+        slot.skin_ids.swap(submitted_skin_ids);slot.screen_reflections=plan.settings.screen_reflections;slot.height_fog=plan.settings.height_fog;
         slot.profile=profiling::capture_deferred();slot.timing=timestamp_recording;
         slot.history_valid=pending_history_valid;slot.history_sequence=scene ? history_sequence+1 : 0;slot.history_reset=pending_history_reset;
         slot.capture_probes=capture_frame && !product_probes.empty();slot.reconstruction=pending_reconstruction;

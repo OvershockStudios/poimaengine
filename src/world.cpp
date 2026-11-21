@@ -657,6 +657,7 @@ public:
                 const auto& environment=components.at("LightingEnvironment");
                 if(environment.contains("output_grade"))result.needs_output_grade=true;
                 if(environment.contains("screen_reflections"))result.needs_screen_reflections=true;
+                if(environment.contains("height_fog"))result.needs_height_fog=true;
                 if(environment.contains("post_effect")) {
                     const auto& digest=environment.at("post_effect").get_ref<const std::string&>();
                     if(!post_effects.contains(digest)) {
@@ -1050,6 +1051,7 @@ public:
             if(content.needs_output_grade)result["needs_output_grade"]=true;
             if(content.needs_screen_reflections)result["needs_screen_reflections"]=true;
             if(content.needs_foliage_motion)result["needs_foliage_motion"]=true;
+            if(content.needs_height_fog)result["needs_height_fog"]=true;
             if(!content.provenance_records.empty()) {
                 Json records=Json::array();
                 for(const auto& f:content.provenance_records)records.push_back({{"filename",f.filename},{"sha256",f.sha256},{"bytes",f.bytes}});

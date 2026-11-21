@@ -1,0 +1,764 @@
+{
+  "release": "0.0.377",
+  "production_input_inventory_sha256": "4a6af010ffb237326e79d929f04e51c59e38b4524167e77edfd9e40b4b7a7fd6",
+  "linux_simulation": {
+    "binary_sha256": "925594b9abff599e3f3fe9292082f39465d311ce7a2c80aec8d694c2d70042db",
+    "junit_sha256": "513f5a507370d75c43c80e500de3101a072d74bac236bda5b9ac7e1710992a28",
+    "strict_authoring_and_frozen_report_sha256": "96593254e44413d86e6d10e2ef8a2f942aedd79347c1568b2f9f35b04a58db57",
+    "suites": [
+      {
+        "name": "foliage_authoring_native",
+        "seconds": 0.02
+      },
+      {
+        "name": "world_foliage_contract",
+        "seconds": 0.58
+      },
+      {
+        "name": "world_water_contract",
+        "seconds": 0.45
+      },
+      {
+        "name": "world_water_rain_contract",
+        "seconds": 0.93
+      },
+      {
+        "name": "authoring_core_conformance",
+        "seconds": 0.12
+      },
+      {
+        "name": "authoring_contract_identity",
+        "seconds": 0.68
+      },
+      {
+        "name": "render_schedule_native",
+        "seconds": 0.04
+      },
+      {
+        "name": "output_grade_authoring_contract",
+        "seconds": 0.22
+      },
+      {
+        "name": "world_schema_native",
+        "seconds": 51.72
+      },
+      {
+        "name": "mcp_contract",
+        "seconds": 2.58
+      },
+      {
+        "name": "runtime_templates_native",
+        "seconds": 0.23
+      },
+      {
+        "name": "world_templates_contract",
+        "seconds": 0.28
+      },
+      {
+        "name": "world_ui_contract",
+        "seconds": 0.32
+      },
+      {
+        "name": "player_service_contract",
+        "seconds": 0.22
+      },
+      {
+        "name": "lighting_contract",
+        "seconds": 1.66
+      },
+      {
+        "name": "runtime_contract",
+        "seconds": 0.54
+      },
+      {
+        "name": "cli_contract",
+        "seconds": 0.14
+      },
+      {
+        "name": "world_contract",
+        "seconds": 5.36
+      },
+      {
+        "name": "asset_references_contract",
+        "seconds": 0.44
+      }
+    ]
+  },
+  "shader": {
+    "spirv_sha256": "6ba032453f47a86627f8f729062660f4356285140e0539fa769616a4e95e6914",
+    "analytic_integral_check": {
+      "cases": 207,
+      "maximum_absolute_error": 1.39425574290882e-09,
+      "oracle": "Adaptive Simpson integration in Python double precision",
+      "scope": "Algebra only. No shader dispatch or framebuffer observation."
+    }
+  },
+  "windows": {
+    "binary_sha256": "2d9a67ca0d900f4e6652ae0a2f00f416ccf99ca4297ffca83bdbb135dadcdc61",
+    "runtime_descriptor_sha256": "617d28bdb2692bd7ac553e7b27e21b240de59b72882f79628419b932a4aad883",
+    "schedule": "Production render schedule: 488 valid variants, 1265 rejected contract mutations.",
+    "height_fog": [
+      {
+        "adapter": "AMD Radeon(TM) Graphics",
+        "lighting_path": "deferred",
+        "image_count": 13,
+        "presented_frames": 26,
+        "probe_count": 73,
+        "max_analytic_channel_error": 0.00038887197358405956,
+        "report_sha256": "0a906ea96c86994c2c42c41d72c527dcbe32a2503cbd494a977e31b479be0578",
+        "fixture_sha256": "262c0b8a1b3f3342bb628ab5efc81a3c5e77e765ffae8629671ead849700d04e",
+        "image_sha256": {
+          "omitted-0-1x-color-none": "90c1e154e210fb179ab3d6769a12f3eeb81b9f4082391ff872a9bef248de5e87",
+          "omitted-1-1x-color-none": "1f08f15f801967c64017f50bb73043c2b3f71070be9bd1c5d974575203bab981",
+          "omitted-0-1x-depth-none": "4a497dc0f9e71a14172fa0f248d5e3e7354884fb5ebdeac756cf97b81bf00311",
+          "omitted-0-1x-color-fsr3_native": "9acad356e651647a1588186f02ce1eca734956d160850f9036617ea7edd06098",
+          "zero-0-1x-color-none": "90c1e154e210fb179ab3d6769a12f3eeb81b9f4082391ff872a9bef248de5e87",
+          "zero-1-1x-color-none": "1f08f15f801967c64017f50bb73043c2b3f71070be9bd1c5d974575203bab981",
+          "enabled-0-1x-color-none": "56d9d755be8e90c5d85fd1f9c5a4976921259948c33ed582d1c78465a0fcf5ad",
+          "enabled-1-1x-color-none": "46eaa2070392b6f04904425037b84c9979edf395128d7de8a2e5a80155ea0e7b",
+          "enabled-0-1x-depth-none": "4a497dc0f9e71a14172fa0f248d5e3e7354884fb5ebdeac756cf97b81bf00311",
+          "enabled-0-1x-color-fsr3_native": "9acad356e651647a1588186f02ce1eca734956d160850f9036617ea7edd06098",
+          "spot-zero-2-1x-color-none": "e1f2be0531bf2069f0270fc4715afafd27389568c49b9213bda92051c07c0a04",
+          "spot-open-2-1x-color-none": "82fa734c4fb664930a5f7ce80daca54937110c61accd10a6798be8d066b4f44c",
+          "spot-shadow-2-1x-color-none": "00df5993dd0dbde0f7140526aab9e32585a35d64b6bc5b85507886d4eeb5e4cb"
+        },
+        "checks": {
+          "exact_fallbacks": [
+            "depth",
+            "fsr"
+          ],
+          "contrasts": {
+            "000000000000000000000000000020d0/above_near_level": {
+              "hdr_delta": 0.16751178415323562,
+              "tau": 0.370120818434653
+            },
+            "000000000000000000000000000020d0/ascending_above": {
+              "hdr_delta": 0.11266025149874835,
+              "tau": 0.2330804851901544
+            },
+            "000000000000000000000000000020d0/descending_crossing": {
+              "hdr_delta": 0.44329974744012074,
+              "tau": 1.7146732956406332
+            },
+            "000000000000000000000000000020d0/off_axis_within_range": {
+              "hdr_delta": 0.43182024088281945,
+              "tau": 1.6031805378797812
+            },
+            "000000000000000000000000000020d0/opaque_past_maximum": {
+              "hdr_delta": 0.4720233431434515,
+              "tau": 2.0646567354312904
+            },
+            "000000000000000000000000000020d0/ascending_sky": {
+              "hdr_delta": 0.06952748234860029,
+              "tau": 0.23462518248613018
+            },
+            "000000000000000000000000000020d1/constant_below": {
+              "hdr_delta": 0.3706781770855217,
+              "tau": 1.156659796936903
+            },
+            "000000000000000000000000000020d1/ascending_crossing": {
+              "hdr_delta": 0.35419016180456897,
+              "tau": 1.0640763939579605
+            },
+            "000000000000000000000000000020d1/ascending_sky": {
+              "hdr_delta": 0.18514042557322435,
+              "tau": 0.8116170939087709
+            },
+            "000000000000000000000000000020d1/descending_sky": {
+              "hdr_delta": 0.2935485189453459,
+              "tau": 2.134
+            }
+          },
+          "omitted_vs_zero_unchanged": true,
+          "spot": {
+            "occluded_beam": {
+              "added_hdr": [
+                0.14453125,
+                0.050537109375,
+                0.014404296875
+              ],
+              "lost_to_blocker_red": 0.085693359375
+            },
+            "clear_beam": {
+              "added_hdr": [
+                0.07763671875,
+                0.027099609375,
+                0.0078125
+              ],
+              "lost_to_blocker_red": 0.0
+            },
+            "outside_beam": {
+              "added_hdr": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "lost_to_blocker_red": 0.0
+            }
+          }
+        }
+      },
+      {
+        "adapter": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "lighting_path": "deferred",
+        "image_count": 13,
+        "presented_frames": 26,
+        "probe_count": 73,
+        "max_analytic_channel_error": 0.00038887197358405956,
+        "report_sha256": "026dcbc964f4b934d7aebab1430ac5156113bcda5f0fe4c2abd900a323039b21",
+        "fixture_sha256": "262c0b8a1b3f3342bb628ab5efc81a3c5e77e765ffae8629671ead849700d04e",
+        "image_sha256": {
+          "omitted-0-1x-color-none": "90c1e154e210fb179ab3d6769a12f3eeb81b9f4082391ff872a9bef248de5e87",
+          "omitted-1-1x-color-none": "1f08f15f801967c64017f50bb73043c2b3f71070be9bd1c5d974575203bab981",
+          "omitted-0-1x-depth-none": "4a497dc0f9e71a14172fa0f248d5e3e7354884fb5ebdeac756cf97b81bf00311",
+          "omitted-0-1x-color-fsr3_native": "0318a63efd25b7619bf6cc580854e7e25e4685b803c54e369f11222198f70cf7",
+          "zero-0-1x-color-none": "90c1e154e210fb179ab3d6769a12f3eeb81b9f4082391ff872a9bef248de5e87",
+          "zero-1-1x-color-none": "1f08f15f801967c64017f50bb73043c2b3f71070be9bd1c5d974575203bab981",
+          "enabled-0-1x-color-none": "3b8a36dd2de97bead5707ea4dc02e7f946f0775c918499a051488dc1ed7ccd7c",
+          "enabled-1-1x-color-none": "a7633f152da9857cad4b08e6363a0baa7fb35867ca380719ccd42a7b27786ff3",
+          "enabled-0-1x-depth-none": "4a497dc0f9e71a14172fa0f248d5e3e7354884fb5ebdeac756cf97b81bf00311",
+          "enabled-0-1x-color-fsr3_native": "0318a63efd25b7619bf6cc580854e7e25e4685b803c54e369f11222198f70cf7",
+          "spot-zero-2-1x-color-none": "5b39c025354c0807e8f736f3ad3542457c75a071cde229255183f5bc76663bd8",
+          "spot-open-2-1x-color-none": "0d9dd1020a63411882a5dd4d603b3c8b45e141ee00c6c053a244ef2849b31f9f",
+          "spot-shadow-2-1x-color-none": "df74393eb994e37bb265aa1d3a801a270d3207537bb008104f51b060258c6884"
+        },
+        "checks": {
+          "exact_fallbacks": [
+            "depth",
+            "fsr"
+          ],
+          "contrasts": {
+            "000000000000000000000000000020d0/above_near_level": {
+              "hdr_delta": 0.16751178415323562,
+              "tau": 0.370120818434653
+            },
+            "000000000000000000000000000020d0/ascending_above": {
+              "hdr_delta": 0.11266025149874835,
+              "tau": 0.2330804851901544
+            },
+            "000000000000000000000000000020d0/descending_crossing": {
+              "hdr_delta": 0.44329974744012074,
+              "tau": 1.7146732956406332
+            },
+            "000000000000000000000000000020d0/off_axis_within_range": {
+              "hdr_delta": 0.43182024088281945,
+              "tau": 1.6031805378797812
+            },
+            "000000000000000000000000000020d0/opaque_past_maximum": {
+              "hdr_delta": 0.4720233431434515,
+              "tau": 2.0646567354312904
+            },
+            "000000000000000000000000000020d0/ascending_sky": {
+              "hdr_delta": 0.06952748234860029,
+              "tau": 0.23462518248613018
+            },
+            "000000000000000000000000000020d1/constant_below": {
+              "hdr_delta": 0.3706781770855217,
+              "tau": 1.156659796936903
+            },
+            "000000000000000000000000000020d1/ascending_crossing": {
+              "hdr_delta": 0.35419016180456897,
+              "tau": 1.0640763939579605
+            },
+            "000000000000000000000000000020d1/ascending_sky": {
+              "hdr_delta": 0.18514042557322435,
+              "tau": 0.8116170939087709
+            },
+            "000000000000000000000000000020d1/descending_sky": {
+              "hdr_delta": 0.2935485189453459,
+              "tau": 2.134
+            }
+          },
+          "omitted_vs_zero_unchanged": true,
+          "spot": {
+            "occluded_beam": {
+              "added_hdr": [
+                0.14453125,
+                0.050537109375,
+                0.014404296875
+              ],
+              "lost_to_blocker_red": 0.085693359375
+            },
+            "clear_beam": {
+              "added_hdr": [
+                0.07763671875,
+                0.027099609375,
+                0.0078125
+              ],
+              "lost_to_blocker_red": 0.0
+            },
+            "outside_beam": {
+              "added_hdr": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "lost_to_blocker_red": 0.0
+            }
+          }
+        }
+      },
+      {
+        "adapter": "AMD Radeon(TM) Graphics",
+        "lighting_path": "forward",
+        "image_count": 15,
+        "presented_frames": 30,
+        "probe_count": 73,
+        "max_analytic_channel_error": 0.00038887197358405956,
+        "report_sha256": "db9eb5f9f7bb44d93a74f79e3f94a348894a6e7e860d4dc02d256e174cddd7ac",
+        "fixture_sha256": "262c0b8a1b3f3342bb628ab5efc81a3c5e77e765ffae8629671ead849700d04e",
+        "image_sha256": {
+          "omitted-0-1x-color-none": "90c1e154e210fb179ab3d6769a12f3eeb81b9f4082391ff872a9bef248de5e87",
+          "omitted-1-1x-color-none": "1f08f15f801967c64017f50bb73043c2b3f71070be9bd1c5d974575203bab981",
+          "omitted-0-1x-depth-none": "4a497dc0f9e71a14172fa0f248d5e3e7354884fb5ebdeac756cf97b81bf00311",
+          "omitted-0-1x-color-fsr3_native": "9acad356e651647a1588186f02ce1eca734956d160850f9036617ea7edd06098",
+          "omitted-0-4x-color-none": "1973abe19a202825d0efdc3c7ce8d0b6242a5e6b9e9350c19f4e963d6f6512ef",
+          "zero-0-1x-color-none": "90c1e154e210fb179ab3d6769a12f3eeb81b9f4082391ff872a9bef248de5e87",
+          "zero-1-1x-color-none": "1f08f15f801967c64017f50bb73043c2b3f71070be9bd1c5d974575203bab981",
+          "enabled-0-1x-color-none": "56d9d755be8e90c5d85fd1f9c5a4976921259948c33ed582d1c78465a0fcf5ad",
+          "enabled-1-1x-color-none": "46eaa2070392b6f04904425037b84c9979edf395128d7de8a2e5a80155ea0e7b",
+          "enabled-0-1x-depth-none": "4a497dc0f9e71a14172fa0f248d5e3e7354884fb5ebdeac756cf97b81bf00311",
+          "enabled-0-1x-color-fsr3_native": "9acad356e651647a1588186f02ce1eca734956d160850f9036617ea7edd06098",
+          "enabled-0-4x-color-none": "1973abe19a202825d0efdc3c7ce8d0b6242a5e6b9e9350c19f4e963d6f6512ef",
+          "spot-zero-2-1x-color-none": "220c367cf9708a2e818fa7627b982d4f0d6e87c5c55b2aa9a47468b1330b7902",
+          "spot-open-2-1x-color-none": "7e779c8590b1f4ac1d7ae112cfa9ed57d60595a3944e610485299582e6eb1edd",
+          "spot-shadow-2-1x-color-none": "94d326765d51b8b22f2797622acef2d3baa51ec45fcee284ef6fab5b8da2beae"
+        },
+        "checks": {
+          "exact_fallbacks": [
+            "depth",
+            "fsr",
+            "msaa"
+          ],
+          "contrasts": {
+            "000000000000000000000000000020d0/above_near_level": {
+              "hdr_delta": 0.16751178415323562,
+              "tau": 0.370120818434653
+            },
+            "000000000000000000000000000020d0/ascending_above": {
+              "hdr_delta": 0.11266025149874835,
+              "tau": 0.2330804851901544
+            },
+            "000000000000000000000000000020d0/descending_crossing": {
+              "hdr_delta": 0.44329974744012074,
+              "tau": 1.7146732956406332
+            },
+            "000000000000000000000000000020d0/off_axis_within_range": {
+              "hdr_delta": 0.43182024088281945,
+              "tau": 1.6031805378797812
+            },
+            "000000000000000000000000000020d0/opaque_past_maximum": {
+              "hdr_delta": 0.4720233431434515,
+              "tau": 2.0646567354312904
+            },
+            "000000000000000000000000000020d0/ascending_sky": {
+              "hdr_delta": 0.06952748234860029,
+              "tau": 0.23462518248613018
+            },
+            "000000000000000000000000000020d1/constant_below": {
+              "hdr_delta": 0.3706781770855217,
+              "tau": 1.156659796936903
+            },
+            "000000000000000000000000000020d1/ascending_crossing": {
+              "hdr_delta": 0.35419016180456897,
+              "tau": 1.0640763939579605
+            },
+            "000000000000000000000000000020d1/ascending_sky": {
+              "hdr_delta": 0.18514042557322435,
+              "tau": 0.8116170939087709
+            },
+            "000000000000000000000000000020d1/descending_sky": {
+              "hdr_delta": 0.2935485189453459,
+              "tau": 2.134
+            }
+          },
+          "omitted_vs_zero_unchanged": true,
+          "spot": {
+            "occluded_beam": {
+              "added_hdr": [
+                0.14453125,
+                0.050537109375,
+                0.014404296875
+              ],
+              "lost_to_blocker_red": 0.085693359375
+            },
+            "clear_beam": {
+              "added_hdr": [
+                0.07763671875,
+                0.027099609375,
+                0.0078125
+              ],
+              "lost_to_blocker_red": 0.0
+            },
+            "outside_beam": {
+              "added_hdr": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "lost_to_blocker_red": 0.0
+            }
+          }
+        }
+      },
+      {
+        "adapter": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "lighting_path": "forward",
+        "image_count": 15,
+        "presented_frames": 30,
+        "probe_count": 73,
+        "max_analytic_channel_error": 0.00038887197358405956,
+        "report_sha256": "77e4278353a0aa8f3f01a81e587bbf7577e79affa55e3d260c4d44768a744961",
+        "fixture_sha256": "262c0b8a1b3f3342bb628ab5efc81a3c5e77e765ffae8629671ead849700d04e",
+        "image_sha256": {
+          "omitted-0-1x-color-none": "90c1e154e210fb179ab3d6769a12f3eeb81b9f4082391ff872a9bef248de5e87",
+          "omitted-1-1x-color-none": "1f08f15f801967c64017f50bb73043c2b3f71070be9bd1c5d974575203bab981",
+          "omitted-0-1x-depth-none": "4a497dc0f9e71a14172fa0f248d5e3e7354884fb5ebdeac756cf97b81bf00311",
+          "omitted-0-1x-color-fsr3_native": "0318a63efd25b7619bf6cc580854e7e25e4685b803c54e369f11222198f70cf7",
+          "omitted-0-4x-color-none": "1973abe19a202825d0efdc3c7ce8d0b6242a5e6b9e9350c19f4e963d6f6512ef",
+          "zero-0-1x-color-none": "90c1e154e210fb179ab3d6769a12f3eeb81b9f4082391ff872a9bef248de5e87",
+          "zero-1-1x-color-none": "1f08f15f801967c64017f50bb73043c2b3f71070be9bd1c5d974575203bab981",
+          "enabled-0-1x-color-none": "3b8a36dd2de97bead5707ea4dc02e7f946f0775c918499a051488dc1ed7ccd7c",
+          "enabled-1-1x-color-none": "a7633f152da9857cad4b08e6363a0baa7fb35867ca380719ccd42a7b27786ff3",
+          "enabled-0-1x-depth-none": "4a497dc0f9e71a14172fa0f248d5e3e7354884fb5ebdeac756cf97b81bf00311",
+          "enabled-0-1x-color-fsr3_native": "0318a63efd25b7619bf6cc580854e7e25e4685b803c54e369f11222198f70cf7",
+          "enabled-0-4x-color-none": "1973abe19a202825d0efdc3c7ce8d0b6242a5e6b9e9350c19f4e963d6f6512ef",
+          "spot-zero-2-1x-color-none": "a3bb6ee56b04955861461b72c1d7c499d34e3c7c3b29f40faef98182e1340076",
+          "spot-open-2-1x-color-none": "7f4dc4e10ad31918300a2dcd0b0d2919de91e23f67dccc9c55fc06e54fc69b32",
+          "spot-shadow-2-1x-color-none": "2b8ffd61e9b860fae4006b8644aa4f5b7b4c32e024d677d8784276dfe99ba18f"
+        },
+        "checks": {
+          "exact_fallbacks": [
+            "depth",
+            "fsr",
+            "msaa"
+          ],
+          "contrasts": {
+            "000000000000000000000000000020d0/above_near_level": {
+              "hdr_delta": 0.16751178415323562,
+              "tau": 0.370120818434653
+            },
+            "000000000000000000000000000020d0/ascending_above": {
+              "hdr_delta": 0.11266025149874835,
+              "tau": 0.2330804851901544
+            },
+            "000000000000000000000000000020d0/descending_crossing": {
+              "hdr_delta": 0.44329974744012074,
+              "tau": 1.7146732956406332
+            },
+            "000000000000000000000000000020d0/off_axis_within_range": {
+              "hdr_delta": 0.43182024088281945,
+              "tau": 1.6031805378797812
+            },
+            "000000000000000000000000000020d0/opaque_past_maximum": {
+              "hdr_delta": 0.4720233431434515,
+              "tau": 2.0646567354312904
+            },
+            "000000000000000000000000000020d0/ascending_sky": {
+              "hdr_delta": 0.06952748234860029,
+              "tau": 0.23462518248613018
+            },
+            "000000000000000000000000000020d1/constant_below": {
+              "hdr_delta": 0.3706781770855217,
+              "tau": 1.156659796936903
+            },
+            "000000000000000000000000000020d1/ascending_crossing": {
+              "hdr_delta": 0.35419016180456897,
+              "tau": 1.0640763939579605
+            },
+            "000000000000000000000000000020d1/ascending_sky": {
+              "hdr_delta": 0.18514042557322435,
+              "tau": 0.8116170939087709
+            },
+            "000000000000000000000000000020d1/descending_sky": {
+              "hdr_delta": 0.2935485189453459,
+              "tau": 2.134
+            }
+          },
+          "omitted_vs_zero_unchanged": true,
+          "spot": {
+            "occluded_beam": {
+              "added_hdr": [
+                0.14453125,
+                0.050537109375,
+                0.014404296875
+              ],
+              "lost_to_blocker_red": 0.085693359375
+            },
+            "clear_beam": {
+              "added_hdr": [
+                0.07763671875,
+                0.027099609375,
+                0.0078125
+              ],
+              "lost_to_blocker_red": 0.0
+            },
+            "outside_beam": {
+              "added_hdr": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "lost_to_blocker_red": 0.0
+            }
+          }
+        }
+      }
+    ],
+    "fog_after_reflections": [
+      {
+        "adapter": "AMD Radeon(TM) Graphics",
+        "lighting_path": "deferred",
+        "image_count": 2,
+        "presented_frames": 4,
+        "probe_count": 14,
+        "max_analytic_channel_error": null,
+        "report_sha256": "fbdb64a38f18fa15c5474e6ec4f7b27a34a39370de52c25d6d622286ad0d4c98",
+        "fixture_sha256": "a1e86cd08f48c0874caa5feaa302bfbbd87ba910438393ba11f97adabeef91e7",
+        "image_sha256": {
+          "reflections-only": "8e19990922590bdc764dae4fc43eccf004ca588a3bb4a85b2653de735e8a435e",
+          "reflections-with-fog": "5534e26cea62e4a1543d7775bf55a1ef542cc4d41d2af4177c49d9a8823c3199"
+        },
+        "checks": {
+          "warm_hit": {
+            "expected_fogged_hdr": [
+              0.24996081935349684,
+              0.12237336176388748,
+              0.1473221548830662
+            ],
+            "actual_fogged_hdr": [
+              0.2498779296875,
+              0.122314453125,
+              0.147216796875
+            ],
+            "max_hdr_error": 0.00010535800806618645,
+            "reflection_gain": 0.1344757080078125,
+            "surviving_reflection_hdr": [
+              0.06849955106450079,
+              0.009536251853646677,
+              0.00503851959579843
+            ]
+          },
+          "cool_hit": {
+            "expected_fogged_hdr": [
+              0.1843608104922393,
+              0.155421077888518,
+              0.20915890613723565
+            ],
+            "actual_fogged_hdr": [
+              0.184326171875,
+              0.1553955078125,
+              0.2091064453125
+            ],
+            "max_hdr_error": 5.246082473564506e-05,
+            "reflection_gain": 0.1328887939453125,
+            "surviving_reflection_hdr": [
+              0.005459465310175937,
+              0.0439984080128675,
+              0.06879379975635685
+            ]
+          },
+          "miss": {
+            "expected_fogged_hdr": [
+              0.1838665209393163,
+              0.11414636436562808,
+              0.1440264314686373
+            ],
+            "actual_fogged_hdr": [
+              0.183837890625,
+              0.1141357421875,
+              0.1439208984375
+            ],
+            "max_hdr_error": 0.00010553303113730594
+          },
+          "rough_guard": {
+            "expected_fogged_hdr": [
+              0.1808751799991949,
+              0.11250150576978814,
+              0.14180450901096248
+            ],
+            "actual_fogged_hdr": [
+              0.1807861328125,
+              0.11248779296875,
+              0.1417236328125
+            ],
+            "max_hdr_error": 8.904718669489053e-05
+          },
+          "warm_target": {
+            "expected_fogged_hdr": [
+              0.5842616129218945,
+              0.17775464270338748,
+              0.19151465874678952
+            ],
+            "actual_fogged_hdr": [
+              0.583984375,
+              0.177734375,
+              0.19140625
+            ],
+            "max_hdr_error": 0.0002772379218944909
+          },
+          "cool_target": {
+            "expected_fogged_hdr": [
+              0.2437594643748422,
+              0.3627109643368799,
+              0.5338690811548513
+            ],
+            "actual_fogged_hdr": [
+              0.24365234375,
+              0.362548828125,
+              0.53369140625
+            ],
+            "max_hdr_error": 0.00017767490485132154
+          },
+          "clear": {
+            "expected_fogged_hdr": [
+              0.22341833496217,
+              0.1389246577390527,
+              0.1841281520083733
+            ],
+            "actual_fogged_hdr": [
+              0.223388671875,
+              0.138916015625,
+              0.18408203125
+            ],
+            "max_hdr_error": 4.612075837329144e-05
+          }
+        }
+      },
+      {
+        "adapter": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "lighting_path": "deferred",
+        "image_count": 2,
+        "presented_frames": 4,
+        "probe_count": 14,
+        "max_analytic_channel_error": null,
+        "report_sha256": "ad2b4d81453596a379c0210c28789c0d214e0457e0f6579c7bd440672d52bb72",
+        "fixture_sha256": "a1e86cd08f48c0874caa5feaa302bfbbd87ba910438393ba11f97adabeef91e7",
+        "image_sha256": {
+          "reflections-only": "fe2fe08b940a536953cc6675b54486e15ac3c10400ae45fb4081bf55b4b8820c",
+          "reflections-with-fog": "6dcf6cd7f7836eeefdc22b7cf0f07d64f483205905c4d7ac26d1a64c546a4716"
+        },
+        "checks": {
+          "warm_hit": {
+            "expected_fogged_hdr": [
+              0.24996081935349684,
+              0.12237336176388748,
+              0.1473221548830662
+            ],
+            "actual_fogged_hdr": [
+              0.2498779296875,
+              0.122314453125,
+              0.147216796875
+            ],
+            "max_hdr_error": 0.00010535800806618645,
+            "reflection_gain": 0.1344757080078125,
+            "surviving_reflection_hdr": [
+              0.06849955106450079,
+              0.009536251853646677,
+              0.00503851959579843
+            ]
+          },
+          "cool_hit": {
+            "expected_fogged_hdr": [
+              0.1843608104922393,
+              0.155421077888518,
+              0.20915890613723565
+            ],
+            "actual_fogged_hdr": [
+              0.184326171875,
+              0.1553955078125,
+              0.2091064453125
+            ],
+            "max_hdr_error": 5.246082473564506e-05,
+            "reflection_gain": 0.1328887939453125,
+            "surviving_reflection_hdr": [
+              0.005459465310175937,
+              0.0439984080128675,
+              0.06879379975635685
+            ]
+          },
+          "miss": {
+            "expected_fogged_hdr": [
+              0.1838665209393163,
+              0.11414636436562808,
+              0.1440264314686373
+            ],
+            "actual_fogged_hdr": [
+              0.183837890625,
+              0.1141357421875,
+              0.1439208984375
+            ],
+            "max_hdr_error": 0.00010553303113730594
+          },
+          "rough_guard": {
+            "expected_fogged_hdr": [
+              0.1808751799991949,
+              0.11250150576978814,
+              0.14180450901096248
+            ],
+            "actual_fogged_hdr": [
+              0.1807861328125,
+              0.11248779296875,
+              0.1417236328125
+            ],
+            "max_hdr_error": 8.904718669489053e-05
+          },
+          "warm_target": {
+            "expected_fogged_hdr": [
+              0.5842616129218945,
+              0.17775464270338748,
+              0.19151465874678952
+            ],
+            "actual_fogged_hdr": [
+              0.583984375,
+              0.177734375,
+              0.19140625
+            ],
+            "max_hdr_error": 0.0002772379218944909
+          },
+          "cool_target": {
+            "expected_fogged_hdr": [
+              0.2437594643748422,
+              0.3627109643368799,
+              0.5338690811548513
+            ],
+            "actual_fogged_hdr": [
+              0.24365234375,
+              0.362548828125,
+              0.53369140625
+            ],
+            "max_hdr_error": 0.00017767490485132154
+          },
+          "clear": {
+            "expected_fogged_hdr": [
+              0.22341833496217,
+              0.1389246577390527,
+              0.1841281520083733
+            ],
+            "actual_fogged_hdr": [
+              0.223388671875,
+              0.138916015625,
+              0.18408203125
+            ],
+            "max_hdr_error": 4.612075837329144e-05
+          }
+        }
+      }
+    ],
+    "exact_control": {
+      "images": 32,
+      "probes": 128,
+      "report_sha256": "d323ff663173008239637ef7957f04383ab5fbf69547970a3d96d79011723d29"
+    },
+    "runtime_feature_guard": {
+      "missing": {
+        "rejected": true,
+        "diagnostic_sha256": "a705933f3f305341dbb79d564c278171dac3d1232b50d47293a0b4c1c0cec0e0"
+      },
+      "disabled": {
+        "rejected": true,
+        "diagnostic_sha256": "a705933f3f305341dbb79d564c278171dac3d1232b50d47293a0b4c1c0cec0e0"
+      }
+    }
+  }
+}

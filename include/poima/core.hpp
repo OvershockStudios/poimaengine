@@ -254,6 +254,12 @@ struct ScreenReflectionsDiagnostics {
     std::string_view reason;
     std::uint64_t buffer_bytes=0;
 };
+struct HeightFogDiagnostics {
+    bool active=false;
+    std::string_view reason;
+    std::uint64_t buffer_bytes=0;
+    std::uint32_t spot_lights=0;
+};
 struct RenderDiagnostics {
     gpu_memory::Diagnostics memory_budget;
     bool deferred=false;
@@ -279,6 +285,8 @@ struct RenderDiagnostics {
     std::optional<EnvironmentIblDiagnostics> environment_ibl;
     std::optional<ScreenReflectionsDiagnostics> screen_reflections;
     TimingSummary screen_reflections_gpu;
+    std::optional<HeightFogDiagnostics> height_fog;
+    TimingSummary height_fog_gpu;
     std::optional<RendererSceneResult> scene_observed,scene_submitted,scene_presented;
     std::optional<ViewmodelDiagnostics> viewmodel;
 };

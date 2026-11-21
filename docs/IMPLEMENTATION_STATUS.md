@@ -1,8 +1,19 @@
 # Implementation status
 
-Updated 2026-11-21 for **0.0.376**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-21 for **0.0.377**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.377 adds authored [height fog](HEIGHT_FOG.md) with ambient light
+and up to two shadowed spotlights. Fifty-six relocated Windows captures and
+292 depth and color probes checked forward and deferred rendering on AMD and
+NVIDIA. Diagnostic, reconstruction and forward 4× MSAA fallback images match
+the corresponding runs with fog omitted. Four additional captures checked
+reflection transmittance at seven probe sites per adapter. Thirty-two retained
+images and 128 probes matched 0.0.376 exactly. A focused Linux contract checked
+authoring, frozen state and local spotlight reference remapping. Exports rejected
+runtime descriptors with a missing or disabled fog feature flag.
+[Results](evidence/m2-height-fog-377.json)
 
 Version 0.0.376 adds [foliage motion](FOLIAGE_SCATTER.md#bend-foliage-with-wind-and-character-proximity)
 from a world-space wind wave and an authored character controller. The

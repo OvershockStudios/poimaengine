@@ -809,6 +809,11 @@ struct Runtime::Impl {
                     const auto* light=registry.try_get<Light>(found->second);
                     require(light && light->kind==LightKind::directional,"Runtime sky sun must reference a directional Light.");
                 }
+                if(const auto& fog=d.environment->height_fog)for(const auto& spot:fog->spot_lights) {
+                    const auto found=candidate->identities.find(spot.entity);
+                    const auto* light=found==candidate->identities.end() ? nullptr : registry.try_get<Light>(found->second);
+                    require(light && light->kind==LightKind::spot,"Runtime height fog must reference an existing spot Light.");
+                }
             }
         }
         require(lights<=max_scene_lights && environments<=1,"Runtime exceeds light/environment limits.");
@@ -1528,6 +1533,11 @@ struct Runtime::Impl {
                     const auto found=candidate.definitions.find(d.environment->sky.sun);
                     require(found!=candidate.definitions.end() && found->second.light && found->second.light->kind==LightKind::directional,
                         "Runtime sky sun must reference a live directional Light.");
+                }
+                if(const auto& fog=d.environment->height_fog)for(const auto& spot:fog->spot_lights) {
+                    const auto found=candidate.definitions.find(spot.entity);
+                    require(found!=candidate.definitions.end() && found->second.light && found->second.light->kind==LightKind::spot,
+                        "Runtime height fog must reference a live spot Light.");
                 }
             }
         }

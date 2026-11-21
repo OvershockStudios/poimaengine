@@ -44,6 +44,12 @@ world-color image. The schedule validates both producers and requires later
 sprites, foreground composition and display output to use the reflected image
 or its composed result. It keeps the original HDR available to raw probes.
 
+[Height fog](HEIGHT_FOG.md) reads opaque depth and the reflected image when
+available. Otherwise it reads the original lit HDR. Fog writes a separate
+world image before sprites and foreground composition. Selected spotlights
+depend on the current light table and shadow atlas. The raw HDR probe keeps
+the opaque color and the resolved probe reads the final world image.
+
 These checks validate the declared contract and its renderer bindings. They do not inspect arbitrary shader memory accesses or replace runtime validation of shader outputs.
 
 ## Synchronization boundary

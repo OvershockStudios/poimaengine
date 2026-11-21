@@ -35,6 +35,10 @@ struct Fixture {
                 f.reflection_roughness=add(Kind::texture,Lifetime::shared);f.resources[f.reflection_roughness].format=Format::r16_float;
                 f.reflected_hdr=add(Kind::texture,Lifetime::shared);f.resources[f.reflected_hdr].format=Format::rgba16_float;
             }
+            if(s.height_fog) {
+                f.resources[f.hdr].format=Format::rgba16_float;
+                f.fogged_hdr=add(Kind::texture,Lifetime::shared);f.resources[f.fogged_hdr].format=Format::rgba16_float;
+            }
             if(s.ambient_occlusion) {
                 f.ao_raw=add(Kind::texture,Lifetime::shared);f.resources[f.ao_raw].format=Format::r16_float;
                 f.ao_filtered=add(Kind::texture,Lifetime::shared);f.resources[f.ao_filtered].format=Format::r16_float;
@@ -42,6 +46,7 @@ struct Fixture {
             }
             f.frame=add(Kind::buffer,Lifetime::shared);f.objects=add(Kind::buffer,Lifetime::shared);
             f.lights=add(Kind::buffer,Lifetime::shared);f.shadow=add(Kind::texture,Lifetime::shared);
+            if(s.height_fog_spots)f.resources[f.shadow].format=Format::depth32;
             const auto material=add(Kind::texture,Lifetime::imported,true);
             const auto vertices=add(Kind::buffer,Lifetime::imported,true),indices=add(Kind::buffer,Lifetime::imported,true);
             ResourceId drawn=vertices;
@@ -978,10 +983,10 @@ void environment_contracts(){
     auto ordinary=Fixture(rich(),4).plan();ordinary.validate();check(ordinary.frame.ibl_diffuse==none && ordinary.frame.ibl_specular==none && ordinary.frame.ibl_brdf==none,"Legacy graph acquired IBL roles");
 }
 
-void reflection_probes(Fixture& fixture) {
+void world_hdr_probes(Fixture& fixture) {
     auto& f=fixture.f;
     f.probe_points={{0,0},{383,215}};
-    for(auto source:{f.depth,f.normal,f.motion,f.motion_valid,f.hdr,f.reflected_hdr,f.ao_raw,f.ao_filtered}) {
+    for(auto source:{f.depth,f.normal,f.motion,f.motion_valid,f.hdr,world_radiance(f,fixture.settings),f.ao_raw,f.ao_filtered}) {
         if(source==none)continue;
         const auto target=fixture.add(Kind::texture,Lifetime::capture);
         auto& r=f.resources[target];
@@ -990,13 +995,14 @@ void reflection_probes(Fixture& fixture) {
     }
 }
 
+bool access(Schedule& schedule,PassId stage,ResourceId resource,Use use,bool initialize=false) {
+    const auto& list=pass(schedule,stage).accesses;
+    return std::any_of(list.begin(),list.end(),[&](const auto& a) {
+        return a.resource==resource && a.use==use && a.initialize==initialize;
+    });
+}
+
 void screen_reflection_contracts() {
-    const auto access=[](Schedule& schedule,PassId stage,ResourceId resource,Use use,bool initialize=false) {
-        const auto& list=pass(schedule,stage).accesses;
-        return std::any_of(list.begin(),list.end(),[&](const auto& a) {
-            return a.resource==resource && a.use==use && a.initialize==initialize;
-        });
-    };
     for(bool products:{false,true})for(bool ao:{false,true})for(bool environment:{false,true})for(unsigned composition:{0u,1u,2u,3u}) {
         auto settings=rich();settings.deferred=settings.screen_reflections=true;
         settings.products=products;settings.ambient_occlusion=ao;settings.editor=composition==3;
@@ -1007,7 +1013,7 @@ void screen_reflection_contracts() {
         if(composition==1 || composition==3) {
             setup_particle_sprites(fixture);setup_bloom(fixture);
         }
-        if(products)reflection_probes(fixture);
+        if(products)world_hdr_probes(fixture);
         auto plan=fixture.plan();plan.validate();++accepted;
         const auto& f=plan.frame;
         const auto position=[&](PassId id){return &pass(plan,id)-plan.passes.data();};
@@ -1043,7 +1049,7 @@ void screen_reflection_contracts() {
 
     auto settings=rich();settings.deferred=settings.screen_reflections=settings.products=settings.ambient_occlusion=true;
     Fixture fixture(settings);environment_inputs(fixture);setup_particle_sprites(fixture);setup_foreground(fixture);
-    setup_post_effect(fixture);setup_bloom(fixture);reflection_probes(fixture);
+    setup_post_effect(fixture);setup_bloom(fixture);world_hdr_probes(fixture);
     const auto valid=fixture.plan();valid.validate();
     const auto& f=valid.frame;
     auto bad=[&](const char* name,const auto& edit){auto plan=valid;edit(plan);rejects(name,[&]{plan.validate();});};
@@ -1107,5 +1113,107 @@ void screen_reflection_contracts() {
           std::none_of(legacy.passes.begin(),legacy.passes.end(),[](const auto& work){return work.id==PassId::screen_reflections;}),
           "Default rendering acquired reflection resources or work");
 }
+
+void height_fog_contracts() {
+    for(unsigned path:{0u,1u,2u})for(bool spotlight:{false,true})for(bool probes:{false,true})
+    for(unsigned composition:{0u,1u,2u,3u}) {
+        auto settings=rich();settings.height_fog=true;settings.height_fog_spots=spotlight;
+        settings.deferred=path!=0;settings.screen_reflections=path==2;settings.products=probes;
+        settings.ambient_occlusion=path==2;settings.editor=composition==3;
+        if(!spotlight && composition==0)settings.clustered=false;
+        Fixture fixture(settings);
+        if(!spotlight && composition==0)fixture.f.lights=none;
+        if(composition==3)setup_foreground(fixture);
+        if(composition>=2)setup_post_effect(fixture);
+        if(composition==1 || composition==3) {setup_particle_sprites(fixture);setup_bloom(fixture);}
+        if(probes)world_hdr_probes(fixture);
+        auto plan=fixture.plan();plan.validate();++accepted;
+        const auto& f=plan.frame;
+        const auto hdr=path==2 ? f.reflected_hdr : f.hdr;
+        const auto producer=path==2 ? PassId::screen_reflections : path==1 ? PassId::deferred_lighting : PassId::opaque;
+        const auto position=[&](PassId id){return &pass(plan,id)-plan.passes.data();};
+        const auto& fog=pass(plan,PassId::height_fog);
+        check(std::string(pass_name(fog.id))=="render.pass.height_fog" &&
+              position(PassId::height_fog)==position(producer)+1 && surface_radiance(f,settings)==hdr &&
+              world_radiance(f,settings)==f.fogged_hdr,"Height fog did not follow the selected opaque surface producer");
+        check(fog.accesses.size()==(spotlight ? 6u : 4u) &&
+              access(plan,PassId::height_fog,hdr,Use::sampled) && access(plan,PassId::height_fog,f.depth,Use::sampled) &&
+              access(plan,PassId::height_fog,f.frame,Use::constant) && access(plan,PassId::height_fog,f.fogged_hdr,Use::image_write,true),
+              "Height fog inputs or full-image initialization differ");
+        check(access(plan,PassId::height_fog,f.lights,Use::storage_read)==spotlight &&
+              access(plan,PassId::height_fog,f.shadow,Use::sampled)==spotlight,"Height fog read inactive spotlight bindings");
+        if(fixture.settings.particle_sprites)check(position(PassId::particle_sprites)==position(PassId::height_fog)+1 &&
+                access(plan,PassId::particle_sprites,f.fogged_hdr,Use::color),"Sprites did not blend into fogged radiance");
+        if(fixture.settings.viewmodel)check(access(plan,PassId::viewmodel_composite,f.fogged_hdr,Use::sampled),
+                                             "Foreground bypassed fogged radiance");
+        if(fixture.settings.post_effect)check(access(plan,PassId::post_effect,composition==3 ? f.composite : f.fogged_hdr,Use::sampled),
+                                               "Post effect bypassed fog or foreground composition");
+        const auto display=fixture.settings.post_effect ? f.post_effect : f.fogged_hdr;
+        if(fixture.settings.bloom)check(access(plan,PassId::bloom_extract,display,Use::sampled),"Bloom bypassed fogged composition");
+        check(access(plan,PassId::output,display,Use::sampled) && access(plan,PassId::game_ui,f.output,Use::color) &&
+              !access(plan,PassId::game_ui,f.fogged_hdr,Use::sampled),"Display or UI used the wrong color composition source");
+        if(probes)check(f.probe_copies[4].source==f.hdr && f.probe_copies[5].source==f.fogged_hdr &&
+                        access(plan,PassId::product_probes,f.hdr,Use::copy_source) && access(plan,PassId::product_probes,f.fogged_hdr,Use::copy_source),
+                        "Height fog changed the raw probe or bypassed the resolved world probe");
+    }
+
+    auto settings=rich();settings.height_fog=settings.height_fog_spots=settings.products=true;
+    settings.screen_reflections=settings.deferred=true;
+    Fixture fixture(settings);setup_particle_sprites(fixture);setup_foreground(fixture);world_hdr_probes(fixture);
+    const auto valid=fixture.plan();valid.validate();
+    const auto& f=valid.frame;
+    auto bad=[&](const char* name,const auto& edit){auto plan=valid;edit(plan);rejects(name,[&]{plan.validate();});};
+    bad("height fog without a scene",[](auto& p){p.settings.scene=false;});
+    bad("height fog in diagnostic view",[](auto& p){p.settings.products_debug=true;});
+    bad("height fog with reconstruction",[](auto& p){p.settings.reconstruction=true;});
+    bad("height fog attachment retained while disabled",[](auto& p){p.settings.height_fog=p.settings.height_fog_spots=false;});
+    bad("height fog attachment absent",[](auto& p){p.frame.fogged_hdr=none;});
+    bad("height fog attachment physical identity aliases reflected HDR",[&](auto& p){p.frame.resources[f.fogged_hdr].identity=p.frame.resources[f.reflected_hdr].identity;});
+    for(auto alias:{f.hdr,f.depth,f.reflected_hdr,f.reflection_roughness,f.composite,f.output,f.shadow})
+        bad("height fog attachment aliases another resource role",[&](auto& p){p.frame.fogged_hdr=alias;});
+    bad("height fog attachment format differs",[&](auto& p){p.frame.resources[f.fogged_hdr].format=Format::rgba32_float;});
+    bad("height fog attachment has stale initialized contents",[&](auto& p){p.frame.resources[f.fogged_hdr].initialized=true;});
+    bad("height fog attachment is borrowed",[&](auto& p){p.frame.resources[f.fogged_hdr].lifetime=Lifetime::imported;});
+    bad("height fog attachment is layered",[&](auto& p){p.frame.resources[f.fogged_hdr].layers=2;});
+    bad("height fog attachment has wrong extent",[&](auto& p){++p.frame.resources[f.fogged_hdr].height;});
+    bad("height fog attachment is multisampled",[&](auto& p){p.frame.resources[f.fogged_hdr].samples=4;});
+    bad("height fog attachment is partial",[&](auto& p){p.frame.resources[f.fogged_hdr].region=Region::probe_pixels;});
+    for(auto use:{Use::sampled,Use::image_write})
+        bad("height fog unsupported attachment use",[&](auto& p){p.frame.resources[f.fogged_hdr].supported&=~use_bit(use);});
+    bad("height fog shadow format differs",[&](auto& p){p.frame.resources[f.shadow].format=Format::r32_float;});
+    bad("height fog lacks spotlight inputs",[](auto& p){p.frame.lights=none;});
+    bad("height fog reads inactive spotlight inputs",[](auto& p){p.settings.height_fog_spots=false;});
+    bad("height fog before reflections",[](auto& p){std::swap(pass(p,PassId::height_fog),pass(p,PassId::screen_reflections));});
+    bad("height fog after sprites",[](auto& p){std::swap(pass(p,PassId::height_fog),pass(p,PassId::particle_sprites));});
+    bad("height fog stage omitted",[](auto& p){std::erase_if(p.passes,[](const auto& work){return work.id==PassId::height_fog;});});
+    for(auto input:{f.reflected_hdr,f.depth,f.shadow})
+        bad("height fog shader input absent",[&](auto& p){erase_access(p,PassId::height_fog,input,Use::sampled);});
+    bad("height fog frame constants absent",[&](auto& p){erase_access(p,PassId::height_fog,f.frame,Use::constant);});
+    bad("height fog light storage read absent",[&](auto& p){erase_access(p,PassId::height_fog,f.lights,Use::storage_read);});
+    bad("height fog samples opaque data instead of reflected",[&](auto& p){pass(p,PassId::height_fog).accesses.front().resource=f.hdr;});
+    bad("height fog fails to initialize its attachment",[](auto& p){pass(p,PassId::height_fog).accesses.back().initialize=false;});
+    bad("sprites overwrite unfogged reflected HDR",[&](auto& p){pass(p,PassId::particle_sprites).accesses.front().resource=f.reflected_hdr;});
+    bad("scene color bypasses fogged radiance",[&](auto& p){pass(p,PassId::viewmodel_composite).accesses.front().resource=f.reflected_hdr;});
+    bad("resolved HDR probe bypasses height fog",[&](auto& p){p.frame.probe_copies[5].source=f.reflected_hdr;});
+    bad("raw HDR probe includes height fog",[&](auto& p){p.frame.probe_copies[4].source=f.fogged_hdr;});
+    bad("output samples the unused reflected attachment",[&](auto& p){pass(p,PassId::output).accesses.push_back({f.reflected_hdr,Use::sampled});});
+    bad("game UI samples pre-composite fogged HDR",[&](auto& p){pass(p,PassId::game_ui).accesses.push_back({f.fogged_hdr,Use::sampled});});
+
+    auto forward=rich();forward.height_fog=true;
+    rejects("height fog with world MSAA",[&]{Fixture(forward,4).plan().validate();});
+    Fixture bounded(forward);
+    for(auto id:{bounded.f.hdr,bounded.f.depth,bounded.f.fogged_hdr}) {
+        bounded.f.resources[id].width=4096;bounded.f.resources[id].height=3072;
+    }
+    bounded.plan().validate();++accepted;
+    for(auto id:{bounded.f.hdr,bounded.f.depth,bounded.f.fogged_hdr})++bounded.f.resources[id].height;
+    rejects("height fog exceeds 96 MiB at next row",[&]{bounded.plan().validate();});
+    auto legacy=Fixture(rich(),4).plan();legacy.validate();
+    check(legacy.frame.fogged_hdr==none && world_radiance(legacy.frame,legacy.settings)==legacy.frame.hdr &&
+          std::none_of(legacy.passes.begin(),legacy.passes.end(),[](const auto& work){return work.id==PassId::height_fog;}),
+          "Default rendering acquired height fog resources or work");
+    legacy.settings.height_fog_spots=true;
+    rejects("height fog spotlights without height fog",[&]{legacy.validate();});
 }
-int main(){try{matrix();faults();products();motion_contracts();reconstruction_contracts();deferred_contracts();deferred_color_contracts();viewmodel_contracts();ambient_occlusion_contracts();masked_shadow_contracts();environment_contracts();bloom_contracts();post_effect_contracts();output_grade_contracts();streamed_geometry_contracts();mutable_geometry_contracts();particle_sprite_contracts();surface_mark_contracts();screen_reflection_contracts();std::cout<<"Production render schedule: "<<accepted<<" valid variants, "<<rejected<<" rejected contract mutations.\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}
+}
+int main(){try{matrix();faults();products();motion_contracts();reconstruction_contracts();deferred_contracts();deferred_color_contracts();viewmodel_contracts();ambient_occlusion_contracts();masked_shadow_contracts();environment_contracts();bloom_contracts();post_effect_contracts();output_grade_contracts();streamed_geometry_contracts();mutable_geometry_contracts();particle_sprite_contracts();surface_mark_contracts();screen_reflection_contracts();height_fog_contracts();std::cout<<"Production render schedule: "<<accepted<<" valid variants, "<<rejected<<" rejected contract mutations.\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}

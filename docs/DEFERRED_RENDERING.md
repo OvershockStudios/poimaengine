@@ -40,7 +40,9 @@ The reflection pass reads both and writes a separate HDR image. Sprites and
 separately composited viewmodels draw afterward, followed by post-processing
 and UI. The two added images use 10 logical bytes per pixel, capped at
 128 MiB. Capture probes report the opaque input as `raw_hdr` and the
-reflected world image as `resolved_hdr`.
+reflected world image as `resolved_hdr`. If [height fog](HEIGHT_FOG.md)
+is also active, the resolved probe includes its composition over the
+reflected color.
 
 `world.lighting`, `runtime.lighting` and capture lighting report the authored
 selection. When selected, `render_diagnostics.screen_reflections` reports

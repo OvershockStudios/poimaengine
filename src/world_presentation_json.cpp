@@ -151,6 +151,11 @@ Json render_diagnostics(const RenderDiagnostics& d) {
         result["screen_reflections"]={{"active",reflections.active},{"reason",reflections.reason},
             {"buffer_bytes",reflections.buffer_bytes},{"gpu",timing(d.screen_reflections_gpu)}};
     }
+    if(d.height_fog) {
+        const auto& fog=*d.height_fog;
+        result["height_fog"]={{"active",fog.active},{"reason",fog.reason},{"buffer_bytes",fog.buffer_bytes},
+            {"spot_lights",fog.spot_lights},{"gpu",timing(d.height_fog_gpu)}};
+    }
     if(d.viewmodel) {
         const auto& v=*d.viewmodel;
         result["viewmodel"]={{"rendered",v.rendered},{"samples",v.samples},{"output_width",v.output_width},{"output_height",v.output_height},
@@ -186,6 +191,19 @@ Json lighting_json(const SceneLighting& lighting) {
         const auto& reflections=*lighting.environment.screen_reflections;
         result["screen_reflections"]={{"strength",reflections.strength},
             {"max_distance_m",reflections.max_distance_m},{"thickness_m",reflections.thickness_m}};
+    }
+    if(lighting.environment.height_fog) {
+        const auto& fog=*lighting.environment.height_fog;
+        Json settings={{"density_per_m",fog.density_per_m},{"base_height_m",fog.base_height_m},
+            {"height_falloff_per_m",fog.height_falloff_per_m},{"start_distance_m",fog.start_distance_m},
+            {"max_distance_m",fog.max_distance_m},{"ambient_radiance",fog.ambient_radiance},{"anisotropy",fog.anisotropy}};
+        if(!fog.spot_lights.empty()) {
+            auto spots=Json::array();
+            for(const auto& spot:fog.spot_lights)
+                spots.push_back({{"entity",spot.entity},{"scattering",spot.scattering}});
+            settings["spot_lights"]=std::move(spots);
+        }
+        result["height_fog"]=std::move(settings);
     }
     if(!lighting.environment.post_effect_asset.empty())result["post_effect"]=lighting.environment.post_effect_asset;
     return result;

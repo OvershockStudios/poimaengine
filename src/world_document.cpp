@@ -92,7 +92,7 @@ static SkySettings sky_value(const Json& value) {
     return result;
 }
 LightingEnvironment environment_value(const Json& value) {
-    fields(value,{"ambient","exposure","shadow_resolution","shadow_filter","sky","ibl","bloom","post_effect","output_grade","screen_reflections"},{"ambient","exposure"});require(value.at("ambient").is_array() && value.at("ambient").size()==3,"Ambient fill needs three values.");
+    fields(value,{"ambient","exposure","shadow_resolution","shadow_filter","sky","ibl","bloom","post_effect","output_grade","screen_reflections","height_fog"},{"ambient","exposure"});require(value.at("ambient").is_array() && value.at("ambient").size()==3,"Ambient fill needs three values.");
     for(const auto& x:value.at("ambient"))require(x.is_number() && std::isfinite(x.get<double>()) && x>=0 && x<=1e6,"Ambient fill must be in [0,1e6].");
     require(value.at("exposure").is_number() && std::isfinite(value.at("exposure").get<double>()) && value.at("exposure")>=0 && value.at("exposure")<=1e6,"Exposure must be in [0,1e6].");
     if(value.contains("shadow_resolution"))require(value.at("shadow_resolution").is_number_integer() && (value.at("shadow_resolution")==256 || value.at("shadow_resolution")==512 || value.at("shadow_resolution")==1024 || value.at("shadow_resolution")==2048),"Shadow resolution must be 256, 512, 1024 or 2048.");
@@ -166,6 +166,38 @@ LightingEnvironment environment_value(const Json& value) {
         };
         result.screen_reflections=ScreenReflections{
             read_number("strength",0,1),read_number("max_distance_m",.25,32),read_number("thickness_m",.01,.5)};
+    }
+    if(value.contains("height_fog")) {
+        const auto& authored=value.at("height_fog");
+        fields(authored,{"density_per_m","base_height_m","height_falloff_per_m","start_distance_m","max_distance_m",
+            "ambient_radiance","anisotropy","spot_lights"},{"density_per_m","base_height_m","height_falloff_per_m",
+            "start_distance_m","max_distance_m","ambient_radiance","anisotropy"});
+        const auto read_number=[](const Json& field,double minimum,double maximum,const char* name) {
+            require(field.is_number() && std::isfinite(field.get<double>()) && field>=minimum && field<=maximum,
+                std::string("Height fog ")+name+" is outside its finite range.");
+            return field.get<float>();
+        };
+        HeightFog fog;
+        fog.density_per_m=read_number(authored.at("density_per_m"),0,.75,"density_per_m");
+        fog.base_height_m=read_number(authored.at("base_height_m"),-8192,8192,"base_height_m");
+        fog.height_falloff_per_m=read_number(authored.at("height_falloff_per_m"),0,4,"height_falloff_per_m");
+        fog.start_distance_m=read_number(authored.at("start_distance_m"),0,300,"start_distance_m");
+        fog.max_distance_m=read_number(authored.at("max_distance_m"),.1,512,"max_distance_m");
+        fog.anisotropy=read_number(authored.at("anisotropy"),-.8,.8,"anisotropy");
+        const auto& rgb=authored.at("ambient_radiance");
+        require(rgb.is_array() && rgb.size()==3,"Height fog ambient_radiance needs three RGB values.");
+        for(std::size_t channel=0;channel<fog.ambient_radiance.size();++channel)
+            fog.ambient_radiance[channel]=read_number(rgb.at(channel),0,32,"ambient_radiance");
+        if(authored.contains("spot_lights")) {
+            const auto& spots=authored.at("spot_lights");
+            require(spots.is_array() && spots.size()<=2,"Height fog accepts at most two spot lights.");
+            for(const auto& spot:spots) {
+                fields(spot,{"entity","scattering"},{"entity","scattering"});
+                fog.spot_lights.push_back({identifier(spot.at("entity")),
+                    read_number(spot.at("scattering"),0,1,"spot light scattering")});
+            }
+        }
+        result.height_fog=std::move(fog);
     }
     if(value.contains("post_effect")) {
         const auto& digest=value.at("post_effect");
@@ -852,8 +884,13 @@ static void validate_template_graph(const Json& document,const Json& recipe,
         if(bag.contains("PhysicalRig") && bag.at("PhysicalRig").contains("controller_handoff"))
             local_reference(bag.at("PhysicalRig").at("controller_handoff").at("actor"),"CharacterController");
         if(bag.contains("SkinnedMesh"))local_reference(bag.at("SkinnedMesh").at("rig"),"AnimationRig");
-        if(bag.contains("LightingEnvironment") && bag.at("LightingEnvironment").contains("sky"))
-            local_reference(bag.at("LightingEnvironment").at("sky").at("sun"),"Light");
+        if(bag.contains("LightingEnvironment")) {
+            const auto& environment=bag.at("LightingEnvironment");
+            if(environment.contains("sky"))local_reference(environment.at("sky").at("sun"),"Light");
+            if(environment.contains("height_fog") && environment.at("height_fog").contains("spot_lights"))
+                for(const auto& spot:environment.at("height_fog").at("spot_lights"))
+                    local_reference(spot.at("entity"),"Light");
+        }
         for(const auto& [type,value]:bag.items())if(custom_component(type)) {
             const auto& schema=authored_schema(schemas,custom_type(type));
             const auto payload=component_checked([&]{return components::parse_values(schema,value.dump());});
@@ -1028,6 +1065,12 @@ void validate(const Json& doc) {
                 require(entities.contains(environment.sky.sun),"Sky sun entity does not exist.");
                 const auto& sun=entities.at(environment.sky.sun).at("components");
                 require(sun.contains("Light") && sun.at("Light").at("kind")=="directional","Sky sun must reference a directional Light.");
+            }
+            if(environment.height_fog)for(const auto& spot:environment.height_fog->spot_lights) {
+                require(entities.contains(spot.entity),"Height fog spot light entity does not exist.");
+                const auto& emitter=entities.at(spot.entity).at("components");
+                require(emitter.contains("Light") && emitter.at("Light").at("kind")=="spot",
+                    "Height fog spot light must reference an authored spot Light.");
             }
         }
     }

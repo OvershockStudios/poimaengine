@@ -126,7 +126,10 @@ std::vector<RuntimeEntityDefinition> runtime_template_entities(const RuntimeSpaw
         // is validated against that exact model and direct-parent graph.
         if(entity.skinned_mesh)remap(entity.skinned_mesh->rig);
         if(entity.hit_region)remap(entity.hit_region->owner);
-        if(entity.environment)remap(entity.environment->sky.sun);
+        if(entity.environment) {
+            remap(entity.environment->sky.sun);
+            if(auto& fog=entity.environment->height_fog)for(auto& spot:fog->spot_lights)remap(spot.entity);
+        }
         remap_payloads(entity,nodes,schemas);result.push_back(std::move(entity));
     }
     return result;
@@ -206,6 +209,9 @@ void validate_runtime_templates(const RuntimeDefinition& definition) {
                 validate_environment(*entity.environment);
                 const auto& sun=entity.environment->sky.sun;
                 check(sun.empty() || (graph.contains(sun) && graph.at(sun)->light && graph.at(sun)->light->kind==LightKind::directional),"Template sky sun must target a local directional light.");
+                if(const auto& fog=entity.environment->height_fog)for(const auto& spot:fog->spot_lights)
+                    check(graph.contains(spot.entity) && graph.at(spot.entity)->light && graph.at(spot.entity)->light->kind==LightKind::spot,
+                        "Template height fog must target local spot lights.");
             }
             if(entity.acoustics)validate_acoustic_material(*entity.acoustics);
             if(entity.emitter) {

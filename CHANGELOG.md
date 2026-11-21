@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.377
+
+- Author height fog with distance limits, scene-linear haze color and scattering from up to two shadowed spotlights. Capture diagnostics report the selected path and sparse HDR probes expose the composed world color.
+
 ## 0.0.376
 
 - Let rigid foliage bend in a travelling wind wave and move away from a nearby character. Capture, shadows and motion vectors use the same foliage pose, and the world service reports the live tip offset.
