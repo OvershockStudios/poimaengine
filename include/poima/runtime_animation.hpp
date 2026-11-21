@@ -284,6 +284,7 @@ public:
     std::optional<RuntimeIkState> ik_state(const std::string& entity,std::uint32_t slot) const;
     // Borrow completed acquisition decisions until the next animation mutation.
     std::size_t foot_plant_acquisitions(std::uint64_t tick,std::span<const RuntimeGroundingState*> output) const;
+    bool has_held_foot(const std::function<bool(const RuntimeFootPlantAnchor&)>& affected) const;
     struct IkChainPreview {
         std::array<std::string,3> entities;
         std::array<std::array<double,3>,3> candidate;

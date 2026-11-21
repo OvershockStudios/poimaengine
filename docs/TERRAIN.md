@@ -47,8 +47,8 @@ tiles, 250,000 triangles and 32 MiB of encoded models. The generated meshes also
 pass the static collider geometry admission checks. Export includes referenced
 tiles through the ordinary model dependency closure, so the shipped game can
 load the surface without the source recipe. Save the recipe in the source
-project for further editing. Streaming, deformation and automatic terrain LOD
-are separate work.
+project for further editing. The [snow binding](#compact-snow-on-cooked-tiles)
+adds bounded deformation to a pair of cooked tiles.
 
 Use the reviewed recipe for [grounded foliage placement](FOLIAGE_SCATTER.md)
 and the bound collider geometry for [navigation baking](NAVIGATION.md).
@@ -75,6 +75,94 @@ python3 tests/world_terrain_contract.py "$runtime/bin/poima.exe" \
   --windows-interop --runtime-root "$runtime" --gpu 0 \
   --capture-output build/terrain-captures
 ```
+
+## Compact snow on cooked tiles
+
+Cook one heightfield with `samples_x: 65`, `samples_z: 33`, `tile_cells: 32`
+and `spacing_m: [0.03125, 0.03125]`. Bind the resulting west and east tiles
+as visible, opaque `StaticMesh` and matching `MeshCollider` components with
+identity root transforms. Keep the grid within ±512 m, including the
+substrate under the authored snow. Add this operation to `world.transact`:
+
+```json
+{
+  "op": "snow.set",
+  "definition": {
+    "tiles": ["00000000000000000000000000000010", "00000000000000000000000000000011"],
+    "thickness_units": 256
+  }
+}
+```
+
+Each unit is 1/4096 m. The example permits up to 6.25 cm of compaction.
+The supported thickness is 1–512 units. Use `definition: null` to remove
+the binding. A snow world currently uses terrain configured without a
+baked water or navigation region. The selected tiles use the snow geometry
+path, so reserve material footprint stamps and acoustic meshes for other
+receivers.
+
+The `snow` section of `world.describe` reports the lattice dimensions,
+physical units, and supported mutation. Select `runtime.snow.step` to
+discover its full request schema.
+
+Start the runtime and query `runtime.snow.inspect` at the committed tick and
+structure revision. Read `generation` and use `runtime.raycast` to get the
+tile ID and triangle under the intended stamp. Send `runtime.snow.step` with
+the usual step guards and a required `snow_stamp` parameter. It accepts the
+other step inputs in the same batch. This example uses a radius of 15.625 cm and
+a maximum depth of 3.125 cm at the center:
+
+```json
+{
+  "expected_generation": 0,
+  "receiver": "00000000000000000000000000000010",
+  "triangle": 1054,
+  "ray": {"origin": [0.48, 2, 0.51], "direction": [0, -1, 0], "distance": 3},
+  "radius_units": 640,
+  "depth_units": 128
+}
+```
+
+Use the triangle from your actual raycast. The ray must first hit the
+expected upward-facing triangle. The engine rounds X and Z to the closest
+compaction unit, applies a radial falloff proportional to `1 − distance² / radius²`,
+and clamps each sample at the substrate. Radius accepts 128–1536 units and
+depth accepts 1–512 units. One stamp applies before physics and gameplay on
+the first tick of the requested batch. A stamp that changes a held foot's
+triangle or its immediately connected samples is refused. Script the stamp
+after the foot lifts. A stamp that changes no samples only advances the tick.
+
+Read up to 64 lattice coordinates with `samples: [[31, 16], [32, 16], [33, 16]]`
+in `runtime.snow.inspect`. It reports base height, compacted height, and lost
+volume. Each sample contributes its compaction times the number of touching
+triangles, including the triangles on both sides of the seam. Multiply
+`lost_volume_units` by the cell area and by 1/4096 m, then divide by six to
+get cubic metres. The save stores the generation and nonzero sample depths.
+The runtime reconstructs the exact derived mesh from the saved depths and
+the immutable cooked tiles when opening a save. A failed step restores the
+previous meshes, collision shapes and compaction together.
+
+Vulkan uses the current tile vertices for both the visible surface and its
+shadows. With reconstruction active, a visible tile uses motion from
+corresponding vertices when the preceding accepted frame also drew it.
+A tile that reappears establishes new correspondence. Inspect
+`render_diagnostics.last_draws` for streamed geometry counts and byte totals.
+
+Run the [snow contract](../tests/snow_compaction_contract.py) for guarded
+edits, collision, rollback, and fresh save continuation:
+
+```sh
+python3 tests/snow_compaction_contract.py build/linux-game/poima \
+  --headless --output build/snow-contract
+```
+
+For Windows Vulkan, supply the installed executable and add `--runtime-root`,
+`--gpu`, and `--lighting-path`. Use `--windows-interop` when running from WSL.
+The [shadow contract](../tests/snow_shadow_contract.py) compares light rays
+and HDR samples before and after compaction, with shadow casting separately
+enabled and disabled. The native `poima-reconstruction-quality-test` accepts
+`OUTPUT_PREFIX GPU --mutable-snow-motion forward fsr3_native`. It also accepts
+`deferred` and `fsr3_quality`.
 
 ## Generate and sample geometry from C++
 

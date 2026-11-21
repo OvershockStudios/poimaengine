@@ -1077,6 +1077,17 @@ std::size_t RuntimeAnimations::foot_plant_acquisitions(std::uint64_t tick,
     }
     return count;
 }
+bool RuntimeAnimations::has_held_foot(const std::function<bool(const RuntimeFootPlantAnchor&)>& affected) const {
+    for(const auto& [entity,index]:membership_->indices) {
+        if(procedural_suspended(entity))continue;
+        for(const auto& state:ik_states_[index]) {
+            if(!state.grounding || !state.grounding->planting)continue;
+            const auto& plant=*state.grounding->planting;
+            if(plant.status=="locked" && plant.anchor && affected(*plant.anchor))return true;
+        }
+    }
+    return false;
+}
 std::pair<std::size_t,std::size_t> RuntimeAnimations::manual_ik_slot(const std::string& entity,std::uint32_t slot) const {
     const auto found=membership_->indices.find(entity);
     check(found!=membership_->indices.end(),"IK clearance requires a live animation rig.");

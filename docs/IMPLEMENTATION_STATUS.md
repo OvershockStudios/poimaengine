@@ -1,8 +1,20 @@
 # Implementation status
 
-Updated 2026-11-21 for **0.0.366**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-21 for **0.0.367**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.367 supports [physical snow compaction](TERRAIN.md#compact-snow-on-cooked-tiles)
+across two neighboring cooked terrain tiles. Guarded stamps update the render
+mesh and Jolt collision together, preserve held foot contacts, and restore
+the same depression from a save. Twenty captures from relocated Windows
+games verify depth and normals. Sixteen separate captures confirm that
+compaction changes real shadows across the seam. Forward and deferred Vulkan
+passed on AMD and NVIDIA, with 56 additional FSR Native AA and Quality frames
+checking motion from the last accepted geometry and zero added device-idle
+waits. In an isolated Windows CPU probe, geometry and collision rebuilds
+measured p95 of 0.84 ms for one tile and 2.07 ms for two tiles.
+[Results](evidence/m2-snow-compaction-367.json)
 
 Version 0.0.366 adds [shading relief](SURFACE_MARKS.md#give-a-print-shading-relief)
 to footprints and explicit surface marks. Grazing lights reveal the relief

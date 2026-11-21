@@ -1,0 +1,1571 @@
+{
+  "format": "poima.evidence.snow-compaction.v1",
+  "version": "0.0.367",
+  "discovery_schema_revision": 188,
+  "base_commit": "6fdddab3a9f1cf85986770e649305b138cddc196",
+  "scope": "Two neighboring opaque 32-cell cooked tiles, guarded fixed-tick compaction, live collision, save continuation and bounded Vulkan observation.",
+  "limits": [
+    "The contract covers a fixed two-tile region and explicitly scripted stamps.",
+    "GPU observations come from small deterministic fixtures at the recorded extents."
+  ],
+  "binaries": {
+    "linux": "22b9e7fa29e1ff1756fb6024922dabc9d1c2037605bc2031a1876031dda44852",
+    "windows": "a66fc3d5ded7d6e2e92771c813388d6ee55a5daa533088191fc02c99a91917e4",
+    "continuous_vulkan_qualifier": "bd29e07ee0d147005b9ded6c5b70bc90816c8c3f2f32c21f37df325bddd01772"
+  },
+  "linux": {
+    "receipt_sha256": "4a5b1eaa773b70dc14ca3884ebf18af6d641469fd4549f9308345e23f6c56a99",
+    "earlier_failed_report_sha256": [
+      "8d1ca00384aef304e56a5901ff8321913335583fd14778b5de1ab27a7d887ca8",
+      "b5dea590b2a82091fd34704e8b47bdcf8c897412409002794d55eeffd6db6413"
+    ],
+    "authoring_guard_refusals": [
+      {
+        "code": -32602,
+        "message": "Snow tiles need an exact shared 1/32 metre lattice within +/-512 metres, including the substrate."
+      },
+      {
+        "code": -32602,
+        "message": "Snow tiles need identity world transforms and static, unskinned geometry."
+      },
+      {
+        "code": -32602,
+        "message": "Snow tiles need the same visible cooked primitive for rendering and triangle collision."
+      }
+    ],
+    "runtime_guard_refusals": {
+      "stale_tick": {
+        "code": -32009,
+        "message": "Runtime tick conflict."
+      },
+      "stale_structure": {
+        "code": -32009,
+        "message": "Runtime structure revision conflict."
+      },
+      "too_many_samples": {
+        "code": -32602,
+        "message": "Snow inspection permits up to 64 sample pairs."
+      },
+      "ordinary_step_with_stamp": {
+        "code": -32602,
+        "message": "Use runtime.snow.step with a snow_stamp to compact snow."
+      },
+      "snow_step_without_stamp": {
+        "code": -32602,
+        "message": "Use runtime.snow.step with a snow_stamp to compact snow."
+      },
+      "stale_generation": {
+        "code": -32040,
+        "message": "Stale snow generation."
+      },
+      "wrong_receiver": {
+        "code": -32040,
+        "message": "Snow stamp ray must first hit the expected upward-facing receiver triangle."
+      },
+      "wrong_triangle": {
+        "code": -32040,
+        "message": "Snow stamp ray must first hit the expected upward-facing receiver triangle."
+      },
+      "out_of_range_radius": {
+        "code": -32602,
+        "message": "Snow stamp radius must be within 128..1536 units."
+      },
+      "malformed_depth": {
+        "code": -32602,
+        "message": "Revision must be a safe nonnegative JSON integer."
+      },
+      "mark_after_staging": {
+        "code": -32040,
+        "message": "Surface mark ray must first hit the expected receiver with a surface normal."
+      }
+    },
+    "phases": {
+      "pristine": {
+        "tick": 0,
+        "generation": 0,
+        "compacted_samples": 0,
+        "lost_volume_units": 0,
+        "lost_volume_m3": 0.0
+      },
+      "first_stamp": {
+        "tick": 1,
+        "generation": 1,
+        "compacted_samples": 136,
+        "lost_volume_units": 38382,
+        "lost_volume_m3": 0.0015251636505126953
+      },
+      "after_refusals": {
+        "tick": 1,
+        "generation": 1,
+        "compacted_samples": 136,
+        "lost_volume_units": 38382,
+        "lost_volume_m3": 0.0015251636505126953
+      },
+      "saturation": {
+        "tick": 2,
+        "generation": 2,
+        "compacted_samples": 136,
+        "lost_volume_units": 69060,
+        "lost_volume_m3": 0.0027441978454589844
+      },
+      "saturated_noop": {
+        "tick": 3,
+        "generation": 2,
+        "compacted_samples": 136,
+        "lost_volume_units": 69060,
+        "lost_volume_m3": 0.0027441978454589844
+      },
+      "restored": {
+        "tick": 1,
+        "generation": 1,
+        "compacted_samples": 136,
+        "lost_volume_units": 38382,
+        "lost_volume_m3": 0.0015251636505126953
+      },
+      "cold_saturated": {
+        "tick": 3,
+        "generation": 2,
+        "compacted_samples": 136,
+        "lost_volume_units": 69060,
+        "lost_volume_m3": 0.0027441978454589844
+      }
+    },
+    "checkpoint": {
+      "tick": 1,
+      "bytes": 7834,
+      "sha256": "713ae039c1b8731c1520fd980035663633f89d4ee7221b1d8d7d02df935f53a7"
+    },
+    "final": {
+      "tick": 3,
+      "bytes": 7912,
+      "sha256": "fb90f0039cb54247fd07cd7465350e219f17c9fb750f87a2330bb93231c30d85"
+    },
+    "max_raycast_height_error_m": 1.316070556631188e-07,
+    "far_normal_quantization_delta": 3.5762786865234375e-07,
+    "contact": {
+      "cooked_model_sha256": "c816d0e811cf4f104b3106b4f67076a49672f461450089ac6316aa5c82175ac7",
+      "original_model_sha256": "60428e3abc09ba83e595d256e3af8c5c976b46cdae599f0802fc82b4a3445168",
+      "license_sha256": "ae322141814056dda0deea7540d74c41d87aee1da319977cd1bd84ee5a923629",
+      "held_stamp_refusal": {
+        "code": -32040,
+        "message": "Snow compaction would alter a held foot anchor. Release it before stamping."
+      },
+      "unaffected_plant_survives_stamp": true,
+      "post_release_generation": 2
+    },
+    "settled_prop": {
+      "drop_m": 0.01978527929971284,
+      "downward_speed_after_stamp_m_s": -0.1633637547492981
+    },
+    "compatible_365": {
+      "passed": true,
+      "executable_sha256": "22b9e7fa29e1ff1756fb6024922dabc9d1c2037605bc2031a1876031dda44852",
+      "source_receipt_sha256": "5e4a689facc2dad698589a485e5155e63b5016890251dd02ab5c05c6c4efbf0f",
+      "checkpoint_sha256": "8fe099811fbc5e7c586f09b3f3e344e4a58b3f1b4838f767ead45324122233fc",
+      "final_sha256": "09546bda1af6b6f74cfe2eecf7e886e7fc89040d929b37d41883a98153fd5cae"
+    },
+    "retained_timed_marks": {
+      "backend": "native_aot",
+      "receipt_sha256": "6ae6f1263ce173967ded60e8e6ac36e2bf8a9c8e9ff3cb63a5837287c6cad1fb",
+      "earlier_failed_report_sha256": [
+        "2d39ff29cce3432665c097c0c5adb4ba4124a8a70134cdd0700542e473131c99"
+      ]
+    },
+    "invalid_saved_extensions": {
+      "passed": true,
+      "refusals": [
+        {
+          "case": "old-tag",
+          "checksum": "14dc328e9ab2a6288198098839b2acea227735b9b1fe40b3b6e95693fdf41291",
+          "verified_storage": true,
+          "diagnostic": {
+            "code": -32070,
+            "message": "Unsupported snow snapshot version."
+          }
+        },
+        {
+          "case": "duplicate-index",
+          "checksum": "915eb11f178c39eaa1ec976702ad16feeff3639a606c7d0e40add0cd2aa19071",
+          "verified_storage": true,
+          "diagnostic": {
+            "code": -32070,
+            "message": "Snow snapshot sample indices must be in range and strictly increasing."
+          }
+        },
+        {
+          "case": "over-depth",
+          "checksum": "f7004092154a14780f23c56c78d5a0c17d07111541e7b7537c8483f97c596a9e",
+          "verified_storage": true,
+          "diagnostic": {
+            "code": -32070,
+            "message": "Snow snapshot samples must have positive compaction within the frozen thickness."
+          }
+        },
+        {
+          "case": "too-new",
+          "checksum": "76672d77bcfe82e13403f58d96067626cdfa1da56ad9273b253d1422cd6c8fb1",
+          "verified_storage": true,
+          "diagnostic": {
+            "code": -32070,
+            "message": "Saved snow generation exceeds its committed tick."
+          }
+        }
+      ],
+      "active_archive_byte_identical": true,
+      "executable_sha256": "22b9e7fa29e1ff1756fb6024922dabc9d1c2037605bc2031a1876031dda44852",
+      "source_receipt_sha256": "4a5b1eaa773b70dc14ca3884ebf18af6d641469fd4549f9308345e23f6c56a99"
+    },
+    "ctest": {
+      "suites": 17,
+      "failures": 0,
+      "report_sha256": "99c321ae2239dd9479590b57e33bcd2684e9c81042a787be39c829d4174f6274"
+    }
+  },
+  "relocated_vulkan": [
+    {
+      "receipt_sha256": "01dbbecbee19bd8b7a9de37a558d93aaf93aff23d4836fe66051ad6d37190ff2",
+      "earlier_failed_report_sha256": [],
+      "authoring_guard_refusals": [
+        {
+          "code": -32602,
+          "message": "Snow tiles need an exact shared 1/32 metre lattice within +/-512 metres, including the substrate."
+        },
+        {
+          "code": -32602,
+          "message": "Snow tiles need identity world transforms and static, unskinned geometry."
+        },
+        {
+          "code": -32602,
+          "message": "Snow tiles need the same visible cooked primitive for rendering and triangle collision."
+        }
+      ],
+      "runtime_guard_refusals": {
+        "stale_tick": {
+          "code": -32009,
+          "message": "Runtime tick conflict."
+        },
+        "stale_structure": {
+          "code": -32009,
+          "message": "Runtime structure revision conflict."
+        },
+        "too_many_samples": {
+          "code": -32602,
+          "message": "Snow inspection permits up to 64 sample pairs."
+        },
+        "ordinary_step_with_stamp": {
+          "code": -32602,
+          "message": "Use runtime.snow.step with a snow_stamp to compact snow."
+        },
+        "snow_step_without_stamp": {
+          "code": -32602,
+          "message": "Use runtime.snow.step with a snow_stamp to compact snow."
+        },
+        "stale_generation": {
+          "code": -32040,
+          "message": "Stale snow generation."
+        },
+        "wrong_receiver": {
+          "code": -32040,
+          "message": "Snow stamp ray must first hit the expected upward-facing receiver triangle."
+        },
+        "wrong_triangle": {
+          "code": -32040,
+          "message": "Snow stamp ray must first hit the expected upward-facing receiver triangle."
+        },
+        "out_of_range_radius": {
+          "code": -32602,
+          "message": "Snow stamp radius must be within 128..1536 units."
+        },
+        "malformed_depth": {
+          "code": -32602,
+          "message": "Revision must be a safe nonnegative JSON integer."
+        },
+        "mark_after_staging": {
+          "code": -32040,
+          "message": "Surface mark ray must first hit the expected receiver with a surface normal."
+        }
+      },
+      "phases": {
+        "pristine": {
+          "tick": 0,
+          "generation": 0,
+          "compacted_samples": 0,
+          "lost_volume_units": 0,
+          "lost_volume_m3": 0.0
+        },
+        "first_stamp": {
+          "tick": 1,
+          "generation": 1,
+          "compacted_samples": 136,
+          "lost_volume_units": 38382,
+          "lost_volume_m3": 0.0015251636505126953
+        },
+        "after_refusals": {
+          "tick": 1,
+          "generation": 1,
+          "compacted_samples": 136,
+          "lost_volume_units": 38382,
+          "lost_volume_m3": 0.0015251636505126953
+        },
+        "saturation": {
+          "tick": 2,
+          "generation": 2,
+          "compacted_samples": 136,
+          "lost_volume_units": 69060,
+          "lost_volume_m3": 0.0027441978454589844
+        },
+        "saturated_noop": {
+          "tick": 3,
+          "generation": 2,
+          "compacted_samples": 136,
+          "lost_volume_units": 69060,
+          "lost_volume_m3": 0.0027441978454589844
+        },
+        "restored": {
+          "tick": 1,
+          "generation": 1,
+          "compacted_samples": 136,
+          "lost_volume_units": 38382,
+          "lost_volume_m3": 0.0015251636505126953
+        },
+        "cold_saturated": {
+          "tick": 3,
+          "generation": 2,
+          "compacted_samples": 136,
+          "lost_volume_units": 69060,
+          "lost_volume_m3": 0.0027441978454589844
+        }
+      },
+      "checkpoint": {
+        "tick": 1,
+        "bytes": 7834,
+        "sha256": "e61d15a089cd35d34f1af3405549d8a2199d538091ff0f6d079717f8d27513e2"
+      },
+      "final": {
+        "tick": 3,
+        "bytes": 7912,
+        "sha256": "e90326dd3bae5d9cfcf482f1d94e46b5a41b9192af9b66d046e140594bf67c06"
+      },
+      "max_raycast_height_error_m": 1.316070556631188e-07,
+      "far_normal_quantization_delta": 3.5762786865234375e-07,
+      "contact": {
+        "cooked_model_sha256": "c816d0e811cf4f104b3106b4f67076a49672f461450089ac6316aa5c82175ac7",
+        "original_model_sha256": "60428e3abc09ba83e595d256e3af8c5c976b46cdae599f0802fc82b4a3445168",
+        "license_sha256": "ae322141814056dda0deea7540d74c41d87aee1da319977cd1bd84ee5a923629",
+        "held_stamp_refusal": {
+          "code": -32040,
+          "message": "Snow compaction would alter a held foot anchor. Release it before stamping."
+        },
+        "unaffected_plant_survives_stamp": true,
+        "post_release_generation": 2
+      },
+      "gpu": "AMD Radeon(TM) Graphics",
+      "lighting_path": "forward",
+      "captures": {
+        "pristine": {
+          "sha256": "cabbc7a7c867e07284ea127d16a470033b0ed66bd55ab9b27913403d18d68c51",
+          "probes": 5,
+          "max_device_depth_error": 9.905671982668451e-08,
+          "max_normal_component_error": 9.178866864978374e-05,
+          "shadow_draws": 8,
+          "streamed_draws": 2
+        },
+        "warm-checkpoint": {
+          "sha256": "4abec1a61a77bb376ed3ef5198910ea8f0d156396ab87deb48a65188a1d6b824",
+          "probes": 5,
+          "max_device_depth_error": 5.678502557060483e-08,
+          "max_normal_component_error": 0.000417216663018527,
+          "shadow_draws": 8,
+          "streamed_draws": 2
+        },
+        "warm-final": {
+          "sha256": "abb1ad504f3d82db33a3bfdeb9183adffaa3b93294dca4601d948eea997097b7",
+          "probes": 5,
+          "max_device_depth_error": 3.7024472376856465e-08,
+          "max_normal_component_error": 9.178866864978374e-05,
+          "shadow_draws": 8,
+          "streamed_draws": 2
+        },
+        "cold-checkpoint": {
+          "sha256": "4abec1a61a77bb376ed3ef5198910ea8f0d156396ab87deb48a65188a1d6b824",
+          "probes": 5,
+          "max_device_depth_error": 5.678502557060483e-08,
+          "max_normal_component_error": 0.000417216663018527,
+          "shadow_draws": 8,
+          "streamed_draws": 2
+        },
+        "cold-final": {
+          "sha256": "abb1ad504f3d82db33a3bfdeb9183adffaa3b93294dca4601d948eea997097b7",
+          "probes": 5,
+          "max_device_depth_error": 3.7024472376856465e-08,
+          "max_normal_component_error": 9.178866864978374e-05,
+          "shadow_draws": 8,
+          "streamed_draws": 2
+        }
+      },
+      "bundle_manifest_sha256": "6259e36f9bd8453cf4e761bdd8460adf1a5eb4435ab24d868d84f953d3f29564"
+    },
+    {
+      "receipt_sha256": "e9e72070439f258b32df2097037a9abdf8515fc7cfda0a4a483b3d4decee58c5",
+      "earlier_failed_report_sha256": [],
+      "authoring_guard_refusals": [
+        {
+          "code": -32602,
+          "message": "Snow tiles need an exact shared 1/32 metre lattice within +/-512 metres, including the substrate."
+        },
+        {
+          "code": -32602,
+          "message": "Snow tiles need identity world transforms and static, unskinned geometry."
+        },
+        {
+          "code": -32602,
+          "message": "Snow tiles need the same visible cooked primitive for rendering and triangle collision."
+        }
+      ],
+      "runtime_guard_refusals": {
+        "stale_tick": {
+          "code": -32009,
+          "message": "Runtime tick conflict."
+        },
+        "stale_structure": {
+          "code": -32009,
+          "message": "Runtime structure revision conflict."
+        },
+        "too_many_samples": {
+          "code": -32602,
+          "message": "Snow inspection permits up to 64 sample pairs."
+        },
+        "ordinary_step_with_stamp": {
+          "code": -32602,
+          "message": "Use runtime.snow.step with a snow_stamp to compact snow."
+        },
+        "snow_step_without_stamp": {
+          "code": -32602,
+          "message": "Use runtime.snow.step with a snow_stamp to compact snow."
+        },
+        "stale_generation": {
+          "code": -32040,
+          "message": "Stale snow generation."
+        },
+        "wrong_receiver": {
+          "code": -32040,
+          "message": "Snow stamp ray must first hit the expected upward-facing receiver triangle."
+        },
+        "wrong_triangle": {
+          "code": -32040,
+          "message": "Snow stamp ray must first hit the expected upward-facing receiver triangle."
+        },
+        "out_of_range_radius": {
+          "code": -32602,
+          "message": "Snow stamp radius must be within 128..1536 units."
+        },
+        "malformed_depth": {
+          "code": -32602,
+          "message": "Revision must be a safe nonnegative JSON integer."
+        },
+        "mark_after_staging": {
+          "code": -32040,
+          "message": "Surface mark ray must first hit the expected receiver with a surface normal."
+        }
+      },
+      "phases": {
+        "pristine": {
+          "tick": 0,
+          "generation": 0,
+          "compacted_samples": 0,
+          "lost_volume_units": 0,
+          "lost_volume_m3": 0.0
+        },
+        "first_stamp": {
+          "tick": 1,
+          "generation": 1,
+          "compacted_samples": 136,
+          "lost_volume_units": 38382,
+          "lost_volume_m3": 0.0015251636505126953
+        },
+        "after_refusals": {
+          "tick": 1,
+          "generation": 1,
+          "compacted_samples": 136,
+          "lost_volume_units": 38382,
+          "lost_volume_m3": 0.0015251636505126953
+        },
+        "saturation": {
+          "tick": 2,
+          "generation": 2,
+          "compacted_samples": 136,
+          "lost_volume_units": 69060,
+          "lost_volume_m3": 0.0027441978454589844
+        },
+        "saturated_noop": {
+          "tick": 3,
+          "generation": 2,
+          "compacted_samples": 136,
+          "lost_volume_units": 69060,
+          "lost_volume_m3": 0.0027441978454589844
+        },
+        "restored": {
+          "tick": 1,
+          "generation": 1,
+          "compacted_samples": 136,
+          "lost_volume_units": 38382,
+          "lost_volume_m3": 0.0015251636505126953
+        },
+        "cold_saturated": {
+          "tick": 3,
+          "generation": 2,
+          "compacted_samples": 136,
+          "lost_volume_units": 69060,
+          "lost_volume_m3": 0.0027441978454589844
+        }
+      },
+      "checkpoint": {
+        "tick": 1,
+        "bytes": 7834,
+        "sha256": "03ee098979598658f904e6b4f03194d514a2eee597e160529f83f1bac16411a5"
+      },
+      "final": {
+        "tick": 3,
+        "bytes": 7912,
+        "sha256": "9583d2ae975cd0e5d0f19c01f254413b9c666fb34e78814b50e64547ae57dc02"
+      },
+      "max_raycast_height_error_m": 1.316070556631188e-07,
+      "far_normal_quantization_delta": 3.5762786865234375e-07,
+      "contact": {
+        "cooked_model_sha256": "c816d0e811cf4f104b3106b4f67076a49672f461450089ac6316aa5c82175ac7",
+        "original_model_sha256": "60428e3abc09ba83e595d256e3af8c5c976b46cdae599f0802fc82b4a3445168",
+        "license_sha256": "ae322141814056dda0deea7540d74c41d87aee1da319977cd1bd84ee5a923629",
+        "held_stamp_refusal": {
+          "code": -32040,
+          "message": "Snow compaction would alter a held foot anchor. Release it before stamping."
+        },
+        "unaffected_plant_survives_stamp": true,
+        "post_release_generation": 2
+      },
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "lighting_path": "forward",
+      "captures": {
+        "pristine": {
+          "sha256": "09c3f225b3f1f49c3a2950fc22d135438bca4f6831b86f60fca3dee3cfa0f3a4",
+          "probes": 5,
+          "max_device_depth_error": 3.945207505129389e-08,
+          "max_normal_component_error": 9.178866864978374e-05,
+          "shadow_draws": 8,
+          "streamed_draws": 2
+        },
+        "warm-checkpoint": {
+          "sha256": "399426fd85e263e0b49718a5202ec730f9717af2a4a193f655da7dd31a162797",
+          "probes": 5,
+          "max_device_depth_error": 3.7024472376856465e-08,
+          "max_normal_component_error": 0.000417216663018527,
+          "shadow_draws": 8,
+          "streamed_draws": 2
+        },
+        "warm-final": {
+          "sha256": "e16bdceb3676677b19ffd7506b66afb0fee8839b266f88d77135a31fb8a11fb8",
+          "probes": 5,
+          "max_device_depth_error": 3.7024472376856465e-08,
+          "max_normal_component_error": 9.178866864978374e-05,
+          "shadow_draws": 8,
+          "streamed_draws": 2
+        },
+        "cold-checkpoint": {
+          "sha256": "399426fd85e263e0b49718a5202ec730f9717af2a4a193f655da7dd31a162797",
+          "probes": 5,
+          "max_device_depth_error": 3.7024472376856465e-08,
+          "max_normal_component_error": 0.000417216663018527,
+          "shadow_draws": 8,
+          "streamed_draws": 2
+        },
+        "cold-final": {
+          "sha256": "e16bdceb3676677b19ffd7506b66afb0fee8839b266f88d77135a31fb8a11fb8",
+          "probes": 5,
+          "max_device_depth_error": 3.7024472376856465e-08,
+          "max_normal_component_error": 9.178866864978374e-05,
+          "shadow_draws": 8,
+          "streamed_draws": 2
+        }
+      },
+      "bundle_manifest_sha256": "976b69fc2a4c27b70f72edc860540653de55a2fcc1f43e6975af7aab3e077e5e"
+    },
+    {
+      "receipt_sha256": "85136a11579e4f262e247232d6776fd9dcfba57eb703c289163754592aff9308",
+      "earlier_failed_report_sha256": [],
+      "authoring_guard_refusals": [
+        {
+          "code": -32602,
+          "message": "Snow tiles need an exact shared 1/32 metre lattice within +/-512 metres, including the substrate."
+        },
+        {
+          "code": -32602,
+          "message": "Snow tiles need identity world transforms and static, unskinned geometry."
+        },
+        {
+          "code": -32602,
+          "message": "Snow tiles need the same visible cooked primitive for rendering and triangle collision."
+        }
+      ],
+      "runtime_guard_refusals": {
+        "stale_tick": {
+          "code": -32009,
+          "message": "Runtime tick conflict."
+        },
+        "stale_structure": {
+          "code": -32009,
+          "message": "Runtime structure revision conflict."
+        },
+        "too_many_samples": {
+          "code": -32602,
+          "message": "Snow inspection permits up to 64 sample pairs."
+        },
+        "ordinary_step_with_stamp": {
+          "code": -32602,
+          "message": "Use runtime.snow.step with a snow_stamp to compact snow."
+        },
+        "snow_step_without_stamp": {
+          "code": -32602,
+          "message": "Use runtime.snow.step with a snow_stamp to compact snow."
+        },
+        "stale_generation": {
+          "code": -32040,
+          "message": "Stale snow generation."
+        },
+        "wrong_receiver": {
+          "code": -32040,
+          "message": "Snow stamp ray must first hit the expected upward-facing receiver triangle."
+        },
+        "wrong_triangle": {
+          "code": -32040,
+          "message": "Snow stamp ray must first hit the expected upward-facing receiver triangle."
+        },
+        "out_of_range_radius": {
+          "code": -32602,
+          "message": "Snow stamp radius must be within 128..1536 units."
+        },
+        "malformed_depth": {
+          "code": -32602,
+          "message": "Revision must be a safe nonnegative JSON integer."
+        },
+        "mark_after_staging": {
+          "code": -32040,
+          "message": "Surface mark ray must first hit the expected receiver with a surface normal."
+        }
+      },
+      "phases": {
+        "pristine": {
+          "tick": 0,
+          "generation": 0,
+          "compacted_samples": 0,
+          "lost_volume_units": 0,
+          "lost_volume_m3": 0.0
+        },
+        "first_stamp": {
+          "tick": 1,
+          "generation": 1,
+          "compacted_samples": 136,
+          "lost_volume_units": 38382,
+          "lost_volume_m3": 0.0015251636505126953
+        },
+        "after_refusals": {
+          "tick": 1,
+          "generation": 1,
+          "compacted_samples": 136,
+          "lost_volume_units": 38382,
+          "lost_volume_m3": 0.0015251636505126953
+        },
+        "saturation": {
+          "tick": 2,
+          "generation": 2,
+          "compacted_samples": 136,
+          "lost_volume_units": 69060,
+          "lost_volume_m3": 0.0027441978454589844
+        },
+        "saturated_noop": {
+          "tick": 3,
+          "generation": 2,
+          "compacted_samples": 136,
+          "lost_volume_units": 69060,
+          "lost_volume_m3": 0.0027441978454589844
+        },
+        "restored": {
+          "tick": 1,
+          "generation": 1,
+          "compacted_samples": 136,
+          "lost_volume_units": 38382,
+          "lost_volume_m3": 0.0015251636505126953
+        },
+        "cold_saturated": {
+          "tick": 3,
+          "generation": 2,
+          "compacted_samples": 136,
+          "lost_volume_units": 69060,
+          "lost_volume_m3": 0.0027441978454589844
+        }
+      },
+      "checkpoint": {
+        "tick": 1,
+        "bytes": 7834,
+        "sha256": "35c7b5f251d350b8527073c8d8dfb0f4cff2516994e0aa0352debc956fccba3d"
+      },
+      "final": {
+        "tick": 3,
+        "bytes": 7912,
+        "sha256": "838c59f43d6b5cb13b191710227f250f6889c0b6ad9d22ffa0761e2c6ced1c5a"
+      },
+      "max_raycast_height_error_m": 1.316070556631188e-07,
+      "far_normal_quantization_delta": 3.5762786865234375e-07,
+      "contact": {
+        "cooked_model_sha256": "c816d0e811cf4f104b3106b4f67076a49672f461450089ac6316aa5c82175ac7",
+        "original_model_sha256": "60428e3abc09ba83e595d256e3af8c5c976b46cdae599f0802fc82b4a3445168",
+        "license_sha256": "ae322141814056dda0deea7540d74c41d87aee1da319977cd1bd84ee5a923629",
+        "held_stamp_refusal": {
+          "code": -32040,
+          "message": "Snow compaction would alter a held foot anchor. Release it before stamping."
+        },
+        "unaffected_plant_survives_stamp": true,
+        "post_release_generation": 2
+      },
+      "gpu": "AMD Radeon(TM) Graphics",
+      "lighting_path": "deferred",
+      "captures": {
+        "pristine": {
+          "sha256": "cabbc7a7c867e07284ea127d16a470033b0ed66bd55ab9b27913403d18d68c51",
+          "probes": 5,
+          "max_device_depth_error": 9.905671982668451e-08,
+          "max_normal_component_error": 0.0001432950957496043,
+          "shadow_draws": 8,
+          "streamed_draws": 2
+        },
+        "warm-checkpoint": {
+          "sha256": "082546e49f891b8d97b70ee435d88720508c31e74573f067d45f06437a781573",
+          "probes": 5,
+          "max_device_depth_error": 5.678502557060483e-08,
+          "max_normal_component_error": 0.000417216663018527,
+          "shadow_draws": 8,
+          "streamed_draws": 2
+        },
+        "warm-final": {
+          "sha256": "fb06e60cdf9744ad5d0a7b6f8d7bcb4a7150ed0ef4600e144f4cffaef3400c29",
+          "probes": 5,
+          "max_device_depth_error": 3.7024472376856465e-08,
+          "max_normal_component_error": 0.0001432950957496043,
+          "shadow_draws": 8,
+          "streamed_draws": 2
+        },
+        "cold-checkpoint": {
+          "sha256": "082546e49f891b8d97b70ee435d88720508c31e74573f067d45f06437a781573",
+          "probes": 5,
+          "max_device_depth_error": 5.678502557060483e-08,
+          "max_normal_component_error": 0.000417216663018527,
+          "shadow_draws": 8,
+          "streamed_draws": 2
+        },
+        "cold-final": {
+          "sha256": "fb06e60cdf9744ad5d0a7b6f8d7bcb4a7150ed0ef4600e144f4cffaef3400c29",
+          "probes": 5,
+          "max_device_depth_error": 3.7024472376856465e-08,
+          "max_normal_component_error": 0.0001432950957496043,
+          "shadow_draws": 8,
+          "streamed_draws": 2
+        }
+      },
+      "bundle_manifest_sha256": "040af107205fda3a30bb428509134687c68da9c9974be0cca5f5fcdebf195744"
+    },
+    {
+      "receipt_sha256": "9ffcbc7b208d729d6fe33c73ef38a729ea18b3e6e07ad70d30e591b029b6d38a",
+      "earlier_failed_report_sha256": [],
+      "authoring_guard_refusals": [
+        {
+          "code": -32602,
+          "message": "Snow tiles need an exact shared 1/32 metre lattice within +/-512 metres, including the substrate."
+        },
+        {
+          "code": -32602,
+          "message": "Snow tiles need identity world transforms and static, unskinned geometry."
+        },
+        {
+          "code": -32602,
+          "message": "Snow tiles need the same visible cooked primitive for rendering and triangle collision."
+        }
+      ],
+      "runtime_guard_refusals": {
+        "stale_tick": {
+          "code": -32009,
+          "message": "Runtime tick conflict."
+        },
+        "stale_structure": {
+          "code": -32009,
+          "message": "Runtime structure revision conflict."
+        },
+        "too_many_samples": {
+          "code": -32602,
+          "message": "Snow inspection permits up to 64 sample pairs."
+        },
+        "ordinary_step_with_stamp": {
+          "code": -32602,
+          "message": "Use runtime.snow.step with a snow_stamp to compact snow."
+        },
+        "snow_step_without_stamp": {
+          "code": -32602,
+          "message": "Use runtime.snow.step with a snow_stamp to compact snow."
+        },
+        "stale_generation": {
+          "code": -32040,
+          "message": "Stale snow generation."
+        },
+        "wrong_receiver": {
+          "code": -32040,
+          "message": "Snow stamp ray must first hit the expected upward-facing receiver triangle."
+        },
+        "wrong_triangle": {
+          "code": -32040,
+          "message": "Snow stamp ray must first hit the expected upward-facing receiver triangle."
+        },
+        "out_of_range_radius": {
+          "code": -32602,
+          "message": "Snow stamp radius must be within 128..1536 units."
+        },
+        "malformed_depth": {
+          "code": -32602,
+          "message": "Revision must be a safe nonnegative JSON integer."
+        },
+        "mark_after_staging": {
+          "code": -32040,
+          "message": "Surface mark ray must first hit the expected receiver with a surface normal."
+        }
+      },
+      "phases": {
+        "pristine": {
+          "tick": 0,
+          "generation": 0,
+          "compacted_samples": 0,
+          "lost_volume_units": 0,
+          "lost_volume_m3": 0.0
+        },
+        "first_stamp": {
+          "tick": 1,
+          "generation": 1,
+          "compacted_samples": 136,
+          "lost_volume_units": 38382,
+          "lost_volume_m3": 0.0015251636505126953
+        },
+        "after_refusals": {
+          "tick": 1,
+          "generation": 1,
+          "compacted_samples": 136,
+          "lost_volume_units": 38382,
+          "lost_volume_m3": 0.0015251636505126953
+        },
+        "saturation": {
+          "tick": 2,
+          "generation": 2,
+          "compacted_samples": 136,
+          "lost_volume_units": 69060,
+          "lost_volume_m3": 0.0027441978454589844
+        },
+        "saturated_noop": {
+          "tick": 3,
+          "generation": 2,
+          "compacted_samples": 136,
+          "lost_volume_units": 69060,
+          "lost_volume_m3": 0.0027441978454589844
+        },
+        "restored": {
+          "tick": 1,
+          "generation": 1,
+          "compacted_samples": 136,
+          "lost_volume_units": 38382,
+          "lost_volume_m3": 0.0015251636505126953
+        },
+        "cold_saturated": {
+          "tick": 3,
+          "generation": 2,
+          "compacted_samples": 136,
+          "lost_volume_units": 69060,
+          "lost_volume_m3": 0.0027441978454589844
+        }
+      },
+      "checkpoint": {
+        "tick": 1,
+        "bytes": 7834,
+        "sha256": "0a985df1ae735882fedbb6b45bc5cbc5a5b63cffa5303fcfb9305706eecf6656"
+      },
+      "final": {
+        "tick": 3,
+        "bytes": 7912,
+        "sha256": "13ab8182974b260728619118be362bd7717f8268bb0ebf87b6cd1983bc6d0bbd"
+      },
+      "max_raycast_height_error_m": 1.316070556631188e-07,
+      "far_normal_quantization_delta": 3.5762786865234375e-07,
+      "contact": {
+        "cooked_model_sha256": "c816d0e811cf4f104b3106b4f67076a49672f461450089ac6316aa5c82175ac7",
+        "original_model_sha256": "60428e3abc09ba83e595d256e3af8c5c976b46cdae599f0802fc82b4a3445168",
+        "license_sha256": "ae322141814056dda0deea7540d74c41d87aee1da319977cd1bd84ee5a923629",
+        "held_stamp_refusal": {
+          "code": -32040,
+          "message": "Snow compaction would alter a held foot anchor. Release it before stamping."
+        },
+        "unaffected_plant_survives_stamp": true,
+        "post_release_generation": 2
+      },
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "lighting_path": "deferred",
+      "captures": {
+        "pristine": {
+          "sha256": "09c3f225b3f1f49c3a2950fc22d135438bca4f6831b86f60fca3dee3cfa0f3a4",
+          "probes": 5,
+          "max_device_depth_error": 3.945207505129389e-08,
+          "max_normal_component_error": 0.0001432950957496043,
+          "shadow_draws": 8,
+          "streamed_draws": 2
+        },
+        "warm-checkpoint": {
+          "sha256": "45e4a29a103ed18289628d227c1c8a5a7baef36490fe67450cd35ba36101cbe4",
+          "probes": 5,
+          "max_device_depth_error": 3.7024472376856465e-08,
+          "max_normal_component_error": 0.000417216663018527,
+          "shadow_draws": 8,
+          "streamed_draws": 2
+        },
+        "warm-final": {
+          "sha256": "0099852454138451e5a094f153a918feee26b745ccfdd4f0f936156f15d69bec",
+          "probes": 5,
+          "max_device_depth_error": 3.7024472376856465e-08,
+          "max_normal_component_error": 0.0001432950957496043,
+          "shadow_draws": 8,
+          "streamed_draws": 2
+        },
+        "cold-checkpoint": {
+          "sha256": "45e4a29a103ed18289628d227c1c8a5a7baef36490fe67450cd35ba36101cbe4",
+          "probes": 5,
+          "max_device_depth_error": 3.7024472376856465e-08,
+          "max_normal_component_error": 0.000417216663018527,
+          "shadow_draws": 8,
+          "streamed_draws": 2
+        },
+        "cold-final": {
+          "sha256": "0099852454138451e5a094f153a918feee26b745ccfdd4f0f936156f15d69bec",
+          "probes": 5,
+          "max_device_depth_error": 3.7024472376856465e-08,
+          "max_normal_component_error": 0.0001432950957496043,
+          "shadow_draws": 8,
+          "streamed_draws": 2
+        }
+      },
+      "bundle_manifest_sha256": "dd593cc9e59c5e4f9a5ed96ae96f043d3c9bd3f3aee0759ca4f6cca362cedeca"
+    }
+  ],
+  "continuous_vulkan": [
+    {
+      "gpu": "AMD Radeon(TM) Graphics",
+      "lighting_path": "forward",
+      "mode": "fsr3_native",
+      "sdk": "FSR 3.1.4 / FidelityFX SDK 1.1.4",
+      "validated_submissions": 7,
+      "render_extent": [
+        320,
+        180
+      ],
+      "output_extent": [
+        320,
+        180
+      ],
+      "extra_device_idle_waits": 0,
+      "peak_stream_bytes": 205968,
+      "stamp_center_heights": [
+        -0.04686164855957031,
+        -0.09372329711914062
+      ],
+      "max_motion_component_uv_error": 3.483861839119473e-08,
+      "probe_count": 35,
+      "visibility_reveal_and_recovery": true,
+      "last_accepted_geometry_motion": true,
+      "receipt_sha256": "893f6a59664ad6725750256bb02f2a945ae91b986abfe77d772b705c27726dd7",
+      "validation_log_sha256": "109998f14c9bc45939d832ec0a409198e372a14266f164168f79b3d5574efa37",
+      "earlier_failed_report_sha256": []
+    },
+    {
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "lighting_path": "forward",
+      "mode": "fsr3_native",
+      "sdk": "FSR 3.1.4 / FidelityFX SDK 1.1.4",
+      "validated_submissions": 7,
+      "render_extent": [
+        320,
+        180
+      ],
+      "output_extent": [
+        320,
+        180
+      ],
+      "extra_device_idle_waits": 0,
+      "peak_stream_bytes": 205968,
+      "stamp_center_heights": [
+        -0.04686164855957031,
+        -0.09372329711914062
+      ],
+      "max_motion_component_uv_error": 1.4889828150316253e-07,
+      "probe_count": 35,
+      "visibility_reveal_and_recovery": true,
+      "last_accepted_geometry_motion": true,
+      "receipt_sha256": "0b4b34bd1ce2b874f63241f1b770ed9b6d596b98466ef6c42e4543b50d71969c",
+      "validation_log_sha256": "44036f1015396de3db9f0f67e32289f6cfb6a12d960d125da8a44e21b769b2dd",
+      "earlier_failed_report_sha256": []
+    },
+    {
+      "gpu": "AMD Radeon(TM) Graphics",
+      "lighting_path": "deferred",
+      "mode": "fsr3_native",
+      "sdk": "FSR 3.1.4 / FidelityFX SDK 1.1.4",
+      "validated_submissions": 7,
+      "render_extent": [
+        320,
+        180
+      ],
+      "output_extent": [
+        320,
+        180
+      ],
+      "extra_device_idle_waits": 0,
+      "peak_stream_bytes": 205968,
+      "stamp_center_heights": [
+        -0.04686164855957031,
+        -0.09372329711914062
+      ],
+      "max_motion_component_uv_error": 3.483861839119473e-08,
+      "probe_count": 35,
+      "visibility_reveal_and_recovery": true,
+      "last_accepted_geometry_motion": true,
+      "receipt_sha256": "bb7aa3955a586aa3ea9dd4cd6ca8e79ec0d5d9a4773d69b9024cd4224ff1542a",
+      "validation_log_sha256": "109998f14c9bc45939d832ec0a409198e372a14266f164168f79b3d5574efa37",
+      "earlier_failed_report_sha256": []
+    },
+    {
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "lighting_path": "deferred",
+      "mode": "fsr3_native",
+      "sdk": "FSR 3.1.4 / FidelityFX SDK 1.1.4",
+      "validated_submissions": 7,
+      "render_extent": [
+        320,
+        180
+      ],
+      "output_extent": [
+        320,
+        180
+      ],
+      "extra_device_idle_waits": 0,
+      "peak_stream_bytes": 205968,
+      "stamp_center_heights": [
+        -0.04686164855957031,
+        -0.09372329711914062
+      ],
+      "max_motion_component_uv_error": 1.4889828150316253e-07,
+      "probe_count": 35,
+      "visibility_reveal_and_recovery": true,
+      "last_accepted_geometry_motion": true,
+      "receipt_sha256": "3d3e4190b586a8e1fd99738df3cce98d3ee3d2cbcc588f7fbc4ba437051045cf",
+      "validation_log_sha256": "44036f1015396de3db9f0f67e32289f6cfb6a12d960d125da8a44e21b769b2dd",
+      "earlier_failed_report_sha256": []
+    },
+    {
+      "gpu": "AMD Radeon(TM) Graphics",
+      "lighting_path": "forward",
+      "mode": "fsr3_quality",
+      "sdk": "FSR 3.1.4 / FidelityFX SDK 1.1.4",
+      "validated_submissions": 7,
+      "render_extent": [
+        213,
+        120
+      ],
+      "output_extent": [
+        320,
+        180
+      ],
+      "extra_device_idle_waits": 0,
+      "peak_stream_bytes": 205968,
+      "stamp_center_heights": [
+        -0.04686164855957031,
+        -0.09372329711914062
+      ],
+      "max_motion_component_uv_error": 7.636225837093918e-07,
+      "probe_count": 35,
+      "visibility_reveal_and_recovery": true,
+      "last_accepted_geometry_motion": true,
+      "receipt_sha256": "eefcbd7a4d785e8c3f3ff72ff4f72d5f29a020bbd79109d5d3669d2c86d34ecc",
+      "validation_log_sha256": "109998f14c9bc45939d832ec0a409198e372a14266f164168f79b3d5574efa37",
+      "earlier_failed_report_sha256": []
+    },
+    {
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "lighting_path": "forward",
+      "mode": "fsr3_quality",
+      "sdk": "FSR 3.1.4 / FidelityFX SDK 1.1.4",
+      "validated_submissions": 7,
+      "render_extent": [
+        213,
+        120
+      ],
+      "output_extent": [
+        320,
+        180
+      ],
+      "extra_device_idle_waits": 0,
+      "peak_stream_bytes": 205968,
+      "stamp_center_heights": [
+        -0.04686164855957031,
+        -0.09372329711914062
+      ],
+      "max_motion_component_uv_error": 7.543093579632371e-07,
+      "probe_count": 35,
+      "visibility_reveal_and_recovery": true,
+      "last_accepted_geometry_motion": true,
+      "receipt_sha256": "f7f0fa1a885751017e827bd1ab57f7f7d4e0a292db55136b94648cc7ec556ee1",
+      "validation_log_sha256": "44036f1015396de3db9f0f67e32289f6cfb6a12d960d125da8a44e21b769b2dd",
+      "earlier_failed_report_sha256": []
+    },
+    {
+      "gpu": "AMD Radeon(TM) Graphics",
+      "lighting_path": "deferred",
+      "mode": "fsr3_quality",
+      "sdk": "FSR 3.1.4 / FidelityFX SDK 1.1.4",
+      "validated_submissions": 7,
+      "render_extent": [
+        213,
+        120
+      ],
+      "output_extent": [
+        320,
+        180
+      ],
+      "extra_device_idle_waits": 0,
+      "peak_stream_bytes": 205968,
+      "stamp_center_heights": [
+        -0.04686164855957031,
+        -0.09372329711914062
+      ],
+      "max_motion_component_uv_error": 7.636225837093918e-07,
+      "probe_count": 35,
+      "visibility_reveal_and_recovery": true,
+      "last_accepted_geometry_motion": true,
+      "receipt_sha256": "ca5703a3c08261a433f49860887e1473066ced8440263b8e5bcf2bfc2787f2ee",
+      "validation_log_sha256": "109998f14c9bc45939d832ec0a409198e372a14266f164168f79b3d5574efa37",
+      "earlier_failed_report_sha256": []
+    },
+    {
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "lighting_path": "deferred",
+      "mode": "fsr3_quality",
+      "sdk": "FSR 3.1.4 / FidelityFX SDK 1.1.4",
+      "validated_submissions": 7,
+      "render_extent": [
+        213,
+        120
+      ],
+      "output_extent": [
+        320,
+        180
+      ],
+      "extra_device_idle_waits": 0,
+      "peak_stream_bytes": 205968,
+      "stamp_center_heights": [
+        -0.04686164855957031,
+        -0.09372329711914062
+      ],
+      "max_motion_component_uv_error": 7.543093579632371e-07,
+      "probe_count": 35,
+      "visibility_reveal_and_recovery": true,
+      "last_accepted_geometry_motion": true,
+      "receipt_sha256": "06e11ba0b19b04809e6cc68fbc53fa3f2ab8c92df523f99a20a12e01d1eb61f2",
+      "validation_log_sha256": "44036f1015396de3db9f0f67e32289f6cfb6a12d960d125da8a44e21b769b2dd",
+      "earlier_failed_report_sha256": []
+    }
+  ],
+  "raster_shadows": [
+    {
+      "gpu": "AMD Radeon(TM) Graphics",
+      "lighting_path": "forward",
+      "receipt_sha256": "69fdf27a547fc3008b8638dc764019c5bebeae8c3fc96d39e9277dfea2836b4b",
+      "earlier_failed_report_sha256": [],
+      "ratios": {
+        "west": [
+          [
+            0.018468045112781956,
+            0.018468045112781956,
+            0.018468045112781956
+          ],
+          [
+            1.0,
+            1.0,
+            1.0
+          ]
+        ],
+        "east": [
+          [
+            0.018468045112781956,
+            0.018468045112781956,
+            0.018468045112781956
+          ],
+          [
+            1.0,
+            1.0,
+            1.0
+          ]
+        ],
+        "quiet": [
+          [
+            0.034473684210526316,
+            0.034473684210526316,
+            0.034473684210526316
+          ],
+          [
+            0.034473684210526316,
+            0.034473684210526316,
+            0.034473684210526316
+          ]
+        ]
+      },
+      "capture_sha256": {
+        "shadow disabled pristine": "58abc5afadbf27c39da4b9fa798c932aac7d6b445fd6221f38fbe07ee5867537",
+        "shadow disabled modified": "912ffedb31e067c5aefe48d4c17f7af9bf6e22fae9a6a19a2598b9054500970d",
+        "shadow enabled pristine": "99edd05840c400cd0829afbc525928b613e96320c6ba475ad823ddd11cf45a88",
+        "shadow enabled modified": "10f9fcb25e26ffdd6d5c212ed87b60b71e73229634f1a26bf407afaac213462a"
+      }
+    },
+    {
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "lighting_path": "forward",
+      "receipt_sha256": "88cec045b378ebb8c38c105f2002f6c2fdb9ab4e29a1118a5e05feda25894c89",
+      "earlier_failed_report_sha256": [],
+      "ratios": {
+        "west": [
+          [
+            0.018468045112781956,
+            0.018468045112781956,
+            0.018468045112781956
+          ],
+          [
+            1.0,
+            1.0,
+            1.0
+          ]
+        ],
+        "east": [
+          [
+            0.018468045112781956,
+            0.018468045112781956,
+            0.018468045112781956
+          ],
+          [
+            1.0,
+            1.0,
+            1.0
+          ]
+        ],
+        "quiet": [
+          [
+            0.034473684210526316,
+            0.034473684210526316,
+            0.034473684210526316
+          ],
+          [
+            0.034473684210526316,
+            0.034473684210526316,
+            0.034473684210526316
+          ]
+        ]
+      },
+      "capture_sha256": {
+        "shadow disabled pristine": "14e57dba254c8b4159c9be16acf5f7d713ba6ffcb84844ad9b4bf4ae9ff687d1",
+        "shadow disabled modified": "43037cd0715baee2d9901b21a95caeb4b520a3d6d644692d78bd2600a3ddb8e6",
+        "shadow enabled pristine": "ac437aa8148d36846ff3159a8ea5a6e2bfd5f170457ab43555c33c3de0916fc3",
+        "shadow enabled modified": "ae85762977f6280837f4206d77e65a949faa62b9f4ea1386c56df1d12065ea24"
+      }
+    },
+    {
+      "gpu": "AMD Radeon(TM) Graphics",
+      "lighting_path": "deferred",
+      "receipt_sha256": "0b389ba4001698dc3b560773cf70fe53a032a2a5a09c622b60a63fc4cf19d16e",
+      "earlier_failed_report_sha256": [],
+      "ratios": {
+        "west": [
+          [
+            0.018456296992481202,
+            0.018456296992481202,
+            0.018456296992481202
+          ],
+          [
+            1.0,
+            1.0,
+            1.0
+          ]
+        ],
+        "east": [
+          [
+            0.018456296992481202,
+            0.018456296992481202,
+            0.018456296992481202
+          ],
+          [
+            1.0,
+            1.0,
+            1.0
+          ]
+        ],
+        "quiet": [
+          [
+            0.034451754385964914,
+            0.034451754385964914,
+            0.034451754385964914
+          ],
+          [
+            0.034451754385964914,
+            0.034451754385964914,
+            0.034451754385964914
+          ]
+        ]
+      },
+      "capture_sha256": {
+        "shadow disabled pristine": "b0f98ce3d605037c1926dd1fbdde5e9f26f1b784a8dcb8e87ed780ad840bdd69",
+        "shadow disabled modified": "7dade3e85904692ebc8c5aa0859926a91905778657feb0334ef3d8f969135470",
+        "shadow enabled pristine": "c2cc4be186fa6028f8878a7957013cb8237794f0dd4d7db27a2295962637b4c7",
+        "shadow enabled modified": "e780fff34d57d94a8316fcbe7fb6f2912f2c01ee4a4afd9c1d1f38c538eb1b2c"
+      }
+    },
+    {
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "lighting_path": "deferred",
+      "receipt_sha256": "cff1f338d5a0c855ebaa305a1184817bfacd2ca50bd89277bb550fd82cbcf256",
+      "earlier_failed_report_sha256": [],
+      "ratios": {
+        "west": [
+          [
+            0.018456296992481202,
+            0.018456296992481202,
+            0.018456296992481202
+          ],
+          [
+            1.0,
+            1.0,
+            1.0
+          ]
+        ],
+        "east": [
+          [
+            0.018456296992481202,
+            0.018456296992481202,
+            0.018456296992481202
+          ],
+          [
+            1.0,
+            1.0,
+            1.0
+          ]
+        ],
+        "quiet": [
+          [
+            0.034451754385964914,
+            0.034451754385964914,
+            0.034451754385964914
+          ],
+          [
+            0.034451754385964914,
+            0.034451754385964914,
+            0.034451754385964914
+          ]
+        ]
+      },
+      "capture_sha256": {
+        "shadow disabled pristine": "62fcaf3544aa9baefdfef141dd034cea234f290f7159627da9333f4d68f056c0",
+        "shadow disabled modified": "ab49dc8ead3c3d59e9214526c1cb148d848eca4be1e4b99fc946aa7a0df14b9d",
+        "shadow enabled pristine": "0ad9e5a573335c9e02af9a09700690dfabb86677521c42d1246a9d1dc63a0534",
+        "shadow enabled modified": "83e06d8280af425e543ac62b1cf68974173f31b75f051192a1b7207f21d9bd12"
+      }
+    }
+  ],
+  "inputs_sha256": {
+    "CMakeLists.txt": "5a24f8c3172cd2ca59ff2edb43fe03ca8f697911fd62b65e67f320036856e5f5",
+    "include/poima/render_schedule.hpp": "cda2fddf0e654537fa802a6d409eea032073103df4ac72bdd7d0d54a202f1417",
+    "include/poima/runtime.hpp": "0a19685bc1da8bc08d2973ebe8abc80774cedf3de5dc00259850d4af71b3f72e",
+    "include/poima/runtime_animation.hpp": "513c607bccdb2d6f41d6d9d06ebe4fdec04e3941276c96e231f92cabf8bcd1e3",
+    "include/poima/scene.hpp": "e04890f03e102b2c7c51d0fb6494bf6d7dc92398d0bdccfc49c669e0adea6320",
+    "include/poima/snow.hpp": "daa23eed36e7ac2a0ac681d9de229ce724f805ae24fda659cd6d033afe7201e7",
+    "include/poima/snow_definition.hpp": "5cd6f2ba5e98974b40991110014f903932454c4702c03445a41694b71923ac2d",
+    "src/game_launch.cpp": "065b0330c31625853215f23783e719c65f961abfbd9b0ca9d682d5a8b2dd1a9b",
+    "src/project_drafts.inc": "59dba9731eee6ac0573d41d767e2eca7e0f710cb3502d730292b6631669c516f",
+    "src/render_smoke.cpp": "dd0f41798fba95482820770ac8d83cc441477b006274676262ac62231e41534a",
+    "src/runtime.cpp": "08569156244a6dfa094fcf51750efdf1d537c813e95ab419b0af7fddefa66a53",
+    "src/runtime_animation.cpp": "5bada0c5c7d56610183bae0b84ea5a2bf2f9db87170db27945ab85a726106fb6",
+    "src/runtime_capsule_query.inc": "736811a5b032998989271dfbc58d805a1b5a0b5297390be0150b9ee6f7034096",
+    "src/runtime_disabled.cpp": "583053786fd929095acea5387f47c38b2e43e10265213508045283113d20702a",
+    "src/runtime_save.inc": "df842bb46229ff115ef2637d14bcd413e5736751e730cf6105bb0ab74b6ab138",
+    "src/runtime_snow.inc": "e09cbd2a29477aaf0031cd197bdb16db66e69f234edf2d4d89e37fa054a864ac",
+    "src/runtime_surface_marks.inc": "def32dd609088e1f253bca2737043dc235ea79af071ec82a599a4fc7ffc07ff5",
+    "src/save_upgrade_document.cpp": "1f9aba5108963e68bd9c05c565a502f1b5e661cd834844e44ea607bb98772dfc",
+    "src/save_upgrade_snapshot.cpp": "063f3e07cfe8bda9759e8db16b690c67105224fa1ae5b4f51daf25b93e818b2a",
+    "src/snow.cpp": "ae59bdb5cce7aa724f2d10f4fb1ae1194fd8ae250ccfcb51be3d2d36e2ca1612",
+    "src/world.cpp": "bc91912b59a376a98baca8f4b98927a46dfa409060e8291a95c43832eac5861a",
+    "src/world_gameplay_save.inc": "aadc23f375293a9c1d6f1c911cf24039e9dbaaf5648785af16ce1cdc3ed4a457",
+    "src/world_player_service.inc": "76cb9d55612c116655d89ad420ba5fb18ec9ececf9cd5dbef6340b83f471c1f3",
+    "src/world_schema.cpp": "cf4420c46731ea50b0f6680b444d7f9abeed9704065117102741861b87a83236",
+    "src/world_snow_service.inc": "fb18110382bfeb56e529e700a757b8a6fc8bcf2eb8d07eb212c68dd8e0d62bb8",
+    "tests/asset_references_contract.py": "a6e1c71ede2bbb7dccfff90e873e6b2929aacdf97fe567a1431cb6d4190e9963",
+    "tests/reconstruction_quality_native.cpp": "db99040a2cb096fa1fde970a7a1e039655eb55e8a970fb5caa39ebbfa01a5fe0",
+    "tests/reconstruction_snow_motion.inc": "61ee0023a6840cb7384fe66e4d8baff179b3d423faa51206050f4da1b33b61cf",
+    "tests/render_schedule.cpp": "d01e6021f0b8eaa0270a2d4021e7cfbb7f3e88293257b06df5489ce530491c50",
+    "tests/snow_compaction_contract.py": "dab277f7aa0ef2a3cafe65506ac0e2365a0148fa79a1bf3488b187de4f384026",
+    "tests/snow_shadow_contract.py": "6e7190bbe2a8ef197ccc96147e68aa3d626f3a311fbec1f705e2e88f29061fca",
+    "tests/world_ui_contract.py": "b1d173b2e1981e0d68708ffb3e4b83efac24983d61ca716a3ba1f6334dd6c603"
+  },
+  "windows_mcp": {
+    "report_sha256": "d40b1192cbac672b802a1f462ca5044e85fea3bb2fd30b0b55ff18096c18cd5e",
+    "result": "OK"
+  },
+  "retained_discovery": {
+    "passed": true,
+    "receipt_sha256": "6f35aee2a3efc003ab2f7263cf7a9cc552ccae34938c3218dd14fe67bc37a0e5",
+    "revision_change": [
+      187,
+      188
+    ],
+    "previous_executable_sha256": "4c296ae3a8048d3963b3992e0b4ae65c3615028626c7c2b3e53542d986aa75ca",
+    "current_executable_sha256": "a66fc3d5ded7d6e2e92771c813388d6ee55a5daa533088191fc02c99a91917e4"
+  },
+  "water_particle_controls": {
+    "passed": true,
+    "reference_version": "0.0.355",
+    "reference_sha256": "4237ae2cf93d615ebb6e589340caf84817c1397f39d748c0b193c28606e0b18b",
+    "captures": [
+      {
+        "gpu": "AMD Radeon(TM) Graphics",
+        "phase": "closed",
+        "capture_sha256": "b23522dfcc87c4409845dd7a992ef01ade0850acbdd725f099048c42341fefc6",
+        "receipt_sha256": "470765315ceb07b78f394944cb892c9dd8f18424f3440844c452f2fcc5c5f670"
+      },
+      {
+        "gpu": "AMD Radeon(TM) Graphics",
+        "phase": "opened",
+        "capture_sha256": "c289b35afc560838ceb746a79bb50bb3c080bb2e2f58c1277a4fe07165b0b062",
+        "receipt_sha256": "470765315ceb07b78f394944cb892c9dd8f18424f3440844c452f2fcc5c5f670"
+      },
+      {
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "phase": "closed",
+        "capture_sha256": "b23522dfcc87c4409845dd7a992ef01ade0850acbdd725f099048c42341fefc6",
+        "receipt_sha256": "400e76a7ccaea840b9425553d374d1593b55f8edf0c9d0182792276a2ce24697"
+      },
+      {
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "phase": "opened",
+        "capture_sha256": "0cb89bd272156f5c8f59f6fb5b45f1cf919e7efd29d616af99f5d6f8b7bd72f7",
+        "receipt_sha256": "400e76a7ccaea840b9425553d374d1593b55f8edf0c9d0182792276a2ce24697"
+      }
+    ]
+  },
+  "qualification_corrections": [
+    "Removed the starter floor collider after it occluded the compacted terrain in the first run.",
+    "The untouched triangle and intersection remained exact. Jolt compression changed the normalized contact by less than 2e-6.",
+    "Retained timed-mark discovery combined three entries and crossed its original 24 KiB cap. A dedicated snow step preserves the previous selection."
+  ],
+  "cpu_stamps": {
+    "linux-debug": {
+      "receipt_sha256": "293dbd59bcbb9d27a1d02778106760eacffdea87da667413128ccaec709d7866",
+      "cases": [
+        {
+          "case": "interior",
+          "dirty_tiles": 1,
+          "stamps": 20,
+          "cpu_ms": {
+            "prepare": {
+              "p50": 12.693898,
+              "p95": 14.328321,
+              "max": 14.417145
+            },
+            "publish": {
+              "p50": 0.019317,
+              "p95": 0.039113,
+              "max": 0.041377
+            },
+            "step": {
+              "p50": 13.265354,
+              "p95": 15.24912,
+              "max": 17.741562
+            }
+          }
+        },
+        {
+          "case": "seam",
+          "dirty_tiles": 2,
+          "stamps": 20,
+          "cpu_ms": {
+            "prepare": {
+              "p50": 25.636843,
+              "p95": 26.440575,
+              "max": 26.675067
+            },
+            "publish": {
+              "p50": 0.051036,
+              "p95": 0.062757,
+              "max": 0.065322
+            },
+            "step": {
+              "p50": 26.425314,
+              "p95": 27.571504,
+              "max": 31.073734
+            }
+          }
+        }
+      ]
+    },
+    "windows-relwithdebinfo": {
+      "receipt_sha256": "0235272fb8809264fd29fff822c751b2626bef2fdd73ae1ee7ec638c10745ab8",
+      "cases": [
+        {
+          "case": "interior",
+          "dirty_tiles": 1,
+          "stamps": 20,
+          "cpu_ms": {
+            "prepare": {
+              "p50": 0.6102,
+              "p95": 0.8425,
+              "max": 0.9049
+            },
+            "publish": {
+              "p50": 0.0022,
+              "p95": 0.0043,
+              "max": 0.0049
+            },
+            "step": {
+              "p50": 0.691,
+              "p95": 1.0204,
+              "max": 1.0657
+            }
+          }
+        },
+        {
+          "case": "seam",
+          "dirty_tiles": 2,
+          "stamps": 20,
+          "cpu_ms": {
+            "prepare": {
+              "p50": 1.2754,
+              "p95": 2.0708,
+              "max": 2.3427
+            },
+            "publish": {
+              "p50": 0.0038,
+              "p95": 0.0255,
+              "max": 0.0256
+            },
+            "step": {
+              "p50": 1.4457,
+              "p95": 2.2169,
+              "max": 2.8505
+            }
+          }
+        }
+      ]
+    },
+    "scope": "Twenty fixed-tick stamps at each position, radius 512 and depth 3 lattice units. Independent fresh interior and seam sessions. Profiling covers simulation request scopes with no active render. These are microbenchmarks."
+  }
+}

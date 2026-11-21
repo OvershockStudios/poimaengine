@@ -227,6 +227,8 @@ void merge_draft_scene(Json& combined, const Json& base, const Json& input) {
         draft_member(input, "navigation"), "/navigation");
     merge_draft_value(combined, "water", draft_member(base, "water"),
         draft_member(input, "water"), "/water");
+    merge_draft_value(combined, "snow", draft_member(base, "snow"),
+        draft_member(input, "snow"), "/snow");
 
     for (const auto* field : {"retired_ids", "retired_component_schemas", "retired_template_ids", "retired_ui_ids"}) {
         if (!input.contains(field)) continue;

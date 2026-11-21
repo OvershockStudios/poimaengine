@@ -5,6 +5,7 @@
 #include "poima/gameplay_player_preferences.hpp"
 #include "poima/jobs.hpp"
 #include "poima/water_region.hpp"
+#include "poima/snow.hpp"
 #include "runtime_components.hpp"
 #include "runtime_body_ids.hpp"
 #include "runtime_physical_restore.hpp"
@@ -254,6 +255,7 @@ struct Runtime::Impl {
     std::size_t game_stance_reads=0,game_stance_writes=0;
     SoundState sounds;
     std::optional<water::Region> water_region;
+#include "runtime_snow.inc"
     std::uint32_t game_sound_calls=0,game_navigation_calls=0;
     std::optional<RuntimeNavigationDefinition> navigation_binding;
     std::array<std::uint64_t,4> navigation_asset{};
@@ -557,27 +559,8 @@ struct Runtime::Impl {
             for(auto parent=d.parent;!parent.empty();parent=registry.get<Node>(find(parent)).parent)
                 require(!moving_roots.contains(parent),"MeshCollider cannot inherit a moving body/controller.");
             const auto p=pose(node.world);
-            // Fill default settings directly: the list-taking constructors
-            // silently sanitize geometry. Create instead reports degenerate
-            // triangles, including degeneracy after Jolt's quantization.
-            JPH::MeshShapeSettings mesh_settings;mesh_settings.mPerTriangleUserData=true;
-            const auto& mesh=*collider.mesh;
-            mesh_settings.mTriangleVertices.reserve(mesh.vertices.size());
-            for(const auto& vertex:mesh.vertices) {
-                std::array<float,3> point;
-                for(std::size_t k=0;k<3;++k) {
-                    const double value=vertex.position[k]*p.scale[k];
-                    require(std::isfinite(value) && std::abs(value)<=10000,"Scaled MeshCollider vertices must be within +/-10000 meters.");
-                    point[k]=static_cast<float>(value);
-                }
-                mesh_settings.mTriangleVertices.emplace_back(point[0],point[1],point[2]);
-            }
-            mesh_settings.mIndexedTriangles.reserve(mesh.indices.size()/3);
-            for(std::size_t i=0;i<mesh.indices.size();i+=3)
-                mesh_settings.mIndexedTriangles.emplace_back(mesh.indices[i],mesh.indices[i+1],mesh.indices[i+2],0,static_cast<JPH::uint32>(i/3));
-            auto shape=mesh_settings.Create();
-            if(shape.HasError())throw std::runtime_error("MeshCollider '"+d.id+"': "+shape.GetError().c_str());
-            JPH::BodyCreationSettings settings(shape.Get(),p.position,p.rotation,JPH::EMotionType::Static,0);
+            const auto shape=build_mesh_shape(*collider.mesh,p.scale,d.id);
+            JPH::BodyCreationSettings settings(shape.GetPtr(),p.position,p.rotation,JPH::EMotionType::Static,0);
             settings.mFriction=collider.friction;settings.mRestitution=collider.restitution;
             auto& body=registry.emplace<Body>(e);
             auto& bodies=physics.GetBodyInterface();
@@ -586,7 +569,7 @@ struct Runtime::Impl {
             if(bootstrap)bodies.AddBody(body.id,JPH::EActivation::DontActivate);
             require(!body.id.IsInvalid(),"Jolt mesh body allocation failed.");
             candidate.body_names.emplace(body.id.GetIndexAndSequenceNumber(),d.id);
-            candidate.mesh_shapes.emplace(body.id.GetIndexAndSequenceNumber(),static_cast<const JPH::MeshShape*>(shape.Get().GetPtr()));
+            candidate.mesh_shapes.emplace(body.id.GetIndexAndSequenceNumber(),shape);
         }
         if (d.collider) {
             const auto& collider=*d.collider;
@@ -706,21 +689,22 @@ struct Runtime::Impl {
         // Keep one hit without early-out pruning so exact equal-distance ties use
         // stable entity IDs rather than broad-phase visitation order.
         struct Collector final : JPH::CastRayCollector {
-            const std::map<JPH::uint32,std::string>& names;std::optional<JPH::RayCastResult> hit;
-            const std::map<JPH::uint32,JPH::RefConst<JPH::MeshShape>>& meshes;
-            Collector(const std::map<JPH::uint32,std::string>& n,const std::map<JPH::uint32,JPH::RefConst<JPH::MeshShape>>& m):names(n),meshes(m) {}
+            const Impl& world;
+            const std::map<JPH::uint32,std::string>& names;
+            std::optional<JPH::RayCastResult> hit;
+            explicit Collector(const Impl& owner):world(owner),names(owner.topology->body_names) {}
             void AddHit(const JPH::RayCastResult& value) override {
                 if(value.mFraction<0 || value.mFraction>1)return;
                 bool better=!hit || value.mFraction<hit->mFraction;
                 if(hit && value.mFraction==hit->mFraction) {
                     const auto id=value.mBodyID.GetIndexAndSequenceNumber(),old=hit->mBodyID.GetIndexAndSequenceNumber();
                     better=names.at(id)<names.at(old) || (names.at(id)==names.at(old) && id!=old && id<old);
-                    if(id==old)if(const auto mesh=meshes.find(id);mesh!=meshes.end())
-                        better=mesh->second->GetTriangleUserData(value.mSubShapeID2)<mesh->second->GetTriangleUserData(hit->mSubShapeID2);
+                    if(id==old)if(const auto* mesh=world.ray_mesh(id))
+                        better=mesh->GetTriangleUserData(value.mSubShapeID2)<mesh->GetTriangleUserData(hit->mSubShapeID2);
                 }
                 if(better)hit=value;
             }
-        } collector(topology->body_names,topology->mesh_shapes);
+        } collector(*this);
         const JPH::RRayCast ray(JPH::RVec3(query.origin[0],query.origin[1],query.origin[2]),JPH::Vec3(delta[0],delta[1],delta[2]));
         JPH::RayCastSettings ray_settings;ray_settings.mBackFaceModeTriangles=JPH::EBackFaceMode::CollideWithBackFaces;
         physics.GetNarrowPhaseQuery().CastRay(ray,ray_settings,collector,{}, {},filter);
@@ -728,8 +712,8 @@ struct Runtime::Impl {
         const auto& hit=*collector.hit;const auto point=ray.GetPointOnRay(hit.mFraction);
         RuntimeRayHit result;result.entity=topology->body_names.at(hit.mBodyID.GetIndexAndSequenceNumber());
         result.fraction=hit.mFraction;result.distance=query.distance*hit.mFraction;result.position={point.GetX(),point.GetY(),point.GetZ()};
-        if(const auto mesh=topology->mesh_shapes.find(hit.mBodyID.GetIndexAndSequenceNumber());mesh!=topology->mesh_shapes.end())
-            result.triangle=mesh->second->GetTriangleUserData(hit.mSubShapeID2);
+        if(const auto* mesh=ray_mesh(hit.mBodyID.GetIndexAndSequenceNumber()))
+            result.triangle=mesh->GetTriangleUserData(hit.mSubShapeID2);
         if(hit.mFraction>0 || result.triangle) {
             JPH::BodyLockRead lock(physics.GetBodyLockInterface(),hit.mBodyID);require(lock.Succeeded(),"Ray hit body could not be inspected.");
             const auto normal=lock.GetBody().GetWorldSpaceSurfaceNormal(hit.mSubShapeID2,point);
@@ -751,6 +735,7 @@ struct Runtime::Impl {
         if(restored) {validate_physical_bootstrap(definition,*restored);body_ids=restored->ledger;physical_next_collision_group=restored->next_collision_group;}
         initialize_navigation(definition.navigation);
         if(definition.water)water_region.emplace(*definition.water);
+        if(definition.snow)snow_binding.emplace(definition);
         require(definition.entities.size()<=10000,"Runtime entity limit exceeded.");
         validate_runtime_templates(definition);templates=definition.templates;
         particle_sprites=particles::build_sprite_catalog(definition);
@@ -814,6 +799,7 @@ struct Runtime::Impl {
         std::set<std::string> controlled_cameras,moving_roots;
         for(const auto& d:definitions)if(d.character || (d.collider && d.collider->motion!=BodyMotion::Static))moving_roots.insert(d.id);
         for(const auto& d:definitions)create_physics(d,*candidate,true,moving_roots,controlled_cameras,restored);
+        if(snow_binding)initialize_snow();
         // Character constructors allocate their own Jolt IDs. Finish all bootstrap
         // creation before inventorying slots; subsequent structural creation must
         // use explicit IDs so a failed batch cannot consume Jolt sequence numbers.
@@ -1758,7 +1744,7 @@ struct Runtime::Impl {
         return std::move(result.spawned.front());
     }
     std::vector<RuntimeStructureResult> step(std::uint32_t count,const std::vector<RuntimeInput>& inputs,const std::vector<KinematicTarget>& motions,const std::vector<SoundCommand>& sound_commands,const std::vector<AnimationCommand>& animation_commands,const std::vector<RuntimeStructureTick>& structure,const std::vector<RuntimeIkCommand>& ik_commands,const std::vector<RuntimeRootMotionCommand>& root_commands,const std::vector<RuntimeCameraLensCommand>& lens_commands,const std::vector<RuntimeCharacterStanceCommand>& stance_commands,const std::vector<RuntimeGroundingCommand>& grounding_commands,const std::vector<AnimationRateCommand>& animation_rates,const std::vector<RuntimeCameraPoseCommand>& pose_commands,const std::vector<PhysicalRigCommand>& physical_commands,
-        std::span<const RuntimeSurfaceMarkCommand> mark_commands) {
+        std::span<const RuntimeSurfaceMarkCommand> mark_commands,const std::optional<RuntimeSnowStamp>& snow_stamp) {
         profiling::Scope batch_profile("runtime.batch",static_cast<std::int64_t>(tick));
         require(!player_preferences_prepared,"Flush pending player preferences before another simulation batch.");
         require(count>=1 && count<=600 && tick+count<=9007199254740991ULL,"Runtime step exceeds tick limits.");
@@ -1806,6 +1792,7 @@ struct Runtime::Impl {
         auto water_checkpoint=water_region;
         auto particle_checkpoint=particle_runtime ? std::make_unique<ParticleRuntime>(*particle_runtime) : nullptr;
         const auto surface_checkpoint=surface_marks;
+        const auto snow_checkpoint=snow_live;
         // World systems share controller input and consume each pressed name once.
         std::vector<std::string_view> pressed_actions;
         if(water_region || particle_runtime) {
@@ -1829,6 +1816,7 @@ struct Runtime::Impl {
             for(auto& [e,motion]:prepared)registry.get<Body>(e).target=std::move(motion);
             for(std::uint32_t frame=0;frame<count;++frame) {
                 profiling::Scope tick_profile("runtime.tick",static_cast<std::int64_t>(tick));
+                if(frame==0 && snow_stamp)apply_snow_stamp(*snow_stamp);
                 game_character_inputs.clear();game_physical_commands.clear();deferred_controller_inputs.clear();clear_controller_preview();
                 for(auto e:topology->characters) {
                     registry.get<Controller>(e).character->BeginTick();
@@ -2071,6 +2059,7 @@ struct Runtime::Impl {
             clear_player_preferences_commands();
             components->rollback_batch();
             rollback_structure(structure_checkpoint);
+            if(snow_checkpoint!=snow_live)publish_snow(snow_checkpoint,false);
             for(const auto& [entity,camera]:camera_checkpoint)registry.get<RuntimeCamera>(entity)=camera;
             save_queue=save_checkpoint;ui_model=ui_checkpoint;clear_ui_commands();
             animations->restore(animation_checkpoint);
@@ -2111,6 +2100,7 @@ struct Runtime::Impl {
         SceneObject result{node.id,proposed ? proposed->at(node.id) : node.world,mesh.albedo,mesh.mesh,mesh.material,mesh.textures,
             animations->skin(node.id,world),
             1,mesh.cast_shadows,mesh.receive_shadows,true,topology->definitions.at(node.id).camera_draw};
+        result.mutable_geometry=snow_binding && snow_binding->contains(node.id);
         if(attachment_graph && !attachment_graph->world_draws.empty() && attachment_graph->world_draws.contains(node.id))
             result.camera_draw.reset();
         if(result.camera_draw && result.camera_draw->mode==CameraDrawMode::Viewmodel)result.cast_shadows=false;
@@ -2166,7 +2156,8 @@ Runtime::PreparedMaterialUpdate Runtime::prepare_materials(std::uint64_t expecte
         validate_pbr_material(edit.material);
         auto& definition=candidate->definitions.at(edit.id);
         if(edit.material.alpha_mode!=MaterialAlphaMode::opaque)
-            require(!definition.footprint_surface && std::none_of(surface_marks().begin(),surface_marks().end(),[&](const auto& row){return row.receiver==edit.id;}),
+            require(!definition.footprint_surface && !(impl_->snow_binding && impl_->snow_binding->contains(edit.id)) &&
+                std::none_of(surface_marks().begin(),surface_marks().end(),[&](const auto& row){return row.receiver==edit.id;}),
                 "A surface mark receiver must retain an opaque material.");
         require(definition.mesh && definition.mesh->material.has_value(),"Material definition is not a PBR drawable.");
         definition.mesh->material=edit.material;data->edits.emplace_back(found->second,edit.material);
@@ -2387,8 +2378,8 @@ std::string Runtime::release_attachment(std::uint64_t expected,const RuntimeAtta
     return impl_->release_attachment(expected,request);
 }
 std::vector<RuntimeStructureResult> Runtime::step(std::uint32_t ticks,const std::vector<RuntimeInput>& inputs,const std::vector<KinematicTarget>& motions,const std::vector<SoundCommand>& sounds,const std::vector<AnimationCommand>& animations,const std::vector<RuntimeStructureTick>& structure,const std::vector<RuntimeIkCommand>& ik,const std::vector<RuntimeRootMotionCommand>& roots,const std::vector<RuntimeCameraLensCommand>& lenses,const std::vector<RuntimeCharacterStanceCommand>& stances,const std::vector<RuntimeGroundingCommand>& grounding,const std::vector<AnimationRateCommand>& animation_rates,const std::vector<RuntimeCameraPoseCommand>& pose_commands,const std::vector<PhysicalRigCommand>& physical_commands,
-    std::span<const RuntimeSurfaceMarkCommand> marks) {
-    return impl_->step(ticks,inputs,motions,sounds,animations,structure,ik,roots,lenses,stances,grounding,animation_rates,pose_commands,physical_commands,marks);
+    std::span<const RuntimeSurfaceMarkCommand> marks,const std::optional<RuntimeSnowStamp>& snow_stamp) {
+    return impl_->step(ticks,inputs,motions,sounds,animations,structure,ik,roots,lenses,stances,grounding,animation_rates,pose_commands,physical_commands,marks,snow_stamp);
 }
 std::span<const RuntimeSurfaceMark> Runtime::surface_marks() const {
     if(!impl_->surface_marks)return {};
@@ -2487,6 +2478,12 @@ std::optional<RuntimeRootMotionState> Runtime::root_motion(const std::string& id
 RuntimeNavigationPath Runtime::navigation_path(const RuntimeNavigationRequest& request) const {return impl_->navigation_query(request);}
 const water::Region* Runtime::water_region() const noexcept {
     return impl_->water_region ? &*impl_->water_region : nullptr;
+}
+const snow::Region* Runtime::snow_region() const noexcept {
+    return impl_->snow_binding ? &*impl_->snow_binding : nullptr;
+}
+const snow::State* Runtime::snow_state() const noexcept {
+    return impl_->snow_live ? &impl_->snow_live->state : nullptr;
 }
 RuntimeParticleObservation Runtime::particle_observation() const { return impl_->observe_particles(); }
 std::optional<RuntimeRayHit> Runtime::raycast(const RuntimeRay& query) const {

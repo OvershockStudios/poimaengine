@@ -14,6 +14,7 @@
 #include "poima/ui_model.hpp"
 #include "poima/particles.hpp"
 #include "poima/water_region_definition.hpp"
+#include "poima/snow_definition.hpp"
 #include <map>
 #include <memory>
 #include <optional>
@@ -24,6 +25,7 @@
 namespace poima {
 namespace jobs { class Executor; }
 namespace water { class Region; }
+namespace snow { class Region; struct State; }
 struct ModelAsset;
 class GameplayPlayerPreferences;
 struct RuntimeTransform {
@@ -496,6 +498,7 @@ struct RuntimeDefinition {
     std::optional<water::RegionDefinition> water;
     std::map<std::string,std::shared_ptr<const TextureImage>> particle_sprite_textures;
     std::map<std::string,RuntimeSurfaceMarkProfile> surface_mark_profiles;
+    std::optional<snow::Definition> snow;
 };
 // Shared authoring/native validation, also available without Jolt.
 void validate_runtime_animation(const RuntimeDefinition& definition);
@@ -543,6 +546,13 @@ struct RuntimeRay {
     std::array<double,3> origin{},direction{0,0,-1};
     double distance=100;
     std::vector<std::string> ignore;
+};
+struct RuntimeSnowStamp {
+    std::uint64_t expected_generation=0;
+    std::string receiver;
+    std::uint32_t triangle=0;
+    RuntimeRay ray;
+    std::uint32_t radius_units=0,depth_units=0;
 };
 struct RuntimeRayHit {
     std::string entity;
@@ -748,7 +758,8 @@ public:
         const std::vector<AnimationRateCommand>& animation_rates={},
         const std::vector<RuntimeCameraPoseCommand>& camera_poses={},
         const std::vector<PhysicalRigCommand>& physical_rigs={},
-        std::span<const RuntimeSurfaceMarkCommand> surface_marks={});
+        std::span<const RuntimeSurfaceMarkCommand> surface_marks={},
+        const std::optional<RuntimeSnowStamp>& snow_stamp={});
     std::span<const RuntimeSurfaceMark> surface_marks() const;
     std::optional<RuntimeSurfaceMarkLifecycle> surface_mark_lifecycle() const;
     std::optional<RuntimeCharacterStanceState> character_stance(const std::string& id) const;
@@ -795,6 +806,8 @@ public:
     RuntimeNavigationPath navigation_path(const RuntimeNavigationRequest&) const;
     // The optional region advances at the same committed tick as this runtime.
     const water::Region* water_region() const noexcept;
+    const snow::Region* snow_region() const noexcept;
+    const snow::State* snow_state() const noexcept;
     RuntimeParticleObservation particle_observation() const;
     // The serialized owner installs a fresh epoch and a ledger that outlives
     // this runtime. Direct runtimes start with saving disabled. Pending intents

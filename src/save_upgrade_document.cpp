@@ -3,6 +3,7 @@
 #include "poima/save_upgrade.hpp"
 #include "poima/runtime.hpp"
 #include "surface_mark_profiles.hpp"
+#include "poima/snow.hpp"
 #include "asset_provenance.hpp"
 #include <nlohmann/json.hpp>
 #include <algorithm>
@@ -28,7 +29,7 @@ Json parse(const std::string& text) {
 void keys(const Json& value,std::initializer_list<const char*> expected,bool optional_world_content=false) {
     const auto extra=optional_world_content ? static_cast<unsigned>(value.contains("navigation"))
         +static_cast<unsigned>(value.contains("asset_provenance"))+static_cast<unsigned>(value.contains("water"))
-        +static_cast<unsigned>(value.contains("surface_mark_profiles")) : 0u;
+        +static_cast<unsigned>(value.contains("snow"))+static_cast<unsigned>(value.contains("surface_mark_profiles")) : 0u;
     check(value.is_object() && value.size()==expected.size()+extra,"Unexpected save upgrade authored document members.");
     for(const auto* key:expected)check(value.contains(key),"Missing save upgrade authored document member.");
 }
@@ -251,6 +252,11 @@ Registry normalize(Json& doc) {
         }
     };
     instances(doc.at("entities"),false);graph_parents(doc.at("entities"));
+    if(doc.contains("snow")) {
+        check(!doc.contains("water") && !doc.contains("navigation"),"Snow cannot be combined with authored water or navigation.");
+        const auto binding=snow::parse_definition(doc.at("snow"));
+        for(const auto& tile:binding.tiles)check(doc.at("entities").contains(tile),"Snow tile entity does not exist.");
+    }
     hit_region_references(doc.at("entities"));
     camera_draw_references(doc.at("entities"));
     if(doc.contains("templates")) {
@@ -283,6 +289,9 @@ DocumentMappingResult map_authored_document(const std::string& source_document,c
     const auto old_profiles=source.find("surface_mark_profiles"),new_profiles=target.find("surface_mark_profiles");
     check(old_profiles==source.end() ? new_profiles==target.end() :
         new_profiles!=target.end() && *old_profiles==*new_profiles,"Save upgrade cannot change the surface mark profile catalog.");
+    const auto old_snow=source.find("snow"),new_snow=target.find("snow");
+    check(old_snow==source.end() ? new_snow==target.end() :
+        new_snow!=target.end() && *old_snow==*new_snow,"Save upgrade cannot change the snow binding.");
     check(old.size()+plan.add_components.size()==next.size(),"Save upgrade component additions do not cover the target catalog.");
     for(const auto& [id,schema]:old) {(void)schema;check(next.contains(id),"Save upgrade cannot remove component types.");}
     check(plan.add_components.size()<=components::max_types,"Added component type budget exceeded.");

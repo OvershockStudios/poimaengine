@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <limits>
+#include <map>
 #include <stdexcept>
 #include <string>
 #include <unordered_set>
@@ -71,6 +72,9 @@ struct Pass {PassId id;std::vector<Access> accesses;};
 struct SkinInputs {ResourceId source=none,influences=none,palette=none,output=none;};
 struct GeometrySlice {
     std::uint64_t vertex_offset=0,index_offset=0,vertex_bytes=0,index_bytes=0;
+    bool mutable_geometry=false,prior_geometry=false;
+    std::uint64_t prior_vertex_offset() const {return prior_geometry ? vertex_offset+vertex_bytes : vertex_offset;}
+    std::uint64_t uploaded_vertex_bytes() const {return prior_geometry ? 2*vertex_bytes : vertex_bytes;}
     friend bool operator==(const GeometrySlice&,const GeometrySlice&)=default;
 };
 struct DrawInputs {ResourceId vertices=none,indices=none;std::vector<ResourceId> textures;ResourceId previous_vertices=none;GeometrySlice stream{};};
@@ -120,6 +124,10 @@ inline constexpr std::uint64_t bloom_budget_bytes=32u*1024u*1024u;
 inline constexpr std::uint64_t stream_vertex_budget=4u*1024u*1024u;
 inline constexpr std::uint64_t stream_index_budget=1u*1024u*1024u;
 inline constexpr std::size_t max_stream_draws=128;
+inline constexpr std::size_t max_mutable_stream_draws=2;
+inline constexpr std::size_t mutable_tile_vertex_count=33*33;
+inline constexpr std::size_t mutable_tile_index_count=32*32*6;
+inline constexpr std::size_t mutable_tile_vertex_stride=48;
 inline constexpr std::size_t sprite_instance_stride=64;
 inline constexpr std::size_t max_sprite_instances=4096;
 inline constexpr std::uint64_t sprite_instance_budget=sprite_instance_stride*max_sprite_instances;
@@ -151,34 +159,63 @@ struct Schedule {
             const auto& indices=resource(frame.streamed_indices);
             auto valid_buffer=[](const Resource& r,std::uint64_t budget) {
                 return r.kind==Kind::buffer && r.lifetime==Lifetime::slot && r.region==Region::prefix &&
-                    !r.initialized && r.allocation_bytes<=budget && r.bytes%4==0;
+                    !r.initialized && r.bytes<=r.allocation_bytes && r.allocation_bytes<=budget && r.bytes%4==0;
             };
             if(!valid_buffer(vertices,stream_vertex_budget) || !valid_buffer(indices,stream_index_budget))
                 fail("invalid streamed geometry buffers");
         }
-        std::uint64_t streamed_vertices=0,streamed_indices=0;
-        std::size_t streamed_draws=0;
-        for(const auto* list:{&frame.camera_draws,&frame.shadow_draws,&frame.viewmodel_draws})for(const auto& draw:*list) {
-            const bool streamed=stream && (draw.vertices==frame.streamed_vertices || draw.indices==frame.streamed_indices);
-            if(!streamed) {
-                if(draw.stream!=GeometrySlice{})fail("static geometry has a streaming slice");
-                continue;
+        struct StreamDraw {GeometrySlice slice;bool camera=false,shadow=false;};
+        std::map<std::uint64_t,StreamDraw> stream_draws;
+        bool streamed_camera=false,streamed_shadow=false;
+        for(const auto* list:{&frame.camera_draws,&frame.shadow_draws,&frame.viewmodel_draws}) {
+            const bool camera=list==&frame.camera_draws,shadow=list==&frame.shadow_draws;
+            std::uint64_t previous_end=0;
+            for(const auto& draw:*list) {
+                const bool streamed=stream && (draw.vertices==frame.streamed_vertices || draw.indices==frame.streamed_indices ||
+                    draw.previous_vertices==frame.streamed_vertices || draw.previous_vertices==frame.streamed_indices);
+                if(!streamed) {
+                    if(draw.stream!=GeometrySlice{})fail("static geometry has a streaming slice");
+                    continue;
+                }
+                const auto& slice=draw.stream;
+                if((!camera && !shadow) || draw.vertices!=frame.streamed_vertices || draw.indices!=frame.streamed_indices ||
+                    draw.previous_vertices!=(camera && settings.products ? draw.vertices : none))
+                    fail("invalid streamed mesh draw consumer");
+                if(!slice.mutable_geometry && (!camera || slice.prior_geometry))
+                    fail("transient streamed geometry requires one opaque camera draw without separate history");
+                if(slice.mutable_geometry && (slice.vertex_bytes!=mutable_tile_vertex_count*mutable_tile_vertex_stride ||
+                    slice.index_bytes!=mutable_tile_index_count*sizeof(std::uint32_t) || (slice.prior_geometry && !settings.products)))
+                    fail("invalid mutable tile topology or previous geometry");
+                const auto vertex_end=resource(frame.streamed_vertices).bytes,index_end=resource(frame.streamed_indices).bytes;
+                if(!slice.vertex_bytes || !slice.index_bytes || slice.vertex_bytes%4 || slice.index_bytes%4 ||
+                    slice.vertex_offset<previous_end || slice.vertex_offset>vertex_end ||
+                    slice.uploaded_vertex_bytes()>vertex_end-slice.vertex_offset ||
+                    slice.index_offset>index_end || slice.index_bytes>index_end-slice.index_offset)
+                    fail("streamed geometry has overlapping or out-of-range slices");
+                previous_end=slice.vertex_offset+slice.uploaded_vertex_bytes();
+                auto [entry,inserted]=stream_draws.try_emplace(slice.vertex_offset,StreamDraw{slice,camera,shadow});
+                if(!inserted) {
+                    auto& existing=entry->second;
+                    if(!slice.mutable_geometry || existing.slice!=slice || (camera && existing.camera) || (shadow && existing.shadow))
+                        fail("streamed geometry has conflicting draw aliases");
+                    existing.camera|=camera;existing.shadow|=shadow;
+                }
+                if(stream_draws.size()>max_stream_draws)fail("too many streamed geometry draws");
+                streamed_camera|=camera;streamed_shadow|=shadow;
             }
-            if(list!=&frame.camera_draws || ++streamed_draws>max_stream_draws || draw.vertices!=frame.streamed_vertices ||
-                draw.indices!=frame.streamed_indices || draw.previous_vertices!=(settings.products ? draw.vertices : none))
-                fail("streamed mesh must have one opaque camera draw without separate history");
-            const auto& slice=draw.stream;
-            const auto vertex_end=resource(frame.streamed_vertices).bytes,index_end=resource(frame.streamed_indices).bytes;
-            if(!slice.vertex_bytes || !slice.index_bytes || slice.vertex_bytes%4 || slice.index_bytes%4 ||
-                slice.vertex_offset!=streamed_vertices || slice.index_offset!=streamed_indices ||
-                slice.vertex_offset>vertex_end || slice.vertex_bytes>vertex_end-slice.vertex_offset ||
-                slice.index_offset>index_end || slice.index_bytes>index_end-slice.index_offset)
-                fail("streamed geometry has noncontiguous or out-of-range slices");
-            streamed_vertices+=slice.vertex_bytes;
+        }
+        std::uint64_t streamed_vertices=0,streamed_indices=0;
+        std::size_t mutable_draws=0;
+        for(const auto& [offset,draw]:stream_draws) {
+            const auto& slice=draw.slice;
+            if(offset!=streamed_vertices || slice.index_offset!=streamed_indices ||
+                (slice.prior_geometry && !draw.camera) || (slice.mutable_geometry && ++mutable_draws>max_mutable_stream_draws))
+                fail("streamed geometry has noncontiguous slices or unavailable camera history");
+            streamed_vertices+=slice.uploaded_vertex_bytes();
             streamed_indices+=slice.index_bytes;
         }
-        if(stream && (!streamed_draws || streamed_vertices!=resource(frame.streamed_vertices).bytes ||
-            streamed_indices!=resource(frame.streamed_indices).bytes))fail("streamed prefix differs from opaque draw slices");
+        if(stream && (stream_draws.empty() || streamed_vertices!=resource(frame.streamed_vertices).bytes ||
+            streamed_indices!=resource(frame.streamed_indices).bytes))fail("streamed prefix differs from draw slices");
         if(settings.editor && settings.overlay)fail("editor composition and hosted overlay are mutually exclusive");
         if(settings.sky && !settings.scene)fail("sky pass without a scene");
         if(settings.overlay)required(frame.overlay_vertices);
@@ -412,7 +449,7 @@ struct Schedule {
         }
         bool world_resolved=false,world_opaque=false,foreground_lights=false,foreground_cleared=false,foreground_drawn=false,foreground_resolved=false,foreground_composed=false;
         bool exported=false,captured=false,probed=false,prepared=false,reconstructed=false,deferred_lit=false,deferred_opaque=false,ao_generated=false,ao_filtered=false;
-        bool post_effect_applied=false,stream_uploaded=false,sprites_uploaded=false,sprites_drawn=false;unsigned previous=0;bool first=true;
+        bool post_effect_applied=false,stream_uploaded=false,stream_shadow_drawn=false,sprites_uploaded=false,sprites_drawn=false;unsigned previous=0;bool first=true;
         bool surface_marks_uploaded=false;
         unsigned bloom_stage=0;
         for(const auto& pass:passes) {
@@ -440,8 +477,10 @@ struct Schedule {
                     fail("invalid surface mark upload");
                 surface_marks_uploaded=true;
             }
-            if(pass.id==PassId::opaque && stream && (!stream_uploaded || !has(frame.streamed_vertices,Use::vertex) ||
-                !has(frame.streamed_indices,Use::index)))fail("opaque draw requires uploaded geometry");
+            const bool stream_draw=(pass.id==PassId::opaque && streamed_camera) || (pass.id==PassId::shadows && streamed_shadow);
+            if(stream_draw && (!stream_uploaded || !has(frame.streamed_vertices,Use::vertex) ||
+                !has(frame.streamed_indices,Use::index)))fail("streamed draw requires uploaded geometry");
+            if(stream_draw && pass.id==PassId::shadows)stream_shadow_drawn=true;
             if(pass.id==PassId::shadows)for(const auto& draw:frame.shadow_draws)
                 for(auto texture:draw.textures)if(!has(texture,Use::sampled))fail("missing masked shadow material input");
             if(pass.id==PassId::opaque) {
@@ -593,8 +632,8 @@ struct Schedule {
                 const auto& r=resource(a.resource);
                 const bool streamed=stream && (a.resource==frame.streamed_vertices || a.resource==frame.streamed_indices);
                 if(streamed && !(pass.id==PassId::stream_geometry && a.use==Use::upload) &&
-                    !(pass.id==PassId::opaque && a.use==(a.resource==frame.streamed_vertices ? Use::vertex : Use::index)))
-                    fail("streamed geometry used outside upload and opaque draw");
+                    !(stream_draw && a.use==(a.resource==frame.streamed_vertices ? Use::vertex : Use::index)))
+                    fail("streamed geometry used outside upload and declared draws");
                 const bool sprite_instances=settings.particle_sprites && a.resource==frame.sprite_instances;
                 if(sprite_instances && !(pass.id==PassId::sprite_upload && a.use==Use::upload) &&
                     !(pass.id==PassId::particle_sprites && a.use==Use::storage_read))
@@ -654,6 +693,7 @@ struct Schedule {
         if(settings.deferred && !deferred_lit)fail("missing deferred lighting pass");
         if(settings.reconstruction && !reconstructed)fail("missing reconstruction pass");
         if(stream && !stream_uploaded)fail("missing streamed geometry upload");
+        if((streamed_camera && !world_opaque) || (streamed_shadow && !stream_shadow_drawn))fail("missing streamed geometry draw pass");
         if(settings.particle_sprites && !sprites_drawn)fail("missing particle sprite pass");
         if(surface_marks && !world_opaque)fail("missing opaque surface mark consumer");
         if(settings.post_effect && !post_effect_applied)fail("missing post effect pass");

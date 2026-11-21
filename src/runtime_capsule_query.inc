@@ -37,8 +37,8 @@
             const auto& axis=hit.mPenetrationAxis;const double length=std::hypot(double(axis.GetX()),double(axis.GetY()),double(axis.GetZ()));
             require(std::isfinite(length),"Native capsule normal is nonfinite.");
             if(length>1e-20)result.normal=std::array<double,3>{-axis.GetX()/length,-axis.GetY()/length,-axis.GetZ()/length};
-            if(const auto mesh=topology->mesh_shapes.find(hit.mBodyID2.GetIndexAndSequenceNumber());mesh!=topology->mesh_shapes.end())
-                result.triangle=mesh->second->GetTriangleUserData(hit.mSubShapeID2);
+            if(const auto* mesh=ray_mesh(hit.mBodyID2.GetIndexAndSequenceNumber()))
+                result.triangle=mesh->GetTriangleUserData(hit.mSubShapeID2);
             return result;
         };
         const auto key=[](const CapsuleCastHit& hit) {

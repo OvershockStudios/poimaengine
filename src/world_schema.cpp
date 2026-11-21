@@ -2,6 +2,7 @@
 #include "world_schema.hpp"
 #include "poima/gameplay_compatibility.hpp"
 #include "poima/runtime.hpp"
+#include "poima/snow.hpp"
 #include "physical_rig_json.hpp"
 #include "pose_frames.hpp"
 #include "poima/scene.hpp"
@@ -34,6 +35,11 @@ Json object_schema(Json properties, Json required = Json::array()) {
 using Json = nlohmann::json;
 Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t max_document_bytes) {
     const Json id = {{"type", "string"}, {"pattern", "^[0-9a-f]{32}$"}};
+    auto unsigned_range = [](std::uint32_t first,std::uint32_t last) {
+        return Json{{"type","integer"},{"minimum",first},{"maximum",last}};
+    };
+    auto snow_tile_id=id;
+    snow_tile_id["not"]={{"const","00000000000000000000000000000000"}};
     const Json rev = {{"type", "integer"}, {"minimum", 0}, {"maximum", max_revision}};
     const Json name = {{"type", "string"}, {"minLength", 1}, {"maxLength", 256}, {"description", "Also limited to 256 UTF-8 bytes."}};
     const Json parent = {{"anyOf", {id, Json{{"type", "null"}}}}};
@@ -241,6 +247,13 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     op("component.remove", {{"type", removable_component}}, {"type"});
     ops.push_back(object_schema({{"op",{{"const","navigation.set"}}},{"asset",{{"anyOf",Json::array({asset_id,Json{{"type","null"}}})}}}},{"op","asset"}));
     ops.push_back(object_schema({{"op",{{"const","water.set"}}},{"asset",{{"anyOf",Json::array({asset_id,Json{{"type","null"}}})}}}},{"op","asset"}));
+    auto snow_tiles=vector(snow_tile_id,2);
+    snow_tiles["uniqueItems"]=true;
+    auto snow_definition=object_schema({{"tiles",snow_tiles},{"thickness_units",unsigned_range(1,snow::max_depth_units)}},
+        {"tiles","thickness_units"});
+    snow_definition["description"]="Bind two existing cooked terrain entities in west-east order. Each must use the same visible static primitive for rendering and collision. Null clears the binding.";
+    ops.push_back(object_schema({{"op",{{"const","snow.set"}}},
+        {"definition",{{"anyOf",Json::array({snow_definition,Json{{"type","null"}}})}}}},{"op","definition"}));
     ops.push_back(object_schema({{"op",{{"const","surface_mark.profile.set"}}},{"id",mark_profile_id},
         {"mask",{{"anyOf",Json::array({asset_id,Json{{"type","null"}}})}}}},{"op","id","mask"}));
     ops.push_back(object_schema({{"op",{{"const","asset.provenance.set"}}},{"asset",asset_id},{"records",{{"type","array"},{"maxItems",8},{"uniqueItems",true},{"items",asset_id}}}},{"op","asset","records"}));
@@ -278,7 +291,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 187}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 188}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -620,6 +633,22 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     const auto mark_ray_vector=vector(mark_range(-1e6,1e6),3);
     const auto mark_ray=object_schema({{"origin",mark_ray_vector},{"direction",mark_ray_vector},
         {"distance",mark_range(.001,10000)}},{"origin","direction","distance"});
+    auto snow_stamp=object_schema({{"expected_generation",rev},{"receiver",snow_tile_id},
+        {"triangle",unsigned_range(0,2*snow::tile_cells*snow::tile_cells-1)},{"ray",mark_ray},
+        {"radius_units",unsigned_range(snow::min_radius_units,snow::max_radius_units)},
+        {"depth_units",unsigned_range(1,snow::max_depth_units)}},
+        {"expected_generation","receiver","triangle","ray","radius_units","depth_units"});
+    snow_stamp["description"]="On the first tick, compact the committed snow surface hit by the ray. Its first hit must match the receiver and cooked triangle at the expected generation. A failed stamp rejects the batch. Outside runtime-game-session v1.";
+    result["snow"]={{"available",Runtime::available()},{"binding_operation","snow.set"},
+        {"samples_x",snow::samples_x},{"samples_z",snow::samples_z},{"spacing_m",snow::spacing_m},
+        {"depth_unit_m",snow::unit_m},{"volume_unit_m3",snow::volume_unit_m3},{"stamps_per_step",1}};
+    if(Runtime::available()) {
+        const Json sample={{"type","array"},{"minItems",2},{"maxItems",2},
+            {"prefixItems",Json::array({unsigned_range(0,snow::samples_x-1),unsigned_range(0,snow::samples_z-1)})}};
+        methods["runtime.snow.inspect"]=object_schema({{"session_id",id},{"tick",rev},{"structure_revision",rev},
+            {"samples",{{"type","array"},{"maxItems",64},{"items",sample}}}},{"session_id","tick","structure_revision"});
+        methods["runtime.snow.inspect"]["description"]="Read committed generation, tile binding, compacted sample count, lost volume and optionally up to 64 pairs of lattice indices [x,z]. Outside runtime-game-session v1.";
+    }
     auto mark_command=object_schema({{"receiver",id},{"source",id},{"ray",mark_ray},{"travel_direction",mark_ray_vector},{"profile",mark_profile_id},
         {"lifetime_ticks",mark_lifetime},{"overflow",{{"enum",{"reject","recycle_oldest_timed"}},{"default","reject"}}}},{"receiver","ray"});
     mark_command["properties"].update(mark_style_props);
@@ -1247,6 +1276,13 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"gameplay_services_abi",7},{"gameplay_services_bytes",176},{"hierarchical_services_bytes",232},{"gameplay_reads","Committed membership; reserved births support custom initializers and local-member resolution. Template defaults are read explicitly."},{"runtime","Frozen root-prop or connected hierarchical recipes; atomic spawn and whole-instance despawn. runtime.instance returns canonical local-to-live member handles. Existing transform/physics/rig ownership and aggregate budgets apply to expanded membership; RPC tick scheduling remains unavailable."}};
     for(const auto* method:{"runtime.step","runtime.component.edit","runtime.gameplay.edit","runtime.gameplay.load","runtime.gameplay.load_native","runtime.audio.replay","runtime.play","player.start"})
         methods[method]["properties"]["expected_structure_revision"]=rev;
+    if(Runtime::available()) {
+        auto snow_step=methods.at("runtime.step");
+        snow_step["properties"]["snow_stamp"]=std::move(snow_stamp);
+        snow_step["required"].push_back("snow_stamp");
+        methods["runtime.snow.step"]=std::move(snow_step);
+        result["snow"]["stamp_method"]="runtime.snow.step";
+    }
     result["invariants"].push_back("Runtime mutations guarded by expected_tick also require expected_structure_revision after any structural transaction. Retained retries use the original guard and return their committed result. Before structural edits the field is optional, but a supplied guard is always checked.");
     result["runtime_available"]=Runtime::available();
     result["invariants"].push_back("Explicit IK grounding owns its slot, uses one bounded post-physics probe per eligible foot, and preserves animation for misses/raised feet. Grounded sessions use nested animation-state v7 with cached decisions; initialization, inspection, preliminary samples and restored poses do not refresh foot probes. Maximum two automatic feet per rig and64 per world; upright uniform wrappers only.");

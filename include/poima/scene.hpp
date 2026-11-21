@@ -181,6 +181,8 @@ struct SceneObject {
     // Indexed opaque world geometry replaced by the next presentation.
     bool stream_geometry=false;
     std::vector<SceneSurfaceMark> surface_marks{};
+    // Fixed-topology terrain whose current and preceding positions belong to frame slots.
+    bool mutable_geometry=false;
 };
 struct SceneViewmodel {
     SceneLens lens;

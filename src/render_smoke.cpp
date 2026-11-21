@@ -310,7 +310,9 @@ struct DrawItem {
     std::uint32_t object_index=0;std::uint64_t incarnation=0;std::shared_ptr<const MeshAsset> mesh;
     nvrhi::BufferHandle previous_vertices;std::string entity_id;SkinInstance* skin=nullptr;
     DrawConstants constants{};Geometry geometry;nvrhi::BindingSetHandle bindings,masked_shadow_bindings;
-    bool cull=false,camera_visible=true,receive_shadows=true,stream_geometry=false;
+    bool cull=false,camera_visible=true,receive_shadows=true,stream_geometry=false,mutable_geometry=false;
+    // Borrowed from the last accepted camera frame until the stream upload is packed.
+    const MeshAsset* previous_stream_mesh=nullptr;
     std::uint32_t shadow_mask=0,surface_mark_offset=0,surface_mark_count=0;
     // Borrowed from the current snapshot during draw preparation and submission.
     std::span<const SceneSurfaceMark> local_surface_marks;
@@ -329,6 +331,7 @@ void timing_sample(TimingSummary& value,double ms) {
     ++value.samples;value.total_ms+=ms;value.last_ms=ms;
 }
 using Vertex=MeshVertex;
+static_assert(sizeof(Vertex)==render_schedule::mutable_tile_vertex_stride);
 std::vector<Vertex> box_vertices() {
     std::vector<Vertex> result;
     for (std::size_t axis = 0; axis < 3; ++axis) for (float sign : {-1.0f, 1.0f}) {
@@ -509,7 +512,7 @@ struct Context {
         std::uint64_t incarnation=0;
         std::shared_ptr<const MeshAsset> mesh;
         std::uint32_t mark_offset=0,mark_count=0;
-        bool skinned=false;
+        bool skinned=false,mutable_geometry=false;
     };
     struct ViewHistory {
         std::string source,world,camera;
@@ -1121,7 +1124,19 @@ struct Context {
             }
             ObjectData gpu_object{};gpu_object.current=item.constants;
             auto previous=history.objects.find(item.entity_id);
-            bool valid=pending_history_valid && item.incarnation && previous!=history.objects.end() && previous->second.incarnation==item.incarnation && previous->second.mesh==item.mesh && previous->second.skinned==bool(item.skin);
+            bool valid=pending_history_valid && item.incarnation && previous!=history.objects.end() &&
+                previous->second.incarnation==item.incarnation && previous->second.skinned==bool(item.skin) &&
+                previous->second.mutable_geometry==item.mutable_geometry;
+            item.previous_stream_mesh=nullptr;
+            if(valid) {
+                const auto& prior_mesh=previous->second.mesh;
+                if(item.mutable_geometry) {
+                    valid=scene_visible && item.camera_visible && (prior_mesh==item.mesh ||
+                        (prior_mesh->vertices.size()==item.mesh->vertices.size() &&
+                        std::ranges::equal(prior_mesh->indices,item.mesh->indices)));
+                    if(valid && prior_mesh!=item.mesh)item.previous_stream_mesh=prior_mesh.get();
+                } else valid=prior_mesh==item.mesh;
+            }
             if(item.skin)valid=valid && item.skin->accepted_sequence==history.sequence;
             std::copy_n(valid ? previous->second.model.data() : &item.constants.model[0][0],12,&gpu_object.previous_model[0][0]);
             bool marks_changed=false;
@@ -1136,9 +1151,9 @@ struct Context {
             gpu_object.history[3]=item.surface_mark_count;
             item.previous_vertices=item.skin && valid ? item.skin->outputs[item.skin->accepted_index] : item.geometry.vertices;
             object_data.push_back(gpu_object);
-            if(item.stream_geometry)continue;
+            if(item.stream_geometry && (!item.mutable_geometry || !scene_motion || !scene_visible || !item.camera_visible))continue;
             ObjectHistory accepted;std::copy_n(&item.constants.model[0][0],12,accepted.model.begin());
-            accepted.incarnation=item.incarnation;accepted.mesh=item.mesh;accepted.skinned=bool(item.skin);
+            accepted.incarnation=item.incarnation;accepted.mesh=item.mesh;accepted.skinned=bool(item.skin);accepted.mutable_geometry=item.mutable_geometry;
             if(scene_motion && !item.local_surface_marks.empty()) {
                 accepted.mark_offset=static_cast<std::uint32_t>(pending_history.surface_marks.size());
                 accepted.mark_count=item.surface_mark_count;
@@ -1406,9 +1421,12 @@ struct Context {
                 const auto& draw=draws.at(batch.first);
                 state.pipeline=draw.masked_shadow_bindings ? masked_shadow_pipeline : shadow_pipeline;
                 state.bindings[0]=draw.masked_shadow_bindings ? draw.masked_shadow_bindings : shadow_bindings;
-                state.vertexBuffers[0].buffer=draw.geometry.vertices;
-                if(scene_products_enabled)state.vertexBuffers[1].buffer=draw.previous_vertices;
-                state.indexBuffer=draw.geometry.indices ? nvrhi::IndexBufferBinding(draw.geometry.indices,nvrhi::Format::R32_UINT,0) : nvrhi::IndexBufferBinding();
+                state.vertexBuffers[0].setBuffer(draw.geometry.vertices).setOffset(draw.geometry.stream.vertex_offset);
+                if(scene_products_enabled)state.vertexBuffers[1]
+                    .setBuffer(draw.stream_geometry ? draw.geometry.vertices : draw.previous_vertices)
+                    .setOffset(draw.geometry.stream.vertex_offset);
+                state.indexBuffer=draw.geometry.indices ? nvrhi::IndexBufferBinding(draw.geometry.indices,nvrhi::Format::R32_UINT,
+                    static_cast<std::uint32_t>(draw.geometry.stream.index_offset)) : nvrhi::IndexBufferBinding();
                 commands->setGraphicsState(state);const DrawIndices indices{draw.object_index,static_cast<std::uint32_t>(layer)};
                 commands->setPushConstants(&indices,sizeof(indices));
                 if(draw.geometry.indices)commands->drawIndexed(nvrhi::DrawArguments().setVertexCount(draw.geometry.count).setInstanceCount(batch.count).setStartInstanceLocation(0));
@@ -1472,19 +1490,25 @@ struct Context {
         pending_draws.streamed_draws=0;
         pending_draws.streamed_vertex_bytes=0;
         pending_draws.streamed_index_bytes=0;
-        if(!scene_visible)return;
+        auto needs_stream=[&](const DrawItem& draw) {
+            return draw.stream_geometry && ((scene_visible && draw.camera_visible) || (draw.mutable_geometry && draw.shadow_mask));
+        };
         std::size_t draw_count=0;
         for(auto& draw:draws) {
-            if(!draw.stream_geometry || !draw.camera_visible)continue;
+            if(!needs_stream(draw))continue;
             const auto& mesh=*draw.mesh;
+            const auto* previous=draw.previous_stream_mesh;
+            const auto vertex_count=mesh.vertices.size()+(previous ? previous->vertices.size() : 0);
             require(++draw_count<=rs::max_stream_draws &&
-                mesh.vertices.size()<=rs::stream_vertex_budget/sizeof(Vertex)-stream_vertices.size() &&
+                vertex_count<=rs::stream_vertex_budget/sizeof(Vertex)-stream_vertices.size() &&
                 mesh.indices.size()<=rs::stream_index_budget/sizeof(std::uint32_t)-stream_indices.size(),
                 "Streamed world geometry exceeds its per-frame budget.");
             draw.geometry.stream={stream_vertices.size()*sizeof(Vertex),stream_indices.size()*sizeof(std::uint32_t),
-                mesh.vertices.size()*sizeof(Vertex),mesh.indices.size()*sizeof(std::uint32_t)};
+                mesh.vertices.size()*sizeof(Vertex),mesh.indices.size()*sizeof(std::uint32_t),draw.mutable_geometry,previous!=nullptr};
             draw.geometry.vertices=nullptr;draw.geometry.indices=nullptr;draw.previous_vertices=nullptr;
             stream_vertices.insert(stream_vertices.end(),mesh.vertices.begin(),mesh.vertices.end());
+            if(previous)stream_vertices.insert(stream_vertices.end(),previous->vertices.begin(),previous->vertices.end());
+            draw.previous_stream_mesh=nullptr;
             stream_indices.insert(stream_indices.end(),mesh.indices.begin(),mesh.indices.end());
         }
         if(!draw_count)return;
@@ -1502,9 +1526,10 @@ struct Context {
         };
         grow(slot.streamed_vertices,stream_vertices.size()*sizeof(Vertex),true);
         grow(slot.streamed_indices,stream_indices.size()*sizeof(std::uint32_t),false);
-        for(auto& draw:draws)if(draw.stream_geometry && draw.camera_visible) {
+        for(auto& draw:draws)if(needs_stream(draw)) {
             draw.geometry.vertices=slot.streamed_vertices;
             draw.geometry.indices=slot.streamed_indices;
+            draw.previous_vertices=slot.streamed_vertices;
         }
         pending_draws.streamed_draws=draw_count;
         pending_draws.streamed_vertex_bytes=stream_vertices.size()*sizeof(Vertex);
@@ -1794,7 +1819,7 @@ struct Context {
         samplers.insert({fallback.wrap_s,fallback.wrap_t,fallback.min_filter,fallback.mag_filter});
         auto retain_objects=[&](const std::vector<SceneObject>& objects) {for(const auto& object:objects) {
             if(object.skin)skin_ids.insert(object.entity_id);
-            const auto* bound_mesh=object.stream_geometry ? nullptr : object.mesh.get();
+            const auto* bound_mesh=object.stream_geometry || object.mutable_geometry ? nullptr : object.mesh.get();
             if(bound_mesh) { meshes.insert(bound_mesh);mesh_owners[bound_mesh]=object.mesh; }
             if(object.textures) { materials.insert(object.textures.get());material_owners[object.textures.get()]=object.textures; }
             combinations.emplace(bound_mesh,object.textures.get());
@@ -2206,7 +2231,7 @@ struct Context {
             Matrix4 rounded;std::copy_n(viewmodel_frame.view_projection,16,rounded.begin());const auto frustum=make_frustum(rounded);
             auto number=[](double value) {require(std::isfinite(value) && std::abs(value)<=std::numeric_limits<float>::max(),"Foreground transform exceeds float range.");return static_cast<float>(value);};
             for(const auto& object:foreground.objects) {
-                require(!object.stream_geometry,"Streamed geometry is limited to opaque world draws.");
+                require(!object.stream_geometry && !object.mutable_geometry,"Streamed geometry is limited to opaque world draws.");
                 if(object.material)validate_material_alpha(*object.material);
                 if(object.mesh)validate_material_alpha(object.mesh->material);
                 DrawItem item;item.object_index=static_cast<std::uint32_t>(viewmodel_draws.size());item.incarnation=object.incarnation;item.mesh=object.mesh;item.entity_id=object.entity_id;item.receive_shadows=object.receive_shadows;
@@ -2595,6 +2620,7 @@ struct Context {
         std::vector<Frustum> shadow_frusta;for(std::size_t i=0;i<shadow_plan.size();++i)shadow_frusta.push_back(frustum(frame_constants.shadows[i].view_projection));
         pending_draws.objects=scene->world_object_count();pending_draws.shadow_views=shadow_plan.size();pending_draws.shadow_candidates=0;
         std::set<std::string> active_skins;
+        std::size_t mutable_stream_count=0;
         for(std::size_t list=0;list<world_drawables.size();++list)for(const auto& object:world_drawables[list]) {
             if(object.material)validate_material_alpha(*object.material);
             if(object.mesh)validate_material_alpha(object.mesh->material);
@@ -2613,20 +2639,28 @@ struct Context {
             draw.normal[0][3]=object.textures ? object.textures->occlusion_strength : object.mesh ? object.mesh->occlusion_strength : 1.0f;
             draw.normal[1][3]=object.textures ? object.textures->normal_scale : object.mesh ? object.mesh->normal_scale : 1.0f;
             draw.normal[2][3]=(object.textures ? bool(object.textures->maps[4].image) : object.mesh && object.mesh->textures[4].image) ? 1.0f : 0.0f;
-            pack_surface_marks(object,item);
-            item.stream_geometry=object.stream_geometry;
+            item.mutable_geometry=object.mutable_geometry;
+            item.stream_geometry=object.stream_geometry || item.mutable_geometry;
             if(item.stream_geometry) {
-                require(list==0 && object.mesh && !object.skin && !object.cast_shadows && !object.camera_draw && !object.incarnation &&
+                namespace rs=render_schedule;
+                require(list==0 && object.mesh && !object.skin && !object.camera_draw && object.surface_marks.empty() &&
                     draw.alpha[2]==0 && !object.mesh->vertices.empty() && !object.mesh->indices.empty() &&
-                    object.mesh->indices.size()%3==0 && object.mesh->vertices.size()<=render_schedule::stream_vertex_budget/sizeof(Vertex) &&
-                    object.mesh->indices.size()<=render_schedule::stream_index_budget/sizeof(std::uint32_t),
-                    "Streamed geometry requires a bounded, indexed, opaque world mesh without shadow casting or motion correspondence.");
+                    object.mesh->indices.size()%3==0 && object.mesh->vertices.size()<=rs::stream_vertex_budget/sizeof(Vertex) &&
+                    object.mesh->indices.size()<=rs::stream_index_budget/sizeof(std::uint32_t),
+                    "Streamed geometry requires a bounded, indexed, opaque world mesh.");
+                if(item.mutable_geometry) {
+                    require(!object.stream_geometry && object.incarnation && ++mutable_stream_count<=rs::max_mutable_stream_draws &&
+                        object.mesh->vertices.size()==rs::mutable_tile_vertex_count && object.mesh->indices.size()==rs::mutable_tile_index_count,
+                        "Mutable world geometry requires an identified tile with fixed topology.");
+                } else require(!object.cast_shadows && !object.incarnation,
+                    "Transient streamed geometry does not support shadow casting or motion correspondence.");
                 require(std::none_of(object.mesh->textures.begin(),object.mesh->textures.end(),[](const auto& map){return bool(map.image);}),
                     "Streamed mesh textures require an explicit immutable material texture set.");
                 require(std::all_of(object.mesh->indices.begin(),object.mesh->indices.end(),[&](auto index){return index<object.mesh->vertices.size();}),
                     "Streamed mesh index is outside its vertex range.");
                 item.geometry.count=static_cast<std::uint32_t>(object.mesh->indices.size());
             }
+            pack_surface_marks(object,item);
             item.bindings=mesh_bindings(item.stream_geometry ? nullptr : object.mesh.get(),object.textures.get());
             if(draw.alpha[2]>.5f)item.masked_shadow_bindings=masked_shadow_material(object.mesh.get(),object.textures.get(),item.bindings);
             if(!item.stream_geometry)item.geometry=mesh_geometry(object.mesh);
@@ -3552,6 +3586,7 @@ struct Context {
                 }
                 if(shadow) {
                     auto shadow_input=input;
+                    if(draw.stream_geometry)shadow_input.previous_vertices=rs::none;
                     if(draw.masked_shadow_bindings)for(const auto& binding:draw.masked_shadow_bindings->getDesc()->bindings)
                         if(binding.type==nvrhi::ResourceType::Texture_SRV)shadow_input.textures.push_back(texture(static_cast<nvrhi::ITexture*>(binding.resourceHandle),rs::Lifetime::imported,true));
                     f.shadow_draws.push_back(std::move(shadow_input));
@@ -3825,7 +3860,7 @@ struct Context {
                 const auto& draw=draws.at(batch.first);
                 state.pipeline=draw.cull ? culled_pipeline : pipeline;state.bindings[0]=draw.bindings;
                 state.vertexBuffers[0].setBuffer(draw.geometry.vertices).setOffset(draw.geometry.stream.vertex_offset);
-                if(scene_products_enabled)state.vertexBuffers[1].setBuffer(draw.previous_vertices).setOffset(draw.geometry.stream.vertex_offset);
+                if(scene_products_enabled)state.vertexBuffers[1].setBuffer(draw.previous_vertices).setOffset(draw.geometry.stream.prior_vertex_offset());
                 state.indexBuffer=draw.geometry.indices ? nvrhi::IndexBufferBinding(draw.geometry.indices,nvrhi::Format::R32_UINT,
                     static_cast<std::uint32_t>(draw.geometry.stream.index_offset)) : nvrhi::IndexBufferBinding();
                 commands->setGraphicsState(state);const DrawIndices indices{draw.object_index};commands->setPushConstants(&indices,sizeof(indices));
@@ -3867,7 +3902,7 @@ struct Context {
         }
         cluster_readback=slot.cluster_readback;skin_readback=slot.skin_readback;
         if(capture_frame)prepare_capture_staging();
-        prepare_game_ui();prepare_stream_geometry(slot);prepare_sprite_frame(slot);prepare_surface_mark_frame(slot);prepare_submission_history();
+        prepare_game_ui();prepare_sprite_frame(slot);prepare_surface_mark_frame(slot);prepare_submission_history();prepare_stream_geometry(slot);
         prepare_draw_batches();prepare_temporal_submission();prepare_ambient_occlusion();prepare_deferred_lighting();
         // Query storage belongs to this Context. Create it before acquiring an
         // image; stopped traces leave it allocated but perform no query work.

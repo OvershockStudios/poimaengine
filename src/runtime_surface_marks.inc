@@ -135,6 +135,7 @@
     }
 
     entt::entity surface_mark_receiver(const std::string& id) const {
+        require(!snow_binding || !snow_binding->contains(id),"Surface marks require a rigid receiver outside mutable snow.");
         const auto entity=find(id);
         const auto& definition=topology->definitions.at(id);
         const auto* mesh=registry.try_get<RuntimeMesh>(entity);

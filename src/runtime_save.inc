@@ -415,6 +415,7 @@ std::string Runtime::save_snapshot(const std::string& content_sha256) const {
         require(s.water_region->grid().tick()==s.tick,"Water region tick differs from its runtime.");
         payload["water"]=s.water_region->save();
     }
+    if(s.snow_live)payload["snow"]=s.snow_binding->save(s.snow_live->state);
     if(const auto* particles=s.particle_runtime.get()) {
         require(particles->system.status().tick==s.tick,"Particle system tick differs from its runtime.");
         SaveJson sources=SaveJson::array();
@@ -463,6 +464,12 @@ std::unique_ptr<Runtime> Runtime::restore_snapshot_data(const RuntimeDefinition&
     if(definition.water) {
         water_extension=std::move(data.at("water"));
         data.erase("water");
+    }
+    require(data.contains("snow")==definition.snow.has_value(),"Snapshot snow membership differs from frozen content.");
+    SaveJson snow_extension;
+    if(definition.snow) {
+        snow_extension=std::move(data.at("snow"));
+        data.erase("snow");
     }
     const bool particle_content=Impl::definition_has_particles(definition);
     require(data.contains("particles")==particle_content,"Snapshot particle membership differs from frozen content.");
@@ -663,6 +670,7 @@ std::unique_ptr<Runtime> Runtime::restore_snapshot_data(const RuntimeDefinition&
     // The private constructor also initializes Jolt before owner-vector parsing.
     auto candidate=std::unique_ptr<Runtime>(new Runtime(restored_definition,std::move(executor),physical_bootstrap ? &*physical_bootstrap : nullptr));auto& s=*candidate->impl_;s.tick=tick;
     if(s.water_region)s.water_region->restore(water_extension,tick);
+    if(s.snow_binding)s.restore_snow(snow_extension);
     std::optional<Impl::PhysicalCheckpoint> physical_checkpoint;
     if(joined_physics)physical_checkpoint=save_physical_checkpoint(s,physical_extension,*physical_bootstrap,tick);
     if(structural) {

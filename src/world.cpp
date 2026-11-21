@@ -9,6 +9,7 @@
 #include "poima/scene.hpp"
 #include "poima/post_effect.hpp"
 #include "poima/runtime.hpp"
+#include "poima/snow.hpp"
 #include "poima/terrain_asset.hpp"
 #include "foliage_authoring.hpp"
 #include "water_asset.hpp"
@@ -1061,6 +1062,7 @@ Json history_state(const Json& doc) {
     Json result={{"entities",doc.at("entities")},{"component_schemas",doc.value("component_schemas",Json::object())},{"templates",doc.value("templates",Json::object())},{"ui",doc.value("ui",Json::object())}};
     if(doc.contains("navigation"))result["navigation"]=doc.at("navigation");
     if(doc.contains("water"))result["water"]=doc.at("water");
+    if(doc.contains("snow"))result["snow"]=doc.at("snow");
     if(doc.contains("asset_provenance"))result["asset_provenance"]=doc.at("asset_provenance");
     if(doc.contains("surface_mark_profiles"))result["surface_mark_profiles"]=doc.at("surface_mark_profiles");
     return result;
@@ -1071,7 +1073,7 @@ bool optional_authored_value_differs(const Json& a,const Json& b,const char* key
 }
 bool same_authored_state(const Json& a,const Json& b) {
     if(a.at("entities")!=b.at("entities"))return false;
-    for(const auto* key:{"asset_provenance","navigation","water","surface_mark_profiles"}) {
+    for(const auto* key:{"asset_provenance","navigation","water","snow","surface_mark_profiles"}) {
         if(optional_authored_value_differs(a,b,key))return false;
     }
     for(const auto* key:{"component_schemas","templates","ui"}) {
@@ -1153,13 +1155,13 @@ void validate_template_graph(const Json& document,const Json& recipe,
 void validate(const Json& doc) {
     require(doc.is_object() && doc.contains("version") && doc.at("version").is_number_integer(),"Unsupported world format/version.");
     const bool user_interface=doc.at("version")==4,catalog=user_interface || doc.at("version")==3,custom=catalog || doc.at("version")==2;
-    if(user_interface)fields(doc,{"format","version","world_id","revision","entities","retired_ids","receipts","component_schemas","retired_component_schemas","templates","retired_template_ids","ui","retired_ui_ids","navigation","asset_provenance","water","surface_mark_profiles"},
+    if(user_interface)fields(doc,{"format","version","world_id","revision","entities","retired_ids","receipts","component_schemas","retired_component_schemas","templates","retired_template_ids","ui","retired_ui_ids","navigation","asset_provenance","water","snow","surface_mark_profiles"},
         {"format","version","world_id","revision","entities","retired_ids","receipts","component_schemas","retired_component_schemas","templates","retired_template_ids","ui","retired_ui_ids"});
-    else if(catalog)fields(doc,{"format","version","world_id","revision","entities","retired_ids","receipts","component_schemas","retired_component_schemas","templates","retired_template_ids","navigation","asset_provenance","water","surface_mark_profiles"},
+    else if(catalog)fields(doc,{"format","version","world_id","revision","entities","retired_ids","receipts","component_schemas","retired_component_schemas","templates","retired_template_ids","navigation","asset_provenance","water","snow","surface_mark_profiles"},
         {"format","version","world_id","revision","entities","retired_ids","receipts","component_schemas","retired_component_schemas","templates","retired_template_ids"});
-    else if(custom)fields(doc,{"format","version","world_id","revision","entities","retired_ids","receipts","component_schemas","retired_component_schemas","navigation","asset_provenance","water","surface_mark_profiles"},
+    else if(custom)fields(doc,{"format","version","world_id","revision","entities","retired_ids","receipts","component_schemas","retired_component_schemas","navigation","asset_provenance","water","snow","surface_mark_profiles"},
         {"format","version","world_id","revision","entities","retired_ids","receipts","component_schemas","retired_component_schemas"});
-    else fields(doc,{"format","version","world_id","revision","entities","retired_ids","receipts","navigation","asset_provenance","water","surface_mark_profiles"},{"format","version","world_id","revision","entities","retired_ids","receipts"});
+    else fields(doc,{"format","version","world_id","revision","entities","retired_ids","receipts","navigation","asset_provenance","water","snow","surface_mark_profiles"},{"format","version","world_id","revision","entities","retired_ids","receipts"});
     require(doc.at("format")=="poima.authored-world" && (doc.at("version")==1 || custom),"Unsupported world format/version.");
     if(doc.contains("navigation")) {
         const auto& binding=doc.at("navigation");fields(binding,{"asset"},{"asset"});
@@ -1219,6 +1221,11 @@ void validate(const Json& doc) {
     identifier(doc.at("world_id")); revision(doc.at("revision"));
     const auto& entities = doc.at("entities");
     require(entities.is_object() && entities.size() <= 10000, "World must contain at most 10,000 entities.");
+    if(doc.contains("snow")) {
+        require(!doc.contains("water") && !doc.contains("navigation"),"Snow cannot be combined with authored water or navigation.");
+        const auto snow_binding=component_checked([&]{return snow::parse_definition(doc.at("snow"));});
+        for(const auto& tile:snow_binding.tiles)require(entities.contains(tile),"Snow tile entity does not exist.");
+    }
     std::size_t audio_sources=0;
     std::vector<std::string> particle_sources;
     for (const auto& [id, entity] : entities.items()) {
@@ -2188,6 +2195,7 @@ public:
                     {"coordinate_system", "right-handed Y-up; meters; local XYZW quaternion transforms"}};
             if(doc_.contains("navigation"))result["navigation"]=doc_.at("navigation");
             if(doc_.contains("water"))result["water"]=doc_.at("water");
+            if(doc_.contains("snow"))result["snow"]=doc_.at("snow");
             if(doc_.contains("surface_mark_profiles"))result["surface_mark_profiles"]=doc_.at("surface_mark_profiles");
             return result;
         }
@@ -2927,6 +2935,7 @@ public:
 #include "world_water_service.inc"
 #include "world_particles.inc"
 #include "world_surface_marks.inc"
+#include "world_snow_service.inc"
     Json asset_dispatch(const std::string& method,const Json& params) const {
         if(method=="asset.catalog" || method=="asset.label") {
             const bool label=method=="asset.label";
@@ -3771,6 +3780,10 @@ public:
         if(!animation_only && !audio_only) {
             result.templates=template_definitions(document,cache,result.component_schemas,&audio_cache,post_effects);
             result.ui=component_checked([&]{return ui::parse_definition(document.value("ui",Json::object()).dump());});
+            if(document.contains("snow")) {
+                result.snow=component_checked([&]{return snow::parse_definition(document.at("snow"));});
+                component_checked([&]{(void)snow::Region(result);});
+            }
         }
         try { validate_runtime_animation(result);if(!animation_only && !audio_only) {validate_runtime_camera_draw(result);validate_runtime_mesh_colliders(result);validate_runtime_templates(result);} }
         catch(const std::runtime_error& error) { throw Error(-32602,error.what()); }
@@ -4358,6 +4371,7 @@ public:
         if(method.starts_with("runtime.material."))return material_dispatch(method,params);
         if(method.starts_with("runtime.texture."))return texture_dispatch(method,params);
         if(method=="runtime.water.inspect")return water_inspect(params);
+        if(method=="runtime.snow.inspect")return inspect_snow(params);
         if(method=="runtime.particles.inspect")return inspect_particles(params);
         if(method=="runtime.surface_marks.inspect")return inspect_surface_marks(params);
         if(method=="runtime.components" || method.starts_with("runtime.component."))return component_dispatch(method,params);
@@ -4666,10 +4680,12 @@ public:
             auto result=runtime_entity_value(e);result["session_id"]=runtime_id_;result["tick"]=runtime_->inspect().tick;
             result["structure_revision"]=runtime_->structure_revision();result["id"]=e.id;return result;
         }
-        if(method=="runtime.step") {
-            fields(params,{"session_id","request_id","expected_tick","ticks","inputs","motions","sounds","animations","animation_phase_matches","animation_rates","ik","root_motion","camera_lenses","camera_poses","character_stances","grounding","physical_rigs","surface_marks","expected_structure_revision"},{"session_id","request_id","expected_tick","ticks"});
+        if(method=="runtime.step" || method=="runtime.snow.step") {
+            fields(params,{"session_id","request_id","expected_tick","ticks","inputs","motions","sounds","animations","animation_phase_matches","animation_rates","ik","root_motion","camera_lenses","camera_poses","character_stances","grounding","physical_rigs","surface_marks","snow_stamp","expected_structure_revision"},{"session_id","request_id","expected_tick","ticks"});
+            const bool stamp_snow=method=="runtime.snow.step";
+            require(params.contains("snow_stamp")==stamp_snow,"Use runtime.snow.step with a snow_stamp to compact snow.");
             identifier(params.at("session_id"));identifier(params.at("request_id"));
-            auto normalized=params; normalized["method"]="runtime.step"; if(!normalized.contains("inputs")) normalized["inputs"]=Json::array();if(!normalized.contains("motions"))normalized["motions"]=Json::array();if(!normalized.contains("sounds"))normalized["sounds"]=Json::array();
+            auto normalized=params; normalized["method"]=method; if(!normalized.contains("inputs")) normalized["inputs"]=Json::array();if(!normalized.contains("motions"))normalized["motions"]=Json::array();if(!normalized.contains("sounds"))normalized["sounds"]=Json::array();
             if(!normalized.contains("animations"))normalized["animations"]=Json::array();
             if(!normalized.contains("animation_phase_matches"))normalized["animation_phase_matches"]=Json::array();
             if(!normalized.contains("animation_rates"))normalized["animation_rates"]=Json::array();
@@ -4690,6 +4706,8 @@ public:
             const auto physical_rigs=parse_physical_rigs(normalized.at("physical_rigs"));
             if(!normalized.contains("surface_marks"))normalized["surface_marks"]=Json::array();
             const auto surface_marks=parse_surface_marks(normalized.at("surface_marks"));
+            const auto snow_stamp=stamp_snow
+                ? std::optional{parse_snow_stamp(normalized.at("snow_stamp"))} : std::nullopt;
             for(auto& command:normalized["physical_rigs"])if(!command.contains("activate"))command["activate"]=false;
             for(auto& command:normalized["root_motion"])if(!command.contains("enabled"))command["enabled"]=true;
             for(auto& command:normalized["ik"]) {
@@ -4732,7 +4750,7 @@ public:
             }
             structure_mutation_guard(params);require(expected==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
             auto receipt=std::make_unique<AdvanceReceipt>();receipt->params=normalized;
-            receipt->outcome=advance_runtime(static_cast<std::uint32_t>(ticks),inputs,motions,sounds,animations,ik,root_motion,camera_lenses,character_stances,grounding,animation_rates,camera_poses,physical_rigs,surface_marks);
+            receipt->outcome=advance_runtime(static_cast<std::uint32_t>(ticks),inputs,motions,sounds,animations,ik,root_motion,camera_lenses,character_stances,grounding,animation_rates,camera_poses,physical_rigs,surface_marks,snow_stamp);
             const auto index=advance_receipt_next_;advance_receipts_[index].swap(receipt);advance_receipt_next_=(index+1)%advance_receipts_.size();
             return advance_json(advance_receipts_[index]->outcome);
         }
@@ -4758,6 +4776,8 @@ public:
         const bool water_changed=doc_.contains("water")!=target_state.contains("water") ||
             (doc_.contains("water") && target_state.contains("water") && doc_.at("water")!=target_state.at("water"));
         if(target_state.contains("water"))staged["water"]=target_state.at("water");else staged.erase("water");
+        const bool snow_changed=optional_authored_value_differs(doc_,target_state,"snow");
+        if(target_state.contains("snow"))staged["snow"]=target_state.at("snow");else staged.erase("snow");
         const bool provenance_changed=doc_.contains("asset_provenance")!=target_state.contains("asset_provenance") ||
             (doc_.contains("asset_provenance") && target_state.contains("asset_provenance") && doc_.at("asset_provenance")!=target_state.at("asset_provenance"));
         if(target_state.contains("asset_provenance"))staged["asset_provenance"]=target_state.at("asset_provenance");else staged.erase("asset_provenance");
@@ -4801,12 +4821,14 @@ public:
         }
         for(const auto& [id,value]:target.items()) { (void)value;retired.erase(id);if(!doc_.at("entities").contains(id))changed.insert(id); }
         staged["retired_ids"]=retired;validate(staged);validate_animation_document(staged);
+        validate_snow_edit(staged,changed,snow_changed);
         if(mark_profiles_changed)validate_surface_mark_assets(staged);
         Json result={{"revision",staged.at("revision")},{"committed",true},{"replayed",false},{"changed_ids",changed},{"history_recorded",true},{"history_action",undo ? "undo" : "redo"}};
         if(!changed_templates.empty())result["changed_template_ids"]=changed_templates;
         if(!changed_ui.empty())result["changed_ui_ids"]=changed_ui;
         if(navigation_changed)result["changed_world_fields"]=Json::array({"navigation"});
         if(water_changed) {if(!result.contains("changed_world_fields"))result["changed_world_fields"]=Json::array();result["changed_world_fields"].push_back("water");}
+        if(snow_changed) {if(!result.contains("changed_world_fields"))result["changed_world_fields"]=Json::array();result["changed_world_fields"].push_back("snow");}
         if(provenance_changed) {if(!result.contains("changed_world_fields"))result["changed_world_fields"]=Json::array();result["changed_world_fields"].push_back("asset_provenance");}
         if(mark_profiles_changed) {if(!result.contains("changed_world_fields"))result["changed_world_fields"]=Json::array();result["changed_world_fields"].push_back("surface_mark_profiles");}
         auto& receipts=staged["receipts"];if(receipts.size()==128)receipts.erase(receipts.begin());receipts.push_back({{"params",params},{"result",result}});
@@ -4836,7 +4858,7 @@ public:
         Json staged = doc_;
         auto& entities = staged["entities"];
         std::set<std::string> changed,changed_templates,changed_ui;
-        bool navigation_touched=false,water_touched=false,mark_profiles_touched=false;
+        bool navigation_touched=false,water_touched=false,snow_touched=false,mark_profiles_touched=false;
         std::set<std::string> provenance_touched;
         for (const auto& op : ops) {
             require(op.is_object() && op.contains("op") && op.at("op").is_string(),"Operation needs op.");
@@ -4863,6 +4885,11 @@ public:
                 require(op.at("asset").is_null() || (op.at("asset").is_string() && valid_asset_id(op.at("asset"))),"Water asset must be null or a lowercase SHA-256.");
                 if(op.at("asset").is_null())staged.erase("water");else staged["water"]={{"asset",op.at("asset")}};
                 water_touched=true;continue;
+            }
+            if(name=="snow.set") {
+                fields(op,{"op","definition"},{"op","definition"});
+                if(op.at("definition").is_null())staged.erase("snow");else staged["snow"]=op.at("definition");
+                snow_touched=true;continue;
             }
             if(name=="surface_mark.profile.set") {
                 fields(op,{"op","id","mask"},{"op","id","mask"});
@@ -4986,6 +5013,7 @@ public:
         validate_animation_document(staged);
         if(navigation_touched && staged.contains("navigation"))(void)navigation_binding(staged);
         if(water_touched && staged.contains("water"))(void)water_binding(staged);
+        validate_snow_edit(staged,changed,snow_touched);
         if(mark_profiles_touched)validate_surface_mark_assets(staged);
         for(const auto& asset:provenance_touched)if(staged.contains("asset_provenance") && staged.at("asset_provenance").contains(asset))
             check_provenance_binding(asset,staged.at("asset_provenance").at(asset),true);
@@ -4995,6 +5023,7 @@ public:
             (doc_.contains("navigation") && staged.contains("navigation") && doc_.at("navigation")!=staged.at("navigation"));
         const bool water_changed=doc_.contains("water")!=staged.contains("water") ||
             (doc_.contains("water") && staged.contains("water") && doc_.at("water")!=staged.at("water"));
+        const bool snow_changed=optional_authored_value_differs(doc_,staged,"snow");
         const bool mark_profiles_changed=optional_authored_value_differs(doc_,staged,"surface_mark_profiles");
         Json result = {{"revision", staged["revision"]}, {"committed", !params["preview"].get<bool>()},
                        {"replayed", false}, {"changed_ids", changed}};
@@ -5002,6 +5031,7 @@ public:
         if(!changed_ui.empty())result["changed_ui_ids"]=changed_ui;
         if(navigation_changed)result["changed_world_fields"]=Json::array({"navigation"});
         if(water_changed) {if(!result.contains("changed_world_fields"))result["changed_world_fields"]=Json::array();result["changed_world_fields"].push_back("water");}
+        if(snow_changed) {if(!result.contains("changed_world_fields"))result["changed_world_fields"]=Json::array();result["changed_world_fields"].push_back("snow");}
         if(provenance_changed) {if(!result.contains("changed_world_fields"))result["changed_world_fields"]=Json::array();result["changed_world_fields"].push_back("asset_provenance");}
         if(mark_profiles_changed) {if(!result.contains("changed_world_fields"))result["changed_world_fields"]=Json::array();result["changed_world_fields"].push_back("surface_mark_profiles");}
         if (!params["preview"].get<bool>()) {

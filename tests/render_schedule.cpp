@@ -104,6 +104,57 @@ void streamed_geometry_contracts() {
     auto legacy=Fixture(rich()).plan();legacy.validate();
     check(legacy.passes.front().id==PassId::skinning,"Default rendering acquired a streamed upload pass.");
 }
+void mutable_geometry_contracts() {
+    constexpr auto tile_vertices=mutable_tile_vertex_count*mutable_tile_vertex_stride;
+    constexpr auto tile_indices=mutable_tile_index_count*sizeof(std::uint32_t);
+    for(bool products:{false,true}) {
+        auto settings=rich();settings.products=products;
+        Fixture fixture(settings);
+        auto& f=fixture.f;
+        f.streamed_vertices=fixture.add(Kind::buffer,Lifetime::slot);
+        f.streamed_indices=fixture.add(Kind::buffer,Lifetime::slot);
+        const auto previous=products ? f.streamed_vertices : none;
+        const GeometrySlice water{0,0,192,24};
+        const GeometrySlice tile{192,24,tile_vertices,tile_indices,true,products};
+        const GeometrySlice offscreen{192+tile.uploaded_vertex_bytes(),24+tile_indices,tile_vertices,tile_indices,true,false};
+        f.resources[f.streamed_vertices].bytes=f.resources[f.streamed_vertices].allocation_bytes=offscreen.vertex_offset+tile_vertices;
+        f.resources[f.streamed_indices].bytes=f.resources[f.streamed_indices].allocation_bytes=offscreen.index_offset+tile_indices;
+        f.camera_draws.push_back({f.streamed_vertices,f.streamed_indices,{},previous,water});
+        f.camera_draws.push_back({f.streamed_vertices,f.streamed_indices,{},previous,tile});
+        f.shadow_draws.push_back({f.streamed_vertices,f.streamed_indices,{},none,tile});
+        f.shadow_draws.push_back({f.streamed_vertices,f.streamed_indices,{},none,offscreen});
+        const auto valid=fixture.plan();valid.validate();++accepted;
+        check(tile.prior_vertex_offset()==tile.vertex_offset+(products ? tile_vertices : 0),"Wrong mutable tile previous-position binding.");
+        check(offscreen.prior_vertex_offset()==offscreen.vertex_offset,"Shadow-only tile must bind current geometry.");
+        auto bad=[&](const char* label,const auto& change){auto p=valid;change(p);rejects(label,[&]{p.validate();});};
+        bad("mutable tile alias disagrees across camera and shadows",[](auto& p){p.frame.shadow_draws[1].stream.index_offset+=4;});
+        bad("mutable shadow index read omitted",[](auto& p){erase_access(p,PassId::shadows,p.frame.streamed_indices,Use::index);});
+        bad("mutable opaque vertex reads omitted",[](auto& p){erase_access(p,PassId::opaque,p.frame.streamed_vertices,Use::vertex);});
+        bad("mutable shadow pass omitted",[](auto& p){std::erase_if(p.passes,[](const auto& pass){return pass.id==PassId::shadows;});});
+        bad("mutable shadow requests independent previous resource",[](auto& p){p.frame.shadow_draws.back().previous_vertices=p.frame.streamed_vertices;});
+        bad("mutable tile index count differs",[](auto& p){p.frame.shadow_draws.back().stream.index_bytes-=4;});
+        bad("water requests prior geometry",[](auto& p){p.frame.camera_draws[1].stream.prior_geometry=true;});
+        bad("extra mutable tile exceeds limit",[&](auto& p){
+            auto extra=offscreen;extra.vertex_offset+=tile_vertices;extra.index_offset+=tile_indices;
+            auto& vertices=p.frame.resources[p.frame.streamed_vertices];vertices.bytes=vertices.allocation_bytes=extra.vertex_offset+tile_vertices;
+            auto& indices=p.frame.resources[p.frame.streamed_indices];indices.bytes=indices.allocation_bytes=extra.index_offset+tile_indices;
+            p.frame.shadow_draws.push_back({p.frame.streamed_vertices,p.frame.streamed_indices,{},none,extra});
+        });
+        if(products) {
+            bad("mutable prior positions overlap next draw",[](auto& p){p.frame.shadow_draws.back().stream.vertex_offset-=tile_vertices;});
+            bad("shadow-only mutable tile carries prior positions",[](auto& p){
+                auto& vertices=p.frame.resources[p.frame.streamed_vertices];vertices.bytes+=tile_vertices;vertices.allocation_bytes=vertices.bytes;
+                p.frame.shadow_draws.back().stream.prior_geometry=true;
+            });
+        }
+        f.camera_draws.resize(1);
+        f.shadow_draws.resize(1);
+        f.shadow_draws.push_back({f.streamed_vertices,f.streamed_indices,{},none,{0,0,tile_vertices,tile_indices,true,false}});
+        f.resources[f.streamed_vertices].bytes=tile_vertices;
+        f.resources[f.streamed_indices].bytes=tile_indices;
+        const auto shadow_only=fixture.plan();shadow_only.validate();++accepted;
+    }
+}
 void setup_post_effect(Fixture& fixture) {
     auto& f=fixture.f;
     fixture.settings.post_effect=true;
@@ -899,4 +950,4 @@ void environment_contracts(){
     auto ordinary=Fixture(rich(),4).plan();ordinary.validate();check(ordinary.frame.ibl_diffuse==none && ordinary.frame.ibl_specular==none && ordinary.frame.ibl_brdf==none,"Legacy graph acquired IBL roles");
 }
 }
-int main(){try{matrix();faults();products();motion_contracts();reconstruction_contracts();deferred_contracts();deferred_color_contracts();viewmodel_contracts();ambient_occlusion_contracts();masked_shadow_contracts();environment_contracts();bloom_contracts();post_effect_contracts();streamed_geometry_contracts();particle_sprite_contracts();surface_mark_contracts();std::cout<<"Production render schedule: "<<accepted<<" valid variants, "<<rejected<<" rejected contract mutations.\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}
+int main(){try{matrix();faults();products();motion_contracts();reconstruction_contracts();deferred_contracts();deferred_color_contracts();viewmodel_contracts();ambient_occlusion_contracts();masked_shadow_contracts();environment_contracts();bloom_contracts();post_effect_contracts();streamed_geometry_contracts();mutable_geometry_contracts();particle_sprite_contracts();surface_mark_contracts();std::cout<<"Production render schedule: "<<accepted<<" valid variants, "<<rejected<<" rejected contract mutations.\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}
