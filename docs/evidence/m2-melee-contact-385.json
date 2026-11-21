@@ -1,0 +1,46 @@
+{
+  "release": "0.0.385",
+  "scope": "Optional managed melee query against stock 0.0.384 native runtime and physics, with compiled consumer and an independent plane contact oracle.",
+  "runtime_commit": "4f146f8d2200641ec2b31a762579980ee54690ff",
+  "fixture_sources": {
+    "packages/fps/Melee.cs": "14861804bbd330add1574eac1c7d4d65a7d362e4347918e3f1b2c449c5499572",
+    "tests/managed_melee_contract.py": "523c50c3818ab05c61f6f098367b9a224f3f85b797dfeff0fd3afd987779b9d5",
+    "tests/fixtures/melee-contact/MeleeContactGame.cs": "004e1004caf588973e5d1fac0c273d632aa4e87db6f35847747ddd704ececca6",
+    "tests/fixtures/melee-contact/Poima.MeleeContactFixture.csproj": "cadd23d30eb090ac6caabcb3a7761b45496965ad199fc3cd01b0dc0795818778"
+  },
+  "linux_coreclr": {
+    "proof_sha256": "2bc6ad2abbdf07e79946e9c15065050455abd8dc59d25f2bb74b63042a2f1dc5",
+    "source_overlay_sha256": "ee58cf7cdb6afe3e409398e6114e93951c40eb72a2f2d85910e5ad5c577b5b1d",
+    "bridge_sha256": "f5d3d5b07b59722185c4d0ead828cb8eb5a0cb1b70da58e4004158971b2050a0",
+    "gameplay_sha256": "76918a9dc8fa5a3993153eec92bb22b180359f731e46d56b089740b68f8fd70b"
+  },
+  "windows_coreclr": {
+    "backend": "coreclr",
+    "proof_sha256": "19368b67a2a2b2f6b81ff82e62867c292383ec2a450dcb7a6c2b71074958c7aa",
+    "requests": 111,
+    "native_owners": 5,
+    "first_contact_tick": 3,
+    "first_contact_fraction": 0.2948409731571491,
+    "first_contact_capsule_attempts": 4,
+    "mid_swing_and_terminal_save_bytes_equal": true
+  },
+  "windows_native_aot": {
+    "backend": "native_aot",
+    "proof_sha256": "a98401a41c1a1d051d4b7ceb1562c702d32d462d73d0eac9fc94e8baf64242b6",
+    "requests": 111,
+    "native_owners": 5,
+    "first_contact_tick": 3,
+    "first_contact_fraction": 0.2948409731571491,
+    "first_contact_capsule_attempts": 4,
+    "mid_swing_and_terminal_save_bytes_equal": true
+  },
+  "checks": [
+    "contact fraction against independent plane oracle",
+    "first same-swing collider and native marker at the obstacle point",
+    "cover blocks subsequent contact with target",
+    "clear miss and native initial overlap",
+    "one accepted hit across repeated active-tick contacts",
+    "guarded late callback failure rolls back gameplay and physical marker",
+    "byte-identical immediate and completed checkpoints in fresh process"
+  ]
+}

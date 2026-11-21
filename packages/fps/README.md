@@ -1,7 +1,7 @@
 # Poima FPS helpers
 
 Optional compiled C# helpers for procedural first-person feedback, weapon
-actions and finite-speed projectiles. Games own
+actions, finite-speed projectiles and melee contact. Games own
 all mutable state and decide which effects affect aiming or presentation.
 The native engine does not install this package for unrelated games.
 
@@ -20,6 +20,8 @@ The native engine does not install this package for unrelated games.
 
 - `Projectiles.Step`: constant-acceleration sphere flight with bounded curved-path
   sweeps, lifetime and explicit impact state. [Projectile contract](../../docs/PROJECTILES.md).
+- `Melee.Sweep`: bounded first contact between two world-space blade poses,
+  including solid cover and native overlap details. [Melee contract](../../docs/MELEE_CONTACT.md).
 
 ## Recoil profiles
 

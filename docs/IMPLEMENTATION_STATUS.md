@@ -1,8 +1,14 @@
 # Implementation status
 
-Updated 2026-11-21 for **0.0.384**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-21 for **0.0.385**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.385 adds [melee contact](MELEE_CONTACT.md) to the optional C# FPS
+package. Compiled fixtures against 0.0.384 verified first contact, cover,
+misses, overlap, rollback and exact save continuation on Ubuntu CoreCLR,
+Windows CoreCLR and Windows Native AOT. The helper covers piecewise-linear
+blade motion against the native query scene. [Results](evidence/m2-melee-contact-385.json)
 
 Version 0.0.384 compiles [frozen world packaging, regional asset checks and
 GTAO](BUILD.md#world-service-and-schema-compilation) in separate units.
