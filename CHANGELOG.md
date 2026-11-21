@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.360
+
+- Place persistent surface marks from C# gameplay using world rays or a source entity's completed pose. Gameplay and caller placements share ordering, limits, and rollback.
+
 ## 0.0.359
 
 - Deposit persistent surface marks with fixed-tick ray commands. Marks follow their receiver, change its color and roughness, and survive saves.

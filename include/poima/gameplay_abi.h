@@ -722,6 +722,20 @@ typedef struct PoimaGameParticleServicesV1 {
     int32_t (POIMA_CALL *particle_burst)(void*,const PoimaGameParticleBurstV1*,PoimaGameError*);
 } PoimaGameParticleServicesV1;
 
+/* Tick-only persistent surface mark. The ray must first hit receiver.
+ * With a nonzero source, the ray is local to the source's final rigid pose.
+ * A zero source selects a world-space ray. The host copies this command. */
+typedef struct PoimaGameSurfaceMarkCommandV1 {
+    uint32_t version,bytes;
+    PoimaEntityId receiver,source;
+    double origin[3],direction[3],distance;
+    float half_extent_m[2],half_depth_m,minimum_normal_dot,edge_fraction,linear_rgb[3],opacity,roughness;
+} PoimaGameSurfaceMarkCommandV1;
+typedef struct PoimaGameSurfaceMarkServicesV1 {
+    PoimaGameParticleServicesV1 particles;
+    int32_t (POIMA_CALL *surface_mark)(void*,const PoimaGameSurfaceMarkCommandV1*,PoimaGameError*);
+} PoimaGameSurfaceMarkServicesV1;
+
 typedef struct PoimaGameCall {
     uint32_t version,operation; uint64_t handle;
     const char* text; void* state; uint32_t state_bytes,input_count;
@@ -775,6 +789,16 @@ static_assert(sizeof(PoimaGameParticleBurstV1)==32 && alignof(PoimaGameParticleB
     offsetof(PoimaGameParticleBurstV1,reserved)==28);
 static_assert(sizeof(PoimaGameParticleServicesV1)==536 && alignof(PoimaGameParticleServicesV1)==8 &&
     offsetof(PoimaGameParticleServicesV1,attachments)==0 && offsetof(PoimaGameParticleServicesV1,particle_burst)==528);
+static_assert(sizeof(PoimaGameSurfaceMarkCommandV1)==136 && alignof(PoimaGameSurfaceMarkCommandV1)==8 &&
+    offsetof(PoimaGameSurfaceMarkCommandV1,version)==0 && offsetof(PoimaGameSurfaceMarkCommandV1,bytes)==4 &&
+    offsetof(PoimaGameSurfaceMarkCommandV1,receiver)==8 && offsetof(PoimaGameSurfaceMarkCommandV1,source)==24 &&
+    offsetof(PoimaGameSurfaceMarkCommandV1,origin)==40 && offsetof(PoimaGameSurfaceMarkCommandV1,direction)==64 &&
+    offsetof(PoimaGameSurfaceMarkCommandV1,distance)==88 && offsetof(PoimaGameSurfaceMarkCommandV1,half_extent_m)==96 &&
+    offsetof(PoimaGameSurfaceMarkCommandV1,half_depth_m)==104 && offsetof(PoimaGameSurfaceMarkCommandV1,minimum_normal_dot)==108 &&
+    offsetof(PoimaGameSurfaceMarkCommandV1,edge_fraction)==112 && offsetof(PoimaGameSurfaceMarkCommandV1,linear_rgb)==116 &&
+    offsetof(PoimaGameSurfaceMarkCommandV1,opacity)==128 && offsetof(PoimaGameSurfaceMarkCommandV1,roughness)==132);
+static_assert(sizeof(PoimaGameSurfaceMarkServicesV1)==544 && alignof(PoimaGameSurfaceMarkServicesV1)==8 &&
+    offsetof(PoimaGameSurfaceMarkServicesV1,particles)==0 && offsetof(PoimaGameSurfaceMarkServicesV1,surface_mark)==536);
 static_assert(sizeof(PoimaGameReleasedItemAimV4)==208 && alignof(PoimaGameReleasedItemAimV4)==8 &&
     offsetof(PoimaGameReleasedItemAimV4,ray)==16 && offsetof(PoimaGameReleasedItemAimV4,hit)==88 &&
     offsetof(PoimaGameReleasedItemAimV4,item)==176 && offsetof(PoimaGameReleasedItemAimV4,sampled_tick)==192 &&

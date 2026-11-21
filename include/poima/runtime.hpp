@@ -543,6 +543,7 @@ struct RuntimeSurfaceMarkCommand {
     std::string receiver;
     RuntimeRay ray;
     SceneSurfaceMark style; // Placement supplies the position, normal and tangent.
+    std::string source; // Empty uses world coordinates. Otherwise use its final local frame.
 };
 struct RuntimeSurfaceMark {
     std::uint64_t id=0,tick=0;

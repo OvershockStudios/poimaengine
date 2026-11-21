@@ -1841,7 +1841,7 @@ struct Runtime::Impl {
                     require(scheduled_structure_calls>=1 && scheduled_structure_calls<=4096,"Scheduled structural command budget exceeded.");
                 }
                 if(game) {
-                    game_sound_calls=0;game_navigation_calls=0;game_particle_burst_calls=0;sync();
+                    game_sound_calls=0;game_navigation_calls=0;game_particle_burst_calls=0;surface_mark_attempts=0;sync();
                     if(animations->has_ik())animation_locals();
                     game_commands.clear();game_animation_commands.clear();game_animation_rate_commands.clear();game_animation_rate_write_calls=0;game_ik_commands.clear();game_grounding_commands.clear();game_root_motion_commands.clear();game_camera_lens_commands.clear();game_camera_pose_commands.clear();std::array<PoimaGameInput,32> frame_inputs{};std::size_t input_count=0;
                     for(const auto& [e,source]:controls) {
@@ -1855,7 +1855,7 @@ struct Runtime::Impl {
                     {
                         profiling::Scope gameplay_profile("runtime.gameplay.tick");
                         build_controller_preview();
-                        game->tick(gameplay_abi::physical_rig_drive_baseline(api.attachments.recovery.animation.drive),std::span<const PoimaGameInput>(frame_inputs.data(),input_count),tick);
+                        game->tick(gameplay_abi::physical_rig_drive_baseline(api.particles.attachments.recovery.animation.drive),std::span<const PoimaGameInput>(frame_inputs.data(),input_count),tick);
                         clear_controller_preview();game_phase=GamePhase::idle;game_input_source=nullptr;game_input_edges=false;
                     }
                     if(auto candidate=prepare_ui_commands())ui_model.swap(candidate);
@@ -2048,7 +2048,7 @@ struct Runtime::Impl {
                 for(const auto e:topology->characters)registry.get<Controller>(e).character->EndTick();
                 step_particles(pressed_actions);
                 retire_surface_marks();
-                if(frame==0)place_surface_marks(mark_commands);
+                place_surface_marks(frame==0 ? mark_commands : std::span<const RuntimeSurfaceMarkCommand>{});
                 pressed_actions.clear();
             }
             sync();
@@ -2056,7 +2056,7 @@ struct Runtime::Impl {
             require(!save_queue.pending() || save_queue.commit(tick),"Cannot commit gameplay save request boundary.");
             components->commit_batch();commit_structure(structure_checkpoint);
         } catch(...) {
-            game_attachment_commands.clear();game_release_commands.clear();game_pickup_checks.clear();game_particle_bursts.clear();
+            game_attachment_commands.clear();game_release_commands.clear();game_pickup_checks.clear();game_particle_bursts.clear();gameplay_surface_marks.clear();
             clear_controller_preview();deferred_controller_inputs.clear();game_phase=GamePhase::idle;game_input_source=nullptr;game_input_edges=false;game_input_action_calls=0;game_hit_region_calls=0;game_ik_read_calls=game_ik_write_calls=0;game_grounding_read_calls=game_grounding_write_calls=0;game_ik_commands.clear();game_grounding_commands.clear();game_root_motion_reads=game_root_motion_writes=0;game_root_motion_commands.clear();game_camera_lens_commands.clear();game_camera_pose_commands.clear();game_camera_lens_reads=game_camera_lens_writes=0;game_camera_pose_reads=game_camera_pose_writes=0;game_stance_reads=game_stance_writes=0;game_stance_commands.clear();
             {
             profiling::Scope rollback_profile("runtime.rollback",static_cast<std::int64_t>(previous_tick));

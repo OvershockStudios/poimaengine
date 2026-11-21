@@ -1,0 +1,2214 @@
+{
+  "engine_version": "0.0.360",
+  "world_schema_revision": 181,
+  "sources_sha256": {
+    ".gitignore": "e7923191af3bbb6cb695c2408ea3079f395fc9a111430143685f9abfc2bbd455",
+    "CMakeLists.txt": "9ea58bd016734fb27d9c6c2f276b78bd9ac77036d7aa20df72711d770c63c1a1",
+    "include/poima/gameplay_abi.h": "b7195042421b7e02048d776fc1621021d85780bdb2559c0a0bc707071882f36f",
+    "include/poima/gameplay_compatibility.hpp": "405833a97fddb7677d3f345c8e9dcdf060a3ae7404f3aa2bc213ce0fc0592b6b",
+    "include/poima/runtime.hpp": "e9b1bcd69c66e7ca606cddfd914a4f9d8d0d561c34f3dabf1a58f7301a5bd5bb",
+    "managed/Poima.Gameplay/GameplayRequirements.cs": "9fca35853d334cb59831b8834944c0564c05463306e77e3f1d3b08403fd2cab1",
+    "managed/Poima.Gameplay/SurfaceMarks.cs": "13915609f6b02be858e54259c5676953d6fb0f3617e482c3914f700a0c11a3cd",
+    "managed/Poima.ManagedBridge/Entry.cs": "306865545b69aea2e1559c361cf89bb24aacc61fe1d30e913a3bec44f3dfb91c",
+    "managed/Poima.NativeGame.Generator/Program.cs": "b7c9e64858dc90119a440b0bac8bb0f4cd6eadeb4bb82e0b5c66a8c49d387def",
+    "managed/Poima.NativeGame/Entry.cs": "8e3fbaa9f6884330e47bb134729fb2621815a4edb8297c16f6a536cf8b7eaf88",
+    "scripts/publish_native_gameplay.py": "f8c11c1c8c94cd75e487deca79abe0f9f119956e8cceb1571b0c7f969f93d432",
+    "src/gameplay.cpp": "8413089aed0a04240b265be379f44a1972d792e6adf86030f581092a70cea98c",
+    "src/runtime.cpp": "b865923440c8493ce9443256d4797e9eb77a1e510d7b2ba29514b7883ad8fe64",
+    "src/runtime_surface_marks.inc": "8be9f1c41f78a8cf1e7c62340076dc9fbcd0e8bb734211ac91b941752cba9800",
+    "src/runtime_ui.inc": "be97b4b4299080467988ab4a59e669fc1e7e6f2b1b6a6297ceccbf2834290e39",
+    "src/world_schema.cpp": "300cd8e70d06d2630f9c8e52260a75efd4f566bce4313c2954e2158d31383d41",
+    "src/world_surface_marks.inc": "2ff6a63a68af3781ca9a966b03edd6605ce67809e44cfb28cf9a47468458af00",
+    "tests/asset_references_contract.py": "4f784b3ade6de4780d3e25ed1a90ed418d28f3696a9a9f925c361c3847ff77a2",
+    "tests/gameplay_compatibility_native.cpp": "b229319a65de4fe6bb89060f939708eff71272fc95b04a9fec1fc647a21a8aea",
+    "tests/gameplay_player_preferences_native.cpp": "a997168f28defb21a32c1f33b842bec2d232afbeae02a339269f4604064a8ad2",
+    "tests/gameplay_surface_mark_contract.py": "a2cdf6364017b643b99af1feab6834b6f147d022c9957f0a95c0be1314391d20",
+    "tests/managed_service_abi/Program.cs": "f2a3f690dd2f8d1c22d6e0d74a08137dadfcf3c7854d1d0de33f5a895b96123e",
+    "tests/managed_service_abi/SurfaceMarksExtension.cs": "53d9ad23961bf7a96b9ee6d64a79959cfcf10aec5ebef278df1a36fb30836cab",
+    "tests/managed_surface_mark_gameplay/ManagedSurfaceMarkGame.cs": "b296665350f5e69a5be0771b59da3a3536a7ba061ea4b5ea00f2d2428b06b375",
+    "tests/managed_surface_mark_gameplay/Poima.ManagedSurfaceMarkGame.csproj": "d962388628932261c075561f0f7b1ead35ea9cbbcaf3cabd2475bbfe016e645f",
+    "tests/runtime_descriptor_contract.py": "63faceedeb516552b1b91df4717a1f5e5fd647c6188506fe2aa5813c000062c6",
+    "tests/world_ui_contract.py": "1a5234ed74808bb88135809782782dccc8cc0a14b5088c8e37462873e380391b",
+    "docs/MANAGED_GAMEPLAY.md": "af18dfcb584843c32839c7826523cafb79c759ed9887ee8b1a131842c4a739db"
+  },
+  "service": {
+    "feature": "surface_mark_v1",
+    "epoch": 7,
+    "extent_bytes": 544,
+    "command_bytes": 136
+  },
+  "managed_abi": {
+    "report_sha256": "e58f68fa902de866bee6f84e7ab8c413d47683aae8def0fbd955df09c735bdae",
+    "checks": 113,
+    "generator_and_publisher": {
+      "generated-surface": {
+        "call_version": 1,
+        "call_bytes": 80,
+        "services_version": 7,
+        "services_bytes": 544,
+        "features": [
+          "baseline_v7",
+          "surface_mark_v1"
+        ]
+      },
+      "generated-surface-particle": {
+        "call_version": 1,
+        "call_bytes": 80,
+        "services_version": 7,
+        "services_bytes": 544,
+        "features": [
+          "baseline_v7",
+          "particle_burst_v1",
+          "surface_mark_v1"
+        ]
+      }
+    }
+  },
+  "descriptor_checks": {
+    "file_only_checks": 46,
+    "generated_navigation_false_and_true_checked": true,
+    "old_528_missing_contact_rejected": true,
+    "old_528_missing_surface_rejected": true,
+    "passed": true,
+    "retained_400_descriptor_rejected": true,
+    "retained_424_descriptor_rejected": true,
+    "retained_448_descriptor_rejected": true,
+    "retained_496_and_512_descriptors_rejected": true,
+    "retained_and_spoofed_528_rejected": true,
+    "retained_and_spoofed_536_rejected": true,
+    "retained_stale_descriptor_rejected": true,
+    "unnamed_496_and_missing_physical_dependencies_rejected": true,
+    "unnamed_536_rejected": true,
+    "unnamed_544_rejected": true
+  },
+  "linux": {
+    "version": {
+      "version": "0.0.360",
+      "compiler": "GNU",
+      "compiler_version": "16.2.0",
+      "target_os": "Linux",
+      "target_arch": "x86_64"
+    },
+    "executable_sha256": "6bb695d12e1f1c27e67610f2429c9cea4a786a48d6f9c7ed7801a31a98f6d17a",
+    "descriptor": {
+      "call_bytes": 80,
+      "call_version": 1,
+      "feature_count": 39,
+      "navigation": true,
+      "passed": true,
+      "services_bytes": 544,
+      "services_version": 7
+    },
+    "junit_sha256": "c71338212c3d64c731048a61c214e1243b09684cdb6962e633d369458646e9f9",
+    "suites": [
+      "surface_marks_contract",
+      "world_particles_contract",
+      "sprite_lifetime_contract",
+      "authoring_core_conformance",
+      "authoring_contract_identity",
+      "gameplay_compatibility_policy",
+      "gameplay_service_contract",
+      "native_gameplay_publish_requirements",
+      "save_upgrade_snapshot_native",
+      "gameplay_player_preferences_native",
+      "mcp_contract",
+      "world_ui_contract",
+      "physical_gameplay_publish_requirements",
+      "project_contract",
+      "asset_references_contract"
+    ],
+    "compiled_fixtures": [
+      {
+        "report_sha256": "af967397ca1f34317e4f788e94f961ded680c87af5e71153373383e4edceb513",
+        "backend": "coreclr",
+        "artifact": {
+          "10.0.15/libhostfxr.so": "342ccc53ed77b71fb097f548098ea5b4190069099dfd8dfef31976d308edf32b",
+          "coreclr-bridge/Poima.ManagedBridge.dll": "ddbc68b6ce8d8eb1c43b49134946a489dde9d413832ed7ec1f8432fb6edf1551",
+          "coreclr-game/Poima.ManagedSurfaceMarkGame.dll": "b4c5f26230231efa0d3f1655b4f57c1d49b88d1c57dff95147410ab67dd17028",
+          "coreclr-bridge/Poima.Gameplay.dll": "9afde480c90501203b823b5affd25550a467b1a34a0385e41c55453f535f72a6",
+          "coreclr-game/Poima.Gameplay.dll": "9ca39bfd14c5d0ebd16ffe85c779f011dfabd14f652b202448e400001add3b83"
+        },
+        "states": {
+          "checkpoint": {
+            "tick": 1,
+            "marks": [
+              {
+                "center_m": [
+                  0.3125,
+                  -1.1920928955078125e-07,
+                  0.5
+                ],
+                "edge_fraction": 0.5,
+                "half_depth_m": 0.125,
+                "half_extent_m": [
+                  0.75,
+                  0.75
+                ],
+                "id": "1",
+                "linear_rgb": [
+                  0.875,
+                  0.125,
+                  0.125
+                ],
+                "minimum_normal_dot": 0.800000011920929,
+                "normal": [
+                  0.0,
+                  0.0,
+                  1.0
+                ],
+                "opacity": 0.75,
+                "receiver": "00000000000000000000000000000064",
+                "roughness": 0.375,
+                "tangent": [
+                  1.0,
+                  0.0,
+                  0.0
+                ],
+                "tick": 1
+              },
+              {
+                "center_m": [
+                  0.3125,
+                  -1.1920928955078125e-07,
+                  0.5
+                ],
+                "edge_fraction": 0.0,
+                "half_depth_m": 0.125,
+                "half_extent_m": [
+                  0.3125,
+                  0.3125
+                ],
+                "id": "2",
+                "linear_rgb": [
+                  0.125,
+                  0.875,
+                  0.125
+                ],
+                "minimum_normal_dot": 0.800000011920929,
+                "normal": [
+                  0.0,
+                  0.0,
+                  1.0
+                ],
+                "opacity": 0.5,
+                "receiver": "00000000000000000000000000000064",
+                "roughness": 0.25,
+                "tangent": [
+                  1.0,
+                  0.0,
+                  0.0
+                ],
+                "tick": 1
+              },
+              {
+                "center_m": [
+                  0.25,
+                  -0.25,
+                  0.5
+                ],
+                "edge_fraction": 0.5,
+                "half_depth_m": 0.125,
+                "half_extent_m": [
+                  0.09375,
+                  0.09375
+                ],
+                "id": "3",
+                "linear_rgb": [
+                  0.125,
+                  0.125,
+                  0.875
+                ],
+                "minimum_normal_dot": 0.800000011920929,
+                "normal": [
+                  0.0,
+                  0.0,
+                  1.0
+                ],
+                "opacity": 1.0,
+                "receiver": "00000000000000000000000000000065",
+                "roughness": 0.5,
+                "tangent": [
+                  1.0,
+                  0.0,
+                  0.0
+                ],
+                "tick": 1
+              }
+            ],
+            "particles": {
+              "dropped": 0,
+              "expired": 0,
+              "live": 2,
+              "removed": 0,
+              "spawned": 2
+            }
+          },
+          "final": {
+            "tick": 5,
+            "marks": [
+              {
+                "center_m": [
+                  0.3125,
+                  -1.1920928955078125e-07,
+                  0.5
+                ],
+                "edge_fraction": 0.5,
+                "half_depth_m": 0.125,
+                "half_extent_m": [
+                  0.75,
+                  0.75
+                ],
+                "id": "1",
+                "linear_rgb": [
+                  0.875,
+                  0.125,
+                  0.125
+                ],
+                "minimum_normal_dot": 0.800000011920929,
+                "normal": [
+                  0.0,
+                  0.0,
+                  1.0
+                ],
+                "opacity": 0.75,
+                "receiver": "00000000000000000000000000000064",
+                "roughness": 0.375,
+                "tangent": [
+                  1.0,
+                  0.0,
+                  0.0
+                ],
+                "tick": 1
+              },
+              {
+                "center_m": [
+                  0.3125,
+                  -1.1920928955078125e-07,
+                  0.5
+                ],
+                "edge_fraction": 0.0,
+                "half_depth_m": 0.125,
+                "half_extent_m": [
+                  0.3125,
+                  0.3125
+                ],
+                "id": "2",
+                "linear_rgb": [
+                  0.125,
+                  0.875,
+                  0.125
+                ],
+                "minimum_normal_dot": 0.800000011920929,
+                "normal": [
+                  0.0,
+                  0.0,
+                  1.0
+                ],
+                "opacity": 0.5,
+                "receiver": "00000000000000000000000000000064",
+                "roughness": 0.25,
+                "tangent": [
+                  1.0,
+                  0.0,
+                  0.0
+                ],
+                "tick": 1
+              },
+              {
+                "center_m": [
+                  0.25,
+                  -0.25,
+                  0.5
+                ],
+                "edge_fraction": 0.5,
+                "half_depth_m": 0.125,
+                "half_extent_m": [
+                  0.09375,
+                  0.09375
+                ],
+                "id": "3",
+                "linear_rgb": [
+                  0.125,
+                  0.125,
+                  0.875
+                ],
+                "minimum_normal_dot": 0.800000011920929,
+                "normal": [
+                  0.0,
+                  0.0,
+                  1.0
+                ],
+                "opacity": 1.0,
+                "receiver": "00000000000000000000000000000065",
+                "roughness": 0.5,
+                "tangent": [
+                  1.0,
+                  0.0,
+                  0.0
+                ],
+                "tick": 1
+              },
+              {
+                "center_m": [
+                  -0.3125,
+                  0.25,
+                  0.5
+                ],
+                "edge_fraction": 0.5,
+                "half_depth_m": 0.125,
+                "half_extent_m": [
+                  0.09375,
+                  0.09375
+                ],
+                "id": "4",
+                "linear_rgb": [
+                  0.125,
+                  0.125,
+                  0.875
+                ],
+                "minimum_normal_dot": 0.800000011920929,
+                "normal": [
+                  0.0,
+                  0.0,
+                  1.0
+                ],
+                "opacity": 1.0,
+                "receiver": "00000000000000000000000000000064",
+                "roughness": 0.5,
+                "tangent": [
+                  1.0,
+                  0.0,
+                  0.0
+                ],
+                "tick": 3
+              },
+              {
+                "center_m": [
+                  0.25,
+                  -0.3125,
+                  0.5
+                ],
+                "edge_fraction": 0.5,
+                "half_depth_m": 0.125,
+                "half_extent_m": [
+                  0.09375,
+                  0.09375
+                ],
+                "id": "5",
+                "linear_rgb": [
+                  0.875,
+                  0.875,
+                  0.125
+                ],
+                "minimum_normal_dot": 0.800000011920929,
+                "normal": [
+                  0.0,
+                  0.0,
+                  1.0
+                ],
+                "opacity": 1.0,
+                "receiver": "00000000000000000000000000000064",
+                "roughness": 0.375,
+                "tangent": [
+                  1.0,
+                  0.0,
+                  0.0
+                ],
+                "tick": 3
+              }
+            ],
+            "particles": {
+              "dropped": 0,
+              "expired": 3,
+              "live": 0,
+              "removed": 0,
+              "spawned": 3
+            }
+          }
+        },
+        "archive_receipts": {
+          "checkpoint": {
+            "tick": 1,
+            "bytes": 25210,
+            "sha256": "ad17988b10460436d4ad7c8b10bdd561968c362b366f1bdffb5254ac4608f31b"
+          },
+          "final": {
+            "tick": 5,
+            "bytes": 25688,
+            "sha256": "71183d35a91061e52af34971602729770c7b93ca373dcc25569b1548401cb4f1"
+          },
+          "restored-checkpoint": {
+            "tick": 1,
+            "bytes": 25210,
+            "sha256": "ad17988b10460436d4ad7c8b10bdd561968c362b366f1bdffb5254ac4608f31b"
+          },
+          "restored-final": {
+            "tick": 5,
+            "bytes": 25688,
+            "sha256": "71183d35a91061e52af34971602729770c7b93ca373dcc25569b1548401cb4f1"
+          },
+          "combined-limit-before": {
+            "tick": 0,
+            "bytes": 22869,
+            "sha256": "6d0b7fead1844aaf0c7548c41ce781a41217ce47c9d5d5105f23a5aae64ba702"
+          },
+          "combined-limit-after": {
+            "tick": 0,
+            "bytes": 22869,
+            "sha256": "6d0b7fead1844aaf0c7548c41ce781a41217ce47c9d5d5105f23a5aae64ba702"
+          },
+          "blocked-before": {
+            "tick": 0,
+            "bytes": 22869,
+            "sha256": "24671ea81415509bb0c4996b9744adc4f54896b5d921446a6847c1d951344d8b"
+          },
+          "blocked-after": {
+            "tick": 0,
+            "bytes": 22869,
+            "sha256": "24671ea81415509bb0c4996b9744adc4f54896b5d921446a6847c1d951344d8b"
+          },
+          "later-tick-before": {
+            "tick": 0,
+            "bytes": 22868,
+            "sha256": "696263c7e5960e1b5d5c0be16702302a7e754f4da08ee81072c0e966ed70613e"
+          },
+          "later-tick-after": {
+            "tick": 0,
+            "bytes": 22868,
+            "sha256": "696263c7e5960e1b5d5c0be16702302a7e754f4da08ee81072c0e966ed70613e"
+          }
+        },
+        "refusals": {
+          "combined-limit": {
+            "code": -32040,
+            "diagnostic": "Surface mark command budget exceeded."
+          },
+          "blocked": {
+            "code": -32040,
+            "diagnostic": "Surface mark ray must first hit the expected receiver with a surface normal."
+          },
+          "later-tick": {
+            "code": -32040,
+            "diagnostic": "C# gameplay: Surface mark fixture later-tick failure."
+          }
+        },
+        "accepted_combined_budget": {
+          "caller": 15,
+          "gameplay": 1,
+          "marks": 16
+        }
+      },
+      {
+        "report_sha256": "fb25def6392da91390be828b9965e9c3b8777d7688ce1ff2b452d27b26428264",
+        "backend": "native_aot",
+        "artifact": {
+          "descriptor_sha256": "f6c331f3727cbe42a3a53545b216ec7bbebc291cd501159df4420761f45ac96c",
+          "files": [
+            {
+              "path": "Poima.NativeGame.so",
+              "size": 1611592,
+              "sha256": "e3dffb2f3fe37a8066ad7df093afe0d868ab67f59905a6f5a099d1e7c5070dbd",
+              "role": "library"
+            },
+            {
+              "path": "notices/DOTNET-NATIVEAOT-10.0.15-LICENSE.txt",
+              "size": 1116,
+              "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310",
+              "role": "notice"
+            },
+            {
+              "path": "notices/DOTNET-NATIVEAOT-10.0.15-THIRD-PARTY-NOTICES.txt",
+              "size": 76623,
+              "sha256": "66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54",
+              "role": "notice"
+            },
+            {
+              "path": "notices/DOTNET-RUNTIME-10.0.15-LICENSE.txt",
+              "size": 1116,
+              "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310",
+              "role": "notice"
+            },
+            {
+              "path": "notices/DOTNET-RUNTIME-10.0.15-THIRD-PARTY-NOTICES.txt",
+              "size": 76623,
+              "sha256": "66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54",
+              "role": "notice"
+            },
+            {
+              "path": "notices/POIMA-LICENSE.txt",
+              "size": 11358,
+              "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+              "role": "notice"
+            },
+            {
+              "path": "notices/POIMA-THIRD-PARTY-NOTICES.md",
+              "size": 23949,
+              "sha256": "7d364ecf908a603cdc58efecf0a19e8d20b1a51ee0179ce3b9885d05327664a7",
+              "role": "notice"
+            }
+          ]
+        },
+        "states": {
+          "checkpoint": {
+            "tick": 1,
+            "marks": [
+              {
+                "center_m": [
+                  0.3125,
+                  -1.1920928955078125e-07,
+                  0.5
+                ],
+                "edge_fraction": 0.5,
+                "half_depth_m": 0.125,
+                "half_extent_m": [
+                  0.75,
+                  0.75
+                ],
+                "id": "1",
+                "linear_rgb": [
+                  0.875,
+                  0.125,
+                  0.125
+                ],
+                "minimum_normal_dot": 0.800000011920929,
+                "normal": [
+                  0.0,
+                  0.0,
+                  1.0
+                ],
+                "opacity": 0.75,
+                "receiver": "00000000000000000000000000000064",
+                "roughness": 0.375,
+                "tangent": [
+                  1.0,
+                  0.0,
+                  0.0
+                ],
+                "tick": 1
+              },
+              {
+                "center_m": [
+                  0.3125,
+                  -1.1920928955078125e-07,
+                  0.5
+                ],
+                "edge_fraction": 0.0,
+                "half_depth_m": 0.125,
+                "half_extent_m": [
+                  0.3125,
+                  0.3125
+                ],
+                "id": "2",
+                "linear_rgb": [
+                  0.125,
+                  0.875,
+                  0.125
+                ],
+                "minimum_normal_dot": 0.800000011920929,
+                "normal": [
+                  0.0,
+                  0.0,
+                  1.0
+                ],
+                "opacity": 0.5,
+                "receiver": "00000000000000000000000000000064",
+                "roughness": 0.25,
+                "tangent": [
+                  1.0,
+                  0.0,
+                  0.0
+                ],
+                "tick": 1
+              },
+              {
+                "center_m": [
+                  0.25,
+                  -0.25,
+                  0.5
+                ],
+                "edge_fraction": 0.5,
+                "half_depth_m": 0.125,
+                "half_extent_m": [
+                  0.09375,
+                  0.09375
+                ],
+                "id": "3",
+                "linear_rgb": [
+                  0.125,
+                  0.125,
+                  0.875
+                ],
+                "minimum_normal_dot": 0.800000011920929,
+                "normal": [
+                  0.0,
+                  0.0,
+                  1.0
+                ],
+                "opacity": 1.0,
+                "receiver": "00000000000000000000000000000065",
+                "roughness": 0.5,
+                "tangent": [
+                  1.0,
+                  0.0,
+                  0.0
+                ],
+                "tick": 1
+              }
+            ],
+            "particles": {
+              "dropped": 0,
+              "expired": 0,
+              "live": 2,
+              "removed": 0,
+              "spawned": 2
+            }
+          },
+          "final": {
+            "tick": 5,
+            "marks": [
+              {
+                "center_m": [
+                  0.3125,
+                  -1.1920928955078125e-07,
+                  0.5
+                ],
+                "edge_fraction": 0.5,
+                "half_depth_m": 0.125,
+                "half_extent_m": [
+                  0.75,
+                  0.75
+                ],
+                "id": "1",
+                "linear_rgb": [
+                  0.875,
+                  0.125,
+                  0.125
+                ],
+                "minimum_normal_dot": 0.800000011920929,
+                "normal": [
+                  0.0,
+                  0.0,
+                  1.0
+                ],
+                "opacity": 0.75,
+                "receiver": "00000000000000000000000000000064",
+                "roughness": 0.375,
+                "tangent": [
+                  1.0,
+                  0.0,
+                  0.0
+                ],
+                "tick": 1
+              },
+              {
+                "center_m": [
+                  0.3125,
+                  -1.1920928955078125e-07,
+                  0.5
+                ],
+                "edge_fraction": 0.0,
+                "half_depth_m": 0.125,
+                "half_extent_m": [
+                  0.3125,
+                  0.3125
+                ],
+                "id": "2",
+                "linear_rgb": [
+                  0.125,
+                  0.875,
+                  0.125
+                ],
+                "minimum_normal_dot": 0.800000011920929,
+                "normal": [
+                  0.0,
+                  0.0,
+                  1.0
+                ],
+                "opacity": 0.5,
+                "receiver": "00000000000000000000000000000064",
+                "roughness": 0.25,
+                "tangent": [
+                  1.0,
+                  0.0,
+                  0.0
+                ],
+                "tick": 1
+              },
+              {
+                "center_m": [
+                  0.25,
+                  -0.25,
+                  0.5
+                ],
+                "edge_fraction": 0.5,
+                "half_depth_m": 0.125,
+                "half_extent_m": [
+                  0.09375,
+                  0.09375
+                ],
+                "id": "3",
+                "linear_rgb": [
+                  0.125,
+                  0.125,
+                  0.875
+                ],
+                "minimum_normal_dot": 0.800000011920929,
+                "normal": [
+                  0.0,
+                  0.0,
+                  1.0
+                ],
+                "opacity": 1.0,
+                "receiver": "00000000000000000000000000000065",
+                "roughness": 0.5,
+                "tangent": [
+                  1.0,
+                  0.0,
+                  0.0
+                ],
+                "tick": 1
+              },
+              {
+                "center_m": [
+                  -0.3125,
+                  0.25,
+                  0.5
+                ],
+                "edge_fraction": 0.5,
+                "half_depth_m": 0.125,
+                "half_extent_m": [
+                  0.09375,
+                  0.09375
+                ],
+                "id": "4",
+                "linear_rgb": [
+                  0.125,
+                  0.125,
+                  0.875
+                ],
+                "minimum_normal_dot": 0.800000011920929,
+                "normal": [
+                  0.0,
+                  0.0,
+                  1.0
+                ],
+                "opacity": 1.0,
+                "receiver": "00000000000000000000000000000064",
+                "roughness": 0.5,
+                "tangent": [
+                  1.0,
+                  0.0,
+                  0.0
+                ],
+                "tick": 3
+              },
+              {
+                "center_m": [
+                  0.25,
+                  -0.3125,
+                  0.5
+                ],
+                "edge_fraction": 0.5,
+                "half_depth_m": 0.125,
+                "half_extent_m": [
+                  0.09375,
+                  0.09375
+                ],
+                "id": "5",
+                "linear_rgb": [
+                  0.875,
+                  0.875,
+                  0.125
+                ],
+                "minimum_normal_dot": 0.800000011920929,
+                "normal": [
+                  0.0,
+                  0.0,
+                  1.0
+                ],
+                "opacity": 1.0,
+                "receiver": "00000000000000000000000000000064",
+                "roughness": 0.375,
+                "tangent": [
+                  1.0,
+                  0.0,
+                  0.0
+                ],
+                "tick": 3
+              }
+            ],
+            "particles": {
+              "dropped": 0,
+              "expired": 3,
+              "live": 0,
+              "removed": 0,
+              "spawned": 3
+            }
+          }
+        },
+        "archive_receipts": {
+          "checkpoint": {
+            "tick": 1,
+            "bytes": 25213,
+            "sha256": "cb00768ceab49728920cb8ccaf0c3cf65d42eddc7d7ef61fe4c11cf62f7b4ac6"
+          },
+          "final": {
+            "tick": 5,
+            "bytes": 25691,
+            "sha256": "69caacc2e548f642f36a7a3071da26693e3b6d41f30e01e0bee479e16ff91e9b"
+          },
+          "restored-checkpoint": {
+            "tick": 1,
+            "bytes": 25213,
+            "sha256": "cb00768ceab49728920cb8ccaf0c3cf65d42eddc7d7ef61fe4c11cf62f7b4ac6"
+          },
+          "restored-final": {
+            "tick": 5,
+            "bytes": 25691,
+            "sha256": "69caacc2e548f642f36a7a3071da26693e3b6d41f30e01e0bee479e16ff91e9b"
+          },
+          "combined-limit-before": {
+            "tick": 0,
+            "bytes": 22872,
+            "sha256": "60265ece5c2b99abbf21a0ea90a9f3566a3cdb7686de4844e1b780d6724cab53"
+          },
+          "combined-limit-after": {
+            "tick": 0,
+            "bytes": 22872,
+            "sha256": "60265ece5c2b99abbf21a0ea90a9f3566a3cdb7686de4844e1b780d6724cab53"
+          },
+          "blocked-before": {
+            "tick": 0,
+            "bytes": 22872,
+            "sha256": "ca3ec224cec32726f5844a7a4f57c78f6ef4c646f75c34f100f1c1651f9ae311"
+          },
+          "blocked-after": {
+            "tick": 0,
+            "bytes": 22872,
+            "sha256": "ca3ec224cec32726f5844a7a4f57c78f6ef4c646f75c34f100f1c1651f9ae311"
+          },
+          "later-tick-before": {
+            "tick": 0,
+            "bytes": 22871,
+            "sha256": "2a0674737ad24fabec3417d28cebbb181ea90aea2a79934c716b007b70bb00f0"
+          },
+          "later-tick-after": {
+            "tick": 0,
+            "bytes": 22871,
+            "sha256": "2a0674737ad24fabec3417d28cebbb181ea90aea2a79934c716b007b70bb00f0"
+          }
+        },
+        "refusals": {
+          "combined-limit": {
+            "code": -32040,
+            "diagnostic": "Surface mark command budget exceeded."
+          },
+          "blocked": {
+            "code": -32040,
+            "diagnostic": "Surface mark ray must first hit the expected receiver with a surface normal."
+          },
+          "later-tick": {
+            "code": -32040,
+            "diagnostic": "C# gameplay: Surface mark fixture later-tick failure."
+          }
+        },
+        "accepted_combined_budget": {
+          "caller": 15,
+          "gameplay": 1,
+          "marks": 16
+        }
+      }
+    ],
+    "legacy_particle": {
+      "report_sha256": "4e4ea3d4d562c3be4987fba86048d891220d71df750df1effa7d8a6ee2684fd3",
+      "descriptor_sha256": "78c077c6d600759dcff0b7ddcfdd7f9f74f56da5efe0617fdbb6e647349f6eda",
+      "minimum_services_bytes": 536
+    },
+    "legacy_176_byte_aot": {
+      "report_sha256": "586f7a5104c5e79fcf9fbfed4d6f738f779ad1caec7eec458c3eefdefc132cef"
+    }
+  },
+  "windows": {
+    "version": {
+      "version": "0.0.360",
+      "compiler": "Clang",
+      "compiler_version": "23.1.2",
+      "target_os": "Windows",
+      "target_arch": "x86_64"
+    },
+    "executable_sha256": "f0a3585ef05678e31c0e04ff53487c035422eb6826adfc1ea7d082444eede2fe",
+    "descriptor": {
+      "call_bytes": 80,
+      "call_version": 1,
+      "feature_count": 39,
+      "navigation": true,
+      "passed": true,
+      "services_bytes": 544,
+      "services_version": 7
+    },
+    "descriptor_sha256": "edd60851924cd4a108d4fe5cd075d835dd74308f4ac1b34753b612968517750b",
+    "desktop_bridge_sha256": "9656796a5853faec9e78854fbbb420a010f37a2b32c01d37d63ae1eaddb68f75",
+    "mcp_report_sha256": "228b5a6c98cee18320be89ab6eebb2e00b9974a2487465e5916f751524bae4be",
+    "relocated_native_aot": [
+      {
+        "report_sha256": "8f89e5a108749815adcefcaba8ab7f2e55a9b07a0151f0d22c1541da9845cc12",
+        "backend": "native_aot",
+        "artifact": {
+          "descriptor_sha256": "d557b3e999a381b2d3d11833bc028e9d50ba397129bd77987b8ece9ee1940b68",
+          "files": [
+            {
+              "path": "notices/DOTNET-NATIVEAOT-10.0.15-LICENSE.txt",
+              "size": 1139,
+              "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+              "role": "notice"
+            },
+            {
+              "path": "notices/DOTNET-NATIVEAOT-10.0.15-THIRD-PARTY-NOTICES.txt",
+              "size": 78041,
+              "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+              "role": "notice"
+            },
+            {
+              "path": "notices/DOTNET-RUNTIME-10.0.15-LICENSE.txt",
+              "size": 1139,
+              "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+              "role": "notice"
+            },
+            {
+              "path": "notices/DOTNET-RUNTIME-10.0.15-THIRD-PARTY-NOTICES.txt",
+              "size": 78041,
+              "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+              "role": "notice"
+            },
+            {
+              "path": "notices/POIMA-LICENSE.txt",
+              "size": 11358,
+              "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+              "role": "notice"
+            },
+            {
+              "path": "notices/POIMA-THIRD-PARTY-NOTICES.md",
+              "size": 23949,
+              "sha256": "7d364ecf908a603cdc58efecf0a19e8d20b1a51ee0179ce3b9885d05327664a7",
+              "role": "notice"
+            },
+            {
+              "path": "Poima.NativeGame.dll",
+              "size": 1361920,
+              "sha256": "2546695739c4483fb1ece62b5dd0ca7a1b162c652582763e8b04c5888e9dbc8d",
+              "role": "library"
+            }
+          ]
+        },
+        "states": {
+          "checkpoint": {
+            "tick": 1,
+            "marks": [
+              {
+                "center_m": [
+                  0.3125,
+                  -1.1920928955078125e-07,
+                  0.5
+                ],
+                "edge_fraction": 0.5,
+                "half_depth_m": 0.125,
+                "half_extent_m": [
+                  0.75,
+                  0.75
+                ],
+                "id": "1",
+                "linear_rgb": [
+                  0.875,
+                  0.125,
+                  0.125
+                ],
+                "minimum_normal_dot": 0.800000011920929,
+                "normal": [
+                  0.0,
+                  0.0,
+                  1.0
+                ],
+                "opacity": 0.75,
+                "receiver": "00000000000000000000000000000064",
+                "roughness": 0.375,
+                "tangent": [
+                  1.0,
+                  0.0,
+                  0.0
+                ],
+                "tick": 1
+              },
+              {
+                "center_m": [
+                  0.3125,
+                  -1.1920928955078125e-07,
+                  0.5
+                ],
+                "edge_fraction": 0.0,
+                "half_depth_m": 0.125,
+                "half_extent_m": [
+                  0.3125,
+                  0.3125
+                ],
+                "id": "2",
+                "linear_rgb": [
+                  0.125,
+                  0.875,
+                  0.125
+                ],
+                "minimum_normal_dot": 0.800000011920929,
+                "normal": [
+                  0.0,
+                  0.0,
+                  1.0
+                ],
+                "opacity": 0.5,
+                "receiver": "00000000000000000000000000000064",
+                "roughness": 0.25,
+                "tangent": [
+                  1.0,
+                  0.0,
+                  0.0
+                ],
+                "tick": 1
+              },
+              {
+                "center_m": [
+                  0.25,
+                  -0.25,
+                  0.5
+                ],
+                "edge_fraction": 0.5,
+                "half_depth_m": 0.125,
+                "half_extent_m": [
+                  0.09375,
+                  0.09375
+                ],
+                "id": "3",
+                "linear_rgb": [
+                  0.125,
+                  0.125,
+                  0.875
+                ],
+                "minimum_normal_dot": 0.800000011920929,
+                "normal": [
+                  0.0,
+                  0.0,
+                  1.0
+                ],
+                "opacity": 1.0,
+                "receiver": "00000000000000000000000000000065",
+                "roughness": 0.5,
+                "tangent": [
+                  1.0,
+                  0.0,
+                  0.0
+                ],
+                "tick": 1
+              }
+            ],
+            "particles": {
+              "dropped": 0,
+              "expired": 0,
+              "live": 2,
+              "removed": 0,
+              "spawned": 2
+            }
+          },
+          "final": {
+            "tick": 5,
+            "marks": [
+              {
+                "center_m": [
+                  0.3125,
+                  -1.1920928955078125e-07,
+                  0.5
+                ],
+                "edge_fraction": 0.5,
+                "half_depth_m": 0.125,
+                "half_extent_m": [
+                  0.75,
+                  0.75
+                ],
+                "id": "1",
+                "linear_rgb": [
+                  0.875,
+                  0.125,
+                  0.125
+                ],
+                "minimum_normal_dot": 0.800000011920929,
+                "normal": [
+                  0.0,
+                  0.0,
+                  1.0
+                ],
+                "opacity": 0.75,
+                "receiver": "00000000000000000000000000000064",
+                "roughness": 0.375,
+                "tangent": [
+                  1.0,
+                  0.0,
+                  0.0
+                ],
+                "tick": 1
+              },
+              {
+                "center_m": [
+                  0.3125,
+                  -1.1920928955078125e-07,
+                  0.5
+                ],
+                "edge_fraction": 0.0,
+                "half_depth_m": 0.125,
+                "half_extent_m": [
+                  0.3125,
+                  0.3125
+                ],
+                "id": "2",
+                "linear_rgb": [
+                  0.125,
+                  0.875,
+                  0.125
+                ],
+                "minimum_normal_dot": 0.800000011920929,
+                "normal": [
+                  0.0,
+                  0.0,
+                  1.0
+                ],
+                "opacity": 0.5,
+                "receiver": "00000000000000000000000000000064",
+                "roughness": 0.25,
+                "tangent": [
+                  1.0,
+                  0.0,
+                  0.0
+                ],
+                "tick": 1
+              },
+              {
+                "center_m": [
+                  0.25,
+                  -0.25,
+                  0.5
+                ],
+                "edge_fraction": 0.5,
+                "half_depth_m": 0.125,
+                "half_extent_m": [
+                  0.09375,
+                  0.09375
+                ],
+                "id": "3",
+                "linear_rgb": [
+                  0.125,
+                  0.125,
+                  0.875
+                ],
+                "minimum_normal_dot": 0.800000011920929,
+                "normal": [
+                  0.0,
+                  0.0,
+                  1.0
+                ],
+                "opacity": 1.0,
+                "receiver": "00000000000000000000000000000065",
+                "roughness": 0.5,
+                "tangent": [
+                  1.0,
+                  0.0,
+                  0.0
+                ],
+                "tick": 1
+              },
+              {
+                "center_m": [
+                  -0.3125,
+                  0.25,
+                  0.5
+                ],
+                "edge_fraction": 0.5,
+                "half_depth_m": 0.125,
+                "half_extent_m": [
+                  0.09375,
+                  0.09375
+                ],
+                "id": "4",
+                "linear_rgb": [
+                  0.125,
+                  0.125,
+                  0.875
+                ],
+                "minimum_normal_dot": 0.800000011920929,
+                "normal": [
+                  0.0,
+                  0.0,
+                  1.0
+                ],
+                "opacity": 1.0,
+                "receiver": "00000000000000000000000000000064",
+                "roughness": 0.5,
+                "tangent": [
+                  1.0,
+                  0.0,
+                  0.0
+                ],
+                "tick": 3
+              },
+              {
+                "center_m": [
+                  0.25,
+                  -0.3125,
+                  0.5
+                ],
+                "edge_fraction": 0.5,
+                "half_depth_m": 0.125,
+                "half_extent_m": [
+                  0.09375,
+                  0.09375
+                ],
+                "id": "5",
+                "linear_rgb": [
+                  0.875,
+                  0.875,
+                  0.125
+                ],
+                "minimum_normal_dot": 0.800000011920929,
+                "normal": [
+                  0.0,
+                  0.0,
+                  1.0
+                ],
+                "opacity": 1.0,
+                "receiver": "00000000000000000000000000000064",
+                "roughness": 0.375,
+                "tangent": [
+                  1.0,
+                  0.0,
+                  0.0
+                ],
+                "tick": 3
+              }
+            ],
+            "particles": {
+              "dropped": 0,
+              "expired": 3,
+              "live": 0,
+              "removed": 0,
+              "spawned": 3
+            }
+          }
+        },
+        "archive_receipts": {
+          "checkpoint": {
+            "tick": 1,
+            "bytes": 25213,
+            "sha256": "743411f7e64362b86907c81953ab4c13726fa16c13107e6057971107d42f79d3"
+          },
+          "final": {
+            "tick": 5,
+            "bytes": 25691,
+            "sha256": "184de23ba54133f5d102b9822bc9a19a8ccd17e15f8e8e2e63e067197fa9deec"
+          },
+          "restored-checkpoint": {
+            "tick": 1,
+            "bytes": 25213,
+            "sha256": "743411f7e64362b86907c81953ab4c13726fa16c13107e6057971107d42f79d3"
+          },
+          "restored-final": {
+            "tick": 5,
+            "bytes": 25691,
+            "sha256": "184de23ba54133f5d102b9822bc9a19a8ccd17e15f8e8e2e63e067197fa9deec"
+          }
+        },
+        "refusals": {},
+        "gpu": "AMD Radeon(TM) Graphics",
+        "captures": {
+          "checkpoint-warm": {
+            "gpu": "AMD Radeon(TM) Graphics",
+            "tick": 1,
+            "sha256": "b3a58fbd8bb2bf1ca5814373b3a38c97f5e07a7ea16de74f46a4bdd478b44325",
+            "witnesses": {
+              "overlap": {
+                "pixel": [
+                  334,
+                  180
+                ],
+                "rgb": [
+                  144,
+                  151,
+                  124
+                ],
+                "expected": [
+                  144,
+                  151,
+                  124
+                ]
+              },
+              "spawned-source": {
+                "pixel": [
+                  387,
+                  191
+                ],
+                "rgb": [
+                  83,
+                  83,
+                  157
+                ],
+                "expected": [
+                  83,
+                  83,
+                  157
+                ]
+              },
+              "unmarked": {
+                "pixel": [
+                  359,
+                  168
+                ],
+                "rgb": [
+                  77,
+                  101,
+                  130
+                ],
+                "expected": [
+                  77,
+                  101,
+                  130
+                ]
+              }
+            }
+          },
+          "final-warm": {
+            "gpu": "AMD Radeon(TM) Graphics",
+            "tick": 5,
+            "sha256": "31bbc010ffba6e86e0b58e2e1ed337fc6ff2142ea15e756d17f68b3257b67c94",
+            "witnesses": {
+              "overlap": {
+                "pixel": [
+                  283,
+                  180
+                ],
+                "rgb": [
+                  132,
+                  141,
+                  107
+                ],
+                "expected": [
+                  132,
+                  141,
+                  107
+                ]
+              },
+              "spawned-source": {
+                "pixel": [
+                  387,
+                  191
+                ],
+                "rgb": [
+                  83,
+                  83,
+                  157
+                ],
+                "expected": [
+                  83,
+                  83,
+                  157
+                ]
+              },
+              "unmarked": {
+                "pixel": [
+                  359,
+                  168
+                ],
+                "rgb": [
+                  77,
+                  101,
+                  130
+                ],
+                "expected": [
+                  77,
+                  101,
+                  130
+                ]
+              },
+              "world-ray": {
+                "pixel": [
+                  255,
+                  168
+                ],
+                "rgb": [
+                  83,
+                  83,
+                  157
+                ],
+                "expected": [
+                  83,
+                  83,
+                  157
+                ]
+              }
+            }
+          },
+          "checkpoint-cold": {
+            "gpu": "AMD Radeon(TM) Graphics",
+            "tick": 1,
+            "sha256": "b3a58fbd8bb2bf1ca5814373b3a38c97f5e07a7ea16de74f46a4bdd478b44325",
+            "witnesses": {
+              "overlap": {
+                "pixel": [
+                  334,
+                  180
+                ],
+                "rgb": [
+                  144,
+                  151,
+                  124
+                ],
+                "expected": [
+                  144,
+                  151,
+                  124
+                ]
+              },
+              "spawned-source": {
+                "pixel": [
+                  387,
+                  191
+                ],
+                "rgb": [
+                  83,
+                  83,
+                  157
+                ],
+                "expected": [
+                  83,
+                  83,
+                  157
+                ]
+              },
+              "unmarked": {
+                "pixel": [
+                  359,
+                  168
+                ],
+                "rgb": [
+                  77,
+                  101,
+                  130
+                ],
+                "expected": [
+                  77,
+                  101,
+                  130
+                ]
+              }
+            }
+          },
+          "final-cold": {
+            "gpu": "AMD Radeon(TM) Graphics",
+            "tick": 5,
+            "sha256": "31bbc010ffba6e86e0b58e2e1ed337fc6ff2142ea15e756d17f68b3257b67c94",
+            "witnesses": {
+              "overlap": {
+                "pixel": [
+                  283,
+                  180
+                ],
+                "rgb": [
+                  132,
+                  141,
+                  107
+                ],
+                "expected": [
+                  132,
+                  141,
+                  107
+                ]
+              },
+              "spawned-source": {
+                "pixel": [
+                  387,
+                  191
+                ],
+                "rgb": [
+                  83,
+                  83,
+                  157
+                ],
+                "expected": [
+                  83,
+                  83,
+                  157
+                ]
+              },
+              "unmarked": {
+                "pixel": [
+                  359,
+                  168
+                ],
+                "rgb": [
+                  77,
+                  101,
+                  130
+                ],
+                "expected": [
+                  77,
+                  101,
+                  130
+                ]
+              },
+              "world-ray": {
+                "pixel": [
+                  255,
+                  168
+                ],
+                "rgb": [
+                  83,
+                  83,
+                  157
+                ],
+                "expected": [
+                  83,
+                  83,
+                  157
+                ]
+              }
+            }
+          }
+        },
+        "relocated_bundle_files": 66,
+        "manifest_sha256": "67f4050c9417b6371e2a5d8a841dcb4a19deb40b13d1a02ff77a6fc57637dc27"
+      },
+      {
+        "report_sha256": "1718703de8e9e064727b2c904ac943e1ec685ca351be3c6b3715d498fa73228f",
+        "backend": "native_aot",
+        "artifact": {
+          "descriptor_sha256": "d557b3e999a381b2d3d11833bc028e9d50ba397129bd77987b8ece9ee1940b68",
+          "files": [
+            {
+              "path": "notices/DOTNET-NATIVEAOT-10.0.15-LICENSE.txt",
+              "size": 1139,
+              "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+              "role": "notice"
+            },
+            {
+              "path": "notices/DOTNET-NATIVEAOT-10.0.15-THIRD-PARTY-NOTICES.txt",
+              "size": 78041,
+              "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+              "role": "notice"
+            },
+            {
+              "path": "notices/DOTNET-RUNTIME-10.0.15-LICENSE.txt",
+              "size": 1139,
+              "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+              "role": "notice"
+            },
+            {
+              "path": "notices/DOTNET-RUNTIME-10.0.15-THIRD-PARTY-NOTICES.txt",
+              "size": 78041,
+              "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+              "role": "notice"
+            },
+            {
+              "path": "notices/POIMA-LICENSE.txt",
+              "size": 11358,
+              "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+              "role": "notice"
+            },
+            {
+              "path": "notices/POIMA-THIRD-PARTY-NOTICES.md",
+              "size": 23949,
+              "sha256": "7d364ecf908a603cdc58efecf0a19e8d20b1a51ee0179ce3b9885d05327664a7",
+              "role": "notice"
+            },
+            {
+              "path": "Poima.NativeGame.dll",
+              "size": 1361920,
+              "sha256": "2546695739c4483fb1ece62b5dd0ca7a1b162c652582763e8b04c5888e9dbc8d",
+              "role": "library"
+            }
+          ]
+        },
+        "states": {
+          "checkpoint": {
+            "tick": 1,
+            "marks": [
+              {
+                "center_m": [
+                  0.3125,
+                  -1.1920928955078125e-07,
+                  0.5
+                ],
+                "edge_fraction": 0.5,
+                "half_depth_m": 0.125,
+                "half_extent_m": [
+                  0.75,
+                  0.75
+                ],
+                "id": "1",
+                "linear_rgb": [
+                  0.875,
+                  0.125,
+                  0.125
+                ],
+                "minimum_normal_dot": 0.800000011920929,
+                "normal": [
+                  0.0,
+                  0.0,
+                  1.0
+                ],
+                "opacity": 0.75,
+                "receiver": "00000000000000000000000000000064",
+                "roughness": 0.375,
+                "tangent": [
+                  1.0,
+                  0.0,
+                  0.0
+                ],
+                "tick": 1
+              },
+              {
+                "center_m": [
+                  0.3125,
+                  -1.1920928955078125e-07,
+                  0.5
+                ],
+                "edge_fraction": 0.0,
+                "half_depth_m": 0.125,
+                "half_extent_m": [
+                  0.3125,
+                  0.3125
+                ],
+                "id": "2",
+                "linear_rgb": [
+                  0.125,
+                  0.875,
+                  0.125
+                ],
+                "minimum_normal_dot": 0.800000011920929,
+                "normal": [
+                  0.0,
+                  0.0,
+                  1.0
+                ],
+                "opacity": 0.5,
+                "receiver": "00000000000000000000000000000064",
+                "roughness": 0.25,
+                "tangent": [
+                  1.0,
+                  0.0,
+                  0.0
+                ],
+                "tick": 1
+              },
+              {
+                "center_m": [
+                  0.25,
+                  -0.25,
+                  0.5
+                ],
+                "edge_fraction": 0.5,
+                "half_depth_m": 0.125,
+                "half_extent_m": [
+                  0.09375,
+                  0.09375
+                ],
+                "id": "3",
+                "linear_rgb": [
+                  0.125,
+                  0.125,
+                  0.875
+                ],
+                "minimum_normal_dot": 0.800000011920929,
+                "normal": [
+                  0.0,
+                  0.0,
+                  1.0
+                ],
+                "opacity": 1.0,
+                "receiver": "00000000000000000000000000000065",
+                "roughness": 0.5,
+                "tangent": [
+                  1.0,
+                  0.0,
+                  0.0
+                ],
+                "tick": 1
+              }
+            ],
+            "particles": {
+              "dropped": 0,
+              "expired": 0,
+              "live": 2,
+              "removed": 0,
+              "spawned": 2
+            }
+          },
+          "final": {
+            "tick": 5,
+            "marks": [
+              {
+                "center_m": [
+                  0.3125,
+                  -1.1920928955078125e-07,
+                  0.5
+                ],
+                "edge_fraction": 0.5,
+                "half_depth_m": 0.125,
+                "half_extent_m": [
+                  0.75,
+                  0.75
+                ],
+                "id": "1",
+                "linear_rgb": [
+                  0.875,
+                  0.125,
+                  0.125
+                ],
+                "minimum_normal_dot": 0.800000011920929,
+                "normal": [
+                  0.0,
+                  0.0,
+                  1.0
+                ],
+                "opacity": 0.75,
+                "receiver": "00000000000000000000000000000064",
+                "roughness": 0.375,
+                "tangent": [
+                  1.0,
+                  0.0,
+                  0.0
+                ],
+                "tick": 1
+              },
+              {
+                "center_m": [
+                  0.3125,
+                  -1.1920928955078125e-07,
+                  0.5
+                ],
+                "edge_fraction": 0.0,
+                "half_depth_m": 0.125,
+                "half_extent_m": [
+                  0.3125,
+                  0.3125
+                ],
+                "id": "2",
+                "linear_rgb": [
+                  0.125,
+                  0.875,
+                  0.125
+                ],
+                "minimum_normal_dot": 0.800000011920929,
+                "normal": [
+                  0.0,
+                  0.0,
+                  1.0
+                ],
+                "opacity": 0.5,
+                "receiver": "00000000000000000000000000000064",
+                "roughness": 0.25,
+                "tangent": [
+                  1.0,
+                  0.0,
+                  0.0
+                ],
+                "tick": 1
+              },
+              {
+                "center_m": [
+                  0.25,
+                  -0.25,
+                  0.5
+                ],
+                "edge_fraction": 0.5,
+                "half_depth_m": 0.125,
+                "half_extent_m": [
+                  0.09375,
+                  0.09375
+                ],
+                "id": "3",
+                "linear_rgb": [
+                  0.125,
+                  0.125,
+                  0.875
+                ],
+                "minimum_normal_dot": 0.800000011920929,
+                "normal": [
+                  0.0,
+                  0.0,
+                  1.0
+                ],
+                "opacity": 1.0,
+                "receiver": "00000000000000000000000000000065",
+                "roughness": 0.5,
+                "tangent": [
+                  1.0,
+                  0.0,
+                  0.0
+                ],
+                "tick": 1
+              },
+              {
+                "center_m": [
+                  -0.3125,
+                  0.25,
+                  0.5
+                ],
+                "edge_fraction": 0.5,
+                "half_depth_m": 0.125,
+                "half_extent_m": [
+                  0.09375,
+                  0.09375
+                ],
+                "id": "4",
+                "linear_rgb": [
+                  0.125,
+                  0.125,
+                  0.875
+                ],
+                "minimum_normal_dot": 0.800000011920929,
+                "normal": [
+                  0.0,
+                  0.0,
+                  1.0
+                ],
+                "opacity": 1.0,
+                "receiver": "00000000000000000000000000000064",
+                "roughness": 0.5,
+                "tangent": [
+                  1.0,
+                  0.0,
+                  0.0
+                ],
+                "tick": 3
+              },
+              {
+                "center_m": [
+                  0.25,
+                  -0.3125,
+                  0.5
+                ],
+                "edge_fraction": 0.5,
+                "half_depth_m": 0.125,
+                "half_extent_m": [
+                  0.09375,
+                  0.09375
+                ],
+                "id": "5",
+                "linear_rgb": [
+                  0.875,
+                  0.875,
+                  0.125
+                ],
+                "minimum_normal_dot": 0.800000011920929,
+                "normal": [
+                  0.0,
+                  0.0,
+                  1.0
+                ],
+                "opacity": 1.0,
+                "receiver": "00000000000000000000000000000064",
+                "roughness": 0.375,
+                "tangent": [
+                  1.0,
+                  0.0,
+                  0.0
+                ],
+                "tick": 3
+              }
+            ],
+            "particles": {
+              "dropped": 0,
+              "expired": 3,
+              "live": 0,
+              "removed": 0,
+              "spawned": 3
+            }
+          }
+        },
+        "archive_receipts": {
+          "checkpoint": {
+            "tick": 1,
+            "bytes": 25213,
+            "sha256": "00062d78d8743699209b4344e43bbc9cb1f86319122f5f047f4c64a7521ec185"
+          },
+          "final": {
+            "tick": 5,
+            "bytes": 25691,
+            "sha256": "a753c4e39fa2f1cea76fdb23cd01bcb9046cc44a41443a7b48221fc0fcd4e28d"
+          },
+          "restored-checkpoint": {
+            "tick": 1,
+            "bytes": 25213,
+            "sha256": "00062d78d8743699209b4344e43bbc9cb1f86319122f5f047f4c64a7521ec185"
+          },
+          "restored-final": {
+            "tick": 5,
+            "bytes": 25691,
+            "sha256": "a753c4e39fa2f1cea76fdb23cd01bcb9046cc44a41443a7b48221fc0fcd4e28d"
+          }
+        },
+        "refusals": {},
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "captures": {
+          "checkpoint-warm": {
+            "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+            "tick": 1,
+            "sha256": "009aa2ceb6b66feafa2ab609d757d888deac0a319d908ea2d4a5475517074df9",
+            "witnesses": {
+              "overlap": {
+                "pixel": [
+                  334,
+                  180
+                ],
+                "rgb": [
+                  144,
+                  151,
+                  124
+                ],
+                "expected": [
+                  144,
+                  151,
+                  124
+                ]
+              },
+              "spawned-source": {
+                "pixel": [
+                  387,
+                  191
+                ],
+                "rgb": [
+                  83,
+                  83,
+                  157
+                ],
+                "expected": [
+                  83,
+                  83,
+                  157
+                ]
+              },
+              "unmarked": {
+                "pixel": [
+                  359,
+                  168
+                ],
+                "rgb": [
+                  77,
+                  101,
+                  130
+                ],
+                "expected": [
+                  77,
+                  101,
+                  130
+                ]
+              }
+            }
+          },
+          "final-warm": {
+            "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+            "tick": 5,
+            "sha256": "e2dc2bcabb52eb8435fa7accced62ee4f5d72e08d748b2d0274491b6af848c81",
+            "witnesses": {
+              "overlap": {
+                "pixel": [
+                  283,
+                  180
+                ],
+                "rgb": [
+                  132,
+                  141,
+                  107
+                ],
+                "expected": [
+                  132,
+                  141,
+                  107
+                ]
+              },
+              "spawned-source": {
+                "pixel": [
+                  387,
+                  191
+                ],
+                "rgb": [
+                  83,
+                  83,
+                  157
+                ],
+                "expected": [
+                  83,
+                  83,
+                  157
+                ]
+              },
+              "unmarked": {
+                "pixel": [
+                  359,
+                  168
+                ],
+                "rgb": [
+                  77,
+                  101,
+                  130
+                ],
+                "expected": [
+                  77,
+                  101,
+                  130
+                ]
+              },
+              "world-ray": {
+                "pixel": [
+                  255,
+                  168
+                ],
+                "rgb": [
+                  83,
+                  83,
+                  157
+                ],
+                "expected": [
+                  83,
+                  83,
+                  157
+                ]
+              }
+            }
+          },
+          "checkpoint-cold": {
+            "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+            "tick": 1,
+            "sha256": "009aa2ceb6b66feafa2ab609d757d888deac0a319d908ea2d4a5475517074df9",
+            "witnesses": {
+              "overlap": {
+                "pixel": [
+                  334,
+                  180
+                ],
+                "rgb": [
+                  144,
+                  151,
+                  124
+                ],
+                "expected": [
+                  144,
+                  151,
+                  124
+                ]
+              },
+              "spawned-source": {
+                "pixel": [
+                  387,
+                  191
+                ],
+                "rgb": [
+                  83,
+                  83,
+                  157
+                ],
+                "expected": [
+                  83,
+                  83,
+                  157
+                ]
+              },
+              "unmarked": {
+                "pixel": [
+                  359,
+                  168
+                ],
+                "rgb": [
+                  77,
+                  101,
+                  130
+                ],
+                "expected": [
+                  77,
+                  101,
+                  130
+                ]
+              }
+            }
+          },
+          "final-cold": {
+            "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+            "tick": 5,
+            "sha256": "e2dc2bcabb52eb8435fa7accced62ee4f5d72e08d748b2d0274491b6af848c81",
+            "witnesses": {
+              "overlap": {
+                "pixel": [
+                  283,
+                  180
+                ],
+                "rgb": [
+                  132,
+                  141,
+                  107
+                ],
+                "expected": [
+                  132,
+                  141,
+                  107
+                ]
+              },
+              "spawned-source": {
+                "pixel": [
+                  387,
+                  191
+                ],
+                "rgb": [
+                  83,
+                  83,
+                  157
+                ],
+                "expected": [
+                  83,
+                  83,
+                  157
+                ]
+              },
+              "unmarked": {
+                "pixel": [
+                  359,
+                  168
+                ],
+                "rgb": [
+                  77,
+                  101,
+                  130
+                ],
+                "expected": [
+                  77,
+                  101,
+                  130
+                ]
+              },
+              "world-ray": {
+                "pixel": [
+                  255,
+                  168
+                ],
+                "rgb": [
+                  83,
+                  83,
+                  157
+                ],
+                "expected": [
+                  83,
+                  83,
+                  157
+                ]
+              }
+            }
+          }
+        },
+        "relocated_bundle_files": 66,
+        "manifest_sha256": "4972a9df35eafd3ca2bee10d92fc50cb099c9053ff1f43885e2ebb0d75709095"
+      }
+    ]
+  },
+  "scope": "Bounded fixed-tick world and final source-local rays. Headless Linux CoreCLR and Native AOT, plus relocated Windows Native AOT with single-sample forward Vulkan."
+}

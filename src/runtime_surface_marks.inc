@@ -6,6 +6,38 @@
         std::vector<RuntimeSurfaceMark> rows;
     };
     std::shared_ptr<const SurfaceMarksState> surface_marks;
+    std::vector<RuntimeSurfaceMarkCommand> gameplay_surface_marks;
+    std::size_t surface_mark_attempts=0;
+
+    static int32_t POIMA_CALL stage_surface_mark(void* context,const PoimaGameSurfaceMarkCommandV1* request,
+        PoimaGameError* error) {
+        return callback(error,[&] {
+            require(context,"Surface mark context is absent.");
+            auto& self=*static_cast<Impl*>(context);
+            self.require_tick();
+            require(self.surface_mark_attempts<max_surface_mark_commands,"Gameplay exceeded 16 surface mark requests in one tick.");
+            ++self.surface_mark_attempts;
+            require(request && request->version==1 && request->bytes==sizeof(PoimaGameSurfaceMarkCommandV1) &&
+                (request->receiver.high || request->receiver.low),"Invalid gameplay surface mark request.");
+
+            RuntimeSurfaceMarkCommand command;
+            command.receiver=gameplay_id(request->receiver);
+            if(request->source.high || request->source.low)command.source=gameplay_id(request->source);
+            std::copy_n(request->origin,3,command.ray.origin.begin());
+            std::copy_n(request->direction,3,command.ray.direction.begin());
+            command.ray.distance=request->distance;
+            auto& mark=command.style;
+            std::copy_n(request->half_extent_m,2,mark.half_extent_m.begin());
+            std::copy_n(request->linear_rgb,3,mark.linear_rgb.begin());
+            mark.half_depth_m=request->half_depth_m;
+            mark.minimum_normal_dot=request->minimum_normal_dot;
+            mark.edge_fraction=request->edge_fraction;
+            mark.opacity=request->opacity;
+            mark.roughness=request->roughness;
+            validate_surface_mark_fields(mark,false);
+            self.gameplay_surface_marks.push_back(std::move(command));
+        });
+    }
 
     entt::entity surface_mark_receiver(const std::string& id) const {
         const auto entity=find(id);
@@ -65,23 +97,50 @@
         validate_surface_mark_fields(row.mark,bool(registry.get<RuntimeMesh>(receiver).mesh));
     }
 
-    void place_surface_marks(std::span<const RuntimeSurfaceMarkCommand> commands) {
-        if(commands.empty())return;
-        require(commands.size()<=max_surface_mark_commands,"Surface mark command budget exceeded.");
+    RuntimeRay surface_mark_ray(const RuntimeSurfaceMarkCommand& command) const {
+        const auto& requested=command.ray;
+        require(requested.ignore.empty(),"Surface mark rays cannot ignore colliders.");
+        if(command.source.empty())return requested;
+        const auto bounded=[](double value){return std::isfinite(value) && std::abs(value)<=1e6;};
+        require(std::all_of(requested.origin.begin(),requested.origin.end(),bounded) &&
+            std::all_of(requested.direction.begin(),requested.direction.end(),bounded),
+            "Surface mark source-local ray vectors must be finite and within 1e6.");
+        const auto& world=registry.get<Node>(find(command.source)).world;
+        require(rigid_transform(world) && pose_frames::axes(world).basis==pose_frames::Basis::regular,
+            "Surface mark source needs an unscaled right-handed world transform.");
+        RuntimeRay ray;
+        ray.distance=requested.distance;
+        for(std::size_t row=0;row<3;++row) {
+            ray.origin[row]=world[12+row];
+            ray.direction[row]=0;
+            for(std::size_t axis=0;axis<3;++axis) {
+                ray.origin[row]+=world[4*axis+row]*requested.origin[axis];
+                ray.direction[row]+=world[4*axis+row]*requested.direction[axis];
+            }
+        }
+        return ray;
+    }
+
+    void place_surface_marks(std::span<const RuntimeSurfaceMarkCommand> caller) {
+        const std::span<const RuntimeSurfaceMarkCommand> gameplay=gameplay_surface_marks;
+        if(caller.empty() && gameplay.empty())return;
+        require(caller.size()<=max_surface_mark_commands && gameplay.size()<=max_surface_mark_commands-caller.size(),
+            "Surface mark command budget exceeded.");
+        const auto requested=caller.size()+gameplay.size();
         auto next=surface_marks ? std::make_shared<SurfaceMarksState>(*surface_marks) : std::make_shared<SurfaceMarksState>();
-        require(commands.size()<=max_scene_surface_marks-next->rows.size(),"Scene surface mark capacity exceeded.");
-        next->rows.reserve(next->rows.size()+commands.size());
-        for(const auto& command:commands) {
+        require(requested<=max_scene_surface_marks-next->rows.size(),"Scene surface mark capacity exceeded.");
+        next->rows.reserve(next->rows.size()+requested);
+        // Caller marks receive earlier IDs than gameplay marks on the same tick.
+        for(const auto commands:{caller,gameplay})for(const auto& command:commands) {
             const auto count=std::count_if(next->rows.begin(),next->rows.end(),[&](const auto& row) {
                 return row.receiver==command.receiver;
             });
             require(count<static_cast<std::ptrdiff_t>(max_surface_marks_per_receiver),"Surface mark receiver capacity exceeded.");
             require(next->next_id<max_surface_mark_id,"Surface mark identity space exhausted.");
-            require(command.ray.ignore.empty(),"Surface mark rays cannot ignore colliders.");
-
             const auto receiver=surface_mark_receiver(command.receiver);
             const auto& mesh=registry.get<RuntimeMesh>(receiver);
-            const auto hit=physics_raycast(command.ray);
+            const auto ray=surface_mark_ray(command);
+            const auto hit=physics_raycast(ray);
             require(hit && hit->entity==command.receiver && hit->normal,
                 "Surface mark ray must first hit the expected receiver with a surface normal.");
 
@@ -104,7 +163,7 @@
                 normal=*triangle.normal;
             }
 
-            const auto facing=pose_frames::dot(normal,pose_frames::project(basis,command.ray.direction));
+            const auto facing=pose_frames::dot(normal,pose_frames::project(basis,ray.direction));
             require(facing<0 || (facing>0 && mesh.material->double_sided),
                 "Surface mark ray requires a visible facing surface.");
             const auto normal_length=std::hypot(normal[0],normal[1],normal[2]);
@@ -125,6 +184,7 @@
             next->rows.push_back({next->next_id++,tick,command.receiver,mark});
         }
         surface_marks=std::move(next);
+        gameplay_surface_marks.clear();
     }
 
     void retire_surface_marks() {

@@ -76,6 +76,7 @@ void policy() {
     check(compatibility_error(attachment,capable).empty(),"Attachment unexpectedly requires another optional service.");
     auto old_attachment_host=capable;old_attachment_host.services_bytes=512;
     std::erase(old_attachment_host.features,std::string(particle_burst_feature));
+    std::erase(old_attachment_host.features,std::string(surface_mark_feature));
     std::erase(old_attachment_host.features,std::string(item_attachment_feature));
     std::erase(old_attachment_host.features,std::string(item_attachment_contact_feature));
     std::erase(old_attachment_host.features,std::string(item_attachment_surface_feature));
@@ -97,11 +98,25 @@ void policy() {
     auto missing_burst=capable;std::erase(missing_burst.features,std::string(particle_burst_feature));
     check(!compatibility_error(burst,missing_burst).empty(),"Opaque allocation granted particle bursts.");
     missing_burst.services_bytes=item_attachment_services_bytes;
+    std::erase(missing_burst.features,std::string(surface_mark_feature));
     check(compatibility_error(attachment,missing_burst).empty() && !compatibility_error(burst,missing_burst).empty(),
         "Previous attachment runtime compatibility changed.");
     auto short_burst=burst;short_burst.services_bytes=item_attachment_services_bytes;
     check(!compatibility_error(short_burst,capable).empty() && !compatibility_error(baseline,short_burst).empty(),
         "Short allocation was accepted for particle bursts.");
+    auto mark=baseline;mark.services_bytes=surface_mark_services_bytes;mark.features.push_back(surface_mark_feature);
+    check(compatibility_error(mark,capable).empty() && compatibility_error(mark,mark).empty(),
+        "Surface marks require no unrelated feature.");
+    auto all_effects=mark;all_effects.features.insert(all_effects.features.end(),{particle_burst_feature,item_attachment_feature});
+    check(compatibility_error(all_effects,capable).empty(),"Surface marks, particles and attachments could not coexist.");
+    auto missing_mark=capable;std::erase(missing_mark.features,std::string(surface_mark_feature));
+    check(!compatibility_error(mark,missing_mark).empty(),"Opaque allocation granted surface marks.");
+    missing_mark.services_bytes=particle_services_bytes;
+    check(compatibility_error(burst,missing_mark).empty() && !compatibility_error(mark,missing_mark).empty(),
+        "Previous particle host compatibility changed.");
+    auto short_mark=mark;short_mark.services_bytes=particle_services_bytes;
+    check(!compatibility_error(short_mark,capable).empty() && !compatibility_error(baseline,short_mark).empty(),
+        "Short allocation was accepted for surface marks.");
     auto contact=attachment;contact.features.push_back(item_attachment_contact_feature);
     check(compatibility_error(contact,capable).empty(),"Contact requires no longer service table.");
     auto before_pickup=capable;std::erase(before_pickup.features,std::string(item_attachment_pickup_feature));
@@ -196,7 +211,7 @@ void policy() {
         "Attachment prefix was accepted without both its name and extent.");
     check(physical_rig_drive_services_bytes==448u,"Frozen physical drive extent changed.");
     check(physical_rig_animation_services_bytes==496u,"Frozen physical animation extent changed.");
-    check(capable.services_version==7 && capable.services_bytes==particle_services_bytes && capable.services_bytes==536u &&
+    check(capable.services_version==7 && capable.services_bytes==surface_mark_services_bytes && capable.services_bytes==544u &&
         std::find(capable.features.begin(),capable.features.end(),item_attachment_feature)!=capable.features.end() &&
         std::find(capable.features.begin(),capable.features.end(),physical_recovery_feature)!=capable.features.end() &&
         std::find(capable.features.begin(),capable.features.end(),physical_rig_drive_feature)!=capable.features.end() &&

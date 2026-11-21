@@ -75,6 +75,8 @@ inline constexpr const char* item_pickup_steering_feature="item_attachment_picku
 inline constexpr const char* item_pickup_hand_fallback_feature="item_attachment_pickup_hand_fallback_v1";
 inline constexpr const char* particle_burst_feature="particle_burst_v1";
 inline constexpr std::uint32_t particle_services_bytes=536;
+inline constexpr const char* surface_mark_feature="surface_mark_v1";
+inline constexpr std::uint32_t surface_mark_services_bytes=544;
 
 // In a requirement, services_bytes is the minimum readable prefix. In an
 // availability declaration it is the provided extent. Epochs describe callback
@@ -123,6 +125,8 @@ inline Contract available_contract(bool navigation_bound=true) {
     result.features.push_back(item_pickup_hand_fallback_feature);
     result.services_bytes=particle_services_bytes;
     result.features.push_back(particle_burst_feature);
+    result.services_bytes=surface_mark_services_bytes;
+    result.features.push_back(surface_mark_feature);
     return result;
 }
 
@@ -168,6 +172,7 @@ inline std::uint32_t service_prefix_bytes(const Contract& contract) {
         {physical_recovery_feature,physical_recovery_services_bytes},
         {item_attachment_feature,item_attachment_services_bytes},
         {particle_burst_feature,particle_services_bytes},
+        {surface_mark_feature,surface_mark_services_bytes},
     };
     auto bytes=services_bytes;
     for(const auto& extension:extensions)
@@ -246,7 +251,7 @@ inline std::string compatibility_error(const Contract& required,const Contract& 
        std::find(required.features.begin(),required.features.end(),item_attachment_surface_feature)==required.features.end())
         return "Gameplay item_attachment_recovery_v1 also requires item_attachment_surface_v1.";
     if(required.services_bytes!=service_prefix_bytes(required))
-        return "Gameplay must declare the 176-byte baseline or a named extension prefix through 536 bytes.";
+        return "Gameplay must declare the 176-byte baseline or a named extension prefix through 544 bytes.";
     if(std::find(available.features.begin(),available.features.end(),animation_feature)!=available.features.end() && available.services_bytes<animation_services_bytes)
         return "Runtime animation_inertial_v1 requires a 192-byte service allocation.";
     if(std::find(required.features.begin(),required.features.end(),animation_feature)!=required.features.end() && required.services_bytes<animation_services_bytes)
@@ -313,6 +318,9 @@ inline std::string compatibility_error(const Contract& required,const Contract& 
     if(std::find(available.features.begin(),available.features.end(),particle_burst_feature)!=available.features.end() &&
        available.services_bytes<particle_services_bytes)
         return "Runtime particle_burst_v1 requires a 536-byte service allocation.";
+    if(std::find(available.features.begin(),available.features.end(),surface_mark_feature)!=available.features.end() &&
+       available.services_bytes<surface_mark_services_bytes)
+        return "Runtime surface_mark_v1 requires a 544-byte service allocation.";
     if(std::find(available.features.begin(),available.features.end(),item_attachment_contact_feature)!=available.features.end() &&
        std::find(available.features.begin(),available.features.end(),item_attachment_feature)==available.features.end())
         return "Runtime item_attachment_contact_v1 also requires item_attachment_v1.";
@@ -354,7 +362,7 @@ inline std::string compatibility_error(const Contract& required,const Contract& 
     for(std::size_t i=0;i<required.features.size();++i) {
         const auto& feature=required.features[i];
         if(feature!=baseline_feature && feature!=persistence_feature && feature!=collections_feature && feature!=animation_feature && feature!=animation_layers_feature && feature!=character_input_feature && feature!=navigation_feature && feature!=instances_feature && feature!=player_preferences_feature && feature!=input_actions_feature && feature!=hit_regions_feature && feature!=two_bone_ik_feature && feature!=root_motion_feature && feature!=camera_lens_feature && feature!=character_stance_feature && feature!=two_bone_ik_orientation_feature && feature!=grounding_control_feature && feature!=animation_rate_feature && feature!=camera_pose_feature && feature!=capsule_cast_feature && feature!=physical_rig_feature && feature!=physical_rig_drive_feature && feature!=physical_rig_animation_feature && feature!=physical_recovery_feature && feature!=item_attachment_feature && feature!=item_attachment_contact_feature && feature!=item_attachment_surface_feature && feature!=item_attachment_recovery_feature && feature!=item_attachment_release_feature && feature!=item_attachment_pickup_feature && feature!=item_attachment_aim_feature && feature!=ik_clearance_feature && feature!=item_pickup_clearance_feature && feature!=item_pickup_pose_feature && feature!=item_pickup_blend_feature && feature!=item_pickup_steering_feature && feature!=item_pickup_hand_fallback_feature &&
-           feature!=particle_burst_feature)return "Unknown required gameplay feature: "+feature;
+           feature!=particle_burst_feature && feature!=surface_mark_feature)return "Unknown required gameplay feature: "+feature;
         const auto prefix_end=required.features.begin()+static_cast<std::vector<std::string>::difference_type>(i);
         if(std::find(required.features.begin(),prefix_end,feature)!=prefix_end)
             return "Duplicate required gameplay feature: "+feature;

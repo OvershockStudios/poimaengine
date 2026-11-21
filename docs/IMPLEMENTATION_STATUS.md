@@ -1,8 +1,18 @@
 # Implementation status
 
-Updated 2026-11-21 for **0.0.359**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-21 for **0.0.360**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.360 lets [C# gameplay place surface marks](SURFACE_MARKS.md#place-marks-from-gameplay)
+using world rays or the final pose of a moved or newly spawned source.
+The Linux fixture accepts 15 caller placements plus one gameplay placement.
+A seventeenth placement rolls back the batch, preserving the previous
+save bytes and particle state. CoreCLR and Native AOT match through fresh
+save continuation. Relocated Windows Native AOT games reproduce checkpoint
+and final captures and save bytes on AMD and NVIDIA. The graphics fixture
+uses rigid opaque receivers and single-sample forward Vulkan.
+[Results](evidence/m2-compiled-surface-marks-360.json)
 
 Version 0.0.359 supports [persistent surface marks](SURFACE_MARKS.md) through
 guarded runtime steps. A mark follows its rigid opaque receiver and changes

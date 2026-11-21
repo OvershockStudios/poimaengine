@@ -66,6 +66,7 @@ if(typeof(IItemPickupBlendGame).IsAssignableFrom(game))features|=GameplayRequire
 if(typeof(IItemPickupSteeringGame).IsAssignableFrom(game))features|=GameplayRequiredFeatures.ItemPickupSteering;
 if(typeof(IItemPickupHandFallbackGame).IsAssignableFrom(game))features|=GameplayRequiredFeatures.ItemPickupHandFallback;
 if(typeof(IParticleBurstGame).IsAssignableFrom(game))features|=GameplayRequiredFeatures.ParticleBurst;
+if(typeof(ISurfaceMarkGame).IsAssignableFrom(game))features|=GameplayRequiredFeatures.SurfaceMark;
 string requirements=GameplayRequirements.Json(features);
 int bytes=Marshal.SizeOf(state);if(bytes is <1 or >65536)throw new ArgumentException("State exceeds 1..65536 bytes.");
 var fields=state.GetFields(BindingFlags.Instance|BindingFlags.Public|BindingFlags.NonPublic).OrderBy(f=>f.Name,StringComparer.Ordinal).ToArray();

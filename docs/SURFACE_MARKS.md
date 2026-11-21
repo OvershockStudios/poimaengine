@@ -12,9 +12,11 @@ when it includes simulation. Vulkan builds shade marks in the forward and
 deferred world passes.
 
 Append a `surface_marks` array to a guarded `runtime.step` request. Mark
-rays use world metres. The first hit must be on the named receiver and
-return a surface normal. Placement uses the final pose on the first tick
-of the step batch, including motion submitted in the same request.
+rays use world metres by default. Add a `source` entity ID to interpret
+the ray in that entity's final rigid local frame. The first hit must be on
+the named receiver and return a surface normal. Placement uses the final
+pose on the first tick of the step batch, including motion submitted in
+the same request.
 
 ```json
 {
@@ -42,9 +44,33 @@ fraction of the radius used for a smooth falloff. Set it to zero for a hard
 edge. Overlapping marks blend base color and roughness in placement order,
 oldest first, before the surface is lit.
 
-Submit up to 16 placements per step. A scene retains up to 256 marks with
-at most four per receiver. Capacity and ray failures roll back the step
-batch. A retry of the same successful request uses the existing receipt.
+Submit up to 16 placements per tick across caller and gameplay commands.
+The engine places caller marks first, then gameplay marks in callback order.
+A scene retains up to 256 marks with at most four per receiver. Capacity
+and ray failures roll back the step batch. A retry of the same successful
+request uses the existing receipt.
+
+## Place marks from gameplay
+
+Implement `ISurfaceMarkGame` on the C# game module. During `Tick`, use
+`context.PlaceSurfaceMark(receiver, origin, direction, distance, style)`
+to submit a world ray. Pass a `source` entity to use its final local frame.
+The engine resolves the frame after physics and attachments. A source born
+from a template during the same tick can supply the ray. Marks remain with
+the receiver if the source later moves or is removed.
+
+```csharp
+var style = new SurfaceMarkStyle(new Vector2(.12f, .22f), .02f,
+    .8f, .3f, new Vector3(.12f, .07f, .04f), .6f, .85f);
+context.PlaceSurfaceMark(receiver, new Vector3d(0, .1, 0),
+    new Vector3d(0, -1, 0), .5, style, source);
+```
+
+The optional `surface_mark_v1` service uses a 136-byte command and a
+544-byte epoch-7 prefix. `world.describe` reports this under
+`gameplay_surface_marks`. The gameplay callback allows up to 16 wire
+attempts per tick. Placement joins the same batch as motion, particles,
+and gameplay state, including save continuation.
 
 ## Inspect and restore
 
