@@ -111,6 +111,23 @@ int main() {
         check(ar::collect(entities,&templates,nonexistent).edges.empty(),"Cursor beyond end is not empty.");
         check(rows(ar::collect(entities,nullptr,{}))==Json(expected.begin(),expected.begin()+9),"Legacy missing template catalog differs.");
 
+        const auto sprite=bag({{"ParticleEmitter",{{"sprite",{{"texture",b}}}}}});
+        const Json sprite_entities={{id(1),sprite},{id(2),bag({{"ParticleEmitter",Json::object()}})}};
+        const Json sprite_templates={{id(1),sprite},{id(2),{{"entities",{{id(3),sprite}}}}}};
+        const auto member_path="/entities/"+id(3)+"/components/ParticleEmitter/sprite/texture";
+        const Json sprite_edges=Json::array({row("entity",1,"ParticleEmitter","/sprite/texture",b,"image"),
+            row("template",1,"ParticleEmitter","/sprite/texture",b,"image"),
+            row("template",2,"ParticleEmitter",member_path.c_str(),b,"image")});
+        ar::Query sprite_query;sprite_query.asset=b;sprite_query.limit=1;
+        for(std::size_t index=0;index<sprite_edges.size();++index) {
+            const auto page=ar::collect(sprite_entities,&sprite_templates,sprite_query);
+            check(rows(page)==Json::array({sprite_edges[index]}) && bool(page.next_after)==(index+1<sprite_edges.size()),
+                "Particle sprite reference pagination skipped or reordered owners.");
+            sprite_query.after=page.next_after;
+        }
+        sprite_query.after=cursor(sprite_edges.back());
+        check(ar::collect(sprite_entities,&sprite_templates,sprite_query).edges.empty(),"Template sprite cursor did not advance past its row.");
+
         ar::Query invalid;
         invalid.limit=0;error([&]{(void)ar::collect(entities,&templates,invalid);},-32602);
         invalid.limit=257;error([&]{(void)ar::collect(entities,&templates,invalid);},-32602);

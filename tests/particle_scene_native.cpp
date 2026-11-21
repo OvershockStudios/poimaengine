@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "particle_scene.hpp"
 #include "poima/assets.hpp"
+#include "poima/runtime.hpp"
 
 #include <array>
 #include <cmath>
@@ -112,13 +113,69 @@ void precision_and_invalid_inputs() {
     catch (const std::invalid_argument&) { rejected = true; }
     check(rejected && snapshot.objects.size() == 1, "Invalid opacity published partial particle geometry.");
 }
+
+void frozen_sprite_catalog() {
+    const auto first_digest = std::string(64, '1');
+    const auto second_digest = std::string(64, '2');
+    const auto image = std::make_shared<const TextureImage>(TextureImage{true, {{1, 1, {255, 128, 64, 32}}}});
+    RuntimeDefinition definition;
+    definition.particle_sprite_textures.emplace(first_digest, image);
+    definition.particle_sprite_textures.emplace(second_digest, image);
+
+    RuntimeParticleEmitter emitter;
+    emitter.config.linear_rgba[3] = .5f;
+    emitter.sprite = RuntimeParticleSprite{second_digest, 2};
+    definition.entities.emplace_back().particle_emitter = emitter;
+    emitter.sprite = RuntimeParticleSprite{first_digest, 1};
+    definition.templates.emplace_back().particle_emitter = emitter;
+    auto& graph = definition.templates.emplace_back();
+    graph.entities.emplace_back().particle_emitter = emitter;
+    emitter.sprite->depth_fade_m = 0;
+    graph.entities.emplace_back().particle_emitter = emitter;
+
+    const auto catalog = build_sprite_catalog(definition);
+    check(catalog.styles.size() == 3 && catalog.indices.at({first_digest, 0}) == 0 &&
+        catalog.indices.at({first_digest, 1}) == 1 && catalog.indices.at({second_digest, 2}) == 2,
+        "Sprite catalog did not deduplicate styles in a stable order across roots and templates.");
+    check(catalog.styles.front().texture == image && catalog.styles.front().texture->mips.front().rgba[3] == 32,
+        "Sprite catalog changed its frozen straight alpha asset.");
+
+    definition.entities.insert(definition.entities.begin(), graph.entities.back());
+    check(build_sprite_catalog(definition).indices == catalog.indices,
+        "Expanding a template before cold restore changed frozen style indices.");
+
+    const auto rejected = [](const RuntimeDefinition& invalid) {
+        try { (void)build_sprite_catalog(invalid); }
+        catch (const std::invalid_argument&) { return true; }
+        return false;
+    };
+    auto invalid = definition;
+    invalid.particle_sprite_textures.erase(first_digest);
+    check(rejected(invalid), "A dormant template allowed an unresolved sprite texture.");
+    invalid = definition;
+    invalid.particle_sprite_textures[first_digest] = std::make_shared<const TextureImage>(TextureImage{false, {{1025, 1, {}}}});
+    check(rejected(invalid), "An oversized sprite texture was admitted.");
+
+    const auto full_size = std::make_shared<const TextureImage>(TextureImage{false, {{1024, 1024, std::vector<std::uint8_t>(4*1024*1024)}}});
+    invalid = {};
+    for (char digest : std::string_view("1234")) invalid.particle_sprite_textures.emplace(std::string(64, digest), full_size);
+    check(!rejected(invalid), "A sprite catalog rejected the exact base-level budget.");
+    invalid.particle_sprite_textures.emplace(std::string(64, '5'), image);
+    check(rejected(invalid), "A sprite catalog exceeded the total base-level budget with distinct digests.");
+    invalid = {};
+    for (char digest : std::string_view("0123456789abcdef")) invalid.particle_sprite_textures.emplace(std::string(64, digest), image);
+    check(!rejected(invalid), "A sprite catalog rejected the exact distinct-texture count limit.");
+    invalid.particle_sprite_textures.emplace(std::string(63, '0') + "f", image);
+    check(rejected(invalid), "A sprite catalog exceeded the distinct-texture count limit.");
+}
 }
 
 int main() {
     try {
         moving_emitters_and_camera();
         precision_and_invalid_inputs();
-        std::cout << "Particle scene camera, bounds, ownership, precision and opaque draw checks passed.\n";
+        frozen_sprite_catalog();
+        std::cout << "Particle scene camera, bounds, ownership, opaque projection and frozen sprite catalog checks passed.\n";
         return 0;
     } catch (const std::exception& error) {
         std::cerr << error.what() << '\n';

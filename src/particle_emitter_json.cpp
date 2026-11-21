@@ -74,7 +74,7 @@ Json vec_schema(double minimum, double maximum) {
 
 RuntimeParticleEmitter parse_particle_emitter(const Json& value) {
     fields(value, {"spawn_space", "simulation_space", "lifetime_ticks", "size_m", "linear_rgb"},
-        {"seed", "particles_per_second", "live_limit", "emitting", "offset_m", "velocity_m_s", "acceleration_m_s2", "burst"});
+        {"seed", "particles_per_second", "live_limit", "emitting", "offset_m", "velocity_m_s", "acceleration_m_s2", "burst", "sprite"});
     RuntimeParticleEmitter result;
     auto& config = result.config;
     config.spawn_space = space(value.at("spawn_space"));
@@ -111,6 +111,20 @@ RuntimeParticleEmitter parse_particle_emitter(const Json& value) {
         require(valid_input_action_name(result.burst_action), "Particle burst action is not a valid input name.");
         result.burst_count = integer(burst.at("count"), 1, particles::max_burst);
     }
+    if (value.contains("sprite")) {
+        const auto& sprite = value.at("sprite");
+        fields(sprite, {"texture"}, {"opacity", "depth_fade_m"});
+        const auto& texture = sprite.at("texture");
+        require(texture.is_string(), "Particle sprite texture must be a lowercase cooked image SHA-256.");
+        const auto& digest = texture.get_ref<const std::string&>();
+        require(digest.size() == 64 && digest.find_first_not_of("0123456789abcdef") == std::string::npos,
+            "Particle sprite texture must be a lowercase cooked image SHA-256.");
+        result.sprite = RuntimeParticleSprite{digest};
+        if (sprite.contains("opacity"))
+            config.linear_rgba[3] = static_cast<float>(number(sprite.at("opacity"), 0, 1));
+        if (sprite.contains("depth_fade_m"))
+            result.sprite->depth_fade_m = static_cast<float>(number(sprite.at("depth_fade_m"), 0, 10));
+    }
     return result;
 }
 
@@ -120,14 +134,18 @@ Json particle_emitter_schema() {
     const auto limits = object({{"minimum", v}, {"maximum", v}}, {"minimum", "maximum"});
     const auto burst = object({{"action", {{"type", "string"}, {"pattern", "^[a-z][a-z0-9_.-]{0,63}$"}}},
         {"count", range("integer", 1, particles::max_burst)}}, {"action", "count"});
+    auto sprite = object({{"texture", {{"type", "string"}, {"pattern", "^[0-9a-f]{64}$"}}},
+        {"opacity", range("number", 0, 1)}, {"depth_fade_m", range("number", 0, 10)}}, {"texture"});
+    sprite["properties"]["opacity"]["default"] = 1;
+    sprite["properties"]["depth_fade_m"]["default"] = 0;
     auto result = object({{"spawn_space", spaces}, {"simulation_space", spaces}, {"lifetime_ticks", range("integer", 1, particles::max_lifetime_ticks)},
         {"size_m", range("number", min_size, max_size)}, {"linear_rgb", vec_schema(0, 1)},
         {"seed", {{"type", "string"}, {"pattern", "^[0-9a-f]{16}$"}, {"default", "0000000000000000"}}},
         {"particles_per_second", range("integer", 0, particles::max_rate)}, {"live_limit", range("integer", 0, live_capacity)},
         {"emitting", {{"type", "boolean"}, {"default", true}}}, {"offset_m", limits},
-        {"velocity_m_s", limits}, {"acceleration_m_s2", v}, {"burst", burst}},
+        {"velocity_m_s", limits}, {"acceleration_m_s2", v}, {"burst", burst}, {"sprite", std::move(sprite)}},
         {"spawn_space", "simulation_space", "lifetime_ticks", "size_m", "linear_rgb"});
-    result["description"] = "Fixed-tick opaque emissive billboards. Spawn space selects birth axes. Simulation space selects whether live particles follow the source. Burst actions use named pressed edges.";
+    result["description"] = "Fixed-tick billboards with optional translucent cooked image sprites. Spawn space selects birth axes. Simulation space selects whether live particles follow the source. Burst actions use named pressed edges.";
     return result;
 }
 

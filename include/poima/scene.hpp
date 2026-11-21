@@ -17,6 +17,7 @@ namespace poima {
 struct RenderOptions;
 struct RenderReport;
 struct PostEffect;
+struct TextureImage;
 // Column-major matrices multiplying column vectors. Right-handed, Y-up,
 // camera looks along local -Z; projection depth is [0, 1].
 using Matrix4 = std::array<double, 16>;
@@ -169,6 +170,26 @@ struct SceneViewmodel {
             lens.near_plane,lens.far_plane};
     }
 };
+inline constexpr std::size_t max_scene_particle_sprite_textures=16;
+inline constexpr std::uint32_t max_scene_particle_sprite_texture_side=1024;
+inline constexpr std::size_t max_scene_particle_sprite_texture_bytes=16*1024*1024;
+struct SceneParticleSpriteStyle {
+    std::string texture_sha256;
+    std::shared_ptr<const TextureImage> texture;
+    float depth_fade_m=0;
+};
+struct SceneParticleSprite {
+    std::uint64_t id=0;
+    std::uint32_t style=0;
+    std::array<double,3> position_m{};
+    float size_m=0;
+    std::array<float,4> linear_rgba{};
+};
+struct SceneParticleSprites {
+    // Includes frozen root and template styles even with no live instances.
+    std::vector<SceneParticleSpriteStyle> styles;
+    std::vector<SceneParticleSprite> instances;
+};
 // An immutable presentation copy; no pointers into authored or simulation state.
 struct SceneSnapshot {
     std::string world_id;
@@ -198,6 +219,7 @@ struct SceneSnapshot {
     // Opt-in receipt of actual prepared camera and foreground matrices.
     bool camera_pose_receipt=false;
     std::shared_ptr<const PostEffect> post_effect;
+    SceneParticleSprites particle_sprites;
 
     SceneLens world_lens() const { return {vertical_fov,near_plane,far_plane}; }
     std::span<const SceneObject> world_viewmodel_draws() const {

@@ -1,8 +1,19 @@
 # Implementation status
 
-Updated 2026-11-21 for **0.0.355**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-21 for **0.0.356**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.356 adds [textured particle sprites](PARTICLES.md#add-a-translucent-sprite)
+with per-emitter opacity and soft depth fade. A relocated Windows fixture
+checked ten analytic HDR samples in forward and deferred rendering on AMD
+integrated graphics and an RTX 4070 Laptop GPU. The samples cover depth
+order, equal-depth particle IDs, hard occlusion, soft fade and filtering
+across a transparent texel. A fresh process reproduced the live image and
+the complete continued save. The sprite pass currently requires one world
+sample with reconstruction disabled. The fixture measures image and state
+correctness in a small scene.
+[Results](evidence/m2-textured-particle-sprites-356.json)
 
 Version 0.0.355 streams [changing water geometry](SHALLOW_WATER.md) through
 the Vulkan buffers shared with scene particles. A relocated game replay

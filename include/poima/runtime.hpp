@@ -386,10 +386,15 @@ struct RuntimeHitRegion {
 };
 inline constexpr std::size_t max_runtime_hit_regions=4096;
 inline constexpr particles::Limits runtime_particle_limits{16,4096};
+struct RuntimeParticleSprite {
+    std::string texture_sha256;
+    float depth_fade_m=0;
+};
 struct RuntimeParticleEmitter {
     particles::EmitterConfig config;
     std::string burst_action;
     std::uint32_t burst_count=0;
+    std::optional<RuntimeParticleSprite> sprite;
 };
 struct RuntimeParticleSource {
     particles::EmitterId id=0;
@@ -463,6 +468,7 @@ struct RuntimeDefinition {
     ui::Definition ui;
     std::optional<RuntimeNavigationDefinition> navigation;
     std::optional<water::RegionDefinition> water;
+    std::map<std::string,std::shared_ptr<const TextureImage>> particle_sprite_textures;
 };
 // Shared authoring/native validation, also available without Jolt.
 void validate_runtime_animation(const RuntimeDefinition& definition);

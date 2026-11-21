@@ -14,6 +14,7 @@
 #include "water_asset.hpp"
 #include "water_region_scene.hpp"
 #include "particle_emitter_json.hpp"
+#include "particle_scene.hpp"
 #include <charconv>
 #include "physical_rig_json.hpp"
 #include "physical_pose_diagnostics.hpp"
@@ -1638,6 +1639,8 @@ public:
         WorldPackageContent result;result.revision=revision(source.at("revision"));
         std::map<std::string,WorldPackageAsset> files;ModelCache assets;AudioCache audio;
         std::map<std::string,LoadedPostEffect> post_effects;
+        std::map<std::string,std::shared_ptr<const TextureImage>> sprite_textures;
+        std::size_t sprite_base_bytes=0;
         auto add=[&](const std::string& id,const char* extension,std::size_t bytes) {
             const auto filename=id+extension;files.emplace(filename,WorldPackageAsset{filename,id,static_cast<std::uint64_t>(bytes)});
         };
@@ -1649,10 +1652,30 @@ public:
         auto image=[&](const std::string& id) {
             const auto value=assets.image(asset_directory(),id);add(id,".pimage",assets.images.at(id).bytes);return value;
         };
+        auto collect_particle_emitter=[&](const Json& emitter) {
+            result.needs_particles=true;
+            const auto sprite=emitter.find("sprite");
+            if(sprite==emitter.end())return;
+            result.needs_sprite_particles=true;
+            const auto& id=sprite->at("texture").get_ref<const std::string&>();
+            if(sprite_textures.contains(id))return;
+            require(sprite_textures.size()<max_scene_particle_sprite_textures,
+                "Particle sprites exceed the 16-texture budget.",-32050);
+            try {
+                const auto texture=image(id);
+                const auto bytes=particles::sprite_texture_base_bytes(*texture);
+                require(bytes<=max_scene_particle_sprite_texture_bytes-sprite_base_bytes,
+                    "Particle sprites exceed the 16 MiB base-level budget.",-32050);
+                sprite_base_bytes+=bytes;
+                sprite_textures.emplace(id,texture);
+            } catch(const std::exception& error) {
+                throw Error(-32050,"Particle sprite texture "+id+": "+error.what());
+            }
+        };
         // Only active component references are dependencies. Receipt/history
         // payloads may mention retired assets and are deliberately not scanned.
         auto collect_components=[&](const Json& components) {
-            if(components.contains("ParticleEmitter"))result.needs_particles=true;
+            if(components.contains("ParticleEmitter"))collect_particle_emitter(components.at("ParticleEmitter"));
             for(const auto* type:{"StaticMesh","SkinnedMesh","AnimationRig","MeshCollider"})if(components.contains(type)) {
                 const auto& ref=components.at(type);const auto value=model(ref.at("asset").get<std::string>());
                 if(ref.contains("primitive"))require(revision(ref.at("primitive"))<value->primitives.size(),"Package mesh primitive index does not exist.",-32050);
@@ -1691,6 +1714,7 @@ public:
         // Includes mesh/UV/material compatibility, complete rig ownership,
         // weighted primitive bindings and enabled-audio aggregate limits.
         auto definition=runtime_definition(false,&source,false,&assets,&audio,&post_effects);
+        definition.particle_sprite_textures=std::move(sprite_textures);
         resolve_ui_images(definition.ui,assets);
         for(const auto& element:definition.ui)if(element.style && element.style->image) {
             const auto& id=element.style->image->asset;
@@ -2038,7 +2062,20 @@ public:
             Json ops=Json::array();for(const auto& schema:schemas)ops.push_back({{"op","component.schema.set"},{"schema",Json::parse(components::schema_json(schema))}});
             return transact({{"request_id",params.at("request_id")},{"base_revision",params.at("base_revision")},{"ops",ops}},"component.schema.import");
         }
-        if(method=="world.dependencies") { fields(params,{});const auto content=package_content();Json assets=Json::array();for(const auto& asset:content.assets)assets.push_back({{"filename",asset.filename},{"sha256",asset.sha256},{"bytes",asset.bytes}});Json result={{"revision",content.revision},{"needs_audio",content.needs_audio},{"assets",assets}};if(content.needs_navigation)result["needs_navigation"]=true;if(content.needs_particles)result["needs_particles"]=true;if(!content.provenance_records.empty()) {Json records=Json::array();for(const auto& f:content.provenance_records)records.push_back({{"filename",f.filename},{"sha256",f.sha256},{"bytes",f.bytes}});result["provenance_records"]=std::move(records);result["asset_credits_sha256"]=content_hash(content.asset_credits);}return result; }
+        if(method=="world.dependencies") {
+            fields(params,{});const auto content=package_content();Json assets=Json::array();
+            for(const auto& asset:content.assets)assets.push_back({{"filename",asset.filename},{"sha256",asset.sha256},{"bytes",asset.bytes}});
+            Json result={{"revision",content.revision},{"needs_audio",content.needs_audio},{"assets",assets}};
+            if(content.needs_navigation)result["needs_navigation"]=true;
+            if(content.needs_particles)result["needs_particles"]=true;
+            if(content.needs_sprite_particles)result["needs_sprite_particles"]=true;
+            if(!content.provenance_records.empty()) {
+                Json records=Json::array();
+                for(const auto& f:content.provenance_records)records.push_back({{"filename",f.filename},{"sha256",f.sha256},{"bytes",f.bytes}});
+                result["provenance_records"]=std::move(records);result["asset_credits_sha256"]=content_hash(content.asset_credits);
+            }
+            return result;
+        }
         if (method == "world.inspect") {
             fields(params, {});
             Json result={{"world_id", doc_.at("world_id")}, {"revision", doc_.at("revision")},
@@ -2172,7 +2209,8 @@ public:
         return {{"skinned_instances",c.skinned_instances},{"skinned_vertices",c.skinned_vertices},{"objects",c.objects},{"camera_draws",c.camera_draws},{"camera_culled",c.camera_culled},{"camera_triangles",c.camera_triangles},
             {"camera_batches",c.camera_batches},{"shadow_batches",c.shadow_batches},
             {"shadow_views",c.shadow_views},{"shadow_candidates",c.shadow_candidates},{"shadow_draws",c.shadow_draws},{"shadow_culled",c.shadow_culled},{"shadow_triangles",c.shadow_triangles},
-            {"streamed_draws",c.streamed_draws},{"streamed_vertex_bytes",c.streamed_vertex_bytes},{"streamed_index_bytes",c.streamed_index_bytes}};
+            {"streamed_draws",c.streamed_draws},{"streamed_vertex_bytes",c.streamed_vertex_bytes},{"streamed_index_bytes",c.streamed_index_bytes},
+            {"sprite_instances",c.sprite_instances},{"sprite_batches",c.sprite_batches}};
     }
     static Json light_assignment_json(const LightAssignmentDiagnostics& l) {
         return {{"requested",l.requested},{"active",l.active},{"statistics_available",l.statistics_available},

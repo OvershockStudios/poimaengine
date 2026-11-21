@@ -86,7 +86,7 @@ GPU intervals:
 | `light_assignment` | Light-table upload, candidate assignment and the GPU copy of counts for diagnostics. CPU mapping/scanning is outside this interval. |
 | `shadows` | Shadow clears/draws and transition to sampling. |
 | `opaque` | Main target/depth clears, optional procedural sky, and opaque draws. |
-| `post` | Linear MSAA resolve, scene output mapping, UI/overlays, optional image readback copy, and transition for presentation. Capture frames include a copy that ordinary player frames lack. |
+| `post` | Translucent sprites, linear MSAA resolve, scene output mapping, UI/overlays, optional image readback copy, and transition for presentation. Capture frames include a copy that ordinary player frames lack. |
 | `total` | The complete timestamp span, excluding swapchain acquire, presentation completion, CPU simulation and file writing. |
 
 The start stamp uses top-of-pipe and later boundaries use bottom-of-pipe. These are approximate intervals on an overlapping GPU pipeline, not isolated shader costs. Timestamps themselves add synchronization/measurement overhead. Neither totals nor their reciprocals establish playable FPS. A two-frame capture includes cold/warm effects and the final readback; use controlled longer workloads for performance comparisons. The CPU can retain two submissions, but a cross-submission dependency still orders shared GPU scratch. This does not establish concurrent GPU frame execution or production frame pacing.
@@ -115,6 +115,12 @@ material textures. The profiler reports
 `renderer.streamed_geometry_draws` and `renderer.streamed_geometry_upload_bytes`
 for the upload. The water replay checks both effects in one frame and compares
 the idle-wait counts with those of the closed gate.
+
+Textured scene particles use a frame-slot instance upload before the
+`render.pass.particle_sprites` HDR pass. `last_draws.sprite_instances` reports
+the submitted sprites. `last_draws.sprite_batches` counts consecutive runs
+sharing one texture in the global depth order. The instance stride is
+48 bytes, with a maximum of 4,096 instances per frame.
 
 ## Evidence and reproduction
 

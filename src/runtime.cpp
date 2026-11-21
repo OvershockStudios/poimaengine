@@ -748,6 +748,7 @@ struct Runtime::Impl {
         if(definition.water)water_region.emplace(*definition.water);
         require(definition.entities.size()<=10000,"Runtime entity limit exceeded.");
         validate_runtime_templates(definition);templates=definition.templates;
+        particle_sprites=particles::build_sprite_catalog(definition);
         for(const auto& recipe:templates)for(const auto& entity:recipe.entities)if(entity.camera && entity.camera->viewmodel_clearance) {
             require(entity.camera->viewmodel.has_value(),"Viewmodel clearance requires a foreground lens.");validate_viewmodel_clearance_profile(*entity.camera->viewmodel_clearance);
         }
@@ -2617,7 +2618,27 @@ SceneSnapshot Runtime::snapshot(const std::string& camera) const {
 void Runtime::append_particles(SceneSnapshot& scene) const {
     if(!impl_->particle_runtime)return;
     const auto instances=impl_->particle_instances();
-    if(!instances.empty())particles::append_scene_particles(scene,instances);
+    const auto& catalog=impl_->particle_sprites;
+    if(catalog.styles.empty()) {
+        particles::append_scene_particles(scene,instances);
+        return;
+    }
+    require(scene.particle_sprites.styles.empty() && scene.particle_sprites.instances.empty(), "Particle sprite scene batches already exist.");
+    SceneParticleSprites sprites;
+    sprites.styles=catalog.styles;
+    std::map<particles::EmitterId,std::uint32_t> styles_by_emitter;
+    for(const auto& [id,source]:impl_->particle_runtime->sources)if(source.definition.sprite) {
+        const auto& sprite=*source.definition.sprite;
+        styles_by_emitter.emplace(id,catalog.indices.at({sprite.texture_sha256,sprite.depth_fade_m}));
+    }
+    std::vector<particles::Instance> opaque;
+    for(const auto& particle:instances) {
+        const auto style=styles_by_emitter.find(particle.emitter);
+        if(style==styles_by_emitter.end())opaque.push_back(particle);
+        else sprites.instances.push_back({particle.id,style->second,particle.position_m,particle.size_m,particle.linear_rgba});
+    }
+    particles::append_scene_particles(scene,opaque);
+    scene.particle_sprites=std::move(sprites);
 }
 const std::string& Runtime::presentation_source_id() const { return impl_->presentation_source_id; }
 std::optional<SceneObject> Runtime::indexed_drawable(const std::string& id) const {

@@ -1,0 +1,1118 @@
+{
+  "engine_version": "0.0.356",
+  "world_schema_revision": 177,
+  "sources_sha256": {
+    "CMakeLists.txt": "38f0dbdf8f7443633e212250ffae399460b916f287b38cdbc851cdb41c07b7e0",
+    "cmake/render_smoke.cmake": "8f9b68dfac26d2f9896c8da01fd3d3dc64305313f337cda26c343e1eabd88581",
+    "cmake/runtime.json.in": "ebc053d910bccea9f7990f37ae02d8a3fa6242a0d4ca5e48db22f30b3599608d",
+    "include/poima/core.hpp": "7acaffdc8381849626e10b9d00e8b67ee105a9cb5a364df211576316659c0c75",
+    "include/poima/render_schedule.hpp": "fd8d9ab26829c7b06892e89e84d700d983b24c372e194d902130b1464b93c463",
+    "include/poima/runtime.hpp": "ea5dd567874515f3566fe6ecac38871d6fe0ef31a1b4fca888c1dde922a45c5a",
+    "include/poima/scene.hpp": "3c6a0efffb92aab0ecd97a1d79b5ab02749af92768dde2b749fc0afbfbac9202",
+    "include/poima/world.hpp": "b90d60ad14c87118bca80a3dbc19dd75ce973d1bee6c5dbffbcbd53472dd772f",
+    "shaders/particle_sprite.hlsl": "000532e08615f55679d3deeaba7b396bcaba17b0ea78f0df841172bdeaf7accc",
+    "src/asset_references.cpp": "6b211985b2ac990c3c1074d0e174711438afa9eafeda92dcefb1f539dfef97c3",
+    "src/asset_references.hpp": "7031be53bd79281a061f25f51ee10d46652cf72f92ec63229b7cf7438a03f43b",
+    "src/particle_emitter_json.cpp": "a86876f9ccb0fc160fed45b7a619511201d7e86c06579810bd16ef0a811407cc",
+    "src/particle_scene.cpp": "2a677865c6a1a44715689a13356bcdbd3d4ed7c2d96b47dcfdb283c4dc67e41d",
+    "src/particle_scene.hpp": "e7966eabb2ce7631735991b8c389a4b1461e4aeeeeb75ca531f82a11f3bf0c22",
+    "src/project.cpp": "07641b3c7e5bbb7a2895256696a62aa74cc5a00af73209896a19201ea47e33f9",
+    "src/render_particle_sprites.inc": "a68dc10a542eafcf1885b2c92ba7c091a2b2ad3a24282127650b3c5e6d29a416",
+    "src/render_smoke.cpp": "852ca3332563fb0c58f5a37cbab2181e71a74a4fadb08766fb5bee0a6fe0913d",
+    "src/runtime.cpp": "594e8a1f74c572d5bf5eb1c8d22a8288ad1a6aca0109e07fbe6068b82e8def78",
+    "src/runtime_particles.inc": "ece64ecfcde1c62c58111f36185fbffdcaaa0f6662dc870abe45ff8ec5946889",
+    "src/world.cpp": "5a6ec5a2f9e3aac6a0c8acb9699976cf185f19245d188d833a19d2dafc5e4852",
+    "src/world_schema.cpp": "fd3296474cf1d353436f61365dc2e966e471bfb27d8b49ea6937275d09b5127d",
+    "tests/asset_references_contract.py": "8e390e5527908e3a1ea7b69bd2e4569910b0648ceb4e3af328150c571ed679a6",
+    "tests/asset_references_native.cpp": "fe7ec0a57a12f06c1e870b14da5fe60a4dbfd1209b0b0742da2b4576d1eecb37",
+    "tests/particle_scene_native.cpp": "77b0a926d92df4102f8dbf3a434f737b7872661d1208a076aa59ab134e8467be",
+    "tests/render_schedule.cpp": "5e6ae4900adb03aa16333b7f0f498a00964d53ebe252fe7e19789608abebbd39",
+    "tests/sprite_particles_capture.py": "e2179c59fd85818d236060bf8d743434229fc6212858ea1087cc62d5e7eabfb3",
+    "tests/world_ui_contract.py": "0e6909d9ef2c962c0df1666623beaf67f1ddedec13af920e84544fcab63e5f6e"
+  },
+  "linux": {
+    "version": {
+      "version": "0.0.356",
+      "compiler": "GNU",
+      "compiler_version": "16.2.0",
+      "target_os": "Linux",
+      "target_arch": "x86_64"
+    },
+    "executable_sha256": "3773192721dfdb72e6963929d2c831581c18bfb8278969efde3307337ac7ea91",
+    "junit_sha256": "e1a52d332185827cc9865a9fd105d96d19bc8d568173172517add9e2a5cb01a0",
+    "suites": [
+      "particles_native",
+      "shallow_water_native",
+      "water_region_native",
+      "water_region_scene_native",
+      "particle_scene_native",
+      "world_terrain_contract",
+      "world_foliage_contract",
+      "world_water_contract",
+      "world_particles_contract",
+      "sprite_particle_authoring_contract",
+      "authoring_core_conformance",
+      "authoring_contract_identity",
+      "render_batches_native",
+      "render_schedule_native",
+      "mcp_contract",
+      "world_ui_contract",
+      "project_contract",
+      "asset-references-native",
+      "asset_references_contract"
+    ],
+    "authored_textures": {
+      "report_sha256": "a6eea99eb9b9f14db5a53cf5dbd8e11597acc7e6847d0e788914040515d320b1",
+      "closure": [
+        {
+          "bytes": 128,
+          "filename": "0262ae278af60f0b37451a50096ce0d95fd800c2e36f3d3e495b19645a744210.pimage",
+          "sha256": "0262ae278af60f0b37451a50096ce0d95fd800c2e36f3d3e495b19645a744210"
+        },
+        {
+          "bytes": 87,
+          "filename": "f0e6ffb25b9cd1541d9e8849d6523168c28221016d7e6c45fbf28829bf77ce75.pimage",
+          "sha256": "f0e6ffb25b9cd1541d9e8849d6523168c28221016d7e6c45fbf28829bf77ce75"
+        },
+        {
+          "bytes": 87,
+          "filename": "fdbac4cceefaca4fef2a1a3f63b0def12b2902c6a0d0e439f5106ad3fe791126.pimage",
+          "sha256": "fdbac4cceefaca4fef2a1a3f63b0def12b2902c6a0d0e439f5106ad3fe791126"
+        }
+      ],
+      "invalid_edit_repair": {
+        "invalid_fields": 4,
+        "missing_texture_error": -32050,
+        "repaired": true
+      },
+      "repair_report_sha256": "3000e34f8618eb70daf28eff6519a5dc09f483b88f99f68ad9332fa239910f2e"
+    }
+  },
+  "windows": {
+    "version": {
+      "version": "0.0.356",
+      "compiler": "Clang",
+      "compiler_version": "23.1.2",
+      "target_os": "Windows",
+      "target_arch": "x86_64"
+    },
+    "executable_sha256": "4a533fea0ea807034fce778919a4ff703e677bf943ce1a3ed37908a7dae48e07",
+    "descriptor_sha256": "9c8f9b928e8628deae3c3384588bb476d06ef2cc460c4a0b6cd07a625d41a2e2",
+    "bridge_sha256": "495ad1237a4dfba90dafff612a7d701396b2401517c034d86649a3ea8dd745fc",
+    "mcp_log_sha256": "1afd0f5e9538eae053d6efbb246c5590f986dc994a79fa8155f7ada2e6d42800",
+    "devices": [
+      {
+        "device": "AMD Radeon(TM) Graphics",
+        "mode": "forward",
+        "report_sha256": "c89a5a9ee2148e4467359c7efcf9bdc58b0abf804b363f677c6f79a05364df92",
+        "bundle_sha256": "c890b5ab45a40a5e126229214b7bafac73ea84c382d1434f3f4150fb63591a68",
+        "verifier_sha256": "931bd886fed07ac0452e5f27422f58c28ee84ab592a3fbf5a401f4f432ddb163",
+        "groups": [
+          {
+            "name": "closed",
+            "tick": 5,
+            "checks": 1
+          },
+          {
+            "name": "live",
+            "tick": 5,
+            "checks": 7
+          },
+          {
+            "name": "expired",
+            "tick": 9,
+            "checks": 1
+          }
+        ],
+        "texture_hashes": [
+          "0262ae278af60f0b37451a50096ce0d95fd800c2e36f3d3e495b19645a744210",
+          "f0e6ffb25b9cd1541d9e8849d6523168c28221016d7e6c45fbf28829bf77ce75",
+          "fdbac4cceefaca4fef2a1a3f63b0def12b2902c6a0d0e439f5106ad3fe791126"
+        ],
+        "captures": {
+          "closed": {
+            "tick": 5,
+            "bmp_sha256": "97b11f61015b331f91f9b18b72f9e60838967653d62555a0ec2a906d52306bb3",
+            "frame_slots": 2,
+            "idle_waits": 7,
+            "nvrhi_errors": 0,
+            "sprite_instances": 0,
+            "sprite_batches": 0,
+            "streamed_draws": 0
+          },
+          "live": {
+            "tick": 5,
+            "bmp_sha256": "c0b327fcffaba1f5a37a61cb05772ab078f162028dc9fb23a98599259d16ee02",
+            "frame_slots": 2,
+            "idle_waits": 7,
+            "nvrhi_errors": 0,
+            "sprite_instances": 10,
+            "sprite_batches": 6,
+            "streamed_draws": 1
+          },
+          "expired": {
+            "tick": 9,
+            "bmp_sha256": "97b11f61015b331f91f9b18b72f9e60838967653d62555a0ec2a906d52306bb3",
+            "frame_slots": 2,
+            "idle_waits": 7,
+            "nvrhi_errors": 0,
+            "sprite_instances": 0,
+            "sprite_batches": 0,
+            "streamed_draws": 0
+          }
+        },
+        "live_probes": {
+          "overlap": {
+            "pixel": [
+              80,
+              67
+            ],
+            "hdr": [
+              0.65625,
+              0.28125,
+              0.03125
+            ],
+            "bmp_rgb": [
+              169,
+              129,
+              49
+            ],
+            "depth": 0.97826087474823
+          },
+          "tie": {
+            "pixel": [
+              240,
+              67
+            ],
+            "hdr": [
+              0.3125,
+              0.5625,
+              0.0625
+            ],
+            "bmp_rgb": [
+              134,
+              162,
+              69
+            ],
+            "depth": 0.97826087474823
+          },
+          "red_texel": {
+            "pixel": [
+              146,
+              67
+            ],
+            "hdr": [
+              1.0,
+              0.0,
+              0.0
+            ],
+            "bmp_rgb": [
+              188,
+              0,
+              0
+            ],
+            "depth": 0.97826087474823
+          },
+          "filtered_edge": {
+            "pixel": [
+              160,
+              67
+            ],
+            "hdr": [
+              0.625,
+              0.125,
+              0.125
+            ],
+            "bmp_rgb": [
+              167,
+              94,
+              94
+            ],
+            "depth": 0.97826087474823
+          },
+          "transparent_texel": {
+            "pixel": [
+              174,
+              67
+            ],
+            "hdr": [
+              0.25,
+              0.25,
+              0.25
+            ],
+            "bmp_rgb": [
+              124,
+              124,
+              124
+            ],
+            "depth": 0.97826087474823
+          },
+          "behind_blocker": {
+            "pixel": [
+              53,
+              155
+            ],
+            "hdr": [
+              0.25,
+              0.25,
+              0.25
+            ],
+            "bmp_rgb": [
+              124,
+              124,
+              124
+            ],
+            "depth": 0.75
+          },
+          "half_fade": {
+            "pixel": [
+              113,
+              155
+            ],
+            "hdr": [
+              0.4375,
+              0.1875,
+              0.1875
+            ],
+            "bmp_rgb": [
+              150,
+              111,
+              111
+            ],
+            "depth": 0.75
+          },
+          "hard_depth": {
+            "pixel": [
+              173,
+              155
+            ],
+            "hdr": [
+              0.625,
+              0.125,
+              0.125
+            ],
+            "bmp_rgb": [
+              167,
+              94,
+              94
+            ],
+            "depth": 0.75
+          },
+          "full_fade": {
+            "pixel": [
+              248,
+              155
+            ],
+            "hdr": [
+              0.625,
+              0.125,
+              0.125
+            ],
+            "bmp_rgb": [
+              167,
+              94,
+              94
+            ],
+            "depth": 0.97826087474823
+          },
+          "opaque_particle": {
+            "pixel": [
+              43,
+              32
+            ],
+            "hdr": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "bmp_rgb": [
+              0,
+              0,
+              188
+            ],
+            "depth": 0.5
+          }
+        },
+        "cold_restore": {
+          "tick": 5,
+          "bmp_sha256": "c0b327fcffaba1f5a37a61cb05772ab078f162028dc9fb23a98599259d16ee02",
+          "frame_slots": 2,
+          "idle_waits": 6,
+          "nvrhi_errors": 0,
+          "sprite_instances": 10,
+          "sprite_batches": 6,
+          "streamed_draws": 1,
+          "continued_tick": 6,
+          "checkpoint_sha256": "dcd494a0f5dbee49767f8b5e740eb293e2a5e6f12755c4e7515333a59b7434b4",
+          "continuation_sha256": "ae4b0e78ae7a41d110285cdc10520e8312fc98529c5d2f62b7b38353fcbd787d",
+          "continuation_bytes": 25231
+        }
+      },
+      {
+        "device": "AMD Radeon(TM) Graphics",
+        "mode": "deferred",
+        "report_sha256": "181f5455f053066c7ca9f3167fbdac0261b275e560b4be3d39cbb500f5cf1122",
+        "bundle_sha256": "e306b5f190e21331aef5fa3f23b4220d431a02c57c09b15c48aa1a5cf22fb4b6",
+        "verifier_sha256": "931bd886fed07ac0452e5f27422f58c28ee84ab592a3fbf5a401f4f432ddb163",
+        "groups": [
+          {
+            "name": "closed",
+            "tick": 5,
+            "checks": 1
+          },
+          {
+            "name": "live",
+            "tick": 5,
+            "checks": 7
+          },
+          {
+            "name": "expired",
+            "tick": 9,
+            "checks": 1
+          }
+        ],
+        "texture_hashes": [
+          "0262ae278af60f0b37451a50096ce0d95fd800c2e36f3d3e495b19645a744210",
+          "f0e6ffb25b9cd1541d9e8849d6523168c28221016d7e6c45fbf28829bf77ce75",
+          "fdbac4cceefaca4fef2a1a3f63b0def12b2902c6a0d0e439f5106ad3fe791126"
+        ],
+        "captures": {
+          "closed": {
+            "tick": 5,
+            "bmp_sha256": "97b11f61015b331f91f9b18b72f9e60838967653d62555a0ec2a906d52306bb3",
+            "frame_slots": 2,
+            "idle_waits": 7,
+            "nvrhi_errors": 0,
+            "sprite_instances": 0,
+            "sprite_batches": 0,
+            "streamed_draws": 0
+          },
+          "live": {
+            "tick": 5,
+            "bmp_sha256": "c0b327fcffaba1f5a37a61cb05772ab078f162028dc9fb23a98599259d16ee02",
+            "frame_slots": 2,
+            "idle_waits": 7,
+            "nvrhi_errors": 0,
+            "sprite_instances": 10,
+            "sprite_batches": 6,
+            "streamed_draws": 1
+          },
+          "expired": {
+            "tick": 9,
+            "bmp_sha256": "97b11f61015b331f91f9b18b72f9e60838967653d62555a0ec2a906d52306bb3",
+            "frame_slots": 2,
+            "idle_waits": 7,
+            "nvrhi_errors": 0,
+            "sprite_instances": 0,
+            "sprite_batches": 0,
+            "streamed_draws": 0
+          }
+        },
+        "live_probes": {
+          "overlap": {
+            "pixel": [
+              80,
+              67
+            ],
+            "hdr": [
+              0.65625,
+              0.28125,
+              0.03125
+            ],
+            "bmp_rgb": [
+              169,
+              129,
+              49
+            ],
+            "depth": 0.97826087474823
+          },
+          "tie": {
+            "pixel": [
+              240,
+              67
+            ],
+            "hdr": [
+              0.3125,
+              0.5625,
+              0.0625
+            ],
+            "bmp_rgb": [
+              134,
+              162,
+              69
+            ],
+            "depth": 0.97826087474823
+          },
+          "red_texel": {
+            "pixel": [
+              146,
+              67
+            ],
+            "hdr": [
+              1.0,
+              0.0,
+              0.0
+            ],
+            "bmp_rgb": [
+              188,
+              0,
+              0
+            ],
+            "depth": 0.97826087474823
+          },
+          "filtered_edge": {
+            "pixel": [
+              160,
+              67
+            ],
+            "hdr": [
+              0.625,
+              0.125,
+              0.125
+            ],
+            "bmp_rgb": [
+              167,
+              94,
+              94
+            ],
+            "depth": 0.97826087474823
+          },
+          "transparent_texel": {
+            "pixel": [
+              174,
+              67
+            ],
+            "hdr": [
+              0.25,
+              0.25,
+              0.25
+            ],
+            "bmp_rgb": [
+              124,
+              124,
+              124
+            ],
+            "depth": 0.97826087474823
+          },
+          "behind_blocker": {
+            "pixel": [
+              53,
+              155
+            ],
+            "hdr": [
+              0.25,
+              0.25,
+              0.25
+            ],
+            "bmp_rgb": [
+              124,
+              124,
+              124
+            ],
+            "depth": 0.75
+          },
+          "half_fade": {
+            "pixel": [
+              113,
+              155
+            ],
+            "hdr": [
+              0.4375,
+              0.1875,
+              0.1875
+            ],
+            "bmp_rgb": [
+              150,
+              111,
+              111
+            ],
+            "depth": 0.75
+          },
+          "hard_depth": {
+            "pixel": [
+              173,
+              155
+            ],
+            "hdr": [
+              0.625,
+              0.125,
+              0.125
+            ],
+            "bmp_rgb": [
+              167,
+              94,
+              94
+            ],
+            "depth": 0.75
+          },
+          "full_fade": {
+            "pixel": [
+              248,
+              155
+            ],
+            "hdr": [
+              0.625,
+              0.125,
+              0.125
+            ],
+            "bmp_rgb": [
+              167,
+              94,
+              94
+            ],
+            "depth": 0.97826087474823
+          },
+          "opaque_particle": {
+            "pixel": [
+              43,
+              32
+            ],
+            "hdr": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "bmp_rgb": [
+              0,
+              0,
+              188
+            ],
+            "depth": 0.5
+          }
+        },
+        "cold_restore": {
+          "tick": 5,
+          "bmp_sha256": "c0b327fcffaba1f5a37a61cb05772ab078f162028dc9fb23a98599259d16ee02",
+          "frame_slots": 2,
+          "idle_waits": 6,
+          "nvrhi_errors": 0,
+          "sprite_instances": 10,
+          "sprite_batches": 6,
+          "streamed_draws": 1,
+          "continued_tick": 6,
+          "checkpoint_sha256": "24d6abc96c7ae70f3fa6d780b342553920f5524188d92fb34b172f8f033a2748",
+          "continuation_sha256": "e9ef5d8d6da11145fa32b8ad47875a3dd067acf7221123de1142288dcffe9bc9",
+          "continuation_bytes": 25231
+        }
+      },
+      {
+        "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "mode": "forward",
+        "report_sha256": "9bed4bf67b6fe9c5969c26632f592c201cd6115919805e2b8ba743f77e6c7db6",
+        "bundle_sha256": "a07e0ef9caa7ab87a8c088e8e9822c7a9a9416b01a0b83e50f1259bbbaca8b60",
+        "verifier_sha256": "931bd886fed07ac0452e5f27422f58c28ee84ab592a3fbf5a401f4f432ddb163",
+        "groups": [
+          {
+            "name": "closed",
+            "tick": 5,
+            "checks": 1
+          },
+          {
+            "name": "live",
+            "tick": 5,
+            "checks": 7
+          },
+          {
+            "name": "expired",
+            "tick": 9,
+            "checks": 1
+          }
+        ],
+        "texture_hashes": [
+          "0262ae278af60f0b37451a50096ce0d95fd800c2e36f3d3e495b19645a744210",
+          "f0e6ffb25b9cd1541d9e8849d6523168c28221016d7e6c45fbf28829bf77ce75",
+          "fdbac4cceefaca4fef2a1a3f63b0def12b2902c6a0d0e439f5106ad3fe791126"
+        ],
+        "captures": {
+          "closed": {
+            "tick": 5,
+            "bmp_sha256": "97b11f61015b331f91f9b18b72f9e60838967653d62555a0ec2a906d52306bb3",
+            "frame_slots": 2,
+            "idle_waits": 6,
+            "nvrhi_errors": 0,
+            "sprite_instances": 0,
+            "sprite_batches": 0,
+            "streamed_draws": 0
+          },
+          "live": {
+            "tick": 5,
+            "bmp_sha256": "aa06229f60ccdd5817f447844dbc27ecf0329d2ae1998ce2ab850b0c859ee57f",
+            "frame_slots": 2,
+            "idle_waits": 6,
+            "nvrhi_errors": 0,
+            "sprite_instances": 10,
+            "sprite_batches": 6,
+            "streamed_draws": 1
+          },
+          "expired": {
+            "tick": 9,
+            "bmp_sha256": "97b11f61015b331f91f9b18b72f9e60838967653d62555a0ec2a906d52306bb3",
+            "frame_slots": 2,
+            "idle_waits": 6,
+            "nvrhi_errors": 0,
+            "sprite_instances": 0,
+            "sprite_batches": 0,
+            "streamed_draws": 0
+          }
+        },
+        "live_probes": {
+          "overlap": {
+            "pixel": [
+              80,
+              67
+            ],
+            "hdr": [
+              0.65625,
+              0.28125,
+              0.03125
+            ],
+            "bmp_rgb": [
+              169,
+              129,
+              49
+            ],
+            "depth": 0.97826087474823
+          },
+          "tie": {
+            "pixel": [
+              240,
+              67
+            ],
+            "hdr": [
+              0.3125,
+              0.5625,
+              0.0625
+            ],
+            "bmp_rgb": [
+              134,
+              162,
+              69
+            ],
+            "depth": 0.97826087474823
+          },
+          "red_texel": {
+            "pixel": [
+              146,
+              67
+            ],
+            "hdr": [
+              1.0,
+              0.0,
+              0.0
+            ],
+            "bmp_rgb": [
+              188,
+              0,
+              0
+            ],
+            "depth": 0.97826087474823
+          },
+          "filtered_edge": {
+            "pixel": [
+              160,
+              67
+            ],
+            "hdr": [
+              0.625,
+              0.125,
+              0.125
+            ],
+            "bmp_rgb": [
+              167,
+              94,
+              94
+            ],
+            "depth": 0.97826087474823
+          },
+          "transparent_texel": {
+            "pixel": [
+              174,
+              67
+            ],
+            "hdr": [
+              0.25,
+              0.25,
+              0.25
+            ],
+            "bmp_rgb": [
+              124,
+              124,
+              124
+            ],
+            "depth": 0.97826087474823
+          },
+          "behind_blocker": {
+            "pixel": [
+              53,
+              155
+            ],
+            "hdr": [
+              0.25,
+              0.25,
+              0.25
+            ],
+            "bmp_rgb": [
+              124,
+              124,
+              124
+            ],
+            "depth": 0.75
+          },
+          "half_fade": {
+            "pixel": [
+              113,
+              155
+            ],
+            "hdr": [
+              0.4375,
+              0.1875,
+              0.1875
+            ],
+            "bmp_rgb": [
+              150,
+              111,
+              111
+            ],
+            "depth": 0.75
+          },
+          "hard_depth": {
+            "pixel": [
+              173,
+              155
+            ],
+            "hdr": [
+              0.625,
+              0.125,
+              0.125
+            ],
+            "bmp_rgb": [
+              167,
+              94,
+              94
+            ],
+            "depth": 0.75
+          },
+          "full_fade": {
+            "pixel": [
+              248,
+              155
+            ],
+            "hdr": [
+              0.625,
+              0.125,
+              0.125
+            ],
+            "bmp_rgb": [
+              167,
+              94,
+              94
+            ],
+            "depth": 0.97826087474823
+          },
+          "opaque_particle": {
+            "pixel": [
+              43,
+              32
+            ],
+            "hdr": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "bmp_rgb": [
+              0,
+              0,
+              188
+            ],
+            "depth": 0.5
+          }
+        },
+        "cold_restore": {
+          "tick": 5,
+          "bmp_sha256": "aa06229f60ccdd5817f447844dbc27ecf0329d2ae1998ce2ab850b0c859ee57f",
+          "frame_slots": 2,
+          "idle_waits": 6,
+          "nvrhi_errors": 0,
+          "sprite_instances": 10,
+          "sprite_batches": 6,
+          "streamed_draws": 1,
+          "continued_tick": 6,
+          "checkpoint_sha256": "de6e8a6e6de4b4ce35db4ae7c13c1ca75514976edeef81dde35438057268df41",
+          "continuation_sha256": "cb7dc370f335baca09dc9eaf9897fb7991fd61f055c083ec0476ed623b00cbbe",
+          "continuation_bytes": 25231
+        }
+      },
+      {
+        "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "mode": "deferred",
+        "report_sha256": "74a280ca2ceb656fc2f8db656b409474a7c1d3d334ca597d9d4f031e538e7c2b",
+        "bundle_sha256": "5606e265bf9fc12e66f66a5aa806fb72ea67135391af718218a4b1c4ff353e00",
+        "verifier_sha256": "931bd886fed07ac0452e5f27422f58c28ee84ab592a3fbf5a401f4f432ddb163",
+        "groups": [
+          {
+            "name": "closed",
+            "tick": 5,
+            "checks": 1
+          },
+          {
+            "name": "live",
+            "tick": 5,
+            "checks": 7
+          },
+          {
+            "name": "expired",
+            "tick": 9,
+            "checks": 1
+          }
+        ],
+        "texture_hashes": [
+          "0262ae278af60f0b37451a50096ce0d95fd800c2e36f3d3e495b19645a744210",
+          "f0e6ffb25b9cd1541d9e8849d6523168c28221016d7e6c45fbf28829bf77ce75",
+          "fdbac4cceefaca4fef2a1a3f63b0def12b2902c6a0d0e439f5106ad3fe791126"
+        ],
+        "captures": {
+          "closed": {
+            "tick": 5,
+            "bmp_sha256": "97b11f61015b331f91f9b18b72f9e60838967653d62555a0ec2a906d52306bb3",
+            "frame_slots": 2,
+            "idle_waits": 6,
+            "nvrhi_errors": 0,
+            "sprite_instances": 0,
+            "sprite_batches": 0,
+            "streamed_draws": 0
+          },
+          "live": {
+            "tick": 5,
+            "bmp_sha256": "aa06229f60ccdd5817f447844dbc27ecf0329d2ae1998ce2ab850b0c859ee57f",
+            "frame_slots": 2,
+            "idle_waits": 6,
+            "nvrhi_errors": 0,
+            "sprite_instances": 10,
+            "sprite_batches": 6,
+            "streamed_draws": 1
+          },
+          "expired": {
+            "tick": 9,
+            "bmp_sha256": "97b11f61015b331f91f9b18b72f9e60838967653d62555a0ec2a906d52306bb3",
+            "frame_slots": 2,
+            "idle_waits": 6,
+            "nvrhi_errors": 0,
+            "sprite_instances": 0,
+            "sprite_batches": 0,
+            "streamed_draws": 0
+          }
+        },
+        "live_probes": {
+          "overlap": {
+            "pixel": [
+              80,
+              67
+            ],
+            "hdr": [
+              0.65625,
+              0.28125,
+              0.03125
+            ],
+            "bmp_rgb": [
+              169,
+              129,
+              49
+            ],
+            "depth": 0.97826087474823
+          },
+          "tie": {
+            "pixel": [
+              240,
+              67
+            ],
+            "hdr": [
+              0.3125,
+              0.5625,
+              0.0625
+            ],
+            "bmp_rgb": [
+              134,
+              162,
+              69
+            ],
+            "depth": 0.97826087474823
+          },
+          "red_texel": {
+            "pixel": [
+              146,
+              67
+            ],
+            "hdr": [
+              1.0,
+              0.0,
+              0.0
+            ],
+            "bmp_rgb": [
+              188,
+              0,
+              0
+            ],
+            "depth": 0.97826087474823
+          },
+          "filtered_edge": {
+            "pixel": [
+              160,
+              67
+            ],
+            "hdr": [
+              0.625,
+              0.125,
+              0.125
+            ],
+            "bmp_rgb": [
+              167,
+              94,
+              94
+            ],
+            "depth": 0.97826087474823
+          },
+          "transparent_texel": {
+            "pixel": [
+              174,
+              67
+            ],
+            "hdr": [
+              0.25,
+              0.25,
+              0.25
+            ],
+            "bmp_rgb": [
+              124,
+              124,
+              124
+            ],
+            "depth": 0.97826087474823
+          },
+          "behind_blocker": {
+            "pixel": [
+              53,
+              155
+            ],
+            "hdr": [
+              0.25,
+              0.25,
+              0.25
+            ],
+            "bmp_rgb": [
+              124,
+              124,
+              124
+            ],
+            "depth": 0.75
+          },
+          "half_fade": {
+            "pixel": [
+              113,
+              155
+            ],
+            "hdr": [
+              0.4375,
+              0.1875,
+              0.1875
+            ],
+            "bmp_rgb": [
+              150,
+              111,
+              111
+            ],
+            "depth": 0.75
+          },
+          "hard_depth": {
+            "pixel": [
+              173,
+              155
+            ],
+            "hdr": [
+              0.625,
+              0.125,
+              0.125
+            ],
+            "bmp_rgb": [
+              167,
+              94,
+              94
+            ],
+            "depth": 0.75
+          },
+          "full_fade": {
+            "pixel": [
+              248,
+              155
+            ],
+            "hdr": [
+              0.625,
+              0.125,
+              0.125
+            ],
+            "bmp_rgb": [
+              167,
+              94,
+              94
+            ],
+            "depth": 0.97826087474823
+          },
+          "opaque_particle": {
+            "pixel": [
+              43,
+              32
+            ],
+            "hdr": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "bmp_rgb": [
+              0,
+              0,
+              188
+            ],
+            "depth": 0.5
+          }
+        },
+        "cold_restore": {
+          "tick": 5,
+          "bmp_sha256": "aa06229f60ccdd5817f447844dbc27ecf0329d2ae1998ce2ab850b0c859ee57f",
+          "frame_slots": 2,
+          "idle_waits": 6,
+          "nvrhi_errors": 0,
+          "sprite_instances": 10,
+          "sprite_batches": 6,
+          "streamed_draws": 1,
+          "continued_tick": 6,
+          "checkpoint_sha256": "b714690e73c4ed2d837f8c8300a0c70f38f3b71bd0d202ca962732e2aa06638a",
+          "continuation_sha256": "a740b40a2c2ca1d3fb2afcba77ad949c0d546588667cbcf72e4c076a48e7b3a6",
+          "continuation_bytes": 25231
+        }
+      }
+    ]
+  },
+  "shader_sha256": {
+    "vs": "28c805a8f90f8aba196d5278c78a1e17ab96f416504b36791ac5b6d15c7ed540",
+    "ps": "e6e7b161838985e986d366ae6f1a825c31c732863c1671eba4ab08dbcdbc2f7a"
+  },
+  "first_fixture_attempt": {
+    "report_sha256": "4a9812896e7b7999cc1fd57daaf66e8c81b0a026161b0be45ed67e57a338b442",
+    "executable_sha256": "85fec4f31469602c99bfd183cb108c0ea432789ee93b9770e79ffa3e083d483e",
+    "observed_filter_midpoint": [
+      0.62451171875,
+      0.125,
+      0.125
+    ],
+    "observed_half_fade": [
+      0.437255859375,
+      0.1875,
+      0.1875
+    ],
+    "correction": "Use a constant camera-space distance for each card and a pixel grid with exactly representable UV steps."
+  },
+  "descriptor_rejection_hashes": {
+    "missing": "7db979cd0869fccd721264bc859c285634b201d4314cfd86f7c538308644cc6b",
+    "disabled": "7db979cd0869fccd721264bc859c285634b201d4314cfd86f7c538308644cc6b"
+  },
+  "scope": "Single-sample, non-reconstructed textured sprites in a small relocated game. Ten analytic pixels, opaque product checks, native replay and fresh-process render/save continuation."
+}

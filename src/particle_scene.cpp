@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "particle_scene.hpp"
 #include "poima/assets.hpp"
+#include "poima/runtime.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -54,6 +55,56 @@ void append_quad(MeshAsset& mesh, const Instance& particle, const Matrix4& model
     });
     mesh.indices.insert(mesh.indices.end(), {first, first + 1, first + 2, first, first + 2, first + 3});
 }
+}
+
+std::size_t sprite_texture_base_bytes(const TextureImage& texture) {
+    require(!texture.mips.empty(), "Particle sprite texture requires a base mip.");
+    const auto& base = texture.mips.front();
+    require(base.width > 0 && base.height > 0 && base.width <= max_scene_particle_sprite_texture_side &&
+        base.height <= max_scene_particle_sprite_texture_side, "Particle sprite texture dimensions must be 1..1024 pixels.");
+    require(base.rgba.size() == std::size_t(base.width) * base.height * 4,
+        "Particle sprite texture requires a complete RGBA8 base mip.");
+    return base.rgba.size();
+}
+
+SpriteCatalog build_sprite_catalog(const RuntimeDefinition& definition) {
+    const auto& textures = definition.particle_sprite_textures;
+    require(textures.size() <= max_scene_particle_sprite_textures, "Particle sprites exceed the 16-texture budget.");
+    std::size_t base_bytes = 0;
+    for (const auto& [digest, texture] : textures) {
+        require(digest.size() == 64 && digest.find_first_not_of("0123456789abcdef") == std::string::npos && texture,
+            "Particle sprites require frozen cooked images by lowercase SHA-256.");
+        const auto bytes = sprite_texture_base_bytes(*texture);
+        require(bytes <= max_scene_particle_sprite_texture_bytes - base_bytes, "Particle sprites exceed the 16 MiB base-level budget.");
+        base_bytes += bytes;
+    }
+
+    SpriteCatalog result;
+    const auto collect = [&](const auto& entity) {
+        if (!entity.particle_emitter || !entity.particle_emitter->sprite) return;
+        const auto& emitter = *entity.particle_emitter;
+        const auto& sprite = *emitter.sprite;
+        const auto opacity = emitter.config.linear_rgba[3];
+        require(std::isfinite(opacity) && opacity >= 0 && opacity <= 1, "Particle sprite opacity must be 0..1.");
+        require(std::isfinite(sprite.depth_fade_m) && sprite.depth_fade_m >= 0 && sprite.depth_fade_m <= 10,
+            "Particle sprite depth fade must be 0..10 m.");
+        require(textures.contains(sprite.texture_sha256), "Particle sprite texture is absent from frozen assets.");
+        result.indices.emplace(std::pair(sprite.texture_sha256, sprite.depth_fade_m), 0);
+    };
+    for (const auto& entity : definition.entities) collect(entity);
+    for (const auto& recipe : definition.templates) {
+        collect(recipe);
+        for (const auto& entity : recipe.entities) collect(entity);
+    }
+    // Canonical order also covers cold save restoration, where live template
+    // instances may already be expanded in definition.entities.
+    result.styles.reserve(result.indices.size());
+    for (auto& [key, index] : result.indices) {
+        const auto& [digest, fade] = key;
+        index = static_cast<std::uint32_t>(result.styles.size());
+        result.styles.push_back({digest, textures.at(digest), fade});
+    }
+    return result;
 }
 
 void append_scene_particles(SceneSnapshot& scene, std::span<const Instance> instances) {

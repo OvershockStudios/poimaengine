@@ -128,6 +128,90 @@ void setup_bloom(Fixture& fixture) {
     };
     f.bloom=image();f.bloom_scratch=image();
 }
+void setup_particle_sprites(Fixture& fixture,std::size_t texture_count=2) {
+    auto& f=fixture.f;
+    fixture.settings.particle_sprites=true;
+    f.resources[f.hdr].format=Format::rgba16_float;
+    f.sprite_instances=fixture.add(Kind::buffer,Lifetime::slot);
+    auto& instances=f.resources[f.sprite_instances];
+    instances.bytes=2*sprite_instance_stride;
+    instances.allocation_bytes=sprite_instance_budget;
+    for(std::size_t i=0;i<texture_count;++i)f.sprite_textures.push_back(fixture.add(Kind::texture,Lifetime::imported,true));
+}
+void particle_sprite_contracts() {
+    auto settings=rich();Fixture forward(settings);
+    setup_particle_sprites(forward);
+    const auto valid=forward.plan();valid.validate();++accepted;
+    auto bad=[&](const char* label,const auto& edit){auto p=valid;edit(p);rejects(label,[&]{p.validate();});};
+    auto planned=valid;
+    const auto& sprite_pass=pass(planned,PassId::particle_sprites);
+    check(std::string(pass_name(sprite_pass.id))=="render.pass.particle_sprites","Sprite pass trace label differs");
+    check(valid.passes.front().id==PassId::sprite_upload && sprite_pass.accesses.size()==5,
+        "Sprite scheduling must upload first and draw into HDR with only world depth, the instance buffer and sprite textures");
+    unsigned draws=0;
+    valid.execute([&](const Pass& work,const Schedule&){draws+=work.id==PassId::particle_sprites;});
+    check(draws==1,"Sprite scheduling must execute exactly one translucent pass");
+
+    for(auto id:{PassId::sprite_upload,PassId::particle_sprites,PassId::opaque})
+        bad("required sprite pass or opaque producer absent",[&](auto& p){std::erase_if(p.passes,[&](const Pass& work){return work.id==id;});});
+    bad("sprite instance buffer missing",[](auto& p){p.frame.sprite_instances=none;});
+    bad("sprite resources retained when disabled",[](auto& p){p.settings.particle_sprites=false;});
+    bad("sprite draws without a scene",[](auto& p){p.settings.scene=false;});
+    bad("sprite draws with reconstruction",[](auto& p){p.settings.reconstruction=true;});
+    bad("sprite depth extent differs from HDR",[](auto& p){++p.frame.resources[p.frame.depth].width;});
+    bad("sprite depth format is not D32",[](auto& p){p.frame.resources[p.frame.depth].format=Format::r32_float;});
+    bad("sprite depth cannot be sampled",[](auto& p){p.frame.resources[p.frame.depth].supported&=~use_bit(Use::sampled);});
+    bad("sprite depth absent from opaque draws",[](auto& p){erase_access(p,PassId::opaque,p.frame.depth,Use::depth);});
+    bad("sprite read before opaque draw",[](auto& p){std::swap(pass(p,PassId::opaque),pass(p,PassId::particle_sprites));});
+    bad("sprite pass overwrites HDR",[](auto& p){auto& a=pass(p,PassId::particle_sprites).accesses.front();a.use=Use::color_overwrite;a.initialize=true;});
+    bad("sprite pass claims to initialize HDR",[](auto& p){pass(p,PassId::particle_sprites).accesses.front().initialize=true;});
+    bad("sprite pass writes world depth",[](auto& p){pass(p,PassId::particle_sprites).accesses[1].use=Use::depth;});
+    bad("sprite storage read omitted",[](auto& p){erase_access(p,PassId::particle_sprites,p.frame.sprite_instances,Use::storage_read);});
+    bad("sprite buffer used by another pass",[](auto& p){pass(p,PassId::opaque).accesses.push_back({p.frame.sprite_instances,Use::storage_read});});
+    bad("sprite buffer used as a readback",[](auto& p){pass(p,PassId::light_assignment).accesses.push_back({p.frame.sprite_instances,Use::copy_destination,true});});
+    bad("sprite upload does not initialize prefix",[](auto& p){pass(p,PassId::sprite_upload).accesses.front().initialize=false;});
+    bad("sprite prefix ends inside an instance",[](auto& p){++p.frame.resources[p.frame.sprite_instances].bytes;});
+    bad("sprite prefix is empty",[](auto& p){p.frame.resources[p.frame.sprite_instances].bytes=0;});
+    bad("sprite buffer allocation exceeds budget",[](auto& p){++p.frame.resources[p.frame.sprite_instances].allocation_bytes;});
+    bad("sprite buffer has no prefix region",[](auto& p){p.frame.resources[p.frame.sprite_instances].region=Region::whole;});
+    bad("sprite buffer preinitialized",[](auto& p){p.frame.resources[p.frame.sprite_instances].initialized=true;});
+    bad("sprite buffer not slot-owned",[](auto& p){p.frame.resources[p.frame.sprite_instances].lifetime=Lifetime::shared;});
+    bad("sprite buffer belongs to wrong slot",[](auto& p){++p.frame.resources[p.frame.sprite_instances].owner;});
+    bad("sprite texture role absent",[](auto& p){p.frame.sprite_textures.clear();});
+    bad("sprite texture repeated",[](auto& p){p.frame.sprite_textures.back()=p.frame.sprite_textures.front();});
+    bad("sprite texture not sampled",[](auto& p){erase_access(p,PassId::particle_sprites,p.frame.sprite_textures.front(),Use::sampled);});
+    bad("sprite texture not immutable",[](auto& p){p.frame.resources[p.frame.sprite_textures.front()].lifetime=Lifetime::shared;});
+    bad("sprite texture not initialized",[](auto& p){p.frame.resources[p.frame.sprite_textures.front()].initialized=false;});
+    bad("sprite texture multisampled",[](auto& p){p.frame.resources[p.frame.sprite_textures.front()].samples=4;});
+
+    Fixture msaa(settings,4);setup_particle_sprites(msaa);
+    rejects("sprites with multisampled world",[&]{msaa.plan().validate();});
+    Fixture too_many(settings);setup_particle_sprites(too_many,max_sprite_textures+1);
+    rejects("too many sprite textures",[&]{too_many.plan().validate();});
+    auto regular=Fixture(settings).plan();regular.validate();
+    check(std::none_of(regular.passes.begin(),regular.passes.end(),[](const Pass& work){
+        return work.id==PassId::sprite_upload || work.id==PassId::particle_sprites;
+    }),"Sprites added work to a frame without any draws");
+
+    settings.deferred=settings.products=settings.ambient_occlusion=true;
+    Fixture deferred(settings);setup_particle_sprites(deferred,max_sprite_textures);
+    auto& f=deferred.f;f.resources[f.sprite_instances].bytes=sprite_instance_budget;
+    f.streamed_vertices=deferred.add(Kind::buffer,Lifetime::slot);
+    f.streamed_indices=deferred.add(Kind::buffer,Lifetime::slot);
+    f.camera_draws.push_back({f.streamed_vertices,f.streamed_indices,{},f.streamed_vertices,{0,0,256,256}});
+    setup_post_effect(deferred);setup_bloom(deferred);
+    auto composed=deferred.plan();composed.validate();++accepted;
+    check(composed.passes[0].id==PassId::stream_geometry && composed.passes[1].id==PassId::sprite_upload,
+        "Sprite upload must follow streamed opaque geometry upload");
+    check(&pass(composed,PassId::deferred_lighting)<&pass(composed,PassId::particle_sprites) &&
+        &pass(composed,PassId::particle_sprites)<&pass(composed,PassId::post_effect) &&
+        &pass(composed,PassId::post_effect)<&pass(composed,PassId::bloom_extract),"Unexpected deferred sprite composition order");
+    auto extra_product=composed;
+    pass(extra_product,PassId::particle_sprites).accesses.push_back({f.normal,Use::color});
+    rejects("sprite pass writes a scene product",[&]{extra_product.validate();});
+    std::swap(pass(composed,PassId::particle_sprites),pass(composed,PassId::deferred_lighting));
+    rejects("sprites drawn before deferred lighting",[&]{composed.validate();});
+}
 void post_effect_contracts() {
     for(bool editor:{false,true})for(unsigned samples:{1u,4u})for(bool deferred:{false,true})for(bool bloom:{false,true}) {
         if(deferred && samples!=1)continue;
@@ -440,6 +524,12 @@ void viewmodel_contracts(){
     }
     auto settings=rich();settings.products=settings.viewmodel_clustered=true;
     Fixture fixture(settings,1,true);foreground(fixture);const auto original=fixture.plan();original.validate();
+    auto sprite_fixture=fixture;setup_particle_sprites(sprite_fixture);
+    auto composed_sprites=sprite_fixture.plan();composed_sprites.validate();++accepted;
+    check(&pass(composed_sprites,PassId::particle_sprites)<&pass(composed_sprites,PassId::viewmodel_lights),
+        "World sprites must draw before independent foreground passes");
+    std::swap(pass(composed_sprites,PassId::particle_sprites),pass(composed_sprites,PassId::viewmodel_composite));
+    rejects("world sprites after foreground",[&]{composed_sprites.validate();});
     auto bad=[&](const char* label,const auto& edit) {auto p=original;edit(p);rejects(label,[&]{p.validate();});};
     bad("foreground depth aliases world",[](auto& p){p.frame.viewmodel_depth=p.frame.depth;});
     bad("foreground output aliases input",[](auto& p){p.frame.composite=p.frame.hdr;});
@@ -741,4 +831,4 @@ void environment_contracts(){
     auto ordinary=Fixture(rich(),4).plan();ordinary.validate();check(ordinary.frame.ibl_diffuse==none && ordinary.frame.ibl_specular==none && ordinary.frame.ibl_brdf==none,"Legacy graph acquired IBL roles");
 }
 }
-int main(){try{matrix();faults();products();motion_contracts();reconstruction_contracts();deferred_contracts();deferred_color_contracts();viewmodel_contracts();ambient_occlusion_contracts();masked_shadow_contracts();environment_contracts();bloom_contracts();post_effect_contracts();streamed_geometry_contracts();std::cout<<"Production render schedule: "<<accepted<<" valid variants, "<<rejected<<" rejected contract mutations.\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}
+int main(){try{matrix();faults();products();motion_contracts();reconstruction_contracts();deferred_contracts();deferred_color_contracts();viewmodel_contracts();ambient_occlusion_contracts();masked_shadow_contracts();environment_contracts();bloom_contracts();post_effect_contracts();streamed_geometry_contracts();particle_sprite_contracts();std::cout<<"Production render schedule: "<<accepted<<" valid variants, "<<rejected<<" rejected contract mutations.\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}

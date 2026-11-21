@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.356
+
+- Author textured, translucent scene particles with per-emitter opacity and depth fade. The Vulkan sprite pass blends overlapping effects in camera depth order.
+
 ## 0.0.355
 
 - Stream changing water geometry through the same frame-owned Vulkan buffers as scene particles. Completed draw reports show streamed draw and byte counts.

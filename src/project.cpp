@@ -342,6 +342,7 @@ Json project_summary(const Project& p) {
     Json result={{"manifest",text(p.manifest)},{"manifest_sha256",hash(p.manifest_bytes)},{"world_sha256",hash(p.world_bytes)},{"project_id",p.spec.at("project_id")},{"name",p.spec.at("name")},{"entry",p.spec.at("entry")},{"revision",p.content.revision},{"assets",assets},{"needs_audio",p.content.needs_audio},{"audio",p.spec.value("audio",false)},{"input_profile",p.profile.empty() ? Json(nullptr) : Json(text(p.profile))}};
     if(p.content.needs_navigation)result["needs_navigation"]=true;
     if(p.content.needs_particles)result["needs_particles"]=true;
+    if(p.content.needs_sprite_particles)result["needs_sprite_particles"]=true;
     result["startup_splash"]=p.spec.value("startup_splash",true);
     if(!p.content.provenance_records.empty()) {
         Json records=Json::array();for(const auto& record:p.content.provenance_records)records.push_back({{"filename",record.filename},{"sha256",record.sha256},{"bytes",record.bytes}});
@@ -413,6 +414,8 @@ void require_scene_feature_support(const WorldPackageContent& content, const Jso
         "Project water regions require a compatible simulation runtime.");
     require(!content.needs_particles || runtime.at("features").value("scene_particles", false),
         "Project particle emitters require a compatible particle runtime.");
+    require(!content.needs_sprite_particles || runtime.at("features").value("scene_particle_sprites", false),
+        "Project particle sprites require a compatible Vulkan runtime.");
 }
 Json runtime_spec(const std::string& bytes,std::string_view expected_version=build_metadata().version) {
     const auto value=parse(bytes);fields(value,{"format","version","engine_version","gameplay_services_version","gameplay_call_version","gameplay_call_bytes","gameplay_services_bytes","gameplay_features","target_os","target_arch","executable","features"},{"format","version","engine_version","target_os","target_arch","executable","features"});
@@ -425,7 +428,7 @@ Json runtime_spec(const std::string& bytes,std::string_view expected_version=bui
     if(contract_fields==4)(void)runtime_gameplay_contract(value);
     require((value.at("target_os")=="Windows" || value.at("target_os")=="Linux") && value.at("target_arch")=="x86_64","Only Windows/Linux x86_64 runtime targets are supported.");
     require(value.at("executable")== (value.at("target_os")=="Windows" ? "bin/poima.exe" : "bin/poima"),"Runtime executable path does not match target.");
-    const auto& features=value.at("features");fields(features,{"simulation","renderer","audio","managed","editor","native_gameplay","game_ui","navigation","asset_provenance","project_post_effects","water_regions","scene_particles"},{"simulation","renderer","audio","managed","editor"});for(const auto& v:features)require(v.is_boolean(),"Runtime feature flags must be Boolean.");
+    const auto& features=value.at("features");fields(features,{"simulation","renderer","audio","managed","editor","native_gameplay","game_ui","navigation","asset_provenance","project_post_effects","water_regions","scene_particles","scene_particle_sprites"},{"simulation","renderer","audio","managed","editor"});for(const auto& v:features)require(v.is_boolean(),"Runtime feature flags must be Boolean.");
     require(features.at("simulation")==true && features.at("renderer")==true,"Game bundles require a simulation and renderer runtime.");return value;
 }
 std::vector<std::string> file_tree(const fs::path& root) {

@@ -60,6 +60,8 @@
 #include "poima/viewmodel_resolve_ps.hpp"
 #include "poima/scene_output_vs.hpp"
 #include "poima/scene_output_ps.hpp"
+#include "poima/particle_sprite_vs.hpp"
+#include "poima/particle_sprite_ps.hpp"
 #include "poima/cluster_lights_cs.hpp"
 #include "poima/sky_vs.hpp"
 #include "poima/sky_ps.hpp"
@@ -254,6 +256,23 @@ struct FrameConstants {
 };
 static_assert(sizeof(GpuLight)==80 && sizeof(GpuShadow)==80 && sizeof(FrameConstants)==1600);
 struct Geometry { nvrhi::BufferHandle vertices,indices;std::uint32_t count=0;render_schedule::GeometrySlice stream{}; };
+struct SpriteInstance {
+    std::array<float,4> center_and_size,linear_rgba,fade_and_reserved;
+};
+struct SpriteConstants {
+    std::array<float,16> view_projection;
+    std::array<float,4> right_and_near,up_and_far;
+    std::array<std::uint32_t,4> first_and_reserved;
+};
+static_assert(sizeof(SpriteInstance)==render_schedule::sprite_instance_stride && sizeof(SpriteConstants)==112);
+static_assert(max_scene_particle_sprite_textures<=render_schedule::max_sprite_textures);
+struct SpriteBatch {
+    std::uint32_t first,count,texture;
+};
+struct SpriteBinding {
+    nvrhi::TextureHandle image;
+    nvrhi::BindingSetHandle bindings;
+};
 struct GpuInfluence { std::uint32_t joints[4];float weights[4]; };
 struct GpuJoint { float rows[3][4]; };
 static_assert(sizeof(GpuInfluence)==32 && sizeof(GpuJoint)==48);
@@ -347,6 +366,9 @@ struct Context {
         vk::QueryPool timestamps;
         nvrhi::BufferHandle cluster_readback,skin_readback;
         nvrhi::BufferHandle streamed_vertices,streamed_indices;
+        nvrhi::BufferHandle sprite_instances;
+        nvrhi::TextureHandle sprite_depth;
+        std::vector<SpriteBinding> sprite_bindings;
         nvrhi::EventQueryHandle completion;
         std::uint64_t submission=0;
         bool occupied=false,timing=false,has_skin=false;
@@ -369,6 +391,12 @@ struct Context {
     // storage. Only the two GPU buffers are retained by each completion slot.
     std::vector<Vertex> stream_vertices;
     std::vector<std::uint32_t> stream_indices;
+    std::vector<SpriteInstance> sprite_instances;
+    std::vector<SpriteBatch> sprite_batches;
+    std::vector<nvrhi::TextureHandle> sprite_textures;
+    nvrhi::FramebufferHandle sprite_framebuffer;
+    nvrhi::BindingLayoutHandle sprite_layout;
+    nvrhi::GraphicsPipelineHandle sprite_pipeline;
     // Borrowed only during a player poll. Slots retain detached generation
     // tickets; the session recorder outlives renderer teardown.
     fp::Recorder* performance=nullptr;fp::FrameToken performance_token;fp::CpuSample* performance_cpu=nullptr;
@@ -649,7 +677,9 @@ struct Context {
         for(auto& slot:slots) {
             slot.completion=nullptr;slot.cluster_readback=nullptr;slot.skin_readback=nullptr;
             slot.streamed_vertices=nullptr;slot.streamed_indices=nullptr;
+            slot.sprite_instances=nullptr;slot.sprite_depth=nullptr;slot.sprite_bindings.clear();
         }
+        sprite_framebuffer=nullptr;sprite_pipeline=nullptr;sprite_layout=nullptr;sprite_textures.clear();
         checked = nullptr;
         native = nullptr;
         if (device) {
@@ -1619,6 +1649,7 @@ struct Context {
         commands->close();checked->executeCommandList(commands);++diagnostics.frame_execution.device_idle_waits;require(checked->waitForIdle(),"Texture upload failed.");
         texture_bytes+=bytes;texture_cache.emplace(image.get(),texture);return texture;
     }
+#include "render_particle_sprites.inc"
     nvrhi::BindingSetHandle mesh_bindings(const MeshAsset* mesh,const MaterialTextures* override,bool foreground=false) {
         auto& cache=foreground ? viewmodel->materials : material_cache;
         const auto key_material=std::make_pair(mesh,override);
@@ -1684,6 +1715,7 @@ struct Context {
             }
         }
         };retain_objects(scene->objects);if(scene->viewmodel)retain_objects(scene->viewmodel->objects);
+        for(const auto& style:scene->particle_sprites.styles)retain_image(style.texture);
         // Owner maps retain old pointer identities until the associated GPU
         // cache entries are gone, preventing allocator-address reuse hits.
         std::erase_if(material_cache,[&](const auto& item){return !combinations.contains(item.first);});
@@ -2386,7 +2418,7 @@ struct Context {
         prepare_reconstruction();validate_game_ui();prepare_object_buffer();
         profiling::Scope profile_scope("renderer.prepare");
         const auto started=SteadyClock::now();draws.clear();object_data.clear();pending_draws={};
-        retain_scene_resources();prepare_shadows();
+        retain_scene_resources();warm_particle_sprites();prepare_shadows();
         auto lighting=scene->lighting;finalize_lighting(lighting);
         prepare_environment(lighting.environment);bindings=mesh_bindings(nullptr,nullptr);
         shadow_filter=shadow_filter_override.value_or(lighting.environment.shadow_filter);
@@ -2572,6 +2604,8 @@ struct Context {
 #if POIMA_EDITOR
         ui_framebuffers.clear();ui_scene_bindings=nullptr;
 #endif
+        sprite_framebuffer=nullptr;
+        for(auto& slot:slots) {slot.sprite_depth=nullptr;slot.sprite_bindings.clear();}
         framebuffers.clear();sky_framebuffers.clear(); images.clear(); depth=nullptr; multisample_color=nullptr; scene_hdr=nullptr; scene_normal=nullptr; scene_motion=nullptr;scene_motion_valid=nullptr;material_base=nullptr;material_surface=nullptr;material_correspondence=nullptr;ao_raw=nullptr;ao_filtered=nullptr;ao_bindings={};deferred_bindings=nullptr;deferred_binding_key={};staging=nullptr;
         for(auto& texture:probe_staging)texture=nullptr;
         fsr3_history_readback=nullptr;
@@ -3299,6 +3333,7 @@ struct Context {
         settings.viewmodel=viewmodel_enabled;settings.viewmodel_clustered=viewmodel_enabled && viewmodel_lights.active;settings.viewmodel_samples=viewmodel_samples;
         settings.bloom=scene && output_bloom_bound;
         settings.post_effect=scene && post_effect.active;
+        settings.particle_sprites=!sprite_instances.empty();
         settings.sky=scene && scene_visible && sky_enabled;settings.products=bool(scene_normal);settings.products_debug=scene_debug_view!=SceneDebugView::color;settings.editor=editor;settings.capture=capture_frame;settings.reconstruction=pending_reconstruction.active;settings.deferred=deferred;settings.ambient_occlusion=ao_enabled;
         settings.slot=static_cast<std::uint32_t>(next_slot%diagnostics.frame_execution.limit);settings.history_sequence=history.sequence;
         std::unordered_map<std::uintptr_t,rs::ResourceId> ids;
@@ -3354,6 +3389,11 @@ struct Context {
 #endif
         f.color=f.output;
         if(scene) {
+            if(settings.particle_sprites) {
+                f.sprite_instances=buffer(slots[settings.slot].sprite_instances,rs::Lifetime::slot,false,
+                    sprite_instances.size()*sizeof(SpriteInstance));
+                for(const auto& image:sprite_textures)f.sprite_textures.push_back(texture(image,rs::Lifetime::imported,true));
+            }
             if(!stream_vertices.empty()) {
                 const auto& slot=slots[settings.slot];
                 f.streamed_vertices=buffer(slot.streamed_vertices,rs::Lifetime::slot,false,stream_vertices.size()*sizeof(Vertex));
@@ -3483,6 +3523,20 @@ struct Context {
             if(depth_id!=rs::none)identity(depth_id,desc.depthAttachment.texture);
         };
         identity(f.swapchain,images.at(index).Get());
+        if(plan.settings.particle_sprites) {
+            const auto& slot=slots.at(plan.settings.slot);
+            framebuffer(sprite_framebuffer,f.hdr,rs::none);
+            require(slot.sprite_bindings.size()==f.sprite_textures.size(),"Particle sprite texture count differs from its schedule.");
+            for(std::size_t texture=0;texture<slot.sprite_bindings.size();++texture) {
+                identity(f.sprite_textures[texture],slot.sprite_bindings[texture].image.Get());
+                for(const auto& binding:slot.sprite_bindings[texture].bindings->getDesc()->bindings) {
+                    if(binding.type==nvrhi::ResourceType::StructuredBuffer_SRV)
+                        identity(f.sprite_instances,binding.resourceHandle);
+                    else if(binding.type==nvrhi::ResourceType::Texture_SRV)
+                        identity(binding.slot==1 ? f.depth : f.sprite_textures[texture],binding.resourceHandle);
+                }
+            }
+        }
         if(deferred) {
             const auto& desc=framebuffers.at(index)->getDesc();require(desc.colorAttachments.size()==4,"Deferred framebuffer binding count changed.");
             identity(f.material_base,desc.colorAttachments[0].texture);identity(f.material_surface,desc.colorAttachments[1].texture);
@@ -3687,7 +3741,8 @@ struct Context {
         }
         cluster_readback=slot.cluster_readback;skin_readback=slot.skin_readback;
         if(capture_frame)prepare_capture_staging();
-        prepare_game_ui();prepare_stream_geometry(slot);prepare_submission_history();prepare_draw_batches();prepare_temporal_submission();prepare_ambient_occlusion();prepare_deferred_lighting();
+        prepare_game_ui();prepare_stream_geometry(slot);prepare_sprite_frame(slot);prepare_submission_history();
+        prepare_draw_batches();prepare_temporal_submission();prepare_ambient_occlusion();prepare_deferred_lighting();
         // Query storage belongs to this Context. Create it before acquiring an
         // image; stopped traces leave it allocated but perform no query work.
         if((profiling::active() || bool(performance_token)) && !timestamp_prepared)prepare_timestamps();
@@ -3751,6 +3806,9 @@ struct Context {
                 commands->writeBuffer(planned_buffer(resources.streamed_vertices),stream_vertices.data(),stream_vertices.size()*sizeof(Vertex));
                 commands->writeBuffer(planned_buffer(resources.streamed_indices),stream_indices.data(),stream_indices.size()*sizeof(std::uint32_t));
                 break;
+            case render_schedule::PassId::sprite_upload:
+                commands->writeBuffer(planned_buffer(resources.sprite_instances),sprite_instances.data(),sprite_instances.size()*sizeof(SpriteInstance));
+                break;
             case render_schedule::PassId::skinning:
                 if(scene) {if(viewmodel_enabled) {commands->writeBuffer(planned_buffer(resources.viewmodel_frame),&viewmodel_frame,sizeof(viewmodel_frame));commands->writeBuffer(planned_buffer(resources.viewmodel_objects),viewmodel_objects.data(),viewmodel_objects.size()*sizeof(ObjectData));}commands->writeBuffer(planned_buffer(resources.frame),&frame_constants,sizeof(frame_constants));commands->writeBuffer(planned_buffer(resources.objects),object_data.data(),object_data.size()*sizeof(ObjectData));dispatch_skinning();if(ao_enabled)commands->writeBuffer(planned_buffer(resources.ao_constants),ao_settings.data(),sizeof(ao_settings));}
                 timestamp(1);break;
@@ -3778,6 +3836,7 @@ struct Context {
             case render_schedule::PassId::ambient_occlusion:dispatch_ambient_occlusion(0);break;
             case render_schedule::PassId::ambient_occlusion_filter:dispatch_ambient_occlusion(1);break;
             case render_schedule::PassId::deferred_lighting:dispatch_deferred_lighting();break;
+            case render_schedule::PassId::particle_sprites:render_particle_sprites(slot);break;
             case render_schedule::PassId::temporal_inputs:timestamp(6);dispatch_temporal_inputs();break;
             case render_schedule::PassId::reconstruction:dispatch_reconstruction();timestamp(7);break;
             case render_schedule::PassId::resolve:

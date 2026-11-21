@@ -24,16 +24,18 @@ enum class Region { whole,prefix,cluster_members,probe_pixels };
 enum class Use { upload,storage_read,storage_write,vertex,index,constant,sampled,color,color_overwrite,depth,clear_color,clear_depth,copy_source,copy_destination,resolve_source,resolve_destination,present,image_write,image_read_write };
 using Uses=std::uint64_t;
 constexpr Uses use_bit(Use use) {return Uses{1}<<static_cast<unsigned>(use);}
-enum class PassId { stream_geometry,skinning,light_assignment,shadows,scene_clear,sky,opaque,ambient_occlusion,ambient_occlusion_filter,deferred_lighting,resolve,temporal_inputs,reconstruction,viewmodel_lights,viewmodel_clear,viewmodel_opaque,viewmodel_resolve,viewmodel_composite,post_effect,bloom_extract,bloom_horizontal,bloom_vertical,output,game_ui,overlay,editor_clear,editor_ui,product_probes,capture,present };
+enum class PassId { stream_geometry,sprite_upload,skinning,light_assignment,shadows,scene_clear,sky,opaque,ambient_occlusion,ambient_occlusion_filter,deferred_lighting,particle_sprites,resolve,temporal_inputs,reconstruction,viewmodel_lights,viewmodel_clear,viewmodel_opaque,viewmodel_resolve,viewmodel_composite,post_effect,bloom_extract,bloom_horizontal,bloom_vertical,output,game_ui,overlay,editor_clear,editor_ui,product_probes,capture,present };
 inline const char* pass_name(PassId id) {
     switch(id) {
     case PassId::stream_geometry:return "render.pass.stream_geometry";
+    case PassId::sprite_upload:return "render.pass.sprite_upload";
     case PassId::skinning:return "render.pass.skinning";case PassId::light_assignment:return "render.pass.light_assignment";
     case PassId::shadows:return "render.pass.shadows";case PassId::scene_clear:return "render.pass.scene_clear";
     case PassId::sky:return "render.pass.sky";case PassId::opaque:return "render.pass.opaque";
     case PassId::ambient_occlusion:return "render.pass.ambient_occlusion";
     case PassId::ambient_occlusion_filter:return "render.pass.ambient_occlusion_filter";
     case PassId::deferred_lighting:return "render.pass.deferred_lighting";
+    case PassId::particle_sprites:return "render.pass.particle_sprites";
     case PassId::temporal_inputs:return "render.pass.temporal_inputs";case PassId::reconstruction:return "render.pass.reconstruction";
     case PassId::viewmodel_lights:return "render.pass.viewmodel_lights";case PassId::viewmodel_clear:return "render.pass.viewmodel_clear";
     case PassId::viewmodel_opaque:return "render.pass.viewmodel_opaque";case PassId::viewmodel_resolve:return "render.pass.viewmodel_resolve";case PassId::viewmodel_composite:return "render.pass.viewmodel_composite";
@@ -91,6 +93,8 @@ struct FrameResources {
     ResourceId post_effect=none;
     ResourceId bloom=none,bloom_scratch=none;
     ResourceId streamed_vertices=none,streamed_indices=none;
+    ResourceId sprite_instances=none;
+    std::vector<ResourceId> sprite_textures;
 };
 struct Settings {
     bool scene=false,clustered=false,sky=false,game_ui=false,overlay=false,editor=false,capture=false,products=false,products_debug=false,reconstruction=false,deferred=false,ambient_occlusion=false;
@@ -99,6 +103,7 @@ struct Settings {
     bool viewmodel=false,viewmodel_clustered=false;
     std::uint32_t viewmodel_samples=1;
     bool bloom=false,post_effect=false;
+    bool particle_sprites=false;
 };
 inline constexpr ResourceId scene_linear_radiance(const FrameResources& frame,const Settings& settings) {
     return settings.viewmodel ? frame.composite : settings.reconstruction ? frame.reconstructed : frame.hdr;
@@ -112,6 +117,10 @@ inline constexpr std::uint64_t bloom_budget_bytes=32u*1024u*1024u;
 inline constexpr std::uint64_t stream_vertex_budget=4u*1024u*1024u;
 inline constexpr std::uint64_t stream_index_budget=1u*1024u*1024u;
 inline constexpr std::size_t max_stream_draws=128;
+inline constexpr std::size_t sprite_instance_stride=48;
+inline constexpr std::size_t max_sprite_instances=4096;
+inline constexpr std::uint64_t sprite_instance_budget=sprite_instance_stride*max_sprite_instances;
+inline constexpr std::size_t max_sprite_textures=16;
 struct Schedule {
     FrameResources frame;
     Settings settings;
@@ -168,6 +177,31 @@ struct Schedule {
         if(settings.sky && !settings.scene)fail("sky pass without a scene");
         if(settings.overlay)required(frame.overlay_vertices);
         if(settings.scene) {required(frame.frame);required(frame.objects);required(frame.depth);required(frame.hdr);required(frame.shadow);}
+        if(settings.particle_sprites) {
+            if(!settings.scene || settings.reconstruction || frame.color!=frame.hdr)
+                fail("particle sprites require a single-sample scene without reconstruction");
+            const auto& hdr=resource(frame.hdr);
+            const auto& depth=resource(frame.depth);
+            if(hdr.kind!=Kind::texture || hdr.format!=Format::rgba16_float || hdr.samples!=1 ||
+                hdr.lifetime!=Lifetime::shared || hdr.region!=Region::whole || hdr.initialized || frame.hdr==frame.output ||
+                depth.kind!=Kind::texture || depth.format!=Format::depth32 || depth.samples!=1 ||
+                depth.lifetime!=Lifetime::shared || depth.region!=Region::whole || depth.initialized || frame.depth==frame.shadow ||
+                depth.width!=hdr.width || depth.height!=hdr.height)
+                fail("invalid particle sprite HDR or world depth attachment");
+            required(frame.sprite_instances);
+            const auto& instances=resource(frame.sprite_instances);
+            if(instances.kind!=Kind::buffer || instances.lifetime!=Lifetime::slot || instances.region!=Region::prefix ||
+                instances.initialized || instances.bytes%sprite_instance_stride || instances.allocation_bytes>sprite_instance_budget)
+                fail("invalid particle sprite instance buffer");
+            if(frame.sprite_textures.empty() || frame.sprite_textures.size()>max_sprite_textures)
+                fail("invalid particle sprite texture count");
+            for(auto it=frame.sprite_textures.begin();it!=frame.sprite_textures.end();++it) {
+                const auto& texture=resource(*it);
+                if(std::find(frame.sprite_textures.begin(),it,*it)!=it || texture.kind!=Kind::texture ||
+                    texture.samples!=1 || texture.lifetime!=Lifetime::imported || texture.region!=Region::whole || !texture.initialized)
+                    fail("invalid or repeated particle sprite texture");
+            }
+        } else if(frame.sprite_instances!=none || !frame.sprite_textures.empty())fail("particle sprite resources without sprite draws");
         if(frame.ibl_diffuse!=none || frame.ibl_specular!=none || frame.ibl_brdf!=none) {
             if(!settings.scene)fail("environment inputs without scene shading");
             const ResourceId inputs[]={frame.ibl_diffuse,frame.ibl_specular,frame.ibl_brdf};
@@ -342,13 +376,13 @@ struct Schedule {
             if(r.kind==Kind::texture && (!r.width || !r.height || !r.samples))fail("invalid texture extent or samples");
             if(r.kind==Kind::buffer && (!r.bytes || r.bytes>r.allocation_bytes))fail("invalid buffer prefix");
             if(r.lifetime==Lifetime::history && (!r.initialized || !r.version || r.version!=settings.history_sequence))fail("prior deformation does not belong to preceding accepted submission");
-            if(r.lifetime==Lifetime::slot && r.owner!=settings.slot)fail("readback belongs to another frame slot");
+            if(r.lifetime==Lifetime::slot && r.owner!=settings.slot)fail("resource belongs to another frame slot");
             if(r.lifetime==Lifetime::swapchain && !before_acquire && r.owner!=settings.image)fail("wrong swapchain image");
             initialized.push_back(r.initialized);
         }
         bool world_resolved=false,world_opaque=false,foreground_lights=false,foreground_cleared=false,foreground_drawn=false,foreground_resolved=false,foreground_composed=false;
         bool exported=false,captured=false,probed=false,prepared=false,reconstructed=false,deferred_lit=false,deferred_opaque=false,ao_generated=false,ao_filtered=false;
-        bool post_effect_applied=false,stream_uploaded=false;unsigned previous=0;bool first=true;
+        bool post_effect_applied=false,stream_uploaded=false,sprites_uploaded=false,sprites_drawn=false;unsigned previous=0;bool first=true;
         unsigned bloom_stage=0;
         for(const auto& pass:passes) {
             const auto order=static_cast<unsigned>(pass.id);
@@ -362,11 +396,20 @@ struct Schedule {
                     fail("invalid streamed geometry upload");
                 stream_uploaded=true;
             }
+            if(pass.id==PassId::sprite_upload) {
+                if(!settings.particle_sprites || pass.accesses.size()!=1 || !has(frame.sprite_instances,Use::upload) ||
+                    !pass.accesses.front().initialize)fail("invalid particle sprite upload");
+                sprites_uploaded=true;
+            }
             if(pass.id==PassId::opaque && stream && (!stream_uploaded || !has(frame.streamed_vertices,Use::vertex) ||
                 !has(frame.streamed_indices,Use::index)))fail("opaque draw requires uploaded geometry");
             if(pass.id==PassId::shadows)for(const auto& draw:frame.shadow_draws)
                 for(auto texture:draw.textures)if(!has(texture,Use::sampled))fail("missing masked shadow material input");
-            if(pass.id==PassId::opaque)world_opaque=true;
+            if(pass.id==PassId::opaque) {
+                if(settings.particle_sprites && (!has(frame.hdr,Use::color) || !has(frame.depth,Use::depth)))
+                    fail("particle sprites require opaque HDR and world depth outputs");
+                world_opaque=true;
+            }
             if((pass.id==PassId::opaque && !settings.deferred) || pass.id==PassId::deferred_lighting || pass.id==PassId::viewmodel_opaque)
                 for(auto id:{frame.ibl_diffuse,frame.ibl_specular,frame.ibl_brdf})if(id!=none && !has(id,Use::sampled))fail("missing environment lighting input");
             if(pass.id==PassId::resolve)world_resolved=true;
@@ -402,6 +445,14 @@ struct Schedule {
                 std::unordered_set<ResourceId> accessed;
                 for(const auto& access:pass.accesses)if(!accessed.insert(access.resource).second)fail("deferred lighting resource has conflicting duplicate accesses");
                 deferred_lit=true;
+            }
+            if(pass.id==PassId::particle_sprites) {
+                if(!settings.particle_sprites || !sprites_uploaded || !world_opaque || (settings.deferred && !deferred_lit) ||
+                    pass.accesses.size()!=3+frame.sprite_textures.size() || !has(frame.hdr,Use::color) ||
+                    !has(frame.depth,Use::sampled) || !has(frame.sprite_instances,Use::storage_read))
+                    fail("invalid or premature particle sprite pass");
+                for(auto id:frame.sprite_textures)if(!has(id,Use::sampled))fail("missing particle sprite texture input");
+                sprites_drawn=true;
             }
             if(settings.deferred && (pass.id==PassId::temporal_inputs || pass.id==PassId::output) && !deferred_lit)fail("display or reconstruction precedes deferred lighting");
             if(pass.id==PassId::temporal_inputs) {
@@ -501,6 +552,10 @@ struct Schedule {
                 if(streamed && !(pass.id==PassId::stream_geometry && a.use==Use::upload) &&
                     !(pass.id==PassId::opaque && a.use==(a.resource==frame.streamed_vertices ? Use::vertex : Use::index)))
                     fail("streamed geometry used outside upload and opaque draw");
+                const bool sprite_instances=settings.particle_sprites && a.resource==frame.sprite_instances;
+                if(sprite_instances && !(pass.id==PassId::sprite_upload && a.use==Use::upload) &&
+                    !(pass.id==PassId::particle_sprites && a.use==Use::storage_read))
+                    fail("particle sprite instances used outside sprite upload and draw");
                 if(settings.post_effect && a.resource==frame.post_effect && pass.id!=PassId::post_effect &&
                     !((pass.id==PassId::bloom_extract || pass.id==PassId::output) && a.use==Use::sampled))
                     fail("post-effect image used outside scene color composition");
@@ -531,7 +586,7 @@ struct Schedule {
                     if(settings.capture && !captured)fail("presentation precedes requested capture");
                     exported=true;
                 }
-                if(r.lifetime==Lifetime::slot && !streamed && a.use!=Use::copy_destination)fail("slot readback used by a GPU consumer");
+                if(r.lifetime==Lifetime::slot && !streamed && !sprite_instances && a.use!=Use::copy_destination)fail("slot readback used by a GPU consumer");
                 if(r.lifetime==Lifetime::capture && ((pass.id!=PassId::capture && pass.id!=PassId::product_probes) || a.use!=Use::copy_destination))fail("capture storage used outside capture copy");
             }
             if(pass.id==PassId::resolve || pass.id==PassId::capture) {
@@ -548,6 +603,7 @@ struct Schedule {
         if(settings.deferred && !deferred_lit)fail("missing deferred lighting pass");
         if(settings.reconstruction && !reconstructed)fail("missing reconstruction pass");
         if(stream && !stream_uploaded)fail("missing streamed geometry upload");
+        if(settings.particle_sprites && !sprites_drawn)fail("missing particle sprite pass");
         if(settings.post_effect && !post_effect_applied)fail("missing post effect pass");
         if(settings.bloom && bloom_stage!=3)fail("missing bloom pass");
         if(settings.viewmodel && (!foreground_cleared || !foreground_drawn || !foreground_composed || (settings.viewmodel_samples!=1 && !foreground_resolved) || (settings.viewmodel_clustered && !foreground_lights)))fail("missing foreground passes");
@@ -569,6 +625,9 @@ inline Schedule build(FrameResources frame,Settings settings) {
     if(f.streamed_vertices!=none || f.streamed_indices!=none) {
         auto& upload=pass(PassId::stream_geometry);
         add(upload,f.streamed_vertices,Use::upload,true);add(upload,f.streamed_indices,Use::upload,true);
+    }
+    if(settings.particle_sprites) {
+        auto& upload=pass(PassId::sprite_upload);add(upload,f.sprite_instances,Use::upload,true);
     }
     auto& skin=pass(PassId::skinning);
     if(settings.scene) {add(skin,f.frame,Use::upload,true);add(skin,f.objects,Use::upload,true);}
@@ -611,6 +670,11 @@ inline Schedule build(FrameResources frame,Settings settings) {
         if(settings.clustered) {add(lighting,f.counts,Use::storage_read);add(lighting,f.indices,Use::storage_read);}
         add(lighting,f.hdr,Use::image_read_write);
         if(settings.products)for(auto id:{f.normal,f.motion,f.motion_valid})add(lighting,id,Use::image_write,true);
+    }
+    if(settings.particle_sprites) {
+        auto& sprites=pass(PassId::particle_sprites);
+        add(sprites,f.hdr,Use::color);add(sprites,f.depth,Use::sampled);add(sprites,f.sprite_instances,Use::storage_read);
+        for(auto id:f.sprite_textures)add(sprites,id,Use::sampled);
     }
     if(settings.scene && f.color!=f.hdr) {auto& resolve=pass(PassId::resolve);add(resolve,f.color,Use::resolve_source);add(resolve,f.hdr,Use::resolve_destination,true);}
     if(settings.reconstruction) {

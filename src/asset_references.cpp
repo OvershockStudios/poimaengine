@@ -15,7 +15,7 @@ bool hex(const std::string& value,std::size_t count) noexcept {
     return true;
 }
 constexpr std::array<std::string_view,5> texture_slots{"base_color","emissive","metallic_roughness","normal","occlusion"};
-constexpr std::array<std::string_view,6> component_order{"AnimationRig","AudioEmitter","MeshCollider","PbrTextures","SkinnedMesh","StaticMesh"};
+constexpr std::array<std::string_view,7> component_order{"AnimationRig","AudioEmitter","MeshCollider","ParticleEmitter","PbrTextures","SkinnedMesh","StaticMesh"};
 std::uint32_t index(const Json& value,std::uint32_t maximum) {
     need(value.is_number_integer(),"Asset-reference subresource index must be an integer.");
     if(value.is_number_unsigned()) {
@@ -54,7 +54,8 @@ bool valid_cursor(const Cursor& value) noexcept {
         if(!path.starts_with(value.component))return false;
         path.remove_prefix(value.component.size());member=true;
     }
-    if(value.owner.kind=="template" && !member && value.component!="StaticMesh" && value.component!="PbrTextures")return false;
+    if(value.owner.kind=="template" && !member && value.component!="StaticMesh" && value.component!="PbrTextures" && value.component!="ParticleEmitter")return false;
+    if(value.component=="ParticleEmitter")return path=="/sprite/texture";
     if(value.component=="PbrTextures") {
         for(const auto slot:texture_slots)
             if(path.size()==slot.size()+7 && path.front()=='/' && path.substr(1,slot.size())==slot && path.substr(slot.size()+1)=="/asset")return true;
@@ -99,9 +100,14 @@ Page collect(const Json& entities,const Json* templates,const Query& query,const
         for(const auto type:component_order) {
             if(!only.empty() && type!=only)continue;
             const auto found=components.find(std::string(type));if(found==components.end())continue;
-            need(owner.kind!="template" || !prefix.empty() || type=="StaticMesh" || type=="PbrTextures","Unsupported asset-reference template component.");
+            need(owner.kind!="template" || !prefix.empty() || type=="StaticMesh" || type=="PbrTextures" || type=="ParticleEmitter","Unsupported asset-reference template component.");
             const auto& component=*found;need(component.is_object(),"Asset-reference component must be an object.");
-            if(type=="PbrTextures") {
+            if(type=="ParticleEmitter") {
+                const auto sprite=component.find("sprite");
+                if(sprite==component.end())continue;
+                need(sprite->is_object() && sprite->contains("texture"),"Malformed authored particle sprite texture reference.");
+                emit(owner,type,prefix+(!prefix.empty() ? std::string(type):std::string{})+"/sprite/texture",sprite->at("texture"),"image",std::nullopt);
+            } else if(type=="PbrTextures") {
                 for(const auto slot:texture_slots) {
                     const auto map=component.find(std::string(slot));if(map==component.end() || map->is_null())continue;
                     need(map->is_object() && map->contains("asset"),"Malformed authored texture reference.");

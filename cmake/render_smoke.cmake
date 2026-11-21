@@ -41,7 +41,7 @@ find_program(POIMA_DXC NAMES dxc
     HINTS "${CMAKE_SOURCE_DIR}/.cache/toolchains/dxc-v1.8.2505.1/bin"
     DOC "Host DXC executable with SPIR-V support" REQUIRED NO_CMAKE_FIND_ROOT_PATH)
 file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/generated/poima")
-foreach(shader smoke scene scene_products scene_deferred scene_deferred_color deferred_lighting deferred_lighting_ao deferred_lighting_color deferred_lighting_color_ao ambient_occlusion ambient_occlusion_filter scene_output scene_output_ao scene_output_products scene_output_bloom scene_output_products_bloom bloom viewmodel_composite viewmodel_resolve sky shadow skinning cluster_lights temporal_inputs editor_overlay game_ui)
+foreach(shader smoke scene scene_products scene_deferred scene_deferred_color deferred_lighting deferred_lighting_ao deferred_lighting_color deferred_lighting_color_ao ambient_occlusion ambient_occlusion_filter scene_output scene_output_ao scene_output_products scene_output_bloom scene_output_products_bloom bloom viewmodel_composite viewmodel_resolve sky shadow skinning cluster_lights temporal_inputs editor_overlay game_ui particle_sprite)
 if(shader MATCHES "^(skinning|cluster_lights|temporal_inputs|deferred_lighting.*|ambient_occlusion.*)$")
     set(shader_stages cs)
 else()

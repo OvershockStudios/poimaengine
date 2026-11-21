@@ -16,6 +16,7 @@
         std::shared_ptr<const Topology> membership;
     };
     std::unique_ptr<ParticleRuntime> particle_runtime;
+    particles::SpriteCatalog particle_sprites;
     void restore_particles(const RuntimeDefinition&,const nlohmann::json&);
     static bool definition_has_particles(const RuntimeDefinition& definition) {
         const auto has_emitter=[](const auto& entry){return entry.particle_emitter.has_value();};

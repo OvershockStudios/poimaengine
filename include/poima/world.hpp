@@ -22,6 +22,7 @@ struct WorldPackageContent {
     bool needs_audio=false;
     bool needs_navigation=false;
     bool needs_particles=false;
+    bool needs_sprite_particles=false;
 };
 enum class WorldRequestScope { standalone, shared_headless, shared_editor };
 struct WorldRuntimeStatus {

@@ -5,8 +5,9 @@ seeded fixed-tick effect. Use [focused discovery](WORLD_SERVICE.md#focused-disco
 to retrieve the component and `runtime.particles.inspect` schemas from the
 installed executable. Authoring needs the component schema. Running and
 shipping the scene need simulation and, for export, a matching runtime with
-`features.scene_particles`. Windows Vulkan presents the particles as opaque,
-emissive camera-facing quads.
+`features.scene_particles`. Windows Vulkan presents camera-facing quads.
+An emitter can use the default opaque emissive quad or a textured,
+translucent sprite.
 
 ## Author a scene effect
 
@@ -52,6 +53,39 @@ last particle expires. A runtime attachment transfer updates local particle
 positions at the same tick, with their ages unchanged. The renderer uses
 frame-owned Vulkan buffers for the changing quad geometry.
 
+## Add a translucent sprite
+
+Import a PNG or JPEG through `asset.image.import`. Choose `srgb` for ordinary
+color textures. Use the resulting cooked image SHA-256 in the emitter's
+`sprite` value.
+
+```json
+{
+  "texture": "<cooked image SHA-256>",
+  "opacity": 0.5,
+  "depth_fade_m": 0.4
+}
+```
+
+Opacity defaults to 1. Depth fade defaults to zero, which gives a hard
+occlusion edge at solid geometry. A positive value up to 10 m fades the sprite
+over its distance from the opaque surface behind it. The sprite uses
+`linear_rgb` as a tint. The renderer premultiplies each texel in linear space
+before bilinear filtering at the base mip. This prevents hidden RGB in a
+transparent texel from bleeding into its neighbors.
+
+The translucent pass sorts instances from far to near across emitters.
+Persistent particle IDs break ties at the same view depth. It blends into
+scene HDR after opaque shading and before independent foreground, post
+effects, bloom, tone mapping, and UI. Depth, normal, and motion observations
+continue to describe the opaque geometry underneath.
+
+Use one world sample with reconstruction disabled. The exported runtime must
+advertise `features.scene_particle_sprites`. Cooked images belong to the
+frozen world and are prepared even before an emitter's first burst. Up to 16
+distinct sprite images may be referenced by the world and its templates. Each
+image is at most 1024×1024, with a combined 16 MiB limit for the base levels.
+
 ## Observe and verify
 
 After a completed tick, call `runtime.particles.inspect` with that tick and
@@ -75,9 +109,17 @@ python3 tests/world_particles_contract.py "$runtime/bin/poima.exe" \
   --windows-interop --runtime-root "$runtime" --capture-output build/particles --gpu 0
 ```
 
-This path gives games opaque billboards and motion/lifetime controls. Sprite
-textures, transparency, surface deposition, mesh and ribbon rendering,
-general VFX graphs and production-scale frame budgets are further work.
+Run the standalone sprite fixture to check overlap, depth occlusion, fade,
+texture fringes, and the final color at the selected pixels.
+
+```sh
+python3 tests/sprite_particles_capture.py "$runtime/bin/poima.exe" \
+  --windows-interop --runtime-root "$runtime" --output build/sprite-captures --gpu 0
+```
+
+Surface deposition, mesh and ribbon rendering, general VFX graphs, translucent
+MSAA and temporal reconstruction, and production-scale frame budgets are
+further work.
 
 ## Native particle API
 
