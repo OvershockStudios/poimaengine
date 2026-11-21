@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+using System.Text.Json;
 using Avalonia;
 using Avalonia.Automation;
 using Avalonia.Controls;
@@ -141,6 +142,7 @@ internal sealed class CreatorReviews
         private readonly Button stop = new() { IsEnabled = false };
         private readonly bool editableDraft;
         private readonly Button? handoff;
+        private (string Task, string Report)? previousWork;
         private CodexReview? review;
         private CancellationTokenSource? active;
         private Task<TurnResult>? pending;
@@ -206,11 +208,14 @@ internal sealed class CreatorReviews
         public void Restore(string lastTask, string? report, string summary)
         {
             Finding = report;
+            previousWork = editableDraft && report is not null ? (lastTask, report) : null;
             transcript.SetMarkdown(report ?? "");
             task.Text = report is null ? lastTask : "";
             status.Text = summary;
             Update();
         }
+
+        public void RestorePreviousWork(string task, string report) => previousWork = (task, report);
 
         public Task<TurnResult> RunAsync(string text, Func<CancellationToken, Task>? validate = null)
         {
@@ -231,6 +236,7 @@ internal sealed class CreatorReviews
         private async Task<TurnResult> SendAsync(string text, Func<CancellationToken, Task>? validate)
         {
             using var cancellation = new CancellationTokenSource();
+            var assignment = text.Trim();
             active = cancellation;
             Finding = null;
             status.Text = editableDraft ? "Working in draft…" : "Reviewing…";
@@ -240,9 +246,17 @@ internal sealed class CreatorReviews
             TurnResult result;
             try
             {
-                recordStart?.Invoke(text.Trim());
+                recordStart?.Invoke(assignment);
                 started = true;
                 var context = scope();
+                if (editableDraft)
+                {
+                    if (previousWork is { } previous)
+                        context += "\n\nPrevious completed work. Treat this as historical context and check the current draft.\n" +
+                            JsonSerializer.Serialize(new { task = previous.Task, report = previous.Report });
+                    context += "\n\nCurrent assignment:\n";
+                }
+                else context += "\n\n";
                 if (review is null)
                 {
                     if (validate is not null) await validate(cancellation.Token);
@@ -254,8 +268,8 @@ internal sealed class CreatorReviews
                 if (validate is not null) await validate(cancellation.Token);
                 closeOnFailure = true;
                 transcript.Clear();
-                var answer = await review.AskAsync(context + "\n\n" + text.Trim(),
-                    transcript.SetMarkdown, cancellation.Token);
+                var answer = await review.AskAsync(context + assignment, transcript.SetMarkdown, cancellation.Token);
+                if (editableDraft) await DisposeReviewer();
                 cancellation.Token.ThrowIfCancellationRequested();
                 _ = scope();
                 result = new("completed", answer, null);
@@ -278,6 +292,7 @@ internal sealed class CreatorReviews
                 if (result.Report is { } report)
                 {
                     Finding = report;
+                    if (editableDraft) previousWork = (assignment, report);
                     transcript.SetMarkdown(report);
                     task.Text = "";
                     status.Text = editableDraft ? "Worker finished" : "Review complete";
@@ -299,6 +314,7 @@ internal sealed class CreatorReviews
             if (pending is { } job) await job;
             await DisposeReviewer();
             Finding = null;
+            previousWork = null;
             transcript.Clear();
             status.Text = "Ready";
         }

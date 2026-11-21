@@ -249,8 +249,11 @@ internal static class CodexDraftContract
                     {
                         Check(parameters["threadId"]?.GetValue<string>() == thread, "A draft turn went to another thread.");
                         var turn = Guid.NewGuid().ToString("N");
-                        var task = parameters["input"]![0]!["text"]!.GetValue<string>();
-                        await Trace(method, new JsonObject { ["turn"] = turn, ["text"] = task });
+                        var text = parameters["input"]![0]!["text"]!.GetValue<string>();
+                        const string assignment = "\n\nCurrent assignment:\n";
+                        var separator = text.LastIndexOf(assignment, StringComparison.Ordinal);
+                        var task = separator < 0 ? text : text[(separator + assignment.Length)..];
+                        await Trace(method, new JsonObject { ["turn"] = turn, ["text"] = text });
                         await Reply(new JsonObject { ["turn"] = new JsonObject { ["id"] = turn } });
                         await CodexReviewContract.CheckInteractiveRequestsAsync(thread, turn);
                         Task Delta(string delta, string id) => CodexReviewContract.Send(CodexReviewContract.Event("item/agentMessage/delta",

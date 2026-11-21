@@ -1,8 +1,21 @@
 # Implementation status
 
-Updated 2026-11-20 for **0.0.344**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-20 for **0.0.345**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.345 [releases completed scene worker connections](AGENT_CLIENTS.md#delegate-scene-work-from-codex).
+In the signed-in Windows test, all ten worker processes had exited before
+the lead started combined verification. The sampled lead and worker
+processes used about 403 MiB of private memory during overlap and 85 MiB
+after worker retirement. The sample excludes the editor and shared project
+service. The lead sent the failed check back to the same draft through a
+fresh connection and reached six passing groups. The approved game played
+after reopening and reproduced its verification report after relocation.
+Scripted tests checked that follow-ups receive the previous report.
+One crash-recovery attempt lacked its expected clean worker exit record.
+The unchanged package passed on retry.
+[Results](evidence/m2-windows-worker-retirement-345.json)
 
 Version 0.0.344 adds [shell-disabled Codex connections](AGENT_CLIENTS.md#delegate-scene-work-from-codex)
 for the main creator chat. A signed-in Codex client confirmed the execution

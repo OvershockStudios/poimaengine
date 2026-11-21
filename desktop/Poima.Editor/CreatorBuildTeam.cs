@@ -263,6 +263,12 @@ internal sealed class CreatorBuildTeam
             pane.Restore(turn.Task, problem is null ? turn.Report : null,
                 problem ?? (turn.State == "completed" ? "Worker finished" : turn.Error ?? "Ready"));
         else if (problem is not null) pane.Restore("", null, problem);
+        if (problem is null && worker.Latest?.Report is null)
+        {
+            var completed = Current.FollowUps?.LastOrDefault(receipt =>
+                receipt.DraftId == worker.ProjectId && receipt.Turn.State == "completed")?.Turn ?? worker.Assigned;
+            if (completed?.Report is { } report) pane.RestorePreviousWork(completed.Task, report);
+        }
         var tab = CreatorWindow.ConversationTab(name, pane.View);
         tabs.Add(new(pane, tab, available));
         conversations.Items.Add(tab);

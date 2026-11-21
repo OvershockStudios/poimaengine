@@ -695,6 +695,15 @@ function Read-BuildWorkerTrace {
     }
 }
 
+function Confirm-WorkerExits($Launches) {
+    $exits = @(Read-BuildWorkerTrace | Where-Object { $_.kind -ceq 'exit' })
+    foreach ($launch in $Launches) {
+        if ($launch.thread -notin $exits.thread -or (Get-Process -Id $launch.pid -ErrorAction SilentlyContinue)) {
+            throw 'A finished draft still has an open worker process.'
+        }
+    }
+}
+
 function Start-BuildWorkerTask($TaskText) {
     Set-ControlText 'Worker task' $TaskText
     Invoke-Control 'Send to worker'
@@ -839,16 +848,25 @@ function Exercise-BuildWorkers($Project, $LeadProcess) {
     $checks.independent_concurrent_work = $true
     $checks.handoff_left_draft_unsent = $true
 
+    $finished = @($records | Where-Object { $_.kind -ceq 'launch' -and $_.pid -in @($firstPid, $secondPid) })
+    Confirm-WorkerExits $finished
+    $checks.finished_workers_retired_before_close = $true
+    $held = @($records | Where-Object { $_.kind -ceq 'turn/start' -and $_.text.EndsWith($holdTask, [StringComparison]::Ordinal) })
+    if ($held.Count -ne 1 -or $held[0].pid -in @($firstPid,$secondPid) -or
+        !$held[0].text.Contains('Previous completed work.') -or !$held[0].text.Contains($lanternReport)) {
+        throw 'The next turn did not retain the lantern report in a fresh worker.'
+    }
+    $held = $held[0]
+    $checks.follow_up_inherited_completed_report = $true
     Invoke-Control 'Stop worker'
     $null = Wait-For 'the stopped worker and its clean exit' {
         (Find-ControlId 'worker-status').Current.Name -ceq 'Worker stopped' -and
-            !(Get-Process -Id $firstPid -ErrorAction SilentlyContinue) -and
-            (Read-BuildWorkerTrace | Where-Object { $_.pid -eq $firstPid -and $_.kind -ceq 'exit' })
+            !(Get-Process -Id $held.pid -ErrorAction SilentlyContinue) -and
+            (Read-BuildWorkerTrace | Where-Object { $_.thread -ceq $held.thread -and $_.kind -ceq 'exit' })
     }
     Wait-ForCreatorChatTab 'Worker 2' -Select
     Wait-ForBuildWorkerReport $benchReport
-    if (!(Get-Process -Id $secondPid -ErrorAction SilentlyContinue)) { throw 'Stopping one worker retired its peer.' }
-    $checks.stop_retired_only_one_worker = $true
+    $checks.stop_preserved_other_worker_report = $true
 
     if ($WithCombinedDrafts) {
         Wait-ForCreatorChatTab 'Worker 1' -Select
@@ -861,10 +879,12 @@ function Exercise-BuildWorkers($Project, $LeadProcess) {
     Wait-ForHeldBuildWorker
     $restarted = Wait-For 'the reopened worker acting in the same draft' {
         $trace = @(Read-BuildWorkerTrace)
-        $launch = @($trace | Where-Object { $_.kind -ceq 'launch' -and $_.manifest -ceq $manifests[0] -and $_.pid -ne $firstPid })
-        if ($launch.Count -eq 1 -and $launch[0].pid -ne $secondPid -and
-            ($trace | Where-Object { $_.pid -eq $launch[0].pid -and $_.kind -ceq 'turn/start' -and
-                $_.text.EndsWith($holdTask, [StringComparison]::Ordinal) })) { $launch[0] }
+        $running = @($trace | Where-Object { $_.kind -ceq 'turn/start' -and $_.thread -cne $held.thread -and
+            $_.text.EndsWith($holdTask, [StringComparison]::Ordinal) })
+        if ($running.Count -eq 1) {
+            $trace | Where-Object { $_.kind -ceq 'launch' -and $_.thread -ceq $running[0].thread -and
+                $_.manifest -ceq $manifests[0] }
+        }
     }
     Wait-ForCreatorChatTab 'Main chat' -Select
     if ((Get-ControlText 'Agent prompt') -cne $leadDraft -or (Get-ControlText 'Agent transcript') -cne $leadTranscript -or
@@ -873,7 +893,6 @@ function Exercise-BuildWorkers($Project, $LeadProcess) {
     }
     $checks.project_unchanged = $true
     $checks.restarted_worker_pid = $restarted.pid
-    $checks.second_worker_pid = $secondPid
 }
 
 function Inspect-MarkdownTranscript($Label) {
@@ -947,6 +966,8 @@ function Exercise-LeadWorkers($Project, $Peer) {
         $answer = "$($names[$i-1]) created at revision $($Project.revision + 1). Entity $($ids[$i-1])."
         Wait-ForBuildWorkerReport $answer
     }
+    Confirm-WorkerExits $launches
+    $checks.finished_workers_retired_before_close = $true
     Wait-ForCreatorChatTab 'Main chat' -Select
     if ($WithCombinedDrafts) {
         $group = Split-Path -Parent (Split-Path -Parent $launches[0].manifest)
@@ -968,7 +989,6 @@ function Exercise-LeadWorkers($Project, $Peer) {
     }
     if ((@(Get-AuthoredFileHashes) -join "`n") -cne $before) { throw 'The lead workers changed the active source project.' }
     $checks.lead_pid = $lead[0].pid
-    $checks.worker_pids = @($launches.pid)
     $checks.worker_manifests = @($launches.manifest)
     $checks.tool_replies = $calls.Count
     $checks.rejected_tool_calls = 5
@@ -991,7 +1011,7 @@ function Exercise-LeadWorkers($Project, $Peer) {
         Wait-ForHeldBuildWorker
         $held = @(Read-BuildWorkerTrace | Where-Object { $_.kind -ceq 'turn/start' -and $_.text.EndsWith('Hold draft turn.') })[0]
         if (!$held) { throw 'The third worker did not start its owned provider turn.' }
-        $checks.worker_pids += $held.pid
+        $checks.active_worker_pid = $held.pid
         Wait-ForCreatorChatTab 'Main chat' -Select
     }
 }
@@ -1046,9 +1066,19 @@ function Exercise-LeadVerification($Group, $Assignment, $Revision) {
         $repair = @($ledger.follow_ups | Where-Object { $_.turn.state -ceq 'completed' })[0]
         $stale = @($ledger.follow_ups | Where-Object { $_.turn.state -ceq 'failed' })[0]
         if ($ledger.follow_ups.Count -ne 2 -or !$repair -or !$stale -or $turns.Count -ne 3 -or
-            $launches.Count -ne 2 -or $edits.Count -ne 3) {
+            $launches.Count -ne 3 -or $edits.Count -ne 3) {
             throw 'The exact repair caused additional worker turns, edits or owners.'
         }
+        $repairTurn = @($turns | Where-Object { $_.text.EndsWith('Add the lantern brace missing from the playtest.') })[0]
+        $originalTurn = @($turns | Where-Object { $_.text.EndsWith('Draft a lantern. Wait for the release signal.') })[0]
+        $originalDraft = ($launches | Where-Object { $_.thread -ceq $originalTurn.thread }).manifest
+        $repairedDraft = ($launches | Where-Object { $_.thread -ceq $repairTurn.thread }).manifest
+        if (!$repairTurn -or !$originalTurn -or $repairTurn.thread -ceq $originalTurn.thread -or
+            !$repairTurn.text.Contains('Previous completed work.') -or !$repairTurn.text.Contains('Draft lantern created') -or
+            $originalDraft -cne $repairedDraft) {
+            throw 'The repair did not carry the prior report into a new connection to the same draft.'
+        }
+        Confirm-WorkerExits $launches
         Wait-ForCreatorChatTab 'Worker 1' -Select
         $entity = '{0:x32}' -f 0xda03
         Wait-ForBuildWorkerReport "Draft lantern brace created at revision $($Revision + 2). Entity $entity."
@@ -1140,13 +1170,17 @@ function Replay-ReopenedRepair($Peer) {
     $recovery = @($records | Where-Object { $_.kind -ceq 'native/tool' -and
         $_.request.arguments.method -ceq 'world.transact' -and
         $_.request.arguments.params.ops[0].name -ceq 'Worker recovery marker' })
+    $recoveryTurn = @($records | Where-Object { $_.kind -ceq 'turn/start' -and
+        $_.thread -in $recovery.thread })
     if (!$reply.Contains('Lead recovered the scene worker after its scope was rejected.') -or
         $peers.Count -ne 2 -or $unused.Count -ne 1 -or $recovery.Count -ne 1 -or
         $peers[0].manifest -cne $peers[1].manifest -or $recovery[0].pid -notin $peers.pid -or
+        $recoveryTurn.Count -ne 1 -or !$recoveryTurn[0].text.Contains('Draft lantern brace created') -or
         !$recovery[0].reply.structuredContent.result.committed -or
         (@(Get-AuthoredFileHashes) -join "`n") -cne $before) {
         throw 'Creator did not preserve the failed scope receipt and recover the same independent draft.'
     }
+    Confirm-WorkerExits $peers
     $checks.worker_scope_recovery = [ordered]@{
         rejected_before_first_turn = $true
         original_hashes_unchanged = $true
@@ -2640,14 +2674,14 @@ try {
         if ($WithBuildWorkers) {
             Exercise-BuildWorkers $project $reviewChecks.lead_pid
             $workerChecks = $report.checks.codex_build_workers
-            $workerPeers = @(Get-Process -Id @($workerChecks.restarted_worker_pid, $workerChecks.second_worker_pid))
+            $workerPeers = @(Get-Process -Id $workerChecks.restarted_worker_pid)
             foreach ($peer in $workerPeers) { $null = $peer.Handle }
         }
         if ($WithLeadWorkers) {
             Exercise-LeadWorkers $project $CodexReviews
             $leadChecks = $report.checks.lead_workers
             $reviewPeers = @(Get-Process -Id $leadChecks.lead_pid)
-            $workerPeers = @(Get-Process -Id $leadChecks.worker_pids)
+            if ($leadChecks.active_worker_pid) { $workerPeers = @(Get-Process -Id $leadChecks.active_worker_pid) }
             foreach ($peer in ($reviewPeers + $workerPeers)) { $null = $peer.Handle }
         }
         if ($WithWorkerCrash) { Stop-OwnedCreatorDuringWorkerTurn $leadChecks ($reviewPeers + $workerPeers) }

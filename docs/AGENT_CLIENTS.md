@@ -96,7 +96,10 @@ characters each. Read the full report in its worker tab. A round retains up
 to 64 assignment request IDs and the scene hashes returned with completed work. Reopen
 the project and use `inspect` or replay the exact `assign` to get the saved
 receipt. Reopening restores the reports and draft files. Worker processes
-start only when a new task is sent.
+start when a task is sent and close before Poima reports successful
+completion. A follow-up opens a fresh scoped connection to the same draft.
+Poima includes the previous completed task and report when they are
+available. The worker can check the current scene through native tools.
 
 A completed worker turn supplies a report and pins its `draft_id` and
 `world_sha256`. After a failed or stopped turn or another edit, the lead can

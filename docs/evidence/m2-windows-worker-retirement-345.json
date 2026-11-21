@@ -1,0 +1,88 @@
+{
+  "engine_version": "0.0.345",
+  "archive": {
+    "name": "Poima-0.0.345-Windows-x64.zip",
+    "bytes": 142320456,
+    "sha256": "f80491bca1fc070fdf8bf524f4d0e246dd4833e8aa1cb2a43922b376aacb3bf6"
+  },
+  "binaries": {
+    "editor_sha256": "ddc1b0d949af29c4184418428715b4d31ec23280c604569adb09b00a0bbc1931",
+    "frontend_sha256": "d8acd3c94a0da4a8690992c7418e3a25bdd0460e9065d2447025d9d8d6aba905",
+    "cli_sha256": "ec5a17d840687fddbe0663b8716c5884511623a00f918f4e3fd44389501a9abb",
+    "bridge_sha256": "f20f146882440b3757bd2218a227cb67c085e858ac37236a834a0b986f03e3ba"
+  },
+  "signed_in_windows_team": {
+    "report_sha256": "fab30931d498de01d4dd8c334be54cfa48ed9a63e3bdff4213ea45413082cf42",
+    "runner_sha256": "0fec821f2999a2a65f4ffbcba304ceed5df3566fad199d012a014e1acef1a202",
+    "scenario_sha256": "f0cca100281df8c37181f8d801d27ce2a472f1909ed0d36e5f7170c2b99810a9",
+    "model": "gpt-6.2-sol",
+    "codex_version": "codex-cli 0.171.0",
+    "count": 5,
+    "simultaneous_native_draft_owners": 5,
+    "simultaneous_codex_app_servers": 6,
+    "retired_worker_processes_before_verify": 10,
+    "repair_worker_retired": true,
+    "child_private_bytes_at_sample": 422146048,
+    "child_private_bytes_before_verify": 88625152,
+    "available_windows_memory_kib_at_sample": 922044,
+    "assignment_wall_ms": 53934,
+    "verify_and_repair_wall_ms": 75044,
+    "approved_bundle_sha256": "6035d48304b8dc3bf582570584c5d64e4135eff9f6ac8eec030f09d465707960",
+    "original_unchanged": true,
+    "children_exited_before_creator": true,
+    "playback_after_reopen": {
+      "event_type": "verified_play_closed",
+      "revision": 2,
+      "bundle_sha256": "6035d48304b8dc3bf582570584c5d64e4135eff9f6ac8eec030f09d465707960",
+      "tick": 29,
+      "frames_presented": 55,
+      "stop_reason": "window_closed"
+    },
+    "relocated": {
+      "groups_passed": 6,
+      "report_sha256": "fa65f3777f7831498f27a5cb46ba5bbf502e6fae2a2ee25a7e85b0c612d40864",
+      "suite_sha256": "32b9b4aebbca95acf19d37c3faf6b5f43d3435b6c62e19d5e87f0a7283587659",
+      "unchanged_bundle_files": 54,
+      "original_unavailable": true
+    },
+    "sample_scope": "Private bytes for the lead Codex process and the sampled worker Codex and draft-native processes, then the same lead process after the workers exited. The sample excludes the creator and shared native project service.",
+    "sandbox_setup_trace_detected": false,
+    "sandbox_log_delta_sha256": "07b11a790f91ec0dbe4836fb433986f3b8816dabbadbf1fbc0a1f8dd789fca8c"
+  },
+  "scripted_windows_creator": {
+    "runner_sha256": "0bffacd2dae30de910352aa7455489c874cd426bd1d0335052e71f93c99add12",
+    "lead": {
+      "report_sha256": "a282b9152f18eb38c6cadf4e8311b5b852b127d1854ad54eaad2b43bcdf65e82",
+      "retired_workers_before_verify": true,
+      "new_connection_for_same_draft": true,
+      "previous_report_in_follow_up": true,
+      "context_restored_after_reopen_and_scope_rejection": true
+    },
+    "manual": {
+      "report_sha256": "9d8693f85fe262df19121cbaec8e3e20903bba3e3763fc9545affc1c044c29c3",
+      "finished_workers_retired_before_close": true,
+      "previous_report_in_follow_up": true,
+      "pending_worker_cancelled": true,
+      "other_worker_report_preserved": true
+    },
+    "interrupted": {
+      "report_sha256": "459c977500bb1b47f7d41f65b078fc9f9eabb1263401fd78de446b4735927f4c",
+      "passed": true,
+      "first_attempt": {
+        "report_sha256": "4e9844976cedc314688b3e4329d05208400499b862a9a998af34e05d8744d4dc",
+        "passed": false,
+        "failure": "One completed worker did not record its expected clean exit event. The process was absent at the subsequent process inspection. The cause of the missing event was undetermined. The unchanged package and fixture passed on retry."
+      }
+    }
+  },
+  "managed_contracts": {
+    "linux": {
+      "passed": true,
+      "log_sha256": "c553528c30de1b12926dbe02666572d122cba9eb040b643fe33a4938d9db643c"
+    },
+    "windows": {
+      "passed": true,
+      "log_sha256": "4889ea2e04ebf61e22a5ead5422b51af850ab6d5676ccea85a6f48edc8aafbba"
+    }
+  }
+}
