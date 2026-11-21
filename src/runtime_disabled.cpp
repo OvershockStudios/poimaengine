@@ -57,6 +57,7 @@ std::optional<RuntimeGroundingCommand> Runtime::grounding(const std::string&,std
 std::optional<RuntimeCharacterStanceState> Runtime::character_stance(const std::string&) const { throw std::runtime_error("Simulation is not built."); }
 std::optional<RuntimeRootMotionState> Runtime::root_motion(const std::string&) const { throw std::runtime_error("Simulation is not built."); }
 RuntimeNavigationPath Runtime::navigation_path(const RuntimeNavigationRequest&) const { throw std::runtime_error("Simulation is not built."); }
+const water::Region* Runtime::water_region() const noexcept { return nullptr; }
 std::optional<RuntimeRayHit> Runtime::raycast(const RuntimeRay&) const { throw std::runtime_error("Simulation is not built."); }
 RuntimeIkClearance Runtime::ik_clearance(const RuntimeIkClearanceRequest&) const {throw std::runtime_error("Simulation is not built.");}
 std::vector<RuntimePoseSegmentClearance> Runtime::pose_clearance(std::span<const RuntimePoseClearanceSegment>,

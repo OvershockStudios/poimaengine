@@ -25,7 +25,8 @@ Json parse(const std::string& text) {
     });
 }
 void keys(const Json& value,std::initializer_list<const char*> expected,bool optional_world_content=false) {
-    const auto extra=optional_world_content ? static_cast<unsigned>(value.contains("navigation"))+static_cast<unsigned>(value.contains("asset_provenance")) : 0u;
+    const auto extra=optional_world_content ? static_cast<unsigned>(value.contains("navigation"))
+        +static_cast<unsigned>(value.contains("asset_provenance"))+static_cast<unsigned>(value.contains("water")) : 0u;
     check(value.is_object() && value.size()==expected.size()+extra,"Unexpected save upgrade authored document members.");
     for(const auto* key:expected)check(value.contains(key),"Missing save upgrade authored document member.");
 }
@@ -201,6 +202,14 @@ Registry normalize(Json& doc) {
         check(binding.at("asset").is_string(),"Navigation binding asset must be text.");
         const auto asset=binding.at("asset").get<std::string>();
         check(asset.size()==64 && asset.find_first_not_of("0123456789abcdef")==std::string::npos,"Invalid navigation binding asset identity.");
+    }
+    // Water uses the same immutable asset rule. Gameplay upgrades cannot add,
+    // replace or remove the authored water definition.
+    if(doc.contains("water")) {
+        const auto& binding=doc.at("water");keys(binding,{"asset"});
+        check(binding.at("asset").is_string(),"Water binding asset must be text.");
+        const auto& asset=binding.at("asset").get_ref<const std::string&>();
+        check(asset.size()==64 && asset.find_first_not_of("0123456789abcdef")==std::string::npos,"Invalid water binding asset identity.");
     }
     // Provenance is frozen authored content, never a component migration.
     // The final exact document comparison also prevents adding, replacing or

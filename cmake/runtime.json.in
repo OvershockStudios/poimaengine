@@ -13,6 +13,7 @@
   "features": {
     "asset_provenance": true,
     "simulation": @POIMA_RUNTIME_SIMULATION@,
+    "water_regions": @POIMA_RUNTIME_SIMULATION@,
     "renderer": @POIMA_RUNTIME_RENDER_SMOKE@,
     "project_post_effects": @POIMA_RUNTIME_RENDER_SMOKE@,
     "audio": @POIMA_RUNTIME_AUDIO@,

@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.353
+
+- Cook a terrain-bound local water region, control its gates through named inputs, and observe flow, depth and volume at committed ticks. Water participates in runtime rollback, saves and standalone rendering.
+
 ## 0.0.352
 
 - Plan terrain-aware foliage and rock placement through the world service and MCP. Review stable placement keys, exclusions, mesh variants and paged results before applying normal scene edits.

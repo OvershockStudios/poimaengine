@@ -12,6 +12,7 @@
 #include "poima/audio.hpp"
 #include "poima/components.hpp"
 #include "poima/ui_model.hpp"
+#include "poima/water_region_definition.hpp"
 #include <map>
 #include <memory>
 #include <optional>
@@ -21,6 +22,7 @@
 
 namespace poima {
 namespace jobs { class Executor; }
+namespace water { class Region; }
 struct ModelAsset;
 class GameplayPlayerPreferences;
 struct RuntimeTransform {
@@ -439,6 +441,7 @@ struct RuntimeDefinition {
     std::vector<RuntimeSpawnTemplate> templates;
     ui::Definition ui;
     std::optional<RuntimeNavigationDefinition> navigation;
+    std::optional<water::RegionDefinition> water;
 };
 // Shared authoring/native validation, also available without Jolt.
 void validate_runtime_animation(const RuntimeDefinition& definition);
@@ -708,6 +711,8 @@ public:
     std::optional<RuntimeHitResult> hit_test(const RuntimeRay& ray) const;
     // Immutable bound mesh, live capsule foot start; no state/time mutation.
     RuntimeNavigationPath navigation_path(const RuntimeNavigationRequest&) const;
+    // The optional region advances at the same committed tick as this runtime.
+    const water::Region* water_region() const noexcept;
     // The serialized owner installs a fresh epoch and a ledger that outlives
     // this runtime. Direct runtimes start with saving disabled. Pending intents
     // are part of whole-batch rollback; storage is serviced only by the owner.

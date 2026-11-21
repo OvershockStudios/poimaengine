@@ -33,6 +33,7 @@
         std::map<std::string,std::string> active;
         for(const auto& asset:package.assets) {
             const auto dot=asset.filename.find('.');const auto extension=asset.filename.substr(dot);
+            if(extension==".pwater")continue; // Generated configuration with terrain identity in the artifact.
             active[asset.sha256]=extension==".pimage" ? "image" : extension==".pmodel" ? "model" : extension==".paudio" ? "audio" : "navigation";
         }
         std::map<std::string,WorldPackageAsset> inventory;std::size_t bytes=0;

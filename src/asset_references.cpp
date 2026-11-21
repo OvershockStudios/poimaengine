@@ -33,7 +33,7 @@ bool valid_asset(const std::string& value) noexcept { return hex(value,64); }
 bool valid_cursor(const Cursor& value) noexcept {
     if(!valid_owner(value.owner))return false;
     if(value.owner.kind=="world") {
-        if(value.component=="navigation")return value.path=="/asset";
+        if(value.component=="navigation" || value.component=="water")return value.path=="/asset";
         constexpr std::string_view suffix="/style/image/asset";
         if(value.component!="ui" || value.path.size()!=4+32+suffix.size() ||
             !value.path.starts_with("/ui/") || !value.path.ends_with(suffix))return false;
@@ -66,9 +66,11 @@ bool valid_cursor(const Cursor& value) noexcept {
 bool before(const Cursor& a,const Cursor& b) noexcept {
     return std::tie(a.owner.kind,a.owner.id,a.component,a.path)<std::tie(b.owner.kind,b.owner.id,b.component,b.path);
 }
-Page collect(const Json& entities,const Json* templates,const Query& query,const std::string& world_id,const Json* navigation,const Json* ui) {
+Page collect(const Json& entities,const Json* templates,const Query& query,const std::string& world_id,const Json* navigation,const Json* ui,
+    const Json* water) {
     need(world_id.empty() || hex(world_id,32),"Malformed authored world identity.");
     need(!navigation || (!world_id.empty() && navigation->is_object() && navigation->size()==1 && navigation->contains("asset")),"Malformed authored navigation binding.");
+    need(!water || (!world_id.empty() && water->is_object() && water->size()==1 && water->contains("asset")),"Malformed authored water binding.");
     need(entities.is_object() && entities.size()<=max_entities,"Asset-reference entity map exceeds bounds.");
     need(!templates || (templates->is_object() && templates->size()<=max_templates),"Asset-reference template map exceeds bounds.");
     need(!ui || (!world_id.empty() && ui->is_object() && ui->size()<=max_ui_elements),"Asset-reference UI map exceeds bounds.");
@@ -134,8 +136,7 @@ Page collect(const Json& entities,const Json* templates,const Query& query,const
     };
     auto visit_world=[&](const Owner& owner) {
         if(navigation)emit(owner,"navigation","/asset",navigation->at("asset"),"navigation",std::nullopt);
-        if(!ui)return;
-        for(const auto& [id,element]:ui->items()) {
+        if(ui)for(const auto& [id,element]:ui->items()) {
             if(result.edges.size()>query.limit)return;
             need(hex(id,32) && id.find_first_not_of('0')!=std::string::npos && element.is_object(),
                 "Malformed authored UI element.");
@@ -147,6 +148,7 @@ Page collect(const Json& entities,const Json* templates,const Query& query,const
             need(image->is_object() && image->contains("asset"),"Malformed authored UI image reference.");
             emit(owner,"ui","/ui/"+id+"/style/image/asset",image->at("asset"),"image",std::nullopt);
         }
+        if(water && result.edges.size()<=query.limit)emit(owner,"water","/asset",water->at("asset"),"water",std::nullopt);
     };
     if(query.owner) {
         if(query.owner->kind=="world")visit_world(*query.owner);
@@ -156,7 +158,7 @@ Page collect(const Json& entities,const Json* templates,const Query& query,const
         for(const auto& [id,value]:entities.items()) { visit_owner({"entity",id},value);if(result.edges.size()>query.limit)break; }
         if(result.edges.size()<=query.limit && templates)
             for(const auto& [id,value]:templates->items()) { visit_owner({"template",id},value);if(result.edges.size()>query.limit)break; }
-        if(result.edges.size()<=query.limit && (navigation || ui))visit_world({"world",world_id});
+        if(result.edges.size()<=query.limit && (navigation || ui || water))visit_world({"world",world_id});
     }
     if(result.edges.size()>query.limit) { result.edges.pop_back();result.next_after=result.edges.back().source; }
     return result;

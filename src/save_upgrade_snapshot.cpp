@@ -79,9 +79,9 @@ SnapshotMappingResult transform_runtime_snapshot(const std::string& original,con
     if(version>=4)payload_fields.push_back("ui");
     if(version>=5)payload_fields.push_back("control_sequence");
     if(version>=7)payload_fields.push_back("cameras");
-    // Both source and target native restoration validate this unchanged
-    // subsystem extension around the gameplay-only mapping.
-    for(const auto* extension:{"kinematic_sleep","attachments","attachment_outcomes"})
+    // Native restore validates the unchanged subsystem extensions against both
+    // frozen definitions. The gameplay mapper preserves the checked JSON values.
+    for(const auto* extension:{"kinematic_sleep","attachments","attachment_outcomes","water"})
         if(data.contains(extension))payload_fields.push_back(extension);
     fields(data,payload_fields);(void)integer(data.at("authored_revision"));(void)integer(data.at("tick"));check(integer(data.at("gameplay_revision"))>0,"Upgrade requires a saved gameplay module.");
     if(version>=5)(void)integer(data.at("control_sequence"));

@@ -428,6 +428,27 @@ class McpContract(unittest.TestCase):
                     worker.world('world.foliage.plan', {**plan, 'terrain': {'source': invalid}}, error=-32602)
         finally:
             terrain_alias.unlink()
+        tiles = worker.world('world.terrain.cook', {'source': terrain_path.name, 'expected_recipe_sha256': terrain_pin})['tiles']
+        tile_id = uuid.uuid4().hex
+        part = dict(asset=tiles[0]['asset'], primitive=0)
+        tiled = worker.world('world.transact', dict(request_id=uuid.uuid4().hex, base_revision=prepared['revision'], ops=[
+            dict(op='entity.create', id=tile_id, name='Basin floor'),
+            dict(op='component.set', id=tile_id, type='StaticMesh', value=dict(part, visible=True)),
+            dict(op='component.set', id=tile_id, type='MeshCollider', value=dict(part, friction=.5, restitution=0))]))
+        water = dict(revision=tiled['revision'], terrain={'source': terrain_path.name}, expected_terrain_recipe_sha256=terrain_pin,
+            tile_entities=[tile_id], grid=dict(cells_x=1, cells_z=1, cell_size_m=1, origin_x_m=0, origin_z_m=0), initial_depths_m=[.25])
+        planned = worker.world('world.water.plan', water)
+        pin = planned['plan_sha256']
+        for invalid in (native(terrain_path), '../Terrain.json'):
+            external = {**water, 'terrain': {'source': invalid}}
+            worker.world('world.water.plan', external, error=-32602)
+            worker.world('world.water.cook', {**external, 'expected_plan_sha256': pin}, error=-32602)
+        self.assertEqual(worker.world('world.water.cook', {**water, 'expected_plan_sha256': pin}), planned)
+        bound = worker.world('world.transact', dict(request_id=uuid.uuid4().hex, base_revision=tiled['revision'],
+            ops=[dict(op='water.set', asset=pin)]))
+        self.assertEqual(bound['changed_world_fields'], ['water'])
+        reference, = worker.world('world.asset.references', {'asset': pin})['edges']
+        self.assertEqual((reference['component'], reference['path'], reference['kind']), ('water', '/asset', 'water'))
         store = draft_world.with_suffix('.json.assets')
         self.assertTrue((store / (audio + '.paudio')).is_file())
         self.assertTrue((store / (model + '.pmodel')).is_file())

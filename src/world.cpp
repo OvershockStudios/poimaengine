@@ -11,6 +11,8 @@
 #include "poima/runtime.hpp"
 #include "poima/terrain_asset.hpp"
 #include "foliage_authoring.hpp"
+#include "water_asset.hpp"
+#include "water_region_scene.hpp"
 #include "physical_rig_json.hpp"
 #include "physical_pose_diagnostics.hpp"
 #include "poima/physical_target.hpp"
@@ -994,13 +996,15 @@ bool authored_reference_exists(void* context,PoimaEntityId entity) { return stat
 Json history_state(const Json& doc) {
     Json result={{"entities",doc.at("entities")},{"component_schemas",doc.value("component_schemas",Json::object())},{"templates",doc.value("templates",Json::object())},{"ui",doc.value("ui",Json::object())}};
     if(doc.contains("navigation"))result["navigation"]=doc.at("navigation");
+    if(doc.contains("water"))result["water"]=doc.at("water");
     if(doc.contains("asset_provenance"))result["asset_provenance"]=doc.at("asset_provenance");
     return result;
 }
 bool same_authored_state(const Json& a,const Json& b) {
     if(a.at("entities")!=b.at("entities"))return false;
-    if(a.contains("asset_provenance")!=b.contains("asset_provenance") || (a.contains("asset_provenance") && a.at("asset_provenance")!=b.at("asset_provenance")))return false;
-    if(a.contains("navigation")!=b.contains("navigation") || (a.contains("navigation") && a.at("navigation")!=b.at("navigation")))return false;
+    for(const auto* key:{"asset_provenance","navigation","water"}) {
+        if(a.contains(key)!=b.contains(key) || (a.contains(key) && a.at(key)!=b.at(key)))return false;
+    }
     for(const auto* key:{"component_schemas","templates","ui"}) {
         const auto left=a.find(key),right=b.find(key);
         if(left==a.end()) { if(right!=b.end() && !right->empty())return false; }
@@ -1079,17 +1083,21 @@ void validate_template_graph(const Json& document,const Json& recipe,
 void validate(const Json& doc) {
     require(doc.is_object() && doc.contains("version") && doc.at("version").is_number_integer(),"Unsupported world format/version.");
     const bool user_interface=doc.at("version")==4,catalog=user_interface || doc.at("version")==3,custom=catalog || doc.at("version")==2;
-    if(user_interface)fields(doc,{"format","version","world_id","revision","entities","retired_ids","receipts","component_schemas","retired_component_schemas","templates","retired_template_ids","ui","retired_ui_ids","navigation","asset_provenance"},
+    if(user_interface)fields(doc,{"format","version","world_id","revision","entities","retired_ids","receipts","component_schemas","retired_component_schemas","templates","retired_template_ids","ui","retired_ui_ids","navigation","asset_provenance","water"},
         {"format","version","world_id","revision","entities","retired_ids","receipts","component_schemas","retired_component_schemas","templates","retired_template_ids","ui","retired_ui_ids"});
-    else if(catalog)fields(doc,{"format","version","world_id","revision","entities","retired_ids","receipts","component_schemas","retired_component_schemas","templates","retired_template_ids","navigation","asset_provenance"},
+    else if(catalog)fields(doc,{"format","version","world_id","revision","entities","retired_ids","receipts","component_schemas","retired_component_schemas","templates","retired_template_ids","navigation","asset_provenance","water"},
         {"format","version","world_id","revision","entities","retired_ids","receipts","component_schemas","retired_component_schemas","templates","retired_template_ids"});
-    else if(custom)fields(doc,{"format","version","world_id","revision","entities","retired_ids","receipts","component_schemas","retired_component_schemas","navigation","asset_provenance"},
+    else if(custom)fields(doc,{"format","version","world_id","revision","entities","retired_ids","receipts","component_schemas","retired_component_schemas","navigation","asset_provenance","water"},
         {"format","version","world_id","revision","entities","retired_ids","receipts","component_schemas","retired_component_schemas"});
-    else fields(doc,{"format","version","world_id","revision","entities","retired_ids","receipts","navigation","asset_provenance"},{"format","version","world_id","revision","entities","retired_ids","receipts"});
+    else fields(doc,{"format","version","world_id","revision","entities","retired_ids","receipts","navigation","asset_provenance","water"},{"format","version","world_id","revision","entities","retired_ids","receipts"});
     require(doc.at("format")=="poima.authored-world" && (doc.at("version")==1 || custom),"Unsupported world format/version.");
     if(doc.contains("navigation")) {
         const auto& binding=doc.at("navigation");fields(binding,{"asset"},{"asset"});
         require(binding.at("asset").is_string() && valid_asset_id(binding.at("asset")),"Navigation binding asset must be64 lowercase hexadecimal digits.");
+    }
+    if(doc.contains("water")) {
+        const auto& binding=doc.at("water");fields(binding,{"asset"},{"asset"});
+        require(binding.at("asset").is_string() && valid_asset_id(binding.at("asset")),"Water binding asset must be a lowercase SHA-256.");
     }
     if(doc.contains("asset_provenance"))component_checked([&]{provenance::validate_bindings(doc.at("asset_provenance"));return true;});
     const auto schemas=authored_component_schemas(doc);
@@ -1326,7 +1334,7 @@ void validate(const Json& doc) {
     }
 }
 
-constexpr std::array authoring_methods{"component.schema.import","world.reference","world.transact","world.undo","world.redo","asset.import","asset.image.import","asset.audio.import","asset.post-effect.import","asset.label","input.transact","settings.transact","development.compile","development.profiles","development.publish","development.export","development.verify","development.candidate","project.candidate.retain","development.jobs","development.inspect","development.diagnostics","development.cancel","development.forget","project.inspect","project.gameplay.adopt","project.source.read","project.source.write","project.verification.read","project.verification.write","asset.material.generate","asset.material.job","asset.material.jobs","asset.material.cancel","asset.material.forget","world.navigation.bake","asset.provenance.create","asset.animation.author","asset.mesh.extract_rigid","world.terrain.inspect","world.terrain.cook","world.foliage.plan"};
+constexpr std::array authoring_methods{"component.schema.import","world.reference","world.transact","world.undo","world.redo","asset.import","asset.image.import","asset.audio.import","asset.post-effect.import","asset.label","input.transact","settings.transact","development.compile","development.profiles","development.publish","development.export","development.verify","development.candidate","project.candidate.retain","development.jobs","development.inspect","development.diagnostics","development.cancel","development.forget","project.inspect","project.gameplay.adopt","project.source.read","project.source.write","project.verification.read","project.verification.write","asset.material.generate","asset.material.job","asset.material.jobs","asset.material.cancel","asset.material.forget","world.navigation.bake","asset.provenance.create","asset.animation.author","asset.mesh.extract_rigid","world.terrain.inspect","world.terrain.cook","world.foliage.plan","world.water.plan","world.water.cook"};
 class World {
     profiling::Service profiler_;
     frame_performance::Service performance_;
@@ -1663,6 +1671,11 @@ public:
             auto checked=navigation_binding(source);definition.navigation=checked.definition;result.needs_navigation=true;
             add(checked.definition.asset,".pnav",checked.bytes);
         }
+        if(source.contains("water")) {
+            auto [asset, bytes]=water_binding(source);
+            add(asset.definition.plan_sha256,".pwater",bytes);
+            definition.water=std::move(asset.definition);
+        }
         auto document=source;document["receipts"]=Json::array();document["retired_ids"]=Json::array();if(document.contains("retired_component_schemas"))document["retired_component_schemas"]=Json::array();if(document.contains("retired_template_ids"))document["retired_template_ids"]=Json::array();if(document.contains("retired_ui_ids"))document["retired_ui_ids"]=Json::array();result.document=document.dump(2)+'\n';
         for(auto& [filename,file]:files) { (void)filename;result.assets.push_back(std::move(file)); }
         freeze_provenance(source,result);
@@ -1756,6 +1769,10 @@ public:
                 result.objects.push_back({e.id,matrices.at(e.id),mesh->albedo,mesh->mesh,mesh->material,mesh->textures,skin,0,
                     mesh->cast_shadows && (!e.camera_draw || e.camera_draw->mode!=CameraDrawMode::Viewmodel),mesh->receive_shadows,true,e.camera_draw});
             }
+            if(document.contains("water") && !preview) {
+                try { water::append_region_scene(water::Region(water_binding(document).first.definition), result); }
+                catch(const Error& error) { if(error.code!=-32009)throw; }
+            }
             if(!preview)authored_cache_=result;
         }
         if(!live)stamp_authored(result);
@@ -1847,7 +1864,7 @@ public:
         auto owner_json=[](const asset_references::Owner& owner) { return Json{{"kind",owner.kind},{"id",owner.id}}; };
         auto cursor_json=[&](const asset_references::Cursor& cursor) { return Json{{"owner",owner_json(cursor.owner)},{"component",cursor.component},{"path",cursor.path}}; };
         asset_references::Page page;
-        try { page=asset_references::collect(doc_.at("entities"),doc_.contains("templates") ? &doc_.at("templates"):nullptr,query,doc_.at("world_id").get<std::string>(),doc_.contains("navigation") ? &doc_.at("navigation"):nullptr,doc_.contains("ui") ? &doc_.at("ui"):nullptr); }
+        try { page=asset_references::collect(doc_.at("entities"),doc_.contains("templates") ? &doc_.at("templates"):nullptr,query,doc_.at("world_id").get<std::string>(),doc_.contains("navigation") ? &doc_.at("navigation"):nullptr,doc_.contains("ui") ? &doc_.at("ui"):nullptr,doc_.contains("water") ? &doc_.at("water"):nullptr); }
         catch(const asset_references::Error& error) { throw Error(error.code,error.what()); }
         Json selection=Json::object();if(query.asset)selection["asset"]=*query.asset;if(query.owner)selection["owner"]=owner_json(*query.owner);
         Json edges=Json::array();
@@ -1896,6 +1913,7 @@ public:
         if(method.starts_with("world.navigation."))return navigation_dispatch(method,params);
         if(method.starts_with("world.terrain."))return terrain_dispatch(method,params);
         if(method=="world.foliage.plan")return foliage_plan(params);
+        if(method.starts_with("world.water."))return water_plan(method,params);
         prune_model_cache();
         if(method.starts_with("profiler.")) {
             try { return profiler_.dispatch(method,params); }
@@ -1997,6 +2015,7 @@ public:
                     {"entity_count", doc_.at("entities").size()}, {"persisted", exists_},{"read_only",read_only_},{"mode",read_only_ ? "read_only_runtime" : "authoring"},
                     {"coordinate_system", "right-handed Y-up; meters; local XYZW quaternion transforms"}};
             if(doc_.contains("navigation"))result["navigation"]=doc_.at("navigation");
+            if(doc_.contains("water"))result["water"]=doc_.at("water");
             return result;
         }
         if(method=="world.history") {
@@ -2726,6 +2745,7 @@ public:
 #include "world_rigid_mesh.inc"
 #include "world_terrain_service.inc"
 #include "world_foliage_service.inc"
+#include "world_water_service.inc"
     Json asset_dispatch(const std::string& method,const Json& params) const {
         if(method=="asset.catalog" || method=="asset.label") {
             const bool label=method=="asset.label";
@@ -3275,6 +3295,7 @@ public:
                     snapshot.objects.push_back({id,matrices.at(id),mesh->albedo,mesh->mesh,mesh->material,mesh->textures,skin,0,
                         mesh->cast_shadows && (!owner.camera_draw || owner.camera_draw->mode!=CameraDrawMode::Viewmodel),mesh->receive_shadows,true,owner.camera_draw});
                 }
+                if(doc_.contains("water"))water::append_region_scene(water::Region(water_binding(doc_).first.definition), snapshot);
             }
             }
         } catch(const Error&) { throw; }
@@ -4151,6 +4172,7 @@ public:
         if(method.starts_with("runtime.ui."))return ui_dispatch(method,params);
         if(method.starts_with("runtime.material."))return material_dispatch(method,params);
         if(method.starts_with("runtime.texture."))return texture_dispatch(method,params);
+        if(method=="runtime.water.inspect")return water_inspect(params);
         if(method=="runtime.components" || method.starts_with("runtime.component."))return component_dispatch(method,params);
         if(method=="runtime.status") {
             fields(params,{});const auto s=runtime_status();
@@ -4544,6 +4566,9 @@ public:
         const bool navigation_changed=doc_.contains("navigation")!=target_state.contains("navigation") ||
             (doc_.contains("navigation") && target_state.contains("navigation") && doc_.at("navigation")!=target_state.at("navigation"));
         if(target_state.contains("navigation"))staged["navigation"]=target_state.at("navigation");else staged.erase("navigation");
+        const bool water_changed=doc_.contains("water")!=target_state.contains("water") ||
+            (doc_.contains("water") && target_state.contains("water") && doc_.at("water")!=target_state.at("water"));
+        if(target_state.contains("water"))staged["water"]=target_state.at("water");else staged.erase("water");
         const bool provenance_changed=doc_.contains("asset_provenance")!=target_state.contains("asset_provenance") ||
             (doc_.contains("asset_provenance") && target_state.contains("asset_provenance") && doc_.at("asset_provenance")!=target_state.at("asset_provenance"));
         if(target_state.contains("asset_provenance"))staged["asset_provenance"]=target_state.at("asset_provenance");else staged.erase("asset_provenance");
@@ -4588,6 +4613,7 @@ public:
         if(!changed_templates.empty())result["changed_template_ids"]=changed_templates;
         if(!changed_ui.empty())result["changed_ui_ids"]=changed_ui;
         if(navigation_changed)result["changed_world_fields"]=Json::array({"navigation"});
+        if(water_changed) {if(!result.contains("changed_world_fields"))result["changed_world_fields"]=Json::array();result["changed_world_fields"].push_back("water");}
         if(provenance_changed) {if(!result.contains("changed_world_fields"))result["changed_world_fields"]=Json::array();result["changed_world_fields"].push_back("asset_provenance");}
         auto& receipts=staged["receipts"];if(receipts.size()==128)receipts.erase(receipts.begin());receipts.push_back({{"params",params},{"result",result}});
         auto next_undo=undo_,next_redo=redo_;
@@ -4615,7 +4641,7 @@ public:
         require(ops.is_array() && !ops.empty() && ops.size() <= 256, "Transaction needs 1..256 operations.");
         Json staged = doc_;
         auto& entities = staged["entities"];
-        std::set<std::string> changed,changed_templates,changed_ui;bool navigation_touched=false;std::set<std::string> provenance_touched;
+        std::set<std::string> changed,changed_templates,changed_ui;bool navigation_touched=false,water_touched=false;std::set<std::string> provenance_touched;
         for (const auto& op : ops) {
             require(op.is_object() && op.contains("op") && op.at("op").is_string(),"Operation needs op.");
             const auto name=op.at("op").get<std::string>();
@@ -4635,6 +4661,12 @@ public:
                 require(op.at("asset").is_null() || (op.at("asset").is_string() && valid_asset_id(op.at("asset"))),"Navigation asset must be null or64 lowercase hexadecimal digits.");
                 if(op.at("asset").is_null())staged.erase("navigation");else staged["navigation"]={{"asset",op.at("asset")}};
                 navigation_touched=true;continue;
+            }
+            if(name=="water.set") {
+                fields(op,{"op","asset"},{"op","asset"});
+                require(op.at("asset").is_null() || (op.at("asset").is_string() && valid_asset_id(op.at("asset"))),"Water asset must be null or a lowercase SHA-256.");
+                if(op.at("asset").is_null())staged.erase("water");else staged["water"]={{"asset",op.at("asset")}};
+                water_touched=true;continue;
             }
             if(name=="ui.element.set" || name=="ui.element.remove") {
                 if(name=="ui.element.set")fields(op,{"op","id","element"},{"op","id","element"});else fields(op,{"op","id"},{"op","id"});
@@ -4741,17 +4773,21 @@ public:
         validate(staged);
         validate_animation_document(staged);
         if(navigation_touched && staged.contains("navigation"))(void)navigation_binding(staged);
+        if(water_touched && staged.contains("water"))(void)water_binding(staged);
         for(const auto& asset:provenance_touched)if(staged.contains("asset_provenance") && staged.at("asset_provenance").contains(asset))
             check_provenance_binding(asset,staged.at("asset_provenance").at(asset),true);
         const bool provenance_changed=doc_.contains("asset_provenance")!=staged.contains("asset_provenance") ||
             (doc_.contains("asset_provenance") && staged.contains("asset_provenance") && doc_.at("asset_provenance")!=staged.at("asset_provenance"));
         const bool navigation_changed=doc_.contains("navigation")!=staged.contains("navigation") ||
             (doc_.contains("navigation") && staged.contains("navigation") && doc_.at("navigation")!=staged.at("navigation"));
+        const bool water_changed=doc_.contains("water")!=staged.contains("water") ||
+            (doc_.contains("water") && staged.contains("water") && doc_.at("water")!=staged.at("water"));
         Json result = {{"revision", staged["revision"]}, {"committed", !params["preview"].get<bool>()},
                        {"replayed", false}, {"changed_ids", changed}};
         if(!changed_templates.empty())result["changed_template_ids"]=changed_templates;
         if(!changed_ui.empty())result["changed_ui_ids"]=changed_ui;
         if(navigation_changed)result["changed_world_fields"]=Json::array({"navigation"});
+        if(water_changed) {if(!result.contains("changed_world_fields"))result["changed_world_fields"]=Json::array();result["changed_world_fields"].push_back("water");}
         if(provenance_changed) {if(!result.contains("changed_world_fields"))result["changed_world_fields"]=Json::array();result["changed_world_fields"].push_back("asset_provenance");}
         if (!params["preview"].get<bool>()) {
             auto next_undo=undo_;History next_redo;

@@ -1,0 +1,205 @@
+// SPDX-License-Identifier: Apache-2.0
+#include "poima/water_region.hpp"
+
+#include <algorithm>
+#include <array>
+#include <cmath>
+#include <iostream>
+#include <limits>
+#include <stdexcept>
+#include <string>
+
+namespace {
+
+using Json = nlohmann::json;
+using namespace std::string_view_literals;
+using poima::water::FaceAxis;
+using poima::water::Region;
+using poima::water::RegionDefinition;
+
+constexpr std::array toggle{"use.sluice"sv};
+constexpr std::array repeated_toggle{"ignored"sv, "use.sluice"sv, "use.sluice"sv};
+
+void require(bool condition, const char* message) {
+    if (!condition)
+        throw std::runtime_error(message);
+}
+
+template<class Exception, class Operation>
+void rejects(Operation operation, const char* message) {
+    try {
+        operation();
+    } catch (const Exception&) {
+        return;
+    }
+    throw std::runtime_error(message);
+}
+
+RegionDefinition canal() {
+    return {
+        .config = {.cells_x = 4, .cells_z = 2, .origin_x_m = 20, .origin_z_m = -10},
+        .floor_heights_m = {.2, 0, -.25, -.5, 0, .1, -.2, -.5},
+        .initial_depths_m = {1, 1.2, 0, 0, 1.2, 1.1, 0, 0},
+        .faces = {
+            {{1, 1}, FaceAxis::x, {0, .55}, "use.sluice", .75},
+            {{2, 1}, FaceAxis::x, {.3, -.15}, "", 1},
+            {{1, 0}, FaceAxis::x, {0, .5}, "use.sluice", .5},
+        },
+        .exchanges = {{{3, 0}, 0, .24}, {{0, 0}, .6, 0}},
+        .plan_sha256 = std::string(64, 'a'),
+    };
+}
+
+void flood_through_authored_actions() {
+    const auto definition = canal();
+    Region original(definition);
+    const auto initial = original.save();
+    require(original.plan_sha256() == definition.plan_sha256 && !original.last_report(), "Initial region pin or receipt differs.");
+    require(original.face_rules().front().cell.z == 0, "Rules are not in canonical order.");
+    for (int tick = 0; tick < 45; ++tick) {
+        const auto result = original.step();
+        require(std::abs(result.supplied_m3 - .01) < 1e-14 && result.drained_m3 == 0,
+                "Metered water did not run each tick, or a drain acted on a dry cell.");
+    }
+    require(original.grid().sample({2, 0}).depth_m == 0 && original.grid().sample({2, 1}).depth_m == 0,
+            "Water leaked through the closed sluices.");
+    original.step(repeated_toggle);
+    require(original.grid().face({1, 0}, FaceAxis::x).openness == .5 &&
+            original.grid().face({1, 1}, FaceAxis::x).openness == .75 &&
+            original.grid().face({2, 1}, FaceAxis::x).openness == .3,
+            "Repeated edges toggled a rule twice, or altered an unrelated face.");
+    require(original.grid().sample({2, 0}).depth_m > 0 && original.grid().sample({2, 1}).depth_m > 0 &&
+            original.grid().sample({3, 0}).depth_m == 0, "Flow did not cross exactly one boundary on its first tick.");
+    original.step();
+    require(original.grid().face({1, 0}, FaceAxis::x).openness == .5, "A held gate was closed without a pressed edge.");
+    require(original.grid().sample({3, 0}).depth_m > 0 && original.last_report()->drained_m3 == 0,
+            "A drain consumed newly arrived flow before its next tick.");
+    original.step();
+    require(original.last_report()->drained_m3 > 0, "Metered drain did not observe its available water.");
+    const auto checkpoint = original.save();
+    require(checkpoint.at("action_face_openness") == Json::array({.5, .75}), "Canonical action face snapshot differs.");
+
+    auto reordered = definition;
+    std::reverse(reordered.faces.begin(), reordered.faces.end());
+    std::reverse(reordered.exchanges.begin(), reordered.exchanges.end());
+    Region replay(reordered);
+    replay.restore(Json::parse(checkpoint.dump()), original.grid().tick());
+    require(replay.save() == checkpoint, "Serialized checkpoint did not round-trip.");
+    for (int tick = 0; tick < 110; ++tick) {
+        const auto actions = tick == 24 || tick == 65 ? std::span<const std::string_view>{toggle} : std::span<const std::string_view>{};
+        original.step(actions);
+        replay.step(actions);
+        require(original.save() == replay.save(), "Continued water state or receipts diverged.");
+        if (tick == 24)
+            require(original.grid().face({1, 0}, FaceAxis::x).openness == 0 &&
+                    original.grid().face({1, 1}, FaceAxis::x).openness == 0, "A new edge did not close both sluices.");
+    }
+    replay.restore(initial, 0);
+    require(replay.save() == initial && !replay.last_report(), "Restoring the original tick left dynamic state behind.");
+}
+
+void invalid_definitions_are_rejected() {
+    auto bad = canal();
+    bad.plan_sha256.front() = 'A';
+    rejects<std::invalid_argument>([&] { const Region region(bad); }, "Malformed plan pin was accepted.");
+    bad = canal();
+    bad.config.cells_x = poima::water::max_region_side + 1;
+    rejects<std::invalid_argument>([&] { const Region region(bad); }, "Oversized region was accepted.");
+    bad = canal();
+    bad.faces.resize(poima::water::max_region_faces + 1, bad.faces.front());
+    rejects<std::invalid_argument>([&] { const Region region(bad); }, "Too many faces were accepted.");
+    bad = canal();
+    bad.exchanges.resize(poima::water::max_region_exchanges + 1, bad.exchanges.front());
+    rejects<std::invalid_argument>([&] { const Region region(bad); }, "Too many exchanges were accepted.");
+    bad = canal();
+    bad.faces.push_back(bad.faces.front());
+    rejects<std::invalid_argument>([&] { const Region region(bad); }, "Duplicate face was accepted.");
+    bad = canal();
+    bad.faces.front().action = "Use Sluice";
+    rejects<std::invalid_argument>([&] { const Region region(bad); }, "An unknown action syntax was accepted.");
+    bad = canal();
+    bad.faces.front().action_openness = std::numeric_limits<double>::quiet_NaN();
+    rejects<std::invalid_argument>([&] { const Region region(bad); }, "NaN face openness was accepted.");
+    bad = canal();
+    bad.exchanges.push_back(bad.exchanges.front());
+    rejects<std::invalid_argument>([&] { const Region region(bad); }, "Duplicate exchange was accepted.");
+    bad = canal();
+    bad.exchanges.front().drain_m3_per_second = 1'000'001;
+    rejects<std::invalid_argument>([&] { const Region region(bad); }, "An invalid exchange was accepted.");
+}
+
+void restore_and_step_are_atomic() {
+    Region original(canal());
+    const auto initial = original.save();
+    original.step(toggle);
+    const auto intact = original.save();
+    const auto check_bad_restore = [&](const Json& incompatible, std::uint64_t tick) {
+        rejects<std::invalid_argument>([&] { original.restore(incompatible, tick); }, "Invalid snapshot data was accepted.");
+        require(original.save() == intact, "Rejected snapshot modified the region.");
+    };
+    check_bad_restore(intact, 2);
+    auto bad = intact;
+    bad["plan_sha256"] = std::string(64, 'b');
+    check_bad_restore(bad, 1);
+    bad = intact;
+    bad["tick"] = 1.0;
+    check_bad_restore(bad, 1);
+    bad = intact;
+    bad["unexpected"] = false;
+    check_bad_restore(bad, 1);
+    bad = intact;
+    bad["depths_m"] = Json::array();
+    check_bad_restore(bad, 1);
+    bad = intact;
+    bad["depths_m"][0] = true;
+    check_bad_restore(bad, 1);
+    bad = intact;
+    bad["depths_m"][0] = std::numeric_limits<double>::infinity();
+    check_bad_restore(bad, 1);
+    bad = intact;
+    bad["action_face_openness"][0] = .2;
+    check_bad_restore(bad, 1);
+    bad = intact;
+    bad["last_report"]["volume_after_m3"] = 0;
+    check_bad_restore(bad, 1);
+    bad = intact;
+    bad["last_report"]["volume_before_m3"] = 0;
+    check_bad_restore(bad, 1);
+    bad = intact;
+    bad["last_report"] = nullptr;
+    check_bad_restore(bad, 1);
+    bad = initial;
+    bad["depths_m"][0] = 0;
+    check_bad_restore(bad, 0);
+    bad = initial;
+    bad["action_face_openness"][0] = .5;
+    check_bad_restore(bad, 0);
+
+    Region overflowing({
+        .config = {.cells_x = 2, .cells_z = 1, .cell_size_m = .01},
+        .floor_heights_m = {0, 0},
+        .initial_depths_m = {850'000, 0},
+        .faces = {{{0, 0}, FaceAxis::x, {0, 0}, "use.sluice", 1}},
+        .exchanges = {{{0, 0}, 600, 0}},
+        .plan_sha256 = std::string(64, 'c'),
+    });
+    overflowing.step();
+    const auto before_overflow = overflowing.save();
+    rejects<std::overflow_error>([&] { overflowing.step(toggle); }, "Grid overflow did not reject the gated tick.");
+    require(overflowing.save() == before_overflow && overflowing.grid().face({0, 0}, FaceAxis::x).openness == 0,
+            "Failed tick did not restore actual gate state and the prior receipt.");
+}
+
+}
+
+int main() {
+    try {
+        flood_through_authored_actions();
+        invalid_definitions_are_rejected();
+        restore_and_step_are_atomic();
+        std::cout << "Water region tests passed.\n";
+    } catch (const std::exception& error) {
+        std::cerr << error.what() << '\n';
+        return 1;
+    }
+}

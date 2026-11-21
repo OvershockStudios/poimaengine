@@ -1,6 +1,6 @@
 # Authored asset references
 
-`world.asset.references` identifies the authored entity, template or world fields that reference cooked models, images, audio and navigation. It supports both directions: find the users of an asset, or list one owner's dependencies. It reads the current loaded authoring document, including while a runtime is active. It does not read packages, decode models, rebuild snapshots or enumerate live spawned owners.
+`world.asset.references` identifies the authored entity, template or world fields that reference cooked models, images, audio, navigation and water. It finds the users of an asset or lists an owner's dependencies from the loaded authoring document, including while a runtime is active. Packages and live spawned owners have separate queries.
 
 This is an evolving development API, outside selected authoring-core v1. Discovery revision 54 added the method; 0.0.64 adds typed world-owned navigation references. Protocol 1 and the selected stable contract remain unchanged.
 
@@ -68,6 +68,7 @@ Continue with the returned revision and the same selector. `after` is an exclusi
 | --- | --- | --- |
 | World `navigation.asset` | navigation | null |
 | World UI `style.image.asset` | image | null |
+| World `water.asset` | water | null |
 | `AnimationRig.asset` | model | null |
 | `AudioEmitter.asset` | audio | null |
 | `MeshCollider.asset` | model | authored primitive |
@@ -76,7 +77,7 @@ Continue with the returned revision and the same selector. `after` is an exclusi
 | `PbrTextures.<slot>.asset`, without `image` | image | null |
 | `PbrTextures.<slot>.asset`, with `image` | model | authored embedded image |
 
-Direct component cursors use `/asset`. Texture slots are `base_color`, `emissive`, `metallic_roughness`, `normal` and `occlusion`; their cursor paths are `/<slot>/asset`. Templates currently admit only the StaticMesh and PbrTextures reference rows. A world owner uses the current `world_id` from `world.inspect`. Its [navigation binding](NAVIGATION.md#bind-a-world) uses component `navigation` and path `/asset`. Its [UI images](GAME_UI.md#use-cooked-images) use component `ui` and path `/ui/<element-id>/style/image/asset`.
+Direct component cursors use `/asset`. Texture slots are `base_color`, `emissive`, `metallic_roughness`, `normal` and `occlusion`. Their cursor paths are `/<slot>/asset`. A world owner uses the current `world_id` from `world.inspect`. Navigation and water use components `navigation` and `water` with path `/asset`. UI images use component `ui` and path `/ui/<element-id>/style/image/asset`. [Navigation](NAVIGATION.md#bind-a-world), [Water binding](SHALLOW_WATER.md#author-a-terrain-bound-region), [UI images](GAME_UI.md#use-cooked-images).
 
 Invisible meshes, collision-only geometry, disabled emitters and frozen template references are included. Omitted texture slots inherit imported maps; null slots disable them. Neither creates another explicit edge. Imported material images, skins, curves and layer/reference clips live inside the referenced model package; this operation does not decode them into an effective material graph. Use [effective material inspection](MATERIAL_AUTHORING.md#inspect-the-effective-material) when that is needed.
 

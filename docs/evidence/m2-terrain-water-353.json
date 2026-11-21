@@ -1,0 +1,389 @@
+{
+  "engine_version": "0.0.353",
+  "world_schema_revision": 175,
+  "sources_sha256": {
+    "CMakeLists.txt": "0aaa31cd319c2ef16c94bf99f87fa77d1a0e6c04a49e357cc6e0eb1ce5dcb601",
+    "cmake/runtime.json.in": "0b8a3c8fbd4fd4073b64f2c4dc198fb002832a9967f9eb08316368ae72959d41",
+    "include/poima/runtime.hpp": "a8b492688523b4dba930eefabbf5314a62412de631922905006026306837542a",
+    "include/poima/water_region.hpp": "0da7e3956e64aa9e3125ed62a411095cf4d686f55c54dc9585a500c86b964901",
+    "include/poima/water_region_definition.hpp": "6b00dca060ee26669b6274913365667961ebbe7df0233210476de8dc95dd6d94",
+    "src/asset_references.cpp": "d887ffef0042f257b4f6cd837ec178650f3cfd09dccf325d9e6ead17a3afd8a0",
+    "src/game_launch.cpp": "2758d7023440d0359c81d6e32bca840bfc15874a64265df1bbbba7ba20eff306",
+    "src/mcp.cpp": "5093c5928cb19bff3175c3dca2c987501da5b5b00ae4867e71f090ce99937d18",
+    "src/project.cpp": "8324c8ead602720bea902dae87cca21f685b31f467289c4fa99bea3ef5f0ada6",
+    "src/project_drafts.inc": "3a8e9361c0eb2ff6e9e21e1a638600c7737e1d081128fc12d1fb681a6c696ab5",
+    "src/runtime.cpp": "3c2e769ec10229b7f9fd81bc04af582695c310f83222098d6031540f20d3cbdd",
+    "src/runtime_camera_pose_snapshot.inc": "d530bac1bee6771643b1c5c49004da75add9f45c51a15dcf08629149b0c8377b",
+    "src/runtime_save.inc": "61b520d1076788990fa7ce9b3702ffed49ce820344cc496e88d9918140c0ff7c",
+    "src/save_upgrade_document.cpp": "3097ac7e31d915932d6dc17b3801dcbca4986bba2aa825181a82c3ce236ed1e8",
+    "src/save_upgrade_snapshot.cpp": "0c7f7a8f0339693ea6c899e282452264b5aea46b5eee997202d8c40cfe2873a7",
+    "src/shallow_water.cpp": "b4955c8fb9178dc3d96fc3ef006c6bad0261226b558e1dced694dd8effa7dd71",
+    "src/water_asset.cpp": "a251ddbcdc20d0c0a19a9ab322d11ef68b38c4a0095767e82f006e80be2f5490",
+    "src/water_region.cpp": "b7aeae71f8ec6ebdb84307220d357d756f81dc131d07d5020112e441c7759608",
+    "src/water_region_scene.cpp": "c5cc4d08ba29613c24196e6210d5511c605dc45a8bb41b96d3d491733ede61cf",
+    "src/world.cpp": "f0b433b9578aeac4ef03ff817c8085455c0c09acb197a4fdf3034dd442709723",
+    "src/world_schema.cpp": "2a88ba4001496949f20afa9f6c932cc383c0ab58af9974e9f8dd27685131cb77",
+    "src/world_water_service.inc": "91ffa14ae7a8edb09fd51c33981cb90d93f6773f544fa5882ec8742c6a546c57",
+    "tests/mcp_contract.py": "13f7cb3163c814fdc287d4cf8b56f2d0c45318ddb7b05bb74905cac811e712ed",
+    "tests/water_region_native.cpp": "13f77347dbdb8b27c6f6aa1d6e1b91226ce59ef9030607534c76b774e3ee501c",
+    "tests/water_region_scene_native.cpp": "e1e804dacf9a142f012bc85d0a9a1b7ee35ddcc93a24f8f58578d51050474232",
+    "tests/world_water_contract.py": "11281ce7945ec117cd5e3fca22f9d021db5eea4e8def488f7d9ce9f118d57b43"
+  },
+  "linux": {
+    "version": {
+      "version": "0.0.353",
+      "compiler": "GNU",
+      "compiler_version": "16.2.0",
+      "target_os": "Linux",
+      "target_arch": "x86_64"
+    },
+    "executable_sha256": "9125286365f83bee59c3815b7bcb9f3f8bdf9358f59cf4f48429916816a926cd",
+    "junit_sha256": "8de9734283c4efc0b468b5dafead6458e85d79a9d905e7dd5df7c95213ecc07a",
+    "suites": [
+      "shallow_water_native",
+      "water_region_native",
+      "water_region_scene_native",
+      "world_terrain_contract",
+      "world_foliage_contract",
+      "authoring_core_conformance",
+      "authoring_contract_identity",
+      "save_upgrade_document_native",
+      "save_upgrade_snapshot_native",
+      "mcp_contract",
+      "world_ui_contract",
+      "project_contract",
+      "asset-references-native",
+      "asset_references_contract"
+    ],
+    "water": {
+      "report_sha256": "e616a080bf4281eeba537e3b3fe912ea8e74eb27b87681c6e01eed5b2d6aec90",
+      "native_calls": 26,
+      "plan": {
+        "asset_bytes": 967,
+        "cells": 8,
+        "plan_sha256": "d63181362a1307fad328fc8780b7a27a1027e40efb2e4c8f7efeb4a04c7a67a1",
+        "revision": 2,
+        "terrain_recipe_sha256": "acf1a1f7a1c120c92999733c77f326d901c9b0db733653a6520d014939e730eb",
+        "tiles": [
+          {
+            "asset": "e571530dd4585de75271d0fdc485ffdb965febf7148d0dd06b52c38200291fbb",
+            "entity": "00000000000000000000000000000064"
+          },
+          {
+            "asset": "6b56729472ec7da6f8d12d4766d7e5fd9e269f65669901f81266c9cfd4fd9de9",
+            "entity": "00000000000000000000000000000065"
+          }
+        ]
+      },
+      "closure": [
+        {
+          "filename": "6b56729472ec7da6f8d12d4766d7e5fd9e269f65669901f81266c9cfd4fd9de9.pmodel",
+          "sha256": "6b56729472ec7da6f8d12d4766d7e5fd9e269f65669901f81266c9cfd4fd9de9",
+          "bytes": 1050
+        },
+        {
+          "filename": "d63181362a1307fad328fc8780b7a27a1027e40efb2e4c8f7efeb4a04c7a67a1.pwater",
+          "sha256": "d63181362a1307fad328fc8780b7a27a1027e40efb2e4c8f7efeb4a04c7a67a1",
+          "bytes": 967
+        },
+        {
+          "filename": "e571530dd4585de75271d0fdc485ffdb965febf7148d0dd06b52c38200291fbb.pmodel",
+          "sha256": "e571530dd4585de75271d0fdc485ffdb965febf7148d0dd06b52c38200291fbb",
+          "bytes": 1050
+        }
+      ],
+      "dry_depth_m": 0.0,
+      "first_transfer_depth_m": 0.037728,
+      "opened_depth_m": 0.20094330096568347,
+      "sampled_max_mass_residual_m3": 8.881784197001252e-16,
+      "stale_tile_freeze_rejected": true,
+      "source_recipe_unavailable": true,
+      "late_batch_rollback_code": -32040,
+      "authored_cold_continuation": {
+        "tick": 16,
+        "sha256": "99bf655f3d062a148b1652e294fe9a7637eb35278065c802f2540f1fb504f36a",
+        "bytes": 6104
+      }
+    }
+  },
+  "windows": {
+    "version": {
+      "version": "0.0.353",
+      "compiler": "Clang",
+      "compiler_version": "23.1.2",
+      "target_os": "Windows",
+      "target_arch": "x86_64"
+    },
+    "executable_sha256": "6bfe7edf870b040ed080533e8ec6268efb9bd3ed4aa5ef552e47c469f435eec3",
+    "runtime_descriptor_sha256": "cf3d70bc0f2c25fb3d2a06e0f7138857455bc1e449a591d4fafd4eeecf82a936",
+    "bridge_sha256": "73d3fb6fd12ee311fc5f68b408792c31c2762d5ac59f91c26f6e09dee495d42c",
+    "mcp_log_sha256": "f249d55ff76bd5addf36ae55d745ab1acd07f230902b91b22abbf0a7298cd0ab",
+    "water": [
+      {
+        "report_sha256": "810ee1edcb45a57e457a3ecf5a5104b138872a760f9a737b638e0da8fcf64560",
+        "native_calls": 34,
+        "plan": {
+          "asset_bytes": 967,
+          "cells": 8,
+          "plan_sha256": "d63181362a1307fad328fc8780b7a27a1027e40efb2e4c8f7efeb4a04c7a67a1",
+          "revision": 2,
+          "terrain_recipe_sha256": "acf1a1f7a1c120c92999733c77f326d901c9b0db733653a6520d014939e730eb",
+          "tiles": [
+            {
+              "asset": "e571530dd4585de75271d0fdc485ffdb965febf7148d0dd06b52c38200291fbb",
+              "entity": "00000000000000000000000000000064"
+            },
+            {
+              "asset": "6b56729472ec7da6f8d12d4766d7e5fd9e269f65669901f81266c9cfd4fd9de9",
+              "entity": "00000000000000000000000000000065"
+            }
+          ]
+        },
+        "closure": [
+          {
+            "filename": "6b56729472ec7da6f8d12d4766d7e5fd9e269f65669901f81266c9cfd4fd9de9.pmodel",
+            "sha256": "6b56729472ec7da6f8d12d4766d7e5fd9e269f65669901f81266c9cfd4fd9de9",
+            "bytes": 1050
+          },
+          {
+            "filename": "d63181362a1307fad328fc8780b7a27a1027e40efb2e4c8f7efeb4a04c7a67a1.pwater",
+            "sha256": "d63181362a1307fad328fc8780b7a27a1027e40efb2e4c8f7efeb4a04c7a67a1",
+            "bytes": 967
+          },
+          {
+            "filename": "e571530dd4585de75271d0fdc485ffdb965febf7148d0dd06b52c38200291fbb.pmodel",
+            "sha256": "e571530dd4585de75271d0fdc485ffdb965febf7148d0dd06b52c38200291fbb",
+            "bytes": 1050
+          }
+        ],
+        "dry_depth_m": 0.0,
+        "first_transfer_depth_m": 0.037728,
+        "opened_depth_m": 0.20094330096568347,
+        "sampled_max_mass_residual_m3": 8.881784197001252e-16,
+        "stale_tile_freeze_rejected": true,
+        "source_recipe_unavailable": true,
+        "late_batch_rollback_code": -32040,
+        "authored_cold_continuation": {
+          "tick": 16,
+          "sha256": "ff4b287b33fd7608bf3e6eeeb143778c7e533e6db54664169546293897641ebd",
+          "bytes": 6104
+        },
+        "relocated_verification": {
+          "bundle_sha256": "a8bae0c68ca5df89c12a6283667b9b5d8d2a771cec740fd476df94f2d02c06c1",
+          "suite_sha256": "6966667aae86207daaa177746c485744ab00197b873104b618100480d2e0fa49",
+          "groups": [
+            {
+              "name": "closed",
+              "tick": 3,
+              "measured_depth_m": 0.0
+            },
+            {
+              "name": "opened",
+              "tick": 14,
+              "measured_depth_m": 0.20094330096568347
+            }
+          ]
+        },
+        "relocated_cold_continuation": {
+          "tick": 16,
+          "bytes": 5888,
+          "sha256": "9dafefdab907a3fbaf659df881f85ac07d929dc429ac6d75984d961121521f37",
+          "owners": 2
+        },
+        "vulkan": {
+          "gpu": "AMD Radeon(TM) Graphics",
+          "inventory_files": 61,
+          "executable_sha256": "6bfe7edf870b040ed080533e8ec6268efb9bd3ed4aa5ef552e47c469f435eec3",
+          "captures": {
+            "closed": {
+              "bmp_sha256": "b23522dfcc87c4409845dd7a992ef01ade0850acbdd725f099048c42341fefc6",
+              "tick": 3,
+              "frames_presented": 4,
+              "nvrhi_errors": 0,
+              "triangle_count": 24,
+              "surface_witnesses": {
+                "upstream": {
+                  "pixel": [
+                    239,
+                    132
+                  ],
+                  "depth_m": 1.5827000000000002,
+                  "water_pixels": 9
+                },
+                "downstream": {
+                  "pixel": [
+                    342,
+                    211
+                  ],
+                  "depth_m": 0.0,
+                  "water_pixels": 0
+                }
+              }
+            },
+            "opened": {
+              "bmp_sha256": "c69d802d776ce28e69275ace032ad0bc43dada328574e33ff19eba05939ebe62",
+              "tick": 14,
+              "frames_presented": 15,
+              "nvrhi_errors": 0,
+              "triangle_count": 32,
+              "surface_witnesses": {
+                "upstream": {
+                  "pixel": [
+                    237,
+                    121
+                  ],
+                  "depth_m": 1.5490850889721548,
+                  "water_pixels": 9
+                },
+                "downstream": {
+                  "pixel": [
+                    343,
+                    196
+                  ],
+                  "depth_m": 0.20094330096568347,
+                  "water_pixels": 9
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "report_sha256": "abbad59cf43991f742319a5f3afbc552b102085a06916fab812d10e276a7090d",
+        "native_calls": 34,
+        "plan": {
+          "asset_bytes": 967,
+          "cells": 8,
+          "plan_sha256": "d63181362a1307fad328fc8780b7a27a1027e40efb2e4c8f7efeb4a04c7a67a1",
+          "revision": 2,
+          "terrain_recipe_sha256": "acf1a1f7a1c120c92999733c77f326d901c9b0db733653a6520d014939e730eb",
+          "tiles": [
+            {
+              "asset": "e571530dd4585de75271d0fdc485ffdb965febf7148d0dd06b52c38200291fbb",
+              "entity": "00000000000000000000000000000064"
+            },
+            {
+              "asset": "6b56729472ec7da6f8d12d4766d7e5fd9e269f65669901f81266c9cfd4fd9de9",
+              "entity": "00000000000000000000000000000065"
+            }
+          ]
+        },
+        "closure": [
+          {
+            "filename": "6b56729472ec7da6f8d12d4766d7e5fd9e269f65669901f81266c9cfd4fd9de9.pmodel",
+            "sha256": "6b56729472ec7da6f8d12d4766d7e5fd9e269f65669901f81266c9cfd4fd9de9",
+            "bytes": 1050
+          },
+          {
+            "filename": "d63181362a1307fad328fc8780b7a27a1027e40efb2e4c8f7efeb4a04c7a67a1.pwater",
+            "sha256": "d63181362a1307fad328fc8780b7a27a1027e40efb2e4c8f7efeb4a04c7a67a1",
+            "bytes": 967
+          },
+          {
+            "filename": "e571530dd4585de75271d0fdc485ffdb965febf7148d0dd06b52c38200291fbb.pmodel",
+            "sha256": "e571530dd4585de75271d0fdc485ffdb965febf7148d0dd06b52c38200291fbb",
+            "bytes": 1050
+          }
+        ],
+        "dry_depth_m": 0.0,
+        "first_transfer_depth_m": 0.037728,
+        "opened_depth_m": 0.20094330096568347,
+        "sampled_max_mass_residual_m3": 8.881784197001252e-16,
+        "stale_tile_freeze_rejected": true,
+        "source_recipe_unavailable": true,
+        "late_batch_rollback_code": -32040,
+        "authored_cold_continuation": {
+          "tick": 16,
+          "sha256": "3a431add09fe73b521a4be28b33941d0dd2a6072b9a6cc52aac6b4f79b5307af",
+          "bytes": 6104
+        },
+        "relocated_verification": {
+          "bundle_sha256": "0509058b14ce4e4e0e09fa1bd3d4c62592f7d43b188aede4860f553d81c64e0a",
+          "suite_sha256": "6966667aae86207daaa177746c485744ab00197b873104b618100480d2e0fa49",
+          "groups": [
+            {
+              "name": "closed",
+              "tick": 3,
+              "measured_depth_m": 0.0
+            },
+            {
+              "name": "opened",
+              "tick": 14,
+              "measured_depth_m": 0.20094330096568347
+            }
+          ]
+        },
+        "relocated_cold_continuation": {
+          "tick": 16,
+          "bytes": 5888,
+          "sha256": "e7bb306e02117d28c97f23dcd7afc81e3fe913b121e91e948390aab518c1f76a",
+          "owners": 2
+        },
+        "vulkan": {
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "inventory_files": 61,
+          "executable_sha256": "6bfe7edf870b040ed080533e8ec6268efb9bd3ed4aa5ef552e47c469f435eec3",
+          "captures": {
+            "closed": {
+              "bmp_sha256": "b23522dfcc87c4409845dd7a992ef01ade0850acbdd725f099048c42341fefc6",
+              "tick": 3,
+              "frames_presented": 4,
+              "nvrhi_errors": 0,
+              "triangle_count": 24,
+              "surface_witnesses": {
+                "upstream": {
+                  "pixel": [
+                    239,
+                    132
+                  ],
+                  "depth_m": 1.5827000000000002,
+                  "water_pixels": 9
+                },
+                "downstream": {
+                  "pixel": [
+                    342,
+                    211
+                  ],
+                  "depth_m": 0.0,
+                  "water_pixels": 0
+                }
+              }
+            },
+            "opened": {
+              "bmp_sha256": "c69d802d776ce28e69275ace032ad0bc43dada328574e33ff19eba05939ebe62",
+              "tick": 14,
+              "frames_presented": 15,
+              "nvrhi_errors": 0,
+              "triangle_count": 32,
+              "surface_witnesses": {
+                "upstream": {
+                  "pixel": [
+                    237,
+                    121
+                  ],
+                  "depth_m": 1.5490850889721548,
+                  "water_pixels": 9
+                },
+                "downstream": {
+                  "pixel": [
+                    343,
+                    196
+                  ],
+                  "depth_m": 0.20094330096568347,
+                  "water_pixels": 9
+                }
+              }
+            }
+          }
+        }
+      }
+    ]
+  },
+  "retained_attempts": {
+    "initial_linux_compile_sha256": "2b5d2ed20f90cd885e522a00dc7fee78890a7c1e286ba855910e30e34ff8b829",
+    "corrected_linux_compile_sha256": "cc9120122ee996820416c4d4bcc75f8bfedf49a9bde942bd0eaf240163172171",
+    "first_native_fixture_sha256": "6048359bf21fd80e0098e76ee4fbee829156b1d8e2b875d5571f5a46be8d99fb",
+    "first_native_fixture_recovery": "The stale-world check now opens the entry world directly so it can observe the actual guarded errors."
+  },
+  "scope": "An eight-cell terrain-fed region. Native clock, gates, flows, snapshots, source-free export and opaque Vulkan projection. The fixture establishes correctness for this basin. Large water, surface optics and frame cost are separate."
+}

@@ -337,6 +337,10 @@ std::string Runtime::save_snapshot(const std::string& content_sha256) const {
         payload["control_sequence"]=s.control_sequence;payload["cameras"]=std::move(cameras);
     }
     if(joined_physics)payload["physical"]=save_physical_extension(s);
+    if(s.water_region) {
+        require(s.water_region->grid().tick()==s.tick,"Water region tick differs from its runtime.");
+        payload["water"]=s.water_region->save();
+    }
     const SaveJson envelope={{"format","poima.runtime-snapshot"},{"version",motor_state ? 9 : stance_state ? 8 : camera_state ? 7 : hierarchical ? 6 : logical_ui ? 5 : structural ? 3 : custom ? 2 : 1},{"sha256",save_hash(payload.dump())},{"payload",payload}};
     std::size_t tokens=0;save_budget(envelope,0,tokens);const auto result=envelope.dump();
     require(result.size()<=snapshot_bytes_limit,"Runtime snapshot exceeds 64 MiB.");return result;
@@ -357,6 +361,12 @@ std::unique_ptr<Runtime> Runtime::restore_snapshot_data(const RuntimeDefinition&
     require(save_digest(digest) && digest==save_hash(data.dump()),"Runtime snapshot checksum mismatch.");
     // Authenticate the original complete payload before validating a separately
     // named optional extension; every legacy field and unknown-key rejection stays exact.
+    require(data.contains("water")==definition.water.has_value(),"Snapshot water membership differs from frozen content.");
+    SaveJson water_extension;
+    if(definition.water) {
+        water_extension=std::move(data.at("water"));
+        data.erase("water");
+    }
     const bool physical_content=Impl::definition_has_physical(definition);
     SaveJson pose_extension=nullptr;
     if(data.contains("camera_poses")) {
@@ -535,6 +545,7 @@ std::unique_ptr<Runtime> Runtime::restore_snapshot_data(const RuntimeDefinition&
     // Exact IDs/generations are installed at first allocation, never remapped.
     // The private constructor also initializes Jolt before owner-vector parsing.
     auto candidate=std::unique_ptr<Runtime>(new Runtime(restored_definition,std::move(executor),physical_bootstrap ? &*physical_bootstrap : nullptr));auto& s=*candidate->impl_;s.tick=tick;
+    if(s.water_region)s.water_region->restore(water_extension,tick);
     std::optional<Impl::PhysicalCheckpoint> physical_checkpoint;
     if(joined_physics)physical_checkpoint=save_physical_checkpoint(s,physical_extension,*physical_bootstrap,tick);
     if(structural) {

@@ -4,6 +4,7 @@
 #include "poima/runtime_ik.hpp"
 #include "poima/gameplay_player_preferences.hpp"
 #include "poima/jobs.hpp"
+#include "poima/water_region.hpp"
 #include "runtime_components.hpp"
 #include "runtime_body_ids.hpp"
 #include "runtime_physical_restore.hpp"
@@ -23,6 +24,7 @@
 #include "pose_frames.hpp"
 #include "surface_measure.hpp"
 #include "attachment_outcome_json.hpp"
+#include "water_region_scene.hpp"
 #include "poima/profiler.hpp"
 #include "poima/assets.hpp"
 #include <nlohmann/json.hpp>
@@ -243,6 +245,7 @@ struct Runtime::Impl {
     std::vector<RuntimeCharacterStanceCommand> game_stance_commands;
     std::size_t game_stance_reads=0,game_stance_writes=0;
     SoundState sounds;
+    std::optional<water::Region> water_region;
     std::uint32_t game_sound_calls=0,game_navigation_calls=0;
     std::optional<RuntimeNavigationDefinition> navigation_binding;
     std::array<std::uint64_t,4> navigation_asset{};
@@ -736,6 +739,7 @@ struct Runtime::Impl {
         physical_content=definition_has_physical(definition);validate_physical_ownership(definition);
         if(restored) {validate_physical_bootstrap(definition,*restored);body_ids=restored->ledger;physical_next_collision_group=restored->next_collision_group;}
         initialize_navigation(definition.navigation);
+        if(definition.water)water_region.emplace(*definition.water);
         require(definition.entities.size()<=10000,"Runtime entity limit exceeded.");
         validate_runtime_templates(definition);templates=definition.templates;
         for(const auto& recipe:templates)for(const auto& entity:recipe.entities)if(entity.camera && entity.camera->viewmodel_clearance) {
@@ -1772,6 +1776,16 @@ struct Runtime::Impl {
         const auto save_checkpoint=save_queue;const auto ui_checkpoint=ui_model;
         auto game_checkpoint=game ? game->state() : std::vector<std::uint64_t>{};
         auto sound_checkpoint=sounds;
+        auto water_checkpoint=water_region;
+        // The region is shared by all controllers. Coalesce their first-tick
+        // edges before stepping so a common action toggles each gate once.
+        std::vector<std::string_view> water_actions;
+        if(water_region) {
+            for(const auto& input:inputs)for(const auto& action:input.actions)
+                if(action.pressed)water_actions.push_back(action.name);
+            std::sort(water_actions.begin(),water_actions.end());
+            water_actions.erase(std::unique(water_actions.begin(),water_actions.end()),water_actions.end());
+        }
         auto animation_checkpoint=animations->checkpoint();
         std::vector<std::pair<entt::entity,RuntimeTransform>> local_checkpoint;local_checkpoint.reserve(topology->order.size());
         for(auto e:topology->order)local_checkpoint.emplace_back(e,registry.get<Node>(e).local);
@@ -2007,6 +2021,10 @@ struct Runtime::Impl {
                         registry.get<Controller>(e).character->PostSimulation(0.05f);
                 }
                 commit_root_motion_intervals(root_intervals,tick+1);
+                if(water_region) {
+                    water_region->step(water_actions);
+                    water_actions.clear();
+                }
                 ++tick;animation_locals(true);sync();physical_record_final();
                 finish_game_attachments();
                 for(const auto e:topology->characters)registry.get<Controller>(e).character->EndTick();
@@ -2028,6 +2046,8 @@ struct Runtime::Impl {
             animations->restore(animation_checkpoint);
             for(const auto& [e,local]:local_checkpoint)registry.get<Node>(e).local=local;
             sounds=std::move(sound_checkpoint);
+            static_assert(std::is_nothrow_move_assignable_v<decltype(water_region)>);
+            water_region=std::move(water_checkpoint);
             if(game)game->state().swap(game_checkpoint);
             game_commands.clear();clear_structure_commands();
             game_animation_commands.clear();game_animation_rate_commands.clear();game_animation_rate_write_calls=0;game_character_inputs.clear();game_navigation_calls=0;
@@ -2421,6 +2441,9 @@ std::optional<RuntimeRootMotionState> Runtime::root_motion(const std::string& id
     (void)impl_->find(id);return impl_->animations->root_motion_state(id);
 }
 RuntimeNavigationPath Runtime::navigation_path(const RuntimeNavigationRequest& request) const {return impl_->navigation_query(request);}
+const water::Region* Runtime::water_region() const noexcept {
+    return impl_->water_region ? &*impl_->water_region : nullptr;
+}
 std::optional<RuntimeRayHit> Runtime::raycast(const RuntimeRay& query) const {
     return impl_->physics_raycast(query);
 }
@@ -2590,6 +2613,7 @@ SceneSnapshot Runtime::snapshot() const {
     for(auto object:impl_->topology->order)
         if(const auto* mesh=impl_->registry.try_get<RuntimeMesh>(object);mesh && mesh->visible)
             result.objects.push_back(impl_->drawable(object,*mesh));
+    if(const auto* region=water_region())water::append_region_scene(*region,result);
     return result;
 }
 #include "runtime_camera_pose_snapshot.inc"

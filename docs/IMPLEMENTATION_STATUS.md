@@ -1,8 +1,19 @@
 # Implementation status
 
-Updated 2026-11-21 for **0.0.352**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-21 for **0.0.353**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.353 adds a [terrain-bound water region](SHALLOW_WATER.md) with
+metered sources, drains, sills and gates controlled by named inputs. The
+eight-cell fixture checked mass conservation, stale terrain refusal and
+rollback when a second tick exceeded the depth limit. A relocated standalone
+game verified the downstream probe dry at tick 3 and about 0.201 m deep at
+tick 14. Both Windows GPUs captured the corresponding cell surface. A fresh
+standalone process loaded a tick-4 checkpoint and produced a byte-identical
+tick-16 save. The cell-based opaque surface provides a simple view of the
+simulation. Large water, buoyancy and optical effects remain further work.
+[Results](evidence/m2-terrain-water-353.json)
 
 Version 0.0.352 adds [terrain-aware foliage placement](FOLIAGE_SCATTER.md)
 through the world service and MCP. Plans report reasons for skipped cells and
@@ -46,8 +57,9 @@ Version 0.0.349 adds native [terrain tiles](TERRAIN.md), [foliage scattering](FO
 [CPU particles](PARTICLES.md), and a [localized water grid](SHALLOW_WATER.md).
 These APIs cover terrain seams and sampling, stable CPU placements, fixed-tick
 emission, and bounded water flow and snapshots. Terrain authoring and rendering
-were integrated in 0.0.351, followed by static foliage placement in 0.0.352.
-Particles and localized water still require scene and renderer integration.
+were integrated in 0.0.351, followed by static foliage placement in 0.0.352
+and local water regions in 0.0.353. Particles still require scene and renderer
+integration.
 
 The [weather package](WEATHER_CYCLE.md) adds solar and seasonal state, storms,
 lightning, and rainfall queries. Games own its clock and the visible effects.
