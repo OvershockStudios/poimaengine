@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.365
+
+- Author `FootprintSurface` on a rigid support to stamp timed prints from newly planted feet. Each print follows the solved foot heading and stays with the support through motion and saves.
+
 ## 0.0.364
 
 - Expire temporary footprints and impact marks at a fixed tick, with optional recycling that protects permanent marks. Save continuation preserves deadlines and lifecycle counts.

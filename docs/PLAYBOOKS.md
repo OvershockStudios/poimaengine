@@ -34,6 +34,7 @@ record correlated evidence, and identify a useful impossibility check.
 | Effects and lighting | [Render diagnostics](RENDER_DIAGNOSTICS.md), then the supported effect or light guide | Capture the effect with its trigger visible. Check repeated execution, depth, readability and the cost at the relevant quality tier. |
 | Emit attached or detached particles | [Scene particles](PARTICLES.md) | Compare source pose and live trajectories at committed ticks. Check named bursts, expiry and fresh save continuation, then capture the visible effect in the exported game. |
 | Leave a mark on a surface | [Persistent surface marks](SURFACE_MARKS.md) | Guard the intended first ray hit, inspect its receiver-local frame, and compare the marked surface after motion and save restoration. |
+| Leave footprints with an imported character | [Planted footprints](SURFACE_MARKS.md#place-footprints-from-planted-feet) | Compare new prints with solved contact and heading, then move the support and reopen a save. |
 
 ## Start with a complete example
 

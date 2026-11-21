@@ -1054,6 +1054,29 @@ std::optional<RuntimeIkState> RuntimeAnimations::ik_state(const std::string& ent
     }
     return {};
 }
+std::size_t RuntimeAnimations::foot_plant_acquisitions(std::uint64_t tick,
+    std::span<const RuntimeGroundingState*> output) const {
+    std::size_t count=0;
+    for(const auto& [entity,index]:membership_->indices) {
+        if(procedural_suspended(entity))continue;
+        // The authored chain order is independent of the public slot order.
+        std::array<const RuntimeGroundingState*,8> slots{};
+        for(const auto& state:ik_states_[index]) {
+            if(!state.grounding)continue;
+            const auto& contact=*state.grounding;
+            if(contact.decision_tick!=tick || contact.status!="contact" || !contact.hit || !contact.planting)continue;
+            const auto& plant=*contact.planting;
+            if(plant.status=="locked" && plant.anchor && plant.anchor->acquired_tick==tick &&
+                plant.target_forward && plant.position_error && plant.anchor->support==contact.hit->entity)
+                slots[state.slot-1]=&contact;
+        }
+        for(const auto* contact:slots)if(contact) {
+            check(count<output.size(),"Foot plant acquisition buffer is too small.");
+            output[count++]=contact;
+        }
+    }
+    return count;
+}
 std::pair<std::size_t,std::size_t> RuntimeAnimations::manual_ik_slot(const std::string& entity,std::uint32_t slot) const {
     const auto found=membership_->indices.find(entity);
     check(found!=membership_->indices.end(),"IK clearance requires a live animation rig.");

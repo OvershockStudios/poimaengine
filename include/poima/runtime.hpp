@@ -423,6 +423,12 @@ struct RuntimeParticleObservation {
     std::vector<RuntimeParticleSource> sources;
     std::vector<particles::Instance> instances;
 };
+struct RuntimeFootprintSurface {
+    SceneSurfaceMark style;
+    std::string profile;
+    std::uint32_t lifetime_ticks=0;
+    double sole_tolerance_m=.025;
+};
 struct RuntimeEntityDefinition {
     std::string id, parent;
     RuntimeTransform transform;
@@ -443,6 +449,7 @@ struct RuntimeEntityDefinition {
     std::optional<RuntimeHitRegion> hit_region;
     std::optional<CameraDrawBinding> camera_draw;
     std::optional<RuntimeParticleEmitter> particle_emitter;
+    std::optional<RuntimeFootprintSurface> footprint_surface;
 };
 inline constexpr std::size_t max_runtime_spawn_templates=256;
 inline constexpr std::size_t max_runtime_template_payload_bytes=2*1024*1024;
@@ -494,6 +501,7 @@ struct RuntimeDefinition {
 void validate_runtime_animation(const RuntimeDefinition& definition);
 void validate_runtime_mesh_colliders(const RuntimeDefinition& definition);
 void validate_runtime_hit_regions(const RuntimeDefinition& definition);
+void validate_runtime_footprint_surfaces(const RuntimeDefinition& definition);
 // Portable frozen graph validation; omission preserves legacy admission.
 void validate_runtime_camera_draw(const RuntimeDefinition& definition);
 // Partition a detached generic snapshot once, after named camera/lens and all

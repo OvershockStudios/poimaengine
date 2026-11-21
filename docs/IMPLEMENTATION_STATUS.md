@@ -1,8 +1,17 @@
 # Implementation status
 
-Updated 2026-11-21 for **0.0.364**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-21 for **0.0.365**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.365 lets [authored ground receive footprints](SURFACE_MARKS.md#place-footprints-from-planted-feet)
+from the solved contact of an imported character. Controlled Knight poses
+left two prints on a moving support and two on cooked sloped terrain. Plain
+ground and out-of-tolerance soles left no marks. Fresh processes replayed
+the plant and expiry sequence to identical save bytes. Relocated Windows
+builds reproduced 16 captures before and after expiry on AMD and NVIDIA,
+using forward and deferred Vulkan at one sample with reconstruction disabled.
+The prints affect color and roughness. [Results](evidence/m2-planted-footprints-365.json)
 
 Version 0.0.364 gives [temporary surface marks](SURFACE_MARKS.md#expire-and-recycle-marks)
 fixed-tick deadlines and an optional overflow policy that protects permanent

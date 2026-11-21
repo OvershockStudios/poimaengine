@@ -4,12 +4,6 @@
         require(raw.is_array() && raw.size()<=max_surface_mark_commands,"Surface marks must be an array of at most 16 commands.");
         std::vector<RuntimeSurfaceMarkCommand> commands;
         commands.reserve(raw.size());
-        const auto scalar=[](const Json& value,double low,double high) {
-            require(value.is_number(),"Surface mark values must be numeric.");
-            const auto number=value.get<double>();
-            require(std::isfinite(number) && number>=low && number<=high,"Surface mark value is outside its range.");
-            return number;
-        };
         for(const auto& row:raw) {
             const std::initializer_list<const char*> keys={"receiver","ray","half_extent_m","half_depth_m",
                 "minimum_normal_dot","edge_fraction","linear_rgb","opacity","roughness"};
@@ -19,15 +13,8 @@
             command.receiver=identifier(row.at("receiver"));
             if(row.contains("source"))command.source=identifier(row.at("source"));
             if(row.contains("travel_direction"))command.travel_direction=query_vector(row.at("travel_direction"));
-            if(row.contains("profile")) {
-                command.profile=identifier(row.at("profile"));
-                require(command.profile!=std::string(32,'0'),"Surface mark profile identity cannot be zero.");
-            }
-            if(row.contains("lifetime_ticks")) {
-                const auto lifetime=revision(row.at("lifetime_ticks"));
-                require(lifetime>0 && lifetime<=max_surface_mark_lifetime_ticks,"Surface mark lifetime must be 1..216000 ticks.");
-                command.lifetime_ticks=static_cast<std::uint32_t>(lifetime);
-            }
+            if(row.contains("profile"))command.profile=surface_mark_profile_id(row.at("profile"));
+            if(row.contains("lifetime_ticks"))command.lifetime_ticks=surface_mark_lifetime(row.at("lifetime_ticks"));
             if(row.contains("overflow")) {
                 const auto& overflow=row.at("overflow");
                 require(overflow=="reject" || (overflow=="recycle_oldest_timed" && command.lifetime_ticks),
@@ -38,19 +25,8 @@
             fields(ray,{"origin","direction","distance"},{"origin","direction","distance"});
             command.ray.origin=query_vector(ray.at("origin"));
             command.ray.direction=query_vector(ray.at("direction"));
-            command.ray.distance=scalar(ray.at("distance"),.001,10000);
-            const auto& half_extent=row.at("half_extent_m");
-            const auto& color=row.at("linear_rgb");
-            require(half_extent.is_array() && half_extent.size()==2 && color.is_array() && color.size()==3,
-                "Surface marks require two half extents and three linear color channels.");
-            auto& style=command.style;
-            for(std::size_t i=0;i<2;++i)style.half_extent_m[i]=static_cast<float>(scalar(half_extent[i],.005,4));
-            for(std::size_t i=0;i<3;++i)style.linear_rgb[i]=static_cast<float>(scalar(color[i],0,1));
-            style.half_depth_m=static_cast<float>(scalar(row.at("half_depth_m"),.001,.25));
-            style.minimum_normal_dot=static_cast<float>(scalar(row.at("minimum_normal_dot"),0,1));
-            style.edge_fraction=static_cast<float>(scalar(row.at("edge_fraction"),0,1));
-            style.opacity=static_cast<float>(scalar(row.at("opacity"),0,1));
-            style.roughness=static_cast<float>(scalar(row.at("roughness"),.045,1));
+            command.ray.distance=surface_mark_scalar(ray.at("distance"),.001,10000);
+            command.style=surface_mark_style(row);
             commands.push_back(std::move(command));
         }
         return commands;

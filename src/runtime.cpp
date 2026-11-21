@@ -25,6 +25,7 @@
 #include "surface_measure.hpp"
 #include "surface_marks_json.hpp"
 #include "surface_mark_profiles.hpp"
+#include "surface_mark_validation.hpp"
 #include "attachment_outcome_json.hpp"
 #include "particle_state_json.hpp"
 #include "particle_scene.hpp"
@@ -763,6 +764,10 @@ struct Runtime::Impl {
         if(restored)for(const auto& [id,terminal]:restored->procedural_terminals)
             animations->install_procedural_terminal(id,terminal,restored->snapshot_tick);
         validate_runtime_mesh_colliders(definition);
+        validate_runtime_footprint_surfaces(definition);
+        has_footprint_surfaces=std::ranges::any_of(definition.entities,[](const auto& entity) {
+            return entity.footprint_surface.has_value();
+        });
         physics.Init(RuntimeBodyIds::capacity,0,8192,8192,broad_layers,broad_filter,object_layers);
         physics.SetGravity(JPH::Vec3(0,-9.81f,0));
         auto definitions=definition.entities;
@@ -2159,10 +2164,10 @@ Runtime::PreparedMaterialUpdate Runtime::prepare_materials(std::uint64_t expecte
         require(mesh && mesh->material.has_value(),"Material adoption needs an existing PBR drawable.");
         require(edit.material.double_sided==mesh->material->double_sided,"Material adoption cannot change double_sided.");
         validate_pbr_material(edit.material);
-        if(edit.material.alpha_mode!=MaterialAlphaMode::opaque)
-            require(std::none_of(surface_marks().begin(),surface_marks().end(),[&](const auto& row){return row.receiver==edit.id;}),
-                "A surface mark receiver must retain an opaque material.");
         auto& definition=candidate->definitions.at(edit.id);
+        if(edit.material.alpha_mode!=MaterialAlphaMode::opaque)
+            require(!definition.footprint_surface && std::none_of(surface_marks().begin(),surface_marks().end(),[&](const auto& row){return row.receiver==edit.id;}),
+                "A surface mark receiver must retain an opaque material.");
         require(definition.mesh && definition.mesh->material.has_value(),"Material definition is not a PBR drawable.");
         definition.mesh->material=edit.material;data->edits.emplace_back(found->second,edit.material);
     }

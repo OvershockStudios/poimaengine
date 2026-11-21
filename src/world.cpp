@@ -813,9 +813,52 @@ physical_rig::Configuration physical_rig_value(const Json& value) {
     try { return physical_rig::parse_configuration(value); }
     catch(const std::exception& error) { throw Error(-32602,error.what()); }
 }
+double surface_mark_scalar(const Json& value,double low,double high) {
+    require(value.is_number(),"Surface mark values must be numeric.");
+    const auto number=value.get<double>();
+    require(std::isfinite(number) && number>=low && number<=high,"Surface mark value is outside its range.");
+    return number;
+}
+SceneSurfaceMark surface_mark_style(const Json& row) {
+    const auto& half_extent=row.at("half_extent_m");
+    const auto& color=row.at("linear_rgb");
+    require(half_extent.is_array() && half_extent.size()==2 && color.is_array() && color.size()==3,
+        "Surface marks require two half extents and three linear color channels.");
+    SceneSurfaceMark style;
+    for(std::size_t i=0;i<2;++i)style.half_extent_m[i]=static_cast<float>(surface_mark_scalar(half_extent[i],.005,4));
+    for(std::size_t i=0;i<3;++i)style.linear_rgb[i]=static_cast<float>(surface_mark_scalar(color[i],0,1));
+    style.half_depth_m=static_cast<float>(surface_mark_scalar(row.at("half_depth_m"),.001,.25));
+    style.minimum_normal_dot=static_cast<float>(surface_mark_scalar(row.at("minimum_normal_dot"),0,1));
+    style.edge_fraction=static_cast<float>(surface_mark_scalar(row.at("edge_fraction"),0,1));
+    style.opacity=static_cast<float>(surface_mark_scalar(row.at("opacity"),0,1));
+    style.roughness=static_cast<float>(surface_mark_scalar(row.at("roughness"),.045,1));
+    return style;
+}
+std::string surface_mark_profile_id(const Json& value) {
+    auto profile=identifier(value);
+    require(profile!=std::string(32,'0'),"Surface mark profile identity cannot be zero.");
+    return profile;
+}
+std::uint32_t surface_mark_lifetime(const Json& value) {
+    const auto lifetime=revision(value);
+    require(lifetime>0 && lifetime<=max_surface_mark_lifetime_ticks,"Surface mark lifetime must be 1..216000 ticks.");
+    return static_cast<std::uint32_t>(lifetime);
+}
+RuntimeFootprintSurface footprint_surface_value(const Json& value) {
+    fields(value,{"half_extent_m","half_depth_m","minimum_normal_dot","edge_fraction","linear_rgb","opacity",
+        "roughness","lifetime_ticks","profile","sole_tolerance_m"},
+        {"half_extent_m","half_depth_m","minimum_normal_dot","edge_fraction","linear_rgb","opacity","roughness","lifetime_ticks"});
+    RuntimeFootprintSurface surface;
+    surface.style=surface_mark_style(value);
+    surface.lifetime_ticks=surface_mark_lifetime(value.at("lifetime_ticks"));
+    if(value.contains("profile"))surface.profile=surface_mark_profile_id(value.at("profile"));
+    if(value.contains("sole_tolerance_m"))surface.sole_tolerance_m=surface_mark_scalar(value.at("sole_tolerance_m"),.001,.1);
+    return surface;
+}
 void validate_component(const std::string& type, const Json& value) {
     if(type=="PhysicalRig") { (void)physical_rig_value(value);return; }
     if(type=="HitRegion") { (void)hit_region_value(value);return; }
+    if(type=="FootprintSurface") { (void)footprint_surface_value(value);return; }
     if(type=="MeshRenderer" || type=="StaticMesh" || type=="SkinnedMesh")
         for(const auto* key:{"cast_shadows","receive_shadows"})if(value.contains(key))
             require(value.at(key).is_boolean(),"Mesh shadow controls must be boolean.");
@@ -1071,6 +1114,7 @@ void validate_template_graph(const Json& document,const Json& recipe,
             "Template requires exactly one connected root.");
         if(!member.at("parent").is_null())require(members.contains(identifier(member.at("parent"))),"Template parent must be local.");
         const auto& bag=member.at("components");require(bag.is_object(),"Template member components must be an object.");
+        require(!bag.contains("FootprintSurface"),"FootprintSurface requires an authored world receiver outside the spawn catalog.");
         for(const auto& [type,value]:bag.items())if(!custom_component(type))validate_component(type,value);
         auto local_reference=[&](const Json& target,const char* expected) {
             if(target.is_null())return;
@@ -1190,7 +1234,7 @@ void validate(const Json& doc) {
         }
         require(int(audio_components.contains("MeshRenderer"))+int(audio_components.contains("StaticMesh"))+int(audio_components.contains("SkinnedMesh"))<=1,"An entity can have only one mesh component.");
         require(!audio_components.contains("SkinnedMesh") || !audio_components.contains("AcousticMaterial"),"Skinned mesh acoustics are not supported; use a separate explicit collision/acoustic proxy.");
-        for (const auto& [type,value]:entity.at("components").items()) {
+        for (const auto& [type,value]:audio_components.items()) {
             if(!custom_component(type))validate_component(type,value);
             else {
                 const auto type_id=custom_type(type);const auto& schema=authored_schema(schemas,type_id);
@@ -1198,6 +1242,13 @@ void validate(const Json& doc) {
                 component_checked([&]{components::validate_payload(schema,payload,&authored_reference_exists,const_cast<Json*>(&entities));});
                 require(++component_count<=components::max_instances && payload.size()<=components::max_payload_bytes-component_bytes,"Authored component instance/byte budget exceeded.");component_bytes+=payload.size();
             }
+        }
+        if(audio_components.contains("FootprintSurface")) {
+            const auto& surface=audio_components.at("FootprintSurface");
+            if(surface.contains("profile"))
+                require(doc.contains("surface_mark_profiles") &&
+                    doc.at("surface_mark_profiles").contains(surface.at("profile").get_ref<const std::string&>()),
+                    "FootprintSurface on "+id+" refers to an absent surface mark profile.");
         }
     }
     std::size_t light_count=0,environment_count=0,shadow_count=0;std::uint32_t shadow_resolution=1024;
@@ -1757,6 +1808,7 @@ public:
         auto definition=runtime_definition(false,&source,false,&assets,&audio,&post_effects);
         definition.particle_sprite_textures=std::move(sprite_textures);
         definition.surface_mark_profiles=resolve_surface_mark_profiles(source,image);
+        component_checked([&]{ validate_runtime_footprint_surfaces(definition); });
         result.needs_surface_mark_masks=!definition.surface_mark_profiles.empty();
         resolve_ui_images(definition.ui,assets);
         for(const auto& element:definition.ui)if(element.style && element.style->image) {
@@ -2155,7 +2207,7 @@ public:
             fields(params, {"revision", "parent", "after", "limit", "component"}); current_revision(params);
             if(params.contains("component") && params.at("component").is_string() && custom_component(params.at("component").get<std::string>())) {
                 const auto schemas=authored_component_schemas(doc_);(void)authored_schema(schemas,custom_type(params.at("component").get<std::string>()));
-            } else if (params.contains("component")) require(params["component"] == "Transform" || params["component"] == "Camera" || params["component"] == "CameraDraw" || params["component"] == "MeshRenderer" || params["component"] == "BoxCollider" || params["component"] == "MeshCollider" || params["component"] == "CharacterController" || params["component"] == "StaticMesh" || params["component"] == "PbrMaterial" || params["component"] == "PbrTextures" || params["component"] == "Light" || params["component"] == "LightingEnvironment" || params["component"] == "AcousticMaterial" || params["component"] == "AudioEmitter" || params["component"] == "AnimationRig" || params["component"] == "PhysicalRig" || params["component"] == "RigNode" || params["component"] == "SkinnedMesh" || params["component"] == "HitRegion" || params["component"] == "ParticleEmitter", "Unknown component type.");
+            } else if (params.contains("component")) require(params["component"] == "Transform" || params["component"] == "Camera" || params["component"] == "CameraDraw" || params["component"] == "MeshRenderer" || params["component"] == "BoxCollider" || params["component"] == "MeshCollider" || params["component"] == "CharacterController" || params["component"] == "StaticMesh" || params["component"] == "PbrMaterial" || params["component"] == "PbrTextures" || params["component"] == "Light" || params["component"] == "LightingEnvironment" || params["component"] == "AcousticMaterial" || params["component"] == "AudioEmitter" || params["component"] == "AnimationRig" || params["component"] == "PhysicalRig" || params["component"] == "RigNode" || params["component"] == "SkinnedMesh" || params["component"] == "HitRegion" || params["component"] == "ParticleEmitter" || params["component"] == "FootprintSurface", "Unknown component type.");
             const auto after = params.contains("after") ? identifier(params.at("after")) : std::string{};
             if (params.contains("after")) require(params.contains("revision"), "Pagination requires a revision.");
             if (params.contains("parent") && !params.at("parent").is_null()) identifier(params.at("parent"));
@@ -3626,6 +3678,8 @@ public:
             }
             if(components.contains("CameraDraw"))value.camera_draw=camera_draw_value(components.at("CameraDraw"));
             if(components.contains("ParticleEmitter"))value.particle_emitter=parse_particle_emitter(components.at("ParticleEmitter"));
+            if(!animation_only && !audio_only && components.contains("FootprintSurface"))
+                value.footprint_surface=footprint_surface_value(components.at("FootprintSurface"));
             if(components.contains("AnimationRig")) {
                 const auto& ref=components.at("AnimationRig");const auto state=animation_value(ref);RuntimeAnimationRig rig;
                 try { rig.model=cache.get(asset_directory(),ref.at("asset")); }
@@ -4905,7 +4959,7 @@ public:
                 } else {validate_component(type,op.at("value"));entity(staged,id)["components"][type]=op.at("value");}
             } else if (name == "component.remove") {
                 fields(op, {"op", "id", "type"}, {"op", "id", "type"});
-                require((op.at("type").is_string() && custom_component(op.at("type").get<std::string>())) || op.at("type") == "Camera" || op.at("type") == "CameraDraw" || op.at("type") == "MeshRenderer" || op.at("type") == "BoxCollider" || op.at("type") == "MeshCollider" || op.at("type") == "CharacterController" || op.at("type") == "StaticMesh" || op.at("type") == "PbrMaterial" || op.at("type") == "PbrTextures" || op.at("type") == "Light" || op.at("type") == "LightingEnvironment" || op.at("type") == "AcousticMaterial" || op.at("type") == "AudioEmitter" || op.at("type") == "AnimationRig" || op.at("type") == "PhysicalRig" || op.at("type") == "RigNode" || op.at("type") == "SkinnedMesh" || op.at("type") == "HitRegion" || op.at("type") == "ParticleEmitter", "Only optional built-in or registered custom components can be removed.");
+                require((op.at("type").is_string() && custom_component(op.at("type").get<std::string>())) || op.at("type") == "Camera" || op.at("type") == "CameraDraw" || op.at("type") == "MeshRenderer" || op.at("type") == "BoxCollider" || op.at("type") == "MeshCollider" || op.at("type") == "CharacterController" || op.at("type") == "StaticMesh" || op.at("type") == "PbrMaterial" || op.at("type") == "PbrTextures" || op.at("type") == "Light" || op.at("type") == "LightingEnvironment" || op.at("type") == "AcousticMaterial" || op.at("type") == "AudioEmitter" || op.at("type") == "AnimationRig" || op.at("type") == "PhysicalRig" || op.at("type") == "RigNode" || op.at("type") == "SkinnedMesh" || op.at("type") == "HitRegion" || op.at("type") == "ParticleEmitter" || op.at("type") == "FootprintSurface", "Only optional built-in or registered custom components can be removed.");
                 auto& components = entity(staged, id)["components"];
                 require(components.erase(op.at("type").get<std::string>()) == 1, "Component does not exist.", -32004);
             } else if (name == "entity.delete") {

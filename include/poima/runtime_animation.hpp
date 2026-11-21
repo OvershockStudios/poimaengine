@@ -282,6 +282,8 @@ public:
     std::optional<RuntimeGroundingCommand> grounding_control(const std::string& entity,std::uint32_t slot) const;
     void apply_grounding(const std::vector<RuntimeGroundingCommand>& commands);
     std::optional<RuntimeIkState> ik_state(const std::string& entity,std::uint32_t slot) const;
+    // Borrow completed acquisition decisions until the next animation mutation.
+    std::size_t foot_plant_acquisitions(std::uint64_t tick,std::span<const RuntimeGroundingState*> output) const;
     struct IkChainPreview {
         std::array<std::string,3> entities;
         std::array<std::array<double,3>,3> candidate;

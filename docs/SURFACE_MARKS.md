@@ -81,6 +81,51 @@ lifecycle event has occurred. A dropped request still checks its receiver,
 ray, and style, and it uses one command slot. It consumes no placement ID.
 Deadlines and counters resume from the saved tick in a fresh process.
 
+## Place footprints from planted feet
+
+Add `FootprintSurface` to ground that should show tracks. Discover its
+component schema with `world.describe`. The character needs calibrated
+[planted-foot locking](FOOT_PLANTING.md) on the feet that leave prints.
+The example sets a 24 cm long by 11 cm wide projection with an optional
+cooked sole mask. Omit `profile` to use an analytic ellipse.
+
+```json
+{
+  "half_extent_m": [0.12, 0.055],
+  "half_depth_m": 0.015,
+  "minimum_normal_dot": 0.9,
+  "edge_fraction": 0.18,
+  "linear_rgb": [0.46, 0.52, 0.58],
+  "opacity": 0.8,
+  "roughness": 0.88,
+  "lifetime_ticks": 1800,
+  "sole_tolerance_m": 0.025,
+  "profile": "00000000000000000000000000000092"
+}
+```
+
+Use an authored static or kinematic box with matching visible geometry,
+or a static cooked mesh whose triangle collider matches its render primitive.
+The ordinary rigid, unscaled and opaque receiver rules apply. The referenced
+profile must exist in the same world. Restart the runtime to adopt a change.
+
+A new plant stamps once when the solved sole reaches within
+`sole_tolerance_m` of its target. The tolerance defaults to 0.025 m and accepts
+0.001–0.1 m. The mark uses the cached contact and its support-local heading.
+On a mesh, the cooked triangle provides the rendered plane. The first half
+extent follows the heading. The support carries its marks as it moves, and
+fresh save restoration retains the original stamp and its deadline. A foot
+can stamp again when lift or a gameplay grounding reset allows a new plant.
+
+Caller and gameplay placements run first. New eligible plants use the
+remaining slots in the shared 16-command budget in rig ID and IK slot order.
+Footprints request timed recycling. The runtime skips acquisitions that
+exceed the command budget and records drops when all eligible retained
+slots are permanent. Inspect `runtime.ik` and `runtime.surface_marks.inspect`
+at the same committed tick to compare the support, heading, solved residual
+and new receiver-local mark. The effect changes surface shading. Snow depth,
+geometry and physical material simulation have their own engine contracts.
+
 ## Author a mask profile
 
 Import a PNG or JPEG with `asset.image.import` and `color_space: "linear"`.
@@ -192,3 +237,18 @@ The [timed gameplay fixture](../tests/timed_surface_marks_contract.py) uses
 `tests/managed_timed_surface_mark_gameplay`. Its headless route checks capacity,
 rollback, and 900 ticks of placements on cooked terrain. Its standalone route
 checks mark coverage before and after expiry, including fresh-process restores.
+
+The [planted-footprint fixture](../tests/footprint_surface_contract.py) uses
+the [original Knight GLB and license](CHARACTER_LIBRARY.md#original-source).
+It uses controlled poses from the imported clips and checks planted contacts
+on a moving box and a cooked slope, expiry, and byte-identical save continuation.
+
+```sh
+python3 tests/footprint_surface_contract.py build/linux-game/poima \
+  --source "$knight/Knight.glb" --license "$knight/LICENSE.txt" \
+  --output build/planted-footprints-check
+```
+
+For the relocated Vulkan route, supply the Windows executable with
+`--runtime-root`, `--gpu`, and `--lighting-path`. Add `--windows-interop`
+if Python runs under WSL.

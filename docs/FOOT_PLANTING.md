@@ -98,6 +98,11 @@ avoids a constrained foot repeatedly ratcheting forward into a new stance.
 Partial requested weights blend the achieved pose, so a target anchor alone
 does not imply the actual sole is perfectly fixed.
 
+Ground marked with [FootprintSurface](SURFACE_MARKS.md#place-footprints-from-planted-feet)
+can stamp its surface at a new acquisition whose achieved sole reaches
+the configured tolerance. Use the acquisition tick and support-local
+axes to compare the plant with the visible print.
+
 The character wrapper retains grounding's upright positive-uniform restriction;
 the support can rotate in three dimensions. Original affine ankle offsets and
 positive end-joint scales are retained under the selected IK metric profile.

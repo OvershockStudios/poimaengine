@@ -14,6 +14,7 @@
     std::vector<RuntimeSurfaceMarkCommand> gameplay_surface_marks;
     std::size_t surface_mark_attempts=0;
     std::vector<SceneSurfaceMarkMask> surface_mark_masks;
+    bool has_footprint_surfaces=false;
 
     void initialize_surface_mark_profiles(const RuntimeDefinition& definition) {
         require(definition.surface_mark_profiles.size()<=max_surface_mark_profiles,"Surface mark profile budget exceeded.");
@@ -166,12 +167,7 @@
         const auto bounded=[](float value,float minimum,float maximum) {
             return std::isfinite(value) && value>=minimum && value<=maximum;
         };
-        const auto unit=[&](float value) { return bounded(value,0.f,1.f); };
-        require(std::all_of(mark.half_extent_m.begin(),mark.half_extent_m.end(),
-                [&](float value) { return bounded(value,.005f,4.f); }) &&
-            bounded(mark.half_depth_m,.001f,.25f) && unit(mark.minimum_normal_dot) && unit(mark.edge_fraction) &&
-            std::all_of(mark.linear_rgb.begin(),mark.linear_rgb.end(),unit) && unit(mark.opacity) &&
-            bounded(mark.roughness,.045f,1.f),"Surface mark style is outside the bounded material ranges.");
+        require(surface_mark_validation::style_in_range(mark),"Surface mark style is outside the bounded material ranges.");
 
         const float center_limit=triangle_mesh ? 10000.f : .501f;
         require(std::all_of(mark.center_m.begin(),mark.center_m.end(),
@@ -221,21 +217,24 @@
     }
 
     pose_frames::Vector surface_mark_tangent(const RuntimeSurfaceMarkCommand& command,
-        const pose_frames::Axes& receiver_basis,const pose_frames::Vector& normal) const {
-        if(command.travel_direction) {
-            auto travel=*command.travel_direction;
-            const auto length=travel_direction_length(travel);
-            for(auto& value:travel)value/=length;
-            if(!command.source.empty()) {
-                // The ray has already validated the same final source pose.
-                const auto source_basis=pose_frames::axes(registry.get<Node>(find(command.source)).world);
-                const auto local=travel;
-                for(std::size_t row=0;row<3;++row) {
-                    travel[row]=source_basis.direction[0][row]*local[0]+source_basis.direction[1][row]*local[1]+
-                        source_basis.direction[2][row]*local[2];
+        const pose_frames::Axes& receiver_basis,const pose_frames::Vector& normal,
+        const pose_frames::Vector* planted_forward) const {
+        if(planted_forward || command.travel_direction) {
+            auto travel=planted_forward ? *planted_forward : *command.travel_direction;
+            if(!planted_forward) {
+                const auto length=travel_direction_length(travel);
+                for(auto& value:travel)value/=length;
+                if(!command.source.empty()) {
+                    // The ray has already validated the same final source pose.
+                    const auto source_basis=pose_frames::axes(registry.get<Node>(find(command.source)).world);
+                    const auto local=travel;
+                    for(std::size_t row=0;row<3;++row) {
+                        travel[row]=source_basis.direction[0][row]*local[0]+source_basis.direction[1][row]*local[1]+
+                            source_basis.direction[2][row]*local[2];
+                    }
                 }
+                travel=pose_frames::project(receiver_basis,travel);
             }
-            travel=pose_frames::project(receiver_basis,travel);
             const auto normal_dot=pose_frames::dot(normal,travel);
             for(std::size_t k=0;k<3;++k)travel[k]-=normal[k]*normal_dot;
             const auto projected_length=std::hypot(travel[0],travel[1],travel[2]);
@@ -252,6 +251,66 @@
         return tangent;
     }
 
+    std::optional<SceneSurfaceMark> resolve_surface_mark(const RuntimeSurfaceMarkCommand& command,
+        const RuntimeFootPlantAnchor* plant) const {
+        const auto receiver=surface_mark_receiver(command.receiver);
+        const auto& mesh=registry.get<RuntimeMesh>(receiver);
+        const auto& world=registry.get<Node>(receiver).world;
+        const auto basis=pose_frames::axes(world);
+        pose_frames::Vector center,normal,toward;
+        std::optional<std::uint32_t> triangle_index;
+        if(plant) {
+            // Plant frames are already in the matching rigid support space.
+            // Keep the contact that was used by IK, without casting a second ray.
+            center=plant->local_point;
+            normal=plant->local_normal;
+            toward={-normal[0],-normal[1],-normal[2]};
+            triangle_index=plant->triangle;
+        } else {
+            const auto ray=surface_mark_ray(command);
+            const auto hit=physics_raycast(ray);
+            require(hit && hit->entity==command.receiver && hit->normal,
+                "Surface mark ray must first hit the expected receiver with a surface normal.");
+            const pose_frames::Vector origin{world[12],world[13],world[14]};
+            center=pose_frames::project(basis,surface_measure::subtract(hit->position,origin));
+            normal=pose_frames::project(basis,*hit->normal);
+            toward=pose_frames::project(basis,ray.direction);
+            triangle_index=hit->triangle;
+        }
+        if(mesh.mesh) {
+            require(triangle_index && *triangle_index<mesh.mesh->indices.size()/3,
+                "Surface mark ray must identify the matching cooked triangle.");
+            // Use the frozen render triangle for the anchor. Physics uses
+            // a quantized copy of the same vertices in its acceleration tree.
+            SceneObject geometry{};
+            geometry.world=identity_matrix();
+            geometry.mesh=mesh.mesh;
+            const auto triangle=surface_measure::triangle(geometry,*triangle_index);
+            require(triangle.normal.has_value(),"Surface mark triangle has no stable normal.");
+            center=surface_measure::nearest(triangle,center).position;
+            normal=*triangle.normal;
+        }
+
+        const auto facing=pose_frames::dot(normal,toward);
+        if(plant && !(facing<0 || (facing>0 && mesh.material->double_sided)))return std::nullopt;
+        require(facing<0 || (facing>0 && mesh.material->double_sided),
+            "Surface mark ray requires a visible facing surface.");
+        const auto normal_length=std::hypot(normal[0],normal[1],normal[2]);
+        require(std::isfinite(normal_length) && normal_length>1e-8,"Surface mark hit normal is invalid.");
+        for(auto& value:normal)value/=facing>0 ? -normal_length : normal_length;
+        const auto tangent=surface_mark_tangent(command,basis,normal,plant ? &plant->local_forward : nullptr);
+
+        auto mark=command.style;
+        mark.mask_sha256=command.profile.empty() ? std::string{} : surface_mark_profile(command.profile).mask_sha256;
+        for(std::size_t k=0;k<3;++k) {
+            mark.center_m[k]=static_cast<float>(center[k]);
+            mark.normal[k]=static_cast<float>(normal[k]);
+            mark.tangent[k]=static_cast<float>(tangent[k]);
+        }
+        validate_surface_mark_fields(mark,bool(mesh.mesh));
+        return mark;
+    }
+
     bool surface_mark_expired(const RuntimeSurfaceMark& row) const {
         return row.expires_tick && row.expires_tick<=tick;
     }
@@ -266,97 +325,95 @@
         });
     }
 
-    void advance_surface_marks(std::span<const RuntimeSurfaceMarkCommand> caller) {
-        const std::span<const RuntimeSurfaceMarkCommand> gameplay=gameplay_surface_marks;
-        if(caller.empty() && gameplay.empty()) {
-            retire_surface_marks();
+    void place_surface_mark(SurfaceMarksState& state,const RuntimeSurfaceMarkCommand& command,
+        const RuntimeFootPlantAnchor* plant=nullptr) {
+        const bool recycle=command.overflow==SurfaceMarkOverflowPolicy::recycle_oldest_timed;
+        require((command.overflow==SurfaceMarkOverflowPolicy::reject || (recycle && command.lifetime_ticks)) &&
+            command.lifetime_ticks<=max_surface_mark_lifetime_ticks && tick<=max_surface_mark_id-command.lifetime_ticks,
+            "Invalid surface mark lifetime or overflow policy at this tick.");
+        const auto count=std::count_if(state.rows.begin(),state.rows.end(),[&](const auto& row) {
+            return row.receiver==command.receiver;
+        });
+        const bool receiver_full=count>=static_cast<std::ptrdiff_t>(max_surface_marks_per_receiver);
+        const bool scene_full=state.rows.size()>=max_scene_surface_marks;
+        auto replaced=state.rows.end();
+        bool dropped=false;
+        if(receiver_full || scene_full) {
+            require(recycle || !receiver_full,"Surface mark receiver capacity exceeded.");
+            require(recycle || !scene_full,"Scene surface mark capacity exceeded.");
+            replaced=std::find_if(state.rows.begin(),state.rows.end(),[&](const auto& row) {
+                return row.expires_tick && (!receiver_full || row.receiver==command.receiver);
+            });
+            dropped=replaced==state.rows.end();
+        }
+        require(dropped || state.next_id<max_surface_mark_id,"Surface mark identity space exhausted.");
+        auto mark=resolve_surface_mark(command,plant);
+        if(!mark)return;
+        if(dropped) {
+            if(state.lifecycle.dropped<max_surface_mark_id)++state.lifecycle.dropped;
             return;
         }
+        if(replaced!=state.rows.end()) {
+            state.rows.erase(replaced);
+            ++state.lifecycle.recycled;
+        }
+        const auto expiry=command.lifetime_ticks ? tick+command.lifetime_ticks : 0;
+        state.rows.push_back({state.next_id++,tick,command.receiver,std::move(*mark),command.profile,expiry});
+    }
+
+    struct FootprintPlacement {
+        const RuntimeFootPlantAnchor* anchor=nullptr;
+        const RuntimeFootprintSurface* surface=nullptr;
+    };
+
+    std::size_t collect_footprints(std::span<FootprintPlacement> output) const {
+        if(!has_footprint_surfaces || output.empty())return 0;
+        std::array<const RuntimeGroundingState*,64> contacts;
+        const auto count=animations->foot_plant_acquisitions(tick,contacts);
+        std::size_t written=0;
+        for(const auto* contact:std::span(contacts).first(count)) {
+            const auto& plant=*contact->planting;
+            const auto support=topology->definitions.find(plant.anchor->support);
+            if(support==topology->definitions.end() || !support->second.footprint_surface)continue;
+            const auto& surface=*support->second.footprint_surface;
+            if(*plant.position_error>surface.sole_tolerance_m || tick>max_surface_mark_id-surface.lifetime_ticks)continue;
+            output[written++]={&*plant.anchor,&surface};
+            if(written==output.size())break;
+        }
+        return written;
+    }
+
+    void advance_surface_marks(std::span<const RuntimeSurfaceMarkCommand> caller) {
+        const std::span<const RuntimeSurfaceMarkCommand> gameplay=gameplay_surface_marks;
         require(caller.size()<=max_surface_mark_commands && gameplay.size()<=max_surface_mark_commands-caller.size(),
             "Surface mark command budget exceeded.");
         const auto requested=caller.size()+gameplay.size();
+        std::array<FootprintPlacement,max_surface_mark_commands> automatic;
+        const auto footprints=collect_footprints(std::span(automatic).first(automatic.size()-requested));
+        if(requested==0 && footprints==0) {
+            retire_surface_marks();
+            return;
+        }
+
         auto next=surface_marks ? std::make_shared<SurfaceMarksState>(*surface_marks) : std::make_shared<SurfaceMarksState>();
         erase_retired_surface_marks(*next);
         const auto recycles=[](const auto& command){return command.overflow==SurfaceMarkOverflowPolicy::recycle_oldest_timed;};
         if(requested>max_scene_surface_marks-next->rows.size())
             require(std::ranges::any_of(caller,recycles) || std::ranges::any_of(gameplay,recycles),"Scene surface mark capacity exceeded.");
-        next->rows.reserve(std::min(max_scene_surface_marks,next->rows.size()+requested));
-        // Caller marks receive earlier IDs than gameplay marks on the same tick.
-        for(const auto commands:{caller,gameplay})for(const auto& command:commands) {
-            const bool recycle=recycles(command);
-            require((command.overflow==SurfaceMarkOverflowPolicy::reject || (recycle && command.lifetime_ticks)) &&
-                command.lifetime_ticks<=max_surface_mark_lifetime_ticks && tick<=max_surface_mark_id-command.lifetime_ticks,
-                "Invalid surface mark lifetime or overflow policy at this tick.");
-            const auto count=std::count_if(next->rows.begin(),next->rows.end(),[&](const auto& row) {
-                return row.receiver==command.receiver;
-            });
-            const bool receiver_full=count>=static_cast<std::ptrdiff_t>(max_surface_marks_per_receiver);
-            const bool scene_full=next->rows.size()>=max_scene_surface_marks;
-            auto replaced=next->rows.end();
-            bool dropped=false;
-            if(receiver_full || scene_full) {
-                require(recycle || !receiver_full,"Surface mark receiver capacity exceeded.");
-                require(recycle || !scene_full,"Scene surface mark capacity exceeded.");
-                replaced=std::find_if(next->rows.begin(),next->rows.end(),[&](const auto& row) {
-                    return row.expires_tick && (!receiver_full || row.receiver==command.receiver);
-                });
-                dropped=replaced==next->rows.end();
-            }
-            require(dropped || next->next_id<max_surface_mark_id,"Surface mark identity space exhausted.");
-            const auto receiver=surface_mark_receiver(command.receiver);
-            const auto& mesh=registry.get<RuntimeMesh>(receiver);
-            const auto ray=surface_mark_ray(command);
-            const auto hit=physics_raycast(ray);
-            require(hit && hit->entity==command.receiver && hit->normal,
-                "Surface mark ray must first hit the expected receiver with a surface normal.");
-
-            const auto& world=registry.get<Node>(receiver).world;
-            const auto basis=pose_frames::axes(world);
-            const pose_frames::Vector origin{world[12],world[13],world[14]};
-            auto center=pose_frames::project(basis,surface_measure::subtract(hit->position,origin));
-            auto normal=pose_frames::project(basis,*hit->normal);
-            if(mesh.mesh) {
-                require(hit->triangle && *hit->triangle<mesh.mesh->indices.size()/3,
-                    "Surface mark ray must identify the matching cooked triangle.");
-                // Use the frozen render triangle for the anchor. Physics uses
-                // a quantized copy of the same vertices in its acceleration tree.
-                SceneObject geometry{};
-                geometry.world=identity_matrix();
-                geometry.mesh=mesh.mesh;
-                const auto triangle=surface_measure::triangle(geometry,*hit->triangle);
-                require(triangle.normal.has_value(),"Surface mark triangle has no stable normal.");
-                center=surface_measure::nearest(triangle,center).position;
-                normal=*triangle.normal;
-            }
-
-            const auto facing=pose_frames::dot(normal,pose_frames::project(basis,ray.direction));
-            require(facing<0 || (facing>0 && mesh.material->double_sided),
-                "Surface mark ray requires a visible facing surface.");
-            const auto normal_length=std::hypot(normal[0],normal[1],normal[2]);
-            require(std::isfinite(normal_length) && normal_length>1e-8,"Surface mark hit normal is invalid.");
-            for(auto& value:normal)value/=facing>0 ? -normal_length : normal_length;
-            const auto tangent=surface_mark_tangent(command,basis,normal);
-
-            auto mark=command.style;
-            mark.mask_sha256=command.profile.empty() ? std::string{} : surface_mark_profile(command.profile).mask_sha256;
-            for(std::size_t k=0;k<3;++k) {
-                mark.center_m[k]=static_cast<float>(center[k]);
-                mark.normal[k]=static_cast<float>(normal[k]);
-                mark.tangent[k]=static_cast<float>(tangent[k]);
-            }
-            validate_surface_mark_fields(mark,bool(mesh.mesh));
-            if(dropped) {
-                if(next->lifecycle.dropped<max_surface_mark_id)++next->lifecycle.dropped;
-                continue;
-            }
-            if(replaced!=next->rows.end()) {
-                next->rows.erase(replaced);
-                ++next->lifecycle.recycled;
-            }
-            const auto expiry=command.lifetime_ticks ? tick+command.lifetime_ticks : 0;
-            next->rows.push_back({next->next_id++,tick,command.receiver,std::move(mark),command.profile,expiry});
+        next->rows.reserve(std::min(max_scene_surface_marks,next->rows.size()+requested+footprints));
+        // Keep caller and gameplay priority, then visit acquired contacts in rig/slot order.
+        for(const auto commands:{caller,gameplay})
+            for(const auto& command:commands)place_surface_mark(*next,command);
+        for(const auto& placement:std::span(automatic).first(footprints)) {
+            RuntimeSurfaceMarkCommand command;
+            command.receiver=placement.anchor->support;
+            command.style=placement.surface->style;
+            command.profile=placement.surface->profile;
+            command.lifetime_ticks=placement.surface->lifetime_ticks;
+            command.overflow=SurfaceMarkOverflowPolicy::recycle_oldest_timed;
+            place_surface_mark(*next,command,placement.anchor);
         }
-        surface_marks=std::move(next);
+        if(next->next_id!=1 || next->lifecycle.has_events())surface_marks=std::move(next);
         gameplay_surface_marks.clear();
     }
 

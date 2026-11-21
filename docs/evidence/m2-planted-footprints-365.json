@@ -1,0 +1,1066 @@
+{
+  "version": "0.0.365",
+  "world_schema_revision": 186,
+  "sources_sha256": {
+    "CMakeLists.txt": "026bec6f42b09a122557219e94f16723801277ba4cd4719082261d565979fe1a",
+    "include/poima/runtime.hpp": "21acb19beac0964f0e92045d64b926dfd4c83b42e29ec27ba9ffb5db9cc7643e",
+    "include/poima/runtime_animation.hpp": "c282219b479932bb07901365632e3d5772b12dab3b7dc0f0a5526fecedeaafbf",
+    "src/runtime.cpp": "9a0407215cc4776518a15fb79d29864ee2bb57b789ee5c57a04fb1ec59968012",
+    "src/runtime_animation.cpp": "7773a2fb6b842a290664f993482970a92fb6e9f98ba4287ca302167e07d6e5d2",
+    "src/runtime_footprint_validation.cpp": "60ec3436dbfd3da30cba1697a99c238d95f6a674b09579e7f4a5254c5483c861",
+    "src/runtime_surface_marks.inc": "94747414009c3bfb7fa6ffd35ce7e0a3b19313c091bf78a9ea8f366f85ad544d",
+    "src/surface_mark_validation.hpp": "4e7bae9c3416e92502ae2e3a803b7d1fa2b88099d67408effd8a1e4aaaa2e699",
+    "src/world.cpp": "6f3606255ae82a064af339a73eb308bc188412765557ef26626ca3dea078683e",
+    "src/world_schema.cpp": "2f3d4edf04af3bf0140b91019d0499b41171e0294b58ad37391cb4c5ad022e9f",
+    "src/world_surface_marks.inc": "44ba6df7fbb31e2c420a06710236e58a3bf5526df6fb477d44b05449dd013977",
+    "tests/asset_references_contract.py": "7568c2b1ad7dcd75111dc92e431330734eade1099c467c00a4f5d706361ddc85",
+    "tests/footprint_surface_contract.py": "5a5f5d7a4393a027294050e703cf5d1e02987218804ee10a8c811e104daf2752",
+    "tests/world_ui_contract.py": "1b032c448f89ad129bbe0e5ddf5d69c5444a6da71652c8b7ecd66ef5e3bc2da4"
+  },
+  "linux": {
+    "version": {
+      "version": "0.0.365",
+      "compiler": "GNU",
+      "compiler_version": "16.2.0",
+      "target_os": "Linux",
+      "target_arch": "x86_64"
+    },
+    "executable_sha256": "76ebe43e191863ad80024e66757625e3688f6da04105e16ae8cfe53847975c55",
+    "descriptor": {
+      "call_bytes": 80,
+      "call_version": 1,
+      "feature_count": 42,
+      "navigation": true,
+      "passed": true,
+      "services_bytes": 568,
+      "services_version": 7
+    },
+    "headless": {
+      "report_sha256": "5e4a689facc2dad698589a485e5155e63b5016890251dd02ab5c05c6c4efbf0f",
+      "failed_report_sha256": [],
+      "content": {
+        "source_sha256": "60428e3abc09ba83e595d256e3af8c5c976b46cdae599f0802fc82b4a3445168",
+        "license_sha256": "ae322141814056dda0deea7540d74c41d87aee1da319977cd1bd84ee5a923629",
+        "model_sha256": "c816d0e811cf4f104b3106b4f67076a49672f461450089ac6316aa5c82175ac7",
+        "provenance_sha256": "430247addaa14855a883a901d8224eafd042dd10d204bd725b27ef537c3dcc87",
+        "mask_sha256": "4b31e46095449ccf573ded16ee39b5d88d390d936388f405e7c4002975927f60",
+        "terrain": {
+          "asset": "69037f0f340b9dbdbd25f75f70ae947fc596c01437c1fa219be58b53fa5a9eac",
+          "bounds": {
+            "max": [
+              -1.5,
+              0.07500000298023224,
+              0.5
+            ],
+            "min": [
+              -2.5,
+              0.02500000037252903,
+              -0.5
+            ]
+          },
+          "bytes": 1050,
+          "primitive": 0,
+          "triangles": 8,
+          "vertices": 9,
+          "x": 0,
+          "z": 0
+        }
+      },
+      "archives": {
+        "before-rejected-step": {
+          "tick": 0,
+          "bytes": 74014,
+          "sha256": "0d64ea99848b5d961c5e844bd45a3511392a7de71a5615c1bbaaa28d17a5d47f"
+        },
+        "checkpoint": {
+          "tick": 4,
+          "bytes": 89082,
+          "sha256": "8fe099811fbc5e7c586f09b3f3e344e4a58b3f1b4838f767ead45324122233fc"
+        },
+        "final-warm": {
+          "tick": 19,
+          "bytes": 88117,
+          "sha256": "09546bda1af6b6f74cfe2eecf7e886e7fc89040d929b37d41883a98153fd5cae"
+        }
+      },
+      "cold_continuation_exact": true,
+      "placement_ticks": [
+        1,
+        13
+      ],
+      "expiration_ticks": [
+        17,
+        19
+      ],
+      "permanent_marks_at_final": 1,
+      "rejections": [
+        "boolean-lifetime",
+        "invalid-tolerance",
+        "missing-profile",
+        "remove-used-profile",
+        "zero-lifetime"
+      ],
+      "bad_receiver_preserved_project": true,
+      "residual_gate": {
+        "initial_errors_m": [
+          0.051143217345276284,
+          0.050471784221145524
+        ],
+        "stamp_after_replant_tick": 4
+      },
+      "placement_budget": {
+        "explicit": 15,
+        "eligible": 2,
+        "emitted": 1,
+        "no_late_retry": true,
+        "automatic": {
+          "center_m": [
+            0.2677931487560272,
+            0.5,
+            0.0288687851279974
+          ],
+          "edge_fraction": 0.25,
+          "expires_tick": 19,
+          "half_depth_m": 0.02500000037252903,
+          "half_extent_m": [
+            0.1599999964237213,
+            0.09000000357627869
+          ],
+          "id": "16",
+          "linear_rgb": [
+            0.949999988079071,
+            0.02500000037252903,
+            0.01600000075995922
+          ],
+          "mask_sha256": "4b31e46095449ccf573ded16ee39b5d88d390d936388f405e7c4002975927f60",
+          "minimum_normal_dot": 0.800000011920929,
+          "normal": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "opacity": 1.0,
+          "profile": "00000000000000000000000000000391",
+          "receiver": "0000000000000000000000000000038e",
+          "roughness": 0.8600000143051147,
+          "tangent": [
+            0.33186373114585876,
+            0.0,
+            0.9433273077011108
+          ],
+          "tick": 1
+        }
+      }
+    },
+    "ctest_report_sha256": "10ade968b4f16c4fe4abc1724be9ce647080a6a86e614443df3628d4510770fc",
+    "suites": [
+      "world_terrain_contract",
+      "surface_marks_contract",
+      "authoring_core_conformance",
+      "authoring_contract_identity",
+      "gameplay_compatibility_policy",
+      "gameplay_service_contract",
+      "native_gameplay_publish_requirements",
+      "gameplay_player_preferences_native",
+      "mcp_contract",
+      "runtime_foot_planting_native",
+      "world_ui_contract",
+      "project_contract",
+      "asset_references_contract"
+    ],
+    "retained_timed_aot": {
+      "report_sha256": "65c0e0fa003c924f5482c28edaf7c7156af5214ddc424ee99e8f456d092ca16a",
+      "baseline_sha256": "4254048d5eb1f82cd620ee71325b6cdc9d90d54fe38fdd6a230bc9ffa1e89306",
+      "checkpoint_sha256": "4b75a3d23f80a368693d406130bf691e8742fe1a2f95b8f424b106a46f27c88e",
+      "final_sha256": "54fc305e7425648855e9e297b38ce3dafa8b2842ea32b4c21aa9ccde2a7cd97a",
+      "compatibility_receipt_sha256": "ab9dc038aded764b2e26e0940996da1c7daf6e02b40f3e2ed83ea3dcbeb0908f",
+      "checkpoint_and_continuation_byte_identical": true
+    }
+  },
+  "windows": {
+    "version": {
+      "version": "0.0.365",
+      "compiler": "Clang",
+      "compiler_version": "23.1.2",
+      "target_os": "Windows",
+      "target_arch": "x86_64"
+    },
+    "executable_sha256": "40140a0cb96dd2c345b07a03bf59ac0f97dbda9780feb62ae2602a93b83ec2f9",
+    "descriptor": {
+      "call_bytes": 80,
+      "call_version": 1,
+      "feature_count": 42,
+      "navigation": true,
+      "passed": true,
+      "services_bytes": 568,
+      "services_version": 7
+    },
+    "runtime_manifest_sha256": "ce80ef98af4ef606a00a827654aff2fffa4ce25bacf6fe21df2010a985965656",
+    "desktop_bridge_sha256": "e875c2527c24da5d30cb2ecf9dafaef9f4abef242c49824b9f9e6263cadec7ee",
+    "mcp_log_sha256": "e517c300a1b2fe42b05242d23c4bbf0f91af7fcae60653eec7a4603c06af5396",
+    "relocated": [
+      {
+        "report_sha256": "30ac6ef36f4448cd2bc4b04b9b1aab1ac2118ef2f5c1d083460e116c688bf11b",
+        "failed_report_sha256": [],
+        "content": {
+          "source_sha256": "60428e3abc09ba83e595d256e3af8c5c976b46cdae599f0802fc82b4a3445168",
+          "license_sha256": "ae322141814056dda0deea7540d74c41d87aee1da319977cd1bd84ee5a923629",
+          "model_sha256": "c816d0e811cf4f104b3106b4f67076a49672f461450089ac6316aa5c82175ac7",
+          "provenance_sha256": "430247addaa14855a883a901d8224eafd042dd10d204bd725b27ef537c3dcc87",
+          "mask_sha256": "4b31e46095449ccf573ded16ee39b5d88d390d936388f405e7c4002975927f60",
+          "terrain": {
+            "asset": "69037f0f340b9dbdbd25f75f70ae947fc596c01437c1fa219be58b53fa5a9eac",
+            "bounds": {
+              "max": [
+                -1.5,
+                0.07500000298023224,
+                0.5
+              ],
+              "min": [
+                -2.5,
+                0.02500000037252903,
+                -0.5
+              ]
+            },
+            "bytes": 1050,
+            "primitive": 0,
+            "triangles": 8,
+            "vertices": 9,
+            "x": 0,
+            "z": 0
+          }
+        },
+        "archives": {
+          "before-rejected-step": {
+            "tick": 0,
+            "bytes": 74014,
+            "sha256": "92c311e5c750dbaa6ac652f2de8341016cbda52fc1b6963193aa2934546f2c78"
+          },
+          "checkpoint": {
+            "tick": 4,
+            "bytes": 89082,
+            "sha256": "7a672b54207057465a4bd554ce5e96a5bc812712d43b6d5f6b09c12f647f4032"
+          },
+          "final-warm": {
+            "tick": 19,
+            "bytes": 88129,
+            "sha256": "dfd21b9e9b447f6282560a2d79a5e453b3643d07d4daf9f1744dde256c0fad6d"
+          }
+        },
+        "cold_continuation_exact": true,
+        "placement_ticks": [
+          1,
+          13
+        ],
+        "expiration_ticks": [
+          17,
+          19
+        ],
+        "permanent_marks_at_final": 1,
+        "gpu": "AMD Radeon(TM) Graphics",
+        "lighting_path": "forward",
+        "capture_count": 4,
+        "bundle_files": 63,
+        "bundle_manifest_sha256": "3e02812ffa4496f9d871db6fbdb2dbe87490bca86a2c207ab7a131fb3413befc",
+        "warm_captures": {
+          "uncovered-warm": {
+            "sha256": "d072c85d2faa1c5ba9e5c66675cbad3b3e2ff7470883315d8a9611c867ae5c96",
+            "gpu": "AMD Radeon(TM) Graphics",
+            "lighting_path": "forward",
+            "samples": [
+              {
+                "pixel": [
+                  363,
+                  182
+                ],
+                "rgb": [
+                  173,
+                  37,
+                  28
+                ],
+                "hdr": [
+                  0.71240234375,
+                  0.01873779296875,
+                  0.011993408203125
+                ],
+                "depth": 0.9725856184959412,
+                "normal": [
+                  0.0,
+                  1.0,
+                  0.0
+                ]
+              },
+              {
+                "pixel": [
+                  302,
+                  198
+                ],
+                "rgb": [
+                  173,
+                  37,
+                  28
+                ],
+                "hdr": [
+                  0.71240234375,
+                  0.01873779296875,
+                  0.011993408203125
+                ],
+                "depth": 0.9725856184959412,
+                "normal": [
+                  0.0,
+                  1.0,
+                  0.0
+                ]
+              },
+              {
+                "pixel": [
+                  320,
+                  140
+                ],
+                "rgb": [
+                  94,
+                  99,
+                  105
+                ],
+                "hdr": [
+                  0.12744140625,
+                  0.1424560546875,
+                  0.1649169921875
+                ],
+                "depth": 0.9725856184959412,
+                "normal": [
+                  0.0,
+                  1.0,
+                  0.0
+                ]
+              }
+            ],
+            "tick": 7
+          },
+          "expired-warm": {
+            "sha256": "57e1499d8f7b785e105fd761b7a35108d6689ae913a3170079d9b69c78c9e851",
+            "gpu": "AMD Radeon(TM) Graphics",
+            "lighting_path": "forward",
+            "samples": [
+              {
+                "pixel": [
+                  363,
+                  182
+                ],
+                "rgb": [
+                  94,
+                  99,
+                  105
+                ],
+                "hdr": [
+                  0.12744140625,
+                  0.1424560546875,
+                  0.1649169921875
+                ],
+                "depth": 0.9725856184959412,
+                "normal": [
+                  0.0,
+                  1.0,
+                  0.0
+                ]
+              },
+              {
+                "pixel": [
+                  302,
+                  198
+                ],
+                "rgb": [
+                  94,
+                  99,
+                  105
+                ],
+                "hdr": [
+                  0.12744140625,
+                  0.1424560546875,
+                  0.1649169921875
+                ],
+                "depth": 0.9725856184959412,
+                "normal": [
+                  0.0,
+                  1.0,
+                  0.0
+                ]
+              },
+              {
+                "pixel": [
+                  320,
+                  140
+                ],
+                "rgb": [
+                  94,
+                  99,
+                  105
+                ],
+                "hdr": [
+                  0.12744140625,
+                  0.1424560546875,
+                  0.1649169921875
+                ],
+                "depth": 0.9725856184959412,
+                "normal": [
+                  0.0,
+                  1.0,
+                  0.0
+                ]
+              }
+            ],
+            "tick": 19
+          }
+        }
+      },
+      {
+        "report_sha256": "c6cdb56de1095de53594762ad51f4324fe5484a8e21ba1a7186a18a2bcfd2ffe",
+        "failed_report_sha256": [],
+        "content": {
+          "source_sha256": "60428e3abc09ba83e595d256e3af8c5c976b46cdae599f0802fc82b4a3445168",
+          "license_sha256": "ae322141814056dda0deea7540d74c41d87aee1da319977cd1bd84ee5a923629",
+          "model_sha256": "c816d0e811cf4f104b3106b4f67076a49672f461450089ac6316aa5c82175ac7",
+          "provenance_sha256": "430247addaa14855a883a901d8224eafd042dd10d204bd725b27ef537c3dcc87",
+          "mask_sha256": "4b31e46095449ccf573ded16ee39b5d88d390d936388f405e7c4002975927f60",
+          "terrain": {
+            "asset": "69037f0f340b9dbdbd25f75f70ae947fc596c01437c1fa219be58b53fa5a9eac",
+            "bounds": {
+              "max": [
+                -1.5,
+                0.07500000298023224,
+                0.5
+              ],
+              "min": [
+                -2.5,
+                0.02500000037252903,
+                -0.5
+              ]
+            },
+            "bytes": 1050,
+            "primitive": 0,
+            "triangles": 8,
+            "vertices": 9,
+            "x": 0,
+            "z": 0
+          }
+        },
+        "archives": {
+          "before-rejected-step": {
+            "tick": 0,
+            "bytes": 74014,
+            "sha256": "b7086515340aee30cb1a4a5d3d60d233073e6a72261033e0385beb90602bc71d"
+          },
+          "checkpoint": {
+            "tick": 4,
+            "bytes": 89082,
+            "sha256": "4ff8d7493d4b2010743b2d1fe8356a95e3beebed1b7dad703b430c1acbb897ad"
+          },
+          "final-warm": {
+            "tick": 19,
+            "bytes": 88129,
+            "sha256": "31cdbf7ad4afd0d3d678e9c749624c5b6a2f66ff1d8e0524dcf962406460f807"
+          }
+        },
+        "cold_continuation_exact": true,
+        "placement_ticks": [
+          1,
+          13
+        ],
+        "expiration_ticks": [
+          17,
+          19
+        ],
+        "permanent_marks_at_final": 1,
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "lighting_path": "forward",
+        "capture_count": 4,
+        "bundle_files": 63,
+        "bundle_manifest_sha256": "43b90f3b8992b4f1f0b638ca515cb063839944b4ff79a8479292724d3994afb9",
+        "warm_captures": {
+          "uncovered-warm": {
+            "sha256": "d8a8081f37864fbdc0517d5818a2980f175b4ec25229a6f6e9344f8184ee01d3",
+            "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+            "lighting_path": "forward",
+            "samples": [
+              {
+                "pixel": [
+                  363,
+                  182
+                ],
+                "rgb": [
+                  173,
+                  37,
+                  28
+                ],
+                "hdr": [
+                  0.71240234375,
+                  0.01873779296875,
+                  0.011993408203125
+                ],
+                "depth": 0.9725856184959412,
+                "normal": [
+                  0.0,
+                  0.99951171875,
+                  0.0
+                ]
+              },
+              {
+                "pixel": [
+                  302,
+                  198
+                ],
+                "rgb": [
+                  173,
+                  37,
+                  28
+                ],
+                "hdr": [
+                  0.71240234375,
+                  0.01873779296875,
+                  0.011993408203125
+                ],
+                "depth": 0.9725856184959412,
+                "normal": [
+                  0.0,
+                  0.99951171875,
+                  0.0
+                ]
+              },
+              {
+                "pixel": [
+                  320,
+                  140
+                ],
+                "rgb": [
+                  94,
+                  99,
+                  105
+                ],
+                "hdr": [
+                  0.12744140625,
+                  0.1424560546875,
+                  0.1649169921875
+                ],
+                "depth": 0.9725856184959412,
+                "normal": [
+                  0.0,
+                  0.99951171875,
+                  0.0
+                ]
+              }
+            ],
+            "tick": 7
+          },
+          "expired-warm": {
+            "sha256": "3bf9e08fd28972a025bf1d206775c82c3e53bcc29259a0684377574b688b7a7f",
+            "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+            "lighting_path": "forward",
+            "samples": [
+              {
+                "pixel": [
+                  363,
+                  182
+                ],
+                "rgb": [
+                  94,
+                  99,
+                  105
+                ],
+                "hdr": [
+                  0.12744140625,
+                  0.1424560546875,
+                  0.1649169921875
+                ],
+                "depth": 0.9725856184959412,
+                "normal": [
+                  0.0,
+                  0.99951171875,
+                  0.0
+                ]
+              },
+              {
+                "pixel": [
+                  302,
+                  198
+                ],
+                "rgb": [
+                  94,
+                  99,
+                  105
+                ],
+                "hdr": [
+                  0.12744140625,
+                  0.1424560546875,
+                  0.1649169921875
+                ],
+                "depth": 0.9725856184959412,
+                "normal": [
+                  0.0,
+                  0.99951171875,
+                  0.0
+                ]
+              },
+              {
+                "pixel": [
+                  320,
+                  140
+                ],
+                "rgb": [
+                  94,
+                  99,
+                  105
+                ],
+                "hdr": [
+                  0.12744140625,
+                  0.1424560546875,
+                  0.1649169921875
+                ],
+                "depth": 0.9725856184959412,
+                "normal": [
+                  0.0,
+                  0.99951171875,
+                  0.0
+                ]
+              }
+            ],
+            "tick": 19
+          }
+        }
+      },
+      {
+        "report_sha256": "117e5ed1e4eff58ea201095fc346503d3cecd7cf84cee2cad2bf3bb2ed8ff275",
+        "failed_report_sha256": [],
+        "content": {
+          "source_sha256": "60428e3abc09ba83e595d256e3af8c5c976b46cdae599f0802fc82b4a3445168",
+          "license_sha256": "ae322141814056dda0deea7540d74c41d87aee1da319977cd1bd84ee5a923629",
+          "model_sha256": "c816d0e811cf4f104b3106b4f67076a49672f461450089ac6316aa5c82175ac7",
+          "provenance_sha256": "430247addaa14855a883a901d8224eafd042dd10d204bd725b27ef537c3dcc87",
+          "mask_sha256": "4b31e46095449ccf573ded16ee39b5d88d390d936388f405e7c4002975927f60",
+          "terrain": {
+            "asset": "69037f0f340b9dbdbd25f75f70ae947fc596c01437c1fa219be58b53fa5a9eac",
+            "bounds": {
+              "max": [
+                -1.5,
+                0.07500000298023224,
+                0.5
+              ],
+              "min": [
+                -2.5,
+                0.02500000037252903,
+                -0.5
+              ]
+            },
+            "bytes": 1050,
+            "primitive": 0,
+            "triangles": 8,
+            "vertices": 9,
+            "x": 0,
+            "z": 0
+          }
+        },
+        "archives": {
+          "before-rejected-step": {
+            "tick": 0,
+            "bytes": 74014,
+            "sha256": "c75a33e923afa43f7988f58d23094f065e4a29f78a44aa686b8121d7ded140d9"
+          },
+          "checkpoint": {
+            "tick": 4,
+            "bytes": 89082,
+            "sha256": "a7bcf28c390846a379ee2ffe08688afec0efa56be82e018c2dd4a08faf23aead"
+          },
+          "final-warm": {
+            "tick": 19,
+            "bytes": 88129,
+            "sha256": "b14c958cf31425d2bb4dcf31f3c021cf164bba23123c05dcb58f596a50b51fb9"
+          }
+        },
+        "cold_continuation_exact": true,
+        "placement_ticks": [
+          1,
+          13
+        ],
+        "expiration_ticks": [
+          17,
+          19
+        ],
+        "permanent_marks_at_final": 1,
+        "gpu": "AMD Radeon(TM) Graphics",
+        "lighting_path": "deferred",
+        "capture_count": 4,
+        "bundle_files": 63,
+        "bundle_manifest_sha256": "8f4126a5cb4b17bb056060e3f4d2fd96226c127c0cee7800b42259dd0081ecdd",
+        "warm_captures": {
+          "uncovered-warm": {
+            "sha256": "2fe4309c2b6dab6ba7bdada1c412088a03341dd4a7fe85e6364b7264f9cdb883",
+            "gpu": "AMD Radeon(TM) Graphics",
+            "lighting_path": "deferred",
+            "samples": [
+              {
+                "pixel": [
+                  363,
+                  182
+                ],
+                "rgb": [
+                  173,
+                  37,
+                  28
+                ],
+                "hdr": [
+                  0.7119140625,
+                  0.01873779296875,
+                  0.011993408203125
+                ],
+                "depth": 0.9725856184959412,
+                "normal": [
+                  0.0,
+                  1.0,
+                  0.0
+                ]
+              },
+              {
+                "pixel": [
+                  302,
+                  198
+                ],
+                "rgb": [
+                  173,
+                  37,
+                  28
+                ],
+                "hdr": [
+                  0.7119140625,
+                  0.01873779296875,
+                  0.011993408203125
+                ],
+                "depth": 0.9725856184959412,
+                "normal": [
+                  0.0,
+                  1.0,
+                  0.0
+                ]
+              },
+              {
+                "pixel": [
+                  320,
+                  140
+                ],
+                "rgb": [
+                  94,
+                  99,
+                  105
+                ],
+                "hdr": [
+                  0.12744140625,
+                  0.1424560546875,
+                  0.1649169921875
+                ],
+                "depth": 0.9725856184959412,
+                "normal": [
+                  0.0,
+                  1.0,
+                  0.0
+                ]
+              }
+            ],
+            "tick": 7
+          },
+          "expired-warm": {
+            "sha256": "f0c2e9a7bb793fcea6af5caf560532fb09a198613dcadaecfdd5f421a56d2a06",
+            "gpu": "AMD Radeon(TM) Graphics",
+            "lighting_path": "deferred",
+            "samples": [
+              {
+                "pixel": [
+                  363,
+                  182
+                ],
+                "rgb": [
+                  94,
+                  99,
+                  105
+                ],
+                "hdr": [
+                  0.12744140625,
+                  0.1424560546875,
+                  0.1649169921875
+                ],
+                "depth": 0.9725856184959412,
+                "normal": [
+                  0.0,
+                  1.0,
+                  0.0
+                ]
+              },
+              {
+                "pixel": [
+                  302,
+                  198
+                ],
+                "rgb": [
+                  94,
+                  99,
+                  105
+                ],
+                "hdr": [
+                  0.12744140625,
+                  0.1424560546875,
+                  0.1649169921875
+                ],
+                "depth": 0.9725856184959412,
+                "normal": [
+                  0.0,
+                  1.0,
+                  0.0
+                ]
+              },
+              {
+                "pixel": [
+                  320,
+                  140
+                ],
+                "rgb": [
+                  94,
+                  99,
+                  105
+                ],
+                "hdr": [
+                  0.12744140625,
+                  0.1424560546875,
+                  0.1649169921875
+                ],
+                "depth": 0.9725856184959412,
+                "normal": [
+                  0.0,
+                  1.0,
+                  0.0
+                ]
+              }
+            ],
+            "tick": 19
+          }
+        }
+      },
+      {
+        "report_sha256": "4be41a6b01ae995a6977efa54dac50198d77b16d19fe8947704f8b4847203116",
+        "failed_report_sha256": [],
+        "content": {
+          "source_sha256": "60428e3abc09ba83e595d256e3af8c5c976b46cdae599f0802fc82b4a3445168",
+          "license_sha256": "ae322141814056dda0deea7540d74c41d87aee1da319977cd1bd84ee5a923629",
+          "model_sha256": "c816d0e811cf4f104b3106b4f67076a49672f461450089ac6316aa5c82175ac7",
+          "provenance_sha256": "430247addaa14855a883a901d8224eafd042dd10d204bd725b27ef537c3dcc87",
+          "mask_sha256": "4b31e46095449ccf573ded16ee39b5d88d390d936388f405e7c4002975927f60",
+          "terrain": {
+            "asset": "69037f0f340b9dbdbd25f75f70ae947fc596c01437c1fa219be58b53fa5a9eac",
+            "bounds": {
+              "max": [
+                -1.5,
+                0.07500000298023224,
+                0.5
+              ],
+              "min": [
+                -2.5,
+                0.02500000037252903,
+                -0.5
+              ]
+            },
+            "bytes": 1050,
+            "primitive": 0,
+            "triangles": 8,
+            "vertices": 9,
+            "x": 0,
+            "z": 0
+          }
+        },
+        "archives": {
+          "before-rejected-step": {
+            "tick": 0,
+            "bytes": 74014,
+            "sha256": "87ca5b230a10a7db72b39175c43171a6af0c3d4dc48f37d64a3a9006ed06b4ad"
+          },
+          "checkpoint": {
+            "tick": 4,
+            "bytes": 89082,
+            "sha256": "b455575fb68bee93a275df01acd8e373bc11e17576342246ef01ae2e13b2bde9"
+          },
+          "final-warm": {
+            "tick": 19,
+            "bytes": 88129,
+            "sha256": "a7f9ecbbd1a4ebe660d4a108d70b3e09a213b5d6af63c873173131c59de59120"
+          }
+        },
+        "cold_continuation_exact": true,
+        "placement_ticks": [
+          1,
+          13
+        ],
+        "expiration_ticks": [
+          17,
+          19
+        ],
+        "permanent_marks_at_final": 1,
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "lighting_path": "deferred",
+        "capture_count": 4,
+        "bundle_files": 63,
+        "bundle_manifest_sha256": "6bb78887a4a8836fb6325872fa111ac03c26b98b3304780c8e029985abe08c90",
+        "warm_captures": {
+          "uncovered-warm": {
+            "sha256": "176469f844928a2323eef1b274d59ade4f260e781901e0c058638af642e19fcc",
+            "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+            "lighting_path": "deferred",
+            "samples": [
+              {
+                "pixel": [
+                  363,
+                  182
+                ],
+                "rgb": [
+                  173,
+                  37,
+                  28
+                ],
+                "hdr": [
+                  0.7119140625,
+                  0.01873779296875,
+                  0.011993408203125
+                ],
+                "depth": 0.9725856184959412,
+                "normal": [
+                  0.0,
+                  1.0,
+                  0.0
+                ]
+              },
+              {
+                "pixel": [
+                  302,
+                  198
+                ],
+                "rgb": [
+                  173,
+                  37,
+                  28
+                ],
+                "hdr": [
+                  0.7119140625,
+                  0.01873779296875,
+                  0.011993408203125
+                ],
+                "depth": 0.9725856184959412,
+                "normal": [
+                  0.0,
+                  1.0,
+                  0.0
+                ]
+              },
+              {
+                "pixel": [
+                  320,
+                  140
+                ],
+                "rgb": [
+                  94,
+                  99,
+                  105
+                ],
+                "hdr": [
+                  0.12744140625,
+                  0.1424560546875,
+                  0.1649169921875
+                ],
+                "depth": 0.9725856184959412,
+                "normal": [
+                  0.0,
+                  1.0,
+                  0.0
+                ]
+              }
+            ],
+            "tick": 7
+          },
+          "expired-warm": {
+            "sha256": "99498b0d95f7417517e7a51c6f7f7f07104503cbc9843903caab4e6d8a65b161",
+            "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+            "lighting_path": "deferred",
+            "samples": [
+              {
+                "pixel": [
+                  363,
+                  182
+                ],
+                "rgb": [
+                  94,
+                  99,
+                  105
+                ],
+                "hdr": [
+                  0.12744140625,
+                  0.1424560546875,
+                  0.1649169921875
+                ],
+                "depth": 0.9725856184959412,
+                "normal": [
+                  0.0,
+                  1.0,
+                  0.0
+                ]
+              },
+              {
+                "pixel": [
+                  302,
+                  198
+                ],
+                "rgb": [
+                  94,
+                  99,
+                  105
+                ],
+                "hdr": [
+                  0.12744140625,
+                  0.1424560546875,
+                  0.1649169921875
+                ],
+                "depth": 0.9725856184959412,
+                "normal": [
+                  0.0,
+                  1.0,
+                  0.0
+                ]
+              },
+              {
+                "pixel": [
+                  320,
+                  140
+                ],
+                "rgb": [
+                  94,
+                  99,
+                  105
+                ],
+                "hdr": [
+                  0.12744140625,
+                  0.1424560546875,
+                  0.1649169921875
+                ],
+                "depth": 0.9725856184959412,
+                "normal": [
+                  0.0,
+                  1.0,
+                  0.0
+                ]
+              }
+            ],
+            "tick": 19
+          }
+        }
+      }
+    ],
+    "first_probe_attempt": {
+      "amd_forward_sha256": "30c915243ff64d5da45e1a9133a6e62a1e907debbd427278a3e3fed7e13d2ad4",
+      "nvidia_forward_failed_sha256": "49906769c7bc2ccd7eabd695e1ca4d4c002a70cf2f1beae5f28cb4abeda1276a",
+      "cause": "The fixture compared an FP16 normal component to full precision. The final matrix checks normal direction, one FP16 step of length precision, and exact unchanged normals through expiry."
+    }
+  },
+  "scope": "Controlled acquisition and lift poses from an original licensed character. Selected Vulkan witnesses use one sample and reconstruction disabled."
+}

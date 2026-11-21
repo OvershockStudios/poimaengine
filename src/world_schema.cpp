@@ -19,6 +19,7 @@
 #include "model_import.hpp"
 #include "ui_authoring_schema.hpp"
 #include <nlohmann/json.hpp>
+#include <algorithm>
 #include <string_view>
 #include <utility>
 
@@ -39,7 +40,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     auto vector = [](Json item, int size) { return Json{{"type", "array"}, {"items", item}, {"minItems", size}, {"maxItems", size}}; };
     const Json transform = object_schema({{"position", vector(number, 3)}, {"rotation", vector(number, 4)},
         {"scale", vector({{"type", "number"}, {"exclusiveMinimum", 0}, {"maximum", 1e9}}, 3)}}, {"position", "rotation", "scale"});
-    const Json component_type = {{"enum", {"Transform", "Camera", "CameraDraw", "MeshRenderer", "BoxCollider", "MeshCollider", "CharacterController", "StaticMesh", "PbrMaterial", "PbrTextures", "Light", "LightingEnvironment", "AcousticMaterial", "AudioEmitter", "AnimationRig", "PhysicalRig", "RigNode", "SkinnedMesh", "HitRegion", "ParticleEmitter"}}};
+    const Json component_type = {{"enum", {"Transform", "Camera", "CameraDraw", "MeshRenderer", "BoxCollider", "MeshCollider", "CharacterController", "StaticMesh", "PbrMaterial", "PbrTextures", "Light", "LightingEnvironment", "AcousticMaterial", "AudioEmitter", "AnimationRig", "PhysicalRig", "RigNode", "SkinnedMesh", "HitRegion", "ParticleEmitter", "FootprintSurface"}}};
     const Json lens = object_schema({{"vertical_fov", {{"type", "number"}, {"minimum", 5}, {"maximum", 150}}},
         {"near", {{"type", "number"}, {"minimum", 0.001}}}, {"far", {{"type", "number"}, {"maximum", 1e7}}}}, {"vertical_fov", "near", "far"});
     auto camera=lens;camera["properties"]["viewmodel"]=lens;
@@ -201,7 +202,23 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     const Json hit_region={{"oneOf",hit_variants},{"description","Immutable query-only region; owner is self or an ancestor. Unique owner/name pairs and at most 4096 regions include disabled members. Local spheres, boxes and Y capsules use exact affine poses; no physics body or collision response."}};
     auto physical_rig_schema=physical_rig::configuration_schema();
     physical_rig_schema["description"]="Frozen physical profile on an AnimationRig owner. Part nodes refer to the same model's local indices and require matching RigNode entities; joint parents must be model ancestors. Optional pose_frame selects rigid_uniform (default) or skeletal_fixed_scale with immutable initialized local scales and logical quaternion-chain axes. No separate asset or editor-only rig state.";
-    const Json components = {{"Transform", transform}, {"Camera", camera}, {"CameraDraw",camera_draw}, {"MeshRenderer", mesh}, {"BoxCollider",collider}, {"MeshCollider",mesh_collider}, {"CharacterController",character},{"StaticMesh",static_mesh},{"SkinnedMesh",skinned_mesh},{"AnimationRig",animation_rig},{"PhysicalRig",physical_rig_schema},{"RigNode",rig_node},{"HitRegion",hit_region},{"PbrMaterial",pbr},{"PbrTextures",textures},{"Light",{{"oneOf",light_variants}}},{"LightingEnvironment",lighting_environment},{"AcousticMaterial",acoustic},{"AudioEmitter",emitter},{"ParticleEmitter",particle_emitter_schema()}};
+    const auto mark_range=[](double minimum,double maximum) {
+        return Json{{"type","number"},{"minimum",minimum},{"maximum",maximum}};
+    };
+    const Json mark_profile_id={{"type","string"},{"pattern","^(?!0{32}$)[0-9a-f]{32}$"}};
+    const Json mark_lifetime={{"type","integer"},{"minimum",1},{"maximum",max_surface_mark_lifetime_ticks}};
+    const Json mark_style_props={{"half_extent_m",vector(mark_range(.005,4),2)},{"half_depth_m",mark_range(.001,.25)},
+        {"minimum_normal_dot",unit},{"edge_fraction",unit},{"linear_rgb",vector(unit,3)},
+        {"opacity",unit},{"roughness",mark_range(.045,1)}};
+    const Json mark_style_required={"half_extent_m","half_depth_m","minimum_normal_dot","edge_fraction","linear_rgb","opacity","roughness"};
+    auto footprint=object_schema(mark_style_props,mark_style_required);
+    footprint["properties"]["profile"]=mark_profile_id;
+    footprint["properties"]["lifetime_ticks"]=mark_lifetime;
+    footprint["properties"]["sole_tolerance_m"]=mark_range(.001,.1);
+    footprint["properties"]["sole_tolerance_m"]["default"]=.025;
+    footprint["required"].push_back("lifetime_ticks");
+    footprint["description"]="Author on a static or kinematic rigid surface with matching visible opaque render and collision geometry. A newly acquired planted foot can leave a timed mark here when the solved sole is within sole_tolerance_m of the contact. The first half extent follows the foot heading. Optional profile refers to the frozen surface mark catalog. Available for authored world entities.";
+    const Json components = {{"Transform", transform}, {"Camera", camera}, {"CameraDraw",camera_draw}, {"MeshRenderer", mesh}, {"BoxCollider",collider}, {"MeshCollider",mesh_collider}, {"CharacterController",character},{"StaticMesh",static_mesh},{"SkinnedMesh",skinned_mesh},{"AnimationRig",animation_rig},{"PhysicalRig",physical_rig_schema},{"RigNode",rig_node},{"HitRegion",hit_region},{"PbrMaterial",pbr},{"PbrTextures",textures},{"Light",{{"oneOf",light_variants}}},{"LightingEnvironment",lighting_environment},{"AcousticMaterial",acoustic},{"AudioEmitter",emitter},{"ParticleEmitter",particle_emitter_schema()},{"FootprintSurface",footprint}};
     Json ops = Json::array();
     auto op = [&](const char* kind, Json properties, Json required) {
         properties["op"] = {{"const", kind}}; properties["id"] = id;
@@ -214,10 +231,12 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     op("entity.delete", {{"recursive", {{"type", "boolean"}}}}, {"recursive"});
     for (const auto& [type, value] : components.items())
         op("component.set", {{"type", {{"const", type}}}, {"value", value}}, {"type", "value"});
-    op("component.remove", {{"type", {{"enum", {"Camera", "CameraDraw", "MeshRenderer", "BoxCollider", "MeshCollider", "CharacterController", "StaticMesh", "PbrMaterial", "PbrTextures", "Light", "LightingEnvironment", "AcousticMaterial", "AudioEmitter", "AnimationRig", "PhysicalRig", "RigNode", "SkinnedMesh", "HitRegion", "ParticleEmitter"}}}}}, {"type"});
+    auto removable_component=component_type;
+    auto& removable_types=removable_component.at("enum");
+    removable_types.erase(std::find(removable_types.begin(),removable_types.end(),Json("Transform")));
+    op("component.remove", {{"type", removable_component}}, {"type"});
     ops.push_back(object_schema({{"op",{{"const","navigation.set"}}},{"asset",{{"anyOf",Json::array({asset_id,Json{{"type","null"}}})}}}},{"op","asset"}));
     ops.push_back(object_schema({{"op",{{"const","water.set"}}},{"asset",{{"anyOf",Json::array({asset_id,Json{{"type","null"}}})}}}},{"op","asset"}));
-    const Json mark_profile_id={{"type","string"},{"pattern","^(?!0{32}$)[0-9a-f]{32}$"}};
     ops.push_back(object_schema({{"op",{{"const","surface_mark.profile.set"}}},{"id",mark_profile_id},
         {"mask",{{"anyOf",Json::array({asset_id,Json{{"type","null"}}})}}}},{"op","id","mask"}));
     ops.push_back(object_schema({{"op",{{"const","asset.provenance.set"}}},{"asset",asset_id},{"records",{{"type","array"},{"maxItems",8},{"uniqueItems",true},{"items",asset_id}}}},{"op","asset","records"}));
@@ -255,7 +274,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 185}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 186}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -594,24 +613,18 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"pairs",{{"type","array"},{"minItems",1},{"maxItems",max_surface_pairs},{"items",surface_pair}}}},
         {"session_id","tick","pairs"});
     methods["runtime.surface.measure"]["description"]="Measure selected points against the closest rigid or skinned indexed triangles in committed world space. Supply a cooked vertex index or a triangle ordinal and three weights that sum to one. Omit target triangles to scan the whole target. Maximum 32768 target triangle checks per request. Returns closest point, unsigned distance, winding normals, signed normal offset and an optional distance verdict. Geometry precedes camera-specific effects. Read-only, outside runtime-game-session v1.";
-    const auto mark_range=[](double minimum,double maximum) {
-        return Json{{"type","number"},{"minimum",minimum},{"maximum",maximum}};
-    };
     const auto mark_ray_vector=vector(mark_range(-1e6,1e6),3);
     const auto mark_ray=object_schema({{"origin",mark_ray_vector},{"direction",mark_ray_vector},
         {"distance",mark_range(.001,10000)}},{"origin","direction","distance"});
     auto mark_command=object_schema({{"receiver",id},{"source",id},{"ray",mark_ray},{"travel_direction",mark_ray_vector},{"profile",mark_profile_id},
-        {"lifetime_ticks",{{"type","integer"},{"minimum",1},{"maximum",max_surface_mark_lifetime_ticks}}},
-        {"overflow",{{"enum",{"reject","recycle_oldest_timed"}},{"default","reject"}}},
-        {"half_extent_m",vector(mark_range(.005,4),2)},{"half_depth_m",mark_range(.001,.25)},
-        {"minimum_normal_dot",unit},{"edge_fraction",unit},{"linear_rgb",vector(unit,3)},
-        {"opacity",unit},{"roughness",mark_range(.045,1)}},
-        {"receiver","ray","half_extent_m","half_depth_m","minimum_normal_dot","edge_fraction","linear_rgb","opacity","roughness"});
+        {"lifetime_ticks",mark_lifetime},{"overflow",{{"enum",{"reject","recycle_oldest_timed"}},{"default","reject"}}}},{"receiver","ray"});
+    mark_command["properties"].update(mark_style_props);
+    for(const auto& field:mark_style_required)mark_command["required"].push_back(field);
     mark_command["allOf"]=Json::array({Json{
         {"if",{{"properties",{{"overflow",{{"const","recycle_oldest_timed"}}}}},{"required",{"overflow"}}}},
         {"then",{{"required",{"lifetime_ticks"}}}}}});
     methods["runtime.step"]["properties"]["surface_marks"]={{"type","array"},{"maxItems",max_surface_mark_commands},
-        {"items",mark_command},{"description","Deposit marks in list order after final motion on the first simulated tick. Optional source makes the ray and travel direction relative to its final unscaled rigid frame. Optional profile selects a mask in the frozen world catalog. Each ray must hit its named rigid opaque receiver first. Budget and rollback are shared with gameplay. Outside runtime-game-session v1."}};
+        {"items",mark_command},{"description","Deposit marks in list order after final motion on the first simulated tick. Optional source makes the ray and travel direction relative to its final unscaled rigid frame. Optional profile selects a mask in the frozen world catalog. Each ray must hit its named rigid opaque receiver first. Caller and gameplay placements take priority over automatic footprints in the shared budget. Outside runtime-game-session v1."}};
     methods["runtime.surface_marks.inspect"]=object_schema({{"session_id",id},{"tick",rev},{"structure_revision",rev},{"entity",id}},
         {"session_id","tick","structure_revision"});
     methods["runtime.surface_marks.inspect"]["description"]="Read receiver-local mark frames, material parameters and optional expires_tick in placement order. The optional entity filter selects one receiver. Lifecycle counts cover the whole scene. Outside runtime-game-session v1.";
@@ -624,6 +637,10 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"lifecycle",{{"max_lifetime_ticks",max_surface_mark_lifetime_ticks},
             {"expiration","Marks expire at placement tick plus lifetime, before new placements on that tick."},
             {"recycling","On capacity, use the oldest timed mark on a full receiver, or the oldest scene-wide timed mark when only the scene is full. A request without an eligible replacement is dropped after validation. Permanent marks are protected."}}},
+        {"footprints",{{"component","FootprintSurface"},
+            {"trigger","A newly acquired native foot plant within the surface's solved sole tolerance."},
+            {"order","After caller and gameplay commands, in ascending rig ID and IK slot. Skip acquisitions above the shared 16-attempt limit."},
+            {"placement","Use the committed grounding hit and planted heading. Timed marks recycle oldest eligible timed marks and protect permanent marks."}}},
         {"persistence","Optional surface_marks snapshot extension. Version 3 stores timed rows and lifecycle counts. Version 2 stores permanent textured marks. Removing a receiver retires its marks."}};
     result["gameplay_surface_marks"]={{"feature",gameplay_abi::surface_mark_feature},
         {"services_abi",gameplay_abi::services_version},{"services_bytes",gameplay_abi::surface_mark_services_bytes},
@@ -638,7 +655,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
             {"services_bytes",gameplay_abi::surface_mark_timed_services_bytes},
             {"command_bytes",sizeof(PoimaGameSurfaceMarkCommandV4)},{"command_version",4}}},
         {"attempts_per_tick",max_surface_mark_commands},{"combined_commands_per_tick",max_surface_mark_commands},
-        {"order","Caller commands, then gameplay commands in callback order."},
+        {"order","Caller commands, then gameplay commands in callback order, then automatic footprints."},
         {"placement","Tick only. Ray starts in world coordinates or in the final unscaled rigid frame of a source entity."}};
     const auto camera_pose=object_schema({{"position",pose_vector(3,10)},{"rotation",pose_vector(4,1.00001)}},{"position","rotation"});
     auto pose_command=object_schema({{"entity",id},{"world",camera_pose},{"viewmodel",camera_pose}},{"entity"});
@@ -1149,6 +1166,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     auto recipe_components=object_schema(recipe_properties,{"Transform"});recipe_components["patternProperties"]={{"^game:[0-9a-f]{32}$",custom_values}};
     mutations.push_back(object_schema({{"op",{{"const","template.set"}}},{"id",stable_type},{"name",name},{"components",recipe_components}},{"op","id","name","components"}));
     auto member_components=object_schema(components,{"Transform"});
+    member_components["properties"].erase("FootprintSurface");
     member_components["patternProperties"]={{"^game:[0-9a-f]{32}$",custom_values}};
     const auto template_member=object_schema({{"name",name},{"parent",{{"anyOf",Json::array({stable_type,Json{{"type","null"}}})}}},
         {"components",member_components}},{"name","parent","components"});
