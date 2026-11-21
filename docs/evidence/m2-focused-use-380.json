@@ -1,0 +1,80 @@
+{
+  "release": "0.0.380",
+  "scope": "Compiled C# camera-directed input, native first-hit ray, rollback and fresh-process save continuation.",
+  "package_source_sha256": "425cef4e6c8566da9979db08ac47b0cdf673d8b1fdce8aaa9a1924502363e00c",
+  "fixture_source_sha256": "66e7d789018fbed44e45f48ee772f0e551e4464c8f86fd7c062ac04919435cbc",
+  "runner_sha256": "c440528ee747841dac8f6c1717443c9d0f582f25d6e3659cf3bcf9530cef118e",
+  "managed_sdk": "10.0.404",
+  "windows": {
+    "coreclr": {
+      "proof_sha256": "1aa1f672dd04352769b61253205e874854ed955cda248b23198c26f482861ce2",
+      "native_calls": 65,
+      "fresh_processes": 2,
+      "outcomes": 8,
+      "snapshots": 6
+    },
+    "native_aot": {
+      "proof_sha256": "780e0305647cc75f17ba76809912481d0281051c863da69638a0631503fb04bd",
+      "native_calls": 65,
+      "fresh_processes": 2,
+      "outcomes": 8,
+      "snapshots": 6
+    },
+    "cli_sha256": "d44c0d602d3c95f754718bde38b72e8fb0ff133bb55deb1d3c65f9313ab8c5c2",
+    "embedded_managed_guide_sha256": "44534866cb8c579609ff80a506c6ff9a1c1c10760f1211dc6c3d9df562ad83ac",
+    "shader_modules_byte_equal": 55
+  },
+  "linux": {
+    "cli_sha256": "407c44fa992865fbf937714c40c7bfd054d204c61b674799eedc602ad19f2252",
+    "coreclr_proof_sha256": "2390b36c82dca975779a7437adfa5f5e0170295843c9821aa0009bba88274c87",
+    "ctest_junit_sha256": "9331ab4b107fde4575dc76cf1d9b2539022a95070507dd6b01d11cf501ade6dc",
+    "suites": [
+      {
+        "suite": "authoring_core_conformance",
+        "seconds": 0.14
+      },
+      {
+        "suite": "authoring_contract_identity",
+        "seconds": 0.71
+      },
+      {
+        "suite": "world_ui_contract",
+        "seconds": 0.35
+      },
+      {
+        "suite": "runtime_save_contract",
+        "seconds": 0.63
+      },
+      {
+        "suite": "lighting_contract",
+        "seconds": 1.65
+      },
+      {
+        "suite": "runtime_contract",
+        "seconds": 0.54
+      },
+      {
+        "suite": "cli_contract",
+        "seconds": 0.14
+      },
+      {
+        "suite": "world_contract",
+        "seconds": 5.54
+      },
+      {
+        "suite": "asset_references_contract",
+        "seconds": 0.46
+      }
+    ]
+  },
+  "witnesses": [
+    "Actor self-exclusion",
+    "First non-target hit",
+    "Empty and out-of-range rays",
+    "Multiple eligible targets",
+    "Same-tick Look and Use",
+    "One Use edge across a four-tick span",
+    "Failed multi-tick batch restored native camera, physics and saved gameplay bytes",
+    "Same continuation after a fresh-process reload"
+  ]
+}

@@ -1,8 +1,15 @@
 # Implementation status
 
-Updated 2026-11-21 for **0.0.379**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-21 for **0.0.380**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.380 adds the optional [focused interaction package](../packages/interaction/README.md).
+Compiled C# gameplay can check the current camera ray against a bounded target
+set while excluding the player collider. Windows CoreCLR and Native AOT and
+Ubuntu CoreCLR exercised blockers, reach, same-tick camera look and Use,
+failed tick rollback and save continuation in fresh processes.
+[Results](evidence/m2-focused-use-380.json)
 
 Version 0.0.379 runs [compactable snow and shallow water](TERRAIN.md#compact-snow-on-cooked-tiles)
 in one world on separate terrain entities. Touching footprints are supported.

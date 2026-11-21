@@ -111,6 +111,12 @@ public sealed class CounterGame : Game<CounterState>
 
 Controller look is applied before C# runs, so a use action in the same tick sees the new camera direction. Gameplay then runs before physics advances. Queued motions are validated together before application, with at most 128 per tick. Duplicate targets, invalid bodies and exceeding native speed/duration limits fail the batch. Explicit caller motion and gameplay may not target the same body on the first tick of a batch. Movement is held for a step/replay segment; look, jump and use apply only on its first tick. Read-only entity queries during gameplay see the current state, not the eventual result of queued motion.
 
+Use the optional [focused interaction package](../packages/interaction/README.md)
+when a camera ray should select one of the game's usable colliders. The
+package reports a hit on a different collider separately from an empty ray.
+Combine a valid target
+with the same tick's Use edge before staging gameplay effects.
+
 This is trusted local project code. Do not retain borrowed pointers, start background gameplay work or store authoritative state in statics/external objects. Native-state rollback cannot undo file writes, subscriptions, static variables or other external side effects. Managed exceptions become structured engine errors; this is not a sandbox for arbitrary assemblies.
 
 ## Control animation from C#
