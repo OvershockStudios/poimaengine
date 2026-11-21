@@ -47,10 +47,11 @@ int run_mcp_world(const std::string& path,const std::string& development_profile
     McpSession session([&world](std::string_view message) {return world.request(message);});
     return serve_stdio(session);
 }
-int run_mcp_draft(const std::string& manifest) {
+int run_mcp_draft(const std::string& manifest,bool gameplay_source) {
     const auto world_path=project_draft_world_path(manifest);
     WorldSession world(world_path);
-    McpSession session([&world](std::string_view message) {return world.request(message);},{},world_path);
+    McpSession session([&world](std::string_view message) {return world.request(message);},{},world_path,
+                       gameplay_source ? manifest : std::string{});
     return serve_stdio(session);
 }
 int run_mcp_connected(const std::string& endpoint,std::uint32_t timeout_ms,

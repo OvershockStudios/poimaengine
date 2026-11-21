@@ -32,8 +32,9 @@ int run_mcp_cli(int argc,char** argv) {
     // Startup and usage failures must not put the ordinary CLI envelope on
     // MCP stdout. Only the established protocol session writes that stream.
     const auto usage=[](const char* message) {std::cerr<<message<<'\n';return 2;};
-    const bool draft=argc==5 && std::string_view(argv[2])=="--project" && std::string_view(argv[4])=="--draft";
-    if(argc<4 || argc>8 || (!draft && argc%2))return usage("Use: mcp (--project <project-manifest> | --world <world.json>) [--development-profiles file.json] | mcp --project <draft-manifest> --draft | mcp --endpoint <name> [--timeout-ms N] [--review-revision N].");
+    const bool draft=argc>=5 && std::string_view(argv[2])=="--project" && std::string_view(argv[4])=="--draft";
+    const bool draft_source=draft && argc==6 && std::string_view(argv[5])=="--gameplay-source";
+    if(argc<4 || argc>8 || (draft ? argc!=5 && !draft_source : argc%2!=0))return usage("Use: mcp (--project <project-manifest> | --world <world.json>) [--development-profiles file.json] | mcp --project <draft-manifest> --draft [--gameplay-source] | mcp --endpoint <name> [--timeout-ms N] [--review-revision N].");
     const std::string_view kind=argv[2],value=argv[3];
     if(value.empty() || value.starts_with("--"))return usage("Missing MCP project path, world path or endpoint.");
     unsigned timeout=30000;
@@ -41,7 +42,7 @@ int run_mcp_cli(int argc,char** argv) {
     std::string profiles;
     if(kind=="--world" || kind=="--project") {
         if(argc>6)return usage("Standalone MCP accepts only one development profiles file.");
-        if(argc==6) {
+        if(argc==6 && !draft) {
             if(std::string_view(argv[4])!="--development-profiles" || !*argv[5] || std::string_view(argv[5]).starts_with("--"))return usage("Standalone MCP accepts only --development-profiles file.json after the target.");
             profiles=argv[5];
         }
@@ -66,7 +67,7 @@ int run_mcp_cli(int argc,char** argv) {
     } else return usage("Choose exactly one MCP project path, world path or endpoint.");
     try {
         if(kind=="--endpoint")return poima::run_mcp_connected(std::string(value),timeout,review_revision);
-        if(draft)return poima::run_mcp_draft(std::string(value));
+        if(draft)return poima::run_mcp_draft(std::string(value),draft_source);
         const auto path=kind=="--project" ? poima::project_world_path(std::string(value)):std::string(value);
         return poima::run_mcp_world(path,profiles);
     } catch(const std::exception& error) {

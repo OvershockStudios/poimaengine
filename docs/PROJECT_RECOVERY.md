@@ -212,8 +212,10 @@ Poima selects the cooked assets and provenance needed by the pinned scenes.
 {
   "base_sha256": "<source_sha256>",
   "drafts": [
-    {"manifest": "D:/Work/AudioDraft/project.poimaproject", "world_sha256": "<audio world hash>", "files": []},
-    {"manifest": "D:/Work/LightingDraft/project.poimaproject", "world_sha256": "<lighting world hash>", "files": []}
+    {"manifest": "D:/Work/LightingDraft/project.poimaproject", "world_sha256": "<lighting world hash>", "files": []},
+    {"manifest": "D:/Work/LogicDraft/project.poimaproject", "files": [
+      {"path": "gameplay-src/Game.cs", "sha256": "<reviewed C# file hash>"}
+    ]}
   ]
 }
 ```
@@ -223,6 +225,12 @@ Save the request as `changes.json`.
 ```powershell
 poima project integrate .\Base\checkpoint.json --output .\Integrated --request .\changes.json
 ```
+
+A draft [gameplay source connection](MCP.md#edit-compiled-gameplay-in-a-draft)
+returns the file hashes to use in this request. Review the selected bytes,
+then compile the integrated C# and adopt that artifact before verifying or
+exporting the candidate. The integration command copies selected source bytes
+and retains the checkpoint's existing gameplay binding, if one was present.
 
 Poima compares each pinned scene with the common checkpoint. It can combine
 a rename and a lighting component change on the same entity. Divergent edits

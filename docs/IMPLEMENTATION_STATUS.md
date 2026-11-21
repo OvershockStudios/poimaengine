@@ -1,8 +1,20 @@
 # Implementation status
 
-Updated 2026-11-20 for **0.0.347**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-21 for **0.0.348**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.348 adds [guarded C# source edits in worker drafts](MCP.md#edit-compiled-gameplay-in-a-draft).
+On Linux, a scripted test used one worker to change two C# files and a
+separate worker to author the collider that the new gameplay uses. The test
+selected both contributions by hash and published the integrated C# to Native AOT.
+Fresh native owners loaded the relocated candidates with the original
+project paths unavailable. The combined candidate passed three gameplay
+groups, including two Use presses that awarded three credits each. The
+code-only control passed one group. The headless Linux runtime was rejected
+for standalone export by the existing renderer requirement. Desktop worker
+assignment still uses the scene scope.
+[Results](evidence/m2-draft-gameplay-source-348.json)
 
 Version 0.0.347 opens Codex creator chats and specialist reviews without a
 local shell by default. The creator can opt in to shell access for an

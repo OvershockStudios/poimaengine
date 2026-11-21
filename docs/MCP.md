@@ -141,11 +141,31 @@ and asset authoring. For model, animation donor, image and audio imports, use
 portable source paths relative to the draft entry world's directory. Use
 discovery for the active method catalog.
 
+### Edit compiled gameplay in a draft
+
+For a worker assigned a C# change, open the draft with
+`poima mcp --project /absolute/draft/project.poimaproject --draft --gameplay-source`.
+The flag adds `project.source.read` through `poima_call` and guarded writes
+through `poima_source`. Discovery lists both method schemas for that connection.
+The CLI selects the project, so neither method takes a project or profile selector.
+
+1. Read `project.source.read` with `{"path":"gameplay-src/Game.cs"}`.
+2. Call `poima_source` with method `project.source.write`. Pass the same
+   `path`, the returned hash as `expected_sha256`, and the complete replacement
+   `text`. Use a null guard when creating a file in an existing source directory.
+3. Include each changed relative path and its returned SHA-256 in the worker report.
+
+The scope accepts UTF-8 `.cs` files of up to 128 KiB under the draft's
+`gameplay-src/` directory. Identical repeated writes succeed with
+`changed: false`. Different writes with stale guards return `-32009`.
+The lead owns compilation, gameplay adoption and verification-suite edits.
+The creator's current scene worker tabs use the scene-only connection.
+
 Keep build and verification jobs with the lead's candidate workflow. After
 the worker finishes a turn, review the draft and take its world hash from
 `project inspect`. Use the hash in the
 [integration request](PROJECT_RECOVERY.md#create-worker-drafts-and-stage-an-integration).
-The lead can also select separate source files by hash.
+Use the reported file hashes to select reviewed gameplay contributions.
 
 ## Image observations (development)
 

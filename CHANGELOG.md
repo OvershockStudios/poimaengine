@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.348
+
+- Let draft agents read and make hash-guarded C# source edits through an opt-in MCP connection. Integrate selected source files alongside scene changes for a lead-owned build.
+
 ## 0.0.347
 
 - Open Codex creator chats and specialist reviews without shell access by default. Allow local shell access for individual creator chats and require it to be off for scene delegation.

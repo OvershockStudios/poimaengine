@@ -34,7 +34,8 @@ def native(path):
 
 
 class Client:
-    def __init__(self, path=None, endpoint=None, *, project=None, cwd=None, profiles=None, review_revision=None, draft=False):
+    def __init__(self, path=None, endpoint=None, *, project=None, cwd=None, profiles=None, review_revision=None,
+                 draft=False, draft_source=False):
         if endpoint:
             target = ['--endpoint', endpoint]
             if review_revision is not None:
@@ -45,6 +46,8 @@ class Client:
             target = ['--world', native(path)]
         if draft:
             target.append('--draft')
+        if draft_source:
+            target.append('--gameplay-source')
         if profiles:
             target.extend(['--development-profiles', native(profiles)])
         self.process = subprocess.Popen([BINARY, 'mcp', *target], stdin=subprocess.PIPE,
@@ -132,9 +135,10 @@ class McpContract(unittest.TestCase):
         client.initialize()
         return client
 
-    def create_project(self):
+    def create_project(self, *, gameplay=False):
         root = Path(self.temp.name) / 'My project'
-        created = subprocess.run([BINARY, 'project', 'create', native(root), '--name', 'MCP project'],
+        starter = ['--gameplay'] if gameplay else []
+        created = subprocess.run([BINARY, 'project', 'create', native(root), '--name', 'MCP project', *starter],
                                  capture_output=True, text=True, encoding='utf-8', timeout=30)
         self.assertEqual(created.returncode, 0, created.stdout + created.stderr)
         manifest = root / Path(json.loads(created.stdout)['result']['manifest']).name
@@ -181,6 +185,132 @@ class McpContract(unittest.TestCase):
                                 input=json.dumps(request)+'\n', capture_output=True, text=True, timeout=30)
         self.assertEqual(direct.returncode, 0, direct.stdout + direct.stderr)
         self.assertEqual(json.loads(direct.stdout)['result']['revision'], revision + 1)
+
+    def test_draft_source_is_guarded_and_integrates_with_a_separate_scene(self):
+        manifest, world = self.create_project(gameplay=True)
+        root = Path(self.temp.name)
+        path = 'gameplay-src/Game.cs'
+        original = (manifest.parent / path).read_bytes()
+        original_world = world.read_bytes()
+        schema = json.loads(subprocess.check_output([BINARY, 'schema', 'mcp'], text=True, timeout=30))['result']
+        self.assertIs(schema['properties']['gameplay_source']['const'], True)
+        self.assertEqual(schema['dependentRequired']['gameplay_source'], ['draft'])
+
+        def project(*arguments, failure=False):
+            result = subprocess.run([BINARY, 'project', *arguments], capture_output=True,
+                                    text=True, encoding='utf-8', timeout=30)
+            self.assertEqual(result.returncode, 4 if failure else 0, result.stdout + result.stderr)
+            return json.loads(result.stdout)
+
+        checkpoint = root / 'Base'
+        base_hash = project('checkpoint', native(manifest), '--output', native(checkpoint))['result']['source_sha256']
+        metadata = checkpoint / 'checkpoint.json'
+
+        def draft(name):
+            folder = root / name
+            project('draft', native(metadata), '--output', native(folder), '--expected-base-sha256', base_hash)
+            return folder / manifest.name
+
+        source_draft = draft('Source')
+        scene_draft = draft('Scene')
+        for invalid, status in ((['--project', native(manifest), '--draft', '--gameplay-source'], 4),
+                                (['--project', native(source_draft), '--gameplay-source'], 2),
+                                (['--endpoint', 'live', '--gameplay-source'], 2),
+                                (['--project', native(source_draft), '--draft', '--gameplay-source',
+                                  '--development-profiles', 'profiles.json'], 2)):
+            refused = subprocess.run([BINARY, 'mcp', *invalid], input='', capture_output=True, text=True, timeout=30)
+            self.assertEqual(refused.returncode, status, refused.stderr)
+            self.assertEqual(refused.stdout, '')
+
+        worker = Client(project=source_draft, draft=True, draft_source=True, cwd=root)
+        self.clients.append(worker)
+        worker.initialize()
+        tools = {tool['name']: tool for tool in worker.rpc('tools/list')['tools']}
+        self.assertEqual(set(tools), {'poima_call', 'poima_discover', 'poima_reference', 'poima_source'})
+        methods = set(tools['poima_call']['inputSchema']['properties']['method']['enum'])
+        self.assertIn('project.source.read', methods)
+        self.assertNotIn('project.source.write', methods)
+        catalog = worker.tool('poima_discover')
+        self.assertTrue(catalog['draft_gameplay_source'])
+        self.assertEqual(set(catalog['methods']), methods | {'project.source.write'})
+        selected = worker.tool('poima_discover', {'selection': {'methods': ['project.source.read', 'project.source.write']}})
+        for method, fields in (('project.source.read', ['path']), ('project.source.write', ['path', 'expected_sha256', 'text'])):
+            description = worker.tool('poima_discover', {'view': 'method', 'name': method})['methods'][method]
+            self.assertEqual(description, selected['methods'][method])
+            self.assertEqual(description['required'], fields)
+            self.assertEqual(set(description['properties']), set(fields))
+        worker.world('development.publish', error=-32602)
+        worker.rpc('tools/call', {'name': 'poima_build'}, error=-32602)
+        worker.rpc('tools/call', {'name': 'poima_checks'}, error=-32602)
+
+        def read(options, error=None):
+            return worker.world('project.source.read', options, error=error)
+
+        def write(options, error=None):
+            return worker.tool('poima_source', {'method': 'project.source.write', 'params': options}, error=error)
+
+        baseline = read({'path': path})
+        replacement = {'path': path, 'expected_sha256': baseline['sha256'], 'text': baseline['text'] + '\n// scène 水\r\n'}
+        self.assertEqual(baseline['text'].encode(), original)
+        worker.world('project.source.write', replacement, error=-32602)
+        read(replacement, error=-32602)
+        write({'path': path}, error=-32602)
+        write(dict(replacement, project=native(manifest)), error=-32602)
+        write(dict(replacement, text='a\0b'), error=-32602)
+        for other in (native(manifest.parent / path), 'gameplay-src/../world.json', 'gameplay-src/Game.csproj', 'game.verify.json'):
+            read({'path': other}, error=-32602)
+        linked = source_draft.parent / 'gameplay-src/Linked.cs'
+        os.link(manifest.parent / path, linked)
+        try:
+            read({'path': 'gameplay-src/Linked.cs'}, error=-32091)
+            write(dict(replacement, path='gameplay-src/Linked.cs'), error=-32091)
+        finally:
+            linked.unlink()
+
+        edited = write(replacement)
+        self.assertTrue(edited['changed'])
+        self.assertEqual(edited['sha256'], hashlib.sha256(replacement['text'].encode()).hexdigest())
+        self.assertFalse(write(replacement)['changed'])
+        write(dict(replacement, text='// stale'), error=-32009)
+        extra = 'gameplay-src/Extra.cs'
+        self.assertEqual(read({'path': extra}), dict(path=extra, exists=False, sha256=None, text=None))
+        new = write(dict(path=extra, expected_sha256=None, text='internal static class Extra { }\n'))
+        self.assertTrue(new['changed'])
+        worker.close()
+
+        scene = Client(project=scene_draft, draft=True)
+        self.clients.append(scene)
+        scene.initialize()
+        self.assertNotIn('draft_gameplay_source', scene.tool('poima_discover'))
+        scene.world('project.source.read', {'path': path}, error=-32602)
+        scene.rpc('tools/call', {'name': 'poima_source'}, error=-32602)
+        base_revision = scene.world('world.inspect')['revision']
+        lantern = uuid.uuid4().hex
+        receipt = scene.world('world.transact', {'request_id': uuid.uuid4().hex, 'base_revision': base_revision,
+            'ops': [{'op': 'entity.create', 'id': lantern, 'name': 'Worker lantern'}]})
+        self.assertTrue(receipt['committed'])
+        scene.close()
+        scene_hash = project('inspect', native(scene_draft))['result']['world_sha256']
+        request = root / 'integration.json'
+        plan = {'base_sha256': base_hash, 'drafts': [
+            {'manifest': native(source_draft), 'files': [{'path': path, 'sha256': baseline['sha256']}]},
+            {'manifest': native(scene_draft), 'world_sha256': scene_hash, 'files': []}]}
+        request.write_text(json.dumps(plan), encoding='utf-8')
+        rejected = root / 'Stale'
+        refused = project('integrate', native(metadata), '--output', native(rejected), '--request', native(request), failure=True)
+        self.assertIn('hash mismatch', refused['diagnostics'][0]['message'])
+        self.assertFalse(rejected.exists())
+        plan['drafts'][0]['files'] = [{'path': path, 'sha256': edited['sha256']}, {'path': extra, 'sha256': new['sha256']}]
+        request.write_text(json.dumps(plan), encoding='utf-8')
+        candidate = root / 'Integrated'
+        merged = project('integrate', native(metadata), '--output', native(candidate), '--request', native(request))['result']
+        self.assertEqual(merged['revision'], base_revision + 1)
+        self.assertEqual((candidate / path).read_bytes(), replacement['text'].encode())
+        self.assertEqual(hashlib.sha256((candidate / extra).read_bytes()).hexdigest(), new['sha256'])
+        combined = candidate / world.relative_to(manifest.parent)
+        self.assertEqual(json.loads(combined.read_bytes())['entities'][lantern]['name'], 'Worker lantern')
+        self.assertEqual(world.read_bytes(), original_world)
+        self.assertEqual((manifest.parent / path).read_bytes(), original)
 
     def test_draft_mcp_only_edits_the_owned_draft_and_imports_local_assets(self):
         manifest, world = self.create_project()

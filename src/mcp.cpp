@@ -3,6 +3,7 @@
 #include "poima/local_session.hpp"
 #include "poima/build_metadata.hpp"
 #include "poima/capture_image.hpp"
+#include "poima/project.hpp"
 #include "authoring_reference.hpp"
 #include "discovery_selection.hpp"
 #include "project_draft_paths.hpp"
@@ -96,22 +97,25 @@ constexpr std::array<std::string_view, 35> draft_methods{
     "world.asset.provenance", "world.asset.references", "world.dependencies", "world.history",
     "world.inspect", "world.lighting", "world.redo", "world.transact", "world.ui.get", "world.ui.list", "world.undo"
 };
-bool draft_method(std::string_view name) {
-    return std::find(draft_methods.begin(),draft_methods.end(),name)!=draft_methods.end();
+bool source_method(std::string_view name) {
+    return name=="project.source.read" || name=="project.source.write";
 }
-void check_draft_request(std::string_view method,const Json& params,const std::string& world) {
+bool draft_method(std::string_view name,bool source) {
+    return (source && source_method(name)) || std::find(draft_methods.begin(),draft_methods.end(),name)!=draft_methods.end();
+}
+void check_draft_request(std::string_view method,const Json& params,const std::string& world,bool gameplay_source) {
     constexpr auto unavailable="Native method is unavailable to a draft connection.";
     if(method=="world.describe" || method=="world.describe.select") {
         if(params.value("view",std::string{})=="method" && params.contains("name"))
-            require(params.at("name").is_string() && draft_method(params.at("name").get_ref<const std::string&>()),-32602,unavailable);
+            require(params.at("name").is_string() && draft_method(params.at("name").get_ref<const std::string&>(),gameplay_source),-32602,unavailable);
         if(params.contains("methods") && params.at("methods").is_array()) {
             for(const auto& selected:params.at("methods"))
-                require(selected.is_string() && draft_method(selected.get_ref<const std::string&>()),-32602,unavailable);
+                require(selected.is_string() && draft_method(selected.get_ref<const std::string&>(),gameplay_source),-32602,unavailable);
         }
         return;
     }
     if(method=="world.reference")return;
-    require(draft_method(method),-32602,unavailable);
+    require(draft_method(method,gameplay_source),-32602,unavailable);
     if(method!="asset.import" && method!="asset.source.inspect" && method!="asset.audio.import" && method!="asset.image.import")
         return;
     const auto check_source=[&](const Json& source) {
@@ -129,24 +133,41 @@ void check_draft_request(std::string_view method,const Json& params,const std::s
         }
     }
 }
-void scope_draft_discovery(Json& result) {
+void scope_draft_discovery(Json& result,bool source) {
     if(result.contains("methods")) {
         auto& methods=result.at("methods");
         for(auto it=methods.begin();it!=methods.end();) {
             const auto& name=methods.is_array() ? it->get_ref<const std::string&>() : it.key();
-            if(draft_method(name))++it;
-            else it=methods.erase(it);
+            if(!draft_method(name,source)) {
+                it=methods.erase(it);
+                continue;
+            }
+            if(methods.is_object() && source_method(name)) {
+                auto& properties=it->at("properties");
+                properties.erase("profile");
+                properties.erase("project");
+                properties["path"]["description"]="A portable .cs path under this draft's gameplay-src directory.";
+                (*it)["required"]=name=="project.source.read" ? Json::array({"path"}) :
+                    Json::array({"path","expected_sha256","text"});
+            }
+            ++it;
         }
     }
     result["mcp_scope"]="project_draft";
+    if(source)result["draft_gameplay_source"]=true;
 }
-bool available_tool(std::string_view name, bool review, bool draft) {
+bool available_tool(std::string_view name,bool review,bool draft,bool source) {
     if(name=="poima_discover" || name=="poima_reference")return true;
     if(review)return name=="poima_inspect";
-    if(draft)return name=="poima_call";
+    if(draft)return name=="poima_call" || (source && name=="poima_source");
     return name=="poima_call" || name=="poima_build" || name=="poima_source" || name=="poima_checks";
 }
-Json tools(bool review,bool draft){
+Json source_tool(const char* description) {
+    return {{"name","poima_source"},{"description",description},
+        {"inputSchema",schema({{"method",{{"enum",{"project.source.write"}}}},{"params",{{"type","object"}}}},{"method","params"})},
+        {"annotations",{{"readOnlyHint",false},{"destructiveHint",true},{"idempotentHint",true},{"openWorldHint",false}}}};
+}
+Json tools(bool review,bool draft,bool source){
     auto catalog=Json::array({
         {{"name","poima_discover"},{"description","Discover the current native world API. Defaults to its compact catalog. Use selection alone to retrieve up to 12 exact method, component, section or scoped mutation schemas in one reply. Read invariants before editing. Select specific operations for transactions."},
          {"inputSchema",schema({{"view",{{"type","string"},{"enum",{"full","catalog","method","component","section","mutation"}},{"default","catalog"}}},{"name",{{"type","string"},{"minLength",1}}},{"operation",{{"type","string"},{"minLength",1},{"maxLength",128}}},{"type",{{"type","string"},{"minLength",1},{"maxLength",128}}},{"selection",discovery_detail::selection_parameters_schema()}})},
@@ -162,18 +183,19 @@ Json tools(bool review,bool draft){
         return catalog;
     }
     if(draft) {
+        Json methods=draft_methods;
+        if(source)methods.push_back("project.source.read");
         catalog.push_back({{"name","poima_call"},{"description","Call one scoped native operation on this draft. Preserve the revision and durable request ID when editing. Asset sources and animation donors use portable paths relative to the draft entry world's directory. Discover exact parameters with poima_discover."},
-            {"inputSchema",schema({{"method",{{"type","string"},{"enum",draft_methods}}},{"params",{{"type","object"}}}},{"method"})},
+            {"inputSchema",schema({{"method",{{"type","string"},{"enum",std::move(methods)}}},{"params",{{"type","object"}}}},{"method"})},
             {"annotations",{{"readOnlyHint",false},{"destructiveHint",true},{"idempotentHint",false},{"openWorldHint",false}}}});
+        if(source)catalog.push_back(source_tool("Write one C# file in this draft. Read project.source.read through poima_call first. Pass only path, expected_sha256 and text. The lead builds and verifies the integrated candidate."));
         return catalog;
     }
     for(auto& tool:Json::array({
         {{"name","poima_call"},{"description","Call one native world operation using discovered parameters. Preserve native request_id and base_revision for edits. Calls are synchronous and never retried; transport failure may leave the outcome unknown."},
          {"inputSchema",schema({{"method",{{"type","string"},{"minLength",1}}},{"params",{{"type","object"}}},{"image",schema({{"max_edge",{{"type","integer"},{"minimum",128},{"maximum",2048},{"default",1280}}}})}},{"method"})},
          {"annotations",{{"readOnlyHint",false},{"destructiveHint",true},{"idempotentHint",false},{"openWorldHint",true}}}},
-        {{"name","poima_source"},{"description","Write one C# source file in the open host-configured project. First read project.source.read through poima_call and use its SHA-256 as the write guard. This operation publishes text without compiling it."},
-         {"inputSchema",schema({{"method",{{"enum",{"project.source.write"}}}},{"params",{{"type","object"}}}},{"method","params"})},
-         {"annotations",{{"readOnlyHint",false},{"destructiveHint",true},{"idempotentHint",true},{"openWorldHint",false}}}},
+        source_tool("Write one C# source file in the open host-configured project. First read project.source.read through poima_call and use its SHA-256 as the write guard. This operation publishes text without compiling it."),
         {{"name","poima_checks"},{"description","Write the open project's gameplay verification suite. Read project.verification.read through poima_call and use its SHA-256 as the write guard. A successful write validates the suite format; the game has to run the checks separately."},
          {"inputSchema",schema({{"method",{{"enum",{"project.verification.write"}}}},{"params",{{"type","object"}}}},{"method","params"})},
          {"annotations",{{"readOnlyHint",false},{"destructiveHint",true},{"idempotentHint",true},{"openWorldHint",false}}}},
@@ -188,15 +210,19 @@ struct McpSession::Impl {
     std::function<std::string(std::string_view)> backend;
     const std::optional<std::uint64_t> review_revision;
     const std::string draft_world;
+    const std::string draft_source_manifest;
     bool initialized=false,ready=false;
-    Impl(std::function<std::string(std::string_view)> value,std::optional<std::uint64_t> revision,std::string world)
-        :backend(std::move(value)),review_revision(revision),draft_world(std::move(world)) {
+    Impl(std::function<std::string(std::string_view)> value,std::optional<std::uint64_t> revision,std::string world,std::string source_manifest)
+        :backend(std::move(value)),review_revision(revision),draft_world(std::move(world)),draft_source_manifest(std::move(source_manifest)) {
         if(!backend)throw std::invalid_argument("MCP backend is absent.");
         if(review_revision && *review_revision>mcp_max_review_revision)
             throw std::invalid_argument("MCP review revision exceeds the safe JSON integer range.");
         if(review_revision && !draft_world.empty())
             throw std::invalid_argument("Draft and review MCP scopes are mutually exclusive.");
+        if(!draft_source_manifest.empty() && draft_world.empty())
+            throw std::invalid_argument("Gameplay source scope requires a draft world.");
     }
+    bool draft_source() const {return !draft_source_manifest.empty();}
     Json call(const std::string& name,const Json& arguments) {
         // Tool argument failures are tool errors, not malformed MCP envelopes.
         if(!arguments.is_object())return tool_result({{"error",error(-32602,"Tool arguments must be an object.")}},true);
@@ -220,7 +246,7 @@ struct McpSession::Impl {
                 return tool_result({{"error",error(-32602,"A nonempty native method is required.")}},true);
             method=arguments["method"].get<std::string>();params=arguments.value("params",Json::object());
             if(!params.is_object())return tool_result({{"error",error(-32602,"Native params must be an object.")}},true);
-            if(!draft_world.empty() && !draft_method(method))
+            if(!draft_world.empty() && !draft_method(method,draft_source()))
                 return tool_result({{"error",error(-32602,"Native method is unavailable to a draft connection.")}},true);
             if(review_revision) {
                 if(std::find(review_methods.begin(),review_methods.end(),method)==review_methods.end())
@@ -257,7 +283,7 @@ struct McpSession::Impl {
             }
         }
         if(!draft_world.empty()) {
-            try {check_draft_request(method,params,draft_world);}
+            try {check_draft_request(method,params,draft_world,draft_source());}
             catch(const std::exception& failure) {return tool_result({{"error",error(-32602,failure.what())}},true);}
         }
         // Fixed correlation is safe because this adapter permits one synchronous
@@ -266,6 +292,17 @@ struct McpSession::Impl {
         const auto request=Json{{"jsonrpc","2.0"},{"id",id},{"method",method},{"params",params}}.dump();
         if(request.size()>message_limit)return tool_result({{"error",error(-32602,"Native request exceeds 1 MiB.")}},true);
         try {
+            if(draft_source() && source_method(method)) {
+                if(params.contains("text")!=(method=="project.source.write"))
+                    return tool_result({{"error",error(-32602,"Source reads accept a path. Source writes also require a guard and replacement text.")}},true);
+                const auto reply=project_gameplay_source(draft_source_manifest,draft_world,params.dump());
+                const auto receipt=parse(reply.json,local_session_response_limit);
+                if(reply.exit_code!=0) {
+                    const auto& diagnostic=receipt.at("diagnostics").at(0);
+                    return tool_result({{"error",error(diagnostic.at("error_code").get<int>(),diagnostic.at("message").get<std::string>())}},true);
+                }
+                return tool_result({{"result",receipt.at("result")}},false);
+            }
             auto reply=parse(backend(request),local_session_response_limit);
             require(reply.is_object() && !reply.contains("method") && reply.value("jsonrpc",Json{})=="2.0" && reply.contains("id") && reply["id"]==id && (reply.contains("result")!=reply.contains("error")),-32603,"Invalid backend response envelope.");
             if(reply.contains("error")) {
@@ -274,7 +311,7 @@ struct McpSession::Impl {
                 return tool_result({{"error",problem}},true);
             }
             auto& result=reply["result"];
-            if(!draft_world.empty() && name=="poima_discover")scope_draft_discovery(result);
+            if(!draft_world.empty() && name=="poima_discover")scope_draft_discovery(result,draft_source());
             if(name=="poima_inspect") {
                 require(result.is_object() && result.contains("revision") && result["revision"].is_number_integer(),
                         -32603,"Review result lacks a native revision.");
@@ -288,8 +325,9 @@ struct McpSession::Impl {
         return tool_result({{"error",error(-32603,"Backend response unavailable or invalid; do not retry blindly.")},{"outcome_unknown",true}},true);
     }
 };
-McpSession::McpSession(std::function<std::string(std::string_view)> backend,std::optional<std::uint64_t> review_revision,std::string draft_world)
-    :impl_(std::make_unique<Impl>(std::move(backend),review_revision,std::move(draft_world))){}
+McpSession::McpSession(std::function<std::string(std::string_view)> backend,std::optional<std::uint64_t> review_revision,
+                       std::string draft_world,std::string draft_source_manifest)
+    :impl_(std::make_unique<Impl>(std::move(backend),review_revision,std::move(draft_world),std::move(draft_source_manifest))){}
 McpSession::~McpSession()=default;
 std::string McpSession::request(std::string_view message) {
     Json id=nullptr;bool notification=false;
@@ -333,9 +371,12 @@ std::string McpSession::request(std::string_view message) {
             if(impl_->review_revision)
                 result["instructions"]="This connection can inspect authored revision "+std::to_string(*impl_->review_revision)
                     +". Use poima_inspect for scene reads and poima_discover for their schemas. A stale read requires a new assignment from the lead.";
-            else if(!impl_->draft_world.empty())
+            else if(!impl_->draft_world.empty()) {
                 result["instructions"]="This connection edits one project draft. Discover its scene and asset operations with poima_discover. "
                     "Use poima_call with the current revision and a durable request ID. Draft edits require separate lead integration.";
+                if(impl_->draft_source())result["instructions"]=result["instructions"].get<std::string>()+
+                    " Read draft C# files through project.source.read and submit guarded writes through poima_source.";
+            }
             impl_->initialized=true;
         } else if(method=="ping")result=Json::object();
         else {
@@ -343,12 +384,12 @@ std::string McpSession::request(std::string_view message) {
             require(impl_->ready,-32002,"Complete MCP initialization before using tools.");
             if(method=="tools/list") {
                 require(!params.contains("cursor"),-32602,"Tool catalog is not paginated.");
-                result={{"tools",tools(impl_->review_revision.has_value(),!impl_->draft_world.empty())}};
+                result={{"tools",tools(impl_->review_revision.has_value(),!impl_->draft_world.empty(),impl_->draft_source())}};
             } else if(method=="tools/call") {
                 require(!params.contains("task"),-32602,"Task execution is unsupported.");
                 require(params.contains("name") && params["name"].is_string(),-32602,"Tool name is required.");
                 const auto name=params["name"].get<std::string>();
-                require(available_tool(name,impl_->review_revision.has_value(),!impl_->draft_world.empty()),-32602,"Unknown tool.");
+                require(available_tool(name,impl_->review_revision.has_value(),!impl_->draft_world.empty(),impl_->draft_source()),-32602,"Unknown tool.");
                 require(!params.contains("arguments") || params["arguments"].is_object(),-32602,"Tool arguments must be an object.");
                 result=impl_->call(name,params.value("arguments",Json::object()));
             } else throw ProtocolError(-32601,"Unknown MCP method.");

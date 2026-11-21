@@ -10,7 +10,7 @@ namespace poima {
 // Synchronous owner-thread MCP adapter. The backend accepts one native JSON-RPC
 // request and returns its response. Calls are never retried or interrupted.
 int run_mcp_world(const std::string& path,const std::string& development_profiles={});
-int run_mcp_draft(const std::string& manifest);
+int run_mcp_draft(const std::string& manifest,bool gameplay_source=false);
 inline constexpr std::uint64_t mcp_max_review_revision = 9007199254740991ULL;
 int run_mcp_connected(const std::string& endpoint, std::uint32_t timeout_ms=30000,
                       std::optional<std::uint64_t> review_revision={});
@@ -19,7 +19,8 @@ class McpSession {
     std::unique_ptr<Impl> impl_;
 public:
     explicit McpSession(std::function<std::string(std::string_view)> backend,
-                        std::optional<std::uint64_t> review_revision={},std::string draft_world={});
+                        std::optional<std::uint64_t> review_revision={},std::string draft_world={},
+                        std::string draft_source_manifest={});
     ~McpSession();
     McpSession(const McpSession&)=delete;
     McpSession& operator=(const McpSession&)=delete;

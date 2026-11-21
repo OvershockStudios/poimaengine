@@ -1,0 +1,90 @@
+{
+  "engine_version": "0.0.348",
+  "executed_binary_sha256": "db22cc75d51826f23fc7e3e7e8137c98d978bd99362a69ddd1aeac5e9f3b8846",
+  "sources_sha256": {
+    "include/poima/mcp.hpp": "84cb832aeda2fa67e019780946f50426c24178a9660192fdc655cffb03e7d0ff",
+    "src/core.cpp": "5ef4162c046f45d02028496bb90dc3ae94223e406731f636606c89d2a8c5d059",
+    "src/main.cpp": "012cf7d8e1dacdd4822f361e55ccd06f3892969a2c6832c6fad5c14c4812d687",
+    "src/mcp.cpp": "2518c5fcee4058f2f6007f3b2a6b50800e2922d55837141e27625e061bdc97dc",
+    "src/mcp_stdio.cpp": "acc289f6d099882d509ad82d7f2a3e0e61b6cd6516093c01858e5243369e2e9b",
+    "tests/mcp_contract.py": "87630050923706d1493b686014496027f9943d949744ee731dc93f6a57b2d972"
+  },
+  "linux_regression_before_cli_schema_dependency": {
+    "passed": [
+      "mcp_native",
+      "mcp_contract",
+      "project_contract",
+      "project_draft_contract",
+      "project_gameplay_contract",
+      "shared_session_contract"
+    ],
+    "binary_sha256": "77a720ba7bfac9dddc45bd8d5fca94c6d4d04cb05923ca34b6a5584d84bacd08",
+    "junit_sha256": "a2bc2b4014afa692edf010b348df9dbfe6f321c1d5168cd6de970c062f26503f"
+  },
+  "linux_final_mcp_contracts": {
+    "passed": [
+      "mcp_native",
+      "mcp_contract"
+    ],
+    "junit_sha256": "ee1336b6beccee2f6024bf7f6f92fd96b1c1ee3c60754b99b2428b251d77d244"
+  },
+  "linux_scripted_drafts": {
+    "mcp_requests_sha256": "e1acea34da394ba79b70c66682bd5def97ae734bc4d3c9b45502305a2b6d0bf3",
+    "selected_files": [
+      {
+        "path": "gameplay-src/Game.cs",
+        "sha256": "2bc7cdee97c3231d61a0a76e16e2a70087efee1bea710068e3fb621828ace9ba"
+      },
+      {
+        "path": "gameplay-src/Relay.cs",
+        "sha256": "00f598003f2aa9978a906949cc7beb2bd6d526b9a1bc2f8afcc3afa9d61d2d89"
+      }
+    ],
+    "scene_sha256": "7fc4e67b340df0550baf27df8867d0e5938de82f497330c10384e53e04b6ac8b",
+    "suite_sha256": "fda2769640fd31b878775f2238f224ed1ccdd9b627079e909fd819ea0265e506",
+    "native_gameplay_descriptor_sha256": "56488f5273c9f9a274d867e7259a839d3d0f671ab12794b25f1e6460f2403ef6",
+    "native_aot_sdk": "10.0.404",
+    "ilcompiler_package_version": "10.0.15",
+    "runtime_calls_sha256": "809aa175dfdf6cb31d68e51f5b423c4bf6ab84d0a6cdb616f873769d6f75bca2",
+    "report_sha256": "157f7c6c3952d08768c8a653071b02154ec01f29c8752cf18591a41aa51f9ab3",
+    "independent_fresh_owners": 6,
+    "original_paths_unavailable": true,
+    "relocated_csharp_source_absent": true,
+    "originals_unchanged": true,
+    "combined": {
+      "passed_groups": 3,
+      "total_groups": 3,
+      "credit_sequence": [
+        0,
+        3,
+        6
+      ]
+    },
+    "code_only_control": {
+      "passed_groups": 1,
+      "total_groups": 3,
+      "credit_sequence": [
+        0,
+        0,
+        0
+      ]
+    }
+  },
+  "retained_failed_attempts": [
+    {
+      "stage": "native_publish_initial",
+      "sdk": "10.0.401",
+      "reason": "NU1903 on ILCompiler 10.0.12",
+      "advisory": "https://github.com/advisories/GHSA-p3jp-9v83-76w9",
+      "log_sha256": "ac117fe55885dbad93f745a0c82c2dd6be76c800fd08eed49e9f9b50ec592592"
+    },
+    {
+      "stage": "standalone_export",
+      "reason": "Headless Linux runtime has no renderer",
+      "log_sha256": "d84928398948bbb8f7d2521e714194ed15760f102de54f52238313300d05bdcd"
+    }
+  ],
+  "windows_interactive_qualification": {
+    "run": false
+  }
+}
