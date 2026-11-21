@@ -1,0 +1,30 @@
+name: Linux headless authoring
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  authoring:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out Poima
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Configure the headless authoring build
+        run: cmake --preset headless -DPOIMA_BUILD_MODULE_LAB=OFF
+
+      - name: Build the native CLI
+        run: cmake --build --preset headless --target poima
+
+      - name: Verify native authoring contracts
+        run: >-
+          ctest --preset headless --output-on-failure --no-tests=error
+          -R '^(cli_contract|authoring_core_conformance|authoring_contract_identity|shared_session_contract|mcp_contract)$'
