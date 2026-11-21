@@ -16,16 +16,27 @@ Texture2D<float> scene_depth : register(t3);
 [[vk::image_format("rg32f")]] RWTexture2D<float2> surface_motion : register(u2);
 [[vk::image_format("r8")]] RWTexture2D<float> motion_valid : register(u3);
 #endif
+#if POIMA_REFLECTION_ROUGHNESS
+[[vk::image_format("r16f")]] RWTexture2D<float> reflection_roughness : register(u4);
+#endif
 [numthreads(8,8,1)]
 void compute_main(uint3 id : SV_DispatchThreadID) {
     uint width,height;scene_hdr.GetDimensions(width,height);
     if(any(id.xy>=uint2(width,height)))return;
     const float2 pixel=float2(id.xy)+.5;
-    if(any(pixel<cluster_viewport.xy) || any(pixel>=cluster_viewport.xy+cluster_viewport.zw))return;
+    if(any(pixel<cluster_viewport.xy) || any(pixel>=cluster_viewport.xy+cluster_viewport.zw)) {
+#if POIMA_REFLECTION_ROUGHNESS
+        reflection_roughness[id.xy]=1;
+#endif
+        return;
+    }
     const float4 surface=surface_buffer.Load(int3(id.xy,0));
     const uint flags=(uint)round(surface.w);
     if((flags&1u)==0) {
         // Clear/sky radiance is already initialized; only geometry has products.
+#if POIMA_REFLECTION_ROUGHNESS
+        reflection_roughness[id.xy]=1;
+#endif
 #if POIMA_SCENE_PRODUCTS
         shading_normal[id.xy]=0;surface_motion[id.xy]=0;motion_valid[id.xy]=0;
 #endif
@@ -41,6 +52,10 @@ void compute_main(uint3 id : SV_DispatchThreadID) {
     material.normal=normal_is_valid ? decode_normal(surface.xy) : float3(0,0,0);material.occlusion=surface.z;
     material.geometric_normal=normal_is_valid ? decode_normal(correspondence.xy) : float3(0,0,0);
     material.emission=emission.rgb;material.roughness=emission.a;material.legacy=(flags&2u)!=0;material.receive_shadows=(flags&16u)==0;
+#if POIMA_REFLECTION_ROUGHNESS
+    reflection_roughness[id.xy]=normal_is_valid && !material.legacy && isfinite(material.roughness)
+        ? saturate(material.roughness) : 1;
+#endif
     const float depth=scene_depth.Load(int3(id.xy,0));
     const float near_plane=cluster_depth.z,far_plane=cluster_depth.w;
     const float view_z=near_plane/((1-depth)+depth*(near_plane/far_plane));

@@ -1,0 +1,429 @@
+{
+  "version": "0.0.375",
+  "source_boundaries": {
+    "baseline": "0.0.370",
+    "lines": {
+      "world.cpp": {
+        "before": 5304,
+        "candidate": 3780
+      },
+      "render_smoke.cpp": {
+        "before": 5301,
+        "candidate": 4441
+      }
+    },
+    "world": [
+      "world_document.cpp",
+      "world_runtime_json.cpp",
+      "world_discovery.cpp",
+      "world_presentation_json.cpp"
+    ],
+    "renderer": [
+      "player_window.cpp",
+      "render_readback.cpp",
+      "render_vulkan_instance.cpp",
+      "render_screen_reflections.cpp"
+    ]
+  },
+  "native_build_input_inventory_sha256": "bb2ed39a534e97eba4a8b9379eb82b35061e55fdcda7e263c2931097a88b6d75",
+  "linux_headless": {
+    "tests": [
+      {
+        "name": "world_water_contract",
+        "seconds": 0.45
+      },
+      {
+        "name": "world_water_rain_contract",
+        "seconds": 0.93
+      },
+      {
+        "name": "authoring_core_conformance",
+        "seconds": 0.12
+      },
+      {
+        "name": "authoring_contract_identity",
+        "seconds": 0.69
+      },
+      {
+        "name": "render_schedule_native",
+        "seconds": 0.04
+      },
+      {
+        "name": "output_grade_authoring_contract",
+        "seconds": 0.22
+      },
+      {
+        "name": "world_schema_native",
+        "seconds": 50.82
+      },
+      {
+        "name": "mcp_contract",
+        "seconds": 12.42
+      },
+      {
+        "name": "world_ui_contract",
+        "seconds": 0.31
+      },
+      {
+        "name": "player_service_contract",
+        "seconds": 0.21
+      },
+      {
+        "name": "lighting_contract",
+        "seconds": 1.62
+      },
+      {
+        "name": "runtime_contract",
+        "seconds": 0.54
+      },
+      {
+        "name": "cli_contract",
+        "seconds": 0.14
+      },
+      {
+        "name": "world_contract",
+        "seconds": 5.25
+      },
+      {
+        "name": "asset_references_contract",
+        "seconds": 0.45
+      }
+    ],
+    "binary_sha256": "574ca9bc506aee68914250e34140d6613fbd955ceb72d966c600ba34d2c5f596"
+  },
+  "windows": {
+    "binary_sha256": "8e7caacfbf1e92e079797ed991f2b92a6a5a5a9f837abae8aabc8890a4de2aa1",
+    "runtime_descriptor_sha256": "8cb739bc1f2ded268964868fabe27de454157b4b0b76079f41f6a388e5db78d2",
+    "portable_schedule": "Production render schedule: 439 valid variants, 1221 rejected contract mutations.",
+    "shared_vulkan_instance": [
+      {
+        "adapter": "AMD Radeon(TM) Graphics",
+        "passed": true,
+        "frame_slot_limits": [
+          1,
+          2
+        ],
+        "final_fresh_matches": {
+          "1": "f9797006040b99b678c77ddb0323c449308efc57e0cbeb5f4b1d1d5d393623ad",
+          "2": "f9797006040b99b678c77ddb0323c449308efc57e0cbeb5f4b1d1d5d393623ad"
+        },
+        "report_sha256": "c404ca448b1e1a1b5aa687311f06aecfdaf3c752c306d7c6f48e6e88b7d8a86d",
+        "loader_log_sha256": "73a50430f91d53b6abf5af28a8330b47e1ece86fead492e8fefc26618efb19b2"
+      },
+      {
+        "adapter": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "passed": true,
+        "frame_slot_limits": [
+          1,
+          2
+        ],
+        "final_fresh_matches": {
+          "1": "2751aaecb5e28304c0ff23f02d76ef0c84599dfe1b7b4d2ac5dab697379ace65",
+          "2": "2751aaecb5e28304c0ff23f02d76ef0c84599dfe1b7b4d2ac5dab697379ace65"
+        },
+        "report_sha256": "4cd1a18e055ebd1d8051694c9cfab589f82b12e6e1bc6d6ab4e3092e54e3eb01",
+        "loader_log_sha256": "45710078bc5df6a4e9c2e5055fe2a84b3a2669433261e2765a0da7dfbc85e7cf"
+      }
+    ],
+    "reflection_captures": [
+      {
+        "adapter": "AMD Radeon(TM) Graphics",
+        "captures": 11,
+        "frames_presented": 22,
+        "sampled_pixels": 77,
+        "comparisons": {
+          "exact_fallbacks": [
+            [
+              "forward",
+              "color",
+              "none"
+            ],
+            [
+              "deferred",
+              "depth",
+              "none"
+            ],
+            [
+              "deferred",
+              "color",
+              "fsr3_native"
+            ]
+          ],
+          "zero_exact": true,
+          "short_exact": true,
+          "same_pre_exposure_products": true,
+          "target_colors": {
+            "warm_hit": {
+              "delta_hdr": [
+                0.1344757080078125,
+                0.0188140869140625,
+                0.0100860595703125
+              ],
+              "gain": 0.1344757080078125,
+              "expected_gain": 0.134613681346825
+            },
+            "cool_hit": {
+              "delta_hdr": [
+                0.0106048583984375,
+                0.0849761962890625,
+                0.1328887939453125
+              ],
+              "gain": 0.1328887939453125,
+              "expected_gain": 0.13295035672050162
+            }
+          }
+        },
+        "declined_runtime_profiles": 2,
+        "fixture_sha256": "10231644d590b83adc4fcbf6cc6f2e46d34bc6f2b44ce4805f4ed9213c0161f7",
+        "export_profiles": 5,
+        "detached_source": true,
+        "raw_report_sha256": "73379bbac82de447bd2a8c2f791560c7884851618d7deb248b5c37701aa756b9",
+        "image_sha256": {
+          "omitted-deferred-color-none": "69966452c19608b80088ad55f5b882ee281f47fd3c25c8653730e5daae2ad18f",
+          "omitted-forward-color-none": "69966452c19608b80088ad55f5b882ee281f47fd3c25c8653730e5daae2ad18f",
+          "omitted-deferred-depth-none": "6d2a2c8d84b2e91ff6a030e7aa9d3907f4ce759f4651994c9230fce8fbb05336",
+          "omitted-deferred-color-fsr3_native": "6fe8665a8fd94013de54caf99c20e7bfa9b424f7c23ecb40fd43fbfc2d42105b",
+          "zero-deferred-color-none": "69966452c19608b80088ad55f5b882ee281f47fd3c25c8653730e5daae2ad18f",
+          "enabled-deferred-color-none": "5561e5c2048abad60a2c37909b1bb9cb9019cb76eca1d7e6fc2400f352cde973",
+          "enabled-forward-color-none": "69966452c19608b80088ad55f5b882ee281f47fd3c25c8653730e5daae2ad18f",
+          "enabled-deferred-depth-none": "6d2a2c8d84b2e91ff6a030e7aa9d3907f4ce759f4651994c9230fce8fbb05336",
+          "enabled-deferred-color-fsr3_native": "6fe8665a8fd94013de54caf99c20e7bfa9b424f7c23ecb40fd43fbfc2d42105b",
+          "short-deferred-color-none": "69966452c19608b80088ad55f5b882ee281f47fd3c25c8653730e5daae2ad18f",
+          "bright-deferred-color-none": "9fcb55dcf8b5de58787cc265ad47795a42452aa0736dc30aefbd51a49de5168c"
+        }
+      },
+      {
+        "adapter": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "captures": 11,
+        "frames_presented": 22,
+        "sampled_pixels": 77,
+        "comparisons": {
+          "exact_fallbacks": [
+            [
+              "forward",
+              "color",
+              "none"
+            ],
+            [
+              "deferred",
+              "depth",
+              "none"
+            ],
+            [
+              "deferred",
+              "color",
+              "fsr3_native"
+            ]
+          ],
+          "zero_exact": true,
+          "short_exact": true,
+          "same_pre_exposure_products": true,
+          "target_colors": {
+            "warm_hit": {
+              "delta_hdr": [
+                0.1344757080078125,
+                0.0188140869140625,
+                0.0100860595703125
+              ],
+              "gain": 0.1344757080078125,
+              "expected_gain": 0.134613681346825
+            },
+            "cool_hit": {
+              "delta_hdr": [
+                0.0106048583984375,
+                0.0849761962890625,
+                0.1328887939453125
+              ],
+              "gain": 0.1328887939453125,
+              "expected_gain": 0.13295035672050162
+            }
+          }
+        },
+        "declined_runtime_profiles": 2,
+        "fixture_sha256": "10231644d590b83adc4fcbf6cc6f2e46d34bc6f2b44ce4805f4ed9213c0161f7",
+        "export_profiles": 5,
+        "detached_source": true,
+        "raw_report_sha256": "4a130521efee8ed3aa969a2e5fe79cc2bb61acf5896633dfbb9438d89c323530",
+        "image_sha256": {
+          "omitted-deferred-color-none": "69966452c19608b80088ad55f5b882ee281f47fd3c25c8653730e5daae2ad18f",
+          "omitted-forward-color-none": "69966452c19608b80088ad55f5b882ee281f47fd3c25c8653730e5daae2ad18f",
+          "omitted-deferred-depth-none": "c6561bbe92fe75de2523b2c7c4e274c7163fefd1f11b3daee0a6c02bcc645c93",
+          "omitted-deferred-color-fsr3_native": "609960a99473e5053c3bb98c499c9794d8c562ea3e8224e5edf5e252c1b3afd8",
+          "zero-deferred-color-none": "69966452c19608b80088ad55f5b882ee281f47fd3c25c8653730e5daae2ad18f",
+          "enabled-deferred-color-none": "8771d3327e1fa89bdec3e53b5e3b072e5559940a8e65cf63dd45ec4947aaad73",
+          "enabled-forward-color-none": "69966452c19608b80088ad55f5b882ee281f47fd3c25c8653730e5daae2ad18f",
+          "enabled-deferred-depth-none": "c6561bbe92fe75de2523b2c7c4e274c7163fefd1f11b3daee0a6c02bcc645c93",
+          "enabled-deferred-color-fsr3_native": "609960a99473e5053c3bb98c499c9794d8c562ea3e8224e5edf5e252c1b3afd8",
+          "short-deferred-color-none": "69966452c19608b80088ad55f5b882ee281f47fd3c25c8653730e5daae2ad18f",
+          "bright-deferred-color-none": "9fcb55dcf8b5de58787cc265ad47795a42452aa0736dc30aefbd51a49de5168c"
+        }
+      }
+    ],
+    "exact_omitted_scene_comparisons_to_374": {
+      "forward-0": {
+        "reference_report_sha256": "69839a17260afcade70d1700f037a386f503b628ee48262daa580d7d1f244c75",
+        "candidate_report_sha256": "92f053d169a00763de8a820ae11c9ff14478ea14ddd87461919b079898df3222",
+        "images": {
+          "omitted": {
+            "bitmap_sha256": "ab4a3cee6ee092884cbca9217a2799f264e7891b88319ea283f89ed270ee2ff0",
+            "probe_count": 4
+          },
+          "retained-371": {
+            "bitmap_sha256": "ab4a3cee6ee092884cbca9217a2799f264e7891b88319ea283f89ed270ee2ff0",
+            "probe_count": 4
+          },
+          "explicit-zero": {
+            "bitmap_sha256": "ab4a3cee6ee092884cbca9217a2799f264e7891b88319ea283f89ed270ee2ff0",
+            "probe_count": 4
+          },
+          "exposed-low": {
+            "bitmap_sha256": "2a0b8ebe2633b89c8b57fa1d7fc012d220d4a4d9f709612bac4464cfd138f28d",
+            "probe_count": 4
+          },
+          "exposed-tail": {
+            "bitmap_sha256": "1ac69bb861052b0121f626103437369689117ebe81ac61c60c082222b2679ec6",
+            "probe_count": 4
+          },
+          "black": {
+            "bitmap_sha256": "d403f7f03ff8236fdc70b056a0283159897b3a0bbb31cd53df4d2c3c9114589c",
+            "probe_count": 4
+          },
+          "graded-bloom": {
+            "bitmap_sha256": "47f4661aff0fe873d6d2b35105118f85ba626e9727495ea1d63a103d40672bd0",
+            "probe_count": 4
+          },
+          "fsr3_native-omitted": {
+            "bitmap_sha256": "a8093d9dc18fcfd72e826a5e87eed06badf75154198de36e962675ab32d2f5b1",
+            "probe_count": 4
+          },
+          "fsr3_native-graded": {
+            "bitmap_sha256": "2a0b8ebe2633b89c8b57fa1d7fc012d220d4a4d9f709612bac4464cfd138f28d",
+            "probe_count": 4
+          },
+          "fsr3_quality-omitted": {
+            "bitmap_sha256": "a8093d9dc18fcfd72e826a5e87eed06badf75154198de36e962675ab32d2f5b1",
+            "probe_count": 4
+          },
+          "fsr3_quality-graded": {
+            "bitmap_sha256": "2a0b8ebe2633b89c8b57fa1d7fc012d220d4a4d9f709612bac4464cfd138f28d",
+            "probe_count": 4
+          },
+          "hud-omitted": {
+            "bitmap_sha256": "bf232951c451c77316c8ab049299ee5e4f8d2258806037bdf5da7c029281c6ef",
+            "probe_count": 4
+          },
+          "hud-active": {
+            "bitmap_sha256": "58c0f513066fc7eb9b9d630d059336af0da5a5f727a2b2b7aa32c21daf30a20d",
+            "probe_count": 4
+          },
+          "hud-black": {
+            "bitmap_sha256": "105dde43150ae42fe3a7d2f6230219de56cc6ade5a00d4608bd4b4e23c41e945",
+            "probe_count": 4
+          },
+          "diagnostic-omitted": {
+            "bitmap_sha256": "ba6f143c418da48011113c361fd6e8627aec38e0c00550202a217026f7266867",
+            "probe_count": 4
+          },
+          "diagnostic-graded": {
+            "bitmap_sha256": "ba6f143c418da48011113c361fd6e8627aec38e0c00550202a217026f7266867",
+            "probe_count": 4
+          }
+        }
+      },
+      "deferred-1": {
+        "reference_report_sha256": "bfed07ae2c557ce218506e0af86131e2e377b93f3414050d27d3c0450889e0f4",
+        "candidate_report_sha256": "3ee27ccbae43ef365c7dd392b3527a67e71efde3c59a15c7f09db32912b24f18",
+        "images": {
+          "omitted": {
+            "bitmap_sha256": "ab4a3cee6ee092884cbca9217a2799f264e7891b88319ea283f89ed270ee2ff0",
+            "probe_count": 4
+          },
+          "retained-371": {
+            "bitmap_sha256": "ab4a3cee6ee092884cbca9217a2799f264e7891b88319ea283f89ed270ee2ff0",
+            "probe_count": 4
+          },
+          "explicit-zero": {
+            "bitmap_sha256": "ab4a3cee6ee092884cbca9217a2799f264e7891b88319ea283f89ed270ee2ff0",
+            "probe_count": 4
+          },
+          "exposed-low": {
+            "bitmap_sha256": "2a0b8ebe2633b89c8b57fa1d7fc012d220d4a4d9f709612bac4464cfd138f28d",
+            "probe_count": 4
+          },
+          "exposed-tail": {
+            "bitmap_sha256": "1ac69bb861052b0121f626103437369689117ebe81ac61c60c082222b2679ec6",
+            "probe_count": 4
+          },
+          "black": {
+            "bitmap_sha256": "d403f7f03ff8236fdc70b056a0283159897b3a0bbb31cd53df4d2c3c9114589c",
+            "probe_count": 4
+          },
+          "graded-bloom": {
+            "bitmap_sha256": "bb4fd33365a741f07a3241b1bb9b0dae28563559d28649568d9123cb6e04bccd",
+            "probe_count": 4
+          },
+          "fsr3_native-omitted": {
+            "bitmap_sha256": "a8093d9dc18fcfd72e826a5e87eed06badf75154198de36e962675ab32d2f5b1",
+            "probe_count": 4
+          },
+          "fsr3_native-graded": {
+            "bitmap_sha256": "2a0b8ebe2633b89c8b57fa1d7fc012d220d4a4d9f709612bac4464cfd138f28d",
+            "probe_count": 4
+          },
+          "fsr3_quality-omitted": {
+            "bitmap_sha256": "a8093d9dc18fcfd72e826a5e87eed06badf75154198de36e962675ab32d2f5b1",
+            "probe_count": 4
+          },
+          "fsr3_quality-graded": {
+            "bitmap_sha256": "2a0b8ebe2633b89c8b57fa1d7fc012d220d4a4d9f709612bac4464cfd138f28d",
+            "probe_count": 4
+          },
+          "hud-omitted": {
+            "bitmap_sha256": "bf232951c451c77316c8ab049299ee5e4f8d2258806037bdf5da7c029281c6ef",
+            "probe_count": 4
+          },
+          "hud-active": {
+            "bitmap_sha256": "58c0f513066fc7eb9b9d630d059336af0da5a5f727a2b2b7aa32c21daf30a20d",
+            "probe_count": 4
+          },
+          "hud-black": {
+            "bitmap_sha256": "105dde43150ae42fe3a7d2f6230219de56cc6ade5a00d4608bd4b4e23c41e945",
+            "probe_count": 4
+          },
+          "diagnostic-omitted": {
+            "bitmap_sha256": "ba6f143c418da48011113c361fd6e8627aec38e0c00550202a217026f7266867",
+            "probe_count": 4
+          },
+          "diagnostic-graded": {
+            "bitmap_sha256": "ba6f143c418da48011113c361fd6e8627aec38e0c00550202a217026f7266867",
+            "probe_count": 4
+          }
+        }
+      }
+    }
+  },
+  "shaders": {
+    "new_variants": 5,
+    "exact_legacy_variants": 4,
+    "shader_sha256": {
+      "screen_reflections_cs": "c3bd3089f66b80aebc1ba164d9d84934ff825fc1189011d4efb2d381e223e157",
+      "deferred_lighting_cs": "638f5c58684beb77032a29c3d60bd753cd7bbeb0fdf374db977402c30e23cc3a",
+      "deferred_lighting_baseline_cs": "638f5c58684beb77032a29c3d60bd753cd7bbeb0fdf374db977402c30e23cc3a",
+      "deferred_lighting_reflection_cs": "05e7a639b2fedb499d1938dfc80e798094852c140100cb18b2ebb05acb5aeeec",
+      "deferred_lighting_ao_cs": "41fec7bb496e022dacfd87bb3ee77ed8be5856abf2822856c23ac75a24965805",
+      "deferred_lighting_ao_baseline_cs": "41fec7bb496e022dacfd87bb3ee77ed8be5856abf2822856c23ac75a24965805",
+      "deferred_lighting_ao_reflection_cs": "0fe9ec6f043c8468cd78ca5d1c05a2229e2409df64db08578b599c83ea4a39f4",
+      "deferred_lighting_color_cs": "e992375dac29ed4b72bc663d54b58239c8ab62bfdc96d0616e3873c0c13918eb",
+      "deferred_lighting_color_baseline_cs": "e992375dac29ed4b72bc663d54b58239c8ab62bfdc96d0616e3873c0c13918eb",
+      "deferred_lighting_color_reflection_cs": "fb54a727886c36c6b2e5a544eee3df8143d26836d75782fc1a698d765c9c12d9",
+      "deferred_lighting_color_ao_cs": "2c6bd964d2ecaa333cddd1b44f0295812b2186c7a0ae43a55fbd57526eeab81b",
+      "deferred_lighting_color_ao_baseline_cs": "2c6bd964d2ecaa333cddd1b44f0295812b2186c7a0ae43a55fbd57526eeab81b",
+      "deferred_lighting_color_ao_reflection_cs": "277f5547ecd9a42cb05c87266065c8f54998e03fc5a051baf1aa4f98b353de81"
+    }
+  },
+  "retained_fixture_setup_failure": {
+    "reason": "A camera mounted to the starter controller inherited its translation. The final fixture uses a separate root camera and retains the same world-space oracle.",
+    "original_report_sha256": "eb101203d916ac6e8ffd5ec4bd393273a1c218b440b3716c55f0c62dfd4f80d6"
+  },
+  "scope": "Bounded Windows Vulkan and Linux headless correctness. The reflection cohort uses controlled scenes and camera-visible opaque light."
+}

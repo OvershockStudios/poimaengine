@@ -49,6 +49,15 @@ void validate_environment(const LightingEnvironment& e) {
             require(std::isfinite(channel) && channel>=0 && channel<=16,
                     "Output grade knot channels must be finite and in [0,16].");
     }
+    if(e.screen_reflections) {
+        const auto& reflections=*e.screen_reflections;
+        require(std::isfinite(reflections.strength) && reflections.strength>=0 && reflections.strength<=1,
+                "Screen reflections strength must be finite and in [0,1].");
+        require(std::isfinite(reflections.max_distance_m) && reflections.max_distance_m>=.25f && reflections.max_distance_m<=32,
+                "Screen reflections max_distance_m must be finite and in [0.25,32].");
+        require(std::isfinite(reflections.thickness_m) && reflections.thickness_m>=.01f && reflections.thickness_m<=.5f,
+                "Screen reflections thickness_m must be finite and in [0.01,0.5].");
+    }
     require(e.shadow_filter==ShadowFilter::pcf3_point || e.shadow_filter==ShadowFilter::pcf3_fractional || e.shadow_filter==ShadowFilter::pcss_directional,"Invalid environment shadow filter.");
     require(e.shadow_resolution==256 || e.shadow_resolution==512 || e.shadow_resolution==1024 || e.shadow_resolution==2048,"Shadow resolution must be 256, 512, 1024 or 2048.");
     for(const auto& color:{e.sky.zenith,e.sky.horizon,e.sky.ground})

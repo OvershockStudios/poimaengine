@@ -45,6 +45,12 @@
 #include "poima/deferred_lighting_ao_cs.hpp"
 #include "poima/deferred_lighting_color_cs.hpp"
 #include "poima/deferred_lighting_color_ao_cs.hpp"
+#include "poima/deferred_lighting_reflection_cs.hpp"
+#include "poima/deferred_lighting_ao_reflection_cs.hpp"
+#include "poima/deferred_lighting_color_reflection_cs.hpp"
+#include "poima/deferred_lighting_color_ao_reflection_cs.hpp"
+#include "render_embedded_shader.hpp"
+#include "render_screen_reflections.hpp"
 #include "poima/ambient_occlusion_cs.hpp"
 #include "poima/ambient_occlusion_filter_cs.hpp"
 #include "poima/scene_output_ao_ps.hpp"
@@ -73,10 +79,7 @@
 #include "poima/smoke_vs.hpp"
 #include "poima/smoke_ps.hpp"
 
-#define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
-// Compile-time enforcement: every Poima Vulkan-Hpp call supplies its dispatcher.
-#define VULKAN_HPP_NO_DEFAULT_DISPATCHER
-#include <vulkan/vulkan.hpp>
+#include "render_vulkan_instance.hpp"
 #include <nvrhi/vulkan.h>
 #include <nvrhi/validation.h>
 #define SDL_MAIN_HANDLED
@@ -92,15 +95,12 @@
 #include <chrono>
 #include <iostream>
 #include <limits>
-#include <mutex>
 #include <numbers>
 #include <stdexcept>
 #include <thread>
 #ifdef _WIN32
 #include <windows.h>
 #endif
-
-VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
 namespace poima {
 namespace {
@@ -116,69 +116,6 @@ void require(bool condition, const std::string& detail) {
     if (!condition) throw std::runtime_error(detail);
 }
 
-template<std::size_t Size>
-nvrhi::ShaderHandle create_embedded_shader(nvrhi::IDevice* device, const nvrhi::ShaderDesc& desc,
-                                           const unsigned char (&bytes)[Size]) {
-    static_assert(Size % sizeof(std::uint32_t) == 0);
-    // DXC emits byte arrays; Vulkan requires pCode aligned for uint32_t.
-    std::vector<std::uint32_t> words(Size / sizeof(std::uint32_t));
-    std::memcpy(words.data(), bytes, Size);
-    return device->createShader(desc, words.data(), Size);
-}
-
-// NVRHI's pinned static backend uses Vulkan-Hpp's global dispatcher. Keep it
-// loaded with INSTANCE-derived loader trampolines, never device-specific entry
-// points: these dispatch correctly for every device descended from this shared
-// instance. Poima itself uses an explicit per-Context device dispatcher below.
-// https://docs.vulkan.org/refpages/latest/refpages/source/vkGetInstanceProcAddr.html
-// All windows/renderers remain on one owning UI thread; this is lifetime
-// isolation for interleaved draws, not a cross-thread rendering API.
-struct SharedInstance {
-    vk::detail::DispatchLoaderDynamic dispatch;
-    vk::Instance instance;
-    PFN_vkGetInstanceProcAddr entry;
-    std::vector<std::string> extensions;
-    std::thread::id owner=std::this_thread::get_id();
-
-    SharedInstance(PFN_vkGetInstanceProcAddr get,const char* const* names,std::uint32_t count):entry(get) {
-        for(std::uint32_t i=0;i<count;++i)extensions.emplace_back(names[i]);
-        dispatch.init(get);
-        const auto available=vk::enumerateInstanceExtensionProperties(nullptr,dispatch);
-        auto supports=[&](const char* name) {return std::any_of(available.begin(),available.end(),[&](const auto& e) {return std::string_view(e.extensionName.data())==name;});};
-        if(supports(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME)) {
-            extensions.emplace_back(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
-            if(supports(VK_KHR_SURFACE_MAINTENANCE_1_EXTENSION_NAME))extensions.emplace_back(VK_KHR_SURFACE_MAINTENANCE_1_EXTENSION_NAME);
-            if(supports(VK_EXT_SURFACE_MAINTENANCE_1_EXTENSION_NAME))extensions.emplace_back(VK_EXT_SURFACE_MAINTENANCE_1_EXTENSION_NAME);
-        }
-        std::vector<const char*> enabled;for(const auto& extension:extensions)enabled.push_back(extension.c_str());
-        require(dispatch.vkEnumerateInstanceVersion && vk::enumerateInstanceVersion(dispatch)>=VK_API_VERSION_1_3,
-            "The renderer experiment needs a Vulkan 1.3 loader.");
-        const vk::ApplicationInfo app("Poima",1,"Poima",1,VK_API_VERSION_1_3);
-        vk::InstanceCreateInfo info;
-        info.pApplicationInfo=&app;info.enabledExtensionCount=static_cast<std::uint32_t>(enabled.size());info.ppEnabledExtensionNames=enabled.data();
-        instance=vk::createInstance(info,nullptr,dispatch);
-        dispatch.init(instance);
-        // NVRHI_BUILD_SHARED is forced OFF by render_smoke.cmake. Its static
-        // backend does not reinitialize this dispatcher when creating a device.
-        // Assignment occurs only when no previous Context/device remains alive.
-        VULKAN_HPP_DEFAULT_DISPATCHER=dispatch;
-    }
-    ~SharedInstance() { if(instance)instance.destroy(nullptr,dispatch); }
-};
-
-std::shared_ptr<SharedInstance> acquire_instance(PFN_vkGetInstanceProcAddr get,const char* const* names,std::uint32_t count) {
-    static std::mutex mutex;
-    static std::weak_ptr<SharedInstance> active;
-    std::lock_guard lock(mutex);
-    if(auto existing=active.lock()) {
-        require(existing->owner==std::this_thread::get_id(),"Live graphics contexts require their common UI thread.");
-        require(existing->entry==get && existing->extensions.size()>=count,"Live graphics contexts require the same Vulkan loader/platform.");
-        for(std::uint32_t i=0;i<count;++i)
-            require(existing->extensions[i]==names[i],"Live graphics contexts require matching Vulkan instance extensions.");
-        return existing;
-    }
-    auto created=std::make_shared<SharedInstance>(get,names,count);active=created;return created;
-}
 struct DrawConstants {
     float model[3][4];
     float normal[3][4];
@@ -300,7 +237,7 @@ std::vector<Vertex> box_vertices() {
 
 struct Context {
     Messages messages;
-    std::shared_ptr<SharedInstance> shared_instance;
+    std::shared_ptr<const render_vulkan::SharedInstance> shared_instance;
     vk::detail::DispatchLoaderDynamic dispatch;
     bool sdl_initialized = false;
     SDL_Window* window = nullptr;
@@ -350,7 +287,7 @@ struct Context {
         std::vector<SpriteBinding> sprite_bindings;
         nvrhi::EventQueryHandle completion;
         std::uint64_t submission=0;
-        bool occupied=false,timing=false,has_skin=false;
+        bool occupied=false,timing=false,has_skin=false,screen_reflections=false;
         std::shared_ptr<ViewmodelResources> viewmodel;
         std::optional<ViewmodelDiagnostics> viewmodel_diagnostics;
         SteadyClock::time_point started;
@@ -425,7 +362,12 @@ struct Context {
     nvrhi::BindingLayoutHandle deferred_layout;
     nvrhi::BindingSetHandle deferred_bindings;
     nvrhi::ComputePipelineHandle deferred_pipeline;
-    std::array<const void*,18> deferred_binding_key{};
+    std::array<const void*,19> deferred_binding_key{};
+    bool deferred_reflection_variant=false;
+    screen_reflections::Pass reflections;
+    nvrhi::ITexture* world_radiance_texture() const noexcept {
+        return reflections.radiance() ? reflections.radiance() : scene_hdr.Get();
+    }
     AmbientOcclusionOptions ambient_occlusion;
     ShadowFilter shadow_filter=ShadowFilter::pcf3_point;
     std::optional<ShadowFilter> shadow_filter_override;
@@ -653,6 +595,7 @@ struct Context {
         shadow_pipeline=nullptr;shadow_bindings=nullptr;shadow_layout=nullptr;shadow_shader=nullptr;shadow_framebuffers.clear();shadow_texture=nullptr;
         ao_bindings={};ao_pipelines={};ao_layouts={};ao_shaders={};ao_raw=nullptr;ao_filtered=nullptr;ao_buffer=nullptr;
         deferred_bindings=nullptr;deferred_pipeline=nullptr;deferred_layout=nullptr;deferred_cs=nullptr;material_base=nullptr;material_surface=nullptr;material_correspondence=nullptr;
+        reflections={};
         pipeline = nullptr; culled_pipeline=nullptr;
         sky_pipeline=nullptr;sky_bindings=nullptr;sky_layout=nullptr;sky_vs=nullptr;sky_ps=nullptr;
         output_pipeline=nullptr;output_bindings=nullptr;output_layout=nullptr;output_vs=nullptr;output_ps=nullptr;
@@ -781,9 +724,9 @@ struct Context {
         std::uint32_t extension_count = 0;
         const auto extension_names = SDL_Vulkan_GetInstanceExtensions(&extension_count);
         require(extension_names != nullptr, std::string("SDL Vulkan extensions: ") + SDL_GetError());
-        shared_instance=acquire_instance(get,extension_names,extension_count);
-        instance=shared_instance->instance;
-        dispatch=shared_instance->dispatch;
+        shared_instance=render_vulkan::acquire_instance(get,extension_names,extension_count);
+        instance=render_vulkan::instance_handle(*shared_instance);
+        dispatch=render_vulkan::instance_dispatch(*shared_instance);
         VkSurfaceKHR raw_surface = VK_NULL_HANDLE;
         const bool created_surface = SDL_Vulkan_CreateSurface(window, static_cast<VkInstance>(instance), nullptr, &raw_surface);
         require(created_surface,
@@ -814,7 +757,7 @@ struct Context {
             if (scene && !features13.shaderDemoteToHelperInvocation) continue;
             const auto queues = candidate.getQueueFamilyProperties(dispatch);
             for (std::uint32_t family = 0; family < queues.size(); ++family) {
-                if (reconstruction_mode!=ReconstructionMode::none && !(queues[family].queueFlags & vk::QueueFlagBits::eCompute))continue;
+                if ((deferred || reconstruction_mode!=ReconstructionMode::none) && !(queues[family].queueFlags & vk::QueueFlagBits::eCompute))continue;
                 if (!(queues[family].queueFlags & vk::QueueFlagBits::eGraphics) || !candidate.getSurfaceSupportKHR(family,surface,dispatch)) continue;
                 const int score = props.deviceType == vk::PhysicalDeviceType::eDiscreteGpu ? 30 : (is_hardware ? 20 : 10);
                 if (score > best_score) {
@@ -841,7 +784,8 @@ struct Context {
         std::vector<const char*> device_extensions{VK_KHR_SWAPCHAIN_EXTENSION_NAME};
         const auto available_extensions=physical.enumerateDeviceExtensionProperties(nullptr,dispatch);
         auto has_device=[&](const char* name) {return std::any_of(available_extensions.begin(),available_extensions.end(),[&](const auto& e) {return std::string_view(e.extensionName.data())==name;});};
-        auto has_instance=[&](const char* name) {return std::find(shared_instance->extensions.begin(),shared_instance->extensions.end(),name)!=shared_instance->extensions.end();};
+        const auto enabled_instance_extensions=render_vulkan::instance_extensions(*shared_instance);
+        auto has_instance=[&](const char* name) {return std::find(enabled_instance_extensions.begin(),enabled_instance_extensions.end(),name)!=enabled_instance_extensions.end();};
         // Optional observation only: no allocation policy/reservations change.
         const bool budget_supported=has_device(VK_EXT_MEMORY_BUDGET_EXTENSION_NAME);
         if(budget_supported)device_extensions.push_back(VK_EXT_MEMORY_BUDGET_EXTENSION_NAME);
@@ -905,7 +849,7 @@ struct Context {
         desc.graphicsQueue = queue;
         desc.graphicsQueueIndex = static_cast<int>(queue_family);
         // NVRHI's API predates the extra const on the pointer list; it only reads it.
-        std::vector<const char*> instance_extensions;for(const auto& extension:shared_instance->extensions)instance_extensions.push_back(extension.c_str());
+        std::vector<const char*> instance_extensions;for(const auto& extension:enabled_instance_extensions)instance_extensions.push_back(extension.c_str());
         desc.instanceExtensions = instance_extensions.data();
         desc.numInstanceExtensions = instance_extensions.size();
         desc.deviceExtensions = device_extensions.data();
@@ -1253,7 +1197,7 @@ struct Context {
         if(!(limits.timestampPeriod>0) || diagnostics.timestamp_valid_bits==0) {
             diagnostics.gpu_timing_detail="Selected graphics queue does not support timestamps.";return;
         }
-        for(auto& slot:slots)slot.timestamps=device.createQueryPool(vk::QueryPoolCreateInfo({},vk::QueryType::eTimestamp,14),nullptr,dispatch);
+        for(auto& slot:slots)slot.timestamps=device.createQueryPool(vk::QueryPoolCreateInfo({},vk::QueryType::eTimestamp,16),nullptr,dispatch);
         diagnostics.gpu_timestamps=true;
         diagnostics.gpu_timing_detail="64-bit graphics-queue timestamps; approximate pass intervals, not presentation latency or game frame time.";
     }
@@ -1270,8 +1214,8 @@ struct Context {
             if(slot.performance)slot.performance->gpu_drop(slot.performance_ticket,fp::GpuDropReason::query_unavailable);
             return;
         }
-        std::array<std::uint64_t,14> values{};
-        const auto status=device.getQueryPoolResults(slot.timestamps,0,14,sizeof(values),values.data(),sizeof(values[0]),vk::QueryResultFlagBits::e64,dispatch);
+        std::array<std::uint64_t,16> values{};
+        const auto status=device.getQueryPoolResults(slot.timestamps,0,static_cast<std::uint32_t>(values.size()),sizeof(values),values.data(),sizeof(values[0]),vk::QueryResultFlagBits::e64,dispatch);
         const auto bits=diagnostics.timestamp_valid_bits;
         const double wrap_ms=std::ldexp(diagnostics.timestamp_period_ns*1e-6,static_cast<int>(bits));
         if(status!=vk::Result::eSuccess || cpu_interval_ms>=wrap_ms) {
@@ -1287,6 +1231,7 @@ struct Context {
             if(deferred)timing_sample(diagnostics.deferred_lighting_gpu,ms(8,9));
             if(ao_enabled) {timing_sample(diagnostics.ambient_occlusion_gpu,ms(10,11));timing_sample(diagnostics.ambient_occlusion_filter_gpu,ms(12,13));}
             if(slot.reconstruction.active)timing_sample(diagnostics.reconstruction.gpu,ms(6,7));
+            if(slot.screen_reflections)timing_sample(diagnostics.screen_reflections_gpu,ms(14,15));
             timing_sample(diagnostics.post_gpu,ms(4,5));timing_sample(diagnostics.total_gpu,ms(0,5));
         }
         // GPU values are queue durations observed after completion, not CPU
@@ -1300,6 +1245,7 @@ struct Context {
         if(deferred)sample("gpu.deferred_lighting.ns",8,9);
         if(ao_enabled) {sample("gpu.ambient_occlusion.ns",10,11);sample("gpu.ambient_occlusion_filter.ns",12,13);}
         if(slot.reconstruction.active)sample("gpu.reconstruction.ns",6,7);
+        if(slot.screen_reflections)sample("gpu.screen_reflections.ns",14,15);
         sample("gpu.post.ns",4,5);sample("gpu.total.ns",0,5);
         if(slot.performance) {
             fp::GpuTiming timing;bool valid=true;
@@ -1911,11 +1857,62 @@ struct Context {
         const auto& desc=ao_raw->getDesc();commands->dispatch((desc.width+7)/8,(desc.height+7)/8,1);
         timestamp(pass==0 ? 11 : 13);
     }
+    void prepare_screen_reflections(const std::optional<ScreenReflections>& selected) {
+        diagnostics.screen_reflections.reset();
+        if(selected) {
+            const std::string_view reason=
+                selected->strength==0 ? "zero_strength" :
+                !scene_visible ? "scene_hidden" :
+                scene_debug_view!=SceneDebugView::color ? "diagnostic" :
+                !deferred ? "forward" :
+                reconstruction_mode!=ReconstructionMode::none ? "reconstruction" :
+                !scene->world_viewmodel_draws().empty() ? "world_depth_foreground" : "active";
+            const bool active=reason=="active";
+            if(active) {
+                if(!reflections.radiance()) {
+                    const auto required=vk::FormatFeatureFlagBits::eSampledImage|vk::FormatFeatureFlagBits::eStorageImage|
+                        vk::FormatFeatureFlagBits::eTransferSrc|vk::FormatFeatureFlagBits::eTransferDst;
+                    const auto color_required=required|vk::FormatFeatureFlagBits::eColorAttachment|vk::FormatFeatureFlagBits::eColorAttachmentBlend;
+                    const auto roughness=physical.getFormatProperties(vk::Format::eR16Sfloat,dispatch).optimalTilingFeatures;
+                    const auto radiance=physical.getFormatProperties(vk::Format::eR16G16B16A16Sfloat,dispatch).optimalTilingFeatures;
+                    require((roughness&required)==required && (radiance&color_required)==color_required,
+                        "Selected GPU lacks screen reflection image format support.");
+                }
+                const auto& environment=bound_environment();
+                reflections.prepare(*checked.Get(),{frame_buffer.Get(),scene_hdr.Get(),material_base.Get(),
+                    material_surface.Get(),depth.Get(),ao_filtered.Get(),environment.specular.Get(),
+                    environment.brdf.Get(),environment_sampler.Get()});
+            }
+            diagnostics.screen_reflections=ScreenReflectionsDiagnostics{active,reason,active ? reflections.buffer_bytes() : 0};
+            if(active)return;
+        }
+        if(auto* source=reflections.radiance()) {
+            retire_frames(true);
+            deferred_bindings=nullptr;
+            sprite_framebuffer=nullptr;
+            detach_bloom_source(source);
+            if(output_source_bound==source) {output_bindings=nullptr;output_source_bound=nullptr;}
+            if(post_effect.source==source) {post_effect.bindings=nullptr;post_effect.source=nullptr;}
+            if(viewmodel) viewmodel->compose_bindings=nullptr;
+            reflections.clear_targets();
+        }
+    }
     void prepare_deferred_lighting() {
         if(!deferred)return;
+        const bool reflection_variant=bool(reflections.roughness());
+        if(deferred_reflection_variant!=reflection_variant) {
+            deferred_reflection_variant=reflection_variant;
+            deferred_bindings=nullptr;
+            deferred_pipeline=nullptr;
+            deferred_layout=nullptr;
+        }
         if(!deferred_layout) {
             const auto compute=nvrhi::ShaderDesc(nvrhi::ShaderType::Compute).setEntryName("compute_main");
-            if(scene_products_enabled)
+            if(reflection_variant && scene_products_enabled)
+                deferred_cs=ao_enabled ? create_embedded_shader(checked,compute,poima_deferred_lighting_ao_reflection_cs) : create_embedded_shader(checked,compute,poima_deferred_lighting_reflection_cs);
+            else if(reflection_variant)
+                deferred_cs=ao_enabled ? create_embedded_shader(checked,compute,poima_deferred_lighting_color_ao_reflection_cs) : create_embedded_shader(checked,compute,poima_deferred_lighting_color_reflection_cs);
+            else if(scene_products_enabled)
                 deferred_cs=ao_enabled ? create_embedded_shader(checked,compute,poima_deferred_lighting_ao_cs) : create_embedded_shader(checked,compute,poima_deferred_lighting_cs);
             else
                 deferred_cs=ao_enabled ? create_embedded_shader(checked,compute,poima_deferred_lighting_color_ao_cs) : create_embedded_shader(checked,compute,poima_deferred_lighting_color_cs);
@@ -1923,6 +1920,7 @@ struct Context {
             for(std::uint32_t i=0;i<4;++i)layout.addItem(nvrhi::BindingLayoutItem::Texture_SRV(i));
             layout.addItem(nvrhi::BindingLayoutItem::Texture_UAV(0));
             if(scene_products_enabled)for(std::uint32_t i=1;i<4;++i)layout.addItem(nvrhi::BindingLayoutItem::Texture_UAV(i));
+            if(reflection_variant)layout.addItem(nvrhi::BindingLayoutItem::Texture_UAV(4));
             layout.addItem(nvrhi::BindingLayoutItem::Texture_SRV(5));
             for(std::uint32_t i=6;i<=8;++i)layout.addItem(nvrhi::BindingLayoutItem::StructuredBuffer_SRV(i));
             for(std::uint32_t i=10;i<=12;++i)layout.addItem(nvrhi::BindingLayoutItem::Texture_SRV(i));
@@ -1933,7 +1931,7 @@ struct Context {
             require(bool(deferred_pipeline),"Deferred lighting pipeline creation failed.");
         }
         const auto& environment=bound_environment();
-        const std::array<const void*,18> key={frame_buffer.Get(),material_base.Get(),material_surface.Get(),material_correspondence.Get(),depth.Get(),shadow_texture.Get(),light_buffer.Get(),cluster_counts.Get(),cluster_indices.Get(),scene_hdr.Get(),scene_normal.Get(),scene_motion.Get(),scene_motion_valid.Get(),ao_filtered.Get(),environment.diffuse.Get(),environment.specular.Get(),environment.brdf.Get(),environment_sampler.Get()};
+        const std::array<const void*,19> key={frame_buffer.Get(),material_base.Get(),material_surface.Get(),material_correspondence.Get(),depth.Get(),shadow_texture.Get(),light_buffer.Get(),cluster_counts.Get(),cluster_indices.Get(),scene_hdr.Get(),scene_normal.Get(),scene_motion.Get(),scene_motion_valid.Get(),ao_filtered.Get(),environment.diffuse.Get(),environment.specular.Get(),environment.brdf.Get(),environment_sampler.Get(),reflections.roughness()};
         if(deferred_bindings && key==deferred_binding_key)return;
         auto desc=nvrhi::BindingSetDesc().addItem(nvrhi::BindingSetItem::ConstantBuffer(1,frame_buffer))
             .addItem(nvrhi::BindingSetItem::Texture_SRV(0,material_base)).addItem(nvrhi::BindingSetItem::Texture_SRV(1,material_surface))
@@ -1944,6 +1942,7 @@ struct Context {
         if(scene_products_enabled)desc.addItem(nvrhi::BindingSetItem::Texture_UAV(1,scene_normal))
             .addItem(nvrhi::BindingSetItem::Texture_UAV(2,scene_motion)).addItem(nvrhi::BindingSetItem::Texture_UAV(3,scene_motion_valid));
         if(ao_enabled)desc.addItem(nvrhi::BindingSetItem::Texture_SRV(4,ao_filtered));
+        if(reflection_variant)desc.addItem(nvrhi::BindingSetItem::Texture_UAV(4,reflections.roughness()));
         bind_environment(desc);
         deferred_bindings=checked->createBindingSet(desc,deferred_layout);require(bool(deferred_bindings),"Deferred lighting binding creation failed.");deferred_binding_key=key;
     }
@@ -2069,7 +2068,7 @@ struct Context {
             require(world+foreground_bytes+reconstruction->gpu_bytes()<=1536ull*1024*1024,"World, foreground and FSR payload exceeds the 1536 MiB budget.");
         } else {
             const auto pixels=std::uint64_t(extent.width)*extent.height;
-            const auto world=pixels*(8u*(samples>1 ? samples+1u : 1u)+(scene_products_enabled ? 17u : 0u)+deferred_material_bytes_per_pixel()+(ao_enabled ? 4u : 0u));
+            const auto world=pixels*(8u*(samples>1 ? samples+1u : 1u)+(scene_products_enabled ? 17u : 0u)+deferred_material_bytes_per_pixel()+(ao_enabled ? 4u : 0u))+reflections.buffer_bytes();
             require(world+foreground_bytes<=512ull*1024*1024,"World and foreground HDR attachments exceed the 512 MiB budget.");
         }
     }
@@ -2153,7 +2152,7 @@ struct Context {
             bundle->resolve_pipeline=checked->createGraphicsPipeline(resolve,bundle->resolve_framebuffer->getFramebufferInfo());
             require(bool(bundle->resolve_pipeline),"Foreground resolve pipeline allocation failed.");
         }
-        bundle->compose_bindings=checked->createBindingSet(nvrhi::BindingSetDesc().addItem(nvrhi::BindingSetItem::PushConstants(0,32)).addItem(nvrhi::BindingSetItem::Texture_SRV(0,reconstruction ? reconstructed.Get() : scene_hdr.Get())).addItem(nvrhi::BindingSetItem::Texture_SRV(1,bundle->resolved)),bundle->compose_layout);
+        bundle->compose_bindings=checked->createBindingSet(nvrhi::BindingSetDesc().addItem(nvrhi::BindingSetItem::PushConstants(0,32)).addItem(nvrhi::BindingSetItem::Texture_SRV(0,reconstruction ? reconstructed.Get() : world_radiance_texture())).addItem(nvrhi::BindingSetItem::Texture_SRV(1,bundle->resolved)),bundle->compose_layout);
         require(bool(bundle->compose_bindings),"Foreground staged composition bindings unavailable.");
         return bundle;
     }
@@ -2209,7 +2208,7 @@ struct Context {
                 if(item.camera_visible) {++pending_viewmodel->draws.camera_draws;pending_viewmodel->draws.camera_triangles+=item.geometry.count/3;if(item.skin) {++pending_viewmodel->draws.skinned_instances;pending_viewmodel->draws.skinned_vertices+=object.mesh->vertices.size();}}else ++pending_viewmodel->draws.camera_culled;
                 viewmodel_draws.push_back(std::move(item));
             }
-            auto composition=checked->createBindingSet(nvrhi::BindingSetDesc().addItem(nvrhi::BindingSetItem::PushConstants(0,32)).addItem(nvrhi::BindingSetItem::Texture_SRV(0,reconstruction ? reconstructed.Get() : scene_hdr.Get())).addItem(nvrhi::BindingSetItem::Texture_SRV(1,viewmodel->resolved)),viewmodel->compose_layout);
+            auto composition=checked->createBindingSet(nvrhi::BindingSetDesc().addItem(nvrhi::BindingSetItem::PushConstants(0,32)).addItem(nvrhi::BindingSetItem::Texture_SRV(0,reconstruction ? reconstructed.Get() : world_radiance_texture())).addItem(nvrhi::BindingSetItem::Texture_SRV(1,viewmodel->resolved)),viewmodel->compose_layout);
             require(bool(composition),"Foreground composition bindings unavailable.");viewmodel->compose_bindings=std::move(composition);
         } catch(...) {renderer_fault=true;throw;}
     }
@@ -2240,15 +2239,18 @@ struct Context {
         commands->setGraphicsState(state);commands->draw(nvrhi::DrawArguments().setVertexCount(3));
     }
 
+    void detach_bloom_source(const nvrhi::ITexture* source) {
+        if(bloom_targets && bloom_targets->source==source) {
+            bloom_targets->bindings[0]=nullptr;
+            bloom_targets->source=nullptr;
+        }
+    }
     void retire_post_effect_target() {
         if(!post_effect.target)return;
         retire_frames(true);
         output_bindings=nullptr;
         output_source_bound=nullptr;
-        if(bloom_targets && bloom_targets->source==post_effect.target.Get()) {
-            bloom_targets->bindings[0]=nullptr;
-            bloom_targets->source=nullptr;
-        }
+        detach_bloom_source(post_effect.target.Get());
         post_effect.framebuffer=nullptr;
         post_effect.target=nullptr;
     }
@@ -2400,7 +2402,7 @@ struct Context {
     void prepare_scene_output() {
         if(!scene)return;
         const bool use_reconstructed=(reconstruction && scene_visible) || viewmodel_enabled;
-        auto* source=viewmodel_enabled ? viewmodel->composite.Get() : (reconstruction && scene_visible) ? reconstructed.Get() : scene_hdr.Get();
+        auto* source=viewmodel_enabled ? viewmodel->composite.Get() : (reconstruction && scene_visible) ? reconstructed.Get() : world_radiance_texture();
         post_effect.active=scene_visible && scene_debug_view==SceneDebugView::color && bool(scene->post_effect);
         if(post_effect.active) {
             prepare_post_effect(source);
@@ -2544,7 +2546,7 @@ struct Context {
         validate_surface_mark_catalog();
         retain_scene_resources();warm_particle_sprites();prepare_shadows();
         auto lighting=scene->lighting;finalize_lighting(lighting);
-        prepare_environment(lighting.environment);bindings=mesh_bindings(nullptr,nullptr);
+        prepare_environment(lighting.environment);prepare_screen_reflections(lighting.environment.screen_reflections);bindings=mesh_bindings(nullptr,nullptr);
         shadow_filter=shadow_filter_override.value_or(lighting.environment.shadow_filter);
         diagnostics.shadow_filter=shadow_filter;
         const bool contact_shadows=shadow_filter==ShadowFilter::pcss_directional;
@@ -2773,6 +2775,7 @@ struct Context {
         swapchain_dirty=true;
         retire_frames(true);
         retire_presentation();
+        reflections.clear_targets();
         reconstruction.reset();temporal_bindings=nullptr;reconstructed=nullptr;dense_motion=nullptr;reactive=nullptr;dilated_depth=nullptr;dilated_motion=nullptr;reconstructed_depth=nullptr;render_extent={};output_extent={};temporal_phase=0;temporal_clock.reset();
         viewmodel.reset();viewmodel_enabled=false;viewmodel_draws.clear();viewmodel_objects.clear();output_source_bound=nullptr;
         commands=nullptr;
@@ -3439,6 +3442,7 @@ struct Context {
         settings.viewmodel=viewmodel_enabled;settings.viewmodel_clustered=viewmodel_enabled && viewmodel_lights.active;settings.viewmodel_samples=viewmodel_samples;
         settings.bloom=scene && output_bloom_bound;
         settings.post_effect=scene && post_effect.active;
+        settings.screen_reflections=scene && scene_visible && reflections.radiance();
         settings.particle_sprites=!sprite_instances.empty();
         settings.sky=scene && scene_visible && sky_enabled;settings.products=bool(scene_normal);settings.products_debug=scene_debug_view!=SceneDebugView::color;settings.editor=editor;settings.capture=capture_frame;settings.reconstruction=pending_reconstruction.active;settings.deferred=deferred;settings.ambient_occlusion=ao_enabled;
         settings.slot=static_cast<std::uint32_t>(next_slot%diagnostics.frame_execution.limit);settings.history_sequence=history.sequence;
@@ -3524,6 +3528,10 @@ struct Context {
             if(ao_enabled) {f.ao_raw=texture(ao_raw,rs::Lifetime::shared,false);f.ao_filtered=texture(ao_filtered,rs::Lifetime::shared,false);f.ao_constants=buffer(ao_buffer,rs::Lifetime::shared,false);}
             if(deferred) {f.material_base=texture(material_base,rs::Lifetime::shared,false);f.material_surface=texture(material_surface,rs::Lifetime::shared,false);f.material_correspondence=texture(material_correspondence,rs::Lifetime::shared,false);}
             f.hdr=texture(scene_hdr,rs::Lifetime::shared,false);f.color=multisample_color ? texture(multisample_color,rs::Lifetime::shared,false) : f.hdr;
+            if(settings.screen_reflections) {
+                f.reflection_roughness=texture(reflections.roughness(),rs::Lifetime::shared,false);
+                f.reflected_hdr=texture(reflections.radiance(),rs::Lifetime::shared,false);
+            }
             f.depth=texture(depth,rs::Lifetime::shared,false);if(scene_normal) {f.normal=texture(scene_normal,rs::Lifetime::shared,false);f.motion=texture(scene_motion,rs::Lifetime::shared,false);f.motion_valid=texture(scene_motion_valid,rs::Lifetime::shared,false);}f.shadow=texture(shadow_texture,rs::Lifetime::shared,false);
             if(settings.clustered) {
                 f.counts=buffer(cluster_counts,rs::Lifetime::shared,false);f.indices=buffer(cluster_indices,rs::Lifetime::shared,false);
@@ -3608,7 +3616,8 @@ struct Context {
 #endif
         if(capture_frame && !product_probes.empty()) {
             for(const auto& point:product_probes)f.probe_points.push_back({point.x,point.y});
-            const rs::ResourceId sources[]={f.depth,f.normal,f.motion,f.motion_valid,f.hdr,f.reconstructed!=rs::none ? f.reconstructed : f.hdr,f.ao_raw,f.ao_filtered};
+            const rs::ResourceId sources[]={f.depth,f.normal,f.motion,f.motion_valid,f.hdr,
+                f.reconstructed!=rs::none ? f.reconstructed : rs::world_radiance(f,settings),f.ao_raw,f.ao_filtered};
             for(std::size_t i=0;i<(ao_enabled ? 8u : 6u);++i) {
                 require(bool(probe_staging[i]),"Product probe staging is unavailable.");const auto& desc=probe_staging[i]->getDesc();
                 rs::Resource r;r.identity=reinterpret_cast<std::uintptr_t>(probe_staging[i].Get());r.name="Sparse product probe staging";
@@ -3642,7 +3651,7 @@ struct Context {
         identity(f.swapchain,images.at(index).Get());
         if(plan.settings.particle_sprites) {
             const auto& slot=slots.at(plan.settings.slot);
-            framebuffer(sprite_framebuffer,f.hdr,rs::none);
+            framebuffer(sprite_framebuffer,rs::world_radiance(f,plan.settings),rs::none);
             require(slot.sprite_bindings.size()==f.sprite_textures.size(),"Particle sprite texture count differs from its schedule.");
             for(std::size_t texture=0;texture<slot.sprite_bindings.size();++texture) {
                 identity(f.sprite_textures[texture],slot.sprite_bindings[texture].image.Get());
@@ -3663,13 +3672,16 @@ struct Context {
                     if(binding.slot>=10) {environment_identity(binding.slot,binding.resourceHandle);continue;}
                     const auto id=binding.slot==0 ? f.material_base : binding.slot==1 ? f.material_surface : binding.slot==2 ? f.material_correspondence : binding.slot==3 ? f.depth : binding.slot==4 ? f.ao_filtered : f.shadow;identity(id,binding.resourceHandle);
                 } else if(binding.type==nvrhi::ResourceType::Texture_UAV) {
-                    const auto id=binding.slot==0 ? f.hdr : binding.slot==1 ? f.normal : binding.slot==2 ? f.motion : f.motion_valid;identity(id,binding.resourceHandle);
+                    const auto id=binding.slot==0 ? f.hdr : binding.slot==1 ? f.normal : binding.slot==2 ? f.motion :
+                        binding.slot==3 ? f.motion_valid : f.reflection_roughness;
+                    identity(id,binding.resourceHandle);
                 } else if(binding.type==nvrhi::ResourceType::ConstantBuffer)identity(f.frame,binding.resourceHandle);
                 else if(binding.type==nvrhi::ResourceType::StructuredBuffer_SRV) {
                     const auto id=binding.slot==6 ? f.lights : binding.slot==7 ? f.counts : f.indices;if(id!=rs::none)identity(id,binding.resourceHandle);
                 }
             }
         } else framebuffer(framebuffers.at(index),f.color,f.depth,f.normal);
+        if(plan.settings.screen_reflections)reflections.verify_bindings(plan,environment_sampler.Get());
         if(ao_enabled) {
             identity(f.ao_raw,ao_raw.Get());identity(f.ao_filtered,ao_filtered.Get());identity(f.ao_constants,ao_buffer.Get());
             for(unsigned pass=0;pass<2;++pass)for(const auto& binding:ao_bindings[pass]->getDesc()->bindings) {
@@ -3768,7 +3780,7 @@ struct Context {
                         if(binding.type==nvrhi::ResourceType::StructuredBuffer_SRV) {const auto id=binding.slot==6 ? f.lights : binding.slot==7 ? f.viewmodel_counts : binding.slot==8 ? f.viewmodel_indices : f.viewmodel_objects;if(id!=rs::none)identity(id,binding.resourceHandle);}
                     }
                 }
-                for(const auto& binding:viewmodel->compose_bindings->getDesc()->bindings)if(binding.type==nvrhi::ResourceType::Texture_SRV)identity(binding.slot==0 ? (plan.settings.reconstruction ? f.reconstructed : f.hdr) : f.viewmodel_resolved,binding.resourceHandle);
+                for(const auto& binding:viewmodel->compose_bindings->getDesc()->bindings)if(binding.type==nvrhi::ResourceType::Texture_SRV)identity(binding.slot==0 ? (plan.settings.reconstruction ? f.reconstructed : rs::world_radiance(f,plan.settings)) : f.viewmodel_resolved,binding.resourceHandle);
                 if(plan.settings.viewmodel_clustered)for(const auto& binding:viewmodel->cluster_bindings->getDesc()->bindings) {
                     if(binding.type==nvrhi::ResourceType::ConstantBuffer)identity(f.viewmodel_frame,binding.resourceHandle);
                     if(binding.type==nvrhi::ResourceType::StructuredBuffer_SRV)identity(f.lights,binding.resourceHandle);
@@ -3926,7 +3938,7 @@ struct Context {
             vk::AccessFlagBits::eMemoryRead|vk::AccessFlagBits::eMemoryWrite);
         native_commands().pipelineBarrier(vk::PipelineStageFlagBits::eAllCommands,vk::PipelineStageFlagBits::eAllCommands,
             {},1,&scratch_dependency,0,nullptr,0,nullptr,dispatch);
-        if(timestamp_recording)native_commands().resetQueryPool(timestamp_pool,0,14,dispatch);
+        if(timestamp_recording)native_commands().resetQueryPool(timestamp_pool,0,16,dispatch);
         timestamp(0);
         // Only the acquired image is late-bound. All other resources were
         // resolved after preparation; no recording pass allocates/rebinds them.
@@ -3977,10 +3989,15 @@ struct Context {
                 if(resources.depth!=render_schedule::none)commands->clearDepthStencilTexture(planned_texture(resources.depth),nvrhi::AllSubresources,true,1.0f,false,0);
                 break;
             case render_schedule::PassId::sky:render_sky(index);break;
-            case render_schedule::PassId::opaque:render_opaque(index,slot);timestamp(4);if(!ao_enabled) {timestamp(10);timestamp(11);timestamp(12);timestamp(13);}if(!deferred) {timestamp(8);timestamp(9);}if(!pending_reconstruction.active) {timestamp(6);timestamp(7);}break;
+            case render_schedule::PassId::opaque:render_opaque(index,slot);timestamp(4);if(!ao_enabled) {timestamp(10);timestamp(11);timestamp(12);timestamp(13);}if(!deferred) {timestamp(8);timestamp(9);}if(!pending_reconstruction.active) {timestamp(6);timestamp(7);}if(!plan.settings.screen_reflections) {timestamp(14);timestamp(15);}break;
             case render_schedule::PassId::ambient_occlusion:dispatch_ambient_occlusion(0);break;
             case render_schedule::PassId::ambient_occlusion_filter:dispatch_ambient_occlusion(1);break;
             case render_schedule::PassId::deferred_lighting:dispatch_deferred_lighting();break;
+            case render_schedule::PassId::screen_reflections:
+                timestamp(14);
+                reflections.dispatch(*commands.Get(),*scene->lighting.environment.screen_reflections,ao_enabled);
+                timestamp(15);
+                break;
             case render_schedule::PassId::particle_sprites:render_particle_sprites(slot);break;
             case render_schedule::PassId::temporal_inputs:timestamp(6);dispatch_temporal_inputs();break;
             case render_schedule::PassId::reconstruction:dispatch_reconstruction();timestamp(7);break;
@@ -4041,7 +4058,7 @@ struct Context {
         slot.started=frame_started;slot.draws=pending_draws;slot.lights=submitted_lights;
         if(slot_viewmodel && pending_viewmodel)slot_viewmodel->draws.camera_batches=pending_viewmodel->draws.camera_batches;
         slot.viewmodel_diagnostics.swap(slot_viewmodel);slot.has_skin=has_skin_draws();slot.viewmodel=viewmodel_enabled ? viewmodel : nullptr;
-        slot.skin_ids.swap(submitted_skin_ids);
+        slot.skin_ids.swap(submitted_skin_ids);slot.screen_reflections=plan.settings.screen_reflections;
         slot.profile=profiling::capture_deferred();slot.timing=timestamp_recording;
         slot.history_valid=pending_history_valid;slot.history_sequence=scene ? history_sequence+1 : 0;slot.history_reset=pending_history_reset;
         slot.capture_probes=capture_frame && !product_probes.empty();slot.reconstruction=pending_reconstruction;

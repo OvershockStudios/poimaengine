@@ -81,6 +81,9 @@ struct OutputGrade {
     float input_max=4,strength=1;
     std::array<std::array<float,3>,output_grade_knot_count> knots{};
 };
+struct ScreenReflections {
+    float strength=0,max_distance_m=8,thickness_m=.1f;
+};
 struct LightingEnvironment {
     std::array<float,3> ambient{};
     float exposure=1;
@@ -93,6 +96,7 @@ struct LightingEnvironment {
     // Runtime lighting retains the artifact admitted when the scene was frozen.
     std::shared_ptr<const PostEffect> post_effect;
     std::optional<OutputGrade> output_grade;
+    std::optional<ScreenReflections> screen_reflections;
 };
 struct SceneLight { std::string entity_id;Light light;std::array<double,3> position{},direction{0,0,-1}; };
 struct SceneLighting {

@@ -1,8 +1,25 @@
 # Implementation status
 
-Updated 2026-11-21 for **0.0.374**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-21 for **0.0.375**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.375 puts world discovery, presentation-report serialization and
+shared Vulkan instance ownership in their own [compilation units](BUILD.md#world-service-and-schema-compilation).
+Fifteen Linux headless suites passed, including scoped discovery, authoring
+conformance and player-service contracts. Thirty-two retained Windows images
+and 128 product probes matched 0.0.374 exactly on the tested forward and
+deferred paths. Interleaved Vulkan contexts passed resize, teardown and
+recreation on AMD and NVIDIA. Final images with one and two frame slots
+matched newly created contexts byte for byte on each adapter.
+
+[Authored screen-space reflections](DEFERRED_RENDERING.md#screen-space-reflections)
+use a separate scene-linear image on single-sample deferred Vulkan. Two
+validated Windows adapters passed 22 relocated captures with 154 product
+samples. Warm and cool reflection samples matched an independent ray
+and radiance calculation. Zero strength, short-distance misses and
+forward, diagnostic and FSR Native AA fallbacks matched their controls
+exactly. [Results](evidence/m2-source-ownership-reflections-375.json)
 
 Version 0.0.374 adds [authored water ripples](SHALLOW_WATER.md#author-surface-ripples)
 with direction, slope, wavelength and period. The water tick determines the

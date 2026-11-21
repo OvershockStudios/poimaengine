@@ -16,6 +16,48 @@ Add these fields to the normal capture parameters, including camera, revision or
 
 Native clients set `RenderOptions::deferred` and `samples = 1`. There is no desktop preference for this path yet. See the [world service contract](WORLD_SERVICE.md) for complete request schemas.
 
+## Screen-space reflections
+
+Set `LightingEnvironment.screen_reflections` in a guarded `component.set`
+operation. All three settings are required when selected.
+
+```json
+{"screen_reflections":{"strength":0.65,"max_distance_m":12,"thickness_m":0.125}}
+```
+
+Strength is a blend factor from 0 to 1. The trace distance is 0.25 to 32
+metres and the depth hit tolerance is 0.01 to 0.5 metres. Authored strength
+zero keeps the selected settings and disables the effect.
+
+Use single-sample deferred color with reconstruction disabled. Reflections
+sample visible opaque scene radiance. Each ray uses up to 32 coarse samples
+with four refinements per candidate depth crossing. Rougher surfaces fade
+out of the effect between roughness 0.20 and 0.45. Rays that miss retain
+the existing lighting.
+
+Deferred lighting writes the reflector roughness and the original opaque HDR.
+The reflection pass reads both and writes a separate HDR image. Sprites and
+separately composited viewmodels draw afterward, followed by post-processing
+and UI. The two added images use 10 logical bytes per pixel, capped at
+128 MiB. Capture probes report the opaque input as `raw_hdr` and the
+reflected world image as `resolved_hdr`.
+
+`world.lighting`, `runtime.lighting` and capture lighting report the authored
+selection. When selected, `render_diagnostics.screen_reflections` reports
+`active`, `reason`, `buffer_bytes` and available GPU timing. Forward
+rendering, FSR reconstruction, diagnostic views and world-depth foregrounds
+use their existing lighting.
+
+Headless authoring can validate the settings and resolve the export closure.
+World dependencies and project and bundle inspection report
+`needs_screen_reflections` for a selected profile. Build and bundle verification
+require an installed Vulkan runtime with `features.screen_reflections`.
+
+Use `tests/screen_reflections_capture.py POIMA --runtime-root RUNTIME
+--output DIRECTORY --gpu GPU_INDEX` to check relocated exports, an independent
+geometric and radiance witness, and disabled and fallback comparisons. Add
+`--fsr` for an installed build with FSR and `--windows-interop` from WSL.
+
 ## Storage and execution
 
 Opaque rasterization writes base color/metallic, octahedrally encoded shading normal/occlusion/flags, emission/roughness, and octahedrally encoded geometric normals. A compute pass reconstructs world position from depth, evaluates shared lighting, and writes HDR radiance. Background pixels retain the clear or procedural sky. GTAO and shadow bias use geometric normals at the same precision in both storage layouts.

@@ -252,6 +252,73 @@ class LightingContract(unittest.TestCase):
         c.rpc('world.undo',{'base_revision':4,'request_id':uuid.uuid4().hex})
         self.assertEqual(c.rpc('world.lighting')['sky']['sun'],uid(2));self.assertEqual(c.rpc('entity.get',{'id':uid(2)})['value']['components']['Light']['kind'],'directional')
         c.rpc('world.redo',{'base_revision':5,'request_id':uuid.uuid4().hex});self.assertIsNone(c.rpc('world.lighting')['sky']['sun'])
+    def test_screen_reflections_are_optional_strict_and_persistent(self):
+        c = self.open()
+        discovery = c.rpc('world.describe', {'view': 'component', 'name': 'LightingEnvironment'})
+        schema = discovery['components']['LightingEnvironment']['properties']['screen_reflections']
+        fields = {'strength': (0, 1), 'max_distance_m': (.25, 32), 'thickness_m': (.01, .5)}
+        self.assertEqual(set(schema['required']), set(fields))
+        self.assertFalse(schema['additionalProperties'])
+        for key, (minimum, maximum) in fields.items():
+            self.assertEqual(schema['properties'][key], dict(type='number', minimum=minimum, maximum=maximum))
+
+        baseline = dict(ambient=[0, 0, 0], exposure=1)
+        config = dict(strength=0, max_distance_m=32, thickness_m=.5)
+
+        def edit(value):
+            return component(1, 'LightingEnvironment', baseline | dict(screen_reflections=value))
+
+        c.txn(0, [create(1), environment(1)])
+        original = c.rpc('world.lighting')
+        dependencies = c.rpc('world.dependencies')
+        self.assertNotIn('screen_reflections', original)
+        self.assertNotIn('needs_screen_reflections', dependencies)
+        before = self.path.read_bytes()
+        history = c.rpc('world.history')
+        invalid = [None, [], {}, config | dict(unexpected=1)]
+        for name, (low, high) in fields.items():
+            invalid.append({key: value for key, value in config.items() if key != name})
+            for value in (low - 1e-10, high + 1e-10, True, '1', None):
+                invalid.append(config | {name: value})
+        for bad in invalid:
+            c.txn(1, [transform(1, (45, 0, 0)), edit(bad)], error=-32602)
+            self.assertEqual(self.path.read_bytes(), before)
+            self.assertEqual(c.rpc('world.history'), history)
+        self.assertEqual(c.rpc('world.lighting'), original)
+
+        c.txn(1, [edit(config)])
+        selected = c.rpc('world.lighting', {'revision': 2})
+        self.assertEqual(selected, original | dict(revision=2, screen_reflections=config))
+        self.assertEqual(c.rpc('world.dependencies'), dependencies | dict(revision=2, needs_screen_reflections=True))
+        c.close()
+        c = self.open()
+        self.assertEqual(c.rpc('world.lighting'), selected)
+        c.txn(2, [environment(1)])
+        self.assertEqual(c.rpc('world.lighting'), original | dict(revision=3))
+        self.assertEqual(c.rpc('world.dependencies'), dependencies | dict(revision=3))
+        c.rpc('world.undo', {'base_revision': 3, 'request_id': uuid.uuid4().hex})
+        self.assertEqual(c.rpc('world.lighting'), selected | dict(revision=4))
+
+    def test_runtime_screen_reflections_are_frozen_with_lighting(self):
+        cap = json.loads(subprocess.check_output([BINARY, 'capabilities'], text=True))
+        if not cap['result']['features']['simulation']:
+            self.skipTest('Simulation disabled in this build')
+        c = self.open()
+        session = uid(951)
+        first = dict(strength=0, max_distance_m=.25, thickness_m=.125)
+        second = dict(strength=1, max_distance_m=32, thickness_m=.5)
+
+        def edit(value):
+            return component(1, 'LightingEnvironment', dict(ambient=[0, 0, 0], exposure=1, screen_reflections=value))
+
+        c.txn(0, [create(1), edit(first)])
+        c.rpc('runtime.start', {'session_id': session, 'revision': 1})
+        frozen = c.rpc('runtime.lighting', {'session_id': session, 'tick': 0})
+        self.assertEqual(frozen['screen_reflections'], first)
+        c.txn(1, [edit(second)])
+        self.assertEqual(c.rpc('world.lighting')['screen_reflections'], second)
+        self.assertEqual(c.rpc('runtime.lighting', {'session_id': session, 'tick': 0}), frozen)
+
     def test_runtime_sky_settings_are_frozen_but_sun_pose_is_live(self):
         cap=json.loads(subprocess.check_output([BINARY,'capabilities'],text=True))
         if not cap['result']['features']['simulation']:self.skipTest('Simulation disabled in this build')

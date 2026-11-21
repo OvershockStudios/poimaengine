@@ -249,6 +249,11 @@ struct EnvironmentIblDiagnostics {
     std::uint64_t texture_bytes=0,generation=0;
     double prepare_cpu_ms=0;
 };
+struct ScreenReflectionsDiagnostics {
+    bool active=false;
+    std::string_view reason;
+    std::uint64_t buffer_bytes=0;
+};
 struct RenderDiagnostics {
     gpu_memory::Diagnostics memory_budget;
     bool deferred=false;
@@ -272,6 +277,8 @@ struct RenderDiagnostics {
     std::uint32_t shadow_blocker_samples=0,shadow_filter_samples=0,shadow_max_comparisons=0;
     double shadow_max_radius_texels=0,shadow_guard_texels=0;
     std::optional<EnvironmentIblDiagnostics> environment_ibl;
+    std::optional<ScreenReflectionsDiagnostics> screen_reflections;
+    TimingSummary screen_reflections_gpu;
     std::optional<RendererSceneResult> scene_observed,scene_submitted,scene_presented;
     std::optional<ViewmodelDiagnostics> viewmodel;
 };

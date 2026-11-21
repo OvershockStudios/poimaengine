@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.375
+
+- Compile world discovery, presentation reports and shared Vulkan instance ownership in separate translation units.
+- Author screen-space reflections for single-sample deferred Vulkan rendering and inspect raw and reflected HDR in capture probes.
+
 ## 0.0.374
 
 - Author directional ripples on terrain-bound water. Replay and save restoration recover the same water shading phase from the simulation tick.

@@ -25,7 +25,7 @@ enum class Region { whole,prefix,cluster_members,probe_pixels };
 enum class Use { upload,storage_read,storage_write,vertex,index,constant,sampled,color,color_overwrite,depth,clear_color,clear_depth,copy_source,copy_destination,resolve_source,resolve_destination,present,image_write,image_read_write };
 using Uses=std::uint64_t;
 constexpr Uses use_bit(Use use) {return Uses{1}<<static_cast<unsigned>(use);}
-enum class PassId { stream_geometry,sprite_upload,surface_mark_upload,skinning,light_assignment,shadows,scene_clear,sky,opaque,ambient_occlusion,ambient_occlusion_filter,deferred_lighting,particle_sprites,resolve,temporal_inputs,reconstruction,viewmodel_lights,viewmodel_clear,viewmodel_opaque,viewmodel_resolve,viewmodel_composite,post_effect,bloom_extract,bloom_horizontal,bloom_vertical,output,game_ui,overlay,editor_clear,editor_ui,product_probes,capture,present };
+enum class PassId { stream_geometry,sprite_upload,surface_mark_upload,skinning,light_assignment,shadows,scene_clear,sky,opaque,ambient_occlusion,ambient_occlusion_filter,deferred_lighting,screen_reflections,particle_sprites,resolve,temporal_inputs,reconstruction,viewmodel_lights,viewmodel_clear,viewmodel_opaque,viewmodel_resolve,viewmodel_composite,post_effect,bloom_extract,bloom_horizontal,bloom_vertical,output,game_ui,overlay,editor_clear,editor_ui,product_probes,capture,present };
 inline const char* pass_name(PassId id) {
     switch(id) {
     case PassId::stream_geometry:return "render.pass.stream_geometry";
@@ -37,6 +37,7 @@ inline const char* pass_name(PassId id) {
     case PassId::ambient_occlusion:return "render.pass.ambient_occlusion";
     case PassId::ambient_occlusion_filter:return "render.pass.ambient_occlusion_filter";
     case PassId::deferred_lighting:return "render.pass.deferred_lighting";
+    case PassId::screen_reflections:return "render.pass.screen_reflections";
     case PassId::particle_sprites:return "render.pass.particle_sprites";
     case PassId::temporal_inputs:return "render.pass.temporal_inputs";case PassId::reconstruction:return "render.pass.reconstruction";
     case PassId::viewmodel_lights:return "render.pass.viewmodel_lights";case PassId::viewmodel_clear:return "render.pass.viewmodel_clear";
@@ -86,6 +87,7 @@ struct FrameResources {
     ResourceId material_base=none,material_surface=none,material_correspondence=none;
     ResourceId ibl_diffuse=none,ibl_specular=none,ibl_brdf=none;
     ResourceId ao_raw=none,ao_filtered=none,ao_constants=none;
+    ResourceId reflection_roughness=none,reflected_hdr=none;
     ResourceId reconstructed=none,dense_motion=none,reactive=none,dilated_depth=none,dilated_motion=none,reconstructed_depth=none;
     ResourceId shadow=none,counts=none,indices=none,cluster_readback=none,skin_errors=none,skin_readback=none,capture=none;
     ResourceId game_vertices=none,game_indices=none,overlay_vertices=none,editor_vertices=none,editor_indices=none;
@@ -112,14 +114,20 @@ struct Settings {
     std::uint32_t viewmodel_samples=1;
     bool bloom=false,post_effect=false;
     bool particle_sprites=false;
+    bool screen_reflections=false;
 };
+inline constexpr ResourceId world_radiance(const FrameResources& frame,const Settings& settings) {
+    return settings.screen_reflections ? frame.reflected_hdr : frame.hdr;
+}
 inline constexpr ResourceId scene_linear_radiance(const FrameResources& frame,const Settings& settings) {
-    return settings.viewmodel ? frame.composite : settings.reconstruction ? frame.reconstructed : frame.hdr;
+    return settings.viewmodel ? frame.composite : settings.reconstruction ? frame.reconstructed : world_radiance(frame,settings);
 }
 inline constexpr ResourceId display_radiance(const FrameResources& frame,const Settings& settings) {
     return settings.post_effect ? frame.post_effect : scene_linear_radiance(frame,settings);
 }
 inline constexpr std::uint64_t post_effect_budget_bytes=128u*1024u*1024u;
+inline constexpr std::uint64_t screen_reflections_budget_bytes=128u*1024u*1024u;
+inline constexpr std::uint64_t screen_reflections_constants_bytes=16;
 inline constexpr std::uint32_t bloom_extent(std::uint32_t size) {return size/4+(size%4!=0);}
 inline constexpr std::uint64_t bloom_budget_bytes=32u*1024u*1024u;
 inline constexpr std::uint64_t output_grade_bytes=544;
@@ -254,13 +262,55 @@ struct Schedule {
                 !masks.layers || masks.layers>max_surface_mark_mask_layers)
                 fail("invalid surface mark mask array");
         }
+        if(settings.screen_reflections) {
+            if(!settings.scene || !settings.deferred || settings.products_debug || settings.reconstruction || frame.color!=frame.hdr)
+                fail("screen reflections require a single-sample deferred color scene without reconstruction");
+            const auto& hdr=resource(frame.hdr);
+            if(std::uint64_t(hdr.width)*hdr.height>screen_reflections_budget_bytes/10)
+                fail("screen reflection attachment payload exceeds limit");
+            const auto scene_image=[&](ResourceId id,Format format) {
+                required(id);
+                const auto& image=resource(id);
+                return image.kind==Kind::texture && image.format==format && image.samples==1 && image.layers==1 &&
+                    image.lifetime==Lifetime::shared && image.region==Region::whole && !image.initialized &&
+                    image.width==hdr.width && image.height==hdr.height && (image.supported&use_bit(Use::sampled));
+            };
+            if(frame.hdr==frame.output || frame.hdr==frame.swapchain || !scene_image(frame.hdr,Format::rgba16_float) ||
+                !scene_image(frame.depth,Format::depth32) ||
+                !scene_image(frame.material_base,Format::rgba16_float) || !scene_image(frame.material_surface,Format::rgba16_float) ||
+                (settings.ambient_occlusion && !scene_image(frame.ao_filtered,Format::r16_float)))
+                fail("invalid screen reflection input attachment");
+            for(const auto& [id,format]:{std::pair{frame.reflection_roughness,Format::r16_float},std::pair{frame.reflected_hdr,Format::rgba16_float}}) {
+                if(!scene_image(id,format) || !(resource(id).supported&use_bit(Use::image_write)))
+                    fail("invalid screen reflection attachment");
+            }
+            if(frame.reflected_hdr==frame.reflection_roughness)fail("screen reflection attachments alias");
+            const auto disjoint=[&](ResourceId id) {
+                if(id==frame.reflection_roughness || id==frame.reflected_hdr)fail("screen reflection attachment aliases another resource role");
+            };
+            for(auto id:{frame.color,frame.hdr,frame.depth,frame.normal,frame.motion,frame.motion_valid,frame.output,frame.swapchain,
+                frame.material_base,frame.material_surface,frame.material_correspondence,frame.ao_raw,frame.ao_filtered,frame.ao_constants,frame.ibl_diffuse,frame.ibl_specular,frame.ibl_brdf,
+                frame.reconstructed,frame.dense_motion,frame.reactive,frame.dilated_depth,frame.dilated_motion,frame.reconstructed_depth,frame.shadow,frame.frame,frame.objects,frame.lights,
+                frame.counts,frame.indices,frame.cluster_readback,frame.skin_errors,frame.skin_readback,frame.capture,frame.game_vertices,frame.game_indices,frame.overlay_vertices,
+                frame.editor_vertices,frame.editor_indices,frame.viewmodel_frame,frame.viewmodel_objects,frame.viewmodel_counts,frame.viewmodel_indices,frame.viewmodel_readback,
+                frame.viewmodel_color,frame.viewmodel_depth,frame.viewmodel_resolved,frame.composite,frame.post_effect,frame.bloom,frame.bloom_scratch,frame.output_grade,
+                frame.streamed_vertices,frame.streamed_indices,frame.sprite_instances,frame.surface_marks,frame.surface_mark_masks})disjoint(id);
+            for(const auto& skin:frame.skins)for(auto id:{skin.source,skin.influences,skin.palette,skin.output})disjoint(id);
+            for(const auto* list:{&frame.camera_draws,&frame.shadow_draws,&frame.viewmodel_draws})for(const auto& draw:*list) {
+                for(auto id:{draw.vertices,draw.indices,draw.previous_vertices})disjoint(id);
+                for(auto id:draw.textures)disjoint(id);
+            }
+            for(const auto* textures:{&frame.game_textures,&frame.editor_textures,&frame.sprite_textures})for(auto id:*textures)disjoint(id);
+            for(const auto& copy:frame.probe_copies)disjoint(copy.destination);
+        } else if(frame.reflection_roughness!=none || frame.reflected_hdr!=none)fail("screen reflection attachments without reflection pass");
         if(settings.particle_sprites) {
             if(!settings.scene || settings.reconstruction || frame.color!=frame.hdr)
                 fail("particle sprites require a single-sample scene without reconstruction");
-            const auto& hdr=resource(frame.hdr);
+            const auto sprite_target=world_radiance(frame,settings);
+            const auto& hdr=resource(sprite_target);
             const auto& depth=resource(frame.depth);
             if(hdr.kind!=Kind::texture || hdr.format!=Format::rgba16_float || hdr.samples!=1 ||
-                hdr.lifetime!=Lifetime::shared || hdr.region!=Region::whole || hdr.initialized || frame.hdr==frame.output ||
+                hdr.lifetime!=Lifetime::shared || hdr.region!=Region::whole || hdr.initialized || sprite_target==frame.output ||
                 depth.kind!=Kind::texture || depth.format!=Format::depth32 || depth.samples!=1 ||
                 depth.lifetime!=Lifetime::shared || depth.region!=Region::whole || depth.initialized || frame.depth==frame.shadow ||
                 depth.width!=hdr.width || depth.height!=hdr.height)
@@ -436,7 +486,8 @@ struct Schedule {
         if(settings.products)for(const auto& d:frame.camera_draws)required(d.previous_vertices);
         if(!frame.probe_points.empty()) {
             if(!settings.capture || !settings.products || frame.probe_points.size()>64 || (frame.probe_copies.size()!=4 && frame.probe_copies.size()!=6 && !(settings.ambient_occlusion && frame.probe_copies.size()==8)))fail("product probes require a bounded single-sample capture");
-            const ResourceId sources[]={frame.depth,frame.normal,frame.motion,frame.motion_valid,frame.hdr,frame.reconstructed!=none ? frame.reconstructed : frame.hdr,frame.ao_raw,frame.ao_filtered};
+            const auto resolved_hdr=!settings.screen_reflections && frame.reconstructed!=none ? frame.reconstructed : world_radiance(frame,settings);
+            const ResourceId sources[]={frame.depth,frame.normal,frame.motion,frame.motion_valid,frame.hdr,resolved_hdr,frame.ao_raw,frame.ao_filtered};
             for(std::size_t i=0;i<frame.probe_copies.size();++i) {
                 const auto& copy=frame.probe_copies[i];required(copy.destination);
                 if(copy.source!=sources[i])fail("product probe source role mismatch");
@@ -459,7 +510,7 @@ struct Schedule {
         }
         bool world_resolved=false,world_opaque=false,foreground_lights=false,foreground_cleared=false,foreground_drawn=false,foreground_resolved=false,foreground_composed=false;
         bool exported=false,captured=false,probed=false,prepared=false,reconstructed=false,deferred_lit=false,deferred_opaque=false,ao_generated=false,ao_filtered=false;
-        bool post_effect_applied=false,stream_uploaded=false,stream_shadow_drawn=false,sprites_uploaded=false,sprites_drawn=false;unsigned previous=0;bool first=true;
+        bool post_effect_applied=false,screen_reflected=false,reflected_output=false,stream_uploaded=false,stream_shadow_drawn=false,sprites_uploaded=false,sprites_drawn=false;unsigned previous=0;bool first=true;
         bool surface_marks_uploaded=false,grade_applied=false;
         unsigned bloom_stage=0;
         for(const auto& pass:passes) {
@@ -533,14 +584,28 @@ struct Schedule {
                 if(settings.clustered && (!has(frame.counts,Use::storage_read) || !has(frame.indices,Use::storage_read)))fail("missing deferred cluster inputs");
                 if(settings.products)for(const auto id:{frame.normal,frame.motion,frame.motion_valid})
                     if(!has(id,Use::image_write))fail("missing deferred product output");
+                if(settings.screen_reflections && !has(frame.reflection_roughness,Use::image_write))fail("missing deferred reflection roughness output");
                 if(std::count_if(pass.accesses.begin(),pass.accesses.end(),[&](const Access& a){return a.resource==frame.hdr;})!=1)fail("deferred HDR cannot alias another access");
                 std::unordered_set<ResourceId> accessed;
                 for(const auto& access:pass.accesses)if(!accessed.insert(access.resource).second)fail("deferred lighting resource has conflicting duplicate accesses");
                 deferred_lit=true;
             }
+            if(pass.id==PassId::screen_reflections) {
+                if(!settings.screen_reflections || !deferred_lit)fail("unexpected or premature screen reflection pass");
+                for(auto id:{frame.hdr,frame.material_base,frame.material_surface,frame.depth,frame.reflection_roughness})
+                    if(!has(id,Use::sampled))fail("missing screen reflection input");
+                if(settings.ambient_occlusion && (!ao_filtered || !has(frame.ao_filtered,Use::sampled)))fail("missing screen reflection ambient occlusion input");
+                const bool environment=frame.ibl_specular!=none;
+                if(environment && (!has(frame.ibl_specular,Use::sampled) || !has(frame.ibl_brdf,Use::sampled)))
+                    fail("missing screen reflection environment input");
+                if(pass.accesses.size()!=7u+(settings.ambient_occlusion ? 1u : 0u)+(environment ? 2u : 0u) ||
+                    !has(frame.frame,Use::constant) || !has(frame.reflected_hdr,Use::image_write))fail("invalid screen reflection bindings");
+                screen_reflected=true;
+            }
             if(pass.id==PassId::particle_sprites) {
                 if(!settings.particle_sprites || !sprites_uploaded || !world_opaque || (settings.deferred && !deferred_lit) ||
-                    pass.accesses.size()!=3+frame.sprite_textures.size() || !has(frame.hdr,Use::color) ||
+                    (settings.screen_reflections && !screen_reflected) || pass.accesses.size()!=3+frame.sprite_textures.size() ||
+                    !has(world_radiance(frame,settings),Use::color) ||
                     !has(frame.depth,Use::sampled) || !has(frame.sprite_instances,Use::storage_read))
                     fail("invalid or premature particle sprite pass");
                 for(auto id:frame.sprite_textures)if(!has(id,Use::sampled))fail("missing particle sprite texture input");
@@ -584,11 +649,16 @@ struct Schedule {
                 foreground_resolved=true;
             }
             if(pass.id==PassId::viewmodel_composite) {
-                if(!settings.viewmodel || !foreground_drawn || (settings.viewmodel_samples!=1 && !foreground_resolved) || !has(frame.viewmodel_resolved,Use::sampled) || !has(settings.reconstruction ? frame.reconstructed : frame.hdr,Use::sampled) || !has(frame.composite,Use::color_overwrite))fail("invalid foreground composition");
+                if(!settings.viewmodel || !foreground_drawn || (settings.viewmodel_samples!=1 && !foreground_resolved) || !has(frame.viewmodel_resolved,Use::sampled) || !has(settings.reconstruction ? frame.reconstructed : world_radiance(frame,settings),Use::sampled) || !has(frame.composite,Use::color_overwrite))fail("invalid foreground composition");
                 if(pass.accesses.size()!=3)fail("foreground composite must have exactly two sources and a distinct output");
                 foreground_composed=true;
             }
             if(pass.id==PassId::output && settings.viewmodel && (!foreground_composed || !has(display_radiance(frame,settings),Use::sampled)))fail("display precedes foreground composition");
+            if(pass.id==PassId::output && settings.screen_reflections) {
+                if(!screen_reflected || !has(display_radiance(frame,settings),Use::sampled) ||
+                    !has(frame.output,Use::color_overwrite) || has(frame.hdr,Use::sampled))fail("display bypasses screen reflections");
+                reflected_output=true;
+            }
             if(pass.id==PassId::post_effect) {
                 if(!settings.post_effect || !world_opaque || (frame.color!=frame.hdr && !world_resolved) ||
                     (settings.deferred && !deferred_lit) || (settings.reconstruction && !reconstructed) ||
@@ -666,6 +736,24 @@ struct Schedule {
                     !(pass.id==PassId::surface_mark_upload && a.use==Use::copy_destination && upload_surface_mark_masks) &&
                     !(pass.id==PassId::opaque && a.use==Use::sampled))
                     fail("surface mark masks used outside upload and opaque draw");
+                if(settings.screen_reflections && a.resource==frame.reflection_roughness &&
+                    !(pass.id==PassId::deferred_lighting && a.use==Use::image_write && a.initialize) &&
+                    !(pass.id==PassId::screen_reflections && a.use==Use::sampled && !a.initialize))
+                    fail("reflection roughness used outside deferred lighting and screen reflections");
+                if(settings.screen_reflections && a.resource==frame.hdr && pass.id>PassId::screen_reflections &&
+                    !(pass.id==PassId::product_probes && a.use==Use::copy_source && !a.initialize &&
+                      frame.probe_copies.size()>=6 && frame.probe_copies[4].source==a.resource))
+                    fail("raw HDR used after screen reflections outside its capture probe");
+                if(settings.screen_reflections && a.resource==frame.reflected_hdr) {
+                    const bool composed=a.use==Use::sampled && !a.initialize && (pass.id==PassId::viewmodel_composite ||
+                        (pass.id==PassId::post_effect && scene_linear_radiance(frame,settings)==a.resource) ||
+                        ((pass.id==PassId::bloom_extract || pass.id==PassId::output) && display_radiance(frame,settings)==a.resource));
+                    const bool probe=pass.id==PassId::product_probes && a.use==Use::copy_source && !a.initialize &&
+                        frame.probe_copies.size()>=6 && frame.probe_copies[5].source==a.resource;
+                    if(!composed && !probe && !(pass.id==PassId::screen_reflections && a.use==Use::image_write && a.initialize) &&
+                        !(pass.id==PassId::particle_sprites && a.use==Use::color && !a.initialize))
+                        fail("reflected radiance used outside its producers and scene color composition");
+                }
                 if(settings.post_effect && a.resource==frame.post_effect && pass.id!=PassId::post_effect &&
                     !((pass.id==PassId::bloom_extract || pass.id==PassId::output) && a.use==Use::sampled))
                     fail("post-effect image used outside scene color composition");
@@ -711,6 +799,7 @@ struct Schedule {
         }
         if(settings.ambient_occlusion && (!ao_generated || !ao_filtered))fail("missing ambient occlusion passes");
         if(settings.deferred && !deferred_lit)fail("missing deferred lighting pass");
+        if(settings.screen_reflections && (!screen_reflected || !reflected_output))fail("missing screen reflection pass or composed output");
         if(settings.reconstruction && !reconstructed)fail("missing reconstruction pass");
         if(stream && !stream_uploaded)fail("missing streamed geometry upload");
         if((streamed_camera && !world_opaque) || (streamed_shadow && !stream_shadow_drawn))fail("missing streamed geometry draw pass");
@@ -790,10 +879,18 @@ inline Schedule build(FrameResources frame,Settings settings) {
         if(settings.clustered) {add(lighting,f.counts,Use::storage_read);add(lighting,f.indices,Use::storage_read);}
         add(lighting,f.hdr,Use::image_read_write);
         if(settings.products)for(auto id:{f.normal,f.motion,f.motion_valid})add(lighting,id,Use::image_write,true);
+        if(settings.screen_reflections)add(lighting,f.reflection_roughness,Use::image_write,true);
+    }
+    if(settings.screen_reflections) {
+        auto& reflections=pass(PassId::screen_reflections);
+        for(auto id:{f.hdr,f.material_base,f.material_surface,f.depth,f.reflection_roughness,f.ibl_specular,f.ibl_brdf})add(reflections,id,Use::sampled);
+        if(settings.ambient_occlusion)add(reflections,f.ao_filtered,Use::sampled);
+        add(reflections,f.frame,Use::constant);
+        add(reflections,f.reflected_hdr,Use::image_write,true);
     }
     if(settings.particle_sprites) {
         auto& sprites=pass(PassId::particle_sprites);
-        add(sprites,f.hdr,Use::color);add(sprites,f.depth,Use::sampled);add(sprites,f.sprite_instances,Use::storage_read);
+        add(sprites,world_radiance(f,settings),Use::color);add(sprites,f.depth,Use::sampled);add(sprites,f.sprite_instances,Use::storage_read);
         for(auto id:f.sprite_textures)add(sprites,id,Use::sampled);
     }
     if(settings.scene && f.color!=f.hdr) {auto& resolve=pass(PassId::resolve);add(resolve,f.color,Use::resolve_source);add(resolve,f.hdr,Use::resolve_destination,true);}
@@ -813,7 +910,7 @@ inline Schedule build(FrameResources frame,Settings settings) {
         if(settings.viewmodel_clustered) {add(draw,f.viewmodel_counts,Use::storage_read);add(draw,f.viewmodel_indices,Use::storage_read);}
         for(const auto& d:f.viewmodel_draws) {add(draw,d.vertices,Use::vertex);add(draw,d.indices,Use::index);for(auto t:d.textures)add(draw,t,Use::sampled);}
         if(settings.viewmodel_samples!=1) {auto& resolve=pass(PassId::viewmodel_resolve);add(resolve,f.viewmodel_color,Use::sampled);add(resolve,f.viewmodel_resolved,Use::color_overwrite,true);}
-        auto& compose=pass(PassId::viewmodel_composite);add(compose,settings.reconstruction ? f.reconstructed : f.hdr,Use::sampled);add(compose,f.viewmodel_resolved,Use::sampled);add(compose,f.composite,Use::color_overwrite,true);
+        auto& compose=pass(PassId::viewmodel_composite);add(compose,settings.reconstruction ? f.reconstructed : world_radiance(f,settings),Use::sampled);add(compose,f.viewmodel_resolved,Use::sampled);add(compose,f.composite,Use::color_overwrite,true);
     }
     if(settings.post_effect) {
         auto& effect=pass(PassId::post_effect);

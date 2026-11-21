@@ -151,11 +151,14 @@ still requires its matching native target.
 
 Base API discovery lives in `src/world_schema.cpp`. The schema receives
 the world's serialized sky defaults and numeric limits, and returns fresh JSON
-for owner and scope filtering. `src/world_document.cpp` validates authored
+for owner and scope filtering. `src/world_discovery.cpp` validates discovery
+selectors, identifies stable contracts, and projects selected results.
+`src/world_document.cpp` validates authored
 documents and decodes typed components for scene and runtime construction.
 `src/world_runtime_json.cpp` decodes runtime command payloads and serializes
-animation and motion observations. `src/world.cpp` owns state, publication,
-dispatch and session filtering.
+animation and motion observations. `src/world_presentation_json.cpp`
+serializes lighting, capture and player presentation reports. `src/world.cpp`
+owns state, publication, dispatch and session filtering.
 
 Each source compiles separately with the same optimization, debug information
 and warning settings. Changes to a private shared header may rebuild its
@@ -165,8 +168,11 @@ and read-only worlds through standalone, shared CLI and shared editor scopes.
 On Vulkan builds, `src/player_window.cpp` owns the SDL player loop, input,
 preferences and presentation receipts. It prepares a borrowed scene snapshot
 through the private `PlayerRenderer` interface. `src/render_smoke.cpp` owns
-the GPU context, frame submission and retirement. The native player-window
-fixture checks the presentation boundary separately from offscreen captures.
+the GPU context, frame submission and retirement. `src/render_vulkan_instance.cpp`
+owns the shared Vulkan instance and its loader dispatch. Render passes with their
+own resources, such as `src/render_screen_reflections.cpp`, use the context's
+device and command list. The native player-window fixture checks the presentation
+boundary separately from offscreen captures.
 
 The [0.0.67 evidence](evidence/m2-world-schema-extraction.json) records unchanged
 compile flags, separate command timings and synthetic dirty-source scheduling

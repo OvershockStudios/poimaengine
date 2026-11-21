@@ -145,34 +145,6 @@
             }
     };
 
-    static Json player_pose_presentation_json(const PlayerPosePresentation& p) {
-        const auto pose=[](const RuntimeCameraPose& v)->Json {return {{"position",v.position},{"rotation",v.rotation}};};
-        const auto optional=[&](const std::optional<RuntimeCameraPose>& v)->Json {return v ? pose(*v) : Json(nullptr);};
-        return {{"enabled",p.enabled},{"interpolating",p.interpolating},{"previous_tick",p.previous_tick},
-            {"target_tick",p.target_tick},{"alpha",p.alpha},{"reset_reason",p.reset_reason},
-            {"previous_world",pose(p.previous_world)},{"target_world",pose(p.target_world)},{"rendered_world",pose(p.rendered_world)},
-            {"previous_viewmodel",optional(p.previous_viewmodel)},{"target_viewmodel",optional(p.target_viewmodel)},
-            {"rendered_viewmodel",optional(p.rendered_viewmodel)},{"target_base_world",p.target_base_world}};
-    }
-    static Json player_lens_presentation_json(const PlayerLensPresentation& presentation) {
-        const auto lens=[](const SceneLens& value)->Json {
-            return {{"vertical_fov",value.vertical_fov},{"near",value.near_plane},{"far",value.far_plane}};
-        };
-        const auto optional_lens=[&](const std::optional<SceneLens>& value)->Json {
-            return value ? lens(*value) : Json(nullptr);
-        };
-        return {{"enabled",presentation.enabled},{"interpolating",presentation.interpolating},
-            {"previous_tick",presentation.previous_tick},{"target_tick",presentation.target_tick},
-            {"alpha",presentation.alpha},{"reset_reason",presentation.reset_reason},
-            {"previous_world",lens(presentation.previous_world)},{"target_world",lens(presentation.target_world)},
-            {"rendered_world",lens(presentation.rendered_world)},
-            {"previous_viewmodel",optional_lens(presentation.previous_viewmodel)},
-            {"target_viewmodel",optional_lens(presentation.target_viewmodel)},
-            {"rendered_viewmodel",optional_lens(presentation.rendered_viewmodel)},
-            {"authored_fov",presentation.authored_fov ? Json(*presentation.authored_fov) : Json(nullptr)},
-            {"preference_fov",presentation.preference_fov ? Json(*presentation.preference_fov) : Json(nullptr)}};
-    }
-
     Json player_report_json(const PlayerOptions& options,Json input_info,Json settings_application,
         const PlayerReport& report,const std::string& mode) const {
         std::optional<RuntimeCameraState> camera;try { camera=runtime_->camera_state(options.camera); }catch(const std::exception&) {}

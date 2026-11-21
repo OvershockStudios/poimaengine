@@ -31,6 +31,10 @@ struct Fixture {
                 f.material_surface=add(Kind::texture,Lifetime::shared);f.resources[f.material_surface].format=Format::rgba16_float;
                 f.material_correspondence=add(Kind::texture,Lifetime::shared);f.resources[f.material_correspondence].format=s.products ? Format::rgba32_float : Format::rg32_float;
             }
+            if(s.screen_reflections) {
+                f.reflection_roughness=add(Kind::texture,Lifetime::shared);f.resources[f.reflection_roughness].format=Format::r16_float;
+                f.reflected_hdr=add(Kind::texture,Lifetime::shared);f.resources[f.reflected_hdr].format=Format::rgba16_float;
+            }
             if(s.ambient_occlusion) {
                 f.ao_raw=add(Kind::texture,Lifetime::shared);f.resources[f.ao_raw].format=Format::r16_float;
                 f.ao_filtered=add(Kind::texture,Lifetime::shared);f.resources[f.ao_filtered].format=Format::r16_float;
@@ -631,28 +635,29 @@ void reconstruction_contracts(){
     }
 }
 
+void setup_foreground(Fixture& fixture) {
+    auto& f=fixture.f;fixture.settings.viewmodel=true;
+    f.viewmodel_frame=fixture.add(Kind::buffer,Lifetime::shared);f.viewmodel_objects=fixture.add(Kind::buffer,Lifetime::shared);
+    auto image=[&](Format format,unsigned samples=1) {auto id=fixture.add(Kind::texture,Lifetime::shared,false,samples);f.resources[id].format=format;return id;};
+    f.viewmodel_color=image(Format::rgba16_float,fixture.settings.viewmodel_samples);f.viewmodel_depth=image(Format::depth32,fixture.settings.viewmodel_samples);f.composite=image(Format::rgba16_float);
+    f.viewmodel_resolved=fixture.settings.viewmodel_samples==1 ? f.viewmodel_color : image(Format::rgba16_float);
+    f.viewmodel_draws.push_back({f.camera_draws.front().vertices,f.camera_draws.front().indices,f.camera_draws.front().textures});
+    if(fixture.settings.viewmodel_clustered) {
+        f.viewmodel_counts=fixture.add(Kind::buffer,Lifetime::shared);f.viewmodel_indices=fixture.add(Kind::buffer,Lifetime::shared);f.viewmodel_readback=fixture.add(Kind::buffer,Lifetime::slot);
+        f.resources[f.viewmodel_counts].bytes=f.resources[f.viewmodel_counts].allocation_bytes=16u*9u*24u*4u;
+        f.resources[f.viewmodel_readback].bytes=f.resources[f.viewmodel_readback].allocation_bytes=16u*9u*24u*4u;
+        f.resources[f.viewmodel_indices].bytes=f.resources[f.viewmodel_indices].allocation_bytes=16u*9u*24u*64u*4u;
+        f.resources[f.viewmodel_indices].region=Region::cluster_members;f.resources[f.viewmodel_indices].counts=f.viewmodel_counts;
+    }
+}
+
 void viewmodel_contracts(){
-    auto foreground=[](Fixture& fixture) {
-        auto& f=fixture.f;fixture.settings.viewmodel=true;
-        f.viewmodel_frame=fixture.add(Kind::buffer,Lifetime::shared);f.viewmodel_objects=fixture.add(Kind::buffer,Lifetime::shared);
-        auto image=[&](Format format,unsigned samples=1) {auto id=fixture.add(Kind::texture,Lifetime::shared,false,samples);f.resources[id].format=format;return id;};
-        f.viewmodel_color=image(Format::rgba16_float,fixture.settings.viewmodel_samples);f.viewmodel_depth=image(Format::depth32,fixture.settings.viewmodel_samples);f.composite=image(Format::rgba16_float);
-        f.viewmodel_resolved=fixture.settings.viewmodel_samples==1 ? f.viewmodel_color : image(Format::rgba16_float);
-        f.viewmodel_draws.push_back({f.camera_draws.front().vertices,f.camera_draws.front().indices,f.camera_draws.front().textures});
-        if(fixture.settings.viewmodel_clustered) {
-            f.viewmodel_counts=fixture.add(Kind::buffer,Lifetime::shared);f.viewmodel_indices=fixture.add(Kind::buffer,Lifetime::shared);f.viewmodel_readback=fixture.add(Kind::buffer,Lifetime::slot);
-            f.resources[f.viewmodel_counts].bytes=f.resources[f.viewmodel_counts].allocation_bytes=16u*9u*24u*4u;
-            f.resources[f.viewmodel_readback].bytes=f.resources[f.viewmodel_readback].allocation_bytes=16u*9u*24u*4u;
-            f.resources[f.viewmodel_indices].bytes=f.resources[f.viewmodel_indices].allocation_bytes=16u*9u*24u*64u*4u;
-            f.resources[f.viewmodel_indices].region=Region::cluster_members;f.resources[f.viewmodel_indices].counts=f.viewmodel_counts;
-        }
-    };
     // Foreground samples are independent of the world path and its samples;
     // its opaque pass consumes current skin output, never previous world input.
     for(bool deferred:{false,true})for(bool clustered:{false,true})for(bool skin:{false,true})for(unsigned samples:{1u,2u,4u,8u})for(unsigned foreground_samples:{1u,2u,4u,8u}) {
         if(deferred && samples!=1)continue;
         auto settings=rich();settings.deferred=deferred;settings.products=deferred || samples==1;settings.viewmodel_clustered=clustered;settings.viewmodel_samples=foreground_samples;
-        Fixture fixture(settings,samples,skin);foreground(fixture);auto plan=fixture.plan();plan.validate();++accepted;
+        Fixture fixture(settings,samples,skin);setup_foreground(fixture);auto plan=fixture.plan();plan.validate();++accepted;
         check(plan.frame.resources[plan.frame.viewmodel_color].samples==foreground_samples && plan.frame.resources[plan.frame.color].samples==samples,"Foreground changed world MSAA");
         check((plan.frame.viewmodel_resolved==plan.frame.viewmodel_color)==(foreground_samples==1),"Foreground resolve alias policy differs");
         unsigned draws=0,resolves=0,composites=0;plan.execute([&](const Pass& pass,const Schedule&){draws+=pass.id==PassId::viewmodel_opaque;resolves+=pass.id==PassId::viewmodel_resolve;composites+=pass.id==PassId::viewmodel_composite;});
@@ -665,7 +670,7 @@ void viewmodel_contracts(){
         }
     }
     auto settings=rich();settings.products=settings.viewmodel_clustered=true;
-    Fixture fixture(settings,1,true);foreground(fixture);const auto original=fixture.plan();original.validate();
+    Fixture fixture(settings,1,true);setup_foreground(fixture);const auto original=fixture.plan();original.validate();
     auto sprite_fixture=fixture;setup_particle_sprites(sprite_fixture);
     auto composed_sprites=sprite_fixture.plan();composed_sprites.validate();++accepted;
     check(&pass(composed_sprites,PassId::particle_sprites)<&pass(composed_sprites,PassId::viewmodel_lights),
@@ -700,7 +705,7 @@ void viewmodel_contracts(){
     bad("foreground disabled but retains resources",[](auto& p){p.settings.viewmodel=false;});
     // Multisample foreground resolves exactly once by sampling its own color,
     // without fixed-function copy/resolve or accesses to world products/depth.
-    auto ms_settings=settings;ms_settings.viewmodel_samples=8;Fixture ms(ms_settings,1,true);foreground(ms);const auto ms_original=ms.plan();ms_original.validate();
+    auto ms_settings=settings;ms_settings.viewmodel_samples=8;Fixture ms(ms_settings,1,true);setup_foreground(ms);const auto ms_original=ms.plan();ms_original.validate();
     auto ms_bad=[&](const char* label,const auto& edit){auto p=ms_original;edit(p);rejects(label,[&]{p.validate();});};
     for(unsigned samples:{0u,3u,16u})ms_bad("unsupported foreground samples",[&](auto& p){p.settings.viewmodel_samples=samples;});
     ms_bad("foreground depth sample mismatch",[](auto& p){p.frame.resources[p.frame.viewmodel_depth].samples=4;});
@@ -732,7 +737,7 @@ void viewmodel_contracts(){
     ms_bad("multisample foreground logical payload exceeds limit",[](auto& p){for(auto id:{p.frame.viewmodel_color,p.frame.viewmodel_depth,p.frame.viewmodel_resolved,p.frame.composite})p.frame.resources[id].width=p.frame.resources[id].height=2048;});
     // A compact world reconstructs before the output-resolution foreground.
     for(bool deferred:{false,true})for(unsigned foreground_samples:{1u,2u,4u,8u}) {
-        auto reconstructed=settings;reconstructed.reconstruction=true;reconstructed.deferred=deferred;reconstructed.viewmodel_samples=foreground_samples;Fixture fsr(reconstructed,1,true);foreground(fsr);
+        auto reconstructed=settings;reconstructed.reconstruction=true;reconstructed.deferred=deferred;reconstructed.viewmodel_samples=foreground_samples;Fixture fsr(reconstructed,1,true);setup_foreground(fsr);
         auto image=[&](Format format){auto id=fsr.add(Kind::texture,Lifetime::shared);fsr.f.resources[id].format=format;return id;};auto& f=fsr.f;f.resources[f.hdr].format=Format::rgba16_float;
         f.reconstructed=image(Format::rgba16_float);f.dense_motion=image(Format::rg32_float);f.reactive=image(Format::r8_unorm);f.dilated_depth=image(Format::r32_float);f.dilated_motion=image(Format::rg16_float);f.reconstructed_depth=image(Format::r32_uint);
         for(auto id:{f.hdr,f.depth,f.normal,f.motion,f.motion_valid,f.dense_motion,f.reactive,f.dilated_depth,f.dilated_motion,f.reconstructed_depth}) {f.resources[id].width=192;f.resources[id].height=108;}
@@ -754,7 +759,7 @@ void viewmodel_contracts(){
     // Default omission retains the old graph with no new pass/resources.
     auto ordinary=Fixture(rich(),4,true).plan();ordinary.validate();check(std::none_of(ordinary.passes.begin(),ordinary.passes.end(),[](const Pass& work){return work.id>=PassId::viewmodel_lights && work.id<=PassId::viewmodel_composite;}),"Default graph acquired foreground passes");
     for(bool deferred:{false,true}) {
-        auto s=rich();s.deferred=s.products=deferred;Fixture environment(s,deferred?1:4);foreground(environment);environment_inputs(environment);
+        auto s=rich();s.deferred=s.products=deferred;Fixture environment(s,deferred?1:4);setup_foreground(environment);environment_inputs(environment);
         const auto valid=environment.plan();valid.validate();++accepted;
         for(auto id:{environment.f.ibl_diffuse,environment.f.ibl_specular,environment.f.ibl_brdf}) {
             auto broken=valid;erase_access(broken,PassId::viewmodel_opaque,id,Use::sampled);
@@ -972,5 +977,135 @@ void environment_contracts(){
     Fixture triangle(Settings{});environment_inputs(triangle);rejects("environment without scene",[&]{triangle.plan().validate();});
     auto ordinary=Fixture(rich(),4).plan();ordinary.validate();check(ordinary.frame.ibl_diffuse==none && ordinary.frame.ibl_specular==none && ordinary.frame.ibl_brdf==none,"Legacy graph acquired IBL roles");
 }
+
+void reflection_probes(Fixture& fixture) {
+    auto& f=fixture.f;
+    f.probe_points={{0,0},{383,215}};
+    for(auto source:{f.depth,f.normal,f.motion,f.motion_valid,f.hdr,f.reflected_hdr,f.ao_raw,f.ao_filtered}) {
+        if(source==none)continue;
+        const auto target=fixture.add(Kind::texture,Lifetime::capture);
+        auto& r=f.resources[target];
+        r.format=f.resources[source].format;r.width=4;r.height=2;r.region=Region::probe_pixels;
+        f.probe_copies.push_back({source,target});
+    }
 }
-int main(){try{matrix();faults();products();motion_contracts();reconstruction_contracts();deferred_contracts();deferred_color_contracts();viewmodel_contracts();ambient_occlusion_contracts();masked_shadow_contracts();environment_contracts();bloom_contracts();post_effect_contracts();output_grade_contracts();streamed_geometry_contracts();mutable_geometry_contracts();particle_sprite_contracts();surface_mark_contracts();std::cout<<"Production render schedule: "<<accepted<<" valid variants, "<<rejected<<" rejected contract mutations.\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}
+
+void screen_reflection_contracts() {
+    const auto access=[](Schedule& schedule,PassId stage,ResourceId resource,Use use,bool initialize=false) {
+        const auto& list=pass(schedule,stage).accesses;
+        return std::any_of(list.begin(),list.end(),[&](const auto& a) {
+            return a.resource==resource && a.use==use && a.initialize==initialize;
+        });
+    };
+    for(bool products:{false,true})for(bool ao:{false,true})for(bool environment:{false,true})for(unsigned composition:{0u,1u,2u,3u}) {
+        auto settings=rich();settings.deferred=settings.screen_reflections=true;
+        settings.products=products;settings.ambient_occlusion=ao;settings.editor=composition==3;
+        Fixture fixture(settings);
+        if(environment)environment_inputs(fixture,!products);
+        if(composition==3)setup_foreground(fixture);
+        if(composition>=2)setup_post_effect(fixture);
+        if(composition==1 || composition==3) {
+            setup_particle_sprites(fixture);setup_bloom(fixture);
+        }
+        if(products)reflection_probes(fixture);
+        auto plan=fixture.plan();plan.validate();++accepted;
+        const auto& f=plan.frame;
+        const auto position=[&](PassId id){return &pass(plan,id)-plan.passes.data();};
+        check(position(PassId::screen_reflections)==position(PassId::deferred_lighting)+1,
+              "Screen reflections must immediately follow deferred lighting");
+        check(access(plan,PassId::deferred_lighting,f.reflection_roughness,Use::image_write,true) &&
+              access(plan,PassId::screen_reflections,f.reflection_roughness,Use::sampled) &&
+              access(plan,PassId::screen_reflections,f.hdr,Use::sampled) &&
+              access(plan,PassId::screen_reflections,f.reflected_hdr,Use::image_write,true),
+              "Reflection source and destination must have separate producers");
+        check(access(plan,PassId::screen_reflections,f.ao_filtered,Use::sampled)==ao &&
+              access(plan,PassId::screen_reflections,f.ibl_specular,Use::sampled)==environment &&
+              access(plan,PassId::screen_reflections,f.ibl_brdf,Use::sampled)==environment &&
+              !access(plan,PassId::screen_reflections,f.ibl_diffuse,Use::sampled),"Unexpected reflection fallback inputs");
+        if(fixture.settings.particle_sprites) {
+            check(position(PassId::particle_sprites)==position(PassId::screen_reflections)+1 &&
+                  access(plan,PassId::particle_sprites,f.reflected_hdr,Use::color) &&
+                  !access(plan,PassId::particle_sprites,f.hdr,Use::color),"Sprites must blend into reflected world radiance");
+        }
+        if(fixture.settings.viewmodel)check(access(plan,PassId::viewmodel_composite,f.reflected_hdr,Use::sampled),
+                                           "Foreground must compose over reflected world radiance");
+        if(fixture.settings.post_effect)check(access(plan,PassId::post_effect,composition==3 ? f.composite : f.reflected_hdr,Use::sampled),
+                                             "Post effect bypassed reflected radiance");
+        const auto display=fixture.settings.post_effect ? f.post_effect : f.reflected_hdr;
+        if(fixture.settings.bloom)check(access(plan,PassId::bloom_extract,display,Use::sampled),"Bloom bypassed reflected radiance");
+        check(access(plan,PassId::output,display,Use::sampled) && access(plan,PassId::game_ui,f.output,Use::color) &&
+              !access(plan,PassId::game_ui,f.reflected_hdr,Use::sampled),"Display or UI bypassed its composited source");
+        if(products)check(f.probe_copies[4].source==f.hdr && f.probe_copies[5].source==f.reflected_hdr &&
+                          access(plan,PassId::product_probes,f.hdr,Use::copy_source) &&
+                          access(plan,PassId::product_probes,f.reflected_hdr,Use::copy_source),
+                          "The capture must retain distinct raw and resolved HDR probes");
+    }
+
+    auto settings=rich();settings.deferred=settings.screen_reflections=settings.products=settings.ambient_occlusion=true;
+    Fixture fixture(settings);environment_inputs(fixture);setup_particle_sprites(fixture);setup_foreground(fixture);
+    setup_post_effect(fixture);setup_bloom(fixture);reflection_probes(fixture);
+    const auto valid=fixture.plan();valid.validate();
+    const auto& f=valid.frame;
+    auto bad=[&](const char* name,const auto& edit){auto plan=valid;edit(plan);rejects(name,[&]{plan.validate();});};
+    bad("reflections without scene",[](auto& p){p.settings.scene=false;});
+    bad("reflections in forward renderer",[](auto& p){p.settings.deferred=false;});
+    bad("reflections on diagnostic product output",[](auto& p){p.settings.products_debug=true;});
+    bad("reflections with reconstruction",[](auto& p){p.settings.reconstruction=true;});
+    bad("reflection roles bound while disabled",[](auto& p){p.settings.screen_reflections=false;});
+    rejects("reflections on MSAA",[&]{Fixture(settings,4).plan().validate();});
+    for(auto role:{&FrameResources::reflection_roughness,&FrameResources::reflected_hdr}) {
+        const auto id=f.*role;
+        bad("missing reflection attachment",[&](auto& p){p.frame.*role=none;});
+        bad("reflection format differs",[&](auto& p){p.frame.resources[id].format=Format::rgba32_float;});
+        bad("reflection extent differs",[&](auto& p){++p.frame.resources[id].width;});
+        bad("reflection attachment is multisampled",[&](auto& p){p.frame.resources[id].samples=2;});
+        bad("reflection attachment is layered",[&](auto& p){p.frame.resources[id].layers=2;});
+        bad("reflection attachment is a partial region",[&](auto& p){p.frame.resources[id].region=Region::probe_pixels;});
+        bad("reflection attachment has stale initialized contents",[&](auto& p){p.frame.resources[id].initialized=true;});
+        bad("reflection attachment is not shared",[&](auto& p){p.frame.resources[id].lifetime=Lifetime::capture;});
+        bad("reflection attachment physical identity aliases input",[&](auto& p){p.frame.resources[id].identity=p.frame.resources[f.hdr].identity;});
+        for(auto use:{Use::sampled,Use::image_write})bad("reflection attachment unsupported use",[&](auto& p){p.frame.resources[id].supported&=~use_bit(use);});
+        for(auto alias:{f.hdr,f.material_base,f.material_surface,f.ao_filtered,f.output,f.composite,f.bloom,f.post_effect})
+            bad("reflection attachment aliases another role",[&](auto& p){p.frame.*role=alias;});
+    }
+    bad("reflection role pair aliases",[](auto& p){p.frame.reflected_hdr=p.frame.reflection_roughness;});
+    bad("reflection inputs are layered",[](auto& p){p.frame.resources[p.frame.depth].layers=2;});
+    bad("reflection payload exceeds combined limit",[](auto& p){p.frame.resources[p.frame.hdr].width=p.frame.resources[p.frame.hdr].height=4096;});
+    for(auto stage:{PassId::screen_reflections,PassId::deferred_lighting})
+        bad("required reflection stage removed",[&](auto& p){std::erase_if(p.passes,[&](const auto& work){return work.id==stage;});});
+    bad("reflection precedes deferred lighting",[](auto& p){std::swap(pass(p,PassId::deferred_lighting),pass(p,PassId::screen_reflections));});
+    bad("reflection follows sprite composition",[](auto& p){std::swap(pass(p,PassId::screen_reflections),pass(p,PassId::particle_sprites));});
+    bad("missing deferred roughness producer",[&](auto& p){erase_access(p,PassId::deferred_lighting,f.reflection_roughness,Use::image_write);});
+    for(auto stage:{PassId::deferred_lighting,PassId::screen_reflections}) {
+        const auto target=stage==PassId::deferred_lighting ? f.reflection_roughness : f.reflected_hdr;
+        bad("reflection compute does not initialize its full output",[&](auto& p){
+            for(auto& a:pass(p,stage).accesses)if(a.resource==target)a.initialize=false;
+        });
+    }
+    for(auto input:{f.hdr,f.material_base,f.material_surface,f.depth,f.reflection_roughness,f.ao_filtered,f.ibl_specular,f.ibl_brdf})
+        bad("missing reflection shader input",[&](auto& p){erase_access(p,PassId::screen_reflections,input,Use::sampled);});
+    bad("reflection frame constants missing",[&](auto& p){erase_access(p,PassId::screen_reflections,f.frame,Use::constant);});
+    bad("reflection output absent",[&](auto& p){erase_access(p,PassId::screen_reflections,f.reflected_hdr,Use::image_write);});
+    bad("reflection target sampled while written",[&](auto& p){pass(p,PassId::screen_reflections).accesses.push_back({f.reflected_hdr,Use::sampled});});
+    bad("reflection unexpectedly samples diffuse IBL",[&](auto& p){pass(p,PassId::screen_reflections).accesses.push_back({f.ibl_diffuse,Use::sampled});});
+    bad("reflected image is an opaque input",[&](auto& p){pass(p,PassId::opaque).accesses.push_back({f.reflected_hdr,Use::sampled});});
+    bad("sprites bypass reflected HDR",[&](auto& p){pass(p,PassId::particle_sprites).accesses.front().resource=f.hdr;});
+    bad("foreground bypasses reflected HDR",[&](auto& p){pass(p,PassId::viewmodel_composite).accesses.front().resource=f.hdr;});
+    bad("post effect bypasses foreground",[&](auto& p){pass(p,PassId::post_effect).accesses.front().resource=f.reflected_hdr;});
+    bad("bloom bypasses post effect",[&](auto& p){pass(p,PassId::bloom_extract).accesses.front().resource=f.reflected_hdr;});
+    bad("display also reads pre-reflection HDR",[&](auto& p){pass(p,PassId::output).accesses.push_back({f.hdr,Use::sampled});});
+    bad("display rewrites a pre-reflection HDR probe",[&](auto& p){pass(p,PassId::output).accesses.push_back({f.hdr,Use::image_write,true});});
+    bad("UI samples pre-composite reflection output",[&](auto& p){pass(p,PassId::game_ui).accesses.push_back({f.reflected_hdr,Use::sampled});});
+    bad("resolved HDR probe bypasses reflections",[&](auto& p){p.frame.probe_copies[5].source=f.hdr;});
+    bad("raw HDR probe includes reflections",[&](auto& p){p.frame.probe_copies[4].source=f.reflected_hdr;});
+    bad("reflection roughness leaks into scene display",[&](auto& p){pass(p,PassId::output).accesses.push_back({f.reflection_roughness,Use::sampled});});
+
+    settings.screen_reflections=false;
+    auto legacy=Fixture(settings).plan();legacy.validate();
+    check(legacy.frame.reflected_hdr==none && legacy.frame.reflection_roughness==none &&
+          world_radiance(legacy.frame,legacy.settings)==legacy.frame.hdr &&
+          std::none_of(legacy.passes.begin(),legacy.passes.end(),[](const auto& work){return work.id==PassId::screen_reflections;}),
+          "Default rendering acquired reflection resources or work");
+}
+}
+int main(){try{matrix();faults();products();motion_contracts();reconstruction_contracts();deferred_contracts();deferred_color_contracts();viewmodel_contracts();ambient_occlusion_contracts();masked_shadow_contracts();environment_contracts();bloom_contracts();post_effect_contracts();output_grade_contracts();streamed_geometry_contracts();mutable_geometry_contracts();particle_sprite_contracts();surface_mark_contracts();screen_reflection_contracts();std::cout<<"Production render schedule: "<<accepted<<" valid variants, "<<rejected<<" rejected contract mutations.\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}

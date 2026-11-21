@@ -91,7 +91,7 @@ static SkySettings sky_value(const Json& value) {
     return result;
 }
 LightingEnvironment environment_value(const Json& value) {
-    fields(value,{"ambient","exposure","shadow_resolution","shadow_filter","sky","ibl","bloom","post_effect","output_grade"},{"ambient","exposure"});require(value.at("ambient").is_array() && value.at("ambient").size()==3,"Ambient fill needs three values.");
+    fields(value,{"ambient","exposure","shadow_resolution","shadow_filter","sky","ibl","bloom","post_effect","output_grade","screen_reflections"},{"ambient","exposure"});require(value.at("ambient").is_array() && value.at("ambient").size()==3,"Ambient fill needs three values.");
     for(const auto& x:value.at("ambient"))require(x.is_number() && std::isfinite(x.get<double>()) && x>=0 && x<=1e6,"Ambient fill must be in [0,1e6].");
     require(value.at("exposure").is_number() && std::isfinite(value.at("exposure").get<double>()) && value.at("exposure")>=0 && value.at("exposure")<=1e6,"Exposure must be in [0,1e6].");
     if(value.contains("shadow_resolution"))require(value.at("shadow_resolution").is_number_integer() && (value.at("shadow_resolution")==256 || value.at("shadow_resolution")==512 || value.at("shadow_resolution")==1024 || value.at("shadow_resolution")==2048),"Shadow resolution must be 256, 512, 1024 or 2048.");
@@ -153,6 +153,18 @@ LightingEnvironment environment_value(const Json& value) {
                     "Output grade knot channels must be finite and in [0,16].");
         }
         result.output_grade=grade;
+    }
+    if(value.contains("screen_reflections")) {
+        const auto& authored=value.at("screen_reflections");
+        fields(authored,{"strength","max_distance_m","thickness_m"},{"strength","max_distance_m","thickness_m"});
+        const auto read_number=[&](const char* name,double minimum,double maximum) {
+            const auto& field=authored.at(name);
+            require(field.is_number() && std::isfinite(field.get<double>()) && field>=minimum && field<=maximum,
+                    std::string("Screen reflections ")+name+" is outside its finite range.");
+            return field.get<float>();
+        };
+        result.screen_reflections=ScreenReflections{
+            read_number("strength",0,1),read_number("max_distance_m",.25,32),read_number("thickness_m",.01,.5)};
     }
     if(value.contains("post_effect")) {
         const auto& digest=value.at("post_effect");

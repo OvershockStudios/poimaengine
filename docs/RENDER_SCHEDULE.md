@@ -37,6 +37,13 @@ The zero-shadow case retains the clear of its fallback depth texture. Skin defor
 
 Game UI textures uploaded during preparation enter the schedule as initialized imported resources. Dynamic vertex/index uploads describe their used prefixes. Game UI and overlay composition preserve their dependency on existing attachment contents. The legacy editor's Scene image and acquired swapchain image remain distinct resources.
 
+With [screen-space reflections](DEFERRED_RENDERING.md#screen-space-reflections)
+active, deferred lighting additionally produces a roughness image. The
+reflection dispatch reads the opaque HDR image and produces a distinct
+world-color image. The schedule validates both producers and requires later
+sprites, foreground composition and display output to use the reflected image
+or its composed result. It keeps the original HDR available to raw probes.
+
 These checks validate the declared contract and its renderer bindings. They do not inspect arbitrary shader memory accesses or replace runtime validation of shader outputs.
 
 ## Synchronization boundary

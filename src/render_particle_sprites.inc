@@ -35,8 +35,9 @@
         }
     }
     void prepare_sprite_pipeline() {
-        if(!sprite_framebuffer || sprite_framebuffer->getDesc().colorAttachments[0].texture!=scene_hdr.Get()) {
-            sprite_framebuffer=checked->createFramebuffer(nvrhi::FramebufferDesc().addColorAttachment(scene_hdr));
+        auto* color=world_radiance_texture();
+        if(!sprite_framebuffer || sprite_framebuffer->getDesc().colorAttachments[0].texture!=color) {
+            sprite_framebuffer=checked->createFramebuffer(nvrhi::FramebufferDesc().addColorAttachment(color));
             require(bool(sprite_framebuffer),"Particle sprite framebuffer creation failed.");
         }
         if(sprite_pipeline)return;

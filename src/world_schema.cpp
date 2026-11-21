@@ -212,6 +212,13 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"exposure",{{"type","number"},{"minimum",0},{"maximum",1e6}}},{"shadow_resolution",{{"enum",{256,512,1024,2048}},{"default",1024}}},{"shadow_filter",{{"enum",{"pcf3_point","pcf3_fractional","pcss_directional"}},{"default","pcf3_point"}}},{"sky",sky},{"ibl",ibl},{"bloom",bloom}}, {"ambient","exposure"});
     lighting_environment["properties"]["output_grade"]=output_grade;
     lighting_environment["properties"]["output_grade"]["description"]="Optional per-channel curves over exposed scene HDR, after bloom and exposure and before tone mapping. All 33 RGB knots are required and knot zero is [0,0,0].";
+    auto screen_reflections=object_schema({
+        {"strength",unit},
+        {"max_distance_m",{{"type","number"},{"minimum",.25},{"maximum",32}}},
+        {"thickness_m",{{"type","number"},{"minimum",.01},{"maximum",.5}}}},
+        {"strength","max_distance_m","thickness_m"});
+    screen_reflections["description"]="Optional screen reflections for single-sample deferred color with reconstruction disabled. Set strength to zero to retain a disabled selection.";
+    lighting_environment["properties"]["screen_reflections"]=std::move(screen_reflections);
     lighting_environment["properties"]["post_effect"]=asset_id;
     lighting_environment["properties"]["post_effect"]["description"]="Optional content-addressed .poimapost artifact SHA-256. The runtime freezes the selected effect with the authored scene.";
     const Json enabled_ibl={{"required",Json::array({"ibl"})},{"properties",Json{{"ibl",Json{
@@ -347,7 +354,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 194}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 195}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -892,6 +899,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     result["invariants"].push_back("LightingEnvironment.sky is optional and disabled when absent; when present all sky fields are required. Non-null sun must reference an existing directional Light, including when sky is disabled. Remove or change that light only while clearing/changing the reference in the same transaction. Disabled sun lights hide the disk. Runtime retains frozen sky settings/reference and resolves the sun direction from its live pose.");
     result["invariants"].push_back("LightingEnvironment.ibl is optional. If present it requires enabled Boolean and finite numeric diffuse_intensity/specular_intensity gains in [0,64], including while disabled. Enabled IBL requires an enabled procedural sky. Omission preserves the old stored and resolved lighting shapes and does not insert IBL defaults; explicit disabled settings and zero gains retain their presence. Runtime freezes the authored presence and values, including through complete saves and restoration. IBL samples the artistic sky gradient without the visible Sun disk/halo, ambient fill or exposure; it adds diffuse irradiance and roughness-filtered specular environment response, not local scene reflections, geometry occlusion or dynamic GI.");
     result["invariants"].push_back("LightingEnvironment.output_grade optionally selects a per-channel curve over exposed HDR before tone mapping. input_max is in [0.125,64], strength in [0,1] and 33 uniform RGB knots in [0,16] start at [0,0,0]. Above input_max the curve extends from the last knot with unit slope. The renderer blends graded and original values by strength. Omission preserves prior lighting responses. A selected zero-strength grade has identity output and remains observable, frozen with the scene and included in export feature requirements.");
+    result["invariants"].push_back("LightingEnvironment.screen_reflections selects optional screen reflections for single-sample deferred color when reconstruction is disabled. The three required settings are finite: strength in [0,1], max_distance_m in [0.25,32], and thickness_m in [0.01,0.5]. Forward and reconstruction retain the established fallback. Omission preserves lighting and dependency shapes. A selected zero strength disables the effect while retaining the authored selection and its export feature requirement.");
     result["invariants"].push_back("LightingEnvironment.post_effect selects one optional compiled scene-linear HDR effect by its whole-file SHA-256. Import the reviewed .poimapost bytes before selecting them. Dependency resolution and frozen scene preparation revalidate the file and reject missing or changed bytes. An active runtime owns its admitted effect until replaced. Omission leaves lighting observations and dependencies unchanged.");
     result["invariants"].push_back("Shadow maps are opt-in per light. Directional=4 views, point=6, spot=1; at most 16 views and 128 MiB of D32 depth storage. Shadowed spot outer_angle <= 89.5; local range must exceed shadow near.");
     result["invariants"].push_back("Capture/play clustered_lighting defaults true. False evaluates the full light table as a reference. Cluster overflow falls back to all lights; directional and range-zero lights are never distance-culled. Assignment diagnostics distinguish requested mode, active mode and measured GPU statistics.");
