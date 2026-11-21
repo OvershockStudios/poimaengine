@@ -120,6 +120,13 @@ verify the proposals. Closing the creator ends the specialist sessions.
 
 ## Assign scene work to a draft
 
+To let the main Codex chat assign work, open **Connection settings**, enable
+**Allow Codex to assign scene workers**, and start a new chat. Describe the
+scene work you want delegated. Each worker gets a tab that you can open to
+follow its work, send a follow-up, or stop its current turn. The main Codex
+chat can collect the reports itself.
+[Worker tool](https://github.com/OvershockStudios/poimaengine/blob/main/docs/AGENT_CLIENTS.md#delegate-scene-work-from-codex)
+
 Connect **Codex** and choose **Add build worker**. Poima captures the
 current project when you add the first worker. Each worker gets a separate
 editable copy of that checkpoint. Add up to ten workers and switch between

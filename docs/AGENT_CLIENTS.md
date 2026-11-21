@@ -53,6 +53,45 @@ installs it under `%LOCALAPPDATA%\Poima\agents\codex\0.171.0`. Allow about
 client lives alongside any existing CLI. **Connection
 settings** can select another executable. [Official Codex release](https://github.com/openai/codex/releases/tag/rust-v0.171.0)
 
+### Delegate scene work from Codex
+
+In the Windows creator, enable **Allow Codex to assign scene workers** in
+**Connection settings** before starting a new chat. The main Codex thread
+gets a `poima_workers` tool. The permission applies to that connection. Each
+worker uses the same configured client and model in a separate draft.
+The Windows worker flow has a live check with the pinned Codex CLI 0.171.0.
+If your installed client cannot connect to the scoped tools, choose that
+release's executable in **Connection settings**.
+
+Use the revision from `world.inspect` to start a parallel assignment.
+Each action accepts a 32-character lowercase hex request ID.
+
+```json
+{"action":"assign","request_id":"2f1db5130cee4f81889a55b19f850ff5","expected_revision":2,"tasks":["Light the courtyard entrance.","Place benches along the dock."]}
+```
+
+Inspect the same request. `wait_ms` is optional and waits for a change for
+up to ten seconds.
+
+```json
+{"action":"inspect","request_id":"2f1db5130cee4f81889a55b19f850ff5","wait_ms":10000}
+```
+
+Poima returns preparation and turn states, draft manifests and completed
+reports. An exact assignment retry returns the original batch's current
+state. Changing the tasks or revision under an existing ID fails. One round
+can hold ten workers, including manually added workers, and a task can use up
+to 4,000 characters. Worker reports in tool replies are limited to 4,000
+characters each. Read the full report in its worker tab. A round retains up
+to 64 request IDs. Request IDs and running conversations belong to the open
+creator workspace. Draft files remain available after close.
+
+A completed worker turn supplies a report. Use **Review worker scenes** to
+select and verify the combined game from the saved checkpoint.
+[Combine and play the selected scenes](PROJECT_RECOVERY.md#check-selected-scenes-in-the-creator)
+
+### Connect from a CLI
+
 Use absolute paths to the engine executable and the project's manifest. With
 Poima 0.0.278 or later, `mcp --project` opens the entry world and owns its
 writer lock. To work alongside an open editor or shared headless host,

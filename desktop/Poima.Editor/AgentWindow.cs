@@ -23,6 +23,7 @@ internal sealed class AgentChat : UserControl
     private readonly bool creator;
     private readonly string? gameplayToolContext;
     private readonly CreatorConversationStore? conversationStore;
+    private readonly Func<CodexWorkerRequest, CancellationToken, Task<JsonObject>>? coordinateWorkers;
     private readonly CancellationTokenSource lifetime = new();
     private readonly ComboBox provider = new() { ItemsSource = new[] { "Codex", "Antigravity", "Claude Code" }, SelectedIndex = 0 };
     private readonly TextBox executable = Field("Codex executable", "codex.exe");
@@ -35,6 +36,7 @@ internal sealed class AgentChat : UserControl
     private readonly CheckBox allowSourceEdits = new() { Content = "Allow gameplay source edits in this session" };
     private readonly CheckBox allowBuilds = new() { Content = "Allow gameplay builds in this session" };
     private readonly CheckBox allowChecks = new() { Content = "Allow gameplay check edits in this session" };
+    private readonly CheckBox allowWorkers = new() { Content = "Allow Codex to assign scene workers" };
     private readonly TextBox prompt = new() { AcceptsReturn = true, TextWrapping = TextWrapping.Wrap, MinHeight = 85, MaxHeight = 180 };
     private readonly TextBox transcript = new() { IsReadOnly = true, AcceptsReturn = true, TextWrapping = TextWrapping.Wrap };
     private readonly TextBlock status = new() { Text = "Disconnected", TextWrapping = TextWrapping.Wrap };
@@ -70,11 +72,13 @@ internal sealed class AgentChat : UserControl
     private string? ResumeThread => string.IsNullOrWhiteSpace(thread.Text) || thread.Text.Trim() == unusedConversation
         ? null : thread.Text.Trim();
     public AgentChat(string projectRoot, string endpoint, bool creator = false,
-        string? gameplayToolStatus = null, string? gameplayToolContext = null, CreatorConversationStore? conversationStore = null)
+        string? gameplayToolStatus = null, string? gameplayToolContext = null, CreatorConversationStore? conversationStore = null,
+        Func<CodexWorkerRequest, CancellationToken, Task<JsonObject>>? coordinateWorkers = null)
     {
         this.projectRoot = projectRoot; this.endpoint = endpoint; this.creator = creator;
         this.gameplayToolContext = gameplayToolContext;
         this.conversationStore = conversationStore;
+        this.coordinateWorkers = coordinateWorkers;
         if (conversationStore is not null)
         {
             try { thread.Text = rememberedThread = conversationStore.Read(); }
@@ -96,6 +100,11 @@ internal sealed class AgentChat : UserControl
             settings.Children.Add(executable); settings.Children.Add(agyExecutable); settings.Children.Add(claudeExecutable);
             settings.Children.Add(model); settings.Children.Add(thread);
             settings.Children.Add(allowEdits);
+            if (coordinateWorkers is not null)
+            {
+                ToolTip.SetTip(allowWorkers, "Authorize up to ten independent Codex workers in this workspace. Set this before starting a new chat.");
+                settings.Children.Add(allowWorkers);
+            }
             if (gameplayToolStatus is not null)
                 settings.Children.Add(new TextBlock { Text = gameplayToolStatus, TextWrapping = TextWrapping.Wrap });
             if (gameplayToolContext is not null)
@@ -179,6 +188,7 @@ internal sealed class AgentChat : UserControl
     {
         executable.IsVisible = model.IsVisible = thread.IsVisible = allowEdits.IsVisible = ProviderName == "Codex";
         allowSourceEdits.IsVisible = allowBuilds.IsVisible = allowChecks.IsVisible = ProviderName == "Codex";
+        allowWorkers.IsVisible = ProviderName == "Codex";
         agyExecutable.IsVisible = ProviderName == "Antigravity";
         claudeExecutable.IsVisible = ProviderName == "Claude Code";
         UpdateSetupButtons();
@@ -333,7 +343,8 @@ internal sealed class AgentChat : UserControl
         provider.IsEnabled = executable.IsEnabled = agyExecutable.IsEnabled = claudeExecutable.IsEnabled =
             engine.IsEnabled = model.IsEnabled = connect.IsEnabled;
         thread.IsReadOnly = !connect.IsEnabled; thread.IsEnabled = !closing;
-        allowEdits.IsEnabled = allowSourceEdits.IsEnabled = allowBuilds.IsEnabled = allowChecks.IsEnabled = connect.IsEnabled;
+        allowEdits.IsEnabled = allowSourceEdits.IsEnabled = allowBuilds.IsEnabled = allowChecks.IsEnabled =
+            allowWorkers.IsEnabled = connect.IsEnabled;
         UpdateConversationButtons();
     }
     private async Task Connect(bool authenticateAntigravity = false)
@@ -566,7 +577,8 @@ internal sealed class AgentChat : UserControl
                     Path.TrimEndingDirectorySeparator(Path.GetFullPath(projectRoot)), comparison))
                 throw new InvalidOperationException("The saved Codex chat belongs to a different folder. Choose New chat to continue here.");
         }
-        var id = await current.OpenAsync(resume, cancellation, chosen);
+        var id = await current.OpenAsync(resume, cancellation, chosen,
+            offerWorkers: resume is null && allowWorkers.IsChecked == true && coordinateWorkers is not null);
         unusedConversation = resume is null ? id : null;
         thread.Text = id;
         if (conversationStore is not null && displayedThread != id)
@@ -849,7 +861,9 @@ internal sealed class AgentChat : UserControl
         }
         if (message["id"] is JsonNode requestId)
         {
-            if (method == "item/tool/requestUserInput")
+            if (method == "item/tool/call")
+                _ = HandleWorkerCallAsync(current, requestId, parameters);
+            else if (method == "item/tool/requestUserInput")
             {
                 if (!ShowQuestions(current, requestId, parameters)) _ = RejectUnsupported(current, requestId, method);
             }
@@ -901,6 +915,29 @@ internal sealed class AgentChat : UserControl
             ClearApprovals(); Append("\n"); Controls();
         }
         else if (method == "error") status.Text = parameters?.ToJsonString();
+    }
+
+    private async Task HandleWorkerCallAsync(IAgentSession current, JsonNode requestId, JsonObject? parameters)
+    {
+        JsonObject response;
+        try
+        {
+            if (parameters is null || CodexWorkerTool.Text(parameters["tool"]) != CodexWorkerTool.Name ||
+                parameters["namespace"] is not null || coordinateWorkers is null || allowWorkers.IsChecked != true)
+                throw new InvalidOperationException("Enable scene workers in Connection settings and start a new Codex chat.");
+            if (cancelRequested || activeTurn is null ||
+                CodexWorkerTool.Text(parameters["threadId"]) != current.ConversationId ||
+                CodexWorkerTool.Text(parameters["turnId"]) != activeTurn ||
+                CodexWorkerTool.Text(parameters["callId"]) is not { Length: > 0 and <= 256 })
+                throw new InvalidOperationException("Scene worker tools require the current Codex turn.");
+            var request = CodexWorkerTool.Read(parameters["arguments"]);
+            response = CodexWorkerTool.Response(true, await coordinateWorkers(request, lifetime.Token));
+        }
+        catch (Exception failure)
+        {
+            response = CodexWorkerTool.Response(false, new JsonObject { ["error"] = failure.Message });
+        }
+        if (!closing && ReferenceEquals(session, current)) await Reply(current, requestId, response);
     }
 
     private bool ShowQuestions(IAgentSession current, JsonNode requestId, JsonObject? parameters)

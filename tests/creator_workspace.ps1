@@ -12,6 +12,7 @@
 # -CodexQuestions uses the local AgentRpc contract executable as a scripted app-server.
 # -CodexReviews uses the AgentRpc contract executable to test two revision-pinned reviewers.
 # -WithBuildWorkers adds two editable drafts using the same peer and the native engine.
+# -WithLeadWorkers uses the active Codex tool protocol to assign those drafts from main chat.
 # -WithCombinedDrafts checks selected worker scenes and plays the retained combined export.
 # -CodexToolApproval exercises decline and approve once with the installed Codex.
 # -WithExport requires a packaged sample runtime and plays a relocated export.
@@ -38,6 +39,7 @@ param(
     [string]$CodexQuestions,
     [string]$CodexReviews,
     [switch]$WithBuildWorkers,
+    [switch]$WithLeadWorkers,
     [switch]$WithCombinedDrafts,
     [switch]$CodexToolApproval,
     [switch]$WithExport,
@@ -59,7 +61,10 @@ if ($InstallAntigravity -and $Antigravity) { throw 'Run the installation and sup
 if ($VerifiedPlayChat -and $VerifiedPlayWithCodex) { throw 'Run the scripted and live playback checks separately.' }
 if ($ObserveVerifiedPlayback -and !$VerifiedPlayWithCodex) { throw 'Use -VerifiedPlayWithCodex for the live observation workflow.' }
 if ($WithBuildWorkers -and !$CodexReviews) { throw 'Supply -CodexReviews for the build worker scenario.' }
-if ($WithCombinedDrafts -and (!$WithBuildWorkers -or $WithoutVulkan)) {
+if ($WithLeadWorkers -and (!$CodexReviews -or $WithBuildWorkers)) {
+    throw 'Supply -CodexReviews and run lead assignments separately from manual worker assignments.'
+}
+if ($WithCombinedDrafts -and ((!$WithBuildWorkers -and !$WithLeadWorkers) -or $WithoutVulkan)) {
     throw 'Run combined drafts with build workers, a packaged sample runtime and Windows Vulkan.'
 }
 if ($CodexReviews -and ($WithCodex -or $CodexQuestions -or $CodexBrief -or $CodexToolApproval -or
@@ -150,6 +155,7 @@ $report = [ordered]@{
     codex_questions_requested = ![string]::IsNullOrWhiteSpace($CodexQuestions)
     codex_reviews_requested = ![string]::IsNullOrWhiteSpace($CodexReviews)
     build_workers_requested = [bool]$WithBuildWorkers
+    lead_workers_requested = [bool]$WithLeadWorkers
     combined_drafts_requested = [bool]$WithCombinedDrafts
     export_requested = [bool]$WithExport
     playtest_results_requested = [bool]$WithPlaytestResults
@@ -678,23 +684,25 @@ function Get-AuthoredFileHashes {
         Sort-Object FullName | ForEach-Object { "$((Get-FileHash -LiteralPath $_.FullName).Hash) $($_.FullName)" }
 }
 
+function Write-WorkerSuite($Ids, $Names) {
+    $groups = for ($i = 0; $i -lt $Ids.Count; ++$i) {
+        @{ name = $Names[$i]; sequence = @(
+            @{ step = @{ ticks = 2 } }
+            @{ expect = @{
+                label = $Names[$i] + ' appears in the game'; method = 'runtime.entity'
+                params = @{ id = $Ids[$i] }; path = '/id'; equals = $Ids[$i]
+            } }
+        ) }
+    }
+    $suite = @{ format = 'poima.game-verification'; version = 1; groups = @($groups) } | ConvertTo-Json -Depth 10
+    [IO.File]::WriteAllText((Join-Path (Split-Path -Parent $manifest) 'game.verify.json'), $suite)
+}
+
 function Exercise-BuildWorkers($Project, $LeadProcess) {
     $checks = $report.checks.codex_build_workers = [ordered]@{ base_revision = $Project.revision }
     $ids = @('{0:x32}' -f 0xda01; '{0:x32}' -f 0xda02)
     $names = @('Draft lantern', 'Draft quay bench')
-    if ($WithCombinedDrafts) {
-        $groups = for ($i = 0; $i -lt $ids.Count; ++$i) {
-            @{ name = $names[$i]; sequence = @(
-                @{ step = @{ ticks = 2 } }
-                @{ expect = @{
-                    label = $names[$i] + ' appears in the game'; method = 'runtime.entity'
-                    params = @{ id = $ids[$i] }; path = '/id'; equals = $ids[$i]
-                } }
-            ) }
-        }
-        $suite = @{ format = 'poima.game-verification'; version = 1; groups = @($groups) } | ConvertTo-Json -Depth 10
-        [IO.File]::WriteAllText((Join-Path (Split-Path -Parent $manifest) 'game.verify.json'), $suite)
-    }
+    if ($WithCombinedDrafts) { Write-WorkerSuite $ids $names }
     $before = @(Get-AuthoredFileHashes) -join "`n"
     $originalDraft = 'Keep this build plan.'
     Set-ControlText 'Agent prompt' $originalDraft
@@ -829,6 +837,65 @@ function Exercise-BuildWorkers($Project, $LeadProcess) {
     $checks.project_unchanged = $true
     $checks.restarted_worker_pid = $restarted.pid
     $checks.second_worker_pid = $secondPid
+}
+
+function Exercise-LeadWorkers($Project, $Peer) {
+    $checks = $report.checks.lead_workers = [ordered]@{ base_revision = $Project.revision }
+    $ids = @('{0:x32}' -f 0xda01; '{0:x32}' -f 0xda02)
+    $names = @('Draft lantern', 'Draft quay bench')
+    if ($WithCombinedDrafts) { Write-WorkerSuite $ids $names }
+    $before = @(Get-AuthoredFileHashes) -join "`n"
+    Select-AgentProvider 'Codex'
+    Set-AgentExecutable 'Codex executable' $Peer
+    Invoke-Control 'Agent Connect'
+    $null = Wait-For 'the lead with worker permission off' { Find-Control 'Agent Send' -Enabled } 65
+    $denied = Send-CodexPrompt "Confirm disabled worker permission at revision $($Project.revision)."
+    if (!$denied.Contains('Worker permission is off.') -or (Read-BuildWorkerTrace)) {
+        throw 'The initial connection did not deny worker creation.'
+    }
+    Invoke-Control 'Agent Disconnect'
+    $null = Wait-For 'the disconnected lead' { Find-Control 'New chat' -Enabled }
+    $settings = Wait-For 'Connection settings' { Find-Control 'Connection settings' }
+    $expander = $settings.GetCurrentPattern([Windows.Automation.ExpandCollapsePattern]::Pattern)
+    $expander.Expand()
+    $setting = Wait-For 'worker assignment permission' { Find-Control 'Allow Codex to assign scene workers' -Enabled }
+    $toggle = $setting.GetCurrentPattern([Windows.Automation.TogglePattern]::Pattern)
+    if ($toggle.Current.ToggleState -ne [Windows.Automation.ToggleState]::Off) { throw 'Scene workers must default to off.' }
+    $toggle.Toggle()
+    $expander.Collapse()
+    Invoke-Control 'New chat'
+    $null = Wait-For 'the lead with worker permission granted' { Find-Control 'Agent Send' -Enabled } 65
+    $done = Send-CodexPrompt "Delegate scene work at revision $($Project.revision)."
+    if (!$done.Contains('Lead collected both worker reports.')) { throw 'The lead did not collect its assigned worker results.' }
+    $lead = @(Read-ReviewTrace | Where-Object { $_.kind -ceq 'thread/start' -and $_.dynamicTools.Count -eq 1 })
+    $calls = @(Read-ReviewTrace | Where-Object { $_.kind -ceq 'worker/tool' })
+    $launches = @(Read-BuildWorkerTrace | Where-Object { $_.kind -ceq 'launch' })
+    $edits = @(Read-BuildWorkerTrace | Where-Object { $_.kind -ceq 'native/tool' -and $_.request.arguments.method -ceq 'world.transact' })
+    if ($lead.Count -ne 1 -or $launches.Count -ne 2 -or $edits.Count -ne 2 -or
+        ($launches.manifest | Select-Object -Unique).Count -ne 2 -or
+        ($edits | Where-Object { !$_.reply.structuredContent.result.committed -or
+            $_.reply.structuredContent.result.revision -ne $Project.revision + 1 }) -or
+        @($calls | Where-Object { !$_.reply.result.success }).Count -ne 5) {
+        throw 'The lead did not start exactly two independent native draft owners.'
+    }
+    for ($i = 1; $i -le 2; ++$i) {
+        Wait-ForCreatorChatTab "Worker $i" -Select
+        $answer = "$($names[$i-1]) created at revision $($Project.revision + 1). Entity $($ids[$i-1])."
+        Wait-ForBuildWorkerReport $answer
+    }
+    Wait-ForCreatorChatTab 'Main chat' -Select
+    if ($WithCombinedDrafts) {
+        $group = Split-Path -Parent (Split-Path -Parent $launches[0].manifest)
+        Exercise-CombinedDrafts $group $ids $Project
+    }
+    if ((@(Get-AuthoredFileHashes) -join "`n") -cne $before) { throw 'The lead workers changed the active source project.' }
+    $checks.lead_pid = $lead[0].pid
+    $checks.worker_pids = @($launches.pid)
+    $checks.worker_manifests = @($launches.manifest)
+    $checks.tool_replies = $calls.Count
+    $checks.rejected_tool_calls = 5
+    $checks.completed_workers = 2
+    $checks.project_unchanged = $true
 }
 
 function Select-CombinedDrafts([string[]]$Workers) {
@@ -1975,7 +2042,7 @@ try {
         $env:POIMA_TEST_CODEX_REVIEW_TRACE = $reviewTrace
         $report.codex_review_fixture_sha256 = (Get-FileHash -LiteralPath $CodexReviews).Hash.ToLowerInvariant()
     }
-    if ($WithBuildWorkers) {
+    if ($WithBuildWorkers -or $WithLeadWorkers) {
         $workerTrace = Join-Path $run 'codex-worker-trace'
         New-Item -ItemType Directory -Path $workerTrace | Out-Null
         $env:POIMA_TEST_CODEX_DRAFT = '1'
@@ -2102,7 +2169,7 @@ try {
     $reviewPeers = @()
     $workerPeers = @()
     try {
-        if ($CodexReviews) {
+        if ($CodexReviews -and !$WithLeadWorkers) {
             $project = Exercise-CodexReviews $project $CodexReviews
             $reviewChecks = $report.checks.codex_reviews
             $reviewPeers = @(Get-Process -Id @($reviewChecks.active_reviewer_before_creator_close, $reviewChecks.lead_pid))
@@ -2114,6 +2181,13 @@ try {
             $workerPeers = @(Get-Process -Id @($workerChecks.restarted_worker_pid, $workerChecks.second_worker_pid))
             foreach ($peer in $workerPeers) { $null = $peer.Handle }
         }
+        if ($WithLeadWorkers) {
+            Exercise-LeadWorkers $project $CodexReviews
+            $leadChecks = $report.checks.lead_workers
+            $reviewPeers = @(Get-Process -Id $leadChecks.lead_pid)
+            $workerPeers = @(Get-Process -Id $leadChecks.worker_pids)
+            foreach ($peer in ($reviewPeers + $workerPeers)) { $null = $peer.Handle }
+        }
         Close-Owner
         $report.checks.closed_exit_code = $owner.ExitCode
         if ($CodexReviews) {
@@ -2123,16 +2197,18 @@ try {
                     throw "Creator closed before the Codex peer $($peer.Id) exited naturally."
                 }
             }
-            $reviewChecks.closed_creator_joined_review_and_lead = $true
+            if ($WithLeadWorkers) { $leadChecks.closed_creator_joined_lead = $true }
+            else { $reviewChecks.closed_creator_joined_review_and_lead = $true }
         }
-        if ($WithBuildWorkers) {
+        if ($WithBuildWorkers -or $WithLeadWorkers) {
             $exits = @(Read-BuildWorkerTrace | Where-Object { $_.kind -ceq 'exit' })
             foreach ($peer in $workerPeers) {
                 if (!$peer.HasExited -or $peer.ExitTime -gt $owner.ExitTime -or $peer.Id -notin $exits.pid) {
                     throw "Creator closed before the build worker $($peer.Id) exited naturally."
                 }
             }
-            $workerChecks.closed_creator_joined_build_workers = $true
+            if ($WithLeadWorkers) { $leadChecks.closed_creator_joined_workers = $true }
+            else { $workerChecks.closed_creator_joined_build_workers = $true }
         }
     }
     finally { foreach ($peer in ($reviewPeers + $workerPeers)) { $peer.Dispose() } }

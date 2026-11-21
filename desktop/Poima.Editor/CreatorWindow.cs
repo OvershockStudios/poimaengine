@@ -13,6 +13,7 @@ using Avalonia.Markup.Xaml.Styling;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
+using Poima.AgentHost;
 
 namespace Poima.Editor;
 
@@ -96,7 +97,8 @@ internal sealed class CreatorWindow : Window
             game.Error += message => { error = message; UpdateControls(); };
             chat = new AgentChat(project.Root, host.Endpoint, creator: true,
                 gameplayToolStatus: options.GameplayToolStatus, gameplayToolContext: options.GameplayToolContext,
-                conversationStore: new CreatorConversationStore(project.Manifest, project.ProjectId));
+                conversationStore: new CreatorConversationStore(project.Manifest, project.ProjectId),
+                coordinateWorkers: CoordinateWorkersAsync);
             if (draft is not null) chat.RestoreDraft(draft);
             Content = BuildContent();
         }
@@ -898,14 +900,28 @@ internal sealed class CreatorWindow : Window
     private async Task AddBuildWorkerAsync()
     {
         if (!addBuildWorker.IsEnabled || chat.ReviewClient is not { } client) return;
-        buildTeam ??= new CreatorBuildTeam(project, conversations, finding =>
+        await BuildTeam().AddAsync(client.Executable, client.Model);
+        UpdateControls();
+    }
+
+    private CreatorBuildTeam BuildTeam() => buildTeam ??= new CreatorBuildTeam(project, conversations, finding =>
         {
             if (!chat.AddReviewToDraft(finding)) return false;
             conversations.SelectedIndex = 0;
             return true;
         }, message => { error = message; UpdateControls(); });
-        await buildTeam.AddAsync(client.Executable, client.Model);
-        UpdateControls();
+
+    private Task<JsonObject> CoordinateWorkersAsync(CodexWorkerRequest request, CancellationToken cancellation)
+    {
+        if (closing || closeRequested || chat.ReviewClient is not { } client)
+            throw new InvalidOperationException("Connect the main Codex chat in an open creator workspace.");
+        if (request.ExpectedRevision is not null)
+        {
+            host.RefreshState();
+            if (exporting || starting || model.RuntimeId is not null)
+                throw new InvalidOperationException("Stop the project preview or wait for project work before assigning scene workers.");
+        }
+        return BuildTeam().CoordinateAsync(request, client.Executable, client.Model, cancellation);
     }
 
     private Task ReviewDraftsAsync()

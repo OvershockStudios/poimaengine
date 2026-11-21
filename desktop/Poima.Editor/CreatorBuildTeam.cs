@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 using System.Globalization;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Avalonia.Controls;
 using Poima.AgentHost;
 
@@ -8,21 +9,39 @@ namespace Poima.Editor;
 
 internal sealed class CreatorBuildTeam
 {
-    private const int MaximumWorkers = 10;
+    private const int MaximumAssignments = 64;
     private readonly ProjectLocation project;
     private readonly TabControl conversations;
     private readonly Func<string, bool> addToDraft;
     private readonly Action<string?> status;
     private readonly List<WorkerDraft> workers = [];
+    private readonly Dictionary<string, LeadBatch> batches = new(StringComparer.Ordinal);
     private string? groupDirectory;
     private (string Checkpoint, string Hash, long Revision, string Source)? snapshot;
     private Task? provision, retirement;
     private bool closing, adding;
-    public bool CanAdd => !closing && !adding && workers.Count < MaximumWorkers;
+    public bool CanAdd => !closing && !adding && workers.Count < CodexWorkerTool.MaximumWorkers;
     public bool CanReview => !closing && !adding && workers.Any(worker => !worker.Pane.Busy && worker.Pane.Finding is not null);
     public long BaseRevision => snapshot?.Revision ?? throw new InvalidOperationException("There is no worker checkpoint.");
 
     private sealed record WorkerDraft(CreatorReviews.WorkerPane Pane, string Manifest);
+    private sealed record Assignment(WorkerDraft Worker, Task<CreatorReviews.WorkerPane.TurnResult> Turn);
+
+    private sealed class LeadBatch(CodexWorkerRequest request)
+    {
+        public CodexWorkerRequest Request { get; } = request;
+        public Assignment[] Assignments { get; set; } = [];
+        public string? Error { get; set; }
+        public TaskCompletionSource Changed { get; private set; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public bool Pending => Error is null && (Assignments.Length == 0 || Assignments.Any(work => !work.Turn.IsCompleted));
+
+        public void SignalChange()
+        {
+            var previous = Changed;
+            Changed = new(TaskCreationOptions.RunContinuationsAsynchronously);
+            previous.TrySetResult();
+        }
+    }
     public sealed record ReviewedDraft(string Name, string Manifest, long Revision, string WorldHash, string Report);
     public sealed record CombinedCheck(string ProjectId, string History, string Checkpoint, string Snapshot,
         string GameManifest, PlaytestAttempt Attempt);
@@ -48,59 +67,187 @@ internal sealed class CreatorBuildTeam
         status("Preparing a worker draft…");
         try
         {
-            if (groupDirectory is null)
-            {
-                var parent = Path.GetDirectoryName(project.Root) ??
-                    throw new InvalidOperationException("The project needs a parent folder for worker drafts.");
-                var drafts = Directory.CreateDirectory(Path.Combine(parent, ".poima-drafts"));
-                if ((drafts.Attributes & FileAttributes.ReparsePoint) != 0)
-                    throw new InvalidOperationException("Choose an ordinary folder for worker drafts.");
-                groupDirectory = Directory.CreateDirectory(Path.Combine(drafts.FullName, Guid.NewGuid().ToString("N")[..12])).FullName;
-            }
-            if (snapshot is null)
-            {
-                var checkpoint = await ProjectFiles.Command("checkpoint", project.Manifest,
-                    "--output", Path.Combine(groupDirectory, "base"));
-                snapshot = (checkpoint.GetProperty("checkpoint").GetString()!,
-                    checkpoint.GetProperty("source_sha256").GetString()!, checkpoint.GetProperty("revision").GetInt64(),
-                    checkpoint.GetProperty("source_manifest").GetString()!);
-            }
+            await CaptureAsync(null);
             if (closing) return;
-            var captured = snapshot.Value;
-            var number = workers.Count + 1;
-            var draft = await ProjectFiles.Command("draft", captured.Checkpoint,
-                "--output", Path.Combine(groupDirectory, "w" + number), "--expected-base-sha256", captured.Hash);
+            var worker = await DraftAsync(workers.Count + 1, executable, model);
             if (closing) return;
-            var manifest = draft.GetProperty("manifest").GetString()!;
-            var projectId = draft.GetProperty("project_id").GetString()!;
-            var name = "Worker " + number;
-            var engine = Path.Combine(AppContext.BaseDirectory, "poima.exe");
-            var scope = $"You are editing Poima draft {projectId}, forked from authored revision {captured.Revision}. " +
-                "Make the assigned change using the draft Poima tools. Verify the resulting draft revision and entities. " +
-                "Report the changed entity IDs, verification results, and any separate source files the lead should select. " +
-                "The lead reviews the pinned draft scene and verifies the assembled candidate.";
-            var pane = new CreatorReviews.WorkerPane(name, "Assign part of the game to this worker.",
-                cancellation => CodexReview.OpenDraftAsync(executable, engine, manifest, model, cancellation),
-                () => scope, draftPath: manifest, useReport: report =>
-                {
-                    if (closing) return;
-                    var message = $"{name} completed a task on an independent Poima draft.\n" +
-                        $"The base is `{captured.Checkpoint}` at authored revision {captured.Revision}.\n" +
-                        $"Its SHA-256 is `{captured.Hash}`. The worker manifest is `{manifest}`.\n\n" +
-                        "Review the draft, then use project inspect to get its world_sha256 for project integrate. " +
-                        "Poima combines pinned scene edits and copies their cooked dependencies. Select other source files by hash. " +
-                        "Build and verify the resulting candidate before offering it for play.\n\n" + report;
-                    status(addToDraft(message) ? "Worker report added to the main chat draft."
-                        : "Wait for the main chat to finish before adding the report.");
-                });
-            workers.Add(new(pane, manifest));
-            var tab = CreatorWindow.ConversationTab(name, pane.View);
-            conversations.Items.Add(tab);
-            conversations.SelectedItem = tab;
+            conversations.SelectedItem = AddTab(worker);
             status(null);
         }
         catch (Exception failure) { if (!closing) status(failure.Message); }
         finally { adding = false; }
+    }
+
+    private async Task CaptureAsync(long? expectedRevision)
+    {
+        if (snapshot is { } existing)
+        {
+            if (expectedRevision is not null && expectedRevision != existing.Revision)
+                throw new InvalidOperationException($"This worker round uses revision {existing.Revision}. Reopen the project to start a round from the current scene.");
+            return;
+        }
+        if (expectedRevision is long expected)
+        {
+            var current = await ProjectFiles.Command("inspect", project.Manifest);
+            if (current.GetProperty("project_id").GetString() != project.ProjectId ||
+                current.GetProperty("revision").GetInt64() != expected)
+                throw new InvalidOperationException("The project or scene revision changed. Inspect the current project before assigning work.");
+        }
+        if (closing) return;
+        if (groupDirectory is null)
+        {
+            var parent = Path.GetDirectoryName(project.Root) ??
+                throw new InvalidOperationException("The project needs a parent folder for worker drafts.");
+            var drafts = Directory.CreateDirectory(Path.Combine(parent, ".poima-drafts"));
+            if ((drafts.Attributes & FileAttributes.ReparsePoint) != 0)
+                throw new InvalidOperationException("Choose an ordinary folder for worker drafts.");
+            groupDirectory = Directory.CreateDirectory(Path.Combine(drafts.FullName, Guid.NewGuid().ToString("N")[..12])).FullName;
+        }
+        var checkpoint = await ProjectFiles.Command("checkpoint", project.Manifest,
+            "--output", Path.Combine(groupDirectory, "base"));
+        if (closing) return;
+        var revision = checkpoint.GetProperty("revision").GetInt64();
+        var source = checkpoint.GetProperty("source_manifest").GetString()!;
+        var captured = await ProjectFiles.Command("inspect", source);
+        if (captured.GetProperty("project_id").GetString() != project.ProjectId ||
+            expectedRevision is not null && expectedRevision != revision)
+        {
+            groupDirectory = null;
+            throw new InvalidOperationException("The project changed while capturing the worker checkpoint. Check the current project and revision.");
+        }
+        snapshot = (checkpoint.GetProperty("checkpoint").GetString()!,
+            checkpoint.GetProperty("source_sha256").GetString()!, revision, source);
+    }
+
+    private async Task<WorkerDraft> DraftAsync(int number, string executable, string? model)
+    {
+        var captured = snapshot!.Value;
+        var suffix = Guid.NewGuid().ToString("N")[..8];
+        var draft = await ProjectFiles.Command("draft", captured.Checkpoint,
+            "--output", Path.Combine(groupDirectory!, $"w{number}-{suffix}"),
+            "--expected-base-sha256", captured.Hash);
+        var manifest = draft.GetProperty("manifest").GetString()!;
+        var projectId = draft.GetProperty("project_id").GetString()!;
+        var name = "Worker " + number;
+        var engine = Path.Combine(AppContext.BaseDirectory, "poima.exe");
+        var scope = $"You are editing Poima draft {projectId}, forked from authored revision {captured.Revision}. " +
+            "Make the assigned change using the draft Poima tools. Verify the resulting draft revision and entities. " +
+            "Report the changed entity IDs, verification results, and any separate source files the lead should select. " +
+            "The lead reviews the pinned draft scene and verifies the assembled candidate.";
+        var pane = new CreatorReviews.WorkerPane(name, "Assign part of the game to this worker.",
+            cancellation => CodexReview.OpenDraftAsync(executable, engine, manifest, model, cancellation),
+            () => scope, draftPath: manifest, useReport: report =>
+            {
+                if (closing) return;
+                var message = $"{name} completed a task on an independent Poima draft.\n" +
+                    $"The base is `{captured.Checkpoint}` at authored revision {captured.Revision}.\n" +
+                    $"Its SHA-256 is `{captured.Hash}`. The worker manifest is `{manifest}`.\n\n" +
+                    "Review the draft, then use project inspect to get its world_sha256 for project integrate. " +
+                    "Poima combines pinned scene edits and copies their cooked dependencies. Select other source files by hash. " +
+                    "Build and verify the resulting candidate before offering it for play.\n\n" + report;
+                status(addToDraft(message) ? "Worker report added to the main chat draft."
+                    : "Wait for the main chat to finish before adding the report.");
+            });
+        return new(pane, manifest);
+    }
+
+    private TabItem AddTab(WorkerDraft worker)
+    {
+        workers.Add(worker);
+        var tab = CreatorWindow.ConversationTab(worker.Pane.Name, worker.Pane.View);
+        conversations.Items.Add(tab);
+        return tab;
+    }
+
+    public async Task<JsonObject> CoordinateAsync(CodexWorkerRequest request, string executable, string? model,
+        CancellationToken cancellation)
+    {
+        if (batches.TryGetValue(request.RequestId, out var existing))
+        {
+            if (request.ExpectedRevision is not null &&
+                (existing.Request.ExpectedRevision != request.ExpectedRevision || !existing.Request.Tasks.SequenceEqual(request.Tasks)))
+                throw new InvalidOperationException("This request_id already identifies a different assignment.");
+            if (request.WaitMilliseconds > 0 && existing.Pending)
+            {
+                try { await existing.Changed.Task.WaitAsync(TimeSpan.FromMilliseconds(request.WaitMilliseconds), cancellation); }
+                catch (TimeoutException) { }
+            }
+            return Describe(existing, replayed: request.ExpectedRevision is not null);
+        }
+        if (request.ExpectedRevision is null) throw new InvalidOperationException("Unknown worker assignment. Inspect a request_id returned by assign.");
+        if (!CanAdd || workers.Count + request.Tasks.Length > CodexWorkerTool.MaximumWorkers)
+            throw new InvalidOperationException("Wait for draft preparation or assign within the workspace limit of ten workers.");
+        if (batches.Count >= MaximumAssignments) throw new InvalidOperationException("Reopen the project to start a new worker round.");
+        var batch = new LeadBatch(request);
+        batches.Add(request.RequestId, batch);
+        provision = StartBatchAsync(batch, executable, model);
+        return Describe(batch, replayed: false);
+    }
+
+    private async Task StartBatchAsync(LeadBatch batch, string executable, string? model)
+    {
+        adding = true;
+        status("Preparing worker drafts…");
+        try
+        {
+            await CaptureAsync(batch.Request.ExpectedRevision);
+            if (closing) return;
+            var staged = new List<WorkerDraft>();
+            foreach (var _ in batch.Request.Tasks)
+            {
+                staged.Add(await DraftAsync(workers.Count + staged.Count + 1, executable, model));
+                if (closing) return;
+            }
+            foreach (var worker in staged) AddTab(worker);
+            batch.Assignments = staged.Select((worker, index) =>
+                new Assignment(worker, FinishAssignmentAsync(batch, worker, batch.Request.Tasks[index]))).ToArray();
+            status(null);
+        }
+        catch (Exception failure)
+        {
+            batch.Error = failure.Message;
+            if (!closing) status(failure.Message);
+        }
+        finally
+        {
+            adding = false;
+            if (closing && batch.Assignments.Length == 0) batch.Error ??= "The workspace closed during draft preparation.";
+            batch.SignalChange();
+        }
+    }
+
+    private static async Task<CreatorReviews.WorkerPane.TurnResult> FinishAssignmentAsync(
+        LeadBatch batch, WorkerDraft worker, string task)
+    {
+        try { return await worker.Pane.RunAsync(task); }
+        catch (Exception failure) { return new("failed", null, failure.Message); }
+        finally { batch.SignalChange(); }
+    }
+
+    private static JsonObject Describe(LeadBatch batch, bool replayed)
+    {
+        var rows = new JsonArray();
+        var allCompleted = true;
+        foreach (var assignment in batch.Assignments)
+        {
+            var turn = assignment.Turn.IsCompletedSuccessfully ? assignment.Turn.Result : null;
+            var row = new JsonObject { ["worker"] = assignment.Worker.Pane.Name, ["manifest"] = assignment.Worker.Manifest,
+                ["state"] = turn?.State ?? "running" };
+            allCompleted &= turn?.State == "completed";
+            if (turn?.Report is { } report)
+            {
+                row["report"] = report.Length <= 4000 ? report : report[..4000];
+                if (report.Length > 4000) row["report_truncated"] = true;
+            }
+            if (turn?.Error is { } error) row["error"] = error;
+            rows.Add(row);
+        }
+        var state = batch.Error is not null ? "failed" : rows.Count == 0 ? "preparing" :
+            batch.Pending ? "running" : allCompleted ? "completed" : "failed";
+        var result = new JsonObject { ["request_id"] = batch.Request.RequestId, ["base_revision"] = batch.Request.ExpectedRevision,
+            ["state"] = state, ["replayed"] = replayed, ["workers"] = rows };
+        if (batch.Error is not null) result["error"] = batch.Error;
+        return result;
     }
 
     public async Task<ReviewedDraft[]> ReviewAsync(CancellationToken cancellation)

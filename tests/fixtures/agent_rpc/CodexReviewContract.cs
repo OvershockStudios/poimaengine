@@ -128,6 +128,7 @@ internal static class CodexReviewContract
         var thread = Guid.NewGuid().ToString("N");
         var traceDirectory = Environment.GetEnvironmentVariable(TraceVariable);
         var traceFile = traceDirectory is null ? null : Path.Combine(Directory.CreateDirectory(traceDirectory).FullName, $"codex-{pid}.jsonl");
+        JsonArray? dynamicTools = null;
         await Trace("launch", new JsonObject { ["endpoint"] = endpoint, ["revision"] = revision, ["command"] = command, ["args"] = engineArgs });
 
         while (await Console.In.ReadLineAsync() is { } line)
@@ -154,6 +155,7 @@ internal static class CodexReviewContract
                     Check(revision is not null || parameters["approvalPolicy"]?.GetValue<string>() == "on-request" &&
                         parameters["sandbox"]?.GetValue<string>() == "workspace-write" && parameters["ephemeral"]?.GetValue<bool>() == false,
                         "The lead thread lost its normal settings.");
+                    dynamicTools = parameters["dynamicTools"] as JsonArray;
                     await Trace(method, parameters);
                     await Reply(new JsonObject { ["thread"] = new JsonObject { ["id"] = thread } });
                     break;
@@ -191,7 +193,9 @@ internal static class CodexReviewContract
                         using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(25));
                         while (!File.Exists(Path.Combine(traceDirectory, ReleaseCrate))) await Task.Delay(25, deadline.Token);
                     }
-                    var finding = revision is null ? "Lead received the findings." : Find(text);
+                    var finding = revision is null
+                        ? await CodexLeadWorkerContract.ExerciseAsync(text.Trim(), dynamicTools, thread, turn, Trace) ?? "Lead received the findings."
+                        : Find(text);
                     await Draft(finding);
                     await Send(Event("item/completed", new JsonObject { ["threadId"] = thread, ["turnId"] = turn,
                         ["item"] = new JsonObject { ["type"] = "agentMessage", ["text"] = finding } }));

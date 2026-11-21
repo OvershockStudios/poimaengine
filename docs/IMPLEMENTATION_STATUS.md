@@ -1,8 +1,19 @@
 # Implementation status
 
-Updated 2026-11-20 for **0.0.335**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-20 for **0.0.336**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.336 lets the main creator conversation
+[assign and inspect scene workers](AGENT_CLIENTS.md#delegate-scene-work-from-codex).
+One live Windows run with Codex CLI 0.171.0 and GPT-6.2 Sol assigned two
+independent edits and collected both worker reports. The selected scenes
+passed the saved checks from a relocated build and opened as an editable copy.
+The original project stayed unchanged. The creator still chooses the scenes
+to combine, and worker conversations and assignment IDs are scoped to the
+open workspace. Codex CLI 0.152.1 assigned work but failed to discover the
+scoped draft tools in its workers.
+[Results](evidence/m2-creator-lead-336.json)
 
 Version 0.0.335 lets the Windows creator
 [check selected worker scenes together](PROJECT_RECOVERY.md#check-selected-scenes-in-the-creator).

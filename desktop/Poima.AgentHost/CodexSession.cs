@@ -121,12 +121,15 @@ public sealed class CodexSession : IAgentSession
     }
 
     /// <summary>Open a scoped specialist thread or start or resume a regular project conversation.</summary>
-    public async Task<string> OpenAsync(string? threadId = null, CancellationToken cancellation = default, string? model = null)
+    public async Task<string> OpenAsync(string? threadId = null, CancellationToken cancellation = default, string? model = null,
+        bool offerWorkers = false)
     {
         if (threadId is not null) ArgumentException.ThrowIfNullOrWhiteSpace(threadId);
         var ephemeral = interaction != Interaction.Project;
         if (ephemeral && threadId is not null)
             throw new ArgumentException("Specialists open a new scoped conversation.", nameof(threadId));
+        if (offerWorkers && (ephemeral || threadId is not null))
+            throw new ArgumentException("Worker tools can only be added when starting a new project conversation.", nameof(offerWorkers));
         if (model is not null) ArgumentException.ThrowIfNullOrWhiteSpace(model);
         await opening.WaitAsync(cancellation);
         try
@@ -140,6 +143,7 @@ public sealed class CodexSession : IAgentSession
             if (model is not null) parameters["model"] = model;
             if (threadId is null) parameters["ephemeral"] = ephemeral;
             else { parameters["threadId"] = threadId; parameters["excludeTurns"] = true; }
+            if (offerWorkers) parameters["dynamicTools"] = new JsonArray(CodexWorkerTool.Definition());
             var result = await rpc.RequestAsync(threadId is null ? "thread/start" : "thread/resume", parameters, cancellation);
             var returned = result?["thread"]?["id"]?.GetValue<string>();
             if (string.IsNullOrWhiteSpace(returned) || (threadId is not null && returned != threadId))

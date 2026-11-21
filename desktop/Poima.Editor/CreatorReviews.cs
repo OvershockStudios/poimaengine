@@ -128,6 +128,7 @@ internal sealed class CreatorReviews
 
     internal sealed class WorkerPane
     {
+        public sealed record TurnResult(string State, string? Report, string? Error);
         private readonly Func<CancellationToken, Task<CodexReview>> open;
         private readonly Func<string> scope;
         private readonly Action? changed;
@@ -140,7 +141,7 @@ internal sealed class CreatorReviews
         private readonly Button? handoff;
         private CodexReview? review;
         private CancellationTokenSource? active;
-        private Task? pending;
+        private Task<TurnResult>? pending;
         private bool enabled = true;
         public string Name { get; }
         public Control View { get; }
@@ -176,7 +177,7 @@ internal sealed class CreatorReviews
             View = root;
             ask.Click += async (_, _) =>
             {
-                if (ask.IsEnabled && task.Text is { } text) await (pending = SendAsync(text));
+                if (ask.IsEnabled && task.Text is { } text) await RunAsync(text);
             };
             stop.Click += (_, _) =>
             {
@@ -192,6 +193,13 @@ internal sealed class CreatorReviews
 
         public void Enable(bool value) { enabled = value; Update(); }
 
+        public Task<TurnResult> RunAsync(string text)
+        {
+            if (!enabled || Busy) throw new InvalidOperationException("This worker is unavailable.");
+            task.Text = text;
+            return pending = SendAsync(text);
+        }
+
         private void Update()
         {
             task.IsReadOnly = Busy || !enabled;
@@ -201,7 +209,7 @@ internal sealed class CreatorReviews
             changed?.Invoke();
         }
 
-        private async Task SendAsync(string text)
+        private async Task<TurnResult> SendAsync(string text)
         {
             using var cancellation = new CancellationTokenSource();
             active = cancellation;
@@ -225,6 +233,7 @@ internal sealed class CreatorReviews
                 Finding = transcript.Text = answer;
                 task.Text = "";
                 status.Text = editableDraft ? "Worker finished" : "Review complete";
+                return new("completed", answer, null);
             }
             catch (Exception error)
             {
@@ -236,6 +245,7 @@ internal sealed class CreatorReviews
                         : error.Message;
                 }
                 catch (Exception shutdown) { status.Text = "Couldn’t close the specialist connection. " + shutdown.Message; }
+                return new(cancellation.IsCancellationRequested ? "stopped" : "failed", null, status.Text);
             }
             finally { active = null; Update(); }
         }

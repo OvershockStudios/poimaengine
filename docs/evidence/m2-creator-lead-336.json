@@ -1,0 +1,177 @@
+{
+  "engine_version": "0.0.336",
+  "scope": "One Windows x64 development laptop, an exact packaged creator, real native draft and game owners. The live agent received two narrowly specified entity edits and the harness supplied the project and verification suite.",
+  "archive": {
+    "name": "Poima-0.0.336-Windows-x64.zip",
+    "bytes": 142072950,
+    "sha256": "8657b9465a81cc90ca4cb907deed64f7edc5e0786c95168bf6fffb0af1e4d479"
+  },
+  "scripted_lead": {
+    "runner": "tests/creator_workspace.ps1 -WithLeadWorkers -WithCombinedDrafts -CodexReviews <Windows AgentRpc fixture>",
+    "runner_sha256": "5d8b8f52bc6872f59244b45937f93687586536388be8f0500a8b9151216b4352",
+    "peer_sha256": "14a0f48830cef9f1e2797a965fb1c8c106da5b13e697d0e47671b1802198496a",
+    "tool_replies": 12,
+    "rejected_tool_calls": 5,
+    "completed_workers": 2,
+    "project_unchanged": true,
+    "closed_creator_joined_lead": true,
+    "closed_creator_joined_workers": true,
+    "guarded_cases": [
+      "disabled permission",
+      "wrong thread",
+      "previous turn",
+      "blank task",
+      "duplicate ID with changed payload",
+      "stale revision before staging",
+      "same-payload retry reuses assignment"
+    ],
+    "one_worker_completed_while_the_other_waited": true,
+    "combined": {
+      "cancelled_without_output": true,
+      "observation": {
+        "focused": false,
+        "frames_presented": 1,
+        "paused": true,
+        "tick": 0
+      },
+      "playback": {
+        "event_type": "verified_play_closed",
+        "revision": 2,
+        "bundle_sha256": "6c6d455c3889e0d6cfdafd95be425a31df5d8c7b3287ee2071af4afcaf0768f4",
+        "tick": 0,
+        "frames_presented": 13,
+        "stop_reason": "window_closed"
+      },
+      "editable_project": "75bb6036bf970eda03722c410b46fd99",
+      "editable_close_exit_code": 0,
+      "passing_report": {
+        "bundle_sha256": "6c6d455c3889e0d6cfdafd95be425a31df5d8c7b3287ee2071af4afcaf0768f4",
+        "suite_sha256": "2fad5e78ab03f4503bd437b525dd54c9c8701296fd4261329b75ce9a4115e96d",
+        "groups_passed": 2,
+        "groups_total": 2,
+        "passed": true,
+        "report_sha256": "ec19287d428ccc0f038751de2b68741d655a62bfc6fe52b4087de002d88183d4"
+      },
+      "failed_report": {
+        "bundle_sha256": "318d55c1a791a6f7897b6cf6307f2a83ae049871b422c4c294852707d5265f39",
+        "suite_sha256": "2fad5e78ab03f4503bd437b525dd54c9c8701296fd4261329b75ce9a4115e96d",
+        "groups_passed": 1,
+        "groups_total": 2,
+        "passed": false,
+        "report_sha256": "44d3764da092d05ff4e12714719b74f4b0e58736233abf0ce8616f98d24268de"
+      }
+    },
+    "relocated": {
+      "source_unavailable": true,
+      "bundle_unchanged": true,
+      "bundle_files": 54,
+      "bundle_sha256": "6c6d455c3889e0d6cfdafd95be425a31df5d8c7b3287ee2071af4afcaf0768f4",
+      "suite_sha256": "2fad5e78ab03f4503bd437b525dd54c9c8701296fd4261329b75ce9a4115e96d",
+      "groups_passed": 2,
+      "check_tick": 2,
+      "report_sha256": "ec19287d428ccc0f038751de2b68741d655a62bfc6fe52b4087de002d88183d4"
+    },
+    "report_sha256": "dbc087b1647724f16695b8754f7900bb78dd2b448cdae5551ec9f7949705e5cf"
+  },
+  "manual_worker_regression": {
+    "passed": true,
+    "closed_creator_joined_build_workers": true,
+    "report_sha256": "8956360d46517a5a1fabca0424a60ddde97955cd1771169bf4111f2c09575a43"
+  },
+  "live_windows_lead": {
+    "codex_version": "codex-cli 0.171.0",
+    "model": "gpt-6.2-sol",
+    "provider_archive_sha256": "669941eff23dd8470fbf85d919a03d80c4e3d35b441e3fcd361c0f8630945be8",
+    "frontend_sha256": "d19c84ddd694b3f65c6c71793978c84a1b0475063aaa7c29bfd97dd78f592732",
+    "cli_sha256": "d724ca16639578b00ab36f3168bf917398d2d5cce6f3e02d85313e6877e79146",
+    "two_independent_native_draft_edits": true,
+    "original_project_unchanged": true,
+    "creator_exit_code": 0,
+    "combined": {
+      "cancelled_without_output": true,
+      "observation": {
+        "focused": true,
+        "frames_presented": 36,
+        "paused": false,
+        "tick": 19
+      },
+      "playback": {
+        "event_type": "verified_play_closed",
+        "revision": 2,
+        "bundle_sha256": "6c1425d01ba0d724b173b2a974e268e3659c7f2bb11317489187b895cb9e2f36",
+        "tick": 28,
+        "frames_presented": 56,
+        "stop_reason": "window_closed"
+      },
+      "editable_project": "f391f6c4080bc20c779ab5298ad5e213",
+      "editable_close_exit_code": 0,
+      "passing_report": {
+        "bundle_sha256": "6c1425d01ba0d724b173b2a974e268e3659c7f2bb11317489187b895cb9e2f36",
+        "suite_sha256": "2fad5e78ab03f4503bd437b525dd54c9c8701296fd4261329b75ce9a4115e96d",
+        "groups_passed": 2,
+        "groups_total": 2,
+        "passed": true,
+        "report_sha256": "904840218a1e961d046aaae0f7a4d0c9a66c1f96a4bc5591e7737be75db62326"
+      },
+      "failed_report": {
+        "bundle_sha256": "ec7e8639b041340435200ad5c7893c482489927bb9074055dd35631ad787d23c",
+        "suite_sha256": "2fad5e78ab03f4503bd437b525dd54c9c8701296fd4261329b75ce9a4115e96d",
+        "groups_passed": 1,
+        "groups_total": 2,
+        "passed": false,
+        "report_sha256": "456ce0eaaf9be89f943c0e963ca17191531e3573e0f3ce892e686ca4d73d0528"
+      }
+    },
+    "relocated": {
+      "source_unavailable": true,
+      "bundle_unchanged": true,
+      "bundle_files": 54,
+      "bundle_sha256": "6c1425d01ba0d724b173b2a974e268e3659c7f2bb11317489187b895cb9e2f36",
+      "suite_sha256": "2fad5e78ab03f4503bd437b525dd54c9c8701296fd4261329b75ce9a4115e96d",
+      "groups_passed": 2,
+      "check_tick": 2,
+      "report_sha256": "904840218a1e961d046aaae0f7a4d0c9a66c1f96a4bc5591e7737be75db62326"
+    },
+    "report_sha256": "cfbe4c8b578596790fd88c2c21db3524faaf270c52b34fe9505fc8232473aa1d"
+  },
+  "managed_protocol_regressions": {
+    "linux_report_sha256": "29b517d2b8624c6b7618ba6918f057eb87f7c142b512e697c01681170a951e37",
+    "windows_report_sha256": "7e2325fdbab1f5aecc7000a1eb5027b95b16b25ee07cc3a5646a9704a805c3e2",
+    "app_server_thread_start_probes": [
+      {
+        "provider": "codex-cli 0.170.0",
+        "platform": "Linux",
+        "dynamic_tool_registered": true,
+        "natural_exit": true
+      },
+      {
+        "provider": "codex-cli 0.152.1",
+        "platform": "Windows",
+        "dynamic_tool_registered": true,
+        "natural_exit": true
+      }
+    ]
+  },
+  "earlier_attempts": [
+    {
+      "passed": false,
+      "cause": "The fixture parsed the appended gameplay context as part of the revision number. It now reads the first line.",
+      "report_sha256": "e17a81f8c6521c31494104668e1fe4dfaab2e7b161868f68943bb05a15cb429d"
+    },
+    {
+      "passed": false,
+      "cause": "Codex CLI 0.152.1 assigned both drafts but its workers returned an empty tool catalog. The original project remained unchanged.",
+      "report_sha256": "716fca72baaa0c77d1d41eca632008bd0c0d60865f1c754da934a277820f6cf5"
+    },
+    {
+      "passed": false,
+      "cause": "The launcher created a project with a different title prefix. The corrected live harness locates the only project it created.",
+      "report_sha256": "059c3f62ccef32e966570096c43c7a324734c59fb6132168d6f1ebea9abe0ac5"
+    }
+  ],
+  "remaining": [
+    "Durable worker rounds and assignment receipts across workspace restart",
+    "Lead-selected verification and acceptance without user selection",
+    "Larger task sets and non-Codex delegation"
+  ]
+}
