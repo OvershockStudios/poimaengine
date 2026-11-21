@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.382
+
+- Add an optional C# dialogue package with authored branches, tick delays, revision guards and saveable progress.
+
 ## 0.0.381
 
 - Compile authored runtime scene construction and capture handling separately from the world service.

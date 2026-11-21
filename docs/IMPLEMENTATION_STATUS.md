@@ -1,8 +1,15 @@
 # Implementation status
 
-Updated 2026-11-21 for **0.0.381**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-21 for **0.0.382**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.382 adds the optional [branching dialogue package](../packages/dialogue/README.md)
+for compiled C# gameplay. It evaluates authored node and choice IDs with
+tick delays, revision guards, and scalar state suitable for native saves.
+The native fixture checks both branches, callback rollback, restored subtitles
+and save continuation on Ubuntu CoreCLR, Windows CoreCLR and Windows Native AOT.
+[Results](evidence/m2-dialogue-382.json)
 
 Version 0.0.381 compiles [runtime scene construction, capture handling, screen
 UI, sky lighting and render scheduling](BUILD.md#world-service-and-schema-compilation)

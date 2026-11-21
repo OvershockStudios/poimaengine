@@ -1,0 +1,76 @@
+{
+  "release": "0.0.382",
+  "scope": "Compiled authored dialogue, native logical controls, rollback and durable branch continuation.",
+  "package_sha256": "dfcbee5f30537f5bfb46e3432d4f1228e9edf8f872a5e19cca92916606701665",
+  "fixture_sha256": "00fddc15debdbe7625bfbe981fca46ea15704f6acf601ebd15ee2ea8449f734d",
+  "verifier_sha256": "65eb52661317f95615309879ef8bd82a1411ea384626efa16ac637b2c8e6a094",
+  "managed_sdk": "10.0.404",
+  "linux": {
+    "binary_sha256": "652c128e678bf18827b51568760b74661c067513709c307afce4c1b45baecae3",
+    "coreclr_proof_sha256": "9f6f45fe856cb649930cb916512d4acc6111e29ff44ef6f94c7e74d87e2d3975",
+    "junit_sha256": "d57d1df934e8231ee3a15a9a9fc985594931f333dd0a8ed8dde4fbd7941c090c",
+    "overlay_source_inventory_sha256": "9e83b325d1f5da5a8ea23b36eff4bc1c770b9b8dc05b9ca2fc1f4a4c2ce146c2",
+    "suites": [
+      {
+        "suite": "authoring_core_conformance",
+        "seconds": 0.13
+      },
+      {
+        "suite": "authoring_contract_identity",
+        "seconds": 0.7
+      },
+      {
+        "suite": "world_ui_contract",
+        "seconds": 0.34
+      },
+      {
+        "suite": "runtime_save_contract",
+        "seconds": 0.63
+      },
+      {
+        "suite": "runtime_ui_contract",
+        "seconds": 0.23
+      },
+      {
+        "suite": "runtime_contract",
+        "seconds": 0.54
+      },
+      {
+        "suite": "world_contract",
+        "seconds": 5.38
+      },
+      {
+        "suite": "asset_references_contract",
+        "seconds": 0.44
+      }
+    ]
+  },
+  "windows": {
+    "binary_sha256": "450bf3741f8a11892803f1ad44b09cafaaabd32e34fff7f0394e69618d2fcab6",
+    "runtime_descriptor_sha256": "9b8b1471a5a98bf040adb937a8fc6f363fcb608083affb5150012d26d85412ea",
+    "coreclr": {
+      "proof_sha256": "57bbb2ba81048b4a38ca7cf36a492a9049a2d215a2ca1f001f0d8ed24990425f",
+      "native_calls": 165,
+      "processes": 2,
+      "observations": 21,
+      "snapshots": 8
+    },
+    "native_aot": {
+      "proof_sha256": "56248e557b33c3334a9fa86fce9555937bf127fe38fdb14ad37defeb4e6ea376",
+      "native_calls": 165,
+      "processes": 2,
+      "observations": 21,
+      "snapshots": 8
+    },
+    "shader_modules_byte_equal": 55
+  },
+  "witnesses": [
+    "Both branches and single-choice follow-up",
+    "Minimum line duration, stale revision, and same-tick repeat guards",
+    "Accepted control replay returned the stored receipt without repeating the state change",
+    "Rejected control restored staged UI and refused a queued save intent",
+    "A later failed Tick restored the dialogue and UI after an earlier Tick had ended the node",
+    "Fresh process restored the complete active branch checkpoint and the same terminal state",
+    "Cancellation persisted across later ticks"
+  ]
+}

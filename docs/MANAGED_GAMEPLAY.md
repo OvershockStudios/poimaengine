@@ -117,6 +117,11 @@ package reports a hit on a different collider separately from an empty ray.
 Combine a valid target
 with the same tick's Use edge before staging gameplay effects.
 
+Use the optional [dialogue package](../packages/dialogue/README.md) to route
+authored lines and choices. Keep its node ID, revision and last transition
+tick in saved game state. Stage the matching subtitles, animation and sound
+in the same callback when a transition succeeds.
+
 This is trusted local project code. Do not retain borrowed pointers, start background gameplay work or store authoritative state in statics/external objects. Native-state rollback cannot undo file writes, subscriptions, static variables or other external side effects. Managed exceptions become structured engine errors; this is not a sandbox for arbitrary assemblies.
 
 ## Control animation from C#
