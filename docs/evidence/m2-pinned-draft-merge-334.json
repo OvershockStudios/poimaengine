@@ -1,0 +1,88 @@
+{
+  "engine_version": "0.0.334",
+  "scope": "Builds on Linux and Windows x64 on the development laptop. Native tests exercise actual draft projects and world edits. Independent export uses two retained live Codex-authored scenes. The Windows desktop test uses the scripted Codex protocol peer and real native draft owners.",
+  "draft_contract": {
+    "linux": {
+      "checks": 6,
+      "native_calls": 115,
+      "binary_sha256": "c61ca81496e5a3687377c3d5b70e3e3b1ce8e08618be3f23b121c663480c3ca5",
+      "report_sha256": "cb0decdf7907c1a1c0a28f189f00802cfd8b1f32138c70e33ffc1c4d89edc518"
+    },
+    "windows": {
+      "checks": 6,
+      "native_calls": 115,
+      "binary_sha256": "817d04a8fb3e08985699475affc654b5b1a554065ea40fbc28f0a4ac2a8cbdea",
+      "report_sha256": "684e2264b61602b4ccba1d6fc0a017af3b4fd1c6faba3be24c68bb1e843636d9"
+    }
+  },
+  "linux_regressions": {
+    "passed": [
+      "cli_contract",
+      "mcp_contract",
+      "project_contract"
+    ],
+    "report_sha256": "cdd54a91147bbca9ebc721607643e2b5fc2ae4a2f3503ddd6750a767962c7bb2"
+  },
+  "retained_codex_drafts": {
+    "passed": true,
+    "native_merge": {
+      "linux": {
+        "world_sha256": "3487f14a1dfb897fc8ecedd90853c58bd4278e5536a12fa3f13cb22386d6bc12",
+        "revision": 2,
+        "drafts": 2
+      },
+      "windows": {
+        "world_sha256": "3487f14a1dfb897fc8ecedd90853c58bd4278e5536a12fa3f13cb22386d6bc12",
+        "revision": 2,
+        "drafts": 2
+      }
+    },
+    "scene_matches_original_supervised_candidate": true,
+    "base_live_and_worker_files_unchanged": true,
+    "bundle_sha256": "6e3a3fbe8c42f93b8fb508d4b969cf138f006c2a04989467e9be6d61bb2cc8ac",
+    "suite_sha256": "6fafbcbc59991105697750a3e8e8ec516eafe6b5557c420745f4d2d3be9fc63b",
+    "groups_passed": 2,
+    "source_unavailable_during_test": true,
+    "read_only_source_inventory": true,
+    "export_verification_report_sha256": "cb22a079cbf0547f486cda26ad1692c5335ba91ce25b9e0d715ca64c408a5e26",
+    "native_transcript_sha256": "81458c0c9f1e79cd67143d6977677e6061fda9adf9a17d3acd74434ad6189736"
+  },
+  "windows_creator": {
+    "editor_sha256": "8a5f3a96fe41fcaf4c3b13f6dde7c5d7c6887eb3333aae196acc7502cbe65712",
+    "frontend_sha256": "5c7bfe8c95b21bc7ba7aa256b7fa79b5593613405722f82d5e19c165e24e42bb",
+    "native_cli_sha256": "817d04a8fb3e08985699475affc654b5b1a554065ea40fbc28f0a4ac2a8cbdea",
+    "scripted_peer_sha256": "a86cbf0b22236e86c438defd9c7649351cee24eac0fb0f6bb21b12860d8bc3b4",
+    "preview": {
+      "session": "6b939b4ba4ef4092825651b7203be91b",
+      "tick": 3,
+      "frames": 3,
+      "revision": 1,
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "validation_errors": 0
+    },
+    "independent_concurrent_work": true,
+    "handoff_left_draft_unsent": true,
+    "report_includes_pinned_world_guidance": true,
+    "project_unchanged": true,
+    "closed_creator_joined_build_workers": true,
+    "natural_close_exit_code": 0,
+    "merged_workspace_drafts": {
+      "passed": true,
+      "base_revision": 2,
+      "revision": 3,
+      "world_sha256": "22add556ad455245cd62e35a94d700ee1f5bb0456878ea7eb92ed2fe2b908a9c",
+      "merged_entities": [
+        "Draft lantern",
+        "Draft quay bench"
+      ]
+    },
+    "report_sha256": "3dfc2d2714a8d76a6666a9fcfaf65dffc8c8182a19fcf0191a3bad4e61256d40",
+    "handoff_sha256": "ae7a2f3eda869ed56c77478255bb495296754affdafd0d0e351d021e663d0b6f"
+  },
+  "earlier_build": "The first Linux compilation failed on a string-to-JSON hash comparison. Comparing the extracted string compiled and the native suite passed.",
+  "remaining": [
+    "Lead-managed assignment",
+    "Opening the verified integrated candidate from the creator",
+    "New live provider qualification"
+  ]
+}

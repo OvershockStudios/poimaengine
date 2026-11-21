@@ -131,8 +131,9 @@ project's sibling `.poima-drafts` folder. Closing the workspace retires its
 worker sessions and chat tabs.
 
 When a worker finishes, **Add report to main chat** adds its report, draft path
-and checkpoint hash to the unsent message. The lead uses these pointers to
-inspect the changes, select files and stage an integrated candidate for playtest.
+and checkpoint hash to the unsent message. The lead reviews each draft and pins
+its inspected world hash. Poima can then assemble the selected scenes and
+their cooked dependencies in one candidate for playtest.
 [Worker draft integration](https://github.com/OvershockStudios/poimaengine/blob/main/docs/PROJECT_RECOVERY.md#create-worker-drafts-and-stage-an-integration)
 
 ## Import assets

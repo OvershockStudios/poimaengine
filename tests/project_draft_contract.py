@@ -187,6 +187,9 @@ class ProjectDraftContract(unittest.TestCase):
         return {'manifest': native(root / MANIFEST),
                 'files': [{'path': path, 'sha256': sha256((root / path).read_bytes())} for path in paths]}
 
+    def pick_scene(self, root, *paths):
+        return {**self.pick(root, *paths), 'world_sha256': self.inspect(root)['world_sha256']}
+
     def integrate(self, target, request, error=None):
         request_path = self.root / f'integrate-{uuid.uuid4().hex}.json'
         payload = request if isinstance(request, str) else json.dumps(request) + '\n'
@@ -266,10 +269,88 @@ class ProjectDraftContract(unittest.TestCase):
         cue = self.world(candidate, 'entity.get', id=CUE, component='AudioEmitter', revision=revision)
         self.assertEqual(cue['value'], emitter(CUE, asset)['value'])
         self.assertEqual(self.world(candidate, 'asset.audio.inspect', asset=asset), imported)
+
+        pinned = {'base_sha256': self.base_sha256,
+                  'drafts': [self.pick_scene(gate, 'Gate.txt'), self.pick_scene(light, 'Design.txt')]}
+        automatic = self.root / 'Automatically merged candidate'
+        merged = self.integrate(automatic, pinned)
+        self.assertEqual(merged['revision'], revision)
+        self.assertEqual([row['world_sha256'] for row in merged['scene_sources']],
+                         [selection['world_sha256'] for selection in pinned['drafts']])
+        self.assertEqual(merged['world_sha256'], sha256((automatic / self.world_path).read_bytes()))
+        self.assertEqual(merged['merged_files'], result['merged_files'])
+        self.assertEqual(self.names(automatic, revision), names)
+        self.assertEqual(self.world(automatic, 'asset.audio.inspect', asset=asset), imported)
+        manual_doc, automatic_doc = (read_json(root / self.world_path) for root in (candidate, automatic))
+        self.assertEqual(automatic_doc.pop('receipts'), read_json(self.source / self.world_path)['receipts'])
+        manual_doc.pop('receipts')
+        self.assertEqual(automatic_doc, manual_doc)
         self.assertEqual(tree(gate), gate_bytes)
         self.assertEqual(tree(light), light_bytes)
         self.assertEqual(tree(self.live), self.original)
         self.assertEqual(tree(self.base), self.base_bytes)
+
+    def test_pinned_scenes_compose_disjoint_fields_and_retire_identities(self):
+        a, b = (self.root / name for name in ('Draft A', 'Draft B'))
+        for root in (a, b):
+            self.draft(root)
+        label = dict(parent=None, name='Gate status', kind='label', text='Ready', action=None,
+                     visible=True, enabled=True)
+        self.edit(a, self.revision, [rename(GATE, 'Open gate'),
+                  {'op': 'ui.element.set', 'id': CUE, 'element': label}])
+        material = {'primitive': 'box', 'visible': True, 'albedo': [.4, .2, .1]}
+        self.edit(b, self.revision, [{'op': 'component.set', 'id': GATE, 'type': 'MeshRenderer', 'value': material},
+                  {'op': 'entity.delete', 'id': LIGHT, 'recursive': False}])
+        picks = [self.pick_scene(a), self.pick_scene(b)]
+        original = {root: tree(root) for root in (a, b, self.live, self.base)}
+        digests = []
+        for i, order in enumerate((picks, list(reversed(picks)))):
+            candidate = self.root / f'Merged {i}'
+            result = self.integrate(candidate, {'base_sha256': self.base_sha256, 'drafts': order})
+            digests.append(result['world_sha256'])
+            doc = read_json(candidate / self.world_path)
+            self.assertEqual(doc['version'], 4)
+            self.assertEqual(doc['ui'][CUE], label)
+            self.assertEqual(doc['entities'][GATE]['components']['MeshRenderer'], material)
+            self.assertEqual(doc['entities'][GATE]['name'], 'Open gate')
+            self.assertNotIn(LIGHT, doc['entities'])
+            self.assertIn(LIGHT, doc['retired_ids'])
+        self.assertEqual(*digests)
+        for root, baseline in original.items():
+            self.assertEqual(tree(root), baseline)
+
+    def test_pinned_scenes_reject_conflicts_in_both_orders_and_stale_hashes(self):
+        a, b = (self.root / name for name in ('Draft A', 'Draft B'))
+        for root in (a, b):
+            self.draft(root)
+        candidate = self.root / 'Conflicted candidate'
+        def request(*selections):
+            return {'base_sha256': self.base_sha256, 'drafts': list(selections)}
+
+        self.integrate(candidate, request(self.pick_scene(a)), error='changed scenes')
+        self.edit(a, self.revision, [rename(GATE, 'Gate A')])
+        self.edit(b, self.revision, [rename(GATE, 'Gate B')])
+        a_pick, b_pick = self.pick_scene(a), self.pick_scene(b)
+        for order in ((a_pick, b_pick), (b_pick, a_pick)):
+            self.integrate(candidate, request(*order), error=f'/entities/{GATE}/name')
+        transaction = self.transaction(self.revision, [rename(GATE, 'Lead gate')])
+        self.integrate(candidate, {**request(a_pick), 'transaction': transaction}, error='explicit world transaction')
+        revision = self.revision + 1
+        self.edit(b, revision, [{'op': 'entity.delete', 'id': GATE, 'recursive': False}])
+        self.integrate(candidate, request(a_pick, b_pick), error='world hash mismatch')
+        for order in ((a_pick, self.pick_scene(b)), (self.pick_scene(b), a_pick)):
+            self.integrate(candidate, request(*order), error=f'/entities/{GATE}')
+        self.assertEqual(tree(self.live), self.original)
+        self.assertEqual(tree(self.base), self.base_bytes)
+
+    def test_pinned_scenes_validate_the_assembled_hierarchy(self):
+        a, b = (self.root / name for name in ('Draft A', 'Draft B'))
+        for root in (a, b):
+            self.draft(root)
+        self.edit(a, self.revision, [{'op': 'entity.reparent', 'id': GATE, 'parent': LIGHT, 'mode': 'keep_local'}])
+        self.edit(b, self.revision, [{'op': 'entity.delete', 'id': LIGHT, 'recursive': False}])
+        self.integrate(self.root / 'Invalid candidate', {'base_sha256': self.base_sha256,
+                      'drafts': [self.pick_scene(a), self.pick_scene(b)]}, error='parent')
 
     def test_draft_requires_verified_source_and_new_nonoverlapping_output(self):
         target = self.root / 'Draft'

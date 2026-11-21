@@ -101,6 +101,91 @@ void register_draft_path(std::map<std::string, std::pair<std::string, bool>>& tr
     }
 }
 
+constexpr std::size_t draft_world_limit = 16 * 1024 * 1024;
+
+const Json* draft_member(const Json& object, const std::string& key) {
+    const auto value = object.find(key);
+    return value == object.end() ? nullptr : &*value;
+}
+
+bool same_draft_value(const Json* left, const Json* right) {
+    if (!left || !right) return left == right;
+    // Keep the exact numeric and structural representation of a reviewed unit.
+    return *left == *right && left->dump() == right->dump();
+}
+
+void merge_draft_value(Json& combined, const std::string& key, const Json* base, const Json* input,
+    const std::string& path) {
+    if (same_draft_value(base, input)) return;
+    const auto* current = draft_member(combined, key);
+    if (same_draft_value(current, input)) return;
+    require(same_draft_value(current, base), "Conflicting draft scene edits at " + path);
+    if (input) combined[key] = *input;
+    else combined.erase(key);
+}
+
+template<class Merge>
+void for_draft_keys(const Json& base, const Json& input, Merge merge) {
+    for (const auto& [key, value] : input.items()) merge(key, draft_member(base, key), &value);
+    for (const auto& [key, value] : base.items()) if (!input.contains(key)) merge(key, &value, nullptr);
+}
+
+void merge_draft_rows(Json& combined, const Json& base, const Json& input, const std::string& path) {
+    for_draft_keys(base, input, [&](const std::string& key, const Json* before, const Json* after) {
+        merge_draft_value(combined, key, before, after, path + '/' + key);
+    });
+}
+
+void merge_draft_scene(Json& combined, const Json& base, const Json& input) {
+    require(input.at("world_id") == base.at("world_id") &&
+        integer(input.at("revision")) >= integer(base.at("revision")) &&
+        integer(input.at("version")) >= integer(base.at("version")),
+        "Draft world identity, revision or version differs from its checkpoint lineage.");
+    combined["version"] = std::max(integer(combined.at("version")), integer(input.at("version")));
+    auto& entities = combined.at("entities");
+    for_draft_keys(base.at("entities"), input.at("entities"),
+        [&](const std::string& key, const Json* before, const Json* after) {
+            const auto path = "/entities/" + key;
+            if (!before || !after || !entities.contains(key)) {
+                merge_draft_value(entities, key, before, after, path);
+                return;
+            }
+            auto& entity = entities.at(key);
+            for (const auto* member : {"name", "parent"})
+                merge_draft_value(entity, member, draft_member(*before, member), draft_member(*after, member),
+                    path + '/' + member);
+            merge_draft_rows(entity.at("components"), before->at("components"), after->at("components"),
+                path + "/components");
+        });
+
+    const auto empty = Json::object();
+    for (const auto* field : {"component_schemas", "templates", "ui", "asset_provenance"}) {
+        const auto* before = draft_member(base, field);
+        const auto* after = draft_member(input, field);
+        if (!before && !after) continue;
+        if (!combined.contains(field)) combined[field] = Json::object();
+        merge_draft_rows(combined.at(field), before ? *before : empty, after ? *after : empty,
+            std::string("/") + field);
+    }
+    if (combined.contains("asset_provenance") && combined.at("asset_provenance").empty() &&
+        (!base.contains("asset_provenance") || !base.at("asset_provenance").empty()))
+        combined.erase("asset_provenance");
+    merge_draft_value(combined, "navigation", draft_member(base, "navigation"),
+        draft_member(input, "navigation"), "/navigation");
+
+    for (const auto* field : {"retired_ids", "retired_component_schemas", "retired_template_ids", "retired_ui_ids"}) {
+        if (!input.contains(field)) continue;
+        const auto previous = base.value(field, std::set<std::string>{});
+        const auto retired = input.at(field).get<std::set<std::string>>();
+        require(std::includes(retired.begin(), retired.end(), previous.begin(), previous.end()),
+            std::string("Draft removed a retired identity from /") + field);
+        auto current = combined.value(field, std::set<std::string>{});
+        const auto count = current.size();
+        current.insert(retired.begin(), retired.end());
+        if (current.size() != count || !combined.contains(field)) combined[field] = current;
+    }
+}
+
 Json apply_draft_transaction(const fs::path& world, const Json& transaction, std::uint64_t base_revision) {
     std::vector<fs::path> sidecars;
     for (const auto* suffix : draft_world_sidecars) {
@@ -159,6 +244,10 @@ Reply integrate_project_drafts(const std::string& checkpoint, const std::string&
         const auto destination = destination_path(output);
         require(!draft_paths_overlap(destination, base.root), "Integration output cannot overlap the base checkpoint.");
         const bool transact = request.contains("transaction");
+        const bool merge_scene = std::any_of(drafts.begin(), drafts.end(), [](const auto& draft) {
+            return draft.contains("world_sha256");
+        });
+        require(!transact || !merge_scene, "Choose pinned draft scenes or an explicit world transaction.");
         if (transact) {
             const auto& transaction = request.at("transaction");
             fields(transaction, {"request_id", "base_revision", "ops"}, {"request_id", "base_revision", "ops"});
@@ -172,7 +261,7 @@ Reply integrate_project_drafts(const std::string& checkpoint, const std::string&
         std::set<std::string> project_ids{base_id}, protected_paths;
         protect_draft_files(base.source, protected_paths);
         for (const auto& input : drafts) {
-            fields(input, {"manifest", "files"}, {"manifest", "files"});
+            fields(input, {"manifest", "files", "world_sha256"}, {"manifest", "files"});
             require(input.at("files").is_array(), "Draft files must be an array.");
             auto draft = draft_input(input.at("manifest"), base, project_name);
             require(!draft_paths_overlap(destination, draft.root), "Integration output cannot overlap a draft project.");
@@ -186,27 +275,31 @@ Reply integrate_project_drafts(const std::string& checkpoint, const std::string&
         }
 
         std::map<std::string, std::pair<std::string, bool>> tree;
+        std::map<std::string, std::string> base_hashes;
         for (const auto& entry : base.files) {
             const auto path = entry.at("path").get<std::string>().substr(7);
             const auto name = folded(path.substr(0, path.find('/')));
             require(name != project_draft_marker, "Base checkpoint contains a reserved draft marker.");
             register_draft_path(tree, path);
+            if (merge_scene) base_hashes.emplace(path, entry.at("sha256").get<std::string>());
         }
+        const auto base_world = merge_scene ? parse(base.source.world_bytes) : Json();
+        auto combined_world = base_world;
+        Json scene_sources = Json::array();
+        std::vector<std::pair<fs::path, std::string>> scene_manifests;
         std::map<std::string, DraftFile> selected;
         std::uint64_t selected_bytes = 0;
         std::size_t selections = 0;
         for (std::size_t i = 0; i < projects.size(); ++i) {
-            const auto& files = drafts.at(i).at("files");
-            require(files.size() <= count_limit - selections, "Integration exceeds 4096 selected files.");
-            selections += files.size();
-            if (files.empty()) continue;
+            const auto& input = drafts.at(i);
+            const auto& files = input.at("files");
+            const bool use_scene = input.contains("world_sha256");
+            if (files.empty() && !use_scene) continue;
             const auto& draft = projects[i];
             const auto editable = editable_files(draft);
             std::set<std::string> seen;
-            for (const auto& file : files) {
-                fields(file, {"path", "sha256"}, {"path", "sha256"});
-                const auto name = relative_path(file.at("path"));
-                const auto sha256 = draft_digest(file.at("sha256"));
+            const auto select = [&](const std::string& name, const std::string& sha256) {
+                require(++selections <= count_limit, "Integration exceeds 4096 selected files.");
                 validate_draft_selection(name, protected_paths);
                 require(seen.insert(name).second, "Duplicate selected draft file: " + name);
                 register_draft_path(tree, name);
@@ -219,9 +312,43 @@ Reply integrate_project_drafts(const std::string& checkpoint, const std::string&
                 selected_bytes += bytes.size();
                 const auto [existing, inserted] = selected.try_emplace(name, DraftFile{draft.root, sha256, bytes.size()});
                 require(inserted || existing->second.sha256 == sha256, "Divergent draft files target the same path: " + name);
+            };
+            for (const auto& file : files) {
+                fields(file, {"path", "sha256"}, {"path", "sha256"});
+                select(relative_path(file.at("path")), draft_digest(file.at("sha256")));
             }
+            if (!use_scene) continue;
+            const auto expected_world = draft_digest(input.at("world_sha256"));
+            auto expected_spec = base.source.spec;
+            expected_spec["project_id"] = draft.spec.at("project_id");
+            require(draft.spec.dump() == expected_spec.dump(),
+                "Pinned draft scenes require the checkpoint's project settings and entry.");
+            adoption_safe_path(draft.world);
+            const auto observed = project(text(draft.manifest));
+            require(observed.spec.dump() == expected_spec.dump(), "Draft manifest changed during integration.");
+            require(hash(observed.world_bytes) == expected_world, "Draft world hash mismatch.");
+            merge_draft_scene(combined_world, base_world, parse(observed.world_bytes));
+            scene_sources.push_back({{"project_id", observed.spec.at("project_id")},
+                {"revision", observed.content.revision}, {"world_sha256", expected_world}});
+            scene_manifests.emplace_back(draft.manifest, hash(observed.manifest_bytes));
+            for (const auto* list : {&observed.content.assets, &observed.content.provenance_records})
+                for (const auto& asset : *list) {
+                    const auto path = world_name + ".assets/" + asset.filename;
+                    if (const auto previous = base_hashes.find(path); previous != base_hashes.end()) {
+                        require(previous->second == asset.sha256, "Draft dependency differs from the checkpoint: " + path);
+                    } else if (!seen.contains(path)) select(path, asset.sha256);
+                    else require(selected.at(path).sha256 == asset.sha256, "Selected dependency hash differs: " + path);
+                }
         }
-        require(transact || !selected.empty(), "Integration requires selected draft files or a world transaction.");
+        std::optional<std::string> merged_world;
+        if (merge_scene && combined_world.dump() != base_world.dump()) {
+            require(base_revision < 9007199254740991ULL, "World revision limit reached.");
+            combined_world["revision"] = base_revision + 1;
+            merged_world = combined_world.dump(2) + "\n";
+            require(merged_world->size() <= draft_world_limit, "Merged draft scene exceeds 16 MiB.");
+        }
+        require(transact || merged_world || !selected.empty(),
+            "Integration requires selected draft files, changed scenes or a world transaction.");
 
         auto spec = base.source.spec;
         auto candidate_id = new_id();
@@ -246,9 +373,11 @@ Reply integrate_project_drafts(const std::string& checkpoint, const std::string&
             const auto bytes = read(original, size);
             require(bytes.size() == size && hash(bytes) == entry.at("sha256").get<std::string>(),
                 "Base source changed during integration: " + name);
-            if (const auto file = selected.find(name); file != selected.end()) overlay(name, file->second);
-            else inventory.add(name, name == project_name ? spec.dump(2) + "\n" : bytes, "source",
-                fs::status(project_io_path(original)).permissions());
+            if (const auto file = selected.find(name); file != selected.end()) { overlay(name, file->second); continue; }
+            const auto mode = fs::status(project_io_path(original)).permissions();
+            if (name == project_name) inventory.add(name, spec.dump(2) + "\n", "source", mode);
+            else if (merged_world && name == world_name) inventory.add(name, *merged_world, "source", mode);
+            else inventory.add(name, bytes, "source", mode);
         }
         require(file_tree(base.source.root) == base_paths &&
             hash(read(contained(base.root, checkpoint_name), 4 * 1024 * 1024)) == base_sha256,
@@ -269,7 +398,7 @@ Reply integrate_project_drafts(const std::string& checkpoint, const std::string&
             result["transaction"] = apply_draft_transaction(world, request.at("transaction"), base_revision);
         }
         const auto candidate = project(text(stage.path / project_name));
-        require(candidate.spec == spec && candidate.content.revision == base_revision + (transact ? 1 : 0),
+        require(candidate.spec == spec && candidate.content.revision == base_revision + (transact || merged_world ? 1 : 0),
             "Integrated project identity or revision differs from the staged result.");
         if (transact)
             require(candidate.world_bytes.size() <= total_limit - (inventory.total - old_world_size),
@@ -278,6 +407,20 @@ Reply integrate_project_drafts(const std::string& checkpoint, const std::string&
         std::vector<std::string> expected_paths;
         for (const auto& entry : inventory.files) expected_paths.push_back(entry.at("path").get<std::string>());
         require(file_tree(stage.path) == expected_paths, "Integrated project file set changed during staging.");
+        if (merge_scene) {
+            for (std::size_t i = 0; i < scene_manifests.size(); ++i) {
+                const auto& [manifest, manifest_sha256] = scene_manifests[i];
+                const auto draft = draft_input(Json(text(manifest)), base, project_name);
+                adoption_safe_path(draft.world);
+                require(draft.spec.at("project_id") == scene_sources.at(i).at("project_id") &&
+                    hash(read(manifest, 65536)) == manifest_sha256 &&
+                    hash(read(draft.world, draft_world_limit)) ==
+                        scene_sources.at(i).at("world_sha256").get_ref<const std::string&>(),
+                    "Pinned draft changed before publication.");
+            }
+            result["scene_sources"] = std::move(scene_sources);
+            result["world_sha256"] = hash(candidate.world_bytes);
+        }
         result["revision"] = candidate.content.revision;
         stage.publish(project_name);
         return result;

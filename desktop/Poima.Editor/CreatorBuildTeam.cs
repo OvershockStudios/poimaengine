@@ -67,8 +67,8 @@ internal sealed class CreatorBuildTeam
             var engine = Path.Combine(AppContext.BaseDirectory, "poima.exe");
             var scope = $"You are editing Poima draft {projectId}, forked from authored revision {captured.Revision}. " +
                 "Make the assigned change using the draft Poima tools. Verify the resulting draft revision and entities. " +
-                "Tell the lead which authored operations and asset files are needed for integration. Include entity IDs, " +
-                "exact settings and asset hashes where relevant. The lead reviews and verifies the joined candidate.";
+                "Report the changed entity IDs, verification results, and any separate source files the lead should select. " +
+                "The lead reviews the pinned draft scene and verifies the assembled candidate.";
             var pane = new CreatorReviews.WorkerPane(name, "Assign part of the game to this worker.",
                 cancellation => CodexReview.OpenDraftAsync(executable, engine, manifest, model, cancellation),
                 () => scope, draftPath: manifest, useReport: report =>
@@ -77,7 +77,8 @@ internal sealed class CreatorBuildTeam
                     var message = $"{name} completed a task on an independent Poima draft.\n" +
                         $"The base is `{captured.Checkpoint}` at authored revision {captured.Revision}.\n" +
                         $"Its SHA-256 is `{captured.Hash}`. The worker manifest is `{manifest}`.\n\n" +
-                        "Inspect the proposed changes before staging them with project integrate. " +
+                        "Review the draft, then use project inspect to get its world_sha256 for project integrate. " +
+                        "Poima combines pinned scene edits and copies their cooked dependencies. Select other source files by hash. " +
                         "Build and verify the resulting candidate before offering it for play.\n\n" + report;
                     status(addToDraft(message) ? "Worker report added to the main chat draft."
                         : "Wait for the main chat to finish before adding the report.");

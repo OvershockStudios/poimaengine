@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.334
+
+- Combine reviewed worker scenes and their cooked dependencies in a separate project candidate. Report conflicts at the affected scene fields.
+
 ## 0.0.333
 
 - Show the Poima wordmark when an exported game opens. Turn it off in Project settings or through the CLI.

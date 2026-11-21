@@ -142,8 +142,10 @@ portable source paths relative to the draft entry world's directory. Use
 discovery for the active method catalog.
 
 Keep build and verification jobs with the lead's candidate workflow. After
-the worker finishes a turn, review its report and compose the selected
-operations and file hashes into a separate integration request.
+the worker finishes a turn, review the draft and take its world hash from
+`project inspect`. Use the hash in the
+[integration request](PROJECT_RECOVERY.md#create-worker-drafts-and-stage-an-integration).
+The lead can also select separate source files by hash.
 
 ## Image observations (development)
 

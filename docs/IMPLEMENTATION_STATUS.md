@@ -1,8 +1,17 @@
 # Implementation status
 
-Updated 2026-11-20 for **0.0.333**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-20 for **0.0.334**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.334 [integrates reviewed worker scenes by hash](PROJECT_RECOVERY.md#create-worker-drafts-and-stage-an-integration).
+The CLI compares each scene with its checkpoint, carries over cooked
+dependencies, and reports conflicting edits before publication. Linux and
+Windows produced the same world from two retained Codex drafts. The
+relocated Windows build passed both original gameplay checks. The Windows
+creator also handed off and merged two drafts from scripted workers.
+The lead still selects the drafts and opens the verified candidate.
+[Results](evidence/m2-pinned-draft-merge-334.json)
 
 Version 0.0.333 adds a [startup splash for exported games](PROJECTS.md#change-the-startup-splash).
 The creator's **Project settings** icon and CLI can turn it off. Two

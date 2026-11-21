@@ -130,12 +130,43 @@ settings, assets, and gameplay files. It has its own project ID and history.
 Open the returned `manifest` in an independent owner using a unique endpoint
 name. The source checkpoint can be used before any exported build has passed.
 
-The lead selects up to ten drafts and supplies the files to take from each.
-Use the same relative path in the draft and candidate, with the SHA-256 of
-the reviewed draft file. Identical file contributions can be shared.
-Conflicting contributions to one path fail. Scene edits run through one
-ordinary `world.transact` against the captured revision. Save a request like
-the following as `changes.json`.
+The lead reviews up to ten drafts and uses each draft's `world_sha256` from
+`project inspect` to select its scene. Set `files` to the other files to carry
+over, with their reviewed hashes and the same relative paths in the candidate.
+Poima selects the cooked assets and provenance needed by the pinned scenes.
+
+```json
+{
+  "base_sha256": "<source_sha256>",
+  "drafts": [
+    {"manifest": "D:/Work/AudioDraft/project.poimaproject", "world_sha256": "<audio world hash>", "files": []},
+    {"manifest": "D:/Work/LightingDraft/project.poimaproject", "world_sha256": "<lighting world hash>", "files": []}
+  ]
+}
+```
+
+Save the request as `changes.json`.
+
+```powershell
+poima project integrate .\Base\checkpoint.json --output .\Integrated --request .\changes.json
+```
+
+Poima compares each pinned scene with the common checkpoint. It can combine
+a rename and a lighting component change on the same entity. Divergent edits
+to a name, parent, or whole component are reported at that field. Additions
+and deletions use the complete entity as their unit. UI elements, templates,
+registered schemas and provenance use whole entries. Navigation uses one
+binding. The merged world keeps retired identities, and identity reuse,
+invalid hierarchies and broken asset references fail validation.
+
+Pinned scene selection requires the checkpoint's project settings and entry.
+The result lists the selected world hashes and the candidate world hash. A
+merged scene advances the checkpoint revision by one and carries forward its
+existing receipts. Worker receipts stay in the original drafts.
+
+For a manually curated scene edit, use one ordinary `world.transact` against
+the captured revision and omit the draft world hashes. In this mode the lead
+also selects each cooked asset referenced by the transaction.
 
 ```json
 {
@@ -154,18 +185,11 @@ the following as `changes.json`.
 }
 ```
 
-```powershell
-poima project integrate .\Base\checkpoint.json --output .\Integrated --request .\changes.json
-```
-
-The native command requires current source and selected file hashes, builds a
-separate candidate, and checks its entry and dependency closure before
-publication. Include the cooked asset payloads referenced by scene edits.
-Editable source may also be included for later reimport. A missing cooked
-asset makes the integration fail. Poima owns the candidate manifest and
-applies scene changes through the transaction. Integration accepts up to
-4,096 selected files, 1 GiB of selected data and a 1 MiB request. The
-candidate also fits the source checkpoint's file and byte limits.
+The native command validates hashes, project lineage, the assembled scene,
+and the complete dependency closure before publishing a separate candidate.
+Identical file contributions can be shared. Conflicts at one path fail.
+Integration accepts up to 4,096 selected files, 1 GiB of selected data, and
+a 1 MiB request. The candidate also fits the source checkpoint's limits.
 
 Use the returned candidate manifest to playtest or export the joined work. The
 candidate has its own project ID. The creator can open it separately. The
