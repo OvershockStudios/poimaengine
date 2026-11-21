@@ -212,11 +212,11 @@ internal sealed class CreatorReviews
             Update();
         }
 
-        public Task<TurnResult> RunAsync(string text)
+        public Task<TurnResult> RunAsync(string text, Func<CancellationToken, Task>? validate = null)
         {
             if (!enabled || !canStart || Busy) throw new InvalidOperationException("This worker is unavailable.");
             task.Text = text;
-            return pending = SendAsync(text);
+            return pending = SendAsync(text, validate);
         }
 
         private void Update()
@@ -228,7 +228,7 @@ internal sealed class CreatorReviews
             changed?.Invoke();
         }
 
-        private async Task<TurnResult> SendAsync(string text)
+        private async Task<TurnResult> SendAsync(string text, Func<CancellationToken, Task>? validate)
         {
             using var cancellation = new CancellationTokenSource();
             active = cancellation;
@@ -236,6 +236,7 @@ internal sealed class CreatorReviews
             status.Text = editableDraft ? "Working in draft…" : "Reviewing…";
             Update();
             var started = false;
+            var closeOnFailure = validate is null;
             TurnResult result;
             try
             {
@@ -244,10 +245,14 @@ internal sealed class CreatorReviews
                 var context = scope();
                 if (review is null)
                 {
+                    if (validate is not null) await validate(cancellation.Token);
+                    closeOnFailure = true;
                     using var startup = CancellationTokenSource.CreateLinkedTokenSource(cancellation.Token);
                     startup.CancelAfter(TimeSpan.FromSeconds(60));
                     review = await open(startup.Token);
                 }
+                if (validate is not null) await validate(cancellation.Token);
+                closeOnFailure = true;
                 transcript.Clear();
                 var answer = await review.AskAsync(context + "\n\n" + text.Trim(),
                     transcript.SetMarkdown, cancellation.Token);
@@ -259,7 +264,7 @@ internal sealed class CreatorReviews
             {
                 try
                 {
-                    await DisposeReviewer();
+                    if (closeOnFailure || cancellation.IsCancellationRequested) await DisposeReviewer();
                     status.Text = cancellation.IsCancellationRequested
                         ? editableDraft ? "Worker stopped" : "Review stopped"
                         : error.Message;

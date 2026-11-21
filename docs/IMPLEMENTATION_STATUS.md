@@ -1,8 +1,22 @@
 # Implementation status
 
-Updated 2026-11-20 for **0.0.339**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-20 for **0.0.340**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.340 lets the [lead Codex agent revise a worker's draft](AGENT_CLIENTS.md#delegate-scene-work-from-codex)
+using its current scene hash. Follow-ups keep their own receipts and leave
+the original assignment intact. The packaged Windows test rejected a stale
+request before the worker turn, then replayed the completed follow-up after
+reopening. In a live two-worker run, Codex read a failed playtest,
+asked the existing lantern worker to add the missing brace, and used the
+new scene hash to pass all three checks. The creator approved the result and
+the native player presented it. The relocated bundle passed all three checks
+with the source project unavailable. The separate prior-workflow regression
+passed in a shorter scratch path. Its earlier attempts retain a Windows
+player crash of undetermined cause and a Windows process-start failure for a
+264-character verifier executable path.
+[Results](evidence/m2-creator-repair-340.json)
 
 Version 0.0.339 lets the [lead Codex agent verify selected worker scenes](AGENT_CLIENTS.md#delegate-scene-work-from-codex).
 Poima builds the pinned combination separately and runs the saved playtest

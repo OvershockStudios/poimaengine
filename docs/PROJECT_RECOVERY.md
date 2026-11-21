@@ -146,6 +146,12 @@ checkpoint and report, then makes it playable. **Keep for later** leaves the
 proposal pending, including after reopening. A failed check preserves both
 the earlier passing proposal and any previously approved build.
 
+The lead can use a failed group's feedback to [revise an existing
+draft](AGENT_CLIENTS.md#delegate-scene-work-from-codex). That task runs in the
+same worker tab and returns a new report for the revised scene. A follow-up
+that was running when the workspace closed is marked interrupted on reopen.
+Inspect its current draft before sending a new request.
+
 Use **Combined game checks** to inspect the outcome. **Play combined game**
 runs the last approved or manually verified combination from this workspace.
 **Open combined project as copy** opens an editable
@@ -167,6 +173,9 @@ for `win-x64` and run the creator test with that executable.
 .\tests\creator_workspace.ps1 -Editor <Poima.Editor.exe> -Output <scratch> `
   -CodexReviews <Poima.AgentRpc.Contract.exe> -WithLeadWorkers -WithCombinedDrafts -WithLeadVerification
 ```
+
+Add `-WithLeadRepair` to test a failed playtest, targeted worker follow-up,
+reverification and receipt replay after reopening.
 
 Choose **Start new worker round** when the current workers are idle to use a
 new checkpoint for later assignments. The previous draft and build files stay

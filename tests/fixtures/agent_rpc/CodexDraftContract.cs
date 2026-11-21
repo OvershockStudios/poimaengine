@@ -281,6 +281,7 @@ internal static class CodexDraftContract
             (int Number, string Name) assignment;
             if (task.Contains(LanternTask, StringComparison.Ordinal)) assignment = (0xda01, "Draft lantern");
             else if (task.Contains(BenchTask, StringComparison.Ordinal)) assignment = (0xda02, "Draft quay bench");
+            else if (task.Contains(CodexLeadWorkerContract.RepairTask, StringComparison.Ordinal)) assignment = (0xda03, "Draft lantern brace");
             else if (task.Contains(ReportTask, StringComparison.Ordinal)) return CodexLeadWorkerContract.MarkdownReport;
             else return "Draft is ready to review.";
             if (native is null) return assignment.Name + " created at revision 3.";

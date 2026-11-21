@@ -18,7 +18,7 @@ internal sealed class CreatorBuildTeam
     private readonly Func<(string Executable, string? Model)?> client;
     private readonly CreatorWorkerRoundStore store;
     private readonly List<WorkerTab> tabs = [];
-    private readonly List<Task> assignedFinishes = [];
+    private readonly List<Task> managedTurns = [];
     private Round? round;
     private Task? provision, verificationWork, retirement;
     private CancellationTokenSource? verifying;
@@ -31,7 +31,7 @@ internal sealed class CreatorBuildTeam
     public bool CanAdd => loaded && !restoreFailed && !closing && !adding && !IsVerifying && tabs.Count < CodexWorkerTool.MaximumWorkers;
     public bool CanReview => !closing && !adding && !IsVerifying && tabs.Any(tab => !tab.Pane.Busy && tab.Pane.Finding is not null);
     public bool CanStartRound => loaded && round is not null && !adding && !closing && !IsVerifying &&
-        tabs.All(tab => !tab.Pane.Busy) && assignedFinishes.All(task => task.IsCompleted);
+        tabs.All(tab => !tab.Pane.Busy) && managedTurns.All(task => task.IsCompleted);
     public long BaseRevision => round?.Base?.Revision ?? throw new InvalidOperationException("There is no worker checkpoint.");
 
     private sealed record WorkerTab(CreatorReviews.WorkerPane Pane, TabItem Tab, bool Available);
@@ -91,7 +91,8 @@ internal sealed class CreatorBuildTeam
                     {
                         Interrupted = true,
                         Error = "The workspace closed before verification completed. Submit a new request to check these drafts again."
-                    } : check).ToArray()
+                    } : check).ToArray(),
+                    FollowUps = round.FollowUps?.Select(followup => followup with { Turn = Interrupt(followup.Turn)! }).ToArray()
                 });
             }
             foreach (var worker in round.Workers)
@@ -143,7 +144,7 @@ internal sealed class CreatorBuildTeam
         }
         var retiring = tabs.Select(tab => tab.Pane.ResetAsync()).ToArray();
         tabs.Clear();
-        assignedFinishes.Clear();
+        managedTurns.Clear();
         await Task.WhenAll(retiring);
     }
 
@@ -284,7 +285,8 @@ internal sealed class CreatorBuildTeam
     private void RememberStart(string id, string task)
     {
         var worker = FindWorker(id);
-        UpdateWorker(worker with { Latest = new(task, "running") });
+        var started = new Turn(task, "running");
+        if (worker.Latest != started) UpdateWorker(worker with { Latest = started });
     }
 
     private async Task<CreatorReviews.WorkerPane.TurnResult> RememberFinishAsync(string id, CreatorReviews.WorkerPane.TurnResult result)
@@ -297,25 +299,37 @@ internal sealed class CreatorBuildTeam
             catch (Exception failure) { result = new("failed", null, "Couldn’t inspect the finished draft. " + failure.Message); }
         }
         var turn = new Turn(worker.Latest!.Task, result.State, result.Report, ShortError(result.Error), world);
-        UpdateWorker(worker with { Latest = turn, Assigned = worker.Assigned?.State == "running" ? turn : worker.Assigned });
+        var updated = worker with { Latest = turn, Assigned = worker.Assigned?.State == "running" ? turn : worker.Assigned };
+        Save(Current with
+        {
+            Workers = ReplacedWorker(updated),
+            FollowUps = Current.FollowUps?.Select(followup => followup.DraftId == id && followup.Turn.State == "running"
+                ? followup with { Turn = turn } : followup).ToArray()
+        });
         return result;
     }
 
     private void UpdateWorker(Worker replacement) =>
-        Save(Current with { Workers = Current.Workers.Select(worker => worker.ProjectId == replacement.ProjectId ? replacement : worker).ToArray() });
+        Save(Current with { Workers = ReplacedWorker(replacement) });
+
+    private Worker[] ReplacedWorker(Worker replacement) =>
+        Current.Workers.Select(worker => worker.ProjectId == replacement.ProjectId ? replacement : worker).ToArray();
 
     private static string? ShortError(string? value) => value is { Length: > 2000 } ? value[..2000] : value;
     private Batch? FindBatch(string id) => round?.Batches.FirstOrDefault(batch => batch.Id == id);
     private Verification? FindVerification(string id) => round?.Verifications?.FirstOrDefault(check => check.Id == id);
+    private FollowUp? FindFollowUp(string id) => round?.FollowUps?.FirstOrDefault(followup => followup.Id == id);
     private static string PayloadHash(CodexWorkerRequest request) =>
         Hash(JsonSerializer.SerializeToUtf8Bytes(new { revision = request.ExpectedRevision, request.Tasks }));
 
-    public async Task<JsonObject> CoordinateAsync(CodexWorkerRequest request, bool canStartVerification,
+    public async Task<JsonObject> CoordinateAsync(CodexWorkerRequest request, bool canStart,
         CancellationToken cancellation)
     {
         if (!loaded || restoreFailed) throw new InvalidOperationException("The worker round could not be loaded.");
+        if (request.FollowUp is not null || FindFollowUp(request.RequestId) is not null)
+            return await CoordinateFollowUpAsync(request, canStart, cancellation);
         if (request.Drafts is not null || FindVerification(request.RequestId) is not null)
-            return await CoordinateVerificationAsync(request, canStartVerification, cancellation);
+            return await CoordinateVerificationAsync(request, canStart, cancellation);
         if (FindBatch(request.RequestId) is { } existing)
         {
             if (request.ExpectedRevision is not null && existing.PayloadHash != PayloadHash(request))
@@ -328,7 +342,7 @@ internal sealed class CreatorBuildTeam
             return Describe(FindBatch(request.RequestId) ??
                 throw new InvalidOperationException("The worker round changed."), replayed: request.ExpectedRevision is not null);
         }
-        if (request.ExpectedRevision is not long revision) throw new InvalidOperationException("Unknown worker request. Inspect a request_id used with assign or verify.");
+        if (request.ExpectedRevision is not long revision) throw new InvalidOperationException("Unknown worker request. Inspect a request_id used with assign, revise or verify.");
         if (!CanAdd || (round?.Workers.Length ?? 0) + request.Tasks.Length > CodexWorkerTool.MaximumWorkers)
             throw new InvalidOperationException("Wait for draft preparation or assign within the workspace limit of ten workers.");
         if (round?.Batches.Length >= MaximumAssignments) throw new InvalidOperationException("Start a new worker round to assign more work.");
@@ -360,7 +374,7 @@ internal sealed class CreatorBuildTeam
             foreach (var worker in staged)
             {
                 AddTab(worker, available: true);
-                assignedFinishes.Add(RunAssignedAsync(tabs[^1].Pane, worker));
+                managedTurns.Add(RunAssignedAsync(tabs[^1].Pane, worker));
             }
             status(null);
         }
@@ -411,19 +425,9 @@ internal sealed class CreatorBuildTeam
         {
             var worker = FindWorker(id);
             var turn = worker.Assigned!;
-            var number = Array.FindIndex(Current.Workers, item => item.ProjectId == id) + 1;
-            var row = new JsonObject { ["worker"] = "Worker " + number, ["draft_id"] = id,
-                ["manifest"] = Manifest(worker), ["state"] = turn.State };
             allCompleted &= turn.State == "completed";
             interrupted |= turn.State == "interrupted";
-            if (turn.Report is { } report)
-            {
-                row["report"] = report.Length <= 4000 ? report : report[..4000];
-                if (report.Length > 4000) row["report_truncated"] = true;
-                row["world_sha256"] = turn.WorldHash;
-            }
-            if (turn.Error is { } error) row["error"] = error;
-            rows.Add(row);
+            rows.Add(DescribeTurn(worker, turn));
         }
         var state = Preparing(batch) ? "preparing" : Pending(batch) ? "running" : interrupted ? "interrupted" :
             batch.Error is null && allCompleted ? "completed" : "failed";
@@ -431,6 +435,90 @@ internal sealed class CreatorBuildTeam
             ["state"] = state, ["replayed"] = replayed, ["workers"] = rows };
         if (batch.Error is not null) result["error"] = batch.Error;
         return result;
+    }
+
+    private JsonObject DescribeTurn(Worker worker, Turn turn)
+    {
+        var number = Array.FindIndex(Current.Workers, item => item.ProjectId == worker.ProjectId) + 1;
+        var row = new JsonObject { ["worker"] = "Worker " + number, ["draft_id"] = worker.ProjectId,
+            ["manifest"] = Manifest(worker), ["state"] = turn.State };
+        if (turn.Report is { } report)
+        {
+            row["report"] = Limit(report, 4000);
+            if (report.Length > 4000) row["report_truncated"] = true;
+            row["world_sha256"] = turn.WorldHash;
+        }
+        if (turn.Error is { } error) row["error"] = error;
+        return row;
+    }
+
+    private async Task<JsonObject> CoordinateFollowUpAsync(CodexWorkerRequest request, bool canStart,
+        CancellationToken cancellation)
+    {
+        if (request.ExpectedRevision is not null || request.Drafts is not null ||
+            FindBatch(request.RequestId) is not null || FindVerification(request.RequestId) is not null)
+            throw new InvalidOperationException("This request_id belongs to a different worker operation.");
+        var followup = request.FollowUp;
+        if (FindFollowUp(request.RequestId) is { } existing)
+        {
+            if (followup is not null && (followup.Draft != new CodexWorkerScene(existing.DraftId, existing.ExpectedWorldHash) ||
+                    followup.Task != existing.Turn.Task))
+                throw new InvalidOperationException("This request_id already identifies a different follow-up.");
+            if (request.WaitMilliseconds > 0 && existing.Turn.State == "running")
+            {
+                try { await changed.Task.WaitAsync(TimeSpan.FromMilliseconds(request.WaitMilliseconds), cancellation); }
+                catch (TimeoutException) { }
+            }
+            return Describe(FindFollowUp(request.RequestId) ??
+                throw new InvalidOperationException("The worker round changed."), replayed: followup is not null);
+        }
+        if (!canStart || closing || adding || IsVerifying)
+            throw new InvalidOperationException("Stop the game or wait for current project work before revising a draft.");
+        var index = round is null ? -1 : Array.FindIndex(Current.Workers, worker => worker.ProjectId == followup!.Draft.DraftId);
+        if (index < 0) throw new InvalidOperationException("The selected draft is outside the current worker round.");
+        var tab = tabs[index];
+        var worker = Current.Workers[index];
+        if (!tab.Available || tab.Pane.Busy || worker.Latest?.State == "running")
+            throw new InvalidOperationException("Wait for the worker to finish its current task.");
+        var receipts = Current.FollowUps ?? [];
+        if (receipts.Length >= MaximumAssignments)
+            throw new InvalidOperationException("Start a new worker round to send more follow-ups.");
+        cancellation.ThrowIfCancellationRequested();
+        var receipt = new FollowUp(request.RequestId, worker.ProjectId, followup!.Draft.WorldSha256, new(followup.Task, "running"));
+        Save(Current with { FollowUps = [.. receipts, receipt], Workers = ReplacedWorker(worker with { Latest = receipt.Turn }) });
+        managedTurns.RemoveAll(turn => turn.IsCompleted);
+        managedTurns.Add(RunFollowUpAsync(tab.Pane, worker, receipt));
+        return Describe(FindFollowUp(receipt.Id)!, replayed: false);
+    }
+
+    private async Task RunFollowUpAsync(CreatorReviews.WorkerPane pane, Worker worker, FollowUp receipt)
+    {
+        CreatorReviews.WorkerPane.TurnResult result;
+        try
+        {
+            result = await pane.RunAsync(receipt.Turn.Task, async cancellation =>
+            {
+                var state = await InspectWorkerAsync(worker, cancellation);
+                if (state.GetProperty("world_sha256").GetString() != receipt.ExpectedWorldHash)
+                    throw new InvalidOperationException("The draft changed. Inspect its current world_sha256 before sending a follow-up.");
+            });
+        }
+        catch (Exception failure) { result = new("failed", null, failure.Message); }
+        try
+        {
+            if (FindFollowUp(receipt.Id)?.Turn.State == "running")
+                await RememberFinishAsync(worker.ProjectId, result);
+        }
+        catch (Exception failure) { if (!closing) status(failure.Message); }
+    }
+
+    private JsonObject Describe(FollowUp receipt, bool replayed)
+    {
+        var reply = DescribeTurn(FindWorker(receipt.DraftId), receipt.Turn);
+        reply["request_id"] = receipt.Id;
+        reply["expected_world_sha256"] = receipt.ExpectedWorldHash;
+        reply["replayed"] = replayed;
+        return reply;
     }
 
     private async Task<JsonObject> CoordinateVerificationAsync(CodexWorkerRequest request, bool canStart,
@@ -712,6 +800,6 @@ internal sealed class CreatorBuildTeam
         if (provision is { } pending) await pending;
         if (verificationWork is { } checking) await checking;
         await Task.WhenAll(tabs.Select(tab => tab.Pane.ResetAsync()));
-        await Task.WhenAll(assignedFinishes);
+        await Task.WhenAll(managedTurns);
     }
 }

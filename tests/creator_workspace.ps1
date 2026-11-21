@@ -16,6 +16,7 @@
 # -CheckMarkdown inspects formatted lead and worker replies and their original text.
 # -WithCombinedDrafts checks selected worker scenes and plays the retained combined export.
 # -WithLeadVerification checks tool-driven proposals and approves one after reopening.
+# -WithLeadRepair uses failed playtest feedback to revise a draft, verify it and reopen its receipt.
 # -WithWorkerReopen closes a working round and checks restored reports, receipts and combined playback.
 # -WithWorkerCrash terminates the owned test creator during a worker turn and checks recovery after a draft edit.
 # -CodexToolApproval exercises decline and approve once with the installed Codex.
@@ -47,6 +48,7 @@ param(
     [switch]$CheckMarkdown,
     [switch]$WithCombinedDrafts,
     [switch]$WithLeadVerification,
+    [switch]$WithLeadRepair,
     [switch]$WithWorkerReopen,
     [switch]$WithWorkerCrash,
     [switch]$CodexToolApproval,
@@ -83,6 +85,7 @@ if ($WithCombinedDrafts -and ((!$WithBuildWorkers -and !$WithLeadWorkers) -or $W
 if ($WithLeadVerification -and (!$WithLeadWorkers -or !$WithCombinedDrafts -or $WithWorkerReopen -or $WithWorkerCrash)) {
     throw 'Run lead verification with lead assignments and combined drafts, as a separate recovery scenario.'
 }
+if ($WithLeadRepair -and !$WithLeadVerification) { throw 'Run lead repair with -WithLeadVerification.' }
 if ($CodexReviews -and ($WithCodex -or $CodexQuestions -or $CodexBrief -or $CodexToolApproval -or
     $VerifiedPlayChat -or $VerifiedPlayWithCodex -or $CodexAssetRead)) {
     throw 'Run the specialist review fixture separately from the other Codex scenarios.'
@@ -175,6 +178,7 @@ $report = [ordered]@{
     markdown_requested = [bool]$CheckMarkdown
     combined_drafts_requested = [bool]$WithCombinedDrafts
     lead_verification_requested = [bool]$WithLeadVerification
+    lead_repair_requested = [bool]$WithLeadRepair
     worker_reopen_requested = [bool]$WithWorkerReopen
     worker_crash_requested = [bool]$WithWorkerCrash
     export_requested = [bool]$WithExport
@@ -890,7 +894,8 @@ function Exercise-LeadWorkers($Project, $Peer) {
     $checks = $report.checks.lead_workers = [ordered]@{ base_revision = $Project.revision }
     $ids = @('{0:x32}' -f 0xda01; '{0:x32}' -f 0xda02)
     $names = @('Draft lantern', 'Draft quay bench')
-    if ($WithCombinedDrafts) { Write-WorkerSuite $ids $names }
+    if ($WithLeadRepair) { Write-WorkerSuite ($ids + ('{0:x32}' -f 0xda03)) ($names + 'Draft lantern brace') }
+    elseif ($WithCombinedDrafts) { Write-WorkerSuite $ids $names }
     $before = @(Get-AuthoredFileHashes) -join "`n"
     Select-AgentProvider 'Codex'
     Set-AgentExecutable 'Codex executable' $Peer
@@ -931,7 +936,7 @@ function Exercise-LeadWorkers($Project, $Peer) {
             $completed = @($calls | Where-Object { $_.reply.result.success } |
                 ForEach-Object { $_.reply.result.contentItems[0].text | ConvertFrom-Json } |
                 Where-Object { $_.state -ceq 'completed' })[-1]
-            Exercise-LeadVerification $group $completed.request_id
+            Exercise-LeadVerification $group $completed.request_id $Project.revision
         }
         else { Exercise-CombinedDrafts $group $ids $Project }
     }
@@ -973,16 +978,23 @@ function Exercise-LeadWorkers($Project, $Peer) {
     }
 }
 
-function Exercise-LeadVerification($Group, $Assignment) {
-    $reply = Send-CodexPrompt "Verify drafts for assignment $Assignment."
-    if (!$reply.Contains('Lead checked both combinations.')) { throw 'The lead did not verify the exact requested combinations.' }
+function Exercise-LeadVerification($Group, $Assignment, $Revision) {
+    if ($WithLeadRepair) {
+        $reply = Send-CodexPrompt "Repair failed checks for assignment $Assignment."
+        if (!$reply.Contains('Lead fixed the failed check and verified all three groups.')) { throw 'The lead did not fix the failed playtest.' }
+    }
+    else {
+        $reply = Send-CodexPrompt "Verify drafts for assignment $Assignment."
+        if (!$reply.Contains('Lead checked both combinations.')) { throw 'The lead did not verify the exact requested combinations.' }
+    }
     $ledgerPath = Join-Path $Group 'round.json'
     $ledger = Get-Content -LiteralPath $ledgerPath -Raw | ConvertFrom-Json
     $builds = @(Get-ChildItem -LiteralPath $Group -Directory -Filter 'combined-*')
     $candidate = @($ledger.verifications | Where-Object { $_.id -ceq $ledger.proposed })[0]
     $rejected = @($ledger.verifications | Where-Object { $_.result.passed -eq $false })[0]
+    $expectedLatest = if ($WithLeadRepair) { $candidate.result.build.bundle } else { $rejected.result.build.bundle }
     if ($builds.Count -ne 2 -or $ledger.verifications.Count -ne 2 -or !$candidate.result.passed -or
-        $ledger.latest.bundle -cne $rejected.result.build.bundle -or $ledger.passing -or (Find-Control 'Play combined game')) {
+        $ledger.latest.bundle -cne $expectedLatest -or $ledger.passing -or (Find-Control 'Play combined game')) {
         throw 'Verification duplicated a build or made the proposal playable before approval.'
     }
     $passingReport = @(Get-ChildItem -File -Path (Join-Path $Group "$($candidate.result.build.folder)\.poima-history\*\*\checks.json"))[0]
@@ -994,7 +1006,8 @@ function Exercise-LeadVerification($Group, $Assignment) {
     try {
         $window = Wait-For 'the proposed build report' { Find-OwnedDialog $creator 'Playtest results' }
         $null = Wait-For 'both proposed check groups' {
-            (Find-Control 'Draft lantern (passed)') -and (Find-Control 'Draft quay bench (passed)')
+            (Find-Control 'Draft lantern (passed)') -and (Find-Control 'Draft quay bench (passed)') -and
+                (!$WithLeadRepair -or (Find-Control 'Draft lantern brace (passed)'))
         }
         Invoke-Control 'Keep for later'
     }
@@ -1008,13 +1021,38 @@ function Exercise-LeadVerification($Group, $Assignment) {
         exact_combinations_built = $builds.Count
         reviewed_and_left_pending = $true
     }
+    if ($WithLeadRepair) {
+        $turns = @(Read-BuildWorkerTrace | Where-Object { $_.kind -ceq 'turn/start' })
+        $launches = @(Read-BuildWorkerTrace | Where-Object { $_.kind -ceq 'launch' })
+        $edits = @(Read-BuildWorkerTrace | Where-Object { $_.kind -ceq 'native/tool' -and $_.request.arguments.method -ceq 'world.transact' })
+        $repair = @($ledger.follow_ups | Where-Object { $_.turn.state -ceq 'completed' })[0]
+        $stale = @($ledger.follow_ups | Where-Object { $_.turn.state -ceq 'failed' })[0]
+        if ($ledger.follow_ups.Count -ne 2 -or !$repair -or !$stale -or $turns.Count -ne 3 -or
+            $launches.Count -ne 2 -or $edits.Count -ne 3) {
+            throw 'The exact repair caused additional worker turns, edits or owners.'
+        }
+        Wait-ForCreatorChatTab 'Worker 1' -Select
+        $entity = '{0:x32}' -f 0xda03
+        Wait-ForBuildWorkerReport "Draft lantern brace created at revision $($Revision + 2). Entity $entity."
+        Wait-ForCreatorChatTab 'Main chat' -Select
+        $report.checks.lead_repair = [ordered]@{
+            request_id = $repair.id
+            stale_request_id = $stale.id
+            draft_id = $repair.draft_id
+            before_sha256 = $repair.expected_world_hash
+            after_sha256 = $repair.turn.world_hash
+            worker_owners = $launches.Count
+            worker_turns = $turns.Count
+            committed_world_edits = $edits.Count
+        }
+    }
 }
 
 function Approve-ReopenedProposal {
     $checks = $report.checks.lead_verification
     $creator = $window
     $null = Wait-For 'the restored proposal and failed check' {
-        (Find-Control 'Review proposed build' -Enabled) -and (Find-Control 'Combined game checks' -Enabled)
+        (Find-Control 'Review proposed build' -Enabled) -and ($WithLeadRepair -or (Find-Control 'Combined game checks' -Enabled))
     }
     if (Find-Control 'Play combined game') { throw 'Reopening activated the pending proposal.' }
     $reportBefore = [IO.File]::ReadAllBytes($checks.passing_report)
@@ -1045,8 +1083,8 @@ function Approve-ReopenedProposal {
     $null = Wait-For 'the approved playable build' { Find-Control 'Play combined game' -Enabled }
     $ledger = Get-Content -LiteralPath $checks.ledger -Raw | ConvertFrom-Json
     if ($ledger.proposed -or $ledger.passing.bundle -cne $checks.passing_bundle -or
-        $ledger.latest.bundle -ceq $ledger.passing.bundle) {
-        throw 'Approval did not retain the exact proposal alongside the latest failed check.'
+        ($ledger.latest.bundle -ceq $ledger.passing.bundle) -ne [bool]$WithLeadRepair) {
+        throw 'Approval did not retain the exact proposal alongside the expected latest check.'
     }
     $candidate = Get-Content -LiteralPath $checks.passing_report -Raw | ConvertFrom-Json
     $game = Join-Path (Split-Path -Parent $checks.passing_report) 'game'
@@ -1054,6 +1092,22 @@ function Approve-ReopenedProposal {
     $checks.approved_after_reopen = $true
     $checks.observation = $played.observation
     $checks.playback = $played.playback
+}
+
+function Replay-ReopenedRepair($Peer) {
+    $checks = $report.checks.lead_repair
+    $launches = @(Read-BuildWorkerTrace | Where-Object { $_.kind -ceq 'launch' }).Count
+    Select-AgentProvider 'Codex'
+    Set-AgentExecutable 'Codex executable' $Peer
+    Grant-LeadWorkerPermission
+    Invoke-Control 'New chat'
+    $null = Wait-For 'the reopened lead connected' { Find-Control 'Agent Send' -Enabled } 65
+    $reply = Send-CodexPrompt "Replay worker follow-up $($checks.request_id)."
+    if (!$reply.Contains('Reopened worker follow-up receipt verified.') -or
+        @(Read-BuildWorkerTrace | Where-Object { $_.kind -ceq 'launch' }).Count -ne $launches) {
+        throw 'Replaying the repaired receipt did not preserve the exact turn without starting workers.'
+    }
+    $checks.replayed_after_reopen_without_new_worker = $true
 }
 
 function Exercise-ReopenedWorkers($Project, $Peer, $LeadChecks) {
@@ -2561,6 +2615,7 @@ try {
     if ($WithWorkerReopen) { Exercise-ReopenedWorkers $reopened $CodexReviews $report.checks.lead_workers }
     if ($WithWorkerCrash) { Exercise-CrashRecovery $report.checks.lead_workers }
     if ($WithLeadVerification) { Approve-ReopenedProposal }
+    if ($WithLeadRepair) { Replay-ReopenedRepair $CodexReviews }
     if ($ObserveVerifiedPlayback) {
         if ($null -ne (Verified-PlayRpc 'desktop.verified.inspect' @{}).playback) {
             throw 'The reopened creator reported playback from a previous owner.'

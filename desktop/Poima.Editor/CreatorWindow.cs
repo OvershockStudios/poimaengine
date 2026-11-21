@@ -949,7 +949,7 @@ internal sealed class CreatorWindow : Window
     {
         if (closing || closeRequested || chat.ReviewClient is null)
             throw new InvalidOperationException("Connect the main Codex chat in an open creator workspace.");
-        if (request.ExpectedRevision is not null || request.Drafts is not null)
+        if (request.ExpectedRevision is not null || request.Drafts is not null || request.FollowUp is not null)
         {
             host.RefreshState();
             if (request.ExpectedRevision is not null && (exporting || starting || model.RuntimeId is not null))

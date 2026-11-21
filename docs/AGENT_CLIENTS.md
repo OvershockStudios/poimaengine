@@ -93,8 +93,23 @@ receipt. Reopening restores the reports and draft files. Worker processes
 start only when a new task is sent.
 
 A completed worker turn supplies a report and pins its `draft_id` and
-`world_sha256`. With a playtest suite saved before starting the round, the
-lead can send `verify` with a fresh request ID and one to ten selected drafts.
+`world_sha256`. The lead can send a focused change to an existing worker
+with `revise`. Use the current scene hash from the worker report, or inspect
+the worker's manifest with `poima project inspect` after other edits.
+
+```json
+{"action":"revise","request_id":"b6d227aded0b444b808c58a5f2952814","draft_id":"8ee6b99412f04b7eb54227a25622f1f2","world_sha256":"a2e67aa65f4e7a699f28d1098bdca2f278ecfc320f505c56b68c7a8ea54e9204","task":"Add the missing lantern brace, then check its position."}
+```
+
+Inspect the follow-up ID for its state and new scene hash. The next
+verification uses the revised draft's new hash and the unchanged hashes of
+the other selected drafts. The first assignment receipt keeps its original
+reports. An exact `revise` retry returns the saved result without sending
+another task. A round keeps up to 64 follow-up receipts. A stale hash
+returns a failed receipt before the worker gets the prompt.
+
+With a playtest suite saved before starting the round, the lead can send
+`verify` with a fresh request ID and one to ten selected drafts.
 
 ```json
 {"action":"verify","request_id":"a0c9340c357a4df8a57b8fbf907c1fed","drafts":[{"draft_id":"8ee6b99412f04b7eb54227a25622f1f2","world_sha256":"a2e67aa65f4e7a699f28d1098bdca2f278ecfc320f505c56b68c7a8ea54e9204"}]}

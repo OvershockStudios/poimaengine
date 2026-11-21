@@ -1,0 +1,172 @@
+{
+  "engine_version": "0.0.340",
+  "scope": "Packaged Windows creator, scoped native draft editors, isolated build verification, creator approval and Vulkan playback.",
+  "archive": {
+    "name": "Poima-0.0.340-Windows-x64.zip",
+    "bytes": 142308499,
+    "sha256": "53c55b5e5bfa2072fe336b7ded15f4f82d43c01d129b3a5c1142afde11e17f42"
+  },
+  "build": {
+    "editor_sha256": "e51b8e0c30d17e08411bb792f264d5dcb6d48a4b9d80e21030e726c0ec475403",
+    "frontend_sha256": "e32f59f92c8c2e7bcf26b1fdbc6e1a13aaba015084c2cbdffaa6c402f801cc99",
+    "cli_sha256": "af2e7c80f371bd48abec058170d989ae3e7c9f8798490a92a99416540ba6b7db",
+    "codex_fixture_sha256": "6bb97a2c9b8e6d2493114254bb328b5185f0e1c1c402003d7fa2a4c4668ccb01"
+  },
+  "runner": {
+    "path": "tests/creator_workspace.ps1",
+    "sha256": "91d25c578db5047f55e81676e1f1117a7d444639c94193f7c56b7368c451eebe"
+  },
+  "scripted_run": {
+    "arguments": [
+      "WithLeadWorkers",
+      "WithCombinedDrafts",
+      "WithLeadVerification",
+      "WithLeadRepair"
+    ],
+    "report_sha256": "9c891c47d0a036ebd49a48442eb14d70edf11bdbed19974fe4f5e015256ba730",
+    "native_combinations_built": 2,
+    "follow_up": {
+      "request_id": "1aa3046aa9444576879675a8ec599277",
+      "stale_request_id": "b0f76c690b0c4ab5b98fe83358713bda",
+      "draft_id": "9091d8150b70ce840b694b7860cb410c",
+      "before_sha256": "e517902dbfa94015cb32f12608ccd5df7d44cce6cdc6f49feadf7107019ede97",
+      "after_sha256": "1073458f5a383b9759e8a5e3fb729cf08fdbe9763ddcfc93afdb4a786a22da07",
+      "worker_owners": 2,
+      "worker_turns": 3,
+      "committed_world_edits": 3,
+      "replayed_after_reopen_without_new_worker": true
+    },
+    "first_playtest": {
+      "passed": false,
+      "groups_passed": 2,
+      "groups_total": 3,
+      "bundle_sha256": "78c280c2f08442ce1beed561caa2d3a03a8a2172a3caf70e6cb2a326619621c3",
+      "report_sha256": "cb964184d809b820ef70e6305e7fa87b52b38dc65840acc0a80f6f67bbdd50c8",
+      "failed_group": {
+        "group": "Draft lantern brace",
+        "check": null,
+        "tick": null,
+        "issue": "runtime.entity: Runtime entity does not exist."
+      }
+    },
+    "repaired_playtest": {
+      "passed": true,
+      "groups_passed": 3,
+      "groups_total": 3,
+      "bundle_sha256": "cb6a2eeaa6f596f3553b9234bb17cd718d99771c31fe9121bfd4e9be43fdb6c5",
+      "report_sha256": "a79ffc605efc7c47079f9aceee95a4e67fbc34178c5b91a33d870437bdf14e16"
+    },
+    "approved_after_reopen": true,
+    "changed_report_rejected": true,
+    "playback": {
+      "event_type": "verified_play_closed",
+      "revision": 2,
+      "bundle_sha256": "cb6a2eeaa6f596f3553b9234bb17cd718d99771c31fe9121bfd4e9be43fdb6c5",
+      "tick": 21,
+      "frames_presented": 42,
+      "stop_reason": "window_closed"
+    },
+    "original_project_unchanged": true,
+    "ordinary_worker_exits": true,
+    "relocated": {
+      "source_unavailable": true,
+      "bundle_unchanged": true,
+      "bundle_files": 54,
+      "bundle_sha256": "cb6a2eeaa6f596f3553b9234bb17cd718d99771c31fe9121bfd4e9be43fdb6c5",
+      "suite_sha256": "e2a6605987d0a55bbd32805bc3d76ab25c8061934fec6e5a509013417199b349",
+      "groups_passed": 3,
+      "check_tick": 2,
+      "report_sha256": "a79ffc605efc7c47079f9aceee95a4e67fbc34178c5b91a33d870437bdf14e16"
+    }
+  },
+  "managed_protocol_regressions": {
+    "passed": true,
+    "log_sha256": {
+      "windows": "7e2325fdbab1f5aecc7000a1eb5027b95b16b25ee07cc3a5646a9704a805c3e2",
+      "linux": "29b517d2b8624c6b7618ba6918f057eb87f7c142b512e697c01681170a951e37"
+    }
+  },
+  "live_run": {
+    "report_sha256": "08afb1f9126513b02cf877e9e3ad9d44be12871c9bc400e4d7cd62c260912c21",
+    "passed": true,
+    "runner_sha256": "3d01a0f86781bcd7b859c27ba7ab34bd4edeb0161b49f466f115d8d40d888474",
+    "codex_version": "codex-cli 0.171.0",
+    "model": "gpt-6.2-sol",
+    "assignment_request_id": "e3582a71e80774d4e6c9af5714b904bf",
+    "follow_up_request_id": "5387924bbc10f1d83e6f4a1f39eac81c",
+    "worker_draft_id": "a16bc32c59e4b31a7d297d3b08aee0af",
+    "draft_before_sha256": "7ee6c1153a0268fefd57df3421ad617a143511ea37090701dfaa48e24092b168",
+    "draft_after_sha256": "329c7a50ef9f2687602252d1504ce91d9d3953974d18e966c4ed5a4401a9cefc",
+    "first_playtest": {
+      "passed": false,
+      "groups_passed": 2,
+      "groups_total": 3,
+      "bundle_sha256": "c1245473e8d43500bb47b55beeb200e3d6f46f280a81e3468901c0fc69c401a7",
+      "report_sha256": "db397e9387b3808c4aeab8c139ad65643e5ee999bfee666243a1ce9c3d67d6b6",
+      "failed_group": {
+        "group": "Draft lantern brace",
+        "check": null,
+        "tick": null,
+        "issue": "runtime.entity: Runtime entity does not exist."
+      }
+    },
+    "repaired_playtest": {
+      "passed": true,
+      "groups_passed": 3,
+      "groups_total": 3,
+      "bundle_sha256": "89ad3ce407eebe78dfa51ba94a5439cc21178e5f718fc4f96b5cb65388e0d40d",
+      "report_sha256": "12c94c68b39c28572d9e378e27b617e25d88cf48392231b9775769b5cb0cda10"
+    },
+    "approved": true,
+    "playback": {
+      "event_type": "verified_play_closed",
+      "revision": 2,
+      "bundle_sha256": "89ad3ce407eebe78dfa51ba94a5439cc21178e5f718fc4f96b5cb65388e0d40d",
+      "tick": 28,
+      "frames_presented": 57,
+      "stop_reason": "window_closed"
+    },
+    "source_unchanged": true,
+    "relocated": {
+      "source_unavailable": true,
+      "bundle_unchanged": true,
+      "bundle_files": 54,
+      "bundle_sha256": "89ad3ce407eebe78dfa51ba94a5439cc21178e5f718fc4f96b5cb65388e0d40d",
+      "suite_sha256": "e2a6605987d0a55bbd32805bc3d76ab25c8061934fec6e5a509013417199b349",
+      "groups_passed": 3,
+      "check_tick": 2,
+      "report_sha256": "12c94c68b39c28572d9e378e27b617e25d88cf48392231b9775769b5cb0cda10"
+    }
+  },
+  "verification_regression": {
+    "arguments": [
+      "WithLeadWorkers",
+      "WithCombinedDrafts",
+      "WithLeadVerification"
+    ],
+    "report_sha256": "0d249cad67b25289d32697dc0b5eee12a0cb1e6bbc33046b39509c82b59c3b01",
+    "passed": true,
+    "first_attempt": {
+      "report_sha256": "df2f780a9d7ce2c8e50b08e58e46a4b4e531f905f21344099fff86b0143babad",
+      "passed": false,
+      "failure": "Timed out waiting for native combined playback presentation.",
+      "player_state": "failed",
+      "observation": null,
+      "windows_error_report": {
+        "sha256": "fc3d954da3c57a0bab8d7418f80be57333c6642820ac71b35f86aaefd2b4baeb",
+        "event": "BEX64",
+        "exception_code": "0xc0000409",
+        "exception_data": "0x5",
+        "cause": "undetermined"
+      }
+    },
+    "deep_path_attempt": {
+      "report_sha256": "e556a6d038a075e88ba05781b8346190c5f684ff3995ecec99905d9975c7f519",
+      "passed": false,
+      "native_executable_path_characters": 264,
+      "failure": "Process start returned file not found for the existing native verifier. A direct version probe reproduced the failure, and the extended path reported a path-length error.",
+      "probe_sha256": "9ee3526de49960a3b876d28f4a29382a0968198c19928bb26f21cfcfc0b5688a"
+    },
+    "approved_after_reopen": true
+  }
+}

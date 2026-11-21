@@ -13,6 +13,7 @@ internal sealed class CreatorWorkerRoundStore
     public sealed record Turn(string Task, string State, string? Report = null, string? Error = null, string? WorldHash = null);
     public sealed record Worker(string Folder, string ProjectId, Turn? Latest = null, Turn? Assigned = null);
     public sealed record Batch(string Id, long Revision, string PayloadHash, string[] Workers, string? Error = null, bool Interrupted = false);
+    public sealed record FollowUp(string Id, string DraftId, string ExpectedWorldHash, Turn Turn);
     public sealed record Candidate(string Folder, string ProjectId, string Snapshot, string Bundle, string? ReportHash = null);
     public sealed record FailedCheck(string Group, string? Check, long? Tick, string? Issue);
     public sealed record VerificationResult(Candidate Build, bool Passed, int PassedGroups, int TotalGroups, FailedCheck[] Failures);
@@ -23,7 +24,8 @@ internal sealed class CreatorWorkerRoundStore
         public bool Pending => Result is null && Error is null;
     }
     public sealed record Round(int Version, string Owner, string Id, Checkpoint? Base, Worker[] Workers, Batch[] Batches,
-        Candidate? Latest = null, Candidate? Passing = null, Verification[]? Verifications = null, string? Proposed = null);
+        Candidate? Latest = null, Candidate? Passing = null, Verification[]? Verifications = null, string? Proposed = null,
+        FollowUp[]? FollowUps = null);
 
     public const int MaximumAssignments = 64;
     public const int MaximumVerificationFailures = 12;
@@ -96,6 +98,7 @@ internal sealed class CreatorWorkerRoundStore
             round.Workers is null || round.Workers.Length > CodexWorkerTool.MaximumWorkers ||
             round.Batches is null || round.Batches.Length > MaximumAssignments ||
             round.Verifications is { Length: > MaximumAssignments } ||
+            round.FollowUps is { Length: > MaximumAssignments } ||
             !ValidCandidate(round.Latest) || !ValidCandidate(round.Passing))
             throw new InvalidDataException("The saved worker round is invalid for this project.");
         var checkpoint = round.Base;
@@ -132,6 +135,17 @@ internal sealed class CreatorWorkerRoundStore
         if (round.Proposed is not null && round.Verifications?.Any(check =>
                 check.Id == round.Proposed && check.Result?.Passed == true) != true)
             throw new InvalidDataException("The proposed build is missing its passing verification.");
+        var active = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var followup in round.FollowUps ?? [])
+        {
+            if (followup is null || !Hex(followup.Id, 32) || !batches.Add(followup.Id) ||
+                !Hex(followup.DraftId, 32) || !ids.Contains(followup.DraftId) ||
+                !Hex(followup.ExpectedWorldHash, 64) || followup.Turn is null || !ValidTurn(followup.Turn) ||
+                (followup.Turn.State == "running" && (!active.Add(followup.DraftId) ||
+                    !round.Workers.Any(worker => worker.ProjectId == followup.DraftId && worker.Latest == followup.Turn &&
+                        worker.Assigned?.State != "running"))))
+                throw new InvalidDataException("The saved round contains an invalid worker follow-up.");
+        }
     }
 
     private static bool ValidTurn(Turn? turn) => turn is null ||

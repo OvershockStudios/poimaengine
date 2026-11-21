@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.340
+
+- Let the lead Codex agent send a guarded follow-up to an existing scene worker and verify its revised draft.
+
 ## 0.0.339
 
 - Let the lead Codex agent verify a combination of worker scenes and submit a passing build for creator approval.
