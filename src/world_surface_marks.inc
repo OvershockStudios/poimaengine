@@ -8,7 +8,7 @@
             const std::initializer_list<const char*> keys={"receiver","ray","half_extent_m","half_depth_m",
                 "minimum_normal_dot","edge_fraction","linear_rgb","opacity","roughness"};
             fields(row,{"receiver","source","ray","travel_direction","profile","lifetime_ticks","overflow","half_extent_m","half_depth_m","minimum_normal_dot","edge_fraction",
-                "linear_rgb","opacity","roughness"},keys);
+                "linear_rgb","opacity","roughness","relief_depth_m"},keys);
             RuntimeSurfaceMarkCommand command;
             command.receiver=identifier(row.at("receiver"));
             if(row.contains("source"))command.source=identifier(row.at("source"));

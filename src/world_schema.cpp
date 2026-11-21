@@ -5,6 +5,7 @@
 #include "physical_rig_json.hpp"
 #include "pose_frames.hpp"
 #include "poima/scene.hpp"
+#include "surface_mark_validation.hpp"
 #include "poima/terrain_asset.hpp"
 #include "foliage_authoring.hpp"
 #include "water_asset.hpp"
@@ -207,9 +208,12 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     };
     const Json mark_profile_id={{"type","string"},{"pattern","^(?!0{32}$)[0-9a-f]{32}$"}};
     const Json mark_lifetime={{"type","integer"},{"minimum",1},{"maximum",max_surface_mark_lifetime_ticks}};
+    auto mark_relief=mark_range(0,surface_mark_validation::max_authored_relief_depth_m);
+    mark_relief["default"]=0;
+    mark_relief["description"]="Shading depression depth in metres, independent of color opacity.";
     const Json mark_style_props={{"half_extent_m",vector(mark_range(.005,4),2)},{"half_depth_m",mark_range(.001,.25)},
         {"minimum_normal_dot",unit},{"edge_fraction",unit},{"linear_rgb",vector(unit,3)},
-        {"opacity",unit},{"roughness",mark_range(.045,1)}};
+        {"opacity",unit},{"roughness",mark_range(.045,1)},{"relief_depth_m",mark_relief}};
     const Json mark_style_required={"half_extent_m","half_depth_m","minimum_normal_dot","edge_fraction","linear_rgb","opacity","roughness"};
     auto footprint=object_schema(mark_style_props,mark_style_required);
     footprint["properties"]["profile"]=mark_profile_id;
@@ -274,7 +278,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 186}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 187}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -627,13 +631,15 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"items",mark_command},{"description","Deposit marks in list order after final motion on the first simulated tick. Optional source makes the ray and travel direction relative to its final unscaled rigid frame. Optional profile selects a mask in the frozen world catalog. Each ray must hit its named rigid opaque receiver first. Caller and gameplay placements take priority over automatic footprints in the shared budget. Outside runtime-game-session v1."}};
     methods["runtime.surface_marks.inspect"]=object_schema({{"session_id",id},{"tick",rev},{"structure_revision",rev},{"entity",id}},
         {"session_id","tick","structure_revision"});
-    methods["runtime.surface_marks.inspect"]["description"]="Read receiver-local mark frames, material parameters and optional expires_tick in placement order. The optional entity filter selects one receiver. Lifecycle counts cover the whole scene. Outside runtime-game-session v1.";
+    methods["runtime.surface_marks.inspect"]["description"]="Read receiver-local mark frames, material parameters and optional expires_tick and relief_depth_m in placement order. Zero relief is omitted. The optional entity filter selects one receiver. Lifecycle counts cover the whole scene. Outside runtime-game-session v1.";
     result["surface_marks"]={{"available",Runtime::available()},{"commands_per_step",max_surface_mark_commands},
         {"marks_per_receiver",max_surface_marks_per_receiver},{"marks_per_scene",max_scene_surface_marks},
         {"receiver","Unscaled opaque world drawable with a matching built-in box or cooked triangle collider."},
         {"orientation","Optional travel_direction aligns the first half extent along the contact plane. Minimum length 1e-8. A normalized projection of length at most 1e-6 uses the default receiver-local axes."},
         {"profiles",{{"max_profiles",max_surface_mark_profiles},{"max_masks",max_surface_mark_masks},
             {"max_mask_side",max_surface_mark_mask_side},{"format","Linear cooked image, red channel coverage, mip 0."}}},
+        {"relief",{{"field","relief_depth_m"},{"max_depth_m",surface_mark_validation::max_authored_relief_depth_m},
+            {"default_depth_m",0},{"composition","Affects the forward and deferred shading normal independently of color opacity."}}},
         {"lifecycle",{{"max_lifetime_ticks",max_surface_mark_lifetime_ticks},
             {"expiration","Marks expire at placement tick plus lifetime, before new placements on that tick."},
             {"recycling","On capacity, use the oldest timed mark on a full receiver, or the oldest scene-wide timed mark when only the scene is full. A request without an eligible replacement is dropped after validation. Permanent marks are protected."}}},
@@ -641,7 +647,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
             {"trigger","A newly acquired native foot plant within the surface's solved sole tolerance."},
             {"order","After caller and gameplay commands, in ascending rig ID and IK slot. Skip acquisitions above the shared 16-attempt limit."},
             {"placement","Use the committed grounding hit and planted heading. Timed marks recycle oldest eligible timed marks and protect permanent marks."}}},
-        {"persistence","Optional surface_marks snapshot extension. Version 3 stores timed rows and lifecycle counts. Version 2 stores permanent textured marks. Removing a receiver retires its marks."}};
+        {"persistence","Optional surface_marks snapshot extension. Version 4 stores positive relief with lifecycle counts when needed. Version 3 stores timed rows and lifecycle counts. Version 2 stores permanent textured marks. Removing a receiver retires its marks."}};
     result["gameplay_surface_marks"]={{"feature",gameplay_abi::surface_mark_feature},
         {"services_abi",gameplay_abi::services_version},{"services_bytes",gameplay_abi::surface_mark_services_bytes},
         {"command_bytes",sizeof(PoimaGameSurfaceMarkCommandV1)},{"command_version",1},

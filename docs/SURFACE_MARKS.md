@@ -126,6 +126,25 @@ at the same committed tick to compare the support, heading, solved residual
 and new receiver-local mark. The effect changes surface shading. Snow depth,
 geometry and physical material simulation have their own engine contracts.
 
+## Give a print shading relief
+
+Set `relief_depth_m` on `FootprintSurface` or an explicit `runtime.step`
+surface mark to a value between zero and 0.025 m. For a subtle imprint,
+start with 0.004 m and inspect it under a low light from each side.
+The same 0.004 m depth appears steeper on a narrow print. Set `opacity`
+to zero for an impression with only a lighting change.
+
+The shader multiplies a smooth radial depression by the optional sole mask,
+then uses its slope in metres to perturb the existing material normal.
+The relief fades at small screen sizes and caps the combined slope when
+marks overlap. `half_depth_m` still sets the projection's reach. The
+terrain surface, collision and shadow silhouette use the same geometry.
+Forward and deferred Vulkan apply the same material effect.
+
+`runtime.surface_marks.inspect` includes the positive depth. A save with
+live relief uses version 4 of the surface-mark extension, with lifecycle
+counters when applicable. Zero is omitted and uses the existing save forms.
+
 ## Author a mask profile
 
 Import a PNG or JPEG with `asset.image.import` and `color_space: "linear"`.
@@ -252,3 +271,11 @@ python3 tests/footprint_surface_contract.py build/linux-game/poima \
 For the relocated Vulkan route, supply the Windows executable with
 `--runtime-root`, `--gpu`, and `--lighting-path`. Add `--windows-interop`
 if Python runs under WSL.
+
+Substitute [surface_mark_relief_contract.py](../tests/surface_mark_relief_contract.py)
+in that command to verify relief. It checks the saved depth, replay, and
+renderer probes under opposing grazing lights. The native qualifier
+`poima-reconstruction-quality-test` also accepts `--surface-mark-relief-reactivity`
+and `--surface-mark-relief-profile`. The first takes a lighting path and FSR
+mode after the test switch. The second takes a lighting path and measures
+paired 1080p Vulkan timings with relief off and on.

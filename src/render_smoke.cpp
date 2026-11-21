@@ -249,9 +249,12 @@ static_assert(sizeof(DrawIndices)==16 && sizeof(ObjectData)==208);
 struct GpuSurfaceMark {
     float center_depth[4],normal_minimum_dot[4],tangent_half_width[4],color_opacity[4],half_height_roughness_edge[3];
     std::uint32_t mask=0;
+    float relief_depth_m=0;
+    float padding[3]{};
 };
 static_assert(sizeof(GpuSurfaceMark)==render_schedule::surface_mark_stride);
 static_assert(offsetof(GpuSurfaceMark,mask)==76);
+static_assert(offsetof(GpuSurfaceMark,relief_depth_m)==80);
 static_assert(max_scene_surface_marks*sizeof(GpuSurfaceMark)==render_schedule::surface_mark_budget);
 static_assert(max_surface_mark_masks==render_schedule::max_surface_mark_mask_layers);
 static_assert(max_surface_mark_mask_side==render_schedule::max_surface_mark_mask_side);

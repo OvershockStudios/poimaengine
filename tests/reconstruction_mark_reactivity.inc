@@ -87,7 +87,7 @@ SceneSnapshot mark_scene() {
     return scene;
 }
 
-void pose_mark_scene(SceneSnapshot& scene,const MarkFrame& frame,unsigned index) {
+void pose_mark_scene(SceneSnapshot& scene,const MarkFrame& frame,unsigned index,bool relief=false) {
     scene.revision=index;
     auto& receiver=scene.objects.front();
     receiver.world[12]=frame.receiver_x;
@@ -98,6 +98,11 @@ void pose_mark_scene(SceneSnapshot& scene,const MarkFrame& frame,unsigned index)
         mark.edge_fraction=.2f;
         mark.linear_rgb=mark_tints[frame.mark_style];
         mark.mask_sha256=scene.surface_mark_masks.front().sha256;
+        if(relief) {
+            mark.linear_rgb=receiver_base;
+            mark.opacity=0;
+            mark.relief_depth_m=frame.mark_style==1 ? .0125f : .025f;
+        }
         receiver.surface_marks.push_back(std::move(mark));
     }
 }
@@ -133,7 +138,7 @@ RenderReport capture_mark_frame(HostedViewport& view,const SceneSnapshot& scene,
     }
 }
 
-void run_surface_mark_reactivity(int argc,char** argv,Json& evidence) {
+void run_surface_mark_reactivity(int argc,char** argv,Json& evidence,bool relief) {
     check(argc<=6,"Usage: reconstruction-quality-test OUTPUT_PREFIX GPU --surface-mark-reactivity [forward|deferred] [fsr3_native|fsr3_quality]");
     const std::string_view route=argc>=5 ? argv[4] : "forward";
     const std::string_view mode_name=argc>=6 ? argv[5] : "fsr3_native";
@@ -155,6 +160,7 @@ void run_surface_mark_reactivity(int argc,char** argv,Json& evidence) {
     evidence["format"]="poima.fsr3-surface-mark-reactivity.v1";
     evidence["lighting_path"]=route;
     evidence["reconstruction"]=mode_name;
+    if(relief)evidence["relief_only"]=true;
     evidence["render_extent"]={render_width,render_height};
     evidence["output_extent"]={width,height};
     evidence["mask_sha256"]=scene.surface_mark_masks.front().sha256;
@@ -183,7 +189,7 @@ void run_surface_mark_reactivity(int argc,char** argv,Json& evidence) {
         double previous_x=mark_frames[0].receiver_x;
         for(unsigned index=0;index<std::size(mark_frames);++index) {
             const auto& phase=mark_frames[index];
-            pose_mark_scene(scene,phase,index);
+            pose_mark_scene(scene,phase,index,relief);
             const auto accepted=index+1;
             const auto filename=prefix.filename().string()+"-"+std::to_string(accepted)+"-"+phase.label+".bmp";
             const float expected_motion=static_cast<float>((previous_x-phase.receiver_x)*uv_per_meter);
@@ -217,7 +223,8 @@ void run_surface_mark_reactivity(int argc,char** argv,Json& evidence) {
                     {"output",{sample.resolved_x,sample.resolved_y}},{"surface_valid",sample.surface_valid},
                     {"motion_valid",sample.motion_valid},{"r8_code",sample.motion_validity_code},
                     {"motion",sample.motion},{"raw_hdr",sample.raw_hdr},{"resolved_hdr",sample.resolved_hdr},
-                    {"expected_hdr",expected_mark_radiance(probe.role,phase.mark_style)}};
+                    {"expected_hdr",expected_mark_radiance(probe.role,relief ? 0 : phase.mark_style)}};
+                if(relief)observation["shading_normal"]=sample.shading_normal;
                 if(sample.fsr3_history) {
                     observation["sdk_masks"]=sample.fsr3_history->masks;
                     observation["sdk_sequence"]=sample.fsr3_history->sdk_dispatch_sequence;
@@ -258,7 +265,18 @@ void run_surface_mark_reactivity(int argc,char** argv,Json& evidence) {
                     "Mark reactivity readback used different coordinates");
                 check(std::abs(sample.motion[0]-(receiver && valid ? expected_motion : 0))<=.00001f &&
                     std::abs(sample.motion[1])<=.00001f,"Mark reactivity changed geometric motion");
-                const auto expected=expected_mark_radiance(probe.role,phase.mark_style);
+                const auto expected=expected_mark_radiance(probe.role,relief ? 0 : phase.mark_style);
+                if(relief && geometry) {
+                    const bool raised_direction=probe.role==MarkProbeRole::covered && phase.mark_style!=0;
+                    const auto& normal=sample.shading_normal;
+                    if(raised_direction) {
+                        // Negative local X on the marked face points the relief normal to +X.
+                        check(normal[0]>(phase.mark_style==1 ? .004f : .008f),"Relief-only update did not alter the covered normal");
+                    } else {
+                        check(std::abs(normal[0])<.0001f && std::abs(normal[1])<.0001f && normal[2]>.999f,
+                            "Relief changed a masked or unrelated surface normal");
+                    }
+                }
                 for(unsigned channel=0;channel<3;++channel) {
                     check(std::isfinite(sample.raw_hdr[channel]) && std::abs(sample.raw_hdr[channel]-expected[channel])<=.001f,
                         "Mark reactivity raw HDR differs from the masked material");

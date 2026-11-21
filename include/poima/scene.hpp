@@ -146,6 +146,7 @@ inline constexpr std::size_t max_scene_surface_marks=256;
 inline constexpr std::size_t max_surface_mark_profiles=32;
 inline constexpr std::size_t max_surface_mark_masks=16;
 inline constexpr std::uint32_t max_surface_mark_mask_side=256;
+inline constexpr float max_surface_mark_relief_depth_m=.025f;
 struct SceneSurfaceMarkMask {
     std::string sha256;
     std::shared_ptr<const TextureImage> image;
@@ -158,6 +159,7 @@ struct SceneSurfaceMark {
     std::array<float,3> linear_rgb{.2f,.2f,.2f};
     float opacity=1,roughness=1;
     std::string mask_sha256; // Empty is the analytic ellipse.
+    float relief_depth_m=0;
 
     bool operator==(const SceneSurfaceMark&) const=default;
 };

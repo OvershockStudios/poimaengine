@@ -5,6 +5,7 @@
 #include "poima/hosted_viewport.hpp"
 #include "poima/assets.hpp"
 #include <nlohmann/json.hpp>
+#include <algorithm>
 #include <chrono>
 #include <cmath>
 #include <filesystem>
@@ -23,8 +24,8 @@ void pump(){MSG m;while(PeekMessageW(&m,nullptr,0,0,PM_REMOVE)){TranslateMessage
 void write(const fs::path& path,const Json& value){std::ofstream file(path,std::ios::binary|std::ios::trunc);file<<value.dump(2)<<'\n';file.flush();check(bool(file),"Evidence write failed");}
 struct Window {
     HWND parent{},child{};
-    Window(){parent=CreateWindowExW(0,L"STATIC",L"Poima temporal quality sequence",WS_POPUP|WS_VISIBLE,80,80,340,200,nullptr,nullptr,GetModuleHandleW(nullptr),nullptr);check(parent,"Parent creation failed");
-        child=CreateWindowExW(0,L"STATIC",L"",WS_CHILD|WS_VISIBLE,0,0,width,height,parent,nullptr,GetModuleHandleW(nullptr),nullptr);if(!child){DestroyWindow(parent);throw std::runtime_error("Child creation failed");}pump();}
+    Window(unsigned w=width,unsigned h=height){parent=CreateWindowExW(0,L"STATIC",L"Poima temporal quality sequence",WS_POPUP|WS_VISIBLE,80,80,static_cast<int>(w)+20,static_cast<int>(h)+20,nullptr,nullptr,GetModuleHandleW(nullptr),nullptr);check(parent,"Parent creation failed");
+        child=CreateWindowExW(0,L"STATIC",L"",WS_CHILD|WS_VISIBLE,0,0,static_cast<int>(w),static_cast<int>(h),parent,nullptr,GetModuleHandleW(nullptr),nullptr);if(!child){DestroyWindow(parent);throw std::runtime_error("Child creation failed");}pump();}
     ~Window(){if(child)DestroyWindow(child);if(parent)DestroyWindow(parent);}
 };
 std::shared_ptr<const MeshAsset> polygon(const std::array<std::array<float,3>,4>& points,std::array<float,3> radiance){
@@ -48,11 +49,17 @@ Json ground_truth(const SceneSnapshot& scene,unsigned sequence){
         {"layers",layers},{"background",clear_radiance},{"exposure",scene.lighting.environment.exposure},{"captures",Json::object()},{"observations",Json::object()}};
 }
 #include "reconstruction_mark_reactivity.inc"
+#include "surface_mark_relief_profile.inc"
 }
 int main(int argc,char** argv){Json evidence={{"passed",false},{"quality_qualified",false},{"sequences",Json::array()}};
     try{
-        if(argc>=4 && std::string_view(argv[3])=="--surface-mark-reactivity") {
-            run_surface_mark_reactivity(argc,argv,evidence);
+        const std::string_view requested_task=argc>=4 ? argv[3] : "";
+        if(requested_task=="--surface-mark-reactivity" || requested_task=="--surface-mark-relief-reactivity") {
+            run_surface_mark_reactivity(argc,argv,evidence,requested_task=="--surface-mark-relief-reactivity");
+            std::cout<<evidence.dump(2)<<'\n';return 0;
+        }
+        if(requested_task=="--surface-mark-relief-profile") {
+            run_surface_mark_relief_profile(argc,argv,evidence);
             std::cout<<evidence.dump(2)<<'\n';return 0;
         }
         check(argc==3 || (argc==4 && (std::string(argv[3])=="--history-probes" || std::string(argv[3])=="--uniform-background-history" || std::string(argv[3])=="--flat-diagonal-history")),"Usage: reconstruction-quality-test OUTPUT_PREFIX GPU [--history-probes|--uniform-background-history|--flat-diagonal-history]");SetProcessDPIAware();const fs::path prefix=fs::absolute(argv[1]);const int gpu=std::stoi(argv[2]);const bool history_probes=argc==4;const bool uniform=history_probes && std::string(argv[3])=="--uniform-background-history";const bool flat=history_probes && std::string(argv[3])=="--flat-diagonal-history";

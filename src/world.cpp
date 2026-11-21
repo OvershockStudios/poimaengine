@@ -22,6 +22,7 @@
 #include "pose_frames.hpp"
 #include "surface_measure.hpp"
 #include "surface_mark_profiles.hpp"
+#include "surface_mark_validation.hpp"
 #include "surface_marks_json.hpp"
 #include "attachment_outcome_json.hpp"
 #include "poima/runtime_ik.hpp"
@@ -832,6 +833,9 @@ SceneSurfaceMark surface_mark_style(const Json& row) {
     style.edge_fraction=static_cast<float>(surface_mark_scalar(row.at("edge_fraction"),0,1));
     style.opacity=static_cast<float>(surface_mark_scalar(row.at("opacity"),0,1));
     style.roughness=static_cast<float>(surface_mark_scalar(row.at("roughness"),.045,1));
+    if(row.contains("relief_depth_m"))
+        style.relief_depth_m=static_cast<float>(surface_mark_scalar(row.at("relief_depth_m"),
+            0,surface_mark_validation::max_authored_relief_depth_m));
     return style;
 }
 std::string surface_mark_profile_id(const Json& value) {
@@ -846,7 +850,7 @@ std::uint32_t surface_mark_lifetime(const Json& value) {
 }
 RuntimeFootprintSurface footprint_surface_value(const Json& value) {
     fields(value,{"half_extent_m","half_depth_m","minimum_normal_dot","edge_fraction","linear_rgb","opacity",
-        "roughness","lifetime_ticks","profile","sole_tolerance_m"},
+        "roughness","lifetime_ticks","profile","sole_tolerance_m","relief_depth_m"},
         {"half_extent_m","half_depth_m","minimum_normal_dot","edge_fraction","linear_rgb","opacity","roughness","lifetime_ticks"});
     RuntimeFootprintSurface surface;
     surface.style=surface_mark_style(value);

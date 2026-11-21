@@ -19,6 +19,7 @@ struct SurfaceMark {
     float4 color_opacity;
     float3 half_height_roughness_edge;
     uint mask; // one-based layer in bits 0..4, then width-1 and height-1 in eight bits each
+    float4 relief; // x depression depth in metres
 };
 struct DrawIndices {uint object_index;uint shadow_layer;uint2 reserved;};
 [[vk::push_constant]] ConstantBuffer<DrawIndices> draw_indices;
@@ -96,7 +97,50 @@ void test_material_alpha(float2 uv,uint object_index) {
     if(draw.alpha.z>.5)clip(base_map.Sample(base_sampler,uv).a*draw.alpha.x-draw.alpha.y);
 }
 void shadow_pixel_main(ShadowVertexOutput input) {test_material_alpha(input.uv,input.object_index);}
-void apply_surface_marks(inout SceneSurface material,float3 position,uint offset,uint count) {
+float3 surface_mark_height_mask(uint mask,float2 sample_position,float2 sample_dx,float2 sample_dy) {
+    const uint layer=(mask & 31u)-1u;
+    const uint2 extent=uint2(((mask>>5u) & 255u)+1u,((mask>>13u) & 255u)+1u);
+    const float2 uv=0.5+0.5*float2(sample_position.x,-sample_position.y);
+    const float2 to_texels=float2(0.5,-0.5)*extent;
+    const float2 last=float2(extent)-1;
+    const float2 texel=uv*extent-0.5;
+    const float2 clamped_texel=clamp(texel,0,last);
+    const uint2 lower=uint2(clamped_texel);
+    const uint2 upper=min(lower+1,extent-1);
+    const float2 blend=clamped_texel-float2(lower);
+    // Reconstruct the piecewise bilinear height and its two derivatives from
+    // the real texels of this layer, including one-texel axes and clamped edges.
+    const float h00=surface_mark_masks.Load(int4(lower.x,lower.y,layer,0));
+    const float h10=surface_mark_masks.Load(int4(upper.x,lower.y,layer,0));
+    const float h01=surface_mark_masks.Load(int4(lower.x,upper.y,layer,0));
+    const float h11=surface_mark_masks.Load(int4(upper.x,upper.y,layer,0));
+    const float height=lerp(lerp(h00,h10,blend.x),lerp(h01,h11,blend.x),blend.y);
+    float2 gradient=float2(lerp(h10-h00,h11-h01,blend.y),lerp(h01-h00,h11-h10,blend.x))*to_texels;
+    if(texel.x<0 || texel.x>=last.x)gradient.x=0;
+    if(texel.y<0 || texel.y>=last.y)gradient.y=0;
+    const float texels_per_pixel=max(length(sample_dx*to_texels),length(sample_dy*to_texels));
+    gradient*=1-smoothstep(1.0,3.0,texels_per_pixel);
+    return float3(height,gradient);
+}
+
+float3 surface_mark_relief_gradient(SurfaceMark mark,float3 tangent,float3 bitangent,
+    float2 sample_position,float radius_squared,float3 position_dx,float3 position_dy) {
+    const float2 half_extent=float2(mark.tangent_half_width.w,mark.half_height_roughness_edge.x);
+    const float2 sample_dx=float2(dot(position_dx,tangent),dot(position_dx,bitangent))/half_extent;
+    const float2 sample_dy=float2(dot(position_dy,tangent),dot(position_dy,bitangent))/half_extent;
+    const float radius_per_pixel=max(length(sample_dx),length(sample_dy));
+    const float fade=1-smoothstep(0.04,0.22,radius_per_pixel);
+    if(fade<=0)return 0;
+    const float3 mask=mark.mask!=0 ? surface_mark_height_mask(mark.mask,sample_position,sample_dx,sample_dy) : float3(1,0,0);
+    const float interior=1-radius_squared;
+    // The squared radial window reaches zero with zero slope at the boundary.
+    // Its depth and textured slope are independent of color and roughness.
+    const float2 gradient=(-mark.relief.x*fade)*(interior*interior*mask.yz-4*interior*mask.x*sample_position)/half_extent;
+    return tangent*gradient.x+bitangent*gradient.y;
+}
+
+void apply_surface_marks(inout SceneSurface material,float3 position,float3 position_dx,float3 position_dy,uint offset,uint count) {
+    float3 relief_gradient=0;
     [loop] for(uint index=0;index<count;++index) {
         const SurfaceMark mark=surface_marks[offset+index];
         const float3 normal=mark.normal_minimum_dot.xyz;
@@ -127,7 +171,18 @@ void apply_surface_marks(inout SceneSurface material,float3 position,uint offset
                 }
                 material.base=lerp(material.base,mark.color_opacity.rgb,weight);
                 material.roughness=lerp(material.roughness,max(mark.half_height_roughness_edge.y,0.045),weight);
+                if(mark.relief.x>0)relief_gradient+=surface_mark_relief_gradient(mark,tangent,bitangent,
+                    sample_position,radius_squared,position_dx,position_dy);
             }
+        }
+    }
+    if(any(relief_gradient!=0)) {
+        // Compose in the surface tangent plane of the existing shading normal.
+        relief_gradient-=material.normal*dot(material.normal,relief_gradient);
+        const float slope_squared=dot(relief_gradient,relief_gradient);
+        if(slope_squared>0) {
+            if(slope_squared>0.75*0.75)relief_gradient*=0.75*rsqrt(slope_squared);
+            material.normal=normalize(material.normal-relief_gradient);
         }
     }
 }
@@ -137,7 +192,8 @@ SceneSurface evaluate_material(VertexOutput input,bool front) {
     // Smooth vertex normals describe shading, not the rasterized triangle plane.
     // Compute the plane before any divergent light/cascade branches.
     const float3 facing_normal=front ? n : -n;
-    const float3 triangle_normal=cross(ddx(input.world_position),ddy(input.world_position));
+    const float3 position_dx=ddx(input.world_position),position_dy=ddy(input.world_position);
+    const float3 triangle_normal=cross(position_dx,position_dy);
     const float triangle_length2=dot(triangle_normal,triangle_normal);
     const float3 geometric_normal=triangle_length2>1e-20 ?
         triangle_normal*((dot(triangle_normal,facing_normal)<0 ? -1 : 1)*rsqrt(triangle_length2)) : facing_normal;
@@ -168,10 +224,10 @@ SceneSurface evaluate_material(VertexOutput input,bool front) {
         const float3 emission=draw.emissive_roughness.rgb*emissive_map.Sample(emissive_sampler,input.uv).rgb;
         const float occlusion=lerp(1,occlusion_map.Sample(occlusion_sampler,input.uv).r,draw.normal_row0.w);
         material.base=base;material.metallic=metallic;material.roughness=roughness;
-        material.emission=emission;material.occlusion=occlusion;
-        apply_surface_marks(material,input.world_position,draw.history.z,draw.history.w);
+        material.emission=emission;material.occlusion=occlusion;material.normal=n;
+        apply_surface_marks(material,input.world_position,position_dx,position_dy,draw.history.z,draw.history.w);
     }
-    material.normal=n;return material;
+    return material;
 }
 
 #if POIMA_SCENE_DEFERRED

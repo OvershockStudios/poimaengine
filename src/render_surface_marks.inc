@@ -79,6 +79,7 @@
                 std::abs(dot(mark.normal,mark.tangent))<1e-4f &&
                 std::all_of(mark.half_extent_m.begin(),mark.half_extent_m.end(),positive) && positive(mark.half_depth_m) &&
                 unit_interval(mark.minimum_normal_dot) && unit_interval(mark.edge_fraction) && unit_interval(mark.opacity) &&
+                mark.relief_depth_m>=0 && mark.relief_depth_m<=max_surface_mark_relief_depth_m &&
                 unit_interval(mark.roughness) && std::all_of(mark.linear_rgb.begin(),mark.linear_rgb.end(),unit_interval),
                 "Invalid surface mark dimensions, orientation, or material parameters.");
             const auto center=direction(mark.center_m,1),normal=direction(mark.normal,0),tangent=direction(mark.tangent,0);
@@ -86,7 +87,8 @@
                 {normal[0],normal[1],normal[2],mark.minimum_normal_dot},
                 {tangent[0],tangent[1],tangent[2],mark.half_extent_m[0]},
                 {mark.linear_rgb[0],mark.linear_rgb[1],mark.linear_rgb[2],mark.opacity},
-                {mark.half_extent_m[1],mark.roughness,mark.edge_fraction},surface_mark_mask_metadata(mark.mask_sha256)});
+                {mark.half_extent_m[1],mark.roughness,mark.edge_fraction},surface_mark_mask_metadata(mark.mask_sha256),
+                mark.relief_depth_m});
         }
     }
 

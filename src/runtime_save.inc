@@ -426,13 +426,14 @@ std::string Runtime::save_snapshot(const std::string& content_sha256) const {
     }
     if(s.surface_marks) {
         SaveJson rows=SaveJson::array();
-        bool textured=false;
+        bool textured=false,relief=false;
         for(const auto& row:s.surface_marks->rows) {
             textured|=!row.profile.empty();
+            relief|=row.mark.relief_depth_m>0;
             rows.push_back(surface_mark_json(row));
         }
         const bool timed=s.surface_marks->has_lifecycle();
-        auto extension=SaveJson{{"version",timed ? 3 : textured ? 2 : 1},
+        auto extension=SaveJson{{"version",relief ? 4 : timed ? 3 : textured ? 2 : 1},
             {"next_id",s.surface_marks->next_id},{"marks",std::move(rows)}};
         if(timed)extension["lifecycle"]=surface_mark_lifecycle_json(s.surface_marks->lifecycle);
         payload["surface_marks"]=std::move(extension);
@@ -475,9 +476,10 @@ std::unique_ptr<Runtime> Runtime::restore_snapshot_data(const RuntimeDefinition&
     if(data.contains("surface_marks")) {
         surface_extension=std::move(data.at("surface_marks"));data.erase("surface_marks");
         const auto surface_version=save_integer(surface_extension.at("version"));
-        if(surface_version==3)save_fields(surface_extension,{"version","next_id","marks","lifecycle"});
+        if(surface_version==3 || (surface_version==4 && surface_extension.contains("lifecycle")))
+            save_fields(surface_extension,{"version","next_id","marks","lifecycle"});
         else save_fields(surface_extension,{"version","next_id","marks"});
-        require(surface_version>=1 && surface_version<=3 && save_integer(surface_extension.at("next_id"))>1,
+        require(surface_version>=1 && surface_version<=4 && save_integer(surface_extension.at("next_id"))>1,
             "Invalid runtime surface mark extension version or identity frontier.");
         const auto& rows=surface_extension.at("marks");
         require(rows.is_array() && rows.size()<=max_scene_surface_marks,"Invalid saved surface mark count.");
@@ -989,7 +991,7 @@ std::unique_ptr<Runtime> Runtime::restore_snapshot_data(const RuntimeDefinition&
             std::transform(values.begin(),values.end(),result.begin(),[](double member){return static_cast<float>(member);});
             return result;
         };
-        bool textured=false;
+        bool textured=false,relief=false;
         for(const auto& saved:surface_extension.at("marks")) {
             RuntimeSurfaceMark row;
             auto values=saved;
@@ -1006,6 +1008,11 @@ std::unique_ptr<Runtime> Runtime::restore_snapshot_data(const RuntimeDefinition&
             if(saved.contains("expires_tick")) {
                 row.expires_tick=save_integer(saved.at("expires_tick"));
                 values.erase("expires_tick");
+            }
+            if(saved.contains("relief_depth_m")) {
+                row.mark.relief_depth_m=static_cast<float>(save_number(saved.at("relief_depth_m"),max_surface_mark_relief_depth_m));
+                values.erase("relief_depth_m");
+                relief=true;
             }
             save_fields(values,{"id","receiver","tick","center_m","normal","tangent","half_extent_m",
                 "half_depth_m","minimum_normal_dot","edge_fraction","linear_rgb","opacity","roughness"});
@@ -1032,7 +1039,9 @@ std::unique_ptr<Runtime> Runtime::restore_snapshot_data(const RuntimeDefinition&
         }
         require(state->lifecycle.expired+state->lifecycle.recycled+state->rows.size()<=issued,
             "Saved retired marks exceed the issued identities.");
-        require(save_integer(surface_extension.at("version"))==(state->has_lifecycle() ? 3u : textured ? 2u : 1u),
+        const bool timed=state->has_lifecycle();
+        require(save_integer(surface_extension.at("version"))==(relief ? 4u : timed ? 3u : textured ? 2u : 1u) &&
+            surface_extension.contains("lifecycle")==timed,
             "Saved surface mark extension version does not match its contents.");
         s.surface_marks=std::move(state);
     }

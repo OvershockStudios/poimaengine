@@ -124,7 +124,7 @@ inline constexpr std::size_t sprite_instance_stride=64;
 inline constexpr std::size_t max_sprite_instances=4096;
 inline constexpr std::uint64_t sprite_instance_budget=sprite_instance_stride*max_sprite_instances;
 inline constexpr std::size_t max_sprite_textures=16;
-inline constexpr std::size_t surface_mark_stride=80;
+inline constexpr std::size_t surface_mark_stride=96;
 inline constexpr std::uint64_t surface_mark_budget=surface_mark_stride*256;
 inline constexpr std::uint32_t max_surface_mark_mask_side=256,max_surface_mark_mask_layers=16;
 struct Schedule {

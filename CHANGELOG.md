@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.366
+
+- Give footprints and ray-placed surface marks optional shading relief. A cooked sole mask can form a shallow depression that catches grazing light and keeps its depth setting through save and load.
+
 ## 0.0.365
 
 - Author `FootprintSurface` on a rigid support to stamp timed prints from newly planted feet. Each print follows the solved foot heading and stays with the support through motion and saves.

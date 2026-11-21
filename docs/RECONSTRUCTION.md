@@ -75,7 +75,7 @@ A separate input pass supplies background motion for the procedural sky using ca
 When a rigid receiver's [surface marks](SURFACE_MARKS.md) differ from its
 preceding accepted submission, FSR receives a one-submission reactive
 signal over the receiver's visible surface. The renderer compares ordered
-marks in receiver-local space, including the mask identities. Moving the
+marks in receiver-local space, including mask identities and relief depth. Moving the
 receiver with the same marks preserves its normal history behavior. A mark
 change preserves geometric motion and does not reset the view. The signal
 uses the existing correspondence attachment and temporal input pass.

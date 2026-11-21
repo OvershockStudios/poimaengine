@@ -18,6 +18,7 @@ inline nlohmann::json surface_mark_json(const RuntimeSurfaceMark& row) {
         result["mask_sha256"]=mark.mask_sha256;
     }
     if(row.expires_tick)result["expires_tick"]=row.expires_tick;
+    if(mark.relief_depth_m>0)result["relief_depth_m"]=mark.relief_depth_m;
     return result;
 }
 

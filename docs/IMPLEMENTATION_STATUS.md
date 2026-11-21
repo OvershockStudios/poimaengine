@@ -1,8 +1,18 @@
 # Implementation status
 
-Updated 2026-11-21 for **0.0.365**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-21 for **0.0.366**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.366 adds [shading relief](SURFACE_MARKS.md#give-a-print-shading-relief)
+to footprints and explicit surface marks. Grazing lights reveal the relief
+on a moving masked pad and an analytic cooked slope. The 32 relocated Windows
+captures repeat across fresh processes on AMD and NVIDIA in forward and
+deferred Vulkan. Sixteen zero-relief controls match 0.0.365. Another 96 frames
+verify relief-only changes in FSR Native AA and Quality. At 256 marks, paired
+median opaque GPU time increased by 0.007–0.187 ms in a synthetic, single-slot
+1080p workload. The relief changes the material normal and the samples
+preserve collision, depth and geometric motion. [Results](evidence/m2-surface-mark-relief-366.json)
 
 Version 0.0.365 lets [authored ground receive footprints](SURFACE_MARKS.md#place-footprints-from-planted-feet)
 from the solved contact of an imported character. Controlled Knight poses
