@@ -10,6 +10,7 @@
 #include "poima/post_effect.hpp"
 #include "poima/runtime.hpp"
 #include "poima/snow.hpp"
+#include "poima/snow_releases.hpp"
 #include "poima/terrain_asset.hpp"
 #include "foliage_authoring.hpp"
 #include "water_asset.hpp"

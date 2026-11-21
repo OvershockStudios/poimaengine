@@ -2,6 +2,7 @@
 #pragma once
 
 #include "poima/snow_definition.hpp"
+#include <bitset>
 #include <cstddef>
 #include <memory>
 #include <nlohmann/json.hpp>
@@ -23,6 +24,8 @@ inline constexpr double volume_unit_m3 = spacing_m * spacing_m * unit_m / 6;
 inline constexpr double max_coordinate_m = 512;
 inline constexpr std::uint32_t min_radius_units = 128, max_radius_units = 1536;
 inline constexpr std::uint32_t max_depth_units = 512;
+using StampCenter = std::array<std::uint16_t, 2>; // Region-relative X and Z in height units.
+using SampleMask = std::bitset<sample_count>;
 
 Definition parse_definition(const nlohmann::json& json);
 
@@ -43,10 +46,18 @@ public:
     std::uint16_t compaction_at(const State& state, unsigned x, unsigned z) const;
     std::uint64_t loss_units(const State& state) const noexcept;
     unsigned compacted_samples(const State& state) const noexcept;
+    StampCenter quantize_center(double world_x, double world_z) const;
+    // The supplied state belongs to this region. Only selected samples within
+    // the stamp bounds are read, allowing several queued stamps to be checked.
+    bool changes_samples(const State& state, StampCenter center,
+                         std::uint32_t radius_units, std::uint32_t depth_units,
+                         const SampleMask& samples) const;
 
     // Mutate a detached state. A successful change advances generation once.
     // Mask 1 selects the west tile, mask 2 selects east, including normal-only edits.
     std::uint8_t apply(State& state, double world_x, double world_z,
+                      std::uint32_t radius_units, std::uint32_t depth_units) const;
+    std::uint8_t apply(State& state, StampCenter center,
                       std::uint32_t radius_units, std::uint32_t depth_units) const;
     std::shared_ptr<const MeshAsset> mesh(unsigned tile, const State& state) const;
 

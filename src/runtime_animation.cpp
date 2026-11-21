@@ -1077,6 +1077,25 @@ std::size_t RuntimeAnimations::foot_plant_acquisitions(std::uint64_t tick,
     }
     return count;
 }
+std::size_t RuntimeAnimations::foot_plant_observations(std::span<RuntimeFootPlantObservation> output) const {
+    std::size_t count=0;
+    for(const auto& [entity,index]:membership_->indices) {
+        if(procedural_suspended(entity))continue;
+        const auto& chains=membership_->rigs[index].ik;
+        const auto& states=ik_states_[index];
+        std::array<const RuntimeGroundingState*,8> slots{};
+        for(std::size_t i=0;i<chains.size();++i) {
+            const auto& chain=chains[i];
+            if(chain.grounding && chain.grounding->plant_lock && states[i].grounding)
+                slots[chain.slot-1]=&*states[i].grounding;
+        }
+        for(std::size_t index_in_rig=0;index_in_rig<slots.size();++index_in_rig)if(const auto* state=slots[index_in_rig]) {
+            check(count<output.size(),"Foot plant observation buffer is too small.");
+            output[count++]={entity,static_cast<std::uint32_t>(index_in_rig+1),state};
+        }
+    }
+    return count;
+}
 bool RuntimeAnimations::has_held_foot(const std::function<bool(const RuntimeFootPlantAnchor&)>& affected) const {
     for(const auto& [entity,index]:membership_->indices) {
         if(procedural_suspended(entity))continue;

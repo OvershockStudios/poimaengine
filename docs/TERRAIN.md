@@ -164,6 +164,54 @@ enabled and disabled. The native `poima-reconstruction-quality-test` accepts
 `OUTPUT_PREFIX GPU --mutable-snow-motion forward fsr3_native`. It also accepts
 `deferred` and `fsr3_quality`.
 
+### Leave depressions with planted feet
+
+Add a `foot_release` profile to the `snow.set` definition to use authored
+[planted-foot locking](FOOT_PLANTING.md).
+
+```json
+{"radius_units": 512, "depth_units": 96, "sole_tolerance_m": 0.002}
+```
+
+This profile uses a 12.5 cm radius and allows up to 2.34 cm of additional
+compaction per contact, subject to the snow thickness and radial falloff.
+Use the same radius and depth bounds as a scripted stamp. The allowed sole
+tolerance is 0.001–0.02 m. The runtime records a newly locked foot when its
+solved sole meets the tolerance and the contact hits a bound snow triangle.
+
+The footprint becomes ready on a confirmed lift. Starting with the next
+tick, the runtime tries the oldest ready footprint whose compaction would
+preserve every held foot's support triangle and immediately connected
+samples. A safe footprint can proceed while another waits. An explicit
+`runtime.snow.step` stamp gets the first tick's attempt, including a stamp
+that leaves the geometry unchanged. A foot that loses its lock when its
+slot is disabled or its rig is removed gives up the held footprint. A
+footprint that is already ready remains queued if its source rig is removed.
+
+Read `foot_release` in `runtime.snow.inspect` for holding and ready rows and
+outcome counts. Each row identifies the rig, slot, acquisition tick, snow
+tile, source triangle and quantized center. Ready rows also give the release
+tick. The queue holds up to 64 planted contacts and 16 ready footprints. When
+full, it keeps the existing ready footprints and counts new overflow. A
+ready footprint with zero effective compaction is consumed as `saturated`.
+An enabled region saves the queue and its outcome counts with the compacted
+grid. Loading a save taken during a hold or after a lift preserves the same
+next eligible footprint. Restoration checks the contact timeline against
+the saved IK state for live rigs and the allocation history for retired IDs.
+
+Run the [plant and release contract](../tests/snow_foot_release_contract.py)
+with the pinned Original Knight GLB and CC0 notice.
+
+```sh
+python3 tests/snow_foot_release_contract.py build/linux-game/poima \
+  --source "$knight_glb" --license "$knight_notice" --output build/snow-sole-check
+```
+
+The [Vulkan contract](../tests/snow_foot_release_capture.py) also checks the
+visible terrain and the actor in a relocated Windows export. Supply the
+installed Windows runtime with `--runtime-root` and select the adapter and
+rendering path with `--gpu` and `--lighting-path`.
+
 ## Generate and sample geometry from C++
 
 [`poima::terrain::Heightfield`](../include/poima/terrain.hpp) builds indexed

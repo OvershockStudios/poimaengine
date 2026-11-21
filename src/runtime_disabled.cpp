@@ -62,6 +62,7 @@ RuntimeNavigationPath Runtime::navigation_path(const RuntimeNavigationRequest&) 
 const water::Region* Runtime::water_region() const noexcept { return nullptr; }
 const snow::Region* Runtime::snow_region() const noexcept { return nullptr; }
 const snow::State* Runtime::snow_state() const noexcept { return nullptr; }
+const snow::FootReleaseState* Runtime::snow_foot_releases() const noexcept { return nullptr; }
 RuntimeParticleObservation Runtime::particle_observation() const { throw std::runtime_error("Simulation is not built."); }
 std::optional<RuntimeRayHit> Runtime::raycast(const RuntimeRay&) const { throw std::runtime_error("Simulation is not built."); }
 RuntimeIkClearance Runtime::ik_clearance(const RuntimeIkClearanceRequest&) const {throw std::runtime_error("Simulation is not built.");}

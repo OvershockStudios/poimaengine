@@ -415,7 +415,7 @@ std::string Runtime::save_snapshot(const std::string& content_sha256) const {
         require(s.water_region->grid().tick()==s.tick,"Water region tick differs from its runtime.");
         payload["water"]=s.water_region->save();
     }
-    if(s.snow_live)payload["snow"]=s.snow_binding->save(s.snow_live->state);
+    if(s.snow_live)payload["snow"]=s.archive_snow();
     if(const auto* particles=s.particle_runtime.get()) {
         require(particles->system.status().tick==s.tick,"Particle system tick differs from its runtime.");
         SaveJson sources=SaveJson::array();
@@ -670,7 +670,7 @@ std::unique_ptr<Runtime> Runtime::restore_snapshot_data(const RuntimeDefinition&
     // The private constructor also initializes Jolt before owner-vector parsing.
     auto candidate=std::unique_ptr<Runtime>(new Runtime(restored_definition,std::move(executor),physical_bootstrap ? &*physical_bootstrap : nullptr));auto& s=*candidate->impl_;s.tick=tick;
     if(s.water_region)s.water_region->restore(water_extension,tick);
-    if(s.snow_binding)s.restore_snow(snow_extension);
+    if(s.snow_binding)s.restore_snow(std::move(snow_extension));
     std::optional<Impl::PhysicalCheckpoint> physical_checkpoint;
     if(joined_physics)physical_checkpoint=save_physical_checkpoint(s,physical_extension,*physical_bootstrap,tick);
     if(structural) {
@@ -915,6 +915,7 @@ std::unique_ptr<Runtime> Runtime::restore_snapshot_data(const RuntimeDefinition&
         s.validate_procedural_supports(rig);
     }
     s.validate_planting_membership();
+    s.validate_restored_snow_foot_releases();
     if(s.animations->has_ik() || s.animations->has_root_motion()) { s.animation_locals();s.sync(); }
     if(physical_checkpoint) {
         // Broadphase membership/global constraint order already match. Restore

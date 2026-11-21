@@ -3,6 +3,7 @@
 #include "poima/gameplay_compatibility.hpp"
 #include "poima/runtime.hpp"
 #include "poima/snow.hpp"
+#include "poima/snow_releases.hpp"
 #include "physical_rig_json.hpp"
 #include "pose_frames.hpp"
 #include "poima/scene.hpp"
@@ -249,8 +250,13 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     ops.push_back(object_schema({{"op",{{"const","water.set"}}},{"asset",{{"anyOf",Json::array({asset_id,Json{{"type","null"}}})}}}},{"op","asset"}));
     auto snow_tiles=vector(snow_tile_id,2);
     snow_tiles["uniqueItems"]=true;
-    auto snow_definition=object_schema({{"tiles",snow_tiles},{"thickness_units",unsigned_range(1,snow::max_depth_units)}},
-        {"tiles","thickness_units"});
+    auto foot_release=object_schema({{"radius_units",unsigned_range(snow::min_radius_units,snow::max_radius_units)},
+        {"depth_units",unsigned_range(1,snow::max_depth_units)},
+        {"sole_tolerance_m",mark_range(snow::min_sole_tolerance_m,snow::max_sole_tolerance_m)}},
+        {"radius_units","depth_units","sole_tolerance_m"});
+    foot_release["description"]="Opt-in compaction from grounded feet. A qualifying locked sole creates an intent on a lift reported by grounding. The intent becomes eligible for a pre-physics stamp on the next tick.";
+    auto snow_definition=object_schema({{"tiles",snow_tiles},{"thickness_units",unsigned_range(1,snow::max_depth_units)},
+        {"foot_release",foot_release}},{"tiles","thickness_units"});
     snow_definition["description"]="Bind two existing cooked terrain entities in west-east order. Each must use the same visible static primitive for rendering and collision. Null clears the binding.";
     ops.push_back(object_schema({{"op",{{"const","snow.set"}}},
         {"definition",{{"anyOf",Json::array({snow_definition,Json{{"type","null"}}})}}}},{"op","definition"}));
@@ -291,7 +297,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 188}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 189}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -641,13 +647,16 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     snow_stamp["description"]="On the first tick, compact the committed snow surface hit by the ray. Its first hit must match the receiver and cooked triangle at the expected generation. A failed stamp rejects the batch. Outside runtime-game-session v1.";
     result["snow"]={{"available",Runtime::available()},{"binding_operation","snow.set"},
         {"samples_x",snow::samples_x},{"samples_z",snow::samples_z},{"spacing_m",snow::spacing_m},
-        {"depth_unit_m",snow::unit_m},{"volume_unit_m3",snow::volume_unit_m3},{"stamps_per_step",1}};
+        {"depth_unit_m",snow::unit_m},{"volume_unit_m3",snow::volume_unit_m3},{"stamps_per_step",1},
+        {"foot_release",std::move(foot_release)},
+        {"foot_release_limits",{{"holding",snow::max_held_releases},{"ready",snow::max_ready_releases},
+            {"attempts_per_tick",1},{"snapshot_version",2}}}};
     if(Runtime::available()) {
         const Json sample={{"type","array"},{"minItems",2},{"maxItems",2},
             {"prefixItems",Json::array({unsigned_range(0,snow::samples_x-1),unsigned_range(0,snow::samples_z-1)})}};
         methods["runtime.snow.inspect"]=object_schema({{"session_id",id},{"tick",rev},{"structure_revision",rev},
             {"samples",{{"type","array"},{"maxItems",64},{"items",sample}}}},{"session_id","tick","structure_revision"});
-        methods["runtime.snow.inspect"]["description"]="Read committed generation, tile binding, compacted sample count, lost volume and optionally up to 64 pairs of lattice indices [x,z]. Outside runtime-game-session v1.";
+        methods["runtime.snow.inspect"]["description"]="Read committed generation, tile binding, loss and up to 64 lattice samples. Opt-in foot_release includes held and ready intents and outcome counts. Outside runtime-game-session v1.";
     }
     auto mark_command=object_schema({{"receiver",id},{"source",id},{"ray",mark_ray},{"travel_direction",mark_ray_vector},{"profile",mark_profile_id},
         {"lifetime_ticks",mark_lifetime},{"overflow",{{"enum",{"reject","recycle_oldest_timed"}},{"default","reject"}}}},{"receiver","ray"});

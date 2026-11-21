@@ -54,6 +54,8 @@
             result["compacted_samples"]=region->compacted_samples(*state);
             result["lost_volume_units"]=loss;
             result["lost_volume_m3"]=static_cast<double>(loss)*snow::volume_unit_m3;
+            if(const auto* releases=runtime_->snow_foot_releases())
+                result["foot_release"]=snow::save_foot_releases(*releases,region->definition());
         }
         if(params.contains("samples")) {
             const auto& samples=params.at("samples");

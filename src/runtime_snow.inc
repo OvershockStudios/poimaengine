@@ -31,6 +31,7 @@
     };
     std::optional<snow::Region> snow_binding;
     std::shared_ptr<const SnowSurface> snow_live;
+    std::optional<snow::FootReleaseState> snow_releases;
     std::array<entt::entity,2> snow_entities{};
     std::array<JPH::BodyID,2> snow_bodies;
 
@@ -44,6 +45,7 @@
             base->shapes[tile]=topology->mesh_shapes.at(snow_bodies[tile].GetIndexAndSequenceNumber());
         }
         snow_live=std::move(base);
+        if(snow_binding->definition().foot_release)snow_releases.emplace();
     }
 
     const JPH::MeshShape* ray_mesh(JPH::uint32 body) const {
@@ -93,30 +95,42 @@
         if(!wake.empty())bodies.ActivateBodies(wake.data(),static_cast<int>(wake.size()));
     }
 
-    bool stamp_conflicts_with_sole(const snow::State& next,const RuntimeFootPlantAnchor& anchor) const {
+    snow::SampleMask held_snow_samples() const {
+        snow::SampleMask pinned;
         const auto& tiles=snow_binding->definition().tiles;
-        const auto support=std::find(tiles.begin(),tiles.end(),anchor.support);
-        if(support==tiles.end())return false;
-        require(anchor.triangle && *anchor.triangle<2*snow::tile_cells*snow::tile_cells,
-            "A planted snow anchor requires a valid source triangle.");
-        const auto tile=static_cast<unsigned>(support-tiles.begin());
-        const auto& mesh=*snow_live->meshes[tile];
-        constexpr unsigned row=snow::tile_cells+1;
-        for(unsigned corner=0;corner<3;++corner) {
-            const auto vertex=mesh.indices[*anchor.triangle*3+corner];
-            const auto x=vertex%row+tile*snow::tile_cells,z=vertex/row;
-            const auto changed=[&](unsigned xx,unsigned zz) {
-                const auto index=zz*snow::samples_x+xx;
-                return snow_live->state.compaction[index]!=next.compaction[index];
-            };
-            // Normals use the incident triangles' one-ring, including the
-            // shared samples across the seam and the fixed cell diagonal.
-            if(changed(x,z) || (x && changed(x-1,z)) || (x+1<snow::samples_x && changed(x+1,z)) ||
-                (z && changed(x,z-1)) || (z+1<snow::samples_z && changed(x,z+1)) ||
-                (x && z && changed(x-1,z-1)) ||
-                (x+1<snow::samples_x && z+1<snow::samples_z && changed(x+1,z+1)))return true;
-        }
-        return false;
+        (void)animations->has_held_foot([&](const RuntimeFootPlantAnchor& anchor) {
+            const auto support=std::find(tiles.begin(),tiles.end(),anchor.support);
+            if(support==tiles.end())return false;
+            require(anchor.triangle && *anchor.triangle<2*snow::tile_cells*snow::tile_cells,
+                "A planted snow anchor requires a valid source triangle.");
+            const auto tile=static_cast<unsigned>(support-tiles.begin());
+            const auto& mesh=*snow_live->meshes[tile];
+            constexpr unsigned row=snow::tile_cells+1;
+            // Adjacent faces include the fixed diagonal and can cross the tile seam.
+            constexpr std::array<std::array<int,2>,7> ring{{{0,0},{-1,0},{1,0},{0,-1},{0,1},{-1,-1},{1,1}}};
+            for(unsigned corner=0;corner<3;++corner) {
+                const auto vertex=mesh.indices[*anchor.triangle*3+corner];
+                const auto x=static_cast<int>(vertex%row+tile*snow::tile_cells),z=static_cast<int>(vertex/row);
+                for(const auto& offset:ring) {
+                    const auto xx=x+offset[0],zz=z+offset[1];
+                    if(xx>=0 && xx<static_cast<int>(snow::samples_x) && zz>=0 && zz<static_cast<int>(snow::samples_z))
+                        pinned.set(static_cast<unsigned>(zz)*snow::samples_x+static_cast<unsigned>(xx));
+                }
+            }
+            return false;
+        });
+        return pinned;
+    }
+
+    bool compact_snow(snow::StampCenter center,std::uint32_t radius_units,std::uint32_t depth_units) {
+        auto compacted=snow_live->state;
+        const auto dirty=snow_binding->apply(compacted,center,radius_units,depth_units);
+        if(!dirty)return false;
+        auto candidate=std::make_shared<SnowSurface>(*snow_live);
+        candidate->state=compacted;
+        build_snow_geometry(*candidate,dirty);
+        publish_snow(std::move(candidate),true);
+        return true;
     }
 
     void apply_snow_stamp(const RuntimeSnowStamp& stamp) {
@@ -127,20 +141,38 @@
         require(hit && hit->entity==stamp.receiver && hit->triangle==stamp.triangle && hit->normal &&
             (*hit->normal)[1]>0 && pose_frames::dot(*hit->normal,stamp.ray.direction)<0,
             "Snow stamp ray must first hit the expected upward-facing receiver triangle.");
-        auto candidate=std::make_shared<SnowSurface>(*snow_live);
-        const auto dirty=snow_binding->apply(candidate->state,hit->position[0],hit->position[2],stamp.radius_units,stamp.depth_units);
-        if(!dirty)return;
-        require(!animations->has_held_foot([&](const auto& anchor) {return stamp_conflicts_with_sole(candidate->state,anchor);}),
+        const auto center=snow_binding->quantize_center(hit->position[0],hit->position[2]);
+        require(!snow_binding->changes_samples(snow_live->state,center,stamp.radius_units,stamp.depth_units,held_snow_samples()),
             "Snow compaction would alter a held foot anchor. Release it before stamping.");
-        build_snow_geometry(*candidate,dirty);
-        publish_snow(std::move(candidate),true);
+        (void)compact_snow(center,stamp.radius_units,stamp.depth_units);
     }
 
-    void restore_snow(const nlohmann::json& archived) {
+    nlohmann::json archive_snow() const {
+        auto archived=snow_binding->save(snow_live->state);
+        if(snow_releases) {
+            archived["version"]=2;
+            archived["foot_release"]=snow::save_foot_releases(*snow_releases,snow_binding->definition());
+        }
+        return archived;
+    }
+
+    void restore_snow(nlohmann::json archived) {
+        if(snow_releases) {
+            require(archived.is_object() && archived.contains("version") && archived.at("version").is_number_integer() &&
+                archived.at("version")==2 && archived.contains("foot_release"),
+                "Snow foot-release snapshot needs version 2 and its intent ledger.");
+            *snow_releases=snow::restore_foot_releases(archived.at("foot_release"),snow_binding->definition(),tick);
+            archived.erase("foot_release");
+            archived["version"]=1;
+        }
         auto candidate=std::make_shared<SnowSurface>(*snow_live);
         candidate->state=snow_binding->restore(archived);
         require(candidate->state.generation<=tick,"Saved snow generation exceeds its committed tick.");
+        require(!snow_releases || snow_releases->counts.applied<=candidate->state.generation,
+            "Saved applied snow footprints exceed the committed compaction generation.");
         if(!candidate->state.generation)return;
         build_snow_geometry(*candidate,3);
         publish_snow(std::move(candidate),false);
     }
+
+#include "runtime_snow_releases.inc"

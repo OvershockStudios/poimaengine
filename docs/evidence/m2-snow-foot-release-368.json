@@ -1,0 +1,1112 @@
+{
+  "format": "poima.evidence.snow-foot-release.v1",
+  "version": "0.0.368",
+  "discovery_schema_revision": 189,
+  "base_commit": "c7b619879d6eca9d99cb0ca01d50d781566ca26c",
+  "scope": [
+    "Bounded two-tile snow with circular compaction and fixed-step planted-foot decisions.",
+    "Archived Knight fixtures use controlled held and lifted poses. Vulkan uses relocated games and normal rendering.",
+    "The FSR regression exercises the earlier explicit-stamp path."
+  ],
+  "binaries": {
+    "linux": "746b6af9684835ee4dedef3da392e63bd3e08b6a9ea8e17faf4bf0ba0c0d2fd6",
+    "windows": "ef7fd8a249e8edab6d3d79bd44ec7c1b484c926925c6dcc2e9baa85f1d2eba08",
+    "continuous_vulkan_qualifier": "876dd04463563ecbba506436bd24d7a9eb04fd347628a4f7fc62f2ebfedc70da"
+  },
+  "linux": {
+    "character": {
+      "asset": "c816d0e811cf4f104b3106b4f67076a49672f461450089ac6316aa5c82175ac7",
+      "source_sha256": "60428e3abc09ba83e595d256e3af8c5c976b46cdae599f0802fc82b4a3445168",
+      "license_sha256": "ae322141814056dda0deea7540d74c41d87aee1da319977cd1bd84ee5a923629"
+    },
+    "receipt_sha256": "e3f1b3495bddc6c0d8a71e35e133dbe46db566baebf3c845c0f60f904f4f3723",
+    "earlier_failed_report_sha256": [],
+    "phases": {
+      "held": {
+        "tick": 2,
+        "generation": 0,
+        "compacted_samples": 0,
+        "lost_volume_units": 0,
+        "lost_volume_m3": 0.0,
+        "foot_release": {
+          "counts": {
+            "applied": 0,
+            "cancelled": 0,
+            "overflow": 0,
+            "saturated": 0
+          },
+          "holding": [
+            {
+              "acquired_tick": 1,
+              "center_units": [
+                5316,
+                2166
+              ],
+              "receiver": "0000000000000000000000000000019b",
+              "rig": "00000000000000000000000000000190",
+              "slot": 1,
+              "triangle": 1043
+            },
+            {
+              "acquired_tick": 1,
+              "center_units": [
+                3355,
+                2362
+              ],
+              "receiver": "0000000000000000000000000000019a",
+              "rig": "00000000000000000000000000000190",
+              "slot": 2,
+              "triangle": 1205
+            }
+          ],
+          "ready": []
+        }
+      },
+      "warm released": {
+        "tick": 3,
+        "generation": 0,
+        "compacted_samples": 0,
+        "lost_volume_units": 0,
+        "lost_volume_m3": 0.0,
+        "foot_release": {
+          "counts": {
+            "applied": 0,
+            "cancelled": 0,
+            "overflow": 0,
+            "saturated": 0
+          },
+          "holding": [],
+          "ready": [
+            {
+              "acquired_tick": 1,
+              "center_units": [
+                5316,
+                2166
+              ],
+              "receiver": "0000000000000000000000000000019b",
+              "released_tick": 3,
+              "rig": "00000000000000000000000000000190",
+              "slot": 1,
+              "triangle": 1043
+            },
+            {
+              "acquired_tick": 1,
+              "center_units": [
+                3355,
+                2362
+              ],
+              "receiver": "0000000000000000000000000000019a",
+              "released_tick": 3,
+              "rig": "00000000000000000000000000000190",
+              "slot": 2,
+              "triangle": 1205
+            }
+          ]
+        }
+      },
+      "warm explicit at tick 4": {
+        "tick": 4,
+        "generation": 1,
+        "compacted_samples": 1,
+        "lost_volume_units": 768,
+        "lost_volume_m3": 3.0517578125e-05,
+        "foot_release": {
+          "counts": {
+            "applied": 0,
+            "cancelled": 0,
+            "overflow": 0,
+            "saturated": 0
+          },
+          "holding": [],
+          "ready": [
+            {
+              "acquired_tick": 1,
+              "center_units": [
+                5316,
+                2166
+              ],
+              "receiver": "0000000000000000000000000000019b",
+              "released_tick": 3,
+              "rig": "00000000000000000000000000000190",
+              "slot": 1,
+              "triangle": 1043
+            },
+            {
+              "acquired_tick": 1,
+              "center_units": [
+                3355,
+                2362
+              ],
+              "receiver": "0000000000000000000000000000019a",
+              "released_tick": 3,
+              "rig": "00000000000000000000000000000190",
+              "slot": 2,
+              "triangle": 1205
+            }
+          ]
+        }
+      },
+      "warm explicit at tick 5": {
+        "tick": 5,
+        "generation": 1,
+        "compacted_samples": 1,
+        "lost_volume_units": 768,
+        "lost_volume_m3": 3.0517578125e-05,
+        "foot_release": {
+          "counts": {
+            "applied": 0,
+            "cancelled": 0,
+            "overflow": 0,
+            "saturated": 0
+          },
+          "holding": [],
+          "ready": [
+            {
+              "acquired_tick": 1,
+              "center_units": [
+                5316,
+                2166
+              ],
+              "receiver": "0000000000000000000000000000019b",
+              "released_tick": 3,
+              "rig": "00000000000000000000000000000190",
+              "slot": 1,
+              "triangle": 1043
+            },
+            {
+              "acquired_tick": 1,
+              "center_units": [
+                3355,
+                2362
+              ],
+              "receiver": "0000000000000000000000000000019a",
+              "released_tick": 3,
+              "rig": "00000000000000000000000000000190",
+              "slot": 2,
+              "triangle": 1205
+            }
+          ]
+        }
+      },
+      "warm automatic at tick 6": {
+        "tick": 6,
+        "generation": 2,
+        "compacted_samples": 452,
+        "lost_volume_units": 131028,
+        "lost_volume_m3": 0.005206584930419922,
+        "foot_release": {
+          "counts": {
+            "applied": 1,
+            "cancelled": 0,
+            "overflow": 0,
+            "saturated": 0
+          },
+          "holding": [],
+          "ready": [
+            {
+              "acquired_tick": 1,
+              "center_units": [
+                3355,
+                2362
+              ],
+              "receiver": "0000000000000000000000000000019a",
+              "released_tick": 3,
+              "rig": "00000000000000000000000000000190",
+              "slot": 2,
+              "triangle": 1205
+            }
+          ]
+        }
+      },
+      "warm automatic at tick 7": {
+        "tick": 7,
+        "generation": 3,
+        "compacted_samples": 793,
+        "lost_volume_units": 261348,
+        "lost_volume_m3": 0.01038503646850586,
+        "foot_release": {
+          "counts": {
+            "applied": 2,
+            "cancelled": 0,
+            "overflow": 0,
+            "saturated": 0
+          },
+          "holding": [],
+          "ready": []
+        }
+      },
+      "warm consumed": {
+        "tick": 8,
+        "generation": 3,
+        "compacted_samples": 793,
+        "lost_volume_units": 261348,
+        "lost_volume_m3": 0.01038503646850586,
+        "foot_release": {
+          "counts": {
+            "applied": 2,
+            "cancelled": 0,
+            "overflow": 0,
+            "saturated": 0
+          },
+          "holding": [],
+          "ready": []
+        }
+      },
+      "explicitly disabled sole": {
+        "tick": 3,
+        "generation": 0,
+        "compacted_samples": 0,
+        "lost_volume_units": 0,
+        "lost_volume_m3": 0.0,
+        "foot_release": {
+          "counts": {
+            "applied": 0,
+            "cancelled": 1,
+            "overflow": 0,
+            "saturated": 0
+          },
+          "holding": [],
+          "ready": [
+            {
+              "acquired_tick": 1,
+              "center_units": [
+                5316,
+                2166
+              ],
+              "receiver": "0000000000000000000000000000019b",
+              "released_tick": 3,
+              "rig": "00000000000000000000000000000190",
+              "slot": 1,
+              "triangle": 1043
+            }
+          ]
+        }
+      },
+      "one authorized print": {
+        "tick": 4,
+        "generation": 1,
+        "compacted_samples": 451,
+        "lost_volume_units": 130260,
+        "lost_volume_m3": 0.005176067352294922,
+        "foot_release": {
+          "counts": {
+            "applied": 1,
+            "cancelled": 1,
+            "overflow": 0,
+            "saturated": 0
+          },
+          "holding": [],
+          "ready": []
+        }
+      },
+      "no canceled print": {
+        "tick": 5,
+        "generation": 1,
+        "compacted_samples": 451,
+        "lost_volume_units": 130260,
+        "lost_volume_m3": 0.005176067352294922,
+        "foot_release": {
+          "counts": {
+            "applied": 1,
+            "cancelled": 1,
+            "overflow": 0,
+            "saturated": 0
+          },
+          "holding": [],
+          "ready": []
+        }
+      }
+    },
+    "rejected_profiles": [
+      {
+        "code": -32602,
+        "message": "Snow foot_release radius_units must be in 128..1536."
+      },
+      {
+        "code": -32602,
+        "message": "Snow foot_release depth_units must be in 1..512."
+      },
+      {
+        "code": -32602,
+        "message": "Snow foot_release sole_tolerance_m must be numeric."
+      }
+    ],
+    "late_rollback": {
+      "code": -32040,
+      "message": "Surface mark ray must first hit the expected receiver with a surface normal."
+    },
+    "held": {
+      "tick": 2,
+      "bytes": 84984,
+      "sha256": "0a710b4e38e1a4def8970388530115a4ab4b9f4e6533d0e4ba99bdf5efdedd6d"
+    },
+    "ready": {
+      "tick": 3,
+      "bytes": 82652,
+      "sha256": "581aa059feae2812b840abf60539e08f6d76bfb4a819781bd7dbdda8d1209fc0"
+    },
+    "final": {
+      "tick": 8,
+      "bytes": 89915,
+      "sha256": "310677d127aa257e67fcd6838e4f9a152cb7e5f62b1250c7ac5922708d41d6f0"
+    },
+    "retained_v1_save": {
+      "passed": true,
+      "executable_sha256": "746b6af9684835ee4dedef3da392e63bd3e08b6a9ea8e17faf4bf0ba0c0d2fd6",
+      "source_receipt_sha256": "4a5b1eaa773b70dc14ca3884ebf18af6d641469fd4549f9308345e23f6c56a99",
+      "checkpoint_sha256": "713ae039c1b8731c1520fd980035663633f89d4ee7221b1d8d7d02df935f53a7",
+      "final_sha256": "fb90f0039cb54247fd07cd7465350e219f17c9fb750f87a2330bb93231c30d85"
+    },
+    "overlap": {
+      "cold_checkpoints_exact": true,
+      "safe_bypass_tick": 3,
+      "wait_tick": 4,
+      "blocker_release_tick": 5,
+      "oldest_ready_applied_tick": 6,
+      "collected_final_tick": 8,
+      "applied": 4,
+      "receipt_sha256": "dc00d12e223aa64f40ce8512c102260602b31db525451dad12285463f55ef916",
+      "earlier_failed_report_sha256": [],
+      "protected_samples": 24,
+      "samples_the_blocked_stamp_would_change": 12,
+      "cooked_at_prephysics_ticks": [
+        2,
+        5,
+        6,
+        7
+      ],
+      "bypass_archive": {
+        "tick": 3,
+        "bytes": 164921,
+        "sha256": "091418e8cd8fbf659da08a1e206028d7bd4b01f626da229436fe166264840a68"
+      },
+      "final": {
+        "tick": 8,
+        "bytes": 168525,
+        "sha256": "841833294eaaf011354453ee974a98aac99461ee662ccf589e5f14867cba0984"
+      }
+    },
+    "retired_rig": {
+      "template_members": 73,
+      "cancelled_holds": 2,
+      "first_root": "00000000000000000000000000000006",
+      "retired_ready_source": "0000000000000000000000000000004f",
+      "kept_ready_rows": 2,
+      "next_entity_id": "00000000000000000000000000000098",
+      "structure_revision": 4,
+      "refused_member_removal": {
+        "code": -32602,
+        "message": "Removal needs a unique live spawned instance root."
+      },
+      "immediate_and_final_cold_save_exact": true,
+      "receipt_sha256": "d7a34144d4ba5d1b8fc1ee77d2959babf47709c897eda4f767e83b336a2efbc1",
+      "earlier_failed_report_sha256": [],
+      "held": {
+        "tick": 1,
+        "bytes": 90600,
+        "sha256": "f98302bda66ee7ae6752a9988240ad2940e50bd09eab3e86ee6d882ff87fe910"
+      },
+      "ready": {
+        "tick": 3,
+        "bytes": 36975,
+        "sha256": "f957e0b773db5c00d7430f4b4ca6e29de710ea6c702d4c48cdde863a8c33021c"
+      },
+      "final": {
+        "tick": 5,
+        "bytes": 44228,
+        "sha256": "89ea8b89f29bfd937b66a671ddfef17cf4247c2e74ebf4e301b9fe6f9ba49a41"
+      }
+    },
+    "refusals": {
+      "receipt_sha256": "7595ec021c6b3c15947dae1dcec6ff53549ebf9e0f00e69df3e0ece39ffd6d4b",
+      "earlier_failed_report_sha256": [],
+      "cases": [
+        {
+          "case": "duplicate-holding-slot",
+          "diagnostic": {
+            "code": -32070,
+            "message": "Snow held releases must be ordered by rig and slot without duplicate slots."
+          },
+          "sealed_data_sha256": "8b60a15bb012805a40ea7b4ed13b8142b57f734fbedc0ac1b548de6b5989f959"
+        },
+        {
+          "case": "reordered-holding",
+          "diagnostic": {
+            "code": -32070,
+            "message": "Snow held releases must be ordered by rig and slot without duplicate slots."
+          },
+          "sealed_data_sha256": "6e6f1b66ea94498f5a97e7dc9eae6405f00b1455b16e257839a0ca150fdf26a9"
+        },
+        {
+          "case": "duplicate-ready-acquisition",
+          "diagnostic": {
+            "code": -32070,
+            "message": "Snow foot release snapshot contains a duplicate acquisition."
+          },
+          "sealed_data_sha256": "91237a3abf0c696af02e7202a14516d3c16525be38293ea40493bac22f5f2368"
+        },
+        {
+          "case": "reordered-ready",
+          "diagnostic": {
+            "code": -32070,
+            "message": "Snow ready releases must be in release order without duplicate rows."
+          },
+          "sealed_data_sha256": "791268b4946a7fd93d5f7989742c5405e674b359e49a9aac589688b62a224587"
+        },
+        {
+          "case": "duplicate-across-queues",
+          "diagnostic": {
+            "code": -32070,
+            "message": "Snow foot release snapshot contains a duplicate acquisition."
+          },
+          "sealed_data_sha256": "7877f3770df2e08765e302fe4d0a561be5b424b408f00183ba88b34e0bcd9165"
+        },
+        {
+          "case": "overlapping-release-intervals",
+          "diagnostic": {
+            "code": -32070,
+            "message": "Snow ready releases for one foot overlap in time."
+          },
+          "sealed_data_sha256": "2756d3a4fc962cd4b166ae2c9720c188330595d22fa43d37336afd95911ccebf"
+        },
+        {
+          "case": "overlapping-ready-and-held",
+          "diagnostic": {
+            "code": -32070,
+            "message": "Snow ready release overlaps a holding acquisition."
+          },
+          "sealed_data_sha256": "eff4cf0286b1a48562b9f335134831a35e01172855694a13990db6d27102e414"
+        },
+        {
+          "case": "premature-release-of-live-hold",
+          "diagnostic": {
+            "code": -32070,
+            "message": "Saved released snow foot overlaps a live planted foot."
+          },
+          "sealed_data_sha256": "d6bce06451f707d27710758b47d5d586c07385c4ee1a882b88cf514ad35664e7"
+        },
+        {
+          "case": "off-triangle-center",
+          "diagnostic": {
+            "code": -32070,
+            "message": "Snow foot release center is outside the frozen receiver triangle."
+          },
+          "sealed_data_sha256": "dbe08e9037b1f8b5e5e7e6e503a04250282a5f852bad4e374de44d42ed146675"
+        },
+        {
+          "case": "wrong-held-acquisition",
+          "diagnostic": {
+            "code": -32070,
+            "message": "Saved snow holding intent differs from its live planted foot."
+          },
+          "sealed_data_sha256": "4fe0d8deebd0bcae0efb82257c8f796e6f9777ba4d1c99ef2436deb158655a63"
+        },
+        {
+          "case": "non-rig-live-identity",
+          "diagnostic": {
+            "code": -32070,
+            "message": "Saved released snow foot differs from its live rig slot."
+          },
+          "sealed_data_sha256": "57b90dc1bb7511f2c5a378640d9bd73713211949e51cd76c8a5a1072ec417363"
+        },
+        {
+          "case": "invented-retired-rig",
+          "diagnostic": {
+            "code": -32070,
+            "message": "Saved released snow foot has no allocated rig identity."
+          },
+          "sealed_data_sha256": "02fd3dabb67ac095ff295e73153a22921ce6167362cdf736529ce9e04c762aaa"
+        },
+        {
+          "case": "wrong-snow-version",
+          "diagnostic": {
+            "code": -32070,
+            "message": "Snow foot-release snapshot needs version 2 and its intent ledger."
+          },
+          "sealed_data_sha256": "35a982d60eaa1bd22b94a8c0bff73cc17c9d74df74c3279181edfcfe390755d0"
+        },
+        {
+          "case": "consumption-count",
+          "diagnostic": {
+            "code": -32070,
+            "message": "Snow foot release count is out of range."
+          },
+          "sealed_data_sha256": "10b6b1c4475aad416a8b29ab7a2e63f9ca0a3e0506c163bc3f8f74cf286554e2"
+        },
+        {
+          "case": "acquisition-count",
+          "diagnostic": {
+            "code": -32070,
+            "message": "Snow foot release counts exceed the committed acquisition budget."
+          },
+          "sealed_data_sha256": "a713e8e801444da4ebb7c9f4c32fb475cfdf4bdb69023347f1510a774974775c"
+        },
+        {
+          "case": "outside-exact-integer-count",
+          "diagnostic": {
+            "code": -32070,
+            "message": "Invalid snow foot release overflow count."
+          },
+          "sealed_data_sha256": "6ca338e3bef2539dbadd162557ab27deadf489410fadb413c4d665798ad5e8b3"
+        },
+        {
+          "case": "applied-before-compaction",
+          "diagnostic": {
+            "code": -32070,
+            "message": "Saved applied snow footprints exceed the committed compaction generation."
+          },
+          "sealed_data_sha256": "124b0fb0a18107c6b70141a1b0345d1f42d6adf5b7906afbdafd18b36ec195d5"
+        }
+      ],
+      "active_archive_byte_identical": true,
+      "original_slots_unchanged": true
+    },
+    "ctest": {
+      "suites": 17,
+      "failures": 0,
+      "report_sha256": "eb6786621f43df550776c4fa3c0db89860f9206a1456bddfb0a979bb03844e02"
+    }
+  },
+  "relocated_vulkan": [
+    {
+      "gpu": "AMD Radeon(TM) Graphics",
+      "lighting_path": "forward",
+      "receipt_sha256": "6f1b334b921ce402e63c76e09e38e65837084a6d934ccbd94eaa25a67aa1efda",
+      "earlier_failed_report_sha256": [],
+      "max_terrain_device_depth_error": 1.6740957420324776e-07,
+      "min_visible_actor_ground_gap_m": 1.175566715200616,
+      "captures": {
+        "warm held": {
+          "sha256": "5cbc271e56b96e3f5930af9e687997862d61828328228365cb576b5402d5f102",
+          "tick": 2,
+          "sampled_depths": {
+            "east rim": 0.9768102765083313,
+            "west rim": 0.9802608489990234,
+            "untouched": 0.9745920896530151,
+            "visible knight": 0.9685275554656982
+          },
+          "skinned_instances": 6
+        },
+        "warm ready": {
+          "sha256": "acfdbf7021082a07e1eb4b7026718b2b99d81d2d83c6508849661bf05224092c",
+          "tick": 3,
+          "sampled_depths": {
+            "east rim": 0.9768102765083313,
+            "west rim": 0.9802608489990234,
+            "untouched": 0.9745920896530151,
+            "visible knight": 0.9662564396858215
+          },
+          "skinned_instances": 6
+        },
+        "warm automatic 1": {
+          "sha256": "c799fbeb25e757ba72a9974a8242873d6ef6d9ab1d8cd38b6c9eda7e968e302e",
+          "tick": 4,
+          "sampled_depths": {
+            "east rim": 0.9770389795303345,
+            "west rim": 0.9802608489990234,
+            "untouched": 0.9745920896530151,
+            "visible knight": 0.9662564396858215
+          },
+          "skinned_instances": 6
+        },
+        "warm automatic 2": {
+          "sha256": "56e819e3c659c69af9fcf6a567c0a0c2ae161d5a63a63668d89c83ee38274a70",
+          "tick": 5,
+          "sampled_depths": {
+            "east rim": 0.9770389795303345,
+            "west rim": 0.9803845882415771,
+            "untouched": 0.9745920896530151,
+            "visible knight": 0.9662564396858215
+          },
+          "skinned_instances": 6
+        },
+        "cold ready": {
+          "sha256": "acfdbf7021082a07e1eb4b7026718b2b99d81d2d83c6508849661bf05224092c",
+          "tick": 3,
+          "sampled_depths": {
+            "east rim": 0.9768102765083313,
+            "west rim": 0.9802608489990234,
+            "untouched": 0.9745920896530151,
+            "visible knight": 0.9662564396858215
+          },
+          "skinned_instances": 6
+        },
+        "cold automatic 1": {
+          "sha256": "c799fbeb25e757ba72a9974a8242873d6ef6d9ab1d8cd38b6c9eda7e968e302e",
+          "tick": 4,
+          "sampled_depths": {
+            "east rim": 0.9770389795303345,
+            "west rim": 0.9802608489990234,
+            "untouched": 0.9745920896530151,
+            "visible knight": 0.9662564396858215
+          },
+          "skinned_instances": 6
+        },
+        "cold automatic 2": {
+          "sha256": "56e819e3c659c69af9fcf6a567c0a0c2ae161d5a63a63668d89c83ee38274a70",
+          "tick": 5,
+          "sampled_depths": {
+            "east rim": 0.9770389795303345,
+            "west rim": 0.9803845882415771,
+            "untouched": 0.9745920896530151,
+            "visible knight": 0.9662564396858215
+          },
+          "skinned_instances": 6
+        }
+      },
+      "ready": {
+        "tick": 3,
+        "bytes": 82890,
+        "sha256": "a71c0d41ae821f13baf660ba385e924f81d9892b32da3f5948c38f452e75561f"
+      },
+      "final": {
+        "tick": 5,
+        "bytes": 90143,
+        "sha256": "859b4565c5fdc95b2226462e5c8b625b205a4e776cf45f73853d370150939779"
+      },
+      "knight": {
+        "asset": "c816d0e811cf4f104b3106b4f67076a49672f461450089ac6316aa5c82175ac7",
+        "source_sha256": "60428e3abc09ba83e595d256e3af8c5c976b46cdae599f0802fc82b4a3445168",
+        "license_sha256": "ae322141814056dda0deea7540d74c41d87aee1da319977cd1bd84ee5a923629",
+        "provenance_sha256": "430247addaa14855a883a901d8224eafd042dd10d204bd725b27ef537c3dcc87"
+      }
+    },
+    {
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "lighting_path": "forward",
+      "receipt_sha256": "b05a0530df09a6fedbd12bbc104d84ac1a3f911a9e1c01ccb5f993d614b3222f",
+      "earlier_failed_report_sha256": [],
+      "max_terrain_device_depth_error": 1.0780492942785713e-07,
+      "min_visible_actor_ground_gap_m": 1.175566715200616,
+      "captures": {
+        "warm held": {
+          "sha256": "b1f85b2d6999638c7c31fb399fb374a00662e755c27c8f1fd73124a54fcfd9ac",
+          "tick": 2,
+          "sampled_depths": {
+            "east rim": 0.9768103361129761,
+            "west rim": 0.9802609086036682,
+            "untouched": 0.9745920896530151,
+            "visible knight": 0.9685275554656982
+          },
+          "skinned_instances": 6
+        },
+        "warm ready": {
+          "sha256": "6f041b1a240a0304b250e32b448eeff3f32ed61ca0131f6a27f2b3b9ba6ac565",
+          "tick": 3,
+          "sampled_depths": {
+            "east rim": 0.9768103361129761,
+            "west rim": 0.9802609086036682,
+            "untouched": 0.9745920896530151,
+            "visible knight": 0.9662563800811768
+          },
+          "skinned_instances": 6
+        },
+        "warm automatic 1": {
+          "sha256": "fcf0342429e460f7f56f35c0fb8ba1bbf8194f92e2c5349e856622e28414c85e",
+          "tick": 4,
+          "sampled_depths": {
+            "east rim": 0.9770389795303345,
+            "west rim": 0.9802609086036682,
+            "untouched": 0.9745920896530151,
+            "visible knight": 0.9662563800811768
+          },
+          "skinned_instances": 6
+        },
+        "warm automatic 2": {
+          "sha256": "6de730f0a902c36d6909f1372fad2b466cde6ae293c3eaa9b89e5e279fa43f1c",
+          "tick": 5,
+          "sampled_depths": {
+            "east rim": 0.9770389795303345,
+            "west rim": 0.9803846478462219,
+            "untouched": 0.9745920896530151,
+            "visible knight": 0.9662563800811768
+          },
+          "skinned_instances": 6
+        },
+        "cold ready": {
+          "sha256": "6f041b1a240a0304b250e32b448eeff3f32ed61ca0131f6a27f2b3b9ba6ac565",
+          "tick": 3,
+          "sampled_depths": {
+            "east rim": 0.9768103361129761,
+            "west rim": 0.9802609086036682,
+            "untouched": 0.9745920896530151,
+            "visible knight": 0.9662563800811768
+          },
+          "skinned_instances": 6
+        },
+        "cold automatic 1": {
+          "sha256": "fcf0342429e460f7f56f35c0fb8ba1bbf8194f92e2c5349e856622e28414c85e",
+          "tick": 4,
+          "sampled_depths": {
+            "east rim": 0.9770389795303345,
+            "west rim": 0.9802609086036682,
+            "untouched": 0.9745920896530151,
+            "visible knight": 0.9662563800811768
+          },
+          "skinned_instances": 6
+        },
+        "cold automatic 2": {
+          "sha256": "6de730f0a902c36d6909f1372fad2b466cde6ae293c3eaa9b89e5e279fa43f1c",
+          "tick": 5,
+          "sampled_depths": {
+            "east rim": 0.9770389795303345,
+            "west rim": 0.9803846478462219,
+            "untouched": 0.9745920896530151,
+            "visible knight": 0.9662563800811768
+          },
+          "skinned_instances": 6
+        }
+      },
+      "ready": {
+        "tick": 3,
+        "bytes": 82890,
+        "sha256": "d15180146765819e1559f29b3094242659080fcfc3100b8054fde2ca618675a4"
+      },
+      "final": {
+        "tick": 5,
+        "bytes": 90143,
+        "sha256": "1ec5e61adac657522a8ee538f99ab69d62692c7892151e3c52a5fb59df3d892d"
+      },
+      "knight": {
+        "asset": "c816d0e811cf4f104b3106b4f67076a49672f461450089ac6316aa5c82175ac7",
+        "source_sha256": "60428e3abc09ba83e595d256e3af8c5c976b46cdae599f0802fc82b4a3445168",
+        "license_sha256": "ae322141814056dda0deea7540d74c41d87aee1da319977cd1bd84ee5a923629",
+        "provenance_sha256": "430247addaa14855a883a901d8224eafd042dd10d204bd725b27ef537c3dcc87"
+      }
+    },
+    {
+      "gpu": "AMD Radeon(TM) Graphics",
+      "lighting_path": "deferred",
+      "receipt_sha256": "4ccfd553daa8bc0d7b0ea9933f603c54c1e07e3e981c3b86e7e71fdb68a86ca9",
+      "earlier_failed_report_sha256": [],
+      "max_terrain_device_depth_error": 1.6740957420324776e-07,
+      "min_visible_actor_ground_gap_m": 1.175566715200616,
+      "captures": {
+        "warm held": {
+          "sha256": "a827bca2b1e7c39d43799c7a31dbabdd36db2e428ea03d91bb254aa653391b66",
+          "tick": 2,
+          "sampled_depths": {
+            "east rim": 0.9768102765083313,
+            "west rim": 0.9802608489990234,
+            "untouched": 0.9745920896530151,
+            "visible knight": 0.9685275554656982
+          },
+          "skinned_instances": 6
+        },
+        "warm ready": {
+          "sha256": "07ea7e21a70e778eb1e23bd48a453c3f9c49a1c003f17a7299b796efa203d359",
+          "tick": 3,
+          "sampled_depths": {
+            "east rim": 0.9768102765083313,
+            "west rim": 0.9802608489990234,
+            "untouched": 0.9745920896530151,
+            "visible knight": 0.9662564396858215
+          },
+          "skinned_instances": 6
+        },
+        "warm automatic 1": {
+          "sha256": "9fb090afe7bbc48f945d719692459f8c7b704f96b185515c33fb3ac9a63cccdd",
+          "tick": 4,
+          "sampled_depths": {
+            "east rim": 0.9770389795303345,
+            "west rim": 0.9802608489990234,
+            "untouched": 0.9745920896530151,
+            "visible knight": 0.9662564396858215
+          },
+          "skinned_instances": 6
+        },
+        "warm automatic 2": {
+          "sha256": "6034af4b6fe5c0db71e878635f19b56280fca609b3a4e705637da2584e2b6ab6",
+          "tick": 5,
+          "sampled_depths": {
+            "east rim": 0.9770389795303345,
+            "west rim": 0.9803845882415771,
+            "untouched": 0.9745920896530151,
+            "visible knight": 0.9662564396858215
+          },
+          "skinned_instances": 6
+        },
+        "cold ready": {
+          "sha256": "07ea7e21a70e778eb1e23bd48a453c3f9c49a1c003f17a7299b796efa203d359",
+          "tick": 3,
+          "sampled_depths": {
+            "east rim": 0.9768102765083313,
+            "west rim": 0.9802608489990234,
+            "untouched": 0.9745920896530151,
+            "visible knight": 0.9662564396858215
+          },
+          "skinned_instances": 6
+        },
+        "cold automatic 1": {
+          "sha256": "9fb090afe7bbc48f945d719692459f8c7b704f96b185515c33fb3ac9a63cccdd",
+          "tick": 4,
+          "sampled_depths": {
+            "east rim": 0.9770389795303345,
+            "west rim": 0.9802608489990234,
+            "untouched": 0.9745920896530151,
+            "visible knight": 0.9662564396858215
+          },
+          "skinned_instances": 6
+        },
+        "cold automatic 2": {
+          "sha256": "6034af4b6fe5c0db71e878635f19b56280fca609b3a4e705637da2584e2b6ab6",
+          "tick": 5,
+          "sampled_depths": {
+            "east rim": 0.9770389795303345,
+            "west rim": 0.9803845882415771,
+            "untouched": 0.9745920896530151,
+            "visible knight": 0.9662564396858215
+          },
+          "skinned_instances": 6
+        }
+      },
+      "ready": {
+        "tick": 3,
+        "bytes": 82890,
+        "sha256": "54a9abfd8d5999ad066b58fcb7947d9b820c7aac09f7de9616a213e34b53e5fd"
+      },
+      "final": {
+        "tick": 5,
+        "bytes": 90143,
+        "sha256": "a5cc807c80cb736a95287409e1734e3e49a4462b9fc72fb02c6862e4a52ba73f"
+      },
+      "knight": {
+        "asset": "c816d0e811cf4f104b3106b4f67076a49672f461450089ac6316aa5c82175ac7",
+        "source_sha256": "60428e3abc09ba83e595d256e3af8c5c976b46cdae599f0802fc82b4a3445168",
+        "license_sha256": "ae322141814056dda0deea7540d74c41d87aee1da319977cd1bd84ee5a923629",
+        "provenance_sha256": "430247addaa14855a883a901d8224eafd042dd10d204bd725b27ef537c3dcc87"
+      }
+    },
+    {
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "lighting_path": "deferred",
+      "receipt_sha256": "e44f0f90d7fc2ac5fb4c71ac639b7cf359d3a40cd4d2c9f509c8d1768750d18e",
+      "earlier_failed_report_sha256": [],
+      "max_terrain_device_depth_error": 1.0780492942785713e-07,
+      "min_visible_actor_ground_gap_m": 1.175566715200616,
+      "captures": {
+        "warm held": {
+          "sha256": "8d0f54b980e340a856d0b6a76290171b4576c7a90ba8a9abe01d813b1fe11919",
+          "tick": 2,
+          "sampled_depths": {
+            "east rim": 0.9768103361129761,
+            "west rim": 0.9802609086036682,
+            "untouched": 0.9745920896530151,
+            "visible knight": 0.9685275554656982
+          },
+          "skinned_instances": 6
+        },
+        "warm ready": {
+          "sha256": "041a63971ab34cd55d301dc2a83261cac3b7a839a7c111a735f60962ef9f6c5d",
+          "tick": 3,
+          "sampled_depths": {
+            "east rim": 0.9768103361129761,
+            "west rim": 0.9802609086036682,
+            "untouched": 0.9745920896530151,
+            "visible knight": 0.9662563800811768
+          },
+          "skinned_instances": 6
+        },
+        "warm automatic 1": {
+          "sha256": "dd603f91144791380f4a38fc30772219e8a7d1199a71dcabc23268f6e1710a6e",
+          "tick": 4,
+          "sampled_depths": {
+            "east rim": 0.9770389795303345,
+            "west rim": 0.9802609086036682,
+            "untouched": 0.9745920896530151,
+            "visible knight": 0.9662563800811768
+          },
+          "skinned_instances": 6
+        },
+        "warm automatic 2": {
+          "sha256": "61730ed03e0c9267f5b3cabd14bc1ab13408a45482c2561dae06602ba9bca03a",
+          "tick": 5,
+          "sampled_depths": {
+            "east rim": 0.9770389795303345,
+            "west rim": 0.9803846478462219,
+            "untouched": 0.9745920896530151,
+            "visible knight": 0.9662563800811768
+          },
+          "skinned_instances": 6
+        },
+        "cold ready": {
+          "sha256": "041a63971ab34cd55d301dc2a83261cac3b7a839a7c111a735f60962ef9f6c5d",
+          "tick": 3,
+          "sampled_depths": {
+            "east rim": 0.9768103361129761,
+            "west rim": 0.9802609086036682,
+            "untouched": 0.9745920896530151,
+            "visible knight": 0.9662563800811768
+          },
+          "skinned_instances": 6
+        },
+        "cold automatic 1": {
+          "sha256": "dd603f91144791380f4a38fc30772219e8a7d1199a71dcabc23268f6e1710a6e",
+          "tick": 4,
+          "sampled_depths": {
+            "east rim": 0.9770389795303345,
+            "west rim": 0.9802609086036682,
+            "untouched": 0.9745920896530151,
+            "visible knight": 0.9662563800811768
+          },
+          "skinned_instances": 6
+        },
+        "cold automatic 2": {
+          "sha256": "61730ed03e0c9267f5b3cabd14bc1ab13408a45482c2561dae06602ba9bca03a",
+          "tick": 5,
+          "sampled_depths": {
+            "east rim": 0.9770389795303345,
+            "west rim": 0.9803846478462219,
+            "untouched": 0.9745920896530151,
+            "visible knight": 0.9662563800811768
+          },
+          "skinned_instances": 6
+        }
+      },
+      "ready": {
+        "tick": 3,
+        "bytes": 82890,
+        "sha256": "7986fb1a5f31950add0a26749f19ea7361a0787aa07da2b225647698a75cdce8"
+      },
+      "final": {
+        "tick": 5,
+        "bytes": 90143,
+        "sha256": "018b2363d27a23e8c2cd410fd28ae5d261b5c7c7ee6136f86aff9ebada630bbd"
+      },
+      "knight": {
+        "asset": "c816d0e811cf4f104b3106b4f67076a49672f461450089ac6316aa5c82175ac7",
+        "source_sha256": "60428e3abc09ba83e595d256e3af8c5c976b46cdae599f0802fc82b4a3445168",
+        "license_sha256": "ae322141814056dda0deea7540d74c41d87aee1da319977cd1bd84ee5a923629",
+        "provenance_sha256": "430247addaa14855a883a901d8224eafd042dd10d204bd725b27ef537c3dcc87"
+      }
+    }
+  ],
+  "scripted_fsr_regression": [
+    {
+      "gpu": "AMD Radeon(TM) Graphics",
+      "lighting_path": "forward",
+      "mode": "fsr3_native",
+      "frames": 7,
+      "extra_device_idle_waits": 0,
+      "max_motion_component_uv_error": 3.483861839119473e-08,
+      "receipt_sha256": "893f6a59664ad6725750256bb02f2a945ae91b986abfe77d772b705c27726dd7",
+      "validation_log_sha256": "109998f14c9bc45939d832ec0a409198e372a14266f164168f79b3d5574efa37",
+      "earlier_failed_report_sha256": []
+    },
+    {
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "lighting_path": "forward",
+      "mode": "fsr3_native",
+      "frames": 7,
+      "extra_device_idle_waits": 0,
+      "max_motion_component_uv_error": 1.4889828150316253e-07,
+      "receipt_sha256": "0b4b34bd1ce2b874f63241f1b770ed9b6d596b98466ef6c42e4543b50d71969c",
+      "validation_log_sha256": "44036f1015396de3db9f0f67e32289f6cfb6a12d960d125da8a44e21b769b2dd",
+      "earlier_failed_report_sha256": []
+    },
+    {
+      "gpu": "AMD Radeon(TM) Graphics",
+      "lighting_path": "deferred",
+      "mode": "fsr3_native",
+      "frames": 7,
+      "extra_device_idle_waits": 0,
+      "max_motion_component_uv_error": 3.483861839119473e-08,
+      "receipt_sha256": "bb7aa3955a586aa3ea9dd4cd6ca8e79ec0d5d9a4773d69b9024cd4224ff1542a",
+      "validation_log_sha256": "109998f14c9bc45939d832ec0a409198e372a14266f164168f79b3d5574efa37",
+      "earlier_failed_report_sha256": []
+    },
+    {
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "lighting_path": "deferred",
+      "mode": "fsr3_native",
+      "frames": 7,
+      "extra_device_idle_waits": 0,
+      "max_motion_component_uv_error": 1.4889828150316253e-07,
+      "receipt_sha256": "3d3e4190b586a8e1fd99738df3cce98d3ee3d2cbcc588f7fbc4ba437051045cf",
+      "validation_log_sha256": "44036f1015396de3db9f0f67e32289f6cfb6a12d960d125da8a44e21b769b2dd",
+      "earlier_failed_report_sha256": []
+    },
+    {
+      "gpu": "AMD Radeon(TM) Graphics",
+      "lighting_path": "forward",
+      "mode": "fsr3_quality",
+      "frames": 7,
+      "extra_device_idle_waits": 0,
+      "max_motion_component_uv_error": 7.636225837093918e-07,
+      "receipt_sha256": "eefcbd7a4d785e8c3f3ff72ff4f72d5f29a020bbd79109d5d3669d2c86d34ecc",
+      "validation_log_sha256": "109998f14c9bc45939d832ec0a409198e372a14266f164168f79b3d5574efa37",
+      "earlier_failed_report_sha256": []
+    },
+    {
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "lighting_path": "forward",
+      "mode": "fsr3_quality",
+      "frames": 7,
+      "extra_device_idle_waits": 0,
+      "max_motion_component_uv_error": 7.543093579632371e-07,
+      "receipt_sha256": "f7f0fa1a885751017e827bd1ab57f7f7d4e0a292db55136b94648cc7ec556ee1",
+      "validation_log_sha256": "44036f1015396de3db9f0f67e32289f6cfb6a12d960d125da8a44e21b769b2dd",
+      "earlier_failed_report_sha256": []
+    },
+    {
+      "gpu": "AMD Radeon(TM) Graphics",
+      "lighting_path": "deferred",
+      "mode": "fsr3_quality",
+      "frames": 7,
+      "extra_device_idle_waits": 0,
+      "max_motion_component_uv_error": 7.636225837093918e-07,
+      "receipt_sha256": "ca5703a3c08261a433f49860887e1473066ced8440263b8e5bcf2bfc2787f2ee",
+      "validation_log_sha256": "109998f14c9bc45939d832ec0a409198e372a14266f164168f79b3d5574efa37",
+      "earlier_failed_report_sha256": []
+    },
+    {
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "lighting_path": "deferred",
+      "mode": "fsr3_quality",
+      "frames": 7,
+      "extra_device_idle_waits": 0,
+      "max_motion_component_uv_error": 7.543093579632371e-07,
+      "receipt_sha256": "06e11ba0b19b04809e6cc68fbc53fa3f2ab8c92df523f99a20a12e01d1eb61f2",
+      "validation_log_sha256": "44036f1015396de3db9f0f67e32289f6cfb6a12d960d125da8a44e21b769b2dd",
+      "earlier_failed_report_sha256": []
+    }
+  ],
+  "windows_mcp": {
+    "suites": 17,
+    "report_sha256": "7793a8283ba2dff1dcb392afdf635594011edef50575cd3bb1b3f69c1958c894"
+  },
+  "qualification_resume": {
+    "initial_windows_exit": 143,
+    "completed_adapter_routes_before_interruption": 3,
+    "resumed_route": "NVIDIA deferred",
+    "incomplete_route_captures": 0,
+    "initial_log_sha256": "e0b1b55a3e089b40bbdb8e1d04948ce82fa9a6b1e08f82d2a062a335a2c7ebae",
+    "resumed_log_sha256": "b35052756219e9f318cfc685a3f4787c48705677efb2df897261c712382f5f68"
+  },
+  "inputs_sha256": {
+    "CMakeLists.txt": "4e8538cf13075238fb07b6463a83f846a70e13b21253c8368956ee1a4a489b9a",
+    "include/poima/runtime.hpp": "ba76650b59fff189f2424ae54cc5cf83528a451ee34bc69c28826f9d1cbfbd1e",
+    "include/poima/runtime_animation.hpp": "3c25f19d93cf6e4f1dd0397474f539e89a2e84922000a41861b3e2702a9165f2",
+    "include/poima/snow.hpp": "0624fc0a6afa32cbee193402dd90aa4c06d1d72cc30010b644b313cc7400f382",
+    "include/poima/snow_definition.hpp": "2c152c5a6afd6726cf68396cfca9a84f328e19ab0d4be4a1e5520451c0795408",
+    "include/poima/snow_releases.hpp": "0a949bcf0fe4f871021704b5c91b6849423c6167d26a70742d00bd3c43ff1842",
+    "src/runtime.cpp": "9c62d43635c5cc628c1235990ac047720d4c639403cce8d2f64fc3a6dd4f554a",
+    "src/runtime_animation.cpp": "c10174d454ee5df2c941fdd9ce51a8dac6e68b0fc5fc6dff3a424f787f42d629",
+    "src/runtime_disabled.cpp": "ab8d37f4383a65f5d04d86c1ca3629dccba9504532e13123d43457a3907c5215",
+    "src/runtime_save.inc": "a344d08165aee96ba23b85f89470b2566ce6b35fa4cae8f5a5d8d45f42457029",
+    "src/runtime_snow.inc": "46921b47aee1e98146d4af81b373f77ec230858d6b03d4c7e17424be1829b26f",
+    "src/runtime_snow_releases.inc": "8c3dc7aee583ab3e9dea07301f41691b9deb4dd65f522f555776adc1f93568ba",
+    "src/snow.cpp": "1b93fe779414fa8a59890c61da3167b72ca6ffb948f1d2160212a77312570151",
+    "src/snow_releases.cpp": "b7038e1ca1d8b0b6b4bb99c148da9f8db1b4fce5498fb95a3484238aadd86322",
+    "src/world.cpp": "230e50e2884b21f38d04ee0287220a06e523391da0d81ebd2c9ae16780ff17ea",
+    "src/world_schema.cpp": "413fa34a015f74079c9d035e90abcd4cfdbe3eaa1d30487c17b610ada8ff69cb",
+    "src/world_snow_service.inc": "52ab26732cd1b7362a76cca79716f85829bfff8b895c50d701d9ca6588b1b2a3",
+    "tests/asset_references_contract.py": "e28be5e22a0f9d15ff5da4d9b859c7841889cd9045db3cdc0242fde33ffd4bbc",
+    "tests/snow_foot_release_capture.py": "dd6a829c711a28c6e82b2d7749151ef6ce8cfb19020fa18fffa496a0f49c4922",
+    "tests/snow_foot_release_contract.py": "958d4598b199733886d85f3f4bef053cdcba6fa2902d567488f81527ffb40be0",
+    "tests/snow_foot_release_overlap.py": "ca9fd368c3a59e7972be135719d015ca262e7f5e3d7bb0cbe4601ea7eaa7a101",
+    "tests/snow_foot_release_save_refusals.py": "1a5f1e2ca9425b028d81389ee3090acf5849c11d1a1d2cdcc31d8a607f014b62",
+    "tests/snow_foot_release_structure.py": "c1ebaa8eca3816f291ebe2dfc25073ea529512fad7e3ed7573e0a7846b554fb4",
+    "tests/world_ui_contract.py": "2d8b71345a9cc13bb621a0a1ffff0225a26f2e643f37803b60ffcc1c323987b4"
+  }
+}

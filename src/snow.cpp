@@ -33,6 +33,15 @@ void validate_definition(const Definition& definition) {
         definition.tiles[0] != definition.tiles[1], "Snow needs two distinct nonzero lowercase terrain entity IDs.");
     require(definition.thickness_units >= 1 && definition.thickness_units <= max_depth_units,
         "Snow thickness_units must be in 1..512.");
+    if (definition.foot_release) {
+        const auto& profile = *definition.foot_release;
+        require(profile.radius_units >= min_radius_units && profile.radius_units <= max_radius_units,
+            "Snow foot_release radius_units must be in 128..1536.");
+        require(profile.depth_units >= 1 && profile.depth_units <= max_depth_units,
+            "Snow foot_release depth_units must be in 1..512.");
+        require(std::isfinite(profile.sole_tolerance_m) && profile.sole_tolerance_m >= min_sole_tolerance_m &&
+            profile.sole_tolerance_m <= max_sole_tolerance_m, "Snow foot_release sole_tolerance_m must be in 0.001..0.02.");
+    }
 }
 
 constexpr std::size_t sample_index(unsigned x, unsigned z) noexcept {
@@ -71,16 +80,64 @@ std::int64_t quantized_center(double world, double origin, unsigned cells) {
     return std::llround(units);
 }
 
+constexpr std::int64_t sample_spacing_units = static_cast<std::int64_t>(spacing_m / unit_m);
+
+struct StampArea {
+    unsigned min_x, max_x, min_z, max_z;
+    std::int64_t radius_squared;
+};
+
+StampArea stamp_area(StampCenter center, std::uint32_t radius, std::uint32_t depth) {
+    require(radius >= min_radius_units && radius <= max_radius_units && depth >= 1 && depth <= max_depth_units,
+        "Snow stamp radius_units or depth_units is outside its bounds.");
+    require(center[0] <= (samples_x - 1) * sample_spacing_units && center[1] <= (samples_z - 1) * sample_spacing_units,
+        "Snow stamp center is outside its lattice.");
+    const auto minimum = [radius](std::int64_t axis) {
+        return static_cast<unsigned>((std::max<std::int64_t>(0, axis - radius) + sample_spacing_units - 1) / sample_spacing_units);
+    };
+    const auto maximum = [radius](std::int64_t axis, unsigned extent) {
+        return std::min(extent - 1, static_cast<unsigned>((axis + radius) / sample_spacing_units));
+    };
+    return {minimum(center[0]), maximum(center[0], samples_x), minimum(center[1]), maximum(center[1], samples_z),
+        std::int64_t{radius} * radius};
+}
+
+std::uint16_t compacted_depth(std::uint16_t old, unsigned x, unsigned z, StampCenter center,
+    std::int64_t radius_squared, std::uint32_t depth, std::uint32_t thickness) {
+    const auto dx = x * sample_spacing_units - center[0], dz = z * sample_spacing_units - center[1];
+    const auto distance_squared = dx * dx + dz * dz;
+    if (distance_squared >= radius_squared) return old;
+    const auto increment = static_cast<std::uint32_t>((depth * (radius_squared - distance_squared) +
+        radius_squared / 2) / radius_squared);
+    return static_cast<std::uint16_t>(std::min(old + increment, thickness));
+}
+
 } // namespace
 
 Definition parse_definition(const Json& json) {
-    require(json.is_object() && json.size() == 2 && json.contains("tiles") && json.contains("thickness_units"),
-        "Snow binding requires exactly tiles and thickness_units.");
+    const auto profile = json.find("foot_release");
+    const bool has_profile = profile != json.end();
+    require(json.is_object() && json.size() == (has_profile ? 3u : 2u) &&
+        json.contains("tiles") && json.contains("thickness_units"),
+        "Snow binding requires tiles and thickness_units and permits an optional foot_release.");
     const auto& tiles = json.at("tiles");
     require(tiles.is_array() && tiles.size() == 2 && tiles[0].is_string() && tiles[1].is_string(),
         "Snow tiles must contain two terrain entity IDs ordered west to east.");
     Definition result{tiles.get<std::array<std::string, 2>>(), static_cast<std::uint32_t>(
-        integer(json.at("thickness_units"), 1, max_depth_units, "Snow thickness_units must be in 1..512."))};
+        integer(json.at("thickness_units"), 1, max_depth_units, "Snow thickness_units must be in 1..512.")), std::nullopt};
+    if (has_profile) {
+        require(profile->is_object() && profile->size() == 3 && profile->contains("radius_units") &&
+            profile->contains("depth_units") && profile->contains("sole_tolerance_m"),
+            "Snow foot_release requires exactly radius_units, depth_units and sole_tolerance_m.");
+        const auto radius = integer(profile->at("radius_units"), min_radius_units, max_radius_units,
+            "Snow foot_release radius_units must be in 128..1536.");
+        const auto depth = integer(profile->at("depth_units"), 1, max_depth_units,
+            "Snow foot_release depth_units must be in 1..512.");
+        const auto& tolerance = profile->at("sole_tolerance_m");
+        require(tolerance.is_number(), "Snow foot_release sole_tolerance_m must be numeric.");
+        result.foot_release = FootReleaseProfile{
+            static_cast<std::uint32_t>(radius), static_cast<std::uint32_t>(depth), tolerance.get<double>()};
+    }
     validate_definition(result);
     return result;
 }
@@ -190,24 +247,36 @@ void Region::validate(const State& state) const {
 
 std::uint8_t Region::apply(State& state, double world_x, double world_z,
                           std::uint32_t radius_units, std::uint32_t depth_units) const {
-    require(radius_units >= min_radius_units && radius_units <= max_radius_units &&
-        depth_units >= 1 && depth_units <= max_depth_units, "Snow stamp radius_units or depth_units is outside its bounds.");
+    return apply(state, quantize_center(world_x, world_z), radius_units, depth_units);
+}
+
+StampCenter Region::quantize_center(double world_x, double world_z) const {
+    static_assert((samples_x - 1) * sample_spacing_units <= UINT16_MAX);
+    return {static_cast<std::uint16_t>(quantized_center(world_x, origin_[0], samples_x - 1)),
+        static_cast<std::uint16_t>(quantized_center(world_z, origin_[1], samples_z - 1))};
+}
+
+bool Region::changes_samples(const State& state, StampCenter center, std::uint32_t radius_units,
+                             std::uint32_t depth_units, const SampleMask& samples) const {
+    const auto area = stamp_area(center, radius_units, depth_units);
+    for (unsigned z = area.min_z; z <= area.max_z; ++z) for (unsigned x = area.min_x; x <= area.max_x; ++x) {
+        const auto index = sample_index(x, z);
+        if (samples[index] && compacted_depth(state.compaction[index], x, z, center, area.radius_squared,
+                depth_units, definition_.thickness_units) != state.compaction[index]) return true;
+    }
+    return false;
+}
+
+std::uint8_t Region::apply(State& state, StampCenter center,
+                          std::uint32_t radius_units, std::uint32_t depth_units) const {
+    const auto area = stamp_area(center, radius_units, depth_units);
     validate(state);
-    const auto center_x = quantized_center(world_x, origin_[0], samples_x - 1);
-    const auto center_z = quantized_center(world_z, origin_[1], samples_z - 1);
-    constexpr std::int64_t sample_spacing_units = static_cast<std::int64_t>(spacing_m / unit_m);
-    const std::int64_t radius_squared = std::int64_t{radius_units} * radius_units;
     std::uint8_t dirty = 0;
-    for (unsigned z = 0; z < samples_z; ++z) for (unsigned x = 0; x < samples_x; ++x) {
-        const auto dx = x * sample_spacing_units - center_x, dz = z * sample_spacing_units - center_z;
-        const auto distance_squared = dx * dx + dz * dz;
-        if (distance_squared >= radius_squared) continue;
-        const auto increment = static_cast<std::uint32_t>((depth_units * (radius_squared - distance_squared) +
-            radius_squared / 2) / radius_squared);
+    for (unsigned z = area.min_z; z <= area.max_z; ++z) for (unsigned x = area.min_x; x <= area.max_x; ++x) {
         auto& depth = state.compaction[sample_index(x, z)];
-        const auto next = std::min(depth + increment, definition_.thickness_units);
+        const auto next = compacted_depth(depth, x, z, center, area.radius_squared, depth_units, definition_.thickness_units);
         if (next == depth) continue;
-        depth = static_cast<std::uint16_t>(next);
+        depth = next;
         dirty |= affected_tiles(x);
     }
     if (dirty) ++state.generation;

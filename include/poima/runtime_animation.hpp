@@ -6,10 +6,16 @@
 #include "poima/runtime_grounding.hpp"
 #include <functional>
 #include <map>
+#include <string_view>
 #include <utility>
 
 namespace poima {
 struct RuntimeAnimationPose { std::string entity;RuntimeTransform local; };
+struct RuntimeFootPlantObservation {
+    std::string_view rig;
+    std::uint32_t slot=0;
+    const RuntimeGroundingState* state=nullptr;
+};
 class RuntimeAnimations {
     struct LayerDefinition {
         std::uint32_t slot=1;
@@ -284,6 +290,9 @@ public:
     std::optional<RuntimeIkState> ik_state(const std::string& entity,std::uint32_t slot) const;
     // Borrow completed acquisition decisions until the next animation mutation.
     std::size_t foot_plant_acquisitions(std::uint64_t tick,std::span<const RuntimeGroundingState*> output) const;
+    // Borrow cached plant-lock decisions in rig ID, slot order. Rig views and
+    // state pointers expire at the next animation mutation.
+    std::size_t foot_plant_observations(std::span<RuntimeFootPlantObservation> output) const;
     bool has_held_foot(const std::function<bool(const RuntimeFootPlantAnchor&)>& affected) const;
     struct IkChainPreview {
         std::array<std::string,3> entities;

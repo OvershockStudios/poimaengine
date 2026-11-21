@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.368
+
+- Queue physical snow impressions when a planted sole lifts. Pending impressions survive save and load, and compaction waits for other planted feet to clear the affected samples.
+
 ## 0.0.367
 
 - Compact snow across two cooked terrain tiles with a guarded ray stamp. The changed vertices drive rendering and collision, and saves restore the resulting depression.

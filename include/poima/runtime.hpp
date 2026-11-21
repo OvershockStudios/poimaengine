@@ -25,7 +25,7 @@
 namespace poima {
 namespace jobs { class Executor; }
 namespace water { class Region; }
-namespace snow { class Region; struct State; }
+namespace snow { class Region; struct State; struct FootReleaseState; }
 struct ModelAsset;
 class GameplayPlayerPreferences;
 struct RuntimeTransform {
@@ -808,6 +808,7 @@ public:
     const water::Region* water_region() const noexcept;
     const snow::Region* snow_region() const noexcept;
     const snow::State* snow_state() const noexcept;
+    const snow::FootReleaseState* snow_foot_releases() const noexcept;
     RuntimeParticleObservation particle_observation() const;
     // The serialized owner installs a fresh epoch and a ledger that outlives
     // this runtime. Direct runtimes start with saving disabled. Pending intents

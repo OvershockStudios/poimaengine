@@ -6,6 +6,7 @@
 #include "poima/jobs.hpp"
 #include "poima/water_region.hpp"
 #include "poima/snow.hpp"
+#include "poima/snow_releases.hpp"
 #include "runtime_components.hpp"
 #include "runtime_body_ids.hpp"
 #include "runtime_physical_restore.hpp"
@@ -1638,6 +1639,7 @@ struct Runtime::Impl {
         auto sound_checkpoint=sounds;
         auto particle_checkpoint=particle_runtime ? std::make_unique<ParticleRuntime>(*particle_runtime) : nullptr;
         const auto surface_checkpoint=surface_marks;
+        const auto releases_checkpoint=snow_releases;
         std::vector<std::pair<entt::entity,RuntimeTransform>> local_checkpoint;local_checkpoint.reserve(topology->order.size());
         for(const auto e:topology->order)local_checkpoint.emplace_back(e,registry.get<Node>(e).local);
         JPH::StateRecorderImpl checkpoint;physics.SaveState(checkpoint);
@@ -1648,10 +1650,12 @@ struct Runtime::Impl {
             auto result=publish();
             synchronize_particles();
             retire_surface_marks();
+            prune_snow_holds();
             components->commit_batch();commit_structure(saved);return result;
         } catch(...) {
             particle_runtime=std::move(particle_checkpoint);
             surface_marks=surface_checkpoint;
+            snow_releases=releases_checkpoint;
             components->rollback_batch();rollback_structure(saved);animations->restore(animation_checkpoint);
             for(const auto& [e,local]:local_checkpoint)registry.get<Node>(e).local=local;
             sounds=std::move(sound_checkpoint);
@@ -1793,6 +1797,7 @@ struct Runtime::Impl {
         auto particle_checkpoint=particle_runtime ? std::make_unique<ParticleRuntime>(*particle_runtime) : nullptr;
         const auto surface_checkpoint=surface_marks;
         const auto snow_checkpoint=snow_live;
+        const auto releases_checkpoint=snow_releases;
         // World systems share controller input and consume each pressed name once.
         std::vector<std::string_view> pressed_actions;
         if(water_region || particle_runtime) {
@@ -1817,6 +1822,7 @@ struct Runtime::Impl {
             for(std::uint32_t frame=0;frame<count;++frame) {
                 profiling::Scope tick_profile("runtime.tick",static_cast<std::int64_t>(tick));
                 if(frame==0 && snow_stamp)apply_snow_stamp(*snow_stamp);
+                else apply_ready_snow_foot();
                 game_character_inputs.clear();game_physical_commands.clear();deferred_controller_inputs.clear();clear_controller_preview();
                 for(auto e:topology->characters) {
                     registry.get<Controller>(e).character->BeginTick();
@@ -2038,10 +2044,12 @@ struct Runtime::Impl {
                 }
                 commit_root_motion_intervals(root_intervals,tick+1);
                 if(water_region)water_region->step(pressed_actions);
+                prune_snow_holds();
                 ++tick;animation_locals(true);sync();physical_record_final();
                 finish_game_attachments();
                 for(const auto e:topology->characters)registry.get<Controller>(e).character->EndTick();
                 step_particles(pressed_actions);
+                record_snow_foot_decisions();
                 advance_surface_marks(frame==0 ? mark_commands : std::span<const RuntimeSurfaceMarkCommand>{});
                 pressed_actions.clear();
             }
@@ -2060,6 +2068,7 @@ struct Runtime::Impl {
             components->rollback_batch();
             rollback_structure(structure_checkpoint);
             if(snow_checkpoint!=snow_live)publish_snow(snow_checkpoint,false);
+            snow_releases=releases_checkpoint;
             for(const auto& [entity,camera]:camera_checkpoint)registry.get<RuntimeCamera>(entity)=camera;
             save_queue=save_checkpoint;ui_model=ui_checkpoint;clear_ui_commands();
             animations->restore(animation_checkpoint);
@@ -2484,6 +2493,9 @@ const snow::Region* Runtime::snow_region() const noexcept {
 }
 const snow::State* Runtime::snow_state() const noexcept {
     return impl_->snow_live ? &impl_->snow_live->state : nullptr;
+}
+const snow::FootReleaseState* Runtime::snow_foot_releases() const noexcept {
+    return impl_->snow_releases ? &*impl_->snow_releases : nullptr;
 }
 RuntimeParticleObservation Runtime::particle_observation() const { return impl_->observe_particles(); }
 std::optional<RuntimeRayHit> Runtime::raycast(const RuntimeRay& query) const {

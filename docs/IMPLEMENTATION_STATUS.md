@@ -1,8 +1,18 @@
 # Implementation status
 
-Updated 2026-11-21 for **0.0.367**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-21 for **0.0.368**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.368 supports [automatic snow impressions from a planted foot lift](TERRAIN.md#leave-depressions-with-planted-feet).
+An eligible footprint can proceed while an older one would disturb another
+held foot. The overlap fixture verifies zero mesh rebuilds during the
+blocked ticks. Saves preserve held contacts and ready footprints, including
+ready footprints from a removed rig. Twenty-eight relocated Windows Vulkan
+captures cover both terrain and the imported actor on AMD and NVIDIA in
+forward and deferred rendering. Fresh processes reproduce their saves and
+matching captures. The geometry in this fixture uses circular impressions
+on two cooked tiles. [Results](evidence/m2-snow-foot-release-368.json)
 
 Version 0.0.367 supports [physical snow compaction](TERRAIN.md#compact-snow-on-cooked-tiles)
 across two neighboring cooked terrain tiles. Guarded stamps update the render
