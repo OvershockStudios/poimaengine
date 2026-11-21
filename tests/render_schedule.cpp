@@ -212,6 +212,39 @@ void particle_sprite_contracts() {
     std::swap(pass(composed,PassId::particle_sprites),pass(composed,PassId::deferred_lighting));
     rejects("sprites drawn before deferred lighting",[&]{composed.validate();});
 }
+void surface_mark_contracts() {
+    for(bool deferred:{false,true}) {
+        auto settings=rich();settings.deferred=settings.products=deferred;settings.slot=deferred ? 1u : 0u;
+        Fixture fixture(settings,deferred ? 1u : 4u);
+        const auto unmarked=fixture.plan();unmarked.validate();
+        check(std::none_of(unmarked.passes.begin(),unmarked.passes.end(),[](const Pass& work) {
+            return work.id==PassId::surface_mark_upload;
+        }),"An unmarked scene scheduled a surface mark upload");
+
+        const auto marks=fixture.f.surface_marks=fixture.add(Kind::buffer,Lifetime::slot);
+        auto& resource=fixture.f.resources[marks];
+        resource.bytes=resource.allocation_bytes=deferred ? surface_mark_budget : surface_mark_stride;
+        const auto valid=fixture.plan();valid.validate();++accepted;
+        auto bad=[&](const char* label,const auto& edit) {
+            auto plan=valid;edit(plan);rejects(label,[&]{plan.validate();});
+        };
+        bad("surface marks uploaded after opaque draw",[](auto& plan) {
+            std::swap(pass(plan,PassId::surface_mark_upload),pass(plan,PassId::opaque));
+        });
+        bad("surface marks absent from opaque shading",[&](auto& plan) {
+            erase_access(plan,PassId::opaque,marks,Use::storage_read);
+        });
+        bad("surface marks accessed during shadow draw",[&](auto& plan) {
+            pass(plan,PassId::shadows).accesses.push_back({marks,Use::storage_read});
+        });
+        bad("surface marks from another slot",[&](auto& plan){plan.frame.resources[marks].owner=1u-settings.slot;});
+        bad("surface mark upload ends inside a record",[&](auto& plan){--plan.frame.resources[marks].bytes;});
+        bad("surface mark allocation exceeds budget",[&](auto& plan){plan.frame.resources[marks].allocation_bytes=surface_mark_budget+1;});
+        bad("surface mark upload repeats a resource",[&](auto& plan) {
+            pass(plan,PassId::surface_mark_upload).accesses.push_back({marks,Use::upload,true});
+        });
+    }
+}
 void post_effect_contracts() {
     for(bool editor:{false,true})for(unsigned samples:{1u,4u})for(bool deferred:{false,true})for(bool bloom:{false,true}) {
         if(deferred && samples!=1)continue;
@@ -831,4 +864,4 @@ void environment_contracts(){
     auto ordinary=Fixture(rich(),4).plan();ordinary.validate();check(ordinary.frame.ibl_diffuse==none && ordinary.frame.ibl_specular==none && ordinary.frame.ibl_brdf==none,"Legacy graph acquired IBL roles");
 }
 }
-int main(){try{matrix();faults();products();motion_contracts();reconstruction_contracts();deferred_contracts();deferred_color_contracts();viewmodel_contracts();ambient_occlusion_contracts();masked_shadow_contracts();environment_contracts();bloom_contracts();post_effect_contracts();streamed_geometry_contracts();particle_sprite_contracts();std::cout<<"Production render schedule: "<<accepted<<" valid variants, "<<rejected<<" rejected contract mutations.\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}
+int main(){try{matrix();faults();products();motion_contracts();reconstruction_contracts();deferred_contracts();deferred_color_contracts();viewmodel_contracts();ambient_occlusion_contracts();masked_shadow_contracts();environment_contracts();bloom_contracts();post_effect_contracts();streamed_geometry_contracts();particle_sprite_contracts();surface_mark_contracts();std::cout<<"Production render schedule: "<<accepted<<" valid variants, "<<rejected<<" rejected contract mutations.\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}

@@ -424,6 +424,11 @@ std::string Runtime::save_snapshot(const std::string& content_sha256) const {
         payload["particles"]={{"version",1},{"next_emitter_id",particles->next_id},{"sources",std::move(sources)},
             {"state",poima::particles::snapshot_json(particles->system.snapshot())}};
     }
+    if(s.surface_marks) {
+        SaveJson rows=SaveJson::array();
+        for(const auto& row:s.surface_marks->rows)rows.push_back(surface_mark_json(row));
+        payload["surface_marks"]={{"version",1},{"next_id",s.surface_marks->next_id},{"marks",std::move(rows)}};
+    }
     const SaveJson envelope={{"format","poima.runtime-snapshot"},{"version",motor_state ? 9 : stance_state ? 8 : camera_state ? 7 : hierarchical ? 6 : logical_ui ? 5 : structural ? 3 : custom ? 2 : 1},{"sha256",save_hash(payload.dump())},{"payload",payload}};
     std::size_t tokens=0;save_budget(envelope,0,tokens);const auto result=envelope.dump();
     require(result.size()<=snapshot_bytes_limit,"Runtime snapshot exceeds 64 MiB.");return result;
@@ -457,6 +462,15 @@ std::unique_ptr<Runtime> Runtime::restore_snapshot_data(const RuntimeDefinition&
         particle_extension=std::move(data.at("particles"));data.erase("particles");
         save_fields(particle_extension,{"version","next_emitter_id","sources","state"});
         require(save_integer(particle_extension.at("version"))==1,"Unsupported runtime particle extension version.");
+    }
+    SaveJson surface_extension=nullptr;
+    if(data.contains("surface_marks")) {
+        surface_extension=std::move(data.at("surface_marks"));data.erase("surface_marks");
+        save_fields(surface_extension,{"version","next_id","marks"});
+        require(save_integer(surface_extension.at("version"))==1 && save_integer(surface_extension.at("next_id"))>1,
+            "Invalid runtime surface mark extension version or identity frontier.");
+        const auto& rows=surface_extension.at("marks");
+        require(rows.is_array() && rows.size()<=max_scene_surface_marks,"Invalid saved surface mark count.");
     }
     const bool physical_content=Impl::definition_has_physical(definition);
     SaveJson pose_extension=nullptr;
@@ -944,6 +958,45 @@ std::unique_ptr<Runtime> Runtime::restore_snapshot_data(const RuntimeDefinition&
     if(attachment_graph)s.publish_attachment_transforms(std::move(attachment_graph));
     s.attachment_outcomes=std::move(attachment_outcomes);
     if(particle_content)s.restore_particles(definition,particle_extension);
+    if(!surface_extension.is_null()) {
+        auto state=std::make_shared<Impl::SurfaceMarksState>();
+        state->next_id=save_integer(surface_extension.at("next_id"));
+        require(state->next_id<=1+s.tick*max_surface_mark_commands,
+            "Saved surface mark identity frontier exceeds the placement history.");
+        std::map<std::string,std::size_t> receiver_counts;
+        const auto floats=[]<std::size_t N>(const SaveJson& value,double limit) {
+            const auto values=save_vector<N>(value,limit);
+            std::array<float,N> result{};
+            std::transform(values.begin(),values.end(),result.begin(),[](double member){return static_cast<float>(member);});
+            return result;
+        };
+        for(const auto& saved:surface_extension.at("marks")) {
+            save_fields(saved,{"id","receiver","tick","center_m","normal","tangent","half_extent_m",
+                "half_depth_m","minimum_normal_dot","edge_fraction","linear_rgb","opacity","roughness"});
+            RuntimeSurfaceMark row;
+            row.id=save_integer(saved.at("id"),state->next_id-1);
+            row.tick=save_integer(saved.at("tick"),s.tick);
+            row.receiver=save_text(saved.at("receiver"),32);
+            require(state->rows.empty() || (state->rows.back().id<row.id && state->rows.back().tick<=row.tick),
+                "Saved surface marks must retain their placement order.");
+            require(++receiver_counts[row.receiver]<=max_surface_marks_per_receiver,"Saved surface mark receiver capacity exceeded.");
+            auto& mark=row.mark;
+            mark.center_m=floats.template operator()<3>(saved.at("center_m"),10000);
+            mark.normal=floats.template operator()<3>(saved.at("normal"),1.001);
+            mark.tangent=floats.template operator()<3>(saved.at("tangent"),1.001);
+            mark.half_extent_m=floats.template operator()<2>(saved.at("half_extent_m"),4);
+            mark.half_depth_m=static_cast<float>(save_number(saved.at("half_depth_m"),.25));
+            mark.minimum_normal_dot=static_cast<float>(save_number(saved.at("minimum_normal_dot"),1));
+            mark.edge_fraction=static_cast<float>(save_number(saved.at("edge_fraction"),1));
+            mark.linear_rgb=floats.template operator()<3>(saved.at("linear_rgb"),1);
+            mark.opacity=static_cast<float>(save_number(saved.at("opacity"),1));
+            mark.roughness=static_cast<float>(save_number(saved.at("roughness"),1));
+            s.validate_surface_mark(row);
+            require(surface_mark_json(row)==saved,"Saved surface marks must use canonical native values.");
+            state->rows.push_back(std::move(row));
+        }
+        s.surface_marks=std::move(state);
+    }
     if(!kinematic_sleep.is_null()) {
         // Install last: restoring public body pose/activation and rebuilding
         // controller support can otherwise reset the sleep test spheres/timer.

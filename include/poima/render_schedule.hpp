@@ -24,11 +24,12 @@ enum class Region { whole,prefix,cluster_members,probe_pixels };
 enum class Use { upload,storage_read,storage_write,vertex,index,constant,sampled,color,color_overwrite,depth,clear_color,clear_depth,copy_source,copy_destination,resolve_source,resolve_destination,present,image_write,image_read_write };
 using Uses=std::uint64_t;
 constexpr Uses use_bit(Use use) {return Uses{1}<<static_cast<unsigned>(use);}
-enum class PassId { stream_geometry,sprite_upload,skinning,light_assignment,shadows,scene_clear,sky,opaque,ambient_occlusion,ambient_occlusion_filter,deferred_lighting,particle_sprites,resolve,temporal_inputs,reconstruction,viewmodel_lights,viewmodel_clear,viewmodel_opaque,viewmodel_resolve,viewmodel_composite,post_effect,bloom_extract,bloom_horizontal,bloom_vertical,output,game_ui,overlay,editor_clear,editor_ui,product_probes,capture,present };
+enum class PassId { stream_geometry,sprite_upload,surface_mark_upload,skinning,light_assignment,shadows,scene_clear,sky,opaque,ambient_occlusion,ambient_occlusion_filter,deferred_lighting,particle_sprites,resolve,temporal_inputs,reconstruction,viewmodel_lights,viewmodel_clear,viewmodel_opaque,viewmodel_resolve,viewmodel_composite,post_effect,bloom_extract,bloom_horizontal,bloom_vertical,output,game_ui,overlay,editor_clear,editor_ui,product_probes,capture,present };
 inline const char* pass_name(PassId id) {
     switch(id) {
     case PassId::stream_geometry:return "render.pass.stream_geometry";
     case PassId::sprite_upload:return "render.pass.sprite_upload";
+    case PassId::surface_mark_upload:return "render.pass.surface_mark_upload";
     case PassId::skinning:return "render.pass.skinning";case PassId::light_assignment:return "render.pass.light_assignment";
     case PassId::shadows:return "render.pass.shadows";case PassId::scene_clear:return "render.pass.scene_clear";
     case PassId::sky:return "render.pass.sky";case PassId::opaque:return "render.pass.opaque";
@@ -95,6 +96,7 @@ struct FrameResources {
     ResourceId streamed_vertices=none,streamed_indices=none;
     ResourceId sprite_instances=none;
     std::vector<ResourceId> sprite_textures;
+    ResourceId surface_marks=none;
 };
 struct Settings {
     bool scene=false,clustered=false,sky=false,game_ui=false,overlay=false,editor=false,capture=false,products=false,products_debug=false,reconstruction=false,deferred=false,ambient_occlusion=false;
@@ -121,6 +123,8 @@ inline constexpr std::size_t sprite_instance_stride=64;
 inline constexpr std::size_t max_sprite_instances=4096;
 inline constexpr std::uint64_t sprite_instance_budget=sprite_instance_stride*max_sprite_instances;
 inline constexpr std::size_t max_sprite_textures=16;
+inline constexpr std::size_t surface_mark_stride=80;
+inline constexpr std::uint64_t surface_mark_budget=surface_mark_stride*256;
 struct Schedule {
     FrameResources frame;
     Settings settings;
@@ -177,6 +181,16 @@ struct Schedule {
         if(settings.sky && !settings.scene)fail("sky pass without a scene");
         if(settings.overlay)required(frame.overlay_vertices);
         if(settings.scene) {required(frame.frame);required(frame.objects);required(frame.depth);required(frame.hdr);required(frame.shadow);}
+        const bool surface_marks=frame.surface_marks!=none;
+        if(surface_marks) {
+            required(frame.surface_marks);
+            const auto& marks=resource(frame.surface_marks);
+            if(!settings.scene || marks.kind!=Kind::buffer || marks.lifetime!=Lifetime::slot || marks.region!=Region::prefix ||
+                marks.initialized || marks.bytes%surface_mark_stride || marks.allocation_bytes>surface_mark_budget ||
+                frame.surface_marks==frame.streamed_vertices || frame.surface_marks==frame.streamed_indices ||
+                frame.surface_marks==frame.sprite_instances)
+                fail("invalid surface mark buffer");
+        }
         if(settings.particle_sprites) {
             if(!settings.scene || settings.reconstruction || frame.color!=frame.hdr)
                 fail("particle sprites require a single-sample scene without reconstruction");
@@ -383,6 +397,7 @@ struct Schedule {
         bool world_resolved=false,world_opaque=false,foreground_lights=false,foreground_cleared=false,foreground_drawn=false,foreground_resolved=false,foreground_composed=false;
         bool exported=false,captured=false,probed=false,prepared=false,reconstructed=false,deferred_lit=false,deferred_opaque=false,ao_generated=false,ao_filtered=false;
         bool post_effect_applied=false,stream_uploaded=false,sprites_uploaded=false,sprites_drawn=false;unsigned previous=0;bool first=true;
+        bool surface_marks_uploaded=false;
         unsigned bloom_stage=0;
         for(const auto& pass:passes) {
             const auto order=static_cast<unsigned>(pass.id);
@@ -401,6 +416,11 @@ struct Schedule {
                     !pass.accesses.front().initialize)fail("invalid particle sprite upload");
                 sprites_uploaded=true;
             }
+            if(pass.id==PassId::surface_mark_upload) {
+                if(!surface_marks || pass.accesses.size()!=1 || !has(frame.surface_marks,Use::upload) ||
+                    !pass.accesses.front().initialize)fail("invalid surface mark upload");
+                surface_marks_uploaded=true;
+            }
             if(pass.id==PassId::opaque && stream && (!stream_uploaded || !has(frame.streamed_vertices,Use::vertex) ||
                 !has(frame.streamed_indices,Use::index)))fail("opaque draw requires uploaded geometry");
             if(pass.id==PassId::shadows)for(const auto& draw:frame.shadow_draws)
@@ -408,6 +428,8 @@ struct Schedule {
             if(pass.id==PassId::opaque) {
                 if(settings.particle_sprites && (!has(frame.hdr,Use::color) || !has(frame.depth,Use::depth)))
                     fail("particle sprites require opaque HDR and world depth outputs");
+                if(surface_marks && (!surface_marks_uploaded || !has(frame.surface_marks,Use::storage_read)))
+                    fail("opaque materials require uploaded surface marks");
                 world_opaque=true;
             }
             if((pass.id==PassId::opaque && !settings.deferred) || pass.id==PassId::deferred_lighting || pass.id==PassId::viewmodel_opaque)
@@ -556,6 +578,10 @@ struct Schedule {
                 if(sprite_instances && !(pass.id==PassId::sprite_upload && a.use==Use::upload) &&
                     !(pass.id==PassId::particle_sprites && a.use==Use::storage_read))
                     fail("particle sprite instances used outside sprite upload and draw");
+                const bool mark_instances=surface_marks && a.resource==frame.surface_marks;
+                if(mark_instances && !(pass.id==PassId::surface_mark_upload && a.use==Use::upload) &&
+                    !(pass.id==PassId::opaque && a.use==Use::storage_read))
+                    fail("surface marks used outside upload and opaque draw");
                 if(settings.post_effect && a.resource==frame.post_effect && pass.id!=PassId::post_effect &&
                     !((pass.id==PassId::bloom_extract || pass.id==PassId::output) && a.use==Use::sampled))
                     fail("post-effect image used outside scene color composition");
@@ -586,7 +612,7 @@ struct Schedule {
                     if(settings.capture && !captured)fail("presentation precedes requested capture");
                     exported=true;
                 }
-                if(r.lifetime==Lifetime::slot && !streamed && !sprite_instances && a.use!=Use::copy_destination)fail("slot readback used by a GPU consumer");
+                if(r.lifetime==Lifetime::slot && !streamed && !sprite_instances && !mark_instances && a.use!=Use::copy_destination)fail("slot readback used by a GPU consumer");
                 if(r.lifetime==Lifetime::capture && ((pass.id!=PassId::capture && pass.id!=PassId::product_probes) || a.use!=Use::copy_destination))fail("capture storage used outside capture copy");
             }
             if(pass.id==PassId::resolve || pass.id==PassId::capture) {
@@ -604,6 +630,7 @@ struct Schedule {
         if(settings.reconstruction && !reconstructed)fail("missing reconstruction pass");
         if(stream && !stream_uploaded)fail("missing streamed geometry upload");
         if(settings.particle_sprites && !sprites_drawn)fail("missing particle sprite pass");
+        if(surface_marks && !world_opaque)fail("missing opaque surface mark consumer");
         if(settings.post_effect && !post_effect_applied)fail("missing post effect pass");
         if(settings.bloom && bloom_stage!=3)fail("missing bloom pass");
         if(settings.viewmodel && (!foreground_cleared || !foreground_drawn || !foreground_composed || (settings.viewmodel_samples!=1 && !foreground_resolved) || (settings.viewmodel_clustered && !foreground_lights)))fail("missing foreground passes");
@@ -629,6 +656,9 @@ inline Schedule build(FrameResources frame,Settings settings) {
     if(settings.particle_sprites) {
         auto& upload=pass(PassId::sprite_upload);add(upload,f.sprite_instances,Use::upload,true);
     }
+    if(f.surface_marks!=none) {
+        auto& upload=pass(PassId::surface_mark_upload);add(upload,f.surface_marks,Use::upload,true);
+    }
     auto& skin=pass(PassId::skinning);
     if(settings.scene) {add(skin,f.frame,Use::upload,true);add(skin,f.objects,Use::upload,true);}
     if(settings.viewmodel) {add(skin,f.viewmodel_frame,Use::upload,true);add(skin,f.viewmodel_objects,Use::upload,true);}
@@ -650,6 +680,7 @@ inline Schedule build(FrameResources frame,Settings settings) {
     if(settings.deferred)for(auto id:{f.material_base,f.material_surface,f.material_correspondence})add(clear,id,Use::clear_color,true);
     if(settings.sky) {auto& sky=pass(PassId::sky);add(sky,f.color,Use::color);add(sky,f.depth,Use::depth);add(sky,f.frame,Use::constant);}
     auto& opaque=pass(PassId::opaque);add(opaque,f.color,Use::color);add(opaque,f.depth,Use::depth);if(settings.products && !settings.deferred) {add(opaque,f.normal,Use::color);add(opaque,f.motion,Use::color);add(opaque,f.motion_valid,Use::color);}
+    add(opaque,f.surface_marks,Use::storage_read);
     if(settings.scene) {add(opaque,f.frame,Use::constant);add(opaque,f.objects,Use::storage_read);if(!settings.deferred) {add(opaque,f.lights,Use::storage_read);add(opaque,f.shadow,Use::sampled);for(auto id:{f.ibl_diffuse,f.ibl_specular,f.ibl_brdf})add(opaque,id,Use::sampled);}geometry(opaque,f.camera_draws,true);if(settings.clustered && !settings.deferred) {add(opaque,f.counts,Use::storage_read);add(opaque,f.indices,Use::storage_read);}}
     if(settings.deferred) {
         for(auto id:{f.material_base,f.material_surface,f.material_correspondence})add(opaque,id,Use::color);

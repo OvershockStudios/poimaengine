@@ -23,6 +23,7 @@
 #include "runtime_hierarchy.hpp"
 #include "pose_frames.hpp"
 #include "surface_measure.hpp"
+#include "surface_marks_json.hpp"
 #include "attachment_outcome_json.hpp"
 #include "particle_state_json.hpp"
 #include "particle_scene.hpp"
@@ -737,6 +738,7 @@ struct Runtime::Impl {
 #include "runtime_capsule_query.inc"
 #include "runtime_viewmodel_clearance.inc"
 #include "runtime_particles.inc"
+#include "runtime_surface_marks.inc"
     void initialize(const RuntimeDefinition& definition,const RuntimePhysicsBootstrap* restored=nullptr) {
         // Construction is private to this Runtime; helpers read the same root
         // while only this local builder may mutate its indices.
@@ -1642,6 +1644,7 @@ struct Runtime::Impl {
         const auto saved=checkpoint_structure();auto physical_checkpoint=checkpoint_physical(release_pending);auto animation_checkpoint=animations->checkpoint();
         auto sound_checkpoint=sounds;
         auto particle_checkpoint=particle_runtime ? std::make_unique<ParticleRuntime>(*particle_runtime) : nullptr;
+        const auto surface_checkpoint=surface_marks;
         std::vector<std::pair<entt::entity,RuntimeTransform>> local_checkpoint;local_checkpoint.reserve(topology->order.size());
         for(const auto e:topology->order)local_checkpoint.emplace_back(e,registry.get<Node>(e).local);
         JPH::StateRecorderImpl checkpoint;physics.SaveState(checkpoint);
@@ -1651,9 +1654,11 @@ struct Runtime::Impl {
         try {
             auto result=publish();
             synchronize_particles();
+            retire_surface_marks();
             components->commit_batch();commit_structure(saved);return result;
         } catch(...) {
             particle_runtime=std::move(particle_checkpoint);
+            surface_marks=surface_checkpoint;
             components->rollback_batch();rollback_structure(saved);animations->restore(animation_checkpoint);
             for(const auto& [e,local]:local_checkpoint)registry.get<Node>(e).local=local;
             sounds=std::move(sound_checkpoint);
@@ -1745,7 +1750,8 @@ struct Runtime::Impl {
         auto result=change_structure_transaction(expected,[&] {return publish_attachment_release(expected,request);},true);
         return std::move(result.spawned.front());
     }
-    std::vector<RuntimeStructureResult> step(std::uint32_t count,const std::vector<RuntimeInput>& inputs,const std::vector<KinematicTarget>& motions,const std::vector<SoundCommand>& sound_commands,const std::vector<AnimationCommand>& animation_commands,const std::vector<RuntimeStructureTick>& structure,const std::vector<RuntimeIkCommand>& ik_commands,const std::vector<RuntimeRootMotionCommand>& root_commands,const std::vector<RuntimeCameraLensCommand>& lens_commands,const std::vector<RuntimeCharacterStanceCommand>& stance_commands,const std::vector<RuntimeGroundingCommand>& grounding_commands,const std::vector<AnimationRateCommand>& animation_rates,const std::vector<RuntimeCameraPoseCommand>& pose_commands,const std::vector<PhysicalRigCommand>& physical_commands) {
+    std::vector<RuntimeStructureResult> step(std::uint32_t count,const std::vector<RuntimeInput>& inputs,const std::vector<KinematicTarget>& motions,const std::vector<SoundCommand>& sound_commands,const std::vector<AnimationCommand>& animation_commands,const std::vector<RuntimeStructureTick>& structure,const std::vector<RuntimeIkCommand>& ik_commands,const std::vector<RuntimeRootMotionCommand>& root_commands,const std::vector<RuntimeCameraLensCommand>& lens_commands,const std::vector<RuntimeCharacterStanceCommand>& stance_commands,const std::vector<RuntimeGroundingCommand>& grounding_commands,const std::vector<AnimationRateCommand>& animation_rates,const std::vector<RuntimeCameraPoseCommand>& pose_commands,const std::vector<PhysicalRigCommand>& physical_commands,
+        std::span<const RuntimeSurfaceMarkCommand> mark_commands) {
         profiling::Scope batch_profile("runtime.batch",static_cast<std::int64_t>(tick));
         require(!player_preferences_prepared,"Flush pending player preferences before another simulation batch.");
         require(count>=1 && count<=600 && tick+count<=9007199254740991ULL,"Runtime step exceeds tick limits.");
@@ -1792,6 +1798,7 @@ struct Runtime::Impl {
         auto sound_checkpoint=sounds;
         auto water_checkpoint=water_region;
         auto particle_checkpoint=particle_runtime ? std::make_unique<ParticleRuntime>(*particle_runtime) : nullptr;
+        const auto surface_checkpoint=surface_marks;
         // World systems share controller input and consume each pressed name once.
         std::vector<std::string_view> pressed_actions;
         if(water_region || particle_runtime) {
@@ -2040,6 +2047,8 @@ struct Runtime::Impl {
                 finish_game_attachments();
                 for(const auto e:topology->characters)registry.get<Controller>(e).character->EndTick();
                 step_particles(pressed_actions);
+                retire_surface_marks();
+                if(frame==0)place_surface_marks(mark_commands);
                 pressed_actions.clear();
             }
             sync();
@@ -2052,6 +2061,7 @@ struct Runtime::Impl {
             {
             profiling::Scope rollback_profile("runtime.rollback",static_cast<std::int64_t>(previous_tick));
             particle_runtime=std::move(particle_checkpoint);
+            surface_marks=surface_checkpoint;
             clear_player_preferences_commands();
             components->rollback_batch();
             rollback_structure(structure_checkpoint);
@@ -2148,6 +2158,9 @@ Runtime::PreparedMaterialUpdate Runtime::prepare_materials(std::uint64_t expecte
         require(mesh && mesh->material.has_value(),"Material adoption needs an existing PBR drawable.");
         require(edit.material.double_sided==mesh->material->double_sided,"Material adoption cannot change double_sided.");
         validate_pbr_material(edit.material);
+        if(edit.material.alpha_mode!=MaterialAlphaMode::opaque)
+            require(std::none_of(surface_marks().begin(),surface_marks().end(),[&](const auto& row){return row.receiver==edit.id;}),
+                "A surface mark receiver must retain an opaque material.");
         auto& definition=candidate->definitions.at(edit.id);
         require(definition.mesh && definition.mesh->material.has_value(),"Material definition is not a PBR drawable.");
         definition.mesh->material=edit.material;data->edits.emplace_back(found->second,edit.material);
@@ -2367,7 +2380,14 @@ void Runtime::change_attachments(std::uint64_t expected,const std::vector<Runtim
 std::string Runtime::release_attachment(std::uint64_t expected,const RuntimeAttachmentRelease& request) {
     return impl_->release_attachment(expected,request);
 }
-std::vector<RuntimeStructureResult> Runtime::step(std::uint32_t ticks,const std::vector<RuntimeInput>& inputs,const std::vector<KinematicTarget>& motions,const std::vector<SoundCommand>& sounds,const std::vector<AnimationCommand>& animations,const std::vector<RuntimeStructureTick>& structure,const std::vector<RuntimeIkCommand>& ik,const std::vector<RuntimeRootMotionCommand>& roots,const std::vector<RuntimeCameraLensCommand>& lenses,const std::vector<RuntimeCharacterStanceCommand>& stances,const std::vector<RuntimeGroundingCommand>& grounding,const std::vector<AnimationRateCommand>& animation_rates,const std::vector<RuntimeCameraPoseCommand>& pose_commands,const std::vector<PhysicalRigCommand>& physical_commands) { return impl_->step(ticks,inputs,motions,sounds,animations,structure,ik,roots,lenses,stances,grounding,animation_rates,pose_commands,physical_commands); }
+std::vector<RuntimeStructureResult> Runtime::step(std::uint32_t ticks,const std::vector<RuntimeInput>& inputs,const std::vector<KinematicTarget>& motions,const std::vector<SoundCommand>& sounds,const std::vector<AnimationCommand>& animations,const std::vector<RuntimeStructureTick>& structure,const std::vector<RuntimeIkCommand>& ik,const std::vector<RuntimeRootMotionCommand>& roots,const std::vector<RuntimeCameraLensCommand>& lenses,const std::vector<RuntimeCharacterStanceCommand>& stances,const std::vector<RuntimeGroundingCommand>& grounding,const std::vector<AnimationRateCommand>& animation_rates,const std::vector<RuntimeCameraPoseCommand>& pose_commands,const std::vector<PhysicalRigCommand>& physical_commands,
+    std::span<const RuntimeSurfaceMarkCommand> marks) {
+    return impl_->step(ticks,inputs,motions,sounds,animations,structure,ik,roots,lenses,stances,grounding,animation_rates,pose_commands,physical_commands,marks);
+}
+std::span<const RuntimeSurfaceMark> Runtime::surface_marks() const {
+    if(!impl_->surface_marks)return {};
+    return impl_->surface_marks->rows;
+}
 std::optional<PhysicalRigObservation> Runtime::physical_rig(const std::string& id,bool include_parts,bool include_joints) const {
     (void)impl_->find(id);if(!impl_->physical_owners.contains(id))return {};
     return impl_->observe_physical(id,include_parts,include_joints);
@@ -2663,8 +2683,18 @@ SceneSnapshot Runtime::snapshot() const {
     for(auto object:impl_->topology->order)
         if(const auto* mesh=impl_->registry.try_get<RuntimeMesh>(object);mesh && mesh->visible)
             result.objects.push_back(impl_->drawable(object,*mesh));
+    append_scene_surface_marks(result);
     if(const auto* region=water_region())water::append_region_scene(*region,result);
     return result;
+}
+void Runtime::append_scene_surface_marks(SceneSnapshot& result) const {
+    if(const auto marks=surface_marks();!marks.empty()) {
+        std::map<std::string_view,std::vector<SceneSurfaceMark>> by_receiver;
+        for(const auto& row:marks)by_receiver[row.receiver].push_back(row.mark);
+        for(auto& object:result.objects)
+            if(const auto found=by_receiver.find(object.entity_id);found!=by_receiver.end())
+                object.surface_marks=std::move(found->second);
+    }
 }
 #include "runtime_camera_pose_snapshot.inc"
 }

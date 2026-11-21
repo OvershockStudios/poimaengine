@@ -53,6 +53,7 @@ SceneSnapshot Runtime::snapshot(const std::string& camera,const RuntimeCameraPos
             result.objects.push_back(impl_->drawable(e,*mesh,&worlds));
     }
     finalize_lighting(result.lighting);
+    append_scene_surface_marks(result);
     if(const auto* region=water_region())water::append_region_scene(*region,result);
     select_scene_camera_draw(result,projection.viewmodel,projection.viewmodel_projection);
     if(result.viewmodel && *viewmodel!=RuntimeCameraPose{}) {

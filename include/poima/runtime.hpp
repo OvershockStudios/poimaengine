@@ -538,6 +538,17 @@ struct RuntimeRayHit {
     std::optional<std::array<double,3>> normal; // Absent for primitive origin-inside hits; mesh surface hits retain winding normals.
     std::optional<std::uint32_t> triangle; // Original mesh indices triple ordinal; absent for primitives.
 };
+inline constexpr std::size_t max_surface_mark_commands=16;
+struct RuntimeSurfaceMarkCommand {
+    std::string receiver;
+    RuntimeRay ray;
+    SceneSurfaceMark style; // Placement supplies the position, normal and tangent.
+};
+struct RuntimeSurfaceMark {
+    std::uint64_t id=0,tick=0;
+    std::string receiver;
+    SceneSurfaceMark mark;
+};
 struct ReleasedItemAim {
     std::optional<RuntimeRayHit> hit;
     std::optional<std::string> item;
@@ -710,7 +721,9 @@ public:
         const std::vector<RuntimeGroundingCommand>& grounding={},
         const std::vector<AnimationRateCommand>& animation_rates={},
         const std::vector<RuntimeCameraPoseCommand>& camera_poses={},
-        const std::vector<PhysicalRigCommand>& physical_rigs={});
+        const std::vector<PhysicalRigCommand>& physical_rigs={},
+        std::span<const RuntimeSurfaceMarkCommand> surface_marks={});
+    std::span<const RuntimeSurfaceMark> surface_marks() const;
     std::optional<RuntimeCharacterStanceState> character_stance(const std::string& id) const;
     std::optional<RuntimeAnimationState> animation(const std::string& id) const;
     std::optional<PhysicalRigObservation> physical_rig(const std::string& id,
@@ -796,5 +809,7 @@ public:
     // ownership restrictions as camera pose commands.
     SceneSnapshot snapshot(const std::string& camera,const RuntimeCameraPose& world,
         const std::optional<RuntimeCameraPose>& viewmodel) const;
+private:
+    void append_scene_surface_marks(SceneSnapshot&) const;
 };
 }

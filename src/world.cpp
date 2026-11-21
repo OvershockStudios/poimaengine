@@ -21,6 +21,7 @@
 #include "poima/physical_target.hpp"
 #include "pose_frames.hpp"
 #include "surface_measure.hpp"
+#include "surface_marks_json.hpp"
 #include "attachment_outcome_json.hpp"
 #include "poima/runtime_ik.hpp"
 #include "poima/runtime_grounding.hpp"
@@ -2822,6 +2823,7 @@ public:
 #include "world_foliage_service.inc"
 #include "world_water_service.inc"
 #include "world_particles.inc"
+#include "world_surface_marks.inc"
     Json asset_dispatch(const std::string& method,const Json& params) const {
         if(method=="asset.catalog" || method=="asset.label") {
             const bool label=method=="asset.label";
@@ -4252,6 +4254,7 @@ public:
         if(method.starts_with("runtime.texture."))return texture_dispatch(method,params);
         if(method=="runtime.water.inspect")return water_inspect(params);
         if(method=="runtime.particles.inspect")return inspect_particles(params);
+        if(method=="runtime.surface_marks.inspect")return inspect_surface_marks(params);
         if(method=="runtime.components" || method.starts_with("runtime.component."))return component_dispatch(method,params);
         if(method=="runtime.status") {
             fields(params,{});const auto s=runtime_status();
@@ -4559,7 +4562,7 @@ public:
             result["structure_revision"]=runtime_->structure_revision();result["id"]=e.id;return result;
         }
         if(method=="runtime.step") {
-            fields(params,{"session_id","request_id","expected_tick","ticks","inputs","motions","sounds","animations","animation_phase_matches","animation_rates","ik","root_motion","camera_lenses","camera_poses","character_stances","grounding","physical_rigs","expected_structure_revision"},{"session_id","request_id","expected_tick","ticks"});
+            fields(params,{"session_id","request_id","expected_tick","ticks","inputs","motions","sounds","animations","animation_phase_matches","animation_rates","ik","root_motion","camera_lenses","camera_poses","character_stances","grounding","physical_rigs","surface_marks","expected_structure_revision"},{"session_id","request_id","expected_tick","ticks"});
             identifier(params.at("session_id"));identifier(params.at("request_id"));
             auto normalized=params; normalized["method"]="runtime.step"; if(!normalized.contains("inputs")) normalized["inputs"]=Json::array();if(!normalized.contains("motions"))normalized["motions"]=Json::array();if(!normalized.contains("sounds"))normalized["sounds"]=Json::array();
             if(!normalized.contains("animations"))normalized["animations"]=Json::array();
@@ -4580,6 +4583,8 @@ public:
             const auto grounding=parse_grounding(normalized.at("grounding"));
             if(!normalized.contains("physical_rigs"))normalized["physical_rigs"]=Json::array();
             const auto physical_rigs=parse_physical_rigs(normalized.at("physical_rigs"));
+            if(!normalized.contains("surface_marks"))normalized["surface_marks"]=Json::array();
+            const auto surface_marks=parse_surface_marks(normalized.at("surface_marks"));
             for(auto& command:normalized["physical_rigs"])if(!command.contains("activate"))command["activate"]=false;
             for(auto& command:normalized["root_motion"])if(!command.contains("enabled"))command["enabled"]=true;
             for(auto& command:normalized["ik"]) {
@@ -4622,7 +4627,7 @@ public:
             }
             structure_mutation_guard(params);require(expected==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
             auto receipt=std::make_unique<AdvanceReceipt>();receipt->params=normalized;
-            receipt->outcome=advance_runtime(static_cast<std::uint32_t>(ticks),inputs,motions,sounds,animations,ik,root_motion,camera_lenses,character_stances,grounding,animation_rates,camera_poses,physical_rigs);
+            receipt->outcome=advance_runtime(static_cast<std::uint32_t>(ticks),inputs,motions,sounds,animations,ik,root_motion,camera_lenses,character_stances,grounding,animation_rates,camera_poses,physical_rigs,surface_marks);
             const auto index=advance_receipt_next_;advance_receipts_[index].swap(receipt);advance_receipt_next_=(index+1)%advance_receipts_.size();
             return advance_json(advance_receipts_[index]->outcome);
         }

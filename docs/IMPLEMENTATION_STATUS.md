@@ -1,8 +1,19 @@
 # Implementation status
 
-Updated 2026-11-21 for **0.0.358**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-21 for **0.0.359**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.359 supports [persistent surface marks](SURFACE_MARKS.md) through
+guarded runtime steps. A mark follows its rigid opaque receiver and changes
+its base color and roughness before lighting. The Linux fixture verifies
+placement on cooked terrain, retirement after despawn, and byte-identical
+save continuation. Relocated Windows fixtures check ordered overlap,
+roughness response, edge falloff, and a nearby unmarked object in forward
+and deferred Vulkan on AMD and NVIDIA. Fresh processes reproduce captured
+frames and save bytes on each route. The graphics fixture uses one sample
+with reconstruction disabled.
+[Results](evidence/m2-persistent-surface-marks-359.json)
 
 Version 0.0.358 lets [C# gameplay trigger scene particles](PARTICLES.md#trigger-a-burst-from-gameplay).
 The compiled fixture emits sparks from a press after its final translation

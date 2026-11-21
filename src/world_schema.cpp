@@ -251,7 +251,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 179}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 180}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -590,6 +590,26 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"pairs",{{"type","array"},{"minItems",1},{"maxItems",max_surface_pairs},{"items",surface_pair}}}},
         {"session_id","tick","pairs"});
     methods["runtime.surface.measure"]["description"]="Measure selected points against the closest rigid or skinned indexed triangles in committed world space. Supply a cooked vertex index or a triangle ordinal and three weights that sum to one. Omit target triangles to scan the whole target. Maximum 32768 target triangle checks per request. Returns closest point, unsigned distance, winding normals, signed normal offset and an optional distance verdict. Geometry precedes camera-specific effects. Read-only, outside runtime-game-session v1.";
+    const auto mark_range=[](double minimum,double maximum) {
+        return Json{{"type","number"},{"minimum",minimum},{"maximum",maximum}};
+    };
+    const auto mark_ray_vector=vector(mark_range(-1e6,1e6),3);
+    const auto mark_ray=object_schema({{"origin",mark_ray_vector},{"direction",mark_ray_vector},
+        {"distance",mark_range(.001,10000)}},{"origin","direction","distance"});
+    const auto mark_command=object_schema({{"receiver",id},{"ray",mark_ray},
+        {"half_extent_m",vector(mark_range(.005,4),2)},{"half_depth_m",mark_range(.001,.25)},
+        {"minimum_normal_dot",unit},{"edge_fraction",unit},{"linear_rgb",vector(unit,3)},
+        {"opacity",unit},{"roughness",mark_range(.045,1)}},
+        {"receiver","ray","half_extent_m","half_depth_m","minimum_normal_dot","edge_fraction","linear_rgb","opacity","roughness"});
+    methods["runtime.step"]["properties"]["surface_marks"]={{"type","array"},{"maxItems",max_surface_mark_commands},
+        {"items",mark_command},{"description","Deposit persistent marks in list order after final motion on the first simulated tick. Each ray must hit its named rigid opaque receiver first. Marks share batch rollback. Outside runtime-game-session v1."}};
+    methods["runtime.surface_marks.inspect"]=object_schema({{"session_id",id},{"tick",rev},{"structure_revision",rev},{"entity",id}},
+        {"session_id","tick","structure_revision"});
+    methods["runtime.surface_marks.inspect"]["description"]="Read persistent receiver-local mark frames and material parameters in placement order. The optional entity filter selects one receiver. Outside runtime-game-session v1.";
+    result["surface_marks"]={{"available",Runtime::available()},{"commands_per_step",max_surface_mark_commands},
+        {"marks_per_receiver",max_surface_marks_per_receiver},{"marks_per_scene",max_scene_surface_marks},
+        {"receiver","Unscaled opaque world drawable with a matching built-in box or cooked triangle collider."},
+        {"persistence","Optional surface_marks v1 runtime snapshot extension. Removing a receiver retires its marks."}};
     const auto camera_pose=object_schema({{"position",pose_vector(3,10)},{"rotation",pose_vector(4,1.00001)}},{"position","rotation"});
     auto pose_command=object_schema({{"entity",id},{"world",camera_pose},{"viewmodel",camera_pose}},{"entity"});
     pose_command["anyOf"]=Json::array({Json{{"required",{"world"}}},Json{{"required",{"viewmodel"}}}});

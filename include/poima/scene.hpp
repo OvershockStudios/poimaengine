@@ -141,6 +141,16 @@ struct CameraDrawBinding {
     CameraDrawMode mode=CameraDrawMode::Viewmodel;
     bool scene_anchored=false;
 };
+inline constexpr std::size_t max_surface_marks_per_receiver=4;
+inline constexpr std::size_t max_scene_surface_marks=256;
+struct SceneSurfaceMark {
+    // Position and orthonormal projection axes in rigid mesh-local space.
+    std::array<float,3> center_m{},normal{0,0,1},tangent{1,0,0};
+    std::array<float,2> half_extent_m{.1f,.1f};
+    float half_depth_m=.01f,minimum_normal_dot=.8f,edge_fraction=.25f;
+    std::array<float,3> linear_rgb{.2f,.2f,.2f};
+    float opacity=1,roughness=1;
+};
 struct SceneObject {
     std::string entity_id;
     Matrix4 world;
@@ -158,6 +168,7 @@ struct SceneObject {
     std::optional<CameraDrawBinding> camera_draw;
     // Indexed opaque world geometry replaced by the next presentation.
     bool stream_geometry=false;
+    std::vector<SceneSurfaceMark> surface_marks{};
 };
 struct SceneViewmodel {
     SceneLens lens;

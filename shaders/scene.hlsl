@@ -10,11 +10,19 @@ struct ObjectData {
     float4 emissive_roughness;
     float4 alpha; // x opacity, y cutoff, z mask mode; w reserved
     float4 previous_model_row0,previous_model_row1,previous_model_row2;
-    uint4 history; // x: motion correspondence; y: receive-shadows disabled; zw: reserved
+    uint4 history; // x: motion correspondence; y: receive-shadows disabled; zw: mark offset and count
+};
+struct SurfaceMark {
+    float4 center_depth;
+    float4 normal_minimum_dot;
+    float4 tangent_half_width;
+    float4 color_opacity;
+    float4 half_height_roughness_edge;
 };
 struct DrawIndices {uint object_index;uint shadow_layer;uint2 reserved;};
 [[vk::push_constant]] ConstantBuffer<DrawIndices> draw_indices;
 StructuredBuffer<ObjectData> objects : register(t9);
+StructuredBuffer<SurfaceMark> surface_marks : register(t0, space1);
 #include "scene_surface.hlsli"
 Texture2D base_map : register(t0);
 Texture2D mr_map : register(t1);
@@ -81,6 +89,30 @@ void test_material_alpha(float2 uv,uint object_index) {
     if(draw.alpha.z>.5)clip(base_map.Sample(base_sampler,uv).a*draw.alpha.x-draw.alpha.y);
 }
 void shadow_pixel_main(ShadowVertexOutput input) {test_material_alpha(input.uv,input.object_index);}
+void apply_surface_marks(inout SceneSurface material,float3 position,uint offset,uint count) {
+    [loop] for(uint index=0;index<count;++index) {
+        const SurfaceMark mark=surface_marks[offset+index];
+        const float3 normal=mark.normal_minimum_dot.xyz;
+        const float3 delta=position-mark.center_depth.xyz;
+        if(dot(material.geometric_normal,normal)>=mark.normal_minimum_dot.w && abs(dot(delta,normal))<=mark.center_depth.w) {
+            const float3 tangent=mark.tangent_half_width.xyz;
+            const float3 bitangent=cross(normal,tangent);
+            const float2 sample_position=float2(dot(delta,tangent)/mark.tangent_half_width.w,
+                dot(delta,bitangent)/mark.half_height_roughness_edge.x);
+            const float radius_squared=dot(sample_position,sample_position);
+            if(radius_squared<=1) {
+                const float edge=mark.half_height_roughness_edge.z;
+                // Divide by the width directly so a subpixel falloff never
+                // rounds both smoothstep endpoints to the same float.
+                const float ramp=edge>0 ? saturate((1-sqrt(radius_squared))/edge) : 1;
+                const float coverage=ramp*ramp*(3-2*ramp);
+                const float weight=mark.color_opacity.w*coverage;
+                material.base=lerp(material.base,mark.color_opacity.rgb,weight);
+                material.roughness=lerp(material.roughness,max(mark.half_height_roughness_edge.y,0.045),weight);
+            }
+        }
+    }
+}
 SceneSurface evaluate_material(VertexOutput input,bool front) {
     const ObjectData draw=objects[input.object_index];
     float3 n=normalize(input.normal);
@@ -119,6 +151,7 @@ SceneSurface evaluate_material(VertexOutput input,bool front) {
         const float occlusion=lerp(1,occlusion_map.Sample(occlusion_sampler,input.uv).r,draw.normal_row0.w);
         material.base=base;material.metallic=metallic;material.roughness=roughness;
         material.emission=emission;material.occlusion=occlusion;
+        apply_surface_marks(material,input.world_position,draw.history.z,draw.history.w);
     }
     material.normal=n;return material;
 }
