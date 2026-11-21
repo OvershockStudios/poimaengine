@@ -358,6 +358,102 @@ class InputProfile(unittest.TestCase):
             self.assertEqual(self.profile.read_bytes(),raw)
         self.profile.write_bytes(valid)
 
+    def test_v4_keyboard_chord_persistence_and_events(self):
+        description=self.result(self.requests(rpc('input.describe'))[0])
+        self.assertEqual(description['keyboard_chords']['format'],'poima.input.v4')
+        self.assertEqual((description['keyboard_chords']['min_keys'],description['keyboard_chords']['max_keys']),(2,4))
+        legacy=copy.deepcopy(DEFAULT);legacy['actions']={'reload':['mouse.1'],'journal':[]}
+        old_path=self.root/'legacy.poima-input.json'
+        old_request=self.transaction(legacy);old_request['params']['path']=self.native(old_path)
+        old_result=self.result(self.requests(old_request)[0]);old_bytes=old_path.read_bytes()
+        profile=copy.deepcopy(legacy)
+        profile['chords']={'reload':[['key.r','key.left_ctrl']],'journal':[['key.y','key.left_ctrl','key.right_shift']]}
+        expected=copy.deepcopy(profile)
+        expected['chords']={name:[sorted(chord) for chord in row] for name,row in profile['chords'].items()}
+        for preview in (True,False):
+            overwrite=self.transaction(profile,revision=1,preview=preview)
+            overwrite['params']['path']=self.native(old_path)
+            self.error(self.requests(overwrite)[0],-32602)
+            self.assertEqual(old_path.read_bytes(),old_bytes)
+        self.assertEqual(self.result(self.requests(old_request)[0]),dict(old_result,replayed=True))
+        request=self.transaction(profile,preview=True)
+        preview=self.result(self.requests(request)[0])
+        self.assertEqual(preview['profile'],expected)
+        self.assertEqual(preview['proposed_revision'],1)
+        self.assertFalse(self.profile.exists())
+        request['params']['preview']=False
+        committed=self.result(self.requests(request)[0]);raw=self.profile.read_bytes()
+        canonical=json.dumps(expected,sort_keys=True,separators=(',',':')).encode()
+        self.assertEqual(committed['content_hash'],hashlib.sha256(canonical).hexdigest())
+        self.assertEqual(preview['content_hash'],committed['content_hash'])
+        self.assertEqual(json.loads(raw)['format'],'poima.input.v4')
+        self.assertEqual(self.inspect()['profile'],expected)
+        retry=copy.deepcopy(request);retry['params']['profile']=expected
+        self.assertEqual(self.result(self.requests(retry)[0]),dict(committed,replayed=True))
+        changed=copy.deepcopy(request);changed['params']['profile']['chords']['reload']=[['key.r','key.right_ctrl']]
+        self.error(self.requests(changed)[0],-32010)
+        self.assertEqual(self.profile.read_bytes(),raw)
+
+        def key(control,down=True):return {'control':control,'down':down}
+        consume={'consume':True}
+        events=[key('key.r'),consume,key('key.left_ctrl'),consume,
+            key('key.r'),key('mouse.1'),key('key.left_ctrl',False),consume,
+            key('mouse.1',False),consume,key('key.left_ctrl'),key('key.left_ctrl',False),consume,
+            key('key.left_ctrl'),{'clear':True},key('key.r'),consume,
+            key('key.r',False),key('key.left_ctrl'),key('key.r'),key('key.y'),consume,
+            key('key.right_shift'),consume,key('key.left_ctrl',False),consume]
+        result=self.result(self.requests(rpc('input.evaluate',path=self.native(self.profile),events=events))[0])
+        self.assertEqual(result['input_profile'],{'source':'profile','revision':1,
+            'content_hash':committed['content_hash'],'format':'poima.input.v4'})
+        def states(name):
+            return [next(action for action in frame['actions'] if action['name']==name) for frame in result['frames']]
+        def wanted(name,rows):return [dict(name=name,held=h,pressed=p,released=r) for h,p,r in rows]
+        self.assertEqual(states('reload'),wanted('reload',[(False,False,False),(True,True,False),
+            (True,False,False),(False,False,True),(False,True,True),(False,False,False),
+            (True,True,False),(True,False,False),(False,False,True)]))
+        self.assertEqual(states('journal'),wanted('journal',[(False,False,False)]*7+[(True,True,False),(False,False,True)]))
+        self.assertEqual(self.profile.read_bytes(),raw)
+        self.error(self.requests(self.transaction(legacy,revision=1))[0],-32602)
+        empty=copy.deepcopy(profile);empty['chords']={}
+        self.result(self.requests(self.transaction(empty,revision=1))[0])
+        self.assertEqual(self.inspect()['format'],'poima.input.v4')
+        self.assertEqual(self.inspect()['profile'],empty)
+        REPORTS.append({'v4_chords':2,'canonical_member_order':True,'reordered_receipt_replay':True,
+            'key_order_independent_activation':True,'partial_and_repeat_held_states':True,'quick_tap_edges':True,
+            'preserved_legacy_bytes':True,'empty_v4_still_v4':True})
+
+    def test_v4_keyboard_chord_rejections_preserve_profile(self):
+        profile=copy.deepcopy(DEFAULT)
+        profile['actions']={'reload':[],'journal':['mouse.1','mouse.2','mouse.3']}
+        profile['chords']={'reload':[['key.left_ctrl','key.r']]}
+        self.result(self.requests(self.transaction(profile))[0]);raw=self.profile.read_bytes()
+        rows=[None,[],{'absent':[]},{'reload':False},{'reload':['key.r']},{'reload':[['key.r']]},
+            {'reload':[['key.r','key.left_ctrl',True]]},{'reload':[['key.r','key.r']]},
+            {'reload':[['key.left_ctrl','key.right_ctrl']]},{'reload':[['key.left_ctrl','key.w']]},
+            {'reload':[['key.left_ctrl','key.escape']]},{'reload':[['key.left_ctrl','mouse.4']]},
+            {'reload':[['key.left_ctrl','gamepad.north']]},{'reload':[['key.left_ctrl','key.unknown']]},
+            {'reload':[['key.left_ctrl','key.r'],['key.r','key.right_alt']]},
+            {'reload':[['key.left_ctrl','key.r']],'journal':[['key.right_alt','key.r']]},
+            {'journal':[['key.left_ctrl','key.r'],['key.left_ctrl','key.g']]}]
+        variants=[dict(profile,chords=row) for row in rows]
+        variants.append(dict(profile,actions={'reload':['key.left_ctrl'],'journal':[]}))
+        variants.append(dict(profile,actions={'reload':['key.r'],'journal':[]}))
+        variants.append({key:value for key,value in profile.items() if key!='actions'})
+        replies=self.requests(*(self.transaction(value,revision=1) for value in variants))
+        for value,reply in zip(variants,replies,strict=True):
+            with self.subTest(profile=value):self.error(reply,-32602)
+        self.assertEqual(self.profile.read_bytes(),raw)
+        wrong=json.loads(raw);wrong['format']='poima.input.v3'
+        mixed=json.loads(raw);mixed['receipts'][0]['params']['profile'].pop('chords')
+        for document in [wrong,mixed]:
+            corrupt=json.dumps(document).encode()
+            self.profile.write_bytes(corrupt)
+            self.error(self.requests(rpc('input.inspect',path=self.native(self.profile),read_only=True))[0],-32070)
+            self.assertEqual(self.profile.read_bytes(),corrupt)
+        self.profile.write_bytes(raw)
+        REPORTS.append({'invalid_v4_profiles_rejected':len(variants),'last_good_bytes_preserved':True,
+            'format_and_receipt_corruption_rejected_without_repair':True})
+
 if __name__=='__main__':
     result=unittest.TextTestRunner(verbosity=2).run(unittest.defaultTestLoader.loadTestsFromTestCase(InputProfile))
     if args.evidence:args.evidence.write_text(json.dumps({'tests':result.testsRun,'passed':result.wasSuccessful(),

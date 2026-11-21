@@ -343,13 +343,26 @@ The native solver owns anchor constraints, hard angular limits and joint
 - Smooth approach energy in `soft_limit_zone` before the hard angular endpoints
   and cone boundary. Its potential is C2 across the approach start and endpoint.
 - Relative angular damping `-rest_damping * (omega_child - omega_parent)`.
+- Optional `soft_limit_damping` for outward angular motion at an engaged
+  limit. Set it on a joint in N·m·s/rad. It can work with zero elastic
+  `soft_limit_stiffness`.
 - One nonnegative saturation scale for the sum of elastic and damping torques,
   bounded by `max_torque`, applied as equal/opposite world-space internal torques.
 
-The energy gradient uses central Lie perturbations of `1e-5` radians. Soft-limit
-response rejects the ambiguous 180-degree swing/twist chart neighborhood instead
-of inventing an angle. Native joint friction is not applied a second time by the
-passive evaluator.
+For directional damping, each engaged band uses the outward normal to the
+same angular distance that defines its elastic response. Project the relative
+angular velocity onto that normal. A positive projection contributes damping
+along the opposite direction. An inward or tangential velocity contributes
+zero. The damping weight follows `x²(3−2x)`, with `x` the fraction of the
+approach band entered, clamped to [0, 1]. It reaches full strength at the
+hard endpoint. Both damping contributions share the same passive torque cap.
+Omission preserves the stored profile and its torque response. Explicit zero
+keeps the same torque response.
+
+The energy gradient and limit normals use central Lie perturbations of
+`1e-5` radians. An enabled soft spring or directional damper requires a
+defined swing/twist chart. The evaluator rejects the ambiguous 180-degree
+neighborhood. Jolt owns the hard limits, anchors and native joint friction.
 
 The damping contribution has nonpositive relative damping power. Reported
 potential energy is the **unsaturated authored potential**: torque clipping does
@@ -496,6 +509,7 @@ write limit. These are attempt limits, not only successful-operation counts.
 | Hinge/twist endpoints | Within ±3 radians, containing zero; width ≥0.01 and at least one extent ≥0.01 radians |
 | Rest/soft stiffness | 0–1,000,000 N·m/rad |
 | Relative rest damping | 0–10,000 N·m·s/rad |
+| Optional directional soft-limit damping | 0–10,000 N·m·s/rad |
 | Maximum response / joint friction torque | 0–100,000 N·m |
 | Soft approach zone | 0.001–0.5 radians, no wider than half the angular interval or either swing half-cone |
 | Native world position / impulse point | Each component within ±1,000,000 m |

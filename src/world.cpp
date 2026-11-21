@@ -424,7 +424,7 @@ SkySettings sky_value(const Json& value) {
     return result;
 }
 LightingEnvironment environment_value(const Json& value) {
-    fields(value,{"ambient","exposure","shadow_resolution","shadow_filter","sky","ibl"},{"ambient","exposure"});require(value.at("ambient").is_array() && value.at("ambient").size()==3,"Ambient fill needs three values.");
+    fields(value,{"ambient","exposure","shadow_resolution","shadow_filter","sky","ibl","bloom"},{"ambient","exposure"});require(value.at("ambient").is_array() && value.at("ambient").size()==3,"Ambient fill needs three values.");
     for(const auto& x:value.at("ambient"))require(x.is_number() && std::isfinite(x.get<double>()) && x>=0 && x<=1e6,"Ambient fill must be in [0,1e6].");
     require(value.at("exposure").is_number() && std::isfinite(value.at("exposure").get<double>()) && value.at("exposure")>=0 && value.at("exposure")<=1e6,"Exposure must be in [0,1e6].");
     if(value.contains("shadow_resolution"))require(value.at("shadow_resolution").is_number_integer() && (value.at("shadow_resolution")==256 || value.at("shadow_resolution")==512 || value.at("shadow_resolution")==1024 || value.at("shadow_resolution")==2048),"Shadow resolution must be 256, 512, 1024 or 2048.");
@@ -445,6 +445,20 @@ LightingEnvironment environment_value(const Json& value) {
                     std::string("IBL ")+key+" must be a finite number in [0,64].");
         }
         result.ibl=IblSettings{ibl.at("enabled").get<bool>(),ibl.at("diffuse_intensity").get<float>(),ibl.at("specular_intensity").get<float>()};
+    }
+    if(value.contains("bloom")) {
+        const auto& bloom=value.at("bloom");
+        fields(bloom,{"intensity","threshold","radius"});
+        const auto read_field=[&](const char* name,float fallback,double minimum,double maximum) {
+            if(!bloom.contains(name))return fallback;
+            const auto& field=bloom.at(name);
+            require(field.is_number() && field>=minimum && field<=maximum,
+                    std::string("Bloom ")+name+" is outside its finite range.");
+            return field.get<float>();
+        };
+        result.bloom.intensity=read_field("intensity",result.bloom.intensity,0,1);
+        result.bloom.threshold=read_field("threshold",result.bloom.threshold,0,65504);
+        result.bloom.radius=read_field("radius",result.bloom.radius,2,32);
     }
     try { validate_environment(result); }catch(const std::runtime_error& error) { throw Error(-32602,error.what()); }
     return result;
@@ -2871,7 +2885,8 @@ public:
                 auto loaded=(read_only_ ? input_profiles::load_read_only(input_profile_path(params.at("path"))) : input_profiles::load(input_profile_path(params.at("path"))));profile=std::move(loaded.profile);
                 info={{"source","profile"},{"revision",loaded.revision},{"content_hash",loaded.content_hash}};
             }catch(const input_profiles::ProfileError& e) { throw Error(e.code,e.what()); }
-            const bool has_gamepad=profile.gamepad.has_value();info["format"]=profile.actions ? "poima.input.v3" : has_gamepad ? "poima.input.v2" : "poima.input.v1";
+            const bool has_gamepad=profile.gamepad.has_value();
+            info["format"]=input_profiles::profile_format(profile);
             BoundPlayerInput evaluator(std::move(profile));Json frames=Json::array();
             for(std::size_t i=0;i<events.size();++i) {
                 try {
@@ -3192,20 +3207,23 @@ public:
     Json audio_dispatch(const std::string& method,const Json& params,bool live) const {
         const bool capture_audio=std::string_view(method).ends_with("capture");
         if(live) {
-            if(capture_audio)fields(params,{"session_id","tick","listener","path","frames"},{"session_id","tick","listener","path"});
-            else fields(params,{"session_id","tick","listener"},{"session_id","tick","listener"});
+            if(capture_audio)fields(params,{"session_id","tick","listener","path","frames","early_reflections"},{"session_id","tick","listener","path"});
+            else fields(params,{"session_id","tick","listener","early_reflections"},{"session_id","tick","listener"});
             runtime_guard(params);require(revision(params.at("tick"))==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
         } else {
-            if(capture_audio)fields(params,{"revision","listener","path","frames"},{"revision","listener","path"});
-            else fields(params,{"revision","listener"},{"revision","listener"});
+            if(capture_audio)fields(params,{"revision","listener","path","frames","early_reflections"},{"revision","listener","path"});
+            else fields(params,{"revision","listener","early_reflections"},{"revision","listener"});
             current_revision(params);
         }
         require(audio_available(),"Audio observation is not built. Configure POIMA_ENABLE_AUDIO=ON.",-32003);
         const auto listener=identifier(params.at("listener"));const auto frame_count=capture_audio ? revision(params.value("frames",Json(48000))) : 0;
         require(!capture_audio || (frame_count>=1 && frame_count<=480000),"Audio capture frames must be 1..480000.");
+        const auto reflections=params.value("early_reflections",Json(false));
+        require(reflections.is_boolean(),"early_reflections must be Boolean.");
         std::string output;if(capture_audio)output=render_options(Json{{"path",params.at("path")}}).capture;
         try {
             AudioSnapshot snapshot;RuntimeDefinition definition;std::map<std::string,Matrix4> matrices;
+            snapshot.early_reflections=reflections.get<bool>();
             if(!live) { definition=runtime_definition(true);matrices=world_matrices(doc_.at("entities")); }
             const auto& source_definition=live ? runtime_->live_definition() : definition;
             auto pose=[&](const std::string& id) { return live ? runtime_->entity(id).world : matrices.at(id); };
@@ -3223,14 +3241,28 @@ public:
                 geometry.push_back({{"entity",e.id},{"shape",shape},{"world_matrix",g.world},{"absorption",g.material.absorption},{"scattering",g.material.scattering},{"transmission",g.material.transmission}});snapshot.geometry.push_back(std::move(g));
             }
             auto report=observe_audio(snapshot,static_cast<std::uint32_t>(frame_count));Json paths=Json::array();
-            for(const auto& p:report.paths)paths.push_back({{"entity",p.entity},{"asset",p.asset},{"source_position",p.source},{"listener_position",p.listener},{"listener_local_direction",p.direction},{"distance_m",p.distance},{"propagation_delay_samples",p.propagation_delay_samples},{"distance_gain",p.distance_gain},{"direct_visibility",p.occlusion},{"air_absorption",p.air},{"transmission",p.transmission}});
+            for(const auto& p:report.paths) {
+                Json path={{"entity",p.entity},{"asset",p.asset},{"source_position",p.source},{"listener_position",p.listener},{"listener_local_direction",p.direction},{"distance_m",p.distance},{"propagation_delay_samples",p.propagation_delay_samples},{"distance_gain",p.distance_gain},{"direct_visibility",p.occlusion},{"air_absorption",p.air},{"transmission",p.transmission}};
+                if(snapshot.early_reflections) {
+                    path["early_reflection"]=nullptr;
+                    if(p.reflection) {
+                        const auto& reflection=*p.reflection;
+                        path["early_reflection"]={{"entity",reflection.entity},{"face",reflection.face},
+                            {"point_world",reflection.point},{"listener_local_direction",reflection.direction},
+                            {"distance_m",reflection.distance},{"propagation_delay_samples",reflection.propagation_delay_samples},
+                            {"distance_gain",reflection.distance_gain},{"bands",reflection.bands}};
+                    }
+                }
+                paths.push_back(std::move(path));
+            }
             for(std::size_t i=0;i<snapshot.sources.size();++i) {
                 paths[i]["gain"]=snapshot.sources[i].emitter.gain;paths[i]["loop"]=snapshot.sources[i].emitter.loop;paths[i]["clip_frames"]=snapshot.sources[i].emitter.clip->samples.size();
             }
             Json result={{"world_id",source_definition.world_id},{"revision",source_definition.authored_revision},{"tick",live ? Json(runtime_->inspect().tick) : Json(nullptr)},{"session_id",live ? Json(runtime_id_) : Json(nullptr)},
                 {"source",live ? "runtime" : "authored"},{"listener",listener},{"listener_world",snapshot.listener},{"backend","Steam Audio 4.8.1; CPU direct paths; default HRTF"},{"build_version",build_metadata().version},
                 {"geometry",geometry},{"triangles",report.triangles},{"sources",paths},{"scene_ms",report.scene_ms},{"simulation_ms",report.simulation_ms},{"dsp_ms",report.dsp_ms},
-                {"reflections",false},{"diffraction",false},{"device_playback",false},{"snapshot_policy","fresh synchronous frozen geometry/poses; capture restarts clips at sample zero"}};
+                {"reflections",snapshot.early_reflections},{"diffraction",false},{"device_playback",false},{"snapshot_policy","fresh synchronous frozen geometry/poses; capture restarts clips at sample zero"}};
+            if(snapshot.early_reflections)result["reflection_budget_exceeded"]=report.reflection_budget_exceeded;
             if(capture_audio) {
                 const auto bytes=audio_wave(report.samples,2);const auto utf8=fs::path(std::u8string(output.begin(),output.end()));write_flushed(utf8,bytes);
                 result["capture"]={{"path",output},{"format","WAV IEEE float32"},{"sample_rate",audio_rate},{"channels",2},{"frames",frame_count},{"sha256",content_hash(bytes)},{"peak",report.peak},{"rms",report.rms},{"over_range_samples",report.over_range_samples}};
@@ -3694,7 +3726,7 @@ public:
         return {{"session_id",runtime_id_},{"tick",tick},{"next_voice",state.next_id()},{"emitting",emitting},{"retained",state.voices().size()},{"has_more",more},{"voices",voices}};
     }
     Json audio_replay(const Json& params) {
-        fields(params,{"session_id","request_id","expected_tick","listener","path","sequence","expected_structure_revision"},{"session_id","request_id","expected_tick","listener","path","sequence"});
+        fields(params,{"session_id","request_id","expected_tick","listener","path","sequence","expected_structure_revision","early_reflections"},{"session_id","request_id","expected_tick","listener","path","sequence"});
         identifier(params.at("session_id"));identifier(params.at("request_id"));revision(params.at("expected_tick"));auto normalized=params;normalized["method"]="runtime.audio.replay";
         for(const auto& receipt:playback_receipts_)if(receipt["params"]["session_id"]==params.at("session_id") && receipt["params"]["request_id"]==params.at("request_id")) {
             require(receipt["params"]==normalized,"Runtime request ID reused with different parameters.",-32010);auto result=receipt["result"];result["replayed"]=true;return result;
@@ -3702,6 +3734,8 @@ public:
         runtime_guard(params);
         const auto expected=revision(params.at("expected_tick"));structure_mutation_guard(params);require(expected==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
         require(audio_available(),"Audio replay is not built. Configure POIMA_ENABLE_AUDIO=ON.",-32003);
+        const auto reflections=params.value("early_reflections",Json(false));
+        require(reflections.is_boolean(),"early_reflections must be Boolean.");
         const auto listener=identifier(params.at("listener"));const auto output=render_options(Json{{"path",params.at("path")}}).capture;
         struct Segment { std::uint32_t ticks;std::vector<RuntimeInput> inputs;std::vector<KinematicTarget> motions;std::vector<SoundCommand> sounds; };
         const auto& sequence=params.at("sequence");require(sequence.is_array() && !sequence.empty() && sequence.size()<=256,"Audio replay requires 1..256 segments.");
@@ -3711,12 +3745,18 @@ public:
             Segment segment;segment.ticks=static_cast<std::uint32_t>(ticks);const auto inputs=value.value("inputs",Json::array());require(inputs.is_array() && inputs.size()<=32,"At most 32 replay inputs.");for(const auto& input:inputs)segment.inputs.push_back(parse_input(input));
             segment.motions=parse_motions(value.value("motions",Json::array()));segment.sounds=parse_sounds(value.value("sounds",Json::array()));segments.push_back(std::move(segment));
         }
-        std::unique_ptr<AudioStream> stream;try { stream=std::make_unique<AudioStream>(expected,runtime_->audio_snapshot(listener)); }catch(const std::exception& e) { throw Error(-32070,e.what()); }
+        const auto snapshot=[&] {
+            auto audio=runtime_->audio_snapshot(listener);
+            audio.early_reflections=reflections.get<bool>();
+            return audio;
+        };
+        std::unique_ptr<AudioStream> stream;try { stream=std::make_unique<AudioStream>(expected,snapshot()); }catch(const std::exception& e) { throw Error(-32070,e.what()); }
         std::vector<float> pcm;pcm.reserve(static_cast<std::size_t>(total*audio_tick_frames*2));
         auto receipts=playback_receipts_;if(receipts.size()==32)receipts.erase(receipts.begin());receipts.push_back({{"params",normalized},{"result",Json::object()}});
         Json result={{"session_id",runtime_id_},{"previous_tick",expected},{"listener",listener},{"replayed",false},{"success",false},{"capture",nullptr}};
+        if(reflections.get<bool>())result["early_reflections"]=true;
         try {
-            auto append=[&](bool finish=false) { auto block=stream->advance(runtime_->inspect().tick,runtime_->audio_snapshot(listener),runtime_->sound_state().voices(),finish);pcm.insert(pcm.end(),block.begin(),block.end()); };
+            auto append=[&](bool finish=false) { auto block=stream->advance(runtime_->inspect().tick,snapshot(),runtime_->sound_state().voices(),finish);pcm.insert(pcm.end(),block.begin(),block.end()); };
             bool replaced=false;
             for(auto& segment:segments) {
               for(std::uint32_t i=0;i<segment.ticks;++i) {

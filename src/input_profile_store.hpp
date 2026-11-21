@@ -14,6 +14,7 @@ struct ProfileError : std::runtime_error {
     ProfileError(int value,const std::string& message) : std::runtime_error(message),code(value) {}
 };
 struct Loaded { InputProfile profile;std::uint64_t revision;std::string content_hash,format; };
+const char* profile_format(const InputProfile& profile) noexcept;
 Json profile_schema();
 Json profile_json(const InputProfile& profile);
 Json describe();

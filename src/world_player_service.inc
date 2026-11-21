@@ -53,7 +53,7 @@
             if(choice.contains("id")) { const auto id=revision(choice.at("id"));require(id>=1 && id<=4294967295ULL,"Gamepad id must be a nonzero uint32.");options.gamepad_selection.id=static_cast<std::uint32_t>(id); }
         }
         require(options.gamepad_selection.mode=="disabled" || options.input_profile->gamepad.has_value(),"Gamepad selection requires a v2 profile; copy a v1 profile to a new v2 destination first.");
-        input_info["format"]=options.input_profile->actions ? "poima.input.v3" : options.input_profile->gamepad ? "poima.input.v2" : "poima.input.v1";
+        input_info["format"]=input_profiles::profile_format(*options.input_profile);
         require(options.controller.empty() || runtime_->is_player_controller(options.controller),"Player requires a camera-bound CharacterController when controller is supplied.",-32004);
         try { runtime_->snapshot(options.camera); }
         catch(const std::runtime_error& error) { throw Error(-32602,error.what()); }

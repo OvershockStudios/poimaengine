@@ -20,8 +20,20 @@ internal static class CodexDraftContract
     private const string Holding = "Draft turn is waiting.";
     private const string MissingScope = "Missing execution scope";
     private const string LocalExecutor = "Unexpected local executor";
+    private const string GameplayExecutor = "Unexpected gameplay executor";
     private const string WritableScope = "Unexpected write access";
-    private static readonly string[] ToolNames = ["poima_call", "poima_discover", "poima_reference"];
+    private const string SourceRead = "project.source.read";
+    private const string SourceWrite = "project.source.write";
+    private const string MissingSourceTool = "Missing source tool";
+    private const string MissingSourceRead = "Missing source read";
+    private const string SourceWriteOnDispatcher = "Source write on dispatcher";
+    private const string ExpandedSourceTool = "Expanded source tool";
+    private const string BuildOnDispatcher = "Build on dispatcher";
+    private const string ChecksOnDispatcher = "Checks on dispatcher";
+    private const string ExtraChecksTool = "Extra checks tool";
+    private const string SceneWithSourceRead = "Scene with source read";
+    private static readonly string[] SceneTools = ["poima_call", "poima_discover", "poima_reference"];
+    private static readonly string[] GameplayTools = [.. SceneTools, "poima_source"];
 
     public static bool IsDraftPeer(string[] arguments) =>
         Override(arguments, "mcp_servers.poima.args") is JsonArray args && args.Any(value => value?.GetValue<string>() == "--project");
@@ -40,14 +52,32 @@ internal static class CodexDraftContract
         {
             var first = WriteDraft(scratch, "Lantern draft");
             var second = WriteDraft(scratch, "Bench draft");
+            var logic = WriteDraft(scratch, "Gameplay draft");
             var wrong = WriteDraft(scratch, "Wrong marker", wrongProjectId: true);
             var noMarker = WriteDraft(scratch, "Missing marker");
-            var wrongCatalog = WriteDraft(scratch, "Wrong catalog");
-            var unsafeDrafts = new[] { MissingScope, LocalExecutor, WritableScope }
-                .Select(name => WriteDraft(scratch, name)).ToArray();
+            var wrongCatalogs = new (string Manifest, bool Source)[]
+            {
+                (WriteDraft(scratch, "Wrong catalog"), false),
+                (WriteDraft(scratch, SceneWithSourceRead), false),
+                (WriteDraft(scratch, MissingSourceTool), true),
+                (WriteDraft(scratch, MissingSourceRead), true),
+                (WriteDraft(scratch, SourceWriteOnDispatcher), true),
+                (WriteDraft(scratch, ExpandedSourceTool), true),
+                (WriteDraft(scratch, BuildOnDispatcher), true),
+                (WriteDraft(scratch, ChecksOnDispatcher), true),
+                (WriteDraft(scratch, ExtraChecksTool), true)
+            };
+            var unsafeDrafts = new (string Manifest, bool Source)[]
+            {
+                (WriteDraft(scratch, MissingScope), false),
+                (WriteDraft(scratch, LocalExecutor), false),
+                (WriteDraft(scratch, GameplayExecutor), true),
+                (WriteDraft(scratch, WritableScope), false)
+            };
             File.Delete(Path.Combine(Path.GetDirectoryName(noMarker)!, MarkerName));
-            Task<CodexReview> Open(string manifest) =>
-                CodexReview.OpenDraftAsync(client, client, manifest, Model, cancellation);
+            Task<CodexReview> Open(string manifest, bool source = false) => source
+                ? CodexReview.OpenDraftAsync(client, client, manifest, Model, cancellation, allowGameplaySourceEdits: true)
+                : CodexReview.OpenDraftAsync(client, client, manifest, Model, cancellation);
 
             foreach (var invalid in new[] { wrong, noMarker })
             {
@@ -60,20 +90,23 @@ internal static class CodexDraftContract
             Check(!Directory.EnumerateFiles(scratch, "draft-*.jsonl").Any(),
                 "An invalid draft started a provider process before validation.");
 
-            foreach (var unsafeDraft in unsafeDrafts)
+            foreach (var (manifest, source) in unsafeDrafts)
             {
                 var rejected = false;
-                try { await using var unexpected = await Open(unsafeDraft); }
+                try { await using var unexpected = await Open(manifest, source); }
                 catch (InvalidOperationException error) when (error.Message.Contains("could not confirm an isolated scene worker", StringComparison.Ordinal))
                 { rejected = true; }
-                Check(rejected, "A scene worker opened with an unconfirmed local execution scope.");
+                Check(rejected, "A draft worker opened with an unconfirmed local execution scope.");
             }
 
-            var rejectedTools = false;
-            try { await using var unexpected = await Open(wrongCatalog); }
-            catch (InvalidOperationException error) when (error.Message.Contains("draft", StringComparison.OrdinalIgnoreCase))
-            { rejectedTools = true; }
-            Check(rejectedTools, "Draft connection accepted the unrestricted Poima tool catalog.");
+            foreach (var (manifest, source) in wrongCatalogs)
+            {
+                var rejected = false;
+                try { await using var unexpected = await Open(manifest, source); }
+                catch (InvalidOperationException error) when (error.Message.Contains("scoped draft tools", StringComparison.Ordinal))
+                { rejected = true; }
+                Check(rejected, "Draft connection accepted a missing or excessive permission in " + Path.GetDirectoryName(manifest));
+            }
 
             await using (var lantern = await Open(first))
             await using (var bench = await Open(second))
@@ -94,24 +127,31 @@ internal static class CodexDraftContract
                 Check(await bench.AskAsync("Check the draft.", _ => { }, cancellation) == "Draft is ready to review.",
                     "Retiring one draft stopped the other draft's conversation.");
             }
+            await using (var gameplay = await Open(logic, source: true))
+                Check(await gameplay.AskAsync("Check the draft.", _ => { }, cancellation) == "Draft is ready to review.",
+                    "An explicitly permitted gameplay worker could not start a turn.");
 
+            var expected = wrongCatalogs.Concat(unsafeDrafts)
+                .ToDictionary(target => target.Manifest, target => target.Source, StringComparer.Ordinal);
+            expected.Add(first, false);
+            expected.Add(second, false);
+            expected.Add(logic, true);
             var peers = Directory.GetFiles(scratch, "draft-*.jsonl")
                 .Select(file => File.ReadLines(file).Select(line => JsonNode.Parse(line)!.AsObject()).ToArray()).ToArray();
-            Check(peers.Length == 3 + unsafeDrafts.Length &&
+            Check(peers.Length == expected.Count &&
                 peers.Select(peer => peer[0]["thread"]!.GetValue<string>()).Distinct().Count() == peers.Length,
                 "Drafts did not own independent provider threads.");
             foreach (var peer in peers)
             {
                 var launch = peer[0];
                 var manifest = launch["manifest"]!.GetValue<string>();
-                var unsafeScope = unsafeDrafts.Contains(manifest, StringComparer.Ordinal);
-                Check((manifest == first || manifest == second || manifest == wrongCatalog || unsafeScope) &&
+                Check(expected.Remove(manifest, out var source) && launch["gameplay_source"]?.GetValue<bool>() == source &&
                     launch["command"]?.GetValue<string>() == client,
-                    "The draft launched with a different project or executable.");
-                if (unsafeScope)
+                    "The draft launched with a different project, executable, or source permission.");
+                if (unsafeDrafts.Any(target => target.Manifest == manifest) || wrongCatalogs.Any(target => target.Manifest == manifest))
                     Check(peer.Select(row => row["kind"]!.GetValue<string>())
                         .SequenceEqual(["launch", "native/catalog", "thread/start", "exit"]),
-                        "An unsafe draft connection was used after the thread scope was returned.");
+                        "A rejected draft connection was used after the scope check.");
                 Check(peer[^1]["kind"]?.GetValue<string>() == "exit", "Draft peer did not close on EOF.");
                 try
                 {
@@ -128,7 +168,7 @@ internal static class CodexDraftContract
             Environment.SetEnvironmentVariable(TraceVariable, trace);
             Directory.Delete(scratch, recursive: true);
         }
-        Console.WriteLine("Codex draft targets, separate threads, no-executor scope, restricted approvals, streaming and retirement passed.");
+        Console.WriteLine("Codex draft targets, opt-in gameplay source, no-executor scope, restricted approvals, streaming and retirement passed.");
     }
 
     private static string WriteDraft(string scratch, string name, bool wrongProjectId = false)
@@ -160,17 +200,20 @@ internal static class CodexDraftContract
     {
         var command = Override(arguments, "mcp_servers.poima.command")!.GetValue<string>();
         var engineArgs = Override(arguments, "mcp_servers.poima.args")!.AsArray().Select(value => value!.GetValue<string>()).ToArray();
-        Check(engineArgs is ["mcp", "--project", _, "--draft"],
+        var source = engineArgs is ["mcp", "--project", _, "--draft", "--gameplay-source"];
+        Check(source || engineArgs is ["mcp", "--project", _, "--draft"],
             "The draft must target a standalone Poima project.");
+        var expectedTools = source ? GameplayTools : SceneTools;
         var manifest = engineArgs[2];
         var cwd = Directory.GetCurrentDirectory();
         var pathComparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
         Check(Path.IsPathFullyQualified(manifest) && string.Equals(Path.GetDirectoryName(manifest), cwd, pathComparison),
             "Draft provider started outside its workspace.");
         var enabledTools = Override(arguments, "mcp_servers.poima.enabled_tools")!.AsArray().Select(value => value!.GetValue<string>());
-        Check(enabledTools.Order(StringComparer.Ordinal).SequenceEqual(ToolNames) &&
+        Check(enabledTools.Order(StringComparer.Ordinal).SequenceEqual(expectedTools) &&
             Override(arguments, "mcp_servers.poima.tools.poima_call.approval_mode")?.GetValue<string>() == "approve" &&
-            arguments.Count(arg => arg.StartsWith("mcp_servers.poima.tools.", StringComparison.Ordinal)) == 1,
+            Override(arguments, "mcp_servers.poima.tools.poima_source.approval_mode")?.GetValue<string>() == (source ? "approve" : null) &&
+            arguments.Count(arg => arg.StartsWith("mcp_servers.poima.tools.", StringComparison.Ordinal)) == (source ? 2 : 1),
             "Draft session approval or enabled tools differ from the scoped authoring catalog.");
         Check(Override(arguments, "sandbox_mode")?.GetValue<string>() == "read-only" &&
             Override(arguments, "features.shell_tool")?.GetValue<bool>() == false &&
@@ -185,15 +228,17 @@ internal static class CodexDraftContract
         await Trace("launch", new JsonObject
         {
             ["command"] = command, ["args"] = new JsonArray(engineArgs.Select(argument => JsonValue.Create(argument)).ToArray()),
-            ["manifest"] = manifest, ["cwd"] = cwd
+            ["manifest"] = manifest, ["cwd"] = cwd, ["gameplay_source"] = source
         });
 
         await using (var native = Environment.GetEnvironmentVariable(NativeVariable) == "1"
             ? new AgentRpcProcess(command, engineArgs, cwd, requireJsonRpcVersion: true) : null)
         {
             using var startup = new CancellationTokenSource(TimeSpan.FromSeconds(30));
-            var tools = await ReadToolsAsync(native, startup.Token);
-            if (native is null && fixture == "Wrong catalog") tools["poima_build"] = new JsonObject();
+            var tools = native is null ? FixtureTools(fixture, source) : await ReadToolsAsync(native, startup.Token);
+            if (native is not null)
+                Check(tools.Select(tool => tool.Key).Order(StringComparer.Ordinal).SequenceEqual(expectedTools),
+                    "Native draft advertised tools outside its scoped catalog.");
             await Trace("native/catalog", new JsonObject { ["native"] = native is not null, ["tools"] = tools.DeepClone() });
             while (await Console.In.ReadLineAsync() is { } line)
             {
@@ -224,7 +269,7 @@ internal static class CodexDraftContract
                         if (rejectScope) File.Delete(forcedFailure!);
                         var identity = new JsonObject { ["id"] = thread };
                         if (fixture != MissingScope)
-                            identity["environments"] = fixture == LocalExecutor || rejectScope
+                            identity["environments"] = fixture is LocalExecutor or GameplayExecutor || rejectScope
                                 ? new JsonArray(new JsonObject { ["environmentId"] = "local", ["cwd"] = cwd })
                                 : new JsonArray();
                         await Reply(new JsonObject
@@ -342,21 +387,44 @@ internal static class CodexDraftContract
         }
     }
 
-    private static async Task<JsonObject> ReadToolsAsync(AgentRpcProcess? native, CancellationToken cancellation)
+    private static JsonObject FixtureTools(string fixture, bool source)
     {
-        var result = new JsonObject();
-        if (native is null)
+        var dispatcher = new JsonArray("world.inspect", "world.transact", "entity.get");
+        if ((source && fixture != MissingSourceRead) || fixture == SceneWithSourceRead) dispatcher.Add(SourceRead);
+        if (fixture == SourceWriteOnDispatcher) dispatcher.Add(SourceWrite);
+        if (fixture == BuildOnDispatcher) dispatcher.Add("development.publish");
+        if (fixture == ChecksOnDispatcher) dispatcher.Add("project.verification.write");
+        var result = new JsonObject
         {
-            foreach (var name in ToolNames) result[name] = new JsonObject();
-            result["poima_call"]!["inputSchema"] = new JsonObject
+            ["poima_call"] = MethodTool(dispatcher),
+            ["poima_discover"] = new JsonObject(),
+            ["poima_reference"] = new JsonObject()
+        };
+        if (source && fixture != MissingSourceTool)
+        {
+            var writes = new JsonArray(SourceWrite);
+            if (fixture == ExpandedSourceTool) writes.Add("development.publish");
+            result["poima_source"] = MethodTool(writes);
+        }
+        if (fixture == "Wrong catalog") result["poima_build"] = new JsonObject();
+        if (fixture == ExtraChecksTool) result["poima_checks"] = new JsonObject();
+        return result;
+
+        static JsonObject MethodTool(JsonArray methods) => new()
+        {
+            ["inputSchema"] = new JsonObject
             {
                 ["properties"] = new JsonObject
                 {
-                    ["method"] = new JsonObject { ["enum"] = new JsonArray("world.inspect", "world.transact", "entity.get") }
+                    ["method"] = new JsonObject { ["enum"] = methods }
                 }
-            };
-            return result;
-        }
+            }
+        };
+    }
+
+    private static async Task<JsonObject> ReadToolsAsync(AgentRpcProcess native, CancellationToken cancellation)
+    {
+        var result = new JsonObject();
         var initialization = await native.RequestAsync("initialize", new JsonObject
         {
             ["protocolVersion"] = "2025-11-25", ["capabilities"] = new JsonObject(),
@@ -370,8 +438,6 @@ internal static class CodexDraftContract
             var name = tool!["name"]!.GetValue<string>();
             result[name] = tool.DeepClone();
         }
-        Check(result.Select(tool => tool.Key).Order(StringComparer.Ordinal).SequenceEqual(ToolNames),
-            "Native draft advertised tools outside its scoped catalog.");
         return result;
     }
 

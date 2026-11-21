@@ -3,6 +3,7 @@
 #include "poima/input_action.hpp"
 #include "poima/player.hpp"
 #include <array>
+#include <cstddef>
 #include <cstdint>
 #include <map>
 #include <optional>
@@ -31,6 +32,8 @@ struct GamepadProfile {
     std::array<double,2> look_degrees_per_second{180,120};
     double trigger_press=.55, trigger_release=.45;
 };
+using KeyboardChord = std::vector<std::string>;
+inline constexpr std::size_t input_chord_max_keys=4;
 struct InputProfile {
     // PlayerAction order: forward, backward, left, right, jump, use.
     std::array<std::vector<std::string>,6> bindings;
@@ -39,10 +42,12 @@ struct InputProfile {
     std::optional<GamepadProfile> gamepad;
     // Omission preserves legacy profile formats; an empty map opts into v3.
     std::optional<std::map<std::string,std::vector<std::string>>> actions;
+    // A present map opts into v4. Each row augments an existing named action.
+    std::optional<std::map<std::string,std::vector<KeyboardChord>>> chords;
 };
 InputProfile default_input_profile();
 InputProfile default_gamepad_input_profile();
-// At most four distinct controls per action; sharing across actions is rejected.
+// At most four alternatives per action. Chords may share modifiers with chords.
 // Empty actions are allowed. Escape/Tab remain reserved player recovery controls.
 void validate_input_profile(const InputProfile& profile);
 std::span<const InputControl> input_controls();
@@ -54,7 +59,9 @@ class BoundPlayerInput {
     struct NamedBinding {
         std::string name;
         std::vector<Binding> bindings;
+        std::vector<std::vector<Binding>> chords;
         std::array<bool,2> pressed{},released{}; // keyboard+mouse / gamepad
+        bool held() const;
     };
     std::vector<NamedBinding> named_;
     // Jump/use edges retain their origin, so unplugging a pad cannot consume

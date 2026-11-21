@@ -1,8 +1,32 @@
 # Implementation status
 
-Updated 2026-11-21 for **0.0.348**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-21 for **0.0.349**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.349 adds native [terrain tiles](TERRAIN.md), [foliage scattering](FOLIAGE_SCATTER.md),
+[CPU particles](PARTICLES.md), and a [localized water grid](SHALLOW_WATER.md).
+These APIs cover terrain seams and sampling, stable CPU placements, fixed-tick
+emission, and bounded water flow and snapshots. Scene authoring, runtime
+composition, and GPU rendering for these modules require further integration.
+
+The [weather package](WEATHER_CYCLE.md) adds solar and seasonal state, storms,
+lightning, and rainfall queries. Games own its clock and the visible effects.
+A compiled [behavior tree](../packages/ai/BEHAVIOR_TREE.md) followed native
+line-of-sight changes and reproduced the full save after loading in a fresh
+process. The [FPS traversal package](FPS_TRAVERSAL.md) tested mantle and vault
+on a kinematic actor through Native AOT. It matched 19 ticks after a fresh load
+and stopped when a moving collider interrupted the path.
+
+Linux fixtures cover [early acoustic reflections](EARLY_REFLECTIONS.md),
+[passive joint damping](PHYSICAL_RIGS.md), [keyboard chords](INPUT_ACTIONS.md),
+[game UI focus](GAME_UI.md), and [draft change inspection](PROJECT_RECOVERY.md).
+The live Windows creator still assigns scene-only worker tasks. [HDR bloom](BLOOM.md)
+has shader, render-schedule, and Windows-target syntax checks. Native Vulkan
+capture remains open. The [project post-effect compiler](PROJECT_POST_EFFECTS.md)
+produced identical pinned vignette artifacts after relocation on Linux and
+rejected stale source. Its output still requires player and export integration.
+[Results](evidence/m2-parallel-engine-349.json)
 
 Version 0.0.348 adds [guarded C# source edits in worker drafts](MCP.md#edit-compiled-gameplay-in-a-draft).
 On Linux, a scripted test used one worker to change two C# files and a

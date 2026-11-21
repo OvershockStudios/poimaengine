@@ -158,11 +158,12 @@ Configuration parse_configuration(const nlohmann::json& value) {
         part.linear_damping=number(entry.at("linear_damping"));part.angular_damping=number(entry.at("angular_damping"));result.profile.parts.push_back(std::move(part));
     }
     for(const auto& entry:joints) {
-        fields(entry,{"name","parent","child","parent_frame","child_frame","limits","neutral_rotation","rest_stiffness","rest_damping","soft_limit_stiffness","soft_limit_zone","max_torque","friction_torque"},{"drive"});
+        fields(entry,{"name","parent","child","parent_frame","child_frame","limits","neutral_rotation","rest_stiffness","rest_damping","soft_limit_stiffness","soft_limit_zone","max_torque","friction_torque"},{"drive","soft_limit_damping"});
         Joint joint;joint.name=text(entry.at("name"));joint.parent=text(entry.at("parent"));joint.child=text(entry.at("child"));
         joint.parent_frame=pose(entry.at("parent_frame"));joint.child_frame=pose(entry.at("child_frame"));joint.limits=parse_joint_limits(entry.at("limits"));joint.neutral_rotation=vector<4>(entry.at("neutral_rotation"));
         joint.rest_stiffness=number(entry.at("rest_stiffness"));joint.rest_damping=number(entry.at("rest_damping"));joint.soft_limit_stiffness=number(entry.at("soft_limit_stiffness"));
         joint.soft_limit_zone=number(entry.at("soft_limit_zone"));joint.max_torque=number(entry.at("max_torque"));joint.friction_torque=number(entry.at("friction_torque"));
+        if(entry.contains("soft_limit_damping"))joint.soft_limit_damping=number(entry.at("soft_limit_damping"));
         if(entry.contains("drive")) {
             const auto& drive=entry.at("drive");fields(drive,{"stiffness","damping","max_torque"});
             joint.drive=DriveProfile{number(drive.at("stiffness")),number(drive.at("damping")),number(drive.at("max_torque"))};
@@ -182,6 +183,7 @@ nlohmann::json configuration_json(const Configuration& value) {
         {"limits",limits_json(j.limits)},{"neutral_rotation",j.neutral_rotation},{"rest_stiffness",j.rest_stiffness},{"rest_damping",j.rest_damping},{"soft_limit_stiffness",j.soft_limit_stiffness},
         {"soft_limit_zone",j.soft_limit_zone},{"max_torque",j.max_torque},{"friction_torque",j.friction_torque}};
         if(j.drive)joint["drive"]={{"stiffness",j.drive->stiffness},{"damping",j.drive->damping},{"max_torque",j.drive->max_torque}};
+        if(j.soft_limit_damping)joint["soft_limit_damping"]=*j.soft_limit_damping;
         joints.push_back(std::move(joint));
     }
     Json result={{"root",value.profile.root},{"initial_mode",value.initially_passive?"passive":"animated"},{"parts",std::move(parts)},{"joints",std::move(joints)}};
@@ -228,6 +230,8 @@ nlohmann::json configuration_schema() {
     drive_torque.erase("minimum");drive_torque["exclusiveMinimum"]=0;
     joint["properties"]["drive"]=object({{"stiffness",drive_stiffness},{"damping",range(0,max_damping)},{"max_torque",drive_torque}});
     joint["properties"]["drive"]["description"]="Optional immutable joint-space pose-drive permission: stiffness in Nm/rad, damping in Nms/rad, and drive torque norm cap in Nm. Positive stiffness/torque and nonnegative damping; no omitted defaults. Runtime target starts at neutral_rotation with strength zero. Passive coefficients and hard limits remain separate. Omission preserves the earlier passive profile.";
+    joint["properties"]["soft_limit_damping"]=range(0,max_damping);
+    joint["properties"]["soft_limit_damping"]["description"]="Optional angular damping in Nms/rad for outward motion within each soft approach band. Independent of the rest damping and elastic soft-limit stiffness. Torque ramps through the band and shares max_torque with all other passive torque.";
     auto result=object({{"root",name},{"initial_mode",{{"enum",{"animated","passive"}}}},
         {"parts",{{"type","array"},{"minItems",1},{"maxItems",max_parts},{"items",part}}},
         {"joints",{{"type","array"},{"maxItems",max_joints},{"items",joint}}}});

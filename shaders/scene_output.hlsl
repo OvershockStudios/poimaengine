@@ -10,6 +10,10 @@ Texture2D<float> scene_motion_valid : register(t4);
 #if POIMA_AMBIENT_OCCLUSION
 Texture2D<float> ambient_visibility : register(t5);
 #endif
+#if POIMA_BLOOM
+Texture2D<float4> bloom_radiance : register(t6);
+SamplerState bloom_linear : register(s0);
+#endif
 struct OutputConstants {
     float exposure;
     float attachment_srgb;
@@ -69,7 +73,13 @@ float4 pixel_main(float4 position : SV_Position) : SV_Target0 {
         if(any(uv<0) || any(uv>=1))return float4(0,0,0,1);
         source_pixel=clamp(int2(uv*output.source_extent.xy),int2(0,0),int2(output.source_extent.xy)-1);
     }
-    const float3 radiance=scene_radiance.Load(int3(source_pixel,0)).rgb;
+    float3 radiance=scene_radiance.Load(int3(source_pixel,0)).rgb;
+#if POIMA_BLOOM
+    uint2 size;
+    bloom_radiance.GetDimensions(size.x,size.y);
+    const float2 bloom_uv=(float2(source_pixel)+.5)/(float2(size)*4);
+    radiance+=bloom_radiance.SampleLevel(bloom_linear,bloom_uv,0).rgb*output.source_extent.z;
+#endif
     const float3 exposed=radiance*output.exposure;
     const float3 mapped=exposed/(1+exposed);
     return float4(output.attachment_srgb>.5 ? mapped : linear_to_srgb(mapped),1);

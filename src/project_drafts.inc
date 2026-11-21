@@ -46,7 +46,8 @@ Project draft_input(const Json& manifest, const SourceCheckpoint& base, const st
     require(marker.at("base_sha256") == base.source_sha256 && marker.at("base_project_id") == base.source.spec.at("project_id") &&
         integer(marker.at("base_revision")) == base.source.content.revision && marker.at("project") == project_name,
         "Project draft lineage does not match the selected base checkpoint.");
-    draft.spec = parse(read(draft.manifest, 65536));
+    draft.manifest_bytes = read(draft.manifest, 65536);
+    draft.spec = parse(draft.manifest_bytes);
     fields(draft.spec, {"format", "version", "project_id", "name", "entry", "input_profile", "audio", "gameplay", "startup_splash"},
         {"format", "version", "project_id", "name", "entry"});
     const auto version = integer(draft.spec.at("version"));
@@ -102,6 +103,56 @@ void register_draft_path(std::map<std::string, std::pair<std::string, bool>>& tr
 }
 
 constexpr std::size_t draft_world_limit = 16 * 1024 * 1024;
+
+bool is_draft_gameplay_source(const std::string& name) {
+    return name.starts_with("gameplay-src/") && path_of(name).extension() == ".cs";
+}
+
+void validate_draft_gameplay_scope(const Project& input) {
+    const auto in_scope = [](const fs::path& path) {
+        const auto name = folded(text(path));
+        return name == "gameplay-src" || name.starts_with("gameplay-src/");
+    };
+    require(!in_scope(input.world.lexically_relative(input.root)) &&
+        (input.profile.empty() || !in_scope(input.profile.lexically_relative(input.root))),
+        "Gameplay source scope cannot contain the entry world or input profile.");
+    if (input.spec.contains("gameplay")) {
+        const auto descriptor = relative_path(input.spec.at("gameplay").at("descriptor"));
+        const auto artifact = path_of(descriptor).parent_path();
+        require(!artifact.empty() && !in_scope(artifact),
+            "Gameplay source scope cannot overlap the adopted gameplay artifact.");
+    }
+    const auto scope = input.root / "gameplay-src";
+    adoption_safe_path(scope, true);
+    adoption_case_name(scope);
+    const auto status = fs::symlink_status(project_io_path(scope));
+    require(status.type() == fs::file_type::not_found || fs::is_directory(status),
+        "Expected an ordinary gameplay-src directory.");
+}
+
+std::string read_draft_world(const Project& draft) {
+    const auto path = contained(draft.root, relative_path(draft.spec.at("entry").at("world")));
+    adoption_safe_path(path);
+    return read(path, draft_world_limit);
+}
+
+std::map<std::string, std::string> draft_gameplay_hashes(const Project& draft,
+    const std::set<std::string>& protected_paths, std::map<std::string, std::pair<std::string, bool>>& tree) {
+    validate_draft_gameplay_scope(draft);
+    std::map<std::string, std::string> hashes;
+    std::uint64_t total = 0;
+    for (const auto& name : editable_files(draft)) {
+        if (!is_draft_gameplay_source(name)) continue;
+        validate_draft_selection(name, protected_paths);
+        register_draft_path(tree, name);
+        const auto path = contained(draft.root, name);
+        adoption_safe_path(path);
+        const auto bytes = read(path, std::min(file_limit, total_limit - total));
+        total += bytes.size();
+        hashes.emplace(name, hash(bytes));
+    }
+    return hashes;
+}
 
 const Json* draft_member(const Json& object, const std::string& key) {
     const auto value = object.find(key);
@@ -226,6 +277,75 @@ void validate_draft_asset_source(const std::string& world, const std::string& so
     const auto path = contained(path_of(world).parent_path(), relative_path(Json(source)));
     adoption_safe_path(path);
 }
+}
+
+Reply project_draft_changes(const std::string& checkpoint, const std::string& draft_manifest,
+    const std::string& expected_base) {
+    return operation("project.draft-changes", [&] {
+        require(hexadecimal(expected_base, 64), "Expected a base checkpoint SHA-256.");
+        const auto checkpoint_path = fs::absolute(path_of(checkpoint)).lexically_normal();
+        adoption_safe_path(checkpoint_path);
+        const auto base = read_source_checkpoint(checkpoint_path, expected_base);
+        const auto project_name = text(base.source.manifest.filename());
+        const auto draft = draft_input(Json(draft_manifest), base, project_name);
+        require(!draft_paths_overlap(draft.root, base.root), "Draft project cannot overlap the base checkpoint.");
+        validate_draft_gameplay_scope(base.source);
+        validate_draft_gameplay_scope(draft);
+        adoption_safe_path(base.source.manifest);
+        adoption_safe_path(base.source.world);
+
+        const auto world_bytes = read_draft_world(draft);
+        const auto world = parse(world_bytes);
+        const auto base_world = parse(base.source.world_bytes);
+        require(world.at("format") == base_world.at("format") && world.at("world_id") == base_world.at("world_id") &&
+            integer(world.at("revision")) >= base.source.content.revision &&
+            integer(world.at("version")) >= integer(base_world.at("version")),
+            "Draft world identity, revision or version differs from its checkpoint lineage.");
+
+        std::set<std::string> protected_paths;
+        protect_draft_files(base.source, protected_paths);
+        protect_draft_files(draft, protected_paths);
+        std::map<std::string, std::pair<std::string, bool>> paths;
+        std::map<std::string, std::pair<Json, Json>> hashes;
+        const auto base_world_name = folded(text(base.source.world.lexically_relative(base.source.root)));
+        for (const auto& entry : base.files) {
+            const auto name = entry.at("path").get<std::string>().substr(7);
+            const auto& sha256 = entry.at("sha256").get_ref<const std::string&>();
+            register_draft_path(paths, name);
+            if (name == project_name)
+                require(hash(base.source.manifest_bytes) == sha256, "Base manifest differs from its checkpoint.");
+            if (folded(name) == base_world_name)
+                require(hash(base.source.world_bytes) == sha256, "Base world differs from its checkpoint.");
+            if (!is_draft_gameplay_source(name)) continue;
+            const auto source = contained(base.source.root, name);
+            adoption_safe_path(source);
+            const auto size = integer(entry.at("size"), file_limit);
+            const auto bytes = read(source, size);
+            require(bytes.size() == size && hash(bytes) == sha256,
+                "Base source changed during draft review: " + name);
+            hashes[name].first = sha256;
+        }
+        const auto observed = draft_gameplay_hashes(draft, protected_paths, paths);
+        for (const auto& [path, sha256] : observed) hashes[path].second = sha256;
+        const auto current = draft_input(Json(draft_manifest), base, project_name);
+        require(current.manifest == draft.manifest && current.manifest_bytes == draft.manifest_bytes &&
+            draft_gameplay_hashes(current, protected_paths, paths) == observed && read_draft_world(current) == world_bytes,
+            "Draft changed during review; retry against the current draft.");
+        adoption_safe_path(checkpoint_path);
+        require(hash(read(checkpoint_path, 4 * 1024 * 1024)) == expected_base, "Base checkpoint changed during draft review.");
+
+        Json changes = Json::array();
+        for (const auto& [path, pair] : hashes) {
+            const auto& [before, after] = pair;
+            if (before == after) continue;
+            const auto* change = before.is_null() ? "added" : after.is_null() ? "deleted" : "replaced";
+            changes.push_back({{"path", path}, {"change", change}, {"base_sha256", before}, {"sha256", after}});
+        }
+        return Json{{"manifest", text(draft.manifest)}, {"project_id", draft.spec.at("project_id")},
+            {"base_project_id", base.source.spec.at("project_id")}, {"base_sha256", expected_base},
+            {"base_revision", base.source.content.revision}, {"world_sha256", hash(world_bytes)},
+            {"files", std::move(changes)}};
+    });
 }
 
 Reply integrate_project_drafts(const std::string& checkpoint, const std::string& output, const std::string& request_json) {

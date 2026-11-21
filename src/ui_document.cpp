@@ -4,6 +4,7 @@
 #include "poima/ui_model.hpp"
 #include <RmlUi/Core.h>
 #include <RmlUi/Core/ElementUtilities.h>
+#include <RmlUi/Core/MeshUtilities.h>
 #include <algorithm>
 #include <cmath>
 #include <cctype>
@@ -49,13 +50,57 @@ struct Files final:Rml::FileInterface {
     bool Seek(Rml::FileHandle,long,int) override {return false;}
     std::size_t Tell(Rml::FileHandle) override {return 0;}
 };
+// An inset focus indicator uses ordinary colored geometry, including when an
+// authored image fills the button. It participates in the normal UI clip and
+// draw order and adds no layout, hit regions, textures or render effects.
+struct FocusRing final:Rml::Decorator {
+    Rml::DecoratorDataHandle GenerateElementData(Rml::Element* element,Rml::BoxArea paint_area) const override {
+        const auto box=element->GetRenderBox(paint_area);
+        const auto size=box.GetFillSize();
+        const float width=std::min(std::max(1.f,std::round(2*Rml::ElementUtilities::GetDensityIndependentPixelRatio(element))),
+            std::min(size.x,size.y)/5);
+        if(width<=0)return INVALID_DECORATORDATAHANDLE;
+        const auto radii=box.GetBorderRadius();
+        const auto border=box.GetBorderWidths();
+        const float border_inset=*std::max_element(border.begin(),border.end());
+        const auto origin=box.GetBorderOffset()+box.GetFillOffset();
+        Rml::Mesh mesh;
+        const auto edge=[&](float inset,Rml::ColourbPremultiplied color) {
+            auto corners=radii;
+            for(auto& corner:corners)corner=std::max(0.f,corner-border_inset-inset);
+            const Rml::Vector2f offset(inset,inset);
+            const float margin=2*(inset+width);
+            const Rml::RenderBox ring(size-Rml::Vector2f(margin,margin),origin+offset,{width,width,width,width},corners);
+            const Rml::ColourbPremultiplied colors[]{color,color,color,color};
+            Rml::MeshUtilities::GenerateBackgroundBorder(mesh,ring,{0,0,0,0},colors);
+        };
+        edge(0,{16,20,24,255});
+        edge(width,{255,255,255,255});
+        const auto geometry=new Rml::Geometry(element->GetRenderManager()->MakeGeometry(std::move(mesh)));
+        return reinterpret_cast<Rml::DecoratorDataHandle>(geometry);
+    }
+    void ReleaseElementData(Rml::DecoratorDataHandle data) const override {
+        delete reinterpret_cast<Rml::Geometry*>(data);
+    }
+    void RenderElement(Rml::Element* element,Rml::DecoratorDataHandle data) const override {
+        reinterpret_cast<Rml::Geometry*>(data)->Render(element->GetAbsoluteOffset(Rml::BoxArea::Border));
+    }
+};
+struct FocusRingInstancer final:Rml::DecoratorInstancer {
+    Rml::SharedPtr<Rml::Decorator> InstanceDecorator(const Rml::String&,const Rml::PropertyDictionary&,
+        const Rml::DecoratorInstancerInterface&) override {return Rml::MakeShared<FocusRing>();}
+};
 struct Globals {
     std::mutex mutex;System system;Files files;std::size_t users=0,font_bytes=0;std::uint64_t next=0;
+    FocusRingInstancer focus_ring;
     struct Font {std::shared_ptr<const std::vector<std::uint8_t>> bytes;bool loaded=false;};
     std::map<std::string,Font> fonts;
     Globals() {files.system=&system;}
     void acquire() {
-        if(users==0) {Rml::SetSystemInterface(&system);Rml::SetFileInterface(&files);check(Rml::Initialise(),"RmlUi initialization failed.");}
+        if(users==0) {
+            Rml::SetSystemInterface(&system);Rml::SetFileInterface(&files);check(Rml::Initialise(),"RmlUi initialization failed.");
+            Rml::Factory::RegisterDecoratorInstancer("poima-focus-ring",&focus_ring);
+        }
         ++users;
     }
     void release() {
@@ -167,9 +212,20 @@ struct UiDocument::Impl {
     std::shared_ptr<const std::vector<UiElementInspection>> last_frame_inspection;
     std::uint32_t width=640,height=480;float scale=1;double time=0;std::uint64_t revision=0;
     void valid() const {if(!error.empty())throw std::runtime_error(error);}
+    void set_focus(const std::string& id) {
+        // RmlUi may focus a scrollbar or panel during pointer handling.
+        // Keep the button cue tied to the focus used by Poima confirmation.
+        if(focus==id)return;
+        if(!focus.empty())element(focus)->SetPseudoClass("poima-focused",false);
+        focus=id;
+        if(!focus.empty())element(focus)->SetPseudoClass("poima-focused",true);
+    }
     void update() {
         valid();check(context->Update(),"RmlUi layout update failed.");valid();
-        if(!focus.empty() && (!element(focus)->IsVisible(true) || !enabled(element(focus)))) {element(focus)->Blur();focus.clear();}
+        if(!focus.empty() && (!element(focus)->IsVisible(true) || !enabled(element(focus)))) {
+            element(focus)->Blur();set_focus({});
+            check(context->Update(),"RmlUi layout update failed.");valid();
+        }
     }
     std::string plain_text(Rml::Element* e) {
         if(auto* text=dynamic_cast<Rml::ElementText*>(e))return text->GetText();
@@ -278,6 +334,27 @@ struct UiDocument::Impl {
         }
         return false;
     }
+    bool reveal(Rml::Element* e) {
+        // A candidate can be offscreen in a scrollable menu, clipped by a
+        // fixed panel, or hidden behind another control. A failed probe must
+        // leave all ancestor scroll positions where the player left them.
+        using Rml::Style::Overflow;
+        const auto scrollable=[](Overflow overflow) {return overflow==Overflow::Auto || overflow==Overflow::Scroll;};
+        std::vector<std::pair<Rml::Element*,Rml::Vector2f>> offsets;
+        for(auto* parent=e->GetParentNode();parent;parent=parent->GetParentNode()) {
+            const auto& computed=parent->GetComputedValues();
+            if((scrollable(computed.overflow_x()) && parent->GetScrollWidth()>parent->GetClientWidth()) ||
+               (scrollable(computed.overflow_y()) && parent->GetScrollHeight()>parent->GetClientHeight()))
+                offsets.emplace_back(parent,Rml::Vector2f{parent->GetScrollLeft(),parent->GetScrollTop()});
+        }
+        if(offsets.empty())return false;
+        e->ScrollIntoView({Rml::ScrollAlignment::Nearest,Rml::ScrollAlignment::Nearest});
+        update();
+        if(hittable(e))return true;
+        for(const auto& [parent,offset]:offsets)parent->ScrollTo(offset,Rml::ScrollBehavior::Instant);
+        update();
+        return false;
+    }
 };
 UiDocument::UiDocument(UiDocumentSource source):impl_(std::make_unique<Impl>()) {auto& g=globals();std::lock_guard lock(g.mutex);Operation operation(impl_->error,0);impl_->init(std::move(source));}
 UiDocument::~UiDocument()=default;
@@ -332,11 +409,11 @@ void UiDocument::pointer_wheel(float delta) {
 }
 bool UiDocument::focus(const std::optional<std::string>& id,bool scroll) {
     auto& g=globals();std::lock_guard lock(g.mutex);auto& s=*impl_;Operation operation(s.error,s.time);s.update();
-    if(!id) {if(auto* e=s.context->GetFocusElement())e->Blur();s.focus.clear();s.valid();return true;}
+    if(!id) {if(auto* e=s.context->GetFocusElement())e->Blur();s.set_focus({});s.valid();return true;}
     auto* e=s.element(*id);if(s.binding(*id).kind!=UiElementKind::button || !e->IsVisible(true) || !s.enabled(e))return false;
     if(!e->Focus(true))return false;
     if(scroll)e->ScrollIntoView();
-    s.focus=*id;s.update();s.valid();return true;
+    s.set_focus(*id);s.update();s.valid();return true;
 }
 void UiDocument::set_pressed(const std::string& id,bool value) {auto& g=globals();std::lock_guard lock(g.mutex);auto& s=*impl_;Operation operation(s.error,s.time);s.valid();s.element(id)->SetPseudoClass("active",value);s.valid();}
 std::optional<std::string> UiDocument::pointer_activate(float x,float y) {
@@ -345,10 +422,21 @@ std::optional<std::string> UiDocument::pointer_activate(float x,float y) {
     s.valid();return {};
 }
 std::optional<std::string> UiDocument::activate(const std::string& id) {auto& g=globals();std::lock_guard lock(g.mutex);auto& s=*impl_;Operation operation(s.error,s.time);s.update();const auto& b=s.binding(id);if(b.kind==UiElementKind::button && s.hittable(s.element(id)))return b.action;return {};}
-std::optional<std::string> UiDocument::focus_next(bool reverse) {
+std::optional<std::string> UiDocument::focus_next(bool reverse,bool reveal) {
     auto& g=globals();std::lock_guard lock(g.mutex);auto& s=*impl_;Operation operation(s.error,s.time);s.update();const auto count=s.bindings.size();if(!count)return {};
-    auto found=std::find_if(s.bindings.begin(),s.bindings.end(),[&](const auto& b){return b.id==s.focus;});std::size_t start=found==s.bindings.end() ? (reverse?0:count-1) : static_cast<std::size_t>(found-s.bindings.begin());
-    for(std::size_t n=1;n<=count;++n) {const auto i=reverse?(start+count-n)%count:(start+n)%count;const auto& b=s.bindings[i];if(b.kind==UiElementKind::button && s.hittable(s.element(b.id)) && s.element(b.id)->Focus()) {s.focus=b.id;return s.focus;}}
+    const auto found=std::find_if(s.bindings.begin(),s.bindings.end(),[&](const auto& b){return b.id==s.focus;});
+    const auto start=found==s.bindings.end() ? (reverse?0:count-1) : static_cast<std::size_t>(found-s.bindings.begin());
+    for(std::size_t n=1;n<=count;++n) {
+        const auto i=reverse?(start+count-n)%count:(start+n)%count;
+        const auto& b=s.bindings[i];
+        if(b.kind!=UiElementKind::button)continue;
+        auto* e=s.element(b.id);
+        if(!e->IsVisible(true) || !s.enabled(e))continue;
+        if((s.hittable(e) || (reveal && s.reveal(e))) && e->Focus(reveal)) {
+            s.set_focus(b.id);
+            return s.focus;
+        }
+    }
     return {};
 }
 std::optional<std::string> UiDocument::activate_focused() {auto& g=globals();std::lock_guard lock(g.mutex);auto& s=*impl_;Operation operation(s.error,s.time);s.update();if(s.focus.empty())return {};const auto& b=s.binding(s.focus);return s.hittable(s.element(s.focus))?std::optional<std::string>{b.action}:std::nullopt;}

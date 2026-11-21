@@ -4,9 +4,11 @@ Poima 0.0.15 adds native WAV import, editable `AudioEmitter` and `AcousticMateri
 
 The snapshot methods on this page render **frozen audio snapshots offline**.
 [Sound events and player output](AUDIO_EVENTS.md) provide logical gameplay voices,
-C# play/stop calls and optional native device playback. Reflections, reverberation,
-diffraction, compressed streaming, buses, captions and the complete environmental
-audio system remain unfinished. Inspect build capabilities before using either path.
+C# play/stop calls and optional native device playback. The native
+[early reflection model](EARLY_REFLECTIONS.md) provides a single optional
+bounce. Late reverberation, diffraction, compressed streaming, buses, captions
+and the complete environmental audio system remain unfinished. Inspect build
+capabilities before using either path.
 
 ## Build
 
@@ -138,4 +140,4 @@ Listen to the actual C#-triggered [closed-door capture](evidence/m2-audio-door-c
 
 The high-frequency component is attenuated more strongly. Those measurements come from captured PCM after startup, independently of the backend's reported path coefficients.
 
-The continuous event/mixer, C# event bindings and optional device adapter are described in [Audio events](AUDIO_EVENTS.md). Worker publication, incremental acoustic updates, reflections/reverb and around-corner propagation are not implemented. Source streaming, buses/ducking, device changes, priority/virtualization, environmental transitions, proximity voice, captions and console backends are also unsupported; production listening and resource qualification remain incomplete.
+The continuous event/mixer, C# event bindings and optional device adapter are described in [Audio events](AUDIO_EVENTS.md). The optional native [early reflection model](EARLY_REFLECTIONS.md) adds one specular bounce from an acoustic proxy box to frozen observations and timed streams. Worker publication, incremental acoustic updates, late reverb and around-corner propagation remain open. Source streaming, buses/ducking, device changes, priority/virtualization, environmental transitions, proximity voice, captions and console backends also remain open, along with production listening and resource qualification.

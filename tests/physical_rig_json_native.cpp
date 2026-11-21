@@ -32,6 +32,19 @@ int main() {
     try {
         auto config=fixture();const auto encoded=configuration_json(config);const auto parsed=parse_configuration(encoded);
         need(configuration_json(parsed)==encoded,"Complete configuration round trip changed values.");
+        need(!encoded["joints"][0].contains("soft_limit_damping")&&!parsed.profile.joints[0].soft_limit_damping,
+            "An omitted directional damper changed legacy configuration bytes.");
+        auto directional=encoded;
+        directional["joints"][0]["soft_limit_damping"]=2.5;
+        directional["joints"][1]["soft_limit_damping"]=0.;
+        const auto selected=parse_configuration(directional);
+        need(selected.profile.joints[0].soft_limit_damping==2.5&&selected.profile.joints[1].soft_limit_damping==0.,
+            "Positive or explicit zero damping value was lost.");
+        need(configuration_json(selected)==directional,"Directional damping presence changed on round trip.");
+        rejects(encoded,[](auto& x){x["joints"][0]["soft_limit_damping"]=true;},"Boolean directional damping accepted.");
+        rejects(encoded,[](auto& x){x["joints"][0]["soft_limit_damping"]=nullptr;},"Null directional damping accepted.");
+        rejects(encoded,[](auto& x){x["joints"][0]["soft_limit_damping"]=1e4+1;},"Excessive directional damping accepted.");
+        rejects(encoded,[](auto& x){x["joints"][0]["soft_limit_damping"]=-1;},"Negative directional damping accepted.");
         auto node_boundary=fixture();node_boundary.profile.parts[0].node=9999;
         const auto node_encoded=configuration_json(node_boundary);const auto node_parsed=parse_configuration(node_encoded);
         need(node_parsed.profile.parts[0].node==9999 && configuration_json(node_parsed)==node_encoded,"Node9999 boundary must round trip without numeric coercion.");
@@ -77,6 +90,9 @@ int main() {
         const auto& props=schema["properties"];need(props["parts"]["maxItems"]==64 && props["joints"]["maxItems"]==63,"Schema bounds changed.");
         const auto& shape=props["parts"]["items"]["properties"]["shape"];need(shape["oneOf"].size()==3,"Missing shape discriminator.");
         const auto& limit=props["joints"]["items"]["properties"]["limits"];need(limit["oneOf"].size()==2,"Missing joint discriminator.");
+        const auto& damping=props["joints"]["items"]["properties"]["soft_limit_damping"];
+        need(damping["type"]=="number"&&damping["minimum"]==0&&damping["maximum"]==max_damping,
+            "Directional damping schema disagrees with native admission.");
         need(props["parts"]["items"]["properties"]["body_in_bone"]["properties"]["rotation"]["items"]["maximum"].get<double>()==1+unit_tolerance,
             "Quaternion schema rejects unit-tolerance values accepted by the semantic validator.");
         auto near_unit=encoded;near_unit["parts"][0]["body_in_bone"]["rotation"]={0,0,0,1+unit_tolerance/2};

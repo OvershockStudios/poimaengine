@@ -245,6 +245,119 @@ void passive_torque_paths_and_sleep_policy() {
     rig.before_step(1./60);const auto awake_parent=accumulated(w,p),awake_child=accumulated(w,c);
     check(awake_parent.active&&awake_child.active,"Active passive rig did not wake its sleeping link for a balanced pair.");near(awake_child.torque,{elastic,0,0},2e-5);near(awake_parent.torque,{-elastic,0,0},2e-5);
 }
+void soft_approach_damping() {
+    const auto probe=[](bool hinge,unsigned axis,double angle,V spin,std::optional<double> gain,double cap=1000.,
+                        double elastic=0,double rest_damping=0) {
+        World w;
+        auto d=profile(hinge);
+        auto& joint=d.joints[0];
+        joint.parent_frame.position=joint.child_frame.position={};
+        joint.soft_limit_zone=.2;
+        joint.soft_limit_damping=gain;
+        joint.soft_limit_stiffness=elastic;
+        joint.rest_damping=rest_damping;
+        joint.max_torque=cap;
+        auto at=torque_poses(0);
+        at[1].rotation[axis]=std::sin(angle/2);
+        at[1].rotation[3]=std::cos(angle/2);
+        at[1].angular_velocity=spin;
+        RuntimePhysicalRigBackend rig(w.physics,w.ids,d,at,1,62,604);
+        rig.enter_passive(at);
+        rig.before_step(1./60);
+        const auto child=accumulated(w,rig.body_id("tip")).torque;
+        const auto parent=accumulated(w,rig.body_id("pelvis")).torque;
+        near(parent,{-child[0],-child[1],-child[2]},0);
+        return child;
+    };
+    // Mid-band smoothstep = .5. D=2Nms/rad and outward speed=4rad/s.
+    near(probe(true,0,.9,{4,0,0},2),{-4,0,0},2e-5);
+    near(probe(true,0,-.9,{-4,0,0},2),{4,0,0},2e-5);
+    near(probe(true,0,.9,{-4,0,0},2),{},0);
+    near(probe(true,0,-.9,{4,0,0},2),{},0);
+    near(probe(true,0,.9,{0,4,0},2),{},0);
+    near(probe(true,0,.7,{4,0,0},2),{},0);
+    near(probe(true,0,1,{4,0,0},2,.5),{-.5,0,0},2e-5);
+    // At mid-band, additional X torque is -2 elastic, -4 directional
+    // and -4 relative damping, with -1 on Y. One cap scales all terms.
+    const double cap_scale=.5/std::hypot(10.,1.);
+    near(probe(true,0,.9,{4,1,0},2,.5,40,1),{-10*cap_scale,-cap_scale,0},2e-5);
+    // The swing/twist case has independent asymmetric twist and swing bands.
+    near(probe(false,0,.7,{4,0,0},2),{-4,0,0},2e-5);
+    near(probe(false,0,-.4,{-4,0,0},2),{4,0,0},2e-5);
+    near(probe(false,1,.6,{0,4,0},2),{0,-4,0},2e-5);
+    near(probe(false,2,-1,{0,0,-4},2),{0,0,4},2e-5);
+    near(probe(false,2,-1,{0,0,4},2),{},0);
+
+    // Capture exact poses and Jolt warm starts at each solved tick. Explicit
+    // zero must produce the same trajectory as omission.
+    using Trajectory=std::vector<RuntimePhysicalRigMembership>;
+    struct Run { Trajectory trajectory; double angle=0,speed=0,maximum_angle=0; };
+    const auto run=[](std::optional<double> gain,double start,double speed,double rest,double neutral) {
+        World w;
+        auto d=profile();
+        auto& joint=d.joints[0];
+        joint.parent_frame.position=joint.child_frame.position={};
+        joint.soft_limit_zone=.3;
+        joint.soft_limit_damping=gain;
+        joint.rest_stiffness=rest;
+        joint.rest_damping=rest>0 ? .025 : 0;
+        joint.neutral_rotation={std::sin(neutral/2),0,0,std::cos(neutral/2)};
+        for(auto& part:d.parts)part.linear_damping=part.angular_damping=0;
+        auto at=torque_poses(start);
+        at[1].angular_velocity={speed,0,0};
+        RuntimePhysicalRigBackend rig(w.physics,w.ids,d,at,1,63,605);
+        rig.enter_passive(at);
+        std::array<RuntimePhysicalRigBackend*,1> rigs{&rig};
+        Run result;
+        for(unsigned tick=0;tick<120;++tick) {
+            w.tick(rigs);
+            result.trajectory.push_back(rig.snapshot_membership());
+            const auto joint_state=rig.observe(false,true).joints[0];
+            result.angle=joint_state.twist_angle;
+            result.speed=joint_state.relative_angular_velocity[0];
+            result.maximum_angle=std::max(result.maximum_angle,result.angle);
+        }
+        return result;
+    };
+    const auto hard=run(std::nullopt,.72,2,0,0);
+    const auto zero=run(0,.72,2,0,0);
+    const auto damped=run(.16,.72,2,0,0);
+    const auto returned=run(.16,.92,0,.08,.3);
+    std::cout<<"Soft approach angles (radians): hard peak "<<hard.maximum_angle
+        <<", damped peak "<<damped.maximum_angle<<", returned pose "<<returned.angle
+        <<". Final relative speeds "<<hard.speed<<", "<<damped.speed<<", "<<returned.speed<<".\n";
+    check(hard.trajectory==zero.trajectory,"Explicit zero approach damping changed the legacy solved state.");
+    const auto solved_hard_limit=[](const Run& trial) {
+        return std::any_of(trial.trajectory.begin(),trial.trajectory.end(),[](const auto& tick) {
+            return tick.warm_starts[0].hinge_limit_lambda!=0;
+        });
+    };
+    // The native endpoint admits up to one free 60 Hz angular displacement
+    // during discrete correction. A nonzero limit impulse witnesses the stop.
+    check(solved_hard_limit(hard)&&hard.maximum_angle>=1&&hard.maximum_angle<=1+2./60,
+        "Control approach did not reach and solve its native hard angular limit.");
+    check(!solved_hard_limit(damped)&&damped.maximum_angle<.95&&std::abs(damped.speed)<.1,
+        "Directional damping did not slow the matched approach before the hard endpoint.");
+    check(std::abs(returned.angle-.3)<.01&&std::abs(returned.speed)<.05,
+        "The authored neutral failed to return from inside the band under the extra damping.");
+
+    World w;
+    auto d=profile();
+    auto& joint=d.joints[0];
+    joint.parent_frame.position=joint.child_frame.position={};
+    joint.soft_limit_zone=.2;
+    joint.soft_limit_damping=2;
+    auto at=torque_poses(.9);
+    RuntimePhysicalRigBackend rig(w.physics,w.ids,d,at,1,64,606);
+    rig.enter_passive(at);
+    auto& bodies=w.physics.GetBodyInterface();
+    const auto parent=rig.body_id("pelvis"),child=rig.body_id("tip");
+    bodies.DeactivateBody(parent);
+    bodies.DeactivateBody(child);
+    rig.before_step(1./60);
+    check(!accumulated(w,parent).active&&!accumulated(w,child).active,
+        "Opted-in approach damping woke a sleeping rig.");
+}
 void composed_joint_frame_admission() {
     // COM and authored local frame are individually valid, but their composed
     // world anchor would exceed the evaluator's domain. Reject BEFORE mutation.
@@ -282,6 +395,6 @@ void settling_and_exact_warm_continuation() {
 }
 } // namespace
 int main() {
-    try {Library library;handoff_impulse_and_tiny_inertia();lifecycle_order_warm_and_off_broadphase();malformed_restore_atomicity();actual_adjacent_contact_filtering();settling_and_exact_warm_continuation();passive_torque_paths_and_sleep_policy();composed_joint_frame_admission();check(assertions==0,"Actual native Jolt assertions occurred.");std::cout<<"Physical rig backend: "<<checks<<" checks, seven native lifecycle/momentum/filtering/restore/contact/passive-torque/admission groups passed.\n";return 0;}
+    try {Library library;handoff_impulse_and_tiny_inertia();lifecycle_order_warm_and_off_broadphase();malformed_restore_atomicity();actual_adjacent_contact_filtering();settling_and_exact_warm_continuation();passive_torque_paths_and_sleep_policy();soft_approach_damping();composed_joint_frame_admission();check(assertions==0,"Actual native Jolt assertions occurred.");std::cout<<"Physical rig backend: "<<checks<<" checks, eight native lifecycle/momentum/filtering/restore/contact/passive-torque/soft-approach/admission groups passed.\n";return 0;}
     catch(const std::exception& error){std::cerr<<"Physical rig backend: "<<error.what()<<'\n';return 1;}
 }

@@ -1,0 +1,8 @@
+{
+  "format": "poima.project-post-effect",
+  "version": 1,
+  "id": "soft_vignette",
+  "slot": "scene-linear-pre-exposure",
+  "inputs": ["scene_hdr"],
+  "source": "Vignette.hlsl"
+}

@@ -115,10 +115,81 @@ void named_actions() {
     limits.actions->clear();(*limits.actions)[std::string(64,'a')]={"key.f","key.g","key.h","key.i"};
     validate_input_profile(limits);
 }
+void keyboard_chords() {
+    auto profile=default_gamepad_input_profile();
+    profile.actions.emplace();
+    *profile.actions={{"reload",{"gamepad.east"}},{"journal",{}},{"light",{"mouse.2"}}};
+    profile.chords.emplace();
+    *profile.chords={{"reload",{{"key.left_ctrl","key.r"}}},
+        {"journal",{{"key.j","key.left_ctrl","key.right_shift"}}},
+        {"light",{{"key.f","key.left_ctrl"},{"key.right_alt","key.t"}}}};
+    BoundPlayerInput input(profile);
+    key(input,21); // R first.
+    state(input.consume("player"),"reload",false,false,false);
+    key(input,224);
+    auto frame=input.peek("player");
+    state(frame,"reload",true,true,false);
+    check(equal(frame,input.peek("player")),"Peeking lost a pending chord press.");
+    reject_allocations=true;input.commit_tick();key(input,224);reject_allocations=false;
+    state(input.consume("player"),"reload",true,false,false);
+    key(input,13); // J and Ctrl held, but not Right Shift.
+    state(input.consume("player"),"journal",false,false,false);
+    key(input,229);
+    key(input,9);
+    frame=input.consume("player");
+    state(frame,"journal",true,true,false);state(frame,"light",true,true,false);
+    state(frame,"reload",true,false,false);
+    key(input,230);key(input,23); // Second light chord.
+    input.control(InputControlKind::mouse,2,true);
+    key(input,224,false); // Releases the first chord, not the light.
+    frame=input.consume("player");
+    state(frame,"journal",false,false,true);state(frame,"reload",false,false,true);
+    state(frame,"light",true,false,false);
+    key(input,23,false);
+    state(input.consume("player"),"light",true,false,false);
+    input.control(InputControlKind::mouse,2,false);
+    state(input.consume("player"),"light",false,false,true);
+
+    // Keep the old gamepad edge-source rules when the other alternative is a chord.
+    key(input,224);
+    state(input.consume("player"),"reload",true,true,false);
+    input.gamepad_connect();input.gamepad_button(1,true);input.gamepad_disconnect();
+    state(input.consume("player"),"reload",true,false,false);
+    key(input,21,false);
+    state(input.consume("player"),"reload",false,false,true);
+    key(input,21);key(input,21,false);
+    input.gamepad_disconnect();
+    state(input.consume("player"),"reload",false,true,true);
+    state(input.consume("player"),"reload",false,false,false);
+    key(input,21);input.clear();
+    key(input,21);key(input,26); // Focus clear removed the held modifiers.
+    frame=input.consume("player");
+    state(frame,"reload",false,false,false);
+    check(frame.move[1]==1,"A chord profile changed legacy movement.");
+    key(input,224);
+    state(input.consume("player"),"reload",true,true,false);
+
+    auto invalid=profile;invalid.actions.reset();rejects(invalid);
+    invalid=profile;(*invalid.chords)["missing"]={};rejects(invalid);
+    invalid=profile;(*invalid.chords)["reload"]={{"key.r","key.left_ctrl"},{"key.r","key.right_alt"}};rejects(invalid);
+    invalid=profile;(*invalid.chords)["light"]={{"key.r","key.left_ctrl"}};rejects(invalid);
+    invalid=profile;(*invalid.actions)["light"].emplace_back("key.left_ctrl");rejects(invalid);
+    invalid=profile;(*invalid.actions)["light"].emplace_back("key.r");rejects(invalid);
+    invalid=profile;(*invalid.actions)["light"]={"mouse.1","mouse.2","mouse.3"};rejects(invalid);
+    for(const KeyboardChord& keys:std::vector<KeyboardChord>{{},{"key.r"},{"key.r","key.left_ctrl","key.right_shift","key.right_alt","key.right_meta"},
+            {"key.r","key.r"},{"key.r","key.w"},{"key.left_ctrl","key.right_ctrl"},{"key.left_ctrl","key.escape"},
+            {"key.left_ctrl","key.tab"},{"key.left_ctrl","mouse.1"},{"key.left_ctrl","gamepad.north"},{"key.left_ctrl","key.unknown"}}) {
+        invalid=profile;(*invalid.chords)["reload"]={keys};rejects(invalid);
+    }
+    auto limit=profile;
+    (*limit.chords)["reload"]={{"key.left_ctrl","key.r","key.right_shift","key.right_alt"}};
+    validate_input_profile(limit);
+}
 }
 int main() {
     try {
         named_actions();
+        keyboard_chords();
         auto defaults=default_input_profile();validate_input_profile(defaults);
         // Prepare every potentially allocating value before a committed tick.
         // A regression allocating during commit terminates this test under the
@@ -370,6 +441,6 @@ int main() {
             check(bound.consume("player").move[1]==0,"Catalog release failed.");
         }
         check(reserved==4,"Recovery reservations changed unexpectedly.");
-        std::cout<<"Input profiles: legacy controls, native gamepad sticks/buttons/triggers, neutral gating, independent source edges, peek/commit and validation passed.\n";
+        std::cout<<"Input profiles: keyboard chords, legacy controls, native gamepad sticks/buttons/triggers, neutral gating, independent source edges, peek/commit and validation passed.\n";
     }catch(const std::exception& error) { std::cerr<<error.what()<<'\n';return 1; }
 }

@@ -164,8 +164,15 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"diffuse_intensity",{{"type","number"},{"minimum",0},{"maximum",64}}},
         {"specular_intensity",{{"type","number"},{"minimum",0},{"maximum",64}}}},
         {"enabled","diffuse_intensity","specular_intensity"});
+    const Json bloom=object_schema({
+        {"intensity",{{"type","number"},{"minimum",0},{"maximum",1},{"default",0},
+            {"description","Blend strength. Zero disables bloom."}}},
+        {"threshold",{{"type","number"},{"minimum",0},{"maximum",65504},{"default",1},
+            {"description","Scene-linear peak RGB threshold before exposure."}}},
+        {"radius",{{"type","number"},{"minimum",2},{"maximum",32},{"default",8},
+            {"description","Approximate blur support in source pixels."}}}});
     Json lighting_environment=object_schema({{"ambient",vector({{"type","number"},{"minimum",0},{"maximum",1e6}},3)},
-        {"exposure",{{"type","number"},{"minimum",0},{"maximum",1e6}}},{"shadow_resolution",{{"enum",{256,512,1024,2048}},{"default",1024}}},{"shadow_filter",{{"enum",{"pcf3_point","pcf3_fractional","pcss_directional"}},{"default","pcf3_point"}}},{"sky",sky},{"ibl",ibl}}, {"ambient","exposure"});
+        {"exposure",{{"type","number"},{"minimum",0},{"maximum",1e6}}},{"shadow_resolution",{{"enum",{256,512,1024,2048}},{"default",1024}}},{"shadow_filter",{{"enum",{"pcf3_point","pcf3_fractional","pcss_directional"}},{"default","pcf3_point"}}},{"sky",sky},{"ibl",ibl},{"bloom",bloom}}, {"ambient","exposure"});
     const Json enabled_ibl={{"required",Json::array({"ibl"})},{"properties",Json{{"ibl",Json{
         {"required",Json::array({"enabled"})},{"properties",Json{{"enabled",Json{{"const",true}}}}}}}}}};
     const Json enabled_sky={{"required",Json::array({"sky"})},{"properties",Json{{"sky",Json{
@@ -720,7 +727,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     result["input_actions"]={{"maximum_controllers",32},{"maximum_actions_per_controller",32},{"name_pattern","^[a-z][a-z0-9_.-]{0,63}$"},
         {"ordering","Names in runtime input records must be sorted and unique."},
         {"state","Held repeats throughout a tick batch or replay segment. Pressed/released apply only on its first tick; a quick tap may set both with held=false. Omitted records are absent and neutral."},
-        {"profiles","An actions object selects poima.input.v3; omission preserves v1/v2. Keyboard, mouse and optional gamepad bindings share the existing control catalog and recovery policy."},
+        {"profiles","An actions object selects poima.input.v3. Adding keyboard chords for named actions selects poima.input.v4. Keyboard, mouse and optional gamepad bindings share the same control catalog and recovery policy."},
         {"gameplay",{{"feature","input_actions_v1"},{"services_epoch",7},{"required_prefix_bytes",264},{"result_bytes",16},{"maximum_reads_per_tick",1024},{"phase","Tick only"}}},
         {"persistence","Input is transient. Game state derived from input participates in rollback and durable saves."}};
     methods["world.lighting"]=object_schema({{"revision",rev}});
@@ -730,7 +737,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     methods["asset.audio.inspect"]=object_schema({{"asset",asset_id}}, {"asset"});
     for(const auto* method:{"world.audio.inspect","world.audio.capture","runtime.audio.inspect","runtime.audio.capture"}) {
         const bool live=std::string_view(method).starts_with("runtime"),capture_audio=std::string_view(method).ends_with("capture");
-        Json props={{"listener",id}};Json required={"listener"};
+        Json props={{"listener",id},{"early_reflections",{{"type","boolean"},{"default",false}}}};Json required={"listener"};
         if(live) { props["session_id"]=id;props["tick"]=rev;required.push_back("session_id");required.push_back("tick"); }
         else { props["revision"]=rev;required.push_back("revision"); }
         if(capture_audio) { props["path"]={{"type","string"},{"minLength",1}};props["frames"]={{"type","integer"},{"minimum",1},{"maximum",480000},{"default",48000}};required.push_back("path"); }
@@ -740,10 +747,11 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     const auto audio_segment=object_schema({{"ticks",{{"type","integer"},{"minimum",1},{"maximum",600}}},
         {"inputs",{{"type","array"},{"maxItems",32},{"items",input}}},{"motions",motions},{"sounds",sounds}}, {"ticks"});
     methods["runtime.audio.replay"]=object_schema({{"session_id",id},{"request_id",id},{"expected_tick",rev},{"listener",id},
-        {"path",{{"type","string"},{"minLength",1}}},{"sequence",{{"type","array"},{"minItems",1},{"maxItems",256},{"items",audio_segment}}}},
+        {"path",{{"type","string"},{"minLength",1}}},{"early_reflections",{{"type","boolean"},{"default",false}}},
+        {"sequence",{{"type","array"},{"minItems",1},{"maxItems",256},{"items",audio_segment}}}},
         {"session_id","request_id","expected_tick","listener","path","sequence"});
     result["invariants"].push_back("Sound play/stop commands join runtime.step batch rollback and apply on the first tick; C# sound calls share that transaction. Voices use session-local monotonic handles, at most 64 emitting and 256 retained records. runtime.audio.replay advances and records committed ticks (max 3600 total), retaining partial progress and retry receipts on failure. DSP uses persistent filters and does not alter logical voice state.");
-    result["invariants"].push_back("Audio observation is synchronous and frozen: fresh geometry and poses on every query, no simulation advance, source cursor or device playback. AcousticMaterial requires box/mesh geometry. At most 64 enabled emitters, 131072 acoustic triangles, 64 MiB clip packages; mono 48 kHz PCM16/float32 WAV import, up to 60 seconds per clip. Captures are 1..480000 stereo float frames with direct paths and HRTF only.");
+    result["invariants"].push_back("Audio observation is synchronous and frozen: fresh geometry and poses on every query, no simulation advance, source cursor or device playback. AcousticMaterial requires box/mesh geometry. At most 64 enabled emitters, 131072 acoustic triangles, 64 MiB clip packages; mono 48 kHz PCM16/float32 WAV import, up to 60 seconds per clip. Captures are 1..480000 stereo float frames with direct paths and HRTF. Enable early_reflections for a bounded first-order path off a finite acoustic box face.");
     methods.update(materials::Service::schemas());
     result["invariants"].push_back("Native animation tasks and material baking share one lazy executor per creating owner thread. POIMA_JOB_WORKERS selects 0..8 workers (default 2) before first use; zero is the serial reference. Frame/background admission is separate, and reserved frame workers do not execute background work. Registry, physics, C# callbacks and publication remain owner-only. jobs.status inspects this shared owner pool without creating it; its counts may include other sessions on the same owner.");
     result["invariants"].push_back("Procedural brick/plaster recipes bake compiled CPU work without world changes or worker file I/O. One active material bake and eight retained records per service; explicit polling publishes immutable image packages and a recipe descriptor. Cancellation before publication vetoes even completed CPU results. Jobs are authoring-only; runtime closure contains referenced baked images. These evolving methods are outside authoring-core v1.");

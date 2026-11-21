@@ -143,6 +143,9 @@ poima::Reply run(int argc, char** argv) {
         if(action=="draft" && argc==8 && *argv[3] && std::string_view(argv[4])=="--output" && *argv[5] &&
            std::string_view(argv[6])=="--expected-base-sha256" && *argv[7])
             return poima::draft_project(argv[3],argv[5],argv[7]);
+        if(action=="draft-changes" && argc==8 && *argv[3] && std::string_view(argv[4])=="--draft" && *argv[5] &&
+           std::string_view(argv[6])=="--expected-base-sha256" && *argv[7])
+            return poima::project_draft_changes(argv[3],argv[5],argv[7]);
         if(action=="integrate" && argc==8 && *argv[3] && std::string_view(argv[4])=="--output" && *argv[5] &&
            std::string_view(argv[6])=="--request" && *argv[7]) {
             const std::string request=argv[7];

@@ -2,6 +2,15 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.349
+
+- Add reusable native terrain tiles, terrain-aware foliage placement, a deterministic particle simulator, and localized water flow with controllable gates and volume accounting.
+- Add scene-authored HDR bloom and optional acoustic box-face reflections for audio observations and replay.
+- Add offline compilation and source pinning for a project-owned HDR color effect.
+- Add limit-approach damping for passive ragdolls, named keyboard chords, and visible controller and keyboard focus in game UI.
+- Add optional solar and weather scheduling, deterministic NPC behavior trees, and collision-checked mantle and vault motion in the FPS package.
+- Add a guarded changed-file inventory for worker drafts and typed gameplay source scopes in the Codex worker adapter.
+
 ## 0.0.348
 
 - Let draft agents read and make hash-guarded C# source edits through an opt-in MCP connection. Integrate selected source files alongside scene changes for a lead-owned build.

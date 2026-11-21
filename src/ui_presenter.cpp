@@ -45,6 +45,7 @@ std::string authored_css(const ui::Element& e) {
         if(s.image) {
             const auto& image=*s.image;
             const auto path=std::string(ui_image_source_prefix)+image.asset;
+            std::string decorator;
             if(image.tint)base+="image-color:"+*image.tint+";";
             if(image.slice_insets_px) {
                 check(image.texture && !image.texture->mips.empty(),"UI nine-slice image is not resolved.");
@@ -56,17 +57,19 @@ std::string authored_css(const ui::Element& e) {
                     name+"-outer:0px 0px "+std::to_string(mip.width)+"px "+std::to_string(mip.height)+"px;"+
                     name+"-inner:"+std::to_string(left)+"px "+std::to_string(top)+"px "+
                     std::to_string(mip.width-left-right)+"px "+std::to_string(mip.height-top-bottom)+"px;}";
-                base+="decorator:ninepatch("+name+"-outer,"+name+"-inner);";
+                decorator="ninepatch("+name+"-outer,"+name+"-inner)";
             } else {
-                base+="decorator:image(\""+path+"\" "+(image.fit==ui::ImageFit::stretch?"fill":"contain")+");";
+                decorator="image(\""+path+"\" "+(image.fit==ui::ImageFit::stretch?"fill":"contain")+")";
             }
+            base+="decorator:"+decorator+";";
+            if(e.kind==ui::Kind::button)rules+="#"+e.id+":poima-focused{decorator:poima-focus-ring(),"+decorator+";}";
         }
         if(s.font_size)base+="font-size:"+number(*s.font_size)+"dp;";
         if(s.border_width)base+="border-width:"+number(*s.border_width)+"dp;";
         if(s.border_radius)base+="border-radius:"+number(*s.border_radius)+"dp;";
         if(s.text_align)base+="text-align:"+std::string(*s.text_align==ui::TextAlign::left?"left":*s.text_align==ui::TextAlign::right?"right":"center")+";";
         const auto state=[&](const char* selector,const std::optional<ui::ColorState>& v){if(v)rules+="#"+e.id+selector+"{"+colors(*v)+"}";};
-        state(":hover",s.hover);state(":focus",s.focus);state(":active",s.pressed);
+        state(":hover",s.hover);state(":poima-focused",s.focus);state(":active",s.pressed);
         if(s.disabled)rules+="#"+e.id+":disabled,#"+e.id+".disabled{"+colors(*s.disabled)+"}";
     }
     return base.empty()?rules:sprites+"#"+e.id+"{"+base+"}"+rules;
@@ -118,7 +121,8 @@ scrollbarhorizontal { height: 10dp; }
 .label { display: block; margin-bottom: 8dp; white-space: pre-wrap; word-break: break-all; }
 button { display: block; width: 100%; box-sizing: border-box; padding: 9dp; margin-bottom: 8dp; background-color: #356695; color: #ffffff; white-space: pre-wrap; word-break: break-all; tab-index: auto; }
 button:disabled { background-color: #34404d; color: #9ea9b8; }
-button:focus { background-color: #477fac; }
+button:focus, button:poima-focused { background-color: #477fac; }
+button:poima-focused { decorator: poima-focus-ring(); }
 button:hover { background-color: #477fac; }
 button:active { background-color: #214568; }
 .hidden { display: none; }
@@ -299,14 +303,13 @@ UiInputResult UiPresenter::input(const UiInput& event,bool activate) {
     case UiInputKind::pointer_wheel:
         if(result.consumed) {s.unpress();s.document->pointer_wheel(event.delta);}break;
     case UiInputKind::focus_next:case UiInputKind::focus_previous: {
-        s.unpress();std::vector<std::string> ids;for(const auto& row:s.document->inspect())if(s.eligible(row.id))ids.push_back(row.id);
-        if(!ids.empty()) {
-            const auto found=s.focused?std::find(ids.begin(),ids.end(),*s.focused):ids.end();
-            const bool reverse=event.kind==UiInputKind::focus_previous;
-            const auto index=found==ids.end() ? (reverse?ids.size()-1:0) : (static_cast<std::size_t>(found-ids.begin())+(reverse?ids.size()-1:1))%ids.size();
-            if(s.document->focus(ids[index]))s.focused=ids[index];
-            result.consumed=true;
-        }break;
+        s.unpress();
+        if(auto focused=s.document->focus_next(event.kind==UiInputKind::focus_previous,true))s.focused=std::move(focused);
+        // Keep focus navigation owned by a menu even when clipping or a
+        // temporary cover prevents moving to any of its eligible buttons.
+        result.consumed=result.consumed || std::any_of(s.projection->elements.begin(),s.projection->elements.end(),
+            [](const auto& row){return row.eligible && row.element.kind==ui::Kind::button;});
+        break;
     }
     case UiInputKind::accept_down:
         if(s.focused && s.eligible(*s.focused)) {result.consumed=true;if(!s.accept_captured) {s.unpress();if(s.document->activate(*s.focused)) {s.accept_pressed=s.focused;s.document->set_pressed(*s.focused,true);}}s.accept_captured=true;}break;

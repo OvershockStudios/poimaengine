@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cmath>
 #include <iterator>
+#include <set>
 #include <stdexcept>
 #include <utility>
 
@@ -94,6 +95,10 @@ const InputControl* find_control(std::string_view id) {
     for(const auto& control:controls)if(control.id==id)return &control;
     return nullptr;
 }
+bool keyboard_modifier(const InputControl& control) {
+    // The physical Ctrl, Shift, Alt and Meta keys occupy SDL codes 224–231.
+    return control.kind==InputControlKind::keyboard && control.code>=224 && control.code<=231;
+}
 double normalized_axis(std::int16_t value) { return value<0 ? double(value)/32768.0 : double(value)/32767.0; }
 std::array<double,2> stick_value(const std::array<std::int16_t,6>& axes,const StickProfile& profile) {
     if(profile.stick==GamepadStick::none)return {};
@@ -163,6 +168,39 @@ void validate_input_profile(const InputProfile& profile) {
         if(!valid_input_action_name(name))throw std::invalid_argument("Invalid named input action: "+name);
         validate_bindings(action);
     }
+    if(!profile.chords)return;
+    if(!profile.actions)throw std::invalid_argument("Keyboard chords require named actions.");
+    if(profile.chords->size()>input_action_limit)
+        throw std::invalid_argument("An input profile accepts at most 32 keyboard chord rows.");
+    const auto bound=std::span(seen).first(count);
+    std::set<std::string_view> triggers;
+    for(const auto& [name,chords]:*profile.chords) {
+        const auto action=profile.actions->find(name);
+        if(action==profile.actions->end())throw std::invalid_argument("Keyboard chord row requires a declared named action: "+name);
+        if(chords.size()>4-action->second.size())
+            throw std::invalid_argument("An action accepts at most four alternatives, including keyboard chords.");
+        for(const auto& chord:chords) {
+            if(chord.size()<2 || chord.size()>input_chord_max_keys)
+                throw std::invalid_argument("A keyboard chord requires two to four keys.");
+            std::set<std::string_view> members;
+            const InputControl* trigger=nullptr;
+            for(const auto& id:chord) {
+                const auto* control=find_control(id);
+                if(!control || control->kind!=InputControlKind::keyboard || control->reserved)
+                    throw std::invalid_argument("A keyboard chord needs a non-reserved catalog key: "+id);
+                if(!members.insert(id).second)
+                    throw std::invalid_argument("A keyboard chord cannot repeat a key: "+id);
+                if(std::find(bound.begin(),bound.end(),id)!=bound.end())
+                    throw std::invalid_argument("A keyboard chord key conflicts with a single binding: "+id);
+                if(keyboard_modifier(*control))continue;
+                if(trigger)throw std::invalid_argument("A keyboard chord requires exactly one non-modifier key.");
+                trigger=control;
+            }
+            if(!trigger)throw std::invalid_argument("A keyboard chord requires exactly one non-modifier key.");
+            if(!triggers.insert(trigger->id).second)
+                throw std::invalid_argument("A non-modifier key can trigger only one keyboard chord: "+std::string(trigger->id));
+        }
+    }
 }
 BoundPlayerInput::BoundPlayerInput(InputProfile profile):profile_(std::move(profile)) {
     validate_input_profile(profile_);
@@ -177,8 +215,20 @@ BoundPlayerInput::BoundPlayerInput(InputProfile profile):profile_(std::move(prof
             const auto& control=*find_control(id);
             action.bindings.push_back({control.kind,control.code,false});
         }
+        if(profile_.chords) {
+            const auto found=profile_.chords->find(name);
+            if(found!=profile_.chords->end())for(const auto& chord:found->second) {
+                auto& keys=action.chords.emplace_back();
+                for(const auto& id:chord)keys.push_back({InputControlKind::keyboard,find_control(id)->code,false});
+            }
+        }
         named_.push_back(std::move(action));
     }
+}
+bool BoundPlayerInput::NamedBinding::held() const {
+    const auto down=[](const Binding& binding){return binding.held;};
+    return std::any_of(bindings.begin(),bindings.end(),down) ||
+        std::any_of(chords.begin(),chords.end(),[&](const auto& keys){return std::all_of(keys.begin(),keys.end(),down);});
 }
 void BoundPlayerInput::control(InputControlKind kind,std::uint16_t code,bool down) {
     if(kind==InputControlKind::gamepad_button) { gamepad_button(code,down);return; }
@@ -195,11 +245,13 @@ void BoundPlayerInput::apply_control(InputControlKind kind,std::uint16_t code,bo
     }
     const auto origin=kind==InputControlKind::gamepad_button ? 1u : 0u;
     for(auto& action:named_) {
-        const auto held=[](const Binding& binding){return binding.held;};
-        const bool before=std::any_of(action.bindings.begin(),action.bindings.end(),held);
+        const bool before=action.held();
         for(auto& binding:action.bindings)
             if(binding.kind==kind && binding.code==code)binding.held=down;
-        const bool after=std::any_of(action.bindings.begin(),action.bindings.end(),held);
+        if(kind==InputControlKind::keyboard)
+            for(auto& chord:action.chords)for(auto& key:chord)
+                if(key.code==code)key.held=down;
+        const bool after=action.held();
         if(!before && after)action.pressed[origin]=true;
         if(before && !after)action.released[origin]=true;
     }
@@ -222,6 +274,7 @@ void BoundPlayerInput::clear() {
     for(auto& action:bindings_)for(auto& binding:action)binding.held=false;
     for(auto& action:named_) {
         for(auto& binding:action.bindings)binding.held=false;
+        for(auto& chord:action.chords)for(auto& key:chord)key.held=false;
         action.pressed={};action.released={};
     }
     edges_={};input_.clear();gamepad_clear();
@@ -247,11 +300,10 @@ void BoundPlayerInput::gamepad_clear() {
         if(binding.kind==InputControlKind::gamepad_button)binding.held=false;
     edges_[1]={};triggers_={};armed_=false;
     for(auto& action:named_) {
-        const auto held=[](const Binding& binding){return binding.held;};
-        const bool before=std::any_of(action.bindings.begin(),action.bindings.end(),held);
+        const bool before=action.held();
         for(auto& binding:action.bindings)
             if(binding.kind==InputControlKind::gamepad_button)binding.held=false;
-        const bool after=std::any_of(action.bindings.begin(),action.bindings.end(),held);
+        const bool after=action.held();
         action.pressed[1]=false;
         // A disconnected/re-armed pad cannot keep firing. Preserve the release
         // until commit, including repeated disconnect calls before that tick.
@@ -305,8 +357,7 @@ RuntimeInput BoundPlayerInput::frame(const std::string& entity,PlayerInput& pend
     result.jump=edges_[0][0] || edges_[1][0];result.use=edges_[0][1] || edges_[1][1];
     result.actions.reserve(named_.size());
     for(const auto& action:named_)
-        result.actions.push_back({action.name,
-            std::any_of(action.bindings.begin(),action.bindings.end(),[](const Binding& binding){return binding.held;}),
+        result.actions.push_back({action.name,action.held(),
             action.pressed[0] || action.pressed[1],action.released[0] || action.released[1]});
     return result;
 }

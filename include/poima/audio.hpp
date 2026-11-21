@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 #pragma once
 #include "poima/scene.hpp"
-#include <span>
 #include <map>
+#include <optional>
+#include <span>
 
 namespace poima {
 inline constexpr std::uint32_t audio_rate=48000, audio_block=512, max_audio_clip_frames=60*audio_rate;
@@ -35,6 +36,16 @@ struct AudioSnapshot {
     Matrix4 listener=identity_matrix();
     std::vector<AcousticGeometry> geometry;
     std::vector<AudioSource> sources;
+    bool early_reflections=false;
+};
+struct AudioReflection {
+    std::string entity;
+    std::uint32_t face=0;
+    std::array<double,3> point{},direction{};
+    double distance=0;
+    std::uint32_t propagation_delay_samples=0;
+    float distance_gain=1;
+    std::array<float,3> bands{1,1,1};
 };
 struct AudioPath {
     std::string entity,asset;
@@ -43,6 +54,7 @@ struct AudioPath {
     std::uint32_t propagation_delay_samples=0;
     float distance_gain=1,occlusion=1;
     std::array<float,3> air{1,1,1},transmission{1,1,1};
+    std::optional<AudioReflection> reflection;
 };
 struct AudioReport {
     std::vector<AudioPath> paths;
@@ -50,6 +62,7 @@ struct AudioReport {
     std::size_t triangles=0;
     double scene_ms=0,simulation_ms=0,dsp_ms=0,peak=0,rms=0;
     std::size_t over_range_samples=0;
+    bool reflection_budget_exceeded=false;
 };
 bool audio_available();
 // Synchronous frozen-snapshot observation. No device, simulation clock changes,

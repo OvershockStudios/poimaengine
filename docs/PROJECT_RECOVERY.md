@@ -232,6 +232,19 @@ then compile the integrated C# and adopt that artifact before verifying or
 exporting the candidate. The integration command copies selected source bytes
 and retains the checkpoint's existing gameplay binding, if one was present.
 
+Use `project draft-changes` to inspect the current C# differences from the
+pinned checkpoint after the worker finishes.
+
+```powershell
+poima project draft-changes .\Base\checkpoint.json --draft D:\Work\LogicDraft\project.poimaproject --expected-base-sha256 <source_sha256>
+```
+
+The result identifies the draft's scene hash and each added, replaced or
+deleted `.cs` path under `gameplay-src/`. It returns the base and current
+SHA-256 for each entry, using `null` for an absent file. Select the added
+or replaced files by exact hash. Deletion entries describe draft changes
+for review. Integration copies the selected files.
+
 Poima compares each pinned scene with the common checkpoint. It can combine
 a rename and a lighting component change on the same entity. Divergent edits
 to a name, parent, or whole component are reported at that field. Additions

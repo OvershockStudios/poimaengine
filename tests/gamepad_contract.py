@@ -66,8 +66,8 @@ class GamepadContract(unittest.TestCase):
         self.assertGreaterEqual(schema['schema_revision'],18)
         self.assertIn('input.devices',schema['methods']);self.assertIn('gamepad',schema['methods']['runtime.play']['properties'])
         self.assertEqual(description['defaults'],V1);self.assertEqual(description['gamepad_defaults'],V2)
-        self.assertEqual(description['supported_formats'],['poima.input.v1','poima.input.v2','poima.input.v3'])
-        self.assertEqual(len(description['profile_schema']['anyOf']),4)
+        self.assertEqual(description['supported_formats'],['poima.input.v1','poima.input.v2','poima.input.v3','poima.input.v4'])
+        self.assertEqual(len(description['profile_schema']['anyOf']),6)
         controls={c['id']:c for c in description['controls']}
         for name in ['gamepad.south','gamepad.west','gamepad.left_trigger','gamepad.right_trigger','gamepad.dpad_up']:
             self.assertEqual(controls[name]['device'],'gamepad');self.assertFalse(controls[name]['reserved'])

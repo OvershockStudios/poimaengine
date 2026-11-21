@@ -31,8 +31,13 @@ std::string request_id(const Json& value) {
     require(value.is_string(),"Input request ID must be a string.");const auto result=value.get<std::string>();
     require(result.size()==32 && std::all_of(result.begin(),result.end(),[](char c) { return (c>='0' && c<='9') || (c>='a' && c<='f'); }),"Input request ID must contain 32 lowercase hexadecimal characters.");return result;
 }
+const char* select_format(bool gamepad,bool actions,bool chords) noexcept {
+    if(chords)return "poima.input.v4";
+    if(actions)return "poima.input.v3";
+    return gamepad ? "poima.input.v2" : "poima.input.v1";
+}
 const char* profile_format(const Json& profile) {
-    return profile.contains("actions") ? "poima.input.v3" : profile.contains("gamepad") ? "poima.input.v2" : "poima.input.v1";
+    return select_format(profile.contains("gamepad"),profile.contains("actions"),profile.contains("chords"));
 }
 StickProfile parse_stick(const Json& value) {
     fields(value,{"stick","inner_deadzone","outer_deadzone","response","invert_x","invert_y"});
@@ -51,7 +56,11 @@ Json stick_json(const StickProfile& profile) {
         {"invert_x",profile.invert_x},{"invert_y",profile.invert_y}};
 }
 InputProfile parse_profile(const Json& value) {
-    if(value.contains("actions") && value.contains("gamepad"))fields(value,{"bindings","sensitivity_x","sensitivity_y","invert_x","invert_y","gamepad","actions"});
+    if(value.contains("chords") && value.contains("gamepad"))
+        fields(value,{"bindings","sensitivity_x","sensitivity_y","invert_x","invert_y","gamepad","actions","chords"});
+    else if(value.contains("chords"))
+        fields(value,{"bindings","sensitivity_x","sensitivity_y","invert_x","invert_y","actions","chords"});
+    else if(value.contains("actions") && value.contains("gamepad"))fields(value,{"bindings","sensitivity_x","sensitivity_y","invert_x","invert_y","gamepad","actions"});
     else if(value.contains("actions"))fields(value,{"bindings","sensitivity_x","sensitivity_y","invert_x","invert_y","actions"});
     else if(value.contains("gamepad"))fields(value,{"bindings","sensitivity_x","sensitivity_y","invert_x","invert_y","gamepad"});
     else fields(value,{"bindings","sensitivity_x","sensitivity_y","invert_x","invert_y"});
@@ -75,6 +84,23 @@ InputProfile parse_profile(const Json& value) {
             auto& controls=(*result.actions)[name];
             for(const auto& id:ids) {
                 require(id.is_string(),"Input control ID must be a string.");controls.push_back(id.get<std::string>());
+            }
+        }
+    }
+    if(value.contains("chords")) {
+        const auto& rows=value.at("chords");
+        require(rows.is_object() && rows.size()<=input_action_limit,"Keyboard chords require an object with at most 32 entries.");
+        result.chords.emplace();
+        for(const auto& [name,alternatives]:rows.items()) {
+            require(alternatives.is_array() && alternatives.size()<=4,"Each chord row permits zero to four alternatives.");
+            auto& chords=(*result.chords)[name];
+            for(const auto& keys:alternatives) {
+                require(keys.is_array() && keys.size()>=2 && keys.size()<=input_chord_max_keys,"A keyboard chord requires two to four keys.");
+                auto& chord=chords.emplace_back();
+                for(const auto& key:keys) {
+                    require(key.is_string(),"A keyboard chord key ID must be a string.");
+                    chord.push_back(key.get<std::string>());
+                }
             }
         }
     }
@@ -143,7 +169,9 @@ Json parse_document(const std::string& bytes) {
             return true;
         };
         auto doc=Json::parse(bytes,callback);fields(doc,{"format","revision","profile","receipts"});
-        require(doc.at("format")=="poima.input.v1" || doc.at("format")=="poima.input.v2" || doc.at("format")=="poima.input.v3","Unsupported input profile format; no automatic migration was performed.");
+        require(doc.at("format")=="poima.input.v1" || doc.at("format")=="poima.input.v2" ||
+            doc.at("format")=="poima.input.v3" || doc.at("format")=="poima.input.v4",
+            "Unsupported input profile format; no automatic migration was performed.");
         const auto current=revision(doc.at("revision"));doc["profile"]=profile_json(parse_profile(doc.at("profile")));
         require(doc.at("format")==profile_format(doc.at("profile")),"Input profile fields do not match its format.");
         const auto& receipts=doc.at("receipts");require(receipts.is_array() && receipts.size()==std::min<std::uint64_t>(current,max_receipts),"Invalid input profile receipt history.");
@@ -195,6 +223,9 @@ template<class F> auto storage_errors(F&& work) -> decltype(work()) {
 }
 }
 
+const char* profile_format(const InputProfile& profile) noexcept {
+    return select_format(profile.gamepad.has_value(),profile.actions.has_value(),profile.chords.has_value());
+}
 Json profile_json(const InputProfile& profile) {
     Json bindings=Json::object();for(std::size_t i=0;i<action_names.size();++i)bindings[action_names[i]]=profile.bindings[i];
     Json result={{"bindings",bindings},{"sensitivity_x",profile.sensitivity_x},{"sensitivity_y",profile.sensitivity_y},{"invert_x",profile.invert_x},{"invert_y",profile.invert_y}};
@@ -203,6 +234,17 @@ Json profile_json(const InputProfile& profile) {
             {"look_degrees_per_second",pad.look_degrees_per_second},{"trigger_press",pad.trigger_press},{"trigger_release",pad.trigger_release}};
     }
     if(profile.actions)result["actions"]=*profile.actions;
+    if(profile.chords) {
+        result["chords"]=Json::object();
+        for(const auto& [name,chords]:*profile.chords) {
+            auto row=Json::array();
+            for(auto chord:chords) {
+                std::sort(chord.begin(),chord.end());
+                row.push_back(std::move(chord));
+            }
+            result["chords"][name]=std::move(row);
+        }
+    }
     return result;
 }
 Json profile_schema() {
@@ -235,19 +277,32 @@ Json profile_schema() {
     v3["required"].push_back("actions");v3["properties"]["actions"]=named;
     named["additionalProperties"]["items"]["pattern"]="^(key|mouse|gamepad)\\.";
     v3_pad["required"].push_back("actions");v3_pad["properties"]["actions"]=named;
-    return {{"anyOf",{v1,v2,v3,v3_pad}}};
+    const Json chord={{"type","array"},{"minItems",2},{"maxItems",input_chord_max_keys},{"uniqueItems",true},
+        {"items",{{"type","string"},{"maxLength",32},{"pattern","^key\\."}}},
+        {"description","One non-modifier key and one to three physical Ctrl, Shift, Alt or Meta keys. Modifier keys may be shared by chords. Single bindings and chord trigger keys may not be shared."}};
+    const Json chord_rows={{"type","object"},{"maxProperties",input_action_limit},{"propertyNames",named.at("propertyNames")},
+        {"additionalProperties",{{"type","array"},{"maxItems",4},{"uniqueItems",true},{"items",chord}}},
+        {"description","Rows augment declared actions. The combined number of single and chord alternatives per action may not exceed four."}};
+    auto v4=v3,v4_pad=v3_pad;
+    v4["required"].push_back("chords");v4["properties"]["chords"]=chord_rows;
+    v4_pad["required"].push_back("chords");v4_pad["properties"]["chords"]=chord_rows;
+    v4_pad["properties"]["gamepad"]["description"]="Optional in v4 profiles. Trigger press must exceed trigger release to provide hysteresis.";
+    return {{"anyOf",{v1,v2,v3,v3_pad,v4,v4_pad}}};
 }
 Json describe() {
     Json controls=Json::array(),reserved=Json::array();for(const auto& control:input_controls()) {
         controls.push_back({{"id",control.id},{"label",control.label},{"device",control.kind==InputControlKind::keyboard ? "keyboard" : control.kind==InputControlKind::mouse ? "mouse" : "gamepad"},{"code",control.code},{"reserved",control.reserved}});
         if(control.reserved)reserved.push_back(control.id);
     }
-    return {{"format","poima.input.v1"},{"supported_formats",{"poima.input.v1","poima.input.v2","poima.input.v3"}},{"profile_schema",profile_schema()},{"actions",action_names},
+    return {{"format","poima.input.v1"},{"supported_formats",{"poima.input.v1","poima.input.v2","poima.input.v3","poima.input.v4"}},{"profile_schema",profile_schema()},{"actions",action_names},
         {"named_actions",{{"max_actions",input_action_limit},{"max_name_length",64},{"name_pattern","^[a-z][a-z0-9_.-]*$"},{"states",{"held","pressed","released"}},{"default_bindings",false}}},
+        {"keyboard_chords",{{"format","poima.input.v4"},{"min_keys",2},{"max_keys",input_chord_max_keys},
+            {"activation","All keys held, in any press order. A chord joins the same held and edge aggregation as a single alternative."},
+            {"key_order","Chord members are sorted by control ID in canonical profile JSON."}}},
         {"controls",controls},{"reserved_controls",reserved},
         {"defaults",profile_json(default_input_profile())},{"gamepad_defaults",profile_json(default_gamepad_input_profile())},{"application","next_play"},{"sensitivity_units","degrees per relative mouse count"},
         {"gamepad_units",{{"look_degrees_per_second","[yaw,pitch] degrees per second at full stick deflection"},{"deadzones","normalized radial stick magnitude"},{"response","dimensionless exponent after deadzone rescaling"},{"trigger_thresholds","normalized trigger position from 0 to 1; press must exceed release"}}},
-        {"binding_policy","Zero to four alternatives per action; a control can belong to only one legacy or named action. Keyboard IDs identify physical keys. Mouse buttons use SDL numbering (middle=2, right=3). Gamepad controls require gamepad settings. An actions object, including an empty object, selects v3; omission preserves v1/v2."},
+        {"binding_policy","Zero to four alternatives per action. Single bindings are unique and cannot share keys with chords. Chords can share modifier keys. Keyboard IDs identify physical keys. Mouse buttons use SDL numbering (middle=2, right=3). Gamepad controls require gamepad settings. A chords object selects v4; otherwise an actions object selects v3, and omission preserves v1/v2."},
         {"revision_policy","Every accepted non-preview set increments the revision, including unchanged values. Preview does not write. The latest 32 successful request receipts survive restart."},
         {"content_hash_scope","SHA256 of canonical compact profile JSON; excludes revision and receipts."},
         {"conversion_policy","Existing files cannot change format through transact. Inspect the old profile, explicitly construct a complete target-format profile and transact to a new destination path. The original file and receipts remain intact; there is no automatic migration."},

@@ -31,6 +31,13 @@ void validate_light(const Light& l) {
 void validate_environment(const LightingEnvironment& e) {
     for(auto x:e.ambient)require(std::isfinite(x) && x>=0 && x<=1e6f,"Ambient fill must be in [0,1e6].");
     require(std::isfinite(e.exposure) && e.exposure>=0 && e.exposure<=1e6f,"Exposure multiplier must be in [0,1e6].");
+    const auto& bloom=e.bloom;
+    require(std::isfinite(bloom.intensity) && bloom.intensity>=0 && bloom.intensity<=1,
+            "Bloom intensity must be finite and in [0,1].");
+    require(std::isfinite(bloom.threshold) && bloom.threshold>=0 && bloom.threshold<=65504,
+            "Bloom threshold must be finite and in [0,65504].");
+    require(std::isfinite(bloom.radius) && bloom.radius>=2 && bloom.radius<=32,
+            "Bloom radius must be finite and in [2,32] source pixels.");
     require(e.shadow_filter==ShadowFilter::pcf3_point || e.shadow_filter==ShadowFilter::pcf3_fractional || e.shadow_filter==ShadowFilter::pcss_directional,"Invalid environment shadow filter.");
     require(e.shadow_resolution==256 || e.shadow_resolution==512 || e.shadow_resolution==1024 || e.shadow_resolution==2048,"Shadow resolution must be 256, 512, 1024 or 2048.");
     for(const auto& color:{e.sky.zenith,e.sky.horizon,e.sky.ground})

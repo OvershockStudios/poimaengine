@@ -74,6 +74,40 @@ class AudioContract(unittest.TestCase):
     def capture(self,name,rev=1,frames=24000,live=False,tick=0):
         r=self.inspect(rev,live,tick);r['method']=r['method'].replace('inspect','capture');r['params'].update({'path':native(self.directory/(name+'.wav')),'frames':frames});return r
 
+    @unittest.skipUnless(CAPS['audio_capture'], 'Optional Steam Audio not built')
+    def test_box_face_reflection_is_opt_in_and_changes_pcm_after_arrival(self):
+        self.import_clip([.5])
+        room = self.room(False, source=(0, 0, -2), listener=(0, 0, 0), loop=False)
+        room['params']['ops'].extend([
+            create(102, 'Reflector'), transform(102, [2, 0, 0], scale=[1, 8, 8]),
+            component(102, 'BoxCollider', {'half_extents': [.5, .5, .5], 'motion': 'static',
+                                          'mass': 1, 'friction': .5, 'restitution': 0}),
+            component(102, 'AcousticMaterial', {'absorption': [.25, .5, .75], 'scattering': .1,
+                                                'transmission': [0, 0, 0], 'enabled': True}),
+        ])
+        direct = self.capture('direct', frames=1200)
+        reflected = self.capture('reflected', frames=1200)
+        reflected['params']['early_reflections'] = True
+        invalid = self.inspect()
+        invalid['params']['early_reflections'] = 1
+        replies = self.requests([room, direct, reflected, invalid])
+        self.result(replies[0])
+        direct_result, reflected_result = [self.result(reply) for reply in replies[1:3]]
+        self.error(replies[3], -32602)
+        self.assertFalse(direct_result['reflections'])
+        self.assertNotIn('early_reflection', direct_result['sources'][0])
+        self.assertTrue(reflected_result['reflections'])
+        self.assertFalse(reflected_result['reflection_budget_exceeded'])
+        path = reflected_result['sources'][0]['early_reflection']
+        arrival = round(math.sqrt(13) * 48000 / 343)
+        self.assertEqual(path['entity'], uid(102))
+        self.assertEqual(path['face'], 4)
+        self.assertEqual(path['propagation_delay_samples'], arrival)
+        self.assertAlmostEqual(path['distance_m'], math.sqrt(13))
+        dry, wet = [pcm(self.directory / name) for name in ('direct.wav', 'reflected.wav')]
+        self.assertEqual(dry[:arrival * 2], wet[:arrival * 2])
+        self.assertNotEqual(dry[arrival * 2:], wet[arrival * 2:])
+
     def test_clip_import_is_source_independent_and_hash_checked(self):
         info=self.import_clip([-.5,0,.5]);self.assertEqual(info['frames'],3);self.assertEqual(info['channels'],1)
         source=self.directory/'original.wav';source.unlink()

@@ -110,6 +110,10 @@ Styles support `color`, `background_color` and `border_color` as lowercase
 `hover`, `focus`, `pressed` and `disabled` objects contain color overrides only.
 Focus and pressed presentation states apply to buttons; accepting those metadata
 fields on panels or labels does not make them focusable or pressable.
+The runtime draws a dark-and-light inset ring on a focused button, including
+image-only buttons and buttons with authored focus colors. The ring scales
+with UI density and stays within normal drawing and clipping order. It adds
+no hit area or layout size. Pointer hover still uses its own style.
 No field accepts arbitrary CSS, scripts, URLs, font files or markup. Rounded
 borders are supported; a positive radius on a panel with `overflow:hidden/auto`
 is rejected because the renderer does not support rounded clip masks.
@@ -379,7 +383,7 @@ Current bounds include a 1 MiB RML document, 4,096 parsed nodes, 256 registered 
 The native player and the desktop Game pane route mouse, keyboard and assigned gamepad input through the displayed `UiPresenter`. Hit testing uses the actual layout, clipping and scroll position. Presentation returns a stable button ID; the native control service checks eligibility and executes compiled `Control`. Agents should normally use `runtime.ui.inspect` and `runtime.ui.activate` directly, without synthesizing pointer events.
 
 - Left-button release activates only the eligible button that received the press. Releasing outside the pressed target cancels activation. Focus loss, resizing, DPI changes or a runtime replacement cancel the gesture. Unrelated HUD text updates preserve a held gesture when its target geometry and eligibility remain unchanged.
-- Tab and Shift+Tab move focus; Enter presses/releases the focused button. Assigned gamepad D-pad or left-stick edges navigate, South confirms and East cancels the gesture. Navigation currently has no held-direction repeat.
+- Tab and Shift+Tab move focus through authored visual order and wrap at either end. Assigned gamepad D-pad or left-stick edges use the same order. Navigation tries to reveal offscreen buttons in scrollable menus, then skips any button that is still unusable under the same clipped hit test as focused confirmation. Enter or gamepad South confirms on release. Gamepad East cancels the gesture. Navigation currently has no held-direction repeat.
 - Modal UI owns input even outside its visible controls. It blocks gameplay bindings without implicitly stopping simulation. Compiled Pause/Resume intents change playback explicitly and clear held gameplay input.
 - The generated menu scrolls with the wheel, scrollbar and focused-control navigation. Mouse coordinates supplied to the hosted interface are physical Game-client pixels.
 

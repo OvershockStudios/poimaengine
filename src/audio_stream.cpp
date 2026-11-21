@@ -9,12 +9,14 @@
 #include <stdexcept>
 #if POIMA_AUDIO
 #include <phonon.h>
+#include "audio_reflections.hpp"
 #endif
 namespace poima {
 namespace {
 void check(bool ok,const char* text) { if(!ok)throw std::runtime_error(text); }
 [[maybe_unused]] bool same_paths(const AudioSnapshot& a,const AudioSnapshot& b) {
-    if(a.listener!=b.listener || a.geometry.size()!=b.geometry.size() || a.sources.size()!=b.sources.size())return false;
+    if(a.listener!=b.listener || a.early_reflections!=b.early_reflections ||
+       a.geometry.size()!=b.geometry.size() || a.sources.size()!=b.sources.size())return false;
     for(std::size_t i=0;i<a.geometry.size();++i) {
         const auto& x=a.geometry[i];const auto& y=b.geometry[i];
         if(x.entity!=y.entity || x.world!=y.world || x.mesh!=y.mesh || x.material.enabled!=y.material.enabled || x.material.absorption!=y.material.absorption || x.material.transmission!=y.material.transmission || x.material.scattering!=y.material.scattering)return false;
@@ -30,15 +32,31 @@ struct AudioStream::Impl {
     AudioSnapshot snapshot;AudioReport paths;
 #if POIMA_AUDIO
     IPLContext context=nullptr;IPLHRTF hrtf=nullptr;
-    struct Voice {
-        SoundVoice state;std::uint64_t delay=0;
+    struct DspPath {
+        std::uint64_t delay=0;
         IPLDirectEffect direct=nullptr;IPLBinauralEffect spatial=nullptr;
         bool direct_done=false,done=false;
-        ~Voice() { if(spatial)iplBinauralEffectRelease(&spatial);if(direct)iplDirectEffectRelease(&direct); }
+        ~DspPath() { if(spatial)iplBinauralEffectRelease(&spatial);if(direct)iplDirectEffectRelease(&direct); }
+    };
+    struct ReflectedVoice {
+        AudioReflection path;
+        DspPath dsp;
+        float audibility=1;
+    };
+    struct Voice {
+        SoundVoice state;
+        DspPath direct;
+        std::unique_ptr<ReflectedVoice> reflected;
     };
     std::map<std::uint64_t,std::unique_ptr<Voice>> voices;
     ~Impl() { voices.clear();if(hrtf)iplHRTFRelease(&hrtf);if(context)iplContextRelease(&context); }
     static void status(IPLerror e) { check(e==IPL_STATUS_SUCCESS,"Audio stream DSP initialization failed."); }
+    void setup(DspPath& dsp,std::uint32_t delay) const {
+        dsp.delay=delay;
+        IPLAudioSettings audio{audio_rate,audio_block};
+        IPLDirectEffectSettings direct_settings{1};status(iplDirectEffectCreate(context,&audio,&direct_settings,&dsp.direct));
+        IPLBinauralEffectSettings spatial_settings{hrtf};status(iplBinauralEffectCreate(context,&audio,&spatial_settings,&dsp.spatial));
+    }
     const AudioPath& path(const std::string& entity) const {
         const auto p=std::find_if(paths.paths.begin(),paths.paths.end(),[&](const auto& v){return v.entity==entity;});check(p!=paths.paths.end(),"Playing voice lost its emitter path.");return *p;
     }
@@ -55,42 +73,78 @@ struct AudioStream::Impl {
         for(const auto& state:states) {
             if(auto found=voices.find(state.id);found!=voices.end()) { found->second->state=state;continue; }
             if(state.id<=seen)continue;
-            const auto delay=path(state.emitter).propagation_delay_samples;
+            const auto& current=path(state.emitter);
+            const auto delay=current.reflection ? std::max(current.propagation_delay_samples,current.reflection->propagation_delay_samples) :
+                current.propagation_delay_samples;
             if(state.start_tick*audio_tick_frames<start && state.end_sample()!=UINT64_MAX && state.end_sample()+delay<=start)continue;
             check(voices.size()<256,"Audio presentation exceeded 256 active/delayed/tail voices.");
-            auto voice=std::make_unique<Voice>();voice->state=state;voice->delay=path(state.emitter).propagation_delay_samples;
-            IPLAudioSettings audio{audio_rate,audio_block};IPLDirectEffectSettings direct_settings{1};status(iplDirectEffectCreate(context,&audio,&direct_settings,&voice->direct));
-            IPLBinauralEffectSettings spatial_settings{hrtf};status(iplBinauralEffectCreate(context,&audio,&spatial_settings,&voice->spatial));
+            auto voice=std::make_unique<Voice>();voice->state=state;
+            setup(voice->direct,current.propagation_delay_samples);
+            if(current.reflection) {
+                voice->reflected=std::make_unique<ReflectedVoice>();
+                voice->reflected->path=*current.reflection;
+                setup(voice->reflected->dsp,current.reflection->propagation_delay_samples);
+            }
             voices.emplace(state.id,std::move(voice));++stats.voices_started;
         }
         for(const auto& state:states)seen=std::max(seen,state.id);
     }
+    void render_path(std::span<float> mix,const SoundVoice& state,DspPath& dsp,const std::array<double,3>& direction,
+                     IPLDirectEffectParams params,float start_audibility=1,float end_audibility=1) {
+        if(dsp.done)return;
+        const auto begin=state.start_tick*audio_tick_frames+dsp.delay;
+        const auto emission_end=state.end_sample();
+        const auto end=emission_end==UINT64_MAX ? UINT64_MAX : emission_end+dsp.delay;
+        if(end<=begin) { dsp.done=true;return; }
+        if(cursor+audio_block<=begin)return;
+        std::array<float,audio_block> mono{},filtered{},left{},right{};
+        float* in_channels[]{mono.data()};float* filtered_channels[]{filtered.data()};float* out_channels[]{left.data(),right.data()};
+        IPLAudioBuffer in{1,audio_block,in_channels},middle{1,audio_block,filtered_channels},out{2,audio_block,out_channels};
+        IPLBinauralEffectParams spatial{};
+        spatial.direction={float(direction[0]),float(direction[1]),float(direction[2])};
+        spatial.interpolation=IPL_HRTFINTERPOLATION_BILINEAR;spatial.spatialBlend=1;spatial.hrtf=hrtf;
+        if(dsp.direct_done)dsp.done=iplBinauralEffectGetTail(dsp.spatial,&out)==IPL_AUDIOEFFECTSTATE_TAILCOMPLETE;
+        else {
+            if(cursor<end) {
+                const auto& clip=state.sound.clip->samples;
+                for(std::uint64_t k=0;k<audio_block;++k)if(cursor+k>=begin && cursor+k<end)mono[k]=clip[(cursor+k-begin)%clip.size()];
+                iplDirectEffectApply(dsp.direct,&params,&in,&middle);
+            } else dsp.direct_done=iplDirectEffectGetTail(dsp.direct,&middle)==IPL_AUDIOEFFECTSTATE_TAILCOMPLETE;
+            iplBinauralEffectApply(dsp.spatial,&spatial,&middle,&out);
+        }
+        for(std::size_t k=0;k<audio_block;++k)if(cursor+k>=begin) {
+            const float audibility=std::lerp(start_audibility,end_audibility,float(k+1)/audio_block);
+            mix[2*k]+=left[k]*state.sound.gain*state.gain*audibility;
+            mix[2*k+1]+=right[k]*state.sound.gain*state.gain*audibility;
+        }
+    }
     void block(std::span<float> mix) {
         std::fill(mix.begin(),mix.end(),0);
         for(auto& [id,owned]:voices) {
-            (void)id;auto& voice=*owned;const auto& state=voice.state;
-            const auto begin=state.start_tick*audio_tick_frames+voice.delay;
-            const auto emission_end=state.end_sample();const auto end=emission_end==UINT64_MAX ? UINT64_MAX : emission_end+voice.delay;
-            if(end<=begin) { voice.done=true;continue; }
-            if(cursor+audio_block<=begin)continue;
-            std::array<float,audio_block> mono{},filtered{},left{},right{};float* in_channels[]{mono.data()};float* filtered_channels[]{filtered.data()};float* out_channels[]{left.data(),right.data()};
-            IPLAudioBuffer in{1,audio_block,in_channels},middle{1,audio_block,filtered_channels},out{2,audio_block,out_channels};
-            const auto& p=path(state.emitter);IPLDirectEffectParams params{};
+            (void)id;auto& voice=*owned;
+            const auto& current=path(voice.state.emitter);
+            IPLDirectEffectParams params{};
             params.flags=static_cast<IPLDirectEffectFlags>(IPL_DIRECTEFFECTFLAGS_APPLYDISTANCEATTENUATION|IPL_DIRECTEFFECTFLAGS_APPLYAIRABSORPTION|IPL_DIRECTEFFECTFLAGS_APPLYOCCLUSION|IPL_DIRECTEFFECTFLAGS_APPLYTRANSMISSION);
-            params.transmissionType=IPL_TRANSMISSIONTYPE_FREQDEPENDENT;params.distanceAttenuation=p.distance_gain;params.occlusion=p.occlusion;std::copy(p.air.begin(),p.air.end(),params.airAbsorption);std::copy(p.transmission.begin(),p.transmission.end(),params.transmission);
-            IPLBinauralEffectParams spatial{};spatial.direction={float(p.direction[0]),float(p.direction[1]),float(p.direction[2])};spatial.interpolation=IPL_HRTFINTERPOLATION_BILINEAR;spatial.spatialBlend=1;spatial.hrtf=hrtf;
-            if(voice.direct_done)voice.done=iplBinauralEffectGetTail(voice.spatial,&out)==IPL_AUDIOEFFECTSTATE_TAILCOMPLETE;
-            else {
-                if(cursor<end) {
-                    const auto& clip=state.sound.clip->samples;
-                    for(std::uint64_t k=0;k<audio_block;++k)if(cursor+k>=begin && cursor+k<end)mono[k]=clip[(cursor+k-begin)%clip.size()];
-                    iplDirectEffectApply(voice.direct,&params,&in,&middle);
-                } else voice.direct_done=iplDirectEffectGetTail(voice.direct,&middle)==IPL_AUDIOEFFECTSTATE_TAILCOMPLETE;
-                iplBinauralEffectApply(voice.spatial,&spatial,&middle,&out);
+            params.transmissionType=IPL_TRANSMISSIONTYPE_FREQDEPENDENT;
+            params.distanceAttenuation=current.distance_gain;params.occlusion=current.occlusion;
+            std::copy(current.air.begin(),current.air.end(),params.airAbsorption);
+            std::copy(current.transmission.begin(),current.transmission.end(),params.transmission);
+            render_path(mix,voice.state,voice.direct,current.direction,params);
+            if(auto& reflection=voice.reflected) {
+                const auto& path_now=current.reflection;
+                const bool visible=path_now && path_now->entity==reflection->path.entity && path_now->face==reflection->path.face;
+                if(visible)reflection->path=*path_now;
+                const float target=visible ? 1 : 0;
+                render_path(mix,voice.state,reflection->dsp,reflection->path.direction,
+                            audio_detail::reflection_filter(reflection->path),reflection->audibility,target);
+                reflection->audibility=target;
             }
-            for(std::size_t k=0;k<audio_block;++k)if(cursor+k>=begin) { mix[2*k]+=left[k]*state.sound.gain*state.gain;mix[2*k+1]+=right[k]*state.sound.gain*state.gain; }
         }
-        std::erase_if(voices,[](const auto& item){return item.second->done;});++stats.blocks;
+        std::erase_if(voices,[](const auto& item){
+            const auto& voice=*item.second;
+            return voice.direct.done && (!voice.reflected || voice.reflected->dsp.done);
+        });
+        ++stats.blocks;
     }
 #endif
 };

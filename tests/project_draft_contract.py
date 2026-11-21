@@ -5,6 +5,7 @@ import argparse
 from concurrent.futures import ThreadPoolExecutor
 import hashlib
 import json
+import os
 from pathlib import Path
 import struct
 import subprocess
@@ -173,6 +174,13 @@ class ProjectDraftContract(unittest.TestCase):
         self.assertEqual(untouched, {path: contents for path, contents in tree(self.source).items()
                                     if path != MANIFEST})
         return result
+
+    def draft_changes(self, target, *, base_sha256=None, error=None):
+        argv = ('project', 'draft-changes', native(self.checkpoint), '--draft', native(target / MANIFEST),
+                '--expected-base-sha256', self.base_sha256 if base_sha256 is None else base_sha256)
+        if error:
+            return self.reject(error, *argv)
+        return self.cli(*argv)
 
     def transaction(self, revision, ops):
         return {'request_id': uuid.uuid4().hex, 'base_revision': revision, 'ops': ops}
@@ -362,6 +370,103 @@ class ProjectDraftContract(unittest.TestCase):
         (self.source / 'Design.txt').write_bytes(b'Corrupted checkpoint file\n')
         self.draft(self.root / 'Draft from corrupt source', error='Design\\.txt')
         self.assertEqual(tree(self.live), self.original)
+
+    def test_draft_changes_review_and_pin_current_source(self):
+        worker = self.root / 'Source draft'
+        fork = self.draft(worker)
+        before = tree(self.root)
+        empty = self.draft_changes(worker)
+        self.assertEqual(empty, {'manifest': empty['manifest'], 'project_id': fork['project_id'],
+                                 'base_project_id': self.spec['project_id'], 'base_sha256': self.base_sha256,
+                                 'base_revision': self.revision, 'world_sha256': self.live_summary['world_sha256'],
+                                 'files': []})
+        self.assert_path(empty['manifest'], worker / MANIFEST)
+        self.assertEqual(tree(self.root), before)
+
+        added, replaced = 'gameplay-src/Logic/Score.cs', 'gameplay-src/Game.cs'
+        base_game = (self.source / replaced).read_bytes()
+        score_code = b'internal static class Score { internal const int Goal = 3; }\n'
+        game_code = base_game + b'\n// Reviewed worker edit.\n'
+        (worker / added).parent.mkdir()
+        (worker / added).write_bytes(score_code)
+        (worker / replaced).write_bytes(game_code)
+        (worker / 'Outside.cs').write_bytes(b'// Outside the gameplay source directory.\n')
+        (worker / 'gameplay-src/Design.txt').write_bytes(b'Not C# source.\n')
+        (worker / 'gameplay-src/obj').mkdir()
+        (worker / 'gameplay-src/obj/project.assets.json').write_bytes(b'{}\n')
+        (worker / 'gameplay-src/obj/Generated.cs').write_bytes(b'// Generated compiler output.\n')
+        self.edit(worker, self.revision, [rename(GATE, 'Reviewed gate')])
+        after_worker = tree(worker)
+        review = self.draft_changes(worker)
+        self.assertEqual(review['world_sha256'], sha256(after_worker[self.world_path]))
+        self.assertNotEqual(review['world_sha256'], empty['world_sha256'])
+        self.assertEqual(review['files'], [
+            {'path': replaced, 'change': 'replaced', 'base_sha256': sha256(base_game), 'sha256': sha256(game_code)},
+            {'path': added, 'change': 'added', 'base_sha256': None, 'sha256': sha256(score_code)},
+        ])
+        self.assertEqual(tree(worker), after_worker)
+
+        request = {'base_sha256': self.base_sha256, 'drafts': [
+            {'manifest': review['manifest'], 'world_sha256': review['world_sha256'],
+             'files': [{'path': item['path'], 'sha256': item['sha256']} for item in review['files']]},
+        ]}
+        candidate = self.root / 'Reviewed candidate'
+        (worker / added).write_bytes(score_code + b'// Edited after review.\n')
+        self.integrate(candidate, request, error='draft file hash mismatch')
+        (worker / added).write_bytes(score_code)
+        result = self.integrate(candidate, request)
+        self.assertEqual((candidate / added).read_bytes(), score_code)
+        self.assertEqual((candidate / replaced).read_bytes(), game_code)
+        self.assertFalse((candidate / 'Outside.cs').exists())
+        self.assertEqual(self.names(candidate, result['revision'])[GATE], 'Reviewed gate')
+
+        (worker / replaced).unlink()
+        deletion = self.draft_changes(worker)
+        self.assertEqual(deletion['files'], [
+            {'path': replaced, 'change': 'deleted', 'base_sha256': sha256(base_game), 'sha256': None},
+            review['files'][1],
+        ])
+        self.assertEqual(tree(self.live), self.original)
+        self.assertEqual(tree(self.base), self.base_bytes)
+
+    def test_draft_changes_reject_invalid_lineage_and_linked_inputs(self):
+        worker = self.root / 'Source draft'
+        self.draft(worker)
+        self.draft_changes(worker, base_sha256='0' * 64, error='base source checkpoint changed')
+        self.draft_changes(self.live, error=r'draft\.json')
+        self.reject('absolute draft manifest', 'project', 'draft-changes', native(self.checkpoint),
+                    '--draft', MANIFEST, '--expected-base-sha256', self.base_sha256)
+        marker = worker / DRAFT_MARKER
+        original = marker.read_bytes()
+        marker.write_text(json.dumps({**json.loads(original), 'base_revision': self.revision + 1}), encoding='utf-8')
+        self.draft_changes(worker, error='lineage')
+        marker.write_bytes(original)
+        world = worker / self.world_path
+        world_bytes = world.read_bytes()
+        world.write_text(json.dumps({**json.loads(world_bytes), 'world_id': uuid.uuid4().hex}), encoding='utf-8')
+        self.draft_changes(worker, error='world identity')
+        world.write_bytes(world_bytes)
+
+        source = worker / 'gameplay-src/Game.cs'
+        alias = worker / 'gameplay-src/Alias.cs'
+        os.link(source, alias)
+        self.draft_changes(worker, error='hard link')
+        alias.unlink()
+        if not ARGS.windows_interop and os.name != 'nt':
+            alias.symlink_to(source)
+            self.draft_changes(worker, error='symlink|symbolic link')
+            alias.unlink()
+        lower_case = source.with_name('game.cs')
+        # Move through a third spelling so the rename also works on Windows.
+        source.rename(alias)
+        alias.rename(lower_case)
+        self.draft_changes(worker, error='case-insensitive')
+        lower_case.rename(alias)
+        alias.rename(source)
+
+        nested = self.base / 'Nested draft'
+        worker.rename(nested)
+        self.draft_changes(nested, error='overlap')
 
     def test_integration_rejects_unreviewed_or_unsafe_inputs(self):
         first = self.root / 'First draft'

@@ -19,15 +19,15 @@ public sealed class CodexReview : IAsyncDisposable
             revision, cancellation), "poima_inspect", model, cancellation);
 
     public static Task<CodexReview> OpenDraftAsync(string codexExecutable, string poimaExecutable,
-        string draftManifest, string? model, CancellationToken cancellation) =>
-        OpenSpecialistAsync(CodexSession.ConnectDraftAsync(codexExecutable, poimaExecutable, draftManifest, cancellation),
-            "poima_call", model, cancellation);
+        string draftManifest, string? model, CancellationToken cancellation, bool allowGameplaySourceEdits = false) =>
+        OpenSpecialistAsync(CodexSession.ConnectDraftAsync(codexExecutable, poimaExecutable, draftManifest,
+            cancellation, allowGameplaySourceEdits), "poima_call", model, cancellation, allowGameplaySourceEdits);
 
     public static string ValidateDraft(string manifest, string draft, string project, string baseHash, long revision) =>
         CodexDraftTarget.Validate(manifest, draft, project, baseHash, revision);
 
     private static async Task<CodexReview> OpenSpecialistAsync(Task<CodexSession> connection, string tool,
-        string? model, CancellationToken cancellation)
+        string? model, CancellationToken cancellation, bool allowGameplaySourceEdits = false)
     {
         var session = await connection;
         try
@@ -36,9 +36,9 @@ public sealed class CodexReview : IAsyncDisposable
             var servers = await session.ListMcpServersAsync(cancellation);
             if (servers?["data"] is not JsonArray data || !data.Any(node =>
                 node?["name"]?.GetValue<string>() == "poima" && node["toolsError"] is null &&
-                node["tools"] is JsonObject tools && tools.Count == 3 && tools.ContainsKey(tool) &&
+                node["tools"] is JsonObject tools && tools.Count == (allowGameplaySourceEdits ? 4 : 3) && tools.ContainsKey(tool) &&
                 tools.ContainsKey("poima_reference") && tools.ContainsKey("poima_discover") &&
-                (tool != "poima_call" || HasDraftMethods(tools[tool]))))
+                (tool != "poima_call" || HasDraftMethods(tools, allowGameplaySourceEdits))))
                 throw new InvalidOperationException(tool == "poima_call"
                     ? "The specialist could not connect to Poima's scoped draft tools."
                     : "The specialist could not connect to Poima's scoped review tools.");
@@ -47,10 +47,27 @@ public sealed class CodexReview : IAsyncDisposable
         catch { await session.DisposeAsync(); throw; }
     }
 
-    private static bool HasDraftMethods(JsonNode? tool) =>
-        tool?["inputSchema"]?["properties"]?["method"]?["enum"] is JsonArray methods &&
-        methods.Any(method => method?.GetValue<string>() == "world.inspect") &&
-        methods.Any(method => method?.GetValue<string>() == "world.transact");
+    private static bool HasDraftMethods(JsonObject tools, bool allowGameplaySourceEdits)
+    {
+        const string readSource = "project.source.read";
+        if (ToolMethods(tools["poima_call"]) is not { } methods) return false;
+        var calls = methods.Select(MethodName).ToArray();
+        if (!calls.Contains("world.inspect") || !calls.Contains("world.transact") ||
+            calls.Contains(readSource) != allowGameplaySourceEdits ||
+            calls.Any(name => string.IsNullOrEmpty(name) || name.StartsWith("development.", StringComparison.Ordinal) ||
+                (name.StartsWith("project.", StringComparison.Ordinal) && name != readSource)))
+            return false;
+        return !allowGameplaySourceEdits ||
+            ToolMethods(tools["poima_source"]) is { Count: 1 } source && MethodName(source[0]) == "project.source.write";
+    }
+
+    private static JsonArray? ToolMethods(JsonNode? tool) =>
+        tool is JsonObject descriptor && descriptor["inputSchema"] is JsonObject input &&
+        input["properties"] is JsonObject properties && properties["method"] is JsonObject method
+            ? method["enum"] as JsonArray : null;
+
+    private static string? MethodName(JsonNode? method) =>
+        method is JsonValue value && value.TryGetValue<string>(out var name) ? name : null;
 
     public async Task<string> AskAsync(string text, Action<string> showDraft, CancellationToken cancellation)
     {

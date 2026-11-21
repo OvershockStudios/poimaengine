@@ -43,6 +43,9 @@ struct Joint {
     double soft_limit_zone=.1,max_torque=1000,friction_torque=0;
     // Omitted by default; no drive state or force is implied by a legacy joint.
     std::optional<DriveProfile> drive;
+    // Optional directional damping (N·m·s/rad) for outward motion in each
+    // soft limit band. Omission and zero keep the legacy torque law.
+    std::optional<double> soft_limit_damping;
 };
 struct Definition { std::string root;std::vector<Part> parts;std::vector<Joint> joints; };
 inline constexpr std::size_t max_parts=64,max_joints=63;
@@ -173,8 +176,11 @@ struct PassiveResponse {
 // Soft-limit-enabled evaluation rejects within 4*gradient_step of the
 // 180-degree swing singularity or signed-twist cut (hard limits <=3rad);
 // diagnostics never silently invent a twist or differentiate a chart jump.
-// Relative damping is PSD. One nonnegative scale saturates elastic+damping
-// together, preserving paired equal/opposite torques and damping_power<=0.
+// Relative damping opposes motion. Each engaged soft limit optionally adds
+// damping along its outward angular normal, scaled smoothly across the band
+// and applied only while approaching or moving farther beyond the endpoint.
+// One nonnegative scale caps elastic and all damping torque together,
+// preserving paired equal/opposite torques and damping_power<=0.
 // Clipping does not establish passivity or monotonic kinetic+authored-U energy:
 // the clipped elastic torque is not the gradient of the reported U.
 // Native joint friction_torque is NOT applied again here: backend owns friction.

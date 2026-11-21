@@ -73,32 +73,31 @@ double approach(double d,double band,double stiffness) {
     if(d<band)return stiffness*d*d*d/(3*band);
     return stiffness*(d*d-band*d+band*band/3);
 }
-double interval_energy(double angle,double lo,double hi,double zone,double stiffness) {
-    const double band=zone;
-    return approach(angle-(hi-band),band,stiffness)+approach((lo+band)-angle,band,stiffness);
-}
 struct Energy { double rest=0,soft=0;double total()const{return rest+soft;} };
-Energy energy(const Joint& j,Quat relative) {
+Energy energy(const Joint& j,Quat relative,Vec3* distances=nullptr) {
     relative=canonical_quaternion(relative);const auto neutral=canonical_quaternion(j.neutral_rotation);
     double inner=0;for(unsigned k=0;k<4;++k)inner+=relative[k]*neutral[k];
     Energy e;e.rest=2*j.rest_stiffness*std::max(0.,1-std::min(1.,inner*inner));
-    if(j.soft_limit_stiffness==0)return e;
+    if(j.soft_limit_stiffness==0&&!distances)return e;
     const auto c=coordinates(relative,true);
-    std::visit([&](const auto& l) {
+    const double band=j.soft_limit_zone;
+    const auto d=std::visit([&](const auto& l)->Vec3 {
         using T=std::decay_t<decltype(l)>;
-        if constexpr(std::is_same_v<T,Hinge>)e.soft=interval_energy(c.twist,l.minimum,l.maximum,j.soft_limit_zone,j.soft_limit_stiffness);
+        if constexpr(std::is_same_v<T,Hinge>)return {c.twist-(l.maximum-band),(l.minimum+band)-c.twist,0};
         else {
-            e.soft=interval_energy(c.twist,l.twist_min,l.twist_max,j.soft_limit_zone,j.soft_limit_stiffness);
+            double swing=0;
             const double r=std::hypot(c.swing_y,c.swing_z);
             if(r>0) {
                 const double y=c.swing_y/r,z=c.swing_z/r;
                 const double radius=1/std::hypot(y/std::sin(l.swing_y/2),z/std::sin(l.swing_z/2));
                 const double hard_angle=2*std::asin(std::clamp(radius,0.,1.));
-                const double band=j.soft_limit_zone;
-                e.soft+=approach(c.swing_angle-(hard_angle-band),band,j.soft_limit_stiffness);
+                swing=c.swing_angle-(hard_angle-band);
             }
+            return {c.twist-(l.twist_max-band),(l.twist_min+band)-c.twist,swing};
         }
     },j.limits);
+    if(distances)*distances=d;
+    for(double distance:d)e.soft+=approach(distance,band,j.soft_limit_stiffness);
     return e;
 }
 } // namespace
@@ -176,6 +175,8 @@ void validate(const Joint& j) {
     local_pose(j.parent_frame);local_pose(j.child_frame);limits(j.limits);const auto neutral=canonical_quaternion(j.neutral_rotation);
     require(range(j.rest_stiffness,0,max_stiffness)&&range(j.rest_damping,0,max_damping)&&range(j.soft_limit_stiffness,0,max_stiffness)&&
         range(j.soft_limit_zone,.001,.5)&&range(j.max_torque,0,max_torque)&&range(j.friction_torque,0,max_torque),"Physical passive coefficients exceed finite nonnegative bounds.");
+    if(j.soft_limit_damping)
+        require(range(*j.soft_limit_damping,0,max_damping),"Physical soft-limit damping exceeds finite nonnegative bounds.");
     const auto c=coordinates(neutral,true);
     std::visit([&](const auto& l) {
         using T=std::decay_t<decltype(l)>;
@@ -274,16 +275,38 @@ void validate(const Configuration& c) {
 }
 PassiveResponse evaluate_passive(const Joint& j,Pose parent,Pose child,Vec3 relative_omega) {
     validate(j);parent=canonical_pose(parent);child=canonical_pose(child);vector(relative_omega,max_relative_angular_velocity,"Relative angular velocity exceeds finite +/-2e4 rad/s per axis.");
-    const auto relative=multiply(conjugate(parent.rotation),child.rotation);const auto e=energy(j,relative);
+    const auto relative=multiply(conjugate(parent.rotation),child.rotation);
+    const double approach_gain=j.soft_limit_damping.value_or(0);
+    Vec3 distances{};
+    const auto e=energy(j,relative,approach_gain>0 ? &distances : nullptr);
+    const bool inside_band=std::any_of(distances.begin(),distances.end(),[](double d){return d>0;});
     Vec3 local_gradient{};
+    std::array<Vec3,3> distance_gradients{};
     for(unsigned axis=0;axis<3;++axis) {
         Quat delta{0,0,0,std::cos(gradient_step/2)};delta[axis]=std::sin(gradient_step/2);
         // Left perturbation is expressed in the parent joint frame.
-        const auto plus=energy(j,product(delta,relative));delta[axis]=-delta[axis];const auto minus=energy(j,product(delta,relative));
+        Vec3 plus_distances{},minus_distances{};
+        const auto plus=energy(j,product(delta,relative),inside_band ? &plus_distances : nullptr);
+        delta[axis]=-delta[axis];
+        const auto minus=energy(j,product(delta,relative),inside_band ? &minus_distances : nullptr);
         local_gradient[axis]=(plus.total()-minus.total())/(2*gradient_step);
+        if(inside_band)for(unsigned band=0;band<distances.size();++band)
+            distance_gradients[band][axis]=(plus_distances[band]-minus_distances[band])/(2*gradient_step);
     }
     PassiveResponse r;r.rest_potential=e.rest;r.soft_limit_potential=e.soft;r.potential_energy=e.total();
-    const auto elastic=rotate(parent.rotation,scale(local_gradient,-1));const auto damping=scale(relative_omega,-j.rest_damping);
+    const auto elastic=rotate(parent.rotation,scale(local_gradient,-1));
+    auto damping=scale(relative_omega,-j.rest_damping);
+    if(inside_band)for(unsigned band=0;band<distances.size();++band) {
+        if(distances[band]<=0)continue;
+        const double length=norm(distance_gradients[band]);
+        if(length<=1e-12)continue;
+        const auto normal=rotate(parent.rotation,scale(distance_gradients[band],1/length));
+        const double speed=dot(relative_omega,normal);
+        if(speed<=0)continue;
+        const double x=std::min(distances[band]/j.soft_limit_zone,1.);
+        const double weight=x*x*(3-2*x);
+        damping=add(damping,scale(normal,-approach_gain*weight*speed));
+    }
     const auto raw=add(elastic,damping);r.raw_torque_norm=norm(raw);
     r.saturation_scale=r.raw_torque_norm>j.max_torque ? j.max_torque/r.raw_torque_norm : 1;r.saturated=r.saturation_scale<1;
     r.elastic_torque_world=scale(elastic,r.saturation_scale);r.damping_torque_world=scale(damping,r.saturation_scale);

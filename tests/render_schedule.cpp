@@ -72,6 +72,52 @@ void environment_inputs(Fixture& fixture,bool dummy=false) {
 Pass& pass(Schedule& p,PassId id){auto i=std::find_if(p.passes.begin(),p.passes.end(),[&](const auto& v){return v.id==id;});check(i!=p.passes.end(),"Fixture required pass absent");return *i;}
 void erase_access(Schedule& p,PassId id,ResourceId resource,Use use){auto& accesses=pass(p,id).accesses;const auto n=std::erase_if(accesses,[&](const auto& a){return a.resource==resource && a.use==use;});check(n>0,"Fixture mutation did not remove an access");}
 Settings rich(){Settings s;s.scene=s.clustered=s.sky=s.game_ui=s.capture=true;s.slot=1;s.image=2;return s;}
+void setup_bloom(Fixture& fixture) {
+    auto& f=fixture.f;
+    fixture.settings.bloom=true;
+    const auto source=display_radiance(f,fixture.settings);
+    f.resources[source].format=Format::rgba16_float;
+    const auto width=bloom_extent(f.resources[source].width),height=bloom_extent(f.resources[source].height);
+    auto image=[&] {
+        const auto id=fixture.add(Kind::texture,Lifetime::shared);
+        auto& r=f.resources[id];r.width=width;r.height=height;r.format=Format::rgba16_float;
+        return id;
+    };
+    f.bloom=image();f.bloom_scratch=image();
+}
+void bloom_contracts() {
+    for(bool editor:{false,true})for(unsigned samples:{1u,4u})for(bool deferred:{false,true}) {
+        if(deferred && samples!=1)continue;
+        auto settings=rich();settings.editor=editor;settings.deferred=deferred;
+        Fixture fixture(settings,samples);setup_bloom(fixture);
+        auto plan=fixture.plan();plan.validate();++accepted;
+        const auto& f=plan.frame;
+        check(pass(plan,PassId::bloom_extract).accesses.front().resource==f.hdr,"Bloom extract bypassed resolved HDR");
+        check(pass(plan,PassId::bloom_horizontal).accesses.front().resource==f.bloom,"Horizontal bloom bypassed prefilter");
+        check(pass(plan,PassId::bloom_vertical).accesses.front().resource==f.bloom_scratch,"Vertical bloom bypassed horizontal filter");
+        auto bad=[&](const char* label,const auto& change){auto p=plan;change(p);rejects(label,[&]{p.validate();});};
+        for(auto id:{PassId::bloom_extract,PassId::bloom_horizontal,PassId::bloom_vertical})
+            bad("bloom pass absent",[&](auto& p){std::erase_if(p.passes,[&](const auto& work){return work.id==id;});});
+        bad("bloom on diagnostic output",[](auto& p){p.settings.products_debug=true;});
+        bad("bloom disabled with targets",[](auto& p){p.settings.bloom=false;});
+        bad("bloom scratch aliases bloom",[](auto& p){p.frame.bloom_scratch=p.frame.bloom;});
+        bad("bloom aliases scene",[](auto& p){p.frame.bloom=p.frame.hdr;});
+        bad("bloom format differs",[](auto& p){p.frame.resources[p.frame.bloom].format=Format::r8_unorm;});
+        bad("bloom target extent differs",[](auto& p){++p.frame.resources[p.frame.bloom].width;});
+        bad("bloom source not sampled",[](auto& p){erase_access(p,PassId::bloom_extract,p.frame.hdr,Use::sampled);});
+        bad("bloom outside filter passes",[](auto& p){pass(p,PassId::game_ui).accesses.push_back({p.frame.bloom,Use::sampled,false});});
+        bad("output skips bloom",[](auto& p){erase_access(p,PassId::output,p.frame.bloom,Use::sampled);});
+    }
+    auto settings=rich();Fixture odd(settings);
+    for(auto id:{odd.f.hdr,odd.f.depth}) {
+        auto& resource=odd.f.resources[id];resource.width=385;resource.height=217;
+    }
+    setup_bloom(odd);odd.plan().validate();++accepted;
+    check(odd.f.resources[odd.f.bloom].width==97 && odd.f.resources[odd.f.bloom].height==55,"Odd bloom extent lost a source texel");
+    auto standard=Fixture(rich(),4).plan();standard.validate();
+    check(standard.frame.bloom==none && standard.frame.bloom_scratch==none,"Default graph acquired bloom attachments");
+    check(std::none_of(standard.passes.begin(),standard.passes.end(),[](const auto& work){return work.id>=PassId::bloom_extract && work.id<=PassId::bloom_vertical;}),"Default graph acquired bloom passes");
+}
 void matrix(){
     for(bool scene:{false,true})for(bool editor:{false,true})for(bool capture:{false,true})for(bool ui:{false,true})
     for(bool overlay:{false,true})for(unsigned samples:{1u,4u})for(bool skin:{false,true})for(bool clustered:{false,true})for(bool sky:{false,true}){
@@ -242,6 +288,9 @@ void reconstruction_contracts(){
         upscale.frame.resources[id].width=192;upscale.frame.resources[id].height=108;
     }
     upscale.validate();++accepted;
+    setup_bloom(fixture);
+    auto bloomed=fixture.plan();bloomed.validate();++accepted;
+    check(pass(bloomed,PassId::bloom_extract).accesses.front().resource==f.reconstructed,"Bloom bypassed reconstruction");
     auto bad=[&](const char* label,const auto& edit){auto p=original;edit(p);rejects(label,[&]{p.validate();});};
     bad("reconstruction non-HDR input",[](auto& p){p.frame.resources[p.frame.hdr].format=Format::r8_unorm;});
     bad("reconstruction downsamples width",[](auto& p){--p.frame.resources[p.frame.reconstructed].width;});
@@ -368,8 +417,10 @@ void viewmodel_contracts(){
         f.reconstructed=image(Format::rgba16_float);f.dense_motion=image(Format::rg32_float);f.reactive=image(Format::r8_unorm);f.dilated_depth=image(Format::r32_float);f.dilated_motion=image(Format::rg16_float);f.reconstructed_depth=image(Format::r32_uint);
         for(auto id:{f.hdr,f.depth,f.normal,f.motion,f.motion_valid,f.dense_motion,f.reactive,f.dilated_depth,f.dilated_motion,f.reconstructed_depth}) {f.resources[id].width=192;f.resources[id].height=108;}
         if(deferred)for(auto id:{f.material_base,f.material_surface,f.material_correspondence}) {f.resources[id].width=192;f.resources[id].height=108;}
+        setup_bloom(fsr);
         auto plan=fsr.plan();plan.validate();++accepted;
         check(pass(plan,PassId::viewmodel_composite).accesses.front().resource==f.reconstructed,"Foreground composition samples compact world instead of completed output");
+        check(pass(plan,PassId::bloom_extract).accesses.front().resource==f.composite,"Bloom bypassed the composed viewmodel");
         auto broken=plan;std::erase_if(broken.passes,[](const Pass& work){return work.id==PassId::reconstruction;});rejects("foreground before reconstruction",[&]{broken.validate();});
         broken=plan;++broken.frame.resources[f.viewmodel_color].width;rejects("foreground FSR output extent mismatch",[&]{broken.validate();});
     }
@@ -595,4 +646,4 @@ void environment_contracts(){
     auto ordinary=Fixture(rich(),4).plan();ordinary.validate();check(ordinary.frame.ibl_diffuse==none && ordinary.frame.ibl_specular==none && ordinary.frame.ibl_brdf==none,"Legacy graph acquired IBL roles");
 }
 }
-int main(){try{matrix();faults();products();motion_contracts();reconstruction_contracts();deferred_contracts();deferred_color_contracts();viewmodel_contracts();ambient_occlusion_contracts();masked_shadow_contracts();environment_contracts();std::cout<<"Production render schedule: "<<accepted<<" valid variants, "<<rejected<<" rejected contract mutations.\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}
+int main(){try{matrix();faults();products();motion_contracts();reconstruction_contracts();deferred_contracts();deferred_color_contracts();viewmodel_contracts();ambient_occlusion_contracts();masked_shadow_contracts();environment_contracts();bloom_contracts();std::cout<<"Production render schedule: "<<accepted<<" valid variants, "<<rejected<<" rejected contract mutations.\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}

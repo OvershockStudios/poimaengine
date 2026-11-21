@@ -1,0 +1,100 @@
+# Fixed-tick CPU particles
+
+The native [`poima::particles::System`](../include/poima/particles.hpp) advances
+temporary visual effects at 60 ticks per second. It takes emitter definitions,
+rigid poses and explicit bursts, and writes world-space instances into
+caller-owned memory. The headless test uses a moving source to show the
+difference between attached particles and a detached trail.
+
+## Run an emitter
+
+An owner registers an emitter with a nonzero ID, its seed and its initial pose.
+Set the source pose and queue any gameplay-triggered bursts before calling
+`step()` for the next tick. `write_instances()` emits live positions, velocities,
+stable particle IDs, emitter IDs, age, lifetime, size and linear RGBA. The output
+is in spawn order. The receiving renderer can associate an emitter ID with its
+own presentation resources.
+
+```cpp
+#include "poima/particles.hpp"
+#include <array>
+
+using namespace poima::particles;
+
+System particles({2, 64});
+EmitterConfig sparks;
+sparks.seed = 7;
+sparks.simulation_space = Space::World;
+sparks.velocity_m_s = {{-1, 2, -1}, {1, 4, 1}};
+sparks.acceleration_m_s2 = {0, -9.81, 0};
+sparks.lifetime_ticks = 36;
+sparks.size_m = 0.035f;
+sparks.linear_rgba = {4, 0.6f, 0.1f, 1};
+particles.add_emitter(1, sparks);
+particles.set_pose(1, {{2, 1.5, 0}});
+particles.burst(1, 12);
+particles.step();
+
+std::array<Instance, 64> storage;
+const auto live = particles.write_instances(storage);
+```
+
+## Spaces and tick order
+
+`spawn_space` chooses the axes for the spawn offset and initial velocity. Local
+axes use the emitter rotation at birth. World axes align with the world. Both
+use the current emitter position as the origin of the spawn offset. Positions,
+velocities and acceleration use metres, metres per second and metres per
+second squared. The pose is a translation and an `x, y, z, w` unit quaternion.
+
+`simulation_space` chooses whether particles follow the emitter's subsequent
+translation and rotation. Local particles integrate in emitter coordinates and
+project through the latest tick's pose. World particles integrate independently
+after spawning. Acceleration is expressed in simulation axes. Reported velocity
+describes particle motion within its simulation frame projected into world axes.
+
+Each step increments existing ages, expires particles at their lifetime, and
+updates the survivors with semi-implicit Euler (`v += a / 60`, then
+`p += v / 60`). It then applies queued poses and spawns age-zero particles.
+Pausing continuous emission keeps its fractional phase. Queued bursts still
+run and existing particles age. Emitters can drain this way before removal.
+Removing an emitter immediately retires its live particles and releases its
+slot. Queued bursts for that emitter retire with the slot.
+
+## Capacity and replay
+
+- One system supports up to 128 emitters and 65,536 live particles. The
+  constructor reserves its chosen capacities. A definition can set a lower live
+  limit for its own emitter.
+- Continuous emission uses an integer `particles_per_second` rate from 0 to
+  61,440 and retains its remainder across ticks. Up to 1,024 burst particles can
+  be queued per emitter per tick. Lifetime ranges from 1 to 36,000 ticks.
+- Authored pose, offset, velocity and acceleration components must be finite
+  and within ±10⁹. Each random range must be ordered. Size is positive and at
+  most 10⁹ metres. Linear RGB is in [0, 10⁹] and alpha is in [0, 1].
+- Existing particles keep their places when capacity is full. Spawns are
+  admitted in emitter slot order using each emitter's live limit and remaining
+  shared capacity. New emitters take the first free slot. Excess attempts are
+  counted as dropped and are not queued for a later tick.
+- Each emitter has a seeded SplitMix64 stream. Every spawn attempt occupies six
+  samples including dropped attempts. Reconstruct a system and submit the
+  same definitions, poses and emission actions in the same order for a repeatable
+  replay in the same build and floating-point environment.
+- `status()` reports the completed tick, configured capacities and counts.
+  `emitter_status()` reports per-emitter counts, its sampled pose and pending
+  emission. System counts satisfy `spawned = live + expired + removed`.
+  `write_instances()` rejects an undersized output before writing.
+
+## Headless check
+
+Compile and run the standalone native fixture from the repository root.
+
+```sh
+mkdir -p build
+c++ -std=c++20 -Iinclude src/particles.cpp tests/particles_native.cpp -o build/poima-particles-test
+build/poima-particles-test
+```
+
+The fixture checks both spawn axes against a rotating emitter, attached and
+detached trajectories, expiry, same-seed replay, random sequence continuity
+under overflow, capacity ordering, removal and invalid inputs.

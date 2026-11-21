@@ -1,11 +1,10 @@
-# Poima AI perception helpers
+# Poima AI gameplay helpers
 
-Optional compiled C# helpers for deterministic NPC sight. The package provides
-bounded sight cones, line-of-sight through the existing native `Raycast`
-service and explicit last-seen target memory. It is not an AI brain: games
-choose targets, sample points, thresholds, budgets, gaze and responses. Hearing,
-pathfinding, cover, squad tactics, behavior graphs and learned or generative
-models are separate later work; nothing here performs model inference.
+This optional compiled C# package provides [behavior trees](BEHAVIOR_TREE.md),
+bounded sight cones, line-of-sight through the native `Raycast` service and
+explicit last-seen target memory. The game chooses targets, sample points,
+budgets and responses. Behavior trees execute the game's authored conditions
+and actions in a fixed order.
 
 The native engine does not install this package for unrelated games. It adds no
 native ABI, service marker or state-field type.
@@ -125,10 +124,11 @@ physics numerics have their own scope.
 
 ## Use and verification
 
-Reference `Poima.Ai.csproj` from a trusted game project, or include
-`Perception.cs`. It requires the same .NET 10/C# 14 toolchain and Poima gameplay
-SDK as the game. The native overload calls only the existing baseline `Raycast`
-and `IsAlive` services.
+Reference `Poima.Ai.csproj` from a trusted game project, or include the package
+source files you use. It requires the same .NET 10/C# 14 toolchain and Poima
+gameplay SDK as the game. The native sight overload calls the baseline
+`Raycast` and `IsAlive` services. The behavior tree evaluator uses the supplied
+game callbacks.
 
 `tests/ai_perception` contains synthetic managed checks with scripted tapes and
 an independent analytic box model. They cover cone/range boundaries, frames,

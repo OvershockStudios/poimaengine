@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="$(PoimaAuthoringRoot)/build/Poima.Gameplay.props" Condition="'$(PoimaAuthoringRoot)' != ''" />
+  <Import Project="../../managed/Directory.Build.props" Condition="'$(PoimaAuthoringRoot)' == ''" />
+  <ItemGroup Condition="'$(PoimaAuthoringRoot)' == ''">
+    <ProjectReference Include="../../packages/fps/Poima.Fps.csproj" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(PoimaAuthoringRoot)' != '' and !Exists('Traversal.cs')">
+    <Compile Include="../../packages/fps/Traversal.cs" Link="Traversal.cs" />
+  </ItemGroup>
+</Project>

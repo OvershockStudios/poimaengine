@@ -69,7 +69,20 @@ struct IblSettings {
     bool enabled=false;
     float diffuse_intensity=1,specular_intensity=1;
 };
-struct LightingEnvironment { std::array<float,3> ambient{};float exposure=1;std::uint32_t shadow_resolution=1024;SkySettings sky;ShadowFilter shadow_filter=ShadowFilter::pcf3_point;std::optional<IblSettings> ibl; };
+struct BloomSettings {
+    float intensity=0;
+    float threshold=1;
+    float radius=8;
+};
+struct LightingEnvironment {
+    std::array<float,3> ambient{};
+    float exposure=1;
+    std::uint32_t shadow_resolution=1024;
+    SkySettings sky;
+    ShadowFilter shadow_filter=ShadowFilter::pcf3_point;
+    std::optional<IblSettings> ibl;
+    BloomSettings bloom;
+};
 struct SceneLight { std::string entity_id;Light light;std::array<double,3> position{},direction{0,0,-1}; };
 struct SceneLighting {
     std::vector<SceneLight> lights;

@@ -54,12 +54,16 @@ public sealed class CodexSession : IAgentSession
     }
 
     internal static Task<CodexSession> ConnectDraftAsync(string codexExecutable, string poimaExecutable,
-        string draftManifest, CancellationToken cancellation)
+        string draftManifest, CancellationToken cancellation, bool allowGameplaySourceEdits)
     {
         cancellation.ThrowIfCancellationRequested();
         var manifest = CodexDraftTarget.Validate(draftManifest);
-        return ConnectCoreAsync(codexExecutable, poimaExecutable, ["mcp", "--project", manifest, "--draft"],
-            Path.GetDirectoryName(manifest)!, Interaction.Draft, cancellation, allowPoimaEdits: true, disableShell: true);
+        string[] engineArguments = allowGameplaySourceEdits
+            ? ["mcp", "--project", manifest, "--draft", "--gameplay-source"]
+            : ["mcp", "--project", manifest, "--draft"];
+        return ConnectCoreAsync(codexExecutable, poimaExecutable, engineArguments,
+            Path.GetDirectoryName(manifest)!, Interaction.Draft, cancellation, allowPoimaEdits: true,
+            allowPoimaSourceEdits: allowGameplaySourceEdits, disableShell: true);
     }
 
     private static async Task<CodexSession> ConnectEndpointAsync(string codexExecutable, string poimaExecutable,
@@ -93,7 +97,11 @@ public sealed class CodexSession : IAgentSession
             "-c", "mcp_servers.poima.args=" + JsonSerializer.Serialize(engineArguments)
         };
         if (interaction == Interaction.Draft)
-            arguments.AddRange(["-c", "mcp_servers.poima.enabled_tools=[\"poima_discover\",\"poima_reference\",\"poima_call\"]"]);
+        {
+            var enabled = new List<string> { "poima_discover", "poima_reference", "poima_call" };
+            if (allowPoimaSourceEdits) enabled.Add("poima_source");
+            arguments.AddRange(["-c", "mcp_servers.poima.enabled_tools=" + JsonSerializer.Serialize(enabled)]);
+        }
         if (disableShell)
             arguments.AddRange([
                 "-c", "sandbox_mode=\"read-only\"",

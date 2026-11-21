@@ -59,7 +59,9 @@ public:
     // elements cannot activate. Transforms render normally; transformed or very
     // thin/partly occluded controls may lack a sampled point (hittable=false).
     std::optional<std::string> activate(const std::string& id);
-    std::optional<std::string> focus_next(bool reverse=false);
+    // Cycle through usable buttons in registration order. With reveal set,
+    // try to scroll an offscreen button into view before skipping it.
+    std::optional<std::string> focus_next(bool reverse=false,bool reveal=false);
     std::optional<std::string> activate_focused();
 };
 }

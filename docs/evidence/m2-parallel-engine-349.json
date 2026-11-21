@@ -1,0 +1,110 @@
+{
+  "engine_version": "0.0.349",
+  "sources_sha256": {
+    "desktop/Poima.AgentHost/CodexWorkerTool.cs": "87896cd29e44f0873d483bdd183f1605dc0161c4e622d8457ced95d1adaa998e",
+    "packages/ai/BehaviorTree.cs": "f8d1c474315e9fb90461555906a149475ca256a617e49ba2baaddfffad23b7ca",
+    "packages/fps/Traversal.cs": "10d8498312f31c4920fe50f23d9b831ccf349252f0f1988d03b17e7efbcd5aae",
+    "packages/weather/WeatherSchedule.cs": "a07decb26dd629a7ac3eb8ace3c349f01d553962ed2e4a04f6ca8d4c3248fb6b",
+    "scripts/project_post_effect.py": "14133830e139876bd56d03a25fcce8bce3813c1ebebb541a1d1e8abedc36012d",
+    "shaders/bloom.hlsl": "8277c637108a485c286f27061c0ee7548b17b53a5a5fbfeb61d39851b7640e9c",
+    "shaders/scene_output.hlsl": "c79c7ebeede637612dbd2295f7613a2c50301947b57de051a1ebe77602087606",
+    "src/audio_reflections.hpp": "3eb07494e32daf2d94b80e4f64b493b7bffefd54d80eb8a6267c0083aa64c14f",
+    "src/foliage.cpp": "ff317c6b46b1dab83a706aa838e818e7a2f6cdc42d4262a06ed9d8eed2ab95b4",
+    "src/input_profile.cpp": "e5a45eb5a0b8c6c686c1351816bf370ffdb99e1d013653ba402f2f6ef7ac16e2",
+    "src/particles.cpp": "90d288b99911c7749e55a4b836a347eb876f980b853e86b230b0bb0380879c0a",
+    "src/physical_rig.cpp": "c6f96c1a6eb73851449ced1691100c47599efa17d3174e9744174902160d191e",
+    "src/project_drafts.inc": "0db25353edeba671fcc5e0925eb57079342aed12b743357f2ffbd6a16339b73b",
+    "src/render_smoke.cpp": "7eaf4f48370e627155774ae32dccdfa4402df763609dc85a42a27c93bdae5811",
+    "src/shallow_water.cpp": "b4955c8fb9178dc3d96fc3ef006c6bad0261226b558e1dced694dd8effa7dd71",
+    "src/terrain.cpp": "01e624c6c4d6039fb4de0457528a8ee21e9a94b60b2fda94cee6abc311a4a8d1",
+    "src/ui_document.cpp": "1af588c036d65189e3a6ee42663ac31654690dfe0cbe44df24b05eb84f22e51b",
+    "src/world.cpp": "4e70aec0fc50fbe6dfe709c073e2276c93a74c418658f1e10da93b045818edd1",
+    "tests/project_post_effect_contract.py": "3fe262d119c1656618d6835ae64d33e9fc6c3aeff64b128785e1025190eed6fe"
+  },
+  "linux_game": {
+    "binary_sha256": "7fb99b8949c4afb79686c6d625900dfa2922369cd42ef8aaf108fe4274272bce",
+    "compiler": "GNU 16.2.0",
+    "architecture": "x86_64",
+    "junit_sha256": "08420d4d00dd73fa79699e200a044bc9ca86d38dcfe297a3297275c123d5d9ff",
+    "passed_suites": [
+      "audio_contract",
+      "audio_reflections_native",
+      "authoring_contract_identity",
+      "authoring_core_conformance",
+      "foliage_scatter_native",
+      "gamepad_contract",
+      "input_profile_contract",
+      "input_profile_native",
+      "mcp_contract",
+      "mcp_native",
+      "particles_native",
+      "physical_rig_json_native",
+      "project_draft_contract",
+      "render_schedule_native",
+      "runtime_physical_rig_native",
+      "shallow_water_native",
+      "terrain_native",
+      "ui_document_native",
+      "ui_presenter_native"
+    ],
+    "bloom_authoring": {
+      "accepted": 1,
+      "rejected_without_changes": 4,
+      "raw_rpc_sha256": "075d8d0ede2f01482f3e4d3219413493ce63fb35573530cb2df7365c51db17d2"
+    }
+  },
+  "linux_dotnet": {
+    "sdk": "10.0.404",
+    "agent_rpc_log_sha256": "74f7c58b6f53dff8db7adeff5c430384e49ea4157f01adabd139e363f9d369ae",
+    "weather_cycle_log_sha256": "38727f22b5a30d8f1d203a9141b4b79427eaba25d98a1c7cf33f0d2802e45709",
+    "behavior_tree_unit_checks": 92,
+    "behavior_tree_log_sha256": "303075fa9d8bad5b9f6ec9ac4fbffcde194d6115626099957561d3e1a40db5aa",
+    "behavior_tree_coreclr": {
+      "requests": 32,
+      "owners_closed_naturally": 2,
+      "matching_checkpoint_sha256": "6ed31b2bbc33ba885c35ed04930f8d1e068d5dc9e3aed000fd7f24237bf153ad",
+      "report_sha256": "107d2f30080f44e67ed4991cadff8f1d31ee446dd499e0fc8d42331bd04e99ea"
+    },
+    "fps_traversal_native_aot": {
+      "requests": 209,
+      "scenarios": [
+        "mantle",
+        "vault",
+        "empty",
+        "narrow",
+        "dynamic",
+        "ceiling",
+        "interrupted"
+      ],
+      "matched_ticks_after_fresh_save_load": 19,
+      "descriptor_sha256": "77cd459f2f89b6540e542721bab151df477e15dc38e19664d8d7f80c838ce9ce",
+      "report_sha256": "d00f2bfac1e09a9cd714ec9c5952cd763ef4d0027b3cc318a520c38a96913278"
+    }
+  },
+  "project_post_effect_offline": {
+    "host": "Linux x86_64",
+    "tests_passed": 5,
+    "dxc_release": "v1.8.2505.1",
+    "source_sha256": "f1a89987cbd85d7596f9c1601b39fe77eee8dfbb69a3f7419f113038b26623ae",
+    "artifact_sha256": "457ad18548e2de71d07add094043953eacf23f13a2ec5b45c6bca587be0425e0",
+    "spirv_sha256": "c2e1fc00c5cb9a8c62b4751d86a8b0ca9942b276f8077a19601e1c17afdfe36e",
+    "spirv_bytes": 1688,
+    "spirv_instructions": 89,
+    "test_log_sha256": "dbc2c44f6136d552b68a3095bc964096ad2bc039968b2f5c1654a44dc81a1330",
+    "scope": "Pinned compilation and generated-module profile checks. Native renderer dispatch and bundle admission remain open."
+  },
+  "bloom_shader_and_schedule": {
+    "dxc_release": "v1.8.2505.1",
+    "schedule_valid_graphs": 367,
+    "schedule_rejected_mutations": 829,
+    "windows_target_syntax_log_sha256": "d7d4ffabaf824e845a0fa1c976f88aab4a61f0cab2f411a70a6c2eae67ad0fd3",
+    "scope": "Shader compilation, default output shader byte parity, Windows-target renderer syntax, headless schedule and authoring checks. Windows native GPU output remains open."
+  },
+  "retained_failed_attempts": [
+    {
+      "stage": "integrated_native_build",
+      "reason": "Draft inspection compared native string and JSON objects. The retry extracts and compares the checkpoint string digest.",
+      "log_sha256": "18d0a690befcba415dcf5178a3dca5efb5845a7c2124a0d6d1ecdd60938bc2e5"
+    }
+  ]
+}

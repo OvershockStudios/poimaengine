@@ -22,6 +22,16 @@ __pycache__/
 /examples/weapon-actions/obj/
 /packages/fps/bin/
 /packages/fps/obj/
+/packages/ai/bin/
+/packages/ai/obj/
+/packages/weather/bin/
+/packages/weather/obj/
+/tests/ai_behavior_tree/bin/
+/tests/ai_behavior_tree/obj/
+/tests/fps_traversal_gameplay/bin/
+/tests/fps_traversal_gameplay/obj/
+/tests/WeatherCycle/bin/
+/tests/WeatherCycle/obj/
 /tests/FpsFeedback/bin/
 /tests/FpsFeedback/obj/
 /tests/WeaponActions/bin/

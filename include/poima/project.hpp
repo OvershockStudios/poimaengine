@@ -20,6 +20,7 @@ Reply adopt_project_gameplay(const std::string& manifest,const std::string& arti
 Reply build_project(const std::string& manifest,const std::string& output,const std::string& runtime_root);
 Reply checkpoint_project(const std::string& manifest,const std::string& output);
 Reply draft_project(const std::string& checkpoint,const std::string& output,const std::string& expected_base);
+Reply project_draft_changes(const std::string& checkpoint,const std::string& draft_manifest,const std::string& expected_base);
 Reply integrate_project_drafts(const std::string& checkpoint,const std::string& output,const std::string& request_json);
 Reply build_project_candidate(const std::string& manifest,const std::string& output,const std::string& runtime_root,
     const std::string& request);

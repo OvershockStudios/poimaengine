@@ -9,6 +9,7 @@
 #include <utility>
 #if POIMA_AUDIO
 #include <phonon.h>
+#include "audio_reflections.hpp"
 #endif
 namespace poima {
 bool audio_available() { return POIMA_AUDIO!=0; }
@@ -45,6 +46,7 @@ AudioReport observe_audio(const AudioSnapshot& s,std::uint32_t frames) {
     status(iplContextCreate(&context_settings,&context.value));
     Handle<IPLScene,iplSceneRelease> scene;IPLSceneSettings scene_settings{};scene_settings.type=IPL_SCENETYPE_DEFAULT;status(iplSceneCreate(context.value,&scene_settings,&scene.value));
     std::vector<IPLVector3> vertices;std::vector<IPLTriangle> triangles;std::vector<IPLint32> material_indices;std::vector<IPLMaterial> materials;
+    std::vector<audio_detail::ReflectionShape> reflection_shapes;
     constexpr std::array<std::array<float,3>,8> corners{{{-.5f,-.5f,-.5f},{.5f,-.5f,-.5f},{.5f,.5f,-.5f},{-.5f,.5f,-.5f},{-.5f,-.5f,.5f},{.5f,-.5f,.5f},{.5f,.5f,.5f},{-.5f,.5f,.5f}}};
     constexpr std::array<std::uint32_t,36> box{{0,2,1,0,3,2,4,5,6,4,6,7,0,1,5,0,5,4,3,7,6,3,6,2,0,4,7,0,7,3,1,2,6,1,6,5}};
     for(const auto& g:s.geometry) {
@@ -54,10 +56,17 @@ AudioReport observe_audio(const AudioSnapshot& s,std::uint32_t frames) {
         const auto vertex_count=g.mesh ? g.mesh->vertices.size() : corners.size();
         check(vertices.size()<=3*max_audio_triangles && vertex_count<=3*max_audio_triangles-vertices.size(),"Audio geometry vertex budget exceeded.");
         const auto first=static_cast<IPLint32>(vertices.size()),material=static_cast<IPLint32>(materials.size());
+        const auto first_triangle=triangles.size();
         auto append=[&](const std::array<float,3>& p) { std::array<double,3> q{};for(std::size_t row=0;row<3;++row)q[row]=g.world[12+row]+g.world[row]*p[0]+g.world[4+row]*p[1]+g.world[8+row]*p[2];vertices.push_back(vector(q)); };
         if(g.mesh)for(const auto& v:g.mesh->vertices)append(v.position);else for(const auto& v:corners)append(v);
         const std::span<const std::uint32_t> indices=g.mesh ? std::span<const std::uint32_t>(g.mesh->indices) : std::span<const std::uint32_t>(box);
         for(std::size_t i=0;i<count;i+=3) { IPLTriangle t{};for(std::size_t k=0;k<3;++k) { check(indices[i+k]<vertices.size()-static_cast<std::size_t>(first),"Invalid acoustic triangle index.");t.indices[k]=first+static_cast<IPLint32>(indices[i+k]); }triangles.push_back(t);material_indices.push_back(material); }
+        if(s.early_reflections && !report.reflection_budget_exceeded) {
+            report.reflection_budget_exceeded=triangles.size()>audio_detail::max_reflection_triangles;
+            if(report.reflection_budget_exceeded)reflection_shapes.clear();
+            else if(count!=0)reflection_shapes.push_back(audio_detail::reflection_shape(g,first_triangle,triangles.size(),
+                std::span<const IPLVector3>(vertices).subspan(static_cast<std::size_t>(first))));
+        }
         IPLMaterial m{};std::copy(g.material.absorption.begin(),g.material.absorption.end(),m.absorption);std::copy(g.material.transmission.begin(),g.material.transmission.end(),m.transmission);m.scattering=g.material.scattering;materials.push_back(m);
     }
     Handle<IPLStaticMesh,iplStaticMeshRelease> mesh;
@@ -95,20 +104,23 @@ AudioReport observe_audio(const AudioSnapshot& s,std::uint32_t frames) {
         coefficient(path.distance_gain);coefficient(path.occlusion);
         for(float v:out.direct.airAbsorption)coefficient(v);
         for(float v:out.direct.transmission)coefficient(v);
-        std::copy_n(out.direct.airAbsorption,3,path.air.begin());std::copy_n(out.direct.transmission,3,path.transmission.begin());report.paths.push_back(path);
+        std::copy_n(out.direct.airAbsorption,3,path.air.begin());std::copy_n(out.direct.transmission,3,path.transmission.begin());
+        if(!reflection_shapes.empty())path.reflection=audio_detail::first_reflection(path,s.listener,reflection_shapes,vertices,triangles);
+        report.paths.push_back(std::move(path));
     }
+    if(s.early_reflections)report.simulation_ms=ms(mark);
     if(frames==0)return report;
     mark=Clock::now();IPLAudioSettings audio_settings{audio_rate,audio_block};Handle<IPLHRTF,iplHRTFRelease> hrtf;
     IPLHRTFSettings hrtf_settings{};hrtf_settings.type=IPL_HRTFTYPE_DEFAULT;hrtf_settings.volume=1;status(audio_detail::create_hrtf(context.value,&audio_settings,&hrtf_settings,&hrtf.value));
     report.samples.resize(std::size_t(frames)*2);
-    for(std::size_t i=0;i<s.sources.size();++i) {
+    const auto mix_path=[&](const AudioEmitter& emitter,std::uint32_t delay,const std::array<double,3>& direction,
+                            IPLDirectEffectParams params) {
         Handle<IPLDirectEffect,iplDirectEffectRelease> filter;IPLDirectEffectSettings filter_settings{1};status(iplDirectEffectCreate(context.value,&audio_settings,&filter_settings,&filter.value));
         Handle<IPLBinauralEffect,iplBinauralEffectRelease> spatial;IPLBinauralEffectSettings spatial_settings{hrtf.value};status(iplBinauralEffectCreate(context.value,&audio_settings,&spatial_settings,&spatial.value));
         std::array<float,audio_block> mono{},filtered{},left{},right{};float* input_channels[]{mono.data()};float* filtered_channels[]{filtered.data()};float* output_channels[]{left.data(),right.data()};
         IPLAudioBuffer input{1,audio_block,input_channels},middle{1,audio_block,filtered_channels},output{2,audio_block,output_channels};
-        auto params=direct[i];params.flags=static_cast<IPLDirectEffectFlags>(IPL_DIRECTEFFECTFLAGS_APPLYDISTANCEATTENUATION|IPL_DIRECTEFFECTFLAGS_APPLYAIRABSORPTION|IPL_DIRECTEFFECTFLAGS_APPLYOCCLUSION|IPL_DIRECTEFFECTFLAGS_APPLYTRANSMISSION);params.transmissionType=IPL_TRANSMISSIONTYPE_FREQDEPENDENT;
-        IPLBinauralEffectParams spatial_params{};spatial_params.direction=vector(report.paths[i].direction);spatial_params.interpolation=IPL_HRTFINTERPOLATION_BILINEAR;spatial_params.spatialBlend=1;spatial_params.hrtf=hrtf.value;
-        const auto& emitter=s.sources[i].emitter;const auto& clip=emitter.clip->samples;const auto delay=report.paths[i].propagation_delay_samples;
+        IPLBinauralEffectParams spatial_params{};spatial_params.direction=vector(direction);spatial_params.interpolation=IPL_HRTFINTERPOLATION_BILINEAR;spatial_params.spatialBlend=1;spatial_params.hrtf=hrtf.value;
+        const auto& clip=emitter.clip->samples;
         for(std::uint32_t first=0;first<frames;first+=audio_block) {
             for(std::uint32_t k=0;k<audio_block;++k) { const auto sample=first+k;mono[k]=sample>=delay && (emitter.loop || sample-delay<clip.size()) ? clip[(sample-delay)%clip.size()]*emitter.gain : 0; }
             iplDirectEffectApply(filter.value,&params,&input,&middle);iplBinauralEffectApply(spatial.value,&spatial_params,&middle,&output);
@@ -117,6 +129,15 @@ AudioReport observe_audio(const AudioSnapshot& s,std::uint32_t frames) {
             // until this voice's scheduled arrival, independently of DSP noise.
             for(std::uint32_t k=0;k<audio_block && first+k<frames;++k)if(first+k>=delay) { report.samples[2*(first+k)]+=left[k];report.samples[2*(first+k)+1]+=right[k]; }
         }
+    };
+    for(std::size_t i=0;i<s.sources.size();++i) {
+        auto params=direct[i];params.flags=static_cast<IPLDirectEffectFlags>(IPL_DIRECTEFFECTFLAGS_APPLYDISTANCEATTENUATION|IPL_DIRECTEFFECTFLAGS_APPLYAIRABSORPTION|IPL_DIRECTEFFECTFLAGS_APPLYOCCLUSION|IPL_DIRECTEFFECTFLAGS_APPLYTRANSMISSION);
+        params.transmissionType=IPL_TRANSMISSIONTYPE_FREQDEPENDENT;
+        const auto& path=report.paths[i];
+        const auto& emitter=s.sources[i].emitter;
+        mix_path(emitter,path.propagation_delay_samples,path.direction,params);
+        if(path.reflection)mix_path(emitter,path.reflection->propagation_delay_samples,path.reflection->direction,
+                                    audio_detail::reflection_filter(*path.reflection));
     }
     report.dsp_ms=ms(mark);double squares=0;
     for(float sample:report.samples) { check(std::isfinite(sample),"Steam Audio produced nonfinite output.");report.peak=std::max(report.peak,std::abs(double(sample)));squares+=double(sample)*sample;if(std::abs(sample)>1)++report.over_range_samples; }

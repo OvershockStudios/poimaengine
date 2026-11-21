@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "poima/ui_presenter.hpp"
 #include "poima/ui_document.hpp"
+#include "poima/assets.hpp"
 #include <span>
 #include <algorithm>
 #include <cmath>
@@ -56,6 +57,67 @@ void authored_scroll_tests() {
     const auto first=control(p,stable_id('2'));rectangle(first.clip,{20,20,200,120});check(!p.input({UiInputKind::pointer_down,40,125}).consumed,"Scroller captured input outside its clipped extent.");p.input({UiInputKind::pointer_up,40,125});
     for(int i=0;i<5;++i)p.input({UiInputKind::focus_next});p.frame(model.presentation(),320,180);check(control(p,last).hittable,"Visual-order focus failed to reveal clipped authored control.");
     check(p.input({UiInputKind::pointer_wheel,40,40,-100}).consumed,"Authored scroller did not own wheel input.");p.frame(model.presentation(),320,180);check(control(p,stable_id('2')).hittable && !control(p,last).hittable,"Authored scroller did not apply bounded wheel motion/clipping.");
+}
+void focus_accessibility_tests() {
+    using namespace poima;using namespace poima::ui;
+    const auto clipping=stable_id('1'),clipped=stable_id('2'),covered=stable_id('3'),second=stable_id('4'),
+        first=stable_id('5'),cover=stable_id('6');
+    Definition definition{{clipping,"","Clip",Kind::panel},{clipped,clipping,"Clipped",Kind::button,"Clipped","clipped"},
+        {covered,"","Covered",Kind::button,"Covered","covered"},{second,"","Image button",Kind::button,"","second"},
+        {first,"","First",Kind::button,"First","first"},{cover,"","Cover",Kind::panel}};
+    const auto absolute=[](double x,double y,double width,double height,std::int32_t order=0) {
+        Layout layout;layout.position=Position::absolute;layout.left=Length{x};layout.top=Length{y};
+        layout.width=Length{width};layout.height=Length{height};layout.order=order;return layout;
+    };
+    definition[0].layout=absolute(20,10,100,35);
+    definition[0].layout->overflow=Overflow::hidden;
+    definition[1].layout=absolute(0,50,100,35);
+    definition[2].layout=absolute(20,60,100,35);
+    definition[3].layout=absolute(20,160,100,35,2);
+    definition[4].layout=absolute(20,110,100,35,1);
+    definition[5].layout=absolute(20,60,100,35,3);
+    Style authored;authored.background_color="#aa3322";authored.border_width=2;
+    authored.border_color="#552233";authored.border_radius=8;
+    authored.focus=ColorState{std::nullopt,"#335544","#665577"};definition[4].style=authored;
+    Style artwork;artwork.image=Image{std::string(64,'7'),ImageFit::stretch,
+        std::make_shared<const TextureImage>(TextureImage{true,{{1,1,{20,190,70,255}}}}),std::nullopt,std::nullopt};
+    definition[3].style=artwork;
+    Model model(definition);UiPresenter p;const auto projection=model.presentation();
+    const auto before=p.frame(projection,320,220);const auto before_first=control(p,first);
+    const std::array<std::uint8_t,4> dark{16,20,24,255},light{255,255,255,255};
+    check(!control(p,clipped).hittable && !control(p,covered).hittable,"Focus fixture fails to clip or cover its unusable buttons.");
+    check(!color(*before,dark),"An unfocused authored button displays a focus ring.");
+    p.input({UiInputKind::pointer_move,40,120});
+    check(!color(*p.frame(projection,320,220),dark),"Pointer hover displays the focus ring.");
+
+    check(p.input({UiInputKind::focus_next}).focused==first,"Focus did not skip clipped and covered controls in authored order.");
+    const auto first_frame=p.frame(projection,320,220);const auto first_control=control(p,first);
+    rectangle(first_control.bounds,before_first.bounds);
+    check(first_control.focused && color(*first_frame,dark) && color(*first_frame,light) &&
+        color(*first_frame,{51,85,68,255}) && color(*first_frame,{102,85,119,255}),
+        "The focus ring or authored focus colors did not render.");
+    check(p.input({UiInputKind::focus_previous}).focused==second,"Reverse focus did not wrap in authored order.");
+    const auto image_frame=p.frame(projection,320,220);
+    bool image_drawn=false,ring_over_image=false;
+    const std::vector<std::uint8_t> pixels{20,190,70,255};
+    for(const auto& draw:image_frame->draws) {
+        if(draw.texture!=ui_white_texture) {
+            const auto& texture=image_frame->textures.at(draw.texture);
+            if(texture.width==1 && texture.height==1 && texture.rgba==pixels)image_drawn=true;
+        } else if(image_drawn) {
+            for(std::uint32_t i=0;i<draw.index_count;++i)
+                if(image_frame->vertices.at(image_frame->indices.at(draw.first_index+i)).color==dark)ring_over_image=true;
+        }
+    }
+    check(control(p,second).focused && image_drawn && ring_over_image,"Focusing the image button lost its art or focus ring.");
+    p.input({UiInputKind::accept_down});check(p.input({UiInputKind::accept_up}).activated==second,"The focused image button did not activate.");
+    p.input({UiInputKind::pointer_down,40,120});
+    check(p.input({UiInputKind::pointer_up,40,120}).activated==first,"The focus ring changed the pointer target.");
+    p.input({UiInputKind::pointer_down,40,20});
+    check(!p.input({UiInputKind::pointer_up,40,20}).activated,"Panel padding activated a button.");
+    check(control(p,first).focused && color(*p.frame(projection,320,220),dark),
+        "Clicking a panel made retained button focus invisible.");
+    p.reset_input();check(!color(*p.frame(projection,320,220),dark),"Input reset left a focus ring visible.");
 }
 void mixed_root_tests() {
     using namespace poima;using namespace poima::ui;const auto canvas=stable_id('1'),authored=stable_id('2'),legacy=stable_id('8'),old_button=stable_id('9');
@@ -235,6 +297,7 @@ int main() {try {
     layout_observation_tests();
     authored_layout_tests();
     authored_scroll_tests();
+    focus_accessibility_tests();
     mixed_root_tests();
     document_input_tests();
     input_tests();

@@ -29,8 +29,45 @@ whole profile, including legacy and named bindings.
 Names are ASCII `[a-z][a-z0-9_.-]{0,63}`: 1–64 characters, starting with a lower
 case letter. A profile permits at most 32 names and zero to four controls per
 name. Existing files cannot change format in place; create a new destination
-for an explicitly converted profile. Contexts, chords and live rebinding menus
-remain separate work.
+for an explicitly converted profile. Contexts and live rebinding menus remain
+separate work.
+
+### Bind a keyboard chord
+
+Add a `chords` object alongside `actions` in the complete profile. Each
+chord row augments a declared named action. This example binds **Reload** to
+either mouse button 4 or Left Ctrl + R and **Journal** to Left Ctrl + Left Shift + J.
+
+```json
+{
+  "actions": {
+    "journal": [],
+    "reload": ["mouse.4"]
+  },
+  "chords": {
+    "journal": [["key.j", "key.left_ctrl", "key.left_shift"]],
+    "reload": [["key.left_ctrl", "key.r"]]
+  }
+}
+```
+
+A chord requires one non-modifier key and one to three distinct physical
+Ctrl, Shift, Alt or Meta keys. A modifier can appear in several chords.
+Each non-modifier key belongs to at most one chord. Keys used in chords are
+reserved for those chords within the profile, and reserved recovery keys
+such as Escape and Tab remain unavailable. Count both single controls and
+chords toward the four-alternative limit for each named action.
+
+All members must be held. Pressing the final member activates the chord in
+any press order. Releasing any member deactivates it. A named action emits
+its aggregate edges as the first alternative becomes held and the last
+alternative is released. Focus clear discards pending edges and all held keys.
+Test the authored binding with ordinary keyboard events in `input.evaluate`.
+
+The `chords` object selects `poima.input.v4`, including when empty. Write a
+converted profile to a new destination and keep the original during migration.
+Canonical profile JSON sorts the keys inside each chord, so a retry with the
+same keys in a different order matches its original receipt.
 
 ## Send semantic input
 
