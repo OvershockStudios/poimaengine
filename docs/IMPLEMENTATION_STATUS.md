@@ -1,8 +1,18 @@
 # Implementation status
 
-Updated 2026-11-20 for **0.0.334**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-20 for **0.0.335**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.335 lets the Windows creator
+[check selected worker scenes together](PROJECT_RECOVERY.md#check-selected-scenes-in-the-creator).
+Packaged Windows automation with scripted Codex peers combined two drafts,
+passed both saved checks, and retained that build through a later failed
+selection. The passing standalone player presented Vulkan frames, and the
+creator opened a separate editable copy. The original project retained its own
+results and playable build after reopening. Lead-managed task assignment and
+live-provider qualification of this combined workflow remain open.
+[Results](evidence/m2-creator-combined-335.json)
 
 Version 0.0.334 [integrates reviewed worker scenes by hash](PROJECT_RECOVERY.md#create-worker-drafts-and-stage-an-integration).
 The CLI compares each scene with its checkpoint, carries over cooked

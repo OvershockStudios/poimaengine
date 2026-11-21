@@ -1,0 +1,135 @@
+{
+  "engine_version": "0.0.335",
+  "scope": "Exact precompiled Windows x64 preview on the development laptop. Windows UI Automation uses scripted Codex protocol peers and actual native project and game owners. The combined checks assert that the selected entities appear after two simulation ticks.",
+  "native_draft_contract": {
+    "tests_passed": 6,
+    "native_calls": 115,
+    "binary_sha256": "7e2726a1f8fe58898915008cb6af03c85cdf5263c9ddbd3f0b785b3e2ff40c21",
+    "report_sha256": "7ec0ed760fc8525b6e65b84ae8288f6fd184fcfcbd1d0ec61cb62a9f75ca9599"
+  },
+  "windows_creator": {
+    "package_sha256": "53aa3e3af1d6400113024fc148a4fed01380148fb1011c3851ae312d8dd54dde",
+    "editor_sha256": "8e08a4166fb933cb2710c827348a804dbd9694a1c7a161d7bf8e8d538888fbf9",
+    "frontend_sha256": "5919357b65b5c45717e6646df2ad004dd382cbd00f7e7f54e8a282dcfd2a6aa2",
+    "cli_sha256": "7e2726a1f8fe58898915008cb6af03c85cdf5263c9ddbd3f0b785b3e2ff40c21",
+    "bridge_sha256": "ac527c86d2d7a8f30c6a310d3fc223073cab9fb2da14619a75b9818697f29ec5",
+    "codex_review_fixture_sha256": "a86cbf0b22236e86c438defd9c7649351cee24eac0fb0f6bb21b12860d8bc3b4",
+    "reproducer": {
+      "script": "tests/creator_workspace.ps1",
+      "script_sha256": "545ce4718ee8309db66a9c5f8874d9c5f4ba47dc9d2b0f4aadd16777fd674260",
+      "switches": [
+        "WithBuildWorkers",
+        "WithCombinedDrafts",
+        "WithPlaytestResults"
+      ]
+    },
+    "cancelled_selection_created_no_candidate": true,
+    "active_project_unchanged": true,
+    "worker_reports_left_unsent": true,
+    "creator_joined_workers_before_exit": true,
+    "passing_combination": {
+      "revision": 4,
+      "project_id": "38a985b0eea8cd200c6c72f17e541e27",
+      "bundle_sha256": "5799bae514dd3cd0881dc28ebc915d67d9928aac4154295f42e1459bc3d3e176",
+      "suite_sha256": "2fad5e78ab03f4503bd437b525dd54c9c8701296fd4261329b75ce9a4115e96d",
+      "groups_passed": 2,
+      "groups_total": 2,
+      "passed": true,
+      "verified_groups": [
+        {
+          "name": "Draft lantern",
+          "passed": true
+        },
+        {
+          "name": "Draft quay bench",
+          "passed": true
+        }
+      ],
+      "report_sha256": "9faaea5311ae4e7dbda45b7b8614f6167f5dbfdb46006699172848a6cc906596"
+    },
+    "later_failed_combination": {
+      "revision": 4,
+      "project_id": "3bd5d721db27b84ed45eedc3c56c64f4",
+      "bundle_sha256": "6d078811934a407fe59a0ec9d397e16908c1c73b4bcb053e326d10f1b8138118",
+      "suite_sha256": "2fad5e78ab03f4503bd437b525dd54c9c8701296fd4261329b75ce9a4115e96d",
+      "groups_passed": 1,
+      "groups_total": 2,
+      "passed": false,
+      "verified_groups": [
+        {
+          "name": "Draft lantern",
+          "passed": true
+        },
+        {
+          "name": "Draft quay bench",
+          "passed": false
+        }
+      ],
+      "report_sha256": "6cc432c29435800e08a3ee5196799231d53362a2b8fb765e3c25daf37fab5b33"
+    },
+    "retained_player_observation": {
+      "focused": false,
+      "frames_presented": 1,
+      "paused": true,
+      "tick": 0
+    },
+    "retained_player_close": {
+      "event_type": "verified_play_closed",
+      "revision": 4,
+      "bundle_sha256": "5799bae514dd3cd0881dc28ebc915d67d9928aac4154295f42e1459bc3d3e176",
+      "tick": 0,
+      "frames_presented": 8,
+      "stop_reason": "window_closed"
+    },
+    "editable_copy": {
+      "project_id": "bb8a49e3e3e1cc796c8db49c92ddf988",
+      "closed_exit_code": 0
+    },
+    "original_project_history_regression": {
+      "failed_report_sha256": "84c6b496df10ae2c8e9c0257d0a262139bc1101616396e43343103fa606491ea",
+      "failed_revision": 2,
+      "playable_bundle_sha256": "cfe6616d7537d9ccf50ca84c2dc6fd4b95ba2dd8ff27de0909f2758efb2bb66c",
+      "playable_revision": 1,
+      "report_changed_rejected": true,
+      "verified_player_exit": 0,
+      "recovered_revision": 1
+    },
+    "report_sha256": "5b3b53a24d0f59075aeced837785376666542ef8aedab90bb84527c4d6a05b3b"
+  },
+  "relocated_combination": {
+    "source_unavailable": true,
+    "bundle_unchanged": true,
+    "bundle_files": 54,
+    "bundle_sha256": "5799bae514dd3cd0881dc28ebc915d67d9928aac4154295f42e1459bc3d3e176",
+    "suite_sha256": "2fad5e78ab03f4503bd437b525dd54c9c8701296fd4261329b75ce9a4115e96d",
+    "groups_passed": 2,
+    "check_tick": 2,
+    "report_sha256": "9faaea5311ae4e7dbda45b7b8614f6167f5dbfdb46006699172848a6cc906596"
+  },
+  "earlier_automation_runs": [
+    {
+      "passed": false,
+      "stage": "Reopening original project after completing the combined workflow",
+      "cause": "The script used the default project selection after recovery added a second project to the launcher.",
+      "combined_playback": {
+        "event_type": "verified_play_closed",
+        "revision": 4,
+        "bundle_sha256": "3d9f0402e8a327c34a8c1a96a2b1a258a9a99eeb1717798a5463b1a2978d470f",
+        "tick": 29,
+        "frames_presented": 57,
+        "stop_reason": "window_closed"
+      },
+      "report_sha256": "d51d4c22d300ea66c9ea3c7ae87ce6558ecc04daed4d13aa2a51b67b89bb1a2c"
+    },
+    {
+      "passed": false,
+      "stage": "Observing the passing standalone player",
+      "cause": "The script expected running simulation ticks while Windows left focus elsewhere. The player paused at tick 0 and continued presenting frames.",
+      "report_sha256": "05b55612acbc0094c99d41403a0d5c514d2308d3224574b340e70e674d096ef5"
+    }
+  ],
+  "remaining": [
+    "Lead-managed worker assignment and review",
+    "Live-provider qualification of this combined creator flow"
+  ]
+}

@@ -12,6 +12,7 @@
 # -CodexQuestions uses the local AgentRpc contract executable as a scripted app-server.
 # -CodexReviews uses the AgentRpc contract executable to test two revision-pinned reviewers.
 # -WithBuildWorkers adds two editable drafts using the same peer and the native engine.
+# -WithCombinedDrafts checks selected worker scenes and plays the retained combined export.
 # -CodexToolApproval exercises decline and approve once with the installed Codex.
 # -WithExport requires a packaged sample runtime and plays a relocated export.
 # -WithPlaytestResults checks passing and failed reports, reopening and recovery.
@@ -37,6 +38,7 @@ param(
     [string]$CodexQuestions,
     [string]$CodexReviews,
     [switch]$WithBuildWorkers,
+    [switch]$WithCombinedDrafts,
     [switch]$CodexToolApproval,
     [switch]$WithExport,
     [switch]$WithPlaytestResults,
@@ -57,6 +59,9 @@ if ($InstallAntigravity -and $Antigravity) { throw 'Run the installation and sup
 if ($VerifiedPlayChat -and $VerifiedPlayWithCodex) { throw 'Run the scripted and live playback checks separately.' }
 if ($ObserveVerifiedPlayback -and !$VerifiedPlayWithCodex) { throw 'Use -VerifiedPlayWithCodex for the live observation workflow.' }
 if ($WithBuildWorkers -and !$CodexReviews) { throw 'Supply -CodexReviews for the build worker scenario.' }
+if ($WithCombinedDrafts -and (!$WithBuildWorkers -or $WithoutVulkan)) {
+    throw 'Run combined drafts with build workers, a packaged sample runtime and Windows Vulkan.'
+}
 if ($CodexReviews -and ($WithCodex -or $CodexQuestions -or $CodexBrief -or $CodexToolApproval -or
     $VerifiedPlayChat -or $VerifiedPlayWithCodex -or $CodexAssetRead)) {
     throw 'Run the specialist review fixture separately from the other Codex scenarios.'
@@ -127,6 +132,7 @@ New-Item -ItemType Directory -Path $projects | Out-Null
 $owner = $null
 $window = $null
 $verifiedPlayer = $null
+$combinedEditor = $null
 $report = [ordered]@{
     passed = $false
     input = 'Windows UI Automation and an owned WM_CLOSE message'
@@ -144,6 +150,7 @@ $report = [ordered]@{
     codex_questions_requested = ![string]::IsNullOrWhiteSpace($CodexQuestions)
     codex_reviews_requested = ![string]::IsNullOrWhiteSpace($CodexReviews)
     build_workers_requested = [bool]$WithBuildWorkers
+    combined_drafts_requested = [bool]$WithCombinedDrafts
     export_requested = [bool]$WithExport
     playtest_results_requested = [bool]$WithPlaytestResults
     share_zip_requested = [bool]$WithShareZip
@@ -673,14 +680,27 @@ function Get-AuthoredFileHashes {
 
 function Exercise-BuildWorkers($Project, $LeadProcess) {
     $checks = $report.checks.codex_build_workers = [ordered]@{ base_revision = $Project.revision }
+    $ids = @('{0:x32}' -f 0xda01; '{0:x32}' -f 0xda02)
+    $names = @('Draft lantern', 'Draft quay bench')
+    if ($WithCombinedDrafts) {
+        $groups = for ($i = 0; $i -lt $ids.Count; ++$i) {
+            @{ name = $names[$i]; sequence = @(
+                @{ step = @{ ticks = 2 } }
+                @{ expect = @{
+                    label = $names[$i] + ' appears in the game'; method = 'runtime.entity'
+                    params = @{ id = $ids[$i] }; path = '/id'; equals = $ids[$i]
+                } }
+            ) }
+        }
+        $suite = @{ format = 'poima.game-verification'; version = 1; groups = @($groups) } | ConvertTo-Json -Depth 10
+        [IO.File]::WriteAllText((Join-Path (Split-Path -Parent $manifest) 'game.verify.json'), $suite)
+    }
     $before = @(Get-AuthoredFileHashes) -join "`n"
     $originalDraft = 'Keep this build plan.'
     Set-ControlText 'Agent prompt' $originalDraft
     $leadTranscript = Get-ControlText 'Agent transcript'
     $leadTurnCount = @(Read-ReviewTrace | Where-Object { $_.pid -eq $LeadProcess -and $_.kind -ceq 'turn/start' }).Count
     $revision = $Project.revision + 1
-    $ids = @('{0:x32}' -f 0xda01; '{0:x32}' -f 0xda02)
-    $names = @('Draft lantern', 'Draft quay bench')
     $lanternTask = 'Draft a lantern.'
     $benchTask = 'Draft a quay bench.'
     $holdTask = 'Hold draft turn.'
@@ -785,6 +805,12 @@ function Exercise-BuildWorkers($Project, $LeadProcess) {
     if (!(Get-Process -Id $secondPid -ErrorAction SilentlyContinue)) { throw 'Stopping one worker retired its peer.' }
     $checks.stop_retired_only_one_worker = $true
 
+    if ($WithCombinedDrafts) {
+        Wait-ForCreatorChatTab 'Worker 1' -Select
+        Start-BuildWorkerTask 'Check the draft.'
+        Wait-ForBuildWorkerReport 'Draft is ready to review.'
+        Exercise-CombinedDrafts (Split-Path -Parent (Split-Path -Parent $base)) $ids $Project
+    }
     Wait-ForCreatorChatTab 'Worker 1' -Select
     Start-BuildWorkerTask $holdTask
     Wait-ForHeldBuildWorker
@@ -803,6 +829,119 @@ function Exercise-BuildWorkers($Project, $LeadProcess) {
     $checks.project_unchanged = $true
     $checks.restarted_worker_pid = $restarted.pid
     $checks.second_worker_pid = $secondPid
+}
+
+function Select-CombinedDrafts([string[]]$Workers) {
+    $creator = $window
+    Invoke-Control 'Review worker scenes'
+    $window = Wait-For 'worker scene review' { Find-OwnedDialog $creator 'Review worker scenes' }
+    if (Find-Control 'Check combined game' -Enabled) { throw 'An empty worker selection was accepted.' }
+    if (!$Workers) {
+        Invoke-Control 'Cancel'
+        return
+    }
+    foreach ($worker in $Workers) {
+        $choice = Wait-For "Include $worker" { Find-Control "Include $worker" -Enabled }
+        Select-QuestionChoice $choice
+    }
+    Invoke-Control 'Check combined game'
+}
+
+function Exercise-CombinedDrafts($Group, $Ids, $Project) {
+    Select-CombinedDrafts @()
+    $null = Wait-For 'the cancelled review to close' { Find-Control 'Review worker scenes' -Enabled }
+    if ((Get-ChildItem -LiteralPath $Group -Directory -Filter 'combined-*') -or
+        (Find-Control 'Play combined game' -Enabled)) { throw 'Cancelled review produced an export.' }
+
+    $attempts = @()
+    foreach ($passed in @($true, $false)) {
+        $workers = if ($passed) { @('Worker 1', 'Worker 2') } else { @('Worker 1') }
+        Select-CombinedDrafts $workers
+        $count = if ($passed) { 1 } else { 2 }
+        $reports = Wait-For "the completed combined game check $count" {
+            if (Find-Control 'Combined game checks' -Enabled) {
+                $folders = @(Get-ChildItem -LiteralPath $Group -Directory -Filter 'combined-*')
+                $files = @($folders | ForEach-Object {
+                    Get-ChildItem -File -Path (Join-Path $_.FullName '.poima-history\*\*\checks.json')
+                })
+                if ($files.Count -eq $count) { ,$files }
+            }
+        } 120
+        $reportPath = @($reports | Where-Object { $_.FullName -notin $attempts })[0].FullName
+        $attempts += $reportPath
+        $result = Get-Content -LiteralPath $reportPath -Raw | ConvertFrom-Json
+        if ($result.passed -ne $passed -or $result.groups_passed -ne $workers.Count -or $result.groups_total -ne 2) {
+            throw 'The exact selected worker scenes did not produce the expected gameplay checks.'
+        }
+        $creator = $window
+        Invoke-Control 'Combined game checks'
+        $dialog = Wait-For 'combined game check results' { Find-OwnedDialog $creator 'Playtest results' }
+        $window = $dialog
+        try {
+            $label = if ($passed) { 'Draft quay bench (passed)' } else { 'Draft quay bench (failed)' }
+            $null = Wait-For $label { Find-Control $label }
+            Invoke-Control 'Done'
+        }
+        finally { $window = $creator }
+        if ($passed) {
+            $candidate = $result
+            $game = Join-Path (Split-Path -Parent $reportPath) 'game'
+        }
+    }
+
+    $runtime = Join-Path $game 'runtime\bin\poima.exe'
+    Invoke-Control 'Play combined game'
+    $script:verifiedPlayer = Wait-For 'the passing combined player after the later failed build' {
+        Get-Process -Name poima -ErrorAction SilentlyContinue | Where-Object {
+            $_.Path -ieq $runtime -and $_.MainWindowHandle -ne [IntPtr]::Zero
+        } | Select-Object -First 1
+    } 45
+    $null = $verifiedPlayer.Handle
+    $observation = Wait-For 'native combined playback presentation' {
+        $playback = (Verified-PlayRpc 'desktop.verified.inspect' @{}).playback
+        if ($playback.bundle_sha256 -ceq $candidate.bundle_sha256 -and $playback.observation.frames_presented -ge 1 -and
+            ($playback.observation.tick -ge 1 -or (!$playback.observation.focused -and $playback.observation.paused))) {
+            $playback.observation
+        }
+    } 20
+    # This automation does not take foreground focus from another application.
+    $played = Close-VerifiedPlayer $candidate 'create' $(if ($observation.tick -ge 1) { 1 } else { 0 })
+
+    Invoke-Control 'Open combined project as copy'
+    $copy = Wait-For 'the editable combined project' {
+        $folders = @(Get-ChildItem -LiteralPath $projects -Directory -Filter "$name - Combined *")
+        if ($folders.Count -eq 1) {
+            $path = Join-Path $folders[0].FullName 'project.poimaproject'
+            if (Test-Path -LiteralPath $path -PathType Leaf) { $path }
+        }
+    } 45
+    $script:combinedEditor = Wait-For 'the open combined editor' {
+        $running = Get-CimInstance Win32_Process -Filter "Name = 'Poima.Editor.exe'" |
+            Where-Object { $_.CommandLine -and $_.CommandLine.Contains($copy) } | Select-Object -First 1
+        if ($running) {
+            $child = Get-Process -Id $running.ProcessId -ErrorAction SilentlyContinue
+            if ($child -and $child.MainWindowHandle -ne [IntPtr]::Zero) { $child }
+        }
+    } 45
+    $null = $combinedEditor.Handle
+    $opened = (& $cli project inspect $copy | ConvertFrom-Json).result
+    $scene = Get-Content -LiteralPath (Join-Path (Split-Path -Parent $copy) $opened.entry.world) -Raw | ConvertFrom-Json
+    if ($opened.project_id -in @($Project.project_id, $candidate.project_id) -or $opened.revision -ne $candidate.revision -or
+        ($Ids | Where-Object { !$scene.entities.PSObject.Properties[$_] })) { throw 'The editable copy differs from the passing combined scene.' }
+    if (![CreatorTestWindow]::PostMessage($combinedEditor.MainWindowHandle, 0x0010, [IntPtr]::Zero, [IntPtr]::Zero) -or
+        !$combinedEditor.WaitForExit(20000) -or $combinedEditor.ExitCode -ne 0) {
+        throw 'The editable copy did not close normally.'
+    }
+    $report.checks.combined_drafts = [ordered]@{
+        cancelled_without_output = $true
+        passing_report = $attempts[0]
+        failed_report = $attempts[1]
+        passing_bundle = $candidate.bundle_sha256
+        observation = $observation
+        playback = $played
+        editable_project = $opened.project_id
+        editable_close_exit_code = $combinedEditor.ExitCode
+    }
 }
 
 function Exercise-Acp($Project, $Provider, $Setting, $Executable, $Key) {
@@ -1385,7 +1524,7 @@ function Start-VerifiedPlayer($Version) {
     }
 }
 
-function Close-VerifiedPlayer($Version, $Phase) {
+function Close-VerifiedPlayer($Version, $Phase, [int]$MinimumTick = 1) {
     if (![CreatorTestWindow]::PostMessage($verifiedPlayer.MainWindowHandle, 0x0010, [IntPtr]::Zero, [IntPtr]::Zero) -or
         !$verifiedPlayer.WaitForExit(20000) -or $verifiedPlayer.ExitCode -ne 0) {
         throw 'The selected standalone player failed to close normally.'
@@ -1397,7 +1536,7 @@ function Close-VerifiedPlayer($Version, $Phase) {
             $played = $line | ConvertFrom-Json
             if ($played.bundle_sha256 -cne $Version.bundle_sha256) { continue }
             if ($played.revision -ne $Version.revision -or $played.frames_presented -lt 1 -or
-                $played.tick -lt 1 -or $played.stop_reason -cne 'window_closed') {
+                $played.tick -lt $MinimumTick -or $played.stop_reason -cne 'window_closed') {
                 throw 'The closed player did not report native presentation for the selected revision.'
             }
             return $played
@@ -2000,6 +2139,7 @@ try {
 
     $owner = Start-Launcher 'reopen'
     $window = Wait-For 'the reopened launcher' { Find-Window 'Poima' }
+    if ($WithCombinedDrafts) { Select-ComboValue 'Local projects' $name }
     Invoke-Control 'Open selected project'
     $window = Wait-For 'the reopened creator' { Find-Window "$name*Poima Creator" }
     if ($InstallAntigravity) {
@@ -2116,6 +2256,13 @@ finally {
     if ($verifiedPlayer -and !$verifiedPlayer.HasExited) {
         $report.forced_player_cleanup = $true
         Stop-Process -Id $verifiedPlayer.Id
+    }
+    if ($combinedEditor -and !$combinedEditor.HasExited) {
+        $null = [CreatorTestWindow]::PostMessage($combinedEditor.MainWindowHandle, 0x0010, [IntPtr]::Zero, [IntPtr]::Zero)
+        if (!$combinedEditor.WaitForExit(10000)) {
+            $report.forced_combined_editor_cleanup = $true
+            Stop-Process -Id $combinedEditor.Id
+        }
     }
     if ($owner -and !$owner.HasExited) {
         $report.forced_cleanup = $true

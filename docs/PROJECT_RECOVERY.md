@@ -130,6 +130,28 @@ settings, assets, and gameplay files. It has its own project ID and history.
 Open the returned `manifest` in an independent owner using a unique endpoint
 name. The source checkpoint can be used before any exported build has passed.
 
+### Check selected scenes in the creator
+
+Save a [playtest suite](GAME_VERIFICATION.md) before adding the first build
+worker. The worker round starts from that saved checkpoint. Once workers
+finish, choose **Review worker scenes** to read their reports and select which
+scene revisions to combine. **Check combined game** builds the selection in a
+separate folder and runs the suite captured with the round. Later edits in the
+main project stay in that project.
+
+Use **Combined game checks** to inspect the outcome. **Play combined game**
+runs the most recent passing combination from this workspace, even after
+a later selection fails. **Open combined project as copy** opens an editable
+copy of the verified source in a new creator window. It gets its own project
+identity. The original project's build history and chat stay with the original
+workspace. Combined checks and exports are stored alongside their worker
+drafts under `.poima-drafts`. The buttons are scoped to the open worker round.
+
+The creator combines scene changes and their cooked dependencies. Use the CLI
+when the integration also needs selected source files.
+
+### Select scene and source changes by hash
+
 The lead reviews up to ten drafts and uses each draft's `world_sha256` from
 `project inspect` to select its scene. Set `files` to the other files to carry
 over, with their reviewed hashes and the same relative paths in the candidate.

@@ -40,6 +40,10 @@ internal sealed class CreatorWindow : Window
     private readonly Button importAssets = new() { Content = "Import assets…" };
     private readonly Button reviewSpecialists = new() { Content = "Specialist reviews" };
     private readonly Button addBuildWorker = new() { Content = "Add build worker" };
+    private readonly Button reviewDrafts = new() { Content = "Review worker scenes", IsVisible = false };
+    private readonly Button showCombined = new() { Content = "Combined game checks", IsVisible = false };
+    private readonly Button playCombined = new() { Content = "Play combined game", IsVisible = false };
+    private readonly Button openCombined = new() { Content = "Open combined project as copy", IsVisible = false };
     private readonly TextBlock status = new() { TextWrapping = TextWrapping.Wrap };
     private readonly TextBlock verifiedPlayStatus = new() { TextWrapping = TextWrapping.Wrap, IsVisible = false };
     private readonly Border viewport = new() { Background = EditorTheme.Brush("#190F14"), ClipToBounds = true };
@@ -55,6 +59,7 @@ internal sealed class CreatorWindow : Window
     private VerifiedPlayback? verifiedPlayback;
     private string? sharedZip, shareNotice;
     private PlaytestAttempt? latestAttempt;
+    private CreatorBuildTeam.CombinedCheck? combinedCheck, verifiedCombined;
     private string workDescription = "";
     private long exportedRevision;
     private Task? agentShutdown;
@@ -63,6 +68,7 @@ internal sealed class CreatorWindow : Window
         ItemsPanel = new FuncTemplate<Panel?>(() => new WrapPanel { ItemSpacing = 4, LineSpacing = 2 })
     };
     private readonly Grid conversationArea = new() { RowDefinitions = new RowDefinitions("*,Auto") };
+    private readonly StackPanel conversationActions = new();
     private CreatorReviews? specialistReviews;
     private CreatorBuildTeam? buildTeam;
     private CancellationTokenSource? checking, checkingVerifiedPlay;
@@ -128,6 +134,10 @@ internal sealed class CreatorWindow : Window
         importAssets.Click += async (_, _) => await ImportAssetsAsync();
         reviewSpecialists.Click += (_, _) => OpenSpecialistReviews();
         addBuildWorker.Click += async (_, _) => await AddBuildWorkerAsync();
+        reviewDrafts.Click += async (_, _) => await ReviewDraftsAsync();
+        showCombined.Click += async (_, _) => await ShowCombinedChecksAsync();
+        playCombined.Click += async (_, _) => await PlayCombinedAsync();
+        openCombined.Click += async (_, _) => await OpenCombinedAsync();
         projectSettings.Click += async (_, _) => await OpenProjectSettingsAsync();
         AutomationProperties.SetName(projectSettings, "Project settings");
         ToolTip.SetTip(projectSettings, "Project settings");
@@ -249,6 +259,9 @@ internal sealed class CreatorWindow : Window
                 team.Footer.IsVisible = conversations.SelectedItem is TabItem selected && team.Tabs.Contains(selected);
         };
         conversationArea.Children.Add(conversations);
+        conversationActions.Children.Add(reviewDrafts);
+        Grid.SetRow(conversationActions, 1);
+        conversationArea.Children.Add(conversationActions);
         panels.Children.Add(conversationArea);
         var preview = new Grid { RowDefinitions = new RowDefinitions("Auto,*,Auto"), RowSpacing = 14, Margin = new Thickness(16) };
         var bar = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto") };
@@ -281,6 +294,7 @@ internal sealed class CreatorWindow : Window
         sharing.Children.Add(showSharedZip);
         result.Children.Add(sharing);
         result.Children.Add(new WrapPanel { ItemSpacing = 8, LineSpacing = 8, Children = { showChecks, buildHistory } });
+        result.Children.Add(new WrapPanel { ItemSpacing = 8, LineSpacing = 8, Children = { showCombined, playCombined, openCombined } });
         result.Children.Add(restore);
         result.Children.Add(openRecovered);
         Grid.SetRow(result, 2); preview.Children.Add(result);
@@ -599,9 +613,17 @@ internal sealed class CreatorWindow : Window
     private async Task PlayVerifiedAsync()
     {
         if (!playVerified.IsEnabled || exportedFolder is null || verifiedBundleHash is null) return;
-        var manifest = Path.GetFullPath(Path.Combine(exportedFolder, "game.json"));
-        var bundleHash = verifiedBundleHash;
-        var revision = exportedRevision;
+        await PlayVerifiedAsync(project.ProjectId, HistoryDirectory(), Path.GetFullPath(Path.Combine(exportedFolder, "game.json")),
+            verifiedBundleHash, exportedRevision);
+    }
+
+    private Task PlayCombinedAsync() => playCombined.IsEnabled && verifiedCombined is { } combined
+        ? PlayVerifiedAsync(combined.ProjectId, combined.History, combined.GameManifest, combined.Attempt.Build, combined.Attempt.Revision)
+        : Task.CompletedTask;
+
+    private async Task PlayVerifiedAsync(string projectId, string history, string manifest, string bundleHash, long revision)
+    {
+        manifest = Path.GetFullPath(manifest);
         var playback = verifiedPlayback = new VerifiedPlayback(bundleHash, revision);
         verifiedPlayActive = true;
         verifiedPlayStatus.Text = $"Checking verified revision {revision}…";
@@ -614,7 +636,8 @@ internal sealed class CreatorWindow : Window
                 checkingVerifiedPlay = cancellation;
                 try
                 {
-                    var latest = (await ReadHistory(cancellation.Token)).GetProperty("latest");
+                    var latest = (await ProjectFiles.Command(cancellation.Token, "history", history,
+                        "--project-id", projectId)).GetProperty("latest");
                     if (latest.ValueKind != JsonValueKind.Object ||
                         latest.GetProperty("bundle_sha256").GetString() != bundleHash ||
                         !string.Equals(Path.GetFullPath(latest.GetProperty("game_manifest").GetString()!), manifest, StringComparison.OrdinalIgnoreCase))
@@ -626,7 +649,7 @@ internal sealed class CreatorWindow : Window
             var local = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
             if (!Path.IsPathFullyQualified(local))
                 throw new InvalidOperationException("Poima could not locate local storage for playtest saves.");
-            var saves = Directory.CreateDirectory(Path.Combine(local, "Poima", "Playtests", project.ProjectId, bundleHash)).FullName;
+            var saves = Directory.CreateDirectory(Path.Combine(local, "Poima", "Playtests", projectId, bundleHash)).FullName;
             verifiedPlayStatus.Text = $"Verified revision {revision} is running in a separate window.";
             UpdateControls();
             var result = await ProjectFiles.PlayExport(manifest, saves, options.Gpu, options.Samples, playback);
@@ -831,6 +854,12 @@ internal sealed class CreatorWindow : Window
         importAssets.IsEnabled = play.IsEnabled;
         reviewSpecialists.IsEnabled = ready && (specialistReviews is not null || chat.ReviewClient is not null);
         addBuildWorker.IsEnabled = ready && chat.ReviewClient is not null && (buildTeam?.CanAdd ?? true);
+        reviewDrafts.IsVisible = buildTeam is not null && export.IsVisible;
+        reviewDrafts.IsEnabled = play.IsEnabled && buildTeam?.CanReview == true;
+        showCombined.IsVisible = combinedCheck is not null;
+        showCombined.IsEnabled = ready;
+        playCombined.IsVisible = openCombined.IsVisible = verifiedCombined is not null;
+        playCombined.IsEnabled = openCombined.IsEnabled = play.IsEnabled;
         setupBuilds.IsEnabled = play.IsEnabled;
         chat.IsEnabled = !closing && !closeRequested && !exporting;
         playVerified.IsVisible = verifiedBundleHash is not null;
@@ -879,6 +908,64 @@ internal sealed class CreatorWindow : Window
         UpdateControls();
     }
 
+    private Task ReviewDraftsAsync()
+    {
+        if (!reviewDrafts.IsEnabled || buildTeam is not { } team) return Task.CompletedTask;
+        return ProjectWork("Loading worker scenes…", async () =>
+        {
+            using var cancellation = new CancellationTokenSource();
+            checking = cancellation;
+            var drafts = await team.ReviewAsync(cancellation.Token);
+            if (closeRequested) return;
+            if (drafts.Length == 0) throw new InvalidOperationException("Wait for a worker to finish its draft.");
+            var selected = await new CreatorDraftReviewWindow(team.BaseRevision, drafts)
+                .ShowDialog<CreatorBuildTeam.ReviewedDraft[]?>(this);
+            if (closeRequested || selected is not { Length: > 0 }) return;
+            workDescription = "Combining the selected scenes…";
+            UpdateControls();
+            var result = await team.CombineAsync(selected, progress =>
+            {
+                workDescription = progress;
+                UpdateControls();
+            }, cancellation.Token);
+            combinedCheck = result;
+            if (result.Attempt.Retained) verifiedCombined = result;
+            error = "Combined game. " + result.Attempt.Summary +
+                (!result.Attempt.Passed && verifiedCombined is not null ? " The previous combined game is still playable." : "");
+        });
+    }
+
+    private async Task ShowCombinedChecksAsync()
+    {
+        if (!showCombined.IsEnabled || combinedCheck is not { } combined) return;
+        try
+        {
+            using var report = await combined.Attempt.ReadReportAsync();
+            if (!showCombined.IsEnabled || combinedCheck != combined) return;
+            await new PlaytestResultsWindow(combined.Attempt, report.RootElement,
+                verifiedCombined?.Attempt.Build, verifiedCombined?.Attempt.Revision ?? 0).ShowDialog(this);
+        }
+        catch (Exception failure) { error = failure.Message; UpdateControls(); }
+    }
+
+    private Task OpenCombinedAsync()
+    {
+        if (!openCombined.IsEnabled || verifiedCombined is not { } combined) return Task.CompletedTask;
+        return ProjectWork("Opening a copy of the verified combined project…", async () =>
+        {
+            var name = Path.GetFileName(project.Root);
+            if (name.Length > 140) name = "Poima";
+            var output = Path.Combine(ProjectParent(), $"{name} - Combined {Guid.NewGuid().ToString("N")[..8]}");
+            var recovered = await ProjectFiles.Command("recover", combined.Checkpoint,
+                "--output", output, "--expected-snapshot-sha256", combined.Snapshot);
+            if (closeRequested) return;
+            var manifest = Path.GetFullPath(recovered.GetProperty("restored_manifest").GetString()!);
+            using var process = Process.Start(CreatorStart(manifest)) ??
+                throw new InvalidOperationException("Poima could not open the combined project.");
+            shareNotice = "Opened the verified combined project as an editable copy.";
+        });
+    }
+
     private void OpenSpecialistReviews()
     {
         if (specialistReviews is not null) { conversations.SelectedItem = specialistReviews.Tabs[0]; return; }
@@ -892,8 +979,7 @@ internal sealed class CreatorWindow : Window
                 return true;
             });
             foreach (var tab in specialistReviews.Tabs) conversations.Items.Add(tab);
-            Grid.SetRow(specialistReviews.Footer, 1);
-            conversationArea.Children.Add(specialistReviews.Footer);
+            conversationActions.Children.Insert(0, specialistReviews.Footer);
             conversations.SelectedItem = specialistReviews.Tabs[0];
         }
         catch (Exception failure) { specialistReviews = null; error = failure.Message; UpdateControls(); }
