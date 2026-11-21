@@ -206,7 +206,8 @@ Json parse_suite(std::string_view bytes) {
             require(!check.empty() && check.size()<=96,"Expectation labels must be 1 to 96 bytes.");
             const auto method=expect.at("method").get<std::string>();
             static const std::set<std::string_view> observers={"runtime.inspect","runtime.entity","runtime.gameplay.inspect",
-                "runtime.ui.inspect","runtime.component.get","runtime.raycast","runtime.water.inspect","runtime.snow.inspect","runtime.particles.inspect"};
+                "runtime.ui.inspect","runtime.component.get","runtime.raycast","runtime.water.inspect","runtime.snow.inspect",
+                "runtime.wetness.inspect","runtime.particles.inspect"};
             require(observers.contains(method),"Unsupported verification observation: "+method);
             if(expect.contains("params")) {
                 const auto& params=expect.at("params");
@@ -286,7 +287,7 @@ Json evaluate_group(const GameDefinition& game,const Json& group) {
             const auto method=expect.at("method").get<std::string>();
             params["session_id"]=session;
             if(method!="runtime.inspect")params["tick"]=current.tick;
-            if(method=="runtime.snow.inspect" && !params.contains("structure_revision"))
+            if((method=="runtime.snow.inspect" || method=="runtime.wetness.inspect") && !params.contains("structure_revision"))
                 params["structure_revision"]=current.structure_revision;
             const auto observed=call(world,method,std::move(params));
             const Json::json_pointer pointer(expect.at("path").get<std::string>());

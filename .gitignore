@@ -97,6 +97,8 @@ __pycache__/
 /tests/managed_textured_surface_mark_gameplay/obj/
 /tests/managed_timed_surface_mark_gameplay/bin/
 /tests/managed_timed_surface_mark_gameplay/obj/
+/tests/managed_wetness_gameplay/bin/
+/tests/managed_wetness_gameplay/obj/
 
 /examples/projectile-range/bin/
 /examples/projectile-range/obj/

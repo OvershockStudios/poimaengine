@@ -131,6 +131,15 @@ int main(){try{
     for(unsigned bytes:{176u,192u,208u,216u,224u,232u,256u,264u,272u,288u,296u,303u,305u}){auto wrong=root;wrong["services_bytes"]=bytes;rejected(wrong.dump());}
     auto duplicate_root=root;duplicate_root["features"].push_back("animation_root_motion_v1");rejected(duplicate_root.dump());
     auto unnamed_root=root;unnamed_root["features"]=Json::array({"baseline_v7"});rejected(unnamed_root.dump());
+    auto wetness=baseline;wetness["services_bytes"]=576;wetness["features"].push_back("surface_wetness_v1");
+    parsed=poima::parse_gameplay_service_contract(wetness.dump());
+    check(parsed.services_bytes==576 && parsed.features.size()==2,"Independent surface wetness contract rejected.");
+    for(unsigned bytes:{568u,575u,577u}){auto wrong=wetness;wrong["services_bytes"]=bytes;rejected(wrong.dump());}
+    auto unnamed_wetness=wetness;unnamed_wetness["features"]=Json::array({"baseline_v7","surface_mark_timed_v4"});rejected(unnamed_wetness.dump());
+    auto combined_wetness=wetness;combined_wetness["features"].push_back("surface_mark_timed_v4");
+    check(poima::parse_gameplay_service_contract(combined_wetness.dump()).features.size()==3,
+        "Wetness and timed surface mark combination rejected.");
+    offer=actual;offer.services_bytes=575;offer_rejected(offer);
     for(const char* field:{"call_version","call_bytes","services_version","services_bytes"}){
         for(const Json& value:{Json(true),Json(-1),Json(1.5),Json(4294967296ULL),Json("192"),Json(nullptr)}){auto bad=baseline;bad[field]=value;rejected(bad.dump());}
         auto bad=baseline;bad.erase(field);rejected(bad.dump());

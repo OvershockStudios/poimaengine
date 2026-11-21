@@ -10,6 +10,11 @@ The development compatibility baseline is services epoch 7 with a 176-byte prefi
 
 The preference tail preserves all earlier layouts and uses three copied, bounded callbacks at offsets 232/240/248. Reads use the native owner's committed configuration and cached observations; staged mutations publish only after the complete callback/native boundary succeeds. It adds no settings storage or gameplay-save format. See [compiled settings](COMPILED_PLAYER_SETTINGS.md) for wire sizes, lifecycle and task instructions.
 
+`ISurfaceWetnessGame` requests the independent 576-byte
+`surface_wetness_v1` service. Its callback at byte 568 copies each submitted
+batch before `Update` returns. It uses the same committed rain doses, shelter
+and saved film as the CLI. See [shelter-aware wetness](SURFACE_WETNESS.md).
+
 ## Publish
 
 For an external project, use the binary SDK and prebuilt tools in an

@@ -847,7 +847,8 @@
         constexpr std::array reads{"runtime.status","runtime.inspect","runtime.observe","runtime.entity","runtime.pose.compare","runtime.pose.joints","runtime.pose.clearance","runtime.surface.measure","runtime.attachment.inspect","runtime.attachment.outcomes","runtime.lighting",
             "runtime.raycast","runtime.capsule_cast","runtime.hit_test","runtime.ik","runtime.physical_rig","runtime.physical_animation","runtime.physical_recovery","runtime.controller_handoff","runtime.procedural_pose","runtime.grounding","runtime.root_motion","runtime.camera_pose","runtime.camera_lens","runtime.character_stance","runtime.components","runtime.component.get","runtime.component.query","runtime.material.inspect","runtime.texture.inspect","runtime.gameplay.inspect","runtime.gameplay.metrics","runtime.gameplay.memory",
             "runtime.template.get","runtime.template.query","runtime.instance","runtime.ui.inspect","runtime.audio.inspect","runtime.audio.voices",
-            "runtime.save.status","runtime.save.result","runtime.water.inspect","runtime.snow.inspect","runtime.particles.inspect","runtime.surface_marks.inspect"};
+            "runtime.save.status","runtime.save.result","runtime.water.inspect","runtime.snow.inspect","runtime.wetness.inspect",
+            "runtime.particles.inspect","runtime.surface_marks.inspect"};
         return std::find(reads.begin(),reads.end(),method)==reads.end();
     }
     void guard_player_request(const std::string& method) const {

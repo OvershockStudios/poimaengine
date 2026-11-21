@@ -51,6 +51,7 @@ Json ground_truth(const SceneSnapshot& scene,unsigned sequence){
         {"layers",layers},{"background",clear_radiance},{"exposure",scene.lighting.environment.exposure},{"captures",Json::object()},{"observations",Json::object()}};
 }
 #include "reconstruction_mark_reactivity.inc"
+#include "reconstruction_wetness_reactivity.inc"
 #include "surface_mark_relief_profile.inc"
 #include "reconstruction_snow_motion.inc"
 }
@@ -59,6 +60,10 @@ int main(int argc,char** argv){Json evidence={{"passed",false},{"quality_qualifi
         const std::string_view requested_task=argc>=4 ? argv[3] : "";
         if(requested_task=="--surface-mark-reactivity" || requested_task=="--surface-mark-relief-reactivity") {
             run_surface_mark_reactivity(argc,argv,evidence,requested_task=="--surface-mark-relief-reactivity");
+            std::cout<<evidence.dump(2)<<'\n';return 0;
+        }
+        if(requested_task=="--surface-wetness-reactivity") {
+            run_surface_wetness_reactivity(argc,argv,evidence);
             std::cout<<evidence.dump(2)<<'\n';return 0;
         }
         if(requested_task=="--surface-mark-relief-profile") {

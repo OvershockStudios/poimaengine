@@ -163,6 +163,11 @@ struct SceneSurfaceMark {
 
     bool operator==(const SceneSurfaceMark&) const=default;
 };
+struct SceneWetness {
+    float base_scale=1, roughness_scale=1;
+
+    bool operator==(const SceneWetness&) const=default;
+};
 struct SceneObject {
     std::string entity_id;
     Matrix4 world;
@@ -183,6 +188,8 @@ struct SceneObject {
     std::vector<SceneSurfaceMark> surface_marks{};
     // Fixed-topology terrain whose current and preceding positions belong to frame slots.
     bool mutable_geometry=false;
+    // Linear factors applied to the drawable's base tint and roughness.
+    std::optional<SceneWetness> wetness{};
 };
 struct SceneViewmodel {
     SceneLens lens;

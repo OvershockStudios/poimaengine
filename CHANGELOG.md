@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.370
+
+- Accumulate and dry saved surface wetness from rain and measured shelter. CLI and compiled gameplay submit fixed game-clock doses to the same material state.
+
 ## 0.0.369
 
 - Add an optional asymmetric sole for physical snow impressions. Each pending impression retains its planted heading through save and load.

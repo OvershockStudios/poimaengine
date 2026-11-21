@@ -15,6 +15,7 @@
 #include "poima/particles.hpp"
 #include "poima/water_region_definition.hpp"
 #include "poima/snow_definition.hpp"
+#include "poima/surface_wetness.hpp"
 #include <map>
 #include <memory>
 #include <optional>
@@ -452,6 +453,7 @@ struct RuntimeEntityDefinition {
     std::optional<CameraDrawBinding> camera_draw;
     std::optional<RuntimeParticleEmitter> particle_emitter;
     std::optional<RuntimeFootprintSurface> footprint_surface;
+    std::optional<wetness::Profile> surface_wetness;
 };
 inline constexpr std::size_t max_runtime_spawn_templates=256;
 inline constexpr std::size_t max_runtime_template_payload_bytes=2*1024*1024;
@@ -505,6 +507,7 @@ void validate_runtime_animation(const RuntimeDefinition& definition);
 void validate_runtime_mesh_colliders(const RuntimeDefinition& definition);
 void validate_runtime_hit_regions(const RuntimeDefinition& definition);
 void validate_runtime_footprint_surfaces(const RuntimeDefinition& definition);
+void validate_runtime_surface_wetness(const RuntimeDefinition& definition);
 // Portable frozen graph validation; omission preserves legacy admission.
 void validate_runtime_camera_draw(const RuntimeDefinition& definition);
 // Partition a detached generic snapshot once, after named camera/lens and all
@@ -759,7 +762,8 @@ public:
         const std::vector<RuntimeCameraPoseCommand>& camera_poses={},
         const std::vector<PhysicalRigCommand>& physical_rigs={},
         std::span<const RuntimeSurfaceMarkCommand> surface_marks={},
-        const std::optional<RuntimeSnowStamp>& snow_stamp={});
+        const std::optional<RuntimeSnowStamp>& snow_stamp={},
+        const std::optional<wetness::Dose>& wetness_dose={});
     std::span<const RuntimeSurfaceMark> surface_marks() const;
     std::optional<RuntimeSurfaceMarkLifecycle> surface_mark_lifecycle() const;
     std::optional<RuntimeCharacterStanceState> character_stance(const std::string& id) const;
@@ -809,6 +813,8 @@ public:
     const snow::Region* snow_region() const noexcept;
     const snow::State* snow_state() const noexcept;
     const snow::FootReleaseState* snow_foot_releases() const noexcept;
+    const wetness::State* wetness_state() const noexcept;
+    const wetness::Profile* wetness_profile(const std::string& id) const noexcept;
     RuntimeParticleObservation particle_observation() const;
     // The serialized owner installs a fresh epoch and a ledger that outlives
     // this runtime. Direct runtimes start with saving disabled. Pending intents

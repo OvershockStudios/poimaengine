@@ -80,6 +80,7 @@ void policy() {
     std::erase(old_attachment_host.features,std::string(surface_mark_direction_feature));
     std::erase(old_attachment_host.features,std::string(surface_mark_texture_feature));
     std::erase(old_attachment_host.features,std::string(surface_mark_timed_feature));
+    std::erase(old_attachment_host.features,std::string(surface_wetness_feature));
     std::erase(old_attachment_host.features,std::string(item_attachment_feature));
     std::erase(old_attachment_host.features,std::string(item_attachment_contact_feature));
     std::erase(old_attachment_host.features,std::string(item_attachment_surface_feature));
@@ -105,6 +106,7 @@ void policy() {
     std::erase(missing_burst.features,std::string(surface_mark_direction_feature));
     std::erase(missing_burst.features,std::string(surface_mark_texture_feature));
     std::erase(missing_burst.features,std::string(surface_mark_timed_feature));
+    std::erase(missing_burst.features,std::string(surface_wetness_feature));
     check(compatibility_error(attachment,missing_burst).empty() && !compatibility_error(burst,missing_burst).empty(),
         "Previous attachment runtime compatibility changed.");
     auto short_burst=burst;short_burst.services_bytes=item_attachment_services_bytes;
@@ -121,6 +123,7 @@ void policy() {
     std::erase(missing_mark.features,std::string(surface_mark_direction_feature));
     std::erase(missing_mark.features,std::string(surface_mark_texture_feature));
     std::erase(missing_mark.features,std::string(surface_mark_timed_feature));
+    std::erase(missing_mark.features,std::string(surface_wetness_feature));
     check(compatibility_error(burst,missing_mark).empty() && !compatibility_error(mark,missing_mark).empty(),
         "Previous particle host compatibility changed.");
     auto short_mark=mark;short_mark.services_bytes=particle_services_bytes;
@@ -136,6 +139,7 @@ void policy() {
     std::erase(previous_mark_host.features,std::string(surface_mark_direction_feature));
     std::erase(previous_mark_host.features,std::string(surface_mark_texture_feature));
     std::erase(previous_mark_host.features,std::string(surface_mark_timed_feature));
+    std::erase(previous_mark_host.features,std::string(surface_wetness_feature));
     check(compatibility_error(mark,previous_mark_host).empty() && !compatibility_error(directional,previous_mark_host).empty(),
         "The 544-byte host lost V1 support or granted directional placement.");
     auto opaque_direction_host=previous_mark_host;
@@ -161,6 +165,7 @@ void policy() {
     previous_direction_host.services_bytes=surface_mark_direction_services_bytes;
     std::erase(previous_direction_host.features,std::string(surface_mark_texture_feature));
     std::erase(previous_direction_host.features,std::string(surface_mark_timed_feature));
+    std::erase(previous_direction_host.features,std::string(surface_wetness_feature));
     check(compatibility_error(mixed_direction,previous_direction_host).empty() &&
         !compatibility_error(textured,previous_direction_host).empty(),"The 552-byte host lost directional support or granted textured placement.");
     auto opaque_texture_host=previous_direction_host;
@@ -168,6 +173,7 @@ void policy() {
     check(!compatibility_error(textured,opaque_texture_host).empty(),"Opaque allocation granted textured placement.");
     auto short_texture_host=capable;
     short_texture_host.services_bytes=559;
+    std::erase(short_texture_host.features,std::string(surface_wetness_feature));
     check(!compatibility_error(baseline,short_texture_host).empty(),"Short allocation advertised textured placement.");
     auto unnamed_texture=mixed_direction;
     unnamed_texture.services_bytes=surface_mark_texture_services_bytes;
@@ -191,6 +197,7 @@ void policy() {
     auto previous_texture_host=capable;
     previous_texture_host.services_bytes=surface_mark_texture_services_bytes;
     std::erase(previous_texture_host.features,std::string(surface_mark_timed_feature));
+    std::erase(previous_texture_host.features,std::string(surface_wetness_feature));
     check(compatibility_error(textured,previous_texture_host).empty() &&
         !compatibility_error(timed,previous_texture_host).empty(),"The 560-byte host lost textured support or granted timed placement.");
     auto opaque_timed_host=previous_texture_host;
@@ -198,6 +205,7 @@ void policy() {
     check(!compatibility_error(timed,opaque_timed_host).empty(),"Opaque allocation granted timed placement.");
     auto short_timed_host=capable;
     short_timed_host.services_bytes=surface_mark_timed_services_bytes-1;
+    std::erase(short_timed_host.features,std::string(surface_wetness_feature));
     check(!compatibility_error(baseline,short_timed_host).empty(),"Short allocation advertised timed placement.");
     auto unnamed_timed=textured;
     unnamed_timed.services_bytes=surface_mark_timed_services_bytes;
@@ -214,6 +222,29 @@ void policy() {
             check(!compatibility_error(combined,capable).empty(),"Timed placement accepted a noncanonical prefix.");
         }
     }
+    auto wetness=baseline;
+    wetness.services_bytes=surface_wetness_services_bytes;
+    wetness.features.push_back(surface_wetness_feature);
+    check(compatibility_error(wetness,capable).empty() && compatibility_error(wetness,wetness).empty(),
+        "Wetness requires an unrelated optional service.");
+    auto previous_timed_host=capable;
+    previous_timed_host.services_bytes=surface_mark_timed_services_bytes;
+    std::erase(previous_timed_host.features,std::string(surface_wetness_feature));
+    check(compatibility_error(timed,previous_timed_host).empty() && !compatibility_error(wetness,previous_timed_host).empty(),
+        "The 568-byte host lost timed-mark support or granted surface wetness.");
+    auto opaque_wetness_host=previous_timed_host;
+    opaque_wetness_host.services_bytes=surface_wetness_services_bytes;
+    check(!compatibility_error(wetness,opaque_wetness_host).empty(),"Opaque allocation granted surface wetness.");
+    for(const auto wrong_extent:{568u,575u,577u}) {
+        auto invalid=wetness;invalid.services_bytes=wrong_extent;
+        check(!compatibility_error(invalid,capable).empty(),"Wetness accepted a noncanonical required prefix.");
+    }
+    auto short_wetness_host=capable;
+    short_wetness_host.services_bytes=surface_wetness_services_bytes-1;
+    check(!compatibility_error(baseline,short_wetness_host).empty(),"A short allocation advertised surface wetness.");
+    for(const auto feature:{surface_mark_timed_feature,surface_mark_texture_feature,surface_mark_direction_feature,
+        surface_mark_feature,particle_burst_feature,item_attachment_feature})wetness.features.push_back(feature);
+    check(compatibility_error(wetness,capable).empty(),"Wetness and previously named mark, particle or attachment operations cannot coexist.");
     auto contact=attachment;contact.features.push_back(item_attachment_contact_feature);
     check(compatibility_error(contact,capable).empty(),"Contact requires no longer service table.");
     auto before_pickup=capable;std::erase(before_pickup.features,std::string(item_attachment_pickup_feature));
@@ -311,7 +342,9 @@ void policy() {
     check(surface_mark_services_bytes==544u,"Frozen surface mark extent changed.");
     check(surface_mark_direction_services_bytes==552u,"Frozen directional mark extent changed.");
     check(surface_mark_texture_services_bytes==560u,"Frozen textured mark extent changed.");
-    check(capable.services_version==7 && capable.services_bytes==surface_mark_timed_services_bytes && capable.services_bytes==568u &&
+    check(surface_mark_timed_services_bytes==568u,"Frozen timed mark extent changed.");
+    check(capable.services_version==7 && capable.services_bytes==surface_wetness_services_bytes && capable.services_bytes==576u &&
+        std::find(capable.features.begin(),capable.features.end(),surface_wetness_feature)!=capable.features.end() &&
         std::find(capable.features.begin(),capable.features.end(),surface_mark_timed_feature)!=capable.features.end() &&
         std::find(capable.features.begin(),capable.features.end(),surface_mark_texture_feature)!=capable.features.end() &&
         std::find(capable.features.begin(),capable.features.end(),surface_mark_direction_feature)!=capable.features.end() &&

@@ -36,6 +36,7 @@ record correlated evidence, and identify a useful impossibility check.
 | Leave a mark on a surface | [Persistent surface marks](SURFACE_MARKS.md) | Guard the intended first ray hit, inspect its receiver-local frame, and compare the marked surface after motion and save restoration. |
 | Leave footprints with an imported character | [Planted footprints](SURFACE_MARKS.md#place-footprints-from-planted-feet) | Compare new prints with solved contact and heading, then move the support and reopen a save. |
 | Compact snow under a boot | [Shaped snow soles](TERRAIN.md#shape-the-sole) | Compare the planted heading, released print, terrain depth, and collision through save restoration. |
+| Wet a scene during rain | [Surface wetness](SURFACE_WETNESS.md) | Check exposed and sheltered materials, then move a wet prop under cover and restore during drying. |
 
 ## Start with a complete example
 

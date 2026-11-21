@@ -133,4 +133,29 @@ var late = storm.Sample(WeatherClock.MaximumTimeMilliseconds);
 Assert(late.SlotIndex > uint.MaxValue && late.Kind == WeatherKind.Storm && late.Conditions.CloudCover is >= 0.92 and <= 1,
     "Large world time must preserve its slot address.");
 
-Console.WriteLine("Weather clock verified calendar wrap, solar geometry, seeded transitions, rain accumulation and lightning replay.");
+// Independent integrals of the first clear-to-rain transition, the steady
+// rain, and the transition back to overcast, rounded per complete second.
+(long Index, uint Depth)[] expectedQuanta =
+[
+    (119, 0), (120, 13), (121, 86), (125, 848), (131, 1924), (132, 1937),
+    (179, 1937), (180, 1924), (191, 13), (192, 0)
+];
+foreach (var (index, depth) in expectedQuanta)
+    Assert(schedule.RainDepthNanometers(index) == depth, $"Rain quantum {index} differs.");
+foreach (var (index, depth) in expectedQuanta.Reverse())
+    Assert(resumed.RainDepthNanometers(index) == depth, $"Recreated rain quantum {index} differs.");
+long roundedRain = 0;
+for (long index = 120; index < 192; ++index)
+    roundedRain += schedule.RainDepthNanometers(index);
+Assert(roundedRain == 116_220, "Fixed one-second rounding differs.");
+
+long lastQuantum = WeatherRainQuanta.MaximumQuantumIndex;
+var steadyStorm = new WeatherSchedule(6, 60, 0, new WeatherWeights(0, 0, 0, 1));
+Assert(lastQuantum == 315_359_999_998L && steadyStorm.RainDepthNanometers(lastQuantum) == 5995,
+    "The last complete quantum must preserve the full interval and 64-bit address.");
+Reject<ArgumentOutOfRangeException>(() => schedule.RainDepthNanometers(-1));
+Reject<ArgumentOutOfRangeException>(() => schedule.RainDepthNanometers(lastQuantum + 1));
+Reject<ArgumentOutOfRangeException>(() => schedule.RainDepthNanometers(long.MaxValue));
+Reject<ArgumentNullException>(() => WeatherRainQuanta.RainDepthNanometers(null!, 0));
+
+Console.WriteLine("Weather clock verified calendar wrap, solar geometry, seeded transitions, rain accumulation, lightning replay and complete one-second rain quanta.");

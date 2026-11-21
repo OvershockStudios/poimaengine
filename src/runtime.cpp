@@ -258,6 +258,7 @@ struct Runtime::Impl {
     SoundState sounds;
     std::optional<water::Region> water_region;
 #include "runtime_snow.inc"
+#include "runtime_wetness.inc"
     std::uint32_t game_sound_calls=0,game_navigation_calls=0;
     std::optional<RuntimeNavigationDefinition> navigation_binding;
     std::array<std::uint64_t,4> navigation_asset{};
@@ -661,7 +662,8 @@ struct Runtime::Impl {
             candidate.body_names.emplace(controller.character->GetBodyID().GetIndexAndSequenceNumber(),d.id);
         }
     }
-    std::optional<RuntimeRayHit> physics_raycast(const RuntimeRay& query,const std::set<std::string>& proxy_owners={}) const {
+    std::optional<RuntimeRayHit> physics_raycast(const RuntimeRay& query,const std::set<std::string>& proxy_owners={},
+        bool shelter_only=false) const {
         require(std::isfinite(query.distance) && query.distance>=.001 && query.distance<=10000,"Ray distance must be .001..10000 meters.");
         double length=0;
         for(double x:query.origin)require(std::isfinite(x) && std::abs(x)<=1e6,"Ray origin must be finite and within 1000 km.");
@@ -693,10 +695,16 @@ struct Runtime::Impl {
         struct Collector final : JPH::CastRayCollector {
             const Impl& world;
             const std::map<JPH::uint32,std::string>& names;
+            bool shelter_only;
             std::optional<JPH::RayCastResult> hit;
-            explicit Collector(const Impl& owner):world(owner),names(owner.topology->body_names) {}
+            Collector(const Impl& owner,bool shelter):world(owner),names(owner.topology->body_names),shelter_only(shelter) {}
             void AddHit(const JPH::RayCastResult& value) override {
                 if(value.mFraction<0 || value.mFraction>1)return;
+                if(shelter_only) {
+                    const auto& id=names.at(value.mBodyID.GetIndexAndSequenceNumber());
+                    const auto* body=world.registry.try_get<Body>(world.find(id));
+                    if(!body || body->id!=value.mBodyID || body->motion==BodyMotion::Dynamic)return;
+                }
                 bool better=!hit || value.mFraction<hit->mFraction;
                 if(hit && value.mFraction==hit->mFraction) {
                     const auto id=value.mBodyID.GetIndexAndSequenceNumber(),old=hit->mBodyID.GetIndexAndSequenceNumber();
@@ -706,7 +714,7 @@ struct Runtime::Impl {
                 }
                 if(better)hit=value;
             }
-        } collector(*this);
+        } collector(*this,shelter_only);
         const JPH::RRayCast ray(JPH::RVec3(query.origin[0],query.origin[1],query.origin[2]),JPH::Vec3(delta[0],delta[1],delta[2]));
         JPH::RayCastSettings ray_settings;ray_settings.mBackFaceModeTriangles=JPH::EBackFaceMode::CollideWithBackFaces;
         physics.GetNarrowPhaseQuery().CastRay(ray,ray_settings,collector,{}, {},filter);
@@ -752,6 +760,7 @@ struct Runtime::Impl {
             animations->install_procedural_terminal(id,terminal,restored->snapshot_tick);
         validate_runtime_mesh_colliders(definition);
         validate_runtime_footprint_surfaces(definition);
+        validate_runtime_surface_wetness(definition);
         has_footprint_surfaces=std::ranges::any_of(definition.entities,[](const auto& entity) {
             return entity.footprint_surface.has_value();
         });
@@ -802,6 +811,7 @@ struct Runtime::Impl {
         for(const auto& d:definitions)if(d.character || (d.collider && d.collider->motion!=BodyMotion::Static))moving_roots.insert(d.id);
         for(const auto& d:definitions)create_physics(d,*candidate,true,moving_roots,controlled_cameras,restored);
         if(snow_binding)initialize_snow();
+        initialize_wetness(definition);
         // Character constructors allocate their own Jolt IDs. Finish all bootstrap
         // creation before inventorying slots; subsequent structural creation must
         // use explicit IDs so a failed batch cannot consume Jolt sequence numbers.
@@ -1749,9 +1759,14 @@ struct Runtime::Impl {
         return std::move(result.spawned.front());
     }
     std::vector<RuntimeStructureResult> step(std::uint32_t count,const std::vector<RuntimeInput>& inputs,const std::vector<KinematicTarget>& motions,const std::vector<SoundCommand>& sound_commands,const std::vector<AnimationCommand>& animation_commands,const std::vector<RuntimeStructureTick>& structure,const std::vector<RuntimeIkCommand>& ik_commands,const std::vector<RuntimeRootMotionCommand>& root_commands,const std::vector<RuntimeCameraLensCommand>& lens_commands,const std::vector<RuntimeCharacterStanceCommand>& stance_commands,const std::vector<RuntimeGroundingCommand>& grounding_commands,const std::vector<AnimationRateCommand>& animation_rates,const std::vector<RuntimeCameraPoseCommand>& pose_commands,const std::vector<PhysicalRigCommand>& physical_commands,
-        std::span<const RuntimeSurfaceMarkCommand> mark_commands,const std::optional<RuntimeSnowStamp>& snow_stamp) {
+        std::span<const RuntimeSurfaceMarkCommand> mark_commands,const std::optional<RuntimeSnowStamp>& snow_stamp,
+        const std::optional<wetness::Dose>& wetness_dose) {
         profiling::Scope batch_profile("runtime.batch",static_cast<std::int64_t>(tick));
         require(!player_preferences_prepared,"Flush pending player preferences before another simulation batch.");
+        if(wetness_dose) {
+            require(!snow_stamp,"Wetness and explicit snow requests use separate step methods.");
+            validate_wetness_dose(*wetness_dose);
+        }
         require(count>=1 && count<=600 && tick+count<=9007199254740991ULL,"Runtime step exceeds tick limits.");
         require(structure.size()<=count,"At most one structural transaction per tick is supported.");
         for(std::size_t i=0;i<structure.size();++i)
@@ -1797,6 +1812,7 @@ struct Runtime::Impl {
         auto water_checkpoint=water_region;
         auto particle_checkpoint=particle_runtime ? std::make_unique<ParticleRuntime>(*particle_runtime) : nullptr;
         const auto surface_checkpoint=surface_marks;
+        const auto wetness_checkpoint=wetness_live;
         const auto snow_checkpoint=snow_live;
         const auto releases_checkpoint=snow_releases;
         // World systems share controller input and consume each pressed name once.
@@ -1857,7 +1873,7 @@ struct Runtime::Impl {
                     {
                         profiling::Scope gameplay_profile("runtime.gameplay.tick");
                         build_controller_preview();
-                        game->tick(gameplay_abi::physical_rig_drive_baseline(api.textured.directional.marks.particles.attachments.recovery.animation.drive),std::span<const PoimaGameInput>(frame_inputs.data(),input_count),tick);
+                        game->tick(gameplay_abi::physical_rig_drive_baseline(api.timed.textured.directional.marks.particles.attachments.recovery.animation.drive),std::span<const PoimaGameInput>(frame_inputs.data(),input_count),tick);
                         clear_controller_preview();game_phase=GamePhase::idle;game_input_source=nullptr;game_input_edges=false;
                     }
                     if(auto candidate=prepare_ui_commands())ui_model.swap(candidate);
@@ -2051,6 +2067,7 @@ struct Runtime::Impl {
                 for(const auto e:topology->characters)registry.get<Controller>(e).character->EndTick();
                 step_particles(pressed_actions);
                 record_snow_foot_decisions();
+                advance_wetness(frame==0 && wetness_dose ? &*wetness_dose : nullptr);
                 advance_surface_marks(frame==0 ? mark_commands : std::span<const RuntimeSurfaceMarkCommand>{});
                 pressed_actions.clear();
             }
@@ -2065,6 +2082,8 @@ struct Runtime::Impl {
             profiling::Scope rollback_profile("runtime.rollback",static_cast<std::int64_t>(previous_tick));
             particle_runtime=std::move(particle_checkpoint);
             surface_marks=surface_checkpoint;
+            wetness_live=wetness_checkpoint;
+            gameplay_wetness_dose.reset();
             clear_player_preferences_commands();
             components->rollback_batch();
             rollback_structure(structure_checkpoint);
@@ -2111,6 +2130,7 @@ struct Runtime::Impl {
             animations->skin(node.id,world),
             1,mesh.cast_shadows,mesh.receive_shadows,true,topology->definitions.at(node.id).camera_draw};
         result.mutable_geometry=snow_binding && snow_binding->contains(node.id);
+        result.wetness=scene_wetness(node.id);
         if(attachment_graph && !attachment_graph->world_draws.empty() && attachment_graph->world_draws.contains(node.id))
             result.camera_draw.reset();
         if(result.camera_draw && result.camera_draw->mode==CameraDrawMode::Viewmodel)result.cast_shadows=false;
@@ -2388,8 +2408,9 @@ std::string Runtime::release_attachment(std::uint64_t expected,const RuntimeAtta
     return impl_->release_attachment(expected,request);
 }
 std::vector<RuntimeStructureResult> Runtime::step(std::uint32_t ticks,const std::vector<RuntimeInput>& inputs,const std::vector<KinematicTarget>& motions,const std::vector<SoundCommand>& sounds,const std::vector<AnimationCommand>& animations,const std::vector<RuntimeStructureTick>& structure,const std::vector<RuntimeIkCommand>& ik,const std::vector<RuntimeRootMotionCommand>& roots,const std::vector<RuntimeCameraLensCommand>& lenses,const std::vector<RuntimeCharacterStanceCommand>& stances,const std::vector<RuntimeGroundingCommand>& grounding,const std::vector<AnimationRateCommand>& animation_rates,const std::vector<RuntimeCameraPoseCommand>& pose_commands,const std::vector<PhysicalRigCommand>& physical_commands,
-    std::span<const RuntimeSurfaceMarkCommand> marks,const std::optional<RuntimeSnowStamp>& snow_stamp) {
-    return impl_->step(ticks,inputs,motions,sounds,animations,structure,ik,roots,lenses,stances,grounding,animation_rates,pose_commands,physical_commands,marks,snow_stamp);
+    std::span<const RuntimeSurfaceMarkCommand> marks,const std::optional<RuntimeSnowStamp>& snow_stamp,
+    const std::optional<wetness::Dose>& wetness_dose) {
+    return impl_->step(ticks,inputs,motions,sounds,animations,structure,ik,roots,lenses,stances,grounding,animation_rates,pose_commands,physical_commands,marks,snow_stamp,wetness_dose);
 }
 std::span<const RuntimeSurfaceMark> Runtime::surface_marks() const {
     if(!impl_->surface_marks)return {};
@@ -2497,6 +2518,10 @@ const snow::State* Runtime::snow_state() const noexcept {
 }
 const snow::FootReleaseState* Runtime::snow_foot_releases() const noexcept {
     return impl_->snow_releases ? &*impl_->snow_releases : nullptr;
+}
+const wetness::State* Runtime::wetness_state() const noexcept { return impl_->wetness_live.get(); }
+const wetness::Profile* Runtime::wetness_profile(const std::string& id) const noexcept {
+    return impl_->wetness_profile(id);
 }
 RuntimeParticleObservation Runtime::particle_observation() const { return impl_->observe_particles(); }
 std::optional<RuntimeRayHit> Runtime::raycast(const RuntimeRay& query) const {

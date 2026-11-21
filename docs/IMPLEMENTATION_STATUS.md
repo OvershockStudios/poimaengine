@@ -1,8 +1,20 @@
 # Implementation status
 
-Updated 2026-11-21 for **0.0.369**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-21 for **0.0.370**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.370 adds [shelter-aware surface wetness](SURFACE_WETNESS.md). An
+exposed plate takes on rain while a sheltered plate stays dry. A wet prop
+keeps its film when it moves indoors and dries on subsequent game-clock steps.
+The CLI and compiled gameplay share a saved clock and film. Linux CoreCLR,
+Linux Native AOT and a relocated Windows Native AOT game match all ten
+selected observations and reproduce saves within each run. Forty-eight
+relocated Windows Vulkan captures check tint, roughness and collision in both
+lighting paths across AMD and NVIDIA. Eight continuous FSR sequences check
+local material changes without resetting the established view history. Each
+authored receiver uses one exposure point and one film value across its draw.
+[Results](evidence/m2-surface-wetness-370.json)
 
 Version 0.0.369 adds [asymmetric boot impressions](TERRAIN.md#shape-the-sole)
 with a wider toe and the heading captured at plant acquisition. Four Linux

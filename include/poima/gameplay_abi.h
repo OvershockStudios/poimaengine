@@ -772,6 +772,15 @@ typedef struct PoimaGameSurfaceMarkTimedServicesV4 {
     int32_t (POIMA_CALL *surface_mark_timed)(void*,const PoimaGameSurfaceMarkCommandV4*,PoimaGameError*);
 } PoimaGameSurfaceMarkTimedServicesV4;
 
+/* surface_wetness_v1 consumes 1..64 consecutive game-clock seconds after
+ * physics in the current tick. Rain depths are integer nanometres, one per
+ * second. The input buffer is borrowed only for the duration of the call. */
+typedef struct PoimaGameWetnessServicesV1 {
+    PoimaGameSurfaceMarkTimedServicesV4 timed;
+    int32_t (POIMA_CALL *wetness_advance)(void* context,uint64_t first_quantum,
+        const uint32_t* rain_nm,uint32_t count,PoimaGameError* error);
+} PoimaGameWetnessServicesV1;
+
 typedef struct PoimaGameCall {
     uint32_t version,operation; uint64_t handle;
     const char* text; void* state; uint32_t state_bytes,input_count;
@@ -851,6 +860,9 @@ static_assert(sizeof(PoimaGameSurfaceMarkCommandV4)==184 && alignof(PoimaGameSur
 static_assert(sizeof(PoimaGameSurfaceMarkTimedServicesV4)==568 && alignof(PoimaGameSurfaceMarkTimedServicesV4)==8 &&
     offsetof(PoimaGameSurfaceMarkTimedServicesV4,textured)==0 &&
     offsetof(PoimaGameSurfaceMarkTimedServicesV4,surface_mark_timed)==560);
+static_assert(sizeof(PoimaGameWetnessServicesV1)==576 && alignof(PoimaGameWetnessServicesV1)==8 &&
+    offsetof(PoimaGameWetnessServicesV1,timed)==0 &&
+    offsetof(PoimaGameWetnessServicesV1,wetness_advance)==568);
 static_assert(sizeof(PoimaGameReleasedItemAimV4)==208 && alignof(PoimaGameReleasedItemAimV4)==8 &&
     offsetof(PoimaGameReleasedItemAimV4,ray)==16 && offsetof(PoimaGameReleasedItemAimV4,hit)==88 &&
     offsetof(PoimaGameReleasedItemAimV4,item)==176 && offsetof(PoimaGameReleasedItemAimV4,sampled_tick)==192 &&

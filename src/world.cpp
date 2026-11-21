@@ -11,6 +11,7 @@
 #include "poima/runtime.hpp"
 #include "poima/snow.hpp"
 #include "poima/snow_releases.hpp"
+#include "poima/surface_wetness.hpp"
 #include "poima/terrain_asset.hpp"
 #include "foliage_authoring.hpp"
 #include "water_asset.hpp"
@@ -861,10 +862,39 @@ RuntimeFootprintSurface footprint_surface_value(const Json& value) {
     if(value.contains("sole_tolerance_m"))surface.sole_tolerance_m=surface_mark_scalar(value.at("sole_tolerance_m"),.001,.1);
     return surface;
 }
+wetness::Profile surface_wetness_value(const Json& value) {
+    const std::initializer_list<const char*> required{"capacity_nm","retention_q16","drying_nm_per_second",
+        "probe_local_m","darkening","roughness_factor"};
+    fields(value,required,required);
+    const auto integer=[&](const char* key,std::uint32_t minimum,std::uint32_t maximum) {
+        const auto& number=value.at(key);
+        require(number.is_number_integer() && number>=minimum && number<=maximum,
+            std::string("SurfaceWetness ")+key+" must be an integer in its allowed range.");
+        return number.get<std::uint32_t>();
+    };
+    const auto bounded=[](const Json& number,double minimum,double maximum) {
+        require(number.is_number() && std::isfinite(number.get<double>()) && number>=minimum && number<=maximum,
+            "SurfaceWetness probe or material response is outside its numeric range.");
+        return number.get<double>();
+    };
+    wetness::Profile profile;
+    profile.capacity_nm=integer("capacity_nm",1,wetness::max_capacity_nm);
+    profile.retention_q16=integer("retention_q16",0,wetness::units_per_nm);
+    profile.drying_nm_per_second=integer("drying_nm_per_second",0,profile.capacity_nm);
+    const auto& probe=value.at("probe_local_m");
+    require(probe.is_array() && probe.size()==profile.probe_local_m.size(),
+        "SurfaceWetness probe_local_m requires three numbers.");
+    for(std::size_t axis=0;axis<profile.probe_local_m.size();++axis)
+        profile.probe_local_m[axis]=bounded(probe.at(axis),-wetness::probe_bound_m,wetness::probe_bound_m);
+    profile.darkening=static_cast<float>(bounded(value.at("darkening"),0,1));
+    profile.roughness_factor=static_cast<float>(bounded(value.at("roughness_factor"),0,1));
+    return profile;
+}
 void validate_component(const std::string& type, const Json& value) {
     if(type=="PhysicalRig") { (void)physical_rig_value(value);return; }
     if(type=="HitRegion") { (void)hit_region_value(value);return; }
     if(type=="FootprintSurface") { (void)footprint_surface_value(value);return; }
+    if(type=="SurfaceWetness") { (void)surface_wetness_value(value);return; }
     if(type=="MeshRenderer" || type=="StaticMesh" || type=="SkinnedMesh")
         for(const auto* key:{"cast_shadows","receive_shadows"})if(value.contains(key))
             require(value.at(key).is_boolean(),"Mesh shadow controls must be boolean.");
@@ -1122,6 +1152,7 @@ void validate_template_graph(const Json& document,const Json& recipe,
         if(!member.at("parent").is_null())require(members.contains(identifier(member.at("parent"))),"Template parent must be local.");
         const auto& bag=member.at("components");require(bag.is_object(),"Template member components must be an object.");
         require(!bag.contains("FootprintSurface"),"FootprintSurface requires an authored world receiver outside the spawn catalog.");
+        require(!bag.contains("SurfaceWetness"),"SurfaceWetness requires an authored world receiver outside the spawn catalog.");
         for(const auto& [type,value]:bag.items())if(!custom_component(type))validate_component(type,value);
         auto local_reference=[&](const Json& target,const char* expected) {
             if(target.is_null())return;
@@ -1227,7 +1258,7 @@ void validate(const Json& doc) {
         const auto snow_binding=component_checked([&]{return snow::parse_definition(doc.at("snow"));});
         for(const auto& tile:snow_binding.tiles)require(entities.contains(tile),"Snow tile entity does not exist.");
     }
-    std::size_t audio_sources=0;
+    std::size_t audio_sources=0,wetness_receivers=0;
     std::vector<std::string> particle_sources;
     for (const auto& [id, entity] : entities.items()) {
         identifier(id);require(schemas.empty() || id!=std::string(32,'0'),"Custom component worlds reserve the zero entity identity as unset.");
@@ -1261,6 +1292,13 @@ void validate(const Json& doc) {
                 require(doc.contains("surface_mark_profiles") &&
                     doc.at("surface_mark_profiles").contains(surface.at("profile").get_ref<const std::string&>()),
                     "FootprintSurface on "+id+" refers to an absent surface mark profile.");
+        }
+        if(audio_components.contains("SurfaceWetness")) {
+            require(++wetness_receivers<=wetness::max_receivers,"World exceeds the SurfaceWetness receiver capacity.");
+            require(audio_components.contains("PbrMaterial") &&
+                (audio_components.contains("MeshRenderer") || audio_components.contains("StaticMesh")) &&
+                !audio_components.contains("SkinnedMesh") && !audio_components.contains("CameraDraw"),
+                "SurfaceWetness requires a rigid PBR world drawable without CameraDraw.");
         }
     }
     std::size_t light_count=0,environment_count=0,shadow_count=0;std::uint32_t shadow_resolution=1024;
@@ -1821,6 +1859,7 @@ public:
         definition.particle_sprite_textures=std::move(sprite_textures);
         definition.surface_mark_profiles=resolve_surface_mark_profiles(source,image);
         component_checked([&]{ validate_runtime_footprint_surfaces(definition); });
+        component_checked([&]{ validate_runtime_surface_wetness(definition); });
         result.needs_surface_mark_masks=!definition.surface_mark_profiles.empty();
         resolve_ui_images(definition.ui,assets);
         for(const auto& element:definition.ui)if(element.style && element.style->image) {
@@ -2220,7 +2259,8 @@ public:
             fields(params, {"revision", "parent", "after", "limit", "component"}); current_revision(params);
             if(params.contains("component") && params.at("component").is_string() && custom_component(params.at("component").get<std::string>())) {
                 const auto schemas=authored_component_schemas(doc_);(void)authored_schema(schemas,custom_type(params.at("component").get<std::string>()));
-            } else if (params.contains("component")) require(params["component"] == "Transform" || params["component"] == "Camera" || params["component"] == "CameraDraw" || params["component"] == "MeshRenderer" || params["component"] == "BoxCollider" || params["component"] == "MeshCollider" || params["component"] == "CharacterController" || params["component"] == "StaticMesh" || params["component"] == "PbrMaterial" || params["component"] == "PbrTextures" || params["component"] == "Light" || params["component"] == "LightingEnvironment" || params["component"] == "AcousticMaterial" || params["component"] == "AudioEmitter" || params["component"] == "AnimationRig" || params["component"] == "PhysicalRig" || params["component"] == "RigNode" || params["component"] == "SkinnedMesh" || params["component"] == "HitRegion" || params["component"] == "ParticleEmitter" || params["component"] == "FootprintSurface", "Unknown component type.");
+            } else if (params.contains("component")) require(params["component"] == "Transform" || params["component"] == "Camera" || params["component"] == "CameraDraw" || params["component"] == "MeshRenderer" || params["component"] == "BoxCollider" || params["component"] == "MeshCollider" || params["component"] == "CharacterController" || params["component"] == "StaticMesh" || params["component"] == "PbrMaterial" || params["component"] == "PbrTextures" || params["component"] == "Light" || params["component"] == "LightingEnvironment" || params["component"] == "AcousticMaterial" || params["component"] == "AudioEmitter" || params["component"] == "AnimationRig" || params["component"] == "PhysicalRig" || params["component"] == "RigNode" || params["component"] == "SkinnedMesh" || params["component"] == "HitRegion" || params["component"] == "ParticleEmitter" || params["component"] == "FootprintSurface" ||
+                params["component"] == "SurfaceWetness", "Unknown component type.");
             const auto after = params.contains("after") ? identifier(params.at("after")) : std::string{};
             if (params.contains("after")) require(params.contains("revision"), "Pagination requires a revision.");
             if (params.contains("parent") && !params.at("parent").is_null()) identifier(params.at("parent"));
@@ -3694,6 +3734,8 @@ public:
             if(components.contains("ParticleEmitter"))value.particle_emitter=parse_particle_emitter(components.at("ParticleEmitter"));
             if(!animation_only && !audio_only && components.contains("FootprintSurface"))
                 value.footprint_surface=footprint_surface_value(components.at("FootprintSurface"));
+            if(!animation_only && !audio_only && components.contains("SurfaceWetness"))
+                value.surface_wetness=surface_wetness_value(components.at("SurfaceWetness"));
             if(components.contains("AnimationRig")) {
                 const auto& ref=components.at("AnimationRig");const auto state=animation_value(ref);RuntimeAnimationRig rig;
                 try { rig.model=cache.get(asset_directory(),ref.at("asset")); }
@@ -4329,6 +4371,7 @@ public:
         structure_receipt_next_=(index+1)%structure_receipts_.size();
         return structure_receipt_json(*structure_receipts_[index],false);
     }
+#include "world_wetness_service.inc"
     Json runtime_dispatch(const std::string& method,const Json& params) {
         if(method=="runtime.observe")return observe_runtime(params);
         if(method=="runtime.pose.compare")return compare_runtime_pose_frames(params);
@@ -4373,6 +4416,7 @@ public:
         if(method.starts_with("runtime.texture."))return texture_dispatch(method,params);
         if(method=="runtime.water.inspect")return water_inspect(params);
         if(method=="runtime.snow.inspect")return inspect_snow(params);
+        if(method=="runtime.wetness.inspect")return inspect_wetness(params);
         if(method=="runtime.particles.inspect")return inspect_particles(params);
         if(method=="runtime.surface_marks.inspect")return inspect_surface_marks(params);
         if(method=="runtime.components" || method.starts_with("runtime.component."))return component_dispatch(method,params);
@@ -4681,10 +4725,13 @@ public:
             auto result=runtime_entity_value(e);result["session_id"]=runtime_id_;result["tick"]=runtime_->inspect().tick;
             result["structure_revision"]=runtime_->structure_revision();result["id"]=e.id;return result;
         }
-        if(method=="runtime.step" || method=="runtime.snow.step") {
-            fields(params,{"session_id","request_id","expected_tick","ticks","inputs","motions","sounds","animations","animation_phase_matches","animation_rates","ik","root_motion","camera_lenses","camera_poses","character_stances","grounding","physical_rigs","surface_marks","snow_stamp","expected_structure_revision"},{"session_id","request_id","expected_tick","ticks"});
+        if(method=="runtime.step" || method=="runtime.snow.step" || method=="runtime.wetness.step") {
+            fields(params,{"session_id","request_id","expected_tick","ticks","inputs","motions","sounds","animations","animation_phase_matches","animation_rates","ik","root_motion","camera_lenses","camera_poses","character_stances","grounding","physical_rigs","surface_marks","snow_stamp","wetness_dose","expected_structure_revision"},{"session_id","request_id","expected_tick","ticks"});
             const bool stamp_snow=method=="runtime.snow.step";
+            const bool dose_wetness=method=="runtime.wetness.step";
             require(params.contains("snow_stamp")==stamp_snow,"Use runtime.snow.step with a snow_stamp to compact snow.");
+            require(params.contains("wetness_dose")==dose_wetness,
+                "Use runtime.wetness.step with a wetness_dose to advance surface wetness.");
             identifier(params.at("session_id"));identifier(params.at("request_id"));
             auto normalized=params; normalized["method"]=method; if(!normalized.contains("inputs")) normalized["inputs"]=Json::array();if(!normalized.contains("motions"))normalized["motions"]=Json::array();if(!normalized.contains("sounds"))normalized["sounds"]=Json::array();
             if(!normalized.contains("animations"))normalized["animations"]=Json::array();
@@ -4709,6 +4756,8 @@ public:
             const auto surface_marks=parse_surface_marks(normalized.at("surface_marks"));
             const auto snow_stamp=stamp_snow
                 ? std::optional{parse_snow_stamp(normalized.at("snow_stamp"))} : std::nullopt;
+            const auto wetness_dose=dose_wetness
+                ? std::optional{parse_wetness_dose(normalized.at("wetness_dose"))} : std::nullopt;
             for(auto& command:normalized["physical_rigs"])if(!command.contains("activate"))command["activate"]=false;
             for(auto& command:normalized["root_motion"])if(!command.contains("enabled"))command["enabled"]=true;
             for(auto& command:normalized["ik"]) {
@@ -4751,7 +4800,9 @@ public:
             }
             structure_mutation_guard(params);require(expected==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
             auto receipt=std::make_unique<AdvanceReceipt>();receipt->params=normalized;
-            receipt->outcome=advance_runtime(static_cast<std::uint32_t>(ticks),inputs,motions,sounds,animations,ik,root_motion,camera_lenses,character_stances,grounding,animation_rates,camera_poses,physical_rigs,surface_marks,snow_stamp);
+            receipt->outcome=advance_runtime(static_cast<std::uint32_t>(ticks),inputs,motions,sounds,animations,ik,
+                root_motion,camera_lenses,character_stances,grounding,animation_rates,camera_poses,physical_rigs,
+                surface_marks,snow_stamp,wetness_dose);
             const auto index=advance_receipt_next_;advance_receipts_[index].swap(receipt);advance_receipt_next_=(index+1)%advance_receipts_.size();
             return advance_json(advance_receipts_[index]->outcome);
         }
@@ -4991,7 +5042,8 @@ public:
                 } else {validate_component(type,op.at("value"));entity(staged,id)["components"][type]=op.at("value");}
             } else if (name == "component.remove") {
                 fields(op, {"op", "id", "type"}, {"op", "id", "type"});
-                require((op.at("type").is_string() && custom_component(op.at("type").get<std::string>())) || op.at("type") == "Camera" || op.at("type") == "CameraDraw" || op.at("type") == "MeshRenderer" || op.at("type") == "BoxCollider" || op.at("type") == "MeshCollider" || op.at("type") == "CharacterController" || op.at("type") == "StaticMesh" || op.at("type") == "PbrMaterial" || op.at("type") == "PbrTextures" || op.at("type") == "Light" || op.at("type") == "LightingEnvironment" || op.at("type") == "AcousticMaterial" || op.at("type") == "AudioEmitter" || op.at("type") == "AnimationRig" || op.at("type") == "PhysicalRig" || op.at("type") == "RigNode" || op.at("type") == "SkinnedMesh" || op.at("type") == "HitRegion" || op.at("type") == "ParticleEmitter" || op.at("type") == "FootprintSurface", "Only optional built-in or registered custom components can be removed.");
+                require((op.at("type").is_string() && custom_component(op.at("type").get<std::string>())) || op.at("type") == "Camera" || op.at("type") == "CameraDraw" || op.at("type") == "MeshRenderer" || op.at("type") == "BoxCollider" || op.at("type") == "MeshCollider" || op.at("type") == "CharacterController" || op.at("type") == "StaticMesh" || op.at("type") == "PbrMaterial" || op.at("type") == "PbrTextures" || op.at("type") == "Light" || op.at("type") == "LightingEnvironment" || op.at("type") == "AcousticMaterial" || op.at("type") == "AudioEmitter" || op.at("type") == "AnimationRig" || op.at("type") == "PhysicalRig" || op.at("type") == "RigNode" || op.at("type") == "SkinnedMesh" || op.at("type") == "HitRegion" || op.at("type") == "ParticleEmitter" || op.at("type") == "FootprintSurface" ||
+                    op.at("type") == "SurfaceWetness", "Only optional built-in or registered custom components can be removed.");
                 auto& components = entity(staged, id)["components"];
                 require(components.erase(op.at("type").get<std::string>()) == 1, "Component does not exist.", -32004);
             } else if (name == "entity.delete") {

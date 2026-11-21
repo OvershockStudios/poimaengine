@@ -4,6 +4,7 @@
 #include "poima/runtime.hpp"
 #include "poima/snow.hpp"
 #include "poima/snow_releases.hpp"
+#include "poima/surface_wetness.hpp"
 #include "physical_rig_json.hpp"
 #include "pose_frames.hpp"
 #include "poima/scene.hpp"
@@ -48,7 +49,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     auto vector = [](Json item, int size) { return Json{{"type", "array"}, {"items", item}, {"minItems", size}, {"maxItems", size}}; };
     const Json transform = object_schema({{"position", vector(number, 3)}, {"rotation", vector(number, 4)},
         {"scale", vector({{"type", "number"}, {"exclusiveMinimum", 0}, {"maximum", 1e9}}, 3)}}, {"position", "rotation", "scale"});
-    const Json component_type = {{"enum", {"Transform", "Camera", "CameraDraw", "MeshRenderer", "BoxCollider", "MeshCollider", "CharacterController", "StaticMesh", "PbrMaterial", "PbrTextures", "Light", "LightingEnvironment", "AcousticMaterial", "AudioEmitter", "AnimationRig", "PhysicalRig", "RigNode", "SkinnedMesh", "HitRegion", "ParticleEmitter", "FootprintSurface"}}};
+    const Json component_type = {{"enum", {"Transform", "Camera", "CameraDraw", "MeshRenderer", "BoxCollider", "MeshCollider", "CharacterController", "StaticMesh", "PbrMaterial", "PbrTextures", "Light", "LightingEnvironment", "AcousticMaterial", "AudioEmitter", "AnimationRig", "PhysicalRig", "RigNode", "SkinnedMesh", "HitRegion", "ParticleEmitter", "FootprintSurface", "SurfaceWetness"}}};
     const Json lens = object_schema({{"vertical_fov", {{"type", "number"}, {"minimum", 5}, {"maximum", 150}}},
         {"near", {{"type", "number"}, {"minimum", 0.001}}}, {"far", {{"type", "number"}, {"maximum", 1e7}}}}, {"vertical_fov", "near", "far"});
     auto camera=lens;camera["properties"]["viewmodel"]=lens;
@@ -229,7 +230,15 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     footprint["properties"]["sole_tolerance_m"]["default"]=.025;
     footprint["required"].push_back("lifetime_ticks");
     footprint["description"]="Author on a static or kinematic rigid surface with matching visible opaque render and collision geometry. A newly acquired planted foot can leave a timed mark here when the solved sole is within sole_tolerance_m of the contact. The first half extent follows the foot heading. Optional profile refers to the frozen surface mark catalog. Available for authored world entities.";
-    const Json components = {{"Transform", transform}, {"Camera", camera}, {"CameraDraw",camera_draw}, {"MeshRenderer", mesh}, {"BoxCollider",collider}, {"MeshCollider",mesh_collider}, {"CharacterController",character},{"StaticMesh",static_mesh},{"SkinnedMesh",skinned_mesh},{"AnimationRig",animation_rig},{"PhysicalRig",physical_rig_schema},{"RigNode",rig_node},{"HitRegion",hit_region},{"PbrMaterial",pbr},{"PbrTextures",textures},{"Light",{{"oneOf",light_variants}}},{"LightingEnvironment",lighting_environment},{"AcousticMaterial",acoustic},{"AudioEmitter",emitter},{"ParticleEmitter",particle_emitter_schema()},{"FootprintSurface",footprint}};
+    auto surface_wetness=object_schema({{"capacity_nm",unsigned_range(1,wetness::max_capacity_nm)},
+        {"retention_q16",unsigned_range(0,wetness::units_per_nm)},
+        {"drying_nm_per_second",unsigned_range(0,wetness::max_capacity_nm)},
+        {"probe_local_m",vector(mark_range(-wetness::probe_bound_m,wetness::probe_bound_m),3)},
+        {"darkening",unit},{"roughness_factor",unit}},
+        {"capacity_nm","retention_q16","drying_nm_per_second","probe_local_m","darkening","roughness_factor"});
+    surface_wetness["description"]="Attach to an authored rigid world drawable with explicit PbrMaterial and no CameraDraw. Drying per game second must be at most capacity_nm. Darkening sets the full-film linear base color reduction; roughness_factor sets the full-film roughness multiplier.";
+    const Json components = {{"Transform", transform}, {"Camera", camera}, {"CameraDraw",camera_draw}, {"MeshRenderer", mesh}, {"BoxCollider",collider}, {"MeshCollider",mesh_collider}, {"CharacterController",character},{"StaticMesh",static_mesh},{"SkinnedMesh",skinned_mesh},{"AnimationRig",animation_rig},{"PhysicalRig",physical_rig_schema},{"RigNode",rig_node},{"HitRegion",hit_region},{"PbrMaterial",pbr},{"PbrTextures",textures},{"Light",{{"oneOf",light_variants}}},{"LightingEnvironment",lighting_environment},{"AcousticMaterial",acoustic},{"AudioEmitter",emitter},{"ParticleEmitter",particle_emitter_schema()},{"FootprintSurface",footprint},
+        {"SurfaceWetness",std::move(surface_wetness)}};
     Json ops = Json::array();
     auto op = [&](const char* kind, Json properties, Json required) {
         properties["op"] = {{"const", kind}}; properties["id"] = id;
@@ -304,7 +313,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 190}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 191}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -1218,6 +1227,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     mutations.push_back(object_schema({{"op",{{"const","template.set"}}},{"id",stable_type},{"name",name},{"components",recipe_components}},{"op","id","name","components"}));
     auto member_components=object_schema(components,{"Transform"});
     member_components["properties"].erase("FootprintSurface");
+    member_components["properties"].erase("SurfaceWetness");
     member_components["patternProperties"]={{"^game:[0-9a-f]{32}$",custom_values}};
     const auto template_member=object_schema({{"name",name},{"parent",{{"anyOf",Json::array({stable_type,Json{{"type","null"}}})}}},
         {"components",member_components}},{"name","parent","components"});
@@ -1292,12 +1302,31 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"gameplay_services_abi",7},{"gameplay_services_bytes",176},{"hierarchical_services_bytes",232},{"gameplay_reads","Committed membership; reserved births support custom initializers and local-member resolution. Template defaults are read explicitly."},{"runtime","Frozen root-prop or connected hierarchical recipes; atomic spawn and whole-instance despawn. runtime.instance returns canonical local-to-live member handles. Existing transform/physics/rig ownership and aggregate budgets apply to expanded membership; RPC tick scheduling remains unavailable."}};
     for(const auto* method:{"runtime.step","runtime.component.edit","runtime.gameplay.edit","runtime.gameplay.load","runtime.gameplay.load_native","runtime.audio.replay","runtime.play","player.start"})
         methods[method]["properties"]["expected_structure_revision"]=rev;
+    result["wetness"]={{"available",Runtime::available()},{"component","SurfaceWetness"},
+        {"seconds_per_quantum",1},{"max_receivers",wetness::max_receivers},{"max_batch",wetness::max_batch},
+        {"max_rain_nm",wetness::max_rain_nm},{"film_units_per_nm",wetness::units_per_nm},
+        {"shelter_distance_m",wetness::shelter_distance_m},{"snapshot_version",1}};
     if(Runtime::available()) {
         auto snow_step=methods.at("runtime.step");
         snow_step["properties"]["snow_stamp"]=std::move(snow_stamp);
         snow_step["required"].push_back("snow_stamp");
         methods["runtime.snow.step"]=std::move(snow_step);
         result["snow"]["stamp_method"]="runtime.snow.step";
+
+        auto wetness_step=methods.at("runtime.step");
+        wetness_step["properties"]["wetness_dose"]=object_schema({
+            {"first_quantum",{{"type","integer"},{"minimum",0},{"maximum",wetness::max_quantum}}},
+            {"rain_nm",{{"type","array"},{"minItems",1},{"maxItems",wetness::max_batch},
+                {"items",unsigned_range(0,wetness::max_rain_nm)}}}},
+            {"first_quantum","rain_nm"});
+        wetness_step["required"].push_back("wetness_dose");
+        wetness_step["description"]="Advance a guarded runtime step with contiguous rain depths in nanometres per game second. The first simulated tick supplies the committed receiver poses. Outside runtime-game-session v1.";
+        methods["runtime.wetness.step"]=std::move(wetness_step);
+        methods["runtime.wetness.inspect"]=object_schema({{"session_id",id},{"tick",rev},
+            {"structure_revision",rev},{"entity",id}},{"session_id","tick","structure_revision"});
+        methods["runtime.wetness.inspect"]["description"]="Read committed films and last sampled shelter, optionally for one receiver. Outside runtime-game-session v1.";
+        result["wetness"]["step_method"]="runtime.wetness.step";
+        result["wetness"]["inspect_method"]="runtime.wetness.inspect";
     }
     result["invariants"].push_back("Runtime mutations guarded by expected_tick also require expected_structure_revision after any structural transaction. Retained retries use the original guard and return their committed result. Before structural edits the field is optional, but a supplied guard is always checked.");
     result["runtime_available"]=Runtime::available();

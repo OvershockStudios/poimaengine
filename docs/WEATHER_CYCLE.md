@@ -10,8 +10,9 @@ Reference `packages/weather/Poima.Weather.csproj` from a Poima C# project. The
 package targets .NET 10 and has no engine ABI or external dependency. A game can
 use it from its compiled update, a headless replay or an editor preview. The game
 owns the clock and applies the results to its scene, environment audio and water
-simulation. Renderer integration, sky scattering, snow, regional weather fronts
-and surface-drying simulation are separate work.
+simulation. Use [surface wetness](SURFACE_WETNESS.md) to route integrated rain
+and drying through native material state. Sky scattering, snow and regional
+weather fronts are separate systems.
 
 ## Sample a day and its weather
 
@@ -61,6 +62,11 @@ targets are 0 mm/h for clear and overcast, 4–10 mm/h for rain and 16–28 mm/h
 storm. Wind along +X and +Z is in metres per second. Cloud cover and wetness
 targets are in [0, 1]. A game can use the wetness target as a material input and
 the accumulated depth for its own saved surface or water state.
+
+`RainDepthNanometers(quantumIndex)` integrates a complete game second and
+rounds its result once to an integer nanometre. Index zero spans [0, 1000)
+game milliseconds. The last complete index is 315,359,999,998. Feed the same
+sequence of quanta at different clock speeds to preserve the same dose history.
 
 ## Collect deterministic events
 

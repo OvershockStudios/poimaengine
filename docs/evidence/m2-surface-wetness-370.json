@@ -1,0 +1,1649 @@
+{
+  "base_commit": "b9b84d10c6651a2df3bd1c0b90f5e61b19dcf355",
+  "earlier_attempts": [
+    {
+      "cause": "The test tried to serialize independent fractions as JSON.",
+      "raw_sha256": "1c2657ca9dd26dc88117a68e33a2ed0485aad782ac420a19d1540d348bb2a14c"
+    },
+    {
+      "cause": "The Linux headless runtime was refused by the graphical export gate.",
+      "raw_sha256": "a65e3198bd8272a24b47957d4081d64c2d822626db084e7a9752f1735cdf3467"
+    },
+    {
+      "cause": "The test expected numeric JSON for a saved int64 clock encoded as a canonical string.",
+      "raw_sha256": "f7f19644107d8379706589aa54c58295b6169c920e67d4dcfd6d5593ee25a6cb"
+    },
+    {
+      "cause": "NuGet rejected ILCompiler 10.0.12. SDK 10.0.404 published with audit enabled.",
+      "raw_sha256": "08224e5790822b70bf957b2197bbb8c55fae9ffc94e0b26c5eebd6e075917e32"
+    }
+  ],
+  "format": "poima.evidence.shelter-wetness.v1",
+  "inputs_sha256": {
+    "CMakeLists.txt": "b717ab30db89b86b51c79aef152beef7f84d886208e96706272c052937991a2c",
+    "include/poima/gameplay_abi.h": "727caf3d7d72d245455718a90cdea236d48af7cac2ed57722e01bbcd2e97ce85",
+    "include/poima/gameplay_compatibility.hpp": "4606e000650df593496ff3b74f7d08a4747d808aaac259ac1ab703d21e5be3b1",
+    "include/poima/runtime.hpp": "9fdca8506ac121cf25f905e925088285a2a5fb0609b0c901f41db75f80841b5b",
+    "include/poima/scene.hpp": "5beb42b1d3d943b763ff50fd138fc56850ad237841c1c27ac66561aeddddd73d",
+    "include/poima/surface_wetness.hpp": "83907dde088ac95165b68734514e3b25cb372c83b1a8454c4cb6edc9f0ea57c6",
+    "managed/Poima.Gameplay/GameplayRequirements.cs": "02b531af62c2e7641ecc196d8741b14c12fb1c731cf67b8394edc86ecd4f40e1",
+    "managed/Poima.Gameplay/SurfaceWetness.cs": "366329c5f78af5c8c59544243bc995900d257740f2887ba4fa63149001d480a7",
+    "managed/Poima.ManagedBridge/Entry.cs": "523fd6c3872e18b6aa6cdade4807a9e166582c21da6146ca4e9727481bc9fecb",
+    "managed/Poima.NativeGame.Generator/Program.cs": "f6d65d5ea97e26931218a2c45221e009e8200abda4e528255488a7a6d09fd806",
+    "packages/weather/WeatherRainQuanta.cs": "d22103ef9e092697cf9e1ddf845f3492c55b4c62ebdcae1a73ec711aa68c017f",
+    "scripts/publish_native_gameplay.py": "fda91259b693767978a5e386e9e64833b899b65d5601a110f36401cab6a5b4bf",
+    "src/game_launch.cpp": "d8d34e6336e731edb91567a28e5b1472d19ecec524a18c9e1591b54a7db8fb1b",
+    "src/gameplay.cpp": "66a9ba2aff978b5c71fed5c8940a60fea20221a1ecf7546e39f87e128c17666f",
+    "src/render_smoke.cpp": "68f5b30fadbc6f0c122c315fb5642e10e8ec84e96682d1389da78f4bd8792ec0",
+    "src/runtime.cpp": "729b7011c0c314daa8958427f9910a01fa019b8bc9ba682a0cd0d88e639a31e9",
+    "src/runtime_disabled.cpp": "722999c76f16e7e83d2d10186f397e10567d5ed173dc10f2799a9e3859f9b019",
+    "src/runtime_save.inc": "9e6a7fec453370c54e9ada1812ceb6b4dd758de163bc6087dbc0689cba81e30e",
+    "src/runtime_ui.inc": "237373b243e05aa55648ee09704e6a1121eaa2e152a508cdfc90ac3ea8e6395b",
+    "src/runtime_wetness.inc": "25f4cd43b80aab6072deef80dde63d83fb86cc5f387fa2c94eb5950f77306088",
+    "src/save_upgrade_snapshot.cpp": "79d6cb1eb752d0c604d959bdfb6b94549c8cc63e645c0ff67700db34ba7507af",
+    "src/surface_wetness.cpp": "51e29b900ccb87164300218a5f77b8b38b424be1d086c6086dd746fc772208a0",
+    "src/world.cpp": "8b75b9686814dfdb3ddb2f95d9cb1bce545a3ad4538a3addbaf2fe05d3f6bd37",
+    "src/world_gameplay_save.inc": "08c381b90b879fbe52d9c86b3c610d302cf52720960b0915342df859f5596532",
+    "src/world_player_service.inc": "3b4251c82689f40b4dceb9089873a84e417952348c4684b54ef04f3cd66472a6",
+    "src/world_schema.cpp": "58be1443f2f62034ab803bc1c7da025c34171298894adfae5a811bd42ff54618",
+    "src/world_wetness_service.inc": "e24bf0b610168ff4176f45ed290af3285b64902c33d649d651cc9c01828400b3",
+    "tests/WeatherCycle/Program.cs": "09aec21d96f4d1c3993c3725a1950f0c8fe6989f0dc4a66ad3f38df297104c9c",
+    "tests/asset_references_contract.py": "57991f0f2c1f20dec8e28879c62b7ac6b6e2957439074bc95c3cef5b5ed32426",
+    "tests/gameplay_compatibility_native.cpp": "1b25758df1fdddd5547c1bc1d64c9dd1528808ced81dcd587f1e4d0e268ec1e5",
+    "tests/gameplay_player_preferences_native.cpp": "1bf21eb0bb913b37bf1bee61c1698257f92467af1660c0572bbf47519ac4af7a",
+    "tests/gameplay_service_contract_native.cpp": "151b2cba6f0b2ddf45c401c383006b9386438d94b599378fd667c7a3560e2a2b",
+    "tests/managed_wetness_contract.py": "6212fb13de64ac06252aaa4d57110e187ad5d22ca8449a35a69fb08d05c379c9",
+    "tests/managed_wetness_gameplay/ManagedWetnessGame.cs": "801d35962d71ff6cc944403fbd536c3858037a01bb2c4ecbda25d97bc97a1350",
+    "tests/managed_wetness_gameplay/Poima.ManagedWetnessGame.csproj": "5856dcbc0bab79bffd35f1d67e31b737ac393a13c2574386b24eb3868155c367",
+    "tests/reconstruction_quality_native.cpp": "c3ef1e5c40685d4e39def871e4a4e778c54eaa8723384d571b99a318a503ac03",
+    "tests/reconstruction_wetness_reactivity.inc": "865cd8e12787f09669cf2844d47185825d930e4afc00c7addcec049ab38129f1",
+    "tests/runtime_descriptor_contract.py": "ce8b92d0af314732703a74b9afa4d078c4df0b021db4171be088534d5dec44ee",
+    "tests/save_upgrade_snapshot_native.cpp": "75291acc11b37e8e6774f6034e063fa8348b6f2107b47b6248ea757a46e3cf33",
+    "tests/world_ui_contract.py": "aaede62fabca8b0e0ac2349bd981728318029791b42bf08b3dc4fbb76c09f43e",
+    "tests/world_wetness_capture.py": "20870980dcc551e759251a7e335d7e1eaeca487910b17c9d7a3d870ef53b5772",
+    "tests/world_wetness_contract.py": "7284fe75b94e550b58051566ed43bf6e70672e577fa65eb45e12dd74e8200be2"
+  },
+  "linux": {
+    "coreclr": {
+      "artifact": {
+        "assembly_sha256": "f36f533febca6a8768f3e1e736f78547adefcc7dd6501ce3d56471ab13985788",
+        "bridge_sha256": "c7f9defc17fa6b6bdcd927bc7464976ea08ba4fa4d0541c22a0333578fe130fb",
+        "hostfxr_sha256": "342ccc53ed77b71fb097f548098ea5b4190069099dfd8dfef31976d308edf32b",
+        "sdk_sha256": "bc1405b7147f413d94c7f0cd53e8d5683b3ed4534db2bc3d8e8b4d62be7b243a",
+        "weather_dependency_sha256": "b7b0e9f7d4573b88fb71a6843682da3962f175b99d8d7e19f19bc022f6caa99e"
+      },
+      "binary_sha256": "78bb6f510519d1bc0774790985506977f271ab29aeb29954524c32006a912fdf",
+      "checkpoints": {
+        "after-mixed-dose": {
+          "bytes": 10494,
+          "sha256": "b30593bf4a2e60fdd794e9749402c6f0c9e5aee8f70f8d0cb34c1cbb4973fbf5",
+          "tick": 2
+        },
+        "checkpoint": {
+          "bytes": 10494,
+          "sha256": "b30593bf4a2e60fdd794e9749402c6f0c9e5aee8f70f8d0cb34c1cbb4973fbf5",
+          "tick": 2
+        },
+        "cold-final": {
+          "bytes": 10469,
+          "sha256": "21cbc92ec021e3bfcbb9333d2173af005fb9df2f0a6b7024c853486f1f79b396",
+          "tick": 5
+        },
+        "restored-checkpoint": {
+          "bytes": 10494,
+          "sha256": "b30593bf4a2e60fdd794e9749402c6f0c9e5aee8f70f8d0cb34c1cbb4973fbf5",
+          "tick": 2
+        },
+        "warm-final": {
+          "bytes": 10469,
+          "sha256": "21cbc92ec021e3bfcbb9333d2173af005fb9df2f0a6b7024c853486f1f79b396",
+          "tick": 5
+        }
+      },
+      "dose_oracle": {
+        "first_quantum": 58,
+        "rain_nm": [
+          5932,
+          5932,
+          7474,
+          7474,
+          7474
+        ]
+      },
+      "mixed_dose_refusal": {
+        "code": -32040,
+        "message": "Wetness cannot receive both caller and gameplay doses in one tick."
+      },
+      "raw_sha256": "12ef013e8a87facee884be4c55a72f825ce5fed0f71e1e9ce0607a797b7446cf",
+      "ticks": {
+        "warm initial": {
+          "gameplay": {
+            "NextQuantum": "58"
+          },
+          "tick": 0,
+          "wet": {
+            "next_quantum": null,
+            "rows": [
+              {
+                "blocker": null,
+                "capacity_nm": 6000,
+                "entity": "000000000000000000000000000001fe",
+                "exposed": null,
+                "film_nm_q16": 0
+              },
+              {
+                "blocker": null,
+                "capacity_nm": 6000,
+                "entity": "000000000000000000000000000001ff",
+                "exposed": null,
+                "film_nm_q16": 0
+              },
+              {
+                "blocker": null,
+                "capacity_nm": 6000,
+                "entity": "00000000000000000000000000000200",
+                "exposed": null,
+                "film_nm_q16": 0
+              }
+            ]
+          }
+        },
+        "warm tick 1": {
+          "gameplay": {
+            "NextQuantum": "59"
+          },
+          "tick": 1,
+          "wet": {
+            "next_quantum": 59,
+            "rows": [
+              {
+                "blocker": null,
+                "capacity_nm": 6000,
+                "entity": "000000000000000000000000000001fe",
+                "exposed": true,
+                "film_nm_q16": 128843776
+              },
+              {
+                "blocker": "00000000000000000000000000000201",
+                "capacity_nm": 6000,
+                "entity": "000000000000000000000000000001ff",
+                "exposed": false,
+                "film_nm_q16": 0
+              },
+              {
+                "blocker": null,
+                "capacity_nm": 6000,
+                "entity": "00000000000000000000000000000200",
+                "exposed": true,
+                "film_nm_q16": 128843776
+              }
+            ]
+          }
+        },
+        "warm tick 2": {
+          "gameplay": {
+            "NextQuantum": "60"
+          },
+          "tick": 2,
+          "wet": {
+            "next_quantum": 60,
+            "rows": [
+              {
+                "blocker": null,
+                "capacity_nm": 6000,
+                "entity": "000000000000000000000000000001fe",
+                "exposed": true,
+                "film_nm_q16": 257687552
+              },
+              {
+                "blocker": "00000000000000000000000000000201",
+                "capacity_nm": 6000,
+                "entity": "000000000000000000000000000001ff",
+                "exposed": false,
+                "film_nm_q16": 0
+              },
+              {
+                "blocker": "00000000000000000000000000000201",
+                "capacity_nm": 6000,
+                "entity": "00000000000000000000000000000200",
+                "exposed": false,
+                "film_nm_q16": 63307776
+              }
+            ]
+          }
+        },
+        "warm tick 3": {
+          "gameplay": {
+            "NextQuantum": "61"
+          },
+          "tick": 3,
+          "wet": {
+            "next_quantum": 61,
+            "rows": [
+              {
+                "blocker": null,
+                "capacity_nm": 6000,
+                "entity": "000000000000000000000000000001fe",
+                "exposed": true,
+                "film_nm_q16": 393216000
+              },
+              {
+                "blocker": "00000000000000000000000000000201",
+                "capacity_nm": 6000,
+                "entity": "000000000000000000000000000001ff",
+                "exposed": false,
+                "film_nm_q16": 0
+              },
+              {
+                "blocker": null,
+                "capacity_nm": 6000,
+                "entity": "00000000000000000000000000000200",
+                "exposed": true,
+                "film_nm_q16": 242679808
+              }
+            ]
+          }
+        },
+        "warm tick 4": {
+          "gameplay": {
+            "NextQuantum": "62"
+          },
+          "tick": 4,
+          "wet": {
+            "next_quantum": 62,
+            "rows": [
+              {
+                "blocker": null,
+                "capacity_nm": 6000,
+                "entity": "000000000000000000000000000001fe",
+                "exposed": true,
+                "film_nm_q16": 393216000
+              },
+              {
+                "blocker": "00000000000000000000000000000201",
+                "capacity_nm": 6000,
+                "entity": "000000000000000000000000000001ff",
+                "exposed": false,
+                "film_nm_q16": 0
+              },
+              {
+                "blocker": "00000000000000000000000000000201",
+                "capacity_nm": 6000,
+                "entity": "00000000000000000000000000000200",
+                "exposed": false,
+                "film_nm_q16": 177143808
+              }
+            ]
+          }
+        },
+        "warm tick 5": {
+          "gameplay": {
+            "NextQuantum": "63"
+          },
+          "tick": 5,
+          "wet": {
+            "next_quantum": 63,
+            "rows": [
+              {
+                "blocker": null,
+                "capacity_nm": 6000,
+                "entity": "000000000000000000000000000001fe",
+                "exposed": true,
+                "film_nm_q16": 393216000
+              },
+              {
+                "blocker": "00000000000000000000000000000201",
+                "capacity_nm": 6000,
+                "entity": "000000000000000000000000000001ff",
+                "exposed": false,
+                "film_nm_q16": 0
+              },
+              {
+                "blocker": null,
+                "capacity_nm": 6000,
+                "entity": "00000000000000000000000000000200",
+                "exposed": true,
+                "film_nm_q16": 356515840
+              }
+            ]
+          }
+        }
+      }
+    },
+    "native_aot": {
+      "artifact": {
+        "descriptor_sha256": "307888882039324a9835c647047c917db2a8c014fb3f844fbc5947a09f408e09",
+        "files": [
+          {
+            "path": "Poima.NativeGame.so",
+            "role": "library",
+            "sha256": "7291f57ef5272e9eb92d6018c7887ad2a553faaf1915a3f64c1610351912ee88",
+            "size": 1611592
+          },
+          {
+            "path": "notices/DOTNET-NATIVEAOT-10.0.15-LICENSE.txt",
+            "role": "notice",
+            "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310",
+            "size": 1116
+          },
+          {
+            "path": "notices/DOTNET-NATIVEAOT-10.0.15-THIRD-PARTY-NOTICES.txt",
+            "role": "notice",
+            "sha256": "66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54",
+            "size": 76623
+          },
+          {
+            "path": "notices/DOTNET-RUNTIME-10.0.15-LICENSE.txt",
+            "role": "notice",
+            "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310",
+            "size": 1116
+          },
+          {
+            "path": "notices/DOTNET-RUNTIME-10.0.15-THIRD-PARTY-NOTICES.txt",
+            "role": "notice",
+            "sha256": "66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54",
+            "size": 76623
+          },
+          {
+            "path": "notices/POIMA-LICENSE.txt",
+            "role": "notice",
+            "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+            "size": 11358
+          },
+          {
+            "path": "notices/POIMA-THIRD-PARTY-NOTICES.md",
+            "role": "notice",
+            "sha256": "7d364ecf908a603cdc58efecf0a19e8d20b1a51ee0179ce3b9885d05327664a7",
+            "size": 23949
+          }
+        ]
+      },
+      "binary_sha256": "78bb6f510519d1bc0774790985506977f271ab29aeb29954524c32006a912fdf",
+      "checkpoints": {
+        "after-mixed-dose": {
+          "bytes": 10497,
+          "sha256": "bd5a8ce74996ec9d8db7fe65a8e2bff255a825d432e68929a83b469f957bf9b8",
+          "tick": 2
+        },
+        "checkpoint": {
+          "bytes": 10497,
+          "sha256": "bd5a8ce74996ec9d8db7fe65a8e2bff255a825d432e68929a83b469f957bf9b8",
+          "tick": 2
+        },
+        "cold-final": {
+          "bytes": 10472,
+          "sha256": "7bd44054f4bba1804a3988af178857141bd48d675025105b3d67e49e61690c68",
+          "tick": 5
+        },
+        "restored-checkpoint": {
+          "bytes": 10497,
+          "sha256": "bd5a8ce74996ec9d8db7fe65a8e2bff255a825d432e68929a83b469f957bf9b8",
+          "tick": 2
+        },
+        "warm-final": {
+          "bytes": 10472,
+          "sha256": "7bd44054f4bba1804a3988af178857141bd48d675025105b3d67e49e61690c68",
+          "tick": 5
+        }
+      },
+      "dose_oracle": {
+        "first_quantum": 58,
+        "rain_nm": [
+          5932,
+          5932,
+          7474,
+          7474,
+          7474
+        ]
+      },
+      "mixed_dose_refusal": {
+        "code": -32040,
+        "message": "Wetness cannot receive both caller and gameplay doses in one tick."
+      },
+      "raw_sha256": "7cd64ac296bc13fa4778d28d1f7cf8573793b56e8fc176b7d26fdea0225aae36",
+      "ticks": {
+        "warm initial": {
+          "gameplay": {
+            "NextQuantum": "58"
+          },
+          "tick": 0,
+          "wet": {
+            "next_quantum": null,
+            "rows": [
+              {
+                "blocker": null,
+                "capacity_nm": 6000,
+                "entity": "000000000000000000000000000001fe",
+                "exposed": null,
+                "film_nm_q16": 0
+              },
+              {
+                "blocker": null,
+                "capacity_nm": 6000,
+                "entity": "000000000000000000000000000001ff",
+                "exposed": null,
+                "film_nm_q16": 0
+              },
+              {
+                "blocker": null,
+                "capacity_nm": 6000,
+                "entity": "00000000000000000000000000000200",
+                "exposed": null,
+                "film_nm_q16": 0
+              }
+            ]
+          }
+        },
+        "warm tick 1": {
+          "gameplay": {
+            "NextQuantum": "59"
+          },
+          "tick": 1,
+          "wet": {
+            "next_quantum": 59,
+            "rows": [
+              {
+                "blocker": null,
+                "capacity_nm": 6000,
+                "entity": "000000000000000000000000000001fe",
+                "exposed": true,
+                "film_nm_q16": 128843776
+              },
+              {
+                "blocker": "00000000000000000000000000000201",
+                "capacity_nm": 6000,
+                "entity": "000000000000000000000000000001ff",
+                "exposed": false,
+                "film_nm_q16": 0
+              },
+              {
+                "blocker": null,
+                "capacity_nm": 6000,
+                "entity": "00000000000000000000000000000200",
+                "exposed": true,
+                "film_nm_q16": 128843776
+              }
+            ]
+          }
+        },
+        "warm tick 2": {
+          "gameplay": {
+            "NextQuantum": "60"
+          },
+          "tick": 2,
+          "wet": {
+            "next_quantum": 60,
+            "rows": [
+              {
+                "blocker": null,
+                "capacity_nm": 6000,
+                "entity": "000000000000000000000000000001fe",
+                "exposed": true,
+                "film_nm_q16": 257687552
+              },
+              {
+                "blocker": "00000000000000000000000000000201",
+                "capacity_nm": 6000,
+                "entity": "000000000000000000000000000001ff",
+                "exposed": false,
+                "film_nm_q16": 0
+              },
+              {
+                "blocker": "00000000000000000000000000000201",
+                "capacity_nm": 6000,
+                "entity": "00000000000000000000000000000200",
+                "exposed": false,
+                "film_nm_q16": 63307776
+              }
+            ]
+          }
+        },
+        "warm tick 3": {
+          "gameplay": {
+            "NextQuantum": "61"
+          },
+          "tick": 3,
+          "wet": {
+            "next_quantum": 61,
+            "rows": [
+              {
+                "blocker": null,
+                "capacity_nm": 6000,
+                "entity": "000000000000000000000000000001fe",
+                "exposed": true,
+                "film_nm_q16": 393216000
+              },
+              {
+                "blocker": "00000000000000000000000000000201",
+                "capacity_nm": 6000,
+                "entity": "000000000000000000000000000001ff",
+                "exposed": false,
+                "film_nm_q16": 0
+              },
+              {
+                "blocker": null,
+                "capacity_nm": 6000,
+                "entity": "00000000000000000000000000000200",
+                "exposed": true,
+                "film_nm_q16": 242679808
+              }
+            ]
+          }
+        },
+        "warm tick 4": {
+          "gameplay": {
+            "NextQuantum": "62"
+          },
+          "tick": 4,
+          "wet": {
+            "next_quantum": 62,
+            "rows": [
+              {
+                "blocker": null,
+                "capacity_nm": 6000,
+                "entity": "000000000000000000000000000001fe",
+                "exposed": true,
+                "film_nm_q16": 393216000
+              },
+              {
+                "blocker": "00000000000000000000000000000201",
+                "capacity_nm": 6000,
+                "entity": "000000000000000000000000000001ff",
+                "exposed": false,
+                "film_nm_q16": 0
+              },
+              {
+                "blocker": "00000000000000000000000000000201",
+                "capacity_nm": 6000,
+                "entity": "00000000000000000000000000000200",
+                "exposed": false,
+                "film_nm_q16": 177143808
+              }
+            ]
+          }
+        },
+        "warm tick 5": {
+          "gameplay": {
+            "NextQuantum": "63"
+          },
+          "tick": 5,
+          "wet": {
+            "next_quantum": 63,
+            "rows": [
+              {
+                "blocker": null,
+                "capacity_nm": 6000,
+                "entity": "000000000000000000000000000001fe",
+                "exposed": true,
+                "film_nm_q16": 393216000
+              },
+              {
+                "blocker": "00000000000000000000000000000201",
+                "capacity_nm": 6000,
+                "entity": "000000000000000000000000000001ff",
+                "exposed": false,
+                "film_nm_q16": 0
+              },
+              {
+                "blocker": null,
+                "capacity_nm": 6000,
+                "entity": "00000000000000000000000000000200",
+                "exposed": true,
+                "film_nm_q16": 356515840
+              }
+            ]
+          }
+        }
+      }
+    },
+    "retained_unopted": {
+      "complete_checkpoint_sha256": "88db5bb952d39a4971e67189801f57ba0b48be81e0ac398569a45c4d887b4712",
+      "executable_sha256": "78bb6f510519d1bc0774790985506977f271ab29aeb29954524c32006a912fdf",
+      "passed": true,
+      "ready_checkpoint_sha256": "bfd74a901d744a29a2dfd7c72e0a1e4cf7f48a8ad169926fd750f2d1c99e615b",
+      "source_receipt_sha256": "e4abd57d1d9fb8fe8eedafe34f34e91e810bb5314c22b48d2c5da0dca491e8b1"
+    },
+    "suites": [
+      "world_terrain_contract",
+      "world_water_contract",
+      "surface_marks_contract",
+      "snow_compaction_contract",
+      "authoring_core_conformance",
+      "authoring_contract_identity",
+      "gameplay_compatibility_policy",
+      "gameplay_service_contract",
+      "native_gameplay_publish_requirements",
+      "render_schedule_native",
+      "reconstruction_history_oracle",
+      "gameplay_player_preferences_native",
+      "mcp_contract",
+      "runtime_foot_planting_native",
+      "world_ui_contract",
+      "project_contract",
+      "asset_references_contract",
+      "save_upgrade_snapshot_native"
+    ],
+    "world": {
+      "authoring_refusals": [
+        "bool-capacity",
+        "too-fast-drying",
+        "probe-too-far",
+        "missing-profile-field",
+        "missing-pbr",
+        "catalog-receiver"
+      ],
+      "binary_sha256": "78bb6f510519d1bc0774790985506977f271ab29aeb29954524c32006a912fdf",
+      "checkpoints": {
+        "after-save-refusals": {
+          "bytes": 10190,
+          "sha256": "d78745b8d686eb65edd7e31f914cb6d4c24b5f28b24d8a08d2f9711628c0732d",
+          "tick": 5
+        },
+        "after-step-refusals": {
+          "bytes": 10134,
+          "sha256": "b68d2f9d3bc78e1a4d3dd2ca364ac331edb8599113047c4124f37d1f9bfa1ff8",
+          "tick": 1
+        },
+        "checkpoint": {
+          "bytes": 10190,
+          "sha256": "d78745b8d686eb65edd7e31f914cb6d4c24b5f28b24d8a08d2f9711628c0732d",
+          "tick": 5
+        },
+        "clock-limit": {
+          "bytes": 10143,
+          "sha256": "3dfe7ce714ee96b378053c2f1f5ae7c87bfc617f7fb6072ebed7777ee8d25178",
+          "tick": 1
+        },
+        "clock-limit-restored": {
+          "bytes": 10143,
+          "sha256": "3dfe7ce714ee96b378053c2f1f5ae7c87bfc617f7fb6072ebed7777ee8d25178",
+          "tick": 1
+        },
+        "clock-limit-unchanged": {
+          "bytes": 10143,
+          "sha256": "3dfe7ce714ee96b378053c2f1f5ae7c87bfc617f7fb6072ebed7777ee8d25178",
+          "tick": 1
+        },
+        "cold-final": {
+          "bytes": 10139,
+          "sha256": "16d75a93233e0d1faca22606b815c42c19786bc30dffba354f13f6688813f73f",
+          "tick": 15
+        },
+        "first-rain": {
+          "bytes": 10134,
+          "sha256": "b68d2f9d3bc78e1a4d3dd2ca364ac331edb8599113047c4124f37d1f9bfa1ff8",
+          "tick": 1
+        },
+        "grouped-drying": {
+          "bytes": 10197,
+          "sha256": "12d2659851db3a1132ddf04a8923b670ba12c6e75aabdd5f26842c4f45494047",
+          "tick": 7
+        },
+        "restored-checkpoint": {
+          "bytes": 10190,
+          "sha256": "d78745b8d686eb65edd7e31f914cb6d4c24b5f28b24d8a08d2f9711628c0732d",
+          "tick": 5
+        },
+        "split-drying": {
+          "bytes": 10197,
+          "sha256": "12d2659851db3a1132ddf04a8923b670ba12c6e75aabdd5f26842c4f45494047",
+          "tick": 7
+        },
+        "warm-final": {
+          "bytes": 10139,
+          "sha256": "16d75a93233e0d1faca22606b815c42c19786bc30dffba354f13f6688813f73f",
+          "tick": 15
+        }
+      },
+      "clock_limit_refusal": {
+        "code": -32602,
+        "message": "Wetness first_quantum exceeds the supported clock."
+      },
+      "phases": {
+        "cold clear": {
+          "next_quantum": 809,
+          "rows": [
+            {
+              "blocker": null,
+              "capacity_nm": 6000,
+              "entity": "000000000000000000000000000001fe",
+              "exposed": true,
+              "film_nm_q16": 262144000
+            },
+            {
+              "blocker": "00000000000000000000000000000201",
+              "capacity_nm": 6000,
+              "entity": "000000000000000000000000000001ff",
+              "exposed": false,
+              "film_nm_q16": 0
+            },
+            {
+              "blocker": null,
+              "capacity_nm": 6000,
+              "entity": "00000000000000000000000000000200",
+              "exposed": true,
+              "film_nm_q16": 262144000
+            }
+          ],
+          "tick": 15
+        },
+        "cold drying": {
+          "next_quantum": 805,
+          "rows": [
+            {
+              "blocker": null,
+              "capacity_nm": 6000,
+              "entity": "000000000000000000000000000001fe",
+              "exposed": true,
+              "film_nm_q16": 180256768
+            },
+            {
+              "blocker": "00000000000000000000000000000201",
+              "capacity_nm": 6000,
+              "entity": "000000000000000000000000000001ff",
+              "exposed": false,
+              "film_nm_q16": 0
+            },
+            {
+              "blocker": "00000000000000000000000000000201",
+              "capacity_nm": 6000,
+              "entity": "00000000000000000000000000000200",
+              "exposed": false,
+              "film_nm_q16": 0
+            }
+          ],
+          "tick": 7
+        },
+        "cold saturation": {
+          "next_quantum": 807,
+          "rows": [
+            {
+              "blocker": null,
+              "capacity_nm": 6000,
+              "entity": "000000000000000000000000000001fe",
+              "exposed": true,
+              "film_nm_q16": 393216000
+            },
+            {
+              "blocker": "00000000000000000000000000000201",
+              "capacity_nm": 6000,
+              "entity": "000000000000000000000000000001ff",
+              "exposed": false,
+              "film_nm_q16": 0
+            },
+            {
+              "blocker": null,
+              "capacity_nm": 6000,
+              "entity": "00000000000000000000000000000200",
+              "exposed": true,
+              "film_nm_q16": 393216000
+            }
+          ],
+          "tick": 13
+        },
+        "cold sliding-roof": {
+          "next_quantum": 806,
+          "rows": [
+            {
+              "blocker": "00000000000000000000000000000202",
+              "capacity_nm": 6000,
+              "entity": "000000000000000000000000000001fe",
+              "exposed": false,
+              "film_nm_q16": 114720768
+            },
+            {
+              "blocker": "00000000000000000000000000000201",
+              "capacity_nm": 6000,
+              "entity": "000000000000000000000000000001ff",
+              "exposed": false,
+              "film_nm_q16": 0
+            },
+            {
+              "blocker": null,
+              "capacity_nm": 6000,
+              "entity": "00000000000000000000000000000200",
+              "exposed": true,
+              "film_nm_q16": 393216000
+            }
+          ],
+          "tick": 11
+        },
+        "cold under-roof": {
+          "next_quantum": 803,
+          "rows": [
+            {
+              "blocker": null,
+              "capacity_nm": 6000,
+              "entity": "000000000000000000000000000001fe",
+              "exposed": true,
+              "film_nm_q16": 311296000
+            },
+            {
+              "blocker": "00000000000000000000000000000201",
+              "capacity_nm": 6000,
+              "entity": "000000000000000000000000000001ff",
+              "exposed": false,
+              "film_nm_q16": 0
+            },
+            {
+              "blocker": "00000000000000000000000000000201",
+              "capacity_nm": 6000,
+              "entity": "00000000000000000000000000000200",
+              "exposed": false,
+              "film_nm_q16": 114688000
+            }
+          ],
+          "tick": 5
+        },
+        "last complete seconds": {
+          "next_quantum": 315359999999,
+          "rows": [
+            {
+              "blocker": null,
+              "capacity_nm": 6000,
+              "entity": "000000000000000000000000000001fe",
+              "exposed": true,
+              "film_nm_q16": 393216000
+            },
+            {
+              "blocker": "00000000000000000000000000000201",
+              "capacity_nm": 6000,
+              "entity": "000000000000000000000000000001ff",
+              "exposed": false,
+              "film_nm_q16": 0
+            },
+            {
+              "blocker": null,
+              "capacity_nm": 6000,
+              "entity": "00000000000000000000000000000200",
+              "exposed": true,
+              "film_nm_q16": 393216000
+            }
+          ],
+          "tick": 1
+        },
+        "warm clear": {
+          "next_quantum": 809,
+          "rows": [
+            {
+              "blocker": null,
+              "capacity_nm": 6000,
+              "entity": "000000000000000000000000000001fe",
+              "exposed": true,
+              "film_nm_q16": 262144000
+            },
+            {
+              "blocker": "00000000000000000000000000000201",
+              "capacity_nm": 6000,
+              "entity": "000000000000000000000000000001ff",
+              "exposed": false,
+              "film_nm_q16": 0
+            },
+            {
+              "blocker": null,
+              "capacity_nm": 6000,
+              "entity": "00000000000000000000000000000200",
+              "exposed": true,
+              "film_nm_q16": 262144000
+            }
+          ],
+          "tick": 15
+        },
+        "warm drying": {
+          "next_quantum": 805,
+          "rows": [
+            {
+              "blocker": null,
+              "capacity_nm": 6000,
+              "entity": "000000000000000000000000000001fe",
+              "exposed": true,
+              "film_nm_q16": 180256768
+            },
+            {
+              "blocker": "00000000000000000000000000000201",
+              "capacity_nm": 6000,
+              "entity": "000000000000000000000000000001ff",
+              "exposed": false,
+              "film_nm_q16": 0
+            },
+            {
+              "blocker": "00000000000000000000000000000201",
+              "capacity_nm": 6000,
+              "entity": "00000000000000000000000000000200",
+              "exposed": false,
+              "film_nm_q16": 0
+            }
+          ],
+          "tick": 7
+        },
+        "warm initial": {
+          "next_quantum": null,
+          "rows": [
+            {
+              "blocker": null,
+              "capacity_nm": 6000,
+              "entity": "000000000000000000000000000001fe",
+              "exposed": null,
+              "film_nm_q16": 0
+            },
+            {
+              "blocker": null,
+              "capacity_nm": 6000,
+              "entity": "000000000000000000000000000001ff",
+              "exposed": null,
+              "film_nm_q16": 0
+            },
+            {
+              "blocker": null,
+              "capacity_nm": 6000,
+              "entity": "00000000000000000000000000000200",
+              "exposed": null,
+              "film_nm_q16": 0
+            }
+          ],
+          "tick": 0
+        },
+        "warm rain": {
+          "next_quantum": 802,
+          "rows": [
+            {
+              "blocker": null,
+              "capacity_nm": 6000,
+              "entity": "000000000000000000000000000001fe",
+              "exposed": true,
+              "film_nm_q16": 180224000
+            },
+            {
+              "blocker": "00000000000000000000000000000201",
+              "capacity_nm": 6000,
+              "entity": "000000000000000000000000000001ff",
+              "exposed": false,
+              "film_nm_q16": 0
+            },
+            {
+              "blocker": null,
+              "capacity_nm": 6000,
+              "entity": "00000000000000000000000000000200",
+              "exposed": true,
+              "film_nm_q16": 180224000
+            }
+          ],
+          "tick": 1
+        },
+        "warm saturation": {
+          "next_quantum": 807,
+          "rows": [
+            {
+              "blocker": null,
+              "capacity_nm": 6000,
+              "entity": "000000000000000000000000000001fe",
+              "exposed": true,
+              "film_nm_q16": 393216000
+            },
+            {
+              "blocker": "00000000000000000000000000000201",
+              "capacity_nm": 6000,
+              "entity": "000000000000000000000000000001ff",
+              "exposed": false,
+              "film_nm_q16": 0
+            },
+            {
+              "blocker": null,
+              "capacity_nm": 6000,
+              "entity": "00000000000000000000000000000200",
+              "exposed": true,
+              "film_nm_q16": 393216000
+            }
+          ],
+          "tick": 13
+        },
+        "warm sliding-roof": {
+          "next_quantum": 806,
+          "rows": [
+            {
+              "blocker": "00000000000000000000000000000202",
+              "capacity_nm": 6000,
+              "entity": "000000000000000000000000000001fe",
+              "exposed": false,
+              "film_nm_q16": 114720768
+            },
+            {
+              "blocker": "00000000000000000000000000000201",
+              "capacity_nm": 6000,
+              "entity": "000000000000000000000000000001ff",
+              "exposed": false,
+              "film_nm_q16": 0
+            },
+            {
+              "blocker": null,
+              "capacity_nm": 6000,
+              "entity": "00000000000000000000000000000200",
+              "exposed": true,
+              "film_nm_q16": 393216000
+            }
+          ],
+          "tick": 11
+        },
+        "warm under-roof": {
+          "next_quantum": 803,
+          "rows": [
+            {
+              "blocker": null,
+              "capacity_nm": 6000,
+              "entity": "000000000000000000000000000001fe",
+              "exposed": true,
+              "film_nm_q16": 311296000
+            },
+            {
+              "blocker": "00000000000000000000000000000201",
+              "capacity_nm": 6000,
+              "entity": "000000000000000000000000000001ff",
+              "exposed": false,
+              "film_nm_q16": 0
+            },
+            {
+              "blocker": "00000000000000000000000000000201",
+              "capacity_nm": 6000,
+              "entity": "00000000000000000000000000000200",
+              "exposed": false,
+              "film_nm_q16": 114688000
+            }
+          ],
+          "tick": 5
+        }
+      },
+      "raw_sha256": "9090d57ece28ec8c2d6a983635c6be57b2b109ab3e8930cb8fab0597b39cf333",
+      "save_refusals": [
+        "wrong-version",
+        "film-over-capacity",
+        "float-film",
+        "wrong-entity",
+        "invalid-blocker",
+        "invalid-cursor",
+        "unstarted-nonzero-film"
+      ],
+      "step_refusals": [
+        "empty",
+        "too-long",
+        "boolean-amount",
+        "floating-amount",
+        "amount-range",
+        "boolean-index",
+        "terminal-overflow",
+        "wrong-method",
+        "missing-dose",
+        "skip-quantum",
+        "reapply-quantum",
+        "stale-tick",
+        "stale-structure",
+        "late-ray-miss"
+      ]
+    }
+  },
+  "schema_revision": 191,
+  "scope": [
+    "One upward shelter sample and one saved film per authored rigid world drawable.",
+    "Windows relocation verifies direct rain commands with actual one-sample Vulkan captures.",
+    "Temporal captures exercise the renderer signal on a controlled sequence."
+  ],
+  "toolchain": {
+    "dotnet_sdk": "10.0.404",
+    "shared_runtime": "10.0.15"
+  },
+  "version": "0.0.370",
+  "windows": {
+    "host_abi": {
+      "call_bytes": 80,
+      "call_version": 1,
+      "feature_count": 43,
+      "navigation": true,
+      "passed": true,
+      "services_bytes": 576,
+      "services_version": 7
+    },
+    "mcp_cases": 17,
+    "native_aot": {
+      "artifact": {
+        "descriptor_sha256": "09292c37dbb1263aea27c7ebfc51794fbf46aba2eb5d4e31708826a48441efa7",
+        "files": [
+          {
+            "path": "notices/DOTNET-NATIVEAOT-10.0.15-LICENSE.txt",
+            "role": "notice",
+            "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+            "size": 1139
+          },
+          {
+            "path": "notices/DOTNET-NATIVEAOT-10.0.15-THIRD-PARTY-NOTICES.txt",
+            "role": "notice",
+            "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+            "size": 78041
+          },
+          {
+            "path": "notices/DOTNET-RUNTIME-10.0.15-LICENSE.txt",
+            "role": "notice",
+            "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+            "size": 1139
+          },
+          {
+            "path": "notices/DOTNET-RUNTIME-10.0.15-THIRD-PARTY-NOTICES.txt",
+            "role": "notice",
+            "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+            "size": 78041
+          },
+          {
+            "path": "notices/POIMA-LICENSE.txt",
+            "role": "notice",
+            "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+            "size": 11358
+          },
+          {
+            "path": "notices/POIMA-THIRD-PARTY-NOTICES.md",
+            "role": "notice",
+            "sha256": "7d364ecf908a603cdc58efecf0a19e8d20b1a51ee0179ce3b9885d05327664a7",
+            "size": 23949
+          },
+          {
+            "path": "Poima.NativeGame.dll",
+            "role": "library",
+            "sha256": "86b7afc12ea2ac62cd87e8185ed6392b15db28455bd6ec35c4bbdf28dc956485",
+            "size": 1359360
+          }
+        ]
+      },
+      "binary_sha256": "88f8b3fdad9b15cfc8b0efcc68c8522655fd0d24707478e5b1ea536b53545bc7",
+      "checkpoints": {
+        "after-mixed-dose": {
+          "bytes": 10497,
+          "sha256": "37b71d8dddd6da270a8ca0de9ed3cd8e6a77f288e77f0ceea5af9259e98c3d33",
+          "tick": 2
+        },
+        "checkpoint": {
+          "bytes": 10497,
+          "sha256": "37b71d8dddd6da270a8ca0de9ed3cd8e6a77f288e77f0ceea5af9259e98c3d33",
+          "tick": 2
+        },
+        "cold-final": {
+          "bytes": 10472,
+          "sha256": "cd2857281a9cdf3ead83a9d659a91b65393b04e1fe6f1329c3e19b2607947d22",
+          "tick": 5
+        },
+        "restored-checkpoint": {
+          "bytes": 10497,
+          "sha256": "37b71d8dddd6da270a8ca0de9ed3cd8e6a77f288e77f0ceea5af9259e98c3d33",
+          "tick": 2
+        },
+        "warm-final": {
+          "bytes": 10472,
+          "sha256": "cd2857281a9cdf3ead83a9d659a91b65393b04e1fe6f1329c3e19b2607947d22",
+          "tick": 5
+        }
+      },
+      "dose_oracle": {
+        "first_quantum": 58,
+        "rain_nm": [
+          5932,
+          5932,
+          7474,
+          7474,
+          7474
+        ]
+      },
+      "manifest_sha256": "1b75501029b132c49899c6c17607e1ee0e675426d1833b05a6601eff6deaac3b",
+      "mixed_dose_refusal": {
+        "code": -32040,
+        "message": "Wetness cannot receive both caller and gameplay doses in one tick."
+      },
+      "raw_sha256": "38c5bf3212723b43c55ef498f7d30b598595bdc3f7debc679bc356b4f11720fc",
+      "ticks": {
+        "warm initial": {
+          "gameplay": {
+            "NextQuantum": "58"
+          },
+          "tick": 0,
+          "wet": {
+            "next_quantum": null,
+            "rows": [
+              {
+                "blocker": null,
+                "capacity_nm": 6000,
+                "entity": "000000000000000000000000000001fe",
+                "exposed": null,
+                "film_nm_q16": 0
+              },
+              {
+                "blocker": null,
+                "capacity_nm": 6000,
+                "entity": "000000000000000000000000000001ff",
+                "exposed": null,
+                "film_nm_q16": 0
+              },
+              {
+                "blocker": null,
+                "capacity_nm": 6000,
+                "entity": "00000000000000000000000000000200",
+                "exposed": null,
+                "film_nm_q16": 0
+              }
+            ]
+          }
+        },
+        "warm tick 1": {
+          "gameplay": {
+            "NextQuantum": "59"
+          },
+          "tick": 1,
+          "wet": {
+            "next_quantum": 59,
+            "rows": [
+              {
+                "blocker": null,
+                "capacity_nm": 6000,
+                "entity": "000000000000000000000000000001fe",
+                "exposed": true,
+                "film_nm_q16": 128843776
+              },
+              {
+                "blocker": "00000000000000000000000000000201",
+                "capacity_nm": 6000,
+                "entity": "000000000000000000000000000001ff",
+                "exposed": false,
+                "film_nm_q16": 0
+              },
+              {
+                "blocker": null,
+                "capacity_nm": 6000,
+                "entity": "00000000000000000000000000000200",
+                "exposed": true,
+                "film_nm_q16": 128843776
+              }
+            ]
+          }
+        },
+        "warm tick 2": {
+          "gameplay": {
+            "NextQuantum": "60"
+          },
+          "tick": 2,
+          "wet": {
+            "next_quantum": 60,
+            "rows": [
+              {
+                "blocker": null,
+                "capacity_nm": 6000,
+                "entity": "000000000000000000000000000001fe",
+                "exposed": true,
+                "film_nm_q16": 257687552
+              },
+              {
+                "blocker": "00000000000000000000000000000201",
+                "capacity_nm": 6000,
+                "entity": "000000000000000000000000000001ff",
+                "exposed": false,
+                "film_nm_q16": 0
+              },
+              {
+                "blocker": "00000000000000000000000000000201",
+                "capacity_nm": 6000,
+                "entity": "00000000000000000000000000000200",
+                "exposed": false,
+                "film_nm_q16": 63307776
+              }
+            ]
+          }
+        },
+        "warm tick 3": {
+          "gameplay": {
+            "NextQuantum": "61"
+          },
+          "tick": 3,
+          "wet": {
+            "next_quantum": 61,
+            "rows": [
+              {
+                "blocker": null,
+                "capacity_nm": 6000,
+                "entity": "000000000000000000000000000001fe",
+                "exposed": true,
+                "film_nm_q16": 393216000
+              },
+              {
+                "blocker": "00000000000000000000000000000201",
+                "capacity_nm": 6000,
+                "entity": "000000000000000000000000000001ff",
+                "exposed": false,
+                "film_nm_q16": 0
+              },
+              {
+                "blocker": null,
+                "capacity_nm": 6000,
+                "entity": "00000000000000000000000000000200",
+                "exposed": true,
+                "film_nm_q16": 242679808
+              }
+            ]
+          }
+        },
+        "warm tick 4": {
+          "gameplay": {
+            "NextQuantum": "62"
+          },
+          "tick": 4,
+          "wet": {
+            "next_quantum": 62,
+            "rows": [
+              {
+                "blocker": null,
+                "capacity_nm": 6000,
+                "entity": "000000000000000000000000000001fe",
+                "exposed": true,
+                "film_nm_q16": 393216000
+              },
+              {
+                "blocker": "00000000000000000000000000000201",
+                "capacity_nm": 6000,
+                "entity": "000000000000000000000000000001ff",
+                "exposed": false,
+                "film_nm_q16": 0
+              },
+              {
+                "blocker": "00000000000000000000000000000201",
+                "capacity_nm": 6000,
+                "entity": "00000000000000000000000000000200",
+                "exposed": false,
+                "film_nm_q16": 177143808
+              }
+            ]
+          }
+        },
+        "warm tick 5": {
+          "gameplay": {
+            "NextQuantum": "63"
+          },
+          "tick": 5,
+          "wet": {
+            "next_quantum": 63,
+            "rows": [
+              {
+                "blocker": null,
+                "capacity_nm": 6000,
+                "entity": "000000000000000000000000000001fe",
+                "exposed": true,
+                "film_nm_q16": 393216000
+              },
+              {
+                "blocker": "00000000000000000000000000000201",
+                "capacity_nm": 6000,
+                "entity": "000000000000000000000000000001ff",
+                "exposed": false,
+                "film_nm_q16": 0
+              },
+              {
+                "blocker": null,
+                "capacity_nm": 6000,
+                "entity": "00000000000000000000000000000200",
+                "exposed": true,
+                "film_nm_q16": 356515840
+              }
+            ]
+          }
+        }
+      }
+    },
+    "relocated_vulkan": [
+      {
+        "adapter": 0,
+        "binary_sha256": "88f8b3fdad9b15cfc8b0efcc68c8522655fd0d24707478e5b1ea536b53545bc7",
+        "bundle_manifest_sha256": "8967267be9f7573152fb3b9d6e59708c282a64dce1a506f301f95d9f6ef40687",
+        "dry_to_wet_example": {
+          "warm initial": [
+            117,
+            124,
+            132
+          ],
+          "warm rain": [
+            104,
+            111,
+            118
+          ],
+          "warm saturation": [
+            83,
+            89,
+            95
+          ]
+        },
+        "exact_fresh": {
+          "clear": "9c60d115590bdff30bdf488e8afd0a12d07b477bb5c8ae0f236ea1993fb37aa9",
+          "drying": "55062dbc38886acae8f9c4573c5a19da525feb2b2421dfd477f423a3c1a8e23a",
+          "saturation": "395447ee7e589af97ef1ea373569cd40842d7ed87f73b9468c692beb3beb265e",
+          "sliding-roof": "d5dd3e20845c7d86a429733d9f819c9e9f9495a4290edd55bdc39062580c1739",
+          "under-roof": "853fc4430273b309702dab5fa9e91a9851dea913e7d3eac20fd097d9a8259594"
+        },
+        "images": {
+          "cold clear": "9c60d115590bdff30bdf488e8afd0a12d07b477bb5c8ae0f236ea1993fb37aa9",
+          "cold drying": "55062dbc38886acae8f9c4573c5a19da525feb2b2421dfd477f423a3c1a8e23a",
+          "cold saturation": "395447ee7e589af97ef1ea373569cd40842d7ed87f73b9468c692beb3beb265e",
+          "cold sliding-roof": "d5dd3e20845c7d86a429733d9f819c9e9f9495a4290edd55bdc39062580c1739",
+          "cold under-roof": "853fc4430273b309702dab5fa9e91a9851dea913e7d3eac20fd097d9a8259594",
+          "warm clear": "9c60d115590bdff30bdf488e8afd0a12d07b477bb5c8ae0f236ea1993fb37aa9",
+          "warm drying": "55062dbc38886acae8f9c4573c5a19da525feb2b2421dfd477f423a3c1a8e23a",
+          "warm initial": "672058d66c6c41c0714fdfffe1489d866df6800379f3e4d71f2e5e546123071a",
+          "warm rain": "a9a3bfd5d13878be87b9ee62900da90c9687bd0807b1b03b1a9d6ec61f12bbd7",
+          "warm saturation": "395447ee7e589af97ef1ea373569cd40842d7ed87f73b9468c692beb3beb265e",
+          "warm sliding-roof": "d5dd3e20845c7d86a429733d9f819c9e9f9495a4290edd55bdc39062580c1739",
+          "warm under-roof": "853fc4430273b309702dab5fa9e91a9851dea913e7d3eac20fd097d9a8259594"
+        },
+        "lighting_path": "forward",
+        "raw_sha256": "5953ef631d14b43286ac66f56f14daa9fceb80a36d4d631896dbf9e91b11b02c"
+      },
+      {
+        "adapter": 1,
+        "binary_sha256": "88f8b3fdad9b15cfc8b0efcc68c8522655fd0d24707478e5b1ea536b53545bc7",
+        "bundle_manifest_sha256": "4e5e1ef420d5d1ca5d8284191d31a4c45bba72868a9a1c3891c0ae36972c7dc2",
+        "dry_to_wet_example": {
+          "warm initial": [
+            117,
+            124,
+            132
+          ],
+          "warm rain": [
+            104,
+            111,
+            118
+          ],
+          "warm saturation": [
+            83,
+            89,
+            95
+          ]
+        },
+        "exact_fresh": {
+          "clear": "9c60d115590bdff30bdf488e8afd0a12d07b477bb5c8ae0f236ea1993fb37aa9",
+          "drying": "55062dbc38886acae8f9c4573c5a19da525feb2b2421dfd477f423a3c1a8e23a",
+          "saturation": "395447ee7e589af97ef1ea373569cd40842d7ed87f73b9468c692beb3beb265e",
+          "sliding-roof": "d5dd3e20845c7d86a429733d9f819c9e9f9495a4290edd55bdc39062580c1739",
+          "under-roof": "853fc4430273b309702dab5fa9e91a9851dea913e7d3eac20fd097d9a8259594"
+        },
+        "images": {
+          "cold clear": "9c60d115590bdff30bdf488e8afd0a12d07b477bb5c8ae0f236ea1993fb37aa9",
+          "cold drying": "55062dbc38886acae8f9c4573c5a19da525feb2b2421dfd477f423a3c1a8e23a",
+          "cold saturation": "395447ee7e589af97ef1ea373569cd40842d7ed87f73b9468c692beb3beb265e",
+          "cold sliding-roof": "d5dd3e20845c7d86a429733d9f819c9e9f9495a4290edd55bdc39062580c1739",
+          "cold under-roof": "853fc4430273b309702dab5fa9e91a9851dea913e7d3eac20fd097d9a8259594",
+          "warm clear": "9c60d115590bdff30bdf488e8afd0a12d07b477bb5c8ae0f236ea1993fb37aa9",
+          "warm drying": "55062dbc38886acae8f9c4573c5a19da525feb2b2421dfd477f423a3c1a8e23a",
+          "warm initial": "672058d66c6c41c0714fdfffe1489d866df6800379f3e4d71f2e5e546123071a",
+          "warm rain": "a9a3bfd5d13878be87b9ee62900da90c9687bd0807b1b03b1a9d6ec61f12bbd7",
+          "warm saturation": "395447ee7e589af97ef1ea373569cd40842d7ed87f73b9468c692beb3beb265e",
+          "warm sliding-roof": "d5dd3e20845c7d86a429733d9f819c9e9f9495a4290edd55bdc39062580c1739",
+          "warm under-roof": "853fc4430273b309702dab5fa9e91a9851dea913e7d3eac20fd097d9a8259594"
+        },
+        "lighting_path": "forward",
+        "raw_sha256": "fdcde25d3741f04cfe8e60753280521a7880083c301d2d08ee3684db2303bddb"
+      },
+      {
+        "adapter": 0,
+        "binary_sha256": "88f8b3fdad9b15cfc8b0efcc68c8522655fd0d24707478e5b1ea536b53545bc7",
+        "bundle_manifest_sha256": "a63859432de017b6378d5fdf12a9ff1061170aa700b87556a95822a5d05246d8",
+        "dry_to_wet_example": {
+          "warm initial": [
+            117,
+            124,
+            132
+          ],
+          "warm rain": [
+            104,
+            111,
+            118
+          ],
+          "warm saturation": [
+            83,
+            89,
+            95
+          ]
+        },
+        "exact_fresh": {
+          "clear": "8136baba1b3ffe16a934f63f2047b72f91e60af5652ac1d74b991b39bff33c78",
+          "drying": "914f2e190d95e8479bc69ab4a14819461781dfb90f6f5714bab7a547cd2821d2",
+          "saturation": "5b7494e8cae4261db312a273fb91a5954b873683faac9cfd638a4c2b2f47b8fc",
+          "sliding-roof": "8a43c50666ee9f18dccd2ff190c798cd1036b5cba46ed989d1b28611b49b26ba",
+          "under-roof": "5afc7e5959b97757fe03be1dbbfa84eb5a5fc0ae583c89fc734bb5fa9223599d"
+        },
+        "images": {
+          "cold clear": "8136baba1b3ffe16a934f63f2047b72f91e60af5652ac1d74b991b39bff33c78",
+          "cold drying": "914f2e190d95e8479bc69ab4a14819461781dfb90f6f5714bab7a547cd2821d2",
+          "cold saturation": "5b7494e8cae4261db312a273fb91a5954b873683faac9cfd638a4c2b2f47b8fc",
+          "cold sliding-roof": "8a43c50666ee9f18dccd2ff190c798cd1036b5cba46ed989d1b28611b49b26ba",
+          "cold under-roof": "5afc7e5959b97757fe03be1dbbfa84eb5a5fc0ae583c89fc734bb5fa9223599d",
+          "warm clear": "8136baba1b3ffe16a934f63f2047b72f91e60af5652ac1d74b991b39bff33c78",
+          "warm drying": "914f2e190d95e8479bc69ab4a14819461781dfb90f6f5714bab7a547cd2821d2",
+          "warm initial": "9381b69b9702a78a86fc3d99704f017931d8da8486eaa16f2458064c3991c46a",
+          "warm rain": "22e550c9ab012eb17f2c385c75814abf6aa47b7cc1d9c0328f74e2e5693e86b8",
+          "warm saturation": "5b7494e8cae4261db312a273fb91a5954b873683faac9cfd638a4c2b2f47b8fc",
+          "warm sliding-roof": "8a43c50666ee9f18dccd2ff190c798cd1036b5cba46ed989d1b28611b49b26ba",
+          "warm under-roof": "5afc7e5959b97757fe03be1dbbfa84eb5a5fc0ae583c89fc734bb5fa9223599d"
+        },
+        "lighting_path": "deferred",
+        "raw_sha256": "268ac59289ed39a4174d537ab81969f351e4557fa2abf0b57f36348be4372f71"
+      },
+      {
+        "adapter": 1,
+        "binary_sha256": "88f8b3fdad9b15cfc8b0efcc68c8522655fd0d24707478e5b1ea536b53545bc7",
+        "bundle_manifest_sha256": "cf5cf2afd7122ece03b9e76447e174230b69d230800b1cb170d54f52d130780c",
+        "dry_to_wet_example": {
+          "warm initial": [
+            117,
+            124,
+            132
+          ],
+          "warm rain": [
+            104,
+            111,
+            118
+          ],
+          "warm saturation": [
+            83,
+            89,
+            95
+          ]
+        },
+        "exact_fresh": {
+          "clear": "8136baba1b3ffe16a934f63f2047b72f91e60af5652ac1d74b991b39bff33c78",
+          "drying": "914f2e190d95e8479bc69ab4a14819461781dfb90f6f5714bab7a547cd2821d2",
+          "saturation": "5b7494e8cae4261db312a273fb91a5954b873683faac9cfd638a4c2b2f47b8fc",
+          "sliding-roof": "8a43c50666ee9f18dccd2ff190c798cd1036b5cba46ed989d1b28611b49b26ba",
+          "under-roof": "5afc7e5959b97757fe03be1dbbfa84eb5a5fc0ae583c89fc734bb5fa9223599d"
+        },
+        "images": {
+          "cold clear": "8136baba1b3ffe16a934f63f2047b72f91e60af5652ac1d74b991b39bff33c78",
+          "cold drying": "914f2e190d95e8479bc69ab4a14819461781dfb90f6f5714bab7a547cd2821d2",
+          "cold saturation": "5b7494e8cae4261db312a273fb91a5954b873683faac9cfd638a4c2b2f47b8fc",
+          "cold sliding-roof": "8a43c50666ee9f18dccd2ff190c798cd1036b5cba46ed989d1b28611b49b26ba",
+          "cold under-roof": "5afc7e5959b97757fe03be1dbbfa84eb5a5fc0ae583c89fc734bb5fa9223599d",
+          "warm clear": "8136baba1b3ffe16a934f63f2047b72f91e60af5652ac1d74b991b39bff33c78",
+          "warm drying": "914f2e190d95e8479bc69ab4a14819461781dfb90f6f5714bab7a547cd2821d2",
+          "warm initial": "9381b69b9702a78a86fc3d99704f017931d8da8486eaa16f2458064c3991c46a",
+          "warm rain": "22e550c9ab012eb17f2c385c75814abf6aa47b7cc1d9c0328f74e2e5693e86b8",
+          "warm saturation": "5b7494e8cae4261db312a273fb91a5954b873683faac9cfd638a4c2b2f47b8fc",
+          "warm sliding-roof": "8a43c50666ee9f18dccd2ff190c798cd1036b5cba46ed989d1b28611b49b26ba",
+          "warm under-roof": "5afc7e5959b97757fe03be1dbbfa84eb5a5fc0ae583c89fc734bb5fa9223599d"
+        },
+        "lighting_path": "deferred",
+        "raw_sha256": "9088cf4257508654fe07dd3002eafbda2ddde80254eca8fdda023819f8e8bff6"
+      }
+    ],
+    "temporal": [
+      {
+        "frames": 11,
+        "gpu": "AMD Radeon(TM) Graphics",
+        "history_resets": 1,
+        "lighting_path": "deferred",
+        "raw_sha256": "6b0a805d0bb624115ef4988a059b603c642efceda9640527d38b2dae9910e72d",
+        "receiver_changes": 4,
+        "reconstruction": "fsr3_native"
+      },
+      {
+        "frames": 11,
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "history_resets": 1,
+        "lighting_path": "deferred",
+        "raw_sha256": "b91ebf38d3232a762b4c9b1dfb6b90871f45613faddf37b2ec2d82ac8486c5e9",
+        "receiver_changes": 4,
+        "reconstruction": "fsr3_native"
+      },
+      {
+        "frames": 11,
+        "gpu": "AMD Radeon(TM) Graphics",
+        "history_resets": 1,
+        "lighting_path": "forward",
+        "raw_sha256": "2a9d9fe4e6b1c24081efd6fc2b7856880a2e242d9fa38701b11eb8e5ce1f243a",
+        "receiver_changes": 4,
+        "reconstruction": "fsr3_native"
+      },
+      {
+        "frames": 11,
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "history_resets": 1,
+        "lighting_path": "forward",
+        "raw_sha256": "355fdb4e2934b306798fab5d988e4755fc51eec47a209e39316cc77ecd08eb0a",
+        "receiver_changes": 4,
+        "reconstruction": "fsr3_native"
+      },
+      {
+        "frames": 11,
+        "gpu": "AMD Radeon(TM) Graphics",
+        "history_resets": 1,
+        "lighting_path": "deferred",
+        "raw_sha256": "df9ae7a937e64903fc351e20425beb1a86f651566c7d0f48d63597e1810b5e8c",
+        "receiver_changes": 4,
+        "reconstruction": "fsr3_quality"
+      },
+      {
+        "frames": 11,
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "history_resets": 1,
+        "lighting_path": "deferred",
+        "raw_sha256": "817757ccc92d68084ca536270381f30bef5dc54aa3823c4e4ee3d5222d20e453",
+        "receiver_changes": 4,
+        "reconstruction": "fsr3_quality"
+      },
+      {
+        "frames": 11,
+        "gpu": "AMD Radeon(TM) Graphics",
+        "history_resets": 1,
+        "lighting_path": "forward",
+        "raw_sha256": "10954e387119293a6bee041781389becb4f6c51c12941bf3f72385160da8e0b0",
+        "receiver_changes": 4,
+        "reconstruction": "fsr3_quality"
+      },
+      {
+        "frames": 11,
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "history_resets": 1,
+        "lighting_path": "forward",
+        "raw_sha256": "fa27d22015c9cae29e05b7041b3cf86b433c1aa534de617f528796d44e22441c",
+        "receiver_changes": 4,
+        "reconstruction": "fsr3_quality"
+      }
+    ]
+  }
+}

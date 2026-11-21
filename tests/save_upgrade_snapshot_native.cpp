@@ -150,6 +150,26 @@ void run(){
         auto false_miss=grip_source;false_miss["payload"]["attachment_outcomes"]["outcomes"][0]["distance_m"]=.001;
         rejects([&]{Runtime::validate_snapshot(definition,source_hash,seal(false_miss));});
     }
+    auto wetness_source=original;
+    wetness_source["payload"]["wetness"]={{"version",1},{"next_quantum",9},{"receivers",Json::array({
+        {{"entity",definition.entities[0].id},{"film_nm_q16",16384},{"blocker",nullptr}}})}};
+    const auto wetness_bytes=seal(wetness_source);
+    const auto wetness_mapping=transform(wetness_bytes,plan,target_game,before,after);
+    check(Json::parse(wetness_mapping.snapshot).at("payload").at("wetness")==wetness_source["payload"]["wetness"],
+        "Upgrade changed saved surface wetness.");
+    if(Runtime::available()) {
+        auto wet_definition=definition;
+        auto& receiver=wet_definition.entities[0];
+        receiver.mesh=RuntimeMesh{};
+        receiver.mesh->material=PbrMaterial{};
+        receiver.surface_wetness=wetness::Profile{.capacity_nm=6000};
+        Runtime::validate_snapshot(wet_definition,source_hash,wetness_bytes);
+        wet_definition.authored_revision=8;wet_definition.component_schemas=after;
+        const auto converted=map_component_scalars(components::schema_json(a),components::schema_json(b),
+            components::values_json(a,source_values),cm.dump()).target_payload;
+        receiver.components[a.id]=converted;wet_definition.templates[0].components[a.id]=converted;
+        Runtime::validate_snapshot(wet_definition,target_hash,wetness_mapping.snapshot);
+    }
     // New defaulted cells on an existing authored entity; live spawned and
     // retired IDs never become eligible through checkpoint membership alone.
     const auto added=components::parse_schema(Json{{"id",id('5')},{"name","Progression"},{"version",2},{"fields",Json::array({

@@ -242,7 +242,7 @@ struct DrawIndices {std::uint32_t object=0,shadow=0,reserved[2]{};};
 struct ObjectData {
     DrawConstants current{};
     float previous_model[3][4]{};
-    // Motion correspondence, receive-shadows disabled, mark offset, mark count.
+    // Motion and surface change flags, receive-shadows disabled, mark offset, mark count.
     std::uint32_t history[4]{};
 };
 static_assert(sizeof(DrawIndices)==16 && sizeof(ObjectData)==208);
@@ -316,6 +316,7 @@ struct DrawItem {
     std::uint32_t shadow_mask=0,surface_mark_offset=0,surface_mark_count=0;
     // Borrowed from the current snapshot during draw preparation and submission.
     std::span<const SceneSurfaceMark> local_surface_marks;
+    SceneWetness wetness;
 };
 using SteadyClock=std::chrono::steady_clock;
 namespace fp=frame_performance;
@@ -513,6 +514,7 @@ struct Context {
         std::shared_ptr<const MeshAsset> mesh;
         std::uint32_t mark_offset=0,mark_count=0;
         bool skinned=false,mutable_geometry=false;
+        SceneWetness wetness;
     };
     struct ViewHistory {
         std::string source,world,camera;
@@ -1139,13 +1141,13 @@ struct Context {
             }
             if(item.skin)valid=valid && item.skin->accepted_sequence==history.sequence;
             std::copy_n(valid ? previous->second.model.data() : &item.constants.model[0][0],12,&gpu_object.previous_model[0][0]);
-            bool marks_changed=false;
-            if(valid && (previous->second.mark_count || !item.local_surface_marks.empty())) {
+            bool surface_changed=valid && previous->second.wetness!=item.wetness;
+            if(valid && !surface_changed && (previous->second.mark_count || !item.local_surface_marks.empty())) {
                 const auto previous_marks=std::span(history.surface_marks).subspan(previous->second.mark_offset,previous->second.mark_count);
-                marks_changed=!std::ranges::equal(previous_marks,item.local_surface_marks);
+                surface_changed=!std::ranges::equal(previous_marks,item.local_surface_marks);
             }
             // Keep geometry correspondence when only the surface appearance changed.
-            gpu_object.history[0]=valid ? (marks_changed ? 3u : 1u) : 0u;
+            gpu_object.history[0]=valid ? (surface_changed ? 3u : 1u) : 0u;
             gpu_object.history[1]=item.receive_shadows ? 0u : 1u;
             gpu_object.history[2]=item.surface_mark_offset;
             gpu_object.history[3]=item.surface_mark_count;
@@ -1154,6 +1156,7 @@ struct Context {
             if(item.stream_geometry && (!item.mutable_geometry || !scene_motion || !scene_visible || !item.camera_visible))continue;
             ObjectHistory accepted;std::copy_n(&item.constants.model[0][0],12,accepted.model.begin());
             accepted.incarnation=item.incarnation;accepted.mesh=item.mesh;accepted.skinned=bool(item.skin);accepted.mutable_geometry=item.mutable_geometry;
+            accepted.wetness=item.wetness;
             if(scene_motion && !item.local_surface_marks.empty()) {
                 accepted.mark_offset=static_cast<std::uint32_t>(pending_history.surface_marks.size());
                 accepted.mark_count=item.surface_mark_count;
@@ -2517,6 +2520,7 @@ struct Context {
         for(const auto& object:foreground.objects) {
             require(!object.entity_id.empty() && ids.insert(object.entity_id).second,"Foreground identity is missing, duplicated or also belongs to world geometry.");
             require(object.surface_marks.empty(),"Surface marks are limited to opaque world receivers.");
+            require(!object.wetness,"Surface wetness is limited to world drawables.");
         }
     }
     void update_scene() {
@@ -2624,6 +2628,8 @@ struct Context {
         for(std::size_t list=0;list<world_drawables.size();++list)for(const auto& object:world_drawables[list]) {
             if(object.material)validate_material_alpha(*object.material);
             if(object.mesh)validate_material_alpha(object.mesh->material);
+            require(!object.wetness || (list==0 && object.material && !object.camera_draw && !object.skin && !object.stream_geometry),
+                "Surface wetness requires a world PBR drawable without camera routing, skinning or transient geometry.");
             DrawItem item;item.object_index=static_cast<std::uint32_t>(draws.size());item.incarnation=object.incarnation;item.mesh=object.mesh;item.entity_id=object.entity_id;item.receive_shadows=object.receive_shadows;auto& draw=item.constants;const auto inverse=inverse_affine(object.world);
             for(std::size_t row=0;row<3;++row) {
                 for(std::size_t col=0;col<4;++col)draw.model[row][col]=number(object.world[col*4+row]);
@@ -2632,6 +2638,16 @@ struct Context {
             if(object.material || !lighting.preview) {
                 PbrMaterial m;if(object.material)m=*object.material;else { m.base_color=object.albedo;m.metallic=0; }
                 validate_material_alpha(m);
+                if(object.wetness) {
+                    item.wetness=*object.wetness;
+                    for(float scale:{item.wetness.base_scale,item.wetness.roughness_scale})
+                        require(std::isfinite(scale) && scale>=0 && scale<=1,
+                            "Surface wetness factors must be finite and in [0,1].");
+                    if(item.wetness!=SceneWetness{}) {
+                        for(auto& channel:m.base_color)channel*=item.wetness.base_scale;
+                        m.roughness*=item.wetness.roughness_scale;
+                    }
+                }
                 for(std::size_t k=0;k<3;++k) { draw.base_metallic[k]=m.base_color[k];draw.emissive_roughness[k]=m.emissive[k]; }
                 draw.base_metallic[3]=m.metallic;draw.emissive_roughness[3]=m.roughness;item.cull=!m.double_sided;
                 draw.alpha[0]=m.opacity;draw.alpha[1]=m.alpha_cutoff;draw.alpha[2]=m.alpha_mode==MaterialAlphaMode::mask ? 1.f : 0.f;

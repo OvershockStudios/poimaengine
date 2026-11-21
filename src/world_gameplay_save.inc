@@ -140,7 +140,8 @@
     }
     RuntimeAdvance advance_runtime(std::uint32_t ticks,const std::vector<RuntimeInput>& inputs,
         const std::vector<KinematicTarget>& motions={},const std::vector<SoundCommand>& sounds={},const std::vector<AnimationCommand>& animations={},const std::vector<RuntimeIkCommand>& ik={},const std::vector<RuntimeRootMotionCommand>& root_motion={},const std::vector<RuntimeCameraLensCommand>& camera_lenses={},const std::vector<RuntimeCharacterStanceCommand>& character_stances={},const std::vector<RuntimeGroundingCommand>& grounding={},const std::vector<AnimationRateCommand>& animation_rates={},const std::vector<RuntimeCameraPoseCommand>& camera_poses={},const std::vector<PhysicalRigCommand>& physical_rigs={},
-        std::span<const RuntimeSurfaceMarkCommand> surface_marks={},const std::optional<RuntimeSnowStamp>& snow_stamp={}) {
+        std::span<const RuntimeSurfaceMarkCommand> surface_marks={},const std::optional<RuntimeSnowStamp>& snow_stamp={},
+        const std::optional<wetness::Dose>& wetness_dose={}) {
         require(bool(runtime_),"No runtime is active.",-32030);
         profiling::SessionScope trace_session(runtime_id_);
         profiling::Scope trace_advance("owner.advance",static_cast<std::int64_t>(runtime_->inspect().tick));
@@ -156,7 +157,8 @@
         result.previous_tick=runtime_->inspect().tick;result.committed_tick=result.previous_tick+ticks;result.current_tick=result.committed_tick;result.stepped=ticks;
         result.first_voice=runtime_->sound_state().next_id();
         prepare_gameplay_player_preferences_boundary();
-        try { runtime_->step(ticks,inputs,motions,sounds,animations,{},ik,root_motion,camera_lenses,character_stances,grounding,animation_rates,camera_poses,physical_rigs,surface_marks,snow_stamp); }
+        try { runtime_->step(ticks,inputs,motions,sounds,animations,{},ik,root_motion,camera_lenses,
+            character_stances,grounding,animation_rates,camera_poses,physical_rigs,surface_marks,snow_stamp,wetness_dose); }
         catch(const RuntimeAttachmentContactRejected& error) {throw attachment_contact_error(error);}
         catch(const RuntimeAttachmentSurfaceRejected& error) {throw attachment_surface_error(error);}
         catch(const std::runtime_error& error) { throw Error(-32040,error.what()); }
