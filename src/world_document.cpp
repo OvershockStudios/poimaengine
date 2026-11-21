@@ -91,7 +91,7 @@ static SkySettings sky_value(const Json& value) {
     return result;
 }
 LightingEnvironment environment_value(const Json& value) {
-    fields(value,{"ambient","exposure","shadow_resolution","shadow_filter","sky","ibl","bloom","post_effect"},{"ambient","exposure"});require(value.at("ambient").is_array() && value.at("ambient").size()==3,"Ambient fill needs three values.");
+    fields(value,{"ambient","exposure","shadow_resolution","shadow_filter","sky","ibl","bloom","post_effect","output_grade"},{"ambient","exposure"});require(value.at("ambient").is_array() && value.at("ambient").size()==3,"Ambient fill needs three values.");
     for(const auto& x:value.at("ambient"))require(x.is_number() && std::isfinite(x.get<double>()) && x>=0 && x<=1e6,"Ambient fill must be in [0,1e6].");
     require(value.at("exposure").is_number() && std::isfinite(value.at("exposure").get<double>()) && value.at("exposure")>=0 && value.at("exposure")<=1e6,"Exposure must be in [0,1e6].");
     if(value.contains("shadow_resolution"))require(value.at("shadow_resolution").is_number_integer() && (value.at("shadow_resolution")==256 || value.at("shadow_resolution")==512 || value.at("shadow_resolution")==1024 || value.at("shadow_resolution")==2048),"Shadow resolution must be 256, 512, 1024 or 2048.");
@@ -126,6 +126,33 @@ LightingEnvironment environment_value(const Json& value) {
         result.bloom.intensity=read_field("intensity",result.bloom.intensity,0,1);
         result.bloom.threshold=read_field("threshold",result.bloom.threshold,0,65504);
         result.bloom.radius=read_field("radius",result.bloom.radius,2,32);
+    }
+    if(value.contains("output_grade")) {
+        const auto& authored=value.at("output_grade");
+        fields(authored,{"input_max","strength","knots"},{"input_max","strength","knots"});
+        const auto read_number=[](const Json& field,double minimum,double maximum,const char* message) {
+            require(field.is_number(),message);
+            const auto number=field.get<double>();
+            require(std::isfinite(number) && number>=minimum && number<=maximum,message);
+            return static_cast<float>(number);
+        };
+        OutputGrade grade;
+        grade.input_max=read_number(authored.at("input_max"),.125,64,
+            "Output grade input_max must be finite and in [0.125,64].");
+        grade.strength=read_number(authored.at("strength"),0,1,
+            "Output grade strength must be finite and in [0,1].");
+        const auto& knots=authored.at("knots");
+        require(knots.is_array() && knots.size()==output_grade_knot_count,"Output grade needs exactly 33 RGB knots.");
+        // Test the original numbers so float rounding cannot hide a nonzero first knot.
+        require(knots.front()==Json::array({0,0,0}),"Output grade first knot must be [0,0,0].");
+        for(std::size_t i=0;i<grade.knots.size();++i) {
+            const auto& knot=knots.at(i);
+            require(knot.is_array() && knot.size()==3,"An output grade knot needs exactly three RGB channels.");
+            for(std::size_t channel=0;channel<grade.knots[i].size();++channel)
+                grade.knots[i][channel]=read_number(knot.at(channel),0,16,
+                    "Output grade knot channels must be finite and in [0,16].");
+        }
+        result.output_grade=grade;
     }
     if(value.contains("post_effect")) {
         const auto& digest=value.at("post_effect");

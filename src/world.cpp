@@ -792,6 +792,7 @@ public:
             }
             if(components.contains("LightingEnvironment")) {
                 const auto& environment=components.at("LightingEnvironment");
+                if(environment.contains("output_grade"))result.needs_output_grade=true;
                 if(environment.contains("post_effect")) {
                     const auto& digest=environment.at("post_effect").get_ref<const std::string&>();
                     if(!post_effects.contains(digest)) {
@@ -1179,6 +1180,7 @@ public:
             if(content.needs_surface_mark_masks)result["needs_surface_mark_masks"]=true;
             if(content.needs_mesh_lod)result["needs_mesh_lod"]=true;
             if(content.needs_water_rain)result["needs_water_rain"]=true;
+            if(content.needs_output_grade)result["needs_output_grade"]=true;
             if(!content.provenance_records.empty()) {
                 Json records=Json::array();
                 for(const auto& f:content.provenance_records)records.push_back({{"filename",f.filename},{"sha256",f.sha256},{"bytes",f.bytes}});
@@ -1415,6 +1417,10 @@ public:
         if(lighting.environment.ibl) {
             const auto& ibl=*lighting.environment.ibl;
             result["ibl"]={{"enabled",ibl.enabled},{"diffuse_intensity",ibl.diffuse_intensity},{"specular_intensity",ibl.specular_intensity}};
+        }
+        if(lighting.environment.output_grade) {
+            const auto& grade=*lighting.environment.output_grade;
+            result["output_grade"]={{"input_max",grade.input_max},{"strength",grade.strength},{"knots",grade.knots}};
         }
         if(!lighting.environment.post_effect_asset.empty())result["post_effect"]=lighting.environment.post_effect_asset;
         return result;

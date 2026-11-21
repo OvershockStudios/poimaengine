@@ -52,6 +52,8 @@
 #include "poima/scene_output_products_ps.hpp"
 #include "poima/scene_output_bloom_ps.hpp"
 #include "poima/scene_output_products_bloom_ps.hpp"
+#include "poima/scene_output_grade_ps.hpp"
+#include "poima/scene_output_grade_bloom_ps.hpp"
 #include "poima/bloom_vs.hpp"
 #include "poima/bloom_ps.hpp"
 #include "poima/viewmodel_composite_vs.hpp"
@@ -532,6 +534,8 @@ struct Context {
     nvrhi::BindingSetHandle output_bindings;
     bool output_reconstruction_bound=false;
     bool output_bloom_bound=false;
+    bool output_grade_bound=false;
+    nvrhi::BufferHandle output_grade_buffer;
     const nvrhi::ITexture* output_source_bound=nullptr;
     nvrhi::GraphicsPipelineHandle output_pipeline;
     struct PostEffectPass {
@@ -702,6 +706,7 @@ struct Context {
         pipeline = nullptr; culled_pipeline=nullptr;
         sky_pipeline=nullptr;sky_bindings=nullptr;sky_layout=nullptr;sky_vs=nullptr;sky_ps=nullptr;
         output_pipeline=nullptr;output_bindings=nullptr;output_layout=nullptr;output_vs=nullptr;output_ps=nullptr;
+        output_grade_buffer=nullptr;
         bloom_pipeline=nullptr;bloom_targets.reset();bloom_layout=nullptr;bloom_vs=nullptr;bloom_ps=nullptr;bloom_sampler=nullptr;
         post_effect={};
         vertex_shader = nullptr;
@@ -2436,6 +2441,12 @@ struct Context {
         commands->setPushConstants(parameters,sizeof(parameters));
         commands->draw(nvrhi::DrawArguments().setVertexCount(3));
     }
+    struct OutputGradeConstants {
+        std::array<float, 4> parameters{};
+        std::array<std::array<float, 4>, output_grade_knot_count> knots{};
+    };
+    static_assert(sizeof(OutputGradeConstants) == render_schedule::output_grade_bytes);
+
     void prepare_scene_output() {
         if(!scene)return;
         const bool use_reconstructed=(reconstruction && scene_visible) || viewmodel_enabled;
@@ -2455,8 +2466,21 @@ struct Context {
             std::isfinite(bloom.radius) && bloom.radius>=2 && bloom.radius<=32,"Invalid snapshot bloom settings.");
         const bool use_bloom=scene_visible && scene_debug_view==SceneDebugView::color && bloom.intensity>0;
         if(use_bloom)prepare_bloom(source);
-        if(output_bloom_bound!=use_bloom) {
+        const auto& grade=scene->lighting.environment.output_grade;
+        const bool use_grade=scene_visible && scene_debug_view==SceneDebugView::color && grade && grade->strength>0;
+        if(use_grade && !output_grade_buffer) {
+            nvrhi::BufferDesc desc;
+            desc.byteSize=sizeof(OutputGradeConstants);
+            desc.isConstantBuffer=true;
+            desc.initialState=nvrhi::ResourceStates::ConstantBuffer;
+            desc.keepInitialState=true;
+            desc.debugName="Output grade constants";
+            output_grade_buffer=checked->createBuffer(desc);
+            require(bool(output_grade_buffer),"Output grade constants allocation failed.");
+        }
+        if(output_bloom_bound!=use_bloom || output_grade_bound!=use_grade) {
             output_bloom_bound=use_bloom;
+            output_grade_bound=use_grade;
             output_layout=nullptr;
             output_pipeline=nullptr;
             output_bindings=nullptr;
@@ -2465,6 +2489,7 @@ struct Context {
             output_vs=create_embedded_shader(checked,nvrhi::ShaderDesc(nvrhi::ShaderType::Vertex).setEntryName("vertex_main"),poima_scene_output_vs);
             const auto ps=nvrhi::ShaderDesc(nvrhi::ShaderType::Pixel).setEntryName("pixel_main");
             if(scene_debug_view==SceneDebugView::ambient_occlusion)output_ps=create_embedded_shader(checked,ps,poima_scene_output_ao_ps);
+            else if(use_grade)output_ps=use_bloom ? create_embedded_shader(checked,ps,poima_scene_output_grade_bloom_ps) : create_embedded_shader(checked,ps,poima_scene_output_grade_ps);
             else if(use_bloom)output_ps=scene_normal ? create_embedded_shader(checked,ps,poima_scene_output_products_bloom_ps) : create_embedded_shader(checked,ps,poima_scene_output_bloom_ps);
             else output_ps=scene_normal ? create_embedded_shader(checked,ps,poima_scene_output_products_ps) : create_embedded_shader(checked,ps,poima_scene_output_ps);
             auto layout=nvrhi::BindingLayoutDesc().setVisibility(nvrhi::ShaderType::All)
@@ -2472,6 +2497,7 @@ struct Context {
             if(scene_normal)layout.addItem(nvrhi::BindingLayoutItem::Texture_SRV(1)).addItem(nvrhi::BindingLayoutItem::Texture_SRV(2)).addItem(nvrhi::BindingLayoutItem::Texture_SRV(3)).addItem(nvrhi::BindingLayoutItem::Texture_SRV(4));
             if(scene_debug_view==SceneDebugView::ambient_occlusion)layout.addItem(nvrhi::BindingLayoutItem::Texture_SRV(5));
             if(use_bloom)layout.addItem(nvrhi::BindingLayoutItem::Texture_SRV(6)).addItem(nvrhi::BindingLayoutItem::Sampler(0));
+            if(use_grade)layout.addItem(nvrhi::BindingLayoutItem::ConstantBuffer(1));
             output_layout=checked->createBindingLayout(layout);
             require(output_vs && output_ps && output_layout,"Scene output shader/layout creation failed.");
         }
@@ -2484,6 +2510,7 @@ struct Context {
             if(scene_normal)bindings_desc.addItem(nvrhi::BindingSetItem::Texture_SRV(1,depth)).addItem(nvrhi::BindingSetItem::Texture_SRV(2,scene_normal)).addItem(nvrhi::BindingSetItem::Texture_SRV(3,scene_motion)).addItem(nvrhi::BindingSetItem::Texture_SRV(4,scene_motion_valid));
             if(scene_debug_view==SceneDebugView::ambient_occlusion)bindings_desc.addItem(nvrhi::BindingSetItem::Texture_SRV(5,ao_filtered));
             if(use_bloom)bindings_desc.addItem(nvrhi::BindingSetItem::Texture_SRV(6,bloom_targets->images[0])).addItem(nvrhi::BindingSetItem::Sampler(0,bloom_sampler));
+            if(use_grade)bindings_desc.addItem(nvrhi::BindingSetItem::ConstantBuffer(1,output_grade_buffer));
             output_bindings=checked->createBindingSet(bindings_desc,output_layout);
             require(bool(output_bindings),"Scene output HDR bindings creation failed.");
         }
@@ -2495,8 +2522,16 @@ struct Context {
             require(bool(output_pipeline),"Scene output pipeline creation failed.");
         }
     }
-    void render_scene_output(std::uint32_t image_index) {
+    void render_scene_output(std::uint32_t image_index, nvrhi::IBuffer* grade_buffer) {
         if(!scene)return;
+        if(grade_buffer) {
+            const auto& grade=*scene->lighting.environment.output_grade;
+            OutputGradeConstants constants;
+            constants.parameters={grade.input_max,grade.strength,0,0};
+            for(std::size_t i=0;i<grade.knots.size();++i)
+                std::copy(grade.knots[i].begin(),grade.knots[i].end(),constants.knots[i].begin());
+            commands->writeBuffer(grade_buffer,&constants,sizeof(constants));
+        }
         nvrhi::GraphicsState state;state.pipeline=output_pipeline;state.framebuffer=game_ui_framebuffers.at(image_index);state.bindings.push_back(output_bindings);
         state.viewport.addViewportAndScissorRect(nvrhi::Viewport(static_cast<float>(extent.width),static_cast<float>(extent.height)));
         const auto display=scene_viewport.value_or(nvrhi::Viewport(static_cast<float>(extent.width),static_cast<float>(extent.height)));
@@ -3647,6 +3682,7 @@ struct Context {
             }
         }
         if(settings.post_effect)f.post_effect=texture(post_effect.target,rs::Lifetime::shared,false);
+        if(settings.scene && output_grade_bound)f.output_grade=buffer(output_grade_buffer,rs::Lifetime::shared,false);
         if(settings.bloom) {
             f.bloom=texture(bloom_targets->images[0],rs::Lifetime::shared,false);
             f.bloom_scratch=texture(bloom_targets->images[1],rs::Lifetime::shared,false);
@@ -3858,8 +3894,16 @@ struct Context {
                         if(binding.type==nvrhi::ResourceType::Texture_SRV)identity(inputs[pass],binding.resourceHandle);
             }
             const std::array<rs::ResourceId,7> output_resources={rs::display_radiance(f,plan.settings),f.depth,f.normal,f.motion,f.motion_valid,f.ao_filtered,f.bloom};
-            for(const auto& binding:output_bindings->getDesc()->bindings)
+            bool grade_bound=false;
+            for(const auto& binding:output_bindings->getDesc()->bindings) {
                 if(binding.type==nvrhi::ResourceType::Texture_SRV)identity(output_resources.at(binding.slot),binding.resourceHandle);
+                if(binding.type==nvrhi::ResourceType::ConstantBuffer) {
+                    require(binding.slot==1 && !grade_bound,"Invalid scene output grade binding.");
+                    identity(f.output_grade,binding.resourceHandle);
+                    grade_bound=true;
+                }
+            }
+            require(grade_bound==(f.output_grade!=rs::none),"Scene output grade binding differs from its schedule.");
         }
         if(f.game_vertices!=rs::none)identity(f.game_vertices,game_ui_vertices.Get());
         if(f.game_indices!=rs::none)identity(f.game_indices,game_ui_indices.Get());
@@ -4055,7 +4099,9 @@ struct Context {
             case render_schedule::PassId::bloom_extract:render_bloom(0);break;
             case render_schedule::PassId::bloom_horizontal:render_bloom(1);break;
             case render_schedule::PassId::bloom_vertical:render_bloom(2);break;
-            case render_schedule::PassId::output:render_scene_output(index);break;
+            case render_schedule::PassId::output:
+                render_scene_output(index,resources.output_grade!=render_schedule::none ? planned_buffer(resources.output_grade) : nullptr);
+                break;
             case render_schedule::PassId::game_ui:render_game_ui(index);break;
             case render_schedule::PassId::overlay:render_overlay(index);break;
             case render_schedule::PassId::editor_clear:

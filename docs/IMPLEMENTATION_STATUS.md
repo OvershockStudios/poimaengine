@@ -1,8 +1,17 @@
 # Implementation status
 
-Updated 2026-11-21 for **0.0.371**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-21 for **0.0.372**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.372 adds an [authored RGB grade](PROJECT_POST_EFFECTS.md#grade-exposed-scene-color)
+between exposure and tone mapping. Windows Vulkan qualification produced 86
+images across AMD and NVIDIA, including forward, deferred, 4× MSAA, FSR
+Native AA and Quality, HUD, diagnostics, and two relocated standalone runs.
+The controlled grade images matched an independent reference within one
+8-bit RGB step. Omitted and zero-strength grades matched the retained
+0.0.371 captures byte for byte. The headless authoring suite refused 18
+malformed grades without changing the authored world. [Results](evidence/m2-output-grade-372.json)
 
 Version 0.0.371 moves [authored document validation and the SDL player loop](BUILD.md#world-service-and-schema-compilation)
 into separate compilation units. Twelve reference image pairs from a native

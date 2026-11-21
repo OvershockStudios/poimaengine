@@ -10,7 +10,13 @@ automatic exposure, and GI have separate implementation and qualification scopes
 
 ## Output contract
 
-The output pass multiplies resolved scene radiance by `LightingEnvironment.exposure`, applies component-wise Reinhard mapping `x / (1 + x)`, then encodes sRGB exactly once. An sRGB attachment performs that encoding; an UNORM attachment uses explicit shader encoding. The pass uses an integer texel load at the output pixel, avoiding a resampling filter or different UV convention between capture, player and editor.
+The output pass adds enabled bloom to the selected scene radiance, multiplies
+by `LightingEnvironment.exposure`, and evaluates the optional
+[output grade](PROJECT_POST_EFFECTS.md#grade-exposed-scene-color). It applies
+component-wise Reinhard mapping `x / (1 + x)` and encodes sRGB exactly once.
+An sRGB attachment performs that encoding. An UNORM attachment uses explicit
+shader encoding. The pass uses an integer texel load for scene radiance to
+keep sampling consistent between capture, player and editor.
 
 Exposure zero makes scene content black, including the flat background. UI remains visible. Legacy preview boxes retain their simple preview shading but now receive the same output transform as other geometry; their previous exposure bypass is intentionally removed. The standalone diagnostic triangle remains outside the scene pipeline.
 

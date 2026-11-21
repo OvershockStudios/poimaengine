@@ -80,8 +80,8 @@ mapping, and diagnostic views bypass the effect. The target has the same
 extent as the selected HDR input and a 128 MiB payload cap per renderer
 context. UVs are relative to that input texture.
 
-The vignette attenuates radiance toward the corners. An exposed-HDR film grade
-would use a separate slot after scene exposure and before tone mapping.
+The vignette attenuates radiance toward the corners. For a curve over
+exposed HDR, use the authored [output grade](#grade-exposed-scene-color).
 Effects such as depth of field and motion blur need declared depth, motion
 or neighboring samples and their own render-stage contract.
 [Scene HDR composition](HDR_COMPOSITION.md)
@@ -118,6 +118,43 @@ instruction admission and semantic validation leave GPU driver isolation and
 whole-scene performance qualification to separate controls.
 [SPIR-V specification](https://registry.khronos.org/SPIR-V/specs/unified1/SPIRV.html)
 
+## Grade exposed scene color
+
+Set `LightingEnvironment.output_grade` in a guarded `component.set` operation.
+Provide `input_max` in [0.125, 64], `strength` in [0, 1], and exactly 33
+`knots`. Each knot contains three finite RGB values in [0, 16]. The
+first knot must be [0, 0, 0] so black stays black. Any order is valid for
+the remaining values.
+
+The renderer applies the grade after bloom and exposure, before display tone
+mapping. Each channel samples its own curve at its exposed intensity. Knot
+indices 0 through 32 span `0` through `input_max` uniformly. Values between
+knots interpolate linearly. Above `input_max`, each curve continues from its
+last knot with unit slope. Strength blends the original exposed value and
+the graded value. HUD rendering follows this display transform.
+
+The following Python example creates a grade with a slight warm tint.
+
+```python
+grade = {
+    "input_max": 4,
+    "strength": 0.6,
+    "knots": [[4 * i / 32 * gain for gain in [1.06, 1.0, 0.9]]
+              for i in range(33)],
+}
+```
+
+`world.lighting`, `runtime.lighting` and capture lighting reports return the
+selected grade, including an explicit strength of zero. Zero gives an identity
+transform. Omit the field to remove the selection. A running session keeps its
+frozen grade until replaced.
+
+The grade travels in the authored world document. Headless tools can validate
+it and report the `needs_output_grade` content requirement in
+`world.dependencies`, project inspection and verified bundle inspection.
+Export and bundle reopening check for a runtime with
+`features.output_grade: true` whenever the world selects the grade.
+
 ## Verify compilation
 
 ```sh
@@ -143,3 +180,19 @@ python3 tests/project_post_effect_capture.py build/installed/bin/poima.exe \
 
 The command uses WSL path translation. Omit `--windows-interop` when running
 Python directly on Windows. [Windows fixture results](evidence/m2-project-post-effect-350.json)
+
+The headless suite validates grade authoring and capability discovery.
+
+```sh
+ctest --preset headless -R '^output_grade_authoring_contract$' --output-on-failure
+```
+
+On Windows, the grade fixture compares presented pixels with an independent
+RGB reference. It checks the grade with bloom and the compiled vignette,
+reconstruction, the runtime HUD, and a standalone export.
+
+```sh
+python3 tests/output_grade_capture.py build/installed/bin/poima.exe \
+    --output build/output-grade-captures --artifact build/vignette.poimapost \
+    --runtime build/installed --check-ui --reconstruction fsr3_quality --windows-interop
+```

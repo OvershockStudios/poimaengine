@@ -405,6 +405,29 @@ void bloom_contracts() {
     check(standard.frame.bloom==none && standard.frame.bloom_scratch==none,"Default graph acquired bloom attachments");
     check(std::none_of(standard.passes.begin(),standard.passes.end(),[](const auto& work){return work.id>=PassId::bloom_extract && work.id<=PassId::bloom_vertical;}),"Default graph acquired bloom passes");
 }
+void output_grade_contracts() {
+    for(bool deferred:{false,true})for(bool composed:{false,true}) {
+        auto settings=rich();
+        settings.deferred=settings.products=deferred;
+        Fixture fixture(settings,deferred?1:4);
+        if(composed) {setup_post_effect(fixture);setup_bloom(fixture);}
+        auto& f=fixture.f;
+        f.output_grade=fixture.add(Kind::buffer,Lifetime::shared);
+        auto& grade=f.resources[f.output_grade];
+        grade.region=Region::whole;
+        grade.bytes=grade.allocation_bytes=output_grade_bytes;
+        grade.supported=use_bit(Use::upload)|use_bit(Use::constant);
+        const auto valid=fixture.plan();
+        valid.validate();
+        ++accepted;
+        auto bad=[&](const char* label,const auto& change){auto p=valid;change(p);rejects(label,[&]{p.validate();});};
+        bad("grade upload omitted",[](auto& p){erase_access(p,PassId::output,p.frame.output_grade,Use::upload);});
+        bad("grade read omitted",[](auto& p){erase_access(p,PassId::output,p.frame.output_grade,Use::constant);});
+        bad("grade used in game UI",[](auto& p){pass(p,PassId::game_ui).accesses.push_back({p.frame.output_grade,Use::constant,false});});
+        bad("grade on diagnostic output",[](auto& p){p.settings.products_debug=true;});
+        bad("grade payload has wrong size",[](auto& p){--p.frame.resources[p.frame.output_grade].bytes;});
+    }
+}
 void matrix(){
     for(bool scene:{false,true})for(bool editor:{false,true})for(bool capture:{false,true})for(bool ui:{false,true})
     for(bool overlay:{false,true})for(unsigned samples:{1u,4u})for(bool skin:{false,true})for(bool clustered:{false,true})for(bool sky:{false,true}){
@@ -950,4 +973,4 @@ void environment_contracts(){
     auto ordinary=Fixture(rich(),4).plan();ordinary.validate();check(ordinary.frame.ibl_diffuse==none && ordinary.frame.ibl_specular==none && ordinary.frame.ibl_brdf==none,"Legacy graph acquired IBL roles");
 }
 }
-int main(){try{matrix();faults();products();motion_contracts();reconstruction_contracts();deferred_contracts();deferred_color_contracts();viewmodel_contracts();ambient_occlusion_contracts();masked_shadow_contracts();environment_contracts();bloom_contracts();post_effect_contracts();streamed_geometry_contracts();mutable_geometry_contracts();particle_sprite_contracts();surface_mark_contracts();std::cout<<"Production render schedule: "<<accepted<<" valid variants, "<<rejected<<" rejected contract mutations.\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}
+int main(){try{matrix();faults();products();motion_contracts();reconstruction_contracts();deferred_contracts();deferred_color_contracts();viewmodel_contracts();ambient_occlusion_contracts();masked_shadow_contracts();environment_contracts();bloom_contracts();post_effect_contracts();output_grade_contracts();streamed_geometry_contracts();mutable_geometry_contracts();particle_sprite_contracts();surface_mark_contracts();std::cout<<"Production render schedule: "<<accepted<<" valid variants, "<<rejected<<" rejected contract mutations.\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}

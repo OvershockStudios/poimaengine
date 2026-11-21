@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.372
+
+- Grade exposed scene color with an optional RGB curve. World inspection reports the selection, and standalone export checks that its Vulkan runtime supports the grade.
+
 ## 0.0.371
 
 - Compile authored world validation and the SDL player loop in their own translation units. Native world publication and Vulkan resource ownership retain their existing interfaces.

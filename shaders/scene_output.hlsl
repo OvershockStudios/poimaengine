@@ -14,6 +14,19 @@ Texture2D<float> ambient_visibility : register(t5);
 Texture2D<float4> bloom_radiance : register(t6);
 SamplerState bloom_linear : register(s0);
 #endif
+#if POIMA_OUTPUT_GRADE
+cbuffer OutputGrade : register(b1) {
+    float4 grade_parameters;
+    float4 grade_knots[33];
+};
+float grade_channel(float exposed, uint channel) {
+    const float input_max = grade_parameters.x;
+    const float position = saturate(exposed / input_max) * 32;
+    const uint low = min((uint)position, 31u);
+    const float curved = lerp(grade_knots[low][channel], grade_knots[low + 1][channel], position - float(low));
+    return lerp(exposed, curved + max(exposed - input_max, 0), grade_parameters.y);
+}
+#endif
 struct OutputConstants {
     float exposure;
     float attachment_srgb;
@@ -81,6 +94,11 @@ float4 pixel_main(float4 position : SV_Position) : SV_Target0 {
     radiance+=bloom_radiance.SampleLevel(bloom_linear,bloom_uv,0).rgb*output.source_extent.z;
 #endif
     const float3 exposed=radiance*output.exposure;
+#if POIMA_OUTPUT_GRADE
+    const float3 graded = float3(grade_channel(exposed.r, 0), grade_channel(exposed.g, 1), grade_channel(exposed.b, 2));
+    const float3 mapped = graded / (1 + graded);
+#else
     const float3 mapped=exposed/(1+exposed);
+#endif
     return float4(output.attachment_srgb>.5 ? mapped : linear_to_srgb(mapped),1);
 }

@@ -38,6 +38,17 @@ void validate_environment(const LightingEnvironment& e) {
             "Bloom threshold must be finite and in [0,65504].");
     require(std::isfinite(bloom.radius) && bloom.radius>=2 && bloom.radius<=32,
             "Bloom radius must be finite and in [2,32] source pixels.");
+    if(e.output_grade) {
+        const auto& grade=*e.output_grade;
+        require(std::isfinite(grade.input_max) && grade.input_max>=.125f && grade.input_max<=64,
+                "Output grade input_max must be finite and in [0.125,64].");
+        require(std::isfinite(grade.strength) && grade.strength>=0 && grade.strength<=1,
+                "Output grade strength must be finite and in [0,1].");
+        require(grade.knots.front()==std::array<float,3>{},"Output grade first knot must be [0,0,0].");
+        for(const auto& knot:grade.knots)for(float channel:knot)
+            require(std::isfinite(channel) && channel>=0 && channel<=16,
+                    "Output grade knot channels must be finite and in [0,16].");
+    }
     require(e.shadow_filter==ShadowFilter::pcf3_point || e.shadow_filter==ShadowFilter::pcf3_fractional || e.shadow_filter==ShadowFilter::pcss_directional,"Invalid environment shadow filter.");
     require(e.shadow_resolution==256 || e.shadow_resolution==512 || e.shadow_resolution==1024 || e.shadow_resolution==2048,"Shadow resolution must be 256, 512, 1024 or 2048.");
     for(const auto& color:{e.sky.zenith,e.sky.horizon,e.sky.ground})

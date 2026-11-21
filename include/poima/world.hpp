@@ -26,6 +26,7 @@ struct WorldPackageContent {
     bool needs_surface_mark_masks=false;
     bool needs_mesh_lod=false;
     bool needs_water_rain=false;
+    bool needs_output_grade=false;
 };
 enum class WorldRequestScope { standalone, shared_headless, shared_editor };
 struct WorldRuntimeStatus {

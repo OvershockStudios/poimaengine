@@ -98,6 +98,7 @@ struct FrameResources {
     ResourceId viewmodel_resolved=none;
     ResourceId post_effect=none;
     ResourceId bloom=none,bloom_scratch=none;
+    ResourceId output_grade=none;
     ResourceId streamed_vertices=none,streamed_indices=none;
     ResourceId sprite_instances=none;
     std::vector<ResourceId> sprite_textures;
@@ -121,6 +122,7 @@ inline constexpr ResourceId display_radiance(const FrameResources& frame,const S
 inline constexpr std::uint64_t post_effect_budget_bytes=128u*1024u*1024u;
 inline constexpr std::uint32_t bloom_extent(std::uint32_t size) {return size/4+(size%4!=0);}
 inline constexpr std::uint64_t bloom_budget_bytes=32u*1024u*1024u;
+inline constexpr std::uint64_t output_grade_bytes=544;
 inline constexpr std::uint64_t stream_vertex_budget=4u*1024u*1024u;
 inline constexpr std::uint64_t stream_index_budget=1u*1024u*1024u;
 inline constexpr std::size_t max_stream_draws=128;
@@ -220,6 +222,14 @@ struct Schedule {
         if(settings.sky && !settings.scene)fail("sky pass without a scene");
         if(settings.overlay)required(frame.overlay_vertices);
         if(settings.scene) {required(frame.frame);required(frame.objects);required(frame.depth);required(frame.hdr);required(frame.shadow);}
+        if(frame.output_grade!=none) {
+            required(frame.output_grade);
+            const auto& grade=resource(frame.output_grade);
+            if(!settings.scene || settings.products_debug || grade.kind!=Kind::buffer ||
+                grade.lifetime!=Lifetime::shared || grade.region!=Region::whole || grade.initialized ||
+                grade.bytes!=output_grade_bytes || grade.allocation_bytes!=output_grade_bytes)
+                fail("invalid output grade constants");
+        }
         const bool surface_marks=frame.surface_marks!=none;
         if(surface_marks) {
             required(frame.surface_marks);
@@ -450,7 +460,7 @@ struct Schedule {
         bool world_resolved=false,world_opaque=false,foreground_lights=false,foreground_cleared=false,foreground_drawn=false,foreground_resolved=false,foreground_composed=false;
         bool exported=false,captured=false,probed=false,prepared=false,reconstructed=false,deferred_lit=false,deferred_opaque=false,ao_generated=false,ao_filtered=false;
         bool post_effect_applied=false,stream_uploaded=false,stream_shadow_drawn=false,sprites_uploaded=false,sprites_drawn=false;unsigned previous=0;bool first=true;
-        bool surface_marks_uploaded=false;
+        bool surface_marks_uploaded=false,grade_applied=false;
         unsigned bloom_stage=0;
         for(const auto& pass:passes) {
             const auto order=static_cast<unsigned>(pass.id);
@@ -591,6 +601,12 @@ struct Schedule {
             if(pass.id==PassId::output && settings.post_effect &&
                 (!post_effect_applied || !has(frame.post_effect,Use::sampled) ||
                  has(scene_linear_radiance(frame,settings),Use::sampled)))fail("display bypasses post effect");
+            if(pass.id==PassId::output && frame.output_grade!=none) {
+                if(!has(frame.output_grade,Use::upload) || !has(frame.output_grade,Use::constant) ||
+                    !has(display_radiance(frame,settings),Use::sampled) || !has(frame.output,Use::color_overwrite))
+                    fail("display requires uploaded output grade constants");
+                grade_applied=true;
+            }
             if(pass.id>=PassId::bloom_extract && pass.id<=PassId::bloom_vertical) {
                 const auto stage=static_cast<unsigned>(pass.id)-static_cast<unsigned>(PassId::bloom_extract);
                 const auto input=stage==0 ? display_radiance(frame,settings) : stage==1 ? frame.bloom : frame.bloom_scratch;
@@ -630,6 +646,10 @@ struct Schedule {
             std::uint32_t attachment_width=0,attachment_height=0,attachment_samples=0;
             for(const auto& a:pass.accesses) {
                 const auto& r=resource(a.resource);
+                if(a.resource==frame.output_grade &&
+                    (pass.id!=PassId::output || (a.use!=Use::upload && a.use!=Use::constant) ||
+                     a.initialize!=(a.use==Use::upload)))
+                    fail("output grade constants used outside display upload and read");
                 const bool streamed=stream && (a.resource==frame.streamed_vertices || a.resource==frame.streamed_indices);
                 if(streamed && !(pass.id==PassId::stream_geometry && a.use==Use::upload) &&
                     !(stream_draw && a.use==(a.resource==frame.streamed_vertices ? Use::vertex : Use::index)))
@@ -698,6 +718,7 @@ struct Schedule {
         if(surface_marks && !world_opaque)fail("missing opaque surface mark consumer");
         if(settings.post_effect && !post_effect_applied)fail("missing post effect pass");
         if(settings.bloom && bloom_stage!=3)fail("missing bloom pass");
+        if(frame.output_grade!=none && !grade_applied)fail("missing graded output pass");
         if(settings.viewmodel && (!foreground_cleared || !foreground_drawn || !foreground_composed || (settings.viewmodel_samples!=1 && !foreground_resolved) || (settings.viewmodel_clustered && !foreground_lights)))fail("missing foreground passes");
         if(!exported)fail("missing presentation export");
         if(!frame.probe_points.empty() && !probed)fail("missing product probe pass");
@@ -804,7 +825,20 @@ inline Schedule build(FrameResources frame,Settings settings) {
         auto& horizontal=pass(PassId::bloom_horizontal);add(horizontal,f.bloom,Use::sampled);add(horizontal,f.bloom_scratch,Use::color_overwrite,true);
         auto& vertical=pass(PassId::bloom_vertical);add(vertical,f.bloom_scratch,Use::sampled);add(vertical,f.bloom,Use::color_overwrite,true);
     }
-    if(settings.scene) {auto& output=pass(PassId::output);add(output,display_radiance(f,settings),Use::sampled);if(settings.bloom)add(output,f.bloom,Use::sampled);if(settings.products_debug) {add(output,f.depth,Use::sampled);add(output,f.normal,Use::sampled);add(output,f.motion,Use::sampled);add(output,f.motion_valid,Use::sampled);if(settings.ambient_occlusion)add(output,f.ao_filtered,Use::sampled);}add(output,f.output,Use::color_overwrite,true);}
+    if(settings.scene) {
+        auto& output=pass(PassId::output);
+        add(output,display_radiance(f,settings),Use::sampled);
+        if(settings.bloom)add(output,f.bloom,Use::sampled);
+        if(f.output_grade!=none) {
+            add(output,f.output_grade,Use::upload,true);
+            add(output,f.output_grade,Use::constant);
+        }
+        if(settings.products_debug) {
+            add(output,f.depth,Use::sampled);add(output,f.normal,Use::sampled);add(output,f.motion,Use::sampled);add(output,f.motion_valid,Use::sampled);
+            if(settings.ambient_occlusion)add(output,f.ao_filtered,Use::sampled);
+        }
+        add(output,f.output,Use::color_overwrite,true);
+    }
     if(settings.game_ui) {auto& ui=pass(PassId::game_ui);add(ui,f.game_vertices,Use::upload,true);add(ui,f.game_indices,Use::upload,true);add(ui,f.game_vertices,Use::vertex);add(ui,f.game_indices,Use::index);for(auto t:f.game_textures)add(ui,t,Use::sampled);add(ui,f.output,Use::color);}
     if(settings.overlay) {auto& overlay=pass(PassId::overlay);add(overlay,f.overlay_vertices,Use::upload,true);add(overlay,f.overlay_vertices,Use::vertex);add(overlay,f.swapchain,Use::color);}
     if(settings.editor) {

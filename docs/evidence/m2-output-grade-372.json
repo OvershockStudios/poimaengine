@@ -1,0 +1,469 @@
+{
+  "format": "poima.qualification-summary",
+  "version": 1,
+  "engine_checkpoint": "0.0.372",
+  "comparison_commit": "fc5543dc35db9e4e63c62b3f6683b676e113835e",
+  "scope": "Controlled scene color, render order, capture presentation, and standalone replay.",
+  "fixture_sha256": "6188e1e9dfda611e295dbe3cc4eecbc9a7aeeb71745bcdc39986daa4c8d6dd06",
+  "source_sha256": {
+    "CMakeLists.txt": "1cc1f3c43467cc8da3dda98f354e26718e6aec6f39cb87b96320897563ddda03",
+    "cmake/render_smoke.cmake": "12c4e30f1a9b79831c335d028c4d32d3317bb3a5ed5a462442b28305591f22e2",
+    "cmake/runtime.json.in": "70a23c945fabe29160d74d5b93c429691e009743435b1f1a8c702e0b75129e84",
+    "shaders/scene_output.hlsl": "59affe3bcf0130cb758f10875154562538028501aff7422b6be211bcf2c3720d",
+    "src/render_smoke.cpp": "9fc26a777fa74227d4cc7fb6c01bc378d2cd5aa82e3ede2268c809f806ab0351",
+    "src/world_document.cpp": "c48ce5812953c0c654e20124d8652752b1727569d75edbfde690a2376d68046d",
+    "src/world_schema.cpp": "8c01f9931bdc28f9ce0b75c915e17134fdd0c68ad3582e6c601bcd6b37ade4fc",
+    "include/poima/render_schedule.hpp": "c6df1f4ddfa5ed0f5c58eceb4ea270bef8af0e928846e4d6b1fe6c113982f549"
+  },
+  "windows_binary_sha256": "9d25b696741831de1e68861739b0f50afa0463b13d4f66118fcbe821130f6d9b",
+  "windows_runtime_sha256": "e302044531f69b9ccd8393a8d2e545b59a0abdc5fa4a87ba6371a0d09f8f2ecf",
+  "compiled_vignette_sha256": "457ad18548e2de71d07add094043953eacf23f13a2ec5b45c6bca587be0425e0",
+  "windows_synchronization_validation": true,
+  "windows_native_schedule": "Production render schedule: 407 valid variants, 1144 rejected contract mutations.",
+  "linux_authoring": {
+    "binary_sha256": "7b7de2291cf7dfe2be76e5467553ffa0c83021da8ad25292cde6466272dd0822",
+    "junit_sha256": "2467d374ed9e0587008295e1885635c828a42522e5d86e3ba4477adcdc122794",
+    "raw_report_sha256": "db0fd2b382083a12131c5140148f18abead656007ca000df460f6f136ba5e192",
+    "new_or_rerun_suites_passed": 2,
+    "authoring_refusals": 18,
+    "initial_exit": {
+      "scope": "fixture mistakenly requested a simulation session from a dependency-free authoring build",
+      "native_error": -32003,
+      "build_log_sha256": "6ffe77f80a3e6701fb6c66d6c1518806144dbf537dff634f3b42e7154ced539b"
+    }
+  },
+  "unchanged_shader_variants": 10,
+  "accepted": [
+    {
+      "gpu": "AMD Radeon(TM) Graphics",
+      "lighting_path": "forward",
+      "samples": 1,
+      "report_sha256": "11fe9302c3c4574277bba52202fd4ba637d0f371916a64a4a0e5299a6c9b99b7",
+      "capture_sha256": {
+        "omitted": "ab4a3cee6ee092884cbca9217a2799f264e7891b88319ea283f89ed270ee2ff0",
+        "retained-371": "ab4a3cee6ee092884cbca9217a2799f264e7891b88319ea283f89ed270ee2ff0",
+        "explicit-zero": "ab4a3cee6ee092884cbca9217a2799f264e7891b88319ea283f89ed270ee2ff0",
+        "exposed-low": "2a0b8ebe2633b89c8b57fa1d7fc012d220d4a4d9f709612bac4464cfd138f28d",
+        "exposed-tail": "1ac69bb861052b0121f626103437369689117ebe81ac61c60c082222b2679ec6",
+        "black": "d403f7f03ff8236fdc70b056a0283159897b3a0bbb31cd53df4d2c3c9114589c",
+        "graded-bloom": "47f4661aff0fe873d6d2b35105118f85ba626e9727495ea1d63a103d40672bd0",
+        "fsr3_native-omitted": "a8093d9dc18fcfd72e826a5e87eed06badf75154198de36e962675ab32d2f5b1",
+        "fsr3_native-graded": "2a0b8ebe2633b89c8b57fa1d7fc012d220d4a4d9f709612bac4464cfd138f28d",
+        "fsr3_quality-omitted": "a8093d9dc18fcfd72e826a5e87eed06badf75154198de36e962675ab32d2f5b1",
+        "fsr3_quality-graded": "2a0b8ebe2633b89c8b57fa1d7fc012d220d4a4d9f709612bac4464cfd138f28d",
+        "relocated-forward": "47f4661aff0fe873d6d2b35105118f85ba626e9727495ea1d63a103d40672bd0",
+        "hud-omitted": "bf232951c451c77316c8ab049299ee5e4f8d2258806037bdf5da7c029281c6ef",
+        "hud-active": "58c0f513066fc7eb9b9d630d059336af0da5a5f727a2b2b7aa32c21daf30a20d",
+        "hud-black": "105dde43150ae42fe3a7d2f6230219de56cc6ade5a00d4608bd4b4e23c41e945",
+        "diagnostic-omitted": "ba6f143c418da48011113c361fd6e8627aec38e0c00550202a217026f7266867",
+        "diagnostic-graded": "ba6f143c418da48011113c361fd6e8627aec38e0c00550202a217026f7266867"
+      },
+      "color": {
+        "omitted": {
+          "checked_pixels": 77361,
+          "maximum_rgb_error": 0,
+          "out_of_tolerance": 0,
+          "refutes_wrong_order": 0
+        },
+        "exposed-low": {
+          "checked_pixels": 77361,
+          "maximum_rgb_error": 0,
+          "out_of_tolerance": 0,
+          "refutes_wrong_order": 77361
+        },
+        "exposed-tail": {
+          "checked_pixels": 77361,
+          "maximum_rgb_error": 0,
+          "out_of_tolerance": 0,
+          "refutes_wrong_order": 77361
+        },
+        "black": {
+          "checked_pixels": 77361,
+          "maximum_rgb_error": 0,
+          "out_of_tolerance": 0,
+          "refutes_wrong_order": 0
+        },
+        "graded-bloom": {
+          "checked_pixels": 77361,
+          "maximum_rgb_error": 1,
+          "out_of_tolerance": 0,
+          "refutes_wrong_order": 23825
+        },
+        "reference_omitted_identical": true,
+        "omitted_and_zero_identical": true,
+        "upstream_hdr_exact": true
+      },
+      "validated_hud_modes": [
+        "omitted",
+        "active",
+        "black"
+      ],
+      "guarded_authoring_refusals": 18,
+      "reconstruction": {
+        "fsr3_native": 16,
+        "fsr3_quality": 16
+      },
+      "diagnostic": {
+        "unchanged": true,
+        "nonblack_pixels": 6889
+      },
+      "relocated": {
+        "original_source_unavailable": true,
+        "rejected_runtime_flag": [
+          "disabled",
+          "missing"
+        ],
+        "cold_missing_artifact_rejected": true,
+        "cold_modified_grade_rejected": true,
+        "maximum_rgb_error": 1
+      }
+    },
+    {
+      "gpu": "AMD Radeon(TM) Graphics",
+      "lighting_path": "deferred",
+      "samples": 1,
+      "report_sha256": "51668448ced7960093081cbb32a10a224fff661dd55f5e7c6c3a3b28b248c6cd",
+      "capture_sha256": {
+        "omitted": "ab4a3cee6ee092884cbca9217a2799f264e7891b88319ea283f89ed270ee2ff0",
+        "retained-371": "ab4a3cee6ee092884cbca9217a2799f264e7891b88319ea283f89ed270ee2ff0",
+        "explicit-zero": "ab4a3cee6ee092884cbca9217a2799f264e7891b88319ea283f89ed270ee2ff0",
+        "exposed-low": "2a0b8ebe2633b89c8b57fa1d7fc012d220d4a4d9f709612bac4464cfd138f28d",
+        "exposed-tail": "1ac69bb861052b0121f626103437369689117ebe81ac61c60c082222b2679ec6",
+        "black": "d403f7f03ff8236fdc70b056a0283159897b3a0bbb31cd53df4d2c3c9114589c",
+        "graded-bloom": "47f4661aff0fe873d6d2b35105118f85ba626e9727495ea1d63a103d40672bd0",
+        "fsr3_native-omitted": "a8093d9dc18fcfd72e826a5e87eed06badf75154198de36e962675ab32d2f5b1",
+        "fsr3_native-graded": "2a0b8ebe2633b89c8b57fa1d7fc012d220d4a4d9f709612bac4464cfd138f28d",
+        "fsr3_quality-omitted": "a8093d9dc18fcfd72e826a5e87eed06badf75154198de36e962675ab32d2f5b1",
+        "fsr3_quality-graded": "2a0b8ebe2633b89c8b57fa1d7fc012d220d4a4d9f709612bac4464cfd138f28d",
+        "hud-omitted": "bf232951c451c77316c8ab049299ee5e4f8d2258806037bdf5da7c029281c6ef",
+        "hud-active": "58c0f513066fc7eb9b9d630d059336af0da5a5f727a2b2b7aa32c21daf30a20d",
+        "hud-black": "105dde43150ae42fe3a7d2f6230219de56cc6ade5a00d4608bd4b4e23c41e945",
+        "diagnostic-omitted": "ba6f143c418da48011113c361fd6e8627aec38e0c00550202a217026f7266867",
+        "diagnostic-graded": "ba6f143c418da48011113c361fd6e8627aec38e0c00550202a217026f7266867"
+      },
+      "color": {
+        "omitted": {
+          "checked_pixels": 77361,
+          "maximum_rgb_error": 0,
+          "out_of_tolerance": 0,
+          "refutes_wrong_order": 0
+        },
+        "exposed-low": {
+          "checked_pixels": 77361,
+          "maximum_rgb_error": 0,
+          "out_of_tolerance": 0,
+          "refutes_wrong_order": 77361
+        },
+        "exposed-tail": {
+          "checked_pixels": 77361,
+          "maximum_rgb_error": 0,
+          "out_of_tolerance": 0,
+          "refutes_wrong_order": 77361
+        },
+        "black": {
+          "checked_pixels": 77361,
+          "maximum_rgb_error": 0,
+          "out_of_tolerance": 0,
+          "refutes_wrong_order": 0
+        },
+        "graded-bloom": {
+          "checked_pixels": 77361,
+          "maximum_rgb_error": 1,
+          "out_of_tolerance": 0,
+          "refutes_wrong_order": 23825
+        },
+        "reference_omitted_identical": true,
+        "omitted_and_zero_identical": true,
+        "upstream_hdr_exact": true
+      },
+      "validated_hud_modes": [
+        "omitted",
+        "active",
+        "black"
+      ],
+      "guarded_authoring_refusals": 18,
+      "reconstruction": {
+        "fsr3_native": 16,
+        "fsr3_quality": 16
+      },
+      "diagnostic": {
+        "unchanged": true,
+        "nonblack_pixels": 6889
+      }
+    },
+    {
+      "gpu": "AMD Radeon(TM) Graphics",
+      "lighting_path": "forward",
+      "samples": 4,
+      "report_sha256": "54ae3e76ec78a78d24b704f13f3e1c433cff2d3a94b3deef8d400c821043ccd3",
+      "capture_sha256": {
+        "omitted": "ab4a3cee6ee092884cbca9217a2799f264e7891b88319ea283f89ed270ee2ff0",
+        "retained-371": "ab4a3cee6ee092884cbca9217a2799f264e7891b88319ea283f89ed270ee2ff0",
+        "explicit-zero": "ab4a3cee6ee092884cbca9217a2799f264e7891b88319ea283f89ed270ee2ff0",
+        "exposed-low": "2a0b8ebe2633b89c8b57fa1d7fc012d220d4a4d9f709612bac4464cfd138f28d",
+        "exposed-tail": "1ac69bb861052b0121f626103437369689117ebe81ac61c60c082222b2679ec6",
+        "black": "d403f7f03ff8236fdc70b056a0283159897b3a0bbb31cd53df4d2c3c9114589c",
+        "graded-bloom": "47f4661aff0fe873d6d2b35105118f85ba626e9727495ea1d63a103d40672bd0",
+        "hud-omitted": "bf232951c451c77316c8ab049299ee5e4f8d2258806037bdf5da7c029281c6ef",
+        "hud-active": "58c0f513066fc7eb9b9d630d059336af0da5a5f727a2b2b7aa32c21daf30a20d",
+        "hud-black": "105dde43150ae42fe3a7d2f6230219de56cc6ade5a00d4608bd4b4e23c41e945"
+      },
+      "color": {
+        "omitted": {
+          "checked_pixels": 77361,
+          "maximum_rgb_error": 0,
+          "out_of_tolerance": 0,
+          "refutes_wrong_order": 0
+        },
+        "exposed-low": {
+          "checked_pixels": 77361,
+          "maximum_rgb_error": 0,
+          "out_of_tolerance": 0,
+          "refutes_wrong_order": 77361
+        },
+        "exposed-tail": {
+          "checked_pixels": 77361,
+          "maximum_rgb_error": 0,
+          "out_of_tolerance": 0,
+          "refutes_wrong_order": 77361
+        },
+        "black": {
+          "checked_pixels": 77361,
+          "maximum_rgb_error": 0,
+          "out_of_tolerance": 0,
+          "refutes_wrong_order": 0
+        },
+        "graded-bloom": {
+          "checked_pixels": 77361,
+          "maximum_rgb_error": 1,
+          "out_of_tolerance": 0,
+          "refutes_wrong_order": 23825
+        },
+        "reference_omitted_identical": true,
+        "omitted_and_zero_identical": true
+      },
+      "validated_hud_modes": [
+        "omitted",
+        "active",
+        "black"
+      ],
+      "guarded_authoring_refusals": 18
+    },
+    {
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "lighting_path": "forward",
+      "samples": 1,
+      "report_sha256": "85a882ec176b004cee1f7b35d136ee6fe8d78ed21539ae81bb7f5aeba60a812b",
+      "capture_sha256": {
+        "omitted": "ab4a3cee6ee092884cbca9217a2799f264e7891b88319ea283f89ed270ee2ff0",
+        "retained-371": "ab4a3cee6ee092884cbca9217a2799f264e7891b88319ea283f89ed270ee2ff0",
+        "explicit-zero": "ab4a3cee6ee092884cbca9217a2799f264e7891b88319ea283f89ed270ee2ff0",
+        "exposed-low": "2a0b8ebe2633b89c8b57fa1d7fc012d220d4a4d9f709612bac4464cfd138f28d",
+        "exposed-tail": "1ac69bb861052b0121f626103437369689117ebe81ac61c60c082222b2679ec6",
+        "black": "d403f7f03ff8236fdc70b056a0283159897b3a0bbb31cd53df4d2c3c9114589c",
+        "graded-bloom": "bb4fd33365a741f07a3241b1bb9b0dae28563559d28649568d9123cb6e04bccd",
+        "fsr3_native-omitted": "a8093d9dc18fcfd72e826a5e87eed06badf75154198de36e962675ab32d2f5b1",
+        "fsr3_native-graded": "2a0b8ebe2633b89c8b57fa1d7fc012d220d4a4d9f709612bac4464cfd138f28d",
+        "fsr3_quality-omitted": "a8093d9dc18fcfd72e826a5e87eed06badf75154198de36e962675ab32d2f5b1",
+        "fsr3_quality-graded": "2a0b8ebe2633b89c8b57fa1d7fc012d220d4a4d9f709612bac4464cfd138f28d",
+        "relocated-forward": "bb4fd33365a741f07a3241b1bb9b0dae28563559d28649568d9123cb6e04bccd",
+        "hud-omitted": "bf232951c451c77316c8ab049299ee5e4f8d2258806037bdf5da7c029281c6ef",
+        "hud-active": "58c0f513066fc7eb9b9d630d059336af0da5a5f727a2b2b7aa32c21daf30a20d",
+        "hud-black": "105dde43150ae42fe3a7d2f6230219de56cc6ade5a00d4608bd4b4e23c41e945",
+        "diagnostic-omitted": "ba6f143c418da48011113c361fd6e8627aec38e0c00550202a217026f7266867",
+        "diagnostic-graded": "ba6f143c418da48011113c361fd6e8627aec38e0c00550202a217026f7266867"
+      },
+      "color": {
+        "omitted": {
+          "checked_pixels": 77361,
+          "maximum_rgb_error": 0,
+          "out_of_tolerance": 0,
+          "refutes_wrong_order": 0
+        },
+        "exposed-low": {
+          "checked_pixels": 77361,
+          "maximum_rgb_error": 0,
+          "out_of_tolerance": 0,
+          "refutes_wrong_order": 77361
+        },
+        "exposed-tail": {
+          "checked_pixels": 77361,
+          "maximum_rgb_error": 0,
+          "out_of_tolerance": 0,
+          "refutes_wrong_order": 77361
+        },
+        "black": {
+          "checked_pixels": 77361,
+          "maximum_rgb_error": 0,
+          "out_of_tolerance": 0,
+          "refutes_wrong_order": 0
+        },
+        "graded-bloom": {
+          "checked_pixels": 77361,
+          "maximum_rgb_error": 1,
+          "out_of_tolerance": 0,
+          "refutes_wrong_order": 23824
+        },
+        "reference_omitted_identical": true,
+        "omitted_and_zero_identical": true,
+        "upstream_hdr_exact": true
+      },
+      "validated_hud_modes": [
+        "omitted",
+        "active",
+        "black"
+      ],
+      "guarded_authoring_refusals": 18,
+      "reconstruction": {
+        "fsr3_native": 16,
+        "fsr3_quality": 16
+      },
+      "diagnostic": {
+        "unchanged": true,
+        "nonblack_pixels": 6889
+      },
+      "relocated": {
+        "original_source_unavailable": true,
+        "rejected_runtime_flag": [
+          "disabled",
+          "missing"
+        ],
+        "cold_missing_artifact_rejected": true,
+        "cold_modified_grade_rejected": true,
+        "maximum_rgb_error": 1
+      }
+    },
+    {
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "lighting_path": "deferred",
+      "samples": 1,
+      "report_sha256": "cf4022e2175a0748f28a9ca95d702c6f4fd324b6906ba51f3d9081b9f50e25de",
+      "capture_sha256": {
+        "omitted": "ab4a3cee6ee092884cbca9217a2799f264e7891b88319ea283f89ed270ee2ff0",
+        "retained-371": "ab4a3cee6ee092884cbca9217a2799f264e7891b88319ea283f89ed270ee2ff0",
+        "explicit-zero": "ab4a3cee6ee092884cbca9217a2799f264e7891b88319ea283f89ed270ee2ff0",
+        "exposed-low": "2a0b8ebe2633b89c8b57fa1d7fc012d220d4a4d9f709612bac4464cfd138f28d",
+        "exposed-tail": "1ac69bb861052b0121f626103437369689117ebe81ac61c60c082222b2679ec6",
+        "black": "d403f7f03ff8236fdc70b056a0283159897b3a0bbb31cd53df4d2c3c9114589c",
+        "graded-bloom": "bb4fd33365a741f07a3241b1bb9b0dae28563559d28649568d9123cb6e04bccd",
+        "fsr3_native-omitted": "a8093d9dc18fcfd72e826a5e87eed06badf75154198de36e962675ab32d2f5b1",
+        "fsr3_native-graded": "2a0b8ebe2633b89c8b57fa1d7fc012d220d4a4d9f709612bac4464cfd138f28d",
+        "fsr3_quality-omitted": "a8093d9dc18fcfd72e826a5e87eed06badf75154198de36e962675ab32d2f5b1",
+        "fsr3_quality-graded": "2a0b8ebe2633b89c8b57fa1d7fc012d220d4a4d9f709612bac4464cfd138f28d",
+        "hud-omitted": "bf232951c451c77316c8ab049299ee5e4f8d2258806037bdf5da7c029281c6ef",
+        "hud-active": "58c0f513066fc7eb9b9d630d059336af0da5a5f727a2b2b7aa32c21daf30a20d",
+        "hud-black": "105dde43150ae42fe3a7d2f6230219de56cc6ade5a00d4608bd4b4e23c41e945",
+        "diagnostic-omitted": "ba6f143c418da48011113c361fd6e8627aec38e0c00550202a217026f7266867",
+        "diagnostic-graded": "ba6f143c418da48011113c361fd6e8627aec38e0c00550202a217026f7266867"
+      },
+      "color": {
+        "omitted": {
+          "checked_pixels": 77361,
+          "maximum_rgb_error": 0,
+          "out_of_tolerance": 0,
+          "refutes_wrong_order": 0
+        },
+        "exposed-low": {
+          "checked_pixels": 77361,
+          "maximum_rgb_error": 0,
+          "out_of_tolerance": 0,
+          "refutes_wrong_order": 77361
+        },
+        "exposed-tail": {
+          "checked_pixels": 77361,
+          "maximum_rgb_error": 0,
+          "out_of_tolerance": 0,
+          "refutes_wrong_order": 77361
+        },
+        "black": {
+          "checked_pixels": 77361,
+          "maximum_rgb_error": 0,
+          "out_of_tolerance": 0,
+          "refutes_wrong_order": 0
+        },
+        "graded-bloom": {
+          "checked_pixels": 77361,
+          "maximum_rgb_error": 1,
+          "out_of_tolerance": 0,
+          "refutes_wrong_order": 23824
+        },
+        "reference_omitted_identical": true,
+        "omitted_and_zero_identical": true,
+        "upstream_hdr_exact": true
+      },
+      "validated_hud_modes": [
+        "omitted",
+        "active",
+        "black"
+      ],
+      "guarded_authoring_refusals": 18,
+      "reconstruction": {
+        "fsr3_native": 16,
+        "fsr3_quality": 16
+      },
+      "diagnostic": {
+        "unchanged": true,
+        "nonblack_pixels": 6889
+      }
+    },
+    {
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "lighting_path": "forward",
+      "samples": 4,
+      "report_sha256": "6fb4c41846d0556a85476606fb62966b1a27b181daa4f7124566d2850f776ac3",
+      "capture_sha256": {
+        "omitted": "ab4a3cee6ee092884cbca9217a2799f264e7891b88319ea283f89ed270ee2ff0",
+        "retained-371": "ab4a3cee6ee092884cbca9217a2799f264e7891b88319ea283f89ed270ee2ff0",
+        "explicit-zero": "ab4a3cee6ee092884cbca9217a2799f264e7891b88319ea283f89ed270ee2ff0",
+        "exposed-low": "2a0b8ebe2633b89c8b57fa1d7fc012d220d4a4d9f709612bac4464cfd138f28d",
+        "exposed-tail": "1ac69bb861052b0121f626103437369689117ebe81ac61c60c082222b2679ec6",
+        "black": "d403f7f03ff8236fdc70b056a0283159897b3a0bbb31cd53df4d2c3c9114589c",
+        "graded-bloom": "bb4fd33365a741f07a3241b1bb9b0dae28563559d28649568d9123cb6e04bccd",
+        "hud-omitted": "bf232951c451c77316c8ab049299ee5e4f8d2258806037bdf5da7c029281c6ef",
+        "hud-active": "58c0f513066fc7eb9b9d630d059336af0da5a5f727a2b2b7aa32c21daf30a20d",
+        "hud-black": "105dde43150ae42fe3a7d2f6230219de56cc6ade5a00d4608bd4b4e23c41e945"
+      },
+      "color": {
+        "omitted": {
+          "checked_pixels": 77361,
+          "maximum_rgb_error": 0,
+          "out_of_tolerance": 0,
+          "refutes_wrong_order": 0
+        },
+        "exposed-low": {
+          "checked_pixels": 77361,
+          "maximum_rgb_error": 0,
+          "out_of_tolerance": 0,
+          "refutes_wrong_order": 77361
+        },
+        "exposed-tail": {
+          "checked_pixels": 77361,
+          "maximum_rgb_error": 0,
+          "out_of_tolerance": 0,
+          "refutes_wrong_order": 77361
+        },
+        "black": {
+          "checked_pixels": 77361,
+          "maximum_rgb_error": 0,
+          "out_of_tolerance": 0,
+          "refutes_wrong_order": 0
+        },
+        "graded-bloom": {
+          "checked_pixels": 77361,
+          "maximum_rgb_error": 1,
+          "out_of_tolerance": 0,
+          "refutes_wrong_order": 23824
+        },
+        "reference_omitted_identical": true,
+        "omitted_and_zero_identical": true
+      },
+      "validated_hud_modes": [
+        "omitted",
+        "active",
+        "black"
+      ],
+      "guarded_authoring_refusals": 18
+    }
+  ],
+  "retained_failures": []
+}
