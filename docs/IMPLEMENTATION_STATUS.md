@@ -1,8 +1,18 @@
 # Implementation status
 
-Updated 2026-11-21 for **0.0.397**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-21 for **0.0.398**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.398 exports [project graphics defaults](PROJECTS.md#set-the-exported-games-graphics-defaults).
+The Creator and CLI update graphics and splash settings in one guarded write.
+Eight Windows Vulkan launches on AMD and NVIDIA covered the relocated launcher,
+explicit overrides, and automatic one-sample rendering for textured sprites.
+The launcher without graphics flags matched explicit deferred lighting and
+FSR Quality settings pixel for pixel. Every replay matched its headless save.
+Windows Creator automation verified both invalid combinations, persistence,
+and cancellation. Ubuntu passed 14 suites, and Windows passed 25 project checks.
+[Results](evidence/m2-project-startup-render-398.json)
 
 Version 0.0.397 compiles [authored scene assembly, Vulkan presentation and GPU
 timing, and deferred lighting](BUILD.md#world-service-and-schema-compilation)

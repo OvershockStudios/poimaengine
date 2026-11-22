@@ -80,6 +80,19 @@ void validate_save_launch(const std::string& save_root,const std::optional<std::
     require(*write_mode=="synchronous" || *write_mode=="background","Save write mode must be synchronous or background.");
     require(!save_root.empty() || default_root,"Save write mode requires --save-root.");
 }
+void validate_launch_render(bool deferred,bool fxaa,ReconstructionMode reconstruction,
+    std::optional<std::uint32_t> samples,bool needs_sprite_particles=false) {
+    const bool can_use_one_sample=!samples || *samples==1;
+    require(!deferred || can_use_one_sample,"Deferred lighting requires samples=1.");
+    require(!fxaa || can_use_one_sample,"FXAA requires samples=1.");
+    require(reconstruction_mode_name(reconstruction)!="invalid","Unsupported reconstruction mode.");
+    if(reconstruction!=ReconstructionMode::none) {
+        require(can_use_one_sample,"Reconstruction requires samples=1.");
+        require(!fxaa,"FXAA requires reconstruction=none.");
+        require(POIMA_FSR3_UPSCALER,"FSR3 reconstruction is unavailable in this build.");
+    }
+    require(!needs_sprite_particles || can_use_one_sample,"Textured particle sprites require samples=1.");
+}
 // Exported Windows launchers opt in here. Explicit roots keep
 // their existing validation and are never created here. Ordinary ancestry checks
 // assume a trusted environment with no concurrent hostile filesystem changes.
@@ -439,22 +452,21 @@ Reply run_game(const GameLaunchOptions& options) {
         require(options.replay.empty() || !options.lens_interpolation,"Lens interpolation is interactive only.");
         require(options.replay.empty() || !options.pose_interpolation,"Pose interpolation is interactive only.");
         validate_save_launch(options.save_root,options.save_write_mode,options.default_save_root);
-        require(!options.render.deferred || !options.samples_explicit || options.render.samples==1,
-            "Deferred lighting requires samples=1.");
-        require(!options.render.fxaa || !options.samples_explicit || options.render.samples==1,
-            "FXAA requires samples=1.");
-        const auto reconstruction=reconstruction_mode_name(options.render.reconstruction);
-        require(reconstruction!="invalid","Unsupported reconstruction mode.");
-        const bool reconstruct=options.render.reconstruction!=ReconstructionMode::none;
-        if(reconstruct) {
-            require(!options.samples_explicit || options.render.samples==1,"Reconstruction requires samples=1.");
-            require(!options.render.fxaa,"FXAA requires reconstruction=none.");
-            require(POIMA_FSR3_UPSCALER,"FSR3 reconstruction is unavailable in this build.");
-        }
+        const auto explicit_samples=options.samples_explicit ? std::optional{options.render.samples} : std::nullopt;
+        validate_launch_render(options.render.deferred,options.render.fxaa,options.render.reconstruction,explicit_samples);
         const auto game=load_game(options.manifest);
         validate_game_host(game);
         const auto* expected=std::getenv("POIMA_VERIFIED_PLAY_SHA256");
         require(!expected || game.manifest_sha256==expected,"The verified game changed before launch.");
+        const auto& authored=game.startup_render;
+        const bool deferred=(options.lighting_path_explicit || options.render.deferred)
+            ? options.render.deferred : authored.deferred.value_or(false);
+        const bool fxaa=(options.post_aa_explicit || options.render.fxaa)
+            ? options.render.fxaa : authored.fxaa.value_or(false);
+        const auto reconstruction=(options.reconstruction_explicit || options.render.reconstruction!=ReconstructionMode::none)
+            ? options.render.reconstruction : authored.reconstruction.value_or(ReconstructionMode::none);
+        validate_launch_render(deferred,fxaa,reconstruction,explicit_samples,game.needs_sprite_particles);
+        const bool reconstruct=reconstruction!=ReconstructionMode::none;
         require(POIMA_RENDER_SMOKE,"Game launch requires the Vulkan player in this executable.");
         require(options.max_frames<=36000,"Interactive frame limit must be 0..36000.");
         require(options.replay.empty() || !options.max_frames,"Replay and an interactive frame limit cannot be combined.");
@@ -476,19 +488,18 @@ Reply run_game(const GameLaunchOptions& options) {
             options.render.capture.empty())world.enable_startup_splash();
         Json params={{"session_id",session},{"request_id",id()},{"expected_tick",0},{"controller",game.controller},{"camera",game.camera},
             {"mode",options.replay.empty() ? "interactive" : "replay"},{"audio",game.audio},{"width",options.render.width},{"height",options.render.height},
-            {"samples",options.render.samples},{"culling",options.render.culling},{"draw_instancing",options.render.draw_instancing},{"profile",options.render.profile}};
+            {"culling",options.render.culling},{"draw_instancing",options.render.draw_instancing},{"profile",options.render.profile}};
         if(options.render.viewmodel_samples!=1)params["viewmodel_samples"]=options.render.viewmodel_samples;
         if(options.lens_interpolation)params["lens_interpolation"]=true;
         if(options.pose_interpolation)params["pose_interpolation"]=true;
         const bool has_settings=!options.settings_profile.empty() || !options.settings_overrides.empty() || options.settings_revision.has_value();
-        if(options.render.deferred)params["lighting_path"]="deferred";
-        if(options.render.fxaa)params["post_aa"]="fxaa";
-        if(reconstruct)params["reconstruction"]=reconstruction;
-        if(options.render.deferred || options.render.fxaa || reconstruct) {
-            // Use the existing explicit-option precedence so inherited
-            // graphics preferences cannot make this launch incompatible.
-            params["samples"]=1;
-        } else if(has_settings && !options.samples_explicit)params.erase("samples");
+        if(deferred)params["lighting_path"]="deferred";
+        if(fxaa)params["post_aa"]="fxaa";
+        if(reconstruct)params["reconstruction"]=reconstruction_mode_name(reconstruction);
+        if(explicit_samples)params["samples"]=*explicit_samples;
+        else if(deferred || fxaa || reconstruct || game.needs_sprite_particles)params["samples"]=1;
+        else if(authored.samples)params["samples"]=*authored.samples;
+        else if(!has_settings)params["samples"]=options.render.samples;
         if(options.frames_in_flight_explicit)params["frames_in_flight"]=options.render.frames_in_flight;
         if(!options.settings_profile.empty())params["settings_profile"]=text_of(fs::absolute(path_of(options.settings_profile)).lexically_normal());
         if(options.settings_revision)params["settings_revision"]=*options.settings_revision;

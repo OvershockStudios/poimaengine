@@ -83,6 +83,43 @@ verified preview, headless runs, replay and capture or frame-bounded commands
 start directly. An interactive report counts splash presentations separately
 from gameplay frames.
 
+### Set the exported game's graphics defaults
+
+Open **Project settings** in the creator and choose the exported game's lighting
+path, post-process antialiasing, reconstruction, and world sample count.
+Select **Default** to leave a field unset. Save applies graphics and splash
+changes in one guarded write.
+Build again to include these settings in the export. **Play verified build** uses the
+selected build's settings, and the live editor preview keeps its own settings.
+
+An agent can apply the same settings using the manifest digest from
+`poima project inspect`.
+
+```sh
+poima project configure MyRoom/project.poimaproject \
+  --expected-manifest-sha256 SHA256 \
+  --patch '{"startup_render":{"lighting_path":"deferred","reconstruction":"fsr3_native"}}'
+```
+
+The patch changes only the top-level fields it supplies. The optional
+`startup_splash` Boolean sets the wordmark. `startup_render` replaces the
+previous graphics object. Set it to `null` to remove the object. An empty
+object leaves all four graphics choices at their launch defaults.
+
+| Graphics field | Accepted values |
+| --- | --- |
+| `lighting_path` | `forward`, `deferred` |
+| `post_aa` | `none`, `fxaa` |
+| `reconstruction` | `none`, `fsr3_native`, `fsr3_quality`, `fsr3_balanced`, `fsr3_performance` |
+| `samples` | `1`, `4` |
+
+Deferred lighting, FXAA, FSR, and textured particle sprites require one world
+sample. FXAA and FSR are mutually exclusive. Export checks the authored scene
+and package capabilities before publishing. FSR requires a runtime built with
+FSR3 support. `project inspect` reports the authored choices and sprite
+dependency, including when a later scene change needs a settings repair.
+`game inspect` reports the choices stored in the verified bundle.
+
 Paths resolve relative to the manifest's directory, independently of the process working directory. Relative content paths use `/` separators and ASCII letters, digits, spaces, `_`, `-` and `.`. Absolute paths, backslashes, traversal components, Windows device names, trailing dots/spaces, symlinks and content-path junctions are rejected. Display names and the containing project directory can use UTF-8. Relative paths are bounded to 1,024 bytes and components to 128 bytes; project manifests are bounded to 64 KiB.
 
 The entry IDs must identify a `CharacterController` and `Camera`. The controller must be an unscaled hierarchy root with only Y-axis rotation. Its configured camera must be the selected camera and a direct child. World validation also checks the existing component and reference rules.
@@ -252,9 +289,10 @@ The player reads the bundled world and profile without writer sidecars. Runtime 
 | `--default-save-root true\|false` | Windows `game run` opt-in for per-user, per-project storage; direct CLI default is false. The generated Windows launcher supplies true. |
 | `--save-write-mode synchronous\|background` | Gameplay write mode; requires an explicit or enabled default save root. [Storage behavior](GAMEPLAY_SAVES.md#configure-storage). |
 | `--width N`, `--height N` | Each 128–4096; defaults 960×540. |
-| `--lighting-path forward\|deferred` | Selects the lighting path for interactive play or replay. Forward is the default. Deferred uses one world sample. [Deferred rendering](DEFERRED_RENDERING.md#select-the-path). |
-| `--post-aa none\|fxaa` | Selects the display-space antialiasing filter. The default is none. FXAA uses one world sample. [Single-sample antialiasing](DEFERRED_RENDERING.md#single-sample-antialiasing). |
-| `--samples N` | 1 or 4. Forward uses 4 when no preference supplies a value. An explicit flag overrides stored and session settings. Deferred requires 1 and supplies it when the flag is omitted, even if preferences request 4. |
+| `--lighting-path forward\|deferred` | Overrides the bundle's lighting path. The fallback is `forward`. Deferred uses one world sample. [Deferred rendering](DEFERRED_RENDERING.md#select-the-path). |
+| `--post-aa none\|fxaa` | Overrides the bundle's display-space antialiasing. The fallback is `none`. FXAA uses one world sample. [Single-sample antialiasing](DEFERRED_RENDERING.md#single-sample-antialiasing). |
+| `--reconstruction MODE` | Overrides the bundle's FSR mode. Use `none` to disable an authored mode. [Reconstruction modes](RECONSTRUCTION.md). |
+| `--samples N` | 1 or 4. An explicit flag wins and must satisfy the selected effects. Without it, single-sample requirements win, then the bundle's sample count, then external preferences. The fallback is 4. |
 | `--frames-in-flight N` | 1 or 2; explicit graphics submission limit, overriding stored/session settings. |
 | `--settings-profile PATH` | Existing portable player profile outside the bundle. |
 | `--settings-revision N` | Require the exact profile revision; needs `--settings-profile`. |

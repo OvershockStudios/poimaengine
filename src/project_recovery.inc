@@ -38,8 +38,12 @@ std::vector<std::string> editable_files(const Project& project) {
         const auto status = it->symlink_status();
         const bool managed_cache = fs::is_directory(status) && (leaf == "bin" || leaf == "obj") &&
             fs::is_regular_file(it->path().parent_path() / "obj" / "project.assets.json");
+        const bool root_configuration_sidecar = it->path().parent_path() == root &&
+            (leaf == project_manifest_lock_filename ||
+                (fs::is_directory(status) && leaf.starts_with(project_configuration_stage_prefix) &&
+                    hexadecimal(leaf.substr(project_configuration_stage_prefix.size()),32)));
         if (leaf == ".git" || leaf == ".vs" || leaf == ".poima-gameplay-adoptions" ||
-            managed_cache || sidecars.contains(folded(relative))) {
+            root_configuration_sidecar || managed_cache || sidecars.contains(folded(relative))) {
             it.disable_recursion_pending();
             continue;
         }
@@ -147,6 +151,8 @@ Checkpoint read_checkpoint(const fs::path& checkpoint,const char* report_name,
         game.definition.camera == source.spec.at("entry").at("camera").get<std::string>() &&
         game.definition.controller == source.spec.at("entry").at("controller").get<std::string>() &&
         game.definition.audio == source.spec.value("audio", false), "Verified game source differs from the checkpoint.");
+    require(game.spec.value("startup_render",Json(nullptr)) == source.spec.value("startup_render",Json(nullptr)),
+        "Verified game startup_render differs from the checkpoint.");
     require(source.profile.empty() ? game.definition.input_profile.empty() :
         !game.definition.input_profile.empty() && read(path_of(game.definition.input_profile), 16 * 1024 * 1024) == source.profile_bytes,
         "Verified game input profile differs from the checkpoint.");

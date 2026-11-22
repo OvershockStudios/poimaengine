@@ -1,15 +1,19 @@
 # SPDX-License-Identifier: Apache-2.0
 # Uses the published launcher and release ZIP in an interactive Windows session.
+# Pass -Editor to check export settings directly in a prepared desktop candidate.
 # WithFirstPlay requires a working hardware Vulkan preview.
+[CmdletBinding(DefaultParameterSetName = 'Launcher')]
 param(
-    [Parameter(Mandatory = $true)][string]$Launcher,
-    [Parameter(Mandatory = $true)][string]$EngineZip,
+    [Parameter(Mandatory = $true, ParameterSetName = 'Launcher')][string]$Launcher,
+    [Parameter(Mandatory = $true, ParameterSetName = 'Launcher')][string]$EngineZip,
+    [Parameter(Mandatory = $true, ParameterSetName = 'Creator')][string]$Editor,
     [Parameter(Mandatory = $true)][string]$Output,
-    [switch]$WithBuildCheck,
-    [switch]$ExpectBuildSetup,
-    [switch]$ExpectCompactStart,
-    [switch]$WithFirstPlay,
-    [switch]$WithSplashSettings
+    [Parameter(ParameterSetName = 'Launcher')][switch]$WithBuildCheck,
+    [Parameter(ParameterSetName = 'Launcher')][switch]$ExpectBuildSetup,
+    [Parameter(ParameterSetName = 'Launcher')][switch]$ExpectCompactStart,
+    [Parameter(ParameterSetName = 'Launcher')][switch]$WithFirstPlay,
+    [Parameter(ParameterSetName = 'Launcher')][switch]$WithSplashSettings,
+    [Parameter(ParameterSetName = 'Launcher')][switch]$WithStartupRenderSettings
 )
 
 $ErrorActionPreference = 'Stop'
@@ -70,18 +74,28 @@ public static class InstalledCreatorWindow {
 }
 '@
 
-$Launcher = (Resolve-Path -LiteralPath $Launcher).Path
-$EngineZip = (Resolve-Path -LiteralPath $EngineZip).Path
-$manifest = Get-Content -Raw -LiteralPath ([IO.Path]::ChangeExtension($EngineZip, '.manifest.json')) | ConvertFrom-Json
-$version = $manifest.engine_version
+$directCreator = $PSCmdlet.ParameterSetName -eq 'Creator'
 $run = Join-Path ([IO.Path]::GetFullPath($Output)) ([guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $run | Out-Null
-$exe = Join-Path $run 'Poima.Launcher.exe'
-Copy-Item -LiteralPath $Launcher -Destination $exe
 $root = Join-Path $run 'PoimaData'
 $projects = Join-Path $root 'Projects'
-$installed = Join-Path $root "Engines\versions\Poima-$version-Windows-x64"
-$editorPath = Join-Path $installed 'Poima.Editor.exe'
+if ($directCreator) {
+    $editorPath = (Resolve-Path -LiteralPath $Editor).Path
+    $installed = Split-Path -Parent $editorPath
+    $cli = Join-Path $installed 'poima.exe'
+    $cliVersion = & $cli version | ConvertFrom-Json
+    if ($LASTEXITCODE -ne 0) { throw 'The desktop candidate did not report its native version.' }
+    $version = $cliVersion.result.version
+} else {
+    $Launcher = (Resolve-Path -LiteralPath $Launcher).Path
+    $EngineZip = (Resolve-Path -LiteralPath $EngineZip).Path
+    $manifest = Get-Content -Raw -LiteralPath ([IO.Path]::ChangeExtension($EngineZip, '.manifest.json')) | ConvertFrom-Json
+    $version = $manifest.engine_version
+    $exe = Join-Path $run 'Poima.Launcher.exe'
+    Copy-Item -LiteralPath $Launcher -Destination $exe
+    $installed = Join-Path $root "Engines\versions\Poima-$version-Windows-x64"
+    $editorPath = Join-Path $installed 'Poima.Editor.exe'
+}
 $ordinary = Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) 'Poima\installer.json'
 $extraction = $env:DOTNET_BUNDLE_EXTRACT_BASE_DIR
 $env:DOTNET_BUNDLE_EXTRACT_BASE_DIR = Join-Path $run 'launcher-bundle'
@@ -257,16 +271,91 @@ function Check-GameplayBuild($HomeWindow) {
     Invoke-Button $setup 'Done'
 }
 
-function Check-SplashSettings($Workspace, $ProjectPath) {
+function Select-ExportOption($Dialog, $Label, $Value, [switch]$AssertSelected) {
+    $selector = Wait-For $Label { Element $Dialog $Label }
+    $expansion = $selector.GetCurrentPattern([Windows.Automation.ExpandCollapsePattern]::Pattern)
+    $expansion.Expand()
+    try {
+        $condition = [Windows.Automation.AndCondition]::new(
+            [Windows.Automation.PropertyCondition]::new([Windows.Automation.AutomationElement]::NameProperty, $Value),
+            [Windows.Automation.PropertyCondition]::new([Windows.Automation.AutomationElement]::ProcessIdProperty, $creator.Id))
+        $selection = Wait-For "the $Label option $Value" {
+            $items = [Windows.Automation.AutomationElement]::RootElement.FindAll([Windows.Automation.TreeScope]::Descendants, $condition)
+            foreach ($item in $items) {
+                $pattern = $null
+                if (!$item.Current.IsOffscreen -and
+                    $item.TryGetCurrentPattern([Windows.Automation.SelectionItemPattern]::Pattern, [ref]$pattern)) { return $pattern }
+            }
+        }
+        if ($AssertSelected) {
+            if (!$selection.Current.IsSelected) { throw "$Label did not reopen with $Value selected." }
+        } else {
+            $selection.Select()
+        }
+    }
+    finally {
+        if ($expansion.Current.ExpandCollapseState -eq [Windows.Automation.ExpandCollapseState]::Expanded) {
+            $expansion.Collapse()
+        }
+    }
+}
+
+function Check-ExportValidation($Dialog, $Label, $ExpectedWarning) {
+    $saveCondition = [Windows.Automation.AndCondition]::new(
+        [Windows.Automation.PropertyCondition]::new([Windows.Automation.AutomationElement]::NameProperty, 'Save'),
+        [Windows.Automation.PropertyCondition]::new([Windows.Automation.AutomationElement]::ControlTypeProperty, [Windows.Automation.ControlType]::Button))
+    try {
+        $null = Wait-For $Label {
+            # Avalonia uses a TextBlock's visible text as its accessible name.
+            $save = $Dialog.FindFirst([Windows.Automation.TreeScope]::Descendants, $saveCondition)
+            (Visible-Element $Dialog $ExpectedWarning) -and $null -ne $save -and !$save.Current.IsEnabled
+        }
+    }
+    finally {
+        $selections = [ordered]@{}
+        foreach ($name in @('Export lighting', 'Export post-process antialiasing', 'Export reconstruction', 'Export world samples')) {
+            $selector = Element $Dialog $name
+            $value = $null
+            $selections[$name] = if ($selector -and
+                $selector.TryGetCurrentPattern([Windows.Automation.ValuePattern]::Pattern, [ref]$value)) { $value.Current.Value }
+        }
+        $save = $Dialog.FindFirst([Windows.Automation.TreeScope]::Descendants, $saveCondition)
+        $textCondition = [Windows.Automation.PropertyCondition]::new(
+            [Windows.Automation.AutomationElement]::ControlTypeProperty, [Windows.Automation.ControlType]::Text)
+        $report.startup_render_validation[$Label] = [ordered]@{
+            selections = $selections
+            expected_warning = $ExpectedWarning
+            visible_text = @(
+                $Dialog.FindAll([Windows.Automation.TreeScope]::Descendants, $textCondition) |
+                    Where-Object { !$_.Current.IsOffscreen } | ForEach-Object { $_.Current.Name }
+            )
+            save_enabled = if ($save) { $save.Current.IsEnabled }
+        }
+    }
+}
+
+function Check-SplashSettings($Workspace, $ProjectPath, [switch]$StartupRender) {
     $cli = Join-Path $installed 'poima.exe'
     $original = (& $cli project inspect $ProjectPath | ConvertFrom-Json).result
     if (!$original.startup_splash) { throw 'A fresh project did not enable the splash by default.' }
+    if ($StartupRender -and $null -ne $original.startup_render) { throw 'A fresh project authored an unexpected graphics override.' }
     Invoke-Button $Workspace 'Project settings'
     $settings = Wait-For 'project settings window' { Window $creator 'Project settings' }
     $control = Wait-For 'splash toggle' { Element $settings 'Show the Poima splash in exported games' }
     $toggle = $control.GetCurrentPattern([Windows.Automation.TogglePattern]::Pattern)
     if ($toggle.Current.ToggleState -ne [Windows.Automation.ToggleState]::On) { throw 'The default splash toggle was off.' }
     $toggle.Toggle()
+    if ($StartupRender) {
+        $report.startup_render_validation = [ordered]@{}
+        Select-ExportOption $settings 'Export lighting' 'Deferred'
+        Select-ExportOption $settings 'Export world samples' '4 samples'
+        Check-ExportValidation $settings 'blocked deferred multisampling' 'Deferred lighting, FXAA, and FSR require Default or 1 world sample.'
+        Select-ExportOption $settings 'Export world samples' '1 sample'
+        Select-ExportOption $settings 'Export reconstruction' 'FSR 3 Quality'
+        Select-ExportOption $settings 'Export post-process antialiasing' 'FXAA'
+        Check-ExportValidation $settings 'blocked FXAA with FSR' 'Choose either FXAA or FSR.'
+        Select-ExportOption $settings 'Export post-process antialiasing' 'Off'
+    }
     Invoke-Button $settings 'Save'
     $changed = Wait-For 'saved splash choice' {
         $current = (& $cli project inspect $ProjectPath | ConvertFrom-Json).result
@@ -274,12 +363,26 @@ function Check-SplashSettings($Workspace, $ProjectPath) {
     }
     if ($changed.project_id -cne $original.project_id -or $changed.world_sha256 -cne $original.world_sha256 -or
         $changed.manifest_sha256 -ceq $original.manifest_sha256) { throw 'The splash edit touched the wrong project boundary.' }
+    if ($StartupRender) {
+        $render = $changed.startup_render
+        if ($render.lighting_path -cne 'deferred' -or $render.post_aa -cne 'none' -or
+            $render.reconstruction -cne 'fsr3_quality' -or $render.samples -ne 1) {
+            throw 'Export graphics and splash did not persist together.'
+        }
+    }
     Invoke-Button $Workspace 'Project settings'
     $settings = Wait-For 'reopened project settings' { Window $creator 'Project settings' }
     $control = Wait-For 'reopened splash toggle' { Element $settings 'Show the Poima splash in exported games' }
     $toggle = $control.GetCurrentPattern([Windows.Automation.TogglePattern]::Pattern)
     if ($toggle.Current.ToggleState -ne [Windows.Automation.ToggleState]::Off) { throw 'The splash toggle did not persist.' }
     $toggle.Toggle()
+    if ($StartupRender) {
+        Select-ExportOption $settings 'Export lighting' 'Deferred' -AssertSelected
+        Select-ExportOption $settings 'Export world samples' '1 sample' -AssertSelected
+        Select-ExportOption $settings 'Export reconstruction' 'FSR 3 Quality' -AssertSelected
+        Select-ExportOption $settings 'Export post-process antialiasing' 'Off' -AssertSelected
+        Select-ExportOption $settings 'Export reconstruction' 'Off'
+    }
     Invoke-Button $settings 'Cancel'
     $null = Wait-For 'dismissed project settings' { !(Window $creator 'Project settings') }
     $afterCancel = (& $cli project inspect $ProjectPath | ConvertFrom-Json).result
@@ -287,10 +390,40 @@ function Check-SplashSettings($Workspace, $ProjectPath) {
     $report.checks.splash_settings = [ordered]@{
         default_enabled = $true; persisted_disabled = $true; cancel_preserved_manifest = $true
     }
+    if ($StartupRender) {
+        $report.checks.startup_render_settings = [ordered]@{
+            authored = $render
+            invalid_selections_blocked = 2
+            all_selections_reopened = $true
+            startup_splash = $changed.startup_splash
+            original_manifest_sha256 = $original.manifest_sha256
+            saved_manifest_sha256 = $changed.manifest_sha256
+            after_cancel_manifest_sha256 = $afterCancel.manifest_sha256
+        }
+    }
 }
 
 $before = SettingsHash
 try {
+    if ($directCreator) {
+        $projectName = 'Export Settings Check'
+        $projectRoot = Join-Path $run $projectName
+        $projectPath = Join-Path $projectRoot 'project.poimaproject'
+        $null = & $cli project create $projectRoot --name $projectName
+        if ($LASTEXITCODE -ne 0) { throw 'Could not create the isolated settings project.' }
+        $creator = Start-Process -FilePath $editorPath -ArgumentList @('--creator', ('"' + $projectPath + '"'), '--software-ui') `
+            -WorkingDirectory $installed -PassThru
+        $null = $creator.Handle
+        $workspaceTitle = $projectName + ' ' + [char]0x2014 + ' Poima Creator'
+        $workspace = Wait-For 'standalone creator workspace' { Window $creator $workspaceTitle }
+        $report.checks.creator_editor_sha256 = Hash $editorPath
+        $report.checks.creator_cli_sha256 = Hash $cli
+        Check-SplashSettings $workspace $projectPath -StartupRender
+        Close-ProcessWindow $creator
+        $report.checks.creator_exit = $creator.ExitCode
+        $report.passed = $true
+        return
+    }
     if (Test-Path -LiteralPath $root) { throw 'The portable install root must be empty.' }
     if ((Hash $EngineZip) -cne $manifest.archive.sha256) { throw 'The supplied engine ZIP does not match the inventory.' }
     $report.archive_sha256 = $manifest.archive.sha256
@@ -402,7 +535,9 @@ try {
     $report.checks.portable_project_created = $true
     $report.checks.creator_editor_sha256 = Hash $editorPath
     if ($WithFirstPlay) { Check-FirstPlay $workspace $projectPath }
-    if ($WithSplashSettings) { Check-SplashSettings $workspace $projectPath }
+    if ($WithSplashSettings -or $WithStartupRenderSettings) {
+        Check-SplashSettings $workspace $projectPath -StartupRender:$WithStartupRenderSettings
+    }
     Close-ProcessWindow $creator
     Close-ProcessWindow $owner
     if ((SettingsHash) -cne $before) { throw 'Portable mode modified normal launcher settings.' }

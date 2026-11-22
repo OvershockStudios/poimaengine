@@ -144,6 +144,20 @@ poima::Reply run(int argc, char** argv) {
             if(value!="true" && value!="false")return poima::usage_error("Splash setting expects true or false.");
             return poima::set_project_startup_splash(argv[3],value=="true",argv[7]);
         }
+        if(action=="configure") {
+            if(argc!=8 || !*argv[3])
+                return poima::usage_error("Use: project configure <project-manifest> --patch JSON --expected-manifest-sha256 SHA256.");
+            std::string_view patch,expected;
+            for(int i=4;i<8;i+=2) {
+                const std::string_view key=argv[i],value=argv[i+1];
+                if(value.empty() || value.starts_with("--"))
+                    return poima::usage_error("Project configure options require nonempty values.");
+                if(key=="--patch" && patch.empty())patch=value;
+                else if(key=="--expected-manifest-sha256" && expected.empty())expected=value;
+                else return poima::usage_error("Unknown or repeated project configure option.");
+            }
+            return poima::configure_project(argv[3],std::string(patch),std::string(expected));
+        }
         if(action=="draft" && argc==8 && *argv[3] && std::string_view(argv[4])=="--output" && *argv[5] &&
            std::string_view(argv[6])=="--expected-base-sha256" && *argv[7])
             return poima::draft_project(argv[3],argv[5],argv[7]);
@@ -257,11 +271,11 @@ poima::Reply run(int argc, char** argv) {
             const std::string_view value=argv[i];
             if(key=="--lighting-path") {
                 if(value!="forward" && value!="deferred")return poima::usage_error("Lighting path must be forward or deferred.");
-                options.render.deferred=value=="deferred";continue;
+                options.render.deferred=value=="deferred";options.lighting_path_explicit=true;continue;
             }
             if(key=="--post-aa") {
                 if(value!="none" && value!="fxaa")return poima::usage_error("Post AA must be none or fxaa.");
-                options.render.fxaa=value=="fxaa";continue;
+                options.render.fxaa=value=="fxaa";options.post_aa_explicit=true;continue;
             }
             if(key=="--reconstruction") {
                 using Mode=poima::ReconstructionMode;
@@ -269,6 +283,7 @@ poima::Reply run(int argc, char** argv) {
                 const auto mode=std::ranges::find(modes,value,poima::reconstruction_mode_name);
                 if(mode==modes.end())return poima::usage_error("Unsupported reconstruction mode. Use: schema game.");
                 options.render.reconstruction=*mode;
+                options.reconstruction_explicit=true;
                 continue;
             }
             if(key=="--default-save-root") {

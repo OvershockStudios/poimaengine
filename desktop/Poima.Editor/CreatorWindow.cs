@@ -358,37 +358,14 @@ internal sealed class CreatorWindow : Window
         var current = await ProjectFiles.Command("inspect", project.Manifest);
         if (closeRequested || closing) return;
         var hash = current.GetProperty("manifest_sha256").GetString()!;
-        var splash = new CheckBox
+        var dialog = new CreatorProjectSettingsWindow(current)
         {
-            Content = "Show the Poima splash in exported games",
-            IsChecked = current.GetProperty("startup_splash").GetBoolean()
+            FontFamily = FontFamily, FontSize = FontSize, UseLayoutRounding = UseLayoutRounding,
+            Background = Background, Foreground = Foreground
         };
-        AutomationProperties.SetName(splash, "Show the Poima splash in exported games");
-        var save = new Button { Content = "Save", IsDefault = true };
-        save.Classes.Add("primary");
-        var cancel = new Button { Content = "Cancel", IsCancel = true };
-        var dialog = new Window
+        if (await dialog.ShowDialog<JsonObject?>(this) is { } patch && !closeRequested && !closing)
         {
-            Title = "Project settings", Width = 460, SizeToContent = SizeToContent.Height, CanResize = false,
-            WindowStartupLocation = WindowStartupLocation.CenterOwner, ShowInTaskbar = false,
-            FontFamily = FontFamily, Background = Background, Foreground = Foreground,
-            Content = new StackPanel
-            {
-                Spacing = 16, Margin = new Thickness(24), Children =
-                {
-                    splash,
-                    new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right,
-                        Spacing = 8, Children = { cancel, save } }
-                }
-            }
-        };
-        dialog.Styles.Add(new StyleInclude(new Uri("avares://Poima.Editor/"))
-        { Source = new Uri("avares://Poima.Editor/Themes/CreatorControls.axaml") });
-        save.Click += (_, _) => dialog.Close(splash.IsChecked == true);
-        cancel.Click += (_, _) => dialog.Close();
-        if (await dialog.ShowDialog<bool?>(this) is bool enabled)
-        {
-            await ProjectFiles.Command("splash", project.Manifest, "--enabled", enabled ? "true" : "false",
+            await ProjectFiles.Command("configure", project.Manifest, "--patch", patch.ToJsonString(),
                 "--expected-manifest-sha256", hash);
         }
     });
@@ -697,7 +674,7 @@ internal sealed class CreatorWindow : Window
             UpdateControls();
             using var preparation = new CancellationTokenSource();
             checkingVerifiedPlay = preparation;
-            var result = await ProjectFiles.PlayExport(manifest, saves, options.Gpu, options.Samples, playback,
+            var result = await ProjectFiles.PlayExport(manifest, saves, options.Gpu, playback,
                 preparation.Token, () => checkingVerifiedPlay = null);
             var played = result.GetProperty("play");
             playback.Closed(played);

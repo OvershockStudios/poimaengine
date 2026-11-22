@@ -2,6 +2,7 @@
 """Portable project manifests, immutable inspection and optional bundle export."""
 # SPDX-License-Identifier: Apache-2.0
 import argparse
+from base64 import b64decode
 import copy
 import hashlib
 import json
@@ -66,6 +67,11 @@ class ProjectContract(unittest.TestCase):
         self.assertEqual(tree(self.project), before, 'Project inspection wrote or altered project files.')
         return result
 
+    def configure(self, patch, expected, *, success=True):
+        payload = patch if isinstance(patch, str) else json.dumps(patch)
+        return self.run_cli('project', 'configure', native(self.manifest), '--patch', payload,
+                            '--expected-manifest-sha256', expected, success=success)
+
     def world_rpc(self, method, **params):
         world = self.project/self.document['entry']['world']
         request = {'jsonrpc': '2.0', 'id': 1, 'method': method, 'params': params}
@@ -105,6 +111,8 @@ class ProjectContract(unittest.TestCase):
         self.assertEqual(sun['shadow'],{'enabled':True,'distance':80,'bias':.0001,'normal_bias':.005})
         inspected = self.inspect()
         self.assertIs(inspected['startup_splash'], True)
+        self.assertNotIn('startup_render', doc)
+        self.assertNotIn('startup_render', inspected)
         self.assertEqual(inspected['revision'], world['revision'])
         self.assertEqual(inspected['project_id'], doc['project_id'])
         self.assertFalse(list(self.project.rglob('*.lock')), 'Starter/inspection unexpectedly created a lock sidecar.')
@@ -255,7 +263,9 @@ class ProjectContract(unittest.TestCase):
             original = tree(runtime)
             bundle = self.root/('No gameplay ABI '+str(abi))
             self.run_cli('project', 'build', native(self.manifest), '--runtime', native(runtime), '--output', native(bundle))
-            self.run_cli('game', 'inspect', native(bundle/'game.json'))
+            manifest = bundle/'game.json'
+            self.assertNotIn('startup_render', json.loads(manifest.read_bytes()))
+            self.assertNotIn('startup_render', self.run_cli('game', 'inspect', native(manifest)))
             self.assertEqual(tree(runtime), original)
         self.assertEqual(tree(self.project), source)
 
@@ -341,6 +351,239 @@ class ProjectContract(unittest.TestCase):
         self.assertIs(json.loads(manifest.read_bytes())['startup_splash'], False)
         self.assertIs(self.run_cli('game', 'inspect', native(manifest))['startup_splash'], False)
         self.assertEqual(tree(self.project), stable)
+
+    def test_configure_startup_render_digest_and_atomic_splash_update(self):
+        initial = self.inspect()['manifest_sha256']
+        source = tree(self.project)
+        profile = {'reconstruction': 'fsr3_quality', 'lighting_path': 'deferred'}
+        patch = {'startup_splash': False, 'startup_render': profile}
+
+        self.run_cli('project', 'configure', native(self.manifest), '--patch', json.dumps(patch), success=False)
+        self.configure(patch, '0' * 64, success=False)
+        self.configure({'startup_splash': False, 'startup_render': {'samples': 2}}, initial, success=False)
+        unchanged = self.configure({'startup_splash': True, 'startup_render': None}, initial)
+        self.assertEqual(unchanged, {'startup_splash': True, 'manifest_sha256': initial, 'changed': False})
+        self.assertEqual(tree(self.project), source)
+
+        applied = self.configure(patch, initial)
+        self.assertIs(applied['changed'], True)
+        self.assertIs(applied['startup_splash'], False)
+        self.assertEqual(applied['startup_render'], profile)
+        payload = self.manifest.read_bytes()
+        self.assertEqual(applied['manifest_sha256'], hashlib.sha256(payload).hexdigest())
+        self.assertNotEqual(applied['manifest_sha256'], initial)
+        self.assertEqual(json.loads(payload), {**self.document, **patch})
+        self.assertEqual(self.inspect()['startup_render'], profile)
+        stable = tree(self.project)
+        for path, digest in source.items():
+            if path != self.manifest.name:
+                self.assertEqual(stable[path], digest)
+
+        self.configure(patch, initial, success=False)
+        reordered = {'startup_render': {'lighting_path': 'deferred', 'reconstruction': 'fsr3_quality'},
+                     'startup_splash': False}
+        replay = self.configure(reordered, applied['manifest_sha256'])
+        self.assertEqual(replay, {**applied, 'changed': False})
+        self.assertEqual(tree(self.project), stable)
+
+        replaced = self.configure({'startup_render': {'samples': 1}}, applied['manifest_sha256'])
+        self.assertIs(replaced['changed'], True)
+        self.assertEqual(self.inspect()['startup_render'], {'samples': 1})
+        empty = self.configure({'startup_render': {}}, replaced['manifest_sha256'])
+        self.assertIs(empty['changed'], True)
+        self.assertEqual(self.inspect()['startup_render'], {})
+        removed = self.configure({'startup_render': None}, empty['manifest_sha256'])
+        self.assertIs(removed['changed'], True)
+        self.assertIs(removed['startup_splash'], False)
+        self.assertNotIn('startup_render', removed)
+        self.assertNotIn('startup_render', self.inspect())
+        self.assertEqual(json.loads(self.manifest.read_bytes()), {**self.document, 'startup_splash': False})
+        stable = tree(self.project)
+        self.assertEqual(self.configure({'startup_render': None}, removed['manifest_sha256']),
+                         {**removed, 'changed': False})
+        self.assertEqual(tree(self.project), stable)
+
+    def test_configure_rejects_invalid_render_options_without_partial_changes(self):
+        applied = self.configure({'startup_render': {'lighting_path': 'forward', 'samples': 4}},
+                                 self.inspect()['manifest_sha256'])
+        stable = tree(self.project)
+        cases = [
+            'null',
+            '{}',
+            '{"startup_render":{},"startup_render":null}',
+            '{"startup_render":{"samples":1,"samples":4}}',
+            {'startup_splash': 'false', 'startup_render': {}},
+            {'startup_splash': False, 'name': 'Unknown patch member'},
+        ]
+        invalid_profiles = [
+            False, [], 'deferred',
+            {'samples': True}, {'samples': 1.0}, {'samples': 2}, {'samples': None},
+            {'lighting_path': True}, {'lighting_path': 'clustered'},
+            {'post_aa': 1}, {'post_aa': 'taa'},
+            {'reconstruction': False}, {'reconstruction': 'dlss'},
+            {'viewmodel_samples': 4},
+            {'lighting_path': 'deferred', 'samples': 4},
+            {'post_aa': 'fxaa', 'samples': 4},
+            {'reconstruction': 'fsr3_native', 'samples': 4},
+            {'reconstruction': 'fsr3_performance', 'post_aa': 'fxaa'},
+        ]
+        cases.extend({'startup_splash': False, 'startup_render': value} for value in invalid_profiles)
+        for patch in cases:
+            with self.subTest(patch=patch):
+                self.configure(patch, applied['manifest_sha256'], success=False)
+                self.assertEqual(tree(self.project), stable)
+        self.assertIs(self.inspect()['startup_splash'], True)
+
+        for profile in [None, *invalid_profiles]:
+            with self.subTest(manifest_profile=profile):
+                self.write({**self.document, 'startup_render': profile})
+                self.inspect(False)
+
+    def test_startup_render_can_repair_a_new_sprite_conflict(self):
+        applied = self.configure({'startup_render': {'samples': 4}}, self.inspect()['manifest_sha256'])
+        image = self.root/'Opaque test pixel.png'
+        image.write_bytes(b64decode(
+            'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR4nGP4DwQACfsD/fteaysAAAAASUVORK5CYII='))
+        texture = self.world_rpc('asset.image.import', source=native(image), color_space='srgb')['asset']
+        world = self.project/self.document['entry']['world']
+        entity = uuid.uuid4().hex
+        revision = json.loads(world.read_bytes())['revision']
+        emitter = dict(spawn_space='world', simulation_space='world', lifetime_ticks=12,
+                       particles_per_second=30, size_m=.25, linear_rgb=[1, 1, 1], sprite={'texture': texture})
+        self.world_rpc('world.transact', request_id=uuid.uuid4().hex, base_revision=revision, ops=[
+            {'op': 'entity.create', 'id': entity, 'name': 'Textured sprite'},
+            {'op': 'component.set', 'id': entity, 'type': 'ParticleEmitter', 'value': emitter},
+        ])
+        conflicted = self.inspect()
+        self.assertEqual(conflicted['startup_render'], {'samples': 4})
+        self.assertEqual(conflicted['manifest_sha256'], applied['manifest_sha256'])
+        source = tree(self.project)
+        runtime, spec = self.metadata_runtime()
+        spec['features'].update(scene_particles=True, scene_particle_sprites=True)
+        (runtime/'runtime.json').write_text(json.dumps(spec), encoding='utf-8')
+        output = self.root/'Sprite bundle'
+        build = ('project', 'build', native(self.manifest), '--runtime', native(runtime), '--output', native(output))
+        self.run_cli(*build, success=False)
+        self.assertIn('sprites require samples=1', CALLS[-1]['reply']['diagnostics'][0]['message'])
+        self.assertFalse(output.exists())
+        self.configure({'startup_splash': False}, applied['manifest_sha256'], success=False)
+        self.assertEqual(tree(self.project), source)
+        repaired = self.configure({'startup_render': {'samples': 1}}, applied['manifest_sha256'])
+        self.assertIs(repaired['changed'], True)
+        current = self.inspect()
+        self.assertEqual(current['startup_render'], {'samples': 1})
+        self.assertEqual(current['revision'], revision + 1)
+        self.assertIs(current['startup_splash'], True)
+        self.assertEqual({name: digest for name, digest in tree(self.project).items() if name != self.manifest.name},
+                         {name: digest for name, digest in source.items() if name != self.manifest.name})
+        self.run_cli(*build)
+        game = output/'game.json'
+        self.assertEqual(self.run_cli('game', 'inspect', native(game))['startup_render'], {'samples': 1})
+        spec = json.loads(game.read_bytes())
+        spec['startup_render']['samples'] = 4
+        game.write_text(json.dumps(spec), encoding='utf-8')
+        self.run_cli('game', 'inspect', native(game), success=False)
+        self.assertIn('sprites require samples=1', CALLS[-1]['reply']['diagnostics'][0]['message'])
+
+    def test_startup_render_checkpoint_and_draft_preserve_sparse_profile(self):
+        profile = {'post_aa': 'fxaa', 'reconstruction': 'none'}
+        self.configure({'startup_render': profile}, self.inspect()['manifest_sha256'])
+        lock = '.poima-gameplay-adoptions.lock'
+        self.assertEqual((self.project/lock).read_bytes(), b'')
+        stage = '.poima-splash-' + uuid.uuid4().hex
+        (self.project/stage).mkdir()
+        (self.project/stage/'manifest.pending').write_bytes(b'Unpublished manifest bytes.')
+        nested = self.project/'ordinary' / stage
+        nested.mkdir(parents=True)
+        (nested/lock).write_bytes(b'Ordinary project file with a matching leaf name.')
+        source = tree(self.project)
+        base = self.root/'Render profile checkpoint'
+        saved = self.run_cli('project', 'checkpoint', native(self.manifest), '--output', native(base))
+        expected_source = {path: value for path, value in source.items()
+                           if path != lock and not path.startswith(stage+'/')}
+        self.assertEqual(tree(base/'source'), expected_source)
+        self.assertFalse((base/'source'/stage).exists())
+        draft = self.root/'Render profile draft'
+        draft_manifest = draft/self.manifest.name
+        pin = ('--expected-base-sha256', saved['source_sha256'])
+        self.run_cli('project', 'draft', native(base/'checkpoint.json'), '--output', native(draft), *pin)
+        self.assertEqual(self.run_cli('project', 'inspect', native(draft_manifest))['startup_render'], profile)
+        baseline = tree(draft)
+        review = self.run_cli('project', 'draft-changes', native(base/'checkpoint.json'),
+                              '--draft', native(draft_manifest), *pin)
+        self.assertEqual(review['files'], [])
+        self.assertEqual(tree(draft), baseline)
+        self.assertEqual(tree(self.project), source)
+
+    def test_legacy_checkpoint_with_inventoried_writer_lock_remains_readable(self):
+        base = self.root/'Legacy lock checkpoint'
+        self.run_cli('project', 'checkpoint', native(self.manifest), '--output', native(base))
+        checkpoint = base/'checkpoint.json'
+        document = json.loads(checkpoint.read_bytes())
+        lock = '.poima-gameplay-adoptions.lock'
+        # Versions before the exclusion could include this root lock as an ordinary
+        # source file. Preserve the shape of such a checkpoint and its valid digest.
+        (base/'source'/lock).write_bytes(b'')
+        document['files'].append({'path': 'source/'+lock, 'size': 0, 'role': 'source',
+                                  'sha256': hashlib.sha256(b'').hexdigest()})
+        document['files'].sort(key=lambda row: row['path'])
+        checkpoint.write_text(json.dumps(document), encoding='utf-8')
+        pin = hashlib.sha256(checkpoint.read_bytes()).hexdigest()
+        before = tree(base)
+        draft = self.root/'Draft from legacy lock checkpoint'
+        self.run_cli('project', 'draft', native(checkpoint), '--output', native(draft),
+                     '--expected-base-sha256', pin)
+        self.assertEqual(tree(base), before)
+        self.assertNotIn('startup_render', self.run_cli('project', 'inspect', native(draft/self.manifest.name)))
+
+    def test_export_startup_render_profile_requires_runtime_capabilities(self):
+        runtime, spec = self.metadata_runtime()
+        descriptor = runtime/'runtime.json'
+        build = ('project', 'build', native(self.manifest), '--runtime', native(runtime))
+        output = self.root/'Authored render bundle'
+        profile = {'reconstruction': 'fsr3_balanced', 'lighting_path': 'deferred'}
+        self.configure({'startup_render': profile}, self.inspect()['manifest_sha256'])
+        source = tree(self.project)
+        for renderer, fsr, expected in [(False, True, 'render'), (True, None, 'fsr'),
+                                        (True, False, 'fsr'), (True, 'true', 'boolean')]:
+            with self.subTest(renderer=renderer, fsr=fsr):
+                spec['features']['renderer'] = renderer
+                if fsr is None:
+                    spec['features'].pop('fsr3_upscaler')
+                else:
+                    spec['features']['fsr3_upscaler'] = fsr
+                descriptor.write_text(json.dumps(spec), encoding='utf-8')
+                self.run_cli(*build, '--output', native(output), success=False)
+                self.assertIn(expected, CALLS[-1]['reply']['diagnostics'][0]['message'].lower())
+                self.assertFalse(output.exists())
+                self.assertEqual(tree(self.project), source)
+
+        spec['features']['fsr3_upscaler'] = True
+        descriptor.write_text(json.dumps(spec), encoding='utf-8')
+        runtime_source = tree(runtime)
+        self.run_cli(*build, '--output', native(output))
+        relocated = self.root/'Relocated authored render bundle'
+        output.rename(relocated)
+        manifest = relocated/'game.json'
+        game = json.loads(manifest.read_bytes())
+        self.assertEqual(game['version'], 1)
+        self.assertEqual(game['startup_render'], profile)
+        self.assertEqual(self.run_cli('game', 'inspect', native(manifest))['startup_render'], profile)
+
+        # A coherent inventory without the required feature still fails admission.
+        bundled_descriptor = relocated/'runtime/runtime.json'
+        del spec['features']['fsr3_upscaler']
+        bundled_descriptor.write_text(json.dumps(spec), encoding='utf-8')
+        descriptor_bytes = bundled_descriptor.read_bytes()
+        row = next(item for item in game['files'] if item['path'] == 'runtime/runtime.json')
+        row.update(size=len(descriptor_bytes), sha256=hashlib.sha256(descriptor_bytes).hexdigest())
+        manifest.write_text(json.dumps(game), encoding='utf-8')
+        unqualified = tree(relocated)
+        self.run_cli('game', 'inspect', native(manifest), success=False)
+        self.assertIn('fsr', CALLS[-1]['reply']['diagnostics'][0]['message'].lower())
+        self.assertEqual(tree(relocated), unqualified)
+        self.assertEqual(tree(runtime), runtime_source)
+        self.assertEqual(tree(self.project), source)
 
     @unittest.skipUnless(args.windows_interop or os.name == 'nt', 'Reproduces the Windows staging path limit.')
     def test_windows_export_reads_world_and_profile_in_deep_staging_paths(self):

@@ -1,0 +1,171 @@
+{
+  "format": "poima.project-startup-render.qualification.v1",
+  "version": "0.0.398",
+  "baseline_commit": "ea9d6f87190c23a76981ad24f9ab92a791c1c204",
+  "source_manifest_sha256": "9c6998b547db1cdd2f2ba5774a744b95540c9b593222d9358bf62ae66622b099",
+  "ubuntu": {
+    "ctest": [
+      "world_history_contract",
+      "project_draft_contract",
+      "input_profile_contract",
+      "project_contract",
+      "shared_session_contract",
+      "player_settings_contract",
+      "authoring_contract_identity",
+      "world_particles_contract",
+      "authoring_response_compatibility",
+      "authoring_api_compatibility",
+      "authoring_core_conformance",
+      "cli_contract",
+      "world_session_native",
+      "world_schema_native"
+    ],
+    "packaged_fsr3_upscaler_flag": false,
+    "cli_sha256": "7fadd765330f9e8eb46aed18317846c2eb00d50057001f879f5643c2acda6143"
+  },
+  "windows": {
+    "installed_cli_sha256": "bdcf7856503f09d38f0981a92c235936d4842670ae7e439e9b6971a071e01e7f",
+    "runtime_descriptor_sha256": "0475601ab84ba2aa7c8eca7e405f763952b81d01dd6421ab8f18fe5ddcb9c80e",
+    "packaged_fsr3_upscaler_flag": true,
+    "project_contract_tests_passed": 25,
+    "cli_contract_tests_passed": 10,
+    "cli_contract_tests_inapplicable": 2,
+    "native_capture_test_sha256": "506bfabe53f4755da00997a29855f36c18a2371d93d1ca7944022d938ec89fae",
+    "replay_devices": {
+      "AMD Radeon(TM) Graphics": {
+        "evidence_sha256": "b85068dee0e31d8603f0b4989dc5a0a90afb270e2003513ac7ce704db4cd051d",
+        "cases": {
+          "automatic": {
+            "lighting": "deferred",
+            "reconstruction": "fsr3_quality",
+            "samples": 1,
+            "capture_sha256": "104b8bc9a220d843124ab8098fbf156d6e6434a216aedc88a67e5de47c3847fc",
+            "save_sha256": "88d69b9132148a82840886cc1e3d36b7251b1aad973ca7d0a89f9200ebbe15d3",
+            "gameplay_native_result_sha256": "3fb4de665f82f3b887492ae0d57342e878847811067906c98d1dee017d8632a5"
+          },
+          "explicit": {
+            "lighting": "deferred",
+            "reconstruction": "fsr3_quality",
+            "samples": 1,
+            "capture_sha256": "104b8bc9a220d843124ab8098fbf156d6e6434a216aedc88a67e5de47c3847fc",
+            "save_sha256": "88d69b9132148a82840886cc1e3d36b7251b1aad973ca7d0a89f9200ebbe15d3",
+            "gameplay_native_result_sha256": "5af6c3f8e7c7d857ab5e091613458e67bb993248addef46640ef6aa68d07a93a"
+          },
+          "override": {
+            "lighting": "forward",
+            "reconstruction": "none",
+            "samples": 1,
+            "capture_sha256": "4c78591062da9a8d3996630032951991faaacdbedcc6dacb624c792ca4c844a5",
+            "save_sha256": "88d69b9132148a82840886cc1e3d36b7251b1aad973ca7d0a89f9200ebbe15d3",
+            "gameplay_native_result_sha256": "a2c7e93eec29fa5be22629d94aa0dad0ef3f426a2cd53bd4a34724aa0defa5d7"
+          },
+          "legacy-fallback": {
+            "lighting": "forward",
+            "reconstruction": "none",
+            "samples": 1,
+            "capture_sha256": "4c78591062da9a8d3996630032951991faaacdbedcc6dacb624c792ca4c844a5",
+            "save_sha256": "88d69b9132148a82840886cc1e3d36b7251b1aad973ca7d0a89f9200ebbe15d3",
+            "gameplay_native_result_sha256": "b5f6fa564983db2d850c16afae0dc10ff12eb04b5915efc96280026203a9c4f6"
+          }
+        },
+        "verified_vulkan_sync_validation": true,
+        "relocated_launcher": "launch.cmd",
+        "refused_request_names": [
+          "legacy_sprite_explicit_four",
+          "runtime_without_fsr"
+        ],
+        "cross_lighting_ui": {
+          "opaque_glyph_pixels": 187,
+          "opaque_panel_pixels": 2599,
+          "changed_partial_coverage_pixels": 100,
+          "maximum_channel_difference": 1
+        }
+      },
+      "NVIDIA GeForce RTX 4070 Laptop GPU": {
+        "evidence_sha256": "db1d54a82042de618c162363e7f0460480509e26dfededf607208a4b536a1e7a",
+        "cases": {
+          "automatic": {
+            "lighting": "deferred",
+            "reconstruction": "fsr3_quality",
+            "samples": 1,
+            "capture_sha256": "ff693e9d3eb1f2ca3ddebf91a7e6137b180bc42d7b88f3f8c356741faf9cdba7",
+            "save_sha256": "2a353cd3b3fc9796ab0e7c4ebbe5ea7203d89e7de5e0deb776c52e5fc0f56d79",
+            "gameplay_native_result_sha256": "7e154e77b5b8b61198975881f69da261d653eb15c7a91fa28fb090e0c74b3f0f"
+          },
+          "explicit": {
+            "lighting": "deferred",
+            "reconstruction": "fsr3_quality",
+            "samples": 1,
+            "capture_sha256": "ff693e9d3eb1f2ca3ddebf91a7e6137b180bc42d7b88f3f8c356741faf9cdba7",
+            "save_sha256": "2a353cd3b3fc9796ab0e7c4ebbe5ea7203d89e7de5e0deb776c52e5fc0f56d79",
+            "gameplay_native_result_sha256": "4a4e339ca697c95e3b2c79ef3f1dcb842a47256417bbe0b2caef2dc1f6f11239"
+          },
+          "override": {
+            "lighting": "forward",
+            "reconstruction": "none",
+            "samples": 1,
+            "capture_sha256": "234468487b27969752800e41a4628aba1c73f23c0c52031d177320d37b3dc0a8",
+            "save_sha256": "2a353cd3b3fc9796ab0e7c4ebbe5ea7203d89e7de5e0deb776c52e5fc0f56d79",
+            "gameplay_native_result_sha256": "b71ee758519990ee740acdf82dacbb4201b17bcf4a4c711deca1a6878cd0acc8"
+          },
+          "legacy-fallback": {
+            "lighting": "forward",
+            "reconstruction": "none",
+            "samples": 1,
+            "capture_sha256": "234468487b27969752800e41a4628aba1c73f23c0c52031d177320d37b3dc0a8",
+            "save_sha256": "2a353cd3b3fc9796ab0e7c4ebbe5ea7203d89e7de5e0deb776c52e5fc0f56d79",
+            "gameplay_native_result_sha256": "db10bb9275429a70c838519aacf5e350933f39af8b0d945a0e6d1367bd1781e0"
+          }
+        },
+        "verified_vulkan_sync_validation": true,
+        "relocated_launcher": "launch.cmd",
+        "refused_request_names": [
+          "legacy_sprite_explicit_four",
+          "runtime_without_fsr"
+        ],
+        "cross_lighting_ui": {
+          "opaque_glyph_pixels": 185,
+          "opaque_panel_pixels": 2599,
+          "changed_partial_coverage_pixels": 95,
+          "maximum_channel_difference": 1
+        }
+      }
+    },
+    "creator_desktop": {
+      "binary_sha256": "8bbaa52027ca549df9e82c4603bf5bb336cc30d20bffb6f787a4dc69f25ae424",
+      "assembly_sha256": "54fd594e354b58e0476344beb1f4f69e227c9eb53afb1e62b433d918fa4519da",
+      "bound_cli_sha256": "bdcf7856503f09d38f0981a92c235936d4842670ae7e439e9b6971a071e01e7f",
+      "view_test_sha256": "9450f67bb6d2ed6e4c91a9adea988b521477b517d61398867616b84d06b3443c",
+      "report_sha256": "7e92b3839a1d1834f18f0183e62ab2b779d3b91c1360ee6611fb3978128a6276",
+      "authored": {
+        "lighting_path": "deferred",
+        "post_aa": "none",
+        "reconstruction": "fsr3_quality",
+        "samples": 1
+      },
+      "invalid_selections_blocked": 2,
+      "previous_selections_reopened": true,
+      "cancel_preserved_manifest": true,
+      "closed_normally": true
+    }
+  },
+  "retained_preflights": {
+    "windows_cli": {
+      "sha256": "643d003608a0d7f1dda420da8a4c0557807aca0819033c319099d0602ba627c3",
+      "finding": "The first invocation used the wrong editor feature parameter and did not forward the Windows Vulkan environment variables through WSL."
+    },
+    "native_relocation": {
+      "sha256": "121bbfd413b880f686faddacd6da6c4d23a4a7cf3cac37198cfeec2905f3040a",
+      "finding": "The initial comparison treated the relocated DLL path as global. Validation now checks each path against its own bundle and both artifacts against the expected DLL digest."
+    },
+    "cross_lighting_ui": {
+      "sha256": "07fa2616a3243cc24d4b56048fefb05d83dff66e54adc522d7e9f601fe27a687",
+      "finding": "A forward to deferred comparison changed partially covered pixels by one display code value. Opaque glyph and panel positions and colors are checked exactly. Each equivalent-mode pair still requires exact whole-image comparison."
+    },
+    "creator_uia": {
+      "sha256": "4860e8b5d482ecf7e4f7c8c6794da56e9b9d342f99713a90bee80844feea18f0",
+      "finding": "The test initially looked up an attached Automation name. The text peer exposes the warning text. The rerun checks the visible text and actual disabled Save state."
+    }
+  },
+  "boundaries": "Fixtures cover startup defaults, overrides, immutable relocation, save parity, and settings interaction. Timing, installed launcher onboarding, and physical input are separate workloads."
+}

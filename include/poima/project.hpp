@@ -2,11 +2,13 @@
 #pragma once
 #include "poima/core.hpp"
 #include <cstdint>
+#include <optional>
 #include <string>
 namespace poima {
 Reply create_project(const std::string& directory,const std::string& name,bool gameplay_source=false);
 Reply inspect_project(const std::string& manifest);
 Reply set_project_startup_splash(const std::string& manifest,bool enabled,const std::string& expected_manifest);
+Reply configure_project(const std::string& manifest,const std::string& patch_json,const std::string& expected_manifest);
 // Resolve the entry world only after validating the existing project.
 std::string project_world_path(const std::string& manifest);
 // Resolve a draft's entry only after verifying its local lineage marker and project.
@@ -32,6 +34,11 @@ Reply project_versions(const std::string& directory,const std::string& project_i
 Reply recover_project(const std::string& checkpoint,const std::string& output,const std::string& expected_snapshot={});
 Reply share_project_build(const std::string& checkpoint,const std::string& expected_bundle,const std::string& output);
 Reply inspect_game(const std::string& manifest,const std::string& expected_bundle={});
+struct StartupRenderOptions {
+    std::optional<bool> deferred,fxaa;
+    std::optional<ReconstructionMode> reconstruction;
+    std::optional<std::uint32_t> samples;
+};
 struct GameDefinition {
     std::string root,world,camera,controller,input_profile,name,target_os,target_arch;
     std::string project_id;
@@ -39,6 +46,8 @@ struct GameDefinition {
     std::string gameplay_descriptor,gameplay_descriptor_sha256,gameplay_values="{}";
     std::uint64_t revision=0;
     bool audio=false, startup_splash=true;
+    StartupRenderOptions startup_render;
+    bool needs_sprite_particles=false;
 };
 // Verifies all bundle files and their dependency closure before returning paths.
 GameDefinition load_game(const std::string& manifest);

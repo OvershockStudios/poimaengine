@@ -24,6 +24,7 @@
     "surface_mark_masks": @POIMA_RUNTIME_SURFACE_MARK_MASKS@,
     "scene_particle_sprites": @POIMA_RUNTIME_SCENE_PARTICLE_SPRITES@,
     "renderer": @POIMA_RUNTIME_RENDER_SMOKE@,
+    "fsr3_upscaler": @POIMA_RUNTIME_FSR3_UPSCALER@,
     "mesh_lod": @POIMA_RUNTIME_RENDER_SMOKE@,
     "project_post_effects": @POIMA_RUNTIME_RENDER_SMOKE@,
     "output_grade": @POIMA_RUNTIME_RENDER_SMOKE@,

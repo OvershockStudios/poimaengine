@@ -81,14 +81,13 @@ internal static class ProjectFiles
         return result;
     }
 
-    public static async Task<JsonElement> PlayExport(string manifest, string saves, int gpu, uint samples, VerifiedPlayback playback,
+    public static async Task<JsonElement> PlayExport(string manifest, string saves, int gpu, VerifiedPlayback playback,
         CancellationToken preparation, Action launched)
     {
         using var stage = await GameChildWorkspace.PrepareAsync(manifest, null, null, playback.BundleHash, preparation);
         preparation.ThrowIfCancellationRequested();
         manifest = stage?.Manifest ?? manifest;
-        var arguments = new List<string> { "game", "run", manifest, "--save-root", saves,
-            "--samples", samples.ToString(System.Globalization.CultureInfo.InvariantCulture) };
+        var arguments = new List<string> { "game", "run", manifest, "--save-root", saves };
         if (gpu >= 0)
             arguments.AddRange(["--gpu", gpu.ToString(System.Globalization.CultureInfo.InvariantCulture)]);
         return await RunCommand(GameExecutable(manifest), [.. arguments], playback: playback, launched: launched);

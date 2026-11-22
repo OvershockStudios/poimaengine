@@ -10,13 +10,15 @@ struct GameLaunchOptions {
     RenderOptions render;
     std::string settings_profile,settings_overrides;
     std::optional<std::uint64_t> settings_revision;
-    // Deferred lighting, FXAA and reconstruction use one world sample.
+    // Deferred lighting, FXAA, reconstruction and textured sprites use one world sample.
     // An explicit sample count must be 1 when any of these are enabled.
     bool samples_explicit=false,frames_in_flight_explicit=false;
     bool lens_interpolation=false,pose_interpolation=false;
     bool default_save_root=false;
     std::uint32_t max_frames=0;
     std::optional<std::string> save_write_mode={};
+    // The CLI can explicitly select forward, no post AA or no reconstruction.
+    bool lighting_path_explicit=false,post_aa_explicit=false,reconstruction_explicit=false;
 };
 Reply run_game(const GameLaunchOptions& options);
 struct GameServeOptions {
