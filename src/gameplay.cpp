@@ -131,7 +131,8 @@ void validate_offered_contract(const gameplay_abi::Contract& offered,const gamep
             feature==gameplay_abi::animation_layers_feature || feature==gameplay_abi::character_input_feature || feature==gameplay_abi::navigation_feature || feature==gameplay_abi::instances_feature || feature==gameplay_abi::player_preferences_feature || feature==gameplay_abi::input_actions_feature || feature==gameplay_abi::hit_regions_feature || feature==gameplay_abi::two_bone_ik_feature || feature==gameplay_abi::root_motion_feature || feature==gameplay_abi::camera_lens_feature || feature==gameplay_abi::character_stance_feature || feature==gameplay_abi::two_bone_ik_orientation_feature || feature==gameplay_abi::grounding_control_feature || feature==gameplay_abi::animation_rate_feature || feature==gameplay_abi::camera_pose_feature || feature==gameplay_abi::capsule_cast_feature || feature==gameplay_abi::physical_rig_feature || feature==gameplay_abi::physical_rig_drive_feature || feature==gameplay_abi::physical_rig_animation_feature || feature==gameplay_abi::physical_recovery_feature || feature==gameplay_abi::item_attachment_feature || feature==gameplay_abi::item_attachment_contact_feature || feature==gameplay_abi::item_attachment_surface_feature || feature==gameplay_abi::item_attachment_recovery_feature || feature==gameplay_abi::item_attachment_release_feature || feature==gameplay_abi::item_attachment_pickup_feature || feature==gameplay_abi::item_attachment_aim_feature || feature==gameplay_abi::ik_clearance_feature || feature==gameplay_abi::item_pickup_clearance_feature || feature==gameplay_abi::item_pickup_pose_feature || feature==gameplay_abi::item_pickup_blend_feature || feature==gameplay_abi::item_pickup_steering_feature || feature==gameplay_abi::item_pickup_hand_fallback_feature ||
             feature==gameplay_abi::particle_burst_feature || feature==gameplay_abi::surface_mark_feature ||
             feature==gameplay_abi::surface_mark_direction_feature || feature==gameplay_abi::surface_mark_texture_feature ||
-            feature==gameplay_abi::surface_mark_timed_feature || feature==gameplay_abi::surface_wetness_feature;
+            feature==gameplay_abi::surface_mark_timed_feature || feature==gameplay_abi::surface_wetness_feature ||
+            feature==gameplay_abi::solar_lighting_feature;
         check(!known || std::find(actual.features.begin(),actual.features.end(),feature)!=actual.features.end(),
             "Offered gameplay feature is unavailable in the compiled runtime.");
     }
@@ -789,7 +790,7 @@ template<class F>void with_timed_surface_mark_service_view(const gameplay_abi::C
     baseline.bytes=sizeof(view);
     callback(&baseline);
 }
-template<class F>void with_service_view(const gameplay_abi::Contract& prefix,bool has_attachments,bool has_particle_bursts,
+template<class F>void with_wetness_service_view(const gameplay_abi::Contract& prefix,bool has_attachments,bool has_particle_bursts,
     bool has_surface_marks,bool has_directional_marks,bool has_textured_marks,bool has_timed_marks,bool has_wetness,
     const PoimaGameServices& provided,F&& callback) {
     if(!has_wetness) {
@@ -809,6 +810,31 @@ template<class F>void with_service_view(const gameplay_abi::Contract& prefix,boo
         std::memcpy(&view.timed,services,services->bytes);
     });
     auto& drive=view.timed.textured.directional.marks.particles.attachments.recovery.animation.drive;
+    gameplay_abi::restrict_physical_rig_drive_callbacks(prefix,drive);
+    auto& baseline=gameplay_abi::physical_rig_drive_baseline(drive);
+    baseline.bytes=sizeof(view);
+    callback(&baseline);
+}
+template<class F>void with_service_view(const gameplay_abi::Contract& prefix,bool has_attachments,bool has_particle_bursts,
+    bool has_surface_marks,bool has_directional_marks,bool has_textured_marks,bool has_timed_marks,bool has_wetness,
+    bool has_solar_lighting,const PoimaGameServices& provided,F&& callback) {
+    if(!has_solar_lighting) {
+        with_wetness_service_view(prefix,has_attachments,has_particle_bursts,has_surface_marks,has_directional_marks,
+            has_textured_marks,has_timed_marks,has_wetness,provided,callback);
+        return;
+    }
+    check(provided.version==gameplay_abi::services_version && provided.bytes>=sizeof(PoimaGameSolarLightingServicesV1),
+        "Gameplay requires services epoch 7 and the 584-byte solar lighting extension.");
+    PoimaGameSolarLightingServicesV1 view{};
+    std::memcpy(&view,&provided,sizeof(view));
+    check(view.solar_lighting_set,"Gameplay solar lighting callback is absent.");
+    view.wetness={};
+    with_wetness_service_view(prefix,has_attachments,has_particle_bursts,has_surface_marks,has_directional_marks,
+        has_textured_marks,has_timed_marks,has_wetness,provided,[&](const PoimaGameServices* services) {
+        check(services->bytes<=sizeof(view.wetness),"Projected gameplay services exceed the solar lighting prefix.");
+        std::memcpy(&view.wetness,services,services->bytes);
+    });
+    auto& drive=view.wetness.timed.textured.directional.marks.particles.attachments.recovery.animation.drive;
     gameplay_abi::restrict_physical_rig_drive_callbacks(prefix,drive);
     auto& baseline=gameplay_abi::physical_rig_drive_baseline(drive);
     baseline.bytes=sizeof(view);
@@ -1021,6 +1047,7 @@ struct Gameplay::Impl {
     std::vector<std::pair<std::size_t,std::string>> entity_fields;
     gameplay_abi::Contract requirements,prefix_requirements;
     bool has_wetness=false;
+    bool has_solar_lighting=false;
     bool has_timed_marks=false;
     bool has_textured_marks=false;
     bool has_directional_marks=false;
@@ -1081,6 +1108,7 @@ Gameplay::Gameplay(const GameplayConfig& config,const Gameplay* previous,Gamepla
     require_compatible(impl_->requirements,host_available);
     impl_->prefix_requirements=impl_->requirements;
     auto& prefix=impl_->prefix_requirements;
+    impl_->has_solar_lighting=std::erase(prefix.features,std::string(gameplay_abi::solar_lighting_feature))!=0;
     impl_->has_wetness=std::erase(prefix.features,std::string(gameplay_abi::surface_wetness_feature))!=0;
     impl_->has_timed_marks=std::erase(prefix.features,std::string(gameplay_abi::surface_mark_timed_feature))!=0;
     impl_->has_textured_marks=std::erase(prefix.features,std::string(gameplay_abi::surface_mark_texture_feature))!=0;
@@ -1218,14 +1246,14 @@ std::string validate_gameplay_values(const std::string& schema,const std::string
 void Gameplay::control(const PoimaGameServices& services,std::uint64_t tick) {
     with_service_view(impl_->prefix_requirements,impl_->has_attachments,impl_->has_particle_bursts,
         impl_->has_surface_marks,impl_->has_directional_marks,impl_->has_textured_marks,impl_->has_timed_marks,impl_->has_wetness,
-        services,[&](const PoimaGameServices* view) {
+        impl_->has_solar_lighting,services,[&](const PoimaGameServices* view) {
         PoimaGameCall call{};call.operation=6;call.handle=impl_->handle;call.state=impl_->storage.data();call.state_bytes=impl_->bytes;call.services=view;call.tick=tick;(void)invoke(impl_->entry,call);impl_->validate();
     });
 }
 void Gameplay::tick(const PoimaGameServices& services,std::span<const PoimaGameInput> inputs,std::uint64_t tick) {
     with_service_view(impl_->prefix_requirements,impl_->has_attachments,impl_->has_particle_bursts,
         impl_->has_surface_marks,impl_->has_directional_marks,impl_->has_textured_marks,impl_->has_timed_marks,impl_->has_wetness,
-        services,[&](const PoimaGameServices* view) {
+        impl_->has_solar_lighting,services,[&](const PoimaGameServices* view) {
         PoimaGameCall call{};call.operation=3;call.handle=impl_->handle;call.state=impl_->storage.data();call.state_bytes=impl_->bytes;call.services=view;call.inputs=inputs.data();call.input_count=static_cast<std::uint32_t>(inputs.size());call.tick=tick;(void)invoke(impl_->entry,call);impl_->validate();
     });
 }

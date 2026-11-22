@@ -33,6 +33,7 @@
 #include "particle_state_json.hpp"
 #include "particle_scene.hpp"
 #include "water_region_scene.hpp"
+#include "solar_lighting_json.hpp"
 #include "poima/profiler.hpp"
 #include "poima/assets.hpp"
 #include "mesh_lod.hpp"
@@ -260,6 +261,7 @@ struct Runtime::Impl {
     std::optional<water::Region> water_region;
 #include "runtime_snow.inc"
 #include "runtime_wetness.inc"
+#include "runtime_solar_lighting.inc"
     std::uint32_t game_sound_calls=0,game_navigation_calls=0;
     std::optional<RuntimeNavigationDefinition> navigation_binding;
     std::vector<std::string> navigation_obstacles;
@@ -830,6 +832,7 @@ struct Runtime::Impl {
             }
         }
         require(lights<=max_scene_lights && environments<=1,"Runtime exceeds light/environment limits.");
+        has_solar_target=authored_solar_target(definition);
         validate_shadow_budget(shadow_count,shadow_resolution);
         require(body_count<=RuntimeBodyIds::capacity,"Runtime physics body limit exceeded.");
         std::set<entt::entity> done;
@@ -1857,6 +1860,7 @@ struct Runtime::Impl {
         auto particle_checkpoint=particle_runtime ? std::make_unique<ParticleRuntime>(*particle_runtime) : nullptr;
         const auto surface_checkpoint=surface_marks;
         const auto wetness_checkpoint=wetness_live;
+        const auto solar_checkpoint=solar_lighting_live;
         const auto snow_checkpoint=snow_live;
         const auto releases_checkpoint=snow_releases;
         // World systems share controller input and consume each pressed name once.
@@ -1917,7 +1921,7 @@ struct Runtime::Impl {
                     {
                         profiling::Scope gameplay_profile("runtime.gameplay.tick");
                         build_controller_preview();
-                        game->tick(gameplay_abi::physical_rig_drive_baseline(api.timed.textured.directional.marks.particles.attachments.recovery.animation.drive),std::span<const PoimaGameInput>(frame_inputs.data(),input_count),tick);
+                        game->tick(gameplay_abi::physical_rig_drive_baseline(api.wetness.timed.textured.directional.marks.particles.attachments.recovery.animation.drive),std::span<const PoimaGameInput>(frame_inputs.data(),input_count),tick);
                         clear_controller_preview();game_phase=GamePhase::idle;game_input_source=nullptr;game_input_edges=false;
                     }
                     if(auto candidate=prepare_ui_commands())ui_model.swap(candidate);
@@ -2119,6 +2123,7 @@ struct Runtime::Impl {
                 step_particles(pressed_actions,rain_nm);
                 record_snow_foot_decisions();
                 advance_surface_marks(frame==0 ? mark_commands : std::span<const RuntimeSurfaceMarkCommand>{});
+                if(staged_solar_lighting)solar_lighting_live=std::exchange(staged_solar_lighting,std::nullopt);
                 pressed_actions.clear();
             }
             sync();
@@ -2134,6 +2139,8 @@ struct Runtime::Impl {
             surface_marks=surface_checkpoint;
             wetness_live=wetness_checkpoint;
             gameplay_wetness_dose.reset();
+            solar_lighting_live=solar_checkpoint;
+            staged_solar_lighting.reset();
             clear_player_preferences_commands();
             components->rollback_batch();
             rollback_structure(structure_checkpoint);
@@ -2717,11 +2724,13 @@ AudioSnapshot Runtime::audio_snapshot(const std::string& listener) const {
 }
 SceneLighting Runtime::lighting() const {
     SceneLighting result;
+    result.solar_lighting=impl_->solar_lighting_live;
     for(auto e:impl_->topology->order) {
         const auto& node=impl_->registry.get<Node>(e);
         if(const auto* light=impl_->registry.try_get<Light>(e))append_light(result,node.id,*light,node.world);
         if(const auto* environment=impl_->registry.try_get<LightingEnvironment>(e)) { result.environment=*environment;result.preview=false; }
     }
+    resolve_solar_lighting(result);
     finalize_lighting(result);return result;
 }
 std::optional<RuntimeCameraPoseState> Runtime::camera_pose(const std::string& id) const { return impl_->camera_pose(id); }

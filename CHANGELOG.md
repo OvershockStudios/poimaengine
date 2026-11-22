@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.405
+
+- Drive the sun, sky and ambient lighting from compiled gameplay time through a replayable, saved solar sample.
+
 ## 0.0.404
 
 - Trim conservatively clipped index ranges from large rigid shadow casters using cached triangle block bounds.

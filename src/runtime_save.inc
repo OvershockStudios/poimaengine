@@ -19,6 +19,30 @@ double save_number(const SaveJson& v,double limit) {
     require(v.is_number(),"Runtime snapshot requires a number.");const auto result=v.get<double>();
     require(std::isfinite(result) && std::abs(result)<=limit,"Runtime snapshot number is out of range.");return result;
 }
+SolarLightingSample read_solar_lighting(const SaveJson& data) {
+    save_fields(data,{"version","world_milliseconds","toward_sun","sun_gain","sun_tint","sky_gain","ambient"});
+    require(save_integer(data.at("version"))==1,"Unsupported solar lighting snapshot version.");
+    const auto magnitude=[](const SaveJson& value,double limit) {
+        const auto number=save_number(value,limit);
+        require(number>=0,"Solar lighting snapshot values must be nonnegative.");
+        return static_cast<float>(number);
+    };
+    const auto& direction=data.at("toward_sun");
+    const auto& tint=data.at("sun_tint");
+    const auto& ambient=data.at("ambient");
+    require(direction.is_array() && direction.size()==3 && tint.is_array() && tint.size()==3 &&
+        ambient.is_array() && ambient.size()==3,"Solar lighting snapshot vectors need three values.");
+    SolarLightingSample result;
+    result.world_milliseconds=save_integer(data.at("world_milliseconds"),max_solar_world_milliseconds);
+    result.sun_gain=magnitude(data.at("sun_gain"),1);
+    result.sky_gain=magnitude(data.at("sky_gain"),1);
+    for(std::size_t axis=0;axis<3;++axis) {
+        result.toward_sun[axis]=save_number(direction[axis],1.000001);
+        result.sun_tint[axis]=magnitude(tint[axis],1);
+        result.ambient[axis]=magnitude(ambient[axis],1e6);
+    }
+    return result;
+}
 std::string save_text(const SaveJson& v,std::size_t bound=256,bool empty=false) {
     require(v.is_string(),"Runtime snapshot requires a string.");const auto s=v.get<std::string>();
     require((empty || !s.empty()) && s.size()<=bound && s.find('\0')==std::string::npos,"Runtime snapshot string is out of range.");return s;
@@ -521,6 +545,7 @@ std::string Runtime::save_snapshot(const std::string& content_sha256) const {
     }
     if(s.snow_live)payload["snow"]=s.archive_snow();
     if(s.wetness_live)payload["wetness"]=s.archive_wetness();
+    if(s.solar_lighting_live)payload["solar_lighting"]=solar_lighting_json(*s.solar_lighting_live);
     if(const auto* particles=s.particle_runtime.get()) {
         require(particles->system.status().tick==s.tick,"Particle system tick differs from its runtime.");
         SaveJson sources=SaveJson::array();
@@ -587,6 +612,13 @@ std::unique_ptr<Runtime> Runtime::restore_snapshot_data(const RuntimeDefinition&
     if(wetness_content) {
         wetness_extension=std::move(data.at("wetness"));
         data.erase("wetness");
+    }
+    std::optional<SolarLightingSample> solar_sample;
+    if(data.contains("solar_lighting")) {
+        require(!data.at("gameplay").is_null() && save_integer(data.at("tick"))>0,
+            "A solar lighting sample requires a committed gameplay tick.");
+        solar_sample=read_solar_lighting(data.at("solar_lighting"));
+        data.erase("solar_lighting");
     }
     const bool particle_content=Impl::definition_has_particles(definition);
     require(data.contains("particles")==particle_content,"Snapshot particle membership differs from frozen content.");
@@ -798,6 +830,11 @@ std::unique_ptr<Runtime> Runtime::restore_snapshot_data(const RuntimeDefinition&
         auto topology=std::make_shared<Impl::Topology>(*s.topology);topology->spawned=std::move(origins);s.topology=std::move(topology);
     }
     if(s.wetness_live)s.restore_wetness(wetness_extension);
+    if(expanded)s.has_solar_target=Impl::authored_solar_target(definition);
+    if(solar_sample) {
+        s.validate_solar_sample(*solar_sample);
+        s.solar_lighting_live=solar_sample;
+    }
     if(s.water_region)s.water_region->restore(water_extension,tick,
         s.wetness_live ? s.wetness_live->next_quantum : std::nullopt);
     if(custom || structural || logical_ui || version>=7)s.components->load(data.at("components").dump());

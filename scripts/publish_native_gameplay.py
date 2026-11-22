@@ -51,6 +51,7 @@ GAMEPLAY_FEATURE_PREFIX_BYTES = {
     'surface_mark_texture_v3': 560,
     'surface_mark_timed_v4': 568,
     'surface_wetness_v1': 576,
+    'solar_lighting_v1': 584,
 }
 GAMEPLAY_IN_PREFIX_FEATURES = frozenset((
     'item_attachment_contact_v1',

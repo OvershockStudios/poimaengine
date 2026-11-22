@@ -1,0 +1,1009 @@
+{
+  "checkpoint": "0.0.405",
+  "baseline_commit": "06f1d53",
+  "services_epoch": 7,
+  "optional_service": {
+    "name": "solar_lighting_v1",
+    "bytes": 584
+  },
+  "world_schema_revision": 206,
+  "ubuntu": {
+    "suites": [
+      "world_water_contract",
+      "world_particles_contract",
+      "authoring_api_compatibility",
+      "gameplay_compatibility_policy",
+      "gameplay_service_contract",
+      "native_gameplay_publish_requirements",
+      "save_upgrade_snapshot_native",
+      "render_schedule_native",
+      "world_session_native",
+      "gameplay_player_preferences_native",
+      "world_ui_contract",
+      "project_contract",
+      "shared_session_contract",
+      "lighting_contract",
+      "cli_contract",
+      "world_contract",
+      "asset_references_contract"
+    ],
+    "junit_sha256": "d27464fef05538d8af94f9adbfaa45f5adb5e83afba7bc7443bc727c49b6ca27",
+    "descriptor_sha256": "5e259edbdc49955a718e67e789bbba54f7771afdea2b15f1d0d544a5a613e6ed",
+    "compiled_games": {
+      "coreclr": {
+        "binary_sha256": "a276e16694226b453723a3f9d7c9dd1bc982e3c43d0f271c6957b9d414944454",
+        "harness_sha256": "326821e4d2e8bde056d7fe996ac1d1a494f3105a024890aba3006f10cf9e3fde",
+        "evidence_sha256": "d9f1dc3f62bb1e6b16eb04e902075f53e445c53cd87646c550eee81a1d2bdfcf",
+        "archives": {
+          "warm-0": "b7e248f17a3085672eac9f64adfe0a1eeeb9c8871926b63bb390282192a38212",
+          "before-late-failure": "433f57202f582772804229e3ff9eac487fe10a36c99b99d2f5902ec55aeb9aed",
+          "after-late-failure": "433f57202f582772804229e3ff9eac487fe10a36c99b99d2f5902ec55aeb9aed",
+          "warm-2": "ada482f2ab38da60db5110209ae3e06c7a7fcf035789b5ac611fe2e25a206616",
+          "warm-5": "7f10e86bac52a12505d295c5bc2b4d80ec890fb43a2ea35243fdfdca046b9de6",
+          "warm-restored": "ada482f2ab38da60db5110209ae3e06c7a7fcf035789b5ac611fe2e25a206616",
+          "cold-2": "ada482f2ab38da60db5110209ae3e06c7a7fcf035789b5ac611fe2e25a206616",
+          "cold-5": "7f10e86bac52a12505d295c5bc2b4d80ec890fb43a2ea35243fdfdca046b9de6"
+        },
+        "artifact": {
+          "assembly_sha256": "74ee024da93796b214aac0c1a413105532ff8f7fc58933b23b9fd5d9c80dd574",
+          "weather_sha256": "3a41598768370909692b6012815a171d20880e7143b8ebe4944f175bd5b6bd38",
+          "sdk_sha256": "2d5fed75fb29c0053d1d925132c392ac73a69e18f3459c1fca608b8119f752cc",
+          "bridge_sha256": "2748db4b605e7d7a4e8740603e4d6be7bf07001c40f942f0611c54727172ae1e",
+          "hostfxr_sha256": "342ccc53ed77b71fb097f548098ea5b4190069099dfd8dfef31976d308edf32b"
+        },
+        "observed_ticks": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "late_failure": -32040
+      },
+      "native-aot": {
+        "binary_sha256": "a276e16694226b453723a3f9d7c9dd1bc982e3c43d0f271c6957b9d414944454",
+        "harness_sha256": "326821e4d2e8bde056d7fe996ac1d1a494f3105a024890aba3006f10cf9e3fde",
+        "evidence_sha256": "3ab061d215343e1591655f80eb9458e51b84d03310e560f7527fd878020c4508",
+        "archives": {
+          "warm-0": "ecd2d5dd9daf2c7f7786d7ab218026c61194215a121c5e030d9b806947110bb8",
+          "before-late-failure": "1f6938882ca70bdf81c624e30ad533ac6bd1112bc8f55fb241876bec82208c9f",
+          "after-late-failure": "1f6938882ca70bdf81c624e30ad533ac6bd1112bc8f55fb241876bec82208c9f",
+          "warm-2": "b2cf6a8546288125f58725fa2266a072951697346cda45e6dba060edf17a7069",
+          "warm-5": "a5d5792f8d9c9197d21a9d06b9d15db3021b4968afd122d57e1c915dd8401792",
+          "warm-restored": "b2cf6a8546288125f58725fa2266a072951697346cda45e6dba060edf17a7069",
+          "cold-2": "b2cf6a8546288125f58725fa2266a072951697346cda45e6dba060edf17a7069",
+          "cold-5": "a5d5792f8d9c9197d21a9d06b9d15db3021b4968afd122d57e1c915dd8401792"
+        },
+        "artifact": {
+          "descriptor_sha256": "ec255238f24c82fe240e682641ba4456ac89eff3b8caded902b879cb46b24da7",
+          "library_sha256": "9823f09452e34db76c43f4cdcf49bbc16de356f856d29054b6ab390609569263"
+        },
+        "observed_ticks": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "late_failure": -32040
+      }
+    },
+    "export_rejection": {
+      "message": "Game bundles require a simulation and renderer runtime.",
+      "evidence_sha256": "1362d6c40ca13b61d7651c0f84c1193610b464317b29f606f5fce481df90177e"
+    }
+  },
+  "windows": {
+    "coreclr": {
+      "binary_sha256": "3b5b32dd2a76a8356208cf9cea2c166a2d6a394be3a268cc47cf7c9461690e02",
+      "evidence_sha256": "f8869d28bf222c14bc7f7bfc7991815934bedd7297554335b068cf51da3e8d9f",
+      "harness_sha256": "326821e4d2e8bde056d7fe996ac1d1a494f3105a024890aba3006f10cf9e3fde",
+      "standalone": false,
+      "observed_ticks": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "late_failure_code": -32040,
+      "archives": {
+        "warm-0": "998356f3115f9f4ba4e4f283a7ce6e892018544b06cfc4ff4f8ff45df2b7537f",
+        "before-late-failure": "90ac246e1b7d655dfc6f12b49c9197fa06994e4fa216024c97f68ab12902d955",
+        "after-late-failure": "90ac246e1b7d655dfc6f12b49c9197fa06994e4fa216024c97f68ab12902d955",
+        "warm-2": "e24c78873e03381ada4e5bb9096f733c2fdd08d94301c7d23e9c23334947dda0",
+        "warm-5": "400039fb955f66a9dc66dec4a1209c947d60e154a13116be9c23ffddb4a294de",
+        "warm-restored": "e24c78873e03381ada4e5bb9096f733c2fdd08d94301c7d23e9c23334947dda0",
+        "cold-2": "e24c78873e03381ada4e5bb9096f733c2fdd08d94301c7d23e9c23334947dda0",
+        "cold-5": "400039fb955f66a9dc66dec4a1209c947d60e154a13116be9c23ffddb4a294de"
+      },
+      "artifact": {
+        "assembly_sha256": "ce3908529b83779a61e749c29f16ca28b7e066a48d5a691742b57041b4df3f08",
+        "weather_sha256": "77eb73c121b2fbfce24519461fd01f2adfd4da4aa760bdb8942f3dda72cfea35",
+        "sdk_sha256": "baa9100638ef3e7b2178b3c36bb4f9f8d6fc4f37cc0390be98873d6617b2a7ee",
+        "bridge_sha256": "193e65621b5dae3224c4855824b7ea0d794f6121eb2f3ab56098660224907f5d",
+        "hostfxr_sha256": "2c14e9b4a540d98971b60cbaffcdde4f22328bd24bf75b68aa9e6bee13c2ca25"
+      }
+    },
+    "relocated_native_aot": {
+      "0-forward": {
+        "binary_sha256": "3b5b32dd2a76a8356208cf9cea2c166a2d6a394be3a268cc47cf7c9461690e02",
+        "evidence_sha256": "6e6b11dd9ace2d93e71a8ae3ea5532e66801133e431b1a371832ad562e6db31f",
+        "harness_sha256": "326821e4d2e8bde056d7fe996ac1d1a494f3105a024890aba3006f10cf9e3fde",
+        "standalone": true,
+        "observed_ticks": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "late_failure_code": -32040,
+        "archives": {
+          "warm-0": "7fae0d8bbc85a4d1fd5ce502a70d17c01b37b6618fb8dcca8e5b213faaa8902d",
+          "before-late-failure": "368ca6a73b2e7836cc78ad8cf36645cf0a628c6ad7dc1953972839998e91efbe",
+          "after-late-failure": "368ca6a73b2e7836cc78ad8cf36645cf0a628c6ad7dc1953972839998e91efbe",
+          "warm-2": "6219784f6b9f22f209278606ab55e7dc31ee61258de5f1a4be262a0b154b19b9",
+          "warm-5": "91b3f91224f1845084e785e567690af1ed8d205a3a0165fef05f606d76394858",
+          "warm-restored": "6219784f6b9f22f209278606ab55e7dc31ee61258de5f1a4be262a0b154b19b9",
+          "cold-2": "6219784f6b9f22f209278606ab55e7dc31ee61258de5f1a4be262a0b154b19b9",
+          "cold-5": "91b3f91224f1845084e785e567690af1ed8d205a3a0165fef05f606d76394858"
+        },
+        "artifact": {
+          "descriptor_sha256": "56f7d4dfbb6bfdb17d2c89ffe53af694e44b630d6f95b0bfbece4e0a2c0d458d",
+          "library_sha256": "f8c87e12dff851b5a4ac9db24bc1a821c53ccf5a6a0d97a48f96a9d39f0bfaae"
+        },
+        "game_sha256": "5454be7764474a6ad4d3ad6d8c2cb61fda99362997aea6f89ff1a26610b94c36",
+        "captures": {
+          "warm-0": {
+            "sha256": "725e29218b361c1c612d543f16839688651eb46e58f3facc5acd927d489d6a92",
+            "gpu": "AMD Radeon(TM) Graphics",
+            "tick": 0,
+            "rgb": [
+              95,
+              124,
+              143
+            ],
+            "expected_rgb": [
+              94,
+              124,
+              143
+            ]
+          },
+          "warm-1": {
+            "sha256": "f223c43fd1328926ddb026f61f02e39005780f93345bac097fbcb12b9fe1c687",
+            "gpu": "AMD Radeon(TM) Graphics",
+            "tick": 1,
+            "rgb": [
+              69,
+              94,
+              111
+            ],
+            "expected_rgb": [
+              69,
+              94,
+              111
+            ]
+          },
+          "warm-2": {
+            "sha256": "afc569bb487c1d719273b6b10994d5c0beaf71a7a235d771b3beb060c07e2fcd",
+            "gpu": "AMD Radeon(TM) Graphics",
+            "tick": 2,
+            "rgb": [
+              94,
+              124,
+              143
+            ],
+            "expected_rgb": [
+              94,
+              124,
+              143
+            ]
+          },
+          "warm-4": {
+            "sha256": "dcb0a70da4f86baf283beaf0ff25f3b3f0fa0740b0a05f06aa4b072335ed60e1",
+            "gpu": "AMD Radeon(TM) Graphics",
+            "tick": 4,
+            "rgb": [
+              60,
+              83,
+              98
+            ],
+            "expected_rgb": [
+              60,
+              83,
+              98
+            ]
+          },
+          "warm-5": {
+            "sha256": "a5a7da6c2d5996c3f0d98ee4381b4eb1028ae7bb8ac416d5a18b10cf6f55c85f",
+            "gpu": "AMD Radeon(TM) Graphics",
+            "tick": 5,
+            "rgb": [
+              22,
+              33,
+              42
+            ],
+            "expected_rgb": [
+              21,
+              33,
+              42
+            ]
+          },
+          "cold-2": {
+            "sha256": "afc569bb487c1d719273b6b10994d5c0beaf71a7a235d771b3beb060c07e2fcd",
+            "gpu": "AMD Radeon(TM) Graphics",
+            "tick": 2,
+            "rgb": [
+              94,
+              124,
+              143
+            ],
+            "expected_rgb": [
+              94,
+              124,
+              143
+            ]
+          },
+          "cold-5": {
+            "sha256": "a5a7da6c2d5996c3f0d98ee4381b4eb1028ae7bb8ac416d5a18b10cf6f55c85f",
+            "gpu": "AMD Radeon(TM) Graphics",
+            "tick": 5,
+            "rgb": [
+              22,
+              33,
+              42
+            ],
+            "expected_rgb": [
+              21,
+              33,
+              42
+            ]
+          }
+        },
+        "gpu_index": 0,
+        "lighting_path": "forward",
+        "khronos_validation": true
+      },
+      "0-deferred": {
+        "binary_sha256": "3b5b32dd2a76a8356208cf9cea2c166a2d6a394be3a268cc47cf7c9461690e02",
+        "evidence_sha256": "fd8fb01cd2e82edef9dbf9b801d50de991f221dccfbb16fe209f9708f6d6ab81",
+        "harness_sha256": "326821e4d2e8bde056d7fe996ac1d1a494f3105a024890aba3006f10cf9e3fde",
+        "standalone": true,
+        "observed_ticks": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "late_failure_code": -32040,
+        "archives": {
+          "warm-0": "787dc88bae64d9edce0d4a1fc1751e9d2f08ede4210b788a300413f09d6e233a",
+          "before-late-failure": "5d5cf08762dbd7e0b277c8cfb75c76be76e6a315f3a6e0a2e9d7c7f19d45785d",
+          "after-late-failure": "5d5cf08762dbd7e0b277c8cfb75c76be76e6a315f3a6e0a2e9d7c7f19d45785d",
+          "warm-2": "522f8e2066df3bb9a9a6dcb914a2fe75ce594a96fa3fb9a362bc4ca524a4becd",
+          "warm-5": "bd2fdcf4f8b3513b9be76b62bc19edc89c5f004a22a8f03c724aa00a75547ea4",
+          "warm-restored": "522f8e2066df3bb9a9a6dcb914a2fe75ce594a96fa3fb9a362bc4ca524a4becd",
+          "cold-2": "522f8e2066df3bb9a9a6dcb914a2fe75ce594a96fa3fb9a362bc4ca524a4becd",
+          "cold-5": "bd2fdcf4f8b3513b9be76b62bc19edc89c5f004a22a8f03c724aa00a75547ea4"
+        },
+        "artifact": {
+          "descriptor_sha256": "56f7d4dfbb6bfdb17d2c89ffe53af694e44b630d6f95b0bfbece4e0a2c0d458d",
+          "library_sha256": "f8c87e12dff851b5a4ac9db24bc1a821c53ccf5a6a0d97a48f96a9d39f0bfaae"
+        },
+        "game_sha256": "c21b2342344a74e8366367f2f842cf5dba0e14fbf153503de5bf21f3261b2a69",
+        "captures": {
+          "warm-0": {
+            "sha256": "851d84ed8086eeb5bff4bc760abebc143f51d2af8e0e82946ff30b35269f5e12",
+            "gpu": "AMD Radeon(TM) Graphics",
+            "tick": 0,
+            "rgb": [
+              95,
+              124,
+              143
+            ],
+            "expected_rgb": [
+              94,
+              124,
+              143
+            ]
+          },
+          "warm-1": {
+            "sha256": "229dcb861a3909ca12b6f113bcac83c684547b3d14f23889b62113fa74a62eb5",
+            "gpu": "AMD Radeon(TM) Graphics",
+            "tick": 1,
+            "rgb": [
+              69,
+              94,
+              111
+            ],
+            "expected_rgb": [
+              69,
+              94,
+              111
+            ]
+          },
+          "warm-2": {
+            "sha256": "6b6504545ad3782a44b9f8037b958252166d4727297f6c36e19e71fed9d8050c",
+            "gpu": "AMD Radeon(TM) Graphics",
+            "tick": 2,
+            "rgb": [
+              94,
+              124,
+              143
+            ],
+            "expected_rgb": [
+              94,
+              124,
+              143
+            ]
+          },
+          "warm-4": {
+            "sha256": "6af3e5780c259d8ac723876776c4589c488c9effbf171586a9a0467d12ddd650",
+            "gpu": "AMD Radeon(TM) Graphics",
+            "tick": 4,
+            "rgb": [
+              60,
+              83,
+              98
+            ],
+            "expected_rgb": [
+              60,
+              83,
+              98
+            ]
+          },
+          "warm-5": {
+            "sha256": "a5a7da6c2d5996c3f0d98ee4381b4eb1028ae7bb8ac416d5a18b10cf6f55c85f",
+            "gpu": "AMD Radeon(TM) Graphics",
+            "tick": 5,
+            "rgb": [
+              22,
+              33,
+              42
+            ],
+            "expected_rgb": [
+              21,
+              33,
+              42
+            ]
+          },
+          "cold-2": {
+            "sha256": "6b6504545ad3782a44b9f8037b958252166d4727297f6c36e19e71fed9d8050c",
+            "gpu": "AMD Radeon(TM) Graphics",
+            "tick": 2,
+            "rgb": [
+              94,
+              124,
+              143
+            ],
+            "expected_rgb": [
+              94,
+              124,
+              143
+            ]
+          },
+          "cold-5": {
+            "sha256": "a5a7da6c2d5996c3f0d98ee4381b4eb1028ae7bb8ac416d5a18b10cf6f55c85f",
+            "gpu": "AMD Radeon(TM) Graphics",
+            "tick": 5,
+            "rgb": [
+              22,
+              33,
+              42
+            ],
+            "expected_rgb": [
+              21,
+              33,
+              42
+            ]
+          }
+        },
+        "gpu_index": 0,
+        "lighting_path": "deferred",
+        "khronos_validation": true
+      },
+      "1-forward": {
+        "binary_sha256": "3b5b32dd2a76a8356208cf9cea2c166a2d6a394be3a268cc47cf7c9461690e02",
+        "evidence_sha256": "e9cc7bfc83549e9be91d5a6d601af395df75eb8bf39aa4480b46fe20cb034faa",
+        "harness_sha256": "326821e4d2e8bde056d7fe996ac1d1a494f3105a024890aba3006f10cf9e3fde",
+        "standalone": true,
+        "observed_ticks": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "late_failure_code": -32040,
+        "archives": {
+          "warm-0": "ea701b0c1741f98d411246848060832a97dc835b0ddd50fe9ca190d8dc721e08",
+          "before-late-failure": "4130db972cd5508f1c81e278ccc208a20f4c5eb05875df2e2da46c9951e2340a",
+          "after-late-failure": "4130db972cd5508f1c81e278ccc208a20f4c5eb05875df2e2da46c9951e2340a",
+          "warm-2": "0d800d691e2ec6ed6c9992f6264b78593a29e1538b2856f3bba19767fc4a63bb",
+          "warm-5": "e014d9fd34d008447d0fdfe6832567436bb6188a115e9463ddb19d0dfecd032b",
+          "warm-restored": "0d800d691e2ec6ed6c9992f6264b78593a29e1538b2856f3bba19767fc4a63bb",
+          "cold-2": "0d800d691e2ec6ed6c9992f6264b78593a29e1538b2856f3bba19767fc4a63bb",
+          "cold-5": "e014d9fd34d008447d0fdfe6832567436bb6188a115e9463ddb19d0dfecd032b"
+        },
+        "artifact": {
+          "descriptor_sha256": "56f7d4dfbb6bfdb17d2c89ffe53af694e44b630d6f95b0bfbece4e0a2c0d458d",
+          "library_sha256": "f8c87e12dff851b5a4ac9db24bc1a821c53ccf5a6a0d97a48f96a9d39f0bfaae"
+        },
+        "game_sha256": "814da68a110119996eba29266b2e8ecb1f0d3f20d86329479afa956f4098e11f",
+        "captures": {
+          "warm-0": {
+            "sha256": "0ea64b1952f618f1b3bf265d447da66fb17cf578dab94895c7a821941ec2a149",
+            "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+            "tick": 0,
+            "rgb": [
+              95,
+              124,
+              143
+            ],
+            "expected_rgb": [
+              94,
+              124,
+              143
+            ]
+          },
+          "warm-1": {
+            "sha256": "33df8c5db49deeff81cf0a192eaf5120511d61e260b7ea442be666004f6f8aae",
+            "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+            "tick": 1,
+            "rgb": [
+              69,
+              94,
+              111
+            ],
+            "expected_rgb": [
+              69,
+              94,
+              111
+            ]
+          },
+          "warm-2": {
+            "sha256": "afc569bb487c1d719273b6b10994d5c0beaf71a7a235d771b3beb060c07e2fcd",
+            "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+            "tick": 2,
+            "rgb": [
+              94,
+              124,
+              143
+            ],
+            "expected_rgb": [
+              94,
+              124,
+              143
+            ]
+          },
+          "warm-4": {
+            "sha256": "6df934b6c0d2296e1f7b62267267a7a4be07a267a686aef063a3f01a0dd487ac",
+            "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+            "tick": 4,
+            "rgb": [
+              60,
+              83,
+              98
+            ],
+            "expected_rgb": [
+              60,
+              83,
+              98
+            ]
+          },
+          "warm-5": {
+            "sha256": "a5a7da6c2d5996c3f0d98ee4381b4eb1028ae7bb8ac416d5a18b10cf6f55c85f",
+            "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+            "tick": 5,
+            "rgb": [
+              22,
+              33,
+              42
+            ],
+            "expected_rgb": [
+              21,
+              33,
+              42
+            ]
+          },
+          "cold-2": {
+            "sha256": "afc569bb487c1d719273b6b10994d5c0beaf71a7a235d771b3beb060c07e2fcd",
+            "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+            "tick": 2,
+            "rgb": [
+              94,
+              124,
+              143
+            ],
+            "expected_rgb": [
+              94,
+              124,
+              143
+            ]
+          },
+          "cold-5": {
+            "sha256": "a5a7da6c2d5996c3f0d98ee4381b4eb1028ae7bb8ac416d5a18b10cf6f55c85f",
+            "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+            "tick": 5,
+            "rgb": [
+              22,
+              33,
+              42
+            ],
+            "expected_rgb": [
+              21,
+              33,
+              42
+            ]
+          }
+        },
+        "gpu_index": 1,
+        "lighting_path": "forward",
+        "khronos_validation": true
+      },
+      "1-deferred": {
+        "binary_sha256": "3b5b32dd2a76a8356208cf9cea2c166a2d6a394be3a268cc47cf7c9461690e02",
+        "evidence_sha256": "66dc71261b638e06d4066be4af296c29fd5bcd8786e72a477484eaf2d888ac9e",
+        "harness_sha256": "26bea714ea9767bd745e91cbb5a80cba92643fe22d9f7e7a1200169df5a695ed",
+        "standalone": true,
+        "observed_ticks": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "late_failure_code": -32040,
+        "archives": {
+          "warm-0": "abd6f3cc5eaa0e8f98ccb7ba5507a831b093cf2b0eb94d0212d9e23d3639af17",
+          "before-late-failure": "0fa506fbb31be314e8b398dba60d899455669a84e24806e3200062a5116dfc85",
+          "after-late-failure": "0fa506fbb31be314e8b398dba60d899455669a84e24806e3200062a5116dfc85",
+          "warm-2": "87df6b9c36474b4195bf2681921280af4ec68440daf8e5b6dfdf2bb21d30a6ab",
+          "warm-5": "42a19c1e41f4dbdeec8ed0df249d1e43f132a31bc8dadbb182e1d2471f70225a",
+          "warm-restored": "87df6b9c36474b4195bf2681921280af4ec68440daf8e5b6dfdf2bb21d30a6ab",
+          "cold-2": "87df6b9c36474b4195bf2681921280af4ec68440daf8e5b6dfdf2bb21d30a6ab",
+          "cold-5": "42a19c1e41f4dbdeec8ed0df249d1e43f132a31bc8dadbb182e1d2471f70225a"
+        },
+        "artifact": {
+          "descriptor_sha256": "56f7d4dfbb6bfdb17d2c89ffe53af694e44b630d6f95b0bfbece4e0a2c0d458d",
+          "library_sha256": "f8c87e12dff851b5a4ac9db24bc1a821c53ccf5a6a0d97a48f96a9d39f0bfaae"
+        },
+        "game_sha256": "a69fef0ca63f51628bfeaaa783175a706c3c8a1165fe435e1b82bc98e38d0de6",
+        "captures": {
+          "warm-0": {
+            "sha256": "98025ed4d871a209e066babb601ffec0e6bf09682e66761afece66b629483dfc",
+            "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+            "tick": 0,
+            "rgb": [
+              95,
+              124,
+              143
+            ],
+            "expected_rgb": [
+              94,
+              124,
+              143
+            ]
+          },
+          "warm-1": {
+            "sha256": "51d772421a5a93f99e1c64413ee54ecbfed752352b2ad5991fb3a735291b05ed",
+            "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+            "tick": 1,
+            "rgb": [
+              69,
+              94,
+              111
+            ],
+            "expected_rgb": [
+              69,
+              94,
+              111
+            ]
+          },
+          "warm-2": {
+            "sha256": "bb5aaddc9461b7c1446975f1067dd9698888056b0c5db6453ab04d152662d7a4",
+            "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+            "tick": 2,
+            "rgb": [
+              94,
+              124,
+              143
+            ],
+            "expected_rgb": [
+              94,
+              124,
+              143
+            ]
+          },
+          "warm-4": {
+            "sha256": "738189389f057a54b3b91886c2ec5159a5eb08234c08186e44e3a2682625fdfd",
+            "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+            "tick": 4,
+            "rgb": [
+              60,
+              83,
+              98
+            ],
+            "expected_rgb": [
+              60,
+              83,
+              98
+            ]
+          },
+          "warm-5": {
+            "sha256": "0251f5ad4f4695ec2d3cd5a981e046e83a977008ec9d11ee2c198842b9c2746c",
+            "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+            "tick": 5,
+            "rgb": [
+              22,
+              33,
+              42
+            ],
+            "expected_rgb": [
+              21,
+              33,
+              42
+            ]
+          },
+          "cold-2": {
+            "sha256": "bb5aaddc9461b7c1446975f1067dd9698888056b0c5db6453ab04d152662d7a4",
+            "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+            "tick": 2,
+            "rgb": [
+              94,
+              124,
+              143
+            ],
+            "expected_rgb": [
+              94,
+              124,
+              143
+            ]
+          },
+          "cold-5": {
+            "sha256": "0251f5ad4f4695ec2d3cd5a981e046e83a977008ec9d11ee2c198842b9c2746c",
+            "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+            "tick": 5,
+            "rgb": [
+              22,
+              33,
+              42
+            ],
+            "expected_rgb": [
+              21,
+              33,
+              42
+            ]
+          }
+        },
+        "gpu_index": 1,
+        "lighting_path": "deferred",
+        "khronos_validation": true,
+        "ibl_replay": {
+          "rendered_frames": 6,
+          "terminal_tick": 5,
+          "capture_sha256": "0251f5ad4f4695ec2d3cd5a981e046e83a977008ec9d11ee2c198842b9c2746c",
+          "environment_ibl": {
+            "brdf_size": 64,
+            "diffuse_size": 16,
+            "enabled": true,
+            "generation": 1,
+            "prepare_cpu_ms": 114.8081,
+            "specular_levels": 7,
+            "specular_size": 64,
+            "texture_bytes": 581600
+          },
+          "swapchain_rebuilds": 1
+        }
+      }
+    },
+    "first_ibl_attempt": {
+      "evidence_sha256": "10dc1c42aec767019c482b5c25811ca3328e4bc169ac6b70a2daa0b551a8227b",
+      "rejection": "The fixture initially required zero swapchain rebuilds. Windows reported one; swapping targets retains the same renderer-owned environment resources."
+    },
+    "night_reflections": {
+      "0": {
+        "evidence_sha256": "c4ec589d9b1564b66bf20691659a138eda8406df1c291e223a3c3dcbfdf82dfe",
+        "harness_sha256": "cb41fa81da7bb38859b1de70c2554e75483f46fda7099ef442f83b579718dc7d",
+        "response": {
+          "warm": {
+            "response_ratio": 1.0003868944470116,
+            "phases": [
+              {
+                "sky_gain": 1,
+                "local_hdr": 1.029296875,
+                "fallback_hdr": 0.25,
+                "delta_hdr": 0.26416015625,
+                "response": 0.33897243107769426
+              },
+              {
+                "sky_gain": 0.0625,
+                "local_hdr": 1.0,
+                "fallback_hdr": 0.015625,
+                "delta_hdr": 0.3338050842285156,
+                "response": 0.33910357762896826
+              }
+            ]
+          },
+          "cool": {
+            "response_ratio": 1.001889421255813,
+            "phases": [
+              {
+                "sky_gain": 1,
+                "local_hdr": 1.0283203125,
+                "fallback_hdr": 0.75,
+                "delta_hdr": 0.093017578125,
+                "response": 0.33421052631578946
+              },
+              {
+                "sky_gain": 0.0625,
+                "local_hdr": 1.0009765625,
+                "fallback_hdr": 0.046875,
+                "delta_hdr": 0.3194732666015625,
+                "response": 0.33484199078812693
+              }
+            ]
+          }
+        },
+        "phases": {
+          "noon": "fe8b35bb39093baa35f6e85c47a9337af69a7d3f17631584feb1958c4c0409d2",
+          "midnight": "c39a66e22936c634941432c604293541db29e68f3a248a4a87cbf921d2224675"
+        }
+      },
+      "1": {
+        "evidence_sha256": "90b68d29216ee19462539212d53a9e595fb8b10ea950444c27e8872f0fea8321",
+        "harness_sha256": "cb41fa81da7bb38859b1de70c2554e75483f46fda7099ef442f83b579718dc7d",
+        "response": {
+          "warm": {
+            "response_ratio": 1.0003868944470116,
+            "phases": [
+              {
+                "sky_gain": 1,
+                "local_hdr": 1.029296875,
+                "fallback_hdr": 0.25,
+                "delta_hdr": 0.26416015625,
+                "response": 0.33897243107769426
+              },
+              {
+                "sky_gain": 0.0625,
+                "local_hdr": 1.0,
+                "fallback_hdr": 0.015625,
+                "delta_hdr": 0.3338050842285156,
+                "response": 0.33910357762896826
+              }
+            ]
+          },
+          "cool": {
+            "response_ratio": 1.001889421255813,
+            "phases": [
+              {
+                "sky_gain": 1,
+                "local_hdr": 1.0283203125,
+                "fallback_hdr": 0.75,
+                "delta_hdr": 0.093017578125,
+                "response": 0.33421052631578946
+              },
+              {
+                "sky_gain": 0.0625,
+                "local_hdr": 1.0009765625,
+                "fallback_hdr": 0.046875,
+                "delta_hdr": 0.3194732666015625,
+                "response": 0.33484199078812693
+              }
+            ]
+          }
+        },
+        "phases": {
+          "noon": "704e722154627da103d265b932e2a23a26f9da71ab9128d934940bab07b9c948",
+          "midnight": "106ff32af3cc62899cba856b5e1716457e3119420cb4c66d3b19a171c7868e33"
+        }
+      }
+    },
+    "unaffected_reference_captures": {
+      "sky-0-forward": {
+        "matched": 44,
+        "baseline_evidence_sha256": "a62f1fdb197b8d204efc869aec5193b7c96aa5b5143e8847cb49dd87c0faf8b4",
+        "candidate_evidence_sha256": "8d9662eef45a6f2c1ce91b3d4d42599a49e31317fb2ebbee8c24989594066479",
+        "bitmap_sha256": {
+          "1x-legacy": "6972ad398ceb93512e03b4600bd5ee926edaad4f4dba6019ea9e33cbc542c955",
+          "1x-disabled": "6972ad398ceb93512e03b4600bd5ee926edaad4f4dba6019ea9e33cbc542c955",
+          "1x-gradient": "2d90d8473b9d3577addfa7c4fa0fbcd9c896d2ff8908dc7e60d9e48a57e6a03d",
+          "1x-translated": "2d90d8473b9d3577addfa7c4fa0fbcd9c896d2ff8908dc7e60d9e48a57e6a03d",
+          "1x-yaw-invariant": "2d90d8473b9d3577addfa7c4fa0fbcd9c896d2ff8908dc7e60d9e48a57e6a03d",
+          "1x-zenith": "1466ba54aaaeae4486ca0d3aa3536687a94d40a1c41cd20503bcb09bca2c48b3",
+          "1x-ground": "bb150377ddc5c3751d9680330eb5670538d91d57bd2f7ea716b1ffeaeda42bbb",
+          "1x-narrow": "cb4c4c8f5e31bca275fc7a2c750469c9af63b3d283a0b34c0cc64a0a50c30e35",
+          "1x-uniform-1": "46f4fb20404d250c457bc89c84b61a640e849b432487c58e5696bb63284af375",
+          "1x-uniform-2": "42ae107867aa0fd1b82338b3b252c275f7ab2e4a19c97e7fb2ffe396d8f164a2",
+          "1x-sun-unreferenced": "27a6ed8c30f4fe050acfce54bd6c261bcd47435cd00969dd09b8874fca3a967b",
+          "1x-sun": "aecd78c829d32f9f53a4f0015ec9e85ea16e0e9071e1fc2ebee98d42058e52d0",
+          "1x-sun-wide": "6b8b9ef0e4aa1562a1d2d0d0915363ed2f8d1d9d14d63bc1829e8450ee6053ac",
+          "1x-sun-rotated": "ab8101984256c583a241533fe99d38502f4e528fc2b617f763ded09ccb287125",
+          "1x-sun-disabled": "27a6ed8c30f4fe050acfce54bd6c261bcd47435cd00969dd09b8874fca3a967b",
+          "1x-occluded": "243f1e0f6d1a9c399583c44ef84dcaa7208132f950dbfe513097f8754aaa5dd2",
+          "1x-runtime-initial": "aecd78c829d32f9f53a4f0015ec9e85ea16e0e9071e1fc2ebee98d42058e52d0",
+          "1x-runtime-rotated": "0d7d8ccf17fdd4e9682bfc8a3ab648cc5b8a45f29445281e8d728ef5f7f92004",
+          "1x-runtime-frozen": "0d7d8ccf17fdd4e9682bfc8a3ab648cc5b8a45f29445281e8d728ef5f7f92004",
+          "1x-authored-dark": "a2e2bdffe9f676a8569d73d1b4656f2e795a4e45df5698417f443681e49f1874",
+          "1x-player": "0d7d8ccf17fdd4e9682bfc8a3ab648cc5b8a45f29445281e8d728ef5f7f92004",
+          "1x-player-independent": "0d7d8ccf17fdd4e9682bfc8a3ab648cc5b8a45f29445281e8d728ef5f7f92004",
+          "4x-legacy": "6972ad398ceb93512e03b4600bd5ee926edaad4f4dba6019ea9e33cbc542c955",
+          "4x-disabled": "6972ad398ceb93512e03b4600bd5ee926edaad4f4dba6019ea9e33cbc542c955",
+          "4x-gradient": "2d90d8473b9d3577addfa7c4fa0fbcd9c896d2ff8908dc7e60d9e48a57e6a03d",
+          "4x-translated": "2d90d8473b9d3577addfa7c4fa0fbcd9c896d2ff8908dc7e60d9e48a57e6a03d",
+          "4x-yaw-invariant": "2d90d8473b9d3577addfa7c4fa0fbcd9c896d2ff8908dc7e60d9e48a57e6a03d",
+          "4x-zenith": "1466ba54aaaeae4486ca0d3aa3536687a94d40a1c41cd20503bcb09bca2c48b3",
+          "4x-ground": "bb150377ddc5c3751d9680330eb5670538d91d57bd2f7ea716b1ffeaeda42bbb",
+          "4x-narrow": "cb4c4c8f5e31bca275fc7a2c750469c9af63b3d283a0b34c0cc64a0a50c30e35",
+          "4x-uniform-1": "46f4fb20404d250c457bc89c84b61a640e849b432487c58e5696bb63284af375",
+          "4x-uniform-2": "42ae107867aa0fd1b82338b3b252c275f7ab2e4a19c97e7fb2ffe396d8f164a2",
+          "4x-sun-unreferenced": "27a6ed8c30f4fe050acfce54bd6c261bcd47435cd00969dd09b8874fca3a967b",
+          "4x-sun": "aecd78c829d32f9f53a4f0015ec9e85ea16e0e9071e1fc2ebee98d42058e52d0",
+          "4x-sun-wide": "6b8b9ef0e4aa1562a1d2d0d0915363ed2f8d1d9d14d63bc1829e8450ee6053ac",
+          "4x-sun-rotated": "ab8101984256c583a241533fe99d38502f4e528fc2b617f763ded09ccb287125",
+          "4x-sun-disabled": "27a6ed8c30f4fe050acfce54bd6c261bcd47435cd00969dd09b8874fca3a967b",
+          "4x-occluded": "717ec56950ae3f6dd8572eaa01ec4947e604da4e38d17c88a030fd0fcc96bcb4",
+          "4x-runtime-initial": "aecd78c829d32f9f53a4f0015ec9e85ea16e0e9071e1fc2ebee98d42058e52d0",
+          "4x-runtime-rotated": "0d7d8ccf17fdd4e9682bfc8a3ab648cc5b8a45f29445281e8d728ef5f7f92004",
+          "4x-runtime-frozen": "0d7d8ccf17fdd4e9682bfc8a3ab648cc5b8a45f29445281e8d728ef5f7f92004",
+          "4x-authored-dark": "a2e2bdffe9f676a8569d73d1b4656f2e795a4e45df5698417f443681e49f1874",
+          "4x-player": "0d7d8ccf17fdd4e9682bfc8a3ab648cc5b8a45f29445281e8d728ef5f7f92004",
+          "4x-player-independent": "0d7d8ccf17fdd4e9682bfc8a3ab648cc5b8a45f29445281e8d728ef5f7f92004"
+        }
+      },
+      "sky-0-deferred": {
+        "matched": 22,
+        "baseline_evidence_sha256": "3e522a55b4ed2cf6970908468dd1921e3c668c669e990d8da0c84489acb5159a",
+        "candidate_evidence_sha256": "31b74458336010baecbc9d43cabc76831355f2ddadbbe366cbce7af4911850b5",
+        "bitmap_sha256": {
+          "1x-legacy": "6972ad398ceb93512e03b4600bd5ee926edaad4f4dba6019ea9e33cbc542c955",
+          "1x-disabled": "6972ad398ceb93512e03b4600bd5ee926edaad4f4dba6019ea9e33cbc542c955",
+          "1x-gradient": "2d90d8473b9d3577addfa7c4fa0fbcd9c896d2ff8908dc7e60d9e48a57e6a03d",
+          "1x-translated": "2d90d8473b9d3577addfa7c4fa0fbcd9c896d2ff8908dc7e60d9e48a57e6a03d",
+          "1x-yaw-invariant": "2d90d8473b9d3577addfa7c4fa0fbcd9c896d2ff8908dc7e60d9e48a57e6a03d",
+          "1x-zenith": "1466ba54aaaeae4486ca0d3aa3536687a94d40a1c41cd20503bcb09bca2c48b3",
+          "1x-ground": "bb150377ddc5c3751d9680330eb5670538d91d57bd2f7ea716b1ffeaeda42bbb",
+          "1x-narrow": "cb4c4c8f5e31bca275fc7a2c750469c9af63b3d283a0b34c0cc64a0a50c30e35",
+          "1x-uniform-1": "46f4fb20404d250c457bc89c84b61a640e849b432487c58e5696bb63284af375",
+          "1x-uniform-2": "42ae107867aa0fd1b82338b3b252c275f7ab2e4a19c97e7fb2ffe396d8f164a2",
+          "1x-sun-unreferenced": "27a6ed8c30f4fe050acfce54bd6c261bcd47435cd00969dd09b8874fca3a967b",
+          "1x-sun": "aecd78c829d32f9f53a4f0015ec9e85ea16e0e9071e1fc2ebee98d42058e52d0",
+          "1x-sun-wide": "6b8b9ef0e4aa1562a1d2d0d0915363ed2f8d1d9d14d63bc1829e8450ee6053ac",
+          "1x-sun-rotated": "ab8101984256c583a241533fe99d38502f4e528fc2b617f763ded09ccb287125",
+          "1x-sun-disabled": "27a6ed8c30f4fe050acfce54bd6c261bcd47435cd00969dd09b8874fca3a967b",
+          "1x-occluded": "243f1e0f6d1a9c399583c44ef84dcaa7208132f950dbfe513097f8754aaa5dd2",
+          "1x-runtime-initial": "aecd78c829d32f9f53a4f0015ec9e85ea16e0e9071e1fc2ebee98d42058e52d0",
+          "1x-runtime-rotated": "0d7d8ccf17fdd4e9682bfc8a3ab648cc5b8a45f29445281e8d728ef5f7f92004",
+          "1x-runtime-frozen": "0d7d8ccf17fdd4e9682bfc8a3ab648cc5b8a45f29445281e8d728ef5f7f92004",
+          "1x-authored-dark": "a2e2bdffe9f676a8569d73d1b4656f2e795a4e45df5698417f443681e49f1874",
+          "1x-player": "0d7d8ccf17fdd4e9682bfc8a3ab648cc5b8a45f29445281e8d728ef5f7f92004",
+          "1x-player-independent": "0d7d8ccf17fdd4e9682bfc8a3ab648cc5b8a45f29445281e8d728ef5f7f92004"
+        }
+      },
+      "sky-1-forward": {
+        "matched": 44,
+        "baseline_evidence_sha256": "16fd262ab474b7ca50c6b7937fd1e2c4b5964eafc3b6eb2a32c44f6e5ade28ed",
+        "candidate_evidence_sha256": "7c5733dd6e9edb583b9877d073271086a237cc220978969e9100db3db6e32f6d",
+        "bitmap_sha256": {
+          "1x-legacy": "6972ad398ceb93512e03b4600bd5ee926edaad4f4dba6019ea9e33cbc542c955",
+          "1x-disabled": "6972ad398ceb93512e03b4600bd5ee926edaad4f4dba6019ea9e33cbc542c955",
+          "1x-gradient": "ef564a0eb99d441026492b6d79c517c16bf5115a421cb6613f6eae18a57006f8",
+          "1x-translated": "ef564a0eb99d441026492b6d79c517c16bf5115a421cb6613f6eae18a57006f8",
+          "1x-yaw-invariant": "ea2bba50e7e808198aecb3115f0bc657d4934dbb80b7218395c070bd60b5a6e1",
+          "1x-zenith": "c7a873f6ecd66206cece8ee9ec276c6efbc5f8245b550d6b6dff2cb75386b463",
+          "1x-ground": "6e9a112fcdd3460590b3fff1b7ce1381a3119e294507be8e00577043404c3e17",
+          "1x-narrow": "4245de0fd116ecd1a8d4d522c43a6e6365059a9ab6a8726c8cbe73559301a8d0",
+          "1x-uniform-1": "cb247b7081a85894545aede300dac6083f9179d33dc473222671cb957f85f3e3",
+          "1x-uniform-2": "42ae107867aa0fd1b82338b3b252c275f7ab2e4a19c97e7fb2ffe396d8f164a2",
+          "1x-sun-unreferenced": "27a6ed8c30f4fe050acfce54bd6c261bcd47435cd00969dd09b8874fca3a967b",
+          "1x-sun": "5f10055e30ff0c45f0cd68ff2c6bb5a7720ca5f303e7bb1f9e8281120aa3c8dd",
+          "1x-sun-wide": "0d407d63ad699d8b18a6180d5e8953bb7b74cc9921f1ef4e0ea14fc012ada159",
+          "1x-sun-rotated": "6b2d85b55c13d06ecc85acaa39bd0a9fe920bcb119353a9e09703ce29d79b2e3",
+          "1x-sun-disabled": "27a6ed8c30f4fe050acfce54bd6c261bcd47435cd00969dd09b8874fca3a967b",
+          "1x-occluded": "cb119e6b4ff0182d4c20095cc30af52942436bb819c518abaf53ef95843bb690",
+          "1x-runtime-initial": "5f10055e30ff0c45f0cd68ff2c6bb5a7720ca5f303e7bb1f9e8281120aa3c8dd",
+          "1x-runtime-rotated": "6b2d85b55c13d06ecc85acaa39bd0a9fe920bcb119353a9e09703ce29d79b2e3",
+          "1x-runtime-frozen": "6b2d85b55c13d06ecc85acaa39bd0a9fe920bcb119353a9e09703ce29d79b2e3",
+          "1x-authored-dark": "a2e2bdffe9f676a8569d73d1b4656f2e795a4e45df5698417f443681e49f1874",
+          "1x-player": "6b2d85b55c13d06ecc85acaa39bd0a9fe920bcb119353a9e09703ce29d79b2e3",
+          "1x-player-independent": "6b2d85b55c13d06ecc85acaa39bd0a9fe920bcb119353a9e09703ce29d79b2e3",
+          "4x-legacy": "6972ad398ceb93512e03b4600bd5ee926edaad4f4dba6019ea9e33cbc542c955",
+          "4x-disabled": "6972ad398ceb93512e03b4600bd5ee926edaad4f4dba6019ea9e33cbc542c955",
+          "4x-gradient": "ef564a0eb99d441026492b6d79c517c16bf5115a421cb6613f6eae18a57006f8",
+          "4x-translated": "ef564a0eb99d441026492b6d79c517c16bf5115a421cb6613f6eae18a57006f8",
+          "4x-yaw-invariant": "ea2bba50e7e808198aecb3115f0bc657d4934dbb80b7218395c070bd60b5a6e1",
+          "4x-zenith": "c7a873f6ecd66206cece8ee9ec276c6efbc5f8245b550d6b6dff2cb75386b463",
+          "4x-ground": "6e9a112fcdd3460590b3fff1b7ce1381a3119e294507be8e00577043404c3e17",
+          "4x-narrow": "4245de0fd116ecd1a8d4d522c43a6e6365059a9ab6a8726c8cbe73559301a8d0",
+          "4x-uniform-1": "cb247b7081a85894545aede300dac6083f9179d33dc473222671cb957f85f3e3",
+          "4x-uniform-2": "42ae107867aa0fd1b82338b3b252c275f7ab2e4a19c97e7fb2ffe396d8f164a2",
+          "4x-sun-unreferenced": "27a6ed8c30f4fe050acfce54bd6c261bcd47435cd00969dd09b8874fca3a967b",
+          "4x-sun": "5f10055e30ff0c45f0cd68ff2c6bb5a7720ca5f303e7bb1f9e8281120aa3c8dd",
+          "4x-sun-wide": "0d407d63ad699d8b18a6180d5e8953bb7b74cc9921f1ef4e0ea14fc012ada159",
+          "4x-sun-rotated": "6b2d85b55c13d06ecc85acaa39bd0a9fe920bcb119353a9e09703ce29d79b2e3",
+          "4x-sun-disabled": "27a6ed8c30f4fe050acfce54bd6c261bcd47435cd00969dd09b8874fca3a967b",
+          "4x-occluded": "0cd75757d487bd1b5dbef074b4affed7e5b4d1ab40d22a15a4d12c830b1ad6c7",
+          "4x-runtime-initial": "5f10055e30ff0c45f0cd68ff2c6bb5a7720ca5f303e7bb1f9e8281120aa3c8dd",
+          "4x-runtime-rotated": "6b2d85b55c13d06ecc85acaa39bd0a9fe920bcb119353a9e09703ce29d79b2e3",
+          "4x-runtime-frozen": "6b2d85b55c13d06ecc85acaa39bd0a9fe920bcb119353a9e09703ce29d79b2e3",
+          "4x-authored-dark": "a2e2bdffe9f676a8569d73d1b4656f2e795a4e45df5698417f443681e49f1874",
+          "4x-player": "6b2d85b55c13d06ecc85acaa39bd0a9fe920bcb119353a9e09703ce29d79b2e3",
+          "4x-player-independent": "6b2d85b55c13d06ecc85acaa39bd0a9fe920bcb119353a9e09703ce29d79b2e3"
+        }
+      },
+      "sky-1-deferred": {
+        "matched": 22,
+        "baseline_evidence_sha256": "2c842497d670269543f2d1a7d4eb29824806b903820975393b5e48ee9b53b400",
+        "candidate_evidence_sha256": "14a24fd258cde167baa4508d61b10a670a8fcab0ca9dcabc1bdb6da71f44b803",
+        "bitmap_sha256": {
+          "1x-legacy": "6972ad398ceb93512e03b4600bd5ee926edaad4f4dba6019ea9e33cbc542c955",
+          "1x-disabled": "6972ad398ceb93512e03b4600bd5ee926edaad4f4dba6019ea9e33cbc542c955",
+          "1x-gradient": "ef564a0eb99d441026492b6d79c517c16bf5115a421cb6613f6eae18a57006f8",
+          "1x-translated": "ef564a0eb99d441026492b6d79c517c16bf5115a421cb6613f6eae18a57006f8",
+          "1x-yaw-invariant": "ea2bba50e7e808198aecb3115f0bc657d4934dbb80b7218395c070bd60b5a6e1",
+          "1x-zenith": "c7a873f6ecd66206cece8ee9ec276c6efbc5f8245b550d6b6dff2cb75386b463",
+          "1x-ground": "6e9a112fcdd3460590b3fff1b7ce1381a3119e294507be8e00577043404c3e17",
+          "1x-narrow": "4245de0fd116ecd1a8d4d522c43a6e6365059a9ab6a8726c8cbe73559301a8d0",
+          "1x-uniform-1": "cb247b7081a85894545aede300dac6083f9179d33dc473222671cb957f85f3e3",
+          "1x-uniform-2": "42ae107867aa0fd1b82338b3b252c275f7ab2e4a19c97e7fb2ffe396d8f164a2",
+          "1x-sun-unreferenced": "27a6ed8c30f4fe050acfce54bd6c261bcd47435cd00969dd09b8874fca3a967b",
+          "1x-sun": "5f10055e30ff0c45f0cd68ff2c6bb5a7720ca5f303e7bb1f9e8281120aa3c8dd",
+          "1x-sun-wide": "0d407d63ad699d8b18a6180d5e8953bb7b74cc9921f1ef4e0ea14fc012ada159",
+          "1x-sun-rotated": "6b2d85b55c13d06ecc85acaa39bd0a9fe920bcb119353a9e09703ce29d79b2e3",
+          "1x-sun-disabled": "27a6ed8c30f4fe050acfce54bd6c261bcd47435cd00969dd09b8874fca3a967b",
+          "1x-occluded": "cb119e6b4ff0182d4c20095cc30af52942436bb819c518abaf53ef95843bb690",
+          "1x-runtime-initial": "5f10055e30ff0c45f0cd68ff2c6bb5a7720ca5f303e7bb1f9e8281120aa3c8dd",
+          "1x-runtime-rotated": "6b2d85b55c13d06ecc85acaa39bd0a9fe920bcb119353a9e09703ce29d79b2e3",
+          "1x-runtime-frozen": "6b2d85b55c13d06ecc85acaa39bd0a9fe920bcb119353a9e09703ce29d79b2e3",
+          "1x-authored-dark": "a2e2bdffe9f676a8569d73d1b4656f2e795a4e45df5698417f443681e49f1874",
+          "1x-player": "6b2d85b55c13d06ecc85acaa39bd0a9fe920bcb119353a9e09703ce29d79b2e3",
+          "1x-player-independent": "6b2d85b55c13d06ecc85acaa39bd0a9fe920bcb119353a9e09703ce29d79b2e3"
+        }
+      },
+      "ssr-0": {
+        "matched": 9,
+        "baseline_evidence_sha256": "3bc393b29ce6cb8b9fba1ff94a630a59f76efa7291e78bdd0490abc8be15c11f",
+        "candidate_evidence_sha256": "0a4fdb95c0f07bc3d599ed7d0c7c5db782cf7310e73c1be5371454483a13652e",
+        "bitmap_sha256": {
+          "omitted-deferred-color-none": "69966452c19608b80088ad55f5b882ee281f47fd3c25c8653730e5daae2ad18f",
+          "omitted-forward-color-none": "69966452c19608b80088ad55f5b882ee281f47fd3c25c8653730e5daae2ad18f",
+          "omitted-deferred-depth-none": "6d2a2c8d84b2e91ff6a030e7aa9d3907f4ce759f4651994c9230fce8fbb05336",
+          "zero-deferred-color-none": "69966452c19608b80088ad55f5b882ee281f47fd3c25c8653730e5daae2ad18f",
+          "enabled-deferred-color-none": "5561e5c2048abad60a2c37909b1bb9cb9019cb76eca1d7e6fc2400f352cde973",
+          "enabled-forward-color-none": "69966452c19608b80088ad55f5b882ee281f47fd3c25c8653730e5daae2ad18f",
+          "enabled-deferred-depth-none": "6d2a2c8d84b2e91ff6a030e7aa9d3907f4ce759f4651994c9230fce8fbb05336",
+          "short-deferred-color-none": "69966452c19608b80088ad55f5b882ee281f47fd3c25c8653730e5daae2ad18f",
+          "bright-deferred-color-none": "9fcb55dcf8b5de58787cc265ad47795a42452aa0736dc30aefbd51a49de5168c"
+        }
+      },
+      "ssr-1": {
+        "matched": 9,
+        "baseline_evidence_sha256": "7b72a63a1d748464d93361e2599fe27a6bf5718c236e357f09bc6befb410de66",
+        "candidate_evidence_sha256": "9f998dc3be56f8069d7f88cd1bb040cb43d9ba5c444df81bf5496be52b32a0e0",
+        "bitmap_sha256": {
+          "omitted-deferred-color-none": "69966452c19608b80088ad55f5b882ee281f47fd3c25c8653730e5daae2ad18f",
+          "omitted-forward-color-none": "69966452c19608b80088ad55f5b882ee281f47fd3c25c8653730e5daae2ad18f",
+          "omitted-deferred-depth-none": "c6561bbe92fe75de2523b2c7c4e274c7163fefd1f11b3daee0a6c02bcc645c93",
+          "zero-deferred-color-none": "69966452c19608b80088ad55f5b882ee281f47fd3c25c8653730e5daae2ad18f",
+          "enabled-deferred-color-none": "8771d3327e1fa89bdec3e53b5e3b072e5559940a8e65cf63dd45ec4947aaad73",
+          "enabled-forward-color-none": "69966452c19608b80088ad55f5b882ee281f47fd3c25c8653730e5daae2ad18f",
+          "enabled-deferred-depth-none": "c6561bbe92fe75de2523b2c7c4e274c7163fefd1f11b3daee0a6c02bcc645c93",
+          "short-deferred-color-none": "69966452c19608b80088ad55f5b882ee281f47fd3c25c8653730e5daae2ad18f",
+          "bright-deferred-color-none": "9fcb55dcf8b5de58787cc265ad47795a42452aa0736dc30aefbd51a49de5168c"
+        }
+      }
+    },
+    "reference_count": 150,
+    "descriptor_sha256": "5e259edbdc49955a718e67e789bbba54f7771afdea2b15f1d0d544a5a613e6ed"
+  },
+  "scope": "Small fixed-tick gameplay fixtures and Windows Vulkan captures on two laptop adapters."
+}

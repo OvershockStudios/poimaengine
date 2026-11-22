@@ -15,6 +15,11 @@ The preference tail preserves all earlier layouts and uses three copied, bounded
 batch before `Update` returns. It uses the same committed rain doses, shelter
 and saved film as the CLI. See [shelter-aware wetness](SURFACE_WETNESS.md).
 
+`ISolarLightingGame` requests the independent 584-byte `solar_lighting_v1`
+service. The callback at byte 576 copies a 72-byte sample during `Update`.
+The accepted sample controls the authored sun and sky and is saved with the
+simulation. See [solar lighting](WEATHER_CYCLE.md#drive-the-sun-and-sky).
+
 ## Publish
 
 For an external project, use the binary SDK and prebuilt tools in an

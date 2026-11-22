@@ -1099,18 +1099,20 @@ struct Context {
         scene_assets.invalidate_materials();bindings=nullptr;deferred_lighting.invalidate_bindings();
         viewmodel_draws.clear();if(viewmodel)viewmodel->materials.clear();
     }
-    void prepare_environment(const LightingEnvironment& lighting) {
+    void prepare_environment(const SceneLighting& lighting) {
+        const auto& environment=lighting.environment;
         std::fill_n(frame_constants.ibl_parameters,4,0.0f);
-        diagnostics.environment_ibl=environment_ibl.prepare(*checked.Get(),lighting,{
+        diagnostics.environment_ibl=environment_ibl.prepare(*checked.Get(),environment,{
             .retire_frames=[this] { retire_frames(true); },
             .require_float_sampling=[this] { require_environment_float_sampling(); },
             .upload=[this](const render_environment_ibl::RecordUpload& record) { submit_environment_upload(record); },
             .invalidate_bindings=[this] { invalidate_environment_bindings(); },
         });
         if(diagnostics.environment_ibl && diagnostics.environment_ibl->enabled) {
+            const float sky_gain=lighting.solar_lighting ? lighting.solar_lighting->sky_gain : 1.0f;
             frame_constants.ibl_parameters[0]=1;
-            frame_constants.ibl_parameters[1]=lighting.ibl->diffuse_intensity;
-            frame_constants.ibl_parameters[2]=lighting.ibl->specular_intensity;
+            frame_constants.ibl_parameters[1]=environment.ibl->diffuse_intensity*sky_gain;
+            frame_constants.ibl_parameters[2]=environment.ibl->specular_intensity*sky_gain;
             frame_constants.ibl_parameters[3]=float(diagnostics.environment_ibl->specular_levels-1);
         }
     }
@@ -1710,7 +1712,7 @@ struct Context {
         validate_surface_mark_catalog();
         retain_scene_resources();warm_particle_sprites();prepare_shadows();
         auto lighting=scene->lighting;finalize_lighting(lighting);
-        prepare_environment(lighting.environment);prepare_screen_reflections(lighting.environment.screen_reflections);bindings=mesh_bindings(nullptr,nullptr);
+        prepare_environment(lighting);prepare_screen_reflections(lighting.environment.screen_reflections);bindings=mesh_bindings(nullptr,nullptr);
         shadow_filter=shadow_filter_override.value_or(lighting.environment.shadow_filter);
         diagnostics.shadow_filter=shadow_filter;
         const bool contact_shadows=shadow_filter==ShadowFilter::pcss_directional;
@@ -2888,11 +2890,16 @@ struct Context {
                 timestamp(13);
                 break;
             case render_schedule::PassId::deferred_lighting:dispatch_deferred_lighting();break;
-            case render_schedule::PassId::screen_reflections:
+            case render_schedule::PassId::screen_reflections: {
                 timestamp(14);
-                reflections.dispatch(*commands.Get(),*scene->lighting.environment.screen_reflections,ao_enabled);
+                const auto& lighting=scene->lighting;
+                const auto& ibl=lighting.environment.ibl;
+                reflections.dispatch(*commands.Get(),*lighting.environment.screen_reflections,ao_enabled,{
+                    .sky_gain=lighting.solar_lighting ? lighting.solar_lighting->sky_gain : 1.0f,
+                    .authored_specular_gain=ibl ? ibl->specular_intensity : 0.0f});
                 timestamp(15);
                 break;
+            }
             case render_schedule::PassId::height_fog:
                 timestamp(16);
                 fog.dispatch(*commands.Get(),*scene->lighting.environment.height_fog,fog_spots);

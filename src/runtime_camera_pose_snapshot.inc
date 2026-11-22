@@ -38,6 +38,7 @@ SceneSnapshot Runtime::snapshot(const std::string& camera,const RuntimeCameraPos
     require(rigid_transform(matrix(camera)),"Presentation camera hierarchy must not scale or shear the camera.");
 
     SceneSnapshot result;
+    result.lighting.solar_lighting=impl_->solar_lighting_live;
     result.presentation_source_id=impl_->presentation_source_id;result.world_id=impl_->world_id;
     result.revision=impl_->revision;result.material_revision=impl_->material_revision;
     result.presentation_generation=impl_->material_revision;result.camera_id=camera;
@@ -52,6 +53,7 @@ SceneSnapshot Runtime::snapshot(const std::string& camera,const RuntimeCameraPos
         if(const auto* mesh=impl_->registry.try_get<RuntimeMesh>(e);mesh && mesh->visible)
             result.objects.push_back(impl_->drawable(e,*mesh,&worlds));
     }
+    resolve_solar_lighting(result.lighting);
     finalize_lighting(result.lighting);
     append_scene_surface_marks(result);
     if(const auto* region=water_region())water::append_region_scene(*region,result);

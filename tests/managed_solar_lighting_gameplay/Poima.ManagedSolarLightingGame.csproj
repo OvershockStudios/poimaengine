@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="../../managed/Directory.Build.props" />
+  <ItemGroup>
+    <ProjectReference Include="../../managed/Poima.Gameplay/Poima.Gameplay.csproj" />
+    <ProjectReference Include="../../packages/weather/Poima.Weather.csproj" />
+  </ItemGroup>
+</Project>

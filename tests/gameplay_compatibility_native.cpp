@@ -54,6 +54,9 @@ void policy() {
     check(compatibility_error(baseline,available_contract()).empty(),"Collection capability broke old scalar game.");
     check(collections.services_version==7 && collections.services_bytes==176,"Collection feature changed baseline ABI.");
     const auto capable=available_contract();
+    auto previous_wetness_host=capable;
+    previous_wetness_host.services_bytes=surface_wetness_services_bytes;
+    std::erase(previous_wetness_host.features,std::string(solar_lighting_feature));
     // Explicit pre-physical host fixture, not a downgraded current response.
     Contract legacy400;legacy400.services_bytes=400;
     legacy400.features={baseline_feature,persistence_feature,collections_feature,animation_feature,animation_layers_feature,
@@ -74,7 +77,7 @@ void policy() {
 
     auto attachment=baseline;attachment.services_bytes=528;attachment.features.push_back(item_attachment_feature);
     check(compatibility_error(attachment,capable).empty(),"Attachment unexpectedly requires another optional service.");
-    auto old_attachment_host=capable;old_attachment_host.services_bytes=512;
+    auto old_attachment_host=previous_wetness_host;old_attachment_host.services_bytes=512;
     std::erase(old_attachment_host.features,std::string(particle_burst_feature));
     std::erase(old_attachment_host.features,std::string(surface_mark_feature));
     std::erase(old_attachment_host.features,std::string(surface_mark_direction_feature));
@@ -102,6 +105,7 @@ void policy() {
     auto missing_burst=capable;std::erase(missing_burst.features,std::string(particle_burst_feature));
     check(!compatibility_error(burst,missing_burst).empty(),"Opaque allocation granted particle bursts.");
     missing_burst.services_bytes=item_attachment_services_bytes;
+    std::erase(missing_burst.features,std::string(solar_lighting_feature));
     std::erase(missing_burst.features,std::string(surface_mark_feature));
     std::erase(missing_burst.features,std::string(surface_mark_direction_feature));
     std::erase(missing_burst.features,std::string(surface_mark_texture_feature));
@@ -120,6 +124,7 @@ void policy() {
     auto missing_mark=capable;std::erase(missing_mark.features,std::string(surface_mark_feature));
     check(!compatibility_error(mark,missing_mark).empty(),"Opaque allocation granted surface marks.");
     missing_mark.services_bytes=particle_services_bytes;
+    std::erase(missing_mark.features,std::string(solar_lighting_feature));
     std::erase(missing_mark.features,std::string(surface_mark_direction_feature));
     std::erase(missing_mark.features,std::string(surface_mark_texture_feature));
     std::erase(missing_mark.features,std::string(surface_mark_timed_feature));
@@ -134,7 +139,7 @@ void policy() {
     directional.features.push_back(surface_mark_direction_feature);
     check(compatibility_error(directional,capable).empty() && compatibility_error(directional,directional).empty(),
         "Directional placement requires an unrelated optional service.");
-    auto previous_mark_host=capable;
+    auto previous_mark_host=previous_wetness_host;
     previous_mark_host.services_bytes=surface_mark_services_bytes;
     std::erase(previous_mark_host.features,std::string(surface_mark_direction_feature));
     std::erase(previous_mark_host.features,std::string(surface_mark_texture_feature));
@@ -161,7 +166,7 @@ void policy() {
     textured.features.push_back(surface_mark_texture_feature);
     check(compatibility_error(textured,capable).empty() && compatibility_error(textured,textured).empty(),
         "Textured placement requires an unrelated optional service.");
-    auto previous_direction_host=capable;
+    auto previous_direction_host=previous_wetness_host;
     previous_direction_host.services_bytes=surface_mark_direction_services_bytes;
     std::erase(previous_direction_host.features,std::string(surface_mark_texture_feature));
     std::erase(previous_direction_host.features,std::string(surface_mark_timed_feature));
@@ -171,7 +176,7 @@ void policy() {
     auto opaque_texture_host=previous_direction_host;
     opaque_texture_host.services_bytes=surface_mark_texture_services_bytes;
     check(!compatibility_error(textured,opaque_texture_host).empty(),"Opaque allocation granted textured placement.");
-    auto short_texture_host=capable;
+    auto short_texture_host=previous_wetness_host;
     short_texture_host.services_bytes=559;
     std::erase(short_texture_host.features,std::string(surface_wetness_feature));
     check(!compatibility_error(baseline,short_texture_host).empty(),"Short allocation advertised textured placement.");
@@ -194,7 +199,7 @@ void policy() {
     timed.features.push_back(surface_mark_timed_feature);
     check(compatibility_error(timed,capable).empty() && compatibility_error(timed,timed).empty(),
         "Timed placement requires an unrelated optional service.");
-    auto previous_texture_host=capable;
+    auto previous_texture_host=previous_wetness_host;
     previous_texture_host.services_bytes=surface_mark_texture_services_bytes;
     std::erase(previous_texture_host.features,std::string(surface_mark_timed_feature));
     std::erase(previous_texture_host.features,std::string(surface_wetness_feature));
@@ -203,7 +208,7 @@ void policy() {
     auto opaque_timed_host=previous_texture_host;
     opaque_timed_host.services_bytes=surface_mark_timed_services_bytes;
     check(!compatibility_error(timed,opaque_timed_host).empty(),"Opaque allocation granted timed placement.");
-    auto short_timed_host=capable;
+    auto short_timed_host=previous_wetness_host;
     short_timed_host.services_bytes=surface_mark_timed_services_bytes-1;
     std::erase(short_timed_host.features,std::string(surface_wetness_feature));
     check(!compatibility_error(baseline,short_timed_host).empty(),"Short allocation advertised timed placement.");
@@ -227,7 +232,7 @@ void policy() {
     wetness.features.push_back(surface_wetness_feature);
     check(compatibility_error(wetness,capable).empty() && compatibility_error(wetness,wetness).empty(),
         "Wetness requires an unrelated optional service.");
-    auto previous_timed_host=capable;
+    auto previous_timed_host=previous_wetness_host;
     previous_timed_host.services_bytes=surface_mark_timed_services_bytes;
     std::erase(previous_timed_host.features,std::string(surface_wetness_feature));
     check(compatibility_error(timed,previous_timed_host).empty() && !compatibility_error(wetness,previous_timed_host).empty(),
@@ -239,12 +244,28 @@ void policy() {
         auto invalid=wetness;invalid.services_bytes=wrong_extent;
         check(!compatibility_error(invalid,capable).empty(),"Wetness accepted a noncanonical required prefix.");
     }
-    auto short_wetness_host=capable;
+    auto short_wetness_host=previous_wetness_host;
     short_wetness_host.services_bytes=surface_wetness_services_bytes-1;
     check(!compatibility_error(baseline,short_wetness_host).empty(),"A short allocation advertised surface wetness.");
     for(const auto feature:{surface_mark_timed_feature,surface_mark_texture_feature,surface_mark_direction_feature,
         surface_mark_feature,particle_burst_feature,item_attachment_feature})wetness.features.push_back(feature);
     check(compatibility_error(wetness,capable).empty(),"Wetness and previously named mark, particle or attachment operations cannot coexist.");
+    auto solar=baseline;
+    solar.services_bytes=solar_lighting_services_bytes;
+    solar.features.push_back(solar_lighting_feature);
+    check(compatibility_error(solar,solar).empty() && compatibility_error(solar,capable).empty(),
+        "Solar lighting requires an unrelated optional service.");
+    check(compatibility_error(wetness,previous_wetness_host).empty() && !compatibility_error(solar,previous_wetness_host).empty(),
+        "The 576-byte host lost wetness support or granted solar lighting.");
+    auto opaque_solar_host=previous_wetness_host;
+    opaque_solar_host.services_bytes=solar_lighting_services_bytes;
+    check(compatibility_error(baseline,opaque_solar_host).empty() && !compatibility_error(solar,opaque_solar_host).empty(),
+        "Opaque allocation granted solar lighting.");
+    auto short_solar_host=capable;
+    short_solar_host.services_bytes=solar_lighting_services_bytes-1;
+    check(!compatibility_error(baseline,short_solar_host).empty(),"Short host allocation advertised solar lighting.");
+    solar.features.insert(solar.features.end(),wetness.features.begin()+1,wetness.features.end());
+    check(compatibility_error(solar,capable).empty(),"Solar lighting displaced wetness or earlier named extensions.");
     auto contact=attachment;contact.features.push_back(item_attachment_contact_feature);
     check(compatibility_error(contact,capable).empty(),"Contact requires no longer service table.");
     auto before_pickup=capable;std::erase(before_pickup.features,std::string(item_attachment_pickup_feature));
@@ -343,7 +364,9 @@ void policy() {
     check(surface_mark_direction_services_bytes==552u,"Frozen directional mark extent changed.");
     check(surface_mark_texture_services_bytes==560u,"Frozen textured mark extent changed.");
     check(surface_mark_timed_services_bytes==568u,"Frozen timed mark extent changed.");
-    check(capable.services_version==7 && capable.services_bytes==surface_wetness_services_bytes && capable.services_bytes==576u &&
+    check(surface_wetness_services_bytes==576u,"Frozen surface wetness extent changed.");
+    check(capable.services_version==7 && capable.services_bytes==solar_lighting_services_bytes && capable.services_bytes==584u &&
+        std::find(capable.features.begin(),capable.features.end(),solar_lighting_feature)!=capable.features.end() &&
         std::find(capable.features.begin(),capable.features.end(),surface_wetness_feature)!=capable.features.end() &&
         std::find(capable.features.begin(),capable.features.end(),surface_mark_timed_feature)!=capable.features.end() &&
         std::find(capable.features.begin(),capable.features.end(),surface_mark_texture_feature)!=capable.features.end() &&

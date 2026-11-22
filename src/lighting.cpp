@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "poima/scene.hpp"
+#include <algorithm>
 #include <cmath>
 #include <numbers>
 #include <stdexcept>
@@ -120,6 +121,34 @@ void append_light(SceneLighting& state,const std::string& id,const Light& light,
         result.direction={-world[8]/length,-world[9]/length,-world[10]/length};
     }
     state.lights.push_back(std::move(result));
+}
+void validate_solar_lighting(const SolarLightingSample& sample) {
+    require(sample.world_milliseconds<=max_solar_world_milliseconds,"Solar lighting time is outside the supported game calendar.");
+    const auto& direction=sample.toward_sun;
+    const auto length=std::hypot(direction[0],direction[1],direction[2]);
+    require(std::isfinite(length) && std::abs(length-1)<=1e-6,"Solar lighting needs a finite unit direction toward the sun.");
+    require(sample.sun_gain>=0 && sample.sun_gain<=1 && sample.sky_gain>=0 && sample.sky_gain<=1,
+        "Solar light and sky gains must be in [0,1].");
+    for(const auto value:sample.sun_tint)
+        require(value>=0 && value<=1,"Solar light tint must be linear RGB in [0,1].");
+    for(const auto value:sample.ambient)
+        require(value>=0 && value<=1e6f,"Solar ambient fill must be in [0,1e6].");
+}
+void resolve_solar_lighting(SceneLighting& state) {
+    if(!state.solar_lighting)return;
+    const auto& sample=*state.solar_lighting;
+    const auto sun=std::ranges::find(state.lights,state.environment.sky.sun,&SceneLight::entity_id);
+    require(state.environment.sky.enabled && sun!=state.lights.end() && sun->light.kind==LightKind::directional,
+        "Solar lighting requires an enabled procedural sky linked to an enabled directional light.");
+    const auto& direction=sample.toward_sun;
+    const auto length=std::hypot(direction[0],direction[1],direction[2]);
+    for(std::size_t axis=0;axis<3;++axis) {
+        sun->direction[axis]=-direction[axis]/length;
+        sun->light.color[axis]*=sample.sun_tint[axis];
+    }
+    sun->light.intensity*=sample.sun_gain;
+    state.environment.sky.sun_intensity*=sample.sun_gain;
+    state.environment.ambient=sample.ambient;
 }
 void finalize_lighting(SceneLighting& state) {
     validate_environment(state.environment);

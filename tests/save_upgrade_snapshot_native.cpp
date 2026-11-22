@@ -170,6 +170,33 @@ void run(){
         receiver.components[a.id]=converted;wet_definition.templates[0].components[a.id]=converted;
         Runtime::validate_snapshot(wet_definition,target_hash,wetness_mapping.snapshot);
     }
+    const Json solar_sample={{"version",1},{"world_milliseconds",567890123},{"toward_sun",{0.0,.8,-.6}},
+        {"sun_gain",.625},{"sun_tint",{1.0,.75,.5}},{"sky_gain",.375},{"ambient",{.125,.25,.5}}};
+    auto solar_source=original;
+    solar_source["payload"]["solar_lighting"]=solar_sample;
+    const auto solar_bytes=seal(solar_source);
+    auto solar_definition=definition;
+    auto& sun=solar_definition.entities[0];
+    sun.light.emplace().kind=LightKind::directional;
+    sun.environment=LightingEnvironment{};
+    sun.environment->sky.enabled=true;
+    sun.environment->sky.sun=sun.id;
+    if(Runtime::available())Runtime::validate_snapshot(solar_definition,source_hash,solar_bytes);
+
+    const auto solar_mapping=transform(solar_bytes,plan,target_game,before,after);
+    auto expected_solar=mapped;
+    expected_solar["payload"]["solar_lighting"]=solar_sample;
+    check(solar_mapping.snapshot==seal(expected_solar),
+        "Solar lighting upgrade changed the saved extension or other snapshot bytes.");
+    if(Runtime::available()) {
+        solar_definition.authored_revision=8;
+        solar_definition.component_schemas=after;
+        const auto converted=map_component_scalars(components::schema_json(a),components::schema_json(b),
+            components::values_json(a,source_values),cm.dump()).target_payload;
+        sun.components[a.id]=converted;
+        solar_definition.templates[0].components[a.id]=converted;
+        Runtime::validate_snapshot(solar_definition,target_hash,solar_mapping.snapshot);
+    }
     // New defaulted cells on an existing authored entity; live spawned and
     // retired IDs never become eligible through checkpoint membership alone.
     const auto added=components::parse_schema(Json{{"id",id('5')},{"name","Progression"},{"version",2},{"fields",Json::array({

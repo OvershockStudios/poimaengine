@@ -22,12 +22,17 @@ struct Inputs {
     nvrhi::ISampler* sky_sampler;
 };
 
+struct IblGains {
+    float sky_gain;
+    float authored_specular_gain;
+};
+
 class Pass {
 public:
     void prepare(nvrhi::IDevice& device, const Inputs& inputs);
     void clear_targets() noexcept;
     void verify_bindings(const render_schedule::Schedule& plan, nvrhi::ISampler* sky_sampler) const;
-    void dispatch(nvrhi::ICommandList& commands, const ScreenReflections& settings, bool ao) const;
+    void dispatch(nvrhi::ICommandList& commands, const ScreenReflections& settings, bool ao, IblGains ibl) const;
 
     nvrhi::ITexture* radiance() const noexcept { return reflected_hdr_.Get(); }
     nvrhi::ITexture* roughness() const noexcept { return roughness_.Get(); }

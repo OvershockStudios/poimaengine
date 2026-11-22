@@ -5,10 +5,24 @@
 #include "poima/screen_reflections_cs.hpp"
 #include "render_embedded_shader.hpp"
 
+#include <cstddef>
 #include <stdexcept>
 #include <utility>
 
 namespace poima::screen_reflections {
+namespace {
+
+struct alignas(16) ReflectionConstants {
+    float strength, max_distance_m, thickness_m, use_ao;
+    float sky_gain, authored_specular_gain;
+    std::array<float, 2> reserved{};
+};
+static_assert(sizeof(ReflectionConstants) == render_schedule::screen_reflections_constants_bytes &&
+              offsetof(ReflectionConstants, sky_gain) == 16 &&
+              offsetof(ReflectionConstants, authored_specular_gain) == 20);
+
+}
+
 void Pass::prepare(nvrhi::IDevice& device, const Inputs& inputs) {
     const auto& opaque=inputs.opaque_hdr->getDesc();
     if(opaque.sampleCount!=1 || !opaque.width || !opaque.height ||
@@ -100,14 +114,14 @@ void Pass::verify_bindings(const render_schedule::Schedule& plan, nvrhi::ISample
         if(!(actual[i]==expected[i]))throw std::runtime_error("Screen reflection binding differs from its validated schedule.");
 }
 
-void Pass::dispatch(nvrhi::ICommandList& commands, const ScreenReflections& settings, bool ao) const {
+void Pass::dispatch(nvrhi::ICommandList& commands, const ScreenReflections& settings, bool ao, IblGains ibl) const {
     nvrhi::ComputeState state;
     state.pipeline=pipeline_;
     state.bindings.push_back(bindings_);
     commands.setComputeState(state);
-    const std::array constants{settings.strength,settings.max_distance_m,settings.thickness_m,ao ? 1.f : 0.f};
-    static_assert(sizeof(constants)==render_schedule::screen_reflections_constants_bytes);
-    commands.setPushConstants(constants.data(),sizeof(constants));
+    const ReflectionConstants constants{settings.strength, settings.max_distance_m, settings.thickness_m,
+        ao ? 1.f : 0.f, ibl.sky_gain, ibl.authored_specular_gain};
+    commands.setPushConstants(&constants, sizeof(constants));
     const auto& target=reflected_hdr_->getDesc();
     commands.dispatch((target.width+7)/8,(target.height+7)/8,1);
 }

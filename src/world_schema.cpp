@@ -397,7 +397,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 205}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 206}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -1203,6 +1203,12 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"gameplay_services_abi",7},{"gameplay_services_bytes",176},{"hierarchical_services_bytes",232},{"gameplay_reads","Committed membership; reserved births support custom initializers and local-member resolution. Template defaults are read explicitly."},{"runtime","Frozen root-prop or connected hierarchical recipes; atomic spawn and whole-instance despawn. runtime.instance returns canonical local-to-live member handles. Existing transform/physics/rig ownership and aggregate budgets apply to expanded membership; RPC tick scheduling remains unavailable."}};
     for(const auto* method:{"runtime.step","runtime.component.edit","runtime.gameplay.edit","runtime.gameplay.load","runtime.gameplay.load_native","runtime.audio.replay","runtime.play","player.start"})
         methods[method]["properties"]["expected_structure_revision"]=rev;
+    const bool solar_available=Runtime::available() && (Gameplay::available() || Gameplay::native_available());
+    result["solar_lighting"]={{"available",solar_available},{"gameplay_feature",gameplay_abi::solar_lighting_feature},
+        {"gameplay_services_bytes",gameplay_abi::solar_lighting_services_bytes},{"observation","runtime.lighting"},
+        {"max_world_milliseconds",max_solar_world_milliseconds},{"snapshot_version",1},
+        {"target","Enabled authored LightingEnvironment.sky with an enabled linked directional Light."},
+        {"ownership","Gameplay stages one sample during Update. It publishes on the committed tick."}};
     result["wetness"]={{"available",Runtime::available()},{"component","SurfaceWetness"},
         {"seconds_per_quantum",1},{"max_receivers",wetness::max_receivers},{"max_batch",wetness::max_batch},
         {"max_rain_nm",wetness::max_rain_nm},{"film_units_per_nm",wetness::units_per_nm},

@@ -140,6 +140,14 @@ int main(){try{
     check(poima::parse_gameplay_service_contract(combined_wetness.dump()).features.size()==3,
         "Wetness and timed surface mark combination rejected.");
     offer=actual;offer.services_bytes=575;offer_rejected(offer);
+    auto solar=baseline;solar["services_bytes"]=584;solar["features"].push_back("solar_lighting_v1");
+    parsed=poima::parse_gameplay_service_contract(solar.dump());
+    check(parsed.services_bytes==584 && parsed.features.size()==2,"Independent solar lighting contract rejected.");
+    for(unsigned bytes:{576u,583u,585u}){auto wrong=solar;wrong["services_bytes"]=bytes;rejected(wrong.dump());}
+    auto unnamed_solar=solar;unnamed_solar["features"]=Json::array({"baseline_v7","surface_wetness_v1"});rejected(unnamed_solar.dump());
+    solar["features"].push_back("surface_wetness_v1");
+    check(poima::parse_gameplay_service_contract(solar.dump()).features.size()==3,"Solar lighting and wetness combination rejected.");
+    offer=actual;offer.services_bytes=583;offer_rejected(offer);
     for(const char* field:{"call_version","call_bytes","services_version","services_bytes"}){
         for(const Json& value:{Json(true),Json(-1),Json(1.5),Json(4294967296ULL),Json("192"),Json(nullptr)}){auto bad=baseline;bad[field]=value;rejected(bad.dump());}
         auto bad=baseline;bad.erase(field);rejected(bad.dump());

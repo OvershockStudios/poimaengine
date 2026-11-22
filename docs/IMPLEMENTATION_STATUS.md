@@ -1,8 +1,19 @@
 # Implementation status
 
-Updated 2026-11-22 for **0.0.404**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-22 for **0.0.405**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.405 adds [gameplay-driven solar lighting](WEATHER_CYCLE.md#drive-the-sun-and-sky).
+The same clock can drive rain and the visible sun, sky and ambient light.
+The fixture checks rollback, exact saves and fresh-process continuation with
+CoreCLR and Native AOT. Relocated Windows builds verified the sky in forward
+and deferred Vulkan on AMD and NVIDIA. One continuous NVIDIA replay reused
+a single sky-lighting bake through the transition and a swapchain resize.
+Both GPUs preserved local screen-space reflection response at night.
+Another 150 reference captures matched 0.0.404 byte for byte. Ubuntu passed
+17 suites.
+[Results](evidence/m2-solar-lighting-405.json)
 
 Version 0.0.404 trims [shadow index ranges](SHADOWS.md#shadow-geometry-culling)
 for large rigid meshes. A native fixture submitted 1,024 of 4,096 shadow

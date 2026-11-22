@@ -15,6 +15,9 @@ struct ReflectionSettings {
     float max_distance_m;
     float thickness_m;
     float use_ao;
+    float sky_gain;
+    float authored_specular_gain;
+    float2 reserved;
 };
 [[vk::push_constant]] ConstantBuffer<ReflectionSettings> settings;
 
@@ -246,8 +249,15 @@ float3 screen_reflection(int2 pixel, uint2 extent, float3 prior) {
                                                                  roughness * ibl_parameters.w).rgb;
         const float2 brdf = environment_brdf.SampleLevel(environment_sampler,
                                                         float2(saturate(normal_view), roughness), 0);
-        replacement -= fallback;
-        response = (f0 * brdf.x + brdf.y) * ibl_parameters.z;
+        float specular_gain = ibl_parameters.z;
+        [branch] if (settings.sky_gain < 1) {
+            // Only the baked sky fallback carries the solar attenuation.
+            replacement -= fallback * settings.sky_gain;
+            specular_gain = settings.authored_specular_gain;
+        } else {
+            replacement -= fallback;
+        }
+        response = (f0 * brdf.x + brdf.y) * specular_gain;
     } else {
         // Single visible incoming sample with a conservative Schlick response.
         const float fresnel = pow(1 - saturate(normal_view), 5);

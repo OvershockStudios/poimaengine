@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "world_presentation_json.hpp"
+#include "solar_lighting_json.hpp"
 
 #include "gpu_memory_json.hpp"
 #include "poima/core.hpp"
@@ -198,6 +199,7 @@ Json lighting_json(const SceneLighting& lighting) {
     }
     Json result={{"preview_fallback",lighting.preview},{"lights",lights},{"ambient",lighting.environment.ambient},{"exposure",lighting.environment.exposure},{"shadow_resolution",lighting.environment.shadow_resolution},{"shadow_filter",shadow_filter_name(lighting.environment.shadow_filter)},{"shadow_views",shadow_count},{"shadow_bytes",shadow_count*lighting.environment.shadow_resolution*lighting.environment.shadow_resolution*4},
         {"sky",sky_json(sky)},{"sky_sun",sun}};
+    if(lighting.solar_lighting)result["solar_lighting"]=solar_lighting_json(*lighting.solar_lighting);
     if(lighting.environment.auto_exposure) {
         const auto& settings=*lighting.environment.auto_exposure;
         result["auto_exposure"]={{"min_stops",settings.min_stops},{"max_stops",settings.max_stops},

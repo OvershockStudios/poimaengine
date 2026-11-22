@@ -117,10 +117,20 @@ struct LightingEnvironment {
     std::optional<AutoExposureSettings> auto_exposure;
 };
 struct SceneLight { std::string entity_id;Light light;std::array<double,3> position{},direction{0,0,-1}; };
+inline constexpr std::uint64_t max_solar_world_milliseconds = 315359999999999ULL;
+struct SolarLightingSample {
+    std::uint64_t world_milliseconds{};
+    std::array<double,3> toward_sun{};
+    float sun_gain=1;
+    std::array<float,3> sun_tint{1,1,1};
+    float sky_gain=1;
+    std::array<float,3> ambient{};
+};
 struct SceneLighting {
     std::vector<SceneLight> lights;
     LightingEnvironment environment;
     bool preview=true;
+    std::optional<SolarLightingSample> solar_lighting;
 };
 inline constexpr std::size_t max_scene_lights=1024;
 inline constexpr std::size_t max_shadow_views=16;
@@ -129,7 +139,10 @@ std::size_t shadow_view_count(const Light& light);
 void validate_shadow_budget(std::size_t views,std::uint32_t resolution);
 void validate_light(const Light& light);
 void validate_environment(const LightingEnvironment& environment);
+void validate_solar_lighting(const SolarLightingSample& sample);
 void append_light(SceneLighting& state,const std::string& id,const Light& light,const Matrix4& world);
+// Apply to newly assembled runtime lighting before it enters the renderer.
+void resolve_solar_lighting(SceneLighting& state);
 void finalize_lighting(SceneLighting& state);
 enum class MaterialAlphaMode : std::uint32_t { opaque=0,mask=1 };
 constexpr std::string_view material_alpha_mode_name(MaterialAlphaMode mode) {

@@ -20,7 +20,7 @@ KNOWN_FEATURES = frozenset((
     'hierarchical_instances_v1', 'player_preferences_v1', 'input_actions_v1',
     'hit_regions_v1', 'animation_ik_v1', 'animation_ik_clearance_v1', 'animation_root_motion_v1',
     'camera_lens_v1', 'character_stance_v1', 'animation_ik_end_orientation_v1', 'animation_grounding_control_v1', 'animation_rate_v1', 'camera_pose_v1', 'capsule_cast_v1', 'physical_rig_v1', 'physical_rig_drive_v1', 'physical_rig_animation_v1', 'physical_recovery_v1', 'item_attachment_v1',
-    'item_attachment_contact_v1', 'item_attachment_surface_v1', 'item_attachment_recovery_v1', 'item_attachment_release_v1', 'item_attachment_pickup_v1', 'item_attachment_pickup_clearance_v1', 'item_attachment_pickup_pose_v1', 'item_attachment_pickup_blend_v1', 'item_attachment_pickup_hand_fallback_v1', 'item_attachment_pickup_steering_v1', 'item_attachment_aim_v1', 'particle_burst_v1', 'surface_mark_v1', 'surface_mark_direction_v2', 'surface_mark_texture_v3', 'surface_mark_timed_v4', 'surface_wetness_v1', 'navigation_query_v1'))
+    'item_attachment_contact_v1', 'item_attachment_surface_v1', 'item_attachment_recovery_v1', 'item_attachment_release_v1', 'item_attachment_pickup_v1', 'item_attachment_pickup_clearance_v1', 'item_attachment_pickup_pose_v1', 'item_attachment_pickup_blend_v1', 'item_attachment_pickup_hand_fallback_v1', 'item_attachment_pickup_steering_v1', 'item_attachment_aim_v1', 'particle_burst_v1', 'surface_mark_v1', 'surface_mark_direction_v2', 'surface_mark_texture_v3', 'surface_mark_timed_v4', 'surface_wetness_v1', 'solar_lighting_v1', 'navigation_query_v1'))
 NAVIGATION = 'navigation_query_v1'
 
 
@@ -64,13 +64,13 @@ def canonical(header):
     refs = ['baseline_feature', *re.findall(r'result\.features\.push_back\(([a-z_]+)\);', body)]
     need(len(refs) == len(set(refs)) and all(name in symbols for name in refs), 'Canonical native feature symbols are incomplete or duplicated.')
     features = [symbols[name] for name in refs]
-    need(set(features) == KNOWN_FEATURES and len(features) == 43 and refs.count('navigation_feature') == 1,
+    need(set(features) == KNOWN_FEATURES and len(features) == 44 and refs.count('navigation_feature') == 1,
          'Known native availability feature contract changed.')
     extents = re.findall(r'result\.services_bytes=([a-z_]+);', body)
-    need(extents and extents[-1] == 'surface_wetness_services_bytes' and all(name in numbers for name in extents),
+    need(extents and extents[-1] == 'solar_lighting_services_bytes' and all(name in numbers for name in extents),
          'Canonical service allocation endpoint changed.')
     need((numbers.get('call_version'), numbers.get('call_bytes'), numbers.get('services_version'),
-          numbers.get(extents[-1])) == (1, 80, 7, 576), 'Known native call/epoch/extent contract changed.')
+          numbers.get(extents[-1])) == (1, 80, 7, 584), 'Known native call/epoch/extent contract changed.')
     return dict(call_version=numbers['call_version'], call_bytes=numbers['call_bytes'],
                 services_version=numbers['services_version'], services_bytes=numbers[extents[-1]], features=features)
 
@@ -125,7 +125,7 @@ def self_test(header, cmake, stale_runtime=None):
         generated = copy.deepcopy(seed);generated['features']['navigation'] = navigation
         generated.update(generated_fields(cmake, navigation))
         result = validate(generated, header)
-        need(result['feature_count'] == (43 if navigation else 42), 'Generated descriptor has the wrong feature count.')
+        need(result['feature_count'] == (44 if navigation else 43), 'Generated descriptor has the wrong feature count.')
         cases += 1
     good = copy.deepcopy(seed);good.update(generated_fields(cmake, False))
     def reject(value):
@@ -136,7 +136,15 @@ def self_test(header, cmake, stale_runtime=None):
             cases += 1
             return
         raise AssertionError('Invalid descriptor was accepted.')
-    unnamed_576 = copy.deepcopy(good)
+    unnamed_584 = copy.deepcopy(good)
+    unnamed_584['gameplay_features'].remove('solar_lighting_v1')
+    reject(unnamed_584)
+    previous_576 = copy.deepcopy(unnamed_584)
+    previous_576['gameplay_services_bytes'] = 576
+    need(len(previous_576['gameplay_features']) == 42, 'Retained576 witness changed its frozen feature membership.')
+    reject(previous_576)
+    short_576 = copy.deepcopy(good);short_576['gameplay_services_bytes'] = 576;reject(short_576)
+    unnamed_576 = copy.deepcopy(previous_576)
     unnamed_576['gameplay_features'].remove('surface_wetness_v1')
     reject(unnamed_576)
     previous_568 = copy.deepcopy(unnamed_576)
@@ -260,7 +268,7 @@ def self_test(header, cmake, stale_runtime=None):
         bad = copy.deepcopy(good);bad['gameplay_features'] = features;reject(bad)
     bad = copy.deepcopy(good);bad['features']['navigation'] = True;reject(bad)
     bad['gameplay_features'].append(NAVIGATION);bad['features']['simulation'] = False;reject(bad)
-    need(policy['services_bytes'] == 576, 'Canonical extent changed during file-only tests.')
+    need(policy['services_bytes'] == 584, 'Canonical extent changed during file-only tests.')
     return dict(passed=True, file_only_checks=cases, retained_stale_descriptor_rejected=True, retained_400_descriptor_rejected=True,
                 retained_424_descriptor_rejected=True, retained_448_descriptor_rejected=True,
                 unnamed_496_and_missing_physical_dependencies_rejected=True, retained_496_and_512_descriptors_rejected=True,
@@ -269,6 +277,7 @@ def self_test(header, cmake, stale_runtime=None):
                 retained_and_spoofed_536_rejected=True, unnamed_544_rejected=True,
                 retained_and_spoofed_544_rejected=True, unnamed_552_rejected=True,
                 retained_and_spoofed_568_rejected=True, unnamed_576_rejected=True,
+                retained_and_spoofed_576_rejected=True, unnamed_584_rejected=True,
                 generated_navigation_false_and_true_checked=True)
 
 

@@ -28,7 +28,7 @@ One optional `LightingEnvironment` may exist anywhere in a world. Its transform 
 {"op":"component.set","id":"00000000000000000000000000000003","type":"LightingEnvironment","value":{"ambient":[0.015,0.02,0.03],"exposure":1}}
 ```
 
-Both fields are required. Ambient channels and exposure are finite numbers in [0,1e6]. `ambient` is a constant diffuse fill, not a sky or physical indirect-light solution. `exposure` is a linear multiplier; 2 doubles scene-linear light, 0 makes shaded geometry black. The procedural sky and flat scene background follow exposure through the [shared HDR composition path](HDR_COMPOSITION.md). UI is composed afterward and is unaffected. There is no auto-exposure or photometrically calibrated camera.
+Both fields are required. Ambient channels and exposure are finite numbers in [0,1e6]. `ambient` supplies diffuse fill. `exposure` is a linear multiplier. A value of 2 doubles scene-linear light and 0 makes shaded geometry black. The procedural sky and flat scene background follow exposure through the [shared HDR composition path](HDR_COMPOSITION.md), which also supports authored automatic exposure. UI is composed afterward at its own brightness.
 
 ## Procedural sky
 
@@ -51,7 +51,7 @@ New projects include an Environment with a blue sky, horizon and ground gradient
 
 Colors are linear RGB in [0,1]. `horizon_falloff` is in [0.1,16]; larger values extend the horizon color farther toward the poles. `sun_size_degrees` is the disk's angular **diameter**, in [0.1,20]. `sun_intensity` is its independent background radiance multiplier, in [0,1e6], not the Light's illuminance. `sun` is null or an existing directional Light's 32-character entity ID. A disabled linked Light hides the disk. The reference remains valid even when sky is disabled: deleting or changing that Light requires clearing/changing the reference in the same transaction.
 
-The sky follows camera rotation and FOV, ignores camera translation, and stays behind scene geometry. Its gradient and derivative-smoothed disk use the same exposure, Reinhard mapping and sRGB output as materials, with 1×/4× MSAA support. It is an artistic background; it does not provide atmospheric scattering, reflections, indirect illumination, clouds or a day/night simulation.
+The sky follows camera rotation and FOV, ignores camera translation, and stays behind scene geometry. Its gradient and derivative-smoothed disk use the same exposure, Reinhard mapping and sRGB output as materials, with 1×/4× MSAA support. Use [sky environment lighting](ENVIRONMENT_IBL.md) for indirect light from the gradient and [gameplay solar lighting](WEATHER_CYCLE.md#drive-the-sun-and-sky) to change the sun and sky over time.
 
 `world.describe` exposes the complete sky defaults, disabled by default for compatibility. `world.lighting` and `runtime.lighting` return `sky` plus `sky_sun`: null when absent/disabled, otherwise the linked enabled light's ID, direction **toward** the disk, color and authored Light intensity. Runtime freezes sky settings and the reference while following the Sun's live pose.
 

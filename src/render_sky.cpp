@@ -59,13 +59,14 @@ void Pass::prepare(nvrhi::IDevice& device, nvrhi::IBuffer* frame,
         require(bool(pipeline_), "Procedural sky pipeline creation failed.");
     }
 
+    const float sky_gain = lighting.solar_lighting ? lighting.solar_lighting->sky_gain : 1.0f;
     for (std::size_t axis = 0; axis < 3; ++axis) {
         constants_.right_tan[axis] = gpu_float(scene.camera_world[axis]);
         constants_.up_tan[axis] = gpu_float(scene.camera_world[4 + axis]);
         constants_.forward_srgb[axis] = gpu_float(-scene.camera_world[8 + axis]);
-        constants_.zenith_exposure[axis] = sky.zenith[axis];
-        constants_.horizon_falloff[axis] = sky.horizon[axis];
-        constants_.ground_radius[axis] = sky.ground[axis];
+        constants_.zenith_exposure[axis] = sky.zenith[axis] * sky_gain;
+        constants_.horizon_falloff[axis] = sky.horizon[axis] * sky_gain;
+        constants_.ground_radius[axis] = sky.ground[axis] * sky_gain;
     }
     const double tan_y = std::tan(scene.vertical_fov * 0.0087266462599716478846);
     constants_.right_tan[3] = gpu_float(tan_y * aspect);

@@ -781,6 +781,19 @@ typedef struct PoimaGameWetnessServicesV1 {
         const uint32_t* rain_nm,uint32_t count,PoimaGameError* error);
 } PoimaGameWetnessServicesV1;
 
+/* solar_lighting_v1 stages one complete game-clock sample during Tick. The unit
+ * vector points toward the sun. The record is borrowed only during the call. */
+typedef struct PoimaGameSolarLightingV1 {
+    uint32_t version,bytes;
+    uint64_t world_milliseconds;
+    double toward_sun[3];
+    float sun_gain,sun_tint[3],sky_gain,ambient[3];
+} PoimaGameSolarLightingV1;
+typedef struct PoimaGameSolarLightingServicesV1 {
+    PoimaGameWetnessServicesV1 wetness;
+    int32_t (POIMA_CALL *solar_lighting_set)(void*,const PoimaGameSolarLightingV1*,PoimaGameError*);
+} PoimaGameSolarLightingServicesV1;
+
 typedef struct PoimaGameCall {
     uint32_t version,operation; uint64_t handle;
     const char* text; void* state; uint32_t state_bytes,input_count;
@@ -863,6 +876,12 @@ static_assert(sizeof(PoimaGameSurfaceMarkTimedServicesV4)==568 && alignof(PoimaG
 static_assert(sizeof(PoimaGameWetnessServicesV1)==576 && alignof(PoimaGameWetnessServicesV1)==8 &&
     offsetof(PoimaGameWetnessServicesV1,timed)==0 &&
     offsetof(PoimaGameWetnessServicesV1,wetness_advance)==568);
+static_assert(sizeof(PoimaGameSolarLightingV1)==72 && alignof(PoimaGameSolarLightingV1)==8 &&
+    offsetof(PoimaGameSolarLightingV1,world_milliseconds)==8 && offsetof(PoimaGameSolarLightingV1,toward_sun)==16 &&
+    offsetof(PoimaGameSolarLightingV1,sun_gain)==40 && offsetof(PoimaGameSolarLightingV1,sun_tint)==44 &&
+    offsetof(PoimaGameSolarLightingV1,sky_gain)==56 && offsetof(PoimaGameSolarLightingV1,ambient)==60);
+static_assert(sizeof(PoimaGameSolarLightingServicesV1)==584 && alignof(PoimaGameSolarLightingServicesV1)==8 &&
+    offsetof(PoimaGameSolarLightingServicesV1,wetness)==0 && offsetof(PoimaGameSolarLightingServicesV1,solar_lighting_set)==576);
 static_assert(sizeof(PoimaGameReleasedItemAimV4)==208 && alignof(PoimaGameReleasedItemAimV4)==8 &&
     offsetof(PoimaGameReleasedItemAimV4,ray)==16 && offsetof(PoimaGameReleasedItemAimV4,hit)==88 &&
     offsetof(PoimaGameReleasedItemAimV4,item)==176 && offsetof(PoimaGameReleasedItemAimV4,sampled_tick)==192 &&
