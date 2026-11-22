@@ -14,7 +14,22 @@ World, runtime and animation capture requests accept:
 
 Add these fields to the normal capture parameters, including camera, revision or runtime tick, and output path. `runtime.play` accepts the same selection. Invalid combinations reject without advancing authoritative state. Omitting `lighting_path` selects `forward`; deferred rendering requires explicit single-sample selection when the request's default would be MSAA.
 
-Native clients set `RenderOptions::deferred` and `samples = 1`. There is no desktop preference for this path yet. See the [world service contract](WORLD_SERVICE.md) for complete request schemas.
+For a standalone game, pass the lighting path to the bundle's launcher.
+
+```text
+MyRoom-game\launch.cmd --lighting-path deferred
+```
+
+Both interactive launch and `--replay` accept the option. The standalone
+launch supplies one world sample for deferred rendering, overriding stored
+and session sample preferences. A conflicting `--samples 4` is rejected
+before opening the bundle. Read `poima schema game` for the CLI options.
+
+Native rendering callers set `RenderOptions::deferred` and `samples = 1`.
+For a standalone launch through `run_game`, set
+`GameLaunchOptions::render.deferred`. The same single-sample policy applies,
+and an explicit sample count must be 1. See the
+[world service contract](WORLD_SERVICE.md) for the capture and play request schemas.
 
 ## Screen-space reflections
 
@@ -87,6 +102,18 @@ poima-scene-motion-test.exe OUTPUT_PREFIX GPU_INDEX deferred
 ```
 
 The Python suites `lighting_capture.py`, `shadow_capture.py`, `clustered_lighting_capture.py`, `sky_capture.py` and `gpu_skinning_capture.py` accept the engine executable followed by `--output DIRECTORY --gpu GPU_INDEX --lighting-path deferred`. `reconstruction_ui_capture.py` takes the UI fixture executable instead. Use Windows Python for native Windows paths, or the suites' `--windows-interop` option from WSL.
+
+For standalone launch, publish the [item contact fixture](../tests/fixtures/item_attachment_contact/README.md)
+as Windows x64 Native AOT, then run this check with a matching installed
+Windows runtime. The fixture writes an external checkpoint on the first
+committed tick. The check compares its bytes across forward, deferred and
+headless runs from a relocated export.
+
+```sh
+python3 tests/game_launch_lighting.py "$runtime/bin/poima.exe" \
+  --runtime-root "$runtime" --artifact "$contact/native-gameplay.json" \
+  --output build/standalone-lighting-check --gpu 0 --windows-interop
+```
 
 Enable the installed Khronos validation layer and synchronization validation when reproducing GPU qualification. Preserve stdout, stderr and generated evidence; a successful image comparison does not excuse a validation error. Run each suite separately on each device and verify its reported GPU name. Headless contract tests and `poima-render-schedule-test` provide separate CPU-side checks.
 

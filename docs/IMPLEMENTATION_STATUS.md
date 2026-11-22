@@ -1,8 +1,16 @@
 # Implementation status
 
-Updated 2026-11-21 for **0.0.391**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-21 for **0.0.392**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.392 exposes [standalone lighting selection](DEFERRED_RENDERING.md#select-the-path)
+through `game run`. Deferred launch supplies one world sample, including when
+the preference profile requests four. Seven Ubuntu suites and seven CLI
+admission cases passed. On AMD and NVIDIA, five relocated Windows replay
+launches per adapter reproduced the headless Native AOT save byte for byte.
+The forward captures matched and the three deferred selections reproduced
+the same reflected pixels. [Results](evidence/m2-standalone-lighting-392.json)
 
 Version 0.0.391 compiles [transaction staging and Vulkan skinning](BUILD.md#world-service-and-schema-compilation)
 separately. Ubuntu passed 19 focused suites. Before and after builds on Ubuntu

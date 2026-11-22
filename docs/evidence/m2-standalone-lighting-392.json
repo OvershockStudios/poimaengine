@@ -1,0 +1,491 @@
+{
+  "format": "poima.standalone-lighting.qualification.v1",
+  "version": "0.0.392",
+  "current_base": "e24033fcc6ae243fe44669029bc75c5f5c66a37d",
+  "source_manifest_sha256": "9266c81a177967022bc8c07803060e4433aa2d8c88a8b3d8706dfd7c840e8a91",
+  "harness_sha256": "4381b057dc9f7b8ff68f9af92ffa35bdc6e621c9e594347b1e1364fd56244762",
+  "windows": {
+    "executable_sha256": "0fd610f5716ba09945fad4a79944ed6aebd54f44928be6d2abd4de4954a0c0b2",
+    "runtime_descriptor_sha256": "ddbb791fd784b8839e5f25a4aeb0e6b336a600473a6684af7d43a0334e020335",
+    "adapters": [
+      {
+        "adapter": "AMD Radeon(TM) Graphics",
+        "gpu": 0,
+        "raw_evidence_sha256": "4d4f41daf72c1594b3fa24c0f86b69c6c3738a38d8ef854a77e98925c011a044",
+        "native_aot_descriptor_sha256": "91e880f2d35f50ac9a271cb116c27ce7ec3c72f37de18338b2d23fe51b4d51b7",
+        "request_count": 21,
+        "rejections": [
+          "deferred-four",
+          "duplicate-path",
+          "invalid-path",
+          "missing-path"
+        ],
+        "validated_player_processes": 5,
+        "save_bytes": 9922,
+        "save_sha256": "c389faeb4a4c1d239816e2302f5da3018f41701cc37b981a2c18d5fa36b93f99",
+        "runs": {
+          "default-forward": {
+            "lighting_path": "forward",
+            "samples": 4,
+            "capture_sha256": "4b6d93499562f9df00e9d3e2c41625ad67ef66a8e0b595b76bf042fa46cc3f17",
+            "report_sha256": "425bc051815735c67773d7c566779dada79ebad333a25df6b5182ec30cd8e791",
+            "probes": {
+              "warm_hit": [
+                47,
+                47,
+                47
+              ],
+              "cool_hit": [
+                47,
+                47,
+                47
+              ],
+              "miss": [
+                47,
+                47,
+                47
+              ],
+              "rough_guard": [
+                47,
+                47,
+                47
+              ],
+              "warm_target": [
+                188,
+                98,
+                75
+              ],
+              "cool_target": [
+                77,
+                168,
+                188
+              ],
+              "clear": [
+                43,
+                52,
+                65
+              ]
+            }
+          },
+          "explicit-forward": {
+            "lighting_path": "forward",
+            "samples": 4,
+            "capture_sha256": "4b6d93499562f9df00e9d3e2c41625ad67ef66a8e0b595b76bf042fa46cc3f17",
+            "report_sha256": "390064fcaef090b61476971f0f4bf81a4a66aa4153322f341e3d2ebc1df7cf81",
+            "probes": {
+              "warm_hit": [
+                47,
+                47,
+                47
+              ],
+              "cool_hit": [
+                47,
+                47,
+                47
+              ],
+              "miss": [
+                47,
+                47,
+                47
+              ],
+              "rough_guard": [
+                47,
+                47,
+                47
+              ],
+              "warm_target": [
+                188,
+                98,
+                75
+              ],
+              "cool_target": [
+                77,
+                168,
+                188
+              ],
+              "clear": [
+                43,
+                52,
+                65
+              ]
+            }
+          },
+          "default-deferred": {
+            "lighting_path": "deferred",
+            "samples": 1,
+            "capture_sha256": "5561e5c2048abad60a2c37909b1bb9cb9019cb76eca1d7e6fc2400f352cde973",
+            "report_sha256": "6654edd8418e1ba888d62a02f2d79f6f1e60ce5aa7198d482bb39af872aef8a0",
+            "probes": {
+              "warm_hit": [
+                105,
+                60,
+                54
+              ],
+              "cool_hit": [
+                55,
+                90,
+                104
+              ],
+              "miss": [
+                47,
+                47,
+                47
+              ],
+              "rough_guard": [
+                47,
+                47,
+                47
+              ],
+              "warm_target": [
+                188,
+                98,
+                75
+              ],
+              "cool_target": [
+                77,
+                168,
+                188
+              ],
+              "clear": [
+                43,
+                52,
+                65
+              ]
+            }
+          },
+          "explicit-one": {
+            "lighting_path": "deferred",
+            "samples": 1,
+            "capture_sha256": "5561e5c2048abad60a2c37909b1bb9cb9019cb76eca1d7e6fc2400f352cde973",
+            "report_sha256": "24d3b0b657e2ce37bc247c2e958dd69dc85f2c900bd5a5a4243d81b5efe13952",
+            "probes": {
+              "warm_hit": [
+                105,
+                60,
+                54
+              ],
+              "cool_hit": [
+                55,
+                90,
+                104
+              ],
+              "miss": [
+                47,
+                47,
+                47
+              ],
+              "rough_guard": [
+                47,
+                47,
+                47
+              ],
+              "warm_target": [
+                188,
+                98,
+                75
+              ],
+              "cool_target": [
+                77,
+                168,
+                188
+              ],
+              "clear": [
+                43,
+                52,
+                65
+              ]
+            }
+          },
+          "stored-four-deferred": {
+            "lighting_path": "deferred",
+            "samples": 1,
+            "capture_sha256": "5561e5c2048abad60a2c37909b1bb9cb9019cb76eca1d7e6fc2400f352cde973",
+            "report_sha256": "ac49b7d69fec61e649e98e8b1592b242bb9d1c63abbe6c01f345b7dcbe9d040d",
+            "probes": {
+              "warm_hit": [
+                105,
+                60,
+                54
+              ],
+              "cool_hit": [
+                55,
+                90,
+                104
+              ],
+              "miss": [
+                47,
+                47,
+                47
+              ],
+              "rough_guard": [
+                47,
+                47,
+                47
+              ],
+              "warm_target": [
+                188,
+                98,
+                75
+              ],
+              "cool_target": [
+                77,
+                168,
+                188
+              ],
+              "clear": [
+                43,
+                52,
+                65
+              ]
+            }
+          }
+        }
+      },
+      {
+        "adapter": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "gpu": 1,
+        "raw_evidence_sha256": "e01269136eea215059ee24813b3d09f08dd7608c6dc0083028fa2f1168cfe6e9",
+        "native_aot_descriptor_sha256": "91e880f2d35f50ac9a271cb116c27ce7ec3c72f37de18338b2d23fe51b4d51b7",
+        "request_count": 21,
+        "rejections": [
+          "deferred-four",
+          "duplicate-path",
+          "invalid-path",
+          "missing-path"
+        ],
+        "validated_player_processes": 5,
+        "save_bytes": 9922,
+        "save_sha256": "2e6fdde5699b6418525055fe2fe7779496e4e718c145566138a4a9378c38120e",
+        "runs": {
+          "default-forward": {
+            "lighting_path": "forward",
+            "samples": 4,
+            "capture_sha256": "24641e1951520a4f4708308aaae91766c950f6aae0702c71c2a0e0adfdc54462",
+            "report_sha256": "55ac0e0ac01c0b702f662a4c2a3bb6400b4be544d54e380aa4d2c44a7e792f03",
+            "probes": {
+              "warm_hit": [
+                47,
+                47,
+                47
+              ],
+              "cool_hit": [
+                47,
+                47,
+                47
+              ],
+              "miss": [
+                47,
+                47,
+                47
+              ],
+              "rough_guard": [
+                47,
+                47,
+                47
+              ],
+              "warm_target": [
+                188,
+                98,
+                75
+              ],
+              "cool_target": [
+                77,
+                168,
+                188
+              ],
+              "clear": [
+                43,
+                52,
+                65
+              ]
+            }
+          },
+          "explicit-forward": {
+            "lighting_path": "forward",
+            "samples": 4,
+            "capture_sha256": "24641e1951520a4f4708308aaae91766c950f6aae0702c71c2a0e0adfdc54462",
+            "report_sha256": "b3ed6e66cdb3ef388b649912e4ba518741b424c5e0004bb35ad6fe435302493c",
+            "probes": {
+              "warm_hit": [
+                47,
+                47,
+                47
+              ],
+              "cool_hit": [
+                47,
+                47,
+                47
+              ],
+              "miss": [
+                47,
+                47,
+                47
+              ],
+              "rough_guard": [
+                47,
+                47,
+                47
+              ],
+              "warm_target": [
+                188,
+                98,
+                75
+              ],
+              "cool_target": [
+                77,
+                168,
+                188
+              ],
+              "clear": [
+                43,
+                52,
+                65
+              ]
+            }
+          },
+          "default-deferred": {
+            "lighting_path": "deferred",
+            "samples": 1,
+            "capture_sha256": "8771d3327e1fa89bdec3e53b5e3b072e5559940a8e65cf63dd45ec4947aaad73",
+            "report_sha256": "f10fb42ff6800cbdad99ef93f11fdcc47b6bf970767e003eaa1f92a8be800d65",
+            "probes": {
+              "warm_hit": [
+                105,
+                60,
+                54
+              ],
+              "cool_hit": [
+                55,
+                90,
+                104
+              ],
+              "miss": [
+                47,
+                47,
+                47
+              ],
+              "rough_guard": [
+                47,
+                47,
+                47
+              ],
+              "warm_target": [
+                188,
+                98,
+                75
+              ],
+              "cool_target": [
+                77,
+                168,
+                188
+              ],
+              "clear": [
+                43,
+                52,
+                65
+              ]
+            }
+          },
+          "explicit-one": {
+            "lighting_path": "deferred",
+            "samples": 1,
+            "capture_sha256": "8771d3327e1fa89bdec3e53b5e3b072e5559940a8e65cf63dd45ec4947aaad73",
+            "report_sha256": "d23fea38655b6ba8df51ec8c45a5a4172bd49390bd5267527721769ac5cbf793",
+            "probes": {
+              "warm_hit": [
+                105,
+                60,
+                54
+              ],
+              "cool_hit": [
+                55,
+                90,
+                104
+              ],
+              "miss": [
+                47,
+                47,
+                47
+              ],
+              "rough_guard": [
+                47,
+                47,
+                47
+              ],
+              "warm_target": [
+                188,
+                98,
+                75
+              ],
+              "cool_target": [
+                77,
+                168,
+                188
+              ],
+              "clear": [
+                43,
+                52,
+                65
+              ]
+            }
+          },
+          "stored-four-deferred": {
+            "lighting_path": "deferred",
+            "samples": 1,
+            "capture_sha256": "8771d3327e1fa89bdec3e53b5e3b072e5559940a8e65cf63dd45ec4947aaad73",
+            "report_sha256": "e193272964f80a9c42d4870093959018bbd4f2b71bfb7997ffb7194e2e871617",
+            "probes": {
+              "warm_hit": [
+                105,
+                60,
+                54
+              ],
+              "cool_hit": [
+                55,
+                90,
+                104
+              ],
+              "miss": [
+                47,
+                47,
+                47
+              ],
+              "rough_guard": [
+                47,
+                47,
+                47
+              ],
+              "warm_target": [
+                188,
+                98,
+                75
+              ],
+              "cool_target": [
+                77,
+                168,
+                188
+              ],
+              "clear": [
+                43,
+                52,
+                65
+              ]
+            }
+          }
+        }
+      }
+    ]
+  },
+  "ubuntu": {
+    "ctest_count": 7,
+    "command_cases": 7,
+    "sha256": {
+      "poima": "35d79b29bc072ee0495537dd7acd39ef7b4119e96dd261a95e4e9396d04b354e",
+      "schema-before.json": "fd35e448bb60e9decc07eba3759d9fe385793b155a76ffe917b6d5ae02f199c7",
+      "schema-after.json": "dfd35017529ed3f4045e7fecdc2201e237cb661e0434a9cdf630dfd34a6e953a",
+      "cli-cases.json": "fbe61787628a69654487cad9c533d8e1416ae036fd701642ebf14ba71bcdf33a",
+      "result.xml": "fb50e4b872ab0b141cb588aa945995e192ac2094ced9ec5688b52c4d20e3b925"
+    }
+  },
+  "scope": "Windows standalone replay of an exported reflection fixture with one Native AOT save on its first committed tick. Each GPU agrees with its own relocated headless owner's complete save. The schema and CLI admission checks also run on Ubuntu."
+}

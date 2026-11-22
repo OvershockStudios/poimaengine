@@ -252,7 +252,8 @@ The player reads the bundled world and profile without writer sidecars. Runtime 
 | `--default-save-root true\|false` | Windows `game run` opt-in for per-user, per-project storage; direct CLI default is false. The generated Windows launcher supplies true. |
 | `--save-write-mode synchronous\|background` | Gameplay write mode; requires an explicit or enabled default save root. [Storage behavior](GAMEPLAY_SAVES.md#configure-storage). |
 | `--width N`, `--height N` | Each 128–4096; defaults 960×540. |
-| `--samples N` | 1 or 4; default 4 when no preference supplies it. An explicit flag overrides stored/session settings. |
+| `--lighting-path forward\|deferred` | Selects the lighting path for interactive play or replay. Forward is the default. Deferred uses one world sample. [Deferred rendering](DEFERRED_RENDERING.md#select-the-path). |
+| `--samples N` | 1 or 4. Forward uses 4 when no preference supplies a value. An explicit flag overrides stored and session settings. Deferred requires 1 and supplies it when the flag is omitted, even if preferences request 4. |
 | `--frames-in-flight N` | 1 or 2; explicit graphics submission limit, overriding stored/session settings. |
 | `--settings-profile PATH` | Existing portable player profile outside the bundle. |
 | `--settings-revision N` | Require the exact profile revision; needs `--settings-profile`. |

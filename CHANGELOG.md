@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.392
+
+- Select forward or deferred lighting when launching a standalone game or replay.
+
 ## 0.0.391
 
 - Compile staged world edits and Vulkan skinning in their own source modules.

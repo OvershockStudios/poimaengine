@@ -245,9 +245,19 @@ poima::Reply run(int argc, char** argv) {
         poima::GameLaunchOptions options;options.manifest=argv[3];std::set<std::string_view> seen;
         for(int i=4;i<argc;++i) {
             const std::string_view key=argv[i];
-            if(!seen.insert(key).second || (key!="--gpu" && key!="--frames" && key!="--replay" && key!="--capture" && key!="--report" && key!="--save-root" && key!="--save-write-mode" && key!="--width" && key!="--height" && key!="--samples" && key!="--viewmodel-samples" && key!="--frames-in-flight" && key!="--settings-profile" && key!="--settings-revision" && key!="--settings-overrides" && key!="--lens-interpolation" && key!="--pose-interpolation" && key!="--default-save-root"))return poima::usage_error("Unknown or repeated game run argument.");
+            if(!seen.insert(key).second || (key!="--gpu" && key!="--frames" && key!="--replay" &&
+                key!="--capture" && key!="--report" && key!="--save-root" && key!="--save-write-mode" &&
+                key!="--width" && key!="--height" && key!="--samples" && key!="--lighting-path" &&
+                key!="--viewmodel-samples" && key!="--frames-in-flight" && key!="--settings-profile" &&
+                key!="--settings-revision" && key!="--settings-overrides" && key!="--lens-interpolation" &&
+                key!="--pose-interpolation" && key!="--default-save-root"))
+                return poima::usage_error("Unknown or repeated game run argument.");
             if(++i>=argc)return poima::usage_error("Missing game run argument value.");
             const std::string_view value=argv[i];
+            if(key=="--lighting-path") {
+                if(value!="forward" && value!="deferred")return poima::usage_error("Lighting path must be forward or deferred.");
+                options.render.deferred=value=="deferred";continue;
+            }
             if(key=="--default-save-root") {
                 if(value!="true" && value!="false")return poima::usage_error("Default save root expects true or false.");
                 options.default_save_root=value=="true";continue;
@@ -286,6 +296,8 @@ poima::Reply run(int argc, char** argv) {
         if(!options.replay.empty() && options.lens_interpolation)return poima::usage_error("Lens interpolation is interactive only.");
         if(!options.replay.empty() && options.pose_interpolation)return poima::usage_error("Pose interpolation is interactive only.");
         if(!options.replay.empty() && options.max_frames)return poima::usage_error("Replay and interactive frame limit cannot be combined.");
+        if(options.render.deferred && options.samples_explicit && options.render.samples!=1)
+            return poima::usage_error("Deferred lighting requires --samples 1.");
         return poima::run_game(options);
     }
     if(command=="serve" || command=="world") {

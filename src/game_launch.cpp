@@ -439,6 +439,8 @@ Reply run_game(const GameLaunchOptions& options) {
         require(options.replay.empty() || !options.lens_interpolation,"Lens interpolation is interactive only.");
         require(options.replay.empty() || !options.pose_interpolation,"Pose interpolation is interactive only.");
         validate_save_launch(options.save_root,options.save_write_mode,options.default_save_root);
+        require(!options.render.deferred || !options.samples_explicit || options.render.samples==1,
+            "Deferred lighting requires samples=1.");
         const auto game=load_game(options.manifest);
         validate_game_host(game);
         const auto* expected=std::getenv("POIMA_VERIFIED_PLAY_SHA256");
@@ -469,7 +471,12 @@ Reply run_game(const GameLaunchOptions& options) {
         if(options.lens_interpolation)params["lens_interpolation"]=true;
         if(options.pose_interpolation)params["pose_interpolation"]=true;
         const bool has_settings=!options.settings_profile.empty() || !options.settings_overrides.empty() || options.settings_revision.has_value();
-        if(has_settings && !options.samples_explicit)params.erase("samples");
+        if(options.render.deferred) {
+            params["lighting_path"]="deferred";
+            // Use the existing explicit-option precedence so inherited
+            // graphics preferences cannot make this launch incompatible.
+            params["samples"]=1;
+        } else if(has_settings && !options.samples_explicit)params.erase("samples");
         if(options.frames_in_flight_explicit)params["frames_in_flight"]=options.render.frames_in_flight;
         if(!options.settings_profile.empty())params["settings_profile"]=text_of(fs::absolute(path_of(options.settings_profile)).lexically_normal());
         if(options.settings_revision)params["settings_revision"]=*options.settings_revision;
