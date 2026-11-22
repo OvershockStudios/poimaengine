@@ -217,7 +217,7 @@ void particle_sprite_contracts() {
     bad("sprite instance buffer missing",[](auto& p){p.frame.sprite_instances=none;});
     bad("sprite resources retained when disabled",[](auto& p){p.settings.particle_sprites=false;});
     bad("sprite draws without a scene",[](auto& p){p.settings.scene=false;});
-    bad("sprite draws with reconstruction",[](auto& p){p.settings.reconstruction=true;});
+    bad("reconstructed sprites without required targets",[](auto& p){p.settings.reconstruction=true;});
     bad("sprite depth extent differs from HDR",[](auto& p){++p.frame.resources[p.frame.depth].width;});
     bad("sprite depth format is not D32",[](auto& p){p.frame.resources[p.frame.depth].format=Format::r32_float;});
     bad("sprite depth cannot be sampled",[](auto& p){p.frame.resources[p.frame.depth].supported&=~use_bit(Use::sampled);});
@@ -1361,6 +1361,117 @@ void composed_reconstruction_contracts() {
           "Opaque reconstruction must bypass composition-mask inputs");
 }
 
+void setup_reconstructed_sprites(Fixture& fixture,bool upscale) {
+    setup_particle_sprites(fixture);
+    setup_composed_reconstruction(fixture,upscale);
+    if(!fixture.settings.screen_reflections && !fixture.settings.height_fog)fixture.f.composition_mask=none;
+    auto& f=fixture.f;
+    const auto image=[&](Format format,Use initialize) {
+        const auto id=fixture.add(Kind::texture,Lifetime::shared);
+        auto& r=f.resources[id];
+        r.format=format;
+        r.width=f.resources[f.hdr].width;
+        r.height=f.resources[f.hdr].height;
+        r.supported=use_bit(Use::sampled)|use_bit(Use::color)|use_bit(initialize);
+        return id;
+    };
+    f.sprite_hdr=image(Format::rgba16_float,Use::copy_destination);
+    f.sprite_coverage=image(Format::r8_unorm,Use::clear_color);
+}
+
+void reconstructed_sprite_contracts() {
+    for(unsigned path:{0u,1u,2u,3u,4u})for(bool upscale:{false,true})for(bool foreground:{false,true}) {
+        auto settings=rich();
+        settings.products=settings.reconstruction=true;
+        settings.deferred=path==1 || path==3 || path==4;
+        settings.screen_reflections=path>=3;
+        settings.height_fog=path==2 || path==4;
+        settings.ambient_occlusion=settings.deferred && foreground;
+        settings.height_fog_spots=settings.height_fog && foreground;
+        settings.editor=foreground;
+        Fixture fixture(settings);
+        setup_reconstructed_sprites(fixture,upscale);
+        if(foreground) {
+            setup_foreground(fixture);
+            setup_post_effect(fixture);
+            setup_bloom(fixture);
+        }
+        world_hdr_probes(fixture);
+        auto plan=fixture.plan();plan.validate();++accepted;
+        const auto& f=plan.frame;
+        const auto world=world_radiance(f,plan.settings);
+        const auto& draw=pass(plan,PassId::particle_sprites);
+        check(reconstruction_radiance(f,plan.settings)==f.sprite_hdr &&
+              draw.accesses.size()==7+f.sprite_textures.size() && draw.accesses.front().resource==world &&
+              draw.accesses.front().use==Use::copy_source && draw.accesses[1].resource==f.sprite_hdr &&
+              draw.accesses[1].use==Use::copy_destination && draw.accesses[1].initialize &&
+              draw.accesses[2].resource==f.sprite_coverage && draw.accesses[2].use==Use::clear_color &&
+              draw.accesses[2].initialize && access(plan,PassId::particle_sprites,f.sprite_hdr,Use::color) &&
+              access(plan,PassId::particle_sprites,f.sprite_coverage,Use::color),
+              "Reconstructed sprite draw must initialize HDR and coverage before blending");
+        check(&draw+1==&pass(plan,PassId::temporal_inputs) &&
+              access(plan,PassId::temporal_inputs,f.sprite_coverage,Use::sampled) &&
+              access(plan,PassId::reconstruction,f.sprite_hdr,Use::sampled) &&
+              !access(plan,PassId::reconstruction,world,Use::sampled),
+              "Sprite coverage and HDR must reach the corresponding temporal passes");
+        check(access(plan,PassId::temporal_inputs,world,Use::sampled)==(settings.screen_reflections || settings.height_fog) &&
+              !access(plan,PassId::temporal_inputs,f.sprite_hdr,Use::sampled) &&
+              !access(plan,PassId::reconstruction,f.sprite_coverage,Use::sampled),
+              "World effects use pre-sprite HDR for the composition mask");
+        check(f.probe_copies[4].source==f.hdr && f.probe_copies[5].source==f.reconstructed &&
+              access(plan,PassId::product_probes,f.hdr,Use::copy_source) &&
+              access(plan,PassId::product_probes,f.reconstructed,Use::copy_source),
+              "Sprite reconstruction must retain opaque raw and final reconstructed probes");
+    }
+
+    auto settings=rich();
+    settings.products=settings.reconstruction=settings.deferred=settings.screen_reflections=settings.height_fog=true;
+    Fixture fixture(settings);
+    setup_reconstructed_sprites(fixture,true);
+    setup_foreground(fixture);
+    world_hdr_probes(fixture);
+    const auto valid=fixture.plan();valid.validate();++accepted;
+    const auto& f=valid.frame;
+    auto bad=[&](const char* label,const auto& edit){auto plan=valid;edit(plan);rejects(label,[&]{plan.validate();});};
+    for(auto role:{&FrameResources::sprite_hdr,&FrameResources::sprite_coverage}) {
+        bad("missing reconstructed sprite target",[&](auto& p){p.frame.*role=none;});
+        for(auto alias:{f.hdr,f.reflected_hdr,f.fogged_hdr,f.reconstructed,f.motion_valid,f.reactive,f.composition_mask,f.output,f.depth})
+            bad("reconstructed sprite target aliases another role",[&](auto& p){p.frame.*role=alias;});
+        const auto id=f.*role;
+        const auto bad_image=[&](const char* label,const auto& edit){bad(label,[&](auto& p){edit(p.frame.resources[id]);});};
+        bad_image("sprite target uses output width",[&](auto& r){r.width=f.resources[f.reconstructed].width;});
+        bad_image("sprite target height differs",[](auto& r){++r.height;});
+        bad_image("sprite target has wrong format",[](auto& r){r.format=Format::r16_float;});
+        bad_image("sprite target multisampled",[](auto& r){r.samples=4;});
+        bad_image("sprite target layered",[](auto& r){r.layers=2;});
+        bad_image("sprite target partial region",[](auto& r){r.region=Region::prefix;});
+        bad_image("sprite target initialized from a previous frame",[](auto& r){r.initialized=true;});
+        bad_image("sprite target needs a late binding",[](auto& r){r.late_bound=true;});
+        bad_image("sprite target is slot-owned",[](auto& r){r.lifetime=Lifetime::slot;});
+        bad_image("sprite target duplicates physical identity",[&](auto& r){r.identity=f.resources[f.fogged_hdr].identity;});
+        for(auto use:{Use::sampled,Use::color,id==f.sprite_hdr ? Use::copy_destination : Use::clear_color})
+            bad_image("sprite target missing required access support",[&](auto& r){r.supported&=~use_bit(use);});
+    }
+    bad("sprite targets alias each other",[](auto& p){p.frame.sprite_coverage=p.frame.sprite_hdr;});
+    bad("sprite targets without reconstructed draws",[](auto& p){p.settings.reconstruction=false;});
+    bad("reconstructed sprite copy source bypasses fog",[&](auto& p){pass(p,PassId::particle_sprites).accesses[0].resource=f.reflected_hdr;});
+    bad("reconstructed sprite copy source lacks transfer support",[&](auto& p){p.frame.resources[f.fogged_hdr].supported&=~use_bit(Use::copy_source);});
+    bad("reconstructed sprite HDR copy follows drawing",[](auto& p){auto& a=pass(p,PassId::particle_sprites).accesses;std::swap(a[1],a[3]);});
+    bad("reconstructed sprite coverage clear follows drawing",[](auto& p){auto& a=pass(p,PassId::particle_sprites).accesses;std::swap(a[2],a[4]);});
+    bad("incomplete reconstructed sprite HDR copy",[](auto& p){pass(p,PassId::particle_sprites).accesses[1].initialize=false;});
+    bad("incomplete reconstructed sprite coverage clear",[](auto& p){pass(p,PassId::particle_sprites).accesses[2].initialize=false;});
+    bad("missing reconstructed sprite coverage read",[&](auto& p){erase_access(p,PassId::temporal_inputs,f.sprite_coverage,Use::sampled);});
+    bad("FSR bypasses sprite HDR",[&](auto& p){pass(p,PassId::reconstruction).accesses[0].resource=f.fogged_hdr;});
+    bad("composition mask incorrectly consumes sprite HDR",[&](auto& p){
+        for(auto& a:pass(p,PassId::temporal_inputs).accesses)if(a.resource==f.fogged_hdr)a.resource=f.sprite_hdr;
+    });
+    bad("display samples sprite coverage",[&](auto& p){pass(p,PassId::output).accesses.push_back({f.sprite_coverage,Use::sampled});});
+    bad("foreground samples sprite HDR",[&](auto& p){pass(p,PassId::viewmodel_composite).accesses.front().resource=f.sprite_hdr;});
+    bad("sprite draw followed temporal coverage preparation",[](auto& p){std::swap(pass(p,PassId::particle_sprites),pass(p,PassId::temporal_inputs));});
+    bad("opaque raw HDR probe uses blended sprites",[&](auto& p){p.frame.probe_copies[4].source=f.sprite_hdr;});
+    bad("resolved HDR probe uses compact sprite HDR",[&](auto& p){p.frame.probe_copies[5].source=f.sprite_hdr;});
+}
+
 void setup_spatial_aa(Fixture& fixture) {
     fixture.settings.spatial_aa=true;
     auto& f=fixture.f;
@@ -1464,4 +1575,4 @@ void spatial_aa_contracts() {
 }
 }
 
-int main(){try{matrix();faults();products();motion_contracts();reconstruction_contracts();deferred_contracts();deferred_color_contracts();viewmodel_contracts();ambient_occlusion_contracts();masked_shadow_contracts();environment_contracts();bloom_contracts();post_effect_contracts();output_grade_contracts();streamed_geometry_contracts();mutable_geometry_contracts();particle_sprite_contracts();surface_mark_contracts();screen_reflection_contracts();height_fog_contracts();composed_reconstruction_contracts();spatial_aa_contracts();std::cout<<"Production render schedule: "<<accepted<<" valid variants, "<<rejected<<" rejected contract mutations.\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}
+int main(){try{matrix();faults();products();motion_contracts();reconstruction_contracts();deferred_contracts();deferred_color_contracts();viewmodel_contracts();ambient_occlusion_contracts();masked_shadow_contracts();environment_contracts();bloom_contracts();post_effect_contracts();output_grade_contracts();streamed_geometry_contracts();mutable_geometry_contracts();particle_sprite_contracts();surface_mark_contracts();screen_reflection_contracts();height_fog_contracts();composed_reconstruction_contracts();reconstructed_sprite_contracts();spatial_aa_contracts();std::cout<<"Production render schedule: "<<accepted<<" valid variants, "<<rejected<<" rejected contract mutations.\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}

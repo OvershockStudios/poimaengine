@@ -7,8 +7,7 @@
             require(layer.instances.empty(),"Particle sprites require frozen styles.");
             return;
         }
-        require(samples==1 && reconstruction_mode==ReconstructionMode::none,
-            "Textured particle sprites require one world sample and reconstruction disabled.");
+        require(samples==1,"Textured particle sprites require one world sample.");
         const auto near_plane=static_cast<float>(scene->near_plane),far_plane=static_cast<float>(scene->far_plane);
         require(rigid_transform(scene->camera_world) && std::isfinite(near_plane) && std::isfinite(far_plane) &&
             near_plane>0 && far_plane>near_plane,"Particle sprites require a rigid camera with finite float lens planes.");
@@ -35,19 +34,31 @@
         }
     }
     void prepare_sprite_pipeline() {
-        auto* color=world_radiance_texture();
-        if(!sprite_framebuffer || sprite_framebuffer->getDesc().colorAttachments[0].texture!=color) {
-            sprite_framebuffer=checked->createFramebuffer(nvrhi::FramebufferDesc().addColorAttachment(color));
+        const bool temporal=temporal_sprites_active();
+        auto* color=sprite_target();
+        if(!sprite_framebuffer || sprite_framebuffer->getDesc().colorAttachments.size()!=(temporal ? 2u : 1u) ||
+            sprite_framebuffer->getDesc().colorAttachments[0].texture!=color ||
+            (temporal && sprite_framebuffer->getDesc().colorAttachments[1].texture!=sprite_targets.coverage())) {
+            auto description=nvrhi::FramebufferDesc().addColorAttachment(color);
+            if(temporal)description.addColorAttachment(sprite_targets.coverage());
+            sprite_framebuffer=checked->createFramebuffer(description);
             require(bool(sprite_framebuffer),"Particle sprite framebuffer creation failed.");
         }
-        if(sprite_pipeline)return;
-        auto vs=create_embedded_shader(checked,nvrhi::ShaderDesc(nvrhi::ShaderType::Vertex).setEntryName("vertex_main"),poima_particle_sprite_vs);
-        auto ps=create_embedded_shader(checked,nvrhi::ShaderDesc(nvrhi::ShaderType::Pixel).setEntryName("pixel_main"),poima_particle_sprite_ps);
-        sprite_layout=checked->createBindingLayout(nvrhi::BindingLayoutDesc().setVisibility(nvrhi::ShaderType::All)
-            .addItem(nvrhi::BindingLayoutItem::PushConstants(0,sizeof(SpriteConstants)))
-            .addItem(nvrhi::BindingLayoutItem::StructuredBuffer_SRV(0))
-            .addItem(nvrhi::BindingLayoutItem::Texture_SRV(1))
-            .addItem(nvrhi::BindingLayoutItem::Texture_SRV(2)));
+        auto& pipeline=sprite_pipelines[temporal];
+        if(pipeline)return;
+        auto vs_desc=nvrhi::ShaderDesc(nvrhi::ShaderType::Vertex).setEntryName("vertex_main");
+        auto ps_desc=nvrhi::ShaderDesc(nvrhi::ShaderType::Pixel).setEntryName("pixel_main");
+        auto vs=temporal ? create_embedded_shader(checked,vs_desc,poima_particle_sprite_temporal_vs) :
+            create_embedded_shader(checked,vs_desc,poima_particle_sprite_vs);
+        auto ps=temporal ? create_embedded_shader(checked,ps_desc,poima_particle_sprite_temporal_ps) :
+            create_embedded_shader(checked,ps_desc,poima_particle_sprite_ps);
+        if(!sprite_layout) {
+            sprite_layout=checked->createBindingLayout(nvrhi::BindingLayoutDesc().setVisibility(nvrhi::ShaderType::All)
+                .addItem(nvrhi::BindingLayoutItem::PushConstants(0,sizeof(SpriteConstants)))
+                .addItem(nvrhi::BindingLayoutItem::StructuredBuffer_SRV(0))
+                .addItem(nvrhi::BindingLayoutItem::Texture_SRV(1))
+                .addItem(nvrhi::BindingLayoutItem::Texture_SRV(2)));
+        }
         require(vs && ps && sprite_layout,"Particle sprite shader or layout creation failed.");
         nvrhi::GraphicsPipelineDesc description;
         description.VS=vs;
@@ -62,8 +73,9 @@
         blend.destBlend=nvrhi::BlendFactor::InvSrcAlpha;
         blend.srcBlendAlpha=nvrhi::BlendFactor::Zero;
         blend.destBlendAlpha=nvrhi::BlendFactor::One;
-        sprite_pipeline=checked->createGraphicsPipeline(description,sprite_framebuffer->getFramebufferInfo());
-        require(bool(sprite_pipeline),"Particle sprite pipeline creation failed.");
+        if(temporal)description.renderState.blendState.targets[1]=blend;
+        pipeline=checked->createGraphicsPipeline(description,sprite_framebuffer->getFramebufferInfo());
+        require(bool(pipeline),"Particle sprite pipeline creation failed.");
     }
     void prepare_sprite_frame(FrameSlot& slot) {
         require(!slot.occupied,"Particle sprites require a retired frame slot.");
@@ -122,6 +134,19 @@
             sprite_instances.push_back({{static_cast<float>(sprite.position_m[0]),static_cast<float>(sprite.position_m[1]),
                 static_cast<float>(sprite.position_m[2]),sprite.size_m},sprite.linear_rgba,{style.depth_fade_m,0,0,0},rect});
         }
+        if(temporal_sprites_active()) {
+            auto* world=world_radiance_texture();
+            if(!sprite_targets.hdr()) {
+                const auto required=vk::FormatFeatureFlagBits::eColorAttachment|
+                    vk::FormatFeatureFlagBits::eColorAttachmentBlend|
+                    vk::FormatFeatureFlagBits::eSampledImage|vk::FormatFeatureFlagBits::eTransferDst;
+                const auto features=physical.getFormatProperties(vk::Format::eR8Unorm,dispatch).optimalTilingFeatures;
+                require((features&required)==required,"Selected Vulkan device cannot blend temporal particle coverage.");
+                require_reconstruction_composition_budget(world_composition_mask_bytes(),
+                    render_sprite_targets::Targets::bytes_per_pixel*reconstruction_pixels());
+            }
+            sprite_targets.prepare(*checked.Get(),world);
+        }
         prepare_sprite_pipeline();
         const auto size=sprite_instances.size()*sizeof(SpriteInstance);
         if(!slot.sprite_instances || slot.sprite_instances->getDesc().byteSize<size) {
@@ -157,8 +182,10 @@
         profiling::counter("renderer.sprite_batches",pending_draws.sprite_batches);
     }
     void render_particle_sprites(const FrameSlot& slot) {
+        const bool temporal=temporal_sprites_active();
+        if(temporal)sprite_targets.record_inputs(*commands.Get(),world_radiance_texture());
         nvrhi::GraphicsState state;
-        state.pipeline=sprite_pipeline;
+        state.pipeline=sprite_pipelines[temporal];
         state.framebuffer=sprite_framebuffer;
         state.viewport.addViewportAndScissorRect(raster_viewport());
         state.bindings.resize(1);
@@ -170,6 +197,10 @@
         }
         constants.right_and_near[3]=static_cast<float>(scene->near_plane);
         constants.up_and_far[3]=static_cast<float>(scene->far_plane);
+        if(temporal) {
+            constants.first_and_reserved[1]=std::bit_cast<std::uint32_t>(2.f*frame_constants.temporal_jitter[0]/frame_constants.cluster_viewport[2]);
+            constants.first_and_reserved[2]=std::bit_cast<std::uint32_t>(-2.f*frame_constants.temporal_jitter[1]/frame_constants.cluster_viewport[3]);
+        }
         for(const auto& batch:sprite_batches) {
             state.bindings[0]=slot.sprite_bindings[batch.texture].bindings;
             constants.first_and_reserved[0]=batch.first;

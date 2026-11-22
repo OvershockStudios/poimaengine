@@ -3,10 +3,13 @@
 
 #include "poima/render_schedule.hpp"
 #include "poima/temporal_composed_inputs_cs.hpp"
+#include "poima/temporal_composed_sprite_inputs_cs.hpp"
 #include "poima/temporal_inputs_cs.hpp"
+#include "poima/temporal_sprite_inputs_cs.hpp"
 #include "render_embedded_shader.hpp"
 
 #include <algorithm>
+#include <cstddef>
 #include <cstdint>
 #include <stdexcept>
 #include <utility>
@@ -26,6 +29,10 @@ bool scene_image(nvrhi::ITexture* texture, const nvrhi::TextureDesc& raster, nvr
         desc.sampleCount == 1 && desc.mipLevels == 1 && desc.isShaderResource;
 }
 
+std::size_t pipeline_index(bool composed, bool sprites) noexcept {
+    return (composed ? 1u : 0u) + (sprites ? 2u : 0u);
+}
+
 nvrhi::BindingSetDesc binding_desc(const Inputs& inputs, nvrhi::ITexture* composition_mask) {
     auto desc = nvrhi::BindingSetDesc()
         .addItem(nvrhi::BindingSetItem::ConstantBuffer(1, inputs.frame))
@@ -35,6 +42,9 @@ nvrhi::BindingSetDesc binding_desc(const Inputs& inputs, nvrhi::ITexture* compos
     if (composition_mask) {
         desc.addItem(nvrhi::BindingSetItem::Texture_SRV(3, inputs.raw_hdr))
             .addItem(nvrhi::BindingSetItem::Texture_SRV(4, inputs.composed_hdr));
+    }
+    if (inputs.sprite_coverage) {
+        desc.addItem(nvrhi::BindingSetItem::Texture_SRV(5, inputs.sprite_coverage));
     }
     desc.addItem(nvrhi::BindingSetItem::Texture_UAV(0, inputs.dense_motion))
         .addItem(nvrhi::BindingSetItem::Texture_UAV(1, inputs.reactive));
@@ -48,6 +58,7 @@ void Pass::prepare(nvrhi::IDevice& device, const Inputs& inputs) {
     if (bindings_ && inputs_ == inputs) return;
 
     const bool composed = inputs.composed_hdr != nullptr;
+    const bool sprites = inputs.sprite_coverage != nullptr;
     require(composed == (inputs.raw_hdr != nullptr) && (!composed || inputs.raw_hdr != inputs.composed_hdr),
         "Temporal composition requires distinct raw and composed HDR inputs.");
     require(inputs.frame && inputs.dense_motion, "Temporal input preparation requires frame and dense motion resources.");
@@ -59,6 +70,11 @@ void Pass::prepare(nvrhi::IDevice& device, const Inputs& inputs) {
             scene_image(inputs.correspondence, raster, nvrhi::Format::R8_UNORM) &&
             scene_image(inputs.reactive, raster, nvrhi::Format::R8_UNORM) && inputs.reactive->getDesc().isUAV,
         "Temporal preparation images must use matching render dimensions and formats.");
+    if (sprites) {
+        require(scene_image(inputs.sprite_coverage, raster, nvrhi::Format::R8_UNORM) &&
+                inputs.sprite_coverage != inputs.correspondence && inputs.sprite_coverage != inputs.reactive,
+            "Temporal sprite coverage must be a distinct R8 input at the render extent.");
+    }
 
     nvrhi::TextureHandle mask;
     if (composed) {
@@ -81,11 +97,16 @@ void Pass::prepare(nvrhi::IDevice& device, const Inputs& inputs) {
         }
     }
 
-    auto& pipeline = pipelines_[composed];
+    auto& pipeline = pipelines_[pipeline_index(composed, sprites)];
     if (!pipeline.pipeline) {
         const auto shader_desc = nvrhi::ShaderDesc(nvrhi::ShaderType::Compute).setEntryName("compute_main");
-        pipeline.shader = composed ? create_embedded_shader(&device, shader_desc, poima_temporal_composed_inputs_cs)
-                                   : create_embedded_shader(&device, shader_desc, poima_temporal_inputs_cs);
+        if (composed) {
+            pipeline.shader = sprites ? create_embedded_shader(&device, shader_desc, poima_temporal_composed_sprite_inputs_cs)
+                                      : create_embedded_shader(&device, shader_desc, poima_temporal_composed_inputs_cs);
+        } else {
+            pipeline.shader = sprites ? create_embedded_shader(&device, shader_desc, poima_temporal_sprite_inputs_cs)
+                                      : create_embedded_shader(&device, shader_desc, poima_temporal_inputs_cs);
+        }
         auto layout = nvrhi::BindingLayoutDesc().setVisibility(nvrhi::ShaderType::Compute)
             .addItem(nvrhi::BindingLayoutItem::ConstantBuffer(1))
             .addItem(nvrhi::BindingLayoutItem::Texture_SRV(0))
@@ -95,6 +116,7 @@ void Pass::prepare(nvrhi::IDevice& device, const Inputs& inputs) {
             layout.addItem(nvrhi::BindingLayoutItem::Texture_SRV(3))
                 .addItem(nvrhi::BindingLayoutItem::Texture_SRV(4));
         }
+        if (sprites) layout.addItem(nvrhi::BindingLayoutItem::Texture_SRV(5));
         layout.addItem(nvrhi::BindingLayoutItem::Texture_UAV(0))
             .addItem(nvrhi::BindingLayoutItem::Texture_UAV(1));
         if (composed) layout.addItem(nvrhi::BindingLayoutItem::Texture_UAV(2));
@@ -115,7 +137,7 @@ void Pass::prepare(nvrhi::IDevice& device, const Inputs& inputs) {
 void Pass::record(nvrhi::ICommandList& commands) const {
     require(bool(bindings_), "Temporal input preparation has no bound resources.");
     nvrhi::ComputeState state;
-    state.pipeline = pipelines_[bool(composition_mask_)].pipeline;
+    state.pipeline = pipelines_[pipeline_index(bool(composition_mask_), inputs_.sprite_coverage != nullptr)].pipeline;
     state.bindings.push_back(bindings_);
     commands.setComputeState(state);
     const auto& raster = inputs_.dense_motion->getDesc();
@@ -126,9 +148,12 @@ void Pass::verify_bindings(const render_schedule::Schedule& schedule) const {
     const auto& frame = schedule.frame;
     const auto& settings = schedule.settings;
     const bool composed = settings.screen_reflections || settings.height_fog;
+    const bool sprites = settings.particle_sprites;
     require(settings.reconstruction && bindings_ && bool(composition_mask_) == composed &&
             (frame.composition_mask != render_schedule::none) == composed,
         "Temporal input composition differs from its schedule.");
+    require((frame.sprite_coverage != render_schedule::none) == sprites,
+        "Temporal sprite coverage differs from its schedule.");
     const auto texture = [&](render_schedule::ResourceId id) {
         return reinterpret_cast<nvrhi::ITexture*>(schedule.resource(id).identity);
     };
@@ -136,7 +161,8 @@ void Pass::verify_bindings(const render_schedule::Schedule& schedule) const {
         reinterpret_cast<nvrhi::IBuffer*>(schedule.resource(frame.frame).identity),
         texture(frame.normal), texture(frame.motion), texture(frame.motion_valid),
         texture(frame.dense_motion), texture(frame.reactive), composed ? texture(frame.hdr) : nullptr,
-        composed ? texture(render_schedule::world_radiance(frame, settings)) : nullptr};
+        composed ? texture(render_schedule::world_radiance(frame, settings)) : nullptr,
+        sprites ? texture(frame.sprite_coverage) : nullptr};
     auto* scheduled_mask = composed ? texture(frame.composition_mask) : nullptr;
     require(expected_inputs == inputs_ && scheduled_mask == composition_mask_.Get(),
         "Temporal input resources differ from their scheduled identities.");

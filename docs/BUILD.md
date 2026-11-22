@@ -220,6 +220,9 @@ output framebuffer, validates schedule identities and retires live resources.
 `src/render_temporal_inputs.cpp` prepares the Vulkan motion and reactivity
 inputs and the optional world composition mask. The context retires affected
 frames when replacing input resources and dispatches the SDK after that pass.
+`src/render_sprite_targets.cpp` owns the HDR copy and opacity target used by
+textured sprites with FSR. Sprite drawing writes both targets before temporal
+input preparation.
 `src/render_environment_ibl.cpp` owns the procedural sky lighting bake
 and its texture bindings. `src/render_schedule.cpp` constructs and validates
 the frame schedule. The native player-window fixture checks

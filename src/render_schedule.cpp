@@ -2,6 +2,7 @@
 #include "poima/render_schedule.hpp"
 
 #include <algorithm>
+#include <array>
 #include <map>
 #include <unordered_set>
 #include <utility>
@@ -14,6 +15,7 @@ void Schedule::validate(bool before_acquire) const {
     const auto display_target=display_output_target(frame,settings);
     const auto world_hdr=world_radiance(frame,settings);
     const bool reconstruct_composed=settings.reconstruction && (settings.screen_reflections || settings.height_fog);
+    const bool reconstruct_sprites=settings.reconstruction && settings.particle_sprites;
     const bool stream=frame.streamed_vertices!=none || frame.streamed_indices!=none;
     if(stream) {
         if(!settings.scene || frame.streamed_vertices==frame.streamed_indices)fail("invalid streamed geometry roles");
@@ -209,13 +211,12 @@ void Schedule::validate(bool before_acquire) const {
             if(frame.composition_mask==id)fail(alias_error);
     } else if(frame.composition_mask!=none)fail("composition mask without reconstructed world effects");
     if(settings.particle_sprites) {
-        if(!settings.scene || settings.reconstruction || frame.color!=frame.hdr)
-            fail("particle sprites require a single-sample scene without reconstruction");
-        const auto sprite_target=world_radiance(frame,settings);
-        const auto& hdr=resource(sprite_target);
+        if(!settings.scene || frame.color!=frame.hdr)
+            fail("particle sprites require a single-sample scene");
+        const auto& hdr=resource(world_hdr);
         const auto& depth=resource(frame.depth);
         if(hdr.kind!=Kind::texture || hdr.format!=Format::rgba16_float || hdr.samples!=1 ||
-            hdr.lifetime!=Lifetime::shared || hdr.region!=Region::whole || hdr.initialized || sprite_target==frame.output ||
+            hdr.lifetime!=Lifetime::shared || hdr.region!=Region::whole || hdr.initialized || world_hdr==frame.output ||
             depth.kind!=Kind::texture || depth.format!=Format::depth32 || depth.samples!=1 ||
             depth.lifetime!=Lifetime::shared || depth.region!=Region::whole || depth.initialized || frame.depth==frame.shadow ||
             depth.width!=hdr.width || depth.height!=hdr.height)
@@ -234,6 +235,23 @@ void Schedule::validate(bool before_acquire) const {
                 fail("invalid or repeated particle sprite texture");
         }
     } else if(frame.sprite_instances!=none || !frame.sprite_textures.empty())fail("particle sprite resources without sprite draws");
+    if(reconstruct_sprites) {
+        const auto& hdr=resource(world_hdr);
+        constexpr Uses color=use_bit(Use::color);
+        constexpr Uses copy=color|use_bit(Use::copy_destination);
+        constexpr Uses clear=color|use_bit(Use::clear_color);
+        if(hdr.layers!=1 || !(hdr.supported&use_bit(Use::copy_source)) ||
+            !scene_image(frame.sprite_hdr,Format::rgba16_float,hdr) ||
+            !scene_image(frame.sprite_coverage,Format::r8_unorm,hdr) ||
+            resource(frame.sprite_hdr).late_bound || resource(frame.sprite_coverage).late_bound ||
+            (resource(frame.sprite_hdr).supported&copy)!=copy || (resource(frame.sprite_coverage).supported&clear)!=clear)
+            fail("invalid reconstructed particle sprite targets");
+        constexpr auto alias_error="reconstructed sprite targets alias another resource role";
+        if(frame.sprite_hdr==frame.sprite_coverage)fail(alias_error);
+        require_distinct_images(frame.sprite_hdr,frame.sprite_coverage,alias_error);
+        for(auto id:{frame.reflection_roughness,frame.reflected_hdr,frame.fogged_hdr,frame.display_ldr,frame.composition_mask})
+            if(id==frame.sprite_hdr || id==frame.sprite_coverage)fail(alias_error);
+    } else if(frame.sprite_hdr!=none || frame.sprite_coverage!=none)fail("sprite reconstruction targets without reconstructed sprite draws");
     if(frame.ibl_diffuse!=none || frame.ibl_specular!=none || frame.ibl_brdf!=none) {
         if(!settings.scene)fail("environment inputs without scene shading");
         const ResourceId inputs[]={frame.ibl_diffuse,frame.ibl_specular,frame.ibl_brdf};
@@ -523,10 +541,20 @@ void Schedule::validate(bool before_acquire) const {
         if(pass.id==PassId::particle_sprites) {
             if(!settings.particle_sprites || !sprites_uploaded || !world_opaque || (settings.deferred && !deferred_lit) ||
                 (settings.screen_reflections && !screen_reflected) || (settings.height_fog && !world_fogged) ||
-                pass.accesses.size()!=3+frame.sprite_textures.size() ||
-                !has(world_radiance(frame,settings),Use::color) ||
+                pass.accesses.size()!=(reconstruct_sprites ? 7u : 3u)+frame.sprite_textures.size() ||
                 !has(frame.depth,Use::sampled) || !has(frame.sprite_instances,Use::storage_read))
                 fail("invalid or premature particle sprite pass");
+            if(reconstruct_sprites) {
+                const std::array prepare{
+                    Access{world_hdr,Use::copy_source,false},
+                    Access{frame.sprite_hdr,Use::copy_destination,true},
+                    Access{frame.sprite_coverage,Use::clear_color,true},
+                    Access{frame.sprite_hdr,Use::color,false},
+                    Access{frame.sprite_coverage,Use::color,false}};
+                if(!std::equal(prepare.begin(),prepare.end(),pass.accesses.begin(),[](const Access& a,const Access& b) {
+                    return a.resource==b.resource && a.use==b.use && a.initialize==b.initialize;
+                }))fail("reconstructed sprite draw requires the HDR copy and coverage clear before blending");
+            } else if(!has(world_hdr,Use::color))fail("missing particle sprite color target");
             for(auto id:frame.sprite_textures)if(!has(id,Use::sampled))fail("missing particle sprite texture input");
             sprites_drawn=true;
         }
@@ -536,20 +564,27 @@ void Schedule::validate(bool before_acquire) const {
             for(const auto id:{frame.normal,frame.motion,frame.motion_valid})if(!has(id,Use::sampled))fail("missing temporal input");
             if(!has(frame.frame,Use::constant) || !has(frame.dense_motion,Use::image_write) || !has(frame.reactive,Use::image_write))fail("missing temporal input outputs");
             if(reconstruct_composed && (!world_opaque || (settings.screen_reflections && !screen_reflected) ||
-                (settings.height_fog && !world_fogged) || pass.accesses.size()!=9 ||
+                (settings.height_fog && !world_fogged) ||
                 !has(frame.hdr,Use::sampled) || !has(world_hdr,Use::sampled) || !has(frame.composition_mask,Use::image_write)))
                 fail("invalid or premature temporal composition mask preparation");
+            if(reconstruct_sprites && (!sprites_drawn || !has(frame.sprite_coverage,Use::sampled)))
+                fail("reconstruction requires the completed sprite coverage");
+            if((reconstruct_composed || reconstruct_sprites) &&
+                pass.accesses.size()!=6u+(reconstruct_composed ? 3u : 0u)+(reconstruct_sprites ? 1u : 0u))
+                fail("invalid temporal input bindings");
             prepared=true;
         }
         if(pass.id==PassId::reconstruction) {
             if(!settings.reconstruction || !prepared)fail("reconstruction precedes input preparation");
-            for(const auto id:{world_hdr,frame.depth,frame.dense_motion,frame.reactive})if(!has(id,Use::sampled))fail("missing reconstruction input");
+            for(const auto id:{reconstruction_radiance(frame,settings),frame.depth,frame.dense_motion,frame.reactive})if(!has(id,Use::sampled))fail("missing reconstruction input");
             for(const auto id:{frame.reconstructed,frame.dilated_depth,frame.dilated_motion,frame.reconstructed_depth})if(!has(id,Use::image_write))fail("missing reconstruction output");
-            if(reconstruct_composed && (pass.accesses.size()!=9 || !has(frame.composition_mask,Use::sampled)))
+            if(reconstruct_composed && !has(frame.composition_mask,Use::sampled))
                 fail("missing or invalid reconstruction composition mask input");
+            if((reconstruct_composed || reconstruct_sprites) && pass.accesses.size()!=(reconstruct_composed ? 9u : 8u))
+                fail("invalid reconstruction bindings");
             reconstructed=true;
         }
-        if(reconstruct_composed && (pass.id==PassId::temporal_inputs || pass.id==PassId::reconstruction))
+        if((reconstruct_composed || reconstruct_sprites) && (pass.id==PassId::temporal_inputs || pass.id==PassId::reconstruction))
             for(const auto& a:pass.accesses)if(a.initialize!=(a.use==Use::image_write))
                 fail("reconstruction composition passes must initialize their complete outputs");
         if(pass.id==PassId::output && settings.ambient_occlusion && settings.products_debug && !has(frame.ao_filtered,Use::sampled))fail("missing ambient occlusion diagnostic input");
@@ -683,6 +718,14 @@ void Schedule::validate(bool before_acquire) const {
             if(sprite_instances && !(pass.id==PassId::sprite_upload && a.use==Use::upload) &&
                 !(pass.id==PassId::particle_sprites && a.use==Use::storage_read))
                 fail("particle sprite instances used outside sprite upload and draw");
+            if(reconstruct_sprites && a.resource==frame.sprite_hdr &&
+                !(pass.id==PassId::particle_sprites && ((a.use==Use::copy_destination && a.initialize) || (a.use==Use::color && !a.initialize))) &&
+                !(pass.id==PassId::reconstruction && a.use==Use::sampled && !a.initialize))
+                fail("sprite HDR used outside sprite draw and reconstruction");
+            if(reconstruct_sprites && a.resource==frame.sprite_coverage &&
+                !(pass.id==PassId::particle_sprites && ((a.use==Use::clear_color && a.initialize) || (a.use==Use::color && !a.initialize))) &&
+                !(pass.id==PassId::temporal_inputs && a.use==Use::sampled && !a.initialize))
+                fail("sprite coverage used outside sprite draw and temporal inputs");
             const bool mark_instances=surface_marks && a.resource==frame.surface_marks;
             if(mark_instances && !(pass.id==PassId::surface_mark_upload && a.use==Use::upload) &&
                 !(pass.id==PassId::opaque && a.use==Use::storage_read))
@@ -696,7 +739,7 @@ void Schedule::validate(bool before_acquire) const {
                 !(pass.id==PassId::screen_reflections && a.use==Use::sampled && !a.initialize))
                 fail("reflection roughness used outside deferred lighting and screen reflections");
             const bool opaque_hdr_consumed=(settings.screen_reflections && pass.id>PassId::screen_reflections) ||
-                (settings.height_fog && pass.id>PassId::height_fog);
+                (settings.height_fog && pass.id>PassId::height_fog) || (reconstruct_sprites && pass.id>PassId::particle_sprites);
             const bool mask_input=reconstruct_composed && pass.id==PassId::temporal_inputs && a.use==Use::sampled && !a.initialize;
             if(a.resource==frame.hdr && opaque_hdr_consumed &&
                 !mask_input &&
@@ -719,8 +762,8 @@ void Schedule::validate(bool before_acquire) const {
                     ((pass.id==PassId::bloom_extract || pass.id==PassId::output) && display_radiance(frame,settings)==a.resource));
                 const bool probe=pass.id==PassId::product_probes && a.use==Use::copy_source && !a.initialize &&
                     frame.probe_copies.size()>=6 && frame.probe_copies[5].source==a.resource;
-                const bool sprites=pass.id==PassId::particle_sprites && a.use==Use::color && !a.initialize;
-                const bool reconstruct_input=reconstruct_composed && pass.id==PassId::reconstruction && a.use==Use::sampled && !a.initialize;
+                const bool sprites=pass.id==PassId::particle_sprites && a.use==(reconstruct_sprites ? Use::copy_source : Use::color) && !a.initialize;
+                const bool reconstruct_input=reconstruct_composed && !reconstruct_sprites && pass.id==PassId::reconstruction && a.use==Use::sampled && !a.initialize;
                 const bool final_world=a.resource==world_hdr && (composed || probe || sprites || mask_input || reconstruct_input);
                 if(!produced && !fog_input && !final_world)fail(reflected ?
                     "reflected radiance used outside its producers and scene color composition" :
@@ -868,7 +911,14 @@ Schedule build(FrameResources frame,Settings settings) {
     }
     if(settings.particle_sprites) {
         auto& sprites=pass(PassId::particle_sprites);
-        add(sprites,world_radiance(f,settings),Use::color);add(sprites,f.depth,Use::sampled);add(sprites,f.sprite_instances,Use::storage_read);
+        if(settings.reconstruction) {
+            add(sprites,world_radiance(f,settings),Use::copy_source);
+            add(sprites,f.sprite_hdr,Use::copy_destination,true);
+            add(sprites,f.sprite_coverage,Use::clear_color,true);
+            add(sprites,f.sprite_hdr,Use::color);
+            add(sprites,f.sprite_coverage,Use::color);
+        } else add(sprites,world_radiance(f,settings),Use::color);
+        add(sprites,f.depth,Use::sampled);add(sprites,f.sprite_instances,Use::storage_read);
         for(auto id:f.sprite_textures)add(sprites,id,Use::sampled);
     }
     if(settings.scene && f.color!=f.hdr) {auto& resolve=pass(PassId::resolve);add(resolve,f.color,Use::resolve_source);add(resolve,f.hdr,Use::resolve_destination,true);}
@@ -882,8 +932,9 @@ Schedule build(FrameResources frame,Settings settings) {
             add(inputs,f.hdr,Use::sampled);add(inputs,source,Use::sampled);
             add(inputs,f.composition_mask,Use::image_write,true);
         }
+        if(settings.particle_sprites)add(inputs,f.sprite_coverage,Use::sampled);
         auto& reconstruct=pass(PassId::reconstruction);
-        for(auto id:{source,f.depth,f.dense_motion,f.reactive})add(reconstruct,id,Use::sampled);
+        for(auto id:{reconstruction_radiance(f,settings),f.depth,f.dense_motion,f.reactive})add(reconstruct,id,Use::sampled);
         if(composed)add(reconstruct,f.composition_mask,Use::sampled);
         for(auto id:{f.reconstructed,f.dilated_depth,f.dilated_motion,f.reconstructed_depth})add(reconstruct,id,Use::image_write,true);
     }

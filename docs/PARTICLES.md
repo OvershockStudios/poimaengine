@@ -144,11 +144,13 @@ transparent texel from bleeding into its neighbors.
 
 The translucent pass sorts instances from far to near across emitters.
 Persistent particle IDs break ties at the same view depth. It blends into
-scene HDR after opaque shading and before independent foreground, post
-effects, bloom, tone mapping, and UI. Depth, normal, and motion observations
-continue to describe the opaque geometry underneath.
+scene HDR after opaque shading, fog and reflections and before FSR,
+independent foreground, post effects, bloom, tone mapping and UI. Depth,
+normal and motion observations continue to describe the opaque geometry
+underneath. With FSR active, the [temporal sprite path](RECONSTRUCTION.md#textured-world-sprites)
+uses visible particle coverage to protect the current frame's sprite color.
 
-Use one world sample with reconstruction disabled. The exported runtime must
+Use one world sample. The exported runtime must
 advertise `features.scene_particle_sprites`. Cooked images belong to the
 frozen world and are prepared even before an emitter's first burst. Up to 16
 distinct sprite images may be referenced by the world and its templates. Each

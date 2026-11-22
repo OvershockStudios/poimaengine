@@ -138,6 +138,8 @@ Json render_diagnostics(const RenderDiagnostics& d) {
             {"skinning",timing(d.skinning_gpu)},{"light_assignment",timing(d.light_assignment_gpu)},{"shadows",timing(d.shadow_gpu)},{"opaque",timing(d.opaque_gpu)},{"post",timing(d.post_gpu)},{"total",timing(d.total_gpu)}}}};
     if(reconstruction.composition_mask_bytes)
         result["reconstruction"]["composition_mask_bytes"]=reconstruction.composition_mask_bytes;
+    if(reconstruction.active && d.last_draws.sprite_instances)
+        result["reconstruction"]["sprite_radiance_bytes"]=std::uint64_t(reconstruction.render_width)*reconstruction.render_height*9;
     if(d.fxaa_buffer_bytes)
         result["post_aa"]={{"mode","fxaa"},{"active",true},{"buffer_bytes",d.fxaa_buffer_bytes}};
     if(d.shadow_filter==ShadowFilter::pcss_directional)

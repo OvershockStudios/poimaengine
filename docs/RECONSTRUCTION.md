@@ -109,9 +109,8 @@ Toggling an active reflection or fog pass resets the affected view's history.
 When no other reset also applies, diagnostics report
 `reset_reason: "world_composition_changed"`. Active composition reports
 `composition_mask_bytes` within the existing reconstruction byte total.
-The world-effects textures keep their separate per-pass byte counts. Textured
-particle sprites require the native-resolution path with reconstruction disabled.
-The regular reflection and fog restrictions still apply to world-depth
+The world-effects textures keep their separate per-pass byte counts. The regular
+reflection and fog restrictions still apply to world-depth
 foreground and diagnostic views.
 
 Use the Windows reconstruction test target to verify composition through the
@@ -128,8 +127,39 @@ matching `--runtime-root`, [item contact Native AOT fixture](../tests/fixtures/i
 `--artifact`, fresh `--output` and `--gpu`. Add `--windows-interop` from WSL.
 It checks reflection and fog independently and together, compares native and
 Quality captures, then plays relocated exports and compares saved progress
-with the independent headless run. The legacy reflection and fog scripts'
+with the independent headless run. The `--legacy-sprite-refusal` flag selects
+the original 0.0.395 particle compatibility check. The legacy reflection and fog scripts'
 `--fsr` fallback checks target builds through 0.0.394.
+
+## Textured world sprites
+
+When a frame draws textured sprites, Poima copies the pre-sprite HDR image
+to a separate render-resolution target. Sprites blend into that copy and
+accumulate visible opacity in a cleared R8 image with the same projection
+jitter as opaque depth. Occluded and fully transparent texels contribute
+zero. Overlapping sprites accumulate coverage as `a + (1 - a) * previous`.
+
+FSR reads the sprite HDR image. The temporal input pass combines covered
+opacity, capped at 0.9, with the existing reactive signal. The separate
+fog and reflection mask still compares opaque HDR with pre-sprite world HDR.
+Sprite animation, emission and expiry leave the existing view history policy
+in place. Motion vectors describe the opaque scene. [Reactive mask guidance](https://gpuopen.com/manuals/fidelityfx_sdk/techniques/super-resolution-upscaler/#reactive-mask)
+
+`render_diagnostics.reconstruction.sprite_radiance_bytes` reports nine
+bytes per render pixel on frames with sprite draws. The HDR and coverage
+targets can stay allocated between emissions, where their bytes remain in
+`logical_bytes`. `last_draws.sprite_instances` records the batched input
+count, including depth-occluded instances. Authored world state and particle
+simulation remain independent of render resolution and reconstruction mode.
+
+```text
+poima-reconstruction-test.exe OUTPUT_PREFIX GPU_INDEX deferred --sprite-reactivity
+```
+
+The native fixture samples the SDK input response at overlapping, depth-faded,
+fully occluded and zero-opacity sprites. It checks moving and expiring
+sprites at Native AA and Quality settings. Run the composition capture
+fixture above to test authored sprites and relocated saves on the same runtime.
 
 ## Numeric observations and diagnostics
 

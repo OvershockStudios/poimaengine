@@ -7,6 +7,9 @@ Texture2D<float> correspondence_valid : register(t2);
 RWTexture2D<float2> dense_motion : register(u0);
 // Match the actual R8_UNORM UAV; scalar float otherwise defaults to R32f.
 [[vk::image_format("r8")]] RWTexture2D<float> reactive : register(u1);
+#ifdef POIMA_TEMPORAL_SPRITES
+Texture2D<float> sprite_coverage : register(t5);
+#endif
 #ifdef POIMA_TEMPORAL_COMPOSITION
 Texture2D<float4> opaque_hdr : register(t3);
 Texture2D<float4> composed_hdr : register(t4);
@@ -43,7 +46,12 @@ void compute_main(uint3 id : SV_DispatchThreadID) {
         }
     }
     dense_motion[id.xy]=valid ? motion : 0;
+#ifdef POIMA_TEMPORAL_SPRITES
+    const float coverage = min(sprite_coverage.Load(int3(id.xy, 0)), 0.9);
+    reactive[id.xy] = max((!valid || marks_changed) ? 1.0 : 0.0, coverage);
+#else
     reactive[id.xy]=(!valid || marks_changed) ? 1 : 0;
+#endif
 #ifdef POIMA_TEMPORAL_COMPOSITION
     const float3 opaque = opaque_hdr.Load(int3(id.xy, 0)).rgb;
     const float3 composed = composed_hdr.Load(int3(id.xy, 0)).rgb;

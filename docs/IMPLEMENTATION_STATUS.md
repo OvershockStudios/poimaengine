@@ -1,8 +1,16 @@
 # Implementation status
 
-Updated 2026-11-21 for **0.0.395**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-21 for **0.0.396**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.396 renders [textured world sprites with FSR](RECONSTRUCTION.md#textured-world-sprites).
+The renderer sends depth-tested sprite coverage as reactivity and keeps the
+fog and reflection composition mask separate. Ubuntu passed 15 suites. AMD
+and NVIDIA passed 116 hosted captures and 56 authored or relocated captures.
+Six relocated replays reproduced headless save bytes with live particles.
+Four legacy forward sprite captures matched 0.0.395 exactly.
+[Results](evidence/m2-temporal-sprites-396.json)
 
 Version 0.0.395 adds [standalone FSR selection and world composition](RECONSTRUCTION.md#world-lighting-composition).
 FSR consumes height fog and deferred screen reflections with an explicit

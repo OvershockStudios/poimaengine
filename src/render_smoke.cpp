@@ -50,6 +50,9 @@
 #include "poima/scene_products_vs.hpp"
 #include "poima/particle_sprite_vs.hpp"
 #include "poima/particle_sprite_ps.hpp"
+#include "poima/particle_sprite_temporal_vs.hpp"
+#include "poima/particle_sprite_temporal_ps.hpp"
+#include "render_sprite_targets.hpp"
 #include "poima/cluster_lights_cs.hpp"
 #include "poima/sky_vs.hpp"
 #include "poima/sky_ps.hpp"
@@ -260,7 +263,8 @@ struct Context {
     std::vector<nvrhi::TextureHandle> sprite_textures;
     nvrhi::FramebufferHandle sprite_framebuffer;
     nvrhi::BindingLayoutHandle sprite_layout;
-    nvrhi::GraphicsPipelineHandle sprite_pipeline;
+    std::array<nvrhi::GraphicsPipelineHandle,2> sprite_pipelines;
+    render_sprite_targets::Targets sprite_targets;
     // Borrowed only during a player poll. Slots retain detached generation
     // tickets; the session recorder outlives renderer teardown.
     fp::Recorder* performance=nullptr;fp::FrameToken performance_token;fp::CpuSample* performance_cpu=nullptr;
@@ -466,7 +470,7 @@ struct Context {
             slot.surface_mark_binding=nullptr;slot.surface_marks=nullptr;slot.surface_mark_masks=nullptr;
             slot.sprite_instances=nullptr;slot.sprite_depth=nullptr;slot.sprite_bindings.clear();
         }
-        sprite_framebuffer=nullptr;sprite_pipeline=nullptr;sprite_layout=nullptr;sprite_textures.clear();
+        clear_sprite_targets();sprite_pipelines={};sprite_layout=nullptr;sprite_textures.clear();
         checked = nullptr;
         native = nullptr;
         if (device) {
@@ -1444,7 +1448,7 @@ struct Context {
             const bool active=reason=="active";
             if(active) {
                 if(!reflections.radiance()) {
-                    require_reconstruction_composition_budget(std::uint64_t(render_extent.width)*render_extent.height*10);
+                    require_reconstruction_composition_budget(reconstruction_pixels(),reconstruction_pixels()*10);
                     const auto required=vk::FormatFeatureFlagBits::eSampledImage|vk::FormatFeatureFlagBits::eStorageImage|
                         vk::FormatFeatureFlagBits::eTransferSrc|vk::FormatFeatureFlagBits::eTransferDst;
                     const auto color_required=required|vk::FormatFeatureFlagBits::eColorAttachment|vk::FormatFeatureFlagBits::eColorAttachmentBlend;
@@ -1490,7 +1494,7 @@ struct Context {
             const bool active=reason=="active";
             if(active) {
                 if(!fog.radiance()) {
-                    require_reconstruction_composition_budget(std::uint64_t(render_extent.width)*render_extent.height*8);
+                    require_reconstruction_composition_budget(reconstruction_pixels(),reconstruction_pixels()*8);
                     const auto needed=vk::FormatFeatureFlagBits::eSampledImage|vk::FormatFeatureFlagBits::eStorageImage|
                         vk::FormatFeatureFlagBits::eTransferSrc|vk::FormatFeatureFlagBits::eTransferDst|
                         vk::FormatFeatureFlagBits::eColorAttachment|vk::FormatFeatureFlagBits::eColorAttachmentBlend;
@@ -1574,6 +1578,14 @@ struct Context {
         }
         timestamp(9);
     }
+    bool temporal_sprites_active() const noexcept { return reconstruction && !sprite_batches.empty(); }
+    nvrhi::ITexture* sprite_target() const noexcept {
+        return temporal_sprites_active() ? sprite_targets.hdr() : world_radiance_texture();
+    }
+    void clear_sprite_targets() noexcept {
+        sprite_framebuffer=nullptr;
+        sprite_targets.clear();
+    }
     void prepare_reconstruction() {
         if(reconstruction_mode==ReconstructionMode::none)return;
         require(scene && !scene->presentation_source_id.empty(),"FSR reconstruction requires an authoritative presentation source.");
@@ -1587,6 +1599,7 @@ struct Context {
         if(reconstruction && render.width==render_extent.width && render.height==render_extent.height && output.width==output_extent.width && output.height==output_extent.height)return;
         retire_frames(true);
         temporal_inputs.clear_targets();
+        clear_sprite_targets();
         if(auto* source=fog.radiance())detach_world_outputs(source);
         fog.clear_targets();
         if(auto* source=reflections.radiance())detach_world_outputs(source);
@@ -1649,19 +1662,20 @@ struct Context {
         const auto pixels=std::uint64_t(render_extent.width)*render_extent.height;
         pending_reconstruction.composition_mask_bytes=temporal_inputs.composition_mask() ? pixels : 0;
         pending_reconstruction.logical_bytes=reconstruction->gpu_bytes()+pixels*21+
-            std::uint64_t(output_extent.width)*output_extent.height*8+pending_reconstruction.composition_mask_bytes;
+            std::uint64_t(output_extent.width)*output_extent.height*8+pending_reconstruction.composition_mask_bytes+sprite_targets.bytes();
     }
     void prepare_temporal_inputs() {
-        if(!reconstruction)return;
+        if(!reconstruction || !scene_visible)return;
         auto* world=world_radiance_texture();
         const bool composed=world!=scene_hdr.Get();
-        if(composed && !temporal_inputs.composition_mask())require_reconstruction_composition_budget(0);
+        if(composed && !temporal_inputs.composition_mask())require_reconstruction_composition_budget(reconstruction_pixels(),0);
         if(!composed && temporal_inputs.composition_mask())retire_frames(true);
         temporal_inputs.prepare(*checked.Get(),{frame_buffer.Get(),scene_normal.Get(),scene_motion.Get(),scene_motion_valid.Get(),
-            dense_motion.Get(),reactive.Get(),composed ? scene_hdr.Get() : nullptr,composed ? world : nullptr});
+            dense_motion.Get(),reactive.Get(),composed ? scene_hdr.Get() : nullptr,composed ? world : nullptr,
+            temporal_sprites_active() ? sprite_targets.coverage() : nullptr});
     }
     void dispatch_reconstruction() {
-        auto* world=world_radiance_texture();
+        auto* world=sprite_target();
         auto* composition=temporal_inputs.composition_mask();
         for(auto* image:{world,depth.Get(),dense_motion.Get(),reactive.Get()})commands->setTextureState(image,nvrhi::AllSubresources,nvrhi::ResourceStates::NonPixelShaderResource);
         if(composition)commands->setTextureState(composition,nvrhi::AllSubresources,nvrhi::ResourceStates::NonPixelShaderResource);
@@ -1685,13 +1699,18 @@ struct Context {
         auto count=[&](const std::shared_ptr<render_viewmodel::Resources>& bundle) {if(bundle && identities.insert(bundle.get()).second)bytes+=bundle->bytes;};
         count(viewmodel);for(const auto& slot:slots)count(slot.viewmodel);return bytes;
     }
-    std::uint64_t reconstruction_world_bytes(std::uint64_t composition_bytes) const noexcept {
-        return std::uint64_t(render_extent.width)*render_extent.height*((deferred ? 82u : 50u)+(ao_enabled ? 4u : 0u))+
-            std::uint64_t(output_extent.width)*output_extent.height*8+reflections.buffer_bytes()+fog.buffer_bytes()+composition_bytes;
+    std::uint64_t reconstruction_pixels() const noexcept {
+        return std::uint64_t(render_extent.width)*render_extent.height;
     }
-    void require_reconstruction_composition_budget(std::uint64_t additional) const {
+    std::uint64_t world_composition_mask_bytes() const noexcept {
+        return (world_radiance_texture()!=scene_hdr.Get() || temporal_inputs.composition_mask()) ? reconstruction_pixels() : 0;
+    }
+    std::uint64_t reconstruction_world_bytes(std::uint64_t composition_bytes) const noexcept {
+        return reconstruction_pixels()*((deferred ? 82u : 50u)+(ao_enabled ? 4u : 0u))+
+            std::uint64_t(output_extent.width)*output_extent.height*8+reflections.buffer_bytes()+fog.buffer_bytes()+composition_bytes+sprite_targets.bytes();
+    }
+    void require_reconstruction_composition_budget(std::uint64_t mask_bytes,std::uint64_t additional) const {
         if(!reconstruction)return;
-        const auto mask_bytes=std::uint64_t(render_extent.width)*render_extent.height;
         const auto attachments=reconstruction_world_bytes(mask_bytes)+viewmodel_resident_bytes()+additional;
         require(attachments<=768ull*1024*1024,"Reconstruction engine attachments exceed the 768 MiB payload budget.");
         require(attachments+reconstruction->gpu_bytes()<=1536ull*1024*1024,"Reconstruction total logical image payload exceeds the 1536 MiB budget.");
@@ -1699,8 +1718,7 @@ struct Context {
     void validate_viewmodel_budget(std::uint64_t foreground_bytes) const {
         require(foreground_bytes<=viewmodel_cap,"Foreground resident and staged payload exceeds the 384 MiB budget.");
         if(reconstruction) {
-            const auto bytes=temporal_inputs.composition_mask() ? std::uint64_t(render_extent.width)*render_extent.height : 0;
-            const auto world=reconstruction_world_bytes(bytes);
+            const auto world=reconstruction_world_bytes(world_composition_mask_bytes());
             require(world+foreground_bytes<=768ull*1024*1024,"World and foreground engine attachments exceed the 768 MiB reconstruction budget.");
             require(world+foreground_bytes+reconstruction->gpu_bytes()<=1536ull*1024*1024,"World, foreground and FSR payload exceeds the 1536 MiB budget.");
         } else {
@@ -2004,7 +2022,6 @@ struct Context {
         }
         configure_light_assignment();
         prepare_height_fog(lighting);
-        prepare_temporal_inputs();
         // Use the actual rounded GPU matrices for clipping decisions.
         auto frustum=[](const float* matrix) { Matrix4 value;std::copy_n(matrix,16,value.begin());return make_frustum(value); };
         std::array<float,16> culling_projection;std::copy_n(frame_constants.view_projection,16,culling_projection.begin());
@@ -2168,6 +2185,7 @@ struct Context {
         retire_frames(true);
         retire_presentation();
         temporal_inputs.clear_targets();
+        clear_sprite_targets();
         fog.clear_targets();reflections.clear_targets();
         reconstruction.reset();reconstructed=nullptr;dense_motion=nullptr;reactive=nullptr;dilated_depth=nullptr;dilated_motion=nullptr;reconstructed_depth=nullptr;render_extent={};output_extent={};temporal_phase=0;temporal_clock.reset();
         viewmodel.reset();viewmodel_enabled=false;viewmodel_draws.clear();viewmodel_objects.clear();
@@ -2182,7 +2200,6 @@ struct Context {
 #if POIMA_EDITOR
         editor_ui.detach_targets();
 #endif
-        sprite_framebuffer=nullptr;
         for(auto& slot:slots) {slot.sprite_depth=nullptr;slot.sprite_bindings.clear();}
         framebuffers.clear();sky_framebuffers.clear(); images.clear(); depth=nullptr; multisample_color=nullptr; scene_hdr=nullptr; scene_normal=nullptr; scene_motion=nullptr;scene_motion_valid=nullptr;material_base=nullptr;material_surface=nullptr;material_correspondence=nullptr;occlusion.clear_targets();deferred_bindings=nullptr;deferred_binding_key={};staging=nullptr;
         for(auto& texture:probe_staging)texture=nullptr;
@@ -2606,6 +2623,10 @@ struct Context {
                 f.sprite_instances=buffer(slots[settings.slot].sprite_instances,rs::Lifetime::slot,false,
                     sprite_instances.size()*sizeof(SpriteInstance));
                 for(const auto& image:sprite_textures)f.sprite_textures.push_back(texture(image,rs::Lifetime::imported,true));
+                if(settings.reconstruction) {
+                    f.sprite_hdr=texture(sprite_targets.hdr(),rs::Lifetime::shared,false);
+                    f.sprite_coverage=texture(sprite_targets.coverage(),rs::Lifetime::shared,false);
+                }
             }
             if(!stream_vertices.empty()) {
                 const auto& slot=slots[settings.slot];
@@ -2757,7 +2778,13 @@ struct Context {
         identity(f.swapchain,images.at(index).Get());
         if(plan.settings.particle_sprites) {
             const auto& slot=slots.at(plan.settings.slot);
-            framebuffer(sprite_framebuffer,rs::world_radiance(f,plan.settings),rs::none);
+            if(plan.settings.reconstruction) {
+                const auto& targets=sprite_framebuffer->getDesc().colorAttachments;
+                require(targets.size()==2,"Reconstructed sprite framebuffer needs HDR and coverage.");
+                identity(f.sprite_hdr,targets[0].texture);
+                identity(f.sprite_coverage,targets[1].texture);
+                identity(rs::world_radiance(f,plan.settings),world_radiance_texture());
+            } else framebuffer(sprite_framebuffer,rs::world_radiance(f,plan.settings),rs::none);
             require(slot.sprite_bindings.size()==f.sprite_textures.size(),"Particle sprite texture count differs from its schedule.");
             for(std::size_t texture=0;texture<slot.sprite_bindings.size();++texture) {
                 identity(f.sprite_textures[texture],slot.sprite_bindings[texture].image.Get());
@@ -2937,6 +2964,7 @@ struct Context {
 #endif
         if(plan.settings.reconstruction) {
             temporal_inputs.verify_bindings(plan);
+            identity(rs::reconstruction_radiance(f,plan.settings),sprite_target());
             if(f.composition_mask!=rs::none)identity(f.composition_mask,temporal_inputs.composition_mask());
             identity(f.reconstructed,reconstructed.Get());identity(f.dense_motion,dense_motion.Get());identity(f.reactive,reactive.Get());identity(f.dilated_depth,dilated_depth.Get());identity(f.dilated_motion,dilated_motion.Get());identity(f.reconstructed_depth,reconstructed_depth.Get());}
         if(plan.settings.capture)identity(f.capture,staging.Get());
@@ -2998,7 +3026,8 @@ struct Context {
         }
         cluster_readback=slot.cluster_readback;skin_readback=slot.skin_readback;
         if(capture_frame)prepare_capture_staging();
-        prepare_game_ui();prepare_sprite_frame(slot);prepare_surface_mark_frame(slot);prepare_submission_history();prepare_stream_geometry(slot);
+        prepare_game_ui();prepare_sprite_frame(slot);prepare_temporal_inputs();
+        prepare_surface_mark_frame(slot);prepare_submission_history();prepare_stream_geometry(slot);
         prepare_draw_batches();prepare_temporal_submission();
         if(ao_enabled)occlusion.prepare(*checked.Get(),{frame_buffer.Get(),depth.Get(),material_surface.Get(),material_correspondence.Get()});
         prepare_deferred_lighting();

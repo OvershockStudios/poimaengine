@@ -104,7 +104,7 @@ struct FrameResources {
     ResourceId bloom=none,bloom_scratch=none;
     ResourceId output_grade=none;
     ResourceId streamed_vertices=none,streamed_indices=none;
-    ResourceId sprite_instances=none;
+    ResourceId sprite_instances=none,sprite_hdr=none,sprite_coverage=none;
     std::vector<ResourceId> sprite_textures;
     ResourceId surface_marks=none,surface_mark_masks=none;
     ResourceId display_ldr=none;
@@ -126,6 +126,9 @@ inline constexpr ResourceId surface_radiance(const FrameResources& frame,const S
 }
 inline constexpr ResourceId world_radiance(const FrameResources& frame,const Settings& settings) {
     return settings.height_fog ? frame.fogged_hdr : surface_radiance(frame,settings);
+}
+inline constexpr ResourceId reconstruction_radiance(const FrameResources& frame,const Settings& settings) {
+    return settings.reconstruction && settings.particle_sprites ? frame.sprite_hdr : world_radiance(frame,settings);
 }
 inline constexpr ResourceId scene_linear_radiance(const FrameResources& frame,const Settings& settings) {
     return settings.viewmodel ? frame.composite : settings.reconstruction ? frame.reconstructed : world_radiance(frame,settings);

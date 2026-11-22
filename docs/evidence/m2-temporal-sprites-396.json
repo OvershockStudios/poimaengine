@@ -1,0 +1,970 @@
+{
+  "format": "poima.reconstruction.sprite.qualification.v1",
+  "version": "0.0.396",
+  "schema_revision": 204,
+  "baseline": "c79bb93",
+  "source_manifest_sha256": "43d3f216199dd7d22fc26a23e8da8d5f5afb3d6d4aa5a7e2034f2e29a443a0fc",
+  "qualification_source_sha256": {
+    "tests/reconstruction_native.cpp": "de2ca4a02e553d06661bab7161a1ea9a6286365f7c26a3ec88af3cf5bdc17aae",
+    "tests/reconstruction_composition_capture.py": "e1736de3635e58db9fb52ba53febc8a4b90e13ad355005e5a60fab8cc97dd4de",
+    "tests/sprite_particles_capture.py": "e2179c59fd85818d236060bf8d743434229fc6212858ea1087cc62d5e7eabfb3"
+  },
+  "ubuntu": {
+    "tests": [
+      "player_settings_contract",
+      "project_contract",
+      "world_particles_contract",
+      "authoring_response_compatibility",
+      "authoring_contract_identity",
+      "asset_references_contract",
+      "authoring_api_compatibility",
+      "player_service_contract",
+      "world_ui_contract",
+      "authoring_core_conformance",
+      "world_precipitation_contract",
+      "cli_contract",
+      "authoring_contract_artifacts",
+      "render_schedule_native",
+      "world_schema_native"
+    ],
+    "binary_sha256": "73dc23134db4a4ade21c743a2cb67eb00a46e77ea7b30492dae1c51c165ff6b0",
+    "discovery_sha256": "d31d8442697165cb44f8c316ad3b7d759ef2d72d7cf80378e9ae0d2e00633151",
+    "junit_sha256": "57a3bf7a0ace157d6322d831f6822e9638806442ab1683cc5059a1814cf1861f"
+  },
+  "schedule": {
+    "admitted": 547,
+    "refused": 1405,
+    "legacy_identical_traces": 1293,
+    "legacy_trace_sha256": "362584614897cb8c184a53f33045d12214279aa00f3e40e992779fad6654e4be"
+  },
+  "windows": {
+    "binary_sha256": "4d8fb2a4c22e9a8d8efed608d06b0d413795204d4d5b6e0fb043bbec5fd592d8",
+    "runtime_sha256": "25c8716a579774b27f15ce372cca82ff1b56642287e01124b10d957535fa50bd",
+    "native_fixture_sha256": "2507a70af012f05d1ac3f7490a28e377d17961a634bee9a1bdf0ecd456e84ff4",
+    "previous_shader_modules_identical": 57,
+    "new_shader_sha256": {
+      "particle_sprite_temporal_vs.spv": "fd7280fc653f33818aa5c3649ed3088227cfef3c9175665a609202e189dedcc8",
+      "particle_sprite_temporal_ps.spv": "813d77bce5852ebfafc861e25faec1a7c91083e6c8238cc603639f1690948511",
+      "temporal_sprite_inputs_cs.spv": "19ba0d0a1175f4d92645cd31c96917313fea9412b73658f35aa3575213e52412",
+      "temporal_composed_sprite_inputs_cs.spv": "b64020d0f4761a7d557f895fed87562537f18843506d7bfd6dde149fd59bed49"
+    },
+    "native_sdk_probes": [
+      {
+        "adapter": "AMD Radeon(TM) Graphics",
+        "gpu_index": 0,
+        "lighting": "forward",
+        "ambient_occlusion": "none",
+        "cases": [
+          {
+            "mode": "fsr3_native",
+            "slots": 1,
+            "fog": false,
+            "capture_count": 29,
+            "endpoints": {
+              "covered-8": [
+                {
+                  "site": "original-overlap",
+                  "coverage": 0.6269589066505432,
+                  "sdk_masks": [
+                    0.0,
+                    0.0,
+                    0.6274510025978088,
+                    0.20000000298023224
+                  ],
+                  "rgb_error": 0.0010783672332763672
+                },
+                {
+                  "site": "moved-overlap",
+                  "coverage": 0.0,
+                  "sdk_masks": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    1.0
+                  ],
+                  "rgb_error": 0.0
+                },
+                {
+                  "site": "depth-fade",
+                  "coverage": 0.250980406999588,
+                  "sdk_masks": [
+                    0.0,
+                    0.0,
+                    0.250980406999588,
+                    0.7490196228027344
+                  ],
+                  "rgb_error": 0.00044080615043640137
+                },
+                {
+                  "site": "occluded",
+                  "coverage": 0.0,
+                  "sdk_masks": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    1.0
+                  ],
+                  "rgb_error": 0.0
+                },
+                {
+                  "site": "clear-texel",
+                  "coverage": 0.0,
+                  "sdk_masks": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    1.0
+                  ],
+                  "rgb_error": 0.0
+                },
+                {
+                  "site": "equal-color",
+                  "coverage": 1.0,
+                  "sdk_masks": [
+                    0.0,
+                    0.0,
+                    0.8980392217636108,
+                    0.03921568766236305
+                  ],
+                  "rgb_error": 0.0
+                },
+                {
+                  "site": "untouched",
+                  "coverage": 0.0,
+                  "sdk_masks": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    1.0
+                  ],
+                  "rgb_error": 0.0
+                }
+              ]
+            },
+            "max_rgb_error_in_transition": {
+              "moved-": 0.0010783672332763672,
+              "despawned-": 0.0
+            }
+          },
+          {
+            "mode": "fsr3_quality",
+            "slots": 2,
+            "fog": true,
+            "capture_count": 29,
+            "endpoints": {
+              "covered-8": [
+                {
+                  "site": "original-overlap",
+                  "coverage": 0.6269589066505432,
+                  "sdk_masks": [
+                    0.250980406999588,
+                    0.0,
+                    0.6274510025978088,
+                    0.20000000298023224
+                  ],
+                  "rgb_error": 0.0007125139236450195
+                },
+                {
+                  "site": "moved-overlap",
+                  "coverage": 0.0,
+                  "sdk_masks": [
+                    0.250980406999588,
+                    0.0,
+                    0.0,
+                    1.0
+                  ],
+                  "rgb_error": 0.0
+                },
+                {
+                  "site": "depth-fade",
+                  "coverage": 0.250980406999588,
+                  "sdk_masks": [
+                    0.250980406999588,
+                    0.0,
+                    0.250980406999588,
+                    0.7490196228027344
+                  ],
+                  "rgb_error": 0.0004042387008666992
+                },
+                {
+                  "site": "occluded",
+                  "coverage": 0.0,
+                  "sdk_masks": [
+                    0.250980406999588,
+                    0.0,
+                    0.0,
+                    1.0
+                  ],
+                  "rgb_error": 0.0
+                },
+                {
+                  "site": "clear-texel",
+                  "coverage": 0.0,
+                  "sdk_masks": [
+                    0.250980406999588,
+                    0.0,
+                    0.0,
+                    1.0
+                  ],
+                  "rgb_error": 0.0
+                },
+                {
+                  "site": "equal-color",
+                  "coverage": 1.0,
+                  "sdk_masks": [
+                    0.250980406999588,
+                    0.0,
+                    0.8980392217636108,
+                    0.03921568766236305
+                  ],
+                  "rgb_error": 0.0
+                },
+                {
+                  "site": "untouched",
+                  "coverage": 0.0,
+                  "sdk_masks": [
+                    0.250980406999588,
+                    0.0,
+                    0.0,
+                    1.0
+                  ],
+                  "rgb_error": 0.0
+                }
+              ]
+            },
+            "max_rgb_error_in_transition": {
+              "moved-": 0.0007125139236450195,
+              "despawned-": 0.0
+            }
+          }
+        ],
+        "captures": 58,
+        "report_sha256": "0cd33290169c41808ded5ce6a9860793b0a07ccad495294de8e53834ceba4c00",
+        "validation_sha256": "fb9deb202f38fdfe4ba26c2a61bc1184d0bd43e3b157cce77f0a07d5745f1e9d"
+      },
+      {
+        "adapter": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "gpu_index": 1,
+        "lighting": "deferred",
+        "ambient_occlusion": "gtao",
+        "cases": [
+          {
+            "mode": "fsr3_native",
+            "slots": 1,
+            "fog": false,
+            "capture_count": 29,
+            "endpoints": {
+              "covered-8": [
+                {
+                  "site": "original-overlap",
+                  "coverage": 0.6269589066505432,
+                  "sdk_masks": [
+                    0.0,
+                    0.0,
+                    0.6274510025978088,
+                    0.20000000298023224
+                  ],
+                  "rgb_error": 0.00010180473327636719
+                },
+                {
+                  "site": "moved-overlap",
+                  "coverage": 0.0,
+                  "sdk_masks": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    1.0
+                  ],
+                  "rgb_error": 0.0
+                },
+                {
+                  "site": "depth-fade",
+                  "coverage": 0.250980406999588,
+                  "sdk_masks": [
+                    0.0,
+                    0.0,
+                    0.250980406999588,
+                    0.7490196228027344
+                  ],
+                  "rgb_error": 0.00034296512603759766
+                },
+                {
+                  "site": "occluded",
+                  "coverage": 0.0,
+                  "sdk_masks": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    1.0
+                  ],
+                  "rgb_error": 0.0
+                },
+                {
+                  "site": "clear-texel",
+                  "coverage": 0.0,
+                  "sdk_masks": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    1.0
+                  ],
+                  "rgb_error": 0.0
+                },
+                {
+                  "site": "equal-color",
+                  "coverage": 1.0,
+                  "sdk_masks": [
+                    0.0,
+                    0.0,
+                    0.8980392217636108,
+                    0.03921568766236305
+                  ],
+                  "rgb_error": 0.0
+                },
+                {
+                  "site": "untouched",
+                  "coverage": 0.0,
+                  "sdk_masks": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    1.0
+                  ],
+                  "rgb_error": 0.0
+                }
+              ]
+            },
+            "max_rgb_error_in_transition": {
+              "moved-": 0.00034296512603759766,
+              "despawned-": 0.0
+            }
+          },
+          {
+            "mode": "fsr3_quality",
+            "slots": 2,
+            "fog": true,
+            "capture_count": 29,
+            "endpoints": {
+              "covered-8": [
+                {
+                  "site": "original-overlap",
+                  "coverage": 0.6269589066505432,
+                  "sdk_masks": [
+                    0.250980406999588,
+                    0.0,
+                    0.6274510025978088,
+                    0.20000000298023224
+                  ],
+                  "rgb_error": 0.0007125139236450195
+                },
+                {
+                  "site": "moved-overlap",
+                  "coverage": 0.0,
+                  "sdk_masks": [
+                    0.250980406999588,
+                    0.0,
+                    0.0,
+                    1.0
+                  ],
+                  "rgb_error": 0.0
+                },
+                {
+                  "site": "depth-fade",
+                  "coverage": 0.250980406999588,
+                  "sdk_masks": [
+                    0.250980406999588,
+                    0.0,
+                    0.250980406999588,
+                    0.7490196228027344
+                  ],
+                  "rgb_error": 0.00016009807586669922
+                },
+                {
+                  "site": "occluded",
+                  "coverage": 0.0,
+                  "sdk_masks": [
+                    0.250980406999588,
+                    0.0,
+                    0.0,
+                    1.0
+                  ],
+                  "rgb_error": 0.0
+                },
+                {
+                  "site": "clear-texel",
+                  "coverage": 0.0,
+                  "sdk_masks": [
+                    0.250980406999588,
+                    0.0,
+                    0.0,
+                    1.0
+                  ],
+                  "rgb_error": 0.0
+                },
+                {
+                  "site": "equal-color",
+                  "coverage": 1.0,
+                  "sdk_masks": [
+                    0.250980406999588,
+                    0.0,
+                    0.8980392217636108,
+                    0.03921568766236305
+                  ],
+                  "rgb_error": 0.0
+                },
+                {
+                  "site": "untouched",
+                  "coverage": 0.0,
+                  "sdk_masks": [
+                    0.250980406999588,
+                    0.0,
+                    0.0,
+                    1.0
+                  ],
+                  "rgb_error": 0.0
+                }
+              ]
+            },
+            "max_rgb_error_in_transition": {
+              "moved-": 0.0007125139236450195,
+              "despawned-": 0.0
+            }
+          }
+        ],
+        "captures": 58,
+        "report_sha256": "aa4a804a14705badbbe656dd8cf044483f3bd444738a4e613978895ca81b5320",
+        "validation_sha256": "6b0921d347d317e69abd9176eaac2ffc11c581674c995817af8ad4d4c4c0e34e"
+      }
+    ],
+    "authored_and_relocated_captures": [
+      {
+        "adapter": "AMD Radeon(TM) Graphics",
+        "gpu_index": 0,
+        "capture_count": 28,
+        "validation_owners": 14,
+        "captures": [
+          {
+            "site": "omitted/deferred/fsr3_native",
+            "sha256": "d7e85156f37e8059e7fd37212c579686632e72be653688c57fa264e15b0593ef",
+            "probe_count": 7
+          },
+          {
+            "site": "omitted/deferred/fsr3_quality",
+            "sha256": "775928ff73587ad3afebc25edb065099b7c315358cc88dee8dd81a5737bdf46d",
+            "probe_count": 7
+          },
+          {
+            "site": "omitted/deferred/none",
+            "sha256": "381a8f1035640a925238c51876b8998846b851827abe28bc61ecc1e3cce7781d",
+            "probe_count": 7
+          },
+          {
+            "site": "omitted/forward/fsr3_quality",
+            "sha256": "775928ff73587ad3afebc25edb065099b7c315358cc88dee8dd81a5737bdf46d",
+            "probe_count": 7
+          },
+          {
+            "site": "zero/deferred/fsr3_native",
+            "sha256": "d7e85156f37e8059e7fd37212c579686632e72be653688c57fa264e15b0593ef",
+            "probe_count": 7
+          },
+          {
+            "site": "zero/deferred/fsr3_quality",
+            "sha256": "775928ff73587ad3afebc25edb065099b7c315358cc88dee8dd81a5737bdf46d",
+            "probe_count": 7
+          },
+          {
+            "site": "zero/deferred/none",
+            "sha256": "381a8f1035640a925238c51876b8998846b851827abe28bc61ecc1e3cce7781d",
+            "probe_count": 7
+          },
+          {
+            "site": "reflections/deferred/fsr3_native",
+            "sha256": "6c5af3f5aca5c879c6dd070d192cb2482ed558a0cbe1835ae8d83369dddc8885",
+            "probe_count": 7
+          },
+          {
+            "site": "reflections/deferred/fsr3_quality",
+            "sha256": "25a3a42e5db05987b58f7df3500513c00ef0427b3f7768b804ba54e69b54570a",
+            "probe_count": 7
+          },
+          {
+            "site": "fog/deferred/fsr3_native",
+            "sha256": "3a0941ac1769712dc97d9519c6fff0662f419c67177309f79386c18833c1b9d8",
+            "probe_count": 7
+          },
+          {
+            "site": "fog/deferred/fsr3_quality",
+            "sha256": "a194ec5bb7b933963dd13e80488c95773bc625d0bd1345e6fe8987520fde2060",
+            "probe_count": 7
+          },
+          {
+            "site": "fog/forward/fsr3_quality",
+            "sha256": "a194ec5bb7b933963dd13e80488c95773bc625d0bd1345e6fe8987520fde2060",
+            "probe_count": 7
+          },
+          {
+            "site": "combined/deferred/fsr3_native",
+            "sha256": "dfd9c9f157bee0f56c61bd3c78ea14ffdd71c4f90480525f9189520714478c34",
+            "probe_count": 7
+          },
+          {
+            "site": "combined/deferred/fsr3_quality",
+            "sha256": "81b694c2821e4ca5d86a026b6ea087bc098e52c86092326f29c30a08c5dea7ce",
+            "probe_count": 7
+          },
+          {
+            "site": "foreground-omitted/deferred/fsr3_quality",
+            "sha256": "b05b34e4bdb9b1c0a61b9b6cf5ec7dc11f19547fd5c8f733dd5d308f6d0ecd05",
+            "probe_count": 7
+          },
+          {
+            "site": "foreground-combined/deferred/fsr3_quality",
+            "sha256": "b05b34e4bdb9b1c0a61b9b6cf5ec7dc11f19547fd5c8f733dd5d308f6d0ecd05",
+            "probe_count": 7
+          },
+          {
+            "site": "sprites-only-empty/deferred/fsr3_native",
+            "sha256": "74d342c3c7d0797c24fdb7a04d118b5f7508059cb78f265e9aace4648330b4e2",
+            "probe_count": 7
+          },
+          {
+            "site": "sprites-only-empty/deferred/fsr3_quality",
+            "sha256": "9c2ef9164042ed7d0171e4e35a9c2f5c195ed4b15a45ed4b77d1f1f78c556a64",
+            "probe_count": 7
+          },
+          {
+            "site": "sprites-only-live/deferred/fsr3_native",
+            "sha256": "c43516871f141063d6c105e607530963d5e7ec54528928716eeb6fc22e551900",
+            "probe_count": 7
+          },
+          {
+            "site": "sprites-only-live/deferred/fsr3_quality",
+            "sha256": "3adf79ae4cccacce66637051d2ac88946a10740bf1f8878ec5db946cf6ffe280",
+            "probe_count": 7
+          },
+          {
+            "site": "sprites-combined-empty/deferred/fsr3_native",
+            "sha256": "3206dc47cfeb68080dfdbfd928bbf5856de0568d2295ba51b1595321b2db2a33",
+            "probe_count": 7
+          },
+          {
+            "site": "sprites-combined-empty/deferred/fsr3_quality",
+            "sha256": "2fd3bb46de5e1ae7f5a0656ae24a5ba45c14527e036ce2e63f63494f933ed5a4",
+            "probe_count": 7
+          },
+          {
+            "site": "sprites-combined-live/deferred/fsr3_native",
+            "sha256": "5045cea7dcb48c962371ce9ecbcdc97c26afcbad854fa1c3e4c95f996a2efda7",
+            "probe_count": 7
+          },
+          {
+            "site": "sprites-combined-live/deferred/fsr3_quality",
+            "sha256": "10f65046d0eb2995994202505cc13bfdd6373d6f6d17c5b0b812e9106e17ae68",
+            "probe_count": 7
+          },
+          {
+            "site": "relocated/deferred/fsr3_native",
+            "sha256": "dfd9c9f157bee0f56c61bd3c78ea14ffdd71c4f90480525f9189520714478c34",
+            "probe_count": 7
+          },
+          {
+            "site": "relocated/deferred/fsr3_quality",
+            "sha256": "81b694c2821e4ca5d86a026b6ea087bc098e52c86092326f29c30a08c5dea7ce",
+            "probe_count": 7
+          },
+          {
+            "site": "relocated-sprites-live/deferred/fsr3_native",
+            "sha256": "5045cea7dcb48c962371ce9ecbcdc97c26afcbad854fa1c3e4c95f996a2efda7",
+            "probe_count": 7
+          },
+          {
+            "site": "relocated-sprites-live/deferred/fsr3_quality",
+            "sha256": "10f65046d0eb2995994202505cc13bfdd6373d6f6d17c5b0b812e9106e17ae68",
+            "probe_count": 7
+          }
+        ],
+        "replays": {
+          "none": {
+            "report_sha256": "b20dbf8028bff4558b36572be1fb1838e268769436c95eda28f915b3d28e3b42",
+            "image_sha256": "deab1ff5fc5ab29340def6738011250741a7b9c043daeff496c658a0902fa35a",
+            "saved": {
+              "file": "none/saves/slot-contact-auto/p-9cf42e9b8de35e2f07205919f1dac6f9.bin",
+              "sha256": "17130bf53f79184eaa60d60859ca9624150d3585414ecec14bae002fe7eb8ce9",
+              "bytes": 24255
+            },
+            "presented": 2,
+            "reconstruction": {
+              "active": false,
+              "gpu": {
+                "last_ms": null,
+                "max_ms": null,
+                "mean_ms": null,
+                "min_ms": null,
+                "samples": 0
+              },
+              "history_reset": true,
+              "history_sequence": 0,
+              "jitter_pixels": [
+                0.0,
+                0.0
+              ],
+              "logical_bytes": 0,
+              "mode": "none",
+              "output_height": 0,
+              "output_width": 0,
+              "render_height": 0,
+              "render_width": 0,
+              "reset_reason": "",
+              "sdk_version": ""
+            }
+          },
+          "fsr3_native": {
+            "report_sha256": "6420d340b189ef27740825dbe6d246c2c19a7cd0ac58ed7f397aff21128c91cf",
+            "image_sha256": "4b66f2c63f7f75f915cef64c3fc26478fd3b932b1d03967a3aa93d0105f0209d",
+            "saved": {
+              "file": "fsr3_native/saves/slot-contact-auto/p-325cfc0c99de7219d54deb211eb3d990.bin",
+              "sha256": "17130bf53f79184eaa60d60859ca9624150d3585414ecec14bae002fe7eb8ce9",
+              "bytes": 24255
+            },
+            "presented": 2,
+            "reconstruction": {
+              "active": true,
+              "composition_mask_bytes": 230400,
+              "gpu": {
+                "last_ms": null,
+                "max_ms": null,
+                "mean_ms": null,
+                "min_ms": null,
+                "samples": 0
+              },
+              "history_reset": false,
+              "history_sequence": 2,
+              "jitter_pixels": [
+                -0.25,
+                0.1666666865348816
+              ],
+              "logical_bytes": 20940480,
+              "mode": "fsr3_native",
+              "output_height": 360,
+              "output_width": 640,
+              "render_height": 360,
+              "render_width": 640,
+              "reset_reason": "",
+              "sdk_version": "FSR 3.1.4 / FidelityFX SDK 1.1.4",
+              "sprite_radiance_bytes": 2073600
+            }
+          },
+          "fsr3_quality": {
+            "report_sha256": "34dea1cd423506d7e11927dac2478854c2bfb86da58c8af21479ec1e51f362c2",
+            "image_sha256": "4c73f9582c026f089748e1ab14a97b580bcf39325db599f7b18effd0f9ec0f59",
+            "saved": {
+              "file": "fsr3_quality/saves/slot-contact-auto/p-708dd73df641a9db6275856a6e758163.bin",
+              "sha256": "17130bf53f79184eaa60d60859ca9624150d3585414ecec14bae002fe7eb8ce9",
+              "bytes": 24255
+            },
+            "presented": 2,
+            "reconstruction": {
+              "active": true,
+              "composition_mask_bytes": 102240,
+              "gpu": {
+                "last_ms": null,
+                "max_ms": null,
+                "mean_ms": null,
+                "min_ms": null,
+                "samples": 0
+              },
+              "history_reset": false,
+              "history_sequence": 2,
+              "jitter_pixels": [
+                -0.25,
+                0.1666666865348816
+              ],
+              "logical_bytes": 13166432,
+              "mode": "fsr3_quality",
+              "output_height": 360,
+              "output_width": 640,
+              "render_height": 240,
+              "render_width": 426,
+              "reset_reason": "",
+              "sdk_version": "FSR 3.1.4 / FidelityFX SDK 1.1.4",
+              "sprite_radiance_bytes": 920160
+            }
+          }
+        },
+        "live_particle_save_sha256": "17130bf53f79184eaa60d60859ca9624150d3585414ecec14bae002fe7eb8ce9",
+        "evidence_sha256": "3d98d697459c87a1b72721d3ac43d00dab51481911a2b6bc9a324bbd97bc9625"
+      },
+      {
+        "adapter": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "gpu_index": 1,
+        "capture_count": 28,
+        "validation_owners": 14,
+        "captures": [
+          {
+            "site": "omitted/deferred/fsr3_native",
+            "sha256": "7ee1cd2b8740e80046dcac2f5f2beb685c41e16f3c47cd4a8005a2618934ea1b",
+            "probe_count": 7
+          },
+          {
+            "site": "omitted/deferred/fsr3_quality",
+            "sha256": "bcc6865bc119d434b394a78a9073988a936757a45fbb75fe56c0382dd76920bb",
+            "probe_count": 7
+          },
+          {
+            "site": "omitted/deferred/none",
+            "sha256": "a18d11ef0330d85928118d01631156d4f449b7fce575b75a226cf27ef5f83e44",
+            "probe_count": 7
+          },
+          {
+            "site": "omitted/forward/fsr3_quality",
+            "sha256": "bcc6865bc119d434b394a78a9073988a936757a45fbb75fe56c0382dd76920bb",
+            "probe_count": 7
+          },
+          {
+            "site": "zero/deferred/fsr3_native",
+            "sha256": "7ee1cd2b8740e80046dcac2f5f2beb685c41e16f3c47cd4a8005a2618934ea1b",
+            "probe_count": 7
+          },
+          {
+            "site": "zero/deferred/fsr3_quality",
+            "sha256": "bcc6865bc119d434b394a78a9073988a936757a45fbb75fe56c0382dd76920bb",
+            "probe_count": 7
+          },
+          {
+            "site": "zero/deferred/none",
+            "sha256": "a18d11ef0330d85928118d01631156d4f449b7fce575b75a226cf27ef5f83e44",
+            "probe_count": 7
+          },
+          {
+            "site": "reflections/deferred/fsr3_native",
+            "sha256": "2af21ac46f20497384990569039994efd5ebeb8896bcd21b1a2a030629eb897d",
+            "probe_count": 7
+          },
+          {
+            "site": "reflections/deferred/fsr3_quality",
+            "sha256": "6d91613c363a8c1680029904c1ff071324247ded17d8bfee40e91575de4a03d9",
+            "probe_count": 7
+          },
+          {
+            "site": "fog/deferred/fsr3_native",
+            "sha256": "c526c06fc11d3ae3988716ec309e6d6f07beb6cf12fd001f30afa2c0b0db9df5",
+            "probe_count": 7
+          },
+          {
+            "site": "fog/deferred/fsr3_quality",
+            "sha256": "6fd3d652f8562ee20d89b4595efa3d26c54dbeb55f30d6a3203c731146e6fc63",
+            "probe_count": 7
+          },
+          {
+            "site": "fog/forward/fsr3_quality",
+            "sha256": "6fd3d652f8562ee20d89b4595efa3d26c54dbeb55f30d6a3203c731146e6fc63",
+            "probe_count": 7
+          },
+          {
+            "site": "combined/deferred/fsr3_native",
+            "sha256": "8adf017be40af6f414208769c66164b7039ba5702b1c43f82e385209271ad413",
+            "probe_count": 7
+          },
+          {
+            "site": "combined/deferred/fsr3_quality",
+            "sha256": "072c622376c208b0cb4545353bdc6b324aeb91261f732833e5b2028681d6e625",
+            "probe_count": 7
+          },
+          {
+            "site": "foreground-omitted/deferred/fsr3_quality",
+            "sha256": "f6b0e6359619bd79b34cf37db162444c9907d594ae8a7e48682931dfe174acfe",
+            "probe_count": 7
+          },
+          {
+            "site": "foreground-combined/deferred/fsr3_quality",
+            "sha256": "f6b0e6359619bd79b34cf37db162444c9907d594ae8a7e48682931dfe174acfe",
+            "probe_count": 7
+          },
+          {
+            "site": "sprites-only-empty/deferred/fsr3_native",
+            "sha256": "7ee1cd2b8740e80046dcac2f5f2beb685c41e16f3c47cd4a8005a2618934ea1b",
+            "probe_count": 7
+          },
+          {
+            "site": "sprites-only-empty/deferred/fsr3_quality",
+            "sha256": "60492b9d62051678cd1d31adfea47ed1786ee0615f1d1cc4a226ed4f193911bc",
+            "probe_count": 7
+          },
+          {
+            "site": "sprites-only-live/deferred/fsr3_native",
+            "sha256": "f331e67f3d24e239626c08564d6ed6e4796480206f23ea575ac4f5abcdf8129a",
+            "probe_count": 7
+          },
+          {
+            "site": "sprites-only-live/deferred/fsr3_quality",
+            "sha256": "e212ce6669a458274a2ec4863b94100f87012fe61d07409fbbe75a1474293cc9",
+            "probe_count": 7
+          },
+          {
+            "site": "sprites-combined-empty/deferred/fsr3_native",
+            "sha256": "744770b6ad95997ed6e55e94525e42ad77339e1b3662f32f9727492e26bae97e",
+            "probe_count": 7
+          },
+          {
+            "site": "sprites-combined-empty/deferred/fsr3_quality",
+            "sha256": "ef2e858010da34bee743b792359603c29f667d4cf3d39f80d90010e64cd92838",
+            "probe_count": 7
+          },
+          {
+            "site": "sprites-combined-live/deferred/fsr3_native",
+            "sha256": "91e1964618c8ea146f9264f9b895ec23bf1b982142947a807cc12431af9bd66f",
+            "probe_count": 7
+          },
+          {
+            "site": "sprites-combined-live/deferred/fsr3_quality",
+            "sha256": "e884ba6f8f8625f930b6875d397b6191f5dfbd1dc4760d9f18857d8787980bdf",
+            "probe_count": 7
+          },
+          {
+            "site": "relocated/deferred/fsr3_native",
+            "sha256": "8adf017be40af6f414208769c66164b7039ba5702b1c43f82e385209271ad413",
+            "probe_count": 7
+          },
+          {
+            "site": "relocated/deferred/fsr3_quality",
+            "sha256": "072c622376c208b0cb4545353bdc6b324aeb91261f732833e5b2028681d6e625",
+            "probe_count": 7
+          },
+          {
+            "site": "relocated-sprites-live/deferred/fsr3_native",
+            "sha256": "91e1964618c8ea146f9264f9b895ec23bf1b982142947a807cc12431af9bd66f",
+            "probe_count": 7
+          },
+          {
+            "site": "relocated-sprites-live/deferred/fsr3_quality",
+            "sha256": "e884ba6f8f8625f930b6875d397b6191f5dfbd1dc4760d9f18857d8787980bdf",
+            "probe_count": 7
+          }
+        ],
+        "replays": {
+          "none": {
+            "report_sha256": "7b29d1c14eaa26931ec2b4c9d9950e695c6edf2380e65d1dea7a0320db63977b",
+            "image_sha256": "afd39e519bb5fcdbed9cc81501e8c59739648fc9aaa934b2eb21cff2a6419bd8",
+            "saved": {
+              "file": "none/saves/slot-contact-auto/p-242a311d44284265dd71f54232b4a87c.bin",
+              "sha256": "948ec0298ca0e7134f3930e6c72930d702d5d4bebb056540e2158a33b6cbe407",
+              "bytes": 24255
+            },
+            "presented": 2,
+            "reconstruction": {
+              "active": false,
+              "gpu": {
+                "last_ms": null,
+                "max_ms": null,
+                "mean_ms": null,
+                "min_ms": null,
+                "samples": 0
+              },
+              "history_reset": true,
+              "history_sequence": 0,
+              "jitter_pixels": [
+                0.0,
+                0.0
+              ],
+              "logical_bytes": 0,
+              "mode": "none",
+              "output_height": 0,
+              "output_width": 0,
+              "render_height": 0,
+              "render_width": 0,
+              "reset_reason": "",
+              "sdk_version": ""
+            }
+          },
+          "fsr3_native": {
+            "report_sha256": "2f1f83318c71f99c25903723aef359e85c5072dcd5c51515a114796c5c85064a",
+            "image_sha256": "105da6049a5a413c83bcabe4ead350048d08241041eb20f3ebe1e7ff36aee76a",
+            "saved": {
+              "file": "fsr3_native/saves/slot-contact-auto/p-45c770e460fb2cc142a43a97b79eac5e.bin",
+              "sha256": "948ec0298ca0e7134f3930e6c72930d702d5d4bebb056540e2158a33b6cbe407",
+              "bytes": 24255
+            },
+            "presented": 2,
+            "reconstruction": {
+              "active": true,
+              "composition_mask_bytes": 230400,
+              "gpu": {
+                "last_ms": null,
+                "max_ms": null,
+                "mean_ms": null,
+                "min_ms": null,
+                "samples": 0
+              },
+              "history_reset": false,
+              "history_sequence": 2,
+              "jitter_pixels": [
+                -0.25,
+                0.1666666865348816
+              ],
+              "logical_bytes": 20734976,
+              "mode": "fsr3_native",
+              "output_height": 360,
+              "output_width": 640,
+              "render_height": 360,
+              "render_width": 640,
+              "reset_reason": "",
+              "sdk_version": "FSR 3.1.4 / FidelityFX SDK 1.1.4",
+              "sprite_radiance_bytes": 2073600
+            }
+          },
+          "fsr3_quality": {
+            "report_sha256": "3ee2d2361fcc714a4f4ba3e9404aa76e6f09d21245c55a1796a1b9f0d3d6760b",
+            "image_sha256": "768a636d0452b8816f23363c0c034db6a63a78f08c96817cec51a972ba6d7d95",
+            "saved": {
+              "file": "fsr3_quality/saves/slot-contact-auto/p-036e7ce1bb7d833a4645796e2c90e830.bin",
+              "sha256": "948ec0298ca0e7134f3930e6c72930d702d5d4bebb056540e2158a33b6cbe407",
+              "bytes": 24255
+            },
+            "presented": 2,
+            "reconstruction": {
+              "active": true,
+              "composition_mask_bytes": 102240,
+              "gpu": {
+                "last_ms": null,
+                "max_ms": null,
+                "mean_ms": null,
+                "min_ms": null,
+                "samples": 0
+              },
+              "history_reset": false,
+              "history_sequence": 2,
+              "jitter_pixels": [
+                -0.25,
+                0.1666666865348816
+              ],
+              "logical_bytes": 12569760,
+              "mode": "fsr3_quality",
+              "output_height": 360,
+              "output_width": 640,
+              "render_height": 240,
+              "render_width": 426,
+              "reset_reason": "",
+              "sdk_version": "FSR 3.1.4 / FidelityFX SDK 1.1.4",
+              "sprite_radiance_bytes": 920160
+            }
+          }
+        },
+        "live_particle_save_sha256": "948ec0298ca0e7134f3930e6c72930d702d5d4bebb056540e2158a33b6cbe407",
+        "evidence_sha256": "d6a92ef5039512ac6d9ed91e3c71920458030610febe5293d6cd8e099f9c8dee"
+      }
+    ],
+    "legacy_amd_forward_images": {
+      "External sprite verification/closed.bmp": "97b11f61015b331f91f9b18b72f9e60838967653d62555a0ec2a906d52306bb3",
+      "External sprite verification/expired.bmp": "97b11f61015b331f91f9b18b72f9e60838967653d62555a0ec2a906d52306bb3",
+      "External sprite verification/live.bmp": "c0b327fcffaba1f5a37a61cb05772ab078f162028dc9fb23a98599259d16ee02",
+      "External sprite verification/restored.bmp": "c0b327fcffaba1f5a37a61cb05772ab078f162028dc9fb23a98599259d16ee02"
+    }
+  },
+  "method": [
+    "Native probes verify visible opacity accumulation, depth fade, independent fog composition, unchanged opaque depth, motion and HDR, and continuity of accepted history across particle motion and expiry.",
+    "Authored and relocated tests compare real sprite batches and localized analytic color, and compare each Native AOT replay archive byte for byte with the headless archive from the same exported world.",
+    "The native-resolution sprite baseline and candidate use the same independent fixture on AMD forward. The reported capture image hashes matched byte for byte."
+  ],
+  "limits": "Small graphics and gameplay fixtures exercise Native AA and Quality. Transition observations are localized samples. Game-scale performance and general temporal image quality remain separate qualification."
+}

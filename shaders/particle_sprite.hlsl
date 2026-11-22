@@ -37,6 +37,9 @@ SpriteVertex vertex_main(uint vertex : SV_VertexID, uint instance : SV_InstanceI
     const float3 world = center + sprite_constants.right_and_near.xyz * offset.x
         + sprite_constants.up_and_far.xyz * offset.y;
     output.position = mul(sprite_constants.view_projection, float4(world, 1));
+#ifdef POIMA_PARTICLE_SPRITE_TEMPORAL
+    output.position.xy += asfloat(sprite_constants.first_and_reserved.yz) * output.position.w;
+#endif
     output.linear_rgba = sprite.linear_rgba;
     output.depth_fade_m = sprite.fade_and_reserved.x;
     // A camera-aligned card has one view depth. Keep that exact value through
@@ -72,7 +75,7 @@ float4 sample_sprite(float2 uv, uint4 rect) {
     return lerp(top, bottom, weight.y);
 }
 
-float4 pixel_main(SpriteVertex input) : SV_Target0 {
+float4 particle_color(SpriteVertex input) {
     const float opaque = opaque_depth.Load(int3(int2(input.position.xy), 0));
     float visibility = 1;
     if (opaque < 1) {
@@ -88,3 +91,23 @@ float4 pixel_main(SpriteVertex input) : SV_Target0 {
     const float4 sampled = sample_sprite(input.uv, input.texel_rect);
     return sampled * float4(input.linear_rgba.rgb, 1) * (input.linear_rgba.a * visibility);
 }
+
+#ifdef POIMA_PARTICLE_SPRITE_TEMPORAL
+struct ParticleOutput {
+    float4 color : SV_Target0;
+    float4 coverage : SV_Target1;
+};
+
+ParticleOutput pixel_main(SpriteVertex input) {
+    ParticleOutput output;
+    output.color = particle_color(input);
+    // R receives source opacity. The same source alpha drives both attachments'
+    // destination factors, accumulating the union of overlapping coverage.
+    output.coverage = output.color.aaaa;
+    return output;
+}
+#else
+float4 pixel_main(SpriteVertex input) : SV_Target0 {
+    return particle_color(input);
+}
+#endif

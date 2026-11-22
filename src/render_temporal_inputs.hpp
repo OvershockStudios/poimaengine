@@ -18,6 +18,7 @@ struct Inputs {
     nvrhi::ITexture* reactive = nullptr;
     nvrhi::ITexture* raw_hdr = nullptr;
     nvrhi::ITexture* composed_hdr = nullptr;
+    nvrhi::ITexture* sprite_coverage = nullptr;
 
     friend bool operator==(const Inputs&, const Inputs&) = default;
 };
@@ -41,7 +42,7 @@ private:
         nvrhi::ComputePipelineHandle pipeline;
     };
 
-    std::array<Pipeline, 2> pipelines_;
+    std::array<Pipeline, 4> pipelines_;
     nvrhi::TextureHandle composition_mask_;
     nvrhi::BindingSetHandle bindings_;
     Inputs inputs_;
