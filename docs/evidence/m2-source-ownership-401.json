@@ -1,0 +1,169 @@
+{
+  "format": "poima.source-ownership.qualification.v1",
+  "version": "0.0.401",
+  "baseline_version": "0.0.400",
+  "baseline_commit": "9d26bed153fdd038b150b25252595353540afe35",
+  "scope": "Imported scene asset caching, clustered light assignment and procedural sky compile separately.",
+  "owner_line_counts": {
+    "src/world.cpp": {
+      "before": 2021,
+      "after": 2021
+    },
+    "src/render_smoke.cpp": {
+      "before": 3489,
+      "after": 3285
+    }
+  },
+  "new_translation_units": [
+    "src/render_scene_assets.cpp",
+    "src/render_light_clusters.cpp",
+    "src/render_sky.cpp"
+  ],
+  "source_manifest_sha256": "bb5ea58d21e80ad248bb0a3ea1dc54388a22d13ec75fec7512561c8c520d64c5",
+  "ubuntu": {
+    "binary_sha256": "3350e1445df94c8402164db218052bb123a453d52f2fa2a99114a6b55a2496e5",
+    "runtime_sha256": "31cf4f8408a68b8ed752d7a12bdca6bfb5949419ad444eee2bed52dbe97c7c35",
+    "junit_sha256": "a44b9a1f61f21c9eb452e04b031a200b5d228a3449f19dfde9285ac8594009dc",
+    "ctest": [
+      "world_history_contract",
+      "project_contract",
+      "world_contract",
+      "lighting_contract",
+      "shared_session_contract",
+      "authoring_contract_identity",
+      "world_particles_contract",
+      "asset_references_contract",
+      "authoring_response_compatibility",
+      "world_water_contract",
+      "authoring_api_compatibility",
+      "cli_contract",
+      "world_ui_contract",
+      "render_schedule_native",
+      "authoring_core_conformance",
+      "world_session_native"
+    ]
+  },
+  "windows": {
+    "baseline_runtime_sha256": "dd2bb29385176d8cf9d2249480b646ec350621907fecea8b049c68d3b44c8c86",
+    "candidate_binaries_sha256": {
+      "poima.exe": "f5bf6a7e52e4e34785dad45efc0d2c06085ee544006bfe11da574fe513d5b158",
+      "runtime.json": "c8e26d3aeda8c0c2fcb54a1b504294d523ff88dc10b709c86f9befdb00cea7c2",
+      "poima-auto-exposure-test.exe": "39acaa211202daacfcddd8280b0e4a177e03f2b87fed3f8da3e9f0e6056c5cb8",
+      "poima-environment-ibl-capture-test.exe": "38213fe7209c8e65bc49f1099dd347a742571c599e8ec0c52265a57fab17caba",
+      "poima-frame-execution-test.exe": "0ceb4693f004f2dc21e862bd68a9dff6cdd413552e9f9ba3d346a62b0b97f98f"
+    },
+    "exact_captures_from_baseline": 182,
+    "devices": {
+      "AMD Radeon(TM) Graphics": {
+        "exact_matching_baseline_images": 91,
+        "exposure_parity": [
+          {
+            "fixture": "gpu0-forward-none",
+            "baseline_report_sha256": "6a9872cdb29ba4b5681ac50e0c490f632f96135f20802be81579a1e6bc6a307e",
+            "candidate_report_sha256": "85decccb562e10b5ae367106651b8a7039e8d9189dc3c55716dcf44a8b1f081d",
+            "samples": [
+              1,
+              4
+            ]
+          },
+          {
+            "fixture": "gpu0-deferred-fsr3_quality",
+            "baseline_report_sha256": "e828147c869f352e51ff8f8142996dd4d651719fd864631b0db4e4fbad5eaeec",
+            "candidate_report_sha256": "dbb0dfc72e472e7c964c97c3f19bb51821c5c5aeb7c9030bfbf49566a9533966",
+            "samples": [
+              1
+            ]
+          }
+        ],
+        "editor_asset_replacement": {
+          "old_report_sha256": "3d013d3e9cb297b039e7672301c832ce5f9c684d0bf23f7ccb43ea7d6b02cfe4",
+          "new_report_sha256": "7fe33eac1999d29300150099d0af2d21a388c616caede87d7b366d9bd6f744e3",
+          "bmp_count": 1,
+          "exact_bmp_count": 1,
+          "different_bmps": [],
+          "resource_samples": 55,
+          "resource_samples_match_baseline": true
+        },
+        "deferred_lighting": {
+          "old_report_sha256": "7e0653c8b4827e9cddbd2b4ac56c2962ff5a0be2f69619356ca97e861456a66b",
+          "new_report_sha256": "08e2083826edb505d8c31757f39f9a70f6ee6323a5bd4a34a2359776af4193a8",
+          "bmp_count": 34,
+          "exact_bmp_count": 34,
+          "different_bmps": [],
+          "paired_clustered_and_reference_cases": 17
+        },
+        "environment_ibl": {
+          "report_sha256": "fa51b956d4f423fd5b43583d6c7831c3a2a37386c5fbda0ba649657925df161a",
+          "captures": 27,
+          "samples": 4,
+          "deferred": false,
+          "validation_log_sha256": "109998f14c9bc45939d832ec0a409198e372a14266f164168f79b3d5574efa37"
+        },
+        "presentation": {
+          "report_sha256": "3538f92c43e536034fc504be624201c3b288325b46fbd6f7d47bbbc5e5f06daf",
+          "frame_slots": [
+            1,
+            2
+          ],
+          "captures": 16,
+          "validation_log_sha256": "73a50430f91d53b6abf5af28a8330b47e1ece86fead492e8fefc26618efb19b2"
+        }
+      },
+      "NVIDIA GeForce RTX 4070 Laptop GPU": {
+        "exact_matching_baseline_images": 91,
+        "exposure_parity": [
+          {
+            "fixture": "gpu1-forward-none",
+            "baseline_report_sha256": "c9070f54306d5c28026dc979e477d7571094a84a3f168b9d1139cb279aa5d76b",
+            "candidate_report_sha256": "dda84336a127b2bf25704355c17e2659a2de5aeb202cbb9798c9a5295900932f",
+            "samples": [
+              1,
+              4
+            ]
+          },
+          {
+            "fixture": "gpu1-deferred-fsr3_quality",
+            "baseline_report_sha256": "b6304b609cb080d9031bbf56ec2d0fa9e13208138a5510f55b1a92fff27f6df9",
+            "candidate_report_sha256": "70565d4d5f5621f8196fc7507fe742d0c6276ae06e457c1db8398535c9f140af",
+            "samples": [
+              1
+            ]
+          }
+        ],
+        "editor_asset_replacement": {
+          "old_report_sha256": "e0ebe5b143dcd66f640c904879ad415da165334c6a982998c4419f4c3566b3e8",
+          "new_report_sha256": "413d51aeff2512a38e3d09bb427b7b96df7d4399a9bb2a0635dece49dd2e60a3",
+          "bmp_count": 1,
+          "exact_bmp_count": 1,
+          "different_bmps": [],
+          "resource_samples": 55,
+          "resource_samples_match_baseline": true
+        },
+        "deferred_lighting": {
+          "old_report_sha256": "08e8c2f3d13c15f4f4c697306c393f8972c4341f4d348143625a6d54634893e5",
+          "new_report_sha256": "22734e8dbb36fb055698802d22df30d3da00e279714e0649a9df6f9881e80984",
+          "bmp_count": 34,
+          "exact_bmp_count": 34,
+          "different_bmps": [],
+          "paired_clustered_and_reference_cases": 17
+        },
+        "environment_ibl": {
+          "report_sha256": "8dbb538b3677d8761e977d07a4e80a0a93a7b6fba223992f44ed781215db98f5",
+          "captures": 27,
+          "samples": 1,
+          "deferred": true,
+          "validation_log_sha256": "44036f1015396de3db9f0f67e32289f6cfb6a12d960d125da8a44e21b769b2dd"
+        },
+        "presentation": {
+          "report_sha256": "4b03bdf7cae6d804d26d78968807dfd0caef31cd3cfaa45c75cee7b22bd8ba93",
+          "frame_slots": [
+            1,
+            2
+          ],
+          "captures": 16,
+          "validation_log_sha256": "45710078bc5df6a4e9c2e5055fe2a84b3a2669433261e2765a0da7dfbc85e7cf"
+        }
+      }
+    }
+  }
+}

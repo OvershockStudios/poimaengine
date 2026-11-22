@@ -200,7 +200,14 @@ the GPU context, frame scheduling, submission and retirement. `src/render_vulkan
 owns the shared Vulkan instance and its loader dispatch. `src/render_vulkan_frame.cpp`
 owns swapchain image synchronization, presentation, and per-slot Vulkan query
 pools and timing collection. The context controls when to retire this work and
-publishes the frame receipts. Render passes with their
+publishes the frame receipts. `src/render_scene_assets.cpp` owns imported
+mesh and texture uploads, bounds, material bindings and cache retention.
+The context coordinates eviction with shadow and skinning resources.
+`src/render_light_clusters.cpp` owns cluster resource allocation, dispatch
+and statistics. Frame slots retain their readbacks. `src/render_sky.cpp`
+owns procedural sky constants, shaders and draw recording. The context supplies
+the framebuffer and detaches the pipeline when its attachments change.
+Render passes with their
 own resources, such as `src/render_screen_reflections.cpp` and
 `src/render_height_fog.cpp`, use the context's device and command list.
 `src/render_ambient_occlusion.cpp` owns the GTAO and bilateral filter GPU

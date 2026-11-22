@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.401
+
+- Compile scene asset caching, clustered lighting, and procedural sky rendering in separate modules.
+
 ## 0.0.400
 
 - Add authored GPU automatic exposure with bounded stops, asymmetric adaptation rates, and capture readback.

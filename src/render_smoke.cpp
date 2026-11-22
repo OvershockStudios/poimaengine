@@ -47,9 +47,9 @@
 #include "poima/particle_sprite_temporal_vs.hpp"
 #include "poima/particle_sprite_temporal_ps.hpp"
 #include "render_sprite_targets.hpp"
-#include "poima/cluster_lights_cs.hpp"
-#include "poima/sky_vs.hpp"
-#include "poima/sky_ps.hpp"
+#include "render_light_clusters.hpp"
+#include "render_scene_assets.hpp"
+#include "render_sky.hpp"
 #include "render_scene_draw.hpp"
 #include "render_shadows.hpp"
 #include "render_skinning.hpp"
@@ -119,22 +119,17 @@ static_assert(offsetof(GpuSurfaceMark,relief_depth_m)==80);
 static_assert(max_scene_surface_marks*sizeof(GpuSurfaceMark)==render_schedule::surface_mark_budget);
 static_assert(max_surface_mark_masks==render_schedule::max_surface_mark_mask_layers);
 static_assert(max_surface_mark_mask_side==render_schedule::max_surface_mark_mask_side);
-struct SkyConstants {
-    float right_tan[4],up_tan[4],forward_srgb[4],zenith_exposure[4];
-    float horizon_falloff[4],ground_radius[4],sun_intensity[4],sun_color[4];
-};
-static_assert(sizeof(SkyConstants)==128);
-struct GpuLight { float position_kind[4],direction_range[4],color_intensity[4],cone[4],shadow[4]; };
+using render_light_clusters::GpuLight;
+using render_light_clusters::cluster_capacity;
+using render_light_clusters::cluster_cells;
 struct GpuShadow { float view_projection[16],splits[4]; };
-inline constexpr std::uint32_t cluster_x=16,cluster_y=9,cluster_z=24,cluster_capacity=64;
-inline constexpr std::uint32_t cluster_cells=cluster_x*cluster_y*cluster_z;
 struct FrameConstants {
     float view_projection[16];float camera[4];float ambient_exposure[4];std::uint32_t light_count[4];float camera_forward[4];
     GpuShadow shadows[max_shadow_views];float cluster_viewport[4],cluster_depth[4];std::uint32_t cluster_grid[4];float previous_view_projection[16];float temporal_jitter[4]{},temporal_right[4]{},temporal_up[4]{},temporal_forward[4]{},ibl_parameters[4]{};
     std::array<float,4> water_ripple_shape{},water_ripple_motion{};
     std::array<std::array<float,4>,max_scene_water_wave_layers-1> water_wave_shapes{};
 };
-static_assert(sizeof(GpuLight)==80 && sizeof(GpuShadow)==80 && sizeof(FrameConstants)==1680);
+static_assert(sizeof(GpuShadow)==80 && sizeof(FrameConstants)==1680);
 static_assert(offsetof(FrameConstants,water_ripple_shape)==1600 && offsetof(FrameConstants,water_ripple_motion)==1616 &&
     offsetof(FrameConstants,water_wave_shapes)==1632);
 struct SpriteInstance {
@@ -360,25 +355,13 @@ struct Context {
     FrameConstants frame_constants{};
     nvrhi::BufferHandle frame_buffer;
     std::vector<GpuLight> gpu_lights;
-    nvrhi::BufferHandle light_buffer,cluster_counts,cluster_indices,cluster_readback;
-    nvrhi::ShaderHandle cluster_shader;
-    nvrhi::BindingLayoutHandle cluster_layout;
-    nvrhi::BindingSetHandle cluster_bindings;
-    nvrhi::ComputePipelineHandle cluster_pipeline;
+    render_light_clusters::Pass light_clusters;
+    nvrhi::BufferHandle cluster_readback;
     bool clustered_requested=true;
-    SkyConstants sky_constants{};
-    bool sky_enabled=false;
-    nvrhi::ShaderHandle sky_vs,sky_ps;
-    nvrhi::BindingLayoutHandle sky_layout;
-    nvrhi::BindingSetHandle sky_bindings;
-    nvrhi::GraphicsPipelineHandle sky_pipeline;
+    render_sky::Pass sky_pass;
     render_shadows::Pass shadows;
     std::vector<ShadowView> shadow_plan;
-    std::map<const MeshAsset*,Geometry> geometry_cache;
-    std::map<const MeshAsset*,std::shared_ptr<const MeshAsset>> mesh_owners;
-    std::map<const MaterialTextures*,std::shared_ptr<const MaterialTextures>> material_owners;
-    std::map<const TextureImage*,std::shared_ptr<const TextureImage>> image_owners;
-    std::map<const MeshAsset*,Bounds> bounds_cache;
+    render_scene_assets::Cache scene_assets;
     render_skinning::Pass skinning;
     nvrhi::BufferHandle skin_readback;
     RenderDiagnostics diagnostics;
@@ -387,11 +370,6 @@ struct Context {
     DrawCounts pending_draws;
     LightAssignmentDiagnostics pending_lights;
     render_vulkan_frame::Timestamps timestamps;
-    std::map<std::pair<const MeshAsset*,const MaterialTextures*>,nvrhi::BindingSetHandle> material_cache;
-    std::map<const TextureImage*,nvrhi::TextureHandle> texture_cache;
-    std::map<std::array<int,4>,nvrhi::SamplerHandle> sampler_cache;
-    std::shared_ptr<const TextureImage> white_image;
-    std::size_t texture_bytes=0;
     render_environment_ibl::Resources environment_ibl;
     bool hardware = false;
     std::string gpu_name;
@@ -425,7 +403,7 @@ struct Context {
         temporal_inputs.release_gpu();
         fog={};reflections={};
         pipeline = nullptr; culled_pipeline=nullptr;
-        sky_pipeline=nullptr;sky_bindings=nullptr;sky_layout=nullptr;sky_vs=nullptr;sky_ps=nullptr;
+        sky_pass.reset();
         scene_output.release_gpu();
         exposure_meter.release_gpu();
         bloom={};
@@ -440,9 +418,10 @@ struct Context {
         empty_surface_mark_binding=nullptr;empty_surface_marks=nullptr;white_surface_mark_mask=nullptr;
         surface_mark_mask_sampler=nullptr;surface_mark_array={};surface_mark_layout=nullptr;
         input_layout = nullptr;
-        cluster_pipeline=nullptr;cluster_bindings=nullptr;cluster_layout=nullptr;cluster_shader=nullptr;
-        light_buffer=nullptr;cluster_counts=nullptr;cluster_indices=nullptr;cluster_readback=nullptr;
-        vertices = nullptr; frame_buffer=nullptr; draws.clear(); geometry_cache.clear(); material_cache.clear();texture_cache.clear();sampler_cache.clear();
+        light_clusters.reset();
+        cluster_readback=nullptr;
+        vertices = nullptr; frame_buffer=nullptr; draws.clear();
+        scene_assets.release_gpu();
         environment_ibl={};
         framebuffers.clear();sky_framebuffers.clear();
 #if POIMA_EDITOR
@@ -744,7 +723,7 @@ struct Context {
             nvrhi::BufferDesc frame_desc;frame_desc.byteSize=sizeof(FrameConstants);frame_desc.isConstantBuffer=true;
             frame_desc.initialState=nvrhi::ResourceStates::ConstantBuffer;frame_desc.keepInitialState=true;frame_desc.debugName="Scene frame uniforms";
             frame_buffer=checked->createBuffer(frame_desc);require(static_cast<bool>(frame_buffer),"Frame uniform buffer creation failed.");
-            prepare_object_buffer();prepare_light_resources();
+            prepare_object_buffer();light_clusters.prepare(*checked.Get(), frame_buffer, cluster_readback);
             pipeline_desc.inputLayout = input_layout;
             pipeline_desc.bindingLayouts.push_back(binding_layout);
             pipeline_desc.bindingLayouts.push_back(surface_mark_layout);
@@ -798,7 +777,7 @@ struct Context {
         nvrhi::BufferDesc desc;desc.byteSize=count*sizeof(ObjectData);desc.structStride=sizeof(ObjectData);
         desc.initialState=nvrhi::ResourceStates::ShaderResource;desc.keepInitialState=true;desc.debugName="Current and prior accepted object data";
         object_buffer=checked->createBuffer(desc);require(bool(object_buffer),"Structured object buffer allocation failed.");
-        material_cache.clear();shadows.clear_masked_materials();bindings=nullptr;
+        scene_assets.invalidate_materials();shadows.clear_masked_materials();bindings=nullptr;
         shadows.rebind_objects(*checked.Get(),{frame_buffer,object_buffer});
     }
     void prepare_history() {
@@ -943,82 +922,17 @@ struct Context {
         for(auto& draw:viewmodel_draws)if(draw.skin && draw.camera_visible) {draw.skin->accepted_index=draw.skin->write_index;draw.skin->accepted_sequence=history_sequence;}
         history=std::move(pending_history);
     }
-    void prepare_light_resources() {
-        nvrhi::BufferDesc lights;lights.byteSize=max_scene_lights*sizeof(GpuLight);lights.structStride=sizeof(GpuLight);
-        lights.initialState=nvrhi::ResourceStates::ShaderResource;lights.keepInitialState=true;lights.debugName="Structured scene lights";
-        light_buffer=checked->createBuffer(lights);
-        nvrhi::BufferDesc cells;cells.byteSize=cluster_cells*sizeof(std::uint32_t);cells.structStride=sizeof(std::uint32_t);
-        cells.canHaveUAVs=true;cells.initialState=nvrhi::ResourceStates::ShaderResource;cells.keepInitialState=true;cells.debugName="Cluster light counts";
-        cluster_counts=checked->createBuffer(cells);
-        cells.byteSize=cluster_cells*cluster_capacity*sizeof(std::uint32_t);cells.debugName="Cluster sorted light indices";
-        cluster_indices=checked->createBuffer(cells);
-        nvrhi::BufferDesc readback;readback.byteSize=cluster_cells*sizeof(std::uint32_t);readback.cpuAccess=nvrhi::CpuAccessMode::Read;
-        readback.initialState=nvrhi::ResourceStates::CopyDest;readback.keepInitialState=true;readback.debugName="Cluster statistics readback";
-        cluster_readback=checked->createBuffer(readback);
-        cluster_shader=create_embedded_shader(checked,nvrhi::ShaderDesc(nvrhi::ShaderType::Compute).setEntryName("compute_main"),poima_cluster_lights_cs);
-        cluster_layout=checked->createBindingLayout(nvrhi::BindingLayoutDesc().setVisibility(nvrhi::ShaderType::Compute)
-            .addItem(nvrhi::BindingLayoutItem::ConstantBuffer(1)).addItem(nvrhi::BindingLayoutItem::StructuredBuffer_SRV(6))
-            .addItem(nvrhi::BindingLayoutItem::StructuredBuffer_UAV(0)).addItem(nvrhi::BindingLayoutItem::StructuredBuffer_UAV(1)));
-        require(light_buffer && cluster_counts && cluster_indices && cluster_readback && cluster_shader && cluster_layout,"Clustered light resources unavailable.");
-        cluster_bindings=checked->createBindingSet(nvrhi::BindingSetDesc().addItem(nvrhi::BindingSetItem::ConstantBuffer(1,frame_buffer))
-            .addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(6,light_buffer)).addItem(nvrhi::BindingSetItem::StructuredBuffer_UAV(0,cluster_counts))
-            .addItem(nvrhi::BindingSetItem::StructuredBuffer_UAV(1,cluster_indices)),cluster_layout);
-        cluster_pipeline=checked->createComputePipeline(nvrhi::ComputePipelineDesc().setComputeShader(cluster_shader).addBindingLayout(cluster_layout));
-        require(cluster_bindings && cluster_pipeline,"Clustered light compute pipeline creation failed.");
-    }
-    void configure_frame_lights(FrameConstants& frame_constants,LightAssignmentDiagnostics& pending_lights,const SceneLens& lens,const nvrhi::Viewport& viewport) {
-        auto& info=pending_lights;info={};info.requested=clustered_requested;
-        info.grid={cluster_x,cluster_y,cluster_z};info.cluster_count=cluster_cells;info.capacity=cluster_capacity;info.light_count=gpu_lights.size();
-        // Steady-state storage bound: GPU indices/counts plus one CPU readback
-        // per configured slot (readbacks are allocated lazily during warmup).
-        info.buffer_bytes=max_scene_lights*sizeof(GpuLight)+cluster_cells*(cluster_capacity+1+diagnostics.frame_execution.limit)*sizeof(std::uint32_t);
-        for(const auto& light:gpu_lights)if(light.position_kind[3]<.5f || light.direction_range[3]==0)++info.global_lights;
-        frame_constants.cluster_viewport[0]=viewport.minX;frame_constants.cluster_viewport[1]=viewport.minY;
-        frame_constants.cluster_viewport[2]=viewport.maxX-viewport.minX;frame_constants.cluster_viewport[3]=viewport.maxY-viewport.minY;
-        frame_constants.cluster_depth[2]=static_cast<float>(lens.near_plane);frame_constants.cluster_depth[3]=static_cast<float>(lens.far_plane);
-        frame_constants.cluster_grid[0]=cluster_x;frame_constants.cluster_grid[1]=cluster_y;frame_constants.cluster_grid[2]=cluster_z;frame_constants.cluster_grid[3]=0;
-        if(!clustered_requested)info.fallback_reason="All-light reference requested.";
-        else if(info.global_lights==info.light_count)info.fallback_reason="All lights have unbounded influence.";
-        else if(!rigid_transform(scene->camera_world))info.fallback_reason="Non-rigid camera uses all-light reference.";
-        else if(lens.near_plane<1e-4 || lens.far_plane>1e7 || lens.far_plane/lens.near_plane>1e7 || lens.vertical_fov<1 || lens.vertical_fov>175)
-            info.fallback_reason="Extreme camera projection uses all-light reference.";
-        else if(std::abs(scene->camera_world[12])>1e6 || std::abs(scene->camera_world[13])>1e6 || std::abs(scene->camera_world[14])>1e6)
-            info.fallback_reason="Extreme camera translation uses all-light reference.";
-        else if(!(frame_constants.cluster_viewport[2]>0 && frame_constants.cluster_viewport[3]>0))info.fallback_reason="Empty viewport uses all-light reference.";
-        else {
-            frame_constants.cluster_depth[0]=static_cast<float>(std::log2(lens.near_plane));
-            frame_constants.cluster_depth[1]=static_cast<float>(std::log2(lens.far_plane/lens.near_plane)/cluster_z);
-            frame_constants.cluster_depth[2]=static_cast<float>(lens.near_plane);frame_constants.cluster_depth[3]=static_cast<float>(lens.far_plane);
-            info.active=true;frame_constants.cluster_grid[3]=1;
-        }
+    void configure_frame_lights(FrameConstants& constants, LightAssignmentDiagnostics& info,
+        const SceneLens& lens, const nvrhi::Viewport& viewport) {
+        render_light_clusters::configure(gpu_lights, clustered_requested, diagnostics.frame_execution.limit,
+            scene->camera_world, lens, viewport,
+            {constants.cluster_viewport, constants.cluster_depth, constants.cluster_grid}, info);
     }
     void configure_light_assignment() { configure_frame_lights(frame_constants,pending_lights,{scene->vertical_fov,scene->near_plane,scene->far_plane},raster_viewport()); }
-    void dispatch_light_assignment() {
-        if(!pending_lights.active)return;
-        nvrhi::ComputeState state;state.pipeline=cluster_pipeline;state.bindings.push_back(cluster_bindings);commands->setComputeState(state);
-        commands->dispatch((cluster_cells+63)/64);
-        commands->copyBuffer(cluster_readback,0,cluster_counts,0,cluster_cells*sizeof(std::uint32_t));
-    }
-    void collect_light_assignment(FrameSlot& slot) {
-        auto& info=slot.lights;if(!info.active)return;
-        const void* mapped=checked->mapBuffer(slot.cluster_readback,nvrhi::CpuAccessMode::Read);require(mapped!=nullptr,"Cluster light statistics readback failed.");
-        std::array<std::uint32_t,cluster_cells> counts{};std::memcpy(counts.data(),mapped,sizeof(counts));checked->unmapBuffer(slot.cluster_readback);
-        info.candidate_references=0;info.overflow_clusters=0;info.max_candidates=0;
-        for(const auto count:counts) {
-            require(count<=slot.lights.light_count,"GPU cluster count exceeds the uploaded light table.");
-            info.candidate_references+=count;info.max_candidates=std::max(info.max_candidates,static_cast<std::uint64_t>(count));
-            if(count>cluster_capacity)++info.overflow_clusters;
-        }
-        info.statistics_available=true;
-        profiling::deferred_counter(slot.profile,"renderer.cluster_candidates",info.candidate_references);profiling::deferred_counter(slot.profile,"renderer.cluster_overflow",info.overflow_clusters);
-    }
     void collect_viewmodel_assignment(FrameSlot& slot) {
-        if(!slot.viewmodel_diagnostics || !slot.viewmodel_diagnostics->light_assignment.active)return;
-        auto& info=slot.viewmodel_diagnostics->light_assignment;const auto readback=slot.viewmodel->readbacks.at(static_cast<std::size_t>(&slot-slots.data()));
-        const void* data=checked->mapBuffer(readback,nvrhi::CpuAccessMode::Read);require(data!=nullptr,"Foreground cluster statistics unavailable.");
-        std::array<std::uint32_t,cluster_cells> counts{};std::memcpy(counts.data(),data,sizeof(counts));checked->unmapBuffer(readback);
-        for(auto count:counts) {require(count<=info.light_count,"Foreground GPU cluster count exceeds light table.");info.candidate_references+=count;info.max_candidates=std::max(info.max_candidates,std::uint64_t(count));if(count>cluster_capacity)++info.overflow_clusters;}
-        info.statistics_available=true;
+        if (!slot.viewmodel_diagnostics || !slot.viewmodel_diagnostics->light_assignment.active) return;
+        auto& readback = slot.viewmodel->readbacks.at(static_cast<std::size_t>(&slot - slots.data()));
+        render_light_clusters::collect_foreground(*checked.Get(), readback.Get(), slot.viewmodel_diagnostics->light_assignment);
     }
     vk::CommandBuffer native_commands() {
         const auto object=commands->getNativeObject(nvrhi::ObjectTypes::VK_CommandBuffer);
@@ -1033,12 +947,12 @@ struct Context {
         const auto target=render_shadows::target_for(scene->lighting);
         if(shadows.matches(target))return;
         // NVRHI submission references retain old resources until completion.
-        material_cache.clear();shadows.clear_masked_materials();bindings=nullptr;
+        scene_assets.invalidate_materials();shadows.clear_masked_materials();bindings=nullptr;
         shadows.prepare(*checked.Get(),physical,dispatch,target,input_layout,{frame_buffer,object_buffer});
     }
 
     void prepare_scene() {
-        auto white=std::make_shared<TextureImage>();white->mips.push_back({1,1,{255,255,255,255}});white_image=white;
+        scene_assets.initialize_defaults();
         environment_ibl.prepare_dummy(*checked.Get(),[this](const render_environment_ibl::RecordUpload& record) {
             submit_environment_upload(record);
         });
@@ -1070,19 +984,8 @@ struct Context {
         update_scene();
     }
 
-    Geometry mesh_geometry(const std::shared_ptr<const MeshAsset>& mesh) {
-        if(!mesh)return {vertices,nullptr,36};
-        if(const auto found=geometry_cache.find(mesh.get());found!=geometry_cache.end())return found->second;
-        Geometry result;result.count=static_cast<std::uint32_t>(mesh->indices.size());
-        nvrhi::BufferDesc vertex_desc;vertex_desc.byteSize=mesh->vertices.size()*sizeof(Vertex);vertex_desc.isVertexBuffer=true;vertex_desc.structStride=mesh->influences.empty() ? 0u : std::uint32_t(sizeof(Vertex));
-        vertex_desc.initialState=nvrhi::ResourceStates::VertexBuffer;vertex_desc.keepInitialState=true;
-        result.vertices=checked->createBuffer(vertex_desc);
-        auto index_desc=vertex_desc;index_desc.structStride=0;index_desc.byteSize=mesh->indices.size()*sizeof(std::uint32_t);index_desc.isVertexBuffer=false;index_desc.isIndexBuffer=true;index_desc.initialState=nvrhi::ResourceStates::IndexBuffer;
-        result.indices=checked->createBuffer(index_desc);require(result.vertices && result.indices,"Imported geometry buffer creation failed.");
-        commands->open();commands->writeBuffer(result.vertices,mesh->vertices.data(),vertex_desc.byteSize);
-        commands->writeBuffer(result.indices,mesh->indices.data(),index_desc.byteSize);commands->close();checked->executeCommandList(commands);
-        ++diagnostics.frame_execution.device_idle_waits;require(checked->waitForIdle(),"Imported geometry upload failed.");
-        geometry_cache.emplace(mesh.get(),result);return result;
+    render_scene_assets::Upload asset_upload() {
+        return {*checked.Get(), *commands.Get(), diagnostics.frame_execution.device_idle_waits};
     }
     void prepare_stream_geometry(FrameSlot& slot) {
         namespace rs=render_schedule;
@@ -1175,7 +1078,7 @@ struct Context {
         }
     }
     void invalidate_environment_bindings() {
-        material_cache.clear();bindings=nullptr;deferred_lighting.invalidate_bindings();
+        scene_assets.invalidate_materials();bindings=nullptr;deferred_lighting.invalidate_bindings();
         viewmodel_draws.clear();if(viewmodel)viewmodel->materials.clear();
     }
     void prepare_environment(const LightingEnvironment& lighting) {
@@ -1193,117 +1096,32 @@ struct Context {
             frame_constants.ibl_parameters[3]=float(diagnostics.environment_ibl->specular_levels-1);
         }
     }
-    nvrhi::TextureHandle upload_texture(const std::shared_ptr<const TextureImage>& image) {
-        if(const auto found=texture_cache.find(image.get());found!=texture_cache.end())return found->second;
-        std::size_t bytes=0;for(const auto& mip:image->mips)bytes+=mip.rgba.size();
-        require(bytes<=256*1024*1024-texture_bytes,"GPU texture data exceeds the initial 256 MiB budget.");
-        nvrhi::TextureDesc desc;desc.width=image->mips.front().width;desc.height=image->mips.front().height;desc.mipLevels=static_cast<std::uint32_t>(image->mips.size());
-        desc.format=image->srgb ? nvrhi::Format::SRGBA8_UNORM : nvrhi::Format::RGBA8_UNORM;
-        desc.initialState=nvrhi::ResourceStates::ShaderResource;desc.keepInitialState=true;desc.debugName="Cooked material texture";
-        auto texture=checked->createTexture(desc);require(bool(texture),"Texture allocation failed.");
-        commands->open();
-        for(std::uint32_t level=0;level<image->mips.size();++level) { const auto& mip=image->mips[level];commands->writeTexture(texture,0,level,mip.rgba.data(),std::size_t(mip.width)*4); }
-        commands->close();checked->executeCommandList(commands);++diagnostics.frame_execution.device_idle_waits;require(checked->waitForIdle(),"Texture upload failed.");
-        texture_bytes+=bytes;texture_cache.emplace(image.get(),texture);return texture;
-    }
 #include "render_particle_sprites.inc"
 #include "render_surface_marks.inc"
-    nvrhi::BindingSetHandle mesh_bindings(const MeshAsset* mesh,const MaterialTextures* override,bool foreground=false) {
-        auto& cache=foreground ? viewmodel->materials : material_cache;
-        const auto key_material=std::make_pair(mesh,override);
-        if(const auto found=cache.find(key_material);found!=cache.end())return found->second;
-        auto desc=nvrhi::BindingSetDesc().addItem(nvrhi::BindingSetItem::PushConstants(0,sizeof(DrawIndices))).addItem(nvrhi::BindingSetItem::ConstantBuffer(1,foreground ? viewmodel->frame : frame_buffer));
-        for(std::uint32_t slot=0;slot<5;++slot) {
-            const TextureMap map=override ? override->maps[slot] : mesh ? mesh->textures[slot] : TextureMap{};
-            const auto texture=upload_texture(map.image ? map.image : white_image);
-            const std::array<int,4> key{map.wrap_s,map.wrap_t,map.min_filter,map.mag_filter};
-            auto& sampler=sampler_cache[key];
-            if(!sampler) {
-                auto address=[](int v) { return v==33071 ? nvrhi::SamplerAddressMode::Clamp : v==33648 ? nvrhi::SamplerAddressMode::Mirror : nvrhi::SamplerAddressMode::Wrap; };
-                nvrhi::SamplerDesc sd;sd.addressU=address(map.wrap_s);sd.addressV=address(map.wrap_t);
-                sd.minFilter=map.min_filter==9729 || map.min_filter==9985 || map.min_filter==9987;sd.magFilter=map.mag_filter==9729;
-                sd.mipFilter=map.min_filter==9986 || map.min_filter==9987;sampler=checked->createSampler(sd);require(bool(sampler),"Texture sampler creation failed.");
-            }
-            auto levels=nvrhi::AllSubresources;if(map.min_filter==9728 || map.min_filter==9729)levels.setMipLevels(0,1);
-            desc.addItem(nvrhi::BindingSetItem::Texture_SRV(slot,texture,nvrhi::Format::UNKNOWN,levels)).addItem(nvrhi::BindingSetItem::Sampler(slot,sampler));
-        }
-        desc.addItem(nvrhi::BindingSetItem::Texture_SRV(5,shadows.texture()))
-            .addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(6,light_buffer))
-            .addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(7,foreground ? viewmodel->counts : cluster_counts))
-            .addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(8,foreground ? viewmodel->indices : cluster_indices)).addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(9,foreground ? viewmodel->objects : object_buffer));
-        environment_ibl.bind(desc);
-        auto result=checked->createBindingSet(desc,binding_layout);require(bool(result),"Material texture bindings failed.");cache.emplace(key_material,result);return result;
+    nvrhi::BindingSetHandle mesh_bindings(const MeshAsset* mesh, const MaterialTextures* textures, bool foreground=false) {
+        return scene_assets.material(asset_upload(), {
+            .layout=binding_layout.Get(),
+            .frame=foreground ? viewmodel->frame.Get() : frame_buffer.Get(),
+            .lights=light_clusters.lights(),
+            .counts=foreground ? viewmodel->counts.Get() : light_clusters.counts(),
+            .indices=foreground ? viewmodel->indices.Get() : light_clusters.indices(),
+            .objects=foreground ? viewmodel->objects.Get() : object_buffer.Get(),
+            .shadow=shadows.texture(),
+            .environment=environment_ibl,
+        }, mesh, textures, foreground ? &viewmodel->materials : nullptr);
     }
     void retain_scene_resources() {
-        std::set<const MeshAsset*> meshes;
-        std::set<const MaterialTextures*> materials;
-        std::set<const TextureImage*> images_used;
-        std::set<std::string> skin_ids;
-        std::set<render_shadows::MaterialKey> combinations{{nullptr,nullptr}};
-        std::set<std::array<int,4>> samplers;
-        auto retain_image=[&](const std::shared_ptr<const TextureImage>& image) {
-            if(image) { images_used.insert(image.get());image_owners[image.get()]=image; }
-        };
-        retain_image(white_image);
-        const TextureMap fallback;
-        samplers.insert({fallback.wrap_s,fallback.wrap_t,fallback.min_filter,fallback.mag_filter});
-        auto retain_objects=[&](const std::vector<SceneObject>& objects) {for(const auto& object:objects) {
-            if(object.skin)skin_ids.insert(object.entity_id);
-            const auto* bound_mesh=object.stream_geometry || object.mutable_geometry ? nullptr : object.mesh.get();
-            if(bound_mesh) { meshes.insert(bound_mesh);mesh_owners[bound_mesh]=object.mesh; }
-            if(object.lods)for(const auto& level:*object.lods)if(level.mesh) {
-                meshes.insert(level.mesh.get());mesh_owners[level.mesh.get()]=level.mesh;
-            }
-            if(object.textures) { materials.insert(object.textures.get());material_owners[object.textures.get()]=object.textures; }
-            combinations.emplace(bound_mesh,object.textures.get());
-            for(std::size_t slot=0;slot<5;++slot) {
-                const auto map=object.textures ? object.textures->maps[slot] : bound_mesh ? bound_mesh->textures[slot] : TextureMap{};
-                retain_image(map.image);samplers.insert({map.wrap_s,map.wrap_t,map.min_filter,map.mag_filter});
-            }
-        }
-        };retain_objects(scene->objects);if(scene->viewmodel)retain_objects(scene->viewmodel->objects);
-        for(const auto& style:scene->particle_sprites.styles)retain_image(style.texture);
-        // Owner maps retain old pointer identities until the associated GPU
-        // cache entries are gone, preventing allocator-address reuse hits.
-        std::erase_if(material_cache,[&](const auto& item){return !combinations.contains(item.first);});
-        shadows.prune_masked_materials(combinations);
-        if(viewmodel)std::erase_if(viewmodel->materials,[&](const auto& item){return !combinations.contains(item.first);});
-        std::erase_if(geometry_cache,[&](const auto& item){return !meshes.contains(item.first);});
-        std::erase_if(bounds_cache,[&](const auto& item){return item.first && !meshes.contains(item.first);});
-        skinning.retain_sources(meshes);
-        skinning.retain_instances(skin_ids);
-        std::erase_if(texture_cache,[&](const auto& item){return !images_used.contains(item.first);});
-        std::erase_if(sampler_cache,[&](const auto& item){return !samplers.contains(item.first);});
-        std::erase_if(mesh_owners,[&](const auto& item){return !meshes.contains(item.first);});
-        std::erase_if(material_owners,[&](const auto& item){return !materials.contains(item.first);});
-        std::erase_if(image_owners,[&](const auto& item){return !images_used.contains(item.first);});
-        texture_bytes=0;
-        for(const auto& [image,unused]:texture_cache) { (void)unused;for(const auto& mip:image_owners.at(image)->mips)texture_bytes+=mip.rgba.size(); }
-    }
-    void prepare_sky() {
-        if(!sky_layout) {
-            sky_vs=create_embedded_shader(checked,nvrhi::ShaderDesc(nvrhi::ShaderType::Vertex).setEntryName("vertex_main"),poima_sky_vs);
-            sky_ps=create_embedded_shader(checked,nvrhi::ShaderDesc(nvrhi::ShaderType::Pixel).setEntryName("pixel_main"),poima_sky_ps);
-            sky_layout=checked->createBindingLayout(nvrhi::BindingLayoutDesc().setVisibility(nvrhi::ShaderType::All)
-                .addItem(nvrhi::BindingLayoutItem::PushConstants(0,sizeof(SkyConstants))).addItem(nvrhi::BindingLayoutItem::ConstantBuffer(1)));
-            require(sky_vs && sky_ps && sky_layout,"Procedural sky shader/layout creation failed.");
-            sky_bindings=checked->createBindingSet(nvrhi::BindingSetDesc().addItem(nvrhi::BindingSetItem::PushConstants(0,sizeof(SkyConstants))).addItem(nvrhi::BindingSetItem::ConstantBuffer(1,frame_buffer)),sky_layout);
-            require(bool(sky_bindings),"Procedural sky bindings creation failed.");
-        }
-        if(!sky_pipeline) {
-            nvrhi::GraphicsPipelineDesc description;description.VS=sky_vs;description.PS=sky_ps;description.bindingLayouts.push_back(sky_layout);
-            description.renderState.depthStencilState.depthTestEnable=false;description.renderState.depthStencilState.depthWriteEnable=false;
-            description.renderState.rasterState.cullMode=nvrhi::RasterCullMode::None;description.renderState.rasterState.scissorEnable=true;
-            sky_pipeline=checked->createGraphicsPipeline(description,sky_framebuffers.front()->getFramebufferInfo());
-            require(bool(sky_pipeline),"Procedural sky pipeline creation failed.");
-        }
+        scene_assets.retain_scene(*scene, viewmodel ? &viewmodel->materials : nullptr, {
+            .shadow_materials=[this](const auto& materials) { shadows.prune_masked_materials(materials); },
+            .skins=[this](const auto& meshes, const auto& ids) {
+                skinning.retain_sources(meshes);
+                skinning.retain_instances(ids);
+            },
+        });
     }
     void render_sky(std::uint32_t image_index) {
-        if(!scene || !scene_visible || !sky_enabled)return;
-        nvrhi::GraphicsState state;state.pipeline=sky_pipeline;state.framebuffer=sky_framebuffers.at(image_index);state.bindings.push_back(sky_bindings);
-        state.viewport.addViewportAndScissorRect(raster_viewport());
-        commands->setGraphicsState(state);commands->setPushConstants(&sky_constants,sizeof(sky_constants));
-        commands->draw(nvrhi::DrawArguments().setVertexCount(3));
+        if (scene && scene_visible && sky_pass.enabled())
+            sky_pass.draw(*commands.Get(), sky_framebuffers.at(image_index), raster_viewport());
     }
     nvrhi::Viewport raster_viewport() const {
         if(reconstruction_mode!=ReconstructionMode::none)return nvrhi::Viewport(static_cast<float>(render_extent.width),static_cast<float>(render_extent.height));
@@ -1424,7 +1242,7 @@ struct Context {
                     if(light!=lighting.lights.end() && light->light.kind==LightKind::spot && light->light.intensity>0)
                         fog_spots[slot]=static_cast<std::uint32_t>(light-lighting.lights.begin()+1);
                 }
-                fog.prepare(*checked.Get(),{frame_buffer.Get(),surface_radiance_texture(),depth.Get(),shadows.texture(),light_buffer.Get()});
+                fog.prepare(*checked.Get(),{frame_buffer.Get(),surface_radiance_texture(),depth.Get(),shadows.texture(),light_clusters.lights()});
             }
             const auto light_count=static_cast<std::uint32_t>(std::ranges::count_if(fog_spots,[](auto ordinal){return ordinal!=0;}));
             diagnostics.height_fog=HeightFogDiagnostics{active,reason,fog.buffer_bytes(),light_count};
@@ -1470,7 +1288,7 @@ struct Context {
         if(auto* source=reflections.radiance())detach_world_outputs(source);
         reflections.clear_targets();
         reconstruction.reset();scene_output.invalidate_bindings();
-        framebuffers.clear();sky_framebuffers.clear();sky_pipeline=nullptr;
+        framebuffers.clear();sky_framebuffers.clear();sky_pass.detach_framebuffer();
         history={};temporal_phase=0;temporal_clock.reset();render_extent=render;output_extent=output;
         auto allocate=[&](nvrhi::Format pixel_format,vk::Format vk_format,fsr3::Extent size,const char* name,bool target,bool uav) {
             const auto properties=physical.getFormatProperties(vk_format,dispatch).optimalTilingFeatures;
@@ -1519,7 +1337,7 @@ struct Context {
         const auto jitter=fsr3::jitter(phase,render_extent,output_extent);
         // SDK accumulation samples current raster at output UV + jitter/renderSize;
         // apply the same right/down raster displacement to scene projection.
-        frame_constants.temporal_jitter[0]=jitter[0];frame_constants.temporal_jitter[1]=jitter[1];frame_constants.temporal_jitter[2]=1;frame_constants.temporal_jitter[3]=sky_enabled ? 1.0f : 0.0f;
+        frame_constants.temporal_jitter[0]=jitter[0];frame_constants.temporal_jitter[1]=jitter[1];frame_constants.temporal_jitter[2]=1;frame_constants.temporal_jitter[3]=sky_pass.enabled() ? 1.0f : 0.0f;
         pending_reconstruction.active=true;pending_reconstruction.render_width=render_extent.width;pending_reconstruction.render_height=render_extent.height;
         pending_reconstruction.output_width=output_extent.width;pending_reconstruction.output_height=output_extent.height;pending_reconstruction.jitter_pixels=jitter;
         pending_reconstruction.history_reset=!pending_history_valid || temporal_phase==0;pending_reconstruction.reset_reason=pending_history_reset;pending_reconstruction.history_sequence=history_sequence+1;
@@ -1598,7 +1416,7 @@ struct Context {
         // Stage only after the existing and replacement bundles fit together.
         validate_viewmodel_budget(viewmodel_resident_bytes()+render_viewmodel::logical_bytes(config));
         return render_viewmodel::stage(*checked.Get(),physical,dispatch,config,
-            {light_buffer.Get(),cluster_layout.Get(),binding_layout.Get(),surface_mark_layout.Get(),
+            {light_clusters.lights(),light_clusters.layout(),binding_layout.Get(),surface_mark_layout.Get(),
              reconstruction ? reconstructed.Get() : world_radiance_texture()});
     }
     void prepare_viewmodel(std::set<std::string>& active_skins) {
@@ -1646,13 +1464,13 @@ struct Context {
                 draw.normal[0][3]=object.textures ? object.textures->occlusion_strength : object.mesh ? object.mesh->occlusion_strength : 1.0f;
                 draw.normal[1][3]=object.textures ? object.textures->normal_scale : object.mesh ? object.mesh->normal_scale : 1.0f;
                 draw.normal[2][3]=(object.textures ? bool(object.textures->maps[4].image) : object.mesh && object.mesh->textures[4].image) ? 1.0f : 0.0f;
-                item.bindings=mesh_bindings(object.mesh.get(),object.textures.get(),true);item.geometry=mesh_geometry(object.mesh);Bounds bounds;
+                item.bindings=mesh_bindings(object.mesh.get(),object.textures.get(),true);item.geometry=scene_assets.geometry(asset_upload(), object.mesh, vertices);Bounds bounds;
                 if(object.skin) {
                     require(object.mesh && !object.mesh->influences.empty() && active_skins.insert(object.entity_id).second,
                         "Foreground skin requires unique weighted instance.");
                     bounds=prepare_skinning(object,item);
                 }
-                else {require(!object.mesh || object.mesh->influences.empty(),"Foreground weighted mesh lacks a skin pose.");auto [entry,inserted]=bounds_cache.try_emplace(object.mesh.get());if(inserted)entry->second=mesh_bounds(object.mesh.get());bounds=entry->second;}
+                else {require(!object.mesh || object.mesh->influences.empty(),"Foreground weighted mesh lacks a skin pose.");bounds=scene_assets.bounds(object.mesh.get());}
                 item.camera_visible=object.camera_visible && (!diagnostics.culling || intersects(transform_bounds(bounds,object.world),frustum));
                 if(item.camera_visible) {++pending_viewmodel->draws.camera_draws;pending_viewmodel->draws.camera_triangles+=item.geometry.count/3;if(item.skin) {++pending_viewmodel->draws.skinned_instances;pending_viewmodel->draws.skinned_vertices+=object.mesh->vertices.size();}}else ++pending_viewmodel->draws.camera_culled;
                 viewmodel_draws.push_back(std::move(item));
@@ -1890,31 +1708,7 @@ struct Context {
         for(std::size_t k=0;k<16;++k)frame_constants.view_projection[k]=number(vp[k]);
         for(std::size_t k=0;k<3;++k)frame_constants.camera[k]=number(scene->camera_world[12+k]);
         frame_constants.camera[3]=(format==vk::Format::eB8G8R8A8Srgb || format==vk::Format::eR8G8B8A8Srgb) ? 1.0f : 0.0f;
-        const auto& sky=lighting.environment.sky;sky_enabled=sky.enabled;sky_constants={};
-        if(sky_enabled) {
-            require(rigid_transform(scene->camera_world),"Procedural sky requires a rigid camera transform.");
-            prepare_sky();
-            for(std::size_t k=0;k<3;++k) {
-                sky_constants.right_tan[k]=number(scene->camera_world[k]);
-                sky_constants.up_tan[k]=number(scene->camera_world[4+k]);
-                sky_constants.forward_srgb[k]=number(-scene->camera_world[8+k]);
-                sky_constants.zenith_exposure[k]=sky.zenith[k];sky_constants.horizon_falloff[k]=sky.horizon[k];sky_constants.ground_radius[k]=sky.ground[k];
-            }
-            const double tan_y=std::tan(scene->vertical_fov*0.0087266462599716478846);
-            sky_constants.right_tan[3]=number(tan_y*aspect);sky_constants.up_tan[3]=number(tan_y);
-            sky_constants.forward_srgb[3]=frame_constants.camera[3];sky_constants.zenith_exposure[3]=lighting.environment.exposure;
-            sky_constants.horizon_falloff[3]=sky.horizon_falloff;
-            sky_constants.ground_radius[3]=static_cast<float>(2*std::sin(sky.sun_size_degrees*0.0043633231299858239423));
-            // A deterministic reference, never whichever directional light happens
-            // to sort first. Runtime snapshots supply the live light orientation.
-            for(const auto& light:lighting.lights)if(!sky.sun.empty() && light.entity_id==sky.sun && light.light.enabled && light.light.kind==LightKind::directional) {
-                const double length=std::hypot(light.direction[0],light.direction[1],light.direction[2]);
-                require(std::isfinite(length) && length>0,"Sky sun direction is degenerate.");
-                validate_light(light.light);
-                for(std::size_t k=0;k<3;++k) { sky_constants.sun_intensity[k]=number(-light.direction[k]/length);sky_constants.sun_color[k]=light.light.color[k]; }
-                sky_constants.sun_intensity[3]=sky.sun_intensity;break;
-            }
-        }
+        sky_pass.prepare(*checked.Get(), frame_buffer, sky_framebuffers, *scene, lighting, aspect, frame_constants.camera[3]);
         for(std::size_t k=0;k<3;++k)frame_constants.ambient_exposure[k]=lighting.environment.ambient[k];
         frame_constants.ambient_exposure[3]=lighting.environment.exposure;
         frame_constants.light_count[0]=static_cast<std::uint32_t>(lighting.lights.size());
@@ -2040,7 +1834,7 @@ struct Context {
             item.bindings=mesh_bindings(item.stream_geometry ? nullptr : object.mesh.get(),object.textures.get());
             if(draw.alpha[2]>.5f)item.masked_shadow_bindings=shadows.masked_material(*checked.Get(),{frame_buffer,object_buffer},
                 {object.mesh.get(),object.textures.get()},*item.bindings.Get());
-            if(!item.stream_geometry)item.geometry=mesh_geometry(item.mesh);
+            if(!item.stream_geometry)item.geometry=scene_assets.geometry(asset_upload(), item.mesh, vertices);
             Bounds local_bounds;
             if(object.skin) {
                 require(object.mesh && !object.mesh->influences.empty() && active_skins.insert(object.entity_id).second,"Skin snapshot requires a weighted mesh and unique instance ID.");
@@ -2050,8 +1844,7 @@ struct Context {
                 local_bounds=mesh_bounds(object.mesh.get());
             } else {
                 require(!object.mesh || object.mesh->influences.empty(),"Weighted geometry requires a skin pose.");
-                auto [entry,inserted]=bounds_cache.try_emplace(item.mesh.get());if(inserted)entry->second=mesh_bounds(item.mesh.get());
-                local_bounds=entry->second;
+                local_bounds=scene_assets.bounds(item.mesh.get());
             }
             auto bounds=transform_bounds(local_bounds,object.world);
             if(object.foliage_motion) {
@@ -2082,11 +1875,12 @@ struct Context {
         profiling::counter("renderer.camera_triangles",pending_draws.camera_triangles);
         profiling::counter("renderer.shadow_draws",pending_draws.shadow_draws);
         profiling::counter("renderer.shadow_triangles",pending_draws.shadow_triangles);
-        profiling::counter("renderer.geometries",geometry_cache.size());
-        profiling::counter("renderer.materials",material_cache.size());
-        profiling::counter("renderer.images",texture_cache.size());
+        const auto assets = scene_assets.statistics();
+        profiling::counter("renderer.geometries", assets.geometries);
+        profiling::counter("renderer.materials", assets.materials);
+        profiling::counter("renderer.images", assets.images);
         profiling::counter("renderer.skin_instances",skinning.instance_count());
-        profiling::counter("renderer.texture_payload_bytes",texture_bytes);
+        profiling::counter("renderer.texture_payload_bytes", assets.texture_bytes);
         profiling::counter("renderer.environment_texture_payload_bytes",environment_ibl.payload_bytes());
         profiling::counter("renderer.skin_buffer_bytes",skinning.instance_bytes());
         diagnostics.scene_observed=renderer_scene_result(*scene);
@@ -2104,7 +1898,7 @@ struct Context {
         reconstruction.reset();reconstructed=nullptr;dense_motion=nullptr;reactive=nullptr;dilated_depth=nullptr;dilated_motion=nullptr;reconstructed_depth=nullptr;render_extent={};output_extent={};temporal_phase=0;temporal_clock.reset();
         viewmodel.reset();viewmodel_enabled=false;viewmodel_draws.clear();viewmodel_objects.clear();
         commands=nullptr;
-        sky_pipeline=nullptr;scene_output.detach_framebuffer();bloom.clear_targets();
+        sky_pass.detach_framebuffer();scene_output.detach_framebuffer();bloom.clear_targets();
         spatial_aa={};diagnostics.fxaa_buffer_bytes=0;
         post_effect.clear_target();
         post_effect.detach_source();
@@ -2386,7 +2180,8 @@ struct Context {
                     require(status==vk::Result::eSuccess,"GPU frame completion timed out; recreate the renderer session.");
                 }
                 if(slot.has_skin)render_skinning::validate_status(*checked.Get(),slot.skin_readback,slot.skin_ids);
-                collect_light_assignment(slot);collect_viewmodel_assignment(slot);
+                render_light_clusters::collect_world(*checked.Get(), slot.cluster_readback.Get(), slot.lights, slot.profile);
+                collect_viewmodel_assignment(slot);
                 timestamps.collect(device,dispatch,retire_slot%diagnostics.frame_execution.limit,{
                     .recorded=slot.timing,.deferred=deferred,.ambient_occlusion=ao_enabled,
                     .reconstruction=slot.reconstruction.active,.screen_reflections=slot.screen_reflections,
@@ -2422,7 +2217,7 @@ struct Context {
         settings.height_fog=scene && scene_visible && fog.radiance();
         settings.height_fog_spots=settings.height_fog && (fog_spots[0]!=0 || fog_spots[1]!=0);
         settings.particle_sprites=!sprite_instances.empty();
-        settings.sky=scene && scene_visible && sky_enabled;settings.products=bool(scene_normal);settings.products_debug=scene_debug_view!=SceneDebugView::color;settings.editor=editor;settings.capture=capture_frame;settings.reconstruction=pending_reconstruction.active;settings.deferred=deferred;settings.ambient_occlusion=ao_enabled;
+        settings.sky=scene && scene_visible && sky_pass.enabled();settings.products=bool(scene_normal);settings.products_debug=scene_debug_view!=SceneDebugView::color;settings.editor=editor;settings.capture=capture_frame;settings.reconstruction=pending_reconstruction.active;settings.deferred=deferred;settings.ambient_occlusion=ao_enabled;
         settings.slot=static_cast<std::uint32_t>(next_slot%diagnostics.frame_execution.limit);settings.history_sequence=history.sequence;
         std::unordered_map<std::uintptr_t,rs::ResourceId> ids;
         auto insert=[&](rs::Resource resource) {
@@ -2505,7 +2300,7 @@ struct Context {
             f.ibl_diffuse=texture(environment.diffuse,rs::Lifetime::imported,true);
             f.ibl_specular=texture(environment.specular,rs::Lifetime::imported,true);
             f.ibl_brdf=texture(environment.brdf,rs::Lifetime::imported,true);
-            if(!gpu_lights.empty())f.lights=buffer(light_buffer,rs::Lifetime::shared,false,gpu_lights.size()*sizeof(GpuLight));
+            if(!gpu_lights.empty())f.lights=buffer(light_clusters.lights(),rs::Lifetime::shared,false,gpu_lights.size()*sizeof(GpuLight));
             if(settings.reconstruction) {
                 f.reconstructed=texture(reconstructed,rs::Lifetime::shared,false);
                 f.dense_motion=texture(dense_motion,rs::Lifetime::shared,false);
@@ -2525,14 +2320,14 @@ struct Context {
             if(settings.height_fog)f.fogged_hdr=texture(fog.radiance(),rs::Lifetime::shared,false);
             f.depth=texture(depth,rs::Lifetime::shared,false);if(scene_normal) {f.normal=texture(scene_normal,rs::Lifetime::shared,false);f.motion=texture(scene_motion,rs::Lifetime::shared,false);f.motion_valid=texture(scene_motion_valid,rs::Lifetime::shared,false);}f.shadow=texture(shadows.texture(),rs::Lifetime::shared,false);
             if(settings.clustered) {
-                f.counts=buffer(cluster_counts,rs::Lifetime::shared,false);f.indices=buffer(cluster_indices,rs::Lifetime::shared,false);
+                f.counts=buffer(light_clusters.counts(),rs::Lifetime::shared,false);f.indices=buffer(light_clusters.indices(),rs::Lifetime::shared,false);
                 f.resources[f.indices].region=rs::Region::cluster_members;f.resources[f.indices].counts=f.counts;
                 f.cluster_readback=buffer(cluster_readback,rs::Lifetime::slot,false);
             }
             for(const auto* list:{&draws,&viewmodel_draws})for(const auto& draw:*list) {
                 if(draw.skin && (draw.camera_visible || draw.shadow_mask)) {
                     const auto& skin=*draw.skin;const auto* mesh=skin.mesh.get();
-                    f.skins.push_back({buffer(geometry_cache.at(mesh).vertices,rs::Lifetime::imported,true),
+                    f.skins.push_back({buffer(scene_assets.geometry_for(mesh).vertices,rs::Lifetime::imported,true),
                         buffer(skinning.influences(mesh),rs::Lifetime::imported,true),buffer(skin.palette,rs::Lifetime::shared,false),
                         buffer(skin.vertices,rs::Lifetime::shared,false)});
                 }
@@ -2697,8 +2492,8 @@ struct Context {
             if(f.surface_mark_masks!=rs::none)identity(f.surface_mark_masks,mark_bindings[1].resourceHandle);
             else require(mark_bindings[1].resourceHandle==white_surface_mark_mask.Get(),"Analytic marks require the white mask binding.");
             identity(f.frame,frame_buffer.Get());identity(f.objects,object_buffer.Get());identity(f.hdr,scene_hdr.Get());identity(f.shadow,shadows.texture());if(f.normal!=rs::none) {identity(f.normal,scene_normal.Get());identity(f.motion,scene_motion.Get());identity(f.motion_valid,scene_motion_valid.Get());}
-            if(f.lights!=rs::none)identity(f.lights,light_buffer.Get());
-            if(plan.settings.clustered) {identity(f.counts,cluster_counts.Get());identity(f.indices,cluster_indices.Get());identity(f.cluster_readback,cluster_readback.Get());}
+            if(f.lights!=rs::none)identity(f.lights,light_clusters.lights());
+            if(plan.settings.clustered) {identity(f.counts,light_clusters.counts());identity(f.indices,light_clusters.indices());identity(f.cluster_readback,cluster_readback.Get());}
             if(!f.skins.empty()) {identity(f.skin_errors,skinning.errors());identity(f.skin_readback,skin_readback.Get());}
             for(const auto& shadow:shadows.framebuffers())framebuffer(shadow,rs::none,f.shadow);
             for(const auto& binding:shadows.opaque_bindings()->getDesc()->bindings) {
@@ -2889,10 +2684,8 @@ struct Context {
             slot.completion=checked->createEventQuery();
             require(bool(slot.completion),"Frame completion query allocation failed.");
         }
-        if(cluster_readback && !slot.cluster_readback) {
-            slot.cluster_readback=checked->createBuffer(cluster_readback->getDesc());
-            require(bool(slot.cluster_readback),"Frame cluster readback allocation failed.");
-        }
+        if (cluster_readback && !slot.cluster_readback)
+            slot.cluster_readback = render_light_clusters::make_slot_readback(*checked.Get(), *cluster_readback.Get());
         if(skin_readback && !slot.skin_readback) {
             slot.skin_readback=checked->createBuffer(skin_readback->getDesc());
             require(bool(slot.skin_readback),"Frame skin readback allocation failed.");
@@ -2907,7 +2700,7 @@ struct Context {
         if(deferred)deferred_lighting.prepare(*checked.Get(),{
             .frame=frame_buffer.Get(),.material_base=material_base.Get(),.material_surface=material_surface.Get(),
             .material_correspondence=material_correspondence.Get(),.depth=depth.Get(),.shadow=shadows.texture(),
-            .lights=light_buffer.Get(),.counts=cluster_counts.Get(),.indices=cluster_indices.Get(),
+            .lights=light_clusters.lights(),.counts=light_clusters.counts(),.indices=light_clusters.indices(),
             .hdr=scene_hdr.Get(),.normal=scene_normal.Get(),.motion=scene_motion.Get(),.motion_valid=scene_motion_valid.Get(),
             .ao=occlusion.filtered(),.reflection_roughness=reflections.roughness()},
             environment_ibl,scene_products_enabled,ao_enabled);
@@ -2993,7 +2786,7 @@ struct Context {
             case render_schedule::PassId::light_assignment:
                 if(scene) {
                     if(!gpu_lights.empty())commands->writeBuffer(planned_buffer(resources.lights),gpu_lights.data(),gpu_lights.size()*sizeof(GpuLight));
-                    dispatch_light_assignment();
+                    light_clusters.record(*commands.Get(), cluster_readback.Get(), pending_lights.active);
                 }
                 timestamp(2);break;
             case render_schedule::PassId::shadows:
@@ -3044,7 +2837,9 @@ struct Context {
             case render_schedule::PassId::resolve:
                 commands->resolveTexture(planned_texture(resources.hdr),nvrhi::AllSubresources,planned_texture(resources.color),nvrhi::AllSubresources);break;
             case render_schedule::PassId::viewmodel_lights: {
-                nvrhi::ComputeState state;state.pipeline=cluster_pipeline;state.bindings.push_back(viewmodel->cluster_bindings);commands->setComputeState(state);commands->dispatch((cluster_cells+63)/64);commands->copyBuffer(planned_buffer(resources.viewmodel_readback),0,viewmodel->counts,0,cluster_cells*sizeof(std::uint32_t));break;
+                light_clusters.record_foreground(*commands.Get(), viewmodel->cluster_bindings.Get(),
+                    viewmodel->counts.Get(), planned_buffer(resources.viewmodel_readback));
+                break;
             }
             case render_schedule::PassId::viewmodel_clear:
                 commands->clearTextureFloat(planned_texture(resources.viewmodel_color),nvrhi::AllSubresources,nvrhi::Color(0,0,0,0));commands->clearDepthStencilTexture(planned_texture(resources.viewmodel_depth),nvrhi::AllSubresources,true,1.0f,false,0);break;
@@ -3371,8 +3166,9 @@ RenderReport EditorViewport::report() const {
 }
 EditorViewportResources EditorViewport::resources() const {
     const auto& c=impl_->context;
-    return {c.geometry_cache.size(),c.material_cache.size(),c.texture_cache.size(),c.skinning.instance_count(),
-        c.texture_bytes,c.skinning.instance_bytes()};
+    const auto assets = c.scene_assets.statistics();
+    return {assets.geometries, assets.materials, assets.images, c.skinning.instance_count(),
+        assets.texture_bytes, c.skinning.instance_bytes()};
 }
 #endif
 

@@ -160,7 +160,7 @@ target_sources(poima_core PRIVATE
     src/render_vulkan_instance.cpp src/render_vulkan_frame.cpp src/render_deferred_lighting.cpp
     src/player_window.cpp src/gamepad_sdl.cpp
     src/render_ui.cpp src/render_environment_ibl.cpp src/render_ambient_occlusion.cpp
-    src/render_shadows.cpp
+    src/render_shadows.cpp src/render_scene_assets.cpp src/render_light_clusters.cpp src/render_sky.cpp
     src/render_auto_exposure.cpp
     src/render_skinning.cpp src/render_spatial_aa.cpp src/render_scene_output.cpp src/render_temporal_inputs.cpp src/render_sprite_targets.cpp
     "${poima_startup_wordmark}")

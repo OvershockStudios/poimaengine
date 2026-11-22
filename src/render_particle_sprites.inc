@@ -30,7 +30,7 @@
                 base.rgba.size()<=max_scene_particle_sprite_texture_bytes-base_bytes,
                 "Frozen particle sprite images exceed the texture budget.");
             base_bytes+=base.rgba.size();
-            (void)upload_texture(style.texture);
+            (void)scene_assets.upload_texture(asset_upload(), style.texture);
         }
     }
     void prepare_sprite_pipeline() {
@@ -118,7 +118,7 @@
         for(const auto& candidate:candidates) {
             const auto& sprite=*candidate.sprite;
             const auto& style=layer.styles[sprite.style];
-            const auto& image=texture_cache.at(style.texture.get());
+            const auto& image=scene_assets.texture_for(style.texture.get());
             const auto& base=style.texture->mips.front();
             auto rect=sprite.texel_rect;
             if(rect==std::array<std::uint32_t,4>{})rect={0,0,base.width,base.height};
