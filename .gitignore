@@ -103,6 +103,8 @@ __pycache__/
 /tests/managed_timed_surface_mark_gameplay/obj/
 /tests/managed_wetness_gameplay/bin/
 /tests/managed_wetness_gameplay/obj/
+/tests/managed_solar_lighting_gameplay/bin/
+/tests/managed_solar_lighting_gameplay/obj/
 
 /examples/projectile-range/bin/
 /examples/projectile-range/obj/
