@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.395
+
+- Select FSR reconstruction in standalone games and reconstruct the world with height fog and deferred screen reflections active.
+
 ## 0.0.394
 
 - Compile world preference commands, spatial queries and the Vulkan scene output pass in separate source modules.

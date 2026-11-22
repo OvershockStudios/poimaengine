@@ -217,6 +217,9 @@ FXAA draw. The render schedule orders the filter between scene output and UI.
 `src/render_scene_output.cpp` owns the fullscreen tone-mapping pipeline, grade
 constants, shader bindings and draw. The context chooses its HDR source and
 output framebuffer, validates schedule identities and retires live resources.
+`src/render_temporal_inputs.cpp` prepares the Vulkan motion and reactivity
+inputs and the optional world composition mask. The context retires affected
+frames when replacing input resources and dispatches the SDK after that pass.
 `src/render_environment_ibl.cpp` owns the procedural sky lighting bake
 and its texture bindings. `src/render_schedule.cpp` constructs and validates
 the frame schedule. The native player-window fixture checks

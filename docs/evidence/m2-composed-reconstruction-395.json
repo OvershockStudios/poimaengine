@@ -1,0 +1,589 @@
+{
+  "format": "poima.reconstruction.composition.qualification.v1",
+  "version": "0.0.395",
+  "schema_revision": 203,
+  "baseline": "f8dc795",
+  "source_manifest_sha256": "9e4988ec3548d69dfa8f53ad3fb34d2d12739e3b4b1028b34eae6aeac1c98954",
+  "verifier_sha256": {
+    "tests/reconstruction_native.cpp": "c69eefb15e4254c0ead2ec84218adc6c03638b981752c738f501d7218912c027",
+    "tests/reconstruction_composition_capture.py": "1db499b3f008de35ef809de9a1d8f057223843267fa3a1310cd7ab71b0393ffe"
+  },
+  "ubuntu": {
+    "tests": [
+      "player_settings_contract",
+      "project_contract",
+      "authoring_response_compatibility",
+      "authoring_api_compatibility",
+      "authoring_contract_identity",
+      "asset_references_contract",
+      "world_ui_contract",
+      "authoring_core_conformance",
+      "player_service_contract",
+      "authoring_contract_artifacts",
+      "cli_contract",
+      "render_schedule_native",
+      "world_schema_native"
+    ],
+    "binary_sha256": "86af7f935be4df882f20161339a81caa74000160295d0b6e109f03f1c47f7ead",
+    "junit_sha256": "e34957e22ed3d3146070539f6ffa4893b2467180c2c106755545f45404061c83",
+    "world_discovery_sha256": "fbc488405acff6ba400d190b1e34f4ef7c9ace4635d7f0dbd0f824bdd8755407"
+  },
+  "render_schedule": {
+    "admitted": 526,
+    "rejected": 1343,
+    "legacy_identical_traces": 1267,
+    "legacy_trace_sha256": "3fe640917bad4da8925b6a498a3aa89690769442239eecf341c485844a17dc1e"
+  },
+  "windows": {
+    "binary_sha256": "a1689f123a3ccda26413f5be39af9cffdcfaec0182aa363f3c6b7c70f15f5bcd",
+    "runtime_descriptor_sha256": "5606ebb58c210b6938bef9eab53af95634805cbd99e583c2ffdc6b7c60f9ce04",
+    "native_harness_sha256": "855525b70ab4109e6c15154d511a9ba4cd60691f84485f56811deb4737cdae9f",
+    "legacy_shader_modules_identical": 56,
+    "composed_shader_sha256": "da565957c2f3aec831d3a2087c2c28eb13b9a944d5cd3bb79fe399b391544e88",
+    "native_mask_captures": 64,
+    "native_mask_cases": [
+      {
+        "adapter": "AMD Radeon(TM) Graphics",
+        "gpu_index": 0,
+        "lighting_path": "forward",
+        "ambient_occlusion": "none",
+        "captures": 32,
+        "analytic_fog_roots": [
+          {
+            "mode": "fsr3_native",
+            "frame_slots": 1,
+            "render_extent": [
+              320,
+              240
+            ],
+            "output_extent": [
+              320,
+              240
+            ],
+            "mask_bytes": 76800,
+            "sdk_mask_r": 0.250980406999588,
+            "raw_hdr": [
+              0.125,
+              0.5,
+              2.0
+            ],
+            "resolved_hdr": [
+              0.09368896484375,
+              0.374755859375,
+              1.5
+            ]
+          },
+          {
+            "mode": "fsr3_native",
+            "frame_slots": 2,
+            "render_extent": [
+              320,
+              240
+            ],
+            "output_extent": [
+              320,
+              240
+            ],
+            "mask_bytes": 76800,
+            "sdk_mask_r": 0.250980406999588,
+            "raw_hdr": [
+              0.125,
+              0.5,
+              2.0
+            ],
+            "resolved_hdr": [
+              0.09368896484375,
+              0.374755859375,
+              1.5
+            ]
+          },
+          {
+            "mode": "fsr3_quality",
+            "frame_slots": 1,
+            "render_extent": [
+              213,
+              160
+            ],
+            "output_extent": [
+              320,
+              240
+            ],
+            "mask_bytes": 34080,
+            "sdk_mask_r": 0.250980406999588,
+            "raw_hdr": [
+              0.125,
+              0.5,
+              2.0
+            ],
+            "resolved_hdr": [
+              0.09375,
+              0.375,
+              1.5
+            ]
+          },
+          {
+            "mode": "fsr3_quality",
+            "frame_slots": 2,
+            "render_extent": [
+              213,
+              160
+            ],
+            "output_extent": [
+              320,
+              240
+            ],
+            "mask_bytes": 34080,
+            "sdk_mask_r": 0.250980406999588,
+            "raw_hdr": [
+              0.125,
+              0.5,
+              2.0
+            ],
+            "resolved_hdr": [
+              0.09375,
+              0.375,
+              1.5
+            ]
+          }
+        ],
+        "before_fog_enable_and_after_disable": 0,
+        "expected_composition_mask": 0.25,
+        "report_sha256": "13a80f2e11775166ee243b532296fff064577ce1c1b69c273f476868269f3ae1",
+        "validation_log_sha256": "ba1d5935011e8aee0638db50199d95750d05bf6043e4d307baecda4f23afc6e7"
+      },
+      {
+        "adapter": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "gpu_index": 1,
+        "lighting_path": "deferred",
+        "ambient_occlusion": "gtao",
+        "captures": 32,
+        "analytic_fog_roots": [
+          {
+            "mode": "fsr3_native",
+            "frame_slots": 1,
+            "render_extent": [
+              320,
+              240
+            ],
+            "output_extent": [
+              320,
+              240
+            ],
+            "mask_bytes": 76800,
+            "sdk_mask_r": 0.250980406999588,
+            "raw_hdr": [
+              0.125,
+              0.5,
+              2.0
+            ],
+            "resolved_hdr": [
+              0.09375,
+              0.374755859375,
+              1.4990234375
+            ]
+          },
+          {
+            "mode": "fsr3_native",
+            "frame_slots": 2,
+            "render_extent": [
+              320,
+              240
+            ],
+            "output_extent": [
+              320,
+              240
+            ],
+            "mask_bytes": 76800,
+            "sdk_mask_r": 0.250980406999588,
+            "raw_hdr": [
+              0.125,
+              0.5,
+              2.0
+            ],
+            "resolved_hdr": [
+              0.09375,
+              0.374755859375,
+              1.4990234375
+            ]
+          },
+          {
+            "mode": "fsr3_quality",
+            "frame_slots": 1,
+            "render_extent": [
+              213,
+              160
+            ],
+            "output_extent": [
+              320,
+              240
+            ],
+            "mask_bytes": 34080,
+            "sdk_mask_r": 0.250980406999588,
+            "raw_hdr": [
+              0.125,
+              0.5,
+              2.0
+            ],
+            "resolved_hdr": [
+              0.09375,
+              0.375,
+              1.5
+            ]
+          },
+          {
+            "mode": "fsr3_quality",
+            "frame_slots": 2,
+            "render_extent": [
+              213,
+              160
+            ],
+            "output_extent": [
+              320,
+              240
+            ],
+            "mask_bytes": 34080,
+            "sdk_mask_r": 0.250980406999588,
+            "raw_hdr": [
+              0.125,
+              0.5,
+              2.0
+            ],
+            "resolved_hdr": [
+              0.09375,
+              0.375,
+              1.5
+            ]
+          }
+        ],
+        "before_fog_enable_and_after_disable": 0,
+        "expected_composition_mask": 0.25,
+        "report_sha256": "6ad93b416c1fb82d14bc17310fca5b8da009d27ffe023f24882ee553c6c69d93",
+        "validation_log_sha256": "49dbe7c93064c3fea245d80194f47d543cf63ab6062b18e5c71f5765b04891ec"
+      }
+    ],
+    "authored_and_relocated_windows_cases": [
+      {
+        "adapter": "AMD Radeon(TM) Graphics",
+        "gpu_index": 0,
+        "validation_owners": 12,
+        "capture_observations": [
+          {
+            "case": "omitted/deferred/fsr3_native",
+            "image_sha256": "d7e85156f37e8059e7fd37212c579686632e72be653688c57fa264e15b0593ef",
+            "probe_count": 7
+          },
+          {
+            "case": "omitted/deferred/fsr3_quality",
+            "image_sha256": "775928ff73587ad3afebc25edb065099b7c315358cc88dee8dd81a5737bdf46d",
+            "probe_count": 7
+          },
+          {
+            "case": "omitted/deferred/none",
+            "image_sha256": "381a8f1035640a925238c51876b8998846b851827abe28bc61ecc1e3cce7781d",
+            "probe_count": 7
+          },
+          {
+            "case": "omitted/forward/fsr3_quality",
+            "image_sha256": "775928ff73587ad3afebc25edb065099b7c315358cc88dee8dd81a5737bdf46d",
+            "probe_count": 7
+          },
+          {
+            "case": "zero/deferred/fsr3_native",
+            "image_sha256": "d7e85156f37e8059e7fd37212c579686632e72be653688c57fa264e15b0593ef",
+            "probe_count": 7
+          },
+          {
+            "case": "zero/deferred/fsr3_quality",
+            "image_sha256": "775928ff73587ad3afebc25edb065099b7c315358cc88dee8dd81a5737bdf46d",
+            "probe_count": 7
+          },
+          {
+            "case": "zero/deferred/none",
+            "image_sha256": "381a8f1035640a925238c51876b8998846b851827abe28bc61ecc1e3cce7781d",
+            "probe_count": 7
+          },
+          {
+            "case": "reflections/deferred/fsr3_native",
+            "image_sha256": "6c5af3f5aca5c879c6dd070d192cb2482ed558a0cbe1835ae8d83369dddc8885",
+            "probe_count": 7
+          },
+          {
+            "case": "reflections/deferred/fsr3_quality",
+            "image_sha256": "25a3a42e5db05987b58f7df3500513c00ef0427b3f7768b804ba54e69b54570a",
+            "probe_count": 7
+          },
+          {
+            "case": "fog/deferred/fsr3_native",
+            "image_sha256": "3a0941ac1769712dc97d9519c6fff0662f419c67177309f79386c18833c1b9d8",
+            "probe_count": 7
+          },
+          {
+            "case": "fog/deferred/fsr3_quality",
+            "image_sha256": "a194ec5bb7b933963dd13e80488c95773bc625d0bd1345e6fe8987520fde2060",
+            "probe_count": 7
+          },
+          {
+            "case": "fog/forward/fsr3_quality",
+            "image_sha256": "a194ec5bb7b933963dd13e80488c95773bc625d0bd1345e6fe8987520fde2060",
+            "probe_count": 7
+          },
+          {
+            "case": "combined/deferred/fsr3_native",
+            "image_sha256": "dfd9c9f157bee0f56c61bd3c78ea14ffdd71c4f90480525f9189520714478c34",
+            "probe_count": 7
+          },
+          {
+            "case": "combined/deferred/fsr3_quality",
+            "image_sha256": "81b694c2821e4ca5d86a026b6ea087bc098e52c86092326f29c30a08c5dea7ce",
+            "probe_count": 7
+          },
+          {
+            "case": "foreground-omitted/deferred/fsr3_quality",
+            "image_sha256": "b05b34e4bdb9b1c0a61b9b6cf5ec7dc11f19547fd5c8f733dd5d308f6d0ecd05",
+            "probe_count": 7
+          },
+          {
+            "case": "foreground-combined/deferred/fsr3_quality",
+            "image_sha256": "b05b34e4bdb9b1c0a61b9b6cf5ec7dc11f19547fd5c8f733dd5d308f6d0ecd05",
+            "probe_count": 7
+          },
+          {
+            "case": "relocated/deferred/fsr3_native",
+            "image_sha256": "dfd9c9f157bee0f56c61bd3c78ea14ffdd71c4f90480525f9189520714478c34",
+            "probe_count": 7
+          },
+          {
+            "case": "relocated/deferred/fsr3_quality",
+            "image_sha256": "81b694c2821e4ca5d86a026b6ea087bc098e52c86092326f29c30a08c5dea7ce",
+            "probe_count": 7
+          }
+        ],
+        "replays": {
+          "none": {
+            "mode": "none",
+            "image_sha256": "c4086fc957fe73d228c328600384d024c27493ecb60aee7faaa03abcb5aefe88",
+            "report_sha256": "301333e1af744574fac358bba0e7d17d08117ba02d436ad6f45b7604903264c0",
+            "saved": {
+              "file": "none/saves/slot-contact-auto/p-eaf2faa199f35592ac3d3fe89a5542f2.bin",
+              "sha256": "fd14cc904971923126875b24a137a8b1d5ed64bfd537c083301c44b933e69a18",
+              "bytes": 11601
+            },
+            "frames_presented": 2,
+            "render_extent": [
+              0,
+              0
+            ],
+            "output_extent": [
+              0,
+              0
+            ]
+          },
+          "fsr3_native": {
+            "mode": "fsr3_native",
+            "image_sha256": "4e9dfce5470d8a3c9d5e95359deb3e15d9a0dcab5e8473d4728156ebb6fe77a9",
+            "report_sha256": "363875cb07665ad1236d13fcc18b4e140c6e0c7b727e5e913b9fef417e4db7b3",
+            "saved": {
+              "file": "fsr3_native/saves/slot-contact-auto/p-bb313304ee9be4a564d9f8706ed62edd.bin",
+              "sha256": "fd14cc904971923126875b24a137a8b1d5ed64bfd537c083301c44b933e69a18",
+              "bytes": 11601
+            },
+            "frames_presented": 2,
+            "render_extent": [
+              640,
+              360
+            ],
+            "output_extent": [
+              640,
+              360
+            ]
+          },
+          "fsr3_quality": {
+            "mode": "fsr3_quality",
+            "image_sha256": "6da25951a83723b27b6f4c890a67a5aaaf75f3872cdfd0044efd38920f2c8914",
+            "report_sha256": "bd2945fd79d860190de4dacc81ae62252e6fb166ef38c583ecf135fd7c477634",
+            "saved": {
+              "file": "fsr3_quality/saves/slot-contact-auto/p-68a69b27b7bc19ce9b1a8a06447b9eac.bin",
+              "sha256": "fd14cc904971923126875b24a137a8b1d5ed64bfd537c083301c44b933e69a18",
+              "bytes": 11601
+            },
+            "frames_presented": 2,
+            "render_extent": [
+              426,
+              240
+            ],
+            "output_extent": [
+              640,
+              360
+            ]
+          }
+        },
+        "native_save_sha256": "fd14cc904971923126875b24a137a8b1d5ed64bfd537c083301c44b933e69a18",
+        "evidence_sha256": "ef63be7dfbbc42edf59e5d31eb93429321dd171153d8ec17a5a8eba46c480c68"
+      },
+      {
+        "adapter": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "gpu_index": 1,
+        "validation_owners": 12,
+        "capture_observations": [
+          {
+            "case": "omitted/deferred/fsr3_native",
+            "image_sha256": "7ee1cd2b8740e80046dcac2f5f2beb685c41e16f3c47cd4a8005a2618934ea1b",
+            "probe_count": 7
+          },
+          {
+            "case": "omitted/deferred/fsr3_quality",
+            "image_sha256": "bcc6865bc119d434b394a78a9073988a936757a45fbb75fe56c0382dd76920bb",
+            "probe_count": 7
+          },
+          {
+            "case": "omitted/deferred/none",
+            "image_sha256": "a18d11ef0330d85928118d01631156d4f449b7fce575b75a226cf27ef5f83e44",
+            "probe_count": 7
+          },
+          {
+            "case": "omitted/forward/fsr3_quality",
+            "image_sha256": "bcc6865bc119d434b394a78a9073988a936757a45fbb75fe56c0382dd76920bb",
+            "probe_count": 7
+          },
+          {
+            "case": "zero/deferred/fsr3_native",
+            "image_sha256": "7ee1cd2b8740e80046dcac2f5f2beb685c41e16f3c47cd4a8005a2618934ea1b",
+            "probe_count": 7
+          },
+          {
+            "case": "zero/deferred/fsr3_quality",
+            "image_sha256": "bcc6865bc119d434b394a78a9073988a936757a45fbb75fe56c0382dd76920bb",
+            "probe_count": 7
+          },
+          {
+            "case": "zero/deferred/none",
+            "image_sha256": "a18d11ef0330d85928118d01631156d4f449b7fce575b75a226cf27ef5f83e44",
+            "probe_count": 7
+          },
+          {
+            "case": "reflections/deferred/fsr3_native",
+            "image_sha256": "2af21ac46f20497384990569039994efd5ebeb8896bcd21b1a2a030629eb897d",
+            "probe_count": 7
+          },
+          {
+            "case": "reflections/deferred/fsr3_quality",
+            "image_sha256": "6d91613c363a8c1680029904c1ff071324247ded17d8bfee40e91575de4a03d9",
+            "probe_count": 7
+          },
+          {
+            "case": "fog/deferred/fsr3_native",
+            "image_sha256": "c526c06fc11d3ae3988716ec309e6d6f07beb6cf12fd001f30afa2c0b0db9df5",
+            "probe_count": 7
+          },
+          {
+            "case": "fog/deferred/fsr3_quality",
+            "image_sha256": "6fd3d652f8562ee20d89b4595efa3d26c54dbeb55f30d6a3203c731146e6fc63",
+            "probe_count": 7
+          },
+          {
+            "case": "fog/forward/fsr3_quality",
+            "image_sha256": "6fd3d652f8562ee20d89b4595efa3d26c54dbeb55f30d6a3203c731146e6fc63",
+            "probe_count": 7
+          },
+          {
+            "case": "combined/deferred/fsr3_native",
+            "image_sha256": "8adf017be40af6f414208769c66164b7039ba5702b1c43f82e385209271ad413",
+            "probe_count": 7
+          },
+          {
+            "case": "combined/deferred/fsr3_quality",
+            "image_sha256": "072c622376c208b0cb4545353bdc6b324aeb91261f732833e5b2028681d6e625",
+            "probe_count": 7
+          },
+          {
+            "case": "foreground-omitted/deferred/fsr3_quality",
+            "image_sha256": "f6b0e6359619bd79b34cf37db162444c9907d594ae8a7e48682931dfe174acfe",
+            "probe_count": 7
+          },
+          {
+            "case": "foreground-combined/deferred/fsr3_quality",
+            "image_sha256": "f6b0e6359619bd79b34cf37db162444c9907d594ae8a7e48682931dfe174acfe",
+            "probe_count": 7
+          },
+          {
+            "case": "relocated/deferred/fsr3_native",
+            "image_sha256": "8adf017be40af6f414208769c66164b7039ba5702b1c43f82e385209271ad413",
+            "probe_count": 7
+          },
+          {
+            "case": "relocated/deferred/fsr3_quality",
+            "image_sha256": "072c622376c208b0cb4545353bdc6b324aeb91261f732833e5b2028681d6e625",
+            "probe_count": 7
+          }
+        ],
+        "replays": {
+          "none": {
+            "mode": "none",
+            "image_sha256": "591ec26811be6aeb8473be8f57af6a0b46bd0d7a773fc7c84ccb374ed954928e",
+            "report_sha256": "7c355bb8bb296a87cc66414f118c8ab5dbf30cd8c04a4d9222c36309cdcdba01",
+            "saved": {
+              "file": "none/saves/slot-contact-auto/p-323d5173d2802af0ab0b8242bb505200.bin",
+              "sha256": "33bfce2285f0ff0136211c2de44cbb083ba140c661b78923d54c34effe700dcd",
+              "bytes": 11601
+            },
+            "frames_presented": 2,
+            "render_extent": [
+              0,
+              0
+            ],
+            "output_extent": [
+              0,
+              0
+            ]
+          },
+          "fsr3_native": {
+            "mode": "fsr3_native",
+            "image_sha256": "c4fcc6ffe70d8fd9490f08d59cc6a6a2a288b1cd9ead1d86f88193f57927d20b",
+            "report_sha256": "3c7a2cf8625ead7f10edcd3a912e54f739420f66c456502f379e373c173d7105",
+            "saved": {
+              "file": "fsr3_native/saves/slot-contact-auto/p-c470bca0d1c7156d27af62e2b39eebb5.bin",
+              "sha256": "33bfce2285f0ff0136211c2de44cbb083ba140c661b78923d54c34effe700dcd",
+              "bytes": 11601
+            },
+            "frames_presented": 2,
+            "render_extent": [
+              640,
+              360
+            ],
+            "output_extent": [
+              640,
+              360
+            ]
+          },
+          "fsr3_quality": {
+            "mode": "fsr3_quality",
+            "image_sha256": "ea9be5a0a5ab23e108f52b03adc65d0ddea105403f6a963168cb4d8b4c0f42a3",
+            "report_sha256": "e2a937047043a3742b25a56a848f7053211e8f030962d27bd2fbdfbf918010a9",
+            "saved": {
+              "file": "fsr3_quality/saves/slot-contact-auto/p-ddc2d5da62955c3e8f8a950def308a8a.bin",
+              "sha256": "33bfce2285f0ff0136211c2de44cbb083ba140c661b78923d54c34effe700dcd",
+              "bytes": 11601
+            },
+            "frames_presented": 2,
+            "render_extent": [
+              426,
+              240
+            ],
+            "output_extent": [
+              640,
+              360
+            ]
+          }
+        },
+        "native_save_sha256": "33bfce2285f0ff0136211c2de44cbb083ba140c661b78923d54c34effe700dcd",
+        "evidence_sha256": "421e1416a744f6e10a9486cea643795adbfbca9bd13c0786a127e0c00bf1026f"
+      }
+    ]
+  },
+  "method": [
+    "The hosted flat plane uses one metre of fog with log(2) optical depth and half-radiance ambient. The resolved RGB is three quarters of opaque RGB. The existing internal SDK probe measures the composition mask at stationary interior pixels.",
+    "Authored controls keep projection and geometry fixed and compare opaque data, fog/SSR RGB, and output UI. Relocated replay archives are compared with headless Native AOT saves in fresh processes.",
+    "The shared capture guide documents raw and resolved coordinates and the active composition payload. Device validation checks run under the Khronos Vulkan layer."
+  ],
+  "limits": "Qualification covers analytic and authored fixture composition. Moving-image quality, render performance, textured particle reconstruction and other temporal reconstruction backends remain separate."
+}

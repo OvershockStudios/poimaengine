@@ -17,7 +17,7 @@
 #include "poima/render_batches.hpp"
 #include "poima/fsr3.hpp"
 #include "poima/temporal_clock.hpp"
-#include "poima/temporal_inputs_cs.hpp"
+#include "render_temporal_inputs.hpp"
 #include <unordered_map>
 #if POIMA_EDITOR
 #include <imgui.h>
@@ -321,10 +321,7 @@ struct Context {
     std::unique_ptr<fsr3::Context> reconstruction;
     fsr3::Extent render_extent{},output_extent{};
     nvrhi::TextureHandle reconstructed,dense_motion,reactive,dilated_depth,dilated_motion,reconstructed_depth;
-    nvrhi::ShaderHandle temporal_cs;
-    nvrhi::BindingLayoutHandle temporal_layout;
-    nvrhi::BindingSetHandle temporal_bindings;
-    nvrhi::ComputePipelineHandle temporal_pipeline;
+    render_temporal_inputs::Pass temporal_inputs;
     std::uint64_t temporal_phase=0;
     ReconstructionDiagnostics pending_reconstruction;
     TemporalClock temporal_clock;
@@ -345,6 +342,7 @@ struct Context {
         std::array<float,4> viewport{};
         std::array<double,3> lens{};
         std::optional<RendererCameraDrawResult> camera_draw;
+        bool reconstructed_reflections=false,reconstructed_fog=false;
         std::map<std::string,ObjectHistory> objects;
         std::vector<SceneSurfaceMark> surface_marks;
     } history,pending_history;
@@ -434,6 +432,7 @@ struct Context {
         shadows.reset();
         occlusion.reset();
         deferred_bindings=nullptr;deferred_pipeline=nullptr;deferred_layout=nullptr;deferred_cs=nullptr;material_base=nullptr;material_surface=nullptr;material_correspondence=nullptr;
+        temporal_inputs.release_gpu();
         fog={};reflections={};
         pipeline = nullptr; culled_pipeline=nullptr;
         sky_pipeline=nullptr;sky_bindings=nullptr;sky_layout=nullptr;sky_vs=nullptr;sky_ps=nullptr;
@@ -443,7 +442,7 @@ struct Context {
         post_effect={};
         vertex_shader = nullptr;
         pixel_shader = nullptr;
-        reconstruction.reset();reconstructed=nullptr;dense_motion=nullptr;reactive=nullptr;dilated_depth=nullptr;dilated_motion=nullptr;reconstructed_depth=nullptr;temporal_bindings=nullptr;temporal_pipeline=nullptr;temporal_layout=nullptr;temporal_cs=nullptr;
+        reconstruction.reset();reconstructed=nullptr;dense_motion=nullptr;reactive=nullptr;dilated_depth=nullptr;dilated_motion=nullptr;reconstructed_depth=nullptr;
         staging = nullptr;for(auto& texture:probe_staging)texture=nullptr;fsr3_history_readback=nullptr;object_buffer=nullptr;history={};pending_history={};
         bindings = nullptr;
         binding_layout = nullptr;
@@ -822,6 +821,8 @@ struct Context {
         std::copy_n(frame_constants.cluster_viewport,4,pending_history.viewport.begin());
         pending_history.lens={scene->vertical_fov,scene->near_plane,scene->far_plane};
         pending_history.camera_draw=renderer_scene_result(*scene).camera_draw;
+        pending_history.reconstructed_reflections=reconstruction && reflections.radiance();
+        pending_history.reconstructed_fog=reconstruction && fog.radiance();
         if(pending_history.camera_draw) {
             pending_history.camera_draw->viewmodel_lens.reset();
             // A world-depth handoff keeps the same drawable in the world pass.
@@ -841,6 +842,8 @@ struct Context {
         else if(history.viewport!=pending_history.viewport)pending_history_reset="viewport_changed";
         else if(history.lens!=pending_history.lens)pending_history_reset="projection_changed";
         else if(history.camera_draw!=pending_history.camera_draw)pending_history_reset="camera_draw_changed";
+        else if(history.reconstructed_reflections!=pending_history.reconstructed_reflections ||
+                history.reconstructed_fog!=pending_history.reconstructed_fog)pending_history_reset="world_composition_changed";
         pending_history_valid=pending_history_reset.empty();
         const auto& previous=pending_history_valid ? history.view_projection : pending_history.view_projection;
         std::copy(previous.begin(),previous.end(),frame_constants.previous_view_projection);
@@ -1437,11 +1440,11 @@ struct Context {
                 !scene_visible ? "scene_hidden" :
                 scene_debug_view!=SceneDebugView::color ? "diagnostic" :
                 !deferred ? "forward" :
-                reconstruction_mode!=ReconstructionMode::none ? "reconstruction" :
                 !scene->world_viewmodel_draws().empty() ? "world_depth_foreground" : "active";
             const bool active=reason=="active";
             if(active) {
                 if(!reflections.radiance()) {
+                    require_reconstruction_composition_budget(std::uint64_t(render_extent.width)*render_extent.height*10);
                     const auto required=vk::FormatFeatureFlagBits::eSampledImage|vk::FormatFeatureFlagBits::eStorageImage|
                         vk::FormatFeatureFlagBits::eTransferSrc|vk::FormatFeatureFlagBits::eTransferDst;
                     const auto color_required=required|vk::FormatFeatureFlagBits::eColorAttachment|vk::FormatFeatureFlagBits::eColorAttachmentBlend;
@@ -1467,6 +1470,7 @@ struct Context {
     }
     void detach_world_outputs(const nvrhi::ITexture* source) {
         sprite_framebuffer=nullptr;
+        temporal_inputs.invalidate_bindings();
         bloom.detach_source(source);
         scene_output.detach_source(source);
         post_effect.detach_source(source);
@@ -1481,12 +1485,12 @@ struct Context {
                 !scene_visible ? "scene_hidden" :
                 scene_debug_view!=SceneDebugView::color ? "diagnostic" :
                 samples!=1 ? "multisample" :
-                reconstruction_mode!=ReconstructionMode::none ? "reconstruction" :
                 !rigid_transform(scene->camera_world) ? "camera_non_rigid" :
                 !scene->world_viewmodel_draws().empty() ? "world_depth_foreground" : "active";
             const bool active=reason=="active";
             if(active) {
                 if(!fog.radiance()) {
+                    require_reconstruction_composition_budget(std::uint64_t(render_extent.width)*render_extent.height*8);
                     const auto needed=vk::FormatFeatureFlagBits::eSampledImage|vk::FormatFeatureFlagBits::eStorageImage|
                         vk::FormatFeatureFlagBits::eTransferSrc|vk::FormatFeatureFlagBits::eTransferDst|
                         vk::FormatFeatureFlagBits::eColorAttachment|vk::FormatFeatureFlagBits::eColorAttachmentBlend;
@@ -1581,7 +1585,13 @@ struct Context {
         const fsr3::Extent render{std::max(1u,static_cast<std::uint32_t>(output.width/ratio)),std::max(1u,static_cast<std::uint32_t>(output.height/ratio))};
         for(const auto& point:product_probes)require(point.x<render.width && point.y<render.height,"Scene product probe lies outside the reconstruction render extent.");
         if(reconstruction && render.width==render_extent.width && render.height==render_extent.height && output.width==output_extent.width && output.height==output_extent.height)return;
-        retire_frames(true);reconstruction.reset();temporal_bindings=nullptr;scene_output.invalidate_bindings();
+        retire_frames(true);
+        temporal_inputs.clear_targets();
+        if(auto* source=fog.radiance())detach_world_outputs(source);
+        fog.clear_targets();
+        if(auto* source=reflections.radiance())detach_world_outputs(source);
+        reflections.clear_targets();
+        reconstruction.reset();scene_output.invalidate_bindings();
         framebuffers.clear();sky_framebuffers.clear();sky_pipeline=nullptr;
         history={};temporal_phase=0;temporal_clock.reset();render_extent=render;output_extent=output;
         auto allocate=[&](nvrhi::Format pixel_format,vk::Format vk_format,fsr3::Extent size,const char* name,bool target,bool uav) {
@@ -1613,19 +1623,6 @@ struct Context {
             sky_framebuffers.push_back(checked->createFramebuffer(nvrhi::FramebufferDesc().addColorAttachment(scene_hdr).setDepthAttachment(depth)));
             require(framebuffers.back() && sky_framebuffers.back(),"Compact scene framebuffer creation failed.");
         }
-        if(!temporal_layout) {
-            temporal_cs=create_embedded_shader(checked,nvrhi::ShaderDesc(nvrhi::ShaderType::Compute).setEntryName("compute_main"),poima_temporal_inputs_cs);
-            temporal_layout=checked->createBindingLayout(nvrhi::BindingLayoutDesc().setVisibility(nvrhi::ShaderType::Compute)
-                .addItem(nvrhi::BindingLayoutItem::ConstantBuffer(1)).addItem(nvrhi::BindingLayoutItem::Texture_SRV(0)).addItem(nvrhi::BindingLayoutItem::Texture_SRV(1)).addItem(nvrhi::BindingLayoutItem::Texture_SRV(2))
-                .addItem(nvrhi::BindingLayoutItem::Texture_UAV(0)).addItem(nvrhi::BindingLayoutItem::Texture_UAV(1)));
-            require(temporal_cs && temporal_layout,"Temporal input shader/layout creation failed.");
-            nvrhi::ComputePipelineDesc pipeline_desc;pipeline_desc.CS=temporal_cs;pipeline_desc.bindingLayouts.push_back(temporal_layout);
-            temporal_pipeline=checked->createComputePipeline(pipeline_desc);require(bool(temporal_pipeline),"Temporal input pipeline creation failed.");
-        }
-        temporal_bindings=checked->createBindingSet(nvrhi::BindingSetDesc().addItem(nvrhi::BindingSetItem::ConstantBuffer(1,frame_buffer))
-            .addItem(nvrhi::BindingSetItem::Texture_SRV(0,scene_normal)).addItem(nvrhi::BindingSetItem::Texture_SRV(1,scene_motion)).addItem(nvrhi::BindingSetItem::Texture_SRV(2,scene_motion_valid))
-            .addItem(nvrhi::BindingSetItem::Texture_UAV(0,dense_motion)).addItem(nvrhi::BindingSetItem::Texture_UAV(1,reactive)),temporal_layout);
-        require(bool(temporal_bindings),"Temporal input bindings creation failed.");
         reconstruction=std::make_unique<fsr3::Context>(static_cast<VkDevice>(device),static_cast<VkPhysicalDevice>(physical),dispatch.vkGetDeviceProcAddr,render,output);
         require(reconstruction->gpu_bytes()+render_pixels*((deferred ? 82 : 50)+(ao_enabled ? 4 : 0))+output_pixels*8+viewmodel_resident_bytes()<=1536ull*1024*1024,"Reconstruction total logical image payload exceeds the 1536 MiB budget.");
         diagnostics.scene_products.normal_buffer_bytes=render_pixels*8;diagnostics.scene_products.motion_buffer_bytes=render_pixels*9;
@@ -1649,19 +1646,31 @@ struct Context {
         pending_reconstruction.output_width=output_extent.width;pending_reconstruction.output_height=output_extent.height;pending_reconstruction.jitter_pixels=jitter;
         pending_reconstruction.history_reset=!pending_history_valid || temporal_phase==0;pending_reconstruction.reset_reason=pending_history_reset;pending_reconstruction.history_sequence=history_sequence+1;
         pending_reconstruction.sdk_version="FSR 3.1.4 / FidelityFX SDK 1.1.4";
-        pending_reconstruction.logical_bytes=reconstruction->gpu_bytes()+std::uint64_t(render_extent.width)*render_extent.height*21+std::uint64_t(output_extent.width)*output_extent.height*8;
+        const auto pixels=std::uint64_t(render_extent.width)*render_extent.height;
+        pending_reconstruction.composition_mask_bytes=temporal_inputs.composition_mask() ? pixels : 0;
+        pending_reconstruction.logical_bytes=reconstruction->gpu_bytes()+pixels*21+
+            std::uint64_t(output_extent.width)*output_extent.height*8+pending_reconstruction.composition_mask_bytes;
     }
-    void dispatch_temporal_inputs() {
-        nvrhi::ComputeState state;state.pipeline=temporal_pipeline;state.bindings.push_back(temporal_bindings);
-        commands->setComputeState(state);commands->dispatch((render_extent.width+7)/8,(render_extent.height+7)/8,1);
+    void prepare_temporal_inputs() {
+        if(!reconstruction)return;
+        auto* world=world_radiance_texture();
+        const bool composed=world!=scene_hdr.Get();
+        if(composed && !temporal_inputs.composition_mask())require_reconstruction_composition_budget(0);
+        if(!composed && temporal_inputs.composition_mask())retire_frames(true);
+        temporal_inputs.prepare(*checked.Get(),{frame_buffer.Get(),scene_normal.Get(),scene_motion.Get(),scene_motion_valid.Get(),
+            dense_motion.Get(),reactive.Get(),composed ? scene_hdr.Get() : nullptr,composed ? world : nullptr});
     }
     void dispatch_reconstruction() {
-        for(auto* image:{scene_hdr.Get(),depth.Get(),dense_motion.Get(),reactive.Get()})commands->setTextureState(image,nvrhi::AllSubresources,nvrhi::ResourceStates::NonPixelShaderResource);
+        auto* world=world_radiance_texture();
+        auto* composition=temporal_inputs.composition_mask();
+        for(auto* image:{world,depth.Get(),dense_motion.Get(),reactive.Get()})commands->setTextureState(image,nvrhi::AllSubresources,nvrhi::ResourceStates::NonPixelShaderResource);
+        if(composition)commands->setTextureState(composition,nvrhi::AllSubresources,nvrhi::ResourceStates::NonPixelShaderResource);
         for(auto* image:{reconstructed.Get(),dilated_depth.Get(),dilated_motion.Get(),reconstructed_depth.Get()})commands->setTextureState(image,nvrhi::AllSubresources,nvrhi::ResourceStates::UnorderedAccess);
         commands->commitBarriers();
         auto image=[](nvrhi::ITexture* texture,VkFormat native_format) {const auto& desc=texture->getDesc();const auto object=texture->getNativeObject(nvrhi::ObjectTypes::VK_Image);require(object.pointer!=nullptr,"FSR native image unavailable.");return fsr3::Image{static_cast<VkImage>(object.pointer),native_format,{desc.width,desc.height}};};
         fsr3::Dispatch args;args.commands=static_cast<VkCommandBuffer>(native_commands());
-        args.color=image(scene_hdr,VK_FORMAT_R16G16B16A16_SFLOAT);args.depth=image(depth,VK_FORMAT_D32_SFLOAT);args.motion=image(dense_motion,VK_FORMAT_R32G32_SFLOAT);args.reactive=image(reactive,VK_FORMAT_R8_UNORM);args.output=image(reconstructed,VK_FORMAT_R16G16B16A16_SFLOAT);
+        args.color=image(world,VK_FORMAT_R16G16B16A16_SFLOAT);args.depth=image(depth,VK_FORMAT_D32_SFLOAT);args.motion=image(dense_motion,VK_FORMAT_R32G32_SFLOAT);args.reactive=image(reactive,VK_FORMAT_R8_UNORM);args.output=image(reconstructed,VK_FORMAT_R16G16B16A16_SFLOAT);
+        if(composition)args.composition_mask=image(composition,VK_FORMAT_R8_UNORM);
         args.dilated_depth=image(dilated_depth,VK_FORMAT_R32_SFLOAT);args.dilated_motion=image(dilated_motion,VK_FORMAT_R16G16_SFLOAT);args.reconstructed_depth=image(reconstructed_depth,VK_FORMAT_R32_UINT);
         args.jitter_pixels=pending_reconstruction.jitter_pixels;args.near_plane=static_cast<float>(scene->near_plane);args.far_plane=static_cast<float>(scene->far_plane);args.vertical_fov_radians=static_cast<float>(scene->vertical_fov*0.01745329251994329577);
         args.delta_milliseconds=temporal_clock.begin(SteadyClock::now(),live_temporal,pending_reconstruction.history_reset);
@@ -1676,10 +1685,22 @@ struct Context {
         auto count=[&](const std::shared_ptr<render_viewmodel::Resources>& bundle) {if(bundle && identities.insert(bundle.get()).second)bytes+=bundle->bytes;};
         count(viewmodel);for(const auto& slot:slots)count(slot.viewmodel);return bytes;
     }
+    std::uint64_t reconstruction_world_bytes(std::uint64_t composition_bytes) const noexcept {
+        return std::uint64_t(render_extent.width)*render_extent.height*((deferred ? 82u : 50u)+(ao_enabled ? 4u : 0u))+
+            std::uint64_t(output_extent.width)*output_extent.height*8+reflections.buffer_bytes()+fog.buffer_bytes()+composition_bytes;
+    }
+    void require_reconstruction_composition_budget(std::uint64_t additional) const {
+        if(!reconstruction)return;
+        const auto mask_bytes=std::uint64_t(render_extent.width)*render_extent.height;
+        const auto attachments=reconstruction_world_bytes(mask_bytes)+viewmodel_resident_bytes()+additional;
+        require(attachments<=768ull*1024*1024,"Reconstruction engine attachments exceed the 768 MiB payload budget.");
+        require(attachments+reconstruction->gpu_bytes()<=1536ull*1024*1024,"Reconstruction total logical image payload exceeds the 1536 MiB budget.");
+    }
     void validate_viewmodel_budget(std::uint64_t foreground_bytes) const {
         require(foreground_bytes<=viewmodel_cap,"Foreground resident and staged payload exceeds the 384 MiB budget.");
         if(reconstruction) {
-            const auto world=std::uint64_t(render_extent.width)*render_extent.height*((deferred ? 82u : 50u)+(ao_enabled ? 4u : 0u))+std::uint64_t(output_extent.width)*output_extent.height*8;
+            const auto bytes=temporal_inputs.composition_mask() ? std::uint64_t(render_extent.width)*render_extent.height : 0;
+            const auto world=reconstruction_world_bytes(bytes);
             require(world+foreground_bytes<=768ull*1024*1024,"World and foreground engine attachments exceed the 768 MiB reconstruction budget.");
             require(world+foreground_bytes+reconstruction->gpu_bytes()<=1536ull*1024*1024,"World, foreground and FSR payload exceeds the 1536 MiB budget.");
         } else {
@@ -1983,6 +2004,7 @@ struct Context {
         }
         configure_light_assignment();
         prepare_height_fog(lighting);
+        prepare_temporal_inputs();
         // Use the actual rounded GPU matrices for clipping decisions.
         auto frustum=[](const float* matrix) { Matrix4 value;std::copy_n(matrix,16,value.begin());return make_frustum(value); };
         std::array<float,16> culling_projection;std::copy_n(frame_constants.view_projection,16,culling_projection.begin());
@@ -2145,8 +2167,9 @@ struct Context {
         swapchain_dirty=true;
         retire_frames(true);
         retire_presentation();
+        temporal_inputs.clear_targets();
         fog.clear_targets();reflections.clear_targets();
-        reconstruction.reset();temporal_bindings=nullptr;reconstructed=nullptr;dense_motion=nullptr;reactive=nullptr;dilated_depth=nullptr;dilated_motion=nullptr;reconstructed_depth=nullptr;render_extent={};output_extent={};temporal_phase=0;temporal_clock.reset();
+        reconstruction.reset();reconstructed=nullptr;dense_motion=nullptr;reactive=nullptr;dilated_depth=nullptr;dilated_motion=nullptr;reconstructed_depth=nullptr;render_extent={};output_extent={};temporal_phase=0;temporal_clock.reset();
         viewmodel.reset();viewmodel_enabled=false;viewmodel_draws.clear();viewmodel_objects.clear();
         commands=nullptr;
         sky_pipeline=nullptr;scene_output.detach_framebuffer();bloom.clear_targets();
@@ -2595,7 +2618,15 @@ struct Context {
             f.ibl_specular=texture(environment.specular,rs::Lifetime::imported,true);
             f.ibl_brdf=texture(environment.brdf,rs::Lifetime::imported,true);
             if(!gpu_lights.empty())f.lights=buffer(light_buffer,rs::Lifetime::shared,false,gpu_lights.size()*sizeof(GpuLight));
-            if(settings.reconstruction) {f.reconstructed=texture(reconstructed,rs::Lifetime::shared,false);f.dense_motion=texture(dense_motion,rs::Lifetime::shared,false);f.reactive=texture(reactive,rs::Lifetime::shared,false);f.dilated_depth=texture(dilated_depth,rs::Lifetime::shared,false);f.dilated_motion=texture(dilated_motion,rs::Lifetime::shared,false);f.reconstructed_depth=texture(reconstructed_depth,rs::Lifetime::shared,false);}
+            if(settings.reconstruction) {
+                f.reconstructed=texture(reconstructed,rs::Lifetime::shared,false);
+                f.dense_motion=texture(dense_motion,rs::Lifetime::shared,false);
+                f.reactive=texture(reactive,rs::Lifetime::shared,false);
+                if(auto* mask=temporal_inputs.composition_mask())f.composition_mask=texture(mask,rs::Lifetime::shared,false);
+                f.dilated_depth=texture(dilated_depth,rs::Lifetime::shared,false);
+                f.dilated_motion=texture(dilated_motion,rs::Lifetime::shared,false);
+                f.reconstructed_depth=texture(reconstructed_depth,rs::Lifetime::shared,false);
+            }
             if(ao_enabled) {f.ao_raw=texture(occlusion.raw(),rs::Lifetime::shared,false);f.ao_filtered=texture(occlusion.filtered(),rs::Lifetime::shared,false);f.ao_constants=buffer(occlusion.constants(),rs::Lifetime::shared,false);}
             if(deferred) {f.material_base=texture(material_base,rs::Lifetime::shared,false);f.material_surface=texture(material_surface,rs::Lifetime::shared,false);f.material_correspondence=texture(material_correspondence,rs::Lifetime::shared,false);}
             f.hdr=texture(scene_hdr,rs::Lifetime::shared,false);f.color=multisample_color ? texture(multisample_color,rs::Lifetime::shared,false) : f.hdr;
@@ -2905,11 +2936,8 @@ struct Context {
         }
 #endif
         if(plan.settings.reconstruction) {
-            for(const auto& binding:temporal_bindings->getDesc()->bindings) {
-                if(binding.type==nvrhi::ResourceType::ConstantBuffer)identity(f.frame,binding.resourceHandle);
-                if(binding.type==nvrhi::ResourceType::Texture_SRV)identity(binding.slot==0 ? f.normal : binding.slot==1 ? f.motion : f.motion_valid,binding.resourceHandle);
-                if(binding.type==nvrhi::ResourceType::Texture_UAV)identity(binding.slot==0 ? f.dense_motion : f.reactive,binding.resourceHandle);
-            }
+            temporal_inputs.verify_bindings(plan);
+            if(f.composition_mask!=rs::none)identity(f.composition_mask,temporal_inputs.composition_mask());
             identity(f.reconstructed,reconstructed.Get());identity(f.dense_motion,dense_motion.Get());identity(f.reactive,reactive.Get());identity(f.dilated_depth,dilated_depth.Get());identity(f.dilated_motion,dilated_motion.Get());identity(f.reconstructed_depth,reconstructed_depth.Get());}
         if(plan.settings.capture)identity(f.capture,staging.Get());
         for(std::size_t i=0;i<f.probe_copies.size();++i)identity(f.probe_copies[i].destination,probe_staging.at(i).Get());
@@ -3102,7 +3130,7 @@ struct Context {
                 timestamp(17);
                 break;
             case render_schedule::PassId::particle_sprites:render_particle_sprites(slot);break;
-            case render_schedule::PassId::temporal_inputs:timestamp(6);dispatch_temporal_inputs();break;
+            case render_schedule::PassId::temporal_inputs:timestamp(6);temporal_inputs.record(*commands.Get());break;
             case render_schedule::PassId::reconstruction:dispatch_reconstruction();timestamp(7);break;
             case render_schedule::PassId::resolve:
                 commands->resolveTexture(planned_texture(resources.hdr),nvrhi::AllSubresources,planned_texture(resources.color),nvrhi::AllSubresources);break;

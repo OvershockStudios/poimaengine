@@ -11,6 +11,7 @@ struct Image { VkImage image{}; VkFormat format{}; Extent extent{}; };
 struct Dispatch {
     VkCommandBuffer commands{};
     Image color, depth, motion, reactive, output;
+    Image composition_mask; // Optional render-size R8_UNORM history protection mask.
     // Render-size shared outputs required by FSR 3.1.4, owned by the renderer.
     Image dilated_depth, dilated_motion, reconstructed_depth;
     std::array<float, 2> jitter_pixels{};

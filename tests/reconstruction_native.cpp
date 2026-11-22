@@ -41,12 +41,166 @@ SceneSnapshot scene(){
     SceneObject o{};o.entity_id="constant-radiance";o.world=identity_matrix();o.mesh=mesh;o.material=mesh->material;o.incarnation=1;s.objects.push_back(o);return s;
 }
 void close_to(float actual,float expected,float tolerance,const char* why){check(std::isfinite(actual)&&std::abs(actual-expected)<=tolerance,why);}
+
+void verify_world_composition(const std::string& prefix,int gpu,bool deferred,bool ao_enabled,Json& evidence) {
+    // The plane is four metres from the camera. A one-metre fog cap makes the
+    // path length constant even when reconstruction jitters the raster rays.
+    // With ln(2) extinction and ambient at half the plane radiance, outgoing
+    // radiance is 3/4 of the original. The composition mask is therefore 1/4.
+    HeightFog fog;
+    fog.density_per_m=std::log(2.f);
+    fog.max_distance_m=1;
+    fog.ambient_radiance={.0625f,.25f,1.f};
+
+    for(auto mode:{ReconstructionMode::fsr3_native,ReconstructionMode::fsr3_quality}) {
+        for(unsigned slots:{1u,2u}) {
+            Window window;
+            auto state=scene();
+            RenderOptions options;
+            options.deferred=deferred;
+            if(ao_enabled)options.ambient_occlusion.mode=AmbientOcclusionMode::gtao;
+            options.gpu=gpu;
+            options.samples=1;
+            options.reconstruction=mode;
+            options.frames_in_flight=slots;
+            options.width=320;
+            options.height=240;
+            options.capture_exclusive=true;
+            options.scene_product_probes={{80,60}};
+            options.fsr3_history_probes=true;
+            HostedViewport view(options,state,window.child);
+            evidence["cases"].push_back({{"mode",reconstruction_mode_name(mode)},
+                {"slots",slots},{"captures",Json::array()}});
+            auto& row=evidence["cases"].back();
+            auto& environment=state.lighting.environment;
+            unsigned width=options.width,height=options.height;
+            std::uint64_t accepted=0,sdk_sequence=0;
+
+            auto capture=[&](const char* phase,bool fog_enabled,const std::string& reset_reason) {
+                const auto path=prefix+"-composition-"+std::string(reconstruction_mode_name(mode))+"-"+
+                    std::to_string(slots)+"-"+phase+".bmp";
+                row["last_attempt"]={{"phase",phase},{"path",path}};
+                auto deadline=std::chrono::steady_clock::now()+std::chrono::seconds(15);
+                for(;;) {
+                    pump();
+                    const auto before=view.report().diagnostics.frame_execution.submitted;
+                    const bool presented=view.draw_capture(state,path);
+                    const auto after=view.report().diagnostics.frame_execution.submitted;
+                    if(presented) {
+                        check(after==before+1,"Composition capture did not accept exactly one frame");
+                        ++accepted;
+                        ++sdk_sequence;
+                        break;
+                    }
+                    check(after==before,"Composition sequence interrupted by an accepted but unpresented frame");
+                    check(std::chrono::steady_clock::now()<deadline,"Composition capture timed out");
+                    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                }
+                const auto report=view.report();
+                const auto& diagnostics=report.diagnostics;
+                const auto& reconstruction=diagnostics.reconstruction;
+                const auto& products=diagnostics.scene_products;
+                const bool reset=!reset_reason.empty();
+                auto& observation=row["last_attempt"];
+                observation.update({{"gpu",report.gpu_name},{"capture_written",report.capture_written},
+                    {"validation_errors",report.validation_errors},{"detail",report.detail},
+                    {"history_reset",reconstruction.history_reset},{"reset_reason",reconstruction.reset_reason},
+                    {"history_sequence",reconstruction.history_sequence},{"jitter",reconstruction.jitter_pixels},
+                    {"render_extent",{reconstruction.render_width,reconstruction.render_height}},
+                    {"output_extent",{reconstruction.output_width,reconstruction.output_height}},
+                    {"composition_mask_bytes",reconstruction.composition_mask_bytes},
+                    {"logical_bytes",reconstruction.logical_bytes}});
+                check(report.success&&report.hardware&&report.capture_written&&report.validation_errors==0,
+                    "Composition hardware capture failed");
+                check(diagnostics.deferred==deferred&&reconstruction.active&&reconstruction.mode==mode,
+                    "Composition did not render with requested paths");
+                check(reconstruction.history_reset==reset&&reconstruction.reset_reason==reset_reason,
+                    "Composition changed the wrong history boundary");
+                check(reconstruction.history_sequence==accepted&&products.history_sequence==accepted&&
+                    diagnostics.completed_submissions==accepted&&diagnostics.frame_execution.submitted==accepted&&
+                    diagnostics.frame_execution.outstanding==0,"Composition capture did not retire the accepted history");
+                const double ratio=mode==ReconstructionMode::fsr3_native ? 1 : 1.5;
+                check(reconstruction.render_width==static_cast<unsigned>(width/ratio)&&
+                    reconstruction.render_height==static_cast<unsigned>(height/ratio)&&
+                    reconstruction.output_width==width&&reconstruction.output_height==height,
+                    "Composition did not use render-sized inputs and the selected output extent");
+                const auto pixels=std::uint64_t(reconstruction.render_width)*reconstruction.render_height;
+                check(reconstruction.composition_mask_bytes==(fog_enabled ? pixels : 0),
+                    "Composition mask accounting differs from one byte per render pixel");
+                check(bool(diagnostics.height_fog)==fog_enabled&&(!fog_enabled||
+                    (diagnostics.height_fog->active&&diagnostics.height_fog->buffer_bytes==pixels*8)),
+                    "Height fog did not follow composition enablement and extent");
+                check(products.probes.size()==1,"Composition probe missing");
+                const auto& probe=products.probes[0];
+                check(probe.surface_valid&&probe.motion_valid==!reset&&probe.fsr3_history.has_value(),
+                    "Composition surface, motion correspondence, or SDK history probe missing");
+                check(probe.resolved_x==static_cast<unsigned>((probe.x+.5)*width/reconstruction.render_width)&&
+                    probe.resolved_y==static_cast<unsigned>((probe.y+.5)*height/reconstruction.render_height),
+                    "Composition probe samples the wrong reconstruction output pixel");
+                const auto& history=*probe.fsr3_history;
+                observation.update({{"probe_input",{probe.x,probe.y}},{"probe_output",{probe.resolved_x,probe.resolved_y}},
+                    {"raw_hdr",probe.raw_hdr},{"resolved_hdr",probe.resolved_hdr},{"motion",probe.motion},
+                    {"sdk_masks",history.masks},{"sdk_sequence",history.sdk_dispatch_sequence},
+                    {"sdk_previous_used",history.previous_history_used}});
+                check(history.sdk_dispatch_sequence==sdk_sequence&&history.previous_history_used==!reset,
+                    "SDK history consumption differs from composition reset policy");
+                const auto& raw=state.objects[0].material->emissive;
+                for(std::size_t channel=0;channel<raw.size();++channel) {
+                    close_to(probe.raw_hdr[channel],raw[channel],.005f,"Composition changed the opaque probe");
+                    close_to(probe.resolved_hdr[channel],(fog_enabled ? .75f : 1.f)*raw[channel],.03f,
+                        "Reconstruction did not consume the analytic composed color");
+                }
+                if(!reset) {
+                    for(float motion:probe.motion)close_to(motion,0,.00001f,"Stationary composition probe moved");
+                    // Pinned SDK mask R is max(motion divergence, composition).
+                    // A stationary flat plane has no divergence in the interior.
+                    close_to(history.masks[0],fog_enabled ? .25f : 0.f,1.1f/255.f,
+                        "SDK did not sample the expected render-size composition mask");
+                }
+                row["captures"].push_back(observation);
+                row.erase("last_attempt");
+                return reconstruction;
+            };
+
+            const auto first=capture("clear-first",false,"first_submission_or_resize");
+            const auto clear=capture("clear-steady",false,"");
+            environment.height_fog=fog;
+            const auto enabled=capture("fog-enabled",true,"world_composition_changed");
+            check(enabled.logical_bytes==clear.logical_bytes+enabled.composition_mask_bytes&&
+                enabled.jitter_pixels==first.jitter_pixels,"Fog enablement changed the FSR budget or jitter reset");
+            capture("fog-steady",true,"");
+
+            width=384;
+            height=216;
+            window.resize(width,height);
+            sdk_sequence=0;
+            const auto resized=capture("fog-resized",true,"first_submission_or_resize");
+            check(resized.jitter_pixels==first.jitter_pixels,"Fog resize did not restart jitter");
+            capture("fog-resized-steady",true,"");
+
+            environment.height_fog.reset();
+            const auto disabled=capture("fog-disabled",false,"world_composition_changed");
+            check(disabled.logical_bytes+resized.composition_mask_bytes==resized.logical_bytes&&
+                disabled.jitter_pixels==first.jitter_pixels,"Fog disablement retained mask bytes or stale jitter");
+            capture("clear-resized-steady",false,"");
+        }
+    }
+}
 }
 int main(int argc,char**argv){Json evidence={{"passed",false},{"cases",Json::array()}};
     try{
         SetUnhandledExceptionFilter(report_crash);
-        check(argc==3 || ((argc==4 || argc==5) && std::string(argv[3])=="deferred" && (argc==4 || std::string(argv[4])=="gtao")),"Usage: reconstruction-test OUTPUT_PREFIX GPU [deferred [gtao]]");
+        const bool world_composition=argc>=4 && std::string(argv[argc-1])=="--world-composition";
+        if(world_composition)--argc;
+        check(argc==3 || ((argc==4 || argc==5) && std::string(argv[3])=="deferred" && (argc==4 || std::string(argv[4])=="gtao")),"Usage: reconstruction-test OUTPUT_PREFIX GPU [deferred [gtao]] [--world-composition]");
         const bool deferred=argc>=4,ao_enabled=argc==5;evidence["deferred"]=deferred;evidence["ambient_occlusion"]=ao_enabled ? "gtao" : "none";SetProcessDPIAware();std::string prefix=argv[1];int gpu=std::stoi(argv[2]);
+        if(world_composition) {
+            evidence["world_composition"]=true;
+            verify_world_composition(prefix,gpu,deferred,ao_enabled,evidence);
+            evidence["passed"]=true;
+            std::cout<<evidence.dump(2)<<'\n';
+            return 0;
+        }
         auto check_ao=[&](const RenderDiagnostics& diagnostics,const AmbientOcclusionOptions& requested){
             check(diagnostics.ambient_occlusion.mode==requested.mode && diagnostics.ambient_occlusion.quality==requested.quality && diagnostics.ambient_occlusion.radius==requested.radius,"AO options changed across view lifecycle");
             const auto& reconstruction=diagnostics.reconstruction;

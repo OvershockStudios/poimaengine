@@ -137,6 +137,8 @@ void Context::dispatch(const Dispatch& input) {
     d.depth=resource(input.depth,p.render,VK_FORMAT_D32_SFLOAT,false,true);
     d.motionVectors=resource(input.motion,p.render,VK_FORMAT_R32G32_SFLOAT,false);
     if(input.reactive.image)d.reactive=resource(input.reactive,p.render,VK_FORMAT_R8_UNORM,false);
+    if(input.composition_mask.image)
+        d.transparencyAndComposition=resource(input.composition_mask,p.render,VK_FORMAT_R8_UNORM,false);
     d.output=resource(input.output,p.output,VK_FORMAT_R16G16B16A16_SFLOAT,true);
     d.dilatedDepth=resource(input.dilated_depth,p.render,VK_FORMAT_R32_SFLOAT,true);
     d.dilatedMotionVectors=resource(input.dilated_motion,p.render,VK_FORMAT_R16G16_SFLOAT,true);

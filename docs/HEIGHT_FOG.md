@@ -48,7 +48,8 @@ in Decima](https://www.guerrilla-games.com/media/News/Files/DecimaSiggraph2017.p
 
 ## Rendering and inspection
 
-Use forward or deferred color at one sample with reconstruction disabled.
+Use forward or deferred color at one sample. [FSR reconstruction](RECONSTRUCTION.md)
+can consume this color at the internal render extent.
 Height fog reads opaque depth and scene-linear color after optional screen
 reflections. It writes a separate world image before sprites, a separately
 composited foreground, post-processing and the HUD. This route uses the
@@ -59,14 +60,15 @@ blend and shading behavior.
 report the selected profile. `render_diagnostics.height_fog` reports
 `active`, `reason`, `buffer_bytes`, effective `spot_lights` count, and
 available GPU timing. The extra target uses eight logical bytes per
-pixel with a 96 MiB cap. A selected density of zero has identity output.
-Multisample, reconstruction, diagnostic views, a hidden scene, a non-rigid
-camera, and world-depth foreground use the original color route. The
+render pixel with a 96 MiB cap. A selected density of zero has identity output.
+Multisample, diagnostic views, a hidden scene, a non-rigid camera and
+world-depth foreground use the original color route. The
 inactive diagnostic gives the applicable reason.
 
 Sparse probe `raw_hdr` is the original lit opaque scene. `resolved_hdr`
-reports the world image after fog and any sprites, before composited
-foreground and post-processing. The selected profile freezes with the
+reports the world image after fog at the reconstructed output coordinate
+when FSR is active. The native-resolution path includes sprites. Both
+reports precede composited foreground and post-processing. The selected profile freezes with the
 runtime and its authored dependency identity.
 
 Project and standalone inspection report `needs_height_fog`. Use an
@@ -83,5 +85,5 @@ python3 tests/height_fog_capture.py POIMA --runtime-root RUNTIME \
 ```
 
 Use `--lighting-path deferred` for the deferred path and `--windows-interop`
-from WSL. `--fsr` and `--msaa` exercise fallback output on builds that
-support those paths.
+from WSL. `--msaa` exercises the multisample fallback. The
+[composition check](RECONSTRUCTION.md#world-lighting-composition) exercises fog with FSR.

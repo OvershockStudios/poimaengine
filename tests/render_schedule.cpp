@@ -985,8 +985,9 @@ void environment_contracts(){
 
 void world_hdr_probes(Fixture& fixture) {
     auto& f=fixture.f;
-    f.probe_points={{0,0},{383,215}};
-    for(auto source:{f.depth,f.normal,f.motion,f.motion_valid,f.hdr,world_radiance(f,fixture.settings),f.ao_raw,f.ao_filtered}) {
+    f.probe_points={{0,0},{f.resources[f.hdr].width-1,f.resources[f.hdr].height-1}};
+    const auto resolved=fixture.settings.reconstruction ? f.reconstructed : world_radiance(f,fixture.settings);
+    for(auto source:{f.depth,f.normal,f.motion,f.motion_valid,f.hdr,resolved,f.ao_raw,f.ao_filtered}) {
         if(source==none)continue;
         const auto target=fixture.add(Kind::texture,Lifetime::capture);
         auto& r=f.resources[target];
@@ -1056,7 +1057,7 @@ void screen_reflection_contracts() {
     bad("reflections without scene",[](auto& p){p.settings.scene=false;});
     bad("reflections in forward renderer",[](auto& p){p.settings.deferred=false;});
     bad("reflections on diagnostic product output",[](auto& p){p.settings.products_debug=true;});
-    bad("reflections with reconstruction",[](auto& p){p.settings.reconstruction=true;});
+    bad("reconstructed reflections without composition mask",[](auto& p){p.settings.reconstruction=true;});
     bad("reflection roles bound while disabled",[](auto& p){p.settings.screen_reflections=false;});
     rejects("reflections on MSAA",[&]{Fixture(settings,4).plan().validate();});
     for(auto role:{&FrameResources::reflection_roughness,&FrameResources::reflected_hdr}) {
@@ -1165,7 +1166,7 @@ void height_fog_contracts() {
     auto bad=[&](const char* name,const auto& edit){auto plan=valid;edit(plan);rejects(name,[&]{plan.validate();});};
     bad("height fog without a scene",[](auto& p){p.settings.scene=false;});
     bad("height fog in diagnostic view",[](auto& p){p.settings.products_debug=true;});
-    bad("height fog with reconstruction",[](auto& p){p.settings.reconstruction=true;});
+    bad("reconstructed fog without composition mask",[](auto& p){p.settings.reconstruction=true;});
     bad("height fog attachment retained while disabled",[](auto& p){p.settings.height_fog=p.settings.height_fog_spots=false;});
     bad("height fog attachment absent",[](auto& p){p.frame.fogged_hdr=none;});
     bad("height fog attachment physical identity aliases reflected HDR",[&](auto& p){p.frame.resources[f.fogged_hdr].identity=p.frame.resources[f.reflected_hdr].identity;});
@@ -1214,6 +1215,150 @@ void height_fog_contracts() {
           "Default rendering acquired height fog resources or work");
     legacy.settings.height_fog_spots=true;
     rejects("height fog spotlights without height fog",[&]{legacy.validate();});
+}
+
+void setup_composed_reconstruction(Fixture& fixture,bool upscale) {
+    auto& f=fixture.f;
+    auto image=[&](Format format) {
+        const auto id=fixture.add(Kind::texture,Lifetime::shared);
+        f.resources[id].format=format;
+        return id;
+    };
+    f.reconstructed=image(Format::rgba16_float);
+    f.dense_motion=image(Format::rg32_float);
+    f.reactive=image(Format::r8_unorm);
+    f.dilated_depth=image(Format::r32_float);
+    f.dilated_motion=image(Format::rg16_float);
+    f.reconstructed_depth=image(Format::r32_uint);
+    f.composition_mask=image(Format::r8_unorm);
+    f.resources[f.composition_mask].supported=use_bit(Use::sampled)|use_bit(Use::image_write);
+    if(upscale)for(auto id:{f.hdr,f.depth,f.normal,f.motion,f.motion_valid,f.material_base,f.material_surface,
+        f.material_correspondence,f.ao_raw,f.ao_filtered,f.reflection_roughness,f.reflected_hdr,f.fogged_hdr,
+        f.dense_motion,f.reactive,f.dilated_depth,f.dilated_motion,f.reconstructed_depth,f.composition_mask}) {
+        if(id==none)continue;
+        f.resources[id].width=257;
+        f.resources[id].height=145;
+    }
+}
+
+void composed_reconstruction_contracts() {
+    for(unsigned path:{0u,1u,2u,3u})for(bool upscale:{false,true})for(unsigned composition:{0u,1u,2u}) {
+        auto settings=rich();
+        settings.products=settings.reconstruction=true;
+        settings.deferred=path!=0;
+        settings.screen_reflections=path==1 || path==3;
+        settings.ambient_occlusion=settings.deferred && composition!=0;
+        settings.height_fog=path!=1;
+        settings.height_fog_spots=settings.height_fog && composition!=0;
+        settings.editor=composition==2;
+        settings.viewmodel_samples=4;
+        Fixture fixture(settings);
+        setup_composed_reconstruction(fixture,upscale);
+        if(composition==2) {
+            setup_foreground(fixture);
+            environment_inputs(fixture);
+        }
+        if(composition!=0) {
+            setup_post_effect(fixture);
+            setup_bloom(fixture);
+        }
+        world_hdr_probes(fixture);
+        auto plan=fixture.plan();plan.validate();++accepted;
+        const auto& f=plan.frame;
+        const auto world=world_radiance(f,settings);
+        const auto producer=settings.height_fog ? PassId::height_fog : PassId::screen_reflections;
+        const auto position=[&](PassId id){return &pass(plan,id)-plan.passes.data();};
+        check(position(producer)+1==position(PassId::temporal_inputs) &&
+              position(PassId::temporal_inputs)+1==position(PassId::reconstruction),
+              "World composition, temporal inputs and reconstruction must execute in sequence");
+        check(access(plan,PassId::temporal_inputs,f.hdr,Use::sampled) &&
+              access(plan,PassId::temporal_inputs,world,Use::sampled) &&
+              access(plan,PassId::temporal_inputs,f.composition_mask,Use::image_write,true),
+              "Composition mask must use separate raw and composed HDR textures");
+        check(access(plan,PassId::reconstruction,world,Use::sampled) &&
+              access(plan,PassId::reconstruction,f.composition_mask,Use::sampled) &&
+              !access(plan,PassId::reconstruction,f.hdr,Use::sampled),
+              "Reconstruction must consume composed HDR and the initialized mask");
+        if(fixture.settings.viewmodel)
+            check(access(plan,PassId::viewmodel_composite,f.reconstructed,Use::sampled) &&
+                  !access(plan,PassId::viewmodel_composite,world,Use::sampled),
+                  "Foreground composition must use reconstructed world HDR");
+        if(fixture.settings.post_effect)
+            check(access(plan,PassId::post_effect,fixture.settings.viewmodel ? f.composite : f.reconstructed,Use::sampled) &&
+                  access(plan,PassId::bloom_extract,f.post_effect,Use::sampled),
+                  "Post effects or bloom bypassed reconstructed color processing");
+        check(access(plan,PassId::output,display_radiance(f,fixture.settings),Use::sampled) &&
+              access(plan,PassId::game_ui,f.output,Use::color),"Output or HUD bypassed reconstruction");
+        check(f.probe_copies[4].source==f.hdr && f.probe_copies[5].source==f.reconstructed &&
+              access(plan,PassId::product_probes,f.hdr,Use::copy_source) &&
+              access(plan,PassId::product_probes,f.reconstructed,Use::copy_source),
+              "Probes must keep raw HDR and output-resolution reconstructed HDR separate");
+    }
+
+    auto settings=rich();
+    settings.products=settings.reconstruction=settings.deferred=settings.screen_reflections=settings.height_fog=true;
+    Fixture fixture(settings);
+    setup_composed_reconstruction(fixture,true);
+    setup_foreground(fixture);
+    world_hdr_probes(fixture);
+    const auto valid=fixture.plan();valid.validate();
+    const auto& f=valid.frame;
+    auto bad=[&](const char* name,const auto& edit){auto p=valid;edit(p);rejects(name,[&]{p.validate();});};
+    bad("composition mask role absent",[](auto& p){p.frame.composition_mask=none;});
+    bad("composition mask present without reconstruction",[](auto& p){p.settings.reconstruction=false;});
+    bad("composition mask aliases opaque HDR",[](auto& p){p.frame.composition_mask=p.frame.hdr;});
+    bad("composition mask aliases geometric validity",[](auto& p){p.frame.composition_mask=p.frame.motion_valid;});
+    bad("composition mask aliases temporal reactivity",[](auto& p){p.frame.composition_mask=p.frame.reactive;});
+    bad("composition mask replaces renderer output",[](auto& p){p.frame.output=p.frame.composition_mask;});
+    bad("composition mask has duplicate image identity",[](auto& p){
+        p.frame.resources[p.frame.composition_mask].identity=p.frame.resources[p.frame.motion_valid].identity;
+    });
+    auto bad_mask=[&](const char* name,const auto& edit){bad(name,[&](auto& p){edit(p.frame.resources[f.composition_mask]);});};
+    bad_mask("composition mask output extent",[&](auto& r){r.width=f.resources[f.reconstructed].width;});
+    bad_mask("composition mask height differs",[](auto& r){++r.height;});
+    bad_mask("composition mask multisampled",[](auto& r){r.samples=4;});
+    bad_mask("composition mask array layers",[](auto& r){r.layers=2;});
+    bad_mask("composition mask has wrong format",[](auto& r){r.format=Format::r16_float;});
+    bad_mask("composition mask uses partial region",[](auto& r){r.region=Region::prefix;});
+    bad_mask("composition mask starts initialized",[](auto& r){r.initialized=true;});
+    bad_mask("composition mask not shared",[](auto& r){r.lifetime=Lifetime::imported;});
+    bad_mask("composition mask late bound",[](auto& r){r.late_bound=true;});
+    for(auto use:{Use::sampled,Use::image_write}) {
+        bad_mask("composition mask missing image support",[&](auto& r){r.supported&=~use_bit(use);});
+    }
+    for(auto id:{PassId::screen_reflections,PassId::height_fog,PassId::temporal_inputs,PassId::reconstruction}) {
+        bad("composed reconstruction omits a stage",[&](auto& p){std::erase_if(p.passes,[&](const auto& stage){return stage.id==id;});});
+    }
+    for(auto source:{f.hdr,f.fogged_hdr})
+        bad("composition mask omits HDR source",[&](auto& p){erase_access(p,PassId::temporal_inputs,source,Use::sampled);});
+    bad("temporal inputs do not write the mask",[&](auto& p){erase_access(p,PassId::temporal_inputs,f.composition_mask,Use::image_write);});
+    bad("temporal inputs leave the mask partly unwritten",[&](auto& p){
+        for(auto& a:pass(p,PassId::temporal_inputs).accesses)if(a.resource==f.composition_mask)a.initialize=false;
+    });
+    bad("reconstruction omits the initialized mask",[&](auto& p){erase_access(p,PassId::reconstruction,f.composition_mask,Use::sampled);});
+    bad("reconstruction claims mask initialization",[&](auto& p){
+        for(auto& a:pass(p,PassId::reconstruction).accesses)if(a.resource==f.composition_mask)a.initialize=true;
+    });
+    for(auto bypass:{f.hdr,f.reflected_hdr})bad("reconstruction bypasses composed source",[&](auto& p){
+        for(auto& a:pass(p,PassId::reconstruction).accesses)if(a.resource==f.fogged_hdr)a.resource=bypass;
+    });
+    bad("reconstruction also samples raw opaque HDR",[&](auto& p){pass(p,PassId::reconstruction).accesses.push_back({f.hdr,Use::sampled});});
+    bad("foreground additionally samples pre-reconstruction HDR",[&](auto& p){
+        pass(p,PassId::viewmodel_composite).accesses.push_back({f.fogged_hdr,Use::sampled});
+    });
+    bad("display samples the composition mask",[&](auto& p){pass(p,PassId::output).accesses.push_back({f.composition_mask,Use::sampled});});
+    bad("raw probe observes fogged HDR",[&](auto& p){p.frame.probe_copies[4].source=f.fogged_hdr;});
+    bad("resolved probe bypasses reconstruction",[&](auto& p){p.frame.probe_copies[5].source=f.fogged_hdr;});
+    bad("raw probe falls outside render input but inside output",[&](auto& p){p.frame.probe_points.back().x=f.resources[f.hdr].width;});
+    auto no_effects=rich();no_effects.products=no_effects.reconstruction=no_effects.deferred=true;
+    Fixture legacy(no_effects);
+    setup_composed_reconstruction(legacy,false);
+    rejects("mask without composed reconstruction source",[&]{legacy.plan().validate();});
+    legacy.f.composition_mask=none;
+    auto restored=legacy.plan();restored.validate();++accepted;
+    check(access(restored,PassId::reconstruction,legacy.f.hdr,Use::sampled) &&
+          !access(restored,PassId::temporal_inputs,legacy.f.hdr,Use::sampled),
+          "Opaque reconstruction must bypass composition-mask inputs");
 }
 
 void setup_spatial_aa(Fixture& fixture) {
@@ -1319,4 +1464,4 @@ void spatial_aa_contracts() {
 }
 }
 
-int main(){try{matrix();faults();products();motion_contracts();reconstruction_contracts();deferred_contracts();deferred_color_contracts();viewmodel_contracts();ambient_occlusion_contracts();masked_shadow_contracts();environment_contracts();bloom_contracts();post_effect_contracts();output_grade_contracts();streamed_geometry_contracts();mutable_geometry_contracts();particle_sprite_contracts();surface_mark_contracts();screen_reflection_contracts();height_fog_contracts();spatial_aa_contracts();std::cout<<"Production render schedule: "<<accepted<<" valid variants, "<<rejected<<" rejected contract mutations.\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}
+int main(){try{matrix();faults();products();motion_contracts();reconstruction_contracts();deferred_contracts();deferred_color_contracts();viewmodel_contracts();ambient_occlusion_contracts();masked_shadow_contracts();environment_contracts();bloom_contracts();post_effect_contracts();output_grade_contracts();streamed_geometry_contracts();mutable_geometry_contracts();particle_sprite_contracts();surface_mark_contracts();screen_reflection_contracts();height_fog_contracts();composed_reconstruction_contracts();spatial_aa_contracts();std::cout<<"Production render schedule: "<<accepted<<" valid variants, "<<rejected<<" rejected contract mutations.\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}

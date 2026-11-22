@@ -7,6 +7,20 @@ Texture2D<float> correspondence_valid : register(t2);
 RWTexture2D<float2> dense_motion : register(u0);
 // Match the actual R8_UNORM UAV; scalar float otherwise defaults to R32f.
 [[vk::image_format("r8")]] RWTexture2D<float> reactive : register(u1);
+#ifdef POIMA_TEMPORAL_COMPOSITION
+Texture2D<float4> opaque_hdr : register(t3);
+Texture2D<float4> composed_hdr : register(t4);
+[[vk::image_format("r8")]] RWTexture2D<float> composition_mask : register(u2);
+
+float composition_weight(float3 opaque, float3 composed) {
+    if (!all(isfinite(opaque)) || !all(isfinite(composed))) return 1;
+    // Use relative scene-linear change across all channels, with a floor to
+    // keep very small near-black differences from dominating history.
+    const float3 scale = max(max(abs(opaque), abs(composed)), 1.0 / 64.0);
+    const float3 relative_change = abs(composed - opaque) / scale;
+    return saturate(max(relative_change.r, max(relative_change.g, relative_change.b)));
+}
+#endif
 [numthreads(8,8,1)]
 void compute_main(uint3 id : SV_DispatchThreadID) {
     if(any(id.xy>=uint2(cluster_viewport.zw)))return;
@@ -30,4 +44,9 @@ void compute_main(uint3 id : SV_DispatchThreadID) {
     }
     dense_motion[id.xy]=valid ? motion : 0;
     reactive[id.xy]=(!valid || marks_changed) ? 1 : 0;
+#ifdef POIMA_TEMPORAL_COMPOSITION
+    const float3 opaque = opaque_hdr.Load(int3(id.xy, 0)).rgb;
+    const float3 composed = composed_hdr.Load(int3(id.xy, 0)).rgb;
+    composition_mask[id.xy] = composition_weight(opaque, composed);
+#endif
 }

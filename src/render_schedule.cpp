@@ -12,6 +12,8 @@ void Schedule::validate(bool before_acquire) const {
     auto required=[&](ResourceId id) {if(id==none || id>=frame.resources.size())fail("required resource role is absent");};
     required(frame.swapchain);required(frame.color);required(frame.output);
     const auto display_target=display_output_target(frame,settings);
+    const auto world_hdr=world_radiance(frame,settings);
+    const bool reconstruct_composed=settings.reconstruction && (settings.screen_reflections || settings.height_fog);
     const bool stream=frame.streamed_vertices!=none || frame.streamed_indices!=none;
     if(stream) {
         if(!settings.scene || frame.streamed_vertices==frame.streamed_indices)fail("invalid streamed geometry roles");
@@ -159,8 +161,8 @@ void Schedule::validate(bool before_acquire) const {
             if(frame.display_ldr==id)fail(alias_error);
     } else if(frame.display_ldr!=none)fail("display attachment without spatial anti-aliasing");
     if(settings.screen_reflections) {
-        if(!settings.scene || !settings.deferred || settings.products_debug || settings.reconstruction || frame.color!=frame.hdr)
-            fail("screen reflections require a single-sample deferred color scene without reconstruction");
+        if(!settings.scene || !settings.deferred || settings.products_debug || frame.color!=frame.hdr)
+            fail("screen reflections require a single-sample deferred color scene");
         const auto& hdr=resource(frame.hdr);
         if(std::uint64_t(hdr.width)*hdr.height>screen_reflections_budget_bytes/10)
             fail("screen reflection attachment payload exceeds limit");
@@ -177,8 +179,8 @@ void Schedule::validate(bool before_acquire) const {
         require_distinct_images(frame.reflection_roughness,frame.reflected_hdr,"screen reflection attachment aliases another resource role");
     } else if(frame.reflection_roughness!=none || frame.reflected_hdr!=none)fail("screen reflection attachments without reflection pass");
     if(settings.height_fog) {
-        if(!settings.scene || settings.products_debug || settings.reconstruction || frame.color!=frame.hdr)
-            fail("height fog requires a single-sample color scene without reconstruction");
+        if(!settings.scene || settings.products_debug || frame.color!=frame.hdr)
+            fail("height fog requires a single-sample color scene");
         const auto& hdr=resource(frame.hdr);
         if(std::uint64_t(hdr.width)*hdr.height>height_fog_budget_bytes/8)fail("height fog attachment payload exceeds limit");
         if(frame.hdr==frame.output || frame.hdr==frame.swapchain ||
@@ -196,6 +198,16 @@ void Schedule::validate(bool before_acquire) const {
                 fail("invalid height fog spotlight inputs");
         }
     } else if(frame.fogged_hdr!=none || settings.height_fog_spots)fail("height fog attachments or spotlights without height fog pass");
+    if(reconstruct_composed) {
+        if(!scene_image(frame.composition_mask,Format::r8_unorm,resource(frame.hdr)) ||
+            resource(frame.composition_mask).late_bound ||
+            !(resource(frame.composition_mask).supported&use_bit(Use::image_write)))
+            fail("invalid reconstruction composition mask");
+        constexpr auto alias_error="reconstruction composition mask aliases another resource role";
+        require_distinct_images(frame.composition_mask,none,alias_error);
+        for(auto id:{frame.reflection_roughness,frame.reflected_hdr,frame.fogged_hdr,frame.display_ldr})
+            if(frame.composition_mask==id)fail(alias_error);
+    } else if(frame.composition_mask!=none)fail("composition mask without reconstructed world effects");
     if(settings.particle_sprites) {
         if(!settings.scene || settings.reconstruction || frame.color!=frame.hdr)
             fail("particle sprites require a single-sample scene without reconstruction");
@@ -379,7 +391,7 @@ void Schedule::validate(bool before_acquire) const {
     if(settings.products)for(const auto& d:frame.camera_draws)required(d.previous_vertices);
     if(!frame.probe_points.empty()) {
         if(!settings.capture || !settings.products || frame.probe_points.size()>64 || (frame.probe_copies.size()!=4 && frame.probe_copies.size()!=6 && !(settings.ambient_occlusion && frame.probe_copies.size()==8)))fail("product probes require a bounded single-sample capture");
-        const auto resolved_hdr=!settings.screen_reflections && !settings.height_fog && frame.reconstructed!=none ? frame.reconstructed : world_radiance(frame,settings);
+        const auto resolved_hdr=settings.reconstruction ? frame.reconstructed : world_hdr;
         const ResourceId sources[]={frame.depth,frame.normal,frame.motion,frame.motion_valid,frame.hdr,resolved_hdr,frame.ao_raw,frame.ao_filtered};
         for(std::size_t i=0;i<frame.probe_copies.size();++i) {
             const auto& copy=frame.probe_copies[i];required(copy.destination);
@@ -523,14 +535,23 @@ void Schedule::validate(bool before_acquire) const {
             if(!settings.reconstruction)fail("unexpected temporal input pass");
             for(const auto id:{frame.normal,frame.motion,frame.motion_valid})if(!has(id,Use::sampled))fail("missing temporal input");
             if(!has(frame.frame,Use::constant) || !has(frame.dense_motion,Use::image_write) || !has(frame.reactive,Use::image_write))fail("missing temporal input outputs");
+            if(reconstruct_composed && (!world_opaque || (settings.screen_reflections && !screen_reflected) ||
+                (settings.height_fog && !world_fogged) || pass.accesses.size()!=9 ||
+                !has(frame.hdr,Use::sampled) || !has(world_hdr,Use::sampled) || !has(frame.composition_mask,Use::image_write)))
+                fail("invalid or premature temporal composition mask preparation");
             prepared=true;
         }
         if(pass.id==PassId::reconstruction) {
             if(!settings.reconstruction || !prepared)fail("reconstruction precedes input preparation");
-            for(const auto id:{frame.hdr,frame.depth,frame.dense_motion,frame.reactive})if(!has(id,Use::sampled))fail("missing reconstruction input");
+            for(const auto id:{world_hdr,frame.depth,frame.dense_motion,frame.reactive})if(!has(id,Use::sampled))fail("missing reconstruction input");
             for(const auto id:{frame.reconstructed,frame.dilated_depth,frame.dilated_motion,frame.reconstructed_depth})if(!has(id,Use::image_write))fail("missing reconstruction output");
+            if(reconstruct_composed && (pass.accesses.size()!=9 || !has(frame.composition_mask,Use::sampled)))
+                fail("missing or invalid reconstruction composition mask input");
             reconstructed=true;
         }
+        if(reconstruct_composed && (pass.id==PassId::temporal_inputs || pass.id==PassId::reconstruction))
+            for(const auto& a:pass.accesses)if(a.initialize!=(a.use==Use::image_write))
+                fail("reconstruction composition passes must initialize their complete outputs");
         if(pass.id==PassId::output && settings.ambient_occlusion && settings.products_debug && !has(frame.ao_filtered,Use::sampled))fail("missing ambient occlusion diagnostic input");
         if(pass.id==PassId::output && settings.reconstruction && (!reconstructed || !has(display_radiance(frame,settings),Use::sampled)))fail("display precedes reconstruction");
         if(pass.id==PassId::skinning && settings.viewmodel && (!has(frame.viewmodel_frame,Use::upload) || !has(frame.viewmodel_objects,Use::upload)))fail("missing foreground constant upload");
@@ -676,11 +697,16 @@ void Schedule::validate(bool before_acquire) const {
                 fail("reflection roughness used outside deferred lighting and screen reflections");
             const bool opaque_hdr_consumed=(settings.screen_reflections && pass.id>PassId::screen_reflections) ||
                 (settings.height_fog && pass.id>PassId::height_fog);
+            const bool mask_input=reconstruct_composed && pass.id==PassId::temporal_inputs && a.use==Use::sampled && !a.initialize;
             if(a.resource==frame.hdr && opaque_hdr_consumed &&
+                !mask_input &&
                 !(pass.id==PassId::product_probes && a.use==Use::copy_source && !a.initialize &&
                   frame.probe_copies.size()>=6 && frame.probe_copies[4].source==a.resource))
-                fail(settings.screen_reflections ? "raw HDR used after screen reflections outside its capture probe" :
-                    "raw HDR used after height fog outside its capture probe");
+                fail("raw HDR used after world effects outside temporal composition inputs or capture probe");
+            if(reconstruct_composed && a.resource==frame.composition_mask &&
+                !(pass.id==PassId::temporal_inputs && a.use==Use::image_write && a.initialize) &&
+                !(pass.id==PassId::reconstruction && a.use==Use::sampled && !a.initialize))
+                fail("composition mask used outside preparation and reconstruction");
             const bool reflected=settings.screen_reflections && a.resource==frame.reflected_hdr;
             const bool fogged=settings.height_fog && a.resource==frame.fogged_hdr;
             if(reflected || fogged) {
@@ -688,13 +714,14 @@ void Schedule::validate(bool before_acquire) const {
                 const bool produced=pass.id==producer && a.use==Use::image_write && a.initialize;
                 const bool fog_input=reflected && settings.height_fog && pass.id==PassId::height_fog &&
                     a.use==Use::sampled && !a.initialize;
-                const bool composed=a.use==Use::sampled && !a.initialize && (pass.id==PassId::viewmodel_composite ||
+                const bool composed=!settings.reconstruction && a.use==Use::sampled && !a.initialize && (pass.id==PassId::viewmodel_composite ||
                     (pass.id==PassId::post_effect && scene_linear_radiance(frame,settings)==a.resource) ||
                     ((pass.id==PassId::bloom_extract || pass.id==PassId::output) && display_radiance(frame,settings)==a.resource));
                 const bool probe=pass.id==PassId::product_probes && a.use==Use::copy_source && !a.initialize &&
                     frame.probe_copies.size()>=6 && frame.probe_copies[5].source==a.resource;
                 const bool sprites=pass.id==PassId::particle_sprites && a.use==Use::color && !a.initialize;
-                const bool final_world=a.resource==world_radiance(frame,settings) && (composed || probe || sprites);
+                const bool reconstruct_input=reconstruct_composed && pass.id==PassId::reconstruction && a.use==Use::sampled && !a.initialize;
+                const bool final_world=a.resource==world_hdr && (composed || probe || sprites || mask_input || reconstruct_input);
                 if(!produced && !fog_input && !final_world)fail(reflected ?
                     "reflected radiance used outside its producers and scene color composition" :
                     "fogged radiance used outside its producers and scene color composition");
@@ -849,8 +876,15 @@ Schedule build(FrameResources frame,Settings settings) {
         auto& inputs=pass(PassId::temporal_inputs);add(inputs,f.frame,Use::constant);
         for(auto id:{f.normal,f.motion,f.motion_valid})add(inputs,id,Use::sampled);
         for(auto id:{f.dense_motion,f.reactive})add(inputs,id,Use::image_write,true);
+        const auto source=world_radiance(f,settings);
+        const bool composed=settings.screen_reflections || settings.height_fog;
+        if(composed) {
+            add(inputs,f.hdr,Use::sampled);add(inputs,source,Use::sampled);
+            add(inputs,f.composition_mask,Use::image_write,true);
+        }
         auto& reconstruct=pass(PassId::reconstruction);
-        for(auto id:{f.hdr,f.depth,f.dense_motion,f.reactive})add(reconstruct,id,Use::sampled);
+        for(auto id:{source,f.depth,f.dense_motion,f.reactive})add(reconstruct,id,Use::sampled);
+        if(composed)add(reconstruct,f.composition_mask,Use::sampled);
         for(auto id:{f.reconstructed,f.dilated_depth,f.dilated_motion,f.reconstructed_depth})add(reconstruct,id,Use::image_write,true);
     }
     if(settings.viewmodel) {

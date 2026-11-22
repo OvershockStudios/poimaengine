@@ -443,6 +443,14 @@ Reply run_game(const GameLaunchOptions& options) {
             "Deferred lighting requires samples=1.");
         require(!options.render.fxaa || !options.samples_explicit || options.render.samples==1,
             "FXAA requires samples=1.");
+        const auto reconstruction=reconstruction_mode_name(options.render.reconstruction);
+        require(reconstruction!="invalid","Unsupported reconstruction mode.");
+        const bool reconstruct=options.render.reconstruction!=ReconstructionMode::none;
+        if(reconstruct) {
+            require(!options.samples_explicit || options.render.samples==1,"Reconstruction requires samples=1.");
+            require(!options.render.fxaa,"FXAA requires reconstruction=none.");
+            require(POIMA_FSR3_UPSCALER,"FSR3 reconstruction is unavailable in this build.");
+        }
         const auto game=load_game(options.manifest);
         validate_game_host(game);
         const auto* expected=std::getenv("POIMA_VERIFIED_PLAY_SHA256");
@@ -475,7 +483,8 @@ Reply run_game(const GameLaunchOptions& options) {
         const bool has_settings=!options.settings_profile.empty() || !options.settings_overrides.empty() || options.settings_revision.has_value();
         if(options.render.deferred)params["lighting_path"]="deferred";
         if(options.render.fxaa)params["post_aa"]="fxaa";
-        if(options.render.deferred || options.render.fxaa) {
+        if(reconstruct)params["reconstruction"]=reconstruction;
+        if(options.render.deferred || options.render.fxaa || reconstruct) {
             // Use the existing explicit-option precedence so inherited
             // graphics preferences cannot make this launch incompatible.
             params["samples"]=1;

@@ -72,26 +72,27 @@ Strength is a blend factor from 0 to 1. The trace distance is 0.25 to 32
 metres and the depth hit tolerance is 0.01 to 0.5 metres. Authored strength
 zero keeps the selected settings and disables the effect.
 
-Use single-sample deferred color with reconstruction disabled. Reflections
-sample visible opaque scene radiance. Each ray uses up to 32 coarse samples
+Use single-sample deferred color, with optional [FSR reconstruction](RECONSTRUCTION.md).
+Reflections sample visible opaque scene radiance. Each ray uses up to 32 coarse samples
 with four refinements per candidate depth crossing. Rougher surfaces fade
 out of the effect between roughness 0.20 and 0.45. Rays that miss retain
 the existing lighting.
 
 Deferred lighting writes the reflector roughness and the original opaque HDR.
-The reflection pass reads both and writes a separate HDR image. Sprites and
-separately composited viewmodels draw afterward, followed by post-processing
-and UI. The two added images use 10 logical bytes per pixel, capped at
-128 MiB. Capture probes report the opaque input as `raw_hdr` and the
-reflected world image as `resolved_hdr`. If [height fog](HEIGHT_FOG.md)
-is also active, the resolved probe includes its composition over the
-reflected color.
+The reflection pass reads both and writes a separate HDR image. Optional
+[height fog](HEIGHT_FOG.md) then scatters light over the reflected color.
+With FSR enabled, the engine reconstructs that HDR result before drawing
+composited viewmodels and UI. Without FSR, sprites can draw over the HDR
+world before viewmodels. The two reflection images use 10 logical bytes
+per render pixel, capped at 128 MiB. Capture probes report the opaque input
+as `raw_hdr` and the resulting world color as `resolved_hdr`, at the
+reconstruction output coordinate when FSR is active.
 
 `world.lighting`, `runtime.lighting` and capture lighting report the authored
 selection. When selected, `render_diagnostics.screen_reflections` reports
 `active`, `reason`, `buffer_bytes` and available GPU timing. Forward
-rendering, FSR reconstruction, diagnostic views and world-depth foregrounds
-use their existing lighting.
+rendering, diagnostic views and world-depth foregrounds use their existing
+lighting.
 
 Headless authoring can validate the settings and resolve the export closure.
 World dependencies and project and bundle inspection report
@@ -101,7 +102,8 @@ require an installed Vulkan runtime with `features.screen_reflections`.
 Use `tests/screen_reflections_capture.py POIMA --runtime-root RUNTIME
 --output DIRECTORY --gpu GPU_INDEX` to check relocated exports, an independent
 geometric and radiance witness, and disabled and fallback comparisons. Add
-`--fsr` for an installed build with FSR and `--windows-interop` from WSL.
+`--windows-interop` from WSL. Use the [composition check](RECONSTRUCTION.md#world-lighting-composition)
+to test the FSR path.
 
 ## Storage and execution
 

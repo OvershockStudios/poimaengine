@@ -1,8 +1,16 @@
 # Implementation status
 
-Updated 2026-11-21 for **0.0.394**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-21 for **0.0.395**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.395 adds [standalone FSR selection and world composition](RECONSTRUCTION.md#world-lighting-composition).
+FSR consumes height fog and deferred screen reflections with an explicit
+composition mask. Discovery revision 203 describes the combination. Ubuntu
+passed 13 suites. AMD and NVIDIA verified the SDK mask through 64 hosted
+captures and the authored effects through 36 captures. Six relocated Windows
+replays matched their headless Native AOT save bytes. Textured particle sprites
+still use the path with reconstruction disabled. [Results](evidence/m2-composed-reconstruction-395.json)
 
 Version 0.0.394 compiles [profile handling, spatial queries, and Vulkan scene
 output](BUILD.md#world-service-and-schema-compilation) in separate units.

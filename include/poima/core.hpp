@@ -201,6 +201,7 @@ struct ReconstructionDiagnostics {
     std::uint64_t history_sequence=0,logical_bytes=0;
     std::string reset_reason,sdk_version;
     TimingSummary gpu;
+    std::uint64_t composition_mask_bytes=0;
 };
 // Exact immutable scene used by one renderer context. Observed receipts have
 // zero frame/submission IDs. Submitted means accepted queue work; presented

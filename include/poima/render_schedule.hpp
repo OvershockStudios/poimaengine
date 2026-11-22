@@ -90,6 +90,7 @@ struct FrameResources {
     ResourceId reflection_roughness=none,reflected_hdr=none;
     ResourceId fogged_hdr=none;
     ResourceId reconstructed=none,dense_motion=none,reactive=none,dilated_depth=none,dilated_motion=none,reconstructed_depth=none;
+    ResourceId composition_mask=none;
     ResourceId shadow=none,counts=none,indices=none,cluster_readback=none,skin_errors=none,skin_readback=none,capture=none;
     ResourceId game_vertices=none,game_indices=none,overlay_vertices=none,editor_vertices=none,editor_indices=none;
     std::vector<ResourceId> game_textures,editor_textures;

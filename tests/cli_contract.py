@@ -110,6 +110,45 @@ class CliContract(unittest.TestCase):
             with self.subTest(args=args):
                 self.invoke("render-smoke", *args, expected=2)
 
+    def test_game_reconstruction_admission_before_bundle(self):
+        modes = ["none", "fsr3_native", "fsr3_quality", "fsr3_balanced", "fsr3_performance"]
+        features = self.invoke("capabilities")["result"]["features"]
+        schema = self.invoke("schema", "game")["result"]
+        self.assertEqual(schema["properties"]["reconstruction"]["enum"], modes)
+        self.assertEqual(schema["properties"]["reconstruction"]["default"], "none")
+        failures = [
+            (("--reconstruction",), "Missing game run argument value."),
+            (("--reconstruction", "quality"), "Unsupported reconstruction mode. Use: schema game."),
+            (("--reconstruction", "none", "--reconstruction", "fsr3_native"),
+             "Unknown or repeated game run argument."),
+            (("--reconstruction", "fsr3_native", "--samples", "4"),
+             "Reconstruction requires --samples 1."),
+            (("--samples", "4", "--reconstruction", "fsr3_balanced"),
+             "Reconstruction requires --samples 1."),
+            (("--post-aa", "fxaa", "--reconstruction", "fsr3_quality"),
+             "FXAA requires --reconstruction none."),
+            (("--reconstruction", "fsr3_performance", "--post-aa", "fxaa"),
+             "FXAA requires --reconstruction none."),
+        ]
+        with tempfile.TemporaryDirectory() as directory:
+            prefix = ("game", "run", str(Path(directory) / "game.json"))
+            for flags, message in failures:
+                with self.subTest(flags=flags):
+                    diagnostic = self.invoke(*prefix, *flags, expected=2)["diagnostics"][0]
+                    self.assertEqual(diagnostic["code"], "invalid_arguments")
+                    self.assertEqual(diagnostic["message"], message)
+            missing = self.invoke(*prefix, expected=4)
+            self.assertEqual(self.invoke(*prefix, "--reconstruction", "none", expected=4), missing)
+            for mode in modes[1:]:
+                with self.subTest(mode=mode):
+                    result = self.invoke(*prefix, "--reconstruction", mode, expected=4)
+                    if features["fsr3_upscaler"]:
+                        self.assertEqual(result, missing)
+                    else:
+                        self.assertEqual(result["diagnostics"], [{"code": "game.failed",
+                            "message": "FSR3 reconstruction is unavailable in this build."}])
+            self.assertEqual(list(Path(directory).iterdir()), [])
+
     @unittest.skipIf(RENDER_ENABLED, "Actual GPU execution is a separate integration test")
     def test_render_not_built_is_explicit(self):
         reply = self.invoke("render-smoke", "--frames", "1", expected=3)

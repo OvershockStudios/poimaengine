@@ -9,6 +9,7 @@
 
 #include <exception>
 #include <algorithm>
+#include <array>
 #include <charconv>
 #include <set>
 #include <filesystem>
@@ -248,7 +249,7 @@ poima::Reply run(int argc, char** argv) {
             if(!seen.insert(key).second || (key!="--gpu" && key!="--frames" && key!="--replay" &&
                 key!="--capture" && key!="--report" && key!="--save-root" && key!="--save-write-mode" &&
                 key!="--width" && key!="--height" && key!="--samples" && key!="--lighting-path" && key!="--post-aa" &&
-                key!="--viewmodel-samples" && key!="--frames-in-flight" && key!="--settings-profile" &&
+                key!="--reconstruction" && key!="--viewmodel-samples" && key!="--frames-in-flight" && key!="--settings-profile" &&
                 key!="--settings-revision" && key!="--settings-overrides" && key!="--lens-interpolation" &&
                 key!="--pose-interpolation" && key!="--default-save-root"))
                 return poima::usage_error("Unknown or repeated game run argument.");
@@ -261,6 +262,14 @@ poima::Reply run(int argc, char** argv) {
             if(key=="--post-aa") {
                 if(value!="none" && value!="fxaa")return poima::usage_error("Post AA must be none or fxaa.");
                 options.render.fxaa=value=="fxaa";continue;
+            }
+            if(key=="--reconstruction") {
+                using Mode=poima::ReconstructionMode;
+                constexpr std::array modes{Mode::none,Mode::fsr3_native,Mode::fsr3_quality,Mode::fsr3_balanced,Mode::fsr3_performance};
+                const auto mode=std::ranges::find(modes,value,poima::reconstruction_mode_name);
+                if(mode==modes.end())return poima::usage_error("Unsupported reconstruction mode. Use: schema game.");
+                options.render.reconstruction=*mode;
+                continue;
             }
             if(key=="--default-save-root") {
                 if(value!="true" && value!="false")return poima::usage_error("Default save root expects true or false.");
@@ -304,6 +313,11 @@ poima::Reply run(int argc, char** argv) {
             return poima::usage_error("Deferred lighting requires --samples 1.");
         if(options.render.fxaa && options.samples_explicit && options.render.samples!=1)
             return poima::usage_error("FXAA requires --samples 1.");
+        if(options.render.reconstruction!=poima::ReconstructionMode::none) {
+            if(options.samples_explicit && options.render.samples!=1)
+                return poima::usage_error("Reconstruction requires --samples 1.");
+            if(options.render.fxaa)return poima::usage_error("FXAA requires --reconstruction none.");
+        }
         return poima::run_game(options);
     }
     if(command=="serve" || command=="world") {

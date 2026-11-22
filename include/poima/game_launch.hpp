@@ -10,8 +10,8 @@ struct GameLaunchOptions {
     RenderOptions render;
     std::string settings_profile,settings_overrides;
     std::optional<std::uint64_t> settings_revision;
-    // Deferred and FXAA launches use one world sample. If samples_explicit
-    // is true, render.samples must be 1 when either is enabled.
+    // Deferred lighting, FXAA and reconstruction use one world sample.
+    // An explicit sample count must be 1 when any of these are enabled.
     bool samples_explicit=false,frames_in_flight_explicit=false;
     bool lens_interpolation=false,pose_interpolation=false;
     bool default_save_root=false;

@@ -43,6 +43,14 @@ The capture services and `runtime.play` accept `reconstruction`:
 
 Render dimensions truncate to positive integer pixels. Reported extents are authoritative. These are fixed ratios; dynamic resolution is not implemented.
 
+Standalone games and input replays accept the same modes on the launcher.
+Enabled reconstruction selects one world sample ahead of stored and session
+graphics preferences. Explicit `--samples 4` and `--post-aa fxaa` conflict.
+
+```text
+MyRoom-game\launch.cmd --lighting-path deferred --reconstruction fsr3_quality
+```
+
 Enabled reconstruction requires `samples: 1`, `scene_debug_view: "color"`, and a scene with presentation continuity identity. Non-color debug views retain their separate, unjittered inspection path and cannot be combined with reconstruction. Sharpening is disabled in this initial adapter. UI renders at the output/window resolution after scene reconstruction and display mapping.
 
 For example, these are additional options for a capture request; the selected service still requires its usual revision/session, camera and path fields:
@@ -82,17 +90,58 @@ uses the existing correspondence attachment and temporal input pass.
 
 FSR consumes scene-linear HDR before exposure and display mapping. Output exposure and the existing display transform follow reconstruction; game UI, overlays and editor composition follow those operations. Exposure changes therefore do not rescale stored scene radiance. This path does not establish reconstruction coverage for future transparent scene effects or arbitrary texture animation.
 
+## World lighting composition
+
+[Screen-space reflections](DEFERRED_RENDERING.md#screen-space-reflections)
+and [height fog](HEIGHT_FOG.md) write their HDR results at the internal render
+extent, before FSR. Reflections require deferred lighting. With both active,
+fog consumes the reflected image and FSR consumes the fogged image. The
+engine preserves opaque depth, geometric motion and the existing reactive mask.
+It supplies a distinct one-byte-per-render-pixel transparency and composition
+mask based on the relative RGB change from opaque to final world radiance.
+Each channel's absolute change is divided by the largest of its two
+magnitudes and `1/64`. The mask takes the maximum channel ratio, clamped to
+`[0,1]`. Identical input colors produce zero. The SDK uses this composition
+mask to adjust history protection.
+[AMD integration details](https://gpuopen.com/manuals/fidelityfx_sdk/techniques/super-resolution-upscaler/#transparency-and-composition-mask)
+
+Toggling an active reflection or fog pass resets the affected view's history.
+When no other reset also applies, diagnostics report
+`reset_reason: "world_composition_changed"`. Active composition reports
+`composition_mask_bytes` within the existing reconstruction byte total.
+The world-effects textures keep their separate per-pass byte counts. Textured
+particle sprites require the native-resolution path with reconstruction disabled.
+The regular reflection and fog restrictions still apply to world-depth
+foreground and diagnostic views.
+
+Use the Windows reconstruction test target to verify composition through the
+SDK. The flat-fog scene has an analytic color and mask value. The fixture
+checks both render extents and one and two frame slots, including activation,
+deactivation and resize.
+
+```text
+poima-reconstruction-test.exe OUTPUT_PREFIX GPU_INDEX deferred --world-composition
+```
+
+Run `tests/reconstruction_composition_capture.py` with the Windows executable,
+matching `--runtime-root`, [item contact Native AOT fixture](../tests/fixtures/item_attachment_contact/README.md)
+`--artifact`, fresh `--output` and `--gpu`. Add `--windows-interop` from WSL.
+It checks reflection and fog independently and together, compares native and
+Quality captures, then plays relocated exports and compares saved progress
+with the independent headless run. The legacy reflection and fog scripts'
+`--fsr` fallback checks target builds through 0.0.394.
+
 ## Numeric observations and diagnostics
 
 `scene_product_probes` remains bounded to 64 positions. With reconstruction enabled, `x` and `y` are **render-input pixels**, not window or reconstruction-output pixels. The renderer rejects positions outside the actual render extent. Each capture result includes:
 
 - Existing depth, shading normal, raw geometric motion and validity values, sampled from that frame's jittered raster products.
 - `surface_mark_reactive: true` when a geometrically valid sample carries the receiver's mark-change signal for that submission.
-- `raw_hdr`: scene-linear RGB before reconstruction, exposure and display mapping.
-- `resolved_hdr`: reconstructed scene-linear RGB before exposure and display mapping.
+- `raw_hdr`: opaque scene-linear RGB before reflection and fog composition, reconstruction and exposure.
+- `resolved_hdr`: composed scene-linear RGB after reconstruction, before exposure and display mapping.
 - `resolved_x` and `resolved_y`: the output pixel selected by mapping the input pixel center to the output grid.
 
-For one axis, the mapping is `floor((input + 0.5) * output_size / render_size)`. Without reconstruction, raw and resolved HDR reference the same scene radiance. RGB values originate in RGBA16F attachments; JSON conversion does not recover precision absent from those attachments. Sparse probes do not replace full-image quality measurements. BMP captures contain the final display image and UI, not lossless HDR data.
+For one axis, the mapping is `floor((input + 0.5) * output_size / render_size)`. Without reconstruction, the resolved probe is sampled at the raster coordinate after any screen reflections, fog or sprites. With all of those passes inactive, both probes describe the same scene radiance. RGB values originate in RGBA16F attachments, and their precision carries through JSON conversion. Sparse probes are localized observations. BMP captures contain the final display image and UI.
 
 `diagnostics.reconstruction` reports `mode`, `active`, render/output dimensions, `jitter_pixels`, `history_reset`, `history_sequence`, `reset_reason`, `sdk_version`, `logical_bytes` and `gpu`. Completed-frame diagnostics retain the metadata of the accepted submission they describe. `active` means that frame dispatched reconstruction.
 
