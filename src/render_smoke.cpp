@@ -45,16 +45,9 @@
 #include "render_viewmodel.hpp"
 #include "render_hdr_effects.hpp"
 #include "render_spatial_aa.hpp"
-#include "poima/scene_output_ao_ps.hpp"
+#include "render_scene_output.hpp"
 #include "poima/scene_products_ps.hpp"
 #include "poima/scene_products_vs.hpp"
-#include "poima/scene_output_products_ps.hpp"
-#include "poima/scene_output_bloom_ps.hpp"
-#include "poima/scene_output_products_bloom_ps.hpp"
-#include "poima/scene_output_grade_ps.hpp"
-#include "poima/scene_output_grade_bloom_ps.hpp"
-#include "poima/scene_output_vs.hpp"
-#include "poima/scene_output_ps.hpp"
 #include "poima/particle_sprite_vs.hpp"
 #include "poima/particle_sprite_ps.hpp"
 #include "poima/cluster_lights_cs.hpp"
@@ -362,15 +355,7 @@ struct Context {
     std::size_t object_capacity=0;
     std::vector<ObjectData> object_data;
     SceneDebugView scene_debug_view=SceneDebugView::color;
-    nvrhi::ShaderHandle output_vs,output_ps;
-    nvrhi::BindingLayoutHandle output_layout;
-    nvrhi::BindingSetHandle output_bindings;
-    bool output_reconstruction_bound=false;
-    bool output_bloom_bound=false;
-    bool output_grade_bound=false;
-    nvrhi::BufferHandle output_grade_buffer;
-    const nvrhi::ITexture* output_source_bound=nullptr;
-    nvrhi::GraphicsPipelineHandle output_pipeline;
+    render_scene_output::Pass scene_output;
     hdr_effects::ProjectPostPass post_effect;
     hdr_effects::BloomPass bloom;
     render_spatial_aa::Pass spatial_aa;
@@ -452,8 +437,7 @@ struct Context {
         fog={};reflections={};
         pipeline = nullptr; culled_pipeline=nullptr;
         sky_pipeline=nullptr;sky_bindings=nullptr;sky_layout=nullptr;sky_vs=nullptr;sky_ps=nullptr;
-        output_pipeline=nullptr;output_bindings=nullptr;output_layout=nullptr;output_vs=nullptr;output_ps=nullptr;
-        output_grade_buffer=nullptr;
+        scene_output.release_gpu();
         bloom={};
         spatial_aa={};
         post_effect={};
@@ -1484,7 +1468,7 @@ struct Context {
     void detach_world_outputs(const nvrhi::ITexture* source) {
         sprite_framebuffer=nullptr;
         bloom.detach_source(source);
-        if(output_source_bound==source) {output_bindings=nullptr;output_source_bound=nullptr;}
+        scene_output.detach_source(source);
         post_effect.detach_source(source);
         if(viewmodel)viewmodel->compose_bindings=nullptr;
     }
@@ -1597,7 +1581,7 @@ struct Context {
         const fsr3::Extent render{std::max(1u,static_cast<std::uint32_t>(output.width/ratio)),std::max(1u,static_cast<std::uint32_t>(output.height/ratio))};
         for(const auto& point:product_probes)require(point.x<render.width && point.y<render.height,"Scene product probe lies outside the reconstruction render extent.");
         if(reconstruction && render.width==render_extent.width && render.height==render_extent.height && output.width==output_extent.width && output.height==output_extent.height)return;
-        retire_frames(true);reconstruction.reset();temporal_bindings=nullptr;output_bindings=nullptr;
+        retire_frames(true);reconstruction.reset();temporal_bindings=nullptr;scene_output.invalidate_bindings();
         framebuffers.clear();sky_framebuffers.clear();sky_pipeline=nullptr;
         history={};temporal_phase=0;temporal_clock.reset();render_extent=render;output_extent=output;
         auto allocate=[&](nvrhi::Format pixel_format,vk::Format vk_format,fsr3::Extent size,const char* name,bool target,bool uav) {
@@ -1719,7 +1703,7 @@ struct Context {
         if(separate_pass) {pending_viewmodel.emplace();pending_viewmodel->samples=viewmodel_samples;}
         viewmodel_enabled=scene_visible && separate_pass && scene_debug_view==SceneDebugView::color;
         if(!viewmodel_enabled) {
-            if(viewmodel) {retire_frames(true);viewmodel.reset();output_bindings=nullptr;}
+            if(viewmodel) {retire_frames(true);viewmodel.reset();scene_output.invalidate_bindings();}
             viewmodel_lights={};return;
         }
         try {
@@ -1727,7 +1711,7 @@ struct Context {
             const auto display=scene_viewport.value_or(nvrhi::Viewport(static_cast<float>(extent.width),static_cast<float>(extent.height)));
             const auto width=std::max(1u,static_cast<std::uint32_t>(std::lround(display.maxX-display.minX))),height=std::max(1u,static_cast<std::uint32_t>(std::lround(display.maxY-display.minY)));
             if(!viewmodel || viewmodel->width!=width || viewmodel->height!=height || viewmodel->samples!=viewmodel_samples) {
-                retire_frames(true);auto staged=stage_viewmodel(width,height,viewmodel_samples);viewmodel.swap(staged);output_bindings=nullptr;
+                retire_frames(true);auto staged=stage_viewmodel(width,height,viewmodel_samples);viewmodel.swap(staged);scene_output.invalidate_bindings();
             }
             validate_viewmodel_budget(viewmodel_resident_bytes());
             viewmodel->materials.clear();viewmodel_frame=frame_constants;
@@ -1796,16 +1780,9 @@ struct Context {
 
     void retire_post_effect_consumers(const nvrhi::ITexture* source) {
         retire_frames(true);
-        output_bindings=nullptr;
-        output_source_bound=nullptr;
+        scene_output.detach_source();
         bloom.detach_source(source);
     }
-
-    struct OutputGradeConstants {
-        std::array<float, 4> parameters{};
-        std::array<std::array<float, 4>, output_grade_knot_count> knots{};
-    };
-    static_assert(sizeof(OutputGradeConstants) == render_schedule::output_grade_bytes);
 
     nvrhi::IFramebuffer* scene_output_framebuffer(std::uint32_t image_index) const {
         return fxaa_enabled ? spatial_aa.input_framebuffer() : game_ui.framebuffer(image_index);
@@ -1837,85 +1814,28 @@ struct Context {
             bloom.prepare(*checked.Get(),source,[this] {
                 const auto properties=physical.getFormatProperties(vk::Format::eR16G16B16A16Sfloat,dispatch);
                 return bool(properties.optimalTilingFeatures&vk::FormatFeatureFlagBits::eSampledImageFilterLinear);
-            },[this] { retire_frames(true); },[this] { output_bindings=nullptr; });
+            },[this] { retire_frames(true); },[this] { scene_output.invalidate_bindings(); });
         }
         const auto& grade=scene->lighting.environment.output_grade;
         const bool use_grade=scene_visible && scene_debug_view==SceneDebugView::color && grade && grade->strength>0;
-        if(use_grade && !output_grade_buffer) {
-            nvrhi::BufferDesc desc;
-            desc.byteSize=sizeof(OutputGradeConstants);
-            desc.isConstantBuffer=true;
-            desc.initialState=nvrhi::ResourceStates::ConstantBuffer;
-            desc.keepInitialState=true;
-            desc.debugName="Output grade constants";
-            output_grade_buffer=checked->createBuffer(desc);
-            require(bool(output_grade_buffer),"Output grade constants allocation failed.");
-        }
-        if(output_bloom_bound!=use_bloom || output_grade_bound!=use_grade) {
-            output_bloom_bound=use_bloom;
-            output_grade_bound=use_grade;
-            output_layout=nullptr;
-            output_pipeline=nullptr;
-            output_bindings=nullptr;
-        }
-        if(!output_layout) {
-            output_vs=create_embedded_shader(checked,nvrhi::ShaderDesc(nvrhi::ShaderType::Vertex).setEntryName("vertex_main"),poima_scene_output_vs);
-            const auto ps=nvrhi::ShaderDesc(nvrhi::ShaderType::Pixel).setEntryName("pixel_main");
-            if(scene_debug_view==SceneDebugView::ambient_occlusion)output_ps=create_embedded_shader(checked,ps,poima_scene_output_ao_ps);
-            else if(use_grade)output_ps=use_bloom ? create_embedded_shader(checked,ps,poima_scene_output_grade_bloom_ps) : create_embedded_shader(checked,ps,poima_scene_output_grade_ps);
-            else if(use_bloom)output_ps=scene_normal ? create_embedded_shader(checked,ps,poima_scene_output_products_bloom_ps) : create_embedded_shader(checked,ps,poima_scene_output_bloom_ps);
-            else output_ps=scene_normal ? create_embedded_shader(checked,ps,poima_scene_output_products_ps) : create_embedded_shader(checked,ps,poima_scene_output_ps);
-            auto layout=nvrhi::BindingLayoutDesc().setVisibility(nvrhi::ShaderType::All)
-                .addItem(nvrhi::BindingLayoutItem::PushConstants(0,64)).addItem(nvrhi::BindingLayoutItem::Texture_SRV(0));
-            if(scene_normal)layout.addItem(nvrhi::BindingLayoutItem::Texture_SRV(1)).addItem(nvrhi::BindingLayoutItem::Texture_SRV(2)).addItem(nvrhi::BindingLayoutItem::Texture_SRV(3)).addItem(nvrhi::BindingLayoutItem::Texture_SRV(4));
-            if(scene_debug_view==SceneDebugView::ambient_occlusion)layout.addItem(nvrhi::BindingLayoutItem::Texture_SRV(5));
-            if(use_bloom)layout.addItem(nvrhi::BindingLayoutItem::Texture_SRV(6)).addItem(nvrhi::BindingLayoutItem::Sampler(0));
-            if(use_grade)layout.addItem(nvrhi::BindingLayoutItem::ConstantBuffer(1));
-            output_layout=checked->createBindingLayout(layout);
-            require(output_vs && output_ps && output_layout,"Scene output shader/layout creation failed.");
-        }
-        if(output_reconstruction_bound!=use_reconstructed || output_source_bound!=source)output_bindings=nullptr;
-        output_source_bound=source;
-        output_reconstruction_bound=use_reconstructed;
-        if(!output_bindings) {
-            auto bindings_desc=nvrhi::BindingSetDesc().addItem(nvrhi::BindingSetItem::PushConstants(0,64))
-                .addItem(nvrhi::BindingSetItem::Texture_SRV(0,source));
-            if(scene_normal)bindings_desc.addItem(nvrhi::BindingSetItem::Texture_SRV(1,depth)).addItem(nvrhi::BindingSetItem::Texture_SRV(2,scene_normal)).addItem(nvrhi::BindingSetItem::Texture_SRV(3,scene_motion)).addItem(nvrhi::BindingSetItem::Texture_SRV(4,scene_motion_valid));
-            if(scene_debug_view==SceneDebugView::ambient_occlusion)bindings_desc.addItem(nvrhi::BindingSetItem::Texture_SRV(5,occlusion.filtered()));
-            if(use_bloom)bindings_desc.addItem(nvrhi::BindingSetItem::Texture_SRV(6,bloom.radiance())).addItem(nvrhi::BindingSetItem::Sampler(0,bloom.sampler()));
-            if(use_grade)bindings_desc.addItem(nvrhi::BindingSetItem::ConstantBuffer(1,output_grade_buffer));
-            output_bindings=checked->createBindingSet(bindings_desc,output_layout);
-            require(bool(output_bindings),"Scene output HDR bindings creation failed.");
-        }
-        if(!output_pipeline) {
-            nvrhi::GraphicsPipelineDesc description;description.VS=output_vs;description.PS=output_ps;description.bindingLayouts.push_back(output_layout);
-            description.renderState.depthStencilState.depthTestEnable=false;description.renderState.depthStencilState.depthWriteEnable=false;
-            description.renderState.rasterState.cullMode=nvrhi::RasterCullMode::None;
-            output_pipeline=checked->createGraphicsPipeline(description,scene_output_framebuffer(0)->getFramebufferInfo());
-            require(bool(output_pipeline),"Scene output pipeline creation failed.");
-        }
+        scene_output.prepare(*checked.Get(), {
+            .radiance=source, .depth=depth.Get(), .normal=scene_normal.Get(), .motion=scene_motion.Get(),
+            .motion_valid=scene_motion_valid.Get(), .occlusion=occlusion.filtered(),
+            .bloom=use_bloom ? bloom.radiance() : nullptr, .bloom_sampler=use_bloom ? bloom.sampler() : nullptr,
+            .view=scene_debug_view, .reconstructed=use_reconstructed, .grade=use_grade,
+        }, *scene_output_framebuffer(0));
     }
     void render_scene_output(std::uint32_t image_index, nvrhi::IBuffer* grade_buffer) {
         if(!scene)return;
-        if(grade_buffer) {
-            const auto& grade=*scene->lighting.environment.output_grade;
-            OutputGradeConstants constants;
-            constants.parameters={grade.input_max,grade.strength,0,0};
-            for(std::size_t i=0;i<grade.knots.size();++i)
-                std::copy(grade.knots[i].begin(),grade.knots[i].end(),constants.knots[i].begin());
-            commands->writeBuffer(grade_buffer,&constants,sizeof(constants));
-        }
-        nvrhi::GraphicsState state;state.pipeline=output_pipeline;state.framebuffer=scene_output_framebuffer(image_index);state.bindings.push_back(output_bindings);
-        state.viewport.addViewportAndScissorRect(nvrhi::Viewport(static_cast<float>(extent.width),static_cast<float>(extent.height)));
-        const auto display=scene_viewport.value_or(nvrhi::Viewport(static_cast<float>(extent.width),static_cast<float>(extent.height)));
-        const float parameters[16]={frame_constants.ambient_exposure[3],
-            !fxaa_enabled && ui_target().srgb ? 1.0f : 0.0f,
-            static_cast<float>(scene_debug_view),static_cast<float>(scene->near_plane),static_cast<float>(scene->far_plane),frame_constants.cluster_viewport[2],frame_constants.cluster_viewport[3],output_reconstruction_bound ? 1.0f : 0.0f,
-            display.minX,display.minY,display.maxX-display.minX,display.maxY-display.minY,
-            float(output_source_bound->getDesc().width),float(output_source_bound->getDesc().height),
-            output_bloom_bound ? scene->lighting.environment.bloom.intensity : 0,0};
-        commands->setGraphicsState(state);commands->setPushConstants(parameters,sizeof(parameters));
-        commands->draw(nvrhi::DrawArguments().setVertexCount(3));
+        const nvrhi::Viewport target(static_cast<float>(extent.width),static_cast<float>(extent.height));
+        const auto& grade=scene->lighting.environment.output_grade;
+        scene_output.record(*commands.Get(),*scene_output_framebuffer(image_index), {
+            .target=target, .display=scene_viewport.value_or(target), .exposure=frame_constants.ambient_exposure[3],
+            .near_plane=static_cast<float>(scene->near_plane), .far_plane=static_cast<float>(scene->far_plane),
+            .raster_width=frame_constants.cluster_viewport[2], .raster_height=frame_constants.cluster_viewport[3],
+            .bloom_intensity=scene->lighting.environment.bloom.intensity, .view=scene_debug_view,
+            .srgb=!fxaa_enabled && ui_target().srgb,
+        }, grade ? &*grade : nullptr, grade_buffer);
     }
     void validate_viewmodel_snapshot() const {
         if(!scene->viewmodel)return;
@@ -2227,9 +2147,9 @@ struct Context {
         retire_presentation();
         fog.clear_targets();reflections.clear_targets();
         reconstruction.reset();temporal_bindings=nullptr;reconstructed=nullptr;dense_motion=nullptr;reactive=nullptr;dilated_depth=nullptr;dilated_motion=nullptr;reconstructed_depth=nullptr;render_extent={};output_extent={};temporal_phase=0;temporal_clock.reset();
-        viewmodel.reset();viewmodel_enabled=false;viewmodel_draws.clear();viewmodel_objects.clear();output_source_bound=nullptr;
+        viewmodel.reset();viewmodel_enabled=false;viewmodel_draws.clear();viewmodel_objects.clear();
         commands=nullptr;
-        sky_pipeline=nullptr;output_pipeline=nullptr;output_bindings=nullptr;bloom.clear_targets();
+        sky_pipeline=nullptr;scene_output.detach_framebuffer();bloom.clear_targets();
         spatial_aa={};diagnostics.fxaa_buffer_bytes=0;
         post_effect.clear_target();
         post_effect.detach_source();
@@ -2588,7 +2508,7 @@ struct Context {
         rs::FrameResources f;
         rs::Settings settings;settings.scene=scene!=nullptr;settings.clustered=scene && pending_lights.active;
         settings.viewmodel=viewmodel_enabled;settings.viewmodel_clustered=viewmodel_enabled && viewmodel_lights.active;settings.viewmodel_samples=viewmodel_samples;
-        settings.bloom=scene && output_bloom_bound;
+        settings.bloom=scene && scene_output.uses_bloom();
         settings.post_effect=scene && post_effect_active;
         settings.spatial_aa=fxaa_enabled;
         settings.screen_reflections=scene && scene_visible && reflections.radiance();
@@ -2742,7 +2662,7 @@ struct Context {
         }
         if(settings.post_effect)f.post_effect=texture(post_effect.radiance(),rs::Lifetime::shared,false);
         if(settings.spatial_aa)f.display_ldr=texture(spatial_aa.input(),rs::Lifetime::shared,false);
-        if(settings.scene && output_grade_bound)f.output_grade=buffer(output_grade_buffer,rs::Lifetime::shared,false);
+        if(settings.scene)if(auto* grade=scene_output.grade_buffer())f.output_grade=buffer(grade,rs::Lifetime::shared,false);
         if(settings.bloom) {
             f.bloom=texture(bloom.radiance(),rs::Lifetime::shared,false);
             f.bloom_scratch=texture(bloom.scratch(),rs::Lifetime::shared,false);
@@ -2963,7 +2883,7 @@ struct Context {
             }
             const std::array<rs::ResourceId,7> output_resources={rs::display_radiance(f,plan.settings),f.depth,f.normal,f.motion,f.motion_valid,f.ao_filtered,f.bloom};
             bool grade_bound=false;
-            for(const auto& binding:output_bindings->getDesc()->bindings) {
+            for(const auto& binding:scene_output.bindings()->getDesc()->bindings) {
                 if(binding.type==nvrhi::ResourceType::Texture_SRV)identity(output_resources.at(binding.slot),binding.resourceHandle);
                 if(binding.type==nvrhi::ResourceType::ConstantBuffer) {
                     require(binding.slot==1 && !grade_bound,"Invalid scene output grade binding.");

@@ -1,9 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 // World-owned save service. Included inside World so one serialized authority
 // owns frozen content, live state, session identities and mutation receipts.
-    static bool save_inside(const fs::path& value,const fs::path& root) {
-        auto at=value.begin();for(const auto& part:root) { if(at==value.end() || !same_path_name(*at,part))return false;++at; }return true;
-    }
     static std::string path_text(const fs::path& path) { const auto v=path.u8string();return {v.begin(),v.end()}; }
     static void plain_directory(const fs::path& path) {
         fs::path at;
@@ -31,13 +28,13 @@
     }
     void save_configured() const {
         require(!save_root_.empty(),"Configure an explicit save root first.",-32070);plain_directory(save_root_);
-        require(!save_inside(save_root_,fs::weakly_canonical(asset_directory())),"Save root cannot be inside the immutable asset store.",-32070);
-        require(!read_only_ || !save_inside(save_root_,protected_root_),"Save root must be outside the immutable game bundle.",-32070);
+        require(!path_components_contain(save_root_,fs::weakly_canonical(asset_directory())),"Save root cannot be inside the immutable asset store.",-32070);
+        require(!read_only_ || !path_components_contain(save_root_,protected_root_),"Save root must be outside the immutable game bundle.",-32070);
     }
     fs::path save_store_path(const std::string& slot) const {
         save_configured();const auto result=fs::weakly_canonical(save_root_/("slot-"+slot));
-        require(!save_inside(result,fs::weakly_canonical(asset_directory())),"Save slot cannot be inside the immutable asset store.",-32070);
-        require(!read_only_ || !save_inside(result,protected_root_),"Save slot must be outside the immutable game bundle.",-32070);
+        require(!path_components_contain(result,fs::weakly_canonical(asset_directory())),"Save slot cannot be inside the immutable asset store.",-32070);
+        require(!read_only_ || !path_components_contain(result,protected_root_),"Save slot must be outside the immutable game bundle.",-32070);
         // Do not resolve away a linked final component before Store checks it.
         return save_root_/("slot-"+slot);
     }
@@ -188,8 +185,8 @@
                 require(!text.empty() && text.size()<=4096 && text.find('\0')==std::string::npos,"Invalid save root path.");
                 root=fs::path(std::u8string(text.begin(),text.end()));if(root.is_relative())root=path_.parent_path()/root;
                 root=fs::absolute(root).lexically_normal();plain_directory(root);root=fs::canonical(root);
-                require(!save_inside(root,fs::weakly_canonical(asset_directory())),"Save root cannot be inside the immutable asset store.",-32070);
-                require(!read_only_ || !save_inside(root,protected_root_),"Save root must be outside the immutable game bundle.",-32070);
+                require(!path_components_contain(root,fs::weakly_canonical(asset_directory())),"Save root cannot be inside the immutable asset store.",-32070);
+                require(!read_only_ || !path_components_contain(root,protected_root_),"Save root must be outside the immutable game bundle.",-32070);
             }
             std::unique_ptr<GameplaySaveWriter> writer;
             if(mode=="background") {

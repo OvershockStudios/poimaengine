@@ -37,10 +37,12 @@
 #include "world_model_assets.hpp"
 #include "world_presentation_json.hpp"
 #include "world_post_effect_assets.hpp"
+#include "world_preferences_commands.hpp"
 #include "world_region_assets.hpp"
 #include "world_runtime_definition.hpp"
 #include "world_runtime_json.hpp"
 #include "world_schema.hpp"
+#include "world_spatial_queries.hpp"
 #include "world_transaction_operations.hpp"
 #include "poima/player.hpp"
 #include "poima/player_diagnostics.hpp"
@@ -357,7 +359,7 @@ public:
             path_=canonical_project_path(path_);
             protected_root_=protected_root.empty() ? path_.parent_path() :
                 canonical_project_path(fs::path(std::u8string(protected_root.begin(),protected_root.end())));
-            require(fs::is_directory(project_io_path(protected_root_)) && save_inside(path_,protected_root_),
+            require(fs::is_directory(project_io_path(protected_root_)) && path_components_contain(path_,protected_root_),
                 "Protected bundle root must contain this world.");
             exists_=true;
             disk_=read(project_io_path(path_));
@@ -595,8 +597,8 @@ public:
             if(player_active() && (method=="save.write" || method=="save.load"))player_owner_->window->note_performance_intervention(frame_performance::Flag::storage);
             return save_dispatch(method,params);
         }
-        if(method.starts_with("input."))return input_dispatch(method,params);
-        if(method.starts_with("settings."))return settings_dispatch(method,params);
+        if(method.starts_with("input."))return dispatch_input_profile(method,params,preference_paths(),gamepad_host_);
+        if(method.starts_with("settings."))return dispatch_saved_player_settings(method,params,preference_paths());
         if (method == "world.describe" || method == "world.describe.select") {
             if(method=="world.describe.select")validate_discovery_selection(params);
             else (void)discovery_view(params);
@@ -908,123 +910,15 @@ public:
         if(method=="asset.source.inspect")return source_model_inspection(params,path_);
         return model_asset_dispatch(method,params,path_,asset_directory());
     }
-    fs::path preference_profile_path(const Json& value,const std::string& kind) const {
-        require(value.is_string(),kind+" profile path must be a string.");
-        const auto text=value.get<std::string>();
-        require(!text.empty() && text.size()<=4096 && text.find('\0')==std::string::npos,"Invalid "+kind+" profile path.");
-        auto raw=fs::path(std::u8string(text.begin(),text.end()));if(raw.is_relative())raw=path_.parent_path()/raw;
-        for(const auto* suffix:{"", ".lock", ".pending", ".previous", ".previous.pending"})
-            require(!fs::is_symlink(fs::path(raw).concat(suffix)),kind+" profile paths cannot be symbolic links.");
-        if(kind=="Settings") {
-            for(auto parent=raw.parent_path();!parent.empty();parent=parent.parent_path()) {
-                require(!fs::is_symlink(parent),"Settings profile parent directories cannot be symbolic links.");
-                if(parent==parent.parent_path())break;
-            }
-        }
-        const auto output=fs::weakly_canonical(fs::absolute(raw));
-        if(kind=="Settings" && read_only_)require(!save_inside(output,protected_root_),"Player settings must be outside the immutable game bundle.");
-        for(const auto* suffix:{"", ".lock", ".pending", ".previous", ".previous.pending"}) {
-            const auto candidate=fs::path(output).concat(suffix);
-            const auto relative=candidate.lexically_relative(fs::weakly_canonical(asset_directory()));
-            require(relative.empty() || relative.is_absolute() || *relative.begin()=="..",kind+" profile cannot use the immutable asset store.");
-            for(const auto* reserved:{"", ".lock", ".pending", ".previous", ".previous.pending"}) {
-                const auto world=fs::path(path_).concat(reserved);
-                require(!same_path_name(candidate,world),kind+" profile path is reserved by the world service.");
-            }
-        }
-        return output;
+    PreferencePaths preference_paths() const {
+        return {path_,asset_directory(),protected_root_,read_only_};
     }
-    fs::path input_profile_path(const Json& value) const { return preference_profile_path(value,"Input"); }
-    Json input_dispatch(const std::string& method,const Json& params) {
-        if(method=="input.describe") { fields(params,{});return input_profiles::describe(); }
-        if(method=="input.devices") {
-            fields(params,{});
-            if(!GamepadHost::available())return {{"available",false},{"devices",Json::array()},{"detail","SDL gamepad device host is not built."}};
-            try { if(!gamepad_host_)gamepad_host_=std::make_shared<GamepadHost>();auto result=Json::parse(gamepad_host_->devices_json());result["available"]=true;return result; }
-            catch(const std::exception& e) { throw Error(-32071,e.what()); }
-        }
-        if(method=="input.evaluate") {
-            fields(params,{"path","events","gamepad_defaults"},{"events"});
-            require(!params.contains("gamepad_defaults") || params.at("gamepad_defaults").is_boolean(),"gamepad_defaults must be Boolean.");
-            require(!params.contains("path") || !params.contains("gamepad_defaults"),"path and gamepad_defaults are mutually exclusive.");
-            const auto& events=params.at("events");require(events.is_array() && events.size()<=256,"Input evaluation takes at most 256 events.");
-            auto profile=params.value("gamepad_defaults",false) ? default_gamepad_input_profile() : default_input_profile();Json info={{"source","defaults"},{"revision",0},{"content_hash",nullptr}};
-            if(params.contains("path"))try {
-                auto loaded=(read_only_ ? input_profiles::load_read_only(input_profile_path(params.at("path"))) : input_profiles::load(input_profile_path(params.at("path"))));profile=std::move(loaded.profile);
-                info={{"source","profile"},{"revision",loaded.revision},{"content_hash",loaded.content_hash}};
-            }catch(const input_profiles::ProfileError& e) { throw Error(e.code,e.what()); }
-            const bool has_gamepad=profile.gamepad.has_value();
-            info["format"]=input_profiles::profile_format(profile);
-            BoundPlayerInput evaluator(std::move(profile));Json frames=Json::array();
-            for(std::size_t i=0;i<events.size();++i) {
-                try {
-                const auto& event=events[i];require(event.is_object(),"Input event must be an object.");
-                if(event.contains("gamepad_connect")) {
-                    fields(event,{"gamepad_connect"},{"gamepad_connect"});require(has_gamepad,"Gamepad events require a v2 profile.");
-                    const auto& state=event.at("gamepad_connect");fields(state,{"axes","buttons"});std::array<std::int16_t,6> axes{};std::uint32_t buttons=0;
-                    if(state.contains("axes")) {
-                        const auto& values=state.at("axes");require(values.is_array() && values.size()==6,"Gamepad snapshot requires six axes.");
-                        for(std::size_t axis=0;axis<6;++axis) { const auto& v=values[axis];require(v.is_number_integer() && v>=(axis<4 ? -32768 : 0) && v<=32767,"Invalid gamepad snapshot axis.");axes[axis]=v.get<std::int16_t>(); }
-                    }
-                    if(state.contains("buttons")) { const auto value=revision(state.at("buttons"));require(value<=4294967295ULL,"Gamepad buttons must be a uint32 mask.");buttons=static_cast<std::uint32_t>(value); }
-                    evaluator.gamepad_connect(axes,buttons);
-                }else if(event.contains("gamepad_axis")) {
-                    fields(event,{"gamepad_axis"},{"gamepad_axis"});require(has_gamepad,"Gamepad events require a v2 profile.");const auto& state=event.at("gamepad_axis");fields(state,{"axis","value"},{"axis","value"});
-                    const std::array<const char*,6> names{"left_x","left_y","right_x","right_y","left_trigger","right_trigger"};
-                    const auto it=std::find_if(names.begin(),names.end(),[&](const auto* name) { return state.at("axis")==name; });require(it!=names.end(),"Unknown gamepad axis.");
-                    const auto axis=static_cast<std::uint16_t>(it-names.begin());const auto& value=state.at("value");require(value.is_number_integer() && value>=(axis<4 ? -32768 : 0) && value<=32767,"Invalid gamepad axis value.");
-                    evaluator.gamepad_axis(axis,value.get<std::int16_t>());
-                }else if(event.contains("gamepad_button")) {
-                    fields(event,{"gamepad_button"},{"gamepad_button"});require(has_gamepad,"Gamepad events require a v2 profile.");const auto& state=event.at("gamepad_button");fields(state,{"control","down"},{"control","down"});
-                    require(state.at("control").is_string() && state.at("down").is_boolean(),"Invalid raw gamepad button event.");const auto id=state.at("control").get<std::string>();const auto controls=input_controls();
-                    const auto it=std::find_if(controls.begin(),controls.end(),[&](const auto& c) { return c.id==id && c.kind==InputControlKind::gamepad_button && c.code<26; });
-                    require(it!=controls.end(),"Raw gamepad buttons require a physical gamepad control; use axis events for triggers.");evaluator.gamepad_button(it->code,state.at("down").get<bool>());
-                }else if(event.contains("gamepad_disconnect")) {
-                    fields(event,{"gamepad_disconnect"},{"gamepad_disconnect"});require(has_gamepad && event.at("gamepad_disconnect").is_boolean() && event.at("gamepad_disconnect")==true,"gamepad_disconnect requires true and a v2 profile.");evaluator.gamepad_disconnect();
-                }else
-                if(event.contains("control")) {
-                    fields(event,{"control","down"},{"control","down"});require(event.at("control").is_string() && event.at("down").is_boolean(),"Invalid input control event.");
-                    const auto id=event.at("control").get<std::string>();const auto controls=input_controls();
-                    const auto found=std::find_if(controls.begin(),controls.end(),[&](const auto& c) { return c.id==id; });
-                    require(found!=controls.end() && !found->reserved,"Unknown or reserved gameplay control.");
-                    require(found->kind!=InputControlKind::gamepad_button || has_gamepad,"Gamepad events require a v2 profile.");
-                    evaluator.control(found->kind,found->code,event.at("down").get<bool>());
-                }else if(event.contains("motion")) {
-                    fields(event,{"motion"},{"motion"});const auto& motion=event.at("motion");require(motion.is_array() && motion.size()==2,"Mouse motion needs two values.");
-                    for(const auto& v:motion)require(v.is_number() && std::isfinite(v.get<double>()) && std::abs(v.get<double>())<=1e6,"Mouse motion is out of bounds.");
-                    evaluator.motion(motion[0].get<double>(),motion[1].get<double>());
-                }else if(event.contains("consume")) {
-                    fields(event,{"consume"},{"consume"});require(event.at("consume").is_boolean() && event.at("consume")==Json(true),"consume must be true.");
-                    const auto frame=evaluator.consume("");Json observed={{"event",i},{"move",frame.move},{"look",frame.look},{"jump",frame.jump},{"use",frame.use},{"connected",evaluator.gamepad_connected()},{"armed",evaluator.gamepad_armed()}};
-                    if(!frame.actions.empty()) {
-                        observed["actions"]=Json::array();for(const auto& action:frame.actions)
-                            observed["actions"].push_back({{"name",action.name},{"held",action.held},{"pressed",action.pressed},{"released",action.released}});
-                    }
-                    frames.push_back(std::move(observed));
-                }else {
-                    fields(event,{"clear"},{"clear"});require(event.at("clear").is_boolean() && event.at("clear")==Json(true),"clear must be true.");evaluator.clear();
-                }
-            }catch(const std::invalid_argument& e) { throw Error(-32602,e.what()); }
-            }
-            return {{"input_profile",info},{"frames",frames},{"gamepad",{{"connected",evaluator.gamepad_connected()},{"armed",evaluator.gamepad_armed()}}}};
-        }
-        require(method=="input.inspect" || method=="input.transact","Unknown input method.",-32601);
-        bool inspect_read_only=read_only_;
-        if(method=="input.inspect") {
-            fields(params,{"path","read_only"},{"path"});
-            if(params.contains("read_only")) {
-                require(params.at("read_only").is_boolean(),"read_only must be boolean.");
-                inspect_read_only=read_only_ || params.at("read_only").get<bool>();
-            }
-        }
-        else fields(params,{"path","request_id","expected_revision","profile","preview"},{"path","request_id","expected_revision","profile"});
-        const auto file=input_profile_path(params.at("path"));
-        try {
-            if(method=="input.inspect")return inspect_read_only ? input_profiles::inspect_read_only(file) : input_profiles::inspect(file);
-            auto operation=params;operation.erase("path");return input_profiles::transact(file,operation);
-        }catch(const input_profiles::ProfileError& e) { throw Error(e.code,e.what()); }
+    fs::path input_profile_path(const Json& value) const {
+        return resolve_preference_profile_path(value,preference_paths(),PreferenceKind::input);
     }
-#include "world_player_settings.inc"
+    Json apply_player_settings(const Json& params,PlayerOptions& options) const {
+        return world_detail::apply_player_settings(params,options,preference_paths(),*runtime_);
+    }
     Json capture(const Json& params, bool live=false,bool asset_preview=false) const {
         std::optional<float> ui_scale;
         if(live) {
@@ -1643,20 +1537,9 @@ public:
         if(method=="runtime.capsule_cast") {
             fields(params,{"session_id","tick","position","rotation","radius","half_height","direction","distance","ignore"},
                 {"session_id","tick","position","rotation","radius","half_height","direction","distance"});
-            runtime_guard(params);require(revision(params.at("tick"))==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
-            CapsuleCastRequest cast;cast.position=query_vector(params.at("position"));cast.direction=query_vector(params.at("direction"));
-            const auto& rotation=params.at("rotation");require(rotation.is_array() && rotation.size()==4,"Capsule rotation must be an XYZW quaternion.");
-            for(std::size_t i=0;i<4;++i) {require(rotation[i].is_number(),"Capsule quaternion must be numeric.");cast.rotation[i]=rotation[i].get<double>();}
-            for(const char* name:{"radius","half_height","distance"})require(params.at(name).is_number(),"Capsule query scalars must be numeric.");
-            cast.radius=params.at("radius").get<double>();cast.half_height=params.at("half_height").get<double>();cast.distance=params.at("distance").get<double>();
-            if(params.contains("ignore")) {
-                const auto& ids=params.at("ignore");require(ids.is_array() && ids.size()<=128,"Ignore must contain at most128 entity IDs.");
-                for(const auto& id:ids)cast.ignore.push_back(identifier(id));
-            }
-            try{return {{"session_id",runtime_id_},{"tick",runtime_->inspect().tick},{"source","runtime"},
-                {"hit",capsule_cast_hit_json(runtime_->capsule_cast(cast))}};}
-            catch(const std::runtime_error& error){throw Error(-32602,error.what());}
-            catch(const std::invalid_argument& error){throw Error(-32602,error.what());}
+            runtime_guard(params);
+            require(revision(params.at("tick"))==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
+            return query_runtime_capsule_cast(*runtime_,runtime_id_,params);
         }
         if(method=="runtime.raycast" || method=="runtime.attachment.aim") {
             const bool picking=method=="runtime.attachment.aim";
@@ -1666,78 +1549,21 @@ public:
             runtime_guard(params);
             if(picking)structure_read_guard(params);
             require(revision(params.at("tick"))==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
-            RuntimeRay ray;ray.origin=query_vector(params.at("origin"));ray.direction=query_vector(params.at("direction"));
-            require(params.at("distance").is_number(),"Ray distance must be numeric.");ray.distance=params.at("distance").get<double>();
-            if(params.contains("ignore")) {
-                const auto& ids=params.at("ignore");require(ids.is_array() && ids.size()<=128,"Ignore must contain at most 128 entity IDs.");
-                for(const auto& id:ids)ray.ignore.push_back(identifier(id));
-            }
-            try {
-                auto result=picking ? runtime_->aim_released_item(ray) : ReleasedItemAim{runtime_->raycast(ray),{}};
-                const auto& hit=result.hit;Json value=nullptr;
-                if(hit)value={{"entity",hit->entity},{"fraction",hit->fraction},{"distance",hit->distance},{"position",hit->position},{"normal",hit->normal ? Json(*hit->normal) : Json(nullptr)},{"triangle",hit->triangle ? Json(*hit->triangle) : Json(nullptr)}};
-                Json response={{"session_id",runtime_id_},{"tick",runtime_->inspect().tick},{"hit",std::move(value)}};
-                if(picking) {
-                    response["structure_revision"]=runtime_->structure_revision();
-                    response["item"]=result.item ? Json(*result.item) : Json(nullptr);
-                }
-                return response;
-            }catch(const std::runtime_error& error) { throw Error(-32602,error.what()); }
+            return query_runtime_ray(*runtime_,runtime_id_,params,picking);
         }
         if(method=="runtime.hit_test") {
-            fields(params,{"session_id","tick","origin","direction","distance","ignore"},{"session_id","tick","origin","direction","distance"});runtime_guard(params);
+            fields(params,{"session_id","tick","origin","direction","distance","ignore"},{"session_id","tick","origin","direction","distance"});
+            runtime_guard(params);
             require(revision(params.at("tick"))==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
-            RuntimeRay ray;ray.origin=query_vector(params.at("origin"));ray.direction=query_vector(params.at("direction"));
-            require(params.at("distance").is_number(),"Ray distance must be numeric.");ray.distance=params.at("distance").get<double>();
-            if(params.contains("ignore")) {
-                const auto& ids=params.at("ignore");require(ids.is_array() && ids.size()<=128,"Ignore must contain at most 128 entity IDs.");
-                for(const auto& id:ids)ray.ignore.push_back(identifier(id));
-            }
-            try {
-                const auto hit=runtime_->hit_test(ray);Json value=nullptr;
-                if(hit)value={{"entity",hit->entity},{"region_entity",hit->region_entity ? Json(*hit->region_entity) : Json(nullptr)},{"region",hit->region ? Json(*hit->region) : Json(nullptr)},{"fraction",hit->fraction},{"distance",hit->distance},{"position",hit->position},{"normal",hit->normal ? Json(*hit->normal) : Json(nullptr)},{"triangle",hit->triangle ? Json(*hit->triangle) : Json(nullptr)}};
-                return {{"session_id",runtime_id_},{"tick",runtime_->inspect().tick},{"hit",value}};
-            }catch(const std::runtime_error& error) { throw Error(-32602,error.what()); }
+            return query_runtime_hit_regions(*runtime_,runtime_id_,params);
         }
-        if(method=="runtime.character_stance") {
-            fields(params,{"session_id","tick","entity"},{"session_id","tick","entity"});runtime_guard(params);
+        if(method=="runtime.character_stance" || method=="runtime.camera_pose" || method=="runtime.camera_lens") {
+            fields(params,{"session_id","tick","entity"},{"session_id","tick","entity"});
+            runtime_guard(params);
             require(revision(params.at("tick"))==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
-            const auto entity=identifier(params.at("entity"));
-            try{(void)runtime_->entity(entity);}catch(const std::runtime_error& error){throw Error(-32004,error.what());}
-            try {
-                const auto state=runtime_->character_stance(entity);Json value=nullptr;
-                if(state)value={{"entity",state->entity},{"ground",state->ground},{"configured",state->configured},
-                    {"requested_crouch",state->requested_crouch},{"crouched",state->crouched},{"stand_blocked",state->stand_blocked},
-                    {"radius",state->radius},{"standing_height",state->standing_height},{"crouched_height",state->crouched_height},
-                    {"height",state->height},{"speed",state->speed},{"camera_drop",state->camera_drop}};
-                return {{"session_id",runtime_id_},{"tick",runtime_->inspect().tick},{"source","runtime"},{"state",value}};
-            }catch(const std::runtime_error& error){throw Error(-32602,error.what());}
-        }
-        if(method=="runtime.camera_pose") {
-            fields(params,{"session_id","tick","entity"},{"session_id","tick","entity"});runtime_guard(params);
-            require(revision(params.at("tick"))==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
-            const auto entity=identifier(params.at("entity"));
-            try{(void)runtime_->entity(entity);}catch(const std::runtime_error& error){throw Error(-32004,error.what());}
-            try {
-                const auto state=runtime_->camera_pose(entity);Json value=nullptr;
-                const auto pose=[](const RuntimeCameraPose& v)->Json{return {{"position",v.position},{"rotation",v.rotation}};};
-                if(state)value={{"entity",state->entity},{"world",pose(state->world)},{"viewmodel",state->viewmodel ? pose(*state->viewmodel) : Json(nullptr)},{"base_world_matrix",state->base_world}};
-                return {{"session_id",runtime_id_},{"tick",runtime_->inspect().tick},{"source","runtime"},{"state",value}};
-            }catch(const std::runtime_error& error){throw Error(-32602,error.what());}
-        }
-        if(method=="runtime.camera_lens") {
-            fields(params,{"session_id","tick","entity"},{"session_id","tick","entity"});runtime_guard(params);
-            require(revision(params.at("tick"))==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
-            const auto entity=identifier(params.at("entity"));
-            try{(void)runtime_->entity(entity);}catch(const std::runtime_error& error){throw Error(-32004,error.what());}
-            try {
-                const auto state=runtime_->camera_lens(entity);Json value=nullptr;
-                const auto lens=[](const SceneLens& v) -> Json {return {{"vertical_fov",v.vertical_fov},{"near",v.near_plane},{"far",v.far_plane}};};
-                if(state)value={{"entity",state->entity},{"world",lens(state->world)},
-                    {"viewmodel",state->viewmodel ? lens(*state->viewmodel) : Json(nullptr)},
-                    {"authored_world",lens(state->authored_world)}};
-                return {{"session_id",runtime_id_},{"tick",runtime_->inspect().tick},{"source","runtime"},{"state",value}};
-            }catch(const std::runtime_error& error){throw Error(-32602,error.what());}
+            if(method=="runtime.character_stance")return query_runtime_character_stance(*runtime_,runtime_id_,params);
+            if(method=="runtime.camera_pose")return query_runtime_camera_pose(*runtime_,runtime_id_,params);
+            return query_runtime_camera_lens(*runtime_,runtime_id_,params);
         }
         if(method=="runtime.physical_rig")return physical_runtime_query(params);
         if(method=="runtime.physical_animation")return physical_animation_runtime_query(params);

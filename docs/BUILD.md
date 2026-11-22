@@ -175,6 +175,11 @@ document and checks authored revisions before calling these queries.
 `src/world_transaction_operations.cpp` applies ordered edits and asset instances
 to a staged document. The world session validates the staged result, records
 receipts and history, and publishes the transaction.
+`src/world_preferences_commands.cpp` resolves profile paths and handles profile
+storage, input evaluation and launch preferences. The session owns the gamepad
+host and controls write admission. `src/world_spatial_queries.cpp` decodes and
+reports collision, stance and camera queries after the session checks the
+runtime, tick and any required structure revision.
 `src/world_capture.cpp` validates capture options and output destinations and
 builds animated asset previews. `src/world.cpp` owns world state, revisioned
 publication, capture revision guards, dispatch and session filtering.
@@ -209,6 +214,9 @@ before replacing live resources. `src/render_ui.cpp` owns the native game UI,
 hosted overlay and ImGui resource staging and compositing.
 `src/render_spatial_aa.cpp` owns the display-color intermediate, sampler and
 FXAA draw. The render schedule orders the filter between scene output and UI.
+`src/render_scene_output.cpp` owns the fullscreen tone-mapping pipeline, grade
+constants, shader bindings and draw. The context chooses its HDR source and
+output framebuffer, validates schedule identities and retires live resources.
 `src/render_environment_ibl.cpp` owns the procedural sky lighting bake
 and its texture bindings. `src/render_schedule.cpp` constructs and validates
 the frame schedule. The native player-window fixture checks

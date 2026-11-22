@@ -177,6 +177,15 @@ inline bool same_path_name(const fs::path& left, const fs::path& right) {
 #endif
 }
 
+inline bool path_components_contain(const fs::path& value,const fs::path& root) {
+    auto at=value.begin();
+    for(const auto& part:root) {
+        if(at==value.end() || !same_path_name(*at,part))return false;
+        ++at;
+    }
+    return true;
+}
+
 // An OS-held, cooperative, per-document writer lock. A process crash releases
 // ownership. The empty sidecar remains; its existence is not the lock state.
 class WriterLock {

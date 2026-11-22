@@ -1,8 +1,16 @@
 # Implementation status
 
-Updated 2026-11-21 for **0.0.393**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-21 for **0.0.394**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.394 compiles [profile handling, spatial queries, and Vulkan scene
+output](BUILD.md#world-service-and-schema-compilation) in separate units.
+Ubuntu passed 25 suites. Ubuntu and Windows each matched 116 accepted and
+rejected RPC replies against 0.0.393, including stored profiles after reopening.
+AMD and NVIDIA matched 93 Vulkan images and 228 probe rows across grading,
+bloom, FSR, FXAA and hosted resize tests. All 56 shader binaries matched.
+[Results](evidence/m2-source-ownership-394.json)
 
 Version 0.0.393 adds [optional FXAA](DEFERRED_RENDERING.md#single-sample-antialiasing)
 for single-sample color. The display filter runs after tone mapping and

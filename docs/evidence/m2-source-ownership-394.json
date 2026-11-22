@@ -1,0 +1,207 @@
+{
+  "format": "poima.source-ownership.qualification.v1",
+  "version": "0.0.394",
+  "baseline_version": "0.0.393",
+  "baseline_commit": "c669209",
+  "scope": "Input and settings requests, runtime spatial queries, and the Vulkan scene output pass compile separately.",
+  "new_translation_units": [
+    "src/world_preferences_commands.cpp",
+    "src/world_spatial_queries.cpp",
+    "src/render_scene_output.cpp"
+  ],
+  "source_manifest_sha256": "7df62583be14363c7bfb467ef427b988929936c765ff0001f035043aad245104",
+  "owner_line_counts": {
+    "src/world.cpp": {
+      "0.0.370": 5304,
+      "before": 2324,
+      "after": 2150
+    },
+    "src/render_smoke.cpp": {
+      "0.0.370": 5301,
+      "before": 3631,
+      "after": 3551
+    }
+  },
+  "removed_textual_include": {
+    "file": "src/world_player_settings.inc",
+    "lines": 135
+  },
+  "ubuntu": {
+    "ctest": [
+      "player_settings_contract",
+      "authoring_contract_identity",
+      "authoring_response_compatibility",
+      "authoring_api_compatibility",
+      "runtime_character_stance_native",
+      "player_service_contract",
+      "authoring_core_conformance",
+      "cli_contract",
+      "render_schedule_native",
+      "runtime_camera_pose_presentation_native",
+      "runtime_capsule_cast_native",
+      "input_profile_native",
+      "player_preferences_native",
+      "runtime_hit_regions_native",
+      "runtime_camera_pose_native",
+      "runtime_camera_lens_native",
+      "runtime_camera_draw_native",
+      "input_profile_contract",
+      "player_live_settings_contract",
+      "gamepad_contract",
+      "mesh_collision_contract",
+      "world_session_native",
+      "world_schema_native",
+      "world_save_native",
+      "world_storage_native"
+    ],
+    "preference_and_spatial_rpc": {
+      "baseline": {
+        "calls": 54,
+        "successes": 41,
+        "refusals": 13,
+        "sha256": {
+          "warm.requests": "20ea8612c29a923930be547eae34bb1df8729441e72cdf5b47b07ea47c9cef31",
+          "warm.replies": "48758b4f0953c30eb65edfb79fe26cf3126776eac1dea9cc60c26ce4ee1f8051",
+          "warm.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "warm.fixture.world.json": "90972aee2b2ebc15fa12ac92208ad8aa7b1fd85bf0b0e2c4645deebc55f4bae4",
+          "warm.fixture.world.json.lock": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "warm.fixture.world.json.previous": "4a6c04a19b4b6b6fe45c1b0398e229cb69598f86a2ef30a74428ea47a97cd3bb",
+          "warm.local.poima-input.json": "1ca0b9197110b7e21a5badc352ce693e30bd1e90dd2b21be32fdc1677cd8b8a9",
+          "warm.local.poima-input.json.lock": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "warm.local.poima-settings.json": "744b3c430926fe1f8138368d5e9d2687e68c82e462112bd7bd251660ce344fd8",
+          "warm.local.poima-settings.json.lock": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "warm.local.poima-settings.json.previous": "be418553c3ebc6fd491b5adc14024a3bd1468623d8ecd24ed93b6e0431dec31e",
+          "cold.requests": "9e81da89c15c50db96f10c590b663c102bc58e80a7cc667dd40396d580e12636",
+          "cold.replies": "6b5050d368279b50f73f34fb824c9de25809f7852a5771a8082b125f1c4f8d7a",
+          "cold.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "cold.fixture.world.json": "90972aee2b2ebc15fa12ac92208ad8aa7b1fd85bf0b0e2c4645deebc55f4bae4",
+          "cold.fixture.world.json.lock": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "cold.fixture.world.json.previous": "4a6c04a19b4b6b6fe45c1b0398e229cb69598f86a2ef30a74428ea47a97cd3bb",
+          "cold.local.poima-input.json": "1ca0b9197110b7e21a5badc352ce693e30bd1e90dd2b21be32fdc1677cd8b8a9",
+          "cold.local.poima-input.json.lock": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "cold.local.poima-settings.json": "744b3c430926fe1f8138368d5e9d2687e68c82e462112bd7bd251660ce344fd8",
+          "cold.local.poima-settings.json.lock": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "cold.local.poima-settings.json.previous": "be418553c3ebc6fd491b5adc14024a3bd1468623d8ecd24ed93b6e0431dec31e"
+        }
+      },
+      "baseline_sha256": "dea950187639ec03c282f5afc654e3a9e42c8396c1b6f12653339e95debdb9e4",
+      "paired": true,
+      "candidate_sha256": "cfd8a0000ad9a7a185f07d10580a8e14a8f1a87525f1716d3e938ffe58039648"
+    },
+    "spatial_rpc": {
+      "identical_replies": 62,
+      "successes": 26,
+      "refusals": 36,
+      "reply_sha256": "9317cd7f50cfdf2c744f596082bf327c37c58331dfe4d8d6902c1b48186a3c6b"
+    },
+    "render_schedule": {
+      "admitted": 501,
+      "refused_mutations": 1306
+    }
+  },
+  "windows": {
+    "binary_sha256": "66c60302a2abe668a1d9df44c329625646c27ef931629a82c81eb5d2cbc40dbe",
+    "manifest_sha256": "46fc8ba4eae604852791be6a17132e944e1d17b4532b80bc0676dfa1b44d5eae",
+    "preference_and_spatial_rpc": {
+      "baseline": {
+        "calls": 54,
+        "successes": 41,
+        "refusals": 13,
+        "sha256": {
+          "warm.requests": "20ea8612c29a923930be547eae34bb1df8729441e72cdf5b47b07ea47c9cef31",
+          "warm.replies": "1fd6be862bb8bb32e2df208b46f679fbe4e8a772a579ea713dcefc7ca0aeaeaf",
+          "warm.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "warm.fixture.world.json": "90972aee2b2ebc15fa12ac92208ad8aa7b1fd85bf0b0e2c4645deebc55f4bae4",
+          "warm.fixture.world.json.lock": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "warm.fixture.world.json.previous": "4a6c04a19b4b6b6fe45c1b0398e229cb69598f86a2ef30a74428ea47a97cd3bb",
+          "warm.local.poima-input.json": "1ca0b9197110b7e21a5badc352ce693e30bd1e90dd2b21be32fdc1677cd8b8a9",
+          "warm.local.poima-input.json.lock": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "warm.local.poima-settings.json": "744b3c430926fe1f8138368d5e9d2687e68c82e462112bd7bd251660ce344fd8",
+          "warm.local.poima-settings.json.lock": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "warm.local.poima-settings.json.previous": "be418553c3ebc6fd491b5adc14024a3bd1468623d8ecd24ed93b6e0431dec31e",
+          "cold.requests": "9e81da89c15c50db96f10c590b663c102bc58e80a7cc667dd40396d580e12636",
+          "cold.replies": "8c0d61a1b7254599de208caec5a1f141748b60570195ca8ad2802f8d30523cb8",
+          "cold.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "cold.fixture.world.json": "90972aee2b2ebc15fa12ac92208ad8aa7b1fd85bf0b0e2c4645deebc55f4bae4",
+          "cold.fixture.world.json.lock": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "cold.fixture.world.json.previous": "4a6c04a19b4b6b6fe45c1b0398e229cb69598f86a2ef30a74428ea47a97cd3bb",
+          "cold.local.poima-input.json": "1ca0b9197110b7e21a5badc352ce693e30bd1e90dd2b21be32fdc1677cd8b8a9",
+          "cold.local.poima-input.json.lock": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "cold.local.poima-settings.json": "744b3c430926fe1f8138368d5e9d2687e68c82e462112bd7bd251660ce344fd8",
+          "cold.local.poima-settings.json.lock": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "cold.local.poima-settings.json.previous": "be418553c3ebc6fd491b5adc14024a3bd1468623d8ecd24ed93b6e0431dec31e"
+        }
+      },
+      "baseline_sha256": "a262b0be007ce3e409d03258a567241bbe6b88ecdc328d9cd126b8ba21315b49",
+      "paired": true,
+      "candidate_sha256": "66c60302a2abe668a1d9df44c329625646c27ef931629a82c81eb5d2cbc40dbe"
+    },
+    "spatial_rpc": {
+      "calls": 62,
+      "refusals": 36,
+      "requests_sha256": "0decf379f3c5703db2a3f703061745474a70f13db16b55799f7a39d6285f6348",
+      "replies_sha256": "945c53cdbbec40a040075daa8352f1531ade5be016a5d84e9937d5a364d40b0e"
+    },
+    "input_profile": {
+      "passed": 20,
+      "skipped": 2,
+      "evidence_sha256": "4dc869a275c5ed1042cde8ed5a204e54f4b940fecf0dcc091c738d2a7bdf8cfd"
+    },
+    "settings": {
+      "passed": 7,
+      "requests": 93,
+      "evidence_sha256": "5ba3d0c2d9302b70b421ffdd31e8351f338b731eea165fad15ec4dbe3fa79354"
+    },
+    "mesh_collision": {
+      "passed": 9,
+      "evidence_sha256": "86b32cdfc634ab9b8f1a7e75532b882e5c0320148db03b5b6a769e5214e3c90b"
+    },
+    "shader_modules_identical": 56,
+    "vulkan": {
+      "passed": true,
+      "baseline_executable_sha256": "a262b0be007ce3e409d03258a567241bbe6b88ecdc328d9cd126b8ba21315b49",
+      "candidate_executable_sha256": "66c60302a2abe668a1d9df44c329625646c27ef931629a82c81eb5d2cbc40dbe",
+      "exact_images": {
+        "grade": 57,
+        "standalone": 16,
+        "standalone_prefilter": 4,
+        "hosted": 16
+      },
+      "exact_prefilter_probe_rows": {
+        "grade": 192,
+        "standalone": 36
+      },
+      "exact_settings_profile_receipts": 2,
+      "exact_launch_refusals": 16,
+      "material_receipts_with_joined_identities": 48,
+      "khronos_validated_launches_per_build": 16,
+      "grade_capture_pairs_by_lighting_samples_and_adapter": {
+        "forward-1-0": 11,
+        "deferred-1-0": 11,
+        "forward-1-1": 11,
+        "deferred-1-1": 15,
+        "forward-4-1": 9
+      },
+      "result_sha256": "5e573ddcd5467fd49f021ed9268ae99b05696b14aebfad841fa3f57d3358006e"
+    }
+  },
+  "qualification_scripts": {
+    "rpc-parity.py": "37f3a779ff1b75f15b6166e735e209708eb5b5ff862c4a7d82830b1bfcf2f4d9",
+    "spatial-parity.py": "6dec0c424d587d8fce9eaf475f475873810464366932d1977808578b4b2cb063",
+    "gpu-parity.sh": "a31da8e60c7b36db4df71f697ea808eea6801dd3e58f41b3722598c200a3a97e",
+    "gpu-parity-compare.py": "69127bee6dc8073685d0cbe465efcd47390dca49150327593be0dc3ee7e09034",
+    "windows-verify.sh": "27b32dbdcf3fe3fd4a831326109d17cea8c5909bd2bf7dcd0c554f6151e5b9a9"
+  },
+  "comparison_history": {
+    "initial_summary_sha256": "a2f59949e4a000d6f2ed7c756d12719dcae61f81da7ad1ba56ce419f38cdfd5f",
+    "initial_comparator_sha256": "b783b989d4fd8d07ba52dce58d9d3770ea3590175ed9f146353e3fe1fdc5ee84",
+    "finding": "The checker initially compared independently allocated world, session and presentation-source IDs across fresh standalone launches.",
+    "resolution": "For all 48 material receipts, joined and validated every scoped ID against its launch and matched every other field exactly. Both checks used the same original artifacts."
+  },
+  "methods": [
+    "Fresh and reopened sessions receive the same seeded world and original commands. Complete requests, replies, stderr and files match within each platform.",
+    "Vulkan compares each adapter to itself. Grade and bloom use tests/output_grade_capture.py. Standalone runs use tests/game_launch_lighting.py with FXAA and a relocated runtime. The hosted fixture uses poima-frame-execution-test with color_fxaa.",
+    "Native save continuation is checked against each exported fixture\u2019s own headless result. Image and probe parity identify the tested configurations."
+  ],
+  "limits": "Qualification covers subsystem behavior and the tested GPU configurations. It does not measure build-time improvement, frame-time change or physical controls."
+}
