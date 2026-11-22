@@ -51,6 +51,7 @@
 #include "render_scene_assets.hpp"
 #include "render_sky.hpp"
 #include "render_scene_draw.hpp"
+#include "render_shadow_batches.hpp"
 #include "render_shadows.hpp"
 #include "render_skinning.hpp"
 #include "poima/smoke_vs.hpp"
@@ -215,6 +216,8 @@ struct Context {
         std::optional<ViewmodelDiagnostics> viewmodel_diagnostics;
         SteadyClock::time_point started;
         DrawCounts draws;
+        std::array<render_shadows::ViewWork,max_shadow_views> shadow_work;
+        std::uint32_t shadow_profile_views=0;
         LightAssignmentDiagnostics lights;
         std::vector<std::string> skin_ids;
         profiling::DeferredContext profile;
@@ -901,12 +904,20 @@ struct Context {
         std::vector<render_batches::Candidate> candidates;candidates.reserve(draws.size());
         for(const auto& draw:draws)candidates.push_back({draw.object_index,scene_visible && draw.camera_visible,key(draw,draw.bindings.Get(),scene_products_enabled,draw.cull ? 1u : 0u)});
         camera_batch_plan=render_batches::plan(candidates,diagnostics.draw_instancing);
-        shadow_batch_plans.reserve(shadow_plan.size());
-        for(std::size_t layer=0;layer<shadow_plan.size();++layer) {
-            candidates.clear();
-            for(const auto& draw:draws)candidates.push_back({draw.object_index,(draw.shadow_mask & (1u<<layer))!=0,
-                key(draw,draw.masked_shadow_bindings ? draw.masked_shadow_bindings.Get() : shadows.opaque_bindings(),scene_products_enabled,draw.masked_shadow_bindings ? 1u : 0u)});
-            shadow_batch_plans.push_back(render_batches::plan(candidates,diagnostics.draw_instancing));
+        if (!shadow_plan.empty()) {
+            std::vector<render_shadow_batches::Caster> casters;
+            casters.reserve(draws.size());
+            for (const auto& draw : draws) {
+                render_batches::Key binding_key{};
+                if (draw.shadow_mask) {
+                    auto* masked = draw.masked_shadow_bindings.Get();
+                    binding_key = key(draw, masked ? masked : shadows.opaque_bindings(),
+                        scene_products_enabled, masked ? 1u : 0u);
+                }
+                casters.push_back({draw.object_index, draw.shadow_mask, binding_key});
+            }
+            shadow_batch_plans = render_shadow_batches::plan(casters,
+                static_cast<std::uint32_t>(shadow_plan.size()), diagnostics.draw_instancing);
         }
         candidates.clear();candidates.reserve(viewmodel_draws.size());
         for(const auto& draw:viewmodel_draws)candidates.push_back({draw.object_index,viewmodel_enabled && draw.camera_visible,key(draw,draw.bindings.Get(),false,draw.cull ? 1u : 0u)});
@@ -2198,7 +2209,9 @@ struct Context {
                     .recorded=slot.timing,.deferred=deferred,.ambient_occlusion=ao_enabled,
                     .reconstruction=slot.reconstruction.active,.screen_reflections=slot.screen_reflections,
                     .height_fog=slot.height_fog,.cpu_interval_ms=elapsed_ms(slot.started),.profile=slot.profile,
-                    .performance=slot.performance,.performance_ticket=slot.performance_ticket},diagnostics);
+                    .performance=slot.performance,.performance_ticket=slot.performance_ticket,
+                    .shadow_views=slot.shadow_profile_views},diagnostics);
+                render_shadows::profile_views(std::span(slot.shadow_work).first(slot.shadow_profile_views), slot.profile);
                 auto reconstruction_gpu=diagnostics.reconstruction.gpu;diagnostics.reconstruction=slot.reconstruction;diagnostics.reconstruction.gpu=reconstruction_gpu;
                 diagnostics.last_draws=slot.draws;diagnostics.light_assignment=slot.lights;diagnostics.viewmodel=slot.viewmodel_diagnostics;
                 diagnostics.scene_products.history_valid=slot.history_valid;diagnostics.scene_products.history_sequence=slot.history_sequence;
@@ -2718,9 +2731,11 @@ struct Context {
             environment_ibl,scene_products_enabled,ao_enabled);
         // Query storage belongs to this Context. Create it before acquiring an
         // image; stopped traces leave it allocated but perform no query work.
-        if(profiling::active() || bool(performance_token))timestamps.prepare(physical,device,queue_family,dispatch,diagnostics);
+        const bool trace_active = profiling::active();
+        if(trace_active || bool(performance_token))timestamps.prepare(physical,device,queue_family,dispatch,diagnostics);
         timestamps.begin(next_slot%diagnostics.frame_execution.limit,
-            diagnostics.profile_requested || profiling::active() || bool(performance_token));
+            diagnostics.profile_requested || trace_active || bool(performance_token));
+        slot.shadow_profile_views = trace_active && scene ? static_cast<std::uint32_t>(shadow_plan.size()) : 0;
         auto plan=make_schedule(capture_frame);
         plan.validate(true);
         // A finite acquire timeout bounds the experiment if presentation stalls.
@@ -2755,7 +2770,7 @@ struct Context {
             vk::AccessFlagBits::eMemoryRead|vk::AccessFlagBits::eMemoryWrite);
         native_commands().pipelineBarrier(vk::PipelineStageFlagBits::eAllCommands,vk::PipelineStageFlagBits::eAllCommands,
             {},1,&scratch_dependency,0,nullptr,0,nullptr,dispatch);
-        if(timestamps.recording())timestamps.reset_queries(native_commands(),dispatch);
+        if(timestamps.recording())timestamps.reset_queries(native_commands(),dispatch,slot.shadow_profile_views);
         timestamp(0);
         // Only the acquired image is late-bound. All other resources were
         // resolved after preparation; no recording pass allocates/rebinds them.
@@ -2801,9 +2816,23 @@ struct Context {
                     light_clusters.record(*commands.Get(), cluster_readback.Get(), pending_lights.active);
                 }
                 timestamp(2);break;
-            case render_schedule::PassId::shadows:
-                if(scene)shadows.record(*commands.Get(),draws,shadow_batch_plans,shadow_plan.size(),scene_products_enabled,pending_draws.shadow_batches);
+            case render_schedule::PassId::shadows: {
+                if (scene) {
+                    const auto work = std::span(slot.shadow_work).first(slot.shadow_profile_views);
+                    std::function<void(std::uint32_t)> boundary;
+                    if (!work.empty() && timestamps.recording()) {
+                        const auto buffer = native_commands();
+                        boundary = [this, buffer](std::uint32_t mark) {
+                            timestamps.write_shadow_boundary(buffer, dispatch, mark);
+                        };
+                    }
+                    shadows.record(*commands.Get(), draws, shadow_batch_plans, scene_products_enabled,
+                        pending_draws.shadow_batches, work, boundary);
+                    for (std::size_t layer = 0; layer < work.size(); ++layer)
+                        work[layer].light_index = shadow_plan[layer].light_index;
+                }
                 timestamp(3);break;
+            }
             case render_schedule::PassId::scene_clear:
                 commands->beginTrackingTextureState(planned_texture(resources.swapchain),nvrhi::AllSubresources,
                     swapchain.initialized(index) ? nvrhi::ResourceStates::Present : nvrhi::ResourceStates::Common);

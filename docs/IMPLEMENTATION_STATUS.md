@@ -1,8 +1,17 @@
 # Implementation status
 
-Updated 2026-11-22 for **0.0.402**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-22 for **0.0.403**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.403 builds [ordered shadow batches](DRAW_INSTANCING.md#eligibility-and-ownership)
+directly from each caster's view mask. The [profiler](PROFILER.md#shadow-views)
+reports the clear, layer GPU timings, submitted work and light indices on
+retirement. AMD and NVIDIA observed 176 layer samples across 44 frames and
+checked exact images and state with tracing on and off. Another 162 captures
+matched 0.0.402. Portable planner checks passed on Windows and Ubuntu. Ubuntu
+passed 15 headless suites.
+[Results](evidence/m2-shadow-view-profiling-403.json)
 
 Version 0.0.402 batches [imported mesh and texture uploads](FRAME_PERFORMANCE.md#imported-asset-uploads)
 before frame recording. AMD and NVIDIA reproduced 114 reference captures

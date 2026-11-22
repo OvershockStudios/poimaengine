@@ -42,6 +42,9 @@ Resource identity must still match: equal-looking independent meshes or textures
 do not qualify by appearance.
 
 Camera, each shadow view and first-person foreground have separate plans.
+The shadow planner builds all layer plans in one pass over the source objects,
+visiting only the layers in each caster's visibility mask. A missing caster in
+a layer still breaks adjacency in that layer.
 Masked shadows retain their texture-aware bindings; opaque shadows retain the
 shared depth-only binding. Skinning plans use the final current/history buffer
 handles selected for that submission. Independently skinned buffers do not become

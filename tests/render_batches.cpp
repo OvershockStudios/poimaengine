@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "poima/render_batches.hpp"
+#include "../src/render_shadow_batches.hpp"
 #include <array>
 #include <iostream>
 #include <string>
 
 namespace {
 using namespace poima::render_batches;
+namespace shadows=poima::render_shadow_batches;
 std::uint64_t checks=0;
 void check(bool value,const char* message) {
     ++checks;
@@ -154,13 +156,133 @@ void many_keys_and_deterministic_cohort() {
     const auto separate=plan(skinned);check(separate.size()==skinned.size(),"Different previous streams were merged");
     invariants(skinned,separate,true);
 }
+
+using ShadowPlans=std::vector<std::vector<Batch>>;
+
+// Reconstruct the former renderer path: scan every original draw for every
+// layer and retain invisible slots before applying the existing draw planner.
+ShadowPlans reference_shadow_plan(std::span<const shadows::Caster> casters,std::uint32_t layers,bool enabled) {
+    ShadowPlans expected;
+    std::vector<Candidate> layer;
+    layer.reserve(casters.size());
+    for(std::uint32_t view=0;view<layers;++view) {
+        layer.clear();
+        for(const auto& caster:casters)
+            layer.push_back(draw(caster.object_index,(caster.layer_mask&(1u<<view))!=0,caster.key));
+        expected.push_back(plan(layer,enabled));
+    }
+    return expected;
+}
+
+void expect_shadow_plan(std::span<const shadows::Caster> casters,std::uint32_t layers) {
+    for(const bool enabled:{false,true}) {
+        const auto actual=shadows::plan(casters,layers,enabled);
+        check(actual==reference_shadow_plan(casters,layers,enabled),"Sparse shadow batches differ from per-view reference");
+        check(shadows::plan(casters,layers,enabled)==actual,"Shadow planner is not deterministic");
+    }
+}
+
+void shadow_layer_partitions() {
+    auto index_offset=key();index_offset.index_offset=8192;
+    auto vertex_offset=key();vertex_offset.vertex_offset=4096;
+    const std::array<shadows::Caster,10> casters{{
+        {10,3,key()},{11,1,key()},{12,3,key()},{13,3,index_offset},{14,3,index_offset},
+        {15,2,vertex_offset},{16,3,vertex_offset},{17,1,key()},{18,0,key()},{19,3,key()}
+    }};
+    const ShadowPlans expected{
+        {{0,3},{3,2},{6,1},{7,1},{9,1}},
+        {{0,1},{2,1},{3,2},{5,2},{9,1}}
+    };
+    check(shadows::plan(casters,2,true)==expected,"Shadow gaps and geometry offsets changed the explicit partition");
+    expect_shadow_plan(casters,2);
+    const std::array<shadows::Caster,2> no_members{{{8,0,key()},{9,0,key()}}};
+    expect_shadow_plan(no_members,0);
+    expect_shadow_plan(no_members,16);
+    expect_shadow_plan({},0);
+    expect_shadow_plan({},16);
+}
+
+void shadow_exhaustive_masks_and_wide_cohort() {
+    auto changed=key();changed.bindings=123;changed.pipeline=2;
+    std::array<shadows::Caster,4> casters{{{5,0,key()},{6,0,key()},{7,0,changed},{12,0,changed}}};
+    for(std::uint32_t masks=0;masks<(1u<<12);++masks) {
+        for(std::size_t i=0;i<casters.size();++i)casters[i].layer_mask=(masks>>(3*i))&7u;
+        expect_shadow_plan(casters,3);
+    }
+
+    std::vector<shadows::Caster> cohort;
+    cohort.reserve(1024);
+    for(std::uint32_t layers=0;layers<=16;++layers) {
+        const auto allowed=(1u<<layers)-1u;
+        cohort.clear();
+        for(std::uint32_t i=0;i<1024;++i) {
+            const auto group=i/7;
+            auto identity=key(1+group%19);
+            identity.bindings=100+group%7;
+            identity.pipeline=group%2;
+            identity.previous_vertices=group%11;
+            identity.vertex_offset=std::uint64_t{group%4}<<35;
+            identity.index_offset=group%5*96;
+            const std::array masks{0u,1u<<(i%16),allowed,((i*0x9e37u)^(i>>2))};
+            cohort.push_back({i+i/13,masks[(i/5)%masks.size()]&allowed,identity});
+        }
+        expect_shadow_plan(cohort,layers);
+    }
+}
+
+void shadow_count_and_index_boundaries() {
+    constexpr auto maximum=std::numeric_limits<std::uint32_t>::max();
+    constexpr auto ends=1u|(1u<<15);
+    const std::array<shadows::Caster,5> wrap{{
+        {maximum-1,ends,key()},{maximum,ends,key()},{0,ends,key()},{1,ends,key()},{2,1,key()}
+    }};
+    expect_shadow_plan(wrap,16);
+    const auto actual=shadows::plan(wrap,16,true);
+    check(actual.front()==std::vector<Batch>{{0,2},{2,3}} && actual.back()==std::vector<Batch>{{0,2},{2,2}},
+        "Shadow planner merged wrapped object IDs or lost the highest layer");
+
+    constexpr std::uint32_t width=65536;
+    std::vector<shadows::Caster> dense;
+    dense.reserve(width+3);
+    for(std::uint32_t i=0;i<width;++i)dense.push_back({i,1,key()});
+    dense.push_back({width,0,key()});
+    dense.push_back({width,1,key()});
+    dense.push_back({width+1,1,key()});
+    expect_shadow_plan(dense,1);
+    check(shadows::plan(dense,1,true)==ShadowPlans{{{0,width},{width+1,2}}},
+        "Shadow count or source index truncated at the uint16 boundary");
+}
+
+void shadow_invalid_layer_masks() {
+    const auto rejected=[](std::span<const shadows::Caster> casters,std::uint32_t layers) {
+        for(const bool enabled:{false,true}) {
+            bool invalid=false;
+            try {(void)shadows::plan(casters,layers,enabled);}
+            catch(const std::invalid_argument&) {invalid=true;}
+            check(invalid,"Invalid shadow view count or mask was accepted");
+        }
+    };
+    rejected({},17);
+    rejected({},std::numeric_limits<std::uint32_t>::max());
+    const std::array<shadows::Caster,1> low{{{0,1,key()}}};
+    rejected(low,0);
+    const std::array<shadows::Caster,2> inactive{{{0,1,key()},{1,9,key()}}};
+    rejected(inactive,3);
+    const std::array<shadows::Caster,1> beyond_limit{{{0,1u<<16,key()}}};
+    rejected(beyond_limit,16);
+    const std::array<shadows::Caster,1> top_bit{{{0,1u<<31,key()}}};
+    rejected(top_bit,16);
+    // As with the regular planner, an oversized source span needs real storage.
+}
 } // namespace
 
 int main() {
     try {
         small_tables();every_key_field();integer_boundaries();exhaustive_small_visibility();
         wide_batch_and_gaps();many_keys_and_deterministic_cohort();
-        std::cout<<"6 portable render batch groups passed, "<<checks<<" checks\n";
+        shadow_layer_partitions();shadow_exhaustive_masks_and_wide_cohort();
+        shadow_count_and_index_boundaries();shadow_invalid_layer_masks();
+        std::cout<<"10 portable render batch groups passed, "<<checks<<" checks\n";
         return 0;
     } catch(const std::exception& error) {
         std::cerr<<error.what()<<'\n';return 1;

@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.403
+
+- Build ordered shadow batches from caster visibility masks in one pass.
+- Expose shadow clear and per-view GPU durations and submitted work in the profiler.
+
 ## 0.0.402
 
 - Batch imported mesh and texture uploads on the Vulkan graphics queue and expose per-batch profiling counters.

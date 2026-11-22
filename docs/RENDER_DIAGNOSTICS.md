@@ -94,6 +94,9 @@ The start stamp uses top-of-pipe and later boundaries use bottom-of-pipe. These 
 
 Optional reconstruction adds two timestamps for temporal input preparation and SDK dispatch. Its `diagnostics.reconstruction.gpu` duration is contained within `gpu.post`; do not add both together. The default rendering path retains its existing timestamp layout.
 
+The frame aggregate keeps one `shadows` interval. An active profiler capture
+can show the clear and each atlas layer separately. [Shadow view profiling](PROFILER.md#shadow-views)
+
 The pinned NVRHI timer implementation reads 32-bit results. Poima uses its supported native-command-buffer access for these 64-bit query operations without changing NVRHI source or graphics binding state.
 
 ## Submission and presentation lifetime

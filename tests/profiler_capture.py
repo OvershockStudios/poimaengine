@@ -78,7 +78,8 @@ def main():
         assert result['state'] == 'recording' and result['count'] == 0, result
         current_capture = wanted
 
-    def seal(expected_source, frame_count, session=None):
+    def seal(expected_source, result, session=None):
+        frame_count = result['frames_presented']
         stopped = call('profiler.stop', {'capture_id': current_capture})
         assert stopped['state'] == 'stopped' and stopped['open'] == 0 and stopped['dropped'] == 0, stopped
         events, offset = [], 0
@@ -137,6 +138,52 @@ def main():
             assert all(e['session'] == session for e in gpu), gpu
             assert all(e['tick'] is not None for e in gpu), gpu
 
+        diagnostics = result['render_diagnostics']
+        execution = diagnostics['frame_execution']
+        assert execution['limit'] == 2 and 0 < execution['peak_outstanding'] <= 2, execution
+        assert execution['submitted'] == diagnostics['completed_submissions'] == frame_count and not execution['outstanding'], execution
+        last_draws = diagnostics['last_draws']
+        view_count = last_draws['shadow_views']
+        lights = result['lighting']['lights']
+        assert view_count == 4 and [(light['id'], light['kind']) for light in lights] == [(uid(300), 'directional')], lights
+        assert not any(e['name'] == 'gpu.shadow_views.samples_dropped' for e in events), events
+        metrics = ('draws', 'batches', 'triangles', 'light_index')
+        timing_names = ['gpu.shadows.ns', 'gpu.shadow_clear.ns'] + [f'gpu.shadow_view.{i}.ns' for i in range(view_count)]
+        work_names = [f'renderer.shadow_view.{i}.{metric}' for i in range(view_count) for metric in metrics]
+        complete = 'renderer.completed_submissions'
+        batches, pending = [], []
+        for event in observed:
+            name = event['name']
+            if name in ('gpu.shadows.ns', 'gpu.shadow_clear.ns', complete) or name.startswith(('gpu.shadow_view.', 'renderer.shadow_view.')):
+                pending.append(event)
+            if name == complete:
+                batches.append(pending)
+                pending = []
+        assert not pending and len(batches) == frame_count, (pending, frame_count, len(batches))
+        totals = []
+        for index, batch in enumerate(batches, 1):
+            # Deferred counters share the submission ticket's time and context.
+            # Retirement order disambiguates repeated replay ticks.
+            assert [event['name'] for event in batch] == timing_names + work_names + [complete], batch
+            assert batch[-1]['value'] == index, batch[-1]
+            ticket = batch[-1]
+            assert all(e['parent'] == 0 and e['start_ns'] == ticket['start_ns'] and
+                       e['session'] == ticket['session'] and e['tick'] == ticket['tick'] and
+                       e['duration_ns'] == 0 and type(e['value']) is int and e['value'] >= 0 for e in batch), batch
+            assert all(e['kind'] == 'gpu' for e in batch[:len(timing_names)]), batch
+            assert all(e['kind'] == 'counter' for e in batch[len(timing_names):]), batch
+            values = {event['name']: event['value'] for event in batch}
+            assert sum(values[name] for name in timing_names[1:]) <= values['gpu.shadows.ns'], values
+            summed = dict.fromkeys(metrics[:-1], 0)
+            for i in range(view_count):
+                view = {metric: values[f'renderer.shadow_view.{i}.{metric}'] for metric in metrics}
+                assert view['light_index'] == 0 and 0 <= view['batches'] <= view['draws'] <= view['triangles'], view
+                assert bool(view['batches']) == bool(view['draws']), view
+                for metric in summed:
+                    summed[metric] += view[metric]
+            totals.append(summed)
+        assert totals[-1]['draws'] > 0 and totals[-1] == {field: last_draws[f'shadow_{field}'] for field in totals[-1]}, (totals[-1], last_draws)
+
         summary = call('profiler.summary', {'capture_id': current_capture})
         groups = defaultdict(list)
         for event in events:
@@ -161,7 +208,7 @@ def main():
 
     def capture(name, samples):
         result = call('world.capture', {'revision': 1, 'camera': uid(200), 'gpu': args.gpu,
-                      'samples': samples, 'profile': False, 'path': native(run / f'{name}.bmp')})
+                      'samples': samples, 'frames_in_flight': 2, 'profile': False, 'path': native(run / f'{name}.bmp')})
         assert result['capture_written'] and result['hardware'] and result['nvrhi_errors'] == 0, result
         assert not result['render_diagnostics']['profile_requested']
         return result
@@ -184,7 +231,7 @@ def main():
             start()
             on = capture(f'on-{samples}', samples)
             assert on['render_diagnostics']['gpu']['available']
-            stopped = seal('request', on['frames_presented'])
+            stopped = seal('request', on)
             again = capture(f'stopped-{samples}', samples)
             assert not again['render_diagnostics']['gpu']['available']
             assert call('profiler.status', {}) == stopped
@@ -202,12 +249,12 @@ def main():
                 start()
             result = call('runtime.play', {'session_id': session, 'request_id': uuid.uuid4().hex,
                           'expected_tick': 0, 'controller': uid(100), 'camera': uid(101),
-                          'mode': 'replay', 'sequence': sequence, 'gpu': args.gpu,
+                          'mode': 'replay', 'sequence': sequence, 'gpu': args.gpu, 'frames_in_flight': 2,
                           'profile': False, 'path': native(run / f'player-{traced}.bmp')})
             assert result['success'] and result['tick'] == ticks and result['nvrhi_errors'] == 0, result
             assert result['capture_written'] and result['hardware']
             if traced:
-                seal('player', result['frames_presented'], session)
+                seal('player', result, session)
             rows = []
             for entity in (2, 3, 100, 101):
                 state = call('runtime.entity', {'session_id': session, 'id': uid(entity), 'tick': ticks})
@@ -219,6 +266,7 @@ def main():
         assert pixels(run / 'player-False.bmp') == pixels(run / 'player-True.bmp')
         assert world.read_bytes() == original
         evidence['checks'].append('traced replay preserves exact controller/body state and final pixels; GPU records carry player session/tick')
+        evidence['checks'].append('two-slot submission tickets retain shadow clear and four cascade timings and reconcile view work at retirement')
         evidence['checks'].append('sealed pages, parent intervals, independently recomputed percentiles, GPU-duration export semantics')
         call('session.close', {})
         process.stdin.close()

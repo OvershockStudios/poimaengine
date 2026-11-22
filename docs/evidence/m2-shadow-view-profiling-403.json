@@ -1,0 +1,127 @@
+{
+  "format": "poima.shadow-view-profiling.qualification.v1",
+  "version": "0.0.403",
+  "baseline_version": "0.0.402",
+  "baseline_commit": "7d90d00",
+  "source_manifest_sha256": "f01c87c8e1608e3b37dbc3af85d804428e943937f044bb1fe77b30a41575806f",
+  "profiler_fixture_sha256": "8a8be20f669046f997a3a654ecd250b081b40e6f70df0870134ff4a88f0aa665",
+  "scope": "Exact sparse shadow batch planning, per-view timing and submitted work, and native image parity.",
+  "portable": {
+    "group_count": 10,
+    "checks": 1986442,
+    "linux_and_windows": true,
+    "planner_test_sha256": "bd2dd5e84fa2bc7257f142548c57b54f9e282af25425831af2c7bea1d8a20b7e"
+  },
+  "windows": {
+    "binaries_sha256": {
+      "poima.exe": "31e4aa4a95a3928c96c2bb43cdc5317cc92bd62b0a5c7d2dfd9a8434e514fbbc",
+      "runtime.json": "9511799e11ee9095f1af2a80b5e28bf955097c6208e5a599d2af0c407f15051d",
+      "poima-auto-exposure-test.exe": "a3fefa2e19f19314829a0cf2ce2618d9b49c8f0a02320d2abe7c0ae8fcd26cf1",
+      "poima-render-batches-test.exe": "267825fd5d25364d0837d714a58a775f466b2a15d75be7d204b90ccb49f4d85d"
+    },
+    "parity_report_sha256": "488ce2de0baf1a00c72acf4c7fe014f623e22e85d6798e66aacec267675ba2cd",
+    "editor_and_exposure_exact_images_against_baseline": 114,
+    "skinning_exact_images_against_baseline": 48,
+    "editor": [
+      {
+        "device": "AMD Radeon(TM) Graphics",
+        "exact_captures": 1,
+        "capture_sha256": "f9c84316df636cbcfefb149eb6fddbad85b4e8bef1d6faa3a873cf0ad638a929",
+        "resource_samples": 55,
+        "reference_report_sha256": "a5c05b15a69027403f6cdd5ff4030b52c2d54a0d025f1a373239495416bcff12",
+        "candidate_report_sha256": "6d0f70743ecbc760d8215987fec872359b5b443efee390da21507bbb2dad0dde"
+      },
+      {
+        "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "exact_captures": 1,
+        "capture_sha256": "e4bf0cc208dfb39def02c69f4b66263a92df7447ec2b20cd5dc8b78df1d23677",
+        "resource_samples": 55,
+        "reference_report_sha256": "84a554dc8aa57fbc8ca1598c9c8201bbd2f7284f57a102a5220f63bf40eca1e5",
+        "candidate_report_sha256": "34879a7e8f866ccd62c739d196e31af1b2a350b68b002bed969f25dc87781740"
+      }
+    ],
+    "exposure": [
+      {
+        "device": "AMD Radeon(TM) Graphics",
+        "fixture": "gpu0-forward-none",
+        "exact_captures": 37,
+        "reference_report_sha256": "6ec6ed3c1aeeaf9333feee177bfbc6ebaff0d861d1859e3bf5a8e7f9ee05b8f9",
+        "candidate_report_sha256": "19410c89e29b351ba2390dc753785ac5a733539a0dab8537684d6f4eb89252e3"
+      },
+      {
+        "device": "AMD Radeon(TM) Graphics",
+        "fixture": "gpu0-deferred-fsr3_quality",
+        "exact_captures": 19,
+        "reference_report_sha256": "83fbb72396dc3fc3607c2d4ad72db07d8b1d2421b1d10fb16cc0653fb192e94a",
+        "candidate_report_sha256": "ca9372754bba33c4aa928175db39c42bd679cb5dd5e1249ff09ceb10261d8753"
+      },
+      {
+        "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "fixture": "gpu1-forward-none",
+        "exact_captures": 37,
+        "reference_report_sha256": "056864648d1ef047018a85a4e1e917054866d783d6d592f496b77b7a6ed6dd76",
+        "candidate_report_sha256": "da01c8fcee280e5244d7e6335c1a4d7046386959e7be341671aa82450d88ab27"
+      },
+      {
+        "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "fixture": "gpu1-deferred-fsr3_quality",
+        "exact_captures": 19,
+        "reference_report_sha256": "ac6b81dd7b4f5e3715d63a9d9b7c327729a66384ffaa0a7386ddf4fa45ef391c",
+        "candidate_report_sha256": "ae2ad5e0a7fbee20c6148cad5c2eb070849c9d64a6c43e302e18051c4596e484"
+      }
+    ],
+    "profile": {
+      "AMD Radeon(TM) Graphics": {
+        "report_sha256": "4f316a2aa243b5d0b0ab56b57cf82801ea1fc1542e1d737e319533bccc678964",
+        "validation_log_sha256": "8096c39535eda0a73f8a2bcf70daf339478e032752dc468473ed468798e4ad97",
+        "traced_frames": 22,
+        "view_samples": 88,
+        "shadow_query_drops": 0,
+        "checks": [
+          "1x MSAA exact pixels with off/on/stopped tracing and real lazy GPU queries",
+          "4x MSAA exact pixels with off/on/stopped tracing and real lazy GPU queries",
+          "traced replay preserves exact controller/body state and final pixels; GPU records carry player session/tick",
+          "two-slot submission tickets retain shadow clear and four cascade timings and reconcile view work at retirement",
+          "sealed pages, parent intervals, independently recomputed percentiles, GPU-duration export semantics"
+        ]
+      },
+      "NVIDIA GeForce RTX 4070 Laptop GPU": {
+        "report_sha256": "2050c4b3ba48e6bf6515aab7091fe04837d0e87767ff407105db362dad086711",
+        "validation_log_sha256": "e81bf85d22e139ae3e9d05c0dc28ca9f3b67406890528f19773e0f1280a74769",
+        "traced_frames": 22,
+        "view_samples": 88,
+        "shadow_query_drops": 0,
+        "checks": [
+          "1x MSAA exact pixels with off/on/stopped tracing and real lazy GPU queries",
+          "4x MSAA exact pixels with off/on/stopped tracing and real lazy GPU queries",
+          "traced replay preserves exact controller/body state and final pixels; GPU records carry player session/tick",
+          "two-slot submission tickets retain shadow clear and four cascade timings and reconcile view work at retirement",
+          "sealed pages, parent intervals, independently recomputed percentiles, GPU-duration export semantics"
+        ]
+      }
+    },
+    "vulkan_synchronization_validation": true
+  },
+  "ubuntu": {
+    "binary_sha256": "d571a1549b41385f96d1a5fd68a7ea60b16348007a448c55b1cf86ea675a8239",
+    "runtime_sha256": "824dab010fda25268eae7f35f172d2324d73b51c8c0a57c1af013dee98571daa",
+    "junit_sha256": "4443d5cfec5d75a26984d6200fd6c259129cf90b86a62d864b1b6d03f830caea",
+    "ctest": [
+      "lighting_contract",
+      "project_contract",
+      "shared_session_contract",
+      "world_particles_contract",
+      "world_water_contract",
+      "asset_references_contract",
+      "world_ui_contract",
+      "world_contract",
+      "authoring_api_compatibility",
+      "cli_contract",
+      "shadow_math",
+      "render_schedule_native",
+      "render_batches_native",
+      "profiler_contract",
+      "world_session_native"
+    ]
+  }
+}

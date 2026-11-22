@@ -5,6 +5,7 @@
 #include "poima/core.hpp"
 #include "poima/frame_performance.hpp"
 #include "poima/profiler.hpp"
+#include "poima/scene.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -17,7 +18,20 @@ namespace fp = frame_performance;
 namespace {
 
 constexpr std::uint64_t retirement_timeout_ns = 5'000'000'000ULL;
-constexpr std::uint32_t timestamp_count = 18;
+constexpr std::uint32_t frame_timestamp_count = 18;
+constexpr std::uint32_t shadow_timestamp_count = max_shadow_views + 1;
+constexpr std::uint32_t timestamp_count = frame_timestamp_count + shadow_timestamp_count;
+constexpr std::array shadow_view_counters = {
+    std::string_view{"gpu.shadow_view.0.ns"}, std::string_view{"gpu.shadow_view.1.ns"},
+    std::string_view{"gpu.shadow_view.2.ns"}, std::string_view{"gpu.shadow_view.3.ns"},
+    std::string_view{"gpu.shadow_view.4.ns"}, std::string_view{"gpu.shadow_view.5.ns"},
+    std::string_view{"gpu.shadow_view.6.ns"}, std::string_view{"gpu.shadow_view.7.ns"},
+    std::string_view{"gpu.shadow_view.8.ns"}, std::string_view{"gpu.shadow_view.9.ns"},
+    std::string_view{"gpu.shadow_view.10.ns"}, std::string_view{"gpu.shadow_view.11.ns"},
+    std::string_view{"gpu.shadow_view.12.ns"}, std::string_view{"gpu.shadow_view.13.ns"},
+    std::string_view{"gpu.shadow_view.14.ns"}, std::string_view{"gpu.shadow_view.15.ns"},
+};
+static_assert(shadow_view_counters.size() == max_shadow_views);
 
 void require(bool condition, const char* detail) {
     if (!condition) throw std::runtime_error(detail);
@@ -207,13 +221,20 @@ void Timestamps::begin(std::size_t slot, bool requested) noexcept {
     recording_ = requested ? pools_[slot] : vk::QueryPool{};
 }
 
-void Timestamps::reset_queries(vk::CommandBuffer commands, const Dispatch& dispatch) const {
-    commands.resetQueryPool(recording_,0,timestamp_count,dispatch);
+void Timestamps::reset_queries(vk::CommandBuffer commands, const Dispatch& dispatch, std::uint32_t shadow_views) const {
+    require(shadow_views <= max_shadow_views, "Shadow timestamp view count exceeds the view limit.");
+    commands.resetQueryPool(recording_, 0, frame_timestamp_count + (shadow_views ? shadow_views + 1 : 0), dispatch);
 }
 
 void Timestamps::write(vk::CommandBuffer commands, const Dispatch& dispatch, std::uint32_t query) const {
     commands.writeTimestamp(query==0 ? vk::PipelineStageFlagBits::eTopOfPipe : vk::PipelineStageFlagBits::eBottomOfPipe,
         recording_,query,dispatch);
+}
+
+void Timestamps::write_shadow_boundary(vk::CommandBuffer commands, const Dispatch& dispatch, std::uint32_t boundary) const {
+    if(!recording_)return;
+    require(boundary<shadow_timestamp_count,"Shadow timestamp boundary exceeds the view limit.");
+    commands.writeTimestamp(vk::PipelineStageFlagBits::eBottomOfPipe,recording_,frame_timestamp_count+boundary,dispatch);
 }
 
 void Timestamps::collect(vk::Device device, const Dispatch& dispatch, std::size_t slot,
@@ -222,13 +243,17 @@ void Timestamps::collect(vk::Device device, const Dispatch& dispatch, std::size_
         if(frame.performance)frame.performance->gpu_drop(frame.performance_ticket,fp::GpuDropReason::query_unavailable);
         return;
     }
-    std::array<std::uint64_t,timestamp_count> values{};
+    const auto drop_shadow_sample = [&] {
+        profiling::deferred_counter(frame.profile,"gpu.shadow_views.samples_dropped",1);
+    };
+    std::array<std::uint64_t,frame_timestamp_count> values{};
     const auto status=device.getQueryPoolResults(pools_[slot],0,static_cast<std::uint32_t>(values.size()),sizeof(values),values.data(),sizeof(values[0]),vk::QueryResultFlagBits::e64,dispatch);
     const auto bits=diagnostics.timestamp_valid_bits;
     const double wrap_ms=std::ldexp(diagnostics.timestamp_period_ns*1e-6,static_cast<int>(bits));
     if(status!=vk::Result::eSuccess || frame.cpu_interval_ms>=wrap_ms) {
         ++diagnostics.gpu_samples_dropped;profiling::deferred_counter(frame.profile,"gpu.samples_dropped",diagnostics.gpu_samples_dropped);
         if(frame.performance)frame.performance->gpu_drop(frame.performance_ticket,fp::GpuDropReason::query_failed);
+        if(frame.shadow_views)drop_shadow_sample();
         return;
     }
     const auto mask=bits==64 ? ~std::uint64_t(0) : (std::uint64_t(1)<<bits)-1;
@@ -273,6 +298,36 @@ void Timestamps::collect(vk::Device device, const Dispatch& dispatch, std::size_
         if(valid)frame.performance->gpu_complete(frame.performance_ticket,timing);
         else frame.performance->gpu_drop(frame.performance_ticket,fp::GpuDropReason::invalid_timing);
     }
+    if(!frame.shadow_views)return;
+    if(frame.shadow_views>max_shadow_views) {
+        drop_shadow_sample();
+        return;
+    }
+    const auto boundary_count=frame.shadow_views+1;
+    std::array<std::uint64_t,shadow_timestamp_count> boundaries{};
+    const auto shadow_status=device.getQueryPoolResults(pools_[slot],frame_timestamp_count,boundary_count,
+        boundary_count*sizeof(boundaries[0]),boundaries.data(),sizeof(boundaries[0]),vk::QueryResultFlagBits::e64,dispatch);
+    if(shadow_status!=vk::Result::eSuccess) {
+        drop_shadow_sample();
+        return;
+    }
+    std::array<std::uint64_t,shadow_timestamp_count> durations{};
+    auto previous=values[2];
+    auto remaining_ticks=(values[3]-previous)&mask;
+    for(std::uint32_t boundary=0;boundary<boundary_count;++boundary) {
+        const auto ticks=(boundaries[boundary]-previous)&mask;
+        const long double ns=static_cast<long double>(ticks)*diagnostics.timestamp_period_ns;
+        if(ticks>remaining_ticks || !std::isfinite(ns) || ns<0 || ns>=static_cast<long double>(std::numeric_limits<std::uint64_t>::max())) {
+            drop_shadow_sample();
+            return;
+        }
+        durations[boundary]=static_cast<std::uint64_t>(ns);
+        remaining_ticks-=ticks;
+        previous=boundaries[boundary];
+    }
+    profiling::deferred_counter(frame.profile,"gpu.shadow_clear.ns",durations[0],profiling::Kind::gpu);
+    for(std::uint32_t view=0;view<frame.shadow_views;++view)
+        profiling::deferred_counter(frame.profile,shadow_view_counters[view],durations[view+1],profiling::Kind::gpu);
 }
 
 void Timestamps::release(vk::Device device, const Dispatch& dispatch) noexcept {

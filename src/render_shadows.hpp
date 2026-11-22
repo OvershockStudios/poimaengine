@@ -6,8 +6,10 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <functional>
 #include <map>
 #include <set>
+#include <span>
 #include <utility>
 #include <vector>
 
@@ -22,6 +24,7 @@ struct MaterialTextures;
 struct SceneLighting;
 
 namespace render_draw { struct DrawItem; }
+namespace profiling { class DeferredContext; }
 
 namespace render_shadows {
 using MaterialKey = std::pair<const MeshAsset*, const MaterialTextures*>;
@@ -36,7 +39,13 @@ struct Buffers {
     nvrhi::IBuffer* objects;
 };
 
+struct ViewWork {
+    std::uint64_t draws = 0, batches = 0, triangles = 0;
+    std::size_t light_index = 0;
+};
+
 Target target_for(const SceneLighting& lighting);
+void profile_views(std::span<const ViewWork> views, const profiling::DeferredContext& profile);
 
 class Pass {
 public:
@@ -56,7 +65,8 @@ public:
 
     void record(nvrhi::ICommandList& commands, const std::vector<render_draw::DrawItem>& draws,
                 const std::vector<std::vector<render_batches::Batch>>& batch_plans,
-                std::size_t view_count, bool scene_products_enabled, std::uint64_t& recorded_batches) const;
+                bool scene_products_enabled, std::uint64_t& recorded_batches, std::span<ViewWork> work,
+                const std::function<void(std::uint32_t)>& timestamp_boundary) const;
 
     nvrhi::ITexture* texture() const noexcept { return texture_.Get(); }
     const std::vector<nvrhi::FramebufferHandle>& framebuffers() const noexcept { return framebuffers_; }

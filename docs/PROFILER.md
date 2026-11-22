@@ -54,6 +54,22 @@ Owner CPU failure flags indicate exception unwinding. Native job flags mark non-
 
 Native instrumentation covers runtime batch validation/checkpointing, fixed ticks, C# calls and command application, physics, animation sampling, hierarchy synchronization, rollback, owner advancement, snapshot/save preparation, renderer preparation/acquire/record/submit/present/retirement/wait/readback, player presentation and native audio queue/DSP boundaries. Only paths actually executed produce samples. Native audio device output and the editor DSP worker have separate [output contracts](AUDIO_EVENTS.md) and [editor qualification](EDITOR_AUDIO.md).
 
+### Shadow views
+
+An active capture records `gpu.shadow_clear.ns` and `gpu.shadow_view.N.ns` for
+each active atlas layer starting at `N = 0`. These are approximate GPU intervals
+within `gpu.shadows.ns`. The clear and draw intervals can leave some attachment
+transition time in the enclosing total. An unavailable or inconsistent view
+readback emits `gpu.shadow_views.samples_dropped` with value 1 when the frame
+recorded timestamps.
+
+`renderer.shadow_view.N.draws`, `.batches` and `.triangles` report the retired
+layer's submitted instances, actual draw commands and triangle instances.
+`.light_index` indexes the frame's effective light list. Match events by source,
+session, tick and submission stamp before comparing layers. A layer can map to
+a different light when active views change. View detail uses the same bounded
+profiler capture as other events.
+
 The [hierarchy counters](RUNTIME_HIERARCHY.md#inspect-reuse) report recomputed
 and reused nodes for each completed traversal. Their sum is that pass's live
 membership; multiple passes in one tick count the nodes again.
