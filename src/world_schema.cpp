@@ -225,6 +225,17 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"input_max","strength","knots"});
     Json lighting_environment=object_schema({{"ambient",vector({{"type","number"},{"minimum",0},{"maximum",1e6}},3)},
         {"exposure",{{"type","number"},{"minimum",0},{"maximum",1e6}}},{"shadow_resolution",{{"enum",{256,512,1024,2048}},{"default",1024}}},{"shadow_filter",{{"enum",{"pcf3_point","pcf3_fractional","pcss_directional"}},{"default","pcf3_point"}}},{"sky",sky},{"ibl",ibl},{"bloom",bloom}}, {"ambient","exposure"});
+    const AutoExposureSettings exposure_defaults;
+    const auto exposure_number=[](float minimum,float maximum,float fallback) {
+        return Json{{"type","number"},{"minimum",minimum},{"maximum",maximum},{"default",fallback}};
+    };
+    auto auto_exposure=object_schema({
+        {"min_stops",exposure_number(-8,8,exposure_defaults.min_stops)},
+        {"max_stops",exposure_number(-8,8,exposure_defaults.max_stops)},
+        {"brighten_stops_per_second",exposure_number(.125f,32,exposure_defaults.brighten_stops_per_second)},
+        {"darken_stops_per_second",exposure_number(.125f,32,exposure_defaults.darken_stops_per_second)}});
+    auto_exposure["description"]="Optional GPU auto exposure in stops. An empty object enables the defaults. min_stops must not exceed max_stops. The exposure field remains a separate manual multiplier.";
+    lighting_environment["properties"]["auto_exposure"]=std::move(auto_exposure);
     lighting_environment["properties"]["output_grade"]=output_grade;
     lighting_environment["properties"]["output_grade"]["description"]="Optional per-channel curves over exposed scene HDR, after bloom and exposure and before tone mapping. All 33 RGB knots are required and knot zero is [0,0,0].";
     auto screen_reflections=object_schema({
@@ -386,7 +397,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 204}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 205}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),

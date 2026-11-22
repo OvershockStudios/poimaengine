@@ -31,6 +31,15 @@ void validate_light(const Light& l) {
 void validate_environment(const LightingEnvironment& e) {
     for(auto x:e.ambient)require(std::isfinite(x) && x>=0 && x<=1e6f,"Ambient fill must be in [0,1e6].");
     require(std::isfinite(e.exposure) && e.exposure>=0 && e.exposure<=1e6f,"Exposure multiplier must be in [0,1e6].");
+    if(e.auto_exposure) {
+        const auto& exposure=*e.auto_exposure;
+        require(std::isfinite(exposure.min_stops) && std::isfinite(exposure.max_stops) &&
+            exposure.min_stops>=-8 && exposure.min_stops<=exposure.max_stops && exposure.max_stops<=8,
+            "Auto exposure stops must be finite and satisfy -8 <= min_stops <= max_stops <= 8.");
+        for(const auto speed:{exposure.brighten_stops_per_second,exposure.darken_stops_per_second})
+            require(std::isfinite(speed) && speed>=.125f && speed<=32,
+                "Auto exposure adaptation speeds must be finite and in [0.125,32] stops per second.");
+    }
     const auto& bloom=e.bloom;
     require(std::isfinite(bloom.intensity) && bloom.intensity>=0 && bloom.intensity<=1,
             "Bloom intensity must be finite and in [0,1].");

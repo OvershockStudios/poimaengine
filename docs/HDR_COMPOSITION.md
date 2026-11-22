@@ -5,8 +5,8 @@ The development renderer stores scene-linear RGB in an RGBA16_FLOAT attachment. 
 This is an internal HDR rendering stage with SDR output. Optional [bloom](BLOOM.md)
 uses the same radiance before exposure and tone mapping. An authored
 [project post effect](PROJECT_POST_EFFECTS.md) processes resolved scene-linear
-radiance before bloom, exposure and tone mapping. HDR monitor output,
-automatic exposure, and GI have separate implementation and qualification scopes.
+radiance before bloom, exposure and tone mapping. HDR monitor output and GI
+have separate implementation and qualification scopes.
 
 ## Output contract
 
@@ -20,15 +20,78 @@ keep sampling consistent between capture, player and editor.
 
 Exposure zero makes scene content black, including the flat background. UI remains visible. Legacy preview boxes retain their simple preview shading but now receive the same output transform as other geometry; their previous exposure bypass is intentionally removed. The standalone diagnostic triangle remains outside the scene pipeline.
 
+## Adapt exposure between dark and bright areas
+
+Set `LightingEnvironment.auto_exposure` to enable the GPU meter. For example,
+this profile lets a night scene gain up to three quarters of a stop while
+letting it recover faster when the camera faces a bright source.
+
+```json
+{
+  "ambient": [0.04, 0.05, 0.07],
+  "exposure": 0.8,
+  "auto_exposure": {
+    "min_stops": -1.5,
+    "max_stops": 0.75,
+    "brighten_stops_per_second": 0.75,
+    "darken_stops_per_second": 3
+  }
+}
+```
+
+Use `{}` for the defaults of −4 to +4 stops, 2 stops/s brightening, and
+4 stops/s darkening. Each limit must be within [−8, 8] with the minimum at
+or below the maximum. The rates accept [0.125, 32] stops/s. Remove the optional
+object to use manual exposure alone. An export needs a runtime with
+`features.auto_exposure`.
+
+The meter samples up to 64 × 36 positions across the rendered world rectangle
+after MSAA resolve and world fog and reflections. It bins Rec. 709 luminance
+into 64 log2 buckets spanning [−12, 12], then trims the lowest and highest 10%
+of the samples. It estimates the mean in stops from the remaining bin centers.
+The target moves that mean toward linear 0.18, subject to the authored bounds.
+The output multiplies manual exposure by `2^adapted_stops` after adding bloom
+and before applying the output grade. The meter uses world radiance before FSR,
+foreground viewmodel, project post effects, bloom, and UI composition.
+
+Each view owns its GPU history. A new source, camera cut, viewport change, or
+resize snaps to the measured target. Later accepted frames move at the selected
+rate. Live playback uses elapsed time between accepted frames. Replays and
+capture fixtures use a fixed 60 Hz interval. Saves retain the authored settings.
+
+`world.lighting` and `runtime.lighting` report the resolved settings.
+Vulkan diagnostics report whether the meter reset, its interval, and the sample
+count. Capture diagnostics also report the adapted stops, target stops,
+metered log2 luminance, and multiplier read back from the GPU.
+
+The design uses established [luminance histogram metering](https://alextardif.com/HistogramLuminance.html)
+and [separate adaptation rates in stops](https://dev.epicgames.com/documentation/unreal-engine/auto-exposure-in-unreal-engine).
+
 ## Bounds and ownership
 
 Half-float radiance storage is bounded to 65,504 per channel before writing. Values beyond that saturate; negative values are clamped and NaNs become zero. This prevents half-float overflow from contaminating the resolve/output pass, but loses extreme highlight ratios. Pre-exposure or wider storage is future work. Authored light limits are unchanged and do not imply lossless storage across that entire range.
 
 The renderer checks format/image capabilities for its color, sampled and transfer usage, extent and requested sample count. Unsupported combinations fail explicitly. HDR color attachments have a 512 MiB combined budget per renderer context, separate from depth, swapchain, UI and staging allocations. Two editor viewports own separate contexts and allocations.
 
-Output bindings and framebuffers follow swapchain recreation. The current serialized submission model permits one resolved scene texture per context. Future overlapping frames must revise this resource ownership before removing the GPU wait.
+Output bindings and framebuffers follow swapchain recreation. Each renderer
+context shares resolved HDR and exposure state across ordered graphics queue
+submissions. Capture readback belongs to the submitted frame slot. Resize
+retires frames before replacing their image bindings.
 
 ## Qualification
+
+Build `poima-auto-exposure-test` from the Windows Vulkan configuration.
+Pass a fresh output prefix, a GPU index, a lighting path, and a reconstruction
+mode. For example, from WSL run the following after creating the output directory.
+
+```sh
+build/windows-runtime/bin/poima-auto-exposure-test.exe \
+  "$(wslpath -aw build/exposure-check/frame)" 1 deferred fsr3_quality
+```
+
+The fixture compares the captured GPU state and pixel values against an
+independent meter, checks camera cuts and resize, and verifies the manual
+capture after disabling the effect. [Exposure results](evidence/m2-auto-exposure-400.json).
 
 The Windows native engine, UI capture executable and desktop bridge build and link. Both the RTX 4070 Laptop GPU and AMD integrated GPU pass 174 scene captures across the HDR, lighting, sky and material suites. Eight additional integration groups cover UI at 1×/4× MSAA, standalone player parity and independent native Scene/Game viewport lifetimes on both GPUs. [Qualification evidence](evidence/m2-hdr-composition.json).
 

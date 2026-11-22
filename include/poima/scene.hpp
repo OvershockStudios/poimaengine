@@ -96,6 +96,10 @@ struct HeightFog {
     float anisotropy=0;
     std::vector<FogSpotLight> spot_lights;
 };
+struct AutoExposureSettings {
+    float min_stops=-4,max_stops=4;
+    float brighten_stops_per_second=2,darken_stops_per_second=4;
+};
 struct LightingEnvironment {
     std::array<float,3> ambient{};
     float exposure=1;
@@ -110,6 +114,7 @@ struct LightingEnvironment {
     std::optional<OutputGrade> output_grade;
     std::optional<ScreenReflections> screen_reflections;
     std::optional<HeightFog> height_fog;
+    std::optional<AutoExposureSettings> auto_exposure;
 };
 struct SceneLight { std::string entity_id;Light light;std::array<double,3> position{},direction{0,0,-1}; };
 struct SceneLighting {

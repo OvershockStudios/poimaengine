@@ -1573,6 +1573,110 @@ void spatial_aa_contracts() {
           access(legacy,PassId::output,legacy.frame.output,Use::color_overwrite,true),
           "Default rendering acquired spatial anti-aliasing resources or work");
 }
+
+void setup_auto_exposure(Fixture& fixture,bool use_history,bool readback) {
+    auto& f=fixture.f;
+    fixture.settings.auto_exposure=true;
+    fixture.settings.exposure_history_valid=use_history;
+    f.resources[f.hdr].format=Format::rgba16_float;
+    f.exposure_state=fixture.add(Kind::buffer,Lifetime::shared,use_history);
+    auto& state=f.resources[f.exposure_state];
+    state.bytes=state.allocation_bytes=auto_exposure_state_bytes;
+    state.region=Region::whole;
+    state.supported=use_bit(Use::storage_read)|use_bit(Use::storage_write)|use_bit(Use::copy_source);
+    if(readback) {
+        f.exposure_readback=fixture.add(Kind::buffer,Lifetime::slot);
+        auto& staging=f.resources[f.exposure_readback];
+        staging.bytes=staging.allocation_bytes=auto_exposure_state_bytes;
+        staging.region=Region::whole;
+        staging.supported=use_bit(Use::copy_destination);
+    }
 }
 
-int main(){try{matrix();faults();products();motion_contracts();reconstruction_contracts();deferred_contracts();deferred_color_contracts();viewmodel_contracts();ambient_occlusion_contracts();masked_shadow_contracts();environment_contracts();bloom_contracts();post_effect_contracts();output_grade_contracts();streamed_geometry_contracts();mutable_geometry_contracts();particle_sprite_contracts();surface_mark_contracts();screen_reflection_contracts();height_fog_contracts();composed_reconstruction_contracts();reconstructed_sprite_contracts();spatial_aa_contracts();std::cout<<"Production render schedule: "<<accepted<<" valid variants, "<<rejected<<" rejected contract mutations.\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}
+void auto_exposure_contracts() {
+    for(unsigned path:{0u,1u,2u,3u,4u})for(bool keep_history:{false,true})for(bool capture:{false,true}) {
+        auto settings=rich();
+        settings.capture=capture;
+        settings.editor=path==3;
+        settings.deferred=path==2 || path==3;
+        settings.height_fog=path==1 || path==3;
+        settings.screen_reflections=settings.deferred;
+        settings.reconstruction=path>=3;
+        settings.products=settings.deferred || settings.reconstruction;
+        Fixture fixture(settings,path==0 ? 4 : 1);
+        if(settings.reconstruction)setup_reconstructed_sprites(fixture,true);
+        else if(settings.height_fog)setup_particle_sprites(fixture);
+        if(path==2)setup_spatial_aa(fixture);
+        if(path==3)setup_foreground(fixture);
+        setup_post_effect(fixture);setup_bloom(fixture);
+        if(capture && settings.products)world_hdr_probes(fixture);
+        setup_auto_exposure(fixture,keep_history,capture);
+        auto valid=fixture.plan();valid.validate();++accepted;
+        const auto& f=valid.frame;
+        const auto& meter=pass(valid,PassId::auto_exposure);
+        check(&meter<&pass(valid,PassId::post_effect) && &meter<&pass(valid,PassId::output) &&
+            access(valid,PassId::auto_exposure,world_radiance(f,valid.settings),Use::sampled) &&
+            access(valid,PassId::auto_exposure,f.exposure_state,Use::storage_read)==keep_history &&
+            access(valid,PassId::auto_exposure,f.exposure_state,Use::storage_write,true) &&
+            access(valid,PassId::output,f.exposure_state,Use::storage_read),
+            "Automatic exposure has wrong source, history or compositor output");
+        if(path==0)check(&pass(valid,PassId::resolve)+1==&meter,"Exposure must follow the world MSAA resolve");
+        if(settings.height_fog)check(&pass(valid,PassId::particle_sprites)<&meter,"Exposure must follow sprite draws");
+        if(settings.reconstruction)check(&meter+1==&pass(valid,PassId::temporal_inputs) &&
+            !access(valid,PassId::auto_exposure,f.sprite_hdr,Use::sampled),"Exposure must meter the world before sprite HDR reconstruction");
+        if(capture)check(&pass(valid,PassId::game_ui)<&pass(valid,PassId::exposure_readback) &&
+            &pass(valid,PassId::exposure_readback)+1==&pass(valid,PassId::capture) &&
+            access(valid,PassId::exposure_readback,f.exposure_state,Use::copy_source) &&
+            access(valid,PassId::exposure_readback,f.exposure_readback,Use::copy_destination,true),
+            "Automatic exposure readback is not attached to the captured frame");
+    }
+
+    auto settings=rich();
+    settings.products=settings.deferred=settings.reconstruction=settings.screen_reflections=settings.height_fog=true;
+    Fixture fixture(settings);
+    setup_reconstructed_sprites(fixture,true);
+    setup_auto_exposure(fixture,true,true);
+    const auto valid=fixture.plan();valid.validate();
+    const auto& f=valid.frame;
+    auto bad=[&](const char* label,const auto& edit){auto p=valid;edit(p);rejects(label,[&]{p.validate();});};
+    bad("exposure state with mode disabled",[](auto& p){p.settings.auto_exposure=false;});
+    bad("exposure with diagnostic output",[](auto& p){p.settings.products_debug=true;});
+    bad("no exposure state",[](auto& p){p.frame.exposure_state=none;});
+    bad("reset exposure sees old initialized state",[](auto& p){p.settings.exposure_history_valid=false;});
+    bad("exposure reads undefined history",[&](auto& p){p.frame.resources[f.exposure_state].initialized=false;});
+    bad("wrong exposure buffer size",[&](auto& p){--p.frame.resources[f.exposure_state].bytes;});
+    bad("oversized exposure allocation",[&](auto& p){++p.frame.resources[f.exposure_state].allocation_bytes;});
+    bad("prefix instead of whole exposure payload",[&](auto& p){p.frame.resources[f.exposure_state].region=Region::prefix;});
+    bad("exposure buffer not shared",[&](auto& p){p.frame.resources[f.exposure_state].lifetime=Lifetime::slot;});
+    bad("readback not captured",[](auto& p){p.settings.capture=false;});
+    bad("readback belongs to wrong slot",[&](auto& p){++p.frame.resources[f.exposure_readback].owner;});
+    bad("readback aliases another declared role",[&](auto& p){p.frame.cluster_readback=f.exposure_readback;});
+    bad("exposure aliases another declared role",[&](auto& p){p.frame.frame=f.exposure_state;});
+    bad("exposure meters raw opaque instead of fog",[&](auto& p){pass(p,PassId::auto_exposure).accesses.front().resource=f.hdr;});
+    bad("exposure meters FSR sprite HDR",[&](auto& p){pass(p,PassId::auto_exposure).accesses.front().resource=f.sprite_hdr;});
+    bad("exposure meters after temporal inputs",[](auto& p){std::swap(pass(p,PassId::auto_exposure),pass(p,PassId::temporal_inputs));});
+    bad("exposure meters before sprite draws",[](auto& p){std::swap(pass(p,PassId::auto_exposure),pass(p,PassId::particle_sprites));});
+    bad("exposure update reads its freshly written output",[](auto& p){auto& a=pass(p,PassId::auto_exposure).accesses;std::swap(a[1],a[2]);});
+    bad("exposure update omits prior sample",[&](auto& p){erase_access(p,PassId::auto_exposure,f.exposure_state,Use::storage_read);});
+    bad("exposure update has partial write",[](auto& p){pass(p,PassId::auto_exposure).accesses.back().initialize=false;});
+    bad("exposure update missing with initialized state",[](auto& p){std::erase_if(p.passes,[](const auto& work){return work.id==PassId::auto_exposure;});});
+    bad("output bypasses updated exposure",[&](auto& p){erase_access(p,PassId::output,f.exposure_state,Use::storage_read);});
+    bad("UI consumes exposure",[&](auto& p){pass(p,PassId::game_ui).accesses.push_back({f.exposure_state,Use::storage_read});});
+    bad("readback at wrong phase",[](auto& p){std::swap(pass(p,PassId::exposure_readback),pass(p,PassId::output));});
+    bad("readback direction reversed",[](auto& p){auto& a=pass(p,PassId::exposure_readback).accesses;std::swap(a[0],a[1]);});
+    bad("readback not copied",[](auto& p){std::erase_if(p.passes,[](const auto& work){return work.id==PassId::exposure_readback;});});
+
+    Fixture reset(settings);setup_reconstructed_sprites(reset,false);setup_auto_exposure(reset,false,false);
+    auto reset_plan=reset.plan();reset_plan.validate();++accepted;
+    auto& reset_accesses=pass(reset_plan,PassId::auto_exposure).accesses;
+    reset_accesses.insert(reset_accesses.begin()+1,{reset.f.exposure_state,Use::storage_read,false});
+    rejects("reset exposure reads history",[&]{reset_plan.validate();});
+    auto legacy=Fixture(rich(),4).plan();legacy.validate();
+    check(legacy.frame.exposure_state==none && legacy.frame.exposure_readback==none &&
+        std::none_of(legacy.passes.begin(),legacy.passes.end(),[](const auto& work){
+            return work.id==PassId::auto_exposure || work.id==PassId::exposure_readback;
+        }),"Default rendering acquired automatic exposure resources or work");
+}
+}
+
+int main(){try{matrix();faults();products();motion_contracts();reconstruction_contracts();deferred_contracts();deferred_color_contracts();viewmodel_contracts();ambient_occlusion_contracts();masked_shadow_contracts();environment_contracts();bloom_contracts();post_effect_contracts();output_grade_contracts();streamed_geometry_contracts();mutable_geometry_contracts();particle_sprite_contracts();surface_mark_contracts();screen_reflection_contracts();height_fog_contracts();composed_reconstruction_contracts();reconstructed_sprite_contracts();spatial_aa_contracts();auto_exposure_contracts();std::cout<<"Production render schedule: "<<accepted<<" valid variants, "<<rejected<<" rejected contract mutations.\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}

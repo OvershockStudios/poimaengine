@@ -34,6 +34,7 @@ struct WorldPackageContent {
     bool needs_height_fog=false;
     bool needs_snow_water=false;
     bool needs_physics_checkpoint=false;
+    bool needs_auto_exposure=false;
 };
 enum class WorldRequestScope { standalone, shared_headless, shared_editor };
 struct WorldRuntimeStatus {

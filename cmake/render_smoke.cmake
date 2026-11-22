@@ -43,11 +43,13 @@ find_program(POIMA_DXC NAMES dxc
 file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/generated/poima")
 foreach(shader smoke scene scene_products scene_deferred scene_deferred_color deferred_lighting deferred_lighting_ao deferred_lighting_color deferred_lighting_color_ao
         deferred_lighting_reflection deferred_lighting_ao_reflection
-        deferred_lighting_color_reflection deferred_lighting_color_ao_reflection screen_reflections height_fog
-        ambient_occlusion ambient_occlusion_filter scene_output scene_output_ao scene_output_products scene_output_bloom scene_output_products_bloom scene_output_grade scene_output_grade_bloom spatial_aa bloom viewmodel_composite viewmodel_resolve sky shadow skinning cluster_lights temporal_inputs temporal_composed_inputs temporal_sprite_inputs temporal_composed_sprite_inputs editor_overlay game_ui particle_sprite particle_sprite_temporal)
-if(shader MATCHES "^(skinning|cluster_lights|temporal(_composed)?(_sprite)?_inputs|deferred_lighting.*|ambient_occlusion.*|screen_reflections|height_fog)$")
+        deferred_lighting_color_reflection deferred_lighting_color_ao_reflection screen_reflections height_fog auto_exposure
+        ambient_occlusion ambient_occlusion_filter scene_output scene_output_ao scene_output_products scene_output_bloom scene_output_products_bloom scene_output_grade scene_output_grade_bloom
+        scene_output_exposure scene_output_bloom_exposure scene_output_grade_exposure scene_output_grade_bloom_exposure
+        spatial_aa bloom viewmodel_composite viewmodel_resolve sky shadow skinning cluster_lights temporal_inputs temporal_composed_inputs temporal_sprite_inputs temporal_composed_sprite_inputs editor_overlay game_ui particle_sprite particle_sprite_temporal)
+if(shader MATCHES "^(skinning|cluster_lights|temporal(_composed)?(_sprite)?_inputs|deferred_lighting.*|ambient_occlusion.*|screen_reflections|height_fog|auto_exposure)$")
     set(shader_stages cs)
-elseif(shader MATCHES "^(scene_output_grade|spatial_aa)")
+elseif(shader MATCHES "^(scene_output_grade|spatial_aa)" OR shader MATCHES "^scene_output.*_exposure$")
     set(shader_stages ps)
 else()
     set(shader_stages vs ps)
@@ -88,11 +90,14 @@ foreach(stage IN LISTS shader_stages)
         if(shader STREQUAL "scene_output_ao")
             list(APPEND shader_defines -DPOIMA_AMBIENT_OCCLUSION=1)
         endif()
-        if(shader MATCHES "_bloom$")
+        if(shader MATCHES "_bloom(_exposure)?$")
             list(APPEND shader_defines -DPOIMA_BLOOM=1)
         endif()
         if(shader MATCHES "_grade")
             list(APPEND shader_defines -DPOIMA_OUTPUT_GRADE=1)
+        endif()
+        if(shader MATCHES "_exposure$")
+            list(APPEND shader_defines -DPOIMA_AUTO_EXPOSURE=1)
         endif()
     elseif(shader MATCHES "^scene_deferred")
         set(shader_source "${CMAKE_SOURCE_DIR}/shaders/scene.hlsl")
@@ -156,6 +161,7 @@ target_sources(poima_core PRIVATE
     src/player_window.cpp src/gamepad_sdl.cpp
     src/render_ui.cpp src/render_environment_ibl.cpp src/render_ambient_occlusion.cpp
     src/render_shadows.cpp
+    src/render_auto_exposure.cpp
     src/render_skinning.cpp src/render_spatial_aa.cpp src/render_scene_output.cpp src/render_temporal_inputs.cpp src/render_sprite_targets.cpp
     "${poima_startup_wordmark}")
 target_link_libraries(poima_core PRIVATE nvrhi nvrhi_vk SDL3::SDL3-static)

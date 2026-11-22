@@ -1,8 +1,16 @@
 # Implementation status
 
-Updated 2026-11-21 for **0.0.399**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-22 for **0.0.400**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.400 adds [authored automatic exposure](HDR_COMPOSITION.md#adapt-exposure-between-dark-and-bright-areas).
+The GPU meters world radiance, adapts within authored bounds, and reports its
+measured state in captures. AMD and NVIDIA passed 148 Vulkan captures across
+eight configurations, including 1× and 4× MSAA, FSR Native AA and Quality,
+and two outstanding submissions. Disabled output shader binaries and manual
+capture pairs matched byte for byte. Ubuntu passed 18 suites.
+[Results](evidence/m2-auto-exposure-400.json)
 
 Version 0.0.399 shows initially wet [terrain-bound regions](SHALLOW_WATER.md#author-a-terrain-bound-region)
 in authored views and captures. Four Windows Vulkan captures matched independent

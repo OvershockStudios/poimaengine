@@ -39,6 +39,7 @@
 #include "render_hdr_effects.hpp"
 #include "render_spatial_aa.hpp"
 #include "render_scene_output.hpp"
+#include "render_auto_exposure.hpp"
 #include "poima/scene_products_ps.hpp"
 #include "poima/scene_products_vs.hpp"
 #include "poima/particle_sprite_vs.hpp"
@@ -204,7 +205,7 @@ struct Context {
     static constexpr std::uint64_t viewmodel_cap=384ull*1024*1024;
     struct FrameSlot {
         vk::Semaphore acquired;
-        nvrhi::BufferHandle cluster_readback,skin_readback;
+        nvrhi::BufferHandle cluster_readback,skin_readback,exposure_readback;
         nvrhi::BufferHandle streamed_vertices,streamed_indices;
         nvrhi::BufferHandle surface_marks;
         nvrhi::TextureHandle surface_mark_masks;
@@ -227,6 +228,8 @@ struct Context {
         std::uint64_t history_sequence=0;
         std::string history_reset;
         ReconstructionDiagnostics reconstruction;
+        std::optional<AutoExposureDiagnostics> exposure;
+        bool capture_exposure=false;
         std::optional<RendererSceneResult> scene;
     };
     std::array<FrameSlot,render_vulkan_frame::slot_count> slots;
@@ -337,6 +340,11 @@ struct Context {
     std::vector<ObjectData> object_data;
     SceneDebugView scene_debug_view=SceneDebugView::color;
     render_scene_output::Pass scene_output;
+    render_auto_exposure::Pass exposure_meter;
+    std::array<std::uint32_t,4> exposure_rect{};
+    TemporalClock exposure_clock;
+    std::optional<AutoExposureDiagnostics> pending_exposure;
+    bool prior_exposure=false;
     hdr_effects::ProjectPostPass post_effect;
     hdr_effects::BloomPass bloom;
     render_spatial_aa::Pass spatial_aa;
@@ -419,6 +427,7 @@ struct Context {
         pipeline = nullptr; culled_pipeline=nullptr;
         sky_pipeline=nullptr;sky_bindings=nullptr;sky_layout=nullptr;sky_vs=nullptr;sky_ps=nullptr;
         scene_output.release_gpu();
+        exposure_meter.release_gpu();
         bloom={};
         spatial_aa={};
         post_effect={};
@@ -444,6 +453,7 @@ struct Context {
         multisample_color = nullptr;scene_hdr=nullptr;scene_normal=nullptr;scene_motion=nullptr;scene_motion_valid=nullptr;
         for(auto& slot:slots) {
             slot.completion=nullptr;slot.cluster_readback=nullptr;slot.skin_readback=nullptr;
+            slot.exposure_readback=nullptr;
             slot.streamed_vertices=nullptr;slot.streamed_indices=nullptr;
             slot.surface_mark_binding=nullptr;slot.surface_marks=nullptr;slot.surface_mark_masks=nullptr;
             slot.sprite_instances=nullptr;slot.sprite_depth=nullptr;slot.sprite_bindings.clear();
@@ -1378,6 +1388,7 @@ struct Context {
         }
     }
     void detach_world_outputs(const nvrhi::ITexture* source) {
+        if(exposure_meter.source()==source)exposure_meter.detach_source();
         sprite_framebuffer=nullptr;
         temporal_inputs.invalidate_bindings();
         bloom.detach_source(source);
@@ -1451,6 +1462,7 @@ struct Context {
         for(const auto& point:product_probes)require(point.x<render.width && point.y<render.height,"Scene product probe lies outside the reconstruction render extent.");
         if(reconstruction && render.width==render_extent.width && render.height==render_extent.height && output.width==output_extent.width && output.height==output_extent.height)return;
         retire_frames(true);
+        exposure_meter.detach_source();
         temporal_inputs.clear_targets();
         clear_sprite_targets();
         if(auto* source=fog.radiance())detach_world_outputs(source);
@@ -1680,8 +1692,66 @@ struct Context {
         return fxaa_enabled ? spatial_aa.input_framebuffer() : game_ui.framebuffer(image_index);
     }
 
+    void prepare_exposure_meter() {
+        exposure_rect={};
+        if(scene_visible && scene_debug_view==SceneDebugView::color && scene->lighting.environment.auto_exposure) {
+            auto* source=world_radiance_texture();
+            const auto& size=source->getDesc();
+            const auto* viewport=frame_constants.cluster_viewport;
+            const auto pixel_edge=[](float value,std::uint32_t extent) {
+                return static_cast<std::uint32_t>(std::clamp(std::ceil(value-.5f),0.0f,static_cast<float>(extent)));
+            };
+            const auto x=pixel_edge(viewport[0],size.width), y=pixel_edge(viewport[1],size.height);
+            const auto right=pixel_edge(viewport[0]+viewport[2],size.width);
+            const auto bottom=pixel_edge(viewport[1]+viewport[3],size.height);
+            if(right>x && bottom>y) {
+                exposure_rect={x,y,right-x,bottom-y};
+                exposure_meter.prepare(*checked.Get(),source);
+                return;
+            }
+        }
+        exposure_meter.detach_source();
+    }
+
+    void prepare_exposure_frame(FrameSlot& slot,bool capture,SteadyClock::time_point now) {
+        pending_exposure.reset();
+        if(!exposure_rect[2])return;
+        AutoExposureDiagnostics frame;
+        frame.history_reset=!prior_exposure || !history.sequence || pending_history.source.empty() ||
+            history.source!=pending_history.source || history.world!=pending_history.world ||
+            history.camera!=pending_history.camera || history.generation!=pending_history.generation ||
+            history.cut!=pending_history.cut || history.viewport!=pending_history.viewport;
+        frame.seconds=exposure_clock.begin(now,live_temporal && !capture_exclusive,frame.history_reset)/1000.0f;
+        frame.samples=std::min(64u,exposure_rect[2])*std::min(36u,exposure_rect[3]);
+        pending_exposure=frame;
+        if(capture && !slot.exposure_readback) {
+            nvrhi::BufferDesc desc;
+            desc.byteSize=render_schedule::auto_exposure_state_bytes;
+            desc.cpuAccess=nvrhi::CpuAccessMode::Read;
+            desc.debugName="Exposure capture readback";
+            desc.initialState=nvrhi::ResourceStates::CopyDest;
+            desc.keepInitialState=true;
+            slot.exposure_readback=checked->createBuffer(desc);
+            require(bool(slot.exposure_readback),"Exposure capture readback allocation failed.");
+        }
+    }
+
+    void collect_exposure(const FrameSlot& slot) {
+        diagnostics.auto_exposure=slot.exposure;
+        if(!slot.capture_exposure)return;
+        std::array<float,4> values{};
+        const void* mapped=checked->mapBuffer(slot.exposure_readback,nvrhi::CpuAccessMode::Read);
+        require(mapped!=nullptr,"Exposure capture readback failed.");
+        std::memcpy(values.data(),mapped,sizeof(values));
+        checked->unmapBuffer(slot.exposure_readback);
+        require(std::all_of(values.begin(),values.end(),[](float value) { return std::isfinite(value); }),
+            "Exposure capture produced a non-finite meter result.");
+        diagnostics.auto_exposure->measured=values;
+    }
+
     void prepare_scene_output() {
         if(!scene)return;
+        prepare_exposure_meter();
         const bool use_reconstructed=(reconstruction && scene_visible) || viewmodel_enabled;
         auto* source=viewmodel_enabled ? viewmodel->composite.Get() : (reconstruction && scene_visible) ? reconstructed.Get() : world_radiance_texture();
         post_effect_active=scene_visible && scene_debug_view==SceneDebugView::color && bool(scene->post_effect);
@@ -1715,6 +1785,7 @@ struct Context {
             .motion_valid=scene_motion_valid.Get(), .occlusion=occlusion.filtered(),
             .bloom=use_bloom ? bloom.radiance() : nullptr, .bloom_sampler=use_bloom ? bloom.sampler() : nullptr,
             .view=scene_debug_view, .reconstructed=use_reconstructed, .grade=use_grade,
+            .exposure_state=exposure_rect[2] ? exposure_meter.state() : nullptr,
         }, *scene_output_framebuffer(0));
     }
     void render_scene_output(std::uint32_t image_index, nvrhi::IBuffer* grade_buffer) {
@@ -2025,6 +2096,8 @@ struct Context {
         swapchain_dirty=true;
         retire_frames(true);
         swapchain.retire(device,dispatch,diagnostics.frame_execution);
+        exposure_meter.detach_source();
+        exposure_rect={};exposure_clock.reset();prior_exposure=false;
         temporal_inputs.clear_targets();
         clear_sprite_targets();
         fog.clear_targets();reflections.clear_targets();
@@ -2324,6 +2397,7 @@ struct Context {
                 diagnostics.scene_products.history_valid=slot.history_valid;diagnostics.scene_products.history_sequence=slot.history_sequence;
                 diagnostics.scene_products.history_reset_reason=slot.history_reset;diagnostics.scene_products.probes.clear();
                 if(slot.capture_probes)collect_product_probes();
+                collect_exposure(slot);
                 ++diagnostics.completed_submissions;--diagnostics.frame_execution.outstanding;
                 profiling::deferred_counter(slot.profile,"renderer.completed_submissions",diagnostics.completed_submissions);
                 checked->resetEventQuery(slot.completion);slot.occupied=false;slot.viewmodel.reset();slot.performance=nullptr;slot.performance_ticket={};++retire_slot;
@@ -2340,6 +2414,8 @@ struct Context {
         rs::Settings settings;settings.scene=scene!=nullptr;settings.clustered=scene && pending_lights.active;
         settings.viewmodel=viewmodel_enabled;settings.viewmodel_clustered=viewmodel_enabled && viewmodel_lights.active;settings.viewmodel_samples=viewmodel_samples;
         settings.bloom=scene && scene_output.uses_bloom();
+        settings.auto_exposure=pending_exposure.has_value();
+        settings.exposure_history_valid=pending_exposure && !pending_exposure->history_reset;
         settings.post_effect=scene && post_effect_active;
         settings.spatial_aa=fxaa_enabled;
         settings.screen_reflections=scene && scene_visible && reflections.radiance();
@@ -2506,6 +2582,10 @@ struct Context {
         if(settings.post_effect)f.post_effect=texture(post_effect.radiance(),rs::Lifetime::shared,false);
         if(settings.spatial_aa)f.display_ldr=texture(spatial_aa.input(),rs::Lifetime::shared,false);
         if(settings.scene)if(auto* grade=scene_output.grade_buffer())f.output_grade=buffer(grade,rs::Lifetime::shared,false);
+        if(settings.auto_exposure) {
+            f.exposure_state=buffer(exposure_meter.state(),rs::Lifetime::shared,settings.exposure_history_valid);
+            if(capture_frame)f.exposure_readback=buffer(slots[settings.slot].exposure_readback,rs::Lifetime::slot,false);
+        }
         if(settings.bloom) {
             f.bloom=texture(bloom.radiance(),rs::Lifetime::shared,false);
             f.bloom_scratch=texture(bloom.scratch(),rs::Lifetime::shared,false);
@@ -2719,7 +2799,15 @@ struct Context {
                         if(binding.type==nvrhi::ResourceType::Texture_SRV)identity(inputs[pass],binding.resourceHandle);
             }
             const std::array<rs::ResourceId,7> output_resources={rs::display_radiance(f,plan.settings),f.depth,f.normal,f.motion,f.motion_valid,f.ao_filtered,f.bloom};
-            bool grade_bound=false;
+            if(plan.settings.auto_exposure) {
+                const auto& meter_bindings=exposure_meter.bindings()->getDesc()->bindings;
+                require(meter_bindings.size()==3,"Invalid auto exposure compute bindings.");
+                for(const auto& binding:meter_bindings) {
+                    if(binding.type==nvrhi::ResourceType::Texture_SRV)identity(rs::world_radiance(f,plan.settings),binding.resourceHandle);
+                    if(binding.type==nvrhi::ResourceType::StructuredBuffer_UAV)identity(f.exposure_state,binding.resourceHandle);
+                }
+            }
+            bool grade_bound=false,exposure_bound=false;
             for(const auto& binding:scene_output.bindings()->getDesc()->bindings) {
                 if(binding.type==nvrhi::ResourceType::Texture_SRV)identity(output_resources.at(binding.slot),binding.resourceHandle);
                 if(binding.type==nvrhi::ResourceType::ConstantBuffer) {
@@ -2727,8 +2815,14 @@ struct Context {
                     identity(f.output_grade,binding.resourceHandle);
                     grade_bound=true;
                 }
+                if(binding.type==nvrhi::ResourceType::StructuredBuffer_SRV) {
+                    require(binding.slot==7 && !exposure_bound,"Invalid exposure output binding.");
+                    identity(f.exposure_state,binding.resourceHandle);
+                    exposure_bound=true;
+                }
             }
             require(grade_bound==(f.output_grade!=rs::none),"Scene output grade binding differs from its schedule.");
+            require(exposure_bound==plan.settings.auto_exposure,"Exposure output binding differs from its schedule.");
         }
         if(f.game_vertices!=rs::none)identity(f.game_vertices,game_ui.vertices());
         if(f.game_indices!=rs::none)identity(f.game_indices,game_ui.indices());
@@ -2807,6 +2901,7 @@ struct Context {
         if(capture_frame)prepare_capture_staging();
         prepare_game_ui();prepare_sprite_frame(slot);prepare_temporal_inputs();
         prepare_surface_mark_frame(slot);prepare_submission_history();prepare_stream_geometry(slot);
+        prepare_exposure_frame(slot,capture_frame,frame_started);
         prepare_draw_batches();prepare_temporal_submission();
         if(ao_enabled)occlusion.prepare(*checked.Get(),{frame_buffer.Get(),depth.Get(),material_surface.Get(),material_correspondence.Get()});
         if(deferred)deferred_lighting.prepare(*checked.Get(),{
@@ -2940,6 +3035,10 @@ struct Context {
                 timestamp(17);
                 break;
             case render_schedule::PassId::particle_sprites:render_particle_sprites(slot);break;
+            case render_schedule::PassId::auto_exposure:
+                exposure_meter.record(*commands.Get(),*scene->lighting.environment.auto_exposure,
+                    exposure_rect,pending_exposure->seconds,pending_exposure->history_reset);
+                break;
             case render_schedule::PassId::temporal_inputs:timestamp(6);temporal_inputs.record(*commands.Get());break;
             case render_schedule::PassId::reconstruction:dispatch_reconstruction();timestamp(7);break;
             case render_schedule::PassId::resolve:
@@ -2982,6 +3081,18 @@ struct Context {
                 }
                 record_fsr3_history_probes();
                 break;
+            case render_schedule::PassId::exposure_readback: {
+                auto* target=planned_buffer(resources.exposure_readback);
+                constexpr auto bytes=render_schedule::auto_exposure_state_bytes;
+                commands->copyBuffer(target,0,planned_buffer(resources.exposure_state),0,bytes);
+                const auto object=target->getNativeObject(nvrhi::ObjectTypes::VK_Buffer);
+                require(object.pointer!=nullptr,"Exposure readback buffer unavailable.");
+                const vk::BufferMemoryBarrier host(vk::AccessFlagBits::eTransferWrite,vk::AccessFlagBits::eHostRead,
+                    VK_QUEUE_FAMILY_IGNORED,VK_QUEUE_FAMILY_IGNORED,vk::Buffer(static_cast<VkBuffer>(object.pointer)),0,bytes);
+                native_commands().pipelineBarrier(vk::PipelineStageFlagBits::eTransfer,vk::PipelineStageFlagBits::eHost,
+                    {},0,nullptr,1,&host,0,nullptr,dispatch);
+                break;
+            }
             case render_schedule::PassId::capture:
                 commands->copyTexture(reinterpret_cast<nvrhi::IStagingTexture*>(plan.resource(resources.capture).identity),{},planned_texture(resources.swapchain),{});break;
             case render_schedule::PassId::present:
@@ -3008,6 +3119,7 @@ struct Context {
         slot.profile=profiling::capture_deferred();slot.timing=timestamps.recording();
         slot.history_valid=pending_history_valid;slot.history_sequence=scene ? history_sequence+1 : 0;slot.history_reset=pending_history_reset;
         slot.capture_probes=capture_frame && !product_probes.empty();slot.reconstruction=pending_reconstruction;
+        slot.exposure=pending_exposure;slot.capture_exposure=plan.frame.exposure_readback!=render_schedule::none;
         slot.submission=checked->executeCommandList(commands);
         // The GPU may have accepted work even if a later validation/query/
         // present operation fails. Attribute that submission immediately.
@@ -3019,6 +3131,8 @@ struct Context {
         for(auto* receipt:{&submitted_scene,&presented_scene,&slot_scene})if(*receipt)(*receipt)->submission_id=slot.submission;
         slot.scene.swap(slot_scene);diagnostics.scene_submitted.swap(submitted_scene);
         commit_history();
+        prior_exposure=pending_exposure.has_value();
+        if(prior_exposure)exposure_clock.accept();else exposure_clock.reset();
         checked->setEventQuery(slot.completion,nvrhi::CommandQueue::Graphics);
         slot.occupied=true;++next_slot;++diagnostics.frame_execution.submitted;
         ++diagnostics.frame_execution.outstanding;

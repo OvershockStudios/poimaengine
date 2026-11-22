@@ -5,8 +5,12 @@
 #include "poima/render_schedule.hpp"
 #include "poima/scene.hpp"
 #include "poima/scene_output_ao_ps.hpp"
+#include "poima/scene_output_bloom_exposure_ps.hpp"
 #include "poima/scene_output_bloom_ps.hpp"
+#include "poima/scene_output_exposure_ps.hpp"
+#include "poima/scene_output_grade_bloom_exposure_ps.hpp"
 #include "poima/scene_output_grade_bloom_ps.hpp"
+#include "poima/scene_output_grade_exposure_ps.hpp"
 #include "poima/scene_output_grade_ps.hpp"
 #include "poima/scene_output_products_bloom_ps.hpp"
 #include "poima/scene_output_products_ps.hpp"
@@ -39,6 +43,13 @@ void Pass::prepare(nvrhi::IDevice& device, const Inputs& inputs, const nvrhi::IF
     const bool use_bloom = inputs.bloom != nullptr;
     const bool products = inputs.normal != nullptr;
     const bool ambient_occlusion = inputs.view == SceneDebugView::ambient_occlusion;
+    const bool use_exposure = inputs.exposure_state != nullptr;
+    if (use_exposure) {
+        const auto& desc = inputs.exposure_state->getDesc();
+        constexpr auto state_size = sizeof(float) * 4;
+        require(inputs.view == SceneDebugView::color && desc.structStride == state_size &&
+                desc.byteSize >= state_size, "Scene output auto exposure requires a color view and structured float4 state.");
+    }
     if (inputs.grade && !grade_buffer_) {
         nvrhi::BufferDesc desc;
         desc.byteSize = sizeof(GradeConstants);
@@ -49,7 +60,8 @@ void Pass::prepare(nvrhi::IDevice& device, const Inputs& inputs, const nvrhi::IF
         grade_buffer_ = device.createBuffer(desc);
         require(bool(grade_buffer_), "Output grade constants allocation failed.");
     }
-    if (bloom_bound_ != use_bloom || grade_bound_ != inputs.grade) {
+    if (bloom_bound_ != use_bloom || grade_bound_ != inputs.grade ||
+        (exposure_state_ != nullptr) != use_exposure) {
         bloom_bound_ = use_bloom;
         grade_bound_ = inputs.grade;
         layout_ = nullptr;
@@ -60,7 +72,13 @@ void Pass::prepare(nvrhi::IDevice& device, const Inputs& inputs, const nvrhi::IF
         const auto vs = nvrhi::ShaderDesc(nvrhi::ShaderType::Vertex).setEntryName("vertex_main");
         const auto ps = nvrhi::ShaderDesc(nvrhi::ShaderType::Pixel).setEntryName("pixel_main");
         vertex_ = create_embedded_shader(&device, vs, poima_scene_output_vs);
-        if (ambient_occlusion)
+        if (use_exposure && inputs.grade)
+            pixel_ = use_bloom ? create_embedded_shader(&device, ps, poima_scene_output_grade_bloom_exposure_ps)
+                               : create_embedded_shader(&device, ps, poima_scene_output_grade_exposure_ps);
+        else if (use_exposure)
+            pixel_ = use_bloom ? create_embedded_shader(&device, ps, poima_scene_output_bloom_exposure_ps)
+                               : create_embedded_shader(&device, ps, poima_scene_output_exposure_ps);
+        else if (ambient_occlusion)
             pixel_ = create_embedded_shader(&device, ps, poima_scene_output_ao_ps);
         else if (inputs.grade)
             pixel_ = use_bloom ? create_embedded_shader(&device, ps, poima_scene_output_grade_bloom_ps)
@@ -83,11 +101,14 @@ void Pass::prepare(nvrhi::IDevice& device, const Inputs& inputs, const nvrhi::IF
         if (ambient_occlusion) layout.addItem(nvrhi::BindingLayoutItem::Texture_SRV(5));
         if (use_bloom) layout.addItem(nvrhi::BindingLayoutItem::Texture_SRV(6)).addItem(nvrhi::BindingLayoutItem::Sampler(0));
         if (inputs.grade) layout.addItem(nvrhi::BindingLayoutItem::ConstantBuffer(1));
+        if (use_exposure) layout.addItem(nvrhi::BindingLayoutItem::StructuredBuffer_SRV(7));
         layout_ = device.createBindingLayout(layout);
         require(vertex_ && pixel_ && layout_, "Scene output shader/layout creation failed.");
     }
-    if (reconstruction_bound_ != inputs.reconstructed || source_ != inputs.radiance) bindings_ = nullptr;
+    if (reconstruction_bound_ != inputs.reconstructed || source_ != inputs.radiance ||
+        exposure_state_ != inputs.exposure_state) bindings_ = nullptr;
     source_ = inputs.radiance;
+    exposure_state_ = inputs.exposure_state;
     reconstruction_bound_ = inputs.reconstructed;
     if (!bindings_) {
         auto bindings = nvrhi::BindingSetDesc()
@@ -105,6 +126,7 @@ void Pass::prepare(nvrhi::IDevice& device, const Inputs& inputs, const nvrhi::IF
                     .addItem(nvrhi::BindingSetItem::Sampler(0, inputs.bloom_sampler));
         }
         if (inputs.grade) bindings.addItem(nvrhi::BindingSetItem::ConstantBuffer(1, grade_buffer_));
+        if (use_exposure) bindings.addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(7, inputs.exposure_state));
         bindings_ = device.createBindingSet(bindings, layout_);
         require(bool(bindings_), "Scene output HDR bindings creation failed.");
     }
@@ -166,6 +188,7 @@ void Pass::release_gpu() noexcept {
     vertex_ = nullptr;
     pixel_ = nullptr;
     grade_buffer_ = nullptr;
+    exposure_state_ = nullptr;
 }
 
 } // namespace poima::render_scene_output

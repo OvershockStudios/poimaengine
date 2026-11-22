@@ -8,6 +8,15 @@
 #include <utility>
 
 namespace poima::render_schedule {
+namespace {
+// Preserve the existing pass IDs in captured plans while inserting new stages.
+constexpr std::uint64_t pass_order(PassId id) {
+    if(id==PassId::auto_exposure)return 2u*static_cast<unsigned>(PassId::resolve)+1u;
+    if(id==PassId::exposure_readback)return 2u*static_cast<unsigned>(PassId::product_probes)+1u;
+    return 2ull*static_cast<unsigned>(id);
+}
+}
+
 void Schedule::validate(bool before_acquire) const {
     auto fail=[](const char* message) {throw std::runtime_error(std::string("Render schedule: ")+message);};
     auto required=[&](ResourceId id) {if(id==none || id>=frame.resources.size())fail("required resource role is absent");};
@@ -124,7 +133,7 @@ void Schedule::validate(bool before_acquire) const {
             image.lifetime==Lifetime::shared && image.region==Region::whole && !image.initialized &&
             image.width==extent.width && image.height==extent.height && (image.supported&use_bit(Use::sampled));
     };
-    const auto require_distinct_images=[&](ResourceId first,ResourceId second,const char* message) {
+    const auto require_distinct_roles=[&](ResourceId first,ResourceId second,const char* message) {
         const auto disjoint=[&](ResourceId id) {
             if(id!=none && (id==first || id==second))fail(message);
         };
@@ -143,6 +152,34 @@ void Schedule::validate(bool before_acquire) const {
         for(const auto* textures:{&frame.game_textures,&frame.editor_textures,&frame.sprite_textures})for(auto id:*textures)disjoint(id);
         for(const auto& copy:frame.probe_copies)disjoint(copy.destination);
     };
+    const bool exposure_readback=frame.exposure_readback!=none;
+    if(settings.auto_exposure) {
+        required(frame.exposure_state);
+        if(!settings.scene || settings.products_debug || world_hdr==frame.output || world_hdr==frame.swapchain ||
+            !scene_image(world_hdr,Format::rgba16_float,resource(frame.hdr)))
+            fail("automatic exposure requires single-sample world HDR for color output");
+        const auto valid_payload=[](const Resource& r,Lifetime lifetime,bool initialized) {
+            return r.kind==Kind::buffer && r.lifetime==lifetime && r.region==Region::whole &&
+                !r.late_bound && r.initialized==initialized && r.bytes==auto_exposure_state_bytes &&
+                r.allocation_bytes==auto_exposure_state_bytes;
+        };
+        const auto& state=resource(frame.exposure_state);
+        const auto state_uses=use_bit(Use::storage_read)|use_bit(Use::storage_write)|
+            (exposure_readback ? use_bit(Use::copy_source) : Uses{0});
+        if(!valid_payload(state,Lifetime::shared,settings.exposure_history_valid) || (state.supported&state_uses)!=state_uses)
+            fail("invalid automatic exposure state");
+        if(exposure_readback) {
+            const auto& readback=resource(frame.exposure_readback);
+            if(!settings.capture || !valid_payload(readback,Lifetime::slot,false) ||
+                !(readback.supported&use_bit(Use::copy_destination)))fail("invalid automatic exposure readback");
+        }
+        constexpr auto alias_error="automatic exposure buffer aliases another resource role";
+        require_distinct_roles(frame.exposure_state,frame.exposure_readback,alias_error);
+        for(auto id:{frame.reflection_roughness,frame.reflected_hdr,frame.fogged_hdr,frame.composition_mask,
+                     frame.sprite_hdr,frame.sprite_coverage,frame.display_ldr})
+            if(id!=none && (id==frame.exposure_state || id==frame.exposure_readback))fail(alias_error);
+    } else if(frame.exposure_state!=none || exposure_readback || settings.exposure_history_valid)
+        fail("automatic exposure resources or history without an exposure pass");
     if(settings.spatial_aa) {
         if(!settings.scene || settings.products_debug || settings.reconstruction ||
             frame.color!=frame.hdr || resource(frame.color).samples!=1)
@@ -158,7 +195,7 @@ void Schedule::validate(bool before_acquire) const {
         if(std::uint64_t(ldr.width)*ldr.height>spatial_aa_budget_bytes/4)
             fail("spatial anti-aliasing display attachment payload exceeds limit");
         const auto* alias_error="spatial anti-aliasing display attachment aliases another resource role";
-        require_distinct_images(frame.display_ldr,none,alias_error);
+        require_distinct_roles(frame.display_ldr,none,alias_error);
         for(auto id:{frame.reflection_roughness,frame.reflected_hdr,frame.fogged_hdr})
             if(frame.display_ldr==id)fail(alias_error);
     } else if(frame.display_ldr!=none)fail("display attachment without spatial anti-aliasing");
@@ -178,7 +215,7 @@ void Schedule::validate(bool before_acquire) const {
                 fail("invalid screen reflection attachment");
         }
         if(frame.reflected_hdr==frame.reflection_roughness)fail("screen reflection attachments alias");
-        require_distinct_images(frame.reflection_roughness,frame.reflected_hdr,"screen reflection attachment aliases another resource role");
+        require_distinct_roles(frame.reflection_roughness,frame.reflected_hdr,"screen reflection attachment aliases another resource role");
     } else if(frame.reflection_roughness!=none || frame.reflected_hdr!=none)fail("screen reflection attachments without reflection pass");
     if(settings.height_fog) {
         if(!settings.scene || settings.products_debug || frame.color!=frame.hdr)
@@ -191,7 +228,7 @@ void Schedule::validate(bool before_acquire) const {
         if(!scene_image(frame.fogged_hdr,Format::rgba16_float,hdr) || !(resource(frame.fogged_hdr).supported&use_bit(Use::image_write)))
             fail("invalid height fog output attachment");
         if(frame.fogged_hdr==frame.reflected_hdr || frame.fogged_hdr==frame.reflection_roughness)fail("height fog and reflection attachments alias");
-        require_distinct_images(frame.fogged_hdr,none,"height fog attachment aliases another resource role");
+        require_distinct_roles(frame.fogged_hdr,none,"height fog attachment aliases another resource role");
         if(settings.height_fog_spots) {
             required(frame.lights);
             const auto& shadow=resource(frame.shadow);
@@ -206,7 +243,7 @@ void Schedule::validate(bool before_acquire) const {
             !(resource(frame.composition_mask).supported&use_bit(Use::image_write)))
             fail("invalid reconstruction composition mask");
         constexpr auto alias_error="reconstruction composition mask aliases another resource role";
-        require_distinct_images(frame.composition_mask,none,alias_error);
+        require_distinct_roles(frame.composition_mask,none,alias_error);
         for(auto id:{frame.reflection_roughness,frame.reflected_hdr,frame.fogged_hdr,frame.display_ldr})
             if(frame.composition_mask==id)fail(alias_error);
     } else if(frame.composition_mask!=none)fail("composition mask without reconstructed world effects");
@@ -248,7 +285,7 @@ void Schedule::validate(bool before_acquire) const {
             fail("invalid reconstructed particle sprite targets");
         constexpr auto alias_error="reconstructed sprite targets alias another resource role";
         if(frame.sprite_hdr==frame.sprite_coverage)fail(alias_error);
-        require_distinct_images(frame.sprite_hdr,frame.sprite_coverage,alias_error);
+        require_distinct_roles(frame.sprite_hdr,frame.sprite_coverage,alias_error);
         for(auto id:{frame.reflection_roughness,frame.reflected_hdr,frame.fogged_hdr,frame.display_ldr,frame.composition_mask})
             if(id==frame.sprite_hdr || id==frame.sprite_coverage)fail(alias_error);
     } else if(frame.sprite_hdr!=none || frame.sprite_coverage!=none)fail("sprite reconstruction targets without reconstructed sprite draws");
@@ -434,14 +471,19 @@ void Schedule::validate(bool before_acquire) const {
     bool world_resolved=false,world_opaque=false,foreground_lights=false,foreground_cleared=false,foreground_drawn=false,foreground_resolved=false,foreground_composed=false;
     bool exported=false,captured=false,probed=false,prepared=false,reconstructed=false,deferred_lit=false,deferred_opaque=false,ao_generated=false,ao_filtered=false;
     bool post_effect_applied=false,screen_reflected=false,world_fogged=false,world_effects_output=false;
-    bool stream_uploaded=false,stream_shadow_drawn=false,sprites_uploaded=false,sprites_drawn=false;unsigned previous=0;bool first=true;
+    bool stream_uploaded=false,stream_shadow_drawn=false,sprites_uploaded=false,sprites_drawn=false;
+    std::uint64_t previous=0;bool first=true;
     bool surface_marks_uploaded=false,grade_applied=false,spatial_aa_applied=false;
+    bool exposure_prepared=false,exposure_applied=false,exposure_copied=false;
     unsigned bloom_stage=0;
     for(const auto& pass:passes) {
-        const auto order=static_cast<unsigned>(pass.id);
+        const auto order=pass_order(pass.id);
         if((!first && order<=previous) || exported)fail("pass order is not the fixed rendering order");
         first=false;previous=order;
         auto has=[&](ResourceId id,Use use) {return std::any_of(pass.accesses.begin(),pass.accesses.end(),[&](const Access& a){return a.resource==id && a.use==use;});};
+        auto matches=[](const Access& access,ResourceId id,Use use,bool initialize) {
+            return access.resource==id && access.use==use && access.initialize==initialize;
+        };
         if(pass.id==PassId::stream_geometry) {
             if(!stream || pass.accesses.size()!=2 || !has(frame.streamed_vertices,Use::upload) ||
                 !has(frame.streamed_indices,Use::upload) ||
@@ -558,6 +600,17 @@ void Schedule::validate(bool before_acquire) const {
             for(auto id:frame.sprite_textures)if(!has(id,Use::sampled))fail("missing particle sprite texture input");
             sprites_drawn=true;
         }
+        if(pass.id==PassId::auto_exposure) {
+            if(!settings.auto_exposure || !world_opaque || (frame.color!=frame.hdr && !world_resolved) ||
+                (settings.deferred && !deferred_lit) || (settings.screen_reflections && !screen_reflected) ||
+                (settings.height_fog && !world_fogged) || (settings.particle_sprites && !sprites_drawn) ||
+                pass.accesses.size()!=(settings.exposure_history_valid ? 3u : 2u) ||
+                !matches(pass.accesses.front(),world_hdr,Use::sampled,false) ||
+                (settings.exposure_history_valid && !matches(pass.accesses[1],frame.exposure_state,Use::storage_read,false)) ||
+                !matches(pass.accesses.back(),frame.exposure_state,Use::storage_write,true))
+                fail("invalid or premature automatic exposure pass");
+            exposure_prepared=true;
+        }
         if(settings.deferred && (pass.id==PassId::temporal_inputs || pass.id==PassId::output) && !deferred_lit)fail("display or reconstruction precedes deferred lighting");
         if(pass.id==PassId::temporal_inputs) {
             if(!settings.reconstruction)fail("unexpected temporal input pass");
@@ -641,6 +694,20 @@ void Schedule::validate(bool before_acquire) const {
                 fail("display requires uploaded output grade constants");
             grade_applied=true;
         }
+        if(pass.id==PassId::output && settings.auto_exposure) {
+            if(!exposure_prepared || !has(frame.exposure_state,Use::storage_read) ||
+                std::count_if(pass.accesses.begin(),pass.accesses.end(),[&](const Access& a){return a.resource==frame.exposure_state;})!=1 ||
+                !has(display_radiance(frame,settings),Use::sampled) || !has(display_target,Use::color_overwrite))
+                fail("display requires the prepared automatic exposure state");
+            exposure_applied=true;
+        }
+        if(pass.id==PassId::exposure_readback) {
+            if(!exposure_readback || !exposure_applied || pass.accesses.size()!=2 ||
+                !matches(pass.accesses.front(),frame.exposure_state,Use::copy_source,false) ||
+                !matches(pass.accesses.back(),frame.exposure_readback,Use::copy_destination,true))
+                fail("invalid or premature automatic exposure readback");
+            exposure_copied=true;
+        }
         if(pass.id>=PassId::bloom_extract && pass.id<=PassId::bloom_vertical) {
             const auto stage=static_cast<unsigned>(pass.id)-static_cast<unsigned>(PassId::bloom_extract);
             const auto input=stage==0 ? display_radiance(frame,settings) : stage==1 ? frame.bloom : frame.bloom_scratch;
@@ -656,7 +723,7 @@ void Schedule::validate(bool before_acquire) const {
         if(pass.id==PassId::output && settings.bloom &&
             (bloom_stage!=3 || !has(frame.bloom,Use::sampled) || !has(display_radiance(frame,settings),Use::sampled)))fail("display requires filtered bloom and HDR radiance");
         if(pass.id==PassId::output && settings.spatial_aa) {
-            const auto accesses=2u+unsigned(settings.bloom)+2u*unsigned(frame.output_grade!=none);
+            const auto accesses=2u+unsigned(settings.bloom)+2u*unsigned(frame.output_grade!=none)+unsigned(settings.auto_exposure);
             if(pass.accesses.size()!=accesses || !has(display_radiance(frame,settings),Use::sampled) ||
                 !has(frame.display_ldr,Use::color_overwrite))fail("invalid spatial anti-aliasing display producer");
         }
@@ -710,6 +777,15 @@ void Schedule::validate(bool before_acquire) const {
                 (pass.id!=PassId::output || (a.use!=Use::upload && a.use!=Use::constant) ||
                  a.initialize!=(a.use==Use::upload)))
                 fail("output grade constants used outside display upload and read");
+            if(a.resource==frame.exposure_state &&
+                !(pass.id==PassId::auto_exposure && ((settings.exposure_history_valid && a.use==Use::storage_read && !a.initialize) ||
+                    (a.use==Use::storage_write && a.initialize))) &&
+                !(pass.id==PassId::output && a.use==Use::storage_read && !a.initialize) &&
+                !(pass.id==PassId::exposure_readback && a.use==Use::copy_source && !a.initialize))
+                fail("automatic exposure state used outside metering, display or readback");
+            if(a.resource==frame.exposure_readback &&
+                !(pass.id==PassId::exposure_readback && a.use==Use::copy_destination && a.initialize))
+                fail("automatic exposure readback used outside its scheduled copy");
             const bool streamed=stream && (a.resource==frame.streamed_vertices || a.resource==frame.streamed_indices);
             if(streamed && !(pass.id==PassId::stream_geometry && a.use==Use::upload) &&
                 !(stream_draw && a.use==(a.resource==frame.streamed_vertices ? Use::vertex : Use::index)))
@@ -741,8 +817,10 @@ void Schedule::validate(bool before_acquire) const {
             const bool opaque_hdr_consumed=(settings.screen_reflections && pass.id>PassId::screen_reflections) ||
                 (settings.height_fog && pass.id>PassId::height_fog) || (reconstruct_sprites && pass.id>PassId::particle_sprites);
             const bool mask_input=reconstruct_composed && pass.id==PassId::temporal_inputs && a.use==Use::sampled && !a.initialize;
+            const bool exposure_input=settings.auto_exposure && pass.id==PassId::auto_exposure &&
+                a.resource==world_hdr && a.use==Use::sampled && !a.initialize;
             if(a.resource==frame.hdr && opaque_hdr_consumed &&
-                !mask_input &&
+                !mask_input && !exposure_input &&
                 !(pass.id==PassId::product_probes && a.use==Use::copy_source && !a.initialize &&
                   frame.probe_copies.size()>=6 && frame.probe_copies[4].source==a.resource))
                 fail("raw HDR used after world effects outside temporal composition inputs or capture probe");
@@ -764,7 +842,7 @@ void Schedule::validate(bool before_acquire) const {
                     frame.probe_copies.size()>=6 && frame.probe_copies[5].source==a.resource;
                 const bool sprites=pass.id==PassId::particle_sprites && a.use==(reconstruct_sprites ? Use::copy_source : Use::color) && !a.initialize;
                 const bool reconstruct_input=reconstruct_composed && !reconstruct_sprites && pass.id==PassId::reconstruction && a.use==Use::sampled && !a.initialize;
-                const bool final_world=a.resource==world_hdr && (composed || probe || sprites || mask_input || reconstruct_input);
+                const bool final_world=a.resource==world_hdr && (composed || probe || sprites || mask_input || reconstruct_input || exposure_input);
                 if(!produced && !fog_input && !final_world)fail(reflected ?
                     "reflected radiance used outside its producers and scene color composition" :
                     "fogged radiance used outside its producers and scene color composition");
@@ -824,6 +902,8 @@ void Schedule::validate(bool before_acquire) const {
     if(settings.post_effect && !post_effect_applied)fail("missing post effect pass");
     if(settings.bloom && bloom_stage!=3)fail("missing bloom pass");
     if(frame.output_grade!=none && !grade_applied)fail("missing graded output pass");
+    if(settings.auto_exposure && !exposure_applied)fail("missing automatic exposure or exposed output pass");
+    if(exposure_readback && !exposure_copied)fail("missing automatic exposure readback pass");
     if(settings.spatial_aa && !spatial_aa_applied)fail("missing spatial anti-aliasing pass");
     if(settings.viewmodel && (!foreground_cleared || !foreground_drawn || !foreground_composed || (settings.viewmodel_samples!=1 && !foreground_resolved) || (settings.viewmodel_clustered && !foreground_lights)))fail("missing foreground passes");
     if(!exported)fail("missing presentation export");
@@ -922,6 +1002,12 @@ Schedule build(FrameResources frame,Settings settings) {
         for(auto id:f.sprite_textures)add(sprites,id,Use::sampled);
     }
     if(settings.scene && f.color!=f.hdr) {auto& resolve=pass(PassId::resolve);add(resolve,f.color,Use::resolve_source);add(resolve,f.hdr,Use::resolve_destination,true);}
+    if(settings.auto_exposure) {
+        auto& exposure=pass(PassId::auto_exposure);
+        add(exposure,world_radiance(f,settings),Use::sampled);
+        if(settings.exposure_history_valid)add(exposure,f.exposure_state,Use::storage_read);
+        add(exposure,f.exposure_state,Use::storage_write,true);
+    }
     if(settings.reconstruction) {
         auto& inputs=pass(PassId::temporal_inputs);add(inputs,f.frame,Use::constant);
         for(auto id:{f.normal,f.motion,f.motion_valid})add(inputs,id,Use::sampled);
@@ -966,6 +1052,7 @@ Schedule build(FrameResources frame,Settings settings) {
             add(output,f.output_grade,Use::upload,true);
             add(output,f.output_grade,Use::constant);
         }
+        if(settings.auto_exposure)add(output,f.exposure_state,Use::storage_read);
         if(settings.products_debug) {
             add(output,f.depth,Use::sampled);add(output,f.normal,Use::sampled);add(output,f.motion,Use::sampled);add(output,f.motion_valid,Use::sampled);
             if(settings.ambient_occlusion)add(output,f.ao_filtered,Use::sampled);
@@ -984,6 +1071,11 @@ Schedule build(FrameResources frame,Settings settings) {
         auto& ui=pass(PassId::editor_ui);add(ui,f.editor_vertices,Use::upload,true);add(ui,f.editor_indices,Use::upload,true);add(ui,f.editor_vertices,Use::vertex);add(ui,f.editor_indices,Use::index);for(auto t:f.editor_textures)add(ui,t,Use::sampled);add(ui,f.swapchain,Use::color);
     }
     if(!f.probe_points.empty()) {auto& probes=pass(PassId::product_probes);for(const auto& copy:f.probe_copies) {add(probes,copy.source,Use::copy_source);add(probes,copy.destination,Use::copy_destination,true);}}
+    if(f.exposure_readback!=none) {
+        auto& readback=pass(PassId::exposure_readback);
+        add(readback,f.exposure_state,Use::copy_source);
+        add(readback,f.exposure_readback,Use::copy_destination,true);
+    }
     if(settings.capture) {auto& capture=pass(PassId::capture);add(capture,f.swapchain,Use::copy_source);add(capture,f.capture,Use::copy_destination,true);}
     auto& present=pass(PassId::present);add(present,f.swapchain,Use::present);
     return result;

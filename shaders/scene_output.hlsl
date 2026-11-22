@@ -14,6 +14,9 @@ Texture2D<float> ambient_visibility : register(t5);
 Texture2D<float4> bloom_radiance : register(t6);
 SamplerState bloom_linear : register(s0);
 #endif
+#if POIMA_AUTO_EXPOSURE
+StructuredBuffer<float4> exposure_state : register(t7);
+#endif
 #if POIMA_OUTPUT_GRADE
 cbuffer OutputGrade : register(b1) {
     float4 grade_parameters;
@@ -93,7 +96,11 @@ float4 pixel_main(float4 position : SV_Position) : SV_Target0 {
     const float2 bloom_uv=(float2(source_pixel)+.5)/(float2(size)*4);
     radiance+=bloom_radiance.SampleLevel(bloom_linear,bloom_uv,0).rgb*output.source_extent.z;
 #endif
+#if POIMA_AUTO_EXPOSURE
+    const float3 exposed = radiance * (output.exposure * exposure_state[0].w);
+#else
     const float3 exposed=radiance*output.exposure;
+#endif
 #if POIMA_OUTPUT_GRADE
     const float3 graded = float3(grade_channel(exposed.r, 0), grade_channel(exposed.g, 1), grade_channel(exposed.b, 2));
     const float3 mapped = graded / (1 + graded);

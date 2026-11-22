@@ -262,6 +262,13 @@ struct HeightFogDiagnostics {
     std::uint64_t buffer_bytes=0;
     std::uint32_t spot_lights=0;
 };
+struct AutoExposureDiagnostics {
+    bool history_reset=false;
+    float seconds=0;
+    std::uint32_t samples=0;
+    // Adapted stops, target stops, metered log2 luminance, and multiplier.
+    std::optional<std::array<float,4>> measured;
+};
 struct RenderDiagnostics {
     gpu_memory::Diagnostics memory_budget;
     bool deferred=false;
@@ -292,6 +299,7 @@ struct RenderDiagnostics {
     std::optional<RendererSceneResult> scene_observed,scene_submitted,scene_presented;
     std::optional<ViewmodelDiagnostics> viewmodel;
     std::uint64_t fxaa_buffer_bytes=0;
+    std::optional<AutoExposureDiagnostics> auto_exposure;
 };
 
 struct RenderReport {

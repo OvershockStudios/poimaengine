@@ -24,6 +24,7 @@ struct Inputs {
     SceneDebugView view;
     bool reconstructed;
     bool grade;
+    nvrhi::IBuffer* exposure_state = nullptr;
 };
 
 struct Draw {
@@ -64,6 +65,7 @@ private:
     bool grade_bound_ = false;
     nvrhi::BufferHandle grade_buffer_;
     const nvrhi::ITexture* source_ = nullptr;
+    const nvrhi::IBuffer* exposure_state_ = nullptr;
     nvrhi::GraphicsPipelineHandle pipeline_;
 };
 

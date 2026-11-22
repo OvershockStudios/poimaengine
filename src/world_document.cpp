@@ -92,11 +92,30 @@ static SkySettings sky_value(const Json& value) {
     return result;
 }
 LightingEnvironment environment_value(const Json& value) {
-    fields(value,{"ambient","exposure","shadow_resolution","shadow_filter","sky","ibl","bloom","post_effect","output_grade","screen_reflections","height_fog"},{"ambient","exposure"});require(value.at("ambient").is_array() && value.at("ambient").size()==3,"Ambient fill needs three values.");
+    fields(value,{"ambient","exposure","shadow_resolution","shadow_filter","sky","ibl","bloom","post_effect","output_grade","screen_reflections","height_fog","auto_exposure"},{"ambient","exposure"});require(value.at("ambient").is_array() && value.at("ambient").size()==3,"Ambient fill needs three values.");
     for(const auto& x:value.at("ambient"))require(x.is_number() && std::isfinite(x.get<double>()) && x>=0 && x<=1e6,"Ambient fill must be in [0,1e6].");
     require(value.at("exposure").is_number() && std::isfinite(value.at("exposure").get<double>()) && value.at("exposure")>=0 && value.at("exposure")<=1e6,"Exposure must be in [0,1e6].");
     if(value.contains("shadow_resolution"))require(value.at("shadow_resolution").is_number_integer() && (value.at("shadow_resolution")==256 || value.at("shadow_resolution")==512 || value.at("shadow_resolution")==1024 || value.at("shadow_resolution")==2048),"Shadow resolution must be 256, 512, 1024 or 2048.");
     LightingEnvironment result;result.ambient=value.at("ambient").get<std::array<float,3>>();result.exposure=value.at("exposure").get<float>();result.shadow_resolution=value.value("shadow_resolution",1024u);
+    if(value.contains("auto_exposure")) {
+        const auto& authored=value.at("auto_exposure");
+        fields(authored,{"min_stops","max_stops","brighten_stops_per_second","darken_stops_per_second"});
+        const auto read_field=[&](const char* key,double fallback,double minimum,double maximum) {
+            if(!authored.contains(key))return fallback;
+            const auto& member=authored.at(key);
+            require(member.is_number() && std::isfinite(member.get<double>()) && member>=minimum && member<=maximum,
+                std::string("Auto exposure ")+key+" is outside its finite range.");
+            return member.get<double>();
+        };
+        const AutoExposureSettings defaults;
+        const auto minimum=read_field("min_stops",defaults.min_stops,-8,8);
+        const auto maximum=read_field("max_stops",defaults.max_stops,-8,8);
+        require(minimum<=maximum,"Auto exposure min_stops must not exceed max_stops.");
+        result.auto_exposure=AutoExposureSettings{
+            static_cast<float>(minimum),static_cast<float>(maximum),
+            static_cast<float>(read_field("brighten_stops_per_second",defaults.brighten_stops_per_second,.125,32)),
+            static_cast<float>(read_field("darken_stops_per_second",defaults.darken_stops_per_second,.125,32))};
+    }
     if(value.contains("shadow_filter")) {
         const auto& filter=value.at("shadow_filter");
         require(filter.is_string() && (filter=="pcf3_point" || filter=="pcf3_fractional" || filter=="pcss_directional"),"Environment shadow_filter must be pcf3_point, pcf3_fractional or pcss_directional.");

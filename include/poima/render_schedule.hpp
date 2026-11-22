@@ -23,7 +23,7 @@ enum class Region { whole,prefix,cluster_members,probe_pixels };
 enum class Use { upload,storage_read,storage_write,vertex,index,constant,sampled,color,color_overwrite,depth,clear_color,clear_depth,copy_source,copy_destination,resolve_source,resolve_destination,present,image_write,image_read_write };
 using Uses=std::uint64_t;
 constexpr Uses use_bit(Use use) {return Uses{1}<<static_cast<unsigned>(use);}
-enum class PassId { stream_geometry,sprite_upload,surface_mark_upload,skinning,light_assignment,shadows,scene_clear,sky,opaque,ambient_occlusion,ambient_occlusion_filter,deferred_lighting,screen_reflections,height_fog,particle_sprites,resolve,temporal_inputs,reconstruction,viewmodel_lights,viewmodel_clear,viewmodel_opaque,viewmodel_resolve,viewmodel_composite,post_effect,bloom_extract,bloom_horizontal,bloom_vertical,output,spatial_aa,game_ui,overlay,editor_clear,editor_ui,product_probes,capture,present };
+enum class PassId { stream_geometry,sprite_upload,surface_mark_upload,skinning,light_assignment,shadows,scene_clear,sky,opaque,ambient_occlusion,ambient_occlusion_filter,deferred_lighting,screen_reflections,height_fog,particle_sprites,resolve,temporal_inputs,reconstruction,viewmodel_lights,viewmodel_clear,viewmodel_opaque,viewmodel_resolve,viewmodel_composite,post_effect,bloom_extract,bloom_horizontal,bloom_vertical,output,spatial_aa,game_ui,overlay,editor_clear,editor_ui,product_probes,capture,present,auto_exposure,exposure_readback };
 inline const char* pass_name(PassId id) {
     switch(id) {
     case PassId::stream_geometry:return "render.pass.stream_geometry";
@@ -38,6 +38,7 @@ inline const char* pass_name(PassId id) {
     case PassId::screen_reflections:return "render.pass.screen_reflections";
     case PassId::height_fog:return "render.pass.height_fog";
     case PassId::particle_sprites:return "render.pass.particle_sprites";
+    case PassId::auto_exposure:return "render.pass.auto_exposure";
     case PassId::temporal_inputs:return "render.pass.temporal_inputs";case PassId::reconstruction:return "render.pass.reconstruction";
     case PassId::viewmodel_lights:return "render.pass.viewmodel_lights";case PassId::viewmodel_clear:return "render.pass.viewmodel_clear";
     case PassId::viewmodel_opaque:return "render.pass.viewmodel_opaque";case PassId::viewmodel_resolve:return "render.pass.viewmodel_resolve";case PassId::viewmodel_composite:return "render.pass.viewmodel_composite";
@@ -50,6 +51,7 @@ inline const char* pass_name(PassId id) {
     case PassId::game_ui:return "render.pass.game_ui";case PassId::overlay:return "render.pass.overlay";
     case PassId::editor_clear:return "render.pass.editor_clear";case PassId::editor_ui:return "render.pass.editor_ui";
     case PassId::product_probes:return "render.pass.product_probes";
+    case PassId::exposure_readback:return "render.pass.exposure_readback";
     case PassId::capture:return "render.pass.capture";case PassId::present:return "render.pass.present";
     }throw std::runtime_error("Unknown render pass.");
 }
@@ -108,6 +110,7 @@ struct FrameResources {
     std::vector<ResourceId> sprite_textures;
     ResourceId surface_marks=none,surface_mark_masks=none;
     ResourceId display_ldr=none;
+    ResourceId exposure_state=none,exposure_readback=none;
 };
 struct Settings {
     bool scene=false,clustered=false,sky=false,game_ui=false,overlay=false,editor=false,capture=false,products=false,products_debug=false,reconstruction=false,deferred=false,ambient_occlusion=false;
@@ -120,6 +123,7 @@ struct Settings {
     bool screen_reflections=false;
     bool height_fog=false,height_fog_spots=false;
     bool spatial_aa=false;
+    bool auto_exposure=false,exposure_history_valid=false;
 };
 inline constexpr ResourceId surface_radiance(const FrameResources& frame,const Settings& settings) {
     return settings.screen_reflections ? frame.reflected_hdr : frame.hdr;
@@ -146,6 +150,7 @@ inline constexpr std::uint64_t height_fog_budget_bytes=96u*1024u*1024u;
 inline constexpr std::uint32_t bloom_extent(std::uint32_t size) {return size/4+(size%4!=0);}
 inline constexpr std::uint64_t bloom_budget_bytes=32u*1024u*1024u;
 inline constexpr std::uint64_t output_grade_bytes=544;
+inline constexpr std::uint64_t auto_exposure_state_bytes=16;
 inline constexpr std::uint64_t spatial_aa_budget_bytes=64u*1024u*1024u;
 inline constexpr std::uint64_t stream_vertex_budget=4u*1024u*1024u;
 inline constexpr std::uint64_t stream_index_budget=1u*1024u*1024u;

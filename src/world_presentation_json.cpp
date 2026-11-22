@@ -142,6 +142,19 @@ Json render_diagnostics(const RenderDiagnostics& d) {
         result["reconstruction"]["sprite_radiance_bytes"]=std::uint64_t(reconstruction.render_width)*reconstruction.render_height*9;
     if(d.fxaa_buffer_bytes)
         result["post_aa"]={{"mode","fxaa"},{"active",true},{"buffer_bytes",d.fxaa_buffer_bytes}};
+    if(d.auto_exposure) {
+        const auto& exposure=*d.auto_exposure;
+        auto& report=result["auto_exposure"];
+        report={{"active",true},{"history_reset",exposure.history_reset},
+            {"interval_seconds",exposure.seconds},{"samples",exposure.samples}};
+        if(exposure.measured) {
+            const auto& measured=*exposure.measured;
+            report["adapted_stops"]=measured[0];
+            report["target_stops"]=measured[1];
+            report["metered_log2_luminance"]=measured[2];
+            report["multiplier"]=measured[3];
+        }
+    }
     if(d.shadow_filter==ShadowFilter::pcss_directional)
         result["contact_shadows"]={{"blocker_samples",d.shadow_blocker_samples},{"filter_samples",d.shadow_filter_samples},
             {"max_comparisons",d.shadow_max_comparisons},{"max_radius_texels",d.shadow_max_radius_texels},{"guard_texels",d.shadow_guard_texels},
@@ -185,6 +198,12 @@ Json lighting_json(const SceneLighting& lighting) {
     }
     Json result={{"preview_fallback",lighting.preview},{"lights",lights},{"ambient",lighting.environment.ambient},{"exposure",lighting.environment.exposure},{"shadow_resolution",lighting.environment.shadow_resolution},{"shadow_filter",shadow_filter_name(lighting.environment.shadow_filter)},{"shadow_views",shadow_count},{"shadow_bytes",shadow_count*lighting.environment.shadow_resolution*lighting.environment.shadow_resolution*4},
         {"sky",sky_json(sky)},{"sky_sun",sun}};
+    if(lighting.environment.auto_exposure) {
+        const auto& settings=*lighting.environment.auto_exposure;
+        result["auto_exposure"]={{"min_stops",settings.min_stops},{"max_stops",settings.max_stops},
+            {"brighten_stops_per_second",settings.brighten_stops_per_second},
+            {"darken_stops_per_second",settings.darken_stops_per_second}};
+    }
     if(lighting.environment.ibl) {
         const auto& ibl=*lighting.environment.ibl;
         result["ibl"]={{"enabled",ibl.enabled},{"diffuse_intensity",ibl.diffuse_intensity},{"specular_intensity",ibl.specular_intensity}};

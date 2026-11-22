@@ -585,6 +585,61 @@ class ProjectContract(unittest.TestCase):
         self.assertEqual(tree(runtime), runtime_source)
         self.assertEqual(tree(self.project), source)
 
+    def test_auto_exposure_requires_runtime_feature_when_authored_in_a_template(self):
+        runtime, spec = self.metadata_runtime()
+        descriptor = runtime/'runtime.json'
+        descriptor.write_text(json.dumps(spec), encoding='utf-8')
+        build = ('project', 'build', native(self.manifest), '--runtime', native(runtime))
+        legacy = self.root/'Legacy light bundle'
+        self.run_cli(*build, '--output', native(legacy))
+        self.assertNotIn('needs_auto_exposure', self.run_cli('game', 'inspect', native(legacy/'game.json')))
+
+        transform = dict(position=[0, 0, 0], rotation=[0, 0, 0, 1], scale=[1, 1, 1])
+        lighting = dict(ambient=[.1, .1, .1], exposure=.25, auto_exposure={})
+        root = uuid.uuid4().hex
+        recipe = dict(op='template.set', id=uuid.uuid4().hex, name='Exposure fixture', root=root,
+                      entities={root: dict(name='Exposure', parent=None,
+                          components=dict(Transform=transform, LightingEnvironment=lighting))})
+        initial = self.inspect()
+        self.world_rpc('world.transact', base_revision=initial['revision'], request_id=uuid.uuid4().hex,
+                       ops=[recipe])
+        self.assertIs(self.inspect()['needs_auto_exposure'], True)
+        self.assertIs(self.world_rpc('world.dependencies')['needs_auto_exposure'], True)
+        self.assertNotIn('auto_exposure', self.world_rpc('world.lighting'))
+
+        output = self.root/'Auto exposure bundle'
+        source = tree(self.project)
+        for feature in (None, False, 'true'):
+            with self.subTest(feature=feature):
+                if feature is None:
+                    spec['features'].pop('auto_exposure', None)
+                else:
+                    spec['features']['auto_exposure'] = feature
+                descriptor.write_text(json.dumps(spec), encoding='utf-8')
+                self.run_cli(*build, '--output', native(output), success=False)
+                self.assertIn('Boolean' if isinstance(feature, str) else 'auto exposure',
+                              CALLS[-1]['reply']['diagnostics'][0]['message'])
+                self.assertFalse(output.exists())
+                self.assertEqual(tree(self.project), source)
+
+        spec['features']['auto_exposure'] = True
+        descriptor.write_text(json.dumps(spec), encoding='utf-8')
+        self.run_cli(*build, '--output', native(output))
+        manifest = output/'game.json'
+        self.assertIs(self.run_cli('game', 'inspect', native(manifest))['needs_auto_exposure'], True)
+        game = json.loads(manifest.read_bytes())
+        del spec['features']['auto_exposure']
+        descriptor_bytes = json.dumps(spec).encode('utf-8')
+        (output/'runtime/runtime.json').write_bytes(descriptor_bytes)
+        row = next(item for item in game['files'] if item['path'] == 'runtime/runtime.json')
+        row.update(size=len(descriptor_bytes), sha256=hashlib.sha256(descriptor_bytes).hexdigest())
+        manifest.write_text(json.dumps(game), encoding='utf-8')
+        unchanged = tree(output)
+        self.run_cli('game', 'inspect', native(manifest), success=False)
+        self.assertIn('auto exposure', CALLS[-1]['reply']['diagnostics'][0]['message'])
+        self.assertEqual(tree(output), unchanged)
+        self.assertEqual(tree(self.project), source)
+
     @unittest.skipUnless(args.windows_interop or os.name == 'nt', 'Reproduces the Windows staging path limit.')
     def test_windows_export_reads_world_and_profile_in_deep_staging_paths(self):
         runtime, spec = self.metadata_runtime()

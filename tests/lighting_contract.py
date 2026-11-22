@@ -299,6 +299,64 @@ class LightingContract(unittest.TestCase):
         c.rpc('world.undo', {'base_revision': 3, 'request_id': uuid.uuid4().hex})
         self.assertEqual(c.rpc('world.lighting'), selected | dict(revision=4))
 
+    def test_auto_exposure_defaults_validation_and_persistence(self):
+        c = self.open()
+        discovery = c.rpc('world.describe', {'view': 'component', 'name': 'LightingEnvironment'})
+        self.assertGreaterEqual(discovery['schema_revision'], 205)
+        schema = discovery['components']['LightingEnvironment']['properties']['auto_exposure']
+        bounds = {'min_stops': (-8, 8, -4), 'max_stops': (-8, 8, 4),
+                  'brighten_stops_per_second': (.125, 32, 2), 'darken_stops_per_second': (.125, 32, 4)}
+        defaults = {key: fallback for key, (_, _, fallback) in bounds.items()}
+        self.assertFalse(schema.get('required'))
+        self.assertFalse(schema['additionalProperties'])
+        self.assertEqual(schema['properties'], {key: dict(type='number', minimum=minimum,
+            maximum=maximum, default=fallback) for key, (minimum, maximum, fallback) in bounds.items()})
+
+        def edit(value):
+            return component(1, 'LightingEnvironment', dict(ambient=[0, 0, 0], exposure=.25, auto_exposure=value))
+
+        c.txn(0, [create(1), environment(1, exposure=.25)])
+        original = c.rpc('world.lighting')
+        dependencies = c.rpc('world.dependencies')
+        self.assertNotIn('auto_exposure', original)
+        self.assertNotIn('needs_auto_exposure', dependencies)
+        before = self.path.read_bytes()
+        history = c.rpc('world.history')
+        invalid = [None, [], False, {'enabled': True}, {'min_stops': 4.5},
+                   {'max_stops': -4.5}, {'min_stops': 1.000000001, 'max_stops': 1}]
+        for key, (minimum, maximum, _) in bounds.items():
+            invalid.extend({key: value} for value in (minimum - 1e-10, maximum + 1e-10, True, '1', None))
+        for value in invalid:
+            c.txn(1, [transform(1, (45, 0, 0)), edit(value)], error=-32602)
+            self.assertEqual(self.path.read_bytes(), before)
+            self.assertEqual(c.rpc('world.history'), history)
+
+        c.txn(1, [edit({})])
+        selected = original | dict(revision=2, auto_exposure=defaults)
+        self.assertEqual(c.rpc('world.lighting'), selected)
+        self.assertEqual(c.rpc('world.dependencies'), dependencies | dict(revision=2, needs_auto_exposure=True))
+        stored = c.rpc('entity.get', {'id': uid(1)})['value']['components']['LightingEnvironment']
+        self.assertEqual(stored['auto_exposure'], {})
+        c.close()
+        c = self.open()
+        self.assertEqual(c.rpc('world.lighting'), selected)
+
+        features = json.loads(subprocess.check_output([BINARY, 'capabilities'], text=True))['result']['features']
+        if features['simulation']:
+            session = uid(952)
+            c.rpc('runtime.start', {'session_id': session, 'revision': 2})
+            frozen = c.rpc('runtime.lighting', {'session_id': session, 'tick': 0})
+            self.assertEqual(frozen['auto_exposure'], defaults)
+            self.assertEqual(frozen['exposure'], .25)
+        authored = dict(min_stops=8, max_stops=8, brighten_stops_per_second=.125, darken_stops_per_second=32)
+        c.txn(2, [edit(authored)])
+        self.assertEqual(c.rpc('world.lighting'), selected | dict(revision=3, auto_exposure=authored))
+        if features['simulation']:
+            self.assertEqual(c.rpc('runtime.lighting', {'session_id': session, 'tick': 0}), frozen)
+        c.txn(3, [environment(1, exposure=.25)])
+        self.assertEqual(c.rpc('world.lighting'), original | dict(revision=4))
+        self.assertEqual(c.rpc('world.dependencies'), dependencies | dict(revision=4))
+
     def test_runtime_screen_reflections_are_frozen_with_lighting(self):
         cap = json.loads(subprocess.check_output([BINARY, 'capabilities'], text=True))
         if not cap['result']['features']['simulation']:

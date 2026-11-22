@@ -255,6 +255,7 @@ FrozenContent freeze_world_content(const Json& source, const fs::path& directory
         if(components.contains("LightingEnvironment")) {
             const auto& environment=components.at("LightingEnvironment");
             if(environment.contains("output_grade"))result.needs_output_grade=true;
+            if(environment.contains("auto_exposure"))result.needs_auto_exposure=true;
             if(environment.contains("screen_reflections"))result.needs_screen_reflections=true;
             if(environment.contains("height_fog"))result.needs_height_fog=true;
             if(environment.contains("post_effect")) {

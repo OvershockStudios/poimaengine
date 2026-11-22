@@ -1,0 +1,292 @@
+{
+  "format": "poima.auto-exposure.qualification.v1",
+  "version": "0.0.400",
+  "baseline_commit": "2203fff",
+  "source_manifest_sha256": "c98d94a97a2fd1a0da8997540c6836c94e80e7f80ca54ee121f4fbb850e0b410",
+  "renderer_source_manifest_sha256": "438d5b520c55983f49931e74e3fd4249baee2c0a35127097a731177d322d2dd6",
+  "ubuntu": {
+    "ctest": [
+      "world_ui_contract",
+      "asset_references_contract",
+      "world_contract",
+      "world_history_contract",
+      "project_contract",
+      "shared_session_contract",
+      "lighting_contract",
+      "authoring_contract_identity",
+      "world_water_rain_contract",
+      "world_particles_contract",
+      "world_water_contract",
+      "authoring_response_compatibility",
+      "authoring_api_compatibility",
+      "cli_contract",
+      "authoring_core_conformance",
+      "render_schedule_native",
+      "world_session_native",
+      "world_schema_native"
+    ],
+    "cli_sha256": "a1558c4d81a040e48262edcc3c70ee16d76927d22a1e4e5a9a427b831cd0bfb7"
+  },
+  "render_schedule": {
+    "valid_variants": 568,
+    "rejected_mutations": 1432,
+    "disabled_path_trace_lines_exact": 1315,
+    "disabled_path_trace_sha256": "c4d54810bf4f0c87b0d269f21b15405cc2a5b78c1dfe595696506b49bbc9fe08"
+  },
+  "windows": {
+    "cli_sha256": "dd2bb29385176d8cf9d2249480b646ec350621907fecea8b049c68d3b44c8c86",
+    "runtime_manifest_sha256": "10ce3fd1b9ce63e82d6d9101ccec997218cf181a3b0198fb5e6eb245628b9dad",
+    "user_facing_project_checks": 26,
+    "disabled_scene_output_shader_binaries_exact": 12,
+    "vulkan_validation": true,
+    "case_count": 8,
+    "capture_count": 148,
+    "gpus": {
+      "AMD Radeon(TM) Graphics": [
+        {
+          "render_path": "deferred",
+          "reconstruction": "fsr3_quality",
+          "samples": 1,
+          "configured_slots": 2,
+          "capture_count": 19,
+          "readback_count": 17,
+          "manual_reference_bmp_bytes_equal": true,
+          "reset_phases": [
+            "enabled-trimmed-chart",
+            "cut-dark-upper-clamp",
+            "cut-bright-lower-clamp",
+            "rec709-chromatic-meter",
+            "world-baseline",
+            "reenabled-dark",
+            "resize-snaps-to-current-bright-target"
+          ],
+          "maximum_adapted_stop_error": 1.5894571925301193e-07,
+          "maximum_log_luminance_error": 3.465085640641519e-08,
+          "evidence_sha256": "e828147c869f352e51ff8f8142996dd4d651719fd864631b0db4e4fbad5eaeec",
+          "buffered_sequence": {
+            "completed": 20,
+            "first_completed": 18,
+            "first_peak_outstanding": 1,
+            "first_submitted": 18,
+            "outstanding": 2,
+            "peak_outstanding": 2,
+            "presented": 22,
+            "presented_without_capture": 4,
+            "radiance": [
+              0.0078125,
+              0.0234375,
+              0.375,
+              0.09375
+            ],
+            "submitted": 22,
+            "validation_errors": 0
+          }
+        },
+        {
+          "render_path": "forward",
+          "reconstruction": "none",
+          "samples": 1,
+          "configured_slots": 1,
+          "capture_count": 18,
+          "readback_count": 16,
+          "manual_reference_bmp_bytes_equal": true,
+          "reset_phases": [
+            "enabled-trimmed-chart",
+            "cut-dark-upper-clamp",
+            "cut-bright-lower-clamp",
+            "rec709-chromatic-meter",
+            "world-baseline",
+            "reenabled-dark",
+            "resize-snaps-to-current-bright-target"
+          ],
+          "maximum_adapted_stop_error": 1.271565759353166e-07,
+          "maximum_log_luminance_error": 3.465085640641519e-08,
+          "evidence_sha256": "6a9872cdb29ba4b5681ac50e0c490f632f96135f20802be81579a1e6bc6a307e"
+        },
+        {
+          "render_path": "forward",
+          "reconstruction": "none",
+          "samples": 4,
+          "configured_slots": 2,
+          "capture_count": 19,
+          "readback_count": 17,
+          "manual_reference_bmp_bytes_equal": true,
+          "reset_phases": [
+            "enabled-trimmed-chart",
+            "cut-dark-upper-clamp",
+            "cut-bright-lower-clamp",
+            "rec709-chromatic-meter",
+            "world-baseline",
+            "reenabled-dark",
+            "resize-snaps-to-current-bright-target"
+          ],
+          "maximum_adapted_stop_error": 1.5894571925301193e-07,
+          "maximum_log_luminance_error": 3.465085640641519e-08,
+          "evidence_sha256": "6a9872cdb29ba4b5681ac50e0c490f632f96135f20802be81579a1e6bc6a307e",
+          "buffered_sequence": {
+            "completed": 20,
+            "first_completed": 18,
+            "first_peak_outstanding": 1,
+            "first_submitted": 18,
+            "outstanding": 2,
+            "peak_outstanding": 2,
+            "presented": 22,
+            "presented_without_capture": 4,
+            "radiance": [
+              0.0078125,
+              0.0234375,
+              0.375,
+              0.09375
+            ],
+            "submitted": 22,
+            "validation_errors": 0
+          }
+        }
+      ],
+      "NVIDIA GeForce RTX 4070 Laptop GPU": [
+        {
+          "render_path": "deferred",
+          "reconstruction": "fsr3_native",
+          "samples": 1,
+          "configured_slots": 1,
+          "capture_count": 18,
+          "readback_count": 16,
+          "manual_reference_bmp_bytes_equal": true,
+          "reset_phases": [
+            "enabled-trimmed-chart",
+            "cut-dark-upper-clamp",
+            "cut-bright-lower-clamp",
+            "rec709-chromatic-meter",
+            "world-baseline",
+            "reenabled-dark",
+            "resize-snaps-to-current-bright-target"
+          ],
+          "maximum_adapted_stop_error": 1.271565759353166e-07,
+          "maximum_log_luminance_error": 3.465085640641519e-08,
+          "evidence_sha256": "1f483a1a53289518fceb1d71176e1721fc404dc7237b0723e0d8185f72656ab5"
+        },
+        {
+          "render_path": "deferred",
+          "reconstruction": "fsr3_quality",
+          "samples": 1,
+          "configured_slots": 2,
+          "capture_count": 19,
+          "readback_count": 17,
+          "manual_reference_bmp_bytes_equal": true,
+          "reset_phases": [
+            "enabled-trimmed-chart",
+            "cut-dark-upper-clamp",
+            "cut-bright-lower-clamp",
+            "rec709-chromatic-meter",
+            "world-baseline",
+            "reenabled-dark",
+            "resize-snaps-to-current-bright-target"
+          ],
+          "maximum_adapted_stop_error": 1.5894571925301193e-07,
+          "maximum_log_luminance_error": 3.465085640641519e-08,
+          "evidence_sha256": "b6304b609cb080d9031bbf56ec2d0fa9e13208138a5510f55b1a92fff27f6df9",
+          "buffered_sequence": {
+            "completed": 21,
+            "first_completed": 18,
+            "first_peak_outstanding": 1,
+            "first_submitted": 18,
+            "outstanding": 1,
+            "peak_outstanding": 2,
+            "presented": 22,
+            "presented_without_capture": 4,
+            "radiance": [
+              0.0078125,
+              0.0234375,
+              0.375,
+              0.09375
+            ],
+            "submitted": 22,
+            "validation_errors": 0
+          }
+        },
+        {
+          "render_path": "deferred",
+          "reconstruction": "none",
+          "samples": 1,
+          "configured_slots": 1,
+          "capture_count": 18,
+          "readback_count": 16,
+          "manual_reference_bmp_bytes_equal": true,
+          "reset_phases": [
+            "enabled-trimmed-chart",
+            "cut-dark-upper-clamp",
+            "cut-bright-lower-clamp",
+            "rec709-chromatic-meter",
+            "world-baseline",
+            "reenabled-dark",
+            "resize-snaps-to-current-bright-target"
+          ],
+          "maximum_adapted_stop_error": 1.271565759353166e-07,
+          "maximum_log_luminance_error": 3.465085640641519e-08,
+          "evidence_sha256": "a4e8b4770b6797c4e71c7c0264654b31e0fd5b5a52f2b845dc77660c5a3d3b3c"
+        },
+        {
+          "render_path": "forward",
+          "reconstruction": "none",
+          "samples": 1,
+          "configured_slots": 1,
+          "capture_count": 18,
+          "readback_count": 16,
+          "manual_reference_bmp_bytes_equal": true,
+          "reset_phases": [
+            "enabled-trimmed-chart",
+            "cut-dark-upper-clamp",
+            "cut-bright-lower-clamp",
+            "rec709-chromatic-meter",
+            "world-baseline",
+            "reenabled-dark",
+            "resize-snaps-to-current-bright-target"
+          ],
+          "maximum_adapted_stop_error": 1.271565759353166e-07,
+          "maximum_log_luminance_error": 3.465085640641519e-08,
+          "evidence_sha256": "c9070f54306d5c28026dc979e477d7571094a84a3f168b9d1139cb279aa5d76b"
+        },
+        {
+          "render_path": "forward",
+          "reconstruction": "none",
+          "samples": 4,
+          "configured_slots": 2,
+          "capture_count": 19,
+          "readback_count": 17,
+          "manual_reference_bmp_bytes_equal": true,
+          "reset_phases": [
+            "enabled-trimmed-chart",
+            "cut-dark-upper-clamp",
+            "cut-bright-lower-clamp",
+            "rec709-chromatic-meter",
+            "world-baseline",
+            "reenabled-dark",
+            "resize-snaps-to-current-bright-target"
+          ],
+          "maximum_adapted_stop_error": 1.5894571925301193e-07,
+          "maximum_log_luminance_error": 3.465085640641519e-08,
+          "evidence_sha256": "c9070f54306d5c28026dc979e477d7571094a84a3f168b9d1139cb279aa5d76b",
+          "buffered_sequence": {
+            "completed": 22,
+            "first_completed": 18,
+            "first_peak_outstanding": 1,
+            "first_submitted": 18,
+            "outstanding": 0,
+            "peak_outstanding": 2,
+            "presented": 22,
+            "presented_without_capture": 4,
+            "radiance": [
+              0.0078125,
+              0.0234375,
+              0.375,
+              0.09375
+            ],
+            "submitted": 22,
+            "validation_errors": 0
+          }
+        }
+      ]
+    }
+  },
+  "scope": "Authored Vulkan color rendering including forward and deferred, 1x and 4x MSAA, and FSR Native AA and Quality. Figures are correctness checks under fixture cadence."
+}

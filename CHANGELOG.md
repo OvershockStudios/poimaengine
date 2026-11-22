@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.400
+
+- Add authored GPU automatic exposure with bounded stops, asymmetric adaptation rates, and capture readback.
+
 ## 0.0.399
 
 - Show initially wet terrain regions in authored views and captures while keeping their terrain selectable.
