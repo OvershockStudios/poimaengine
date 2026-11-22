@@ -391,7 +391,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 199}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 200}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -1172,13 +1172,16 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"axis","minimum_degrees","maximum_degrees"});
     const auto track_hinge=object_schema({{"node",model_node},{"interpolation",interpolation},{"hinge",hinge},
         {"keys",keys(object_schema({{"time",key_time},{"degrees",hinge_degrees}},{"time","degrees"}))}},{"node","hinge","keys"});
+    const auto track_translation=object_schema({{"node",model_node},{"path",{{"const","translation"}}},{"interpolation",interpolation},
+        {"keys",keys(object_schema({{"time",key_time},{"translation",vector(number,3)}},{"time","translation"}))}},
+        {"node","path","keys"});
     const auto authored_clip=object_schema({
         {"name",{{"type","string"},{"minLength",1},{"maxLength",256}}},
-        {"tracks",{{"type","array"},{"minItems",1},{"maxItems",128},{"items",{{"oneOf",Json::array({track_rotation,track_hinge})}}}}}},
+        {"tracks",{{"type","array"},{"minItems",1},{"maxItems",128},{"items",{{"oneOf",Json::array({track_rotation,track_hinge,track_translation})}}}}}},
         {"name","tracks"});
     methods["asset.animation.author"]=object_schema({{"asset",asset_id},
         {"clips",{{"type","array"},{"minItems",1},{"maxItems",8},{"items",authored_clip}}}},{"asset","clips"});
-    methods["asset.animation.author"]["description"]="Append 1..8 joint-local rotation clips to an immutable cooked model and return a new model hash with clip indices. Keys use unit XYZW in the joint's parent frame, or an explicit unit hinge axis and signed degree offsets from model rest. Hinge interval width is at most 179.9 degrees. Times must strictly increase after float32 encoding, at most 4096 total keys. Track nodes and new clip names must be unique in their scope. No world edit occurs.";
+    methods["asset.animation.author"]["description"]="Append 1..8 joint-local clips to an immutable cooked model and return a new model hash with clip indices. Rotation keys use unit XYZW in the joint's parent frame, or a unit hinge axis and signed degree offsets from model rest. Hinge interval width is at most 179.9 degrees. Translation tracks use path translation and absolute parent-frame XYZ keys. Times must strictly increase after float32 encoding, at most 4096 total keys. Each node supports one track per path. New clip names are unique. No world edit occurs.";
     methods["asset.mesh.extract_rigid"]=object_schema({{"asset",asset_id},{"node",model_index},{"joint",model_node},
         {"primitives",{{"type","array"},{"minItems",1},{"maxItems",32},{"uniqueItems",true},{"items",model_index}}}},
         {"asset","node","joint","primitives"});

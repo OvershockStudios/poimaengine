@@ -96,8 +96,8 @@ keeps moving.
 ## Author joint rotation clips
 
 `asset.animation.author` makes a new cooked model from an existing model hash
-and appends named rotation clips. Use it for grip, release, lever and other
-joint poses you can express with a small set of rotation keys. First inspect the
+and appends named clips with rotation and translation tracks. Use it for grip,
+release, lever motion and localized pose adjustments. First inspect the
 source model's nodes and axes. A hinge uses the node's **rest-local axis**.
 For a multi-axis track, supply unit XYZW `rotation` keys expressed in the
 parent frame and omit `hinge`.
@@ -132,10 +132,35 @@ lie within ±180°, with a span of at most 179.9° for shortest-path interpolati
 Hinge limits apply to the authored offsets. The final composed motion also
 depends on the base animation, other layers and procedural constraints.
 
+### Author local translation
+
+Add a track with `path: "translation"` to animate a node's absolute position
+in its parent frame. Sample the starting pose first so the clip begins at the
+intended local position. A pelvis track can put a weight shift in the same clip
+as a rotation of that joint.
+
+```json
+{
+  "node": 4,
+  "path": "translation",
+  "keys": [
+    {"time": 0, "translation": [0, 1.0, 0]},
+    {"time": 0.3, "translation": [0.04, 0.97, 0]},
+    {"time": 0.6, "translation": [0, 1.0, 0]}
+  ]
+}
+```
+
+Each translation key supplies three finite XYZ coordinates in the model's
+existing range of ±1e9. Use the original track shape for quaternion and hinge
+rotation. A node can have one translation track and one rotation track in the
+same clip. Channel inspection orders them by node, then translation before
+rotation. `asset.animation.sample` shows the interpolated position and its
+composed model-space transform.
+
 Each request appends 1–8 clips covering 1–128 tracks per clip, 1–256 keys per
 track and at most 4,096 keys total. Usual model budgets still apply. New names
 are unique within the model and contain 1–256 UTF-8 bytes without NUL.
-Each node appears once per clip, with channels stored in ascending node order.
 `interpolation` accepts `linear` (the default) or `step`. Keys use seconds in
 0–3,600 and must increase strictly after conversion to float32. A single key
 at zero holds a pose. The last stored key time across tracks is the duration.

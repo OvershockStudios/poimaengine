@@ -135,7 +135,7 @@ Json author_animation(const Json& params,const fs::path& assets) {
     fields(params,{"asset","clips"},{"asset","clips"});
     require(params.at("asset").is_string() && valid_asset_id(params.at("asset").get<std::string>()),"Invalid model asset ID.");
     const auto& clips=params.at("clips");
-    require(clips.is_array() && !clips.empty() && clips.size()<=8,"Author 1..8 rotation clips per request.");
+    require(clips.is_array() && !clips.empty() && clips.size()<=8,"Author 1..8 clips per request.");
     const auto number=[](const Json& value,double minimum,double maximum,const char* message) {
         require(value.is_number(),message);
         const auto result=value.get<double>();
@@ -158,19 +158,29 @@ Json author_animation(const Json& params,const fs::path& assets) {
                 "Authored clip name must be 1..256 UTF-8 bytes without NUL.");
             require(names.insert(clip.name).second,"Authored clip name must be unique in the model.");
             const auto& tracks=input.at("tracks");
-            require(tracks.is_array() && !tracks.empty() && tracks.size()<=128,"Author 1..128 rotation tracks per clip.");
-            std::set<std::uint32_t> nodes;
+            require(tracks.is_array() && !tracks.empty() && tracks.size()<=128,"Author 1..128 tracks per clip.");
+            std::set<std::pair<std::uint32_t,AnimationPath>> targets;
             for(const auto& track:tracks) {
-                fields(track,{"node","interpolation","hinge","keys"},{"node","keys"});
+                const bool translates=track.contains("path");
+                if(translates) {
+                    fields(track,{"node","path","interpolation","keys"},{"node","path","keys"});
+                    require(track.at("path")=="translation","Explicit track path must be translation.");
+                } else fields(track,{"node","interpolation","hinge","keys"},{"node","keys"});
                 const auto node=revision(track.at("node"));
-                require(node<model.nodes.size(),"Rotation track node is outside the source model.");
+                require(node<model.nodes.size(),translates
+                    ? "Translation track node is outside the source model."
+                    : "Rotation track node is outside the source model.");
                 AnimationChannel channel;
                 channel.node=static_cast<std::uint32_t>(node);
-                channel.path=AnimationPath::rotation;
-                require(nodes.insert(channel.node).second,"A clip permits one rotation track per node.");
+                channel.path=translates ? AnimationPath::translation : AnimationPath::rotation;
+                require(targets.emplace(channel.node,channel.path).second,translates
+                    ? "A clip permits one translation track per node."
+                    : "A clip permits one rotation track per node.");
                 if(track.contains("interpolation")) {
                     const auto& interpolation=track.at("interpolation");
-                    require(interpolation=="step" || interpolation=="linear","Rotation interpolation must be step or linear.");
+                    require(interpolation=="step" || interpolation=="linear",translates
+                        ? "Translation interpolation must be step or linear."
+                        : "Rotation interpolation must be step or linear.");
                     if(interpolation=="step")channel.interpolation=AnimationInterpolation::step;
                 }
                 std::array<double,3> axis{};
@@ -192,13 +202,27 @@ Json author_animation(const Json& params,const fs::path& assets) {
                 require(keys.is_array() && !keys.empty() && keys.size()<=256 && keys.size()<=4096-key_count,
                     "Author 1..256 keys per track and at most 4096 per request.");
                 key_count+=keys.size();
+                const char* value_field=translates ? "translation" : (hinge==track.end() ? "rotation" : "degrees");
                 for(const auto& key:keys) {
-                    const char* value_field=hinge==track.end()?"rotation":"degrees";
                     fields(key,{"time",value_field},{"time",value_field});
-                    const auto time=number(key.at("time"),0,3600,"Rotation key time must be within 0..3600 seconds.");
+                    const auto time=number(key.at("time"),0,3600,translates
+                        ? "Translation key time must be within 0..3600 seconds."
+                        : "Rotation key time must be within 0..3600 seconds.");
                     const auto stored=static_cast<float>(time==0?0:time);
                     require(channel.times.empty() || stored>channel.times.back(),"Key times must increase after float32 encoding.");
                     channel.times.push_back(stored);
+                    if(translates) {
+                        const auto& xyz=key.at("translation");
+                        require(xyz.is_array() && xyz.size()==3,"Translation key requires three XYZ components.");
+                        std::array<float,4> value{};
+                        for(std::size_t i=0;i<3;++i) {
+                            const auto component=static_cast<float>(number(xyz[i],-1e9,1e9,
+                                "Translation key components must be finite within +/-1e9."));
+                            value[i]=component==0 ? 0 : component;
+                        }
+                        channel.values.push_back(value);
+                        continue;
+                    }
                     std::array<double,4> rotation{};
                     if(hinge==track.end()) {
                         const auto& q=key.at("rotation");
@@ -220,7 +244,9 @@ Json author_animation(const Json& params,const fs::path& assets) {
                 clip.duration=std::max(clip.duration,static_cast<double>(channel.times.back()));
                 clip.channels.push_back(std::move(channel));
             }
-            std::sort(clip.channels.begin(),clip.channels.end(),[](const auto& a,const auto& b){return a.node<b.node;});
+            std::sort(clip.channels.begin(),clip.channels.end(),[](const auto& a,const auto& b) {
+                return std::pair(a.node,a.path)<std::pair(b.node,b.path);
+            });
             appended.push_back({{"index",model.animations.size()},{"name",clip.name},{"duration",clip.duration},{"tracks",clip.channels.size()}});
             model.animations.push_back(std::move(clip));
         }

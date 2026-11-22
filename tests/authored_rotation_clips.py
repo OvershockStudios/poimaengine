@@ -70,7 +70,11 @@ def configure(session):
     schema = discovery['methods']['asset.animation.author']
     assert discovery['schema_revision'] >= 138
     assert schema['properties']['clips']['maxItems'] == 8
-    assert len(schema['properties']['clips']['items']['properties']['tracks']['items']['oneOf']) == 2
+    variants = schema['properties']['clips']['items']['properties']['tracks']['items']['oneOf']
+    assert len(variants) == (3 if discovery['schema_revision'] >= 200 else 2)
+    assert variants[0]['properties']['keys']['items']['required'] == ['time', 'rotation']
+    assert 'hinge' in variants[1]['required']
+    assert variants[1]['properties']['keys']['items']['required'] == ['time', 'degrees']
     status_before = session.rpc('world.history')
 
     def attempt(clips, error=None, asset=None):

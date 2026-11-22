@@ -1,8 +1,17 @@
 # Implementation status
 
-Updated 2026-11-21 for **0.0.387**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-21 for **0.0.388**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.388 lets `asset.animation.author` add [joint-local translation
+keys](ANIMATION_ASSETS.md#author-local-translation) alongside a joint's
+rotation keys. It appends new takes to a derived model and returns the
+content hash and clip indices. Direct pose sampling and native playback
+use the composed local transform. Ubuntu and Windows produced the same
+derived package and reproduced the native ground contact and save continuation.
+Both Windows adapters reproduced the restored Vulkan capture exactly.
+[Results](evidence/m2-authored-translation-388.json)
 
 Version 0.0.387 adds [yaw steering](../packages/ai/README.md#yaw-steering) to
 the optional C# AI package. The fixture checks the commanded speed and

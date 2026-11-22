@@ -1,0 +1,59 @@
+{
+  "release": "0.0.388",
+  "schema_revision": 200,
+  "scope": "Mixed absolute parent-frame translation and quaternion or hinge rotation on immutable cooked animation clips.",
+  "source_inventory_sha256": "e9c4b38ec875f6a51e409e662a944711ac06e6bdd400cef151e46cb64a26e8a8",
+  "linux": {
+    "binary_sha256": "e0c81d8abc6e1b56bce21428d5ac1bf4866e69d144ee0fc66040257da872887f",
+    "ctest_junit_sha256": "75c2e408ac3f51ce6bac8b1a28bb037568f441f5a48d0a2c78a31129fa2d240b",
+    "suites": [
+      "world_contract",
+      "asset_contract",
+      "runtime_animation_contract",
+      "animation_contract",
+      "authoring_contract_identity",
+      "runtime_animation_layers_contract",
+      "runtime_animation_blend_contract",
+      "asset_references_contract",
+      "world_ui_contract",
+      "authoring_core_conformance",
+      "runtime_joint_pose_contract",
+      "world_schema_native"
+    ],
+    "new_track_test_sha256": "9e6d02fc79ae28b184785d3746a2645db1c0fe9fbbb3537e63d4eacfc240544a",
+    "legacy_track_test_sha256": "62932ae019e854ceeb9bc3c463906be59330f1c2c2005992d566080946d2fa4e"
+  },
+  "windows": {
+    "binary_sha256": "5807bf24d051ebf62aea4e611400b85f8ee4da684337eacd42bfc66186290223",
+    "translation_fixture_sha256": "d5adacde1da594c8d8d5fe2ec6e2cf23ae7e71d39484a04e0bad3fc866ee6967",
+    "rotation_fixture_sha256": "2f380a3e0779f4c79f2aa555c8860020b8deafa07aac112a16e7318106ede6de",
+    "rotation_reference_sha256": "2ae871da4049a1ebaacd475aaf0e2c07d78d8a4f011a625823f15345d353fd15",
+    "capture_checks": [
+      {
+        "slot": 0,
+        "proof_sha256": "2db5246fd61e65893511e6acb718306dc843bd0a0dc1abecae149cc6a277dd7a",
+        "captures": 3,
+        "restored_image_sha256": "0920420771417105cf4732c0fa04ec7b332f26481e80ba6b8355e7bbd7e592b6"
+      },
+      {
+        "slot": 1,
+        "proof_sha256": "fef2f162d40f0a41e3aa4291c7c5a659807d7a2b0338212b0c8977879490f27c",
+        "captures": 3,
+        "restored_image_sha256": "0920420771417105cf4732c0fa04ec7b332f26481e80ba6b8355e7bbd7e592b6"
+      }
+    ]
+  },
+  "shared_artifacts": {
+    "unchanged_legacy_model": "9e0cf09fb192808bed71aef4b1a59c52803d7a28a292242d89d8ea64702fcfaf",
+    "mixed_model": "0677bb2274f676644e6ae40c962d45ee84628e42a5282c51661614728c2b3307"
+  },
+  "checks": [
+    "One translation and one rotation channel on the same node",
+    "Legacy rotation recooking and original source model identity",
+    "Same hash after identical recooking, canonical zero and quaternion sign changes",
+    "Sixteen malformed inputs refused with unchanged world, history and model inventory",
+    "Independent parent-frame blend and native sole position on a collision surface",
+    "Immediate and terminal archive bytes reproduced after a fresh-process resume",
+    "Native Vulkan peak motion changes the image and restored pose reproduces the image"
+  ]
+}
