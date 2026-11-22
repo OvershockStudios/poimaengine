@@ -1,10 +1,10 @@
 # Poima AI gameplay helpers
 
 This optional compiled C# package provides [behavior trees](BEHAVIOR_TREE.md),
-bounded sight cones, line-of-sight through the native `Raycast` service and
-explicit last-seen target memory. The game chooses targets, sample points,
-budgets and responses. Behavior trees execute the game's authored conditions
-and actions in a fixed order.
+bounded sight cones, line-of-sight through the native `Raycast` service,
+explicit last-seen target memory and acceleration-limited yaw steering.
+The game chooses targets, sample points, budgets and responses. Behavior
+trees execute the game's authored conditions and actions in a fixed order.
 
 The native engine does not install this package for unrelated games. It adds no
 native ABI, service marker or state-field type.
@@ -108,19 +108,69 @@ before a result is produced. Retention deadlines may extend beyond `MaxTick`;
 `FirstExpiredTick` then reports a mathematical deadline outside the supported
 update domain. No updates or expiry transitions are available past `MaxTick`.
 
+## Yaw steering
+
+Advance once per committed 60 Hz tick for an upright actor whose local forward
+is −Z. This example keeps a kinematic body at its committed position while
+turning toward a game-selected target.
+
+```csharp
+var actor = context.Get(self).Transform;
+var origin = actor.Position;
+Vector3d direction = new(target.X - origin.X, 0, target.Z - origin.Z);
+var profile = new YawTurnProfile(2.1, 8, 0.035);
+var yaw = new YawSteeringState(state.AngularVelocity, (YawHalfTurn)state.HalfTurn);
+var turn = YawSteering.Step(actor.Forward, direction, yaw, profile);
+if (turn.AppliedRadians != 0)
+    context.MoveKinematic(self, origin, turn.Rotation, ticks: 1);
+state.AngularVelocity = turn.State.AngularVelocity;
+state.HalfTurn = (int)turn.State.HalfTurn;
+```
+
+The profile accepts speed from 0.01 to 19 rad/s, acceleration from 0.01 to 600
+rad/s² and dead zone from `1e-5` to π/4 radians, inclusive. The saved velocity
+must be within the profile's speed limit. Every component of both vectors must
+be finite and within ±2,000,000. Y is ignored for heading. Committed forward
+must have XZ length greater than `1e-6`. A desired displacement with XZ length
+at most `1e-6` has `HasDirection == false` and reports zero angular error.
+Invalid inputs throw `ArgumentException` or `ArgumentOutOfRangeException`.
+
+Positive yaw goes toward −X from −Z. The signed error follows the shortest
+arc. Within `1e-12` of an exact half turn, `YawHalfTurn.Positive` (0, the
+default) selects +π and `YawHalfTurn.Negative` (1) selects −π. The helper
+limits speed with the distance available to stop. A missing direction, an
+error inside or on the dead zone, or a reversed target while the actor is
+turning requests braking to zero. Each tick changes speed by at most
+`MaxAcceleration / 60` and applies `AngularVelocity / 60` at the updated speed.
+`CommittedYaw` and `CommandedYaw` are in (−π, π]. A moving target or rounding
+in the committed pose can cause a crossing while braking.
+
+Store angular velocity as a `double` and the tie policy as an `int` in game
+state. Velocity describes the steering command. Each new step measures yaw
+from the committed transform, so physics rounding or a recorded pose needn't
+be reconstructed from the prior command. An actor given a different rotation
+owner should reinitialize steering velocity before resuming. Inspect the next
+committed transform to measure the actual movement. The helper outputs a pure
+Y rotation with single-precision quaternion components for `MoveKinematic`.
+The speed and acceleration limits apply to the command. The native kinematic
+integrator can round very small rotations to zero. Choose a dead zone for the
+actor and verify its committed heading with the actual physics runtime.
+Use one owner for the actor's kinematic motion and compose translation into
+the same command when needed. Same-input repeatability has the platform and
+runtime scope described below.
+
 ## Ownership, saves and determinism
 
-These records are transient values (`SightMemoryState`, `SightResult` and
-`SightSample`), and they are not supported nested game-state fields. Store each
-scalar explicitly in `Game<TState>`, using `int`, `long`, `double` and
-`EntityId`, as in `tests/ai_perception/Program.cs`. Rebuild the records each Tick and call
-`SightMemory.Validate` after editing restored fields if desired. The package has
-no statics, caches, clock, randomness or steady-path allocation.
+The package records are transient values. Store each scalar explicitly in
+`Game<TState>` and rebuild the records each Tick. The sight tests show memory
+fields using `int`, `long`, `double` and `EntityId`. `SightMemory.Validate`
+can check edited or restored memory fields. The package has no mutable static
+state, cache, clock, randomness or steady-path allocation.
 
 For the same inputs and provider replies, the package returns identical results
-within one process. Diagnostics use IEEE `sqrt` and platform `atan2`, so
-bit-identical results across platforms or runtimes are not guaranteed. Native
-physics numerics have their own scope.
+within one process. The results use floating-point square roots and
+trigonometry. Exact cross-platform or cross-runtime replay needs separate
+verification, including the native physics path.
 
 ## Use and verification
 
@@ -140,3 +190,10 @@ on Linux headless and Windows CoreCLR in
 fields, 176 requests and five complete archive-byte pairs. Hearing, navigation,
 general tactical decisions, Native AOT for this sample and game-scale throughput
 remain separate work.
+
+The [heading fixture](../../tests/managed_heading_contract.py) compares the
+command with an independent braking calculation and reads the native
+kinematic pose after each selected tick. It checks both wrap directions,
+braking and reversing, rejected-tick rollback and exact fresh-process
+continuation. The [qualification record](../../docs/evidence/m2-yaw-steering-387.json)
+identifies the tested runtime and compiler configurations.

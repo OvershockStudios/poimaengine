@@ -1,8 +1,15 @@
 # Implementation status
 
-Updated 2026-11-21 for **0.0.386**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-21 for **0.0.387**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.387 adds [yaw steering](../packages/ai/README.md#yaw-steering) to
+the optional C# AI package. The fixture checks the commanded speed and
+acceleration independently of the resulting native rotation. Ubuntu and
+Windows CoreCLR and Windows Native AOT reproduced late-tick rollback and
+40 selected fresh-process continuation ticks with byte-identical saves.
+[Results](evidence/m2-yaw-steering-387.json)
 
 Version 0.0.386 compiles [asset inspection and Vulkan shadow
 resources](BUILD.md#world-service-and-schema-compilation) in separate units.

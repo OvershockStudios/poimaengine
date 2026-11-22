@@ -1,0 +1,81 @@
+{
+  "release": "0.0.387",
+  "scope": "Optional compiled C# acceleration-limited yaw steering. Separate command and native pose checks.",
+  "fixture_sources": {
+    "packages/ai/YawSteering.cs": "ed2dabec1c8173cd9ebf275bac669ac7480a2d5d13930330748626647b02e0c7",
+    "tests/managed_heading_contract.py": "7e0a6f87e971bff7b7ba00a18c4060d00a1a0da750c98e4e49c14a55481c183f",
+    "tests/fixtures/heading/HeadingGame.cs": "7b29079002a970114df42c94ddd012751bc201208fa0f7791f6b0d0b971d7cef",
+    "tests/fixtures/heading/Poima.HeadingFixture.csproj": "c84177eee451259e19af6e5fb860654bbcb5e3cb69b736d41268fd665f6e434a"
+  },
+  "linux_coreclr": {
+    "proof_sha256": "30998a0277f5dd40d46bec3d8d53aa240a06f063539944231a91408c182b4213",
+    "requests": 326,
+    "native_owners": 2,
+    "fresh_process_ticks": 40,
+    "terminal_archive_sha256": "2f590a3cba2869366e1d116bd141a8acbaa6cf3fc5d97801a77899d5ccddc616",
+    "native_metrics": {
+      "selected_ticks": 55,
+      "peak_step_error_tick": 71,
+      "peak_step_error_radians": 7.58697532221872e-05,
+      "peak_observed_speed_radians_per_second": 3.000115721129215,
+      "terminal_error_radians": 7.380873712681257e-05
+    },
+    "runtime_version": "0.0.386",
+    "runtime_sha256": "d8280e64888202d58b8ab5da7fa60c94ba6e172737254002c989673d6fc1a3e0",
+    "gameplay_sha256": "469915e21509ec65daca160ab13c5606f8a33749a5a09eb82bd0243861989c8a",
+    "bridge_sha256": "a4e286a8e0c6890c79e7c14720900615b945f21bc3a3e5e5c77ddbf28d13fb16"
+  },
+  "windows_coreclr": {
+    "runtime_version": "0.0.384",
+    "runtime_sha256": "5c8638ae3eff9a62c4e5da170a64d3f2b714d4b2de32dddd335376ec3c72cd0d",
+    "proof_sha256": "4f4bc07b3fea0a134a1b69a551e50cf87fe964419a307470888edb79665f879b",
+    "requests": 326,
+    "native_owners": 2,
+    "fresh_process_ticks": 40,
+    "terminal_archive_sha256": "3036721196708bcd32e7959a5ed1c00c026cc41362befa2c1f6bfff0a632e680",
+    "native_metrics": {
+      "selected_ticks": 55,
+      "peak_step_error_tick": 71,
+      "peak_step_error_radians": 7.58697532221872e-05,
+      "peak_observed_speed_radians_per_second": 3.000115721129215,
+      "terminal_error_radians": 7.380873712681257e-05
+    },
+    "gameplay_sha256": "fca76a7b296038d85c28a9342224baf7e34f661a5b5c6c43edc56727cfd8dd0a",
+    "bridge_sha256": "c35a74b5063912ed1858c596f8ea184db75916e6ecb745a4254adc8425665110"
+  },
+  "windows_native_aot": {
+    "runtime_version": "0.0.384",
+    "runtime_sha256": "5c8638ae3eff9a62c4e5da170a64d3f2b714d4b2de32dddd335376ec3c72cd0d",
+    "proof_sha256": "9195f7b9dc6262ea2e0aea42e3143f8490ad44eba3b6cf50a6513a91df5cf4f2",
+    "requests": 326,
+    "native_owners": 2,
+    "fresh_process_ticks": 40,
+    "terminal_archive_sha256": "989152649dab5bf92421def042c7cdd25f324b713901ce8c178af13829840f52",
+    "native_metrics": {
+      "selected_ticks": 55,
+      "peak_step_error_tick": 71,
+      "peak_step_error_radians": 7.58697532221872e-05,
+      "peak_observed_speed_radians_per_second": 3.000115721129215,
+      "terminal_error_radians": 7.380873712681257e-05
+    },
+    "gameplay_sha256": "a818ac4260661993200f584127c28e24fa455c0544e777adbaa72dbef83d6f83",
+    "descriptor_sha256": "2d64af317e6bc2878f25b4e40ada2aa0bcfa23fdef0fd143806cbf8b3eb9154c"
+  },
+  "checks": [
+    "Fixed-tick command checked by finite-sum braking distance and bisection",
+    "Both short-arc seam crossings and braking to zero before reversal",
+    "Near-coincident XZ direction with vertical separation and a settled final target",
+    "Native yaw and quaternion on a stationary kinematic body checked with a per-step float angle bound",
+    "Rejected late callback restores the complete pre-step archive",
+    "Immediate and terminal save pairs match byte for byte after 40 selected continuation ticks in a new process"
+  ],
+  "native_precision_control": {
+    "runtime_version": "0.0.386",
+    "proof_sha256": "40db9ee867358889d40711c88b249ff815381ebe402db0d0ca1500dd6a6d2e6e",
+    "scope": "At an identity starting orientation, isolated 0.01 and 0.02 rad/s one-tick requests rounded to zero native motion. Command limits are checked separately from physical response."
+  },
+  "reproduction": [
+    "Compile tests/fixtures/heading/Poima.HeadingFixture.csproj and run tests/managed_heading_contract.py with CoreCLR hostfxr, bridge and assembly paths.",
+    "Publish Poima.Tests.HeadingGame with scripts/publish_native_gameplay.py and run the same verifier with --native-descriptor against the matching Windows runtime."
+  ]
+}
