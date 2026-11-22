@@ -1,8 +1,14 @@
 # Implementation status
 
-Updated 2026-11-21 for **0.0.388**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-21 for **0.0.389**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.389 compiles [asset discovery](BUILD.md#world-service-and-schema-compilation)
+separately. Ubuntu reproduced the complete 1,734-case native discovery
+transcript and passed nine focused suites. Windows matched all 29 discovery
+replies and reproduced the cooked rotation and translation fixtures.
+[Results](evidence/m2-asset-schema-389.json)
 
 Version 0.0.388 lets `asset.animation.author` add [joint-local translation
 keys](ANIMATION_ASSETS.md#author-local-translation) alongside a joint's

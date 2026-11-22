@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.389
+
+- Compile asset, animation, material and model import discovery in a separate module.
+
 ## 0.0.388
 
 - Author joint-local translation alongside rotations in immutable cooked animation clips.

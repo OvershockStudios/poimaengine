@@ -153,6 +153,9 @@ Base API discovery lives in `src/world_schema.cpp`. The schema receives
 the world's serialized sky defaults and numeric limits, and returns fresh JSON
 for owner and scope filtering. `src/world_discovery.cpp` validates discovery
 selectors, identifies stable contracts, and projects selected results.
+`src/world_schema_asset.cpp` contributes asset, animation, material and
+model import discovery. It compiles separately from the rest of world
+discovery.
 `src/world_document.cpp` validates authored
 documents and decodes typed components for scene and runtime construction.
 `src/world_runtime_json.cpp` decodes runtime command payloads and serializes

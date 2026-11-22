@@ -1,0 +1,80 @@
+{
+  "release": "0.0.389",
+  "scope": "Asset, model import, material and animation discovery compiled separately.",
+  "base_commit": "e1ff43a1825a51cb1898f8a26d150946a1747456",
+  "schema_revision": 200,
+  "main_file_lines": {
+    "before": 1440,
+    "after": 1225
+  },
+  "source_inventory_sha256": "9f14a6ac71c242b7c49bc37c2b65f168ab86c084f5c8a1daa218b272aea7c859",
+  "linux": {
+    "binary_sha256": "51a2227a03285f0d51b632f2a6fcd64cbf48985771b0862fb78284e2b6a04429",
+    "parity_proof_sha256": "445855925a8841090b4f6bb37365f6e0334ef6e30bc5ee4ec3ac85345c7ab232",
+    "focused_ctest_sha256": "1dee84ee01cd1ed47599f7699b9802dc464fc0997f43411f18c536cf0a1a8da6",
+    "suites": [
+      "asset_contract",
+      "asset_provenance_contract",
+      "authoring_contract_identity",
+      "animation_contract",
+      "asset_references_contract",
+      "physical_pose_diagnostics_contract",
+      "world_ui_contract",
+      "authoring_core_conformance",
+      "model_bounds_contract"
+    ],
+    "scoped_discovery_calls_per_host": 1734,
+    "native_transcript_sha256": "ced438572f700f7b661ac63d8f0582574976c119f86bf1fe0e83048217ec6402",
+    "checks": [
+      "Exact complete native transcript across six mode/scope combinations",
+      "Exact fresh-copy CLI discovery/state/history replies: standalone",
+      "Exact fresh-copy CLI discovery/state/history replies: shared_headless"
+    ]
+  },
+  "windows": {
+    "reference_binary_sha256": "5807bf24d051ebf62aea4e611400b85f8ee4da684337eacd42bfc66186290223",
+    "binary_sha256": "ae4c6117d03d9c793ebc395509971dc2962cf8cd096dfd63f8d37f2873a7e930",
+    "exact_discovery_replies": 29,
+    "requests_sha256": "09314055009102584f295ff3e33029c2364c64a685c59bb800480b7af99bb87c",
+    "exact_replies_sha256": "ee2ef885fe46f7fcfe92376543179305ff9924ac476bc48ba14d9c610cfd1254",
+    "retained_spirv_modules": 55,
+    "animation_authoring": {
+      "rotation": {
+        "exact_derived_model_sha256": "9e0cf09fb192808bed71aef4b1a59c52803d7a28a292242d89d8ea64702fcfaf",
+        "native_calls": 71,
+        "previous_proof_sha256": "2f380a3e0779f4c79f2aa555c8860020b8deafa07aac112a16e7318106ede6de",
+        "proof_sha256": "e02448514b4c7167943bc76a0170e2810d3cdafb9ba1376d367beae5b6fe2b84"
+      },
+      "translation": {
+        "exact_derived_model_sha256": "0677bb2274f676644e6ae40c962d45ee84628e42a5282c51661614728c2b3307",
+        "native_calls": 115,
+        "previous_proof_sha256": "d5adacde1da594c8d8d5fe2ec6e2cf23ae7e71d39484a04e0bad3fc866ee6967",
+        "proof_sha256": "7b7d9432943fc2afe5006167ee6b3ec8642cce2fb50d52d917941d8dc4bd43c0"
+      }
+    },
+    "incremental_build_observations": {
+      "baseline_388": {
+        "world_schema.cpp.obj": {
+          "elapsed_ms": 334363,
+          "ninja_command_hash": "1458eaadaadc8186"
+        }
+      },
+      "candidate_389": {
+        "world_schema.cpp.obj": {
+          "elapsed_ms": 222780,
+          "ninja_command_hash": "1458eaadaadc8186"
+        },
+        "world_schema_asset.cpp.obj": {
+          "elapsed_ms": 16596,
+          "ninja_command_hash": "4a4ec78816c6a1a0"
+        }
+      },
+      "scope": "Individual Ninja object durations in two normal incremental Windows cross-builds. Captured workload and scheduling vary."
+    }
+  },
+  "reproduction": [
+    "Preserve old and new binary and scoped probe under the same runtime feature configuration, then run tests/world_schema_extraction_contract.py with both pairs.",
+    "Compare unchanged native world.describe full, catalog, section, method and refusal replies from both versions. Match raw RPC result bytes.",
+    "Run the authored rotation and translation contracts under the new build and compare their returned cooked packages against the old proof."
+  ]
+}
