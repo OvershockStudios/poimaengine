@@ -1,8 +1,15 @@
 # Implementation status
 
-Updated 2026-11-21 for **0.0.398**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-21 for **0.0.399**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.399 shows initially wet [terrain-bound regions](SHALLOW_WATER.md#author-a-terrain-bound-region)
+in authored views and captures. Four Windows Vulkan captures matched independent
+wet and dry footprint and depth checks on AMD and NVIDIA. The Windows desktop
+bridge picked the terrain through the water. Native session tests covered
+snapshot reuse, preview, undo, and redo. Ubuntu passed 19 suites.
+[Results](evidence/m2-authored-water-399.json)
 
 Version 0.0.398 exports [project graphics defaults](PROJECTS.md#set-the-exported-games-graphics-defaults).
 The Creator and CLI update graphics and splash settings in one guarded write.

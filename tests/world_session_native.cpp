@@ -562,6 +562,106 @@ void authored_preview_regression(const fs::path& directory) {
     check(call(session,"world.inspect")==inspected&&call(session,"world.history")==history&&tree(directory)==files,
           "Transient preview changed authoring state, history, receipts or storage.");
 }
+void authored_water_snapshot_regression(const fs::path& directory) {
+    const auto fixture = directory / "authored-water";
+    fs::create_directory(fixture);
+    poima::WorldSession session((fixture / "world.json").string());
+    const std::string tile(32, '1'), camera_id(32, '2');
+    const Json recipe = {{"format", "poima.terrain.heightfield"}, {"version", 1},
+        {"samples_x", 2}, {"samples_z", 2}, {"tile_cells", 1}, {"origin_m", {0, 0, 0}},
+        {"spacing_m", {1, 1}}, {"heights_m", {0, 0, 0, 0}}};
+    const Json terrain_request = {{"recipe", recipe.dump()}};
+    const auto terrain = call(session, "world.terrain.inspect", terrain_request);
+    auto terrain_cook = terrain_request;
+    terrain_cook["expected_recipe_sha256"] = terrain.at("recipe_sha256");
+    check(call(session, "world.terrain.cook", terrain_cook) == terrain, "Reviewed terrain cook changed its plan.");
+
+    const auto& asset = terrain.at("tiles").at(0).at("asset");
+    const auto transact = [&](std::uint64_t revision, char request, Json operations) {
+        const auto result = call(session, "world.transact", {{"base_revision", revision},
+            {"request_id", std::string(32, request)}, {"ops", std::move(operations)}});
+        check(result.at("committed") == true && result.at("revision") == revision + 1,
+            "Authored water fixture transaction did not advance the revision.");
+    };
+    transact(0, '3', Json::array({
+        {{"op", "entity.create"}, {"id", tile}, {"name", "Basin tile"}},
+        {{"op", "component.set"}, {"id", tile}, {"type", "StaticMesh"},
+            {"value", {{"asset", asset}, {"primitive", 0}, {"visible", true}}}},
+        {{"op", "component.set"}, {"id", tile}, {"type", "MeshCollider"},
+            {"value", {{"asset", asset}, {"primitive", 0}, {"friction", .5}, {"restitution", 0}}}},
+        {{"op", "entity.create"}, {"id", camera_id}, {"name", "Basin camera"}},
+        {{"op", "component.set"}, {"id", camera_id}, {"type", "Transform"},
+            {"value", {{"position", {0, 2, 4}}, {"rotation", {0, 0, 0, 1}}, {"scale", {1, 1, 1}}}}},
+        {{"op", "component.set"}, {"id", camera_id}, {"type", "Camera"},
+            {"value", {{"vertical_fov", 66}, {"near", .125}, {"far", 100}}}}
+    }));
+
+    const auto find_draw = [](const poima::SceneSnapshot& snapshot, const std::string& id) -> const poima::SceneObject& {
+        const auto found = std::ranges::find(snapshot.objects, id, &poima::SceneObject::entity_id);
+        check(found != snapshot.objects.end(), "Authored water fixture lost a required draw.");
+        return *found;
+    };
+    const auto dry = session.authored_snapshot({});
+    const auto tile_incarnation = find_draw(dry, tile).incarnation;
+    check(dry.objects.size() == 1 && tile_incarnation != 0 && !dry.presentation_source_id.empty(),
+        "Dry terrain did not establish a stable authored presentation lineage.");
+
+    Json water_request = {{"revision", 1}, {"terrain", terrain_request},
+        {"expected_terrain_recipe_sha256", terrain.at("recipe_sha256")}, {"tile_entities", Json::array({tile})},
+        {"grid", {{"cells_x", 1}, {"cells_z", 1}, {"cell_size_m", 1},
+            {"origin_x_m", 0}, {"origin_z_m", 0}, {"relaxation_per_second", 6}}},
+        {"initial_depths_m", Json::array({.5})}};
+    const auto water = call(session, "world.water.plan", water_request);
+    const auto water_asset = water.at("plan_sha256").get<std::string>();
+    water_request["expected_plan_sha256"] = water_asset;
+    check(call(session, "world.water.cook", water_request) == water, "Reviewed water cook changed its plan.");
+    transact(1, '4', Json::array({{{"op", "water.set"}, {"asset", water_asset}}}));
+
+    const auto verify = [&](const poima::SceneSnapshot& snapshot, std::uint64_t revision, bool wet) {
+        check(snapshot.world_id == dry.world_id && snapshot.presentation_source_id == dry.presentation_source_id &&
+            snapshot.revision == revision, "Authored water changed the wrong scene identity.");
+        check(snapshot.objects.size() == (wet ? 2 : 1), "Water geometry leaked or disappeared from an authored snapshot.");
+        check(find_draw(snapshot, tile).incarnation == tile_incarnation, "Water binding replaced the terrain incarnation.");
+        if (wet) {
+            const auto& surface = find_draw(snapshot, "water-region/" + water_asset);
+            check(surface.incarnation == 0 && surface.stream_geometry && surface.mesh &&
+                surface.mesh->vertices.size() == 4 && surface.mesh->indices.size() == 6,
+                "Generated water lost its independent dynamic geometry identity.");
+        }
+    };
+    const auto saved_files = tree(fixture);
+    const auto saved_history = call(session, "world.history");
+    const auto first = session.authored_snapshot({});
+    verify(first, 2, true);
+    poima::EditorCamera editor;
+    editor.world[12] = 3;
+    const auto warm = session.authored_snapshot(editor);
+    verify(warm, 2, true);
+    const auto named = session.authored_camera_snapshot(camera_id);
+    verify(named, 2, true);
+    check(first.camera_id == "editor" && first.camera_world[12] == 0 && warm.camera_world[12] == 3 &&
+        named.camera_id == camera_id && named.camera_world[13] == 2 && named.vertical_fov == 66,
+        "Water-bearing snapshot cache changed camera transforms or lenses.");
+
+    const auto preview = session.authored_preview(editor, tile, {1, 0, 0}, {0, 0, 0, 1}, {1, 1, 1});
+    verify(preview, 2, false);
+    check(find_draw(preview, tile).world[12] == 1 && find_draw(first, tile).world[12] == 0,
+        "Transient terrain transform preview mutated an earlier snapshot.");
+    verify(session.authored_snapshot(editor), 2, true);
+    check(tree(fixture) == saved_files && call(session, "world.history") == saved_history,
+        "Observing or previewing authored water wrote files or changed history.");
+
+    transact(2, '5', Json::array({{{"op", "water.set"}, {"asset", nullptr}}}));
+    verify(session.authored_camera_snapshot(camera_id), 3, false);
+    verify(first, 2, true);
+    call(session, "world.undo", {{"base_revision", 3}, {"request_id", std::string(32, '6')}});
+    const auto restored = session.authored_camera_snapshot(camera_id);
+    verify(restored, 4, true);
+    check(restored.presentation_generation == first.presentation_generation + 1,
+        "Undo did not advance the water-bearing scene's presentation generation.");
+    call(session, "world.redo", {{"base_revision", 4}, {"request_id", std::string(32, '7')}});
+    verify(session.authored_snapshot(editor), 5, false);
+}
 void game_camera_regression(const fs::path& directory) {
     const auto path=directory/"game-cameras.json";
     const std::string platform(32,'6'),camera(32,'7'),scaled(32,'8'),runtime_id(32,'9');
@@ -939,6 +1039,7 @@ int main() {
         runtime_observation_scope_regression(directory);
         renderer_shadow_controls_regression(directory);
         authored_preview_regression(directory);
+        authored_water_snapshot_regression(directory);
         game_camera_regression(directory);
         camera_free_controller_regression(directory);
         asset_reference_scope_regression(directory);

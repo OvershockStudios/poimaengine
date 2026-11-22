@@ -216,7 +216,21 @@ std::string pick(const SceneSnapshot& scene,const EditorRect& rect,ImVec2 mouse)
     if(rect.width<=0 || rect.height<=0)return {};const double x=((mouse.x-rect.x)/rect.width*2-1)*(rect.width/rect.height)*std::tan(pi/6),y=(1-(mouse.y-rect.y)/rect.height*2)*std::tan(pi/6);
     std::array<double,3> ray{},origin{};for(std::size_t i=0;i<3;++i) { ray[i]=scene.camera_world[i]*x+scene.camera_world[4+i]*y-scene.camera_world[8+i];origin[i]=scene.camera_world[12+i]; }
     double nearest=1e30;std::string id;
-    for(const auto& object:scene.objects) { auto b=object_bounds(object);double lo=0,hi=1e30;for(std::size_t i=0;i<3;++i) { if(std::abs(ray[i])<1e-12) { if(origin[i]<b.minimum[i] || origin[i]>b.maximum[i])hi=-1; }else { auto a=(b.minimum[i]-origin[i])/ray[i],c=(b.maximum[i]-origin[i])/ray[i];if(a>c)std::swap(a,c);lo=std::max(lo,a);hi=std::min(hi,c); } }if(lo<=hi && lo<nearest) { nearest=lo;id=object.entity_id; } }
+    for(const auto& object:scene.objects) {
+        if(object.stream_geometry)continue;
+        const auto bounds=object_bounds(object);
+        double lo=0,hi=1e30;
+        for(std::size_t i=0;i<3;++i) {
+            if(std::abs(ray[i])<1e-12) {
+                if(origin[i]<bounds.minimum[i] || origin[i]>bounds.maximum[i])hi=-1;
+            } else {
+                auto a=(bounds.minimum[i]-origin[i])/ray[i],c=(bounds.maximum[i]-origin[i])/ray[i];
+                if(a>c)std::swap(a,c);
+                lo=std::max(lo,a);hi=std::min(hi,c);
+            }
+        }
+        if(lo<=hi && lo<nearest) { nearest=lo;id=object.entity_id; }
+    }
     return id;
 }
 struct EditorLayout {

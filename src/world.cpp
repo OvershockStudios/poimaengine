@@ -399,10 +399,9 @@ public:
         else if(!preview && authored_cache_ && authored_cache_->revision==revision(doc_.at("revision")))result=*authored_cache_;
         else {
             prune_model_cache();
-            result=build_editor_authored_scene(doc_,preview,asset_directory(),model_cache_);
+            result=build_editor_authored_scene(doc_,preview,asset_directory(),model_cache_,authored_presentation_);
             if(!preview)authored_cache_=result;
         }
-        if(!live)authored_presentation_.stamp(result);
         result.camera_id="editor";result.camera_world=camera.world;result.vertical_fov=camera.vertical_fov;result.near_plane=camera.near_plane;result.far_plane=camera.far_plane;
         if(live)runtime_->append_particles(result);
         return result;
@@ -864,14 +863,11 @@ public:
                 resolve_scene_post_effect(snapshot,asset_directory());
                 require(rigid_transform(snapshot.camera_world),"Camera hierarchy must not scale or shear the camera.");
                 if(asset_preview)animation_info=append_asset_animation_preview(snapshot,params,asset_directory());
-                else append_captured_authored_geometry(snapshot,doc_,matrices,asset_directory(),model_cache_);
+                else append_captured_authored_geometry(snapshot,doc_,matrices,asset_directory(),model_cache_,authored_presentation_);
             }
         } catch(const Error&) { throw; }
         catch (const std::runtime_error& error) { throw Error(-32602, error.what()); }
-        if(!live) {
-            if(asset_preview) { snapshot.presentation_source_id=new_presentation_source_id();for(auto& object:snapshot.objects)object.incarnation=1; }
-            else authored_presentation_.stamp(snapshot);
-        }
+        if(!live && asset_preview) { snapshot.presentation_source_id=new_presentation_source_id();for(auto& object:snapshot.objects)object.incarnation=1; }
         if(!live && !asset_preview) {
             const auto& authored_lens=doc_.at("entities").at(camera_id).at("components").at("Camera");
             select_scene_camera_draw(snapshot,authored_lens.contains("viewmodel") ? std::optional<SceneLens>(scene_lens_value(authored_lens.at("viewmodel"))) : std::nullopt,

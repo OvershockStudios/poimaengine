@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.399
+
+- Show initially wet terrain regions in authored views and captures while keeping their terrain selectable.
+
 ## 0.0.398
 
 - Save export graphics defaults in project settings and apply them when a packaged game launches.

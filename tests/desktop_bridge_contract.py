@@ -361,6 +361,33 @@ try:
     check(pick()['id'] == skin_entity, 'Posed skin triangle was not pickable at its deformed position.')
     checks.append('GPU-independent skin picking follows edited joint poses and excludes obsolete rest geometry.')
     transact([{'op': 'entity.delete', 'id': identity, 'recursive': True} for identity in [group, rotated, triangle, rig]])
+
+    terrain_tile = uuid.uuid4().hex
+    recipe = json.dumps(dict(format='poima.terrain.heightfield', version=1, samples_x=2, samples_z=2,
+                             tile_cells=1, origin_m=[1080, 0, -1], spacing_m=[1, 1], heights_m=[0]*4))
+    terrain = rpc('world.terrain.inspect', {'recipe': recipe})
+    terrain_pin = terrain['recipe_sha256']
+    rpc('world.terrain.cook', {'recipe': recipe, 'expected_recipe_sha256': terrain_pin})
+    tile = {'asset': terrain['tiles'][0]['asset'], 'primitive': 0}
+    transact(create(terrain_tile, 'Wet terrain pick', [0, 0, 0]) + [
+        set_component(terrain_tile, 'StaticMesh', dict(tile, visible=True)),
+        set_component(terrain_tile, 'MeshCollider', dict(tile, friction=.5, restitution=0))])
+    water_request = dict(revision=revision, terrain={'recipe': recipe}, expected_terrain_recipe_sha256=terrain_pin,
+                         tile_entities=[terrain_tile], grid=dict(cells_x=1, cells_z=1, cell_size_m=1,
+                                                                 origin_x_m=1080, origin_z_m=-1),
+                         initial_depths_m=[.5])
+    water_plan = rpc('world.water.plan', water_request)
+    rpc('world.water.cook', dict(water_request, expected_plan_sha256=water_plan['plan_sha256']))
+    transact([{'op': 'water.set', 'asset': water_plan['plan_sha256']}])
+    rpc('desktop.camera', {'position': [1080.5, 5, -.5], 'yaw': 0, 'pitch': -89, 'far': 20})
+    hit = pick()
+    check(hit['id'] == terrain_tile and abs(hit['distance'] - 5/math.cos(math.radians(1))) < 1e-9, hit)
+    rpc('desktop.camera', {'far': 4.75})
+    hit = pick()
+    check(hit['id'] is None and hit['distance'] is None, 'Water was selectable with the bed beyond far clipping.')
+    transact([{'op': 'water.set', 'asset': None}, {'op': 'entity.delete', 'id': terrain_tile, 'recursive': True}])
+    checks.append('Authored wet-cell picking reaches terrain beneath water and returns no hit for water alone.')
+
     rpc('desktop.select', {'id': entity})
     rpc('desktop.camera', camera_before)
 

@@ -131,6 +131,7 @@ void AuthoredPresentation::advance_generation() noexcept {
 void AuthoredPresentation::stamp(SceneSnapshot& snapshot) const {
     snapshot.presentation_source_id = source_;
     snapshot.presentation_generation = generation_;
+    // Stamp authored entities before appending generated region geometry.
     for (auto& object : snapshot.objects) object.incarnation = current_.shapes.at(object.entity_id).second;
 }
 
@@ -166,7 +167,7 @@ void resolve_scene_post_effect(SceneSnapshot& snapshot, const std::filesystem::p
 }
 
 SceneSnapshot build_editor_authored_scene(const Json& published, const Json* preview,
-    const std::filesystem::path& assets, ModelCache& model_cache) {
+    const std::filesystem::path& assets, ModelCache& model_cache, const AuthoredPresentation& presentation) {
     const auto& document = preview ? *preview : published;
     const auto definition = resolve_runtime_definition(document, assets, model_cache, AuthoredRuntimeView::animation_only);
     const auto& entities = document.at("entities");
@@ -177,6 +178,7 @@ SceneSnapshot build_editor_authored_scene(const Json& published, const Json* pre
     snapshot.lighting = authored_lighting(published, matrices);
     resolve_scene_post_effect(snapshot, assets);
     append_geometry(snapshot, definition, entities, matrices, assets, model_cache);
+    presentation.stamp(snapshot);
     if (!preview) {
         try { append_water(snapshot, document, assets); }
         catch (const Error& error) { if (error.code != -32009) throw; }
@@ -185,9 +187,11 @@ SceneSnapshot build_editor_authored_scene(const Json& published, const Json* pre
 }
 
 void append_captured_authored_geometry(SceneSnapshot& snapshot, const Json& document,
-    const std::map<std::string, Matrix4>& matrices, const std::filesystem::path& assets, ModelCache& model_cache) {
+    const std::map<std::string, Matrix4>& matrices, const std::filesystem::path& assets,
+    ModelCache& model_cache, const AuthoredPresentation& presentation) {
     const auto definition = resolve_runtime_definition(document, assets, model_cache, AuthoredRuntimeView::animation_only);
     append_geometry(snapshot, definition, document.at("entities"), matrices, assets, model_cache);
+    presentation.stamp(snapshot);
     append_water(snapshot, document, assets);
 }
 

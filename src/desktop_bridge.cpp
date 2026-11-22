@@ -1069,7 +1069,11 @@ struct Bridge : ViewportState {
         auto ray=transformed(scene.camera_world,local,0);for(auto& value:ray)value/=length;
         const Point origin{scene.camera_world[12],scene.camera_world[13],scene.camera_world[14]};
         const double near_distance=scene.near_plane*length;double nearest=scene.far_plane*length;std::string id;
-        for(const auto& object:scene.objects)if(const auto distance=hit_object(object,origin,ray,near_distance,nearest,scene.lighting.preview)) {
+        for(const auto& object:scene.objects) {
+            // Transient streamed drawables have no selectable entity behind them.
+            if(object.stream_geometry)continue;
+            const auto distance=hit_object(object,origin,ray,near_distance,nearest,scene.lighting.preview);
+            if(!distance)continue;
             if(id.empty() || *distance<nearest || (*distance==nearest && object.entity_id<id)) { nearest=*distance;id=object.entity_id; }
         }
         return {{"id",id.empty() ? Json(nullptr) : Json(id)},{"distance",id.empty() ? Json(nullptr) : Json(nearest)},
@@ -1196,7 +1200,7 @@ struct Bridge : ViewportState {
                 {"commit","Automatic playback evaluates and commits one tick at a time. Consume pending edges and up to 180 degrees of mouse backlog per axis only after each success; held movement and analog rates apply every tick. A failed tick pauses playback and clears focus/input, retaining earlier committed ticks and their input trace."},
                 {"inspection","configured,binding,session_id,controller,camera,focused,profile,pending,accepted_batches,last_applied. binding is controller, ui or null; UI-only controller is null and pending gameplay is always zero. pending has move/look/jump/use. last_applied records first_tick (previous+1), ticks, the first input and frames (one complete input including entity per committed tick, at most 8) for the last controlled poll. On failure it retains the successful prefix. Use frames for exact replay, including mouse backlog across ticks."}}},
             {"views",{{"scene","Free inspection camera; authored or runtime world."},{"game","Explicit Camera entity, authored when stopped, frozen runtime lens and live pose while active. No automatic camera replacement if a camera is absent after Stop; choose another camera or Scene."}}},
-            {"picking",{{"coordinates","Normalized viewport coordinates, top-left origin; aspect is width/height."},{"geometry","Nearest visible snapshot geometry: transformed boxes or CPU triangle intersections, including posed skin vertices, near/far clipping and material backface culling. No GPU readback; subpixel rasterization is not reproduced."},{"mutation","None; select explicitly using desktop.select."}}},
+            {"picking",{{"coordinates","Normalized viewport coordinates, top-left origin; aspect is width/height."},{"geometry","Nearest visible entity geometry: transformed boxes or CPU triangle intersections, including posed skin vertices, near/far clipping and material backface culling. Transient streamed drawables such as water are skipped. No GPU readback; subpixel rasterization is not reproduced."},{"mutation","None; select explicitly using desktop.select."}}},
             {"gizmo",{{"coordinates","Physical client pixels, top-left; attached extent must match. begin hit-tests handles. World/local axes; default move/world."},
                 {"preview","update changes only presentation, including child transforms, lights and skin palettes. commit produces one guarded world transaction; cancel writes nothing."},
                 {"invalidation","Authored revision, camera, selection, mode/space, runtime start, attached resize or detach cancels active drag."},

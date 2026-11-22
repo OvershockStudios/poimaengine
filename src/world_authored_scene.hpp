@@ -42,8 +42,9 @@ void validate_editor_camera(const EditorCamera& camera);
 SceneLighting authored_lighting(const Json& document, const std::map<std::string, Matrix4>& matrices);
 void resolve_scene_post_effect(SceneSnapshot& snapshot, const std::filesystem::path& assets);
 SceneSnapshot build_editor_authored_scene(const Json& published, const Json* preview,
-    const std::filesystem::path& assets, ModelCache& model_cache);
+    const std::filesystem::path& assets, ModelCache& model_cache, const AuthoredPresentation& presentation);
 void append_captured_authored_geometry(SceneSnapshot& snapshot, const Json& document,
-    const std::map<std::string, Matrix4>& matrices, const std::filesystem::path& assets, ModelCache& model_cache);
+    const std::map<std::string, Matrix4>& matrices, const std::filesystem::path& assets,
+    ModelCache& model_cache, const AuthoredPresentation& presentation);
 
 } // namespace poima::world_detail

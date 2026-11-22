@@ -53,6 +53,12 @@ If project preflight stops on a stale binding, open the entry world directly
 with `poima world <world.json>`. Clear the stale binding or cook and bind a new
 region before opening through the project manifest again.
 
+After binding, inspect the initial water surface in the editor's Scene view
+or the stopped Game camera. Agents can capture the same initial depths with
+`world.capture` at the current authored revision. Select the underlying terrain
+to edit the bed, and use the water binding to change the region. Capture a
+runtime tick to inspect the result of flow, rainfall, or an open sluice.
+
 One region supports up to 32×32 cells, 128 authored faces and 128 exchange
 cells. Omitted depths start dry. Interior faces default to open, so close the
 other faces of a dam to prevent bypassing a sluice. Sills use absolute world Y.
@@ -214,6 +220,16 @@ python3 tests/world_water_contract.py "$runtime/bin/poima.exe" \
   --capture-output build/water-captures
 ```
 
+To check authored wet and dry surfaces without starting simulation, run the
+focused capture fixture. It compares rendered depth and the projected wet
+footprint, and verifies that each capture preserves the authored files.
+
+```sh
+python3 tests/water_authored_capture.py "$runtime/bin/poima.exe" \
+  --windows-interop --gpu 0 --output build/authored-water-captures
+```
+
+[Authored water qualification](evidence/m2-authored-water-399.json).
 [Water qualification](evidence/m2-terrain-water-353.json).
 [Combined water and particle replay](evidence/m2-shared-water-particle-stream-355.json).
 

@@ -1,0 +1,102 @@
+{
+  "format": "poima.authored-water.qualification.v1",
+  "version": "0.0.399",
+  "baseline_commit": "6ffa5cafbd6923407739540da2bf4f199c9bb0f9",
+  "baseline_refusal": {
+    "version": "0.0.398",
+    "binary_sha256": "bdcf7856503f09d38f0981a92c235936d4842670ae7e439e9b6971a071e01e7f",
+    "evidence_sha256": "dfef0fb7bc1bbe026fc7b741776f723ecdec239f0722d5a0102d22fee0849982",
+    "code": -32000,
+    "captured": false
+  },
+  "source_manifest_sha256": "8aed3511b1150cfae1a9be2b48f6207b82d53692c7f51a0a02a9b4a5e9f2558a",
+  "ubuntu": {
+    "ctest": [
+      "world_contract",
+      "world_history_contract",
+      "project_contract",
+      "shared_session_contract",
+      "authoring_contract_identity",
+      "world_particles_contract",
+      "world_water_rain_contract",
+      "asset_references_contract",
+      "authoring_response_compatibility",
+      "authoring_api_compatibility",
+      "world_water_contract",
+      "world_terrain_contract",
+      "world_source_stale_native",
+      "world_asset_cache_native",
+      "cli_contract",
+      "authoring_core_conformance",
+      "world_save_native",
+      "world_session_native",
+      "world_schema_native"
+    ],
+    "binary_sha256": "ab050f7de0971db06da0ca5b4022c1b16a6cbccccd669607b465ae566b4bf6b3",
+    "session_test_sha256": "9b56d9074275fb050ac7ced7bb4cfe1f91fe96ceae49794fa651132f4eef7d8e"
+  },
+  "windows": {
+    "binary_sha256": "77e97096ee63e2a19558ebe4cbdf2b5060fdf48548b37cd3b31328bc265e5252",
+    "native_world_session_passed": true,
+    "world_session_binary_sha256": "5fc20921fb95aa74d70dd386c7e669b582a36f3353a4e2f5047aecac7e5bd446",
+    "desktop_abi_picking": {
+      "result_sha256": "3ed02ef3fdc490883d799fd2a80ca26f90242188dc6183a84467789f28a268ad",
+      "bridge_sha256": "f873965bff7643cf767b2a6508552870365a3502d9d6b895f2d015770d5327fb",
+      "passed_checks": 11
+    },
+    "vulkan_validation": true,
+    "captures": {
+      "AMD Radeon(TM) Graphics": {
+        "evidence_sha256": "67fe842a32f0c9558baf6bf98593323cc192b38558e251b6d7f87da7821348ef",
+        "dry": {
+          "image_sha256": "b442fe42ab1405ba160ec7ce5f798d9950a6e2671b89e2ceb9bcc99e99d26191",
+          "object_count": 2,
+          "camera_triangles": 16,
+          "streamed_draws": 0,
+          "streamed_geometry_bytes": 0,
+          "water_pixels": 0,
+          "depth_probes": 8,
+          "maximum_depth_error": 1.0353288415476669e-07
+        },
+        "wet": {
+          "image_sha256": "eaadc5a3b38c6ac6ce872ec14b4cf3e6a6a00c8bb0090adc8fb1233657c575d4",
+          "object_count": 3,
+          "camera_triangles": 24,
+          "streamed_draws": 1,
+          "streamed_geometry_bytes": 864,
+          "water_pixels": 8464,
+          "depth_probes": 8,
+          "maximum_depth_error": 1.0310764486654023e-07
+        }
+      },
+      "NVIDIA GeForce RTX 4070 Laptop GPU": {
+        "evidence_sha256": "9a75893214b3713202b4885fdd77ec321177cdf40f82a956d3425f75b20ab423",
+        "dry": {
+          "image_sha256": "b442fe42ab1405ba160ec7ce5f798d9950a6e2671b89e2ceb9bcc99e99d26191",
+          "object_count": 2,
+          "camera_triangles": 16,
+          "streamed_draws": 0,
+          "streamed_geometry_bytes": 0,
+          "water_pixels": 0,
+          "depth_probes": 8,
+          "maximum_depth_error": 8.483937863346114e-08
+        },
+        "wet": {
+          "image_sha256": "eaadc5a3b38c6ac6ce872ec14b4cf3e6a6a00c8bb0090adc8fb1233657c575d4",
+          "object_count": 3,
+          "camera_triangles": 24,
+          "streamed_draws": 1,
+          "streamed_geometry_bytes": 864,
+          "water_pixels": 8464,
+          "depth_probes": 8,
+          "maximum_depth_error": 8.441413945625698e-08
+        }
+      }
+    }
+  },
+  "retained_preflights": {
+    "camera_parent_offset": "3ccb2dd963da9092f376e537ec9c630f47c2b3edddf3bd39ec0c0020f98991b7",
+    "normal_half_float_rounding": "811ece7112aa75f10568fe20dcb3e4ac036b12acaa6d8e9bacb0255e7e921d33"
+  },
+  "scope": "Authored surface geometry, shared editor snapshot ownership, and desktop entity picking. The picking witness runs through the Windows bridge without an HWND. Capture checks use a controlled basin and independent depth and footprint calculations."
+}
