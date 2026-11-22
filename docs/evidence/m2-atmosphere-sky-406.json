@@ -1,0 +1,2078 @@
+{
+  "checkpoint": "0.0.406",
+  "parent_commit": "aec4967",
+  "world_schema_revision": 207,
+  "ubuntu": {
+    "suites": [
+      "world_water_contract",
+      "world_particles_contract",
+      "authoring_api_compatibility",
+      "save_upgrade_snapshot_native",
+      "render_schedule_native",
+      "world_session_native",
+      "world_ui_contract",
+      "project_contract",
+      "shared_session_contract",
+      "lighting_contract",
+      "contact_shadow_contract",
+      "environment_ibl_contract",
+      "cli_contract",
+      "world_contract",
+      "asset_references_contract"
+    ],
+    "junit_sha256": "d32f235b123dd299038387a044cc9f27f7085427aef692a233a465c36a9128b1",
+    "runtime_descriptor_check_sha256": "5e259edbdc49955a718e67e789bbba54f7771afdea2b15f1d0d544a5a613e6ed",
+    "fixture_sha256": "2ee9a4499b325b451c5e6336a076e73eeead49b23b2e1e90442252a23cfa6f26",
+    "fixture_source_sha256": "2b1e4b7b87860a728e46bcd61e014b4f1d72c7fe19cef6a4c14b729ca16a6466",
+    "binary_sha256": "609c45d898766b923a72ff27f59440775e8686368e9f243a3661755b2a58662e"
+  },
+  "windows": {
+    "descriptor_check_sha256": "5e259edbdc49955a718e67e789bbba54f7771afdea2b15f1d0d544a5a613e6ed",
+    "configurations": {
+      "0-forward-1x": {
+        "adapter": "AMD Radeon(TM) Graphics",
+        "binary_sha256": "64b853f21653056eb150bd5b1a3dc4596cf77464e76a7f6017c12b24845beab5",
+        "fixture_source_sha256": "dad673cd71c75b4556439b9f4cfe54b556c8aef650be6621002813ad349b342c",
+        "raw_evidence_sha256": "9737180d201fa75a779409a36727cfd5e88195d459ab61c183c95163bbd47b88",
+        "samples": 1,
+        "lighting_path": "forward",
+        "captured_images": 14,
+        "max_selected_display_step_error": 1,
+        "mirrored_max_display_step_delta": 1,
+        "retained_gradient_sha256": "e43eedb198226486f16b9ea2f87c45eeb58e5d910558c22f55c9e521ab9db138",
+        "captures": {
+          "legacy-gradient": {
+            "sha256": "e43eedb198226486f16b9ea2f87c45eeb58e5d910558c22f55c9e521ab9db138",
+            "rgb": [
+              6,
+              6,
+              6
+            ],
+            "probe": [
+              160,
+              90
+            ],
+            "linear_hdr": [
+              0.00390625,
+              0.00390625,
+              0.00390625
+            ]
+          },
+          "day": {
+            "sha256": "5633a1166b371b27b2ec2422ad59ea252aeea559d4aa6993f3b78f8e7253063e",
+            "rgb": [
+              33,
+              46,
+              64
+            ],
+            "probe": [
+              160,
+              90
+            ],
+            "linear_hdr": [
+              0.0312347412109375,
+              0.056610107421875,
+              0.10870361328125
+            ],
+            "reference": [
+              33,
+              46,
+              64
+            ],
+            "max_display_step_error": 0
+          },
+          "translated-at-same-altitude": {
+            "sha256": "5633a1166b371b27b2ec2422ad59ea252aeea559d4aa6993f3b78f8e7253063e",
+            "rgb": [
+              33,
+              46,
+              64
+            ],
+            "probe": [
+              160,
+              90
+            ],
+            "linear_hdr": [
+              0.0312347412109375,
+              0.056610107421875,
+              0.10870361328125
+            ]
+          },
+          "mirrored-azimuth": {
+            "sha256": "a4b7462ab2546c1f9d9206b701ee282c979f242a0f960cec03458d2cf359263e",
+            "rgb": [
+              33,
+              46,
+              64
+            ],
+            "probe": [
+              160,
+              90
+            ],
+            "linear_hdr": [
+              0.0311126708984375,
+              0.056427001953125,
+              0.1083984375
+            ],
+            "reference": [
+              33,
+              46,
+              64
+            ],
+            "max_display_step_error": 0
+          },
+          "day-at-12km": {
+            "sha256": "2b164c1d6c14ef630de76bda973513ad1c3f3ab391c16364e1ee3125bb5679dd",
+            "rgb": [
+              15,
+              22,
+              34
+            ],
+            "probe": [
+              160,
+              90
+            ],
+            "linear_hdr": [
+              0.00930023193359375,
+              0.01605224609375,
+              0.033203125
+            ],
+            "reference": [
+              15,
+              22,
+              34
+            ],
+            "max_display_step_error": 0
+          },
+          "lowered-sea-level": {
+            "sha256": "2b164c1d6c14ef630de76bda973513ad1c3f3ab391c16364e1ee3125bb5679dd",
+            "rgb": [
+              15,
+              22,
+              34
+            ],
+            "probe": [
+              160,
+              90
+            ],
+            "linear_hdr": [
+              0.00930023193359375,
+              0.01605224609375,
+              0.033203125
+            ],
+            "reference": [
+              15,
+              22,
+              34
+            ],
+            "max_display_step_error": 0
+          },
+          "sunset": {
+            "sha256": "028eed95d9e83ad808a0a6f77953574e3317306db338975f4eb62a0f0731eeb4",
+            "rgb": [
+              88,
+              65,
+              44
+            ],
+            "probe": [
+              160,
+              90
+            ],
+            "linear_hdr": [
+              0.216552734375,
+              0.11212158203125,
+              0.05218505859375
+            ],
+            "reference": [
+              88,
+              65,
+              44
+            ],
+            "max_display_step_error": 0
+          },
+          "twilight": {
+            "sha256": "b5d842605d77b79d3eaae3991381b140b66ed6343c902f6cf07fb7ad0e5980f5",
+            "rgb": [
+              24,
+              17,
+              15
+            ],
+            "probe": [
+              160,
+              90
+            ],
+            "linear_hdr": [
+              0.0179443359375,
+              0.01126861572265625,
+              0.00946807861328125
+            ],
+            "reference": [
+              24,
+              17,
+              15
+            ],
+            "max_display_step_error": 0
+          },
+          "midnight": {
+            "sha256": "e43eedb198226486f16b9ea2f87c45eeb58e5d910558c22f55c9e521ab9db138",
+            "rgb": [
+              6,
+              6,
+              6
+            ],
+            "probe": [
+              160,
+              90
+            ],
+            "linear_hdr": [
+              0.00390625,
+              0.00390625,
+              0.00390625
+            ],
+            "reference": [
+              6,
+              6,
+              6
+            ],
+            "max_display_step_error": 0
+          },
+          "disabled-sun": {
+            "sha256": "e43eedb198226486f16b9ea2f87c45eeb58e5d910558c22f55c9e521ab9db138",
+            "rgb": [
+              6,
+              6,
+              6
+            ],
+            "probe": [
+              160,
+              90
+            ],
+            "linear_hdr": [
+              0.00390625,
+              0.00390625,
+              0.00390625
+            ]
+          },
+          "zero-radiance": {
+            "sha256": "e43eedb198226486f16b9ea2f87c45eeb58e5d910558c22f55c9e521ab9db138",
+            "rgb": [
+              6,
+              6,
+              6
+            ],
+            "probe": [
+              160,
+              90
+            ],
+            "linear_hdr": [
+              0.00390625,
+              0.00390625,
+              0.00390625
+            ]
+          },
+          "solar-direction-without-disk": {
+            "sha256": "56d4b38146f993a4ce0c5dd348480b18cfe7d45cbbdf21d0587369ffa5bff412",
+            "rgb": [
+              116,
+              105,
+              88
+            ],
+            "probe": [
+              160,
+              90
+            ],
+            "linear_hdr": [
+              0.427490234375,
+              0.33056640625,
+              0.21728515625
+            ],
+            "reference": [
+              117,
+              106,
+              88
+            ],
+            "max_display_step_error": 1
+          },
+          "aerosol-free-air": {
+            "sha256": "f06535a7a5c399eeb41b6d9415e5aea73f7a117dcd1940cfd65bcea61d841571",
+            "rgb": [
+              64,
+              74,
+              74
+            ],
+            "probe": [
+              160,
+              90
+            ],
+            "linear_hdr": [
+              0.108642578125,
+              0.14697265625,
+              0.1455078125
+            ],
+            "reference": [
+              64,
+              74,
+              74
+            ],
+            "max_display_step_error": 0
+          },
+          "attenuated-disk": {
+            "sha256": "6198cfec791d4dd107ab0c46cb795bf1bdf48c6a894e28d6dda7988f67a30a63",
+            "rgb": [
+              161,
+              141,
+              111
+            ],
+            "probe": [
+              160,
+              90
+            ],
+            "linear_hdr": [
+              1.1005859375,
+              0.72216796875,
+              0.374267578125
+            ]
+          }
+        }
+      },
+      "0-forward-4x": {
+        "adapter": "AMD Radeon(TM) Graphics",
+        "binary_sha256": "64b853f21653056eb150bd5b1a3dc4596cf77464e76a7f6017c12b24845beab5",
+        "fixture_source_sha256": "dad673cd71c75b4556439b9f4cfe54b556c8aef650be6621002813ad349b342c",
+        "raw_evidence_sha256": "dfe644d1ffe5714b198154ef74c2352d641e7f0d657c9857faf322a71296fa7e",
+        "samples": 4,
+        "lighting_path": "forward",
+        "captured_images": 14,
+        "max_selected_display_step_error": 1,
+        "mirrored_max_display_step_delta": 1,
+        "retained_gradient_sha256": "e43eedb198226486f16b9ea2f87c45eeb58e5d910558c22f55c9e521ab9db138",
+        "captures": {
+          "legacy-gradient": {
+            "sha256": "e43eedb198226486f16b9ea2f87c45eeb58e5d910558c22f55c9e521ab9db138",
+            "rgb": [
+              6,
+              6,
+              6
+            ],
+            "probe": [
+              160,
+              90
+            ]
+          },
+          "day": {
+            "sha256": "5633a1166b371b27b2ec2422ad59ea252aeea559d4aa6993f3b78f8e7253063e",
+            "rgb": [
+              33,
+              46,
+              64
+            ],
+            "probe": [
+              160,
+              90
+            ],
+            "reference": [
+              33,
+              46,
+              64
+            ],
+            "max_display_step_error": 0
+          },
+          "translated-at-same-altitude": {
+            "sha256": "5633a1166b371b27b2ec2422ad59ea252aeea559d4aa6993f3b78f8e7253063e",
+            "rgb": [
+              33,
+              46,
+              64
+            ],
+            "probe": [
+              160,
+              90
+            ]
+          },
+          "mirrored-azimuth": {
+            "sha256": "a4b7462ab2546c1f9d9206b701ee282c979f242a0f960cec03458d2cf359263e",
+            "rgb": [
+              33,
+              46,
+              64
+            ],
+            "probe": [
+              160,
+              90
+            ],
+            "reference": [
+              33,
+              46,
+              64
+            ],
+            "max_display_step_error": 0
+          },
+          "day-at-12km": {
+            "sha256": "2b164c1d6c14ef630de76bda973513ad1c3f3ab391c16364e1ee3125bb5679dd",
+            "rgb": [
+              15,
+              22,
+              34
+            ],
+            "probe": [
+              160,
+              90
+            ],
+            "reference": [
+              15,
+              22,
+              34
+            ],
+            "max_display_step_error": 0
+          },
+          "lowered-sea-level": {
+            "sha256": "2b164c1d6c14ef630de76bda973513ad1c3f3ab391c16364e1ee3125bb5679dd",
+            "rgb": [
+              15,
+              22,
+              34
+            ],
+            "probe": [
+              160,
+              90
+            ],
+            "reference": [
+              15,
+              22,
+              34
+            ],
+            "max_display_step_error": 0
+          },
+          "sunset": {
+            "sha256": "028eed95d9e83ad808a0a6f77953574e3317306db338975f4eb62a0f0731eeb4",
+            "rgb": [
+              88,
+              65,
+              44
+            ],
+            "probe": [
+              160,
+              90
+            ],
+            "reference": [
+              88,
+              65,
+              44
+            ],
+            "max_display_step_error": 0
+          },
+          "twilight": {
+            "sha256": "b5d842605d77b79d3eaae3991381b140b66ed6343c902f6cf07fb7ad0e5980f5",
+            "rgb": [
+              24,
+              17,
+              15
+            ],
+            "probe": [
+              160,
+              90
+            ],
+            "reference": [
+              24,
+              17,
+              15
+            ],
+            "max_display_step_error": 0
+          },
+          "midnight": {
+            "sha256": "e43eedb198226486f16b9ea2f87c45eeb58e5d910558c22f55c9e521ab9db138",
+            "rgb": [
+              6,
+              6,
+              6
+            ],
+            "probe": [
+              160,
+              90
+            ],
+            "reference": [
+              6,
+              6,
+              6
+            ],
+            "max_display_step_error": 0
+          },
+          "disabled-sun": {
+            "sha256": "e43eedb198226486f16b9ea2f87c45eeb58e5d910558c22f55c9e521ab9db138",
+            "rgb": [
+              6,
+              6,
+              6
+            ],
+            "probe": [
+              160,
+              90
+            ]
+          },
+          "zero-radiance": {
+            "sha256": "e43eedb198226486f16b9ea2f87c45eeb58e5d910558c22f55c9e521ab9db138",
+            "rgb": [
+              6,
+              6,
+              6
+            ],
+            "probe": [
+              160,
+              90
+            ]
+          },
+          "solar-direction-without-disk": {
+            "sha256": "56d4b38146f993a4ce0c5dd348480b18cfe7d45cbbdf21d0587369ffa5bff412",
+            "rgb": [
+              116,
+              105,
+              88
+            ],
+            "probe": [
+              160,
+              90
+            ],
+            "reference": [
+              117,
+              106,
+              88
+            ],
+            "max_display_step_error": 1
+          },
+          "aerosol-free-air": {
+            "sha256": "f06535a7a5c399eeb41b6d9415e5aea73f7a117dcd1940cfd65bcea61d841571",
+            "rgb": [
+              64,
+              74,
+              74
+            ],
+            "probe": [
+              160,
+              90
+            ],
+            "reference": [
+              64,
+              74,
+              74
+            ],
+            "max_display_step_error": 0
+          },
+          "attenuated-disk": {
+            "sha256": "6198cfec791d4dd107ab0c46cb795bf1bdf48c6a894e28d6dda7988f67a30a63",
+            "rgb": [
+              161,
+              141,
+              111
+            ],
+            "probe": [
+              160,
+              90
+            ]
+          }
+        }
+      },
+      "0-deferred-1x": {
+        "adapter": "AMD Radeon(TM) Graphics",
+        "binary_sha256": "64b853f21653056eb150bd5b1a3dc4596cf77464e76a7f6017c12b24845beab5",
+        "fixture_source_sha256": "dad673cd71c75b4556439b9f4cfe54b556c8aef650be6621002813ad349b342c",
+        "raw_evidence_sha256": "b6d72bca8a4f5473a8daf27cafe7680830f4d1392bccb47c0a8684c85c7b6a52",
+        "samples": 1,
+        "lighting_path": "deferred",
+        "captured_images": 14,
+        "max_selected_display_step_error": 1,
+        "mirrored_max_display_step_delta": 1,
+        "retained_gradient_sha256": "e43eedb198226486f16b9ea2f87c45eeb58e5d910558c22f55c9e521ab9db138",
+        "captures": {
+          "legacy-gradient": {
+            "sha256": "e43eedb198226486f16b9ea2f87c45eeb58e5d910558c22f55c9e521ab9db138",
+            "rgb": [
+              6,
+              6,
+              6
+            ],
+            "probe": [
+              160,
+              90
+            ],
+            "linear_hdr": [
+              0.00390625,
+              0.00390625,
+              0.00390625
+            ]
+          },
+          "day": {
+            "sha256": "5633a1166b371b27b2ec2422ad59ea252aeea559d4aa6993f3b78f8e7253063e",
+            "rgb": [
+              33,
+              46,
+              64
+            ],
+            "probe": [
+              160,
+              90
+            ],
+            "linear_hdr": [
+              0.0312347412109375,
+              0.056610107421875,
+              0.10870361328125
+            ],
+            "reference": [
+              33,
+              46,
+              64
+            ],
+            "max_display_step_error": 0
+          },
+          "translated-at-same-altitude": {
+            "sha256": "5633a1166b371b27b2ec2422ad59ea252aeea559d4aa6993f3b78f8e7253063e",
+            "rgb": [
+              33,
+              46,
+              64
+            ],
+            "probe": [
+              160,
+              90
+            ],
+            "linear_hdr": [
+              0.0312347412109375,
+              0.056610107421875,
+              0.10870361328125
+            ]
+          },
+          "mirrored-azimuth": {
+            "sha256": "a4b7462ab2546c1f9d9206b701ee282c979f242a0f960cec03458d2cf359263e",
+            "rgb": [
+              33,
+              46,
+              64
+            ],
+            "probe": [
+              160,
+              90
+            ],
+            "linear_hdr": [
+              0.0311126708984375,
+              0.056427001953125,
+              0.1083984375
+            ],
+            "reference": [
+              33,
+              46,
+              64
+            ],
+            "max_display_step_error": 0
+          },
+          "day-at-12km": {
+            "sha256": "2b164c1d6c14ef630de76bda973513ad1c3f3ab391c16364e1ee3125bb5679dd",
+            "rgb": [
+              15,
+              22,
+              34
+            ],
+            "probe": [
+              160,
+              90
+            ],
+            "linear_hdr": [
+              0.00930023193359375,
+              0.01605224609375,
+              0.033203125
+            ],
+            "reference": [
+              15,
+              22,
+              34
+            ],
+            "max_display_step_error": 0
+          },
+          "lowered-sea-level": {
+            "sha256": "2b164c1d6c14ef630de76bda973513ad1c3f3ab391c16364e1ee3125bb5679dd",
+            "rgb": [
+              15,
+              22,
+              34
+            ],
+            "probe": [
+              160,
+              90
+            ],
+            "linear_hdr": [
+              0.00930023193359375,
+              0.01605224609375,
+              0.033203125
+            ],
+            "reference": [
+              15,
+              22,
+              34
+            ],
+            "max_display_step_error": 0
+          },
+          "sunset": {
+            "sha256": "028eed95d9e83ad808a0a6f77953574e3317306db338975f4eb62a0f0731eeb4",
+            "rgb": [
+              88,
+              65,
+              44
+            ],
+            "probe": [
+              160,
+              90
+            ],
+            "linear_hdr": [
+              0.216552734375,
+              0.11212158203125,
+              0.05218505859375
+            ],
+            "reference": [
+              88,
+              65,
+              44
+            ],
+            "max_display_step_error": 0
+          },
+          "twilight": {
+            "sha256": "b5d842605d77b79d3eaae3991381b140b66ed6343c902f6cf07fb7ad0e5980f5",
+            "rgb": [
+              24,
+              17,
+              15
+            ],
+            "probe": [
+              160,
+              90
+            ],
+            "linear_hdr": [
+              0.0179443359375,
+              0.01126861572265625,
+              0.00946807861328125
+            ],
+            "reference": [
+              24,
+              17,
+              15
+            ],
+            "max_display_step_error": 0
+          },
+          "midnight": {
+            "sha256": "e43eedb198226486f16b9ea2f87c45eeb58e5d910558c22f55c9e521ab9db138",
+            "rgb": [
+              6,
+              6,
+              6
+            ],
+            "probe": [
+              160,
+              90
+            ],
+            "linear_hdr": [
+              0.00390625,
+              0.00390625,
+              0.00390625
+            ],
+            "reference": [
+              6,
+              6,
+              6
+            ],
+            "max_display_step_error": 0
+          },
+          "disabled-sun": {
+            "sha256": "e43eedb198226486f16b9ea2f87c45eeb58e5d910558c22f55c9e521ab9db138",
+            "rgb": [
+              6,
+              6,
+              6
+            ],
+            "probe": [
+              160,
+              90
+            ],
+            "linear_hdr": [
+              0.00390625,
+              0.00390625,
+              0.00390625
+            ]
+          },
+          "zero-radiance": {
+            "sha256": "e43eedb198226486f16b9ea2f87c45eeb58e5d910558c22f55c9e521ab9db138",
+            "rgb": [
+              6,
+              6,
+              6
+            ],
+            "probe": [
+              160,
+              90
+            ],
+            "linear_hdr": [
+              0.00390625,
+              0.00390625,
+              0.00390625
+            ]
+          },
+          "solar-direction-without-disk": {
+            "sha256": "56d4b38146f993a4ce0c5dd348480b18cfe7d45cbbdf21d0587369ffa5bff412",
+            "rgb": [
+              116,
+              105,
+              88
+            ],
+            "probe": [
+              160,
+              90
+            ],
+            "linear_hdr": [
+              0.427490234375,
+              0.33056640625,
+              0.21728515625
+            ],
+            "reference": [
+              117,
+              106,
+              88
+            ],
+            "max_display_step_error": 1
+          },
+          "aerosol-free-air": {
+            "sha256": "f06535a7a5c399eeb41b6d9415e5aea73f7a117dcd1940cfd65bcea61d841571",
+            "rgb": [
+              64,
+              74,
+              74
+            ],
+            "probe": [
+              160,
+              90
+            ],
+            "linear_hdr": [
+              0.108642578125,
+              0.14697265625,
+              0.1455078125
+            ],
+            "reference": [
+              64,
+              74,
+              74
+            ],
+            "max_display_step_error": 0
+          },
+          "attenuated-disk": {
+            "sha256": "6198cfec791d4dd107ab0c46cb795bf1bdf48c6a894e28d6dda7988f67a30a63",
+            "rgb": [
+              161,
+              141,
+              111
+            ],
+            "probe": [
+              160,
+              90
+            ],
+            "linear_hdr": [
+              1.1005859375,
+              0.72216796875,
+              0.374267578125
+            ]
+          }
+        }
+      },
+      "1-forward-1x": {
+        "adapter": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "binary_sha256": "64b853f21653056eb150bd5b1a3dc4596cf77464e76a7f6017c12b24845beab5",
+        "fixture_source_sha256": "dad673cd71c75b4556439b9f4cfe54b556c8aef650be6621002813ad349b342c",
+        "raw_evidence_sha256": "b0107e0b43fa2e8813c063c5c1c558c2b05937c6bfd0a1696f4942f353556071",
+        "samples": 1,
+        "lighting_path": "forward",
+        "captured_images": 14,
+        "max_selected_display_step_error": 1,
+        "mirrored_max_display_step_delta": 0,
+        "retained_gradient_sha256": "e43eedb198226486f16b9ea2f87c45eeb58e5d910558c22f55c9e521ab9db138",
+        "captures": {
+          "legacy-gradient": {
+            "sha256": "e43eedb198226486f16b9ea2f87c45eeb58e5d910558c22f55c9e521ab9db138",
+            "rgb": [
+              6,
+              6,
+              6
+            ],
+            "probe": [
+              160,
+              90
+            ],
+            "linear_hdr": [
+              0.00390625,
+              0.00390625,
+              0.00390625
+            ]
+          },
+          "day": {
+            "sha256": "d3023dfeb88b276f92b9e381eef23a7ba3addf2963bc418549bf2460ec1e2322",
+            "rgb": [
+              33,
+              46,
+              64
+            ],
+            "probe": [
+              160,
+              90
+            ],
+            "linear_hdr": [
+              0.03125,
+              0.056610107421875,
+              0.10870361328125
+            ],
+            "reference": [
+              33,
+              46,
+              64
+            ],
+            "max_display_step_error": 0
+          },
+          "translated-at-same-altitude": {
+            "sha256": "d3023dfeb88b276f92b9e381eef23a7ba3addf2963bc418549bf2460ec1e2322",
+            "rgb": [
+              33,
+              46,
+              64
+            ],
+            "probe": [
+              160,
+              90
+            ],
+            "linear_hdr": [
+              0.03125,
+              0.056610107421875,
+              0.10870361328125
+            ]
+          },
+          "mirrored-azimuth": {
+            "sha256": "a52a28aed831154e52eaba37e44b152533fe0b0e160a2ef9f30392efc32803e4",
+            "rgb": [
+              33,
+              46,
+              64
+            ],
+            "probe": [
+              160,
+              90
+            ],
+            "linear_hdr": [
+              0.0311279296875,
+              0.05645751953125,
+              0.10845947265625
+            ],
+            "reference": [
+              33,
+              46,
+              64
+            ],
+            "max_display_step_error": 0
+          },
+          "day-at-12km": {
+            "sha256": "d4de8aab3300b9dcc4ee9bdad2333664264297c0910bac69268d4c97fef278da",
+            "rgb": [
+              15,
+              22,
+              34
+            ],
+            "probe": [
+              160,
+              90
+            ],
+            "linear_hdr": [
+              0.009307861328125,
+              0.01605224609375,
+              0.033233642578125
+            ],
+            "reference": [
+              15,
+              22,
+              34
+            ],
+            "max_display_step_error": 0
+          },
+          "lowered-sea-level": {
+            "sha256": "d4de8aab3300b9dcc4ee9bdad2333664264297c0910bac69268d4c97fef278da",
+            "rgb": [
+              15,
+              22,
+              34
+            ],
+            "probe": [
+              160,
+              90
+            ],
+            "linear_hdr": [
+              0.009307861328125,
+              0.01605224609375,
+              0.033233642578125
+            ],
+            "reference": [
+              15,
+              22,
+              34
+            ],
+            "max_display_step_error": 0
+          },
+          "sunset": {
+            "sha256": "cb46f00ed750eb81edb3fd1e77ee7dff0e2a2d51a8b4a2f5baa1d3f46ba052f1",
+            "rgb": [
+              88,
+              65,
+              44
+            ],
+            "probe": [
+              160,
+              90
+            ],
+            "linear_hdr": [
+              0.2166748046875,
+              0.1121826171875,
+              0.052215576171875
+            ],
+            "reference": [
+              88,
+              65,
+              44
+            ],
+            "max_display_step_error": 0
+          },
+          "twilight": {
+            "sha256": "26c93aee7b88a40dbd29b7a6bd30f8f3d7fa842b964447d5b2d73cbf041871a1",
+            "rgb": [
+              24,
+              17,
+              15
+            ],
+            "probe": [
+              160,
+              90
+            ],
+            "linear_hdr": [
+              0.0179595947265625,
+              0.0112762451171875,
+              0.0094757080078125
+            ],
+            "reference": [
+              24,
+              17,
+              15
+            ],
+            "max_display_step_error": 0
+          },
+          "midnight": {
+            "sha256": "e43eedb198226486f16b9ea2f87c45eeb58e5d910558c22f55c9e521ab9db138",
+            "rgb": [
+              6,
+              6,
+              6
+            ],
+            "probe": [
+              160,
+              90
+            ],
+            "linear_hdr": [
+              0.00390625,
+              0.00390625,
+              0.00390625
+            ],
+            "reference": [
+              6,
+              6,
+              6
+            ],
+            "max_display_step_error": 0
+          },
+          "disabled-sun": {
+            "sha256": "e43eedb198226486f16b9ea2f87c45eeb58e5d910558c22f55c9e521ab9db138",
+            "rgb": [
+              6,
+              6,
+              6
+            ],
+            "probe": [
+              160,
+              90
+            ],
+            "linear_hdr": [
+              0.00390625,
+              0.00390625,
+              0.00390625
+            ]
+          },
+          "zero-radiance": {
+            "sha256": "e43eedb198226486f16b9ea2f87c45eeb58e5d910558c22f55c9e521ab9db138",
+            "rgb": [
+              6,
+              6,
+              6
+            ],
+            "probe": [
+              160,
+              90
+            ],
+            "linear_hdr": [
+              0.00390625,
+              0.00390625,
+              0.00390625
+            ]
+          },
+          "solar-direction-without-disk": {
+            "sha256": "8575688035792fe03fb196afef902695671a509fc8989b775032aecdb72500fc",
+            "rgb": [
+              116,
+              105,
+              88
+            ],
+            "probe": [
+              160,
+              90
+            ],
+            "linear_hdr": [
+              0.427490234375,
+              0.330810546875,
+              0.21728515625
+            ],
+            "reference": [
+              117,
+              106,
+              88
+            ],
+            "max_display_step_error": 1
+          },
+          "aerosol-free-air": {
+            "sha256": "177c6b85bc1fc9ad87b975bf55aa0aa173c28966f933b787422e9c21ebf4b2e6",
+            "rgb": [
+              64,
+              74,
+              74
+            ],
+            "probe": [
+              160,
+              90
+            ],
+            "linear_hdr": [
+              0.108642578125,
+              0.14697265625,
+              0.1455078125
+            ],
+            "reference": [
+              64,
+              74,
+              74
+            ],
+            "max_display_step_error": 0
+          },
+          "attenuated-disk": {
+            "sha256": "3ca946ec49d3ee38da453834bdfc5ddc23e8db2a22597990aac747c9babd9435",
+            "rgb": [
+              161,
+              141,
+              111
+            ],
+            "probe": [
+              160,
+              90
+            ],
+            "linear_hdr": [
+              1.1005859375,
+              0.72216796875,
+              0.374267578125
+            ]
+          }
+        }
+      },
+      "1-forward-4x": {
+        "adapter": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "binary_sha256": "64b853f21653056eb150bd5b1a3dc4596cf77464e76a7f6017c12b24845beab5",
+        "fixture_source_sha256": "dad673cd71c75b4556439b9f4cfe54b556c8aef650be6621002813ad349b342c",
+        "raw_evidence_sha256": "6669c85eeed369a7f3c8ffd1b8be132f7a4956da0f14313f94a77f3758ab246b",
+        "samples": 4,
+        "lighting_path": "forward",
+        "captured_images": 14,
+        "max_selected_display_step_error": 1,
+        "mirrored_max_display_step_delta": 0,
+        "retained_gradient_sha256": "e43eedb198226486f16b9ea2f87c45eeb58e5d910558c22f55c9e521ab9db138",
+        "captures": {
+          "legacy-gradient": {
+            "sha256": "e43eedb198226486f16b9ea2f87c45eeb58e5d910558c22f55c9e521ab9db138",
+            "rgb": [
+              6,
+              6,
+              6
+            ],
+            "probe": [
+              160,
+              90
+            ]
+          },
+          "day": {
+            "sha256": "d3023dfeb88b276f92b9e381eef23a7ba3addf2963bc418549bf2460ec1e2322",
+            "rgb": [
+              33,
+              46,
+              64
+            ],
+            "probe": [
+              160,
+              90
+            ],
+            "reference": [
+              33,
+              46,
+              64
+            ],
+            "max_display_step_error": 0
+          },
+          "translated-at-same-altitude": {
+            "sha256": "d3023dfeb88b276f92b9e381eef23a7ba3addf2963bc418549bf2460ec1e2322",
+            "rgb": [
+              33,
+              46,
+              64
+            ],
+            "probe": [
+              160,
+              90
+            ]
+          },
+          "mirrored-azimuth": {
+            "sha256": "a52a28aed831154e52eaba37e44b152533fe0b0e160a2ef9f30392efc32803e4",
+            "rgb": [
+              33,
+              46,
+              64
+            ],
+            "probe": [
+              160,
+              90
+            ],
+            "reference": [
+              33,
+              46,
+              64
+            ],
+            "max_display_step_error": 0
+          },
+          "day-at-12km": {
+            "sha256": "d4de8aab3300b9dcc4ee9bdad2333664264297c0910bac69268d4c97fef278da",
+            "rgb": [
+              15,
+              22,
+              34
+            ],
+            "probe": [
+              160,
+              90
+            ],
+            "reference": [
+              15,
+              22,
+              34
+            ],
+            "max_display_step_error": 0
+          },
+          "lowered-sea-level": {
+            "sha256": "d4de8aab3300b9dcc4ee9bdad2333664264297c0910bac69268d4c97fef278da",
+            "rgb": [
+              15,
+              22,
+              34
+            ],
+            "probe": [
+              160,
+              90
+            ],
+            "reference": [
+              15,
+              22,
+              34
+            ],
+            "max_display_step_error": 0
+          },
+          "sunset": {
+            "sha256": "cb46f00ed750eb81edb3fd1e77ee7dff0e2a2d51a8b4a2f5baa1d3f46ba052f1",
+            "rgb": [
+              88,
+              65,
+              44
+            ],
+            "probe": [
+              160,
+              90
+            ],
+            "reference": [
+              88,
+              65,
+              44
+            ],
+            "max_display_step_error": 0
+          },
+          "twilight": {
+            "sha256": "26c93aee7b88a40dbd29b7a6bd30f8f3d7fa842b964447d5b2d73cbf041871a1",
+            "rgb": [
+              24,
+              17,
+              15
+            ],
+            "probe": [
+              160,
+              90
+            ],
+            "reference": [
+              24,
+              17,
+              15
+            ],
+            "max_display_step_error": 0
+          },
+          "midnight": {
+            "sha256": "e43eedb198226486f16b9ea2f87c45eeb58e5d910558c22f55c9e521ab9db138",
+            "rgb": [
+              6,
+              6,
+              6
+            ],
+            "probe": [
+              160,
+              90
+            ],
+            "reference": [
+              6,
+              6,
+              6
+            ],
+            "max_display_step_error": 0
+          },
+          "disabled-sun": {
+            "sha256": "e43eedb198226486f16b9ea2f87c45eeb58e5d910558c22f55c9e521ab9db138",
+            "rgb": [
+              6,
+              6,
+              6
+            ],
+            "probe": [
+              160,
+              90
+            ]
+          },
+          "zero-radiance": {
+            "sha256": "e43eedb198226486f16b9ea2f87c45eeb58e5d910558c22f55c9e521ab9db138",
+            "rgb": [
+              6,
+              6,
+              6
+            ],
+            "probe": [
+              160,
+              90
+            ]
+          },
+          "solar-direction-without-disk": {
+            "sha256": "8575688035792fe03fb196afef902695671a509fc8989b775032aecdb72500fc",
+            "rgb": [
+              116,
+              105,
+              88
+            ],
+            "probe": [
+              160,
+              90
+            ],
+            "reference": [
+              117,
+              106,
+              88
+            ],
+            "max_display_step_error": 1
+          },
+          "aerosol-free-air": {
+            "sha256": "177c6b85bc1fc9ad87b975bf55aa0aa173c28966f933b787422e9c21ebf4b2e6",
+            "rgb": [
+              64,
+              74,
+              74
+            ],
+            "probe": [
+              160,
+              90
+            ],
+            "reference": [
+              64,
+              74,
+              74
+            ],
+            "max_display_step_error": 0
+          },
+          "attenuated-disk": {
+            "sha256": "3ca946ec49d3ee38da453834bdfc5ddc23e8db2a22597990aac747c9babd9435",
+            "rgb": [
+              161,
+              141,
+              111
+            ],
+            "probe": [
+              160,
+              90
+            ]
+          }
+        }
+      },
+      "1-deferred-1x": {
+        "adapter": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "binary_sha256": "64b853f21653056eb150bd5b1a3dc4596cf77464e76a7f6017c12b24845beab5",
+        "fixture_source_sha256": "dad673cd71c75b4556439b9f4cfe54b556c8aef650be6621002813ad349b342c",
+        "raw_evidence_sha256": "1a2577a9cee3259f6ecb0088a27cbd84ba79038595c5b4e242027ca0bffdcc4c",
+        "samples": 1,
+        "lighting_path": "deferred",
+        "captured_images": 18,
+        "max_selected_display_step_error": 1,
+        "mirrored_max_display_step_delta": 0,
+        "retained_gradient_sha256": "e43eedb198226486f16b9ea2f87c45eeb58e5d910558c22f55c9e521ab9db138",
+        "captures": {
+          "legacy-gradient": {
+            "sha256": "e43eedb198226486f16b9ea2f87c45eeb58e5d910558c22f55c9e521ab9db138",
+            "rgb": [
+              6,
+              6,
+              6
+            ],
+            "probe": [
+              160,
+              90
+            ],
+            "linear_hdr": [
+              0.00390625,
+              0.00390625,
+              0.00390625
+            ]
+          },
+          "day": {
+            "sha256": "d3023dfeb88b276f92b9e381eef23a7ba3addf2963bc418549bf2460ec1e2322",
+            "rgb": [
+              33,
+              46,
+              64
+            ],
+            "probe": [
+              160,
+              90
+            ],
+            "linear_hdr": [
+              0.03125,
+              0.056610107421875,
+              0.10870361328125
+            ],
+            "reference": [
+              33,
+              46,
+              64
+            ],
+            "max_display_step_error": 0
+          },
+          "translated-at-same-altitude": {
+            "sha256": "d3023dfeb88b276f92b9e381eef23a7ba3addf2963bc418549bf2460ec1e2322",
+            "rgb": [
+              33,
+              46,
+              64
+            ],
+            "probe": [
+              160,
+              90
+            ],
+            "linear_hdr": [
+              0.03125,
+              0.056610107421875,
+              0.10870361328125
+            ]
+          },
+          "mirrored-azimuth": {
+            "sha256": "a52a28aed831154e52eaba37e44b152533fe0b0e160a2ef9f30392efc32803e4",
+            "rgb": [
+              33,
+              46,
+              64
+            ],
+            "probe": [
+              160,
+              90
+            ],
+            "linear_hdr": [
+              0.0311279296875,
+              0.05645751953125,
+              0.10845947265625
+            ],
+            "reference": [
+              33,
+              46,
+              64
+            ],
+            "max_display_step_error": 0
+          },
+          "day-at-12km": {
+            "sha256": "d4de8aab3300b9dcc4ee9bdad2333664264297c0910bac69268d4c97fef278da",
+            "rgb": [
+              15,
+              22,
+              34
+            ],
+            "probe": [
+              160,
+              90
+            ],
+            "linear_hdr": [
+              0.009307861328125,
+              0.01605224609375,
+              0.033233642578125
+            ],
+            "reference": [
+              15,
+              22,
+              34
+            ],
+            "max_display_step_error": 0
+          },
+          "lowered-sea-level": {
+            "sha256": "d4de8aab3300b9dcc4ee9bdad2333664264297c0910bac69268d4c97fef278da",
+            "rgb": [
+              15,
+              22,
+              34
+            ],
+            "probe": [
+              160,
+              90
+            ],
+            "linear_hdr": [
+              0.009307861328125,
+              0.01605224609375,
+              0.033233642578125
+            ],
+            "reference": [
+              15,
+              22,
+              34
+            ],
+            "max_display_step_error": 0
+          },
+          "sunset": {
+            "sha256": "cb46f00ed750eb81edb3fd1e77ee7dff0e2a2d51a8b4a2f5baa1d3f46ba052f1",
+            "rgb": [
+              88,
+              65,
+              44
+            ],
+            "probe": [
+              160,
+              90
+            ],
+            "linear_hdr": [
+              0.2166748046875,
+              0.1121826171875,
+              0.052215576171875
+            ],
+            "reference": [
+              88,
+              65,
+              44
+            ],
+            "max_display_step_error": 0
+          },
+          "twilight": {
+            "sha256": "26c93aee7b88a40dbd29b7a6bd30f8f3d7fa842b964447d5b2d73cbf041871a1",
+            "rgb": [
+              24,
+              17,
+              15
+            ],
+            "probe": [
+              160,
+              90
+            ],
+            "linear_hdr": [
+              0.0179595947265625,
+              0.0112762451171875,
+              0.0094757080078125
+            ],
+            "reference": [
+              24,
+              17,
+              15
+            ],
+            "max_display_step_error": 0
+          },
+          "midnight": {
+            "sha256": "e43eedb198226486f16b9ea2f87c45eeb58e5d910558c22f55c9e521ab9db138",
+            "rgb": [
+              6,
+              6,
+              6
+            ],
+            "probe": [
+              160,
+              90
+            ],
+            "linear_hdr": [
+              0.00390625,
+              0.00390625,
+              0.00390625
+            ],
+            "reference": [
+              6,
+              6,
+              6
+            ],
+            "max_display_step_error": 0
+          },
+          "disabled-sun": {
+            "sha256": "e43eedb198226486f16b9ea2f87c45eeb58e5d910558c22f55c9e521ab9db138",
+            "rgb": [
+              6,
+              6,
+              6
+            ],
+            "probe": [
+              160,
+              90
+            ],
+            "linear_hdr": [
+              0.00390625,
+              0.00390625,
+              0.00390625
+            ]
+          },
+          "zero-radiance": {
+            "sha256": "e43eedb198226486f16b9ea2f87c45eeb58e5d910558c22f55c9e521ab9db138",
+            "rgb": [
+              6,
+              6,
+              6
+            ],
+            "probe": [
+              160,
+              90
+            ],
+            "linear_hdr": [
+              0.00390625,
+              0.00390625,
+              0.00390625
+            ]
+          },
+          "solar-direction-without-disk": {
+            "sha256": "8575688035792fe03fb196afef902695671a509fc8989b775032aecdb72500fc",
+            "rgb": [
+              116,
+              105,
+              88
+            ],
+            "probe": [
+              160,
+              90
+            ],
+            "linear_hdr": [
+              0.427490234375,
+              0.330810546875,
+              0.21728515625
+            ],
+            "reference": [
+              117,
+              106,
+              88
+            ],
+            "max_display_step_error": 1
+          },
+          "aerosol-free-air": {
+            "sha256": "177c6b85bc1fc9ad87b975bf55aa0aa173c28966f933b787422e9c21ebf4b2e6",
+            "rgb": [
+              64,
+              74,
+              74
+            ],
+            "probe": [
+              160,
+              90
+            ],
+            "linear_hdr": [
+              0.108642578125,
+              0.14697265625,
+              0.1455078125
+            ],
+            "reference": [
+              64,
+              74,
+              74
+            ],
+            "max_display_step_error": 0
+          },
+          "attenuated-disk": {
+            "sha256": "3ca946ec49d3ee38da453834bdfc5ddc23e8db2a22597990aac747c9babd9435",
+            "rgb": [
+              161,
+              141,
+              111
+            ],
+            "probe": [
+              160,
+              90
+            ],
+            "linear_hdr": [
+              1.1005859375,
+              0.72216796875,
+              0.374267578125
+            ]
+          },
+          "relocated-day": {
+            "sha256": "d3023dfeb88b276f92b9e381eef23a7ba3addf2963bc418549bf2460ec1e2322",
+            "rgb": [
+              33,
+              46,
+              64
+            ],
+            "probe": [
+              160,
+              90
+            ],
+            "linear_hdr": [
+              0.03125,
+              0.056610107421875,
+              0.10870361328125
+            ]
+          },
+          "relocated-solar-1": {
+            "sha256": "ff8fb2f3cfe2a4842c91c37eef73722bc515966f9b9915fbe79cd7d5e718eace",
+            "rgb": [
+              14,
+              11,
+              8
+            ],
+            "probe": [
+              160,
+              90
+            ],
+            "linear_hdr": [
+              0.00896453857421875,
+              0.006717681884765625,
+              0.004787445068359375
+            ],
+            "reference": [
+              14,
+              11,
+              8
+            ],
+            "max_display_step_error": 0
+          },
+          "relocated-solar-2": {
+            "sha256": "a0edc5aa8924b27a524c8e089333f135f18ea07ce7b9d0fcc154553126da4817",
+            "rgb": [
+              26,
+              38,
+              54
+            ],
+            "probe": [
+              160,
+              90
+            ],
+            "linear_hdr": [
+              0.0211181640625,
+              0.0394287109375,
+              0.076904296875
+            ],
+            "reference": [
+              26,
+              38,
+              54
+            ],
+            "max_display_step_error": 0
+          },
+          "relocated-solar-5": {
+            "sha256": "38e661f5e84afb41cf8c022ff7484cb71df417aad30ee62218f96d3ce1dd5500",
+            "rgb": [
+              0,
+              0,
+              0
+            ],
+            "probe": [
+              160,
+              90
+            ],
+            "linear_hdr": [
+              0.000244140625,
+              0.000244140625,
+              0.000244140625
+            ],
+            "reference": [
+              0,
+              0,
+              0
+            ],
+            "max_display_step_error": 0
+          }
+        },
+        "relocated_replay": {
+          "game_sha256": "66e351f7fa2490316c33dbc74acc56d4707aee716bf33f54160dd8c8d817c0e7",
+          "bmp_sha256": "38e661f5e84afb41cf8c022ff7484cb71df417aad30ee62218f96d3ce1dd5500",
+          "rendered_frames": 6,
+          "retired_frames": 6,
+          "committed_tick": 5,
+          "swapchain_rebuilds": 1,
+          "optical_tables": {
+            "density_generation": 1,
+            "observer_height_m": 0.0,
+            "texture_bytes": 163840,
+            "view_generation": 4
+          }
+        }
+      }
+    },
+    "total_captures": 88
+  },
+  "scope": "Bounded synthetic sky scenes, direct numerical witnesses and a five-tick relocated Windows Native AOT replay.",
+  "intel_compute": {
+    "scope": "Vulkan compute dispatch and image readback for the two 0.0.406 atmosphere kernels on Intel discrete hardware.",
+    "results": {
+      "hardware_invariants_passed": true,
+      "scope": "standalone compute shader readback",
+      "device": "Intel(R) Graphics (BMG G31)",
+      "vendor_id": 32902,
+      "vulkan_api": "1.4.335",
+      "validation_layer": false,
+      "sync_validation": false,
+      "debug_message_capture": false,
+      "validation_messages": 0,
+      "readback_bytes": 557056,
+      "exact_gpu_repeat": true,
+      "deep_night_black": true,
+      "sea_level_below_ground_black": true,
+      "vertical_density": [
+        7.99895096,
+        1.19898331,
+        14.9980993
+      ],
+      "max_relative_divisor_floor_1e_4": 0.0709086127,
+      "max_srgb_code_error_at_exposure_4": 2.01387434,
+      "radiance_gate_7_percent_passed": false,
+      "radiance_gate_violations": 1,
+      "display_gate_2_codes_passed": false,
+      "display_gate_violations": 1,
+      "day_blue_to_red": 2.446,
+      "reference_day_blue_to_red": 2.43881027,
+      "probes": [
+        {
+          "frame": 0,
+          "texel": [
+            83,
+            66
+          ],
+          "gpu": [
+            0.0152587891,
+            0.026473999,
+            0.037322998
+          ],
+          "cpu": [
+            0.015292462,
+            0.0265129172,
+            0.0372954135
+          ]
+        },
+        {
+          "frame": 0,
+          "texel": [
+            15,
+            90
+          ],
+          "gpu": [
+            0.00693893433,
+            0.012512207,
+            0.0235900879
+          ],
+          "cpu": [
+            0.0069918479,
+            0.0125758479,
+            0.0236596202
+          ]
+        },
+        {
+          "frame": 1,
+          "texel": [
+            0,
+            52
+          ],
+          "gpu": [
+            0.0245819092,
+            0.00269889832,
+            4.39882278e-05
+          ],
+          "cpu": [
+            0.0236945261,
+            0.00265379654,
+            4.29483678e-05
+          ]
+        },
+        {
+          "frame": 2,
+          "texel": [
+            5,
+            40
+          ],
+          "gpu": [
+            0.0281677246,
+            0.000884532928,
+            2.98023224e-07
+          ],
+          "cpu": [
+            0.0267329377,
+            0.000825964903,
+            2.88918727e-07
+          ]
+        }
+      ],
+      "sky_peak_rgb": [
+        [
+          0.106689453,
+          0.0938720703,
+          0.0747070312
+        ],
+        [
+          0.0261230469,
+          0.00480270386,
+          0.00280570984
+        ],
+        [
+          0.0560913086,
+          0.00677108765,
+          0.00387954712
+        ],
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          0.106689453,
+          0.0938720703,
+          0.0747070312
+        ]
+      ]
+    },
+    "shader_sha256": {
+      "atmosphere_density": "ec44d70aa3aad63447ab17f6354374e1165282426d660e7f01caa86cea28324e",
+      "atmosphere_sky_view": "e606eb37261e45b05710b647f8bcded9b2f3409eecf1564f15ce42a9028d3418"
+    },
+    "artifacts_sha256": {
+      "witness_source": "0b3c46ddbe1f7ad28d13bb85f0cbc69b673c49d4eec2cb70a3e66e1ead8165e3",
+      "witness_executable": "3bfa1a8e9e648c2ced54c095e403c35ac0bd5877c603943336777fa9160e05ac",
+      "raw_record": "5f8eafbc34ba2648d4b6c177103e28eca800957f5a20e3aa1642f02fe4bb81d6",
+      "raw_image_readback": "195c0f61cfff1838700d48086c15a4c0d1af1d76eb4051f72a11771fc162dc22",
+      "wire_log": "a89951c07783ce6ebe7d84123edb5babed917524c146fa3340c236678c08443f",
+      "stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "retained_failures": [
+      {
+        "attempt": "first",
+        "passed": false,
+        "reason": "The \u22120.35 solar sine left a physically lit path from a 20 km observer through the far upper atmosphere.",
+        "raw_log_sha256": "9f1c0212f39a5b70180d460b3d607b058b07db5d7154c186c7f13fd444cc959c",
+        "witness_source_sha256": "32d4c58b80dd622dd8a224025449be79485e94fb29c214ee7c3be831c4670901"
+      },
+      {
+        "attempt": "second",
+        "passed": false,
+        "reason": "The 2 km grazing probe missed the 7% radiance tolerance in green.",
+        "raw_log_sha256": "f1ee9089dfc3245ef155c41c03b6312fd74bf227251a77986e8581c685fa321f",
+        "witness_source_sha256": "119b322c5c05d514db80b6ddf843976950eb97011b01df9b61d10cc99b2d9b01"
+      },
+      {
+        "attempt": "third",
+        "passed": false,
+        "reason": "The 2 km grazing probe missed the 2 sRGB code tolerance in red at exposure 4.",
+        "raw_log_sha256": "70f4c49c84120039837ac11aeb177b20b6662c641d3e06855c877bf4beb55383",
+        "witness_source_sha256": "5c9a5f1dbf5306694a3ad3052ef3d9876bfdb7e5921d7026fee1bea2a235b0c1"
+      },
+      {
+        "attempt": "fourth",
+        "passed": false,
+        "reason": "The provisional blue to red ratio of 3 exceeded both the direct reference and the measured result. Their channel ordering still agreed.",
+        "raw_log_sha256": "8fb05b6dff2de3d5242fb89f566708ba8ed75c564248aebba22760de9b51fca5",
+        "witness_source_sha256": "d315c29c8c9d34673eb97a2088bf5e8377553749ebbd5934b91e5dca759b88b2"
+      }
+    ],
+    "readback_layout": [
+      {
+        "format": "RGBA32_FLOAT",
+        "dimensions": [
+          128,
+          32
+        ],
+        "optical_columns": "Rayleigh, aerosol, ozone"
+      },
+      {
+        "format": "RGBA16_FLOAT",
+        "dimensions": [
+          128,
+          96
+        ],
+        "configurations": [
+          {
+            "height_km": 0,
+            "sun_up": 0.5,
+            "aerosol": 1
+          },
+          {
+            "height_km": 0,
+            "sun_up": -0.03,
+            "aerosol": 1
+          },
+          {
+            "height_km": 2,
+            "sun_up": -0.03,
+            "aerosol": 1
+          },
+          {
+            "height_km": 20,
+            "sun_up": -0.6,
+            "aerosol": 1
+          },
+          {
+            "height_km": 0,
+            "sun_up": 0.5,
+            "aerosol": 1
+          }
+        ]
+      }
+    ]
+  },
+  "retained_fixture_failures": [
+    {
+      "scope": "Windows fixture setup",
+      "evidence_sha256": "0dac3f8cd937c9580841d5e3325c00a092a6df101d2003c02a4f97cf0a598a3c",
+      "diagnostic": "The baseline process tried to open the active writer's project."
+    },
+    {
+      "scope": "Windows fixture setup",
+      "evidence_sha256": "1dc0036a4cea9c509c5037252df4955bb8d9c736db0c51cc2c91c429e72f6cd5",
+      "diagnostic": "The copied reference could not run because the fixture lacked its file-copy import."
+    },
+    {
+      "scope": "Windows fixture setup",
+      "evidence_sha256": "219236c38ddb2f579cd26d03a494a46181f48b39ede3efb3d97b2c60c318eb4b",
+      "diagnostic": "The reduced reference project lacked required directories. The passing fixture opens a cloned world document directly."
+    },
+    {
+      "scope": "Authoring fixture setup",
+      "evidence_sha256": "f2df588a94d434249611a351451953fc6b50d5c86540ca57067928339a0e9ac1",
+      "diagnostic": "The fixture read build features from version. The passing run reads capabilities."
+    },
+    {
+      "scope": "Authoring fixture setup",
+      "evidence_sha256": "f945cdcab3d2fdbd03a22d68ddb408830685026f515e651c2f15d0a7139f3bca",
+      "diagnostic": "The baseline IBL test expected historical schema 126."
+    },
+    {
+      "scope": "Authoring fixture setup",
+      "evidence_sha256": "69c38a0a24c94a7c8176eb8022c6a2fb0f57f1996d32481c8bf3348cf176133b",
+      "diagnostic": "The baseline contact-shadow test expected historical schema 126."
+    }
+  ]
+}

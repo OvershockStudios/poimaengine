@@ -86,6 +86,10 @@ def validate(runtime, header):
     need(type(flags) is dict and type(flags.get('navigation')) is bool and type(flags.get('simulation')) is bool,
          'Runtime navigation and simulation capabilities must be Boolean.')
     need(not flags['navigation'] or flags['simulation'], 'Navigation requires simulation in the installed runtime.')
+    if 'atmosphere_sky' in flags:
+        need(type(flags['atmosphere_sky']) is bool, 'Runtime atmospheric sky capability must be Boolean.')
+        need(not flags['atmosphere_sky'] or (flags.get('renderer') is True and flags['simulation']),
+             'Atmospheric sky requires rendering and simulation in the installed runtime.')
     features = runtime.get('gameplay_features')
     need(type(features) is list and all(type(name) is str for name in features) and
          len(features) == len(set(features)), 'Runtime gameplay features must be unique strings.')
@@ -136,6 +140,16 @@ def self_test(header, cmake, stale_runtime=None):
             cases += 1
             return
         raise AssertionError('Invalid descriptor was accepted.')
+    atmosphere = copy.deepcopy(good)
+    atmosphere['features'].update(renderer=True, atmosphere_sky=True)
+    validate(atmosphere, header)
+    cases += 1
+    for flags in (dict(renderer=False, atmosphere_sky=True),
+                  dict(renderer=True, simulation=False, atmosphere_sky=True),
+                  dict(renderer=True, atmosphere_sky='true')):
+        invalid_atmosphere = copy.deepcopy(good)
+        invalid_atmosphere['features'].update(flags)
+        reject(invalid_atmosphere)
     unnamed_584 = copy.deepcopy(good)
     unnamed_584['gameplay_features'].remove('solar_lighting_v1')
     reject(unnamed_584)
@@ -278,7 +292,7 @@ def self_test(header, cmake, stale_runtime=None):
                 retained_and_spoofed_544_rejected=True, unnamed_552_rejected=True,
                 retained_and_spoofed_568_rejected=True, unnamed_576_rejected=True,
                 retained_and_spoofed_576_rejected=True, unnamed_584_rejected=True,
-                generated_navigation_false_and_true_checked=True)
+                generated_navigation_false_and_true_checked=True, atmosphere_capability_checked=True)
 
 
 def main():

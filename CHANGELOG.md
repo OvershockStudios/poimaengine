@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.406
+
+- Render an opt-in atmospheric sky with cached optical-density and sky-view tables, including altitude, twilight and sun-disk attenuation.
+
 ## 0.0.405
 
 - Drive the sun, sky and ambient lighting from compiled gameplay time through a replayable, saved solar sample.

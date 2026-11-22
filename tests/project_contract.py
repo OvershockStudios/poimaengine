@@ -640,6 +640,64 @@ class ProjectContract(unittest.TestCase):
         self.assertEqual(tree(output), unchanged)
         self.assertEqual(tree(self.project), source)
 
+    def test_atmosphere_requires_runtime_feature_when_authored_in_a_template(self):
+        runtime, spec = self.metadata_runtime()
+        descriptor = runtime/'runtime.json'
+        build = ('project', 'build', native(self.manifest), '--runtime', native(runtime))
+        output = self.root/'Atmospheric sky bundle'
+        world = json.loads((self.project/self.document['entry']['world']).read_bytes())
+        environment, = (row['components']['LightingEnvironment'] for row in world['entities'].values()
+                        if 'LightingEnvironment' in row['components'])
+        self.assertNotIn('needs_atmosphere_sky', self.inspect())
+        self.assertNotIn('needs_atmosphere_sky', self.world_rpc('world.dependencies'))
+
+        transform = dict(position=[0, 0, 0], rotation=[0, 0, 0, 1], scale=[1, 1, 1])
+        environment_id, sun_id = uuid.uuid4().hex, uuid.uuid4().hex
+        lighting = dict(ambient=[0, 0, 0], exposure=1, sky=environment['sky'] | dict(sun=sun_id),
+                        atmosphere=dict(sea_level_m=0, aerosol_strength=1, radiance_scale=1))
+        sun = dict(kind='directional', color=[1, 1, 1], intensity=20, enabled=False)
+        recipe = dict(op='template.set', id=uuid.uuid4().hex, name='Atmosphere fixture', root=environment_id,
+                      entities={environment_id: dict(name='Environment', parent=None,
+                          components=dict(Transform=transform, LightingEnvironment=lighting)),
+                          sun_id: dict(name='Sun', parent=environment_id,
+                          components=dict(Transform=transform, Light=sun))})
+        self.world_rpc('world.transact', base_revision=world['revision'], request_id=uuid.uuid4().hex, ops=[recipe])
+        self.assertIs(self.inspect()['needs_atmosphere_sky'], True)
+        self.assertIs(self.world_rpc('world.dependencies')['needs_atmosphere_sky'], True)
+        self.assertNotIn('atmosphere', self.world_rpc('world.lighting'))
+
+        source = tree(self.project)
+        for feature in (None, False, 'true'):
+            with self.subTest(feature=feature):
+                if feature is None:
+                    spec['features'].pop('atmosphere_sky', None)
+                else:
+                    spec['features']['atmosphere_sky'] = feature
+                descriptor.write_text(json.dumps(spec), encoding='utf-8')
+                self.run_cli(*build, '--output', native(output), success=False)
+                self.assertIn('Boolean' if isinstance(feature, str) else 'Atmospheric sky',
+                              CALLS[-1]['reply']['diagnostics'][0]['message'])
+                self.assertFalse(output.exists())
+                self.assertEqual(tree(self.project), source)
+
+        spec['features']['atmosphere_sky'] = True
+        descriptor.write_text(json.dumps(spec), encoding='utf-8')
+        self.run_cli(*build, '--output', native(output))
+        manifest = output/'game.json'
+        self.assertIs(self.run_cli('game', 'inspect', native(manifest))['needs_atmosphere_sky'], True)
+        game = json.loads(manifest.read_bytes())
+        del spec['features']['atmosphere_sky']
+        descriptor_bytes = json.dumps(spec).encode('utf-8')
+        (output/'runtime/runtime.json').write_bytes(descriptor_bytes)
+        row = next(item for item in game['files'] if item['path'] == 'runtime/runtime.json')
+        row.update(size=len(descriptor_bytes), sha256=hashlib.sha256(descriptor_bytes).hexdigest())
+        manifest.write_text(json.dumps(game), encoding='utf-8')
+        unchanged = tree(output)
+        self.run_cli('game', 'inspect', native(manifest), success=False)
+        self.assertIn('Atmospheric sky', CALLS[-1]['reply']['diagnostics'][0]['message'])
+        self.assertEqual(tree(output), unchanged)
+        self.assertEqual(tree(self.project), source)
+
     @unittest.skipUnless(args.windows_interop or os.name == 'nt', 'Reproduces the Windows staging path limit.')
     def test_windows_export_reads_world_and_profile_in_deep_staging_paths(self):
         runtime, spec = self.metadata_runtime()

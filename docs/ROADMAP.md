@@ -271,6 +271,10 @@ environmental motion around shared world time. New research techniques need
 controlled moving-scene quality/cost comparisons against the functioning
 baseline. Novelty alone does not establish improved graphics or performance.
 
+[Atmospheric sky](ATMOSPHERE_SKY.md) renders single-scattering daylight and
+twilight from the same committed solar direction as the existing day/night
+lighting. Its optical tables provide a starting point for aerial perspective.
+
 **Dependencies:** render scheduling, scene products, reliable motion/history,
 material/content contracts and profiling. **Exit:** a representative atmospheric
 scene runs within declared CPU/GPU/VRAM budgets across supported tiers, with

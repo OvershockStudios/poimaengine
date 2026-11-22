@@ -1,8 +1,19 @@
 # Implementation status
 
-Updated 2026-11-22 for **0.0.405**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-22 for **0.0.406**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.406 adds an opt-in [atmospheric sky](ATMOSPHERE_SKY.md) that
+renders daylight, sunset and twilight using the authored or gameplay-driven
+sun. AMD and NVIDIA passed 88 Vulkan captures across forward 1× and 4× MSAA
+and deferred 1×. Selected sky pixels were within one sRGB step of an
+independent reference. A relocated Native AOT replay updated the sky view
+four times and computed its density table once. Ubuntu passed 15 suites
+and the exact save-restoration fixture. An independent Intel Arc compute
+readback passed repeatability and physical-boundary checks. A grazing probe
+at 2 km missed its stricter radiance and display-error limits.
+[Results](evidence/m2-atmosphere-sky-406.json)
 
 Version 0.0.405 adds [gameplay-driven solar lighting](WEATHER_CYCLE.md#drive-the-sun-and-sky).
 The same clock can drive rain and the visible sun, sky and ambient light.

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "poima/render_schedule.hpp"
+#include "poima/atmosphere_dimensions.hpp"
 
 #include <algorithm>
 #include <array>
@@ -11,9 +12,11 @@ namespace poima::render_schedule {
 namespace {
 // Preserve the existing pass IDs in captured plans while inserting new stages.
 constexpr std::uint64_t pass_order(PassId id) {
-    if(id==PassId::auto_exposure)return 2u*static_cast<unsigned>(PassId::resolve)+1u;
-    if(id==PassId::exposure_readback)return 2u*static_cast<unsigned>(PassId::product_probes)+1u;
-    return 2ull*static_cast<unsigned>(id);
+    if(id==PassId::auto_exposure)return 4u*static_cast<unsigned>(PassId::resolve)+1u;
+    if(id==PassId::exposure_readback)return 4u*static_cast<unsigned>(PassId::product_probes)+1u;
+    if(id==PassId::atmosphere_density)return 4u*static_cast<unsigned>(PassId::scene_clear)+1u;
+    if(id==PassId::atmosphere_view)return 4u*static_cast<unsigned>(PassId::scene_clear)+2u;
+    return 4ull*static_cast<unsigned>(id);
 }
 }
 
@@ -25,6 +28,7 @@ void Schedule::validate(bool before_acquire) const {
     const auto world_hdr=world_radiance(frame,settings);
     const bool reconstruct_composed=settings.reconstruction && (settings.screen_reflections || settings.height_fog);
     const bool reconstruct_sprites=settings.reconstruction && settings.particle_sprites;
+    const bool atmospheric_sky=frame.atmosphere_density!=none || frame.atmosphere_view!=none;
     const bool stream=frame.streamed_vertices!=none || frame.streamed_indices!=none;
     if(stream) {
         if(!settings.scene || frame.streamed_vertices==frame.streamed_indices)fail("invalid streamed geometry roles");
@@ -152,6 +156,32 @@ void Schedule::validate(bool before_acquire) const {
         for(const auto* textures:{&frame.game_textures,&frame.editor_textures,&frame.sprite_textures})for(auto id:*textures)disjoint(id);
         for(const auto& copy:frame.probe_copies)disjoint(copy.destination);
     };
+    bool density_dirty=false,atmosphere_dirty=false;
+    if(atmospheric_sky) {
+        required(frame.atmosphere_density);
+        required(frame.atmosphere_view);
+        const auto& density=resource(frame.atmosphere_density);
+        const auto& view=resource(frame.atmosphere_view);
+        const auto valid=[](const Resource& table,Format format,std::uint32_t width,std::uint32_t height) {
+            constexpr auto uses=use_bit(Use::sampled)|use_bit(Use::image_write);
+            return table.kind==Kind::texture && table.format==format && table.region==Region::whole &&
+                table.lifetime==(table.initialized ? Lifetime::imported : Lifetime::shared) &&
+                !table.late_bound && table.samples==1 && table.layers==1 &&
+                table.width==width && table.height==height && (table.supported&uses)==uses;
+        };
+        if(!settings.sky || frame.atmosphere_density==frame.atmosphere_view ||
+            !valid(density,Format::rgba32_float,atmosphere::density_width,atmosphere::density_height) ||
+            !valid(view,Format::rgba16_float,atmosphere::sky_view_width,atmosphere::sky_view_height) ||
+            (!density.initialized && view.initialized))fail("invalid atmospheric sky tables");
+        require_distinct_roles(frame.atmosphere_density,frame.atmosphere_view,"atmospheric sky table aliases another resource role");
+        for(auto role:{frame.reflected_hdr,frame.reflection_roughness,frame.fogged_hdr,frame.sprite_hdr,
+            frame.sprite_coverage,frame.display_ldr,frame.composition_mask,frame.exposure_state,frame.exposure_readback}) {
+            if(role==frame.atmosphere_density || role==frame.atmosphere_view)
+                fail("atmospheric sky table aliases an output or composition role");
+        }
+        density_dirty=!density.initialized;
+        atmosphere_dirty=!view.initialized;
+    }
     const bool exposure_readback=frame.exposure_readback!=none;
     if(settings.auto_exposure) {
         required(frame.exposure_state);
@@ -475,6 +505,7 @@ void Schedule::validate(bool before_acquire) const {
     std::uint64_t previous=0;bool first=true;
     bool surface_marks_uploaded=false,grade_applied=false,spatial_aa_applied=false;
     bool exposure_prepared=false,exposure_applied=false,exposure_copied=false;
+    bool atmosphere_drawn=false;
     unsigned bloom_stage=0;
     for(const auto& pass:passes) {
         const auto order=pass_order(pass.id);
@@ -484,6 +515,22 @@ void Schedule::validate(bool before_acquire) const {
         auto matches=[](const Access& access,ResourceId id,Use use,bool initialize) {
             return access.resource==id && access.use==use && access.initialize==initialize;
         };
+        if(pass.id==PassId::atmosphere_density) {
+            if(!density_dirty || pass.accesses.size()!=1 ||
+                !matches(pass.accesses[0],frame.atmosphere_density,Use::image_write,true))
+                fail("invalid atmospheric density precomputation");
+        }
+        if(pass.id==PassId::atmosphere_view) {
+            if(!atmosphere_dirty || pass.accesses.size()!=2 ||
+                !matches(pass.accesses[0],frame.atmosphere_density,Use::sampled,false) ||
+                !matches(pass.accesses[1],frame.atmosphere_view,Use::image_write,true))
+                fail("invalid atmospheric sky-view precomputation");
+        }
+        if(atmospheric_sky && pass.id==PassId::sky) {
+            if(!has(frame.atmosphere_density,Use::sampled) || !has(frame.atmosphere_view,Use::sampled))
+                fail("atmospheric sky draw lacks its tables");
+            atmosphere_drawn=true;
+        }
         if(pass.id==PassId::stream_geometry) {
             if(!stream || pass.accesses.size()!=2 || !has(frame.streamed_vertices,Use::upload) ||
                 !has(frame.streamed_indices,Use::upload) ||
@@ -853,6 +900,14 @@ void Schedule::validate(bool before_acquire) const {
             if(settings.bloom && (a.resource==frame.bloom || a.resource==frame.bloom_scratch) &&
                 (pass.id<PassId::bloom_extract || pass.id>PassId::bloom_vertical) &&
                 !(a.resource==frame.bloom && pass.id==PassId::output && a.use==Use::sampled))fail("bloom resource used outside its filter and display passes");
+            if(atmospheric_sky && (a.resource==frame.atmosphere_density || a.resource==frame.atmosphere_view)) {
+                const bool density=a.resource==frame.atmosphere_density;
+                const auto producer=density ? PassId::atmosphere_density : PassId::atmosphere_view;
+                const bool generated=pass.id==producer && a.use==Use::image_write && a.initialize;
+                const bool consumed=(pass.id==PassId::sky || (density && pass.id==PassId::atmosphere_view)) &&
+                    a.use==Use::sampled && !a.initialize;
+                if(!generated && !consumed)fail("atmospheric sky table used outside its producers and sky draw");
+            }
             if(!(r.supported&use_bit(a.use)))fail("unsupported resource usage");
             const bool buffer_use=a.use==Use::upload || a.use==Use::storage_read || a.use==Use::storage_write || a.use==Use::vertex || a.use==Use::index || a.use==Use::constant;
             const bool texture_use=a.use==Use::image_read_write || a.use==Use::image_write || a.use==Use::sampled || a.use==Use::color || a.use==Use::color_overwrite || a.use==Use::depth || a.use==Use::clear_color || a.use==Use::clear_depth || a.use==Use::resolve_source || a.use==Use::resolve_destination || a.use==Use::present;
@@ -894,6 +949,7 @@ void Schedule::validate(bool before_acquire) const {
     if(settings.deferred && !deferred_lit)fail("missing deferred lighting pass");
     if(settings.screen_reflections && (!screen_reflected || !world_effects_output))fail("missing screen reflection pass or composed output");
     if(settings.height_fog && (!world_fogged || !world_effects_output))fail("missing height fog pass or composed output");
+    if(atmospheric_sky && !atmosphere_drawn)fail("missing atmospheric sky draw");
     if(settings.reconstruction && !reconstructed)fail("missing reconstruction pass");
     if(stream && !stream_uploaded)fail("missing streamed geometry upload");
     if((streamed_camera && !world_opaque) || (streamed_shadow && !stream_shadow_drawn))fail("missing streamed geometry draw pass");
@@ -948,7 +1004,18 @@ Schedule build(FrameResources frame,Settings settings) {
     if(settings.scene) {add(shadows,f.shadow,Use::clear_depth,true);add(shadows,f.frame,Use::constant);add(shadows,f.objects,Use::storage_read);geometry(shadows,f.shadow_draws,false);for(const auto& draw:f.shadow_draws)for(auto texture:draw.textures)add(shadows,texture,Use::sampled);add(shadows,f.shadow,Use::depth);}
     auto& clear=pass(PassId::scene_clear);add(clear,f.color,Use::clear_color,true);add(clear,f.depth,Use::clear_depth,true);if(settings.products) {add(clear,f.normal,Use::clear_color,true);add(clear,f.motion,Use::clear_color,true);add(clear,f.motion_valid,Use::clear_color,true);}
     if(settings.deferred)for(auto id:{f.material_base,f.material_surface,f.material_correspondence})add(clear,id,Use::clear_color,true);
-    if(settings.sky) {auto& sky=pass(PassId::sky);add(sky,f.color,Use::color);add(sky,f.depth,Use::depth);add(sky,f.frame,Use::constant);}
+    if(f.atmosphere_density!=none && !result.resource(f.atmosphere_density).initialized)
+        add(pass(PassId::atmosphere_density),f.atmosphere_density,Use::image_write,true);
+    if(f.atmosphere_view!=none && !result.resource(f.atmosphere_view).initialized) {
+        auto& view=pass(PassId::atmosphere_view);
+        add(view,f.atmosphere_density,Use::sampled);
+        add(view,f.atmosphere_view,Use::image_write,true);
+    }
+    if(settings.sky) {
+        auto& sky=pass(PassId::sky);
+        add(sky,f.color,Use::color);add(sky,f.depth,Use::depth);add(sky,f.frame,Use::constant);
+        add(sky,f.atmosphere_density,Use::sampled);add(sky,f.atmosphere_view,Use::sampled);
+    }
     auto& opaque=pass(PassId::opaque);add(opaque,f.color,Use::color);add(opaque,f.depth,Use::depth);if(settings.products && !settings.deferred) {add(opaque,f.normal,Use::color);add(opaque,f.motion,Use::color);add(opaque,f.motion_valid,Use::color);}
     add(opaque,f.surface_marks,Use::storage_read);
     add(opaque,f.surface_mark_masks,Use::sampled);

@@ -30,6 +30,7 @@
     "output_grade": @POIMA_RUNTIME_RENDER_SMOKE@,
     "screen_reflections": @POIMA_RUNTIME_RENDER_SMOKE@,
     "auto_exposure": @POIMA_RUNTIME_RENDER_SMOKE@,
+    "atmosphere_sky": @POIMA_RUNTIME_ATMOSPHERE_SKY@,
     "foliage_motion": @POIMA_RUNTIME_RENDER_SMOKE@,
     "height_fog": @POIMA_RUNTIME_RENDER_SMOKE@,
     "audio": @POIMA_RUNTIME_AUDIO@,

@@ -1,14 +1,20 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "render_sky.hpp"
 
+#include "poima/atmosphere_density_cs.hpp"
+#include "poima/atmosphere_dimensions.hpp"
+#include "poima/atmosphere_sky_view_cs.hpp"
 #include "poima/scene.hpp"
+#include "poima/sky_atmosphere_ps.hpp"
 #include "poima/sky_ps.hpp"
 #include "poima/sky_vs.hpp"
 #include "render_embedded_shader.hpp"
 
+#include <algorithm>
 #include <cmath>
 #include <limits>
 #include <stdexcept>
+#include <utility>
 
 namespace poima::render_sky {
 namespace {
@@ -21,6 +27,130 @@ float gpu_float(double value) {
         "Scene matrix exceeds GPU float range.");
     return static_cast<float>(value);
 }
+
+nvrhi::TextureHandle make_atmosphere_texture(nvrhi::IDevice& device, nvrhi::Format format,
+    std::uint32_t width, std::uint32_t height, const char* name) {
+    const auto support = nvrhi::FormatSupport::Texture | nvrhi::FormatSupport::ShaderLoad |
+        nvrhi::FormatSupport::ShaderSample | nvrhi::FormatSupport::ShaderUavStore;
+    require((device.queryFormatSupport(format) & support) == support,
+        "Atmospheric sky requires filterable, writable floating-point lookup textures.");
+    nvrhi::TextureDesc desc;
+    desc.width = width;
+    desc.height = height;
+    desc.format = format;
+    desc.isUAV = true;
+    desc.isShaderResource = true;
+    desc.initialState = nvrhi::ResourceStates::ShaderResource;
+    desc.keepInitialState = true;
+    desc.debugName = name;
+    auto texture = device.createTexture(desc);
+    require(bool(texture), "Atmospheric sky lookup texture allocation failed.");
+    return texture;
+}
+
+static_assert(atmosphere::density_width % atmosphere::thread_group_size == 0 &&
+    atmosphere::density_height % atmosphere::thread_group_size == 0 &&
+    atmosphere::sky_view_width % atmosphere::thread_group_size == 0 &&
+    atmosphere::sky_view_height % atmosphere::thread_group_size == 0);
+}
+
+void Pass::prepare_atmosphere(nvrhi::IDevice& device) {
+    if (sky_view_compute_.pipeline) return;
+
+    auto density = make_atmosphere_texture(device, nvrhi::Format::RGBA32_FLOAT,
+        atmosphere::density_width, atmosphere::density_height, "Atmosphere optical density");
+    auto view = make_atmosphere_texture(device, nvrhi::Format::RGBA16_FLOAT,
+        atmosphere::sky_view_width, atmosphere::sky_view_height, "Atmosphere sky radiance");
+    auto sampler = device.createSampler(nvrhi::SamplerDesc().setAllFilters(true)
+        .setAllAddressModes(nvrhi::SamplerAddressMode::Clamp));
+    require(bool(sampler), "Atmospheric sky sampler creation failed.");
+
+    const auto make_compute = [&](const auto& spirv, const nvrhi::BindingLayoutDesc& layout_desc,
+        const nvrhi::BindingSetDesc& binding_desc) {
+        const auto shader = create_embedded_shader(&device,
+            nvrhi::ShaderDesc(nvrhi::ShaderType::Compute).setEntryName("compute_main"), spirv);
+        const auto layout = device.createBindingLayout(layout_desc);
+        require(shader && layout, "Atmospheric sky compute shader or layout creation failed.");
+        auto pipeline = device.createComputePipeline(nvrhi::ComputePipelineDesc()
+            .setComputeShader(shader).addBindingLayout(layout));
+        auto bindings = device.createBindingSet(binding_desc, layout);
+        require(pipeline && bindings, "Atmospheric sky compute pipeline or bindings creation failed.");
+        return Compute{std::move(pipeline), std::move(bindings)};
+    };
+    auto density_compute = make_compute(poima_atmosphere_density_cs,
+        nvrhi::BindingLayoutDesc().setVisibility(nvrhi::ShaderType::Compute)
+            .addItem(nvrhi::BindingLayoutItem::Texture_UAV(0)),
+        nvrhi::BindingSetDesc().addItem(nvrhi::BindingSetItem::Texture_UAV(0, density)));
+    const std::uint32_t parameter_bytes = sizeof(sky_view_parameters_);
+    auto view_compute = make_compute(poima_atmosphere_sky_view_cs,
+        nvrhi::BindingLayoutDesc().setVisibility(nvrhi::ShaderType::Compute)
+            .addItem(nvrhi::BindingLayoutItem::PushConstants(0, parameter_bytes))
+            .addItem(nvrhi::BindingLayoutItem::Texture_SRV(0))
+            .addItem(nvrhi::BindingLayoutItem::Sampler(0))
+            .addItem(nvrhi::BindingLayoutItem::Texture_UAV(0)),
+        nvrhi::BindingSetDesc()
+            .addItem(nvrhi::BindingSetItem::PushConstants(0, parameter_bytes))
+            .addItem(nvrhi::BindingSetItem::Texture_SRV(0, density))
+            .addItem(nvrhi::BindingSetItem::Sampler(0, sampler))
+            .addItem(nvrhi::BindingSetItem::Texture_UAV(0, view)));
+    density_ = std::move(density);
+    sky_view_ = std::move(view);
+    atmosphere_sampler_ = std::move(sampler);
+    density_compute_ = std::move(density_compute);
+    sky_view_compute_ = std::move(view_compute);
+}
+
+void Pass::prepare_raster(nvrhi::IDevice& device, nvrhi::IBuffer* frame,
+    const nvrhi::FramebufferInfo& framebuffer, Raster& raster) {
+    if (!vertex_shader_) {
+        vertex_shader_ = create_embedded_shader(&device,
+            nvrhi::ShaderDesc(nvrhi::ShaderType::Vertex).setEntryName("vertex_main"), poima_sky_vs);
+        require(bool(vertex_shader_), "Procedural sky vertex shader creation failed.");
+    }
+    if (!raster.layout) {
+        const auto pixel_desc = nvrhi::ShaderDesc(nvrhi::ShaderType::Pixel).setEntryName("pixel_main");
+        auto pixel_shader = atmosphere_enabled_ ?
+            create_embedded_shader(&device, pixel_desc, poima_sky_atmosphere_ps) :
+            create_embedded_shader(&device, pixel_desc, poima_sky_ps);
+        auto layout = nvrhi::BindingLayoutDesc().setVisibility(nvrhi::ShaderType::All)
+            .addItem(nvrhi::BindingLayoutItem::PushConstants(0, sizeof(Constants)))
+            .addItem(nvrhi::BindingLayoutItem::ConstantBuffer(1));
+        if (atmosphere_enabled_) {
+            layout.addItem(nvrhi::BindingLayoutItem::Texture_SRV(0))
+                .addItem(nvrhi::BindingLayoutItem::Texture_SRV(1))
+                .addItem(nvrhi::BindingLayoutItem::Sampler(0));
+        }
+        auto binding_layout = device.createBindingLayout(layout);
+        require(pixel_shader && binding_layout, "Procedural sky shader or layout creation failed.");
+        raster.pixel_shader = std::move(pixel_shader);
+        raster.layout = std::move(binding_layout);
+    }
+    if (!raster.bindings || raster.frame != frame) {
+        auto bindings = nvrhi::BindingSetDesc()
+            .addItem(nvrhi::BindingSetItem::PushConstants(0, sizeof(Constants)))
+            .addItem(nvrhi::BindingSetItem::ConstantBuffer(1, frame));
+        if (atmosphere_enabled_) {
+            bindings.addItem(nvrhi::BindingSetItem::Texture_SRV(0, density_))
+                .addItem(nvrhi::BindingSetItem::Texture_SRV(1, sky_view_))
+                .addItem(nvrhi::BindingSetItem::Sampler(0, atmosphere_sampler_));
+        }
+        auto binding_set = device.createBindingSet(bindings, raster.layout);
+        require(bool(binding_set), "Procedural sky bindings creation failed.");
+        raster.bindings = std::move(binding_set);
+        raster.frame = frame;
+    }
+    if (!raster.pipeline) {
+        nvrhi::GraphicsPipelineDesc description;
+        description.VS = vertex_shader_;
+        description.PS = raster.pixel_shader;
+        description.bindingLayouts.push_back(raster.layout);
+        description.renderState.depthStencilState.depthTestEnable = false;
+        description.renderState.depthStencilState.depthWriteEnable = false;
+        description.renderState.rasterState.cullMode = nvrhi::RasterCullMode::None;
+        description.renderState.rasterState.scissorEnable = true;
+        raster.pipeline = device.createGraphicsPipeline(description, framebuffer);
+        require(bool(raster.pipeline), "Procedural sky pipeline creation failed.");
+    }
 }
 
 void Pass::prepare(nvrhi::IDevice& device, nvrhi::IBuffer* frame,
@@ -29,36 +159,12 @@ void Pass::prepare(nvrhi::IDevice& device, nvrhi::IBuffer* frame,
     const auto& sky = lighting.environment.sky;
     enabled_ = sky.enabled;
     constants_ = {};
+    atmosphere_enabled_ = false;
+    observer_height_m_ = 0;
     if (!enabled_) return;
 
     require(rigid_transform(scene.camera_world), "Procedural sky requires a rigid camera transform.");
-    if (!layout_) {
-        vertex_shader_ = create_embedded_shader(&device,
-            nvrhi::ShaderDesc(nvrhi::ShaderType::Vertex).setEntryName("vertex_main"), poima_sky_vs);
-        pixel_shader_ = create_embedded_shader(&device,
-            nvrhi::ShaderDesc(nvrhi::ShaderType::Pixel).setEntryName("pixel_main"), poima_sky_ps);
-        layout_ = device.createBindingLayout(nvrhi::BindingLayoutDesc().setVisibility(nvrhi::ShaderType::All)
-            .addItem(nvrhi::BindingLayoutItem::PushConstants(0, sizeof(Constants)))
-            .addItem(nvrhi::BindingLayoutItem::ConstantBuffer(1)));
-        require(vertex_shader_ && pixel_shader_ && layout_, "Procedural sky shader/layout creation failed.");
-        bindings_ = device.createBindingSet(nvrhi::BindingSetDesc()
-            .addItem(nvrhi::BindingSetItem::PushConstants(0, sizeof(Constants)))
-            .addItem(nvrhi::BindingSetItem::ConstantBuffer(1, frame)), layout_);
-        require(bool(bindings_), "Procedural sky bindings creation failed.");
-    }
-    if (!pipeline_) {
-        nvrhi::GraphicsPipelineDesc description;
-        description.VS = vertex_shader_;
-        description.PS = pixel_shader_;
-        description.bindingLayouts.push_back(layout_);
-        description.renderState.depthStencilState.depthTestEnable = false;
-        description.renderState.depthStencilState.depthWriteEnable = false;
-        description.renderState.rasterState.cullMode = nvrhi::RasterCullMode::None;
-        description.renderState.rasterState.scissorEnable = true;
-        pipeline_ = device.createGraphicsPipeline(description, framebuffers.front()->getFramebufferInfo());
-        require(bool(pipeline_), "Procedural sky pipeline creation failed.");
-    }
-
+    require(frame && !framebuffers.empty() && framebuffers.front(), "Procedural sky needs a frame and framebuffer.");
     const float sky_gain = lighting.solar_lighting ? lighting.solar_lighting->sky_gain : 1.0f;
     for (std::size_t axis = 0; axis < 3; ++axis) {
         constants_.right_tan[axis] = gpu_float(scene.camera_world[axis]);
@@ -77,6 +183,7 @@ void Pass::prepare(nvrhi::IDevice& device, nvrhi::IBuffer* frame,
     constants_.ground_radius[3] = static_cast<float>(2 * std::sin(sky.sun_size_degrees * 0.0043633231299858239423));
 
     // The authored sun reference selects the direction, even as it moves at runtime.
+    const auto& profile = lighting.environment.atmosphere;
     for (const auto& sun : lighting.lights) {
         if (sky.sun.empty() || sun.entity_id != sky.sun || !sun.light.enabled || sun.light.kind != LightKind::directional) continue;
         const double length = std::hypot(sun.direction[0], sun.direction[1], sun.direction[2]);
@@ -87,29 +194,89 @@ void Pass::prepare(nvrhi::IDevice& device, nvrhi::IBuffer* frame,
             constants_.sun_color[axis] = sun.light.color[axis];
         }
         constants_.sun_intensity[3] = sky.sun_intensity;
+        if (profile && profile->radiance_scale > 0) {
+            const auto height = std::clamp(scene.camera_world[13] - profile->sea_level_m,
+                0.0, static_cast<double>(atmosphere::max_observer_height_m));
+            observer_height_m_ = gpu_float(height);
+            sky_view_parameters_ = {gpu_float(height / 1000.0),
+                std::clamp(constants_.sun_intensity[1], -1.0f, 1.0f), profile->aerosol_strength, 0};
+            constants_.forward_srgb[3] = profile->radiance_scale * sky_gain;
+            constants_.zenith_exposure[3] = sky_view_parameters_[0];
+            constants_.sun_color[3] = sky_view_parameters_[2];
+            atmosphere_enabled_ = true;
+        }
         break;
+    }
+    if (atmosphere_enabled_) prepare_atmosphere(device);
+    prepare_raster(device, frame, framebuffers.front()->getFramebufferInfo(),
+        atmosphere_enabled_ ? atmosphere_raster_ : gradient_);
+}
+
+bool Pass::atmosphere_density_dirty() const noexcept {
+    return atmosphere_enabled_ && density_generation_ == 0;
+}
+
+bool Pass::atmosphere_view_dirty() const noexcept {
+    return atmosphere_enabled_ &&
+        (sky_view_generation_ == 0 || accepted_sky_view_parameters_ != sky_view_parameters_);
+}
+
+void Pass::compute_atmosphere_density(nvrhi::ICommandList& commands) {
+    require(atmosphere_density_dirty() && !density_recorded_, "Unexpected atmosphere density dispatch.");
+    nvrhi::ComputeState state;
+    state.pipeline = density_compute_.pipeline;
+    state.bindings.push_back(density_compute_.bindings);
+    commands.setComputeState(state);
+    commands.dispatch(atmosphere::density_width / atmosphere::thread_group_size,
+        atmosphere::density_height / atmosphere::thread_group_size, 1);
+    density_recorded_ = true;
+}
+
+void Pass::compute_atmosphere_view(nvrhi::ICommandList& commands) {
+    require(atmosphere_view_dirty() && !sky_view_recorded_ && (density_generation_ || density_recorded_),
+        "Atmosphere sky-view dispatch needs recorded optical density and a changed sample.");
+    require(sky_view_generation_ < std::numeric_limits<std::uint64_t>::max(), "Atmosphere view generation exhausted.");
+    nvrhi::ComputeState state;
+    state.pipeline = sky_view_compute_.pipeline;
+    state.bindings.push_back(sky_view_compute_.bindings);
+    commands.setComputeState(state);
+    commands.setPushConstants(sky_view_parameters_.data(), sizeof(sky_view_parameters_));
+    commands.dispatch(atmosphere::sky_view_width / atmosphere::thread_group_size,
+        atmosphere::sky_view_height / atmosphere::thread_group_size, 1);
+    sky_view_recorded_ = true;
+}
+
+void Pass::commit_atmosphere() noexcept {
+    if (density_recorded_) {
+        ++density_generation_;
+        density_recorded_ = false;
+    }
+    if (sky_view_recorded_) {
+        accepted_sky_view_parameters_ = sky_view_parameters_;
+        ++sky_view_generation_;
+        sky_view_recorded_ = false;
     }
 }
 
 void Pass::draw(nvrhi::ICommandList& commands, nvrhi::IFramebuffer* framebuffer,
     const nvrhi::Viewport& viewport) const {
+    const auto& raster = atmosphere_enabled_ ? atmosphere_raster_ : gradient_;
+    require(!atmosphere_view_dirty() || sky_view_recorded_, "Atmospheric sky draw needs a current sky-view lookup.");
     nvrhi::GraphicsState state;
-    state.pipeline = pipeline_;
+    state.pipeline = raster.pipeline;
     state.framebuffer = framebuffer;
-    state.bindings.push_back(bindings_);
+    state.bindings.push_back(raster.bindings);
     state.viewport.addViewportAndScissorRect(viewport);
     commands.setGraphicsState(state);
     commands.setPushConstants(&constants_, sizeof(constants_));
     commands.draw(nvrhi::DrawArguments().setVertexCount(3));
 }
 
-void Pass::reset() noexcept {
-    pipeline_ = nullptr;
-    bindings_ = nullptr;
-    layout_ = nullptr;
-    vertex_shader_ = nullptr;
-    pixel_shader_ = nullptr;
-    enabled_ = false;
+void Pass::detach_framebuffer() noexcept {
+    gradient_.pipeline = nullptr;
+    atmosphere_raster_.pipeline = nullptr;
 }
+
+void Pass::reset() noexcept { *this = {}; }
 
 }

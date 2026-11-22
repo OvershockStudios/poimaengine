@@ -100,6 +100,10 @@ struct AutoExposureSettings {
     float min_stops=-4,max_stops=4;
     float brighten_stops_per_second=2,darken_stops_per_second=4;
 };
+struct AtmosphereSettings {
+    double sea_level_m=0;
+    float aerosol_strength=1,radiance_scale=1;
+};
 struct LightingEnvironment {
     std::array<float,3> ambient{};
     float exposure=1;
@@ -115,6 +119,7 @@ struct LightingEnvironment {
     std::optional<ScreenReflections> screen_reflections;
     std::optional<HeightFog> height_fog;
     std::optional<AutoExposureSettings> auto_exposure;
+    std::optional<AtmosphereSettings> atmosphere;
 };
 struct SceneLight { std::string entity_id;Light light;std::array<double,3> position{},direction{0,0,-1}; };
 inline constexpr std::uint64_t max_solar_world_milliseconds = 315359999999999ULL;

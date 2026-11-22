@@ -176,6 +176,12 @@ Json render_diagnostics(const RenderDiagnostics& d) {
         result["height_fog"]={{"active",fog.active},{"reason",fog.reason},{"buffer_bytes",fog.buffer_bytes},
             {"spot_lights",fog.spot_lights},{"gpu",timing(d.height_fog_gpu)}};
     }
+    if(d.atmosphere_sky) {
+        const auto& atmosphere=*d.atmosphere_sky;
+        result["atmosphere_sky"]={{"density_generation",atmosphere.density_generation},
+            {"view_generation",atmosphere.view_generation},{"texture_bytes",atmosphere.texture_bytes},
+            {"observer_height_m",atmosphere.observer_height_m}};
+    }
     if(d.viewmodel) {
         const auto& v=*d.viewmodel;
         result["viewmodel"]={{"rendered",v.rendered},{"samples",v.samples},{"output_width",v.output_width},{"output_height",v.output_height},
@@ -200,6 +206,11 @@ Json lighting_json(const SceneLighting& lighting) {
     Json result={{"preview_fallback",lighting.preview},{"lights",lights},{"ambient",lighting.environment.ambient},{"exposure",lighting.environment.exposure},{"shadow_resolution",lighting.environment.shadow_resolution},{"shadow_filter",shadow_filter_name(lighting.environment.shadow_filter)},{"shadow_views",shadow_count},{"shadow_bytes",shadow_count*lighting.environment.shadow_resolution*lighting.environment.shadow_resolution*4},
         {"sky",sky_json(sky)},{"sky_sun",sun}};
     if(lighting.solar_lighting)result["solar_lighting"]=solar_lighting_json(*lighting.solar_lighting);
+    if(lighting.environment.atmosphere) {
+        const auto& profile=*lighting.environment.atmosphere;
+        result["atmosphere"]={{"sea_level_m",profile.sea_level_m},{"aerosol_strength",profile.aerosol_strength},
+            {"radiance_scale",profile.radiance_scale}};
+    }
     if(lighting.environment.auto_exposure) {
         const auto& settings=*lighting.environment.auto_exposure;
         result["auto_exposure"]={{"min_stops",settings.min_stops},{"max_stops",settings.max_stops},

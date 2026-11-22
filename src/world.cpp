@@ -615,6 +615,7 @@ public:
             if(content.needs_physics_checkpoint)result["needs_physics_checkpoint"]=true;
             if(content.needs_output_grade)result["needs_output_grade"]=true;
             if(content.needs_auto_exposure)result["needs_auto_exposure"]=true;
+            if(content.needs_atmosphere_sky)result["needs_atmosphere_sky"]=true;
             if(content.needs_screen_reflections)result["needs_screen_reflections"]=true;
             if(content.needs_foliage_motion)result["needs_foliage_motion"]=true;
             if(content.needs_height_fog)result["needs_height_fog"]=true;

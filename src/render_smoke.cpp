@@ -14,6 +14,7 @@
 #include "render_ui.hpp"
 #include "poima/frame_performance.hpp"
 #include "poima/render_schedule.hpp"
+#include "poima/atmosphere_dimensions.hpp"
 #include "poima/render_batches.hpp"
 #include "poima/fsr3.hpp"
 #include "poima/temporal_clock.hpp"
@@ -227,6 +228,7 @@ struct Context {
         std::string history_reset;
         ReconstructionDiagnostics reconstruction;
         std::optional<AutoExposureDiagnostics> exposure;
+        std::optional<AtmosphereSkyDiagnostics> atmosphere_sky;
         bool capture_exposure=false;
         std::optional<RendererSceneResult> scene;
     };
@@ -2246,6 +2248,7 @@ struct Context {
                 render_shadows::profile_views(std::span(slot.shadow_work).first(slot.shadow_profile_views), slot.profile);
                 auto reconstruction_gpu=diagnostics.reconstruction.gpu;diagnostics.reconstruction=slot.reconstruction;diagnostics.reconstruction.gpu=reconstruction_gpu;
                 diagnostics.last_draws=slot.draws;diagnostics.light_assignment=slot.lights;diagnostics.viewmodel=slot.viewmodel_diagnostics;
+                diagnostics.atmosphere_sky=slot.atmosphere_sky;
                 diagnostics.scene_products.history_valid=slot.history_valid;diagnostics.scene_products.history_sequence=slot.history_sequence;
                 diagnostics.scene_products.history_reset_reason=slot.history_reset;diagnostics.scene_products.probes.clear();
                 if(slot.capture_probes)collect_product_probes();
@@ -2330,6 +2333,14 @@ struct Context {
 #endif
         f.color=f.output;
         if(scene) {
+            if(settings.sky && sky_pass.atmosphere_enabled()) {
+                const bool density_ready=!sky_pass.atmosphere_density_dirty();
+                const bool view_ready=!sky_pass.atmosphere_view_dirty();
+                f.atmosphere_density=texture(sky_pass.atmosphere_density(),
+                    density_ready ? rs::Lifetime::imported : rs::Lifetime::shared,density_ready);
+                f.atmosphere_view=texture(sky_pass.atmosphere_view(),
+                    view_ready ? rs::Lifetime::imported : rs::Lifetime::shared,view_ready);
+            }
             if(scene_visible && !surface_marks.empty()) {
                 const auto& slot=slots[settings.slot];
                 f.surface_marks=buffer(slot.surface_marks,rs::Lifetime::slot,false,surface_marks.size()*sizeof(GpuSurfaceMark));
@@ -2878,6 +2889,8 @@ struct Context {
                 if(resources.depth!=render_schedule::none)commands->clearDepthStencilTexture(planned_texture(resources.depth),nvrhi::AllSubresources,true,1.0f,false,0);
                 break;
             case render_schedule::PassId::sky:render_sky(index);break;
+            case render_schedule::PassId::atmosphere_density:sky_pass.compute_atmosphere_density(*commands.Get());break;
+            case render_schedule::PassId::atmosphere_view:sky_pass.compute_atmosphere_view(*commands.Get());break;
             case render_schedule::PassId::opaque:render_opaque(index,slot);timestamp(4);if(!ao_enabled) {timestamp(10);timestamp(11);timestamp(12);timestamp(13);}if(!deferred) {timestamp(8);timestamp(9);}if(!pending_reconstruction.active) {timestamp(6);timestamp(7);}if(!plan.settings.screen_reflections) {timestamp(14);timestamp(15);}if(!plan.settings.height_fog) {timestamp(16);timestamp(17);}break;
             case render_schedule::PassId::ambient_occlusion:
                 timestamp(10);
@@ -2999,6 +3012,16 @@ struct Context {
         slot.performance=performance;slot.performance_ticket={};
         if(slot.submission && performance)slot.performance_ticket=performance->gpu_submit(performance_token);
         require(slot.submission!=0 && messages.errors==0,"Frame submission was not accepted; history was not advanced.");
+        slot.atmosphere_sky.reset();
+        if(plan.frame.atmosphere_view!=render_schedule::none) {
+            sky_pass.commit_atmosphere();
+            slot.atmosphere_sky=AtmosphereSkyDiagnostics{
+                .density_generation=sky_pass.atmosphere_density_generation(),
+                .view_generation=sky_pass.atmosphere_view_generation(),
+                .texture_bytes=std::uint64_t(atmosphere::density_width)*atmosphere::density_height*16+
+                    std::uint64_t(atmosphere::sky_view_width)*atmosphere::sky_view_height*8,
+                .observer_height_m=sky_pass.atmosphere_observer_height_m()};
+        }
         if(plan.frame.surface_mark_masks!=render_schedule::none && !plan.resource(plan.frame.surface_mark_masks).initialized)
             std::vector<std::uint8_t>{}.swap(surface_mark_array.pending_texels);
         for(auto* receipt:{&submitted_scene,&presented_scene,&slot_scene})if(*receipt)(*receipt)->submission_id=slot.submission;

@@ -92,7 +92,7 @@ static SkySettings sky_value(const Json& value) {
     return result;
 }
 LightingEnvironment environment_value(const Json& value) {
-    fields(value,{"ambient","exposure","shadow_resolution","shadow_filter","sky","ibl","bloom","post_effect","output_grade","screen_reflections","height_fog","auto_exposure"},{"ambient","exposure"});require(value.at("ambient").is_array() && value.at("ambient").size()==3,"Ambient fill needs three values.");
+    fields(value,{"ambient","exposure","shadow_resolution","shadow_filter","sky","ibl","bloom","post_effect","output_grade","screen_reflections","height_fog","auto_exposure","atmosphere"},{"ambient","exposure"});require(value.at("ambient").is_array() && value.at("ambient").size()==3,"Ambient fill needs three values.");
     for(const auto& x:value.at("ambient"))require(x.is_number() && std::isfinite(x.get<double>()) && x>=0 && x<=1e6,"Ambient fill must be in [0,1e6].");
     require(value.at("exposure").is_number() && std::isfinite(value.at("exposure").get<double>()) && value.at("exposure")>=0 && value.at("exposure")<=1e6,"Exposure must be in [0,1e6].");
     if(value.contains("shadow_resolution"))require(value.at("shadow_resolution").is_number_integer() && (value.at("shadow_resolution")==256 || value.at("shadow_resolution")==512 || value.at("shadow_resolution")==1024 || value.at("shadow_resolution")==2048),"Shadow resolution must be 256, 512, 1024 or 2048.");
@@ -122,6 +122,20 @@ LightingEnvironment environment_value(const Json& value) {
         result.shadow_filter=filter=="pcss_directional" ? ShadowFilter::pcss_directional : filter=="pcf3_fractional" ? ShadowFilter::pcf3_fractional : ShadowFilter::pcf3_point;
     }
     if(value.contains("sky"))result.sky=sky_value(value.at("sky"));
+    if(value.contains("atmosphere")) {
+        const auto& profile=value.at("atmosphere");
+        fields(profile,{"sea_level_m","aerosol_strength","radiance_scale"},
+            {"sea_level_m","aerosol_strength","radiance_scale"});
+        const auto number=[&](const char* name,double minimum,double maximum) {
+            const auto& field=profile.at(name);
+            require(field.is_number() && std::isfinite(field.get<double>()) && field>=minimum && field<=maximum,
+                std::string("Atmosphere ")+name+" is outside its finite range.");
+            return field.get<double>();
+        };
+        result.atmosphere=AtmosphereSettings{number("sea_level_m",-1e6,1e6),
+            static_cast<float>(number("aerosol_strength",0,4)),
+            static_cast<float>(number("radiance_scale",0,64))};
+    }
     if(value.contains("ibl")) {
         const auto& ibl=value.at("ibl");
         fields(ibl,{"enabled","diffuse_intensity","specular_intensity"},{"enabled","diffuse_intensity","specular_intensity"});

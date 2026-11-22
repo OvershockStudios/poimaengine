@@ -245,17 +245,22 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"strength","max_distance_m","thickness_m"});
     screen_reflections["description"]="Optional screen reflections for single-sample deferred color, including FSR when available. Set strength to zero to retain a disabled selection.";
     lighting_environment["properties"]["screen_reflections"]=std::move(screen_reflections);
-    const auto fog_number=[](double minimum,double maximum) {
+    const auto bounded_number=[](double minimum,double maximum) {
         return Json{{"type","number"},{"minimum",minimum},{"maximum",maximum}};
     };
+    auto atmosphere=object_schema({{"sea_level_m",bounded_number(-1e6,1e6)},
+        {"aerosol_strength",bounded_number(0,4)},{"radiance_scale",bounded_number(0,64)}},
+        {"sea_level_m","aerosol_strength","radiance_scale"});
+    atmosphere["description"]="Optional atmospheric sky scattering. The profile uses an enabled procedural sky linked to a directional Light. A disabled linked light retains the selection.";
+    lighting_environment["properties"]["atmosphere"]=std::move(atmosphere);
     const auto fog_light=object_schema({{"entity",id},{"scattering",unit}},{"entity","scattering"});
     auto fog_lights=vector(fog_light,2);
     fog_lights["minItems"]=0;
     fog_lights["uniqueItems"]=true;
     fog_lights["description"]="Up to two distinct authored spot Light entities. Disabled spotlights remain valid selections.";
-    auto height_fog=object_schema({{"density_per_m",fog_number(0,.75)},{"base_height_m",fog_number(-8192,8192)},
-        {"height_falloff_per_m",fog_number(0,4)},{"start_distance_m",fog_number(0,300)},{"max_distance_m",fog_number(.1,512)},
-        {"ambient_radiance",vector(fog_number(0,32),3)},{"anisotropy",fog_number(-.8,.8)},{"spot_lights",fog_lights}},
+    auto height_fog=object_schema({{"density_per_m",bounded_number(0,.75)},{"base_height_m",bounded_number(-8192,8192)},
+        {"height_falloff_per_m",bounded_number(0,4)},{"start_distance_m",bounded_number(0,300)},{"max_distance_m",bounded_number(.1,512)},
+        {"ambient_radiance",vector(bounded_number(0,32),3)},{"anisotropy",bounded_number(-.8,.8)},{"spot_lights",fog_lights}},
         {"density_per_m","base_height_m","height_falloff_per_m","start_distance_m","max_distance_m","ambient_radiance","anisotropy"});
     height_fog["description"]="Optional scene-linear height fog for single-sample color, including FSR when available. Max distance must exceed start distance. A density of zero disables the effect and retains the settings.";
     lighting_environment["properties"]["height_fog"]=std::move(height_fog);
@@ -265,7 +270,11 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"required",Json::array({"enabled"})},{"properties",Json{{"enabled",Json{{"const",true}}}}}}}}}};
     const Json enabled_sky={{"required",Json::array({"sky"})},{"properties",Json{{"sky",Json{
         {"required",Json::array({"enabled"})},{"properties",Json{{"enabled",Json{{"const",true}}}}}}}}}};
-    lighting_environment["allOf"]=Json::array({Json{{"if",enabled_ibl},{"then",enabled_sky}}});
+    auto linked_sky=enabled_sky;
+    linked_sky["properties"]["sky"]["required"].push_back("sun");
+    linked_sky["properties"]["sky"]["properties"]["sun"]=id;
+    lighting_environment["allOf"]=Json::array({Json{{"if",enabled_ibl},{"then",enabled_sky}},
+        Json{{"if",Json{{"required",Json::array({"atmosphere"})}}},{"then",std::move(linked_sky)}}});
     const Json acoustic=object_schema({{"absorption",vector(unit,3)},{"transmission",vector(unit,3)},{"scattering",unit},{"enabled",{{"type","boolean"}}}}, {"absorption","transmission","scattering","enabled"});
     const Json audio_bus_name={{"type","string"},{"pattern",audio_buses::name_pattern}};
     const Json audio_bus_catalog={{"type","object"},{"propertyNames",audio_bus_name},{"minProperties",1},
@@ -397,7 +406,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 206}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 207}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -1209,6 +1218,9 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"max_world_milliseconds",max_solar_world_milliseconds},{"snapshot_version",1},
         {"target","Enabled authored LightingEnvironment.sky with an enabled linked directional Light."},
         {"ownership","Gameplay stages one sample during Update. It publishes on the committed tick."}};
+    result["atmosphere_sky"]={{"available",POIMA_RENDER_SMOKE != 0 && POIMA_SIMULATION != 0},
+        {"profile","LightingEnvironment.atmosphere"},{"runtime_feature","atmosphere_sky"},
+        {"lighting_observation","atmosphere"},{"render_diagnostics","atmosphere_sky"}};
     result["wetness"]={{"available",Runtime::available()},{"component","SurfaceWetness"},
         {"seconds_per_quantum",1},{"max_receivers",wetness::max_receivers},{"max_batch",wetness::max_batch},
         {"max_rain_nm",wetness::max_rain_nm},{"film_units_per_nm",wetness::units_per_nm},

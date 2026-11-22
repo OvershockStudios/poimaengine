@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "poima/render_schedule.hpp"
+#include "poima/atmosphere_dimensions.hpp"
 #include <iostream>
 #include <functional>
 using namespace poima::render_schedule;
@@ -1677,6 +1678,56 @@ void auto_exposure_contracts() {
             return work.id==PassId::auto_exposure || work.id==PassId::exposure_readback;
         }),"Default rendering acquired automatic exposure resources or work");
 }
+void atmosphere_contracts() {
+    using namespace poima::atmosphere;
+    auto setup=[](Fixture& fixture,bool density_ready,bool view_ready) {
+        const auto table=[&](bool ready,Format format,unsigned width,unsigned height) {
+            const auto id=fixture.add(Kind::texture,ready ? Lifetime::imported : Lifetime::shared,ready);
+            auto& resource=fixture.f.resources[id];
+            resource.format=format;
+            resource.width=width;
+            resource.height=height;
+            return id;
+        };
+        fixture.f.atmosphere_density=table(density_ready,Format::rgba32_float,density_width,density_height);
+        fixture.f.atmosphere_view=table(view_ready,Format::rgba16_float,sky_view_width,sky_view_height);
+    };
+    const auto count=[](const Schedule& schedule,PassId id) {
+        return std::count_if(schedule.passes.begin(),schedule.passes.end(),[&](const auto& pass){return pass.id==id;});
+    };
+    for(auto readiness:{std::pair{false,false},std::pair{true,false},std::pair{true,true}}) {
+        Fixture fixture(rich());
+        setup(fixture,readiness.first,readiness.second);
+        const auto schedule=fixture.plan();
+        schedule.validate();
+        check(count(schedule,PassId::atmosphere_density)==!readiness.first &&
+            count(schedule,PassId::atmosphere_view)==!readiness.second,"Atmospheric sky cache scheduled redundant work");
+        ++accepted;
+    }
+    Fixture fixture(rich());
+    setup(fixture,false,false);
+    const auto& f=fixture.f;
+    const auto valid=fixture.plan();
+    const auto bad=[&](const char* name,auto mutate) {
+        auto changed=valid;
+        mutate(changed);
+        rejects(name,[&]{changed.validate();});
+    };
+    bad("atmosphere without sky",[](auto& p){p.settings.sky=false;});
+    bad("density used before precompute",[](auto& p){std::swap(pass(p,PassId::atmosphere_density),pass(p,PassId::atmosphere_view));});
+    bad("view lacks density input",[&](auto& p){erase_access(p,PassId::atmosphere_view,f.atmosphere_density,Use::sampled);});
+    bad("sky bypasses atmosphere view",[&](auto& p){erase_access(p,PassId::sky,f.atmosphere_view,Use::sampled);});
+    bad("atmosphere view is only partially initialized",[](auto& p){pass(p,PassId::atmosphere_view).accesses.back().initialize=false;});
+    bad("atmosphere view has the wrong precision",[&](auto& p){p.frame.resources[f.atmosphere_view].format=Format::rgba32_float;});
+    bad("atmosphere density aliases the shadow image",[&](auto& p){p.frame.shadow=f.atmosphere_density;});
+    bad("unrelated pipeline samples sky view",[&](auto& p){pass(p,PassId::opaque).accesses.push_back({f.atmosphere_view,Use::sampled});});
+    Fixture stale(rich());
+    setup(stale,false,true);
+    rejects("cached view without density precomputation",[&]{stale.plan().validate();});
+    const auto legacy=Fixture(rich(),4).plan();
+    check(count(legacy,PassId::atmosphere_density)==0 && count(legacy,PassId::atmosphere_view)==0,
+        "Legacy sky acquired optical resources or work");
+}
 }
 
-int main(){try{matrix();faults();products();motion_contracts();reconstruction_contracts();deferred_contracts();deferred_color_contracts();viewmodel_contracts();ambient_occlusion_contracts();masked_shadow_contracts();environment_contracts();bloom_contracts();post_effect_contracts();output_grade_contracts();streamed_geometry_contracts();mutable_geometry_contracts();particle_sprite_contracts();surface_mark_contracts();screen_reflection_contracts();height_fog_contracts();composed_reconstruction_contracts();reconstructed_sprite_contracts();spatial_aa_contracts();auto_exposure_contracts();std::cout<<"Production render schedule: "<<accepted<<" valid variants, "<<rejected<<" rejected contract mutations.\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}
+int main(){try{matrix();faults();products();motion_contracts();reconstruction_contracts();deferred_contracts();deferred_color_contracts();viewmodel_contracts();ambient_occlusion_contracts();masked_shadow_contracts();environment_contracts();bloom_contracts();post_effect_contracts();output_grade_contracts();streamed_geometry_contracts();mutable_geometry_contracts();particle_sprite_contracts();surface_mark_contracts();screen_reflection_contracts();height_fog_contracts();composed_reconstruction_contracts();reconstructed_sprite_contracts();spatial_aa_contracts();auto_exposure_contracts();atmosphere_contracts();std::cout<<"Production render schedule: "<<accepted<<" valid variants, "<<rejected<<" rejected contract mutations.\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}

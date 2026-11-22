@@ -12,7 +12,8 @@ use it from its compiled update, a headless replay or an editor preview. The gam
 owns the clock and applies the results to its scene, environment audio and water
 simulation. Drive the visible sun with [solar lighting](#drive-the-sun-and-sky).
 Route integrated rain and drying through native [surface wetness](SURFACE_WETNESS.md).
-Sky scattering, snow and regional weather fronts are separate systems.
+[Atmospheric sky](ATMOSPHERE_SKY.md) uses the same solar sample to render
+scattering during daylight and twilight.
 
 ## Sample a day and its weather
 

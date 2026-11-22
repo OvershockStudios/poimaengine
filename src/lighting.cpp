@@ -97,6 +97,17 @@ void validate_environment(const LightingEnvironment& e) {
     require(std::isfinite(e.sky.horizon_falloff) && e.sky.horizon_falloff>=.1f && e.sky.horizon_falloff<=16,"Sky horizon falloff must be in [0.1,16].");
     require(std::isfinite(e.sky.sun_size_degrees) && e.sky.sun_size_degrees>=.1f && e.sky.sun_size_degrees<=20,"Sky sun angular diameter must be in [0.1,20] degrees.");
     require(std::isfinite(e.sky.sun_intensity) && e.sky.sun_intensity>=0 && e.sky.sun_intensity<=1e6f,"Sky sun intensity must be in [0,1e6].");
+    if(e.atmosphere) {
+        const auto& profile=*e.atmosphere;
+        require(e.sky.enabled && !e.sky.sun.empty(),
+            "Atmosphere requires an enabled procedural sky linked to a directional light.");
+        require(std::isfinite(profile.sea_level_m) && profile.sea_level_m>=-1e6 && profile.sea_level_m<=1e6,
+            "Atmosphere sea_level_m must be finite and in [-1e6,1e6].");
+        require(std::isfinite(profile.aerosol_strength) && profile.aerosol_strength>=0 && profile.aerosol_strength<=4,
+            "Atmosphere aerosol_strength must be finite and in [0,4].");
+        require(std::isfinite(profile.radiance_scale) && profile.radiance_scale>=0 && profile.radiance_scale<=64,
+            "Atmosphere radiance_scale must be finite and in [0,64].");
+    }
     if(e.ibl) {
         const auto& ibl=*e.ibl;
         require(std::isfinite(ibl.diffuse_intensity) && ibl.diffuse_intensity>=0 && ibl.diffuse_intensity<=64 &&

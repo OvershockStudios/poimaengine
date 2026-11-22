@@ -61,7 +61,7 @@ class EnvironmentIblContract(unittest.TestCase):
     def test_discovery_preserves_complete_environment_and_mutation_envelope(self):
         c = self.open()
         d = c.rpc('world.describe')
-        self.assertEqual(d['schema_revision'], 126)
+        self.assertEqual(d['schema_revision'], 207)
         full = d['components']['LightingEnvironment']
         self.assertNotIn('ibl', full['required'])
         branch = full['properties']['ibl']
@@ -74,11 +74,17 @@ class EnvironmentIblContract(unittest.TestCase):
             self.assertEqual(branch['properties'][field],
                              {'type': 'number', 'minimum': 0, 'maximum': 64})
         self.assertEqual(set(full['properties']['sky']['required']), set(sky()))
-        dependency, = full['allOf']
+        dependency, = (value for value in full['allOf'] if value['if']['required'] == ['ibl'])
         self.assertEqual(dependency['if']['required'], ['ibl'])
         self.assertEqual(dependency['if']['properties']['ibl']['properties']['enabled'], {'const': True})
         self.assertEqual(dependency['then']['required'], ['sky'])
         self.assertEqual(dependency['then']['properties']['sky']['properties']['enabled'], {'const': True})
+        atmosphere_rule, = (value for value in full['allOf'] if value['if']['required'] == ['atmosphere'])
+        self.assertEqual(atmosphere_rule['then']['required'], ['sky'])
+        linked_sky = atmosphere_rule['then']['properties']['sky']
+        self.assertEqual(set(linked_sky['required']), {'enabled', 'sun'})
+        self.assertEqual(linked_sky['properties']['enabled'], {'const': True})
+        self.assertEqual(linked_sky['properties']['sun'], {'type': 'string', 'pattern': '^[0-9a-f]{32}$'})
         self.assertEqual(c.rpc('world.describe', dict(view='component', name='LightingEnvironment'))
                          ['components']['LightingEnvironment'], full)
         projected = c.rpc('world.describe', dict(view='mutation', operation='component.set',
