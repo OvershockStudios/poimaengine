@@ -111,6 +111,13 @@ RenderOptions decode_render_options(const Json& params, const fs::path& world_pa
     require(options.scene_debug_view==SceneDebugView::color || options.samples==1,"Non-color scene_debug_view requires samples=1.");
     require(options.reconstruction==ReconstructionMode::none || (options.samples==1 && options.scene_debug_view==SceneDebugView::color),
         "Enabled reconstruction requires samples=1 and scene_debug_view=color.");
+    if(params.contains("post_aa")) {
+        const auto& mode=params.at("post_aa");
+        require(mode=="none" || mode=="fxaa","post_aa must be none or fxaa.");
+        options.fxaa=mode=="fxaa";
+    }
+    require(!options.fxaa || (options.samples==1 && options.scene_debug_view==SceneDebugView::color &&
+        options.reconstruction==ReconstructionMode::none),"FXAA requires samples=1, scene_debug_view=color and reconstruction=none.");
     if(params.contains("scene_product_probes")) {
         const auto& probes=params.at("scene_product_probes");
         require(probes.is_array() && probes.size()<=64,"scene_product_probes must be an array of at most 64 pixel coordinates.");

@@ -55,7 +55,7 @@ Json wall_distribution(std::vector<double> values){
 }
 Json timing(const TimingSummary& t){return {{"samples",t.samples},{"total_ms",t.total_ms},{"minimum_ms",t.min_ms},{"maximum_ms",t.max_ms},{"last_ms",t.last_ms}};}
 Json report(const RenderReport& r){const auto& d=r.diagnostics;const auto& f=d.frame_execution;
-    return {{"gpu",r.gpu_name},{"success",r.success},{"hardware",r.hardware},{"errors",r.validation_errors},{"width",r.width},{"height",r.height},{"samples",r.samples},
+    Json result={{"gpu",r.gpu_name},{"success",r.success},{"hardware",r.hardware},{"errors",r.validation_errors},{"width",r.width},{"height",r.height},{"samples",r.samples},
         {"scene_products",{{"available",d.scene_products.available},{"view",scene_debug_view_name(d.scene_products.view)},{"normal_buffer_bytes",d.scene_products.normal_buffer_bytes}}},
         {"submitted",f.submitted},{"completed",d.completed_submissions},{"outstanding",f.outstanding},{"peak_outstanding",f.peak_outstanding},{"limit",f.limit},
         {"slot_waits",f.slot_waits},{"drain_waits",f.drain_waits},{"device_idle_waits",f.device_idle_waits},{"presentation_fences",f.presentation_fences},
@@ -65,6 +65,8 @@ Json report(const RenderReport& r){const auto& d=r.diagnostics;const auto& f=d.f
         {"cpu_timings",{{"prepare",timing(d.prepare_cpu)},{"record",timing(d.record_cpu)},{"render_call",timing(d.render_call_cpu)},{"completion_wait",timing(d.completion_wait_cpu)}}},
         {"gpu_timings",{{"skinning",timing(d.skinning_gpu)},{"light_assignment",timing(d.light_assignment_gpu)},{"shadows",timing(d.shadow_gpu)},
                          {"opaque",timing(d.opaque_gpu)},{"post",timing(d.post_gpu)},{"total",timing(d.total_gpu)}}}};
+    if(d.fxaa_buffer_bytes)result["fxaa_buffer_bytes"]=d.fxaa_buffer_bytes;
+    return result;
 }
 void accounting(const RenderReport& r,unsigned limit,bool drained=false){const auto& f=r.diagnostics.frame_execution;
     check(r.success && r.hardware && r.validation_errors==0,"Native viewport failed hardware/validation gate");
@@ -87,16 +89,17 @@ void accounting(const RenderReport& r,unsigned limit,bool drained=false){const a
 }
 int main(int argc,char** argv){Json evidence={{"passed",false},{"modes",Json::array()}};
     try{
-        check(argc>=3 && argc<=5,"Usage: frame-execution-test OUTPUT_PREFIX GPU [FRAMES60..600] [color4|color1|depth|shading_normal]");SetProcessDPIAware();
+        check(argc>=3 && argc<=5,"Usage: frame-execution-test OUTPUT_PREFIX GPU [FRAMES60..600] [color4|color1|color_fxaa|depth|shading_normal]");SetProcessDPIAware();
         const std::string prefix=argv[1];const int gpu=std::stoi(argv[2]);const unsigned frames=argc>=4?unsigned(std::stoul(argv[3])):60;
         check(frames>=60 && frames<=600,"Frames must be60..600");evidence["frames"]=frames;const auto geometry=mesh();
         const std::string view=argc==5?argv[4]:"color4";
-        check(view=="color4" || view=="color1" || view=="depth" || view=="shading_normal","Unknown scene view");
+        check(view=="color4" || view=="color1" || view=="color_fxaa" || view=="depth" || view=="shading_normal","Unknown scene view");
         const auto debug=view=="depth"?SceneDebugView::depth:view=="shading_normal"?SceneDebugView::shading_normal:SceneDebugView::color;
         evidence["scene_view"]=view;
         for(unsigned limit:{1u,2u}){
             evidence["modes"].push_back({{"limit",limit},{"observations",Json::array()},{"captures",Json::array()}});auto& mode=evidence["modes"].back();
             Window a(40),b(520);RenderOptions options;options.gpu=gpu;options.width=384;options.height=216;options.samples=view=="color4"?4:1;options.scene_debug_view=debug;options.frames_in_flight=limit;options.capture_exclusive=true;options.profile=true;
+            options.fxaa=view=="color_fxaa";
             auto primary=std::make_unique<HostedViewport>(options,scene(geometry,0),a.handle);
             auto secondary=std::make_unique<HostedViewport>(options,scene(geometry,1),b.handle);
             auto overlay=[&](HostedViewport& v){if(options.samples==1)v.set_overlay({{.8f,.05f,{1,0,0,1}},{.95f,.05f,{1,0,0,1}},{.95f,.15f,{1,0,0,1}},
@@ -106,7 +109,11 @@ int main(int argc,char** argv){Json evidence={{"passed",false},{"modes",Json::ar
             auto capture=[&](HostedViewport& v,const SceneSnapshot& s,const std::string& stage){const auto path=prefix+"-slots"+std::to_string(limit)+"-"+stage+".bmp";
                 check(v.draw_capture(s,path),"Capture skipped");accounting(v.report(),limit,true);check(v.report().capture_written,"Capture not written");
                 if(options.samples==1){const auto& r=v.report();const auto& products=r.diagnostics.scene_products;
-                    check(products.available && products.view==debug && products.normal_buffer_bytes==std::uint64_t(r.width)*r.height*8,"Scene products stale after resize or rebind");}
+                    check(products.available && products.view==debug && products.normal_buffer_bytes==std::uint64_t(r.width)*r.height*8,"Scene products stale after resize or rebind");
+                    if(options.fxaa)
+                        check(r.diagnostics.fxaa_buffer_bytes==std::uint64_t(r.width)*r.height*4,
+                              "FXAA attachment size differs after resize or rebind.");
+                }
                 mode["captures"].push_back({{"stage",stage},{"path",path},{"report",report(v.report())}});};
             // Resource churn: frame constants, palettes, finite candidate lists,
             // UI vertices and owned texture uploads vary while devices interleave.

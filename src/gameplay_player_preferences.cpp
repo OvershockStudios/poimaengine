@@ -64,6 +64,7 @@ void validate_player_preference_graphics(const PlayerPreferences::State& candida
     require(!flags.ambient_occlusion || (flags.deferred && samples==1),"Next-player ambient occlusion requires deferred single-sample lighting.");
     require(flags.color_debug_view || samples==1,"Next-player scene debug views require samples=1.");
     require(!flags.reconstruction || (samples==1 && flags.color_debug_view),"Next-player reconstruction requires single-sample color output.");
+    require(!flags.fxaa || samples==1,"Next-player FXAA requires samples=1.");
 }
 GameplayPlayerPreferences::GameplayPlayerPreferences(std::shared_ptr<PlayerPreferences> preferences,
     PoimaEntityId owner,bool replay,PlayerPreferenceGraphicsConstraints constraints)

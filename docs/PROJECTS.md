@@ -253,6 +253,7 @@ The player reads the bundled world and profile without writer sidecars. Runtime 
 | `--save-write-mode synchronous\|background` | Gameplay write mode; requires an explicit or enabled default save root. [Storage behavior](GAMEPLAY_SAVES.md#configure-storage). |
 | `--width N`, `--height N` | Each 128–4096; defaults 960×540. |
 | `--lighting-path forward\|deferred` | Selects the lighting path for interactive play or replay. Forward is the default. Deferred uses one world sample. [Deferred rendering](DEFERRED_RENDERING.md#select-the-path). |
+| `--post-aa none\|fxaa` | Selects the display-space antialiasing filter. The default is none. FXAA uses one world sample. [Single-sample antialiasing](DEFERRED_RENDERING.md#single-sample-antialiasing). |
 | `--samples N` | 1 or 4. Forward uses 4 when no preference supplies a value. An explicit flag overrides stored and session settings. Deferred requires 1 and supplies it when the flag is omitted, even if preferences request 4. |
 | `--frames-in-flight N` | 1 or 2; explicit graphics submission limit, overriding stored/session settings. |
 | `--settings-profile PATH` | Existing portable player profile outside the bundle. |

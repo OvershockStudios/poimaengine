@@ -15,7 +15,7 @@ from scene_capture import pixels
 from screen_reflections_capture import (
     EYE, LENS, PITCH, SETTINGS, ReflectionCapture, camera_matrix, witness_pixels,
 )
-from world_particles_contract import component, near_vector, transform
+from world_particles_contract import RpcError, component, near_vector, transform
 from world_terrain_contract import CAPTURE_SIZE, file_hash, success, tree_hashes, uid
 
 
@@ -25,10 +25,85 @@ IDENTITY = 'poima.test.item-attachment-contact'
 REPLAY = [dict(ticks=1)]
 VALIDATION_MESSAGES = ('VUID-', 'Validation Error', 'Validation Warning',
                        'SYNC-HAZARD', 'Undefined-Value')
+AA_BOARD, AA_LABEL = map(uid, (8243, 8244))
+AA_FOG = dict(density_per_m=.024, base_height_m=.3, height_falloff_per_m=.18,
+              start_distance_m=1.8, max_distance_m=11.5,
+              ambient_radiance=[.07, .11, .20], anisotropy=0)
+AA_BOARD_CENTER = (495, 75)
+AA_EDGE_REGION = (431, 19, 559, 131)
+AA_UI_REGION = (40, 43, 176, 78)
 
 
 def without_session(values):
     return {key: value for key, value in values.items() if key != 'session_id'}
+
+
+def antialiasing_controls():
+    width, height = CAPTURE_SIZE
+    focal = height / (2*math.tan(math.radians(LENS['vertical_fov'])/2))
+    x, y = AA_BOARD_CENTER
+    distance = 3.4
+    coordinates = [(x-width/2)*distance/focal, (height/2-y)*distance/focal, -distance]
+    camera = camera_matrix()
+    center = [EYE[i] + sum(coordinates[j]*camera[j*4+i] for j in range(3)) for i in range(3)]
+    # Orient a bright face toward the lens, then rotate it 27 degrees to
+    # put two long diagonal edges against the empty, dark background.
+    sx, cx = math.sin(PITCH/2), math.cos(PITCH/2)
+    sz, cz = math.sin(math.radians(27)/2), math.cos(math.radians(27)/2)
+    rotation = [sx*cz, -sx*sz, cx*sz, cx*cz]
+    left, top, right, bottom = AA_UI_REGION
+    offsets = dict(left=left, top=top, width=right-left, height=bottom-top)
+    label_layout = {key: dict(unit='dp', value=value) for key, value in offsets.items()}
+    return [
+        dict(op='entity.create', id=AA_BOARD, name='Diagonal antialiasing witness'),
+        component(AA_BOARD, 'Transform', transform(center, rotation) | dict(scale=[.9, .55, .025])),
+        component(AA_BOARD, 'MeshRenderer', dict(primitive='box', albedo=[0]*3,
+            visible=True, cast_shadows=False, receive_shadows=False)),
+        component(AA_BOARD, 'PbrMaterial', dict(base_color=[0]*3, emissive=[1]*3,
+            metallic=0, roughness=.8, double_sided=False)),
+        dict(op='ui.element.set', id=AA_LABEL, element=dict(parent=None, name='UI glyph control',
+            kind='label', text='AA X /', action=None, visible=True, enabled=True,
+            layout=dict(position='absolute', padding=[0]*4, **label_layout),
+            style=dict(background_color='#38253e', color='#f2f6fa', font_size=28,
+                       border_width=0, text_align='center'))),
+    ]
+
+
+def verify_antialiasing_pixels(plain, filtered):
+    def patch(image, bounds):
+        left, top, right, bottom = bounds
+        return [pixel for row in image[top:bottom] for pixel in row[left:right]]
+
+    for x, y in (AA_BOARD_CENTER, (586, 63)):
+        box = (x-3, y-3, x+4, y+4)
+        pixels_before = patch(plain, box)
+        assert pixels_before == patch(filtered, box), (x, y)
+        assert max(pixel[0] for pixel in pixels_before)-min(pixel[0] for pixel in pixels_before) <= 2
+    x, y = AA_BOARD_CENTER
+    assert plain[y][x][0] > plain[63][586][0]+70, 'The diagonal fixture needs two visible flat colors.'
+
+    interface = patch(plain, AA_UI_REGION)
+    assert interface == patch(filtered, AA_UI_REGION), 'FXAA changed the composited UI.'
+    assert min(color[0] for color in interface) < 70 and max(color[0] for color in interface) > 190
+    assert len(set(interface)) >= 6, 'The UI control must contain rendered glyph edges.'
+
+    left, top, right, bottom = AA_EDGE_REGION
+    mixed = 0
+    changed_rows = set()
+    for y in range(top, bottom):
+        for x in range(left, right):
+            before, after = plain[y][x][0], filtered[y][x][0]
+            if abs(before-after) <= 2:
+                continue
+            near = [plain[v][u][0] for v in range(y-1, y+2) for u in range(x-1, x+2)]
+            low, high = min(near), max(near)
+            assert high-low >= 45, (x, y, before, after, low, high)
+            if low+3 < after < high-3:
+                mixed += 1
+                changed_rows.add(y)
+    assert mixed >= 40 and len(changed_rows) >= 16, (mixed, changed_rows)
+    return dict(interior_mixed_pixels=mixed, rows=len(changed_rows),
+                flat_and_sky_pixels_exact=True, ui_pixels_exact=True)
 
 
 class StandaloneLighting(ReflectionCapture):
@@ -52,6 +127,12 @@ class StandaloneLighting(ReflectionCapture):
             component(ITEM, 'MeshRenderer', dict(primitive='box', albedo=[.8, .3, .1],
                                                  visible=True, cast_shadows=False)),
         )
+        if self.args.fxaa:
+            revision = self.transact(revision, 8254, *antialiasing_controls())
+            layout = self.world_call('world.ui.layout', revision=revision, scale=1,
+                                     width=CAPTURE_SIZE[0], height=CAPTURE_SIZE[1])
+            label, = layout['controls']
+            assert label['id'] == AA_LABEL and label['bounds'] == list(AA_UI_REGION), label
         # Reuse the compiled attachment-contact test consumer. On tick one it
         # commits an off-camera binding and saves without embedding a host token.
         descriptor = json.loads(self.args.artifact.read_bytes())
@@ -137,7 +218,7 @@ class StandaloneLighting(ReflectionCapture):
         assert file_hash(self.profile) == self.profile_sha
         assert file_hash(self.replay) == self.measurements['replay_sha256']
 
-    def launch(self, label, extras, *, path=None, samples=None):
+    def launch(self, label, extras, *, path=None, samples=None, fxaa=False):
         output = self.root/label
         output.mkdir()
         storage = output/'external saves'
@@ -145,7 +226,10 @@ class StandaloneLighting(ReflectionCapture):
         report, capture = output/'report.json', output/'frame.bmp'
         args = ['game', 'run', self.native(self.game), '--replay', self.native(self.replay),
             '--save-root', self.native(storage), '--report', self.native(report), '--capture', self.native(capture),
-            '--gpu', str(self.args.gpu), '--width', str(CAPTURE_SIZE[0]), '--height', str(CAPTURE_SIZE[1]), *extras]
+            '--gpu', str(self.args.gpu), '--width', str(CAPTURE_SIZE[0]), '--height', str(CAPTURE_SIZE[1])]
+        if self.args.fxaa:
+            args += ['--settings-overrides', '{"ui.scale":1}']
+        args += extras
         if path is None:
             argv = [str(self.executable), *args]
             child = subprocess.run(argv, capture_output=True, text=True, encoding='utf-8',
@@ -170,11 +254,13 @@ class StandaloneLighting(ReflectionCapture):
         diagnostics = play['render_diagnostics']
         assert diagnostics['lighting_path'] == path and diagnostics['culling'] is True, diagnostics
         draws = diagnostics['last_draws']
-        assert draws['camera_draws'] == 4 and draws['camera_culled'] >= 1, draws
+        assert draws['camera_draws'] == (5 if self.args.fxaa else 4) and draws['camera_culled'] >= 1, draws
         reflections = diagnostics['screen_reflections']
         assert reflections['active'] is (path == 'deferred'), reflections
         assert reflections['reason'] == ('active' if path == 'deferred' else 'forward'), reflections
         assert reflections['buffer_bytes'] == (math.prod(CAPTURE_SIZE)*10 if path == 'deferred' else 0)
+        if self.args.fxaa:
+            self.check_antialiasing_diagnostics(diagnostics, samples, fxaa)
         terminal = self.inspect_terminal(result, play['current_session_id'])
         data, saved = self.read_save(storage)
         assert data == self.baseline[0] and exact(terminal, self.baseline[1])
@@ -187,11 +273,65 @@ class StandaloneLighting(ReflectionCapture):
         self.check_immutable()
         return measured
 
+    def check_antialiasing_diagnostics(self, diagnostics, samples, active):
+        if active:
+            assert samples == 1
+            assert diagnostics['post_aa'] == dict(mode='fxaa', active=True, buffer_bytes=math.prod(CAPTURE_SIZE)*4)
+        else:
+            assert 'post_aa' not in diagnostics
+        assert diagnostics['reconstruction']['mode'] == 'none' and not diagnostics['reconstruction']['active']
+        fog = diagnostics['height_fog']
+        assert fog['active'] is (samples == 1) and fog['reason'] == ('active' if samples == 1 else 'multisample')
+
+    def check_pre_antialiasing_probes(self):
+        storage = self.root/'probe saves'
+        storage.mkdir()
+        views = {}
+        with self.owner('pre-antialiasing opaque probes', game=self.game, saves=storage) as (client, _):
+            owner = client.call('runtime.status')['session_id']
+            assert client.call('runtime.step', dict(session_id=owner, request_id=uid(8303), expected_tick=0,
+                ticks=1, inputs=[dict(entity=PLAYER)]))['save_serviced']
+            ui = client.call('runtime.ui.inspect', dict(session_id=owner, tick=1))
+            basic = dict(session_id=owner, tick=1, structure_revision=1, camera=CAMERA,
+                ui_revision=ui['ui_revision'], ui_scale=1, width=CAPTURE_SIZE[0], height=CAPTURE_SIZE[1],
+                gpu=self.args.gpu, samples=1, lighting_path='deferred', reconstruction='none')
+            for override in (dict(samples=4, lighting_path='forward'), dict(reconstruction='fsr3_native'),
+                             dict(scene_debug_view='depth')):
+                rejected = self.root/'unpublished-probe.bmp'
+                request = basic | override | dict(post_aa='fxaa', path=self.native(rejected))
+                try:
+                    client.call('runtime.capture', request)
+                except RpcError as error:
+                    assert error.code == -32602, error
+                else:
+                    raise AssertionError(f'Incompatible FXAA runtime capture succeeded with {override!r}')
+                assert not rejected.exists()
+            sites = [*witness_pixels().values(), AA_BOARD_CENTER, (586, 63)]
+            for mode in ('none', 'fxaa'):
+                output = self.root/f'opaque-probe-{mode}.bmp'
+                request = basic | dict(post_aa=mode, path=self.native(output),
+                    scene_product_probes=[dict(x=x, y=y) for x, y in sites])
+                captured = client.call('runtime.capture', request)
+                assert captured['hardware'] and captured['capture_written'] and captured['nvrhi_errors'] == 0
+                assert captured['tick'] == 1 and captured['samples'] == 1
+                diagnostics = captured['render_diagnostics']
+                self.check_antialiasing_diagnostics(diagnostics, 1, mode == 'fxaa')
+                assert diagnostics['lighting_path'] == 'deferred' and diagnostics['screen_reflections']['active']
+                products = diagnostics['scene_products']
+                assert products['available'] and products['view'] == 'color'
+                assert [(row['x'], row['y']) for row in products['probes']] == sites
+                views[mode] = dict(probes=products['probes'], sha256=file_hash(output))
+        assert exact(views['none']['probes'], views['fxaa']['probes'])
+        assert views['none']['sha256'] != views['fxaa']['sha256']
+        assert self.read_save(storage)[0] == self.baseline[0]
+        self.check_immutable()
+        self.measurements['pre_antialiasing'] = views
+
     def run(self):
         self.measurements.update(bundles={}, runs={}, rejections={})
         revision = self.author_fixture()
         self.original_bundle = self.root/'enabled original export'
-        self.game = self.bundle('enabled', SETTINGS, 1, revision, 8253)
+        self.game = self.bundle('enabled', SETTINGS, 1, revision, 8253, height_fog=AA_FOG if self.args.fxaa else None)
         descriptor = json.loads(self.game.read_bytes())
         assert descriptor['entry']['controller'] == PLAYER and descriptor['entry']['camera'] == CAMERA
         self.executable = (self.game.parent/descriptor['engine']['executable']).resolve()
@@ -211,6 +351,11 @@ class StandaloneLighting(ReflectionCapture):
         self.launch('duplicate-path', ['--lighting-path', 'deferred', '--lighting-path', 'forward'])
         self.launch('missing-path', ['--lighting-path'])
         self.launch('deferred-four', ['--lighting-path', 'deferred', '--samples', '4'])
+        if self.args.fxaa:
+            self.launch('invalid-post-aa', ['--post-aa', 'unknown'])
+            self.launch('duplicate-post-aa', ['--post-aa', 'fxaa', '--post-aa', 'none'])
+            self.launch('forward-four-fxaa', ['--post-aa', 'fxaa', '--samples', '4'])
+            self.launch('deferred-four-fxaa', ['--lighting-path', 'deferred', '--post-aa', 'fxaa', '--samples', '4'])
         if self.args.headless_preflight:
             assert self.headless_baseline('headless-repeat') == self.baseline
             return
@@ -227,6 +372,22 @@ class StandaloneLighting(ReflectionCapture):
         assert default['gpu'] == forward['gpu'] == deferred['gpu'] == one['gpu'] == stored['gpu']
         for name, channel in (('warm_hit', 0), ('cool_hit', 2)):
             assert deferred['probes'][name][channel] > forward['probes'][name][channel]+3, (name, deferred, forward)
+        if self.args.fxaa:
+            self.check_antialiasing(deferred)
+
+    def check_antialiasing(self, default):
+        deferred = ['--lighting-path', 'deferred']
+        explicit_none = self.launch('deferred-aa-none', [*deferred, '--post-aa', 'none'],
+                                    path='deferred', samples=1)
+        filtered = self.launch('deferred-fxaa', [*deferred, '--post-aa', 'fxaa'],
+                               path='deferred', samples=1, fxaa=True)
+        self.launch('forward-one-fxaa', ['--lighting-path', 'forward', '--post-aa', 'fxaa', '--samples', '1'],
+                    path='forward', samples=1, fxaa=True)
+        assert default['capture_sha256'] == explicit_none['capture_sha256'] != filtered['capture_sha256']
+        assert default['gpu'] == explicit_none['gpu'] == filtered['gpu']
+        plain, active = (pixels(self.root/label/'frame.bmp') for label in ('deferred-aa-none', 'deferred-fxaa'))
+        self.measurements['antialiasing_pixels'] = verify_antialiasing_pixels(plain, active)
+        self.check_pre_antialiasing_probes()
 
 
 def main():
@@ -236,6 +397,7 @@ def main():
         parser.add_argument('--'+name, type=Path, required=True)
     parser.add_argument('--gpu', type=int, default=0)
     parser.add_argument('--windows-interop', action='store_true')
+    parser.add_argument('--fxaa', action='store_true', help='Qualify post-AA with composition and immutable replay.')
     parser.add_argument('--headless-preflight', action='store_true',
                         help='Run fixture authoring, save and parser controls without presenting.')
     args = parser.parse_args()
@@ -244,10 +406,11 @@ def main():
     args.output = args.output.resolve()
     args.output.mkdir(parents=True)
     test = StandaloneLighting(args, args.output)
-    record = dict(format='poima.game-launch-lighting.v1', passed=False, preflight=args.headless_preflight, gpu=args.gpu,
+    record = dict(format='poima.game-launch-lighting.v1', passed=False, preflight=args.headless_preflight,
+        gpu=args.gpu, fxaa=args.fxaa,
         binary_sha256=file_hash(args.binary), harness_sha256=file_hash(Path(__file__)),
         reflection_fixture_sha256=file_hash(Path(__file__).with_name('screen_reflections_capture.py')),
-        artifact_descriptor_sha256=file_hash(args.artifact),
+                  artifact_descriptor_sha256=file_hash(args.artifact),
         runtime_descriptor_sha256=file_hash(args.runtime_root/'runtime.json'),
         calls=test.calls, measurements=test.measurements)
     try:

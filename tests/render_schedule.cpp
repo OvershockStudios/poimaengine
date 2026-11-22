@@ -1215,5 +1215,108 @@ void height_fog_contracts() {
     legacy.settings.height_fog_spots=true;
     rejects("height fog spotlights without height fog",[&]{legacy.validate();});
 }
+
+void setup_spatial_aa(Fixture& fixture) {
+    fixture.settings.spatial_aa=true;
+    auto& f=fixture.f;
+    f.display_ldr=fixture.add(Kind::texture,Lifetime::shared);
+    auto& image=f.resources[f.display_ldr];
+    image.format=Format::rgba8_unorm;
+    image.width=f.resources[f.output].width;
+    image.height=f.resources[f.output].height;
+    image.supported=use_bit(Use::sampled)|use_bit(Use::color_overwrite);
 }
-int main(){try{matrix();faults();products();motion_contracts();reconstruction_contracts();deferred_contracts();deferred_color_contracts();viewmodel_contracts();ambient_occlusion_contracts();masked_shadow_contracts();environment_contracts();bloom_contracts();post_effect_contracts();output_grade_contracts();streamed_geometry_contracts();mutable_geometry_contracts();particle_sprite_contracts();surface_mark_contracts();screen_reflection_contracts();height_fog_contracts();std::cout<<"Production render schedule: "<<accepted<<" valid variants, "<<rejected<<" rejected contract mutations.\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}
+
+void spatial_aa_contracts() {
+    for(bool editor:{false,true})for(unsigned slot:{0u,1u})for(unsigned path:{0u,1u,2u}) {
+        auto settings=rich();
+        settings.editor=editor;settings.overlay=!editor;settings.slot=slot;
+        settings.deferred=settings.products=path!=0;
+        settings.screen_reflections=settings.height_fog=settings.ambient_occlusion=path==2;
+        Fixture fixture(settings,1,true);
+        if(path==2) {
+            setup_particle_sprites(fixture);setup_foreground(fixture);
+            setup_post_effect(fixture);setup_bloom(fixture);world_hdr_probes(fixture);
+            auto& f=fixture.f;
+            f.output_grade=fixture.add(Kind::buffer,Lifetime::shared);
+            auto& grade=f.resources[f.output_grade];
+            grade.region=Region::whole;
+            grade.bytes=grade.allocation_bytes=output_grade_bytes;
+            grade.supported=use_bit(Use::upload)|use_bit(Use::constant);
+        }
+        setup_spatial_aa(fixture);
+        auto plan=fixture.plan();
+        const auto& f=plan.frame;
+        plan.validate();++accepted;
+        check(&pass(plan,PassId::output)+1==&pass(plan,PassId::spatial_aa) &&
+              &pass(plan,PassId::spatial_aa)+1==&pass(plan,PassId::game_ui) &&
+              access(plan,PassId::game_ui,f.output,Use::color),
+              "Spatial anti-aliasing must run directly before UI composition");
+        check(std::string(pass_name(PassId::spatial_aa))=="render.pass.spatial_aa" &&
+              access(plan,PassId::output,display_radiance(f,plan.settings),Use::sampled) &&
+              access(plan,PassId::output,f.display_ldr,Use::color_overwrite,true) &&
+              !access(plan,PassId::output,f.output,Use::color_overwrite,true) &&
+              access(plan,PassId::spatial_aa,f.display_ldr,Use::sampled) &&
+              access(plan,PassId::spatial_aa,f.output,Use::color_overwrite,true),
+              "Spatial anti-aliasing requires a distinct display source and full output");
+        auto& swap=plan.frame.resources[f.swapchain];
+        swap.identity=0;swap.late_bound=true;plan.validate(true);
+        rejects("spatial anti-aliasing before acquisition",[&]{plan.validate();});
+        plan.bind_swapchain(9000,7);plan.validate();
+    }
+
+    auto settings=rich();settings.overlay=true;
+    Fixture fixture(settings);setup_spatial_aa(fixture);
+    const auto original=fixture.plan();original.validate();
+    const auto& f=original.frame;
+    auto bad=[&](const char* name,const auto& edit){auto p=original;edit(p);rejects(name,[&]{p.validate();});};
+    bad("disabled with display attachment",[](auto& p){p.settings.spatial_aa=false;});
+    bad("spatial anti-aliasing without scene",[](auto& p){p.settings.scene=false;});
+    bad("spatial anti-aliasing with diagnostic output",[](auto& p){p.settings.products_debug=true;});
+    bad("spatial anti-aliasing with reconstruction",[](auto& p){p.settings.reconstruction=true;});
+    bad("spatial anti-aliasing with multisample world",[&](auto& p){p.frame.resources[f.color].samples=4;});
+    bad("multisample display target",[&](auto& p){p.frame.resources[f.output].samples=4;});
+    bad("absent intermediate display",[&](auto& p){p.frame.display_ldr=none;});
+    bad("incorrect intermediate format",[&](auto& p){p.frame.resources[f.display_ldr].format=Format::rgba16_float;});
+    bad("incorrect intermediate width",[&](auto& p){++p.frame.resources[f.display_ldr].width;});
+    bad("intermediate array",[&](auto& p){++p.frame.resources[f.display_ldr].layers;});
+    bad("intermediate from frame-slot storage",[&](auto& p){p.frame.resources[f.display_ldr].lifetime=Lifetime::slot;});
+    bad("intermediate remains initialized",[&](auto& p){p.frame.resources[f.display_ldr].initialized=true;});
+    bad("intermediate is late bound",[&](auto& p){p.frame.resources[f.display_ldr].late_bound=true;});
+    bad("intermediate aliases another texture",[&](auto& p){p.frame.game_textures.push_back(f.display_ldr);});
+    bad("intermediate is the final output",[&](auto& p){p.frame.display_ldr=f.output;});
+    bad("intermediate reuses texture identity",[&](auto& p){p.frame.resources[f.display_ldr].identity=p.frame.resources[f.hdr].identity;});
+    bad("spatial anti-aliasing stage missing",[&](auto& p){
+        p.frame.resources[f.output].initialized=true;
+        std::erase_if(p.passes,[](const auto& stage){return stage.id==PassId::spatial_aa;});
+    });
+    bad("spatial anti-aliasing reads before producer",[](auto& p){
+        std::erase_if(p.passes,[](const auto& stage){return stage.id==PassId::output;});
+    });
+    bad("display writes straight to swapchain",[&](auto& p){pass(p,PassId::output).accesses.back().resource=f.output;});
+    bad("output also writes directly to swapchain",[&](auto& p){pass(p,PassId::output).accesses.push_back({f.output,Use::color_overwrite,true});});
+    bad("intermediate producer does not initialize",[](auto& p){pass(p,PassId::output).accesses.back().initialize=false;});
+    bad("spatial anti-aliasing samples HDR",[&](auto& p){pass(p,PassId::spatial_aa).accesses.front().resource=f.hdr;});
+    bad("spatial anti-aliasing reads unrelated input",[&](auto& p){pass(p,PassId::spatial_aa).accesses.push_back({f.hdr,Use::sampled});});
+    bad("spatial anti-aliasing partially writes output",[](auto& p){pass(p,PassId::spatial_aa).accesses.back().initialize=false;});
+    bad("game UI precedes spatial anti-aliasing",[](auto& p){std::swap(pass(p,PassId::game_ui),pass(p,PassId::spatial_aa));});
+    bad("overlay precedes spatial anti-aliasing",[](auto& p){std::swap(pass(p,PassId::overlay),pass(p,PassId::spatial_aa));});
+    bad("UI reads scratch outside the anti-aliasing pass",[&](auto& p){pass(p,PassId::game_ui).accesses.push_back({f.display_ldr,Use::sampled});});
+    bad("overlay replaces filtered scene",[&](auto& p){pass(p,PassId::overlay).accesses.push_back({f.output,Use::color_overwrite,true});});
+
+    Fixture bounded(settings);setup_spatial_aa(bounded);
+    for(auto id:{bounded.f.output,bounded.f.capture,bounded.f.display_ldr}) {
+        auto& r=bounded.f.resources[id];r.width=r.height=4096;
+    }
+    bounded.plan().validate();++accepted;
+    for(auto id:{bounded.f.output,bounded.f.capture,bounded.f.display_ldr})++bounded.f.resources[id].height;
+    rejects("spatial anti-aliasing exceeds 64 MiB at next row",[&]{bounded.plan().validate();});
+    auto legacy=Fixture(settings,4).plan();legacy.validate();
+    check(legacy.frame.display_ldr==none &&
+          std::none_of(legacy.passes.begin(),legacy.passes.end(),[](const auto& work){return work.id==PassId::spatial_aa;}) &&
+          access(legacy,PassId::output,legacy.frame.output,Use::color_overwrite,true),
+          "Default rendering acquired spatial anti-aliasing resources or work");
+}
+}
+
+int main(){try{matrix();faults();products();motion_contracts();reconstruction_contracts();deferred_contracts();deferred_color_contracts();viewmodel_contracts();ambient_occlusion_contracts();masked_shadow_contracts();environment_contracts();bloom_contracts();post_effect_contracts();output_grade_contracts();streamed_geometry_contracts();mutable_geometry_contracts();particle_sprite_contracts();surface_mark_contracts();screen_reflection_contracts();height_fog_contracts();spatial_aa_contracts();std::cout<<"Production render schedule: "<<accepted<<" valid variants, "<<rejected<<" rejected contract mutations.\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}

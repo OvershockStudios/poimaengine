@@ -44,6 +44,7 @@
 #include "render_height_fog.hpp"
 #include "render_viewmodel.hpp"
 #include "render_hdr_effects.hpp"
+#include "render_spatial_aa.hpp"
 #include "poima/scene_output_ao_ps.hpp"
 #include "poima/scene_products_ps.hpp"
 #include "poima/scene_products_vs.hpp"
@@ -372,6 +373,8 @@ struct Context {
     nvrhi::GraphicsPipelineHandle output_pipeline;
     hdr_effects::ProjectPostPass post_effect;
     hdr_effects::BloomPass bloom;
+    render_spatial_aa::Pass spatial_aa;
+    bool fxaa_enabled=false;
     bool post_effect_active=false;
     nvrhi::BufferHandle vertices;
     nvrhi::InputLayoutHandle input_layout;
@@ -452,6 +455,7 @@ struct Context {
         output_pipeline=nullptr;output_bindings=nullptr;output_layout=nullptr;output_vs=nullptr;output_ps=nullptr;
         output_grade_buffer=nullptr;
         bloom={};
+        spatial_aa={};
         post_effect={};
         vertex_shader = nullptr;
         pixel_shader = nullptr;
@@ -543,6 +547,9 @@ struct Context {
         require(!fsr3_history_probes || (reconstruction_mode!=ReconstructionMode::none && !product_probes.empty()),"SDK history probes require reconstruction and explicit probe coordinates.");
         require(reconstruction_mode>=ReconstructionMode::none && reconstruction_mode<=ReconstructionMode::fsr3_performance,"Invalid reconstruction mode.");
         require(reconstruction_mode==ReconstructionMode::none || (scene && options.samples==1 && scene_debug_view==SceneDebugView::color),"FSR reconstruction requires a single-sample color scene.");
+        fxaa_enabled=options.fxaa;
+        require(!fxaa_enabled || (scene && options.samples==1 && scene_debug_view==SceneDebugView::color &&
+            reconstruction_mode==ReconstructionMode::none),"FXAA requires a single-sample color scene without reconstruction.");
         samples = scene ? options.samples : 1;
         const bool color_only_player=deferred && player && !editor && scene_debug_view==SceneDebugView::color &&
             product_probes.empty() && reconstruction_mode==ReconstructionMode::none;
@@ -1693,7 +1700,7 @@ struct Context {
             require(world+foreground_bytes+reconstruction->gpu_bytes()<=1536ull*1024*1024,"World, foreground and FSR payload exceeds the 1536 MiB budget.");
         } else {
             const auto pixels=std::uint64_t(extent.width)*extent.height;
-            const auto world=pixels*(8u*(samples>1 ? samples+1u : 1u)+(scene_products_enabled ? 17u : 0u)+deferred_material_bytes_per_pixel()+(ao_enabled ? 4u : 0u))+reflections.buffer_bytes()+fog.buffer_bytes();
+            const auto world=pixels*(8u*(samples>1 ? samples+1u : 1u)+(scene_products_enabled ? 17u : 0u)+deferred_material_bytes_per_pixel()+(ao_enabled ? 4u : 0u))+reflections.buffer_bytes()+fog.buffer_bytes()+spatial_aa.buffer_bytes();
             require(world+foreground_bytes<=512ull*1024*1024,"World and foreground HDR attachments exceed the 512 MiB budget.");
         }
     }
@@ -1800,6 +1807,10 @@ struct Context {
     };
     static_assert(sizeof(OutputGradeConstants) == render_schedule::output_grade_bytes);
 
+    nvrhi::IFramebuffer* scene_output_framebuffer(std::uint32_t image_index) const {
+        return fxaa_enabled ? spatial_aa.input_framebuffer() : game_ui.framebuffer(image_index);
+    }
+
     void prepare_scene_output() {
         if(!scene)return;
         const bool use_reconstructed=(reconstruction && scene_visible) || viewmodel_enabled;
@@ -1880,7 +1891,7 @@ struct Context {
             nvrhi::GraphicsPipelineDesc description;description.VS=output_vs;description.PS=output_ps;description.bindingLayouts.push_back(output_layout);
             description.renderState.depthStencilState.depthTestEnable=false;description.renderState.depthStencilState.depthWriteEnable=false;
             description.renderState.rasterState.cullMode=nvrhi::RasterCullMode::None;
-            output_pipeline=checked->createGraphicsPipeline(description,game_ui.framebuffer(0)->getFramebufferInfo());
+            output_pipeline=checked->createGraphicsPipeline(description,scene_output_framebuffer(0)->getFramebufferInfo());
             require(bool(output_pipeline),"Scene output pipeline creation failed.");
         }
     }
@@ -1894,11 +1905,11 @@ struct Context {
                 std::copy(grade.knots[i].begin(),grade.knots[i].end(),constants.knots[i].begin());
             commands->writeBuffer(grade_buffer,&constants,sizeof(constants));
         }
-        nvrhi::GraphicsState state;state.pipeline=output_pipeline;state.framebuffer=game_ui.framebuffer(image_index);state.bindings.push_back(output_bindings);
+        nvrhi::GraphicsState state;state.pipeline=output_pipeline;state.framebuffer=scene_output_framebuffer(image_index);state.bindings.push_back(output_bindings);
         state.viewport.addViewportAndScissorRect(nvrhi::Viewport(static_cast<float>(extent.width),static_cast<float>(extent.height)));
         const auto display=scene_viewport.value_or(nvrhi::Viewport(static_cast<float>(extent.width),static_cast<float>(extent.height)));
         const float parameters[16]={frame_constants.ambient_exposure[3],
-            (format==vk::Format::eB8G8R8A8Srgb || format==vk::Format::eR8G8B8A8Srgb) ? 1.0f : 0.0f,
+            !fxaa_enabled && ui_target().srgb ? 1.0f : 0.0f,
             static_cast<float>(scene_debug_view),static_cast<float>(scene->near_plane),static_cast<float>(scene->far_plane),frame_constants.cluster_viewport[2],frame_constants.cluster_viewport[3],output_reconstruction_bound ? 1.0f : 0.0f,
             display.minX,display.minY,display.maxX-display.minX,display.maxY-display.minY,
             float(output_source_bound->getDesc().width),float(output_source_bound->getDesc().height),
@@ -2219,6 +2230,7 @@ struct Context {
         viewmodel.reset();viewmodel_enabled=false;viewmodel_draws.clear();viewmodel_objects.clear();output_source_bound=nullptr;
         commands=nullptr;
         sky_pipeline=nullptr;output_pipeline=nullptr;output_bindings=nullptr;bloom.clear_targets();
+        spatial_aa={};diagnostics.fxaa_buffer_bytes=0;
         post_effect.clear_target();
         post_effect.detach_source();
         post_effect_active=false;
@@ -2335,7 +2347,16 @@ struct Context {
             const auto hdr_bytes=pixels*8u*(samples>1 ? samples+1u : 1u);
             const auto normal_bytes=scene_products_enabled ? pixels*8u : 0u;
             const auto motion_bytes=scene_products_enabled ? pixels*9u : 0u;
-            require(hdr_bytes+normal_bytes+motion_bytes+pixels*(deferred_material_bytes_per_pixel()+(ao_enabled ? 4u : 0u))<=512u*1024u*1024u,"HDR scene/product attachments exceed the 512 MiB budget.");
+            const auto extras=deferred_material_bytes_per_pixel()+(ao_enabled ? 4u : 0u)+(fxaa_enabled ? 4u : 0u);
+            require(hdr_bytes+normal_bytes+motion_bytes+pixels*extras<=512u*1024u*1024u,
+                "HDR scene/product attachments exceed the 512 MiB budget.");
+            if(fxaa_enabled) {
+                const auto features=physical.getFormatProperties(vk::Format::eR8G8B8A8Unorm,dispatch).optimalTilingFeatures;
+                const auto needed=vk::FormatFeatureFlagBits::eColorAttachment | vk::FormatFeatureFlagBits::eSampledImage |
+                    vk::FormatFeatureFlagBits::eSampledImageFilterLinear | vk::FormatFeatureFlagBits::eTransferSrc |
+                    vk::FormatFeatureFlagBits::eTransferDst;
+                require((features&needed)==needed,"Selected GPU lacks filterable/color/transfer RGBA8_UNORM support for FXAA.");
+            }
             const auto hdr_format=vk::Format::eR16G16B16A16Sfloat;
             const auto properties=physical.getFormatProperties(hdr_format,dispatch).optimalTilingFeatures;
             const auto needed=vk::FormatFeatureFlagBits::eColorAttachment | vk::FormatFeatureFlagBits::eSampledImage |
@@ -2424,6 +2445,10 @@ struct Context {
 #endif
             finished.push_back(device.createSemaphore({},nullptr,dispatch));
             if(maintenance1) {present_fences.push_back(device.createFence({},nullptr,dispatch));present_pending.push_back(false);}
+        }
+        if(fxaa_enabled) {
+            spatial_aa.prepare(*checked.Get(),*game_ui.framebuffer(0));
+            diagnostics.fxaa_buffer_bytes=spatial_aa.buffer_bytes();
         }
         initialized.resize(images.size(), false);
         if(!product_probes.empty()) {
@@ -2565,6 +2590,7 @@ struct Context {
         settings.viewmodel=viewmodel_enabled;settings.viewmodel_clustered=viewmodel_enabled && viewmodel_lights.active;settings.viewmodel_samples=viewmodel_samples;
         settings.bloom=scene && output_bloom_bound;
         settings.post_effect=scene && post_effect_active;
+        settings.spatial_aa=fxaa_enabled;
         settings.screen_reflections=scene && scene_visible && reflections.radiance();
         settings.height_fog=scene && scene_visible && fog.radiance();
         settings.height_fog_spots=settings.height_fog && (fog_spots[0]!=0 || fog_spots[1]!=0);
@@ -2715,6 +2741,7 @@ struct Context {
             }
         }
         if(settings.post_effect)f.post_effect=texture(post_effect.radiance(),rs::Lifetime::shared,false);
+        if(settings.spatial_aa)f.display_ldr=texture(spatial_aa.input(),rs::Lifetime::shared,false);
         if(settings.scene && output_grade_bound)f.output_grade=buffer(output_grade_buffer,rs::Lifetime::shared,false);
         if(settings.bloom) {
             f.bloom=texture(bloom.radiance(),rs::Lifetime::shared,false);
@@ -2917,7 +2944,8 @@ struct Context {
                     if(binding.type==nvrhi::ResourceType::StructuredBuffer_UAV)identity(binding.slot==0 ? f.viewmodel_counts : f.viewmodel_indices,binding.resourceHandle);
                 }
             }
-            framebuffer(game_ui.framebuffer(index),f.output,rs::none);
+            framebuffer(scene_output_framebuffer(index),plan.settings.spatial_aa ? f.display_ldr : f.output,rs::none);
+            if(plan.settings.spatial_aa)spatial_aa.verify_bindings(plan,*game_ui.framebuffer(index));
             if(plan.settings.post_effect) {
                 framebuffer(post_effect.framebuffer(),f.post_effect,rs::none);
                 const auto& inputs=post_effect.bindings()->getDesc()->bindings;
@@ -3176,6 +3204,8 @@ struct Context {
             case render_schedule::PassId::output:
                 render_scene_output(index,resources.output_grade!=render_schedule::none ? planned_buffer(resources.output_grade) : nullptr);
                 break;
+            case render_schedule::PassId::spatial_aa:
+                spatial_aa.record(*commands.Get(),*game_ui.framebuffer(index));break;
             case render_schedule::PassId::game_ui:game_ui.record(*commands.Get(),ui_target(),index);break;
             case render_schedule::PassId::overlay:overlay.record(*commands.Get(),ui_target(),index);break;
             case render_schedule::PassId::editor_clear:

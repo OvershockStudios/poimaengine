@@ -1,0 +1,110 @@
+{
+  "format": "poima.post-aa.qualification.v1",
+  "version": "0.0.393",
+  "windows_source_sha256": "6d00157764e6eea890b0a1b205e01fa4bf3f0dfc05e35a955b4958dd4165d1ab",
+  "headless_source_sha256": "66ff662974003b1aadc6dccfb42930d9e949caad9e8bad467484427c709ead8d",
+  "validation_test_manifest_sha256": "42156b75bb9b518dc85ab1d41c865aeebf05a70094a5dcc53996eba7518d7afe",
+  "windows": {
+    "executable_sha256": "a262b0be007ce3e409d03258a567241bbe6b88ecdc328d9cd126b8ba21315b49",
+    "runtime_manifest_sha256": "593898f4471d7b4d9f643b9227867258fd2f213e98515d4478ed9ecd4e40626c",
+    "new_spirv_sha256": "70ea521e78c6fe74462724c7730dc01a21bec7c28170f2debe69c95a07033810",
+    "existing_spirv_equal": 55,
+    "relocated_cases": [
+      {
+        "gpu": "AMD Radeon(TM) Graphics",
+        "reference_fixture_sha256": "18e6e5c24085b77e8c584d287ee1aa83a53c307bb3395d8bf33f0a9f05a4684c",
+        "validated_launch_processes": 8,
+        "save_sha256": "a831d4500f7bb1d0e84e2c7ed8a51d8974837b3ed82243a574e9d3af3a90e5c4",
+        "save_bytes": 11599,
+        "refused_cli_options": [
+          "deferred-four",
+          "deferred-four-fxaa",
+          "duplicate-path",
+          "duplicate-post-aa",
+          "forward-four-fxaa",
+          "invalid-path",
+          "invalid-post-aa",
+          "missing-path"
+        ],
+        "diagonal_and_ui": {
+          "interior_mixed_pixels": 270,
+          "rows": 92,
+          "flat_and_sky_pixels_exact": true,
+          "ui_pixels_exact": true
+        },
+        "exact_opaque_probe_count": 9,
+        "capture_sha256": {
+          "default-forward": "4af3585837b39963928df9087ebb0ffd5b819eee3ae54e9ae633d9c1e2e6e7a0",
+          "explicit-forward": "4af3585837b39963928df9087ebb0ffd5b819eee3ae54e9ae633d9c1e2e6e7a0",
+          "default-deferred": "d7b783de9c260fc7f7324e5ef114b5c0ba9cf727844e4b3d76cf77fa390dec10",
+          "explicit-one": "d7b783de9c260fc7f7324e5ef114b5c0ba9cf727844e4b3d76cf77fa390dec10",
+          "stored-four-deferred": "d7b783de9c260fc7f7324e5ef114b5c0ba9cf727844e4b3d76cf77fa390dec10",
+          "deferred-aa-none": "d7b783de9c260fc7f7324e5ef114b5c0ba9cf727844e4b3d76cf77fa390dec10",
+          "deferred-fxaa": "9a3d0f5da0e984aed720d8a8f160ad49df452cdbb05a3d36da261aaa056b3e3f",
+          "forward-one-fxaa": "2567fa3f49f5a1e4696b1e8caaba346a76bd82f25e43e662f4720dc2b1af7fd9"
+        }
+      },
+      {
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "reference_fixture_sha256": "6e80c0c02da3ff9a8328a0c97fd4c333dbdd53b71b584d5bc586ca039b725aac",
+        "validated_launch_processes": 8,
+        "save_sha256": "a94b6e54aefebbc28abff0435794303733380ea689c9ec09585e3134d1b92bb8",
+        "save_bytes": 11599,
+        "refused_cli_options": [
+          "deferred-four",
+          "deferred-four-fxaa",
+          "duplicate-path",
+          "duplicate-post-aa",
+          "forward-four-fxaa",
+          "invalid-path",
+          "invalid-post-aa",
+          "missing-path"
+        ],
+        "diagonal_and_ui": {
+          "interior_mixed_pixels": 270,
+          "rows": 92,
+          "flat_and_sky_pixels_exact": true,
+          "ui_pixels_exact": true
+        },
+        "exact_opaque_probe_count": 9,
+        "capture_sha256": {
+          "default-forward": "bba10c39b68a930bc8b672518b3ae9f4c3a2de502cefb5e5bbd418e155e8811e",
+          "explicit-forward": "bba10c39b68a930bc8b672518b3ae9f4c3a2de502cefb5e5bbd418e155e8811e",
+          "default-deferred": "29c05b1daa2f7e01a183037cf90fe97937c360c3b61f618326980a2177980287",
+          "explicit-one": "29c05b1daa2f7e01a183037cf90fe97937c360c3b61f618326980a2177980287",
+          "stored-four-deferred": "29c05b1daa2f7e01a183037cf90fe97937c360c3b61f618326980a2177980287",
+          "deferred-aa-none": "29c05b1daa2f7e01a183037cf90fe97937c360c3b61f618326980a2177980287",
+          "deferred-fxaa": "706152b74f0ff20d62736a09b1adc3ec649b2c2d8c121ce1957c5a38732cdf55",
+          "forward-one-fxaa": "e665c71c1a38df52d29c83dbdf8aa8dfe09ca1ba96e7c979d20fc7a015bc6edf"
+        }
+      }
+    ],
+    "hosted_forward": {
+      "report_sha256": "f65984c527192af82b56ddb0511a38191b5ea90dda8c69b3b549f5cb89608524",
+      "slots": [
+        1,
+        2
+      ],
+      "matched_final_and_fresh_bmp_sha256": "b4b85b23f106682ead467cd4612e0ad791d23061886d173c99004a2ea0b99832"
+    }
+  },
+  "render_schedule": {
+    "accepted": 501,
+    "refused_mutations": 1306,
+    "disabled_traces_equal": 521,
+    "disabled_trace_sha256": "034b911d64755bcb73c50220f0a64ec82865d11cb378d2bb44ea7c6df6ab08c3"
+  },
+  "ubuntu": {
+    "ctest_count": 12,
+    "cli_admission_cases": 7,
+    "sha256": {
+      "poima": "dea950187639ec03c282f5afc654e3a9e42c8396c1b6f12653339e95debdb9e4",
+      "game-schema.json": "60fceb5c014e80effe29b613f38d461c840fa6a824d12de77cea505d26e55dfa",
+      "schedule.txt": "d91d208796a07260ff714e78902b5dd620cf0f75962b8e9c699fdb97b8f28c18",
+      "cli-cases.json": "6763ba38e3a84d72e168fda77fe07d5ec0892cda313d837ffdadbabfb94ecb11",
+      "result.xml": "dea80919d3828323b0708aeace23a0568f38a38c3bdf01e3e46861bde1433fd1"
+    }
+  },
+  "scope": "Single-sample native-resolution color with active FXAA. The fixture includes post-HDR fog, deferred reflections, a diagonal edge and an opaque HUD control. The hosted forward test resizes two views and compares serial, two-slot and fresh captures.",
+  "verification_notes": "The HUD comparison uses the exact rectangle returned by world.ui.layout. The initial rectangle included pixels outside the authored panel, where the scene has its own display-color quantization."
+}

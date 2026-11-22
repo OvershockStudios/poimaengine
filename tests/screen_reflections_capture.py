@@ -256,10 +256,12 @@ class ReflectionCapture(ParticleContract):
             ops.extend(surface_components(surface))
         return self.transact(revision, 8250, *ops)
 
-    def bundle(self, name, profile, exposure, revision, request):
+    def bundle(self, name, profile, exposure, revision, request, *, height_fog=None):
         environment = dict(ambient=[.23, .23, .23], exposure=exposure)
         if profile is not None:
             environment['screen_reflections'] = profile
+        if height_fog is not None:
+            environment['height_fog'] = height_fog
         revision = self.transact(revision, request, component(ENVIRONMENT, 'LightingEnvironment', environment))
         if name == 'enabled':
             self.check_runtime_requirements()

@@ -386,7 +386,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 201}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 202}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -433,6 +433,8 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
             "Character height must exceed twice radius; runtime is single-threaded fixed 60 Hz."}}};
     auto& methods=result["methods"];
     methods["world.capture"]["properties"]["shadow_filter"]={{"enum",{"pcf3_point","pcf3_fractional","pcss_directional"}},{"description","Explicit override; omission inherits LightingEnvironment.shadow_filter, falling back to pcf3_point for legacy scenes."}};
+    methods["world.capture"]["properties"]["post_aa"]={{"type","string"},{"enum",{"none","fxaa"}},{"default","none"},
+        {"description","FXAA requires effective samples=1, scene_debug_view=color and reconstruction=none."}};
     methods.update(navigation::schemas());
     methods.update(provenance::schemas());
     result["navigation"]=navigation::capability();
@@ -858,7 +860,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     auto segment=input; segment["properties"].erase("entity"); segment["properties"]["ticks"]={{"type","integer"},{"minimum",1},{"maximum",600}}; segment["required"]={"ticks"};
     segment["properties"]["motions"]=motions;segment["properties"]["sounds"]=sounds;
     play["properties"]["sequence"]={{"type","array"},{"minItems",1},{"maxItems",256},{"items",segment}};
-    for(const auto* key:{"path","width","height","gpu","samples","viewmodel_samples","culling","draw_instancing","clustered_lighting","frames_in_flight","scene_debug_view","scene_product_probes","lighting_path","ambient_occlusion","reconstruction","shadow_filter","profile"}) play["properties"][key]=capture["properties"][key];
+    for(const auto* key:{"path","width","height","gpu","samples","viewmodel_samples","culling","draw_instancing","clustered_lighting","frames_in_flight","scene_debug_view","scene_product_probes","lighting_path","ambient_occlusion","reconstruction","shadow_filter","post_aa","profile"}) play["properties"][key]=capture["properties"][key];
     play["properties"]["audio"]={{"type","boolean"},{"default",false}};
     play["properties"]["pose_interpolation"]={{"type","boolean"},{"default",false},
         {"description","Opt-in saved camera-effect presentation interpolation; native look/movement/base aim stay committed. Interactive/background only; replay rejects true. Outside authoring-core v1."}};
@@ -945,6 +947,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     result["invariants"].push_back("Capture/play viewmodel_samples is 1 (default), 2, 4 or 8 independently of world samples, lighting path and reconstruction. Configured foreground diagnostics report the selected count even when no foreground draw is rendered; settings profiles do not persist this option.");
     result["invariants"].push_back("Capture/play lighting_path is forward (default) or deferred. Deferred requires samples=1; this option does not change authored content or imply renderer qualification.");
     result["invariants"].push_back("Capture/play reconstruction is none, fsr3_native, fsr3_quality, fsr3_balanced or fsr3_performance. Enabled reconstruction requires samples=1 and scene_debug_view=color and must be available in this build. Capture-only capture_frames is 1..128 (default 2), repeatedly rendering one frozen snapshot; runtime.play does not accept it. Probe x/y are render-input pixels; resolved_x/y identify mapped reconstruction-output pixels. Raw and resolved HDR values are pre-tone-map radiance.");
+    result["invariants"].push_back("Capture/play post_aa is none (default) or fxaa. FXAA requires effective samples=1, scene_debug_view=color and reconstruction=none.");
     result["invariants"].push_back("A numeric geometry probe includes surface_mark_reactive:true on the accepted submission where a corresponding receiver's local surface marks changed. Geometric motion remains valid. FSR uses this signal alongside its invalid-correspondence fallback.");
     result["invariants"].push_back("Capture/play scene_debug_view is color, depth, shading_normal, motion, motion_validity or ambient_occlusion. Non-color views require samples=1 and bypass exposure/output tone mapping. Single-sample scene products contain device depth, final world-space shading normals and previous-minus-current UV motion with explicit validity. Up to 64 scene_product_probes return raw captured values; probes require samples=1 and a capture path. History advances on accepted per-view submission, independently of simulation tick; missing continuity, cuts and replaced objects invalidate correspondence.");
     result["invariants"].push_back("Capture/play frames_in_flight is 1 or 2, default 2. One selects serialized completion; two bounds outstanding graphics submissions. Frame execution diagnostics distinguish submission, completion and explicit waits; neither completion nor presentation-fence retirement proves monitor scanout.");

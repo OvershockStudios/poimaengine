@@ -23,7 +23,7 @@ enum class Region { whole,prefix,cluster_members,probe_pixels };
 enum class Use { upload,storage_read,storage_write,vertex,index,constant,sampled,color,color_overwrite,depth,clear_color,clear_depth,copy_source,copy_destination,resolve_source,resolve_destination,present,image_write,image_read_write };
 using Uses=std::uint64_t;
 constexpr Uses use_bit(Use use) {return Uses{1}<<static_cast<unsigned>(use);}
-enum class PassId { stream_geometry,sprite_upload,surface_mark_upload,skinning,light_assignment,shadows,scene_clear,sky,opaque,ambient_occlusion,ambient_occlusion_filter,deferred_lighting,screen_reflections,height_fog,particle_sprites,resolve,temporal_inputs,reconstruction,viewmodel_lights,viewmodel_clear,viewmodel_opaque,viewmodel_resolve,viewmodel_composite,post_effect,bloom_extract,bloom_horizontal,bloom_vertical,output,game_ui,overlay,editor_clear,editor_ui,product_probes,capture,present };
+enum class PassId { stream_geometry,sprite_upload,surface_mark_upload,skinning,light_assignment,shadows,scene_clear,sky,opaque,ambient_occlusion,ambient_occlusion_filter,deferred_lighting,screen_reflections,height_fog,particle_sprites,resolve,temporal_inputs,reconstruction,viewmodel_lights,viewmodel_clear,viewmodel_opaque,viewmodel_resolve,viewmodel_composite,post_effect,bloom_extract,bloom_horizontal,bloom_vertical,output,spatial_aa,game_ui,overlay,editor_clear,editor_ui,product_probes,capture,present };
 inline const char* pass_name(PassId id) {
     switch(id) {
     case PassId::stream_geometry:return "render.pass.stream_geometry";
@@ -46,6 +46,7 @@ inline const char* pass_name(PassId id) {
     case PassId::bloom_horizontal:return "render.pass.bloom_horizontal";
     case PassId::bloom_vertical:return "render.pass.bloom_vertical";
     case PassId::resolve:return "render.pass.resolve";case PassId::output:return "render.pass.output";
+    case PassId::spatial_aa:return "render.pass.spatial_aa";
     case PassId::game_ui:return "render.pass.game_ui";case PassId::overlay:return "render.pass.overlay";
     case PassId::editor_clear:return "render.pass.editor_clear";case PassId::editor_ui:return "render.pass.editor_ui";
     case PassId::product_probes:return "render.pass.product_probes";
@@ -105,6 +106,7 @@ struct FrameResources {
     ResourceId sprite_instances=none;
     std::vector<ResourceId> sprite_textures;
     ResourceId surface_marks=none,surface_mark_masks=none;
+    ResourceId display_ldr=none;
 };
 struct Settings {
     bool scene=false,clustered=false,sky=false,game_ui=false,overlay=false,editor=false,capture=false,products=false,products_debug=false,reconstruction=false,deferred=false,ambient_occlusion=false;
@@ -116,6 +118,7 @@ struct Settings {
     bool particle_sprites=false;
     bool screen_reflections=false;
     bool height_fog=false,height_fog_spots=false;
+    bool spatial_aa=false;
 };
 inline constexpr ResourceId surface_radiance(const FrameResources& frame,const Settings& settings) {
     return settings.screen_reflections ? frame.reflected_hdr : frame.hdr;
@@ -129,6 +132,9 @@ inline constexpr ResourceId scene_linear_radiance(const FrameResources& frame,co
 inline constexpr ResourceId display_radiance(const FrameResources& frame,const Settings& settings) {
     return settings.post_effect ? frame.post_effect : scene_linear_radiance(frame,settings);
 }
+inline constexpr ResourceId display_output_target(const FrameResources& frame,const Settings& settings) {
+    return settings.spatial_aa ? frame.display_ldr : frame.output;
+}
 inline constexpr std::uint64_t post_effect_budget_bytes=128u*1024u*1024u;
 inline constexpr std::uint64_t screen_reflections_budget_bytes=128u*1024u*1024u;
 inline constexpr std::uint64_t screen_reflections_constants_bytes=16;
@@ -136,6 +142,7 @@ inline constexpr std::uint64_t height_fog_budget_bytes=96u*1024u*1024u;
 inline constexpr std::uint32_t bloom_extent(std::uint32_t size) {return size/4+(size%4!=0);}
 inline constexpr std::uint64_t bloom_budget_bytes=32u*1024u*1024u;
 inline constexpr std::uint64_t output_grade_bytes=544;
+inline constexpr std::uint64_t spatial_aa_budget_bytes=64u*1024u*1024u;
 inline constexpr std::uint64_t stream_vertex_budget=4u*1024u*1024u;
 inline constexpr std::uint64_t stream_index_budget=1u*1024u*1024u;
 inline constexpr std::size_t max_stream_draws=128;

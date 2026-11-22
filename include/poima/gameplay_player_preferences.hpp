@@ -9,6 +9,7 @@
 namespace poima {
 struct PlayerPreferenceGraphicsConstraints {
     bool deferred=false,ambient_occlusion=false,color_debug_view=true,reconstruction=false;
+    bool fxaa=false;
 };
 // Shared by external and compiled preparation; no device/runtime work.
 void validate_player_preference_graphics(const PlayerPreferences::State&,

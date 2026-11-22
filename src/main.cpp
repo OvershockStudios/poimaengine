@@ -247,7 +247,7 @@ poima::Reply run(int argc, char** argv) {
             const std::string_view key=argv[i];
             if(!seen.insert(key).second || (key!="--gpu" && key!="--frames" && key!="--replay" &&
                 key!="--capture" && key!="--report" && key!="--save-root" && key!="--save-write-mode" &&
-                key!="--width" && key!="--height" && key!="--samples" && key!="--lighting-path" &&
+                key!="--width" && key!="--height" && key!="--samples" && key!="--lighting-path" && key!="--post-aa" &&
                 key!="--viewmodel-samples" && key!="--frames-in-flight" && key!="--settings-profile" &&
                 key!="--settings-revision" && key!="--settings-overrides" && key!="--lens-interpolation" &&
                 key!="--pose-interpolation" && key!="--default-save-root"))
@@ -257,6 +257,10 @@ poima::Reply run(int argc, char** argv) {
             if(key=="--lighting-path") {
                 if(value!="forward" && value!="deferred")return poima::usage_error("Lighting path must be forward or deferred.");
                 options.render.deferred=value=="deferred";continue;
+            }
+            if(key=="--post-aa") {
+                if(value!="none" && value!="fxaa")return poima::usage_error("Post AA must be none or fxaa.");
+                options.render.fxaa=value=="fxaa";continue;
             }
             if(key=="--default-save-root") {
                 if(value!="true" && value!="false")return poima::usage_error("Default save root expects true or false.");
@@ -298,6 +302,8 @@ poima::Reply run(int argc, char** argv) {
         if(!options.replay.empty() && options.max_frames)return poima::usage_error("Replay and interactive frame limit cannot be combined.");
         if(options.render.deferred && options.samples_explicit && options.render.samples!=1)
             return poima::usage_error("Deferred lighting requires --samples 1.");
+        if(options.render.fxaa && options.samples_explicit && options.render.samples!=1)
+            return poima::usage_error("FXAA requires --samples 1.");
         return poima::run_game(options);
     }
     if(command=="serve" || command=="world") {

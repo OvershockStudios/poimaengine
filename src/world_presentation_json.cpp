@@ -136,6 +136,8 @@ Json render_diagnostics(const RenderDiagnostics& d) {
         {"cpu",{{"prepare",timing(d.prepare_cpu)},{"record",timing(d.record_cpu)},{"render_call",timing(d.render_call_cpu)},{"completion_wait",timing(d.completion_wait_cpu)}}},
         {"gpu",{{"available",d.gpu_timestamps},{"timestamp_valid_bits",d.timestamp_valid_bits},{"timestamp_period_ns",d.timestamp_period_ns},{"samples_dropped",d.gpu_samples_dropped},{"detail",d.gpu_timing_detail},
             {"skinning",timing(d.skinning_gpu)},{"light_assignment",timing(d.light_assignment_gpu)},{"shadows",timing(d.shadow_gpu)},{"opaque",timing(d.opaque_gpu)},{"post",timing(d.post_gpu)},{"total",timing(d.total_gpu)}}}};
+    if(d.fxaa_buffer_bytes)
+        result["post_aa"]={{"mode","fxaa"},{"active",true},{"buffer_bytes",d.fxaa_buffer_bytes}};
     if(d.shadow_filter==ShadowFilter::pcss_directional)
         result["contact_shadows"]={{"blocker_samples",d.shadow_blocker_samples},{"filter_samples",d.shadow_filter_samples},
             {"max_comparisons",d.shadow_max_comparisons},{"max_radius_texels",d.shadow_max_radius_texels},{"guard_texels",d.shadow_guard_texels},

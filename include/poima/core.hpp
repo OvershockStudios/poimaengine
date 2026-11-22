@@ -136,6 +136,7 @@ struct RenderOptions {
     bool fsr3_history_probes = false; // Native SDK qualification only; requires enabled reconstruction and capture probes.
     std::optional<ShadowFilter> shadow_filter; // Omission inherits authored environment; legacy scenes resolve to point PCF.
     std::uint32_t viewmodel_samples = 1; // Independent foreground samples: 1, 2, 4 or 8.
+    bool fxaa = false; // Single-sample color rendering without reconstruction.
 };
 
 struct TimingSummary { std::uint64_t samples=0;double total_ms=0,min_ms=0,max_ms=0,last_ms=0; };
@@ -289,6 +290,7 @@ struct RenderDiagnostics {
     TimingSummary height_fog_gpu;
     std::optional<RendererSceneResult> scene_observed,scene_submitted,scene_presented;
     std::optional<ViewmodelDiagnostics> viewmodel;
+    std::uint64_t fxaa_buffer_bytes=0;
 };
 
 struct RenderReport {

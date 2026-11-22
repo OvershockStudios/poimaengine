@@ -441,6 +441,8 @@ Reply run_game(const GameLaunchOptions& options) {
         validate_save_launch(options.save_root,options.save_write_mode,options.default_save_root);
         require(!options.render.deferred || !options.samples_explicit || options.render.samples==1,
             "Deferred lighting requires samples=1.");
+        require(!options.render.fxaa || !options.samples_explicit || options.render.samples==1,
+            "FXAA requires samples=1.");
         const auto game=load_game(options.manifest);
         validate_game_host(game);
         const auto* expected=std::getenv("POIMA_VERIFIED_PLAY_SHA256");
@@ -471,8 +473,9 @@ Reply run_game(const GameLaunchOptions& options) {
         if(options.lens_interpolation)params["lens_interpolation"]=true;
         if(options.pose_interpolation)params["pose_interpolation"]=true;
         const bool has_settings=!options.settings_profile.empty() || !options.settings_overrides.empty() || options.settings_revision.has_value();
-        if(options.render.deferred) {
-            params["lighting_path"]="deferred";
+        if(options.render.deferred)params["lighting_path"]="deferred";
+        if(options.render.fxaa)params["post_aa"]="fxaa";
+        if(options.render.deferred || options.render.fxaa) {
             // Use the existing explicit-option precedence so inherited
             // graphics preferences cannot make this launch incompatible.
             params["samples"]=1;

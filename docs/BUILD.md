@@ -207,6 +207,8 @@ project post-effect and bloom GPU resources and draw commands. The context
 selects the input image, checks frame budgets and retires earlier frames
 before replacing live resources. `src/render_ui.cpp` owns the native game UI,
 hosted overlay and ImGui resource staging and compositing.
+`src/render_spatial_aa.cpp` owns the display-color intermediate, sampler and
+FXAA draw. The render schedule orders the filter between scene output and UI.
 `src/render_environment_ibl.cpp` owns the procedural sky lighting bake
 and its texture bindings. `src/render_schedule.cpp` constructs and validates
 the frame schedule. The native player-window fixture checks

@@ -1,8 +1,17 @@
 # Implementation status
 
-Updated 2026-11-21 for **0.0.392**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-21 for **0.0.393**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.393 adds [optional FXAA](DEFERRED_RENDERING.md#single-sample-antialiasing)
+for single-sample color. The display filter runs after tone mapping and
+before UI composition. Ubuntu passed 12 suites. Sixteen relocated Windows
+launches across AMD and NVIDIA compared forward, deferred and FXAA, with
+identical save bytes within each fixture. FXAA blended diagonal edge pixels
+while reproducing the authored HUD and nine pre-filter probes exactly on each
+adapter. The NVIDIA hosted test reproduced fresh captures after resize and
+submission with one and two frame slots. [Results](evidence/m2-post-aa-393.json)
 
 Version 0.0.392 exposes [standalone lighting selection](DEFERRED_RENDERING.md#select-the-path)
 through `game run`. Deferred launch supplies one world sample, including when

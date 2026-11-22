@@ -31,6 +31,34 @@ For a standalone launch through `run_game`, set
 and an explicit sample count must be 1. See the
 [world service contract](WORLD_SERVICE.md) for the capture and play request schemas.
 
+## Single-sample antialiasing
+
+Use `--post-aa fxaa` to smooth visible edges in a standalone game or replay.
+
+```text
+MyRoom-game\launch.cmd --lighting-path deferred --post-aa fxaa
+```
+
+Standalone FXAA supplies one world sample, overriding stored or session
+sample preferences. An explicit `--samples 4` conflicts with the selection.
+For world, runtime and animation captures or live player start, request:
+
+```json
+{"post_aa":"fxaa","samples":1,"lighting_path":"deferred","reconstruction":"none"}
+```
+
+The default `post_aa` is `none`. FXAA accepts forward or deferred color,
+one world sample and native resolution with reconstruction disabled.
+Foreground samples are selected independently. The filter uses luminance
+contrast and neighboring pixels in the current frame. It runs after tone
+mapping and world/viewmodel composition, then the engine draws UI and editor
+overlays. [FXAA method](https://developer.download.nvidia.com/assets/gamedev/files/sdk/11/FXAA_WhitePaper.pdf)
+
+`render_diagnostics.post_aa` reports active FXAA and its intermediate
+texture payload of four bytes per output pixel, up to 64 MiB. Depth,
+normals, motion and raw/resolved HDR probes describe the scene before
+the display filter. A color capture includes the filtered scene and UI.
+
 ## Screen-space reflections
 
 Set `LightingEnvironment.screen_reflections` in a guarded `component.set`
@@ -114,6 +142,9 @@ python3 tests/game_launch_lighting.py "$runtime/bin/poima.exe" \
   --runtime-root "$runtime" --artifact "$contact/native-gameplay.json" \
   --output build/standalone-lighting-check --gpu 0 --windows-interop
 ```
+
+Add `--fxaa` and use a new output directory to check the filter with a
+diagonal edge, UI controls, fog and reflections in the same scene.
 
 Enable the installed Khronos validation layer and synchronization validation when reproducing GPU qualification. Preserve stdout, stderr and generated evidence; a successful image comparison does not excuse a validation error. Run each suite separately on each device and verify its reported GPU name. Headless contract tests and `poima-render-schedule-test` provide separate CPU-side checks.
 

@@ -11,6 +11,7 @@ void Schedule::validate(bool before_acquire) const {
     auto fail=[](const char* message) {throw std::runtime_error(std::string("Render schedule: ")+message);};
     auto required=[&](ResourceId id) {if(id==none || id>=frame.resources.size())fail("required resource role is absent");};
     required(frame.swapchain);required(frame.color);required(frame.output);
+    const auto display_target=display_output_target(frame,settings);
     const bool stream=frame.streamed_vertices!=none || frame.streamed_indices!=none;
     if(stream) {
         if(!settings.scene || frame.streamed_vertices==frame.streamed_indices)fail("invalid streamed geometry roles");
@@ -138,6 +139,25 @@ void Schedule::validate(bool before_acquire) const {
         for(const auto* textures:{&frame.game_textures,&frame.editor_textures,&frame.sprite_textures})for(auto id:*textures)disjoint(id);
         for(const auto& copy:frame.probe_copies)disjoint(copy.destination);
     };
+    if(settings.spatial_aa) {
+        if(!settings.scene || settings.products_debug || settings.reconstruction ||
+            frame.color!=frame.hdr || resource(frame.color).samples!=1)
+            fail("spatial anti-aliasing requires a single-sample color scene without reconstruction");
+        required(frame.display_ldr);
+        const auto& output=resource(frame.output);
+        const auto& ldr=resource(frame.display_ldr);
+        if(output.kind!=Kind::texture || output.samples!=1 || output.layers!=1 ||
+            output.lifetime!=(frame.output==frame.swapchain ? Lifetime::swapchain : Lifetime::shared) ||
+            !scene_image(frame.display_ldr,Format::rgba8_unorm,output) || ldr.late_bound ||
+            !(ldr.supported&use_bit(Use::color_overwrite)))
+            fail("invalid spatial anti-aliasing display attachment");
+        if(std::uint64_t(ldr.width)*ldr.height>spatial_aa_budget_bytes/4)
+            fail("spatial anti-aliasing display attachment payload exceeds limit");
+        const auto* alias_error="spatial anti-aliasing display attachment aliases another resource role";
+        require_distinct_images(frame.display_ldr,none,alias_error);
+        for(auto id:{frame.reflection_roughness,frame.reflected_hdr,frame.fogged_hdr})
+            if(frame.display_ldr==id)fail(alias_error);
+    } else if(frame.display_ldr!=none)fail("display attachment without spatial anti-aliasing");
     if(settings.screen_reflections) {
         if(!settings.scene || !settings.deferred || settings.products_debug || settings.reconstruction || frame.color!=frame.hdr)
             fail("screen reflections require a single-sample deferred color scene without reconstruction");
@@ -385,7 +405,7 @@ void Schedule::validate(bool before_acquire) const {
     bool exported=false,captured=false,probed=false,prepared=false,reconstructed=false,deferred_lit=false,deferred_opaque=false,ao_generated=false,ao_filtered=false;
     bool post_effect_applied=false,screen_reflected=false,world_fogged=false,world_effects_output=false;
     bool stream_uploaded=false,stream_shadow_drawn=false,sprites_uploaded=false,sprites_drawn=false;unsigned previous=0;bool first=true;
-    bool surface_marks_uploaded=false,grade_applied=false;
+    bool surface_marks_uploaded=false,grade_applied=false,spatial_aa_applied=false;
     unsigned bloom_stage=0;
     for(const auto& pass:passes) {
         const auto order=static_cast<unsigned>(pass.id);
@@ -543,7 +563,7 @@ void Schedule::validate(bool before_acquire) const {
         if(pass.id==PassId::output && settings.viewmodel && (!foreground_composed || !has(display_radiance(frame,settings),Use::sampled)))fail("display precedes foreground composition");
         if(pass.id==PassId::output && (settings.screen_reflections || settings.height_fog)) {
             if((settings.screen_reflections && !screen_reflected) || (settings.height_fog && !world_fogged) ||
-                !has(display_radiance(frame,settings),Use::sampled) || !has(frame.output,Use::color_overwrite) ||
+                !has(display_radiance(frame,settings),Use::sampled) || !has(display_target,Use::color_overwrite) ||
                 has(frame.hdr,Use::sampled))fail(settings.height_fog ? "display bypasses height fog" : "display bypasses screen reflections");
             world_effects_output=true;
         }
@@ -561,7 +581,7 @@ void Schedule::validate(bool before_acquire) const {
              has(scene_linear_radiance(frame,settings),Use::sampled)))fail("display bypasses post effect");
         if(pass.id==PassId::output && frame.output_grade!=none) {
             if(!has(frame.output_grade,Use::upload) || !has(frame.output_grade,Use::constant) ||
-                !has(display_radiance(frame,settings),Use::sampled) || !has(frame.output,Use::color_overwrite))
+                !has(display_radiance(frame,settings),Use::sampled) || !has(display_target,Use::color_overwrite))
                 fail("display requires uploaded output grade constants");
             grade_applied=true;
         }
@@ -579,6 +599,19 @@ void Schedule::validate(bool before_acquire) const {
         }
         if(pass.id==PassId::output && settings.bloom &&
             (bloom_stage!=3 || !has(frame.bloom,Use::sampled) || !has(display_radiance(frame,settings),Use::sampled)))fail("display requires filtered bloom and HDR radiance");
+        if(pass.id==PassId::output && settings.spatial_aa) {
+            const auto accesses=2u+unsigned(settings.bloom)+2u*unsigned(frame.output_grade!=none);
+            if(pass.accesses.size()!=accesses || !has(display_radiance(frame,settings),Use::sampled) ||
+                !has(frame.display_ldr,Use::color_overwrite))fail("invalid spatial anti-aliasing display producer");
+        }
+        if(pass.id==PassId::spatial_aa) {
+            if(!settings.spatial_aa || pass.accesses.size()!=2 ||
+                !has(frame.display_ldr,Use::sampled) || !has(frame.output,Use::color_overwrite))
+                fail("invalid spatial anti-aliasing pass");
+            for(const auto& a:pass.accesses)
+                if(a.initialize!=(a.resource==frame.output))fail("spatial anti-aliasing must initialize its complete output");
+            spatial_aa_applied=true;
+        }
         if(settings.products) {
             if(pass.id==PassId::scene_clear && (!has(frame.normal,Use::clear_color) || !has(frame.motion,Use::clear_color) || !has(frame.motion_valid,Use::clear_color)))fail("missing normal validity clear");
             if(pass.id==PassId::opaque && !settings.deferred && (!has(frame.normal,Use::color) || !has(frame.motion,Use::color) || !has(frame.motion_valid,Use::color)))fail("missing opaque normal output");
@@ -604,6 +637,19 @@ void Schedule::validate(bool before_acquire) const {
         std::uint32_t attachment_width=0,attachment_height=0,attachment_samples=0;
         for(const auto& a:pass.accesses) {
             const auto& r=resource(a.resource);
+            if(settings.spatial_aa && a.resource==frame.display_ldr &&
+                !(pass.id==PassId::output && a.use==Use::color_overwrite && a.initialize) &&
+                !(pass.id==PassId::spatial_aa && a.use==Use::sampled && !a.initialize))
+                fail("display attachment used outside display output and spatial anti-aliasing");
+            if(settings.spatial_aa && a.resource==frame.output && pass.id!=PassId::spatial_aa) {
+                const bool ui=a.use==Use::color && ((pass.id==PassId::game_ui && settings.game_ui) ||
+                    (pass.id==PassId::overlay && settings.overlay && frame.output==frame.swapchain));
+                const bool editor_composite=pass.id==PassId::editor_ui && settings.editor &&
+                    frame.output!=frame.swapchain && a.use==Use::sampled;
+                const bool delivery=frame.output==frame.swapchain && ((pass.id==PassId::capture && settings.capture &&
+                    a.use==Use::copy_source) || (pass.id==PassId::present && a.use==Use::present));
+                if(!ui && !editor_composite && !delivery)fail("scene output used outside spatial anti-aliasing and composition");
+            }
             if(a.resource==frame.output_grade &&
                 (pass.id!=PassId::output || (a.use!=Use::upload && a.use!=Use::constant) ||
                  a.initialize!=(a.use==Use::upload)))
@@ -708,6 +754,7 @@ void Schedule::validate(bool before_acquire) const {
     if(settings.post_effect && !post_effect_applied)fail("missing post effect pass");
     if(settings.bloom && bloom_stage!=3)fail("missing bloom pass");
     if(frame.output_grade!=none && !grade_applied)fail("missing graded output pass");
+    if(settings.spatial_aa && !spatial_aa_applied)fail("missing spatial anti-aliasing pass");
     if(settings.viewmodel && (!foreground_cleared || !foreground_drawn || !foreground_composed || (settings.viewmodel_samples!=1 && !foreground_resolved) || (settings.viewmodel_clustered && !foreground_lights)))fail("missing foreground passes");
     if(!exported)fail("missing presentation export");
     if(!frame.probe_points.empty() && !probed)fail("missing product probe pass");
@@ -838,7 +885,12 @@ Schedule build(FrameResources frame,Settings settings) {
             add(output,f.depth,Use::sampled);add(output,f.normal,Use::sampled);add(output,f.motion,Use::sampled);add(output,f.motion_valid,Use::sampled);
             if(settings.ambient_occlusion)add(output,f.ao_filtered,Use::sampled);
         }
-        add(output,f.output,Use::color_overwrite,true);
+        add(output,display_output_target(f,settings),Use::color_overwrite,true);
+    }
+    if(settings.spatial_aa) {
+        auto& aa=pass(PassId::spatial_aa);
+        add(aa,f.display_ldr,Use::sampled);
+        add(aa,f.output,Use::color_overwrite,true);
     }
     if(settings.game_ui) {auto& ui=pass(PassId::game_ui);add(ui,f.game_vertices,Use::upload,true);add(ui,f.game_indices,Use::upload,true);add(ui,f.game_vertices,Use::vertex);add(ui,f.game_indices,Use::index);for(auto t:f.game_textures)add(ui,t,Use::sampled);add(ui,f.output,Use::color);}
     if(settings.overlay) {auto& overlay=pass(PassId::overlay);add(overlay,f.overlay_vertices,Use::upload,true);add(overlay,f.overlay_vertices,Use::vertex);add(overlay,f.swapchain,Use::color);}

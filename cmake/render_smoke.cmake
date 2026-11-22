@@ -44,10 +44,10 @@ file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/generated/poima")
 foreach(shader smoke scene scene_products scene_deferred scene_deferred_color deferred_lighting deferred_lighting_ao deferred_lighting_color deferred_lighting_color_ao
         deferred_lighting_reflection deferred_lighting_ao_reflection
         deferred_lighting_color_reflection deferred_lighting_color_ao_reflection screen_reflections height_fog
-        ambient_occlusion ambient_occlusion_filter scene_output scene_output_ao scene_output_products scene_output_bloom scene_output_products_bloom scene_output_grade scene_output_grade_bloom bloom viewmodel_composite viewmodel_resolve sky shadow skinning cluster_lights temporal_inputs editor_overlay game_ui particle_sprite)
+        ambient_occlusion ambient_occlusion_filter scene_output scene_output_ao scene_output_products scene_output_bloom scene_output_products_bloom scene_output_grade scene_output_grade_bloom spatial_aa bloom viewmodel_composite viewmodel_resolve sky shadow skinning cluster_lights temporal_inputs editor_overlay game_ui particle_sprite)
 if(shader MATCHES "^(skinning|cluster_lights|temporal_inputs|deferred_lighting.*|ambient_occlusion.*|screen_reflections|height_fog)$")
     set(shader_stages cs)
-elseif(shader MATCHES "^scene_output_grade")
+elseif(shader MATCHES "^(scene_output_grade|spatial_aa)")
     set(shader_stages ps)
 else()
     set(shader_stages vs ps)
@@ -149,7 +149,7 @@ target_sources(poima_core PRIVATE
     src/render_vulkan_instance.cpp src/player_window.cpp src/gamepad_sdl.cpp
     src/render_ui.cpp src/render_environment_ibl.cpp src/render_ambient_occlusion.cpp
     src/render_shadows.cpp
-    src/render_skinning.cpp
+    src/render_skinning.cpp src/render_spatial_aa.cpp
     "${poima_startup_wordmark}")
 target_link_libraries(poima_core PRIVATE nvrhi nvrhi_vk SDL3::SDL3-static)
 target_compile_definitions(poima_core PRIVATE NOMINMAX WIN32_LEAN_AND_MEAN)
