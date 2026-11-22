@@ -22,6 +22,22 @@ struct SurfaceCell {
     friend bool operator==(const SurfaceCell&, const SurfaceCell&) = default;
 };
 
+static_assert(max_scene_water_wave_layers == max_surface_wave_layers);
+
+SceneWaterRipples project_ripple(const SurfaceRipples& ripple, std::uint64_t tick) {
+    constexpr auto tau = 2 * std::numbers::pi;
+    const auto heading = ripple.heading_degrees * std::numbers::pi / 180;
+    // Reduce the integer tick before conversion so long-lived saves retain
+    // the same phase as a short run. Camera and presentation time are irrelevant.
+    const auto phase_tick = tick % ripple.period_ticks;
+    return {
+        {static_cast<float>(std::cos(heading)), static_cast<float>(std::sin(heading))},
+        static_cast<float>(ripple.slope),
+        static_cast<float>(tau / ripple.wavelength_m),
+        static_cast<float>(tau * static_cast<double>(phase_tick) / ripple.period_ticks),
+    };
+}
+
 // Linear RGB. Cell depth blends between these two swatches in one draw.
 std::shared_ptr<const MaterialTextures> depth_palette() {
     static const auto palette = [] {
@@ -111,19 +127,16 @@ void append_region_scene(const Region& region, SceneSnapshot& scene) {
     object.cast_shadows = false;
     object.stream_geometry = true;
     if (const auto& ripples = region.surface_ripples(); ripples && static_cast<float>(ripples->slope) > 0) {
-        constexpr auto tau = 2 * std::numbers::pi;
-        const auto heading = ripples->heading_degrees * std::numbers::pi / 180;
-        // Reduce the integer tick before conversion so long-lived saves retain
-        // the same phase as a short run. Camera and presentation time are irrelevant.
-        const auto phase_tick = grid.tick() % ripples->period_ticks;
-        scene.water_ripples = SceneWaterRipples{
-            {static_cast<float>(std::cos(heading)), static_cast<float>(std::sin(heading))},
-            static_cast<float>(ripples->slope),
-            static_cast<float>(tau / ripples->wavelength_m),
-            static_cast<float>(tau * static_cast<double>(phase_tick) / ripples->period_ticks),
-        };
+        scene.water_ripples = project_ripple(*ripples, grid.tick());
         object.water_ripple_surface = true;
     }
+    std::size_t layer_count = 0;
+    for (const auto& layer : region.surface_wave_layers()) {
+        if (static_cast<float>(layer.slope) > 0)
+            scene.water_wave_layers[layer_count++] = project_ripple(layer, grid.tick());
+    }
+    scene.water_wave_layer_count = layer_count;
+    object.water_ripple_surface |= layer_count > 0;
     // Leave incarnation zero because a cell's triangles can appear or disappear.
     scene.objects.push_back(std::move(object));
 }

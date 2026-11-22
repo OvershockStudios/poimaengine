@@ -41,7 +41,36 @@ Grid initial_grid(const RegionDefinition& definition) {
         throw std::invalid_argument("Authored water region exceeds its size or rule limits.");
     if (!lowercase_sha256(definition.plan_sha256))
         throw std::invalid_argument("Water region requires a lowercase SHA-256 plan identity.");
+    if (definition.surface_wave_layers.size() > max_surface_wave_layers)
+        throw std::invalid_argument("Water expects at most four surface wave layers.");
+    if (definition.surface_ripples && !definition.surface_wave_layers.empty())
+        throw std::invalid_argument("Choose either surface_ripples or surface_wave_layers.");
     return Grid(definition.config, definition.floor_heights_m, definition.initial_depths_m);
+}
+
+void validate_surface_ripples(const SurfaceRipples& ripples) {
+    if (!(ripples.wavelength_m >= .10 && ripples.wavelength_m <= 8.0))
+        throw std::invalid_argument("Water surface ripple wavelength_m must be finite and in [0.10,8].");
+    if (!(ripples.slope >= 0 && ripples.slope <= .4))
+        throw std::invalid_argument("Water surface ripple slope must be finite and in [0,0.4].");
+    if (ripples.period_ticks < 8 || ripples.period_ticks > 3600)
+        throw std::invalid_argument("Water surface ripple period_ticks must be in [8,3600].");
+    if (!(ripples.heading_degrees >= -180 && ripples.heading_degrees <= 180))
+        throw std::invalid_argument("Water surface ripple heading_degrees must be finite and in [-180,180].");
+}
+
+void validate_wave_layers(std::span<const SurfaceRipples> layers) {
+    double sum = 0;
+    double rounding_error = 0;
+    for (const auto& layer : layers) {
+        validate_surface_ripples(layer);
+        const double next = sum + layer.slope;
+        // Carry rounding error so the slope limit does not depend on the sequence of partial sums.
+        rounding_error += sum >= layer.slope ? (sum - next) + layer.slope : (layer.slope - next) + sum;
+        sum = next;
+    }
+    if (sum + rounding_error > .4)
+        throw std::invalid_argument("Water surface wave layer slopes must sum to at most 0.4.");
 }
 
 auto face_key(const RegionFace& rule) noexcept {
@@ -141,21 +170,21 @@ nlohmann::json surface_ripples_json(const SurfaceRipples& ripples) {
         {"period_ticks", ripples.period_ticks}, {"heading_degrees", ripples.heading_degrees}};
 }
 
+nlohmann::json surface_wave_layers_json(std::span<const SurfaceRipples> layers) {
+    auto result = Json::array();
+    for (const auto& layer : layers)
+        result.push_back(surface_ripples_json(layer));
+    return result;
+}
+
 Region::Region(const RegionDefinition& definition)
     : grid_(initial_grid(definition)), initial_depths_m_(definition.initial_depths_m),
       faces_(definition.faces), exchanges_(definition.exchanges), plan_sha256_(definition.plan_sha256),
-      rain_cells_(definition.rain_cells), surface_ripples_(definition.surface_ripples) {
-    if (surface_ripples_) {
-        const auto& ripples = *surface_ripples_;
-        if (!(ripples.wavelength_m >= .10 && ripples.wavelength_m <= 8.0))
-            throw std::invalid_argument("Water surface ripple wavelength_m must be finite and in [0.10,8].");
-        if (!(ripples.slope >= 0 && ripples.slope <= .4))
-            throw std::invalid_argument("Water surface ripple slope must be finite and in [0,0.4].");
-        if (ripples.period_ticks < 8 || ripples.period_ticks > 3600)
-            throw std::invalid_argument("Water surface ripple period_ticks must be in [8,3600].");
-        if (!(ripples.heading_degrees >= -180 && ripples.heading_degrees <= 180))
-            throw std::invalid_argument("Water surface ripple heading_degrees must be finite and in [-180,180].");
-    }
+      rain_cells_(definition.rain_cells), surface_ripples_(definition.surface_ripples),
+      surface_wave_layers_(definition.surface_wave_layers) {
+    if (surface_ripples_)
+        validate_surface_ripples(*surface_ripples_);
+    validate_wave_layers(surface_wave_layers_);
 
     const auto& config = grid_.config();
     if (initial_depths_m_.empty())

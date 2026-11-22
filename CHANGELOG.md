@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.390
+
+- Author up to four directional shading waves for a simulated water region, with independent periods and committed-tick phases.
+
 ## 0.0.389
 
 - Compile asset, animation, material and model import discovery in a separate module.

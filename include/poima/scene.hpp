@@ -263,6 +263,7 @@ struct SceneWaterRipples {
     std::array<float,2> direction{1,0};
     float slope=0,radians_per_metre=0,phase_radians=0;
 };
+inline constexpr std::size_t max_scene_water_wave_layers=4;
 // An immutable presentation copy; no pointers into authored or simulation state.
 struct SceneSnapshot {
     std::string world_id;
@@ -295,6 +296,8 @@ struct SceneSnapshot {
     SceneParticleSprites particle_sprites;
     std::vector<SceneSurfaceMarkMask> surface_mark_masks; // Frozen, sorted by unique cooked image digest.
     std::optional<SceneWaterRipples> water_ripples{};
+    std::array<SceneWaterRipples,max_scene_water_wave_layers> water_wave_layers{};
+    std::size_t water_wave_layer_count=0;
 
     SceneLens world_lens() const { return {vertical_fov,near_plane,far_plane}; }
     std::span<const SceneObject> world_viewmodel_draws() const {

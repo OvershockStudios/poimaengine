@@ -223,7 +223,20 @@ SceneSurface evaluate_material(VertexOutput input,bool front) {
             const float3 mapped=t*sampled.x+b*sampled.y+n*sampled.z;
             if(dot(mapped,mapped)>1e-12)n=normalize(mapped);
         }
-        if(draw.alpha.w>0.5) {
+        if(draw.alpha.w>1.5) {
+            // The draw selects one plus the number of active wave layers.
+            const float2 origin=float2(draw.model_row0.w,draw.model_row2.w);
+            const float2 local_xz=input.world_position.xz-origin;
+            float2 gradient=water_wave_layer_gradient(water_ripple_shape,water_ripple_motion.x,
+                local_xz,position_dx.xz,position_dy.xz);
+            [unroll]
+            for(uint index=0;index<3;++index) {
+                if(draw.alpha.w>float(index+2))
+                    gradient+=water_wave_layer_gradient(water_wave_shapes[index],water_ripple_motion[index+1],
+                        local_xz,position_dx.xz,position_dy.xz);
+            }
+            n=normalize(float3(-gradient.x,1,-gradient.y));
+        } else if(draw.alpha.w>0.5) {
             const float2 origin=float2(draw.model_row0.w,draw.model_row2.w);
             n=water_ripple_normal(water_ripple_shape,water_ripple_motion.x,
                 input.world_position.xz-origin,position_dx.xz,position_dy.xz);

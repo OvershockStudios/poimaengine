@@ -24,6 +24,7 @@ cbuffer Frame : register(b1) {
     float4 temporal_forward;
     float4 ibl_parameters; // enabled, diffuse gain, specular gain, maximum specular mip
     float4 water_ripple_shape; // X/Z direction, maximum slope, radians/metre
-    float4 water_ripple_motion; // committed phase in radians, padding
+    float4 water_ripple_motion; // committed phases in radians for active directions
+    float4 water_wave_shapes[3]; // Additional directions for layered water
 };
 StructuredBuffer<SceneLight> lights : register(t6);

@@ -296,6 +296,7 @@ FrozenContent freeze_world_content(const Json& source, const fs::path& directory
         add(asset.definition.plan_sha256,".pwater",bytes);
         result.needs_water_rain=!asset.definition.rain_cells.empty();
         result.needs_water_ripples=asset.definition.surface_ripples.has_value();
+        result.needs_water_wave_layers=!asset.definition.surface_wave_layers.empty();
         definition.water=std::move(asset.definition);
     }
     if(definition.snow)component_checked([&]{(void)snow::Region(definition);});

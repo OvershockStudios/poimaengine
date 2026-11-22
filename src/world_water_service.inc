@@ -32,7 +32,7 @@
         const bool cook = method == "world.water.cook";
         require(cook || method == "world.water.plan", "Unknown water authoring method.", -32601);
         fields(params, {"revision", "terrain", "expected_terrain_recipe_sha256", "expected_plan_sha256", "tile_entities",
-            "grid", "initial_depths_m", "faces", "exchanges", "rain_cells", "surface_ripples"},
+            "grid", "initial_depths_m", "faces", "exchanges", "rain_cells", "surface_ripples", "surface_wave_layers"},
             {"revision", "terrain", "expected_terrain_recipe_sha256", "tile_entities", "grid"});
         require(cook == params.contains("expected_plan_sha256"), "Water cooking requires a reviewed plan SHA-256.");
         current_revision(params);
@@ -77,6 +77,7 @@
             Json result{{"revision", doc_.at("revision")}, {"plan_sha256", id}, {"terrain_recipe_sha256", sampled.recipe_sha256},
                 {"asset_bytes", bytes.size()}, {"cells", cells}, {"tiles", std::move(tiles)}};
             if (params.contains("surface_ripples")) result["surface_ripples"] = params.at("surface_ripples");
+            if (params.contains("surface_wave_layers")) result["surface_wave_layers"] = params.at("surface_wave_layers");
             return result;
         } catch (const Error&) { throw; }
         catch (const std::invalid_argument& error) { throw Error(-32602, error.what()); }
@@ -99,6 +100,8 @@
         result["volume_m3"] = grid.volume_m3();
         if (const auto& ripples = region->surface_ripples())
             result["surface_ripples"] = water::surface_ripples_json(*ripples);
+        if (!region->surface_wave_layers().empty())
+            result["surface_wave_layers"] = water::surface_wave_layers_json(region->surface_wave_layers());
         if (params.contains("cells")) for (const auto& request : params.at("cells")) {
             require(request.is_array() && request.size() == 2, "Water observation cells use [x, z] indices.");
             const auto x = revision(request[0]), z = revision(request[1]);

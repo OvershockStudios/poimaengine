@@ -678,6 +678,7 @@ public:
             if(content.needs_mesh_lod)result["needs_mesh_lod"]=true;
             if(content.needs_water_rain)result["needs_water_rain"]=true;
             if(content.needs_water_ripples)result["needs_water_ripples"]=true;
+            if(content.needs_water_wave_layers)result["needs_water_wave_layers"]=true;
             if(content.needs_snow_water)result["needs_snow_water"]=true;
             if(content.needs_physics_checkpoint)result["needs_physics_checkpoint"]=true;
             if(content.needs_output_grade)result["needs_output_grade"]=true;

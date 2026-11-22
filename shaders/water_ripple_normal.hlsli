@@ -14,3 +14,11 @@ float3 water_ripple_normal(float4 shape, float phase, float2 local_xz, float2 dx
     const float2 gradient = gradients.x * along + gradients.y * across;
     return normalize(float3(-gradient.x, 1, -gradient.y));
 }
+
+float2 water_wave_layer_gradient(float4 shape, float phase, float2 local_xz, float2 dx, float2 dy) {
+    const float2 frequency = shape.w * shape.xy;
+    const float footprint = max(abs(dot(dx, frequency)), abs(dot(dy, frequency)));
+    const float coverage = 1 - smoothstep(.5, 2.5, footprint);
+    const float slope = shape.z * coverage * cos(dot(local_xz, frequency) - phase);
+    return slope * shape.xy;
+}

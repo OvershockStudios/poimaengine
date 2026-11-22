@@ -18,6 +18,7 @@
     "snow_water_regions": @POIMA_RUNTIME_SIMULATION@,
     "water_rain": @POIMA_RUNTIME_SIMULATION@,
     "water_ripples": @POIMA_RUNTIME_RENDER_SMOKE@,
+    "water_wave_layers": @POIMA_RUNTIME_WATER_WAVE_LAYERS@,
     "scene_particles": @POIMA_RUNTIME_SIMULATION@,
     "surface_marks": @POIMA_RUNTIME_SIMULATION@,
     "surface_mark_masks": @POIMA_RUNTIME_SURFACE_MARK_MASKS@,

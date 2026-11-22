@@ -158,9 +158,11 @@ struct FrameConstants {
     float view_projection[16];float camera[4];float ambient_exposure[4];std::uint32_t light_count[4];float camera_forward[4];
     GpuShadow shadows[max_shadow_views];float cluster_viewport[4],cluster_depth[4];std::uint32_t cluster_grid[4];float previous_view_projection[16];float temporal_jitter[4]{},temporal_right[4]{},temporal_up[4]{},temporal_forward[4]{},ibl_parameters[4]{};
     std::array<float,4> water_ripple_shape{},water_ripple_motion{};
+    std::array<std::array<float,4>,max_scene_water_wave_layers-1> water_wave_shapes{};
 };
-static_assert(sizeof(GpuLight)==80 && sizeof(GpuShadow)==80 && sizeof(FrameConstants)==1632);
-static_assert(offsetof(FrameConstants,water_ripple_shape)==1600);
+static_assert(sizeof(GpuLight)==80 && sizeof(GpuShadow)==80 && sizeof(FrameConstants)==1680);
+static_assert(offsetof(FrameConstants,water_ripple_shape)==1600 && offsetof(FrameConstants,water_ripple_motion)==1616 &&
+    offsetof(FrameConstants,water_wave_shapes)==1632);
 struct SpriteInstance {
     std::array<float,4> center_and_size,linear_rgba,fade_and_reserved;
     std::array<std::uint32_t,4> texel_rect;
@@ -2024,6 +2026,43 @@ struct Context {
             require(!object.foliage_motion,"Foliage motion is limited to ordinary world drawables.");
         }
     }
+    float prepare_water_normals() {
+        frame_constants.water_ripple_shape={};
+        frame_constants.water_ripple_motion={};
+        frame_constants.water_wave_shapes={};
+        const auto count=scene->water_wave_layer_count;
+        require(count<=scene->water_wave_layers.size() && (!count || !scene->water_ripples),
+            "Water presentation accepts one normal profile with at most four layers.");
+        const auto store_ripple=[&](const SceneWaterRipples& ripple,std::size_t index) {
+            const auto& direction=ripple.direction;
+            const float length=std::hypot(direction[0],direction[1]);
+            constexpr auto tau=2*std::numbers::pi;
+            require(std::isfinite(length) && std::abs(length-1)<.0001f &&
+                ripple.slope>0 && ripple.slope<=.4f &&
+                ripple.radians_per_metre>=static_cast<float>(tau/8) &&
+                ripple.radians_per_metre<=static_cast<float>(tau/.1) &&
+                ripple.phase_radians>=0 && ripple.phase_radians<static_cast<float>(tau),
+                "Invalid water ripple presentation parameters.");
+            auto& shape=index==0 ? frame_constants.water_ripple_shape : frame_constants.water_wave_shapes[index-1];
+            shape={direction[0],direction[1],ripple.slope,ripple.radians_per_metre};
+            frame_constants.water_ripple_motion[index]=ripple.phase_radians;
+        };
+        if(const auto& ripple=scene->water_ripples) {
+            store_ripple(*ripple,0);
+            return 1;
+        }
+        double slope=0;
+        for(std::size_t index=0;index<count;++index) {
+            const auto& layer=scene->water_wave_layers[index];
+            store_ripple(layer,index);
+            slope+=layer.slope;
+        }
+        // Allow the individual float conversions of the validated authored slopes.
+        require(slope<=.4000001,"Combined water presentation slope exceeds 0.4.");
+        // The reserved draw field distinguishes legacy ripples (1) from
+        // layered normals (1 + active layer count).
+        return count ? static_cast<float>(count+1) : 0;
+    }
     void update_scene() {
         validate_viewmodel_snapshot();
         if(deferred || scene_debug_view!=SceneDebugView::color || reconstruction_mode!=ReconstructionMode::none) {
@@ -2032,21 +2071,7 @@ struct Context {
                 "Scene diagnostic projection requires finite float near/far values with 0 < near < far.");
         }
         require(!deferred || rigid_transform(scene->camera_world),"Deferred lighting requires a rigid camera transform.");
-        frame_constants.water_ripple_shape={};
-        frame_constants.water_ripple_motion={};
-        if(const auto& ripple=scene->water_ripples) {
-            const auto& direction=ripple->direction;
-            const float length=std::hypot(direction[0],direction[1]);
-            constexpr auto tau=2*std::numbers::pi;
-            require(std::isfinite(length) && std::abs(length-1)<.0001f &&
-                ripple->slope>0 && ripple->slope<=.4f &&
-                ripple->radians_per_metre>=static_cast<float>(tau/8) &&
-                ripple->radians_per_metre<=static_cast<float>(tau/.1) &&
-                ripple->phase_radians>=0 && ripple->phase_radians<static_cast<float>(tau),
-                "Invalid water ripple presentation parameters.");
-            frame_constants.water_ripple_shape={direction[0],direction[1],ripple->slope,ripple->radians_per_metre};
-            frame_constants.water_ripple_motion[0]=ripple->phase_radians;
-        }
+        const float water_normal_mode=prepare_water_normals();
         const std::array<std::span<const SceneObject>,2> world_drawables{scene->objects,scene->world_viewmodel_draws()};
         if(deferred)for(const auto objects:world_drawables)for(const auto& object:objects) {
             for(float value:object.albedo)require(std::isfinite(value) && std::abs(value)<=65504,"Deferred preview base exceeds half-float storage.");
@@ -2195,12 +2220,12 @@ struct Context {
             draw.normal[1][3]=object.textures ? object.textures->normal_scale : object.mesh ? object.mesh->normal_scale : 1.0f;
             draw.normal[2][3]=(object.textures ? bool(object.textures->maps[4].image) : object.mesh && object.mesh->textures[4].image) ? 1.0f : 0.0f;
             if(object.water_ripple_surface) {
-                require(list==0 && scene->water_ripples && !found_water_ripples && object.material &&
+                require(list==0 && water_normal_mode!=0 && !found_water_ripples && object.material &&
                     object.stream_geometry && !object.mutable_geometry && !object.incarnation && !object.skin &&
                     !object.camera_draw && !object.lods && !object.cast_shadows,
                     "Water ripple parameters require one transient world water surface.");
                 found_water_ripples=true;
-                draw.alpha[3]=1;
+                draw.alpha[3]=water_normal_mode;
             }
             item.mutable_geometry=object.mutable_geometry;
             item.stream_geometry=object.stream_geometry || item.mutable_geometry;
@@ -2260,7 +2285,7 @@ struct Context {
             draws.push_back(std::move(item));
         }
         pending_draws.mesh_lod=std::move(mesh_lod);
-        require(found_water_ripples==scene->water_ripples.has_value(),"Water ripple surface is missing.");
+        require(found_water_ripples==(water_normal_mode!=0),"Water ripple surface is missing.");
         prepare_viewmodel(active_skins);prepare_scene_output();
         for(auto it=skin_instances.begin();it!=skin_instances.end();) {
             if(!active_skins.contains(it->first)) { skin_bytes-=it->second.bytes;it=skin_instances.erase(it); }else ++it;

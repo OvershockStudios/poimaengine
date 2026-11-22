@@ -1,0 +1,476 @@
+{
+  "format": "poima.water-wave-layers.qualification.v1",
+  "version": "0.0.390",
+  "base_commit": "d6a22b7a09aa6c3009bec99a12aa24613fc3a329",
+  "scope": "Revision 201 authoring, exact v1–v3 cooked input, v4 closed export, native checkpoint and Vulkan probes.",
+  "build_input_manifest_sha256": "74340fabf874940e8611dd6e2bdbe73edf539494e3017f5e8f5a35f15399c912",
+  "verification_script_sha256": "1647b1f95e707f95c05214b1b8e793a2979b96c1b48e619a63f2f072522c9dc4",
+  "windows_legacy_suites": [
+    {
+      "index": 0,
+      "lighting": "forward",
+      "before_evidence_sha256": "8374f84ffaa26fcbad9f900a82772fe7208d22ea18386adc1ea99a8d666fe14d",
+      "after_evidence_sha256": "f257fbbdf77acc77f8d29a3a7a33043083aa1f71abf9923c80894f418c9a2321",
+      "bmp_sha256": {
+        "legacy-initial-near": "f0b8ea6adf77cedcd58cd7692a0353a55ce6dec007836395fa3ca2650d6bb76d",
+        "legacy-checkpoint-near": "610dbfe8da9e8b6b481f2d6935e9e28bb8a114577531abf8ea39fd35b40bae5b",
+        "legacy-checkpoint-far": "140fd89c067ced2bbfb8a568b2dc8b6202e5035c8c8bfae8e570133231bf0f2a",
+        "legacy-checkpoint-moved": "e5cd195d8c5b19c439d8a6e0237b676b04f7831418532e2e45fb4e96d8b40862",
+        "legacy-final-near": "4a98f6a2307737de3e0c81ea80dc4dac169921e84f156d41cae77864bb2ea355",
+        "zero-initial-near": "f0b8ea6adf77cedcd58cd7692a0353a55ce6dec007836395fa3ca2650d6bb76d",
+        "zero-checkpoint-near": "610dbfe8da9e8b6b481f2d6935e9e28bb8a114577531abf8ea39fd35b40bae5b",
+        "zero-checkpoint-far": "140fd89c067ced2bbfb8a568b2dc8b6202e5035c8c8bfae8e570133231bf0f2a",
+        "zero-checkpoint-moved": "e5cd195d8c5b19c439d8a6e0237b676b04f7831418532e2e45fb4e96d8b40862",
+        "zero-final-near": "4a98f6a2307737de3e0c81ea80dc4dac169921e84f156d41cae77864bb2ea355",
+        "enabled-initial-near": "27dd5453cd2b45006c82904a36153b5c9c23514c86d69b138c10c072fea55443",
+        "enabled-checkpoint-near": "e1016fc0f3442eb3e8bf0f72b1eb566029d81ae1a411ce4d720063ad74830048",
+        "enabled-checkpoint-far": "b654677541d0c2f723345051062f695db9c9572c33fb88551fc3e03fbf73d9e5",
+        "enabled-checkpoint-moved": "2d2e3b4978ae34ba3c33d3d7809dd5e36bb0b55cc9bac95b0e83f84e93c25605",
+        "enabled-final-near": "c90f572eedb6ccdaf940013a15bbd1af875749d1ded2b6b450f66a44de231ac9",
+        "enabled-restored-near": "e1016fc0f3442eb3e8bf0f72b1eb566029d81ae1a411ce4d720063ad74830048",
+        "enabled-restored-far": "b654677541d0c2f723345051062f695db9c9572c33fb88551fc3e03fbf73d9e5",
+        "enabled-restored-moved": "2d2e3b4978ae34ba3c33d3d7809dd5e36bb0b55cc9bac95b0e83f84e93c25605",
+        "enabled-cold-final-near": "c90f572eedb6ccdaf940013a15bbd1af875749d1ded2b6b450f66a44de231ac9"
+      },
+      "probe_rows": 92
+    },
+    {
+      "index": 1,
+      "lighting": "deferred",
+      "before_evidence_sha256": "a69f5d5d26afa2a13c22a88ad72a75381dfc7f93332bb37d10c9165ef2fb1f39",
+      "after_evidence_sha256": "af23bd55623e584d1e06dfc0495e62d51be7e6131468dcbd443b42f3d8d57c6c",
+      "bmp_sha256": {
+        "legacy-initial-near": "6d0b6e209b0de37f356a8e57ae12eb8bc2085a37c40431bf1b6f47310a14dc4a",
+        "legacy-checkpoint-near": "f36427ff63c8aa0cc566817506aa4834eb55ea7a7ce37b62020af76d85e22939",
+        "legacy-checkpoint-far": "95019f8f60047e63e474444cca7d777f90cb21702f8669d801034e1ebd397ebd",
+        "legacy-checkpoint-moved": "e538dadeeee3303331129b3339c69ba784d3710b5c99f7208436db44164440e0",
+        "legacy-final-near": "294c789df67b074d8e7fa4411d578c208244beb8e2eb48ada0eeb31d48ed7c76",
+        "zero-initial-near": "6d0b6e209b0de37f356a8e57ae12eb8bc2085a37c40431bf1b6f47310a14dc4a",
+        "zero-checkpoint-near": "f36427ff63c8aa0cc566817506aa4834eb55ea7a7ce37b62020af76d85e22939",
+        "zero-checkpoint-far": "95019f8f60047e63e474444cca7d777f90cb21702f8669d801034e1ebd397ebd",
+        "zero-checkpoint-moved": "e538dadeeee3303331129b3339c69ba784d3710b5c99f7208436db44164440e0",
+        "zero-final-near": "294c789df67b074d8e7fa4411d578c208244beb8e2eb48ada0eeb31d48ed7c76",
+        "enabled-initial-near": "099231311176a8b92ab4440469b2eca76e8a87c134c68ddc958ddcb3a2507435",
+        "enabled-checkpoint-near": "32fd2ef4f181ad6ec653dea261aaabbc330c8ab53a94673535232b626be61cae",
+        "enabled-checkpoint-far": "a79384834d56c700c4f99954f3b8c1f3ff589f14dbe49da2b00c71d1516aa6ac",
+        "enabled-checkpoint-moved": "3e413173d0d0248b67ab5933644191e44b60487c132b0ad13ca721ac4459ed40",
+        "enabled-final-near": "0caef4df752e5cb500a9c8eb88bf129b589762671b20511a0a4e6419555f3366",
+        "enabled-restored-near": "32fd2ef4f181ad6ec653dea261aaabbc330c8ab53a94673535232b626be61cae",
+        "enabled-restored-far": "a79384834d56c700c4f99954f3b8c1f3ff589f14dbe49da2b00c71d1516aa6ac",
+        "enabled-restored-moved": "3e413173d0d0248b67ab5933644191e44b60487c132b0ad13ca721ac4459ed40",
+        "enabled-cold-final-near": "0caef4df752e5cb500a9c8eb88bf129b589762671b20511a0a4e6419555f3366"
+      },
+      "probe_rows": 92
+    }
+  ],
+  "windows_vulkan": [
+    {
+      "adapter": "AMD Radeon(TM) Graphics",
+      "index": 0,
+      "lighting": "forward",
+      "render_owners": 4,
+      "native_case_sha256": "84f78566c34d34b26f77c56fac3ccb236f90d9ea2ac50122558a43073492e1ed",
+      "binary_sha256": "9e20b5f9868d9734817966ee690808942baf4a960a830c2616c1947b466c656f",
+      "captures": {
+        "unlayered": [
+          {
+            "sha256": "f0b8ea6adf77cedcd58cd7692a0353a55ce6dec007836395fa3ca2650d6bb76d",
+            "tick": 0,
+            "camera": "00000000000000000000000000001fa3"
+          },
+          {
+            "sha256": "610dbfe8da9e8b6b481f2d6935e9e28bb8a114577531abf8ea39fd35b40bae5b",
+            "tick": 4,
+            "camera": "00000000000000000000000000001fa3"
+          },
+          {
+            "sha256": "140fd89c067ced2bbfb8a568b2dc8b6202e5035c8c8bfae8e570133231bf0f2a",
+            "tick": 4,
+            "camera": "00000000000000000000000000001fa4"
+          },
+          {
+            "sha256": "e5cd195d8c5b19c439d8a6e0237b676b04f7831418532e2e45fb4e96d8b40862",
+            "tick": 4,
+            "camera": "00000000000000000000000000001fa5"
+          },
+          {
+            "sha256": "4a98f6a2307737de3e0c81ea80dc4dac169921e84f156d41cae77864bb2ea355",
+            "tick": 16,
+            "camera": "00000000000000000000000000001fa3"
+          }
+        ],
+        "zero": [
+          {
+            "sha256": "f0b8ea6adf77cedcd58cd7692a0353a55ce6dec007836395fa3ca2650d6bb76d",
+            "tick": 0,
+            "camera": "00000000000000000000000000001fa3"
+          },
+          {
+            "sha256": "610dbfe8da9e8b6b481f2d6935e9e28bb8a114577531abf8ea39fd35b40bae5b",
+            "tick": 4,
+            "camera": "00000000000000000000000000001fa3"
+          },
+          {
+            "sha256": "140fd89c067ced2bbfb8a568b2dc8b6202e5035c8c8bfae8e570133231bf0f2a",
+            "tick": 4,
+            "camera": "00000000000000000000000000001fa4"
+          },
+          {
+            "sha256": "e5cd195d8c5b19c439d8a6e0237b676b04f7831418532e2e45fb4e96d8b40862",
+            "tick": 4,
+            "camera": "00000000000000000000000000001fa5"
+          },
+          {
+            "sha256": "4a98f6a2307737de3e0c81ea80dc4dac169921e84f156d41cae77864bb2ea355",
+            "tick": 16,
+            "camera": "00000000000000000000000000001fa3"
+          }
+        ],
+        "layered": [
+          {
+            "sha256": "d498071440b32dfa3dce556b519527354d341896cfaeda9839fd501eebe38bbe",
+            "tick": 0,
+            "camera": "00000000000000000000000000001fa3"
+          },
+          {
+            "sha256": "b72610491b6c2ef890c91432a02cef5cf01a031a4517d3e67df692817937303c",
+            "tick": 4,
+            "camera": "00000000000000000000000000001fa3"
+          },
+          {
+            "sha256": "b195e3870e1a2acba84efd4bfc40b687724f69a655fa25e457eb914f43141fd8",
+            "tick": 4,
+            "camera": "00000000000000000000000000001fa4"
+          },
+          {
+            "sha256": "2840f09098b00b25351fd65d47ac1f68df2decfe64d6ce4e4702de7061ebe7da",
+            "tick": 4,
+            "camera": "00000000000000000000000000001fa5"
+          },
+          {
+            "sha256": "53546836ff1f8cbd1acd29277fe4b0627c9785926e948070ea3846f39cee9491",
+            "tick": 16,
+            "camera": "00000000000000000000000000001fa3"
+          }
+        ]
+      },
+      "probe_count": 72,
+      "comparison": {
+        "frames_changed": 5,
+        "max_hdr_delta": 0.057735243369425815
+      },
+      "rejected_runtime_capability_states": [
+        "false",
+        "missing"
+      ]
+    },
+    {
+      "adapter": "AMD Radeon(TM) Graphics",
+      "index": 0,
+      "lighting": "deferred",
+      "render_owners": 4,
+      "native_case_sha256": "a6ca40f3d00dd225ea78799a373010e793f512fb8dc3234acc50cc53b2df8c16",
+      "binary_sha256": "9e20b5f9868d9734817966ee690808942baf4a960a830c2616c1947b466c656f",
+      "captures": {
+        "unlayered": [
+          {
+            "sha256": "6d0b6e209b0de37f356a8e57ae12eb8bc2085a37c40431bf1b6f47310a14dc4a",
+            "tick": 0,
+            "camera": "00000000000000000000000000001fa3"
+          },
+          {
+            "sha256": "f36427ff63c8aa0cc566817506aa4834eb55ea7a7ce37b62020af76d85e22939",
+            "tick": 4,
+            "camera": "00000000000000000000000000001fa3"
+          },
+          {
+            "sha256": "f72befef87b79282b04eb4dcecb08711dc0356c7fcf978f73f86fb4daf3f5391",
+            "tick": 4,
+            "camera": "00000000000000000000000000001fa4"
+          },
+          {
+            "sha256": "e538dadeeee3303331129b3339c69ba784d3710b5c99f7208436db44164440e0",
+            "tick": 4,
+            "camera": "00000000000000000000000000001fa5"
+          },
+          {
+            "sha256": "c5372a335eef660a168fe2545af86399fb096ed6f426177bd1f3c42545208b01",
+            "tick": 16,
+            "camera": "00000000000000000000000000001fa3"
+          }
+        ],
+        "zero": [
+          {
+            "sha256": "6d0b6e209b0de37f356a8e57ae12eb8bc2085a37c40431bf1b6f47310a14dc4a",
+            "tick": 0,
+            "camera": "00000000000000000000000000001fa3"
+          },
+          {
+            "sha256": "f36427ff63c8aa0cc566817506aa4834eb55ea7a7ce37b62020af76d85e22939",
+            "tick": 4,
+            "camera": "00000000000000000000000000001fa3"
+          },
+          {
+            "sha256": "f72befef87b79282b04eb4dcecb08711dc0356c7fcf978f73f86fb4daf3f5391",
+            "tick": 4,
+            "camera": "00000000000000000000000000001fa4"
+          },
+          {
+            "sha256": "e538dadeeee3303331129b3339c69ba784d3710b5c99f7208436db44164440e0",
+            "tick": 4,
+            "camera": "00000000000000000000000000001fa5"
+          },
+          {
+            "sha256": "c5372a335eef660a168fe2545af86399fb096ed6f426177bd1f3c42545208b01",
+            "tick": 16,
+            "camera": "00000000000000000000000000001fa3"
+          }
+        ],
+        "layered": [
+          {
+            "sha256": "8cd1c77c9f27ff17e2566a7d820ce64ccef67f3cef80609b5ae18f873500b390",
+            "tick": 0,
+            "camera": "00000000000000000000000000001fa3"
+          },
+          {
+            "sha256": "ffa4e495f51e6783d6f6848424e772cd7bd6463eff88a6121a66d53bb6b8ab9f",
+            "tick": 4,
+            "camera": "00000000000000000000000000001fa3"
+          },
+          {
+            "sha256": "10797e0c871747ca690afe2d3666ba062a624a5e33b1d2bf534b44ecc6bd9363",
+            "tick": 4,
+            "camera": "00000000000000000000000000001fa4"
+          },
+          {
+            "sha256": "0de4ba2b471bab84106b2ad07fd9cb5b4b48c08d075962333477bcc7031b99b7",
+            "tick": 4,
+            "camera": "00000000000000000000000000001fa5"
+          },
+          {
+            "sha256": "82a43ab96277862402e8bb5cad2e944dd24bc3cb782646dda33604482e75a9ef",
+            "tick": 16,
+            "camera": "00000000000000000000000000001fa3"
+          }
+        ]
+      },
+      "probe_count": 72,
+      "comparison": {
+        "frames_changed": 5,
+        "max_hdr_delta": 0.058305078935925694
+      },
+      "rejected_runtime_capability_states": [
+        "false",
+        "missing"
+      ]
+    },
+    {
+      "adapter": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "index": 1,
+      "lighting": "forward",
+      "render_owners": 4,
+      "native_case_sha256": "211d2cd39ebedfa8f84a61b9002b40bf2d3e3b985483904a370c289ec84a9376",
+      "binary_sha256": "9e20b5f9868d9734817966ee690808942baf4a960a830c2616c1947b466c656f",
+      "captures": {
+        "unlayered": [
+          {
+            "sha256": "f0b8ea6adf77cedcd58cd7692a0353a55ce6dec007836395fa3ca2650d6bb76d",
+            "tick": 0,
+            "camera": "00000000000000000000000000001fa3"
+          },
+          {
+            "sha256": "610dbfe8da9e8b6b481f2d6935e9e28bb8a114577531abf8ea39fd35b40bae5b",
+            "tick": 4,
+            "camera": "00000000000000000000000000001fa3"
+          },
+          {
+            "sha256": "d5dd4503a62ec773083154efc8daecf3a3ca632151b64ad4c7f172d733119e0d",
+            "tick": 4,
+            "camera": "00000000000000000000000000001fa4"
+          },
+          {
+            "sha256": "da77b88d4e100e2d64371fa4b5d98ec16e91379993e775cbebae69acf84089b4",
+            "tick": 4,
+            "camera": "00000000000000000000000000001fa5"
+          },
+          {
+            "sha256": "a67dda91dc068ccbe489e7d628209473a4a86ddb9c9246be146048b2e063294b",
+            "tick": 16,
+            "camera": "00000000000000000000000000001fa3"
+          }
+        ],
+        "zero": [
+          {
+            "sha256": "f0b8ea6adf77cedcd58cd7692a0353a55ce6dec007836395fa3ca2650d6bb76d",
+            "tick": 0,
+            "camera": "00000000000000000000000000001fa3"
+          },
+          {
+            "sha256": "610dbfe8da9e8b6b481f2d6935e9e28bb8a114577531abf8ea39fd35b40bae5b",
+            "tick": 4,
+            "camera": "00000000000000000000000000001fa3"
+          },
+          {
+            "sha256": "d5dd4503a62ec773083154efc8daecf3a3ca632151b64ad4c7f172d733119e0d",
+            "tick": 4,
+            "camera": "00000000000000000000000000001fa4"
+          },
+          {
+            "sha256": "da77b88d4e100e2d64371fa4b5d98ec16e91379993e775cbebae69acf84089b4",
+            "tick": 4,
+            "camera": "00000000000000000000000000001fa5"
+          },
+          {
+            "sha256": "a67dda91dc068ccbe489e7d628209473a4a86ddb9c9246be146048b2e063294b",
+            "tick": 16,
+            "camera": "00000000000000000000000000001fa3"
+          }
+        ],
+        "layered": [
+          {
+            "sha256": "f43432dbb12c3038f732ae1df94e8a57baf1048383cec6044aa30439a8ba3c5c",
+            "tick": 0,
+            "camera": "00000000000000000000000000001fa3"
+          },
+          {
+            "sha256": "0e22b136d3ce19867d6c0844ad1d68090b177e23c882dea23f3503cf76d60b97",
+            "tick": 4,
+            "camera": "00000000000000000000000000001fa3"
+          },
+          {
+            "sha256": "ba8f6dc765846d0c8c397807120269aa10707296d88191e21f738c70b0386912",
+            "tick": 4,
+            "camera": "00000000000000000000000000001fa4"
+          },
+          {
+            "sha256": "365044fbbcdfd615a61c12c616f3fff58b2eeea9762b68daf64e5ddf167a4610",
+            "tick": 4,
+            "camera": "00000000000000000000000000001fa5"
+          },
+          {
+            "sha256": "7ae8d1d65b5d26addafd07eac5360fcc92780384db1d461eb4f4d7e3109dff25",
+            "tick": 16,
+            "camera": "00000000000000000000000000001fa3"
+          }
+        ]
+      },
+      "probe_count": 72,
+      "comparison": {
+        "frames_changed": 5,
+        "max_hdr_delta": 0.057735243369425815
+      },
+      "rejected_runtime_capability_states": [
+        "false",
+        "missing"
+      ]
+    },
+    {
+      "adapter": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "index": 1,
+      "lighting": "deferred",
+      "render_owners": 4,
+      "native_case_sha256": "2124c8bf8077c01dcb09b986370e27e3ff6bd77bede5135c0edf80e8a49c2fc6",
+      "binary_sha256": "9e20b5f9868d9734817966ee690808942baf4a960a830c2616c1947b466c656f",
+      "captures": {
+        "unlayered": [
+          {
+            "sha256": "6d0b6e209b0de37f356a8e57ae12eb8bc2085a37c40431bf1b6f47310a14dc4a",
+            "tick": 0,
+            "camera": "00000000000000000000000000001fa3"
+          },
+          {
+            "sha256": "f36427ff63c8aa0cc566817506aa4834eb55ea7a7ce37b62020af76d85e22939",
+            "tick": 4,
+            "camera": "00000000000000000000000000001fa3"
+          },
+          {
+            "sha256": "95019f8f60047e63e474444cca7d777f90cb21702f8669d801034e1ebd397ebd",
+            "tick": 4,
+            "camera": "00000000000000000000000000001fa4"
+          },
+          {
+            "sha256": "e538dadeeee3303331129b3339c69ba784d3710b5c99f7208436db44164440e0",
+            "tick": 4,
+            "camera": "00000000000000000000000000001fa5"
+          },
+          {
+            "sha256": "294c789df67b074d8e7fa4411d578c208244beb8e2eb48ada0eeb31d48ed7c76",
+            "tick": 16,
+            "camera": "00000000000000000000000000001fa3"
+          }
+        ],
+        "zero": [
+          {
+            "sha256": "6d0b6e209b0de37f356a8e57ae12eb8bc2085a37c40431bf1b6f47310a14dc4a",
+            "tick": 0,
+            "camera": "00000000000000000000000000001fa3"
+          },
+          {
+            "sha256": "f36427ff63c8aa0cc566817506aa4834eb55ea7a7ce37b62020af76d85e22939",
+            "tick": 4,
+            "camera": "00000000000000000000000000001fa3"
+          },
+          {
+            "sha256": "95019f8f60047e63e474444cca7d777f90cb21702f8669d801034e1ebd397ebd",
+            "tick": 4,
+            "camera": "00000000000000000000000000001fa4"
+          },
+          {
+            "sha256": "e538dadeeee3303331129b3339c69ba784d3710b5c99f7208436db44164440e0",
+            "tick": 4,
+            "camera": "00000000000000000000000000001fa5"
+          },
+          {
+            "sha256": "294c789df67b074d8e7fa4411d578c208244beb8e2eb48ada0eeb31d48ed7c76",
+            "tick": 16,
+            "camera": "00000000000000000000000000001fa3"
+          }
+        ],
+        "layered": [
+          {
+            "sha256": "605584d477505476e2007614db25fd70419879dd667976e5284cade7f33ef88c",
+            "tick": 0,
+            "camera": "00000000000000000000000000001fa3"
+          },
+          {
+            "sha256": "2188caf8be9daef107f0c05bb1c1973992b066cd2f514876da0c06364dd50afb",
+            "tick": 4,
+            "camera": "00000000000000000000000000001fa3"
+          },
+          {
+            "sha256": "ccd6ddf55e098c64588302cd532b1bbb95084e139040f8fe71756226cabe30f6",
+            "tick": 4,
+            "camera": "00000000000000000000000000001fa4"
+          },
+          {
+            "sha256": "359cd6ebe569dcb5d0e74b6b5c936586aac88e4b5f4456bf37861a7a48e3874a",
+            "tick": 4,
+            "camera": "00000000000000000000000000001fa5"
+          },
+          {
+            "sha256": "cbe284ab2792c8b1dda069ca61b253d99e63419a03ac070339e25ae646a930cd",
+            "tick": 16,
+            "camera": "00000000000000000000000000001fa3"
+          }
+        ]
+      },
+      "probe_count": 72,
+      "comparison": {
+        "frames_changed": 5,
+        "max_hdr_delta": 0.05831961279715707
+      },
+      "rejected_runtime_capability_states": [
+        "false",
+        "missing"
+      ]
+    }
+  ],
+  "ubuntu": {
+    "binary_sha256": "8bf953489c613a6a049fcf739ad0c4d5251b365407e378d5e347a3f7165eb176",
+    "focused_ctest_count": 7,
+    "native_wave_contract": "passed",
+    "mixed_snow_water": "passed"
+  },
+  "verification_notes": "The render oracle drops zero-slope entries before calculating fades, matching native projection. Original Linux compile and execution used the initial test script and never evaluated that GPU-only branch.",
+  "limits": "Four directional shading-normal layers. Authored wave inputs leave water geometry, collision, volume and saves' hydraulic state unchanged. Capture fixtures do not establish game-scale performance."
+}

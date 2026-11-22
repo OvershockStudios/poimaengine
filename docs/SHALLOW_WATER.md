@@ -128,6 +128,44 @@ python3 tests/water_ripples_capture.py build/installed/bin/poima.exe \
     --windows-interop --lighting-path deferred
 ```
 
+## Author directional wave layers
+
+Use Poima 0.0.390 or later. Supply `surface_wave_layers` to the water plan
+and cook methods when a surface needs independently moving wave directions.
+This profile accepts one to four ordered layers with a combined slope of at
+most 0.4. Choose one of `surface_wave_layers` and `surface_ripples`.
+
+```json
+{
+  "surface_wave_layers": [
+    {"wavelength_m": 1.8, "slope": 0.055, "period_ticks": 64, "heading_degrees": 22},
+    {"wavelength_m": 0.94, "slope": 0.037, "period_ticks": 49, "heading_degrees": -39},
+    {"wavelength_m": 0.57, "slope": 0.028, "period_ticks": 37, "heading_degrees": 75},
+    {"wavelength_m": 0.31, "slope": 0.017, "period_ticks": 27, "heading_degrees": -108}
+  ]
+}
+```
+
+Each layer uses the [ripple parameter ranges](#author-surface-ripples).
+Choose several wavelengths and headings to break up parallel highlights.
+Each phase follows the committed tick modulo its own period. The renderer
+filters each gradient at its projected pixel footprint, sums the gradients
+and normalizes the result. This controls shading while the water grid
+determines the visible and queried surface heights, volume and flow.
+
+Cooked layered regions use `.pwater` v4. Layer order participates in the
+content hash and is returned by `runtime.water.inspect`. Rain can coexist
+with the profile. An all-zero selection gives the unlayered shading and
+still uses the v4 package. Project and game inspection expose
+`needs_water_wave_layers`, and export requires a simulation and Vulkan
+runtime that advertises `features.water_wave_layers`.
+
+The [layered water contract](../tests/water_wave_layers_contract.py) checks
+the cooked package, native water state, save continuation, export admission
+and Vulkan normals. Pass `--runtime-root`, `--windows-interop` from WSL, and
+`--gpu` to exercise the standalone capture path. The forward and deferred
+recipes use `--lighting-path`.
+
 ## Observe and verify local flow
 
 Discover `runtime.water.inspect` in a simulation build. Pass `session_id`, the

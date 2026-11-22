@@ -347,6 +347,7 @@ Json project_summary(const Project& p) {
     if(p.content.needs_mesh_lod)result["needs_mesh_lod"]=true;
     if(p.content.needs_water_rain)result["needs_water_rain"]=true;
     if(p.content.needs_water_ripples)result["needs_water_ripples"]=true;
+    if(p.content.needs_water_wave_layers)result["needs_water_wave_layers"]=true;
     if(p.content.needs_output_grade)result["needs_output_grade"]=true;
     if(p.content.needs_screen_reflections)result["needs_screen_reflections"]=true;
     if(p.content.needs_foliage_motion)result["needs_foliage_motion"]=true;
@@ -445,6 +446,8 @@ void require_scene_feature_support(const WorldPackageContent& content, const Jso
         "Rain-enabled water regions require a compatible simulation runtime.");
     require(!content.needs_water_ripples || runtime.at("features").value("water_ripples", false),
         "Water surface ripples require a compatible Vulkan runtime.");
+    require(!content.needs_water_wave_layers || runtime.at("features").value("water_wave_layers", false),
+        "Water wave layers require a compatible Vulkan runtime.");
     require(!content.needs_particles || runtime.at("features").value("scene_particles", false),
         "Project particle emitters require a compatible particle runtime.");
     require(!content.needs_sprite_particles || runtime.at("features").value("scene_particle_sprites", false),
@@ -465,7 +468,13 @@ Json runtime_spec(const std::string& bytes,std::string_view expected_version=bui
     if(contract_fields==4)(void)runtime_gameplay_contract(value);
     require((value.at("target_os")=="Windows" || value.at("target_os")=="Linux") && value.at("target_arch")=="x86_64","Only Windows/Linux x86_64 runtime targets are supported.");
     require(value.at("executable")== (value.at("target_os")=="Windows" ? "bin/poima.exe" : "bin/poima"),"Runtime executable path does not match target.");
-    const auto& features=value.at("features");fields(features,{"simulation","renderer","audio","managed","editor","native_gameplay","game_ui","navigation","navigation_obstacles","asset_provenance","project_post_effects","water_regions","water_rain","water_ripples","snow_water_regions","scene_particles","scene_particle_sprites","surface_marks","surface_mark_masks","mesh_lod","output_grade","screen_reflections","foliage_motion","height_fog","physics_checkpoint"},{"simulation","renderer","audio","managed","editor"});for(const auto& v:features)require(v.is_boolean(),"Runtime feature flags must be Boolean.");
+    const auto& features=value.at("features");
+    fields(features,{"simulation","renderer","audio","managed","editor","native_gameplay","game_ui",
+        "navigation","navigation_obstacles","asset_provenance","project_post_effects","water_regions","water_rain",
+        "water_ripples","water_wave_layers","snow_water_regions","scene_particles","scene_particle_sprites",
+        "surface_marks","surface_mark_masks","mesh_lod","output_grade","screen_reflections","foliage_motion",
+        "height_fog","physics_checkpoint"},{"simulation","renderer","audio","managed","editor"});
+    for(const auto& feature:features)require(feature.is_boolean(),"Runtime feature flags must be Boolean.");
     require(features.at("simulation")==true && features.at("renderer")==true,"Game bundles require a simulation and renderer runtime.");return value;
 }
 std::vector<std::string> file_tree(const fs::path& root) {
@@ -499,6 +508,7 @@ struct VerifiedGame {
     fs::path manifest;
     bool needs_output_grade=false;
     bool needs_water_ripples=false;
+    bool needs_water_wave_layers=false;
     bool needs_screen_reflections=false;
     bool needs_foliage_motion=false;
     bool needs_height_fog=false;
@@ -547,6 +557,7 @@ VerifiedGame verify_game(const std::string& filename,std::string_view expected_v
     require_scene_feature_support(content,runtime);
     result.needs_output_grade=content.needs_output_grade;
     result.needs_water_ripples=content.needs_water_ripples;
+    result.needs_water_wave_layers=content.needs_water_wave_layers;
     result.needs_screen_reflections=content.needs_screen_reflections;
     result.needs_foliage_motion=content.needs_foliage_motion;
     result.needs_height_fog=content.needs_height_fog;
@@ -939,6 +950,7 @@ Reply inspect_game(const std::string& manifest,const std::string& expected_bundl
         Json result={{"manifest",text(game.manifest)},{"name",game.definition.name},{"project_id",game.spec.at("project_id")},{"revision",game.definition.revision},{"target_os",game.definition.target_os},{"target_arch",game.definition.target_arch},{"entry",game.spec.at("entry")},{"audio",game.definition.audio},{"startup_splash",game.definition.startup_splash},{"files",game.spec.at("files")}};
         if(game.needs_output_grade)result["needs_output_grade"]=true;
         if(game.needs_water_ripples)result["needs_water_ripples"]=true;
+        if(game.needs_water_wave_layers)result["needs_water_wave_layers"]=true;
         if(game.needs_screen_reflections)result["needs_screen_reflections"]=true;
         if(game.needs_foliage_motion)result["needs_foliage_motion"]=true;
         if(game.needs_height_fog)result["needs_height_fog"]=true;

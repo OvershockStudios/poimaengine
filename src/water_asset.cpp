@@ -14,7 +14,8 @@ namespace {
 using Json = nlohmann::json;
 constexpr auto artifact_format = "poima.water.region";
 
-std::uint32_t artifact_version(bool has_rain, bool has_ripples) noexcept {
+std::uint32_t artifact_version(bool has_rain, bool has_ripples, bool has_wave_layers) noexcept {
+    if (has_wave_layers) return 4;
     if (has_ripples) return 3;
     return has_rain ? 2 : 1;
 }
@@ -97,6 +98,14 @@ RegionFace face(const Json& value, const GridConfig& grid) {
     return result;
 }
 
+SurfaceRipples parse_surface_ripples(const Json& ripples) {
+    fields(ripples, {"wavelength_m", "slope", "period_ticks", "heading_degrees"});
+    require(ripples.at("period_ticks").is_number_integer(),
+        "Water surface ripple period_ticks must be an integer.");
+    return {number(ripples.at("wavelength_m")), number(ripples.at("slope")),
+        integer(ripples.at("period_ticks"), 8, 3600), number(ripples.at("heading_degrees"))};
+}
+
 void parse_rules(const Json& object, RegionDefinition& definition) {
     const auto read = [&](const char* field, auto limit, auto& result, const auto& convert) {
         if (!object.contains(field)) return;
@@ -112,14 +121,14 @@ void parse_rules(const Json& object, RegionDefinition& definition) {
     });
     read("rain_cells", static_cast<std::size_t>(definition.config.cells_x) * definition.config.cells_z,
         definition.rain_cells, cell);
-    if (object.contains("surface_ripples")) {
-        const auto& ripples = object.at("surface_ripples");
-        fields(ripples, {"wavelength_m", "slope", "period_ticks", "heading_degrees"});
-        require(ripples.at("period_ticks").is_number_integer(),
-            "Water surface ripple period_ticks must be an integer.");
-        definition.surface_ripples = SurfaceRipples{
-            number(ripples.at("wavelength_m")), number(ripples.at("slope")),
-            integer(ripples.at("period_ticks"), 8, 3600), number(ripples.at("heading_degrees"))};
+    if (object.contains("surface_ripples"))
+        definition.surface_ripples = parse_surface_ripples(object.at("surface_ripples"));
+    if (object.contains("surface_wave_layers")) {
+        const auto& layers = object.at("surface_wave_layers");
+        require(layers.is_array() && !layers.empty() && layers.size() <= max_surface_wave_layers,
+            "Water expects one to four surface wave layers.");
+        for (const auto& layer : layers)
+            definition.surface_wave_layers.push_back(parse_surface_ripples(layer));
     }
     std::ranges::sort(definition.rain_cells, {}, [](Cell cell) { return std::pair{cell.z, cell.x}; });
     std::sort(definition.faces.begin(), definition.faces.end(), [](const auto& left, const auto& right) {
@@ -146,7 +155,8 @@ Json artifact_document(const RegionAsset& asset) {
     for (const auto& exchange : definition.exchanges) exchanges.push_back({{"cell", {exchange.cell.x, exchange.cell.z}},
         {"source_m3_per_second", exchange.source_m3_per_second}, {"drain_m3_per_second", exchange.drain_m3_per_second}});
     Json document{{"format", artifact_format},
-        {"version", artifact_version(!definition.rain_cells.empty(), definition.surface_ripples.has_value())},
+        {"version", artifact_version(!definition.rain_cells.empty(), definition.surface_ripples.has_value(),
+            !definition.surface_wave_layers.empty())},
         {"terrain_recipe_sha256", asset.terrain_recipe_sha256},
         {"tiles", std::move(tiles)}, {"grid", {{"cells_x", grid.cells_x}, {"cells_z", grid.cells_z}, {"cell_size_m", grid.cell_size_m},
             {"origin_x_m", grid.origin_x_m}, {"origin_z_m", grid.origin_z_m}, {"relaxation_per_second", grid.relaxation_per_second}}},
@@ -160,6 +170,8 @@ Json artifact_document(const RegionAsset& asset) {
     }
     if (definition.surface_ripples)
         document["surface_ripples"] = surface_ripples_json(*definition.surface_ripples);
+    if (!definition.surface_wave_layers.empty())
+        document["surface_wave_layers"] = surface_wave_layers_json(definition.surface_wave_layers);
     return document;
 }
 
@@ -209,10 +221,11 @@ RegionAsset decode_region_asset(std::string_view bytes) {
         return true;
     });
     fields(object, {"format", "version", "terrain_recipe_sha256", "tiles", "grid", "floor_heights_m",
-        "initial_depths_m", "faces", "exchanges"}, {"rain_cells", "surface_ripples"});
+        "initial_depths_m", "faces", "exchanges"}, {"rain_cells", "surface_ripples", "surface_wave_layers"});
     require(object.at("format") == artifact_format &&
-        integer(object.at("version"), 1, 3) ==
-            artifact_version(object.contains("rain_cells"), object.contains("surface_ripples")),
+        integer(object.at("version"), 1, 4) ==
+            artifact_version(object.contains("rain_cells"), object.contains("surface_ripples"),
+                object.contains("surface_wave_layers")),
         "Unsupported water asset format.");
     RegionAsset asset;
     asset.terrain_recipe_sha256 = hex(object.at("terrain_recipe_sha256"), 64);
@@ -276,12 +289,16 @@ Json region_authoring_schemas() {
         {"period_ticks", range("integer", 8, 3600)}, {"heading_degrees", range("number", -180, 180)}},
         {"wavelength_m", "slope", "period_ticks", "heading_degrees"});
     ripples["description"] = "Optional water surface normal ripples driven by committed simulation ticks. Heading zero follows world +X and positive headings rotate toward +Z.";
+    auto layers = array(ripples, 1, max_surface_wave_layers);
+    layers["description"] = "Ordered water shading waves with independent headings and periods. Combined slope must be at most 0.4. Choose either surface_wave_layers or surface_ripples.";
     auto plan = object({{"revision", tick_schema}, {"terrain", std::move(source)}, {"expected_terrain_recipe_sha256", sha_schema},
         {"tile_entities", array(id_schema, 1, terrain::max_cook_tiles)}, {"grid", grid},
         {"initial_depths_m", array(range("number", 0, 1'000'000), 0, max_region_side * max_region_side)},
         {"faces", array(std::move(faces), 0, max_region_faces)}, {"exchanges", array(exchange, 0, max_region_exchanges)},
-        {"rain_cells", array(cell, 0, max_region_side * max_region_side)}, {"surface_ripples", std::move(ripples)}},
+        {"rain_cells", array(cell, 0, max_region_side * max_region_side)}, {"surface_ripples", std::move(ripples)},
+        {"surface_wave_layers", std::move(layers)}},
         {"revision", "terrain", "expected_terrain_recipe_sha256", "tile_entities", "grid"});
+    plan["not"] = {{"required", {"surface_ripples", "surface_wave_layers"}}};
     plan["properties"]["rain_cells"]["uniqueItems"] = true;
     plan["properties"]["rain_cells"]["description"] =
         "Cells designated to collect precipitation. Duplicate or out-of-grid cells are invalid. Omit or leave empty for no precipitation.";
@@ -296,7 +313,10 @@ Json region_authoring_schemas() {
 Json region_runtime_schema() {
     auto result = object({{"session_id", id_schema}, {"tick", tick_schema},
         {"cells", array(array(range("integer", 0, max_region_side - 1), 2, 2), 0, 64)}}, {"session_id", "tick"});
-    result["description"] = "Read the region identity, latest volume receipt, authored face controls and up to 64 addressed cells at a committed tick. Rain-enabled regions also report catchment cells and per-step and cumulative rain supply. A selected surface_ripples profile is reported even at slope zero.";
+    result["description"] = "Read the region identity, latest volume receipt, authored face controls and up to 64 addressed cells at a committed tick."
+        " Rain-enabled regions also report catchment cells and per-step and cumulative rain supply."
+        " A selected surface_ripples profile is reported even at slope zero."
+        " Selected surface_wave_layers are reported in authored order.";
     return result;
 }
 } // namespace poima::water
