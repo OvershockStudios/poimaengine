@@ -1,8 +1,16 @@
 # Implementation status
 
-Updated 2026-11-21 for **0.0.396**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-21 for **0.0.397**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.397 compiles [authored scene assembly, Vulkan presentation and GPU
+timing, and deferred lighting](BUILD.md#world-service-and-schema-compilation)
+in separate modules. Ubuntu passed 21 native and contract suites. The Windows
+fixtures matched 112 capture files against 0.0.396 across AMD and NVIDIA,
+including one- and two-slot presentation with resize and deferred rendering
+with FSR. Six relocated replays matched their respective headless saves.
+[Results](evidence/m2-source-ownership-397.json)
 
 Version 0.0.396 renders [textured world sprites with FSR](RECONSTRUCTION.md#textured-world-sprites).
 The renderer sends depth-tested sprite coverage as reactivity and keeps the

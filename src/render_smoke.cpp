@@ -30,14 +30,7 @@
 #include "poima/scene_deferred_ps.hpp"
 #include "poima/scene_deferred_color_vs.hpp"
 #include "poima/scene_deferred_color_ps.hpp"
-#include "poima/deferred_lighting_cs.hpp"
-#include "poima/deferred_lighting_ao_cs.hpp"
-#include "poima/deferred_lighting_color_cs.hpp"
-#include "poima/deferred_lighting_color_ao_cs.hpp"
-#include "poima/deferred_lighting_reflection_cs.hpp"
-#include "poima/deferred_lighting_ao_reflection_cs.hpp"
-#include "poima/deferred_lighting_color_reflection_cs.hpp"
-#include "poima/deferred_lighting_color_ao_reflection_cs.hpp"
+#include "render_deferred_lighting.hpp"
 #include "render_ambient_occlusion.hpp"
 #include "render_embedded_shader.hpp"
 #include "render_screen_reflections.hpp"
@@ -62,6 +55,7 @@
 #include "poima/smoke_vs.hpp"
 #include "poima/smoke_ps.hpp"
 
+#include "render_vulkan_frame.hpp"
 #include "render_vulkan_instance.hpp"
 #include <nvrhi/vulkan.h>
 #include <nvrhi/validation.h>
@@ -163,11 +157,7 @@ struct SpriteBinding {
 using SteadyClock=std::chrono::steady_clock;
 namespace fp=frame_performance;
 double elapsed_ms(SteadyClock::time_point start) { return std::chrono::duration<double,std::milli>(SteadyClock::now()-start).count(); }
-void timing_sample(TimingSummary& value,double ms) {
-    if(value.samples==0)value.min_ms=value.max_ms=ms;
-    else { value.min_ms=std::min(value.min_ms,ms);value.max_ms=std::max(value.max_ms,ms); }
-    ++value.samples;value.total_ms+=ms;value.last_ms=ms;
-}
+using render_vulkan_frame::timing_sample;
 using Vertex=MeshVertex;
 static_assert(sizeof(Vertex)==render_schedule::mutable_tile_vertex_stride);
 std::vector<Vertex> box_vertices() {
@@ -201,7 +191,7 @@ struct Context {
     vk::Device device;
     vk::Queue queue;
     std::uint32_t queue_family = 0;
-    vk::SwapchainKHR swapchain;
+    render_vulkan_frame::Swapchain swapchain;
     vk::Extent2D extent;
     vk::Format format = vk::Format::eUndefined;
     std::shared_ptr<render_viewmodel::Resources> viewmodel;
@@ -214,7 +204,6 @@ struct Context {
     static constexpr std::uint64_t viewmodel_cap=384ull*1024*1024;
     struct FrameSlot {
         vk::Semaphore acquired;
-        vk::QueryPool timestamps;
         nvrhi::BufferHandle cluster_readback,skin_readback;
         nvrhi::BufferHandle streamed_vertices,streamed_indices;
         nvrhi::BufferHandle surface_marks;
@@ -240,7 +229,7 @@ struct Context {
         ReconstructionDiagnostics reconstruction;
         std::optional<RendererSceneResult> scene;
     };
-    std::array<FrameSlot,2> slots;
+    std::array<FrameSlot,render_vulkan_frame::slot_count> slots;
     // NVRHI copies these CPU prefixes during recording into command-owned
     // storage. Only the two GPU buffers are retained by each completion slot.
     std::vector<Vertex> stream_vertices;
@@ -269,11 +258,6 @@ struct Context {
     // tickets; the session recorder outlives renderer teardown.
     fp::Recorder* performance=nullptr;fp::FrameToken performance_token;fp::CpuSample* performance_cpu=nullptr;
     std::uint64_t next_slot=0,retire_slot=0;
-    std::vector<vk::Semaphore> finished;
-    std::vector<vk::Fence> present_fences;
-    std::vector<bool> present_pending;
-    bool maintenance1=false;
-    std::vector<bool> initialized;
     nvrhi::vulkan::DeviceHandle native;
     nvrhi::DeviceHandle checked;
     std::vector<nvrhi::TextureHandle> images;
@@ -297,12 +281,7 @@ struct Context {
         return deferred ? (scene_products_enabled ? 32u : 24u) : 0u;
     }
     nvrhi::TextureHandle material_base,material_surface,material_correspondence;
-    nvrhi::ShaderHandle deferred_cs;
-    nvrhi::BindingLayoutHandle deferred_layout;
-    nvrhi::BindingSetHandle deferred_bindings;
-    nvrhi::ComputePipelineHandle deferred_pipeline;
-    std::array<const void*,19> deferred_binding_key{};
-    bool deferred_reflection_variant=false;
+    render_deferred_lighting::Pass deferred_lighting;
     screen_reflections::Pass reflections;
     height_fog::Pass fog;
     std::array<std::uint32_t,2> fog_spots{};
@@ -399,8 +378,7 @@ struct Context {
     const std::thread::id memory_owner=std::this_thread::get_id();
     DrawCounts pending_draws;
     LightAssignmentDiagnostics pending_lights;
-    vk::QueryPool timestamp_pool;
-    bool timestamp_prepared=false,timestamp_recording=false;
+    render_vulkan_frame::Timestamps timestamps;
     std::map<std::pair<const MeshAsset*,const MaterialTextures*>,nvrhi::BindingSetHandle> material_cache;
     std::map<const TextureImage*,nvrhi::TextureHandle> texture_cache;
     std::map<std::array<int,4>,nvrhi::SamplerHandle> sampler_cache;
@@ -422,7 +400,7 @@ struct Context {
     ~Context() {
         if (device) {
             try { if(checked)retire_frames(true); } catch (...) { /* Preserve the original diagnostic. */ }
-            try { retire_presentation(); } catch (...) { renderer_fault=true; /* Preserve the original diagnostic. */ }
+            try { swapchain.retire(device,dispatch,diagnostics.frame_execution); } catch (...) { renderer_fault=true; /* Preserve the original diagnostic. */ }
             // Partial recording/submission faults can leave work outside a slot.
             if(renderer_fault)try {++diagnostics.frame_execution.device_idle_waits;device.waitIdle(dispatch);} catch(...) {}
         }
@@ -435,7 +413,7 @@ struct Context {
         skinning.reset();skin_readback=nullptr;
         shadows.reset();
         occlusion.reset();
-        deferred_bindings=nullptr;deferred_pipeline=nullptr;deferred_layout=nullptr;deferred_cs=nullptr;material_base=nullptr;material_surface=nullptr;material_correspondence=nullptr;
+        deferred_lighting.release_gpu();material_base=nullptr;material_surface=nullptr;material_correspondence=nullptr;
         temporal_inputs.release_gpu();
         fog={};reflections={};
         pipeline = nullptr; culled_pipeline=nullptr;
@@ -474,13 +452,10 @@ struct Context {
         checked = nullptr;
         native = nullptr;
         if (device) {
-            for(auto fence:present_fences)device.destroyFence(fence,nullptr,dispatch);
-            for (auto semaphore : finished) device.destroySemaphore(semaphore,nullptr,dispatch);
-            for(auto& slot:slots) {
-                if(slot.acquired)device.destroySemaphore(slot.acquired,nullptr,dispatch);
-                if(slot.timestamps)device.destroyQueryPool(slot.timestamps,nullptr,dispatch);
-            }
-            if (swapchain) device.destroySwapchainKHR(swapchain,nullptr,dispatch);
+            swapchain.clear_images(device,dispatch);
+            for(auto& slot:slots)if(slot.acquired)device.destroySemaphore(slot.acquired,nullptr,dispatch);
+            timestamps.release(device,dispatch);
+            swapchain.destroy(device,dispatch);
             device.destroy(nullptr,dispatch);
         }
         if (surface) instance.destroySurfaceKHR(surface,nullptr,dispatch);
@@ -653,14 +628,14 @@ struct Context {
         const char* maintenance_extension=nullptr;
         if(has_instance(VK_KHR_SURFACE_MAINTENANCE_1_EXTENSION_NAME) && has_device(VK_KHR_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME))maintenance_extension=VK_KHR_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME;
         else if(has_instance(VK_EXT_SURFACE_MAINTENANCE_1_EXTENSION_NAME) && has_device(VK_EXT_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME))maintenance_extension=VK_EXT_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME;
+        bool maintenance1=false;
         vk::PhysicalDeviceSwapchainMaintenance1FeaturesKHR maintenance_features;
         if(maintenance_extension) {
             vk::PhysicalDeviceFeatures2 supported;supported.pNext=&maintenance_features;physical.getFeatures2(&supported,dispatch);
             maintenance1=maintenance_features.swapchainMaintenance1;
             if(maintenance1) {enabled13.pNext=&maintenance_features;device_extensions.push_back(maintenance_extension);}
         }
-        diagnostics.frame_execution.presentation_fences=maintenance1;
-        if(maintenance1)diagnostics.frame_execution.presentation_retirement="maintenance1 present fences";
+        swapchain.configure_present_fences(maintenance1,diagnostics.frame_execution);
         vk::PhysicalDeviceFeatures enabled_features;
         if(deferred) {
             require(physical.getFeatures(dispatch).shaderStorageImageExtendedFormats,"Deferred lighting requires storage image extended formats.");
@@ -776,7 +751,7 @@ struct Context {
         }
         commands = checked->createCommandList();
         require(static_cast<bool>(commands), "NVRHI command-list creation failed.");
-        if(options.profile)prepare_timestamps();
+        if(options.profile)timestamps.prepare(physical,device,queue_family,dispatch,diagnostics);
         if (scene) { prepare_shadows();prepare_scene(); }
     }
 
@@ -1035,83 +1010,13 @@ struct Context {
         for(auto count:counts) {require(count<=info.light_count,"Foreground GPU cluster count exceeds light table.");info.candidate_references+=count;info.max_candidates=std::max(info.max_candidates,std::uint64_t(count));if(count>cluster_capacity)++info.overflow_clusters;}
         info.statistics_available=true;
     }
-    void prepare_timestamps() {
-        if(timestamp_prepared)return;
-        timestamp_prepared=true;
-        const auto limits=physical.getProperties(dispatch).limits;
-        diagnostics.timestamp_period_ns=limits.timestampPeriod;
-        diagnostics.timestamp_valid_bits=physical.getQueueFamilyProperties(dispatch).at(queue_family).timestampValidBits;
-        if(!(limits.timestampPeriod>0) || diagnostics.timestamp_valid_bits==0) {
-            diagnostics.gpu_timing_detail="Selected graphics queue does not support timestamps.";return;
-        }
-        for(auto& slot:slots)slot.timestamps=device.createQueryPool(vk::QueryPoolCreateInfo({},vk::QueryType::eTimestamp,18),nullptr,dispatch);
-        diagnostics.gpu_timestamps=true;
-        diagnostics.gpu_timing_detail="64-bit graphics-queue timestamps; approximate pass intervals, not presentation latency or game frame time.";
-    }
     vk::CommandBuffer native_commands() {
         const auto object=commands->getNativeObject(nvrhi::ObjectTypes::VK_CommandBuffer);
         require(object.pointer!=nullptr,"Native Vulkan command buffer unavailable.");
         return vk::CommandBuffer(static_cast<VkCommandBuffer>(object.pointer));
     }
     void timestamp(std::uint32_t index) {
-        if(timestamp_recording)native_commands().writeTimestamp(index==0 ? vk::PipelineStageFlagBits::eTopOfPipe : vk::PipelineStageFlagBits::eBottomOfPipe,timestamp_pool,index,dispatch);
-    }
-    void collect_timestamps(FrameSlot& slot,double cpu_interval_ms) {
-        if(!slot.timing) {
-            if(slot.performance)slot.performance->gpu_drop(slot.performance_ticket,fp::GpuDropReason::query_unavailable);
-            return;
-        }
-        std::array<std::uint64_t,18> values{};
-        const auto status=device.getQueryPoolResults(slot.timestamps,0,static_cast<std::uint32_t>(values.size()),sizeof(values),values.data(),sizeof(values[0]),vk::QueryResultFlagBits::e64,dispatch);
-        const auto bits=diagnostics.timestamp_valid_bits;
-        const double wrap_ms=std::ldexp(diagnostics.timestamp_period_ns*1e-6,static_cast<int>(bits));
-        if(status!=vk::Result::eSuccess || cpu_interval_ms>=wrap_ms) {
-            ++diagnostics.gpu_samples_dropped;profiling::deferred_counter(slot.profile,"gpu.samples_dropped",diagnostics.gpu_samples_dropped);
-            if(slot.performance)slot.performance->gpu_drop(slot.performance_ticket,fp::GpuDropReason::query_failed);
-            return;
-        }
-        const auto mask=bits==64 ? ~std::uint64_t(0) : (std::uint64_t(1)<<bits)-1;
-        auto ms=[&](std::size_t a,std::size_t b) { return static_cast<double>((values[b]-values[a])&mask)*diagnostics.timestamp_period_ns*1e-6; };
-        if(diagnostics.profile_requested) {
-            timing_sample(diagnostics.skinning_gpu,ms(0,1));timing_sample(diagnostics.light_assignment_gpu,ms(1,2));
-            timing_sample(diagnostics.shadow_gpu,ms(2,3));timing_sample(diagnostics.opaque_gpu,ms(3,4));
-            if(deferred)timing_sample(diagnostics.deferred_lighting_gpu,ms(8,9));
-            if(ao_enabled) {timing_sample(diagnostics.ambient_occlusion_gpu,ms(10,11));timing_sample(diagnostics.ambient_occlusion_filter_gpu,ms(12,13));}
-            if(slot.reconstruction.active)timing_sample(diagnostics.reconstruction.gpu,ms(6,7));
-            if(slot.screen_reflections)timing_sample(diagnostics.screen_reflections_gpu,ms(14,15));
-            if(slot.height_fog)timing_sample(diagnostics.height_fog_gpu,ms(16,17));
-            timing_sample(diagnostics.post_gpu,ms(4,5));timing_sample(diagnostics.total_gpu,ms(0,5));
-        }
-        // GPU values are queue durations observed after completion, not CPU
-        // timeline timestamps. Never fabricate cross-clock synchronization.
-        auto sample=[&](std::string_view name,std::size_t a,std::size_t b) {
-            const long double ns=static_cast<long double>((values[b]-values[a])&mask)*diagnostics.timestamp_period_ns;
-            if(std::isfinite(ns) && ns>=0 && ns<static_cast<long double>(std::numeric_limits<std::uint64_t>::max()))
-                profiling::deferred_counter(slot.profile,name,static_cast<std::uint64_t>(ns),profiling::Kind::gpu);
-        };
-        sample("gpu.skinning.ns",0,1);sample("gpu.light_assignment.ns",1,2);sample("gpu.shadows.ns",2,3);sample("gpu.opaque.ns",3,4);
-        if(deferred)sample("gpu.deferred_lighting.ns",8,9);
-        if(ao_enabled) {sample("gpu.ambient_occlusion.ns",10,11);sample("gpu.ambient_occlusion_filter.ns",12,13);}
-        if(slot.reconstruction.active)sample("gpu.reconstruction.ns",6,7);
-        if(slot.screen_reflections)sample("gpu.screen_reflections.ns",14,15);
-        if(slot.height_fog)sample("gpu.height_fog.ns",16,17);
-        sample("gpu.post.ns",4,5);sample("gpu.total.ns",0,5);
-        if(slot.performance) {
-            fp::GpuTiming timing;bool valid=true;
-            auto duration=[&](std::size_t a,std::size_t b) {
-                const long double ns=static_cast<long double>((values[b]-values[a])&mask)*diagnostics.timestamp_period_ns;
-                if(!std::isfinite(ns) || ns<0 || ns>=static_cast<long double>(std::numeric_limits<std::uint64_t>::max())) {valid=false;return std::uint64_t{0};}
-                return static_cast<std::uint64_t>(ns);
-            };
-            timing.total_ns=duration(0,5);timing.skinning_ns=duration(0,1);timing.light_assignment_ns=duration(1,2);
-            timing.shadows_ns=duration(2,3);timing.opaque_ns=duration(3,4);timing.post_ns=duration(4,5);
-            timing.pass_mask=fp::GpuPass::total|fp::GpuPass::skinning|fp::GpuPass::light_assignment|fp::GpuPass::shadows|fp::GpuPass::opaque|fp::GpuPass::post;
-            if(deferred) {timing.deferred_lighting_ns=duration(8,9);timing.pass_mask|=fp::GpuPass::deferred_lighting;}
-            if(ao_enabled) {timing.ambient_occlusion_ns=duration(10,11);timing.ambient_occlusion_filter_ns=duration(12,13);timing.pass_mask|=fp::GpuPass::ambient_occlusion|fp::GpuPass::ambient_occlusion_filter;}
-            if(slot.reconstruction.active) {timing.reconstruction_ns=duration(6,7);timing.pass_mask|=fp::GpuPass::reconstruction;}
-            if(valid)slot.performance->gpu_complete(slot.performance_ticket,timing);
-            else slot.performance->gpu_drop(slot.performance_ticket,fp::GpuDropReason::invalid_timing);
-        }
+        if(timestamps.recording())timestamps.write(native_commands(),dispatch,index);
     }
 
     void prepare_shadows() {
@@ -1260,7 +1165,7 @@ struct Context {
         }
     }
     void invalidate_environment_bindings() {
-        material_cache.clear();bindings=nullptr;deferred_bindings=nullptr;deferred_binding_key={};
+        material_cache.clear();bindings=nullptr;deferred_lighting.invalidate_bindings();
         viewmodel_draws.clear();if(viewmodel)viewmodel->materials.clear();
     }
     void prepare_environment(const LightingEnvironment& lighting) {
@@ -1407,7 +1312,7 @@ struct Context {
     }
     void allocate_deferred_materials() {
         if(!deferred)return;
-        deferred_bindings=nullptr;deferred_binding_key={};
+        deferred_lighting.invalidate_bindings();
         const auto& hdr=scene_hdr->getDesc();
         auto allocate=[&](nvrhi::Format pixel_format,vk::Format native_format,const char* name) {
             const auto needed=vk::FormatFeatureFlagBits::eColorAttachment|vk::FormatFeatureFlagBits::eSampledImage|vk::FormatFeatureFlagBits::eTransferDst;
@@ -1467,7 +1372,7 @@ struct Context {
         }
         if(auto* source=reflections.radiance()) {
             retire_frames(true);
-            deferred_bindings=nullptr;
+            deferred_lighting.invalidate_bindings();
             detach_world_outputs(source);
             reflections.clear_targets();
         }
@@ -1521,61 +1426,9 @@ struct Context {
             fog.clear_targets();
         }
     }
-    void prepare_deferred_lighting() {
-        if(!deferred)return;
-        const bool reflection_variant=bool(reflections.roughness());
-        if(deferred_reflection_variant!=reflection_variant) {
-            deferred_reflection_variant=reflection_variant;
-            deferred_bindings=nullptr;
-            deferred_pipeline=nullptr;
-            deferred_layout=nullptr;
-        }
-        if(!deferred_layout) {
-            const auto compute=nvrhi::ShaderDesc(nvrhi::ShaderType::Compute).setEntryName("compute_main");
-            if(reflection_variant && scene_products_enabled)
-                deferred_cs=ao_enabled ? create_embedded_shader(checked,compute,poima_deferred_lighting_ao_reflection_cs) : create_embedded_shader(checked,compute,poima_deferred_lighting_reflection_cs);
-            else if(reflection_variant)
-                deferred_cs=ao_enabled ? create_embedded_shader(checked,compute,poima_deferred_lighting_color_ao_reflection_cs) : create_embedded_shader(checked,compute,poima_deferred_lighting_color_reflection_cs);
-            else if(scene_products_enabled)
-                deferred_cs=ao_enabled ? create_embedded_shader(checked,compute,poima_deferred_lighting_ao_cs) : create_embedded_shader(checked,compute,poima_deferred_lighting_cs);
-            else
-                deferred_cs=ao_enabled ? create_embedded_shader(checked,compute,poima_deferred_lighting_color_ao_cs) : create_embedded_shader(checked,compute,poima_deferred_lighting_color_cs);
-            auto layout=nvrhi::BindingLayoutDesc().setVisibility(nvrhi::ShaderType::Compute).addItem(nvrhi::BindingLayoutItem::ConstantBuffer(1));
-            for(std::uint32_t i=0;i<4;++i)layout.addItem(nvrhi::BindingLayoutItem::Texture_SRV(i));
-            layout.addItem(nvrhi::BindingLayoutItem::Texture_UAV(0));
-            if(scene_products_enabled)for(std::uint32_t i=1;i<4;++i)layout.addItem(nvrhi::BindingLayoutItem::Texture_UAV(i));
-            if(reflection_variant)layout.addItem(nvrhi::BindingLayoutItem::Texture_UAV(4));
-            layout.addItem(nvrhi::BindingLayoutItem::Texture_SRV(5));
-            for(std::uint32_t i=6;i<=8;++i)layout.addItem(nvrhi::BindingLayoutItem::StructuredBuffer_SRV(i));
-            for(std::uint32_t i=10;i<=12;++i)layout.addItem(nvrhi::BindingLayoutItem::Texture_SRV(i));
-            layout.addItem(nvrhi::BindingLayoutItem::Sampler(5));
-            if(ao_enabled)layout.addItem(nvrhi::BindingLayoutItem::Texture_SRV(4));
-            deferred_layout=checked->createBindingLayout(layout);require(deferred_cs && deferred_layout,"Deferred shader/layout creation failed.");
-            deferred_pipeline=checked->createComputePipeline(nvrhi::ComputePipelineDesc().setComputeShader(deferred_cs).addBindingLayout(deferred_layout));
-            require(bool(deferred_pipeline),"Deferred lighting pipeline creation failed.");
-        }
-        const auto environment=environment_ibl.bound();
-        const std::array<const void*,19> key={frame_buffer.Get(),material_base.Get(),material_surface.Get(),material_correspondence.Get(),depth.Get(),shadows.texture(),light_buffer.Get(),cluster_counts.Get(),cluster_indices.Get(),scene_hdr.Get(),scene_normal.Get(),scene_motion.Get(),scene_motion_valid.Get(),occlusion.filtered(),environment.diffuse,environment.specular,environment.brdf,environment.sampler,reflections.roughness()};
-        if(deferred_bindings && key==deferred_binding_key)return;
-        auto desc=nvrhi::BindingSetDesc().addItem(nvrhi::BindingSetItem::ConstantBuffer(1,frame_buffer))
-            .addItem(nvrhi::BindingSetItem::Texture_SRV(0,material_base)).addItem(nvrhi::BindingSetItem::Texture_SRV(1,material_surface))
-            .addItem(nvrhi::BindingSetItem::Texture_SRV(2,material_correspondence)).addItem(nvrhi::BindingSetItem::Texture_SRV(3,depth))
-            .addItem(nvrhi::BindingSetItem::Texture_SRV(5,shadows.texture())).addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(6,light_buffer))
-            .addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(7,cluster_counts)).addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(8,cluster_indices))
-            .addItem(nvrhi::BindingSetItem::Texture_UAV(0,scene_hdr));
-        if(scene_products_enabled)desc.addItem(nvrhi::BindingSetItem::Texture_UAV(1,scene_normal))
-            .addItem(nvrhi::BindingSetItem::Texture_UAV(2,scene_motion)).addItem(nvrhi::BindingSetItem::Texture_UAV(3,scene_motion_valid));
-        if(ao_enabled)desc.addItem(nvrhi::BindingSetItem::Texture_SRV(4,occlusion.filtered()));
-        if(reflection_variant)desc.addItem(nvrhi::BindingSetItem::Texture_UAV(4,reflections.roughness()));
-        environment_ibl.bind(desc);
-        deferred_bindings=checked->createBindingSet(desc,deferred_layout);require(bool(deferred_bindings),"Deferred lighting binding creation failed.");deferred_binding_key=key;
-    }
     void dispatch_deferred_lighting() {
         timestamp(8);
-        if(scene_visible) {
-            nvrhi::ComputeState state;state.pipeline=deferred_pipeline;state.bindings.push_back(deferred_bindings);commands->setComputeState(state);
-            const auto& desc=scene_hdr->getDesc();commands->dispatch((desc.width+7)/8,(desc.height+7)/8,1);
-        }
+        if(scene_visible)deferred_lighting.dispatch(*commands.Get(),*scene_hdr.Get());
         timestamp(9);
     }
     bool temporal_sprites_active() const noexcept { return reconstruction && !sprite_batches.empty(); }
@@ -2168,22 +2021,10 @@ struct Context {
         diagnostics.scene_observed=renderer_scene_result(*scene);
     }
 
-    void retire_presentation() {
-        for(std::size_t i=0;i<present_fences.size();++i)if(present_pending[i]) {
-            require(device.waitForFences(1,&present_fences[i],true,5'000'000'000ULL,dispatch)==vk::Result::eSuccess,
-                "Presentation retirement timed out; recreate the renderer session.");
-            present_pending[i]=false;
-        }
-        if(!maintenance1) {
-            // Bounded compatibility policy on extension-absent devices. This
-            // conventional idle cleanup is not formal presentation completion.
-            ++diagnostics.frame_execution.device_idle_waits;device.waitIdle(dispatch);
-        }
-    }
     bool rebuild(const RenderOptions& options) {
         swapchain_dirty=true;
         retire_frames(true);
-        retire_presentation();
+        swapchain.retire(device,dispatch,diagnostics.frame_execution);
         temporal_inputs.clear_targets();
         clear_sprite_targets();
         fog.clear_targets();reflections.clear_targets();
@@ -2201,7 +2042,7 @@ struct Context {
         editor_ui.detach_targets();
 #endif
         for(auto& slot:slots) {slot.sprite_depth=nullptr;slot.sprite_bindings.clear();}
-        framebuffers.clear();sky_framebuffers.clear(); images.clear(); depth=nullptr; multisample_color=nullptr; scene_hdr=nullptr; scene_normal=nullptr; scene_motion=nullptr;scene_motion_valid=nullptr;material_base=nullptr;material_surface=nullptr;material_correspondence=nullptr;occlusion.clear_targets();deferred_bindings=nullptr;deferred_binding_key={};staging=nullptr;
+        framebuffers.clear();sky_framebuffers.clear(); images.clear(); depth=nullptr; multisample_color=nullptr; scene_hdr=nullptr; scene_normal=nullptr; scene_motion=nullptr;scene_motion_valid=nullptr;material_base=nullptr;material_surface=nullptr;material_correspondence=nullptr;occlusion.clear_targets();deferred_lighting.invalidate_bindings();staging=nullptr;
         for(auto& texture:probe_staging)texture=nullptr;
         fsr3_history_readback=nullptr;
         history={};
@@ -2210,11 +2051,8 @@ struct Context {
         editor_ui.release_scene_image();
 #endif
         checked->runGarbageCollection();
-        for(auto semaphore:finished) device.destroySemaphore(semaphore,nullptr,dispatch);
-        finished.clear(); initialized.clear();
-        for(auto fence:present_fences)device.destroyFence(fence,nullptr,dispatch);
-        present_fences.clear();present_pending.clear();
-        device.destroySwapchainKHR(swapchain,nullptr,dispatch); swapchain=nullptr;
+        swapchain.clear_images(device,dispatch);
+        swapchain.destroy(device,dispatch);
         const auto previous_format=format;
         if(!create_swapchain(options)) { swapchain_dirty=true; return false; }
         if(format!=previous_format) { renderer_fault=true;throw std::runtime_error("Surface format changed; recreate the renderer session."); }
@@ -2225,72 +2063,22 @@ struct Context {
     }
 
     bool create_swapchain(const RenderOptions& options) {
-        const auto caps = physical.getSurfaceCapabilitiesKHR(surface,dispatch);
-        // Native minimize/restore can race SDL's queued size notification.
-        // Zero surface extent is a suspended window, not a device failure.
-        if(caps.currentExtent.width==0 || caps.currentExtent.height==0) return false;
-        const auto formats = physical.getSurfaceFormatsKHR(surface,dispatch);
-        require(!formats.empty(), "No Vulkan surface formats are available.");
-        vk::SurfaceFormatKHR selected;
-        nvrhi::Format nvrhi_format = nvrhi::Format::UNKNOWN;
-        // Prefer sRGB attachments for scene previews: lighting and MSAA resolve
-        // operate in linear light. Preserve the triangle fixture's old format.
-        const std::array preferred_formats = scene
-            ? std::array{vk::Format::eB8G8R8A8Srgb, vk::Format::eR8G8B8A8Srgb, vk::Format::eB8G8R8A8Unorm, vk::Format::eR8G8B8A8Unorm}
-            : std::array{vk::Format::eB8G8R8A8Unorm, vk::Format::eR8G8B8A8Unorm, vk::Format::eB8G8R8A8Srgb, vk::Format::eR8G8B8A8Srgb};
-        for (const auto preferred : preferred_formats) {
-            const auto found = std::find_if(formats.begin(), formats.end(), [preferred](const auto& item) {
-                return item.format == preferred && item.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear;
-            });
-            if (found == formats.end()) continue;
-            selected = *found;
-            if (preferred == vk::Format::eB8G8R8A8Unorm) nvrhi_format = nvrhi::Format::BGRA8_UNORM;
-            if (preferred == vk::Format::eR8G8B8A8Unorm) nvrhi_format = nvrhi::Format::RGBA8_UNORM;
-            if (preferred == vk::Format::eB8G8R8A8Srgb) nvrhi_format = nvrhi::Format::SBGRA8_UNORM;
-            if (preferred == vk::Format::eR8G8B8A8Srgb) nvrhi_format = nvrhi::Format::SRGBA8_UNORM;
-            break;
-        }
-        require(nvrhi_format != nvrhi::Format::UNKNOWN, "No supported 8-bit RGBA/BGRA surface format.");
-        format = selected.format;
         // Player/editor owners may request a screenshot after startup. Reserve
         // swapchain transfer capability now; player readback allocation remains
         // lazy unless a final capture was configured. Ordinary frames skip copies.
         const bool capture_enabled=editor || hosted || player_context || !options.capture.empty();
-        const auto required_usage = vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferDst |
-            (capture_enabled ? vk::ImageUsageFlagBits::eTransferSrc : vk::ImageUsageFlags{});
-        require((caps.supportedUsageFlags & required_usage) == required_usage, "Surface lacks required render/capture image usage.");
-        extent = caps.currentExtent;
-        if (extent.width == std::numeric_limits<std::uint32_t>::max()) {
-            extent.width = std::clamp(options.width, caps.minImageExtent.width, caps.maxImageExtent.width);
-            extent.height = std::clamp(options.height, caps.minImageExtent.height, caps.maxImageExtent.height);
-        }
-        require(extent.width > 0 && extent.height > 0, "The window has an empty rendering extent.");
+        const auto plan=render_vulkan_frame::plan_swapchain(physical,surface,dispatch,
+            {options.width,options.height},scene!=nullptr,capture_enabled);
+        if(!plan)return false;
+        format=plan->create_info.imageFormat;
+        extent=plan->create_info.imageExtent;
         if(player_context)require(extent.width<=4096 && extent.height<=4096,
             "Player drawable exceeds the initial 4096-pixel limit.");
         game_ui.validate(scene,ui_target());
         if(editor || hosted)require(std::uint64_t(extent.width)*extent.height<=128u*1024u*1024u/4u,
             "GUI surface exceeds the 128 MiB RGBA staging budget.");
-        std::uint32_t count = caps.minImageCount + 1;
-        if (caps.maxImageCount > 0) count = std::min(count, caps.maxImageCount);
-        vk::CompositeAlphaFlagBitsKHR alpha = vk::CompositeAlphaFlagBitsKHR::eOpaque;
-        for (const auto candidate : {vk::CompositeAlphaFlagBitsKHR::eOpaque, vk::CompositeAlphaFlagBitsKHR::ePreMultiplied,
-                                    vk::CompositeAlphaFlagBitsKHR::ePostMultiplied, vk::CompositeAlphaFlagBitsKHR::eInherit}) {
-            if (caps.supportedCompositeAlpha & candidate) { alpha = candidate; break; }
-        }
-        vk::SwapchainCreateInfoKHR swapchain_info;
-        swapchain_info.surface = surface;
-        swapchain_info.minImageCount = count;
-        swapchain_info.imageFormat = format;
-        swapchain_info.imageColorSpace = selected.colorSpace;
-        swapchain_info.imageExtent = extent;
-        swapchain_info.imageArrayLayers = 1;
-        swapchain_info.imageUsage = required_usage;
-        swapchain_info.imageSharingMode = vk::SharingMode::eExclusive;
-        swapchain_info.preTransform = caps.currentTransform;
-        swapchain_info.compositeAlpha = alpha;
-        swapchain_info.presentMode = vk::PresentModeKHR::eFifo;
-        swapchain_info.clipped = true;
-        swapchain = device.createSwapchainKHR(swapchain_info,nullptr,dispatch);
+        swapchain.create(device,dispatch,*plan);
+        const auto nvrhi_format=plan->texture_format;
         nvrhi::TextureDesc texture_desc;
         texture_desc.width = extent.width;
         texture_desc.height = extent.height;
@@ -2376,7 +2164,7 @@ struct Context {
             diagnostics.scene_products.motion_available=bool(scene_motion);diagnostics.scene_products.motion_buffer_bytes=motion_bytes;
         }
         if(scene)allocate_deferred_materials();
-        for (const auto image : device.getSwapchainImagesKHR(swapchain,dispatch)) {
+        for (const auto image : swapchain.images(device,dispatch)) {
             auto texture = checked->createHandleForNativeTexture(nvrhi::ObjectTypes::VK_Image,
                 nvrhi::Object(static_cast<VkImage>(image)), texture_desc);
             require(static_cast<bool>(texture), "NVRHI swapchain image wrapping failed.");
@@ -2403,14 +2191,12 @@ struct Context {
 #if POIMA_EDITOR
             if(editor)editor_ui.add_framebuffer(*checked.Get(),texture.Get());
 #endif
-            finished.push_back(device.createSemaphore({},nullptr,dispatch));
-            if(maintenance1) {present_fences.push_back(device.createFence({},nullptr,dispatch));present_pending.push_back(false);}
+            swapchain.add_image(device,dispatch);
         }
         if(fxaa_enabled) {
             spatial_aa.prepare(*checked.Get(),*game_ui.framebuffer(0));
             diagnostics.fxaa_buffer_bytes=spatial_aa.buffer_bytes();
         }
-        initialized.resize(images.size(), false);
         if(!product_probes.empty()) {
             render_readback::allocate_product_probes(*checked.Get(),
                 static_cast<std::uint32_t>(product_probes.size()),ao_enabled,probe_staging);
@@ -2527,7 +2313,12 @@ struct Context {
                     require(status==vk::Result::eSuccess,"GPU frame completion timed out; recreate the renderer session.");
                 }
                 if(slot.has_skin)render_skinning::validate_status(*checked.Get(),slot.skin_readback,slot.skin_ids);
-                collect_light_assignment(slot);collect_viewmodel_assignment(slot);collect_timestamps(slot,elapsed_ms(slot.started));
+                collect_light_assignment(slot);collect_viewmodel_assignment(slot);
+                timestamps.collect(device,dispatch,retire_slot%diagnostics.frame_execution.limit,{
+                    .recorded=slot.timing,.deferred=deferred,.ambient_occlusion=ao_enabled,
+                    .reconstruction=slot.reconstruction.active,.screen_reflections=slot.screen_reflections,
+                    .height_fog=slot.height_fog,.cpu_interval_ms=elapsed_ms(slot.started),.profile=slot.profile,
+                    .performance=slot.performance,.performance_ticket=slot.performance_ticket},diagnostics);
                 auto reconstruction_gpu=diagnostics.reconstruction.gpu;diagnostics.reconstruction=slot.reconstruction;diagnostics.reconstruction.gpu=reconstruction_gpu;
                 diagnostics.last_draws=slot.draws;diagnostics.light_assignment=slot.lights;diagnostics.viewmodel=slot.viewmodel_diagnostics;
                 diagnostics.scene_products.history_valid=slot.history_valid;diagnostics.scene_products.history_sequence=slot.history_sequence;
@@ -2800,19 +2591,7 @@ struct Context {
             const auto& desc=framebuffers.at(index)->getDesc();require(desc.colorAttachments.size()==4,"Deferred framebuffer binding count changed.");
             identity(f.material_base,desc.colorAttachments[0].texture);identity(f.material_surface,desc.colorAttachments[1].texture);
             identity(f.hdr,desc.colorAttachments[2].texture);identity(f.material_correspondence,desc.colorAttachments[3].texture);identity(f.depth,desc.depthAttachment.texture);
-            for(const auto& binding:deferred_bindings->getDesc()->bindings) {
-                if(binding.type==nvrhi::ResourceType::Texture_SRV) {
-                    if(binding.slot>=10) {environment_identity(binding.slot,binding.resourceHandle);continue;}
-                    const auto id=binding.slot==0 ? f.material_base : binding.slot==1 ? f.material_surface : binding.slot==2 ? f.material_correspondence : binding.slot==3 ? f.depth : binding.slot==4 ? f.ao_filtered : f.shadow;identity(id,binding.resourceHandle);
-                } else if(binding.type==nvrhi::ResourceType::Texture_UAV) {
-                    const auto id=binding.slot==0 ? f.hdr : binding.slot==1 ? f.normal : binding.slot==2 ? f.motion :
-                        binding.slot==3 ? f.motion_valid : f.reflection_roughness;
-                    identity(id,binding.resourceHandle);
-                } else if(binding.type==nvrhi::ResourceType::ConstantBuffer)identity(f.frame,binding.resourceHandle);
-                else if(binding.type==nvrhi::ResourceType::StructuredBuffer_SRV) {
-                    const auto id=binding.slot==6 ? f.lights : binding.slot==7 ? f.counts : f.indices;if(id!=rs::none)identity(id,binding.resourceHandle);
-                }
-            }
+            deferred_lighting.verify_bindings(plan);
         } else framebuffer(framebuffers.at(index),f.color,f.depth,f.normal);
         if(plan.settings.screen_reflections)reflections.verify_bindings(plan,environment_ibl.bound().sampler);
         if(plan.settings.height_fog)fog.verify_bindings(plan);
@@ -3030,17 +2809,23 @@ struct Context {
         prepare_surface_mark_frame(slot);prepare_submission_history();prepare_stream_geometry(slot);
         prepare_draw_batches();prepare_temporal_submission();
         if(ao_enabled)occlusion.prepare(*checked.Get(),{frame_buffer.Get(),depth.Get(),material_surface.Get(),material_correspondence.Get()});
-        prepare_deferred_lighting();
+        if(deferred)deferred_lighting.prepare(*checked.Get(),{
+            .frame=frame_buffer.Get(),.material_base=material_base.Get(),.material_surface=material_surface.Get(),
+            .material_correspondence=material_correspondence.Get(),.depth=depth.Get(),.shadow=shadows.texture(),
+            .lights=light_buffer.Get(),.counts=cluster_counts.Get(),.indices=cluster_indices.Get(),
+            .hdr=scene_hdr.Get(),.normal=scene_normal.Get(),.motion=scene_motion.Get(),.motion_valid=scene_motion_valid.Get(),
+            .ao=occlusion.filtered(),.reflection_roughness=reflections.roughness()},
+            environment_ibl,scene_products_enabled,ao_enabled);
         // Query storage belongs to this Context. Create it before acquiring an
         // image; stopped traces leave it allocated but perform no query work.
-        if((profiling::active() || bool(performance_token)) && !timestamp_prepared)prepare_timestamps();
-        timestamp_pool=slot.timestamps;
-        timestamp_recording=bool(timestamp_pool) && (diagnostics.profile_requested || profiling::active() || bool(performance_token));
+        if(profiling::active() || bool(performance_token))timestamps.prepare(physical,device,queue_family,dispatch,diagnostics);
+        timestamps.begin(next_slot%diagnostics.frame_execution.limit,
+            diagnostics.profile_requested || profiling::active() || bool(performance_token));
         auto plan=make_schedule(capture_frame);
         plan.validate(true);
         // A finite acquire timeout bounds the experiment if presentation stalls.
         vk::ResultValue<std::uint32_t> next(vk::Result::eSuccess,0);
-        try { profiling::Scope acquire_scope("render.acquire");PerformanceWallScope wall(performance_cpu?&performance_cpu->work.acquire_ns:nullptr);next=device.acquireNextImageKHR(swapchain, (editor || hosted) ? 16'000'000ULL : 5'000'000'000ULL,slot.acquired,{},dispatch); }
+        try { profiling::Scope acquire_scope("render.acquire");PerformanceWallScope wall(performance_cpu?&performance_cpu->work.acquire_ns:nullptr);next=swapchain.acquire(device,dispatch,(editor || hosted) ? 16'000'000ULL : 5'000'000'000ULL,slot.acquired); }
         catch(const vk::OutOfDateKHRError&) { swapchain_dirty=true; return false; }
         if((editor || hosted) && (next.result==vk::Result::eTimeout || next.result==vk::Result::eNotReady))return false;
         require(next.result == vk::Result::eSuccess || next.result == vk::Result::eSuboptimalKHR,
@@ -3053,11 +2838,7 @@ struct Context {
             ~FrameFailure() { if(!complete) {context.renderer_fault=true;context.history={};context.pending_history={};} }
         } failure{*this};
         const auto index = next.value;
-        if(maintenance1 && present_pending[index]) {
-            PerformanceWallScope wall(performance_cpu?&performance_cpu->work.gpu_wait_ns:nullptr);
-            require(device.waitForFences(1,&present_fences[index],true,5'000'000'000ULL,dispatch)==vk::Result::eSuccess,"Previous image presentation did not retire.");
-            require(device.resetFences(1,&present_fences[index],dispatch)==vk::Result::eSuccess,"Presentation fence reset failed.");present_pending[index]=false;
-        }
+        swapchain.wait_for_image(device,dispatch,index,performance_cpu);
         plan.bind_swapchain(reinterpret_cast<std::uintptr_t>(images.at(index).Get()),index);
         plan.validate();
         verify_schedule_bindings(plan,index);
@@ -3074,7 +2855,7 @@ struct Context {
             vk::AccessFlagBits::eMemoryRead|vk::AccessFlagBits::eMemoryWrite);
         native_commands().pipelineBarrier(vk::PipelineStageFlagBits::eAllCommands,vk::PipelineStageFlagBits::eAllCommands,
             {},1,&scratch_dependency,0,nullptr,0,nullptr,dispatch);
-        if(timestamp_recording)native_commands().resetQueryPool(timestamp_pool,0,18,dispatch);
+        if(timestamps.recording())timestamps.reset_queries(native_commands(),dispatch);
         timestamp(0);
         // Only the acquired image is late-bound. All other resources were
         // resolved after preparation; no recording pass allocates/rebinds them.
@@ -3125,7 +2906,7 @@ struct Context {
                 timestamp(3);break;
             case render_schedule::PassId::scene_clear:
                 commands->beginTrackingTextureState(planned_texture(resources.swapchain),nvrhi::AllSubresources,
-                    initialized[index] ? nvrhi::ResourceStates::Present : nvrhi::ResourceStates::Common);
+                    swapchain.initialized(index) ? nvrhi::ResourceStates::Present : nvrhi::ResourceStates::Common);
                 commands->clearTextureFloat(planned_texture(resources.color),nvrhi::AllSubresources,nvrhi::Color(0.025f,0.035f,0.055f,1.0f));
                 if(resources.normal!=render_schedule::none) {
                     commands->clearTextureFloat(planned_texture(resources.normal),nvrhi::AllSubresources,nvrhi::Color(0,0,0,0));
@@ -3219,12 +3000,12 @@ struct Context {
         {
         profiling::Scope submit_scope("render.submit");
         PerformanceWallScope wall(performance_cpu?&performance_cpu->work.submit_ns:nullptr);
-        native->queueSignalSemaphore(nvrhi::CommandQueue::Graphics, finished[index], 0);
+        native->queueSignalSemaphore(nvrhi::CommandQueue::Graphics, swapchain.finished(index), 0);
         slot.started=frame_started;slot.draws=pending_draws;slot.lights=submitted_lights;
         if(slot_viewmodel && pending_viewmodel)slot_viewmodel->draws.camera_batches=pending_viewmodel->draws.camera_batches;
         slot.viewmodel_diagnostics.swap(slot_viewmodel);slot.has_skin=render_skinning::has_draws({draws,viewmodel_draws});slot.viewmodel=viewmodel_enabled ? viewmodel : nullptr;
         slot.skin_ids.swap(submitted_skin_ids);slot.screen_reflections=plan.settings.screen_reflections;slot.height_fog=plan.settings.height_fog;
-        slot.profile=profiling::capture_deferred();slot.timing=timestamp_recording;
+        slot.profile=profiling::capture_deferred();slot.timing=timestamps.recording();
         slot.history_valid=pending_history_valid;slot.history_sequence=scene ? history_sequence+1 : 0;slot.history_reset=pending_history_reset;
         slot.capture_probes=capture_frame && !product_probes.empty();slot.reconstruction=pending_reconstruction;
         slot.submission=checked->executeCommandList(commands);
@@ -3245,25 +3026,11 @@ struct Context {
         profiling::counter("renderer.submitted_submissions",diagnostics.frame_execution.submitted);
         profiling::counter("renderer.outstanding_submissions",diagnostics.frame_execution.outstanding);
         }
-        vk::SwapchainPresentFenceInfoKHR fence_info;
-        vk::PresentInfoKHR present_info;
-        if(maintenance1) {fence_info.swapchainCount=1;fence_info.pFences=&present_fences[index];present_info.pNext=&fence_info;}
-        present_info.waitSemaphoreCount = 1;
-        present_info.pWaitSemaphores = &finished[index];
-        present_info.swapchainCount = 1;
-        present_info.pSwapchains = &swapchain;
-        present_info.pImageIndices = &index;
-        vk::Result presented;
-        { profiling::Scope present_scope("render.present");PerformanceWallScope wall(performance_cpu?&performance_cpu->work.present_ns:nullptr);
-          presented=static_cast<vk::Result>(dispatch.vkQueuePresentKHR(static_cast<VkQueue>(queue),reinterpret_cast<const VkPresentInfoKHR*>(&present_info)));
-          if(performance_cpu) {performance_cpu->present_return_ns=fp::Recorder::now_ns();performance_cpu->successful_present=presented==vk::Result::eSuccess || presented==vk::Result::eSuboptimalKHR;}
-        }
-        // OUT_OF_DATE still enqueues the present semaphore wait and fence.
-        if(maintenance1 && (presented==vk::Result::eSuccess || presented==vk::Result::eSuboptimalKHR || presented==vk::Result::eErrorOutOfDateKHR || presented==vk::Result::eErrorSurfaceLostKHR || presented==vk::Result::eErrorFullScreenExclusiveModeLostEXT))present_pending[index]=true;
+        const auto presented=swapchain.present(queue,dispatch,index,performance_cpu);
         swapchain_dirty = next.result==vk::Result::eSuboptimalKHR || presented==vk::Result::eSuboptimalKHR || presented==vk::Result::eErrorOutOfDateKHR;
         require(presented == vk::Result::eSuccess || presented == vk::Result::eSuboptimalKHR || presented==vk::Result::eErrorOutOfDateKHR,
             "Vulkan presentation failed.");
-        initialized[index] = true;
+        swapchain.mark_initialized(index);
         if(capture_frame || diagnostics.frame_execution.limit==1)retire_frames(true);
         if(diagnostics.profile_requested) {
             timing_sample(diagnostics.record_cpu,record_ms);timing_sample(diagnostics.render_call_cpu,elapsed_ms(frame_started));

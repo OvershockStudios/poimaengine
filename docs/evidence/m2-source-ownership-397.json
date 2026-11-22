@@ -1,0 +1,312 @@
+{
+  "format": "poima.source-ownership.qualification.v1",
+  "version": "0.0.397",
+  "baseline_version": "0.0.396",
+  "baseline_commit": "b1d043d122ba7ddb127dc88834a1803ef882ce0b",
+  "scope": "Editable scene assembly, Vulkan swapchain synchronization and timestamps, and deferred lighting compile separately.",
+  "owner_line_counts": {
+    "src/world.cpp": {
+      "before": 2150,
+      "after": 2024
+    },
+    "src/render_smoke.cpp": {
+      "before": 3608,
+      "after": 3375
+    }
+  },
+  "new_translation_units": [
+    "src/world_authored_scene.cpp",
+    "src/render_vulkan_frame.cpp",
+    "src/render_deferred_lighting.cpp"
+  ],
+  "source_manifest_sha256": "643555d6c749d226f54e54863acd242655e92ebe725ea7102523a98a1ded5314",
+  "ubuntu": {
+    "binary_sha256": "56f7f19d4d7165c49cbb369c72e1772a9d4bf9038ac8aa440080e7e444638d1d",
+    "junit_sha256": "54ed2e01d878c20ed606c1be1a71854a66b56f70643ac6d851a5c56d7d7ba851",
+    "ctest": [
+      "world_contract",
+      "world_history_contract",
+      "project_contract",
+      "authoring_contract_identity",
+      "world_particles_contract",
+      "world_instances_contract",
+      "world_foliage_contract",
+      "world_templates_contract",
+      "asset_references_contract",
+      "authoring_response_compatibility",
+      "world_water_contract",
+      "world_source_stale_native",
+      "world_asset_cache_native",
+      "authoring_core_conformance",
+      "cli_contract",
+      "render_schedule_native",
+      "world_save_native",
+      "world_tick_native",
+      "shared_session_contract",
+      "world_session_native",
+      "world_schema_native"
+    ]
+  },
+  "windows": {
+    "binary_sha256": "72524f17b551cddbdd4d8a54674bba1d67fb78f6df7c48867755615685127f50",
+    "manifest_sha256": "646e9e9585f830ff7362170e72f1b4ceceaca35a20de66b58f34199f9faefc8d",
+    "frame_fixture_baseline_binary_sha256": "8b0a65d4dfeb58b8e2ea58c0dbce03f0037e22ee5b7c9ff8058d471eaf03bdb3",
+    "frame_fixture_candidate_binary_sha256": "00fc78e3815e8ad1c59340bcf91f79dfa770c22302481761421527de827319dc",
+    "devices": {
+      "AMD Radeon(TM) Graphics": {
+        "native_frame_report_sha256": "8c7d95bbfc656d0672d18b30367443904c410d6859370ebeab3b0e3913689d36",
+        "vulkan_sync_validation": true,
+        "frame_slot_counts": [
+          1,
+          2
+        ],
+        "gpu_timestamp_queries": {
+          "1": {
+            "churn": 61,
+            "secondary": 61,
+            "overflow": 90,
+            "varying": 139,
+            "resized": 148,
+            "recreated": 2,
+            "final": 169,
+            "fresh": 1
+          },
+          "2": {
+            "churn": 61,
+            "secondary": 61,
+            "overflow": 90,
+            "varying": 139,
+            "resized": 148,
+            "recreated": 2,
+            "final": 169,
+            "fresh": 1
+          }
+        },
+        "frame_capture_bytes_equal": {
+          "frame-slots1-churn.bmp": "54d54a2e4a56ade4d8068d8972f9a7cd0b2d43967bfbec98018f58f2289fc696",
+          "frame-slots1-final.bmp": "adfecd835d9c002f687d9d9110053119ccedc694b4ecce67399754a6aafaa4e8",
+          "frame-slots1-fresh.bmp": "adfecd835d9c002f687d9d9110053119ccedc694b4ecce67399754a6aafaa4e8",
+          "frame-slots1-overflow.bmp": "ee53baab838d61f891d607ceb0bdcd2b0b57b0b654cfec28eee8322207895b62",
+          "frame-slots1-recreated.bmp": "ef9b3df84459fc7834c3941be816fc39ee0f5bee6ff4db770d03d42eb79664c5",
+          "frame-slots1-resized.bmp": "51dbf31d1451f65c02fa1134928d65035ea6ba6c211b2677e9c60850ec4babfa",
+          "frame-slots1-secondary.bmp": "ef9b3df84459fc7834c3941be816fc39ee0f5bee6ff4db770d03d42eb79664c5",
+          "frame-slots1-varying.bmp": "0e601d707a3bee5b82fef531c87dfaae11a95ae63d19fc1e52e664266a46b4a6",
+          "frame-slots2-churn.bmp": "54d54a2e4a56ade4d8068d8972f9a7cd0b2d43967bfbec98018f58f2289fc696",
+          "frame-slots2-final.bmp": "adfecd835d9c002f687d9d9110053119ccedc694b4ecce67399754a6aafaa4e8",
+          "frame-slots2-fresh.bmp": "adfecd835d9c002f687d9d9110053119ccedc694b4ecce67399754a6aafaa4e8",
+          "frame-slots2-overflow.bmp": "ee53baab838d61f891d607ceb0bdcd2b0b57b0b654cfec28eee8322207895b62",
+          "frame-slots2-recreated.bmp": "ef9b3df84459fc7834c3941be816fc39ee0f5bee6ff4db770d03d42eb79664c5",
+          "frame-slots2-resized.bmp": "51dbf31d1451f65c02fa1134928d65035ea6ba6c211b2677e9c60850ec4babfa",
+          "frame-slots2-secondary.bmp": "ef9b3df84459fc7834c3941be816fc39ee0f5bee6ff4db770d03d42eb79664c5",
+          "frame-slots2-varying.bmp": "0e601d707a3bee5b82fef531c87dfaae11a95ae63d19fc1e52e664266a46b4a6"
+        },
+        "authored_and_relocated_report_sha256": "12f073b6c7b1db1ef23fa68f64e762f7e803a5427b1b6370afbe8e2cd09030ba",
+        "authored_and_relocated_image_checks": 31,
+        "relocated_replay_matches_own_headless_save": {
+          "none": {
+            "bytes": 24255,
+            "sha256": "9e49346462435462be9ed4126192a8f9065ad25c81a797331abb810f8e8606ee"
+          },
+          "fsr3_native": {
+            "bytes": 24255,
+            "sha256": "9e49346462435462be9ed4126192a8f9065ad25c81a797331abb810f8e8606ee"
+          },
+          "fsr3_quality": {
+            "bytes": 24255,
+            "sha256": "9e49346462435462be9ed4126192a8f9065ad25c81a797331abb810f8e8606ee"
+          }
+        },
+        "baseline_relocated_replay_saves": {
+          "none": {
+            "bytes": 24255,
+            "sha256": "17130bf53f79184eaa60d60859ca9624150d3585414ecec14bae002fe7eb8ce9"
+          },
+          "fsr3_native": {
+            "bytes": 24255,
+            "sha256": "17130bf53f79184eaa60d60859ca9624150d3585414ecec14bae002fe7eb8ce9"
+          },
+          "fsr3_quality": {
+            "bytes": 24255,
+            "sha256": "17130bf53f79184eaa60d60859ca9624150d3585414ecec14bae002fe7eb8ce9"
+          }
+        },
+        "fresh_fixture_world_ids": {
+          "baseline": "6dcba3498cb527e89a537ba14ac95316",
+          "candidate": "97990d0b8a4e77bfc843537c18165d3a"
+        },
+        "authored_and_relocated_capture_bytes_equal": {
+          "combined-deferred-fsr3_native.bmp": "dfd9c9f157bee0f56c61bd3c78ea14ffdd71c4f90480525f9189520714478c34",
+          "combined-deferred-fsr3_quality.bmp": "81b694c2821e4ca5d86a026b6ea087bc098e52c86092326f29c30a08c5dea7ce",
+          "fog-deferred-fsr3_native.bmp": "3a0941ac1769712dc97d9519c6fff0662f419c67177309f79386c18833c1b9d8",
+          "fog-deferred-fsr3_quality.bmp": "a194ec5bb7b933963dd13e80488c95773bc625d0bd1345e6fe8987520fde2060",
+          "fog-forward-fsr3_quality.bmp": "a194ec5bb7b933963dd13e80488c95773bc625d0bd1345e6fe8987520fde2060",
+          "foreground-combined-deferred-fsr3_quality.bmp": "b05b34e4bdb9b1c0a61b9b6cf5ec7dc11f19547fd5c8f733dd5d308f6d0ecd05",
+          "foreground-omitted-deferred-fsr3_quality.bmp": "b05b34e4bdb9b1c0a61b9b6cf5ec7dc11f19547fd5c8f733dd5d308f6d0ecd05",
+          "fsr3_native/frame.bmp": "4b66f2c63f7f75f915cef64c3fc26478fd3b932b1d03967a3aa93d0105f0209d",
+          "fsr3_quality/frame.bmp": "4c73f9582c026f089748e1ab14a97b580bcf39325db599f7b18effd0f9ec0f59",
+          "none/frame.bmp": "deab1ff5fc5ab29340def6738011250741a7b9c043daeff496c658a0902fa35a",
+          "omitted-deferred-fsr3_native.bmp": "d7e85156f37e8059e7fd37212c579686632e72be653688c57fa264e15b0593ef",
+          "omitted-deferred-fsr3_quality.bmp": "775928ff73587ad3afebc25edb065099b7c315358cc88dee8dd81a5737bdf46d",
+          "omitted-deferred-none.bmp": "381a8f1035640a925238c51876b8998846b851827abe28bc61ecc1e3cce7781d",
+          "omitted-forward-fsr3_quality.bmp": "775928ff73587ad3afebc25edb065099b7c315358cc88dee8dd81a5737bdf46d",
+          "reflections-deferred-fsr3_native.bmp": "6c5af3f5aca5c879c6dd070d192cb2482ed558a0cbe1835ae8d83369dddc8885",
+          "reflections-deferred-fsr3_quality.bmp": "25a3a42e5db05987b58f7df3500513c00ef0427b3f7768b804ba54e69b54570a",
+          "relocated-deferred-fsr3_native.bmp": "dfd9c9f157bee0f56c61bd3c78ea14ffdd71c4f90480525f9189520714478c34",
+          "relocated-deferred-fsr3_quality.bmp": "81b694c2821e4ca5d86a026b6ea087bc098e52c86092326f29c30a08c5dea7ce",
+          "relocated-sprites-live-deferred-fsr3_native.bmp": "5045cea7dcb48c962371ce9ecbcdc97c26afcbad854fa1c3e4c95f996a2efda7",
+          "relocated-sprites-live-deferred-fsr3_quality.bmp": "10f65046d0eb2995994202505cc13bfdd6373d6f6d17c5b0b812e9106e17ae68",
+          "sprites-combined-empty-deferred-fsr3_native.bmp": "3206dc47cfeb68080dfdbfd928bbf5856de0568d2295ba51b1595321b2db2a33",
+          "sprites-combined-empty-deferred-fsr3_quality.bmp": "2fd3bb46de5e1ae7f5a0656ae24a5ba45c14527e036ce2e63f63494f933ed5a4",
+          "sprites-combined-live-deferred-fsr3_native.bmp": "5045cea7dcb48c962371ce9ecbcdc97c26afcbad854fa1c3e4c95f996a2efda7",
+          "sprites-combined-live-deferred-fsr3_quality.bmp": "10f65046d0eb2995994202505cc13bfdd6373d6f6d17c5b0b812e9106e17ae68",
+          "sprites-only-empty-deferred-fsr3_native.bmp": "74d342c3c7d0797c24fdb7a04d118b5f7508059cb78f265e9aace4648330b4e2",
+          "sprites-only-empty-deferred-fsr3_quality.bmp": "9c2ef9164042ed7d0171e4e35a9c2f5c195ed4b15a45ed4b77d1f1f78c556a64",
+          "sprites-only-live-deferred-fsr3_native.bmp": "c43516871f141063d6c105e607530963d5e7ec54528928716eeb6fc22e551900",
+          "sprites-only-live-deferred-fsr3_quality.bmp": "3adf79ae4cccacce66637051d2ac88946a10740bf1f8878ec5db946cf6ffe280",
+          "zero-deferred-fsr3_native.bmp": "d7e85156f37e8059e7fd37212c579686632e72be653688c57fa264e15b0593ef",
+          "zero-deferred-fsr3_quality.bmp": "775928ff73587ad3afebc25edb065099b7c315358cc88dee8dd81a5737bdf46d",
+          "zero-deferred-none.bmp": "381a8f1035640a925238c51876b8998846b851827abe28bc61ecc1e3cce7781d"
+        }
+      },
+      "NVIDIA GeForce RTX 4070 Laptop GPU": {
+        "native_frame_report_sha256": "14e92477cb8e5fbccde2bbd423abc965f40d8f0dff6d2128cd45e699f90d0699",
+        "vulkan_sync_validation": true,
+        "frame_slot_counts": [
+          1,
+          2
+        ],
+        "gpu_timestamp_queries": {
+          "1": {
+            "churn": 61,
+            "secondary": 61,
+            "overflow": 90,
+            "varying": 139,
+            "resized": 148,
+            "recreated": 2,
+            "final": 169,
+            "fresh": 1
+          },
+          "2": {
+            "churn": 61,
+            "secondary": 61,
+            "overflow": 90,
+            "varying": 139,
+            "resized": 148,
+            "recreated": 2,
+            "final": 169,
+            "fresh": 1
+          }
+        },
+        "frame_capture_bytes_equal": {
+          "frame-slots1-churn.bmp": "e2a3b8cf4c3d8de82045f83139e7397fb891aed93ef931d71dbda7bbb1e80ea8",
+          "frame-slots1-final.bmp": "b4b85b23f106682ead467cd4612e0ad791d23061886d173c99004a2ea0b99832",
+          "frame-slots1-fresh.bmp": "b4b85b23f106682ead467cd4612e0ad791d23061886d173c99004a2ea0b99832",
+          "frame-slots1-overflow.bmp": "069c888b0e83ad34e9d8bd18172461f719caa399b33ee3fb438577006a2ae063",
+          "frame-slots1-recreated.bmp": "8e03ad338ddaf3e8731a41e00bd2bf3e53d5e15e7c6f99c77a59421dc6208aff",
+          "frame-slots1-resized.bmp": "ef9a5e104253e9ef041572ccddfd56d2b5ab9f8b4e2617e0ef82539b9ac1c993",
+          "frame-slots1-secondary.bmp": "8e03ad338ddaf3e8731a41e00bd2bf3e53d5e15e7c6f99c77a59421dc6208aff",
+          "frame-slots1-varying.bmp": "031cdb4c09bb8095e85b22efaa70d86f9b80273c97f2ad0baebe6f0df55357c6",
+          "frame-slots2-churn.bmp": "e2a3b8cf4c3d8de82045f83139e7397fb891aed93ef931d71dbda7bbb1e80ea8",
+          "frame-slots2-final.bmp": "b4b85b23f106682ead467cd4612e0ad791d23061886d173c99004a2ea0b99832",
+          "frame-slots2-fresh.bmp": "b4b85b23f106682ead467cd4612e0ad791d23061886d173c99004a2ea0b99832",
+          "frame-slots2-overflow.bmp": "069c888b0e83ad34e9d8bd18172461f719caa399b33ee3fb438577006a2ae063",
+          "frame-slots2-recreated.bmp": "8e03ad338ddaf3e8731a41e00bd2bf3e53d5e15e7c6f99c77a59421dc6208aff",
+          "frame-slots2-resized.bmp": "ef9a5e104253e9ef041572ccddfd56d2b5ab9f8b4e2617e0ef82539b9ac1c993",
+          "frame-slots2-secondary.bmp": "8e03ad338ddaf3e8731a41e00bd2bf3e53d5e15e7c6f99c77a59421dc6208aff",
+          "frame-slots2-varying.bmp": "031cdb4c09bb8095e85b22efaa70d86f9b80273c97f2ad0baebe6f0df55357c6"
+        },
+        "authored_and_relocated_report_sha256": "931ec4b300ed2d92fb163a020e6b2b18b82e90dc04bf1a9ff300f4a52e54ecbf",
+        "authored_and_relocated_image_checks": 31,
+        "relocated_replay_matches_own_headless_save": {
+          "none": {
+            "bytes": 24255,
+            "sha256": "ba8a6f708bda9202d7606bfd80a89fccea4d897a12b4f249474986977dcad6b4"
+          },
+          "fsr3_native": {
+            "bytes": 24255,
+            "sha256": "ba8a6f708bda9202d7606bfd80a89fccea4d897a12b4f249474986977dcad6b4"
+          },
+          "fsr3_quality": {
+            "bytes": 24255,
+            "sha256": "ba8a6f708bda9202d7606bfd80a89fccea4d897a12b4f249474986977dcad6b4"
+          }
+        },
+        "baseline_relocated_replay_saves": {
+          "none": {
+            "bytes": 24255,
+            "sha256": "948ec0298ca0e7134f3930e6c72930d702d5d4bebb056540e2158a33b6cbe407"
+          },
+          "fsr3_native": {
+            "bytes": 24255,
+            "sha256": "948ec0298ca0e7134f3930e6c72930d702d5d4bebb056540e2158a33b6cbe407"
+          },
+          "fsr3_quality": {
+            "bytes": 24255,
+            "sha256": "948ec0298ca0e7134f3930e6c72930d702d5d4bebb056540e2158a33b6cbe407"
+          }
+        },
+        "fresh_fixture_world_ids": {
+          "baseline": "a42e50fa2c5a8267046b4e9819183982",
+          "candidate": "afa9e81e700698c63ce814a7fe859aa5"
+        },
+        "authored_and_relocated_capture_bytes_equal": {
+          "combined-deferred-fsr3_native.bmp": "8adf017be40af6f414208769c66164b7039ba5702b1c43f82e385209271ad413",
+          "combined-deferred-fsr3_quality.bmp": "072c622376c208b0cb4545353bdc6b324aeb91261f732833e5b2028681d6e625",
+          "fog-deferred-fsr3_native.bmp": "c526c06fc11d3ae3988716ec309e6d6f07beb6cf12fd001f30afa2c0b0db9df5",
+          "fog-deferred-fsr3_quality.bmp": "6fd3d652f8562ee20d89b4595efa3d26c54dbeb55f30d6a3203c731146e6fc63",
+          "fog-forward-fsr3_quality.bmp": "6fd3d652f8562ee20d89b4595efa3d26c54dbeb55f30d6a3203c731146e6fc63",
+          "foreground-combined-deferred-fsr3_quality.bmp": "f6b0e6359619bd79b34cf37db162444c9907d594ae8a7e48682931dfe174acfe",
+          "foreground-omitted-deferred-fsr3_quality.bmp": "f6b0e6359619bd79b34cf37db162444c9907d594ae8a7e48682931dfe174acfe",
+          "fsr3_native/frame.bmp": "105da6049a5a413c83bcabe4ead350048d08241041eb20f3ebe1e7ff36aee76a",
+          "fsr3_quality/frame.bmp": "768a636d0452b8816f23363c0c034db6a63a78f08c96817cec51a972ba6d7d95",
+          "none/frame.bmp": "afd39e519bb5fcdbed9cc81501e8c59739648fc9aaa934b2eb21cff2a6419bd8",
+          "omitted-deferred-fsr3_native.bmp": "7ee1cd2b8740e80046dcac2f5f2beb685c41e16f3c47cd4a8005a2618934ea1b",
+          "omitted-deferred-fsr3_quality.bmp": "bcc6865bc119d434b394a78a9073988a936757a45fbb75fe56c0382dd76920bb",
+          "omitted-deferred-none.bmp": "a18d11ef0330d85928118d01631156d4f449b7fce575b75a226cf27ef5f83e44",
+          "omitted-forward-fsr3_quality.bmp": "bcc6865bc119d434b394a78a9073988a936757a45fbb75fe56c0382dd76920bb",
+          "reflections-deferred-fsr3_native.bmp": "2af21ac46f20497384990569039994efd5ebeb8896bcd21b1a2a030629eb897d",
+          "reflections-deferred-fsr3_quality.bmp": "6d91613c363a8c1680029904c1ff071324247ded17d8bfee40e91575de4a03d9",
+          "relocated-deferred-fsr3_native.bmp": "8adf017be40af6f414208769c66164b7039ba5702b1c43f82e385209271ad413",
+          "relocated-deferred-fsr3_quality.bmp": "072c622376c208b0cb4545353bdc6b324aeb91261f732833e5b2028681d6e625",
+          "relocated-sprites-live-deferred-fsr3_native.bmp": "91e1964618c8ea146f9264f9b895ec23bf1b982142947a807cc12431af9bd66f",
+          "relocated-sprites-live-deferred-fsr3_quality.bmp": "e884ba6f8f8625f930b6875d397b6191f5dfbd1dc4760d9f18857d8787980bdf",
+          "sprites-combined-empty-deferred-fsr3_native.bmp": "744770b6ad95997ed6e55e94525e42ad77339e1b3662f32f9727492e26bae97e",
+          "sprites-combined-empty-deferred-fsr3_quality.bmp": "ef2e858010da34bee743b792359603c29f667d4cf3d39f80d90010e64cd92838",
+          "sprites-combined-live-deferred-fsr3_native.bmp": "91e1964618c8ea146f9264f9b895ec23bf1b982142947a807cc12431af9bd66f",
+          "sprites-combined-live-deferred-fsr3_quality.bmp": "e884ba6f8f8625f930b6875d397b6191f5dfbd1dc4760d9f18857d8787980bdf",
+          "sprites-only-empty-deferred-fsr3_native.bmp": "7ee1cd2b8740e80046dcac2f5f2beb685c41e16f3c47cd4a8005a2618934ea1b",
+          "sprites-only-empty-deferred-fsr3_quality.bmp": "60492b9d62051678cd1d31adfea47ed1786ee0615f1d1cc4a226ed4f193911bc",
+          "sprites-only-live-deferred-fsr3_native.bmp": "f331e67f3d24e239626c08564d6ed6e4796480206f23ea575ac4f5abcdf8129a",
+          "sprites-only-live-deferred-fsr3_quality.bmp": "e212ce6669a458274a2ec4863b94100f87012fe61d07409fbbe75a1474293cc9",
+          "zero-deferred-fsr3_native.bmp": "7ee1cd2b8740e80046dcac2f5f2beb685c41e16f3c47cd4a8005a2618934ea1b",
+          "zero-deferred-fsr3_quality.bmp": "bcc6865bc119d434b394a78a9073988a936757a45fbb75fe56c0382dd76920bb",
+          "zero-deferred-none.bmp": "a18d11ef0330d85928118d01631156d4f449b7fce575b75a226cf27ef5f83e44"
+        }
+      }
+    },
+    "nvidia_authored_deferred_capture_bytes_equal": {
+      "ambient-exposure": "bf366f755badcaba2e75d65416736501fec6f0cbff58f4469058239b8e9d7433",
+      "authored-dark": "3400a70db6582649248c3b1a4f9dcdfa1e6a604c4967aa958a05b188eb460db0",
+      "builtin-box": "d62d34d4a8511e4927de71d6a6306d6537c5e2d613f0cf6e8b26ecf5d83b6627",
+      "colored-sum": "33fe6f8b9294a10ec88f55b14d063316d9400b9024771a7cef2fe1b50500cabf",
+      "directional": "7eb005fa519625d2a263c336b3bd07338c30bce387a7b72b7a4021590f3921c4",
+      "disabled": "c5a1a789fb46858623d6e202d0bf07f9d248c408c6f978f97bab310f7678e30f",
+      "emission": "ec92e2ec333057669b93f667de5b9e75e2037e5664afd3a52bebd83af43a0325",
+      "last-slot": "7eb005fa519625d2a263c336b3bd07338c30bce387a7b72b7a4021590f3921c4",
+      "point-far": "a5947693622c0e224822dca16552b089e4ced1d2521be416ae9ff32bdac7bf5c",
+      "point-near": "d200f627e2c325feabb48f36ce42c1271d971c0c005461f54316b21e74f3b8c7",
+      "range-boundary": "c5a1a789fb46858623d6e202d0bf07f9d248c408c6f978f97bab310f7678e30f",
+      "range-taper": "c0fb711a83ba179fb932dc35cca4b20756e8e95764b4de24faeeeae46d0432f0",
+      "runtime-frozen": "0f9a184607b0158d0e6170320dc167052d32624209ba90b5e20776be0ece17a2",
+      "runtime-initial": "0f9a184607b0158d0e6170320dc167052d32624209ba90b5e20776be0ece17a2",
+      "runtime-moved": "4d234fc315f158e90d52e7306bfbc30df6e12ce21bd47bff9dd0d4e61588e426",
+      "spot-away": "c5a1a789fb46858623d6e202d0bf07f9d248c408c6f978f97bab310f7678e30f",
+      "spot-axis": "3d78c2239c2f33decef8c9e7714921439be4f0e59118c3157c1b983e8bc37925",
+      "spot-cone": "05979b4f882e6bdc226949c3a1c5ba385f2b35d3e5122aece64fff439a275275"
+    },
+    "nvidia_authored_before_report_sha256": "dc4fcdf616ec1c8288cbe793cc81abc8410c0621bbc9214c9b626ce6a6c0468f",
+    "nvidia_authored_after_report_sha256": "3f21c399c864cb7e8dd88d06b1fd0af9959864e8cbea0eafed9d63f18f5eebd2",
+    "baseline_preflight": "Relinking an older frame fixture object exited before capturing. Both accepted baseline runs used the current fixture source and headers, linked to the retained 0.0.396 library."
+  },
+  "limits": "Correctness fixtures cover bounded scenes, resize, retirement and native rendering. They do not measure game-scale frame time."
+}

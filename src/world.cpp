@@ -12,7 +12,6 @@
 #include "poima/terrain_asset.hpp"
 #include "foliage_authoring.hpp"
 #include "water_asset.hpp"
-#include "water_region_scene.hpp"
 #include "particle_scene.hpp"
 #include <charconv>
 #include "physical_rig_json.hpp"
@@ -30,6 +29,7 @@
 #include "poima/ui_document.hpp"
 #endif
 #include "world_asset_commands.hpp"
+#include "world_authored_scene.hpp"
 #include "world_capture.hpp"
 #include "world_content.hpp"
 #include "world_discovery.hpp"
@@ -210,43 +210,7 @@ class World {
     mutable ModelCache model_cache_;
     mutable std::optional<std::set<std::string>> authored_model_cache_references_;
     mutable std::optional<SceneSnapshot> authored_cache_;
-    const std::string presentation_source_id_=new_presentation_source_id();
-    std::uint64_t presentation_generation_=0,presentation_incarnation_cursor_=0;
-    using PresentationShapes=std::map<std::string,std::pair<Json,std::uint64_t>>;
-    PresentationShapes presentation_shapes_;
-    PresentationShapes next_presentation_shapes(const Json& document,std::uint64_t& cursor) const {
-        // Binding identity excludes motion, material parameters and clip state.
-        std::map<std::string,Json> rig_nodes;
-        for(const auto& [id,entity]:document.at("entities").items()) {
-            const auto& c=entity.at("components");
-            if(c.contains("RigNode"))rig_nodes[c.at("RigNode").at("rig").get<std::string>()][id]=c.at("RigNode").at("node");
-        }
-        PresentationShapes result;
-        for(const auto& [id,entity]:document.at("entities").items()) {
-            const auto& c=entity.at("components");Json binding;
-            for(const char* kind:{"MeshRenderer","StaticMesh","SkinnedMesh"})if(c.contains(kind)) {
-                auto shape=c.at(kind);if(std::string_view(kind)=="MeshRenderer")shape.erase("albedo");
-                binding={{"kind",kind},{"shape",std::move(shape)}};
-                if(c.contains("CameraDraw"))binding["camera_draw"]=c.at("CameraDraw");
-                if(std::string_view(kind)=="SkinnedMesh") {
-                    const auto rig=c.at(kind).at("rig").get<std::string>();
-                    binding["rig_nodes"]=rig_nodes[rig];
-                    binding["rig_asset"]=document.at("entities").at(rig).at("components").at("AnimationRig").at("asset");
-                }
-            }
-            if(binding.is_null())continue;
-            const auto previous=presentation_shapes_.find(id);
-            std::uint64_t incarnation=0;
-            if(previous!=presentation_shapes_.end() && previous->second.first==binding)incarnation=previous->second.second;
-            else { require(cursor<std::numeric_limits<std::uint64_t>::max(),"Presentation incarnation exhausted.");incarnation=++cursor; }
-            result.emplace(id,std::make_pair(std::move(binding),incarnation));
-        }
-        return result;
-    }
-    void stamp_authored(SceneSnapshot& snapshot) const {
-        snapshot.presentation_source_id=presentation_source_id_;snapshot.presentation_generation=presentation_generation_;
-        for(auto& object:snapshot.objects)object.incarnation=presentation_shapes_.at(object.entity_id).second;
-    }
+    AuthoredPresentation authored_presentation_;
 
     struct Edit { Json before,after;std::size_t bytes;std::string request_id; };
     using History=std::vector<std::shared_ptr<const Edit>>;
@@ -287,8 +251,7 @@ class World {
     }
     void persist(Json&& candidate) {
         require(!read_only_,"This packaged world is read-only.",-32081);
-        auto presentation_cursor=presentation_incarnation_cursor_;
-        auto presentation_shapes=next_presentation_shapes(candidate,presentation_cursor);
+        auto presentation=authored_presentation_.stage(candidate);
         auto bytes = candidate.dump(2) + '\n';
         require(bytes.size() <= max_document_bytes, "World document would exceed 16 MiB.");
         require(fs::exists(path_) == exists_ && (!exists_ || read(path_) == disk_),
@@ -318,7 +281,7 @@ class World {
         doc_.swap(candidate);
         authored_model_cache_references_.reset();
         invalidate_runtime_source_stale();
-        presentation_shapes_.swap(presentation_shapes);presentation_incarnation_cursor_=presentation_cursor;
+        authored_presentation_.publish(std::move(presentation));
         disk_.swap(bytes);
         exists_ = true;
     }
@@ -372,7 +335,7 @@ public:
         if (exists_) { doc_ = parse(disk_); validate(doc_);validate_animation_document(doc_,asset_directory(),model_cache_); }
         else doc_ = {{"format", "poima.authored-world"}, {"version", 1}, {"world_id", new_id()},
                      {"revision", 0}, {"entities", Json::object()}, {"retired_ids", Json::array()}, {"receipts", Json::array()}};
-        presentation_shapes_=next_presentation_shapes(doc_,presentation_incarnation_cursor_);
+        authored_presentation_.publish(authored_presentation_.stage(doc_));
     }
     FrozenContent freeze_content(const Json& source) const {
         return freeze_world_content(source, asset_directory());
@@ -429,46 +392,17 @@ public:
         return {save_configuration_generation_,save_root_.empty() ? std::string{} : path_text(save_root_)};
     }
     SceneSnapshot editor_snapshot(const EditorCamera& camera,bool live,const Json* preview=nullptr) const {
-        const auto& document=preview ? *preview : doc_;
-        for(double value:camera.world)require(std::isfinite(value) && std::abs(value)<=1e12,"Invalid editor camera matrix.");
-        require(camera.world[3]==0 && camera.world[7]==0 && camera.world[11]==0 && camera.world[15]==1 && rigid_transform(camera.world),"Editor camera must be a rigid affine transform.");
-        (void)perspective(camera.vertical_fov,1,camera.near_plane,camera.far_plane);
+        validate_editor_camera(camera);
         if(live)require(bool(runtime_),"No runtime is active for the editor snapshot.",-32030);
         SceneSnapshot result{};
         if(live)result=runtime_->snapshot();
         else if(!preview && authored_cache_ && authored_cache_->revision==revision(doc_.at("revision")))result=*authored_cache_;
         else {
-            prune_model_cache();const auto definition=resolve_runtime_definition(document, asset_directory(), model_cache_, AuthoredRuntimeView::animation_only);
-            const auto matrices=world_matrices(document.at("entities"));
-            result.world_id=definition.world_id;result.revision=definition.authored_revision;
-            result.lighting=authored_lighting(matrices);
-            resolve_scene_post_effect(result);
-            std::map<std::string,const RuntimeEntityDefinition*> entities;
-            std::map<std::string,std::map<std::uint32_t,std::string>> nodes;
-            for(const auto& e:definition.entities) { entities[e.id]=&e;if(e.rig_node)nodes[e.rig_node->rig][e.rig_node->node]=e.id; }
-            for(const auto& e:definition.entities) {
-                const auto mesh=resolve_mesh_component(document.at("entities").at(e.id).at("components"),asset_directory(),model_cache_);
-                if(!mesh || !mesh->visible)continue;
-                std::shared_ptr<const SkinPose> skin;
-                if(e.skinned_mesh) {
-                    const auto& ref=*e.skinned_mesh;const auto& model=*entities.at(ref.rig)->animation_rig->model;
-                    const auto& binding=model.skins.at(std::size_t(model.nodes.at(ref.node).skin));auto pose=std::make_shared<SkinPose>();
-                    const auto inverse=inverse_affine(matrices.at(e.id));
-                    for(std::size_t i=0;i<binding.joints.size();++i)pose->palette.push_back(multiply(multiply(inverse,matrices.at(nodes.at(ref.rig).at(binding.joints[i]))),binding.inverse_bind[i]));
-                    skin=std::move(pose);
-                }
-                result.objects.push_back({e.id,matrices.at(e.id),mesh->albedo,mesh->mesh,mesh->material,mesh->textures,skin,0,
-                    mesh->cast_shadows && (!e.camera_draw || e.camera_draw->mode!=CameraDrawMode::Viewmodel),mesh->receive_shadows,true,e.camera_draw});
-                result.objects.back().lods=mesh->lods;
-                result.objects.back().foliage_motion=authored_foliage_motion(*mesh,document,matrices,e.id);
-            }
-            if(document.contains("water") && !preview) {
-                try { water::append_region_scene(water::Region(resolve_water_binding(document,asset_directory()).first.definition), result); }
-                catch(const Error& error) { if(error.code!=-32009)throw; }
-            }
+            prune_model_cache();
+            result=build_editor_authored_scene(doc_,preview,asset_directory(),model_cache_);
             if(!preview)authored_cache_=result;
         }
-        if(!live)stamp_authored(result);
+        if(!live)authored_presentation_.stamp(result);
         result.camera_id="editor";result.camera_world=camera.world;result.vertical_fov=camera.vertical_fov;result.near_plane=camera.near_plane;result.far_plane=camera.far_plane;
         if(live)runtime_->append_particles(result);
         return result;
@@ -709,7 +643,7 @@ public:
                 {"bytes",history_bytes(undo_,redo_)},{"max_entries",32},{"max_bytes",max_document_bytes},{"session_local",true},{"skipped_large_edits",skipped_large_edits_}};
         }
         if(method=="world.undo" || method=="world.redo")return restore_history(method,params);
-        if(method=="world.lighting") { fields(params,{"revision"});current_revision(params);auto result=lighting_json(authored_lighting(world_matrices(doc_.at("entities"))));result["revision"]=doc_.at("revision");return result; }
+        if(method=="world.lighting") { fields(params,{"revision"});current_revision(params);auto result=lighting_json(authored_lighting(doc_,world_matrices(doc_.at("entities"))));result["revision"]=doc_.at("revision");return result; }
         if (method == "entity.material")return inspect_material(params);
         if (method == "entity.get") {
             fields(params, {"id", "revision", "component"}, {"id"}); current_revision(params);
@@ -760,35 +694,6 @@ public:
     fs::path asset_directory() const { return fs::path(path_).concat(".assets"); }
 #include "world_navigation.inc"
 #include "world_provenance.inc"
-    void resolve_scene_post_effect(SceneSnapshot& snapshot) const {
-        auto& environment=snapshot.lighting.environment;
-        if(environment.post_effect_asset.empty())return;
-        environment.post_effect=load_post_effect_asset(asset_directory(), environment.post_effect_asset).effect;
-        snapshot.post_effect=environment.post_effect;
-    }
-    SceneLighting authored_lighting(const std::map<std::string,Matrix4>& matrices) const {
-        SceneLighting result;
-        try {
-            for(const auto& [id,e]:doc_.at("entities").items()) {
-                const auto& components=e.at("components");
-                if(components.contains("Light"))append_light(result,id,light_value(components.at("Light")),matrices.at(id));
-                if(components.contains("LightingEnvironment")) { result.environment=environment_value(components.at("LightingEnvironment"));result.preview=false; }
-            }
-            finalize_lighting(result);return result;
-        } catch(const std::runtime_error& error) { throw Error(-32602,error.what()); }
-    }
-    static std::optional<FoliageMotionSample> authored_foliage_motion(const RuntimeMesh& mesh,
-        const Json& document,const std::map<std::string,Matrix4>& matrices,const std::string& id) {
-        if(!mesh.foliage_motion)return std::nullopt;
-        const auto& motion=*mesh.foliage_motion;
-        std::optional<FoliageActor> actor;
-        if(motion.touch) {
-            const auto& feet=matrices.at(motion.touch->actor);
-            const auto& controller=document.at("entities").at(motion.touch->actor).at("components").at("CharacterController");
-            actor=FoliageActor{{feet[12],feet[13],feet[14]},controller.at("height").get<double>()};
-        }
-        return sample_foliage_motion(motion,matrices.at(id),0,actor);
-    }
     void validate_mesh_lod_edit(const Json& document,const std::set<std::string>& changed) const {
         const auto& entities=document.at("entities");
         // Only introduced/changed LOD or texture bindings need cooked validation.
@@ -952,51 +857,20 @@ public:
         try {
             if(live) snapshot=runtime_->snapshot(camera_id);
             else {
-            const auto& lens = doc_.at("entities").at(camera_id).at("components").at("Camera");
-            snapshot.vertical_fov = lens.at("vertical_fov"); snapshot.near_plane = lens.at("near"); snapshot.far_plane = lens.at("far");
-            const auto matrices = world_matrices(doc_.at("entities"));
-            snapshot.camera_world = matrices.at(camera_id);snapshot.lighting=authored_lighting(matrices);
-            resolve_scene_post_effect(snapshot);
-            require(rigid_transform(snapshot.camera_world), "Camera hierarchy must not scale or shear the camera.");
-            if(asset_preview) {
-                animation_info=append_asset_animation_preview(snapshot,params,asset_directory());
-            } else {
-                auto& cache=model_cache_;
-                // Authoring displays editable baseline TRS, independent of the
-                // initial runtime clip/time. Build palettes from those bones.
-                const auto definition=resolve_runtime_definition(doc_, asset_directory(), model_cache_, AuthoredRuntimeView::animation_only);
-                std::map<std::string,const RuntimeEntityDefinition*> definitions;
-                std::map<std::string,std::map<std::uint32_t,std::string>> nodes;
-                for(const auto& e:definition.entities) {
-                    definitions[e.id]=&e;
-                    if(e.rig_node)nodes[e.rig_node->rig][e.rig_node->node]=e.id;
-                }
-                for(const auto& [id,e]:doc_.at("entities").items()) {
-                    const auto mesh=resolve_mesh_component(e.at("components"),asset_directory(),cache);
-                    if(!mesh || !mesh->visible)continue;
-                    std::shared_ptr<const SkinPose> skin;
-                    const auto& owner=*definitions.at(id);
-                    if(owner.skinned_mesh) {
-                        const auto& ref=*owner.skinned_mesh;const auto& model=*definitions.at(ref.rig)->animation_rig->model;
-                        const auto& binding=model.skins.at(static_cast<std::size_t>(model.nodes.at(ref.node).skin));
-                        const auto inverse_mesh=inverse_affine(matrices.at(id));auto pose=std::make_shared<SkinPose>();
-                        for(std::size_t joint=0;joint<binding.joints.size();++joint)
-                            pose->palette.push_back(multiply(multiply(inverse_mesh,matrices.at(nodes.at(ref.rig).at(binding.joints[joint]))),binding.inverse_bind[joint]));
-                        skin=std::move(pose);
-                    }
-                    snapshot.objects.push_back({id,matrices.at(id),mesh->albedo,mesh->mesh,mesh->material,mesh->textures,skin,0,
-                        mesh->cast_shadows && (!owner.camera_draw || owner.camera_draw->mode!=CameraDrawMode::Viewmodel),mesh->receive_shadows,true,owner.camera_draw});
-                    snapshot.objects.back().lods=mesh->lods;
-                    snapshot.objects.back().foliage_motion=authored_foliage_motion(*mesh,doc_,matrices,id);
-                }
-                if(doc_.contains("water"))water::append_region_scene(water::Region(resolve_water_binding(doc_,asset_directory()).first.definition), snapshot);
-            }
+                const auto& lens=doc_.at("entities").at(camera_id).at("components").at("Camera");
+                snapshot.vertical_fov=lens.at("vertical_fov");snapshot.near_plane=lens.at("near");snapshot.far_plane=lens.at("far");
+                const auto matrices=world_matrices(doc_.at("entities"));
+                snapshot.camera_world=matrices.at(camera_id);snapshot.lighting=authored_lighting(doc_,matrices);
+                resolve_scene_post_effect(snapshot,asset_directory());
+                require(rigid_transform(snapshot.camera_world),"Camera hierarchy must not scale or shear the camera.");
+                if(asset_preview)animation_info=append_asset_animation_preview(snapshot,params,asset_directory());
+                else append_captured_authored_geometry(snapshot,doc_,matrices,asset_directory(),model_cache_);
             }
         } catch(const Error&) { throw; }
         catch (const std::runtime_error& error) { throw Error(-32602, error.what()); }
         if(!live) {
             if(asset_preview) { snapshot.presentation_source_id=new_presentation_source_id();for(auto& object:snapshot.objects)object.incarnation=1; }
-            else stamp_authored(snapshot);
+            else authored_presentation_.stamp(snapshot);
         }
         if(!live && !asset_preview) {
             const auto& authored_lens=doc_.at("entities").at(camera_id).at("components").at("Camera");
@@ -1879,8 +1753,8 @@ public:
         auto next_undo=undo_,next_redo=redo_;
         if(undo) { next_redo.push_back(next_undo.back());next_undo.pop_back(); }
         else { next_undo.push_back(next_redo.back());next_redo.pop_back(); }
-        require(presentation_generation_<std::numeric_limits<std::uint64_t>::max(),"Presentation generation exhausted.");
-        persist(std::move(staged));++presentation_generation_;undo_.swap(next_undo);redo_.swap(next_redo);return result;
+        authored_presentation_.require_next_generation();
+        persist(std::move(staged));authored_presentation_.advance_generation();undo_.swap(next_undo);redo_.swap(next_redo);return result;
     }
     Json transact(Json params,const std::string& origin="world.transact") {
         fields(params, {"request_id", "base_revision", "ops", "preview"}, {"request_id", "base_revision", "ops"});

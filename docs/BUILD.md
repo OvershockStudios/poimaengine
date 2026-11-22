@@ -165,6 +165,10 @@ serializes lighting, capture and player presentation reports.
 animation cooking. `src/world_post_effect_assets.cpp` verifies and publishes
 compiled post-effect artifacts. `src/world_runtime_definition.cpp` resolves
 authored entities, rig and template definitions, and mesh and material bindings.
+`src/world_authored_scene.cpp` assembles editable snapshots and the authored
+geometry used by captures. It tracks presentation incarnations and generations.
+The world session checks revisions and publishes the staged presentation
+identity with the authored document.
 `src/world_content.cpp` validates frozen runtime and package dependencies,
 collects the selected provenance and credits, and computes the frozen content
 identity. `src/world_region_assets.cpp` verifies cooked navigation and water
@@ -192,13 +196,19 @@ and read-only worlds through standalone, shared CLI and shared editor scopes.
 On Vulkan builds, `src/player_window.cpp` owns the SDL player loop, input,
 preferences and presentation receipts. It prepares a borrowed scene snapshot
 through the private `PlayerRenderer` interface. `src/render_smoke.cpp` owns
-the GPU context, frame submission and retirement. `src/render_vulkan_instance.cpp`
-owns the shared Vulkan instance and its loader dispatch. Render passes with their
+the GPU context, frame scheduling, submission and retirement. `src/render_vulkan_instance.cpp`
+owns the shared Vulkan instance and its loader dispatch. `src/render_vulkan_frame.cpp`
+owns swapchain image synchronization, presentation, and per-slot Vulkan query
+pools and timing collection. The context controls when to retire this work and
+publishes the frame receipts. Render passes with their
 own resources, such as `src/render_screen_reflections.cpp` and
 `src/render_height_fog.cpp`, use the context's device and command list.
 `src/render_ambient_occlusion.cpp` owns the GTAO and bilateral filter GPU
 resources and commands. The context orders both stages and supplies the frame
 constants, depth and deferred material textures.
+`src/render_deferred_lighting.cpp` selects the deferred shader variant,
+verifies bindings against the schedule, and records the compute dispatch.
+The context allocates the shared targets and orders the pass.
 `src/render_shadows.cpp` owns the depth array, masked and opaque bindings,
 and shadow draws. The context chooses casters and batches and checks their
 resource identity against the frame schedule.
