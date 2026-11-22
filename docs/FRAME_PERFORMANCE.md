@@ -99,6 +99,24 @@ hex data rather than potentially invalid text. Pending GPU work still requires
 retirement. Counter saturation and incomplete rows prevent broad performance
 claims; inspect counts before using percentiles.
 
+## Imported asset uploads
+
+On Windows Vulkan, scene preparation batches first-use imported vertex and
+index data with texture mips. The cache submits a batch before adding an asset
+that would exceed 64 MiB of payload or 256 copies. A single admitted asset can
+use its own batch. The renderer waits on the graphics queue timeline for each
+batch and completes all pending uploads before recording a frame that uses
+them. Cached meshes and images skip upload on subsequent frames.
+
+Start a [profiler capture](PROFILER.md) before opening the player to include
+cold scene preparation. Each completed batch emits a `renderer.asset_upload` CPU span
+and the `renderer.asset_upload_batches`, `renderer.asset_upload_payload_bytes`,
+`renderer.asset_upload_meshes` and `renderer.asset_upload_textures` counters.
+The payload count measures bytes prepared for copy. Driver staging allocations
+include additional alignment and allocation overhead. The
+`frame_execution.device_idle_waits` count covers device-wide waits. Upload
+batch completion uses the narrower graphics queue wait.
+
 ## Process memory
 
 Run the separate sampler with **native Windows Python** while the measured

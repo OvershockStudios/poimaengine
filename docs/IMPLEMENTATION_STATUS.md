@@ -1,8 +1,15 @@
 # Implementation status
 
-Updated 2026-11-22 for **0.0.401**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-22 for **0.0.402**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.402 batches [imported mesh and texture uploads](FRAME_PERFORMANCE.md#imported-asset-uploads)
+before frame recording. AMD and NVIDIA reproduced 114 reference captures
+across editor asset replacement, forward MSAA and deferred FSR Quality.
+Another 48 native captures exercised skinned geometry, normal maps and
+shadow-only draws in both lighting paths. Ubuntu passed 13 headless suites.
+[Results](evidence/m2-scene-asset-uploads-402.json)
 
 Version 0.0.401 compiles [scene asset caching, clustered lighting and the
 procedural sky](BUILD.md#world-service-and-schema-compilation) in separate

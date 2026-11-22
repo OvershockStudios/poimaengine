@@ -985,7 +985,14 @@ struct Context {
     }
 
     render_scene_assets::Upload asset_upload() {
-        return {*checked.Get(), *commands.Get(), diagnostics.frame_execution.device_idle_waits};
+        return {*checked.Get(), [this](std::uint64_t submission) {
+            require(submission && messages.errors == 0, "Scene asset upload submission failed.");
+            const vk::Semaphore semaphore = native->getQueueSemaphore(nvrhi::CommandQueue::Graphics);
+            const vk::SemaphoreWaitInfo info({}, 1, &semaphore, &submission);
+            require(device.waitSemaphores(info, 5'000'000'000ULL, dispatch) == vk::Result::eSuccess,
+                "Scene asset upload completion timed out; recreate the renderer session.");
+            require(messages.errors == 0, "Scene asset upload reported a validation/backend error.");
+        }};
     }
     void prepare_stream_geometry(FrameSlot& slot) {
         namespace rs=render_schedule;
@@ -1669,7 +1676,7 @@ struct Context {
         // layered normals (1 + active layer count).
         return count ? static_cast<float>(count+1) : 0;
     }
-    void update_scene() {
+    void update_scene() try {
         validate_viewmodel_snapshot();
         if(deferred || scene_debug_view!=SceneDebugView::color || reconstruction_mode!=ReconstructionMode::none) {
             const auto near_plane=static_cast<float>(scene->near_plane),far_plane=static_cast<float>(scene->far_plane);
@@ -1868,6 +1875,8 @@ struct Context {
         require(found_water_ripples==(water_normal_mode!=0),"Water ripple surface is missing.");
         prepare_viewmodel(active_skins);prepare_scene_output();
         skinning.retain_instances(active_skins);
+        // The schedule imports these assets with initialized contents.
+        scene_assets.flush_uploads(asset_upload());
         if(diagnostics.profile_requested)timing_sample(diagnostics.prepare_cpu,elapsed_ms(started));
         profiling::counter("renderer.objects",pending_draws.objects);
         profiling::counter("renderer.surface_marks",surface_marks.size());
@@ -1884,6 +1893,9 @@ struct Context {
         profiling::counter("renderer.environment_texture_payload_bytes",environment_ibl.payload_bytes());
         profiling::counter("renderer.skin_buffer_bytes",skinning.instance_bytes());
         diagnostics.scene_observed=renderer_scene_result(*scene);
+    } catch(...) {
+        if (scene_assets.has_pending_uploads()) renderer_fault=true;
+        throw;
     }
 
     bool rebuild(const RenderOptions& options) {

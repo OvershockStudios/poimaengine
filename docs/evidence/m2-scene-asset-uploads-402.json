@@ -1,0 +1,321 @@
+{
+  "format": "poima.scene-asset-uploads.qualification.v1",
+  "version": "0.0.402",
+  "baseline_version": "0.0.401",
+  "baseline_commit": "0d77911",
+  "source_manifest_sha256": "04e06ab545ba4ecf96b8303ba5815ffa52d8a31b35985fd50b703f84b582f02a",
+  "qualification_scope": "Immutable geometry and texture uploads; renderer content parity and native recovery checks.",
+  "windows": {
+    "binaries_sha256": {
+      "poima.exe": "65e3c276cd598f9ebc305cd006cd3232e2f9b7145ab0217b62b91c33bc8f60f5",
+      "runtime.json": "8520823d83ca0dac370d44c6cfd000c92ecbf36bd89ee8101b39784d4bb1a1cd",
+      "poima-auto-exposure-test.exe": "7c3e5b1c4f866595be0742c2235c727c23210184b9a1a049259fd4a95d39096e"
+    },
+    "combined_report_sha256": "9fa709c8cf941b8766c1cef9612e2f41c7e8aeffde54f0861639329fa69d63bb",
+    "fixture_source_sha256": {
+      "tests/auto_exposure_native.cpp": "f842c434399289c083699bcfe2e563eca64af1d16c55eb18df750411f107a386",
+      "tests/editor_capture.py": "a9721e4f9909cea1d7f66f0c29fcea1a3cffd4104d6be3acb5ff2d859e172b98",
+      "tests/gltf_fixture.py": "1673c267588131b14137f85511c74ab069d99e69c537b979e7f578f2554fddaf",
+      "tests/scene_capture.py": "4ecb4d6fca9cc46cde70209ed8749547abd71356366361ca6c0f4f3b140761c1",
+      "tests/texture_fixture.py": "b9b157237cdf3a493278e4551c1e635c41c43cd4eeea59c0d6ca34acc0828fb0",
+      "tests/gpu_skinning_capture.py": "d1d36aecfd0d7ad7319db1e8c75250568c70fea088a1deafc97fb51acd823609",
+      "tests/animation_fixture.py": "0df2099292f669ddd75762c7093eb667b6af8811d590617b61c9ae5490a1a9fe"
+    },
+    "exact_images_against_baseline": 114,
+    "editor_replacement": [
+      {
+        "device": "AMD Radeon(TM) Graphics",
+        "exact_captures": 1,
+        "capture_sha256": "f9c84316df636cbcfefb149eb6fddbad85b4e8bef1d6faa3a873cf0ad638a929",
+        "resource_samples": 55,
+        "reference_report_sha256": "7fe33eac1999d29300150099d0af2d21a388c616caede87d7b366d9bd6f744e3",
+        "candidate_report_sha256": "a5c05b15a69027403f6cdd5ff4030b52c2d54a0d025f1a373239495416bcff12"
+      },
+      {
+        "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "exact_captures": 1,
+        "capture_sha256": "e4bf0cc208dfb39def02c69f4b66263a92df7447ec2b20cd5dc8b78df1d23677",
+        "resource_samples": 55,
+        "reference_report_sha256": "413d51aeff2512a38e3d09bb427b7b96df7d4399a9bb2a0635dece49dd2e60a3",
+        "candidate_report_sha256": "84a554dc8aa57fbc8ca1598c9c8201bbd2f7284f57a102a5220f63bf40eca1e5"
+      }
+    ],
+    "exposure": [
+      {
+        "device": "AMD Radeon(TM) Graphics",
+        "fixture": "gpu0-forward-none",
+        "exact_captures": 37,
+        "reference_report_sha256": "85decccb562e10b5ae367106651b8a7039e8d9189dc3c55716dcf44a8b1f081d",
+        "candidate_report_sha256": "6ec6ed3c1aeeaf9333feee177bfbc6ebaff0d861d1859e3bf5a8e7f9ee05b8f9"
+      },
+      {
+        "device": "AMD Radeon(TM) Graphics",
+        "fixture": "gpu0-deferred-fsr3_quality",
+        "exact_captures": 19,
+        "reference_report_sha256": "dbb0dfc72e472e7c964c97c3f19bb51821c5c5aeb7c9030bfbf49566a9533966",
+        "candidate_report_sha256": "83fbb72396dc3fc3607c2d4ad72db07d8b1d2421b1d10fb16cc0653fb192e94a"
+      },
+      {
+        "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "fixture": "gpu1-forward-none",
+        "exact_captures": 37,
+        "reference_report_sha256": "dda84336a127b2bf25704355c17e2659a2de5aeb202cbb9798c9a5295900932f",
+        "candidate_report_sha256": "056864648d1ef047018a85a4e1e917054866d783d6d592f496b77b7a6ed6dd76"
+      },
+      {
+        "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "fixture": "gpu1-deferred-fsr3_quality",
+        "exact_captures": 19,
+        "reference_report_sha256": "70565d4d5f5621f8196fc7507fe742d0c6276ae06e457c1db8398535c9f140af",
+        "candidate_report_sha256": "ac6b81dd7b4f5e3715d63a9d9b7c327729a66384ffaa0a7386ddf4fa45ef391c"
+      }
+    ],
+    "additional_imported_skinning_and_material_captures": [
+      {
+        "device": "AMD Radeon(TM) Graphics",
+        "lighting_path": "forward",
+        "captures": 12,
+        "comparisons": {
+          "base_cpu_gpu": {
+            "maximum_channel_error": 0,
+            "pixels_over_2": 0,
+            "changed_pixels": 0,
+            "mean_max_channel_error": 0.0
+          },
+          "base_culling": {
+            "maximum_channel_error": 0,
+            "pixels_over_2": 0,
+            "changed_pixels": 0,
+            "mean_max_channel_error": 0.0
+          },
+          "normal_frames": {
+            "maximum_channel_error": 0,
+            "pixels_over_2": 0,
+            "changed_pixels": 0,
+            "mean_max_channel_error": 0.0
+          },
+          "independent_instances": {
+            "maximum_channel_error": 0,
+            "pixels_over_2": 0,
+            "changed_pixels": 0,
+            "mean_max_channel_error": 0.0
+          },
+          "after_failure": {
+            "maximum_channel_error": 0,
+            "pixels_over_2": 0,
+            "changed_pixels": 0,
+            "mean_max_channel_error": 0.0
+          },
+          "shadow_cpu_gpu": {
+            "maximum_channel_error": 0,
+            "pixels_over_2": 0,
+            "changed_pixels": 0,
+            "mean_max_channel_error": 0.0
+          },
+          "shadow_culling": {
+            "maximum_channel_error": 0,
+            "pixels_over_2": 0,
+            "changed_pixels": 0,
+            "mean_max_channel_error": 0.0
+          },
+          "shadow_present": {
+            "maximum_channel_error": 58,
+            "pixels_over_2": 18531,
+            "changed_pixels": 18531,
+            "mean_max_channel_error": 2.600126953125
+          }
+        },
+        "report_sha256": "94516290edd5139290d6d400053744cff764182fe0530ba1173c6c83045f0d5a"
+      },
+      {
+        "device": "AMD Radeon(TM) Graphics",
+        "lighting_path": "deferred",
+        "captures": 12,
+        "comparisons": {
+          "base_cpu_gpu": {
+            "maximum_channel_error": 0,
+            "pixels_over_2": 0,
+            "changed_pixels": 0,
+            "mean_max_channel_error": 0.0
+          },
+          "base_culling": {
+            "maximum_channel_error": 0,
+            "pixels_over_2": 0,
+            "changed_pixels": 0,
+            "mean_max_channel_error": 0.0
+          },
+          "normal_frames": {
+            "maximum_channel_error": 0,
+            "pixels_over_2": 0,
+            "changed_pixels": 0,
+            "mean_max_channel_error": 0.0
+          },
+          "independent_instances": {
+            "maximum_channel_error": 0,
+            "pixels_over_2": 0,
+            "changed_pixels": 0,
+            "mean_max_channel_error": 0.0
+          },
+          "after_failure": {
+            "maximum_channel_error": 0,
+            "pixels_over_2": 0,
+            "changed_pixels": 0,
+            "mean_max_channel_error": 0.0
+          },
+          "shadow_cpu_gpu": {
+            "maximum_channel_error": 0,
+            "pixels_over_2": 0,
+            "changed_pixels": 0,
+            "mean_max_channel_error": 0.0
+          },
+          "shadow_culling": {
+            "maximum_channel_error": 0,
+            "pixels_over_2": 0,
+            "changed_pixels": 0,
+            "mean_max_channel_error": 0.0
+          },
+          "shadow_present": {
+            "maximum_channel_error": 58,
+            "pixels_over_2": 18531,
+            "changed_pixels": 18531,
+            "mean_max_channel_error": 2.6002734375
+          }
+        },
+        "report_sha256": "530403072e0c3c8f967abd98ab6dc8130df0fd077aa0b1c9b476d740b7be1c8b"
+      },
+      {
+        "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "lighting_path": "forward",
+        "captures": 12,
+        "comparisons": {
+          "base_cpu_gpu": {
+            "maximum_channel_error": 0,
+            "pixels_over_2": 0,
+            "changed_pixels": 0,
+            "mean_max_channel_error": 0.0
+          },
+          "base_culling": {
+            "maximum_channel_error": 0,
+            "pixels_over_2": 0,
+            "changed_pixels": 0,
+            "mean_max_channel_error": 0.0
+          },
+          "normal_frames": {
+            "maximum_channel_error": 0,
+            "pixels_over_2": 0,
+            "changed_pixels": 0,
+            "mean_max_channel_error": 0.0
+          },
+          "independent_instances": {
+            "maximum_channel_error": 0,
+            "pixels_over_2": 0,
+            "changed_pixels": 0,
+            "mean_max_channel_error": 0.0
+          },
+          "after_failure": {
+            "maximum_channel_error": 0,
+            "pixels_over_2": 0,
+            "changed_pixels": 0,
+            "mean_max_channel_error": 0.0
+          },
+          "shadow_cpu_gpu": {
+            "maximum_channel_error": 0,
+            "pixels_over_2": 0,
+            "changed_pixels": 0,
+            "mean_max_channel_error": 0.0
+          },
+          "shadow_culling": {
+            "maximum_channel_error": 0,
+            "pixels_over_2": 0,
+            "changed_pixels": 0,
+            "mean_max_channel_error": 0.0
+          },
+          "shadow_present": {
+            "maximum_channel_error": 58,
+            "pixels_over_2": 18531,
+            "changed_pixels": 18531,
+            "mean_max_channel_error": 2.600126953125
+          }
+        },
+        "report_sha256": "e42fe5644e543854b526abfc043872412cdcac299314c0ca69056eb95831adb2"
+      },
+      {
+        "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "lighting_path": "deferred",
+        "captures": 12,
+        "comparisons": {
+          "base_cpu_gpu": {
+            "maximum_channel_error": 0,
+            "pixels_over_2": 0,
+            "changed_pixels": 0,
+            "mean_max_channel_error": 0.0
+          },
+          "base_culling": {
+            "maximum_channel_error": 0,
+            "pixels_over_2": 0,
+            "changed_pixels": 0,
+            "mean_max_channel_error": 0.0
+          },
+          "normal_frames": {
+            "maximum_channel_error": 0,
+            "pixels_over_2": 0,
+            "changed_pixels": 0,
+            "mean_max_channel_error": 0.0
+          },
+          "independent_instances": {
+            "maximum_channel_error": 0,
+            "pixels_over_2": 0,
+            "changed_pixels": 0,
+            "mean_max_channel_error": 0.0
+          },
+          "after_failure": {
+            "maximum_channel_error": 0,
+            "pixels_over_2": 0,
+            "changed_pixels": 0,
+            "mean_max_channel_error": 0.0
+          },
+          "shadow_cpu_gpu": {
+            "maximum_channel_error": 0,
+            "pixels_over_2": 0,
+            "changed_pixels": 0,
+            "mean_max_channel_error": 0.0
+          },
+          "shadow_culling": {
+            "maximum_channel_error": 0,
+            "pixels_over_2": 0,
+            "changed_pixels": 0,
+            "mean_max_channel_error": 0.0
+          },
+          "shadow_present": {
+            "maximum_channel_error": 58,
+            "pixels_over_2": 18531,
+            "changed_pixels": 18531,
+            "mean_max_channel_error": 2.6002734375
+          }
+        },
+        "report_sha256": "63acc8d2914e960278b135a7261410bf03b78104d5a68c3ea5e032d21a8c3d4c"
+      }
+    ],
+    "vulkan_synchronization_validation": true
+  },
+  "ubuntu": {
+    "binary_sha256": "24e0a6eca29a7e645368ea7988ee71f4814397cfa1ba2ffdde183290066aeac1",
+    "runtime_sha256": "1357d8cd43116895a34e655fbba526a15ade1a61f70fcf0391f5050eb432cc58",
+    "junit_sha256": "b2e8c589b3bd35279f3dadb8817c8c3fe8cde3e439c2ad7697480291529ffdd5",
+    "ctest": [
+      "lighting_contract",
+      "project_contract",
+      "shared_session_contract",
+      "world_particles_contract",
+      "asset_references_contract",
+      "world_water_contract",
+      "authoring_response_compatibility",
+      "world_contract",
+      "authoring_api_compatibility",
+      "world_ui_contract",
+      "render_schedule_native",
+      "cli_contract",
+      "world_session_native"
+    ]
+  }
+}

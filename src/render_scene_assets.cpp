@@ -2,6 +2,7 @@
 #include "render_scene_assets.hpp"
 
 #include "poima/assets.hpp"
+#include "poima/profiler.hpp"
 #include "render_environment_ibl.hpp"
 
 #include <stdexcept>
@@ -10,6 +11,8 @@ namespace poima::render_scene_assets {
 namespace {
 
 constexpr std::size_t texture_budget = 256 * 1024 * 1024;
+constexpr std::size_t upload_payload_limit = 64 * 1024 * 1024;
+constexpr std::size_t upload_copy_limit = 256;
 
 void require(bool condition, const char* detail) {
     if (!condition) throw std::runtime_error(detail);
@@ -40,6 +43,9 @@ void Cache::initialize_defaults() {
 }
 
 void Cache::release_gpu() noexcept {
+    pending_meshes_.clear();
+    pending_images_.clear();
+    pending_bytes_ = pending_copies_ = 0;
     geometry_.clear();
     materials_.clear();
     textures_.clear();
@@ -56,7 +62,56 @@ void Cache::invalidate_materials() noexcept {
     materials_.clear();
 }
 
-render_draw::Geometry Cache::geometry(Upload upload, const std::shared_ptr<const MeshAsset>& mesh,
+void Cache::make_upload_room(const Upload& upload, std::size_t bytes, std::size_t copies) {
+    if (!has_pending_uploads()) return;
+    // A larger asset accepted by the existing loader may occupy a batch alone.
+    if (pending_bytes_ >= upload_payload_limit || bytes > upload_payload_limit - pending_bytes_ ||
+        pending_copies_ >= upload_copy_limit || copies > upload_copy_limit - pending_copies_) {
+        flush_uploads(upload);
+    }
+}
+
+void Cache::flush_uploads(const Upload& upload) {
+    if (!has_pending_uploads()) return;
+    profiling::Scope profile("renderer.asset_upload");
+    const auto parameters = nvrhi::CommandListParameters().setEnableImmediateExecution(false);
+    const auto commands = upload.device.createCommandList(parameters);
+    require(bool(commands), "Scene asset upload command list creation failed.");
+    const auto finish_recording = [&] {
+        // Close restores recorded resources to their declared read states.
+        commands->close();
+        upload.await_submission(upload.device.executeCommandList(commands));
+        upload.device.runGarbageCollection();
+    };
+    commands->open();
+    try {
+        for (const auto& [mesh, geometry] : pending_meshes_) {
+            commands->writeBuffer(geometry.vertices, mesh->vertices.data(), mesh->vertices.size() * sizeof(MeshVertex));
+            commands->writeBuffer(geometry.indices, mesh->indices.data(), mesh->indices.size() * sizeof(std::uint32_t));
+        }
+        for (const auto& [image, texture] : pending_images_) {
+            for (std::uint32_t level = 0; level < image->mips.size(); ++level) {
+                const auto& mip = image->mips[level];
+                commands->writeTexture(texture, 0, level, mip.rgba.data(), std::size_t(mip.width) * 4);
+            }
+        }
+    } catch (...) {
+        // NVRHI retains an open list. Retire any recorded copies when possible
+        // before the context faults, keeping the original error.
+        try { finish_recording(); } catch (...) {}
+        throw;
+    }
+    finish_recording();
+    profiling::counter("renderer.asset_upload_batches", 1);
+    profiling::counter("renderer.asset_upload_payload_bytes", pending_bytes_);
+    profiling::counter("renderer.asset_upload_meshes", pending_meshes_.size());
+    profiling::counter("renderer.asset_upload_textures", pending_images_.size());
+    pending_meshes_.clear();
+    pending_images_.clear();
+    pending_bytes_ = pending_copies_ = 0;
+}
+
+render_draw::Geometry Cache::geometry(const Upload& upload, const std::shared_ptr<const MeshAsset>& mesh,
                                        const nvrhi::BufferHandle& unit_box) {
     if (!mesh) return {unit_box, nullptr, 36};
     if (const auto found = geometry_.find(mesh.get()); found != geometry_.end()) return found->second;
@@ -80,13 +135,11 @@ render_draw::Geometry Cache::geometry(Upload upload, const std::shared_ptr<const
     result.indices = upload.device.createBuffer(index_desc);
     require(result.vertices && result.indices, "Imported geometry buffer creation failed.");
 
-    upload.commands.open();
-    upload.commands.writeBuffer(result.vertices, mesh->vertices.data(), vertex_desc.byteSize);
-    upload.commands.writeBuffer(result.indices, mesh->indices.data(), index_desc.byteSize);
-    upload.commands.close();
-    upload.device.executeCommandList(&upload.commands);
-    ++upload.device_idle_waits;
-    require(upload.device.waitForIdle(), "Imported geometry upload failed.");
+    const auto bytes = vertex_desc.byteSize + index_desc.byteSize;
+    make_upload_room(upload, bytes, 2);
+    pending_meshes_.push_back({mesh, result});
+    pending_bytes_ += bytes;
+    pending_copies_ += 2;
     geometry_.emplace(mesh.get(), result);
     return result;
 }
@@ -101,7 +154,7 @@ Bounds Cache::bounds(const MeshAsset* mesh) {
     return entry->second;
 }
 
-nvrhi::TextureHandle Cache::upload_texture(Upload upload, const std::shared_ptr<const TextureImage>& image) {
+nvrhi::TextureHandle Cache::upload_texture(const Upload& upload, const std::shared_ptr<const TextureImage>& image) {
     if (const auto found = textures_.find(image.get()); found != textures_.end()) return found->second;
     const auto bytes = image_bytes(*image);
     require(bytes <= texture_budget - texture_bytes_, "GPU texture data exceeds the initial 256 MiB budget.");
@@ -117,15 +170,10 @@ nvrhi::TextureHandle Cache::upload_texture(Upload upload, const std::shared_ptr<
     auto texture = upload.device.createTexture(desc);
     require(bool(texture), "Texture allocation failed.");
 
-    upload.commands.open();
-    for (std::uint32_t level = 0; level < image->mips.size(); ++level) {
-        const auto& mip = image->mips[level];
-        upload.commands.writeTexture(texture, 0, level, mip.rgba.data(), std::size_t(mip.width) * 4);
-    }
-    upload.commands.close();
-    upload.device.executeCommandList(&upload.commands);
-    ++upload.device_idle_waits;
-    require(upload.device.waitForIdle(), "Texture upload failed.");
+    make_upload_room(upload, bytes, image->mips.size());
+    pending_images_.push_back({image, texture});
+    pending_bytes_ += bytes;
+    pending_copies_ += image->mips.size();
     texture_bytes_ += bytes;
     textures_.emplace(image.get(), texture);
     return texture;
@@ -135,7 +183,7 @@ const nvrhi::TextureHandle& Cache::texture_for(const TextureImage* image) const 
     return textures_.at(image);
 }
 
-nvrhi::BindingSetHandle Cache::material(Upload upload, const MaterialInputs& inputs, const MeshAsset* mesh,
+nvrhi::BindingSetHandle Cache::material(const Upload& upload, const MaterialInputs& inputs, const MeshAsset* mesh,
                                         const MaterialTextures* textures, MaterialBindings* foreground) {
     auto& cache = foreground ? *foreground : materials_;
     const MaterialKey material_key{mesh, textures};
