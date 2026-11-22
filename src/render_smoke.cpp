@@ -61,8 +61,8 @@
 #include "poima/cluster_lights_cs.hpp"
 #include "poima/sky_vs.hpp"
 #include "poima/sky_ps.hpp"
-#include "poima/shadow_vs.hpp"
-#include "poima/shadow_ps.hpp"
+#include "render_scene_draw.hpp"
+#include "render_shadows.hpp"
 #include "poima/smoke_vs.hpp"
 #include "poima/smoke_ps.hpp"
 
@@ -90,6 +90,21 @@
 #endif
 
 namespace poima {
+namespace render_draw {
+struct GpuJoint { float rows[3][4]; };
+static_assert(sizeof(GpuJoint)==48);
+struct SkinInstance {
+    std::shared_ptr<const MeshAsset> mesh;
+    nvrhi::BufferHandle vertices,palette;
+    std::array<nvrhi::BufferHandle,2> outputs;
+    std::array<nvrhi::BindingSetHandle,2> output_bindings;
+    nvrhi::BindingSetHandle bindings;
+    std::uint32_t write_index=0,accepted_index=0;
+    std::uint64_t accepted_sequence=0;
+    std::vector<GpuJoint> joints;
+    std::size_t bytes=0;
+};
+}
 namespace {
 struct Messages final : nvrhi::IMessageCallback {
     std::atomic<std::uint32_t> errors{0};
@@ -103,15 +118,12 @@ void require(bool condition, const std::string& detail) {
     if (!condition) throw std::runtime_error(detail);
 }
 
-struct DrawConstants {
-    float model[3][4];
-    float normal[3][4];
-    float base_metallic[4];
-    float emissive_roughness[4];
-    float alpha[4];
-};
-static_assert(sizeof(DrawConstants)==144);
-struct DrawIndices {std::uint32_t object=0,shadow=0,reserved[2]{};};
+using render_draw::DrawConstants;
+using render_draw::DrawIndices;
+using render_draw::DrawItem;
+using render_draw::Geometry;
+using render_draw::GpuJoint;
+using render_draw::SkinInstance;
 struct ObjectData {
     DrawConstants current{};
     float previous_model[3][4]{};
@@ -119,7 +131,7 @@ struct ObjectData {
     std::uint32_t history[4]{};
     std::array<float,4> foliage_current{},foliage_previous{};
 };
-static_assert(sizeof(DrawIndices)==16 && sizeof(ObjectData)==240);
+static_assert(sizeof(ObjectData)==240);
 static_assert(offsetof(ObjectData,foliage_current)==208 && offsetof(ObjectData,foliage_previous)==224);
 struct GpuSurfaceMark {
     float center_depth[4],normal_minimum_dot[4],tangent_half_width[4],color_opacity[4],half_height_roughness_edge[3];
@@ -149,7 +161,6 @@ struct FrameConstants {
 };
 static_assert(sizeof(GpuLight)==80 && sizeof(GpuShadow)==80 && sizeof(FrameConstants)==1632);
 static_assert(offsetof(FrameConstants,water_ripple_shape)==1600);
-struct Geometry { nvrhi::BufferHandle vertices,indices;std::uint32_t count=0;render_schedule::GeometrySlice stream{}; };
 struct SpriteInstance {
     std::array<float,4> center_and_size,linear_rgba,fade_and_reserved;
     std::array<std::uint32_t,4> texel_rect;
@@ -169,33 +180,8 @@ struct SpriteBinding {
     nvrhi::BindingSetHandle bindings;
 };
 struct GpuInfluence { std::uint32_t joints[4];float weights[4]; };
-struct GpuJoint { float rows[3][4]; };
-static_assert(sizeof(GpuInfluence)==32 && sizeof(GpuJoint)==48);
+static_assert(sizeof(GpuInfluence)==32);
 struct SkinSource { std::shared_ptr<const MeshAsset> mesh;nvrhi::BufferHandle influences;SkinBounds bounds; };
-struct SkinInstance {
-    std::shared_ptr<const MeshAsset> mesh;
-    nvrhi::BufferHandle vertices,palette;
-    std::array<nvrhi::BufferHandle,2> outputs;
-    std::array<nvrhi::BindingSetHandle,2> output_bindings;
-    nvrhi::BindingSetHandle bindings;
-    std::uint32_t write_index=0,accepted_index=0;
-    std::uint64_t accepted_sequence=0;
-    std::vector<GpuJoint> joints;
-    std::size_t bytes=0;
-};
-struct DrawItem {
-    std::uint32_t object_index=0;std::uint64_t incarnation=0;std::shared_ptr<const MeshAsset> mesh;
-    nvrhi::BufferHandle previous_vertices;std::string entity_id;SkinInstance* skin=nullptr;
-    DrawConstants constants{};Geometry geometry;nvrhi::BindingSetHandle bindings,masked_shadow_bindings;
-    bool cull=false,camera_visible=true,receive_shadows=true,stream_geometry=false,mutable_geometry=false;
-    // Borrowed from the last accepted camera frame until the stream upload is packed.
-    const MeshAsset* previous_stream_mesh=nullptr;
-    std::uint32_t shadow_mask=0,surface_mark_offset=0,surface_mark_count=0;
-    // Borrowed from the current snapshot during draw preparation and submission.
-    std::span<const SceneSurfaceMark> local_surface_marks;
-    SceneWetness wetness;
-    std::array<float,4> foliage{};
-};
 using SteadyClock=std::chrono::steady_clock;
 namespace fp=frame_performance;
 double elapsed_ms(SteadyClock::time_point start) { return std::chrono::duration<double,std::milli>(SteadyClock::now()-start).count(); }
@@ -428,15 +414,7 @@ struct Context {
     nvrhi::BindingLayoutHandle sky_layout;
     nvrhi::BindingSetHandle sky_bindings;
     nvrhi::GraphicsPipelineHandle sky_pipeline;
-    nvrhi::TextureHandle shadow_texture;
-    std::vector<nvrhi::FramebufferHandle> shadow_framebuffers;
-    nvrhi::ShaderHandle shadow_shader;
-    nvrhi::BindingLayoutHandle shadow_layout;
-    nvrhi::BindingSetHandle shadow_bindings;
-    nvrhi::GraphicsPipelineHandle shadow_pipeline;
-    nvrhi::ShaderHandle masked_shadow_shader;
-    nvrhi::BindingLayoutHandle masked_shadow_layout;
-    nvrhi::GraphicsPipelineHandle masked_shadow_pipeline;
+    render_shadows::Pass shadows;
     std::vector<ShadowView> shadow_plan;
     std::map<const MeshAsset*,Geometry> geometry_cache;
     std::map<const MeshAsset*,std::shared_ptr<const MeshAsset>> mesh_owners;
@@ -458,7 +436,6 @@ struct Context {
     vk::QueryPool timestamp_pool;
     bool timestamp_prepared=false,timestamp_recording=false;
     std::map<std::pair<const MeshAsset*,const MaterialTextures*>,nvrhi::BindingSetHandle> material_cache;
-    std::map<std::pair<const MeshAsset*,const MaterialTextures*>,nvrhi::BindingSetHandle> masked_shadow_cache;
     std::map<const TextureImage*,nvrhi::TextureHandle> texture_cache;
     std::map<std::array<int,4>,nvrhi::SamplerHandle> sampler_cache;
     std::shared_ptr<const TextureImage> white_image;
@@ -467,7 +444,7 @@ struct Context {
     bool hardware = false;
     std::string gpu_name;
     bool swapchain_dirty=false;
-    bool shadow_ready=false,skin_pipeline_ready=false,renderer_fault=false;
+    bool skin_pipeline_ready=false,renderer_fault=false;
     bool editor=false,hosted=false,player_context=false,scene_visible=true,capture_exclusive=false;
     std::optional<nvrhi::Viewport> scene_viewport;
     render_ui::Game game_ui;
@@ -490,8 +467,7 @@ struct Context {
         editor_ui.release_gpu();
 #endif
         skin_instances.clear();skin_sources.clear();skin_pipeline=nullptr;skin_layout=nullptr;skin_shader=nullptr;skin_errors=nullptr;skin_readback=nullptr;
-        masked_shadow_cache.clear();masked_shadow_pipeline=nullptr;masked_shadow_layout=nullptr;masked_shadow_shader=nullptr;
-        shadow_pipeline=nullptr;shadow_bindings=nullptr;shadow_layout=nullptr;shadow_shader=nullptr;shadow_framebuffers.clear();shadow_texture=nullptr;
+        shadows.reset();
         occlusion.reset();
         deferred_bindings=nullptr;deferred_pipeline=nullptr;deferred_layout=nullptr;deferred_cs=nullptr;material_base=nullptr;material_surface=nullptr;material_correspondence=nullptr;
         fog={};reflections={};
@@ -867,12 +843,8 @@ struct Context {
         nvrhi::BufferDesc desc;desc.byteSize=count*sizeof(ObjectData);desc.structStride=sizeof(ObjectData);
         desc.initialState=nvrhi::ResourceStates::ShaderResource;desc.keepInitialState=true;desc.debugName="Current and prior accepted object data";
         object_buffer=checked->createBuffer(desc);require(bool(object_buffer),"Structured object buffer allocation failed.");
-        material_cache.clear();masked_shadow_cache.clear();bindings=nullptr;
-        if(shadow_layout) {
-            shadow_bindings=checked->createBindingSet(nvrhi::BindingSetDesc().addItem(nvrhi::BindingSetItem::PushConstants(0,sizeof(DrawIndices)))
-                .addItem(nvrhi::BindingSetItem::ConstantBuffer(1,frame_buffer)).addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(9,object_buffer)),shadow_layout);
-            require(bool(shadow_bindings),"Shadow object data rebinding failed.");
-        }
+        material_cache.clear();shadows.clear_masked_materials();bindings=nullptr;
+        shadows.rebind_objects(*checked.Get(),{frame_buffer,object_buffer});
     }
     void prepare_history() {
         pending_history={};pending_history.source=scene->presentation_source_id;pending_history.world=scene->world_id;pending_history.camera=scene->camera_id;
@@ -995,7 +967,7 @@ struct Context {
         for(std::size_t layer=0;layer<shadow_plan.size();++layer) {
             candidates.clear();
             for(const auto& draw:draws)candidates.push_back({draw.object_index,(draw.shadow_mask & (1u<<layer))!=0,
-                key(draw,draw.masked_shadow_bindings ? draw.masked_shadow_bindings.Get() : shadow_bindings.Get(),scene_products_enabled,draw.masked_shadow_bindings ? 1u : 0u)});
+                key(draw,draw.masked_shadow_bindings ? draw.masked_shadow_bindings.Get() : shadows.opaque_bindings(),scene_products_enabled,draw.masked_shadow_bindings ? 1u : 0u)});
             shadow_batch_plans.push_back(render_batches::plan(candidates,diagnostics.draw_instancing));
         }
         candidates.clear();candidates.reserve(viewmodel_draws.size());
@@ -1169,73 +1141,11 @@ struct Context {
     }
 
     void prepare_shadows() {
-        auto lighting=scene->lighting;finalize_lighting(lighting);std::size_t count=0;
-        for(const auto& source:lighting.lights)count+=shadow_view_count(source.light);
-        validate_shadow_budget(count,lighting.environment.shadow_resolution);
-        const auto resolution=count ? lighting.environment.shadow_resolution : 1u;
-        const auto layers=static_cast<std::uint32_t>(std::max(count,std::size_t(1)));
-        if(shadow_ready && shadow_texture && shadow_texture->getDesc().width==resolution && shadow_texture->getDesc().arraySize==layers)return;
-        // NVRHI submission references retain the old array and bindings until
-        // completion when an authored light or quality edit replaces them.
-        shadow_ready=false;material_cache.clear();masked_shadow_cache.clear();bindings=nullptr;
-        masked_shadow_pipeline=nullptr;masked_shadow_layout=nullptr;masked_shadow_shader=nullptr;
-        shadow_framebuffers.clear();shadow_pipeline=nullptr;shadow_bindings=nullptr;shadow_texture=nullptr;
-        const auto limits=physical.getProperties(dispatch).limits;
-        require(resolution<=limits.maxImageDimension2D && layers<=limits.maxImageArrayLayers,"Shadow texture dimensions are unavailable on this GPU.");
-        const auto flags=physical.getFormatProperties(vk::Format::eD32Sfloat,dispatch).optimalTilingFeatures;
-        require(bool(flags & vk::FormatFeatureFlagBits::eDepthStencilAttachment) && bool(flags & vk::FormatFeatureFlagBits::eSampledImage),"GPU cannot sample D32 shadow maps.");
-        nvrhi::TextureDesc td;td.width=resolution;td.height=resolution;td.arraySize=layers;td.dimension=nvrhi::TextureDimension::Texture2DArray;
-        td.format=nvrhi::Format::D32;td.isRenderTarget=true;td.isShaderResource=true;td.initialState=nvrhi::ResourceStates::ShaderResource;td.keepInitialState=true;td.debugName="Shadow depth array";
-        shadow_texture=checked->createTexture(td);require(bool(shadow_texture),"Shadow texture allocation failed.");
-        for(std::uint32_t i=0;i<layers;++i) {
-            auto fb=checked->createFramebuffer(nvrhi::FramebufferDesc().setDepthAttachment(shadow_texture,nvrhi::TextureSubresourceSet(0,1,i,1)));
-            require(bool(fb),"Shadow framebuffer creation failed.");shadow_framebuffers.push_back(fb);
-        }
-        shadow_shader=create_embedded_shader(checked,nvrhi::ShaderDesc(nvrhi::ShaderType::Vertex).setEntryName("shadow_vertex_main"),poima_shadow_vs);
-        shadow_layout=checked->createBindingLayout(nvrhi::BindingLayoutDesc().setVisibility(nvrhi::ShaderType::Vertex)
-            .addItem(nvrhi::BindingLayoutItem::PushConstants(0,sizeof(DrawIndices))).addItem(nvrhi::BindingLayoutItem::ConstantBuffer(1)).addItem(nvrhi::BindingLayoutItem::StructuredBuffer_SRV(9)));
-        require(shadow_shader && shadow_layout,"Shadow shader/layout creation failed.");
-        shadow_bindings=checked->createBindingSet(nvrhi::BindingSetDesc().addItem(nvrhi::BindingSetItem::PushConstants(0,sizeof(DrawIndices)))
-            .addItem(nvrhi::BindingSetItem::ConstantBuffer(1,frame_buffer)).addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(9,object_buffer)),shadow_layout);
-        nvrhi::GraphicsPipelineDesc pd;pd.VS=shadow_shader;pd.inputLayout=input_layout;pd.bindingLayouts.push_back(shadow_layout);
-        pd.renderState.depthStencilState.depthTestEnable=true;pd.renderState.depthStencilState.depthWriteEnable=true;pd.renderState.depthStencilState.depthFunc=nvrhi::ComparisonFunc::LessOrEqual;
-        pd.renderState.rasterState.cullMode=nvrhi::RasterCullMode::None;pd.renderState.rasterState.frontCounterClockwise=true;
-        shadow_pipeline=checked->createGraphicsPipeline(pd,shadow_framebuffers.front()->getFramebufferInfo());
-        require(shadow_bindings && shadow_pipeline,"Shadow pipeline creation failed.");
-        masked_shadow_shader=create_embedded_shader(checked,nvrhi::ShaderDesc(nvrhi::ShaderType::Pixel).setEntryName("shadow_pixel_main"),poima_shadow_ps);
-        masked_shadow_layout=checked->createBindingLayout(nvrhi::BindingLayoutDesc().setVisibility(nvrhi::ShaderType::All)
-            .addItem(nvrhi::BindingLayoutItem::PushConstants(0,sizeof(DrawIndices))).addItem(nvrhi::BindingLayoutItem::ConstantBuffer(1))
-            .addItem(nvrhi::BindingLayoutItem::StructuredBuffer_SRV(9)).addItem(nvrhi::BindingLayoutItem::Texture_SRV(0)).addItem(nvrhi::BindingLayoutItem::Sampler(0)));
-        pd.PS=masked_shadow_shader;pd.bindingLayouts[0]=masked_shadow_layout;
-        masked_shadow_pipeline=checked->createGraphicsPipeline(pd,shadow_framebuffers.front()->getFramebufferInfo());
-        require(masked_shadow_shader && masked_shadow_layout && masked_shadow_pipeline,"Masked shadow shader/layout/pipeline creation failed.");
-        shadow_ready=true;
-    }
-    void render_shadows() {
-        commands->clearDepthStencilTexture(shadow_texture,nvrhi::AllSubresources,true,1,false,0);
-        for(std::size_t layer=0;layer<shadow_plan.size();++layer) {
-            nvrhi::GraphicsState state;state.pipeline=shadow_pipeline;state.framebuffer=shadow_framebuffers.at(layer);state.bindings.push_back(shadow_bindings);
-            const auto size=static_cast<float>(shadow_texture->getDesc().width);state.viewport.addViewportAndScissorRect(nvrhi::Viewport(size,size));
-            state.vertexBuffers.push_back(nvrhi::VertexBufferBinding().setSlot(0));
-            if(scene_products_enabled)state.vertexBuffers.push_back(nvrhi::VertexBufferBinding().setSlot(1));
-            for(const auto& batch:shadow_batch_plans.at(layer)) {
-                const auto& draw=draws.at(batch.first);
-                state.pipeline=draw.masked_shadow_bindings ? masked_shadow_pipeline : shadow_pipeline;
-                state.bindings[0]=draw.masked_shadow_bindings ? draw.masked_shadow_bindings : shadow_bindings;
-                state.vertexBuffers[0].setBuffer(draw.geometry.vertices).setOffset(draw.geometry.stream.vertex_offset);
-                if(scene_products_enabled)state.vertexBuffers[1]
-                    .setBuffer(draw.stream_geometry ? draw.geometry.vertices : draw.previous_vertices)
-                    .setOffset(draw.geometry.stream.vertex_offset);
-                state.indexBuffer=draw.geometry.indices ? nvrhi::IndexBufferBinding(draw.geometry.indices,nvrhi::Format::R32_UINT,
-                    static_cast<std::uint32_t>(draw.geometry.stream.index_offset)) : nvrhi::IndexBufferBinding();
-                commands->setGraphicsState(state);const DrawIndices indices{draw.object_index,static_cast<std::uint32_t>(layer)};
-                commands->setPushConstants(&indices,sizeof(indices));
-                if(draw.geometry.indices)commands->drawIndexed(nvrhi::DrawArguments().setVertexCount(draw.geometry.count).setInstanceCount(batch.count).setStartInstanceLocation(0));
-                else commands->draw(nvrhi::DrawArguments().setVertexCount(draw.geometry.count).setInstanceCount(batch.count).setStartInstanceLocation(0));
-                ++pending_draws.shadow_batches;
-            }
-        }
-        commands->setTextureState(shadow_texture,nvrhi::AllSubresources,nvrhi::ResourceStates::ShaderResource);commands->commitBarriers();
+        const auto target=render_shadows::target_for(scene->lighting);
+        if(shadows.matches(target))return;
+        // NVRHI submission references retain old resources until completion.
+        material_cache.clear();shadows.clear_masked_materials();bindings=nullptr;
+        shadows.prepare(*checked.Get(),physical,dispatch,target,input_layout,{frame_buffer,object_buffer});
     }
 
     void prepare_scene() {
@@ -1512,33 +1422,19 @@ struct Context {
             auto levels=nvrhi::AllSubresources;if(map.min_filter==9728 || map.min_filter==9729)levels.setMipLevels(0,1);
             desc.addItem(nvrhi::BindingSetItem::Texture_SRV(slot,texture,nvrhi::Format::UNKNOWN,levels)).addItem(nvrhi::BindingSetItem::Sampler(slot,sampler));
         }
-        desc.addItem(nvrhi::BindingSetItem::Texture_SRV(5,shadow_texture))
+        desc.addItem(nvrhi::BindingSetItem::Texture_SRV(5,shadows.texture()))
             .addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(6,light_buffer))
             .addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(7,foreground ? viewmodel->counts : cluster_counts))
             .addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(8,foreground ? viewmodel->indices : cluster_indices)).addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(9,foreground ? viewmodel->objects : object_buffer));
         environment_ibl.bind(desc);
         auto result=checked->createBindingSet(desc,binding_layout);require(bool(result),"Material texture bindings failed.");cache.emplace(key_material,result);return result;
     }
-    nvrhi::BindingSetHandle masked_shadow_material(const MeshAsset* mesh,const MaterialTextures* textures,const nvrhi::BindingSetHandle& material) {
-        const auto key=std::make_pair(mesh,textures);
-        if(const auto found=masked_shadow_cache.find(key);found!=masked_shadow_cache.end())return found->second;
-        auto desc=nvrhi::BindingSetDesc().addItem(nvrhi::BindingSetItem::PushConstants(0,sizeof(DrawIndices)))
-            .addItem(nvrhi::BindingSetItem::ConstantBuffer(1,frame_buffer)).addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(9,object_buffer));
-        bool image=false,sampler=false;
-        for(const auto& binding:material->getDesc()->bindings) {
-            if(binding.slot==0 && binding.type==nvrhi::ResourceType::Texture_SRV){desc.addItem(binding);image=true;}
-            if(binding.slot==0 && binding.type==nvrhi::ResourceType::Sampler){desc.addItem(binding);sampler=true;}
-        }
-        require(image && sampler,"Masked shadow requires the same base texture and sampler as its camera material.");
-        auto result=checked->createBindingSet(desc,masked_shadow_layout);require(bool(result),"Masked shadow material binding failed.");
-        masked_shadow_cache.emplace(key,result);return result;
-    }
     void retain_scene_resources() {
         std::set<const MeshAsset*> meshes;
         std::set<const MaterialTextures*> materials;
         std::set<const TextureImage*> images_used;
         std::set<std::string> skin_ids;
-        std::set<std::pair<const MeshAsset*,const MaterialTextures*>> combinations{{nullptr,nullptr}};
+        std::set<render_shadows::MaterialKey> combinations{{nullptr,nullptr}};
         std::set<std::array<int,4>> samplers;
         auto retain_image=[&](const std::shared_ptr<const TextureImage>& image) {
             if(image) { images_used.insert(image.get());image_owners[image.get()]=image; }
@@ -1565,7 +1461,7 @@ struct Context {
         // Owner maps retain old pointer identities until the associated GPU
         // cache entries are gone, preventing allocator-address reuse hits.
         std::erase_if(material_cache,[&](const auto& item){return !combinations.contains(item.first);});
-        std::erase_if(masked_shadow_cache,[&](const auto& item){return !combinations.contains(item.first);});
+        shadows.prune_masked_materials(combinations);
         if(viewmodel)std::erase_if(viewmodel->materials,[&](const auto& item){return !combinations.contains(item.first);});
         std::erase_if(geometry_cache,[&](const auto& item){return !meshes.contains(item.first);});
         std::erase_if(bounds_cache,[&](const auto& item){return item.first && !meshes.contains(item.first);});
@@ -1721,7 +1617,7 @@ struct Context {
                     if(light!=lighting.lights.end() && light->light.kind==LightKind::spot && light->light.intensity>0)
                         fog_spots[slot]=static_cast<std::uint32_t>(light-lighting.lights.begin()+1);
                 }
-                fog.prepare(*checked.Get(),{frame_buffer.Get(),surface_radiance_texture(),depth.Get(),shadow_texture.Get(),light_buffer.Get()});
+                fog.prepare(*checked.Get(),{frame_buffer.Get(),surface_radiance_texture(),depth.Get(),shadows.texture(),light_buffer.Get()});
             }
             const auto light_count=static_cast<std::uint32_t>(std::ranges::count_if(fog_spots,[](auto ordinal){return ordinal!=0;}));
             diagnostics.height_fog=HeightFogDiagnostics{active,reason,fog.buffer_bytes(),light_count};
@@ -1768,12 +1664,12 @@ struct Context {
             require(bool(deferred_pipeline),"Deferred lighting pipeline creation failed.");
         }
         const auto environment=environment_ibl.bound();
-        const std::array<const void*,19> key={frame_buffer.Get(),material_base.Get(),material_surface.Get(),material_correspondence.Get(),depth.Get(),shadow_texture.Get(),light_buffer.Get(),cluster_counts.Get(),cluster_indices.Get(),scene_hdr.Get(),scene_normal.Get(),scene_motion.Get(),scene_motion_valid.Get(),occlusion.filtered(),environment.diffuse,environment.specular,environment.brdf,environment.sampler,reflections.roughness()};
+        const std::array<const void*,19> key={frame_buffer.Get(),material_base.Get(),material_surface.Get(),material_correspondence.Get(),depth.Get(),shadows.texture(),light_buffer.Get(),cluster_counts.Get(),cluster_indices.Get(),scene_hdr.Get(),scene_normal.Get(),scene_motion.Get(),scene_motion_valid.Get(),occlusion.filtered(),environment.diffuse,environment.specular,environment.brdf,environment.sampler,reflections.roughness()};
         if(deferred_bindings && key==deferred_binding_key)return;
         auto desc=nvrhi::BindingSetDesc().addItem(nvrhi::BindingSetItem::ConstantBuffer(1,frame_buffer))
             .addItem(nvrhi::BindingSetItem::Texture_SRV(0,material_base)).addItem(nvrhi::BindingSetItem::Texture_SRV(1,material_surface))
             .addItem(nvrhi::BindingSetItem::Texture_SRV(2,material_correspondence)).addItem(nvrhi::BindingSetItem::Texture_SRV(3,depth))
-            .addItem(nvrhi::BindingSetItem::Texture_SRV(5,shadow_texture)).addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(6,light_buffer))
+            .addItem(nvrhi::BindingSetItem::Texture_SRV(5,shadows.texture())).addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(6,light_buffer))
             .addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(7,cluster_counts)).addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(8,cluster_indices))
             .addItem(nvrhi::BindingSetItem::Texture_UAV(0,scene_hdr));
         if(scene_products_enabled)desc.addItem(nvrhi::BindingSetItem::Texture_UAV(1,scene_normal))
@@ -2329,7 +2225,8 @@ struct Context {
             }
             pack_surface_marks(object,item);
             item.bindings=mesh_bindings(item.stream_geometry ? nullptr : object.mesh.get(),object.textures.get());
-            if(draw.alpha[2]>.5f)item.masked_shadow_bindings=masked_shadow_material(object.mesh.get(),object.textures.get(),item.bindings);
+            if(draw.alpha[2]>.5f)item.masked_shadow_bindings=shadows.masked_material(*checked.Get(),{frame_buffer,object_buffer},
+                {object.mesh.get(),object.textures.get()},*item.bindings.Get());
             if(!item.stream_geometry)item.geometry=mesh_geometry(item.mesh);
             Bounds local_bounds;
             if(object.skin) {
@@ -2844,7 +2741,7 @@ struct Context {
                 f.reflected_hdr=texture(reflections.radiance(),rs::Lifetime::shared,false);
             }
             if(settings.height_fog)f.fogged_hdr=texture(fog.radiance(),rs::Lifetime::shared,false);
-            f.depth=texture(depth,rs::Lifetime::shared,false);if(scene_normal) {f.normal=texture(scene_normal,rs::Lifetime::shared,false);f.motion=texture(scene_motion,rs::Lifetime::shared,false);f.motion_valid=texture(scene_motion_valid,rs::Lifetime::shared,false);}f.shadow=texture(shadow_texture,rs::Lifetime::shared,false);
+            f.depth=texture(depth,rs::Lifetime::shared,false);if(scene_normal) {f.normal=texture(scene_normal,rs::Lifetime::shared,false);f.motion=texture(scene_motion,rs::Lifetime::shared,false);f.motion_valid=texture(scene_motion_valid,rs::Lifetime::shared,false);}f.shadow=texture(shadows.texture(),rs::Lifetime::shared,false);
             if(settings.clustered) {
                 f.counts=buffer(cluster_counts,rs::Lifetime::shared,false);f.indices=buffer(cluster_indices,rs::Lifetime::shared,false);
                 f.resources[f.indices].region=rs::Region::cluster_members;f.resources[f.indices].counts=f.counts;
@@ -3018,12 +2915,12 @@ struct Context {
             else require(mark_bindings[0].resourceHandle==empty_surface_marks.Get(),"Unmarked scene requires the empty surface mark binding.");
             if(f.surface_mark_masks!=rs::none)identity(f.surface_mark_masks,mark_bindings[1].resourceHandle);
             else require(mark_bindings[1].resourceHandle==white_surface_mark_mask.Get(),"Analytic marks require the white mask binding.");
-            identity(f.frame,frame_buffer.Get());identity(f.objects,object_buffer.Get());identity(f.hdr,scene_hdr.Get());identity(f.shadow,shadow_texture.Get());if(f.normal!=rs::none) {identity(f.normal,scene_normal.Get());identity(f.motion,scene_motion.Get());identity(f.motion_valid,scene_motion_valid.Get());}
+            identity(f.frame,frame_buffer.Get());identity(f.objects,object_buffer.Get());identity(f.hdr,scene_hdr.Get());identity(f.shadow,shadows.texture());if(f.normal!=rs::none) {identity(f.normal,scene_normal.Get());identity(f.motion,scene_motion.Get());identity(f.motion_valid,scene_motion_valid.Get());}
             if(f.lights!=rs::none)identity(f.lights,light_buffer.Get());
             if(plan.settings.clustered) {identity(f.counts,cluster_counts.Get());identity(f.indices,cluster_indices.Get());identity(f.cluster_readback,cluster_readback.Get());}
             if(!f.skins.empty()) {identity(f.skin_errors,skin_errors.Get());identity(f.skin_readback,skin_readback.Get());}
-            for(const auto& shadow:shadow_framebuffers)framebuffer(shadow,rs::none,f.shadow);
-            for(const auto& binding:shadow_bindings->getDesc()->bindings) {
+            for(const auto& shadow:shadows.framebuffers())framebuffer(shadow,rs::none,f.shadow);
+            for(const auto& binding:shadows.opaque_bindings()->getDesc()->bindings) {
                 if(binding.type==nvrhi::ResourceType::ConstantBuffer)identity(f.frame,binding.resourceHandle);
                 if(binding.type==nvrhi::ResourceType::StructuredBuffer_SRV)identity(f.objects,binding.resourceHandle);
             }
@@ -3292,7 +3189,9 @@ struct Context {
                     dispatch_light_assignment();
                 }
                 timestamp(2);break;
-            case render_schedule::PassId::shadows:if(scene)render_shadows();timestamp(3);break;
+            case render_schedule::PassId::shadows:
+                if(scene)shadows.record(*commands.Get(),draws,shadow_batch_plans,shadow_plan.size(),scene_products_enabled,pending_draws.shadow_batches);
+                timestamp(3);break;
             case render_schedule::PassId::scene_clear:
                 commands->beginTrackingTextureState(planned_texture(resources.swapchain),nvrhi::AllSubresources,
                     initialized[index] ? nvrhi::ResourceStates::Present : nvrhi::ResourceStates::Common);

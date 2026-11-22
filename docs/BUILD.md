@@ -166,6 +166,9 @@ authored entities, rig and template definitions, and mesh and material bindings.
 collects the selected provenance and credits, and computes the frozen content
 identity. `src/world_region_assets.cpp` verifies cooked navigation and water
 packages and their authored bindings.
+`src/world_asset_commands.cpp` resolves read-only reference pages, entity
+materials and cooked animation observations. The world service selects the
+document and checks authored revisions before calling these queries.
 `src/world_capture.cpp` validates capture options and output destinations and
 builds animated asset previews. `src/world.cpp` owns world state, revisioned
 publication, capture revision guards, dispatch and session filtering.
@@ -185,6 +188,9 @@ own resources, such as `src/render_screen_reflections.cpp` and
 `src/render_ambient_occlusion.cpp` owns the GTAO and bilateral filter GPU
 resources and commands. The context orders both stages and supplies the frame
 constants, depth and deferred material textures.
+`src/render_shadows.cpp` owns the depth array, masked and opaque bindings,
+and shadow draws. The context chooses casters and batches and checks their
+resource identity against the frame schedule.
 `src/render_viewmodel.cpp` stages viewmodel GPU resources and records the
 fullscreen resolve and composition draws. `src/render_hdr_effects.cpp` owns
 project post-effect and bloom GPU resources and draw commands. The context

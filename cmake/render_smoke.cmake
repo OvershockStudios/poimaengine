@@ -148,6 +148,7 @@ target_sources(poima_core PRIVATE
     src/render_smoke.cpp src/render_readback.cpp src/render_screen_reflections.cpp src/render_height_fog.cpp src/render_viewmodel.cpp src/render_hdr_effects.cpp
     src/render_vulkan_instance.cpp src/player_window.cpp src/gamepad_sdl.cpp
     src/render_ui.cpp src/render_environment_ibl.cpp src/render_ambient_occlusion.cpp
+    src/render_shadows.cpp
     "${poima_startup_wordmark}")
 target_link_libraries(poima_core PRIVATE nvrhi nvrhi_vk SDL3::SDL3-static)
 target_compile_definitions(poima_core PRIVATE NOMINMAX WIN32_LEAN_AND_MEAN)

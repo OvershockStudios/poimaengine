@@ -1,0 +1,115 @@
+{
+  "release": "0.0.386",
+  "scope": "Read-only asset reference, material and animation projections and Vulkan shadow-pass ownership.",
+  "baseline_commit": "bf39bc842151e88e4fdf06e7abcab9f1da57d87b",
+  "windows_reference_version": "0.0.384",
+  "main_file_lines": {
+    "src/world.cpp": {
+      "before_385": 2695,
+      "after_386": 2529
+    },
+    "src/render_smoke.cpp": {
+      "before_385": 3775,
+      "after_386": 3674
+    }
+  },
+  "src_lines_added_net": 229,
+  "source_inventory_sha256": "27bd5d8262193fc7b321557d98def0fa67f711d5723a36ef966b0f957f309715",
+  "linux": {
+    "binary_sha256": "d8280e64888202d58b8ab5da7fa60c94ba6e172737254002c989673d6fc1a3e0",
+    "junit_sha256": "ddafd9d385d9872667b38f759c1d21ae56fe2e3b2cc115957f5af64b869f2c6b",
+    "suites": [
+      "world_contract",
+      "asset_contract",
+      "runtime_animation_contract",
+      "animation_contract",
+      "authoring_contract_identity",
+      "world_asset_cache_native",
+      "asset_references_contract",
+      "authoring_core_conformance",
+      "physical_pose_diagnostics_contract",
+      "model_bounds_contract",
+      "world_material_native",
+      "world_texture_native",
+      "shadow_math",
+      "procedural_material_contract",
+      "world_schema_native"
+    ]
+  },
+  "windows": {
+    "binary_sha256": "1f2ce2221251e1f6341ca4572bc3013913a31e243e0a8ceed6d32b0e81916db1",
+    "runtime_descriptor_sha256": "1a2179168a356a76641db958e78066d1acd06a311c13f5556980b6cd6848ec92",
+    "matched_spirv_modules": 55,
+    "schedule_evidence_sha256": "daf2e3a18bd5866caadc0d1f706d2aead8aaac60659579940feb643a82eec91a",
+    "schedule_variants": 488,
+    "schedule_refusals": 1265,
+    "shadow_capture_check_sha256": "93d2c0fe731e8fe7794e6bc7338bb242addace4fc27a023cee2aef1094ec873c",
+    "exact_shadow_captures": [
+      {
+        "gpu": "AMD Radeon(TM) Graphics",
+        "lighting_path": "forward",
+        "exact_images": 49,
+        "receipt_sha256": "644c9ef724dadbbe6f2b8269ead1457eeedfbd54007f00a6b5dce367d4d5c383",
+        "reference_receipt_sha256": "ef0f2e01c7a0b2c40cec1b7f62f3c7de4fea58d6111e06b6bd797c429bbc6380",
+        "reference_binary_sha256": "5c8638ae3eff9a62c4e5da170a64d3f2b714d4b2de32dddd335376ec3c72cd0d"
+      },
+      {
+        "gpu": "AMD Radeon(TM) Graphics",
+        "lighting_path": "deferred",
+        "exact_images": 49,
+        "receipt_sha256": "ef2d40955dd69da4e44c0745135c28f47cbc844a7787039d7600844e4ccadd9e",
+        "reference_receipt_sha256": "33d6745c80235e3dbdde249566db4a662497c9ddb2d47655de4fd7fb772f8a16",
+        "reference_binary_sha256": "5c8638ae3eff9a62c4e5da170a64d3f2b714d4b2de32dddd335376ec3c72cd0d"
+      },
+      {
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "lighting_path": "forward",
+        "exact_images": 49,
+        "receipt_sha256": "c17ccd88da67f99d0254749ba0696b259a8150ad8254165fe05750c24ba2b245",
+        "reference_receipt_sha256": "a468b00c8e95f4c2d274cae55d1ffe1846b59e3e10958f8f2542820e7268b2fc",
+        "reference_binary_sha256": "5c8638ae3eff9a62c4e5da170a64d3f2b714d4b2de32dddd335376ec3c72cd0d"
+      },
+      {
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "lighting_path": "deferred",
+        "exact_images": 49,
+        "receipt_sha256": "695def79ea733ae91b558e7d0e0f6ac650497d93c7dde71dce949f3a69323302",
+        "reference_receipt_sha256": "9a564dc53d77ec7064174ff5e3c9138e226cb32d7e6bc6e46fa748dfeefbb9ab",
+        "reference_binary_sha256": "5c8638ae3eff9a62c4e5da170a64d3f2b714d4b2de32dddd335376ec3c72cd0d"
+      }
+    ],
+    "exact_asset_calls": {
+      "requests_and_replies": 49,
+      "methods": {
+        "asset.animation.physical_limits": 17,
+        "entity.material": 5,
+        "world.asset.references": 13,
+        "asset.animation.bounds": 4,
+        "asset.animation.channel": 3,
+        "asset.animation.skin": 2,
+        "asset.animation.sample": 5
+      },
+      "success": 21,
+      "refusal": 28,
+      "evidence_sha256": "3a80fcec852fb152e72f4fe39af9cb18e130356dc465c02dc9edbcd7049286d5",
+      "reference_sha256": "b53680b79fb8a3effbda74475f2b4c8f6483b3a399b733d7fbc484306fa22f33"
+    },
+    "hosted_contact_shadow": [
+      {
+        "gpu": "AMD Radeon(TM) Graphics",
+        "captures": 50,
+        "evidence_sha256": "4dce9eb9083213eee1ee7a4e2702a76c2c9151f8a3fe2ee5a6b39b36bbe1399d"
+      },
+      {
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "captures": 50,
+        "evidence_sha256": "50a833bcd7bb2c4caa897e22d26292bbac914b0b8f46c5871bfb59b497857d69"
+      }
+    ]
+  },
+  "reproduction": [
+    "Build and install the Windows runtime. Run tests/shadow_capture.py on both the retained 0.0.384 runtime and the candidate on the same two adapters with --lighting-path forward and deferred. Compare all image SHA-256 values, stable draw and lighting observations, and fixture control samples within each recipe.",
+    "Run poima-contact-shadow-test with <fresh-output> 0 4 0 and again with <fresh-output> 1 1 1. Enable Khronos Vulkan validation with synchronization checks for both suites.",
+    "Run asset_references_contract, asset_contract, animation_contract, model_bounds_contract, physical_pose_diagnostics_contract, world_material_native and world_texture_native in the native simulation build. Compare the accepted and refused asset calls for an identical authored document across runtimes."
+  ]
+}

@@ -1,8 +1,19 @@
 # Implementation status
 
-Updated 2026-11-21 for **0.0.385**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-21 for **0.0.386**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.386 compiles [asset inspection and Vulkan shadow
+resources](BUILD.md#world-service-and-schema-compilation) in separate units.
+The world session owns revision checks. The Vulkan context owns frame
+scheduling, submission and retirement. Fifteen Ubuntu suites passed. Windows
+matched 49 accepted and rejected asset request and reply pairs and 196 Vulkan
+shadow captures across AMD and NVIDIA, with identical forward and deferred
+results against the reference on each device. Hosted tests passed 100
+additional captures with masked apertures, moving casters and in-context
+shadow array replacement.
+[Results](evidence/m2-source-ownership-386.json)
 
 Version 0.0.385 adds [melee contact](MELEE_CONTACT.md) to the optional C# FPS
 package. Compiled fixtures against 0.0.384 verified first contact, cover,

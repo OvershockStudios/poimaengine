@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.386
+
+- Compile read-only asset inspection and Vulkan shadow resources and draw recording in separate modules.
+
 ## 0.0.385
 
 - Add a bounded melee blade sweep to the optional FPS package with first contact against native collision.
