@@ -1727,6 +1727,53 @@ void atmosphere_contracts() {
     const auto legacy=Fixture(rich(),4).plan();
     check(count(legacy,PassId::atmosphere_density)==0 && count(legacy,PassId::atmosphere_view)==0,
         "Legacy sky acquired optical resources or work");
+
+    const auto volume=[](Fixture& target) {
+        const auto id=target.add(Kind::texture,Lifetime::shared);
+        auto& resource=target.f.resources[id];
+        resource.format=Format::rgba16_float;
+        resource.width=aerial_width;
+        resource.height=aerial_height;
+        resource.layers=aerial_depth;
+        return id;
+    };
+    auto settings=rich();
+    settings.height_fog=settings.aerial_perspective=true;
+    Fixture air(settings);
+    setup(air,false,false);
+    air.f.aerial_scattering=volume(air);
+    air.f.aerial_transmittance=volume(air);
+    const auto air_plan=air.plan();
+    air_plan.validate();
+    check(count(air_plan,PassId::aerial_perspective)==1,"Missing aerial lookup producer");
+    ++accepted;
+    const auto bad_air=[&](const char* name,auto mutate) {
+        auto changed=air_plan;
+        mutate(changed);
+        rejects(name,[&]{changed.validate();});
+    };
+    bad_air("aerial profile omitted while tables remain",[](auto& p){p.settings.aerial_perspective=false;});
+    bad_air("aerial profile without shared world composition",[](auto& p){p.settings.height_fog=false;});
+    bad_air("aerial table layers do not match the slice profile",[&](auto& p){--p.frame.resources[air.f.aerial_scattering].layers;});
+    bad_air("aerial tables alias each other",[](auto& p){p.frame.aerial_transmittance=p.frame.aerial_scattering;});
+    bad_air("aerial integration has no sun transmittance input",[&](auto& p){
+        erase_access(p,PassId::aerial_perspective,air.f.atmosphere_density,Use::sampled);
+    });
+    bad_air("aerial composition bypasses the transmittance table",[&](auto& p){
+        erase_access(p,PassId::height_fog,air.f.aerial_transmittance,Use::sampled);
+    });
+    bad_air("aerial composition precedes integration",[](auto& p){
+        std::swap(pass(p,PassId::height_fog),pass(p,PassId::aerial_perspective));
+    });
+
+    settings.reconstruction=settings.products=true;
+    Fixture reconstructed_air(settings);
+    setup(reconstructed_air,true,true);
+    reconstructed_air.f.aerial_scattering=volume(reconstructed_air);
+    reconstructed_air.f.aerial_transmittance=volume(reconstructed_air);
+    setup_composed_reconstruction(reconstructed_air,true);
+    reconstructed_air.plan().validate();
+    ++accepted;
 }
 }
 

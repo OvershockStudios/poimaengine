@@ -103,6 +103,7 @@ struct AutoExposureSettings {
 struct AtmosphereSettings {
     double sea_level_m=0;
     float aerosol_strength=1,radiance_scale=1;
+    std::optional<float> aerial_perspective_m;
 };
 struct LightingEnvironment {
     std::array<float,3> ambient{};

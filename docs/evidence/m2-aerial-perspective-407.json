@@ -1,0 +1,316 @@
+{
+  "checkpoint": "0.0.407",
+  "parent_commit": "78fae50",
+  "world_schema_revision": 208,
+  "shaders": {
+    "height_fog_cs": "5489c41eef9e0d40d1c2d7c56bdef0cced43ed3dd044bf6b7b82c6c84f778383",
+    "height_fog_aerial_cs": "59322d0bc6d3bde71dddf9e75e059d4ba7532928bba13537f8f48835704fbc68",
+    "aerial_perspective_cs": "ea1ff8477a18cb4441967f094ddc5fcb8b4c46c6f435f9320d2f99fa4c565e6f"
+  },
+  "render_schedule": "Production render schedule: 573 valid variants, 1448 rejected contract mutations.",
+  "ubuntu": {
+    "passed": true,
+    "source_files_verified": 31,
+    "capture_sha256": "1bb1154d63b13c517de07df087a56ea3fe33757353985817221cec72623bc68f",
+    "harness_sha256": "0dafc5a24a479f04cb5d1cd890b7944b5dc72b2eb55a4315e42601d0d2de909f",
+    "binary_sha256": "40494154fbf67cc5788d1daecf3418c6958b2c6442bcb5aad9c10172f1318110",
+    "wire_calls": 4,
+    "invalid_values": [
+      "above maximum",
+      "below minimum",
+      "boolean",
+      "null",
+      "string"
+    ],
+    "descriptor_summary": {
+      "call_bytes": 80,
+      "call_version": 1,
+      "feature_count": 44,
+      "navigation": true,
+      "passed": true,
+      "services_bytes": 584,
+      "services_version": 7
+    },
+    "suites": [
+      "lighting_contract",
+      "project_contract",
+      "shared_session_contract",
+      "world_particles_contract",
+      "save_upgrade_snapshot_native",
+      "environment_ibl_contract",
+      "world_contract",
+      "world_water_contract",
+      "asset_references_contract",
+      "contact_shadow_contract",
+      "authoring_api_compatibility",
+      "world_ui_contract",
+      "render_schedule_native",
+      "cli_contract",
+      "world_session_native"
+    ],
+    "junit_sha256": "28197694d0158b621303e028211d702f3bcb4e1e0de9700098d12d05cdb3935a",
+    "manifest_sha256": "07148535f18a32c48c4224afe8645a0fa841456ff373076628e7878657909be6"
+  },
+  "windows": {
+    "descriptor_check_sha256": "5e259edbdc49955a718e67e789bbba54f7771afdea2b15f1d0d544a5a613e6ed",
+    "rendering": {
+      "0-deferred-1x": {
+        "gpu": 0,
+        "samples": 1,
+        "lighting_path": "deferred",
+        "adapter": "AMD Radeon(TM) Graphics",
+        "capture_sha256": "419a6dad30c00f5614080ff4673fad9249e5e13e2670baa73e6413a32168cfbe",
+        "fixture_sha256": "0dafc5a24a479f04cb5d1cd890b7944b5dc72b2eb55a4315e42601d0d2de909f",
+        "binary_sha256": "a40262b6a07770f35f917ef01244021478e27b88a218eaf59239b78905b8c15d",
+        "world_capture_count": 4,
+        "optics_distances_m": [
+          1433.8476929777278,
+          4704.397516005734,
+          8000
+        ],
+        "atmosphere_sky_band_byte_exact": true,
+        "retained_omitted_aerial_byte_exact": true,
+        "captures": {
+          "atmosphere-without-aerial": {
+            "sha256": "74c4da874a2b536705ca286b60e51fcd12ea2717a76197c3304f6a3dc9305646",
+            "sky_sha256": "db044f795fde74418267835d9044308db2bc82cf9fa4ff01013cd61ed5d19141",
+            "selected_max_linear_hdr_error": 0.0
+          },
+          "aerial-perspective": {
+            "sha256": "5c5e17391f4d9e8e0f3015211f8685050205179f6c29194402a72a30fbece7ef",
+            "sky_sha256": "db044f795fde74418267835d9044308db2bc82cf9fa4ff01013cd61ed5d19141",
+            "selected_max_linear_hdr_error": 0.00033141225292687704
+          },
+          "height-fog-only": {
+            "sha256": "8d62d11d86c369197ce37377591862abadee5fce6c5c0500c4eb77cf70548678",
+            "sky_sha256": "e24031701385824add081ac2a774d069fa0f36a7ce1f327f062263b6e7eae1fe",
+            "selected_max_linear_hdr_error": 9.627054869365548e-05
+          },
+          "aerial-and-height-fog": {
+            "sha256": "39375eb34ac6d40b25b8eb37d6bb52e4bacb35f3ce8d2928279abc5fe2bde29b",
+            "sky_sha256": "e24031701385824add081ac2a774d069fa0f36a7ce1f327f062263b6e7eae1fe",
+            "selected_max_linear_hdr_error": 0.00027116356910705797
+          }
+        }
+      },
+      "0-forward-1x": {
+        "gpu": 0,
+        "samples": 1,
+        "lighting_path": "forward",
+        "adapter": "AMD Radeon(TM) Graphics",
+        "capture_sha256": "aad53e775b0938903340eafd3291810f2cba6099e74a429acecd467ba08728ce",
+        "fixture_sha256": "0dafc5a24a479f04cb5d1cd890b7944b5dc72b2eb55a4315e42601d0d2de909f",
+        "binary_sha256": "a40262b6a07770f35f917ef01244021478e27b88a218eaf59239b78905b8c15d",
+        "world_capture_count": 4,
+        "optics_distances_m": [
+          1433.8476929777278,
+          4704.397516005734,
+          8000
+        ],
+        "atmosphere_sky_band_byte_exact": true,
+        "retained_omitted_aerial_byte_exact": true,
+        "captures": {
+          "atmosphere-without-aerial": {
+            "sha256": "74c4da874a2b536705ca286b60e51fcd12ea2717a76197c3304f6a3dc9305646",
+            "sky_sha256": "db044f795fde74418267835d9044308db2bc82cf9fa4ff01013cd61ed5d19141",
+            "selected_max_linear_hdr_error": 0.0
+          },
+          "aerial-perspective": {
+            "sha256": "5c5e17391f4d9e8e0f3015211f8685050205179f6c29194402a72a30fbece7ef",
+            "sky_sha256": "db044f795fde74418267835d9044308db2bc82cf9fa4ff01013cd61ed5d19141",
+            "selected_max_linear_hdr_error": 0.00033141225292687704
+          },
+          "height-fog-only": {
+            "sha256": "8d62d11d86c369197ce37377591862abadee5fce6c5c0500c4eb77cf70548678",
+            "sky_sha256": "e24031701385824add081ac2a774d069fa0f36a7ce1f327f062263b6e7eae1fe",
+            "selected_max_linear_hdr_error": 9.627054869365548e-05
+          },
+          "aerial-and-height-fog": {
+            "sha256": "39375eb34ac6d40b25b8eb37d6bb52e4bacb35f3ce8d2928279abc5fe2bde29b",
+            "sky_sha256": "e24031701385824add081ac2a774d069fa0f36a7ce1f327f062263b6e7eae1fe",
+            "selected_max_linear_hdr_error": 0.00027116356910705797
+          }
+        }
+      },
+      "0-forward-4x": {
+        "gpu": 0,
+        "samples": 4,
+        "lighting_path": "forward",
+        "adapter": "AMD Radeon(TM) Graphics",
+        "capture_sha256": "485f7707d48f76a4800578cf7662552ae1e2231591af4b9aa3cf92298251107d",
+        "fixture_sha256": "0dafc5a24a479f04cb5d1cd890b7944b5dc72b2eb55a4315e42601d0d2de909f",
+        "binary_sha256": "a40262b6a07770f35f917ef01244021478e27b88a218eaf59239b78905b8c15d",
+        "world_capture_count": 4,
+        "optics_distances_m": [],
+        "atmosphere_sky_band_byte_exact": true,
+        "retained_omitted_aerial_byte_exact": true,
+        "captures": {
+          "atmosphere-without-aerial": {
+            "sha256": "55f01310e86482594f2d306dc8f9b41dde9c531cf61311e7b3e0831d4898bbf3",
+            "sky_sha256": "db044f795fde74418267835d9044308db2bc82cf9fa4ff01013cd61ed5d19141",
+            "selected_max_linear_hdr_error": null
+          },
+          "aerial-perspective": {
+            "sha256": "55f01310e86482594f2d306dc8f9b41dde9c531cf61311e7b3e0831d4898bbf3",
+            "sky_sha256": "db044f795fde74418267835d9044308db2bc82cf9fa4ff01013cd61ed5d19141",
+            "selected_max_linear_hdr_error": null
+          },
+          "height-fog-only": {
+            "sha256": "55f01310e86482594f2d306dc8f9b41dde9c531cf61311e7b3e0831d4898bbf3",
+            "sky_sha256": "db044f795fde74418267835d9044308db2bc82cf9fa4ff01013cd61ed5d19141",
+            "selected_max_linear_hdr_error": null
+          },
+          "aerial-and-height-fog": {
+            "sha256": "55f01310e86482594f2d306dc8f9b41dde9c531cf61311e7b3e0831d4898bbf3",
+            "sky_sha256": "db044f795fde74418267835d9044308db2bc82cf9fa4ff01013cd61ed5d19141",
+            "selected_max_linear_hdr_error": null
+          }
+        },
+        "multisample_fallback_byte_exact": true
+      },
+      "1-deferred-1x": {
+        "gpu": 1,
+        "samples": 1,
+        "lighting_path": "deferred",
+        "adapter": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "capture_sha256": "e3fe66c2f06d1d858168d1d8ba8f119f214f172426151742f60e199219a7a34b",
+        "fixture_sha256": "0dafc5a24a479f04cb5d1cd890b7944b5dc72b2eb55a4315e42601d0d2de909f",
+        "binary_sha256": "a40262b6a07770f35f917ef01244021478e27b88a218eaf59239b78905b8c15d",
+        "world_capture_count": 4,
+        "optics_distances_m": [
+          1433.8476929777278,
+          4704.397516005734,
+          8000
+        ],
+        "atmosphere_sky_band_byte_exact": true,
+        "retained_omitted_aerial_byte_exact": true,
+        "captures": {
+          "atmosphere-without-aerial": {
+            "sha256": "13087c00e6c8f43472608960674d1bcf543f1b062f7d0a80775f23807e733aef",
+            "sky_sha256": "5c36328a18482c441aa1af80acbe925390e2ef3b1b4e210cbfa62d2662fc24e1",
+            "selected_max_linear_hdr_error": 0.0
+          },
+          "aerial-perspective": {
+            "sha256": "5de77c8975b19838f8f38011391f35b3f1a0c10ff7c818d8fc1b6375a9fccfff",
+            "sky_sha256": "5c36328a18482c441aa1af80acbe925390e2ef3b1b4e210cbfa62d2662fc24e1",
+            "selected_max_linear_hdr_error": 0.00033141225292687704
+          },
+          "height-fog-only": {
+            "sha256": "f43a403eed004d83d157d8844ce8b37ae5d1348e9d9930f26d1053bd73d46e25",
+            "sky_sha256": "de47253819d6032b5f7cf2164640762eb6522872049d7523a2e92bcbcd51a74f",
+            "selected_max_linear_hdr_error": 0.00011850674452948406
+          },
+          "aerial-and-height-fog": {
+            "sha256": "7064d749e74d65265bc392c2ba193e5fefb273ce24489bba7626bf0375e30d02",
+            "sky_sha256": "de47253819d6032b5f7cf2164640762eb6522872049d7523a2e92bcbcd51a74f",
+            "selected_max_linear_hdr_error": 0.00027116356910705797
+          }
+        }
+      },
+      "1-forward-1x": {
+        "gpu": 1,
+        "samples": 1,
+        "lighting_path": "forward",
+        "adapter": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "capture_sha256": "04d1b3b1b07b132efc8ea557f033826ab0ef27620b44405b9273cb7e4022f490",
+        "fixture_sha256": "0dafc5a24a479f04cb5d1cd890b7944b5dc72b2eb55a4315e42601d0d2de909f",
+        "binary_sha256": "a40262b6a07770f35f917ef01244021478e27b88a218eaf59239b78905b8c15d",
+        "world_capture_count": 8,
+        "optics_distances_m": [
+          1433.8476929777278,
+          4704.397516005734,
+          8000
+        ],
+        "atmosphere_sky_band_byte_exact": true,
+        "retained_omitted_aerial_byte_exact": true,
+        "captures": {
+          "atmosphere-without-aerial": {
+            "sha256": "13087c00e6c8f43472608960674d1bcf543f1b062f7d0a80775f23807e733aef",
+            "sky_sha256": "5c36328a18482c441aa1af80acbe925390e2ef3b1b4e210cbfa62d2662fc24e1",
+            "selected_max_linear_hdr_error": 0.0
+          },
+          "aerial-perspective": {
+            "sha256": "5de77c8975b19838f8f38011391f35b3f1a0c10ff7c818d8fc1b6375a9fccfff",
+            "sky_sha256": "5c36328a18482c441aa1af80acbe925390e2ef3b1b4e210cbfa62d2662fc24e1",
+            "selected_max_linear_hdr_error": 0.00033141225292687704
+          },
+          "height-fog-only": {
+            "sha256": "f43a403eed004d83d157d8844ce8b37ae5d1348e9d9930f26d1053bd73d46e25",
+            "sky_sha256": "de47253819d6032b5f7cf2164640762eb6522872049d7523a2e92bcbcd51a74f",
+            "selected_max_linear_hdr_error": 0.00011850674452948406
+          },
+          "aerial-and-height-fog": {
+            "sha256": "7064d749e74d65265bc392c2ba193e5fefb273ce24489bba7626bf0375e30d02",
+            "sky_sha256": "de47253819d6032b5f7cf2164640762eb6522872049d7523a2e92bcbcd51a74f",
+            "selected_max_linear_hdr_error": 0.00027116356910705797
+          },
+          "relocated-authored": {
+            "sha256": "7064d749e74d65265bc392c2ba193e5fefb273ce24489bba7626bf0375e30d02",
+            "sky_sha256": "de47253819d6032b5f7cf2164640762eb6522872049d7523a2e92bcbcd51a74f",
+            "selected_max_linear_hdr_error": 0.00027116356910705797
+          },
+          "relocated-solar-1": {
+            "sha256": "62bda8c27949dcc98f8b971865c8015ddefd45a62d2290d561bc026e48f9047a",
+            "sky_sha256": "453e2b8f480ffaedf43e29919135e3e7a8bf29622b20e9783d68878c3dd9fa8b",
+            "selected_max_linear_hdr_error": 0.00026344637954162087
+          },
+          "relocated-solar-2": {
+            "sha256": "e2396bba5ff854dfac259386771e589ecabe7bbcba08499f92d3773e0fbbe8cb",
+            "sky_sha256": "a28976ee9d20e0bc2667cce9c63e3414ddf76db5c70869eebcf2f5694799b9fb",
+            "selected_max_linear_hdr_error": 0.0002239319838236442
+          },
+          "relocated-solar-5": {
+            "sha256": "a8565e6b8238f42b292ef86bff7fa8ff016574428eac6d7b73a40e99627538fb",
+            "sky_sha256": "cf26f9a3c35bac4a3e7b612f9799395274f05d4021ecf43877cb75eda9448f24",
+            "selected_max_linear_hdr_error": 0.0001806401423672388
+          }
+        },
+        "relocated_native_aot": {
+          "manifest_sha256": "32be52c03045fd5e74a4309a48132f828c0dabb86f11347f92edfe73792f033c",
+          "replay_sha256": "a8565e6b8238f42b292ef86bff7fa8ff016574428eac6d7b73a40e99627538fb",
+          "frame_count": 6,
+          "final_tick": 5,
+          "consecutive_session": true,
+          "source_absent": true,
+          "rejected_runtime_without_feature": true
+        }
+      },
+      "1-forward-4x": {
+        "gpu": 1,
+        "samples": 4,
+        "lighting_path": "forward",
+        "adapter": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "capture_sha256": "ace6fa3dfc3769af5b92ffb135ebc333d6bc28dd62c8c998ee1ed617f6afe688",
+        "fixture_sha256": "0dafc5a24a479f04cb5d1cd890b7944b5dc72b2eb55a4315e42601d0d2de909f",
+        "binary_sha256": "a40262b6a07770f35f917ef01244021478e27b88a218eaf59239b78905b8c15d",
+        "world_capture_count": 4,
+        "optics_distances_m": [],
+        "atmosphere_sky_band_byte_exact": true,
+        "retained_omitted_aerial_byte_exact": true,
+        "captures": {
+          "atmosphere-without-aerial": {
+            "sha256": "57882dd96b0f2f04c01039079362024f06098f7d7d62e9d5dbf853ee19e93706",
+            "sky_sha256": "5c36328a18482c441aa1af80acbe925390e2ef3b1b4e210cbfa62d2662fc24e1",
+            "selected_max_linear_hdr_error": null
+          },
+          "aerial-perspective": {
+            "sha256": "57882dd96b0f2f04c01039079362024f06098f7d7d62e9d5dbf853ee19e93706",
+            "sky_sha256": "5c36328a18482c441aa1af80acbe925390e2ef3b1b4e210cbfa62d2662fc24e1",
+            "selected_max_linear_hdr_error": null
+          },
+          "height-fog-only": {
+            "sha256": "57882dd96b0f2f04c01039079362024f06098f7d7d62e9d5dbf853ee19e93706",
+            "sky_sha256": "5c36328a18482c441aa1af80acbe925390e2ef3b1b4e210cbfa62d2662fc24e1",
+            "selected_max_linear_hdr_error": null
+          },
+          "aerial-and-height-fog": {
+            "sha256": "57882dd96b0f2f04c01039079362024f06098f7d7d62e9d5dbf853ee19e93706",
+            "sky_sha256": "5c36328a18482c441aa1af80acbe925390e2ef3b1b4e210cbfa62d2662fc24e1",
+            "selected_max_linear_hdr_error": null
+          }
+        },
+        "multisample_fallback_byte_exact": true
+      }
+    }
+  }
+}

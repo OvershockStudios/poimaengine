@@ -56,6 +56,11 @@ composited foreground, post-processing and the HUD. This route uses the
 opaque depth surface. Sprites and composited foreground retain their own
 blend and shading behavior.
 
+When [aerial perspective](ATMOSPHERE_SKY.md#aerial-perspective) is active, it
+uses the same compositor and height fog applies over the atmospheric haze.
+The height-fog GPU timing then covers building the aerial tables and
+compositing both effects.
+
 `world.lighting`, `runtime.lighting` and the capture lighting receipt
 report the selected profile. `render_diagnostics.height_fog` reports
 `active`, `reason`, `buffer_bytes`, effective `spot_lights` count, and

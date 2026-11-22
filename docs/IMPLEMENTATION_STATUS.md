@@ -1,8 +1,17 @@
 # Implementation status
 
-Updated 2026-11-22 for **0.0.406**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-22 for **0.0.407**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.407 renders [aerial perspective](ATMOSPHERE_SKY.md#aerial-perspective)
+on opaque surfaces using the sky's atmosphere and committed sun. AMD and NVIDIA
+passed 29 captures across forward and deferred color and the 4× MSAA fallback.
+Selected HDR values were within 0.00034 per channel of an independent optical
+reference. The sky band and captures with haze omitted matched byte for byte.
+A relocated Native AOT game replay matched its final capture after five ticks.
+Ubuntu passed 15 suites and the headless authoring fixture. The FSR combination
+is covered by render-schedule checks. [Results](evidence/m2-aerial-perspective-407.json)
 
 Version 0.0.406 adds an opt-in [atmospheric sky](ATMOSPHERE_SKY.md) that
 renders daylight, sunset and twilight using the authored or gameplay-driven

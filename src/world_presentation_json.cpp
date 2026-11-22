@@ -182,6 +182,11 @@ Json render_diagnostics(const RenderDiagnostics& d) {
             {"view_generation",atmosphere.view_generation},{"texture_bytes",atmosphere.texture_bytes},
             {"observer_height_m",atmosphere.observer_height_m}};
     }
+    if(d.aerial_perspective) {
+        const auto& aerial=*d.aerial_perspective;
+        result["aerial_perspective"]={{"active",aerial.active},{"reason",aerial.reason},
+            {"table_bytes",aerial.table_bytes},{"max_distance_m",aerial.max_distance_m}};
+    }
     if(d.viewmodel) {
         const auto& v=*d.viewmodel;
         result["viewmodel"]={{"rendered",v.rendered},{"samples",v.samples},{"output_width",v.output_width},{"output_height",v.output_height},
@@ -210,6 +215,8 @@ Json lighting_json(const SceneLighting& lighting) {
         const auto& profile=*lighting.environment.atmosphere;
         result["atmosphere"]={{"sea_level_m",profile.sea_level_m},{"aerosol_strength",profile.aerosol_strength},
             {"radiance_scale",profile.radiance_scale}};
+        if(profile.aerial_perspective_m)
+            result["atmosphere"]["aerial_perspective_m"]=*profile.aerial_perspective_m;
     }
     if(lighting.environment.auto_exposure) {
         const auto& settings=*lighting.environment.auto_exposure;

@@ -229,6 +229,7 @@ struct Context {
         ReconstructionDiagnostics reconstruction;
         std::optional<AutoExposureDiagnostics> exposure;
         std::optional<AtmosphereSkyDiagnostics> atmosphere_sky;
+        std::optional<AerialPerspectiveDiagnostics> aerial_perspective;
         bool capture_exposure=false;
         std::optional<RendererSceneResult> scene;
     };
@@ -288,6 +289,8 @@ struct Context {
     screen_reflections::Pass reflections;
     height_fog::Pass fog;
     std::array<std::uint32_t,2> fog_spots{};
+    std::optional<height_fog::AerialParameters> aerial_parameters;
+    std::optional<AerialPerspectiveDiagnostics> pending_aerial_perspective;
     nvrhi::ITexture* surface_radiance_texture() const noexcept {
         return reflections.radiance() ? reflections.radiance() : scene_hdr.Get();
     }
@@ -329,6 +332,7 @@ struct Context {
         std::array<double,3> lens{};
         std::optional<RendererCameraDrawResult> camera_draw;
         bool reconstructed_reflections=false,reconstructed_fog=false;
+        float reconstructed_aerial_distance=0;
         std::map<std::string,ObjectHistory> objects;
         std::vector<SceneSurfaceMark> surface_marks;
     } history,pending_history;
@@ -795,7 +799,8 @@ struct Context {
         pending_history.lens={scene->vertical_fov,scene->near_plane,scene->far_plane};
         pending_history.camera_draw=renderer_scene_result(*scene).camera_draw;
         pending_history.reconstructed_reflections=reconstruction && reflections.radiance();
-        pending_history.reconstructed_fog=reconstruction && fog.radiance();
+        pending_history.reconstructed_fog=reconstruction && diagnostics.height_fog && diagnostics.height_fog->active;
+        pending_history.reconstructed_aerial_distance=reconstruction && aerial_parameters ? aerial_parameters->optics[1] : 0;
         if(pending_history.camera_draw) {
             pending_history.camera_draw->viewmodel_lens.reset();
             // A world-depth handoff keeps the same drawable in the world pass.
@@ -816,7 +821,9 @@ struct Context {
         else if(history.lens!=pending_history.lens)pending_history_reset="projection_changed";
         else if(history.camera_draw!=pending_history.camera_draw)pending_history_reset="camera_draw_changed";
         else if(history.reconstructed_reflections!=pending_history.reconstructed_reflections ||
-                history.reconstructed_fog!=pending_history.reconstructed_fog)pending_history_reset="world_composition_changed";
+                history.reconstructed_fog!=pending_history.reconstructed_fog ||
+                history.reconstructed_aerial_distance!=pending_history.reconstructed_aerial_distance)
+            pending_history_reset="world_composition_changed";
         pending_history_valid=pending_history_reset.empty();
         const auto& previous=pending_history_valid ? history.view_projection : pending_history.view_projection;
         std::copy(previous.begin(),previous.end(),frame_constants.previous_view_projection);
@@ -1238,39 +1245,68 @@ struct Context {
     }
     void prepare_height_fog(const SceneLighting& lighting) {
         diagnostics.height_fog.reset();
+        aerial_parameters.reset();
+        pending_aerial_perspective.reset();
         fog_spots={};
-        if(const auto& selected=lighting.environment.height_fog) {
-            const std::string_view reason=
-                selected->density_per_m==0 ? "zero_density" :
-                !scene_visible ? "scene_hidden" :
-                scene_debug_view!=SceneDebugView::color ? "diagnostic" :
-                samples!=1 ? "multisample" :
-                !rigid_transform(scene->camera_world) ? "camera_non_rigid" :
-                !scene->world_viewmodel_draws().empty() ? "world_depth_foreground" : "active";
+        const auto& selected=lighting.environment.height_fog;
+        const auto& atmosphere_profile=lighting.environment.atmosphere;
+        const bool wants_aerial=atmosphere_profile && atmosphere_profile->aerial_perspective_m;
+        const std::string_view color_reason=
+            !scene_visible ? "scene_hidden" :
+            scene_debug_view!=SceneDebugView::color ? "diagnostic" :
+            samples!=1 ? "multisample" :
+            !rigid_transform(scene->camera_world) ? "camera_non_rigid" :
+            !scene->world_viewmodel_draws().empty() ? "world_depth_foreground" : "active";
+        const bool height_active=selected && selected->density_per_m>0 && color_reason=="active";
+        if(wants_aerial) {
+            const auto reason=color_reason=="active" && !sky_pass.atmosphere_enabled() ?
+                std::string_view("atmosphere_inactive") : color_reason;
             const bool active=reason=="active";
+            const float distance=*atmosphere_profile->aerial_perspective_m;
+            pending_aerial_perspective=AerialPerspectiveDiagnostics{
+                active,reason,active ? 2*atmosphere::aerial_table_bytes : 0,distance};
             if(active) {
-                if(!fog.radiance()) {
-                    require_reconstruction_composition_budget(reconstruction_pixels(),reconstruction_pixels()*8);
-                    const auto needed=vk::FormatFeatureFlagBits::eSampledImage|vk::FormatFeatureFlagBits::eStorageImage|
-                        vk::FormatFeatureFlagBits::eTransferSrc|vk::FormatFeatureFlagBits::eTransferDst|
-                        vk::FormatFeatureFlagBits::eColorAttachment|vk::FormatFeatureFlagBits::eColorAttachmentBlend;
-                    const auto support=physical.getFormatProperties(vk::Format::eR16G16B16A16Sfloat,dispatch).optimalTilingFeatures;
-                    require((support&needed)==needed,"Selected GPU lacks height fog image format support.");
+                const auto sun=std::ranges::find(lighting.lights,lighting.environment.sky.sun,&SceneLight::entity_id);
+                require(sun!=lighting.lights.end(),"Aerial perspective needs the active atmosphere sun.");
+                const auto gain=atmosphere_profile->radiance_scale*
+                    (lighting.solar_lighting ? lighting.solar_lighting->sky_gain : 1.0f);
+                auto& parameters=aerial_parameters.emplace();
+                for(std::size_t axis=0;axis<3;++axis) {
+                    parameters.sun_direction_height_km[axis]=static_cast<float>(-sun->direction[axis]);
+                    parameters.sunlight_rgb[axis]=sun->light.color[axis]*gain;
                 }
-                for(std::size_t slot=0;slot<selected->spot_lights.size();++slot) {
-                    const auto& spot=selected->spot_lights[slot];
-                    if(spot.scattering==0)continue;
-                    const auto light=std::ranges::find(lighting.lights,spot.entity,&SceneLight::entity_id);
-                    if(light!=lighting.lights.end() && light->light.kind==LightKind::spot && light->light.intensity>0)
-                        fog_spots[slot]=static_cast<std::uint32_t>(light-lighting.lights.begin()+1);
-                }
-                fog.prepare(*checked.Get(),{frame_buffer.Get(),surface_radiance_texture(),depth.Get(),shadows.texture(),light_clusters.lights()});
+                parameters.sun_direction_height_km[3]=sky_pass.atmosphere_observer_height_m()/1000.0f;
+                parameters.optics={atmosphere_profile->aerosol_strength,distance,0,0};
             }
-            const auto light_count=static_cast<std::uint32_t>(std::ranges::count_if(fog_spots,[](auto ordinal){return ordinal!=0;}));
-            diagnostics.height_fog=HeightFogDiagnostics{active,reason,fog.buffer_bytes(),light_count};
-            if(active)return;
-            diagnostics.height_fog->buffer_bytes=0;
         }
+        if(height_active || aerial_parameters) {
+            const auto new_color_bytes=fog.radiance() ? 0 : reconstruction_pixels()*8;
+            const auto new_optics_bytes=aerial_parameters && fog.aerial_buffer_bytes()==0 ?
+                2*atmosphere::aerial_table_bytes : 0;
+            if(new_color_bytes || new_optics_bytes) {
+                require_reconstruction_composition_budget(reconstruction_pixels(),new_color_bytes+new_optics_bytes);
+                const auto needed=vk::FormatFeatureFlagBits::eSampledImage|vk::FormatFeatureFlagBits::eStorageImage|
+                    vk::FormatFeatureFlagBits::eTransferSrc|vk::FormatFeatureFlagBits::eTransferDst|
+                    vk::FormatFeatureFlagBits::eColorAttachment|vk::FormatFeatureFlagBits::eColorAttachmentBlend;
+                const auto support=physical.getFormatProperties(vk::Format::eR16G16B16A16Sfloat,dispatch).optimalTilingFeatures;
+                require((support&needed)==needed,"Selected GPU lacks world media image format support.");
+            }
+            if(height_active)for(std::size_t slot=0;slot<selected->spot_lights.size();++slot) {
+                const auto& spot=selected->spot_lights[slot];
+                if(spot.scattering==0)continue;
+                const auto light=std::ranges::find(lighting.lights,spot.entity,&SceneLight::entity_id);
+                if(light!=lighting.lights.end() && light->light.kind==LightKind::spot && light->light.intensity>0)
+                    fog_spots[slot]=static_cast<std::uint32_t>(light-lighting.lights.begin()+1);
+            }
+            fog.prepare(*checked.Get(),{frame_buffer.Get(),surface_radiance_texture(),depth.Get(),shadows.texture(),
+                light_clusters.lights(),aerial_parameters ? sky_pass.atmosphere_density() : nullptr});
+        }
+        if(selected) {
+            const auto light_count=static_cast<std::uint32_t>(std::ranges::count_if(fog_spots,[](auto ordinal){return ordinal!=0;}));
+            diagnostics.height_fog=HeightFogDiagnostics{height_active,selected->density_per_m==0 ? "zero_density" : color_reason,
+                height_active ? fog.buffer_bytes() : 0,light_count};
+        }
+        if(height_active || aerial_parameters)return;
         if(auto* source=fog.radiance()) {
             retire_frames(true);
             detach_world_outputs(source);
@@ -1412,7 +1448,8 @@ struct Context {
     }
     std::uint64_t reconstruction_world_bytes(std::uint64_t composition_bytes) const noexcept {
         return reconstruction_pixels()*((deferred ? 82u : 50u)+(ao_enabled ? 4u : 0u))+
-            std::uint64_t(output_extent.width)*output_extent.height*8+reflections.buffer_bytes()+fog.buffer_bytes()+composition_bytes+sprite_targets.bytes();
+            std::uint64_t(output_extent.width)*output_extent.height*8+reflections.buffer_bytes()+fog.buffer_bytes()+
+            fog.aerial_buffer_bytes()+composition_bytes+sprite_targets.bytes();
     }
     void require_reconstruction_composition_budget(std::uint64_t mask_bytes,std::uint64_t additional) const {
         if(!reconstruction)return;
@@ -2249,6 +2286,7 @@ struct Context {
                 auto reconstruction_gpu=diagnostics.reconstruction.gpu;diagnostics.reconstruction=slot.reconstruction;diagnostics.reconstruction.gpu=reconstruction_gpu;
                 diagnostics.last_draws=slot.draws;diagnostics.light_assignment=slot.lights;diagnostics.viewmodel=slot.viewmodel_diagnostics;
                 diagnostics.atmosphere_sky=slot.atmosphere_sky;
+                diagnostics.aerial_perspective=slot.aerial_perspective;
                 diagnostics.scene_products.history_valid=slot.history_valid;diagnostics.scene_products.history_sequence=slot.history_sequence;
                 diagnostics.scene_products.history_reset_reason=slot.history_reset;diagnostics.scene_products.probes.clear();
                 if(slot.capture_probes)collect_product_probes();
@@ -2275,6 +2313,7 @@ struct Context {
         settings.spatial_aa=fxaa_enabled;
         settings.screen_reflections=scene && scene_visible && reflections.radiance();
         settings.height_fog=scene && scene_visible && fog.radiance();
+        settings.aerial_perspective=settings.height_fog && aerial_parameters.has_value();
         settings.height_fog_spots=settings.height_fog && (fog_spots[0]!=0 || fog_spots[1]!=0);
         settings.particle_sprites=!sprite_instances.empty();
         settings.sky=scene && scene_visible && sky_pass.enabled();settings.products=bool(scene_normal);settings.products_debug=scene_debug_view!=SceneDebugView::color;settings.editor=editor;settings.capture=capture_frame;settings.reconstruction=pending_reconstruction.active;settings.deferred=deferred;settings.ambient_occlusion=ao_enabled;
@@ -2386,6 +2425,10 @@ struct Context {
                 f.reflected_hdr=texture(reflections.radiance(),rs::Lifetime::shared,false);
             }
             if(settings.height_fog)f.fogged_hdr=texture(fog.radiance(),rs::Lifetime::shared,false);
+            if(settings.aerial_perspective) {
+                f.aerial_scattering=texture(fog.aerial_scattering(),rs::Lifetime::shared,false);
+                f.aerial_transmittance=texture(fog.aerial_transmittance(),rs::Lifetime::shared,false);
+            }
             f.depth=texture(depth,rs::Lifetime::shared,false);if(scene_normal) {f.normal=texture(scene_normal,rs::Lifetime::shared,false);f.motion=texture(scene_motion,rs::Lifetime::shared,false);f.motion_valid=texture(scene_motion_valid,rs::Lifetime::shared,false);}f.shadow=texture(shadows.texture(),rs::Lifetime::shared,false);
             if(settings.clustered) {
                 f.counts=buffer(light_clusters.counts(),rs::Lifetime::shared,false);f.indices=buffer(light_clusters.indices(),rs::Lifetime::shared,false);
@@ -2913,11 +2956,19 @@ struct Context {
                 timestamp(15);
                 break;
             }
-            case render_schedule::PassId::height_fog:
+            case render_schedule::PassId::aerial_perspective:
                 timestamp(16);
-                fog.dispatch(*commands.Get(),*scene->lighting.environment.height_fog,fog_spots);
+                fog.dispatch_aerial(*commands.Get(),*aerial_parameters);
+                break;
+            case render_schedule::PassId::height_fog: {
+                if(!plan.settings.aerial_perspective)timestamp(16);
+                static const HeightFog clear_air{};
+                const auto& authored=scene->lighting.environment.height_fog;
+                fog.dispatch(*commands.Get(),authored ? *authored : clear_air,fog_spots,
+                    aerial_parameters ? aerial_parameters->optics[1] : 0.f);
                 timestamp(17);
                 break;
+            }
             case render_schedule::PassId::particle_sprites:render_particle_sprites(slot);break;
             case render_schedule::PassId::auto_exposure:
                 exposure_meter.record(*commands.Get(),*scene->lighting.environment.auto_exposure,
@@ -3006,6 +3057,7 @@ struct Context {
         slot.history_valid=pending_history_valid;slot.history_sequence=scene ? history_sequence+1 : 0;slot.history_reset=pending_history_reset;
         slot.capture_probes=capture_frame && !product_probes.empty();slot.reconstruction=pending_reconstruction;
         slot.exposure=pending_exposure;slot.capture_exposure=plan.frame.exposure_readback!=render_schedule::none;
+        slot.aerial_perspective=scene ? pending_aerial_perspective : std::nullopt;
         slot.submission=checked->executeCommandList(commands);
         // The GPU may have accepted work even if a later validation/query/
         // present operation fails. Attribute that submission immediately.

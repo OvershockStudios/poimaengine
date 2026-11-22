@@ -43,11 +43,11 @@ find_program(POIMA_DXC NAMES dxc
 file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/generated/poima")
 foreach(shader smoke scene scene_products scene_deferred scene_deferred_color deferred_lighting deferred_lighting_ao deferred_lighting_color deferred_lighting_color_ao
         deferred_lighting_reflection deferred_lighting_ao_reflection
-        deferred_lighting_color_reflection deferred_lighting_color_ao_reflection screen_reflections height_fog auto_exposure
+        deferred_lighting_color_reflection deferred_lighting_color_ao_reflection screen_reflections height_fog height_fog_aerial aerial_perspective auto_exposure
         ambient_occlusion ambient_occlusion_filter scene_output scene_output_ao scene_output_products scene_output_bloom scene_output_products_bloom scene_output_grade scene_output_grade_bloom
         scene_output_exposure scene_output_bloom_exposure scene_output_grade_exposure scene_output_grade_bloom_exposure
         spatial_aa bloom viewmodel_composite viewmodel_resolve sky sky_atmosphere atmosphere_density atmosphere_sky_view shadow skinning cluster_lights temporal_inputs temporal_composed_inputs temporal_sprite_inputs temporal_composed_sprite_inputs editor_overlay game_ui particle_sprite particle_sprite_temporal)
-if(shader MATCHES "^(skinning|cluster_lights|temporal(_composed)?(_sprite)?_inputs|deferred_lighting.*|ambient_occlusion.*|screen_reflections|height_fog|auto_exposure|atmosphere_density|atmosphere_sky_view)$")
+if(shader MATCHES "^(skinning|cluster_lights|temporal(_composed)?(_sprite)?_inputs|deferred_lighting.*|ambient_occlusion.*|screen_reflections|height_fog(_aerial)?|aerial_perspective|auto_exposure|atmosphere_density|atmosphere_sky_view)$")
     set(shader_stages cs)
 elseif(shader MATCHES "^(scene_output_grade|spatial_aa)" OR shader MATCHES "^scene_output.*_exposure$" OR shader STREQUAL "sky_atmosphere")
     set(shader_stages ps)
@@ -111,6 +111,9 @@ foreach(stage IN LISTS shader_stages)
     elseif(shader STREQUAL "sky_atmosphere")
         set(shader_source "${CMAKE_SOURCE_DIR}/shaders/sky.hlsl")
         list(APPEND shader_defines -DPOIMA_ATMOSPHERE_SKY=1)
+    elseif(shader STREQUAL "height_fog_aerial")
+        set(shader_source "${CMAKE_SOURCE_DIR}/shaders/height_fog.hlsl")
+        list(APPEND shader_defines -DPOIMA_AERIAL_PERSPECTIVE=1)
     endif()
     set(shader_dependencies "${shader_source}")
     if(shader STREQUAL "shadow")
@@ -120,11 +123,14 @@ foreach(stage IN LISTS shader_stages)
         list(APPEND shader_dependencies "${CMAKE_SOURCE_DIR}/shaders/water_ripple_normal.hlsli"
             "${CMAKE_SOURCE_DIR}/shaders/foliage_motion.hlsli")
     endif()
-    if(shader MATCHES "^(ambient_occlusion.*|deferred_lighting.*|scene_deferred.*|scene|scene_products|shadow|cluster_lights|temporal(_composed)?(_sprite)?_inputs|sky(_atmosphere)?|screen_reflections|height_fog)$")
+    if(shader MATCHES "^(ambient_occlusion.*|deferred_lighting.*|scene_deferred.*|scene|scene_products|shadow|cluster_lights|temporal(_composed)?(_sprite)?_inputs|sky(_atmosphere)?|screen_reflections|height_fog(_aerial)?|aerial_perspective)$")
         list(APPEND shader_dependencies "${CMAKE_SOURCE_DIR}/shaders/scene_frame.hlsli")
     endif()
-    if(shader MATCHES "^(sky_atmosphere|atmosphere_density|atmosphere_sky_view)$")
+    if(shader MATCHES "^(sky_atmosphere|atmosphere_density|atmosphere_sky_view|aerial_perspective)$")
         list(APPEND shader_dependencies "${CMAKE_SOURCE_DIR}/shaders/atmosphere_lookup.hlsli")
+    endif()
+    if(shader MATCHES "^(aerial_perspective|height_fog_aerial)$")
+        list(APPEND shader_dependencies "${CMAKE_SOURCE_DIR}/shaders/aerial_perspective_lookup.hlsli")
     endif()
     if(shader MATCHES "^(deferred_lighting.*|scene_deferred.*|scene|scene_products|shadow|temporal(_composed)?(_sprite)?_inputs)$")
         list(APPEND shader_dependencies "${CMAKE_SOURCE_DIR}/shaders/scene_correspondence.hlsli")

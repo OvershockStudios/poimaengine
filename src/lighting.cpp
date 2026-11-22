@@ -107,6 +107,11 @@ void validate_environment(const LightingEnvironment& e) {
             "Atmosphere aerosol_strength must be finite and in [0,4].");
         require(std::isfinite(profile.radiance_scale) && profile.radiance_scale>=0 && profile.radiance_scale<=64,
             "Atmosphere radiance_scale must be finite and in [0,64].");
+        if(profile.aerial_perspective_m) {
+            const auto distance=*profile.aerial_perspective_m;
+            require(std::isfinite(distance) && distance>=128 && distance<=65536,
+                "Atmosphere aerial_perspective_m must be finite and in [128,65536].");
+        }
     }
     if(e.ibl) {
         const auto& ibl=*e.ibl;

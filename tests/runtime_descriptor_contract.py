@@ -90,6 +90,10 @@ def validate(runtime, header):
         need(type(flags['atmosphere_sky']) is bool, 'Runtime atmospheric sky capability must be Boolean.')
         need(not flags['atmosphere_sky'] or (flags.get('renderer') is True and flags['simulation']),
              'Atmospheric sky requires rendering and simulation in the installed runtime.')
+    if 'aerial_perspective' in flags:
+        need(type(flags['aerial_perspective']) is bool, 'Runtime aerial perspective capability must be Boolean.')
+        need(not flags['aerial_perspective'] or flags.get('atmosphere_sky') is True,
+             'Aerial perspective requires atmospheric sky in the installed runtime.')
     features = runtime.get('gameplay_features')
     need(type(features) is list and all(type(name) is str for name in features) and
          len(features) == len(set(features)), 'Runtime gameplay features must be unique strings.')
@@ -150,6 +154,18 @@ def self_test(header, cmake, stale_runtime=None):
         invalid_atmosphere = copy.deepcopy(good)
         invalid_atmosphere['features'].update(flags)
         reject(invalid_atmosphere)
+    for flags in (dict(renderer=True, atmosphere_sky=True, aerial_perspective=True),
+                  dict(aerial_perspective=False)):
+        candidate = copy.deepcopy(good)
+        candidate['features'].update(flags)
+        validate(candidate, header)
+        cases += 1
+    for flags in (dict(renderer=True, atmosphere_sky=True, aerial_perspective='true'),
+                  dict(renderer=True, atmosphere_sky=False, aerial_perspective=True),
+                  dict(renderer=True, aerial_perspective=True)):
+        candidate = copy.deepcopy(good)
+        candidate['features'].update(flags)
+        reject(candidate)
     unnamed_584 = copy.deepcopy(good)
     unnamed_584['gameplay_features'].remove('solar_lighting_v1')
     reject(unnamed_584)
@@ -292,7 +308,8 @@ def self_test(header, cmake, stale_runtime=None):
                 retained_and_spoofed_544_rejected=True, unnamed_552_rejected=True,
                 retained_and_spoofed_568_rejected=True, unnamed_576_rejected=True,
                 retained_and_spoofed_576_rejected=True, unnamed_584_rejected=True,
-                generated_navigation_false_and_true_checked=True, atmosphere_capability_checked=True)
+                generated_navigation_false_and_true_checked=True, atmosphere_capability_checked=True,
+                aerial_perspective_capability_checked=True)
 
 
 def main():

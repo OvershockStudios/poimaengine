@@ -56,6 +56,41 @@ profiles, save restoration and Vulkan captures against independent numerical
 integration. Its Native AOT replay checks cache reuse as the sun moves. Run the
 script with `--help` for headless, capture and relocated-export options.
 
+## Aerial perspective
+
+Set `aerial_perspective_m` in the same `atmosphere` object to add distance haze
+to opaque geometry. For example, choose `12000` to integrate up to 12 km along
+each camera ray. The optional field accepts finite values from 128 to 65,536
+metres. At greater distances, surfaces use the optical result at the cap.
+The haze follows the same observer height, aerosol strength and committed sun
+as the atmospheric sky. Surfaces look lighter or darker depending on the
+balance of in-scattered light and the attenuation of their own color.
+
+Each active frame builds two 32 × 18 × 24 RGBA16F tables that store RGB
+scattered light and transmittance. The tables use 216 KiB together. The
+distance slices are denser near the camera. The compositor reads opaque
+depth and shares an eight-byte-per-pixel world image with height fog. It
+leaves the sky background intact and applies optional local height fog over
+the resulting color. Forward and deferred color each support this stage at
+one sample. World color is composed before reconstruction, sprites, the
+separately composited viewmodel and the HUD.
+
+`render_diagnostics.aerial_perspective` reports `active`, `reason`,
+`table_bytes` and `max_distance_m` after a completed frame. The `reason` field
+identifies fallback for multisampling, diagnostic views, a hidden scene, a
+non-rigid camera, a world-depth foreground or an inactive atmospheric sky.
+Project and standalone inspection report `needs_aerial_perspective` when
+the distance is authored. Export uses an installed runtime with
+`features.aerial_perspective` and `features.atmosphere_sky`.
+
+Use the [aerial perspective fixture](../tests/aerial_perspective_capture.py)
+to check authoring headlessly. With `--gpu GPU_INDEX`,
+it samples Vulkan HDR at three distances, checks sky and height fog
+composition, and can verify a relocated export. Use `--help` for deferred,
+multisample and replay options.
+
+## References
+
 The table split follows the potential for real-time transmittance and sky-view
 lookups described by Hillaire. The optical coefficients and sphere geometry
 follow the Earth case in Bruneton's reference. The 2024 Mie-theory model

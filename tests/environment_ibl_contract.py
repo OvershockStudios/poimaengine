@@ -61,7 +61,7 @@ class EnvironmentIblContract(unittest.TestCase):
     def test_discovery_preserves_complete_environment_and_mutation_envelope(self):
         c = self.open()
         d = c.rpc('world.describe')
-        self.assertEqual(d['schema_revision'], 207)
+        self.assertEqual(d['schema_revision'], 208)
         full = d['components']['LightingEnvironment']
         self.assertNotIn('ibl', full['required'])
         branch = full['properties']['ibl']
@@ -97,6 +97,45 @@ class EnvironmentIblContract(unittest.TestCase):
         self.assertEqual(selected['properties']['type'], {'const': 'LightingEnvironment'})
         self.assertEqual(selected['properties']['value'], full)
         self.assertFalse(self.path.exists())
+
+    def test_aerial_perspective_range_and_optional_observation(self):
+        c = self.open()
+        description = c.rpc('world.describe')
+        profile = description['components']['LightingEnvironment']['properties']['atmosphere']
+        distance = profile['properties']['aerial_perspective_m']
+        self.assertEqual((distance['type'], distance['minimum'], distance['maximum']), ('number', 128, 65536))
+        self.assertNotIn('aerial_perspective_m', profile['required'])
+        aerial = description['atmosphere_sky']['aerial_perspective']
+        self.assertEqual(aerial['profile'], 'LightingEnvironment.atmosphere.aerial_perspective_m')
+        self.assertEqual(aerial['runtime_feature'], 'aerial_perspective')
+        self.assertEqual(aerial['available'], self.features['aerial_perspective'])
+
+        linked_sky = dict(sky(), sun=uid(2))
+        atmosphere = dict(sea_level_m=0, aerosol_strength=1, radiance_scale=1)
+        sun = dict(op='component.set', id=uid(2), type='Light',
+                   value=dict(kind='directional', color=[1, 1, 1], intensity=20, enabled=False))
+        c.txn(0, [create(1), create(2), sun, component(environment(sky=linked_sky, atmosphere=atmosphere))])
+        self.assertEqual(c.rpc('world.lighting')['atmosphere'], atmosphere)
+        self.assertNotIn('needs_aerial_perspective', c.rpc('world.dependencies'))
+        initial = self.path.read_bytes()
+        for value in (None, True, '128', [], {}, 127.999999, 65536.000001):
+            with self.subTest(distance=value):
+                chosen = dict(atmosphere, aerial_perspective_m=value)
+                error = c.txn(1, [component(environment(sky=linked_sky, atmosphere=chosen))], error=-32602)
+                self.assertIn('aerial_perspective_m', error['message'])
+                self.assertEqual(self.path.read_bytes(), initial)
+                self.assertEqual(c.rpc('world.lighting')['atmosphere'], atmosphere)
+        for revision, value in enumerate((128, 2048.25, 65536), start=1):
+            chosen = dict(atmosphere, aerial_perspective_m=value)
+            c.txn(revision, [component(environment(sky=linked_sky, atmosphere=chosen))])
+            self.assertEqual(c.rpc('world.lighting')['atmosphere'], chosen)
+            self.assertIs(c.rpc('world.dependencies')['needs_aerial_perspective'], True)
+        c.close()
+        c = self.open()
+        self.assertEqual(c.rpc('world.lighting')['atmosphere'], chosen)
+        c.txn(4, [component(environment(sky=linked_sky, atmosphere=atmosphere))])
+        self.assertEqual(c.rpc('world.lighting')['atmosphere'], atmosphere)
+        self.assertNotIn('needs_aerial_perspective', c.rpc('world.dependencies'))
 
     def test_omission_and_explicit_disabled_presence_survive_reopen(self):
         c = self.open()

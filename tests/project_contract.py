@@ -664,6 +664,8 @@ class ProjectContract(unittest.TestCase):
         self.world_rpc('world.transact', base_revision=world['revision'], request_id=uuid.uuid4().hex, ops=[recipe])
         self.assertIs(self.inspect()['needs_atmosphere_sky'], True)
         self.assertIs(self.world_rpc('world.dependencies')['needs_atmosphere_sky'], True)
+        self.assertNotIn('needs_aerial_perspective', self.inspect())
+        self.assertNotIn('needs_aerial_perspective', self.world_rpc('world.dependencies'))
         self.assertNotIn('atmosphere', self.world_rpc('world.lighting'))
 
         source = tree(self.project)
@@ -684,7 +686,9 @@ class ProjectContract(unittest.TestCase):
         descriptor.write_text(json.dumps(spec), encoding='utf-8')
         self.run_cli(*build, '--output', native(output))
         manifest = output/'game.json'
-        self.assertIs(self.run_cli('game', 'inspect', native(manifest))['needs_atmosphere_sky'], True)
+        inspected = self.run_cli('game', 'inspect', native(manifest))
+        self.assertIs(inspected['needs_atmosphere_sky'], True)
+        self.assertNotIn('needs_aerial_perspective', inspected)
         game = json.loads(manifest.read_bytes())
         del spec['features']['atmosphere_sky']
         descriptor_bytes = json.dumps(spec).encode('utf-8')
@@ -695,6 +699,52 @@ class ProjectContract(unittest.TestCase):
         unchanged = tree(output)
         self.run_cli('game', 'inspect', native(manifest), success=False)
         self.assertIn('Atmospheric sky', CALLS[-1]['reply']['diagnostics'][0]['message'])
+        self.assertEqual(tree(output), unchanged)
+        self.assertEqual(tree(self.project), source)
+
+    def test_aerial_perspective_requires_explicit_export_runtime_feature(self):
+        runtime, spec = self.metadata_runtime()
+        descriptor = runtime/'runtime.json'
+        world = json.loads((self.project/self.document['entry']['world']).read_bytes())
+        environment_id, = (key for key, row in world['entities'].items()
+                           if 'LightingEnvironment' in row['components'])
+        lighting = world['entities'][environment_id]['components']['LightingEnvironment']
+        lighting['atmosphere'] = dict(sea_level_m=0, aerosol_strength=1, radiance_scale=1, aerial_perspective_m=4096)
+        self.world_rpc('world.transact', base_revision=world['revision'], request_id=uuid.uuid4().hex,
+                       ops=[dict(op='component.set', id=environment_id, type='LightingEnvironment', value=lighting)])
+        self.assertIs(self.inspect()['needs_aerial_perspective'], True)
+        self.assertIs(self.world_rpc('world.dependencies')['needs_aerial_perspective'], True)
+        source = tree(self.project)
+        output = self.root/'Aerial perspective bundle'
+        build = ('project', 'build', native(self.manifest), '--runtime', native(runtime), '--output', native(output))
+        for features, diagnostic in ((dict(atmosphere_sky=True), 'Aerial perspective'),
+                                     (dict(atmosphere_sky=True, aerial_perspective=False), 'Aerial perspective'),
+                                     (dict(atmosphere_sky=True, aerial_perspective='true'), 'Boolean'),
+                                     (dict(aerial_perspective=True), 'requires the atmospheric sky feature')):
+            with self.subTest(features=features):
+                descriptor.write_text(json.dumps(dict(spec, features=spec['features'] | features)), encoding='utf-8')
+                self.run_cli(*build, success=False)
+                self.assertIn(diagnostic, CALLS[-1]['reply']['diagnostics'][0]['message'])
+                self.assertFalse(output.exists())
+                self.assertEqual(tree(self.project), source)
+
+        spec['features'].update(atmosphere_sky=True, aerial_perspective=True)
+        descriptor.write_text(json.dumps(spec), encoding='utf-8')
+        self.run_cli(*build)
+        manifest = output/'game.json'
+        inspected = self.run_cli('game', 'inspect', native(manifest))
+        self.assertIs(inspected['needs_atmosphere_sky'], True)
+        self.assertIs(inspected['needs_aerial_perspective'], True)
+        game = json.loads(manifest.read_bytes())
+        del spec['features']['aerial_perspective']
+        descriptor_bytes = json.dumps(spec).encode('utf-8')
+        (output/'runtime/runtime.json').write_bytes(descriptor_bytes)
+        row = next(item for item in game['files'] if item['path'] == 'runtime/runtime.json')
+        row.update(size=len(descriptor_bytes), sha256=hashlib.sha256(descriptor_bytes).hexdigest())
+        manifest.write_text(json.dumps(game), encoding='utf-8')
+        unchanged = tree(output)
+        self.run_cli('game', 'inspect', native(manifest), success=False)
+        self.assertIn('Aerial perspective', CALLS[-1]['reply']['diagnostics'][0]['message'])
         self.assertEqual(tree(output), unchanged)
         self.assertEqual(tree(self.project), source)
 

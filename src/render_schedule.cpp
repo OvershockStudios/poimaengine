@@ -16,6 +16,7 @@ constexpr std::uint64_t pass_order(PassId id) {
     if(id==PassId::exposure_readback)return 4u*static_cast<unsigned>(PassId::product_probes)+1u;
     if(id==PassId::atmosphere_density)return 4u*static_cast<unsigned>(PassId::scene_clear)+1u;
     if(id==PassId::atmosphere_view)return 4u*static_cast<unsigned>(PassId::scene_clear)+2u;
+    if(id==PassId::aerial_perspective)return 4u*static_cast<unsigned>(PassId::height_fog)-1u;
     return 4ull*static_cast<unsigned>(id);
 }
 }
@@ -181,6 +182,31 @@ void Schedule::validate(bool before_acquire) const {
         }
         density_dirty=!density.initialized;
         atmosphere_dirty=!view.initialized;
+    }
+    if(settings.aerial_perspective) {
+        required(frame.aerial_scattering);
+        required(frame.aerial_transmittance);
+        if(!atmospheric_sky || !settings.height_fog || frame.aerial_scattering==frame.aerial_transmittance)
+            fail("aerial perspective needs distinct tables, atmospheric optics and world color composition");
+        const auto valid=[](const Resource& table) {
+            constexpr auto uses=use_bit(Use::sampled)|use_bit(Use::image_write);
+            return table.kind==Kind::texture && table.format==Format::rgba16_float &&
+                table.region==Region::whole && table.lifetime==Lifetime::shared && !table.initialized &&
+                !table.late_bound && table.samples==1 && table.layers==atmosphere::aerial_depth &&
+                table.width==atmosphere::aerial_width && table.height==atmosphere::aerial_height &&
+                (table.supported&uses)==uses;
+        };
+        if(!valid(resource(frame.aerial_scattering)) || !valid(resource(frame.aerial_transmittance)))
+            fail("invalid aerial perspective lookup tables");
+        require_distinct_roles(frame.aerial_scattering,frame.aerial_transmittance,
+            "aerial perspective table aliases another resource role");
+        for(auto role:{frame.atmosphere_density,frame.atmosphere_view,frame.reflected_hdr,frame.reflection_roughness,
+            frame.fogged_hdr,frame.sprite_hdr,frame.sprite_coverage,frame.display_ldr,frame.composition_mask,
+            frame.exposure_state,frame.exposure_readback})
+            if(role==frame.aerial_scattering || role==frame.aerial_transmittance)
+                fail("aerial perspective table aliases an optical or composition role");
+    } else if(frame.aerial_scattering!=none || frame.aerial_transmittance!=none) {
+        fail("aerial perspective tables without an active profile");
     }
     const bool exposure_readback=frame.exposure_readback!=none;
     if(settings.auto_exposure) {
@@ -505,7 +531,7 @@ void Schedule::validate(bool before_acquire) const {
     std::uint64_t previous=0;bool first=true;
     bool surface_marks_uploaded=false,grade_applied=false,spatial_aa_applied=false;
     bool exposure_prepared=false,exposure_applied=false,exposure_copied=false;
-    bool atmosphere_drawn=false;
+    bool atmosphere_drawn=false,aerial_baked=false;
     unsigned bloom_stage=0;
     for(const auto& pass:passes) {
         const auto order=pass_order(pass.id);
@@ -617,14 +643,26 @@ void Schedule::validate(bool before_acquire) const {
                 !has(frame.frame,Use::constant) || !has(frame.reflected_hdr,Use::image_write))fail("invalid screen reflection bindings");
             screen_reflected=true;
         }
+        if(pass.id==PassId::aerial_perspective) {
+            if(!settings.aerial_perspective || pass.accesses.size()!=4 ||
+                !matches(pass.accesses[0],frame.frame,Use::constant,false) ||
+                !matches(pass.accesses[1],frame.atmosphere_density,Use::sampled,false) ||
+                !matches(pass.accesses[2],frame.aerial_scattering,Use::image_write,true) ||
+                !matches(pass.accesses[3],frame.aerial_transmittance,Use::image_write,true))
+                fail("invalid aerial perspective lookup dispatch");
+            aerial_baked=true;
+        }
         if(pass.id==PassId::height_fog) {
             if(!settings.height_fog || !world_opaque || (settings.deferred && !deferred_lit) ||
                 (settings.screen_reflections && !screen_reflected))fail("unexpected or premature height fog pass");
-            if(pass.accesses.size()!=(settings.height_fog_spots ? 6u : 4u) ||
+            const auto inputs=4u+(settings.height_fog_spots ? 2u : 0u)+(settings.aerial_perspective ? 2u : 0u);
+            if(pass.accesses.size()!=inputs ||
                 !has(surface_radiance(frame,settings),Use::sampled) || !has(frame.depth,Use::sampled) ||
                 !has(frame.frame,Use::constant) || !has(frame.fogged_hdr,Use::image_write))fail("invalid height fog bindings");
             if(settings.height_fog_spots && (!has(frame.lights,Use::storage_read) || !has(frame.shadow,Use::sampled)))
                 fail("missing height fog spotlight inputs");
+            if(settings.aerial_perspective && (!aerial_baked || !has(frame.aerial_scattering,Use::sampled) ||
+                !has(frame.aerial_transmittance,Use::sampled)))fail("missing aerial perspective composition inputs");
             world_fogged=true;
         }
         if(pass.id==PassId::particle_sprites) {
@@ -904,9 +942,15 @@ void Schedule::validate(bool before_acquire) const {
                 const bool density=a.resource==frame.atmosphere_density;
                 const auto producer=density ? PassId::atmosphere_density : PassId::atmosphere_view;
                 const bool generated=pass.id==producer && a.use==Use::image_write && a.initialize;
-                const bool consumed=(pass.id==PassId::sky || (density && pass.id==PassId::atmosphere_view)) &&
+                const bool consumed=(pass.id==PassId::sky ||
+                    (density && (pass.id==PassId::atmosphere_view || pass.id==PassId::aerial_perspective))) &&
                     a.use==Use::sampled && !a.initialize;
                 if(!generated && !consumed)fail("atmospheric sky table used outside its producers and sky draw");
+            }
+            if(settings.aerial_perspective && (a.resource==frame.aerial_scattering || a.resource==frame.aerial_transmittance)) {
+                const bool produced=pass.id==PassId::aerial_perspective && a.use==Use::image_write && a.initialize;
+                const bool consumed=pass.id==PassId::height_fog && a.use==Use::sampled && !a.initialize;
+                if(!produced && !consumed)fail("aerial perspective table used outside its world color composition");
             }
             if(!(r.supported&use_bit(a.use)))fail("unsupported resource usage");
             const bool buffer_use=a.use==Use::upload || a.use==Use::storage_read || a.use==Use::storage_write || a.use==Use::vertex || a.use==Use::index || a.use==Use::constant;
@@ -1048,12 +1092,20 @@ Schedule build(FrameResources frame,Settings settings) {
         add(reflections,f.frame,Use::constant);
         add(reflections,f.reflected_hdr,Use::image_write,true);
     }
+    if(settings.aerial_perspective) {
+        auto& air=pass(PassId::aerial_perspective);
+        add(air,f.frame,Use::constant);
+        add(air,f.atmosphere_density,Use::sampled);
+        add(air,f.aerial_scattering,Use::image_write,true);
+        add(air,f.aerial_transmittance,Use::image_write,true);
+    }
     if(settings.height_fog) {
         auto& fog=pass(PassId::height_fog);
         add(fog,surface_radiance(f,settings),Use::sampled);add(fog,f.depth,Use::sampled);add(fog,f.frame,Use::constant);
         if(settings.height_fog_spots) {
             add(fog,f.lights,Use::storage_read);add(fog,f.shadow,Use::sampled);
         }
+        add(fog,f.aerial_scattering,Use::sampled);add(fog,f.aerial_transmittance,Use::sampled);
         add(fog,f.fogged_hdr,Use::image_write,true);
     }
     if(settings.particle_sprites) {

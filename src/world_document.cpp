@@ -124,7 +124,7 @@ LightingEnvironment environment_value(const Json& value) {
     if(value.contains("sky"))result.sky=sky_value(value.at("sky"));
     if(value.contains("atmosphere")) {
         const auto& profile=value.at("atmosphere");
-        fields(profile,{"sea_level_m","aerosol_strength","radiance_scale"},
+        fields(profile,{"sea_level_m","aerosol_strength","radiance_scale","aerial_perspective_m"},
             {"sea_level_m","aerosol_strength","radiance_scale"});
         const auto number=[&](const char* name,double minimum,double maximum) {
             const auto& field=profile.at(name);
@@ -134,7 +134,9 @@ LightingEnvironment environment_value(const Json& value) {
         };
         result.atmosphere=AtmosphereSettings{number("sea_level_m",-1e6,1e6),
             static_cast<float>(number("aerosol_strength",0,4)),
-            static_cast<float>(number("radiance_scale",0,64))};
+            static_cast<float>(number("radiance_scale",0,64)),std::nullopt};
+        if(profile.contains("aerial_perspective_m"))
+            result.atmosphere->aerial_perspective_m=static_cast<float>(number("aerial_perspective_m",128,65536));
     }
     if(value.contains("ibl")) {
         const auto& ibl=value.at("ibl");

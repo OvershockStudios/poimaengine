@@ -356,6 +356,7 @@ Json project_summary(const Project& p) {
     if(p.content.needs_output_grade)result["needs_output_grade"]=true;
     if(p.content.needs_auto_exposure)result["needs_auto_exposure"]=true;
     if(p.content.needs_atmosphere_sky)result["needs_atmosphere_sky"]=true;
+    if(p.content.needs_aerial_perspective)result["needs_aerial_perspective"]=true;
     if(p.content.needs_screen_reflections)result["needs_screen_reflections"]=true;
     if(p.content.needs_foliage_motion)result["needs_foliage_motion"]=true;
     if(p.content.needs_height_fog)result["needs_height_fog"]=true;
@@ -442,6 +443,8 @@ void require_scene_feature_support(const WorldPackageContent& content, const Jso
         "Project auto exposure requires a compatible Vulkan runtime.");
     require(!content.needs_atmosphere_sky || runtime.at("features").value("atmosphere_sky", false),
         "Atmospheric sky requires a compatible Vulkan runtime.");
+    require(!content.needs_aerial_perspective || runtime.at("features").value("aerial_perspective", false),
+        "Aerial perspective requires a compatible Vulkan runtime.");
     require(!content.needs_screen_reflections || runtime.at("features").value("screen_reflections", false),
         "Screen reflections require a compatible Vulkan runtime.");
     require(!content.needs_foliage_motion || runtime.at("features").value("foliage_motion", false),
@@ -484,9 +487,11 @@ Json runtime_spec(const std::string& bytes,std::string_view expected_version=bui
     fields(features,{"simulation","renderer","audio","managed","editor","native_gameplay","game_ui",
         "navigation","navigation_obstacles","asset_provenance","project_post_effects","water_regions","water_rain",
         "water_ripples","water_wave_layers","snow_water_regions","scene_particles","scene_particle_sprites",
-        "surface_marks","surface_mark_masks","mesh_lod","output_grade","auto_exposure","atmosphere_sky","screen_reflections","foliage_motion",
+        "surface_marks","surface_mark_masks","mesh_lod","output_grade","auto_exposure","atmosphere_sky","aerial_perspective","screen_reflections","foliage_motion",
         "height_fog","physics_checkpoint","fsr3_upscaler"},{"simulation","renderer","audio","managed","editor"});
     for(const auto& feature:features)require(feature.is_boolean(),"Runtime feature flags must be Boolean.");
+    require(!features.value("aerial_perspective",false) || features.value("atmosphere_sky",false),
+        "Runtime aerial perspective requires the atmospheric sky feature.");
     require(features.at("simulation")==true && features.at("renderer")==true,"Game bundles require a simulation and renderer runtime.");return value;
 }
 std::vector<std::string> file_tree(const fs::path& root) {
@@ -521,6 +526,7 @@ struct VerifiedGame {
     bool needs_output_grade=false;
     bool needs_auto_exposure=false;
     bool needs_atmosphere_sky=false;
+    bool needs_aerial_perspective=false;
     bool needs_water_ripples=false;
     bool needs_water_wave_layers=false;
     bool needs_screen_reflections=false;
@@ -576,6 +582,7 @@ VerifiedGame verify_game(const std::string& filename,std::string_view expected_v
     result.needs_output_grade=content.needs_output_grade;
     result.needs_auto_exposure=content.needs_auto_exposure;
     result.needs_atmosphere_sky=content.needs_atmosphere_sky;
+    result.needs_aerial_perspective=content.needs_aerial_perspective;
     result.needs_water_ripples=content.needs_water_ripples;
     result.needs_water_wave_layers=content.needs_water_wave_layers;
     result.needs_screen_reflections=content.needs_screen_reflections;
@@ -1014,6 +1021,7 @@ Reply inspect_game(const std::string& manifest,const std::string& expected_bundl
         if(game.needs_output_grade)result["needs_output_grade"]=true;
         if(game.needs_auto_exposure)result["needs_auto_exposure"]=true;
         if(game.needs_atmosphere_sky)result["needs_atmosphere_sky"]=true;
+        if(game.needs_aerial_perspective)result["needs_aerial_perspective"]=true;
         if(game.needs_water_ripples)result["needs_water_ripples"]=true;
         if(game.needs_water_wave_layers)result["needs_water_wave_layers"]=true;
         if(game.needs_screen_reflections)result["needs_screen_reflections"]=true;

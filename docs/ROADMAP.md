@@ -273,7 +273,8 @@ baseline. Novelty alone does not establish improved graphics or performance.
 
 [Atmospheric sky](ATMOSPHERE_SKY.md) renders single-scattering daylight and
 twilight from the same committed solar direction as the existing day/night
-lighting. Its optical tables provide a starting point for aerial perspective.
+lighting. [Aerial perspective](ATMOSPHERE_SKY.md#aerial-perspective) applies
+the same atmosphere to opaque geometry up to the authored ray distance.
 
 **Dependencies:** render scheduling, scene products, reliable motion/history,
 material/content contracts and profiling. **Exit:** a representative atmospheric

@@ -249,9 +249,11 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         return Json{{"type","number"},{"minimum",minimum},{"maximum",maximum}};
     };
     auto atmosphere=object_schema({{"sea_level_m",bounded_number(-1e6,1e6)},
-        {"aerosol_strength",bounded_number(0,4)},{"radiance_scale",bounded_number(0,64)}},
+        {"aerosol_strength",bounded_number(0,4)},{"radiance_scale",bounded_number(0,64)},
+        {"aerial_perspective_m",bounded_number(128,65536)}},
         {"sea_level_m","aerosol_strength","radiance_scale"});
     atmosphere["description"]="Optional atmospheric sky scattering. The profile uses an enabled procedural sky linked to a directional Light. A disabled linked light retains the selection.";
+    atmosphere["properties"]["aerial_perspective_m"]["description"]="Maximum camera-ray distance in metres for aerial perspective on opaque world geometry. Omitting this leaves atmospheric scattering on the sky.";
     lighting_environment["properties"]["atmosphere"]=std::move(atmosphere);
     const auto fog_light=object_schema({{"entity",id},{"scattering",unit}},{"entity","scattering"});
     auto fog_lights=vector(fog_light,2);
@@ -406,7 +408,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 207}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 208}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -1220,7 +1222,10 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"ownership","Gameplay stages one sample during Update. It publishes on the committed tick."}};
     result["atmosphere_sky"]={{"available",POIMA_RENDER_SMOKE != 0 && POIMA_SIMULATION != 0},
         {"profile","LightingEnvironment.atmosphere"},{"runtime_feature","atmosphere_sky"},
-        {"lighting_observation","atmosphere"},{"render_diagnostics","atmosphere_sky"}};
+        {"lighting_observation","atmosphere"},{"render_diagnostics","atmosphere_sky"},
+        {"aerial_perspective",{{"available",POIMA_RENDER_SMOKE != 0 && POIMA_SIMULATION != 0},
+            {"profile","LightingEnvironment.atmosphere.aerial_perspective_m"},
+            {"runtime_feature","aerial_perspective"},{"render_diagnostics","aerial_perspective"}}}};
     result["wetness"]={{"available",Runtime::available()},{"component","SurfaceWetness"},
         {"seconds_per_quantum",1},{"max_receivers",wetness::max_receivers},{"max_batch",wetness::max_batch},
         {"max_rain_nm",wetness::max_rain_nm},{"film_units_per_nm",wetness::units_per_nm},

@@ -266,6 +266,12 @@ struct HeightFogDiagnostics {
     std::uint64_t buffer_bytes=0;
     std::uint32_t spot_lights=0;
 };
+struct AerialPerspectiveDiagnostics {
+    bool active=false;
+    std::string_view reason;
+    std::uint64_t table_bytes=0;
+    float max_distance_m=0;
+};
 struct AutoExposureDiagnostics {
     bool history_reset=false;
     float seconds=0;
@@ -300,6 +306,7 @@ struct RenderDiagnostics {
     std::optional<ScreenReflectionsDiagnostics> screen_reflections;
     TimingSummary screen_reflections_gpu;
     std::optional<HeightFogDiagnostics> height_fog;
+    std::optional<AerialPerspectiveDiagnostics> aerial_perspective;
     TimingSummary height_fog_gpu;
     std::optional<RendererSceneResult> scene_observed,scene_submitted,scene_presented;
     std::optional<ViewmodelDiagnostics> viewmodel;

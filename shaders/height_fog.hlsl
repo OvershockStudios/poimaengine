@@ -3,6 +3,12 @@
 
 Texture2D<float4> surface_radiance : register(t0);
 Texture2D<float> scene_depth : register(t1);
+#if defined(POIMA_AERIAL_PERSPECTIVE)
+#include "aerial_perspective_lookup.hlsli"
+Texture2DArray<float4> aerial_scattering : register(t2);
+Texture2DArray<float4> aerial_transmittance : register(t3);
+SamplerState aerial_sampler : register(s0);
+#endif
 Texture2DArray<float> shadow_map : register(t5);
 [[vk::image_format("rgba16f")]] RWTexture2D<float4> fogged_radiance : register(u0);
 
@@ -11,6 +17,9 @@ struct FogConstants {
     float4 distance_height; // start/end ray distances, base world Y, falloff per metre
     uint4 spot_ordinals; // one-based indices into the uploaded light buffer
     float4 scattering; // per-spot gains in XY, Henyey-Greenstein anisotropy in Z
+#if defined(POIMA_AERIAL_PERSPECTIVE)
+    float4 aerial_distances; // maximum camera-ray distance in X, reserved YZW
+#endif
 };
 [[vk::push_constant]] ConstantBuffer<FogConstants> fog;
 
@@ -140,9 +149,17 @@ void compute_main(uint3 dispatch_id : SV_DispatchThreadID) {
     const uint2 pixel = dispatch_id.xy;
     if (any(pixel >= uint2(width, height))) return;
 
+#if defined(POIMA_AERIAL_PERSPECTIVE)
+    float4 surface = surface_radiance.Load(int3(pixel, 0));
+#else
     const float4 surface = surface_radiance.Load(int3(pixel, 0));
+#endif
     const float2 viewport_pixel = float2(pixel) + 0.5 - cluster_viewport.xy;
-    if (any(viewport_pixel < 0.0) || any(viewport_pixel >= cluster_viewport.zw) || fog.ambient_density.w <= 0.0) {
+    if (any(viewport_pixel < 0.0) || any(viewport_pixel >= cluster_viewport.zw)
+#if !defined(POIMA_AERIAL_PERSPECTIVE)
+        || fog.ambient_density.w <= 0.0
+#endif
+    ) {
         fogged_radiance[pixel] = surface;
         return;
     }
@@ -159,9 +176,19 @@ void compute_main(uint3 dispatch_id : SV_DispatchThreadID) {
         const float near_plane = cluster_depth.z;
         const float far_plane = cluster_depth.w;
         const float view_z = near_plane / ((1.0 - depth) + depth * (near_plane / far_plane));
-        end = min(end, view_z * ray_scale);
+        const float ray_distance = view_z * ray_scale;
+#if defined(POIMA_AERIAL_PERSPECTIVE)
+        const AerialPerspectiveSample optics = aerial_sample(aerial_scattering, aerial_transmittance,
+            aerial_sampler, uv, ray_distance, fog.aerial_distances.x);
+        surface.rgb = clamp(surface.rgb * optics.transmittance + optics.scattered_light, -65504.0, 65504.0);
+#endif
+        end = min(end, ray_distance);
     }
-    if (end <= start) {
+    if (end <= start
+#if defined(POIMA_AERIAL_PERSPECTIVE)
+        || fog.ambient_density.w <= 0.0
+#endif
+    ) {
         fogged_radiance[pixel] = surface;
         return;
     }
