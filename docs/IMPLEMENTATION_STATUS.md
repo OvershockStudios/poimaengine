@@ -1,8 +1,15 @@
 # Implementation status
 
-Updated 2026-11-22 for **0.0.403**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-22 for **0.0.404**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.404 trims [shadow index ranges](SHADOWS.md#shadow-geometry-culling)
+for large rigid meshes. A native fixture submitted 1,024 of 4,096 shadow
+triangles in the same draw and matched the full image in forward and deferred
+rendering on AMD and NVIDIA. Another 162 captures matched 0.0.403. Portable
+bounds and batch checks passed on Windows and Ubuntu. Ubuntu passed 16 suites.
+[Results](evidence/m2-shadow-index-culling-404.json)
 
 Version 0.0.403 builds [ordered shadow batches](DRAW_INSTANCING.md#eligibility-and-ownership)
 directly from each caster's view mask. The [profiler](PROFILER.md#shadow-views)

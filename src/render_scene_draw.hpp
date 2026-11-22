@@ -3,6 +3,7 @@
 
 #include "poima/render_schedule.hpp"
 #include "poima/scene.hpp"
+#include "render_shadow_index_ranges.hpp"
 #include <nvrhi/nvrhi.h>
 
 #include <array>
@@ -10,6 +11,7 @@
 #include <memory>
 #include <span>
 #include <string>
+#include <vector>
 
 namespace poima::render_draw {
 struct DrawConstants {
@@ -32,6 +34,11 @@ struct DrawItem {
     // Borrowed from the last accepted camera frame until the stream upload is packed.
     const MeshAsset* previous_stream_mesh=nullptr;
     std::uint32_t shadow_mask=0,surface_mark_offset=0,surface_mark_count=0;
+    // Allocated only if at least one shadow view narrows the immutable index range.
+    std::vector<render_shadow_index_ranges::Range> shadow_ranges;
+    render_shadow_index_ranges::Range shadow_range(std::size_t layer) const {
+        return shadow_ranges.empty() ? render_shadow_index_ranges::Range{0, geometry.count} : shadow_ranges.at(layer);
+    }
     // Borrowed from the current snapshot during draw preparation and submission.
     std::span<const SceneSurfaceMark> local_surface_marks;
     SceneWetness wetness;

@@ -51,6 +51,7 @@ void Cache::release_gpu() noexcept {
     textures_.clear();
     samplers_.clear();
     bounds_.clear();
+    shadow_ranges_.clear();
     mesh_owners_.clear();
     material_owners_.clear();
     image_owners_.clear();
@@ -152,6 +153,12 @@ Bounds Cache::bounds(const MeshAsset* mesh) {
     auto [entry, inserted] = bounds_.try_emplace(mesh);
     if (inserted) entry->second = mesh_bounds(mesh);
     return entry->second;
+}
+
+const render_shadow_index_ranges::Hierarchy* Cache::shadow_ranges(const MeshAsset* mesh) {
+    if (!mesh || mesh->indices.size() < render_shadow_index_ranges::minimum_index_count) return nullptr;
+    const auto& hierarchy = shadow_ranges_.try_emplace(mesh, *mesh).first->second;
+    return hierarchy.empty() ? nullptr : &hierarchy;
 }
 
 nvrhi::TextureHandle Cache::upload_texture(const Upload& upload, const std::shared_ptr<const TextureImage>& image) {
@@ -275,6 +282,7 @@ void Cache::retain_scene(const SceneSnapshot& scene, MaterialBindings* foregroun
     if (foreground) std::erase_if(*foreground, stale_material);
     std::erase_if(geometry_, [&](const auto& item) { return !meshes.contains(item.first); });
     std::erase_if(bounds_, [&](const auto& item) { return item.first && !meshes.contains(item.first); });
+    std::erase_if(shadow_ranges_, [&](const auto& item) { return !meshes.contains(item.first); });
     hooks.skins(meshes, skin_ids);
     std::erase_if(textures_, [&](const auto& item) { return !images.contains(item.first); });
     std::erase_if(samplers_, [&](const auto& item) { return !samplers.contains(item.first); });

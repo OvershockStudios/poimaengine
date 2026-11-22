@@ -129,6 +129,7 @@ void Pass::record(nvrhi::ICommandList& commands, const std::vector<render_draw::
         if(scene_products_enabled)state.vertexBuffers.push_back(nvrhi::VertexBufferBinding().setSlot(1));
         for(const auto& batch:batch_plans.at(layer)) {
             const auto& draw=draws.at(batch.first);
+            const auto range = draw.shadow_range(layer);
             state.pipeline=draw.masked_shadow_bindings ? masked_pipeline_ : pipeline_;
             state.bindings[0]=draw.masked_shadow_bindings ? draw.masked_shadow_bindings : bindings_;
             state.vertexBuffers[0].setBuffer(draw.geometry.vertices).setOffset(draw.geometry.stream.vertex_offset);
@@ -139,7 +140,8 @@ void Pass::record(nvrhi::ICommandList& commands, const std::vector<render_draw::
                 static_cast<std::uint32_t>(draw.geometry.stream.index_offset)) : nvrhi::IndexBufferBinding();
             commands.setGraphicsState(state);const DrawIndices indices{draw.object_index,static_cast<std::uint32_t>(layer)};
             commands.setPushConstants(&indices,sizeof(indices));
-            if(draw.geometry.indices)commands.drawIndexed(nvrhi::DrawArguments().setVertexCount(draw.geometry.count).setInstanceCount(batch.count).setStartInstanceLocation(0));
+            if(draw.geometry.indices)commands.drawIndexed(nvrhi::DrawArguments().setVertexCount(range.count)
+                .setStartIndexLocation(range.first).setInstanceCount(batch.count).setStartInstanceLocation(0));
             else commands.draw(nvrhi::DrawArguments().setVertexCount(draw.geometry.count).setInstanceCount(batch.count).setStartInstanceLocation(0));
             ++recorded_batches;
         }
@@ -150,7 +152,7 @@ void Pass::record(nvrhi::ICommandList& commands, const std::vector<render_draw::
             sample.batches = batch_plans[layer].size();
             for (const auto& batch : batch_plans[layer]) {
                 sample.draws += batch.count;
-                sample.triangles += std::uint64_t(draws.at(batch.first).geometry.count / 3) * batch.count;
+                sample.triangles += std::uint64_t(draws.at(batch.first).shadow_range(layer).count / 3) * batch.count;
             }
         }
     }

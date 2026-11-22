@@ -370,6 +370,24 @@ Depth maps use an array of single-sample D32 layers independently of viewport MS
 
 Poima 0.0.12 adds independent [frustum culling and render diagnostics](RENDER_DIAGNOSTICS.md) for each shadow view. An object rejected by the camera can still cast a visible shadow. There is no shadow caching, occlusion culling, per-light scheduling or virtual page allocation. The renderer now supports bounded [frames in flight](RENDER_SCHEDULE.md). The shadow tests establish correctness on the named hardware; they are not evidence of a shipped-game frame-rate target or scalable many-light performance.
 
+### Shadow geometry culling
+
+The renderer first tests each caster's bounds against each light view. For
+imported rigid primitives with at least 4,096 triangles, it also tests cached
+bounds of contiguous 1,024-triangle blocks. Local bounds use the GPU's rounded
+model and light matrices with a guard for float rounding. A block is removed
+only when one clip plane excludes its entire bound.
+
+The draw uses the original index buffer from the first potentially visible
+block through the last. Gaps between them stay in that range. A fully rejected
+caster contributes no draw to that view. Deformed, streamed and smaller meshes
+use their full geometry when their object bounds pass. `culling:false` submits
+full index ranges for every eligible caster. [Render diagnostics](RENDER_DIAGNOSTICS.md#request-controls)
+
+Compare the same render on a configured Windows Vulkan build with
+`tests/shadow_index_culling_capture.py`. The fixture checks that one indexed
+draw casts the same shadow after trimming from 4,096 to 1,024 triangles.
+
 ## Quality and planned extensions
 
 The point/fractional references remain fixed-width; the bounded directional

@@ -914,7 +914,7 @@ struct Context {
                     binding_key = key(draw, masked ? masked : shadows.opaque_bindings(),
                         scene_products_enabled, masked ? 1u : 0u);
                 }
-                casters.push_back({draw.object_index, draw.shadow_mask, binding_key});
+                casters.push_back({draw.object_index, draw.shadow_mask, binding_key, draw.shadow_ranges});
             }
             shadow_batch_plans = render_shadow_batches::plan(casters,
                 static_cast<std::uint32_t>(shadow_plan.size()), diagnostics.draw_instancing);
@@ -1763,7 +1763,13 @@ struct Context {
         std::array<float,16> culling_projection;std::copy_n(frame_constants.view_projection,16,culling_projection.begin());
         if(reconstruction_mode!=ReconstructionMode::none)for(std::size_t k=0;k<4;++k) {culling_projection[k*4]/=1+2.0f/static_cast<float>(render_extent.width);culling_projection[k*4+1]/=1+2.0f/static_cast<float>(render_extent.height);}
         const auto camera_frustum=frustum(culling_projection.data());
-        std::vector<Frustum> shadow_frusta;for(std::size_t i=0;i<shadow_plan.size();++i)shadow_frusta.push_back(frustum(frame_constants.shadows[i].view_projection));
+        std::vector<Frustum> shadow_frusta;
+        std::vector<render_shadow_bounds::Frustum> shadow_index_frusta;
+        for (std::size_t i = 0; i < shadow_plan.size(); ++i) {
+            const auto& projection = frame_constants.shadows[i].view_projection;
+            shadow_frusta.push_back(frustum(projection));
+            if (diagnostics.culling) shadow_index_frusta.push_back(render_shadow_bounds::frustum(projection));
+        }
         pending_draws.objects=scene->world_object_count();pending_draws.shadow_views=shadow_plan.size();pending_draws.shadow_candidates=0;
         std::set<std::string> active_skins;
         std::size_t mutable_stream_count=0;
@@ -1874,10 +1880,34 @@ struct Context {
             item.camera_visible=object.camera_visible && (!diagnostics.culling || intersects(bounds,camera_frustum));
             if(item.camera_visible) { ++pending_draws.camera_draws;pending_draws.camera_triangles+=item.geometry.count/3; }
             else if(object.camera_visible)++pending_draws.camera_culled;
-            for(std::size_t layer=0;list==0 && object.cast_shadows && !(object.camera_draw && object.camera_draw->mode==CameraDrawMode::Viewmodel) && layer<shadow_frusta.size();++layer) {
-                ++pending_draws.shadow_candidates;
-                if(!diagnostics.culling || intersects(bounds,shadow_frusta[layer])) { item.shadow_mask|=1u<<layer;++pending_draws.shadow_draws;pending_draws.shadow_triangles+=item.geometry.count/3; }
-                else ++pending_draws.shadow_culled;
+            const bool casts_shadows = list == 0 && object.cast_shadows &&
+                !(object.camera_draw && object.camera_draw->mode == CameraDrawMode::Viewmodel);
+            if (casts_shadows) {
+                const bool can_trim = diagnostics.culling && !shadow_frusta.empty() && !item.skin &&
+                    !item.stream_geometry && !object.foliage_motion;
+                const auto* hierarchy = can_trim ? scene_assets.shadow_ranges(item.mesh.get()) : nullptr;
+                const render_shadow_index_ranges::Range full{0, item.geometry.count};
+                for (std::size_t layer = 0; layer < shadow_frusta.size(); ++layer) {
+                    ++pending_draws.shadow_candidates;
+                    if (diagnostics.culling && !intersects(bounds, shadow_frusta[layer])) {
+                        ++pending_draws.shadow_culled;
+                        continue;
+                    }
+                    auto range = full;
+                    if (hierarchy) range = hierarchy->visible_range(render_shadow_bounds::local_frustum(
+                        draw.model, shadow_index_frusta[layer]));
+                    if (!range.count) {
+                        ++pending_draws.shadow_culled;
+                        continue;
+                    }
+                    if (range != full) {
+                        if (item.shadow_ranges.empty()) item.shadow_ranges.resize(shadow_frusta.size(), full);
+                        item.shadow_ranges[layer] = range;
+                    }
+                    item.shadow_mask |= 1u << layer;
+                    ++pending_draws.shadow_draws;
+                    pending_draws.shadow_triangles += range.count / 3;
+                }
             }
             if(item.skin && (item.camera_visible || item.shadow_mask)) { ++pending_draws.skinned_instances;pending_draws.skinned_vertices+=object.mesh->vertices.size(); }
             draws.push_back(std::move(item));

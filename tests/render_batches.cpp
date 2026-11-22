@@ -274,6 +274,54 @@ void shadow_invalid_layer_masks() {
     rejected(top_bit,16);
     // As with the regular planner, an oversized source span needs real storage.
 }
+
+void shadow_index_range_keys() {
+    using poima::render_shadow_index_ranges::Range;
+    auto original=key();original.index_offset=24;
+    auto different_count=original;different_count.count=39;
+    const std::array<Range,2> trimmed{{{3,18},{0,36}}};
+    const std::array<Range,2> differently_trimmed{{{6,18},{0,36}}};
+    const std::array<Range,2> first_inactive{{{0,0},{0,36}}};
+    const std::array<Range,2> explicit_full{{{0,36},{0,36}}};
+    const std::array<shadows::Caster,8> casters{{
+        {10,3,original,trimmed},{11,3,original,trimmed},{12,3,original,differently_trimmed},
+        {13,2,original,first_inactive},{14,3,original,differently_trimmed},{15,3,original},
+        {16,3,original,explicit_full},{17,3,different_count,explicit_full}
+    }};
+    const ShadowPlans expected{{{0,2},{2,1},{4,1},{5,2},{7,1}},{{0,7},{7,1}}};
+    check(shadows::plan(casters,2,true)==expected,"Range keys merged distinct spans or split equal full ranges.");
+    check(shadows::plan(casters,2,false)==reference_shadow_plan(casters,2,false),
+        "Range-aware direct draws changed caster order or mask membership.");
+
+    // Compensating first indices yield the same effective byte offset, but
+    // must not erase differences in the original geometry identity.
+    auto shifted=original;shifted.index_offset=36;
+    const std::array<Range,1> first{{{3,18}}},second{{{0,18}}};
+    const std::array<shadows::Caster,2> offset_alias{{{1,1,original,first},{2,1,shifted,second}}};
+    check(shadows::plan(offset_alias,1,true)==ShadowPlans{{{0,1},{1,1}}},
+        "Matching trimmed byte offsets replaced distinct original index offsets.");
+
+    const auto rejects=[](Key value,Range range) {
+        const std::array<Range,1> selection{range};
+        const std::array<shadows::Caster,1> input{{{0,1,value,selection}}};
+        bool invalid=false;
+        try {(void)shadows::plan(input,1,true);}
+        catch(const std::invalid_argument&) {invalid=true;}
+        check(invalid,"Invalid selected shadow index range was accepted.");
+    };
+    rejects(original,{0,0});
+    rejects(original,{1,18});
+    rejects(original,{3,4});
+    rejects(original,{30,9});
+    auto maximum=original;maximum.count=std::numeric_limits<std::uint32_t>::max();
+    rejects(maximum,{maximum.count-3,6});
+
+    const std::array<shadows::Caster,1> missing_slot{{{0,2,original,first}}};
+    bool incomplete=false;
+    try {(void)shadows::plan(missing_slot,2,true);}
+    catch(const std::invalid_argument&) {incomplete=true;}
+    check(incomplete,"Shadow range span omitted a requested layer slot.");
+}
 } // namespace
 
 int main() {
@@ -281,8 +329,8 @@ int main() {
         small_tables();every_key_field();integer_boundaries();exhaustive_small_visibility();
         wide_batch_and_gaps();many_keys_and_deterministic_cohort();
         shadow_layer_partitions();shadow_exhaustive_masks_and_wide_cohort();
-        shadow_count_and_index_boundaries();shadow_invalid_layer_masks();
-        std::cout<<"10 portable render batch groups passed, "<<checks<<" checks\n";
+        shadow_count_and_index_boundaries();shadow_invalid_layer_masks();shadow_index_range_keys();
+        std::cout<<"11 portable render batch groups passed, "<<checks<<" checks\n";
         return 0;
     } catch(const std::exception& error) {
         std::cerr<<error.what()<<'\n';return 1;

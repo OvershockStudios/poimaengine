@@ -11,7 +11,7 @@ The later [native profiler](PROFILER.md) retains scoped CPU events and separate 
 | Parameter | Default | Meaning |
 | --- | --- | --- |
 | `draw_instancing` | true | Combine immediately adjacent compatible geometry draws. False retains one command per visible object/view instance. See [ordered instancing](DRAW_INSTANCING.md). |
-| `culling` | true | Reject object bounds entirely outside each render view. False submits every renderable to every view for comparison. |
+| `culling` | true | Reject bounds outside each view and trim eligible shadow index ranges. `false` submits full geometry for each eligible drawable and view. |
 | `clustered_lighting` | true | Conservatively assign finite lights to view-space cells. False evaluates the complete light table as a reference. |
 | `frames_in_flight` | 2 | Integer from 1 to 2. Two bounds queued submissions; one provides a serialized reference. |
 | `scene_debug_view` | `color` | Select `depth`, `shading_normal`, `motion` or `motion_validity` with `samples: 1`; see [scene products](SCENE_PRODUCTS.md) for encoding and qualification. |
@@ -33,7 +33,15 @@ Bounds are derived from all stored mesh vertex positions, or the unit box for bu
 
 The six planes use the actual float-rounded GPU view-projection matrix and Vulkan's `[0,w]` clip-depth convention. The camera and each directional cascade, point face or spotlight test their own frustum. Camera rejection therefore does not remove a potentially visible shadow caster. Light/caster movement and viewport resize rebuild the relevant decisions.
 
-This is object-level frustum culling, not occlusion culling. Bounds can produce false positives. There is no hierarchical scene index, meshlet/triangle culling or GPU-driven submission. [Ordered instancing](DRAW_INSTANCING.md) combines adjacent compatible draws after these visibility decisions. CPU work is linear in objects times views. All renderables still resolve/upload geometry and material resources; this change does not implement asset streaming or defer invalid-content errors until an object appears. Hidden render components are excluded by snapshot construction and are not counted as frustum rejects. A drawable with `cast_shadows:false` remains a camera candidate but is excluded before shadow-frustum tests. `culling:false` disables frustum rejection; it does not override drawable eligibility. `receive_shadows` does not change draw membership. See [per-drawable controls](SHADOWS.md#per-drawable-controls).
+The camera tests conservative object bounds. Each shadow view tests the same
+bounds and can trim a contiguous index range from an eligible rigid mesh.
+Ordered instancing combines adjacent compatible draws after these decisions.
+Renderables resolve geometry and materials before culling. Hidden components
+are excluded when building the snapshot. A drawable with `cast_shadows:false`
+remains eligible for the camera. `receive_shadows` controls light sampling on
+the drawable's surface. [Ordered instancing](DRAW_INSTANCING.md) ·
+[Shadow geometry culling](SHADOWS.md#shadow-geometry-culling) ·
+[Per-drawable controls](SHADOWS.md#per-drawable-controls)
 
 ## Response
 
@@ -61,7 +69,7 @@ Successful capture and all returned player reports include `render_diagnostics`:
 | `shadow_views` | Active depth views for this camera/light configuration. |
 | `shadow_candidates` | Eligible visible cast-enabled drawable/view pairs before shadow-frustum rejection: cast-enabled snapshot objects × active `shadow_views`. Equals `objects * shadow_views` when all snapshot objects cast. |
 | `shadow_draws`, `shadow_culled` | Submitted and frustum-rejected eligible object/view pairs; their sum equals `shadow_candidates`. Cast-disabled drawables are neither submitted nor counted as rejects. |
-| `shadow_triangles` | Triangles submitted across all active shadow views. |
+| `shadow_triangles` | Actual triangle instances submitted across active shadow views after index-range culling. |
 
 Draw counters describe scene objects; the optional fullscreen sky triangle is excluded. Its GPU work is included in `opaque`.
 

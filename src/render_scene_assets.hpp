@@ -2,6 +2,7 @@
 #pragma once
 
 #include "render_scene_draw.hpp"
+#include "render_shadow_index_ranges.hpp"
 
 #include <functional>
 #include <map>
@@ -53,6 +54,7 @@ public:
                                    const nvrhi::BufferHandle& unit_box);
     const render_draw::Geometry& geometry_for(const MeshAsset* mesh) const;
     Bounds bounds(const MeshAsset* mesh);
+    const render_shadow_index_ranges::Hierarchy* shadow_ranges(const MeshAsset* mesh);
 
     nvrhi::TextureHandle upload_texture(const Upload& upload, const std::shared_ptr<const TextureImage>& image);
     const nvrhi::TextureHandle& texture_for(const TextureImage* image) const;
@@ -75,6 +77,7 @@ private:
 
     std::map<const MeshAsset*, render_draw::Geometry> geometry_;
     std::map<const MeshAsset*, Bounds> bounds_;
+    std::map<const MeshAsset*, render_shadow_index_ranges::Hierarchy> shadow_ranges_;
     std::map<const MeshAsset*, std::shared_ptr<const MeshAsset>> mesh_owners_;
     std::map<const MaterialTextures*, std::shared_ptr<const MaterialTextures>> material_owners_;
     std::map<const TextureImage*, std::shared_ptr<const TextureImage>> image_owners_;

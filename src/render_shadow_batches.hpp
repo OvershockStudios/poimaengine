@@ -3,6 +3,7 @@
 
 #include "poima/render_batches.hpp"
 #include "poima/scene.hpp"
+#include "render_shadow_index_ranges.hpp"
 
 #include <bit>
 #include <cstddef>
@@ -18,7 +19,12 @@ struct Caster {
     std::uint32_t object_index;
     std::uint32_t layer_mask;
     render_batches::Key key;
+    std::span<const render_shadow_index_ranges::Range> ranges{};
 };
+
+inline render_shadow_index_ranges::Range range_at(const Caster& caster, std::size_t layer) {
+    return caster.ranges.empty() ? render_shadow_index_ranges::Range{0, caster.key.count} : caster.ranges[layer];
+}
 
 inline std::vector<std::vector<render_batches::Batch>> plan(
     std::span<const Caster> input, std::uint32_t layer_count, bool instancing) {
@@ -35,6 +41,8 @@ inline std::vector<std::vector<render_batches::Batch>> plan(
         auto remaining = current.layer_mask;
         if (remaining & ~valid_mask)
             throw std::invalid_argument("Shadow batch caster mask names an unavailable view.");
+        if (!current.ranges.empty() && current.ranges.size() != layer_count)
+            throw std::invalid_argument("Shadow batch index ranges must cover its view slots.");
         if (!remaining) continue;
 
         // A batch can extend only across adjacent source slots that share
@@ -51,7 +59,12 @@ inline std::vector<std::vector<render_batches::Batch>> plan(
         while (remaining) {
             const auto layer = static_cast<std::size_t>(std::countr_zero(remaining));
             auto& batches = result[layer];
-            if (adjacent_layers & (std::uint32_t{1} << layer)) ++batches.back().count;
+            const auto range = range_at(current, layer);
+            if (!current.ranges.empty() && (!range.count || range.first > current.key.count ||
+                range.count > current.key.count - range.first || range.first % 3 || range.count % 3))
+                throw std::invalid_argument("Shadow batch index range is outside its original triangle list.");
+            if ((adjacent_layers & (std::uint32_t{1} << layer)) && range == range_at(input[i - 1], layer))
+                ++batches.back().count;
             else batches.push_back({static_cast<std::uint32_t>(i), 1});
             remaining &= remaining - 1;
         }

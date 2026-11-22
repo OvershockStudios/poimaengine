@@ -1,0 +1,393 @@
+{
+  "format": "poima.shadow-index-culling.qualification.v1",
+  "version": "0.0.404",
+  "baseline_version": "0.0.403",
+  "baseline_commit": "f23ac7c",
+  "source_manifest_sha256": "bdb231d7744054d946ea3ab16e36bf4579f99151883a5affad59d48803a54a9b",
+  "scope": "Cached conservative rigid-mesh shadow index ranges, native work counters and image parity.",
+  "portable": {
+    "visibility": [
+      "Six clip planes, perspective depth, touching/enclosing bounds and 10000 affine float-rounding cases passed.",
+      "Precise rigid shadow bounds passed the Vulkan clip and 2048 affine two-stage float cases.",
+      "Contiguous shadow index ranges passed full, partial, empty, boundary and malformed mesh cases."
+    ],
+    "planner": "11 portable render batch groups passed, 1986451 checks",
+    "linux_and_windows": true
+  },
+  "windows": {
+    "binaries_sha256": {
+      "poima.exe": "74b99b773715deb26f34cddc467406b8d76af04ffdb42d2d26bcb1c7722de3cb",
+      "runtime.json": "048a1301eecd988f849a81255dd80e3e075364aead975d574fdfdb5ac1275b8d",
+      "poima-auto-exposure-test.exe": "f694bc0dd5ea1e872b03ec774ec902e73af774c06053c91b06759da4ee6491e7",
+      "poima-render-batches-test.exe": "00019a745793a1e30bc74bf7d13e35fb5d1ddc9168ad60ae6f5b6c648a0261a9",
+      "portable-visibility.exe": "eb6d937a51788e43fd5ee1f0385922e8d8b85000302b2911fc335750105ca92a"
+    },
+    "range_fixture_source_sha256": "a014d5e9775c3ce168b8db01ff0dfc9eba7e7ca7139efd411f1b1e51bfef91d6",
+    "range_capture_pairs": [
+      {
+        "device": "AMD Radeon(TM) Graphics",
+        "lighting_path": "deferred",
+        "captures": {
+          "full-indices": "f00112f55ae0ef75877231d350b02f8a16fa1898ebb6eb1d593e4ab88e616600",
+          "culled-indices": "f00112f55ae0ef75877231d350b02f8a16fa1898ebb6eb1d593e4ab88e616600",
+          "cast-disabled": "68894235fb4a8e302df1b99391086805adfdba0428ad38b9f9c58e6961ba1349"
+        },
+        "shadow_rgb": [
+          28,
+          13,
+          3
+        ],
+        "cast_disabled_rgb": [
+          162,
+          117,
+          80
+        ],
+        "draw_counts": {
+          "full": {
+            "camera_batches": 2,
+            "camera_culled": 0,
+            "camera_draws": 2,
+            "camera_triangles": 4098,
+            "objects": 2,
+            "shadow_batches": 1,
+            "shadow_candidates": 1,
+            "shadow_culled": 0,
+            "shadow_draws": 1,
+            "shadow_triangles": 4096,
+            "shadow_views": 1,
+            "skinned_instances": 0,
+            "skinned_vertices": 0,
+            "sprite_batches": 0,
+            "sprite_instances": 0,
+            "streamed_draws": 0,
+            "streamed_index_bytes": 0,
+            "streamed_vertex_bytes": 0
+          },
+          "culled": {
+            "camera_batches": 2,
+            "camera_culled": 0,
+            "camera_draws": 2,
+            "camera_triangles": 4098,
+            "objects": 2,
+            "shadow_batches": 1,
+            "shadow_candidates": 1,
+            "shadow_culled": 0,
+            "shadow_draws": 1,
+            "shadow_triangles": 1024,
+            "shadow_views": 1,
+            "skinned_instances": 0,
+            "skinned_vertices": 0,
+            "sprite_batches": 0,
+            "sprite_instances": 0,
+            "streamed_draws": 0,
+            "streamed_index_bytes": 0,
+            "streamed_vertex_bytes": 0
+          },
+          "cast_disabled": {
+            "camera_batches": 2,
+            "camera_culled": 0,
+            "camera_draws": 2,
+            "camera_triangles": 4098,
+            "objects": 2,
+            "shadow_batches": 0,
+            "shadow_candidates": 0,
+            "shadow_culled": 0,
+            "shadow_draws": 0,
+            "shadow_triangles": 0,
+            "shadow_views": 1,
+            "skinned_instances": 0,
+            "skinned_vertices": 0,
+            "sprite_batches": 0,
+            "sprite_instances": 0,
+            "streamed_draws": 0,
+            "streamed_index_bytes": 0,
+            "streamed_vertex_bytes": 0
+          }
+        },
+        "report_sha256": "4350b3413453225aad07a0d29787a314e11d7e545f49986ac0151a74f019d4cb",
+        "validation_log_sha256": "cb724605f5d05cfa805725bb08558597929e9d27a83c28cc272a7cd898750718"
+      },
+      {
+        "device": "AMD Radeon(TM) Graphics",
+        "lighting_path": "forward",
+        "captures": {
+          "full-indices": "066b1a9bc6ef8e6f4e3add0ff46f6e06bbe15c257aede7c66de41fb54e4f46a5",
+          "culled-indices": "066b1a9bc6ef8e6f4e3add0ff46f6e06bbe15c257aede7c66de41fb54e4f46a5",
+          "cast-disabled": "3d2297fab1ce67b7f4e74af19596cc9e66f1e712334012b1a8748826897d9007"
+        },
+        "shadow_rgb": [
+          28,
+          13,
+          3
+        ],
+        "cast_disabled_rgb": [
+          162,
+          117,
+          80
+        ],
+        "draw_counts": {
+          "full": {
+            "camera_batches": 2,
+            "camera_culled": 0,
+            "camera_draws": 2,
+            "camera_triangles": 4098,
+            "objects": 2,
+            "shadow_batches": 1,
+            "shadow_candidates": 1,
+            "shadow_culled": 0,
+            "shadow_draws": 1,
+            "shadow_triangles": 4096,
+            "shadow_views": 1,
+            "skinned_instances": 0,
+            "skinned_vertices": 0,
+            "sprite_batches": 0,
+            "sprite_instances": 0,
+            "streamed_draws": 0,
+            "streamed_index_bytes": 0,
+            "streamed_vertex_bytes": 0
+          },
+          "culled": {
+            "camera_batches": 2,
+            "camera_culled": 0,
+            "camera_draws": 2,
+            "camera_triangles": 4098,
+            "objects": 2,
+            "shadow_batches": 1,
+            "shadow_candidates": 1,
+            "shadow_culled": 0,
+            "shadow_draws": 1,
+            "shadow_triangles": 1024,
+            "shadow_views": 1,
+            "skinned_instances": 0,
+            "skinned_vertices": 0,
+            "sprite_batches": 0,
+            "sprite_instances": 0,
+            "streamed_draws": 0,
+            "streamed_index_bytes": 0,
+            "streamed_vertex_bytes": 0
+          },
+          "cast_disabled": {
+            "camera_batches": 2,
+            "camera_culled": 0,
+            "camera_draws": 2,
+            "camera_triangles": 4098,
+            "objects": 2,
+            "shadow_batches": 0,
+            "shadow_candidates": 0,
+            "shadow_culled": 0,
+            "shadow_draws": 0,
+            "shadow_triangles": 0,
+            "shadow_views": 1,
+            "skinned_instances": 0,
+            "skinned_vertices": 0,
+            "sprite_batches": 0,
+            "sprite_instances": 0,
+            "streamed_draws": 0,
+            "streamed_index_bytes": 0,
+            "streamed_vertex_bytes": 0
+          }
+        },
+        "report_sha256": "4b56466502494a59f039788c81fa6ca9a2c5b05a23d689d7f74c7a4a2599f1bd",
+        "validation_log_sha256": "cb724605f5d05cfa805725bb08558597929e9d27a83c28cc272a7cd898750718"
+      },
+      {
+        "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "lighting_path": "deferred",
+        "captures": {
+          "full-indices": "9d6b9f721ff90b1622cc9404f8190e9280cd14737bbf1114d8d4bb7dcf72a435",
+          "culled-indices": "9d6b9f721ff90b1622cc9404f8190e9280cd14737bbf1114d8d4bb7dcf72a435",
+          "cast-disabled": "b051ead5c235cf35822295e10a00955f4a2ae48f94016a2769f1c9fb44ebea28"
+        },
+        "shadow_rgb": [
+          28,
+          13,
+          3
+        ],
+        "cast_disabled_rgb": [
+          162,
+          117,
+          80
+        ],
+        "draw_counts": {
+          "full": {
+            "camera_batches": 2,
+            "camera_culled": 0,
+            "camera_draws": 2,
+            "camera_triangles": 4098,
+            "objects": 2,
+            "shadow_batches": 1,
+            "shadow_candidates": 1,
+            "shadow_culled": 0,
+            "shadow_draws": 1,
+            "shadow_triangles": 4096,
+            "shadow_views": 1,
+            "skinned_instances": 0,
+            "skinned_vertices": 0,
+            "sprite_batches": 0,
+            "sprite_instances": 0,
+            "streamed_draws": 0,
+            "streamed_index_bytes": 0,
+            "streamed_vertex_bytes": 0
+          },
+          "culled": {
+            "camera_batches": 2,
+            "camera_culled": 0,
+            "camera_draws": 2,
+            "camera_triangles": 4098,
+            "objects": 2,
+            "shadow_batches": 1,
+            "shadow_candidates": 1,
+            "shadow_culled": 0,
+            "shadow_draws": 1,
+            "shadow_triangles": 1024,
+            "shadow_views": 1,
+            "skinned_instances": 0,
+            "skinned_vertices": 0,
+            "sprite_batches": 0,
+            "sprite_instances": 0,
+            "streamed_draws": 0,
+            "streamed_index_bytes": 0,
+            "streamed_vertex_bytes": 0
+          },
+          "cast_disabled": {
+            "camera_batches": 2,
+            "camera_culled": 0,
+            "camera_draws": 2,
+            "camera_triangles": 4098,
+            "objects": 2,
+            "shadow_batches": 0,
+            "shadow_candidates": 0,
+            "shadow_culled": 0,
+            "shadow_draws": 0,
+            "shadow_triangles": 0,
+            "shadow_views": 1,
+            "skinned_instances": 0,
+            "skinned_vertices": 0,
+            "sprite_batches": 0,
+            "sprite_instances": 0,
+            "streamed_draws": 0,
+            "streamed_index_bytes": 0,
+            "streamed_vertex_bytes": 0
+          }
+        },
+        "report_sha256": "7a3fe5f5a38151cbb1a700a3db02b64a9f0ff3caae23cdb8de13e7eb4d4ed8af",
+        "validation_log_sha256": "71619ad42b239ad2f58e252f5e46f14d95ff7b9ddd88d9d01a5c432bf63e8662"
+      },
+      {
+        "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "lighting_path": "forward",
+        "captures": {
+          "full-indices": "84f59ee30a2a0aa9046e78e50fa5a350c1b834da45214a339e2c58abe92c18be",
+          "culled-indices": "84f59ee30a2a0aa9046e78e50fa5a350c1b834da45214a339e2c58abe92c18be",
+          "cast-disabled": "3114bb33686f9ce11e2a3ae10adfba0509729bf971b5fbdebcde0f6990c496e1"
+        },
+        "shadow_rgb": [
+          28,
+          13,
+          3
+        ],
+        "cast_disabled_rgb": [
+          163,
+          117,
+          80
+        ],
+        "draw_counts": {
+          "full": {
+            "camera_batches": 2,
+            "camera_culled": 0,
+            "camera_draws": 2,
+            "camera_triangles": 4098,
+            "objects": 2,
+            "shadow_batches": 1,
+            "shadow_candidates": 1,
+            "shadow_culled": 0,
+            "shadow_draws": 1,
+            "shadow_triangles": 4096,
+            "shadow_views": 1,
+            "skinned_instances": 0,
+            "skinned_vertices": 0,
+            "sprite_batches": 0,
+            "sprite_instances": 0,
+            "streamed_draws": 0,
+            "streamed_index_bytes": 0,
+            "streamed_vertex_bytes": 0
+          },
+          "culled": {
+            "camera_batches": 2,
+            "camera_culled": 0,
+            "camera_draws": 2,
+            "camera_triangles": 4098,
+            "objects": 2,
+            "shadow_batches": 1,
+            "shadow_candidates": 1,
+            "shadow_culled": 0,
+            "shadow_draws": 1,
+            "shadow_triangles": 1024,
+            "shadow_views": 1,
+            "skinned_instances": 0,
+            "skinned_vertices": 0,
+            "sprite_batches": 0,
+            "sprite_instances": 0,
+            "streamed_draws": 0,
+            "streamed_index_bytes": 0,
+            "streamed_vertex_bytes": 0
+          },
+          "cast_disabled": {
+            "camera_batches": 2,
+            "camera_culled": 0,
+            "camera_draws": 2,
+            "camera_triangles": 4098,
+            "objects": 2,
+            "shadow_batches": 0,
+            "shadow_candidates": 0,
+            "shadow_culled": 0,
+            "shadow_draws": 0,
+            "shadow_triangles": 0,
+            "shadow_views": 1,
+            "skinned_instances": 0,
+            "skinned_vertices": 0,
+            "sprite_batches": 0,
+            "sprite_instances": 0,
+            "streamed_draws": 0,
+            "streamed_index_bytes": 0,
+            "streamed_vertex_bytes": 0
+          }
+        },
+        "report_sha256": "a0f71ab2023a631319f224e1a5d4413fbd952edb1129c1b82c92f01ff7f9101d",
+        "validation_log_sha256": "71619ad42b239ad2f58e252f5e46f14d95ff7b9ddd88d9d01a5c432bf63e8662"
+      }
+    ],
+    "parity_report_sha256": "987cfe373f58852c19e2419ef7bbef2a76490a1cb33cd11ed0ab5e549c12d788",
+    "editor_and_exposure_exact_images_against_baseline": 114,
+    "skinning_exact_images_against_baseline": 48,
+    "vulkan_synchronization_validation": true,
+    "editor_capture_retry": {
+      "initial_rejected_report_sha256": "a4ad3e66270090c29f5cf6203693e5011d02a786c0a00fd43309e3eeb9fe5d03",
+      "reference_tooltip_reproduction_sha256": "b7deafad27371055c08b8395dafb20ec0efdfee4e7614be8cfacb1f6ae386b18",
+      "result": "The retained reference reproduced the candidate tooltip image with the live pointer. Both exact editor image gates passed with the pointer placed off the asset list."
+    }
+  },
+  "ubuntu": {
+    "binary_sha256": "9f9d4a7d5725b38a1bfaa6953c418e99bf487abbb31655b1a21617913e9e4cce",
+    "runtime_sha256": "aa09f62e1badc9b29120edff8abccacb28460c75ed4cd43ad0eda4607c228ec0",
+    "junit_sha256": "b828da981511f4b80cc8a17cae43582e749510a3ca921b604d4a4663ecc89c75",
+    "ctest": [
+      "lighting_contract",
+      "project_contract",
+      "shared_session_contract",
+      "world_particles_contract",
+      "world_water_contract",
+      "asset_references_contract",
+      "world_contract",
+      "profiler_contract",
+      "authoring_api_compatibility",
+      "world_ui_contract",
+      "visibility_math",
+      "render_batches_native",
+      "render_schedule_native",
+      "shadow_math",
+      "cli_contract",
+      "world_session_native"
+    ]
+  }
+}
