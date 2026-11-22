@@ -172,6 +172,9 @@ packages and their authored bindings.
 `src/world_asset_commands.cpp` resolves read-only reference pages, entity
 materials and cooked animation observations. The world service selects the
 document and checks authored revisions before calling these queries.
+`src/world_transaction_operations.cpp` applies ordered edits and asset instances
+to a staged document. The world session validates the staged result, records
+receipts and history, and publishes the transaction.
 `src/world_capture.cpp` validates capture options and output destinations and
 builds animated asset previews. `src/world.cpp` owns world state, revisioned
 publication, capture revision guards, dispatch and session filtering.
@@ -194,6 +197,10 @@ constants, depth and deferred material textures.
 `src/render_shadows.cpp` owns the depth array, masked and opaque bindings,
 and shadow draws. The context chooses casters and batches and checks their
 resource identity against the frame schedule.
+`src/render_skinning.cpp` owns the compute pipeline, mesh influences,
+per-instance deformation buffers, palette uploads and dispatch. The context
+selects each frame's output and readback buffers, advances history on
+submission, and retires completed frames.
 `src/render_viewmodel.cpp` stages viewmodel GPU resources and records the
 fullscreen resolve and composition draws. `src/render_hdr_effects.cpp` owns
 project post-effect and bloom GPU resources and draw commands. The context

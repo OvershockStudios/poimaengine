@@ -5,7 +5,6 @@
 #include "poima/player.hpp"
 #include "poima/assets.hpp"
 #include "mesh_lod.hpp"
-#include "poima/animation.hpp"
 #include "poima/editor_viewport.hpp"
 #include "poima/hosted_viewport.hpp"
 #include "poima/profiler.hpp"
@@ -23,7 +22,6 @@
 #if POIMA_EDITOR
 #include <imgui.h>
 #endif
-#include "poima/skinning_cs.hpp"
 #include <set>
 #include <map>
 #include "poima/scene_vs.hpp"
@@ -63,6 +61,7 @@
 #include "poima/sky_ps.hpp"
 #include "render_scene_draw.hpp"
 #include "render_shadows.hpp"
+#include "render_skinning.hpp"
 #include "poima/smoke_vs.hpp"
 #include "poima/smoke_ps.hpp"
 
@@ -90,21 +89,6 @@
 #endif
 
 namespace poima {
-namespace render_draw {
-struct GpuJoint { float rows[3][4]; };
-static_assert(sizeof(GpuJoint)==48);
-struct SkinInstance {
-    std::shared_ptr<const MeshAsset> mesh;
-    nvrhi::BufferHandle vertices,palette;
-    std::array<nvrhi::BufferHandle,2> outputs;
-    std::array<nvrhi::BindingSetHandle,2> output_bindings;
-    nvrhi::BindingSetHandle bindings;
-    std::uint32_t write_index=0,accepted_index=0;
-    std::uint64_t accepted_sequence=0;
-    std::vector<GpuJoint> joints;
-    std::size_t bytes=0;
-};
-}
 namespace {
 struct Messages final : nvrhi::IMessageCallback {
     std::atomic<std::uint32_t> errors{0};
@@ -122,8 +106,6 @@ using render_draw::DrawConstants;
 using render_draw::DrawIndices;
 using render_draw::DrawItem;
 using render_draw::Geometry;
-using render_draw::GpuJoint;
-using render_draw::SkinInstance;
 struct ObjectData {
     DrawConstants current{};
     float previous_model[3][4]{};
@@ -181,9 +163,6 @@ struct SpriteBinding {
     nvrhi::TextureHandle image;
     nvrhi::BindingSetHandle bindings;
 };
-struct GpuInfluence { std::uint32_t joints[4];float weights[4]; };
-static_assert(sizeof(GpuInfluence)==32);
-struct SkinSource { std::shared_ptr<const MeshAsset> mesh;nvrhi::BufferHandle influences;SkinBounds bounds; };
 using SteadyClock=std::chrono::steady_clock;
 namespace fp=frame_performance;
 double elapsed_ms(SteadyClock::time_point start) { return std::chrono::duration<double,std::milli>(SteadyClock::now()-start).count(); }
@@ -423,13 +402,8 @@ struct Context {
     std::map<const MaterialTextures*,std::shared_ptr<const MaterialTextures>> material_owners;
     std::map<const TextureImage*,std::shared_ptr<const TextureImage>> image_owners;
     std::map<const MeshAsset*,Bounds> bounds_cache;
-    std::map<const MeshAsset*,SkinSource> skin_sources;
-    std::map<std::string,SkinInstance> skin_instances;
-    std::size_t skin_bytes=0;
-    nvrhi::ShaderHandle skin_shader;
-    nvrhi::BindingLayoutHandle skin_layout;
-    nvrhi::ComputePipelineHandle skin_pipeline;
-    nvrhi::BufferHandle skin_errors,skin_readback;
+    render_skinning::Pass skinning;
+    nvrhi::BufferHandle skin_readback;
     RenderDiagnostics diagnostics;
     gpu_memory::Sampler memory_sampler;
     const std::thread::id memory_owner=std::this_thread::get_id();
@@ -446,7 +420,7 @@ struct Context {
     bool hardware = false;
     std::string gpu_name;
     bool swapchain_dirty=false;
-    bool skin_pipeline_ready=false,renderer_fault=false;
+    bool renderer_fault=false;
     bool editor=false,hosted=false,player_context=false,scene_visible=true,capture_exclusive=false;
     std::optional<nvrhi::Viewport> scene_viewport;
     render_ui::Game game_ui;
@@ -468,7 +442,7 @@ struct Context {
 #if POIMA_EDITOR
         editor_ui.release_gpu();
 #endif
-        skin_instances.clear();skin_sources.clear();skin_pipeline=nullptr;skin_layout=nullptr;skin_shader=nullptr;skin_errors=nullptr;skin_readback=nullptr;
+        skinning.reset();skin_readback=nullptr;
         shadows.reset();
         occlusion.reset();
         deferred_bindings=nullptr;deferred_pipeline=nullptr;deferred_layout=nullptr;deferred_cs=nullptr;material_base=nullptr;material_surface=nullptr;material_correspondence=nullptr;
@@ -1252,102 +1226,18 @@ struct Context {
         profiling::counter("renderer.streamed_geometry_draws",pending_draws.streamed_draws);
         profiling::counter("renderer.streamed_geometry_upload_bytes",pending_draws.streamed_vertex_bytes+pending_draws.streamed_index_bytes);
     }
-    void prepare_skin_pipeline() {
-        if(skin_pipeline_ready)return;
-        require(bool(physical.getQueueFamilyProperties(dispatch).at(queue_family).queueFlags & vk::QueueFlagBits::eCompute),"Selected graphics queue cannot run skinning compute.");
-        skin_shader=create_embedded_shader(checked,nvrhi::ShaderDesc(nvrhi::ShaderType::Compute).setEntryName("compute_main"),poima_skinning_cs);
-        skin_layout=checked->createBindingLayout(nvrhi::BindingLayoutDesc().setVisibility(nvrhi::ShaderType::Compute)
-            .addItem(nvrhi::BindingLayoutItem::PushConstants(0,16))
-            .addItem(nvrhi::BindingLayoutItem::StructuredBuffer_SRV(0)).addItem(nvrhi::BindingLayoutItem::StructuredBuffer_SRV(1))
-            .addItem(nvrhi::BindingLayoutItem::StructuredBuffer_SRV(2)).addItem(nvrhi::BindingLayoutItem::StructuredBuffer_UAV(0))
-            .addItem(nvrhi::BindingLayoutItem::RawBuffer_UAV(1)));
-        require(skin_shader && skin_layout,"Skinning shader/layout creation failed.");
-        skin_pipeline=checked->createComputePipeline(nvrhi::ComputePipelineDesc().setComputeShader(skin_shader).addBindingLayout(skin_layout));
-        nvrhi::BufferDesc error;error.byteSize=16;error.canHaveUAVs=true;error.canHaveRawViews=true;
-        error.initialState=nvrhi::ResourceStates::UnorderedAccess;error.keepInitialState=true;error.debugName="Skinning error flags";
-        skin_errors=checked->createBuffer(error);
-        nvrhi::BufferDesc readback;readback.byteSize=16;readback.cpuAccess=nvrhi::CpuAccessMode::Read;
-        readback.initialState=nvrhi::ResourceStates::CopyDest;readback.keepInitialState=true;readback.debugName="Skinning error readback";
-        skin_readback=checked->createBuffer(readback);
-        require(skin_pipeline && skin_errors && skin_readback,"Skinning compute resources unavailable.");
-        skin_pipeline_ready=true;
-    }
-    SkinSource& skin_source(const std::shared_ptr<const MeshAsset>& mesh) {
-        if(const auto found=skin_sources.find(mesh.get());found!=skin_sources.end())return found->second;
-        SkinSource result;result.mesh=mesh;result.bounds=skin_bounds(*mesh);
-        std::vector<GpuInfluence> influences(mesh->influences.size());
-        for(std::size_t i=0;i<influences.size();++i)for(std::size_t k=0;k<4;++k) {
-            influences[i].joints[k]=mesh->influences[i].joints[k];influences[i].weights[k]=mesh->influences[i].weights[k];
+    Bounds prepare_skinning(const SceneObject& object, DrawItem& item) {
+        const auto& source=skinning.source(*checked.Get(),*commands.Get(),object.mesh,
+            diagnostics.frame_execution.device_idle_waits);
+        const auto bounds=posed_bounds(source.bounds,object.skin->palette);
+        if(!skinning.ready()) {
+            require(bool(physical.getQueueFamilyProperties(dispatch).at(queue_family).queueFlags & vk::QueueFlagBits::eCompute),
+                "Selected graphics queue cannot run skinning compute.");
+            skinning.prepare(*checked.Get(),skin_readback);
         }
-        nvrhi::BufferDesc desc;desc.byteSize=influences.size()*sizeof(GpuInfluence);desc.structStride=sizeof(GpuInfluence);
-        desc.initialState=nvrhi::ResourceStates::ShaderResource;desc.keepInitialState=true;desc.debugName="Immutable skin influences";
-        result.influences=checked->createBuffer(desc);require(bool(result.influences),"Skin influence allocation failed.");
-        commands->open();commands->writeBuffer(result.influences,influences.data(),desc.byteSize);commands->close();checked->executeCommandList(commands);
-        ++diagnostics.frame_execution.device_idle_waits;require(checked->waitForIdle(),"Skin influence upload failed.");
-        return skin_sources.emplace(mesh.get(),std::move(result)).first->second;
-    }
-    SkinInstance& skin_instance(const SceneObject& object,const Geometry& geometry,SkinSource& source) {
-        prepare_skin_pipeline();const auto& palette=object.skin->palette;
-        require(!palette.empty() && palette.size()<=max_skin_joints && source.bounds.joints.size()<=palette.size(),"Skin palette does not cover its vertex joints.");
-        auto& deformation=skin_instances[object.entity_id];
-        if(deformation.mesh!=object.mesh || deformation.joints.size()!=palette.size()) {
-            skin_bytes-=deformation.bytes;deformation={};
-            const auto bytes=object.mesh->vertices.size()*sizeof(Vertex)*(samples==1 ? 2u : 1u)+palette.size()*sizeof(GpuJoint);
-            require(bytes<=128*1024*1024-skin_bytes,"GPU skinned deformation buffers exceed the initial 128 MiB budget.");
-            nvrhi::BufferDesc desc;desc.byteSize=object.mesh->vertices.size()*sizeof(Vertex);desc.structStride=sizeof(Vertex);
-            desc.isVertexBuffer=true;desc.canHaveUAVs=true;desc.initialState=nvrhi::ResourceStates::VertexBuffer;desc.keepInitialState=true;desc.debugName="Computed skin vertices";
-            deformation.outputs[0]=checked->createBuffer(desc);
-            deformation.outputs[1]=samples==1 ? checked->createBuffer(desc) : deformation.outputs[0];
-            deformation.vertices=deformation.outputs[0];
-            desc.byteSize=palette.size()*sizeof(GpuJoint);desc.structStride=sizeof(GpuJoint);desc.isVertexBuffer=false;desc.canHaveUAVs=false;
-            desc.initialState=nvrhi::ResourceStates::ShaderResource;desc.debugName="Instance skin palette";deformation.palette=checked->createBuffer(desc);
-            require(deformation.outputs[0] && deformation.outputs[1] && deformation.palette,"Skin deformation buffer allocation failed.");
-            for(std::size_t output=0;output<2;++output) {
-            deformation.output_bindings[output]=checked->createBindingSet(nvrhi::BindingSetDesc().addItem(nvrhi::BindingSetItem::PushConstants(0,16))
-                .addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(0,geometry.vertices))
-                .addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(1,source.influences))
-                .addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(2,deformation.palette))
-                .addItem(nvrhi::BindingSetItem::StructuredBuffer_UAV(0,deformation.outputs[output]))
-                .addItem(nvrhi::BindingSetItem::RawBuffer_UAV(1,skin_errors)),skin_layout);
-            require(bool(deformation.output_bindings[output]),"Skin compute binding creation failed.");
-            }
-            deformation.bindings=deformation.output_bindings[0];
-            deformation.mesh=object.mesh;deformation.joints.resize(palette.size());deformation.bytes=bytes;skin_bytes+=bytes;
-        }
-        for(std::size_t i=0;i<palette.size();++i) {
-            const auto& matrix=palette[i];require(matrix[3]==0 && matrix[7]==0 && matrix[11]==0 && matrix[15]==1,"GPU palette must be affine.");
-            for(std::size_t row=0;row<3;++row)for(std::size_t col=0;col<4;++col) {
-                const double value=matrix[col*4+row];require(std::isfinite(value) && std::abs(value)<=std::numeric_limits<float>::max(),"GPU palette exceeds float range.");
-                deformation.joints[i].rows[row][col]=static_cast<float>(value);
-            }
-        }
-        return deformation;
-    }
-    bool has_skin_draws() const {
-        for(const auto* list:{&draws,&viewmodel_draws})for(const auto& draw:*list)if(draw.skin && (draw.camera_visible || draw.shadow_mask))return true;
-        return false;
-    }
-    void dispatch_skinning() {
-        if(!has_skin_draws())return;
-        commands->clearBufferUInt(skin_errors,0);std::set<const SkinInstance*> dispatched;std::uint32_t index=0;
-        for(const auto* list:{&draws,&viewmodel_draws})for(const auto& draw:*list) {
-            const auto error_index=index++;
-            if(!draw.skin || (!draw.camera_visible && !draw.shadow_mask) || !dispatched.insert(draw.skin).second)continue;
-            const auto& deformation=*draw.skin;commands->writeBuffer(deformation.palette,deformation.joints.data(),deformation.joints.size()*sizeof(GpuJoint));
-            nvrhi::ComputeState state;state.pipeline=skin_pipeline;state.bindings.push_back(deformation.bindings);commands->setComputeState(state);
-            const std::uint32_t parameters[4]={static_cast<std::uint32_t>(deformation.mesh->vertices.size()),static_cast<std::uint32_t>(deformation.joints.size()),error_index,0};
-            commands->setPushConstants(parameters,sizeof(parameters));commands->dispatch((parameters[0]+63)/64);
-        }
-        commands->copyBuffer(skin_readback,0,skin_errors,0,16);
-    }
-    void validate_skin_dispatch(FrameSlot& slot) {
-        if(!slot.has_skin)return;
-        const void* data=checked->mapBuffer(slot.skin_readback,nvrhi::CpuAccessMode::Read);require(data!=nullptr,"Skinning status readback failed.");
-        std::uint32_t errors[4]{};std::memcpy(errors,data,sizeof(errors));checked->unmapBuffer(slot.skin_readback);
-        if(errors[0]) {
-            const auto id=errors[1]<slot.skin_ids.size() ? slot.skin_ids[errors[1]] : std::string("unknown");
-            throw std::runtime_error("GPU skinning rejected instance "+id+" vertex "+std::to_string(errors[2])+": singular, nonfinite or out-of-range result; capture was not published.");
-        }
+        item.skin=&skinning.instance(*checked.Get(),object,item.geometry,source,samples);
+        item.geometry.vertices=item.skin->vertices;
+        return bounds;
     }
     void require_environment_float_sampling() const {
         const auto features=vk::FormatFeatureFlagBits::eSampledImage|vk::FormatFeatureFlagBits::eSampledImageFilterLinear|vk::FormatFeatureFlagBits::eTransferDst;
@@ -1467,8 +1357,8 @@ struct Context {
         if(viewmodel)std::erase_if(viewmodel->materials,[&](const auto& item){return !combinations.contains(item.first);});
         std::erase_if(geometry_cache,[&](const auto& item){return !meshes.contains(item.first);});
         std::erase_if(bounds_cache,[&](const auto& item){return item.first && !meshes.contains(item.first);});
-        std::erase_if(skin_sources,[&](const auto& item){return !meshes.contains(item.first);});
-        std::erase_if(skin_instances,[&](const auto& item){if(skin_ids.contains(item.first))return false;skin_bytes-=item.second.bytes;return true;});
+        skinning.retain_sources(meshes);
+        skinning.retain_instances(skin_ids);
         std::erase_if(texture_cache,[&](const auto& item){return !images_used.contains(item.first);});
         std::erase_if(sampler_cache,[&](const auto& item){return !samplers.contains(item.first);});
         std::erase_if(mesh_owners,[&](const auto& item){return !meshes.contains(item.first);});
@@ -1862,7 +1752,11 @@ struct Context {
                 draw.normal[1][3]=object.textures ? object.textures->normal_scale : object.mesh ? object.mesh->normal_scale : 1.0f;
                 draw.normal[2][3]=(object.textures ? bool(object.textures->maps[4].image) : object.mesh && object.mesh->textures[4].image) ? 1.0f : 0.0f;
                 item.bindings=mesh_bindings(object.mesh.get(),object.textures.get(),true);item.geometry=mesh_geometry(object.mesh);Bounds bounds;
-                if(object.skin) {require(object.mesh && !object.mesh->influences.empty() && active_skins.insert(object.entity_id).second,"Foreground skin requires unique weighted instance.");auto& source=skin_source(object.mesh);bounds=posed_bounds(source.bounds,object.skin->palette);item.skin=&skin_instance(object,item.geometry,source);item.geometry.vertices=item.skin->vertices;}
+                if(object.skin) {
+                    require(object.mesh && !object.mesh->influences.empty() && active_skins.insert(object.entity_id).second,
+                        "Foreground skin requires unique weighted instance.");
+                    bounds=prepare_skinning(object,item);
+                }
                 else {require(!object.mesh || object.mesh->influences.empty(),"Foreground weighted mesh lacks a skin pose.");auto [entry,inserted]=bounds_cache.try_emplace(object.mesh.get());if(inserted)entry->second=mesh_bounds(object.mesh.get());bounds=entry->second;}
                 item.camera_visible=object.camera_visible && (!diagnostics.culling || intersects(transform_bounds(bounds,object.world),frustum));
                 if(item.camera_visible) {++pending_viewmodel->draws.camera_draws;pending_viewmodel->draws.camera_triangles+=item.geometry.count/3;if(item.skin) {++pending_viewmodel->draws.skinned_instances;pending_viewmodel->draws.skinned_vertices+=object.mesh->vertices.size();}}else ++pending_viewmodel->draws.camera_culled;
@@ -2256,8 +2150,7 @@ struct Context {
             Bounds local_bounds;
             if(object.skin) {
                 require(object.mesh && !object.mesh->influences.empty() && active_skins.insert(object.entity_id).second,"Skin snapshot requires a weighted mesh and unique instance ID.");
-                auto& source=skin_source(object.mesh);local_bounds=posed_bounds(source.bounds,object.skin->palette);
-                item.skin=&skin_instance(object,item.geometry,source);item.geometry.vertices=item.skin->vertices;
+                local_bounds=prepare_skinning(object,item);
             } else if(item.stream_geometry) {
                 require(object.mesh->influences.empty(),"Streamed geometry does not support skin weights.");
                 local_bounds=mesh_bounds(object.mesh.get());
@@ -2287,9 +2180,7 @@ struct Context {
         pending_draws.mesh_lod=std::move(mesh_lod);
         require(found_water_ripples==(water_normal_mode!=0),"Water ripple surface is missing.");
         prepare_viewmodel(active_skins);prepare_scene_output();
-        for(auto it=skin_instances.begin();it!=skin_instances.end();) {
-            if(!active_skins.contains(it->first)) { skin_bytes-=it->second.bytes;it=skin_instances.erase(it); }else ++it;
-        }
+        skinning.retain_instances(active_skins);
         if(diagnostics.profile_requested)timing_sample(diagnostics.prepare_cpu,elapsed_ms(started));
         profiling::counter("renderer.objects",pending_draws.objects);
         profiling::counter("renderer.surface_marks",surface_marks.size());
@@ -2300,10 +2191,10 @@ struct Context {
         profiling::counter("renderer.geometries",geometry_cache.size());
         profiling::counter("renderer.materials",material_cache.size());
         profiling::counter("renderer.images",texture_cache.size());
-        profiling::counter("renderer.skin_instances",skin_instances.size());
+        profiling::counter("renderer.skin_instances",skinning.instance_count());
         profiling::counter("renderer.texture_payload_bytes",texture_bytes);
         profiling::counter("renderer.environment_texture_payload_bytes",environment_ibl.payload_bytes());
-        profiling::counter("renderer.skin_buffer_bytes",skin_bytes);
+        profiling::counter("renderer.skin_buffer_bytes",skinning.instance_bytes());
         diagnostics.scene_observed=renderer_scene_result(*scene);
     }
 
@@ -2650,7 +2541,8 @@ struct Context {
                     if(diagnostics.profile_requested)timing_sample(diagnostics.completion_wait_cpu,elapsed_ms(started));
                     require(status==vk::Result::eSuccess,"GPU frame completion timed out; recreate the renderer session.");
                 }
-                validate_skin_dispatch(slot);collect_light_assignment(slot);collect_viewmodel_assignment(slot);collect_timestamps(slot,elapsed_ms(slot.started));
+                if(slot.has_skin)render_skinning::validate_status(*checked.Get(),slot.skin_readback,slot.skin_ids);
+                collect_light_assignment(slot);collect_viewmodel_assignment(slot);collect_timestamps(slot,elapsed_ms(slot.started));
                 auto reconstruction_gpu=diagnostics.reconstruction.gpu;diagnostics.reconstruction=slot.reconstruction;diagnostics.reconstruction.gpu=reconstruction_gpu;
                 diagnostics.last_draws=slot.draws;diagnostics.light_assignment=slot.lights;diagnostics.viewmodel=slot.viewmodel_diagnostics;
                 diagnostics.scene_products.history_valid=slot.history_valid;diagnostics.scene_products.history_sequence=slot.history_sequence;
@@ -2776,11 +2668,11 @@ struct Context {
                 if(draw.skin && (draw.camera_visible || draw.shadow_mask)) {
                     const auto& skin=*draw.skin;const auto* mesh=skin.mesh.get();
                     f.skins.push_back({buffer(geometry_cache.at(mesh).vertices,rs::Lifetime::imported,true),
-                        buffer(skin_sources.at(mesh).influences,rs::Lifetime::imported,true),buffer(skin.palette,rs::Lifetime::shared,false),
+                        buffer(skinning.influences(mesh),rs::Lifetime::imported,true),buffer(skin.palette,rs::Lifetime::shared,false),
                         buffer(skin.vertices,rs::Lifetime::shared,false)});
                 }
             }
-            if(!f.skins.empty()) {f.skin_errors=buffer(skin_errors,rs::Lifetime::shared,false);f.skin_readback=buffer(skin_readback,rs::Lifetime::slot,false);}
+            if(!f.skins.empty()) {f.skin_errors=buffer(skinning.errors(),rs::Lifetime::shared,false);f.skin_readback=buffer(skin_readback,rs::Lifetime::slot,false);}
             for(const auto& draw:draws) {
                 const bool camera=scene_visible && draw.camera_visible;const bool shadow=draw.shadow_mask!=0;
                 if(!camera && !shadow)continue;
@@ -2943,7 +2835,7 @@ struct Context {
             identity(f.frame,frame_buffer.Get());identity(f.objects,object_buffer.Get());identity(f.hdr,scene_hdr.Get());identity(f.shadow,shadows.texture());if(f.normal!=rs::none) {identity(f.normal,scene_normal.Get());identity(f.motion,scene_motion.Get());identity(f.motion_valid,scene_motion_valid.Get());}
             if(f.lights!=rs::none)identity(f.lights,light_buffer.Get());
             if(plan.settings.clustered) {identity(f.counts,cluster_counts.Get());identity(f.indices,cluster_indices.Get());identity(f.cluster_readback,cluster_readback.Get());}
-            if(!f.skins.empty()) {identity(f.skin_errors,skin_errors.Get());identity(f.skin_readback,skin_readback.Get());}
+            if(!f.skins.empty()) {identity(f.skin_errors,skinning.errors());identity(f.skin_readback,skin_readback.Get());}
             for(const auto& shadow:shadows.framebuffers())framebuffer(shadow,rs::none,f.shadow);
             for(const auto& binding:shadows.opaque_bindings()->getDesc()->bindings) {
                 if(binding.type==nvrhi::ResourceType::ConstantBuffer)identity(f.frame,binding.resourceHandle);
@@ -3206,7 +3098,16 @@ struct Context {
                     record_surface_mark_mask_upload(planned_texture(resources.surface_mark_masks));
                 break;
             case render_schedule::PassId::skinning:
-                if(scene) {if(viewmodel_enabled) {commands->writeBuffer(planned_buffer(resources.viewmodel_frame),&viewmodel_frame,sizeof(viewmodel_frame));commands->writeBuffer(planned_buffer(resources.viewmodel_objects),viewmodel_objects.data(),viewmodel_objects.size()*sizeof(ObjectData));}commands->writeBuffer(planned_buffer(resources.frame),&frame_constants,sizeof(frame_constants));commands->writeBuffer(planned_buffer(resources.objects),object_data.data(),object_data.size()*sizeof(ObjectData));dispatch_skinning();if(ao_enabled)occlusion.upload(*commands.Get(),planned_buffer(resources.ao_constants));}
+                if(scene) {
+                    if(viewmodel_enabled) {
+                        commands->writeBuffer(planned_buffer(resources.viewmodel_frame),&viewmodel_frame,sizeof(viewmodel_frame));
+                        commands->writeBuffer(planned_buffer(resources.viewmodel_objects),viewmodel_objects.data(),viewmodel_objects.size()*sizeof(ObjectData));
+                    }
+                    commands->writeBuffer(planned_buffer(resources.frame),&frame_constants,sizeof(frame_constants));
+                    commands->writeBuffer(planned_buffer(resources.objects),object_data.data(),object_data.size()*sizeof(ObjectData));
+                    skinning.record(*commands.Get(),{draws,viewmodel_draws},skin_readback);
+                    if(ao_enabled)occlusion.upload(*commands.Get(),planned_buffer(resources.ao_constants));
+                }
                 timestamp(1);break;
             case render_schedule::PassId::light_assignment:
                 if(scene) {
@@ -3314,7 +3215,7 @@ struct Context {
         native->queueSignalSemaphore(nvrhi::CommandQueue::Graphics, finished[index], 0);
         slot.started=frame_started;slot.draws=pending_draws;slot.lights=submitted_lights;
         if(slot_viewmodel && pending_viewmodel)slot_viewmodel->draws.camera_batches=pending_viewmodel->draws.camera_batches;
-        slot.viewmodel_diagnostics.swap(slot_viewmodel);slot.has_skin=has_skin_draws();slot.viewmodel=viewmodel_enabled ? viewmodel : nullptr;
+        slot.viewmodel_diagnostics.swap(slot_viewmodel);slot.has_skin=render_skinning::has_draws({draws,viewmodel_draws});slot.viewmodel=viewmodel_enabled ? viewmodel : nullptr;
         slot.skin_ids.swap(submitted_skin_ids);slot.screen_reflections=plan.settings.screen_reflections;slot.height_fog=plan.settings.height_fog;
         slot.profile=profiling::capture_deferred();slot.timing=timestamp_recording;
         slot.history_valid=pending_history_valid;slot.history_sequence=scene ? history_sequence+1 : 0;slot.history_reset=pending_history_reset;
@@ -3582,7 +3483,8 @@ RenderReport EditorViewport::report() const {
 }
 EditorViewportResources EditorViewport::resources() const {
     const auto& c=impl_->context;
-    return {c.geometry_cache.size(),c.material_cache.size(),c.texture_cache.size(),c.skin_instances.size(),c.texture_bytes,c.skin_bytes};
+    return {c.geometry_cache.size(),c.material_cache.size(),c.texture_cache.size(),c.skinning.instance_count(),
+        c.texture_bytes,c.skinning.instance_bytes()};
 }
 #endif
 

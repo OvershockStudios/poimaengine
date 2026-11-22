@@ -1,8 +1,16 @@
 # Implementation status
 
-Updated 2026-11-21 for **0.0.390**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-21 for **0.0.391**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.391 compiles [transaction staging and Vulkan skinning](BUILD.md#world-service-and-schema-compilation)
+separately. Ubuntu passed 19 focused suites. Before and after builds on Ubuntu
+and Windows matched 21 transaction replies and the primary and previous
+world files across a fresh process. Windows matched 24 Vulkan images in
+forward 4× MSAA on AMD and deferred on NVIDIA. The NVIDIA hosted fixture
+also passed 80 motion captures with one and two frame slots.
+[Results](evidence/m2-source-ownership-391.json)
 
 Version 0.0.390 adds [directional wave layers](SHALLOW_WATER.md#author-directional-wave-layers)
 for simulated water. Up to four waves contribute to the shading normal and

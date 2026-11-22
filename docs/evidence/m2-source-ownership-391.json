@@ -1,0 +1,179 @@
+{
+  "format": "poima.source-ownership.qualification.v1",
+  "version": "0.0.391",
+  "baseline_version": "0.0.390",
+  "scope": "Native transaction operation staging and Vulkan compute skinning extraction.",
+  "new_translation_units": [
+    "src/world_transaction_operations.cpp",
+    "src/render_skinning.cpp"
+  ],
+  "owner_line_counts": {
+    "src/world.cpp": {
+      "before": 2530,
+      "after": 2324
+    },
+    "src/render_smoke.cpp": {
+      "before": 3699,
+      "after": 3601
+    }
+  },
+  "source_manifest_sha256": "be74cde040eafe5077083112027358721c0bb97bc087d22ff401888ca2df4cd3",
+  "ubuntu": {
+    "ctest": [
+      "world_contract",
+      "world_particles_contract",
+      "authoring_contract_identity",
+      "world_water_rain_contract",
+      "world_foliage_contract",
+      "world_templates_contract",
+      "asset_references_contract",
+      "world_water_contract",
+      "world_terrain_contract",
+      "world_ui_contract",
+      "world_precipitation_contract",
+      "authoring_core_conformance",
+      "world_source_stale_native",
+      "world_instances_contract",
+      "world_components_contract",
+      "world_history_contract",
+      "world_storage_native",
+      "world_session_native",
+      "world_schema_native"
+    ],
+    "sha256": {
+      "poima-390": "8bf953489c613a6a049fcf739ad0c4d5251b365407e378d5e347a3f7165eb176",
+      "poima": "20a9d4f562ca802d979908b6c6090ea2499301cfc9c3c2775e4b217ecd238dc6",
+      "result.xml": "f3718e88b254d1d261ae9b8acae5a97d615043ec77f9e277a23d3707201a299f"
+    },
+    "native_wave_layers": "passed",
+    "before_after_transaction_calls": 21,
+    "receipts_and_world_files": "byte-identical"
+  },
+  "windows": {
+    "binary_sha256": "c4d9433a120bd02534e5a570fff115dbdda3474efd64899f9862d5672bee9a25",
+    "manifest_sha256": "ee7fa2243a1cb53a7a18b771363ea865a3747bac454d142637473de273b1dec5",
+    "transaction_comparison": {
+      "paired": true,
+      "baseline_sha256": "9e20b5f9868d9734817966ee690808942baf4a960a830c2616c1947b466c656f",
+      "candidate_sha256": "c4d9433a120bd02534e5a570fff115dbdda3474efd64899f9862d5672bee9a25",
+      "calls": 21,
+      "artifacts": {
+        "starting.world.json": "4a6c04a19b4b6b6fe45c1b0398e229cb69598f86a2ef30a74428ea47a97cd3bb",
+        "warm.requests": "17a256a75199aefdf0ff4218342cc21e016b0380eb65635116cb9c2e0a5246d8",
+        "warm.replies": "b0719688fa8442f84fe3896f7cb1ea8a2bc361a54cdb599fffa6f0e1419b41bc",
+        "warm.primary": "d0af5526157233ed02945ef7ab06fe0bdecdaea70fc97cd3d600063a842ce752",
+        "warm.previous": "a3fa90c8be3a66afc960869fe792c9c85740989aa159ee568037487c5de981bc",
+        "cold.requests": "e3033e252d60d1a6441060cb956642ff9c1551fd87029ac51a8838f56b9c3083",
+        "cold.replies": "01340c72b020d077bed83478499f0ae7eec547268c1b541acbae7cae1e263f8a",
+        "cold.primary": "d0af5526157233ed02945ef7ab06fe0bdecdaea70fc97cd3d600063a842ce752",
+        "cold.previous": "a3fa90c8be3a66afc960869fe792c9c85740989aa159ee568037487c5de981bc"
+      }
+    },
+    "shader_modules_identical": 55,
+    "render_schedule": {
+      "admitted": 488,
+      "refused_mutations": 1265
+    },
+    "skinning_pairs": [
+      {
+        "adapter": "AMD Radeon(TM) Graphics",
+        "gpu_index": 0,
+        "lighting_path": "forward",
+        "msaa_samples": 4,
+        "validated_owners": 13,
+        "baseline_evidence_sha256": "81778031527fdf92b7f4df65915b87102b61cd5dc4055652964c464f332542fb",
+        "candidate_evidence_sha256": "f98b129d6fded5abde75212fb7ab9ef177bf215d1258c8b8598ea598d8b9ba0e",
+        "bmp_sha256": {
+          "base-cpu.bmp": "7407f6dfc71b52d38deb885ccd225d20f7daa6297bb3d87dd9f562809d1ccf24",
+          "base-gpu.bmp": "7407f6dfc71b52d38deb885ccd225d20f7daa6297bb3d87dd9f562809d1ccf24",
+          "base-unculled.bmp": "7407f6dfc71b52d38deb885ccd225d20f7daa6297bb3d87dd9f562809d1ccf24",
+          "instances-cpu.bmp": "8b9f147e786ef55a18dcc3282c8e4da3d9b5da6b08485dc84c7a06e5cceaf019",
+          "instances-gpu.bmp": "8b9f147e786ef55a18dcc3282c8e4da3d9b5da6b08485dc84c7a06e5cceaf019",
+          "normal-cpu.bmp": "3f6173267deff1884d442e99fe3b75a43dfaeac1b99576967a3d835877b695d1",
+          "normal-gpu.bmp": "3f6173267deff1884d442e99fe3b75a43dfaeac1b99576967a3d835877b695d1",
+          "recovered.bmp": "7407f6dfc71b52d38deb885ccd225d20f7daa6297bb3d87dd9f562809d1ccf24",
+          "shadow-cpu.bmp": "71206eff7890bf567fd28ea6f279151a5581ac24e13ea003095cbb05c738e3a9",
+          "shadow-gpu.bmp": "71206eff7890bf567fd28ea6f279151a5581ac24e13ea003095cbb05c738e3a9",
+          "shadow-off.bmp": "a67a2dc6b69e63c644ffda437bbd9e4057a363364b680cf15c6f3de14968d529",
+          "shadow-unculled.bmp": "71206eff7890bf567fd28ea6f279151a5581ac24e13ea003095cbb05c738e3a9"
+        },
+        "errors": [
+          {
+            "code": -32020,
+            "message": "GPU skinning rejected instance asset/0/0 vertex 2: singular, nonfinite or out-of-range result; capture was not published."
+          },
+          {
+            "code": -32602,
+            "message": "Singular transform."
+          }
+        ],
+        "candidate_errors": [
+          {
+            "code": -32020,
+            "message": "GPU skinning rejected instance asset/0/0 vertex 2: singular, nonfinite or out-of-range result; capture was not published."
+          },
+          {
+            "code": -32602,
+            "message": "Singular transform."
+          }
+        ]
+      },
+      {
+        "adapter": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "gpu_index": 1,
+        "lighting_path": "deferred",
+        "msaa_samples": 1,
+        "validated_owners": 13,
+        "baseline_evidence_sha256": "70bab660ffbe36f178f0d6bb43547184d1c5451238a7649d883be63df49b7fb8",
+        "candidate_evidence_sha256": "e7488b465d65dfda2fa854a9b64805cd9480b92e6c1b2bdb815bdbe0aa31cbfb",
+        "bmp_sha256": {
+          "base-cpu.bmp": "92a36b9dd8f462e8754e3e4ac86ce11e692c809ecae1518a8fc75f7514a5c4ed",
+          "base-gpu.bmp": "92a36b9dd8f462e8754e3e4ac86ce11e692c809ecae1518a8fc75f7514a5c4ed",
+          "base-unculled.bmp": "92a36b9dd8f462e8754e3e4ac86ce11e692c809ecae1518a8fc75f7514a5c4ed",
+          "instances-cpu.bmp": "7a75db347825458b95f3ed3c95374b615b26ea48f2f914b3eeaab7279c9278d4",
+          "instances-gpu.bmp": "7a75db347825458b95f3ed3c95374b615b26ea48f2f914b3eeaab7279c9278d4",
+          "normal-cpu.bmp": "594085f7acf9c559a97e40edcbb058be41f5d27fa209e6e2c3aaaeae362dcb56",
+          "normal-gpu.bmp": "594085f7acf9c559a97e40edcbb058be41f5d27fa209e6e2c3aaaeae362dcb56",
+          "recovered.bmp": "92a36b9dd8f462e8754e3e4ac86ce11e692c809ecae1518a8fc75f7514a5c4ed",
+          "shadow-cpu.bmp": "cd21b1584fa4e5017a6712ba21efc30080077dc241f7557de331aba4babc2618",
+          "shadow-gpu.bmp": "cd21b1584fa4e5017a6712ba21efc30080077dc241f7557de331aba4babc2618",
+          "shadow-off.bmp": "1a5440e0dedaa308319f6ce8f966ead3d050b34c20f5ce2656a8397d67196654",
+          "shadow-unculled.bmp": "cd21b1584fa4e5017a6712ba21efc30080077dc241f7557de331aba4babc2618"
+        },
+        "errors": [
+          {
+            "code": -32020,
+            "message": "GPU skinning rejected instance asset/0/0 vertex 2: singular, nonfinite or out-of-range result; capture was not published."
+          },
+          {
+            "code": -32602,
+            "message": "Singular transform."
+          }
+        ],
+        "candidate_errors": [
+          {
+            "code": -32020,
+            "message": "GPU skinning rejected instance asset/0/0 vertex 2: singular, nonfinite or out-of-range result; capture was not published."
+          },
+          {
+            "code": -32602,
+            "message": "Singular transform."
+          }
+        ]
+      }
+    ],
+    "hosted_pose_history": {
+      "adapter": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "lighting_path": "deferred",
+      "result_sha256": "c74499fc92072a1851dfb780e90bfc83a78cce5baa16da1d22f3a50422ec9df3",
+      "frame_slots": [
+        1,
+        2
+      ],
+      "captures": 80
+    },
+    "authoring_core_conformance": 5
+  },
+  "methodology": "Both transaction owners load the same authored world identity. All requests, replies, primary and previous publications are compared as bytes, including the fresh-process reopen. Skinning checks compare each GPU to itself with the same forward or deferred setting.",
+  "limits": "Fixture parity and explicit source ownership. Results establish neither clean-build speedup nor game-scale rendering performance."
+}
