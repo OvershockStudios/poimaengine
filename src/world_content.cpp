@@ -187,6 +187,7 @@ FrozenContent freeze_world_content(const Json& source, const fs::path& directory
     };
     auto collect_particle_emitter=[&](const Json& emitter) {
         result.needs_particles=true;
+        if(emitter.contains("surface_collision"))result.needs_particle_collisions=true;
         const auto sprite=emitter.find("sprite");
         if(sprite==emitter.end())return;
         result.needs_sprite_particles=true;

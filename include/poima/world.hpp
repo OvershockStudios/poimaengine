@@ -23,6 +23,7 @@ struct WorldPackageContent {
     bool needs_navigation=false;
     bool needs_particles=false;
     bool needs_sprite_particles=false;
+    bool needs_particle_collisions=false;
     bool needs_surface_mark_masks=false;
     bool needs_mesh_lod=false;
     bool needs_water_rain=false;

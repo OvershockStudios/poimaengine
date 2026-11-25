@@ -308,6 +308,60 @@ Surface deposition, mesh and ribbon rendering, general VFX graphs, translucent
 MSAA and temporal reconstruction, and production-scale frame budgets are
 further work.
 
+## Stop particles at surfaces
+
+Use `surface_collision: "expire"` on a `ParticleEmitter` for drops, sparks
+or small debris that should disappear on contact. Set `simulation_space` to
+`world` and an explicit `live_limit` from 1 to 64. Local and world spawn axes
+both work. The same setting can be used on a weather-driven rain emitter.
+
+```json
+{
+  "spawn_space": "local",
+  "simulation_space": "world",
+  "surface_collision": "expire",
+  "live_limit": 32,
+  "lifetime_ticks": 45,
+  "particles_per_second": 48,
+  "size_m": 0.055,
+  "linear_rgb": [1, 0.38, 0.045],
+  "velocity_m_s": {
+    "minimum": [-1, -9, -1],
+    "maximum": [1, -5, 1]
+  },
+  "acceleration_m_s2": [0, -9.81, 0]
+}
+```
+
+At each fixed tick, Poima tests the segment from the previous particle
+centre to its integrated next position against the final poses of static
+and kinematic colliders. This includes terrain triangle meshes. It ignores
+the source's own body. An age-zero birth starts moving at the next tick.
+Lifetime expiry takes precedence when the particle reaches its last tick.
+A contact removes the particle before publishing render instances and
+frees its capacity for births on the same tick.
+
+The surface test uses the centre of the particle and two-sided triangle
+queries. It costs at most one sweep per moving candidate and 1,024 sweeps
+per world tick. Segments shorter than 1 mm or longer than 10 km and endpoints
+beyond ±1,000 km count as skipped. [Native ray query reference](https://jrouwe.github.io/JoltPhysicsDocs/5.7.0/class_narrow_phase_query.html)
+
+Read `runtime.particles.inspect` at the committed tick. An opted-in source
+reports `surface_collision.last_step` with its `tick`, `tested`, `skipped`
+and `hits`. `first` identifies the first contact in particle ID order when
+one occurred, including the receiver, hit position, nullable normal and
+nullable mesh triangle. `last_step` starts empty after opening a save.
+The cumulative `collided` counter persists with the usual particle state.
+A zero collision count is omitted. The counts balance as
+`spawned = live + expired + removed + collided`.
+
+An installed runtime needs `features.particle_collisions` for an export
+that uses the feature. Run the [native contact fixture](../tests/particle_collision_capture.py)
+against a simulation build, or add `--gpu` for Vulkan image checks. With
+`--runtime-root`, the fixture runs a relocated export and opens its save in
+a separate process. From WSL, use `--windows-interop` and a local Windows
+drive for the fixture's save directories.
+
 ## Native particle API
 
 The native [`poima::particles::System`](../include/poima/particles.hpp) advances
@@ -392,7 +446,10 @@ slot. Queued bursts for that emitter retire with the slot.
   replay in the same build and floating-point environment.
 - `status()` reports the completed tick, configured capacities and counts.
   `emitter_status()` reports per-emitter counts, its sampled pose and pending
-  emission. System counts satisfy `spawned = live + expired + removed`.
+  emission. System counts satisfy `spawned = live + expired + removed + collided`.
+- `step(ContactTest)` queries world-space centre segments for contact-enabled
+  sources before mutating particle state. Worlds without such sources can
+  continue to call `step()`.
   `write_instances()` rejects an undersized output before writing.
 
 ### Headless check

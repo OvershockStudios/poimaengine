@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "poima/particles.hpp"
 #include <algorithm>
+#include <bitset>
 #include <cmath>
 #include <functional>
 #include <limits>
 #include <numeric>
+#include <optional>
 #include <stdexcept>
 
 namespace poima::particles {
@@ -78,6 +80,9 @@ void validate(const EmitterConfig& config, std::size_t capacity) {
     if (config.particles_per_second > max_rate || config.lifetime_ticks == 0 ||
         config.lifetime_ticks > max_lifetime_ticks || config.live_limit > capacity)
         throw std::invalid_argument("Particle emitter rate, lifetime or live limit is outside its bounds.");
+    if (config.expire_on_contact && (config.simulation_space != Space::World || config.live_limit == 0 ||
+        config.live_limit > max_contact_particles_per_emitter))
+        throw std::invalid_argument("Particle collision needs world simulation and a live limit of 1..64.");
     if (!valid_range(config.offset_m) || !valid_range(config.velocity_m_s) || !bounded(config.acceleration_m_s2))
         throw std::invalid_argument("Particle emitter vector or range is outside its bounds.");
     if (!std::isfinite(config.size_m) || config.size_m <= 0 || config.size_m > component_limit)
@@ -113,7 +118,8 @@ void validate_counts(const Counts& counts, std::uint64_t attempt_budget, std::ui
     require_snapshot(counts.spawned <= spawn_budget && counts.spawned <= attempt_budget &&
         counts.dropped <= attempt_budget - counts.spawned, "Particle snapshot spawn counts exceed the completed tick budget.");
     require_snapshot(counts.live <= counts.spawned && counts.expired <= counts.spawned - counts.live &&
-        counts.removed == counts.spawned - counts.live - counts.expired, "Particle snapshot counts do not balance.");
+        counts.collided <= counts.spawned - counts.live - counts.expired &&
+        counts.removed == counts.spawned - counts.live - counts.expired - counts.collided, "Particle snapshot counts do not balance.");
 }
 
 std::uint64_t possible_emitting_ticks(std::uint64_t tick, std::uint32_t rate, std::uint32_t phase) {
@@ -158,14 +164,18 @@ RestoreSlot validate_emitter(const SnapshotEmitter& emitter, const Status& statu
     const auto expiring_ticks = status.tick - std::min<std::uint64_t>(status.tick, config.lifetime_ticks);
     require_snapshot(counts.live <= capacity && counts.expired <= expiring_ticks * spawns_per_tick,
         "Particle snapshot emitter live count or expiry exceeds its bounds.");
+    const auto collision_ticks = status.tick > 0 ? status.tick - 1 : 0;
+    require_snapshot(counts.collided <= (config.expire_on_contact && config.lifetime_ticks > 1 ? collision_ticks * spawns_per_tick : 0),
+        "Particle snapshot collisions do not fit its emitter or available ticks.");
 
     require_snapshot(counts.live <= historical.live && counts.spawned <= historical.spawned &&
-        counts.dropped <= historical.dropped && counts.expired <= historical.expired,
+        counts.dropped <= historical.dropped && counts.expired <= historical.expired && counts.collided <= historical.collided,
         "Particle snapshot emitter counters exceed system counters.");
     historical.live -= counts.live;
     historical.spawned -= counts.spawned;
     historical.dropped -= counts.dropped;
     historical.expired -= counts.expired;
+    historical.collided -= counts.collided;
 
     const auto rotated = config.spawn_space != config.simulation_space;
     auto initial_position = range_magnitudes(config.offset_m, rotated);
@@ -306,15 +316,35 @@ void System::spawn(std::size_t slot) {
     total.live += admitted;
 }
 
-void System::step() {
+void System::step(ContactTest contacts) {
     if (status_.tick == last_tick) throw std::overflow_error("Particle system tick counter is exhausted.");
+    std::optional<std::bitset<max_particles>> impacts;
+    if (std::ranges::any_of(emitters_, [](const auto& emitter) { return emitter.config.expire_on_contact; })) {
+        if (!contacts.hit) throw std::invalid_argument("Particle collision needs a contact test.");
+        impacts.emplace();
+        for (std::size_t index = 0; index < particles_.size(); ++index) {
+            const auto& particle = particles_[index];
+            const auto& emitter = emitters_[particle.slot];
+            if (!emitter.config.expire_on_contact || particle.age + 1 == emitter.config.lifetime_ticks) continue;
+            const auto velocity = add(particle.velocity, scale(emitter.config.acceleration_m_s2, tick_dt));
+            const auto end = add(particle.position, scale(velocity, tick_dt));
+            if (contacts.hit(contacts.context, emitter.id, particle.id, particle.position, end)) impacts->set(index);
+        }
+    }
     auto kept = particles_.begin();
-    for (auto& particle : particles_) {
+    for (std::size_t index = 0; index < particles_.size(); ++index) {
+        auto& particle = particles_[index];
         auto& emitter = emitters_[particle.slot];
-        if (++particle.age == emitter.config.lifetime_ticks) {
-            ++emitter.status.particles.expired;
+        const bool expired = ++particle.age == emitter.config.lifetime_ticks;
+        if (expired || (impacts && (*impacts)[index])) {
+            if (expired) {
+                ++emitter.status.particles.expired;
+                ++status_.particles.expired;
+            } else {
+                ++emitter.status.particles.collided;
+                ++status_.particles.collided;
+            }
             --emitter.status.particles.live;
-            ++status_.particles.expired;
             --status_.particles.live;
             continue;
         }
@@ -351,6 +381,8 @@ System System::restore(const Snapshot& snapshot) {
     const auto max_births = std::min<std::uint64_t>(max_attempts, status.limits.particles);
     validate_counts(totals, status.tick * max_attempts, status.tick * max_births);
     require_snapshot(status.tick > 1 || totals.expired == 0, "Particle snapshot expires particles before any lifetime elapses.");
+    const auto collision_ticks = status.tick > 0 ? status.tick - 1 : 0;
+    require_snapshot(totals.collided <= collision_ticks * max_births, "Particle snapshot collision count exceeds its tick budget.");
 
     std::array<RestoreSlot, max_emitters> slots{};
     std::array<EmitterId, max_emitters> ids{};

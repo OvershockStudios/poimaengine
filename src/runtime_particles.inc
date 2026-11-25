@@ -6,6 +6,7 @@
         RuntimeParticleEmitter definition;
         bool draining=false;
         RuntimeParticleRainSample rain{};
+        std::optional<RuntimeParticleContactSample> contacts{};
     };
     struct ParticleRuntime {
         ParticleRuntime()=default;
@@ -138,6 +139,27 @@
             if(!sample.blocker && sample.scheduled_births)state.system.burst(id,sample.scheduled_births);
         }
     }
+    bool particle_contact(ParticleBinding& source, std::uint64_t particle, const particles::Vec3& from,
+        const particles::Vec3& to) const {
+        auto& sample=*source.contacts;
+        const particles::Vec3 direction{to[0]-from[0],to[1]-from[1],to[2]-from[2]};
+        const auto distance=std::hypot(direction[0],direction[1],direction[2]);
+        const auto in_bounds=[](const particles::Vec3& point) {
+            return std::ranges::all_of(point,[](double axis){return std::isfinite(axis) && std::abs(axis)<=1e6;});
+        };
+        if(!(distance>=.001 && distance<=10000) || !in_bounds(from) || !in_bounds(to)) {
+            ++sample.skipped;
+            return false;
+        }
+        ++sample.tested;
+        RuntimeRay query{from,direction,distance,{}};
+        if(!source.draining)query.ignore.push_back(source.entity);
+        const auto hit=physics_raycast(query,{},true);
+        if(!hit)return false;
+        ++sample.hits;
+        if(!sample.first)sample.first=RuntimeParticleContact{particle,hit->entity,hit->position,hit->normal,hit->triangle};
+        return true;
+    }
     void step_particles(std::span<const std::string_view> pressed,std::optional<std::uint32_t> rain_nm) {
         if(!particle_runtime)return;
         profiling::Scope profile("runtime.particles",static_cast<std::int64_t>(tick));
@@ -159,7 +181,16 @@
         }
         game_particle_bursts.clear();
         step_precipitation(rain_nm);
-        state.system.step();
+        for(auto& [id,source]:state.sources) {
+            (void)id;
+            if(source.definition.config.expire_on_contact)
+                source.contacts=RuntimeParticleContactSample{.tick=tick,.first=std::nullopt};
+        }
+        state.system.step({this,[](void* context,particles::EmitterId emitter,std::uint64_t particle,
+            const particles::Vec3& from,const particles::Vec3& to) {
+            auto& self=*static_cast<Impl*>(context);
+            return self.particle_contact(self.particle_runtime->sources.at(emitter),particle,from,to);
+        }});
         for(auto entry=state.sources.begin();entry!=state.sources.end();) {
             if(entry->second.draining && !state.system.emitter_status(entry->first).particles.live) {
                 state.system.remove_emitter(entry->first);entry=state.sources.erase(entry);
@@ -185,7 +216,8 @@
                 texture=particle_sprites.styles.at(index).texture;
             }
             result.sources.push_back({id,source.entity,source.draining,state.system.emitter_status(id),sprite,
-                std::move(texture),source.definition.rain ? std::optional(source.rain) : std::nullopt});
+                std::move(texture),source.definition.rain ? std::optional(source.rain) : std::nullopt,
+                source.definition.config.expire_on_contact,source.contacts});
         }
         return result;
     }

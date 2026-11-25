@@ -19,7 +19,9 @@
         }
         const auto observed = runtime_->particle_observation();
         const auto counts = [](const particles::Counts& c) {
-            return Json{{"live", c.live}, {"spawned", c.spawned}, {"dropped", c.dropped}, {"expired", c.expired}, {"removed", c.removed}};
+            Json result={{"live", c.live}, {"spawned", c.spawned}, {"dropped", c.dropped}, {"expired", c.expired}, {"removed", c.removed}};
+            if(c.collided)result["collided"]=c.collided;
+            return result;
         };
         auto sources = Json::array();
         std::map<particles::EmitterId, const RuntimeParticleSource*> sprite_sources;
@@ -31,6 +33,19 @@
                 const auto& rain=*source.rain;
                 sources.back()["rain"]={{"phase",rain.phase},{"scheduled_births",rain.scheduled_births},
                     {"blocker",rain.blocker ? Json(*rain.blocker) : Json(nullptr)}};
+            }
+            if(source.expire_on_contact) {
+                auto& trace=sources.back()["surface_collision"];
+                trace={{"mode","expire"},{"last_step",nullptr}};
+                if(const auto& step=source.contacts) {
+                    Json first=nullptr;
+                    if(const auto& contact=step->first)first={{"particle",std::to_string(contact->particle)},
+                        {"receiver",contact->receiver},{"position_m",contact->position_m},
+                        {"normal",contact->normal ? Json(*contact->normal) : Json(nullptr)},
+                        {"triangle",contact->triangle ? Json(*contact->triangle) : Json(nullptr)}};
+                    trace["last_step"]={{"tick",step->tick},{"tested",step->tested},{"skipped",step->skipped},
+                        {"hits",step->hits},{"first",std::move(first)}};
+                }
             }
             if (source.sprite) sprite_sources.emplace(source.id, &source);
         }

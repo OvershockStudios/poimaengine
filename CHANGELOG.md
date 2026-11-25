@@ -2,6 +2,12 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.431
+
+- Retire opted-in world particles on swept contacts with static or kinematic
+  collision. Inspect contacts and preserve cumulative counts in saves.
+  [Particle surface contacts](docs/PARTICLES.md#stop-particles-at-surfaces)
+
 ## 0.0.430
 
 - Track a depth-of-field point on a moving subject from a named camera. Inspect

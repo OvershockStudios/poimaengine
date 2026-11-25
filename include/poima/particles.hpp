@@ -13,6 +13,7 @@ inline constexpr std::size_t max_particles = 65'536;
 inline constexpr std::uint32_t max_burst = 1'024;
 inline constexpr std::uint32_t max_rate = 1'024 * ticks_per_second;
 inline constexpr std::uint32_t max_lifetime_ticks = 36'000;
+inline constexpr std::size_t max_contact_particles_per_emitter = 64;
 
 using EmitterId = std::uint64_t;
 using Vec3 = std::array<double, 3>;
@@ -44,6 +45,7 @@ struct EmitterConfig {
     float size_m = 0.1f;
     Color linear_rgba{1, 1, 1, 1};
     bool emitting = true; // Applies to the continuous rate. Bursts are explicit.
+    bool expire_on_contact = false;
     bool operator==(const EmitterConfig&) const = default;
 };
 
@@ -55,6 +57,7 @@ struct Limits {
 struct Counts {
     std::size_t live = 0;
     std::uint64_t spawned = 0, dropped = 0, expired = 0, removed = 0;
+    std::uint64_t collided = 0;
     bool operator==(const Counts&) const = default;
 };
 
@@ -107,6 +110,11 @@ struct Snapshot {
     bool operator==(const Snapshot&) const = default;
 };
 
+struct ContactTest {
+    void* context = nullptr;
+    bool (*hit)(void*, EmitterId, std::uint64_t particle, const Vec3& from, const Vec3& to) = nullptr;
+};
+
 // One owner calls or inspects the system at a time. Accepted operations use
 // the storage reserved at construction. Particle overflow drops new spawns.
 class System {
@@ -125,7 +133,9 @@ public:
     void commit_pose(EmitterId id, const Pose& pose); // Updates both poses without advancing time.
     void set_emitting(EmitterId id, bool emitting);
     void burst(EmitterId id, std::uint32_t count); // Queues up to max_burst for the next step.
-    void step();
+    // Test world-space centre segments before mutating particle state. A hit
+    // retires the particle at this tick and increments its contact counter.
+    void step(ContactTest contacts = {});
 
     Status status() const noexcept;
     EmitterStatus emitter_status(EmitterId id) const;

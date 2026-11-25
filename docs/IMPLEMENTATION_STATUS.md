@@ -1,8 +1,17 @@
 # Implementation status
 
-Updated 2026-11-25 for **0.0.430**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-25 for **0.0.431**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.431 adds [swept particle surface contacts](PARTICLES.md#stop-particles-at-surfaces).
+Opted-in rain, sparks and debris can expire against static or kinematic
+colliders. The source reports one sampled impact and bounded sweep counts
+per tick, and saves retain the cumulative contact count. The fixture checks
+cooked terrain, moving cover, Vulkan images and save continuation in a
+fresh process after relocation. Bounce responses, splash spawning and
+representative runtime costs remain open.
+[Results and scope](evidence/m2-particle-collision-431.json)
 
 Version 0.0.430 lets a named camera [track a subject's focus point](DEPTH_OF_FIELD.md#keep-a-moving-subject-in-focus).
 The camera measures view-space depth from committed transforms. A point outside

@@ -1,0 +1,458 @@
+{
+  "version": "0.0.431",
+  "date": "2026-11-25",
+  "base_commit": "c71b7902e09234c7f9d589d8cb2e9a8e9a72811b",
+  "schema_revision": 227,
+  "scope": "Bounded world-space particle sweeps against native static or kinematic collision, retirement on first hit, observation and saved counts.",
+  "source_sha256": {
+    "CMakeLists.txt": "e8f169e0f7a2b8bd3c1a1c833af01133f6e06d77a7471dceb5814bcf17de3624",
+    "cmake/runtime.json.in": "b90ce9e8ff0dc379af8a23b51bef44e64809830a128e307c296a21bd7db8143a",
+    "include/poima/particles.hpp": "7201512ee53c639e6ea6b6dfe8341906a13168af56aa98b19bec9a218b7fd2f7",
+    "include/poima/project.hpp": "270e79b03565dc6b83bd271d1a13c4064bef70cb34a06f6b7f2ba52b5ac45072",
+    "include/poima/runtime.hpp": "5edb8a9123c94fb4698a928ad1a28ccc925107369ea0d3569cefd369af2cb3bc",
+    "include/poima/world.hpp": "a64f18986f69541f6a64b89e00878a6c79dab85a7432e676b4a7aa491b4d7c2d",
+    "src/particle_emitter_json.cpp": "b38978b431fa24e1922d1f7e141fc7ccae85fe2a55852e91f5fa2e84c8b679e5",
+    "src/particle_state_json.cpp": "410d796c9e521cc1925ec10ead1007f60c1598f84d38b5c4a9c701dd092ce99f",
+    "src/particles.cpp": "0e6ce1efa7597812fbb81d88015a09352e956dc9d1289c70f238caefa0d00da5",
+    "src/project.cpp": "c7d53b08d99e9e502b8600bb5f6b8b060fe72cc6925455c8a04a684d7e4e85a6",
+    "src/runtime_particles.inc": "c9d7b16d7ce15bafe170bd13f543838664db0f5d85b7dc074c0cc7f66b8e3920",
+    "src/world.cpp": "47748c4226a5c2689d3bdae41c5b348c1b8cdfa3d2ad1120d4963adf842d729b",
+    "src/world_content.cpp": "52f659a45c1b42874e91226844e0740e21ce2fbb6338f4a649991dec36b61542",
+    "src/world_particles.inc": "f9b21481b83d590be09508772d9b0c427123aeed9d49f95f1af708d7eadbe25c",
+    "src/world_schema.cpp": "7b64841bdf19f334332e0efb09f9c5c690a26739b839b0d97634c2f004d5fe2a"
+  },
+  "native_particles": {
+    "source_sha256": "f7d0e6529cdb030b5c83ea41d669663b8ab51237427f4078b7a94d21024e926e",
+    "binary_sha256": "e316c4b5f2902b39fa03a0be98649d7faac1518da014a72a3735d426afcdf67e",
+    "result": "CPU particles passed moving-source, replay, capacity, lifecycle, exact checkpoint and contact checks."
+  },
+  "contact_fixture_sha256": "64deb73fc417f1f10873208a622104bf0c84c2b1d35df6ecc5add63157f276af",
+  "windows": {
+    "binary_sha256": "97127e1c047e98ba4da5896fd918bd24ef1ca471a254c0febca63e336d6d981e",
+    "desktop_library_sha256": "9502905daf25e83ebb06c28c6e76ee458926c725ecba035f7da5035dcfd37515",
+    "runtime_descriptor_sha256": "c0c827c28bfe03e52796ee9d2b0d2166bb1cac02af132c6f62fc825d46317589",
+    "amd_forward": {
+      "adapter": "AMD Radeon(TM) Graphics",
+      "lighting": "forward",
+      "evidence_sha256": "b0748c1cbf9ef3b1d88703339d5c8b3d85b9977a6debc0e9aabeb2a5cf6c41da",
+      "resolution_px": [
+        240,
+        160
+      ],
+      "captures": {
+        "source-closed": {
+          "red": 0,
+          "blue": 81,
+          "image_sha256": "50caa98cd0bea43a34a8e9ade0dff15650e61c075a071ffb7f7a7f940c5331ec"
+        },
+        "source-open": {
+          "red": 81,
+          "blue": 81,
+          "image_sha256": "89a532c00ba725037a6a6c6fc884ffaedea64c8dff561e6b7b0ff2b8073a0b6d"
+        },
+        "restored-closed": {
+          "red": 0,
+          "blue": 81,
+          "image_sha256": "50caa98cd0bea43a34a8e9ade0dff15650e61c075a071ffb7f7a7f940c5331ec"
+        },
+        "restored-open": {
+          "red": 81,
+          "blue": 81,
+          "image_sha256": "89a532c00ba725037a6a6c6fc884ffaedea64c8dff561e6b7b0ff2b8073a0b6d"
+        }
+      },
+      "simulation": [
+        {
+          "tick": 2,
+          "counts": {
+            "collided": 1,
+            "dropped": 0,
+            "expired": 0,
+            "live": 5,
+            "removed": 0,
+            "spawned": 6
+          },
+          "contacts": [
+            {
+              "source": "00000000000000000000000000000321",
+              "first": {
+                "normal": [
+                  0.0,
+                  1.0,
+                  0.0
+                ],
+                "particle": "1",
+                "position_m": [
+                  -0.72,
+                  1.149999976158142,
+                  -4.2
+                ],
+                "receiver": "00000000000000000000000000000324",
+                "triangle": null
+              },
+              "hits": 1,
+              "skipped": 0,
+              "tested": 1,
+              "tick": 2
+            },
+            {
+              "source": "00000000000000000000000000000323",
+              "first": null,
+              "hits": 0,
+              "skipped": 0,
+              "tested": 1,
+              "tick": 2
+            }
+          ]
+        },
+        {
+          "tick": 3,
+          "counts": {
+            "collided": 2,
+            "dropped": 0,
+            "expired": 0,
+            "live": 7,
+            "removed": 0,
+            "spawned": 9
+          },
+          "contacts": [
+            {
+              "source": "00000000000000000000000000000321",
+              "first": null,
+              "hits": 0,
+              "skipped": 0,
+              "tested": 1,
+              "tick": 3
+            },
+            {
+              "source": "00000000000000000000000000000323",
+              "first": {
+                "normal": [
+                  0.0,
+                  1.0,
+                  0.0
+                ],
+                "particle": "3",
+                "position_m": [
+                  0.18,
+                  0.08000000715255728,
+                  -5.35
+                ],
+                "receiver": "00000000000000000000000000000326",
+                "triangle": 3
+              },
+              "hits": 1,
+              "skipped": 0,
+              "tested": 2,
+              "tick": 3
+            }
+          ]
+        },
+        {
+          "tick": 4,
+          "counts": {
+            "collided": 4,
+            "dropped": 0,
+            "expired": 0,
+            "live": 8,
+            "removed": 0,
+            "spawned": 12
+          },
+          "contacts": [
+            {
+              "source": "00000000000000000000000000000321",
+              "first": {
+                "normal": [
+                  0.0,
+                  1.0,
+                  0.0
+                ],
+                "particle": "4",
+                "position_m": [
+                  -0.72,
+                  0.08000000715255728,
+                  -4.2
+                ],
+                "receiver": "00000000000000000000000000000326",
+                "triangle": 4
+              },
+              "hits": 1,
+              "skipped": 0,
+              "tested": 2,
+              "tick": 4
+            },
+            {
+              "source": "00000000000000000000000000000323",
+              "first": {
+                "normal": [
+                  0.0,
+                  1.0,
+                  0.0
+                ],
+                "particle": "6",
+                "position_m": [
+                  0.18,
+                  0.08000000715255728,
+                  -5.35
+                ],
+                "receiver": "00000000000000000000000000000326",
+                "triangle": 3
+              },
+              "hits": 1,
+              "skipped": 0,
+              "tested": 2,
+              "tick": 4
+            }
+          ]
+        }
+      ],
+      "save_sha256": "21aac7030fc415235a06e6952bef4f578240e3eb32a2e8cbed37859d3408d9f4",
+      "exact_observations_after_reload": true
+    },
+    "nvidia_deferred": {
+      "adapter": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "lighting": "deferred",
+      "evidence_sha256": "2fcc72310e8dcbb976a4069200fc31924896b567bec636d2b2ed609ff760de49",
+      "resolution_px": [
+        240,
+        160
+      ],
+      "captures": {
+        "source-closed": {
+          "red": 0,
+          "blue": 81,
+          "image_sha256": "50caa98cd0bea43a34a8e9ade0dff15650e61c075a071ffb7f7a7f940c5331ec"
+        },
+        "source-open": {
+          "red": 81,
+          "blue": 81,
+          "image_sha256": "89a532c00ba725037a6a6c6fc884ffaedea64c8dff561e6b7b0ff2b8073a0b6d"
+        },
+        "restored-closed": {
+          "red": 0,
+          "blue": 81,
+          "image_sha256": "50caa98cd0bea43a34a8e9ade0dff15650e61c075a071ffb7f7a7f940c5331ec"
+        },
+        "restored-open": {
+          "red": 81,
+          "blue": 81,
+          "image_sha256": "89a532c00ba725037a6a6c6fc884ffaedea64c8dff561e6b7b0ff2b8073a0b6d"
+        },
+        "relocated-closed": {
+          "red": 0,
+          "blue": 81,
+          "image_sha256": "50caa98cd0bea43a34a8e9ade0dff15650e61c075a071ffb7f7a7f940c5331ec"
+        },
+        "relocated-open": {
+          "red": 81,
+          "blue": 81,
+          "image_sha256": "89a532c00ba725037a6a6c6fc884ffaedea64c8dff561e6b7b0ff2b8073a0b6d"
+        },
+        "fresh-save-closed": {
+          "red": 0,
+          "blue": 81,
+          "image_sha256": "50caa98cd0bea43a34a8e9ade0dff15650e61c075a071ffb7f7a7f940c5331ec"
+        },
+        "fresh-save-open": {
+          "red": 81,
+          "blue": 81,
+          "image_sha256": "89a532c00ba725037a6a6c6fc884ffaedea64c8dff561e6b7b0ff2b8073a0b6d"
+        }
+      },
+      "simulation": [
+        {
+          "tick": 2,
+          "counts": {
+            "collided": 1,
+            "dropped": 0,
+            "expired": 0,
+            "live": 5,
+            "removed": 0,
+            "spawned": 6
+          },
+          "contacts": [
+            {
+              "source": "00000000000000000000000000000321",
+              "first": {
+                "normal": [
+                  0.0,
+                  1.0,
+                  0.0
+                ],
+                "particle": "1",
+                "position_m": [
+                  -0.72,
+                  1.149999976158142,
+                  -4.2
+                ],
+                "receiver": "00000000000000000000000000000324",
+                "triangle": null
+              },
+              "hits": 1,
+              "skipped": 0,
+              "tested": 1,
+              "tick": 2
+            },
+            {
+              "source": "00000000000000000000000000000323",
+              "first": null,
+              "hits": 0,
+              "skipped": 0,
+              "tested": 1,
+              "tick": 2
+            }
+          ]
+        },
+        {
+          "tick": 3,
+          "counts": {
+            "collided": 2,
+            "dropped": 0,
+            "expired": 0,
+            "live": 7,
+            "removed": 0,
+            "spawned": 9
+          },
+          "contacts": [
+            {
+              "source": "00000000000000000000000000000321",
+              "first": null,
+              "hits": 0,
+              "skipped": 0,
+              "tested": 1,
+              "tick": 3
+            },
+            {
+              "source": "00000000000000000000000000000323",
+              "first": {
+                "normal": [
+                  0.0,
+                  1.0,
+                  0.0
+                ],
+                "particle": "3",
+                "position_m": [
+                  0.18,
+                  0.08000000715255728,
+                  -5.35
+                ],
+                "receiver": "00000000000000000000000000000326",
+                "triangle": 3
+              },
+              "hits": 1,
+              "skipped": 0,
+              "tested": 2,
+              "tick": 3
+            }
+          ]
+        },
+        {
+          "tick": 4,
+          "counts": {
+            "collided": 4,
+            "dropped": 0,
+            "expired": 0,
+            "live": 8,
+            "removed": 0,
+            "spawned": 12
+          },
+          "contacts": [
+            {
+              "source": "00000000000000000000000000000321",
+              "first": {
+                "normal": [
+                  0.0,
+                  1.0,
+                  0.0
+                ],
+                "particle": "4",
+                "position_m": [
+                  -0.72,
+                  0.08000000715255728,
+                  -4.2
+                ],
+                "receiver": "00000000000000000000000000000326",
+                "triangle": 4
+              },
+              "hits": 1,
+              "skipped": 0,
+              "tested": 2,
+              "tick": 4
+            },
+            {
+              "source": "00000000000000000000000000000323",
+              "first": {
+                "normal": [
+                  0.0,
+                  1.0,
+                  0.0
+                ],
+                "particle": "6",
+                "position_m": [
+                  0.18,
+                  0.08000000715255728,
+                  -5.35
+                ],
+                "receiver": "00000000000000000000000000000326",
+                "triangle": 3
+              },
+              "hits": 1,
+              "skipped": 0,
+              "tested": 2,
+              "tick": 4
+            }
+          ]
+        }
+      ],
+      "save_sha256": "aebcda7e608cfd51586f9de5454475e4531b8593fa2bb99355bfdeb8675bc3c2",
+      "exact_observations_after_reload": true,
+      "relocated_game": {
+        "unchanged_files": 59,
+        "source_unavailable": true,
+        "fresh_save_process": true,
+        "exact_continuation_at_ticks": [
+          3,
+          4
+        ],
+        "same_images_and_observations": true,
+        "save_sha256": "aebcda7e608cfd51586f9de5454475e4531b8593fa2bb99355bfdeb8675bc3c2"
+      }
+    },
+    "legacy_unchanged_save": {
+      "scope": "A 0.0.430 process produced the original ordinary world-space particle archive. A 0.0.431 process inspected all its active particles after loading and wrote the same archive bytes again.",
+      "tick": 8,
+      "bytes": 15535,
+      "save_sha256": "705d9f349d6fed200b7841e7642f0bbd94304b777cf04d2a951bc99ad18e2dbb",
+      "evidence_sha256": "c79d7add600bac1056a3f46e4a81e15262c163f217bfe9cab273ba8cd23d9512"
+    }
+  },
+  "ubuntu_headless": {
+    "evidence_sha256": "22120044de8795ccd1af5fd808dda36ed3c72530cba044892599f5cf1e8d69c9",
+    "binary_sha256": "158c37f495eb279cc0c1061dce344d9604eb5ab8c3470807734cdff766069041",
+    "runtime_descriptor_sha256": "9bbdb3d5145bb3b07a165bf689f73ad34fa8cda6f38e149a074156d223a02aef",
+    "ctest_junit_sha256": "01ca03ddc945e09c9920aa32fd6943623af56c98d677be40af3155e708eaa75d",
+    "ctest_passed": [
+      "authoring_contract_identity",
+      "world_water_rain_contract",
+      "authoring_core_conformance",
+      "particle_scene_native",
+      "world_particles_contract",
+      "world_session_native"
+    ],
+    "qualified": "Authored cook, native terrain/ledge collision, weather input, guarded movement and save continuation without a renderer."
+  },
+  "earlier_runs": [
+    {
+      "issue": "The fixture removed a directional light still referenced by the default sun.",
+      "disposition": "Authored an environment without that light and retained the validation failure on Windows and Ubuntu."
+    },
+    {
+      "issue": "The first request for the rebuilt Windows artifact selected the previous candidate.",
+      "disposition": "The hash check rejected both binaries before execution. Used the final install pointer and verified all hashes."
+    }
+  ],
+  "remaining": [
+    "Bounced particles, collision-triggered subeffects, dynamic-body responses and GPU particle collision.",
+    "Representative frame and simulation costs for heavily populated worlds."
+  ]
+}

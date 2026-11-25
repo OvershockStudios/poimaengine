@@ -38,7 +38,7 @@ std::vector<Instance> instances(const System& system) {
 }
 
 void check_counts(const Counts& counts, const char* message) {
-    check(counts.spawned == counts.live + counts.expired + counts.removed, message);
+    check(counts.spawned == counts.live + counts.expired + counts.removed + counts.collided, message);
 }
 
 void moving_source() {
@@ -415,6 +415,43 @@ void maximum_lifetime_checkpoint() {
     check_exact(system.snapshot(), restored.snapshot());
     check(restored.status().particles == Counts{0, 1, 0, 1, 0}, "Restored long-lived particle missed its expiry.");
 }
+
+void swept_contacts() {
+    System system({2, 8});
+    EmitterConfig config;
+    config.live_limit = 8;
+    config.expire_on_contact = true;
+    config.velocity_m_s = {{60, 0, 0}, {60, 0, 0}};
+    system.add_emitter(1, config);
+    config.expire_on_contact = false;
+    system.add_emitter(2, config);
+    system.burst(1, 1);
+    system.burst(2, 1);
+    const auto pending = system.snapshot();
+    rejects<std::invalid_argument>([&] { system.step(); }, "Configured collision ran without a query.");
+    check_exact(pending, system.snapshot());
+    ContactTest hit{nullptr, [](void*, EmitterId emitter, std::uint64_t particle, const Vec3& from, const Vec3& to) {
+        check(emitter == 1 && particle == 1, "Contact query included a plain emitter or a fresh birth.");
+        check_vector(from, {0, 0, 0}, "Contact origin differs from its last committed position.");
+        check_vector(to, {1, 0, 0}, "Contact test did not sweep the complete segment.");
+        return true;
+    }};
+    system.step(hit);
+    const auto born = system.snapshot();
+    ContactTest fail{nullptr, [](void*, EmitterId, std::uint64_t, const Vec3&, const Vec3&) -> bool {
+        throw std::runtime_error("test contact query failure");
+    }};
+    rejects<std::runtime_error>([&] { system.step(fail); }, "Contact query unexpectedly succeeded.");
+    check_exact(born, system.snapshot());
+    system.step(hit);
+    const auto saved = system.snapshot();
+    check(saved.status.particles == Counts{1, 2, 0, 0, 0, 1}, "Contact retirement did not preserve the lifetime ledger.");
+    check(instances(system).front().emitter == 2, "Contact removed a particle from the wrong emitter.");
+    check_exact(saved, System::restore(saved).snapshot());
+    auto invalid = saved;
+    invalid.emitters[0].config.expire_on_contact = false;
+    rejects<std::invalid_argument>([&] { (void)System::restore(invalid); }, "Restore accepted a collision count for a plain source.");
+}
 }
 
 int main() {
@@ -427,7 +464,8 @@ int main() {
         exact_checkpoint();
         malformed_checkpoints();
         maximum_lifetime_checkpoint();
-        std::cout << "CPU particles passed moving-source, replay, capacity, lifecycle and exact checkpoint checks.\n";
+        swept_contacts();
+        std::cout << "CPU particles passed moving-source, replay, capacity, lifecycle, exact checkpoint and contact checks.\n";
     } catch (const std::exception& error) {
         std::cerr << error.what() << '\n';
         return 1;

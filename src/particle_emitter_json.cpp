@@ -112,7 +112,7 @@ Json curve_schema(double max_multiplier) {
 RuntimeParticleEmitter parse_particle_emitter(const Json& value) {
     fields(value, {"spawn_space", "simulation_space", "lifetime_ticks", "size_m", "linear_rgb"},
         {"seed", "particles_per_second", "live_limit", "emitting", "offset_m", "velocity_m_s", "acceleration_m_s2",
-            "burst", "sprite", "rain"});
+            "burst", "sprite", "rain", "surface_collision"});
     RuntimeParticleEmitter result;
     auto& config = result.config;
     config.spawn_space = space(value.at("spawn_space"));
@@ -133,6 +133,12 @@ RuntimeParticleEmitter parse_particle_emitter(const Json& value) {
     if (value.contains("particles_per_second"))
         config.particles_per_second = integer(value.at("particles_per_second"), 0, particles::max_rate);
     if (value.contains("live_limit")) config.live_limit = integer(value.at("live_limit"), 0, live_capacity);
+    if (value.contains("surface_collision")) {
+        require(value.at("surface_collision") == "expire" && config.simulation_space == particles::Space::World &&
+            config.live_limit >= 1 && config.live_limit <= particles::max_contact_particles_per_emitter,
+            "Particle surface collision must be expire with world simulation and a live limit of 1..64.");
+        config.expire_on_contact = true;
+    }
     if (value.contains("emitting")) {
         require(value.at("emitting").is_boolean(), "Particle emitting must be Boolean.");
         config.emitting = value.at("emitting").get<bool>();
@@ -208,9 +214,13 @@ Json particle_emitter_schema() {
         {"particles_per_second", range("integer", 0, particles::max_rate)}, {"live_limit", range("integer", 0, live_capacity)},
         {"emitting", {{"type", "boolean"}, {"default", true}}}, {"offset_m", limits},
         {"velocity_m_s", limits}, {"acceleration_m_s2", v}, {"burst", burst}, {"sprite", std::move(sprite)},
-        {"rain", std::move(rain)}},
+        {"rain", std::move(rain)}, {"surface_collision", {{"const", "expire"},
+            {"description", "Retire world particles on a swept centre contact with a static or kinematic collider."}}}},
         {"spawn_space", "simulation_space", "lifetime_ticks", "size_m", "linear_rgb"});
     result["description"] = "Fixed-tick billboards with optional translucent cooked image sprites. Spawn space selects birth axes. Simulation space selects whether live particles follow the source. Burst actions use named pressed edges. Authored rain uses world spaces, zero continuous rate and no explicit bursts.";
+    result["if"] = {{"required", {"surface_collision"}}};
+    result["then"] = {{"required", {"live_limit"}}, {"properties", {{"simulation_space", {{"const", "world"}}},
+        {"live_limit", range("integer", 1, particles::max_contact_particles_per_emitter)}}}};
     return result;
 }
 

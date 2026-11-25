@@ -434,6 +434,18 @@ struct RuntimeParticleEmitter {
     std::optional<RuntimeParticleSprite> sprite;
     std::optional<RuntimeParticleRainProfile> rain;
 };
+struct RuntimeParticleContact {
+    std::uint64_t particle;
+    std::string receiver;
+    particles::Vec3 position_m;
+    std::optional<particles::Vec3> normal;
+    std::optional<std::uint32_t> triangle;
+};
+struct RuntimeParticleContactSample {
+    std::uint64_t tick;
+    std::uint32_t tested=0, skipped=0, hits=0;
+    std::optional<RuntimeParticleContact> first;
+};
 struct RuntimeParticleSource {
     particles::EmitterId id=0;
     std::string entity;
@@ -442,6 +454,8 @@ struct RuntimeParticleSource {
     std::optional<RuntimeParticleSprite> sprite{};
     std::shared_ptr<const TextureImage> sprite_texture{};
     std::optional<RuntimeParticleRainSample> rain{};
+    bool expire_on_contact=false;
+    std::optional<RuntimeParticleContactSample> contacts;
 };
 struct RuntimeParticleObservation {
     bool active=false;

@@ -348,6 +348,7 @@ Json project_summary(const Project& p) {
     if(p.content.needs_navigation)result["needs_navigation"]=true;
     if(p.content.needs_particles)result["needs_particles"]=true;
     if(p.content.needs_sprite_particles)result["needs_sprite_particles"]=true;
+    if(p.content.needs_particle_collisions)result["needs_particle_collisions"]=true;
     if(p.content.needs_surface_mark_masks)result["needs_surface_mark_masks"]=true;
     if(p.content.needs_mesh_lod)result["needs_mesh_lod"]=true;
     if(p.content.needs_water_rain)result["needs_water_rain"]=true;
@@ -512,6 +513,8 @@ void require_scene_feature_support(const WorldPackageContent& content, const Jso
         "Project particle emitters require a compatible particle runtime.");
     require(!content.needs_sprite_particles || runtime.at("features").value("scene_particle_sprites", false),
         "Project particle sprites require a compatible Vulkan runtime.");
+    require(!content.needs_particle_collisions || runtime.at("features").value("particle_collisions", false),
+        "Project particle collisions require a compatible simulation runtime.");
     require(!content.needs_surface_mark_masks || runtime.at("features").value("surface_mark_masks", false),
         "Project surface mark masks require a compatible Vulkan runtime.");
     require(!content.needs_mesh_lod || runtime.at("features").value("mesh_lod", false),
@@ -532,9 +535,11 @@ Json runtime_spec(const std::string& bytes,std::string_view expected_version=bui
     fields(features,{"simulation","renderer","audio","managed","editor","native_gameplay","game_ui",
         "navigation","navigation_obstacles","asset_provenance","project_post_effects","water_regions","water_rain",
         "water_ripples","water_wave_layers","water_listener_audio","water_optics","water_refraction","water_caustics","water_shore_foam","water_terrain_fit","water_surface_swell","water_swell_variation","water_rough_reflection","water_solar_scattering","water_offshore","water_sprite_optics","snow_water_regions","scene_particles","scene_particle_sprites",
-        "surface_marks","surface_mark_masks","mesh_lod","output_grade","auto_exposure","atmosphere_sky","orbital_atmosphere","aerial_perspective","volumetric_clouds","cloud_shadows","screen_reflections","depth_of_field","foliage_motion",
+        "particle_collisions","surface_marks","surface_mark_masks","mesh_lod","output_grade","auto_exposure","atmosphere_sky","orbital_atmosphere","aerial_perspective","volumetric_clouds","cloud_shadows","screen_reflections","depth_of_field","foliage_motion",
         "height_fog","physics_checkpoint","fsr3_upscaler"},{"simulation","renderer","audio","managed","editor"});
     for(const auto& feature:features)require(feature.is_boolean(),"Runtime feature flags must be Boolean.");
+    require(!features.value("particle_collisions",false) || features.at("simulation")==true,
+        "Runtime particle collisions require simulation support.");
     require(!features.value("water_listener_audio",false) || features.at("audio")==true,
         "Runtime water listener audio requires audio support.");
     require(!features.value("orbital_atmosphere",false) || features.value("atmosphere_sky",false),
@@ -647,6 +652,7 @@ VerifiedGame verify_game(const std::string& filename,std::string_view expected_v
     require_scene_feature_support(content,runtime);
     require_startup_render_content(result.definition.startup_render,content);
     result.definition.needs_sprite_particles=content.needs_sprite_particles;
+    result.definition.needs_particle_collisions=content.needs_particle_collisions;
     result.needs_output_grade=content.needs_output_grade;
     result.needs_auto_exposure=content.needs_auto_exposure;
     result.needs_atmosphere_sky=content.needs_atmosphere_sky;
@@ -1101,6 +1107,7 @@ Reply inspect_game(const std::string& manifest,const std::string& expected_bundl
         Json result={{"manifest",text(game.manifest)},{"name",game.definition.name},{"project_id",game.spec.at("project_id")},{"revision",game.definition.revision},{"target_os",game.definition.target_os},{"target_arch",game.definition.target_arch},{"entry",game.spec.at("entry")},{"audio",game.definition.audio},{"startup_splash",game.definition.startup_splash},{"files",game.spec.at("files")}};
         if(game.spec.contains("startup_render"))result["startup_render"]=game.spec.at("startup_render");
         if(game.definition.needs_sprite_particles)result["needs_sprite_particles"]=true;
+        if(game.definition.needs_particle_collisions)result["needs_particle_collisions"]=true;
         if(game.needs_output_grade)result["needs_output_grade"]=true;
         if(game.needs_auto_exposure)result["needs_auto_exposure"]=true;
         if(game.needs_atmosphere_sky)result["needs_atmosphere_sky"]=true;

@@ -15,8 +15,11 @@ void require(bool valid, const char* message) {
     if (!valid) throw std::invalid_argument(message);
 }
 
-void fields(const Json& value, std::initializer_list<const char*> names) {
-    require(value.is_object() && value.size() == names.size(), "Unexpected particle snapshot object fields.");
+void fields(const Json& value, std::initializer_list<const char*> names, std::initializer_list<const char*> optional = {}) {
+    require(value.is_object(), "Expected a particle snapshot object.");
+    auto count = names.size();
+    for (const auto* name : optional) if (value.contains(name)) ++count;
+    require(value.size() == count, "Unexpected particle snapshot object fields.");
     for (const auto* name : names)
         require(value.contains(name), "Missing required particle snapshot field.");
 }
@@ -96,14 +99,21 @@ VectorRange range(const Json& value) {
 }
 
 Json counts_json(const Counts& value) {
-    return {{"live", value.live}, {"spawned", value.spawned}, {"dropped", value.dropped},
+    Json result = {{"live", value.live}, {"spawned", value.spawned}, {"dropped", value.dropped},
         {"expired", value.expired}, {"removed", value.removed}};
+    if (value.collided) result["collided"] = value.collided;
+    return result;
 }
 
 Counts counts(const Json& value) {
-    fields(value, {"live", "spawned", "dropped", "expired", "removed"});
-    return {bounded_integer(value.at("live"), snapshot_particle_limit), unsigned_integer(value.at("spawned")),
+    fields(value, {"live", "spawned", "dropped", "expired", "removed"}, {"collided"});
+    Counts result{bounded_integer(value.at("live"), snapshot_particle_limit), unsigned_integer(value.at("spawned")),
         unsigned_integer(value.at("dropped")), unsigned_integer(value.at("expired")), unsigned_integer(value.at("removed"))};
+    if (value.contains("collided")) {
+        result.collided = unsigned_integer(value.at("collided"));
+        require(result.collided != 0, "Zero collision counts must be omitted from particle snapshots.");
+    }
+    return result;
 }
 
 Json status_json(const Status& value) {
@@ -122,16 +132,18 @@ Status status(const Json& value) {
 }
 
 Json config_json(const EmitterConfig& value) {
-    return {{"seed", value.seed}, {"spawn_space", space_name(value.spawn_space)},
+    Json result = {{"seed", value.seed}, {"spawn_space", space_name(value.spawn_space)},
         {"simulation_space", space_name(value.simulation_space)}, {"particles_per_second", value.particles_per_second},
         {"lifetime_ticks", value.lifetime_ticks}, {"live_limit", value.live_limit}, {"offset_m", range_json(value.offset_m)},
         {"velocity_m_s", range_json(value.velocity_m_s)}, {"acceleration_m_s2", value.acceleration_m_s2},
         {"size_m", value.size_m}, {"linear_rgba", value.linear_rgba}, {"emitting", value.emitting}};
+    if (value.expire_on_contact) result["expire_on_contact"] = true;
+    return result;
 }
 
 EmitterConfig config(const Json& value) {
     fields(value, {"seed", "spawn_space", "simulation_space", "particles_per_second", "lifetime_ticks", "live_limit",
-        "offset_m", "velocity_m_s", "acceleration_m_s2", "size_m", "linear_rgba", "emitting"});
+        "offset_m", "velocity_m_s", "acceleration_m_s2", "size_m", "linear_rgba", "emitting"}, {"expire_on_contact"});
     EmitterConfig result;
     result.seed = unsigned_integer(value.at("seed"));
     result.spawn_space = space(value.at("spawn_space"));
@@ -145,6 +157,10 @@ EmitterConfig config(const Json& value) {
     result.size_m = number<float>(value.at("size_m"));
     result.linear_rgba = vector<float, 4>(value.at("linear_rgba"));
     result.emitting = boolean(value.at("emitting"));
+    if (value.contains("expire_on_contact")) {
+        require(boolean(value.at("expire_on_contact")), "Disabled collision must be omitted from particle snapshots.");
+        result.expire_on_contact = true;
+    }
     return result;
 }
 
