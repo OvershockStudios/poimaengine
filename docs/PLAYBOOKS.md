@@ -40,6 +40,7 @@ record correlated evidence, and identify a useful impossibility check.
 | Wet a scene during rain | [Surface wetness](SURFACE_WETNESS.md) | Check exposed and sheltered materials, then move a wet prop under cover and restore during drying. |
 | Show rain around shelter | [Rain particles](PARTICLES.md#place-a-roof-aware-rain-source) | Follow accepted weather doses, inspect moving cover, and resume falling particles from a save. |
 | Stop drops, sparks or debris at a surface | [Particle surface contacts](PARTICLES.md#stop-particles-at-surfaces) | Compare a claimed contact with the surface and the next rendered frame. Move the cover and continue from a save. |
+| Make rain splash or sparks scatter on contact | [Contact bursts](PARTICLES.md#spawn-a-burst-at-contact) | Inspect the hit and the new sprite's origin and velocity. Reopen a save and compare the continuation. |
 | Shape a local water surface | [Water regions and ripples](SHALLOW_WATER.md#author-surface-ripples) | Verify water levels and terrain collision, then compare the visible normals at the same tick after restoring a save. |
 
 ## Start with a complete example

@@ -202,7 +202,7 @@ class CollisionFixture(Fixture):
         self.data['immutable_files'] = len(before)
 
 
-def main():
+def main(fixture=CollisionFixture):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('binary', type=Path)
     parser.add_argument('--output', type=Path, required=True)
@@ -219,7 +219,7 @@ def main():
     data = dict(passed=False, binary_sha256=file_hash(args.binary), captures={}, owners=[], cli=[],
                 initial=[], continuations={}, save_sha256={}, pixel_counts={})
     try:
-        CollisionFixture(args, root, data).run()
+        fixture(args, root, data).run()
         data['passed'] = True
     finally:
         path = root/'evidence.json'

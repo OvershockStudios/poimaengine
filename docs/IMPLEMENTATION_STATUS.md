@@ -1,8 +1,17 @@
 # Implementation status
 
-Updated 2026-11-25 for **0.0.431**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-25 for **0.0.432**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.432 adds [contact-triggered particle bursts](PARTICLES.md#spawn-a-burst-at-contact).
+A second emitter can style a splash or scatter effect and launch it along
+the contact's outward normal on the collision tick. Checks cover tilted and
+back-facing geometry, template-local routing, capacity drops, and captured
+sprites across Windows save restoration and a relocated export. Ubuntu
+checks exercise the same fixed-tick behavior without rendering. Material
+selection, particle bounce and representative performance remain open.
+[Results and scope](evidence/m2-particle-impact-432.json)
 
 Version 0.0.431 adds [swept particle surface contacts](PARTICLES.md#stop-particles-at-surfaces).
 Opted-in rain, sparks and debris can expire against static or kinematic

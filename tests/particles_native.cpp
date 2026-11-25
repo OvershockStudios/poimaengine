@@ -451,6 +451,28 @@ void swept_contacts() {
     auto invalid = saved;
     invalid.emitters[0].config.expire_on_contact = false;
     rejects<std::invalid_argument>([&] { (void)System::restore(invalid); }, "Restore accepted a collision count for a plain source.");
+
+    auto placed = System::restore(born);
+    const auto crossing = hit.hit;
+    hit.take_burst = [](void*) -> std::optional<PlacedBurst> {
+        const auto turn = std::sqrt(0.5);
+        return PlacedBurst{2, 2, {{2, 3, -4}, {0, 0, turn, turn}}};
+    };
+    placed.step(hit);
+    const auto presented = instances(placed);
+    check(presented.size() == 3, "Impact burst did not join its contact tick.");
+    for (const auto& child : std::span(presented).last(2)) {
+        check(child.age_ticks == 0 && child.emitter == 2, "Impact burst advanced or used the source emitter.");
+        check_vector(child.position_m, {2, 3, -4}, "Impact burst ignored the contact pose.");
+        check_vector(child.velocity_m_s, {0, 60, 0}, "Impact burst ignored the contact rotation.");
+    }
+    check_exact(placed.snapshot(), System::restore(placed.snapshot()).snapshot());
+    auto capped = System::restore(born);
+    capped.burst(2, max_burst - 1);
+    capped.step({nullptr, crossing, hit.take_burst});
+    const auto target = capped.emitter_status(2).particles;
+    check(target.spawned + target.dropped == max_burst + 1, "Impact burst exceeded the shared tick budget.");
+    check_exact(capped.snapshot(), System::restore(capped.snapshot()).snapshot());
 }
 }
 

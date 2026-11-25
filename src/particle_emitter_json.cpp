@@ -112,7 +112,7 @@ Json curve_schema(double max_multiplier) {
 RuntimeParticleEmitter parse_particle_emitter(const Json& value) {
     fields(value, {"spawn_space", "simulation_space", "lifetime_ticks", "size_m", "linear_rgb"},
         {"seed", "particles_per_second", "live_limit", "emitting", "offset_m", "velocity_m_s", "acceleration_m_s2",
-            "burst", "sprite", "rain", "surface_collision"});
+            "burst", "sprite", "rain", "surface_collision", "impact_burst"});
     RuntimeParticleEmitter result;
     auto& config = result.config;
     config.spawn_space = space(value.at("spawn_space"));
@@ -138,6 +138,17 @@ RuntimeParticleEmitter parse_particle_emitter(const Json& value) {
             config.live_limit >= 1 && config.live_limit <= particles::max_contact_particles_per_emitter,
             "Particle surface collision must be expire with world simulation and a live limit of 1..64.");
         config.expire_on_contact = true;
+    }
+    if (value.contains("impact_burst")) {
+        const auto& burst = value.at("impact_burst");
+        fields(burst, {"emitter", "count"});
+        require(config.expire_on_contact && burst.at("emitter").is_string(),
+            "An impact burst needs surface collision and an emitter ID.");
+        auto target = burst.at("emitter").get<std::string>();
+        require(target.size() == 32 && target.find_first_not_of("0123456789abcdef") == std::string::npos &&
+            target.find_first_not_of('0') != std::string::npos, "Impact burst emitter must be a nonzero entity ID.");
+        result.impact_burst = RuntimeParticleImpactBurst{std::move(target),
+            integer(burst.at("count"), 1, max_particle_impact_burst)};
     }
     if (value.contains("emitting")) {
         require(value.at("emitting").is_boolean(), "Particle emitting must be Boolean.");
@@ -208,6 +219,10 @@ Json particle_emitter_schema() {
         {"max_particles_per_tick", range("integer", 1, max_rain_particles_per_tick)}},
         {"nm_per_particle", "max_particles_per_tick"});
     rain["description"] = "Authored world-space rain source driven by accepted weather doses. Shelter is sampled at the emitter origin each active tick.";
+    auto impact_burst = object({{"emitter", {{"type", "string"}, {"pattern", "^[0-9a-f]{32}$"},
+        {"not", {{"const", "00000000000000000000000000000000"}}}}},
+        {"count", range("integer", 1, max_particle_impact_burst)}}, {"emitter", "count"});
+    impact_burst["description"] = "Offer a same-tick burst to another world-space emitter at each valid surface contact.";
     auto result = object({{"spawn_space", spaces}, {"simulation_space", spaces}, {"lifetime_ticks", range("integer", 1, particles::max_lifetime_ticks)},
         {"size_m", range("number", min_size, max_size)}, {"linear_rgb", vec_schema(0, 1)},
         {"seed", {{"type", "string"}, {"pattern", "^[0-9a-f]{16}$"}, {"default", "0000000000000000"}}},
@@ -215,12 +230,14 @@ Json particle_emitter_schema() {
         {"emitting", {{"type", "boolean"}, {"default", true}}}, {"offset_m", limits},
         {"velocity_m_s", limits}, {"acceleration_m_s2", v}, {"burst", burst}, {"sprite", std::move(sprite)},
         {"rain", std::move(rain)}, {"surface_collision", {{"const", "expire"},
-            {"description", "Retire world particles on a swept centre contact with a static or kinematic collider."}}}},
+            {"description", "Retire world particles on a swept centre contact with a static or kinematic collider."}}},
+        {"impact_burst", std::move(impact_burst)}},
         {"spawn_space", "simulation_space", "lifetime_ticks", "size_m", "linear_rgb"});
     result["description"] = "Fixed-tick billboards with optional translucent cooked image sprites. Spawn space selects birth axes. Simulation space selects whether live particles follow the source. Burst actions use named pressed edges. Authored rain uses world spaces, zero continuous rate and no explicit bursts.";
     result["if"] = {{"required", {"surface_collision"}}};
     result["then"] = {{"required", {"live_limit"}}, {"properties", {{"simulation_space", {{"const", "world"}}},
         {"live_limit", range("integer", 1, particles::max_contact_particles_per_emitter)}}}};
+    result["dependentRequired"] = {{"impact_burst", {"surface_collision"}}};
     return result;
 }
 

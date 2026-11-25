@@ -611,6 +611,7 @@ public:
             if(content.needs_particles)result["needs_particles"]=true;
             if(content.needs_sprite_particles)result["needs_sprite_particles"]=true;
             if(content.needs_particle_collisions)result["needs_particle_collisions"]=true;
+            if(content.needs_particle_impact_bursts)result["needs_particle_impact_bursts"]=true;
             if(content.needs_surface_mark_masks)result["needs_surface_mark_masks"]=true;
             if(content.needs_mesh_lod)result["needs_mesh_lod"]=true;
             if(content.needs_water_rain)result["needs_water_rain"]=true;

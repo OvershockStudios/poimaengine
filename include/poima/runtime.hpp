@@ -402,6 +402,7 @@ inline constexpr std::uint32_t max_runtime_particle_flipbook_side=32;
 inline constexpr std::uint32_t max_runtime_particle_frame_ticks=36'000;
 inline constexpr std::uint32_t rain_particle_window_ticks=particles::ticks_per_second;
 inline constexpr std::uint32_t max_rain_particles_per_tick=32;
+inline constexpr std::uint32_t max_particle_impact_burst=8;
 struct RuntimeParticleRainProfile {
     std::uint32_t nm_per_particle=0, max_particles_per_tick=0;
 };
@@ -427,12 +428,17 @@ struct RuntimeParticleSprite {
     std::vector<RuntimeParticleCurveKnot> size_over_life{},opacity_over_life{};
     std::optional<RuntimeParticleFlipbook> flipbook{};
 };
+struct RuntimeParticleImpactBurst {
+    std::string emitter;
+    std::uint32_t count;
+};
 struct RuntimeParticleEmitter {
     particles::EmitterConfig config;
     std::string burst_action;
     std::uint32_t burst_count=0;
     std::optional<RuntimeParticleSprite> sprite;
     std::optional<RuntimeParticleRainProfile> rain;
+    std::optional<RuntimeParticleImpactBurst> impact_burst{};
 };
 struct RuntimeParticleContact {
     std::uint64_t particle;
@@ -445,6 +451,7 @@ struct RuntimeParticleContactSample {
     std::uint64_t tick;
     std::uint32_t tested=0, skipped=0, hits=0;
     std::optional<RuntimeParticleContact> first;
+    std::uint32_t impact_requested=0;
 };
 struct RuntimeParticleSource {
     particles::EmitterId id=0;
@@ -456,6 +463,7 @@ struct RuntimeParticleSource {
     std::optional<RuntimeParticleRainSample> rain{};
     bool expire_on_contact=false;
     std::optional<RuntimeParticleContactSample> contacts;
+    std::optional<RuntimeParticleImpactBurst> impact_burst{};
 };
 struct RuntimeParticleObservation {
     bool active=false;

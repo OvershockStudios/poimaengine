@@ -362,6 +362,56 @@ against a simulation build, or add `--gpu` for Vulkan image checks. With
 a separate process. From WSL, use `--windows-interop` and a local Windows
 drive for the fixture's save directories.
 
+## Spawn a burst at contact
+
+Add `impact_burst` to a source that uses `surface_collision: "expire"`.
+Name another `ParticleEmitter` and choose 1–8 births per contact.
+
+```json
+{
+  "impact_burst": {
+    "emitter": "00000000000000000000000000000384",
+    "count": 3
+  }
+}
+```
+
+Give the receiving emitter `simulation_space: "world"`. A receiver can
+serve multiple sources. To use it only for contact bursts, leave the
+continuous rate at zero and omit its input burst. Keep weather-driven
+emission on the source. Members of a hierarchical template can reference
+another emitter in that template. Each spawned instance resolves the link
+to its own receiver.
+
+The impact point is the receiving particle's birth origin. For
+`spawn_space: "local"`, local +Y points out of the surface and opposes the
+incoming sweep. A splash can use an upward velocity and a small positive
+Y offset to clear the surface. `spawn_space: "world"` keeps the authored
+axes. The target's own entity pose and the trajectories of existing particles
+stay intact. Contact bursts use the receiver's color, sprite, size, velocity
+range, lifetime and acceleration. A hit with no surface normal retires the
+source particle without offering a burst.
+
+Births appear at age zero on the contact's simulation tick. They start
+moving on the next tick. Within each receiving slot, ordinary births take
+space first. Contact bursts follow in incoming particle ID order and share
+the slot's 1,024-burst tick budget, live capacity and seeded random sequence.
+The pool counts attempts that reach the live-capacity check. Requests beyond
+the burst limit are skipped before consuming random samples.
+
+In `runtime.particles.inspect`, the source's `impact_burst` includes its
+receiver and `requested_last_step`. Compare the requested count with the
+receiver's age-zero particles and its `spawned` and `dropped` totals. Saves
+retain the spawned world positions, velocities, ages and counters. A restored
+source begins with an empty last-step trace. Sources already draining after
+instance retirement continue to collide with surfaces.
+
+Exports require the `particle_impact_bursts` runtime feature. The
+[impact fixture](../tests/particle_impact_burst_capture.py) uses the same
+arguments as the surface contact fixture. It checks a sloped ledge, rain
+on terrain, capacity ordering, a remapped template and relocated save
+continuation. [Qualification results](evidence/m2-particle-impact-432.json)
+
 ## Native particle API
 
 The native [`poima::particles::System`](../include/poima/particles.hpp) advances

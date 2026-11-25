@@ -3,6 +3,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <optional>
 #include <span>
 #include <vector>
 
@@ -110,9 +111,17 @@ struct Snapshot {
     bool operator==(const Snapshot&) const = default;
 };
 
+struct PlacedBurst {
+    EmitterId emitter;
+    std::uint32_t count;
+    Pose pose;
+};
+
 struct ContactTest {
     void* context = nullptr;
     bool (*hit)(void*, EmitterId, std::uint64_t particle, const Vec3& from, const Vec3& to) = nullptr;
+    // Called after each hit. Return a detached burst into a world emitter.
+    std::optional<PlacedBurst> (*take_burst)(void*) = nullptr;
 };
 
 // One owner calls or inspects the system at a time. Accepted operations use
@@ -152,6 +161,7 @@ private:
     System(const Status& status, std::span<const SnapshotEmitter> emitters, std::span<const SnapshotParticle> particles);
     std::size_t find(EmitterId id) const;
     void spawn(std::size_t slot);
+    void spawn_at(std::size_t slot, std::size_t requested, const Pose& pose);
 
     Status status_;
     std::vector<SnapshotEmitter> emitters_;

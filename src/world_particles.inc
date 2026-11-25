@@ -47,6 +47,12 @@
                         {"hits",step->hits},{"first",std::move(first)}};
                 }
             }
+            if(const auto& burst=source.impact_burst) {
+                Json requests=nullptr;
+                if(source.contacts)requests=source.contacts->impact_requested;
+                sources.back()["impact_burst"]={{"emitter",burst->emitter},{"count",burst->count},
+                    {"requested_last_step",std::move(requests)}};
+            }
             if (source.sprite) sprite_sources.emplace(source.id, &source);
         }
         auto instances = Json::array();

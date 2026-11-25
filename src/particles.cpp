@@ -281,7 +281,6 @@ void System::spawn(std::size_t slot) {
     auto& emitter = emitters_[slot];
     const auto& config = emitter.config;
     auto& state = emitter.status;
-    auto& total = status_.particles;
     std::size_t requested = state.pending_burst;
     state.pending_burst = 0;
     if (state.emitting) {
@@ -289,7 +288,15 @@ void System::spawn(std::size_t slot) {
         requested += phase / ticks_per_second;
         state.rate_phase = phase % ticks_per_second;
     }
+    spawn_at(slot, requested, state.pose);
+}
+
+void System::spawn_at(std::size_t slot, std::size_t requested, const Pose& pose) {
     if (requested == 0) return;
+    auto& emitter = emitters_[slot];
+    const auto& config = emitter.config;
+    auto& state = emitter.status;
+    auto& total = status_.particles;
     const auto available = status_.limits.particles - total.live;
     const auto emitter_available = config.live_limit == 0 ? available : config.live_limit - state.particles.live;
     const auto admitted = std::min({requested, available, emitter_available});
@@ -299,7 +306,7 @@ void System::spawn(std::size_t slot) {
     total.dropped += dropped;
 
     const bool world = config.simulation_space == Space::World;
-    const auto conversion = world ? state.pose.rotation : inverse_rotation(state.pose.rotation);
+    const auto conversion = world ? pose.rotation : inverse_rotation(pose.rotation);
     for (std::size_t index = 0; index < admitted; ++index) {
         const auto start = (first + index) * 6;
         auto offset = sample(config.offset_m, config.seed, start);
@@ -308,7 +315,7 @@ void System::spawn(std::size_t slot) {
             offset = rotate(conversion, offset);
             velocity = rotate(conversion, velocity);
         }
-        const auto position = world ? add(state.pose.position_m, offset) : offset;
+        const auto position = world ? add(pose.position_m, offset) : offset;
         particles_.push_back(SnapshotParticle{++total.spawned, slot, position, velocity, 0});
     }
     state.particles.spawned += admitted;
@@ -319,6 +326,11 @@ void System::spawn(std::size_t slot) {
 void System::step(ContactTest contacts) {
     if (status_.tick == last_tick) throw std::overflow_error("Particle system tick counter is exhausted.");
     std::optional<std::bitset<max_particles>> impacts;
+    struct Placements {
+        std::array<std::vector<PlacedBurst>, max_emitters> bursts;
+        std::array<std::uint32_t, max_emitters> counts{};
+    };
+    std::optional<Placements> placements;
     if (std::ranges::any_of(emitters_, [](const auto& emitter) { return emitter.config.expire_on_contact; })) {
         if (!contacts.hit) throw std::invalid_argument("Particle collision needs a contact test.");
         impacts.emplace();
@@ -328,7 +340,21 @@ void System::step(ContactTest contacts) {
             if (!emitter.config.expire_on_contact || particle.age + 1 == emitter.config.lifetime_ticks) continue;
             const auto velocity = add(particle.velocity, scale(emitter.config.acceleration_m_s2, tick_dt));
             const auto end = add(particle.position, scale(velocity, tick_dt));
-            if (contacts.hit(contacts.context, emitter.id, particle.id, particle.position, end)) impacts->set(index);
+            if (!contacts.hit(contacts.context, emitter.id, particle.id, particle.position, end)) continue;
+            impacts->set(index);
+            if (!contacts.take_burst) continue;
+            auto burst=contacts.take_burst(contacts.context);
+            if (!burst) continue;
+            const auto slot = find(burst->emitter);
+            if (emitters_[slot].config.simulation_space != Space::World || burst->count == 0 || burst->count > max_burst)
+                throw std::invalid_argument("Placed bursts require a world emitter and a bounded positive count.");
+            burst->pose = canonical_pose(burst->pose);
+            if (!placements) placements.emplace();
+            auto& placed = placements->counts[slot];
+            burst->count = std::min(burst->count, max_burst - emitters_[slot].status.pending_burst - placed);
+            if (!burst->count) continue;
+            placed += burst->count;
+            placements->bursts[slot].push_back(*burst);
         }
     }
     auto kept = particles_.begin();
@@ -358,6 +384,7 @@ void System::step(ContactTest contacts) {
         if (emitter.id == 0) continue;
         emitter.status.pose = emitter.next_pose;
         spawn(slot);
+        if (placements) for (const auto& burst : placements->bursts[slot]) spawn_at(slot, burst.count, burst.pose);
     }
     ++status_.tick;
 }

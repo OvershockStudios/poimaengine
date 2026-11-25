@@ -2,6 +2,12 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.432
+
+- Spawn a second emitter's particles at a surface contact. Choose world axes
+  or orient its local spawn axes to the hit normal.
+  [Contact bursts](docs/PARTICLES.md#spawn-a-burst-at-contact)
+
 ## 0.0.431
 
 - Retire opted-in world particles on swept contacts with static or kinematic

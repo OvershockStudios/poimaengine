@@ -49,6 +49,7 @@ struct GameDefinition {
     StartupRenderOptions startup_render;
     bool needs_sprite_particles=false;
     bool needs_particle_collisions=false;
+    bool needs_particle_impact_bursts=false;
 };
 // Verifies all bundle files and their dependency closure before returning paths.
 GameDefinition load_game(const std::string& manifest);

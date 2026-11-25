@@ -102,6 +102,13 @@
                 const auto& definition=*entity.particle_emitter;
                 require(definition.burst_count<=particles::max_burst && (definition.burst_count ? valid_input_action_name(definition.burst_action) : definition.burst_action.empty()),
                     "Particle emitter requires a valid named action and positive bounded burst count together.");
+                if(const auto& burst=definition.impact_burst) {
+                    const auto target=topology->definitions.find(burst->emitter);
+                    require(definition.config.expire_on_contact && burst->count>=1 && burst->count<=max_particle_impact_burst &&
+                        burst->emitter!=id && target!=topology->definitions.end() && target->second.particle_emitter &&
+                        target->second.particle_emitter->config.simulation_space==particles::Space::World &&
+                        !target->second.particle_emitter->rain, "Impact burst needs another live world emitter and a bounded count.");
+                }
                 auto [template_id,template_node]=particle_origin(id);
                 state.system.add_emitter(state.next_id,definition.config,particle_pose(registry.get<Node>(find(id)).world));
                 state.sources.emplace(state.next_id,ParticleBinding{id,std::move(template_id),std::move(template_node),definition,false});
@@ -139,8 +146,20 @@
             if(!sample.blocker && sample.scheduled_births)state.system.burst(id,sample.scheduled_births);
         }
     }
+    static particles::Pose particle_impact_pose(const RuntimeRayHit& hit,const particles::Vec3& direction) {
+        auto normal=*hit.normal;
+        const auto length=std::hypot(normal[0],normal[1],normal[2]);
+        require(std::isfinite(length) && length>0,"Particle impact hit has an invalid normal.");
+        const auto facing=std::inner_product(normal.begin(),normal.end(),direction.begin(),0.)>0 ? -length : length;
+        for(auto& axis:normal)axis/=facing;
+        particles::Quaternion rotation{normal[2],0,-normal[0],1+normal[1]};
+        const auto magnitude=std::hypot(rotation[0],rotation[2],rotation[3]);
+        if(magnitude>0)for(auto& axis:rotation)axis/=magnitude;
+        else rotation={1,0,0,0};
+        return {hit.position,rotation};
+    }
     bool particle_contact(ParticleBinding& source, std::uint64_t particle, const particles::Vec3& from,
-        const particles::Vec3& to) const {
+        const particles::Vec3& to,std::optional<particles::PlacedBurst>& spawn) const {
         auto& sample=*source.contacts;
         const particles::Vec3 direction{to[0]-from[0],to[1]-from[1],to[2]-from[2]};
         const auto distance=std::hypot(direction[0],direction[1],direction[2]);
@@ -158,6 +177,15 @@
         if(!hit)return false;
         ++sample.hits;
         if(!sample.first)sample.first=RuntimeParticleContact{particle,hit->entity,hit->position,hit->normal,hit->triangle};
+        if(source.definition.impact_burst && !source.draining && hit->normal) {
+            const auto& burst=*source.definition.impact_burst;
+            const auto target=std::ranges::find_if(particle_runtime->sources,[&](const auto& row) {
+                return !row.second.draining && row.second.entity==burst.emitter;
+            });
+            require(target!=particle_runtime->sources.end(),"Impact burst target was not synchronized.");
+            spawn=particles::PlacedBurst{target->first,burst.count,particle_impact_pose(*hit,direction)};
+            sample.impact_requested+=burst.count;
+        }
         return true;
     }
     void step_particles(std::span<const std::string_view> pressed,std::optional<std::uint32_t> rain_nm) {
@@ -186,10 +214,16 @@
             if(source.definition.config.expire_on_contact)
                 source.contacts=RuntimeParticleContactSample{.tick=tick,.first=std::nullopt};
         }
-        state.system.step({this,[](void* context,particles::EmitterId emitter,std::uint64_t particle,
+        struct ContactBatch {
+            Impl& owner;
+            std::optional<particles::PlacedBurst> spawn;
+        } batch{*this,{}};
+        state.system.step({&batch,[](void* context,particles::EmitterId emitter,std::uint64_t particle,
             const particles::Vec3& from,const particles::Vec3& to) {
-            auto& self=*static_cast<Impl*>(context);
-            return self.particle_contact(self.particle_runtime->sources.at(emitter),particle,from,to);
+            auto& pending=*static_cast<ContactBatch*>(context);
+            return pending.owner.particle_contact(pending.owner.particle_runtime->sources.at(emitter),particle,from,to,pending.spawn);
+        },[](void* context) {
+            return std::exchange(static_cast<ContactBatch*>(context)->spawn,std::nullopt);
         }});
         for(auto entry=state.sources.begin();entry!=state.sources.end();) {
             if(entry->second.draining && !state.system.emitter_status(entry->first).particles.live) {
@@ -217,7 +251,8 @@
             }
             result.sources.push_back({id,source.entity,source.draining,state.system.emitter_status(id),sprite,
                 std::move(texture),source.definition.rain ? std::optional(source.rain) : std::nullopt,
-                source.definition.config.expire_on_contact,source.contacts});
+                source.definition.config.expire_on_contact,source.contacts,
+                source.draining ? std::nullopt : source.definition.impact_burst});
         }
         return result;
     }

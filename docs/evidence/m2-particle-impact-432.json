@@ -1,0 +1,561 @@
+{
+  "version": "0.0.432",
+  "date": "2026-11-25",
+  "base_commit": "346e9ae1930c33acbc2457db21b758aba2a21643",
+  "authoring_schema_revision": 228,
+  "scope": "Contact-positioned world particle births from a named emitter, with outward-normal axes, bounded admission, observation and save continuation.",
+  "source_sha256": {
+    "CMakeLists.txt": "5128f1dfafed050a272f1e962f56044a88dfb6fbf8e45c84014155b2900f0721",
+    "cmake/runtime.json.in": "dc4217198ffcb2e832e81551a3419b914aeb8d070e08b6ce0f3921b0f2827feb",
+    "include/poima/particles.hpp": "9cfb20bac7ef38bfe04332e5d98973e29bd4c0779781cb15e56c4fa98b0af54e",
+    "include/poima/project.hpp": "0c2bd2c32bfbdaa3eb757bc2b2ff4daa9786fd23c563bd3d85dc0d58201f67ed",
+    "include/poima/runtime.hpp": "02f674b826c0353fea1fcda94b23902917bc15737e7a19e199de975b1654581c",
+    "include/poima/world.hpp": "dbb641e3c2307ab58a94a417f14869b793edb97b5cf6055c1f92b5f85cf0f6df",
+    "src/particle_emitter_json.cpp": "ab7cbffc894d116201c04d019d2db90f8c863ca53a1725570fae8204c725956d",
+    "src/particles.cpp": "3797f0bc135295660b63931a3661771e979a70d94135b4573b167c7df6ecfd1a",
+    "src/project.cpp": "a0c21eaca939c91f1fc976809a237023ae97f73184e1306fa04cd2968c0c548a",
+    "src/runtime_particles.inc": "a46f6b9e75f14f849fe533fe7fc46e327324f35eafcc14ecb3f3d7342a504e94",
+    "src/runtime_templates.cpp": "57fd4017c9ec06690c39a4c38dcc2f857308fd31fe380d04b73530944e920a85",
+    "src/world.cpp": "38ba8e8b9e5d4ef44684efb5f941704ad088597fd5c2738ed784d7d3dde72918",
+    "src/world_content.cpp": "ea0cbc805c77a634f0e59e77645916daf9b9bccc509c7cb447c8d6433b1c9e10",
+    "src/world_document.cpp": "d4404f37162c2177fe69eb0f6c89d81179e5c63c8f8fc32303592e76a994614d",
+    "src/world_particles.inc": "7275c3cfb5b471e5dd671a313299270a6fbc363bc6885930dbbd0b32bfd06191",
+    "src/world_schema.cpp": "03e7a6919482392c36b23c92c123fe6a1eb8c134aecd1c254aebe978ad5e00cc"
+  },
+  "impact_fixture_sha256": "10925876bd550635e2a324fdbbd5e72c322f9b1208373dc018beb76d399801ec",
+  "native": {
+    "fixture_sha256": "6438ccadd0fb9c93cf1aac0da2cf573acd9e26aa0f405b086c5080ec148ff4d9",
+    "binary_sha256": "09c994edd9d9f04a01c1b056c636f427e91013bde6e5275c790df1fc342cd344",
+    "result": "CPU particles passed moving-source, replay, capacity, lifecycle, exact checkpoint and contact checks.",
+    "scope": "Exact contact pose and rotation, age-zero retirement and birth, shared burst budget, snapshot restore."
+  },
+  "windows": {
+    "binary_sha256": "f71ae8f4632b0530b30f47340c7988c7088eecbc42d9a686a904cbf04b906b66",
+    "desktop_library_sha256": "dead2fe51364e9b108711909f6e2c7a587dffc609fa18e5ddcc9dad603f3bc3d",
+    "runtime_descriptor_sha256": "40b6d7180892fbce037d0c412109be7123c6a38a90cd829130a9021e07346d6a",
+    "amd_forward": {
+      "adapter": "AMD Radeon(TM) Graphics",
+      "lighting": "forward",
+      "extent_px": [
+        240,
+        160
+      ],
+      "raw_evidence_sha256": "5a40eb997f218c297e964abe80532619a12d9729eea6908f8254972ed5a4287d",
+      "captures": {
+        "source-closed": {
+          "red": 0,
+          "blue": 81,
+          "image_sha256": "f31827565e96a08874afe076bc115cf736f17e61f3f4814fe95949c3629a7073",
+          "splash": 42
+        },
+        "source-open": {
+          "red": 81,
+          "blue": 81,
+          "image_sha256": "261220afbef8c63b0d3f005d8c6859ef4efa2d035fa7549802772b51dfa13ae3",
+          "splash": 113
+        },
+        "restored-closed": {
+          "red": 0,
+          "blue": 81,
+          "image_sha256": "f31827565e96a08874afe076bc115cf736f17e61f3f4814fe95949c3629a7073",
+          "splash": 42
+        },
+        "restored-open": {
+          "red": 81,
+          "blue": 81,
+          "image_sha256": "261220afbef8c63b0d3f005d8c6859ef4efa2d035fa7549802772b51dfa13ae3",
+          "splash": 113
+        }
+      },
+      "assigned_template_target": true,
+      "template_underside_velocity_m_s": [
+        0.0,
+        -4.0,
+        0.0
+      ],
+      "save_sha256": "9c2aa7031552b6393bb275a38ed728f72dffc54d95b95412c2327e64c57996b8",
+      "source_equals_replay": true,
+      "contact_ticks": [
+        {
+          "tick": 2,
+          "offered_births": 2,
+          "pool_counts": {
+            "dropped": 0,
+            "expired": 0,
+            "live": 2,
+            "removed": 0,
+            "spawned": 2
+          },
+          "contacts": [
+            {
+              "source": "00000000000000000000000000000321",
+              "first_contact": {
+                "normal": [
+                  -0.5000000596046448,
+                  0.8660253882408142,
+                  0.0
+                ],
+                "particle": "1",
+                "position_m": [
+                  -0.72,
+                  1.1577349305152893,
+                  -4.2
+                ],
+                "receiver": "00000000000000000000000000000324",
+                "triangle": null
+              }
+            }
+          ],
+          "new_sprites": [
+            {
+              "position_m": [
+                -0.7575000038575551,
+                1.2226868335719616,
+                -4.2
+              ],
+              "velocity_m_s": [
+                -2.0000002057362747,
+                3.464101496355853,
+                0.0
+              ]
+            },
+            {
+              "position_m": [
+                -0.7575000038575551,
+                1.2226868335719616,
+                -4.2
+              ],
+              "velocity_m_s": [
+                -2.0000002057362747,
+                3.464101496355853,
+                0.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 3,
+          "offered_births": 1,
+          "pool_counts": {
+            "dropped": 0,
+            "expired": 0,
+            "live": 3,
+            "removed": 0,
+            "spawned": 3
+          },
+          "contacts": [
+            {
+              "source": "00000000000000000000000000000323",
+              "first_contact": {
+                "normal": [
+                  0.0,
+                  1.0,
+                  0.0
+                ],
+                "particle": "3",
+                "position_m": [
+                  0.18,
+                  0.08000000715255728,
+                  -5.35
+                ],
+                "receiver": "00000000000000000000000000000326",
+                "triangle": 3
+              }
+            }
+          ],
+          "new_sprites": [
+            {
+              "position_m": [
+                0.18,
+                0.1550000071525573,
+                -5.35
+              ],
+              "velocity_m_s": [
+                0.0,
+                4.0,
+                0.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 4,
+          "offered_births": 3,
+          "pool_counts": {
+            "dropped": 1,
+            "expired": 0,
+            "live": 5,
+            "removed": 0,
+            "spawned": 5
+          },
+          "contacts": [
+            {
+              "source": "00000000000000000000000000000321",
+              "first_contact": {
+                "normal": [
+                  0.0,
+                  1.0,
+                  0.0
+                ],
+                "particle": "4",
+                "position_m": [
+                  -0.72,
+                  0.08000000715255728,
+                  -4.2
+                ],
+                "receiver": "00000000000000000000000000000326",
+                "triangle": 4
+              }
+            },
+            {
+              "source": "00000000000000000000000000000323",
+              "first_contact": {
+                "normal": [
+                  0.0,
+                  1.0,
+                  0.0
+                ],
+                "particle": "6",
+                "position_m": [
+                  0.18,
+                  0.08000000715255728,
+                  -5.35
+                ],
+                "receiver": "00000000000000000000000000000326",
+                "triangle": 3
+              }
+            }
+          ],
+          "new_sprites": [
+            {
+              "position_m": [
+                -0.72,
+                0.1550000071525573,
+                -4.2
+              ],
+              "velocity_m_s": [
+                0.0,
+                4.0,
+                0.0
+              ]
+            },
+            {
+              "position_m": [
+                -0.72,
+                0.1550000071525573,
+                -4.2
+              ],
+              "velocity_m_s": [
+                0.0,
+                4.0,
+                0.0
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "nvidia_deferred": {
+      "adapter": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "lighting": "deferred",
+      "extent_px": [
+        240,
+        160
+      ],
+      "raw_evidence_sha256": "c42b4b782bd778e76903e2d1d8172ef3c60fe2ac7eb8a924be00ed99b36570b6",
+      "captures": {
+        "source-closed": {
+          "red": 0,
+          "blue": 81,
+          "image_sha256": "665c9b669ef8988333a063642dec93e0b297a4dfecd6e9c782172ab516ed664d",
+          "splash": 42
+        },
+        "source-open": {
+          "red": 81,
+          "blue": 81,
+          "image_sha256": "7a0052ce4c6262c9526376c1064377df48c352de88817daa5aeac806cc4d08df",
+          "splash": 113
+        },
+        "restored-closed": {
+          "red": 0,
+          "blue": 81,
+          "image_sha256": "665c9b669ef8988333a063642dec93e0b297a4dfecd6e9c782172ab516ed664d",
+          "splash": 42
+        },
+        "restored-open": {
+          "red": 81,
+          "blue": 81,
+          "image_sha256": "7a0052ce4c6262c9526376c1064377df48c352de88817daa5aeac806cc4d08df",
+          "splash": 113
+        },
+        "relocated-closed": {
+          "red": 0,
+          "blue": 81,
+          "image_sha256": "665c9b669ef8988333a063642dec93e0b297a4dfecd6e9c782172ab516ed664d",
+          "splash": 42
+        },
+        "relocated-open": {
+          "red": 81,
+          "blue": 81,
+          "image_sha256": "7a0052ce4c6262c9526376c1064377df48c352de88817daa5aeac806cc4d08df",
+          "splash": 113
+        },
+        "fresh-save-closed": {
+          "red": 0,
+          "blue": 81,
+          "image_sha256": "665c9b669ef8988333a063642dec93e0b297a4dfecd6e9c782172ab516ed664d",
+          "splash": 42
+        },
+        "fresh-save-open": {
+          "red": 81,
+          "blue": 81,
+          "image_sha256": "7a0052ce4c6262c9526376c1064377df48c352de88817daa5aeac806cc4d08df",
+          "splash": 113
+        }
+      },
+      "assigned_template_target": true,
+      "template_underside_velocity_m_s": [
+        0.0,
+        -4.0,
+        0.0
+      ],
+      "save_sha256": "67051d1d744a17cd64a8d01dcdf92f94e5a76f0692bb74683daff8c6a7c693e4",
+      "source_equals_replay": true,
+      "contact_ticks": [
+        {
+          "tick": 2,
+          "offered_births": 2,
+          "pool_counts": {
+            "dropped": 0,
+            "expired": 0,
+            "live": 2,
+            "removed": 0,
+            "spawned": 2
+          },
+          "contacts": [
+            {
+              "source": "00000000000000000000000000000321",
+              "first_contact": {
+                "normal": [
+                  -0.5000000596046448,
+                  0.8660253882408142,
+                  0.0
+                ],
+                "particle": "1",
+                "position_m": [
+                  -0.72,
+                  1.1577349305152893,
+                  -4.2
+                ],
+                "receiver": "00000000000000000000000000000324",
+                "triangle": null
+              }
+            }
+          ],
+          "new_sprites": [
+            {
+              "position_m": [
+                -0.7575000038575551,
+                1.2226868335719616,
+                -4.2
+              ],
+              "velocity_m_s": [
+                -2.0000002057362747,
+                3.464101496355853,
+                0.0
+              ]
+            },
+            {
+              "position_m": [
+                -0.7575000038575551,
+                1.2226868335719616,
+                -4.2
+              ],
+              "velocity_m_s": [
+                -2.0000002057362747,
+                3.464101496355853,
+                0.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 3,
+          "offered_births": 1,
+          "pool_counts": {
+            "dropped": 0,
+            "expired": 0,
+            "live": 3,
+            "removed": 0,
+            "spawned": 3
+          },
+          "contacts": [
+            {
+              "source": "00000000000000000000000000000323",
+              "first_contact": {
+                "normal": [
+                  0.0,
+                  1.0,
+                  0.0
+                ],
+                "particle": "3",
+                "position_m": [
+                  0.18,
+                  0.08000000715255728,
+                  -5.35
+                ],
+                "receiver": "00000000000000000000000000000326",
+                "triangle": 3
+              }
+            }
+          ],
+          "new_sprites": [
+            {
+              "position_m": [
+                0.18,
+                0.1550000071525573,
+                -5.35
+              ],
+              "velocity_m_s": [
+                0.0,
+                4.0,
+                0.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 4,
+          "offered_births": 3,
+          "pool_counts": {
+            "dropped": 1,
+            "expired": 0,
+            "live": 5,
+            "removed": 0,
+            "spawned": 5
+          },
+          "contacts": [
+            {
+              "source": "00000000000000000000000000000321",
+              "first_contact": {
+                "normal": [
+                  0.0,
+                  1.0,
+                  0.0
+                ],
+                "particle": "4",
+                "position_m": [
+                  -0.72,
+                  0.08000000715255728,
+                  -4.2
+                ],
+                "receiver": "00000000000000000000000000000326",
+                "triangle": 4
+              }
+            },
+            {
+              "source": "00000000000000000000000000000323",
+              "first_contact": {
+                "normal": [
+                  0.0,
+                  1.0,
+                  0.0
+                ],
+                "particle": "6",
+                "position_m": [
+                  0.18,
+                  0.08000000715255728,
+                  -5.35
+                ],
+                "receiver": "00000000000000000000000000000326",
+                "triangle": 3
+              }
+            }
+          ],
+          "new_sprites": [
+            {
+              "position_m": [
+                -0.72,
+                0.1550000071525573,
+                -4.2
+              ],
+              "velocity_m_s": [
+                0.0,
+                4.0,
+                0.0
+              ]
+            },
+            {
+              "position_m": [
+                -0.72,
+                0.1550000071525573,
+                -4.2
+              ],
+              "velocity_m_s": [
+                0.0,
+                4.0,
+                0.0
+              ]
+            }
+          ]
+        }
+      ],
+      "relocated_game": {
+        "unchanged_files": 60,
+        "source_unavailable": true,
+        "fresh_process_restore": true,
+        "matching_images": true,
+        "matched_simulation_ticks": [
+          3,
+          4
+        ],
+        "save_sha256": "67051d1d744a17cd64a8d01dcdf92f94e5a76f0692bb74683daff8c6a7c693e4"
+      }
+    },
+    "collision_without_secondary_effects": {
+      "fixture_sha256": "5355e97fb30d96d0bfadd54b89012da67552a0c6229259554336f828766adbae",
+      "raw_evidence_sha256": "ed3aa1b3d1cd68a33ef446c94632ef9b66d3c90fa28c5240ce451be2452c1ec2",
+      "captures": {
+        "source-closed": {
+          "red": 0,
+          "blue": 81,
+          "image_sha256": "50caa98cd0bea43a34a8e9ade0dff15650e61c075a071ffb7f7a7f940c5331ec"
+        },
+        "source-open": {
+          "red": 81,
+          "blue": 81,
+          "image_sha256": "89a532c00ba725037a6a6c6fc884ffaedea64c8dff561e6b7b0ff2b8073a0b6d"
+        },
+        "restored-closed": {
+          "red": 0,
+          "blue": 81,
+          "image_sha256": "50caa98cd0bea43a34a8e9ade0dff15650e61c075a071ffb7f7a7f940c5331ec"
+        },
+        "restored-open": {
+          "red": 81,
+          "blue": 81,
+          "image_sha256": "89a532c00ba725037a6a6c6fc884ffaedea64c8dff561e6b7b0ff2b8073a0b6d"
+        }
+      }
+    }
+  },
+  "ubuntu_headless": {
+    "fixture_evidence_sha256": "47dc4f87e1b7e7dc2862ed156d19459acd6a2c7cf40fcae2956f5eb5cffb5be5",
+    "binary_sha256": "e17aef95591d95d9d026e075db0f1965ff0498e2c55421d7ad8218059acca793",
+    "runtime_descriptor_sha256": "950808449b700cf1a901a8a783bf54bbe6e8b4147a24baf2d37f7c448794b686",
+    "ctest_junit_sha256": "44d4c5dcb5f22af00a5e406a25a3f0ca0880a32c9ef323125c4bf6e9d5e1dc6f",
+    "ctest_passed": [
+      "authoring_contract_identity",
+      "world_water_rain_contract",
+      "authoring_core_conformance",
+      "particle_scene_native",
+      "world_particles_contract",
+      "world_session_native"
+    ],
+    "scope": "Same verified source and target counts, tilted and underside normals, sprite declarations, template-local mapping, saved continuation."
+  },
+  "remaining": [
+    "Material-dependent responses, physical bounce and secondary GPU simulation.",
+    "Performance budgets for dense production effects and larger world workloads."
+  ]
+}

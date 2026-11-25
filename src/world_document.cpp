@@ -1079,6 +1079,8 @@ void validate(const Json& doc) {
             if(bag.contains("ParticleEmitter")) {
                 require(!bag.at("ParticleEmitter").contains("rain"),
                     "Rain emitters require an authored world entity outside the spawn catalog.");
+                require(!bag.at("ParticleEmitter").contains("impact_burst"),
+                    "Impact bursts in templates need a local receiving node in a hierarchical template.");
                 const auto& transform=bag.at("Transform");
                 validate_particle_pose(local_matrix(transform.at("position").get<std::array<double,3>>(),
                     transform.at("rotation").get<std::array<double,4>>(), transform.at("scale").get<std::array<double,3>>()), id);
@@ -1123,6 +1125,17 @@ void validate(const Json& doc) {
         if(audio_components.contains("ParticleEmitter")) {
             require(particle_sources.size() < runtime_particle_limits.emitters, "Scene exceeds the particle emitter capacity.");
             particle_sources.push_back(id);
+            const auto& emitter=audio_components.at("ParticleEmitter");
+            if(emitter.contains("impact_burst")) {
+                const auto source=component_checked([&]{return parse_particle_emitter(emitter);});
+                const auto& reference=source.impact_burst->emitter;
+                require(reference!=id && entities.contains(reference),"Impact burst must reference another emitter in the scene or template.");
+                const auto& target=entities.at(reference).at("components");
+                require(target.contains("ParticleEmitter"),"Impact burst target needs a ParticleEmitter component.");
+                const auto definition=component_checked([&]{return parse_particle_emitter(target.at("ParticleEmitter"));});
+                require(definition.config.simulation_space==particles::Space::World && !definition.rain,
+                    "Impact burst target needs world simulation and ordinary emission.");
+            }
         }
         require(int(audio_components.contains("MeshRenderer"))+int(audio_components.contains("StaticMesh"))+int(audio_components.contains("SkinnedMesh"))<=1,"An entity can have only one mesh component.");
         require(!audio_components.contains("SkinnedMesh") || !audio_components.contains("AcousticMaterial"),"Skinned mesh acoustics are not supported; use a separate explicit collision/acoustic proxy.");
