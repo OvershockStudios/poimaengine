@@ -260,7 +260,8 @@ approach; a particular engine's geometry technique is not itself the requirement
 Integrate dynamic indirect lighting and reflections, including a
 reduced tier for hardware without ray tracing. The authored [depth-of-field
 pass](DEPTH_OF_FIELD.md) focuses a single-sample world view before sprites,
-reconstruction and foreground composition. Add further inspectable post effects,
+reconstruction and foreground composition. Named cameras can follow an
+authored point on a moving subject. Add further inspectable post effects,
 robust temporal reconstruction and separately qualified DLSS, FSR and NVIDIA
 frame generation; XeSS remains a bonus.
 

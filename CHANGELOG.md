@@ -2,6 +2,12 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.430
+
+- Track a depth-of-field point on a moving subject from a named camera. Inspect
+  the focus distance at a committed tick and in a Vulkan capture.
+  [Focus tracking](docs/DEPTH_OF_FIELD.md#keep-a-moving-subject-in-focus)
+
 ## 0.0.429
 
 - Author depth of field in the lighting environment with a focus distance

@@ -15,6 +15,7 @@ Json query_runtime_hit_regions(const Runtime& runtime, const std::string& sessio
 Json query_runtime_character_stance(const Runtime& runtime, const std::string& session_id, const Json& params);
 Json query_runtime_camera_pose(const Runtime& runtime, const std::string& session_id, const Json& params);
 Json query_runtime_camera_lens(const Runtime& runtime, const std::string& session_id, const Json& params);
+Json query_runtime_camera_focus(const Runtime& runtime, const std::string& session_id, const Json& params);
 
 } // namespace world_detail
 } // namespace poima

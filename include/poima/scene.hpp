@@ -89,6 +89,23 @@ struct ScreenReflections {
 struct DepthOfField {
     float focus_distance_m=4,focus_band_m=0,radius_at_infinity_px=0,max_radius_px=0;
 };
+struct FocusTarget {
+    std::string entity;
+    std::array<double,3> local_offset_m{};
+};
+struct FocusAnchor {
+    std::string entity;
+    std::array<double,3> world_position_m;
+};
+struct TrackedFocus {
+    FocusAnchor anchor;
+    float distance_m;
+    bool in_range;
+};
+void validate_focus_target(const FocusTarget& target);
+FocusAnchor focus_anchor(const FocusTarget& target, const Matrix4& world);
+TrackedFocus track_focus(const DepthOfField& profile, const FocusAnchor& anchor,
+    const Matrix4& camera, double near_plane, double far_plane);
 struct FogSpotLight {
     std::string entity;
     float scattering=0;
@@ -358,6 +375,7 @@ struct SceneSnapshot {
     std::array<SceneWaterRipples,max_scene_water_wave_layers> water_wave_layers{};
     std::size_t water_wave_layer_count=0;
     std::optional<SceneWaterVolume> water_volume;
+    std::optional<FocusAnchor> camera_focus_anchor;
 
     SceneLens world_lens() const { return {vertical_fov,near_plane,far_plane}; }
     std::span<const SceneObject> world_viewmodel_draws() const {

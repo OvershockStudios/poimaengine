@@ -144,4 +144,23 @@ Json query_runtime_camera_lens(const Runtime& runtime, const std::string& sessio
     } catch (const std::runtime_error& error) { throw Error(-32602, error.what()); }
 }
 
+Json query_runtime_camera_focus(const Runtime& runtime, const std::string& session_id, const Json& params) {
+    const auto entity=existing_entity(runtime,params);
+    try {
+        Json value=nullptr;
+        if(runtime.camera_lens(entity)) {
+            const auto camera=runtime.camera_state(entity);
+            if(const auto& profile=camera.lighting.environment.depth_of_field) {
+                value={{"entity",entity},{"distance_m",profile->focus_distance_m},{"tracking",nullptr}};
+                if(const auto& anchor=camera.focus_anchor) {
+                    const auto tracking=track_focus(*profile,*anchor,camera.camera_world,camera.near_plane,camera.far_plane);
+                    value["distance_m"]=tracking.distance_m;
+                    value["tracking"]=tracked_focus_json(tracking);
+                }
+            }
+        }
+        return {{"session_id",session_id},{"tick",runtime.inspect().tick},{"source","runtime"},{"state",value}};
+    } catch(const std::runtime_error& error) { throw Error(-32602,error.what()); }
+}
+
 } // namespace poima::world_detail

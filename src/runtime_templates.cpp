@@ -115,6 +115,7 @@ std::vector<RuntimeEntityDefinition> runtime_template_entities(const RuntimeSpaw
         if(local==recipe.root)entity.transform=root_transform;
         if(entity.character)remap(entity.character->camera);
         if(entity.camera_draw)remap(entity.camera_draw->camera);
+        if(entity.camera && entity.camera->focus_target)remap(entity.camera->focus_target->entity);
         if(entity.rig_node)remap(entity.rig_node->rig);
         if(entity.animation_rig && entity.animation_rig->root_motion)remap(entity.animation_rig->root_motion->actor);
         if(entity.physical_rig && entity.physical_rig->controller_handoff) {
@@ -203,7 +204,13 @@ void validate_runtime_templates(const RuntimeDefinition& definition) {
                     check(character.camera.empty() || !graph.at(character.camera)->rig_node,"Stance camera position cannot also be owned by ModelNode animation.");
                 }
             }
-            if(entity.camera)(void)perspective(entity.camera->vertical_fov,1,entity.camera->near_plane,entity.camera->far_plane);
+            if(entity.camera) {
+                (void)perspective(entity.camera->vertical_fov,1,entity.camera->near_plane,entity.camera->far_plane);
+                if(const auto& focus=entity.camera->focus_target) {
+                    validate_focus_target(*focus);
+                    check(focus->entity!=entity.id && graph.contains(focus->entity),"Template camera focus target must reference another local entity.");
+                }
+            }
             if(entity.light)validate_light(*entity.light);
             if(entity.environment) {
                 validate_environment(*entity.environment);

@@ -186,6 +186,7 @@ Json render_diagnostics(const RenderDiagnostics& d) {
     if(d.depth_of_field) {
         const auto& focus=*d.depth_of_field;
         result["depth_of_field"]={{"active",focus.active},{"reason",focus.reason},{"buffer_bytes",focus.buffer_bytes}};
+        if(focus.tracking)result["depth_of_field"]["tracking"]=tracked_focus_json(*focus.tracking);
     }
     if(d.height_fog) {
         const auto& fog=*d.height_fog;
@@ -250,6 +251,11 @@ Json render_diagnostics(const RenderDiagnostics& d) {
     }
     return result;
 }
+Json tracked_focus_json(const TrackedFocus& tracking) {
+    return {{"target",tracking.anchor.entity},{"world_position_m",tracking.anchor.world_position_m},
+        {"distance_m",tracking.distance_m},{"in_range",tracking.in_range}};
+}
+
 Json lighting_json(const SceneLighting& lighting) {
     Json lights=Json::array();std::size_t shadow_count=0;
     for(const auto& source:lighting.lights) {

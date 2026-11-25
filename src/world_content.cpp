@@ -215,6 +215,7 @@ FrozenContent freeze_world_content(const Json& source, const fs::path& directory
     // payloads may mention retired assets and are deliberately not scanned.
     auto collect_components=[&](const Json& components) {
         if(components.contains("ParticleEmitter"))collect_particle_emitter(components.at("ParticleEmitter"));
+        if(components.contains("Camera") && components.at("Camera").contains("focus_target"))result.needs_depth_of_field=true;
         for(const auto* type:{"StaticMesh","SkinnedMesh","AnimationRig","MeshCollider"})if(components.contains(type)) {
             const auto& ref=components.at(type);
             const auto value=model(ref.at("asset").get<std::string>());

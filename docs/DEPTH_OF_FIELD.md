@@ -47,9 +47,49 @@ pixel, with a 128 MiB cap. Under reconstruction, it also counts toward the
 existing composition budget. Raw HDR scene probes retain the original
 opaque values. Resolved probes include the filter on the selected path.
 
+## Keep a moving subject in focus
+
+Set `focus_target` when authoring a `Camera` component. The entity may be a
+subject, a rig node or a child marker on the subject. The offset uses the
+target's full transform and defaults to zero. Each axis accepts –1,000 to
+1,000 metres.
+
+```json
+{
+  "vertical_fov": 45,
+  "near": 0.10,
+  "far": 150,
+  "focus_target": {
+    "entity": "00000000000000000000000000000027",
+    "local_offset_m": [0, 0.35, 0]
+  }
+}
+```
+
+Tracking uses the point's depth along that camera's forward direction. An
+off-centre point can set focus. A point before the near plane, at or beyond the
+far plane, or outside the supported distance range uses the environment's
+`focus_distance_m`. Other named cameras use their own target or that fixed
+distance. Free editor views use the fixed distance. The environment still owns
+whether the filter is enabled and its blur settings.
+
+Call `runtime.camera_focus` with `session_id`, `tick` and the camera `entity`.
+The response reports the effective `distance_m` at the committed pose. Tracking
+includes `target`, `world_position_m`, `distance_m` and `in_range`. An existing
+noncamera or a camera in a scene without the profile returns `state: null`.
+A missing entity or a stale session or tick rejects. In a Vulkan capture,
+`render_diagnostics.depth_of_field.tracking` reports the point and distance used
+with the capture's camera pose. Eligibility for the filter is reported separately.
+
+Targets are authored references. Remove or replace the binding in the same
+transaction when deleting its target. A template's camera can track a target
+within the template. Spawning resolves that reference to the new instance's
+entity. Save restoration recovers the transforms used to calculate focus. A
+moving target can drive a focus pull without an additional saved focus state.
+
 Project and game inspection report `needs_depth_of_field`. Export uses an
-installed runtime that advertises `features.depth_of_field`. The selected
-profile is still part of the project when either radius is zero.
+installed runtime that advertises `features.depth_of_field`. An authored camera
+binding or profile requires this feature, including a profile with a zero radius.
 
 Run the [fixture](../tests/depth_of_field_capture.py) against an installed
 Windows Vulkan build. Add `--windows-interop` from WSL. When checking a relocated
@@ -63,3 +103,8 @@ python3 tests/depth_of_field_capture.py POIMA --output DIRECTORY \
 A forward build can use `--msaa` to check the four-sample fallback. Omit
 rendering options to check the authoring contract on a simulation build.
 [Qualification results](evidence/m2-depth-of-field-429.json)
+
+Run [the tracking fixture](../tests/camera_focus_capture.py) with the same
+options to check movement, target assignment and restore through a standalone
+build. The tracking fixture has no `--msaa` option.
+[Tracking results](evidence/m2-camera-focus-430.json)

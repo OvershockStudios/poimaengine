@@ -252,6 +252,7 @@ struct Context {
         std::optional<AtmosphereSkyDiagnostics> atmosphere_sky;
         std::optional<AerialPerspectiveDiagnostics> aerial_perspective;
         std::optional<WaterOpticsDiagnostics> water_optics;
+        std::optional<DepthOfFieldDiagnostics> depth_of_field;
         std::optional<CloudDiagnostics> volumetric_clouds;
         std::optional<CloudShadowDiagnostics> cloud_shadows;
         bool cloud_shadow_baked=false;
@@ -313,6 +314,7 @@ struct Context {
     render_deferred_lighting::Pass deferred_lighting;
     screen_reflections::Pass reflections;
     DepthOfFieldPass depth_of_field;
+    std::optional<DepthOfFieldDiagnostics> pending_depth_of_field;
     height_fog::Pass fog;
     std::array<std::uint32_t,2> fog_spots{};
     nvrhi::BufferHandle water_columns;
@@ -1474,7 +1476,7 @@ struct Context {
         }
     }
     void prepare_depth_of_field(const std::optional<DepthOfField>& selected) {
-        diagnostics.depth_of_field.reset();
+        pending_depth_of_field.reset();
         if(selected) {
             const std::string_view reason=
                 selected->radius_at_infinity_px==0 || selected->max_radius_px==0 ? "zero_radius" :
@@ -1496,7 +1498,10 @@ struct Context {
                 }
                 depth_of_field.prepare(*checked.Get(),*unfocused_radiance_texture(),*depth.Get());
             }
-            diagnostics.depth_of_field=DepthOfFieldDiagnostics{active,reason,active ? depth_of_field.bytes() : 0};
+            pending_depth_of_field=DepthOfFieldDiagnostics{active,reason,active ? depth_of_field.bytes() : 0};
+            if(scene->camera_focus_anchor && rigid_transform(scene->camera_world))
+                pending_depth_of_field->tracking=track_focus(*selected,*scene->camera_focus_anchor,
+                    scene->camera_world,scene->near_plane,scene->far_plane);
             if(active)return;
         }
         if(auto* source=depth_of_field.target()) {
@@ -1513,7 +1518,9 @@ struct Context {
         };
         const std::array rect{edge(viewport[0],target.width),edge(viewport[1],target.height),
             edge(viewport[0]+viewport[2],target.width),edge(viewport[1]+viewport[3],target.height)};
-        depth_of_field.dispatch(*commands.Get(),*scene->lighting.environment.depth_of_field,
+        auto profile=*scene->lighting.environment.depth_of_field;
+        if(const auto& tracking=pending_depth_of_field->tracking)profile.focus_distance_m=tracking->distance_m;
+        depth_of_field.dispatch(*commands.Get(),profile,
             static_cast<float>(scene->near_plane),static_cast<float>(scene->far_plane),rect);
     }
     void observe_clouds(const SceneLighting& lighting) {
@@ -2582,6 +2589,7 @@ struct Context {
                 diagnostics.aerial_perspective=slot.aerial_perspective;
                 diagnostics.water_optics=slot.water_optics;
                 diagnostics.volumetric_clouds=slot.volumetric_clouds;
+                diagnostics.depth_of_field=slot.depth_of_field;
                 diagnostics.cloud_shadows=slot.cloud_shadows;
                 diagnostics.scene_products.history_valid=slot.history_valid;diagnostics.scene_products.history_sequence=slot.history_sequence;
                 diagnostics.scene_products.history_reset_reason=slot.history_reset;diagnostics.scene_products.probes.clear();
@@ -3467,6 +3475,7 @@ struct Context {
         slot.exposure=pending_exposure;slot.capture_exposure=plan.frame.exposure_readback!=render_schedule::none;
         slot.aerial_perspective=scene ? pending_aerial_perspective : std::nullopt;
         slot.water_optics=scene ? pending_water_optics : std::nullopt;
+        slot.depth_of_field=scene ? pending_depth_of_field : std::nullopt;
         slot.volumetric_clouds=scene ? pending_clouds : std::nullopt;
         slot.cloud_shadows=scene ? pending_cloud_shadows : std::nullopt;
         slot.cloud_shadow_baked=plan.settings.cloud_shadows && !plan.resource(plan.frame.cloud_shadow).initialized;

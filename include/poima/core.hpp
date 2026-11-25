@@ -269,6 +269,7 @@ struct DepthOfFieldDiagnostics {
     bool active=false;
     std::string_view reason;
     std::uint64_t buffer_bytes=0;
+    std::optional<TrackedFocus> tracking;
 };
 struct HeightFogDiagnostics {
     bool active=false;

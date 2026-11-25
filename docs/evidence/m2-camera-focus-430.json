@@ -1,0 +1,214 @@
+{
+  "version": "0.0.430",
+  "date": "2026-11-25",
+  "schema_revision": 226,
+  "base_commit": "f1998eebba9184bd3dbe96f5bafdb2b8c95175fa",
+  "scope": "Named-camera focus on an authored entity and local point through committed snapshots, native rendering, template remapping and save continuation.",
+  "source_sha256": {
+    "CMakeLists.txt": "59de3cecf95c2046ffa73cd457e0bc2f58dd950ba13558b32ae99c83cb9fdfe8",
+    "include/poima/core.hpp": "e1eaf8f5598ceca791913963139aab976622d000d5881f5849e5d18b419bf2ee",
+    "include/poima/runtime.hpp": "c08ced6cfc290a759326c7e45af48b2dbcf1a9a51392ab307fb720e1e18d5e83",
+    "include/poima/scene.hpp": "91293db7293171fb79b544a85c0aace9a7efac3872653a0606b89dd26a50958b",
+    "src/render_smoke.cpp": "b7b52bad27e19d93b8b494f54fcdaea0cec91dca1c549b7352cff3cfa3c978e0",
+    "src/runtime.cpp": "ab0bb6c18c1bf47fa6641ad33ee75987904e939de1e07cea1c2da41992378878",
+    "src/runtime_templates.cpp": "222d2e95ecb02f4008c319b9b5387a4dcca651447b1fac4e040fe8c441f01217",
+    "src/scene_camera_draw.cpp": "3abaee3b7c76740a02b3d449bb3a2cc4c8249b3866e5944540c16d2f712c7b8b",
+    "src/world.cpp": "6e197ec4156525c6181eee857df5ac6f5f8fe90565e27f809dcfc0a49e95204c",
+    "src/world_content.cpp": "aca9554fbde9e481cf79835efc18f7f76b50829bff97b8808d16aaaca24662a6",
+    "src/world_document.cpp": "b2b36cdf646d2f1f4363e2917d3fe95435c49739b33e079464df6bc79b6829b9",
+    "src/world_document.hpp": "75d02ffa5595e9a36f8ee5b9e58f4d513a0532913cba62eaa3626170c92185ef",
+    "src/world_player_service.inc": "fc4f9aa44ffd4bded0f8d766729407f6519ac88401ddc8e73a6641e28c3caee2",
+    "src/world_presentation_json.cpp": "ad1272694a609ee1b8d48a2d3c08ebd2ac4af07a2662bf250130a905ab07d8db",
+    "src/world_presentation_json.hpp": "a008ab505b8bb0775284f03cff4eabd338ffad77de41c652e47d7d4492838923",
+    "src/world_runtime_definition.cpp": "8711443d278df5a1f48fcdb713abb8c5db1e0dd432b9ff0fbba465bb337bafc9",
+    "src/world_schema.cpp": "a01b1fb31e803a60a307fb7fb8063c514e73c281cd2b7f002f0db0f2a2ace778",
+    "src/world_spatial_queries.cpp": "c5ea5943e01c3a7c193c239ed94c09d4866a62b751a57c938f761e6a13bf30ce",
+    "src/world_spatial_queries.hpp": "7129137eb87c665d260b9c76a87bc68c71370a284816694d50bce96e9a8158bb"
+  },
+  "fixture_sha256": "ae7f0a863bdd6d77a6f375ececa1cd6c8e1535d14f72c1d7dc20d9b43a51a85c",
+  "windows": {
+    "binary_sha256": "1c389b6cedd37bd84d7b1084601c87a49908cee00d9ca32b480b4472d86c0e9c",
+    "desktop_runtime_library_sha256": "7b2bbde0f67c5ce823e0ddef1a5fc19dd3dbd494924e7ef6b2d9c27b79fc108c",
+    "runtime_descriptor_sha256": "0af604528aed08a473ffc5c40694f6f6ba2bf454b19f39f44cd519e8c0952972",
+    "amd_forward": {
+      "adapter": "AMD Radeon(TM) Graphics",
+      "lighting_path": "forward",
+      "extent_px": [
+        192,
+        128
+      ],
+      "evidence_sha256": "1c2350dd66ad0d47af446ca5042c3551f39bc8e16b307e7e892dbf9d22206499",
+      "observed_track": [
+        {
+          "tick": 0,
+          "distance_m": 4.0,
+          "in_range": true,
+          "target": "0000000000000000000000000000028b",
+          "world_position_m": [
+            0.19999999999999987,
+            0.25,
+            -4.0
+          ]
+        },
+        {
+          "tick": 12,
+          "distance_m": 8.199999809265137,
+          "in_range": true,
+          "target": "0000000000000000000000000000028b",
+          "world_position_m": [
+            0.19999999999999987,
+            0.25,
+            -8.199999988079071
+          ]
+        },
+        {
+          "tick": 24,
+          "distance_m": 3.25,
+          "in_range": false,
+          "target": "0000000000000000000000000000028b",
+          "world_position_m": [
+            0.19999999999999987,
+            0.25,
+            0.9999999999999999
+          ]
+        },
+        {
+          "tick": 12,
+          "distance_m": 8.199999809265137,
+          "in_range": true,
+          "target": "0000000000000000000000000000028b",
+          "world_position_m": [
+            0.19999999999999987,
+            0.25,
+            -8.199999988079071
+          ]
+        }
+      ],
+      "identical_authored_and_runtime_at_tick_0": true,
+      "same_renderer_after_subject_motion": true,
+      "focused_hdr_probes_per_plane": 10,
+      "same_image_after_save_restore": true,
+      "source_save_sha256": "4d716d128bc2d1484c0c8d8b91e055a3b58e54610f7fde20803f65cb41a2a29f",
+      "source_far_image_sha256": "6022e94edb26662ba99210881fa9d0bddf6eca6b162fe8aa0ac24558c3f5b588",
+      "template_target_remapped": true,
+      "successful_captures": 5,
+      "stale_tick_refusal": "Runtime tick conflict."
+    },
+    "nvidia_deferred": {
+      "adapter": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "lighting_path": "deferred",
+      "extent_px": [
+        192,
+        128
+      ],
+      "evidence_sha256": "f26c9c8dbaafee68b37392ba1a775ce300e58b000de5e283d5c1194fa18076cc",
+      "observed_track": [
+        {
+          "tick": 0,
+          "distance_m": 4.0,
+          "in_range": true,
+          "target": "0000000000000000000000000000028b",
+          "world_position_m": [
+            0.19999999999999987,
+            0.25,
+            -4.0
+          ]
+        },
+        {
+          "tick": 12,
+          "distance_m": 8.199999809265137,
+          "in_range": true,
+          "target": "0000000000000000000000000000028b",
+          "world_position_m": [
+            0.19999999999999987,
+            0.25,
+            -8.199999988079071
+          ]
+        },
+        {
+          "tick": 24,
+          "distance_m": 3.25,
+          "in_range": false,
+          "target": "0000000000000000000000000000028b",
+          "world_position_m": [
+            0.19999999999999987,
+            0.25,
+            0.9999999999999999
+          ]
+        },
+        {
+          "tick": 12,
+          "distance_m": 8.199999809265137,
+          "in_range": true,
+          "target": "0000000000000000000000000000028b",
+          "world_position_m": [
+            0.19999999999999987,
+            0.25,
+            -8.199999988079071
+          ]
+        }
+      ],
+      "identical_authored_and_runtime_at_tick_0": true,
+      "same_renderer_after_subject_motion": true,
+      "focused_hdr_probes_per_plane": 10,
+      "same_image_after_save_restore": true,
+      "source_save_sha256": "4d5246296c146d272a522dd566a2db8d068f146a172748d0f2a04eb8d81792a9",
+      "source_far_image_sha256": "09b6d7d89ee477eda950374574cba21d37cbd51a454e64797fb8ad994b375a4a",
+      "template_target_remapped": true,
+      "successful_captures": 12,
+      "stale_tick_refusal": "Runtime tick conflict.",
+      "relocated_export": {
+        "unchanged_files": 58,
+        "source_directory_hidden": true,
+        "same_authored_and_export_images": true,
+        "fresh_process_restore_tick": 12,
+        "fresh_process_restore_image_sha256": "09b6d7d89ee477eda950374574cba21d37cbd51a454e64797fb8ad994b375a4a",
+        "save_sha256": "4d5246296c146d272a522dd566a2db8d068f146a172748d0f2a04eb8d81792a9"
+      },
+      "fsr_native_aa": {
+        "sdk": "FSR 3.1.4 / FidelityFX SDK 1.1.4",
+        "source_image_sha256": "dabad85d5ab3b30aae49e4d68e0eb168b4b8a9d5072ed7a3bd2525db607974a0",
+        "export_image_sha256": "dabad85d5ab3b30aae49e4d68e0eb168b4b8a9d5072ed7a3bd2525db607974a0"
+      }
+    },
+    "fixed_distance_regression": {
+      "fixture_sha256": "5b657973bcfb7983fa4298891851dcb78843b4b0278af50c2cf968f4b175c450",
+      "evidence_sha256": "8dda9fa3a370ce7b20bd1e34be9dc9b0280339405d3d0b63dc54202e1b50d30c",
+      "unchanged_fallbacks": [
+        "zero",
+        "diagnostic",
+        "multisample"
+      ],
+      "unchanged_separate_viewmodel_pixels": 530
+    }
+  },
+  "ubuntu_headless": {
+    "fixture_evidence_sha256": "71b0d79fe5ff750d7585e5e9e4db0c2fd47d431104c7a11675a77b2f75099e4f",
+    "binary_sha256": "379bb355dc967c8383fa7f796ed3d93513933508cc5c2566bbdcb3d0b1fbc243",
+    "runtime_descriptor_sha256": "54f217efe18f86a4291dd0df9c05a68ee3744da7cdaadda04af2eb54ac97e0ef",
+    "ctest_junit_sha256": "f216956a0ab94ee63ee770d9e7bce4393fa414ed1f4187f60b3bd05c70b0e219",
+    "ctest_passed": [
+      "world_instances_contract",
+      "authoring_core_conformance",
+      "runtime_camera_lens_native",
+      "render_schedule_native",
+      "authoring_contract_identity",
+      "world_session_native"
+    ],
+    "fixture_scope": "Off-centre target with a rotated local offset, preflight refusals, tick-guarded movement and fallback, save restoration and template remapping."
+  },
+  "earlier_runs": [
+    {
+      "issue": "The first fixture tried to move a kinematic subject past the existing 100 m/s limit on Windows and Ubuntu.",
+      "disposition": "Used twelve simulated ticks for each trajectory and retained the engine limit."
+    },
+    {
+      "issue": "The first renderer reuse assertion changed the probe set and therefore selected a different capture key.",
+      "disposition": "Used the same ordered probes from both planes in each capture and verified retention with the changed focus."
+    }
+  ],
+  "remaining": [
+    "Authored focus curves, automatic subject selection and transparent-water composition.",
+    "Representative performance, wider hardware coverage and temporal image quality in moving footage."
+  ]
+}

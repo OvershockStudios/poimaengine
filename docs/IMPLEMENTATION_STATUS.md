@@ -1,8 +1,19 @@
 # Implementation status
 
-Updated 2026-11-25 for **0.0.429**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-25 for **0.0.430**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.430 lets a named camera [track a subject's focus point](DEPTH_OF_FIELD.md#keep-a-moving-subject-in-focus).
+The camera measures view-space depth from committed transforms. A point outside
+its clip or focus range uses the environment's authored distance. Windows Vulkan
+checks matched authored and runtime views and kept the newly focused surface
+sharp after a guarded move, including a retained renderer and FSR Native AA.
+The relocated game restored the exact focus image from a save in a fresh
+process. Ubuntu also checked focus observations, template-local references and
+save restoration. The feature follows the tracked point directly. Authored
+focus curves, automatic subject selection and transparent-water composition remain open.
+[Results and scope](evidence/m2-camera-focus-430.json)
 
 Version 0.0.429 adds [authored depth of field](DEPTH_OF_FIELD.md) to the
 single-sample Vulkan world view. Forward rendering on AMD and deferred on NVIDIA

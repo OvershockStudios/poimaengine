@@ -49,6 +49,10 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     const Json lens = object_schema({{"vertical_fov", {{"type", "number"}, {"minimum", 5}, {"maximum", 150}}},
         {"near", {{"type", "number"}, {"minimum", 0.001}}}, {"far", {{"type", "number"}, {"maximum", 1e7}}}}, {"vertical_fov", "near", "far"});
     auto camera=lens;camera["properties"]["viewmodel"]=lens;
+    auto focus_entity=id;focus_entity["not"]={{"const",std::string(32,'0')}};
+    camera["properties"]["focus_target"]=object_schema({{"entity",focus_entity},
+        {"local_offset_m",vector({{"type","number"},{"minimum",-1000},{"maximum",1000}},3)}},{"entity"});
+    camera["properties"]["focus_target"]["description"]="Track another entity's local point when the scene selects depth of field. A point outside the camera clip range uses the authored environment distance.";
     const Json clearance=object_schema({
         {"position",vector({{"type","number"},{"minimum",-10},{"maximum",10}},3)},
         {"rotation",vector({{"type","number"},{"minimum",-1.00001},{"maximum",1.00001}},4)},
@@ -429,7 +433,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 225}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 226}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -622,6 +626,8 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     methods["runtime.camera_pose"]["description"]="Read committed additive local world and optional foreground-only poses and base_world_matrix with exact session/tick. Base matrix excludes all ancestor and local camera pose effects while retaining native look/stance and physical motion. Existing noncamera returns state=null; missing entity rejects. Does not advance, render or acknowledge.";
     methods["runtime.camera_lens"]=object_schema({{"session_id",id},{"tick",rev},{"entity",id}},{"session_id","tick","entity"});
     methods["runtime.camera_lens"]["description"]="Read committed world and optional first-person lenses plus immutable authored_world with exact session/tick. Existing noncamera returns state=null; missing entity rejects. No tick advancement, rendering or acknowledgement.";
+    methods["runtime.camera_focus"]=methods.at("runtime.camera_lens");
+    methods["runtime.camera_focus"]["description"]="Read the focus distance for the committed camera pose at the exact session and tick. Return the optional tracked entity's world point and range status. A camera with no depth-of-field profile or a noncamera returns state=null. Read only, independent of presentation eligibility.";
     methods["runtime.physical_rig"]=object_schema({{"session_id",id},{"tick",rev},{"entity",id},
         {"include_parts",{{"type","boolean"},{"default",false}}},{"include_joints",{{"type","boolean"},{"default",false}}}},
         {"session_id","tick","entity"});

@@ -304,6 +304,7 @@ struct Runtime::Impl {
         result.viewmodel_projection=lens.viewmodel_projection;
         result.authored_vertical_fov=topology->definitions.at(camera).camera->vertical_fov;
         require(rigid_transform(result.camera_world),"Runtime camera hierarchy must not scale or shear the camera.");
+        if(lens.focus_target)result.focus_anchor=focus_anchor(*lens.focus_target,registry.get<Node>(find(lens.focus_target->entity)).world);
         return result;
     }
     void world_matrices() {
@@ -547,6 +548,7 @@ struct Runtime::Impl {
         if(d.camera) {
             require(d.camera->world_pose==RuntimeCameraPose{} && d.camera->viewmodel_pose==RuntimeCameraPose{},"Authored cameras require identity effect defaults; use runtime camera pose commands.");
             validate_camera_lens({d.camera->vertical_fov,d.camera->near_plane,d.camera->far_plane});
+            if(d.camera->focus_target)validate_focus_target(*d.camera->focus_target);
             if(d.camera->viewmodel)validate_camera_lens(*d.camera->viewmodel);
             if(d.camera->viewmodel_clearance){require(d.camera->viewmodel.has_value(),"Viewmodel clearance requires a foreground lens.");validate_viewmodel_clearance_profile(*d.camera->viewmodel_clearance);}
         }
@@ -815,6 +817,10 @@ struct Runtime::Impl {
         for(const auto& d:definitions) {
             if(d.light && d.light->enabled)++lights;
             if(d.light)shadow_count+=shadow_view_count(*d.light);
+            if(d.camera && d.camera->focus_target) {
+                const auto& target=d.camera->focus_target->entity;
+                require(target!=d.id && candidate->identities.contains(target),"Runtime camera focus target must reference another entity.");
+            }
             if(d.environment) {
                 ++environments;shadow_resolution=d.environment->shadow_resolution;
                 const auto& sun=d.environment->sky.sun;
@@ -1538,7 +1544,10 @@ struct Runtime::Impl {
     void validate_scene_membership(const Topology& candidate) const {
         std::size_t lights=0,environments=0,shadows=0,bodies=0,emitters=0;std::uint32_t resolution=1024;
         for(const auto& [id,d]:candidate.definitions) {
-            (void)id;
+            if(d.camera && d.camera->focus_target) {
+                const auto& target=d.camera->focus_target->entity;
+                require(target!=id && candidate.definitions.contains(target),"Runtime camera focus target must reference another live entity.");
+            }
             if(d.collider || d.character || d.mesh_collider)++bodies;
             bodies+=physical_part_count(d);
             if(d.emitter && d.emitter->enabled)++emitters;
@@ -2745,6 +2754,7 @@ SceneSnapshot Runtime::snapshot(const std::string& camera) const {
     auto result=snapshot();result.camera_id=camera;
     if(!impl_->ui_model->definition().empty())result.logical_ui=impl_->ui_model->presentation();
     result.camera_world=projection.camera_world;result.vertical_fov=projection.vertical_fov;
+    result.camera_focus_anchor=projection.focus_anchor;
     result.authored_vertical_fov=projection.authored_vertical_fov;
     result.near_plane=projection.near_plane;result.far_plane=projection.far_plane;
     select_scene_camera_draw(result,projection.viewmodel,projection.viewmodel_projection);

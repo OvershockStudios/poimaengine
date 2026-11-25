@@ -29,6 +29,7 @@ RuntimeCharacterStanceProfile character_stance_value(const Json& value, double r
 RuntimeRootMotionDefinition root_motion_value(const Json& value);
 RuntimeHitRegion hit_region_value(const Json& value);
 SceneLens scene_lens_value(const Json& value);
+FocusTarget focus_target_value(const Json& value);
 ViewmodelProjection viewmodel_projection_value(const Json& camera);
 CameraDrawBinding camera_draw_value(const Json& value);
 ViewmodelClearanceProfile viewmodel_clearance_value(const Json& value);

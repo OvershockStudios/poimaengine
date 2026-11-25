@@ -171,6 +171,7 @@ struct RuntimeCamera {
     RuntimeCameraPose world_pose,viewmodel_pose;
     std::optional<ViewmodelClearanceProfile> viewmodel_clearance;
     ViewmodelProjection viewmodel_projection=ViewmodelProjection::Independent;
+    std::optional<FocusTarget> focus_target;
 };
 // Complete lenses for selected channels; omitted channels retain committed values.
 // Foreground availability is frozen by the authored Camera definition.
@@ -193,6 +194,7 @@ struct RuntimeCameraState {
     std::optional<SceneLens> viewmodel;
     double authored_vertical_fov=60;
     ViewmodelProjection viewmodel_projection=ViewmodelProjection::Independent;
+    std::optional<FocusAnchor> focus_anchor;
 };
 struct RuntimeMesh {
     std::array<float,3> albedo{}; bool visible=true;

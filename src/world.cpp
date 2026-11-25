@@ -891,6 +891,10 @@ public:
                 snapshot.vertical_fov=lens.at("vertical_fov");snapshot.near_plane=lens.at("near");snapshot.far_plane=lens.at("far");
                 const auto matrices=world_matrices(doc_.at("entities"));
                 snapshot.camera_world=matrices.at(camera_id);snapshot.lighting=authored_lighting(doc_,matrices);
+                if(lens.contains("focus_target")) {
+                    const auto target=focus_target_value(lens.at("focus_target"));
+                    snapshot.camera_focus_anchor=focus_anchor(target,matrices.at(target.entity));
+                }
                 resolve_scene_post_effect(snapshot,asset_directory());
                 require(rigid_transform(snapshot.camera_world),"Camera hierarchy must not scale or shear the camera.");
                 if(asset_preview)animation_info=append_asset_animation_preview(snapshot,params,asset_directory());
@@ -1520,12 +1524,13 @@ public:
             require(revision(params.at("tick"))==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
             return query_runtime_hit_regions(*runtime_,runtime_id_,params);
         }
-        if(method=="runtime.character_stance" || method=="runtime.camera_pose" || method=="runtime.camera_lens") {
+        if(method=="runtime.character_stance" || method=="runtime.camera_pose" || method=="runtime.camera_lens" || method=="runtime.camera_focus") {
             fields(params,{"session_id","tick","entity"},{"session_id","tick","entity"});
             runtime_guard(params);
             require(revision(params.at("tick"))==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
             if(method=="runtime.character_stance")return query_runtime_character_stance(*runtime_,runtime_id_,params);
             if(method=="runtime.camera_pose")return query_runtime_camera_pose(*runtime_,runtime_id_,params);
+            if(method=="runtime.camera_focus")return query_runtime_camera_focus(*runtime_,runtime_id_,params);
             return query_runtime_camera_lens(*runtime_,runtime_id_,params);
         }
         if(method=="runtime.physical_rig")return physical_runtime_query(params);

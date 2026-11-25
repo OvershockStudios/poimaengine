@@ -704,6 +704,20 @@ static void validate_template_foliage_motion(const Json& components) {
     const auto* motion=authored_foliage_motion(components);
     require(!motion || !motion->contains("touch"),"Foliage touch requires an authored world drawable outside the spawn catalog.");
 }
+FocusTarget focus_target_value(const Json& value) {
+    fields(value,{"entity","local_offset_m"},{"entity"});
+    FocusTarget target{identifier(value.at("entity"))};
+    if(value.contains("local_offset_m")) {
+        const auto& offset=value.at("local_offset_m");
+        require(offset.is_array() && offset.size()==3,"Camera focus target needs a three-axis offset in metres.");
+        for(std::size_t axis=0;axis<target.local_offset_m.size();++axis) {
+            require(offset.at(axis).is_number(),"Camera focus target offsets must be numeric.");
+            target.local_offset_m[axis]=offset.at(axis).get<double>();
+        }
+    }
+    component_checked([&]{validate_focus_target(target);});
+    return target;
+}
 void validate_component(const std::string& type, const Json& value) {
     if(type=="PhysicalRig") { (void)physical_rig_value(value);return; }
     if(type=="HitRegion") { (void)hit_region_value(value);return; }
@@ -731,8 +745,9 @@ void validate_component(const std::string& type, const Json& value) {
     if(type=="LightingEnvironment") { (void)environment_value(value);return; }
     if (type == "Transform") { validate_transform(value); return; }
     if (type == "Camera") {
-        fields(value,{"vertical_fov","near","far","viewmodel","viewmodel_clearance","viewmodel_match_world_fov","viewmodel_world_depth"},{"vertical_fov","near","far"});
+        fields(value,{"vertical_fov","near","far","viewmodel","viewmodel_clearance","viewmodel_match_world_fov","viewmodel_world_depth","focus_target"},{"vertical_fov","near","far"});
         (void)scene_lens_value(Json{{"vertical_fov",value.at("vertical_fov")},{"near",value.at("near")},{"far",value.at("far")}});
+        if(value.contains("focus_target"))(void)focus_target_value(value.at("focus_target"));
         if(value.contains("viewmodel"))(void)scene_lens_value(value.at("viewmodel"));
         for(const auto* option:{"viewmodel_match_world_fov","viewmodel_world_depth"})
             if(value.contains(option))require(value.contains("viewmodel") && value.at(option).is_boolean(),
@@ -961,6 +976,10 @@ static void validate_template_graph(const Json& document,const Json& recipe,
         };
         if(bag.contains("CharacterController"))local_reference(bag.at("CharacterController").at("camera"),"Camera");
         if(bag.contains("CameraDraw"))local_reference(bag.at("CameraDraw").at("camera"),"Camera");
+        if(bag.contains("Camera") && bag.at("Camera").contains("focus_target")) {
+            const auto target=focus_target_value(bag.at("Camera").at("focus_target"));
+            require(target.entity!=id && members.contains(target.entity),"Template camera focus target must reference another local entity.");
+        }
         if(bag.contains("RigNode"))local_reference(bag.at("RigNode").at("rig"),"AnimationRig");
         if(bag.contains("AnimationRig") && bag.at("AnimationRig").contains("root_motion") && bag.at("AnimationRig").at("root_motion").contains("actor"))
             local_reference(bag.at("AnimationRig").at("root_motion").at("actor"),"CharacterController");
@@ -1151,8 +1170,12 @@ void validate(const Json& doc) {
         }
     }
     std::size_t light_count=0,environment_count=0,shadow_count=0;std::uint32_t shadow_resolution=1024;
-    for(const auto& e:entities) {
+    for(const auto& [id,e]:entities.items()) {
         const auto& components=e.at("components");
+        if(components.contains("Camera") && components.at("Camera").contains("focus_target")) {
+            const auto target=focus_target_value(components.at("Camera").at("focus_target"));
+            require(target.entity!=id && entities.contains(target.entity),"Camera focus target must reference another authored entity.");
+        }
         if(components.contains("Light") && components.at("Light").at("enabled")==true)++light_count;
         if(components.contains("Light"))shadow_count+=shadow_view_count(light_value(components.at("Light")));
         if(components.contains("LightingEnvironment")) {

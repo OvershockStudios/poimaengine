@@ -167,6 +167,7 @@ RuntimeDefinition resolve_runtime_definition(const Json& document, const std::fi
             if(c.contains("viewmodel"))value.camera->viewmodel=scene_lens_value(c.at("viewmodel"));
             value.camera->viewmodel_projection=viewmodel_projection_value(c);
             if(c.contains("viewmodel_clearance"))value.camera->viewmodel_clearance=viewmodel_clearance_value(c.at("viewmodel_clearance"));
+            if(c.contains("focus_target"))value.camera->focus_target=focus_target_value(c.at("focus_target"));
         }
         if(components.contains("CameraDraw"))value.camera_draw=camera_draw_value(components.at("CameraDraw"));
         if(components.contains("ParticleEmitter"))value.particle_emitter=parse_particle_emitter(components.at("ParticleEmitter"));

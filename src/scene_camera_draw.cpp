@@ -6,6 +6,33 @@
 #include <stdexcept>
 
 namespace poima {
+void validate_focus_target(const FocusTarget& target) {
+    const auto& id=target.entity;
+    if(id.size()!=32 || id.find_first_not_of("0123456789abcdef")!=std::string::npos ||
+        id.find_first_not_of('0')==std::string::npos)
+        throw std::runtime_error("Camera focus target needs a nonzero entity ID.");
+    for(double offset:target.local_offset_m)
+        if(!std::isfinite(offset) || std::abs(offset)>1000)
+            throw std::runtime_error("Camera focus target offset must be within -1000..1000 metres per axis.");
+}
+
+FocusAnchor focus_anchor(const FocusTarget& target, const Matrix4& world) {
+    auto point=std::array{world[12],world[13],world[14]};
+    for(std::size_t axis=0;axis<3;++axis)
+        for(std::size_t basis=0;basis<3;++basis)
+            point[axis]+=world[basis*4+axis]*target.local_offset_m[basis];
+    return {target.entity,point};
+}
+
+TrackedFocus track_focus(const DepthOfField& profile, const FocusAnchor& anchor,
+    const Matrix4& camera, double near_plane, double far_plane) {
+    double depth=0;
+    for(std::size_t axis=0;axis<3;++axis)
+        depth-=(anchor.world_position_m[axis]-camera[12+axis])*camera[8+axis];
+    const bool in_range=std::isfinite(depth) && depth>=std::max(.01,near_plane) && depth<=1000000. && depth<far_plane;
+    return {anchor,in_range ? static_cast<float>(depth) : profile.focus_distance_m,in_range};
+}
+
 namespace {
 void check(bool value,const char* message) {if(!value)throw std::runtime_error(message);}
 bool identity(const std::string& id) {
