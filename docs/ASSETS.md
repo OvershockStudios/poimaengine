@@ -65,6 +65,15 @@ clips up to 60 seconds. Export an appropriately formatted copy if needed.
 
 ### Use a Unity Asset Store library
 
+Unity CLI 1.0 or later can use the experimental Asset Library plug-in to
+download supported individual assets into a local folder. Sign in, select
+the Unity organization that owns the asset, and inspect its files and
+license. Use `unity assetlibrary download` with a versioned asset ID.
+Use the same Poima import steps below for compatible files in that folder.
+For packages that Asset Library has yet to index, use Unity's Package Manager.
+[Unity Asset Library setup](https://docs.unity.com/en-us/asset-store/asset-library/cli-install)
+[Command reference](https://docs.unity.com/en-us/asset-store/asset-library/cli-commands)
+
 1. Create a blank project in Unity Hub. In Unity's Package Manager, open
    **My Assets**, select an asset your project is licensed to use, then
    **Download** and **Import**. Confirm the package's own terms allow use
