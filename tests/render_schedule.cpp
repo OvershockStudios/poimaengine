@@ -1774,6 +1774,86 @@ void atmosphere_contracts() {
     setup_composed_reconstruction(reconstructed_air,true);
     reconstructed_air.plan().validate();
     ++accepted;
+
+    const auto setup_clouds=[](Fixture& target,bool noise_ready) {
+        const auto texture=[&](Format format,unsigned width,unsigned height,unsigned layers,bool ready) {
+            const auto id=target.add(Kind::texture,ready ? Lifetime::imported : Lifetime::shared,ready);
+            auto& image=target.f.resources[id];
+            image.format=format;
+            image.width=width;
+            image.height=height;
+            image.layers=layers;
+            image.supported=use_bit(Use::sampled)|use_bit(Use::image_write);
+            return id;
+        };
+        target.f.cloud_noise=texture(Format::rgba8_unorm,cloud_noise_size,cloud_noise_size,cloud_noise_size,noise_ready);
+        target.f.cloud_view=texture(Format::rgba16_float,cloud_view_width,cloud_view_height,1,false);
+    };
+    auto cloud_settings=rich();
+    cloud_settings.volumetric_clouds=true;
+    Fixture cold_clouds(cloud_settings,4);
+    setup(cold_clouds,false,false);
+    setup_clouds(cold_clouds,false);
+    const auto cloud_plan=cold_clouds.plan();
+    cloud_plan.validate();
+    check(count(cloud_plan,PassId::cloud_noise)==1 && count(cloud_plan,PassId::cloud_view)==1,
+        "Cloud textures need full initial writes");
+    ++accepted;
+
+    auto warm_clouds=reconstructed_air;
+    warm_clouds.settings.volumetric_clouds=true;
+    setup_clouds(warm_clouds,true);
+    const auto warm_plan=warm_clouds.plan();
+    warm_plan.validate();
+    check(count(warm_plan,PassId::cloud_noise)==0 && count(warm_plan,PassId::cloud_view)==1,
+        "Cloud cache must reuse noise and rebuild its view");
+    check(count(legacy,PassId::cloud_noise)==0 && count(legacy,PassId::cloud_view)==0,
+        "Legacy sky acquired cloud work");
+    ++accepted;
+
+    auto deferred_cloud_settings=cloud_settings;
+    deferred_cloud_settings.deferred=true;
+    Fixture changed_sun(deferred_cloud_settings);
+    setup(changed_sun,true,false);
+    setup_clouds(changed_sun,true);
+    const auto changed_sun_plan=changed_sun.plan();
+    changed_sun_plan.validate();
+    check(count(changed_sun_plan,PassId::cloud_noise)==0 && count(changed_sun_plan,PassId::cloud_view)==1 &&
+        count(changed_sun_plan,PassId::atmosphere_view)==1,"Changed sky lighting must reuse the cloud noise");
+    ++accepted;
+
+    auto bad_clouds=[&](const char* name,auto mutate) {
+        auto changed=cloud_plan;
+        mutate(changed);
+        rejects(name,[&]{changed.validate();});
+    };
+    const auto noise=cold_clouds.f.cloud_noise,cloud_view=cold_clouds.f.cloud_view,density=cold_clouds.f.atmosphere_density;
+    bad_clouds("cloud textures remain without profile",[](auto& p){p.settings.volumetric_clouds=false;});
+    bad_clouds("clouds without atmospheric optics",[](auto& p){p.frame.atmosphere_density=p.frame.atmosphere_view=none;});
+    bad_clouds("cloud view not registered",[](auto& p){p.frame.cloud_view=none;});
+    bad_clouds("cloud textures alias each other",[](auto& p){p.frame.cloud_noise=p.frame.cloud_view;});
+    bad_clouds("cloud view aliases a composition target",[&](auto& p){p.frame.fogged_hdr=cloud_view;});
+    bad_clouds("cloud noise has a missing slice",[&](auto& p){--p.frame.resources[noise].layers;});
+    bad_clouds("cloud lookup lacks storage usage",[&](auto& p){p.frame.resources[noise].supported&=~use_bit(Use::image_write);});
+    bad_clouds("cloud view has the wrong resolution",[&](auto& p){++p.frame.resources[cloud_view].height;});
+    bad_clouds("cloud view cannot use stale content",[&](auto& p){p.frame.resources[cloud_view].initialized=true;});
+    bad_clouds("cloud view must retain HDR precision",[&](auto& p){p.frame.resources[cloud_view].format=Format::rgba8_unorm;});
+    bad_clouds("uncached cloud noise precompute is missing",[](auto& p){
+        std::erase_if(p.passes,[](const auto& work){return work.id==PassId::cloud_noise;});
+    });
+    bad_clouds("cloud integration does not initialize the whole view",[](auto& p){pass(p,PassId::cloud_view).accesses.back().initialize=false;});
+    bad_clouds("cloud integration lacks atmospheric transmittance",[&](auto& p){erase_access(p,PassId::cloud_view,density,Use::sampled);});
+    bad_clouds("cloud integration lacks camera constants",[](auto& p){erase_access(p,PassId::cloud_view,p.frame.frame,Use::constant);});
+    bad_clouds("sky omits cloud composition",[&](auto& p){erase_access(p,PassId::sky,cloud_view,Use::sampled);});
+    bad_clouds("sky binds the cloud view twice",[&](auto& p){pass(p,PassId::sky).accesses.push_back({cloud_view,Use::sampled});});
+    bad_clouds("cloud view sampled outside sky",[&](auto& p){pass(p,PassId::opaque).accesses.push_back({cloud_view,Use::sampled});});
+    bad_clouds("cloud view integration after sky draw",[](auto& p){std::swap(pass(p,PassId::cloud_view),pass(p,PassId::sky));});
+    auto invalid_warm=warm_plan;
+    const auto cloud_bake=std::find_if(invalid_warm.passes.begin(),invalid_warm.passes.end(),[](const auto& work){
+        return work.id==PassId::cloud_view;
+    });
+    invalid_warm.passes.insert(cloud_bake,{PassId::cloud_noise,{{invalid_warm.frame.cloud_noise,Use::image_write,true}}});
+    rejects("cached cloud noise is immutable",[&]{invalid_warm.validate();});
 }
 }
 

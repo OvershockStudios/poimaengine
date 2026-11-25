@@ -230,6 +230,7 @@ struct Context {
         std::optional<AutoExposureDiagnostics> exposure;
         std::optional<AtmosphereSkyDiagnostics> atmosphere_sky;
         std::optional<AerialPerspectiveDiagnostics> aerial_perspective;
+        std::optional<CloudDiagnostics> volumetric_clouds;
         bool capture_exposure=false;
         std::optional<RendererSceneResult> scene;
     };
@@ -291,6 +292,7 @@ struct Context {
     std::array<std::uint32_t,2> fog_spots{};
     std::optional<height_fog::AerialParameters> aerial_parameters;
     std::optional<AerialPerspectiveDiagnostics> pending_aerial_perspective;
+    std::optional<CloudDiagnostics> pending_clouds;
     nvrhi::ITexture* surface_radiance_texture() const noexcept {
         return reflections.radiance() ? reflections.radiance() : scene_hdr.Get();
     }
@@ -333,6 +335,7 @@ struct Context {
         std::optional<RendererCameraDrawResult> camera_draw;
         bool reconstructed_reflections=false,reconstructed_fog=false;
         float reconstructed_aerial_distance=0;
+        bool reconstructed_clouds=false;
         std::map<std::string,ObjectHistory> objects;
         std::vector<SceneSurfaceMark> surface_marks;
     } history,pending_history;
@@ -801,6 +804,7 @@ struct Context {
         pending_history.reconstructed_reflections=reconstruction && reflections.radiance();
         pending_history.reconstructed_fog=reconstruction && diagnostics.height_fog && diagnostics.height_fog->active;
         pending_history.reconstructed_aerial_distance=reconstruction && aerial_parameters ? aerial_parameters->optics[1] : 0;
+        pending_history.reconstructed_clouds=reconstruction && sky_pass.clouds_enabled();
         if(pending_history.camera_draw) {
             pending_history.camera_draw->viewmodel_lens.reset();
             // A world-depth handoff keeps the same drawable in the world pass.
@@ -822,7 +826,8 @@ struct Context {
         else if(history.camera_draw!=pending_history.camera_draw)pending_history_reset="camera_draw_changed";
         else if(history.reconstructed_reflections!=pending_history.reconstructed_reflections ||
                 history.reconstructed_fog!=pending_history.reconstructed_fog ||
-                history.reconstructed_aerial_distance!=pending_history.reconstructed_aerial_distance)
+                history.reconstructed_aerial_distance!=pending_history.reconstructed_aerial_distance ||
+                history.reconstructed_clouds!=pending_history.reconstructed_clouds)
             pending_history_reset="world_composition_changed";
         pending_history_valid=pending_history_reset.empty();
         const auto& previous=pending_history_valid ? history.view_projection : pending_history.view_projection;
@@ -1313,6 +1318,19 @@ struct Context {
             fog.clear_targets();
         }
     }
+    void observe_clouds(const SceneLighting& lighting) {
+        pending_clouds.reset();
+        const auto& atmosphere_profile=lighting.environment.atmosphere;
+        if(!atmosphere_profile || !atmosphere_profile->clouds)return;
+        const auto& profile=*atmosphere_profile->clouds;
+        const bool active=scene_visible && sky_pass.clouds_enabled();
+        const char* reason=active ? "active" : !scene_visible ? "scene_hidden" :
+            profile.coverage==0 ? "zero_coverage" : profile.extinction_per_km==0 ? "zero_extinction" :
+            "atmosphere_inactive";
+        pending_clouds=CloudDiagnostics{
+            active,reason,active ? atmosphere::cloud_noise_bytes : 0,active ? atmosphere::cloud_view_bytes : 0,
+            lighting.solar_lighting ? lighting.solar_lighting->world_milliseconds : 0};
+    }
     void dispatch_deferred_lighting() {
         timestamp(8);
         if(scene_visible)deferred_lighting.dispatch(*commands.Get(),*scene_hdr.Get());
@@ -1384,7 +1402,7 @@ struct Context {
     }
     void prepare_temporal_submission() {
         std::fill_n(frame_constants.temporal_jitter,4,0.0f);pending_reconstruction={};pending_reconstruction.mode=reconstruction_mode;
-        if(deferred || reconstruction || fog.radiance()) {
+        if(deferred || reconstruction || fog.radiance() || sky_pass.clouds_enabled()) {
         const double aspect=scene_viewport ? static_cast<double>(scene_viewport->maxX-scene_viewport->minX)/(scene_viewport->maxY-scene_viewport->minY) : static_cast<double>(extent.width)/extent.height;
         const double tan_y=std::tan(scene->vertical_fov*0.0087266462599716478846);
         for(std::size_t k=0;k<3;++k) {frame_constants.temporal_right[k]=static_cast<float>(scene->camera_world[k]);frame_constants.temporal_up[k]=static_cast<float>(scene->camera_world[4+k]);frame_constants.temporal_forward[k]=static_cast<float>(-scene->camera_world[8+k]);}
@@ -1395,7 +1413,8 @@ struct Context {
         const auto jitter=fsr3::jitter(phase,render_extent,output_extent);
         // SDK accumulation samples current raster at output UV + jitter/renderSize;
         // apply the same right/down raster displacement to scene projection.
-        frame_constants.temporal_jitter[0]=jitter[0];frame_constants.temporal_jitter[1]=jitter[1];frame_constants.temporal_jitter[2]=1;frame_constants.temporal_jitter[3]=sky_pass.enabled() ? 1.0f : 0.0f;
+        frame_constants.temporal_jitter[0]=jitter[0];frame_constants.temporal_jitter[1]=jitter[1];frame_constants.temporal_jitter[2]=1;
+        frame_constants.temporal_jitter[3]=sky_pass.clouds_enabled() ? 2.0f : sky_pass.enabled() ? 1.0f : 0.0f;
         pending_reconstruction.active=true;pending_reconstruction.render_width=render_extent.width;pending_reconstruction.render_height=render_extent.height;
         pending_reconstruction.output_width=output_extent.width;pending_reconstruction.output_height=output_extent.height;pending_reconstruction.jitter_pixels=jitter;
         pending_reconstruction.history_reset=!pending_history_valid || temporal_phase==0;pending_reconstruction.reset_reason=pending_history_reset;pending_reconstruction.history_sequence=history_sequence+1;
@@ -1449,7 +1468,7 @@ struct Context {
     std::uint64_t reconstruction_world_bytes(std::uint64_t composition_bytes) const noexcept {
         return reconstruction_pixels()*((deferred ? 82u : 50u)+(ao_enabled ? 4u : 0u))+
             std::uint64_t(output_extent.width)*output_extent.height*8+reflections.buffer_bytes()+fog.buffer_bytes()+
-            fog.aerial_buffer_bytes()+composition_bytes+sprite_targets.bytes();
+            fog.aerial_buffer_bytes()+sky_pass.cloud_resident_bytes()+composition_bytes+sprite_targets.bytes();
     }
     void require_reconstruction_composition_budget(std::uint64_t mask_bytes,std::uint64_t additional) const {
         if(!reconstruction)return;
@@ -1767,7 +1786,11 @@ struct Context {
         for(std::size_t k=0;k<16;++k)frame_constants.view_projection[k]=number(vp[k]);
         for(std::size_t k=0;k<3;++k)frame_constants.camera[k]=number(scene->camera_world[12+k]);
         frame_constants.camera[3]=(format==vk::Format::eB8G8R8A8Srgb || format==vk::Format::eR8G8B8A8Srgb) ? 1.0f : 0.0f;
+        const auto cloud_bytes=sky_pass.cloud_resident_bytes();
         sky_pass.prepare(*checked.Get(), frame_buffer, sky_framebuffers, *scene, lighting, aspect, frame_constants.camera[3]);
+        if(sky_pass.cloud_resident_bytes()!=cloud_bytes)
+            require_reconstruction_composition_budget(world_composition_mask_bytes(),0);
+        observe_clouds(lighting);
         for(std::size_t k=0;k<3;++k)frame_constants.ambient_exposure[k]=lighting.environment.ambient[k];
         frame_constants.ambient_exposure[3]=lighting.environment.exposure;
         frame_constants.light_count[0]=static_cast<std::uint32_t>(lighting.lights.size());
@@ -2279,7 +2302,8 @@ struct Context {
                 timestamps.collect(device,dispatch,retire_slot%diagnostics.frame_execution.limit,{
                     .recorded=slot.timing,.deferred=deferred,.ambient_occlusion=ao_enabled,
                     .reconstruction=slot.reconstruction.active,.screen_reflections=slot.screen_reflections,
-                    .height_fog=slot.height_fog,.cpu_interval_ms=elapsed_ms(slot.started),.profile=slot.profile,
+                    .height_fog=slot.height_fog,.volumetric_clouds=slot.volumetric_clouds && slot.volumetric_clouds->active,
+                    .cpu_interval_ms=elapsed_ms(slot.started),.profile=slot.profile,
                     .performance=slot.performance,.performance_ticket=slot.performance_ticket,
                     .shadow_views=slot.shadow_profile_views},diagnostics);
                 render_shadows::profile_views(std::span(slot.shadow_work).first(slot.shadow_profile_views), slot.profile);
@@ -2287,6 +2311,7 @@ struct Context {
                 diagnostics.last_draws=slot.draws;diagnostics.light_assignment=slot.lights;diagnostics.viewmodel=slot.viewmodel_diagnostics;
                 diagnostics.atmosphere_sky=slot.atmosphere_sky;
                 diagnostics.aerial_perspective=slot.aerial_perspective;
+                diagnostics.volumetric_clouds=slot.volumetric_clouds;
                 diagnostics.scene_products.history_valid=slot.history_valid;diagnostics.scene_products.history_sequence=slot.history_sequence;
                 diagnostics.scene_products.history_reset_reason=slot.history_reset;diagnostics.scene_products.probes.clear();
                 if(slot.capture_probes)collect_product_probes();
@@ -2317,6 +2342,7 @@ struct Context {
         settings.height_fog_spots=settings.height_fog && (fog_spots[0]!=0 || fog_spots[1]!=0);
         settings.particle_sprites=!sprite_instances.empty();
         settings.sky=scene && scene_visible && sky_pass.enabled();settings.products=bool(scene_normal);settings.products_debug=scene_debug_view!=SceneDebugView::color;settings.editor=editor;settings.capture=capture_frame;settings.reconstruction=pending_reconstruction.active;settings.deferred=deferred;settings.ambient_occlusion=ao_enabled;
+        settings.volumetric_clouds=settings.sky && sky_pass.clouds_enabled();
         settings.slot=static_cast<std::uint32_t>(next_slot%diagnostics.frame_execution.limit);settings.history_sequence=history.sequence;
         std::unordered_map<std::uintptr_t,rs::ResourceId> ids;
         auto insert=[&](rs::Resource resource) {
@@ -2379,6 +2405,12 @@ struct Context {
                     density_ready ? rs::Lifetime::imported : rs::Lifetime::shared,density_ready);
                 f.atmosphere_view=texture(sky_pass.atmosphere_view(),
                     view_ready ? rs::Lifetime::imported : rs::Lifetime::shared,view_ready);
+            }
+            if(settings.volumetric_clouds) {
+                const bool noise_ready=!sky_pass.cloud_noise_dirty();
+                f.cloud_noise=texture(sky_pass.cloud_noise(),
+                    noise_ready ? rs::Lifetime::imported : rs::Lifetime::shared,noise_ready);
+                f.cloud_view=texture(sky_pass.cloud_view(),rs::Lifetime::shared,false);
             }
             if(scene_visible && !surface_marks.empty()) {
                 const auto& slot=slots[settings.slot];
@@ -2581,6 +2613,7 @@ struct Context {
         } else framebuffer(framebuffers.at(index),f.color,f.depth,f.normal);
         if(plan.settings.screen_reflections)reflections.verify_bindings(plan,environment_ibl.bound().sampler);
         if(plan.settings.height_fog)fog.verify_bindings(plan);
+        if(plan.settings.volumetric_clouds)sky_pass.verify_cloud_bindings(plan);
         if(ao_enabled) {
             using ambient_occlusion::Stage;
             identity(f.ao_raw,occlusion.raw());identity(f.ao_filtered,occlusion.filtered());identity(f.ao_constants,occlusion.constants());
@@ -2934,6 +2967,12 @@ struct Context {
             case render_schedule::PassId::sky:render_sky(index);break;
             case render_schedule::PassId::atmosphere_density:sky_pass.compute_atmosphere_density(*commands.Get());break;
             case render_schedule::PassId::atmosphere_view:sky_pass.compute_atmosphere_view(*commands.Get());break;
+            case render_schedule::PassId::cloud_noise:sky_pass.compute_cloud_noise(*commands.Get());break;
+            case render_schedule::PassId::cloud_view:
+                timestamp(18);
+                sky_pass.compute_cloud_view(*commands.Get());
+                timestamp(19);
+                break;
             case render_schedule::PassId::opaque:render_opaque(index,slot);timestamp(4);if(!ao_enabled) {timestamp(10);timestamp(11);timestamp(12);timestamp(13);}if(!deferred) {timestamp(8);timestamp(9);}if(!pending_reconstruction.active) {timestamp(6);timestamp(7);}if(!plan.settings.screen_reflections) {timestamp(14);timestamp(15);}if(!plan.settings.height_fog) {timestamp(16);timestamp(17);}break;
             case render_schedule::PassId::ambient_occlusion:
                 timestamp(10);
@@ -3034,7 +3073,9 @@ struct Context {
                 commands->copyTexture(reinterpret_cast<nvrhi::IStagingTexture*>(plan.resource(resources.capture).identity),{},planned_texture(resources.swapchain),{});break;
             case render_schedule::PassId::present:
                 commands->setTextureState(planned_texture(resources.swapchain),nvrhi::AllSubresources,nvrhi::ResourceStates::Present);
-                commands->commitBarriers();timestamp(5);break;
+                commands->commitBarriers();
+                if(!plan.settings.volumetric_clouds) {timestamp(18);timestamp(19);}
+                timestamp(5);break;
             }
         });
         std::uint64_t expected_shadow_batches=0;for(const auto& batches:shadow_batch_plans)expected_shadow_batches+=batches.size();
@@ -3058,6 +3099,7 @@ struct Context {
         slot.capture_probes=capture_frame && !product_probes.empty();slot.reconstruction=pending_reconstruction;
         slot.exposure=pending_exposure;slot.capture_exposure=plan.frame.exposure_readback!=render_schedule::none;
         slot.aerial_perspective=scene ? pending_aerial_perspective : std::nullopt;
+        slot.volumetric_clouds=scene ? pending_clouds : std::nullopt;
         slot.submission=checked->executeCommandList(commands);
         // The GPU may have accepted work even if a later validation/query/
         // present operation fails. Attribute that submission immediately.

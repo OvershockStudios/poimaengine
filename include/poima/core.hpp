@@ -272,6 +272,11 @@ struct AerialPerspectiveDiagnostics {
     std::uint64_t table_bytes=0;
     float max_distance_m=0;
 };
+struct CloudDiagnostics {
+    bool active=false;
+    std::string reason;
+    std::uint64_t noise_bytes=0,view_bytes=0,world_milliseconds=0;
+};
 struct AutoExposureDiagnostics {
     bool history_reset=false;
     float seconds=0;
@@ -307,7 +312,9 @@ struct RenderDiagnostics {
     TimingSummary screen_reflections_gpu;
     std::optional<HeightFogDiagnostics> height_fog;
     std::optional<AerialPerspectiveDiagnostics> aerial_perspective;
+    std::optional<CloudDiagnostics> volumetric_clouds;
     TimingSummary height_fog_gpu;
+    TimingSummary volumetric_clouds_gpu;
     std::optional<RendererSceneResult> scene_observed,scene_submitted,scene_presented;
     std::optional<ViewmodelDiagnostics> viewmodel;
     std::uint64_t fxaa_buffer_bytes=0;

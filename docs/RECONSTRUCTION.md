@@ -106,6 +106,10 @@ mask to adjust history protection.
 [AMD integration details](https://gpuopen.com/manuals/fidelityfx_sdk/techniques/super-resolution-upscaler/#transparency-and-composition-mask)
 
 Toggling an active reflection or fog pass resets the affected view's history.
+Toggling [volumetric clouds](VOLUMETRIC_CLOUDS.md) also resets the view. With
+clouds active, the temporal input pass treats the background as reactive
+because camera rotation alone cannot describe the velocity of nearby cloud
+features.
 When no other reset also applies, diagnostics report
 `reset_reason: "world_composition_changed"`. Active composition reports
 `composition_mask_bytes` within the existing reconstruction byte total.

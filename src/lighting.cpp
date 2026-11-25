@@ -8,6 +8,9 @@
 namespace poima {
 namespace {
 void require(bool ok,const char* message) { if(!ok)throw std::runtime_error(message); }
+bool finite_between(float value,float minimum,float maximum) {
+    return std::isfinite(value) && value>=minimum && value<=maximum;
+}
 }
 void validate_light(const Light& l) {
     require(l.kind==LightKind::directional || l.kind==LightKind::point || l.kind==LightKind::spot,"Invalid light kind.");
@@ -70,9 +73,6 @@ void validate_environment(const LightingEnvironment& e) {
     }
     if(e.height_fog) {
         const auto& fog=*e.height_fog;
-        const auto finite_between=[](float value,float minimum,float maximum) {
-            return std::isfinite(value) && value>=minimum && value<=maximum;
-        };
         require(finite_between(fog.density_per_m,0,.75f),"Height fog density_per_m must be finite and in [0,0.75].");
         require(finite_between(fog.base_height_m,-8192,8192),"Height fog base_height_m must be finite and in [-8192,8192].");
         require(finite_between(fog.height_falloff_per_m,0,4),"Height fog height_falloff_per_m must be finite and in [0,4].");
@@ -109,8 +109,17 @@ void validate_environment(const LightingEnvironment& e) {
             "Atmosphere radiance_scale must be finite and in [0,64].");
         if(profile.aerial_perspective_m) {
             const auto distance=*profile.aerial_perspective_m;
-            require(std::isfinite(distance) && distance>=128 && distance<=65536,
+            require(finite_between(distance,128,65536),
                 "Atmosphere aerial_perspective_m must be finite and in [128,65536].");
+        }
+        if(profile.clouds) {
+            const auto& clouds=*profile.clouds;
+            require(finite_between(clouds.base_height_m,250,12000),"Cloud base_height_m must be finite and in [250,12000].");
+            require(finite_between(clouds.thickness_m,100,6000),"Cloud thickness_m must be finite and in [100,6000].");
+            require(finite_between(clouds.coverage,0,1),"Cloud coverage must be finite and in [0,1].");
+            require(finite_between(clouds.extinction_per_km,0,32),"Cloud extinction_per_km must be finite and in [0,32].");
+            for(float axis:clouds.wind_m_per_s)
+                require(finite_between(axis,-100,100),"Cloud wind_m_per_s must be finite and in [-100,100] on each axis.");
         }
     }
     if(e.ibl) {

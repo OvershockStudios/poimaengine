@@ -1,8 +1,17 @@
 # Implementation status
 
-Updated 2026-11-22 for **0.0.407**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-25 for **0.0.408**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.408 adds [volumetric clouds](VOLUMETRIC_CLOUDS.md) lit by the
+atmospheric sun and moved by saved world time. AMD and NVIDIA passed 90 Vulkan
+captures across forward and deferred rendering, 4× MSAA, and FSR Native AA.
+The relocated Native AOT game matched an independent wind displacement
+control and reproduced its cloud images after cold save restoration and
+continuous replay. Warm cloud view integration took 0.04–0.10 ms in the
+320 × 180 fixture, excluding the first noise bake. Ubuntu passed 15 suites
+and the headless cloud fixture. [Results](evidence/m2-volumetric-clouds-408.json)
 
 Version 0.0.407 renders [aerial perspective](ATMOSPHERE_SKY.md#aerial-perspective)
 on opaque surfaces using the sky's atmosphere and committed sun. AMD and NVIDIA

@@ -100,10 +100,18 @@ struct AutoExposureSettings {
     float min_stops=-4,max_stops=4;
     float brighten_stops_per_second=2,darken_stops_per_second=4;
 };
+struct CloudSettings {
+    float base_height_m=1500;
+    float thickness_m=2000;
+    float coverage=.5f;
+    float extinction_per_km=4;
+    std::array<float,2> wind_m_per_s{};
+};
 struct AtmosphereSettings {
     double sea_level_m=0;
     float aerosol_strength=1,radiance_scale=1;
     std::optional<float> aerial_perspective_m;
+    std::optional<CloudSettings> clouds;
 };
 struct LightingEnvironment {
     std::array<float,3> ambient{};

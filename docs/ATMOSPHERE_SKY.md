@@ -36,6 +36,8 @@ and post effects act on the combined scene through the normal HDR path.
 The existing [environment lighting](ENVIRONMENT_IBL.md) and
 [height fog](HEIGHT_FOG.md) provide the separate material reflection and
 in-scene fog controls.
+[Volumetric clouds](VOLUMETRIC_CLOUDS.md) can use the same atmosphere and
+committed sunlight and world time.
 
 The lookup passes store 160 KiB of texels. A 128 × 32 RGBA32F table holds
 optical-density columns and builds once per renderer. A 128 × 96 RGBA16F

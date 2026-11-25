@@ -61,7 +61,7 @@ class EnvironmentIblContract(unittest.TestCase):
     def test_discovery_preserves_complete_environment_and_mutation_envelope(self):
         c = self.open()
         d = c.rpc('world.describe')
-        self.assertEqual(d['schema_revision'], 208)
+        self.assertEqual(d['schema_revision'], 209)
         full = d['components']['LightingEnvironment']
         self.assertNotIn('ibl', full['required'])
         branch = full['properties']['ibl']
@@ -136,6 +136,69 @@ class EnvironmentIblContract(unittest.TestCase):
         c.txn(4, [component(environment(sky=linked_sky, atmosphere=atmosphere))])
         self.assertEqual(c.rpc('world.lighting')['atmosphere'], atmosphere)
         self.assertNotIn('needs_aerial_perspective', c.rpc('world.dependencies'))
+
+    def test_volumetric_clouds_ranges_preview_and_reopen(self):
+        c = self.open()
+        discovery = c.rpc('world.describe')
+        branch = discovery['components']['LightingEnvironment']['properties']['atmosphere']
+        self.assertNotIn('clouds', branch['required'])
+        clouds = branch['properties']['clouds']
+        limits = dict(base_height_m=(250, 12000), thickness_m=(100, 6000), coverage=(0, 1), extinction_per_km=(0, 32))
+        self.assertEqual(set(clouds['required']), {*limits, 'wind_m_per_s'})
+        self.assertFalse(clouds['additionalProperties'])
+        for name, (minimum, maximum) in limits.items():
+            self.assertEqual(clouds['properties'][name], dict(type='number', minimum=minimum, maximum=maximum))
+        wind = clouds['properties']['wind_m_per_s']
+        self.assertEqual((wind['type'], wind['minItems'], wind['maxItems']), ('array', 2, 2))
+        self.assertEqual(wind['items'], dict(type='number', minimum=-100, maximum=100))
+        self.assertEqual(discovery['atmosphere_sky']['volumetric_clouds'], dict(
+            available=self.features['volumetric_clouds'], profile='LightingEnvironment.atmosphere.clouds',
+            runtime_feature='volumetric_clouds', render_diagnostics='volumetric_clouds'))
+
+        linked_sky = dict(sky(), sun=uid(2))
+        atmosphere = dict(sea_level_m=80, aerosol_strength=1, radiance_scale=1, aerial_perspective_m=4096)
+        sun = dict(op='component.set', id=uid(2), type='Light',
+                   value=dict(kind='directional', color=[1, 1, 1], intensity=20, enabled=False))
+        c.txn(0, [create(1), create(2), sun, component(environment(sky=linked_sky, atmosphere=atmosphere))])
+        original = self.path.read_bytes()
+        original_lighting = c.rpc('world.lighting')
+        self.assertNotIn('needs_volumetric_clouds', c.rpc('world.dependencies'))
+        profile = dict(base_height_m=1600, thickness_m=1750, coverage=.625, extinction_per_km=3.75,
+                       wind_m_per_s=[12.25, -8.5])
+
+        def edit(settings):
+            return component(environment(sky=linked_sky, atmosphere=dict(atmosphere, clouds=settings)))
+
+        # Exercise precision at the bounds before conversion to native floats.
+        invalid = [None, [], {}, dict(profile, extra=1), dict(profile, wind_m_per_s=[0]),
+                   dict(profile, wind_m_per_s=[0, 0, 0]), dict(profile, wind_m_per_s=[True, 0]),
+                   dict(profile, wind_m_per_s=[-100.000001, 0]), dict(profile, wind_m_per_s=[0, 100.000001])]
+        for name, (minimum, maximum) in limits.items():
+            for value in (minimum - .000001, maximum + .000001, True, '1'):
+                invalid.append(dict(profile, **{name: value}))
+        for value in invalid:
+            with self.subTest(clouds=value):
+                c.txn(1, [edit(value)], error=-32602)
+                self.assertEqual(self.path.read_bytes(), original)
+                self.assertEqual(c.rpc('world.lighting'), original_lighting)
+        preview = c.txn(1, [edit(profile)], preview=True)
+        self.assertFalse(preview['committed'])
+        self.assertEqual(self.path.read_bytes(), original)
+        for revision, choice in enumerate((dict(base_height_m=250, thickness_m=100, coverage=0,
+                                                extinction_per_km=0, wind_m_per_s=[-100, 100]),
+                                           dict(base_height_m=12000, thickness_m=6000, coverage=1,
+                                                extinction_per_km=32, wind_m_per_s=[100, -100]), profile), start=1):
+            chosen = dict(atmosphere, clouds=choice)
+            c.txn(revision, [edit(choice)])
+            self.assertEqual(c.rpc('world.lighting')['atmosphere'], chosen)
+            self.assertIs(c.rpc('world.dependencies')['needs_volumetric_clouds'], True)
+        c.close()
+        c = self.open()
+        self.assertEqual(c.rpc('world.lighting')['atmosphere'], chosen)
+        c.txn(4, [component(environment(sky=linked_sky, atmosphere=atmosphere))])
+        self.assertEqual(c.rpc('world.lighting')['atmosphere'], atmosphere)
+        self.assertNotIn('needs_volumetric_clouds', c.rpc('world.dependencies'))
+        self.assertIs(c.rpc('world.dependencies')['needs_aerial_perspective'], True)
 
     def test_omission_and_explicit_disabled_presence_survive_reopen(self):
         c = self.open()

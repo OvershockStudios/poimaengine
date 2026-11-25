@@ -1,0 +1,466 @@
+{
+  "checkpoint": "0.0.408",
+  "parent_commit": "096beaa",
+  "world_schema_revision": 209,
+  "render_schedule": {
+    "valid_variants": 576,
+    "rejected_mutations": 1467
+  },
+  "shader_sha256": {
+    "cloud_noise_cs": "fb5255f036e683d18a9f7fd046f94eac7bc9b20876987267b4f57c6471323ba3",
+    "cloud_view_cs": "7c1e06c4e78e574b28de0c2dadddd6d191e8ab6bd14ef0c7e6984847b81ed64a",
+    "sky_clouds_ps": "49655362f502f970aae3d123646ce20a193b9cae688421a42b52c01b99bbba2f"
+  },
+  "ubuntu": {
+    "suites": [
+      "world_water_contract",
+      "world_particles_contract",
+      "authoring_api_compatibility",
+      "save_upgrade_snapshot_native",
+      "render_schedule_native",
+      "world_session_native",
+      "world_ui_contract",
+      "project_contract",
+      "shared_session_contract",
+      "lighting_contract",
+      "contact_shadow_contract",
+      "environment_ibl_contract",
+      "cli_contract",
+      "world_contract",
+      "asset_references_contract"
+    ],
+    "binary_sha256": "66f6b451a3c0c0b430bc636ef89f0ff194d70153a2acafc89e0b74394b1564e1",
+    "descriptor_sha256": "ef984b632ef944f63d13555d1859986ba26688acbe4fdcb220ec162693b3d845",
+    "descriptor_check_sha256": "5e259edbdc49955a718e67e789bbba54f7771afdea2b15f1d0d544a5a613e6ed",
+    "fixture_sha256": "be9dacb729b5356e3838820ffd6c150e2ac5b2c044cd26a590e9ffb0f71f02ee",
+    "junit_sha256": "fe78f1546b4e9f2e222ca4509212e2764ad8739105533733a204918051194e33",
+    "native_source_pins": 35,
+    "fixture_source_sha256": "f69b5c0b6a66c4fb8e9c8666049a5f324f44cf579fee49207dfcc4a28548b68b"
+  },
+  "windows": {
+    "descriptor_check_sha256": "5e259edbdc49955a718e67e789bbba54f7771afdea2b15f1d0d544a5a613e6ed",
+    "configurations": {
+      "0-deferred-1x": {
+        "gpu": 0,
+        "samples": 1,
+        "lighting_path": "deferred",
+        "adapter": "AMD Radeon(TM) Graphics",
+        "capture_sha256": "856cabbb10d515b118ff074ca174219181eba679bbebac3374fd361ba4717b0a",
+        "fixture_sha256": "f69b5c0b6a66c4fb8e9c8666049a5f324f44cf579fee49207dfcc4a28548b68b",
+        "binary_sha256": "7eb21f8e7c8bdc34fcfdd111a63b43062180cddc8ffd2970f1385d68867a286e",
+        "captured_images": 13,
+        "day_cloud_delta": {
+          "pixels": 21600,
+          "changed": 10974,
+          "max_channel_delta": 89,
+          "mean_channel_delta": 17.395833333333332
+        },
+        "midnight_cloud_delta": {
+          "pixels": 21600,
+          "changed": 4604,
+          "max_channel_delta": 9,
+          "mean_channel_delta": 1.4725
+        },
+        "camera_translation_delta": {
+          "pixels": 21600,
+          "changed": 15566,
+          "max_channel_delta": 83,
+          "mean_channel_delta": 28.02550925925926
+        },
+        "unchanged_opaque_interior_pixels": 143,
+        "zero_coverage_and_extinction_byte_exact": true,
+        "midnight_and_disabled_sun_checked": true,
+        "repeat_tile_sky_patch_byte_exact": true,
+        "repeated_day_capture_byte_exact": true,
+        "captures": {
+          "omitted-clouds": "661048366c91d9e2235c1c5e60d3d490424878ab395ee5333599aea1487e0579",
+          "active-day": "4af7573db59cddd2d3338dfdf79fbecd6e2483e2315fc4e0f66e3adc12101449",
+          "zero_coverage": "661048366c91d9e2235c1c5e60d3d490424878ab395ee5333599aea1487e0579",
+          "zero_extinction": "661048366c91d9e2235c1c5e60d3d490424878ab395ee5333599aea1487e0579",
+          "clouds-with-disabled-sun": "f682a8ef65af12760819ac164e8330936b82fea888b00824f8be07df8d2b9c10",
+          "clear-with-disabled-sun": "f682a8ef65af12760819ac164e8330936b82fea888b00824f8be07df8d2b9c10",
+          "translated-clouds": "a5d5c218597024550c4cba2fd409c8962c8365370fb578c7837befe7911c6420",
+          "translated-clear-sky": "c558e1b296558c2f1d88d63e40155c1e3e06bac94a39b8c117785bd911b5b331",
+          "repeated-world-tile": "d70689296a6c5ebf6256d88c6cd8d9ed81a0be4cbd5197f81f3a5225a4bedb70",
+          "clouds-and-aerial": "4af7573db59cddd2d3338dfdf79fbecd6e2483e2315fc4e0f66e3adc12101449",
+          "active-midnight": "e4113da9442abc9434fa20c05a9abe931ae23ab70170448cfdbcc219295b51bf",
+          "clear-midnight": "f682a8ef65af12760819ac164e8330936b82fea888b00824f8be07df8d2b9c10",
+          "active-day-repeated": "4af7573db59cddd2d3338dfdf79fbecd6e2483e2315fc4e0f66e3adc12101449"
+        },
+        "profiled_cloud_view_gpu": {
+          "last_ms": 0.09663999999999999,
+          "max_ms": 0.11055999999999999,
+          "mean_ms": 0.1036,
+          "min_ms": 0.09663999999999999,
+          "samples": 2
+        },
+        "cloud_texture_bytes": 1214464
+      },
+      "0-forward-1x": {
+        "gpu": 0,
+        "samples": 1,
+        "lighting_path": "forward",
+        "adapter": "AMD Radeon(TM) Graphics",
+        "capture_sha256": "082eccc04ae3fc74c8d477831c64d91606d475b7f964f108e30552a00adf40b1",
+        "fixture_sha256": "f69b5c0b6a66c4fb8e9c8666049a5f324f44cf579fee49207dfcc4a28548b68b",
+        "binary_sha256": "7eb21f8e7c8bdc34fcfdd111a63b43062180cddc8ffd2970f1385d68867a286e",
+        "captured_images": 15,
+        "day_cloud_delta": {
+          "pixels": 21600,
+          "changed": 10974,
+          "max_channel_delta": 89,
+          "mean_channel_delta": 17.395833333333332
+        },
+        "midnight_cloud_delta": {
+          "pixels": 21600,
+          "changed": 4604,
+          "max_channel_delta": 9,
+          "mean_channel_delta": 1.4725
+        },
+        "camera_translation_delta": {
+          "pixels": 21600,
+          "changed": 15566,
+          "max_channel_delta": 83,
+          "mean_channel_delta": 28.02550925925926
+        },
+        "unchanged_opaque_interior_pixels": 143,
+        "zero_coverage_and_extinction_byte_exact": true,
+        "midnight_and_disabled_sun_checked": true,
+        "repeat_tile_sky_patch_byte_exact": true,
+        "repeated_day_capture_byte_exact": true,
+        "captures": {
+          "omitted-clouds": "661048366c91d9e2235c1c5e60d3d490424878ab395ee5333599aea1487e0579",
+          "omitted-clouds-fsr": "0891f2091825bd95b0ec3d915c7de8467bc93307bdd4b54c5fcd8ca3e3ca39b6",
+          "active-day": "4af7573db59cddd2d3338dfdf79fbecd6e2483e2315fc4e0f66e3adc12101449",
+          "active-clouds-fsr": "c182d69e9e6ff70ddc49b38b00df9d74be75fa60bfa51630d00f4e52202104e0",
+          "zero_coverage": "661048366c91d9e2235c1c5e60d3d490424878ab395ee5333599aea1487e0579",
+          "zero_extinction": "661048366c91d9e2235c1c5e60d3d490424878ab395ee5333599aea1487e0579",
+          "clouds-with-disabled-sun": "f682a8ef65af12760819ac164e8330936b82fea888b00824f8be07df8d2b9c10",
+          "clear-with-disabled-sun": "f682a8ef65af12760819ac164e8330936b82fea888b00824f8be07df8d2b9c10",
+          "translated-clouds": "a5d5c218597024550c4cba2fd409c8962c8365370fb578c7837befe7911c6420",
+          "translated-clear-sky": "c558e1b296558c2f1d88d63e40155c1e3e06bac94a39b8c117785bd911b5b331",
+          "repeated-world-tile": "d70689296a6c5ebf6256d88c6cd8d9ed81a0be4cbd5197f81f3a5225a4bedb70",
+          "clouds-and-aerial": "4af7573db59cddd2d3338dfdf79fbecd6e2483e2315fc4e0f66e3adc12101449",
+          "active-midnight": "e4113da9442abc9434fa20c05a9abe931ae23ab70170448cfdbcc219295b51bf",
+          "clear-midnight": "f682a8ef65af12760819ac164e8330936b82fea888b00824f8be07df8d2b9c10",
+          "active-day-repeated": "4af7573db59cddd2d3338dfdf79fbecd6e2483e2315fc4e0f66e3adc12101449"
+        },
+        "profiled_cloud_view_gpu": {
+          "last_ms": 0.09952,
+          "max_ms": 0.09952,
+          "mean_ms": 0.0975,
+          "min_ms": 0.09548,
+          "samples": 2
+        },
+        "cloud_texture_bytes": 1214464,
+        "fsr_native": {
+          "cloud_delta": {
+            "pixels": 21600,
+            "changed": 11001,
+            "max_channel_delta": 89,
+            "mean_channel_delta": 17.445046296296297
+          },
+          "foreground_max_channel_delta": 0
+        },
+        "fsr_cloud_view_gpu": {
+          "last_ms": 0.09636,
+          "max_ms": 0.105,
+          "mean_ms": 0.09887000000000001,
+          "min_ms": 0.09523999999999999,
+          "samples": 8
+        }
+      },
+      "0-forward-4x": {
+        "gpu": 0,
+        "samples": 4,
+        "lighting_path": "forward",
+        "adapter": "AMD Radeon(TM) Graphics",
+        "capture_sha256": "13fc0fce635f9c3a9a1fdbffa1db12ea3700fb7beacb2df517bb4b899e9a5c58",
+        "fixture_sha256": "f69b5c0b6a66c4fb8e9c8666049a5f324f44cf579fee49207dfcc4a28548b68b",
+        "binary_sha256": "7eb21f8e7c8bdc34fcfdd111a63b43062180cddc8ffd2970f1385d68867a286e",
+        "captured_images": 13,
+        "day_cloud_delta": {
+          "pixels": 21600,
+          "changed": 10974,
+          "max_channel_delta": 89,
+          "mean_channel_delta": 17.395833333333332
+        },
+        "midnight_cloud_delta": {
+          "pixels": 21600,
+          "changed": 4604,
+          "max_channel_delta": 9,
+          "mean_channel_delta": 1.4725
+        },
+        "camera_translation_delta": {
+          "pixels": 21600,
+          "changed": 15566,
+          "max_channel_delta": 83,
+          "mean_channel_delta": 28.02550925925926
+        },
+        "unchanged_opaque_interior_pixels": 143,
+        "zero_coverage_and_extinction_byte_exact": true,
+        "midnight_and_disabled_sun_checked": true,
+        "repeat_tile_sky_patch_byte_exact": true,
+        "repeated_day_capture_byte_exact": true,
+        "captures": {
+          "omitted-clouds": "e3e11188ae6d8c49cfde328e83282f2a99722808a112bf9b6e47899df5889a0e",
+          "active-day": "4328da980729f3810aeda358bd2fe35aedf3175d18fa7837b49a37e6ac405acc",
+          "zero_coverage": "e3e11188ae6d8c49cfde328e83282f2a99722808a112bf9b6e47899df5889a0e",
+          "zero_extinction": "e3e11188ae6d8c49cfde328e83282f2a99722808a112bf9b6e47899df5889a0e",
+          "clouds-with-disabled-sun": "31396debef3ed42a9fb164d7be6bb39742acd8ee7f14828d11c59e9fe59c0788",
+          "clear-with-disabled-sun": "31396debef3ed42a9fb164d7be6bb39742acd8ee7f14828d11c59e9fe59c0788",
+          "translated-clouds": "a5d5c218597024550c4cba2fd409c8962c8365370fb578c7837befe7911c6420",
+          "translated-clear-sky": "c558e1b296558c2f1d88d63e40155c1e3e06bac94a39b8c117785bd911b5b331",
+          "repeated-world-tile": "d70689296a6c5ebf6256d88c6cd8d9ed81a0be4cbd5197f81f3a5225a4bedb70",
+          "clouds-and-aerial": "4328da980729f3810aeda358bd2fe35aedf3175d18fa7837b49a37e6ac405acc",
+          "active-midnight": "6b435513c332f8b84ea185df7372e6300ea5a0984f9ec1238915bbb36a0aa826",
+          "clear-midnight": "31396debef3ed42a9fb164d7be6bb39742acd8ee7f14828d11c59e9fe59c0788",
+          "active-day-repeated": "4328da980729f3810aeda358bd2fe35aedf3175d18fa7837b49a37e6ac405acc"
+        },
+        "profiled_cloud_view_gpu": {
+          "last_ms": 0.09491999999999999,
+          "max_ms": 0.09491999999999999,
+          "mean_ms": 0.09408,
+          "min_ms": 0.09323999999999999,
+          "samples": 2
+        },
+        "cloud_texture_bytes": 1214464
+      },
+      "1-deferred-1x": {
+        "gpu": 1,
+        "samples": 1,
+        "lighting_path": "deferred",
+        "adapter": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "capture_sha256": "6f9faca0ff2a54a41b34afc66b94d30ff3d8404761cc7bed550d719edcc29268",
+        "fixture_sha256": "f69b5c0b6a66c4fb8e9c8666049a5f324f44cf579fee49207dfcc4a28548b68b",
+        "binary_sha256": "7eb21f8e7c8bdc34fcfdd111a63b43062180cddc8ffd2970f1385d68867a286e",
+        "captured_images": 13,
+        "day_cloud_delta": {
+          "pixels": 21600,
+          "changed": 10900,
+          "max_channel_delta": 89,
+          "mean_channel_delta": 17.18898148148148
+        },
+        "midnight_cloud_delta": {
+          "pixels": 21600,
+          "changed": 4534,
+          "max_channel_delta": 9,
+          "mean_channel_delta": 1.4558333333333333
+        },
+        "camera_translation_delta": {
+          "pixels": 21600,
+          "changed": 15526,
+          "max_channel_delta": 83,
+          "mean_channel_delta": 27.91935185185185
+        },
+        "unchanged_opaque_interior_pixels": 143,
+        "zero_coverage_and_extinction_byte_exact": true,
+        "midnight_and_disabled_sun_checked": true,
+        "repeat_tile_sky_patch_byte_exact": true,
+        "repeated_day_capture_byte_exact": true,
+        "captures": {
+          "omitted-clouds": "63ca31c92a1505ce7d9e3b4f74e2232a849c526def4c13093bf277832d627413",
+          "active-day": "561b9b82f2a32b958834bc5547e9a9afe84a07baf060a5945fd0b774c1178508",
+          "zero_coverage": "63ca31c92a1505ce7d9e3b4f74e2232a849c526def4c13093bf277832d627413",
+          "zero_extinction": "63ca31c92a1505ce7d9e3b4f74e2232a849c526def4c13093bf277832d627413",
+          "clouds-with-disabled-sun": "f682a8ef65af12760819ac164e8330936b82fea888b00824f8be07df8d2b9c10",
+          "clear-with-disabled-sun": "f682a8ef65af12760819ac164e8330936b82fea888b00824f8be07df8d2b9c10",
+          "translated-clouds": "d1ecbc6b402674cdc2fc00370e5cc0e980e4c598af7df9383a403a0c51cecba6",
+          "translated-clear-sky": "ab55fae62fb79d3083567ecdb0c113f3bf7dd98b73667ef219c223943f4a2cda",
+          "repeated-world-tile": "2806b02ce482f3ac87348bd2bb496c8a073ca3c90d01959303d4a6fccbc23ff0",
+          "clouds-and-aerial": "561b9b82f2a32b958834bc5547e9a9afe84a07baf060a5945fd0b774c1178508",
+          "active-midnight": "ed9aad3e8555cd97acf2fc6767bbaffd9d2ff9150b02977025f6191a6b03f176",
+          "clear-midnight": "f682a8ef65af12760819ac164e8330936b82fea888b00824f8be07df8d2b9c10",
+          "active-day-repeated": "561b9b82f2a32b958834bc5547e9a9afe84a07baf060a5945fd0b774c1178508"
+        },
+        "profiled_cloud_view_gpu": {
+          "last_ms": 0.041984,
+          "max_ms": 0.041984,
+          "mean_ms": 0.03584,
+          "min_ms": 0.029696,
+          "samples": 2
+        },
+        "cloud_texture_bytes": 1214464
+      },
+      "1-forward-1x": {
+        "gpu": 1,
+        "samples": 1,
+        "lighting_path": "forward",
+        "adapter": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "capture_sha256": "58784c27c1f35b4a444d26ca1c45333d6f964a8ba9497a75293b1f3df6c54920",
+        "fixture_sha256": "f69b5c0b6a66c4fb8e9c8666049a5f324f44cf579fee49207dfcc4a28548b68b",
+        "binary_sha256": "7eb21f8e7c8bdc34fcfdd111a63b43062180cddc8ffd2970f1385d68867a286e",
+        "captured_images": 23,
+        "day_cloud_delta": {
+          "pixels": 21600,
+          "changed": 10900,
+          "max_channel_delta": 89,
+          "mean_channel_delta": 17.18898148148148
+        },
+        "midnight_cloud_delta": {
+          "pixels": 21600,
+          "changed": 4534,
+          "max_channel_delta": 9,
+          "mean_channel_delta": 1.4558333333333333
+        },
+        "camera_translation_delta": {
+          "pixels": 21600,
+          "changed": 15526,
+          "max_channel_delta": 83,
+          "mean_channel_delta": 27.91935185185185
+        },
+        "unchanged_opaque_interior_pixels": 143,
+        "zero_coverage_and_extinction_byte_exact": true,
+        "midnight_and_disabled_sun_checked": true,
+        "repeat_tile_sky_patch_byte_exact": true,
+        "repeated_day_capture_byte_exact": true,
+        "captures": {
+          "omitted-clouds": "63ca31c92a1505ce7d9e3b4f74e2232a849c526def4c13093bf277832d627413",
+          "omitted-clouds-fsr": "bf59d91b03b4c88ff841e95acdf54bab65cc7fec0bbddc5530e285bfec4dee44",
+          "active-day": "561b9b82f2a32b958834bc5547e9a9afe84a07baf060a5945fd0b774c1178508",
+          "active-clouds-fsr": "94f61f53d6c6b0e5ccc0b5ac92aaf4b424f2f61a0cd1b01f683dd9fe481ea38e",
+          "zero_coverage": "63ca31c92a1505ce7d9e3b4f74e2232a849c526def4c13093bf277832d627413",
+          "zero_extinction": "63ca31c92a1505ce7d9e3b4f74e2232a849c526def4c13093bf277832d627413",
+          "clouds-with-disabled-sun": "f682a8ef65af12760819ac164e8330936b82fea888b00824f8be07df8d2b9c10",
+          "clear-with-disabled-sun": "f682a8ef65af12760819ac164e8330936b82fea888b00824f8be07df8d2b9c10",
+          "translated-clouds": "d1ecbc6b402674cdc2fc00370e5cc0e980e4c598af7df9383a403a0c51cecba6",
+          "translated-clear-sky": "ab55fae62fb79d3083567ecdb0c113f3bf7dd98b73667ef219c223943f4a2cda",
+          "repeated-world-tile": "2806b02ce482f3ac87348bd2bb496c8a073ca3c90d01959303d4a6fccbc23ff0",
+          "clouds-and-aerial": "561b9b82f2a32b958834bc5547e9a9afe84a07baf060a5945fd0b774c1178508",
+          "active-midnight": "ed9aad3e8555cd97acf2fc6767bbaffd9d2ff9150b02977025f6191a6b03f176",
+          "clear-midnight": "f682a8ef65af12760819ac164e8330936b82fea888b00824f8be07df8d2b9c10",
+          "active-day-repeated": "561b9b82f2a32b958834bc5547e9a9afe84a07baf060a5945fd0b774c1178508",
+          "clockless-no-translation": "8ae8ccf1609299956d556beb48b8ce96b9f184e16b709325fc23d6e396ae74cb",
+          "clockless-expected-translation": "76164658683cd451018b4e846dc21db9000d39fe13508a400496efec7127d134",
+          "relocated-authored": "561b9b82f2a32b958834bc5547e9a9afe84a07baf060a5945fd0b774c1178508",
+          "relocated-solar-2": "978936b357d644ddb66a226b03df6526eb4ab1b02b197dd3d8a57b5e46d30230",
+          "relocated-solar-5": "6e6008512419d2f09c63e264bffe13da7bf2cedeeacb024920e226d87ef9850b",
+          "cold-wind-checkpoint": "978936b357d644ddb66a226b03df6526eb4ab1b02b197dd3d8a57b5e46d30230",
+          "cold-wind-continued": "6e6008512419d2f09c63e264bffe13da7bf2cedeeacb024920e226d87ef9850b"
+        },
+        "profiled_cloud_view_gpu": {
+          "last_ms": 0.041984,
+          "max_ms": 0.041984,
+          "mean_ms": 0.03584,
+          "min_ms": 0.029696,
+          "samples": 2
+        },
+        "cloud_texture_bytes": 1214464,
+        "fsr_native": {
+          "cloud_delta": {
+            "pixels": 21600,
+            "changed": 10920,
+            "max_channel_delta": 89,
+            "mean_channel_delta": 17.23837962962963
+          },
+          "foreground_max_channel_delta": 0
+        },
+        "fsr_cloud_view_gpu": {
+          "last_ms": 0.040959999999999996,
+          "max_ms": 0.040959999999999996,
+          "mean_ms": 0.039167999999999994,
+          "min_ms": 0.029696,
+          "samples": 8
+        },
+        "relocated_native_aot": {
+          "manifest_sha256": "73e9a0af784dcfaaeec59c768b8c7bbc216a20f5bd886b4396ad8468e92ec4be",
+          "final_capture_sha256": "6e6008512419d2f09c63e264bffe13da7bf2cedeeacb024920e226d87ef9850b",
+          "frame_count": 6,
+          "final_tick": 5,
+          "isolated_wind": {
+            "control_translation_m": [
+              -86400.0,
+              43200.0
+            ],
+            "control_separation": {
+              "pixels": 21600,
+              "changed": 20786,
+              "max_channel_delta": 68,
+              "mean_channel_delta": 41.04277777777778
+            },
+            "matches_translated_control": {
+              "pixels": 21600,
+              "changed": 0,
+              "max_channel_delta": 0,
+              "mean_channel_delta": 0.0
+            },
+            "relative_to_stationary": {
+              "pixels": 21600,
+              "changed": 20786,
+              "max_channel_delta": 68,
+              "mean_channel_delta": 41.04277777777778
+            }
+          },
+          "cold_save_checkpoint_and_continuation_exact": true,
+          "source_absent": true,
+          "rejected_runtime_without_feature": true
+        }
+      },
+      "1-forward-4x": {
+        "gpu": 1,
+        "samples": 4,
+        "lighting_path": "forward",
+        "adapter": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "capture_sha256": "1cea61b255ebdc5cb297a5cdcb314a2de5793013e05f7b95187eef4b15720e30",
+        "fixture_sha256": "f69b5c0b6a66c4fb8e9c8666049a5f324f44cf579fee49207dfcc4a28548b68b",
+        "binary_sha256": "7eb21f8e7c8bdc34fcfdd111a63b43062180cddc8ffd2970f1385d68867a286e",
+        "captured_images": 13,
+        "day_cloud_delta": {
+          "pixels": 21600,
+          "changed": 10900,
+          "max_channel_delta": 89,
+          "mean_channel_delta": 17.18898148148148
+        },
+        "midnight_cloud_delta": {
+          "pixels": 21600,
+          "changed": 4534,
+          "max_channel_delta": 9,
+          "mean_channel_delta": 1.4558333333333333
+        },
+        "camera_translation_delta": {
+          "pixels": 21600,
+          "changed": 15526,
+          "max_channel_delta": 83,
+          "mean_channel_delta": 27.91935185185185
+        },
+        "unchanged_opaque_interior_pixels": 143,
+        "zero_coverage_and_extinction_byte_exact": true,
+        "midnight_and_disabled_sun_checked": true,
+        "repeat_tile_sky_patch_byte_exact": true,
+        "repeated_day_capture_byte_exact": true,
+        "captures": {
+          "omitted-clouds": "cc769d321c4c39c9203f7da3b0d209f2541a0392c9a4e63e0e004f30c0e0fad9",
+          "active-day": "c5c2ddec1243ff086361c26a330f9d188a349f9e3e3f649a1338c9f7910f96b1",
+          "zero_coverage": "cc769d321c4c39c9203f7da3b0d209f2541a0392c9a4e63e0e004f30c0e0fad9",
+          "zero_extinction": "cc769d321c4c39c9203f7da3b0d209f2541a0392c9a4e63e0e004f30c0e0fad9",
+          "clouds-with-disabled-sun": "31396debef3ed42a9fb164d7be6bb39742acd8ee7f14828d11c59e9fe59c0788",
+          "clear-with-disabled-sun": "31396debef3ed42a9fb164d7be6bb39742acd8ee7f14828d11c59e9fe59c0788",
+          "translated-clouds": "d1ecbc6b402674cdc2fc00370e5cc0e980e4c598af7df9383a403a0c51cecba6",
+          "translated-clear-sky": "ab55fae62fb79d3083567ecdb0c113f3bf7dd98b73667ef219c223943f4a2cda",
+          "repeated-world-tile": "2806b02ce482f3ac87348bd2bb496c8a073ca3c90d01959303d4a6fccbc23ff0",
+          "clouds-and-aerial": "c5c2ddec1243ff086361c26a330f9d188a349f9e3e3f649a1338c9f7910f96b1",
+          "active-midnight": "a0afb33fb380bca02a68795d4b214ecf8dbcf08ae28744825babf8445ecbde42",
+          "clear-midnight": "31396debef3ed42a9fb164d7be6bb39742acd8ee7f14828d11c59e9fe59c0788",
+          "active-day-repeated": "c5c2ddec1243ff086361c26a330f9d188a349f9e3e3f649a1338c9f7910f96b1"
+        },
+        "profiled_cloud_view_gpu": {
+          "last_ms": 0.041984,
+          "max_ms": 0.041984,
+          "mean_ms": 0.03584,
+          "min_ms": 0.029696,
+          "samples": 2
+        },
+        "cloud_texture_bytes": 1214464
+      }
+    },
+    "aerial_regression": {
+      "capture_sha256": "f63272b92a0c49c5c531696b78aa0631a4e316f51da9bf7b19b6fcd92de499e1",
+      "capture_count": 4
+    }
+  },
+  "qualification_scope": [
+    "Small deterministic scene fixtures and one relocated five-tick Native AOT replay.",
+    "Cloud GPU duration measures the view integration and excludes the one-time noise bake.",
+    "Game-scale performance and moving cloud shadows on geometry are future work."
+  ]
+}

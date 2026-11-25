@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.408
+
+- Render an opt-in cloud layer with internal shadows, atmospheric sunlight, and wind driven by saved world time.
+
 ## 0.0.407
 
 - Render opt-in atmospheric distance haze on opaque surfaces using the same sun and air model as the sky. Compose authored height fog over the haze.

@@ -12,12 +12,15 @@ namespace poima::render_schedule {
 namespace {
 // Preserve the existing pass IDs in captured plans while inserting new stages.
 constexpr std::uint64_t pass_order(PassId id) {
-    if(id==PassId::auto_exposure)return 4u*static_cast<unsigned>(PassId::resolve)+1u;
-    if(id==PassId::exposure_readback)return 4u*static_cast<unsigned>(PassId::product_probes)+1u;
-    if(id==PassId::atmosphere_density)return 4u*static_cast<unsigned>(PassId::scene_clear)+1u;
-    if(id==PassId::atmosphere_view)return 4u*static_cast<unsigned>(PassId::scene_clear)+2u;
-    if(id==PassId::aerial_perspective)return 4u*static_cast<unsigned>(PassId::height_fog)-1u;
-    return 4ull*static_cast<unsigned>(id);
+    constexpr auto ordinal=[](PassId pass){return 8ull*static_cast<unsigned>(pass);};
+    if(id==PassId::auto_exposure)return ordinal(PassId::resolve)+1;
+    if(id==PassId::exposure_readback)return ordinal(PassId::product_probes)+1;
+    if(id==PassId::atmosphere_density)return ordinal(PassId::scene_clear)+1;
+    if(id==PassId::atmosphere_view)return ordinal(PassId::scene_clear)+2;
+    if(id==PassId::cloud_noise)return ordinal(PassId::scene_clear)+3;
+    if(id==PassId::cloud_view)return ordinal(PassId::scene_clear)+4;
+    if(id==PassId::aerial_perspective)return ordinal(PassId::height_fog)-1;
+    return ordinal(id);
 }
 }
 
@@ -207,6 +210,35 @@ void Schedule::validate(bool before_acquire) const {
                 fail("aerial perspective table aliases an optical or composition role");
     } else if(frame.aerial_scattering!=none || frame.aerial_transmittance!=none) {
         fail("aerial perspective tables without an active profile");
+    }
+    bool cloud_noise_dirty=false;
+    if(settings.volumetric_clouds) {
+        required(frame.cloud_noise);
+        required(frame.cloud_view);
+        if(!atmospheric_sky || frame.cloud_noise==frame.cloud_view)
+            fail("volumetric clouds need an atmospheric sky and distinct textures");
+        const auto& noise=resource(frame.cloud_noise);
+        const auto& clouds=resource(frame.cloud_view);
+        const auto valid=[](const Resource& image,Format format,std::uint32_t width,std::uint32_t height,std::uint32_t layers) {
+            constexpr auto uses=use_bit(Use::sampled)|use_bit(Use::image_write);
+            return image.kind==Kind::texture && image.format==format && image.region==Region::whole &&
+                image.lifetime==(image.initialized ? Lifetime::imported : Lifetime::shared) &&
+                !image.late_bound && image.samples==1 && image.width==width && image.height==height &&
+                image.layers==layers && (image.supported&uses)==uses;
+        };
+        constexpr auto noise_size=atmosphere::cloud_noise_size;
+        if(!valid(noise,Format::rgba8_unorm,noise_size,noise_size,noise_size) || clouds.initialized ||
+            !valid(clouds,Format::rgba16_float,atmosphere::cloud_view_width,atmosphere::cloud_view_height,1))
+            fail("invalid volumetric cloud textures");
+        require_distinct_roles(frame.cloud_noise,frame.cloud_view,"cloud texture aliases another resource role");
+        for(auto role:{frame.atmosphere_density,frame.atmosphere_view,frame.aerial_scattering,frame.aerial_transmittance,
+            frame.reflected_hdr,frame.reflection_roughness,frame.fogged_hdr,frame.sprite_hdr,frame.sprite_coverage,
+            frame.display_ldr,frame.composition_mask,frame.exposure_state,frame.exposure_readback}) {
+            if(role==frame.cloud_noise || role==frame.cloud_view)fail("cloud texture aliases an optical or composition role");
+        }
+        cloud_noise_dirty=!noise.initialized;
+    } else if(frame.cloud_noise!=none || frame.cloud_view!=none) {
+        fail("cloud textures without active volumetric clouds");
     }
     const bool exposure_readback=frame.exposure_readback!=none;
     if(settings.auto_exposure) {
@@ -552,9 +584,23 @@ void Schedule::validate(bool before_acquire) const {
                 !matches(pass.accesses[1],frame.atmosphere_view,Use::image_write,true))
                 fail("invalid atmospheric sky-view precomputation");
         }
+        if(pass.id==PassId::cloud_noise) {
+            if(!cloud_noise_dirty || pass.accesses.size()!=1 ||
+                !matches(pass.accesses[0],frame.cloud_noise,Use::image_write,true))fail("invalid cloud noise precomputation");
+        }
+        if(pass.id==PassId::cloud_view) {
+            if(!settings.volumetric_clouds || pass.accesses.size()!=4 ||
+                !matches(pass.accesses[0],frame.frame,Use::constant,false) ||
+                !matches(pass.accesses[1],frame.cloud_noise,Use::sampled,false) ||
+                !matches(pass.accesses[2],frame.atmosphere_density,Use::sampled,false) ||
+                !matches(pass.accesses[3],frame.cloud_view,Use::image_write,true))fail("invalid cloud integration bindings");
+        }
         if(atmospheric_sky && pass.id==PassId::sky) {
             if(!has(frame.atmosphere_density,Use::sampled) || !has(frame.atmosphere_view,Use::sampled))
                 fail("atmospheric sky draw lacks its tables");
+            if(settings.volumetric_clouds && std::count_if(pass.accesses.begin(),pass.accesses.end(),[&](const Access& access) {
+                return matches(access,frame.cloud_view,Use::sampled,false);
+            })!=1)fail("sky draw needs one cloud view binding");
             atmosphere_drawn=true;
         }
         if(pass.id==PassId::stream_geometry) {
@@ -943,7 +989,7 @@ void Schedule::validate(bool before_acquire) const {
                 const auto producer=density ? PassId::atmosphere_density : PassId::atmosphere_view;
                 const bool generated=pass.id==producer && a.use==Use::image_write && a.initialize;
                 const bool consumed=(pass.id==PassId::sky ||
-                    (density && (pass.id==PassId::atmosphere_view || pass.id==PassId::aerial_perspective))) &&
+                    (density && (pass.id==PassId::atmosphere_view || pass.id==PassId::aerial_perspective || pass.id==PassId::cloud_view))) &&
                     a.use==Use::sampled && !a.initialize;
                 if(!generated && !consumed)fail("atmospheric sky table used outside its producers and sky draw");
             }
@@ -951,6 +997,14 @@ void Schedule::validate(bool before_acquire) const {
                 const bool produced=pass.id==PassId::aerial_perspective && a.use==Use::image_write && a.initialize;
                 const bool consumed=pass.id==PassId::height_fog && a.use==Use::sampled && !a.initialize;
                 if(!produced && !consumed)fail("aerial perspective table used outside its world color composition");
+            }
+            if(settings.volumetric_clouds && (a.resource==frame.cloud_noise || a.resource==frame.cloud_view)) {
+                const bool noise=a.resource==frame.cloud_noise;
+                const auto producer=noise ? PassId::cloud_noise : PassId::cloud_view;
+                const auto consumer=noise ? PassId::cloud_view : PassId::sky;
+                const bool produced=pass.id==producer && a.use==Use::image_write && a.initialize;
+                const bool consumed=pass.id==consumer && a.use==Use::sampled && !a.initialize;
+                if(!produced && !consumed)fail("cloud texture used outside cloud integration or sky composition");
             }
             if(!(r.supported&use_bit(a.use)))fail("unsupported resource usage");
             const bool buffer_use=a.use==Use::upload || a.use==Use::storage_read || a.use==Use::storage_write || a.use==Use::vertex || a.use==Use::index || a.use==Use::constant;
@@ -1055,10 +1109,20 @@ Schedule build(FrameResources frame,Settings settings) {
         add(view,f.atmosphere_density,Use::sampled);
         add(view,f.atmosphere_view,Use::image_write,true);
     }
+    if(settings.volumetric_clouds) {
+        if(f.cloud_noise!=none && !result.resource(f.cloud_noise).initialized)
+            add(pass(PassId::cloud_noise),f.cloud_noise,Use::image_write,true);
+        auto& clouds=pass(PassId::cloud_view);
+        add(clouds,f.frame,Use::constant);
+        add(clouds,f.cloud_noise,Use::sampled);
+        add(clouds,f.atmosphere_density,Use::sampled);
+        add(clouds,f.cloud_view,Use::image_write,true);
+    }
     if(settings.sky) {
         auto& sky=pass(PassId::sky);
         add(sky,f.color,Use::color);add(sky,f.depth,Use::depth);add(sky,f.frame,Use::constant);
         add(sky,f.atmosphere_density,Use::sampled);add(sky,f.atmosphere_view,Use::sampled);
+        if(settings.volumetric_clouds)add(sky,f.cloud_view,Use::sampled);
     }
     auto& opaque=pass(PassId::opaque);add(opaque,f.color,Use::color);add(opaque,f.depth,Use::depth);if(settings.products && !settings.deferred) {add(opaque,f.normal,Use::color);add(opaque,f.motion,Use::color);add(opaque,f.motion_valid,Use::color);}
     add(opaque,f.surface_marks,Use::storage_read);

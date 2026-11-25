@@ -91,6 +91,23 @@ static SkySettings sky_value(const Json& value) {
     if(!value.at("sun").is_null())result.sun=identifier(value.at("sun"));
     return result;
 }
+static CloudSettings cloud_value(const Json& value) {
+    fields(value,{"base_height_m","thickness_m","coverage","extinction_per_km","wind_m_per_s"},
+        {"base_height_m","thickness_m","coverage","extinction_per_km","wind_m_per_s"});
+    const auto number=[&](const char* name,double minimum,double maximum) {
+        const auto& field=value.at(name);
+        require(field.is_number() && std::isfinite(field.get<double>()) && field>=minimum && field<=maximum,
+            std::string("Cloud ")+name+" is outside its finite range.");
+        return field.get<float>();
+    };
+    const auto& wind=value.at("wind_m_per_s");
+    require(wind.is_array() && wind.size()==2,"Cloud wind_m_per_s requires [x,z] in metres per second.");
+    for(const auto& axis:wind)
+        require(axis.is_number() && std::isfinite(axis.get<double>()) && axis>=-100 && axis<=100,
+            "Cloud wind_m_per_s must be finite and in [-100,100] on each axis.");
+    return {number("base_height_m",250,12000),number("thickness_m",100,6000),number("coverage",0,1),
+        number("extinction_per_km",0,32),wind.get<std::array<float,2>>()};
+}
 LightingEnvironment environment_value(const Json& value) {
     fields(value,{"ambient","exposure","shadow_resolution","shadow_filter","sky","ibl","bloom","post_effect","output_grade","screen_reflections","height_fog","auto_exposure","atmosphere"},{"ambient","exposure"});require(value.at("ambient").is_array() && value.at("ambient").size()==3,"Ambient fill needs three values.");
     for(const auto& x:value.at("ambient"))require(x.is_number() && std::isfinite(x.get<double>()) && x>=0 && x<=1e6,"Ambient fill must be in [0,1e6].");
@@ -124,7 +141,7 @@ LightingEnvironment environment_value(const Json& value) {
     if(value.contains("sky"))result.sky=sky_value(value.at("sky"));
     if(value.contains("atmosphere")) {
         const auto& profile=value.at("atmosphere");
-        fields(profile,{"sea_level_m","aerosol_strength","radiance_scale","aerial_perspective_m"},
+        fields(profile,{"sea_level_m","aerosol_strength","radiance_scale","aerial_perspective_m","clouds"},
             {"sea_level_m","aerosol_strength","radiance_scale"});
         const auto number=[&](const char* name,double minimum,double maximum) {
             const auto& field=profile.at(name);
@@ -134,9 +151,10 @@ LightingEnvironment environment_value(const Json& value) {
         };
         result.atmosphere=AtmosphereSettings{number("sea_level_m",-1e6,1e6),
             static_cast<float>(number("aerosol_strength",0,4)),
-            static_cast<float>(number("radiance_scale",0,64)),std::nullopt};
+            static_cast<float>(number("radiance_scale",0,64)),std::nullopt,std::nullopt};
         if(profile.contains("aerial_perspective_m"))
             result.atmosphere->aerial_perspective_m=static_cast<float>(number("aerial_perspective_m",128,65536));
+        if(profile.contains("clouds"))result.atmosphere->clouds=cloud_value(profile.at("clouds"));
     }
     if(value.contains("ibl")) {
         const auto& ibl=value.at("ibl");

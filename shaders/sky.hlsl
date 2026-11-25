@@ -6,6 +6,9 @@ Texture2D<float4> sky_optical_density : register(t0);
 Texture2D<float4> sky_single_scattering : register(t1);
 SamplerState sky_atmosphere_sampler : register(s0);
 #endif
+#if defined(POIMA_VOLUMETRIC_CLOUDS)
+Texture2D<float4> sky_cloud_view : register(t2);
+#endif
 // Asset-free artistic sky: linear-light gradient and an angular sun disk.
 // The optical variant uses the reserved lanes for atmospheric sky controls.
 struct SkyConstants {
@@ -63,6 +66,11 @@ float4 pixel_main(VertexOutput input) : SV_Target0 {
         color+=sky.sun_color.xyz*(sky.sun_intensity.w*(disk+halo)*above_ground);
 #endif
     }
+#if defined(POIMA_VOLUMETRIC_CLOUDS)
+    const float2 cloud_uv = ndc * float2(0.5, -0.5) + 0.5;
+    const float4 cloud = sky_cloud_view.SampleLevel(sky_atmosphere_sampler, cloud_uv, 0);
+    color = color * cloud.a + cloud.rgb;
+#endif
     // Same bounded radiance storage as geometry; shared output owns exposure.
     color=select(isnan(color),0,clamp(color,0,65504));
     return float4(color,1);

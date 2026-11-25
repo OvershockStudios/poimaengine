@@ -6,6 +6,7 @@
 #include "poima/atmosphere_sky_view_cs.hpp"
 #include "poima/scene.hpp"
 #include "poima/sky_atmosphere_ps.hpp"
+#include "poima/sky_clouds_ps.hpp"
 #include "poima/sky_ps.hpp"
 #include "poima/sky_vs.hpp"
 #include "render_embedded_shader.hpp"
@@ -100,6 +101,20 @@ void Pass::prepare_atmosphere(nvrhi::IDevice& device) {
     sky_view_compute_ = std::move(view_compute);
 }
 
+nvrhi::BindingSetDesc Pass::sky_binding_desc(nvrhi::IBuffer* frame, nvrhi::ITexture* density,
+    nvrhi::ITexture* view, nvrhi::ITexture* clouds) const {
+    auto bindings = nvrhi::BindingSetDesc()
+        .addItem(nvrhi::BindingSetItem::PushConstants(0, sizeof(Constants)))
+        .addItem(nvrhi::BindingSetItem::ConstantBuffer(1, frame));
+    if (density) {
+        bindings.addItem(nvrhi::BindingSetItem::Texture_SRV(0, density))
+            .addItem(nvrhi::BindingSetItem::Texture_SRV(1, view))
+            .addItem(nvrhi::BindingSetItem::Sampler(0, atmosphere_sampler_));
+    }
+    if (clouds) bindings.addItem(nvrhi::BindingSetItem::Texture_SRV(2, clouds));
+    return bindings;
+}
+
 void Pass::prepare_raster(nvrhi::IDevice& device, nvrhi::IBuffer* frame,
     const nvrhi::FramebufferInfo& framebuffer, Raster& raster) {
     if (!vertex_shader_) {
@@ -109,8 +124,8 @@ void Pass::prepare_raster(nvrhi::IDevice& device, nvrhi::IBuffer* frame,
     }
     if (!raster.layout) {
         const auto pixel_desc = nvrhi::ShaderDesc(nvrhi::ShaderType::Pixel).setEntryName("pixel_main");
-        auto pixel_shader = atmosphere_enabled_ ?
-            create_embedded_shader(&device, pixel_desc, poima_sky_atmosphere_ps) :
+        auto pixel_shader = clouds_enabled_ ? create_embedded_shader(&device, pixel_desc, poima_sky_clouds_ps) :
+            atmosphere_enabled_ ? create_embedded_shader(&device, pixel_desc, poima_sky_atmosphere_ps) :
             create_embedded_shader(&device, pixel_desc, poima_sky_ps);
         auto layout = nvrhi::BindingLayoutDesc().setVisibility(nvrhi::ShaderType::All)
             .addItem(nvrhi::BindingLayoutItem::PushConstants(0, sizeof(Constants)))
@@ -120,21 +135,16 @@ void Pass::prepare_raster(nvrhi::IDevice& device, nvrhi::IBuffer* frame,
                 .addItem(nvrhi::BindingLayoutItem::Texture_SRV(1))
                 .addItem(nvrhi::BindingLayoutItem::Sampler(0));
         }
+        if (clouds_enabled_) layout.addItem(nvrhi::BindingLayoutItem::Texture_SRV(2));
         auto binding_layout = device.createBindingLayout(layout);
         require(pixel_shader && binding_layout, "Procedural sky shader or layout creation failed.");
         raster.pixel_shader = std::move(pixel_shader);
         raster.layout = std::move(binding_layout);
     }
     if (!raster.bindings || raster.frame != frame) {
-        auto bindings = nvrhi::BindingSetDesc()
-            .addItem(nvrhi::BindingSetItem::PushConstants(0, sizeof(Constants)))
-            .addItem(nvrhi::BindingSetItem::ConstantBuffer(1, frame));
-        if (atmosphere_enabled_) {
-            bindings.addItem(nvrhi::BindingSetItem::Texture_SRV(0, density_))
-                .addItem(nvrhi::BindingSetItem::Texture_SRV(1, sky_view_))
-                .addItem(nvrhi::BindingSetItem::Sampler(0, atmosphere_sampler_));
-        }
-        auto binding_set = device.createBindingSet(bindings, raster.layout);
+        auto binding_set = device.createBindingSet(sky_binding_desc(frame,
+            atmosphere_enabled_ ? density_.Get() : nullptr, atmosphere_enabled_ ? sky_view_.Get() : nullptr,
+            clouds_enabled_ ? cloud_view_.Get() : nullptr), raster.layout);
         require(bool(binding_set), "Procedural sky bindings creation failed.");
         raster.bindings = std::move(binding_set);
         raster.frame = frame;
@@ -160,6 +170,7 @@ void Pass::prepare(nvrhi::IDevice& device, nvrhi::IBuffer* frame,
     enabled_ = sky.enabled;
     constants_ = {};
     atmosphere_enabled_ = false;
+    clouds_enabled_ = false;
     observer_height_m_ = 0;
     if (!enabled_) return;
 
@@ -207,9 +218,17 @@ void Pass::prepare(nvrhi::IDevice& device, nvrhi::IBuffer* frame,
         }
         break;
     }
-    if (atmosphere_enabled_) prepare_atmosphere(device);
+    if (atmosphere_enabled_) {
+        prepare_atmosphere(device);
+        const auto& clouds = profile->clouds;
+        clouds_enabled_ = clouds && clouds->coverage > 0 && clouds->extinction_per_km > 0;
+        if (clouds_enabled_) {
+            const auto time = lighting.solar_lighting ? lighting.solar_lighting->world_milliseconds : 0;
+            prepare_clouds(device, frame, scene, *profile, time);
+        }
+    }
     prepare_raster(device, frame, framebuffers.front()->getFramebufferInfo(),
-        atmosphere_enabled_ ? atmosphere_raster_ : gradient_);
+        clouds_enabled_ ? cloud_raster_ : atmosphere_enabled_ ? atmosphere_raster_ : gradient_);
 }
 
 bool Pass::atmosphere_density_dirty() const noexcept {
@@ -256,12 +275,16 @@ void Pass::commit_atmosphere() noexcept {
         ++sky_view_generation_;
         sky_view_recorded_ = false;
     }
+    if (cloud_noise_recorded_) cloud_noise_initialized_ = true;
+    cloud_noise_recorded_ = false;
+    cloud_view_recorded_ = false;
 }
 
 void Pass::draw(nvrhi::ICommandList& commands, nvrhi::IFramebuffer* framebuffer,
     const nvrhi::Viewport& viewport) const {
-    const auto& raster = atmosphere_enabled_ ? atmosphere_raster_ : gradient_;
+    const auto& raster = clouds_enabled_ ? cloud_raster_ : atmosphere_enabled_ ? atmosphere_raster_ : gradient_;
     require(!atmosphere_view_dirty() || sky_view_recorded_, "Atmospheric sky draw needs a current sky-view lookup.");
+    require(!clouds_enabled_ || cloud_view_recorded_, "Atmospheric sky draw needs a current cloud view.");
     nvrhi::GraphicsState state;
     state.pipeline = raster.pipeline;
     state.framebuffer = framebuffer;
@@ -275,6 +298,7 @@ void Pass::draw(nvrhi::ICommandList& commands, nvrhi::IFramebuffer* framebuffer,
 void Pass::detach_framebuffer() noexcept {
     gradient_.pipeline = nullptr;
     atmosphere_raster_.pipeline = nullptr;
+    cloud_raster_.pipeline = nullptr;
 }
 
 void Pass::reset() noexcept { *this = {}; }

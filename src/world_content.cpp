@@ -257,9 +257,10 @@ FrozenContent freeze_world_content(const Json& source, const fs::path& directory
             if(environment.contains("output_grade"))result.needs_output_grade=true;
             if(environment.contains("auto_exposure"))result.needs_auto_exposure=true;
             if(environment.contains("atmosphere")) {
+                const auto& atmosphere=environment.at("atmosphere");
                 result.needs_atmosphere_sky=true;
-                if(environment.at("atmosphere").contains("aerial_perspective_m"))
-                    result.needs_aerial_perspective=true;
+                if(atmosphere.contains("aerial_perspective_m"))result.needs_aerial_perspective=true;
+                if(atmosphere.contains("clouds"))result.needs_volumetric_clouds=true;
             }
             if(environment.contains("screen_reflections"))result.needs_screen_reflections=true;
             if(environment.contains("height_fog"))result.needs_height_fog=true;

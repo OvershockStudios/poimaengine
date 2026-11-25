@@ -275,6 +275,9 @@ baseline. Novelty alone does not establish improved graphics or performance.
 twilight from the same committed solar direction as the existing day/night
 lighting. [Aerial perspective](ATMOSPHERE_SKY.md#aerial-perspective) applies
 the same atmosphere to opaque geometry up to the authored ray distance.
+[Volumetric clouds](VOLUMETRIC_CLOUDS.md) use committed sunlight and world time
+with an authored wind. Cloud shadows on the ground and in-volume geometry
+remain part of the broader atmosphere work.
 
 **Dependencies:** render scheduling, scene products, reliable motion/history,
 material/content contracts and profiling. **Exit:** a representative atmospheric

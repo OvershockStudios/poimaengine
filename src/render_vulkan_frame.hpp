@@ -78,6 +78,7 @@ struct TimestampSample {
     bool reconstruction;
     bool screen_reflections;
     bool height_fog;
+    bool volumetric_clouds;
     double cpu_interval_ms;
     const profiling::DeferredContext& profile;
     frame_performance::Recorder* performance;

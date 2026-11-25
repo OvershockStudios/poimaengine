@@ -187,6 +187,12 @@ Json render_diagnostics(const RenderDiagnostics& d) {
         result["aerial_perspective"]={{"active",aerial.active},{"reason",aerial.reason},
             {"table_bytes",aerial.table_bytes},{"max_distance_m",aerial.max_distance_m}};
     }
+    if(d.volumetric_clouds) {
+        const auto& clouds=*d.volumetric_clouds;
+        result["volumetric_clouds"]={{"active",clouds.active},{"reason",clouds.reason},
+            {"noise_bytes",clouds.noise_bytes},{"view_bytes",clouds.view_bytes},{"world_milliseconds",clouds.world_milliseconds}};
+        if(d.volumetric_clouds_gpu.samples>0)result["volumetric_clouds"]["gpu"]=timing(d.volumetric_clouds_gpu);
+    }
     if(d.viewmodel) {
         const auto& v=*d.viewmodel;
         result["viewmodel"]={{"rendered",v.rendered},{"samples",v.samples},{"output_width",v.output_width},{"output_height",v.output_height},
@@ -217,6 +223,11 @@ Json lighting_json(const SceneLighting& lighting) {
             {"radiance_scale",profile.radiance_scale}};
         if(profile.aerial_perspective_m)
             result["atmosphere"]["aerial_perspective_m"]=*profile.aerial_perspective_m;
+        if(profile.clouds) {
+            const auto& clouds=*profile.clouds;
+            result["atmosphere"]["clouds"]={{"base_height_m",clouds.base_height_m},{"thickness_m",clouds.thickness_m},
+                {"coverage",clouds.coverage},{"extinction_per_km",clouds.extinction_per_km},{"wind_m_per_s",clouds.wind_m_per_s}};
+        }
     }
     if(lighting.environment.auto_exposure) {
         const auto& settings=*lighting.environment.auto_exposure;
