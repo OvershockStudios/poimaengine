@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "scene_frame.hlsli"
+#include "world_media_view.hlsli"
 
 Texture2D<float4> surface_radiance : register(t0);
 Texture2D<float> scene_depth : register(t1);
@@ -172,9 +173,8 @@ void compute_main(uint3 dispatch_id : SV_DispatchThreadID) {
     }
 
     const float2 uv = (viewport_pixel - temporal_jitter.xy) / cluster_viewport.zw;
-    const float2 offset = float2(2.0 * uv.x - 1.0, 1.0 - 2.0 * uv.y) * float2(temporal_right.w, temporal_up.w);
-    const float ray_scale = length(float3(offset, 1.0));
-    const float3 ray = (temporal_forward.xyz + offset.x * temporal_right.xyz + offset.y * temporal_up.xyz) / ray_scale;
+    float ray_scale;
+    const float3 ray = world_media_ray(uv,ray_scale);
 
     const float start = fog.distance_height.x;
     float end = fog.distance_height.y;
@@ -183,7 +183,8 @@ void compute_main(uint3 dispatch_id : SV_DispatchThreadID) {
     const float water_depth = saturate(depth);
     const float water_end = ray_scale * cluster_depth.z /
         ((1.0 - water_depth) + water_depth * (cluster_depth.z / cluster_depth.w));
-    surface.rgb = compose_water(fog.water, surface.rgb, ray, water_end, uint2(width, height));
+    const WaterPath path = trace_water_columns(fog.water,fog.water.camera_cell_size.xyz,ray,water_end,true);
+    surface.rgb = compose_water_path(fog.water,surface.rgb,ray,path,uint2(width,height));
 #endif
     if (depth < 1.0 && depth >= 0.0) {
         const float near_plane = cluster_depth.z;

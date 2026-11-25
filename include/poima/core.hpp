@@ -281,6 +281,7 @@ struct WaterOpticsDiagnostics {
     std::optional<WaterShoreFoam> shore_foam;
     bool shore_foam_sun=false;
     bool follow_terrain=false;
+    bool sprites=false;
 };
 struct AerialPerspectiveDiagnostics {
     bool active=false;

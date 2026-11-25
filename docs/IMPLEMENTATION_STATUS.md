@@ -1,8 +1,20 @@
 # Implementation status
 
-Updated 2026-11-25 for **0.0.418**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-25 for **0.0.419**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.419 applies [water optics to translucent sprites](PARTICLES.md#see-particles-through-water).
+AMD forward and NVIDIA deferred passed 16 HDR blend comparisons with
+opaque reference cards at matching depths. Opaque blockers and total
+internal reflection kept their exact background colors. NVIDIA's FSR
+Native AA path matched the direct probes within 0.00025 in linear HDR.
+A relocated save reproduced both camera images exactly. Thirteen dry
+sprite and water-only regressions matched, and Ubuntu passed 14 suites.
+The cove study combined 156 submerged particles with refraction of opaque
+geometry, shoreline foam, aerial perspective and FSR. Sprite positions
+use a straight projection through the surface.
+[Results](evidence/m2-water-sprites-419.json)
 
 Version 0.0.418 adds [terrain-fitted shorelines](SHALLOW_WATER.md#fit-the-shoreline-to-the-terrain).
 AMD forward and NVIDIA deferred passed 256 HDR comparisons against a

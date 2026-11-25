@@ -47,6 +47,8 @@
 #include "poima/particle_sprite_ps.hpp"
 #include "poima/particle_sprite_temporal_vs.hpp"
 #include "poima/particle_sprite_temporal_ps.hpp"
+#include "poima/particle_sprite_water_ps.hpp"
+#include "poima/particle_sprite_temporal_water_ps.hpp"
 #include "render_sprite_targets.hpp"
 #include "render_light_clusters.hpp"
 #include "render_gpu_visibility.hpp"
@@ -136,13 +138,14 @@ struct FrameConstants {
     std::array<float,4> water_caustic_origin_size{},water_caustic_extinction_strength{};
     std::array<std::uint32_t,4> water_caustic_grid_light{};
     std::array<float,4> water_shore_foam{};
+    height_fog::WaterParameters sprite_water{};
 };
-static_assert(sizeof(GpuShadow)==80 && sizeof(FrameConstants)==1776);
+static_assert(sizeof(GpuShadow)==80 && sizeof(FrameConstants)==1824);
 static_assert(offsetof(FrameConstants,water_ripple_shape)==1600 && offsetof(FrameConstants,water_ripple_motion)==1616 &&
     offsetof(FrameConstants,water_wave_shapes)==1632 && offsetof(FrameConstants,cloud_shadow_geometry)==1680 &&
     offsetof(FrameConstants,cloud_shadow_controls)==1696 && offsetof(FrameConstants,water_caustic_origin_size)==1712 &&
     offsetof(FrameConstants,water_caustic_extinction_strength)==1728 && offsetof(FrameConstants,water_caustic_grid_light)==1744 &&
-    offsetof(FrameConstants,water_shore_foam)==1760);
+    offsetof(FrameConstants,water_shore_foam)==1760 && offsetof(FrameConstants,sprite_water)==1776);
 struct SpriteInstance {
     std::array<float,4> center_and_size,linear_rgba,fade_and_reserved;
     std::array<std::uint32_t,4> texel_rect;
@@ -217,7 +220,6 @@ struct Context {
         nvrhi::TextureHandle surface_mark_masks;
         nvrhi::BindingSetHandle surface_mark_binding;
         nvrhi::BufferHandle sprite_instances;
-        nvrhi::TextureHandle sprite_depth;
         std::vector<SpriteBinding> sprite_bindings;
         nvrhi::EventQueryHandle completion;
         std::uint64_t submission=0;
@@ -270,8 +272,8 @@ struct Context {
     std::vector<SpriteBatch> sprite_batches;
     std::vector<nvrhi::TextureHandle> sprite_textures;
     nvrhi::FramebufferHandle sprite_framebuffer;
-    nvrhi::BindingLayoutHandle sprite_layout;
-    std::array<nvrhi::GraphicsPipelineHandle,2> sprite_pipelines;
+    std::array<nvrhi::BindingLayoutHandle,2> sprite_layouts;
+    std::array<nvrhi::GraphicsPipelineHandle,4> sprite_pipelines;
     render_sprite_targets::Targets sprite_targets;
     // Borrowed only during a player poll. Slots retain detached generation
     // tickets; the session recorder outlives renderer teardown.
@@ -472,9 +474,9 @@ struct Context {
             slot.visibility={};
             slot.streamed_vertices=nullptr;slot.streamed_indices=nullptr;
             slot.surface_mark_binding=nullptr;slot.surface_marks=nullptr;slot.surface_mark_masks=nullptr;
-            slot.sprite_instances=nullptr;slot.sprite_depth=nullptr;slot.sprite_bindings.clear();
+            slot.sprite_instances=nullptr;slot.sprite_bindings.clear();
         }
-        clear_sprite_targets();sprite_pipelines={};sprite_layout=nullptr;sprite_textures.clear();
+        clear_sprite_targets();sprite_pipelines={};sprite_layouts={};sprite_textures.clear();
         checked = nullptr;
         native = nullptr;
         if (device) {
@@ -1351,6 +1353,7 @@ struct Context {
         water_parameters.reset();
         frame_constants.water_caustic_grid_light={};
         frame_constants.water_shore_foam={};
+        frame_constants.sprite_water={};
         fog_spots={};
         const auto& selected=lighting.environment.height_fog;
         const auto& atmosphere_profile=lighting.environment.atmosphere;
@@ -2193,7 +2196,7 @@ struct Context {
 #if POIMA_EDITOR
         editor_ui.detach_targets();
 #endif
-        for(auto& slot:slots) {slot.sprite_depth=nullptr;slot.sprite_bindings.clear();}
+        for(auto& slot:slots)slot.sprite_bindings.clear();
         framebuffers.clear();sky_framebuffers.clear(); images.clear(); depth=nullptr; multisample_color=nullptr; scene_hdr=nullptr; scene_normal=nullptr; scene_motion=nullptr;scene_motion_valid=nullptr;material_base=nullptr;material_surface=nullptr;material_correspondence=nullptr;occlusion.clear_targets();deferred_lighting.invalidate_bindings();staging=nullptr;
         for(auto& texture:probe_staging)texture=nullptr;
         fsr3_history_readback=nullptr;
@@ -2805,11 +2808,24 @@ struct Context {
             require(slot.sprite_bindings.size()==f.sprite_textures.size(),"Particle sprite texture count differs from its schedule.");
             for(std::size_t texture=0;texture<slot.sprite_bindings.size();++texture) {
                 identity(f.sprite_textures[texture],slot.sprite_bindings[texture].image.Get());
-                for(const auto& binding:slot.sprite_bindings[texture].bindings->getDesc()->bindings) {
-                    if(binding.type==nvrhi::ResourceType::StructuredBuffer_SRV)
-                        identity(f.sprite_instances,binding.resourceHandle);
-                    else if(binding.type==nvrhi::ResourceType::Texture_SRV)
-                        identity(binding.slot==1 ? f.depth : f.sprite_textures[texture],binding.resourceHandle);
+                const bool optical_water=rs::water_filtered_sprites(f,plan.settings);
+                const auto& actual=slot.sprite_bindings[texture].bindings->getDesc()->bindings;
+                const auto expected=sprite_binding(slot,slot.sprite_bindings[texture].image.Get(),optical_water);
+                require(std::equal(actual.begin(),actual.end(),expected.bindings.begin(),expected.bindings.end()),
+                    "Recorded particle sprite descriptors differ from the selected water path.");
+                for(const auto& binding:actual) {
+                    using Type=nvrhi::ResourceType;
+                    if(binding.type==Type::ConstantBuffer)identity(f.frame,binding.resourceHandle);
+                    else if(binding.type==Type::StructuredBuffer_SRV) {
+                        if(binding.slot==0)identity(f.sprite_instances,binding.resourceHandle);
+                        if(binding.slot==7)identity(f.water_columns,binding.resourceHandle);
+                        if(binding.slot==6 && plan.settings.water_shore_foam_sun)identity(f.lights,binding.resourceHandle);
+                    } else if(binding.type==Type::Texture_SRV) {
+                        if(binding.slot==1)identity(f.depth,binding.resourceHandle);
+                        if(binding.slot==2)identity(f.sprite_textures[texture],binding.resourceHandle);
+                        if(binding.slot==5 && plan.settings.water_shore_foam_sun)identity(f.shadow,binding.resourceHandle);
+                        if(binding.slot==8)identity(f.ibl_specular,binding.resourceHandle);
+                    }
                 }
             }
         }

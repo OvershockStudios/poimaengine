@@ -1,0 +1,567 @@
+{
+  "checkpoint": "0.0.419",
+  "parent_commit": "5fcbcae9da11e2ba18b9800e18f0cf7b31aa74d2",
+  "schema_revision": 217,
+  "source_sha256": {
+    "CMakeLists.txt": "3ac22ebac9f6019674c1de4eb10affa406f994a103026d098fa694d5e7a381b2",
+    "cmake/render_smoke.cmake": "8c5d2c91a1647711f7253d294e3f4011693dfc3cfb468de187d07f1cc45a88d9",
+    "cmake/runtime.json.in": "192fd13ca2e63a801067d0a4040660f8de8b7ea52b0169cfb09ae9dc46a35c1c",
+    "include/poima/core.hpp": "6db144adf5c654e783c19f6f0695d0dfa4c8de6d420b39978090ac7ce94c8af3",
+    "include/poima/render_schedule.hpp": "1d5978c8ab746effe8992168cead1ba7f6a0a0bf5575c2ef8e261bff974b585b",
+    "shaders/height_fog.hlsl": "151436afdb3fdf958327f7919f5dd813a4077e93dbe3fed240c768a2f084ed0a",
+    "shaders/particle_sprite.hlsl": "f301919e9e16db7155d2c217c8f9fe6723d2b779dd6d2232dc4f87dd6e0213ef",
+    "shaders/scene_frame.hlsli": "812e5a0f54a73f052a3068bcc79934e7447a9be5a8f8bd372a5d39c76d79dba7",
+    "shaders/water_constants.hlsli": "090423f7b7831475b0570bece5542858fbbb38c7211ea60a524397e8fab5409e",
+    "shaders/water_optics.hlsli": "f3c6eae5284a3b6282ccdd89987b0e3d272d44e1f2210516fb488838d7b702dd",
+    "shaders/world_media_view.hlsli": "af628b3608ca5392165c185a791430e7fbcfcedb62e0bc9cdec354273a6e69a9",
+    "src/core.cpp": "80b8cdab40c811a577e995107a546d792e5815b54bb75fa55e1f4e503ce7a64a",
+    "src/project.cpp": "c2fd77b6f0150995bbd2aada0634a10df32e2229fdb2225da65e4f645d1c95ac",
+    "src/render_particle_sprites.inc": "5c40949f78a565e6492031282d2fe5ca1c01ebdbdc866f01e64dee063d854aaf",
+    "src/render_schedule.cpp": "8d5911edfca9769ee3ac606d66d7661b836365b2e2c0222d6d663abfe7cadace",
+    "src/render_smoke.cpp": "16d5f7d6e5d0225d59259a69cb71a5008f49c8e893a8a52e80bd2da7dddf66db",
+    "src/world_presentation_json.cpp": "d69dcc914bd07e072ecd7212cf873bf10bd6012c747b509103fdc4cd71e0a0df",
+    "tests/render_schedule.cpp": "5e6cf05630b5efb376b87533153d1ac74cba49cbc1b3b2a26d70dc521d0cd04a",
+    "tests/water_sprite_capture.py": "14cf537670e7ad23b1f65106acbff2bba5610ff036dbe499c18567e99030a0c3"
+  },
+  "windows": {
+    "validation": "Khronos Vulkan validation with synchronization checking",
+    "capture_extent": [
+      512,
+      288
+    ],
+    "binary_sha256": "02c664b9057a01f8d0c3864f327cdfe86c99df10f254b333d0021c2eb0eb3b45",
+    "bridge_sha256": "7712602eb9cd9c837b48d99f24c59fc49acbb450c880f2eefbcc2209cbee6eba",
+    "runtime_manifest_sha256": "c3f26219417d1d2394754879dc2c5d688d46d35e359eabaf7e9c7e3930feb101",
+    "adapters": {
+      "amd": {
+        "adapter": "AMD Radeon(TM) Graphics",
+        "lighting_path": "forward",
+        "shadowed_sun": false,
+        "original_report_sha256": "ffd68cf40afc18ccbdaefe2cd29cf09e4b7a32e017be480e9b2d8cc841810c68",
+        "max_abs_hdr_channel_error": 0.00042724609375,
+        "comparisons": {
+          "air-above": {
+            "pixel": [
+              196,
+              183
+            ],
+            "expected": [
+              0.51995849609375,
+              0.4398193359375,
+              0.2598876953125
+            ],
+            "actual": [
+              0.51953125,
+              0.439697265625,
+              0.259765625
+            ],
+            "baseline": [
+              0.1199951171875,
+              0.179931640625,
+              0.239990234375
+            ],
+            "sources": {
+              "above": 0.8527649641036987
+            }
+          },
+          "air-far": {
+            "pixel": [
+              290,
+              231
+            ],
+            "expected": [
+              0.20402496337890627,
+              0.41005297851562494,
+              0.3970989990234375
+            ],
+            "actual": [
+              0.203857421875,
+              0.41015625,
+              0.39697265625
+            ],
+            "baseline": [
+              0.08221435546875,
+              0.202392578125,
+              0.277099609375
+            ],
+            "sources": {
+              "far": 0.9086179733276367,
+              "near": 0.8745685815811157
+            }
+          },
+          "air-dry": {
+            "pixel": [
+              122,
+              154
+            ],
+            "expected": [
+              0.39690185546875,
+              0.2722607421875,
+              0.6555517578125
+            ],
+            "actual": [
+              0.39697265625,
+              0.272216796875,
+              0.6552734375
+            ],
+            "baseline": [
+              0.1199951171875,
+              0.179931640625,
+              0.239990234375
+            ],
+            "sources": {
+              "dry": 0.9188936352729797
+            }
+          },
+          "air-occluded": {
+            "pixel": [
+              319,
+              156
+            ],
+            "expected": [
+              0.2099609375,
+              0.14990234375,
+              0.1298828125
+            ],
+            "actual": [
+              0.2099609375,
+              0.14990234375,
+              0.1298828125
+            ],
+            "baseline": [
+              0.2099609375,
+              0.14990234375,
+              0.1298828125
+            ],
+            "sources": {}
+          },
+          "water-above": {
+            "pixel": [
+              196,
+              55
+            ],
+            "expected": [
+              0.024993896484375,
+              0.14990234375,
+              0.25
+            ],
+            "actual": [
+              0.024993896484375,
+              0.14990234375,
+              0.25
+            ],
+            "baseline": [
+              0.024993896484375,
+              0.14990234375,
+              0.25
+            ],
+            "sources": {
+              "above": 0.8527649641036987
+            }
+          },
+          "water-far": {
+            "pixel": [
+              290,
+              147
+            ],
+            "expected": [
+              0.12244628906249999,
+              0.24507080078125,
+              0.159964599609375
+            ],
+            "actual": [
+              0.12249755859375,
+              0.2451171875,
+              0.1600341796875
+            ],
+            "baseline": [
+              0.03564453125,
+              0.1644287109375,
+              0.2425537109375
+            ],
+            "sources": {
+              "far": 0.9086179733276367
+            }
+          },
+          "water-near": {
+            "pixel": [
+              290,
+              120
+            ],
+            "expected": [
+              0.04091796875,
+              0.291619873046875,
+              0.417425537109375
+            ],
+            "actual": [
+              0.0408935546875,
+              0.29150390625,
+              0.417236328125
+            ],
+            "baseline": [
+              0.035491943359375,
+              0.1644287109375,
+              0.2425537109375
+            ],
+            "sources": {
+              "near": 0.8745685815811157
+            }
+          },
+          "water-occluded": {
+            "pixel": [
+              319,
+              81
+            ],
+            "expected": [
+              0.024993896484375,
+              0.14990234375,
+              0.25
+            ],
+            "actual": [
+              0.024993896484375,
+              0.14990234375,
+              0.25
+            ],
+            "baseline": [
+              0.024993896484375,
+              0.14990234375,
+              0.25
+            ],
+            "sources": {}
+          }
+        },
+        "captures": {
+          "solid-above-air": "aab507852c9c57b197a8f77ff14475bfcf2179318724b30b548281df82c8a27d",
+          "solid-above-water": "28fc9966bbe0ed8ba168d534bcfc4c8eeb79ede5e4895d24cdaa9c6d293c723b",
+          "solid-near-air": "87aaecc4da16c20d55a1235b046ab8017c629ca457fc99e954fb48b7f8ad2451",
+          "solid-near-water": "1eac6f30605ee8c1fc2f90977d4ca2bb52f1715e4162995dc163ee065f712891",
+          "solid-far-air": "40dd4cc2a2fddac6c52af9aceef06cf9aad723c0a6ba1f2418b334285b7843fc",
+          "solid-far-water": "53dc62b6a1d6dd9e1588d4419fcf22510de81e9bdf8110307e3da18770f40b9d",
+          "solid-dry-air": "0cf16f60feb8c0fb98c30e66a4354ad728c31a45947cc997bfd820d83f477f7c",
+          "solid-dry-water": "5b26b32498683b0bb5e8025a7d246e145efa685091c27a195a8f0c9758a0119c",
+          "empty-air": "881c61b1d35d2bc3d852e1651ebf9484876970e04050ad96459a37dbf114c688",
+          "empty-water": "28fc9966bbe0ed8ba168d534bcfc4c8eeb79ede5e4895d24cdaa9c6d293c723b",
+          "live-air": "2565fa9b1c13e52ee7a34dd3c1d5e04cda121f7d22897fc96ef4bb494f5b5e64",
+          "live-water": "8ace9e6e357d7c76e1067e1672b5e24ba80c71e942ee78ab1accb766da506141"
+        }
+      },
+      "nvidia": {
+        "adapter": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "lighting_path": "deferred",
+        "shadowed_sun": true,
+        "original_report_sha256": "20028bc94cbf52681ed1989ed7e46cc17f01c128df1aebc25329284c0fe05923",
+        "max_abs_hdr_channel_error": 0.0005257568359374742,
+        "comparisons": {
+          "air-above": {
+            "pixel": [
+              196,
+              183
+            ],
+            "expected": [
+              0.51995849609375,
+              0.4398193359375,
+              0.2598876953125
+            ],
+            "actual": [
+              0.52001953125,
+              0.43994140625,
+              0.259765625
+            ],
+            "baseline": [
+              0.1199951171875,
+              0.179931640625,
+              0.239990234375
+            ],
+            "sources": {
+              "above": 0.8527650237083435
+            }
+          },
+          "air-far": {
+            "pixel": [
+              290,
+              231
+            ],
+            "expected": [
+              0.21707849121093747,
+              0.421283447265625,
+              0.40609277343749994
+            ],
+            "actual": [
+              0.216552734375,
+              0.421142578125,
+              0.406005859375
+            ],
+            "baseline": [
+              0.0953369140625,
+              0.213623046875,
+              0.2861328125
+            ],
+            "sources": {
+              "far": 0.9086180925369263,
+              "near": 0.8745686411857605
+            }
+          },
+          "air-dry": {
+            "pixel": [
+              122,
+              154
+            ],
+            "expected": [
+              0.39690185546875,
+              0.2722607421875,
+              0.6555517578125
+            ],
+            "actual": [
+              0.39697265625,
+              0.2724609375,
+              0.6552734375
+            ],
+            "baseline": [
+              0.1199951171875,
+              0.179931640625,
+              0.239990234375
+            ],
+            "sources": {
+              "dry": 0.9188936948776245
+            }
+          },
+          "air-occluded": {
+            "pixel": [
+              319,
+              156
+            ],
+            "expected": [
+              0.2099609375,
+              0.14990234375,
+              0.1298828125
+            ],
+            "actual": [
+              0.2099609375,
+              0.14990234375,
+              0.1298828125
+            ],
+            "baseline": [
+              0.2099609375,
+              0.14990234375,
+              0.1298828125
+            ],
+            "sources": {}
+          },
+          "water-above": {
+            "pixel": [
+              196,
+              55
+            ],
+            "expected": [
+              0.024993896484375,
+              0.14990234375,
+              0.25
+            ],
+            "actual": [
+              0.024993896484375,
+              0.14990234375,
+              0.25
+            ],
+            "baseline": [
+              0.024993896484375,
+              0.14990234375,
+              0.25
+            ],
+            "sources": {
+              "above": 0.8527650237083435
+            }
+          },
+          "water-far": {
+            "pixel": [
+              290,
+              147
+            ],
+            "expected": [
+              0.12244628906249999,
+              0.24507080078125,
+              0.159964599609375
+            ],
+            "actual": [
+              0.12255859375,
+              0.2451171875,
+              0.1600341796875
+            ],
+            "baseline": [
+              0.03564453125,
+              0.1644287109375,
+              0.2425537109375
+            ],
+            "sources": {
+              "far": 0.9086180925369263
+            }
+          },
+          "water-near": {
+            "pixel": [
+              290,
+              120
+            ],
+            "expected": [
+              0.04091796875,
+              0.291619873046875,
+              0.417425537109375
+            ],
+            "actual": [
+              0.040924072265625,
+              0.291748046875,
+              0.41748046875
+            ],
+            "baseline": [
+              0.035491943359375,
+              0.1644287109375,
+              0.2425537109375
+            ],
+            "sources": {
+              "near": 0.8745686411857605
+            }
+          },
+          "water-occluded": {
+            "pixel": [
+              319,
+              81
+            ],
+            "expected": [
+              0.024993896484375,
+              0.14990234375,
+              0.25
+            ],
+            "actual": [
+              0.024993896484375,
+              0.14990234375,
+              0.25
+            ],
+            "baseline": [
+              0.024993896484375,
+              0.14990234375,
+              0.25
+            ],
+            "sources": {}
+          }
+        },
+        "captures": {
+          "solid-above-air": "e1f8b1b4190418d87787a734bf948ffc3061bd4f4ab24d1e2795acc59f0970f5",
+          "solid-above-water": "133b22b907f6e23376f2016952e5e7e4fb7535b03e5321014d2747cb9a1c27ea",
+          "solid-near-air": "db036048d8d9efda18a21ac5e558d19e7d6524c472a364ad75e52c61032634ed",
+          "solid-near-water": "936cb2a8e2a9a25bb1c9e4e6f3b4ceba18903ad8456b597a8509ef60d16f7a3f",
+          "solid-far-air": "e6cd11edda325cd4d6c8bed1c7b5e30edc1ae047990087fd8d26ae9c971bc6eb",
+          "solid-far-water": "1711782f7fe65adc771da96fb5826031158119e10ca40ce4386f46b589991095",
+          "solid-dry-air": "6b7064c8b27c8ce5a56ab996e04312f265d4edb02696b54021eccf7043a5b6e9",
+          "solid-dry-water": "072198a595df69a4c8f39dcc914bf3d52b67a10f676eedbe00c3509cc66f3b7b",
+          "empty-air": "fb2e4c513b92f3a10a650d7635de012cdd6690491e51fb9bfecab14079e90746",
+          "empty-water": "133b22b907f6e23376f2016952e5e7e4fb7535b03e5321014d2747cb9a1c27ea",
+          "live-air": "8075f50d7f5ba5ba8ca93ac42e0b926566e413191330bd800f91ab067a132a5b",
+          "live-water": "cf740ac1708c11cf94250d59caaecdbfe0f249847d1ef799042f27df85218f75",
+          "fsr-air": "6aa64656a6f450b4af73fbaf40c025d3cd477e5ee58263bb4b741ba2a6a34b86",
+          "fsr-water": "deca692663dc28c19ce72a4141f904288b0331e5690244c4d82df36ba06e6be6",
+          "relocated-air": "8075f50d7f5ba5ba8ca93ac42e0b926566e413191330bd800f91ab067a132a5b",
+          "relocated-water": "cf740ac1708c11cf94250d59caaecdbfe0f249847d1ef799042f27df85218f75"
+        }
+      }
+    },
+    "temporal": {
+      "air": {
+        "sha256": "6aa64656a6f450b4af73fbaf40c025d3cd477e5ee58263bb4b741ba2a6a34b86",
+        "maximum_hdr_delta_from_direct": 0.000244140625
+      },
+      "water": {
+        "sha256": "deca692663dc28c19ce72a4141f904288b0331e5690244c4d82df36ba06e6be6",
+        "maximum_hdr_delta_from_direct": 0.0001220703125
+      },
+      "evidence_sha256": "42a28fa620bc8872199b5ff2bccba055ac9f8edff569e23681583659f3f44704"
+    },
+    "compatibility": {
+      "opaque_water": {
+        "candidate_report_sha256": "b8d0f930d754c1b4246f03deb4123cd8b4d402cab43e621c2412bc8e8aa8ffb0",
+        "baseline_report_sha256": "bdd68d6bd3b763dad71d488ccccdfa4b33338f5a7241849d4c290e6e8a23be9a",
+        "captures": {
+          "control": "b0e0fe1f0cc00c774bfe24aeef0d9e345c1cbc2ff03919713b3d95a54c57c194",
+          "control-underwater": "4e5e4a85199639b41e3acbfd21cfb7e9a461f0fc3bc04bc7b53792c1dc56d0e2",
+          "zero-opacity": "b0e0fe1f0cc00c774bfe24aeef0d9e345c1cbc2ff03919713b3d95a54c57c194",
+          "enabled": "72d068493497631950491b6956db0e626e36baa31aa38f9db78d657edf289971",
+          "enabled-underwater": "4e5e4a85199639b41e3acbfd21cfb7e9a461f0fc3bc04bc7b53792c1dc56d0e2",
+          "later": "ac1c122984f786607166712ce3ff57ec636269c2931249753357e3a4a4758bac",
+          "fsr": "48d7b3e5136a092d6eff6d21595f839b509c15c5f7c950130f569e593488a874",
+          "shadow-control": "9f490918f9a4e9dd7fb62659a953a1f488b3e84d97fb199d79e29a24c14409ad",
+          "shadow-foam": "2d81ee7697bb7dae55a5b00dfe653c433e9865f1470c6aa5c19e1f1b56b1b5ac"
+        }
+      },
+      "dry_sprites": {
+        "candidate_report_sha256": "c6c9453305a73c5087c51c4095b797159182fbcd457914e578a62e0dc43ce927",
+        "baseline_record_sha256": "1e89aa251bfcb07b4336bfd76685f2ca59534aa13ef8afa0710860ce1d3adbf4",
+        "captures": {
+          "External sprite verification/closed.bmp": "97b11f61015b331f91f9b18b72f9e60838967653d62555a0ec2a906d52306bb3",
+          "External sprite verification/expired.bmp": "97b11f61015b331f91f9b18b72f9e60838967653d62555a0ec2a906d52306bb3",
+          "External sprite verification/live.bmp": "c0b327fcffaba1f5a37a61cb05772ab078f162028dc9fb23a98599259d16ee02",
+          "External sprite verification/restored.bmp": "c0b327fcffaba1f5a37a61cb05772ab078f162028dc9fb23a98599259d16ee02"
+        }
+      },
+      "exact_capture_count": 13
+    }
+  },
+  "ubuntu": {
+    "passed_suites": [
+      "audio_contract",
+      "audio_reflections_native",
+      "audio_save_native",
+      "cli_contract",
+      "editor_audio_native",
+      "project_contract",
+      "render_schedule_native",
+      "shallow_water_native",
+      "water_listener_audio_contract",
+      "water_region_native",
+      "water_region_scene_native",
+      "world_audio_native",
+      "world_water_contract",
+      "world_water_rain_contract"
+    ],
+    "junit_sha256": "a4b3870645a9e652fa453b402bf80b69b16b06a06af23106f718eabbebfc35a6",
+    "binary_sha256": "b3129de0836a250764cacc669ceb525f7139b9de200aa967bba7d5ac825d9c7b",
+    "runtime_manifest_sha256": "98bb3d56c4b39fbefea35e4100ce46fa05c876573b63024f842a3690d00c9139"
+  },
+  "schedule": {
+    "valid_variants": 589,
+    "rejected_mutations": 1525
+  },
+  "coast_study": {
+    "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "extent": [
+      1120,
+      630
+    ],
+    "tick": 240,
+    "live_count": 156,
+    "submerged_count": 156,
+    "minimum_depth_m": 0.33198380815228135,
+    "maximum_depth_m": 1.3390808034969914,
+    "observation_sha256": "4375097b4c5e8b199c943a13a060d61c1868c201106345dac6dc867e29c93d5d",
+    "rendered_views": {
+      "swell": {
+        "control_sha256": "16458fc63f05a33e9c7c281618af81319c78ec5cff450fa3996cacc6776d957f",
+        "silt_sha256": "af5fc3f8291468c82fc699594462d9569ae3281a513286a7616fd300e6604da4",
+        "changed_pixels": 1506,
+        "camera_submersion_m": 0.0,
+        "submitted_sprites": 153
+      },
+      "waterline": {
+        "control_sha256": "f1900c5f32f01a25d454ff46b568980e81fd74095423ced46c02f57b4806b8a3",
+        "silt_sha256": "05b6b4304978eb5e2dd745e629cba24212107874c5e638762d8ff04edb82f1e5",
+        "changed_pixels": 3326,
+        "camera_submersion_m": 0.0,
+        "submitted_sprites": 153
+      },
+      "submerged": {
+        "control_sha256": "f48b2d41aed79678249afbb5f97fe69f4c8dc327baee6b2889b00797b8d03e10",
+        "silt_sha256": "ea411fcef303f4e596c94a29cb3733c9eb6f37964b60b2d0059bd83c7986aa3c",
+        "changed_pixels": 7088,
+        "camera_submersion_m": 0.9299996185302746,
+        "submitted_sprites": 153
+      }
+    }
+  },
+  "scope": "Selected visible sprite compositing, depth occlusion, refraction of the opaque view, temporal coverage and save continuation. Sprite projection remains straight. The authored cove is a visual study."
+}

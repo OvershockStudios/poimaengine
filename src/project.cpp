@@ -510,7 +510,7 @@ Json runtime_spec(const std::string& bytes,std::string_view expected_version=bui
     const auto& features=value.at("features");
     fields(features,{"simulation","renderer","audio","managed","editor","native_gameplay","game_ui",
         "navigation","navigation_obstacles","asset_provenance","project_post_effects","water_regions","water_rain",
-        "water_ripples","water_wave_layers","water_listener_audio","water_optics","water_refraction","water_caustics","water_shore_foam","water_terrain_fit","snow_water_regions","scene_particles","scene_particle_sprites",
+        "water_ripples","water_wave_layers","water_listener_audio","water_optics","water_refraction","water_caustics","water_shore_foam","water_terrain_fit","water_sprite_optics","snow_water_regions","scene_particles","scene_particle_sprites",
         "surface_marks","surface_mark_masks","mesh_lod","output_grade","auto_exposure","atmosphere_sky","aerial_perspective","volumetric_clouds","cloud_shadows","screen_reflections","foliage_motion",
         "height_fog","physics_checkpoint","fsr3_upscaler"},{"simulation","renderer","audio","managed","editor"});
     for(const auto& feature:features)require(feature.is_boolean(),"Runtime feature flags must be Boolean.");

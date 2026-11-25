@@ -49,10 +49,11 @@ foreach(shader smoke scene scene_products scene_deferred scene_deferred_color de
         ambient_occlusion ambient_occlusion_filter scene_output scene_output_ao scene_output_products scene_output_bloom scene_output_products_bloom scene_output_grade scene_output_grade_bloom
         scene_output_exposure scene_output_bloom_exposure scene_output_grade_exposure scene_output_grade_bloom_exposure
         spatial_aa bloom viewmodel_composite viewmodel_resolve sky sky_atmosphere sky_clouds atmosphere_density atmosphere_sky_view cloud_noise cloud_view cloud_shadow
-        shadow skinning gpu_visibility cluster_lights temporal_inputs temporal_composed_inputs temporal_sprite_inputs temporal_composed_sprite_inputs editor_overlay game_ui particle_sprite particle_sprite_temporal)
+        shadow skinning gpu_visibility cluster_lights temporal_inputs temporal_composed_inputs temporal_sprite_inputs temporal_composed_sprite_inputs editor_overlay game_ui particle_sprite particle_sprite_temporal
+        particle_sprite_water particle_sprite_temporal_water)
 if(shader MATCHES "^(skinning|gpu_visibility|cluster_lights|temporal(_composed)?(_sprite)?_inputs|deferred_lighting.*|ambient_occlusion.*|screen_reflections|height_fog.*|aerial_perspective|auto_exposure|atmosphere_density|atmosphere_sky_view|cloud_(noise|view|shadow))$")
     set(shader_stages cs)
-elseif(shader MATCHES "^(scene_output_grade|spatial_aa)" OR shader MATCHES "^scene_output.*_exposure$" OR shader MATCHES "^sky_(atmosphere|clouds)$")
+elseif(shader MATCHES "^(scene_output_grade|spatial_aa)" OR shader MATCHES "^scene_output.*_exposure$" OR shader MATCHES "^sky_(atmosphere|clouds)$" OR shader MATCHES "^particle_sprite.*_water$")
     set(shader_stages ps)
 else()
     set(shader_stages vs ps)
@@ -126,6 +127,13 @@ foreach(stage IN LISTS shader_stages)
             list(APPEND shader_defines -DPOIMA_WATER_OPTICS=1)
         endif()
     endif()
+    if(shader MATCHES "^particle_sprite.*_water$")
+        set(shader_source "${CMAKE_SOURCE_DIR}/shaders/particle_sprite.hlsl")
+        list(APPEND shader_defines -DPOIMA_PARTICLE_SPRITE_WATER=1)
+        if(shader MATCHES "_temporal_")
+            list(APPEND shader_defines -DPOIMA_PARTICLE_SPRITE_TEMPORAL=1)
+        endif()
+    endif()
     set(shader_dependencies "${shader_source}")
     if(shader STREQUAL "shadow")
         list(APPEND shader_dependencies "${CMAKE_SOURCE_DIR}/shaders/scene.hlsl")
@@ -134,8 +142,9 @@ foreach(stage IN LISTS shader_stages)
         list(APPEND shader_dependencies "${CMAKE_SOURCE_DIR}/shaders/water_ripple_normal.hlsli"
             "${CMAKE_SOURCE_DIR}/shaders/foliage_motion.hlsli")
     endif()
-    if(shader MATCHES "^(ambient_occlusion.*|deferred_lighting.*|scene_deferred.*|scene|scene_products|shadow|cluster_lights|temporal(_composed)?(_sprite)?_inputs|sky(_atmosphere|_clouds)?|screen_reflections|height_fog.*|aerial_perspective|cloud_view)$")
-        list(APPEND shader_dependencies "${CMAKE_SOURCE_DIR}/shaders/scene_frame.hlsli")
+    if(shader MATCHES "^(ambient_occlusion.*|deferred_lighting.*|scene_deferred.*|scene|scene_products|shadow|cluster_lights|temporal(_composed)?(_sprite)?_inputs|sky(_atmosphere|_clouds)?|screen_reflections|height_fog.*|aerial_perspective|cloud_view|particle_sprite.*_water)$")
+        list(APPEND shader_dependencies "${CMAKE_SOURCE_DIR}/shaders/scene_frame.hlsli"
+            "${CMAKE_SOURCE_DIR}/shaders/water_constants.hlsli")
     endif()
     if(shader MATCHES "^(sky_atmosphere|sky_clouds|atmosphere_density|atmosphere_sky_view|aerial_perspective|cloud_view)$")
         list(APPEND shader_dependencies "${CMAKE_SOURCE_DIR}/shaders/atmosphere_lookup.hlsli")
@@ -143,7 +152,10 @@ foreach(stage IN LISTS shader_stages)
     if(shader MATCHES "^(aerial_perspective|height_fog.*_aerial)$")
         list(APPEND shader_dependencies "${CMAKE_SOURCE_DIR}/shaders/aerial_perspective_lookup.hlsli")
     endif()
-    if(shader MATCHES "^height_fog_water")
+    if(shader MATCHES "^(height_fog.*|particle_sprite.*_water)$")
+        list(APPEND shader_dependencies "${CMAKE_SOURCE_DIR}/shaders/world_media_view.hlsli")
+    endif()
+    if(shader MATCHES "^(height_fog_water|particle_sprite.*_water)")
         list(APPEND shader_dependencies "${CMAKE_SOURCE_DIR}/shaders/water_optics.hlsli"
             "${CMAKE_SOURCE_DIR}/shaders/water_bed.hlsli"
             "${CMAKE_SOURCE_DIR}/shaders/water_shore_trace.hlsli"

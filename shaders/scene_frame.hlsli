@@ -3,6 +3,8 @@
 // Directional cone.z is tan(half emitter diameter); local-light cone.zw retain
 // their existing distance/near values. Light/Shadow layouts are unchanged;
 // Frame appends environment-lighting, water and cloud shadow parameters.
+#include "water_constants.hlsli"
+
 struct SceneLight { float4 position_kind;float4 direction_range;float4 color_intensity;float4 cone;float4 shadow; };
 // splits.xy: camera cascade depths; zw: actual orthographic light-depth span
 // and world metres per shadow texel (zero for local-light views).
@@ -32,5 +34,6 @@ cbuffer Frame : register(b1) {
     float4 water_caustic_extinction_strength; // Water extinction per metre RGB, strength
     uint4 water_caustic_grid_light; // X and Z dimensions, one-based sun index, wave mode
     float4 water_shore_foam; // Depth limit, opacity, phase angle, one-based sun index
+    WaterConstants sprite_water;
 };
 StructuredBuffer<SceneLight> lights : register(t6);

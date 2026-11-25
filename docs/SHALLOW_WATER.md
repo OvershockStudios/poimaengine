@@ -385,6 +385,14 @@ affine bed contour, an opening gate, a blocking sill, unchanged cell volumes
 and dry/submerged point audio. It also checks a relocated save with the
 authored project unavailable.
 
+## Use translucent particles in water
+
+Enable water optics and author ordinary [translucent sprites](PARTICLES.md#see-particles-through-water).
+The water and particle passes read the same committed bed and stages.
+Particles retain their saved motion, opacity and lifetime as they pass
+through the surface. Water filters each card according to its visible
+camera path.
+
 ## Observe and verify local flow
 
 Discover `runtime.water.inspect` in a simulation build. Pass `session_id`, the

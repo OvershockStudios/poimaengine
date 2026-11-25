@@ -147,6 +147,9 @@ struct Settings {
     bool spatial_aa=false;
     bool auto_exposure=false,exposure_history_valid=false;
 };
+inline constexpr bool water_filtered_sprites(const FrameResources& frame,const Settings& settings) {
+    return settings.particle_sprites && frame.water_columns!=none;
+}
 inline constexpr bool world_media_reads_lighting(const Settings& settings) {
     return settings.height_fog_spots || settings.water_shore_foam_sun;
 }

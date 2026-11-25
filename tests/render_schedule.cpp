@@ -1444,6 +1444,39 @@ void setup_reconstructed_sprites(Fixture& fixture,bool upscale) {
 }
 
 void reconstructed_sprite_contracts() {
+    for(bool temporal:{false,true})for(bool lit_foam:{false,true}) {
+        auto settings=rich();
+        settings.height_fog=true;
+        settings.products=settings.reconstruction=temporal;
+        settings.water_shore_foam_sun=lit_foam;
+        Fixture fixture(settings);
+        if(temporal)setup_reconstructed_sprites(fixture,false);
+        else setup_particle_sprites(fixture);
+        environment_inputs(fixture,true);
+        auto& f=fixture.f;
+        f.water_columns=fixture.add(Kind::buffer,Lifetime::shared);
+        f.resources[f.water_columns].bytes=8*water_column_bytes;
+        auto plan=fixture.plan();
+        plan.validate();++accepted;
+        const auto sprite=PassId::particle_sprites;
+        check(access(plan,sprite,f.water_columns,Use::storage_read) &&
+              access(plan,sprite,f.frame,Use::constant) &&
+              access(plan,sprite,f.ibl_specular,Use::sampled) &&
+              access(plan,sprite,f.lights,Use::storage_read)==lit_foam &&
+              access(plan,sprite,f.shadow,Use::sampled)==lit_foam,
+              "Water sprite composition must declare its optical and active lighting resources.");
+        auto missing=plan;
+        erase_access(missing,sprite,f.water_columns,Use::storage_read);
+        rejects("water sprites missing the committed columns",[&]{missing.validate();});
+        missing=plan;
+        erase_access(missing,sprite,f.ibl_specular,Use::sampled);
+        rejects("water sprites missing surface reflections",[&]{missing.validate();});
+        if(lit_foam) {
+            missing=plan;
+            erase_access(missing,sprite,f.shadow,Use::sampled);
+            rejects("water sprites behind lit foam missing shadows",[&]{missing.validate();});
+        }
+    }
     for(unsigned path:{0u,1u,2u,3u,4u})for(bool upscale:{false,true})for(bool foreground:{false,true}) {
         auto settings=rich();
         settings.products=settings.reconstruction=true;

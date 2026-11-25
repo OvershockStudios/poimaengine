@@ -44,20 +44,37 @@
             sprite_framebuffer=checked->createFramebuffer(description);
             require(bool(sprite_framebuffer),"Particle sprite framebuffer creation failed.");
         }
-        auto& pipeline=sprite_pipelines[temporal];
+        const bool optical_water=water_parameters.has_value();
+        auto& pipeline=sprite_pipelines[2*static_cast<std::size_t>(temporal)+static_cast<std::size_t>(optical_water)];
         if(pipeline)return;
         auto vs_desc=nvrhi::ShaderDesc(nvrhi::ShaderType::Vertex).setEntryName("vertex_main");
         auto ps_desc=nvrhi::ShaderDesc(nvrhi::ShaderType::Pixel).setEntryName("pixel_main");
         auto vs=temporal ? create_embedded_shader(checked,vs_desc,poima_particle_sprite_temporal_vs) :
             create_embedded_shader(checked,vs_desc,poima_particle_sprite_vs);
-        auto ps=temporal ? create_embedded_shader(checked,ps_desc,poima_particle_sprite_temporal_ps) :
-            create_embedded_shader(checked,ps_desc,poima_particle_sprite_ps);
+        nvrhi::ShaderHandle ps;
+        if(optical_water) {
+            ps=temporal ? create_embedded_shader(checked,ps_desc,poima_particle_sprite_temporal_water_ps) :
+                create_embedded_shader(checked,ps_desc,poima_particle_sprite_water_ps);
+        } else {
+            ps=temporal ? create_embedded_shader(checked,ps_desc,poima_particle_sprite_temporal_ps) :
+                create_embedded_shader(checked,ps_desc,poima_particle_sprite_ps);
+        }
+        auto& sprite_layout=sprite_layouts[optical_water];
         if(!sprite_layout) {
-            sprite_layout=checked->createBindingLayout(nvrhi::BindingLayoutDesc().setVisibility(nvrhi::ShaderType::All)
+            auto desc=nvrhi::BindingLayoutDesc().setVisibility(nvrhi::ShaderType::All)
                 .addItem(nvrhi::BindingLayoutItem::PushConstants(0,sizeof(SpriteConstants)))
                 .addItem(nvrhi::BindingLayoutItem::StructuredBuffer_SRV(0))
                 .addItem(nvrhi::BindingLayoutItem::Texture_SRV(1))
-                .addItem(nvrhi::BindingLayoutItem::Texture_SRV(2)));
+                .addItem(nvrhi::BindingLayoutItem::Texture_SRV(2));
+            if(optical_water) {
+                desc.addItem(nvrhi::BindingLayoutItem::ConstantBuffer(1))
+                    .addItem(nvrhi::BindingLayoutItem::Texture_SRV(5))
+                    .addItem(nvrhi::BindingLayoutItem::StructuredBuffer_SRV(6))
+                    .addItem(nvrhi::BindingLayoutItem::StructuredBuffer_SRV(7))
+                    .addItem(nvrhi::BindingLayoutItem::Texture_SRV(8))
+                    .addItem(nvrhi::BindingLayoutItem::Sampler(1));
+            }
+            sprite_layout=checked->createBindingLayout(desc);
         }
         require(vs && ps && sprite_layout,"Particle sprite shader or layout creation failed.");
         nvrhi::GraphicsPipelineDesc description;
@@ -77,6 +94,22 @@
         pipeline=checked->createGraphicsPipeline(description,sprite_framebuffer->getFramebufferInfo());
         require(bool(pipeline),"Particle sprite pipeline creation failed.");
     }
+    nvrhi::BindingSetDesc sprite_binding(const FrameSlot& slot,nvrhi::ITexture* image,bool optical_water) const {
+        auto desc=nvrhi::BindingSetDesc().addItem(nvrhi::BindingSetItem::PushConstants(0,sizeof(SpriteConstants)))
+            .addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(0,slot.sprite_instances))
+            .addItem(nvrhi::BindingSetItem::Texture_SRV(1,depth))
+            .addItem(nvrhi::BindingSetItem::Texture_SRV(2,image,nvrhi::Format::UNKNOWN,nvrhi::TextureSubresourceSet(0,1,0,1)));
+        if(optical_water) {
+            const auto environment=environment_ibl.bound();
+            desc.addItem(nvrhi::BindingSetItem::ConstantBuffer(1,frame_buffer))
+                .addItem(nvrhi::BindingSetItem::Texture_SRV(5,shadows.texture()))
+                .addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(6,light_clusters.lights()))
+                .addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(7,water_columns))
+                .addItem(nvrhi::BindingSetItem::Texture_SRV(8,environment.specular))
+                .addItem(nvrhi::BindingSetItem::Sampler(1,environment.sampler));
+        }
+        return desc;
+    }
     void prepare_sprite_frame(FrameSlot& slot) {
         require(!slot.occupied,"Particle sprites require a retired frame slot.");
         sprite_instances.clear();
@@ -86,7 +119,6 @@
         pending_draws.sprite_batches=0;
         if(!scene || !scene_visible || scene->particle_sprites.instances.empty()) {
             slot.sprite_bindings.clear();
-            slot.sprite_depth=nullptr;
             return;
         }
         const auto& layer=scene->particle_sprites;
@@ -160,21 +192,23 @@
             require(bool(slot.sprite_instances),"Particle sprite instance buffer allocation failed.");
             slot.sprite_bindings.clear();
         }
-        if(slot.sprite_depth!=depth || slot.sprite_bindings.size()!=sprite_textures.size() ||
-            !std::equal(sprite_textures.begin(),sprite_textures.end(),slot.sprite_bindings.begin(),slot.sprite_bindings.end(),
-                [](const nvrhi::TextureHandle& texture,const SpriteBinding& previous_binding) { return texture==previous_binding.image; })) {
-            slot.sprite_bindings.clear();
-            for(const auto& texture:sprite_textures) {
-                auto bindings=checked->createBindingSet(nvrhi::BindingSetDesc()
-                    .addItem(nvrhi::BindingSetItem::PushConstants(0,sizeof(SpriteConstants)))
-                    .addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(0,slot.sprite_instances))
-                    .addItem(nvrhi::BindingSetItem::Texture_SRV(1,depth))
-                    .addItem(nvrhi::BindingSetItem::Texture_SRV(2,texture,nvrhi::Format::UNKNOWN,nvrhi::TextureSubresourceSet(0,1,0,1))),
-                    sprite_layout);
-                require(bool(bindings),"Particle sprite bindings failed.");
-                slot.sprite_bindings.push_back({texture,std::move(bindings)});
+        const bool optical_water=water_parameters.has_value();
+        if(optical_water) {
+            frame_constants.sprite_water=*water_parameters;
+            pending_water_optics->sprites=true;
+        }
+        slot.sprite_bindings.resize(sprite_textures.size());
+        for(std::size_t i=0;i<sprite_textures.size();++i) {
+            auto& cached=slot.sprite_bindings[i];
+            const auto& image=sprite_textures[i];
+            const auto desc=sprite_binding(slot,image.Get(),optical_water);
+            if(cached.bindings) {
+                const auto& previous=cached.bindings->getDesc()->bindings;
+                if(std::equal(previous.begin(),previous.end(),desc.bindings.begin(),desc.bindings.end()))continue;
             }
-            slot.sprite_depth=depth;
+            auto sprites_bound=checked->createBindingSet(desc,sprite_layouts[optical_water]);
+            require(bool(sprites_bound),"Particle sprite bindings failed.");
+            cached={image,std::move(sprites_bound)};
         }
         pending_draws.sprite_instances=sprite_instances.size();
         pending_draws.sprite_batches=sprite_batches.size();
@@ -185,7 +219,8 @@
         const bool temporal=temporal_sprites_active();
         if(temporal)sprite_targets.record_inputs(*commands.Get(),world_radiance_texture());
         nvrhi::GraphicsState state;
-        state.pipeline=sprite_pipelines[temporal];
+        const bool optical_water=water_parameters.has_value();
+        state.pipeline=sprite_pipelines[2*static_cast<std::size_t>(temporal)+static_cast<std::size_t>(optical_water)];
         state.framebuffer=sprite_framebuffer;
         state.viewport.addViewportAndScissorRect(raster_viewport());
         state.bindings.resize(1);

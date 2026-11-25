@@ -156,6 +156,28 @@ frozen world and are prepared even before an emitter's first burst. Up to 16
 distinct sprite images may be referenced by the world and its templates. Each
 image is at most 1024×1024, with a combined 16 MiB limit for the base levels.
 
+### See particles through water
+
+Translucent sprite emitters automatically use active [water optics](SHALLOW_WATER.md#author-transparent-water).
+The renderer traces the committed water to each visible card. A card seen
+through water picks up the same depth-dependent absorption and
+in-scattering as opaque objects. Reflections and foam remain visible in
+front of particles behind the interface. Cards in front of the water retain
+their authored color. Overlapping cards use the ordinary back-to-front blend
+and retain the water shared by both sightlines. This includes FSR coverage,
+opaque occlusion and authored soft depth fade.
+
+The runtime advertises `features.water_sprite_optics` and completed frames
+report `render_diagnostics.water_optics.sprites` when they used this path.
+Existing emitters and cooked water assets use their current formats.
+Refraction samples scene depth for opaque geometry. Sprite positions use
+their direct screen projection. The sprite pass leaves atmospheric haze
+and local height fog behavior as before.
+
+The [water sprite fixture](../tests/water_sprite_capture.py) compares
+translucent cards against opaque colors at matching depths in air and water.
+It checks overlapping and blocked cards, FSR and a resumed standalone save.
+
 ### Animate size, opacity, and the sprite sheet
 
 Add `size_over_life`, `opacity_over_life`, or `flipbook` inside the emitter's

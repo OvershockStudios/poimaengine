@@ -799,11 +799,18 @@ void Schedule::validate(bool before_acquire) const {
             world_fogged=true;
         }
         if(pass.id==PassId::particle_sprites) {
+            const bool water=water_filtered_sprites(frame,settings);
+            const bool sun=water && settings.water_shore_foam_sun;
+            const auto media_inputs=water ? (sun ? 5u : 3u) : 0u;
             if(!settings.particle_sprites || !sprites_uploaded || !world_opaque || (settings.deferred && !deferred_lit) ||
                 (settings.screen_reflections && !screen_reflected) || (settings.height_fog && !world_fogged) ||
-                pass.accesses.size()!=(reconstruct_sprites ? 7u : 3u)+frame.sprite_textures.size() ||
+                pass.accesses.size()!=(reconstruct_sprites ? 7u : 3u)+frame.sprite_textures.size()+media_inputs ||
                 !has(frame.depth,Use::sampled) || !has(frame.sprite_instances,Use::storage_read))
                 fail("invalid or premature particle sprite pass");
+            if(water && (!has(frame.frame,Use::constant) || !has(frame.water_columns,Use::storage_read) ||
+                !has(frame.ibl_specular,Use::sampled)))fail("missing particle water optics inputs");
+            if(sun && (!has(frame.lights,Use::storage_read) || !has(frame.shadow,Use::sampled)))
+                fail("missing particle shore foam lighting inputs");
             if(reconstruct_sprites) {
                 const std::array prepare{
                     Access{world_hdr,Use::copy_source,false},
@@ -980,8 +987,10 @@ void Schedule::validate(bool before_acquire) const {
             const auto& r=resource(a.resource);
             if(frame.water_columns!=none && a.resource==frame.water_columns &&
                 !(pass.id==PassId::skinning && a.use==Use::upload && a.initialize) &&
-                !((pass.id==PassId::height_fog || caustic_lighting) && a.use==Use::storage_read && !a.initialize))
-                fail("water columns used outside upload, world lighting and media composition");
+                !((pass.id==PassId::height_fog || caustic_lighting ||
+                   (pass.id==PassId::particle_sprites && water_filtered_sprites(frame,settings))) &&
+                   a.use==Use::storage_read && !a.initialize))
+                fail("water columns used outside their scheduled upload and optical consumers");
             if(settings.spatial_aa && a.resource==frame.display_ldr &&
                 !(pass.id==PassId::output && a.use==Use::color_overwrite && a.initialize) &&
                 !(pass.id==PassId::spatial_aa && a.use==Use::sampled && !a.initialize))
@@ -1308,6 +1317,15 @@ Schedule build(FrameResources frame,Settings settings) {
         } else add(sprites,world_radiance(f,settings),Use::color);
         add(sprites,f.depth,Use::sampled);add(sprites,f.sprite_instances,Use::storage_read);
         for(auto id:f.sprite_textures)add(sprites,id,Use::sampled);
+        if(water_filtered_sprites(f,settings)) {
+            add(sprites,f.frame,Use::constant);
+            add(sprites,f.water_columns,Use::storage_read);
+            add(sprites,f.ibl_specular,Use::sampled);
+            if(settings.water_shore_foam_sun) {
+                add(sprites,f.lights,Use::storage_read);
+                add(sprites,f.shadow,Use::sampled);
+            }
+        }
     }
     if(settings.scene && f.color!=f.hdr) {auto& resolve=pass(PassId::resolve);add(resolve,f.color,Use::resolve_source);add(resolve,f.hdr,Use::resolve_destination,true);}
     if(settings.auto_exposure) {

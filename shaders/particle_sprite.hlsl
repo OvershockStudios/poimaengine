@@ -16,6 +16,14 @@ StructuredBuffer<GpuSprite> sprites : register(t0, space0);
 Texture2D<float> opaque_depth : register(t1, space0);
 Texture2D<float4> sprite_atlas : register(t2, space0);
 
+#ifdef POIMA_PARTICLE_SPRITE_WATER
+#include "scene_frame.hlsli"
+#include "world_media_view.hlsli"
+Texture2DArray<float> shadow_map : register(t5);
+#define POIMA_WATER_STRAIGHT_SURFACE 1
+#include "water_optics.hlsli"
+#endif
+
 struct SpriteVertex {
     float4 position : SV_Position;
     float2 uv : TEXCOORD0;
@@ -89,7 +97,22 @@ float4 particle_color(SpriteVertex input) {
         }
     }
     const float4 sampled = sample_sprite(input.uv, input.texel_rect);
-    return sampled * float4(input.linear_rgba.rgb, 1) * (input.linear_rgba.a * visibility);
+    float4 color = sampled * float4(input.linear_rgba.rgb, 1) * (input.linear_rgba.a * visibility);
+#ifdef POIMA_PARTICLE_SPRITE_WATER
+    [branch] if (color.a > 0.0) {
+        const float2 uv = (input.position.xy - cluster_viewport.xy - temporal_jitter.xy) / cluster_viewport.zw;
+        float ray_scale;
+        const float3 ray = world_media_ray(uv,ray_scale);
+        const float distance = input.view_distance_m * ray_scale;
+        const WaterPath path = trace_water_columns(sprite_water,sprite_water.camera_cell_size.xyz,ray,distance,true);
+        if (path.length_m > 0.0 || path.interface_m >= 0.0) {
+            // Both sides of an alpha blend carry the same foreground water.
+            // Apply its transfer and surface lighting before premultiplication.
+            color.rgb = color.a * compose_water_path(sprite_water,color.rgb / color.a,ray,path,0);
+        }
+    }
+#endif
+    return color;
 }
 
 #ifdef POIMA_PARTICLE_SPRITE_TEMPORAL

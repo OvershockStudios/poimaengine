@@ -6,13 +6,6 @@ StructuredBuffer<WaterColumn> water_columns : register(t7);
 TextureCube<float4> water_environment : register(t8);
 SamplerState water_sampler : register(s1);
 
-struct WaterConstants {
-    float4 camera_cell_size; // Camera relative to the grid origin, cell size.
-    float3 extinction_per_m;
-    uint dimensions; // X and Z in the first two bytes, refraction flag at bit 16.
-    float4 radiance_wave_mode; // RGB in-scattering source and wave mode.
-};
-
 // An axis-aligned segment of the ray. Small directions are parallel at the
 // supported view distances. The upper edge belongs to the next interval.
 bool clip_water_span(float origin, float direction, float low, float high,
@@ -141,12 +134,13 @@ WaterPath trace_water_columns(WaterConstants water, float3 eye, float3 ray, floa
     return path;
 }
 
+#ifndef POIMA_WATER_STRAIGHT_SURFACE
 #include "water_refraction.hlsli"
+#endif
 #include "water_shore_foam.hlsli"
 
-float3 compose_water(WaterConstants water, float3 input_radiance, float3 ray, float max_distance, uint2 extent) {
+float3 compose_water_path(WaterConstants water,float3 input_radiance,float3 ray,WaterPath path,uint2 extent) {
     const float3 eye = water.camera_cell_size.xyz;
-    const WaterPath path = trace_water_columns(water, eye, ray, max_distance, true);
     const float interface_at = path.interface_m;
     if (path.length_m == 0.0 && interface_at < 0.0) return input_radiance;
     const float3 scattering = water.radiance_wave_mode.xyz;
@@ -158,6 +152,7 @@ float3 compose_water(WaterConstants water, float3 input_radiance, float3 ray, fl
         if (!from_air) normal = -normal;
         const float fresnel = water_fresnel(saturate(-dot(normal, ray)), from_air);
         const float before_m = max(path.water_before_interface_m, 0.0);
+#ifndef POIMA_WATER_STRAIGHT_SURFACE
         [branch] if ((water.dimensions & (1u << 16u)) != 0u && fresnel < 0.999) {
             const float3 transmitted = refract(ray, normal, from_air ? 1.0 / 1.333 : 1.333);
             // A shading normal may tilt the bent ray beyond the actual flat
@@ -177,6 +172,7 @@ float3 compose_water(WaterConstants water, float3 input_radiance, float3 ray, fl
                 }
             }
         }
+#endif
         float3 reflection = scattering;
         if (from_air) {
             reflection = ambient_exposure.rgb;
