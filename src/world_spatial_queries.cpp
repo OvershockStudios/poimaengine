@@ -59,16 +59,20 @@ Json query_runtime_capsule_cast(const Runtime& runtime, const std::string& sessi
       catch (const std::invalid_argument& error) { throw Error(-32602, error.what()); }
 }
 
-Json query_runtime_ray(const Runtime& runtime, const std::string& session_id, const Json& params, bool picking) {
+Json query_runtime_ray(const Runtime& runtime, const std::string& session_id, const Json& params, RayObservation observation) {
     const auto ray = parse_ray(params);
     try {
-        const auto result = picking ? runtime.aim_released_item(ray) : ReleasedItemAim{runtime.raycast(ray), {}};
+        const bool picking=observation==RayObservation::ReleasedItem;
+        const bool surface=observation==RayObservation::Surface;
+        const auto result=picking ? runtime.aim_released_item(ray)
+            : ReleasedItemAim{surface ? runtime.raycast_surface(ray) : runtime.raycast(ray),{}};
         const auto& hit = result.hit;
         Json value = nullptr;
         if (hit) {
             value = {{"entity", hit->entity}, {"fraction", hit->fraction}, {"distance", hit->distance},
                 {"position", hit->position}, {"normal", hit->normal ? Json(*hit->normal) : Json(nullptr)},
                 {"triangle", hit->triangle ? Json(*hit->triangle) : Json(nullptr)}};
+            if(surface)value["surface"]=hit->surface.empty() ? Json(nullptr) : Json(hit->surface);
         }
         Json response = {{"session_id", session_id}, {"tick", runtime.inspect().tick}, {"hit", std::move(value)}};
         if (picking) {

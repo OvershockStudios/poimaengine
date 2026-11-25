@@ -61,6 +61,27 @@ Its existing world matrix and velocity remain authoritative observations. All ch
 
 JSON shape/duplicate/range failures report `-32602`; native target-reference, body-kind, speed and physics-update failures during `runtime.step` report `-32040`. All step targets are validated before advancing. Physics-update failure restores Jolt state, controller state, targets, elapsed motion and tick. A replay's state-dependent target failure can occur in a later segment: the player returns its existing partial-progress error receipt, retaining earlier successful ticks. It does not roll back an entire player session.
 
+## Name a collision surface
+
+Set `surface` on `BoxCollider` or `MeshCollider` to a name such as
+`"metal"` or `"stone"`. Names start with a lowercase ASCII letter and accept
+up to 32 characters using lowercase letters, digits, `_`, `.` and `-`. A tag
+covers the entire collider. Friction, restitution and the render material are
+authored independently. Cooked terrain can give its mesh colliders the same
+names as other geometry.
+
+Call `runtime.surface.raycast` with the same session, tick, origin, direction,
+distance and optional ignore list as `runtime.raycast`. It returns the same
+closest hit, with `hit.surface` set to the name or null for untagged geometry.
+A miss returns `hit: null`. This query has its own method name and uses the
+current committed collision state. The frozen `runtime.raycast` and C# gameplay
+raycast retain their existing responses.
+
+Tagged content needs the `collision_surfaces` runtime feature when exported.
+[Particle impact routing](PARTICLES.md#vary-a-burst-by-surface) consumes these
+names on static and kinematic hits. Per-triangle material assignment and
+queries against the liquid surface remain separate features.
+
 ## Sliding-door example
 
 Use fresh output/world paths. From Windows PowerShell at `D:\poimaengine`:

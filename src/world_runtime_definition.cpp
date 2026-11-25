@@ -113,7 +113,7 @@ static std::vector<RuntimeSpawnTemplate> template_definitions(const Json& docume
         }
         const auto& bag=recipe.at("components");const auto& t=bag.at("Transform");
         value.transform={t.at("position").get<std::array<double,3>>(),t.at("rotation").get<std::array<double,4>>(),t.at("scale").get<std::array<double,3>>()};
-        if(bag.contains("BoxCollider")) {const auto& c=bag.at("BoxCollider");value.collider=BoxCollider{c.at("half_extents").get<std::array<float,3>>(),c.at("motion")=="dynamic" ? BodyMotion::Dynamic : c.at("motion")=="kinematic" ? BodyMotion::Kinematic : BodyMotion::Static,c.at("mass"),c.at("friction"),c.at("restitution")};}
+        if(bag.contains("BoxCollider")) {const auto& c=bag.at("BoxCollider");value.collider=BoxCollider{c.at("half_extents").get<std::array<float,3>>(),c.at("motion")=="dynamic" ? BodyMotion::Dynamic : c.at("motion")=="kinematic" ? BodyMotion::Kinematic : BodyMotion::Static,c.at("mass"),c.at("friction"),c.at("restitution"),false,c.value("surface",std::string{})};}
         value.mesh=resolve_mesh_component(bag,assets,cache);
         if(bag.contains("ParticleEmitter"))value.particle_emitter=parse_particle_emitter(bag.at("ParticleEmitter"));
         for(const auto& [type,data]:bag.items())if(custom_component(type)) {
@@ -223,11 +223,13 @@ RuntimeDefinition resolve_runtime_definition(const Json& document, const std::fi
             const auto& c=components.at("BoxCollider");
             value.collider=BoxCollider{c.at("half_extents").get<std::array<float,3>>(),
                 c.at("motion")=="dynamic" ? BodyMotion::Dynamic : c.at("motion")=="kinematic" ? BodyMotion::Kinematic : BodyMotion::Static,
-                c.at("mass"),c.at("friction"),c.at("restitution"),c.value("navigation_obstacle",false)};
+                c.at("mass"),c.at("friction"),c.at("restitution"),c.value("navigation_obstacle",false),
+                c.value("surface",std::string{})};
         }
         if(components.contains("MeshCollider")) {
             const auto& c=components.at("MeshCollider");MeshCollider collider;
             collider.friction=c.at("friction");collider.restitution=c.at("restitution");
+            collider.surface=c.value("surface",std::string{});
             if(!animation_only && !audio_only) {
                 try {
                     const auto model=cache.get(assets,c.at("asset"));const auto primitive=revision(c.at("primitive"));

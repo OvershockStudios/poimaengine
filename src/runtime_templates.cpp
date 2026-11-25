@@ -117,7 +117,7 @@ std::vector<RuntimeEntityDefinition> runtime_template_entities(const RuntimeSpaw
         if(entity.camera_draw)remap(entity.camera_draw->camera);
         if(entity.camera && entity.camera->focus_target)remap(entity.camera->focus_target->entity);
         if(entity.particle_emitter && entity.particle_emitter->impact_burst)
-            remap(entity.particle_emitter->impact_burst->emitter);
+            visit_impact_bursts(*entity.particle_emitter->impact_burst,[&](auto& burst){remap(burst.emitter);});
         if(entity.rig_node)remap(entity.rig_node->rig);
         if(entity.animation_rig && entity.animation_rig->root_motion)remap(entity.animation_rig->root_motion->actor);
         if(entity.physical_rig && entity.physical_rig->controller_handoff) {
@@ -214,13 +214,16 @@ void validate_runtime_templates(const RuntimeDefinition& definition) {
                 }
             }
             if(entity.particle_emitter && entity.particle_emitter->impact_burst) {
-                const auto& burst=*entity.particle_emitter->impact_burst;
-                const auto target=graph.find(burst.emitter);
-                check(burst.emitter!=entity.id && target!=graph.end() && target->second->particle_emitter &&
-                    target->second->particle_emitter->config.simulation_space==particles::Space::World &&
-                    !target->second->particle_emitter->rain, "Template impact burst needs another local world emitter.");
-                check(entity.particle_emitter->config.expire_on_contact && burst.count>=1 && burst.count<=max_particle_impact_burst,
-                    "Invalid template impact burst count or collision setup.");
+                const auto& profile=*entity.particle_emitter->impact_burst;
+                check(entity.particle_emitter->config.expire_on_contact && valid_particle_impact_profile(profile),
+                    "Invalid template particle impact profile.");
+                visit_impact_bursts(profile,[&](const auto& burst) {
+                    const auto target=graph.find(burst.emitter);
+                    check(burst.emitter!=entity.id && target!=graph.end() && target->second->particle_emitter &&
+                        target->second->particle_emitter->config.simulation_space==particles::Space::World &&
+                        !target->second->particle_emitter->rain, "Template impact burst needs another local world emitter.");
+                    check(burst.count>=1 && burst.count<=max_particle_impact_burst,"Invalid template impact burst count.");
+                });
             }
             if(entity.light)validate_light(*entity.light);
             if(entity.environment) {

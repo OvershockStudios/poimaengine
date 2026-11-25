@@ -531,6 +531,8 @@ struct Runtime::Impl {
 #include "runtime_navigation.inc"
     void create_entity(const RuntimeEntityDefinition& d,Topology& candidate) {
         require(!candidate.identities.contains(d.id),"Duplicate runtime entity ID.");
+        if(d.collider && !d.collider->surface.empty())require(valid_collision_surface(d.collider->surface),"Invalid BoxCollider surface name.");
+        if(d.mesh_collider && !d.mesh_collider->surface.empty())require(valid_collision_surface(d.mesh_collider->surface),"Invalid MeshCollider surface name.");
         if(d.mesh) {
             if(d.mesh->material)validate_material_alpha(*d.mesh->material);
             if(d.mesh->mesh)validate_material_alpha(d.mesh->mesh->material);
@@ -680,7 +682,7 @@ struct Runtime::Impl {
         }
     }
     std::optional<RuntimeRayHit> physics_raycast(const RuntimeRay& query,const std::set<std::string>& proxy_owners={},
-        bool shelter_only=false) const {
+        bool shelter_only=false,bool include_surface=false) const {
         require(std::isfinite(query.distance) && query.distance>=.001 && query.distance<=10000,"Ray distance must be .001..10000 meters.");
         double length=0;
         for(double x:query.origin)require(std::isfinite(x) && std::abs(x)<=1e6,"Ray origin must be finite and within 1000 km.");
@@ -739,6 +741,14 @@ struct Runtime::Impl {
         const auto& hit=*collector.hit;const auto point=ray.GetPointOnRay(hit.mFraction);
         RuntimeRayHit result;result.entity=topology->body_names.at(hit.mBodyID.GetIndexAndSequenceNumber());
         result.fraction=hit.mFraction;result.distance=query.distance*hit.mFraction;result.position={point.GetX(),point.GetY(),point.GetZ()};
+        if(include_surface) {
+            const auto* body=registry.try_get<Body>(find(result.entity));
+            if(body && body->id==hit.mBodyID) {
+                const auto& definition=topology->definitions.at(result.entity);
+                if(definition.collider)result.surface=definition.collider->surface;
+                if(definition.mesh_collider)result.surface=definition.mesh_collider->surface;
+            }
+        }
         if(const auto* mesh=ray_mesh(hit.mBodyID.GetIndexAndSequenceNumber()))
             result.triangle=mesh->GetTriangleUserData(hit.mSubShapeID2);
         if(hit.mFraction>0 || result.triangle) {
@@ -2609,6 +2619,9 @@ const wetness::Profile* Runtime::wetness_profile(const std::string& id) const no
 RuntimeParticleObservation Runtime::particle_observation() const { return impl_->observe_particles(); }
 std::optional<RuntimeRayHit> Runtime::raycast(const RuntimeRay& query) const {
     return impl_->physics_raycast(query);
+}
+std::optional<RuntimeRayHit> Runtime::raycast_surface(const RuntimeRay& query) const {
+    return impl_->physics_raycast(query,{},false,true);
 }
 ReleasedItemAim Runtime::aim_released_item(const RuntimeRay& query) const {
     ReleasedItemAim result{raycast(query),{}};

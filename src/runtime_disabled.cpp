@@ -67,6 +67,7 @@ const wetness::State* Runtime::wetness_state() const noexcept { return nullptr; 
 const wetness::Profile* Runtime::wetness_profile(const std::string&) const noexcept { return nullptr; }
 RuntimeParticleObservation Runtime::particle_observation() const { throw std::runtime_error("Simulation is not built."); }
 std::optional<RuntimeRayHit> Runtime::raycast(const RuntimeRay&) const { throw std::runtime_error("Simulation is not built."); }
+std::optional<RuntimeRayHit> Runtime::raycast_surface(const RuntimeRay&) const { throw std::runtime_error("Simulation is not built."); }
 RuntimeIkClearance Runtime::ik_clearance(const RuntimeIkClearanceRequest&) const {throw std::runtime_error("Simulation is not built.");}
 std::vector<RuntimePoseSegmentClearance> Runtime::pose_clearance(std::span<const RuntimePoseClearanceSegment>,
     const std::vector<std::string>&) const {throw std::runtime_error("Simulation is not built.");}

@@ -612,6 +612,7 @@ public:
             if(content.needs_sprite_particles)result["needs_sprite_particles"]=true;
             if(content.needs_particle_collisions)result["needs_particle_collisions"]=true;
             if(content.needs_particle_impact_bursts)result["needs_particle_impact_bursts"]=true;
+            if(content.needs_collision_surfaces)result["needs_collision_surfaces"]=true;
             if(content.needs_surface_mark_masks)result["needs_surface_mark_masks"]=true;
             if(content.needs_mesh_lod)result["needs_mesh_lod"]=true;
             if(content.needs_water_rain)result["needs_water_rain"]=true;
@@ -1510,7 +1511,7 @@ public:
             require(revision(params.at("tick"))==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
             return query_runtime_capsule_cast(*runtime_,runtime_id_,params);
         }
-        if(method=="runtime.raycast" || method=="runtime.attachment.aim") {
+        if(method=="runtime.raycast" || method=="runtime.surface.raycast" || method=="runtime.attachment.aim") {
             const bool picking=method=="runtime.attachment.aim";
             if(picking)fields(params,{"session_id","tick","structure_revision","origin","direction","distance","ignore"},
                 {"session_id","tick","structure_revision","origin","direction","distance"});
@@ -1518,7 +1519,9 @@ public:
             runtime_guard(params);
             if(picking)structure_read_guard(params);
             require(revision(params.at("tick"))==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
-            return query_runtime_ray(*runtime_,runtime_id_,params,picking);
+            const auto observation=picking ? RayObservation::ReleasedItem : method=="runtime.surface.raycast"
+                ? RayObservation::Surface : RayObservation::Collision;
+            return query_runtime_ray(*runtime_,runtime_id_,params,observation);
         }
         if(method=="runtime.hit_test") {
             fields(params,{"session_id","tick","origin","direction","distance","ignore"},{"session_id","tick","origin","direction","distance"});

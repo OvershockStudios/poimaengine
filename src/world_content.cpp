@@ -188,7 +188,10 @@ FrozenContent freeze_world_content(const Json& source, const fs::path& directory
     auto collect_particle_emitter=[&](const Json& emitter) {
         result.needs_particles=true;
         if(emitter.contains("surface_collision"))result.needs_particle_collisions=true;
-        if(emitter.contains("impact_burst"))result.needs_particle_impact_bursts=true;
+        if(emitter.contains("impact_burst")) {
+            result.needs_particle_impact_bursts=true;
+            if(emitter.at("impact_burst").contains("by_surface"))result.needs_collision_surfaces=true;
+        }
         const auto sprite=emitter.find("sprite");
         if(sprite==emitter.end())return;
         result.needs_sprite_particles=true;
@@ -217,6 +220,8 @@ FrozenContent freeze_world_content(const Json& source, const fs::path& directory
     // payloads may mention retired assets and are deliberately not scanned.
     auto collect_components=[&](const Json& components) {
         if(components.contains("ParticleEmitter"))collect_particle_emitter(components.at("ParticleEmitter"));
+        for(const auto* type:{"BoxCollider","MeshCollider"})
+            if(components.contains(type) && components.at(type).contains("surface"))result.needs_collision_surfaces=true;
         if(components.contains("Camera") && components.at("Camera").contains("focus_target"))result.needs_depth_of_field=true;
         for(const auto* type:{"StaticMesh","SkinnedMesh","AnimationRig","MeshCollider"})if(components.contains(type)) {
             const auto& ref=components.at(type);

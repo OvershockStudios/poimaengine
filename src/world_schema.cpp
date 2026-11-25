@@ -76,10 +76,12 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     const Json mesh = object_schema({{"primitive", {{"const", "box"}}}, {"albedo", vector({{"type", "number"}, {"minimum", 0}, {"maximum", 1}}, 3)},
         {"visible", {{"type", "boolean"}}},
         {"cast_shadows",{{"type","boolean"},{"default",true}}},{"receive_shadows",{{"type","boolean"},{"default",true}}}}, {"primitive", "albedo", "visible"});
+    const Json collision_surface={{"type","string"},{"pattern","^[a-z][a-z0-9_.-]{0,31}$"},
+        {"description","Semantic surface name on this collision shape, independent of its render material."}};
     Json collider = object_schema({{"half_extents", vector({{"type","number"},{"minimum",0.001},{"maximum",10000}},3)},
         {"motion",{{"enum",{"static","dynamic","kinematic"}}}}, {"mass",{{"type","number"},{"exclusiveMinimum",0},{"maximum",1e6}}},
         {"friction",{{"type","number"},{"minimum",0},{"maximum",2}}}, {"restitution",{{"type","number"},{"minimum",0},{"maximum",1}}},
-        {"navigation_obstacle",{{"type","boolean"},{"default",false},{"description","Exclude this authored box from the static navigation bake and filter runtime routes using its live physics bounds."}}}},
+        {"surface",collision_surface},{"navigation_obstacle",{{"type","boolean"},{"default",false},{"description","Exclude this authored box from the static navigation bake and filter runtime routes using its live physics bounds."}}}},
         {"half_extents","motion","mass","friction","restitution"});
     collider["if"]={{"required",{"navigation_obstacle"}},{"properties",{{"navigation_obstacle",{{"const",true}}}}}};
     collider["then"]={{"properties",{{"motion",{{"enum",{"static","kinematic"}}}}}}};
@@ -123,7 +125,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"foliage_motion",foliage_motion}},
         {"asset","primitive","visible"});
     const Json mesh_collider=object_schema({{"asset",asset_id},{"primitive",{{"type","integer"},{"minimum",0},{"maximum",9999}}},
-        {"friction",{{"type","number"},{"minimum",0},{"maximum",2}}},{"restitution",unit}}, {"asset","primitive","friction","restitution"});
+        {"friction",{{"type","number"},{"minimum",0},{"maximum",2}}},{"restitution",unit},{"surface",collision_surface}}, {"asset","primitive","friction","restitution"});
     const Json model_node={{"type","integer"},{"minimum",0},{"maximum",9999}};
     const Json animation_fields={{"clip",{{"anyOf",Json::array({Json{{"type","null"}},Json{{"type","integer"},{"minimum",0},{"maximum",255}}})}}},
         {"time",{{"type","number"},{"minimum",0},{"maximum",1e9}}},{"speed",{{"type","number"},{"minimum",0},{"maximum",8}}},
@@ -433,7 +435,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 228}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 229}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -602,6 +604,10 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"direction",vector({{"type","number"},{"minimum",-1e6},{"maximum",1e6}},3)},
         {"distance",{{"type","number"},{"minimum",.001},{"maximum",10000}}},
         {"ignore",{{"type","array"},{"maxItems",128},{"items",id},{"uniqueItems",true}}}}, {"session_id","tick","origin","direction","distance"});
+    if(Runtime::available()) {
+        methods["runtime.surface.raycast"]=methods.at("runtime.raycast");
+        methods["runtime.surface.raycast"]["description"]="Read the closest committed physics ray hit and its authored collider surface name or null. Outside frozen runtime-game-session v1.";
+    }
     methods["runtime.capsule_cast"]=object_schema({{"session_id",id},{"tick",rev},
         {"position",vector({{"type","number"},{"minimum",-1e6},{"maximum",1e6}},3)},
         {"rotation",clearance.at("properties").at("rotation")},
@@ -1061,6 +1067,9 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     result["particle_impact_bursts"]={{"available",Runtime::available()},{"component","ParticleEmitter.impact_burst"},
         {"max_per_contact",max_particle_impact_burst},{"runtime_feature","particle_impact_bursts"},
         {"observation","runtime.particles.inspect"}};
+    result["collision_surfaces"]={{"available",Runtime::available()},{"ray_method","runtime.surface.raycast"},
+        {"max_name_bytes",max_collision_surface_length},{"max_impact_routes",max_particle_impact_surfaces},
+        {"runtime_feature","collision_surfaces"}};
     detail::add_asset_method_schemas(result, id, rev, asset_id, model_node, number);
     const Json save_slot_schema={{"type","string"},{"pattern","^[a-z0-9_-]{1,64}$"}};
     const Json save_path_schema={{"type","string"},{"minLength",1},{"maxLength",4096}};

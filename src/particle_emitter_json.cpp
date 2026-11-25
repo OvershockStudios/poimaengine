@@ -92,6 +92,14 @@ RuntimeParticleFlipbook parse_flipbook(const Json& value) {
     return result;
 }
 
+RuntimeParticleImpactBurst impact_burst_target(const Json& value) {
+    require(value.at("emitter").is_string(), "Impact burst needs an emitter ID.");
+    auto target=value.at("emitter").get<std::string>();
+    require(target.size()==32 && target.find_first_not_of("0123456789abcdef")==std::string::npos &&
+        target.find_first_not_of('0')!=std::string::npos,"Impact burst emitter must be a nonzero entity ID.");
+    return {std::move(target), integer(value.at("count"),1,max_particle_impact_burst)};
+}
+
 Json object(Json properties, Json required) {
     return {{"type", "object"}, {"properties", std::move(properties)}, {"required", std::move(required)}, {"additionalProperties", false}};
 }
@@ -141,14 +149,26 @@ RuntimeParticleEmitter parse_particle_emitter(const Json& value) {
     }
     if (value.contains("impact_burst")) {
         const auto& burst = value.at("impact_burst");
-        fields(burst, {"emitter", "count"});
-        require(config.expire_on_contact && burst.at("emitter").is_string(),
-            "An impact burst needs surface collision and an emitter ID.");
-        auto target = burst.at("emitter").get<std::string>();
-        require(target.size() == 32 && target.find_first_not_of("0123456789abcdef") == std::string::npos &&
-            target.find_first_not_of('0') != std::string::npos, "Impact burst emitter must be a nonzero entity ID.");
-        result.impact_burst = RuntimeParticleImpactBurst{std::move(target),
-            integer(burst.at("count"), 1, max_particle_impact_burst)};
+        fields(burst, {}, {"emitter", "count", "by_surface"});
+        require(config.expire_on_contact && burst.contains("emitter")==burst.contains("count") &&
+            (burst.contains("emitter") || burst.contains("by_surface")),
+            "An impact burst needs surface collision and a complete fallback or named surface routes.");
+        auto& profile=result.impact_burst.emplace();
+        if(burst.contains("emitter"))profile.fallback=impact_burst_target(burst);
+        if(burst.contains("by_surface")) {
+            const auto& routes=burst.at("by_surface");
+            require(routes.is_object() && !routes.empty() && routes.size()<=max_particle_impact_surfaces,
+                "Impact burst by_surface needs 1..8 named routes.");
+            for(const auto& [name,route]:routes.items()) {
+                require(valid_collision_surface(name),"Invalid impact burst surface name.");
+                std::optional<RuntimeParticleImpactBurst> target;
+                if(!route.is_null()) {
+                    fields(route, {"emitter", "count"});
+                    target=impact_burst_target(route);
+                }
+                profile.by_surface.emplace(name,std::move(target));
+            }
+        }
     }
     if (value.contains("emitting")) {
         require(value.at("emitting").is_boolean(), "Particle emitting must be Boolean.");
@@ -219,10 +239,17 @@ Json particle_emitter_schema() {
         {"max_particles_per_tick", range("integer", 1, max_rain_particles_per_tick)}},
         {"nm_per_particle", "max_particles_per_tick"});
     rain["description"] = "Authored world-space rain source driven by accepted weather doses. Shelter is sampled at the emitter origin each active tick.";
-    auto impact_burst = object({{"emitter", {{"type", "string"}, {"pattern", "^[0-9a-f]{32}$"},
+    const auto impact_target = object({{"emitter", {{"type", "string"}, {"pattern", "^[0-9a-f]{32}$"},
         {"not", {{"const", "00000000000000000000000000000000"}}}}},
         {"count", range("integer", 1, max_particle_impact_burst)}}, {"emitter", "count"});
-    impact_burst["description"] = "Offer a same-tick burst to another world-space emitter at each valid surface contact.";
+    auto impact_burst=impact_target;
+    impact_burst.erase("required");
+    impact_burst["properties"]["by_surface"]={{"type","object"},{"minProperties",1},
+        {"maxProperties",max_particle_impact_surfaces},{"propertyNames",{{"pattern","^[a-z][a-z0-9_.-]{0,31}$"}}},
+        {"additionalProperties",{{"anyOf",{impact_target,Json{{"type","null"}}}}}}};
+    impact_burst["dependentRequired"]={{"emitter",{"count"}},{"count",{"emitter"}}};
+    impact_burst["anyOf"]={Json{{"required",{"emitter"}}},Json{{"required",{"by_surface"}}}};
+    impact_burst["description"] = "Offer a same-tick burst at a surface contact. A named match replaces the fallback; null suppresses its burst.";
     auto result = object({{"spawn_space", spaces}, {"simulation_space", spaces}, {"lifetime_ticks", range("integer", 1, particles::max_lifetime_ticks)},
         {"size_m", range("number", min_size, max_size)}, {"linear_rgb", vec_schema(0, 1)},
         {"seed", {{"type", "string"}, {"pattern", "^[0-9a-f]{16}$"}, {"default", "0000000000000000"}}},

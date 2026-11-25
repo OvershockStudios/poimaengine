@@ -20,6 +20,7 @@
 #include <memory>
 #include <optional>
 #include <stdexcept>
+#include <string_view>
 #include <utility>
 #include <variant>
 
@@ -119,15 +120,22 @@ struct RuntimeAttachmentRelease {
     std::array<double,3> linear_velocity_m_s{},angular_velocity_rad_s{};
 };
 enum class BodyMotion { Static, Dynamic, Kinematic };
+inline constexpr std::size_t max_collision_surface_length=32;
+inline bool valid_collision_surface(std::string_view name) noexcept {
+    return !name.empty() && name.size()<=max_collision_surface_length && name.front()>='a' && name.front()<='z' &&
+        name.find_first_not_of("abcdefghijklmnopqrstuvwxyz0123456789_.-")==std::string_view::npos;
+}
 struct BoxCollider {
     std::array<float,3> half_extents{0.5f,0.5f,0.5f};
     BodyMotion motion = BodyMotion::Static;
     float mass = 1, friction = 0.5f, restitution = 0;
     bool navigation_obstacle=false;
+    std::string surface{};
 };
 struct MeshCollider {
     std::shared_ptr<const MeshAsset> mesh;
     float friction=0.5f,restitution=0;
+    std::string surface{};
 };
 struct RuntimeCharacterStanceProfile {
     float crouched_height=1, crouched_speed=2, camera_drop=0.8f;
@@ -403,6 +411,7 @@ inline constexpr std::uint32_t max_runtime_particle_frame_ticks=36'000;
 inline constexpr std::uint32_t rain_particle_window_ticks=particles::ticks_per_second;
 inline constexpr std::uint32_t max_rain_particles_per_tick=32;
 inline constexpr std::uint32_t max_particle_impact_burst=8;
+inline constexpr std::size_t max_particle_impact_surfaces=8;
 struct RuntimeParticleRainProfile {
     std::uint32_t nm_per_particle=0, max_particles_per_tick=0;
 };
@@ -432,13 +441,29 @@ struct RuntimeParticleImpactBurst {
     std::string emitter;
     std::uint32_t count;
 };
+struct RuntimeParticleImpactProfile {
+    std::optional<RuntimeParticleImpactBurst> fallback;
+    std::map<std::string,std::optional<RuntimeParticleImpactBurst>,std::less<>> by_surface;
+};
+inline bool valid_particle_impact_profile(const RuntimeParticleImpactProfile& profile) noexcept {
+    if((!profile.fallback && profile.by_surface.empty()) || profile.by_surface.size()>max_particle_impact_surfaces)return false;
+    for(const auto& entry:profile.by_surface)if(!valid_collision_surface(entry.first))return false;
+    return true;
+}
+template<class Profile,class Visit> void visit_impact_bursts(Profile& profile,Visit visit) {
+    if(profile.fallback)visit(*profile.fallback);
+    for(auto& [surface,burst]:profile.by_surface) {
+        (void)surface;
+        if(burst)visit(*burst);
+    }
+}
 struct RuntimeParticleEmitter {
     particles::EmitterConfig config;
     std::string burst_action;
     std::uint32_t burst_count=0;
     std::optional<RuntimeParticleSprite> sprite;
     std::optional<RuntimeParticleRainProfile> rain;
-    std::optional<RuntimeParticleImpactBurst> impact_burst{};
+    std::optional<RuntimeParticleImpactProfile> impact_burst{};
 };
 struct RuntimeParticleContact {
     std::uint64_t particle;
@@ -446,6 +471,7 @@ struct RuntimeParticleContact {
     particles::Vec3 position_m;
     std::optional<particles::Vec3> normal;
     std::optional<std::uint32_t> triangle;
+    std::string surface{},impact_emitter{};
 };
 struct RuntimeParticleContactSample {
     std::uint64_t tick;
@@ -463,7 +489,7 @@ struct RuntimeParticleSource {
     std::optional<RuntimeParticleRainSample> rain{};
     bool expire_on_contact=false;
     std::optional<RuntimeParticleContactSample> contacts;
-    std::optional<RuntimeParticleImpactBurst> impact_burst{};
+    std::optional<RuntimeParticleImpactProfile> impact_burst{};
 };
 struct RuntimeParticleObservation {
     bool active=false;
@@ -611,6 +637,7 @@ struct RuntimeRayHit {
     std::array<double,3> position{};
     std::optional<std::array<double,3>> normal; // Absent for primitive origin-inside hits; mesh surface hits retain winding normals.
     std::optional<std::uint32_t> triangle; // Original mesh indices triple ordinal; absent for primitives.
+    std::string surface{};
 };
 inline constexpr std::size_t max_surface_mark_commands=16;
 inline constexpr std::uint32_t max_surface_mark_lifetime_ticks=216000;
@@ -856,6 +883,7 @@ public:
     RuntimeControlResult control(std::uint64_t expected_ui_revision,
         std::uint64_t expected_control_sequence,const std::string& element);
     std::optional<RuntimeRayHit> raycast(const RuntimeRay& ray) const;
+    std::optional<RuntimeRayHit> raycast_surface(const RuntimeRay& ray) const;
     ReleasedItemAim aim_released_item(const RuntimeRay& ray) const;
     // Precise fixed-orientation physical capsule query; no state mutation.
     std::optional<CapsuleCastHit> capsule_cast(const CapsuleCastRequest& request) const;

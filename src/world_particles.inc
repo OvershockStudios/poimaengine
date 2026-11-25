@@ -39,19 +39,30 @@
                 trace={{"mode","expire"},{"last_step",nullptr}};
                 if(const auto& step=source.contacts) {
                     Json first=nullptr;
-                    if(const auto& contact=step->first)first={{"particle",std::to_string(contact->particle)},
-                        {"receiver",contact->receiver},{"position_m",contact->position_m},
-                        {"normal",contact->normal ? Json(*contact->normal) : Json(nullptr)},
-                        {"triangle",contact->triangle ? Json(*contact->triangle) : Json(nullptr)}};
+                    if(const auto& contact=step->first) {
+                        first={{"particle",std::to_string(contact->particle)},
+                            {"receiver",contact->receiver},{"position_m",contact->position_m},
+                            {"normal",contact->normal ? Json(*contact->normal) : Json(nullptr)},
+                            {"triangle",contact->triangle ? Json(*contact->triangle) : Json(nullptr)}};
+                        if(!contact->surface.empty())first["surface"]=contact->surface;
+                        if(source.impact_burst && !source.impact_burst->by_surface.empty())
+                            first["impact_emitter"]=contact->impact_emitter.empty() ? Json(nullptr) : Json(contact->impact_emitter);
+                    }
                     trace["last_step"]={{"tick",step->tick},{"tested",step->tested},{"skipped",step->skipped},
                         {"hits",step->hits},{"first",std::move(first)}};
                 }
             }
-            if(const auto& burst=source.impact_burst) {
+            if(const auto& profile=source.impact_burst) {
                 Json requests=nullptr;
                 if(source.contacts)requests=source.contacts->impact_requested;
-                sources.back()["impact_burst"]={{"emitter",burst->emitter},{"count",burst->count},
-                    {"requested_last_step",std::move(requests)}};
+                auto& value=sources.back()["impact_burst"];
+                value={{"requested_last_step",std::move(requests)}};
+                if(const auto& burst=profile->fallback) {value["emitter"]=burst->emitter;value["count"]=burst->count;}
+                if(!profile->by_surface.empty()) {
+                    auto& routes=value["by_surface"]=Json::object();
+                    for(const auto& [surface,burst]:profile->by_surface)
+                        routes[surface]=burst ? Json{{"emitter",burst->emitter},{"count",burst->count}} : Json(nullptr);
+                }
             }
             if (source.sprite) sprite_sources.emplace(source.id, &source);
         }

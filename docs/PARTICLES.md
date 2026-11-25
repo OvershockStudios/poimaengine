@@ -412,6 +412,38 @@ arguments as the surface contact fixture. It checks a sloped ledge, rain
 on terrain, capacity ordering, a remapped template and relocated save
 continuation. [Qualification results](evidence/m2-particle-impact-432.json)
 
+### Vary a burst by surface
+
+Give each receiving [collider a surface name](PHYSICS_INTERACTIONS.md#name-a-collision-surface).
+`impact_burst.by_surface` accepts up to eight names. A matching entry replaces
+the fallback. Use `null` to suppress a burst on that surface. Untagged and
+unmatched hits use the fallback when it is supplied. Authors can omit both
+top-level `emitter` and `count` to respond only to named entries.
+
+```json
+{
+  "impact_burst": {
+    "emitter": "00000000000000000000000000000384",
+    "count": 2,
+    "by_surface": {
+      "metal": {"emitter": "000000000000000000000000000003b6", "count": 4},
+      "stone": null
+    }
+  }
+}
+```
+
+Contact expiry still occurs on a suppressed hit. Tagged samples in
+`runtime.particles.inspect` include `surface` on the first contact. A source
+with named routes also reports `impact_emitter` on its first contact. A null
+value means that contact offered no burst. Follow the chosen pool's counts
+and new particles to see which offers were admitted.
+
+The [surface fixture](../tests/collision_surfaces_capture.py) checks a tagged
+moving box, a tagged cooked terrain mesh, suppression, fallback and a local
+route inside a spawned template. Use the same arguments as the contact
+fixture for headless or Vulkan checks. [Qualification results](evidence/m2-collision-surfaces-433.json)
+
 ## Native particle API
 
 The native [`poima::particles::System`](../include/poima/particles.hpp) advances

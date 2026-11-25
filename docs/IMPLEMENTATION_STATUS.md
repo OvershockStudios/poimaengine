@@ -1,8 +1,18 @@
 # Implementation status
 
-Updated 2026-11-25 for **0.0.432**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-25 for **0.0.433**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.433 adds [collision surface names](PHYSICS_INTERACTIONS.md#name-a-collision-surface)
+and [named particle impact routes](PARTICLES.md#vary-a-burst-by-surface).
+The dedicated surface ray observes tagged and untagged hits. Legacy ray and
+untagged particle behavior match their previous contracts. AMD and NVIDIA
+captures verify different effects on a tagged box and terrain mesh, plus
+fallback and suppression. The relocated Windows game reproduces the effects
+after opening a save in a new process. Ubuntu passes the headless fixture and
+six regression suites. Tags cover a whole collision shape. Material layers and
+liquid-surface hits remain open. [Results and scope](evidence/m2-collision-surfaces-433.json)
 
 Version 0.0.432 adds [contact-triggered particle bursts](PARTICLES.md#spawn-a-burst-at-contact).
 A second emitter can style a splash or scatter effect and launch it along

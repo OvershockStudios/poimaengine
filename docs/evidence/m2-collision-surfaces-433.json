@@ -1,0 +1,412 @@
+{
+  "version": "0.0.433",
+  "authoring_schema_revision": 229,
+  "date": "2026-11-25",
+  "base_commit": "76603c285248c9b1b5dc6dd5cd18d41af8528265",
+  "scope": "Named collision surfaces for boxes and meshes, a committed surface ray, and particle impact routing, fallback and suppression.",
+  "source_sha256": {
+    "CMakeLists.txt": "82789a4003637b0f420f9730a3c53f3e5bdb6668f4ebdacb3db81f8f9523a4b3",
+    "cmake/runtime.json.in": "c35785f8c879d4d8bf6987a822abef4d616d019ebe9446ed5dbf811d99dfbaed",
+    "include/poima/project.hpp": "3be8e7cb35846be40e90bf1e74dcf01886c4c5b5ff1e27cceee946cfc0dc4e5b",
+    "include/poima/runtime.hpp": "ecdd4fea6c22de7f472afc136cb82f9d4ef2ee6456a3e2d8cb4ad4d16d68c855",
+    "include/poima/world.hpp": "204a8aebd6e82d2e01e4306ae66d6f91d7755d13763e940f84f46772ddd3cec8",
+    "src/particle_emitter_json.cpp": "7f1fa3a391327ec4df6ad0ee411a409404aca51a619c29fa126d25f3d4f47cc6",
+    "src/project.cpp": "341e4acf47741cefc920054b01fcc8433fbb9bf15ecfa91fe1bde568761d7855",
+    "src/runtime.cpp": "156e86d7623e4ecba212840b3dbd5ba6dc83053ac7e129dfa15b43728a32c91a",
+    "src/runtime_disabled.cpp": "e919c3cafdce91d8485be68dacc668e74ab7c506327fa4169936279f88c33304",
+    "src/runtime_particles.inc": "23546f82288784a7cdaca7b07c22b1a16f6454b4d958621fc1e4e682fc6647cd",
+    "src/runtime_templates.cpp": "bcadcee0fbf2f961be6ee3b892bcc55318dadac21b0d3d67d839fea09e4f5635",
+    "src/world.cpp": "6ea77f525b323e8ff09d017492b85b1d21ed9ce807f9fca0505da124b24f1ce8",
+    "src/world_content.cpp": "35477b79f946e19bb85c6e6b153e7fd5d90e91130e9e7867fd672779e664ee45",
+    "src/world_document.cpp": "48e758ddf0f57856db9bb7d52fec4a443e45c4c9d6a12e86ebbe1e00f75aef44",
+    "src/world_particles.inc": "7548f19ca567665bdc0a53091d8023f43a2629f644e7dd77300686cfeb311942",
+    "src/world_player_service.inc": "55f9f7da27844d7803df4aea1cabf756f725788f3aced1d71bef5624d0e1c0a4",
+    "src/world_runtime_definition.cpp": "805aaee97ed4a0f08ae03df8dc65378c73c8427f9120badea3b7afaaad00818c",
+    "src/world_schema.cpp": "9fee7508e448f863021b584ac366c741a24a04bf9f9e159c60aad4ab7f466dae",
+    "src/world_spatial_queries.cpp": "dc5bd354ef8e911e23bd2d18ada3cf40e88768d258e5299ff5b29ef3f515b4a1",
+    "src/world_spatial_queries.hpp": "25103d6742a20aa60e70190334450f9c11a3e4dfc7c05cfde8e0e28d44f8daec"
+  },
+  "fixture_sha256": "367187ea9eb529a6e28dc226a17d3f2d1e0de9e9453af3582bc7b06994d3a977",
+  "windows": {
+    "binary_sha256": "18cc6912ee0e3ccc36535445508749fc7551b0d5a5cdb45cda6835de30b3f57f",
+    "runtime_descriptor_sha256": "ff7c866d0c552bdeabf020a9823bdd5b0ca8d729db217c6af8938b34e96f41b3",
+    "desktop_library_sha256": "1d6226551c19ed0b7f3eafbf486155bd3729308a13b816bf1939f5b3c5e0728b",
+    "amd_forward": {
+      "adapter": "AMD Radeon(TM) Graphics",
+      "lighting_path": "forward",
+      "pixel_extent": [
+        240,
+        160
+      ],
+      "raw_evidence_sha256": "3b92f22e9a481e4a1c9b9cac531da757387518691ec48a90ed53fdf783c7ce67",
+      "surface_rays": [
+        {
+          "distance": 0.24226497113704681,
+          "entity": "00000000000000000000000000000324",
+          "fraction": 0.24226497113704681,
+          "normal": [
+            -0.5000000596046448,
+            0.8660253882408142,
+            0.0
+          ],
+          "position": [
+            -0.72,
+            1.157735028862953,
+            -4.2
+          ],
+          "surface": "metal",
+          "triangle": null
+        },
+        {
+          "distance": 0.9200000166893005,
+          "entity": "00000000000000000000000000000326",
+          "fraction": 0.9200000166893005,
+          "normal": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "position": [
+            0.18,
+            0.07999998331069946,
+            -5.35
+          ],
+          "surface": "stone",
+          "triangle": 3
+        },
+        {
+          "distance": 0.15,
+          "entity": "00000000000000000000000000000321",
+          "fraction": 0.5,
+          "normal": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "position": [
+            -0.72,
+            2.0499999940395357,
+            -4.2
+          ],
+          "surface": null,
+          "triangle": null
+        },
+        null
+      ],
+      "legacy_ray_result_unchanged": true,
+      "impact_routes": [
+        {
+          "tick": 2,
+          "source": "00000000000000000000000000000321",
+          "surface": "metal",
+          "collider": "00000000000000000000000000000324",
+          "triangle": null,
+          "impact_emitter": "000000000000000000000000000003b6",
+          "offered_births": 2
+        },
+        {
+          "tick": 3,
+          "source": "00000000000000000000000000000323",
+          "surface": "stone",
+          "collider": "00000000000000000000000000000326",
+          "triangle": 3,
+          "impact_emitter": null,
+          "offered_births": 0
+        },
+        {
+          "tick": 4,
+          "source": "00000000000000000000000000000321",
+          "surface": "stone",
+          "collider": "00000000000000000000000000000326",
+          "triangle": 4,
+          "impact_emitter": "00000000000000000000000000000384",
+          "offered_births": 2
+        },
+        {
+          "tick": 4,
+          "source": "00000000000000000000000000000323",
+          "surface": "stone",
+          "collider": "00000000000000000000000000000326",
+          "triangle": 3,
+          "impact_emitter": null,
+          "offered_births": 0
+        }
+      ],
+      "named_route_remapped_after_spawn": true,
+      "input_save_sha256": "dbda4f6ec284666f089949262f9354480e117a3c187ab04d37ca3c624e0a463d",
+      "images": {
+        "source-closed": {
+          "red": 0,
+          "blue": 81,
+          "image_sha256": "227df80e3009aadd9aeb948a272bda732ba68ee71f66f3ba2948f0df2aa83b8b",
+          "metal": 42,
+          "stone": 0
+        },
+        "source-open": {
+          "red": 81,
+          "blue": 81,
+          "image_sha256": "3d5ca8ce401820741349e0fd86b79bfd0d1f2a889c5268070a2de5b8fadfca7b",
+          "metal": 81,
+          "stone": 0
+        },
+        "source-stone": {
+          "red": 81,
+          "blue": 81,
+          "image_sha256": "93ec8927b92f1a1dd17b518b57ff36077b8dbca4a52dfd7dcb51e81fcc41a78a",
+          "metal": 77,
+          "stone": 66
+        },
+        "restored-closed": {
+          "red": 0,
+          "blue": 81,
+          "image_sha256": "227df80e3009aadd9aeb948a272bda732ba68ee71f66f3ba2948f0df2aa83b8b",
+          "metal": 42,
+          "stone": 0
+        },
+        "restored-open": {
+          "red": 81,
+          "blue": 81,
+          "image_sha256": "3d5ca8ce401820741349e0fd86b79bfd0d1f2a889c5268070a2de5b8fadfca7b",
+          "metal": 81,
+          "stone": 0
+        },
+        "restored-stone": {
+          "red": 81,
+          "blue": 81,
+          "image_sha256": "93ec8927b92f1a1dd17b518b57ff36077b8dbca4a52dfd7dcb51e81fcc41a78a",
+          "metal": 77,
+          "stone": 66
+        }
+      },
+      "exact_observations_after_reload": true
+    },
+    "nvidia_deferred": {
+      "adapter": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "lighting_path": "deferred",
+      "pixel_extent": [
+        240,
+        160
+      ],
+      "raw_evidence_sha256": "d6bac952ea5f199224e474321ab90f7440595ff459d7a0bc55ef5398f1e38ef7",
+      "surface_rays": [
+        {
+          "distance": 0.24226497113704681,
+          "entity": "00000000000000000000000000000324",
+          "fraction": 0.24226497113704681,
+          "normal": [
+            -0.5000000596046448,
+            0.8660253882408142,
+            0.0
+          ],
+          "position": [
+            -0.72,
+            1.157735028862953,
+            -4.2
+          ],
+          "surface": "metal",
+          "triangle": null
+        },
+        {
+          "distance": 0.9200000166893005,
+          "entity": "00000000000000000000000000000326",
+          "fraction": 0.9200000166893005,
+          "normal": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "position": [
+            0.18,
+            0.07999998331069946,
+            -5.35
+          ],
+          "surface": "stone",
+          "triangle": 3
+        },
+        {
+          "distance": 0.15,
+          "entity": "00000000000000000000000000000321",
+          "fraction": 0.5,
+          "normal": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "position": [
+            -0.72,
+            2.0499999940395357,
+            -4.2
+          ],
+          "surface": null,
+          "triangle": null
+        },
+        null
+      ],
+      "legacy_ray_result_unchanged": true,
+      "impact_routes": [
+        {
+          "tick": 2,
+          "source": "00000000000000000000000000000321",
+          "surface": "metal",
+          "collider": "00000000000000000000000000000324",
+          "triangle": null,
+          "impact_emitter": "000000000000000000000000000003b6",
+          "offered_births": 2
+        },
+        {
+          "tick": 3,
+          "source": "00000000000000000000000000000323",
+          "surface": "stone",
+          "collider": "00000000000000000000000000000326",
+          "triangle": 3,
+          "impact_emitter": null,
+          "offered_births": 0
+        },
+        {
+          "tick": 4,
+          "source": "00000000000000000000000000000321",
+          "surface": "stone",
+          "collider": "00000000000000000000000000000326",
+          "triangle": 4,
+          "impact_emitter": "00000000000000000000000000000384",
+          "offered_births": 2
+        },
+        {
+          "tick": 4,
+          "source": "00000000000000000000000000000323",
+          "surface": "stone",
+          "collider": "00000000000000000000000000000326",
+          "triangle": 3,
+          "impact_emitter": null,
+          "offered_births": 0
+        }
+      ],
+      "named_route_remapped_after_spawn": true,
+      "input_save_sha256": "3f5ad9f07d2719931f18b12cb05820df84bc36a21d49f2167addbd06f4ce523a",
+      "images": {
+        "source-closed": {
+          "red": 0,
+          "blue": 81,
+          "image_sha256": "a913887a1cf7a6f1231ecae0bcb89e99f8a2a1368eb287c0773b5bf72e333b6d",
+          "metal": 42,
+          "stone": 0
+        },
+        "source-open": {
+          "red": 81,
+          "blue": 81,
+          "image_sha256": "cc025aa52cc1b92b13c19298af7970f9ddfe71ae7c3eaeb5c0a95aaef4d57a3d",
+          "metal": 81,
+          "stone": 0
+        },
+        "source-stone": {
+          "red": 81,
+          "blue": 81,
+          "image_sha256": "70c7cc509f1a617a4d330905e26e7d03fd78cf700c3d5e28405a87c2015957d2",
+          "metal": 77,
+          "stone": 66
+        },
+        "restored-closed": {
+          "red": 0,
+          "blue": 81,
+          "image_sha256": "a913887a1cf7a6f1231ecae0bcb89e99f8a2a1368eb287c0773b5bf72e333b6d",
+          "metal": 42,
+          "stone": 0
+        },
+        "restored-open": {
+          "red": 81,
+          "blue": 81,
+          "image_sha256": "cc025aa52cc1b92b13c19298af7970f9ddfe71ae7c3eaeb5c0a95aaef4d57a3d",
+          "metal": 81,
+          "stone": 0
+        },
+        "restored-stone": {
+          "red": 81,
+          "blue": 81,
+          "image_sha256": "70c7cc509f1a617a4d330905e26e7d03fd78cf700c3d5e28405a87c2015957d2",
+          "metal": 77,
+          "stone": 66
+        },
+        "relocated-closed": {
+          "red": 0,
+          "blue": 81,
+          "image_sha256": "a913887a1cf7a6f1231ecae0bcb89e99f8a2a1368eb287c0773b5bf72e333b6d",
+          "metal": 42,
+          "stone": 0
+        },
+        "relocated-open": {
+          "red": 81,
+          "blue": 81,
+          "image_sha256": "cc025aa52cc1b92b13c19298af7970f9ddfe71ae7c3eaeb5c0a95aaef4d57a3d",
+          "metal": 81,
+          "stone": 0
+        },
+        "relocated-stone": {
+          "red": 81,
+          "blue": 81,
+          "image_sha256": "70c7cc509f1a617a4d330905e26e7d03fd78cf700c3d5e28405a87c2015957d2",
+          "metal": 77,
+          "stone": 66
+        },
+        "fresh-save-closed": {
+          "red": 0,
+          "blue": 81,
+          "image_sha256": "a913887a1cf7a6f1231ecae0bcb89e99f8a2a1368eb287c0773b5bf72e333b6d",
+          "metal": 42,
+          "stone": 0
+        },
+        "fresh-save-open": {
+          "red": 81,
+          "blue": 81,
+          "image_sha256": "cc025aa52cc1b92b13c19298af7970f9ddfe71ae7c3eaeb5c0a95aaef4d57a3d",
+          "metal": 81,
+          "stone": 0
+        },
+        "fresh-save-stone": {
+          "red": 81,
+          "blue": 81,
+          "image_sha256": "70c7cc509f1a617a4d330905e26e7d03fd78cf700c3d5e28405a87c2015957d2",
+          "metal": 77,
+          "stone": 66
+        }
+      },
+      "exact_observations_after_reload": true,
+      "relocated_game": {
+        "source_unavailable": true,
+        "unchanged_files": 60,
+        "fresh_process_restore": true,
+        "same_observations_and_images": true,
+        "save_sha256": "3f5ad9f07d2719931f18b12cb05820df84bc36a21d49f2167addbd06f4ce523a"
+      }
+    },
+    "retained_untagged_0_0_432_impact_behavior": {
+      "reference_binary_sha256": "f71ae8f4632b0530b30f47340c7988c7088eecbc42d9a686a904cbf04b906b66",
+      "reference_evidence_sha256": "5a40eb997f218c297e964abe80532619a12d9729eea6908f8254972ed5a4287d",
+      "candidate_evidence_sha256": "05e8d42df35789e7994327c7a8d07d399b3f9458f18cc8a39c6b7f08d534e55d",
+      "identical_initial_and_continuation_observations": true,
+      "identical_images": true
+    },
+    "descriptor_without_surface_flag": {
+      "error": "Project collision surfaces require a compatible simulation runtime.",
+      "receipt_sha256": "454b34a42f965d05f6acb6970df4ab1a44e08eba11165504d78ab8964cc80949",
+      "published": false
+    }
+  },
+  "ubuntu_headless": {
+    "fixture_evidence_sha256": "7704d758686f2912b9e3f5b7b20948a4908becc67ee7ed24e2e9a125f7a17133",
+    "binary_sha256": "6efeadd67725f9576aec51b3908788dd83d8c8f8d792ed254379330010065093",
+    "runtime_descriptor_sha256": "130dde16ea5fd96b8d144c59f485a49019fefafb0cd8a7553526c8af1fbc977b",
+    "ctest_junit_sha256": "e04fcf5db6d27e1a84b89a14ca3f66901bec84c03275ee6382a8d8ff39e9321c",
+    "ctest_passed": [
+      "authoring_contract_identity",
+      "world_water_rain_contract",
+      "authoring_core_conformance",
+      "particle_scene_native",
+      "world_particles_contract",
+      "world_session_native"
+    ],
+    "scope": "Named and untagged physics hits, invalid route and surface rejection, impact selection and exact restored continuation."
+  },
+  "remaining": [
+    "Per-triangle material selection, liquid-surface queries, C# surface consumers and scene-scale costs."
+  ]
+}

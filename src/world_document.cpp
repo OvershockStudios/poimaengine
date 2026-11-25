@@ -815,7 +815,9 @@ void validate_component(const std::string& type, const Json& value) {
         if(value.contains("alpha_cutoff"))require(value.at("alpha_cutoff").is_number() && std::isfinite(value.at("alpha_cutoff").get<double>()) && value.at("alpha_cutoff")>=0 && value.at("alpha_cutoff")<=max_material_alpha_cutoff,"alpha_cutoff must be in [0,1000000].");return;
     }
     if (type == "MeshCollider") {
-        fields(value,{"asset","primitive","friction","restitution"},{"asset","primitive","friction","restitution"});
+        fields(value,{"asset","primitive","friction","restitution","surface"},{"asset","primitive","friction","restitution"});
+        if(value.contains("surface"))require(value.at("surface").is_string() &&
+            valid_collision_surface(value.at("surface").get_ref<const std::string&>()),"Invalid collision surface name.");
         require(value.at("asset").is_string() && valid_asset_id(value.at("asset").get<std::string>()),"MeshCollider requires a 64-character lowercase content hash.");
         require(revision(value.at("primitive"))<10000,"Invalid MeshCollider primitive index.");
         for(const auto* key:{"friction","restitution"})require(value.at(key).is_number() && std::isfinite(value.at(key).get<double>()),"Invalid mesh collider material.");
@@ -823,7 +825,9 @@ void validate_component(const std::string& type, const Json& value) {
         return;
     }
     if (type == "BoxCollider") {
-        fields(value, {"half_extents", "motion", "mass", "friction", "restitution", "navigation_obstacle"}, {"half_extents", "motion", "mass", "friction", "restitution"});
+        fields(value, {"half_extents", "motion", "mass", "friction", "restitution", "navigation_obstacle", "surface"}, {"half_extents", "motion", "mass", "friction", "restitution"});
+        if(value.contains("surface"))require(value.at("surface").is_string() &&
+            valid_collision_surface(value.at("surface").get_ref<const std::string&>()),"Invalid collision surface name.");
         const auto& extent=value.at("half_extents");
         require(extent.is_array() && extent.size()==3,"BoxCollider needs three half extents.");
         for(const auto& v:extent) require(v.is_number() && std::isfinite(v.get<double>()) && v>=0.001 && v<=10000,"Collider half extents must be 0.001..10000 meters.");
@@ -1128,13 +1132,15 @@ void validate(const Json& doc) {
             const auto& emitter=audio_components.at("ParticleEmitter");
             if(emitter.contains("impact_burst")) {
                 const auto source=component_checked([&]{return parse_particle_emitter(emitter);});
-                const auto& reference=source.impact_burst->emitter;
-                require(reference!=id && entities.contains(reference),"Impact burst must reference another emitter in the scene or template.");
-                const auto& target=entities.at(reference).at("components");
-                require(target.contains("ParticleEmitter"),"Impact burst target needs a ParticleEmitter component.");
-                const auto definition=component_checked([&]{return parse_particle_emitter(target.at("ParticleEmitter"));});
-                require(definition.config.simulation_space==particles::Space::World && !definition.rain,
-                    "Impact burst target needs world simulation and ordinary emission.");
+                visit_impact_bursts(*source.impact_burst,[&](const auto& burst) {
+                    const auto& reference=burst.emitter;
+                    require(reference!=id && entities.contains(reference),"Impact burst must reference another emitter in the scene or template.");
+                    const auto& target=entities.at(reference).at("components");
+                    require(target.contains("ParticleEmitter"),"Impact burst target needs a ParticleEmitter component.");
+                    const auto definition=component_checked([&]{return parse_particle_emitter(target.at("ParticleEmitter"));});
+                    require(definition.config.simulation_space==particles::Space::World && !definition.rain,
+                        "Impact burst target needs world simulation and ordinary emission.");
+                });
             }
         }
         require(int(audio_components.contains("MeshRenderer"))+int(audio_components.contains("StaticMesh"))+int(audio_components.contains("SkinnedMesh"))<=1,"An entity can have only one mesh component.");

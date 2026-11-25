@@ -102,12 +102,15 @@
                 const auto& definition=*entity.particle_emitter;
                 require(definition.burst_count<=particles::max_burst && (definition.burst_count ? valid_input_action_name(definition.burst_action) : definition.burst_action.empty()),
                     "Particle emitter requires a valid named action and positive bounded burst count together.");
-                if(const auto& burst=definition.impact_burst) {
-                    const auto target=topology->definitions.find(burst->emitter);
-                    require(definition.config.expire_on_contact && burst->count>=1 && burst->count<=max_particle_impact_burst &&
-                        burst->emitter!=id && target!=topology->definitions.end() && target->second.particle_emitter &&
-                        target->second.particle_emitter->config.simulation_space==particles::Space::World &&
-                        !target->second.particle_emitter->rain, "Impact burst needs another live world emitter and a bounded count.");
+                if(const auto& profile=definition.impact_burst) {
+                    require(definition.config.expire_on_contact && valid_particle_impact_profile(*profile),"Invalid particle impact profile.");
+                    visit_impact_bursts(*profile,[&](const auto& burst) {
+                        const auto target=topology->definitions.find(burst.emitter);
+                        require(burst.count>=1 && burst.count<=max_particle_impact_burst && burst.emitter!=id &&
+                            target!=topology->definitions.end() && target->second.particle_emitter &&
+                            target->second.particle_emitter->config.simulation_space==particles::Space::World &&
+                            !target->second.particle_emitter->rain, "Impact burst needs another live world emitter and a bounded count.");
+                    });
                 }
                 auto [template_id,template_node]=particle_origin(id);
                 state.system.add_emitter(state.next_id,definition.config,particle_pose(registry.get<Node>(find(id)).world));
@@ -173,18 +176,24 @@
         ++sample.tested;
         RuntimeRay query{from,direction,distance,{}};
         if(!source.draining)query.ignore.push_back(source.entity);
-        const auto hit=physics_raycast(query,{},true);
+        const auto& profile=source.definition.impact_burst;
+        const auto hit=physics_raycast(query,{},true,!sample.first || (profile && !profile->by_surface.empty()));
         if(!hit)return false;
         ++sample.hits;
-        if(!sample.first)sample.first=RuntimeParticleContact{particle,hit->entity,hit->position,hit->normal,hit->triangle};
-        if(source.definition.impact_burst && !source.draining && hit->normal) {
-            const auto& burst=*source.definition.impact_burst;
+        const bool first=!sample.first;
+        if(first)sample.first=RuntimeParticleContact{particle,hit->entity,hit->position,hit->normal,hit->triangle,hit->surface};
+        if(profile && !source.draining && hit->normal) {
+            const auto route=profile->by_surface.find(hit->surface);
+            const auto& selected=route==profile->by_surface.end() ? profile->fallback : route->second;
+            if(!selected)return true;
+            const auto& burst=*selected;
             const auto target=std::ranges::find_if(particle_runtime->sources,[&](const auto& row) {
                 return !row.second.draining && row.second.entity==burst.emitter;
             });
             require(target!=particle_runtime->sources.end(),"Impact burst target was not synchronized.");
             spawn=particles::PlacedBurst{target->first,burst.count,particle_impact_pose(*hit,direction)};
             sample.impact_requested+=burst.count;
+            if(first && !profile->by_surface.empty())sample.first->impact_emitter=burst.emitter;
         }
         return true;
     }

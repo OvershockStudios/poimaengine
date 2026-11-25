@@ -20,6 +20,12 @@ SKIN = .075
 
 
 class ImpactFixture(CollisionFixture):
+    def template_impact(self):
+        return dict(emitter=LOCAL_EFFECT,count=1)
+
+    def template_receiver(self, profile):
+        return profile['emitter']
+
     def transact(self, client, revision, operations):
         return client.call('world.transact', dict(base_revision=revision, request_id=new_id(), ops=operations))
 
@@ -52,7 +58,7 @@ class ImpactFixture(CollisionFixture):
             params = dict(base_revision=revision, request_id=new_id(), ops=[component(RED,'ParticleEmitter',configuration)])
             expect_error(-32602, 'world.transact', client, params)
             assert client.call('world.inspect')['revision']==revision
-        source_child = source | dict(impact_burst=dict(emitter=LOCAL_EFFECT, count=1),
+        source_child = source | dict(impact_burst=self.template_impact(),
                                      velocity_m_s=fixed([0,96,0]))
         template = dict(op='template.set', id=RECIPE, name='Paired splash emitters', root=LOCAL_SOURCE,
             entities={
@@ -134,7 +140,7 @@ class ImpactFixture(CollisionFixture):
             sources = {source['entity']:source for source in observation['sources']}
             routed = sources[root]['impact_burst']
             target = sources[instance['nodes'][LOCAL_EFFECT]]
-            assert routed['emitter']==target['entity'] and target['entity']!=LOCAL_EFFECT
+            assert self.template_receiver(routed)==target['entity'] and target['entity']!=LOCAL_EFFECT
             assert routed['requested_last_step']==1 and target['counts']['spawned']==1
             particle, = [row for row in observation['particles'] if row['emitter']==target['id']]
             assert particle['age_ticks']==0 and math.dist(particle['velocity_m_s'],[0,-4,0])<.00005

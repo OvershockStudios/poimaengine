@@ -2,6 +2,12 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.433
+
+- Name collision surfaces on boxes and meshes. Contact bursts can choose an
+  effect per surface, use a fallback, or suppress a burst.
+  [Surface names and impact effects](docs/PARTICLES.md#vary-a-burst-by-surface)
+
 ## 0.0.432
 
 - Spawn a second emitter's particles at a surface contact. Choose world axes
