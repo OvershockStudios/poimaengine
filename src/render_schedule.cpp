@@ -786,7 +786,7 @@ void Schedule::validate(bool before_acquire) const {
             if(!settings.height_fog || !world_opaque || (settings.deferred && !deferred_lit) ||
                 (settings.screen_reflections && !screen_reflected))fail("unexpected or premature height fog pass");
             const auto inputs=4u+(world_media_reads_lighting(settings) ? 2u : 0u)+(settings.aerial_perspective ? 2u : 0u)+
-                (frame.water_columns!=none ? 2u : 0u);
+                (frame.water_columns!=none ? 3u : 0u);
             if(pass.accesses.size()!=inputs ||
                 !has(surface_radiance(frame,settings),Use::sampled) || !has(frame.depth,Use::sampled) ||
                 !has(frame.frame,Use::constant) || !has(frame.fogged_hdr,Use::image_write))fail("invalid height fog bindings");
@@ -794,21 +794,22 @@ void Schedule::validate(bool before_acquire) const {
                 fail("missing world media lighting inputs");
             if(settings.aerial_perspective && (!aerial_baked || !has(frame.aerial_scattering,Use::sampled) ||
                 !has(frame.aerial_transmittance,Use::sampled)))fail("missing aerial perspective composition inputs");
-            if(frame.water_columns!=none && (!has(frame.water_columns,Use::storage_read) || !has(frame.ibl_specular,Use::sampled)))
+            if(frame.water_columns!=none && (!has(frame.water_columns,Use::storage_read) ||
+                !has(frame.ibl_specular,Use::sampled) || !has(frame.ibl_brdf,Use::sampled)))
                 fail("missing water optics inputs");
             world_fogged=true;
         }
         if(pass.id==PassId::particle_sprites) {
             const bool water=water_filtered_sprites(frame,settings);
             const bool sun=water && settings.water_shore_foam_sun;
-            const auto media_inputs=water ? (sun ? 5u : 3u) : 0u;
+            const auto media_inputs=water ? (sun ? 6u : 4u) : 0u;
             if(!settings.particle_sprites || !sprites_uploaded || !world_opaque || (settings.deferred && !deferred_lit) ||
                 (settings.screen_reflections && !screen_reflected) || (settings.height_fog && !world_fogged) ||
                 pass.accesses.size()!=(reconstruct_sprites ? 7u : 3u)+frame.sprite_textures.size()+media_inputs ||
                 !has(frame.depth,Use::sampled) || !has(frame.sprite_instances,Use::storage_read))
                 fail("invalid or premature particle sprite pass");
             if(water && (!has(frame.frame,Use::constant) || !has(frame.water_columns,Use::storage_read) ||
-                !has(frame.ibl_specular,Use::sampled)))fail("missing particle water optics inputs");
+                !has(frame.ibl_specular,Use::sampled) || !has(frame.ibl_brdf,Use::sampled)))fail("missing particle water optics inputs");
             if(sun && (!has(frame.lights,Use::storage_read) || !has(frame.shadow,Use::sampled)))
                 fail("missing particle shore foam lighting inputs");
             if(reconstruct_sprites) {
@@ -1303,7 +1304,11 @@ Schedule build(FrameResources frame,Settings settings) {
             add(fog,f.lights,Use::storage_read);add(fog,f.shadow,Use::sampled);
         }
         add(fog,f.aerial_scattering,Use::sampled);add(fog,f.aerial_transmittance,Use::sampled);
-        if(f.water_columns!=none) {add(fog,f.water_columns,Use::storage_read);add(fog,f.ibl_specular,Use::sampled);}
+        if(f.water_columns!=none) {
+            add(fog,f.water_columns,Use::storage_read);
+            add(fog,f.ibl_specular,Use::sampled);
+            add(fog,f.ibl_brdf,Use::sampled);
+        }
         add(fog,f.fogged_hdr,Use::image_write,true);
     }
     if(settings.particle_sprites) {
@@ -1321,6 +1326,7 @@ Schedule build(FrameResources frame,Settings settings) {
             add(sprites,f.frame,Use::constant);
             add(sprites,f.water_columns,Use::storage_read);
             add(sprites,f.ibl_specular,Use::sampled);
+            add(sprites,f.ibl_brdf,Use::sampled);
             if(settings.water_shore_foam_sun) {
                 add(sprites,f.lights,Use::storage_read);
                 add(sprites,f.shadow,Use::sampled);

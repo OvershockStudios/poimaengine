@@ -30,6 +30,7 @@ struct Inputs {
     nvrhi::ITexture* atmosphere_density = nullptr;
     nvrhi::IBuffer* water_columns = nullptr;
     nvrhi::ITexture* water_specular = nullptr;
+    nvrhi::ITexture* water_brdf = nullptr;
     nvrhi::ISampler* water_sampler = nullptr;
     friend bool operator==(const Inputs&, const Inputs&) = default;
 };

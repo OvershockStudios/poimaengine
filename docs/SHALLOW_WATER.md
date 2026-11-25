@@ -395,6 +395,34 @@ a change to the underlying opaque geometry. Authored optics select
 version 6 of the cooked region. Project inspection, export and relocated
 game validation require `features.water_optics`.
 
+### Soften water reflections
+
+Set `optics.reflection_roughness` to a perceptual roughness from 0 to 1.
+With [environment IBL](ENVIRONMENT_IBL.md) enabled, the sky reflection
+uses that roughness as its minimum. Ripples and offshore swell add
+roughness as their slopes become too fine for the projected pixel footprint.
+Each wave band contributes its unresolved mean-square slope. Poima adds
+that contribution to the fourth power of the authored roughness and takes
+the fourth root to select the existing GGX sky level and split-sum response.
+The result is an isotropic approximation to the combined wave slopes.
+
+Zero keeps the sharpest lobe where all wave detail is resolved. Omit the
+field to retain the earlier reflection model. The rough reflection uses
+the existing sky cube and applies to air-side interfaces and the optical
+particle pass. A constant ambient reflection still works with IBL disabled.
+An underwater view keeps its dielectric interface and total internal
+reflection. Medium crossings and displaced surface depths follow the
+committed water geometry.
+
+This setting cooks `.pwater` version 14. Check
+`render_diagnostics.water_optics.rough_reflection` for the authored value
+and active state. Project dependencies report `needs_water_rough_reflection`
+and export checks the corresponding runtime feature. The
+[offshore fixture](../tests/water_offshore_capture.py) accepts
+`--rough-reflection` with optional `--swell-variation`.
+[Multi-scale ocean lighting](https://www-evasion.imag.fr/Publications/2010/BNH10/),
+[Projected-space specular filtering](https://www.jcgt.org/published/0010/02/02/)
+
 ### Refract the view across the surface
 
 Add `"refraction": true` inside the `optics` profile. This cooks version 7 of

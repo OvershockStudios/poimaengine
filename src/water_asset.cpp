@@ -16,6 +16,7 @@ using Json = nlohmann::json;
 constexpr auto artifact_format = "poima.water.region";
 
 std::uint32_t artifact_version(const RegionDefinition& definition) noexcept {
+    if (definition.optics && definition.optics->reflection_roughness) return 14;
     if (definition.swell_variation) return 13;
     if (definition.optics && definition.optics->offshore) return 12;
     if (!definition.surface_swell.empty()) return 11;
@@ -163,7 +164,7 @@ void parse_rules(const Json& object, RegionDefinition& definition) {
     if (object.contains("optics")) {
         const auto& value=object.at("optics");
         fields(value, {"extinction_per_m","scattered_radiance"},
-            {"refraction","caustics_strength","shore_foam","follow_terrain","offshore"});
+            {"refraction","caustics_strength","shore_foam","follow_terrain","offshore","reflection_roughness"});
         if (value.contains("refraction"))
             require(value.at("refraction").is_boolean(),"Water optics refraction must be Boolean.");
         if (value.contains("follow_terrain"))
@@ -182,6 +183,8 @@ void parse_rules(const Json& object, RegionDefinition& definition) {
         definition.optics=WaterOptics{color("extinction_per_m",8),color("scattered_radiance",16),
             value.value("refraction",false),value.contains("caustics_strength") ? number(value.at("caustics_strength")) : 0};
         definition.optics->follow_terrain=value.value("follow_terrain",false);
+        if (value.contains("reflection_roughness"))
+            definition.optics->reflection_roughness=number(value.at("reflection_roughness"));
         if (value.contains("shore_foam")) {
             const auto& foam = value.at("shore_foam");
             fields(foam, {"depth_m","opacity"});
@@ -313,7 +316,7 @@ RegionAsset decode_region_asset(std::string_view bytes) {
         "initial_depths_m", "faces", "exchanges"}, {"rain_cells", "surface_ripples", "surface_wave_layers", "surface_swell",
         "swell_variation", "listener_audio", "optics", "shore_corner_heights_m"});
     require(object.at("format") == artifact_format, "Unsupported water asset format.");
-    const auto version=integer(object.at("version"),1,13);
+    const auto version=integer(object.at("version"),1,14);
     RegionAsset asset;
     asset.terrain_recipe_sha256 = hex(object.at("terrain_recipe_sha256"), 64);
     auto& definition = asset.definition;
@@ -403,6 +406,7 @@ Json region_authoring_schemas() {
         {"follow_terrain",{{"type","boolean"},{"default",false},
             {"description","Fit the optical bed and listener submersion to sampled terrain, respecting dry cells and gate controls."}}},
         {"caustics_strength",range("number",0,1)},
+        {"reflection_roughness",range("number",0,1)},
         {"offshore",object({{"edge",{{"enum",{"min_z","max_x","max_z","min_x"}}}},
             {"surface_height_m",coordinate},{"depth_m",range("number",.1,10'000)}},
             {"edge","surface_height_m","depth_m"})},
@@ -412,6 +416,8 @@ Json region_authoring_schemas() {
     optics["description"] = "Optional transparent surface and depth-dependent RGB extinction and in-scattering. Requires single-sample Vulkan color for optical composition.";
     optics["properties"]["caustics_strength"]["description"] =
         "Focus light from the linked sky sun below the surface using the authored wave normals. Zero disables the effect.";
+    optics["properties"]["reflection_roughness"]["description"] =
+        "Perceptual roughness for above-water sky reflections when environment IBL is enabled. A selected value adds unresolved wave slope variance at distance.";
     optics["properties"]["shore_foam"]["description"] =
         "Add surface foam to shallow committed water. Depth is measured vertically in metres. Opacity zero keeps the selected profile with a clear surface.";
     optics["properties"]["offshore"]["description"] =

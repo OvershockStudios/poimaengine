@@ -351,6 +351,8 @@ that shared surface and the wetted margin at each committed tick.
 changes crest shape and amplitude across local water and offshore shading.
 An optional [offshore plane](SHALLOW_WATER.md#continue-the-water-offshore)
 extends one fitted edge with shared water optics and listener depth.
+[Rough sky reflections](SHALLOW_WATER.md#soften-water-reflections) retain
+unresolved wave-slope energy in the filtered reflection.
 
 Storms, lightning, precipitation, wind and seasons share world state with water,
 audio and surfaces. Longer-term effects must reach crops, resources and travel;

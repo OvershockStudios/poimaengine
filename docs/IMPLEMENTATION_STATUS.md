@@ -1,8 +1,18 @@
 # Implementation status
 
-Updated 2026-11-25 for **0.0.423**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-25 for **0.0.424**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.424 adds [rough sky reflections](SHALLOW_WATER.md#soften-water-reflections).
+AMD forward and NVIDIA deferred matched 584 HDR probes with maximum linear
+channel error of 0.000478. Eight optical sprite blends passed on NVIDIA
+with FSR also exercised. A relocated build restored the same capture from
+a save. Nineteen retained water and sprite images matched byte for byte.
+Ubuntu passed 14 suites and the rough reflection authoring fixture. The
+stock lookout comparison shows lower contrast in the distant bands. This
+path uses prefiltered sky IBL. Direct sun glints and offshore displacement
+remain open. [Results](evidence/m2-water-rough-reflection-424.json)
 
 Version 0.0.423 adds [seeded swell variation](SHALLOW_WATER.md#vary-the-swell-across-a-coast).
 AMD forward and NVIDIA deferred passed 584 HDR comparisons, including

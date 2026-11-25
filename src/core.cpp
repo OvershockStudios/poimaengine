@@ -139,6 +139,7 @@ Reply capabilities() {
         ",\"water_terrain_fit\":" + boolean(POIMA_RENDER_SMOKE != 0 && POIMA_SIMULATION != 0) +
         ",\"water_surface_swell\":" + boolean(POIMA_RENDER_SMOKE != 0 && POIMA_SIMULATION != 0) +
         ",\"water_swell_variation\":" + boolean(POIMA_RENDER_SMOKE != 0 && POIMA_SIMULATION != 0) +
+        ",\"water_rough_reflection\":" + boolean(POIMA_RENDER_SMOKE != 0 && POIMA_SIMULATION != 0) +
         ",\"water_offshore\":" + boolean(POIMA_RENDER_SMOKE != 0 && POIMA_SIMULATION != 0) +
         ",\"water_sprite_optics\":" + boolean(POIMA_RENDER_SMOKE != 0 && POIMA_SIMULATION != 0) +
         ",\"navigation\":" + boolean(runtime_navigation_available()) +

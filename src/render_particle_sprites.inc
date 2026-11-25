@@ -72,6 +72,7 @@
                     .addItem(nvrhi::BindingLayoutItem::StructuredBuffer_SRV(6))
                     .addItem(nvrhi::BindingLayoutItem::StructuredBuffer_SRV(7))
                     .addItem(nvrhi::BindingLayoutItem::Texture_SRV(8))
+                    .addItem(nvrhi::BindingLayoutItem::Texture_SRV(9))
                     .addItem(nvrhi::BindingLayoutItem::Sampler(1));
             }
             sprite_layout=checked->createBindingLayout(desc);
@@ -106,6 +107,7 @@
                 .addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(6,light_clusters.lights()))
                 .addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(7,water_columns))
                 .addItem(nvrhi::BindingSetItem::Texture_SRV(8,environment.specular))
+                .addItem(nvrhi::BindingSetItem::Texture_SRV(9,environment.brdf))
                 .addItem(nvrhi::BindingSetItem::Sampler(1,environment.sampler));
         }
         return desc;

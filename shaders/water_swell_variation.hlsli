@@ -31,11 +31,12 @@ SwellPatch sample_swell_patch(float2 position) {
     return result;
 }
 
-float2 varied_offshore_swell(float2 position,float2 dx,float2 dy) {
+float2 varied_offshore_swell(float2 position,float2 dx,float2 dy,out float variance) {
     const SwellPatch patch=sample_swell_patch(position);
     const float envelope=1.0-water_swell_variation.z*(1.0+patch.value.y);
     const float2 envelope_gradient=-water_swell_variation.z*float2(patch.dx.y,patch.dz.y);
     float2 gradient=0;
+    variance=0.0;
     [unroll] for (uint i=0;i<4;++i) {
         const float4 wave=water_offshore_swell[i];
         if (wave.z<=0.0) continue;
@@ -48,6 +49,8 @@ float2 varied_offshore_swell(float2 position,float2 dx,float2 dy) {
         float sine,cosine;
         sincos(phase,sine,cosine);
         gradient+=wave.z*coverage*(envelope*cosine*frequency+sine*envelope_gradient);
+        const float second_moment=envelope*envelope*dot(frequency,frequency)+dot(envelope_gradient,envelope_gradient);
+        variance+=.5*wave.z*wave.z*second_moment*(1.0-coverage*coverage);
     }
     return gradient;
 }

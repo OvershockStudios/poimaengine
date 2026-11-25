@@ -25,6 +25,7 @@ CAMERAS = dict(air=(AIR, (11.35, 6.50, -2.13)), water=(SUBMERGED, (11.35, 5.85, 
 SURFACE = 6.15
 BURST = 'suspend'
 TICK = 1
+REFLECTION_ROUGHNESS = .43
 FAR = (11.62, 5.82, -3.59)
 NEAR = (11.35+(FAR[0]-11.35)*1.1/1.46, 6.50+(FAR[1]-6.50)*1.1/1.46, -3.23)
 # Position, unfiltered linear radiance, alpha, card size.
@@ -73,6 +74,8 @@ class WaterSpriteCapture(WaterContract):
         texture.write_bytes(png(1,1,[255,255,255,255]))
         image=self.world_call('asset.image.import',source=texture.name,color_space='srgb')['asset']
         lighting=environment()|dict(ambient=[.35,.47,.56])
+        if self.args.rough_reflection:
+            lighting['ibl']=dict(enabled=True,diffuse_intensity=0.,specular_intensity=1.)
         ops=[dict(op='component.remove',id=uid(1),type='MeshRenderer'),
              dict(op='component.remove',id=uid(1),type='BoxCollider')]
         if self.args.sun:
@@ -110,6 +113,8 @@ class WaterSpriteCapture(WaterContract):
             expected_terrain_recipe_sha256=self.terrain['recipe_sha256'],
             initial_depths_m=[SURFACE-bed(*cell_center(cell)) if cell[0]>=1 else 0 for cell in CELLS],
             optics=OPTICS|dict(shore_foam=dict(depth_m=2.4,opacity=.95),follow_terrain=True))
+        if self.args.rough_reflection:
+            params['optics']['reflection_roughness']=REFLECTION_ROUGHNESS
         planned=self.world_call('world.water.plan',**params)
         pin=planned['plan_sha256']
         assert self.world_call('world.water.cook',**params,expected_plan_sha256=pin)==planned
@@ -129,6 +134,8 @@ class WaterSpriteCapture(WaterContract):
         optics=diag['water_optics']
         assert optics['active'] and optics['follow_terrain'] and optics['shore_foam']['active']
         assert optics['shore_foam']['sun_lighting'] is self.args.sun
+        if self.args.rough_reflection:
+            assert optics['rough_reflection']==dict(active=True,perceptual_roughness=REFLECTION_ROUGHNESS)
         assert optics.get('sprites',False) is particles and diag['reconstruction']['active'] is fsr,diag
         assert (optics['camera_submersion_m']>.1)==(camera=='water')
         self.measurements[tag+'-'+camera]=dict(report=response,sha256=file_hash(path))
@@ -236,6 +243,7 @@ def main():
     parser.add_argument('--runtime-root',type=Path)
     parser.add_argument('--fsr',action='store_true')
     parser.add_argument('--sun',action='store_true')
+    parser.add_argument('--rough-reflection',action='store_true')
     args=parser.parse_args()
     args.output.mkdir(parents=True,exist_ok=True)
     root=Path(tempfile.mkdtemp(prefix='water-sprites-',dir=args.output))

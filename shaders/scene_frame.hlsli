@@ -39,5 +39,6 @@ cbuffer Frame : register(b1) {
     float4 water_offshore_swell[4]; // Angular frequency X/Z, amplitude, phase.
     float3 water_swell_variation; // Inverse patch scale, phase gain, envelope gain.
     uint water_swell_seed;
+    float4 water_reflection; // Authored perceptual roughness, rough environment reflection enabled.
 };
 StructuredBuffer<SceneLight> lights : register(t6);

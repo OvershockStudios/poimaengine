@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.424
+
+- Author rough sky reflections for water. Wave detail below the pixel
+  footprint broadens the reflection on surfaces and optical particles.
+
 ## 0.0.423
 
 - Author seeded variation in swell height and crest spacing. Fitted

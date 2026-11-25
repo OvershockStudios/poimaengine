@@ -1,0 +1,203 @@
+{
+  "checkpoint": "0.0.424",
+  "parent_commit": "11ebdfcaa034243d91f4751e8d67762f0d9a60df",
+  "schema_revision": 221,
+  "source_sha256": {
+    "CMakeLists.txt": "f4fc6dbf99bd2fb1572eac3cc2a4b1a0bbd7b088f24400d6feb1af81911c8292",
+    "cmake/runtime.json.in": "453027b2bada6982f14344be71e34ad615d19fb7c9f4328b9bc0a6c3afbe489b",
+    "include/poima/core.hpp": "5e3e47fad692480005f77f444c5c2ada7090aa3be16019f6386a22517d1df83b",
+    "include/poima/water_optics.hpp": "dc4a4e6def24abb405e99f8934ca35f0d1d9c8ed9833de3ae6e21b2f3d3cf66c",
+    "include/poima/world.hpp": "68d622a27564e06856db94f9c762a0d5b4db12eace8b57f2a54d2b13c8554369",
+    "shaders/scene_frame.hlsli": "715a66fcf581a7443d42d5a458ba8681922929d40696c8ab06e6c6bbb727b0cd",
+    "shaders/water_optics.hlsli": "73418d1e0041247f538d1d0247ada3952303b1a44ac34c60dd531a2ccbbede25",
+    "shaders/water_ripple_normal.hlsli": "336b870d635df7d0264fa081b64947088a38d0b46e34a1d633222e0189501543",
+    "shaders/water_swell_variation.hlsli": "9ee15fe9a7862d670a754b8fe569f6bdcf9bec9214de54527dc013a89b96c04f",
+    "src/core.cpp": "7a6e47b1af4a846800642442e2a03897a07cc199f154606e4ddff04fc23c4796",
+    "src/project.cpp": "62d110fb56d885776a97b7c5e495dc1fa7120d03e12a2efe1dda15b075cc98fd",
+    "src/render_height_fog.cpp": "ddb402f4e4be9564c75cd5503ab2b7365abea961da999c48af7bb8fb64281bcc",
+    "src/render_height_fog.hpp": "fb04738e86dfc9f5a3cfea7dc764e1e6f878082690145608c859406d8320458e",
+    "src/render_particle_sprites.inc": "4acf08eb040d4a6a82f30ee0d78a032ed243455473d876d6a28e5222f7e1afc4",
+    "src/render_schedule.cpp": "2ca057fd16d2468f7e88267899bb21a762e9f7e212053449fcf59f58cfa96daa",
+    "src/render_smoke.cpp": "26fecb393454555b0f72c2d5495c2e0a9e951e3c802d94885e1ffa4b93bb83fc",
+    "src/water_asset.cpp": "aa22f496298b0885d9f4144f3791d0e52f0d4e2628fe8050b66567e81fcc2da6",
+    "src/water_region.cpp": "0f0f051c4f0fae1cea0d45e687562f33edda28736131d6daafe219c28c0eecec",
+    "src/world.cpp": "d1d347939121bfa9e35a80ebe414b247a158727b08c9356d43de63a60f7c7592",
+    "src/world_content.cpp": "77ba303dba68c31281d06d2a9c101e88d55e62003ef0eecd4456ba202f0e7311",
+    "src/world_presentation_json.cpp": "52b7374c8a274c46e38ea625ce5e7b54ee3dc9f83a1fe05db34da822c62d4e4d",
+    "src/world_schema.cpp": "852f72c18bc3a81f1d28224b8a9320a5372497bc7426a838438dca68de2dbb24",
+    "tests/render_schedule.cpp": "256551d6c8c728aa21683b0a22e182c89881cf8e0e03ca98fcd01b40a8fe3ce8",
+    "tests/water_offshore_capture.py": "fc2a781b0003d78174f74caffcdb838c00dd8b64cb6545ebada69afe8cfc332c",
+    "tests/water_sprite_capture.py": "df1c76ff1a02e70b09a8799aa535a1743f2172d164ecd46817acf02f00f6798d"
+  },
+  "windows": {
+    "validation": "Khronos 1.4.363.0 with VK_LAYER_VALIDATE_SYNC=1",
+    "binary_sha256": "d24fabff6deb22a50fe54f5088eb5e25e7124f407385ae37a683050dfb3e2faa",
+    "bridge_sha256": "eb83a5b108ed4b135ebfe046de9d740345b548b12af71389ea3a8d399a8baeb7",
+    "runtime_manifest_sha256": "9961a20a8da1ef68dfedc09f12be4191e228da8972b6a91fb9f12ffc4307616c",
+    "amd": {
+      "adapter": "AMD Radeon(TM) Graphics",
+      "lighting_path": "forward",
+      "evidence_sha256": "b4cbf25d29c47e637e508b78a7ba77f222089ed7c4b4742e29c13f5266b36e3b",
+      "water_asset": "dcba09f9e678e9d74e88897dad1e0febe0f2a77bfa0aad29bf6305070c2b4ec7",
+      "captured_images": {
+        "from-shore": "923716ef82e61c98e191a4fe6c71572eebf9f629665d9acf904f2e4075cbb52f",
+        "from-ocean": "227c58d9dd559440c021e430fb7f08eb30d506f40878d57339348a54e4e4aafb",
+        "toward-horizon": "e5a615396c2a848f0ad4f4464f364dde373e8a4e9b8bf2d7ea3c6dedcd371919",
+        "across-patches": "caec3414ee9215722cfabd6f0057cee6e5a1d6b55e6c7ec9a83fa95aeb0bdedb",
+        "cold-ocean": "227c58d9dd559440c021e430fb7f08eb30d506f40878d57339348a54e4e4aafb"
+      },
+      "restored_tick": 45,
+      "hdr_probes": 292,
+      "max_hdr_channel_error": 0.00047780280247611273,
+      "peak_perceptual_roughness": 0.43914781619216947,
+      "authored_perceptual_roughness": 0.32,
+      "probes_with_variance_delta_above_0_004": 17,
+      "max_variance_hdr_delta": 0.04905900807610658,
+      "relocated_export": false
+    },
+    "nvidia": {
+      "adapter": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "lighting_path": "deferred",
+      "evidence_sha256": "8859ad2a7bc31a0bd1b6b58b3b82edeb2f0dce57176fdf214c7c8a80ef88f7a4",
+      "water_asset": "dcba09f9e678e9d74e88897dad1e0febe0f2a77bfa0aad29bf6305070c2b4ec7",
+      "captured_images": {
+        "from-shore": "424bdf551d48f3c1b14f845a01f2fee57aaee35240b3fe72d276a99c16d781f7",
+        "from-ocean": "63928ff35ad56d47a67c777a9ee5c296e6f190147a4f56d019dc4be43cd96b11",
+        "toward-horizon": "0ffd7184bbb8b0e585235e8d2b7fd26351ac29bec1bb0e30737d7239bb0654c3",
+        "across-patches": "0adce57ae5b16c1da6b502f7367eed99b552261c820a9c7256f6b2284dfccdbf",
+        "cold-ocean": "63928ff35ad56d47a67c777a9ee5c296e6f190147a4f56d019dc4be43cd96b11"
+      },
+      "restored_tick": 45,
+      "hdr_probes": 292,
+      "max_hdr_channel_error": 0.000476973902256983,
+      "peak_perceptual_roughness": 0.43914781619216947,
+      "authored_perceptual_roughness": 0.32,
+      "probes_with_variance_delta_above_0_004": 17,
+      "max_variance_hdr_delta": 0.04905900807610658,
+      "relocated_export": true
+    },
+    "minimum_runtime_feature_error": "Rough water reflection requires a compatible Vulkan runtime.",
+    "rough_sprites": {
+      "evidence_sha256": "812035510ad6fc422383a11e8c98fe2c108fe254f65cb0469792e8acd8fa72d1",
+      "blend_comparisons": 8,
+      "max_hdr_channel_error": 0.000511596679687476,
+      "images": {
+        "solid-above-air": "3d6134c93c2d0ebf1856cc7fcaeb9cf178d27466b6773dbb417378592fbdb436",
+        "solid-above-water": "904749408bad8c11eea8bb9344857483931559b912cd6fb905bbf3e0a0f57601",
+        "solid-near-air": "83bf7ea980d8b19921f9f451107bc0b0abbd320f4bf67dd2088a4aa90e22b7e0",
+        "solid-near-water": "976f2330e7f8bc86447fe89f1273fc3ccff5ba2a49bd9d2f34975331cc02f4c5",
+        "solid-far-air": "827e14b1ad4b599ec9b051aadfe7c98898ff9452fc8e925b6f3cc29381c5cdaa",
+        "solid-far-water": "0e4d51277e430c26513b8b882823ea947108ef73cc9e882057c7cc3b1cd4459a",
+        "solid-dry-air": "acd793aa4d9d3a26ec2a4ba4fde8446d5e1baa94d9eea399b97ab78644d85db4",
+        "solid-dry-water": "e6daec0d462db92aa19ab0122fceb7dcc2c7a297c6b6009be758893f48a13057",
+        "empty-air": "154e5b30402501001e44f454071f81191edeba73a112ff211ea4b82cdabb8b52",
+        "empty-water": "904749408bad8c11eea8bb9344857483931559b912cd6fb905bbf3e0a0f57601",
+        "live-air": "fede80dafdc2afae6ecffef52370c09d343ad26a951b90f495ed92067e1859cc",
+        "live-water": "f3c71f080ba84bd79a4e436a939ffb54edc6dbb7fad8b96ab92cd0dceb18f749",
+        "fsr-air": "32a0ffe9193b4bb9baa2f57e0cd7e41676afc9ba01965bdf56fd87951a825e35",
+        "fsr-water": "83f8929a0c6e62f6b1713ac31ff0696ac7f14c3f65bd9b9eb7bce71af727861d"
+      },
+      "fsr": true,
+      "sunlit_foam": true
+    },
+    "retained": {
+      "v13_swell": {
+        "baseline_evidence_sha256": "cbf35fab3a06f4b3646f9e2625fc031f016794d2ccc6cc8aaa54503b0e8cb51f",
+        "observed_evidence_sha256": "b1554a1edae8630a98d1c048299b9f31d908360e5e3072c43b9d30e14192e07b",
+        "images": {
+          "from-shore": "e414b8c794f75c1dc19d66f5349004945649a6ec191763128fd07b34cb8ce80f",
+          "from-ocean": "33bbc41b91e7bfc433b151c4113564468c08fcc69d064e7399da0ff23c1b2213",
+          "toward-horizon": "567163ab54f9b5297f4dd4cb79eb90e3ba20f351cecd17cbe25b2b91325c891a",
+          "across-patches": "cced2a19e02e8c2cfa81914b26889d04b7a58ce246909644de1d336d1ca1c578",
+          "cold-ocean": "33bbc41b91e7bfc433b151c4113564468c08fcc69d064e7399da0ff23c1b2213"
+        }
+      },
+      "original_sprites": {
+        "baseline_evidence_sha256": "899d84116acde85ae6388d0e6a795221a669fd2cc0e5d25dfb7b6911f1aea1a5",
+        "observed_evidence_sha256": "6d0cc31f4026f069d9d8a60d9b04466b123bf8dc8fc2de79b46e8e38403a43d7",
+        "images": {
+          "solid-above-air": "e1f8b1b4190418d87787a734bf948ffc3061bd4f4ab24d1e2795acc59f0970f5",
+          "solid-above-water": "133b22b907f6e23376f2016952e5e7e4fb7535b03e5321014d2747cb9a1c27ea",
+          "solid-near-air": "db036048d8d9efda18a21ac5e558d19e7d6524c472a364ad75e52c61032634ed",
+          "solid-near-water": "936cb2a8e2a9a25bb1c9e4e6f3b4ceba18903ad8456b597a8509ef60d16f7a3f",
+          "solid-far-air": "e6cd11edda325cd4d6c8bed1c7b5e30edc1ae047990087fd8d26ae9c971bc6eb",
+          "solid-far-water": "1711782f7fe65adc771da96fb5826031158119e10ca40ce4386f46b589991095",
+          "solid-dry-air": "6b7064c8b27c8ce5a56ab996e04312f265d4edb02696b54021eccf7043a5b6e9",
+          "solid-dry-water": "072198a595df69a4c8f39dcc914bf3d52b67a10f676eedbe00c3509cc66f3b7b",
+          "empty-air": "fb2e4c513b92f3a10a650d7635de012cdd6690491e51fb9bfecab14079e90746",
+          "empty-water": "133b22b907f6e23376f2016952e5e7e4fb7535b03e5321014d2747cb9a1c27ea",
+          "live-air": "8075f50d7f5ba5ba8ca93ac42e0b926566e413191330bd800f91ab067a132a5b",
+          "live-water": "cf740ac1708c11cf94250d59caaecdbfe0f249847d1ef799042f27df85218f75",
+          "fsr-air": "6aa64656a6f450b4af73fbaf40c025d3cd477e5ee58263bb4b741ba2a6a34b86",
+          "fsr-water": "deca692663dc28c19ce72a4141f904288b0331e5690244c4d82df36ba06e6be6"
+        }
+      }
+    }
+  },
+  "ubuntu": {
+    "passed_ctest_suites": [
+      "audio_contract",
+      "audio_reflections_native",
+      "audio_save_native",
+      "cli_contract",
+      "editor_audio_native",
+      "project_contract",
+      "render_schedule_native",
+      "shallow_water_native",
+      "water_listener_audio_contract",
+      "water_region_native",
+      "water_region_scene_native",
+      "world_audio_native",
+      "world_water_contract",
+      "world_water_rain_contract"
+    ],
+    "binary_sha256": "0ff537143938a78f5f9b0d68aa2b27611b91320c859f376618d2f754306a4475",
+    "junit_sha256": "15010657c627f2dd75eacaee919505434f685dba7068a7a27e3669713b7e8dff",
+    "rough_reflection_protocol_evidence_sha256": "51fc95553c3c31f822f3d15626e0bc5f6c7de64df41cf87d65702d2feff5f5b6"
+  },
+  "stock_lookout": {
+    "extent": [
+      1280,
+      720
+    ],
+    "selected_roughness": 0.43,
+    "baseline_asset": "da05e5c1f3ff98854e528ecf5387bd52ee9b3a1ab13b70a5b94b5e7caffdd9c2",
+    "rough_asset": "af41284ddb63cf6aeb12fbff0c1f3ef14cecdc07b6172dbfcec64bc87c5a4685",
+    "witnessed_capture_sha256": "98e7b56b030fae9d72d4868485733d1586a3f97c1539e419e2f76153f1afddd2",
+    "images": {
+      "original": {
+        "above-the-wide-bay": "c99a1f8e1ff1c371dbee1d34ce2e366be8482b720eef72c325a2fd932954960e",
+        "between-the-lookout-stones": "923021bc4465d57a1574cbfca436339629f4c4f65c0120e486469dbadc1d29c9"
+      },
+      "roughened": {
+        "above-the-wide-bay": "fa0dd6ef7571525e7ff6166ebe72da4a652bd741563f0249aace2a489b91c24e",
+        "between-the-lookout-stones": "4472d48315db6123405de9f80b421ffd49adbabec40ae6d7c8fa080fb1ec549c"
+      }
+    },
+    "band_contrast": {
+      "crop_pixel_bounds": [
+        160,
+        330,
+        740,
+        405
+      ],
+      "method": "RMS vertical 4-pixel high-pass of display-code luminance",
+      "samples_per_image": 43500,
+      "observations": {
+        "above-the-wide-bay": {
+          "original": 2.9356657901787377,
+          "roughened": 0.8433701761569685
+        },
+        "between-the-lookout-stones": {
+          "original": 6.231116069134354,
+          "roughened": 0.970015972236195
+        }
+      }
+    }
+  },
+  "limits": [
+    "Roughness is an isotropic approximation to the unresolved slope variance. Sky IBL supplies the reflected radiance.",
+    "The wide coast retained a fixed offshore volume. Direct sun glints and reflective local geometry remain separate.",
+    "Exposure and framing were fixed for the comparison. The stills do not establish sustained frame cadence."
+  ]
+}

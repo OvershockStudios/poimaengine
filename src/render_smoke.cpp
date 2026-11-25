@@ -142,15 +142,16 @@ struct FrameConstants {
     std::array<float,4> water_offshore{};
     height_fog::OffshoreSwell water_offshore_swell{};
     height_fog::SwellVariationParameters water_swell_variation{};
+    std::array<float,4> water_reflection{};
 };
-static_assert(sizeof(GpuShadow)==80 && sizeof(FrameConstants)==1920);
+static_assert(sizeof(GpuShadow)==80 && sizeof(FrameConstants)==1936);
 static_assert(offsetof(FrameConstants,water_ripple_shape)==1600 && offsetof(FrameConstants,water_ripple_motion)==1616 &&
     offsetof(FrameConstants,water_wave_shapes)==1632 && offsetof(FrameConstants,cloud_shadow_geometry)==1680 &&
     offsetof(FrameConstants,cloud_shadow_controls)==1696 && offsetof(FrameConstants,water_caustic_origin_size)==1712 &&
     offsetof(FrameConstants,water_caustic_extinction_strength)==1728 && offsetof(FrameConstants,water_caustic_grid_light)==1744 &&
     offsetof(FrameConstants,water_shore_foam)==1760 && offsetof(FrameConstants,sprite_water)==1776 &&
     offsetof(FrameConstants,water_offshore)==1824 && offsetof(FrameConstants,water_offshore_swell)==1840 &&
-    offsetof(FrameConstants,water_swell_variation)==1904);
+    offsetof(FrameConstants,water_swell_variation)==1904 && offsetof(FrameConstants,water_reflection)==1920);
 struct SpriteInstance {
     std::array<float,4> center_and_size,linear_rgba,fade_and_reserved;
     std::array<std::uint32_t,4> texel_rect;
@@ -1363,6 +1364,7 @@ struct Context {
         frame_constants.water_offshore={};
         frame_constants.water_offshore_swell={};
         frame_constants.water_swell_variation={};
+        frame_constants.water_reflection={};
         fog_spots={};
         const auto& selected=lighting.environment.height_fog;
         const auto& atmosphere_profile=lighting.environment.atmosphere;
@@ -1378,12 +1380,16 @@ struct Context {
             const auto& camera=scene->camera_world;
             const auto view=height_fog::project_water_view(*water,{camera[12],camera[13],camera[14]},water_normal_mode);
             const auto strength=water->optics.caustics_strength;
+            const auto roughness=water->optics.reflection_roughness;
+            if (roughness) require(*roughness>=0 && *roughness<=1,"Invalid water reflection roughness.");
             const auto caustics=strength>0 ? prepare_water_caustics(*water,lighting,water_normal_mode,color_reason) : std::string_view{};
             if (color_reason=="active") {
                 water_parameters=view.parameters;
                 frame_constants.water_offshore=view.offshore;
                 frame_constants.water_offshore_swell=view.offshore_swell;
                 frame_constants.water_swell_variation=view.swell_variation;
+                if (roughness && frame_constants.ibl_parameters[0]>0)
+                    frame_constants.water_reflection={static_cast<float>(*roughness),1,0,0};
                 prepare_water_shore_foam(*water,lighting);
             }
             pending_water_optics=WaterOpticsDiagnostics{color_reason=="active",color_reason,
@@ -1392,6 +1398,8 @@ struct Context {
             pending_water_optics->surface_swell=water->surface_swell;
             pending_water_optics->offshore=water->optics.offshore.has_value();
             pending_water_optics->swell_variation=water->swell_variation;
+            pending_water_optics->reflection_roughness=roughness;
+            pending_water_optics->rough_reflection_active=frame_constants.water_reflection[1]>0;
             if (color_reason=="active") pending_water_optics->offshore_swell_layers=view.offshore_swell_layers;
         }
         if(wants_aerial) {
@@ -1438,6 +1446,7 @@ struct Context {
             fog.prepare(*checked.Get(),{frame_buffer.Get(),surface_radiance_texture(),depth.Get(),shadows.texture(),
                 light_clusters.lights(),aerial_parameters ? sky_pass.atmosphere_density() : nullptr,
                 water_parameters ? water_columns.Get() : nullptr, water_parameters ? environment.specular : nullptr,
+                water_parameters ? environment.brdf : nullptr,
                 water_parameters ? environment.sampler : nullptr});
         }
         if(selected) {
@@ -2841,6 +2850,7 @@ struct Context {
                         if(binding.slot==2)identity(f.sprite_textures[texture],binding.resourceHandle);
                         if(binding.slot==5 && plan.settings.water_shore_foam_sun)identity(f.shadow,binding.resourceHandle);
                         if(binding.slot==8)identity(f.ibl_specular,binding.resourceHandle);
+                        if(binding.slot==9)identity(f.ibl_brdf,binding.resourceHandle);
                     }
                 }
             }

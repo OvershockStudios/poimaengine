@@ -41,5 +41,6 @@ struct WaterOptics {
     std::optional<WaterShoreFoam> shore_foam{};
     bool follow_terrain=false;
     std::optional<WaterOffshore> offshore;
+    std::optional<double> reflection_roughness{};
 };
 }

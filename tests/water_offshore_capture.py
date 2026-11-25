@@ -8,6 +8,7 @@ from pathlib import Path
 import subprocess
 import tempfile
 import traceback
+from functools import lru_cache
 
 from height_fog_capture import environment
 from solar_lighting_contract import VALIDATION_LAYER
@@ -31,6 +32,7 @@ CAMERAS={
     'patches': (PATCH_VIEW,(65.2,6.85,-55.12),-14,True),
 }
 VARIATION=dict(scale_m=54.,strength=.72,seed=0x6a09e667)
+REFLECTION_ROUGHNESS=.32
 GRAZING_PROBES=[(x,y) for x in (279,320,365) for y in (174,175,176,177,178,180,183,189,200,232,270,310)]
 AMBIENT=(.68,.52,.88)
 FOG=dict(density_per_m=.026,base_height_m=4.93,height_falloff_per_m=0,start_distance_m=.1,max_distance_m=38,
@@ -119,6 +121,7 @@ def wave_slopes(pixel,rotation,from_sea,ray,view_cosine,hit,eye,tick,profile=Non
     z=eye[2]+ray[2]*hit+4
     filtered=[0.,0.]
     unfiltered=[0.,0.]
+    variance=0.
     for wave in SWELL:
         heading=math.radians(wave['heading_degrees'])
         unit=(math.cos(heading),math.sin(heading))
@@ -126,21 +129,71 @@ def wave_slopes(pixel,rotation,from_sea,ray,view_cosine,hit,eye,tick,profile=Non
         phase=k*(x*unit[0]+z*unit[1])-math.tau*(tick%wave['period_ticks'])/wave['period_ticks']
         slope=[math.cos(phase)*wave['slope']*axis for axis in unit]
         frequency=[k*axis for axis in unit]
+        second_moment=.5*wave['slope']**2
         if profile:
             # Differentiate the scalar height and phase by symmetric samples.
             # The shader uses the analytic derivatives and no extra samples.
+            quarter=[]
             for i,(dx,dz) in enumerate(((1e-4,0),(0,1e-4))):
                 a=band_sample(wave,x-dx,z-dz,tick,profile)
                 b=band_sample(wave,x+dx,z+dz,tick,profile)
                 slope[i]=(b[0]-a[0])/.0002
                 frequency[i]=(b[1]-a[1])/.0002
+                quarter_tick=tick+wave['period_ticks']/4
+                a=band_sample(wave,x-dx,z-dz,quarter_tick,profile)
+                b=band_sample(wave,x+dx,z+dz,quarter_tick,profile)
+                quarter.append((b[0]-a[0])/.0002)
+            second_moment=.5*sum(value**2 for value in slope+quarter)
         support=math.hypot(*(a*frequency[0]+b*frequency[1] for a,b in footprint))
         weight=max(0.,min(1.,(support-.5)/(math.pi-.5)))
         coverage=1-weight*weight*(3-2*weight)
+        variance+=second_moment*(1-coverage**2)
         for i,value in enumerate(slope):
             filtered[i]+=value*coverage
             unfiltered[i]+=value
-    return filtered,unfiltered
+    return filtered,unfiltered,variance
+
+
+@lru_cache(maxsize=1)
+def brdf_samples():
+    return [((j+.5)/512,math.cos(phi),math.sin(phi))
+            for j in range(512) for phi in (math.tau*int(f'{j:09b}'[::-1],2)/512,)]
+
+
+@lru_cache(maxsize=4096)
+def reflection_texel(x,y):
+    nv=(x+.5)/64
+    alpha=((y+.5)/64)**2
+    a2=alpha**2
+    vx=math.sqrt(1-nv*nv)
+    length=math.hypot(alpha*vx,nv)
+    tx,tz=alpha*vx/length,nv/length
+    view_length=math.sqrt(nv*nv+(1-nv*nv)*a2)
+    visible=2*nv/(nv+view_length)
+    f0=((1.333-1)/(1.333+1))**2
+    total=0.
+    # Integrate reflected energy for a uniform unit-radiance hemisphere,
+    # with visible GGX normals and height-correlated Smith masking.
+    for u,cos_phi,sin_phi in brdf_samples():
+        hz=1-u*(1+tz)
+        r=math.sqrt(max(0.,1-hz*hz))
+        hx,hy,hz=alpha*(tx+r*cos_phi),alpha*r*sin_phi,tz+hz
+        scale=1/math.hypot(hx,hy,hz)
+        vh=min(1.,(vx*hx+nv*hz)*scale)
+        nl=2*vh*hz*scale-nv
+        if min(vh,nl)>0:
+            divisor=nl*view_length+nv*math.sqrt(nl*nl*(1-a2)+a2)
+            energy=f0+(1-f0)*(1-vh)**5
+            total+=energy*2*nv*nl/(max(divisor,1e-6)*visible)
+    return total/512
+
+
+def rough_response(cosine,roughness):
+    u,v=[max(0.,min(63.,a*64-.5)) for a in (cosine,roughness)]
+    x,y=int(u),int(v)
+    sx,sy=u-x,v-y
+    return min(1.,sum(a*b*reflection_texel(i,j)
+        for i,a in ((x,1-sx),(min(x+1,63),sx)) for j,b in ((y,1-sy),(min(y+1,63),sy))))
 
 
 def haze(color,distance):
@@ -153,7 +206,7 @@ def channel_delta(a,b):
     return max(abs(x-y) for x,y in zip(a,b,strict=True))
 
 
-def compose(pixel,probe,tick,camera,profile=None):
+def compose(pixel,probe,tick,camera,profile=None,roughness=None):
     _,eye,rotation,from_sea=CAMERAS[camera]
     ray,view_cosine=sightline(pixel,rotation,from_sea)
     dx,dy,dz=ray
@@ -194,15 +247,18 @@ def compose(pixel,probe,tick,camera,profile=None):
     hdr=[s+(v-s)*math.exp(-k*length) for s,v,k in zip(tint,probe['raw_hdr'],extinction,strict=True)]
     solid_distance=far if depth<1 else FOG['max_distance_m']
     distance=solid_distance
-    no_filter=faceted=regular=hdr
+    no_filter=faceted=regular=base_rough=hdr
+    effective_roughness=roughness
     if crossings:
         hit,cosine,interface=min(crossings)
         before=wet_length(bounds,hit)
         from_air=cosine<0
         sky=AMBIENT if from_air else tint
 
-        def reflected(incidence):
+        def reflected(incidence,width=None):
             f=fresnel(max(-1.,min(1.,incidence)))
+            if from_air and width is not None:
+                f=rough_response(min(abs(incidence),1.),width)
             return [(1-f)*v+f*(s+(r-s)*math.exp(-k*before))
                     for v,s,r,k in zip(hdr,tint,sky,extinction,strict=True)]
 
@@ -211,15 +267,19 @@ def compose(pixel,probe,tick,camera,profile=None):
             signed=(dy-gx*dx-gz*dz)/math.hypot(gx,1,gz)
             return min(-1e-15,signed) if from_air else max(0.,signed)
 
-        filtered,unfiltered=wave_slopes(pixel,rotation,from_sea,ray,view_cosine,hit,eye,tick,profile)
+        filtered,unfiltered,variance=wave_slopes(pixel,rotation,from_sea,ray,view_cosine,hit,eye,tick,profile)
+        if roughness is not None:
+            effective_roughness=min(1.,roughness**4+variance)**.25
         if from_air and before<=.0001:
             distance=hit
-        no_filter=reflected(slope_incidence(unfiltered))
-        faceted=reflected(cosine)
+        no_filter=reflected(slope_incidence(unfiltered),roughness)
+        faceted=reflected(cosine,effective_roughness)
         if profile:
-            periodic,_=wave_slopes(pixel,rotation,from_sea,ray,view_cosine,hit,eye,tick)
-            regular=reflected(slope_incidence(periodic))
-        hdr=reflected(slope_incidence(filtered))
+            periodic,_,_=wave_slopes(pixel,rotation,from_sea,ray,view_cosine,hit,eye,tick)
+            regular=reflected(slope_incidence(periodic),effective_roughness)
+        incidence=slope_incidence(filtered)
+        base_rough=reflected(incidence,roughness)
+        hdr=reflected(incidence,effective_roughness)
         if not profile:
             regular=hdr
     expected=haze(hdr,distance)
@@ -230,12 +290,17 @@ def compose(pixel,probe,tick,camera,profile=None):
         fog_surface_m=distance,filter_delta=channel_delta(expected,haze(no_filter,distance)),
         facet_delta=channel_delta(expected,haze(faceted,distance)),
         variation_delta=channel_delta(expected,haze(regular,distance)),
+        roughness=effective_roughness,variance_response_delta=channel_delta(expected,haze(base_rough,distance)),
         opaque_fog_delta=channel_delta(expected,haze(hdr,solid_distance)))
 
 
 class OffshoreContract(SwellContract):
     def author(self):
         revision=super().author()
+        lighting=environment(FOG)|dict(ambient=AMBIENT)
+        if self.args.rough_reflection:
+            lighting['sky'].update(zenith=AMBIENT,horizon=AMBIENT,ground=AMBIENT)
+            lighting['ibl']=dict(enabled=True,diffuse_intensity=0.,specular_intensity=1.)
         p=math.radians(-18)*.5
         g=math.radians(CAMERAS['grazing'][2])*.5
         # +90 degree yaw rotates forward to -X, keeping the -18 degree pitch.
@@ -249,12 +314,14 @@ class OffshoreContract(SwellContract):
             component(GRAZING_VIEW,'Transform',transform(CAMERAS['grazing'][1],
                 [math.sin(g)*t,-math.cos(g)*t,math.sin(g)*t,math.cos(g)*t])),
             component(GRAZING_VIEW,'Camera',LENS),
-            component(uid(4),'LightingEnvironment',environment(FOG)|dict(ambient=AMBIENT)),
+            component(uid(4),'LightingEnvironment',lighting),
             dict(op='entity.create',id=OCEAN_EAR,name='Offshore listener'),
             component(OCEAN_EAR,'Transform',transform(OFFSHORE_EAR)),
             dict(op='entity.create',id=SHORE_EAR,name='Nearshore listener'),
             component(SHORE_EAR,'Transform',transform(NEARSHORE_EAR)))
         self.definition=dict(self.definition,revision=revision,optics=self.definition['optics']|dict(offshore=SEA))
+        if self.args.rough_reflection:
+            self.definition['optics']['reflection_roughness']=REFLECTION_ROUGHNESS
         # The leading positive band is subnormal in float presentation. It
         # must not suppress the two visible bands or invalidate the scene.
         self.definition['surface_swell']=[dict(SWELL[0],slope=1e-40),*SWELL]
@@ -281,6 +348,8 @@ class OffshoreContract(SwellContract):
         near(row[2]['submersion_m'],SURFACE-4.61)
         assert row[3]['submersion_m']==row[4]['submersion_m']==0 and row[6]['column'] is None
         near(state['volume_m3'],sum(self.definition['initial_depths_m']))
+        if self.args.rough_reflection:
+            assert state['optics']['reflection_roughness']==REFLECTION_ROUGHNESS
         if self.args.swell_variation:
             assert state['swell_variation']==VARIATION
             for i in (0,5):
@@ -313,8 +382,12 @@ class OffshoreContract(SwellContract):
         assert diag['water_optics']['offshore']
         assert diag['water_optics']['offshore_swell_layers']==len(SWELL) and diag['height_fog']['active']
         profile=VARIATION if self.args.swell_variation else None
+        roughness=REFLECTION_ROUGHNESS if self.args.rough_reflection else None
         assert diag['water_optics'].get('swell_variation')==profile
-        rows=[compose(pixel,probe,tick,camera,profile)
+        if roughness is not None:
+            assert diag['water_optics']['rough_reflection']==dict(active=True,perceptual_roughness=roughness)
+            assert diag['environment_ibl']['enabled']
+        rows=[compose(pixel,probe,tick,camera,profile,roughness)
               for pixel,probe in zip(pixels,diag['scene_products']['probes'],strict=True)]
         for i in rows:
             near_vector(i['actual'],i['expected'],tolerance=.003)
@@ -344,7 +417,13 @@ class OffshoreContract(SwellContract):
                     ('invalid_seed','swell_variation',VARIATION|dict(seed=2**32)),
                     ('bool_scale','swell_variation',VARIATION|dict(scale_m=True)),
                 )])
+        if self.args.rough_reflection:
+            self.cases(*[(label,rpc('world.water.plan',**(self.definition|dict(
+                optics=amended|dict(reflection_roughness=value)))),-32602)
+                for label,value in (('roughness_high',1.001),('roughness_low',-.001),('roughness_boolean',True))])
         plan=self.world_call('world.water.plan',**self.definition)
+        if self.args.rough_reflection:
+            assert plan['optics']['reflection_roughness']==REFLECTION_ROUGHNESS
         if self.args.swell_variation:
             assert plan['swell_variation']==VARIATION
             plain={k:v for k,v in self.definition.items() if k!='swell_variation'}
@@ -352,11 +431,13 @@ class OffshoreContract(SwellContract):
         pin=plan['plan_sha256']
         assert self.world_call('world.water.cook',**self.definition,expected_plan_sha256=pin)==plan
         source=self.assets/(pin+'.pwater')
-        assert file_hash(source)==pin and json.loads(source.read_bytes())['version']==(13 if self.args.swell_variation else 12)
+        artifact_version=14 if self.args.rough_reflection else 13 if self.args.swell_variation else 12
+        assert file_hash(source)==pin and json.loads(source.read_bytes())['version']==artifact_version
         revision=self.apply(revision,8110,dict(op='water.set',asset=pin))
         dependencies=self.world_call('world.dependencies')
         assert dependencies['needs_water_offshore']
         assert dependencies.get('needs_water_swell_variation',False) is self.args.swell_variation
+        assert dependencies.get('needs_water_rough_reflection',False) is self.args.rough_reflection
         (self.root/'saves').mkdir()
         session=uid(8111)
         with self.owner('water seam') as (client,_):
@@ -372,17 +453,23 @@ class OffshoreContract(SwellContract):
                 hits=[r for name in ('from-shore','from-ocean') for r in self.measurements[name]['samples']]
                 assert sum(r['coastal_m']>.01 and r['offshore_m']>.01 for r in hits)>=8
                 assert any(r['interface']=='ocean' for r in hits)
-                assert all(any(r['interface']==side and r['facet_delta']>.006 for r in hits)
-                           for side in ('shore','ocean'))
                 assert all(any(r['interface'] and r['solid_hit'] is solid and r['opaque_fog_delta']>.004
                               for r in hits) for solid in (True,False))
-                assert sum(r['interface']=='ocean' and r['filter_delta']>.006
-                           for r in self.measurements['toward-horizon']['samples'])>=4
+                grazing=self.measurements['toward-horizon']['samples']
+                if self.args.rough_reflection:
+                    assert any(r['interface']=='ocean' and r['roughness']>REFLECTION_ROUGHNESS+.06 for r in grazing)
+                    assert sum(r['variance_response_delta']>.004 for r in grazing)>=4
+                    assert any(r['interface']=='shore' and r['roughness']==REFLECTION_ROUGHNESS for r in hits)
+                else:
+                    assert all(any(r['interface']==side and r['facet_delta']>.006 for r in hits)
+                               for side in ('shore','ocean'))
+                    assert sum(r['interface']=='ocean' and r['filter_delta']>.006 for r in grazing)>=4
                 if self.args.swell_variation:
                     self.image(client,session,45,'across-patches','patches')
                     across=self.measurements['across-patches']['samples']
-                    assert sum(r['interface']=='ocean' and r['variation_delta']>.015 for r in across)>=8
-                    assert any(r['interface']=='shore' and r['variation_delta']>.015 for r in hits)
+                    if not self.args.rough_reflection:
+                        assert sum(r['interface']=='ocean' and r['variation_delta']>.015 for r in across)>=8
+                        assert any(r['interface']=='shore' and r['variation_delta']>.015 for r in hits)
             self.configure(client)
             client.call('save.write',self.write(session,45,'checkpoint',8113)['params'])
         self.measurements['point_checks']=at_tick
@@ -408,12 +495,14 @@ class OffshoreContract(SwellContract):
         older.mkdir()
         manifest=json.loads((self.args.runtime_root/'runtime.json').read_bytes())
         feature='water_swell_variation' if self.args.swell_variation else 'water_offshore'
+        label='Spatially varied swell' if self.args.swell_variation else 'Offshore water'
+        if self.args.rough_reflection:
+            feature,label='water_rough_reflection','Rough water reflection'
         assert manifest['features'].pop(feature)
         (older/'runtime.json').write_text(json.dumps(manifest),encoding='utf-8')
         args=['project','build',self.native(self.manifest),'--output',self.native(first),'--runtime']
         rej=subprocess.run([str(self.args.binary.resolve()),*args,self.native(older)],capture_output=True,text=True,timeout=60)
         assert rej.returncode==4 and not first.exists(),rej
-        label='Spatially varied swell' if self.args.swell_variation else 'Offshore water'
         assert json.loads(rej.stdout)['diagnostics'][0]['message']==f'{label} requires a compatible Vulkan runtime.'
         success(json.loads(self.cli(*args,self.native(self.args.runtime_root))))
         target=self.root/'relocated export'
@@ -445,6 +534,7 @@ def main():
     parser.add_argument('--lighting-path',choices=('forward','deferred'),default='forward')
     parser.add_argument('--runtime-root',type=Path)
     parser.add_argument('--swell-variation',action='store_true')
+    parser.add_argument('--rough-reflection',action='store_true')
     parser.add_argument('--require-validation',action='store_true')
     args=parser.parse_args()
     args.output.mkdir(parents=True,exist_ok=True)

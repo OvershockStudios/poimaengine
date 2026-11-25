@@ -1225,6 +1225,9 @@ void height_fog_contracts() {
     bad_water("water optics lose the specular environment",[&](auto& p){
         erase_access(p,PassId::height_fog,water.f.ibl_specular,Use::sampled);
     });
+    bad_water("water optics lose the reflection response",[&](auto& p){
+        erase_access(p,PassId::height_fog,water.f.ibl_brdf,Use::sampled);
+    });
     bad_water("water optics columns have partial elements",[&](auto& p){
         ++p.frame.resources[water.f.water_columns].bytes;
     });
@@ -1462,6 +1465,7 @@ void reconstructed_sprite_contracts() {
         check(access(plan,sprite,f.water_columns,Use::storage_read) &&
               access(plan,sprite,f.frame,Use::constant) &&
               access(plan,sprite,f.ibl_specular,Use::sampled) &&
+              access(plan,sprite,f.ibl_brdf,Use::sampled) &&
               access(plan,sprite,f.lights,Use::storage_read)==lit_foam &&
               access(plan,sprite,f.shadow,Use::sampled)==lit_foam,
               "Water sprite composition must declare its optical and active lighting resources.");
@@ -1471,6 +1475,9 @@ void reconstructed_sprite_contracts() {
         missing=plan;
         erase_access(missing,sprite,f.ibl_specular,Use::sampled);
         rejects("water sprites missing surface reflections",[&]{missing.validate();});
+        missing=plan;
+        erase_access(missing,sprite,f.ibl_brdf,Use::sampled);
+        rejects("water sprites missing reflection response",[&]{missing.validate();});
         if(lit_foam) {
             missing=plan;
             erase_access(missing,sprite,f.shadow,Use::sampled);

@@ -74,6 +74,7 @@ nvrhi::BindingSetDesc fog_binding_desc(const Inputs& inputs, nvrhi::ITexture* de
     if (inputs.water_columns) {
         desc.addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(7,inputs.water_columns))
             .addItem(nvrhi::BindingSetItem::Texture_SRV(8,inputs.water_specular))
+            .addItem(nvrhi::BindingSetItem::Texture_SRV(9,inputs.water_brdf))
             .addItem(nvrhi::BindingSetItem::Sampler(1,inputs.water_sampler));
     }
     return desc;
@@ -237,6 +238,7 @@ const Pass::Pipeline& Pass::prepare_compositor(nvrhi::IDevice& device, bool aeri
     if (water) {
         desc.addItem(nvrhi::BindingLayoutItem::StructuredBuffer_SRV(7))
             .addItem(nvrhi::BindingLayoutItem::Texture_SRV(8))
+            .addItem(nvrhi::BindingLayoutItem::Texture_SRV(9))
             .addItem(nvrhi::BindingLayoutItem::Sampler(1));
     }
     auto layout = device.createBindingLayout(desc);
@@ -333,7 +335,7 @@ void Pass::prepare(nvrhi::IDevice& device, const Inputs& inputs) {
             aerial_binding_desc(inputs, aerial_scattering_, aerial_transmittance_, aerial_sampler_), aerial_compute_.layout);
         if (!aerial_bindings) throw std::runtime_error("Aerial perspective bindings creation failed.");
     }
-    if (inputs.water_columns && (!inputs.water_specular || !inputs.water_sampler))
+    if (inputs.water_columns && (!inputs.water_specular || !inputs.water_brdf || !inputs.water_sampler))
         throw std::runtime_error("Water optics require the prepared environment descriptors.");
     const auto& compositor=prepare_compositor(device,inputs.atmosphere_density,inputs.water_columns);
     auto bindings = device.createBindingSet(
@@ -383,6 +385,7 @@ void Pass::verify_bindings(const render_schedule::Schedule& plan) const {
         .atmosphere_density = aerial ? texture(frame.atmosphere_density) : nullptr,
         .water_columns=water ? buffer(frame.water_columns) : nullptr,
         .water_specular=water ? texture(frame.ibl_specular) : nullptr,
+        .water_brdf=water ? texture(frame.ibl_brdf) : nullptr,
         .water_sampler=inputs_.water_sampler
     };
     const auto scattering = aerial ? texture(frame.aerial_scattering) : nullptr;
