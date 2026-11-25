@@ -1210,6 +1210,27 @@ void height_fog_contracts() {
     bounded.plan().validate();++accepted;
     for(auto id:{bounded.f.hdr,bounded.f.depth,bounded.f.fogged_hdr})++bounded.f.resources[id].height;
     rejects("height fog exceeds 96 MiB at next row",[&]{bounded.plan().validate();});
+    Fixture water(forward);
+    water.f.water_columns=water.add(Kind::buffer,Lifetime::shared);
+    water.f.resources[water.f.water_columns].bytes=8*water_column_bytes;
+    environment_inputs(water,true);
+    const auto optical=water.plan();
+    optical.validate();++accepted;
+    auto bad_water=[&](const char* name,const auto& edit) {
+        auto candidate=optical;edit(candidate);rejects(name,[&]{candidate.validate();});
+    };
+    bad_water("water optics lose column upload",[&](auto& p){
+        erase_access(p,PassId::skinning,water.f.water_columns,Use::upload);
+    });
+    bad_water("water optics lose the specular environment",[&](auto& p){
+        erase_access(p,PassId::height_fog,water.f.ibl_specular,Use::sampled);
+    });
+    bad_water("water optics columns have partial elements",[&](auto& p){
+        ++p.frame.resources[water.f.water_columns].bytes;
+    });
+    bad_water("water optics columns are read by a foreign pass",[&](auto& p){
+        pass(p,PassId::output).accesses.push_back({water.f.water_columns,Use::storage_read});
+    });
     auto legacy=Fixture(rich(),4).plan();legacy.validate();
     check(legacy.frame.fogged_hdr==none && world_radiance(legacy.frame,legacy.settings)==legacy.frame.hdr &&
           std::none_of(legacy.passes.begin(),legacy.passes.end(),[](const auto& work){return work.id==PassId::height_fog;}),

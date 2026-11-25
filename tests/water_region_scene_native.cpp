@@ -200,6 +200,18 @@ int main() {
         gate_and_dry_state();
         ripple_phase_uses_only_committed_time();
         combined_stream_budget();
+        RegionDefinition profile{};
+        profile.config={.cells_x=2,.cells_z=1,.origin_x_m=137,.origin_z_m=-20};
+        profile.floor_heights_m={4,5};
+        profile.initial_depths_m={2,0};
+        profile.plan_sha256=std::string(64,'a');
+        profile.optics=poima::WaterOptics{{.8,.4,.15},{.03,.12,.22}};
+        Region optical(profile);
+        const auto media=capture(optical);
+        check(media.water_volume && media.objects.front().water_region_surface &&
+              media.water_volume->origin_m==std::array{137.,4.,-20.} &&
+              media.water_volume->columns==std::vector{std::array{0.f,2.f},std::array{1.f,1.f}},
+              "Volume presentation must include both the wet column and the dry terrain bed.");
         std::cout << "Water scene checks passed, including the combined water and particle stream budget.\n";
         return 0;
     } catch (const std::exception& error) {

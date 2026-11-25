@@ -2,6 +2,7 @@
 #pragma once
 
 #include "poima/shallow_water.hpp"
+#include "poima/water_optics.hpp"
 
 #include <optional>
 #include <string>
@@ -46,6 +47,7 @@ struct RegionDefinition {
     std::optional<SurfaceRipples> surface_ripples;
     std::vector<SurfaceRipples> surface_wave_layers;
     std::optional<ListenerAudio> listener_audio;
+    std::optional<WaterOptics> optics;
 };
 
 }

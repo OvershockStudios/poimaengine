@@ -216,6 +216,49 @@ on or above the surface, or when it is below that cell's terrain bed. At an
 interior cell edge the higher-index cell owns the point. Surface shading
 waves leave these sampled heights unchanged.
 
+## Author transparent water
+
+Add an optional `optics` profile to `world.water.plan` and
+`world.water.cook`. Keep the terrain revision and plan hash guards. The two
+RGB arrays are required together. Extinction is measured per metre in
+`[0,8]`. In-scattered radiance is scene-linear and bounded to `[0,16]`.
+
+```json
+{"optics":{"extinction_per_m":[1.15,0.38,0.16],"scattered_radiance":[0.025,0.15,0.25]}}
+```
+
+The water becomes more opaque over longer sightlines. Higher red
+extinction can produce the blue-green cast of clear water. Increase all
+three channels for shorter visibility. The scattering color is the
+radiance the view approaches as the path through water gets longer.
+Choose it alongside the scene lighting and exposure.
+
+Single-sample Vulkan color replaces the opaque water surface with the
+world media compositor. It intersects the view ray with the committed
+water columns and stops at opaque scene depth. It integrates RGB
+transmittance and constant in-scattering over the intersected lengths.
+The first visible top surface reflects according to its angle and a
+water index of refraction of 1.333. Above water it reflects the
+environment IBL cube, or ambient radiance when IBL is disabled. Existing
+ripples and wave layers affect the reflected angle. From below, the
+reflection uses the water scattering radiance and the Fresnel term permits
+total internal reflection. Air-media effects apply after water in the
+shared compositor. The transmitted ray follows the original screen
+sightline. Refracted sampling, sun caustics and water-aware transparent
+particle ordering remain separate work.
+[Grid traversal](https://par.cse.nsysu.edu.tw/resource/paper/2024/241022/A%20Fast%20Voxel%20Traversal%20Algorithm.pdf)
+[Water optics reference](https://developer.nvidia.com/gpugems/gpugems/part-i-natural-effects/chapter-2-rendering-water-caustics)
+
+Use one sample with forward or deferred rendering. FSR can consume the
+composed color. MSAA and diagnostic views retain the opaque water mesh.
+Observe `render_diagnostics.water_optics` for the active path, sampled
+column count, camera submersion and shared media timing. Compare the
+submersion to a `runtime.water.inspect` point query at the same tick.
+Use preserved raw scene HDR and depth to distinguish water changes from
+a change to the underlying opaque geometry. Authored optics select
+version 6 of the cooked region. Project inspection, export and relocated
+game validation require `features.water_optics`.
+
 ## Observe and verify local flow
 
 Discover `runtime.water.inspect` in a simulation build. Pass `session_id`, the
@@ -239,7 +282,7 @@ ledger, whose bounds depend on the saved weather cursor and simulation tick.
 The package includes the selected `.pwater` and cooked terrain meshes.
 Keep the editable heightfield recipe for later revisions.
 
-The renderer projects wet cells into one opaque, depth-tested mesh.
+The default renderer projects wet cells into one opaque, depth-tested mesh.
 From 0.0.355, changing geometry uploads through frame-owned vertex and index
 buffers. The depth-color palette stays bound across changes in cell heights.
 Compare captures taken before and after opening a gate from a view that

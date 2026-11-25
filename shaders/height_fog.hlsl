@@ -12,6 +12,10 @@ SamplerState aerial_sampler : register(s0);
 Texture2DArray<float> shadow_map : register(t5);
 [[vk::image_format("rgba16f")]] RWTexture2D<float4> fogged_radiance : register(u0);
 
+#if defined(POIMA_WATER_OPTICS)
+#include "water_optics.hlsli"
+#endif
+
 struct FogConstants {
     float4 ambient_density; // scene-linear RGB, extinction per metre at and below the base
     float4 distance_height; // start/end ray distances, base world Y, falloff per metre
@@ -19,6 +23,9 @@ struct FogConstants {
     float4 scattering; // per-spot gains in XY, Henyey-Greenstein anisotropy in Z
 #if defined(POIMA_AERIAL_PERSPECTIVE)
     float4 aerial_distances; // maximum camera-ray distance in X, reserved YZW
+#endif
+#if defined(POIMA_WATER_OPTICS)
+    WaterConstants water;
 #endif
 };
 [[vk::push_constant]] ConstantBuffer<FogConstants> fog;
@@ -149,14 +156,14 @@ void compute_main(uint3 dispatch_id : SV_DispatchThreadID) {
     const uint2 pixel = dispatch_id.xy;
     if (any(pixel >= uint2(width, height))) return;
 
-#if defined(POIMA_AERIAL_PERSPECTIVE)
+#if defined(POIMA_AERIAL_PERSPECTIVE) || defined(POIMA_WATER_OPTICS)
     float4 surface = surface_radiance.Load(int3(pixel, 0));
 #else
     const float4 surface = surface_radiance.Load(int3(pixel, 0));
 #endif
     const float2 viewport_pixel = float2(pixel) + 0.5 - cluster_viewport.xy;
     if (any(viewport_pixel < 0.0) || any(viewport_pixel >= cluster_viewport.zw)
-#if !defined(POIMA_AERIAL_PERSPECTIVE)
+#if !defined(POIMA_AERIAL_PERSPECTIVE) && !defined(POIMA_WATER_OPTICS)
         || fog.ambient_density.w <= 0.0
 #endif
     ) {
@@ -172,6 +179,12 @@ void compute_main(uint3 dispatch_id : SV_DispatchThreadID) {
     const float start = fog.distance_height.x;
     float end = fog.distance_height.y;
     const float depth = scene_depth.Load(int3(pixel, 0));
+#if defined(POIMA_WATER_OPTICS)
+    const float water_depth = saturate(depth);
+    const float water_end = ray_scale * cluster_depth.z /
+        ((1.0 - water_depth) + water_depth * (cluster_depth.z / cluster_depth.w));
+    surface.rgb = compose_water(fog.water, surface.rgb, ray, water_end);
+#endif
     if (depth < 1.0 && depth >= 0.0) {
         const float near_plane = cluster_depth.z;
         const float far_plane = cluster_depth.w;
@@ -185,7 +198,7 @@ void compute_main(uint3 dispatch_id : SV_DispatchThreadID) {
         end = min(end, ray_distance);
     }
     if (end <= start
-#if defined(POIMA_AERIAL_PERSPECTIVE)
+#if defined(POIMA_AERIAL_PERSPECTIVE) || defined(POIMA_WATER_OPTICS)
         || fog.ambient_density.w <= 0.0
 #endif
     ) {

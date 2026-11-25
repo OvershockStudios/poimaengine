@@ -11,6 +11,7 @@ namespace poima::water {
 nlohmann::json surface_ripples_json(const SurfaceRipples& ripples);
 nlohmann::json surface_wave_layers_json(std::span<const SurfaceRipples> layers);
 nlohmann::json listener_audio_json(const ListenerAudio& profile);
+nlohmann::json optics_json(const WaterOptics& profile);
 
 // Advances one frozen authored region at the runtime's fixed tick rate.
 class Region {
@@ -25,6 +26,7 @@ public:
     const std::optional<SurfaceRipples>& surface_ripples() const noexcept { return surface_ripples_; }
     std::span<const SurfaceRipples> surface_wave_layers() const noexcept { return surface_wave_layers_; }
     const std::optional<ListenerAudio>& listener_audio() const noexcept { return listener_audio_; }
+    const std::optional<WaterOptics>& optics() const noexcept { return optics_; }
     std::uint64_t cumulative_rain_nm() const noexcept { return cumulative_rain_nm_; }
     double cumulative_rain_m3() const noexcept;
 
@@ -48,6 +50,7 @@ private:
     std::optional<SurfaceRipples> surface_ripples_;
     std::vector<SurfaceRipples> surface_wave_layers_;
     std::optional<ListenerAudio> listener_audio_;
+    std::optional<WaterOptics> optics_;
     std::uint64_t cumulative_rain_nm_ = 0;
     std::uint32_t last_rain_nm_ = 0;
     std::optional<std::uint64_t> first_rain_quantum_;

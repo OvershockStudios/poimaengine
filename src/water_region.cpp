@@ -182,11 +182,15 @@ nlohmann::json listener_audio_json(const ListenerAudio& profile) {
         {"full_depth_m", profile.full_depth_m}};
 }
 
+nlohmann::json optics_json(const WaterOptics& profile) {
+    return {{"extinction_per_m",profile.extinction_per_m},{"scattered_radiance",profile.scattered_radiance}};
+}
+
 Region::Region(const RegionDefinition& definition)
     : grid_(initial_grid(definition)), initial_depths_m_(definition.initial_depths_m),
       faces_(definition.faces), exchanges_(definition.exchanges), plan_sha256_(definition.plan_sha256),
       rain_cells_(definition.rain_cells), surface_ripples_(definition.surface_ripples),
-      surface_wave_layers_(definition.surface_wave_layers), listener_audio_(definition.listener_audio) {
+      surface_wave_layers_(definition.surface_wave_layers), listener_audio_(definition.listener_audio), optics_(definition.optics) {
     if (surface_ripples_)
         validate_surface_ripples(*surface_ripples_);
     validate_wave_layers(surface_wave_layers_);
@@ -195,6 +199,14 @@ Region::Region(const RegionDefinition& definition)
         if (!(profile.cutoff_hz >= 80 && profile.cutoff_hz <= 8000 && unit_interval(profile.gain) &&
               profile.full_depth_m >= .01 && profile.full_depth_m <= 10))
             throw std::invalid_argument("Water listener audio needs cutoff_hz in [80,8000], gain in [0,1] and full_depth_m in [0.01,10].");
+    }
+    if (optics_) {
+        for (double value : optics_->extinction_per_m)
+            if (!(value >= 0 && value <= 8))
+                throw std::invalid_argument("Water extinction_per_m channels must be in [0,8].");
+        for (double value : optics_->scattered_radiance)
+            if (!(value >= 0 && value <= 16))
+                throw std::invalid_argument("Water scattered_radiance channels must be in [0,16].");
     }
 
     const auto& config = grid_.config();

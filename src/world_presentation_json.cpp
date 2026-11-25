@@ -188,6 +188,11 @@ Json render_diagnostics(const RenderDiagnostics& d) {
         result["height_fog"]={{"active",fog.active},{"reason",fog.reason},{"buffer_bytes",fog.buffer_bytes},
             {"spot_lights",fog.spot_lights},{"gpu",timing(d.height_fog_gpu)}};
     }
+    if(d.water_optics) {
+        const auto& water=*d.water_optics;
+        result["water_optics"]={{"active",water.active},{"reason",water.reason},{"columns",water.columns},
+            {"camera_submersion_m",water.camera_submersion_m},{"world_media_gpu",timing(d.height_fog_gpu)}};
+    }
     if(d.atmosphere_sky) {
         const auto& atmosphere=*d.atmosphere_sky;
         result["atmosphere_sky"]={{"density_generation",atmosphere.density_generation},

@@ -1,8 +1,18 @@
 # Implementation status
 
-Updated 2026-11-25 for **0.0.413**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-25 for **0.0.414**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.414 adds [transparent water optics](SHALLOW_WATER.md#author-transparent-water)
+for local terrain-bound regions. A rising water level submerged a fixed
+camera. AMD forward and NVIDIA deferred captures matched 140 independent
+RGB sightline comparisons, including exact raw HDR and opaque depth parity.
+Fresh save loads and a relocated Windows capture reproduced the submerged
+image. NVIDIA also exercised FSR Native AA and a scene with water wave
+layers, sky IBL and aerial perspective. The MSAA path retained the opaque
+surface. Ubuntu passed 14 suites. Refraction and caustics remain open.
+[Results](evidence/m2-water-optics-414.json)
 
 Version 0.0.413 adds [waterline audio](SHALLOW_WATER.md#author-the-waterline-sound-transition)
 and guarded point sampling of committed water columns. The native fixture
@@ -11,8 +21,8 @@ the stereo WAV to an independent filter calculation. Windows and Ubuntu
 agreed within 0.000000008 sample amplitude. A fresh-process save restored the
 same depth and blend target. A relocated Windows bundle reproduced the
 submerged capture with the source project moved aside. Ubuntu passed 13
-suites. This checkpoint qualifies captured PCM. The underwater render and
-acoustic propagation through water are separate work.
+suites. This checkpoint qualifies captured PCM. Acoustic propagation
+through water remains open.
 [Results](evidence/m2-water-listener-413.json)
 
 Version 0.0.412 adds opt-in [GPU camera visibility](GPU_VISIBILITY.md) for

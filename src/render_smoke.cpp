@@ -236,6 +236,7 @@ struct Context {
         std::optional<AutoExposureDiagnostics> exposure;
         std::optional<AtmosphereSkyDiagnostics> atmosphere_sky;
         std::optional<AerialPerspectiveDiagnostics> aerial_perspective;
+        std::optional<WaterOpticsDiagnostics> water_optics;
         std::optional<CloudDiagnostics> volumetric_clouds;
         std::optional<CloudShadowDiagnostics> cloud_shadows;
         bool cloud_shadow_baked=false;
@@ -298,6 +299,9 @@ struct Context {
     screen_reflections::Pass reflections;
     height_fog::Pass fog;
     std::array<std::uint32_t,2> fog_spots{};
+    nvrhi::BufferHandle water_columns;
+    std::optional<height_fog::WaterParameters> water_parameters;
+    std::optional<WaterOpticsDiagnostics> pending_water_optics;
     std::optional<height_fog::AerialParameters> aerial_parameters;
     std::optional<AerialPerspectiveDiagnostics> pending_aerial_perspective;
     std::optional<CloudDiagnostics> pending_clouds;
@@ -342,7 +346,7 @@ struct Context {
         std::array<float,4> viewport{};
         std::array<double,3> lens{};
         std::optional<RendererCameraDrawResult> camera_draw;
-        bool reconstructed_reflections=false,reconstructed_fog=false;
+        bool reconstructed_reflections=false,reconstructed_fog=false,reconstructed_water=false;
         float reconstructed_aerial_distance=0;
         bool reconstructed_clouds=false;
         float reconstructed_cloud_shadow_strength=0;
@@ -428,7 +432,7 @@ struct Context {
         occlusion.reset();
         deferred_lighting.release_gpu();material_base=nullptr;material_surface=nullptr;material_correspondence=nullptr;
         temporal_inputs.release_gpu();
-        fog={};reflections={};
+        fog={};reflections={};water_columns=nullptr;
         pipeline = nullptr; culled_pipeline=nullptr;
         sky_pass.reset();
         scene_output.release_gpu();
@@ -830,6 +834,7 @@ struct Context {
         pending_history.camera_draw=renderer_scene_result(*scene).camera_draw;
         pending_history.reconstructed_reflections=reconstruction && reflections.radiance();
         pending_history.reconstructed_fog=reconstruction && diagnostics.height_fog && diagnostics.height_fog->active;
+        pending_history.reconstructed_water=reconstruction && water_parameters.has_value();
         pending_history.reconstructed_aerial_distance=reconstruction && aerial_parameters ? aerial_parameters->optics[1] : 0;
         pending_history.reconstructed_clouds=reconstruction && sky_pass.clouds_enabled();
         pending_history.reconstructed_cloud_shadow_strength=reconstruction ? frame_constants.cloud_shadow_controls[0] : 0.f;
@@ -854,6 +859,7 @@ struct Context {
         else if(history.camera_draw!=pending_history.camera_draw)pending_history_reset="camera_draw_changed";
         else if(history.reconstructed_reflections!=pending_history.reconstructed_reflections ||
                 history.reconstructed_fog!=pending_history.reconstructed_fog ||
+                history.reconstructed_water!=pending_history.reconstructed_water ||
                 history.reconstructed_aerial_distance!=pending_history.reconstructed_aerial_distance ||
                 history.reconstructed_clouds!=pending_history.reconstructed_clouds ||
                 history.reconstructed_cloud_shadow_strength!=pending_history.reconstructed_cloud_shadow_strength)
@@ -1300,10 +1306,12 @@ struct Context {
         post_effect.detach_source(source);
         if(viewmodel)viewmodel->compose_bindings=nullptr;
     }
-    void prepare_height_fog(const SceneLighting& lighting) {
+    void prepare_height_fog(const SceneLighting& lighting,float water_normal_mode) {
         diagnostics.height_fog.reset();
         aerial_parameters.reset();
         pending_aerial_perspective.reset();
+        pending_water_optics.reset();
+        water_parameters.reset();
         fog_spots={};
         const auto& selected=lighting.environment.height_fog;
         const auto& atmosphere_profile=lighting.environment.atmosphere;
@@ -1315,6 +1323,16 @@ struct Context {
             !rigid_transform(scene->camera_world) ? "camera_non_rigid" :
             !scene->world_viewmodel_draws().empty() ? "world_depth_foreground" : "active";
         const bool height_active=selected && selected->density_per_m>0 && color_reason=="active";
+        if(const auto& water=scene->water_volume) {
+            const auto& camera=scene->camera_world;
+            const auto view=height_fog::project_water_view(*water,{camera[12],camera[13],camera[14]},water_normal_mode);
+            pending_water_optics=WaterOpticsDiagnostics{color_reason=="active",color_reason,
+                water->cells_x*water->cells_z,view.submersion_m};
+            if(color_reason=="active") {
+                if(!water_columns)water_columns=height_fog::allocate_water_columns(*checked.Get());
+                water_parameters=view.parameters;
+            }
+        }
         if(wants_aerial) {
             const auto reason=color_reason=="active" && !sky_pass.atmosphere_enabled() ?
                 std::string_view("atmosphere_inactive") : color_reason;
@@ -1336,7 +1354,7 @@ struct Context {
                 parameters.optics={atmosphere_profile->aerosol_strength,distance,0,0};
             }
         }
-        if(height_active || aerial_parameters) {
+        if(height_active || aerial_parameters || water_parameters) {
             const auto new_color_bytes=fog.radiance() ? 0 : reconstruction_pixels()*8;
             const auto new_optics_bytes=aerial_parameters && fog.aerial_buffer_bytes()==0 ?
                 2*atmosphere::aerial_table_bytes : 0;
@@ -1355,15 +1373,18 @@ struct Context {
                 if(light!=lighting.lights.end() && light->light.kind==LightKind::spot && light->light.intensity>0)
                     fog_spots[slot]=static_cast<std::uint32_t>(light-lighting.lights.begin()+1);
             }
+            const auto environment=environment_ibl.bound();
             fog.prepare(*checked.Get(),{frame_buffer.Get(),surface_radiance_texture(),depth.Get(),shadows.texture(),
-                light_clusters.lights(),aerial_parameters ? sky_pass.atmosphere_density() : nullptr});
+                light_clusters.lights(),aerial_parameters ? sky_pass.atmosphere_density() : nullptr,
+                water_parameters ? water_columns.Get() : nullptr, water_parameters ? environment.specular : nullptr,
+                water_parameters ? environment.sampler : nullptr});
         }
         if(selected) {
             const auto light_count=static_cast<std::uint32_t>(std::ranges::count_if(fog_spots,[](auto ordinal){return ordinal!=0;}));
             diagnostics.height_fog=HeightFogDiagnostics{height_active,selected->density_per_m==0 ? "zero_density" : color_reason,
                 height_active ? fog.buffer_bytes() : 0,light_count};
         }
-        if(height_active || aerial_parameters)return;
+        if(height_active || aerial_parameters || water_parameters)return;
         if(auto* source=fog.radiance()) {
             retire_frames(true);
             detach_world_outputs(source);
@@ -1786,7 +1807,7 @@ struct Context {
             require(object.surface_marks.empty(),"Surface marks are limited to opaque world receivers.");
             require(!object.wetness,"Surface wetness is limited to world drawables.");
             require(!object.lods,"Mesh LOD is limited to ordinary world drawables.");
-            require(!object.water_ripple_surface,"Water ripples are limited to the world region surface.");
+            require(!object.water_ripple_surface && !object.water_region_surface,"Water is limited to the world region surface.");
             require(!object.foliage_motion,"Foliage motion is limited to ordinary world drawables.");
         }
     }
@@ -1903,7 +1924,7 @@ struct Context {
             view.splits[2]=number(source.depth_span);view.splits[3]=number(source.world_units_per_texel);
         }
         configure_light_assignment();
-        prepare_height_fog(lighting);
+        prepare_height_fog(lighting,water_normal_mode);
         // Use the actual rounded GPU matrices for clipping decisions.
         auto frustum=[](const float* matrix) { Matrix4 value;std::copy_n(matrix,16,value.begin());return make_frustum(value); };
         std::array<float,16> culling_projection;std::copy_n(frame_constants.view_projection,16,culling_projection.begin());
@@ -1926,6 +1947,13 @@ struct Context {
         bool found_water_ripples=false;
         std::shared_ptr<MeshLodDiagnostics> mesh_lod;
         for(std::size_t list=0;list<world_drawables.size();++list)for(const auto& object:world_drawables[list]) {
+            if(water_parameters && object.water_region_surface) {
+                require(list==0 && object.mesh && object.stream_geometry && !object.mutable_geometry && !object.cast_shadows &&
+                    !object.skin && !object.incarnation && !object.camera_draw && !object.lods,
+                    "Water optics require the transient world water mesh.");
+                found_water_ripples=object.water_ripple_surface;
+                continue;
+            }
             if(object.material)validate_material_alpha(*object.material);
             if(object.mesh)validate_material_alpha(object.mesh->material);
             require(!object.wetness || (list==0 && object.material && !object.camera_draw && !object.skin && !object.stream_geometry),
@@ -2423,6 +2451,7 @@ struct Context {
                 diagnostics.last_draws=slot.draws;diagnostics.light_assignment=slot.lights;diagnostics.viewmodel=slot.viewmodel_diagnostics;
                 diagnostics.atmosphere_sky=slot.atmosphere_sky;
                 diagnostics.aerial_perspective=slot.aerial_perspective;
+                diagnostics.water_optics=slot.water_optics;
                 diagnostics.volumetric_clouds=slot.volumetric_clouds;
                 diagnostics.cloud_shadows=slot.cloud_shadows;
                 diagnostics.scene_products.history_valid=slot.history_valid;diagnostics.scene_products.history_sequence=slot.history_sequence;
@@ -2587,6 +2616,8 @@ struct Context {
                 f.reflected_hdr=texture(reflections.radiance(),rs::Lifetime::shared,false);
             }
             if(settings.height_fog)f.fogged_hdr=texture(fog.radiance(),rs::Lifetime::shared,false);
+            if(water_parameters)f.water_columns=buffer(water_columns,rs::Lifetime::shared,false,
+                scene->water_volume->columns.size()*rs::water_column_bytes);
             if(settings.aerial_perspective) {
                 f.aerial_scattering=texture(fog.aerial_scattering(),rs::Lifetime::shared,false);
                 f.aerial_transmittance=texture(fog.aerial_transmittance(),rs::Lifetime::shared,false);
@@ -3088,6 +3119,11 @@ struct Context {
                     }
                     commands->writeBuffer(planned_buffer(resources.frame),&frame_constants,sizeof(frame_constants));
                     commands->writeBuffer(planned_buffer(resources.objects),object_data.data(),object_data.size()*sizeof(ObjectData));
+                    if(resources.water_columns!=render_schedule::none) {
+                        const auto& columns=scene->water_volume->columns;
+                        commands->writeBuffer(planned_buffer(resources.water_columns),columns.data(),
+                            columns.size()*render_schedule::water_column_bytes);
+                    }
                     skinning.record(*commands.Get(),{draws,viewmodel_draws},skin_readback);
                     if(ao_enabled)occlusion.upload(*commands.Get(),planned_buffer(resources.ao_constants));
                 }
@@ -3175,7 +3211,7 @@ struct Context {
                 static const HeightFog clear_air{};
                 const auto& authored=scene->lighting.environment.height_fog;
                 fog.dispatch(*commands.Get(),authored ? *authored : clear_air,fog_spots,
-                    aerial_parameters ? aerial_parameters->optics[1] : 0.f);
+                    aerial_parameters ? aerial_parameters->optics[1] : 0.f,water_parameters ? &*water_parameters : nullptr);
                 timestamp(17);
                 break;
             }
@@ -3275,6 +3311,7 @@ struct Context {
         slot.capture_probes=capture_frame && !product_probes.empty();slot.reconstruction=pending_reconstruction;
         slot.exposure=pending_exposure;slot.capture_exposure=plan.frame.exposure_readback!=render_schedule::none;
         slot.aerial_perspective=scene ? pending_aerial_perspective : std::nullopt;
+        slot.water_optics=scene ? pending_water_optics : std::nullopt;
         slot.volumetric_clouds=scene ? pending_clouds : std::nullopt;
         slot.cloud_shadows=scene ? pending_cloud_shadows : std::nullopt;
         slot.cloud_shadow_baked=plan.settings.cloud_shadows && !plan.resource(plan.frame.cloud_shadow).initialized;

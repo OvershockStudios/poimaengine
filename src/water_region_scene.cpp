@@ -101,11 +101,20 @@ void append_region_scene(const Region& region, SceneSnapshot& scene) {
         throw std::invalid_argument("Water region exceeds the scene projection bounds.");
 
     const auto origin_y = grid.sample({0, 0}).floor_height_m;
+    SceneWaterVolume volume;
+    if (const auto& optics = region.optics()) {
+        volume={.origin_m={config.origin_x_m,origin_y,config.origin_z_m},.cell_size_m=config.cell_size_m,
+            .cells_x=config.cells_x,.cells_z=config.cells_z,.optics=*optics,.columns={}};
+        volume.columns.reserve(static_cast<std::size_t>(config.cells_x)*config.cells_z);
+    }
     std::array<SurfaceCell, max_region_side * max_region_side> wet;
     std::size_t count = 0;
     for (std::uint32_t z = 0; z < config.cells_z; ++z) {
         for (std::uint32_t x = 0; x < config.cells_x; ++x) {
             const auto sample = grid.sample({x, z});
+            if (region.optics())
+                volume.columns.push_back({static_cast<float>(sample.floor_height_m-origin_y),
+                    static_cast<float>(sample.surface_height_m-origin_y)});
             if (sample.depth_m == 0) continue;
             // Normalize depth over one meter between the color texel centers.
             const auto palette_u = static_cast<float>(0.25 + 0.5 * std::min(sample.depth_m, 1.0));
@@ -113,6 +122,7 @@ void append_region_scene(const Region& region, SceneSnapshot& scene) {
         }
     }
     if (!count) return;
+    if (region.optics()) scene.water_volume=std::move(volume);
 
     SceneObject object{};
     object.entity_id = "water-region/" + region.plan_sha256();
@@ -126,6 +136,7 @@ void append_region_scene(const Region& region, SceneSnapshot& scene) {
     object.textures = depth_palette();
     object.cast_shadows = false;
     object.stream_geometry = true;
+    object.water_region_surface = true;
     if (const auto& ripples = region.surface_ripples(); ripples && static_cast<float>(ripples->slope) > 0) {
         scene.water_ripples = project_ripple(*ripples, grid.tick());
         object.water_ripple_surface = true;

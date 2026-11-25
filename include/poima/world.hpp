@@ -30,6 +30,7 @@ struct WorldPackageContent {
     bool needs_water_ripples=false;
     bool needs_water_wave_layers=false;
     bool needs_water_listener_audio=false;
+    bool needs_water_optics=false;
     bool needs_screen_reflections=false;
     bool needs_foliage_motion=false;
     bool needs_height_fog=false;

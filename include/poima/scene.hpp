@@ -4,6 +4,7 @@
 #include "poima/ui_model.hpp"
 #include "poima/collision_queries.hpp"
 #include "poima/foliage_motion.hpp"
+#include "poima/water_optics.hpp"
 #include <array>
 #include <cstddef>
 #include <cstdint>
@@ -257,7 +258,7 @@ struct SceneObject {
     std::optional<SceneWetness> wetness{};
     // Additional fixed rigid geometry. The base mesh always owns material inputs.
     std::shared_ptr<const MeshLodChain> lods{};
-    bool water_ripple_surface=false;
+    bool water_ripple_surface=false,water_region_surface=false;
     std::optional<FoliageMotionSample> foliage_motion{};
 };
 struct SceneViewmodel {
@@ -297,6 +298,14 @@ struct SceneWaterRipples {
     float slope=0,radians_per_metre=0,phase_radians=0;
 };
 inline constexpr std::size_t max_scene_water_wave_layers=4;
+struct SceneWaterVolume {
+    std::array<double,3> origin_m;
+    double cell_size_m;
+    std::uint32_t cells_x,cells_z;
+    WaterOptics optics;
+    // Row-major floor and surface heights relative to the region's Y origin.
+    std::vector<std::array<float,2>> columns;
+};
 // An immutable presentation copy; no pointers into authored or simulation state.
 struct SceneSnapshot {
     std::string world_id;
@@ -331,6 +340,7 @@ struct SceneSnapshot {
     std::optional<SceneWaterRipples> water_ripples{};
     std::array<SceneWaterRipples,max_scene_water_wave_layers> water_wave_layers{};
     std::size_t water_wave_layer_count=0;
+    std::optional<SceneWaterVolume> water_volume;
 
     SceneLens world_lens() const { return {vertical_fov,near_plane,far_plane}; }
     std::span<const SceneObject> world_viewmodel_draws() const {

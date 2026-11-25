@@ -5,12 +5,16 @@
 #include "poima/atmosphere_dimensions.hpp"
 #include "poima/height_fog_aerial_cs.hpp"
 #include "poima/height_fog_cs.hpp"
+#include "poima/height_fog_water_cs.hpp"
+#include "poima/height_fog_water_aerial_cs.hpp"
 #include "poima/render_schedule.hpp"
 #include "poima/scene.hpp"
 #include "render_embedded_shader.hpp"
 
+#include <algorithm>
 #include <cmath>
 #include <cstddef>
+#include <limits>
 #include <stdexcept>
 #include <utility>
 
@@ -26,11 +30,27 @@ struct alignas(16) FogAerialConstants {
     FogConstants fog;
     std::array<float, 4> aerial;
 };
+struct alignas(16) FogWaterConstants {
+    FogConstants fog;
+    WaterParameters water;
+};
+struct alignas(16) FogAerialWaterConstants {
+    FogAerialConstants fog;
+    WaterParameters water;
+};
 static_assert(sizeof(FogConstants) == 64 && offsetof(FogConstants, distance_height) == 16 &&
               offsetof(FogConstants, spot_ordinals) == 32 && offsetof(FogConstants, scattering) == 48);
 static_assert(sizeof(FogAerialConstants) == 80 && offsetof(FogAerialConstants, aerial) == 64);
+static_assert(sizeof(WaterParameters)==48 && offsetof(WaterParameters,dimensions)==28 &&
+              offsetof(WaterParameters,radiance_wave_mode)==32);
+static_assert(sizeof(FogWaterConstants)==112 && sizeof(FogAerialWaterConstants)==128);
 static_assert(sizeof(AerialParameters) == 48 && offsetof(AerialParameters, sunlight_rgb) == 16 &&
               offsetof(AerialParameters, optics) == 32);
+
+constexpr std::size_t variant(bool aerial, bool water) { return (aerial ? 1u : 0u) + (water ? 2u : 0u); }
+constexpr std::uint32_t push_size(bool aerial, bool water) {
+    return (aerial ? sizeof(FogAerialConstants) : sizeof(FogConstants)) + (water ? sizeof(WaterParameters) : 0);
+}
 
 nvrhi::BindingSetDesc fog_binding_desc(const Inputs& inputs, nvrhi::ITexture* destination,
                                       nvrhi::ITexture* scattering, nvrhi::ITexture* transmittance,
@@ -38,8 +58,7 @@ nvrhi::BindingSetDesc fog_binding_desc(const Inputs& inputs, nvrhi::ITexture* de
     nvrhi::BindingSetDesc desc;
     desc
         .addItem(nvrhi::BindingSetItem::ConstantBuffer(1, inputs.frame))
-        .addItem(nvrhi::BindingSetItem::PushConstants(0,
-            inputs.atmosphere_density ? sizeof(FogAerialConstants) : sizeof(FogConstants)))
+        .addItem(nvrhi::BindingSetItem::PushConstants(0,push_size(inputs.atmosphere_density,inputs.water_columns)))
         .addItem(nvrhi::BindingSetItem::Texture_SRV(0, inputs.surface_hdr))
         .addItem(nvrhi::BindingSetItem::Texture_SRV(1, inputs.depth))
         .addItem(nvrhi::BindingSetItem::Texture_SRV(5, inputs.shadow))
@@ -49,6 +68,11 @@ nvrhi::BindingSetDesc fog_binding_desc(const Inputs& inputs, nvrhi::ITexture* de
         desc.addItem(nvrhi::BindingSetItem::Texture_SRV(2, scattering))
             .addItem(nvrhi::BindingSetItem::Texture_SRV(3, transmittance))
             .addItem(nvrhi::BindingSetItem::Sampler(0, sampler));
+    }
+    if (inputs.water_columns) {
+        desc.addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(7,inputs.water_columns))
+            .addItem(nvrhi::BindingSetItem::Texture_SRV(8,inputs.water_specular))
+            .addItem(nvrhi::BindingSetItem::Sampler(1,inputs.water_sampler));
     }
     return desc;
 }
@@ -85,13 +109,59 @@ void require_bindings(nvrhi::IBindingSet* bindings, const nvrhi::BindingSetDesc&
 }
 }
 
-void Pass::prepare_compositor(nvrhi::IDevice& device, bool aerial) {
-    auto& selected = aerial ? fog_aerial_ : fog_;
-    if (selected.handle) return;
+WaterView project_water_view(const SceneWaterVolume& water,const std::array<double,3>& eye,float wave_mode) {
+    namespace rs=render_schedule;
+    static_assert(sizeof(std::array<float,2>)==rs::water_column_bytes);
+    if (water.cells_x==0 || water.cells_z==0 || water.cells_x>rs::max_water_column_side ||
+        water.cells_z>rs::max_water_column_side || water.columns.size()!=water.cells_x*water.cells_z ||
+        !(water.cell_size_m>=.01 && water.cell_size_m<=256))
+        throw std::runtime_error("Invalid water optics column grid.");
+    if (!std::ranges::all_of(water.columns,[](const auto& cell) {
+        return std::isfinite(cell[0]) && std::isfinite(cell[1]) && cell[0]<=cell[1];
+    })) throw std::runtime_error("Invalid water column height.");
+
+    WaterView result{};
+    auto& parameters=result.parameters;
+    std::array<double,3> local{};
+    for (std::size_t axis=0;axis<local.size();++axis) {
+        local[axis]=eye[axis]-water.origin_m[axis];
+        const double extinction=water.optics.extinction_per_m[axis],scatter=water.optics.scattered_radiance[axis];
+        if (!(std::isfinite(local[axis]) && std::abs(local[axis])<=std::numeric_limits<float>::max() &&
+            extinction>=0 && extinction<=8 && scatter>=0 && scatter<=16))
+            throw std::runtime_error("Invalid water optics coefficients or origin.");
+        parameters.camera_cell_size[axis]=static_cast<float>(local[axis]);
+        parameters.extinction_per_m[axis]=static_cast<float>(extinction);
+        parameters.radiance_wave_mode[axis]=static_cast<float>(scatter);
+    }
+    parameters.camera_cell_size[3]=static_cast<float>(water.cell_size_m);
+    parameters.dimensions=water.cells_x|(water.cells_z<<16u);
+    parameters.radiance_wave_mode[3]=wave_mode;
+    const double x=local[0]/water.cell_size_m,z=local[2]/water.cell_size_m;
+    if (x>=0 && z>=0 && x<water.cells_x && z<water.cells_z) {
+        const auto& column=water.columns[static_cast<std::size_t>(z)*water.cells_x+static_cast<std::size_t>(x)];
+        if (local[1]>=column[0] && local[1]<column[1])
+            result.submersion_m=static_cast<double>(column[1])-local[1];
+    }
+    return result;
+}
+
+nvrhi::BufferHandle allocate_water_columns(nvrhi::IDevice& device) {
+    namespace rs=render_schedule;
+    constexpr auto side=rs::max_water_column_side;
+    auto buffer=device.createBuffer(nvrhi::BufferDesc().setByteSize(side*side*rs::water_column_bytes)
+        .setStructStride(rs::water_column_bytes).setInitialState(nvrhi::ResourceStates::ShaderResource)
+        .setKeepInitialState(true).setDebugName("Committed water columns"));
+    if (!buffer) throw std::runtime_error("Water optics column buffer allocation failed.");
+    return buffer;
+}
+
+const Pass::Pipeline& Pass::prepare_compositor(nvrhi::IDevice& device, bool aerial, bool water) {
+    auto& selected=compositors_[variant(aerial,water)];
+    if (selected.handle) return selected;
     nvrhi::BindingLayoutDesc desc;
     desc.setVisibility(nvrhi::ShaderType::Compute)
         .addItem(nvrhi::BindingLayoutItem::ConstantBuffer(1))
-        .addItem(nvrhi::BindingLayoutItem::PushConstants(0, aerial ? sizeof(FogAerialConstants) : sizeof(FogConstants)))
+        .addItem(nvrhi::BindingLayoutItem::PushConstants(0,push_size(aerial,water)))
         .addItem(nvrhi::BindingLayoutItem::Texture_SRV(0))
         .addItem(nvrhi::BindingLayoutItem::Texture_SRV(1))
         .addItem(nvrhi::BindingLayoutItem::Texture_SRV(5))
@@ -102,10 +172,19 @@ void Pass::prepare_compositor(nvrhi::IDevice& device, bool aerial) {
             .addItem(nvrhi::BindingLayoutItem::Texture_SRV(3))
             .addItem(nvrhi::BindingLayoutItem::Sampler(0));
     }
+    if (water) {
+        desc.addItem(nvrhi::BindingLayoutItem::StructuredBuffer_SRV(7))
+            .addItem(nvrhi::BindingLayoutItem::Texture_SRV(8))
+            .addItem(nvrhi::BindingLayoutItem::Sampler(1));
+    }
     auto layout = device.createBindingLayout(desc);
-    auto pipeline = aerial ? make_pipeline(device, layout, poima_height_fog_aerial_cs)
-                           : make_pipeline(device, layout, poima_height_fog_cs);
+    auto pipeline=water ?
+        (aerial ? make_pipeline(device,layout,poima_height_fog_water_aerial_cs)
+                : make_pipeline(device,layout,poima_height_fog_water_cs)) :
+        (aerial ? make_pipeline(device,layout,poima_height_fog_aerial_cs)
+                : make_pipeline(device,layout,poima_height_fog_cs));
     selected = {std::move(layout), std::move(pipeline)};
+    return selected;
 }
 
 void Pass::prepare_aerial_tables(nvrhi::IDevice& device) {
@@ -192,8 +271,9 @@ void Pass::prepare(nvrhi::IDevice& device, const Inputs& inputs) {
             aerial_binding_desc(inputs, aerial_scattering_, aerial_transmittance_, aerial_sampler_), aerial_compute_.layout);
         if (!aerial_bindings) throw std::runtime_error("Aerial perspective bindings creation failed.");
     }
-    prepare_compositor(device, inputs.atmosphere_density != nullptr);
-    const auto& compositor = inputs.atmosphere_density ? fog_aerial_ : fog_;
+    if (inputs.water_columns && (!inputs.water_specular || !inputs.water_sampler))
+        throw std::runtime_error("Water optics require the prepared environment descriptors.");
+    const auto& compositor=prepare_compositor(device,inputs.atmosphere_density,inputs.water_columns);
     auto bindings = device.createBindingSet(
         fog_binding_desc(inputs, target, aerial_scattering_, aerial_transmittance_, aerial_sampler_), compositor.layout);
     if (!bindings) throw std::runtime_error("Atmospheric media compositor bindings creation failed.");
@@ -227,15 +307,21 @@ void Pass::verify_bindings(const render_schedule::Schedule& plan) const {
     // A zero spotlight ordinal never reads the light buffer. The Vulkan layout
     // still expects a real descriptor when no light input is in the schedule.
     const bool aerial = plan.settings.aerial_perspective;
+    const bool water=frame.water_columns!=render_schedule::none;
     if (aerial != (inputs_.atmosphere_density != nullptr))
         throw std::runtime_error("Aerial perspective state differs from its validated schedule.");
+    if (water != (inputs_.water_columns!=nullptr))
+        throw std::runtime_error("Water optics state differs from its validated schedule.");
     const Inputs scheduled{
         .frame = buffer(frame.frame),
         .surface_hdr = texture(render_schedule::surface_radiance(frame, plan.settings)),
         .depth = texture(frame.depth),
         .shadow = texture(frame.shadow),
         .lights = plan.settings.height_fog_spots ? buffer(frame.lights) : inputs_.lights,
-        .atmosphere_density = aerial ? texture(frame.atmosphere_density) : nullptr
+        .atmosphere_density = aerial ? texture(frame.atmosphere_density) : nullptr,
+        .water_columns=water ? buffer(frame.water_columns) : nullptr,
+        .water_specular=water ? texture(frame.ibl_specular) : nullptr,
+        .water_sampler=inputs_.water_sampler
     };
     const auto scattering = aerial ? texture(frame.aerial_scattering) : nullptr;
     const auto transmittance = aerial ? texture(frame.aerial_transmittance) : nullptr;
@@ -260,9 +346,12 @@ void Pass::dispatch_aerial(nvrhi::ICommandList& commands, const AerialParameters
 }
 
 void Pass::dispatch(nvrhi::ICommandList& commands, const HeightFog& profile,
-                    const std::array<std::uint32_t, 2>& spot_ordinals, float aerial_max_distance_m) const {
+                    const std::array<std::uint32_t, 2>& spot_ordinals, float aerial_max_distance_m,
+                    const WaterParameters* water) const {
     if (profile.spot_lights.size() > spot_ordinals.size()) throw std::runtime_error("Height fog supports at most two spotlights.");
     const bool aerial = inputs_.atmosphere_density != nullptr;
+    if ((water!=nullptr)!=(inputs_.water_columns!=nullptr))
+        throw std::runtime_error("Water optics parameters differ from the prepared compositor.");
     if (aerial ? !(aerial_max_distance_m > 0) || !std::isfinite(aerial_max_distance_m) : aerial_max_distance_m != 0)
         throw std::runtime_error("Aerial perspective distance differs from the prepared compositor.");
     FogConstants constants{
@@ -278,10 +367,16 @@ void Pass::dispatch(nvrhi::ICommandList& commands, const HeightFog& profile,
         constants.scattering[i] = profile.spot_lights[i].scattering;
     }
     nvrhi::ComputeState state;
-    state.pipeline = aerial ? fog_aerial_.handle : fog_.handle;
+    state.pipeline=compositors_[variant(aerial,water!=nullptr)].handle;
     state.bindings.push_back(bindings_);
     commands.setComputeState(state);
-    if (aerial) {
+    if (aerial && water) {
+        const FogAerialWaterConstants extended{{constants,{aerial_max_distance_m,0,0,0}},*water};
+        commands.setPushConstants(&extended,sizeof(extended));
+    } else if (water) {
+        const FogWaterConstants extended{constants,*water};
+        commands.setPushConstants(&extended,sizeof(extended));
+    } else if (aerial) {
         const FogAerialConstants extended{constants, {aerial_max_distance_m, 0, 0, 0}};
         commands.setPushConstants(&extended, sizeof(extended));
     } else {

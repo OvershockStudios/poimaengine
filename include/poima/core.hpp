@@ -268,6 +268,12 @@ struct HeightFogDiagnostics {
     std::uint64_t buffer_bytes=0;
     std::uint32_t spot_lights=0;
 };
+struct WaterOpticsDiagnostics {
+    bool active=false;
+    std::string_view reason;
+    std::uint32_t columns=0;
+    double camera_submersion_m=0;
+};
 struct AerialPerspectiveDiagnostics {
     bool active=false;
     std::string_view reason;
@@ -319,6 +325,7 @@ struct RenderDiagnostics {
     std::optional<ScreenReflectionsDiagnostics> screen_reflections;
     TimingSummary screen_reflections_gpu;
     std::optional<HeightFogDiagnostics> height_fog;
+    std::optional<WaterOpticsDiagnostics> water_optics;
     std::optional<AerialPerspectiveDiagnostics> aerial_perspective;
     std::optional<CloudDiagnostics> volumetric_clouds;
     std::optional<CloudShadowDiagnostics> cloud_shadows;

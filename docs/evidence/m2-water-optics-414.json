@@ -1,0 +1,313 @@
+{
+  "checkpoint": "0.0.414",
+  "parent_commit": "48a42bf",
+  "schema_revision": 213,
+  "extent": [
+    640,
+    360
+  ],
+  "tolerance": 0.002,
+  "source_sha256": {
+    "CMakeLists.txt": "fb6e39507c9f764d0fb836d4527ebbba5ce474564134067e2da97c73558337e3",
+    "cmake/render_smoke.cmake": "150d5625416c8c28bef6ee8e009a2e43b98215360ac886efe6d0c2781e4a9401",
+    "cmake/runtime.json.in": "37ab25647be11c2b42872ec90362047155b21bb92412302a0edf742eef0aa443",
+    "include/poima/core.hpp": "730013218bdcb14b9c116bff37fce031a959b4ed37e2ffe39d8485c64fad590d",
+    "include/poima/render_schedule.hpp": "7acda823d55ab6beb2dfade421d7c94887b2c82ff407330363ae0ccfadaa519f",
+    "include/poima/scene.hpp": "17ae95f402da2321768969c9ad56952643451445a531c235ede983e8661364ac",
+    "include/poima/water_optics.hpp": "584372bf0b531d63b579b3d0fa0a2ffdcd4d1cdee9d926e2756592c0a9911137",
+    "include/poima/water_region.hpp": "11915e25db5996e4d7696b5c5739240ca1b4be85d8c1a8d739b5fd0332dc2d6a",
+    "include/poima/water_region_definition.hpp": "5e466a3dd4160eeeebad42ede0ffd185cfcb8f6ef9418cb1aa1db809f70f258a",
+    "include/poima/world.hpp": "aedb951b9b875a0fe5cd4b29159d4ec0f59c5a2fe6bc152f1325c6e4c8c34ed7",
+    "shaders/height_fog.hlsl": "b4157d1e9168ced47c810fe81a6d9a1952a0ff5c68d30dbb7f52cdf61243af92",
+    "shaders/water_optics.hlsli": "ed50437c8c206a7223f7bdc7c9d42080b505c8fe4ea237ffbe55ed2e4e274c14",
+    "src/core.cpp": "82ac5bbf3ef173f72071740c198d0bf1f7100ea2044bf17504a084de4c960dbb",
+    "src/project.cpp": "09506c58a294e6122b0f166b2b4af4e46452a76205248ad9642f610396e9dced",
+    "src/render_height_fog.cpp": "96e1ce411717d7e5046fe1070083a58bc915672e26fa0e3c05ef5b5362a116be",
+    "src/render_height_fog.hpp": "b6220ecf9948711f906c04758354ce2e03c1e0d30c06fb8f907f843d46ecfd4f",
+    "src/render_schedule.cpp": "9bd8958b147bc01f59d60b29a73cc8d01046811abf55ec32d3598feaa3ec8c21",
+    "src/render_smoke.cpp": "94c94fe48c09889c7230e1f65c64c77e613900ee85ac39420b05af440f425b9a",
+    "src/water_asset.cpp": "f6455d7c59235ba55ae04391e89355b06070e519259cb9727b336a673de3d9f3",
+    "src/water_region.cpp": "419fd39535d254fcbe4323721db26f8e05e6f552483f67f9ee042fc9944560d9",
+    "src/water_region_scene.cpp": "4b46703e0f1c895c1d32feb8042762ee23a90de4d510e52eb23a4c39ec0c31be",
+    "src/world.cpp": "f9e938f3af04b3eb9f59f8884d677e4a975757c17d04d59d82044c8762af80a4",
+    "src/world_content.cpp": "f8b3c2cf4406f31f1f740257fffabce89cff81a4ec31a74fb40be0637f3cdf4f",
+    "src/world_presentation_json.cpp": "ff7735a8517f0266bab2409a5152108a2d0c0dec6551cfac6feb5cf72a63eef6",
+    "src/world_schema.cpp": "211ff1eaa53fbd649366512df58fe8c0332dc0e63b5144da48b726d0cd94a391",
+    "src/world_water_service.inc": "7cac9dec565c6c5e49b3306baf7c0f29df44052f2b9b6d6209893a207398dd3f",
+    "tests/render_schedule.cpp": "a616ccd335b3e630654ad3730f204fc8be0753605ac776f1d664dbaa486a7e12",
+    "tests/water_optics_capture.py": "fa4fbd49cf583216fd52835d9ed4e9957666f5c1d86504f0a7eac1022194c129",
+    "tests/water_region_scene_native.cpp": "281f837c22c76c740d693513015cc4f468bf7958cf7eb5b593e17e56b8704bdc"
+  },
+  "windows": {
+    "validation": "Khronos Vulkan validation with synchronization checks",
+    "binary_sha256": "ae8ad66cfcd4c0cbdf61738ef312220fd396fdecef5ea1dbe02ef646b83c9908",
+    "bridge_sha256": "aa799daf8200aa4d8a88330caa54d624e6e771b4015ee387eae403ee2b810c14",
+    "runtime_sha256": "90c4694b6a949540ad3252b8cbad91d991070e44bce6fd7f76b8034a53c677a0",
+    "amd": {
+      "adapter": "AMD Radeon(TM) Graphics",
+      "results_sha256": "e0f2c664bdc10bf215e104c5158b7969a437aec6842aee5354973c44771353d8",
+      "captures": {
+        "dry": {
+          "sha256": "aa345a3e395963f92d1f6d64bb3edd0e463ddf4a057f294919b70682c09b2322",
+          "lighting_path": "forward",
+          "samples": 1,
+          "tick": 0,
+          "frames_presented": 2
+        },
+        "above": {
+          "sha256": "7a5e1fa7e70a8a0229a2f628f255a6f61a895423d30f981eb06b07b7c0e5a64d",
+          "lighting_path": "forward",
+          "samples": 1,
+          "tick": 0,
+          "frames_presented": 2,
+          "active": true,
+          "camera_submersion_m": 0.0,
+          "columns": 8,
+          "reason": "active",
+          "world_media_gpu": {
+            "last_ms": 0.10783999999999999,
+            "max_ms": 0.10944,
+            "mean_ms": 0.10863999999999999,
+            "min_ms": 0.10783999999999999,
+            "samples": 2
+          },
+          "independent_hdr_comparisons": 35,
+          "max_channel_error": 0.0004715781364955651,
+          "maximum_water_span_count": 3,
+          "maximum_total_water_length_m": 1.4432000940260394,
+          "opaque_hdr_depth_parity": true
+        },
+        "multisample": {
+          "sha256": "a4682945f03485d3d40fb12ba6730b4ff081f4ce5d7f25ddda08d5fd0ee7fe63",
+          "lighting_path": "forward",
+          "samples": 4,
+          "tick": 0,
+          "frames_presented": 2,
+          "active": false,
+          "camera_submersion_m": 0.0,
+          "columns": 8,
+          "reason": "multisample",
+          "world_media_gpu": {
+            "last_ms": null,
+            "max_ms": null,
+            "mean_ms": null,
+            "min_ms": null,
+            "samples": 0
+          }
+        },
+        "under": {
+          "sha256": "63b2053dacfa3760155fe03b8445184ff24ff919f84a001b55f196dee96b6650",
+          "lighting_path": "forward",
+          "samples": 1,
+          "tick": 2,
+          "frames_presented": 2,
+          "active": true,
+          "camera_submersion_m": 0.375,
+          "columns": 8,
+          "reason": "active",
+          "world_media_gpu": {
+            "last_ms": 0.10964,
+            "max_ms": 0.11048,
+            "mean_ms": 0.11005999999999999,
+            "min_ms": 0.10964,
+            "samples": 2
+          },
+          "independent_hdr_comparisons": 35,
+          "max_channel_error": 0.00023788869891877562,
+          "maximum_water_span_count": 3,
+          "maximum_total_water_length_m": 1.8541153980838518,
+          "opaque_hdr_depth_parity": true
+        },
+        "restored": {
+          "sha256": "63b2053dacfa3760155fe03b8445184ff24ff919f84a001b55f196dee96b6650",
+          "lighting_path": "forward",
+          "samples": 1,
+          "tick": 2,
+          "frames_presented": 2,
+          "active": true,
+          "camera_submersion_m": 0.375,
+          "columns": 8,
+          "reason": "active",
+          "world_media_gpu": {
+            "last_ms": 0.10692,
+            "max_ms": 0.10755999999999999,
+            "mean_ms": 0.10724,
+            "min_ms": 0.10692,
+            "samples": 2
+          }
+        }
+      }
+    },
+    "nvidia": {
+      "adapter": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "results_sha256": "8d86bd47275f44c811a4bbf521c15806b4106cb994569fe98c2e60aae8b10cf9",
+      "captures": {
+        "dry": {
+          "sha256": "aa345a3e395963f92d1f6d64bb3edd0e463ddf4a057f294919b70682c09b2322",
+          "lighting_path": "deferred",
+          "samples": 1,
+          "tick": 0,
+          "frames_presented": 2
+        },
+        "retained-dry": {
+          "sha256": "aa345a3e395963f92d1f6d64bb3edd0e463ddf4a057f294919b70682c09b2322",
+          "lighting_path": "deferred",
+          "samples": 1,
+          "tick": 0,
+          "frames_presented": 2
+        },
+        "above": {
+          "sha256": "449c2cdd7defd01b321fb09766eabd54d1ccba4400ae2082af87cb2b3cf04e0d",
+          "lighting_path": "deferred",
+          "samples": 1,
+          "tick": 0,
+          "frames_presented": 2,
+          "active": true,
+          "camera_submersion_m": 0.0,
+          "columns": 8,
+          "reason": "active",
+          "world_media_gpu": {
+            "last_ms": 0.014336,
+            "max_ms": 0.014336,
+            "mean_ms": 0.014336,
+            "min_ms": 0.014336,
+            "samples": 2
+          },
+          "independent_hdr_comparisons": 35,
+          "max_channel_error": 0.0004715781364955651,
+          "maximum_water_span_count": 3,
+          "maximum_total_water_length_m": 1.4432000940260394,
+          "opaque_hdr_depth_parity": true
+        },
+        "under": {
+          "sha256": "955466d8c32d32a04ad5a5836ef032199496c9bd9033ee8531d9fbb4b899ab50",
+          "lighting_path": "deferred",
+          "samples": 1,
+          "tick": 2,
+          "frames_presented": 2,
+          "active": true,
+          "camera_submersion_m": 0.375,
+          "columns": 8,
+          "reason": "active",
+          "world_media_gpu": {
+            "last_ms": 0.014336,
+            "max_ms": 0.014336,
+            "mean_ms": 0.014336,
+            "min_ms": 0.014336,
+            "samples": 2
+          },
+          "independent_hdr_comparisons": 35,
+          "max_channel_error": 0.00023788869891877562,
+          "maximum_water_span_count": 3,
+          "maximum_total_water_length_m": 1.8541153980838518,
+          "opaque_hdr_depth_parity": true
+        },
+        "under-fsr": {
+          "sha256": "5fb5b24d3079ec4aa5afdc177c4ecc51faf917a8f90c5df74e0b16132df68dcb",
+          "lighting_path": "deferred",
+          "samples": 1,
+          "tick": 2,
+          "frames_presented": 2,
+          "active": true,
+          "camera_submersion_m": 0.375,
+          "columns": 8,
+          "reason": "active",
+          "world_media_gpu": {
+            "last_ms": 0.019455999999999998,
+            "max_ms": 0.019455999999999998,
+            "mean_ms": 0.018431999999999997,
+            "min_ms": 0.017408,
+            "samples": 2
+          },
+          "fsr": true
+        },
+        "restored": {
+          "sha256": "955466d8c32d32a04ad5a5836ef032199496c9bd9033ee8531d9fbb4b899ab50",
+          "lighting_path": "deferred",
+          "samples": 1,
+          "tick": 2,
+          "frames_presented": 2,
+          "active": true,
+          "camera_submersion_m": 0.375,
+          "columns": 8,
+          "reason": "active",
+          "world_media_gpu": {
+            "last_ms": 0.013312,
+            "max_ms": 0.015359999999999999,
+            "mean_ms": 0.014335999999999998,
+            "min_ms": 0.013312,
+            "samples": 2
+          }
+        },
+        "relocated": {
+          "sha256": "955466d8c32d32a04ad5a5836ef032199496c9bd9033ee8531d9fbb4b899ab50",
+          "lighting_path": "deferred",
+          "samples": 1,
+          "tick": 2,
+          "frames_presented": 2,
+          "active": true,
+          "camera_submersion_m": 0.375,
+          "columns": 8,
+          "reason": "active",
+          "world_media_gpu": {
+            "last_ms": 0.014336,
+            "max_ms": 0.014336,
+            "mean_ms": 0.014336,
+            "min_ms": 0.014336,
+            "samples": 2
+          }
+        },
+        "water-and-atmosphere": {
+          "sha256": "b2903c60be61712eeca9f0571190f4705e29839cabbf727ebc6d52454fdf2751",
+          "lighting_path": "deferred",
+          "samples": 1,
+          "tick": 0,
+          "frames_presented": 2,
+          "active": true,
+          "camera_submersion_m": 0.0,
+          "columns": 8,
+          "reason": "active",
+          "world_media_gpu": {
+            "last_ms": 0.047104,
+            "max_ms": 0.061439999999999995,
+            "mean_ms": 0.054272,
+            "min_ms": 0.047104,
+            "samples": 2
+          },
+          "aerial_perspective": true,
+          "ibl": true
+        }
+      }
+    }
+  },
+  "ubuntu": {
+    "suites": [
+      "audio_contract",
+      "audio_reflections_native",
+      "audio_save_native",
+      "cli_contract",
+      "editor_audio_native",
+      "project_contract",
+      "render_schedule_native",
+      "shallow_water_native",
+      "water_listener_audio_contract",
+      "water_region_native",
+      "water_region_scene_native",
+      "world_audio_native",
+      "world_water_contract",
+      "world_water_rain_contract"
+    ],
+    "binary_sha256": "5600ff0baf1a5f1444c0f213bd425ad9706b29edb29fef263a92ba6fe58e008f",
+    "runtime_sha256": "9fe5ce09d386c03177617c0e6fc6fe2b1c6b313bdeda7927ad5d2998302147bd"
+  },
+  "render_schedule": {
+    "accepted": 581,
+    "rejected": 1507
+  },
+  "retained_rejections": [
+    "Initial native render rejected a used prefix labelled as a whole allocation. Vulkan validation also reported the buffer still live on device teardown. The correction validates the prefix and explicitly releases the buffer before teardown. The original driver trace is retained.",
+    "The first Ubuntu patch attempted to include a Windows-only shader-build file that differed in the retained Linux checkout. Retried with that unused file excluded. All portable feature changes were included.",
+    "The first Windows recovery relay split the shell patch heredoc across lines. The corrected relay applied the same source fix and rebuilt both binaries."
+  ],
+  "scope": "Small terrain-bound optics fixture. Tests verify committed depth, HDR composition, fresh save and relocation. Full refraction, caustics, ecosystem content, ocean scale and representative frame cadence remain open."
+}

@@ -360,6 +360,17 @@ void Schedule::validate(bool before_acquire) const {
             fail("invalid height fog output attachment");
         if(frame.fogged_hdr==frame.reflected_hdr || frame.fogged_hdr==frame.reflection_roughness)fail("height fog and reflection attachments alias");
         require_distinct_roles(frame.fogged_hdr,none,"height fog attachment aliases another resource role");
+        if(frame.water_columns!=none) {
+            const auto& columns=resource(frame.water_columns);
+            const auto required_uses=use_bit(Use::upload)|use_bit(Use::storage_read);
+            if(columns.kind!=Kind::buffer || columns.lifetime!=Lifetime::shared || columns.region!=Region::prefix ||
+               columns.late_bound || columns.initialized || (columns.supported&required_uses)!=required_uses ||
+               columns.bytes==0 || columns.bytes%water_column_bytes!=0 ||
+               columns.bytes>columns.allocation_bytes ||
+               columns.allocation_bytes>max_water_column_side*max_water_column_side*water_column_bytes ||
+               frame.ibl_specular==none)fail("invalid water optics resources");
+            require_distinct_roles(frame.water_columns,none,"water optics buffer aliases another resource role");
+        }
         if(settings.height_fog_spots) {
             required(frame.lights);
             const auto& shadow=resource(frame.shadow);
@@ -367,7 +378,8 @@ void Schedule::validate(bool before_acquire) const {
                 shadow.samples!=1 || !shadow.layers || shadow.lifetime!=Lifetime::shared || shadow.region!=Region::whole)
                 fail("invalid height fog spotlight inputs");
         }
-    } else if(frame.fogged_hdr!=none || settings.height_fog_spots)fail("height fog attachments or spotlights without height fog pass");
+    } else if(frame.fogged_hdr!=none || settings.height_fog_spots || frame.water_columns!=none)
+        fail("world media resources without world media pass");
     if(reconstruct_composed) {
         if(!scene_image(frame.composition_mask,Format::r8_unorm,resource(frame.hdr)) ||
             resource(frame.composition_mask).late_bound ||
@@ -766,7 +778,8 @@ void Schedule::validate(bool before_acquire) const {
         if(pass.id==PassId::height_fog) {
             if(!settings.height_fog || !world_opaque || (settings.deferred && !deferred_lit) ||
                 (settings.screen_reflections && !screen_reflected))fail("unexpected or premature height fog pass");
-            const auto inputs=4u+(settings.height_fog_spots ? 2u : 0u)+(settings.aerial_perspective ? 2u : 0u);
+            const auto inputs=4u+(settings.height_fog_spots ? 2u : 0u)+(settings.aerial_perspective ? 2u : 0u)+
+                (frame.water_columns!=none ? 2u : 0u);
             if(pass.accesses.size()!=inputs ||
                 !has(surface_radiance(frame,settings),Use::sampled) || !has(frame.depth,Use::sampled) ||
                 !has(frame.frame,Use::constant) || !has(frame.fogged_hdr,Use::image_write))fail("invalid height fog bindings");
@@ -774,6 +787,8 @@ void Schedule::validate(bool before_acquire) const {
                 fail("missing height fog spotlight inputs");
             if(settings.aerial_perspective && (!aerial_baked || !has(frame.aerial_scattering,Use::sampled) ||
                 !has(frame.aerial_transmittance,Use::sampled)))fail("missing aerial perspective composition inputs");
+            if(frame.water_columns!=none && (!has(frame.water_columns,Use::storage_read) || !has(frame.ibl_specular,Use::sampled)))
+                fail("missing water optics inputs");
             world_fogged=true;
         }
         if(pass.id==PassId::particle_sprites) {
@@ -956,6 +971,10 @@ void Schedule::validate(bool before_acquire) const {
         std::uint32_t attachment_width=0,attachment_height=0,attachment_samples=0;
         for(const auto& a:pass.accesses) {
             const auto& r=resource(a.resource);
+            if(frame.water_columns!=none && a.resource==frame.water_columns &&
+                !(pass.id==PassId::skinning && a.use==Use::upload && a.initialize) &&
+                !(pass.id==PassId::height_fog && a.use==Use::storage_read && !a.initialize))
+                fail("water columns used outside frame upload and media composition");
             if(settings.spatial_aa && a.resource==frame.display_ldr &&
                 !(pass.id==PassId::output && a.use==Use::color_overwrite && a.initialize) &&
                 !(pass.id==PassId::spatial_aa && a.use==Use::sampled && !a.initialize))
@@ -1168,6 +1187,7 @@ Schedule build(FrameResources frame,Settings settings) {
     }
     auto& skin=pass(PassId::skinning);
     if(settings.scene) {add(skin,f.frame,Use::upload,true);add(skin,f.objects,Use::upload,true);}
+    add(skin,f.water_columns,Use::upload,true);
     if(settings.viewmodel) {add(skin,f.viewmodel_frame,Use::upload,true);add(skin,f.viewmodel_objects,Use::upload,true);}
     if(settings.ambient_occlusion)add(skin,f.ao_constants,Use::upload,true);
     if(!f.skins.empty()) {
@@ -1265,6 +1285,7 @@ Schedule build(FrameResources frame,Settings settings) {
             add(fog,f.lights,Use::storage_read);add(fog,f.shadow,Use::sampled);
         }
         add(fog,f.aerial_scattering,Use::sampled);add(fog,f.aerial_transmittance,Use::sampled);
+        if(f.water_columns!=none) {add(fog,f.water_columns,Use::storage_read);add(fog,f.ibl_specular,Use::sampled);}
         add(fog,f.fogged_hdr,Use::image_write,true);
     }
     if(settings.particle_sprites) {
