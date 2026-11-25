@@ -2118,7 +2118,14 @@ struct Runtime::Impl {
                 }
                 physical_before_step();
                 std::array<water::WakeDriver,water::max_buoyant_bodies> wake_drivers;
-                const auto wakes=std::span(wake_drivers).first(apply_water_buoyancy(wake_drivers));
+                std::array<double,water::max_region_side*water::max_region_side> occupied_volumes;
+                std::span<double> occupied;
+                if (water_region && water_region->body_displacement()) {
+                    const auto& sizing=water_region->grid().config();
+                    occupied=std::span(occupied_volumes).first(std::size_t(sizing.cells_x)*sizing.cells_z);
+                    std::ranges::fill(occupied,0.);
+                }
+                const auto wakes=std::span(wake_drivers).first(apply_water_buoyancy(wake_drivers,occupied));
                 const auto error=[&] {
                     profiling::Scope physics_profile("runtime.physics.update");
                     JPH_IF_ENABLE_ASSERTS(runtime_assertions::PhysicsUpdateScope assertion_scope;)
@@ -2143,8 +2150,8 @@ struct Runtime::Impl {
                 if(water_region) {
                     if(weather && !water_region->rain_cells().empty()) {
                         const auto rain_nm=std::accumulate(weather->rain_nm.begin(),weather->rain_nm.end(),std::uint32_t{0});
-                        water_region->step(pressed_actions,rain_nm,weather->first_quantum,wakes);
-                    } else water_region->step(pressed_actions,0,{},wakes);
+                        water_region->step(pressed_actions,rain_nm,weather->first_quantum,wakes,occupied);
+                    } else water_region->step(pressed_actions,0,{},wakes,occupied);
                 }
                 prune_snow_holds();
                 ++tick;animation_locals(true);sync();physical_record_final();

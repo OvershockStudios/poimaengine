@@ -2,6 +2,12 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.438
+
+- Let immersed bodies raise the water stage and transfer liquid through
+  open gates. Inspect and save the occupation field alongside the water ledger.
+  [Body displacement](docs/SHALLOW_WATER.md#let-props-push-water-into-adjacent-cells)
+
 ## 0.0.437
 
 - Simulate wakes as buoyant props move through water. Inspect their crests

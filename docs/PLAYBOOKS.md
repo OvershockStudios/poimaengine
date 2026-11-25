@@ -44,6 +44,7 @@ record correlated evidence, and identify a useful impossibility check.
 | Float an authored prop | [Water buoyancy](SHALLOW_WATER.md#float-a-dynamic-box) | Compare mass, displaced volume and lift, then verify float height, shoreline torque and save continuation. |
 | Carry a prop through a current | [Water currents](SHALLOW_WATER.md#carry-floating-objects-with-a-current) | Compare signed face discharge with the prop's observed drift. Close a gate, check the water ledger, and reopen a save. |
 | Leave a wake behind a float | [Water wakes](SHALLOW_WATER.md#leave-wakes-behind-floating-props) | Match the crest in the rendered surface, water segment query and restored save. Check propagation on both sides of a gate. |
+| Push water out of a compartment with a prop | [Body displacement](SHALLOW_WATER.md#let-props-push-water-into-adjacent-cells) | Check the occupied cell, gate discharge, receiving waterline and liquid-volume ledger. Remove the prop and replay from a save. |
 | Make rain splash or sparks scatter on contact | [Contact bursts](PARTICLES.md#spawn-a-burst-at-contact) and [surface routing](PARTICLES.md#vary-a-burst-by-surface) | Inspect the hit, selected emitter and sprite motion. Reopen a save and compare the continuation. |
 | Shape a local water surface | [Water regions and ripples](SHALLOW_WATER.md#author-surface-ripples) | Verify water levels and terrain collision, then compare the visible normals at the same tick after restoring a save. |
 

@@ -3,6 +3,7 @@
 
 #include <cmath>
 #include <span>
+#include <stdexcept>
 
 namespace poima::water {
 namespace {
@@ -146,7 +147,8 @@ Plane inside_edge(Vec from,Vec to) {
 
 }
 
-Displacement Region::displaced_by_box(const Vec& center,const std::array<Vec,3>& axes) const {
+Displacement Region::displaced_by_box(const Vec& center,const std::array<Vec,3>& axes,
+                                      std::span<double> occupied_cell_volumes_m3) const {
     // All clipping is relative to the body center, even for distant tiles.
     const auto finite=[](Vec v) { return std::ranges::all_of(v,[](double n){return std::isfinite(n);}); };
     if (!finite(center) || !std::ranges::all_of(axes,finite)) return {};
@@ -155,6 +157,9 @@ Displacement Region::displaced_by_box(const Vec& center,const std::array<Vec,3>&
     };
     const Vec radius{extent(0),extent(1),extent(2)};
     const auto& config=grid_.config();
+    if (!occupied_cell_volumes_m3.empty() &&
+        occupied_cell_volumes_m3.size()!=std::size_t(config.cells_x)*config.cells_z)
+        throw std::invalid_argument("Body occupation output differs from the water grid.");
     const auto size=config.cell_size_m;
     const auto x=config.origin_x_m-center[0],z=config.origin_z_m-center[2];
     const auto x_end=x+size*config.cells_x,z_end=z+size*config.cells_z;
@@ -182,7 +187,7 @@ Displacement Region::displaced_by_box(const Vec& center,const std::array<Vec,3>&
                 const auto left=x+size*ix,near=z+size*iz;
                 const Cell cell{ix,iz};
                 VolumeMoment per_cell;
-                auto* tracking=currents_ ? &per_cell : nullptr;
+                auto* tracking=currents_ || !occupied_cell_volumes_m3.empty() ? &per_cell : nullptr;
                 if (shore_corner_heights_m_.empty()) {
                     const auto sample=grid_.sample(cell);
                     const auto bottom=sample.floor_height_m-center[1],top=sample.surface_height_m-center[1];
@@ -213,7 +218,9 @@ Displacement Region::displaced_by_box(const Vec& center,const std::array<Vec,3>&
                         total.include(initial,planes,tracking);
                     }
                 }
-                if (per_cell.volume>0) {
+                if (!occupied_cell_volumes_m3.empty())
+                    occupied_cell_volumes_m3[std::size_t(iz)*config.cells_x+ix]+=per_cell.volume;
+                if (currents_ && per_cell.volume>0) {
                     const auto centroid=add(center,mul(per_cell.moment,1./per_cell.volume));
                     // Within this cell the velocity field is affine, so its
                     // submerged-volume average is the value at the centroid.

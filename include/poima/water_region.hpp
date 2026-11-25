@@ -17,6 +17,7 @@ nlohmann::json listener_audio_json(const ListenerAudio& profile);
 nlohmann::json optics_json(const WaterOptics& profile);
 nlohmann::json currents_json(const WaterCurrents& profile);
 nlohmann::json surface_wakes_json(const SurfaceWakes& profile);
+nlohmann::json body_displacement_json(const BodyDisplacement& profile);
 
 struct SurfaceEntry {
     double fraction;
@@ -48,6 +49,7 @@ public:
     const std::optional<WaterOptics>& optics() const noexcept { return optics_; }
     const std::optional<WaterCurrents>& currents() const noexcept { return currents_; }
     const std::optional<WakeField>& wakes() const noexcept { return wakes_; }
+    const std::optional<BodyDisplacement>& body_displacement() const noexcept { return body_displacement_; }
     bool displaced_surface() const noexcept { return !surface_swell_.empty() || wakes_.has_value(); }
     FittedWaterBed fitted_bed(Cell cell) const;
     std::optional<CellSample> sample_world(double x_m,double z_m,
@@ -58,7 +60,8 @@ public:
     // The half-axes include scale and rotation. The returned moment is
     // expressed relative to the box center in world axes.
     Displacement displaced_by_box(const std::array<double,3>& center,
-                                  const std::array<std::array<double,3>,3>& half_axes) const;
+                                  const std::array<std::array<double,3>,3>& half_axes,
+                                  std::span<double> occupied_cell_volumes_m3 = {}) const;
     std::array<double,3> current_at(Cell cell,double x_m,double z_m) const;
     double submersion_at(double x_m,double y_m,double z_m) const;
     std::uint64_t cumulative_rain_nm() const noexcept { return cumulative_rain_nm_; }
@@ -69,7 +72,8 @@ public:
     StepReport step(std::span<const std::string_view> pressed = {},
                     std::uint32_t rain_depth_nm = 0,
                     std::optional<std::uint64_t> first_quantum = {},
-                    std::span<const WakeDriver> wake_drivers = {});
+                    std::span<const WakeDriver> wake_drivers = {},
+                    std::span<const double> occupied_cell_volumes_m3 = {});
     nlohmann::json save() const;
     void restore(const nlohmann::json& saved, std::uint64_t expected_tick,
                  std::optional<std::uint64_t> next_quantum = {});
@@ -97,6 +101,8 @@ private:
     std::optional<WaterSwellVariation> swell_variation_;
     std::optional<WaterCurrents> currents_;
     std::optional<WakeField> wakes_;
+    std::optional<BodyDisplacement> body_displacement_;
+    std::uint32_t snapshot_version() const noexcept;
     std::vector<SwellWave> swell_waves_;
     double swell_amplitude_m_=0;
     double swell_at(double cell_x,double cell_z) const noexcept;

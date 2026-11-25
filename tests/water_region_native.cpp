@@ -521,6 +521,63 @@ void wake_pulse_propagates_only_across_wet_connected_faces() {
     rejects<std::invalid_argument>([&]{(void)Region(definition);},"An unstable wake speed was accepted.");
 }
 
+void occupied_body_volume_moves_water_without_adding_it() {
+    RegionDefinition def{
+        .config={.cells_x=2,.cells_z=1,.origin_x_m=17,.origin_z_m=-2,.relaxation_per_second=12},
+        .floor_heights_m={0,0},.initial_depths_m={.5,.5},
+        .faces={{{0,0},FaceAxis::x,{0,{}},"use.sluice",1}},
+        .plan_sha256=std::string(64,'f'),
+        .currents=poima::water::WaterCurrents{10,.01},
+        .body_displacement=poima::water::BodyDisplacement{.3},
+    };
+    const auto near=[](double measured,double expected){return std::abs(measured-expected)<1e-12;};
+    Region live(def);
+    const std::array axes{std::array{.25,0.,0.},std::array{0.,.25,0.},std::array{0.,0.,.25}};
+    std::array<double,2> occupied{};
+    const auto body=live.displaced_by_box({17.5,.35,-1.5},axes,occupied);
+    require(near(body.volume_m3,.1) && near(occupied[0],.1) && occupied[1]==0,
+        "The occupied cell does not match the clipped box's submerged volume.");
+    live.step({},0,{}, {},occupied);
+    const auto closed=live.grid().sample({0,0});
+    require(near(closed.surface_height_m,.6) && closed.depth_m==.5 &&
+        live.grid().face_discharge_m3_s({0,0},FaceAxis::x)==0,
+        "A sealed gate leaked pressure-driven flow.");
+    live.step(toggle,0,{}, {},occupied);
+    const auto left=live.grid().sample({0,0}),right=live.grid().sample({1,0});
+    const auto column=live.sample_world(17.5,-1.5);
+    require(near(left.depth_m,.48) && near(right.depth_m,.52) && live.grid().volume_m3()==1 &&
+        near(live.grid().face_discharge_m3_s({0,0},FaceAxis::x),1.2) &&
+        near(column->surface_height_m,.58) && near(column->depth_m,.58),
+        "Occupation produced the wrong pressure, discharge or geometric depth.");
+    const auto pin=live.save();
+    require(pin.at("version")==5 && pin.contains("occupied_depths_m") && pin.contains("face_transfers"),
+        "The pressure and current were not saved together.");
+    Region cold(def);
+    cold.restore(pin,2);
+    require(cold.save()==pin,"Reload changed the committed pressure.");
+    auto forged=pin;
+    forged["occupied_depths_m"][0]=.15;
+    rejects<std::invalid_argument>([&]{cold.restore(forged,2);},"Forged pressure disagrees with the saved transfer.");
+    require(cold.save()==pin,"A rejected pressure record changed the restored state.");
+    cold.step();
+    require(cold.grid().occupied_depth_m({0,0})==0 &&
+        cold.grid().face_discharge_m3_s({0,0},FaceAxis::x)<0,
+        "Removing the body failed to release its occupied water column.");
+
+    def.config.cells_x=def.config.cells_z=3;
+    def.floor_heights_m.assign(9,0);
+    def.initial_depths_m.assign(9,0);
+    def.initial_depths_m[4]=.05;
+    def.faces.clear();
+    Region shallow(def);
+    std::array<double,9> saturated{};
+    saturated[4]=100;
+    shallow.step({},0,{}, {},saturated);
+    require(near(shallow.grid().sample({1,1}).depth_m,.01) && near(shallow.grid().volume_m3(),.05) &&
+        near(shallow.grid().sample({1,1}).surface_height_m,.0125) && shallow.grid().occupied_depth_m({1,1})==.3,
+        "Multi-face outflow exceeded the donor or the shallow stage cap.");
+}
+
 }
 
 int main() {
@@ -535,6 +592,7 @@ int main() {
         displaced_box_volume_matches_analytic_solids();
         currents_share_committed_gate_flow_and_restore();
         wake_pulse_propagates_only_across_wet_connected_faces();
+        occupied_body_volume_moves_water_without_adding_it();
         std::cout << "Water region tests passed.\n";
     } catch (const std::exception& error) {
         std::cerr << error.what() << '\n';

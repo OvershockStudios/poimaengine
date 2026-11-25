@@ -87,11 +87,11 @@ auto exchange_key(const CellExchange& rule) noexcept {
 }
 
 bool exact_fields(const Json& object, std::initializer_list<const char*> fields,
-                  const char* extra=nullptr,const char* second=nullptr,const char* third=nullptr) {
-    const auto count=std::size_t(extra!=nullptr)+std::size_t(second!=nullptr)+std::size_t(third!=nullptr);
-    return object.is_object() && object.size()==fields.size()+count &&
+                  std::initializer_list<const char*> selected={}) {
+    const auto count=std::ranges::count_if(selected,[](const char* field){return field!=nullptr;});
+    return object.is_object() && object.size()==fields.size()+static_cast<std::size_t>(count) &&
         std::ranges::all_of(fields,[&](const char* field){return object.contains(field);}) &&
-        (!extra || object.contains(extra)) && (!second || object.contains(second)) && (!third || object.contains(third));
+        std::ranges::all_of(selected,[&](const char* field){return !field || object.contains(field);});
 }
 
 std::uint64_t unsigned_integer(const Json& value) {
@@ -237,8 +237,12 @@ Region::Region(const RegionDefinition& definition)
       rain_cells_(definition.rain_cells), surface_ripples_(definition.surface_ripples),
       surface_wave_layers_(definition.surface_wave_layers), listener_audio_(definition.listener_audio),
       optics_(definition.optics), shore_corner_heights_m_(definition.shore_corner_heights_m),
-      surface_swell_(definition.surface_swell), swell_variation_(definition.swell_variation),currents_(definition.currents) {
+      surface_swell_(definition.surface_swell), swell_variation_(definition.swell_variation),currents_(definition.currents),
+      body_displacement_(definition.body_displacement) {
     const auto& config=grid_.config();
+    if (body_displacement_ && !(body_displacement_->max_rise_m>=.01 &&
+            body_displacement_->max_rise_m<=std::min(4.,2*config.cell_size_m)))
+        throw std::invalid_argument("Body displacement max_rise_m must be in [0.01,4] and at most twice the cell width.");
     if (currents_ && !(currents_->max_speed_m_s>=.1 && currents_->max_speed_m_s<=30 &&
             currents_->min_depth_m>=.001 && currents_->min_depth_m<=1))
         throw std::invalid_argument("Water currents need max_speed_m_s in [0.1,30] and min_depth_m in [0.001,1].");
@@ -461,7 +465,11 @@ std::optional<CellSample> Region::sample_world(double x_m,double z_m,
     std::optional<std::array<double,3>>* surface_normal) const {
     if (surface_normal) surface_normal->reset();
     auto sample=grid_.sample_world(x_m,z_m);
-    if (!sample || shore_corner_heights_m_.empty()) return sample;
+    if (!sample) return sample;
+    if (shore_corner_heights_m_.empty()) {
+        if (body_displacement_) sample->depth_m=sample->surface_height_m-sample->floor_height_m;
+        return sample;
+    }
     const auto bed=fitted_bed(sample->cell);
     const auto& sizing=grid_.config();
     const auto u=std::clamp((x_m-sizing.origin_x_m)/sizing.cell_size_m-sample->cell.x,0.,1.);
@@ -499,6 +507,10 @@ Json surface_wakes_json(const SurfaceWakes& profile) {
         {"max_amplitude_m",profile.max_amplitude_m},{"body_gain",profile.body_gain}};
 }
 
+Json body_displacement_json(const BodyDisplacement& profile) {
+    return {{"max_rise_m",profile.max_rise_m}};
+}
+
 std::array<double,3> Region::current_at(Cell cell,double x_m,double z_m) const {
     if (!currents_ || grid_.tick()==0 || !std::isfinite(x_m) || !std::isfinite(z_m)) return {};
     const auto depth=grid_.sample(cell).depth_m;
@@ -526,7 +538,8 @@ double Region::submersion_at(double x_m,double y_m,double z_m) const {
 }
 
 StepReport Region::step(std::span<const std::string_view> pressed, std::uint32_t rain_depth_nm,
-                        std::optional<std::uint64_t> first_quantum,std::span<const WakeDriver> wake_drivers) {
+                        std::optional<std::uint64_t> first_quantum,std::span<const WakeDriver> wake_drivers,
+                        std::span<const double> occupied_cell_volumes_m3) {
     if ((first_quantum && (rain_cells_.empty() || *first_quantum > wetness::max_quantum)) ||
         (rain_depth_nm > 0 && !first_quantum) || rain_depth_nm > max_tick_rain_nm ||
         rain_depth_nm > max_total_rain_nm - cumulative_rain_nm_)
@@ -537,6 +550,23 @@ StepReport Region::step(std::span<const std::string_view> pressed, std::uint32_t
                 !(std::abs(driver.speed_x_m_s)<=1e6 && std::abs(driver.speed_z_m_s)<=1e6);
         }))
         throw std::invalid_argument("Invalid surface wake drivers.");
+    const auto& config=grid_.config();
+    const auto cell_count=std::size_t(config.cells_x)*config.cells_z;
+    std::array<double,max_region_side*max_region_side> occupied_depths;
+    std::span<const double> occupied;
+    if (!occupied_cell_volumes_m3.empty() && (!body_displacement_ || occupied_cell_volumes_m3.size()!=cell_count))
+        throw std::invalid_argument("Body displacement input differs from the regional grid.");
+    if (body_displacement_) {
+        const auto area=config.cell_size_m*config.cell_size_m;
+        auto depths=std::span(occupied_depths).first(cell_count);
+        for (std::size_t i=0;i<depths.size();++i) {
+            const auto volume=occupied_cell_volumes_m3.empty() ? 0. : occupied_cell_volumes_m3[i];
+            if (!(std::isfinite(volume) && volume>=0))
+                throw std::invalid_argument("Body occupation volumes must be finite and nonnegative.");
+            depths[i]=std::min(volume/area,body_displacement_->max_rise_m);
+        }
+        occupied=depths;
+    }
     struct ChangedFace { std::size_t index; FaceControl previous; };
     std::array<ChangedFace, max_region_faces> changes;
     std::size_t changed = 0;
@@ -553,7 +583,7 @@ StepReport Region::step(std::span<const std::string_view> pressed, std::uint32_t
             changes[changed++] = {index, previous};
         }
         const auto rain_cells = rain_depth_nm ? std::span<const Cell>(rain_cells_) : std::span<const Cell>{};
-        last_report_ = grid_.step(exchanges_, rain_cells, rain_depth_nm * nm_to_m);
+        last_report_ = grid_.step(exchanges_, rain_cells, rain_depth_nm * nm_to_m,occupied);
     } catch (...) {
         // Only previously validated face values enter this buffer. Grid::step
         // leaves cells and its tick untouched when it rejects a step.
@@ -572,6 +602,10 @@ StepReport Region::step(std::span<const std::string_view> pressed, std::uint32_t
     return *last_report_;
 }
 
+std::uint32_t Region::snapshot_version() const noexcept {
+    return body_displacement_ ? 5u : wakes_ ? 4u : currents_ ? 3u : !rain_cells_.empty() ? 2u : 1u;
+}
+
 Json Region::save() const {
     Json action_faces = Json::array();
     for (const auto& rule : faces_)
@@ -579,7 +613,9 @@ Json Region::save() const {
             action_faces.push_back(grid_.face(rule.cell, rule.axis).openness);
     auto snapshot = grid_.snapshot();
     const bool rain_enabled = !rain_cells_.empty();
-    Json result{{"format", snapshot_format}, {"version", wakes_ ? 4 : currents_ ? 3 : rain_enabled ? 2 : 1}, {"plan_sha256", plan_sha256_},
+    if (body_displacement_ && snapshot.occupied_depths_m.empty())
+        snapshot.occupied_depths_m.resize(snapshot.depths_m.size());
+    Json result{{"format", snapshot_format}, {"version", snapshot_version()}, {"plan_sha256", plan_sha256_},
         {"tick", snapshot.tick}, {"depths_m", std::move(snapshot.depths_m)},
         {"action_face_openness", std::move(action_faces)}, {"last_report", report_json(last_report_, rain_enabled)}};
     if (rain_enabled)
@@ -592,6 +628,8 @@ Json Region::save() const {
         const auto h=wakes_->heights(),v=wakes_->vertical_steps();
         result["wakes"]={{"height_m",std::vector(h.begin(),h.end())},{"vertical_step_m",std::vector(v.begin(),v.end())}};
     }
+    if (body_displacement_)
+        result["occupied_depths_m"]=std::move(snapshot.occupied_depths_m);
     return result;
 }
 
@@ -599,9 +637,10 @@ void Region::restore(const Json& saved, std::uint64_t expected_tick,
                      std::optional<std::uint64_t> next_quantum) {
     const bool rain_enabled = !rain_cells_.empty();
     const bool fields_match=exact_fields(saved,{"format","version","plan_sha256","tick","depths_m","action_face_openness","last_report"},
-        rain_enabled ? "rain" : nullptr,currents_ ? "face_transfers" : nullptr,wakes_ ? "wakes" : nullptr);
+        {rain_enabled ? "rain" : nullptr,currents_ ? "face_transfers" : nullptr,wakes_ ? "wakes" : nullptr,
+            body_displacement_ ? "occupied_depths_m" : nullptr});
     if (!fields_match || saved.at("format") != snapshot_format ||
-        unsigned_integer(saved.at("version")) != (wakes_ ? 4u : currents_ ? 3u : rain_enabled ? 2u : 1u) ||
+        unsigned_integer(saved.at("version")) != snapshot_version() ||
         saved.at("plan_sha256") != plan_sha256_ || unsigned_integer(saved.at("tick")) != expected_tick)
         throw std::invalid_argument("Water snapshot format, plan identity or tick does not match.");
 
@@ -613,6 +652,18 @@ void Region::restore(const Json& saved, std::uint64_t expected_tick,
     if (expected_tick == 0 && snapshot.depths_m != initial_depths_m_)
         throw std::invalid_argument("Initial water snapshot depths do not match the plan.");
     snapshot.tick = expected_tick;
+    if (body_displacement_) {
+        const auto& occupied=saved.at("occupied_depths_m");
+        if (!occupied.is_array() || occupied.size()!=snapshot.depths_m.size())
+            throw std::invalid_argument("Saved body occupation count differs from the water grid.");
+        snapshot.occupied_depths_m.resize(occupied.size());
+        std::transform(occupied.begin(),occupied.end(),snapshot.occupied_depths_m.begin(),[&](const Json& raw) {
+            const auto sample=finite_nonnegative(raw);
+            if (sample>body_displacement_->max_rise_m)
+                throw std::invalid_argument("Saved body occupation exceeds the authored maximum.");
+            return sample;
+        });
+    }
     if (snapshot.last_transfers) {
         std::ranges::fill(snapshot.last_transfers->x_m,0.);
         std::ranges::fill(snapshot.last_transfers->z_m,0.);

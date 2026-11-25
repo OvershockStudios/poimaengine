@@ -58,6 +58,26 @@ double transferred_depth(double lower_floor,double upper_floor,double lower_dept
     return (lower_head-upper_head)*fraction*control.openness;
 }
 
+double body_stage_rise(double depth,double occupation) {
+    // At 12 Hz relaxation the four-face explicit step permits at most
+    // 1.25 times the original stage-to-depth slope.
+    return std::min(.25*depth,occupation);
+}
+
+double pressure_transfer(double lower_floor,double upper_floor,double lower_depth,double upper_depth,
+                         const FaceControl& face,double fraction,std::span<const double> occupation,
+                         std::size_t lower,std::size_t upper) {
+    if (occupation.empty())
+        return transferred_depth(lower_floor,upper_floor,lower_depth,upper_depth,face,fraction);
+    // Body occupancy raises the stage and the available head. Bound each
+    // outgoing face by its share of the donor's actual water.
+    lower_depth=std::max(0.,lower_depth);
+    upper_depth=std::max(0.,upper_depth);
+    const auto flow=transferred_depth(lower_floor,upper_floor,lower_depth+body_stage_rise(lower_depth,occupation[lower]),
+        upper_depth+body_stage_rise(upper_depth,occupation[upper]),face,fraction);
+    return std::clamp(flow,-upper_depth*fraction*face.openness,lower_depth*fraction*face.openness);
+}
+
 class Sum {
 public:
     void add(double value) noexcept {
@@ -135,7 +155,8 @@ CellSample Grid::sample(Cell cell) const {
     const auto index = cell_index(cell);
     const double floor = floor_heights_[index];
     const double depth = depths_[index];
-    return {cell, floor, depth, floor + depth, depth * cell_area_m2_};
+    const auto surface=occupied_depths_.empty() ? floor+depth : floor+(depth+body_stage_rise(depth,occupied_depths_[index]));
+    return {cell, floor, depth, surface, depth * cell_area_m2_};
 }
 
 std::optional<CellSample> Grid::sample_world(double x_m, double z_m) const {
@@ -176,12 +197,21 @@ double Grid::face_discharge_m3_s(Cell lower_cell,FaceAxis axis) const {
     return transfers[index]*(cell_area_m2_/step_seconds);
 }
 
+double Grid::occupied_depth_m(Cell cell) const {
+    const auto index=cell_index(cell);
+    return occupied_depths_.empty() ? 0. : occupied_depths_[index];
+}
+
 StepReport Grid::step(std::span<const CellExchange> exchanges,
-                      std::span<const Cell> rain_cells, double rain_depth_m) {
+                      std::span<const Cell> rain_cells, double rain_depth_m,std::span<const double> occupied_depths_m) {
     if (tick_ == std::numeric_limits<std::uint64_t>::max())
         throw std::overflow_error("Shallow-water tick limit reached.");
     if (exchanges.size() > depths_.size())
         throw std::invalid_argument("Too many shallow-water exchanges.");
+    if (!occupied_depths_m.empty() && (occupied_depths_m.size()!=depths_.size() ||
+            !std::ranges::all_of(occupied_depths_m,[](double depth){return bounded(depth,0,max_height_m); })))
+        throw std::invalid_argument("Invalid shallow-water occupation field.");
+    staged_occupied_depths_.assign(occupied_depths_m.begin(),occupied_depths_m.end());
 
     if (!bounded(rain_depth_m, 0, max_height_m) || (rain_depth_m > 0 && rain_cells.empty()))
         throw std::invalid_argument("Invalid shallow-water rain depth or coverage.");
@@ -242,8 +272,8 @@ StepReport Grid::step(std::span<const CellExchange> exchanges,
     const double fraction = config_.relaxation_per_second * step_seconds;
     for_each_face(config_,[&](std::size_t lower,std::size_t upper,FaceAxis axis,std::size_t index) {
         const auto& control=(axis==FaceAxis::x ? x_faces_ : z_faces_)[index];
-        const double flow=transferred_depth(floor_heights_[lower],floor_heights_[upper],
-            staged_depths_[lower],staged_depths_[upper],control,fraction);
+        const double flow=pressure_transfer(floor_heights_[lower],floor_heights_[upper],
+            staged_depths_[lower],staged_depths_[upper],control,fraction,occupied_depths_m,lower,upper);
         if (staged_transfers_)
             (axis==FaceAxis::x ? staged_transfers_->x_m : staged_transfers_->z_m)[index]=flow;
         transfer_deltas_[lower] -= flow;
@@ -259,6 +289,7 @@ StepReport Grid::step(std::span<const CellExchange> exchanges,
         after.add(depth);
     }
     depths_.swap(staged_depths_);
+    occupied_depths_.swap(staged_occupied_depths_);
     last_transfers_.swap(staged_transfers_);
     return {++tick_, before.value() * cell_area_m2_, supplied.value() * cell_area_m2_,
             drained.value() * cell_area_m2_, after.value() * cell_area_m2_,
@@ -266,7 +297,7 @@ StepReport Grid::step(std::span<const CellExchange> exchanges,
 }
 
 Snapshot Grid::snapshot() const {
-    return {config_, tick_, floor_heights_, depths_, x_faces_, z_faces_, last_transfers_};
+    return {config_, tick_, floor_heights_, depths_, x_faces_, z_faces_, last_transfers_, occupied_depths_};
 }
 
 Grid Grid::restore(const Snapshot& snapshot) {
@@ -282,6 +313,13 @@ Grid Grid::restore(const Snapshot& snapshot) {
     grid.tick_ = snapshot.tick;
     grid.x_faces_ = snapshot.x_faces;
     grid.z_faces_ = snapshot.z_faces;
+    if (!snapshot.occupied_depths_m.empty()) {
+        const auto bound=grid.tick_ ? max_height_m : 0.;
+        if (snapshot.occupied_depths_m.size()!=grid.depths_.size() ||
+            !std::ranges::all_of(snapshot.occupied_depths_m,[&](double value){return bounded(value,0,bound);}))
+            throw std::invalid_argument("Shallow-water occupation state is incomplete or out of bounds.");
+        grid.occupied_depths_=snapshot.occupied_depths_m;
+    }
     // The generic grid permits changing controls between ticks. At this layer
     // the completed transfers can belong to the preceding control state.
     if (snapshot.last_transfers) {
@@ -319,8 +357,8 @@ void Grid::restore_transfers(FaceTransfers transfers) {
             1.,std::abs(previous[lower]),std::abs(previous[upper]),depths_[lower],depths_[upper]});
         if (!bounded(previous[lower],-tolerance,max_height_m+tolerance) ||
             !bounded(previous[upper],-tolerance,max_height_m+tolerance) ||
-            std::abs(flow-transferred_depth(floor_heights_[lower],floor_heights_[upper],
-                previous[lower],previous[upper],control,fraction))>tolerance)
+            std::abs(flow-pressure_transfer(floor_heights_[lower],floor_heights_[upper],
+                previous[lower],previous[upper],control,fraction,occupied_depths_,lower,upper))>tolerance)
             throw std::invalid_argument("Saved water transfers do not match the regional flow step.");
     });
     last_transfers_=std::move(transfers);

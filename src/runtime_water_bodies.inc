@@ -6,7 +6,8 @@
     };
 
     static constexpr double water_density_kg_m3=1000;
-    WaterBodyForces water_body_forces(const JPH::Body& body,double mass) const {
+    WaterBodyForces water_body_forces(const JPH::Body& body,double mass,
+                                      std::span<double> occupied_cell_volumes={}) const {
         const auto half=static_cast<const JPH::BoxShape&>(*body.GetShape()).GetHalfExtent();
         WaterBodyForces result{8.*half.GetX()*half.GetY()*half.GetZ()};
         if (!water_region) return result;
@@ -19,7 +20,7 @@
             const auto axis=rotation*local[i];
             axes[i]={axis.GetX(),axis.GetY(),axis.GetZ()};
         }
-        result.submerged=water_region->displaced_by_box(center,axes);
+        result.submerged=water_region->displaced_by_box(center,axes,occupied_cell_volumes);
         result.submerged.volume_m3=std::min(result.submerged.volume_m3,result.volume_m3);
         if (result.submerged.volume_m3<=result.volume_m3*1e-10) {
             result.submerged={};
@@ -76,7 +77,7 @@
             body.GetCenterOfMassPosition()+arm);
     }
 
-    std::size_t apply_water_buoyancy(std::span<water::WakeDriver> wake_drivers) {
+    std::size_t apply_water_buoyancy(std::span<water::WakeDriver> wake_drivers,std::span<double> occupied_cell_volumes) {
         if (!water_region || topology->buoyant.empty()) return 0;
         profiling::Scope scope("runtime.water.buoyancy",static_cast<std::int64_t>(tick));
         const auto gravity=physics.GetGravity();
@@ -89,7 +90,7 @@
                 JPH::BodyLockWrite lock(physics.GetBodyLockInterface(),id);
                 require(lock.Succeeded(),"Buoyant box is absent from physics.");
                 auto& body=lock.GetBody();
-                const auto forces=water_body_forces(body,collider.mass);
+                const auto forces=water_body_forces(body,collider.mass,occupied_cell_volumes);
                 const auto& wet=forces.submerged;
                 if (wet.volume_m3<=0) continue;
                 const auto& drag=*collider.buoyancy;

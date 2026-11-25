@@ -75,6 +75,7 @@ struct Snapshot {
     std::vector<FaceControl> x_faces;
     std::vector<FaceControl> z_faces;
     std::optional<FaceTransfers> last_transfers{};
+    std::vector<double> occupied_depths_m{};
 };
 
 // One owner advances this localized, closed grid. Cells are row-major in X
@@ -94,12 +95,14 @@ public:
     FaceControl face(Cell lower_cell, FaceAxis axis) const;
     void set_face(Cell lower_cell, FaceAxis axis, FaceControl control);
     double face_discharge_m3_s(Cell lower_cell, FaceAxis axis) const;
+    double occupied_depth_m(Cell cell) const;
 
     // Apply rain to unique cells in row-major order, process the authored
     // exchanges, then move water across interior faces. Rejected steps leave
     // the whole observable state intact.
     StepReport step(std::span<const CellExchange> exchanges = {},
-                    std::span<const Cell> rain_cells = {}, double rain_depth_m = 0);
+                    std::span<const Cell> rain_cells = {}, double rain_depth_m = 0,
+                    std::span<const double> occupied_depths_m = {});
 
     Snapshot snapshot() const;
     static Grid restore(const Snapshot& snapshot);
@@ -115,6 +118,7 @@ private:
     std::uint64_t tick_ = 0;
     std::vector<double> floor_heights_;
     std::vector<double> depths_;
+    std::vector<double> occupied_depths_, staged_occupied_depths_;
     std::vector<FaceControl> x_faces_;
     std::vector<FaceControl> z_faces_;
     std::optional<FaceTransfers> last_transfers_, staged_transfers_;

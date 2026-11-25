@@ -33,7 +33,7 @@
         require(cook || method == "world.water.plan", "Unknown water authoring method.", -32601);
         fields(params, {"revision", "terrain", "expected_terrain_recipe_sha256", "expected_plan_sha256", "tile_entities",
             "grid", "initial_depths_m", "faces", "exchanges", "rain_cells", "surface_ripples", "surface_wave_layers",
-            "surface_swell", "swell_variation", "listener_audio", "optics", "currents", "surface_wakes"},
+            "surface_swell", "swell_variation", "listener_audio", "optics", "currents", "surface_wakes", "body_displacement"},
             {"revision", "terrain", "expected_terrain_recipe_sha256", "tile_entities", "grid"});
         require(cook == params.contains("expected_plan_sha256"), "Water cooking requires a reviewed plan SHA-256.");
         current_revision(params);
@@ -84,6 +84,7 @@
             if (params.contains("listener_audio")) result["listener_audio"] = params.at("listener_audio");
             if (params.contains("currents")) result["currents"] = params.at("currents");
             if (params.contains("surface_wakes")) result["surface_wakes"] = params.at("surface_wakes");
+            if (params.contains("body_displacement")) result["body_displacement"] = params.at("body_displacement");
             if (params.contains("optics")) {
                 auto optics=params.at("optics");
                 if(!optics.value("refraction",false))optics.erase("refraction");
@@ -229,6 +230,8 @@
             result["currents"] = water::currents_json(*currents);
         if (const auto& wakes=region->wakes())
             result["surface_wakes"] = water::surface_wakes_json(wakes->profile());
+        if (const auto& displacement=region->body_displacement())
+            result["body_displacement"] = water::body_displacement_json(*displacement);
         if (params.contains("cells")) for (const auto& request : params.at("cells")) {
             require(request.is_array() && request.size() == 2, "Water observation cells use [x, z] indices.");
             const auto x = revision(request[0]), z = revision(request[1]);
@@ -240,6 +243,11 @@
                 auto& row=result["cells"].back();
                 row["wake_height_m"]=wakes->height(cell.cell);
                 row["wake_vertical_step_m"]=wakes->vertical_steps()[std::size_t(cell.cell.z)*grid.config().cells_x+cell.cell.x];
+            }
+            if (region->body_displacement()) {
+                auto& row=result["cells"].back();
+                row["body_occupied_depth_m"]=grid.occupied_depth_m(cell.cell);
+                row["body_surface_rise_m"]=cell.surface_height_m-(cell.floor_height_m+cell.depth_m);
             }
         }
         for (const auto& face : region->face_rules()) {

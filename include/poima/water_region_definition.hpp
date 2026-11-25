@@ -46,6 +46,9 @@ struct SurfaceWakes {
 struct WakeDriver {
     double x_m, z_m, speed_x_m_s, speed_z_m_s;
 };
+struct BodyDisplacement {
+    double max_rise_m;
+};
 
 struct RegionDefinition {
     GridConfig config;
@@ -64,6 +67,7 @@ struct RegionDefinition {
     std::optional<WaterSwellVariation> swell_variation{};
     std::optional<WaterCurrents> currents{};
     std::optional<SurfaceWakes> surface_wakes{};
+    std::optional<BodyDisplacement> body_displacement{};
 };
 
 }

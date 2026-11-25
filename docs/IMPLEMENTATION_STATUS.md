@@ -1,8 +1,18 @@
 # Implementation status
 
-Updated 2026-11-25 for **0.0.437**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-25 for **0.0.438**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.438 adds [water displacement by buoyant boxes](SHALLOW_WATER.md#let-props-push-water-into-adjacent-cells).
+Clipped occupied volume raises the local stage and can drive conserved flow
+through an open gate. The native fixture moves 20 litres into the receiving
+cell, reverses the flow after removing the body, and preserves the total
+1 m³ throughout. AMD and NVIDIA reproduce the raised waterline after
+restoring a save in a relocated game. Ubuntu passes ten focused suites and
+the headless fixture. This is a bounded depth-averaged approximation.
+Separate connected reservoirs, breaking water and scene-scale costs remain
+open. [Results and scope](evidence/m2-water-displacement-438.json)
 
 Version 0.0.437 adds [surface wakes from buoyant props](SHALLOW_WATER.md#leave-wakes-behind-floating-props).
 The damped wave field respects wet faces and gate connectivity. Water

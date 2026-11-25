@@ -1,0 +1,165 @@
+{
+  "version": "0.0.438",
+  "authoring_schema_revision": 234,
+  "date": "2026-11-25",
+  "base_commit": "21a822e583297508968bac2e4c103ab851e09bf8",
+  "scope": "Box occupancy raises the regional hydraulic head and pushes conserved liquid into neighboring cells.",
+  "source_sha256": {
+    "CMakeLists.txt": "c4829319ba85f30b244dba13121c57441f986c3b89c8c1aea0c8517eba360fc6",
+    "cmake/runtime.json.in": "914626c26d0e54da993d85effa0e8127e41483d6aab62adbe897bc2dad8d8c9f",
+    "include/poima/project.hpp": "14b5a63cf0d06457692a92717235350bca70b4e5a66c06547cbe6cf8be7446ef",
+    "include/poima/shallow_water.hpp": "93343837fc6bbc4c48abed003270805c4e8f212b0c3596f8e71a7d4babe84019",
+    "include/poima/water_region.hpp": "ed5df7cbf419332fa12420a2ba728c8ab32de2cc4221b4357c3939c4fe57ae79",
+    "include/poima/water_region_definition.hpp": "c0bf717138ef543066b6cc4122e1e3a0bc44510aa1186b9595242f574ca9bcce",
+    "include/poima/world.hpp": "2fd35e80a199ee03f08773ac8f6647d18adef6d766fbf5f3d023bd9d6b529037",
+    "src/core.cpp": "2214040f15abccb4036965521cd6e59da4391981312a69262e9f8a5256a79850",
+    "src/project.cpp": "b2aa00d0598e7c4b05d87d68035b56ecd3ebe8c62052aaed1ba715922a6d4f5c",
+    "src/runtime.cpp": "31a98dde136de1647cc8b03fe2cf46e36a4f3b22a9ed6343b26cf27a9b816b7b",
+    "src/runtime_water_bodies.inc": "715aad8a69fa6477f5af3863162ea0174a6219f5b86aafd443c9262f0f477380",
+    "src/shallow_water.cpp": "8ff27f6f9b213022da9b5def1e273ba448b2796066fb693ba52b8b1eccd3f4f5",
+    "src/water_asset.cpp": "7ac1745ca29dd3445dc3e9472569e0df2e0b6da908cf887d1f240d55b2bfea3c",
+    "src/water_buoyancy.cpp": "62c44c0a732af7a0f9ed97bd7c88b639574061d4d716ea111af8ddbe5bfe2d56",
+    "src/water_region.cpp": "7a870729a28e950a1d494058bdada0abf43e1ce29efa375442f1a9145ae628aa",
+    "src/world.cpp": "d1ea0c7d37b3da3f33c9866f91dcf3a68fbb43ab797da63bdf2b785c73db1fed",
+    "src/world_content.cpp": "5bbe7e16e8cf4572432a41db4383b3bffed8f07cf546f922a9f967afe3842f37",
+    "src/world_schema.cpp": "016859a6637078d2bfad4ffb9132c79935a0ba293d94f5304137453d44c24221",
+    "src/world_water_service.inc": "1256f1ed9c879a09c96407a4c267047908d0f1ca0762fcf9f25aadb12d220415",
+    "tests/water_body_displacement_capture.py": "eb103b002e1ca61f2dab68e9a103638fbd7793cb461dcf72a6e36a23ecf6208e",
+    "tests/water_region_native.cpp": "c6c2c3f8339bb3b0cd58c49358529c1d72719e069298a8a9810803a8b3a3bef4"
+  },
+  "fixture": {
+    "ledger_m3": 1,
+    "before": {
+      "tick": 0,
+      "water_depths_m": [
+        0.5,
+        0.5
+      ],
+      "left_stage_rise_m": 0.0,
+      "discharge_m3_s": 0.0,
+      "downstream_submersion_m": 0.0
+    },
+    "sealed_with_box": {
+      "tick": 1,
+      "water_depths_m": [
+        0.5,
+        0.5
+      ],
+      "left_stage_rise_m": 0.09999999999999998,
+      "discharge_m3_s": 0.0,
+      "downstream_submersion_m": 0.0
+    },
+    "opened_with_box": {
+      "tick": 2,
+      "water_depths_m": [
+        0.48,
+        0.52
+      ],
+      "left_stage_rise_m": 0.09999999999999998,
+      "discharge_m3_s": 1.1999999999999997,
+      "downstream_submersion_m": 0.010000000000000009
+    },
+    "after_box_removed": {
+      "tick": 3,
+      "water_depths_m": [
+        0.488,
+        0.512
+      ],
+      "left_stage_rise_m": 0.0,
+      "discharge_m3_s": -0.4800000000000004,
+      "downstream_submersion_m": 0.0020000000000000018
+    },
+    "pwater_plan_sha256": "537a60670a9054f63c1e00c024f7f868fdc36f7384725cff2f66a16ba0831de5"
+  },
+  "windows": {
+    "binary_sha256": "fbe4d88cc3c5eb7384050bdcb8c9b215c3025e3300037a0b96791b2d031a80b0",
+    "desktop_library_sha256": "f96a7af02dc632c89b3e590ab24bdcaa39d17da14fc554e73690c4f196881bd9",
+    "runtime_descriptor_sha256": "6bfc84fd3a70d0b579182e8bd031ebcbf398580d184027a9de5577d6c9873934",
+    "amd_forward": {
+      "adapter": "AMD Radeon(TM) Graphics",
+      "raw_evidence_sha256": "81c4efcc6bb1828a0aab2f2f718f93272f7e7d6151e879bbe58d15fdb4ea9603",
+      "extent": [
+        240,
+        160
+      ],
+      "dry": {
+        "image": "13643b48d7ced6aea78027ee6ce48d9767efbbeca2068771b9b9fa664d225796",
+        "submersion_m": 0.0
+      },
+      "downstream_flooded": {
+        "image": "5ceb2d359bb24723d1d1f0d19f224ebb81c1240f4ab3d17f12fce0c7a8d85cbb",
+        "submersion_m": 0.009999980926513663
+      },
+      "relocated_game": {
+        "source_unavailable": true,
+        "unchanged_files": 60,
+        "same_pressure_and_images_after_fresh_process_restore": true
+      }
+    },
+    "nvidia_deferred": {
+      "adapter": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "raw_evidence_sha256": "a2042afc143cf47d6715e28808cd94d7770b9d1dfbae4b324c174f04495011d6",
+      "extent": [
+        240,
+        160
+      ],
+      "dry": {
+        "image": "a23cc82ac9f23b960c177aee6ad217c73ab7000cf523778be6bfa9ac2a4e3fa2",
+        "submersion_m": 0.0
+      },
+      "downstream_flooded": {
+        "image": "7a7b2bdd9f2c249eafe22aad6e169da2afcbdc25b692f510433512284c8484d3",
+        "submersion_m": 0.009999980926513663
+      },
+      "relocated_game": {
+        "source_unavailable": true,
+        "unchanged_files": 60,
+        "same_pressure_and_images_after_fresh_process_restore": true
+      }
+    },
+    "retained_wakes": {
+      "reference_version": "0.0.437",
+      "reference_evidence_sha256": "4325d96f1901be06e9d7ac5d728226b0e99098111b21e18cee33127c5da1a61a",
+      "candidate_evidence_sha256": "b20339bb587c74c24df2ad09311bf5321ba73eec8f377631c4746eccd209e236",
+      "same_observed_states_and_capture_products": true
+    },
+    "feature_rejection": {
+      "receipt_sha256": "c3ab6205b1f05ceb79bdd66ed7ee47e7a20afe29ff48530bbfb57a5cebe5832a",
+      "published": false
+    }
+  },
+  "ubuntu_headless": {
+    "ctest_passed": [
+      "authoring_contract_identity",
+      "authoring_core_conformance",
+      "particle_scene_native",
+      "shallow_water_native",
+      "water_region_native",
+      "water_region_scene_native",
+      "world_particles_contract",
+      "world_session_native",
+      "world_water_contract",
+      "world_water_rain_contract"
+    ],
+    "fixture_evidence_sha256": "cd2faa7aa82bcd3e0c7bed9c595518b775af915eb7dd74e527ea9a39472de0ce",
+    "binary_sha256": "afc632e813675961956c94f505b34a407d8708db416bdd39c348b8a9843bb68e",
+    "runtime_descriptor_sha256": "da092647b53b97b5c72144e9b428e914eddb4c32bff668b14b0125bddb52dad2",
+    "ctest_junit_sha256": "4b39e70127c43c3066a15fc92e77be87d299bed934543aa879cb2e0dba6e583f"
+  },
+  "native_geometry": [
+    "Exact clipped occupation passed to the pressure solver",
+    "Closed and open gates with known discharge",
+    "Saturated four-face outflow retains water and caps stage",
+    "Occupied state and transfer validation after restore",
+    "Removing occupation reverses flow"
+  ],
+  "exploratory_solver": {
+    "seed": 738115,
+    "restored_records": 3840,
+    "max_volume_error_m3": 1.77636e-15,
+    "recipe_sha256": "974e83de06299bb8d7c2cd9d9ad3c97c97233327a69a9924862c66d160d4b2f8"
+  },
+  "remaining": [
+    "Bounded local pressure approximation. Transfer between separately authored basins, fully volume-resolving surfaces, open-ocean interaction and scene-scale performance remain open."
+  ]
+}
