@@ -23,7 +23,7 @@ enum class Region { whole,prefix,cluster_members,probe_pixels };
 enum class Use { upload,storage_read,storage_write,vertex,index,constant,sampled,color,color_overwrite,depth,clear_color,clear_depth,copy_source,copy_destination,resolve_source,resolve_destination,present,image_write,image_read_write };
 using Uses=std::uint64_t;
 constexpr Uses use_bit(Use use) {return Uses{1}<<static_cast<unsigned>(use);}
-enum class PassId { stream_geometry,sprite_upload,surface_mark_upload,skinning,light_assignment,shadows,scene_clear,sky,opaque,ambient_occlusion,ambient_occlusion_filter,deferred_lighting,screen_reflections,height_fog,particle_sprites,resolve,temporal_inputs,reconstruction,viewmodel_lights,viewmodel_clear,viewmodel_opaque,viewmodel_resolve,viewmodel_composite,post_effect,bloom_extract,bloom_horizontal,bloom_vertical,output,spatial_aa,game_ui,overlay,editor_clear,editor_ui,product_probes,capture,present,auto_exposure,exposure_readback,atmosphere_density,atmosphere_view,aerial_perspective,cloud_noise,cloud_view,cloud_shadow };
+enum class PassId { stream_geometry,sprite_upload,surface_mark_upload,skinning,light_assignment,shadows,scene_clear,sky,opaque,ambient_occlusion,ambient_occlusion_filter,deferred_lighting,screen_reflections,height_fog,particle_sprites,resolve,temporal_inputs,reconstruction,viewmodel_lights,viewmodel_clear,viewmodel_opaque,viewmodel_resolve,viewmodel_composite,post_effect,bloom_extract,bloom_horizontal,bloom_vertical,output,spatial_aa,game_ui,overlay,editor_clear,editor_ui,product_probes,capture,present,auto_exposure,exposure_readback,atmosphere_density,atmosphere_view,aerial_perspective,cloud_noise,cloud_view,cloud_shadow,count };
 inline const char* pass_name(PassId id) {
     switch(id) {
     case PassId::stream_geometry:return "render.pass.stream_geometry";
@@ -59,6 +59,7 @@ inline const char* pass_name(PassId id) {
     case PassId::product_probes:return "render.pass.product_probes";
     case PassId::exposure_readback:return "render.pass.exposure_readback";
     case PassId::capture:return "render.pass.capture";case PassId::present:return "render.pass.present";
+    case PassId::count:break;
     }throw std::runtime_error("Unknown render pass.");
 }
 struct Resource {

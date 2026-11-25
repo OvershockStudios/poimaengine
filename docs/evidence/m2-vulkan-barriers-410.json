@@ -1,0 +1,275 @@
+{
+  "checkpoint": "0.0.410",
+  "parent_commit": "77733f4",
+  "source_sha256": {
+    "CMakeLists.txt": "befd2907ad3a1a3d1cae370edda56b076abaa3225653c8248df0e322e3cd6ec6",
+    "cmake/render_smoke.cmake": "9893a9bb120ef581253131d342398e8532cd11b69b4f341538620f51752923ac",
+    "include/poima/render_schedule.hpp": "c6e6975a8b48749fe5214cece4ec9775f7c672e7a04847dd7a8c03bea19d47fb",
+    "src/render_smoke.cpp": "307e30b19654331c9a98ba0556e2093a0cb3e401ffdc5a5cca1bd8a1704b7f3a",
+    "src/render_vulkan_barriers.cpp": "cacdd6c305f94773de775f71b30b5ebe27044ba1d4f935db8ae85ca6d1497170",
+    "src/render_vulkan_barriers.hpp": "4cd6c5403ad54969873428133ea38a58c44f5064493d592bc39f33d6fb880d5b",
+    "tests/profiler_capture.py": "38e07dd3fb732bf176094c27c4cc69cad964a336e41d897d37364642cc2efb42",
+    "tests/cloud_shadow_capture.py": "be0b287448a7514bcdf6b25e66f996a3e7dc653bfbb7cc8f702bd2aab243c650"
+  },
+  "scope": "Barrier calls issued by Poima and NVRHI on the profiled frame command buffer",
+  "ubuntu": {
+    "suites": [
+      "authoring_api_compatibility",
+      "cli_contract",
+      "frame_performance_native",
+      "frame_performance_service",
+      "profiler_contract",
+      "profiler_jobs",
+      "profiler_native",
+      "profiler_service",
+      "project_contract",
+      "render_schedule_native",
+      "shared_session_contract",
+      "world_contract",
+      "world_session_native"
+    ],
+    "log_sha256": "0d257edc22bf29941a5b02b89b48a98dfe8322935ed7db0f972cb3c2b7585740",
+    "binary_sha256": "e671526fa31d368a8beea1d993361353ecd076b3c02da20f8495eafa269a3c55",
+    "junit_sha256": "e02702b88fb148f1b6a5a056b905bf1ec5e0be7fd0cf90116216a2784d291da2"
+  },
+  "windows": {
+    "build_host": "Ubuntu x86-64",
+    "compiler": "LLVM-MinGW Clang 23.1.2",
+    "candidate_patch_sha256": "3161ea505b7147e085fbd2d3a5d382fa786d63873891ca09a0e84368ea33296f",
+    "warm_dependencies_baseline_build_wall_s": 146.51,
+    "warm_candidate_build_wall_s": 10.87,
+    "workers": 4,
+    "archive_sha256": "8c0af665c3720fefeae9a042ced03b144dcbec0d540cf9cd94b19a356b0e1575",
+    "runtime_descriptor_sha256": "b9fd4f06fb785e46997362f9b375a6ce58a287080fd33f360a46b362aa03de0c",
+    "executable_sha256": "1b49852df0e66a15e3beb08e9b854fc5d36fde13920617393ddeb4dd2ab0ee9d",
+    "desktop_bridge_sha256": "2c691f08ed9811fb551ad69b74afb6db78f04058d78df19cc8623d3cb1c81b0c",
+    "adapters": [
+      {
+        "index": 0,
+        "name": "AMD Radeon(TM) Graphics",
+        "synchronization_validation": true,
+        "profiler_evidence_sha256": "5b66e6681c22cab3271eb4db7bc19466bdb601f8906a0f8797ad92e32539759f",
+        "validation_log_sha256": "8096c39535eda0a73f8a2bcf70daf339478e032752dc468473ed468798e4ad97",
+        "traced_frames": 22,
+        "profiler_image_pairs_or_triplets": 3,
+        "barrier_counts_1x": [
+          {
+            "before_passes": 1,
+            "skinning": 2,
+            "light_assignment": 1,
+            "shadows": 6,
+            "scene_clear": 5,
+            "opaque": 2,
+            "output": 1,
+            "present": 1,
+            "after_passes": 1,
+            "calls": 20,
+            "memory_entries": 1,
+            "buffer_entries": 7,
+            "image_entries": 34
+          },
+          {
+            "before_passes": 1,
+            "skinning": 2,
+            "light_assignment": 1,
+            "shadows": 6,
+            "scene_clear": 5,
+            "opaque": 2,
+            "output": 1,
+            "capture": 1,
+            "present": 1,
+            "after_passes": 1,
+            "calls": 21,
+            "memory_entries": 1,
+            "buffer_entries": 7,
+            "image_entries": 35
+          }
+        ],
+        "barrier_counts_4x": [
+          {
+            "before_passes": 1,
+            "skinning": 2,
+            "light_assignment": 1,
+            "shadows": 6,
+            "scene_clear": 2,
+            "opaque": 2,
+            "resolve": 1,
+            "output": 1,
+            "present": 1,
+            "after_passes": 1,
+            "calls": 18,
+            "memory_entries": 1,
+            "buffer_entries": 7,
+            "image_entries": 26
+          },
+          {
+            "before_passes": 1,
+            "skinning": 2,
+            "light_assignment": 1,
+            "shadows": 6,
+            "scene_clear": 2,
+            "opaque": 2,
+            "resolve": 1,
+            "output": 1,
+            "capture": 1,
+            "present": 1,
+            "after_passes": 1,
+            "calls": 19,
+            "memory_entries": 1,
+            "buffer_entries": 7,
+            "image_entries": 27
+          }
+        ],
+        "replay_calls": [
+          19,
+          19,
+          19,
+          19,
+          19,
+          19,
+          19,
+          19,
+          19,
+          19,
+          19,
+          19,
+          19,
+          19,
+          19,
+          19,
+          19,
+          20
+        ],
+        "deferred_cloud_captures": 13,
+        "cloud_evidence_sha256": "d8072e18ff9918d417141a23d76a1ea8e40ed4193a932be634412cddfda651c6",
+        "previous_deferred_images_byte_exact": 11,
+        "fsr_native_cloud_shadow": {
+          "ground_pixels": 14740,
+          "visibly_dimmed": 14740,
+          "max_red_delta": 82,
+          "max_green_blue_delta": 1
+        }
+      },
+      {
+        "index": 1,
+        "name": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "synchronization_validation": true,
+        "profiler_evidence_sha256": "1f66aa2f856f68a3af17ec7416b912834766a2d7fc3a13ce7a8d86f27d10fb59",
+        "validation_log_sha256": "e81bf85d22e139ae3e9d05c0dc28ca9f3b67406890528f19773e0f1280a74769",
+        "traced_frames": 22,
+        "profiler_image_pairs_or_triplets": 3,
+        "barrier_counts_1x": [
+          {
+            "before_passes": 1,
+            "skinning": 2,
+            "light_assignment": 1,
+            "shadows": 6,
+            "scene_clear": 5,
+            "opaque": 2,
+            "output": 1,
+            "present": 1,
+            "after_passes": 1,
+            "calls": 20,
+            "memory_entries": 1,
+            "buffer_entries": 7,
+            "image_entries": 34
+          },
+          {
+            "before_passes": 1,
+            "skinning": 2,
+            "light_assignment": 1,
+            "shadows": 6,
+            "scene_clear": 5,
+            "opaque": 2,
+            "output": 1,
+            "capture": 1,
+            "present": 1,
+            "after_passes": 1,
+            "calls": 21,
+            "memory_entries": 1,
+            "buffer_entries": 7,
+            "image_entries": 35
+          }
+        ],
+        "barrier_counts_4x": [
+          {
+            "before_passes": 1,
+            "skinning": 2,
+            "light_assignment": 1,
+            "shadows": 6,
+            "scene_clear": 2,
+            "opaque": 2,
+            "resolve": 1,
+            "output": 1,
+            "present": 1,
+            "after_passes": 1,
+            "calls": 18,
+            "memory_entries": 1,
+            "buffer_entries": 7,
+            "image_entries": 26
+          },
+          {
+            "before_passes": 1,
+            "skinning": 2,
+            "light_assignment": 1,
+            "shadows": 6,
+            "scene_clear": 2,
+            "opaque": 2,
+            "resolve": 1,
+            "output": 1,
+            "capture": 1,
+            "present": 1,
+            "after_passes": 1,
+            "calls": 19,
+            "memory_entries": 1,
+            "buffer_entries": 7,
+            "image_entries": 27
+          }
+        ],
+        "replay_calls": [
+          19,
+          19,
+          19,
+          19,
+          19,
+          19,
+          19,
+          19,
+          19,
+          19,
+          19,
+          19,
+          19,
+          19,
+          19,
+          19,
+          19,
+          20
+        ],
+        "deferred_cloud_captures": 18,
+        "cloud_evidence_sha256": "7926d3ca1ed4246c2bcbd124cb718b604c08c2fd4409ad9f2de0ee4da5feee24",
+        "previous_deferred_images_byte_exact": 11,
+        "fsr_native_cloud_shadow": {
+          "ground_pixels": 14740,
+          "visibly_dimmed": 14740,
+          "max_red_delta": 82,
+          "max_green_blue_delta": 1
+        },
+        "relocated_native_aot_replay": {
+          "retired_frames": 4,
+          "final_image_sha256": "2c374d9e00714a2973f3b00f0e5f2201d8911716c81b088903602f7d73a2952d"
+        }
+      }
+    ]
+  },
+  "retained_initial_failures": [
+    "The initial PowerShell function pipeline did not forward the remote script. Direct standard input established the build session.",
+    "The first Windows compilation included Vulkan-Hpp before the shared dynamic-dispatch settings. Using the renderer instance header resolved it.",
+    "Archive byte transfer succeeded. The first checksum wrapper returned a pipe status after its hash reader exited early. Recovery verified the complete original archive and the installed binary hashes.",
+    "Initial Linux runs registered missing profiler and frame performance executables. Building those targets and rerunning the same selection passed all 13 suites."
+  ],
+  "limits": [
+    "Pipeline-barrier counts exclude upload command lists, queue semaphores and internal vendor SDK calls.",
+    "Fixture counts and build wall times are individual measurements, without a representative performance claim."
+  ]
+}

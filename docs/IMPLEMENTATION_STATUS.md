@@ -1,8 +1,18 @@
 # Implementation status
 
-Updated 2026-11-25 for **0.0.409**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-25 for **0.0.410**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.410 adds [Vulkan barrier counters](PROFILER.md#vulkan-barriers)
+to retired profiler traces. AMD and NVIDIA matched the pass and frame totals
+across 44 traced frames. Tracing preserved exact pixels and replay state.
+The Windows runtime and desktop bridge cross-built on a separate Ubuntu host,
+and the transferred runtime passed both laptop GPU checks. Deferred cloud
+shadows and FSR Native AA passed 31 captures, including 22 byte-identical
+images from the 0.0.409 comparison. The relocated Native AOT replay passed.
+Ubuntu also passed 13 native and headless suites.
+[Results](evidence/m2-vulkan-barriers-410.json)
 
 Version 0.0.409 adds [cloud shadows](VOLUMETRIC_CLOUDS.md#shadows-on-world-geometry)
 that attenuate direct sunlight. AMD and NVIDIA passed 76 Vulkan captures across

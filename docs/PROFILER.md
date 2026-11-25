@@ -54,6 +54,33 @@ Owner CPU failure flags indicate exception unwinding. Native job flags mark non-
 
 Native instrumentation covers runtime batch validation/checkpointing, fixed ticks, C# calls and command application, physics, animation sampling, hierarchy synchronization, rollback, owner advancement, snapshot/save preparation, renderer preparation/acquire/record/submit/present/retirement/wait/readback, player presentation and native audio queue/DSP boundaries. Only paths actually executed produce samples. Native audio device output and the editor DSP worker have separate [output contracts](AUDIO_EVENTS.md) and [editor qualification](EDITOR_AUDIO.md).
 
+### Vulkan barriers
+
+Start `profiler.start` before capturing or playing a scene. Each retired
+profiled frame emits `renderer.barriers.calls` for the recorded pipeline
+barrier commands and `renderer.barriers.memory_entries`, `.buffer_entries`
+and `.image_entries` for the barrier structures carried by those commands.
+One command can contain multiple structures. For a pass that recorded work,
+`renderer.barriers.<pass>` counts its commands. For example,
+`renderer.barriers.opaque` counts barriers recorded inside
+`render.pass.opaque`. Passes with zero calls omit the counter.
+`before_passes` includes the explicit dependency for shared frame scratch.
+`after_passes`, when present, covers transitions during command-list close.
+
+The counts come from Poima's native Vulkan pipeline-barrier calls and
+NVRHI's Vulkan synchronization2 dispatch for the frame command buffer.
+Asset upload lists, queue semaphores, and barriers internal to a vendor SDK
+are outside this measurement. Match the submission stamp and session when
+reconciling counts. Use GPU timings to assess cost because the number of
+recorded barriers does not measure stalls.
+
+The profiler observes the calls with a scoped dispatcher on the render
+owner thread and restores the original dispatch entries when the list
+closes or recording fails. A frame outside an active capture takes the
+unobserved path. [Native check](../tests/profiler_capture.py) covers
+attribution, frame totals and exact output with tracing on and off using
+`--require-barriers`.
+
 ### Shadow views
 
 An active capture records `gpu.shadow_clear.ns` and `gpu.shadow_view.N.ns` for

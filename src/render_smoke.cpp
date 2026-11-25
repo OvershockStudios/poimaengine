@@ -58,6 +58,7 @@
 #include "poima/smoke_vs.hpp"
 #include "poima/smoke_ps.hpp"
 
+#include "render_vulkan_barriers.hpp"
 #include "render_vulkan_frame.hpp"
 #include "render_vulkan_instance.hpp"
 #include <nvrhi/vulkan.h>
@@ -221,6 +222,7 @@ struct Context {
         DrawCounts draws;
         std::array<render_shadows::ViewWork,max_shadow_views> shadow_work;
         std::uint32_t shadow_profile_views=0;
+        render_vulkan::BarrierTrace barriers;
         LightAssignmentDiagnostics lights;
         std::vector<std::string> skin_ids;
         profiling::DeferredContext profile;
@@ -2350,6 +2352,7 @@ struct Context {
                     .performance=slot.performance,.performance_ticket=slot.performance_ticket,
                     .shadow_views=slot.shadow_profile_views},diagnostics);
                 render_shadows::profile_views(std::span(slot.shadow_work).first(slot.shadow_profile_views), slot.profile);
+                render_vulkan::profile_barriers(slot.barriers, slot.profile);
                 auto reconstruction_gpu=diagnostics.reconstruction.gpu;diagnostics.reconstruction=slot.reconstruction;diagnostics.reconstruction.gpu=reconstruction_gpu;
                 diagnostics.last_draws=slot.draws;diagnostics.light_assignment=slot.lights;diagnostics.viewmodel=slot.viewmodel_diagnostics;
                 diagnostics.atmosphere_sky=slot.atmosphere_sky;
@@ -2937,6 +2940,10 @@ struct Context {
         profiling::Scope record_scope("render.record");
         PerformanceWallScope wall(performance_cpu?&performance_cpu->work.record_ns:nullptr);
         const auto record_started=SteadyClock::now();commands->open();
+        slot.barriers.recorded=false;
+        std::optional<render_vulkan::BarrierRecording> barrier_recording;
+        if(trace_active)
+            barrier_recording.emplace(slot.barriers,static_cast<VkCommandBuffer>(native_commands()),dispatch);
         // Queue order alone does not order accesses to scratch that stays in
         // the same state (depth/UAV). Keep an explicit cross-submission memory
         // dependency while sharing GPU-only attachments and deformation data.
@@ -2959,6 +2966,7 @@ struct Context {
         };
         plan.execute([&](const render_schedule::Pass& pass,const render_schedule::Schedule&) {
             profiling::Scope pass_scope(render_schedule::pass_name(pass.id));
+            if(barrier_recording)barrier_recording->pass(pass.id);
             switch(pass.id) {
             case render_schedule::PassId::stream_geometry:
                 commands->writeBuffer(planned_buffer(resources.streamed_vertices),stream_vertices.data(),stream_vertices.size()*sizeof(Vertex));
@@ -3137,6 +3145,8 @@ struct Context {
                 if(!plan.settings.volumetric_clouds) {timestamp(18);timestamp(19);}
                 if(!plan.settings.cloud_shadows || plan.resource(plan.frame.cloud_shadow).initialized) {timestamp(20);timestamp(21);}
                 timestamp(5);break;
+            case render_schedule::PassId::count:
+                throw std::logic_error("Invalid render schedule pass.");
             }
         });
         std::uint64_t expected_shadow_batches=0;for(const auto& batches:shadow_batch_plans)expected_shadow_batches+=batches.size();
@@ -3144,7 +3154,9 @@ struct Context {
             "Recorded scene draw command counts differ from their ordered plans.");
         require(!pending_viewmodel || pending_viewmodel->draws.camera_batches==viewmodel_batch_plan.size(),
             "Recorded foreground draw command count differs from its ordered plan.");
+        if(barrier_recording)barrier_recording->finish_passes();
         commands->close();
+        barrier_recording.reset();
         record_ms=elapsed_ms(record_started);
         }
         {

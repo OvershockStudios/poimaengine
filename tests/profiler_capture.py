@@ -29,6 +29,7 @@ def main():
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--windows-interop', action='store_true')
     parser.add_argument('--gpu', type=int, default=0)
+    parser.add_argument('--require-barriers', action='store_true')
     args = parser.parse_args()
     args.output = args.output.resolve()
     run = args.output / uuid.uuid4().hex
@@ -184,6 +185,35 @@ def main():
             totals.append(summed)
         assert totals[-1]['draws'] > 0 and totals[-1] == {field: last_draws[f'shadow_{field}'] for field in totals[-1]}, (totals[-1], last_draws)
 
+        if args.require_barriers:
+            prefix = 'renderer.barriers.'
+            fields = {'calls', 'memory_entries', 'buffer_entries', 'image_entries'}
+            barrier_batches, pending = [], []
+            for event in observed:
+                if event['name'].startswith(prefix):
+                    pending.append(event)
+                if event['name'] == complete:
+                    barrier_batches.append((event, pending))
+                    pending = []
+            assert not pending and len(barrier_batches) == frame_count, barrier_batches
+            barrier_totals = []
+            for (ticket, batch), sequence in zip(barrier_batches, recorded_passes.values(), strict=True):
+                assert all(event['kind'] == 'counter' and event['parent'] == 0 and
+                           event['duration_ns'] == 0 and
+                           all(event[key] == ticket[key] for key in ('start_ns', 'source', 'session', 'tick'))
+                           for event in batch), batch
+                values = {event['name'][len(prefix):]: event['value'] for event in batch}
+                assert len(values) == len(batch) and fields <= values.keys(), values
+                phases = values.keys() - fields
+                assert phases <= {'before_passes', 'after_passes'} | {name.rsplit('.', 1)[1] for name in sequence}, values
+                assert values['before_passes'] == values['memory_entries'] == 1, values
+                assert values['opaque'] > 0 and values['shadows'] > 0, values
+                assert values['buffer_entries'] > 0 and values['image_entries'] > 0, values
+                assert sum(values[name] for name in phases) == values['calls'], values
+                assert values['calls'] <= sum(values[name] for name in fields - {'calls'}), values
+                barrier_totals.append(values)
+            evidence.setdefault('barrier_captures', []).append(barrier_totals)
+
         summary = call('profiler.summary', {'capture_id': current_capture})
         groups = defaultdict(list)
         for event in events:
@@ -267,6 +297,8 @@ def main():
         assert world.read_bytes() == original
         evidence['checks'].append('traced replay preserves exact controller/body state and final pixels; GPU records carry player session/tick')
         evidence['checks'].append('two-slot submission tickets retain shadow clear and four cascade timings and reconcile view work at retirement')
+        if args.require_barriers:
+            evidence['checks'].append('Vulkan frame, pass and barrier-entry counts reconcile at retirement')
         evidence['checks'].append('sealed pages, parent intervals, independently recomputed percentiles, GPU-duration export semantics')
         call('session.close', {})
         process.stdin.close()

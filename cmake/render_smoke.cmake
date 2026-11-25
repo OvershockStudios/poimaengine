@@ -176,7 +176,7 @@ add_custom_command(OUTPUT "${poima_startup_wordmark}"
     DEPENDS "${poima_startup_png}" cmake/embed_startup_wordmark.cmake VERBATIM)
 target_sources(poima_core PRIVATE
     src/render_smoke.cpp src/render_readback.cpp src/render_screen_reflections.cpp src/render_height_fog.cpp src/render_viewmodel.cpp src/render_hdr_effects.cpp
-    src/render_vulkan_instance.cpp src/render_vulkan_frame.cpp src/render_deferred_lighting.cpp
+    src/render_vulkan_instance.cpp src/render_vulkan_frame.cpp src/render_vulkan_barriers.cpp src/render_deferred_lighting.cpp
     src/player_window.cpp src/gamepad_sdl.cpp
     src/render_ui.cpp src/render_environment_ibl.cpp src/render_ambient_occlusion.cpp
     src/render_shadows.cpp src/render_scene_assets.cpp src/render_light_clusters.cpp src/render_sky.cpp src/render_sky_clouds.cpp

@@ -199,7 +199,9 @@ through the private `PlayerRenderer` interface. `src/render_smoke.cpp` owns
 the GPU context, frame scheduling, submission and retirement. `src/render_vulkan_instance.cpp`
 owns the shared Vulkan instance and its loader dispatch. `src/render_vulkan_frame.cpp`
 owns swapchain image synchronization, presentation, and per-slot Vulkan query
-pools and timing collection. The context controls when to retire this work and
+pools and timing collection. `src/render_vulkan_barriers.cpp` observes
+pipeline-barrier commands during [profiler captures](PROFILER.md#vulkan-barriers).
+The context controls when to retire this work and
 publishes the frame receipts. `src/render_scene_assets.cpp` owns imported
 mesh and texture uploads, bounds, material bindings and cache retention.
 The context coordinates eviction with shadow and skinning resources.
