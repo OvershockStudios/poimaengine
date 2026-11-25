@@ -15,5 +15,6 @@ struct WaterOptics {
     bool refraction=false;
     double caustics_strength=0;
     std::optional<WaterShoreFoam> shore_foam{};
+    bool follow_terrain=false;
 };
 }

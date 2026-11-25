@@ -298,14 +298,20 @@ struct SceneWaterRipples {
     float slope=0,radians_per_metre=0,phase_radians=0;
 };
 inline constexpr std::size_t max_scene_water_wave_layers=4;
+struct SceneWaterColumn {
+    // Coarse floor and stage in XY. Z selects the four fitted bed wedges.
+    std::array<float,4> levels{};
+    std::array<float,4> corners{},stages{};
+    friend bool operator==(const SceneWaterColumn&,const SceneWaterColumn&)=default;
+};
 struct SceneWaterVolume {
     std::array<double,3> origin_m;
     double cell_size_m;
     std::uint32_t cells_x,cells_z;
-    WaterOptics optics;
+    WaterOptics optics{};
     float shore_foam_phase=0;
-    // Row-major floor and surface heights relative to the region's Y origin.
-    std::vector<std::array<float,2>> columns;
+    // Row-major columns with heights relative to the region's Y origin.
+    std::vector<SceneWaterColumn> columns;
 };
 // An immutable presentation copy; no pointers into authored or simulation state.
 struct SceneSnapshot {

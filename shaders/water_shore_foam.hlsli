@@ -3,16 +3,22 @@
 
 float shore_bed_height(int2 cell, int2 dimensions) {
     const int2 at = clamp(cell, 0, dimensions - 1);
-    return water_columns[at.y * dimensions.x + at.x].x;
+    return water_columns[at.y * dimensions.x + at.x].levels.x;
 }
 
 // Interpolate across cell centers so a ramp contributes a continuous shallow
 // band. The caller has already intersected an actual wet surface.
 float shore_depth(WaterConstants water, float3 surface) {
-    const float2 lattice = surface.xz / water.camera_cell_size.w - 0.5;
+    const float2 local = surface.xz / water.camera_cell_size.w;
+    const int2 dimensions = water_grid_dimensions(water);
+    const int2 cell = clamp(int2(floor(local)),0,dimensions-1);
+    const WaterColumn column = water_columns[cell.y * dimensions.x + cell.x];
+    if (column.levels.z != 0.0)
+        return max(0.0,surface.y-water_column_levels(column,saturate(local-float2(cell))).x);
+
+    const float2 lattice = local - 0.5;
     const int2 base = int2(floor(lattice));
     const float2 blend = frac(lattice);
-    const int2 dimensions = water_grid_dimensions(water);
     const float near_bed = lerp(shore_bed_height(base, dimensions),
         shore_bed_height(base + int2(1, 0), dimensions), blend.x);
     const float far_bed = lerp(shore_bed_height(base + int2(0, 1), dimensions),

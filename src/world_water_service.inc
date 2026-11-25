@@ -82,6 +82,7 @@
             if (params.contains("optics")) {
                 auto optics=params.at("optics");
                 if(!optics.value("refraction",false))optics.erase("refraction");
+                if(!optics.value("follow_terrain",false))optics.erase("follow_terrain");
                 if(optics.value("caustics_strength",0.)==0.)optics.erase("caustics_strength");
                 result["optics"]=std::move(optics);
             }
@@ -115,7 +116,7 @@
                     return number;
                 };
                 const double x=coordinate(0),y=coordinate(1),z=coordinate(2);
-                const auto column=region ? region->grid().sample_world(x,z) : std::nullopt;
+                const auto column=region ? region->sample_world(x,z) : std::nullopt;
                 Json row{{"point_world",point},{"column",nullptr},{"submersion_m",0.0}};
                 if (column) {
                     row["column"]={{"cell",{column->cell.x,column->cell.z}},{"floor_height_m",column->floor_height_m},

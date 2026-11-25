@@ -16,6 +16,7 @@ constexpr auto artifact_format = "poima.water.region";
 
 std::uint32_t artifact_version(const RegionDefinition& definition) noexcept {
     if (definition.optics) {
+        if (definition.optics->follow_terrain) return 10;
         if (definition.optics->shore_foam) return 9;
         if (definition.optics->caustics_strength>0) return 8;
         return definition.optics->refraction ? 7 : 6;
@@ -144,9 +145,11 @@ void parse_rules(const Json& object, RegionDefinition& definition) {
     }
     if (object.contains("optics")) {
         const auto& value=object.at("optics");
-        fields(value, {"extinction_per_m","scattered_radiance"}, {"refraction","caustics_strength","shore_foam"});
+        fields(value, {"extinction_per_m","scattered_radiance"}, {"refraction","caustics_strength","shore_foam","follow_terrain"});
         if (value.contains("refraction"))
             require(value.at("refraction").is_boolean(),"Water optics refraction must be Boolean.");
+        if (value.contains("follow_terrain"))
+            require(value.at("follow_terrain").is_boolean(),"Water optics follow_terrain must be Boolean.");
         const auto color=[&](const char* name, double maximum) {
             const auto& array=value.at(name);
             require(array.is_array() && array.size()==3,"Water optics use three RGB coefficients.");
@@ -160,6 +163,7 @@ void parse_rules(const Json& object, RegionDefinition& definition) {
         };
         definition.optics=WaterOptics{color("extinction_per_m",8),color("scattered_radiance",16),
             value.value("refraction",false),value.contains("caustics_strength") ? number(value.at("caustics_strength")) : 0};
+        definition.optics->follow_terrain=value.value("follow_terrain",false);
         if (value.contains("shore_foam")) {
             const auto& foam = value.at("shore_foam");
             fields(foam, {"depth_m","opacity"});
@@ -209,6 +213,8 @@ Json artifact_document(const RegionAsset& asset) {
         document["surface_wave_layers"] = surface_wave_layers_json(definition.surface_wave_layers);
     if (definition.listener_audio)
         document["listener_audio"] = listener_audio_json(*definition.listener_audio);
+    if (!definition.shore_corner_heights_m.empty())
+        document["shore_corner_heights_m"] = definition.shore_corner_heights_m;
     if (definition.optics)
         document["optics"] = optics_json(*definition.optics);
     return document;
@@ -233,6 +239,16 @@ std::vector<double> sample_floor(const GridConfig& grid, const terrain::Heightfi
     }
     return heights;
 }
+std::vector<double> sample_corners(const GridConfig& grid,const terrain::Heightfield& terrain) {
+    std::vector<double> heights;
+    heights.reserve(static_cast<std::size_t>(grid.cells_x+1)*(grid.cells_z+1));
+    for (std::uint32_t z=0;z<=grid.cells_z;++z) for (std::uint32_t x=0;x<=grid.cells_x;++x) {
+        const auto sample=terrain.sample(grid.origin_x_m+x*grid.cell_size_m,grid.origin_z_m+z*grid.cell_size_m);
+        require(sample.has_value(),"Water shoreline corner is outside the rounded terrain.");
+        heights.push_back(sample->height==0 ? 0.0 : sample->height);
+    }
+    return heights;
+}
 } // namespace
 
 std::string compile_region_asset(const Json& parameters, const terrain::Heightfield& terrain,
@@ -246,6 +262,8 @@ std::string compile_region_asset(const Json& parameters, const terrain::Heightfi
     if (parameters.contains("initial_depths_m"))
         definition.initial_depths_m = samples(parameters.at("initial_depths_m"), definition.floor_heights_m.size());
     parse_rules(parameters, definition);
+    if (definition.optics && definition.optics->follow_terrain)
+        definition.shore_corner_heights_m=sample_corners(definition.config,terrain);
     auto bytes = artifact_document(asset).dump();
     require(bytes.size() <= max_region_asset_bytes, "Water region asset exceeds its byte budget.");
     definition.plan_sha256 = digest(bytes);
@@ -260,9 +278,9 @@ RegionAsset decode_region_asset(std::string_view bytes) {
         return true;
     });
     fields(object, {"format", "version", "terrain_recipe_sha256", "tiles", "grid", "floor_heights_m",
-        "initial_depths_m", "faces", "exchanges"}, {"rain_cells", "surface_ripples", "surface_wave_layers", "listener_audio", "optics"});
+        "initial_depths_m", "faces", "exchanges"}, {"rain_cells", "surface_ripples", "surface_wave_layers", "listener_audio", "optics", "shore_corner_heights_m"});
     require(object.at("format") == artifact_format, "Unsupported water asset format.");
-    const auto version=integer(object.at("version"),1,9);
+    const auto version=integer(object.at("version"),1,10);
     RegionAsset asset;
     asset.terrain_recipe_sha256 = hex(object.at("terrain_recipe_sha256"), 64);
     auto& definition = asset.definition;
@@ -272,6 +290,9 @@ RegionAsset decode_region_asset(std::string_view bytes) {
     require(definition.floor_heights_m.size() == count, "Water asset is missing floor samples.");
     definition.initial_depths_m = samples(object.at("initial_depths_m"), count);
     parse_rules(object, definition);
+    if (object.contains("shore_corner_heights_m"))
+        definition.shore_corner_heights_m=samples(object.at("shore_corner_heights_m"),
+            static_cast<std::size_t>(definition.config.cells_x+1)*(definition.config.cells_z+1));
     require(version==artifact_version(definition),"Unsupported water asset format.");
     const auto& tiles = object.at("tiles");
     require(tiles.is_array() && !tiles.empty() && tiles.size() <= terrain::max_cook_tiles, "Water asset requires 1..64 terrain tiles.");
@@ -335,6 +356,8 @@ Json region_authoring_schemas() {
         {"scattered_radiance",array(range("number",0,16),3,3)},
         {"refraction",{{"type","boolean"},{"default",false},
             {"description","Bend the sightline at the first water interface and sample a matching opaque depth hit."}}},
+        {"follow_terrain",{{"type","boolean"},{"default",false},
+            {"description","Fit the optical bed and listener submersion to sampled terrain, respecting dry cells and gate controls."}}},
         {"caustics_strength",range("number",0,1)},
         {"shore_foam",object({{"depth_m",range("number",.02,3)},{"opacity",range("number",0,1)}},
             {"depth_m","opacity"})}},

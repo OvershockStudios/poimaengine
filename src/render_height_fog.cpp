@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+#include "poima/water_bed.hpp"
 #include "render_height_fog.hpp"
 
 #include "poima/aerial_perspective_cs.hpp"
@@ -111,13 +112,17 @@ void require_bindings(nvrhi::IBindingSet* bindings, const nvrhi::BindingSetDesc&
 
 WaterView project_water_view(const SceneWaterVolume& water,const std::array<double,3>& eye,float wave_mode) {
     namespace rs=render_schedule;
-    static_assert(sizeof(std::array<float,2>)==rs::water_column_bytes);
+    static_assert(sizeof(SceneWaterColumn)==rs::water_column_bytes);
     if (water.cells_x==0 || water.cells_z==0 || water.cells_x>rs::max_water_column_side ||
         water.cells_z>rs::max_water_column_side || water.columns.size()!=water.cells_x*water.cells_z ||
         !(water.cell_size_m>=.01 && water.cell_size_m<=256))
         throw std::runtime_error("Invalid water optics column grid.");
-    if (!std::ranges::all_of(water.columns,[](const auto& cell) {
-        return std::isfinite(cell[0]) && std::isfinite(cell[1]) && cell[0]<=cell[1];
+    if (!std::ranges::all_of(water.columns,[&](const SceneWaterColumn& cell) {
+        const auto finite=[](auto lane){return std::isfinite(lane);};
+        return std::isfinite(cell.levels[0]) && std::isfinite(cell.levels[1]) && cell.levels[0]<=cell.levels[1] &&
+            cell.levels[2]==(water.optics.follow_terrain ? 1.0f : 0.0f) &&
+            (!water.optics.follow_terrain ||
+             (std::ranges::all_of(cell.corners,finite) && std::ranges::all_of(cell.stages,finite)));
     })) throw std::runtime_error("Invalid water column height.");
 
     WaterView result{};
@@ -138,9 +143,14 @@ WaterView project_water_view(const SceneWaterVolume& water,const std::array<doub
     parameters.radiance_wave_mode[3]=wave_mode;
     const double x=local[0]/water.cell_size_m,z=local[2]/water.cell_size_m;
     if (x>=0 && z>=0 && x<water.cells_x && z<water.cells_z) {
-        const auto& column=water.columns[static_cast<std::size_t>(z)*water.cells_x+static_cast<std::size_t>(x)];
-        if (local[1]>=column[0] && local[1]<column[1])
-            result.submersion_m=static_cast<double>(column[1])-local[1];
+        const auto ix=static_cast<std::size_t>(x),iz=static_cast<std::size_t>(z);
+        const auto& column=water.columns[iz*water.cells_x+ix];
+        const auto levels=water.optics.follow_terrain ?
+            water::fitted_water_levels(column.levels[0],column.corners,column.stages,
+                static_cast<float>(x-static_cast<double>(ix)),static_cast<float>(z-static_cast<double>(iz))) :
+            std::array<float,2>{column.levels[0],column.levels[1]};
+        if (local[1]>=levels[0] && local[1]<levels[1])
+            result.submersion_m=static_cast<double>(levels[1])-local[1];
     }
     return result;
 }

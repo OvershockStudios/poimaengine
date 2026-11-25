@@ -185,6 +185,7 @@ nlohmann::json listener_audio_json(const ListenerAudio& profile) {
 nlohmann::json optics_json(const WaterOptics& profile) {
     nlohmann::json result{{"extinction_per_m",profile.extinction_per_m},{"scattered_radiance",profile.scattered_radiance}};
     if(profile.refraction) result["refraction"]=true;
+    if(profile.follow_terrain) result["follow_terrain"]=true;
     if(profile.caustics_strength>0) result["caustics_strength"]=profile.caustics_strength;
     if(const auto& foam=profile.shore_foam)
         result["shore_foam"]={{"depth_m",foam->depth_m},{"opacity",foam->opacity}};
@@ -195,7 +196,17 @@ Region::Region(const RegionDefinition& definition)
     : grid_(initial_grid(definition)), initial_depths_m_(definition.initial_depths_m),
       faces_(definition.faces), exchanges_(definition.exchanges), plan_sha256_(definition.plan_sha256),
       rain_cells_(definition.rain_cells), surface_ripples_(definition.surface_ripples),
-      surface_wave_layers_(definition.surface_wave_layers), listener_audio_(definition.listener_audio), optics_(definition.optics) {
+      surface_wave_layers_(definition.surface_wave_layers), listener_audio_(definition.listener_audio),
+      optics_(definition.optics), shore_corner_heights_m_(definition.shore_corner_heights_m) {
+    const auto& config=grid_.config();
+    const auto corner_count=static_cast<std::size_t>(config.cells_x+1)*(config.cells_z+1);
+    if (optics_ && optics_->follow_terrain) {
+        if (shore_corner_heights_m_.size()!=corner_count ||
+            !std::ranges::all_of(shore_corner_heights_m_,[](double height){return std::isfinite(height) && std::abs(height)<=1e6;}))
+            throw std::invalid_argument("Terrain-fit water requires one finite height per grid corner.");
+    } else if (!shore_corner_heights_m_.empty()) {
+        throw std::invalid_argument("Water corner heights require terrain fitting.");
+    }
     if (surface_ripples_)
         validate_surface_ripples(*surface_ripples_);
     validate_wave_layers(surface_wave_layers_);
@@ -219,7 +230,6 @@ Region::Region(const RegionDefinition& definition)
                 throw std::invalid_argument("Water scattered_radiance channels must be in [0,16].");
     }
 
-    const auto& config = grid_.config();
     if (initial_depths_m_.empty())
         initial_depths_m_.resize(static_cast<std::size_t>(config.cells_x) * config.cells_z);
 
@@ -261,6 +271,55 @@ double Region::rain_volume_m3(std::uint64_t depth_nm) const noexcept {
 
 double Region::cumulative_rain_m3() const noexcept {
     return rain_volume_m3(cumulative_rain_nm_);
+}
+
+FittedWaterBed Region::fitted_bed(Cell cell) const {
+    const auto sample=grid_.sample(cell);
+    const auto& sizing=grid_.config();
+    if (shore_corner_heights_m_.empty())
+        throw std::logic_error("Terrain-fit water profile is absent.");
+    const auto stride=static_cast<std::size_t>(sizing.cells_x+1);
+    const auto first=cell.z*stride+cell.x;
+    FittedWaterBed out{sample.floor_height_m,
+        {shore_corner_heights_m_[first],shore_corner_heights_m_[first+1],
+         shore_corner_heights_m_[first+stride+1],shore_corner_heights_m_[first+stride]},{}};
+    if (sample.depth_m>0) {
+        out.stages_m.fill(sample.surface_height_m);
+        return out;
+    }
+
+    const std::array<int,4> dx{0,1,0,-1},dz{-1,0,1,0};
+    for (std::size_t side=0;side<dx.size();++side) {
+        const double edge_floor=std::min(out.corners_m[side],out.corners_m[(side+1)%dx.size()]);
+        out.stages_m[side]=std::min(sample.floor_height_m,edge_floor);
+        const auto x=static_cast<int>(cell.x)+dx[side],z=static_cast<int>(cell.z)+dz[side];
+        if (x<0 || z<0 || x>=static_cast<int>(sizing.cells_x) || z>=static_cast<int>(sizing.cells_z)) continue;
+        const Cell donor{static_cast<std::uint32_t>(x),static_cast<std::uint32_t>(z)};
+        const auto neighbor=grid_.sample(donor);
+        const double level=neighbor.surface_height_m;
+        // Only extend into the wedge facing a wet neighbor. A depressed dry
+        // center belongs to the flow solver, including partially filled gates.
+        if (neighbor.depth_m==0 || level>sample.floor_height_m || level<=edge_floor) continue;
+        const Cell face{std::min(cell.x,donor.x),std::min(cell.z,donor.z)};
+        const auto control=grid_.face(face,dx[side]!=0 ? FaceAxis::x : FaceAxis::z);
+        if (control.openness>0 && (!control.sill_height_m || level>*control.sill_height_m))
+            out.stages_m[side]=level;
+    }
+    return out;
+}
+
+std::optional<CellSample> Region::sample_world(double x_m,double z_m) const {
+    auto sample=grid_.sample_world(x_m,z_m);
+    if (!sample || shore_corner_heights_m_.empty()) return sample;
+    const auto bed=fitted_bed(sample->cell);
+    const auto& sizing=grid_.config();
+    const auto u=std::clamp((x_m-sizing.origin_x_m)/sizing.cell_size_m-sample->cell.x,0.,1.);
+    const auto v=std::clamp((z_m-sizing.origin_z_m)/sizing.cell_size_m-sample->cell.z,0.,1.);
+    const auto levels=fitted_water_levels(bed.center_m,bed.corners_m,bed.stages_m,u,v);
+    sample->floor_height_m=levels[0];
+    sample->surface_height_m=levels[1];
+    sample->depth_m=levels[1]-levels[0];
+    return sample;
 }
 
 StepReport Region::step(std::span<const std::string_view> pressed, std::uint32_t rain_depth_nm,

@@ -14,7 +14,7 @@ inline std::optional<AudioWaterMedium> listener_water_medium(const water::Region
                                                              const Matrix4& listener) {
     if (!region || !region->listener_audio()) return std::nullopt;
     const auto& profile = *region->listener_audio();
-    const auto column = region->grid().sample_world(listener[12], listener[14]);
+    const auto column = region->sample_world(listener[12], listener[14]);
     const double depth = column ? column->submersion_at(listener[13]) : 0;
     const double t = std::min(depth / profile.full_depth_m, 1.0);
     return AudioWaterMedium{profile.cutoff_hz, profile.gain, depth, t * t * (3 - 2 * t)};

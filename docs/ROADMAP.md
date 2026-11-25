@@ -343,6 +343,8 @@ Local water now has [depth-based optics, refraction, caustics and shoreline
 foam](SHALLOW_WATER.md#author-transparent-water) on its committed grid. Continuous
 ocean swell, breaking waves, spray and connected regions are separate work
 within this track.
+Optional [terrain fitting](SHALLOW_WATER.md#fit-the-shoreline-to-the-terrain)
+aligns local shore contours, world-point queries and listener submersion.
 
 Storms, lightning, precipitation, wind and seasons share world state with water,
 audio and surfaces. Longer-term effects must reach crops, resources and travel;

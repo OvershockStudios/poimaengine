@@ -67,8 +67,10 @@ bool water_probe_medium(WaterConstants water, WaterScreenRay ray, WaterDepthProb
     const float2 local_cell = position.xz / water.camera_cell_size.w;
     if (all(local_cell >= 0.0) && all(local_cell < float2(span))) {
         const int2 cell = int2(local_cell);
-        const float2 limits = water_columns[cell.y * span.x + cell.x];
-        const bool wet = limits.y > limits.x && position.y < limits.y - 0.002;
+        const WaterColumn column = water_columns[cell.y * span.x + cell.x];
+        const float2 limits = water_column_levels(column,frac(local_cell));
+        const bool above_bed = column.levels.z == 0.0 || position.y >= limits.x - .025;
+        const bool wet = limits.y > limits.x && position.y < limits.y - 0.002 && above_bed;
         if (wet != ray.entering) return false;
     } else if (ray.entering) {
         return false;

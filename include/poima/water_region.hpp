@@ -2,6 +2,7 @@
 #pragma once
 
 #include "poima/water_region_definition.hpp"
+#include "poima/water_bed.hpp"
 
 #include <nlohmann/json.hpp>
 #include <string_view>
@@ -27,6 +28,8 @@ public:
     std::span<const SurfaceRipples> surface_wave_layers() const noexcept { return surface_wave_layers_; }
     const std::optional<ListenerAudio>& listener_audio() const noexcept { return listener_audio_; }
     const std::optional<WaterOptics>& optics() const noexcept { return optics_; }
+    FittedWaterBed fitted_bed(Cell cell) const;
+    std::optional<CellSample> sample_world(double x_m,double z_m) const;
     std::uint64_t cumulative_rain_nm() const noexcept { return cumulative_rain_nm_; }
     double cumulative_rain_m3() const noexcept;
 
@@ -51,6 +54,7 @@ private:
     std::vector<SurfaceRipples> surface_wave_layers_;
     std::optional<ListenerAudio> listener_audio_;
     std::optional<WaterOptics> optics_;
+    std::vector<double> shore_corner_heights_m_;
     std::uint64_t cumulative_rain_nm_ = 0;
     std::uint32_t last_rain_nm_ = 0;
     std::optional<std::uint64_t> first_rain_quantum_;

@@ -1060,12 +1060,12 @@ struct Context {
         require(bool(surface_mark_mask_sampler),"Surface mark mask sampler creation failed.");
         empty_surface_mark_binding=make_surface_mark_binding(empty_surface_marks,white_surface_mark_mask);
         const GpuSurfaceMark unused_mark{};
-        const std::array<float,2> unused_column{};
+        const SceneWaterColumn unused_column{};
         const std::uint8_t white_mask_texel=255;
         commands->open();
         commands->writeBuffer(vertices,mesh.data(),mesh.size()*sizeof(Vertex));
         commands->writeBuffer(empty_surface_marks,&unused_mark,sizeof(unused_mark));
-        commands->writeBuffer(water_columns,unused_column.data(),sizeof(unused_column));
+        commands->writeBuffer(water_columns,&unused_column,sizeof(unused_column));
         commands->writeTexture(white_surface_mark_mask,0,0,&white_mask_texel,1);
         commands->close();
         checked->executeCommandList(commands);
@@ -1373,7 +1373,7 @@ struct Context {
             }
             pending_water_optics=WaterOpticsDiagnostics{color_reason=="active",color_reason,
                 water->cells_x*water->cells_z,view.submersion_m,water->optics.refraction && color_reason=="active",
-                strength,caustics,water->optics.shore_foam,frame_constants.water_shore_foam[3]>0};
+                strength,caustics,water->optics.shore_foam,frame_constants.water_shore_foam[3]>0,water->optics.follow_terrain};
         }
         if(wants_aerial) {
             const auto reason=color_reason=="active" && !sky_pass.atmosphere_enabled() ?

@@ -48,6 +48,7 @@ struct RegionDefinition {
     std::vector<SurfaceRipples> surface_wave_layers;
     std::optional<ListenerAudio> listener_audio;
     std::optional<WaterOptics> optics;
+    std::vector<double> shore_corner_heights_m;
 };
 
 }

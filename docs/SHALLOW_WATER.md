@@ -354,6 +354,37 @@ and a point outside the water. Capture two committed phases and restore
 the later phase from a save. The independent [Vulkan fixture](../tests/water_shore_foam_capture.py)
 checks those paths and shading under an isolated shadow.
 
+### Fit the shoreline to the terrain
+
+Set `"follow_terrain":true` inside `optics` to cook `.pwater` version 10.
+The cooker samples the reviewed heightfield at the grid corners as well as
+the cell centres. Four triangles connect each centre to its edges. Water
+ends where the committed level meets the fitted bed. Choose a cell size
+that resolves the important changes in slope. The optical bed approximates
+terrain detail between those samples.
+
+At a wet cell the surface stays at its committed level. On a dry cell an
+adjacent wet cell can extend the surface only into the triangle facing their
+shared edge. The bed at the dry centre must be at or above the water level,
+part of the edge must be below that level, and the face must be open with
+its sill below the surface. Depressions fill through the existing solver.
+The shoreline follows changes in the water level and gates.
+
+Fitted geometry drives scene attenuation, refraction, caustics, foam and the
+opaque fallback surface. `runtime.water.inspect` uses it for `points`,
+and listener audio uses the same submersion. `cells`, `volume_m3` and the
+flow ledger continue to report the conserved grid state. Saves retain the
+gate controls and solved depths and derive the fitted surface on restore.
+`render_diagnostics.water_optics.follow_terrain` reports the selected
+profile. Export advertises `needs_water_terrain_fit` and requires a runtime
+with `features.water_terrain_fit`. Omission and explicit false select
+the same earlier artifact.
+
+The [terrain fit fixture](../tests/water_terrain_fit_capture.py) checks an
+affine bed contour, an opening gate, a blocking sill, unchanged cell volumes
+and dry/submerged point audio. It also checks a relocated save with the
+authored project unavailable.
+
 ## Observe and verify local flow
 
 Discover `runtime.water.inspect` in a simulation build. Pass `session_id`, the

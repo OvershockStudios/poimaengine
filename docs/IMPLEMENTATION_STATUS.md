@@ -1,8 +1,20 @@
 # Implementation status
 
-Updated 2026-11-25 for **0.0.417**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-25 for **0.0.418**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.418 adds [terrain-fitted shorelines](SHALLOW_WATER.md#fit-the-shoreline-to-the-terrain).
+AMD forward and NVIDIA deferred passed 256 HDR comparisons against a
+continuous ramp with a gated margin. Opening the gate extended the water
+and changed listener submersion by 4.5 cm. The higher sill blocked the
+second margin, and the simulated volume stayed constant. A fresh
+relocated save reproduced the rendered image and stereo waveform exactly.
+Forty-one earlier water images matched, and 14 Ubuntu suites passed.
+The fixed cove views show the fitted shore alongside refraction, caustics,
+foam, aerial perspective and FSR Native AA. The bed between the sampled
+corners and centres is an approximation of the authored terrain.
+[Results](evidence/m2-water-terrain-fit-418.json)
 
 Version 0.0.417 adds [shoreline foam](SHALLOW_WATER.md#add-shoreline-foam)
 lit by the linked sun and occluded by geometry. AMD forward and NVIDIA

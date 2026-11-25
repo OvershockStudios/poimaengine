@@ -92,6 +92,60 @@ std::shared_ptr<const MeshAsset> surface_mesh(double cell_size, std::span<const 
     cache.mesh = mesh;
     return mesh;
 }
+
+std::shared_ptr<const MeshAsset> clipped_surface_mesh(const SceneWaterVolume& water) {
+    struct SurfaceCache {
+        double size=0;
+        std::uint32_t width=0;
+        std::vector<SceneWaterColumn> cells;
+        std::weak_ptr<const MeshAsset> mesh;
+    };
+    thread_local SurfaceCache cache;
+    if (cache.size==water.cell_size_m && cache.width==water.cells_x && cache.cells==water.columns)
+        if (auto mesh=cache.mesh.lock()) return mesh;
+
+    auto mesh=std::make_shared<MeshAsset>();
+    mesh->has_uv=true;
+    mesh->material.metallic=0;
+    mesh->material.roughness=.3f;
+    // Reversed perimeter order when emitting each fan keeps the upward
+    // triangle winding used by the ordinary water surface.
+    constexpr std::array<std::array<float,2>,4> perimeter{{{0,0},{1,0},{1,1},{0,1}}};
+    const float size=static_cast<float>(water.cell_size_m);
+    for (std::uint32_t z=0;z<water.cells_z;++z) for (std::uint32_t x=0;x<water.cells_x;++x) {
+        const auto& column=water.columns[z*water.cells_x+x];
+        for (std::size_t side=0;side<perimeter.size();++side) {
+            const auto next=(side+1)%perimeter.size();
+            const float stage=column.stages[side];
+            const std::array heights{column.levels[0],column.corners[next],column.corners[side]};
+            if (stage<=*std::ranges::min_element(heights)) continue;
+            const std::array<std::array<float,2>,3> triangle{{{.5f,.5f},perimeter[next],perimeter[side]}};
+            const auto first=static_cast<std::uint32_t>(mesh->vertices.size());
+            const auto add=[&](float u,float v,float depth) {
+                const std::array<float,2> uv{.25f+.5f*std::min(depth,1.f),.5f};
+                mesh->vertices.push_back({{size*(static_cast<float>(x)+u),stage,size*(static_cast<float>(z)+v)},
+                    {0,1,0},uv,{1,0,0,1}});
+            };
+            for (std::size_t a=0;a<triangle.size();++a) {
+                const auto b=(a+1)%triangle.size();
+                const float da=stage-heights[a],db=stage-heights[b];
+                if (da>=0) add(triangle[a][0],triangle[a][1],da);
+                if ((da<0 && db>0) || (da>0 && db<0)) {
+                    const float t=da/(da-db);
+                    add(std::lerp(triangle[a][0],triangle[b][0],t),std::lerp(triangle[a][1],triangle[b][1],t),0);
+                }
+            }
+            const auto end=static_cast<std::uint32_t>(mesh->vertices.size());
+            for (auto index=first+1;index+1<end;++index)
+                mesh->indices.insert(mesh->indices.end(),{first,index,index+1});
+        }
+    }
+    cache.size=water.cell_size_m;
+    cache.width=water.cells_x;
+    cache.cells=water.columns;
+    cache.mesh=mesh;
+    return mesh;
+}
 }
 
 void append_region_scene(const Region& region, SceneSnapshot& scene) {
@@ -117,9 +171,19 @@ void append_region_scene(const Region& region, SceneSnapshot& scene) {
     for (std::uint32_t z = 0; z < config.cells_z; ++z) {
         for (std::uint32_t x = 0; x < config.cells_x; ++x) {
             const auto sample = grid.sample({x, z});
-            if (region.optics())
-                volume.columns.push_back({static_cast<float>(sample.floor_height_m-origin_y),
-                    static_cast<float>(sample.surface_height_m-origin_y)});
+            if (region.optics()) {
+                auto& column=volume.columns.emplace_back();
+                column.levels[0]=static_cast<float>(sample.floor_height_m-origin_y);
+                column.levels[1]=static_cast<float>(sample.surface_height_m-origin_y);
+                if (volume.optics.follow_terrain) {
+                    column.levels[2]=1;
+                    const auto fitted=region.fitted_bed({x,z});
+                    for (std::size_t side=0;side<column.corners.size();++side) {
+                        column.corners[side]=static_cast<float>(fitted.corners_m[side]-origin_y);
+                        column.stages[side]=static_cast<float>(fitted.stages_m[side]-origin_y);
+                    }
+                }
+            }
             if (sample.depth_m == 0) continue;
             // Normalize depth over one meter between the color texel centers.
             const auto palette_u = static_cast<float>(0.25 + 0.5 * std::min(sample.depth_m, 1.0));
@@ -127,6 +191,8 @@ void append_region_scene(const Region& region, SceneSnapshot& scene) {
         }
     }
     if (!count) return;
+    auto surface=volume.optics.follow_terrain ? clipped_surface_mesh(volume) :
+        surface_mesh(config.cell_size_m,std::span(wet).first(count));
     if (region.optics()) scene.water_volume=std::move(volume);
 
     SceneObject object{};
@@ -136,7 +202,7 @@ void append_region_scene(const Region& region, SceneSnapshot& scene) {
     object.world[13] = origin_y;
     object.world[14] = config.origin_z_m;
     object.albedo = {0.016f, 0.30f, 0.46f};
-    object.mesh = surface_mesh(config.cell_size_m, std::span(wet).first(count));
+    object.mesh = std::move(surface);
     object.material = object.mesh->material;
     object.textures = depth_palette();
     object.cast_shadows = false;

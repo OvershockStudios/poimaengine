@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
-StructuredBuffer<float2> water_caustic_columns : register(t14);
+#include "water_bed.hlsli"
+
+StructuredBuffer<WaterColumn> water_caustic_columns : register(t14);
 
 struct WaterSlopeField {
     float2 gradient;
@@ -90,7 +92,7 @@ bool water_caustic_column(float2 xz, out float2 levels) {
     const uint2 dimensions = water_caustic_grid_light.xy;
     if (any(local < 0.0) || any(local >= float2(dimensions))) return false;
     const uint2 cell = uint2(local);
-    levels = water_caustic_columns[cell.y * dimensions.x + cell.x];
+    levels = water_column_levels(water_caustic_columns[cell.y * dimensions.x + cell.x],frac(local));
     return levels.y > levels.x;
 }
 

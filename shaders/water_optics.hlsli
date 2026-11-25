@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "water_ripple_normal.hlsli"
+#include "water_bed.hlsli"
 
-StructuredBuffer<float2> water_columns : register(t7);
+StructuredBuffer<WaterColumn> water_columns : register(t7);
 TextureCube<float4> water_environment : register(t8);
 SamplerState water_sampler : register(s1);
 
@@ -67,6 +68,8 @@ struct WaterPath {
     float water_before_interface_m;
 };
 
+#include "water_shore_trace.hlsli"
+
 WaterPath trace_water_columns(WaterConstants water, float3 eye, float3 ray, float max_distance, bool find_interface) {
     WaterPath path = {0, -1, 0};
     const float size = water.camera_cell_size.w;
@@ -92,8 +95,29 @@ WaterPath trace_water_columns(WaterConstants water, float3 eye, float3 ray, floa
     [loop] for (uint i = 0; i < 63; ++i) {
         const float crossing = min(cross_at.x, cross_at.y);
         const float next = max(entry, min(exit, crossing));
-        const float2 column = water_columns[cell.y * dimensions.x + cell.x];
-        if (column.y > column.x && next > entry) {
+        const WaterColumn surface = water_columns[cell.y * dimensions.x + cell.x];
+        const float2 column = surface.levels.xy;
+        bool coarse=surface.levels.z == 0.0;
+        bool fit=false;
+        [branch] if (!coarse && next > entry) {
+            const float2 y=eye.y+ray.y*float2(entry,next);
+            const float low=min(y.x,y.y),high=max(y.x,y.y);
+            const float4 corners=surface.corners;
+            const float highest=max(column.x,max(max(corners.x,corners.y),max(corners.z,corners.w)));
+            // Over a wet center all four wedges share one stage. A ray
+            // already above the entire bed needs only the flat surface test.
+            coarse=column.y>column.x && low>=highest;
+            if (!coarse) {
+                const float lowest=min(column.x,min(min(corners.x,corners.y),min(corners.z,corners.w)));
+                const float4 stages=surface.stages;
+                const float top=max(max(stages.x,stages.y),max(stages.z,stages.w));
+                fit=top>lowest && low<=top && high>=lowest;
+            }
+        }
+        [branch] if (fit) {
+            integrate_fitted_water(surface,eye,ray,eye.xz/size-float2(cell),direction/size,
+                entry,next,max_distance,find_interface,path);
+        } else if (coarse && column.y > column.x && next > entry) {
             float first_water = entry, last_water = next;
             if (clip_water_span(eye.y, ray.y, column.x, column.y, first_water, last_water))
                 path.length_m += last_water - first_water;

@@ -172,7 +172,7 @@ inline constexpr std::uint64_t post_effect_budget_bytes=128u*1024u*1024u;
 inline constexpr std::uint64_t screen_reflections_budget_bytes=128u*1024u*1024u;
 inline constexpr std::uint64_t screen_reflections_constants_bytes=32;
 inline constexpr std::uint64_t height_fog_budget_bytes=96u*1024u*1024u;
-inline constexpr std::uint32_t max_water_column_side=32,water_column_bytes=8;
+inline constexpr std::uint32_t max_water_column_side=32,water_column_bytes=48;
 inline constexpr std::uint32_t bloom_extent(std::uint32_t size) {return size/4+(size%4!=0);}
 inline constexpr std::uint64_t bloom_budget_bytes=32u*1024u*1024u;
 inline constexpr std::uint64_t output_grade_bytes=544;

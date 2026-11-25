@@ -11,6 +11,7 @@
 #include <cmath>
 #include <iostream>
 #include <numbers>
+#include <nlohmann/json.hpp>
 #include <stdexcept>
 #include <string_view>
 #include <vector>
@@ -192,6 +193,43 @@ void combined_stream_budget() {
           indices * sizeof(std::uint32_t) <= render_schedule::stream_index_budget,
           "Full water and particle projections exceed the shared stream budget.");
 }
+
+void terrain_fit_respects_committed_gates() {
+    RegionDefinition definition{};
+    definition.config={.cells_x=2,.cells_z=1,.origin_x_m=137,.origin_z_m=-20,.relaxation_per_second=0};
+    definition.floor_heights_m={4.5,5};
+    definition.initial_depths_m={.35,0};
+    definition.shore_corner_heights_m={4,4.6,5.4,4.2,4.8,5.6};
+    definition.plan_sha256=std::string(64,'e');
+    definition.optics=WaterOptics{.extinction_per_m={.8,.4,.15},.scattered_radiance={.03,.12,.22},.follow_terrain=true};
+    definition.faces.push_back({{0,0},FaceAxis::x,{0,4.82},"open",1});
+    Region region(definition);
+    const auto x=138.1,z=-19.5;
+    const auto closed=capture(region);
+    check(region.sample_world(x,z)->depth_m==0,"A shut face allowed the optical shore to cross it.");
+    const std::string_view action="open";
+    region.step(std::span{&action,1});
+    const auto flooded=region.sample_world(x,z).value();
+    check(std::abs(flooded.floor_height_m-4.76)<1e-9 && std::abs(flooded.submersion_at(4.82)-.03)<1e-9 &&
+          region.sample_world(138.4,z)->depth_m==0 && region.grid().sample({1,0}).depth_m==0 &&
+          std::abs(region.grid().volume_m3()-.35)<1e-9,
+          "Terrain fit must clip at the sampled slope without altering cell volume.");
+    const auto open=capture(region);
+    const auto extends_shore=[](const SceneSnapshot& scene) {
+        return std::ranges::any_of(scene.objects.front().mesh->vertices,
+            [](const auto& vertex){return vertex.position[0]>1;});
+    };
+    check(!extends_shore(closed) && extends_shore(open) &&
+          open.water_volume->columns[1].stages[3]>closed.water_volume->columns[1].stages[3],
+          "Optics and fallback mesh should use the same committed face controls.");
+    Region restored(definition);
+    restored.restore(region.save(),1);
+    check(capture(restored).water_volume->columns==open.water_volume->columns,
+          "Restoring the gate must recover the exact fitted projection.");
+    definition.faces.front().initial={1,4.86};
+    check(Region(definition).sample_world(x,z)->depth_m==0,
+          "A sill above the stage must block the fitted margin.");
+}
 }
 
 int main() {
@@ -200,6 +238,7 @@ int main() {
         gate_and_dry_state();
         ripple_phase_uses_only_committed_time();
         combined_stream_budget();
+        terrain_fit_respects_committed_gates();
         RegionDefinition profile{};
         profile.config={.cells_x=2,.cells_z=1,.origin_x_m=137,.origin_z_m=-20};
         profile.floor_heights_m={4,5};
@@ -210,7 +249,7 @@ int main() {
         const auto media=capture(optical);
         check(media.water_volume && media.objects.front().water_region_surface &&
               media.water_volume->origin_m==std::array{137.,4.,-20.} &&
-              media.water_volume->columns==std::vector{std::array{0.f,2.f},std::array{1.f,1.f}},
+              media.water_volume->columns==std::vector{poima::SceneWaterColumn{{0,2,0,0}},poima::SceneWaterColumn{{1,1,0,0}}},
               "Volume presentation must include both the wet column and the dry terrain bed.");
         std::cout << "Water scene checks passed, including the combined water and particle stream budget.\n";
         return 0;

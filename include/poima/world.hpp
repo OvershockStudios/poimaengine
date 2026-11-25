@@ -34,6 +34,7 @@ struct WorldPackageContent {
     bool needs_water_refraction=false;
     bool needs_water_caustics=false;
     bool needs_water_shore_foam=false;
+    bool needs_water_terrain_fit=false;
     bool needs_screen_reflections=false;
     bool needs_foliage_motion=false;
     bool needs_height_fog=false;

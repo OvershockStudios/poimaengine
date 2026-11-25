@@ -617,6 +617,7 @@ public:
             if(content.needs_water_refraction)result["needs_water_refraction"]=true;
             if(content.needs_water_caustics)result["needs_water_caustics"]=true;
             if(content.needs_water_shore_foam)result["needs_water_shore_foam"]=true;
+            if(content.needs_water_terrain_fit)result["needs_water_terrain_fit"]=true;
             if(content.needs_snow_water)result["needs_snow_water"]=true;
             if(content.needs_physics_checkpoint)result["needs_physics_checkpoint"]=true;
             if(content.needs_output_grade)result["needs_output_grade"]=true;

@@ -280,6 +280,7 @@ struct WaterOpticsDiagnostics {
     std::string_view caustics_reason;
     std::optional<WaterShoreFoam> shore_foam;
     bool shore_foam_sun=false;
+    bool follow_terrain=false;
 };
 struct AerialPerspectiveDiagnostics {
     bool active=false;

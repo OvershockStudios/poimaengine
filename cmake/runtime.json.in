@@ -23,6 +23,7 @@
     "water_refraction": @POIMA_RUNTIME_WATER_OPTICS@,
     "water_caustics": @POIMA_RUNTIME_WATER_OPTICS@,
     "water_shore_foam": @POIMA_RUNTIME_WATER_OPTICS@,
+    "water_terrain_fit": @POIMA_RUNTIME_WATER_OPTICS@,
     "water_listener_audio": @POIMA_RUNTIME_WATER_LISTENER_AUDIO@,
     "scene_particles": @POIMA_RUNTIME_SIMULATION@,
     "surface_marks": @POIMA_RUNTIME_SIMULATION@,
