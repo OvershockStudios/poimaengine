@@ -304,7 +304,7 @@ void Pass::verify_bindings(const render_schedule::Schedule& plan) const {
     const auto buffer = [&](render_schedule::ResourceId id) {
         return reinterpret_cast<nvrhi::IBuffer*>(plan.resource(id).identity);
     };
-    // A zero spotlight ordinal never reads the light buffer. The Vulkan layout
+    // With all light ordinals zero the pass never reads the light buffer. The Vulkan layout
     // still expects a real descriptor when no light input is in the schedule.
     const bool aerial = plan.settings.aerial_perspective;
     const bool water=frame.water_columns!=render_schedule::none;
@@ -317,7 +317,7 @@ void Pass::verify_bindings(const render_schedule::Schedule& plan) const {
         .surface_hdr = texture(render_schedule::surface_radiance(frame, plan.settings)),
         .depth = texture(frame.depth),
         .shadow = texture(frame.shadow),
-        .lights = plan.settings.height_fog_spots ? buffer(frame.lights) : inputs_.lights,
+        .lights = render_schedule::world_media_reads_lighting(plan.settings) ? buffer(frame.lights) : inputs_.lights,
         .atmosphere_density = aerial ? texture(frame.atmosphere_density) : nullptr,
         .water_columns=water ? buffer(frame.water_columns) : nullptr,
         .water_specular=water ? texture(frame.ibl_specular) : nullptr,

@@ -47,7 +47,7 @@ struct Fixture {
             }
             f.frame=add(Kind::buffer,Lifetime::shared);f.objects=add(Kind::buffer,Lifetime::shared);
             f.lights=add(Kind::buffer,Lifetime::shared);f.shadow=add(Kind::texture,Lifetime::shared);
-            if(s.height_fog_spots)f.resources[f.shadow].format=Format::depth32;
+            if(world_media_reads_lighting(s))f.resources[f.shadow].format=Format::depth32;
             const auto material=add(Kind::texture,Lifetime::imported,true);
             const auto vertices=add(Kind::buffer,Lifetime::imported,true),indices=add(Kind::buffer,Lifetime::imported,true);
             ResourceId drawn=vertices;
@@ -1252,6 +1252,26 @@ void height_fog_contracts() {
         unsafe=prepared;
         unsafe.settings.water_caustics=false;
         rejects("Inactive caustics still reads columns from lighting",[&]{unsafe.validate();});
+    }
+    for(bool spotlight:{false,true}) {
+        auto lit=forward;
+        lit.height_fog_spots=spotlight;
+        lit.water_shore_foam_sun=true;
+        Fixture foam(lit);
+        environment_inputs(foam,true);
+        foam.f.water_columns=foam.add(Kind::buffer,Lifetime::shared);
+        foam.f.resources[foam.f.water_columns].bytes=8*water_column_bytes;
+        auto composed=foam.plan();
+        composed.validate();++accepted;
+        check(access(composed,PassId::height_fog,foam.f.lights,Use::storage_read) &&
+              access(composed,PassId::height_fog,foam.f.shadow,Use::sampled),
+              "Sunlit shore foam must use the scheduled light and shadow resources");
+        auto missing_shadow=composed;
+        erase_access(missing_shadow,PassId::height_fog,foam.f.shadow,Use::sampled);
+        rejects("Sunlit shore foam without shadow inputs",[&]{missing_shadow.validate();});
+        auto missing_water=composed;
+        erase_access(missing_water,PassId::height_fog,foam.f.water_columns,Use::storage_read);
+        rejects("Sunlit shore foam without committed columns",[&]{missing_water.validate();});
     }
     auto legacy=Fixture(rich(),4).plan();legacy.validate();
     check(legacy.frame.fogged_hdr==none && world_radiance(legacy.frame,legacy.settings)==legacy.frame.hdr &&

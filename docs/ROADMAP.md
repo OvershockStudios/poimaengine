@@ -339,6 +339,11 @@ reservoirs, room flooding and filling/draining containers. Assign one owner to
 each transfer and bound active simulation regions so visual detail can scale
 without losing accounted water quantities.
 
+Local water now has [depth-based optics, refraction, caustics and shoreline
+foam](SHALLOW_WATER.md#author-transparent-water) on its committed grid. Continuous
+ocean swell, breaking waves, spray and connected regions are separate work
+within this track.
+
 Storms, lightning, precipitation, wind and seasons share world state with water,
 audio and surfaces. Longer-term effects must reach crops, resources and travel;
 accelerated time must preserve accumulated effects.

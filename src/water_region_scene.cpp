@@ -105,6 +105,11 @@ void append_region_scene(const Region& region, SceneSnapshot& scene) {
     if (const auto& optics = region.optics()) {
         volume={.origin_m={config.origin_x_m,origin_y,config.origin_z_m},.cell_size_m=config.cell_size_m,
             .cells_x=config.cells_x,.cells_z=config.cells_z,.optics=*optics,.columns={}};
+        if (optics->shore_foam) {
+            constexpr std::uint64_t foam_cycle_ticks = 240;
+            volume.shore_foam_phase = static_cast<float>(2 * std::numbers::pi *
+                static_cast<double>(grid.tick() % foam_cycle_ticks) / foam_cycle_ticks);
+        }
         volume.columns.reserve(static_cast<std::size_t>(config.cells_x)*config.cells_z);
     }
     std::array<SurfaceCell, max_region_side * max_region_side> wet;

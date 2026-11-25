@@ -195,6 +195,9 @@ Json render_diagnostics(const RenderDiagnostics& d) {
         if(water.refraction)result["water_optics"]["refraction"]=true;
         if(water.caustics_strength>0)result["water_optics"]["caustics"]={{"active",water.caustics_reason=="active"},
             {"reason",water.caustics_reason},{"strength",water.caustics_strength}};
+        if(const auto& foam=water.shore_foam)
+            result["water_optics"]["shore_foam"]={{"active",water.active && foam->opacity>0},
+                {"depth_m",foam->depth_m},{"opacity",foam->opacity},{"sun_lighting",water.shore_foam_sun}};
     }
     if(d.atmosphere_sky) {
         const auto& atmosphere=*d.atmosphere_sky;

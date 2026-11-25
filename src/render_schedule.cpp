@@ -373,14 +373,16 @@ void Schedule::validate(bool before_acquire) const {
         }
         if(settings.water_caustics && frame.water_columns==none)
             fail("water caustics require committed optical columns");
-        if(settings.height_fog_spots) {
+        if(settings.water_shore_foam_sun && frame.water_columns==none)
+            fail("water shore foam requires committed optical columns");
+        if(world_media_reads_lighting(settings)) {
             required(frame.lights);
             const auto& shadow=resource(frame.shadow);
             if(resource(frame.lights).kind!=Kind::buffer || shadow.kind!=Kind::texture || shadow.format!=Format::depth32 ||
                 shadow.samples!=1 || !shadow.layers || shadow.lifetime!=Lifetime::shared || shadow.region!=Region::whole)
-                fail("invalid height fog spotlight inputs");
+                fail("invalid world media lighting inputs");
         }
-    } else if(frame.fogged_hdr!=none || settings.height_fog_spots || frame.water_columns!=none || settings.water_caustics)
+    } else if(frame.fogged_hdr!=none || world_media_reads_lighting(settings) || frame.water_columns!=none || settings.water_caustics)
         fail("world media resources without world media pass");
     if(reconstruct_composed) {
         if(!scene_image(frame.composition_mask,Format::r8_unorm,resource(frame.hdr)) ||
@@ -783,13 +785,13 @@ void Schedule::validate(bool before_acquire) const {
         if(pass.id==PassId::height_fog) {
             if(!settings.height_fog || !world_opaque || (settings.deferred && !deferred_lit) ||
                 (settings.screen_reflections && !screen_reflected))fail("unexpected or premature height fog pass");
-            const auto inputs=4u+(settings.height_fog_spots ? 2u : 0u)+(settings.aerial_perspective ? 2u : 0u)+
+            const auto inputs=4u+(world_media_reads_lighting(settings) ? 2u : 0u)+(settings.aerial_perspective ? 2u : 0u)+
                 (frame.water_columns!=none ? 2u : 0u);
             if(pass.accesses.size()!=inputs ||
                 !has(surface_radiance(frame,settings),Use::sampled) || !has(frame.depth,Use::sampled) ||
                 !has(frame.frame,Use::constant) || !has(frame.fogged_hdr,Use::image_write))fail("invalid height fog bindings");
-            if(settings.height_fog_spots && (!has(frame.lights,Use::storage_read) || !has(frame.shadow,Use::sampled)))
-                fail("missing height fog spotlight inputs");
+            if(world_media_reads_lighting(settings) && (!has(frame.lights,Use::storage_read) || !has(frame.shadow,Use::sampled)))
+                fail("missing world media lighting inputs");
             if(settings.aerial_perspective && (!aerial_baked || !has(frame.aerial_scattering,Use::sampled) ||
                 !has(frame.aerial_transmittance,Use::sampled)))fail("missing aerial perspective composition inputs");
             if(frame.water_columns!=none && (!has(frame.water_columns,Use::storage_read) || !has(frame.ibl_specular,Use::sampled)))
@@ -1288,7 +1290,7 @@ Schedule build(FrameResources frame,Settings settings) {
     if(settings.height_fog) {
         auto& fog=pass(PassId::height_fog);
         add(fog,surface_radiance(f,settings),Use::sampled);add(fog,f.depth,Use::sampled);add(fog,f.frame,Use::constant);
-        if(settings.height_fog_spots) {
+        if(world_media_reads_lighting(settings)) {
             add(fog,f.lights,Use::storage_read);add(fog,f.shadow,Use::sampled);
         }
         add(fog,f.aerial_scattering,Use::sampled);add(fog,f.aerial_transmittance,Use::sampled);

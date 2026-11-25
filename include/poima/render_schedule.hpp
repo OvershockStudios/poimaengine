@@ -141,12 +141,15 @@ struct Settings {
     bool particle_sprites=false;
     bool screen_reflections=false;
     bool height_fog=false,height_fog_spots=false;
-    bool water_caustics=false;
+    bool water_caustics=false,water_shore_foam_sun=false;
     bool aerial_perspective=false;
     bool volumetric_clouds=false,cloud_shadows=false;
     bool spatial_aa=false;
     bool auto_exposure=false,exposure_history_valid=false;
 };
+inline constexpr bool world_media_reads_lighting(const Settings& settings) {
+    return settings.height_fog_spots || settings.water_shore_foam_sun;
+}
 inline constexpr ResourceId surface_radiance(const FrameResources& frame,const Settings& settings) {
     return settings.screen_reflections ? frame.reflected_hdr : frame.hdr;
 }

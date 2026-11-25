@@ -31,5 +31,6 @@ cbuffer Frame : register(b1) {
     float4 water_caustic_origin_size; // Committed grid origin XYZ, cell size
     float4 water_caustic_extinction_strength; // Water extinction per metre RGB, strength
     uint4 water_caustic_grid_light; // X and Z dimensions, one-based sun index, wave mode
+    float4 water_shore_foam; // Depth limit, opacity, phase angle, one-based sun index
 };
 StructuredBuffer<SceneLight> lights : register(t6);

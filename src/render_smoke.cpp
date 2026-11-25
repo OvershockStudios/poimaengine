@@ -135,12 +135,14 @@ struct FrameConstants {
     std::array<float,4> cloud_shadow_geometry{},cloud_shadow_controls{};
     std::array<float,4> water_caustic_origin_size{},water_caustic_extinction_strength{};
     std::array<std::uint32_t,4> water_caustic_grid_light{};
+    std::array<float,4> water_shore_foam{};
 };
-static_assert(sizeof(GpuShadow)==80 && sizeof(FrameConstants)==1760);
+static_assert(sizeof(GpuShadow)==80 && sizeof(FrameConstants)==1776);
 static_assert(offsetof(FrameConstants,water_ripple_shape)==1600 && offsetof(FrameConstants,water_ripple_motion)==1616 &&
     offsetof(FrameConstants,water_wave_shapes)==1632 && offsetof(FrameConstants,cloud_shadow_geometry)==1680 &&
     offsetof(FrameConstants,cloud_shadow_controls)==1696 && offsetof(FrameConstants,water_caustic_origin_size)==1712 &&
-    offsetof(FrameConstants,water_caustic_extinction_strength)==1728 && offsetof(FrameConstants,water_caustic_grid_light)==1744);
+    offsetof(FrameConstants,water_caustic_extinction_strength)==1728 && offsetof(FrameConstants,water_caustic_grid_light)==1744 &&
+    offsetof(FrameConstants,water_shore_foam)==1760);
 struct SpriteInstance {
     std::array<float,4> center_and_size,linear_rgba,fade_and_reserved;
     std::array<std::uint32_t,4> texel_rect;
@@ -1332,6 +1334,15 @@ struct Context {
             static_cast<std::uint32_t>(sun-lighting.lights.begin()+1),static_cast<std::uint32_t>(wave_mode)};
         return "active";
     }
+    void prepare_water_shore_foam(const SceneWaterVolume& water, const SceneLighting& lighting) {
+        const auto& foam=water.optics.shore_foam;
+        if (!foam || foam->opacity==0) return;
+        const auto sun=std::ranges::find(lighting.lights,lighting.environment.sky.sun,&SceneLight::entity_id);
+        const bool sun_above_surface=sun!=lighting.lights.end() && sun->light.kind==LightKind::directional &&
+            sun->light.intensity>0 && sun->direction[1]<0;
+        frame_constants.water_shore_foam={static_cast<float>(foam->depth_m),static_cast<float>(foam->opacity),
+            water.shore_foam_phase,sun_above_surface ? static_cast<float>(sun-lighting.lights.begin()+1) : 0.f};
+    }
     void prepare_height_fog(const SceneLighting& lighting,float water_normal_mode) {
         diagnostics.height_fog.reset();
         aerial_parameters.reset();
@@ -1339,6 +1350,7 @@ struct Context {
         pending_water_optics.reset();
         water_parameters.reset();
         frame_constants.water_caustic_grid_light={};
+        frame_constants.water_shore_foam={};
         fog_spots={};
         const auto& selected=lighting.environment.height_fog;
         const auto& atmosphere_profile=lighting.environment.atmosphere;
@@ -1355,9 +1367,13 @@ struct Context {
             const auto view=height_fog::project_water_view(*water,{camera[12],camera[13],camera[14]},water_normal_mode);
             const auto strength=water->optics.caustics_strength;
             const auto caustics=strength>0 ? prepare_water_caustics(*water,lighting,water_normal_mode,color_reason) : std::string_view{};
+            if (color_reason=="active") {
+                water_parameters=view.parameters;
+                prepare_water_shore_foam(*water,lighting);
+            }
             pending_water_optics=WaterOpticsDiagnostics{color_reason=="active",color_reason,
-                water->cells_x*water->cells_z,view.submersion_m,water->optics.refraction && color_reason=="active",strength,caustics};
-            if(color_reason=="active")water_parameters=view.parameters;
+                water->cells_x*water->cells_z,view.submersion_m,water->optics.refraction && color_reason=="active",
+                strength,caustics,water->optics.shore_foam,frame_constants.water_shore_foam[3]>0};
         }
         if(wants_aerial) {
             const auto reason=color_reason=="active" && !sky_pass.atmosphere_enabled() ?
@@ -2510,6 +2526,7 @@ struct Context {
         settings.aerial_perspective=settings.height_fog && aerial_parameters.has_value();
         settings.height_fog_spots=settings.height_fog && (fog_spots[0]!=0 || fog_spots[1]!=0);
         settings.water_caustics=settings.height_fog && frame_constants.water_caustic_grid_light[2]!=0;
+        settings.water_shore_foam_sun=settings.height_fog && frame_constants.water_shore_foam[3]>0;
         settings.particle_sprites=!sprite_instances.empty();
         settings.sky=scene && scene_visible && sky_pass.enabled();settings.products=bool(scene_normal);settings.products_debug=scene_debug_view!=SceneDebugView::color;settings.editor=editor;settings.capture=capture_frame;settings.reconstruction=pending_reconstruction.active;settings.deferred=deferred;settings.ambient_occlusion=ao_enabled;
         settings.volumetric_clouds=settings.sky && sky_pass.clouds_enabled();

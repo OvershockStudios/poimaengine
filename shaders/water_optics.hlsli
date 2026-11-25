@@ -35,13 +35,17 @@ float water_fresnel(float cosine, bool from_air) {
     return 0.5 * (s * s + p * p);
 }
 
+float water_interface_footprint(float distance, float ray_y) {
+    return 2.0 * distance * max(temporal_right.w / cluster_viewport.z,
+        temporal_up.w / cluster_viewport.w) / max(abs(ray_y), 0.03);
+}
+
 float3 water_interface_normal(WaterConstants water, float2 point_xz, float distance, float ray_y) {
     const float mode = water.radiance_wave_mode.w;
     if (mode == 0.0) return float3(0, 1, 0);
     // Estimate a conservative pixel footprint on the flat surface and
     // damp unresolved waves at distance and along the grazing waterline.
-    const float footprint = 2.0 * distance * max(temporal_right.w / cluster_viewport.z,
-        temporal_up.w / cluster_viewport.w) / max(abs(ray_y), 0.03);
+    const float footprint = water_interface_footprint(distance, ray_y);
     const float2 dx = float2(footprint, 0);
     const float2 dz = float2(0, footprint);
     if (mode == 1.0)
@@ -114,6 +118,7 @@ WaterPath trace_water_columns(WaterConstants water, float3 eye, float3 ray, floa
 }
 
 #include "water_refraction.hlsli"
+#include "water_shore_foam.hlsli"
 
 float3 compose_water(WaterConstants water, float3 input_radiance, float3 ray, float max_distance, uint2 extent) {
     const float3 eye = water.camera_cell_size.xyz;
@@ -157,6 +162,13 @@ float3 compose_water(WaterConstants water, float3 input_radiance, float3 ray, fl
         }
         const float3 before = exp(-water.extinction_per_m * before_m);
         color = lerp(color, lerp(scattering, reflection, before), fresnel);
+        [branch] if (from_air && water_shore_foam.y > 0.0) {
+            const float3 offset = interface_at * ray;
+            const float3 entry = eye + offset;
+            const float coverage = shore_foam_coverage(water, entry, water_interface_footprint(interface_at, ray.y));
+            [branch] if (coverage > 0.0)
+                color = lerp(color, lerp(scattering, shore_foam_radiance(camera.xyz + offset), before), coverage);
+        }
     }
     return clamp(color, -65504.0, 65504.0);
 }

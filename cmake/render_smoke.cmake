@@ -146,6 +146,8 @@ foreach(stage IN LISTS shader_stages)
     if(shader MATCHES "^height_fog_water")
         list(APPEND shader_dependencies "${CMAKE_SOURCE_DIR}/shaders/water_optics.hlsli"
             "${CMAKE_SOURCE_DIR}/shaders/water_refraction.hlsli"
+            "${CMAKE_SOURCE_DIR}/shaders/water_shore_foam.hlsli"
+            "${CMAKE_SOURCE_DIR}/shaders/scene_shadow_filter.hlsli"
             "${CMAKE_SOURCE_DIR}/shaders/water_ripple_normal.hlsli")
     endif()
     if(shader MATCHES "^cloud_(view|shadow)$")
@@ -159,7 +161,7 @@ foreach(stage IN LISTS shader_stages)
     endif()
     if(shader MATCHES "^(ambient_occlusion.*|deferred_lighting.*|scene_deferred.*|scene|scene_products|shadow)$")
         list(APPEND shader_dependencies "${CMAKE_SOURCE_DIR}/shaders/scene_lighting.hlsli" "${CMAKE_SOURCE_DIR}/shaders/scene_surface.hlsli" "${CMAKE_SOURCE_DIR}/shaders/environment_ibl.hlsli"
-            "${CMAKE_SOURCE_DIR}/shaders/water_caustics.hlsli")
+            "${CMAKE_SOURCE_DIR}/shaders/scene_shadow_filter.hlsli" "${CMAKE_SOURCE_DIR}/shaders/water_caustics.hlsli")
     endif()
     if(shader STREQUAL "particle_sprite_temporal")
         list(APPEND shader_dependencies "${CMAKE_SOURCE_DIR}/shaders/particle_sprite.hlsl")

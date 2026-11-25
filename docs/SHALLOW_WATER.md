@@ -321,6 +321,39 @@ zero-slope control and a shadow at the water entry point. Inspect
 `resolved_hdr` or the BMP to review the effect through depth color and
 refraction.
 
+### Add shoreline foam
+
+Set `shore_foam` inside `optics` when planning and cooking a water region.
+
+```json
+{"shore_foam":{"depth_m":0.65,"opacity":0.92}}
+```
+
+Choose a vertical depth limit between 0.02 and 3 metres and opacity from
+0 to 1. Both fields are required. Zero opacity keeps the profile with no
+visual effect. Omitting the profile retains the original artifact rules.
+A selected profile cooks `.pwater` version 9. Dependency and standalone
+inspection report `needs_water_shore_foam`. Export requires an installed
+runtime with `features.water_shore_foam`.
+
+The renderer samples the committed water interface and interpolates the
+terrain bed between the grid's cell centres. Foam fades as this depth
+approaches the limit. An original world-space pattern moves in bands
+along the shallow bed. It uses a four-second cycle from the committed tick,
+and small features fade where the camera cannot resolve them. Geometry in
+front of the surface occludes foam. Ambient light and the linked directional
+sun illuminate it, including ordinary geometry shadows. The profile controls
+a surface effect on local water in single-sample forward and deferred color
+views, including with FSR. Spray, wakes, breaking surf, cloud shadows on foam
+and foam as seen from below the water remain open.
+
+Inspect authored values in `runtime.water.inspect` and the selected
+rendering path in `render_diagnostics.water_optics.shore_foam`. Compare
+`resolved_hdr` or the presented image at a shallow receiver, a deep point
+and a point outside the water. Capture two committed phases and restore
+the later phase from a save. The independent [Vulkan fixture](../tests/water_shore_foam_capture.py)
+checks those paths and shading under an isolated shadow.
+
 ## Observe and verify local flow
 
 Discover `runtime.water.inspect` in a simulation build. Pass `session_id`, the

@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.417
+
+- Add optional shoreline foam that moves on committed water, fades toward deeper beds, and responds to the linked sun and geometry shadows.
+
 ## 0.0.416
 
 - Focus directional sunlight into moving underwater caustics with committed wave phases and shadows at the light's water entry.

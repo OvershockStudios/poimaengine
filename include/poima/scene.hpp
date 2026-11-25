@@ -303,6 +303,7 @@ struct SceneWaterVolume {
     double cell_size_m;
     std::uint32_t cells_x,cells_z;
     WaterOptics optics;
+    float shore_foam_phase=0;
     // Row-major floor and surface heights relative to the region's Y origin.
     std::vector<std::array<float,2>> columns;
 };

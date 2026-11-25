@@ -1,8 +1,20 @@
 # Implementation status
 
-Updated 2026-11-25 for **0.0.416**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-25 for **0.0.417**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.417 adds [shoreline foam](SHALLOW_WATER.md#add-shoreline-foam)
+lit by the linked sun and occluded by geometry. AMD forward and NVIDIA
+deferred passed 252 HDR probes across two committed phases. A caster
+above the water removed the sun's contribution at an isolated sample.
+An exported NVIDIA build reproduced the later capture after a relocated
+save load. The zero-opacity and submerged controls matched exactly on
+both adapters. Twenty-four earlier water images also matched exactly,
+and Ubuntu passed 14 suites. A 1,024-column coastal study combined the
+new effect with refraction, caustics, aerial perspective and FSR Native
+AA. Some shallow shoreline crossings still show the grid's cell edges.
+[Results](evidence/m2-water-shore-foam-417.json)
 
 Version 0.0.416 adds [wave-driven caustics](SHALLOW_WATER.md#focus-sunlight-underwater)
 to the linked sun in forward and deferred Vulkan lighting. The renderer

@@ -16,6 +16,7 @@ constexpr auto artifact_format = "poima.water.region";
 
 std::uint32_t artifact_version(const RegionDefinition& definition) noexcept {
     if (definition.optics) {
+        if (definition.optics->shore_foam) return 9;
         if (definition.optics->caustics_strength>0) return 8;
         return definition.optics->refraction ? 7 : 6;
     }
@@ -143,7 +144,7 @@ void parse_rules(const Json& object, RegionDefinition& definition) {
     }
     if (object.contains("optics")) {
         const auto& value=object.at("optics");
-        fields(value, {"extinction_per_m","scattered_radiance"}, {"refraction","caustics_strength"});
+        fields(value, {"extinction_per_m","scattered_radiance"}, {"refraction","caustics_strength","shore_foam"});
         if (value.contains("refraction"))
             require(value.at("refraction").is_boolean(),"Water optics refraction must be Boolean.");
         const auto color=[&](const char* name, double maximum) {
@@ -159,6 +160,11 @@ void parse_rules(const Json& object, RegionDefinition& definition) {
         };
         definition.optics=WaterOptics{color("extinction_per_m",8),color("scattered_radiance",16),
             value.value("refraction",false),value.contains("caustics_strength") ? number(value.at("caustics_strength")) : 0};
+        if (value.contains("shore_foam")) {
+            const auto& foam = value.at("shore_foam");
+            fields(foam, {"depth_m","opacity"});
+            definition.optics->shore_foam = WaterShoreFoam{number(foam.at("depth_m")),number(foam.at("opacity"))};
+        }
     }
     std::ranges::sort(definition.rain_cells, {}, [](Cell cell) { return std::pair{cell.z, cell.x}; });
     std::sort(definition.faces.begin(), definition.faces.end(), [](const auto& left, const auto& right) {
@@ -256,7 +262,7 @@ RegionAsset decode_region_asset(std::string_view bytes) {
     fields(object, {"format", "version", "terrain_recipe_sha256", "tiles", "grid", "floor_heights_m",
         "initial_depths_m", "faces", "exchanges"}, {"rain_cells", "surface_ripples", "surface_wave_layers", "listener_audio", "optics"});
     require(object.at("format") == artifact_format, "Unsupported water asset format.");
-    const auto version=integer(object.at("version"),1,8);
+    const auto version=integer(object.at("version"),1,9);
     RegionAsset asset;
     asset.terrain_recipe_sha256 = hex(object.at("terrain_recipe_sha256"), 64);
     auto& definition = asset.definition;
@@ -329,11 +335,15 @@ Json region_authoring_schemas() {
         {"scattered_radiance",array(range("number",0,16),3,3)},
         {"refraction",{{"type","boolean"},{"default",false},
             {"description","Bend the sightline at the first water interface and sample a matching opaque depth hit."}}},
-        {"caustics_strength",range("number",0,1)}},
+        {"caustics_strength",range("number",0,1)},
+        {"shore_foam",object({{"depth_m",range("number",.02,3)},{"opacity",range("number",0,1)}},
+            {"depth_m","opacity"})}},
         {"extinction_per_m","scattered_radiance"});
     optics["description"] = "Optional transparent surface and depth-dependent RGB extinction and in-scattering. Requires single-sample Vulkan color for optical composition.";
     optics["properties"]["caustics_strength"]["description"] =
         "Focus light from the linked sky sun below the surface using the authored wave normals. Zero disables the effect.";
+    optics["properties"]["shore_foam"]["description"] =
+        "Add surface foam to shallow committed water. Depth is measured vertically in metres. Opacity zero keeps the selected profile with a clear surface.";
     auto plan = object({{"revision", tick_schema}, {"terrain", std::move(source)}, {"expected_terrain_recipe_sha256", sha_schema},
         {"tile_entities", array(id_schema, 1, terrain::max_cook_tiles)}, {"grid", grid},
         {"initial_depths_m", array(range("number", 0, 1'000'000), 0, max_region_side * max_region_side)},

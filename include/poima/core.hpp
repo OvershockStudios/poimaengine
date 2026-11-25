@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 #pragma once
 
+#include "poima/water_optics.hpp"
+
 #include <array>
 #include <cstdint>
 #include <optional>
@@ -276,6 +278,8 @@ struct WaterOpticsDiagnostics {
     bool refraction=false;
     double caustics_strength=0;
     std::string_view caustics_reason;
+    std::optional<WaterShoreFoam> shore_foam;
+    bool shore_foam_sun=false;
 };
 struct AerialPerspectiveDiagnostics {
     bool active=false;
