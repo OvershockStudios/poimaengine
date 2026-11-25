@@ -36,11 +36,18 @@ struct AcousticGeometry {
     AcousticMaterial material;
 };
 struct AudioSource { std::string entity;AudioEmitter emitter;Matrix4 world; };
+struct AudioWaterMedium {
+    double cutoff_hz;
+    double gain;
+    double submersion_m;
+    double blend;
+};
 struct AudioSnapshot {
     Matrix4 listener=identity_matrix();
     std::vector<AcousticGeometry> geometry;
     std::vector<AudioSource> sources;
     bool early_reflections=false;
+    std::optional<AudioWaterMedium> water_medium;
 };
 struct AudioReflection {
     std::string entity;

@@ -172,6 +172,50 @@ and Vulkan normals. Pass `--runtime-root`, `--windows-interop` from WSL, and
 `--gpu` to exercise the standalone capture path. The forward and deferred
 recipes use `--lighting-path`.
 
+## Author the waterline sound transition
+
+Discover `water_listener_audio` on an audio and simulation build. Add a
+`listener_audio` object to the parameters for `world.water.plan` and
+`world.water.cook`, then bind the reviewed hash as usual. For example:
+
+```json
+{"listener_audio":{"cutoff_hz":900,"gain":0.6,"full_depth_m":0.5}}
+```
+
+The digital low-pass cutoff accepts 80 to 8,000 Hz. Gain accepts 0 to 1.
+Full blend depth accepts 0.01 to 10 metres. The three fields are required
+together. A selected profile is stored in version 5 of the cooked region,
+alongside any existing catchment and wave settings. Projects report
+`needs_water_listener_audio` and export checks the corresponding runtime feature.
+Regions without a profile retain their existing artifact format and audio mix.
+
+The listener samples the committed column at its world position. The target
+blend is zero at the surface and reaches one at the authored depth below it.
+As the target changes, the 48 kHz stereo world mix crossfades between its
+spatial output and the attenuated low-pass signal. A full-scale change takes
+about 50 ms. Authored captures use the initial water levels. Frozen live
+captures apply the selected tick's target from the first sample.
+
+Compare `listener_water.target_blend` and `listener_water.submersion_m` in
+`runtime.audio.inspect` against a point query at the same tick.
+`runtime.audio.replay` records initial and final observations with the native
+stereo mix. This is a listener-side effect. Sources still use the existing
+direct paths and optional early reflections. Underwater-specific propagation,
+cross-surface sound transmission and underwater optics need separate systems.
+[Native audio controls](AUDIO.md)
+
+### Observe the water column at a world position
+
+Pass optional `points` to `runtime.water.inspect` alongside the session and
+exact tick. Up to 64 finite world-space `[x,y,z]` positions are reported in
+request order. Each row contains the original `point_world`, a `column` with
+its cell index, bed height, surface height and depth, and `submersion_m`.
+A point outside the region has a null column and zero submersion. A point
+inside the footprint has zero submersion when the column is dry, when it is
+on or above the surface, or when it is below that cell's terrain bed. At an
+interior cell edge the higher-index cell owns the point. Surface shading
+waves leave these sampled heights unchanged.
+
 ## Observe and verify local flow
 
 Discover `runtime.water.inspect` in a simulation build. Pass `session_id`, the

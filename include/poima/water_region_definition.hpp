@@ -29,6 +29,12 @@ struct SurfaceRipples {
     bool operator==(const SurfaceRipples&) const = default;
 };
 
+struct ListenerAudio {
+    double cutoff_hz;
+    double gain;
+    double full_depth_m;
+};
+
 struct RegionDefinition {
     GridConfig config;
     std::vector<double> floor_heights_m;
@@ -39,6 +45,7 @@ struct RegionDefinition {
     std::vector<Cell> rain_cells;
     std::optional<SurfaceRipples> surface_ripples;
     std::vector<SurfaceRipples> surface_wave_layers;
+    std::optional<ListenerAudio> listener_audio;
 };
 
 }

@@ -32,7 +32,7 @@
         const bool cook = method == "world.water.cook";
         require(cook || method == "world.water.plan", "Unknown water authoring method.", -32601);
         fields(params, {"revision", "terrain", "expected_terrain_recipe_sha256", "expected_plan_sha256", "tile_entities",
-            "grid", "initial_depths_m", "faces", "exchanges", "rain_cells", "surface_ripples", "surface_wave_layers"},
+            "grid", "initial_depths_m", "faces", "exchanges", "rain_cells", "surface_ripples", "surface_wave_layers", "listener_audio"},
             {"revision", "terrain", "expected_terrain_recipe_sha256", "tile_entities", "grid"});
         require(cook == params.contains("expected_plan_sha256"), "Water cooking requires a reviewed plan SHA-256.");
         current_revision(params);
@@ -78,6 +78,7 @@
                 {"asset_bytes", bytes.size()}, {"cells", cells}, {"tiles", std::move(tiles)}};
             if (params.contains("surface_ripples")) result["surface_ripples"] = params.at("surface_ripples");
             if (params.contains("surface_wave_layers")) result["surface_wave_layers"] = params.at("surface_wave_layers");
+            if (params.contains("listener_audio")) result["listener_audio"] = params.at("listener_audio");
             return result;
         } catch (const Error&) { throw; }
         catch (const std::invalid_argument& error) { throw Error(-32602, error.what()); }
@@ -85,7 +86,7 @@
     }
 
     Json water_inspect(const Json& params) const {
-        fields(params, {"session_id", "tick", "cells"}, {"session_id", "tick"});
+        fields(params, {"session_id", "tick", "cells", "points"}, {"session_id", "tick"});
         runtime_guard(params);
         const auto tick = runtime_->inspect().tick;
         require(revision(params.at("tick")) == tick, "Runtime tick conflict.", -32009);
@@ -94,6 +95,30 @@
             {"volume_m3", 0.0}, {"last_step", nullptr}, {"cells", Json::array()}, {"faces", Json::array()}};
         if (params.contains("cells")) require(params.at("cells").is_array() && params.at("cells").size() <= 64,
             "Water observation accepts at most 64 cells.");
+        if (params.contains("points")) {
+            const auto& points=params.at("points");
+            require(points.is_array() && points.size()<=64,"Water observation accepts at most 64 world points.");
+            result["points"]=Json::array();
+            for (const auto& point : points) {
+                require(point.is_array() && point.size()==3,"Water world points use [x, y, z].");
+                const auto coordinate=[&](std::size_t axis) {
+                    const auto& value=point[axis];
+                    require(value.is_number(),"Water world coordinates must be finite numbers.");
+                    const double number=value.get<double>();
+                    require(std::isfinite(number),"Water world coordinates must be finite numbers.");
+                    return number;
+                };
+                const double x=coordinate(0),y=coordinate(1),z=coordinate(2);
+                const auto column=region ? region->grid().sample_world(x,z) : std::nullopt;
+                Json row{{"point_world",point},{"column",nullptr},{"submersion_m",0.0}};
+                if (column) {
+                    row["column"]={{"cell",{column->cell.x,column->cell.z}},{"floor_height_m",column->floor_height_m},
+                        {"surface_height_m",column->surface_height_m},{"depth_m",column->depth_m}};
+                    row["submersion_m"]=column->submersion_at(y);
+                }
+                result["points"].push_back(std::move(row));
+            }
+        }
         if (!region) return result;
         const auto& grid = region->grid();
         result["plan_sha256"] = region->plan_sha256();
@@ -102,6 +127,8 @@
             result["surface_ripples"] = water::surface_ripples_json(*ripples);
         if (!region->surface_wave_layers().empty())
             result["surface_wave_layers"] = water::surface_wave_layers_json(region->surface_wave_layers());
+        if (const auto& listener_audio = region->listener_audio())
+            result["listener_audio"] = water::listener_audio_json(*listener_audio);
         if (params.contains("cells")) for (const auto& request : params.at("cells")) {
             require(request.is_array() && request.size() == 2, "Water observation cells use [x, z] indices.");
             const auto x = revision(request[0]), z = revision(request[1]);

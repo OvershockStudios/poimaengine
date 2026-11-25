@@ -1,8 +1,19 @@
 # Implementation status
 
-Updated 2026-11-25 for **0.0.412**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-25 for **0.0.413**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.413 adds [waterline audio](SHALLOW_WATER.md#author-the-waterline-sound-transition)
+and guarded point sampling of committed water columns. The native fixture
+raised water around a listener, moved the listener to a dry cell and compared
+the stereo WAV to an independent filter calculation. Windows and Ubuntu
+agreed within 0.000000008 sample amplitude. A fresh-process save restored the
+same depth and blend target. A relocated Windows bundle reproduced the
+submerged capture with the source project moved aside. Ubuntu passed 13
+suites. This checkpoint qualifies captured PCM. The underwater render and
+acoustic propagation through water are separate work.
+[Results](evidence/m2-water-listener-413.json)
 
 Version 0.0.412 adds opt-in [GPU camera visibility](GPU_VISIBILITY.md) for
 rigid indexed world meshes. In the 512-plant fixture, a mixed view kept

@@ -5,6 +5,7 @@
 #include "poima/gameplay_player_preferences.hpp"
 #include "poima/jobs.hpp"
 #include "poima/water_region.hpp"
+#include "audio_water.hpp"
 #include "poima/snow.hpp"
 #include "poima/snow_releases.hpp"
 #include "poima/snow_sole.hpp"
@@ -2714,6 +2715,7 @@ void Runtime::component_edit(const std::string& type,const std::string& entity,c
 const SoundState& Runtime::sound_state() const { return impl_->sounds; }
 AudioSnapshot Runtime::audio_snapshot(const std::string& listener) const {
     AudioSnapshot result;result.listener=impl_->registry.get<Node>(impl_->find(listener)).world;
+    result.water_medium=audio_detail::listener_water_medium(water_region(),result.listener);
     for(const auto& source:impl_->topology->acoustic_geometry) {
         auto g=source;g.world=multiply(impl_->registry.get<Node>(impl_->find(g.entity)).world,g.world);result.geometry.push_back(std::move(g));
     }

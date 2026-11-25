@@ -1,0 +1,117 @@
+{
+  "checkpoint": "0.0.413",
+  "parent_commit": "9328239",
+  "schema_revision": 212,
+  "source_sha256": {
+    "CMakeLists.txt": "3575c14b076975aaf1c5671461bdb1f1b1e338361acc7cb4ec58f1654cce0c33",
+    "cmake/runtime.json.in": "4fa83e41c2344de36b9cdb5abec85cc9b2d8f5945597c13aadaacf6bdf503d29",
+    "include/poima/audio.hpp": "75d94057652b0988c30526807a7a8186b47728f625acc524bc98b77451f9655b",
+    "include/poima/shallow_water.hpp": "25b0dea69645a8efc71ea34dcd52959f1bf27a8e2aa62bba1f78e12b43413c9c",
+    "include/poima/water_region.hpp": "23165fad4b1fa4d934f702564b06a9fe0318da6567dc755b66eb67f091007977",
+    "include/poima/water_region_definition.hpp": "94fc0857161b7ea730d37db7735c1ae2647692afbab4c5581205e1a0af08beb5",
+    "include/poima/world.hpp": "1cb9c4c208cc4c404c9bd42f2c261f8cb6337295e845cb227794662c02a88201",
+    "src/audio.cpp": "14ce90dc6196f76eb9704e5602a1e16da116f52874796f907fef6e40fcf5053d",
+    "src/audio_stream.cpp": "89e6b859317de436110b907dbc8ce1fa1e48f14d701d30f724401fd0f685acdd",
+    "src/audio_water.hpp": "3558e3433b7b95511f3a14a0a8645d19dc67c2d6551b4218e71f8f07d39e6980",
+    "src/core.cpp": "fcaa6634e0f8de7d40090f266ae3a911c4ee09e18c390009508d0add3da726d5",
+    "src/project.cpp": "b6d5dfa0dfbed3a59bff31110242fe4d1d1135f1c8d1486627e534afe243f9b4",
+    "src/runtime.cpp": "0b5909db50d51edc509ed03764e59113557ee1bd815492acded01571e0c1bd6b",
+    "src/water_asset.cpp": "665607ea482cd289a59b82af013e6f4bce31caf5a1dba851d3ff71d416548196",
+    "src/water_region.cpp": "c8061b02cd2c7ff09d1738a8e4168baaa1bf1a0c24c6f5b4f5f00394ee2dd914",
+    "src/world.cpp": "b33b630cd9dccb3b36150404240ee41f021fced5124b2d9f4348d2a741e26505",
+    "src/world_content.cpp": "2d37dc93285335317e5da7142d66403332f8a470c63fa8ecabd4019e54f19582",
+    "src/world_schema.cpp": "bcf1285ef03d1b1bb33015b50223aacba5a2ce0dc2d55e0de76f3a401ef1797c",
+    "src/world_water_service.inc": "189caf857759f7b480d4c0225633f37ba4479a6e4e13426b43b32947c9df3cef",
+    "tests/water_listener_audio_contract.py": "3f66366af354524478f14ae370a51c7ccc171b478c82eee067711d803936bfe9"
+  },
+  "fixture": {
+    "sample_rate": 48000,
+    "stream_frames": 14400,
+    "transition_frames": 2400,
+    "frequencies_hz": [
+      200,
+      6000
+    ],
+    "profile": {
+      "cutoff_hz": 900,
+      "gain": 0.6,
+      "full_depth_m": 0.5
+    },
+    "checks": [
+      "Validated schema and v1 and v5 package selection",
+      "Checked dry cell, bed, below bed, surface, interior seam, exterior edge and finite distant point",
+      "Rejected malformed and oversized points and stale ticks",
+      "Matched dry PCM before submersion and after surface exit",
+      "Compared both channels of the replay and frozen capture against a digital filter oracle",
+      "Replayed the same receipt without duplicating work",
+      "Restored point observations and listener target in a fresh process"
+    ]
+  },
+  "windows": {
+    "binary_sha256": "da45739b3ac02dc75486a22ff863e6d65a8642d0ef8f90118c13d36cc37deefd",
+    "desktop_bridge_sha256": "d3c0614e4b953b8fff2ad58f19a0176bc3097b4ddb90297a3107bec35983851d",
+    "runtime_sha256": "d244c301bdfd84e1987124cad0bf6a733aa167d040ffde60708200bff39804de",
+    "evidence_sha256": "ac8efebd04906db57bae43d5052aad5f4a318a24382ad3c3d16de6d3ef6d39cc",
+    "stream_error": 7.41263855852381e-09,
+    "frozen_error": 3.721207175733099e-09,
+    "amplitude_ratios": [
+      0.5856097677796295,
+      0.09096516454410632
+    ],
+    "restored_target": {
+      "cutoff_hz": 900.0,
+      "gain": 0.6,
+      "submersion_m": 0.25,
+      "target_blend": 0.5
+    },
+    "stream_wav_sha256": {
+      "dry": "5285f1272aa558c8a815028cd1c5e776f6c7e30298b6ca843bd45194cf5244cb",
+      "wet": "e6dac275c855b65cc133733daddd8d4c0060bd8a4669ef7b5b9787adc0b80168"
+    },
+    "relocated_frozen_wav_sha256": "a08a05ae09a528c75582e095ca4ceab0ac95aded8d957143143cbc05529360ee",
+    "regression": {
+      "audio_contract_passed": 22,
+      "audio_contract_skipped": 7,
+      "world_water_contract": "passed with relocated asset closure",
+      "world_water_rain_contract": "passed"
+    }
+  },
+  "ubuntu": {
+    "stream_error": 7.3909487419143716e-09,
+    "frozen_error": 3.7189533536041708e-09,
+    "amplitude_ratios": [
+      0.585609768481172,
+      0.09096516221906824
+    ],
+    "restored_target": {
+      "cutoff_hz": 900.0,
+      "gain": 0.6,
+      "submersion_m": 0.25,
+      "target_blend": 0.5
+    },
+    "suites": [
+      "audio_contract",
+      "audio_reflections_native",
+      "audio_save_native",
+      "cli_contract",
+      "editor_audio_native",
+      "project_contract",
+      "shallow_water_native",
+      "water_listener_audio_contract",
+      "water_region_native",
+      "water_region_scene_native",
+      "world_audio_native",
+      "world_water_contract",
+      "world_water_rain_contract"
+    ],
+    "binary_sha256": "0fad27c068463fcee1247d9152877f30b9966832a69fb9d90aa0784c41ec4f80",
+    "evidence_sha256": "36a11d0a3928c8a34bfef6392ecefc51808ccb98e05f869ed16548ce16260ba5"
+  },
+  "retained_rejections": [
+    "Initial build relay omitted its patch heredoc marker. Source was unchanged and the corrected relay built successfully.",
+    "The first Linux build target used a hyphen instead of the registered underscore. The corrected invocation built all requested targets.",
+    "The original fixture moved its listener six metres in one tick. The runtime rejected the motion above 100 metres per second. Both platforms passed after the fixture used a one-metre move into a dry cell.",
+    "The first Windows water regression invocation passed an unsupported output option. The corrected CLI args retained the test report and passed."
+  ],
+  "scope": "Native captured PCM and standalone package closure. No claim of underwater optics, fluid propagation acoustics or interactive device listening qualification."
+}

@@ -177,14 +177,25 @@ nlohmann::json surface_wave_layers_json(std::span<const SurfaceRipples> layers) 
     return result;
 }
 
+nlohmann::json listener_audio_json(const ListenerAudio& profile) {
+    return {{"cutoff_hz", profile.cutoff_hz}, {"gain", profile.gain},
+        {"full_depth_m", profile.full_depth_m}};
+}
+
 Region::Region(const RegionDefinition& definition)
     : grid_(initial_grid(definition)), initial_depths_m_(definition.initial_depths_m),
       faces_(definition.faces), exchanges_(definition.exchanges), plan_sha256_(definition.plan_sha256),
       rain_cells_(definition.rain_cells), surface_ripples_(definition.surface_ripples),
-      surface_wave_layers_(definition.surface_wave_layers) {
+      surface_wave_layers_(definition.surface_wave_layers), listener_audio_(definition.listener_audio) {
     if (surface_ripples_)
         validate_surface_ripples(*surface_ripples_);
     validate_wave_layers(surface_wave_layers_);
+    if (listener_audio_) {
+        const auto& profile = *listener_audio_;
+        if (!(profile.cutoff_hz >= 80 && profile.cutoff_hz <= 8000 && unit_interval(profile.gain) &&
+              profile.full_depth_m >= .01 && profile.full_depth_m <= 10))
+            throw std::invalid_argument("Water listener audio needs cutoff_hz in [80,8000], gain in [0,1] and full_depth_m in [0.01,10].");
+    }
 
     const auto& config = grid_.config();
     if (initial_depths_m_.empty())

@@ -131,6 +131,7 @@ Reply capabilities() {
         ",\"cloud_shadows\":" + boolean(POIMA_RENDER_SMOKE != 0 && POIMA_SIMULATION != 0) +
         ",\"sound_events\":" + boolean(POIMA_SIMULATION != 0) + ",\"audio_stream_capture\":" + boolean(POIMA_AUDIO != 0 && POIMA_SIMULATION != 0) + ",\"audio_authoring\":true,\"wav_import\":true,\"audio_capture\":" + boolean(POIMA_AUDIO != 0) +
         ",\"audio_device_playback\":" + boolean(POIMA_AUDIO != 0 && POIMA_RENDER_SMOKE != 0 && POIMA_SIMULATION != 0) +
+        ",\"water_listener_audio\":" + boolean(POIMA_AUDIO != 0 && POIMA_SIMULATION != 0) +
         ",\"navigation\":" + boolean(runtime_navigation_available()) +
         ",\"physics_queries\":" + boolean(POIMA_SIMULATION != 0) +
         ",\"kinematic_motion\":" + boolean(POIMA_SIMULATION != 0) +

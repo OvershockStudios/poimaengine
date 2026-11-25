@@ -25,6 +25,8 @@ Use `windows-runtime` instead for the native Windows build. The SDK is pinned to
 
 Capabilities distinguish `audio_authoring`, `wav_import`, frozen `audio_capture`, logical `sound_events`, `audio_stream_capture` and optional `audio_device_playback`. Poima 0.0.16 adds [sound events, temporal recording and player output](AUDIO_EVENTS.md); the snapshot methods on this page retain their original behavior. The optional backend uses Steam Audio's CPU scene implementation with an SSE2 ceiling. Console implementations remain unqualified.
 
+An audio-enabled simulation can blend the spatial mix through an authored low-pass and gain as the listener enters water. The captured mix and player share that presentation path. Inspect the listener's committed depth and the blend target before judging the audible transition. [Waterline sound transition](SHALLOW_WATER.md#author-the-waterline-sound-transition)
+
 ## Import and author
 
 `asset.audio.import {"source":"path/to/clip.wav"}` imports mono, 48,000 Hz little-endian WAV containing PCM16 or IEEE float32. Source paths resolve against the world document's directory. Other rates/channels/compression currently return an explicit error; automatic resampling, stereo beds and compressed streaming will be separate import modes. Sources are bounded to 32 MiB, with clips of 1–2,880,000 frames (60 seconds). Samples must be finite and in [-1,1].

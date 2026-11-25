@@ -353,6 +353,7 @@ Json project_summary(const Project& p) {
     if(p.content.needs_water_rain)result["needs_water_rain"]=true;
     if(p.content.needs_water_ripples)result["needs_water_ripples"]=true;
     if(p.content.needs_water_wave_layers)result["needs_water_wave_layers"]=true;
+    if(p.content.needs_water_listener_audio)result["needs_water_listener_audio"]=true;
     if(p.content.needs_output_grade)result["needs_output_grade"]=true;
     if(p.content.needs_auto_exposure)result["needs_auto_exposure"]=true;
     if(p.content.needs_atmosphere_sky)result["needs_atmosphere_sky"]=true;
@@ -469,6 +470,8 @@ void require_scene_feature_support(const WorldPackageContent& content, const Jso
         "Water surface ripples require a compatible Vulkan runtime.");
     require(!content.needs_water_wave_layers || runtime.at("features").value("water_wave_layers", false),
         "Water wave layers require a compatible Vulkan runtime.");
+    require(!content.needs_water_listener_audio || runtime.at("features").value("water_listener_audio", false),
+        "Water listener audio requires a compatible audio and simulation runtime.");
     require(!content.needs_particles || runtime.at("features").value("scene_particles", false),
         "Project particle emitters require a compatible particle runtime.");
     require(!content.needs_sprite_particles || runtime.at("features").value("scene_particle_sprites", false),
@@ -492,10 +495,12 @@ Json runtime_spec(const std::string& bytes,std::string_view expected_version=bui
     const auto& features=value.at("features");
     fields(features,{"simulation","renderer","audio","managed","editor","native_gameplay","game_ui",
         "navigation","navigation_obstacles","asset_provenance","project_post_effects","water_regions","water_rain",
-        "water_ripples","water_wave_layers","snow_water_regions","scene_particles","scene_particle_sprites",
+        "water_ripples","water_wave_layers","water_listener_audio","snow_water_regions","scene_particles","scene_particle_sprites",
         "surface_marks","surface_mark_masks","mesh_lod","output_grade","auto_exposure","atmosphere_sky","aerial_perspective","volumetric_clouds","cloud_shadows","screen_reflections","foliage_motion",
         "height_fog","physics_checkpoint","fsr3_upscaler"},{"simulation","renderer","audio","managed","editor"});
     for(const auto& feature:features)require(feature.is_boolean(),"Runtime feature flags must be Boolean.");
+    require(!features.value("water_listener_audio",false) || features.at("audio")==true,
+        "Runtime water listener audio requires audio support.");
     require(!features.value("aerial_perspective",false) || features.value("atmosphere_sky",false),
         "Runtime aerial perspective requires the atmospheric sky feature.");
     require(!features.value("volumetric_clouds",false) || features.value("atmosphere_sky",false),
@@ -541,6 +546,7 @@ struct VerifiedGame {
     bool needs_cloud_shadows=false;
     bool needs_water_ripples=false;
     bool needs_water_wave_layers=false;
+    bool needs_water_listener_audio=false;
     bool needs_screen_reflections=false;
     bool needs_foliage_motion=false;
     bool needs_height_fog=false;
@@ -599,6 +605,7 @@ VerifiedGame verify_game(const std::string& filename,std::string_view expected_v
     result.needs_cloud_shadows=content.needs_cloud_shadows;
     result.needs_water_ripples=content.needs_water_ripples;
     result.needs_water_wave_layers=content.needs_water_wave_layers;
+    result.needs_water_listener_audio=content.needs_water_listener_audio;
     result.needs_screen_reflections=content.needs_screen_reflections;
     result.needs_foliage_motion=content.needs_foliage_motion;
     result.needs_height_fog=content.needs_height_fog;
@@ -1040,6 +1047,7 @@ Reply inspect_game(const std::string& manifest,const std::string& expected_bundl
         if(game.needs_cloud_shadows)result["needs_cloud_shadows"]=true;
         if(game.needs_water_ripples)result["needs_water_ripples"]=true;
         if(game.needs_water_wave_layers)result["needs_water_wave_layers"]=true;
+        if(game.needs_water_listener_audio)result["needs_water_listener_audio"]=true;
         if(game.needs_screen_reflections)result["needs_screen_reflections"]=true;
         if(game.needs_foliage_motion)result["needs_foliage_motion"]=true;
         if(game.needs_height_fog)result["needs_height_fog"]=true;

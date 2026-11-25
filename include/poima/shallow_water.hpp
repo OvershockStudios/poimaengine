@@ -46,6 +46,11 @@ struct CellSample {
     double depth_m;
     double surface_height_m;
     double volume_m3;
+
+    // The surface itself is air. Points beneath the terrain bed are outside the water.
+    double submersion_at(double y_m) const noexcept {
+        return y_m >= floor_height_m && y_m < surface_height_m ? surface_height_m - y_m : 0;
+    }
 };
 
 struct StepReport {

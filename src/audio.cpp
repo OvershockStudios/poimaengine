@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "poima/audio.hpp"
+#include "audio_water.hpp"
 #include "audio_hrtf.hpp"
 #include "poima/assets.hpp"
 #include <algorithm>
@@ -145,6 +146,10 @@ AudioReport observe_audio(const AudioSnapshot& s,std::uint32_t frames) {
         mix_path(emitter,path.propagation_delay_samples,path.direction,params);
         if(path.reflection)mix_path(emitter,path.reflection->propagation_delay_samples,path.reflection->direction,
                                     audio_detail::reflection_filter(*path.reflection));
+    }
+    if (s.water_medium && s.water_medium->blend > 0) {
+        audio_detail::WaterFilter filter(*s.water_medium);
+        filter.process(report.samples, s.water_medium->blend);
     }
     report.dsp_ms=ms(mark);double squares=0;
     for(float sample:report.samples) { check(std::isfinite(sample),"Steam Audio produced nonfinite output.");report.peak=std::max(report.peak,std::abs(double(sample)));squares+=double(sample)*sample;if(std::abs(sample)>1)++report.over_range_samples; }

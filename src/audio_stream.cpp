@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "poima/audio.hpp"
 #include "audio_hrtf.hpp"
+#include "audio_water.hpp"
 #include <algorithm>
 #include <array>
 #include <chrono>
@@ -31,6 +32,11 @@ struct AudioStream::Impl {
     bool finished=false;
     AudioSnapshot snapshot;AudioReport paths;
 #if POIMA_AUDIO
+    // At most one 512-frame block is pending at a tick of 800 frames. It
+    // may span the previous and current committed listener observations.
+    std::optional<audio_detail::WaterFilter> water_filter;
+    std::uint64_t water_mix_boundary=0;
+    double previous_water_blend=0, water_blend=0;
     IPLContext context=nullptr;IPLHRTF hrtf=nullptr;
     struct DspPath {
         std::uint64_t delay=0;
@@ -155,11 +161,23 @@ struct AudioStream::Impl {
         });
         ++stats.blocks;
     }
+    void filter_water(std::span<float> samples) {
+        if (!water_filter) return;
+        const auto previous_frames = water_mix_boundary > cursor ?
+            std::min<std::uint64_t>(water_mix_boundary - cursor, samples.size() / 2) : 0;
+        const auto split = static_cast<std::size_t>(previous_frames * 2);
+        water_filter->process(samples.first(split), previous_water_blend);
+        water_filter->process(samples.subspan(split), water_blend);
+    }
 #endif
 };
 AudioStream::AudioStream(std::uint64_t tick,const AudioSnapshot& initial):impl_(std::make_unique<Impl>()) {
     check(audio_available(),"Audio stream is not built.");auto& s=*impl_;s.start=s.cursor=s.committed=tick*audio_tick_frames;s.snapshot=initial;s.paths=observe_audio(initial);s.stats.path_updates=1;
 #if POIMA_AUDIO
+    if (initial.water_medium) {
+        s.water_filter.emplace(*initial.water_medium);
+        s.previous_water_blend=s.water_blend=initial.water_medium->blend;
+    }
     IPLContextSettings settings{};settings.version=STEAMAUDIO_VERSION;settings.simdLevel=IPL_SIMDLEVEL_SSE2;Impl::status(iplContextCreate(&settings,&s.context));
     IPLAudioSettings audio{audio_rate,audio_block};IPLHRTFSettings hrtf{};hrtf.type=IPL_HRTFTYPE_DEFAULT;hrtf.volume=1;Impl::status(audio_detail::create_hrtf(s.context,&audio,&hrtf,&s.hrtf));
 #endif
@@ -169,12 +187,24 @@ AudioStreamStats AudioStream::stats() const { return impl_->stats; }
 std::vector<float> AudioStream::advance(std::uint64_t tick,const AudioSnapshot& snapshot,const std::vector<SoundVoice>& voices,bool finish) {
     auto& s=*impl_;check(!s.finished && tick*audio_tick_frames>=s.committed,"Audio stream cannot rewind or resume after finish.");
     check(tick*audio_tick_frames-s.committed<=audio_tick_frames,"Feed committed audio one simulation tick at a time.");
+#if POIMA_AUDIO
+    if (s.water_filter && tick * audio_tick_frames > s.committed) {
+        s.water_mix_boundary=s.committed;
+        s.previous_water_blend=s.water_blend;
+        s.water_blend=snapshot.water_medium ? snapshot.water_medium->blend : 0;
+    }
+#endif
     s.committed=tick*audio_tick_frames;
 #if POIMA_AUDIO
     const auto start=std::chrono::steady_clock::now();s.synchronize(snapshot,voices);
     std::vector<float> result;result.reserve(4*audio_block);std::array<float,2*audio_block> block{};
     while(s.cursor+audio_block<=s.committed || (finish && s.cursor<s.committed)) {
-        s.block(block);const auto count=static_cast<std::size_t>(std::min<std::uint64_t>(audio_block,s.committed-s.cursor));result.insert(result.end(),block.begin(),block.begin()+static_cast<std::ptrdiff_t>(2*count));s.cursor+=count;
+        s.block(block);
+        const auto count=static_cast<std::size_t>(std::min<std::uint64_t>(audio_block,s.committed-s.cursor));
+        const auto committed_samples = std::span(block).first(count * 2);
+        s.filter_water(committed_samples);
+        result.insert(result.end(),committed_samples.begin(),committed_samples.end());
+        s.cursor+=count;
     }
     for(float v:result) { check(std::isfinite(v),"Nonfinite streamed audio.");s.stats.peak=std::max(s.stats.peak,std::abs(double(v)));if(std::abs(v)>1)++s.stats.over_range_samples; }
     s.stats.frames+=result.size()/2;s.stats.dsp_ms+=std::chrono::duration<double,std::milli>(std::chrono::steady_clock::now()-start).count();s.finished=finish;return result;

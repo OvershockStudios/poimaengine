@@ -19,6 +19,7 @@
 #include "pose_frames.hpp"
 #include "surface_measure.hpp"
 #include "audio_buses.hpp"
+#include "audio_water.hpp"
 #include "surface_marks_json.hpp"
 #include "attachment_outcome_json.hpp"
 #include "poima/runtime_ik.hpp"
@@ -611,6 +612,7 @@ public:
             if(content.needs_water_rain)result["needs_water_rain"]=true;
             if(content.needs_water_ripples)result["needs_water_ripples"]=true;
             if(content.needs_water_wave_layers)result["needs_water_wave_layers"]=true;
+            if(content.needs_water_listener_audio)result["needs_water_listener_audio"]=true;
             if(content.needs_snow_water)result["needs_snow_water"]=true;
             if(content.needs_physics_checkpoint)result["needs_physics_checkpoint"]=true;
             if(content.needs_output_grade)result["needs_output_grade"]=true;
@@ -905,6 +907,10 @@ public:
             {"nvrhi_errors", report.validation_errors}, {"build_version", build_metadata().version},{"render_diagnostics",render_diagnostics(report.diagnostics)},
             {"renderer", "forward static and skinned geometry; legacy preview or GGX metallic/roughness with PNG/JPEG material maps; authored lighting with optional cascaded directional, point and spot shadow maps; explicit preview fallback"}};
     }
+    static Json describe_water_audio(const AudioWaterMedium& medium) {
+        return {{"submersion_m", medium.submersion_m}, {"target_blend", medium.blend},
+            {"cutoff_hz", medium.cutoff_hz}, {"gain", medium.gain}};
+    }
     Json audio_dispatch(const std::string& method,const Json& params,bool live) const {
         const bool capture_audio=std::string_view(method).ends_with("capture");
         if(live) {
@@ -930,6 +936,12 @@ public:
             auto pose=[&](const std::string& id) { return live ? runtime_->entity(id).world : matrices.at(id); };
             require(std::any_of(source_definition.entities.begin(),source_definition.entities.end(),[&](const auto& e){return e.id==listener;}),"Audio listener entity does not exist.",-32004);
             snapshot.listener=pose(listener);
+            if (live) snapshot.water_medium=audio_detail::listener_water_medium(runtime_->water_region(),snapshot.listener);
+            else if (doc_.contains("water")) {
+                const auto asset=resolve_water_binding(doc_,asset_directory()).first;
+                const water::Region region(asset.definition);
+                snapshot.water_medium=audio_detail::listener_water_medium(&region,snapshot.listener);
+            }
             Json geometry=Json::array();
             for(const auto& e:source_definition.entities) {
                 if(e.emitter && e.emitter->enabled)snapshot.sources.push_back({e.id,*e.emitter,pose(e.id)});
@@ -965,6 +977,7 @@ public:
                 {"geometry",geometry},{"triangles",report.triangles},{"sources",paths},{"scene_ms",report.scene_ms},{"simulation_ms",report.simulation_ms},{"dsp_ms",report.dsp_ms},
                 {"reflections",snapshot.early_reflections},{"diffraction",false},{"device_playback",false},{"snapshot_policy","fresh synchronous frozen geometry/poses; capture restarts clips at sample zero"}};
             if(snapshot.early_reflections)result["reflection_budget_exceeded"]=report.reflection_budget_exceeded;
+            if(snapshot.water_medium)result["listener_water"]=describe_water_audio(*snapshot.water_medium);
             if(capture_audio) {
                 const auto bytes=audio_wave(report.samples,2);const auto utf8=fs::path(std::u8string(output.begin(),output.end()));write_flushed(utf8,bytes);
                 result["capture"]={{"path",output},{"format","WAV IEEE float32"},{"sample_rate",audio_rate},{"channels",2},{"frames",frame_count},{"sha256",content_hash(bytes)},{"peak",report.peak},{"rms",report.rms},{"over_range_samples",report.over_range_samples}};
@@ -1057,13 +1070,28 @@ public:
             audio.early_reflections=reflections.get<bool>();
             return audio;
         };
-        std::unique_ptr<AudioStream> stream;try { stream=std::make_unique<AudioStream>(expected,snapshot()); }catch(const std::exception& e) { throw Error(-32070,e.what()); }
+        AudioSnapshot initial_audio;
+        std::unique_ptr<AudioStream> stream;
+        try {
+            initial_audio=snapshot();
+            stream=std::make_unique<AudioStream>(expected,initial_audio);
+        }catch(const std::exception& e) { throw Error(-32070,e.what()); }
         std::vector<float> pcm;pcm.reserve(static_cast<std::size_t>(total*audio_tick_frames*2));
         auto receipts=playback_receipts_;if(receipts.size()==32)receipts.erase(receipts.begin());receipts.push_back({{"params",normalized},{"result",Json::object()}});
         Json result={{"session_id",runtime_id_},{"previous_tick",expected},{"listener",listener},{"replayed",false},{"success",false},{"capture",nullptr}};
         if(reflections.get<bool>())result["early_reflections"]=true;
+        if (initial_audio.water_medium) {
+            result["listener_water"]={{"initial",describe_water_audio(*initial_audio.water_medium)},{"final",nullptr},
+                {"transition_frames",audio_detail::WaterFilter::transition_frames}};
+        }
         try {
-            auto append=[&](bool finish=false) { auto block=stream->advance(runtime_->inspect().tick,snapshot(),runtime_->sound_state().voices(),finish);pcm.insert(pcm.end(),block.begin(),block.end()); };
+            auto medium=initial_audio.water_medium;
+            auto append=[&](bool finish=false) {
+                const auto audio=snapshot();
+                auto block=stream->advance(runtime_->inspect().tick,audio,runtime_->sound_state().voices(),finish);
+                pcm.insert(pcm.end(),block.begin(),block.end());
+                medium=audio.water_medium;
+            };
             bool replaced=false;
             for(auto& segment:segments) {
               for(std::uint32_t i=0;i<segment.ticks;++i) {
@@ -1075,6 +1103,8 @@ public:
               if(replaced)break;
             }
             if(!replaced)append(true);
+            if (medium && initial_audio.water_medium)
+                result["listener_water"]["final"]=describe_water_audio(*medium);
             const auto bytes=audio_wave(pcm,2);write_flushed(fs::path(std::u8string(output.begin(),output.end())),bytes);
             result["capture"]={{"path",output},{"sha256",content_hash(bytes)},{"frames",pcm.size()/2},{"channels",2},{"sample_rate",audio_rate},{"format","WAV IEEE float32"}};result["success"]=true;result["detail"]="Committed simulation recorded with persistent direct/HRTF voices; no audio device.";
         }catch(const std::exception& e) { result["detail"]=e.what(); }
