@@ -15,6 +15,12 @@ nlohmann::json swell_variation_json(const WaterSwellVariation& profile);
 nlohmann::json listener_audio_json(const ListenerAudio& profile);
 nlohmann::json optics_json(const WaterOptics& profile);
 
+struct SurfaceEntry {
+    double fraction;
+    std::array<double,3> position_m, normal;
+    std::optional<Cell> cell; // The offshore plane has no cell.
+};
+
 // Advances one frozen authored region at the runtime's fixed tick rate.
 class Region {
 public:
@@ -35,6 +41,8 @@ public:
     std::optional<CellSample> sample_world(double x_m,double z_m,
         std::optional<std::array<double,3>>* surface_normal=nullptr) const;
     std::optional<std::array<double,2>> offshore_levels(double x_m,double z_m) const noexcept;
+    std::optional<SurfaceEntry> surface_entry(const std::array<double,3>& from,
+                                             const std::array<double,3>& to) const;
     double submersion_at(double x_m,double y_m,double z_m) const;
     std::uint64_t cumulative_rain_nm() const noexcept { return cumulative_rain_nm_; }
     double cumulative_rain_m3() const noexcept;

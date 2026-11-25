@@ -37,11 +37,13 @@
             if(source.expire_on_contact) {
                 auto& trace=sources.back()["surface_collision"];
                 trace={{"mode","expire"},{"last_step",nullptr}};
+                if(source.water_contact)trace["water_contact"]=true;
                 if(const auto& step=source.contacts) {
                     Json first=nullptr;
                     if(const auto& contact=step->first) {
                         first={{"particle",std::to_string(contact->particle)},
-                            {"receiver",contact->receiver},{"position_m",contact->position_m},
+                            {"receiver",contact->receiver.empty() ? Json(nullptr) : Json(contact->receiver)},
+                            {"position_m",contact->position_m},
                             {"normal",contact->normal ? Json(*contact->normal) : Json(nullptr)},
                             {"triangle",contact->triangle ? Json(*contact->triangle) : Json(nullptr)}};
                         if(!contact->surface.empty())first["surface"]=contact->surface;

@@ -1,8 +1,18 @@
 # Implementation status
 
-Updated 2026-11-25 for **0.0.433**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-25 for **0.0.434**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.434 adds [swept water entry](SHALLOW_WATER.md#trace-entry-into-water)
+and [water-specific particle contacts](PARTICLES.md#splash-on-the-water-surface).
+The native query shares the committed stages, fitted swell and offshore
+plane. Forward AMD and deferred NVIDIA captured a rain splash after moving
+cover, with identical per-device images after reopening the save in a
+relocated game. Ubuntu passed the headless fixture and nine focused suites.
+Splash particles are visual effects. Wave impulses from particle contacts
+and representative scene costs remain open.
+[Results and scope](evidence/m2-particle-water-contact-434.json)
 
 Version 0.0.433 adds [collision surface names](PHYSICS_INTERACTIONS.md#name-a-collision-surface)
 and [named particle impact routes](PARTICLES.md#vary-a-burst-by-surface).

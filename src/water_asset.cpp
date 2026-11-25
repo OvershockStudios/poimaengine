@@ -458,15 +458,19 @@ Json region_authoring_schemas() {
 }
 
 Json region_runtime_schema() {
+    const auto endpoint=array(range("number",-1e6,1e6),3,3);
     auto result = object({{"session_id", id_schema}, {"tick", tick_schema},
         {"cells", array(array(range("integer", 0, max_region_side - 1), 2, 2), 0, 64)},
-        {"points", array(array(Json{{"type", "number"}}, 3, 3), 0, 64)}}, {"session_id", "tick"});
+        {"points", array(array(Json{{"type", "number"}}, 3, 3), 0, 64)},
+        {"segments", array(object({{"from_world",endpoint},{"to_world",endpoint}},
+            {"from_world","to_world"}),0,64)}}, {"session_id", "tick"});
     result["description"] = "Read the region identity, latest volume receipt, authored face controls and up to 64 addressed cells at a committed tick."
         " Rain-enabled regions also report catchment cells and per-step and cumulative rain supply."
         " A selected surface_ripples profile is reported even at slope zero."
         " Selected surface_wave_layers, surface_swell, swell_variation and optics are reported when authored."
         " Optional points in world [x,y,z] order report the containing column and the submersion depth."
-        " Wet point columns in a swell region include the geometric surface_normal. Cell volumes follow the conserved grid.";
+        " Wet point columns in a swell region include the geometric surface_normal. Cell volumes follow the conserved grid."
+        " Optional segments return the first top-surface entry for each world-space sweep, in request order.";
     return result;
 }
 } // namespace poima::water

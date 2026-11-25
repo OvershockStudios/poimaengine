@@ -444,6 +444,29 @@ moving box, a tagged cooked terrain mesh, suppression, fallback and a local
 route inside a spawned template. Use the same arguments as the contact
 fixture for headless or Vulkan checks. [Qualification results](evidence/m2-collision-surfaces-433.json)
 
+### Splash on the water surface
+
+Add `water_contact: true` to a world emitter with
+`surface_collision: "expire"`. Each moving drop can hit the committed
+[water surface](SHALLOW_WATER.md#trace-entry-into-water) as well as solid
+colliders. The earliest contact wins, with a solid taking precedence if
+the two hits are within one micrometre. A roof or ledge can catch a drop
+before it reaches water. In a scene without a bound region only solid
+contacts are available.
+
+Use the `water` route in `impact_burst.by_surface` to select a splash pool.
+For liquid contacts, `surface_collision.last_step.first` reports
+`surface: "water"`, a null `receiver` and `triangle`, and the point and
+normal of the water surface. The burst uses that pose, so a local spawn
+offset can lift the sprite above the surface. These visual impacts leave
+the simulated water volume and wave phase intact. Precipitation that feeds
+the grid continues to use the existing authored rain catchment rules.
+
+Export with a runtime that advertises `features.particle_water_contact`.
+The [water contact fixture](../tests/particle_water_contact_capture.py)
+checks the change from a solid impact to a rendered water splash when cover
+moves, including after opening a save in a relocated game.
+
 ## Native particle API
 
 The native [`poima::particles::System`](../include/poima/particles.hpp) advances

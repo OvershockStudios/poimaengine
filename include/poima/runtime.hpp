@@ -464,6 +464,7 @@ struct RuntimeParticleEmitter {
     std::optional<RuntimeParticleSprite> sprite;
     std::optional<RuntimeParticleRainProfile> rain;
     std::optional<RuntimeParticleImpactProfile> impact_burst{};
+    bool water_contact=false;
 };
 struct RuntimeParticleContact {
     std::uint64_t particle;
@@ -490,6 +491,7 @@ struct RuntimeParticleSource {
     bool expire_on_contact=false;
     std::optional<RuntimeParticleContactSample> contacts;
     std::optional<RuntimeParticleImpactProfile> impact_burst{};
+    bool water_contact=false;
 };
 struct RuntimeParticleObservation {
     bool active=false;

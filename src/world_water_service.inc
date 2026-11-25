@@ -97,7 +97,7 @@
     }
 
     Json water_inspect(const Json& params) const {
-        fields(params, {"session_id", "tick", "cells", "points"}, {"session_id", "tick"});
+        fields(params, {"session_id", "tick", "cells", "points", "segments"}, {"session_id", "tick"});
         runtime_guard(params);
         const auto tick = runtime_->inspect().tick;
         require(revision(params.at("tick")) == tick, "Runtime tick conflict.", -32009);
@@ -106,6 +106,31 @@
             {"volume_m3", 0.0}, {"last_step", nullptr}, {"cells", Json::array()}, {"faces", Json::array()}};
         if (params.contains("cells")) require(params.at("cells").is_array() && params.at("cells").size() <= 64,
             "Water observation accepts at most 64 cells.");
+        if (params.contains("segments")) {
+            const auto& segments=params.at("segments");
+            require(segments.is_array() && segments.size()<=64,"Water observation accepts at most 64 segments.");
+            const auto endpoint=[](const Json& value) {
+                require(value.is_array() && value.size()==3,"Water segment endpoints use [x, y, z].");
+                std::array<double,3> position{};
+                for(std::size_t i=0;i<position.size();++i) {
+                    require(value[i].is_number(),"Water segment coordinates must be finite numbers.");
+                    position[i]=value[i].get<double>();
+                    require(std::isfinite(position[i]) && std::abs(position[i])<=1e6,
+                        "Water segment coordinates must be within one million metres of the origin.");
+                }
+                return position;
+            };
+            auto& hits=result["segments"]=Json::array();
+            for(const auto& segment:segments) {
+                fields(segment,{"from_world","to_world"},{"from_world","to_world"});
+                const auto from=endpoint(segment.at("from_world")),to=endpoint(segment.at("to_world"));
+                const auto hit=region ? region->surface_entry(from,to) : std::nullopt;
+                if(!hit) {hits.push_back(nullptr);continue;}
+                const auto cell=hit->cell ? Json::array({hit->cell->x,hit->cell->z}) : Json(nullptr);
+                hits.push_back({{"fraction",hit->fraction},{"position_m",hit->position_m},
+                    {"normal",hit->normal},{"cell",cell},{"offshore",!hit->cell}});
+            }
+        }
         if (params.contains("points")) {
             const auto& points=params.at("points");
             require(points.is_array() && points.size()<=64,"Water observation accepts at most 64 world points.");

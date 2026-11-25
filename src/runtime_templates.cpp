@@ -213,6 +213,8 @@ void validate_runtime_templates(const RuntimeDefinition& definition) {
                     check(focus->entity!=entity.id && graph.contains(focus->entity),"Template camera focus target must reference another local entity.");
                 }
             }
+            check(!entity.particle_emitter || !entity.particle_emitter->water_contact ||
+                entity.particle_emitter->config.expire_on_contact,"Template particle water contact requires surface collision.");
             if(entity.particle_emitter && entity.particle_emitter->impact_burst) {
                 const auto& profile=*entity.particle_emitter->impact_burst;
                 check(entity.particle_emitter->config.expire_on_contact && valid_particle_impact_profile(profile),

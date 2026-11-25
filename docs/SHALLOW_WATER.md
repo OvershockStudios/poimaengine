@@ -223,6 +223,27 @@ The [swell fixture](../tests/water_surface_swell_capture.py) compares
 independent clipped wave prisms with rendered HDR and checks fresh-process
 save continuation, spatial audio and export admission.
 
+### Trace entry into water
+
+Pass up to 64 `segments` to `runtime.water.inspect` with the current
+`session_id` and `tick`. Each segment has `from_world` and `to_world`
+endpoints in metres as `[x, y, z]` vectors within ±1,000 km of the origin.
+The results follow request order. Each entry reports `fraction` from 0 to 1,
+`position_m`, an upward-facing unit `normal`, the `cell` as `[x, z]`,
+and `offshore`. A miss returns null. Offshore hits have a null cell.
+
+Entry is measured toward the wet side of the top surface. This includes
+descending onto flat water and crossing the sloped face of a swell. The
+query visits only the crossed grid cells. It uses the fitted wedges, dry
+bed clipping and saved wave phase for local water, and the fixed medium
+plane offshore. Short waves used for shading leave the entry position intact.
+Side entry through a grid wall and exit through the top are outside this
+query. Use the existing point query to inspect current submersion.
+[Uniform grid traversal reference](https://www.eecs.yorku.ca/~amana/research/grid.pdf)
+
+World particle emitters can [use this contact](PARTICLES.md#splash-on-the-water-surface)
+to stop drops and spawn splash effects.
+
 ### Vary the swell across a coast
 
 Set `swell_variation` alongside `surface_swell` in the plan and cook request.

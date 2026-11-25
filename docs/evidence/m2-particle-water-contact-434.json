@@ -1,0 +1,175 @@
+{
+  "version": "0.0.434",
+  "authoring_schema_revision": 230,
+  "date": "2026-11-25",
+  "base_commit": "72a490695533db1597c55b979a27b00c9e70f3a6",
+  "scope": "Committed top-surface segment query and optional water contacts for world particles. Gravity-driven rain, solid interception, same-tick splash pose and relocated save replay.",
+  "source_sha256": {
+    "CMakeLists.txt": "75f4a6c232f27e010ad46a12f8c3267d71434ddde51c96741f097f6ad7648c8a",
+    "cmake/runtime.json.in": "a6e2a14330101d9a321ac6c8cf072b32765e073e65e209330a42a4ecba69f7c1",
+    "include/poima/project.hpp": "40950c104c01b1d74ede73c0026d93e910e80636fddf5d3ec5501ee4a2708ae6",
+    "include/poima/runtime.hpp": "ab26142de88a90dba1a07b0d2c49a7c86ca68c4cee68c64218481ddb47a3e5ff",
+    "include/poima/water_region.hpp": "e0444477fd4cc8955ff924d7b60c174f23f003db29f220333fd74a95bc3203c1",
+    "include/poima/world.hpp": "07178517c15432cf887eb97398829842464960c6d877feaabf05035f2b5eca15",
+    "src/particle_emitter_json.cpp": "e98395c1d43403026caa33bd8a500b9d34a58fcfb24375600edd329583f14caa",
+    "src/project.cpp": "24e12355b40817c1af5a0500717737e141ecc8eba0afc0bbd5a75a02845690a0",
+    "src/runtime_particles.inc": "f5eabe4fb3d905148407740edb83f85293170b2afb1cc0cadc1fc68579f9c8dd",
+    "src/runtime_templates.cpp": "ecbe54f69ed17737437a8013b2655becf8fb0ec1ae59b0802da545e0c2b0fa31",
+    "src/water_asset.cpp": "53fa2e1d20d1c48a68815dab9480ecbe9e2952feb2b29b046433e478a7dcd211",
+    "src/water_surface_entry.cpp": "b161709767ee20e54069807759ef7e5337ac904232eb05dd65621e979f846c8f",
+    "src/world.cpp": "5561e44689ce2318550d88ba709273326f740135e51b820b6d5a6eda37a69ff1",
+    "src/world_content.cpp": "a72343ab2b806672d4bf7d962876a29049eb89574198916d3bed34edc3672787",
+    "src/world_particles.inc": "5b1421b65dae17932a6c994af1a41944dbfd9cca781212607a7a6545be5fc5a2",
+    "src/world_schema.cpp": "4c2d65ea6e1c688eebd6b2601aa31b1a477c9bfa7568f6d87f9b0436981ddc20",
+    "src/world_water_service.inc": "d84e320a72f1d567538af3d67e0233d603a782814f5a92a53ad1285d9ad41b54",
+    "tests/particle_water_contact_capture.py": "94768f63659fa9c6653dc90371a077f112894fedf6c212682882e22c69af6871",
+    "tests/water_region_native.cpp": "82a4d600366e745d3f225aa717a3db35ac06ae193123aa35b12340557fc04ab3"
+  },
+  "windows": {
+    "binary_sha256": "3494d41b3ce9268a9d19b79ead1778e75ea835639c7ed4a8914d935cdf878ae6",
+    "runtime_descriptor_sha256": "d86e84e6e0ae41688efd03c9b7a801a059aa555559b6cf22fa35d6fc8b5685d7",
+    "desktop_library_sha256": "49a16abeec4d0126841c66314f52e22e89a1fbb2140e22ecdb323f77435c0174",
+    "amd_forward": {
+      "adapter": "AMD Radeon(TM) Graphics",
+      "raw_evidence_sha256": "d1311b307a228df1f72d5ba83ee9be77e97d61d70a015d54e96b2c55304216dd",
+      "extent": [
+        240,
+        160
+      ],
+      "water_contact": {
+        "impact_emitter": "000000000000000000000000000003b7",
+        "normal": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "particle": "3",
+        "position_m": [
+          0.18,
+          0.27999999821186067,
+          -5.35
+        ],
+        "receiver": null,
+        "surface": "water",
+        "triangle": null
+      },
+      "two_way_diagonal_fraction": [
+        0.5,
+        0.5
+      ],
+      "matched_images_sha256": {
+        "closed": "1a6dd30d7b026f466fc73efd55389db413b430ec9873f31286697c19ad565ca4",
+        "open": "388fc7e136f71eba704204100aff9c4e00a9c320f307a64e602bc0ef55e2d803"
+      },
+      "splash_pixels": {
+        "before_moving_cover": 0,
+        "after_moving_cover": 49
+      },
+      "equivalent_continuations": [
+        "source",
+        "restored",
+        "relocated",
+        "fresh-save"
+      ],
+      "relocated_game": {
+        "source_unavailable": true,
+        "unchanged_files": 61,
+        "fresh_process_save": true
+      }
+    },
+    "nvidia_deferred": {
+      "adapter": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "raw_evidence_sha256": "240eeb7e8416de3021ee284ba4727b507e09f7be0781447df64a08fa90e7cf18",
+      "extent": [
+        240,
+        160
+      ],
+      "water_contact": {
+        "impact_emitter": "000000000000000000000000000003b7",
+        "normal": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "particle": "3",
+        "position_m": [
+          0.18,
+          0.27999999821186067,
+          -5.35
+        ],
+        "receiver": null,
+        "surface": "water",
+        "triangle": null
+      },
+      "two_way_diagonal_fraction": [
+        0.5,
+        0.5
+      ],
+      "matched_images_sha256": {
+        "closed": "96eff67a75d6b8aad72a09abef95d042ceb97c01cb7e264c9e81b2e7900c29e4",
+        "open": "67f7c23f962938d612c96eaecfd25e5b17ef53bcac22e4d85ef5381ca001a2b2"
+      },
+      "splash_pixels": {
+        "before_moving_cover": 0,
+        "after_moving_cover": 49
+      },
+      "equivalent_continuations": [
+        "source",
+        "restored",
+        "relocated",
+        "fresh-save"
+      ],
+      "relocated_game": {
+        "source_unavailable": true,
+        "unchanged_files": 61,
+        "fresh_process_save": true
+      }
+    },
+    "retained_named_surface_behavior": {
+      "reference_version": "0.0.433",
+      "reference_evidence_sha256": "d6bac952ea5f199224e474321ab90f7440595ff459d7a0bc55ef5398f1e38ef7",
+      "candidate_evidence_sha256": "e501db1a0cf7f7119745ea233848f9cc51fceb73285fcc0651f1e4ae9eb02ee8",
+      "same_selected_rays_and_particle_observations": true,
+      "same_captures": true
+    },
+    "runtime_without_water_contact_feature": {
+      "receipt_sha256": "d13552a2da671552657d261cb6ff37bada38b20518fcd03b697131f56986f2fe",
+      "published": false
+    }
+  },
+  "ubuntu_headless": {
+    "ctest_passed": [
+      "authoring_contract_identity",
+      "authoring_core_conformance",
+      "particle_scene_native",
+      "water_region_native",
+      "water_region_scene_native",
+      "world_particles_contract",
+      "world_session_native",
+      "world_water_contract",
+      "world_water_rain_contract"
+    ],
+    "fixture_evidence_sha256": "5dca948ac5befecf45e2536525421d951c84f3c612376d101a4b3521fd4e1279",
+    "binary_sha256": "96fc3665cdd6e0a0083dad75898a0806f346d082662ab7cc4d79edf7bd4ad602",
+    "runtime_descriptor_sha256": "aa9df6444a6af1478a480dd91b1f3e93b057a3c1f39b013fd0f78d3dbb747981",
+    "ctest_junit_sha256": "59dd9fc36c5da614ec63ab5b49c6857fac63d45920181cfd0a18e49eba80faaa",
+    "geometry_checks": [
+      "diagonal across an isolated wet cell in both directions",
+      "upward exit and dry sweep miss",
+      "endpoint on a shared cell edge",
+      "fitted bed rejects dry wedges",
+      "horizontal crossing of a sloped swell",
+      "exact restored entry at saved wave phase",
+      "fixed offshore entry on all four authored edges"
+    ]
+  },
+  "fixture_corrections": [
+    "The cooked float32 bed height determines the exact endpoint of the contact test.",
+    "The rendered witness uses a narrow fall and a wider splash so the next raindrop leaves the splash legible.",
+    "The native test compares cell coordinates explicitly."
+  ],
+  "remaining": [
+    "The offshore intersection follows the fixed medium plane.",
+    "Particle contacts are cosmetic. Dynamic wave impulses, game-scale budgets and exported fitted-water particle imagery are separate qualification."
+  ]
+}

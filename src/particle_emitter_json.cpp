@@ -120,7 +120,7 @@ Json curve_schema(double max_multiplier) {
 RuntimeParticleEmitter parse_particle_emitter(const Json& value) {
     fields(value, {"spawn_space", "simulation_space", "lifetime_ticks", "size_m", "linear_rgb"},
         {"seed", "particles_per_second", "live_limit", "emitting", "offset_m", "velocity_m_s", "acceleration_m_s2",
-            "burst", "sprite", "rain", "surface_collision", "impact_burst"});
+            "burst", "sprite", "rain", "surface_collision", "water_contact", "impact_burst"});
     RuntimeParticleEmitter result;
     auto& config = result.config;
     config.spawn_space = space(value.at("spawn_space"));
@@ -146,6 +146,11 @@ RuntimeParticleEmitter parse_particle_emitter(const Json& value) {
             config.live_limit >= 1 && config.live_limit <= particles::max_contact_particles_per_emitter,
             "Particle surface collision must be expire with world simulation and a live limit of 1..64.");
         config.expire_on_contact = true;
+    }
+    if (value.contains("water_contact")) {
+        require(value.at("water_contact")==true && config.expire_on_contact,
+            "Particle water_contact must be true and requires surface collision.");
+        result.water_contact = true;
     }
     if (value.contains("impact_burst")) {
         const auto& burst = value.at("impact_burst");
@@ -258,13 +263,14 @@ Json particle_emitter_schema() {
         {"velocity_m_s", limits}, {"acceleration_m_s2", v}, {"burst", burst}, {"sprite", std::move(sprite)},
         {"rain", std::move(rain)}, {"surface_collision", {{"const", "expire"},
             {"description", "Retire world particles on a swept centre contact with a static or kinematic collider."}}},
+        {"water_contact", {{"const", true}, {"description", "Include the committed water surface in swept contacts."}}},
         {"impact_burst", std::move(impact_burst)}},
         {"spawn_space", "simulation_space", "lifetime_ticks", "size_m", "linear_rgb"});
     result["description"] = "Fixed-tick billboards with optional translucent cooked image sprites. Spawn space selects birth axes. Simulation space selects whether live particles follow the source. Burst actions use named pressed edges. Authored rain uses world spaces, zero continuous rate and no explicit bursts.";
     result["if"] = {{"required", {"surface_collision"}}};
     result["then"] = {{"required", {"live_limit"}}, {"properties", {{"simulation_space", {{"const", "world"}}},
         {"live_limit", range("integer", 1, particles::max_contact_particles_per_emitter)}}}};
-    result["dependentRequired"] = {{"impact_burst", {"surface_collision"}}};
+    result["dependentRequired"] = {{"impact_burst", {"surface_collision"}}, {"water_contact", {"surface_collision"}}};
     return result;
 }
 

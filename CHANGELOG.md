@@ -2,6 +2,12 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.434
+
+- Let world particles hit the simulated water surface and spawn water-specific
+  effects. Inspect those surface crossings at the committed tick.
+  [Water contacts](docs/PARTICLES.md#splash-on-the-water-surface)
+
 ## 0.0.433
 
 - Name collision surfaces on boxes and meshes. Contact bursts can choose an

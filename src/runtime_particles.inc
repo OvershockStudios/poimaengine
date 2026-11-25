@@ -100,6 +100,8 @@
                 require(state.sources.size()<runtime_particle_limits.emitters,"Runtime particle emitter capacity exceeded, including draining sources.");
                 require(state.next_id<9007199254740991ULL,"Runtime particle emitter identity space exhausted.");
                 const auto& definition=*entity.particle_emitter;
+                require(!definition.water_contact || definition.config.expire_on_contact,
+                    "Particle water contact requires surface collision.");
                 require(definition.burst_count<=particles::max_burst && (definition.burst_count ? valid_input_action_name(definition.burst_action) : definition.burst_action.empty()),
                     "Particle emitter requires a valid named action and positive bounded burst count together.");
                 if(const auto& profile=definition.impact_burst) {
@@ -177,7 +179,13 @@
         RuntimeRay query{from,direction,distance,{}};
         if(!source.draining)query.ignore.push_back(source.entity);
         const auto& profile=source.definition.impact_burst;
-        const auto hit=physics_raycast(query,{},true,!sample.first || (profile && !profile->by_surface.empty()));
+        auto hit=physics_raycast(query,{},true,!sample.first || (profile && !profile->by_surface.empty()));
+        if(source.definition.water_contact && water_region) {
+            const auto liquid=water_region->surface_entry(from,to);
+            if(liquid && (!hit || liquid->fraction*distance+1e-6<hit->distance))
+                hit=RuntimeRayHit{"",liquid->fraction,liquid->fraction*distance,liquid->position_m,
+                    liquid->normal,std::nullopt,"water"};
+        }
         if(!hit)return false;
         ++sample.hits;
         const bool first=!sample.first;
@@ -261,7 +269,7 @@
             result.sources.push_back({id,source.entity,source.draining,state.system.emitter_status(id),sprite,
                 std::move(texture),source.definition.rain ? std::optional(source.rain) : std::nullopt,
                 source.definition.config.expire_on_contact,source.contacts,
-                source.draining ? std::nullopt : source.definition.impact_burst});
+                source.draining ? std::nullopt : source.definition.impact_burst,source.definition.water_contact});
         }
         return result;
     }

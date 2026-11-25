@@ -238,6 +238,16 @@ void swell_shares_cell_edges_and_restores_phase() {
     };
     Region live(definition);
     const double amplitude=.4/std::numbers::pi;
+    // Near-Z wedge has offsets of 0 and A along the edge and A/sqrt(2)
+    // at its center. A horizontal sweep enters the rising surface.
+    const auto y=1+amplitude*(.4+.2*(std::numbers::sqrt2-1));
+    const auto sloped=live.surface_entry({20.3,y,-9.8},{20.5,y,-9.8});
+    const auto dx=amplitude,dz=amplitude*(std::numbers::sqrt2-1);
+    const auto scale=1/std::hypot(dx,1.,dz);
+    require(sloped && sloped->cell && sloped->cell->x==0 && sloped->cell->z==0 && std::abs(sloped->fraction-.5)<1e-12 &&
+        std::abs(sloped->normal[0]+dx*scale)<1e-13 && std::abs(sloped->normal[2]+dz*scale)<1e-13 &&
+        std::abs(sloped->normal[1]-scale)<1e-13 &&
+        !live.surface_entry({20.5,y,-9.8},{20.3,y,-9.8}),"A fitted swell entry or its normal differs.");
     const auto at_border=live.sample_world(21,-9.65);
     require(std::abs(at_border->surface_height_m-(1+amplitude))<1e-13,"Swell crest differs at the shared edge.");
     for (double x : {21-1e-8,21+1e-8})
@@ -253,6 +263,11 @@ void swell_shares_cell_edges_and_restores_phase() {
     const auto restored=cold.sample_world(20.4,-9.8,&b);
     require(a && a==b && first->surface_height_m==restored->surface_height_m,
         "Cold-restored position or normal differs from the committed wave.");
+    const auto live_entry=live.surface_entry({20.4,2,-9.8},{20.4,0,-9.8});
+    const auto restored_entry=cold.surface_entry({20.4,2,-9.8},{20.4,0,-9.8});
+    require(live_entry && restored_entry && live_entry->position_m==restored_entry->position_m &&
+        live_entry->normal==restored_entry->normal && std::abs(live_entry->normal[1]-(*a)[1])<1e-14,
+        "Cold-restored crossings do not match the saved swell phase.");
 
     definition.surface_swell[0].wavelength_m=3.99;
     rejects<std::invalid_argument>([&] { (void)Region(definition); },"Undersampled swell was admitted.");
@@ -296,6 +311,10 @@ void offshore_joins_only_the_selected_edge() {
                 region.offshore_levels(shore.x,shore.z).has_value()==shore.outside_at_edge,
                 "The grid and offshore water disagree on boundary ownership.");
             const double x=shore.x+shore.dx*1e4,z=shore.z+shore.dz*1e4;
+            const auto entry=region.surface_entry({x,2,z},{x,0,z});
+            require(entry && !entry->cell && entry->normal==std::array{0.,1.,0.} &&
+                entry->position_m==std::array{x,1.,z} && entry->fraction==.5,
+                "The offshore entry differs from the shared medium plane.");
             require(region.offshore_levels(x,z)==std::optional(std::array{-19.,1.}) &&
                 region.submersion_at(x,.75,z)==.25 && region.submersion_at(x,-20,z)==0 &&
                 region.submersion_at(x,1,z)==0 &&
@@ -316,6 +335,39 @@ void offshore_joins_only_the_selected_edge() {
     rejects<std::invalid_argument>([&] { (void)Region(invalid); }, "An out-of-range offshore depth was accepted.");
 }
 
+void surface_segments_cross_cells_and_clip_to_the_wet_bed() {
+    RegionDefinition definition{
+        .config={.cells_x=4,.cells_z=4,.origin_x_m=17,.origin_z_m=-12,.relaxation_per_second=0},
+        .floor_heights_m=std::vector<double>(16,0),.initial_depths_m=std::vector<double>(16,0),
+        .plan_sha256=std::string(64,'f'),
+    };
+    definition.initial_depths_m[5]=.125;
+    Region region(definition);
+    for (bool reverse : {false,true}) {
+        const std::array<double,3> a{16,.75,-13},b{21,-.5,-8};
+        const auto hit=region.surface_entry(reverse ? std::array{b[0],a[1],b[2]} : a,
+            reverse ? std::array{a[0],b[1],a[2]} : b);
+        require(hit && hit->cell && hit->cell->x==1 && hit->cell->z==1 && hit->fraction==.5 &&
+            hit->position_m==std::array{18.5,.125,-10.5},"A diagonal sweep missed the isolated wet cell.");
+    }
+    require(!region.surface_entry({16,.75,-11.25},{21,-.5,-11.25}) &&
+        !region.surface_entry({18.5,0,-10.5},{18.5,.5,-10.5}),"An empty column or upward exit reported an entry.");
+    const auto boundary=region.surface_entry({18,1,-10.75},{18,.125,-10.75});
+    require(boundary && boundary->fraction==1 && boundary->cell && boundary->cell->x==1 && boundary->cell->z==1,
+        "An endpoint entry on a shared grid edge was lost.");
+
+    definition.config.cells_x=definition.config.cells_z=1;
+    definition.floor_heights_m={.4};
+    definition.initial_depths_m={.2};
+    definition.optics=poima::WaterOptics{.extinction_per_m={},.scattered_radiance={},.follow_terrain=true};
+    definition.shore_corner_heights_m={1,1,0,0};
+    Region shore(definition);
+    const auto wet=shore.surface_entry({17.5,1,-11.1},{17.5,0,-11.1});
+    require(wet && std::abs(wet->position_m[1]-.6)<1e-13 &&
+        !shore.surface_entry({17.5,1,-11.9},{17.5,0,-11.9}),
+        "Fitted water failed to clip the stage against its local bed.");
+}
+
 }
 
 int main() {
@@ -326,6 +378,7 @@ int main() {
         restore_and_step_are_atomic();
         swell_shares_cell_edges_and_restores_phase();
         offshore_joins_only_the_selected_edge();
+        surface_segments_cross_cells_and_clip_to_the_wet_bed();
         std::cout << "Water region tests passed.\n";
     } catch (const std::exception& error) {
         std::cerr << error.what() << '\n';
