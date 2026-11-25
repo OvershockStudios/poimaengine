@@ -183,7 +183,9 @@ nlohmann::json listener_audio_json(const ListenerAudio& profile) {
 }
 
 nlohmann::json optics_json(const WaterOptics& profile) {
-    return {{"extinction_per_m",profile.extinction_per_m},{"scattered_radiance",profile.scattered_radiance}};
+    nlohmann::json result{{"extinction_per_m",profile.extinction_per_m},{"scattered_radiance",profile.scattered_radiance}};
+    if(profile.refraction) result["refraction"]=true;
+    return result;
 }
 
 Region::Region(const RegionDefinition& definition)

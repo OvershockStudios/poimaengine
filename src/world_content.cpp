@@ -309,6 +309,7 @@ FrozenContent freeze_world_content(const Json& source, const fs::path& directory
         result.needs_water_wave_layers=!asset.definition.surface_wave_layers.empty();
         result.needs_water_listener_audio=asset.definition.listener_audio.has_value();
         result.needs_water_optics=asset.definition.optics.has_value();
+        result.needs_water_refraction=asset.definition.optics && asset.definition.optics->refraction;
         definition.water=std::move(asset.definition);
     }
     if(definition.snow)component_checked([&]{(void)snow::Region(definition);});

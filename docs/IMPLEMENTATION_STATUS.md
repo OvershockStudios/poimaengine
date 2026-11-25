@@ -1,8 +1,20 @@
 # Implementation status
 
-Updated 2026-11-25 for **0.0.414**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-25 for **0.0.415**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.415 adds [water refraction](SHALLOW_WATER.md#refract-the-view-across-the-surface).
+AMD forward and NVIDIA deferred passed 56 comparisons against independent
+Snell rays and 24 total-internal-reflection checks. A foreground marker
+blocked the shifted sample and the shader fell back to the original sightline.
+NVIDIA passed FSR Native AA, wave-driven changes between committed ticks,
+runtime admission, and a relocated capture. Eleven version 6 water and
+control images matched 0.0.414 exactly. Ubuntu passed 14 suites. In the
+12-frame 1080p fixture, the shared media pass averaged 0.71 ms on the RTX
+4070 Laptop GPU and 6.17 ms on the AMD integrated GPU with refraction
+enabled. Game-scale timing remains open.
+[Results](evidence/m2-water-refraction-415.json)
 
 Version 0.0.414 adds [transparent water optics](SHALLOW_WATER.md#author-transparent-water)
 for local terrain-bound regions. A rising water level submerged a fixed
@@ -11,7 +23,7 @@ RGB sightline comparisons, including exact raw HDR and opaque depth parity.
 Fresh save loads and a relocated Windows capture reproduced the submerged
 image. NVIDIA also exercised FSR Native AA and a scene with water wave
 layers, sky IBL and aerial perspective. The MSAA path retained the opaque
-surface. Ubuntu passed 14 suites. Refraction and caustics remain open.
+surface. Ubuntu passed 14 suites. Surface caustics remain open.
 [Results](evidence/m2-water-optics-414.json)
 
 Version 0.0.413 adds [waterline audio](SHALLOW_WATER.md#author-the-waterline-sound-transition)

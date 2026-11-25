@@ -134,7 +134,7 @@ WaterView project_water_view(const SceneWaterVolume& water,const std::array<doub
         parameters.radiance_wave_mode[axis]=static_cast<float>(scatter);
     }
     parameters.camera_cell_size[3]=static_cast<float>(water.cell_size_m);
-    parameters.dimensions=water.cells_x|(water.cells_z<<16u);
+    parameters.dimensions=water.cells_x|(water.cells_z<<8u)|(water.optics.refraction ? 1u<<16u : 0u);
     parameters.radiance_wave_mode[3]=wave_mode;
     const double x=local[0]/water.cell_size_m,z=local[2]/water.cell_size_m;
     if (x>=0 && z>=0 && x<water.cells_x && z<water.cells_z) {

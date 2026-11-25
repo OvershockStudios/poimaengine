@@ -183,7 +183,7 @@ void compute_main(uint3 dispatch_id : SV_DispatchThreadID) {
     const float water_depth = saturate(depth);
     const float water_end = ray_scale * cluster_depth.z /
         ((1.0 - water_depth) + water_depth * (cluster_depth.z / cluster_depth.w));
-    surface.rgb = compose_water(fog.water, surface.rgb, ray, water_end);
+    surface.rgb = compose_water(fog.water, surface.rgb, ray, water_end, uint2(width, height));
 #endif
     if (depth < 1.0 && depth >= 0.0) {
         const float near_plane = cluster_depth.z;

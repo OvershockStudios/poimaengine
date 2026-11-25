@@ -192,6 +192,7 @@ Json render_diagnostics(const RenderDiagnostics& d) {
         const auto& water=*d.water_optics;
         result["water_optics"]={{"active",water.active},{"reason",water.reason},{"columns",water.columns},
             {"camera_submersion_m",water.camera_submersion_m},{"world_media_gpu",timing(d.height_fog_gpu)}};
+        if(water.refraction)result["water_optics"]["refraction"]=true;
     }
     if(d.atmosphere_sky) {
         const auto& atmosphere=*d.atmosphere_sky;

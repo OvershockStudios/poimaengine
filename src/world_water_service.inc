@@ -79,7 +79,11 @@
             if (params.contains("surface_ripples")) result["surface_ripples"] = params.at("surface_ripples");
             if (params.contains("surface_wave_layers")) result["surface_wave_layers"] = params.at("surface_wave_layers");
             if (params.contains("listener_audio")) result["listener_audio"] = params.at("listener_audio");
-            if (params.contains("optics")) result["optics"] = params.at("optics");
+            if (params.contains("optics")) {
+                auto optics=params.at("optics");
+                if(!optics.value("refraction",false))optics.erase("refraction");
+                result["optics"]=std::move(optics);
+            }
             return result;
         } catch (const Error&) { throw; }
         catch (const std::invalid_argument& error) { throw Error(-32602, error.what()); }

@@ -1327,7 +1327,7 @@ struct Context {
             const auto& camera=scene->camera_world;
             const auto view=height_fog::project_water_view(*water,{camera[12],camera[13],camera[14]},water_normal_mode);
             pending_water_optics=WaterOpticsDiagnostics{color_reason=="active",color_reason,
-                water->cells_x*water->cells_z,view.submersion_m};
+                water->cells_x*water->cells_z,view.submersion_m,water->optics.refraction && color_reason=="active"};
             if(color_reason=="active") {
                 if(!water_columns)water_columns=height_fog::allocate_water_columns(*checked.Get());
                 water_parameters=view.parameters;

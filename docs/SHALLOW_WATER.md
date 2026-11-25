@@ -243,9 +243,9 @@ environment IBL cube, or ambient radiance when IBL is disabled. Existing
 ripples and wave layers affect the reflected angle. From below, the
 reflection uses the water scattering radiance and the Fresnel term permits
 total internal reflection. Air-media effects apply after water in the
-shared compositor. The transmitted ray follows the original screen
-sightline. Refracted sampling, sun caustics and water-aware transparent
-particle ordering remain separate work.
+shared compositor. By default, transmission follows the original
+sightline. Sun caustics and water-aware transparent particle ordering
+remain separate work.
 [Grid traversal](https://par.cse.nsysu.edu.tw/resource/paper/2024/241022/A%20Fast%20Voxel%20Traversal%20Algorithm.pdf)
 [Water optics reference](https://developer.nvidia.com/gpugems/gpugems/part-i-natural-effects/chapter-2-rendering-water-caustics)
 
@@ -258,6 +258,29 @@ Use preserved raw scene HDR and depth to distinguish water changes from
 a change to the underlying opaque geometry. Authored optics select
 version 6 of the cooked region. Project inspection, export and relocated
 game validation require `features.water_optics`.
+
+### Refract the view across the surface
+
+Add `"refraction": true` inside the `optics` profile. This cooks version 7 of
+the region and requires `features.water_refraction` for export. Omission and
+`false` cook the same version 6 bytes.
+
+From above or below, the renderer bends the transmitted ray at the first
+visible surface using Snell's law and the current ripple normal. It traces
+up to 12 metres from that interface against camera-visible opaque depth.
+A depth hit must have a consistent bracket, lie on the transmitted side of
+the surface, and stay in the corresponding medium along the bent path.
+RGB absorption follows the new length through water. Foreground
+occluders, depth breaks, missing depth and off-screen rays use the
+original sightline. A short fade at the image edge smooths that fallback.
+Total internal reflection uses the existing reflected color.
+[Screen-space depth tracing](https://jcgt.org/published/0003/04/04/paper.pdf)
+
+`render_diagnostics.water_optics.refraction` is present on submitted
+views with the effect active. Compare two captures at the same tick,
+one with the option enabled and one without. Use raw HDR and depth to
+confirm that a foreground object stays in front of the water, then
+compare resolved HDR to judge the visible displacement.
 
 ## Observe and verify local flow
 

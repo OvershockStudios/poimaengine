@@ -8,7 +8,7 @@ SamplerState water_sampler : register(s1);
 struct WaterConstants {
     float4 camera_cell_size; // Camera relative to the grid origin, cell size.
     float3 extinction_per_m;
-    uint dimensions; // Low 16 bits X, high 16 bits Z.
+    uint dimensions; // X and Z in the first two bytes, refraction flag at bit 16.
     float4 radiance_wave_mode; // RGB in-scattering source and wave mode.
 };
 
@@ -53,13 +53,23 @@ float3 water_interface_normal(WaterConstants water, float2 point_xz, float dista
     return normalize(float3(-gradient.x, 1.0, -gradient.y));
 }
 
-float3 compose_water(WaterConstants water, float3 input_radiance, float3 ray, float max_distance) {
-    const float3 eye = water.camera_cell_size.xyz;
+int2 water_grid_dimensions(WaterConstants water) {
+    return int2(water.dimensions & 0xffu, (water.dimensions >> 8u) & 0xffu);
+}
+
+struct WaterPath {
+    float length_m;
+    float interface_m;
+    float water_before_interface_m;
+};
+
+WaterPath trace_water_columns(WaterConstants water, float3 eye, float3 ray, float max_distance, bool find_interface) {
+    WaterPath path = {0, -1, 0};
     const float size = water.camera_cell_size.w;
-    const int2 dimensions = int2(water.dimensions & 0xffff, water.dimensions >> 16);
+    const int2 dimensions = water_grid_dimensions(water);
     float entry = 0, exit = max_distance;
     if (!clip_water_span(eye.x, ray.x, 0, size * dimensions.x, entry, exit) ||
-        !clip_water_span(eye.z, ray.z, 0, size * dimensions.y, entry, exit)) return input_radiance;
+        !clip_water_span(eye.z, ray.z, 0, size * dimensions.y, entry, exit)) return path;
 
     const float2 direction = ray.xz;
     const int2 step = int2(direction.x < -1e-8 ? -1 : direction.x > 1e-8 ? 1 : 0,
@@ -74,9 +84,6 @@ float3 compose_water(WaterConstants water, float3 input_radiance, float3 ray, fl
                                  step.y != 0 ? size / abs(direction.y) : 0);
     float2 cross_at = float2(step.x != 0 ? (edge.x - eye.x) / direction.x : exit,
                              step.y != 0 ? (edge.y - eye.z) / direction.y : exit);
-    float water_length = 0;
-    float interface_at = -1;
-    float water_before_interface = 0;
     // Each step moves at least one grid axis. A 32 by 32 grid needs at most 63 cells.
     [loop] for (uint i = 0; i < 63; ++i) {
         const float crossing = min(cross_at.x, cross_at.y);
@@ -85,12 +92,12 @@ float3 compose_water(WaterConstants water, float3 input_radiance, float3 ray, fl
         if (column.y > column.x && next > entry) {
             float first_water = entry, last_water = next;
             if (clip_water_span(eye.y, ray.y, column.x, column.y, first_water, last_water))
-                water_length += last_water - first_water;
-            if (interface_at < 0.0 && abs(ray.y) >= 1e-8) {
+                path.length_m += last_water - first_water;
+            if (find_interface && path.interface_m < 0.0 && abs(ray.y) >= 1e-8) {
                 const float top = (column.y - eye.y) / ray.y;
                 if (top >= entry && top <= next && top < max_distance) {
-                    interface_at = top;
-                    water_before_interface = water_length - max(0.0, last_water - max(top, first_water));
+                    path.interface_m = top;
+                    path.water_before_interface_m = path.length_m - max(0.0, last_water - max(top, first_water));
                 }
             }
         }
@@ -103,15 +110,44 @@ float3 compose_water(WaterConstants water, float3 input_radiance, float3 ray, fl
         entry = next;
     }
 
-    if (water_length == 0.0 && interface_at < 0.0) return input_radiance;
+    return path;
+}
+
+#include "water_refraction.hlsli"
+
+float3 compose_water(WaterConstants water, float3 input_radiance, float3 ray, float max_distance, uint2 extent) {
+    const float3 eye = water.camera_cell_size.xyz;
+    const WaterPath path = trace_water_columns(water, eye, ray, max_distance, true);
+    const float interface_at = path.interface_m;
+    if (path.length_m == 0.0 && interface_at < 0.0) return input_radiance;
     const float3 scattering = water.radiance_wave_mode.xyz;
-    const float3 transmittance = exp(-water.extinction_per_m * water_length);
+    const float3 transmittance = exp(-water.extinction_per_m * path.length_m);
     float3 color = lerp(scattering, input_radiance, transmittance);
     if (interface_at >= 0.0) {
         const bool from_air = ray.y < 0.0;
-        float3 normal = water_interface_normal(water, eye.xz + interface_at * direction, interface_at, ray.y);
+        float3 normal = water_interface_normal(water, eye.xz + interface_at * ray.xz, interface_at, ray.y);
         if (!from_air) normal = -normal;
         const float fresnel = water_fresnel(saturate(-dot(normal, ray)), from_air);
+        const float before_m = max(path.water_before_interface_m, 0.0);
+        [branch] if ((water.dimensions & (1u << 16u)) != 0u && fresnel < 0.999) {
+            const float3 transmitted = refract(ray, normal, from_air ? 1.0 / 1.333 : 1.333);
+            // A shading normal may tilt the bent ray beyond the actual flat
+            // boundary. Such a ray cannot enter the selected outgoing medium.
+            if (from_air ? transmitted.y < -1e-5 : transmitted.y > 1e-5) {
+                WaterRefractionHit hit;
+                const float3 offset = interface_at * ray;
+                if (water_refraction_hit(water, offset, transmitted, from_air, extent, hit)) {
+                    const WaterPath bent = trace_water_columns(water, eye + offset, transmitted, hit.distance_m, false);
+                    const float tolerance = clamp(water.camera_cell_size.w * .03, .015, .06);
+                    const float wrong_medium_m = from_air ? hit.distance_m - bent.length_m : bent.length_m;
+                    if (wrong_medium_m <= tolerance) {
+                        const float3 bent_transmittance = exp(-water.extinction_per_m * (before_m + bent.length_m));
+                        const float3 bent_radiance = surface_radiance.Load(int3(hit.pixel, 0)).rgb;
+                        color = lerp(color, lerp(scattering, bent_radiance, bent_transmittance), hit.confidence);
+                    }
+                }
+            }
+        }
         float3 reflection = scattering;
         if (from_air) {
             reflection = ambient_exposure.rgb;
@@ -119,8 +155,8 @@ float3 compose_water(WaterConstants water, float3 input_radiance, float3 ray, fl
                 reflection = water_environment.SampleLevel(water_sampler, reflect(ray, normal), 0.08 * ibl_parameters.w).rgb *
                     ibl_parameters.z;
         }
-        const float3 before = exp(-water.extinction_per_m * max(water_before_interface, 0.0));
+        const float3 before = exp(-water.extinction_per_m * before_m);
         color = lerp(color, lerp(scattering, reflection, before), fresnel);
     }
-    return color;
+    return clamp(color, -65504.0, 65504.0);
 }

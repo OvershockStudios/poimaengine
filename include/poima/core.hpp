@@ -273,6 +273,7 @@ struct WaterOpticsDiagnostics {
     std::string_view reason;
     std::uint32_t columns=0;
     double camera_submersion_m=0;
+    bool refraction=false;
 };
 struct AerialPerspectiveDiagnostics {
     bool active=false;
