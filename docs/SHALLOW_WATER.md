@@ -214,7 +214,7 @@ entry height and the local surface slope when the solver finds a stable light
 path. Scene capture reports `water_optics.surface_swell` and the rendered
 camera's submersion. The multisampled fallback draws the region's displaced
 surface mesh. The region remains bounded to its authored footprint.
-Ocean LOD, breaking-wave transport and buoyancy are separate systems.
+Ocean LOD and breaking-wave transport remain separate systems.
 
 The selected field cooks `.pwater` version 11. Project and game inspection
 report `needs_water_surface_swell`, and exporting requires
@@ -243,6 +243,52 @@ query. Use the existing point query to inspect current submersion.
 
 World particle emitters can [use this contact](PARTICLES.md#splash-on-the-water-surface)
 to stop drops and spawn splash effects.
+
+### Float a dynamic box
+
+Add `buoyancy` to a dynamic `BoxCollider` on a hierarchy root. This
+example gives a one-metre cube a mass of 250 kg at unit scale. In calm
+freshwater deep enough to float, it displaces about 0.25 m³ at equilibrium.
+
+```json
+{
+  "motion": "dynamic",
+  "half_extents": [0.5, 0.5, 0.5],
+  "mass": 250,
+  "friction": 0.6,
+  "restitution": 0,
+  "buoyancy": {"linear_drag": 0.6, "angular_drag": 0.2}
+}
+```
+
+The water displacement calculation uses the scaled, rotated box and clips
+it against the intersected water volumes. Dry cells, the fitted terrain bed,
+local swell and the fixed offshore plane shape that volume. Poima applies
+lift at the center of the submerged part, so an edge touching the water can
+tip the body. The Jolt impulse uses freshwater density of 1,000 kg/m³ and
+caps lift at 32 times the body's weight. Drag uses the submerged fraction
+and still-water velocity. [Jolt buoyancy implementation](https://github.com/jrouwe/JoltPhysics/blob/036ea7b1d717b3e713ac9d8cbd47118fb9cd5d60/Jolt/Physics/Body/Body.cpp#L181)
+
+Both drag coefficients accept 0–2 and default to 0.6 and 0.2. Use an empty
+`buoyancy` object for both defaults. Mass must be at least 1 g. A world can
+have up to 64 live buoyant bodies, including instances spawned from templates.
+Dry boxes use normal rigid-body motion. Submerged boxes wake to receive
+the impulse. Each physics step reads the water from the start of the tick.
+The displaced volume is used for forces. The water balance remains owned
+by the region solver.
+
+Pass `bodies` with up to 64 buoyant entity IDs to `runtime.water.inspect`.
+Supply the current `structure_revision` when runtime membership has changed.
+The result reports `body_volume_m3`, `submerged_volume_m3`,
+`center_of_buoyancy` in world metres or null when dry, and `lift_n`.
+These values describe the current body pose and water state. A previously
+applied impulse can differ if the body moved or the water changed during
+the tick.
+
+Export with a runtime advertising `features.water_buoyancy`. Run the
+[buoyancy fixture](../tests/water_buoyancy_capture.py) for geometry, motion
+and checkpoint continuation. Add `--gpu` for Vulkan images and
+`--runtime-root` to check the relocated export.
 
 ### Vary the swell across a coast
 

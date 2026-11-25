@@ -1,0 +1,178 @@
+{
+  "version": "0.0.435",
+  "authoring_schema_revision": 231,
+  "date": "2026-11-25",
+  "base_commit": "76599d632110b16365bbd05a0e8e277bd956db93",
+  "scope": "Box buoyancy and still-water drag from the intersection of native body geometry and the committed volumes. Save, export and observation evidence.",
+  "source_sha256": {
+    "CMakeLists.txt": "ed6b1ccdf587e8b3b3d57984b0f7048eeaf9a566e580fe402462ae5fcbb6a600",
+    "cmake/runtime.json.in": "53e303872ca88609ea5d92124c28d3b67037c1ec31e273470247c040540349ba",
+    "include/poima/project.hpp": "7ffbf17f873b1fca8b1f310ec39b69a79a4b9b935a1bd6ee2f7762ff2916f3f0",
+    "include/poima/runtime.hpp": "11b82652e2fe6e3a5c0e77bb4f0da8979a4fd85df544f3844e9c6354f96b86a4",
+    "include/poima/water_region.hpp": "b9e47879196813524f7c610d6309087b23df3cd313f38a6a1b05221319bd09f4",
+    "include/poima/water_region_definition.hpp": "1807adba5b438a5586cf40b4d8ae418228b96b187a4800d013b0a5e4a22e6db1",
+    "include/poima/world.hpp": "1c7c734c3d4791755e932eef64edcef0e4843ca84803dfbe2b6e31d619f64904",
+    "src/project.cpp": "8a33610a219fa7eba1ee444be8fa3902d919cb3adf61a44a6469927971e6dfee",
+    "src/runtime.cpp": "bf98449890ede4497303571dab817023fd052f8db76609ab3c6cce1cb5b9b61b",
+    "src/runtime_disabled.cpp": "783b130dbe29413c01ad2c62a5b972122ad477b4a3a3a0e10f563f4ebf709448",
+    "src/runtime_templates.cpp": "79eba8728fd92936ab5e150f8a123b078c098ef8864e7e005f888d0cceefccd2",
+    "src/runtime_water_bodies.inc": "7163b997a117c97496d4f25140dbbb83368be71315793fba98aa9e3374054574",
+    "src/water_asset.cpp": "8e63814a9c14602c494ec04eefd22eb763dfb194f8e33876500d340ae9aa84a8",
+    "src/water_buoyancy.cpp": "3ccdb6e0bbfeade3fc65db84f4276d2ef4e7a0fb5d070c6769457742ab29cfce",
+    "src/world.cpp": "f446410f4378158348199a72389008cac4448a3ff95fb5ee615feab65333d3ef",
+    "src/world_content.cpp": "f30666b7a2995a296b55e0ef3f2eadd6cad8681bc7e02e9c20e9f53979e6d586",
+    "src/world_document.cpp": "481da34709cb3b7a3a28ee6236b6b14b4b2fb8f3684b588c11021f56fc25ad1b",
+    "src/world_runtime_definition.cpp": "cf5705a001c91ecea728d707e8681795328a131fd0a42076da1751c9c183cab5",
+    "src/world_schema.cpp": "6e9b62e663483ed0530b76ab75b55a64df4ce85c688206c7012e676069fd8984",
+    "src/world_water_service.inc": "be1461448ac76d66a5a828c97a0ad130c85e2269c97eaf883bd29715643441fc",
+    "tests/water_buoyancy_capture.py": "39f807fc19176aebc52d99fceeb71553506acba7fdd8ce139435d94378805ccb",
+    "tests/water_region_native.cpp": "d442d72f08a13f5033ef6d1c0729345dc92462badf769ae5d5886b3f1f6f6901"
+  },
+  "geometry": {
+    "analytic_checks": [
+      "quarter box at a dry/wet cell boundary",
+      "half of a rotated cube across four cells",
+      "triangular prism under a stage at a fitted beach",
+      "offshore seam without a volume gap or duplicate",
+      "tangent body is dry"
+    ],
+    "exploratory_sweep": {
+      "seed": 10905,
+      "reference": "Full or half volume of rotated boxes at an offset origin across multiple cells",
+      "result": "cases=10000 max_volume_error_m3=9.76996e-15 max_full_centroid_error_m=1.92849e-15",
+      "recipe_sha256": "a2444ca69cc1ee8fedd32396904ba6196f1f9628b64881c922bc140f15dd2c2d"
+    }
+  },
+  "windows": {
+    "binary_sha256": "59914579fb52db55a65ce9ecfa8011c7ebec63afdbfd12cb3c4dd6b25c61946e",
+    "runtime_descriptor_sha256": "808643de78db491e866f63a559aad59ad3d39cdf1ec0a66d5e0b2488d312611a",
+    "desktop_library_sha256": "b42d5078eea6c1d53ed1891bee96189ccdca1e65d60b4b1c1287ba89dae6a4d5",
+    "amd_forward": {
+      "adapter": "AMD Radeon(TM) Graphics",
+      "raw_evidence_sha256": "e94862a2a559a03aa88108de74d0c90a6a66b15f4dcc88e4a6dff3d74bfa46e2",
+      "extent": [
+        240,
+        160
+      ],
+      "captures": {
+        "entry": {
+          "red": 715,
+          "blue": 715,
+          "red_center_y": 83.23076923076923,
+          "blue_center_y": 83.23076923076923,
+          "image": "bbbfe02070d0ec6dc96919d2921fceffd9353a6f9acd1d0925d13960c64e86bb"
+        },
+        "continued": {
+          "red": 700,
+          "blue": 946,
+          "red_center_y": 72.94,
+          "blue_center_y": 135.71881606765328,
+          "image": "4fbcf68d82cad15b51a4cc144ab7b6e7fd598adc1f2c82c934119f8db3106c89"
+        }
+      },
+      "upward_cedar_pixels": 10.290769230769229,
+      "downward_stone_pixels": 52.48804683688405,
+      "relocated_game": {
+        "source_unavailable": true,
+        "unchanged_files": 60,
+        "fresh_process_save": true,
+        "same_observations": true,
+        "same_images": true
+      }
+    },
+    "nvidia_deferred": {
+      "adapter": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "raw_evidence_sha256": "4af1b9b1784f87c0366c6b2d4c579a67a2530773387eae857b200cb4a00ba066",
+      "extent": [
+        240,
+        160
+      ],
+      "captures": {
+        "entry": {
+          "red": 715,
+          "blue": 715,
+          "red_center_y": 83.23076923076923,
+          "blue_center_y": 83.23076923076923,
+          "image": "e0ecf14ff64ccbf5bd30cce7ba706fae5f8a6987d1b918c51cbaa3743f83fb40"
+        },
+        "continued": {
+          "red": 700,
+          "blue": 946,
+          "red_center_y": 72.94,
+          "blue_center_y": 135.71881606765328,
+          "image": "954c8b2e8d7c4de3cb40b99ac9d70cee7c35bd45f5943313b0a0681646f025ca"
+        }
+      },
+      "upward_cedar_pixels": 10.290769230769229,
+      "downward_stone_pixels": 52.48804683688405,
+      "relocated_game": {
+        "source_unavailable": true,
+        "unchanged_files": 60,
+        "fresh_process_save": true,
+        "same_observations": true,
+        "same_images": true
+      }
+    },
+    "shared_observations": {
+      "full_body_volume_m3": 0.421875,
+      "initial_shoreline_center_of_buoyancy_world_m": [
+        1.8125,
+        0.8125,
+        -7.25
+      ],
+      "first_tick_y_velocity_m_s": {
+        "cedar": 0.16336378455162048,
+        "stone": -0.12252282351255417,
+        "edge": 1.4888743571361829e-08,
+        "dry": -0.1633637547492981
+      },
+      "cedar_final_center_y_m": 1.2346494970843196,
+      "stone_final_center_y_m": -0.6250018977157171,
+      "spawned_template": {
+        "body_volume_m3": 1.0,
+        "center_of_buoyancy": [
+          0.25,
+          0.75,
+          -6.15
+        ],
+        "entity": "00000000000000000000000000000006",
+        "lift_n": 4905.000209808351,
+        "submerged_volume_m3": 0.5000000000000002
+      },
+      "water_ledger_m3": 32
+    },
+    "previous_water_contacts": {
+      "previous_version": "0.0.434",
+      "reference_evidence_sha256": "240eeb7e8416de3021ee284ba4727b507e09f7be0781447df64a08fa90e7cf18",
+      "candidate_evidence_sha256": "1c969747b4aa0b268626581730b0f55582cf690d054f3edd0ec23d50ef42bc46",
+      "same_observations_and_images": true
+    },
+    "feature_rejection": {
+      "receipt_sha256": "19f2ae2263a97d88c5fd9b65bb5d191364056bf288fb2abb0c48e6cfaec318f0",
+      "published": false
+    }
+  },
+  "ubuntu_headless": {
+    "ctest_passed": [
+      "authoring_contract_identity",
+      "authoring_core_conformance",
+      "particle_scene_native",
+      "water_region_native",
+      "water_region_scene_native",
+      "world_particles_contract",
+      "world_session_native",
+      "world_water_contract",
+      "world_water_rain_contract"
+    ],
+    "ctest_junit_sha256": "20c0e9ecb6acaa6932acfdc869ad056fe70ea9cfb3aad5c9e8fab089db3b5808",
+    "binary_sha256": "45418e2d6d735985c012f4e729d0211a399749cd4fb95f923a9f34f65abdc0b3",
+    "runtime_descriptor_sha256": "229cf1d8170f0e7fb717e33f5e3e74d8375506d062afe421dc9e83701e963006",
+    "fixture_evidence_sha256": "6b3d9829491ec3726c23f30caa2b7ba94dfe87cb47e22ce38ec11c90c06cbe03",
+    "rigid_checkpoint_evidence_sha256": "61e77ad5408bf2fe15b6d1954508135f252d219a2d3a1e8519d53d68350c963e"
+  },
+  "authoring_only_runtime_syntax_checked": true,
+  "fixture_correction": "The camera was aimed to show the fully sunk stone through the surface. Color centroids measure the observed directions of both bodies.",
+  "remaining": [
+    "One-way still-water force and drag on dynamic boxes. Current flow, wakes, water displaced into neighboring cells, other body shapes and scalable scene performance remain open."
+  ]
+}

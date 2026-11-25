@@ -1,8 +1,19 @@
 # Implementation status
 
-Updated 2026-11-25 for **0.0.434**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-25 for **0.0.435**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.435 adds [buoyancy and drag for dynamic boxes](SHALLOW_WATER.md#float-a-dynamic-box).
+The shared water geometry determines submerged volume and the point where
+lift acts. Analytic checks cover rotated bodies, dry cells, fitted beds and
+the offshore seam. The Windows fixture verifies flotation, sinking and
+shoreline torque. Both GPU paths match their respective images after save
+restoration in relocated exports. Ubuntu passes the headless motion fixture,
+nine CTest suites and the rigid-body checkpoint contract. The force law
+uses still water. Current-driven drag, wakes, two-way volume displacement
+and game-scale performance remain open.
+[Results and scope](evidence/m2-water-buoyancy-435.json)
 
 Version 0.0.434 adds [swept water entry](SHALLOW_WATER.md#trace-entry-into-water)
 and [water-specific particle contacts](PARTICLES.md#splash-on-the-water-surface).

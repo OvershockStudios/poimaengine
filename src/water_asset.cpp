@@ -463,14 +463,17 @@ Json region_runtime_schema() {
         {"cells", array(array(range("integer", 0, max_region_side - 1), 2, 2), 0, 64)},
         {"points", array(array(Json{{"type", "number"}}, 3, 3), 0, 64)},
         {"segments", array(object({{"from_world",endpoint},{"to_world",endpoint}},
-            {"from_world","to_world"}),0,64)}}, {"session_id", "tick"});
+            {"from_world","to_world"}),0,64)},
+        {"bodies",array(id_schema,0,max_buoyant_bodies)},{"structure_revision",tick_schema}}, {"session_id", "tick"});
+    result["dependentRequired"]={{"structure_revision",{"bodies"}}};
     result["description"] = "Read the region identity, latest volume receipt, authored face controls and up to 64 addressed cells at a committed tick."
         " Rain-enabled regions also report catchment cells and per-step and cumulative rain supply."
         " A selected surface_ripples profile is reported even at slope zero."
         " Selected surface_wave_layers, surface_swell, swell_variation and optics are reported when authored."
         " Optional points in world [x,y,z] order report the containing column and the submersion depth."
         " Wet point columns in a swell region include the geometric surface_normal. Cell volumes follow the conserved grid."
-        " Optional segments return the first top-surface entry for each world-space sweep, in request order.";
+        " Optional segments return the first top-surface entry for each world-space sweep, in request order."
+        " Optional bodies report current displaced volume, center and lift. Guard changed membership with structure_revision.";
     return result;
 }
 } // namespace poima::water

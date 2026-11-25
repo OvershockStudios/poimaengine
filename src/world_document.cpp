@@ -825,13 +825,22 @@ void validate_component(const std::string& type, const Json& value) {
         return;
     }
     if (type == "BoxCollider") {
-        fields(value, {"half_extents", "motion", "mass", "friction", "restitution", "navigation_obstacle", "surface"}, {"half_extents", "motion", "mass", "friction", "restitution"});
+        fields(value, {"half_extents", "motion", "mass", "friction", "restitution", "navigation_obstacle", "surface", "buoyancy"}, {"half_extents", "motion", "mass", "friction", "restitution"});
         if(value.contains("surface"))require(value.at("surface").is_string() &&
             valid_collision_surface(value.at("surface").get_ref<const std::string&>()),"Invalid collision surface name.");
         const auto& extent=value.at("half_extents");
         require(extent.is_array() && extent.size()==3,"BoxCollider needs three half extents.");
         for(const auto& v:extent) require(v.is_number() && std::isfinite(v.get<double>()) && v>=0.001 && v<=10000,"Collider half extents must be 0.001..10000 meters.");
         require(value.at("motion")=="static" || value.at("motion")=="dynamic" || value.at("motion")=="kinematic","Collider motion must be static, dynamic or kinematic.");
+        if (value.contains("buoyancy")) {
+            const auto& settings=value.at("buoyancy");
+            fields(settings,{"linear_drag","angular_drag"});
+            require(value.at("motion")=="dynamic","Buoyancy requires a dynamic BoxCollider.");
+            require(value.at("mass").is_number() && value.at("mass")>=.001,
+                "Buoyancy requires mass of at least 1 g.");
+            for (const auto& drag : settings)
+                require(drag.is_number() && drag>=0 && drag<=2,"Buoyancy drag coefficients must be in [0,2].");
+        }
         if(value.contains("navigation_obstacle")) {
             require(value.at("navigation_obstacle").is_boolean(),"BoxCollider navigation_obstacle must be Boolean.");
             require(!value.at("navigation_obstacle").get<bool>() || value.at("motion")!="dynamic","Navigation obstacles must be static or kinematic boxes.");

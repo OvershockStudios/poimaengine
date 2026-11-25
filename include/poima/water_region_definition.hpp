@@ -10,6 +10,7 @@
 namespace poima::water {
 
 inline constexpr std::uint32_t max_region_side = 32;
+inline constexpr std::size_t max_buoyant_bodies = 64;
 inline constexpr std::size_t max_region_faces = 128;
 inline constexpr std::size_t max_region_exchanges = 128;
 inline constexpr std::size_t max_surface_wave_layers = 4;

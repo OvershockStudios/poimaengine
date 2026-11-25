@@ -148,6 +148,8 @@ void validate_runtime_spawn_transform(const RuntimeSpawnTemplate& recipe,const R
         const auto& collider=*root_collider;
         check(collider.motion==BodyMotion::Static || collider.motion==BodyMotion::Dynamic || collider.motion==BodyMotion::Kinematic,"Template body motion is invalid.");
         check(bounded(collider.mass,0,1e6) && collider.mass>0 && bounded(collider.friction,0,2) && bounded(collider.restitution,0,1),"Template collider material/mass is invalid.");
+        check(!collider.buoyancy || (valid_box_buoyancy(collider.motion,*collider.buoyancy) && collider.mass>=.001f),
+            "Template buoyancy requires a dynamic box, mass of at least 1 g, and drag coefficients in [0,2].");
         for(std::size_t k=0;k<3;++k) {
             check(std::abs(transform.position[k])<=1e6,"Template collider position exceeds the 1000 km bound.");
             check(bounded(collider.half_extents[k],.001,10000) && bounded(double(collider.half_extents[k])*transform.scale[k],.001,10000),"Template collider half extents must be 0.001..10000 meters before and after scaling.");

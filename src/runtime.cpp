@@ -191,7 +191,7 @@ struct Runtime::Impl {
         std::vector<AcousticGeometry> acoustic_geometry;
 
         std::map<std::string,entt::entity> identities;
-        std::vector<entt::entity> order,hierarchy,characters,kinematics;
+        std::vector<entt::entity> order,hierarchy,characters,kinematics,buoyant;
         std::map<JPH::uint32,std::string> body_names;
         std::set<JPH::uint32> physical_bodies;
         std::vector<std::string> physical_rigs;
@@ -599,6 +599,12 @@ struct Runtime::Impl {
                 std::isfinite(collider.friction) && collider.friction>=0 && collider.friction<=2 &&
                 std::isfinite(collider.restitution) && collider.restitution>=0 && collider.restitution<=1,"Invalid physics material or mass.");
             require(collider.motion==BodyMotion::Static || collider.motion==BodyMotion::Dynamic || collider.motion==BodyMotion::Kinematic,"Invalid body motion kind.");
+            if (collider.buoyancy) {
+                require(valid_box_buoyancy(collider.motion,*collider.buoyancy) && collider.mass>=.001f,
+                    "Buoyancy requires a dynamic box, mass of at least 1 g, and drag coefficients in [0,2].");
+                require(candidate.buoyant.size()<water::max_buoyant_bodies,"A world supports at most 64 buoyant boxes.");
+                candidate.buoyant.push_back(e);
+            }
             require(collider.motion==BodyMotion::Static || d.parent.empty(),"Dynamic and kinematic bodies must be hierarchy roots.");
             for(auto parent=d.parent;!parent.empty();parent=registry.get<Node>(find(parent)).parent)
                 require(!moving_roots.contains(parent),"Static colliders cannot inherit a moving body/controller; use a separate kinematic root.");
@@ -761,6 +767,7 @@ struct Runtime::Impl {
 #include "runtime_capsule_query.inc"
 #include "runtime_viewmodel_clearance.inc"
 #include "runtime_particles.inc"
+#include "runtime_water_bodies.inc"
 #include "runtime_surface_marks.inc"
     void initialize(const RuntimeDefinition& definition,const RuntimePhysicsBootstrap* restored=nullptr) {
         // Construction is private to this Runtime; helpers read the same root
@@ -1608,6 +1615,7 @@ struct Runtime::Impl {
                 }
                 candidate->identities.erase(id);candidate->definitions.erase(id);
                 std::erase(candidate->order,e);std::erase(candidate->hierarchy,e);std::erase(candidate->kinematics,e);std::erase(candidate->characters,e);
+                std::erase(candidate->buoyant,e);
                 if(const auto* body=registry.try_get<Body>(e)) {
                     candidate->body_names.erase(body->id.GetIndexAndSequenceNumber());candidate->mesh_shapes.erase(body->id.GetIndexAndSequenceNumber());
                 }
@@ -1685,6 +1693,7 @@ struct Runtime::Impl {
         if(procedural_birth) {sync();animation_locals();world_matrices();}
         for(const auto& birth:prepared)for(const auto& entity:birth.entities)create_physical(entity,*candidate);
         std::sort(candidate->kinematics.begin(),candidate->kinematics.end(),by_id);
+        std::sort(candidate->buoyant.begin(),candidate->buoyant.end(),by_id);
         std::sort(candidate->characters.begin(),candidate->characters.end(),by_id);
         components->prepare_tick(cells,removed);
         if(game)game->validate_entity_references([](void* context,PoimaEntityId id) {
@@ -2108,6 +2117,7 @@ struct Runtime::Impl {
                     for(auto e:topology->characters)registry.get<Controller>(e).character->UpdateVirtual(1.0f/60.0f);
                 }
                 physical_before_step();
+                apply_water_buoyancy();
                 const auto error=[&] {
                     profiling::Scope physics_profile("runtime.physics.update");
                     JPH_IF_ENABLE_ASSERTS(runtime_assertions::PhysicsUpdateScope assertion_scope;)
@@ -2602,6 +2612,9 @@ std::optional<RuntimeRootMotionState> Runtime::root_motion(const std::string& id
 RuntimeNavigationPath Runtime::navigation_path(const RuntimeNavigationRequest& request) const {return impl_->navigation_query(request,true);}
 const water::Region* Runtime::water_region() const noexcept {
     return impl_->water_region ? &*impl_->water_region : nullptr;
+}
+std::optional<RuntimeWaterBody> Runtime::water_body(const std::string& entity) const {
+    return impl_->water_body_sample(entity);
 }
 const snow::Region* Runtime::snow_region() const noexcept {
     return impl_->snow_binding ? &*impl_->snow_binding : nullptr;

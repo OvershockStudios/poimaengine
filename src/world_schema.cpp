@@ -78,13 +78,18 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"cast_shadows",{{"type","boolean"},{"default",true}}},{"receive_shadows",{{"type","boolean"},{"default",true}}}}, {"primitive", "albedo", "visible"});
     const Json collision_surface={{"type","string"},{"pattern","^[a-z][a-z0-9_.-]{0,31}$"},
         {"description","Semantic surface name on this collision shape, independent of its render material."}};
+    const auto buoyancy=object_schema({
+        {"linear_drag",{{"type","number"},{"minimum",0},{"maximum",2},{"default",.6}}},
+        {"angular_drag",{{"type","number"},{"minimum",0},{"maximum",2},{"default",.2}}}},{});
     Json collider = object_schema({{"half_extents", vector({{"type","number"},{"minimum",0.001},{"maximum",10000}},3)},
         {"motion",{{"enum",{"static","dynamic","kinematic"}}}}, {"mass",{{"type","number"},{"exclusiveMinimum",0},{"maximum",1e6}}},
         {"friction",{{"type","number"},{"minimum",0},{"maximum",2}}}, {"restitution",{{"type","number"},{"minimum",0},{"maximum",1}}},
-        {"surface",collision_surface},{"navigation_obstacle",{{"type","boolean"},{"default",false},{"description","Exclude this authored box from the static navigation bake and filter runtime routes using its live physics bounds."}}}},
+        {"surface",collision_surface},{"buoyancy",buoyancy},{"navigation_obstacle",{{"type","boolean"},{"default",false},{"description","Exclude this authored box from the static navigation bake and filter runtime routes using its live physics bounds."}}}},
         {"half_extents","motion","mass","friction","restitution"});
     collider["if"]={{"required",{"navigation_obstacle"}},{"properties",{{"navigation_obstacle",{{"const",true}}}}}};
     collider["then"]={{"properties",{{"motion",{{"enum",{"static","kinematic"}}}}}}};
+    collider["allOf"]={Json{{"if",{{"required",{"buoyancy"}}}},
+        {"then",{{"properties",{{"motion",{{"const","dynamic"}}},{"mass",{{"minimum",.001}}}}}}}}};
     const Json stance=object_schema({{"crouched_height",{{"type","number"},{"exclusiveMinimum",0},{"maximum",4},{"default",1}}},
         {"crouched_speed",{{"type","number"},{"exclusiveMinimum",0},{"maximum",30},{"default",2}}},
         {"camera_drop",{{"type","number"},{"minimum",0},{"maximum",4},{"default",0.8}}}},{});
@@ -435,7 +440,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 230}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 231}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -1069,6 +1074,8 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"observation","runtime.particles.inspect"}};
     result["particle_water_contact"]={{"available",Runtime::available()},{"component","ParticleEmitter.water_contact"},
         {"surface","water"},{"runtime_feature","particle_water_contact"},{"observation","runtime.water.inspect"}};
+    result["water_buoyancy"]={{"available",Runtime::available()},{"component","BoxCollider.buoyancy"},
+        {"max_bodies",water::max_buoyant_bodies},{"runtime_feature","water_buoyancy"},{"observation","runtime.water.inspect"}};
     result["collision_surfaces"]={{"available",Runtime::available()},{"ray_method","runtime.surface.raycast"},
         {"max_name_bytes",max_collision_surface_length},{"max_impact_routes",max_particle_impact_surfaces},
         {"runtime_feature","collision_surfaces"}};

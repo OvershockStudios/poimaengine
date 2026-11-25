@@ -368,6 +368,55 @@ void surface_segments_cross_cells_and_clip_to_the_wet_bed() {
         "Fitted water failed to clip the stage against its local bed.");
 }
 
+void displaced_box_volume_matches_analytic_solids() {
+    const auto near=[](double measured,double expected) {return std::abs(measured-expected)<1e-12;};
+    RegionDefinition definition{
+        .config={.cells_x=2,.cells_z=2,.origin_x_m=19,.origin_z_m=-11,.relaxation_per_second=0},
+        .floor_heights_m={-1,-1,-1,-1},.initial_depths_m={2,0,2,0},
+        .plan_sha256=std::string(64,'b'),
+    };
+    const std::array rectangular{std::array{.3,0.,0.},std::array{0.,.5,0.},std::array{0.,0.,.25}};
+    Region shore(definition);
+    const auto partial=shore.displaced_by_box({20,1,-10},rectangular);
+    require(near(partial.volume_m3,.075) && near(partial.center_offset_m[0],-.15) &&
+        near(partial.center_offset_m[1],-.25) && near(partial.center_offset_m[2],0),
+        "The dry cells moved or duplicated the quarter-box water volume.");
+    require(shore.displaced_by_box({20,1.5,-10},rectangular).volume_m3==0 &&
+        shore.displaced_by_box({20,-1.5,-10},rectangular).volume_m3==0,
+        "A box tangent to the top or bed displaces water.");
+
+    definition.initial_depths_m={2,2,2,2};
+    Region pool(definition);
+    const auto q=std::numbers::sqrt2/4;
+    const std::array tipped{std::array{q,q,0.},std::array{-q,q,0.},std::array{0.,0.,.5}};
+    const auto half=pool.displaced_by_box({20,1,-10},tipped);
+    require(near(half.volume_m3,.5) && near(half.center_offset_m[0],0) &&
+        near(half.center_offset_m[1],-2*q/3) && near(half.center_offset_m[2],0),
+        "The rotated half-cube differs across the four cell seams.");
+
+    definition.config.cells_x=definition.config.cells_z=1;
+    definition.floor_heights_m={.5};
+    definition.initial_depths_m={.3};
+    definition.shore_corner_heights_m={0,1,0,1};
+    definition.optics=poima::WaterOptics{.extinction_per_m={},.scattered_radiance={},.follow_terrain=true};
+    const std::array square{std::array{.5,0.,0.},std::array{0.,.5,0.},std::array{0.,0.,.5}};
+    Region beach(definition);
+    const auto wedge=beach.displaced_by_box({19.5,.5,-10.5},square);
+    require(near(wedge.volume_m3,.32) && near(wedge.center_offset_m[0],.8/3-.5) &&
+        near(wedge.center_offset_m[1],1.6/3-.5) && near(wedge.center_offset_m[2],0),
+        "The fitted sloping beach differs from its triangular prism.");
+
+    definition.floor_heights_m={-1};
+    definition.initial_depths_m={1.5};
+    definition.shore_corner_heights_m={-1,-1,-1,-1};
+    definition.optics->offshore=poima::WaterOffshore{poima::WaterEdge::max_x,.5,10};
+    Region coast(definition);
+    const auto seam=coast.displaced_by_box({20,.5,-10.5},square);
+    require(near(seam.volume_m3,.5) && near(seam.center_offset_m[0],0) &&
+        near(seam.center_offset_m[1],-.25) && near(seam.center_offset_m[2],0),
+        "The offshore band and local grid overlap or leave a gap.");
+}
+
 }
 
 int main() {
@@ -379,6 +428,7 @@ int main() {
         swell_shares_cell_edges_and_restores_phase();
         offshore_joins_only_the_selected_edge();
         surface_segments_cross_cells_and_clip_to_the_wet_bed();
+        displaced_box_volume_matches_analytic_solids();
         std::cout << "Water region tests passed.\n";
     } catch (const std::exception& error) {
         std::cerr << error.what() << '\n';

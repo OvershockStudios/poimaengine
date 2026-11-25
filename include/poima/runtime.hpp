@@ -125,12 +125,24 @@ inline bool valid_collision_surface(std::string_view name) noexcept {
     return !name.empty() && name.size()<=max_collision_surface_length && name.front()>='a' && name.front()<='z' &&
         name.find_first_not_of("abcdefghijklmnopqrstuvwxyz0123456789_.-")==std::string_view::npos;
 }
+struct BoxBuoyancy {
+    float linear_drag=.6f,angular_drag=.2f;
+};
+inline bool valid_box_buoyancy(BodyMotion motion,const BoxBuoyancy& settings) noexcept {
+    return motion==BodyMotion::Dynamic && settings.linear_drag>=0 && settings.linear_drag<=2 &&
+        settings.angular_drag>=0 && settings.angular_drag<=2;
+}
 struct BoxCollider {
     std::array<float,3> half_extents{0.5f,0.5f,0.5f};
     BodyMotion motion = BodyMotion::Static;
     float mass = 1, friction = 0.5f, restitution = 0;
     bool navigation_obstacle=false;
     std::string surface{};
+    std::optional<BoxBuoyancy> buoyancy{};
+};
+struct RuntimeWaterBody {
+    double body_volume_m3, submerged_volume_m3, lift_n;
+    std::optional<std::array<double,3>> center_of_buoyancy;
 };
 struct MeshCollider {
     std::shared_ptr<const MeshAsset> mesh;
@@ -897,6 +909,7 @@ public:
     RuntimeNavigationPath navigation_path(const RuntimeNavigationRequest&) const;
     // The optional region advances at the same committed tick as this runtime.
     const water::Region* water_region() const noexcept;
+    std::optional<RuntimeWaterBody> water_body(const std::string& entity) const;
     const snow::Region* snow_region() const noexcept;
     const snow::State* snow_state() const noexcept;
     const snow::FootReleaseState* snow_foot_releases() const noexcept;

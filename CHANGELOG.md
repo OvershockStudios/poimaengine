@@ -2,6 +2,12 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.435
+
+- Give dynamic boxes buoyancy and fluid drag. Inspect how much water each
+  body displaces and where the upward force acts.
+  [Floating props](docs/SHALLOW_WATER.md#float-a-dynamic-box)
+
 ## 0.0.434
 
 - Let world particles hit the simulated water surface and spawn water-specific

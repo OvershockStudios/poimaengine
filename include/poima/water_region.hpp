@@ -21,6 +21,11 @@ struct SurfaceEntry {
     std::optional<Cell> cell; // The offshore plane has no cell.
 };
 
+struct Displacement {
+    double volume_m3=0;
+    std::array<double,3> center_offset_m{};
+};
+
 // Advances one frozen authored region at the runtime's fixed tick rate.
 class Region {
 public:
@@ -43,6 +48,10 @@ public:
     std::optional<std::array<double,2>> offshore_levels(double x_m,double z_m) const noexcept;
     std::optional<SurfaceEntry> surface_entry(const std::array<double,3>& from,
                                              const std::array<double,3>& to) const;
+    // The half-axes include scale and rotation. The returned moment is
+    // expressed relative to the box center in world axes.
+    Displacement displaced_by_box(const std::array<double,3>& center,
+                                  const std::array<std::array<double,3>,3>& half_axes) const;
     double submersion_at(double x_m,double y_m,double z_m) const;
     std::uint64_t cumulative_rain_nm() const noexcept { return cumulative_rain_nm_; }
     double cumulative_rain_m3() const noexcept;

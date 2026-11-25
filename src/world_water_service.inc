@@ -97,13 +97,32 @@
     }
 
     Json water_inspect(const Json& params) const {
-        fields(params, {"session_id", "tick", "cells", "points", "segments"}, {"session_id", "tick"});
+        fields(params, {"session_id", "tick", "cells", "points", "segments", "bodies", "structure_revision"}, {"session_id", "tick"});
         runtime_guard(params);
         const auto tick = runtime_->inspect().tick;
         require(revision(params.at("tick")) == tick, "Runtime tick conflict.", -32009);
         const auto* region = runtime_->water_region();
         Json result{{"session_id", runtime_id_}, {"tick", tick}, {"active", region != nullptr}, {"plan_sha256", nullptr},
             {"volume_m3", 0.0}, {"last_step", nullptr}, {"cells", Json::array()}, {"faces", Json::array()}};
+        if (params.contains("bodies")) {
+            const auto structure=runtime_->structure_revision();
+            require(params.contains("structure_revision") ? revision(params.at("structure_revision"))==structure : structure==0,
+                "Runtime structure revision conflict.",-32009);
+            const auto& queries=params.at("bodies");
+            require(queries.is_array() && queries.size()<=water::max_buoyant_bodies,"Water observation accepts at most 64 buoyant boxes.");
+            result["structure_revision"]=structure;
+            auto& bodies=result["bodies"]=Json::array();
+            for (const auto& query : queries) {
+                const auto id=identifier(query);
+                const auto body=runtime_->water_body(id);
+                require(body.has_value(),"Water body observation requires a live BoxCollider with buoyancy.");
+                const auto center=body->center_of_buoyancy ? Json(*body->center_of_buoyancy) : Json(nullptr);
+                bodies.push_back({{"entity",id},{"body_volume_m3",body->body_volume_m3},
+                    {"submerged_volume_m3",body->submerged_volume_m3},{"lift_n",body->lift_n},{"center_of_buoyancy",center}});
+            }
+        } else {
+            require(!params.contains("structure_revision"),"Water structure_revision accompanies a bodies query.");
+        }
         if (params.contains("cells")) require(params.at("cells").is_array() && params.at("cells").size() <= 64,
             "Water observation accepts at most 64 cells.");
         if (params.contains("segments")) {

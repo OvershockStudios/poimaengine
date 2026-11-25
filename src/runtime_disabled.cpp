@@ -60,6 +60,7 @@ std::optional<RuntimeCharacterStanceState> Runtime::character_stance(const std::
 std::optional<RuntimeRootMotionState> Runtime::root_motion(const std::string&) const { throw std::runtime_error("Simulation is not built."); }
 RuntimeNavigationPath Runtime::navigation_path(const RuntimeNavigationRequest&) const { throw std::runtime_error("Simulation is not built."); }
 const water::Region* Runtime::water_region() const noexcept { return nullptr; }
+std::optional<RuntimeWaterBody> Runtime::water_body(const std::string&) const { return std::nullopt; }
 const snow::Region* Runtime::snow_region() const noexcept { return nullptr; }
 const snow::State* Runtime::snow_state() const noexcept { return nullptr; }
 const snow::FootReleaseState* Runtime::snow_foot_releases() const noexcept { return nullptr; }
