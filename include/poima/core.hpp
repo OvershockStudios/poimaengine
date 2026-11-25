@@ -270,6 +270,11 @@ struct HeightFogDiagnostics {
     std::uint64_t buffer_bytes=0;
     std::uint32_t spot_lights=0;
 };
+struct WaterSolarScatteringDiagnostics {
+    double strength;
+    float sky_gain;
+    double radiance_scale;
+};
 struct WaterOpticsDiagnostics {
     bool active=false;
     std::string_view reason;
@@ -288,6 +293,7 @@ struct WaterOpticsDiagnostics {
     std::optional<WaterSwellVariation> swell_variation{};
     std::optional<double> reflection_roughness{};
     bool rough_reflection_active=false;
+    std::optional<WaterSolarScatteringDiagnostics> solar_scattering{};
 };
 struct AerialPerspectiveDiagnostics {
     bool active=false;

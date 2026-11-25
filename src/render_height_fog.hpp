@@ -57,7 +57,8 @@ struct WaterView {
     SwellVariationParameters swell_variation{};
 };
 
-WaterView project_water_view(const SceneWaterVolume& water,const std::array<double,3>& eye,float wave_mode);
+WaterView project_water_view(const SceneWaterVolume& water,const std::array<double,3>& eye,float wave_mode,
+                            double scattering_scale);
 nvrhi::BufferHandle allocate_water_columns(nvrhi::IDevice& device);
 
 class Pass {

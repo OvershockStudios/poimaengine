@@ -1,8 +1,18 @@
 # Implementation status
 
-Updated 2026-11-25 for **0.0.425**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-25 for **0.0.426**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.426 lets [scattered water light follow the sky](SHALLOW_WATER.md#let-scattered-water-light-follow-the-sky).
+AMD forward and NVIDIA deferred passed 1,296 HDR probes across fitted,
+offshore and underwater views with maximum channel error of 0.000479.
+Eight NVIDIA sprite blends passed at dusk with FSR also exercised.
+A relocated Native AOT game restored the same dusk capture from its save.
+Ubuntu passed 14 suites and the solar scattering authoring fixture.
+The stock coastal comparison reproduced six fixed-scattering frames exactly
+and darkened the night water when the profile was enabled. The daytime frame
+matched exactly at full sky gain. [Results](evidence/m2-water-solar-scattering-426.json)
 
 Version 0.0.425 adds [seasonal climate profiles](WEATHER_CYCLE.md#author-a-seasonal-climate)
 to the optional `Poima.Weather` gameplay package. A local profile supplies

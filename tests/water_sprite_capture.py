@@ -10,9 +10,11 @@ import tempfile
 import traceback
 
 from height_fog_capture import environment
+from solar_lighting_contract import IDENTITY, solar_reference
 from texture_fixture import png
 from water_optics_capture import OPTICS
 from water_refraction_capture import panel
+from water_solar_scattering_capture import NIGHT, STRENGTH
 from world_particles_contract import ParticleContract, action, near_vector, transform
 from world_terrain_contract import file_hash
 from world_water_contract import CELLS, TILES, WaterContract, bed, cell_center, component, rpc, success, uid
@@ -115,6 +117,8 @@ class WaterSpriteCapture(WaterContract):
             optics=OPTICS|dict(shore_foam=dict(depth_m=2.4,opacity=.95),follow_terrain=True))
         if self.args.rough_reflection:
             params['optics']['reflection_roughness']=REFLECTION_ROUGHNESS
+        if self.args.solar_native_descriptor:
+            params['optics']['solar_scattering']=STRENGTH
         planned=self.world_call('world.water.plan',**params)
         pin=planned['plan_sha256']
         assert self.world_call('world.water.cook',**params,expected_plan_sha256=pin)==planned
@@ -133,7 +137,13 @@ class WaterSpriteCapture(WaterContract):
         diag=response['render_diagnostics']
         optics=diag['water_optics']
         assert optics['active'] and optics['follow_terrain'] and optics['shore_foam']['active']
-        assert optics['shore_foam']['sun_lighting'] is self.args.sun
+        if self.args.solar_native_descriptor:
+            gain=solar_reference(NIGHT)['sky_gain']
+            assert response['lighting']['solar_lighting']['sky_gain']==gain
+            assert optics['solar_scattering']==dict(strength=STRENGTH,sky_gain=gain,radiance_scale=1-STRENGTH*(1-gain))
+            assert optics['shore_foam']['sun_lighting'] is False
+        else:
+            assert optics['shore_foam']['sun_lighting'] is self.args.sun
         if self.args.rough_reflection:
             assert optics['rough_reflection']==dict(active=True,perceptual_roughness=REFLECTION_ROUGHNESS)
         assert optics.get('sprites',False) is particles and diag['reconstruction']['active'] is fsr,diag
@@ -145,14 +155,26 @@ class WaterSpriteCapture(WaterContract):
         binding=self.references[name]
         return binding | dict(value=binding['value']|dict(visible=visible))
 
+    def start_capture(self,client,session,revision,request,tick=0):
+        client.call('runtime.start',self.start(session,revision)['params'])
+        if self.args.solar_native_descriptor:
+            descriptor=self.args.solar_native_descriptor
+            loaded=client.call('runtime.gameplay.load_native',dict(session_id=session,request_id=uid(7240),
+                expected_tick=0,expected_revision=0,descriptor=self.native(descriptor),
+                expected_descriptor_sha256=file_hash(descriptor)))
+            assert loaded['revision']==1 and loaded['module']['schema']['identity']==IDENTITY
+        if tick:
+            assert client.call('runtime.step',self.step(session,0,tick,request)['params'])['current_tick']==tick
+
     def opaque_references(self, revision):
         captures={}
+        tick=NIGHT if self.args.solar_native_descriptor else 0
         for i,name in enumerate(('above','near','far','dry')):
             revision=self.apply(revision,7170+i,self.marker(name,True))
             with self.owner('opaque '+name) as (client,_):
                 session=uid(7180+i)
-                client.call('runtime.start',self.start(session,revision)['params'])
-                captures[name]={camera:self.render(client,session,0,camera,'solid-'+name,False) for camera in CAMERAS}
+                self.start_capture(client,session,revision,7241,tick)
+                captures[name]={camera:self.render(client,session,tick,camera,'solid-'+name,False) for camera in CAMERAS}
             revision=self.apply(revision,7190+i,self.marker(name,False))
         return revision,captures
 
@@ -211,21 +233,30 @@ class WaterSpriteCapture(WaterContract):
     def run(self):
         revision=self.author()
         revision,controls=self.opaque_references(revision)
+        solar=self.args.solar_native_descriptor is not None
+        tick=NIGHT if solar else TICK
+        if solar:
+            with self.owner('night without particles') as (client,_):
+                session=uid(7242)
+                self.start_capture(client,session,revision,7243,tick)
+                baseline={camera:self.render(client,session,tick,camera,'empty',False) for camera in CAMERAS}
         saves=self.root/'external saves'
         saves.mkdir()
         with self.owner('live particles') as (client,_):
             session=uid(7210)
-            client.call('runtime.start',self.start(session,revision)['params'])
-            baseline={camera:self.render(client,session,0,camera,'empty',False) for camera in CAMERAS}
-            step=self.step(session,0,TICK,7211)['params']
+            self.start_capture(client,session,revision,7244,tick-1)
+            if not solar:
+                baseline={camera:self.render(client,session,0,camera,'empty',False) for camera in CAMERAS}
+            step=self.step(session,tick-1,1,7211)['params']
             step['inputs']=[dict(entity=uid(2),actions=[action(BURST,pressed=True)])]
-            assert client.call('runtime.step',step)['current_tick']==TICK
-            live={camera:self.render(client,session,TICK,camera,'live',True) for camera in CAMERAS}
+            assert client.call('runtime.step',step)['current_tick']==tick
+            live={camera:self.render(client,session,tick,camera,'live',True) for camera in CAMERAS}
             client.call('save.configure',dict(request_id=uid(7212),expected_generation=0,root=self.native(saves)))
-            client.call('save.write',self.write(session,TICK,'checkpoint',7213)['params'])
+            args=self.write(session,tick,'checkpoint',7213)['params']
+            client.call('save.write',args | dict(expected_gameplay_revision=1 if solar else 0))
             if self.args.fsr:
                 for camera in CAMERAS:
-                    fsr=self.render(client,session,TICK,camera,'fsr',True,fsr=True)
+                    fsr=self.render(client,session,tick,camera,'fsr',True,fsr=True)
                     for label,probe in fsr.items():
                         near_vector(probe['resolved_hdr'],live[camera][label]['resolved_hdr'],tolerance=.002)
         self.measurements['blend_oracle']=self.expected(baseline,controls,live)
@@ -244,7 +275,10 @@ def main():
     parser.add_argument('--fsr',action='store_true')
     parser.add_argument('--sun',action='store_true')
     parser.add_argument('--rough-reflection',action='store_true')
+    parser.add_argument('--solar-native-descriptor',type=Path,help='Check sprite compositing during the compiled dusk phase.')
     args=parser.parse_args()
+    if args.solar_native_descriptor and (not args.sun or args.runtime_root):
+        parser.error('The solar variant needs --sun. Use water_solar_scattering_capture.py to check relocated export.')
     args.output.mkdir(parents=True,exist_ok=True)
     root=Path(tempfile.mkdtemp(prefix='water-sprites-',dir=args.output))
     case=WaterSpriteCapture(args,root)

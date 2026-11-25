@@ -16,6 +16,7 @@ using Json = nlohmann::json;
 constexpr auto artifact_format = "poima.water.region";
 
 std::uint32_t artifact_version(const RegionDefinition& definition) noexcept {
+    if (definition.optics && definition.optics->solar_scattering) return 15;
     if (definition.optics && definition.optics->reflection_roughness) return 14;
     if (definition.swell_variation) return 13;
     if (definition.optics && definition.optics->offshore) return 12;
@@ -164,7 +165,7 @@ void parse_rules(const Json& object, RegionDefinition& definition) {
     if (object.contains("optics")) {
         const auto& value=object.at("optics");
         fields(value, {"extinction_per_m","scattered_radiance"},
-            {"refraction","caustics_strength","shore_foam","follow_terrain","offshore","reflection_roughness"});
+            {"refraction","caustics_strength","shore_foam","follow_terrain","offshore","reflection_roughness","solar_scattering"});
         if (value.contains("refraction"))
             require(value.at("refraction").is_boolean(),"Water optics refraction must be Boolean.");
         if (value.contains("follow_terrain"))
@@ -185,6 +186,11 @@ void parse_rules(const Json& object, RegionDefinition& definition) {
         definition.optics->follow_terrain=value.value("follow_terrain",false);
         if (value.contains("reflection_roughness"))
             definition.optics->reflection_roughness=number(value.at("reflection_roughness"));
+        if (value.contains("solar_scattering")) {
+            const auto strength=number(value.at("solar_scattering"));
+            require(strength>=0 && strength<=1,"Water solar_scattering must be in [0,1].");
+            if (strength>0) definition.optics->solar_scattering=strength;
+        }
         if (value.contains("shore_foam")) {
             const auto& foam = value.at("shore_foam");
             fields(foam, {"depth_m","opacity"});
@@ -316,7 +322,7 @@ RegionAsset decode_region_asset(std::string_view bytes) {
         "initial_depths_m", "faces", "exchanges"}, {"rain_cells", "surface_ripples", "surface_wave_layers", "surface_swell",
         "swell_variation", "listener_audio", "optics", "shore_corner_heights_m"});
     require(object.at("format") == artifact_format, "Unsupported water asset format.");
-    const auto version=integer(object.at("version"),1,14);
+    const auto version=integer(object.at("version"),1,15);
     RegionAsset asset;
     asset.terrain_recipe_sha256 = hex(object.at("terrain_recipe_sha256"), 64);
     auto& definition = asset.definition;
@@ -407,6 +413,7 @@ Json region_authoring_schemas() {
             {"description","Fit the optical bed and listener submersion to sampled terrain, respecting dry cells and gate controls."}}},
         {"caustics_strength",range("number",0,1)},
         {"reflection_roughness",range("number",0,1)},
+        {"solar_scattering",range("number",0,1)},
         {"offshore",object({{"edge",{{"enum",{"min_z","max_x","max_z","min_x"}}}},
             {"surface_height_m",coordinate},{"depth_m",range("number",.1,10'000)}},
             {"edge","surface_height_m","depth_m"})},
@@ -418,6 +425,8 @@ Json region_authoring_schemas() {
         "Focus light from the linked sky sun below the surface using the authored wave normals. Zero disables the effect.";
     optics["properties"]["reflection_roughness"]["description"] =
         "Perceptual roughness for above-water sky reflections when environment IBL is enabled. A selected value adds unresolved wave slope variance at distance.";
+    optics["properties"]["solar_scattering"]["description"] =
+        "Blend the water's scattered radiance between its authored value and that value scaled by the committed solar sky gain. Zero and omission cook the same bytes.";
     optics["properties"]["shore_foam"]["description"] =
         "Add surface foam to shallow committed water. Depth is measured vertically in metres. Opacity zero keeps the selected profile with a clear surface.";
     optics["properties"]["offshore"]["description"] =

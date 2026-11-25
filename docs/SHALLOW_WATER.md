@@ -423,6 +423,39 @@ and export checks the corresponding runtime feature. The
 [Multi-scale ocean lighting](https://www-evasion.imag.fr/Publications/2010/BNH10/),
 [Projected-space specular filtering](https://www.jcgt.org/published/0010/02/02/)
 
+### Let scattered water light follow the sky
+
+Set `optics.solar_scattering` to a strength from 0 to 1 when water should
+dim as the scene's [solar lighting](WEATHER_CYCLE.md#drive-the-sun-and-sky)
+changes. Set it to 1 to follow the full brightness change. Intermediate
+values blend between the authored radiance and the sky-scaled radiance.
+For example, a strength of 0.75 and a committed sky gain of 0.2 scale each
+`scattered_radiance` channel by 0.4. Until gameplay commits a sky sample,
+the renderer uses a gain of 1.
+
+The compositor supplies the same effective scene-linear radiance to
+fitted and offshore water, views from below the surface and water-aware
+sprites. The strength acts on the medium's scattered-light term. Extinction,
+Fresnel reflection, surface geometry, caustics and foam use their own controls.
+This is an artist-controlled approximation to changing incident light.
+
+An omitted or zero strength cooks the existing artifact bytes. A positive
+strength cooks `.pwater` version 15. Project and bundle inspection report
+`needs_water_solar_scattering`, and export requires a runtime with
+`features.water_solar_scattering`. The existing water-optics fallback
+conditions apply. Check `render_diagnostics.water_optics.active` to confirm
+optical composition and its `solar_scattering` object for the authored
+strength, committed sky gain and selected radiance scale.
+
+Run the [solar scattering fixture](../tests/water_solar_scattering_capture.py)
+with a simulation build to check authoring, legacy cooking and save
+continuation. With Windows Vulkan, a compiled solar fixture and
+`--gpu GPU_INDEX`, it checks HDR above and below water. Supply
+`--runtime-root` to exercise the relocated build and older-runtime rejection.
+Use `--solar-native-descriptor` on the
+[optical sprite fixture](../tests/water_sprite_capture.py) to check blending
+through the dusk medium.
+
 ### Refract the view across the surface
 
 Add `"refraction": true` inside the `optics` profile. This cooks version 7 of

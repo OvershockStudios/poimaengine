@@ -206,8 +206,8 @@ def channel_delta(a,b):
     return max(abs(x-y) for x,y in zip(a,b,strict=True))
 
 
-def compose(pixel,probe,tick,camera,profile=None,roughness=None):
-    _,eye,rotation,from_sea=CAMERAS[camera]
+def compose(pixel,probe,tick,camera,profile=None,roughness=None,*,scatter_scale=1.,ambient=AMBIENT):
+    _,eye,rotation,from_sea=CAMERAS[camera] if isinstance(camera,str) else camera
     ray,view_cosine=sightline(pixel,rotation,from_sea)
     dx,dy,dz=ray
     x,y,z=eye
@@ -242,7 +242,7 @@ def compose(pixel,probe,tick,camera,profile=None,roughness=None):
     length=wet_length(bounds,far)
     before=0.
     interface=None
-    tint=OPTICS['scattered_radiance']
+    tint=[channel*scatter_scale for channel in OPTICS['scattered_radiance']]
     extinction=OPTICS['extinction_per_m']
     hdr=[s+(v-s)*math.exp(-k*length) for s,v,k in zip(tint,probe['raw_hdr'],extinction,strict=True)]
     solid_distance=far if depth<1 else FOG['max_distance_m']
@@ -253,7 +253,7 @@ def compose(pixel,probe,tick,camera,profile=None,roughness=None):
         hit,cosine,interface=min(crossings)
         before=wet_length(bounds,hit)
         from_air=cosine<0
-        sky=AMBIENT if from_air else tint
+        sky=ambient if from_air else tint
 
         def reflected(incidence,width=None):
             f=fresnel(max(-1.,min(1.,incidence)))

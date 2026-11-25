@@ -42,5 +42,6 @@ struct WaterOptics {
     bool follow_terrain=false;
     std::optional<WaterOffshore> offshore;
     std::optional<double> reflection_roughness{};
+    std::optional<double> solar_scattering{};
 };
 }

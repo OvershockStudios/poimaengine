@@ -1378,7 +1378,11 @@ struct Context {
         const bool height_active=selected && selected->density_per_m>0 && color_reason=="active";
         if(const auto& water=scene->water_volume) {
             const auto& camera=scene->camera_world;
-            const auto view=height_fog::project_water_view(*water,{camera[12],camera[13],camera[14]},water_normal_mode);
+            const auto sky_gain=lighting.solar_lighting ? lighting.solar_lighting->sky_gain : 1.0f;
+            const auto solar_scattering=water->optics.solar_scattering;
+            const double scattering_scale=solar_scattering ? std::lerp(1.0,static_cast<double>(sky_gain),*solar_scattering) : 1.0;
+            const auto view=height_fog::project_water_view(*water,{camera[12],camera[13],camera[14]},water_normal_mode,
+                                                           scattering_scale);
             const auto strength=water->optics.caustics_strength;
             const auto roughness=water->optics.reflection_roughness;
             if (roughness) require(*roughness>=0 && *roughness<=1,"Invalid water reflection roughness.");
@@ -1400,6 +1404,8 @@ struct Context {
             pending_water_optics->swell_variation=water->swell_variation;
             pending_water_optics->reflection_roughness=roughness;
             pending_water_optics->rough_reflection_active=frame_constants.water_reflection[1]>0;
+            if (solar_scattering)
+                pending_water_optics->solar_scattering=WaterSolarScatteringDiagnostics{*solar_scattering,sky_gain,scattering_scale};
             if (color_reason=="active") pending_water_optics->offshore_swell_layers=view.offshore_swell_layers;
         }
         if(wants_aerial) {

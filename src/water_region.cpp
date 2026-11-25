@@ -214,6 +214,7 @@ nlohmann::json listener_audio_json(const ListenerAudio& profile) {
 nlohmann::json optics_json(const WaterOptics& profile) {
     nlohmann::json result{{"extinction_per_m",profile.extinction_per_m},{"scattered_radiance",profile.scattered_radiance}};
     if(const auto& roughness=profile.reflection_roughness) result["reflection_roughness"]=*roughness;
+    if(profile.solar_scattering.value_or(0)>0) result["solar_scattering"]=*profile.solar_scattering;
     if(profile.refraction) result["refraction"]=true;
     if(profile.follow_terrain) result["follow_terrain"]=true;
     if(profile.caustics_strength>0) result["caustics_strength"]=profile.caustics_strength;
@@ -290,6 +291,11 @@ Region::Region(const RegionDefinition& definition)
     if (optics_) {
         if (optics_->reflection_roughness && !unit_interval(*optics_->reflection_roughness))
             throw std::invalid_argument("Water reflection roughness must be in [0,1].");
+        if (const auto strength=optics_->solar_scattering) {
+            if (!unit_interval(*strength))
+                throw std::invalid_argument("Water solar_scattering must be in [0,1].");
+            if (*strength==0) optics_->solar_scattering.reset();
+        }
         if (const auto& sea=optics_->offshore;
             sea && (!optics_->follow_terrain || static_cast<std::uint32_t>(sea->edge)>3 ||
                 !(sea->depth_m>=.1 && sea->depth_m<=10'000) || !(std::abs(sea->surface_height_m)<=1e6)))

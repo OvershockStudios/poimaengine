@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.426
+
+- Let water's scattered light respond to the gameplay-driven sky brightness,
+  including underwater views, the offshore band and optical particles.
+
 ## 0.0.425
 
 - Sample local seasonal temperatures on the solar calendar. Split scheduled

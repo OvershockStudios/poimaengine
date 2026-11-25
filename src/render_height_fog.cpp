@@ -112,7 +112,8 @@ void require_bindings(nvrhi::IBindingSet* bindings, const nvrhi::BindingSetDesc&
 }
 }
 
-WaterView project_water_view(const SceneWaterVolume& water,const std::array<double,3>& eye,float wave_mode) {
+WaterView project_water_view(const SceneWaterVolume& water,const std::array<double,3>& eye,float wave_mode,
+                            double scattering_scale) {
     namespace rs=render_schedule;
     const auto& sea=water.optics.offshore;
     const bool shaped=water.surface_swell || sea.has_value();
@@ -136,6 +137,8 @@ WaterView project_water_view(const SceneWaterVolume& water,const std::array<doub
                 cell.swell_center_m==0 && cell.swell_corners==std::array<float,4>{});
     })) throw std::runtime_error("Invalid water column height.");
 
+    if (!(scattering_scale>=0 && scattering_scale<=1))
+        throw std::runtime_error("Invalid water scattering scale.");
     WaterView result{};
     auto& parameters=result.parameters;
     std::array<double,3> local{};
@@ -147,7 +150,7 @@ WaterView project_water_view(const SceneWaterVolume& water,const std::array<doub
             throw std::runtime_error("Invalid water optics coefficients or origin.");
         parameters.camera_cell_size[axis]=static_cast<float>(local[axis]);
         parameters.extinction_per_m[axis]=static_cast<float>(extinction);
-        parameters.radiance_wave_mode[axis]=static_cast<float>(scatter);
+        parameters.radiance_wave_mode[axis]=static_cast<float>(scatter*scattering_scale);
     }
     parameters.camera_cell_size[3]=static_cast<float>(water.cell_size_m);
     parameters.dimensions=water.cells_x|(water.cells_z<<8u)|(water.optics.refraction ? 1u<<16u : 0u)|
