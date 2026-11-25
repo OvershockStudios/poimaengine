@@ -1,8 +1,19 @@
 # Implementation status
 
-Updated 2026-11-25 for **0.0.449**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-25 for **0.0.450**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.450 adds [doorway acoustics](AUDIO.md#route-sound-through-a-doorway).
+A panel uncovered six of nine samples when partly open and all nine when
+fully open. The direct ray stayed blocked. Audio arrived from the doorway
+and returned to silence after the panel closed while the same voice kept
+playing. Relocated Windows builds on AMD and NVIDIA matched all 35,200
+frames through SDL disk output and restored the open route from a save.
+Ubuntu passed six focused suites and the portal fixture. Portal transport
+covers one sampled opening. Multi-room transport, physical listening and
+representative cost remain open.
+[Results and scope](evidence/m2-audio-portals-450.json)
 
 Version 0.0.449 adds [authored room reverb](AUDIO.md#give-a-room-a-reverberant-tail)
 to capture and playback. The measured decay estimates were 0.35 and 1.24

@@ -21,6 +21,7 @@ struct WorldPackageContent {
     std::uint64_t revision=0;
     bool needs_audio=false;
     bool needs_audio_room_reverb=false;
+    bool needs_audio_portals=false;
     bool needs_audio_water_flow=false;
     bool needs_navigation=false;
     bool needs_particles=false;

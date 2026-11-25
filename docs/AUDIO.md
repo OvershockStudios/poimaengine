@@ -6,10 +6,10 @@ The snapshot methods on this page render **frozen audio snapshots offline**.
 [Sound events and player output](AUDIO_EVENTS.md) provide logical gameplay voices,
 C# play/stop calls and optional native device playback. The native
 [early reflection model](EARLY_REFLECTIONS.md) provides a single optional
-bounce. Authored rooms provide [diffuse late reverb](#give-a-room-a-reverberant-tail).
-Diffraction, compressed streaming, a full mixer, captions and the complete
-environmental audio system remain unfinished. Inspect build capabilities before
-using either path.
+bounce. Authored rooms provide [diffuse late reverb](#give-a-room-a-reverberant-tail)
+and apertures [route sound through doors](#route-sound-through-a-doorway).
+General edge diffraction, compressed streaming, a full mixer and captions
+remain open.
 
 ## Build
 
@@ -180,6 +180,60 @@ out of a volume through a committed replay. Give it an existing output
 directory and the matching `poima` binary. To check a relocated Windows game
 through the SDL disk output, add `--runtime INSTALLED_RUNTIME --gpu 0`.
 Use `--windows-interop` with Windows-accessible paths when running from WSL.
+
+## Route sound through a doorway
+
+Put an `AudioPortal` on a Transform centered on the opening. Its local XY
+plane spans the doorway, with local Z pointing through it. Set
+`{"half_extents":[0.45,1.05],"gain":0.9}` through `component.set` in a
+guarded `world.transact`. Width and height are positive half extents in
+local metres from 0.05–32, and optional `gain` is a pressure multiplier
+from 0–1 with default 1. The aperture follows its full world transform.
+Attach the aperture to the frame of a swinging or sliding door. Give the
+moving panel a collider and `AcousticMaterial` so its committed pose can
+cover the opening. Use acoustic geometry for the surrounding walls.
+
+With the direct ray blocked and the source and listener on opposite sides
+of the plane, the solver tests nine aperture samples against the same
+acoustic triangles used for direct sound. Each sample needs clear legs to
+both endpoints. Triangles covering the opening block a sample even when
+they meet the plane itself. The shortest clear sample supplies the arrival
+direction and two-leg propagation delay. Relative clear area scales the
+pressure by its square root. Longer detours roll off higher frequencies
+more than low frequencies. Direct transmission and early reflections
+remain separate paths. The wet room mix receives the portal signal before
+underwater filtering.
+
+`world.audio.inspect` and `runtime.audio.inspect` report `portal_path` on
+each source when the scene contains a portal. The path is null when no
+candidate passes visibility. The selected result includes the aperture
+point, visible sample count, three band gains, local direction and arrival
+sample. A snapshot checks at most four eligible nearest apertures per
+occluded source and 512 aperture samples total. A world may contain 32
+portals, and a route must be shorter than 100 m. Above 8,192 acoustic
+triangles, direct propagation continues and portal paths are skipped.
+`audio_portals.budget_exceeded` reports either budget limit.
+
+The native player mixes a selected portal into the original voice at its
+delayed cursor and fades path handoffs over one 512-frame block. The arrival
+delay updates when the selected sample changes or its delay drifts by more
+than 32 frames. Replay and player reports count new or replacement branches
+as `portal_handoffs`. Configure `{"audio":true}` in the project
+manifest through `poima project configure`. Export checks the installed
+runtime's `audio_portals` capability.
+
+The aperture model approximates one indirect path and uses the remaining
+visible area to follow a closing door. For context, published approaches
+use portal closure to attenuate computed acoustic paths and model larger
+room graphs. Those methods support richer multi-hop and diffuse transport.
+[Dynamic portal occlusion](https://arxiv.org/abs/2107.11548)
+[Floorplan-centric multi-room simulation](https://arxiv.org/abs/2610.22936)
+
+`tests/audio_portal.py` uses an off-axis doorway and verifies the delay,
+stereo direction, remaining aperture area and the original voice across
+closing and reopening. Give it an existing output directory. For native
+Windows replay and export, also supply `--runtime INSTALLED_RUNTIME --gpu 0`.
+From WSL, use Windows-accessible output paths and add `--windows-interop`.
 
 ## Verification and remaining work
 

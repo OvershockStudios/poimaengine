@@ -11,19 +11,25 @@
 #include <stdexcept>
 #if POIMA_AUDIO
 #include <phonon.h>
-#include "audio_reflections.hpp"
+#include "audio_visibility.hpp"
 #endif
 namespace poima {
 namespace {
 void check(bool ok,const char* text) { if(!ok)throw std::runtime_error(text); }
 [[maybe_unused]] bool same_paths(const AudioSnapshot& a,const AudioSnapshot& b) {
     if(a.listener!=b.listener || a.early_reflections!=b.early_reflections ||
-       a.geometry.size()!=b.geometry.size() || a.sources.size()!=b.sources.size())return false;
+       a.geometry.size()!=b.geometry.size() || a.sources.size()!=b.sources.size() ||
+       a.portals.size()!=b.portals.size())return false;
     for(std::size_t i=0;i<a.geometry.size();++i) {
         const auto& x=a.geometry[i];const auto& y=b.geometry[i];
         if(x.entity!=y.entity || x.world!=y.world || x.mesh!=y.mesh || x.material.enabled!=y.material.enabled || x.material.absorption!=y.material.absorption || x.material.transmission!=y.material.transmission || x.material.scattering!=y.material.scattering)return false;
     }
     for(std::size_t i=0;i<a.sources.size();++i)if(a.sources[i].entity!=b.sources[i].entity || a.sources[i].world!=b.sources[i].world)return false;
+    for(std::size_t i=0;i<a.portals.size();++i) {
+        const auto& x=a.portals[i];const auto& y=b.portals[i];
+        if(x.entity!=y.entity || x.world!=y.world || x.opening.half_extents!=y.opening.half_extents ||
+            x.opening.gain!=y.opening.gain)return false;
+    }
     return true;
 }
 }
@@ -104,15 +110,16 @@ struct AudioStream::Impl {
         bool direct_done=false,done=false;
         ~DspPath() { if(spatial)iplBinauralEffectRelease(&spatial);if(direct)iplDirectEffectRelease(&direct); }
     };
-    struct ReflectedVoice {
-        AudioReflection path;
+    template<class Path> struct SecondaryVoice {
+        Path path;
         DspPath dsp;
         float audibility=1;
     };
     struct Voice {
         SoundVoice state;
         DspPath direct;
-        std::unique_ptr<ReflectedVoice> reflected;
+        std::unique_ptr<SecondaryVoice<AudioReflection>> reflected;
+        std::unique_ptr<SecondaryVoice<AudioPortalPath>> portal;
     };
     std::map<std::uint64_t,std::unique_ptr<Voice>> voices;
     ~Impl() { voices.clear();if(hrtf)iplHRTFRelease(&hrtf);if(context)iplContextRelease(&context); }
@@ -123,18 +130,26 @@ struct AudioStream::Impl {
         IPLDirectEffectSettings direct_settings{1};status(iplDirectEffectCreate(context,&audio,&direct_settings,&dsp.direct));
         IPLBinauralEffectSettings spatial_settings{hrtf};status(iplBinauralEffectCreate(context,&audio,&spatial_settings,&dsp.spatial));
     }
-    std::unique_ptr<ReflectedVoice> make_reflection(const AudioReflection& path,float gain) const {
-        auto reflected=std::make_unique<ReflectedVoice>();
-        reflected->path=path;
-        reflected->audibility=gain;
-        setup(reflected->dsp,path.propagation_delay_samples);
-        return reflected;
+    template<class Path>
+    std::unique_ptr<SecondaryVoice<Path>> make_secondary(const Path& path,float gain) const {
+        auto branch=std::make_unique<SecondaryVoice<Path>>();
+        branch->path=path;
+        branch->audibility=gain;
+        setup(branch->dsp,path.propagation_delay_samples);
+        return branch;
+    }
+    void record_portal_observation() {
+        stats.portals_observed|=!snapshot.portals.empty();
+        stats.portal_budget_exceeded|=paths.portal_budget_exceeded;
     }
     const AudioPath& path(const std::string& entity) const {
         const auto p=std::find_if(paths.paths.begin(),paths.paths.end(),[&](const auto& v){return v.entity==entity;});check(p!=paths.paths.end(),"Playing voice lost its emitter path.");return *p;
     }
     void synchronize(const AudioSnapshot& next,const std::vector<SoundVoice>& states) {
-        if(!same_paths(snapshot,next)) { paths=observe_audio(next);snapshot=next;++stats.path_updates; }
+        if(!same_paths(snapshot,next)) {
+            paths=observe_audio(next);snapshot=next;++stats.path_updates;
+            record_portal_observation();
+        }
         // A committed instance removal retires emitter membership. Its delayed
         // and tail DSP voices cannot keep borrowing a now absent propagation
         // path; other emitters and their presentation state remain untouched.
@@ -147,46 +162,54 @@ struct AudioStream::Impl {
             if(auto found=voices.find(state.id);found!=voices.end()) { found->second->state=state;continue; }
             if(state.id<=seen)continue;
             const auto& current=path(state.emitter);
-            const auto delay=current.reflection ? std::max(current.propagation_delay_samples,current.reflection->propagation_delay_samples) :
-                current.propagation_delay_samples;
+            auto delay=current.propagation_delay_samples;
+            if(current.reflection)delay=std::max(delay,current.reflection->propagation_delay_samples);
+            if(current.portal)delay=std::max(delay,current.portal->propagation_delay_samples);
             if(state.start_tick*audio_tick_frames<start && state.end_sample()!=UINT64_MAX && state.end_sample()+delay<=start)continue;
             check(voices.size()<256,"Audio presentation exceeded 256 active/delayed/tail voices.");
             auto voice=std::make_unique<Voice>();voice->state=state;
             setup(voice->direct,current.propagation_delay_samples);
-            if(current.reflection)voice->reflected=make_reflection(*current.reflection,1);
+            if(current.reflection)voice->reflected=make_secondary(*current.reflection,1);
+            if(current.portal)voice->portal=make_secondary(*current.portal,1);
             voices.emplace(state.id,std::move(voice));++stats.voices_started;
         }
         for(const auto& state:states)seen=std::max(seen,state.id);
     }
-    void render_reflection(std::span<float> mix,const SoundVoice& state,ReflectedVoice& reflection,
-                           const FlowEnvelope* flow,float target) {
-        render_path(mix,state,reflection.dsp,reflection.path.direction,
-                    audio_detail::reflection_filter(reflection.path),flow,reflection.audibility,target);
-        reflection.audibility=target;
+    static bool same_secondary(const AudioReflection& a,const AudioReflection& b,std::uint64_t) {
+        return a.entity==b.entity && a.face==b.face;
     }
-    void update_reflection(std::span<float> mix,Voice& voice,const std::optional<AudioReflection>& selected,
-                           const FlowEnvelope* flow) {
-        auto& current=voice.reflected;
-        const auto same_face=current && selected && selected->entity==current->path.entity &&
-            selected->face==current->path.face;
-        if(same_face) {
+    static bool same_secondary(const AudioPortalPath& a,const AudioPortalPath& b,std::uint64_t delay) {
+        const auto next=std::uint64_t(b.propagation_delay_samples);
+        return a.entity==b.entity && a.sample==b.sample && next<=delay+32 && delay<=next+32;
+    }
+    template<class Path>
+    void render_secondary(std::span<float> mix,const SoundVoice& state,SecondaryVoice<Path>& branch,
+                          const FlowEnvelope* flow,float target) {
+        render_path(mix,state,branch.dsp,branch.path.direction,
+                    audio_detail::acoustic_secondary_filter(branch.path),flow,branch.audibility,target);
+        branch.audibility=target;
+    }
+    template<class Path>
+    void update_secondary(std::span<float> mix,const SoundVoice& state,std::unique_ptr<SecondaryVoice<Path>>& current,
+                          const std::optional<Path>& selected,const FlowEnvelope* flow,std::uint64_t& handoffs) {
+        if(current && selected && same_secondary(current->path,*selected,current->dsp.delay)) {
             current->path=*selected;
-            render_reflection(mix,voice.state,*current,flow,1);
+            render_secondary(mix,state,*current,flow,1);
             return;
         }
         // An audible replacement needs source samples at its own delayed
         // cursor. A new branch cannot restart the clip or revive an ended voice.
-        const auto end=voice.state.end_sample();
+        const auto end=state.end_sample();
         if(selected && (end==UINT64_MAX || cursor<end+selected->propagation_delay_samples)) {
-            auto replacement=make_reflection(*selected,0);
-            if(current && current->audibility>0)render_reflection(mix,voice.state,*current,flow,0);
+            auto replacement=make_secondary(*selected,0);
+            if(current && current->audibility>0)render_secondary(mix,state,*current,flow,0);
             current=std::move(replacement);
-            render_reflection(mix,voice.state,*current,flow,1);
-            ++stats.reflection_handoffs;
+            render_secondary(mix,state,*current,flow,1);
+            ++handoffs;
         } else if(current) {
             // Advance the muted branch in case this face becomes visible
             // again. This also permits its delayed tail to retire naturally.
-            render_reflection(mix,voice.state,*current,flow,0);
+            render_secondary(mix,state,*current,flow,0);
         }
     }
     void render_path(std::span<float> mix,const SoundVoice& state,DspPath& dsp,const std::array<double,3>& direction,
@@ -247,11 +270,13 @@ struct AudioStream::Impl {
             if (voice.state.sound.water_flow)
                 flow=&flow_envelopes.at(voice.state.emitter);
             render_path(mix,voice.state,voice.direct,current.direction,params,flow);
-            update_reflection(mix,voice,current.reflection,flow);
+            update_secondary(mix,voice.state,voice.reflected,current.reflection,flow,stats.reflection_handoffs);
+            update_secondary(mix,voice.state,voice.portal,current.portal,flow,stats.portal_handoffs);
         }
         std::erase_if(voices,[](const auto& item){
             const auto& voice=*item.second;
-            return voice.direct.done && (!voice.reflected || voice.reflected->dsp.done);
+            return voice.direct.done && (!voice.reflected || voice.reflected->dsp.done) &&
+                (!voice.portal || voice.portal->dsp.done);
         });
         ++stats.blocks;
     }
@@ -269,6 +294,7 @@ AudioStream::AudioStream(std::uint64_t tick,const AudioSnapshot& initial):impl_(
     check(audio_available(),"Audio stream is not built.");auto& s=*impl_;s.start=s.cursor=s.committed=tick*audio_tick_frames;s.snapshot=initial;s.paths=observe_audio(initial);s.stats.path_updates=1;
 #if POIMA_AUDIO
     s.sample_flow(initial,tick);
+    s.record_portal_observation();
     s.room=initial.room;
     if (s.room) {
         s.stats.room_reverb_used=true;

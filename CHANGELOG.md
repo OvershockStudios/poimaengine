@@ -2,6 +2,12 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.450
+
+- Route sound through a doorway while a wall still blocks the direct line.
+  The aperture follows committed door geometry, and the player fades changes
+  without restarting the voice. [Doorway acoustics](docs/AUDIO.md#route-sound-through-a-doorway)
+
 ## 0.0.449
 
 - Give rooms an authored late reverb tail that follows the committed listener.

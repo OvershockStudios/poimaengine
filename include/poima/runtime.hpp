@@ -559,6 +559,7 @@ struct RuntimeEntityDefinition {
     std::optional<RuntimeFootprintSurface> footprint_surface;
     std::optional<wetness::Profile> surface_wetness;
     std::optional<AudioRoom> audio_room;
+    std::optional<AudioPortal> audio_portal;
 };
 inline constexpr std::size_t max_runtime_spawn_templates=256;
 inline constexpr std::size_t max_runtime_template_payload_bytes=2*1024*1024;

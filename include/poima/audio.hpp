@@ -70,6 +70,18 @@ struct AudioRoomSelection {
     AudioRoom settings;
 };
 void validate_audio_room(const AudioRoom& room);
+inline constexpr std::size_t max_audio_portals=32;
+inline constexpr double min_audio_portal_extent_m=.05, max_audio_portal_extent_m=32;
+struct AudioPortal {
+    std::array<double,2> half_extents{.5,1};
+    double gain=1;
+};
+void validate_audio_portal(const AudioPortal& portal);
+struct AudioPortalInstance {
+    std::string entity;
+    Matrix4 world=identity_matrix();
+    AudioPortal opening;
+};
 struct AudioSnapshot {
     Matrix4 listener=identity_matrix();
     std::vector<AcousticGeometry> geometry;
@@ -77,10 +89,20 @@ struct AudioSnapshot {
     bool early_reflections=false;
     std::optional<AudioWaterMedium> water_medium;
     std::optional<AudioRoomSelection> room;
+    std::vector<AudioPortalInstance> portals;
 };
 struct AudioReflection {
     std::string entity;
     std::uint32_t face=0;
+    std::array<double,3> point{},direction{};
+    double distance=0;
+    std::uint32_t propagation_delay_samples=0;
+    float distance_gain=1;
+    std::array<float,3> bands{1,1,1};
+};
+struct AudioPortalPath {
+    std::string entity;
+    std::uint32_t sample=0, visible_samples=0;
     std::array<double,3> point{},direction{};
     double distance=0;
     std::uint32_t propagation_delay_samples=0;
@@ -95,6 +117,7 @@ struct AudioPath {
     float distance_gain=1,occlusion=1;
     std::array<float,3> air{1,1,1},transmission{1,1,1};
     std::optional<AudioReflection> reflection;
+    std::optional<AudioPortalPath> portal;
 };
 struct AudioReport {
     std::vector<AudioPath> paths;
@@ -103,6 +126,7 @@ struct AudioReport {
     double scene_ms=0,simulation_ms=0,dsp_ms=0,peak=0,rms=0;
     std::size_t over_range_samples=0;
     bool reflection_budget_exceeded=false;
+    bool portal_budget_exceeded=false;
 };
 bool audio_available();
 // Synchronous frozen-snapshot observation. No device, simulation clock changes,
@@ -144,6 +168,8 @@ struct AudioStreamStats {
     std::uint64_t reflection_handoffs=0;
     std::uint64_t room_transitions=0;
     bool room_reverb_used=false;
+    std::uint64_t portal_handoffs=0;
+    bool portals_observed=false, portal_budget_exceeded=false;
 };
 // Persistent native direct/HRTF DSP, fed only after committed simulation ticks.
 // Full 512-frame blocks are rendered up to (never beyond) committed time.

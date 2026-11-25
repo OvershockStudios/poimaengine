@@ -132,6 +132,7 @@ Reply capabilities() {
         ",\"cloud_shadows\":" + boolean(POIMA_RENDER_SMOKE != 0 && POIMA_SIMULATION != 0) +
         ",\"sound_events\":" + boolean(POIMA_SIMULATION != 0) + ",\"audio_stream_capture\":" + boolean(POIMA_AUDIO != 0 && POIMA_SIMULATION != 0) + ",\"audio_authoring\":true,\"wav_import\":true,\"audio_capture\":" + boolean(POIMA_AUDIO != 0) +
         ",\"audio_room_reverb\":" + boolean(POIMA_AUDIO != 0) +
+        ",\"audio_portals\":" + boolean(POIMA_AUDIO != 0) +
         ",\"audio_water_flow\":" + boolean(POIMA_AUDIO != 0 && POIMA_SIMULATION != 0) +
         ",\"audio_device_playback\":" + boolean(POIMA_AUDIO != 0 && POIMA_RENDER_SMOKE != 0 && POIMA_SIMULATION != 0) +
         ",\"player_early_reflections\":" + boolean(POIMA_AUDIO != 0 && POIMA_RENDER_SMOKE != 0 && POIMA_SIMULATION != 0) +

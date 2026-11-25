@@ -12,6 +12,7 @@
 #if POIMA_AUDIO
 #include <phonon.h>
 #include "audio_reflections.hpp"
+#include "audio_portal.hpp"
 #endif
 namespace poima {
 bool audio_available() { return POIMA_AUDIO!=0; }
@@ -43,12 +44,19 @@ AudioReport observe_audio(const AudioSnapshot& s,std::uint32_t frames) {
     (void)s;(void)frames;throw std::runtime_error("Audio observation is not built. Configure POIMA_ENABLE_AUDIO=ON.");
 #else
     check(frames<=10*audio_rate && s.sources.size()<=max_audio_sources && s.geometry.size()<=10000,"Audio source/capture/geometry budget exceeded.");
+    check(s.portals.size()<=max_audio_portals,"Audio portal limit exceeded.");
+    for(const auto& portal:s.portals) {
+        validate_audio_portal(portal.opening);
+        (void)inverse_affine(portal.world);
+    }
     const auto started=Clock::now();AudioReport report;
     Handle<IPLContext,iplContextRelease> context;IPLContextSettings context_settings{};context_settings.version=STEAMAUDIO_VERSION;context_settings.simdLevel=IPL_SIMDLEVEL_SSE2;
     status(iplContextCreate(&context_settings,&context.value));
     Handle<IPLScene,iplSceneRelease> scene;IPLSceneSettings scene_settings{};scene_settings.type=IPL_SCENETYPE_DEFAULT;status(iplSceneCreate(context.value,&scene_settings,&scene.value));
     std::vector<IPLVector3> vertices;std::vector<IPLTriangle> triangles;std::vector<IPLint32> material_indices;std::vector<IPLMaterial> materials;
-    std::vector<audio_detail::ReflectionShape> reflection_shapes;
+    std::vector<audio_detail::AcousticShape> shapes;
+    const auto shape_limit=s.early_reflections ? audio_detail::max_reflection_triangles :
+        (s.portals.empty() ? 0 : audio_detail::max_portal_triangles);
     constexpr std::array<std::array<float,3>,8> corners{{{-.5f,-.5f,-.5f},{.5f,-.5f,-.5f},{.5f,.5f,-.5f},{-.5f,.5f,-.5f},{-.5f,-.5f,.5f},{.5f,-.5f,.5f},{.5f,.5f,.5f},{-.5f,.5f,.5f}}};
     constexpr std::array<std::uint32_t,36> box{{0,2,1,0,3,2,4,5,6,4,6,7,0,1,5,0,5,4,3,7,6,3,6,2,0,4,7,0,7,3,1,2,6,1,6,5}};
     for(const auto& g:s.geometry) {
@@ -63,10 +71,9 @@ AudioReport observe_audio(const AudioSnapshot& s,std::uint32_t frames) {
         if(g.mesh)for(const auto& v:g.mesh->vertices)append(v.position);else for(const auto& v:corners)append(v);
         const std::span<const std::uint32_t> indices=g.mesh ? std::span<const std::uint32_t>(g.mesh->indices) : std::span<const std::uint32_t>(box);
         for(std::size_t i=0;i<count;i+=3) { IPLTriangle t{};for(std::size_t k=0;k<3;++k) { check(indices[i+k]<vertices.size()-static_cast<std::size_t>(first),"Invalid acoustic triangle index.");t.indices[k]=first+static_cast<IPLint32>(indices[i+k]); }triangles.push_back(t);material_indices.push_back(material); }
-        if(s.early_reflections && !report.reflection_budget_exceeded) {
-            report.reflection_budget_exceeded=triangles.size()>audio_detail::max_reflection_triangles;
-            if(report.reflection_budget_exceeded)reflection_shapes.clear();
-            else if(count!=0)reflection_shapes.push_back(audio_detail::reflection_shape(g,first_triangle,triangles.size(),
+        if(shape_limit!=0) {
+            if(triangles.size()>shape_limit)shapes.clear();
+            else if(count!=0)shapes.push_back(audio_detail::acoustic_shape(g,first_triangle,triangles.size(),
                 std::span<const IPLVector3>(vertices).subspan(static_cast<std::size_t>(first))));
         }
         IPLMaterial m{};std::copy(g.material.absorption.begin(),g.material.absorption.end(),m.absorption);std::copy(g.material.transmission.begin(),g.material.transmission.end(),m.transmission);m.scattering=g.material.scattering;materials.push_back(m);
@@ -77,6 +84,9 @@ AudioReport observe_audio(const AudioSnapshot& s,std::uint32_t frames) {
         settings.vertices=vertices.data();settings.triangles=triangles.data();settings.materialIndices=material_indices.data();settings.materials=materials.data();status(iplStaticMeshCreate(scene.value,&settings,&mesh.value));iplStaticMeshAdd(mesh.value,scene.value);
     }
     iplSceneCommit(scene.value);report.triangles=triangles.size();
+    report.reflection_budget_exceeded=s.early_reflections && triangles.size()>audio_detail::max_reflection_triangles;
+    report.portal_budget_exceeded=!s.portals.empty() && triangles.size()>audio_detail::max_portal_triangles;
+    auto portal_probes=audio_detail::portal_probe_budget;
     Handle<IPLSimulator,iplSimulatorRelease> simulator;IPLSimulationSettings settings{};settings.flags=IPL_SIMULATIONFLAGS_DIRECT;settings.sceneType=IPL_SCENETYPE_DEFAULT;settings.maxNumOcclusionSamples=1;settings.maxNumSources=static_cast<IPLint32>(max_audio_sources);settings.numThreads=1;settings.samplingRate=audio_rate;settings.frameSize=audio_block;
     status(iplSimulatorCreate(context.value,&settings,&simulator.value));iplSimulatorSetScene(simulator.value,scene.value);
     std::vector<Handle<IPLSource,iplSourceRelease>> sources;sources.reserve(s.sources.size());
@@ -112,10 +122,14 @@ AudioReport observe_audio(const AudioSnapshot& s,std::uint32_t frames) {
         for(float v:out.direct.airAbsorption)coefficient(v);
         for(float v:out.direct.transmission)coefficient(v);
         std::copy_n(out.direct.airAbsorption,3,path.air.begin());std::copy_n(out.direct.transmission,3,path.transmission.begin());
-        if(!reflection_shapes.empty())path.reflection=audio_detail::first_reflection(path,s.listener,reflection_shapes,vertices,triangles);
+        if(s.early_reflections && !shapes.empty())
+            path.reflection=audio_detail::first_reflection(path,s.listener,shapes,vertices,triangles);
+        if(!s.portals.empty() && report.triangles<=audio_detail::max_portal_triangles)
+            path.portal=audio_detail::portal_path(path,s.listener,s.portals,shapes,vertices,triangles,
+                portal_probes,report.portal_budget_exceeded);
         report.paths.push_back(std::move(path));
     }
-    if(s.early_reflections)report.simulation_ms=ms(mark);
+    if(s.early_reflections || !s.portals.empty())report.simulation_ms=ms(mark);
     if(frames==0)return report;
     mark=Clock::now();IPLAudioSettings audio_settings{audio_rate,audio_block};Handle<IPLHRTF,iplHRTFRelease> hrtf;
     IPLHRTFSettings hrtf_settings{};hrtf_settings.type=IPL_HRTFTYPE_DEFAULT;hrtf_settings.volume=1;status(audio_detail::create_hrtf(context.value,&audio_settings,&hrtf_settings,&hrtf.value));
@@ -149,7 +163,9 @@ AudioReport observe_audio(const AudioSnapshot& s,std::uint32_t frames) {
         const auto& path=report.paths[i];
         mix_path(source,path.propagation_delay_samples,path.direction,params);
         if(path.reflection)mix_path(source,path.reflection->propagation_delay_samples,path.reflection->direction,
-                                    audio_detail::reflection_filter(*path.reflection));
+                                    audio_detail::acoustic_secondary_filter(*path.reflection));
+        if(path.portal)mix_path(source,path.portal->propagation_delay_samples,path.portal->direction,
+                                audio_detail::acoustic_secondary_filter(*path.portal));
     }
     if (s.room && s.room->settings.wet_gain>0) {
         audio_detail::RoomReverb reverb(s.room->settings);

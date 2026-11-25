@@ -101,6 +101,9 @@ public:
         retired_.reflection_handoffs+=previous.reflection_handoffs;
         retired_.room_transitions+=previous.room_transitions;
         retired_.room_reverb_used|=previous.room_reverb_used;
+        retired_.portal_handoffs+=previous.portal_handoffs;
+        retired_.portals_observed|=previous.portals_observed;
+        retired_.portal_budget_exceeded|=previous.portal_budget_exceeded;
         retired_.peak=std::max(retired_.peak,previous.peak);retired_.dsp_ms+=previous.dsp_ms;
         retired_.over_range_samples+=previous.over_range_samples;
         mixer_=std::move(replacement);++report_.timeline_resets;report_.stream_drained=false;
@@ -136,6 +139,9 @@ public:
         result.stream.reflection_handoffs+=retired_.reflection_handoffs;
         result.stream.room_transitions+=retired_.room_transitions;
         result.stream.room_reverb_used|=retired_.room_reverb_used;
+        result.stream.portal_handoffs+=retired_.portal_handoffs;
+        result.stream.portals_observed|=retired_.portals_observed;
+        result.stream.portal_budget_exceeded|=retired_.portal_budget_exceeded;
         result.stream.peak=std::max(result.stream.peak,retired_.peak);result.stream.dsp_ms+=retired_.dsp_ms;
         result.stream.over_range_samples+=retired_.over_range_samples;return result;
     }

@@ -226,6 +226,8 @@ RuntimeDefinition resolve_runtime_definition(const Json& document, const std::fi
         if(components.contains("AcousticMaterial"))value.acoustics=acoustic_value(components.at("AcousticMaterial"));
         if(!animation_only && components.contains("AudioRoom"))
             value.audio_room=audio_room_value(components.at("AudioRoom"));
+        if(!animation_only && components.contains("AudioPortal"))
+            value.audio_portal=audio_portal_value(components.at("AudioPortal"));
         if(!animation_only && components.contains("AudioEmitter")) {
             value.emitter=emitter_value(components.at("AudioEmitter"));
             if(auto& bus=value.emitter->bus)bus->gain=buses.at(bus->name);

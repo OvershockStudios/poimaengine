@@ -609,6 +609,7 @@ public:
             for(const auto& asset:content.assets)assets.push_back({{"filename",asset.filename},{"sha256",asset.sha256},{"bytes",asset.bytes}});
             Json result={{"revision",content.revision},{"needs_audio",content.needs_audio},{"assets",assets}};
             if(content.needs_audio_room_reverb)result["needs_audio_room_reverb"]=true;
+            if(content.needs_audio_portals)result["needs_audio_portals"]=true;
             if(content.needs_navigation)result["needs_navigation"]=true;
             if(content.needs_particles)result["needs_particles"]=true;
             if(content.needs_sprite_particles)result["needs_sprite_particles"]=true;
@@ -697,7 +698,7 @@ public:
             fields(params, {"revision", "parent", "after", "limit", "component"}); current_revision(params);
             if(params.contains("component") && params.at("component").is_string() && custom_component(params.at("component").get<std::string>())) {
                 const auto schemas=authored_component_schemas(doc_);(void)authored_schema(schemas,custom_type(params.at("component").get<std::string>()));
-            } else if (params.contains("component")) require(params["component"] == "Transform" || params["component"] == "Camera" || params["component"] == "CameraDraw" || params["component"] == "MeshRenderer" || params["component"] == "BoxCollider" || params["component"] == "MeshCollider" || params["component"] == "CharacterController" || params["component"] == "StaticMesh" || params["component"] == "PbrMaterial" || params["component"] == "PbrTextures" || params["component"] == "Light" || params["component"] == "LightingEnvironment" || params["component"] == "AcousticMaterial" || params["component"] == "AudioRoom" || params["component"] == "AudioEmitter" || params["component"] == "AnimationRig" || params["component"] == "PhysicalRig" || params["component"] == "RigNode" || params["component"] == "SkinnedMesh" || params["component"] == "HitRegion" || params["component"] == "ParticleEmitter" || params["component"] == "FootprintSurface" ||
+            } else if (params.contains("component")) require(params["component"] == "Transform" || params["component"] == "Camera" || params["component"] == "CameraDraw" || params["component"] == "MeshRenderer" || params["component"] == "BoxCollider" || params["component"] == "MeshCollider" || params["component"] == "CharacterController" || params["component"] == "StaticMesh" || params["component"] == "PbrMaterial" || params["component"] == "PbrTextures" || params["component"] == "Light" || params["component"] == "LightingEnvironment" || params["component"] == "AcousticMaterial" || params["component"] == "AudioRoom" || params["component"] == "AudioPortal" || params["component"] == "AudioEmitter" || params["component"] == "AnimationRig" || params["component"] == "PhysicalRig" || params["component"] == "RigNode" || params["component"] == "SkinnedMesh" || params["component"] == "HitRegion" || params["component"] == "ParticleEmitter" || params["component"] == "FootprintSurface" ||
                 params["component"] == "SurfaceWetness", "Unknown component type.");
             const auto after = params.contains("after") ? identifier(params.at("after")) : std::string{};
             if (params.contains("after")) require(params.contains("revision"), "Pagination requires a revision.");
@@ -1024,6 +1025,7 @@ public:
             for(const auto& e:source_definition.entities) {
                 if(e.audio_room)
                     audio_detail::select_room(snapshot.room,snapshot.listener,e.id,pose(e.id),*e.audio_room);
+                if(e.audio_portal)snapshot.portals.push_back({e.id,pose(e.id),*e.audio_portal});
                 if(e.emitter && e.emitter->enabled)
                     snapshot.sources.push_back({e.id,*e.emitter,pose(e.id),
                         audio_detail::sample_water_flow(*e.emitter,live ? runtime_->water_region() : nullptr)});
@@ -1046,6 +1048,17 @@ public:
                             {"point_world",reflection.point},{"listener_local_direction",reflection.direction},
                             {"distance_m",reflection.distance},{"propagation_delay_samples",reflection.propagation_delay_samples},
                             {"distance_gain",reflection.distance_gain},{"bands",reflection.bands}};
+                    }
+                }
+                if(!snapshot.portals.empty()) {
+                    path["portal_path"]=nullptr;
+                    if(p.portal) {
+                        const auto& opening=*p.portal;
+                        path["portal_path"]={{"entity",opening.entity},{"sample",opening.sample},
+                            {"visible_samples",opening.visible_samples},{"point_world",opening.point},
+                            {"listener_local_direction",opening.direction},{"distance_m",opening.distance},
+                            {"propagation_delay_samples",opening.propagation_delay_samples},
+                            {"distance_gain",opening.distance_gain},{"bands",opening.bands}};
                     }
                 }
                 paths.push_back(std::move(path));
@@ -1071,6 +1084,8 @@ public:
             if(snapshot.early_reflections)result["reflection_budget_exceeded"]=report.reflection_budget_exceeded;
             if(snapshot.water_medium)result["listener_water"]=describe_water_audio(*snapshot.water_medium);
             if(snapshot.room)result["listener_room"]=describe_audio_room(*snapshot.room);
+            if(!snapshot.portals.empty())
+                result["audio_portals"]={{"count",snapshot.portals.size()},{"budget_exceeded",report.portal_budget_exceeded}};
             if(capture_audio) {
                 const auto bytes=audio_wave(report.samples,2);const auto utf8=fs::path(std::u8string(output.begin(),output.end()));write_flushed(utf8,bytes);
                 result["capture"]={{"path",output},{"format","WAV IEEE float32"},{"sample_rate",audio_rate},{"channels",2},{"frames",frame_count},{"sha256",content_hash(bytes)},{"peak",report.peak},{"rms",report.rms},{"over_range_samples",report.over_range_samples}};
@@ -1205,6 +1220,10 @@ public:
         }catch(const std::exception& e) { result["detail"]=e.what(); }
         result["current_session_id"]=runtime_id_;const auto stats=stream->stats();result["tick"]=runtime_->inspect().tick;result["stream"]={{"frames",stats.frames},{"blocks",stats.blocks},{"voices_started",stats.voices_started},{"path_updates",stats.path_updates},{"peak",stats.peak},{"over_range_samples",stats.over_range_samples},{"dsp_ms",stats.dsp_ms}};
         if(reflections.get<bool>())result["stream"]["reflection_handoffs"]=stats.reflection_handoffs;
+        if(stats.portals_observed) {
+            result["stream"]["portal_handoffs"]=stats.portal_handoffs;
+            result["stream"]["portal_budget_exceeded"]=stats.portal_budget_exceeded;
+        }
         if(stats.room_reverb_used) {
             result["listener_room"]={{"initial",initial_audio.room ? describe_audio_room(*initial_audio.room) : Json(nullptr)},
                 {"final",final_room ? describe_audio_room(*final_room) : Json(nullptr)},

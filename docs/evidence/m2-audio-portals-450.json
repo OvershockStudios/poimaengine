@@ -1,0 +1,395 @@
+{
+  "version": "0.0.450",
+  "date": "2026-11-25",
+  "base_commit": "b7652f087140b2c415e04085bc4cfedb91a355ba",
+  "scope": "Off-axis sound follows a finite aperture exposed and sealed by committed door motion.",
+  "candidate_patch_sha256": "cc0ed2b12086afb0164a3f1e7d18e416a2fa48881da9f17a67649a55ca258c7c",
+  "source_sha256": {
+    "CMakeLists.txt": "f9f6cec429ca7a7dec5b0d3764f7e9c8e0bad5c34a41dff453e7cdac0420847a",
+    "cmake/runtime.json.in": "d1b7bc56f3f054fcba168178f38dcebaca109c1db2130ee040771ca9a041e0d6",
+    "include/poima/audio.hpp": "b814284eb249afb1d7cf9991956e6eba961cccdee27333e90c3b5aafefa5d3e8",
+    "include/poima/runtime.hpp": "d06ba5bb47976fcbe701fca64db22263e02e09a8beb086669991f2d9edcdd361",
+    "include/poima/world.hpp": "b173d45488ac2f1d2381952657c6e96a043c292de53069c6cd23e172b40b2b27",
+    "src/audio.cpp": "5b4c8eec7bb3da247996a8025e7c804dc9a6c0be60ffbecb58f8d6a405c98400",
+    "src/audio_clip.cpp": "2c1aad95b14647d255a2dbf699adabda7db1955bbcc911598400cc8e2f2b1947",
+    "src/audio_portal.hpp": "7d08e4b2de9e3e1a724af2c77bbac066a76062d189f767841377801e894bf1df",
+    "src/audio_reflections.hpp": "ded77931e538155ea118696a5dc658e2ab7d228c431dea628c07a3882688094e",
+    "src/audio_stream.cpp": "e91e9bd1d5fae90db602e70f98701ab708ec0ab5075dd41695d03c1d700c5a49",
+    "src/audio_visibility.hpp": "a8c1bed8be3122b296c2bb66a8406acf4384ae7d30f114b5bdd6a9ade065d73b",
+    "src/core.cpp": "4b5242461c31406d5704d83d79b3481e555ad29879e385d2bcf2442c394f23a8",
+    "src/player_audio.hpp": "2d49d799a44cdb27c58da9ce969f5d3f6e012f11d1b5c096acaafd2244af559e",
+    "src/project.cpp": "236aeec2e00ba93d1671834565b33ad9b36517a8a316a4dcc5f25d7531896254",
+    "src/runtime.cpp": "2792f8775dd4f90467a631f586e275d896d0141331e0b66985beeab63557f8d8",
+    "src/runtime_templates.cpp": "473e6649449736dc0eda6e93afa911d4c231a6dd6090178ccdb19990dd841f85",
+    "src/world.cpp": "bcda073d81b4842eab584350497671dc34b3c6a8e85ee8db716c2086df8f0d33",
+    "src/world_content.cpp": "3a4c18721be3681a3a573a4d02b08cd4282a436ad5ba921592c39190d966845b",
+    "src/world_document.cpp": "44fa6ed333e58c77e3e44c58f58f8d377cf7bfdcac674711a0331de762cb02f1",
+    "src/world_document.hpp": "25c85a734c3b9f50b09e49aa653c6d9f5f3d26d203f7fa3ffe6a2b3ce37fff58",
+    "src/world_player_service.inc": "1318bc78e6d39d6255d7769f848099da5a9b3ed9c4da2dd7d6093fca8ea100e8",
+    "src/world_runtime_definition.cpp": "39df1b677a648f90085d509db50847c66b259f9d357a08a2de7ece4302844570",
+    "src/world_schema.cpp": "ac5ab66be5d0c233b569988dfc26f0fe6b7b9d084aa226e3894e3615a5097b23",
+    "src/world_transaction_operations.cpp": "893c0db2a2acf6319130e853a89e706671539df8dc272fa73f537f2b18e17784",
+    "tests/audio_portal.py": "fd58021b6ed4e2af36fe03300fb7688c8985bf57db4baefdaeaa39f899324ada"
+  },
+  "world_schema_revision": 245,
+  "authoring_contract_version": 1,
+  "fixture": {
+    "script": "tests/audio_portal.py",
+    "ticks": 44,
+    "sample_rate": 48000,
+    "channels": 2,
+    "output_frames": 35200,
+    "static_panel_poses": [
+      "closed",
+      "partial",
+      "open",
+      "closed"
+    ],
+    "direct_occluded_at_all_checked_poses": true,
+    "energy_windows": {
+      "closed_ticks": [
+        0,
+        4
+      ],
+      "open_ticks": [
+        17,
+        24
+      ],
+      "sealed_ticks": [
+        38,
+        44
+      ]
+    },
+    "formula_checks": [
+      "two-leg distance",
+      "delay",
+      "listener direction",
+      "distance gain",
+      "three-band amplitude"
+    ]
+  },
+  "ubuntu": {
+    "binary_sha256": "5f5894730a53640ab5afdab58fecc71865b176f5895f7ca90c7776c865bdf7b3",
+    "raw_evidence_sha256": "4beceadfae236b92ba42eb2ab754e23b2a4ffe5ab1c107c32563c95095f6134e",
+    "paths": {
+      "partial": {
+        "bands": [
+          0.26382020115852356,
+          0.11175087839365005,
+          0.05636641010642052
+        ],
+        "distance_gain": 0.18352486193180084,
+        "distance_m": 5.448853090330111,
+        "entity": "00000000000000000000000000000385",
+        "listener_local_direction": [
+          0.679041981617427,
+          0.0,
+          -0.7340994395864077
+        ],
+        "point_world": [
+          1.8499999999999999,
+          2.6,
+          0.0
+        ],
+        "propagation_delay_samples": 763,
+        "sample": 3,
+        "visible_samples": 6
+      },
+      "open": {
+        "bands": [
+          0.323112428188324,
+          0.13686631619930267,
+          0.06903447210788727
+        ],
+        "distance_gain": 0.18352486193180084,
+        "distance_m": 5.448853090330111,
+        "entity": "00000000000000000000000000000385",
+        "listener_local_direction": [
+          0.679041981617427,
+          0.0,
+          -0.7340994395864077
+        ],
+        "point_world": [
+          1.8499999999999999,
+          2.6,
+          0.0
+        ],
+        "propagation_delay_samples": 763,
+        "sample": 3,
+        "visible_samples": 9
+      },
+      "warm_restored": {
+        "bands": [
+          0.3228587210178375,
+          0.13674581050872803,
+          0.0689726173877716
+        ],
+        "distance_gain": 0.1832485944032669,
+        "distance_m": 5.45706768739363,
+        "entity": "00000000000000000000000000000385",
+        "listener_local_direction": [
+          0.6770007123918411,
+          0.07748010496431425,
+          -0.7318926620452337
+        ],
+        "point_world": [
+          1.8499999999999999,
+          2.6,
+          0.0
+        ],
+        "propagation_delay_samples": 764,
+        "sample": 3,
+        "visible_samples": 9
+      }
+    },
+    "energy": {
+      "closed": 0.0,
+      "opened": 0.18561722287882892,
+      "sealed": 0.0,
+      "left": 0.06815539583642827,
+      "right": 0.11746182704240064
+    },
+    "portal_handoffs": 3,
+    "capture_sha256": "298e826ec3993acb0ae3319877a44f163ff187c2b2bbc552709f767ffcc20ff1",
+    "passed": true,
+    "passed_ctest": [
+      "audio_reflections_native",
+      "authoring_contract_identity",
+      "project_contract",
+      "project_draft_contract",
+      "audio_contract",
+      "world_contract"
+    ],
+    "room_audio_unchanged": {
+      "replay_sha256": {
+        "moving dry": "805ed439f9141b108a74e0290ae0c479bbec6e7265e7dccca8a4f0b7fe515baf",
+        "moving wet": "93d455c518275c1a409fb64f8dfd7d3998122d546694a8f8055f5981eb437c77"
+      },
+      "save_captures": {
+        "Saved original room": "6d8bb6489893cdeed6542b336ff09d7db2212fe28cf7393c44ca2e368392a322",
+        "Warm restored room": "6d8bb6489893cdeed6542b336ff09d7db2212fe28cf7393c44ca2e368392a322"
+      }
+    }
+  },
+  "windows": {
+    "runtime_sha256": {
+      "bin/poima.exe": "8a0c8aca0fda7a2d2cbb9e3c5c4ca10bb3dbc8403527c4fef4d4f892c191fef7",
+      "bin/poima_desktop.dll": "2cc86955c703c42fd759f6e8aad0292aed8f26be42b147ec0874ef4837ef6d32",
+      "runtime.json": "2bbc1fd4e308cb3a537c2ec484b0c689acc7bbd48b9b60d87e07e80bf42a6ee4"
+    },
+    "devices": {
+      "AMD": {
+        "gpu": "AMD Radeon(TM) Graphics",
+        "frames_presented": 44,
+        "pcm": {
+          "frames": 35200,
+          "sha256": "a75f51bc8ddccec9e075f3f9ce80144ab6a315e3a13f2ba4fa9d1e6c0274154e",
+          "leading_silence": 3072,
+          "whole_signal_matches_replay": true
+        },
+        "portal_handoffs": 3,
+        "voices_started": 1,
+        "energy": {
+          "closed": 0.0,
+          "opened": 0.18561715270931917,
+          "sealed": 0.0,
+          "left": 0.0681553759706997,
+          "right": 0.11746177673861947
+        },
+        "replay_sha256": {
+          "source": "5d9938f342ebf9b24b9e5a41fb9c52d3481c2059229daa5d091d2fed786b246b",
+          "relocated": "5d9938f342ebf9b24b9e5a41fb9c52d3481c2059229daa5d091d2fed786b246b"
+        },
+        "routes": {
+          "partial": {
+            "bands": [
+              0.26382020115852356,
+              0.11175087839365005,
+              0.05636641010642052
+            ],
+            "distance_gain": 0.18352486193180084,
+            "distance_m": 5.448853090330111,
+            "entity": "00000000000000000000000000000385",
+            "listener_local_direction": [
+              0.679041981617427,
+              0.0,
+              -0.7340994395864077
+            ],
+            "point_world": [
+              1.8499999999999999,
+              2.6,
+              0.0
+            ],
+            "propagation_delay_samples": 763,
+            "sample": 3,
+            "visible_samples": 6
+          },
+          "open": {
+            "bands": [
+              0.323112428188324,
+              0.13686631619930267,
+              0.06903447210788727
+            ],
+            "distance_gain": 0.18352486193180084,
+            "distance_m": 5.448853090330111,
+            "entity": "00000000000000000000000000000385",
+            "listener_local_direction": [
+              0.679041981617427,
+              0.0,
+              -0.7340994395864077
+            ],
+            "point_world": [
+              1.8499999999999999,
+              2.6,
+              0.0
+            ],
+            "propagation_delay_samples": 763,
+            "sample": 3,
+            "visible_samples": 9
+          },
+          "warm_restored": {
+            "bands": [
+              0.3228587210178375,
+              0.13674581050872803,
+              0.0689726173877716
+            ],
+            "distance_gain": 0.1832485944032669,
+            "distance_m": 5.45706768739363,
+            "entity": "00000000000000000000000000000385",
+            "listener_local_direction": [
+              0.6770007123918411,
+              0.07748010496431425,
+              -0.7318926620452337
+            ],
+            "point_world": [
+              1.8499999999999999,
+              2.6,
+              0.0
+            ],
+            "propagation_delay_samples": 764,
+            "sample": 3,
+            "visible_samples": 9
+          }
+        },
+        "relocated_files": 59,
+        "relocated_tree_unchanged": true,
+        "restored_live_route_exact": true,
+        "prior_source_hidden": true,
+        "bundle_refused_when_runtime_lacks_portal_capability": true
+      },
+      "NVIDIA": {
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "frames_presented": 44,
+        "pcm": {
+          "frames": 35200,
+          "sha256": "3c15f892657ce27722b4557a805680a365e5193aa4c041bc0e1d6a6742fb061c",
+          "leading_silence": 6144,
+          "whole_signal_matches_replay": true
+        },
+        "portal_handoffs": 3,
+        "voices_started": 1,
+        "energy": {
+          "closed": 0.0,
+          "opened": 0.18561715270931917,
+          "sealed": 0.0,
+          "left": 0.0681553759706997,
+          "right": 0.11746177673861947
+        },
+        "replay_sha256": {
+          "source": "5d9938f342ebf9b24b9e5a41fb9c52d3481c2059229daa5d091d2fed786b246b",
+          "relocated": "5d9938f342ebf9b24b9e5a41fb9c52d3481c2059229daa5d091d2fed786b246b"
+        },
+        "routes": {
+          "partial": {
+            "bands": [
+              0.26382020115852356,
+              0.11175087839365005,
+              0.05636641010642052
+            ],
+            "distance_gain": 0.18352486193180084,
+            "distance_m": 5.448853090330111,
+            "entity": "00000000000000000000000000000385",
+            "listener_local_direction": [
+              0.679041981617427,
+              0.0,
+              -0.7340994395864077
+            ],
+            "point_world": [
+              1.8499999999999999,
+              2.6,
+              0.0
+            ],
+            "propagation_delay_samples": 763,
+            "sample": 3,
+            "visible_samples": 6
+          },
+          "open": {
+            "bands": [
+              0.323112428188324,
+              0.13686631619930267,
+              0.06903447210788727
+            ],
+            "distance_gain": 0.18352486193180084,
+            "distance_m": 5.448853090330111,
+            "entity": "00000000000000000000000000000385",
+            "listener_local_direction": [
+              0.679041981617427,
+              0.0,
+              -0.7340994395864077
+            ],
+            "point_world": [
+              1.8499999999999999,
+              2.6,
+              0.0
+            ],
+            "propagation_delay_samples": 763,
+            "sample": 3,
+            "visible_samples": 9
+          },
+          "warm_restored": {
+            "bands": [
+              0.3228587210178375,
+              0.13674581050872803,
+              0.0689726173877716
+            ],
+            "distance_gain": 0.1832485944032669,
+            "distance_m": 5.45706768739363,
+            "entity": "00000000000000000000000000000385",
+            "listener_local_direction": [
+              0.6770007123918411,
+              0.07748010496431425,
+              -0.7318926620452337
+            ],
+            "point_world": [
+              1.8499999999999999,
+              2.6,
+              0.0
+            ],
+            "propagation_delay_samples": 764,
+            "sample": 3,
+            "visible_samples": 9
+          }
+        },
+        "relocated_files": 59,
+        "relocated_tree_unchanged": true,
+        "restored_live_route_exact": true,
+        "prior_source_hidden": true,
+        "bundle_refused_when_runtime_lacks_portal_capability": true
+      }
+    },
+    "legacy_early_reflection_regression_against_0_0_448": {
+      "direct": {
+        "reference_wav_sha256": "dc303b7b7e80b00386e6d3db8a99e6899e8a9fa99df600e5e145b3df677b9347",
+        "frames_compared": 9600
+      },
+      "reflected": {
+        "reference_wav_sha256": "90933775e8da4aad2593146020fe4ea45a5da6e4ead385bbd57981257db40632",
+        "frames_compared": 9600
+      }
+    }
+  },
+  "limits": [
+    "One geometric aperture samples both legs. No general edge diffraction or serial portal transport.",
+    "SDL disk output establishes the device backend signal. Headphone and speaker audition and scene-scale cost remain unqualified."
+  ]
+}

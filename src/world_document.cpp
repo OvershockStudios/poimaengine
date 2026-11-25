@@ -321,6 +321,17 @@ AudioRoom audio_room_value(const Json& value) {
     catch(const std::invalid_argument& error) { throw Error(-32602,error.what()); }
     return room;
 }
+AudioPortal audio_portal_value(const Json& value) {
+    fields(value,{"half_extents","gain"},{"half_extents"});
+    const auto& half=value.at("half_extents");
+    const auto gain=value.value("gain",Json(1));
+    require(half.is_array() && half.size()==2 && half[0].is_number() && half[1].is_number() && gain.is_number(),
+        "AudioPortal needs two numeric half extents and optional numeric gain.");
+    const AudioPortal portal{half.get<std::array<double,2>>(),gain.get<double>()};
+    try { validate_audio_portal(portal); }
+    catch(const std::runtime_error& error) { throw Error(-32602,error.what()); }
+    return portal;
+}
 AudioEmitter emitter_value(const Json& v) {
     fields(v,{"asset","gain","loop","enabled","bus","water_flow"},{"asset","gain","loop","enabled"});
     require(v.at("asset").is_string() && valid_asset_id(v.at("asset").get<std::string>()),"AudioEmitter needs a clip content hash.");
@@ -780,6 +791,7 @@ void validate_component(const std::string& type, const Json& value) {
     }
     if(type=="AcousticMaterial") { (void)acoustic_value(value);return; }
     if(type=="AudioRoom") { (void)audio_room_value(value);return; }
+    if(type=="AudioPortal") { (void)audio_portal_value(value);return; }
     if(type=="AudioEmitter") { (void)emitter_value(value);return; }
     if(type=="Light") { (void)light_value(value);return; }
     if(type=="LightingEnvironment") { (void)environment_value(value);return; }
@@ -1156,7 +1168,7 @@ void validate(const Json& doc) {
         }
     }
     std::size_t audio_sources=0,wetness_receivers=0;
-    std::vector<std::string> particle_sources, audio_rooms;
+    std::vector<std::string> particle_sources, audio_rooms, audio_portals;
     for (const auto& [id, entity] : entities.items()) {
         identifier(id);require(schemas.empty() || id!=std::string(32,'0'),"Custom component worlds reserve the zero entity identity as unset.");
         fields(entity, {"name", "parent", "components"}, {"name", "parent", "components"});
@@ -1178,6 +1190,10 @@ void validate(const Json& doc) {
         if(audio_components.contains("AudioRoom")) {
             require(audio_rooms.size()<max_audio_rooms,"World exceeds the audio room limit.");
             audio_rooms.push_back(id);
+        }
+        if(audio_components.contains("AudioPortal")) {
+            require(audio_portals.size()<max_audio_portals,"World exceeds the audio portal limit.");
+            audio_portals.push_back(id);
         }
         if(audio_components.contains("ParticleEmitter")) {
             require(particle_sources.size() < runtime_particle_limits.emitters, "Scene exceeds the particle emitter capacity.");
@@ -1280,13 +1296,17 @@ void validate(const Json& doc) {
         }
         for (const auto& item : chain) colors[item] = 2;
     }
-    if(!particle_sources.empty() || !audio_rooms.empty()) {
+    if(!particle_sources.empty() || !audio_rooms.empty() || !audio_portals.empty()) {
         const auto matrices=world_matrices(entities);
         for(const auto& id:particle_sources)validate_particle_pose(matrices.at(id), id);
-        for(const auto& id:audio_rooms) {
-            try { (void)inverse_affine(matrices.at(id)); }
-            catch(const std::runtime_error&) { throw Error(-32602,"AudioRoom "+id+" requires an invertible world transform."); }
-        }
+        const auto validate_audio_transform=[&](const auto& ids,const std::string& type) {
+            for(const auto& id:ids) {
+                try { (void)inverse_affine(matrices.at(id)); }
+                catch(const std::runtime_error&) { throw Error(-32602,type+" "+id+" requires an invertible world transform."); }
+            }
+        };
+        validate_audio_transform(audio_rooms,"AudioRoom");
+        validate_audio_transform(audio_portals,"AudioPortal");
     }
     for(const auto& [id,entity]:entities.items()) {
         const auto& bag=entity.at("components");

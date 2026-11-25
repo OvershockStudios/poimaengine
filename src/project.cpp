@@ -364,6 +364,7 @@ Json project_summary(const Project& p) {
     if(p.content.needs_particle_impact_bursts)result["needs_particle_impact_bursts"]=true;
     if(p.content.needs_particle_water_contact)result["needs_particle_water_contact"]=true;
     if(p.content.needs_particle_water_flow)result["needs_particle_water_flow"]=true;
+    if(p.content.needs_audio_portals)result["needs_audio_portals"]=true;
     if(p.content.needs_audio_room_reverb)result["needs_audio_room_reverb"]=true;
     if(p.content.needs_audio_water_flow)result["needs_audio_water_flow"]=true;
     if(p.content.needs_water_buoyancy)result["needs_water_buoyancy"]=true;
@@ -549,6 +550,8 @@ void require_scene_feature_support(const WorldPackageContent& content, const Jso
         "Project particle water contacts require a compatible simulation runtime.");
     require(!content.needs_particle_water_flow || runtime.at("features").value("particle_water_flow",false),
         "Project water-driven particles require a compatible simulation runtime.");
+    require(!content.needs_audio_portals || runtime.at("features").value("audio_portals",false),
+        "Audio portals require a compatible audio runtime.");
     require(!content.needs_audio_room_reverb || runtime.at("features").value("audio_room_reverb",false),
         "Project audio rooms require a compatible audio runtime.");
     require(!content.needs_audio_water_flow || runtime.at("features").value("audio_water_flow",false),
@@ -592,12 +595,15 @@ Json runtime_spec(const std::string& bytes,std::string_view expected_version=bui
     require((value.at("target_os")=="Windows" || value.at("target_os")=="Linux") && value.at("target_arch")=="x86_64","Only Windows/Linux x86_64 runtime targets are supported.");
     require(value.at("executable")== (value.at("target_os")=="Windows" ? "bin/poima.exe" : "bin/poima"),"Runtime executable path does not match target.");
     const auto& features=value.at("features");
-    fields(features,{"simulation","renderer","audio","audio_room_reverb","player_early_reflections","managed","editor","native_gameplay","game_ui",
+    fields(features,{"simulation","renderer","audio","audio_room_reverb","audio_portals","player_early_reflections","managed","editor","native_gameplay","game_ui",
         "navigation","navigation_obstacles","asset_provenance","project_post_effects","water_regions","water_rain","audio_water_flow","water_sheet_aeration","water_impact_foam",
         "water_ripples","water_wave_layers","water_listener_audio","water_optics","water_refraction","water_caustics","water_shore_foam","water_terrain_fit","water_surface_swell","water_swell_variation","water_rough_reflection","water_solar_scattering","water_offshore","water_sprite_optics","snow_water_regions","scene_particles","scene_particle_sprites",
         "particle_collisions","particle_impact_bursts","particle_water_contact","particle_water_flow","water_buoyancy","water_currents","water_surface_wakes","water_body_displacement","water_storage","water_reservoirs","water_overflow","water_sheets","collision_surfaces","surface_marks","surface_mark_masks","mesh_lod","output_grade","auto_exposure","atmosphere_sky","orbital_atmosphere","aerial_perspective","volumetric_clouds","cloud_shadows","screen_reflections","depth_of_field","foliage_motion",
         "height_fog","physics_checkpoint","fsr3_upscaler"},{"simulation","renderer","audio","managed","editor"});
     for(const auto& feature:features)require(feature.is_boolean(),"Runtime feature flags must be Boolean.");
+    require(!features.value("audio_portals",false) ||
+        (features.at("audio")==true && features.at("simulation")==true),
+        "Runtime audio portals require simulation and audio support.");
     require(!features.value("audio_room_reverb",false) ||
         (features.at("audio")==true && features.at("simulation")==true),
         "Runtime audio rooms require simulation and audio support.");
@@ -698,6 +704,7 @@ struct VerifiedGame {
     bool needs_water_wave_layers=false;
     bool needs_water_listener_audio=false;
     bool needs_audio_room_reverb=false;
+    bool needs_audio_portals=false;
     bool needs_water_optics=false;
     bool needs_water_refraction=false;
     bool needs_water_caustics=false;
@@ -766,6 +773,7 @@ VerifiedGame verify_game(const std::string& filename,std::string_view expected_v
     result.definition.needs_particle_water_contact=content.needs_particle_water_contact;
     result.definition.needs_particle_water_flow=content.needs_particle_water_flow;
     result.needs_audio_room_reverb=content.needs_audio_room_reverb;
+    result.needs_audio_portals=content.needs_audio_portals;
     result.definition.needs_audio_water_flow=content.needs_audio_water_flow;
     result.definition.needs_water_buoyancy=content.needs_water_buoyancy;
     result.definition.needs_water_currents=content.needs_water_currents;
@@ -1249,6 +1257,7 @@ Reply inspect_game(const std::string& manifest,const std::string& expected_bundl
         if(game.definition.needs_particle_impact_bursts)result["needs_particle_impact_bursts"]=true;
         if(game.definition.needs_particle_water_contact)result["needs_particle_water_contact"]=true;
         if(game.definition.needs_particle_water_flow)result["needs_particle_water_flow"]=true;
+        if(game.needs_audio_portals)result["needs_audio_portals"]=true;
         if(game.needs_audio_room_reverb)result["needs_audio_room_reverb"]=true;
         if(game.definition.needs_audio_water_flow)result["needs_audio_water_flow"]=true;
         if(game.definition.needs_water_buoyancy)result["needs_water_buoyancy"]=true;

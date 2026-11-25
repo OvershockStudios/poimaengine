@@ -68,4 +68,10 @@ void validate_acoustic_material(const AcousticMaterial& m) {
     for(float v:m.transmission)check(std::isfinite(v) && v>=0 && v<=1,"Acoustic transmission must be in [0,1].");
     check(std::isfinite(m.scattering) && m.scattering>=0 && m.scattering<=1,"Acoustic scattering must be in [0,1].");
 }
+void validate_audio_portal(const AudioPortal& portal) {
+    for(const auto extent:portal.half_extents)
+        check(extent>=min_audio_portal_extent_m && extent<=max_audio_portal_extent_m,
+            "AudioPortal half extents must be in [0.05,32] metres.");
+    check(portal.gain>=0 && portal.gain<=1,"AudioPortal gain must be in [0,1].");
+}
 }
