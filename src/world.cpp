@@ -628,6 +628,7 @@ public:
             if(content.needs_output_grade)result["needs_output_grade"]=true;
             if(content.needs_auto_exposure)result["needs_auto_exposure"]=true;
             if(content.needs_atmosphere_sky)result["needs_atmosphere_sky"]=true;
+            if(content.needs_orbital_atmosphere)result["needs_orbital_atmosphere"]=true;
             if(content.needs_aerial_perspective)result["needs_aerial_perspective"]=true;
             if(content.needs_volumetric_clouds)result["needs_volumetric_clouds"]=true;
             if(content.needs_cloud_shadows)result["needs_cloud_shadows"]=true;

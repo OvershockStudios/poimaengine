@@ -9,7 +9,7 @@ struct AtmosphereViewConstants {
     float height_km;
     float sun_up;
     float aerosol_strength;
-    float reserved;
+    float orbital;
 };
 [[vk::push_constant]] ConstantBuffer<AtmosphereViewConstants> atmosphere;
 
@@ -46,12 +46,51 @@ void accumulate_view_segment(inout float3 radiance, inout float3 view_transmitta
     }
 }
 
+float4 integrate_orbital_view(uint2 pixel) {
+    const float height = atmosphere.height_km;
+    const float view_up = orbital_atmosphere_view_up(height, pixel.y);
+    const float radial_projection = (atmosphere_ground_radius + height) * view_up;
+    const float2 interval = orbital_atmosphere_interval(height, radial_projection,
+        pixel.y < orbital_view_band_rows);
+    const float begin = interval.x;
+    const float end = interval.y;
+    if (end <= begin) return float4(0.0, 0.0, 0.0, 1.0);
+
+    const float azimuth = atmosphere_pi * float(pixel.x) / float(atmosphere_view_size.x - 1);
+    const float view_horizontal = sqrt(saturate(1.0 - view_up * view_up));
+    const float sun_horizontal = sqrt(saturate(1.0 - atmosphere.sun_up * atmosphere.sun_up));
+    const float view_dot_sun = clamp(view_up * atmosphere.sun_up + view_horizontal * sun_horizontal *
+        cos(azimuth), -1.0, 1.0);
+    const float rayleigh_phase = (3.0 / (16.0 * atmosphere_pi)) * (1.0 + view_dot_sun * view_dot_sun);
+    const float g = 0.8;
+    const float phase_base = 1.0 + g * g - 2.0 * g * view_dot_sun;
+    const float mie_phase = (1.0 - g * g) / (4.0 * atmosphere_pi * phase_base * sqrt(phase_base));
+    const float closest = clamp(-radial_projection, begin, end);
+    float3 radiance = 0.0;
+    float3 transmittance = 1.0;
+    if (closest > begin) {
+        const uint samples = closest == end ? 24 : 12;
+        accumulate_view_segment(radiance, transmittance, radial_projection, view_dot_sun,
+            rayleigh_phase, mie_phase, begin, closest, true, samples);
+    }
+    if (end > closest) {
+        const uint samples = closest == begin ? 24 : 12;
+        accumulate_view_segment(radiance, transmittance, radial_projection, view_dot_sun,
+            rayleigh_phase, mie_phase, closest, end, false, samples);
+    }
+    return float4(radiance, (transmittance.r + transmittance.g + transmittance.b) / 3.0);
+}
+
 // Unit incoming sunlight. Tint and gain are applied by the sky draw so they
 // can change independently of optical integration and geometric shadows.
 [numthreads(8, 8, 1)]
 void compute_main(uint3 thread_id : SV_DispatchThreadID) {
     const uint2 pixel = thread_id.xy;
     if (any(pixel >= atmosphere_view_size)) return;
+    if (atmosphere.orbital != 0.0) {
+        atmosphere_view_output[pixel] = integrate_orbital_view(pixel);
+        return;
+    }
     const float2 angles = atmosphere_view_angles(float2(pixel) / float2(atmosphere_view_size - 1));
     const float view_up = angles.y;
     const float radial_projection = (atmosphere_ground_radius + atmosphere.height_km) * view_up;

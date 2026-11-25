@@ -258,10 +258,16 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     clouds["description"]="Optional volumetric cloud layer. Base height is relative to atmospheric sea level. Wind advances the layer with committed solar world time.";
     clouds["properties"]["shadow_strength"]["description"]="Optional strength of cloud shadows on direct light from the linked sun. Zero disables cloud shadows.";
     auto atmosphere=object_schema({{"sea_level_m",bounded_number(-1e6,1e6)},
+        {"planet_center_m",vector(bounded_number(-1e9,1e9),3)},
         {"aerosol_strength",bounded_number(0,4)},{"radiance_scale",bounded_number(0,64)},
         {"aerial_perspective_m",bounded_number(128,65536)},{"clouds",std::move(clouds)}},
-        {"sea_level_m","aerosol_strength","radiance_scale"});
+        {"aerosol_strength","radiance_scale"});
+    atmosphere["if"]={{"required",{"planet_center_m"}}};
+    atmosphere["then"]["not"]["anyOf"]=Json::array({
+        Json{{"required",{"sea_level_m"}}},Json{{"required",{"aerial_perspective_m"}}},Json{{"required",{"clouds"}}}});
+    atmosphere["else"]={{"required",{"sea_level_m"}}};
     atmosphere["description"]="Optional atmospheric sky scattering. The profile uses an enabled procedural sky linked to a directional Light. A disabled linked light retains the selection.";
+    atmosphere["properties"]["planet_center_m"]["description"]="World-space XYZ center in metres for an Earth-sized atmosphere. The sky uses the radial direction from the center to the camera. This replaces sea_level_m and cannot be combined with aerial perspective or volumetric clouds.";
     atmosphere["properties"]["aerial_perspective_m"]["description"]="Maximum camera-ray distance in metres for aerial perspective on opaque world geometry. Omitting this leaves atmospheric scattering on the sky.";
     lighting_environment["properties"]["atmosphere"]=std::move(atmosphere);
     const auto fog_light=object_schema({{"entity",id},{"scattering",unit}},{"entity","scattering"});
@@ -417,7 +423,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 222}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 223}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -1234,6 +1240,9 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     result["atmosphere_sky"]={{"available",POIMA_RENDER_SMOKE != 0 && POIMA_SIMULATION != 0},
         {"profile","LightingEnvironment.atmosphere"},{"runtime_feature","atmosphere_sky"},
         {"lighting_observation","atmosphere"},{"render_diagnostics","atmosphere_sky"},
+        {"orbital_atmosphere",{{"available",POIMA_RENDER_SMOKE != 0 && POIMA_SIMULATION != 0},
+            {"profile","LightingEnvironment.atmosphere.planet_center_m"},
+            {"runtime_feature","orbital_atmosphere"},{"render_diagnostics","atmosphere_sky"}}},
         {"aerial_perspective",{{"available",POIMA_RENDER_SMOKE != 0 && POIMA_SIMULATION != 0},
             {"profile","LightingEnvironment.atmosphere.aerial_perspective_m"},
             {"runtime_feature","aerial_perspective"},{"render_diagnostics","aerial_perspective"}}},

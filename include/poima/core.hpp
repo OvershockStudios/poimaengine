@@ -258,6 +258,7 @@ struct EnvironmentIblDiagnostics {
 struct AtmosphereSkyDiagnostics {
     std::uint64_t density_generation=0,view_generation=0,texture_bytes=0;
     float observer_height_m=0;
+    std::optional<std::array<double,3>> planet_center_m{};
 };
 struct ScreenReflectionsDiagnostics {
     bool active=false;

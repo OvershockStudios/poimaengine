@@ -106,4 +106,69 @@ float2 atmosphere_view_lookup(float3 ray, float3 sun_direction) {
                                    atmosphere_view_size);
 }
 
+// Orbital views reserve independent row bands for ground intersections and
+// unobstructed atmosphere. Filtering never crosses the terrain silhouette.
+static const uint orbital_view_band_rows = atmosphere_view_size.y / 2;
+
+float orbital_atmosphere_top_tangent(float height) {
+    if (height < atmosphere_top_height) return 1.0;
+    const float radius = atmosphere_ground_radius + height;
+    const float offset = (height - atmosphere_top_height) *
+        (2.0 * atmosphere_ground_radius + height + atmosphere_top_height);
+    return -sqrt(offset) / radius;
+}
+
+float orbital_atmosphere_view_up(float height, uint row) {
+    const float horizon = atmosphere_ground_tangent(height);
+    if (row < orbital_view_band_rows) {
+        const float distance_from_edge = 1.0 - float(row) / float(orbital_view_band_rows - 1);
+        return lerp(horizon, -1.0, distance_from_edge * distance_from_edge);
+    }
+    const float t = float(row - orbital_view_band_rows) / float(orbital_view_band_rows - 1);
+    const float u = 1.0 - t;
+    const float coordinate = t < 0.5 ? 2.0 * t * t : 1.0 - 2.0 * u * u;
+    return lerp(horizon, orbital_atmosphere_top_tangent(height), coordinate);
+}
+
+float2 orbital_atmosphere_view_lookup(float height, float3 ray, float3 sun_direction) {
+    const float horizon = atmosphere_ground_tangent(height);
+    float row;
+    if (ray.y < horizon) {
+        const float distance_from_edge = sqrt(saturate((horizon - ray.y) / (1.0 + horizon)));
+        row = (1.0 - distance_from_edge) * float(orbital_view_band_rows - 1);
+    } else {
+        const float upper = orbital_atmosphere_top_tangent(height);
+        const float coordinate = saturate((ray.y - horizon) / (upper - horizon));
+        const float t = coordinate < 0.5 ? sqrt(0.5 * coordinate) : 1.0 - sqrt(0.5 * (1.0 - coordinate));
+        row = float(orbital_view_band_rows) + t * float(orbital_view_band_rows - 1);
+    }
+    return float2(atmosphere_view_lookup(ray, sun_direction).x, (row + 0.5) / float(atmosphere_view_size.y));
+}
+
+float2 orbital_atmosphere_interval(float height, float radial_projection, bool ground_hit) {
+    float2 interval = 0.0;
+    if (height > atmosphere_top_height) {
+        const float inward = -radial_projection;
+        const float outside = (height - atmosphere_top_height) *
+            (2.0 * atmosphere_ground_radius + height + atmosphere_top_height);
+        const float tangent = sqrt(outside);
+        if (inward <= tangent) return interval;
+        const float half_chord = sqrt((inward - tangent) * (inward + tangent));
+        interval.y = inward + half_chord;
+        // The near root obtained without subtracting similar positive lengths.
+        interval.x = outside / interval.y;
+    } else {
+        interval.y = atmosphere_distance_to_top(height, radial_projection);
+    }
+    if (ground_hit) {
+        const float offset = atmosphere_altitude_squared_offset(height);
+        const float inward = -radial_projection;
+        const float tangent = sqrt(offset);
+        const float half_chord = sqrt(max(0.0, (inward - tangent) * (inward + tangent)));
+        const float near_ground = offset > 0.0 ? offset / (inward + half_chord) : 0.0;
+        interval.y = min(interval.y, near_ground);
+    }
+    return interval;
+}
+
 #endif

@@ -7,6 +7,7 @@
 #include "poima/scene.hpp"
 #include "poima/sky_atmosphere_ps.hpp"
 #include "poima/sky_clouds_ps.hpp"
+#include "poima/sky_orbital_ps.hpp"
 #include "poima/sky_ps.hpp"
 #include "poima/sky_vs.hpp"
 #include "render_embedded_shader.hpp"
@@ -27,6 +28,20 @@ float gpu_float(double value) {
     require(std::isfinite(value) && std::abs(value) <= std::numeric_limits<float>::max(),
         "Scene matrix exceeds GPU float range.");
     return static_cast<float>(value);
+}
+
+using Direction = std::array<double, 3>;
+
+Direction cross(const Direction& a, const Direction& b) {
+    return {a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]};
+}
+
+void to_radial_frame(float (&value)[4], const std::array<Direction, 3>& frame) {
+    const std::array<float, 3> world{value[0], value[1], value[2]};
+    for (std::size_t axis = 0; axis < frame.size(); ++axis) {
+        const auto& basis = frame[axis];
+        value[axis] = gpu_float(world[0]*basis[0]+world[1]*basis[1]+world[2]*basis[2]);
+    }
 }
 
 nvrhi::TextureHandle make_atmosphere_texture(nvrhi::IDevice& device, nvrhi::Format format,
@@ -124,7 +139,8 @@ void Pass::prepare_raster(nvrhi::IDevice& device, nvrhi::IBuffer* frame,
     }
     if (!raster.layout) {
         const auto pixel_desc = nvrhi::ShaderDesc(nvrhi::ShaderType::Pixel).setEntryName("pixel_main");
-        auto pixel_shader = clouds_enabled_ ? create_embedded_shader(&device, pixel_desc, poima_sky_clouds_ps) :
+        auto pixel_shader = orbital_enabled_ ? create_embedded_shader(&device, pixel_desc, poima_sky_orbital_ps) :
+            clouds_enabled_ ? create_embedded_shader(&device, pixel_desc, poima_sky_clouds_ps) :
             atmosphere_enabled_ ? create_embedded_shader(&device, pixel_desc, poima_sky_atmosphere_ps) :
             create_embedded_shader(&device, pixel_desc, poima_sky_ps);
         auto layout = nvrhi::BindingLayoutDesc().setVisibility(nvrhi::ShaderType::All)
@@ -170,6 +186,7 @@ void Pass::prepare(nvrhi::IDevice& device, nvrhi::IBuffer* frame,
     enabled_ = sky.enabled;
     constants_ = {};
     atmosphere_enabled_ = false;
+    orbital_enabled_ = false;
     clouds_enabled_ = false;
     cloud_shadows_enabled_ = false;
     cloud_shadow_position_ = {};
@@ -210,11 +227,34 @@ void Pass::prepare(nvrhi::IDevice& device, nvrhi::IBuffer* frame,
         constants_.sun_intensity[3] = sky.sun_intensity;
         sun_lit = sun.light.intensity > 0;
         if (profile && profile->radiance_scale > 0) {
-            const auto height = std::clamp(scene.camera_world[13] - profile->sea_level_m,
-                0.0, static_cast<double>(atmosphere::max_observer_height_m));
+            double height = std::clamp(scene.camera_world[13] - profile->sea_level_m,
+                0.0, atmosphere::max_observer_height_m);
+            if (const auto& center = profile->planet_center_m) {
+                Direction up{scene.camera_world[12]-(*center)[0],
+                             scene.camera_world[13]-(*center)[1],
+                             scene.camera_world[14]-(*center)[2]};
+                const double radius = std::hypot(up[0], up[1], up[2]);
+                height = std::max(0.0, radius-atmosphere::ground_radius_m);
+                if (radius > 0.0) {
+                    for (auto& axis : up) axis /= radius;
+                } else {
+                    up = {0, 1, 0};
+                }
+                const Direction reference = std::abs(up[2]) < .9 ? Direction{0, 0, 1} : Direction{1, 0, 0};
+                auto right = cross(up, reference);
+                const double horizontal = std::hypot(right[0], right[1], right[2]);
+                for (auto& axis : right) axis /= horizontal;
+                const std::array<Direction, 3> radial_frame{right, up, cross(right, up)};
+                to_radial_frame(constants_.right_tan, radial_frame);
+                to_radial_frame(constants_.up_tan, radial_frame);
+                to_radial_frame(constants_.forward_srgb, radial_frame);
+                to_radial_frame(constants_.sun_intensity, radial_frame);
+                orbital_enabled_ = true;
+            }
             observer_height_m_ = gpu_float(height);
             sky_view_parameters_ = {gpu_float(height / 1000.0),
-                std::clamp(constants_.sun_intensity[1], -1.0f, 1.0f), profile->aerosol_strength, 0};
+                std::clamp(constants_.sun_intensity[1], -1.0f, 1.0f), profile->aerosol_strength,
+                orbital_enabled_ ? 1.0f : 0.0f};
             constants_.forward_srgb[3] = profile->radiance_scale * sky_gain;
             constants_.zenith_exposure[3] = sky_view_parameters_[0];
             constants_.sun_color[3] = sky_view_parameters_[2];
@@ -234,8 +274,9 @@ void Pass::prepare(nvrhi::IDevice& device, nvrhi::IBuffer* frame,
             if (cloud_shadows_enabled_) prepare_cloud_shadow(device, *profile);
         }
     }
-    prepare_raster(device, frame, framebuffers.front()->getFramebufferInfo(),
-        clouds_enabled_ ? cloud_raster_ : atmosphere_enabled_ ? atmosphere_raster_ : gradient_);
+    auto& raster = orbital_enabled_ ? orbital_raster_ : clouds_enabled_ ? cloud_raster_ :
+        atmosphere_enabled_ ? atmosphere_raster_ : gradient_;
+    prepare_raster(device, frame, framebuffers.front()->getFramebufferInfo(), raster);
 }
 
 bool Pass::atmosphere_density_dirty() const noexcept {
@@ -294,7 +335,8 @@ void Pass::commit_atmosphere() noexcept {
 
 void Pass::draw(nvrhi::ICommandList& commands, nvrhi::IFramebuffer* framebuffer,
     const nvrhi::Viewport& viewport) const {
-    const auto& raster = clouds_enabled_ ? cloud_raster_ : atmosphere_enabled_ ? atmosphere_raster_ : gradient_;
+    const auto& raster = orbital_enabled_ ? orbital_raster_ : clouds_enabled_ ? cloud_raster_ :
+        atmosphere_enabled_ ? atmosphere_raster_ : gradient_;
     require(!atmosphere_view_dirty() || sky_view_recorded_, "Atmospheric sky draw needs a current sky-view lookup.");
     require(!clouds_enabled_ || cloud_view_recorded_, "Atmospheric sky draw needs a current cloud view.");
     nvrhi::GraphicsState state;
@@ -310,6 +352,7 @@ void Pass::draw(nvrhi::ICommandList& commands, nvrhi::IFramebuffer* framebuffer,
 void Pass::detach_framebuffer() noexcept {
     gradient_.pipeline = nullptr;
     atmosphere_raster_.pipeline = nullptr;
+    orbital_raster_.pipeline = nullptr;
     cloud_raster_.pipeline = nullptr;
 }
 

@@ -114,6 +114,7 @@ struct AtmosphereSettings {
     float aerosol_strength=1,radiance_scale=1;
     std::optional<float> aerial_perspective_m;
     std::optional<CloudSettings> clouds;
+    std::optional<std::array<double,3>> planet_center_m{};
 };
 struct LightingEnvironment {
     std::array<float,3> ambient{};

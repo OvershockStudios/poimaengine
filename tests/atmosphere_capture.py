@@ -170,7 +170,8 @@ class AtmosphereContract(SolarContract):
         discovery = client.call('world.describe', dict(view='component', name='LightingEnvironment'))
         environment = discovery['components']['LightingEnvironment']
         profile = environment['properties']['atmosphere']
-        assert set(profile['required']) == set(PROFILE) and not profile['additionalProperties'], profile
+        assert set(profile['required']) == {'aerosol_strength', 'radiance_scale'}, profile
+        assert profile['else']['required'] == ['sea_level_m'] and not profile['additionalProperties'], profile
         assert 'atmosphere' not in environment['required']
         expected_bounds = dict(sea_level_m=(-1e6, 1e6), aerosol_strength=(0, 4), radiance_scale=(0, 64))
         for key, (low, high) in expected_bounds.items():
@@ -373,20 +374,20 @@ class AtmosphereContract(SolarContract):
         assert file_hash(archive) == receipt['sha256'], receipt
         return archive.read_bytes()
 
-    def frozen_source(self):
+    def frozen_source(self, profile=PROFILE):
         saves = self.root / 'Atmosphere source saves'
         saves.mkdir()
         with self.owner('freeze authored atmosphere') as (client, warm):
             session = self.initialize(client, self.revision, uid(6620), saves, None)
             self.step(client, session, 0, 6621, ticks=2, expected_structure_revision=0)
             frozen = self.light_at(client, session, 2)
-            assert frozen['atmosphere'] == PROFILE, frozen
-            self.edit(client, self.env(PROFILE | dict(aerosol_strength=2)))
+            assert frozen['atmosphere'] == profile, frozen
+            self.edit(client, self.env(profile | dict(aerosol_strength=2)))
             assert client.call('world.lighting', dict(revision=self.revision))['atmosphere']['aerosol_strength'] == 2
             assert self.light_at(client, session, 2) == frozen
             archive = self.save_archive(client, session, 2, saves, 'origin')
             stored = json.loads(archive)['document']['entities'][self.environment]['components']['LightingEnvironment']
-            assert stored['atmosphere'] == PROFILE, stored
+            assert stored['atmosphere'] == profile, stored
         with self.owner('restore authored atmosphere') as (client, cold):
             client.call('save.configure', dict(request_id=uuid.uuid4().hex, expected_generation=0,
                                               root=self.native(saves)))
@@ -397,7 +398,7 @@ class AtmosphereContract(SolarContract):
             assert loaded['source_stale'] and loaded['selected_generation'] == 1 and not loaded['recovered'], loaded
             assert self.light_at(client, session, 2) == frozen
             assert self.save_archive(client, session, 2, saves, 'restored') == archive
-            self.edit(client, self.env(PROFILE))
+            self.edit(client, self.env(profile))
         assert cold['pid'] != warm['pid'], (cold, warm)
         self.measurements['restored'] = frozen
 

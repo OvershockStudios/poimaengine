@@ -58,6 +58,40 @@ profiles, save restoration and Vulkan captures against independent numerical
 integration. Its Native AOT replay checks cache reuse as the sun moves. Run the
 script with `--help` for headless, capture and relocated-export options.
 
+## Planet-centered sky
+
+For a curved planet, specify the center in world metres.
+
+```json
+{
+  "planet_center_m": [0, -6771000, 0],
+  "aerosol_strength": 0.82,
+  "radiance_scale": 4
+}
+```
+
+This form uses the same Earth-sized reference sphere and atmosphere shell.
+At world origin in the example, the observer is 400 km above the surface.
+The renderer measures altitude from the center and takes the outward
+direction as local up. Cameras and the linked sun retain their world
+transforms. Use the sea-level form for the current cloud and aerial
+perspective paths. The authored center takes the place of `sea_level_m`.
+
+Exterior rays contribute scattering over the portion of their path inside
+the atmosphere. The sky-view table separates ground intersections from
+grazing paths through air, with closer samples near the limb. The same table
+provides a scalar transmission estimate for the sun disk. An authored mesh
+can supply the visible planet surface. This sky pass renders behind opaque
+geometry, including planetary surfaces.
+
+The `planet_center_m` components must each be finite and within ±1 billion
+metres. For a camera below the reference surface, the optical altitude is
+zero. Render diagnostics report the selected center and optical altitude.
+The installed runtime advertises `features.orbital_atmosphere`, and project
+inspection reports `needs_orbital_atmosphere`. Use the
+[orbital fixture](../tests/orbital_atmosphere_capture.py) to check admission,
+save continuation and native Vulkan views at multiple altitudes.
+
 ## Aerial perspective
 
 Set `aerial_perspective_m` in the same `atmosphere` object to add distance haze

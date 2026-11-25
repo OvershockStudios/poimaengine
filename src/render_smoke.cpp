@@ -3430,7 +3430,9 @@ struct Context {
                 .view_generation=sky_pass.atmosphere_view_generation(),
                 .texture_bytes=std::uint64_t(atmosphere::density_width)*atmosphere::density_height*16+
                     std::uint64_t(atmosphere::sky_view_width)*atmosphere::sky_view_height*8,
-                .observer_height_m=sky_pass.atmosphere_observer_height_m()};
+                .observer_height_m=sky_pass.atmosphere_observer_height_m(),
+                .planet_center_m=sky_pass.orbital_enabled() ?
+                    scene->lighting.environment.atmosphere->planet_center_m : std::nullopt};
         }
         if(plan.frame.surface_mark_masks!=render_schedule::none && !plan.resource(plan.frame.surface_mark_masks).initialized)
             std::vector<std::uint8_t>{}.swap(surface_mark_array.pending_texels);

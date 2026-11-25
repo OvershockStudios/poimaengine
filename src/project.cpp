@@ -367,6 +367,7 @@ Json project_summary(const Project& p) {
     if(p.content.needs_output_grade)result["needs_output_grade"]=true;
     if(p.content.needs_auto_exposure)result["needs_auto_exposure"]=true;
     if(p.content.needs_atmosphere_sky)result["needs_atmosphere_sky"]=true;
+    if(p.content.needs_orbital_atmosphere)result["needs_orbital_atmosphere"]=true;
     if(p.content.needs_aerial_perspective)result["needs_aerial_perspective"]=true;
     if(p.content.needs_volumetric_clouds)result["needs_volumetric_clouds"]=true;
     if(p.content.needs_cloud_shadows)result["needs_cloud_shadows"]=true;
@@ -456,6 +457,8 @@ void require_scene_feature_support(const WorldPackageContent& content, const Jso
         "Project auto exposure requires a compatible Vulkan runtime.");
     require(!content.needs_atmosphere_sky || runtime.at("features").value("atmosphere_sky", false),
         "Atmospheric sky requires a compatible Vulkan runtime.");
+    require(!content.needs_orbital_atmosphere || runtime.at("features").value("orbital_atmosphere", false),
+        "Orbital atmosphere requires a compatible Vulkan runtime.");
     require(!content.needs_aerial_perspective || runtime.at("features").value("aerial_perspective", false),
         "Aerial perspective requires a compatible Vulkan runtime.");
     require(!content.needs_volumetric_clouds || runtime.at("features").value("volumetric_clouds", false),
@@ -526,11 +529,13 @@ Json runtime_spec(const std::string& bytes,std::string_view expected_version=bui
     fields(features,{"simulation","renderer","audio","managed","editor","native_gameplay","game_ui",
         "navigation","navigation_obstacles","asset_provenance","project_post_effects","water_regions","water_rain",
         "water_ripples","water_wave_layers","water_listener_audio","water_optics","water_refraction","water_caustics","water_shore_foam","water_terrain_fit","water_surface_swell","water_swell_variation","water_rough_reflection","water_solar_scattering","water_offshore","water_sprite_optics","snow_water_regions","scene_particles","scene_particle_sprites",
-        "surface_marks","surface_mark_masks","mesh_lod","output_grade","auto_exposure","atmosphere_sky","aerial_perspective","volumetric_clouds","cloud_shadows","screen_reflections","foliage_motion",
+        "surface_marks","surface_mark_masks","mesh_lod","output_grade","auto_exposure","atmosphere_sky","orbital_atmosphere","aerial_perspective","volumetric_clouds","cloud_shadows","screen_reflections","foliage_motion",
         "height_fog","physics_checkpoint","fsr3_upscaler"},{"simulation","renderer","audio","managed","editor"});
     for(const auto& feature:features)require(feature.is_boolean(),"Runtime feature flags must be Boolean.");
     require(!features.value("water_listener_audio",false) || features.at("audio")==true,
         "Runtime water listener audio requires audio support.");
+    require(!features.value("orbital_atmosphere",false) || features.value("atmosphere_sky",false),
+        "Runtime orbital atmosphere requires the atmospheric sky feature.");
     require(!features.value("aerial_perspective",false) || features.value("atmosphere_sky",false),
         "Runtime aerial perspective requires the atmospheric sky feature.");
     require(!features.value("volumetric_clouds",false) || features.value("atmosphere_sky",false),
@@ -571,6 +576,7 @@ struct VerifiedGame {
     bool needs_output_grade=false;
     bool needs_auto_exposure=false;
     bool needs_atmosphere_sky=false;
+    bool needs_orbital_atmosphere=false;
     bool needs_aerial_perspective=false;
     bool needs_volumetric_clouds=false;
     bool needs_cloud_shadows=false;
@@ -640,6 +646,7 @@ VerifiedGame verify_game(const std::string& filename,std::string_view expected_v
     result.needs_output_grade=content.needs_output_grade;
     result.needs_auto_exposure=content.needs_auto_exposure;
     result.needs_atmosphere_sky=content.needs_atmosphere_sky;
+    result.needs_orbital_atmosphere=content.needs_orbital_atmosphere;
     result.needs_aerial_perspective=content.needs_aerial_perspective;
     result.needs_volumetric_clouds=content.needs_volumetric_clouds;
     result.needs_cloud_shadows=content.needs_cloud_shadows;
@@ -1092,6 +1099,7 @@ Reply inspect_game(const std::string& manifest,const std::string& expected_bundl
         if(game.needs_output_grade)result["needs_output_grade"]=true;
         if(game.needs_auto_exposure)result["needs_auto_exposure"]=true;
         if(game.needs_atmosphere_sky)result["needs_atmosphere_sky"]=true;
+        if(game.needs_orbital_atmosphere)result["needs_orbital_atmosphere"]=true;
         if(game.needs_aerial_perspective)result["needs_aerial_perspective"]=true;
         if(game.needs_volumetric_clouds)result["needs_volumetric_clouds"]=true;
         if(game.needs_cloud_shadows)result["needs_cloud_shadows"]=true;

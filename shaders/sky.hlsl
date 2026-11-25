@@ -39,9 +39,19 @@ float4 pixel_main(VertexOutput input) : SV_Target0 {
     float3 color=lerp(sky.horizon_falloff.xyz,
         ray.y>=0 ? sky.zenith_exposure.xyz : sky.ground_radius.xyz,blend);
 #if defined(POIMA_ATMOSPHERE_SKY)
+#if defined(POIMA_ORBITAL_ATMOSPHERE)
+    const float height = sky.zenith_exposure.w;
+    float4 scattering = float4(0.0, 0.0, 0.0, 1.0);
+    if (height < atmosphere_top_height || ray.y < orbital_atmosphere_top_tangent(height)) {
+        const float2 scattering_uv = orbital_atmosphere_view_lookup(height, ray, sky.sun_intensity.xyz);
+        scattering = sky_single_scattering.SampleLevel(sky_atmosphere_sampler, scattering_uv, 0);
+    }
+    color += scattering.rgb * sky.sun_color.xyz * sky.forward_srgb.w;
+#else
     const float2 scattering_uv=atmosphere_view_lookup(ray,sky.sun_intensity.xyz);
     color+=sky_single_scattering.SampleLevel(sky_atmosphere_sampler,scattering_uv,0).rgb*
         sky.sun_color.xyz*sky.forward_srgb.w;
+#endif
 #endif
     // Chord length avoids acos precision loss at the small real-world sun size.
     // Derivatives soften the edge at 1x as well as 4x MSAA. Compute derivatives
@@ -52,7 +62,13 @@ float4 pixel_main(VertexOutput input) : SV_Target0 {
         const float radius=sky.ground_radius.w;
         const float disk=1-smoothstep(max(0,radius-aa),radius+aa,distance);
         const float halo=.025*exp(-distance*distance/max(36*radius*radius,1e-8));
-#if defined(POIMA_ATMOSPHERE_SKY)
+#if defined(POIMA_ORBITAL_ATMOSPHERE)
+        const float horizon = atmosphere_ground_tangent(height);
+        const float band = max(fwidth(ray.y), 1e-6);
+        const float above_ground = smoothstep(-band, band, ray.y - horizon);
+        color += sky.sun_color.xyz * (sky.sun_intensity.w * (disk + halo) *
+            saturate(scattering.a) * above_ground);
+#elif defined(POIMA_ATMOSPHERE_SKY)
         const float horizon=atmosphere_ground_tangent(sky.zenith_exposure.w);
         const float band=max(fwidth(ray.y),1e-6);
         const float above_ground=smoothstep(-band,band,ray.y-horizon);

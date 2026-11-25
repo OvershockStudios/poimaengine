@@ -1,8 +1,19 @@
 # Implementation status
 
-Updated 2026-11-25 for **0.0.426**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-25 for **0.0.427**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.427 adds a [planet-centered sky](ATMOSPHERE_SKY.md#planet-centered-sky).
+Windows Vulkan captures at 400 and 2,000 km passed 108 display probes against
+an independent scattering reference with a maximum difference of one sRGB
+code. The checks covered AMD forward at one and four samples and NVIDIA
+deferred at one sample. Moving the world origin or rotating the radial frame
+preserved the checked captures on each path. A relocated NVIDIA export
+reproduced the same orbital frame. The sea-level fixture passed and its
+omitted-profile image matched the retained 0.0.426 runtime. Ubuntu passed
+14 suites and the orbital authoring and save fixture. The orbital sky draws
+behind opaque surfaces. [Results](evidence/m2-orbital-atmosphere-427.json)
 
 Version 0.0.426 lets [scattered water light follow the sky](SHALLOW_WATER.md#let-scattered-water-light-follow-the-sky).
 AMD forward and NVIDIA deferred passed 1,296 HDR probes across fitted,

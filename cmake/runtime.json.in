@@ -43,6 +43,7 @@
     "screen_reflections": @POIMA_RUNTIME_RENDER_SMOKE@,
     "auto_exposure": @POIMA_RUNTIME_RENDER_SMOKE@,
     "atmosphere_sky": @POIMA_RUNTIME_ATMOSPHERE_SKY@,
+    "orbital_atmosphere": @POIMA_RUNTIME_ATMOSPHERE_SKY@,
     "aerial_perspective": @POIMA_RUNTIME_AERIAL_PERSPECTIVE@,
     "volumetric_clouds": @POIMA_RUNTIME_VOLUMETRIC_CLOUDS@,
     "cloud_shadows": @POIMA_RUNTIME_CLOUD_SHADOWS@,

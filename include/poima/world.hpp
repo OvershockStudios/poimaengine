@@ -47,6 +47,7 @@ struct WorldPackageContent {
     bool needs_physics_checkpoint=false;
     bool needs_auto_exposure=false;
     bool needs_atmosphere_sky=false;
+    bool needs_orbital_atmosphere=false;
     bool needs_aerial_perspective=false;
     bool needs_volumetric_clouds=false;
     bool needs_cloud_shadows=false;

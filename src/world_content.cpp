@@ -259,6 +259,7 @@ FrozenContent freeze_world_content(const Json& source, const fs::path& directory
             if(environment.contains("atmosphere")) {
                 const auto& atmosphere=environment.at("atmosphere");
                 result.needs_atmosphere_sky=true;
+                if(atmosphere.contains("planet_center_m"))result.needs_orbital_atmosphere=true;
                 if(atmosphere.contains("aerial_perspective_m"))result.needs_aerial_perspective=true;
                 if(atmosphere.contains("clouds")) {
                     result.needs_volumetric_clouds=true;

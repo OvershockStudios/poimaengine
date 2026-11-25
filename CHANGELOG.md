@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.427
+
+- Author a planet-centered atmosphere so the sky follows radial up and shows
+  its curved scattering layer from orbit.
+
 ## 0.0.426
 
 - Let water's scattered light respond to the gameplay-driven sky brightness,

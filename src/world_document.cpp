@@ -143,20 +143,33 @@ LightingEnvironment environment_value(const Json& value) {
     if(value.contains("sky"))result.sky=sky_value(value.at("sky"));
     if(value.contains("atmosphere")) {
         const auto& profile=value.at("atmosphere");
-        fields(profile,{"sea_level_m","aerosol_strength","radiance_scale","aerial_perspective_m","clouds"},
-            {"sea_level_m","aerosol_strength","radiance_scale"});
+        fields(profile,{"sea_level_m","planet_center_m","aerosol_strength","radiance_scale","aerial_perspective_m","clouds"},
+            {"aerosol_strength","radiance_scale"});
         const auto number=[&](const char* name,double minimum,double maximum) {
             const auto& field=profile.at(name);
             require(field.is_number() && std::isfinite(field.get<double>()) && field>=minimum && field<=maximum,
                 std::string("Atmosphere ")+name+" is outside its finite range.");
             return field.get<double>();
         };
-        result.atmosphere=AtmosphereSettings{number("sea_level_m",-1e6,1e6),
-            static_cast<float>(number("aerosol_strength",0,4)),
-            static_cast<float>(number("radiance_scale",0,64)),std::nullopt,std::nullopt};
+        auto& atmosphere=result.atmosphere.emplace();
+        if(profile.contains("planet_center_m")) {
+            require(!profile.contains("sea_level_m") && !profile.contains("aerial_perspective_m") && !profile.contains("clouds"),
+                "Atmosphere planet_center_m is incompatible with sea_level_m, aerial_perspective_m and clouds.");
+            const auto& center=profile.at("planet_center_m");
+            require(center.is_array() && center.size()==3,"Atmosphere planet_center_m requires [x,y,z] in metres.");
+            for(const auto& coordinate:center)
+                require(coordinate.is_number() && std::isfinite(coordinate.get<double>()) && coordinate>=-1e9 && coordinate<=1e9,
+                    "Atmosphere planet_center_m coordinates must be finite and in [-1e9,1e9].");
+            atmosphere.planet_center_m=center.get<std::array<double,3>>();
+        } else {
+            require(profile.contains("sea_level_m"),"Atmosphere requires sea_level_m or planet_center_m.");
+            atmosphere.sea_level_m=number("sea_level_m",-1e6,1e6);
+        }
+        atmosphere.aerosol_strength=static_cast<float>(number("aerosol_strength",0,4));
+        atmosphere.radiance_scale=static_cast<float>(number("radiance_scale",0,64));
         if(profile.contains("aerial_perspective_m"))
-            result.atmosphere->aerial_perspective_m=static_cast<float>(number("aerial_perspective_m",128,65536));
-        if(profile.contains("clouds"))result.atmosphere->clouds=cloud_value(profile.at("clouds"));
+            atmosphere.aerial_perspective_m=static_cast<float>(number("aerial_perspective_m",128,65536));
+        if(profile.contains("clouds"))atmosphere.clouds=cloud_value(profile.at("clouds"));
     }
     if(value.contains("ibl")) {
         const auto& ibl=value.at("ibl");

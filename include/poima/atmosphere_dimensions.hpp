@@ -22,4 +22,5 @@ inline constexpr std::uint64_t cloud_view_bytes = std::uint64_t(cloud_view_width
 inline constexpr std::uint64_t cloud_shadow_bytes = std::uint64_t(cloud_shadow_size) * cloud_shadow_size * 8;
 inline constexpr std::uint32_t thread_group_size = 8;
 inline constexpr double max_observer_height_m = 20'000;
+inline constexpr double ground_radius_m = 6'371'000;
 }

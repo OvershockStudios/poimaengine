@@ -1,0 +1,176 @@
+{
+  "version": "0.0.427",
+  "date": "2026-11-25",
+  "feature": "orbital_atmosphere",
+  "schema": 223,
+  "base_commit": "7101827e40eff935f32b4f6b12c3b92d0cb81c47",
+  "changed_runtime_sources_sha256": {
+    "CMakeLists.txt": "a6fff6308a8afcb9d9b5586596e0c7b79d72910df6e8bc363795e30cbf2188d8",
+    "cmake/render_smoke.cmake": "21b40b1a90950ccc284be0a8577d7c8e51242ed00c782560b7c641487eb80eef",
+    "cmake/runtime.json.in": "e7f88588fba2745b72c8b6c41006d7fcfd88fbab618134fea408489e3d0d7104",
+    "include/poima/atmosphere_dimensions.hpp": "e48802c2db8b02a01bd675fbbc16402b80f9a8e7a8dd07d164c3ee1826ca972e",
+    "include/poima/core.hpp": "399cef1c6e906d790ab3b81a2143d9f6d771615c14580d7fc466b8a97e27beff",
+    "include/poima/scene.hpp": "7ccb3c9284d2e9dbb4db7c807e8fe6114236d5b79dd4543d818dadf4f480ac71",
+    "include/poima/world.hpp": "068c538e7cbd9b917e94deff80336c059080b0833a41cec944e1002070c644e6",
+    "shaders/atmosphere_lookup.hlsli": "f72fa9fd79b578ec2860ab88d8cb3efc8827c725a0b9df04ec4510de91eb11f9",
+    "shaders/atmosphere_sky_view.hlsl": "b9cad0747720e89e907d330c34c9248fb0448766aefc1dbdc458967c23eda742",
+    "shaders/sky.hlsl": "5ad1b007fc920366bdb912e241442b994b5098d326e6f6809893cc2b743a8341",
+    "src/core.cpp": "a236aba60b5778faee26d11d771d5e8a8a76d727c29c8800516689ea0adcda8f",
+    "src/lighting.cpp": "2a421711a8d58298dc8013105a935e855829c5a6391f2954957fb90543073080",
+    "src/project.cpp": "c7a31ebdcf8e552b9df8ab3e0f035dadb10958055abe37fb91762dee27419609",
+    "src/render_sky.cpp": "1f5be2bf22c6fdcfc2be2ad2e0a360d7a3962378e84446e673557562e2a2f27c",
+    "src/render_sky.hpp": "4434d7bf4e7ae9777149cfb3e4206537d4e29cb95f5cb20296c24c1fb5a76a3f",
+    "src/render_smoke.cpp": "3dc97ae3323e102cf8974d709e5d17366167e84595b1d3bc5a78cd5056c911b2",
+    "src/world.cpp": "972027bb8c98ab592c0433705d01d4c1db7f49e55c346a93455e3440be5ea78f",
+    "src/world_content.cpp": "e9edf43df98c43d896b0fea819404d5b308fca95d7fedbf697a7f8a6366b76f8",
+    "src/world_document.cpp": "2fbfe603a10104d228d52ee78ee14daa7f94a182b17868968ea77b293de24bd4",
+    "src/world_presentation_json.cpp": "bbf1a529768acb443afe992c7ab3bfabec845cf2f64cec66a9e0cb5cfbf55a1e",
+    "src/world_schema.cpp": "3eda1e726f8ced77b621c33a37cc603c86468fda253a071f7fccf2c565c0c7f2"
+  },
+  "reference_sphere_radius_m": 6371000,
+  "reference_atmosphere_thickness_m": 100000,
+  "checked_altitudes_m": [
+    400000,
+    2000000
+  ],
+  "windows": {
+    "binary_sha256": "238fe28c12d92328db5827ecb1f10531d8a8d89b009debff044bbfca4d1be810",
+    "runtime_descriptor_sha256": "2fea81503dea0015411bd9e72a294e9d6101f7025b34e2c95275e4d027371710",
+    "orbital_fixture_sha256": "45f7839c3fdf124bac4fb44adbdf6be14dfe9e8c9d3ba02e37d9f1878d35a9ee",
+    "amd": {
+      "adapter": "AMD Radeon(TM) Graphics",
+      "raw_evidence_sha256": "671224926d187dfb16ae50e9888ce9525f76348a330871ce93a45824e02b5458",
+      "lighting_path": "forward",
+      "samples": 1,
+      "atomic_rejection_cases": [
+        "above maximum",
+        "below minimum",
+        "boolean coordinate",
+        "length four",
+        "length two",
+        "local water plane",
+        "missing center and sea level",
+        "object",
+        "string coordinate",
+        "world-y aerial estimate",
+        "world-y clouds"
+      ],
+      "display_probes_against_numerical_reference": 36,
+      "max_display_channel_difference": 1,
+      "hdr_probes_against_numerical_reference": 36,
+      "max_hdr_channel_difference": 0.0004996814659197837,
+      "radial_rotation_max_display_delta": 0,
+      "rotated_and_translated_capture_matches": true,
+      "restored_orbital_profile_matches": true,
+      "capture_sha256": {
+        "illuminated-limb": "5982a40fd5fbf730b467a73297fd686759f85948d1f85b1ae7e5bc2fcb4d10b8",
+        "translated-origin": "5982a40fd5fbf730b467a73297fd686759f85948d1f85b1ae7e5bc2fcb4d10b8",
+        "rotated-radial-frame": "5982a40fd5fbf730b467a73297fd686759f85948d1f85b1ae7e5bc2fcb4d10b8",
+        "unlit-limb": "e43eedb198226486f16b9ea2f87c45eeb58e5d910558c22f55c9e521ab9db138",
+        "distant-limb": "71e8abef08e876a98ee6a6287d83e5a22a06b14e2645b2fada8ba110b3c52a49",
+        "planet-shadow": "e43eedb198226486f16b9ea2f87c45eeb58e5d910558c22f55c9e521ab9db138",
+        "occulted-sun": "e43eedb198226486f16b9ea2f87c45eeb58e5d910558c22f55c9e521ab9db138",
+        "clear-sun": "3d6d27da14453014362d178c59cb87e69a2fdbf50ae4536d2cb60fc4fccb8d59"
+      }
+    },
+    "nvidia": {
+      "adapter": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "raw_evidence_sha256": "cc75c44496b8e1b45db062624c7ff8b6a5621fa068e052a018b23a543399bd63",
+      "lighting_path": "deferred",
+      "samples": 1,
+      "atomic_rejection_cases": [
+        "above maximum",
+        "below minimum",
+        "boolean coordinate",
+        "length four",
+        "length two",
+        "local water plane",
+        "missing center and sea level",
+        "object",
+        "string coordinate",
+        "world-y aerial estimate",
+        "world-y clouds"
+      ],
+      "display_probes_against_numerical_reference": 36,
+      "max_display_channel_difference": 1,
+      "hdr_probes_against_numerical_reference": 36,
+      "max_hdr_channel_difference": 0.0005301990440447837,
+      "radial_rotation_max_display_delta": 0,
+      "rotated_and_translated_capture_matches": true,
+      "restored_orbital_profile_matches": true,
+      "capture_sha256": {
+        "illuminated-limb": "32beaf1342fa3c63a1854878beb49204bdca5afc6c2e22bbbcc04bd93e73ae2b",
+        "translated-origin": "32beaf1342fa3c63a1854878beb49204bdca5afc6c2e22bbbcc04bd93e73ae2b",
+        "rotated-radial-frame": "32beaf1342fa3c63a1854878beb49204bdca5afc6c2e22bbbcc04bd93e73ae2b",
+        "unlit-limb": "e43eedb198226486f16b9ea2f87c45eeb58e5d910558c22f55c9e521ab9db138",
+        "distant-limb": "e5171c8c505b093397d1cb0b4f26d6f225c2b245992291420824029c3f69acee",
+        "planet-shadow": "e43eedb198226486f16b9ea2f87c45eeb58e5d910558c22f55c9e521ab9db138",
+        "occulted-sun": "e43eedb198226486f16b9ea2f87c45eeb58e5d910558c22f55c9e521ab9db138",
+        "clear-sun": "2d663bf33e35f0b0f6be0fd498e173269fe6eba07f940a587fbb000d2572042b",
+        "relocated-render": "32beaf1342fa3c63a1854878beb49204bdca5afc6c2e22bbbcc04bd93e73ae2b"
+      },
+      "relocated_export": {
+        "older_runtime_rejected": "Orbital atmosphere requires a compatible Vulkan runtime.",
+        "files": 58,
+        "game_sha256": "9dee4e0c355c6e84b23bfd377affcca571518b30ad53fd45d55cf6f867c9bba4",
+        "capture_matches": true
+      }
+    },
+    "amd_msaa": {
+      "adapter": "AMD Radeon(TM) Graphics",
+      "raw_evidence_sha256": "751fcb5efe5674e731b96b3367d434b34808db48eeb247c3e4e167ad18d7d471",
+      "lighting_path": "forward",
+      "samples": 4,
+      "atomic_rejection_cases": [
+        "above maximum",
+        "below minimum",
+        "boolean coordinate",
+        "length four",
+        "length two",
+        "local water plane",
+        "missing center and sea level",
+        "object",
+        "string coordinate",
+        "world-y aerial estimate",
+        "world-y clouds"
+      ],
+      "display_probes_against_numerical_reference": 36,
+      "max_display_channel_difference": 1,
+      "hdr_probes_against_numerical_reference": 0,
+      "max_hdr_channel_difference": null,
+      "radial_rotation_max_display_delta": 0,
+      "rotated_and_translated_capture_matches": true,
+      "restored_orbital_profile_matches": true,
+      "capture_sha256": {
+        "illuminated-limb": "5982a40fd5fbf730b467a73297fd686759f85948d1f85b1ae7e5bc2fcb4d10b8",
+        "translated-origin": "5982a40fd5fbf730b467a73297fd686759f85948d1f85b1ae7e5bc2fcb4d10b8",
+        "rotated-radial-frame": "5982a40fd5fbf730b467a73297fd686759f85948d1f85b1ae7e5bc2fcb4d10b8",
+        "unlit-limb": "e43eedb198226486f16b9ea2f87c45eeb58e5d910558c22f55c9e521ab9db138",
+        "distant-limb": "71e8abef08e876a98ee6a6287d83e5a22a06b14e2645b2fada8ba110b3c52a49",
+        "planet-shadow": "e43eedb198226486f16b9ea2f87c45eeb58e5d910558c22f55c9e521ab9db138",
+        "occulted-sun": "e43eedb198226486f16b9ea2f87c45eeb58e5d910558c22f55c9e521ab9db138",
+        "clear-sun": "3d6d27da14453014362d178c59cb87e69a2fdbf50ae4536d2cb60fc4fccb8d59"
+      }
+    },
+    "legacy_nvidia_deferred": {
+      "raw_evidence_sha256": "0b89dda31044e6967c9485ec408735497d505676e82b11c9df0e68b34a68dfd0",
+      "retained_0_0_426_binary_sha256": "5523256b47a56e8a9ad68a812e3be830ae505914901c3a78ef9d8ffc2abb5cd1",
+      "omitted_profile_capture_sha256": "e43eedb198226486f16b9ea2f87c45eeb58e5d910558c22f55c9e521ab9db138",
+      "omitted_profile_capture_matches": true,
+      "sea_level_capture_workflow": "passed"
+    }
+  },
+  "ubuntu_headless": {
+    "binary_sha256": "f46000606a6c3de9c49edccfbd4725c62313fc71f0e4cf02fe648459e3d85693",
+    "runtime_descriptor_sha256": "7c7ec5138da5b039802b70c955c0a4f0e5d49cfa2e01eefc0ce2ee3f511cdea9",
+    "fixture_evidence_sha256": "273d9a0485b9af8bc22d9ce043556b059e74ac875a6d8f28b5eaa6863db6298d",
+    "ctest_xml_sha256": "36e08f5435f36fc10a9048afe60ecfd9b9c5c138d5e3e00987500ec7d73df201",
+    "ctest_passed": 14,
+    "orbital_authoring_and_frozen_save": "passed"
+  },
+  "limits": [
+    "Orbital scattering is drawn behind opaque geometry.",
+    "The current cloud and aerial perspective forms use the sea-level profile.",
+    "The captures exercise correctness, export and recovery. They do not establish frame cadence or game scale."
+  ]
+}

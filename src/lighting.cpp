@@ -101,8 +101,16 @@ void validate_environment(const LightingEnvironment& e) {
         const auto& profile=*e.atmosphere;
         require(e.sky.enabled && !e.sky.sun.empty(),
             "Atmosphere requires an enabled procedural sky linked to a directional light.");
-        require(std::isfinite(profile.sea_level_m) && profile.sea_level_m>=-1e6 && profile.sea_level_m<=1e6,
-            "Atmosphere sea_level_m must be finite and in [-1e6,1e6].");
+        if(profile.planet_center_m) {
+            require(profile.sea_level_m==0 && !profile.aerial_perspective_m && !profile.clouds,
+                "Atmosphere planet_center_m is incompatible with sea_level_m, aerial_perspective_m and clouds.");
+            for(double coordinate:*profile.planet_center_m)
+                require(std::isfinite(coordinate) && coordinate>=-1e9 && coordinate<=1e9,
+                    "Atmosphere planet_center_m coordinates must be finite and in [-1e9,1e9].");
+        } else {
+            require(std::isfinite(profile.sea_level_m) && profile.sea_level_m>=-1e6 && profile.sea_level_m<=1e6,
+                "Atmosphere sea_level_m must be finite and in [-1e6,1e6].");
+        }
         require(std::isfinite(profile.aerosol_strength) && profile.aerosol_strength>=0 && profile.aerosol_strength<=4,
             "Atmosphere aerosol_strength must be finite and in [0,4].");
         require(std::isfinite(profile.radiance_scale) && profile.radiance_scale>=0 && profile.radiance_scale<=64,

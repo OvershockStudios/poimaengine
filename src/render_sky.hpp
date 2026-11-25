@@ -39,6 +39,7 @@ public:
     std::uint64_t atmosphere_density_generation() const noexcept { return density_generation_; }
     std::uint64_t atmosphere_view_generation() const noexcept { return sky_view_generation_; }
     float atmosphere_observer_height_m() const noexcept { return observer_height_m_; }
+    bool orbital_enabled() const noexcept { return orbital_enabled_; }
     bool clouds_enabled() const noexcept { return clouds_enabled_; }
     bool cloud_noise_dirty() const noexcept { return clouds_enabled_ && !cloud_noise_initialized_; }
     nvrhi::ITexture* cloud_noise() const noexcept { return cloud_noise_.Get(); }
@@ -98,7 +99,7 @@ private:
     void prepare_raster(nvrhi::IDevice& device, nvrhi::IBuffer* frame,
         const nvrhi::FramebufferInfo& framebuffer, Raster& raster);
 
-    Raster gradient_, atmosphere_raster_, cloud_raster_;
+    Raster gradient_, atmosphere_raster_, orbital_raster_, cloud_raster_;
     Compute density_compute_, sky_view_compute_, cloud_noise_compute_, cloud_view_compute_, cloud_shadow_compute_;
     nvrhi::ShaderHandle vertex_shader_;
     nvrhi::TextureHandle density_, sky_view_, cloud_noise_, cloud_view_, cloud_shadow_;
@@ -111,6 +112,7 @@ private:
     std::uint64_t cloud_shadow_generation_ = 0;
     float observer_height_m_ = 0;
     bool atmosphere_enabled_ = false;
+    bool orbital_enabled_ = false;
     bool density_recorded_ = false, sky_view_recorded_ = false;
     bool clouds_enabled_ = false, cloud_noise_initialized_ = false;
     bool cloud_noise_recorded_ = false, cloud_view_recorded_ = false;

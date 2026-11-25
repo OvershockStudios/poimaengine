@@ -219,6 +219,8 @@ Json render_diagnostics(const RenderDiagnostics& d) {
         result["atmosphere_sky"]={{"density_generation",atmosphere.density_generation},
             {"view_generation",atmosphere.view_generation},{"texture_bytes",atmosphere.texture_bytes},
             {"observer_height_m",atmosphere.observer_height_m}};
+        if(atmosphere.planet_center_m)
+            result["atmosphere_sky"]["planet_center_m"]=*atmosphere.planet_center_m;
     }
     if(d.aerial_perspective) {
         const auto& aerial=*d.aerial_perspective;
@@ -263,15 +265,17 @@ Json lighting_json(const SceneLighting& lighting) {
     if(lighting.solar_lighting)result["solar_lighting"]=solar_lighting_json(*lighting.solar_lighting);
     if(lighting.environment.atmosphere) {
         const auto& profile=*lighting.environment.atmosphere;
-        result["atmosphere"]={{"sea_level_m",profile.sea_level_m},{"aerosol_strength",profile.aerosol_strength},
-            {"radiance_scale",profile.radiance_scale}};
+        auto& atmosphere=result["atmosphere"];
+        atmosphere={{"aerosol_strength",profile.aerosol_strength},{"radiance_scale",profile.radiance_scale}};
+        if(profile.planet_center_m)atmosphere["planet_center_m"]=*profile.planet_center_m;
+        else atmosphere["sea_level_m"]=profile.sea_level_m;
         if(profile.aerial_perspective_m)
-            result["atmosphere"]["aerial_perspective_m"]=*profile.aerial_perspective_m;
+            atmosphere["aerial_perspective_m"]=*profile.aerial_perspective_m;
         if(profile.clouds) {
             const auto& clouds=*profile.clouds;
-            result["atmosphere"]["clouds"]={{"base_height_m",clouds.base_height_m},{"thickness_m",clouds.thickness_m},
+            atmosphere["clouds"]={{"base_height_m",clouds.base_height_m},{"thickness_m",clouds.thickness_m},
                 {"coverage",clouds.coverage},{"extinction_per_km",clouds.extinction_per_km},{"wind_m_per_s",clouds.wind_m_per_s}};
-            if(clouds.shadow_strength)result["atmosphere"]["clouds"]["shadow_strength"]=*clouds.shadow_strength;
+            if(clouds.shadow_strength)atmosphere["clouds"]["shadow_strength"]=*clouds.shadow_strength;
         }
     }
     if(lighting.environment.auto_exposure) {
