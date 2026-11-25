@@ -1,0 +1,344 @@
+{
+  "version": "0.0.440",
+  "authoring_schema_revision": 236,
+  "date": "2026-11-25",
+  "base_commit": "b491ae17fd8861fd15d83da4dfc7be013e4bf6e0",
+  "scope": "Fixed, disjoint reservoir footprints shared by the conservative simulation, body clipping, swept entries, listener treatment and stock Vulkan optics.",
+  "candidate_patch_sha256": "ab47afe435e4fb3dbee3e239ed119c707a7b17d9f2f83ceb6ffd13c62465c7e5",
+  "source_sha256": {
+    "CMakeLists.txt": "4ddf5094eea294765456768b627fa2f56a033e74a020a825f2ad74eec2cb21a9",
+    "cmake/render_smoke.cmake": "888c958be3136e90e638f3ed8dd22c0c8fba7d8df92992ecfd76bbd7296c663b",
+    "cmake/runtime.json.in": "6f9d7c84eb9eae2a20290c9f4f733409cba9f66302cf1ffc8f52a96e902bd7ae",
+    "include/poima/core.hpp": "e6cffd0be321e73911641807be4d98ddb1c3dfb4a70bb1fc893d83cf09c63950",
+    "include/poima/project.hpp": "0f9ad0bdf1385dc08c7807c038f91fa00a68c12a7726cdfbf8243ed34565e29e",
+    "include/poima/render_schedule.hpp": "7aff0ac48161f0ff9b661d8e33e206132ed340341b3a54e1ae52ec5962d23f53",
+    "include/poima/scene.hpp": "d14336d8faf13cba4b798ffa126bc6e75510a779cac4e6781b98aebbefd57e27",
+    "include/poima/water_region.hpp": "18bd044e447b00e3035f302d74489eb9d66ee7602598b9b01d5253a2ab0791a2",
+    "include/poima/water_storage.hpp": "127970c5ec09c15ffb288727a539cf8a5877e7fa54cfe2cdece619d813d9d886",
+    "include/poima/water_storage_definition.hpp": "1287900d9fbfa9008b077527246ff05d754340eed2d34ed3b817ecf9c706ee20",
+    "include/poima/world.hpp": "72f8655f80c5ac1d4e1e4fe91f89760a7ccb96db5319b1b94b6cab667aed3ab5",
+    "shaders/height_fog.hlsl": "8e6f6f05cad7348cb2c18fab9829ee3eaec6f97970506a4b4137f1fea8b54dbb",
+    "shaders/water_constants.hlsli": "dd64ab6c160d5648ac4eb1d11ee4f9f15c5780ef1d345fb768e7f9f758fc4325",
+    "shaders/water_optics.hlsli": "2951c2f9b451d394b4d62bdb349914391c4304607ced2d8871037fe1f20e6100",
+    "shaders/water_refraction.hlsli": "5606f7d7c649d0ad4643960c15c033852b364a07e4caa4ca84c9179b491eff5c",
+    "shaders/water_reservoirs.hlsli": "8829adb7801fc722e010d1f821aa068087e6383e02936df6492719f7fe67a8ac",
+    "src/core.cpp": "1f34d12f44ba8b579a5adda7317826497ce4939629745c0fc72eaa7ddd059253",
+    "src/project.cpp": "c2bdd94e193602cd4fad0b9a2994845ba0dc41fdd474c2a2d2afd5b9d4c7dd22",
+    "src/render_height_fog.cpp": "3630b14f6cfb325444f4a6777951c6a78a1b000139c4729ad87c21044b9f2d5b",
+    "src/render_height_fog.hpp": "51187fafe60d3c2448a36fdb0c8f1e5f79831f907871e3c4d4f7d5ff5432a704",
+    "src/render_particle_sprites.inc": "09dbb56694f402d43a1e97793597006dc3ef4d93329e2d377efbd9699de6e2b3",
+    "src/render_schedule.cpp": "e2b6c018b6f2faa4f013abd1c2533e57cf6757aec611cf6cde88ddfe5a243570",
+    "src/render_smoke.cpp": "c057721b8ffe35e6352886e1db4c42c54b543963c49117e157b65a1760e0b91a",
+    "src/water_asset.cpp": "db41506de104669e4e55cf6656ac2d5dbe5bb1b20f4e09ea3d97a7be3b22fef1",
+    "src/water_buoyancy.cpp": "1955e381a835b78bbb9cb34332c43d01bf9f2b0ae2e13aa39718456252b20765",
+    "src/water_region.cpp": "0cc7a393eaceb56d896669e05f7aae553cbcee68bf37b5b2c19f715841b2a252",
+    "src/water_region_scene.cpp": "56793452790817b0f9dd7ddd692fc80acad29c32e1c124949e6d98d436ef5716",
+    "src/water_storage.cpp": "beaecec6639e93e0a94a228ab44e0f995339942cb8fd88fadc43a49131e44b77",
+    "src/water_surface_entry.cpp": "c3a969af4382ae992dd769a48e8a30f16e56a8ec867461cd05324a8dac62cba5",
+    "src/world.cpp": "60561ace5adbfafa310454c246fb7c06530a900610080b39e99adae6914f5151",
+    "src/world_content.cpp": "fea28a10bbfdef62dc198b9480be020c60bd62aa2c68d1e326e1b87ff3359ef8",
+    "src/world_presentation_json.cpp": "a6a99e7625aa72502b165ef70a964b2a03e0d14445fba0cf414a0f15dbe7c18c",
+    "src/world_schema.cpp": "02570e0ad535996d828d8278b0d7ceac5f60cd513de01128a414c7e1157c3391",
+    "src/world_water_service.inc": "840eb452cbe8c9ca66de2dab263ca58f41de4cc8cd228b2fd17c843d48aa8951",
+    "tests/render_schedule.cpp": "ba86979a07c846c690de44b466cf3459481144a17ce9e3dfd431ff57eb9e45d8",
+    "tests/retained_capture.py": "6d1c605fa2e81ea8387c9e263ff4620fa49584b62f6b32c5c6f673310076c835",
+    "tests/water_optics_capture.py": "fa4fbd49cf583216fd52835d9ed4e9957666f5c1d86504f0a7eac1022194c129",
+    "tests/water_region_native.cpp": "faa3b011854344a41cfed24d7263dc9d65332b24b4db71b507001c7c72ea6c1d",
+    "tests/water_reservoir_capture.py": "bb1e4352ba26140b15226c71efbf4209037a9df2f17d24d53b0a276cd7eba46e",
+    "tests/water_storage_capture.py": "d617cfd6cb71e0dc8183345ef640fc52aef7c4f809353598b4bbaf06958fe565"
+  },
+  "fixture": {
+    "cooked_version": 20,
+    "asset_sha256": "35ef79bdc843771eecff842ca28529993bfee100b5e4e16230d1cc71b3f64e5d",
+    "released_litres": 120,
+    "sealed": {
+      "terrain_level_m": 0.25,
+      "tank_level_m": 0.85,
+      "tank_litres": 850.0,
+      "combined_volume_m3": 1.1,
+      "listener_submersion_m": 0.05999999999999994,
+      "listener_wet_blend": 0.49999999999999933,
+      "sweep_height_m": 0.85
+    },
+    "released": {
+      "terrain_level_m": 0.37,
+      "tank_level_m": 0.73,
+      "tank_litres": 730.0,
+      "combined_volume_m3": 1.1,
+      "listener_submersion_m": 0.0,
+      "listener_wet_blend": 0.0,
+      "sweep_height_m": 0.73
+    },
+    "rejected_footprints": 4,
+    "windows_headless_evidence_sha256": "293e141566e31ec597094d8814b4df151fd0c3c51ff61cbf8c1d8e3fb7b7f55b"
+  },
+  "windows": {
+    "forward_amd": {
+      "gpu": "AMD Radeon(TM) Graphics",
+      "native_captures": 12,
+      "exact_replay_from_relocated_save": true,
+      "relocated_immutable_files": 60,
+      "source_hidden": true,
+      "independent_hdr_comparisons": 360,
+      "maximum_linear_channel_error": 0.00023974205074162036,
+      "frames": {
+        "source-sealed": {
+          "capture": "a3e0d027dd462ff45e9f19b127663d2fdc4298760d853db1cb9e4cc15663a71f",
+          "wet_probes": 30,
+          "interfaces": 10,
+          "max_linear_error": 0.00011977195340187596
+        },
+        "source-sealed-above": {
+          "capture": "aa9425e78e2009482c89cf2d6e6c325ef7c670b6cfc2e679bc4c0554069cfc33",
+          "wet_probes": 15,
+          "interfaces": 9,
+          "max_linear_error": 0.00011263280288778543
+        },
+        "source-released": {
+          "capture": "27dabc9b0e099fd5cc76b64181d4c24ecad4304204ba41203214369a84c461a9",
+          "wet_probes": 10,
+          "interfaces": 10,
+          "max_linear_error": 0.00023974205074162036
+        },
+        "source-released-above": {
+          "capture": "78620f6d36ca6fb36ac612d8e7ab9698fe5e3ff45c5a99b4a760353c5060de5d",
+          "wet_probes": 14,
+          "interfaces": 11,
+          "max_linear_error": 0.00012186564170788006
+        },
+        "warm-released": {
+          "capture": "27dabc9b0e099fd5cc76b64181d4c24ecad4304204ba41203214369a84c461a9",
+          "wet_probes": 10,
+          "interfaces": 10,
+          "max_linear_error": 0.00023974205074162036
+        },
+        "warm-released-above": {
+          "capture": "78620f6d36ca6fb36ac612d8e7ab9698fe5e3ff45c5a99b4a760353c5060de5d",
+          "wet_probes": 14,
+          "interfaces": 11,
+          "max_linear_error": 0.00012186564170788006
+        },
+        "relocated-sealed": {
+          "capture": "a3e0d027dd462ff45e9f19b127663d2fdc4298760d853db1cb9e4cc15663a71f",
+          "wet_probes": 30,
+          "interfaces": 10,
+          "max_linear_error": 0.00011977195340187596
+        },
+        "relocated-sealed-above": {
+          "capture": "aa9425e78e2009482c89cf2d6e6c325ef7c670b6cfc2e679bc4c0554069cfc33",
+          "wet_probes": 15,
+          "interfaces": 9,
+          "max_linear_error": 0.00011263280288778543
+        },
+        "relocated-released": {
+          "capture": "27dabc9b0e099fd5cc76b64181d4c24ecad4304204ba41203214369a84c461a9",
+          "wet_probes": 10,
+          "interfaces": 10,
+          "max_linear_error": 0.00023974205074162036
+        },
+        "relocated-released-above": {
+          "capture": "78620f6d36ca6fb36ac612d8e7ab9698fe5e3ff45c5a99b4a760353c5060de5d",
+          "wet_probes": 14,
+          "interfaces": 11,
+          "max_linear_error": 0.00012186564170788006
+        },
+        "fresh-released": {
+          "capture": "27dabc9b0e099fd5cc76b64181d4c24ecad4304204ba41203214369a84c461a9",
+          "wet_probes": 10,
+          "interfaces": 10,
+          "max_linear_error": 0.00023974205074162036
+        },
+        "fresh-released-above": {
+          "capture": "78620f6d36ca6fb36ac612d8e7ab9698fe5e3ff45c5a99b4a760353c5060de5d",
+          "wet_probes": 14,
+          "interfaces": 11,
+          "max_linear_error": 0.00012186564170788006
+        }
+      },
+      "saves": {
+        "source": "6e5bd2412ddb14fa7f907c3a3f16dd0dc46a3986ed25aec4ac643f9cbdfc2de2",
+        "relocated": "6e5bd2412ddb14fa7f907c3a3f16dd0dc46a3986ed25aec4ac643f9cbdfc2de2"
+      },
+      "raw_fixture_sha256": "c3153fbe9be01a72c189a55bbc36ef13d4659f8cbb5be3c974ca67d28757a30d"
+    },
+    "deferred_nvidia": {
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "native_captures": 12,
+      "exact_replay_from_relocated_save": true,
+      "relocated_immutable_files": 60,
+      "source_hidden": true,
+      "independent_hdr_comparisons": 360,
+      "maximum_linear_channel_error": 0.00023974205074162036,
+      "frames": {
+        "source-sealed": {
+          "capture": "a6881baf8c8ac6f548b1b4bc16d40adf4b1672387db3f6172faee6e85d1fa2f5",
+          "wet_probes": 30,
+          "interfaces": 10,
+          "max_linear_error": 0.00012186339042460914
+        },
+        "source-sealed-above": {
+          "capture": "d44e703f57184aad48617dd0e348e4da357a4658289a31ac856100b9838c8616",
+          "wet_probes": 15,
+          "interfaces": 9,
+          "max_linear_error": 0.00011520860237954067
+        },
+        "source-released": {
+          "capture": "d95c445a141aeee2992830020188413fc16ec9528bf88cb36879dcc07046a370",
+          "wet_probes": 10,
+          "interfaces": 10,
+          "max_linear_error": 0.00023974205074162036
+        },
+        "source-released-above": {
+          "capture": "267b3c803aaa02837ebd5c4bc6a2fbc3892b07ee6ea80a0e4ff89e8ad0628d1f",
+          "wet_probes": 14,
+          "interfaces": 11,
+          "max_linear_error": 0.00012186564170788006
+        },
+        "warm-released": {
+          "capture": "d95c445a141aeee2992830020188413fc16ec9528bf88cb36879dcc07046a370",
+          "wet_probes": 10,
+          "interfaces": 10,
+          "max_linear_error": 0.00023974205074162036
+        },
+        "warm-released-above": {
+          "capture": "267b3c803aaa02837ebd5c4bc6a2fbc3892b07ee6ea80a0e4ff89e8ad0628d1f",
+          "wet_probes": 14,
+          "interfaces": 11,
+          "max_linear_error": 0.00012186564170788006
+        },
+        "relocated-sealed": {
+          "capture": "a6881baf8c8ac6f548b1b4bc16d40adf4b1672387db3f6172faee6e85d1fa2f5",
+          "wet_probes": 30,
+          "interfaces": 10,
+          "max_linear_error": 0.00012186339042460914
+        },
+        "relocated-sealed-above": {
+          "capture": "d44e703f57184aad48617dd0e348e4da357a4658289a31ac856100b9838c8616",
+          "wet_probes": 15,
+          "interfaces": 9,
+          "max_linear_error": 0.00011520860237954067
+        },
+        "relocated-released": {
+          "capture": "d95c445a141aeee2992830020188413fc16ec9528bf88cb36879dcc07046a370",
+          "wet_probes": 10,
+          "interfaces": 10,
+          "max_linear_error": 0.00023974205074162036
+        },
+        "relocated-released-above": {
+          "capture": "267b3c803aaa02837ebd5c4bc6a2fbc3892b07ee6ea80a0e4ff89e8ad0628d1f",
+          "wet_probes": 14,
+          "interfaces": 11,
+          "max_linear_error": 0.00012186564170788006
+        },
+        "fresh-released": {
+          "capture": "d95c445a141aeee2992830020188413fc16ec9528bf88cb36879dcc07046a370",
+          "wet_probes": 10,
+          "interfaces": 10,
+          "max_linear_error": 0.00023974205074162036
+        },
+        "fresh-released-above": {
+          "capture": "267b3c803aaa02837ebd5c4bc6a2fbc3892b07ee6ea80a0e4ff89e8ad0628d1f",
+          "wet_probes": 14,
+          "interfaces": 11,
+          "max_linear_error": 0.00012186564170788006
+        }
+      },
+      "saves": {
+        "source": "7ba0c102cbe1ed42aaaad8e23e635e68323dd43fb7cc87af9d6e5b0d0509672d",
+        "relocated": "7ba0c102cbe1ed42aaaad8e23e635e68323dd43fb7cc87af9d6e5b0d0509672d"
+      },
+      "raw_fixture_sha256": "171f8c582f6d8a780ca8cc87045cbbf8b008e7564e87b6d1944ee34eb0591d4a"
+    }
+  },
+  "windows_runtime_sha256": {
+    "bin/poima.exe": "4b8a6c793795f9829758d3017ecfb4f116b49c6eb4b73f5ed5da9d15db824cbc",
+    "bin/poima_desktop.dll": "d70c4a3d97f3459b789db8dabe0c90cf0b1fccac539102418b92654854fd8d2e",
+    "runtime.json": "df7f16eb71f8c011ad4dd0902a8ce27e171ec86e7cf693beb320c9391a307f2d"
+  },
+  "amd_multisample_fallback": {
+    "samples": 4,
+    "reason": "multisample",
+    "captured_levels": [
+      "80f5c395b29161944323761d2d61eb61340234a67ca48cc0a7ca1771a586803c",
+      "6132e0cc3983ab142272ced0ce2361ace64ef8eac94d7969c73ad9971ce80b06"
+    ],
+    "raw_sha256": "977f1929632019eb9a9e8ccf8db4458fd94af38c528504f8cc2222835de0d6c4"
+  },
+  "ubuntu": {
+    "focused_suites_passed": 11,
+    "headless_fixture_passed": true,
+    "source_box_clipping_uses_analytic_result": true,
+    "sha256": {
+      "evidence.json": "a891c4774ab7cce7b318c373632b62f03eaef896c40e8e62d90e54004fa799d8",
+      "poima": "332b6be1c6fd864b6726bef111b47a0534da82601c7d16bfa098ed382bcb520d",
+      "runtime.json": "b7deff9c858113f0ba3185a9dc0103f4ad1381f02a2a45b6a03dbadcdbe9930c",
+      "result.xml": "743a798fcc7cf8c4d69b9baf1286d3177d97840afe7b387fd4c627220cf1c7d8"
+    }
+  },
+  "render_schedule": {
+    "valid_variants": 591,
+    "rejected_mutations": 1539,
+    "log_sha256": "9e95a382dd14ede76b7b6561cb9db0d4699071061b814ae935f84626da6f4336"
+  },
+  "rejected_export": {
+    "missing_feature": "water_reservoirs",
+    "older_storage_flag_present": true,
+    "no_bundle": true,
+    "diagnostic": "Project placed water reservoirs require a compatible water runtime."
+  },
+  "unselected_storage_regression": {
+    "baseline": "0.0.439 deferred NVIDIA",
+    "same_plan_sha256": "fba3f7b7329f9ffc8f762d79c1ae30fd61fd0b8fa159b2c4fd04b3bbf866941b",
+    "exact_captures": 5,
+    "same_selected_water_state": true,
+    "previous_sha256": "ad8d551ecd42aef5412b9b9fcc6731d73717ddc3013d0a48a464a9235da95f3c",
+    "rerun_sha256": "3deb5278cc6ccc32d4eab786ef81bbf9312dad4a7d578964662ba77bc5658412"
+  },
+  "water_sprite_regression": {
+    "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "lighting": "deferred",
+    "passed": true,
+    "measurement_names": [
+      "blend_oracle",
+      "empty-air",
+      "empty-water",
+      "live-air",
+      "live-water",
+      "solid-above-air",
+      "solid-above-water",
+      "solid-dry-air",
+      "solid-dry-water",
+      "solid-far-air",
+      "solid-far-water",
+      "solid-near-air",
+      "solid-near-water"
+    ],
+    "raw_sha256": "5d5d56f4c29c5288d13ea81a5f28a2eb0f5340888a7f2a23c0c0cfd0fb0d4f1f"
+  },
+  "recoveries": [
+    {
+      "failure": "The first HLSL build used an identifier reserved by the shader compiler.",
+      "correction": "Renamed the local sample position.",
+      "log_sha256": "f59f7157ce7204730bb51b68b8f22b0f72cf040ce2587bee58b362a8984fb9c0"
+    },
+    {
+      "failure": "The initial fixture omitted the bound mesh collider for the terrain tile.",
+      "correction": "Cooked the same terrain render and collision model into the fixture.",
+      "log_sha256": "686f27a81289190f3d83f1b70f7284101131595b75151c771e428eb944253174"
+    },
+    {
+      "failure": "The first placed reservoir capture reached the renderer with a static fallback drawable.",
+      "correction": "Supplied the tank top through the same streamed-world geometry contract as terrain water.",
+      "log_sha256": "c0c53884c052f6b01d558545e830c540ebe3a9d4e011836c248ab19e73c34e16"
+    },
+    {
+      "failure": "A historical headless source mirror differed in GPU-only files.",
+      "correction": "Excluded those dormant GPU paths from the Ubuntu build. The clean Windows build checkout compiled them.",
+      "log_sha256": "e7753b98de4329a81ffdbd8f37cfcd56c373114c07acd38421bfaafd143ddbcb"
+    }
+  ],
+  "limits": [
+    "The fixture qualifies the fixed water prism, absorption, Fresnel, and listener state. It does not qualify portable vessels, overflow, authored refraction quality or scene-scale rendering costs.",
+    "Box buoyancy clips against tanks. The pressure feedback field remains terrain-only."
+  ]
+}

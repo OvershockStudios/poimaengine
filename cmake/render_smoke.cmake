@@ -159,6 +159,7 @@ foreach(stage IN LISTS shader_stages)
     endif()
     if(shader MATCHES "^(height_fog_water|particle_sprite.*_water)")
         list(APPEND shader_dependencies "${CMAKE_SOURCE_DIR}/shaders/water_optics.hlsli"
+            "${CMAKE_SOURCE_DIR}/shaders/water_reservoirs.hlsli"
             "${CMAKE_SOURCE_DIR}/shaders/water_swell_variation.hlsli"
             "${CMAKE_SOURCE_DIR}/shaders/water_bed.hlsli"
             "${CMAKE_SOURCE_DIR}/shaders/water_shore_trace.hlsli"

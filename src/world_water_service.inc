@@ -152,7 +152,8 @@
                 if(!hit) {hits.push_back(nullptr);continue;}
                 const auto cell=hit->cell ? Json::array({hit->cell->x,hit->cell->z}) : Json(nullptr);
                 hits.push_back({{"fraction",hit->fraction},{"position_m",hit->position_m},
-                    {"normal",hit->normal},{"cell",cell},{"offshore",!hit->cell}});
+                    {"normal",hit->normal},{"cell",cell},{"offshore",!hit->cell && !hit->reservoir}});
+                if (hit->reservoir) hits.back()["reservoir"]=*hit->reservoir;
             }
         }
         if (params.contains("points")) {
@@ -182,6 +183,13 @@
                     row["column"]={{"cell",nullptr},{"offshore",true},{"floor_height_m",floor},
                         {"surface_height_m",stage},{"depth_m",stage-floor},{"surface_normal",{0,1,0}}};
                     if (y>=floor && y<stage) row["submersion_m"]=stage-y;
+                } else if (region && region->storage()) {
+                    if (const auto tank=region->storage()->sample_world(x,z)) {
+                        const auto floor=tank->floor_height_m,stage=tank->surface_height_m;
+                        row["column"]={{"cell",nullptr},{"reservoir",tank->id},{"floor_height_m",floor},
+                            {"surface_height_m",stage},{"depth_m",stage-floor},{"surface_normal",{0,1,0}}};
+                        row["submersion_m"]=tank->submersion_at(y);
+                    }
                 }
                 if (region && region->currents()) {
                     row["water_velocity_m_s"] = column && column->submersion_at(y)>0

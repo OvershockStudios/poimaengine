@@ -31,6 +31,7 @@ struct WorldPackageContent {
     bool needs_water_surface_wakes=false;
     bool needs_water_body_displacement=false;
     bool needs_water_storage=false;
+    bool needs_water_reservoirs=false;
     bool needs_collision_surfaces=false;
     bool needs_surface_mark_masks=false;
     bool needs_mesh_lod=false;

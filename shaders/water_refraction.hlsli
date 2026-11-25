@@ -73,8 +73,9 @@ bool water_probe_medium(WaterConstants water, WaterScreenRay ray, WaterDepthProb
         const bool wet = limits.y > limits.x && position.y < limits.y - 0.002 && above_bed;
         if (wet != ray.entering) return false;
     } else {
-        const bool wet=offshore_contains(position.xz) &&
-            position.y>=water_offshore.z-.025 && position.y<water_offshore.y-.002;
+        const bool wet=(offshore_contains(position.xz) &&
+            position.y>=water_offshore.z-.025 && position.y<water_offshore.y-.002) ||
+            reservoir_contains_water(water,position);
         if (wet!=ray.entering) return false;
     }
     return true;

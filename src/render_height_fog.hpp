@@ -5,6 +5,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <vector>
 
 namespace poima { struct HeightFog; struct SceneWaterVolume; }
 namespace poima::render_schedule { struct Schedule; }
@@ -32,6 +33,7 @@ struct Inputs {
     nvrhi::ITexture* water_specular = nullptr;
     nvrhi::ITexture* water_brdf = nullptr;
     nvrhi::ISampler* water_sampler = nullptr;
+    nvrhi::IBuffer* water_reservoirs = nullptr;
     friend bool operator==(const Inputs&, const Inputs&) = default;
 };
 
@@ -55,11 +57,14 @@ struct WaterView {
     OffshoreSwell offshore_swell{};
     std::uint32_t offshore_swell_layers=0;
     SwellVariationParameters swell_variation{};
+    struct Reservoir { std::array<float,4> low_m,high_m; };
+    std::vector<Reservoir> reservoirs;
 };
 
 WaterView project_water_view(const SceneWaterVolume& water,const std::array<double,3>& eye,float wave_mode,
                             double scattering_scale);
 nvrhi::BufferHandle allocate_water_columns(nvrhi::IDevice& device);
+nvrhi::BufferHandle allocate_water_reservoirs(nvrhi::IDevice& device);
 
 class Pass {
 public:

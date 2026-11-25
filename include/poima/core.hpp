@@ -298,6 +298,7 @@ struct WaterOpticsDiagnostics {
     bool surface_wakes=false;
     bool offshore=false;
     std::uint32_t offshore_swell_layers=0;
+    std::uint32_t reservoir_volumes=0;
     std::optional<WaterSwellVariation> swell_variation{};
     std::optional<double> reflection_roughness{};
     bool rough_reflection_active=false;

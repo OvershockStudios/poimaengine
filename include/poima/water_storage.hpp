@@ -11,11 +11,24 @@ namespace poima::water {
 
 nlohmann::json storage_definition_json(const StorageDefinition& definition);
 
+struct ReservoirSample {
+    std::string_view id;
+    ReservoirFootprint footprint;
+    double floor_height_m, surface_height_m;
+
+    double submersion_at(double height) const noexcept {
+        return height >= floor_height_m && height < surface_height_m ? surface_height_m - height : 0.;
+    }
+};
+
 class WaterStorage {
 public:
     WaterStorage(const StorageDefinition& definition, const Grid& grid);
     double volume_m3() const noexcept;
     double capacity_m3() const noexcept;
+    std::span<const std::size_t> placed() const noexcept { return placed_; }
+    ReservoirSample sample(std::size_t i) const;
+    std::optional<ReservoirSample> sample_world(double x_m, double z_m) const;
 
     struct Step {
         std::array<double, max_water_reservoirs> volumes{};
@@ -36,6 +49,7 @@ private:
         std::size_t from, to;
     };
     std::vector<ReservoirDefinition> reservoirs_;
+    std::vector<std::size_t> placed_;
     std::vector<Cell> cells_;
     std::vector<Port> ports_;
     std::array<double, max_water_reservoirs> volumes_{};

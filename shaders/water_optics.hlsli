@@ -109,12 +109,13 @@ struct WaterPath {
     float2 interface_gradient;
     bool enters;
     bool offshore_interface;
+    bool reservoir_interface;
 };
 
 #include "water_shore_trace.hlsli"
 
 WaterPath trace_water_grid(WaterConstants water,float3 eye,float3 ray,float max_distance,bool find_interface) {
-    WaterPath path={0,-1,0,float2(0,0),false,false};
+    WaterPath path={0,-1,0,float2(0,0),false,false,false};
     const float size = water.camera_cell_size.w;
     const int2 dimensions = water_grid_dimensions(water);
     float entry = 0, exit = max_distance;
@@ -201,7 +202,7 @@ bool offshore_contains(float2 position) {
     return water_offshore.x==1.0 || water_offshore.x==4.0 ? distance>0.0 : distance>=0.0;
 }
 
-WaterPath trace_water_columns(WaterConstants water,float3 eye,float3 ray,float max_distance,bool find_interface) {
+WaterPath trace_terrain_water(WaterConstants water,float3 eye,float3 ray,float max_distance,bool find_interface) {
     WaterPath local=trace_water_grid(water,eye,ray,max_distance,find_interface);
     [branch] if (water_offshore.x==0.0) return local;
 
@@ -233,6 +234,7 @@ WaterPath trace_water_columns(WaterConstants water,float3 eye,float3 ray,float m
     return local;
 }
 
+#include "water_reservoirs.hlsli"
 #ifndef POIMA_WATER_STRAIGHT_SURFACE
 #include "water_refraction.hlsli"
 #endif
@@ -249,8 +251,10 @@ float3 compose_water_path(WaterConstants water,float3 input_radiance,float3 ray,
         const bool from_air = path.enters;
         const float3 geometry_normal=normalize(float3(-path.interface_gradient.x,1,-path.interface_gradient.y));
         const float relative_y=water_displaced(water) ? dot(geometry_normal,ray) : ray.y;
-        float slope_variance;
-        float3 normal=water_interface_normal(water,eye.xz+interface_at*ray.xz,interface_at,ray,relative_y,path.interface_gradient,slope_variance);
+        float slope_variance=0;
+        float3 normal=geometry_normal;
+        if (!path.reservoir_interface)
+            normal=water_interface_normal(water,eye.xz+interface_at*ray.xz,interface_at,ray,relative_y,path.interface_gradient,slope_variance);
         if (!from_air) normal = -normal;
         const float nv=saturate(-dot(normal,ray));
         float fresnel=water_fresnel(nv,from_air);
@@ -296,7 +300,7 @@ float3 compose_water_path(WaterConstants water,float3 input_radiance,float3 ray,
         }
         const float3 before = exp(-water.extinction_per_m * before_m);
         color = lerp(color, lerp(scattering, reflection, before), fresnel);
-        [branch] if (from_air && !path.offshore_interface && water_shore_foam.y > 0.0) {
+        [branch] if (from_air && !path.offshore_interface && !path.reservoir_interface && water_shore_foam.y > 0.0) {
             const float3 offset = interface_at * ray;
             const float3 entry = eye + offset;
             const float coverage = shore_foam_coverage(water, entry, water_interface_footprint(interface_at, relative_y));

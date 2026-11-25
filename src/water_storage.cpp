@@ -29,8 +29,17 @@ Json endpoint_json(const StorageEndpoint& endpoint) {
 }
 
 Json reservoir_json(const ReservoirDefinition& tank) {
-    return {{"id", tank.id}, {"floor_height_m", tank.floor_height_m}, {"area_m2", tank.area_m2},
+    Json result{{"id", tank.id}, {"floor_height_m", tank.floor_height_m}, {"area_m2", tank.area_m2},
         {"capacity_m3", tank.capacity_m3}, {"initial_volume_m3", tank.initial_volume_m3}};
+    if (const auto& footprint=tank.footprint)
+        result["footprint"]={{"min_xz_m",footprint->min_xz_m},{"size_xz_m",footprint->size_xz_m}};
+    return result;
+}
+
+bool overlaps(const ReservoirFootprint& a, const ReservoirFootprint& b) noexcept {
+    for (std::size_t axis=0;axis<2;++axis)
+        if (a.edge(axis)<=b.min_xz_m[axis] || b.edge(axis)<=a.min_xz_m[axis]) return false;
+    return true;
 }
 
 Json port_json(const StoragePortDefinition& port) {
@@ -64,6 +73,9 @@ WaterStorage::WaterStorage(const StorageDefinition& definition, const Grid& grid
             definition.ports.empty() || definition.ports.size() > max_water_ports)
         throw std::invalid_argument("Water storage requires 1–32 reservoirs and 1–128 ports.");
     std::ranges::sort(reservoirs_, {}, &ReservoirDefinition::id);
+    const auto& config = grid.config();
+    const ReservoirFootprint terrain{{config.origin_x_m,config.origin_z_m},
+        {config.cells_x*config.cell_size_m,config.cells_z*config.cell_size_m}};
     for (std::size_t i = 0; i < reservoirs_.size(); ++i) {
         const auto& tank = reservoirs_[i];
         if (!valid_input_action_name(tank.id) || (i && reservoirs_[i-1].id == tank.id) ||
@@ -72,10 +84,23 @@ WaterStorage::WaterStorage(const StorageDefinition& definition, const Grid& grid
                 !bounded(tank.capacity_m3, .001, std::min(max_reservoir_capacity_m3, tank.area_m2 * max_water_depth_m)) ||
                 !bounded(tank.initial_volume_m3, 0, tank.capacity_m3))
             throw std::invalid_argument("Invalid or duplicate water reservoir.");
+        if (const auto& footprint = tank.footprint) {
+            const auto area = footprint->size_xz_m[0] * footprint->size_xz_m[1];
+            if (!(std::abs(area - tank.area_m2) <= tank.area_m2 * 1e-10) ||
+                    tank.floor_height_m + tank.capacity_m3 / tank.area_m2 > max_water_depth_m)
+                throw std::invalid_argument("Placed reservoir footprint area or vertical range differs from its capacity.");
+            for (std::size_t axis=0;axis<2;++axis)
+                if (!bounded(footprint->min_xz_m[axis],-max_water_depth_m,max_water_depth_m) ||
+                    !bounded(footprint->size_xz_m[axis],.01,1e6) || footprint->edge(axis)>max_water_depth_m)
+                    throw std::invalid_argument("Placed reservoir footprint is outside the supported world bounds.");
+            if (overlaps(*footprint,terrain) || std::ranges::any_of(placed_,[&](auto prior) {
+                return overlaps(*footprint,*reservoirs_[prior].footprint);
+            })) throw std::invalid_argument("A placed reservoir footprint overlaps terrain water or another reservoir.");
+            placed_.push_back(i);
+        }
         volumes_[i] = tank.initial_volume_m3;
     }
 
-    const auto& config = grid.config();
     for (const auto& port : definition.ports) {
         if (!std::holds_alternative<std::string>(port.from) && !std::holds_alternative<std::string>(port.to))
             throw std::invalid_argument("A water storage port needs at least one reservoir endpoint.");
@@ -129,6 +154,17 @@ double WaterStorage::volume_m3() const noexcept {
 double WaterStorage::capacity_m3() const noexcept {
     return std::accumulate(reservoirs_.begin(), reservoirs_.end(), 0.,
         [](double total, const ReservoirDefinition& tank) { return total + tank.capacity_m3; });
+}
+
+ReservoirSample WaterStorage::sample(std::size_t i) const {
+    const auto& tank = reservoirs_.at(i);
+    return {tank.id, tank.footprint.value(), tank.floor_height_m, tank.floor_height_m + volumes_[i] / tank.area_m2};
+}
+
+std::optional<ReservoirSample> WaterStorage::sample_world(double x_m, double z_m) const {
+    for (const auto i : placed_)
+        if (reservoirs_[i].footprint->contains(x_m,z_m)) return sample(i);
+    return std::nullopt;
 }
 
 WaterStorage::Step WaterStorage::stage(const Grid& grid, std::span<const std::string_view> pressed,

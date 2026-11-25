@@ -2,6 +2,12 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.440
+
+- Give reservoirs a world-space footprint. Their water level now drives
+  rendering, water queries, listener submersion and buoyant-box geometry.
+  [Placed reservoirs](docs/SHALLOW_WATER.md#place-a-reservoir-in-the-world)
+
 ## 0.0.439
 
 - Connect finite reservoirs and terrain water through bidirectional gates.

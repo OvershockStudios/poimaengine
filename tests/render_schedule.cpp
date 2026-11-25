@@ -1273,6 +1273,15 @@ void height_fog_contracts() {
     bad_water("water optics columns are read by a foreign pass",[&](auto& p){
         pass(p,PassId::output).accesses.push_back({water.f.water_columns,Use::storage_read});
     });
+    water.f.water_reservoirs=water.add(Kind::buffer,Lifetime::shared);
+    water.f.resources[water.f.water_reservoirs].bytes=2*water_reservoir_bytes;
+    const auto connected=water.plan();
+    connected.validate();++accepted;
+    {
+        auto candidate=connected;
+        erase_access(candidate,PassId::height_fog,water.f.water_reservoirs,Use::storage_read);
+        rejects("water optics lose the placed reservoir input",[&]{candidate.validate();});
+    }
     for(bool deferred:{false,true}) {
         auto receiving=forward;
         receiving.deferred=deferred;

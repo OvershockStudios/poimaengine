@@ -24,6 +24,7 @@ struct SurfaceEntry {
     double fraction;
     std::array<double,3> position_m, normal;
     std::optional<Cell> cell; // The offshore plane has no cell.
+    std::optional<std::string_view> reservoir{};
 };
 
 struct Displacement {
@@ -105,6 +106,8 @@ private:
     std::optional<WakeField> wakes_;
     std::optional<BodyDisplacement> body_displacement_;
     std::optional<WaterStorage> storage_;
+    std::optional<SurfaceEntry> terrain_surface_entry(const std::array<double,3>& from,
+                                                     const std::array<double,3>& to) const;
     std::uint32_t snapshot_version() const noexcept;
     std::vector<SwellWave> swell_waves_;
     double swell_amplitude_m_=0;

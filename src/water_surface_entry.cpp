@@ -48,6 +48,23 @@ Position along(const Position& from,const Position& delta,double fraction) {
 std::optional<SurfaceEntry> Region::surface_entry(const Position& from,const Position& to) const {
     const auto bounded=[](double axis) { return std::isfinite(axis) && std::abs(axis)<=1e6; };
     if (!std::ranges::all_of(from,bounded) || !std::ranges::all_of(to,bounded)) return std::nullopt;
+    auto hit=terrain_surface_entry(from,to);
+    if (!storage_ || to[1]>=from[1]) return hit;
+    const Position delta{to[0]-from[0],to[1]-from[1],to[2]-from[2]};
+    for (const auto i : storage_->placed()) {
+        const auto sample=storage_->sample(i);
+        if (sample.surface_height_m<=sample.floor_height_m) continue;
+        const auto fraction=(sample.surface_height_m-from[1])/delta[1];
+        if (fraction<0 || fraction>1 || (hit && fraction>=hit->fraction)) continue;
+        auto point=along(from,delta,fraction);
+        if (!sample.footprint.contains(point[0],point[2])) continue;
+        point[1]=sample.surface_height_m;
+        hit=SurfaceEntry{fraction,point,{0,1,0},std::nullopt,sample.id};
+    }
+    return hit;
+}
+
+std::optional<SurfaceEntry> Region::terrain_surface_entry(const Position& from,const Position& to) const {
     const Position delta{to[0]-from[0],to[1]-from[1],to[2]-from[2]};
     const auto& config=grid_.config();
     const auto size=config.cell_size_m;

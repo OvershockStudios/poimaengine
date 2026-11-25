@@ -626,6 +626,39 @@ void finite_storage_ports_reverse_and_survive_restore() {
     require(blocked.save()==before,"A rejected grid step consumed reservoir water or changed its gate.");
 }
 
+void placed_reservoirs_share_physics_water_levels() {
+    using namespace poima::water;
+    RegionDefinition definition{
+        .config={.cells_x=1,.cells_z=1}, .floor_heights_m={0}, .initial_depths_m={.25},
+        .plan_sha256=std::string(64,'d'), .optics=poima::WaterOptics{{.8,.4,.15},{.03,.12,.22}},
+        .storage=StorageDefinition{
+            {{"cistern",0,1,2,.85,ReservoirFootprint{{2,2},{1,1}}}},
+            {{"spill",std::string("cistern"),Cell{0,0},0,12,20,0,"use.sluice",1}},
+        },
+    };
+    Region basin(definition);
+    const auto near=[](double a,double b){ return std::abs(a-b)<1e-12; };
+    const std::array axes{std::array{.2,0.,0.},std::array{0.,.1,0.},std::array{0.,0.,.2}};
+    const auto see=[&](double top) {
+        auto hit=basin.surface_entry({2.5,2.,2.5},{2.5,0.,2.5});
+        require(hit && hit->reservoir=="cistern" && !hit->cell && near(hit->position_m[1],top),"Tank sweep missed its surface.");
+        require(near(basin.submersion_at(2.5,.65,2.5),top-.65) && basin.submersion_at(3,.65,2.5)==0 &&
+            basin.submersion_at(2.5,-.01,2.5)==0,"Tank submersion crossed an outside boundary.");
+        const auto displacement=basin.displaced_by_box({2.5,.8,2.5},axes);
+        require(near(displacement.volume_m3,.16*(top-.7)) && near(displacement.center_offset_m[1],(.7+top)/2-.8),
+            "Tank clipping differs from the analytic submerged box.");
+    };
+    see(.85);
+    basin.step(toggle);
+    see(.73);
+    require(near(basin.grid().sample({0,0}).depth_m,.37),"Spill did not reach the downstream water surface.");
+    Region restored(definition);
+    restored.restore(basin.save(),1);
+    require(restored.save()==basin.save() && near(restored.submersion_at(2.5,.65,2.5),.08),"Restored tank waterline differs.");
+    definition.optics->offshore=poima::WaterOffshore{poima::WaterEdge::max_x,0,1};
+    rejects<std::invalid_argument>([&]{Region invalid(definition);},"A tank could intersect the offshore half-plane.");
+}
+
 }
 
 int main() {
@@ -642,6 +675,7 @@ int main() {
         wake_pulse_propagates_only_across_wet_connected_faces();
         occupied_body_volume_moves_water_without_adding_it();
         finite_storage_ports_reverse_and_survive_restore();
+        placed_reservoirs_share_physics_water_levels();
         std::cout << "Water region tests passed.\n";
     } catch (const std::exception& error) {
         std::cerr << error.what() << '\n';

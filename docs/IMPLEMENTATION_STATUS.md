@@ -1,8 +1,18 @@
 # Implementation status
 
-Updated 2026-11-25 for **0.0.439**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-25 for **0.0.440**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.440 lets [placed reservoirs](SHALLOW_WATER.md#place-a-reservoir-in-the-world)
+render water at the saved level inside a fixed footprint. Releasing 120
+litres lowers the tank from 0.85 to 0.73 m and exposes a submerged listener
+to air. Box clipping, surface sweeps and the waterline use the same stage.
+AMD forward and NVIDIA deferred matched an independent optical calculation
+at 720 sampled pixels across 24 captures and restored exact images in
+relocated games. AMD also exercised the 4× MSAA surface mesh. Ubuntu passed
+eleven focused suites and the headless fixture. Moving containers, overflow
+and scene-scale costs remain open. [Results and scope](evidence/m2-water-reservoirs-440.json)
 
 Version 0.0.439 adds [connected reservoirs and gates](SHALLOW_WATER.md#fill-and-drain-connected-reservoirs).
 A fixed-area reservoir releases 120 litres into terrain water. The terrain

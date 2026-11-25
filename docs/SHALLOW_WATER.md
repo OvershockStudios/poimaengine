@@ -463,12 +463,11 @@ gates and full receiving reservoirs stop flow.
 the authored `from` to `to` direction. `last_step` accounts for the combined
 volume, with internal transfers excluded from supply and drain. Terrain
 optics, waterline sound and point queries follow the water added to and
-removed from terrain cells. Individual tanks expose their levels as
-simulation data. Tank surface meshes, overflow and moving containers are
-future work.
+removed from terrain cells. Give a tank a [footprint](#place-a-reservoir-in-the-world)
+to use the same systems inside it.
 
-The guarded cook uses `.pwater` v19 and sorts both lists by ID for a stable
-plan hash. Runtime snapshots preserve volumes, openings and the last
+The guarded cook sorts both lists by ID for a stable plan hash. Storage
+without footprints uses `.pwater` v19. Runtime snapshots preserve volumes, openings and the last
 transfer for every port. Project, world and game inspection report
 `needs_water_storage`. Export requires a simulation runtime advertising
 `features.water_storage`.
@@ -476,6 +475,47 @@ transfer for every port. Project, world and game inspection report
 Run the [storage fixture](../tests/water_storage_capture.py) on a simulation
 build. Supply `--runtime-root` and `--gpu` to check the waterline and relocated
 save on Windows. Add `--windows-interop` from WSL.
+
+#### Place a reservoir in the world
+
+Add `footprint` to a reservoir and enable the region's `optics`. Use
+`min_xz_m` for the corner with the lowest X and Z and `size_xz_m` for the two
+horizontal lengths. Their product must match `area_m2` within a relative
+tolerance of `1e-10`.
+
+```json
+{
+  "id": "cistern",
+  "floor_height_m": 0,
+  "area_m2": 1,
+  "capacity_m3": 2,
+  "initial_volume_m3": 0.85,
+  "footprint": {"min_xz_m": [1.5, -5.5], "size_xz_m": [1, 1]}
+}
+```
+
+Each length is at least 0.01 m. The footprint edges, floor and full water
+level stay within ±1,000,000 m. The maximum X and Z edges are exclusive.
+Footprints can touch the edges of the terrain-water grid, the offshore
+water plane or another footprint. Their interiors must remain disjoint.
+Author the container's walls, mesh and colliders separately. Its water
+level follows the committed volume and its floor and footprint stay fixed.
+
+On the single-sample Vulkan path, tank water uses the region's extinction,
+scattering and Fresnel reflectance. When enabled, screen-space refraction
+can validate a hit inside a reservoir. Terrain-specific foam, swell and
+caustics stay on the terrain. The multisample path uses a simple top mesh.
+Gameplay point queries return `column.reservoir`; top-surface sweep hits
+return `reservoir`. The existing listener filter, particle water contacts
+and box buoyancy can use that same water level. Pressure from a moving box
+still affects terrain cells only. Overflow and portable vessels remain open.
+
+Placed reservoirs cook `.pwater` v20. Export needs `features.water_reservoirs`.
+The [fixture](../tests/water_reservoir_capture.py) verifies a gate transfer,
+the change in listener submersion, and fresh save restoration. On Windows it
+also checks the Vulkan output against an independent calculation of the
+water path and Fresnel reflection. Use `--gpu` and `--runtime-root` for the
+rendered export check.
 
 ### Vary the swell across a coast
 

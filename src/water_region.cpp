@@ -242,7 +242,23 @@ Region::Region(const RegionDefinition& definition)
       surface_swell_(definition.surface_swell), swell_variation_(definition.swell_variation),currents_(definition.currents),
       body_displacement_(definition.body_displacement) {
     const auto& config=grid_.config();
-    if (definition.storage) storage_.emplace(*definition.storage, grid_);
+    if (definition.storage) {
+        storage_.emplace(*definition.storage, grid_);
+        for (const auto i : storage_->placed()) {
+            const auto box=storage_->sample(i).footprint;
+            if (!optics_) throw std::invalid_argument("Placed water reservoirs require water optics.");
+            if (const auto& sea=optics_->offshore) {
+                const auto max_x=config.origin_x_m+config.cells_x*config.cell_size_m;
+                const auto max_z=config.origin_z_m+config.cells_z*config.cell_size_m;
+                const auto edge=sea->edge;
+                if ((edge==WaterEdge::min_z && box.min_xz_m[1]<config.origin_z_m) ||
+                    (edge==WaterEdge::max_z && box.edge(1)>max_z) ||
+                    (edge==WaterEdge::min_x && box.min_xz_m[0]<config.origin_x_m) ||
+                    (edge==WaterEdge::max_x && box.edge(0)>max_x))
+                    throw std::invalid_argument("A placed reservoir footprint overlaps offshore water.");
+            }
+        }
+    }
     if (body_displacement_ && !(body_displacement_->max_rise_m>=.01 &&
             body_displacement_->max_rise_m<=std::min(4.,2*config.cell_size_m)))
         throw std::invalid_argument("Body displacement max_rise_m must be in [0.01,4] and at most twice the cell width.");
@@ -534,6 +550,8 @@ std::array<double,3> Region::current_at(Cell cell,double x_m,double z_m) const {
 }
 
 double Region::submersion_at(double x_m,double y_m,double z_m) const {
+    if (storage_)
+        if (const auto tank=storage_->sample_world(x_m,z_m)) return tank->submersion_at(y_m);
     if (const auto local=sample_world(x_m,z_m)) return local->submersion_at(y_m);
     if (const auto ocean=offshore_levels(x_m,z_m); ocean && y_m>=(*ocean)[0] && y_m<(*ocean)[1])
         return (*ocean)[1]-y_m;

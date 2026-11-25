@@ -328,6 +328,9 @@ struct SceneWaterColumn {
     std::uint32_t inactive_wedges() const noexcept { return flags>>1; }
     friend bool operator==(const SceneWaterColumn&,const SceneWaterColumn&)=default;
 };
+struct SceneWaterBox {
+    std::array<double,3> min_m,max_m;
+};
 struct SceneWaterVolume {
     std::array<double,3> origin_m;
     double cell_size_m;
@@ -341,6 +344,7 @@ struct SceneWaterVolume {
     std::optional<WaterSwellVariation> swell_variation{};
     // Row-major columns with heights relative to the region's Y origin.
     std::vector<SceneWaterColumn> columns;
+    std::vector<SceneWaterBox> reservoirs{};
 };
 // An immutable presentation copy; no pointers into authored or simulation state.
 struct SceneSnapshot {

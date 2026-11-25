@@ -16,6 +16,7 @@ using Json = nlohmann::json;
 constexpr auto artifact_format = "poima.water.region";
 
 std::uint32_t artifact_version(const RegionDefinition& definition) noexcept {
+    if (definition.storage && has_placed_reservoirs(*definition.storage)) return 20;
     if (definition.storage) return 19;
     if (definition.body_displacement) return 18;
     if (definition.surface_wakes) return 17;
@@ -132,10 +133,19 @@ StorageDefinition parse_storage(const Json& value, const GridConfig& grid) {
         "The water storage reservoir or port count is outside its bounds.");
     StorageDefinition result;
     for (const auto& tank : tanks) {
-        fields(tank, {"id", "floor_height_m", "area_m2", "capacity_m3", "initial_volume_m3"});
+        fields(tank, {"id", "floor_height_m", "area_m2", "capacity_m3", "initial_volume_m3"},{"footprint"});
         require(tank.at("id").is_string(), "Water reservoirs need a named ID.");
-        result.reservoirs.push_back({tank.at("id"), number(tank.at("floor_height_m")),
+        auto& parsed=result.reservoirs.emplace_back(ReservoirDefinition{tank.at("id"), number(tank.at("floor_height_m")),
             number(tank.at("area_m2")), number(tank.at("capacity_m3")), number(tank.at("initial_volume_m3"))});
+        if (tank.contains("footprint")) {
+            const auto& footprint=tank.at("footprint");
+            fields(footprint,{"min_xz_m","size_xz_m"});
+            const auto pair=[](const Json& values) {
+                require(values.is_array() && values.size()==2,"Reservoir footprint values use [x, z].");
+                return std::array{number(values[0]),number(values[1])};
+            };
+            parsed.footprint=ReservoirFootprint{pair(footprint.at("min_xz_m")),pair(footprint.at("size_xz_m"))};
+        }
     }
     const auto endpoint = [&](const Json& raw) -> StorageEndpoint {
         fields(raw, {}, {"cell", "reservoir"});
@@ -394,7 +404,7 @@ RegionAsset decode_region_asset(std::string_view bytes) {
         "initial_depths_m", "faces", "exchanges"}, {"rain_cells", "surface_ripples", "surface_wave_layers", "surface_swell",
         "swell_variation", "listener_audio", "optics", "shore_corner_heights_m", "currents", "surface_wakes", "body_displacement", "storage"});
     require(object.at("format") == artifact_format, "Unsupported water asset format.");
-    const auto version=integer(object.at("version"),1,19);
+    const auto version=integer(object.at("version"),1,20);
     RegionAsset asset;
     asset.terrain_recipe_sha256 = hex(object.at("terrain_recipe_sha256"), 64);
     auto& definition = asset.definition;
@@ -516,7 +526,9 @@ Json region_authoring_schemas() {
     const auto tank = object({{"id", storage_id}, {"floor_height_m", coordinate},
         {"area_m2", range("number", .01, max_reservoir_area_m2)},
         {"capacity_m3", range("number", .001, max_reservoir_capacity_m3)},
-        {"initial_volume_m3", range("number", 0, max_reservoir_capacity_m3)}},
+        {"initial_volume_m3", range("number", 0, max_reservoir_capacity_m3)},
+        {"footprint", object({{"min_xz_m", array(coordinate, 2, 2)},
+            {"size_xz_m", array(range("number", .01, 1e6), 2, 2)}}, {"min_xz_m", "size_xz_m"})}},
         {"id", "floor_height_m", "area_m2", "capacity_m3", "initial_volume_m3"});
     const auto tank_endpoint = object({{"reservoir", storage_id}}, {"reservoir"});
     const Json storage_endpoint{{"oneOf", Json::array({object({{"cell", cell}}, {"cell"}), tank_endpoint})}};

@@ -230,6 +230,18 @@ Displacement Region::displaced_by_box(const Vec& center,const std::array<Vec,3>&
             }
         }
     }
+    if (storage_) for (const auto i : storage_->placed()) {
+        const auto sample=storage_->sample(i);
+        if (sample.surface_height_m<=sample.floor_height_m) continue;
+        const auto left=sample.footprint.min_xz_m[0]-center[0],right=sample.footprint.edge(0)-center[0];
+        const auto near=sample.footprint.min_xz_m[1]-center[2],far=sample.footprint.edge(1)-center[2];
+        const auto bottom=sample.floor_height_m-center[1],top=sample.surface_height_m-center[1];
+        if (left>=radius[0] || right<=-radius[0] || near>=radius[2] || far<=-radius[2] ||
+            bottom>=radius[1] || top<=-radius[1]) continue;
+        const std::array planes{Plane{{-1,0,0},-left},Plane{{1,0,0},right},Plane{{0,0,-1},-near},
+            Plane{{0,0,1},far},Plane{{0,-1,0},-bottom},Plane{{0,1,0},top}};
+        total.include(initial,planes);
+    }
     if (total.volume<=0) return {};
     return {total.volume,mul(total.moment,1./total.volume),mul(current_moment,1./total.volume)};
 }

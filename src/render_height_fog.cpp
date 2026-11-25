@@ -75,7 +75,8 @@ nvrhi::BindingSetDesc fog_binding_desc(const Inputs& inputs, nvrhi::ITexture* de
         desc.addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(7,inputs.water_columns))
             .addItem(nvrhi::BindingSetItem::Texture_SRV(8,inputs.water_specular))
             .addItem(nvrhi::BindingSetItem::Texture_SRV(9,inputs.water_brdf))
-            .addItem(nvrhi::BindingSetItem::Sampler(1,inputs.water_sampler));
+            .addItem(nvrhi::BindingSetItem::Sampler(1,inputs.water_sampler))
+            .addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(10,inputs.water_reservoirs));
     }
     return desc;
 }
@@ -208,6 +209,24 @@ WaterView project_water_view(const SceneWaterVolume& water,const std::array<doub
         if (local[1]>=levels[0] && local[1]<levels[1])
             result.submersion_m=static_cast<double>(levels[1])-local[1];
     }
+    static_assert(sizeof(WaterView::Reservoir)==rs::water_reservoir_bytes);
+    if (water.reservoirs.size()>rs::max_water_reservoirs) throw std::runtime_error("Too many optical reservoirs.");
+    for (const auto& reservoir : water.reservoirs) {
+        WaterView::Reservoir box{};
+        bool representable=true;
+        for (std::size_t axis=0;axis<3;++axis) {
+            const auto low=reservoir.min_m[axis],high=reservoir.max_m[axis];
+            if (!(low>=-1e6 && high<=1e6 && low<high)) throw std::runtime_error("Invalid optical reservoir bounds.");
+            box.low_m[axis]=static_cast<float>(low-eye[axis]);
+            box.high_m[axis]=static_cast<float>(high-eye[axis]);
+            representable &= box.low_m[axis]<box.high_m[axis];
+        }
+        if (representable) result.reservoirs.push_back(box);
+        if (box.low_m[0]<=0 && box.high_m[0]>0 && box.low_m[1]<=0 && box.high_m[1]>0 &&
+                box.low_m[2]<=0 && box.high_m[2]>0)
+            result.submersion_m=reservoir.max_m[1]-eye[1];
+    }
+    parameters.dimensions |= static_cast<std::uint32_t>(result.reservoirs.size())<<18u;
     return result;
 }
 
@@ -218,6 +237,15 @@ nvrhi::BufferHandle allocate_water_columns(nvrhi::IDevice& device) {
         .setStructStride(rs::water_column_bytes).setInitialState(nvrhi::ResourceStates::ShaderResource)
         .setKeepInitialState(true).setDebugName("Committed water columns"));
     if (!buffer) throw std::runtime_error("Water optics column buffer allocation failed.");
+    return buffer;
+}
+
+nvrhi::BufferHandle allocate_water_reservoirs(nvrhi::IDevice& device) {
+    namespace rs=render_schedule;
+    auto buffer=device.createBuffer(nvrhi::BufferDesc().setByteSize(rs::max_water_reservoirs*rs::water_reservoir_bytes)
+        .setStructStride(rs::water_reservoir_bytes).setInitialState(nvrhi::ResourceStates::ShaderResource)
+        .setKeepInitialState(true).setDebugName("Committed water reservoirs"));
+    if (!buffer) throw std::runtime_error("Optical reservoir buffer allocation failed.");
     return buffer;
 }
 
@@ -242,7 +270,8 @@ const Pass::Pipeline& Pass::prepare_compositor(nvrhi::IDevice& device, bool aeri
         desc.addItem(nvrhi::BindingLayoutItem::StructuredBuffer_SRV(7))
             .addItem(nvrhi::BindingLayoutItem::Texture_SRV(8))
             .addItem(nvrhi::BindingLayoutItem::Texture_SRV(9))
-            .addItem(nvrhi::BindingLayoutItem::Sampler(1));
+            .addItem(nvrhi::BindingLayoutItem::Sampler(1))
+            .addItem(nvrhi::BindingLayoutItem::StructuredBuffer_SRV(10));
     }
     auto layout = device.createBindingLayout(desc);
     auto pipeline=water ?
@@ -338,7 +367,7 @@ void Pass::prepare(nvrhi::IDevice& device, const Inputs& inputs) {
             aerial_binding_desc(inputs, aerial_scattering_, aerial_transmittance_, aerial_sampler_), aerial_compute_.layout);
         if (!aerial_bindings) throw std::runtime_error("Aerial perspective bindings creation failed.");
     }
-    if (inputs.water_columns && (!inputs.water_specular || !inputs.water_brdf || !inputs.water_sampler))
+    if (inputs.water_columns && (!inputs.water_specular || !inputs.water_brdf || !inputs.water_sampler || !inputs.water_reservoirs))
         throw std::runtime_error("Water optics require the prepared environment descriptors.");
     const auto& compositor=prepare_compositor(device,inputs.atmosphere_density,inputs.water_columns);
     auto bindings = device.createBindingSet(
@@ -389,7 +418,8 @@ void Pass::verify_bindings(const render_schedule::Schedule& plan) const {
         .water_columns=water ? buffer(frame.water_columns) : nullptr,
         .water_specular=water ? texture(frame.ibl_specular) : nullptr,
         .water_brdf=water ? texture(frame.ibl_brdf) : nullptr,
-        .water_sampler=inputs_.water_sampler
+        .water_sampler=inputs_.water_sampler,
+        .water_reservoirs=frame.water_reservoirs!=render_schedule::none ? buffer(frame.water_reservoirs) : inputs_.water_reservoirs
     };
     const auto scattering = aerial ? texture(frame.aerial_scattering) : nullptr;
     const auto transmittance = aerial ? texture(frame.aerial_transmittance) : nullptr;

@@ -209,6 +209,36 @@ void append_region_scene(const Region& region, SceneSnapshot& scene) {
             wet[count++] = {x, z, static_cast<float>(sample.surface_height_m - origin_y), palette_u};
         }
     }
+    if (const auto& storage=region.storage()) for (const auto i : storage->placed()) {
+        const auto sample=storage->sample(i);
+        const auto top=sample.surface_height_m;
+        if (top<=sample.floor_height_m) continue;
+        const auto& box=sample.footprint;
+        volume.reservoirs.push_back({{box.min_xz_m[0],sample.floor_height_m,box.min_xz_m[1]},
+            {box.edge(0),top,box.edge(1)}});
+        static const auto patch=surface_mesh(1.,std::array{SurfaceCell{0,0,0,.5f}});
+        SceneObject object{};
+        object.entity_id="water-reservoir/"+std::string(sample.id);
+        object.world=identity_matrix();
+        object.world[0]=box.size_xz_m[0];
+        object.world[10]=box.size_xz_m[1];
+        object.world[12]=box.min_xz_m[0];
+        object.world[13]=top;
+        object.world[14]=box.min_xz_m[1];
+        object.albedo={.016f,.30f,.46f};
+        object.mesh=patch;
+        object.material=patch->material;
+        object.textures=depth_palette();
+        object.cast_shadows=false;
+        object.stream_geometry=true;
+        object.water_region_surface=true;
+        scene.objects.push_back(std::move(object));
+    }
+    const bool has_reservoirs=!volume.reservoirs.empty();
+    if (!count && !volume.optics.offshore && has_reservoirs) {
+        scene.water_volume=std::move(volume);
+        return;
+    }
     if (!count && !volume.optics.offshore) return;
     auto surface=volume.optics.follow_terrain ? clipped_surface_mesh(volume) :
         surface_mesh(config.cell_size_m,std::span(wet).first(count));
