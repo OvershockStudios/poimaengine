@@ -45,6 +45,7 @@ struct OverflowWeir {
 struct WaterSheetDefinition {
     std::array<double,2> lip_xz_m, outlet_xz_m;
     double outlet_floor_m;
+    std::optional<double> aeration{};
 };
 
 struct StoragePortDefinition {
@@ -73,6 +74,10 @@ inline bool has_overflow(const StorageDefinition& definition) noexcept {
 
 inline bool has_water_sheets(const StorageDefinition& definition) noexcept {
     return std::ranges::any_of(definition.ports,[](const auto& port){ return port.sheet.has_value(); });
+}
+
+inline bool has_sheet_aeration(const StorageDefinition& definition) noexcept {
+    return std::ranges::any_of(definition.ports,[](const auto& port){ return port.sheet && port.sheet->aeration; });
 }
 
 }

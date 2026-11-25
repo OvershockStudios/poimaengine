@@ -1359,13 +1359,14 @@ struct Context {
             static_cast<std::uint32_t>(wave_mode)|(water.displaced_surface() ? 8u : 0u)};
         return "active";
     }
-    void prepare_water_shore_foam(const SceneWaterVolume& water, const SceneLighting& lighting) {
+    void prepare_water_foam_light(const SceneWaterVolume& water, const SceneLighting& lighting,bool aeration) {
         const auto& foam=water.optics.shore_foam;
-        if (!foam || foam->opacity==0) return;
+        if (!aeration && (!foam || foam->opacity==0)) return;
         const auto sun=std::ranges::find(lighting.lights,lighting.environment.sky.sun,&SceneLight::entity_id);
         const bool sun_above_surface=sun!=lighting.lights.end() && sun->light.kind==LightKind::directional &&
             sun->light.intensity>0 && sun->direction[1]<0;
-        frame_constants.water_shore_foam={static_cast<float>(foam->depth_m),static_cast<float>(foam->opacity),
+        frame_constants.water_shore_foam={foam ? static_cast<float>(foam->depth_m) : 0.f,
+            foam ? static_cast<float>(foam->opacity) : 0.f,
             water.shore_foam_phase,sun_above_surface ? static_cast<float>(sun-lighting.lights.begin()+1) : 0.f};
     }
     void prepare_height_fog(const SceneLighting& lighting,float water_normal_mode) {
@@ -1405,6 +1406,7 @@ struct Context {
             const auto roughness=water->optics.reflection_roughness;
             if (roughness) require(*roughness>=0 && *roughness<=1,"Invalid water reflection roughness.");
             const auto caustics=strength>0 ? prepare_water_caustics(*water,lighting,water_normal_mode,color_reason) : std::string_view{};
+            std::uint32_t aeration=0;
             if (color_reason=="active") {
                 water_parameters=view.parameters;
                 optical_reservoirs=std::move(view.reservoirs);
@@ -1414,11 +1416,14 @@ struct Context {
                 frame_constants.water_swell_variation=view.swell_variation;
                 if (roughness && frame_constants.ibl_parameters[0]>0)
                     frame_constants.water_reflection={static_cast<float>(*roughness),1,0,0};
-                prepare_water_shore_foam(*water,lighting);
+                aeration=static_cast<std::uint32_t>(std::ranges::count_if(optical_sheets,
+                    [](const auto& sheet){ return sheet.heading_width[3]>0; }));
+                prepare_water_foam_light(*water,lighting,aeration>0);
             }
             pending_water_optics=WaterOpticsDiagnostics{color_reason=="active",color_reason,
                 water->cells_x*water->cells_z,view.submersion_m,water->optics.refraction && color_reason=="active",
-                strength,caustics,water->optics.shore_foam,frame_constants.water_shore_foam[3]>0,water->optics.follow_terrain};
+                strength,caustics,water->optics.shore_foam,
+                frame_constants.water_shore_foam[1]>0 && frame_constants.water_shore_foam[3]>0,water->optics.follow_terrain};
             pending_water_optics->surface_swell=water->surface_swell;
             pending_water_optics->surface_wakes=water->surface_wakes;
             pending_water_optics->offshore=water->optics.offshore.has_value();
@@ -1430,6 +1435,8 @@ struct Context {
             if (color_reason=="active") pending_water_optics->offshore_swell_layers=view.offshore_swell_layers;
             pending_water_optics->reservoir_volumes=static_cast<std::uint32_t>(optical_reservoirs.size());
             pending_water_optics->falling_sheets=static_cast<std::uint32_t>(optical_sheets.size());
+            pending_water_optics->aerated_sheets=aeration;
+            pending_water_optics->aerated_sheets_sun=aeration>0 && frame_constants.water_shore_foam[3]>0;
         }
         if(wants_aerial) {
             const auto reason=color_reason=="active" && !sky_pass.atmosphere_enabled() ?

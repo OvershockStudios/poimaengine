@@ -112,12 +112,15 @@ struct WaterPath {
     bool reservoir_interface;
     float sheet_side;
     float2 sheet_ripple;
+    float bubble_depth;
+    float bubble_before_interface;
+    float bubble_distance_weighted;
 };
 
 #include "water_shore_trace.hlsli"
 
 WaterPath trace_water_grid(WaterConstants water,float3 eye,float3 ray,float max_distance,bool find_interface) {
-    WaterPath path={0,-1,0,float2(0,0),false,false,false,0,float2(0,0)};
+    WaterPath path={0,-1,0,float2(0,0),false,false,false,0,float2(0,0),0,0,0};
     const float size = water.camera_cell_size.w;
     const int2 dimensions = water_grid_dimensions(water);
     float entry = 0, exit = max_distance;
@@ -243,13 +246,28 @@ WaterPath trace_terrain_water(WaterConstants water,float3 eye,float3 ray,float m
 #endif
 #include "water_shore_foam.hlsli"
 
+float3 water_medium(float3 leaving,float3 scattering,float3 water_depth,float3 bubbles,float bubble_depth) {
+    [branch] if (bubble_depth>0) {
+        const float3 optical_depth=water_depth+bubble_depth;
+        const float3 source=lerp(scattering,bubbles,bubble_depth/optical_depth);
+        return lerp(source,leaving,exp(-optical_depth));
+    }
+    return lerp(scattering,leaving,exp(-water_depth));
+}
+
+float3 sheet_bubble_radiance(WaterPath path,float3 origin,float3 ray,float3 fallback) {
+    [branch] if (path.bubble_depth>0)
+        return water_foam_radiance(origin+ray*(path.bubble_distance_weighted/path.bubble_depth));
+    return fallback;
+}
+
 float3 compose_water_path(WaterConstants water,float3 input_radiance,float3 ray,WaterPath path,uint2 extent) {
     const float3 eye = water.camera_cell_size.xyz;
     const float interface_at = path.interface_m;
     if (path.length_m == 0.0 && interface_at < 0.0) return input_radiance;
     const float3 scattering = water.radiance_wave_mode.xyz;
-    const float3 transmittance = exp(-water.extinction_per_m * path.length_m);
-    float3 color = lerp(scattering, input_radiance, transmittance);
+    const float3 bubbles=sheet_bubble_radiance(path,camera.xyz,ray,scattering);
+    float3 color=water_medium(input_radiance,scattering,water.extinction_per_m*path.length_m,bubbles,path.bubble_depth);
     if (interface_at >= 0.0) {
         const bool from_air = path.enters;
         const float3 geometry_normal=normalize(float3(-path.interface_gradient.x,1,-path.interface_gradient.y));
@@ -289,9 +307,13 @@ float3 compose_water_path(WaterConstants water,float3 input_radiance,float3 ray,
                     const float tolerance = clamp(water.camera_cell_size.w * .03, .015, .06);
                     const float wrong_medium_m = from_air ? hit.distance_m - bent.length_m : bent.length_m;
                     if (wrong_medium_m <= tolerance) {
-                        const float3 bent_transmittance = exp(-water.extinction_per_m * (before_m + bent.length_m));
                         const float3 bent_radiance = surface_radiance.Load(int3(hit.pixel, 0)).rgb;
-                        color = lerp(color, lerp(scattering, bent_radiance, bent_transmittance), hit.confidence);
+                        const float3 bent_bubbles=sheet_bubble_radiance(bent,camera.xyz+offset,transmitted,scattering);
+                        const float bubble_depth=path.bubble_before_interface+bent.bubble_depth;
+                        const float3 mixed_bubbles=bubble_depth>0 ?
+                            (path.bubble_before_interface*bubbles+bent.bubble_depth*bent_bubbles)/bubble_depth : scattering;
+                        color=lerp(color,water_medium(bent_radiance,scattering,
+                            water.extinction_per_m*(before_m+bent.length_m),mixed_bubbles,bubble_depth),hit.confidence);
                     }
                 }
             }
@@ -304,8 +326,8 @@ float3 compose_water_path(WaterConstants water,float3 input_radiance,float3 ray,
                 reflection = water_environment.SampleLevel(water_sampler, reflect(ray, normal), reflection_roughness * ibl_parameters.w).rgb *
                     ibl_parameters.z;
         }
-        const float3 before = exp(-water.extinction_per_m * before_m);
-        color = lerp(color, lerp(scattering, reflection, before), fresnel);
+        const float3 before = water.extinction_per_m * before_m;
+        color=lerp(color,water_medium(reflection,scattering,before,bubbles,path.bubble_before_interface),fresnel);
         [branch] if (from_air && !path.offshore_interface && !path.reservoir_interface && path.sheet_side==0 && water_shore_foam.y > 0.0) {
             const float3 offset = interface_at * ray;
             const float3 entry = eye + offset;
@@ -316,7 +338,8 @@ float3 compose_water_path(WaterConstants water,float3 input_radiance,float3 ray,
                 seam_fade=smoothstep(0.0,water.camera_cell_size.w,inward);
             }
             [branch] if (coverage > 0.0)
-                color = lerp(color,lerp(scattering,shore_foam_radiance(camera.xyz+offset),before),coverage*seam_fade);
+                color=lerp(color,water_medium(water_foam_radiance(camera.xyz+offset),scattering,
+                    before,bubbles,path.bubble_before_interface),coverage*seam_fade);
         }
     }
     return clamp(color, -65504.0, 65504.0);

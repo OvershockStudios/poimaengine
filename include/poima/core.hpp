@@ -300,6 +300,8 @@ struct WaterOpticsDiagnostics {
     std::uint32_t offshore_swell_layers=0;
     std::uint32_t reservoir_volumes=0;
     std::uint32_t falling_sheets=0;
+    std::uint32_t aerated_sheets=0;
+    bool aerated_sheets_sun=false;
     std::optional<WaterSwellVariation> swell_variation{};
     std::optional<double> reflection_roughness{};
     bool rough_reflection_active=false;

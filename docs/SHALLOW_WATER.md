@@ -603,6 +603,32 @@ It checks the visible depth and reflection against an independent ray
 calculation and verifies the sheet after restoring a save. Supply `--gpu`
 and `--runtime-root` to qualify the relocated game on Windows.
 
+##### Aerate a falling water sheet
+
+Set `sheet.aeration` between 0 and 1 to add visible bubbles inside the fall.
+The strength starts low at the lip and builds downstream. Bands of bubbles
+travel along the curve at the committed launch speed and fade to their
+average density when projected too small to resolve. The profile controls
+optical scattering. Flow, the receiving surface, and the water ledger keep
+their normal behavior.
+
+Single-sample Vulkan integrates the bubble density along each clipped view
+ray. The bubble layer receives ambient light and the shadowed directional
+sun when the sky names one. It tints the water's transmitted light and
+attenuates reflections seen through the bubbles. The mixer uses a midpoint
+density within each intersected sheet interval. The effect covers opaque
+surfaces and world sprites behind the sheet. The 4× MSAA mesh fallback
+uses the existing sheet geometry.
+
+An authored value, including explicit zero, uses `.pwater` v23 and requires
+`features.water_sheet_aeration` for export. Zero uses clear-water shading.
+`runtime.water.inspect` reports the authored strength on the port and the
+active sheet. Water optics capture diagnostics report `aerated_sheets` and
+`aerated_sheets_sun` when the pass renders a positive profile.
+The [aeration fixture](../tests/water_sheet_aeration_capture.py) isolates
+the effect from the opaque scene and the clear sheet and checks its output
+against an independent optical calculation.
+
 ### Vary the swell across a coast
 
 Set `swell_variation` alongside `surface_swell` in the plan and cook request.

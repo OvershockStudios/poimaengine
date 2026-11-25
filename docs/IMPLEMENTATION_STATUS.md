@@ -1,8 +1,19 @@
 # Implementation status
 
-Updated 2026-11-25 for **0.0.444**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-25 for **0.0.445**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.445 adds [sheet aeration](SHALLOW_WATER.md#aerate-a-falling-water-sheet).
+AMD forward and NVIDIA deferred matched independent HDR calculations at
+six affected probes each, preserved twenty dry probes and reproduced the
+aerated frames after restoring relocated saves. Explicit zero matched the
+clear sheet. The Saltgate scene exercised directional shadowing with FSR
+Native AA and matching water, spray and audio observations. Ubuntu passed
+ten focused suites and the headless fixture. Aeration uses an optical
+approximation within the falling sheet. Physical bubbles, accumulated
+foam, and representative scene-scale cost remain open.
+[Results and scope](evidence/m2-water-sheet-aeration-445.json)
 
 Version 0.0.444 lets [water flow drive spatial audio](AUDIO_EVENTS.md#drive-an-emitter-with-water-flow).
 A native loop follows the same committed discharge as the falling sheet and

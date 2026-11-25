@@ -21,6 +21,7 @@
     "water_wave_layers": @POIMA_RUNTIME_WATER_WAVE_LAYERS@,
     "water_optics": @POIMA_RUNTIME_WATER_OPTICS@,
     "water_sheets": @POIMA_RUNTIME_WATER_OPTICS@,
+    "water_sheet_aeration": @POIMA_RUNTIME_WATER_OPTICS@,
     "water_refraction": @POIMA_RUNTIME_WATER_OPTICS@,
     "water_caustics": @POIMA_RUNTIME_WATER_OPTICS@,
     "water_shore_foam": @POIMA_RUNTIME_WATER_OPTICS@,

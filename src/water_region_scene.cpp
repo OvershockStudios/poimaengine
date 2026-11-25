@@ -159,7 +159,7 @@ std::shared_ptr<const MeshAsset> clipped_surface_mesh(const SceneWaterVolume& wa
 
 void append_water_sheet(const WaterSheetSample& sheet,std::uint64_t tick,SceneWaterVolume& volume,SceneSnapshot& scene) {
     volume.sheets.push_back({sheet.lip_m,sheet.forward_xz,sheet.width_m,sheet.length_m,sheet.drop_per_m2,
-        sheet.vertical_depth_m,sheet.launch_speed_m_s,static_cast<double>(tick%960u)/60.});
+        sheet.vertical_depth_m,sheet.launch_speed_m_s,static_cast<double>(tick%960u)/60.,sheet.aeration.value_or(0.)});
     constexpr std::uint32_t segments=12;
     const auto forward=sheet.forward_xz;
     const std::array side{-forward[1],forward[0]};

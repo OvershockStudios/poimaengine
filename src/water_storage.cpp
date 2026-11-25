@@ -50,9 +50,11 @@ Json port_json(const StoragePortDefinition& port) {
         row["overflow"]={{"width_m",weir->width_m},{"coefficient_sqrt_m_s",weir->coefficient_sqrt_m_s}};
     else
         row["conductance_m2_s"]=port.conductance_m2_s;
-    if (const auto& sheet=port.sheet)
+    if (const auto& sheet=port.sheet) {
         row["sheet"]={{"lip_xz_m",sheet->lip_xz_m},{"outlet_xz_m",sheet->outlet_xz_m},
             {"outlet_floor_m",sheet->outlet_floor_m}};
+        if (sheet->aeration) row["sheet"]["aeration"]=*sheet->aeration;
+    }
     if (!port.action.empty()) {
         row["action"] = port.action;
         row["action_openness"] = port.action_openness;
@@ -174,6 +176,8 @@ WaterStorage::WaterStorage(const StorageDefinition& definition, const Grid& grid
                     throw std::invalid_argument("Water sheet endpoints must be within one million metres of the origin.");
             const auto dx=sheet->outlet_xz_m[0]-sheet->lip_xz_m[0],dz=sheet->outlet_xz_m[1]-sheet->lip_xz_m[1];
             const auto drop=port.definition.sill_height_m-sheet->outlet_floor_m;
+            if (sheet->aeration && !bounded(*sheet->aeration,0.,1.))
+                throw std::invalid_argument("Water sheet aeration must be within [0,1].");
             if (!bounded(std::hypot(dx,dz),.05,256) || !bounded(drop,.05,256))
                 throw std::invalid_argument("Water sheet drop and horizontal reach must be in [0.05,256] metres.");
             const auto [target_x,target_z]=sheet->outlet_xz_m;
@@ -237,7 +241,7 @@ std::optional<WaterSheetSample> WaterStorage::sheet_sample(const Grid& grid,std:
     const auto thickness=std::min({transfers_[i]/(step_seconds*width*speed),drop,8.});
     if (thickness<=0) return std::nullopt;
     return WaterSheetSample{port.definition.id,{sheet.lip_xz_m[0],crest,sheet.lip_xz_m[1]},
-        {dx/length,dz/length},width,length,drop/(length*length),thickness,speed};
+        {dx/length,dz/length},width,length,drop/(length*length),thickness,speed,sheet.aeration};
 }
 
 std::vector<WaterSheetSample> WaterStorage::sheets(const Grid& grid) const {
@@ -366,6 +370,7 @@ Json WaterStorage::inspect(const Grid* grid) const {
                     {"width_m",sheet->width_m},{"length_m",sheet->length_m},
                     {"drop_per_m2",sheet->drop_per_m2},{"vertical_depth_m",sheet->vertical_depth_m},
                     {"launch_speed_m_s",sheet->launch_speed_m_s}};
+                if (sheet->aeration) row["active_sheet"]["aeration"]=*sheet->aeration;
             }
         }
         ports.push_back(std::move(row));

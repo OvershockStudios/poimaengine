@@ -342,10 +342,14 @@ reservoirs, room flooding and filling/draining containers. Assign one owner to
 each transfer and bound active simulation regions so visual detail can scale
 without losing accounted water quantities.
 
-Local water now has [depth-based optics, refraction, caustics and shoreline
-foam](SHALLOW_WATER.md#author-transparent-water) on its committed grid. Continuous
-ocean swell, breaking waves, spray and connected regions are separate work
-within this track.
+Local water has [depth-based optics, refraction, caustics and shoreline
+foam](SHALLOW_WATER.md#author-transparent-water) on its committed grid.
+[Placed reservoirs and overflow](SHALLOW_WATER.md#spill-over-a-reservoir-crest)
+share a conserved ledger with that grid. The committed flow drives native
+spray and [spatial audio](AUDIO_EVENTS.md#drive-an-emitter-with-water-flow);
+[sheet aeration](SHALLOW_WATER.md#aerate-a-falling-water-sheet) adds optical
+scattering within the fall. Portable containers, breaking waves and
+representative scene-scale verification remain in this track.
 Optional [terrain fitting](SHALLOW_WATER.md#fit-the-shoreline-to-the-terrain)
 aligns local shore contours, world-point queries and listener submersion.
 Optional [surface swell](SHALLOW_WATER.md#displace-the-water-surface) moves

@@ -26,6 +26,7 @@ struct WaterSheetSample {
     std::array<double,3> lip_m;
     std::array<double,2> forward_xz;
     double width_m, length_m, drop_per_m2, vertical_depth_m, launch_speed_m_s;
+    std::optional<double> aeration{};
 };
 
 class WaterStorage {

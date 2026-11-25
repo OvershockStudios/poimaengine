@@ -57,7 +57,7 @@ float shore_foam_coverage(WaterConstants water, float3 entry, float footprint) {
     return water_shore_foam.y * (1.0 - smoothstep(.10, 1.0, depth_fraction)) * breakup * band;
 }
 
-float3 shore_foam_radiance(float3 surface) {
+float3 water_foam_radiance(float3 surface) {
     float3 irradiance = ambient_exposure.rgb;
     const uint ordinal = uint(water_shore_foam.w);
     [branch] if (ordinal > 0u && ordinal <= light_count.x) {

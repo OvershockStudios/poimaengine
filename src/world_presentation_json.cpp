@@ -208,6 +208,10 @@ Json render_diagnostics(const RenderDiagnostics& d) {
             result["water_optics"]["reservoir_volumes"]=water.reservoir_volumes;
         if(water.falling_sheets)
             result["water_optics"]["falling_sheets"]=water.falling_sheets;
+        if(water.aerated_sheets) {
+            result["water_optics"]["aerated_sheets"]=water.aerated_sheets;
+            result["water_optics"]["aerated_sheets_sun"]=water.aerated_sheets_sun;
+        }
         if(const auto& variation=water.swell_variation)
             result["water_optics"]["swell_variation"]={{"scale_m",variation->scale_m},
                 {"strength",variation->strength},{"seed",variation->seed}};

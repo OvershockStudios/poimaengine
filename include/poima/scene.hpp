@@ -335,6 +335,7 @@ struct SceneWaterSheet {
     std::array<double,3> lip_m;
     std::array<double,2> forward_xz;
     double width_m,length_m,drop_per_m2,vertical_depth_m,launch_speed_m_s,phase_s;
+    double aeration=0;
 };
 struct SceneWaterVolume {
     std::array<double,3> origin_m;

@@ -234,6 +234,7 @@ WaterView project_water_view(const SceneWaterVolume& water,const std::array<doub
         if (!(sheet.width_m>=.01 && sheet.width_m<=256 && sheet.length_m>=.05 && sheet.length_m<=256 &&
             sheet.drop_per_m2>0 && sheet.drop_per_m2<=102401 && sheet.vertical_depth_m>0 && sheet.vertical_depth_m<=8 &&
             sheet.launch_speed_m_s>0 && sheet.launch_speed_m_s<=1e6 && sheet.phase_s>=0 && sheet.phase_s<16 &&
+            sheet.aeration>=0 && sheet.aeration<=1 &&
             std::abs(std::hypot(sheet.forward_xz[0],sheet.forward_xz[1])-1)<1e-9 &&
             std::ranges::all_of(sheet.lip_m,[](double x){return std::abs(x)<=1e6;})))
             throw std::runtime_error("Invalid optical water sheet.");
@@ -241,7 +242,8 @@ WaterView project_water_view(const SceneWaterVolume& water,const std::array<doub
         if (!(thickness>0)) continue;
         result.sheets.push_back({{static_cast<float>(sheet.lip_m[0]-eye[0]),static_cast<float>(sheet.lip_m[1]-eye[1]),
             static_cast<float>(sheet.lip_m[2]-eye[2]),static_cast<float>(sheet.length_m)},
-            {static_cast<float>(sheet.forward_xz[0]),static_cast<float>(sheet.forward_xz[1]),static_cast<float>(.5*sheet.width_m),0},
+            {static_cast<float>(sheet.forward_xz[0]),static_cast<float>(sheet.forward_xz[1]),
+             static_cast<float>(.5*sheet.width_m),static_cast<float>(sheet.aeration)},
             {static_cast<float>(sheet.drop_per_m2),thickness,static_cast<float>(sheet.launch_speed_m_s),static_cast<float>(sheet.phase_s)}});
     }
     parameters.dimensions |= static_cast<std::uint32_t>(result.sheets.size())<<24u;

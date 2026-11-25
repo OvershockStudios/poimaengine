@@ -2,6 +2,12 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.445
+
+- Add optional aeration to falling water. A lit bubble layer builds down the
+  sheet and moves with the committed flow.
+  [Sheet aeration](docs/SHALLOW_WATER.md#aerate-a-falling-water-sheet)
+
 ## 0.0.444
 
 - Let an audio emitter follow committed discharge through a water storage

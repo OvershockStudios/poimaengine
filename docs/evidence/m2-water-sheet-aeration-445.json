@@ -1,0 +1,248 @@
+{
+  "version": "0.0.445",
+  "date": "2026-11-25",
+  "authoring_schema_revision": 241,
+  "base_commit": "b5d81f8c860f729f7aa677f7f7389d74d0ed918a",
+  "scope": "An authored optical bubble density develops along an active falling water sheet.",
+  "candidate_patch_sha256": "34217d633c320e636de6ef00cce41d8563f81e1d9461b9927c5f914c1ecd1466",
+  "source_sha256": {
+    "CMakeLists.txt": "93e137e2d289d846f173d2bca430b839881502560abd0e6ed187acbfc37fb793",
+    "cmake/runtime.json.in": "d8342a0e6f5ebf4ccc84ebf95ab3a13dd253c0a8acbfcb4bc976342ce44bebd6",
+    "include/poima/core.hpp": "b94779e8f304f09e843ed2c91b9dd84b9e3f54f83471bc3211b16559843cd2b6",
+    "include/poima/project.hpp": "13fec6fa172e67214ce983fe1172385e6dea191dbfe1bad1d3f05e3c0d89f221",
+    "include/poima/scene.hpp": "ea05b1597e799fadf7503e35e298b0a4c7b94608bcfaa51a44a25334b7449e5a",
+    "include/poima/water_storage.hpp": "ca77b4a1f3e355b1d3213d252ba9c5014fe3dd775adfd0ac807d86d3f47a3ce4",
+    "include/poima/water_storage_definition.hpp": "2d9e26d62afa4ff2c6b1c24f9a867f748f927908e5ea4a1c1057995291ae03f4",
+    "include/poima/world.hpp": "0ce0e57e97438cdcca9395a6c8974e7b7805430f8f349a0798665024a7ed2ae9",
+    "shaders/water_optics.hlsli": "0fa6ad3dcb0cca7f6f6c084a07e857bc85e9a038d47970387ec989d094976102",
+    "shaders/water_sheets.hlsli": "724208131c261dbb2cb58a177adf23a649e8d53c012a66b391762113b7a3a445",
+    "shaders/water_shore_foam.hlsli": "970f04cd8b0201bbc285913bc10b6ac6c7646c82e78c116ed142ec18f3822f73",
+    "src/core.cpp": "958dad9dae40ef998da23ee425186b5bda7f1beefb6ace44ba267f0d5cb0921b",
+    "src/project.cpp": "667747dd6d4ab5013a2d7d9489be7c9c023761a9dcee7a9d52dbfc61e8fb3736",
+    "src/render_height_fog.cpp": "04266e117add1b2f6f22e07a744bf9b845632d7178a537b13dd6ae91bcbc437f",
+    "src/render_smoke.cpp": "73f575b1ca4a5f809903fd6785fbeb7d61fd8cb1234fb20c9ac70122aea83806",
+    "src/water_asset.cpp": "a6664f13774e4fbafda4489f5a18aa493655b24302b4864fce7438145de287f9",
+    "src/water_region_scene.cpp": "3643c1e74b551cd5e3d883862b07fa26ac88e6d6aa1fb9f8eea622df8690c8e2",
+    "src/water_storage.cpp": "ab25c98a3410a4af359abae43872dd0b158979edde0af5a5f7c467fe675b850f",
+    "src/world.cpp": "fd4c4e762f40a8f1ceb47617dbc99a491b6c3ba8900c02449c13461267ff2b0c",
+    "src/world_content.cpp": "2bc9c8cef6df90f2e371e1b6c07ea4db0c9789b4a73be7d7ac915c789f9aae8f",
+    "src/world_presentation_json.cpp": "044b44e7b97fae91e2a1057c6d2db73cb72e38b07aa481774c1da4842a8ffb02",
+    "src/world_schema.cpp": "1623f5e1719e14e7c070f7d2c26964a21c8e43e65ac7ffbad79c8fdee7482b58",
+    "tests/audio_water_flow_capture.py": "a6a4421e0230007111a2e587cf75b103b847713e9b8736c392ce33038b69af8a",
+    "tests/water_sheet_aeration_capture.py": "c5d1ecdc4ea46229a35207bbb136faefe817799f27d14c151da3983f00636830",
+    "tests/water_sheet_capture.py": "3050034f07a26b6459a178a6648c3a4056068950fdb24923483ed7ce5272ee6d",
+    "tests/water_shore_foam_capture.py": "7dff4df5baf14d7d239fb5dfa9858566c13b831c1d40029acf63edc77ed81b4d"
+  },
+  "fixture": {
+    "water_sha256": "6d5c8091dcab7a8351e3505c031a13023f0318aa142092e6fc9f5d7ad95ab96c",
+    "water_asset_version": 23,
+    "aeration": 0.86,
+    "rejected_inputs": [
+      -0.01,
+      1.01,
+      true,
+      null
+    ],
+    "unchanged_dry_and_opaque_products": true
+  },
+  "windows_runtime_sha256": {
+    "bin/poima.exe": "51aeb06d16062047333c6d0e320fe71442b2ab3ead6e5ad541ebfd942bb8a82a",
+    "bin/poima_desktop.dll": "f905e61e27d6af9877849826fe2fee0e4004072dd5e2d6cfd5afce4640056706",
+    "runtime.json": "b42f36f58407ecf65bf93568392b580bebb1819af2feeda26575993762c71bab"
+  },
+  "windows": {
+    "amd": {
+      "gpu": "AMD Radeon(TM) Graphics",
+      "lighting_path": "forward",
+      "fixtures": 15,
+      "reconstruction": "none",
+      "immutable_export_files": 61,
+      "relocated_save_frames_exact": true,
+      "independent_optics": {
+        "changed_sheet_probes": 6,
+        "unchanged_dry_probes": 20,
+        "max_hdr_error": 0.00022931581802387857,
+        "numerical_channels": 18,
+        "zero_matches_clear": true
+      },
+      "captures": {
+        "control-water": "4204ee323b0721a8f05719c234b9042a725c98887cefcf692d464c4e0f11da60",
+        "unmodified-clear": "83c2f57d5d8e7a76d1d538b1e5dc443908b7cef9eaf0f4aab182da524c111d2d",
+        "explicit-zero": "83c2f57d5d8e7a76d1d538b1e5dc443908b7cef9eaf0f4aab182da524c111d2d",
+        "source-spray": "d7f892a4b0ca2f3013e1ab818b6ec64bc4e12cd276b128c6d37e7ac2a64f7b6d",
+        "source-drained": "504c3b47a48104309ac4aa89f7d57a9978946f384ea8d06cbe1f0ac7f0d3b5d1",
+        "source-resumed": "3b8feccf54481ada2fc5ecd4fd69e3c3a99b89c6eedf5f452c56ffafc58a5f9e",
+        "warm-spray": "d7f892a4b0ca2f3013e1ab818b6ec64bc4e12cd276b128c6d37e7ac2a64f7b6d",
+        "warm-drained": "504c3b47a48104309ac4aa89f7d57a9978946f384ea8d06cbe1f0ac7f0d3b5d1",
+        "warm-resumed": "3b8feccf54481ada2fc5ecd4fd69e3c3a99b89c6eedf5f452c56ffafc58a5f9e",
+        "relocated-spray": "d7f892a4b0ca2f3013e1ab818b6ec64bc4e12cd276b128c6d37e7ac2a64f7b6d",
+        "relocated-drained": "504c3b47a48104309ac4aa89f7d57a9978946f384ea8d06cbe1f0ac7f0d3b5d1",
+        "relocated-resumed": "3b8feccf54481ada2fc5ecd4fd69e3c3a99b89c6eedf5f452c56ffafc58a5f9e",
+        "fresh-spray": "d7f892a4b0ca2f3013e1ab818b6ec64bc4e12cd276b128c6d37e7ac2a64f7b6d",
+        "fresh-drained": "504c3b47a48104309ac4aa89f7d57a9978946f384ea8d06cbe1f0ac7f0d3b5d1",
+        "fresh-resumed": "3b8feccf54481ada2fc5ecd4fd69e3c3a99b89c6eedf5f452c56ffafc58a5f9e"
+      },
+      "save_sha256": {
+        "source": "e2ca80ceb5540a2ba4d9292b39513db4ead27b80251a4d4ceda7b2540869e585",
+        "relocated": "e2ca80ceb5540a2ba4d9292b39513db4ead27b80251a4d4ceda7b2540869e585"
+      },
+      "raw_fixture_sha256": "5c1c94d536ac1a30211de36996d34d0973f225dc7c74726a4b22f27fac32ded9"
+    },
+    "nvidia": {
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "lighting_path": "deferred",
+      "fixtures": 15,
+      "reconstruction": "none",
+      "immutable_export_files": 61,
+      "relocated_save_frames_exact": true,
+      "independent_optics": {
+        "changed_sheet_probes": 6,
+        "unchanged_dry_probes": 20,
+        "max_hdr_error": 0.00022931581802387857,
+        "numerical_channels": 18,
+        "zero_matches_clear": true
+      },
+      "captures": {
+        "control-water": "c7b4aaab1622a76aa2952bc488bc1d7ca3cfcdc2d27a5f1b82523351f46dab27",
+        "unmodified-clear": "0d295bd1b8ecb9742aed39b5a511e7b9490f6a2db5457e9fd342adb6064677d4",
+        "explicit-zero": "0d295bd1b8ecb9742aed39b5a511e7b9490f6a2db5457e9fd342adb6064677d4",
+        "source-spray": "bb5826fc48557425ec9099d2bdd56c3ffb03953d4ec17134b5dd5a821e7bb73b",
+        "source-drained": "f715001ae08cc39c7a2cb04aa99100b8f6474dd9b3480a29af45dc0f205c0d3b",
+        "source-resumed": "b9783d41c256811297dc8b99fe80d98d200e1187063ace47a5bc21a3679390dc",
+        "warm-spray": "bb5826fc48557425ec9099d2bdd56c3ffb03953d4ec17134b5dd5a821e7bb73b",
+        "warm-drained": "f715001ae08cc39c7a2cb04aa99100b8f6474dd9b3480a29af45dc0f205c0d3b",
+        "warm-resumed": "b9783d41c256811297dc8b99fe80d98d200e1187063ace47a5bc21a3679390dc",
+        "relocated-spray": "bb5826fc48557425ec9099d2bdd56c3ffb03953d4ec17134b5dd5a821e7bb73b",
+        "relocated-drained": "f715001ae08cc39c7a2cb04aa99100b8f6474dd9b3480a29af45dc0f205c0d3b",
+        "relocated-resumed": "b9783d41c256811297dc8b99fe80d98d200e1187063ace47a5bc21a3679390dc",
+        "fresh-spray": "bb5826fc48557425ec9099d2bdd56c3ffb03953d4ec17134b5dd5a821e7bb73b",
+        "fresh-drained": "f715001ae08cc39c7a2cb04aa99100b8f6474dd9b3480a29af45dc0f205c0d3b",
+        "fresh-resumed": "b9783d41c256811297dc8b99fe80d98d200e1187063ace47a5bc21a3679390dc"
+      },
+      "save_sha256": {
+        "source": "e1fcc7a8c229033dec1856d6045d3c89c08c356b295ba77ada51d862bc8d38f3",
+        "relocated": "e1fcc7a8c229033dec1856d6045d3c89c08c356b295ba77ada51d862bc8d38f3"
+      },
+      "raw_fixture_sha256": "cf0bf0848ec630b401ad2595952fe54af275629dcf2ab29685d6a5575f8e9782"
+    }
+  },
+  "amd_forward_multisample": {
+    "samples": 4,
+    "exact_clear_geometry_fallback": true,
+    "raw_sha256": "a8fe7a1d229bc5b26bd87918bada7322500115f392051f458f096bdcf2efaf9d",
+    "image_sha256": "f1880793860c88a2ad45763625cfb8d0a7a8b5d593821e60179161825f62fcb7"
+  },
+  "clear_sheet_regression": {
+    "prior": "0.0.443 NVIDIA deferred",
+    "exact_captures": 7,
+    "exact_selected_state": true,
+    "prior_sha256": "18e292d0d2e7aaaf677ebea684a832358d6114bdb6184fc5cda2343a98c91397",
+    "raw_sha256": "18d6ef083af8b3c7cac13e7f4bbf9fbfe0ca967528441705b523ce69e1b55bd1"
+  },
+  "shore_foam_refraction_regression": {
+    "passed": true,
+    "fsr": true,
+    "shadow": true,
+    "raw_sha256": "dc5ab6c6f88dbf7cc044e889d4c9c28cab0d1d61d6b78e7d38d7aae963aad97f"
+  },
+  "saltgate": {
+    "measurement": {
+      "camera": "Saltgate traveling camera",
+      "matched_hydraulic_and_audio": true,
+      "snapshots": [
+        {
+          "index": 0,
+          "equal_to_public_444": true,
+          "roi_pixels_changed_over_three_codes": 291,
+          "max_rgb_delta": 52
+        },
+        {
+          "index": 165,
+          "equal_to_public_444": true,
+          "roi_pixels_changed_over_three_codes": 904,
+          "max_rgb_delta": 65
+        },
+        {
+          "index": 236,
+          "equal_to_public_444": true,
+          "roi_pixels_changed_over_three_codes": 1005,
+          "max_rgb_delta": 23
+        },
+        {
+          "index": 273,
+          "equal_to_public_444": true,
+          "roi_pixels_changed_over_three_codes": 1896,
+          "max_rgb_delta": 27
+        },
+        {
+          "index": 295,
+          "equal_to_public_444": false,
+          "roi_pixels_changed_over_three_codes": 2967,
+          "max_rgb_delta": 27
+        },
+        {
+          "index": 322,
+          "equal_to_public_444": false,
+          "roi_pixels_changed_over_three_codes": 5333,
+          "max_rgb_delta": 31
+        },
+        {
+          "index": 346,
+          "equal_to_public_444": false,
+          "roi_pixels_changed_over_three_codes": 20484,
+          "max_rgb_delta": 103
+        },
+        {
+          "index": 368,
+          "equal_to_public_444": true,
+          "roi_pixels_changed_over_three_codes": 0,
+          "max_rgb_delta": 0
+        },
+        {
+          "index": 389,
+          "equal_to_public_444": true,
+          "roi_pixels_changed_over_three_codes": 0,
+          "max_rgb_delta": 0
+        }
+      ],
+      "variant": "same stone, optics and trajectory with per-sheet aeration at .86"
+    },
+    "matched_public_clear_frames": 6,
+    "max_rgb_code_delta_from_public_clear": 1,
+    "changed_clear_pixels_over_nine_images": 12,
+    "positive_sun_ticks": [
+      120,
+      450,
+      592,
+      666,
+      710,
+      764,
+      812,
+      856,
+      898
+    ],
+    "comparison_sha256": "f85b5e5c33886cc0d9a70d75c22a5262093fb201c16d43a1aaa8a7c377ee3677"
+  },
+  "ubuntu": {
+    "focused_suites_passed": 10,
+    "runtime_sha256": {
+      "final.xml": "bf6e2ade3b211fe440d34b36b373f382fc2d7f9ed9cfc1674dec26c55a876ca7",
+      "poima": "f881b7111620b2de4f5b9afe115bbcff90d8f6f84c5dce7efe66a3b9a46f712d",
+      "runtime.json": "b048be2cb1d3d2b70a170ac5122fec6a23adaeac7cfc142a66e0610b7aec33f1"
+    },
+    "fixture_sha256": {
+      "aeration-fixture": "b64b9104acf5ae93516716970e08795c1b7371eb850f0eab15b8a1a048e3aeda",
+      "audio-regression": "7bdca7d304acaed391182243c8f710f59a3abe6fd04031c4f325398135a76f4e"
+    }
+  },
+  "rejected_export": {
+    "required_flag": "water_sheet_aeration",
+    "no_bundle": true,
+    "diagnostic": "Project water sheet aeration requires a compatible Vulkan runtime."
+  },
+  "limits": [
+    "Radiance uses a midpoint density and a representative lighting point.",
+    "This optical approximation does not simulate air volume or accumulated foam.",
+    "Scene-scale cost remains unqualified."
+  ]
+}

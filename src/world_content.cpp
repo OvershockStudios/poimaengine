@@ -342,6 +342,7 @@ FrozenContent freeze_world_content(const Json& source, const fs::path& directory
         result.needs_water_reservoirs=asset.definition.storage && water::has_placed_reservoirs(*asset.definition.storage);
         result.needs_water_overflow=asset.definition.storage && water::has_overflow(*asset.definition.storage);
         result.needs_water_sheets=asset.definition.storage && water::has_water_sheets(*asset.definition.storage);
+        result.needs_water_sheet_aeration=asset.definition.storage && water::has_sheet_aeration(*asset.definition.storage);
         result.needs_water_swell_variation=asset.definition.swell_variation.has_value();
         result.needs_water_rough_reflection=asset.definition.optics && asset.definition.optics->reflection_roughness.has_value();
         result.needs_water_solar_scattering=asset.definition.optics && asset.definition.optics->solar_scattering.has_value();
