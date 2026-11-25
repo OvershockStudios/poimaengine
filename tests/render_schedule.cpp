@@ -1116,6 +1116,45 @@ void screen_reflection_contracts() {
           "Default rendering acquired reflection resources or work");
 }
 
+void depth_of_field_contracts() {
+    auto settings=rich();
+    settings.depth_of_field=true;settings.height_fog=true;settings.products=true;
+    settings.deferred=true;settings.screen_reflections=true;
+    Fixture fixture(settings);
+    fixture.f.focused_hdr=fixture.add(Kind::texture,Lifetime::shared);
+    fixture.f.resources[fixture.f.focused_hdr].format=Format::rgba16_float;
+    setup_particle_sprites(fixture);
+    setup_foreground(fixture);
+    setup_post_effect(fixture);
+    setup_bloom(fixture);
+    world_hdr_probes(fixture);
+    auto valid=fixture.plan();
+    valid.validate();++accepted;
+    const auto& f=valid.frame;
+    check(access(valid,PassId::depth_of_field,f.fogged_hdr,Use::sampled) &&
+          access(valid,PassId::depth_of_field,f.depth,Use::sampled) &&
+          access(valid,PassId::depth_of_field,f.focused_hdr,Use::image_write,true),
+          "Focus stage does not use the guarded world color and depth inputs");
+    check(access(valid,PassId::particle_sprites,f.focused_hdr,Use::color) &&
+          access(valid,PassId::viewmodel_composite,f.focused_hdr,Use::sampled) &&
+          access(valid,PassId::post_effect,f.composite,Use::sampled) &&
+          f.probe_copies[4].source==f.hdr && f.probe_copies[5].source==f.focused_hdr,
+          "Focus stage bypasses sprites, foreground, post effects or probes");
+    const auto bad=[&](const char* label,const auto& edit) {
+        auto plan=valid;
+        edit(plan);
+        rejects(label,[&]{plan.validate();});
+    };
+    bad("focus aliases the unfocused HDR input",[&](auto& plan){plan.frame.focused_hdr=f.fogged_hdr;});
+    bad("focus accepts borrowed depth",[&](auto& plan){plan.frame.resources[f.depth].lifetime=Lifetime::imported;});
+    bad("focus lacks resolved depth",[&](auto& plan){erase_access(plan,PassId::depth_of_field,f.depth,Use::sampled);});
+    bad("focus bypasses height fog",[&](auto& plan){pass(plan,PassId::depth_of_field).accesses.front().resource=f.reflected_hdr;});
+    bad("focus assumes initialized output",[&](auto& plan){pass(plan,PassId::depth_of_field).accesses.back().initialize=false;});
+    bad("foreground bypasses depth of field",[&](auto& plan){pass(plan,PassId::viewmodel_composite).accesses.front().resource=f.fogged_hdr;});
+    bad("focus leaks into the raw HDR capture",[&](auto& plan){plan.frame.probe_copies[4].source=f.focused_hdr;});
+    bad("focus target survives omitted pass",[](auto& plan){plan.settings.depth_of_field=false;});
+}
+
 void height_fog_contracts() {
     for(unsigned path:{0u,1u,2u})for(bool spotlight:{false,true})for(bool probes:{false,true})
     for(unsigned composition:{0u,1u,2u,3u}) {
@@ -2088,4 +2127,4 @@ void visibility_contracts() {
 }
 }
 
-int main(){try{matrix();faults();products();motion_contracts();reconstruction_contracts();deferred_contracts();deferred_color_contracts();viewmodel_contracts();ambient_occlusion_contracts();masked_shadow_contracts();environment_contracts();bloom_contracts();post_effect_contracts();output_grade_contracts();streamed_geometry_contracts();mutable_geometry_contracts();particle_sprite_contracts();surface_mark_contracts();screen_reflection_contracts();height_fog_contracts();composed_reconstruction_contracts();reconstructed_sprite_contracts();spatial_aa_contracts();auto_exposure_contracts();atmosphere_contracts();visibility_contracts();std::cout<<"Production render schedule: "<<accepted<<" valid variants, "<<rejected<<" rejected contract mutations.\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}
+int main(){try{matrix();faults();products();motion_contracts();reconstruction_contracts();deferred_contracts();deferred_color_contracts();viewmodel_contracts();ambient_occlusion_contracts();masked_shadow_contracts();environment_contracts();bloom_contracts();post_effect_contracts();output_grade_contracts();streamed_geometry_contracts();mutable_geometry_contracts();particle_sprite_contracts();surface_mark_contracts();screen_reflection_contracts();height_fog_contracts();depth_of_field_contracts();composed_reconstruction_contracts();reconstructed_sprite_contracts();spatial_aa_contracts();auto_exposure_contracts();atmosphere_contracts();visibility_contracts();std::cout<<"Production render schedule: "<<accepted<<" valid variants, "<<rejected<<" rejected contract mutations.\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}

@@ -183,6 +183,10 @@ Json render_diagnostics(const RenderDiagnostics& d) {
         result["screen_reflections"]={{"active",reflections.active},{"reason",reflections.reason},
             {"buffer_bytes",reflections.buffer_bytes},{"gpu",timing(d.screen_reflections_gpu)}};
     }
+    if(d.depth_of_field) {
+        const auto& focus=*d.depth_of_field;
+        result["depth_of_field"]={{"active",focus.active},{"reason",focus.reason},{"buffer_bytes",focus.buffer_bytes}};
+    }
     if(d.height_fog) {
         const auto& fog=*d.height_fog;
         result["height_fog"]={{"active",fog.active},{"reason",fog.reason},{"buffer_bytes",fog.buffer_bytes},
@@ -291,6 +295,11 @@ Json lighting_json(const SceneLighting& lighting) {
     if(lighting.environment.output_grade) {
         const auto& grade=*lighting.environment.output_grade;
         result["output_grade"]={{"input_max",grade.input_max},{"strength",grade.strength},{"knots",grade.knots}};
+    }
+    if(lighting.environment.depth_of_field) {
+        const auto& focus=*lighting.environment.depth_of_field;
+        result["depth_of_field"]={{"focus_distance_m",focus.focus_distance_m},{"focus_band_m",focus.focus_band_m},
+            {"radius_at_infinity_px",focus.radius_at_infinity_px},{"max_radius_px",focus.max_radius_px}};
     }
     if(lighting.environment.screen_reflections) {
         const auto& reflections=*lighting.environment.screen_reflections;

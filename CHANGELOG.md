@@ -2,6 +2,12 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.429
+
+- Author depth of field in the lighting environment with a focus distance
+  and render-pixel blur bounds. Keep the separately rendered foreground and
+  UI outside the focus filter. [Guide and checks](docs/DEPTH_OF_FIELD.md)
+
 ## 0.0.428
 
 - Keep one Vulkan renderer across guarded runtime captures so an agent can

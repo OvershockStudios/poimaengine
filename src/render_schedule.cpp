@@ -13,6 +13,7 @@ namespace {
 // Preserve the existing pass IDs in captured plans while inserting new stages.
 constexpr std::uint64_t pass_order(PassId id) {
     constexpr auto ordinal=[](PassId pass){return 8ull*static_cast<unsigned>(pass);};
+    if(id==PassId::depth_of_field)return ordinal(PassId::height_fog)+1;
     if(id==PassId::auto_exposure)return ordinal(PassId::resolve)+1;
     if(id==PassId::exposure_readback)return ordinal(PassId::product_probes)+1;
     if(id==PassId::atmosphere_density)return ordinal(PassId::scene_clear)+1;
@@ -39,7 +40,7 @@ void Schedule::validate(bool before_acquire) const {
     required(frame.swapchain);required(frame.color);required(frame.output);
     const auto display_target=display_output_target(frame,settings);
     const auto world_hdr=world_radiance(frame,settings);
-    const bool reconstruct_composed=settings.reconstruction && (settings.screen_reflections || settings.height_fog);
+    const bool reconstruct_composed=settings.reconstruction && (settings.screen_reflections || settings.height_fog || settings.depth_of_field);
     const bool reconstruct_sprites=settings.reconstruction && settings.particle_sprites;
     const bool atmospheric_sky=frame.atmosphere_density!=none || frame.atmosphere_view!=none;
     const auto& visibility=frame.visibility;
@@ -384,6 +385,20 @@ void Schedule::validate(bool before_acquire) const {
         }
     } else if(frame.fogged_hdr!=none || world_media_reads_lighting(settings) || frame.water_columns!=none || settings.water_caustics)
         fail("world media resources without world media pass");
+    if(settings.depth_of_field) {
+        const auto& hdr=resource(frame.hdr);
+        if(!settings.scene || settings.products_debug || frame.color!=frame.hdr ||
+            !scene_image(frame.depth,Format::depth32,hdr) ||
+            !scene_image(frame.focused_hdr,Format::rgba16_float,hdr) ||
+            !(resource(frame.focused_hdr).supported&use_bit(Use::image_write)) ||
+            std::uint64_t(hdr.width)*hdr.height>depth_of_field_budget_bytes/8)
+            fail("invalid depth of field images");
+        constexpr auto alias="depth of field output aliases another resource role";
+        require_distinct_roles(frame.focused_hdr,none,alias);
+        for(auto id:{frame.reflection_roughness,frame.reflected_hdr,frame.fogged_hdr,frame.sprite_hdr,
+                     frame.sprite_coverage,frame.composition_mask,frame.display_ldr})
+            if(frame.focused_hdr==id)fail(alias);
+    } else if(frame.focused_hdr!=none)fail("focus target without depth of field pass");
     if(reconstruct_composed) {
         if(!scene_image(frame.composition_mask,Format::r8_unorm,resource(frame.hdr)) ||
             resource(frame.composition_mask).late_bound ||
@@ -617,7 +632,7 @@ void Schedule::validate(bool before_acquire) const {
     }
     bool world_resolved=false,world_opaque=false,foreground_lights=false,foreground_cleared=false,foreground_drawn=false,foreground_resolved=false,foreground_composed=false;
     bool exported=false,captured=false,probed=false,prepared=false,reconstructed=false,deferred_lit=false,deferred_opaque=false,ao_generated=false,ao_filtered=false;
-    bool post_effect_applied=false,screen_reflected=false,world_fogged=false,world_effects_output=false;
+    bool post_effect_applied=false,screen_reflected=false,world_fogged=false,focused=false,world_effects_output=false;
     bool stream_uploaded=false,stream_shadow_drawn=false,sprites_uploaded=false,sprites_drawn=false;
     std::uint64_t previous=0;bool first=true;
     bool surface_marks_uploaded=false,grade_applied=false,spatial_aa_applied=false;
@@ -799,12 +814,22 @@ void Schedule::validate(bool before_acquire) const {
                 fail("missing water optics inputs");
             world_fogged=true;
         }
+        if(pass.id==PassId::depth_of_field) {
+            if(!settings.depth_of_field || focused || !world_opaque || (settings.deferred && !deferred_lit) ||
+                (settings.screen_reflections && !screen_reflected) || (settings.height_fog && !world_fogged) ||
+                pass.accesses.size()!=3 ||
+                !matches(pass.accesses[0],unfocused_radiance(frame,settings),Use::sampled,false) ||
+                !matches(pass.accesses[1],frame.depth,Use::sampled,false) ||
+                !matches(pass.accesses[2],frame.focused_hdr,Use::image_write,true))
+                fail("invalid or premature depth of field pass");
+            focused=true;
+        }
         if(pass.id==PassId::particle_sprites) {
             const bool water=water_filtered_sprites(frame,settings);
             const bool sun=water && settings.water_shore_foam_sun;
             const auto media_inputs=water ? (sun ? 6u : 4u) : 0u;
             if(!settings.particle_sprites || !sprites_uploaded || !world_opaque || (settings.deferred && !deferred_lit) ||
-                (settings.screen_reflections && !screen_reflected) || (settings.height_fog && !world_fogged) ||
+                (settings.screen_reflections && !screen_reflected) || (settings.height_fog && !world_fogged) || (settings.depth_of_field && !focused) ||
                 pass.accesses.size()!=(reconstruct_sprites ? 7u : 3u)+frame.sprite_textures.size()+media_inputs ||
                 !has(frame.depth,Use::sampled) || !has(frame.sprite_instances,Use::storage_read))
                 fail("invalid or premature particle sprite pass");
@@ -829,7 +854,7 @@ void Schedule::validate(bool before_acquire) const {
         if(pass.id==PassId::auto_exposure) {
             if(!settings.auto_exposure || !world_opaque || (frame.color!=frame.hdr && !world_resolved) ||
                 (settings.deferred && !deferred_lit) || (settings.screen_reflections && !screen_reflected) ||
-                (settings.height_fog && !world_fogged) || (settings.particle_sprites && !sprites_drawn) ||
+                (settings.height_fog && !world_fogged) || (settings.depth_of_field && !focused) || (settings.particle_sprites && !sprites_drawn) ||
                 pass.accesses.size()!=(settings.exposure_history_valid ? 3u : 2u) ||
                 !matches(pass.accesses.front(),world_hdr,Use::sampled,false) ||
                 (settings.exposure_history_valid && !matches(pass.accesses[1],frame.exposure_state,Use::storage_read,false)) ||
@@ -843,7 +868,7 @@ void Schedule::validate(bool before_acquire) const {
             for(const auto id:{frame.normal,frame.motion,frame.motion_valid})if(!has(id,Use::sampled))fail("missing temporal input");
             if(!has(frame.frame,Use::constant) || !has(frame.dense_motion,Use::image_write) || !has(frame.reactive,Use::image_write))fail("missing temporal input outputs");
             if(reconstruct_composed && (!world_opaque || (settings.screen_reflections && !screen_reflected) ||
-                (settings.height_fog && !world_fogged) ||
+                (settings.height_fog && !world_fogged) || (settings.depth_of_field && !focused) ||
                 !has(frame.hdr,Use::sampled) || !has(world_hdr,Use::sampled) || !has(frame.composition_mask,Use::image_write)))
                 fail("invalid or premature temporal composition mask preparation");
             if(reconstruct_sprites && (!sprites_drawn || !has(frame.sprite_coverage,Use::sampled)))
@@ -896,10 +921,10 @@ void Schedule::validate(bool before_acquire) const {
             foreground_composed=true;
         }
         if(pass.id==PassId::output && settings.viewmodel && (!foreground_composed || !has(display_radiance(frame,settings),Use::sampled)))fail("display precedes foreground composition");
-        if(pass.id==PassId::output && (settings.screen_reflections || settings.height_fog)) {
-            if((settings.screen_reflections && !screen_reflected) || (settings.height_fog && !world_fogged) ||
+        if(pass.id==PassId::output && (settings.screen_reflections || settings.height_fog || settings.depth_of_field)) {
+            if((settings.screen_reflections && !screen_reflected) || (settings.height_fog && !world_fogged) || (settings.depth_of_field && !focused) ||
                 !has(display_radiance(frame,settings),Use::sampled) || !has(display_target,Use::color_overwrite) ||
-                has(frame.hdr,Use::sampled))fail(settings.height_fog ? "display bypasses height fog" : "display bypasses screen reflections");
+                has(frame.hdr,Use::sampled))fail("display bypasses its world effects");
             world_effects_output=true;
         }
         if(pass.id==PassId::post_effect) {
@@ -1046,8 +1071,10 @@ void Schedule::validate(bool before_acquire) const {
                 !(pass.id==PassId::deferred_lighting && a.use==Use::image_write && a.initialize) &&
                 !(pass.id==PassId::screen_reflections && a.use==Use::sampled && !a.initialize))
                 fail("reflection roughness used outside deferred lighting and screen reflections");
-            const bool opaque_hdr_consumed=(settings.screen_reflections && pass.id>PassId::screen_reflections) ||
-                (settings.height_fog && pass.id>PassId::height_fog) || (reconstruct_sprites && pass.id>PassId::particle_sprites);
+            const bool opaque_hdr_consumed=(settings.screen_reflections && order>pass_order(PassId::screen_reflections)) ||
+                (settings.height_fog && order>pass_order(PassId::height_fog)) ||
+                (reconstruct_sprites && order>pass_order(PassId::particle_sprites)) ||
+                (settings.depth_of_field && order>pass_order(PassId::depth_of_field));
             const bool mask_input=reconstruct_composed && pass.id==PassId::temporal_inputs && a.use==Use::sampled && !a.initialize;
             const bool exposure_input=settings.auto_exposure && pass.id==PassId::auto_exposure &&
                 a.resource==world_hdr && a.use==Use::sampled && !a.initialize;
@@ -1062,8 +1089,10 @@ void Schedule::validate(bool before_acquire) const {
                 fail("composition mask used outside preparation and reconstruction");
             const bool reflected=settings.screen_reflections && a.resource==frame.reflected_hdr;
             const bool fogged=settings.height_fog && a.resource==frame.fogged_hdr;
-            if(reflected || fogged) {
-                const auto producer=reflected ? PassId::screen_reflections : PassId::height_fog;
+            const bool focus_target=settings.depth_of_field && a.resource==frame.focused_hdr;
+            if(reflected || fogged || focus_target) {
+                const auto producer=focus_target ? PassId::depth_of_field :
+                    reflected ? PassId::screen_reflections : PassId::height_fog;
                 const bool produced=pass.id==producer && a.use==Use::image_write && a.initialize;
                 const bool fog_input=reflected && settings.height_fog && pass.id==PassId::height_fog &&
                     a.use==Use::sampled && !a.initialize;
@@ -1075,9 +1104,10 @@ void Schedule::validate(bool before_acquire) const {
                 const bool sprites=pass.id==PassId::particle_sprites && a.use==(reconstruct_sprites ? Use::copy_source : Use::color) && !a.initialize;
                 const bool reconstruct_input=reconstruct_composed && !reconstruct_sprites && pass.id==PassId::reconstruction && a.use==Use::sampled && !a.initialize;
                 const bool final_world=a.resource==world_hdr && (composed || probe || sprites || mask_input || reconstruct_input || exposure_input);
-                if(!produced && !fog_input && !final_world)fail(reflected ?
-                    "reflected radiance used outside its producers and scene color composition" :
-                    "fogged radiance used outside its producers and scene color composition");
+                const bool focus_input=settings.depth_of_field && pass.id==PassId::depth_of_field &&
+                    a.resource==unfocused_radiance(frame,settings) && a.use==Use::sampled && !a.initialize;
+                if(!produced && !fog_input && !focus_input && !final_world)
+                    fail("processed world radiance used outside its scheduled composition");
             }
             if(settings.post_effect && a.resource==frame.post_effect && pass.id!=PassId::post_effect &&
                 !((pass.id==PassId::bloom_extract || pass.id==PassId::output) && a.use==Use::sampled))
@@ -1163,6 +1193,7 @@ void Schedule::validate(bool before_acquire) const {
     if(visibility.count && (!visibility_prepared || !world_opaque))fail("missing GPU visibility producer or draw");
     if(settings.deferred && !deferred_lit)fail("missing deferred lighting pass");
     if(settings.screen_reflections && (!screen_reflected || !world_effects_output))fail("missing screen reflection pass or composed output");
+    if(settings.depth_of_field && (!focused || !world_effects_output))fail("missing depth of field pass or composed output");
     if(settings.height_fog && (!world_fogged || !world_effects_output))fail("missing height fog pass or composed output");
     if(atmospheric_sky && !atmosphere_drawn)fail("missing atmospheric sky draw");
     if(settings.cloud_shadows && (!world_opaque || !initialized[frame.cloud_shadow]))
@@ -1311,6 +1342,12 @@ Schedule build(FrameResources frame,Settings settings) {
         }
         add(fog,f.fogged_hdr,Use::image_write,true);
     }
+    if(settings.depth_of_field) {
+        auto& focus=pass(PassId::depth_of_field);
+        add(focus,unfocused_radiance(f,settings),Use::sampled);
+        add(focus,f.depth,Use::sampled);
+        add(focus,f.focused_hdr,Use::image_write,true);
+    }
     if(settings.particle_sprites) {
         auto& sprites=pass(PassId::particle_sprites);
         if(settings.reconstruction) {
@@ -1345,7 +1382,7 @@ Schedule build(FrameResources frame,Settings settings) {
         for(auto id:{f.normal,f.motion,f.motion_valid})add(inputs,id,Use::sampled);
         for(auto id:{f.dense_motion,f.reactive})add(inputs,id,Use::image_write,true);
         const auto source=world_radiance(f,settings);
-        const bool composed=settings.screen_reflections || settings.height_fog;
+        const bool composed=settings.screen_reflections || settings.height_fog || settings.depth_of_field;
         if(composed) {
             add(inputs,f.hdr,Use::sampled);add(inputs,source,Use::sampled);
             add(inputs,f.composition_mask,Use::image_write,true);

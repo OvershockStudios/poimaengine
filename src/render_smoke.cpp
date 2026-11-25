@@ -36,6 +36,7 @@
 #include "render_ambient_occlusion.hpp"
 #include "render_embedded_shader.hpp"
 #include "render_screen_reflections.hpp"
+#include "render_depth_of_field.hpp"
 #include "render_height_fog.hpp"
 #include "render_viewmodel.hpp"
 #include "render_hdr_effects.hpp"
@@ -311,6 +312,7 @@ struct Context {
     nvrhi::TextureHandle material_base,material_surface,material_correspondence;
     render_deferred_lighting::Pass deferred_lighting;
     screen_reflections::Pass reflections;
+    DepthOfFieldPass depth_of_field;
     height_fog::Pass fog;
     std::array<std::uint32_t,2> fog_spots{};
     nvrhi::BufferHandle water_columns;
@@ -323,8 +325,11 @@ struct Context {
     nvrhi::ITexture* surface_radiance_texture() const noexcept {
         return reflections.radiance() ? reflections.radiance() : scene_hdr.Get();
     }
-    nvrhi::ITexture* world_radiance_texture() const noexcept {
+    nvrhi::ITexture* unfocused_radiance_texture() const noexcept {
         return fog.radiance() ? fog.radiance() : surface_radiance_texture();
+    }
+    nvrhi::ITexture* world_radiance_texture() const noexcept {
+        return depth_of_field.target() ? depth_of_field.target() : unfocused_radiance_texture();
     }
     ShadowFilter shadow_filter=ShadowFilter::pcf3_point;
     std::optional<ShadowFilter> shadow_filter_override;
@@ -446,7 +451,7 @@ struct Context {
         occlusion.reset();
         deferred_lighting.release_gpu();material_base=nullptr;material_surface=nullptr;material_correspondence=nullptr;
         temporal_inputs.release_gpu();
-        fog={};reflections={};water_columns=nullptr;
+        depth_of_field={};fog={};reflections={};water_columns=nullptr;
         pipeline = nullptr; culled_pipeline=nullptr;
         sky_pass.reset();
         scene_output.release_gpu();
@@ -1468,6 +1473,49 @@ struct Context {
             fog.clear_targets();
         }
     }
+    void prepare_depth_of_field(const std::optional<DepthOfField>& selected) {
+        diagnostics.depth_of_field.reset();
+        if(selected) {
+            const std::string_view reason=
+                selected->radius_at_infinity_px==0 || selected->max_radius_px==0 ? "zero_radius" :
+                !scene_visible ? "scene_hidden" :
+                scene_debug_view!=SceneDebugView::color ? "diagnostic" :
+                samples!=1 ? "multisample" :
+                !rigid_transform(scene->camera_world) ? "camera_non_rigid" :
+                !scene->world_viewmodel_draws().empty() ? "world_depth_foreground" :
+                water_parameters ? "transparent_water" : "active";
+            const bool active=reason=="active";
+            if(active) {
+                if(!depth_of_field.target()) {
+                    require_reconstruction_composition_budget(reconstruction_pixels(),reconstruction_pixels()*8);
+                    const auto needed=vk::FormatFeatureFlagBits::eSampledImage|vk::FormatFeatureFlagBits::eStorageImage|
+                        vk::FormatFeatureFlagBits::eTransferSrc|vk::FormatFeatureFlagBits::eColorAttachment|
+                        vk::FormatFeatureFlagBits::eColorAttachmentBlend;
+                    const auto support=physical.getFormatProperties(vk::Format::eR16G16B16A16Sfloat,dispatch).optimalTilingFeatures;
+                    require((support&needed)==needed,"Selected GPU lacks depth of field image format support.");
+                }
+                depth_of_field.prepare(*checked.Get(),*unfocused_radiance_texture(),*depth.Get());
+            }
+            diagnostics.depth_of_field=DepthOfFieldDiagnostics{active,reason,active ? depth_of_field.bytes() : 0};
+            if(active)return;
+        }
+        if(auto* source=depth_of_field.target()) {
+            retire_frames(true);
+            detach_world_outputs(source);
+            depth_of_field.clear();
+        }
+    }
+    void record_depth_of_field() {
+        const auto& target=depth_of_field.target()->getDesc();
+        const auto* viewport=frame_constants.cluster_viewport;
+        const auto edge=[](float pixel,std::uint32_t end) {
+            return static_cast<std::int32_t>(std::clamp(std::ceil(pixel-.5f),0.0f,static_cast<float>(end)));
+        };
+        const std::array rect{edge(viewport[0],target.width),edge(viewport[1],target.height),
+            edge(viewport[0]+viewport[2],target.width),edge(viewport[1]+viewport[3],target.height)};
+        depth_of_field.dispatch(*commands.Get(),*scene->lighting.environment.depth_of_field,
+            static_cast<float>(scene->near_plane),static_cast<float>(scene->far_plane),rect);
+    }
     void observe_clouds(const SceneLighting& lighting) {
         pending_clouds.reset();
         const auto& atmosphere_profile=lighting.environment.atmosphere;
@@ -1538,6 +1586,8 @@ struct Context {
         clear_sprite_targets();
         if(auto* source=fog.radiance())detach_world_outputs(source);
         fog.clear_targets();
+        if(auto* source=depth_of_field.target())detach_world_outputs(source);
+        depth_of_field.clear();
         if(auto* source=reflections.radiance())detach_world_outputs(source);
         reflections.clear_targets();
         reconstruction.reset();scene_output.invalidate_bindings();
@@ -1645,7 +1695,7 @@ struct Context {
     std::uint64_t reconstruction_world_bytes(std::uint64_t composition_bytes) const noexcept {
         return reconstruction_pixels()*((deferred ? 82u : 50u)+(ao_enabled ? 4u : 0u))+
             std::uint64_t(output_extent.width)*output_extent.height*8+reflections.buffer_bytes()+fog.buffer_bytes()+
-            fog.aerial_buffer_bytes()+sky_pass.cloud_resident_bytes()+sky_pass.cloud_shadow_resident_bytes()+
+            fog.aerial_buffer_bytes()+depth_of_field.bytes()+sky_pass.cloud_resident_bytes()+sky_pass.cloud_shadow_resident_bytes()+
             composition_bytes+sprite_targets.bytes();
     }
     void require_reconstruction_composition_budget(std::uint64_t mask_bytes,std::uint64_t additional) const {
@@ -2003,6 +2053,7 @@ struct Context {
         }
         configure_light_assignment();
         prepare_height_fog(lighting,water_normal_mode);
+        prepare_depth_of_field(lighting.environment.depth_of_field);
         // Use the actual rounded GPU matrices for clipping decisions.
         auto frustum=[](const float* matrix) { Matrix4 value;std::copy_n(matrix,16,value.begin());return make_frustum(value); };
         std::array<float,16> culling_projection;std::copy_n(frame_constants.view_projection,16,culling_projection.begin());
@@ -2214,7 +2265,7 @@ struct Context {
         exposure_rect={};exposure_clock.reset();prior_exposure=false;
         temporal_inputs.clear_targets();
         clear_sprite_targets();
-        fog.clear_targets();reflections.clear_targets();
+        depth_of_field.clear();fog.clear_targets();reflections.clear_targets();
         reconstruction.reset();reconstructed=nullptr;dense_motion=nullptr;reactive=nullptr;dilated_depth=nullptr;dilated_motion=nullptr;reconstructed_depth=nullptr;render_extent={};output_extent={};temporal_phase=0;temporal_clock.reset();
         viewmodel.reset();viewmodel_enabled=false;viewmodel_draws.clear();viewmodel_objects.clear();
         commands=nullptr;
@@ -2558,6 +2609,7 @@ struct Context {
         settings.spatial_aa=fxaa_enabled;
         settings.screen_reflections=scene && scene_visible && reflections.radiance();
         settings.height_fog=scene && scene_visible && fog.radiance();
+        settings.depth_of_field=scene && scene_visible && depth_of_field.target();
         settings.aerial_perspective=settings.height_fog && aerial_parameters.has_value();
         settings.height_fog_spots=settings.height_fog && (fog_spots[0]!=0 || fog_spots[1]!=0);
         settings.water_caustics=settings.height_fog && frame_constants.water_caustic_grid_light[2]!=0;
@@ -2696,6 +2748,7 @@ struct Context {
                 f.reflected_hdr=texture(reflections.radiance(),rs::Lifetime::shared,false);
             }
             if(settings.height_fog)f.fogged_hdr=texture(fog.radiance(),rs::Lifetime::shared,false);
+            if(settings.depth_of_field)f.focused_hdr=texture(depth_of_field.target(),rs::Lifetime::shared,false);
             if(water_parameters)f.water_columns=buffer(water_columns,rs::Lifetime::shared,false,
                 scene->water_volume->columns.size()*rs::water_column_bytes);
             if(settings.aerial_perspective) {
@@ -2870,6 +2923,7 @@ struct Context {
         } else framebuffer(framebuffers.at(index),f.color,f.depth,f.normal);
         if(plan.settings.screen_reflections)reflections.verify_bindings(plan,environment_ibl.bound().sampler);
         if(plan.settings.height_fog)fog.verify_bindings(plan);
+        if(plan.settings.depth_of_field)depth_of_field.verify_bindings(plan);
         if(plan.settings.volumetric_clouds)sky_pass.verify_cloud_bindings(plan);
         if(ao_enabled) {
             using ambient_occlusion::Stage;
@@ -3315,6 +3369,7 @@ struct Context {
                 timestamp(17);
                 break;
             }
+            case render_schedule::PassId::depth_of_field:record_depth_of_field();break;
             case render_schedule::PassId::particle_sprites:render_particle_sprites(slot);break;
             case render_schedule::PassId::auto_exposure:
                 exposure_meter.record(*commands.Get(),*scene->lighting.environment.auto_exposure,

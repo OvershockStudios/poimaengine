@@ -41,6 +41,7 @@
     "project_post_effects": @POIMA_RUNTIME_RENDER_SMOKE@,
     "output_grade": @POIMA_RUNTIME_RENDER_SMOKE@,
     "screen_reflections": @POIMA_RUNTIME_RENDER_SMOKE@,
+    "depth_of_field": @POIMA_RUNTIME_RENDER_SMOKE@,
     "auto_exposure": @POIMA_RUNTIME_RENDER_SMOKE@,
     "atmosphere_sky": @POIMA_RUNTIME_ATMOSPHERE_SKY@,
     "orbital_atmosphere": @POIMA_RUNTIME_ATMOSPHERE_SKY@,

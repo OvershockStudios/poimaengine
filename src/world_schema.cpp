@@ -248,6 +248,12 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     const auto bounded_number=[](double minimum,double maximum) {
         return Json{{"type","number"},{"minimum",minimum},{"maximum",maximum}};
     };
+    auto focus=object_schema({
+        {"focus_distance_m",bounded_number(.01,1000000)},{"focus_band_m",bounded_number(0,1000000)},
+        {"radius_at_infinity_px",bounded_number(0,24)},{"max_radius_px",bounded_number(0,24)}},
+        {"focus_distance_m","focus_band_m","radius_at_infinity_px","max_radius_px"});
+    focus["description"]="Single-sample world depth of field in color views. Radius is in internal render pixels. Either zero radius disables the effect.";
+    lighting_environment["properties"]["depth_of_field"]=std::move(focus);
     auto cloud_wind=vector(bounded_number(-100,100),2);
     cloud_wind["description"]="Horizontal wind along world +X and +Z in metres per second.";
     auto clouds=object_schema({{"base_height_m",bounded_number(250,12000)},
@@ -423,7 +429,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 224}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 225}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),

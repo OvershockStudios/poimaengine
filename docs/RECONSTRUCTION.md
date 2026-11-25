@@ -92,11 +92,12 @@ FSR consumes scene-linear HDR before exposure and display mapping. Output exposu
 
 ## World lighting composition
 
-[Screen-space reflections](DEFERRED_RENDERING.md#screen-space-reflections)
-and [height fog](HEIGHT_FOG.md) write their HDR results at the internal render
-extent, before FSR. Reflections require deferred lighting. With both active,
-fog consumes the reflected image and FSR consumes the fogged image. The
-engine preserves opaque depth, geometric motion and the existing reactive mask.
+[Screen-space reflections](DEFERRED_RENDERING.md#screen-space-reflections),
+[height fog](HEIGHT_FOG.md), and [depth of field](DEPTH_OF_FIELD.md) write HDR
+results at the internal render extent before FSR. Reflections require deferred
+lighting. When enabled together, fog consumes the reflected image and depth of
+field consumes the fogged image. The engine preserves opaque depth, geometric
+motion and the existing reactive mask.
 It supplies a distinct one-byte-per-render-pixel transparency and composition
 mask based on the relative RGB change from opaque to final world radiance.
 Each channel's absolute change is divided by the largest of its two
@@ -148,7 +149,7 @@ zero. Overlapping sprites accumulate coverage as `a + (1 - a) * previous`.
 
 FSR reads the sprite HDR image. The temporal input pass combines covered
 opacity, capped at 0.9, with the existing reactive signal. The separate
-fog and reflection mask still compares opaque HDR with pre-sprite world HDR.
+world composition mask still compares opaque HDR with pre-sprite world HDR.
 Sprite animation, emission and expiry leave the existing view history policy
 in place. Motion vectors describe the opaque scene. [Reactive mask guidance](https://gpuopen.com/manuals/fidelityfx_sdk/techniques/super-resolution-upscaler/#reactive-mask)
 
@@ -174,11 +175,11 @@ fixture above to test authored sprites and relocated saves on the same runtime.
 
 - Existing depth, shading normal, raw geometric motion and validity values, sampled from that frame's jittered raster products.
 - `surface_mark_reactive: true` when a geometrically valid sample carries the receiver's mark-change signal for that submission.
-- `raw_hdr`: opaque scene-linear RGB before reflection and fog composition, reconstruction and exposure.
+- `raw_hdr`: opaque scene-linear RGB before world effects, reconstruction and exposure.
 - `resolved_hdr`: composed scene-linear RGB after reconstruction, before exposure and display mapping.
 - `resolved_x` and `resolved_y`: the output pixel selected by mapping the input pixel center to the output grid.
 
-For one axis, the mapping is `floor((input + 0.5) * output_size / render_size)`. Without reconstruction, the resolved probe is sampled at the raster coordinate after any screen reflections, fog or sprites. With all of those passes inactive, both probes describe the same scene radiance. RGB values originate in RGBA16F attachments, and their precision carries through JSON conversion. Sparse probes are localized observations. BMP captures contain the final display image and UI.
+For one axis, the mapping is `floor((input + 0.5) * output_size / render_size)`. Without reconstruction, the resolved probe is sampled at the raster coordinate after any reflections, fog, depth of field or sprites. With all of those passes inactive, both probes describe the same scene radiance. RGB values originate in RGBA16F attachments, and their precision carries through JSON conversion. Sparse probes are localized observations. BMP captures contain the final display image and UI.
 
 `diagnostics.reconstruction` reports `mode`, `active`, render/output dimensions, `jitter_pixels`, `history_reset`, `history_sequence`, `reset_reason`, `sdk_version`, `logical_bytes` and `gpu`. Completed-frame diagnostics retain the metadata of the accepted submission they describe. `active` means that frame dispatched reconstruction.
 

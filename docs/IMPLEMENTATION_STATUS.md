@@ -1,8 +1,19 @@
 # Implementation status
 
-Updated 2026-11-25 for **0.0.428**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-25 for **0.0.429**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.429 adds [authored depth of field](DEPTH_OF_FIELD.md) to the
+single-sample Vulkan world view. Forward rendering on AMD and deferred on NVIDIA
+matched a separate HDR reference for the near and far planes, preserved the focus
+plane and the separately rendered viewmodel, and preserved the original output
+at zero radius. Checks also covered diagnostic and four-sample fallback, FSR
+composition on NVIDIA, and an immutable relocated Windows export. Ubuntu passed
+ten focused native suites and an authoring fixture. The profile has a fixed
+focus distance and a bounded filter. Camera-driven focus changes, transparent
+water composition and representative performance remain open.
+[Results and scope](evidence/m2-depth-of-field-429.json)
 
 Version 0.0.428 lets [runtime captures retain the Vulkan renderer](SCENE_CAPTURE.md#capture-successive-runtime-ticks).
 Eight non-temporal frames matched isolated captures on AMD forward and eight

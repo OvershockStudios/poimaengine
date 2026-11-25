@@ -372,6 +372,7 @@ Json project_summary(const Project& p) {
     if(p.content.needs_volumetric_clouds)result["needs_volumetric_clouds"]=true;
     if(p.content.needs_cloud_shadows)result["needs_cloud_shadows"]=true;
     if(p.content.needs_screen_reflections)result["needs_screen_reflections"]=true;
+    if(p.content.needs_depth_of_field)result["needs_depth_of_field"]=true;
     if(p.content.needs_foliage_motion)result["needs_foliage_motion"]=true;
     if(p.content.needs_height_fog)result["needs_height_fog"]=true;
     if(p.content.needs_snow_water)result["needs_snow_water"]=true;
@@ -469,6 +470,8 @@ void require_scene_feature_support(const WorldPackageContent& content, const Jso
         "Screen reflections require a compatible Vulkan runtime.");
     require(!content.needs_foliage_motion || runtime.at("features").value("foliage_motion", false),
         "Foliage motion requires a compatible Vulkan runtime.");
+    require(!content.needs_depth_of_field || runtime.at("features").value("depth_of_field",false),
+        "Depth of field requires a compatible Vulkan runtime.");
     require(!content.needs_height_fog || runtime.at("features").value("height_fog", false),
         "Height fog requires a compatible Vulkan runtime.");
     require(!content.needs_physics_checkpoint || runtime.at("features").value("physics_checkpoint", false),
@@ -529,7 +532,7 @@ Json runtime_spec(const std::string& bytes,std::string_view expected_version=bui
     fields(features,{"simulation","renderer","audio","managed","editor","native_gameplay","game_ui",
         "navigation","navigation_obstacles","asset_provenance","project_post_effects","water_regions","water_rain",
         "water_ripples","water_wave_layers","water_listener_audio","water_optics","water_refraction","water_caustics","water_shore_foam","water_terrain_fit","water_surface_swell","water_swell_variation","water_rough_reflection","water_solar_scattering","water_offshore","water_sprite_optics","snow_water_regions","scene_particles","scene_particle_sprites",
-        "surface_marks","surface_mark_masks","mesh_lod","output_grade","auto_exposure","atmosphere_sky","orbital_atmosphere","aerial_perspective","volumetric_clouds","cloud_shadows","screen_reflections","foliage_motion",
+        "surface_marks","surface_mark_masks","mesh_lod","output_grade","auto_exposure","atmosphere_sky","orbital_atmosphere","aerial_perspective","volumetric_clouds","cloud_shadows","screen_reflections","depth_of_field","foliage_motion",
         "height_fog","physics_checkpoint","fsr3_upscaler"},{"simulation","renderer","audio","managed","editor"});
     for(const auto& feature:features)require(feature.is_boolean(),"Runtime feature flags must be Boolean.");
     require(!features.value("water_listener_audio",false) || features.at("audio")==true,
@@ -594,6 +597,7 @@ struct VerifiedGame {
     bool needs_water_solar_scattering=false;
     bool needs_water_offshore=false;
     bool needs_screen_reflections=false;
+    bool needs_depth_of_field=false;
     bool needs_foliage_motion=false;
     bool needs_height_fog=false;
     bool needs_snow_water=false;
@@ -664,6 +668,7 @@ VerifiedGame verify_game(const std::string& filename,std::string_view expected_v
     result.needs_water_solar_scattering=content.needs_water_solar_scattering;
     result.needs_water_offshore=content.needs_water_offshore;
     result.needs_screen_reflections=content.needs_screen_reflections;
+    result.needs_depth_of_field=content.needs_depth_of_field;
     result.needs_foliage_motion=content.needs_foliage_motion;
     result.needs_height_fog=content.needs_height_fog;
     result.needs_snow_water=content.needs_snow_water;
@@ -1117,6 +1122,7 @@ Reply inspect_game(const std::string& manifest,const std::string& expected_bundl
         if(game.needs_water_solar_scattering)result["needs_water_solar_scattering"]=true;
         if(game.needs_water_offshore)result["needs_water_offshore"]=true;
         if(game.needs_screen_reflections)result["needs_screen_reflections"]=true;
+        if(game.needs_depth_of_field)result["needs_depth_of_field"]=true;
         if(game.needs_foliage_motion)result["needs_foliage_motion"]=true;
         if(game.needs_height_fog)result["needs_height_fog"]=true;
         if(game.needs_snow_water)result["needs_snow_water"]=true;

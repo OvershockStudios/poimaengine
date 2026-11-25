@@ -111,7 +111,7 @@ static CloudSettings cloud_value(const Json& value) {
     return result;
 }
 LightingEnvironment environment_value(const Json& value) {
-    fields(value,{"ambient","exposure","shadow_resolution","shadow_filter","sky","ibl","bloom","post_effect","output_grade","screen_reflections","height_fog","auto_exposure","atmosphere"},{"ambient","exposure"});require(value.at("ambient").is_array() && value.at("ambient").size()==3,"Ambient fill needs three values.");
+    fields(value,{"ambient","exposure","shadow_resolution","shadow_filter","sky","ibl","bloom","post_effect","output_grade","screen_reflections","height_fog","depth_of_field","auto_exposure","atmosphere"},{"ambient","exposure"});require(value.at("ambient").is_array() && value.at("ambient").size()==3,"Ambient fill needs three values.");
     for(const auto& x:value.at("ambient"))require(x.is_number() && std::isfinite(x.get<double>()) && x>=0 && x<=1e6,"Ambient fill must be in [0,1e6].");
     require(value.at("exposure").is_number() && std::isfinite(value.at("exposure").get<double>()) && value.at("exposure")>=0 && value.at("exposure")<=1e6,"Exposure must be in [0,1e6].");
     if(value.contains("shadow_resolution"))require(value.at("shadow_resolution").is_number_integer() && (value.at("shadow_resolution")==256 || value.at("shadow_resolution")==512 || value.at("shadow_resolution")==1024 || value.at("shadow_resolution")==2048),"Shadow resolution must be 256, 512, 1024 or 2048.");
@@ -234,6 +234,19 @@ LightingEnvironment environment_value(const Json& value) {
         };
         result.screen_reflections=ScreenReflections{
             read_number("strength",0,1),read_number("max_distance_m",.25,32),read_number("thickness_m",.01,.5)};
+    }
+    if(value.contains("depth_of_field")) {
+        const auto& profile=value.at("depth_of_field");
+        fields(profile,{"focus_distance_m","focus_band_m","radius_at_infinity_px","max_radius_px"},
+                       {"focus_distance_m","focus_band_m","radius_at_infinity_px","max_radius_px"});
+        const auto number=[&](const char* name,double low,double high) {
+            const auto& field=profile.at(name);
+            require(field.is_number() && std::isfinite(field.get<double>()) && field>=low && field<=high,
+                    std::string("Depth of field ")+name+" is outside its finite range.");
+            return field.get<float>();
+        };
+        result.depth_of_field=DepthOfField{number("focus_distance_m",.01,1000000),
+            number("focus_band_m",0,1000000),number("radius_at_infinity_px",0,24),number("max_radius_px",0,24)};
     }
     if(value.contains("height_fog")) {
         const auto& authored=value.at("height_fog");

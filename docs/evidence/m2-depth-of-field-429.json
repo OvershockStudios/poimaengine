@@ -1,0 +1,207 @@
+{
+  "version": "0.0.429",
+  "date": "2026-11-25",
+  "schema_revision": 225,
+  "base_commit": "143cc58e9b7a99adca87f335cdfe8549d9a3bf39",
+  "scope": "Optional authored depth of field on single-sample Vulkan world color, with a fixed focus distance and separate foreground composition.",
+  "source_sha256": {
+    "CMakeLists.txt": "8abc03916dbba235f45bf717624f309c71b486b9a5074ceff81a7270e4144680",
+    "cmake/render_smoke.cmake": "3dfaa6dfdbe013a0b81acad1c46ab3fffcbe5fbfaf3ff719c69ed8162e3e02e4",
+    "cmake/runtime.json.in": "91b839c1e79b57662e3b950cab992da0b54892e1148c3a55a1582a3cd779556a",
+    "include/poima/core.hpp": "a1a8e179ea9e54cedc2a83188d60c8d0ab567e8df77ade7c2ccfd674f8c79210",
+    "include/poima/render_schedule.hpp": "6e6d652855228b6d897282c15d258820b94e61de4b5d0b04bceb51d021272425",
+    "include/poima/scene.hpp": "c9d68a1dc21d458816df61834bb4eb758264d4d0bcaaca210ea57de6bdd98ba4",
+    "include/poima/world.hpp": "d2b87fde735c630acf9b7292b12037ab754eb9f3138dbf94002a64cbd9c5105c",
+    "shaders/depth_of_field.hlsl": "8ba7e79676d41bb28781cbd413a4feaa37a561d5e6508443f2de7b056b4c622f",
+    "src/project.cpp": "1e9d40a34f2484d70f639e49f8326bd790da68f68985647780f10275ac503b09",
+    "src/render_depth_of_field.cpp": "9076255c4370e8691a3dd47784f433f04375f21d41a651acc6e6bda35eecd786",
+    "src/render_depth_of_field.hpp": "f92cc00b7ec45f7137aa80003976d2a92646fd7eb8dab47020d3154ebb433f8e",
+    "src/render_schedule.cpp": "dba70169abb577b3741f5db914770d6e260b0d9cbee5e5afa9425d5046462bb7",
+    "src/render_smoke.cpp": "159cab2597bf6f89b87111efb9f924183a3fb0776e36c73465bb4e518f6b8580",
+    "src/render_temporal_inputs.cpp": "7214cbddff7a14de3b510390155df33b9e1407792c86ed6292714ab79915919d",
+    "src/world.cpp": "0b379ab1e9add619b18137359c6b1981246e949067f0e53e9d6dc0c0cb933502",
+    "src/world_content.cpp": "41d71316ffdbdfb809a5db8f4eb34bc82af7447b3131c6c8eceb838c752fe197",
+    "src/world_document.cpp": "281fc2033b907c0eb268f925f4c8c8335c50a114af061479140372ea80e80519",
+    "src/world_presentation_json.cpp": "1eb759b298db34d8ce29a296370c6952023b280f3556b6e30d5e03a52731a863",
+    "src/world_schema.cpp": "b3516bb9331ec60fb904c4a08c6477535d8eb737571b67fcc679c0a29fb4f664",
+    "tests/depth_of_field_capture.py": "5b657973bcfb7983fa4298891851dcb78843b4b0278af50c2cf968f4b175c450",
+    "tests/render_schedule.cpp": "2608736ba4aa0731946d22289805feb77bf05bba5a67c4082dceba9daf9a5453"
+  },
+  "windows": {
+    "binary_sha256": "da31035e0a887cc5d3edc0d4a0b1246e0d2dd0d9256f1cbbb28c705ea7608756",
+    "desktop_runtime_library_sha256": "0e1a4e1f65f385188030b825ace37559b68214ae1c2a9e0d72c02e97fa90fb5a",
+    "runtime_descriptor_sha256": "5173111ceedc3986585f17364418081bd692c8709388bc3269bb0ee971a979ac",
+    "amd_forward": {
+      "adapter": "AMD Radeon(TM) Graphics",
+      "lighting_path": "forward",
+      "evidence_sha256": "4b12092d33df7e30aba8284185296674a600282744b1f390a1faa54a9cf0696f",
+      "extent_px": [
+        192,
+        128
+      ],
+      "numerical_checks": [
+        {
+          "group": 0,
+          "near_or_far": true,
+          "probes": 10,
+          "max_hdr_error": 0.00022618910845589868,
+          "max_change": 0.5097183994911536,
+          "camera_depth_m": 1.6499996100516034
+        },
+        {
+          "group": 1,
+          "near_or_far": false,
+          "probes": 10,
+          "max_hdr_error": 0.0,
+          "max_change": 0.0,
+          "camera_depth_m": 3.9999896208714554
+        },
+        {
+          "group": 2,
+          "near_or_far": true,
+          "probes": 10,
+          "max_hdr_error": 0.00022618910845589868,
+          "max_change": 0.5662201279640747,
+          "camera_depth_m": 8.19992225398822
+        }
+      ],
+      "unchanged_separate_viewmodel_pixels": 530,
+      "baseline_and_zero_radius_image_sha256": "c3d0ffb4f469d28f6a7ca0db97e9d0239d5991b530c19324ec18c5d297a82fdc",
+      "baseline_and_diagnostics_image_sha256": "9e2c08d3c0779511c49e2531cc5c0a7c5b89e80f5b987202fb728677572603aa",
+      "active_image_sha256": "68b037b91c84079250c37873ede030d1553725488eb523d801ef50e8a7ac6460",
+      "active_target_bytes": 196608,
+      "nvrhi_errors": 0,
+      "baseline_and_msaa_fallback_image_sha256": "338e23f384f2042dc7eef4456bdaef3080d7b8539209138932b5b987ba5c1f99"
+    },
+    "nvidia_deferred": {
+      "adapter": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "lighting_path": "deferred",
+      "evidence_sha256": "180bd7e84a5d68e08c34b42a4973d07522c5bb6fdbc1256c72b4b4b72012cd96",
+      "extent_px": [
+        192,
+        128
+      ],
+      "numerical_checks": [
+        {
+          "group": 0,
+          "near_or_far": true,
+          "probes": 10,
+          "max_hdr_error": 0.00022618910845589868,
+          "max_change": 0.5097183994911536,
+          "camera_depth_m": 1.6500012300843212
+        },
+        {
+          "group": 1,
+          "near_or_far": false,
+          "probes": 10,
+          "max_hdr_error": 0.0,
+          "max_change": 0.0,
+          "camera_depth_m": 3.9999896208714554
+        },
+        {
+          "group": 2,
+          "near_or_far": true,
+          "probes": 10,
+          "max_hdr_error": 0.00022618910845589868,
+          "max_change": 0.5662201279640747,
+          "camera_depth_m": 8.19992225398822
+        }
+      ],
+      "unchanged_separate_viewmodel_pixels": 530,
+      "baseline_and_zero_radius_image_sha256": "4009a17e6a833bef36cf7b32c56a41bbdce3fa3f430d5cd89c5a6f0c914d8db4",
+      "baseline_and_diagnostics_image_sha256": "9e2c08d3c0779511c49e2531cc5c0a7c5b89e80f5b987202fb728677572603aa",
+      "active_image_sha256": "9a8e54d6b374a108c75feaf72b99b99adc885ec1c74abb9c9d90781fd0a58df6",
+      "active_target_bytes": 196608,
+      "nvrhi_errors": 0,
+      "fsr_native_aa": {
+        "sdk": "FSR 3.1.4 / FidelityFX SDK 1.1.4",
+        "composition_mask_bytes": 24576,
+        "image_sha256": "2b1a1aae364435f89425c4f258d91d6a515c49266fb4b60dc9659c0b1264a094"
+      },
+      "relocated_export": {
+        "image_sha256": "9a8e54d6b374a108c75feaf72b99b99adc885ec1c74abb9c9d90781fd0a58df6",
+        "source_unavailable": true,
+        "unchanged_bundle_files": 58,
+        "save_root_outside_bundle": true
+      }
+    },
+    "retained_capture_regression": {
+      "fixture_sha256": "38fcad30227c35673d99bbcbcf4653ca4274c8f993478666a73c6c0ecda7f3dd",
+      "evidence_sha256": "6d3b63f6093edb1ca4d450085dee1db2668b89e85106b3a76d7ed4164a90cdc6",
+      "identical_non_temporal_images": 8,
+      "retained_fsr_ticks": 3,
+      "save_preserved_sha256": "6673225cfb714e69b23bdd5a9d3a410a0be37b0c65b2fc231d4d4815f5164ff6"
+    },
+    "export_refusals": [
+      {
+        "configuration": "0.0.428 runtime descriptor and executable",
+        "message": "Runtime engine version does not match the expected engine version.",
+        "receipt_sha256": "9a9ee00d9f2cc18098accfc88870a838cd4173a58a1903055b8147d2f3113cf0"
+      },
+      {
+        "configuration": "0.0.429 descriptor fixture with the feature declaration removed",
+        "message": "Depth of field requires a compatible Vulkan runtime.",
+        "receipt_sha256": "cf94083f42a890b3d1cd4b7e4de0e426ea02d651f8b3c0a64fcd638e275c47a2"
+      }
+    ]
+  },
+  "ubuntu_headless": {
+    "binary_sha256": "e573b5cb051f76c002b891c0962be05ed6f44bf730631c4d9b2d6eb804819cd0",
+    "runtime_descriptor_sha256": "ca136861cb8059231725e1715f70e51bde03bd0b1516e949b2569cb6d9c4d71f",
+    "authoring_evidence_sha256": "0b7993decedcc85430ab67b7862ab7a8453ef453b8ded2d79bcdbdefe71d7a9e",
+    "authoring_scope": "Invalid field and range refusal, revision protection, dependency detection and frozen environment profile.",
+    "ctest_passed": [
+      "audio_save_native",
+      "authoring_core_conformance",
+      "audio_reflections_native",
+      "render_schedule_native",
+      "world_audio_native",
+      "shallow_water_native",
+      "world_water_contract",
+      "water_region_scene_native",
+      "water_region_native",
+      "world_session_native"
+    ]
+  },
+  "production_schedule": {
+    "valid_variants": 590,
+    "rejected_mutations": 1538
+  },
+  "same_pose_showreel_study": {
+    "evidence_sha256": "ae8ffc9b2c30079b053f4c4901747e74c29f53bd9073cceacbfd1f3de9ce1472",
+    "scope": "An independent still with FSR Native AA, unchanged camera and animation pose, and a focus profile applied in a guarded new world revision.",
+    "focus_distance_m": 0.9479620972260808,
+    "original_image_sha256": "7e05778898acffa85f50ee9b2efaf2b1cc1f601d8b0990ef7dbff09043465adc",
+    "focused_image_sha256": "3c638770a27f96c2897f6c807e700a7d6ed21b5c448e553d6822cbbf0acdf406"
+  },
+  "earlier_runs": [
+    {
+      "issue": "The schedule initially ordered the new pass by enum value.",
+      "disposition": "Mapped the new pass to its execution order and checked invalid uses of raw HDR."
+    },
+    {
+      "issue": "An AMD capture reached device teardown with unreleased focus resources.",
+      "disposition": "Released the pass before device shutdown and reran the native capture."
+    },
+    {
+      "issue": "The FSR binding check recognized reflection or fog only.",
+      "disposition": "Checked the selected world-radiance input and reran without and with reconstruction."
+    },
+    {
+      "issue": "The WSL export first lacked a launch permission bit, and its UNC save root was then refused.",
+      "disposition": "Used the executable mode in the fixture and ran export on a local Windows volume with the save policy intact."
+    },
+    {
+      "issue": "The Ubuntu mirror initially lacked the capture fixture\u2019s Python helper.",
+      "disposition": "Supplied the retained helper path and ran the independent authoring fixture."
+    },
+    {
+      "issue": "The first showreel study replay reused the warmup request ID for a new patch.",
+      "disposition": "Used a unique request ID in the replay and captured matching poses."
+    }
+  ],
+  "remaining": [
+    "Camera-controlled focus changes and transparent-water composition.",
+    "Representative scene performance, temporal quality and wider hardware coverage."
+  ]
+}

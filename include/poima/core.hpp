@@ -265,6 +265,11 @@ struct ScreenReflectionsDiagnostics {
     std::string_view reason;
     std::uint64_t buffer_bytes=0;
 };
+struct DepthOfFieldDiagnostics {
+    bool active=false;
+    std::string_view reason;
+    std::uint64_t buffer_bytes=0;
+};
 struct HeightFogDiagnostics {
     bool active=false;
     std::string_view reason;
@@ -347,6 +352,7 @@ struct RenderDiagnostics {
     std::optional<ScreenReflectionsDiagnostics> screen_reflections;
     TimingSummary screen_reflections_gpu;
     std::optional<HeightFogDiagnostics> height_fog;
+    std::optional<DepthOfFieldDiagnostics> depth_of_field;
     std::optional<WaterOpticsDiagnostics> water_optics;
     std::optional<AerialPerspectiveDiagnostics> aerial_perspective;
     std::optional<CloudDiagnostics> volumetric_clouds;

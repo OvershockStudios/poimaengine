@@ -636,6 +636,7 @@ public:
             if(content.needs_volumetric_clouds)result["needs_volumetric_clouds"]=true;
             if(content.needs_cloud_shadows)result["needs_cloud_shadows"]=true;
             if(content.needs_screen_reflections)result["needs_screen_reflections"]=true;
+            if(content.needs_depth_of_field)result["needs_depth_of_field"]=true;
             if(content.needs_foliage_motion)result["needs_foliage_motion"]=true;
             if(content.needs_height_fog)result["needs_height_fog"]=true;
             if(!content.provenance_records.empty()) {

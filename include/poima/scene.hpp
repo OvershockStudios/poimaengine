@@ -86,6 +86,9 @@ struct OutputGrade {
 struct ScreenReflections {
     float strength=0,max_distance_m=8,thickness_m=.1f;
 };
+struct DepthOfField {
+    float focus_distance_m=4,focus_band_m=0,radius_at_infinity_px=0,max_radius_px=0;
+};
 struct FogSpotLight {
     std::string entity;
     float scattering=0;
@@ -130,6 +133,7 @@ struct LightingEnvironment {
     std::optional<OutputGrade> output_grade;
     std::optional<ScreenReflections> screen_reflections;
     std::optional<HeightFog> height_fog;
+    std::optional<DepthOfField> depth_of_field;
     std::optional<AutoExposureSettings> auto_exposure;
     std::optional<AtmosphereSettings> atmosphere;
 };

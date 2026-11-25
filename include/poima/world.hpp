@@ -41,6 +41,7 @@ struct WorldPackageContent {
     bool needs_water_solar_scattering=false;
     bool needs_water_offshore=false;
     bool needs_screen_reflections=false;
+    bool needs_depth_of_field=false;
     bool needs_foliage_motion=false;
     bool needs_height_fog=false;
     bool needs_snow_water=false;

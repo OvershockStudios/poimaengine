@@ -147,7 +147,7 @@ void Pass::record(nvrhi::ICommandList& commands) const {
 void Pass::verify_bindings(const render_schedule::Schedule& schedule) const {
     const auto& frame = schedule.frame;
     const auto& settings = schedule.settings;
-    const bool composed = settings.screen_reflections || settings.height_fog;
+    const bool composed = render_schedule::world_radiance(frame, settings) != frame.hdr;
     const bool sprites = settings.particle_sprites;
     require(settings.reconstruction && bindings_ && bool(composition_mask_) == composed &&
             (frame.composition_mask != render_schedule::none) == composed,
