@@ -1,0 +1,540 @@
+{
+  "version": "0.0.442",
+  "authoring_schema_revision": 238,
+  "date": "2026-11-25",
+  "base_commit": "5e21a37108d1fbf5ee5f3c712cd43214f7041797",
+  "scope": "A saved fixed-tick particle-emission driver consumes the actually committed transferred water volume in a selected direction.",
+  "candidate_patch_sha256": "9d1c173137fba73df910fc62d960f23566512522534128ef24497a9e5ffbffa2",
+  "source_sha256": {
+    "CMakeLists.txt": "c1396513b0aa081339104af5d2ae809a024a38cf2449ebf466a8fe22090e12d2",
+    "cmake/runtime.json.in": "e69553e5f9fb42e14213126d84b29aca991c2d962e78cda9468a0c6d39359f18",
+    "include/poima/project.hpp": "8e990ab90d21150111a939c3a0965d0c70095bf63c8aeeb59e12b1b8b7de88f4",
+    "include/poima/runtime.hpp": "e3fdd5fab742904ed30e8d65654df9065dcb0c793bc4d7320bc36688171ae347",
+    "include/poima/water_storage.hpp": "d65936e8638f90482a021265ea56921d0ea7f765aacbbfe42c1441132a9f13fb",
+    "include/poima/world.hpp": "268745d184f21fc65349b3ef77f9041f3c9936969e8dd3ab494c08ff8f2a0b62",
+    "src/core.cpp": "432a762490b16d0d3d1f7bda0b44bdb156566903351d74b188ccd2d2b953a7aa",
+    "src/particle_emitter_json.cpp": "ce000ab14b391f20f7e99d26bd1b297842dfc1e528159c5ed13b65821429f08a",
+    "src/project.cpp": "f8649a26be466b7ad9d0fabf8068352808944ba6cdb068cef89651fca61a6313",
+    "src/runtime_particles.inc": "c2b06179b623414b7bc57fbf12f729b1a69980591d10b73a16d4d95bc2498e37",
+    "src/runtime_save.inc": "6c6d0e2e1233295c7dc4033389678e373974e410b4c4d8159d7cf87ff7d08bc9",
+    "src/water_storage.cpp": "f1f5652b430dd2d0548e74133418b310e59509578aeda176b945baf11eca3acc",
+    "src/world.cpp": "e8d2617d3988c1b72a9ec70e60d6a95e2ba40488478a3e74bb0e40008746da88",
+    "src/world_content.cpp": "a3ec8d1980bf79c17bcd467d25363b21974681063c7e9fa5c5caea558c0f7989",
+    "src/world_particles.inc": "2dc6ba26759b6d64f1812e0e28914a6579a10038fab125b29845bcb67e74d15f",
+    "src/world_schema.cpp": "2a4fca1fe4316687ef53e5418b262999dd896f59d5e5b4bd651ea58f515aa678",
+    "tests/particle_impact_burst_capture.py": "157f7e9c7ad2bd1b3f2eeca770fa40becf53b26c7d5fcf3a6a4d2540525de6f6",
+    "tests/retained_capture.py": "6d1c605fa2e81ea8387c9e263ff4620fa49584b62f6b32c5c6f673310076c835",
+    "tests/snow_foot_release_save_refusals.py": "1a5f1e2ca9425b028d81389ee3090acf5849c11d1a1d2cdcc31d8a607f014b62",
+    "tests/water_flow_particles_capture.py": "d6aed6c7f7a9f116e5284878f4a2ff4be5be999493eefa4dbe498d76849c4ff7",
+    "tests/water_overflow_capture.py": "f27e20dc1014755a1dc90182144a203525fad1e4f040f6cce947a882d0d2fea7",
+    "tests/water_reservoir_capture.py": "bb1e4352ba26140b15226c71efbf4209037a9df2f17d24d53b0a276cd7eba46e"
+  },
+  "fixture": {
+    "asset_sha256": "60de117320bb50e28d7c5a0154ba86c20e2800b56d1dbaa633726ece04d11eea",
+    "water_flow_particle_extension_version": 2,
+    "windows_headless_sha256": "a89fe671bf36b208651e6d04b3e292c73469ea513961e082baa654eedde1ed76",
+    "profiles_rejected": 4,
+    "missing_port_rejected_by_dependency_resolution": true,
+    "save_rejections": {
+      "wrong-volume": "Saved particle water flow differs from the committed port or tick.",
+      "invalid-phase": "Runtime snapshot integer is out of range."
+    },
+    "active_state_unchanged_on_save_rejection": true,
+    "flows": [
+      {
+        "tick": 0,
+        "sources": [
+          {
+            "reading": {
+              "direction": "forward",
+              "phase_microlitres": 0,
+              "port": "spill",
+              "scheduled_births": 0,
+              "tick": 0,
+              "volume_microlitres": 0
+            },
+            "counts": {
+              "dropped": 0,
+              "expired": 0,
+              "live": 0,
+              "removed": 0,
+              "spawned": 0
+            }
+          },
+          {
+            "reading": {
+              "direction": "both",
+              "phase_microlitres": 0,
+              "port": "spill",
+              "scheduled_births": 0,
+              "tick": 0,
+              "volume_microlitres": 0
+            },
+            "counts": {
+              "dropped": 0,
+              "expired": 0,
+              "live": 0,
+              "removed": 0,
+              "spawned": 0
+            }
+          },
+          {
+            "reading": {
+              "direction": "reverse",
+              "phase_microlitres": 0,
+              "port": "supply",
+              "scheduled_births": 0,
+              "tick": 0,
+              "volume_microlitres": 0
+            },
+            "counts": {
+              "dropped": 0,
+              "expired": 0,
+              "live": 0,
+              "removed": 0,
+              "spawned": 0
+            }
+          }
+        ]
+      },
+      {
+        "tick": 1,
+        "sources": [
+          {
+            "reading": {
+              "direction": "forward",
+              "phase_microlitres": 0,
+              "port": "spill",
+              "scheduled_births": 0,
+              "tick": 1,
+              "volume_microlitres": 0
+            },
+            "counts": {
+              "dropped": 0,
+              "expired": 0,
+              "live": 0,
+              "removed": 0,
+              "spawned": 0
+            }
+          },
+          {
+            "reading": {
+              "direction": "both",
+              "phase_microlitres": 0,
+              "port": "spill",
+              "scheduled_births": 0,
+              "tick": 1,
+              "volume_microlitres": 0
+            },
+            "counts": {
+              "dropped": 0,
+              "expired": 0,
+              "live": 0,
+              "removed": 0,
+              "spawned": 0
+            }
+          },
+          {
+            "reading": {
+              "direction": "reverse",
+              "phase_microlitres": 90000000,
+              "port": "supply",
+              "scheduled_births": 1,
+              "tick": 1,
+              "volume_microlitres": 210000000
+            },
+            "counts": {
+              "dropped": 0,
+              "expired": 0,
+              "live": 1,
+              "removed": 0,
+              "spawned": 1
+            }
+          }
+        ]
+      },
+      {
+        "tick": 2,
+        "sources": [
+          {
+            "reading": {
+              "direction": "forward",
+              "phase_microlitres": 134210,
+              "port": "spill",
+              "scheduled_births": 8,
+              "tick": 2,
+              "volume_microlitres": 2534210
+            },
+            "counts": {
+              "dropped": 0,
+              "expired": 0,
+              "live": 8,
+              "removed": 0,
+              "spawned": 8
+            }
+          },
+          {
+            "reading": {
+              "direction": "both",
+              "phase_microlitres": 0,
+              "port": "spill",
+              "scheduled_births": 3,
+              "tick": 2,
+              "volume_microlitres": 2534210
+            },
+            "counts": {
+              "dropped": 0,
+              "expired": 0,
+              "live": 3,
+              "removed": 0,
+              "spawned": 3
+            }
+          },
+          {
+            "reading": {
+              "direction": "reverse",
+              "phase_microlitres": 90000000,
+              "port": "supply",
+              "scheduled_births": 0,
+              "tick": 2,
+              "volume_microlitres": 0
+            },
+            "counts": {
+              "dropped": 0,
+              "expired": 0,
+              "live": 1,
+              "removed": 0,
+              "spawned": 1
+            }
+          }
+        ]
+      },
+      {
+        "tick": 3,
+        "sources": [
+          {
+            "reading": {
+              "direction": "forward",
+              "phase_microlitres": 134210,
+              "port": "spill",
+              "scheduled_births": 0,
+              "tick": 3,
+              "volume_microlitres": 0
+            },
+            "counts": {
+              "dropped": 0,
+              "expired": 0,
+              "live": 8,
+              "removed": 0,
+              "spawned": 8
+            }
+          },
+          {
+            "reading": {
+              "direction": "both",
+              "phase_microlitres": 0,
+              "port": "spill",
+              "scheduled_births": 0,
+              "tick": 3,
+              "volume_microlitres": 0
+            },
+            "counts": {
+              "dropped": 0,
+              "expired": 0,
+              "live": 3,
+              "removed": 0,
+              "spawned": 3
+            }
+          },
+          {
+            "reading": {
+              "direction": "reverse",
+              "phase_microlitres": 90000000,
+              "port": "supply",
+              "scheduled_births": 0,
+              "tick": 3,
+              "volume_microlitres": 0
+            },
+            "counts": {
+              "dropped": 0,
+              "expired": 0,
+              "live": 1,
+              "removed": 0,
+              "spawned": 1
+            }
+          }
+        ]
+      },
+      {
+        "tick": 14,
+        "sources": [
+          {
+            "reading": {
+              "direction": "forward",
+              "phase_microlitres": 134210,
+              "port": "spill",
+              "scheduled_births": 0,
+              "tick": 14,
+              "volume_microlitres": 0
+            },
+            "counts": {
+              "dropped": 0,
+              "expired": 8,
+              "live": 0,
+              "removed": 0,
+              "spawned": 8
+            }
+          },
+          {
+            "reading": {
+              "direction": "both",
+              "phase_microlitres": 0,
+              "port": "spill",
+              "scheduled_births": 0,
+              "tick": 14,
+              "volume_microlitres": 0
+            },
+            "counts": {
+              "dropped": 0,
+              "expired": 3,
+              "live": 0,
+              "removed": 0,
+              "spawned": 3
+            }
+          },
+          {
+            "reading": {
+              "direction": "reverse",
+              "phase_microlitres": 90000000,
+              "port": "supply",
+              "scheduled_births": 0,
+              "tick": 14,
+              "volume_microlitres": 0
+            },
+            "counts": {
+              "dropped": 0,
+              "expired": 1,
+              "live": 0,
+              "removed": 0,
+              "spawned": 1
+            }
+          }
+        ]
+      },
+      {
+        "tick": 15,
+        "sources": [
+          {
+            "reading": {
+              "direction": "forward",
+              "phase_microlitres": 220407,
+              "port": "spill",
+              "scheduled_births": 8,
+              "tick": 15,
+              "volume_microlitres": 2486197
+            },
+            "counts": {
+              "dropped": 0,
+              "expired": 8,
+              "live": 8,
+              "removed": 0,
+              "spawned": 16
+            }
+          },
+          {
+            "reading": {
+              "direction": "both",
+              "phase_microlitres": 0,
+              "port": "spill",
+              "scheduled_births": 3,
+              "tick": 15,
+              "volume_microlitres": 2486197
+            },
+            "counts": {
+              "dropped": 0,
+              "expired": 3,
+              "live": 3,
+              "removed": 0,
+              "spawned": 6
+            }
+          },
+          {
+            "reading": {
+              "direction": "reverse",
+              "phase_microlitres": 90000000,
+              "port": "supply",
+              "scheduled_births": 0,
+              "tick": 15,
+              "volume_microlitres": 0
+            },
+            "counts": {
+              "dropped": 0,
+              "expired": 1,
+              "live": 0,
+              "removed": 0,
+              "spawned": 1
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "windows_runtime_sha256": {
+    "bin/poima.exe": "1f0b31834f4632b5f22150232e0547ed8edd4605b1de97a345bf3285cdd0c122",
+    "bin/poima_desktop.dll": "5123dcb40f9814894252596d4f2f6377c5105da3613e574fd4689b508e9e5956",
+    "runtime.json": "9551b7e0b0cc329f2db9f85edec95be6ffaec7987d436200c5e3a4e32f919593"
+  },
+  "windows": {
+    "amd_forward": {
+      "gpu": "AMD Radeon(TM) Graphics",
+      "captures": 12,
+      "source_hidden_during_exported_run": true,
+      "immutable_export_files": 61,
+      "fresh_exported_replay_exact": true,
+      "frames": {
+        "source-spray": {
+          "image": "6138b616602fc92d1b31fc2d4b5b3db6c3be9a474e8e2c569f711026e4c76898",
+          "sprite_instances": 8
+        },
+        "source-drained": {
+          "image": "bcafa2d9f3e3a35ed6d14e298d1b716a65d5c788513bbe0215a5d85d05048767",
+          "sprite_instances": 0
+        },
+        "source-resumed": {
+          "image": "2cc6a138f761fc6f9ebb79361528a23832d5abc7ef4605371b638ea01e28f367",
+          "sprite_instances": 8
+        },
+        "warm-spray": {
+          "image": "6138b616602fc92d1b31fc2d4b5b3db6c3be9a474e8e2c569f711026e4c76898",
+          "sprite_instances": 8
+        },
+        "warm-drained": {
+          "image": "bcafa2d9f3e3a35ed6d14e298d1b716a65d5c788513bbe0215a5d85d05048767",
+          "sprite_instances": 0
+        },
+        "warm-resumed": {
+          "image": "2cc6a138f761fc6f9ebb79361528a23832d5abc7ef4605371b638ea01e28f367",
+          "sprite_instances": 8
+        },
+        "relocated-spray": {
+          "image": "6138b616602fc92d1b31fc2d4b5b3db6c3be9a474e8e2c569f711026e4c76898",
+          "sprite_instances": 8
+        },
+        "relocated-drained": {
+          "image": "bcafa2d9f3e3a35ed6d14e298d1b716a65d5c788513bbe0215a5d85d05048767",
+          "sprite_instances": 0
+        },
+        "relocated-resumed": {
+          "image": "2cc6a138f761fc6f9ebb79361528a23832d5abc7ef4605371b638ea01e28f367",
+          "sprite_instances": 8
+        },
+        "fresh-spray": {
+          "image": "6138b616602fc92d1b31fc2d4b5b3db6c3be9a474e8e2c569f711026e4c76898",
+          "sprite_instances": 8
+        },
+        "fresh-drained": {
+          "image": "bcafa2d9f3e3a35ed6d14e298d1b716a65d5c788513bbe0215a5d85d05048767",
+          "sprite_instances": 0
+        },
+        "fresh-resumed": {
+          "image": "2cc6a138f761fc6f9ebb79361528a23832d5abc7ef4605371b638ea01e28f367",
+          "sprite_instances": 8
+        }
+      },
+      "save_sha256": {
+        "source": "303b840933363796c6f07487e26298c761f7bcf800a0d032abbe55bc1d9b171b",
+        "relocated": "303b840933363796c6f07487e26298c761f7bcf800a0d032abbe55bc1d9b171b"
+      },
+      "raw_fixture_sha256": "07d77332e61535cd61bdd01d6c4da66e38b1d7198719b8ab6caf9e0ac4b4f917"
+    },
+    "nvidia_deferred": {
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "captures": 12,
+      "source_hidden_during_exported_run": true,
+      "immutable_export_files": 61,
+      "fresh_exported_replay_exact": true,
+      "frames": {
+        "source-spray": {
+          "image": "1d68b80319a39bccdf4d13bf68899385142ce8212be384e7dde8122ecb872ccf",
+          "sprite_instances": 8
+        },
+        "source-drained": {
+          "image": "273309faaa386db900791b36d46a3c27fbd501cab568b0f522f7dc80f8bdc3d5",
+          "sprite_instances": 0
+        },
+        "source-resumed": {
+          "image": "3aeecbc95175f749a79c4ba7de285170ca5083c4137875812a97d07349f13684",
+          "sprite_instances": 8
+        },
+        "warm-spray": {
+          "image": "1d68b80319a39bccdf4d13bf68899385142ce8212be384e7dde8122ecb872ccf",
+          "sprite_instances": 8
+        },
+        "warm-drained": {
+          "image": "273309faaa386db900791b36d46a3c27fbd501cab568b0f522f7dc80f8bdc3d5",
+          "sprite_instances": 0
+        },
+        "warm-resumed": {
+          "image": "3aeecbc95175f749a79c4ba7de285170ca5083c4137875812a97d07349f13684",
+          "sprite_instances": 8
+        },
+        "relocated-spray": {
+          "image": "1d68b80319a39bccdf4d13bf68899385142ce8212be384e7dde8122ecb872ccf",
+          "sprite_instances": 8
+        },
+        "relocated-drained": {
+          "image": "273309faaa386db900791b36d46a3c27fbd501cab568b0f522f7dc80f8bdc3d5",
+          "sprite_instances": 0
+        },
+        "relocated-resumed": {
+          "image": "3aeecbc95175f749a79c4ba7de285170ca5083c4137875812a97d07349f13684",
+          "sprite_instances": 8
+        },
+        "fresh-spray": {
+          "image": "1d68b80319a39bccdf4d13bf68899385142ce8212be384e7dde8122ecb872ccf",
+          "sprite_instances": 8
+        },
+        "fresh-drained": {
+          "image": "273309faaa386db900791b36d46a3c27fbd501cab568b0f522f7dc80f8bdc3d5",
+          "sprite_instances": 0
+        },
+        "fresh-resumed": {
+          "image": "3aeecbc95175f749a79c4ba7de285170ca5083c4137875812a97d07349f13684",
+          "sprite_instances": 8
+        }
+      },
+      "save_sha256": {
+        "source": "83a0ad6f3e0a9e0000e6934d46d02aa471718378fb56b8a6c2f7378652e967ae",
+        "relocated": "83a0ad6f3e0a9e0000e6934d46d02aa471718378fb56b8a6c2f7378652e967ae"
+      },
+      "raw_fixture_sha256": "ddfba7aca70f9e226a1bef0b740419e3d7e3018294feec6f3c041a9c00f6eb47"
+    }
+  },
+  "ubuntu": {
+    "focused_suites_passed": 10,
+    "headless_fixture_passed": true,
+    "sha256": {
+      "evidence.json": "0da316e4b22f048b04ddafb1417abb33ef619c1ab4cdf005633169039a4b518f",
+      "poima": "c3322b0630a0f31d312a7a7c115a38d83c8ef22486da91987a6010700114370c",
+      "runtime.json": "041792e4f69b40951eb2afe5e1f4fb4e21b81aa6614fcd5ce4171ccb1a98834c",
+      "result.xml": "fcca5e3d9db4e65761370ff1e773097a9628b537e00c09d1c4897beb566d5dc3"
+    }
+  },
+  "rejected_export": {
+    "missing_flag": "particle_water_flow",
+    "water_storage_and_scene_particles_present": true,
+    "no_bundle": true,
+    "diagnostic": "Project water-driven particles require a compatible simulation runtime."
+  },
+  "unselected_overflow_regression": {
+    "baseline": "0.0.441 deferred NVIDIA",
+    "same_plan": true,
+    "same_selected_observations": true,
+    "exact_frames": 8,
+    "prior_raw_sha256": "2ec0e7e7f2630602e529ca341ed78066b44965d952742a073469c4703137b6ff",
+    "rerun_raw_sha256": "0c61f323dd86f74dcfe0428c946421bf8ecaa2fcf42cc2d41e6d90b343727334"
+  },
+  "limits": [
+    "The effect uses authored particle spawn positions and lifetime. Falling continuous sheets and spray performance at game scale are separate."
+  ]
+}

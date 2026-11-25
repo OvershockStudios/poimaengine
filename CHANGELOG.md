@@ -2,6 +2,12 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.442
+
+- Drive particle emission from a water storage port. The emitter keeps its
+  fractional volume through save, closure and reopening.
+  [Flow-driven particles](docs/PARTICLES.md#drive-spray-from-committed-water-flow)
+
 ## 0.0.441
 
 - Add one-way reservoir overflow weirs. The crest controls when a tank

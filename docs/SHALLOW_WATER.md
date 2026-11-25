@@ -549,7 +549,9 @@ water and stable transfer per tick. [USACE spillway reference](https://www.hec.u
 Optional `action` and `action_openness` control a gate on the weir. The
 committed `storage.ports` report includes the same positive-direction
 `discharge_m3_s` field as other ports. The source and receiving water levels
-drive their existing visuals. Author any falling stream or spray separately.
+drive their existing visuals. A [flow-driven particle emitter](PARTICLES.md#drive-spray-from-committed-water-flow)
+can produce spray from the same committed transfer. A continuous falling
+sheet remains a separate effect.
 The combined ledger includes the transfer once and a save retains the
 last completed discharge. Overflow uses `.pwater` v21 and requires
 `features.water_overflow` in exported runtimes.

@@ -26,6 +26,7 @@ public:
     WaterStorage(const StorageDefinition& definition, const Grid& grid);
     double volume_m3() const noexcept;
     double capacity_m3() const noexcept;
+    std::optional<double> transfer_m3(std::string_view port_id) const noexcept;
     std::span<const std::size_t> placed() const noexcept { return placed_; }
     ReservoirSample sample(std::size_t i) const;
     std::optional<ReservoirSample> sample_world(double x_m, double z_m) const;

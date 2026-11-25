@@ -333,9 +333,11 @@ void Runtime::Impl::restore_particles(const RuntimeDefinition& definition,const 
     std::set<std::string> source_entities;
     particles::EmitterId previous_id=0;
     std::size_t active_count=0;
+    bool has_water_flow=false;
     std::map<particles::EmitterId,ParticleBinding> sources;
     for(const auto& row:source_rows) {
-        save_fields(row,{"id","entity","template_id","template_node","draining"});
+        if (row.contains("water_flow")) save_fields(row,{"id","entity","template_id","template_node","draining","water_flow"});
+        else save_fields(row,{"id","entity","template_id","template_node","draining"});
         const auto id=save_integer(row.at("id"));
         require(id>previous_id && id<frontier && emitters.contains(id),"Saved particle sources must be in allocated emitter order.");
         previous_id=id;
@@ -378,8 +380,32 @@ void Runtime::Impl::restore_particles(const RuntimeDefinition& definition,const 
         require(emitter.config==frozen->config && emitter.status.emitting==(!draining && frozen->config.emitting) &&
             emitter.status.pending_burst==0 && emitter.next_pose==emitter.status.pose,
             "Saved particle source configuration, rate state or pose differs from its committed definition.");
-        sources.emplace(id,ParticleBinding{entity,template_id,template_node,*frozen,draining});
+        auto& source=sources.emplace(id,ParticleBinding{entity,template_id,template_node,*frozen,draining}).first->second;
+        require(row.contains("water_flow")==frozen->water_flow.has_value(),"Saved particle water flow differs from frozen content.");
+        if (const auto& profile=frozen->water_flow) {
+            validate_water_flow_emitter(*frozen);
+            has_water_flow=true;
+            const auto& flow=row.at("water_flow");
+            save_fields(flow,{"tick","volume_microlitres","phase_microlitres","scheduled_births"});
+            auto& sample=source.water_flow;
+            sample.tick=save_integer(flow.at("tick"),tick);
+            sample.volume_microlitres=save_integer(flow.at("volume_microlitres"),max_water_flow_sample);
+            sample.phase_microlitres=static_cast<std::uint32_t>(save_integer(flow.at("phase_microlitres"),
+                profile->microlitres_per_particle-1));
+            sample.scheduled_births=static_cast<std::uint32_t>(save_integer(flow.at("scheduled_births"),profile->max_particles_per_tick));
+            const auto max_births=(sample.volume_microlitres+profile->microlitres_per_particle-1)/profile->microlitres_per_particle;
+            require(sample.scheduled_births<=max_births &&
+                (!sample.tick ? (!sample.volume_microlitres && !sample.phase_microlitres && !sample.scheduled_births) : frozen->config.emitting),
+                "Saved particle water flow exceeds its completed emission budget.");
+            if (!draining && frozen->config.emitting) {
+                if (sample.tick || template_id.empty())
+                    require(sample.tick==tick && sample.volume_microlitres==water_flow_volume(*profile),
+                        "Saved particle water flow differs from the committed port or tick.");
+            }
+        }
     }
+    require(save_integer(particle_extension.at("version"))==(has_water_flow ? 2u : 1u),
+        "Saved particle extension version differs from its flow source membership.");
     require(active_count==static_cast<std::size_t>(std::count_if(topology->definitions.begin(),topology->definitions.end(),
         [](const auto& row){return row.second.particle_emitter.has_value();})),"Saved active particle source membership is incomplete.");
     auto& state=*particle_runtime;
@@ -549,10 +575,18 @@ std::string Runtime::save_snapshot(const std::string& content_sha256) const {
     if(const auto* particles=s.particle_runtime.get()) {
         require(particles->system.status().tick==s.tick,"Particle system tick differs from its runtime.");
         SaveJson sources=SaveJson::array();
-        for(const auto& [id,source]:particles->sources)
+        bool has_water_flow=false;
+        for(const auto& [id,source]:particles->sources) {
             sources.push_back({{"id",id},{"entity",source.entity},{"template_id",source.template_id},
                 {"template_node",source.template_node},{"draining",source.draining}});
-        payload["particles"]={{"version",1},{"next_emitter_id",particles->next_id},{"sources",std::move(sources)},
+            if (source.definition.water_flow) {
+                has_water_flow=true;
+                const auto& flow=source.water_flow;
+                sources.back()["water_flow"]={{"tick",flow.tick},{"volume_microlitres",flow.volume_microlitres},
+                    {"phase_microlitres",flow.phase_microlitres},{"scheduled_births",flow.scheduled_births}};
+            }
+        }
+        payload["particles"]={{"version",has_water_flow ? 2u : 1u},{"next_emitter_id",particles->next_id},{"sources",std::move(sources)},
             {"state",poima::particles::snapshot_json(particles->system.snapshot())}};
         if(particles->rain)payload["particles"]["precipitation"]=s.archive_precipitation();
     }
@@ -627,7 +661,8 @@ std::unique_ptr<Runtime> Runtime::restore_snapshot_data(const RuntimeDefinition&
         particle_extension=std::move(data.at("particles"));data.erase("particles");
         if(rain_content)save_fields(particle_extension,{"version","next_emitter_id","sources","state","precipitation"});
         else save_fields(particle_extension,{"version","next_emitter_id","sources","state"});
-        require(save_integer(particle_extension.at("version"))==1,"Unsupported runtime particle extension version.");
+        const auto particle_version=save_integer(particle_extension.at("version"),2);
+        require(particle_version>=1,"Unsupported runtime particle extension version.");
     }
     SaveJson surface_extension=nullptr;
     if(data.contains("surface_marks")) {

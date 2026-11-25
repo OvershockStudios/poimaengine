@@ -1,8 +1,18 @@
 # Implementation status
 
-Updated 2026-11-25 for **0.0.441**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-25 for **0.0.442**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.442 adds [flow-driven particles](PARTICLES.md#drive-spray-from-committed-water-flow).
+A native sprayer uses water moved through a named port. The fixture queues
+eight droplets, seals the weir, observes the droplets expire without new
+births, and resumes with the retained phase. It also checks a rate cap,
+negative-direction supply and rejection of a forged save volume or phase.
+AMD forward and NVIDIA deferred match spray, dry and reopened frames from
+relocated saves. Ubuntu passed ten focused suites and the headless fixture.
+Continuous water sheets and scene-scale spray costs remain open.
+[Results and scope](evidence/m2-water-particles-442.json)
 
 Version 0.0.441 adds [reservoir overflow weirs](SHALLOW_WATER.md#spill-over-a-reservoir-crest).
 The native fixture fills a cistern above its crest, then moves 135.85 litres

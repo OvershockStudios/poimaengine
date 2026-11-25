@@ -467,6 +467,51 @@ The [water contact fixture](../tests/particle_water_contact_capture.py)
 checks the change from a solid impact to a rendered water splash when cover
 moves, including after opening a save in a relocated game.
 
+### Drive spray from committed water flow
+
+Add `water_flow` to a `ParticleEmitter` and bind `port` to a named port in
+the world's [water storage network](SHALLOW_WATER.md#fill-and-drain-connected-reservoirs).
+Place and orient the emitter where the spray should begin. Its existing
+spawn and simulation spaces, sprite, velocity range, acceleration, lifetime
+and impact settings still define the effect.
+
+```json
+{
+  "water_flow": {
+    "port": "cistern.spill",
+    "direction": "forward",
+    "microlitres_per_particle": 300000,
+    "max_particles_per_tick": 24
+  }
+}
+```
+
+Choose `forward` for positive transfers in the port's authored `from` to
+`to` direction, `reverse` for negative transfers, or `both` for either.
+`forward` is the default. Each fixed tick uses the volume that actually
+moved, rounded to the nearest microlitre. One litre equals 1,000,000
+microlitres. The volume per particle can be 1–1,000,000,000 microlitres,
+with a limit of 1–64 flow particles per emitter per tick. Fractional credit
+carries across ticks, including while the port is closed. Excess whole births
+above the limits are discarded for that tick.
+
+Use a zero continuous rate and omit `rain`. Input and gameplay bursts can
+still use this emitter. Those requests reserve their shared burst budget
+first. `emitting: false` disables the flow driver. Sealing the port stops
+flow births on the same tick, while live droplets continue moving until they
+expire or hit a surface. The effect consumes no liquid from the water ledger.
+
+`runtime.particles.inspect` reports the sampled tick, volume, fractional
+phase and scheduled births for each linked source. The ordinary particle
+counters report actual births, drops and live particles. Missing ports are
+rejected when resolving world dependencies, mounting the runtime or building
+a game. Exports require `features.particle_water_flow`. Saves retain the
+fractional phase and validate the last sample against the restored port.
+
+The [flow fixture](../tests/water_flow_particles_capture.py) checks sprayer
+births, reverse flow, clamping, an interrupted spill and fresh save replay.
+Supply `--runtime-root` and `--gpu` for the Vulkan export check.
+
 ## Native particle API
 
 The native [`poima::particles::System`](../include/poima/particles.hpp) advances

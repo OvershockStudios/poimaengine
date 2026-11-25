@@ -470,6 +470,22 @@ template<class Profile,class Visit> void visit_impact_bursts(Profile& profile,Vi
         if(burst)visit(*burst);
     }
 }
+enum class WaterFlowDirection { Forward, Reverse, Both };
+inline constexpr std::uint32_t max_water_flow_particles_per_tick=64;
+inline constexpr std::uint32_t max_microlitres_per_particle=1'000'000'000;
+struct RuntimeParticleWaterFlowProfile {
+    std::string port;
+    std::uint32_t microlitres_per_particle, max_particles_per_tick;
+    WaterFlowDirection direction=WaterFlowDirection::Forward;
+};
+struct RuntimeParticleWaterFlowSample {
+    std::uint64_t tick=0, volume_microlitres=0;
+    std::uint32_t phase_microlitres=0, scheduled_births=0;
+};
+struct RuntimeParticleWaterFlowObservation {
+    RuntimeParticleWaterFlowProfile profile;
+    RuntimeParticleWaterFlowSample sample;
+};
 struct RuntimeParticleEmitter {
     particles::EmitterConfig config;
     std::string burst_action;
@@ -478,6 +494,7 @@ struct RuntimeParticleEmitter {
     std::optional<RuntimeParticleRainProfile> rain;
     std::optional<RuntimeParticleImpactProfile> impact_burst{};
     bool water_contact=false;
+    std::optional<RuntimeParticleWaterFlowProfile> water_flow{};
 };
 struct RuntimeParticleContact {
     std::uint64_t particle;
@@ -505,6 +522,7 @@ struct RuntimeParticleSource {
     std::optional<RuntimeParticleContactSample> contacts;
     std::optional<RuntimeParticleImpactProfile> impact_burst{};
     bool water_contact=false;
+    std::optional<RuntimeParticleWaterFlowObservation> water_flow{};
 };
 struct RuntimeParticleObservation {
     bool active=false;

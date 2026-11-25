@@ -440,7 +440,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 237}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 238}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -1074,6 +1074,9 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"observation","runtime.particles.inspect"}};
     result["particle_water_contact"]={{"available",Runtime::available()},{"component","ParticleEmitter.water_contact"},
         {"surface","water"},{"runtime_feature","particle_water_contact"},{"observation","runtime.water.inspect"}};
+    result["particle_water_flow"]={{"available",Runtime::available()},{"component","ParticleEmitter.water_flow"},
+        {"max_particles_per_tick",max_water_flow_particles_per_tick},{"runtime_feature","particle_water_flow"},
+        {"observation","runtime.particles.inspect"}};
     result["water_buoyancy"]={{"available",Runtime::available()},{"component","BoxCollider.buoyancy"},
         {"max_bodies",water::max_buoyant_bodies},{"runtime_feature","water_buoyancy"},{"observation","runtime.water.inspect"}};
     result["water_currents"]={{"available",Runtime::available()},{"profile","world.water.plan.currents"},

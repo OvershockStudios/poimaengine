@@ -172,6 +172,13 @@ double WaterStorage::capacity_m3() const noexcept {
         [](double total, const ReservoirDefinition& tank) { return total + tank.capacity_m3; });
 }
 
+std::optional<double> WaterStorage::transfer_m3(std::string_view port_id) const noexcept {
+    const auto found=std::lower_bound(ports_.begin(),ports_.end(),port_id,
+        [](const Port& port,std::string_view name){ return port.definition.id<name; });
+    if (found==ports_.end() || found->definition.id!=port_id) return std::nullopt;
+    return transfers_[static_cast<std::size_t>(found-ports_.begin())];
+}
+
 ReservoirSample WaterStorage::sample(std::size_t i) const {
     const auto& tank = reservoirs_.at(i);
     return {tank.id, tank.footprint.value(), tank.floor_height_m, tank.floor_height_m + volumes_[i] / tank.area_m2};

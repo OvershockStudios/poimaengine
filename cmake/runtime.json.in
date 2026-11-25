@@ -38,6 +38,7 @@
     "particle_collisions": @POIMA_RUNTIME_SIMULATION@,
     "particle_impact_bursts": @POIMA_RUNTIME_SIMULATION@,
     "particle_water_contact": @POIMA_RUNTIME_SIMULATION@,
+    "particle_water_flow": @POIMA_RUNTIME_SIMULATION@,
     "water_buoyancy": @POIMA_RUNTIME_SIMULATION@,
     "water_currents": @POIMA_RUNTIME_SIMULATION@,
     "water_surface_wakes": @POIMA_RUNTIME_WATER_OPTICS@,

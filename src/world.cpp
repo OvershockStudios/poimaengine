@@ -613,6 +613,7 @@ public:
             if(content.needs_particle_collisions)result["needs_particle_collisions"]=true;
             if(content.needs_particle_impact_bursts)result["needs_particle_impact_bursts"]=true;
             if(content.needs_particle_water_contact)result["needs_particle_water_contact"]=true;
+            if(content.needs_particle_water_flow)result["needs_particle_water_flow"]=true;
             if(content.needs_water_buoyancy)result["needs_water_buoyancy"]=true;
             if(content.needs_water_currents)result["needs_water_currents"]=true;
             if(content.needs_water_surface_wakes)result["needs_water_surface_wakes"]=true;

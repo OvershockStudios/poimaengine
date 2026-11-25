@@ -120,7 +120,7 @@ Json curve_schema(double max_multiplier) {
 RuntimeParticleEmitter parse_particle_emitter(const Json& value) {
     fields(value, {"spawn_space", "simulation_space", "lifetime_ticks", "size_m", "linear_rgb"},
         {"seed", "particles_per_second", "live_limit", "emitting", "offset_m", "velocity_m_s", "acceleration_m_s2",
-            "burst", "sprite", "rain", "surface_collision", "water_contact", "impact_burst"});
+            "burst", "sprite", "rain", "surface_collision", "water_contact", "impact_burst", "water_flow"});
     RuntimeParticleEmitter result;
     auto& config = result.config;
     config.spawn_space = space(value.at("spawn_space"));
@@ -219,6 +219,23 @@ RuntimeParticleEmitter parse_particle_emitter(const Json& value) {
             integer(rain.at("nm_per_particle"), 1, wetness::max_rain_nm),
             integer(rain.at("max_particles_per_tick"), 1, max_rain_particles_per_tick)};
     }
+    if (value.contains("water_flow")) {
+        const auto& flow=value.at("water_flow");
+        fields(flow,{"port","microlitres_per_particle","max_particles_per_tick"},{"direction"});
+        require(!result.rain && !config.particles_per_second,
+            "A water-driven emitter requires zero continuous rate and cannot use rain.");
+        require(flow.at("port").is_string() && valid_input_action_name(flow.at("port").get_ref<const std::string&>()),
+            "A water-driven emitter needs a named storage port.");
+        auto& profile=result.water_flow.emplace(RuntimeParticleWaterFlowProfile{flow.at("port"),
+            integer(flow.at("microlitres_per_particle"),1,max_microlitres_per_particle),
+            integer(flow.at("max_particles_per_tick"),1,max_water_flow_particles_per_tick)});
+        if (flow.contains("direction")) {
+            const auto& direction=flow.at("direction");
+            require(direction=="forward" || direction=="reverse" || direction=="both","Water flow direction must be forward, reverse or both.");
+            if (direction=="reverse") profile.direction=WaterFlowDirection::Reverse;
+            if (direction=="both") profile.direction=WaterFlowDirection::Both;
+        }
+    }
     return result;
 }
 
@@ -244,6 +261,12 @@ Json particle_emitter_schema() {
         {"max_particles_per_tick", range("integer", 1, max_rain_particles_per_tick)}},
         {"nm_per_particle", "max_particles_per_tick"});
     rain["description"] = "Authored world-space rain source driven by accepted weather doses. Shelter is sampled at the emitter origin each active tick.";
+    auto water_flow=object({{"port",{{"type","string"},{"pattern","^[a-z][a-z0-9_.-]{0,63}$"}}},
+        {"microlitres_per_particle",range("integer",1,max_microlitres_per_particle)},
+        {"max_particles_per_tick",range("integer",1,max_water_flow_particles_per_tick)},
+        {"direction",{{"enum",{"forward","reverse","both"}},{"default","forward"}}}},
+        {"port","microlitres_per_particle","max_particles_per_tick"});
+    water_flow["description"]="Emit from the entity pose using the committed volume transferred through a named water storage port.";
     const auto impact_target = object({{"emitter", {{"type", "string"}, {"pattern", "^[0-9a-f]{32}$"},
         {"not", {{"const", "00000000000000000000000000000000"}}}}},
         {"count", range("integer", 1, max_particle_impact_burst)}}, {"emitter", "count"});
@@ -264,13 +287,15 @@ Json particle_emitter_schema() {
         {"rain", std::move(rain)}, {"surface_collision", {{"const", "expire"},
             {"description", "Retire world particles on a swept centre contact with a static or kinematic collider."}}},
         {"water_contact", {{"const", true}, {"description", "Include the committed water surface in swept contacts."}}},
-        {"impact_burst", std::move(impact_burst)}},
+        {"impact_burst", std::move(impact_burst)},{"water_flow",std::move(water_flow)}},
         {"spawn_space", "simulation_space", "lifetime_ticks", "size_m", "linear_rgb"});
     result["description"] = "Fixed-tick billboards with optional translucent cooked image sprites. Spawn space selects birth axes. Simulation space selects whether live particles follow the source. Burst actions use named pressed edges. Authored rain uses world spaces, zero continuous rate and no explicit bursts.";
     result["if"] = {{"required", {"surface_collision"}}};
     result["then"] = {{"required", {"live_limit"}}, {"properties", {{"simulation_space", {{"const", "world"}}},
         {"live_limit", range("integer", 1, particles::max_contact_particles_per_emitter)}}}};
     result["dependentRequired"] = {{"impact_burst", {"surface_collision"}}, {"water_contact", {"surface_collision"}}};
+    result["allOf"]=Json::array({Json{{"if",{{"required",{"water_flow"}}}},
+        {"then",{{"not",{{"required",{"rain"}}}},{"properties",{{"particles_per_second",{{"const",0}}}}}}}}});
     return result;
 }
 
@@ -279,7 +304,7 @@ Json particle_observation_schema() {
         {"tick", {{"type", "integer"}, {"minimum", 0}, {"maximum", 9007199254740991ULL}}},
         {"after", {{"type", "string"}, {"pattern", "^[1-9][0-9]{0,19}$"}}},
         {"limit", {{"type", "integer"}, {"minimum", 1}, {"maximum", 64}, {"default", 32}}}}, {"session_id", "tick"});
-    result["description"] = "Read committed counts, source poses and ordered world-space particles. Sprite rows include sampled presentation. Authored rain adds its current window and last sampled shelter, phase and scheduled births. Continue after the returned decimal ID at the same tick.";
+    result["description"] = "Read committed counts, source poses and ordered world-space particles. Sprite rows include sampled presentation. Authored rain adds its current window and last sampled shelter. Water-flow sources report port, direction, volume, fractional phase and scheduled births. Continue after the returned decimal ID at the same tick.";
     return result;
 }
 } // namespace poima

@@ -7,6 +7,7 @@
         bool draining=false;
         RuntimeParticleRainSample rain{};
         std::optional<RuntimeParticleContactSample> contacts{};
+        RuntimeParticleWaterFlowSample water_flow{};
     };
     struct ParticleRuntime {
         ParticleRuntime()=default;
@@ -78,6 +79,17 @@
         }
         return {};
     }
+    void validate_water_flow_emitter(const RuntimeParticleEmitter& definition) const {
+        if (const auto& flow=definition.water_flow) {
+            require(!definition.rain && definition.config.particles_per_second==0 &&
+                flow->microlitres_per_particle>=1 && flow->microlitres_per_particle<=max_microlitres_per_particle &&
+                flow->max_particles_per_tick>=1 && flow->max_particles_per_tick<=max_water_flow_particles_per_tick &&
+                (flow->direction==WaterFlowDirection::Forward || flow->direction==WaterFlowDirection::Reverse ||
+                    flow->direction==WaterFlowDirection::Both),"Invalid water flow particle profile.");
+            require(water_region && water_region->storage() && water_region->storage()->transfer_m3(flow->port),
+                "Particle water flow needs a named port in the committed storage network.");
+        }
+    }
     void synchronize_particles() {
         if(!particle_runtime)return;
         auto& state=*particle_runtime;
@@ -102,6 +114,7 @@
                 const auto& definition=*entity.particle_emitter;
                 require(!definition.water_contact || definition.config.expire_on_contact,
                     "Particle water contact requires surface collision.");
+                validate_water_flow_emitter(definition);
                 require(definition.burst_count<=particles::max_burst && (definition.burst_count ? valid_input_action_name(definition.burst_action) : definition.burst_action.empty()),
                     "Particle emitter requires a valid named action and positive bounded burst count together.");
                 if(const auto& profile=definition.impact_burst) {
@@ -149,6 +162,32 @@
             const auto pose=state.system.emitter_status(id).pose;
             sample.blocker=rain_shelter(source.entity,pose.position_m);
             if(!sample.blocker && sample.scheduled_births)state.system.burst(id,sample.scheduled_births);
+        }
+    }
+    static constexpr std::uint64_t microlitres_per_cubic_metre=1'000'000'000;
+    static constexpr std::uint64_t max_water_flow_sample=static_cast<std::uint64_t>(
+        water::max_storage_rate * water::step_seconds * microlitres_per_cubic_metre + .5);
+    std::uint64_t water_flow_volume(const RuntimeParticleWaterFlowProfile& profile) const {
+        const auto transfer=water_region->storage()->transfer_m3(profile.port).value();
+        const double volume=profile.direction==WaterFlowDirection::Both ? std::abs(transfer) :
+            std::max(0.,profile.direction==WaterFlowDirection::Reverse ? -transfer : transfer);
+        return static_cast<std::uint64_t>(std::floor(volume*microlitres_per_cubic_metre+.5));
+    }
+    void step_water_flow_particles() {
+        auto& state=*particle_runtime;
+        for (auto& [id,source] : state.sources) {
+            if (source.draining || !source.definition.water_flow || !source.definition.config.emitting) continue;
+            const auto& profile=*source.definition.water_flow;
+            auto& sample=source.water_flow;
+            sample.tick=tick;
+            sample.volume_microlitres=water_flow_volume(profile);
+            const auto cap=std::uint64_t(profile.microlitres_per_particle)*profile.max_particles_per_tick;
+            const auto credit=sample.phase_microlitres+std::min(sample.volume_microlitres,cap);
+            sample.phase_microlitres=static_cast<std::uint32_t>(credit%profile.microlitres_per_particle);
+            const auto pending=state.system.emitter_status(id).pending_burst;
+            sample.scheduled_births=static_cast<std::uint32_t>(std::min<std::uint64_t>(
+                credit/profile.microlitres_per_particle,particles::max_burst-pending));
+            if (sample.scheduled_births) state.system.burst(id,sample.scheduled_births);
         }
     }
     static particles::Pose particle_impact_pose(const RuntimeRayHit& hit,const particles::Vec3& direction) {
@@ -226,6 +265,7 @@
         }
         game_particle_bursts.clear();
         step_precipitation(rain_nm);
+        step_water_flow_particles();
         for(auto& [id,source]:state.sources) {
             (void)id;
             if(source.definition.config.expire_on_contact)
@@ -269,7 +309,9 @@
             result.sources.push_back({id,source.entity,source.draining,state.system.emitter_status(id),sprite,
                 std::move(texture),source.definition.rain ? std::optional(source.rain) : std::nullopt,
                 source.definition.config.expire_on_contact,source.contacts,
-                source.draining ? std::nullopt : source.definition.impact_burst,source.definition.water_contact});
+                source.draining ? std::nullopt : source.definition.impact_burst,source.definition.water_contact,
+                source.definition.water_flow ? std::optional(RuntimeParticleWaterFlowObservation{
+                    *source.definition.water_flow,source.water_flow}) : std::nullopt});
         }
         return result;
     }

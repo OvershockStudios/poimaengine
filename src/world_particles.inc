@@ -34,6 +34,14 @@
                 sources.back()["rain"]={{"phase",rain.phase},{"scheduled_births",rain.scheduled_births},
                     {"blocker",rain.blocker ? Json(*rain.blocker) : Json(nullptr)}};
             }
+            if (source.water_flow) {
+                const auto& [profile,sample]=*source.water_flow;
+                const auto direction=profile.direction==WaterFlowDirection::Both ? "both" :
+                    profile.direction==WaterFlowDirection::Reverse ? "reverse" : "forward";
+                sources.back()["water_flow"]={{"port",profile.port},{"direction",direction},
+                    {"tick",sample.tick},{"volume_microlitres",sample.volume_microlitres},
+                    {"phase_microlitres",sample.phase_microlitres},{"scheduled_births",sample.scheduled_births}};
+            }
             if(source.expire_on_contact) {
                 auto& trace=sources.back()["surface_collision"];
                 trace={{"mode","expire"},{"last_step",nullptr}};

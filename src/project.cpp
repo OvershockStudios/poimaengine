@@ -351,6 +351,7 @@ Json project_summary(const Project& p) {
     if(p.content.needs_particle_collisions)result["needs_particle_collisions"]=true;
     if(p.content.needs_particle_impact_bursts)result["needs_particle_impact_bursts"]=true;
     if(p.content.needs_particle_water_contact)result["needs_particle_water_contact"]=true;
+    if(p.content.needs_particle_water_flow)result["needs_particle_water_flow"]=true;
     if(p.content.needs_water_buoyancy)result["needs_water_buoyancy"]=true;
     if(p.content.needs_water_currents)result["needs_water_currents"]=true;
     if(p.content.needs_water_surface_wakes)result["needs_water_surface_wakes"]=true;
@@ -529,6 +530,8 @@ void require_scene_feature_support(const WorldPackageContent& content, const Jso
         "Project particle impact bursts require a compatible simulation runtime.");
     require(!content.needs_particle_water_contact || runtime.at("features").value("particle_water_contact", false),
         "Project particle water contacts require a compatible simulation runtime.");
+    require(!content.needs_particle_water_flow || runtime.at("features").value("particle_water_flow",false),
+        "Project water-driven particles require a compatible simulation runtime.");
     require(!content.needs_water_buoyancy || runtime.at("features").value("water_buoyancy",false),
         "Project buoyant boxes require a compatible simulation runtime.");
     require(!content.needs_water_currents || runtime.at("features").value("water_currents",false),
@@ -565,7 +568,7 @@ Json runtime_spec(const std::string& bytes,std::string_view expected_version=bui
     fields(features,{"simulation","renderer","audio","managed","editor","native_gameplay","game_ui",
         "navigation","navigation_obstacles","asset_provenance","project_post_effects","water_regions","water_rain",
         "water_ripples","water_wave_layers","water_listener_audio","water_optics","water_refraction","water_caustics","water_shore_foam","water_terrain_fit","water_surface_swell","water_swell_variation","water_rough_reflection","water_solar_scattering","water_offshore","water_sprite_optics","snow_water_regions","scene_particles","scene_particle_sprites",
-        "particle_collisions","particle_impact_bursts","particle_water_contact","water_buoyancy","water_currents","water_surface_wakes","water_body_displacement","water_storage","water_reservoirs","water_overflow","collision_surfaces","surface_marks","surface_mark_masks","mesh_lod","output_grade","auto_exposure","atmosphere_sky","orbital_atmosphere","aerial_perspective","volumetric_clouds","cloud_shadows","screen_reflections","depth_of_field","foliage_motion",
+        "particle_collisions","particle_impact_bursts","particle_water_contact","particle_water_flow","water_buoyancy","water_currents","water_surface_wakes","water_body_displacement","water_storage","water_reservoirs","water_overflow","collision_surfaces","surface_marks","surface_mark_masks","mesh_lod","output_grade","auto_exposure","atmosphere_sky","orbital_atmosphere","aerial_perspective","volumetric_clouds","cloud_shadows","screen_reflections","depth_of_field","foliage_motion",
         "height_fog","physics_checkpoint","fsr3_upscaler"},{"simulation","renderer","audio","managed","editor"});
     for(const auto& feature:features)require(feature.is_boolean(),"Runtime feature flags must be Boolean.");
     require(!features.value("particle_collisions",false) || features.at("simulation")==true,
@@ -575,6 +578,9 @@ Json runtime_spec(const std::string& bytes,std::string_view expected_version=bui
     require(!features.value("particle_water_contact",false) ||
         (features.value("particle_collisions",false) && features.value("water_regions",false)),
         "Runtime particle water contacts require particle collisions and water regions.");
+    require(!features.value("particle_water_flow",false) ||
+        (features.value("scene_particles",false) && features.value("water_storage",false)),
+        "Runtime water-driven particles require scene particles and water storage.");
     require(!features.value("water_buoyancy",false) ||
         (features.at("simulation")==true && features.value("water_regions",false)),
         "Runtime buoyancy requires simulation and water regions.");
@@ -712,6 +718,7 @@ VerifiedGame verify_game(const std::string& filename,std::string_view expected_v
     result.definition.needs_particle_collisions=content.needs_particle_collisions;
     result.definition.needs_particle_impact_bursts=content.needs_particle_impact_bursts;
     result.definition.needs_particle_water_contact=content.needs_particle_water_contact;
+    result.definition.needs_particle_water_flow=content.needs_particle_water_flow;
     result.definition.needs_water_buoyancy=content.needs_water_buoyancy;
     result.definition.needs_water_currents=content.needs_water_currents;
     result.definition.needs_water_surface_wakes=content.needs_water_surface_wakes;
@@ -1177,6 +1184,7 @@ Reply inspect_game(const std::string& manifest,const std::string& expected_bundl
         if(game.definition.needs_particle_collisions)result["needs_particle_collisions"]=true;
         if(game.definition.needs_particle_impact_bursts)result["needs_particle_impact_bursts"]=true;
         if(game.definition.needs_particle_water_contact)result["needs_particle_water_contact"]=true;
+        if(game.definition.needs_particle_water_flow)result["needs_particle_water_flow"]=true;
         if(game.definition.needs_water_buoyancy)result["needs_water_buoyancy"]=true;
         if(game.definition.needs_water_currents)result["needs_water_currents"]=true;
         if(game.definition.needs_water_surface_wakes)result["needs_water_surface_wakes"]=true;
