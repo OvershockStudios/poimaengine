@@ -51,7 +51,9 @@ The preview shares unit-box geometry, uploads per-object transform/material cons
 
 Stale revisions fail with `-32009`; a missing camera/component with `-32004`; invalid settings, camera transforms or reserved/existing output paths with `-32602`; an unbuilt renderer with `-32003`; and renderer failure with `-32020`. Rendering failure does not mutate the world. A filesystem error during BMP writing can leave an incomplete output file; discard artifacts from failed requests. Existing-file protection is a preflight check, not a lock against unrelated concurrent writers.
 
-Each capture creates and destroys its own graphics context, serializes GPU work and presents two frames. This proves the authoring-to-image path, not player frame times or viewport iteration latency. Full device-loss recovery, Khronos validation, persistent GPU caches, asynchronous captures and a production render graph remain unfinished. The [desktop editor](DESKTOP_EDITOR.md) separately provides persistent Scene/Game panels, camera controls and CPU geometry picking.
+By default each capture creates and destroys its graphics context and presents
+two frames. The [desktop editor](DESKTOP_EDITOR.md) provides persistent
+Scene and Game panels, camera controls and CPU geometry picking.
 
 Poima 0.0.12 adds independent camera/shadow frustum rejection and a `render_diagnostics` result. Optional Boolean `culling` (default true) and `profile` (default false) enable comparison and CPU/GPU intervals. See [the diagnostics contract](RENDER_DIAGNOSTICS.md) for counter definitions and timing boundaries.
 
@@ -59,6 +61,46 @@ The Vulkan context owns capture-copy scheduling, coordinate mapping, and
 submission retirement. The readback module allocates the staging resources,
 decodes retired probe values, and writes the BMP with the selected overwrite
 policy. [Readback implementation](../src/render_readback.cpp)
+
+## Capture successive runtime ticks
+
+Set `reuse_renderer: true` on `runtime.capture` to keep one Vulkan device,
+window and resource cache across matching requests on the same world owner.
+Start the runtime, then alternate guarded `runtime.step` calls with captures
+at the returned tick. Each capture needs a fresh BMP path.
+
+```json
+{
+  "session_id": "00000000000000000000000000000001",
+  "tick": 42,
+  "camera": "00000000000000000000000000000064",
+  "path": "frames/00042.bmp",
+  "samples": 1,
+  "capture_frames": 1,
+  "reuse_renderer": true
+}
+```
+
+The response adds `renderer_reused`. It is false on the first sample or
+after changing the camera or render options. Keep the same option values and
+field presence across a take. Tick, guards, path and the number of
+presentations can change. The response describes the current immutable runtime
+snapshot and reports the number of presentations in this request. Diagnostics
+such as completed submissions accumulate across the renderer lifetime.
+Temporal effects can use earlier samples in the take. Use the default capture
+for an independent frame initialized from its own snapshot.
+
+Call `runtime.capture.release` with the active `session_id` to close the
+renderer. The reply reports whether it released one. Ordinary captures,
+player startup, runtime replacement, runtime stop and owner shutdown also
+release it. A rendering failure discards the renderer. A rejected guard or
+already occupied output leaves the current renderer intact. Use a fresh
+output path for a retry. Packaged games require an output outside the bundle.
+This path still requires Windows Vulkan and a display.
+
+The [retained capture fixture](../tests/retained_capture.py) compares moving
+frames with isolated captures, exercises renderer release and save
+restoration, and can repeat the workflow in a relocated export.
 
 ## Verification
 

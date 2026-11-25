@@ -5,6 +5,7 @@
 #include "world_stdio.hpp"
 #include "poima/animation.hpp"
 #include "poima/scene.hpp"
+#include "render_capture_session.hpp"
 #include "poima/runtime.hpp"
 #include "poima/snow.hpp"
 #include "poima/snow_releases.hpp"
@@ -146,6 +147,8 @@ class World {
     bool exists_ = false;
     GameplaySaveLedger gameplay_save_ledger_;
     std::unique_ptr<Runtime> runtime_;
+    mutable std::unique_ptr<SceneCaptureSession> capture_renderer_;
+    mutable Json capture_renderer_key_;
     std::shared_ptr<GamepadHost> gamepad_host_;
     RuntimeDefinition runtime_definition_;
     Json runtime_document_;
@@ -843,8 +846,12 @@ public:
     }
     Json capture(const Json& params, bool live=false,bool asset_preview=false) const {
         std::optional<float> ui_scale;
+        bool reuse_renderer = false;
         if(live) {
-            fields(params, {"session_id","tick","structure_revision","material_revision","ui_revision","ui_scale","camera","path","width","height","gpu","samples","viewmodel_samples","culling","draw_instancing","gpu_visibility","clustered_lighting","frames_in_flight","scene_debug_view","scene_product_probes","lighting_path","ambient_occlusion","reconstruction","shadow_filter","post_aa","capture_frames","profile"}, {"session_id","tick","camera","path"});
+            fields(params, {"session_id","tick","structure_revision","material_revision","ui_revision","ui_scale","camera","path","width","height","gpu","samples","viewmodel_samples","culling","draw_instancing","gpu_visibility","clustered_lighting","frames_in_flight","scene_debug_view","scene_product_probes","lighting_path","ambient_occlusion","reconstruction","shadow_filter","post_aa","capture_frames","profile","reuse_renderer"}, {"session_id","tick","camera","path"});
+            require(!params.contains("reuse_renderer") || params.at("reuse_renderer").is_boolean(),
+                "Capture reuse_renderer must be Boolean.");
+            reuse_renderer = params.value("reuse_renderer", false);
             runtime_guard(params); require(revision(params.at("tick"))==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
             structure_read_guard(params);
             material_guard(params,"material_revision");
@@ -869,6 +876,11 @@ public:
         }
         if(!live) require(doc_.at("entities").contains(camera_id) && doc_.at("entities").at(camera_id).at("components").contains("Camera"), "Camera entity/component does not exist.", -32004);
         const auto options=decode_render_options(params,path_,asset_directory());
+        if (reuse_renderer && read_only_) {
+            const fs::path output(std::u8string(options.capture.begin(), options.capture.end()));
+            require(!path_components_contain(output, protected_root_),
+                "Retained capture output must be outside the immutable game bundle.");
+        }
         SceneSnapshot snapshot;Json animation_info=nullptr;
         snapshot.world_id = doc_.at("world_id"); snapshot.revision = revision(doc_.at("revision")); snapshot.camera_id = camera_id;
         try {
@@ -904,11 +916,35 @@ public:
             throw Error(-32003,"Native UI presentation is not available in this build.");
 #endif
         }
-        const auto report = run_render_scene(options, snapshot);
+        bool renderer_reused = false;
+        RenderReport report;
+        if (reuse_renderer) {
+            auto key = params;
+            for (const auto* field : {"tick","path","capture_frames","structure_revision","material_revision","ui_revision","reuse_renderer"})
+                key.erase(field);
+            renderer_reused = capture_renderer_ && capture_renderer_key_==key;
+            if (!renderer_reused) {
+                capture_renderer_.reset();
+                capture_renderer_key_ = std::move(key);
+                capture_renderer_ = std::make_unique<SceneCaptureSession>();
+            }
+            try {
+                report = capture_renderer_->capture(options, snapshot);
+                if (!report.success || !report.diagnostics.scene_presented ||
+                    !same_renderer_snapshot(*report.diagnostics.scene_presented,renderer_scene_result(snapshot)))
+                    capture_renderer_.reset();
+            } catch (...) {
+                capture_renderer_.reset();
+                throw;
+            }
+        } else {
+            capture_renderer_.reset();
+            report = run_render_scene(options, snapshot);
+        }
         require(report.available, report.detail, -32003);
         require(report.success, report.detail, -32020);
         require(report.diagnostics.scene_presented && same_renderer_snapshot(*report.diagnostics.scene_presented,renderer_scene_result(snapshot)),"Capture presentation receipt differs from its immutable scene snapshot.",-32020);
-        return {{"world_id", snapshot.world_id}, {"revision", snapshot.revision}, {"camera", camera_id},
+        Json result = {{"world_id", snapshot.world_id}, {"revision", snapshot.revision}, {"camera", camera_id},
             {"source",asset_preview ? "asset_animation" : live ? "runtime" : "authored"}, {"animation",animation_info}, {"tick",live ? Json(runtime_->inspect().tick) : Json(nullptr)},
             {"session_id",live ? Json(runtime_id_) : Json(nullptr)}, {"material_revision",snapshot.material_revision}, {"ui_revision",live ? Json(runtime_->ui_model().revision()) : Json(nullptr)}, {"camera_world", snapshot.camera_world}, {"lens", lens}, {"object_count", snapshot.world_object_count()},{"lighting",lighting_json(snapshot.lighting)},
             {"path", options.capture}, {"format", "BMP"}, {"width", report.width}, {"height", report.height},
@@ -917,6 +953,8 @@ public:
             {"frames_presented", report.frames_presented}, {"capture_written", report.capture_written},
             {"nvrhi_errors", report.validation_errors}, {"build_version", build_metadata().version},{"render_diagnostics",render_diagnostics(report.diagnostics)},
             {"renderer", "forward static and skinned geometry; legacy preview or GGX metallic/roughness with PNG/JPEG material maps; authored lighting with optional cascaded directional, point and spot shadow maps; explicit preview fallback"}};
+        if (reuse_renderer) result["renderer_reused"] = renderer_reused;
+        return result;
     }
     static Json describe_water_audio(const AudioWaterMedium& medium) {
         return {{"submersion_m", medium.submersion_m}, {"target_blend", medium.blend},
@@ -1139,6 +1177,7 @@ public:
         receipts.push_back({{"params",normalized},{"result",Json::object()}});
         PlayerSessionAdapter session(*this);
         BlockingPreferenceScope preference_scope(*this,prepared.gameplay_preferences);
+        capture_renderer_.reset();
         const auto report=run_player(prepared.options,session,player_progress_);
         // A final Tick can accept a write immediately before playback ends.
         // Observe completed work without adding storage waits to the player.
@@ -1412,6 +1451,13 @@ public:
         if(method=="runtime.audio.inspect" || method=="runtime.audio.capture")return audio_dispatch(method,params,true);
         if(method.starts_with("runtime.gameplay."))return gameplay_dispatch(method,params);
         if(method=="runtime.capture") return capture(params,true);
+        if(method=="runtime.capture.release") {
+            fields(params,{"session_id"},{"session_id"});
+            runtime_guard(params);
+            const bool released = bool(capture_renderer_);
+            capture_renderer_.reset();
+            return {{"session_id",runtime_id_},{"released",released}};
+        }
         if(method=="runtime.play") return play(params);
         if(method=="runtime.start") {
             fields(params,{"session_id","revision"},{"session_id","revision"});
@@ -1439,7 +1485,7 @@ public:
         if(method=="runtime.stop") {
             fields(params,{"session_id"},{"session_id"}); const auto id=identifier(params.at("session_id"));
             if(!runtime_ && stopped_runtime_id_==id) return {{"session_id",id},{"stopped",true},{"replayed",true}};
-            runtime_guard(params);require(!runtime_->gameplay_saves().pending(),"Resolve pending gameplay save before stopping the runtime.",-32070); stopped_runtime_id_=id; runtime_.reset();runtime_gameplay_config_.reset(); runtime_receipts_.clear();
+            runtime_guard(params);require(!runtime_->gameplay_saves().pending(),"Resolve pending gameplay save before stopping the runtime.",-32070); stopped_runtime_id_=id; capture_renderer_.reset();runtime_.reset();runtime_gameplay_config_.reset(); runtime_receipts_.clear();
             invalidate_runtime_source_stale();
             return {{"session_id",id},{"stopped",true},{"replayed",false}};
         }
@@ -1994,7 +2040,7 @@ std::string WorldSession::request(std::string_view line,WorldRequestScope scope)
         const bool discovery=method=="world.describe" || method=="world.describe.select";
         require(!shared || method!="session.close","Disconnect the client to detach; host.shutdown stops a headless shared host.",-32080);
         if(scope==WorldRequestScope::shared_editor)
-            require(method!="world.capture" && method!="runtime.capture" && method!="asset.animation.capture" && method!="runtime.play",
+            require(method!="world.capture" && method!="runtime.capture" && method!="runtime.capture.release" && method!="asset.animation.capture" && method!="runtime.play",
                     "This operation creates a graphics lifetime; use editor.capture or the editor's runtime controls in a shared editor.",-32080);
         if(method=="host.shutdown")require(scope==WorldRequestScope::shared_headless,"Only a shared headless host supports host.shutdown.",-32080);
         if(method=="player.start" || method=="player.control" || method=="player.capture" || method=="player.capture_current" || method=="player.settings.transact")
@@ -2013,7 +2059,7 @@ std::string WorldSession::request(std::string_view line,WorldRequestScope scope)
             result["methods"].erase("session.close");
             if(scope==WorldRequestScope::shared_headless)result["methods"]["host.shutdown"]=object_schema(Json::object());
             else {
-                result["unavailable_methods"]={"world.capture","runtime.capture","asset.animation.capture","runtime.play"};
+                result["unavailable_methods"]={"world.capture","runtime.capture","runtime.capture.release","asset.animation.capture","runtime.play"};
                 for(const auto& name:result["unavailable_methods"])result["methods"].erase(name.get<std::string>());
                 result["editor_discovery"]="editor.describe";
             }

@@ -423,7 +423,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 223}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 224}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -892,6 +892,9 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     auto capture=methods["world.capture"];
     capture["properties"].erase("revision"); capture["properties"]["session_id"]=id; capture["properties"]["tick"]=rev;capture["properties"]["ui_revision"]=rev;
     capture["required"]={"session_id","tick","camera","path"}; methods["runtime.capture"]=capture;
+    methods["runtime.capture"]["properties"]["reuse_renderer"]={{"type","boolean"},{"default",false},
+        {"description","Retain one renderer for subsequent matching live captures. Temporal history may carry between samples."}};
+    methods["runtime.capture.release"]=object_schema({{"session_id",id}},{"session_id"});
     auto play=object_schema({{"session_id",id},{"request_id",id},{"expected_tick",rev},{"controller",id},{"camera",id},
         {"mode",{{"enum",{"interactive","replay","background"}}}}, {"max_frames",{{"type","integer"},{"minimum",0},{"maximum",36000}}}},
         {"session_id","request_id","expected_tick","camera","mode"});

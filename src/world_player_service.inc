@@ -667,6 +667,7 @@
             candidate->prepared=std::move(prepared);candidate->observed_session=runtime_id_;
             candidate->session=std::make_unique<PlayerSessionAdapter>(*this);
             candidate->prepared.options.player_generation=player_generation_+1;
+            capture_renderer_.reset();
             candidate->window=std::make_unique<PlayerWindow>(candidate->prepared.options,*candidate->session,params.value("initially_paused",false));
             candidate->observed_paused=candidate->window->paused();player_boundary(*candidate);
             // All admission/ack allocation precedes publication. GPU creation is deferred.

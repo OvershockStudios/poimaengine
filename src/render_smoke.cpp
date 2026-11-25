@@ -10,6 +10,7 @@
 #include "poima/profiler.hpp"
 #include "frame_wall_scope.hpp"
 #include "player_renderer.hpp"
+#include "render_capture_session.hpp"
 #include "render_readback.hpp"
 #include "render_ui.hpp"
 #include "poima/frame_performance.hpp"
@@ -3466,41 +3467,86 @@ struct Context {
 };
 } // namespace
 
+namespace {
+void render_capture_frames(Context& context, const RenderOptions& options, RenderReport& report) {
+    report.width = context.extent.width;
+    report.height = context.extent.height;
+    report.samples = context.samples;
+    for (std::uint32_t frame = 0; frame < options.frames; ++frame) {
+        SDL_Event event;
+        while (SDL_PollEvent(&event)) {
+            if (event.type == SDL_EVENT_QUIT || event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED)
+                throw std::runtime_error("The window was closed before the requested frame count completed.");
+        }
+        const bool capture_frame = !options.capture.empty() && frame + 1 == options.frames;
+        require(context.frame(capture_frame),"Surface changed during capture; retry the capture.");
+        ++report.frames_presented;
+        if (capture_frame) {
+            context.capture(options.capture);
+            report.capture_written = true;
+        }
+    }
+    context.retire_frames(true);
+}
+
+void finish_capture_report(Context& context, RenderReport& report) {
+    report.hardware = context.hardware;
+    report.gpu_name = context.gpu_name;
+    report.validation_errors = context.messages.errors;
+    report.diagnostics = context.report_diagnostics(true,false);
+}
+
 RenderReport render(const RenderOptions& options, const SceneSnapshot* scene) {
     RenderReport report;
     Context context;
     try {
         context.initialize(options, scene);
-        report.width = context.extent.width;
-        report.height = context.extent.height;
-        report.samples = context.samples;
-        for (std::uint32_t frame = 0; frame < options.frames; ++frame) {
-            SDL_Event event;
-            while (SDL_PollEvent(&event)) {
-                if (event.type == SDL_EVENT_QUIT || event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED)
-                    throw std::runtime_error("The window was closed before the requested frame count completed.");
-            }
-            const bool capture_frame = !options.capture.empty() && frame + 1 == options.frames;
-            require(context.frame(capture_frame),"Surface changed during capture; retry the capture.");
-            ++report.frames_presented;
-            if (capture_frame) {
-                context.capture(options.capture);
-                report.capture_written = true;
-            }
-        }
-        context.retire_frames(true);
+        render_capture_frames(context, options, report);
         report.success = true;
         report.detail = scene ? "Authored scene rendered through the bounded forward preview." : "Vulkan triangle drawn and presented through NVRHI. Bounded smoke test; no game-performance qualification.";
     } catch (const std::exception& error) {
         report.detail = error.what();
     }
-    report.hardware = context.hardware;
-    report.gpu_name = context.gpu_name;
-    report.validation_errors = context.messages.errors;report.diagnostics=context.report_diagnostics(true,false);
+    finish_capture_report(context, report);
     return report;
 }
+} // namespace
 RenderReport run_render_smoke(const RenderOptions& options) { return render(options, nullptr); }
 RenderReport run_render_scene(const RenderOptions& options, const SceneSnapshot& scene) { return render(options, &scene); }
+
+struct SceneCaptureSession::Impl {
+    SceneSnapshot snapshot;
+    Context context;
+    bool ready = false;
+};
+
+SceneCaptureSession::SceneCaptureSession() : impl_(std::make_unique<Impl>()) {}
+SceneCaptureSession::~SceneCaptureSession() = default;
+
+RenderReport SceneCaptureSession::capture(const RenderOptions& options, const SceneSnapshot& scene) {
+    auto& state = *impl_;
+    auto& context = state.context;
+    RenderReport report;
+    try {
+        state.snapshot = scene;
+        if (state.ready) {
+            context.update_scene();
+        } else {
+            auto exclusive = options;
+            exclusive.capture_exclusive = true;
+            context.initialize(exclusive, &state.snapshot, false, nullptr, false, true);
+            state.ready = true;
+        }
+        render_capture_frames(context, options, report);
+        require(context.messages.errors==0, "The capture renderer reported a Vulkan error.");
+        report.success = true;
+        report.detail = "Captured the requested runtime snapshot through the retained Vulkan renderer.";
+    } catch (const std::exception& error) {
+        report.detail = error.what();
+    }
+    finish_capture_report(context, report);
+    return report;
+}
 
 struct HostedViewport::Impl {
     RenderOptions options;

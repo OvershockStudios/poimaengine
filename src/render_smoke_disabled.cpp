@@ -4,6 +4,7 @@
 #include "poima/player.hpp"
 #include "poima/player_preferences.hpp"
 #include "poima/input_profile.hpp"
+#include "render_capture_session.hpp"
 #include <stdexcept>
 #include <thread>
 
@@ -15,6 +16,12 @@ RenderReport run_render_smoke(const RenderOptions&) {
     return report;
 }
 RenderReport run_render_scene(const RenderOptions& options, const SceneSnapshot&) {
+    return run_render_smoke(options);
+}
+struct SceneCaptureSession::Impl {};
+SceneCaptureSession::SceneCaptureSession() = default;
+SceneCaptureSession::~SceneCaptureSession() = default;
+RenderReport SceneCaptureSession::capture(const RenderOptions& options, const SceneSnapshot&) {
     return run_render_smoke(options);
 }
 struct PlayerWindow::Impl {

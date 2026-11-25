@@ -1,8 +1,18 @@
 # Implementation status
 
-Updated 2026-11-25 for **0.0.427**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-25 for **0.0.428**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.428 lets [runtime captures retain the Vulkan renderer](SCENE_CAPTURE.md#capture-successive-runtime-ticks).
+Eight non-temporal frames matched isolated captures on AMD forward and eight
+on NVIDIA deferred. The checks exercised stale guards, occupied paths, save
+replacement, explicit release and an immutable relocated export. FSR Native
+AA kept its history across a 390-image orbital take. In that take the span
+between the first and last completed files was 42 seconds using the retained
+renderer and 277 seconds using separate renderers. This is capture workflow
+time on one laptop. The ordinary capture regression and 14 Ubuntu suites
+passed. [Results](evidence/m2-retained-capture-428.json)
 
 Version 0.0.427 adds a [planet-centered sky](ATMOSPHERE_SKY.md#planet-centered-sky).
 Windows Vulkan captures at 400 and 2,000 km passed 108 display probes against

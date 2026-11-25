@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.428
+
+- Keep one Vulkan renderer across guarded runtime captures so an agent can
+  record successive simulation ticks while retaining temporal history.
+
 ## 0.0.427
 
 - Author a planet-centered atmosphere so the sky follows radial up and shows

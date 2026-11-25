@@ -1,0 +1,88 @@
+{
+  "version": "0.0.428",
+  "date": "2026-11-25",
+  "schema_revision": 224,
+  "base_commit": "8aa3215d70ed4064732855a80967cc1a7c12c75b",
+  "scope": "Reuse the Vulkan renderer across guarded runtime captures. Measure capture workflow time on the recorded laptop.",
+  "changed_runtime_sources_sha256": {
+    "CMakeLists.txt": "c60a60dcb4962002ab5db392c2392b475491e4bcce62a32fa401fe67251233e2",
+    "src/render_capture_session.hpp": "7aba2742ef4fe523ec4fcc80fbc4ac486c76a98612ed6c45370b90e995d95526",
+    "src/render_smoke.cpp": "abf88153761c066f73d4b4734d4b58d4b527a004661f9c37110b77fc3a5a3c40",
+    "src/render_smoke_disabled.cpp": "750c56607bcaa114657936291cc7fb2754a4b69c23ab899a3c757a10af8d18b1",
+    "src/world.cpp": "6fdf61e03172496bac713605791fff41e33860a871325c2cbbb2be11832192ff",
+    "src/world_player_service.inc": "2fa52716af3b704a7f6ea801925e58a0860993dda59ac2fecb4ebf441b5ec703",
+    "src/world_save.inc": "18588d175325e0cd0bc0cd5e98233ba2a80337236d060ae8b392775b967ac323",
+    "src/world_schema.cpp": "74d1cdc3124de7b38e90f32537b4eabee881a09234f94998f7238fb567296fb8"
+  },
+  "windows": {
+    "binary_sha256": "a3033f853b5b09ea667a6e55081885c51dd39ce8b65296565cbc000b2bc27666",
+    "descriptor_sha256": "e52ebbffb8e19681f7cbd3aa609017db81870098baf77327fb533c6e55a4741c",
+    "fixture_sha256": "38fcad30227c35673d99bbcbcf4653ca4274c8f993478666a73c6c0ecda7f3dd",
+    "legacy_scene_capture_sha256": "11fd9bb5287607a944613bc01fdec781710672a033bd10a118e0b70de66709ac",
+    "amd": {
+      "adapter": "AMD Radeon(TM) Graphics",
+      "lighting": "forward",
+      "raw_evidence_sha256": "a57706b4e8240a4258045e7707f59cd95b9717f7033f242d23f5ff0de2814338",
+      "non_temporal_byte_identical_pairs": 8,
+      "guard_rejections": {
+        "stale": "Runtime tick conflict.",
+        "occupied": "Capture requires a new path in an existing directory.",
+        "invalid_boolean": "Capture reuse_renderer must be Boolean."
+      },
+      "unchanged_save_sha256": "258b0c78eb1049c64069f4cd44e4447a3843f90b957581b851cee567a8ef9365",
+      "median_capture_call_seconds": {
+        "isolated_median": 0.34606723750039237,
+        "retained_after_first_median": 0.0071110450007836334
+      },
+      "restored_image_matches": true,
+      "fsr_history_sequence": [],
+      "relocated_export_files": null
+    },
+    "nvidia": {
+      "adapter": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "lighting": "deferred",
+      "raw_evidence_sha256": "2dd3e919945b62a19d567f62a70cfe168398b92bc2fa125ac95d72fd4ea3123f",
+      "non_temporal_byte_identical_pairs": 8,
+      "guard_rejections": {
+        "stale": "Runtime tick conflict.",
+        "occupied": "Capture requires a new path in an existing directory.",
+        "invalid_boolean": "Capture reuse_renderer must be Boolean."
+      },
+      "unchanged_save_sha256": "3538207ad0bf3175e4adad739938036ca7aa3dd1998b21b5eee9862fb5b5ffe0",
+      "median_capture_call_seconds": {
+        "isolated_median": 0.48995780649966036,
+        "retained_after_first_median": 0.005052682001405628
+      },
+      "restored_image_matches": true,
+      "fsr_history_sequence": [
+        2,
+        4,
+        6
+      ],
+      "relocated_export_files": 58,
+      "immutable_bundle_output_rejection": "Retained capture output must be outside the immutable game bundle."
+    }
+  },
+  "ubuntu_headless": {
+    "passed_ctest": 14,
+    "binary_sha256": "e6f5c1c6b796dfd63d19ac2105fd455e8ac36d7dd36843b949d39a77c667fe9e",
+    "fixture_evidence_sha256": "161091df98bf59cc65c69bda739768fff6bbf2e63069ae5bce5f109c94b865a4",
+    "ctest_xml_sha256": "280251eb2d57da1035097cad54838ae923e293354310aef353453c452ca005fa"
+  },
+  "cinematic": {
+    "adapter": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "extent": [
+      960,
+      540
+    ],
+    "captured_images": 390,
+    "renderer_reused": 389,
+    "submitted_frames": 780,
+    "profile": "NVIDIA deferred FSR Native AA",
+    "observations_sha256": "18a9992f37f7e046f335a9868619c58327dcdf7dbe2ae59b9d890a83afb84f8b",
+    "previous_observations_sha256": "461cd8ccd66d213d878197aadf4196c81c703e2268304b7bb5e46d1585897fe2",
+    "isolated_first_to_last_seconds": 276.518147451,
+    "retained_first_to_last_seconds": 41.80462825,
+    "retained_wall_seconds": 44.82603480100079
+  }
+}
