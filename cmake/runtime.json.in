@@ -39,6 +39,7 @@
     "particle_impact_bursts": @POIMA_RUNTIME_SIMULATION@,
     "particle_water_contact": @POIMA_RUNTIME_SIMULATION@,
     "water_buoyancy": @POIMA_RUNTIME_SIMULATION@,
+    "water_currents": @POIMA_RUNTIME_SIMULATION@,
     "collision_surfaces": @POIMA_RUNTIME_SIMULATION@,
     "renderer": @POIMA_RUNTIME_RENDER_SMOKE@,
     "fsr3_upscaler": @POIMA_RUNTIME_FSR3_UPSCALER@,

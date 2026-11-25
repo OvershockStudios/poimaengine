@@ -37,6 +37,10 @@ struct ListenerAudio {
     double full_depth_m;
 };
 
+struct WaterCurrents {
+    double max_speed_m_s, min_depth_m;
+};
+
 struct RegionDefinition {
     GridConfig config;
     std::vector<double> floor_heights_m;
@@ -52,6 +56,7 @@ struct RegionDefinition {
     std::vector<double> shore_corner_heights_m;
     std::vector<SurfaceRipples> surface_swell;
     std::optional<WaterSwellVariation> swell_variation{};
+    std::optional<WaterCurrents> currents{};
 };
 
 }

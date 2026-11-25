@@ -267,7 +267,8 @@ local swell and the fixed offshore plane shape that volume. Poima applies
 lift at the center of the submerged part, so an edge touching the water can
 tip the body. The Jolt impulse uses freshwater density of 1,000 kg/m³ and
 caps lift at 32 times the body's weight. Drag uses the submerged fraction
-and still-water velocity. [Jolt buoyancy implementation](https://github.com/jrouwe/JoltPhysics/blob/036ea7b1d717b3e713ac9d8cbd47118fb9cd5d60/Jolt/Physics/Body/Body.cpp#L181)
+and the [local water velocity](#carry-floating-objects-with-a-current).
+[Jolt buoyancy implementation](https://github.com/jrouwe/JoltPhysics/blob/036ea7b1d717b3e713ac9d8cbd47118fb9cd5d60/Jolt/Physics/Body/Body.cpp#L181)
 
 Both drag coefficients accept 0–2 and default to 0.6 and 0.2. Use an empty
 `buoyancy` object for both defaults. Mass must be at least 1 g. A world can
@@ -289,6 +290,44 @@ Export with a runtime advertising `features.water_buoyancy`. Run the
 [buoyancy fixture](../tests/water_buoyancy_capture.py) for geometry, motion
 and checkpoint continuation. Add `--gpu` for Vulkan images and
 `--runtime-root` to check the relocated export.
+
+### Carry floating objects with a current
+
+Supply `currents` in the region plan and cook request. This example limits
+the velocity to 1.2 m/s and uses a 2 cm minimum depth when reconstructing
+velocity in a thin wet cell.
+
+```json
+{"max_speed_m_s": 1.2, "min_depth_m": 0.02}
+```
+
+The grid records the volume actually transferred across each cell face.
+The completed tick's discharge provides a horizontal, depth-averaged velocity.
+Poima interpolates between a cell's opposing faces and limits the velocity
+using the committed depth and the profile. The normal flow at a sealed face
+is zero. A sluice can change the current when its action changes openness.
+The local field uses the accounted grid water. Dry points and the offshore
+plane report a still-water velocity.
+[Staggered-grid discharge reference](https://gmd.copernicus.org/articles/14/3577/2021/)
+
+Buoyant boxes sample the volume-weighted velocity of the water they overlap.
+Drag acts at the center of buoyancy against the body's relative velocity at
+that point, so a stationary object can be carried by flow. The next physics
+step uses the preceding committed water tick. Forces act on the body and the
+regional solver retains ownership of all water transfers.
+
+`max_speed_m_s` accepts 0.1–30 m/s. `min_depth_m` accepts 0.001–1 m.
+The profile cooks `.pwater` version 16 and requires
+`features.water_currents` for export. The saved transfer record restores the
+current before the next physics step. Existing plans without a current
+profile use the earlier still-water force path and snapshot formats.
+
+`runtime.water.inspect` adds `water_velocity_m_s` to requested points and
+buoyant bodies in a region with currents. Use `current_faces` to inspect up
+to 64 interior faces as `{"cell":[1,0],"axis":"x"}`. Each result reports
+`discharge_m3_s`, positive toward increasing X or Z. The
+[counterflow fixture](../tests/water_currents_capture.py) compares both
+directions with an independent water ledger and replays a relocated save.
 
 ### Vary the swell across a coast
 

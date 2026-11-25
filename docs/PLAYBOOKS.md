@@ -42,6 +42,7 @@ record correlated evidence, and identify a useful impossibility check.
 | Stop drops, sparks or debris at a surface | [Particle surface contacts](PARTICLES.md#stop-particles-at-surfaces) | Compare a claimed contact with the surface and the next rendered frame. Move the cover and continue from a save. |
 | Splash where rain hits water | [Water contacts](PARTICLES.md#splash-on-the-water-surface) | Match the impact to the committed water crossing. Verify cover and a rendered splash after save restoration. |
 | Float an authored prop | [Water buoyancy](SHALLOW_WATER.md#float-a-dynamic-box) | Compare mass, displaced volume and lift, then verify float height, shoreline torque and save continuation. |
+| Carry a prop through a current | [Water currents](SHALLOW_WATER.md#carry-floating-objects-with-a-current) | Compare signed face discharge with the prop's observed drift. Close a gate, check the water ledger, and reopen a save. |
 | Make rain splash or sparks scatter on contact | [Contact bursts](PARTICLES.md#spawn-a-burst-at-contact) and [surface routing](PARTICLES.md#vary-a-burst-by-surface) | Inspect the hit, selected emitter and sprite motion. Reopen a save and compare the continuation. |
 | Shape a local water surface | [Water regions and ripples](SHALLOW_WATER.md#author-surface-ripples) | Verify water levels and terrain collision, then compare the visible normals at the same tick after restoring a save. |
 

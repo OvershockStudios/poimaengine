@@ -2,6 +2,12 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.436
+
+- Use local water transfers to drive currents and carry buoyant props.
+  Inspect signed discharge and restore the current with a game save.
+  [Water currents](docs/SHALLOW_WATER.md#carry-floating-objects-with-a-current)
+
 ## 0.0.435
 
 - Give dynamic boxes buoyancy and fluid drag. Inspect how much water each

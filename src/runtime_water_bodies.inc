@@ -5,6 +5,7 @@
         double density_ratio=0;
     };
 
+    static constexpr double water_density_kg_m3=1000;
     WaterBodyForces water_body_forces(const JPH::Body& body,double mass) const {
         const auto half=static_cast<const JPH::BoxShape&>(*body.GetShape()).GetHalfExtent();
         WaterBodyForces result{8.*half.GetX()*half.GetY()*half.GetZ()};
@@ -25,9 +26,8 @@
             return result;
         }
         const auto fraction=result.submerged.volume_m3/result.volume_m3;
-        constexpr double water_density=1000;
         constexpr double max_lift_to_weight=32;
-        result.density_ratio=std::min(water_density*result.volume_m3/mass,max_lift_to_weight/fraction);
+        result.density_ratio=std::min(water_density_kg_m3*result.volume_m3/mass,max_lift_to_weight/fraction);
         return result;
     }
 
@@ -43,6 +43,7 @@
         const auto& wet=forces.submerged;
         RuntimeWaterBody result{forces.volume_m3,wet.volume_m3,
             mass*forces.density_ratio*wet.volume_m3/forces.volume_m3*physics.GetGravity().Length(),std::nullopt};
+        if (water_region && water_region->currents()) result.water_velocity_m_s=wet.water_velocity_m_s;
         if (wet.volume_m3>0) {
             const auto center=body.GetCenterOfMassPosition();
             result.center_of_buoyancy=std::array{
@@ -51,6 +52,28 @@
                 center.GetZ()+wet.center_offset_m[2]};
         }
         return result;
+    }
+
+    static void apply_relative_water_drag(JPH::Body& body,const water::Displacement& wet,JPH::Vec3Arg arm,
+                                         float submerged_fraction,float drag,float mass) {
+        if (drag==0) return;
+        const auto& velocity=wet.water_velocity_m_s;
+        const auto fluid=JPH::Vec3(float(velocity[0]),float(velocity[1]),float(velocity[2]));
+        const auto relative=fluid-(body.GetLinearVelocity()+body.GetAngularVelocity().Cross(arm));
+        const auto speed=relative.Length();
+        if (speed<=1e-6f) return;
+        const auto direction=relative/speed;
+        const auto normal=body.GetRotation().InverseRotate(direction).Abs();
+        const auto extent=static_cast<const JPH::BoxShape&>(*body.GetShape()).GetHalfExtent();
+        const auto area=4.*(normal.GetX()*extent.GetY()*extent.GetZ()+
+            normal.GetY()*extent.GetX()*extent.GetZ()+normal.GetZ()*extent.GetX()*extent.GetY());
+        // Limit the impulse using effective mass along the point's relative
+        // velocity. The drag cannot overshoot the surrounding water velocity.
+        const auto lever=arm.Cross(direction);
+        const auto inverse_mass=1./mass+std::max(0.f,lever.Dot(body.GetInverseInertia()*lever));
+        const auto impulse=.5*water_density_kg_m3*drag*area*submerged_fraction*speed*speed*water::step_seconds;
+        body.AddImpulse(direction*static_cast<float>(std::min(impulse,speed/inverse_mass)),
+            body.GetCenterOfMassPosition()+arm);
     }
 
     void apply_water_buoyancy() {
@@ -71,9 +94,12 @@
                 const auto& drag=*collider.buoyancy;
                 const auto& offset=wet.center_offset_m;
                 const auto wet_fraction=static_cast<float>(wet.volume_m3/forces.volume_m3);
+                const auto arm=JPH::Vec3(float(offset[0]),float(offset[1]),float(offset[2]));
+                const auto flowing=water_region->currents().has_value();
+                if (flowing) apply_relative_water_drag(body,wet,arm,wet_fraction,drag.linear_drag,collider.mass);
                 const bool applied=body.ApplyBuoyancyImpulse(static_cast<float>(forces.volume_m3),
-                    static_cast<float>(wet.volume_m3),JPH::Vec3(float(offset[0]),float(offset[1]),float(offset[2])),
-                    static_cast<float>(forces.density_ratio),drag.linear_drag*wet_fraction,drag.angular_drag,
+                    static_cast<float>(wet.volume_m3),arm,
+                    static_cast<float>(forces.density_ratio),flowing ? 0.f : drag.linear_drag*wet_fraction,drag.angular_drag,
                     JPH::Vec3::sZero(),gravity,1.0f/60.0f);
                 wake=applied && !body.IsActive();
             }

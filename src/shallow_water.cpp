@@ -37,6 +37,27 @@ void validate_face(FaceControl control) {
         throw std::invalid_argument("Invalid shallow-water face control.");
 }
 
+template<class Visit>
+void for_each_face(const GridConfig& config,Visit visit) {
+    for (std::uint32_t z=0;z<config.cells_z;++z) {
+        for (std::uint32_t x=0;x<config.cells_x;++x) {
+            const auto index=static_cast<std::size_t>(z)*config.cells_x+x;
+            if (x+1<config.cells_x) visit(index,index+1,FaceAxis::x,index-z);
+            if (z+1<config.cells_z) visit(index,index+config.cells_x,FaceAxis::z,index);
+        }
+    }
+}
+
+double transferred_depth(double lower_floor,double upper_floor,double lower_depth,double upper_depth,
+                         const FaceControl& control,double fraction) {
+    if (control.openness==0) return 0;
+    double sill=std::max(lower_floor,upper_floor);
+    if (control.sill_height_m) sill=std::max(sill,*control.sill_height_m);
+    const auto lower_head=std::max(0.,lower_depth-(sill-lower_floor));
+    const auto upper_head=std::max(0.,upper_depth-(sill-upper_floor));
+    return (lower_head-upper_head)*fraction*control.openness;
+}
+
 class Sum {
 public:
     void add(double value) noexcept {
@@ -54,7 +75,7 @@ private:
 }
 
 Grid::Grid(const GridConfig& config, std::span<const double> floor_heights_m,
-           std::span<const double> initial_depths_m)
+           std::span<const double> initial_depths_m,bool track_transfers)
     : config_(config), cell_area_m2_(config.cell_size_m * config.cell_size_m) {
     const auto cells = checked_cell_count(config);
     if (floor_heights_m.size() != cells || (!initial_depths_m.empty() && initial_depths_m.size() != cells))
@@ -73,6 +94,10 @@ Grid::Grid(const GridConfig& config, std::span<const double> floor_heights_m,
         depths_.assign(initial_depths_m.begin(), initial_depths_m.end());
     x_faces_.resize(static_cast<std::size_t>(config.cells_x - 1) * config.cells_z);
     z_faces_.resize(static_cast<std::size_t>(config.cells_z - 1) * config.cells_x);
+    if (track_transfers) {
+        last_transfers_=FaceTransfers{std::vector<double>(x_faces_.size()),std::vector<double>(z_faces_.size())};
+        staged_transfers_=last_transfers_;
+    }
     staged_depths_.resize(cells);
     transfer_deltas_.resize(cells);
     exchange_indices_.resize(cells);
@@ -144,6 +169,13 @@ void Grid::set_face(Cell lower_cell, FaceAxis axis, FaceControl control) {
     (axis == FaceAxis::x ? x_faces_ : z_faces_)[index] = control;
 }
 
+double Grid::face_discharge_m3_s(Cell lower_cell,FaceAxis axis) const {
+    const auto index=face_index(lower_cell,axis);
+    if (!last_transfers_) return 0;
+    const auto& transfers=axis==FaceAxis::x ? last_transfers_->x_m : last_transfers_->z_m;
+    return transfers[index]*(cell_area_m2_/step_seconds);
+}
+
 StepReport Grid::step(std::span<const CellExchange> exchanges,
                       std::span<const Cell> rain_cells, double rain_depth_m) {
     if (tick_ == std::numeric_limits<std::uint64_t>::max())
@@ -208,27 +240,15 @@ StepReport Grid::step(std::span<const CellExchange> exchanges,
 
     std::fill(transfer_deltas_.begin(), transfer_deltas_.end(), 0);
     const double fraction = config_.relaxation_per_second * step_seconds;
-    const auto transfer = [&](std::size_t lower, std::size_t upper, const FaceControl& control) {
-        if (control.openness == 0)
-            return;
-        double sill = std::max(floor_heights_[lower], floor_heights_[upper]);
-        if (control.sill_height_m)
-            sill = std::max(sill, *control.sill_height_m);
-        const double lower_head = std::max(0.0, staged_depths_[lower] - (sill - floor_heights_[lower]));
-        const double upper_head = std::max(0.0, staged_depths_[upper] - (sill - floor_heights_[upper]));
-        const double flow = (lower_head - upper_head) * fraction * control.openness;
+    for_each_face(config_,[&](std::size_t lower,std::size_t upper,FaceAxis axis,std::size_t index) {
+        const auto& control=(axis==FaceAxis::x ? x_faces_ : z_faces_)[index];
+        const double flow=transferred_depth(floor_heights_[lower],floor_heights_[upper],
+            staged_depths_[lower],staged_depths_[upper],control,fraction);
+        if (staged_transfers_)
+            (axis==FaceAxis::x ? staged_transfers_->x_m : staged_transfers_->z_m)[index]=flow;
         transfer_deltas_[lower] -= flow;
         transfer_deltas_[upper] += flow;
-    };
-    for (std::uint32_t z = 0; z < config_.cells_z; ++z) {
-        for (std::uint32_t x = 0; x < config_.cells_x; ++x) {
-            const auto index = static_cast<std::size_t>(z) * config_.cells_x + x;
-            if (x < config_.cells_x - 1)
-                transfer(index, index + 1, x_faces_[index - z]);
-            if (z < config_.cells_z - 1)
-                transfer(index, index + config_.cells_x, z_faces_[index]);
-        }
-    }
+    });
 
     Sum after;
     for (std::size_t i = 0; i < depths_.size(); ++i) {
@@ -239,17 +259,18 @@ StepReport Grid::step(std::span<const CellExchange> exchanges,
         after.add(depth);
     }
     depths_.swap(staged_depths_);
+    last_transfers_.swap(staged_transfers_);
     return {++tick_, before.value() * cell_area_m2_, supplied.value() * cell_area_m2_,
             drained.value() * cell_area_m2_, after.value() * cell_area_m2_,
             rain_depth_m * static_cast<double>(rain_cells.size()) * cell_area_m2_};
 }
 
 Snapshot Grid::snapshot() const {
-    return {config_, tick_, floor_heights_, depths_, x_faces_, z_faces_};
+    return {config_, tick_, floor_heights_, depths_, x_faces_, z_faces_, last_transfers_};
 }
 
 Grid Grid::restore(const Snapshot& snapshot) {
-    Grid grid(snapshot.config, snapshot.floor_heights_m, snapshot.depths_m);
+    Grid grid(snapshot.config, snapshot.floor_heights_m, snapshot.depths_m, snapshot.last_transfers.has_value());
     if (snapshot.depths_m.size() != grid.depths_.size() ||
         snapshot.x_faces.size() != grid.x_faces_.size() ||
         snapshot.z_faces.size() != grid.z_faces_.size())
@@ -261,7 +282,48 @@ Grid Grid::restore(const Snapshot& snapshot) {
     grid.tick_ = snapshot.tick;
     grid.x_faces_ = snapshot.x_faces;
     grid.z_faces_ = snapshot.z_faces;
+    // The generic grid permits changing controls between ticks. At this layer
+    // the completed transfers can belong to the preceding control state.
+    if (snapshot.last_transfers) {
+        const auto& transfers=*snapshot.last_transfers;
+        const auto valid=[&](double value) {
+            const auto bound=grid.tick_ ? max_height_m*(grid.config_.relaxation_per_second*step_seconds) : 0.;
+            return bounded(value,-bound,bound);
+        };
+        if (transfers.x_m.size()!=grid.x_faces_.size() || transfers.z_m.size()!=grid.z_faces_.size() ||
+            !std::ranges::all_of(transfers.x_m,valid) || !std::ranges::all_of(transfers.z_m,valid))
+            throw std::invalid_argument("Shallow-water transfer state is incomplete or out of bounds.");
+        grid.last_transfers_=transfers;
+    }
     return grid;
+}
+
+void Grid::restore_transfers(FaceTransfers transfers) {
+    if (!last_transfers_ || transfers.x_m.size()!=x_faces_.size() || transfers.z_m.size()!=z_faces_.size())
+        throw std::invalid_argument("Saved water transfers differ from the grid.");
+    const auto fraction=config_.relaxation_per_second*step_seconds;
+    const auto max_transfer=tick_ ? max_height_m*fraction : 0.;
+    auto previous=depths_;
+    for_each_face(config_,[&](std::size_t lower,std::size_t upper,FaceAxis axis,std::size_t index) {
+        const auto flow=(axis==FaceAxis::x ? transfers.x_m : transfers.z_m)[index];
+        const auto& control=(axis==FaceAxis::x ? x_faces_ : z_faces_)[index];
+        if (!bounded(flow,-max_transfer,max_transfer) || (control.openness==0 && flow!=0))
+            throw std::invalid_argument("Saved water transfer exceeds its face or tick bounds.");
+        previous[lower]+=flow;
+        previous[upper]-=flow;
+    });
+    if (tick_>0) for_each_face(config_,[&](std::size_t lower,std::size_t upper,FaceAxis axis,std::size_t index) {
+        const auto flow=(axis==FaceAxis::x ? transfers.x_m : transfers.z_m)[index];
+        const auto& control=(axis==FaceAxis::x ? x_faces_ : z_faces_)[index];
+        const auto tolerance=32*std::numeric_limits<double>::epsilon()*std::max({
+            1.,std::abs(previous[lower]),std::abs(previous[upper]),depths_[lower],depths_[upper]});
+        if (!bounded(previous[lower],-tolerance,max_height_m+tolerance) ||
+            !bounded(previous[upper],-tolerance,max_height_m+tolerance) ||
+            std::abs(flow-transferred_depth(floor_heights_[lower],floor_heights_[upper],
+                previous[lower],previous[upper],control,fraction))>tolerance)
+            throw std::invalid_argument("Saved water transfers do not match the regional flow step.");
+    });
+    last_transfers_=std::move(transfers);
 }
 
 }

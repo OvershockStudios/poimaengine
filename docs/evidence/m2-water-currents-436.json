@@ -1,0 +1,175 @@
+{
+  "version": "0.0.436",
+  "authoring_schema_revision": 232,
+  "date": "2026-11-25",
+  "base_commit": "e31a2d6b9a69705b93379a0ebf091f927477d29a",
+  "scope": "Committed local grid transfers, bounded horizontal current, relative drag on buoyant boxes, and saved current restoration.",
+  "source_sha256": {
+    "CMakeLists.txt": "59bf026605914202b96920b406f6e452ac60ea63d52ce6160918a093530a5fb6",
+    "cmake/runtime.json.in": "eaa029210522a803ba38a5be096a2af9f84eb6f83eef36774a87251faa4114d5",
+    "include/poima/project.hpp": "5670af2384b3c25a07b26e0239accd8686993c7d0595db3ee4a3832f84607b0f",
+    "include/poima/runtime.hpp": "df51ec392e28a7173f0ac93aa223ff973228d448ebef7584d0430ec4170fa2a1",
+    "include/poima/shallow_water.hpp": "44ad42442bf5f8147f9e6d3e747dbcede0d9a410e8cb8f92ada4ce102d3ed04f",
+    "include/poima/water_region.hpp": "1527f6e34554de697fa6dc17c02b1d212fb0f450771a83c96a0ac41ec5ab0cf3",
+    "include/poima/water_region_definition.hpp": "89fd046258caa22329ad9f06118fe890e4f9670d7699aa1a296188649b90d9c0",
+    "include/poima/world.hpp": "25ac04eb98221280f2777381ad28a344d8963e5938d8517f37479297518c43d8",
+    "src/project.cpp": "98046ce698395ef5093b4a4d801f132b78db49232ba1e7f8a3e88134d224c2c1",
+    "src/runtime_water_bodies.inc": "22e9449578fc5cf4d558e3704b0380b688c1678729ea75632f187ffc8888e13e",
+    "src/shallow_water.cpp": "8d520177b6d49991ae59f7e556c0ee837ac2051b021fddb38ed1e4626edfcf0d",
+    "src/water_asset.cpp": "95f44046901ef75245096ae76762cb5d234ccd1e2b6d1e2ccabd3fc90785d3d3",
+    "src/water_buoyancy.cpp": "d5a88b2ea7e59a8da0e7037f38de3dd8c34c527e66a5b5f37021fcce4e3b48b6",
+    "src/water_region.cpp": "1610c093eed39506d69e5e396095a51fe3f1e9134a306662b460bda58eb3123b",
+    "src/world.cpp": "ee25902eb8e12fde6a6dd95e48df7fb86433499d4e52766e5a8166e342384c5a",
+    "src/world_content.cpp": "d553555b3a48be471a763780dff6f9c227248ffd16c60087e9b1de3ea0da3d25",
+    "src/world_schema.cpp": "ef281613ecb34dce72e74ec4ada6072398effb6c9a8e96a9401d1fcfba25e107",
+    "src/world_water_service.inc": "9ba0140eafaa1927555bf5027fb34280e06a75df8ffa490f2bf76fdbaa194b49",
+    "tests/water_currents_capture.py": "ad24483a33aa8911e3a46aebb4140d62a34d0400164285cd13d89bd13455850a",
+    "tests/water_region_native.cpp": "9d9f0c9bc2dcd8086f8896e2b294af6073f5bf93a8dacd34e3940519dc19675c"
+  },
+  "counterflow": {
+    "water_ledger_m3": 16,
+    "open_gate_discharge_m3_s": [
+      4.500000000000001,
+      -4.500000000000001
+    ],
+    "closed_gate_discharge_m3_s": [
+      0.0,
+      0.0
+    ],
+    "first_coupled_x_velocity_m_s": [
+      0.036032211035490036,
+      -0.036032211035490036
+    ],
+    "final_float_center_x_m": [
+      0.24413550655590366,
+      -0.24413550655590366
+    ],
+    "sampled_ticks": [
+      0,
+      1,
+      2,
+      28,
+      29,
+      88,
+      89
+    ],
+    "pwater_plan_sha256": "e96d685cf60076ac71013c80568215ec5ae962d91c6749fbf464049bab0a4d75"
+  },
+  "windows": {
+    "binary_sha256": "3ecfbf8f88ea57030e8b6daede85ea5ec42218a6ee40c75adf937f8d8f3baff0",
+    "desktop_library_sha256": "24dc3889598e013595dfe56464c1d2b344cfc7c9c37541ad2902183a06109b53",
+    "runtime_descriptor_sha256": "e5e489edbf2227b8dd6e8970e624c7b618296324f7714f72796864f240e26f79",
+    "amd_forward": {
+      "adapter": "AMD Radeon(TM) Graphics",
+      "raw_evidence_sha256": "10488df30ce8c87ad9e477f2e802dbb24cc383098a7888b17f81ba499f39b9aa",
+      "extent": [
+        240,
+        160
+      ],
+      "initial": {
+        "sha256": "3ed5cc0ae04715d7188944776eedb220c1591e579c6d0ba7afb5e5036f81a031",
+        "centroids_x": [
+          104.53591160220995,
+          137.0297397769517
+        ]
+      },
+      "final": {
+        "sha256": "c08094b10f4325b6805f4c0195223b822e93ffffb7fc43c7b5dc3eed1daab30d",
+        "centroids_x": [
+          126.04458598726114,
+          111.52767527675277
+        ]
+      },
+      "pixel_drift_by_float": [
+        21.508674385051194,
+        -25.502064500198912
+      ],
+      "relocated_game": {
+        "source_unavailable": true,
+        "immutable_files": 60,
+        "exact_fresh_process_replay": true,
+        "matching_images": true
+      }
+    },
+    "nvidia_deferred": {
+      "adapter": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "raw_evidence_sha256": "a385cca14cb79b435e201f5969fc0353a591d477a27b2064a2023bf629e7acda",
+      "extent": [
+        240,
+        160
+      ],
+      "initial": {
+        "sha256": "3ed5cc0ae04715d7188944776eedb220c1591e579c6d0ba7afb5e5036f81a031",
+        "centroids_x": [
+          104.53591160220995,
+          137.0297397769517
+        ]
+      },
+      "final": {
+        "sha256": "c08094b10f4325b6805f4c0195223b822e93ffffb7fc43c7b5dc3eed1daab30d",
+        "centroids_x": [
+          126.04458598726114,
+          111.52767527675277
+        ]
+      },
+      "pixel_drift_by_float": [
+        21.508674385051194,
+        -25.502064500198912
+      ],
+      "relocated_game": {
+        "source_unavailable": true,
+        "immutable_files": 60,
+        "exact_fresh_process_replay": true,
+        "matching_images": true
+      }
+    },
+    "exact_images_between_tested_gpu_paths": true,
+    "retained_still_water": {
+      "reference_version": "0.0.435",
+      "reference_evidence_sha256": "4af1b9b1784f87c0366c6b2d4c579a67a2530773387eae857b200cb4a00ba066",
+      "candidate_evidence_sha256": "c9691ced6eb029fe0a2b7c7ea945b75fad82720848809fde5288a2ea95693b7d",
+      "same_body_observations_and_images": true
+    },
+    "feature_rejection": {
+      "receipt_sha256": "e00890c8bb19bfbbb18cc7ccf6d341794a08350b0e8aba71a4872621d9509a18",
+      "published": false
+    }
+  },
+  "ubuntu_headless": {
+    "ctest_passed": [
+      "authoring_contract_identity",
+      "authoring_core_conformance",
+      "particle_scene_native",
+      "shallow_water_native",
+      "water_region_native",
+      "water_region_scene_native",
+      "world_particles_contract",
+      "world_session_native",
+      "world_water_contract",
+      "world_water_rain_contract"
+    ],
+    "fixture_evidence_sha256": "0af33d34efd666a23145ee7c0120c69cf767ef34d6c108df1836f21d1c85ef8d",
+    "still_water_fixture_evidence_sha256": "f47535279f3c2b60d64791d5e2ee4a4eebd1d8d1e74dd41478cc537ee0aa1f15",
+    "binary_sha256": "bc657b5c20d8282e4a924ea755bedd8f37d925f6337c46f69fd18d2036fb0090",
+    "runtime_descriptor_sha256": "36b179d2ca575648826366dde6b18881d2ce67666a8ba08ac1a70580ce18e1f2",
+    "ctest_junit_sha256": "d2376098c12ba4908a26173f11be2feb859bc6ece000a4c33e3ec68af6274856",
+    "native_current_checks": [
+      "rain combined with a half-open gate",
+      "different wet-cell velocities under one box",
+      "reversed flow and speed limiting",
+      "closed gate zeros the discharge",
+      "atomic rejection of forged transfer values"
+    ]
+  },
+  "exploratory_restore_sweep": {
+    "seed": 104971,
+    "grid": "8x8 half flat and half mixed elevations",
+    "restored_records": 3056,
+    "rejected_depth_overflow_with_state_intact": 1,
+    "recipe_sha256": "3a5bb91cf0e0156db53462de264c2cb372c177f4576f369639600c4700d231f0"
+  },
+  "fixture_correction": "Gate actions are supplied in the runtime input for the character entity.",
+  "remaining": [
+    "Current uses a depth-averaged velocity estimate from face discharge. Momentum transport, moving-body feedback into the water solver, surface wakes and scene-scale qualification remain open."
+  ]
+}

@@ -16,6 +16,7 @@ using Json = nlohmann::json;
 constexpr auto artifact_format = "poima.water.region";
 
 std::uint32_t artifact_version(const RegionDefinition& definition) noexcept {
+    if (definition.currents) return 16;
     if (definition.optics && definition.optics->solar_scattering) return 15;
     if (definition.optics && definition.optics->reflection_roughness) return 14;
     if (definition.swell_variation) return 13;
@@ -162,6 +163,11 @@ void parse_rules(const Json& object, RegionDefinition& definition) {
         definition.listener_audio = ListenerAudio{number(value.at("cutoff_hz")),
             number(value.at("gain")), number(value.at("full_depth_m"))};
     }
+    if (object.contains("currents")) {
+        const auto& profile=object.at("currents");
+        fields(profile,{"max_speed_m_s","min_depth_m"});
+        definition.currents=WaterCurrents{number(profile.at("max_speed_m_s")),number(profile.at("min_depth_m"))};
+    }
     if (object.contains("optics")) {
         const auto& value=object.at("optics");
         fields(value, {"extinction_per_m","scattered_radiance"},
@@ -258,6 +264,8 @@ Json artifact_document(const RegionAsset& asset) {
         document["shore_corner_heights_m"] = definition.shore_corner_heights_m;
     if (definition.optics)
         document["optics"] = optics_json(*definition.optics);
+    if (definition.currents)
+        document["currents"] = currents_json(*definition.currents);
     return document;
 }
 
@@ -320,9 +328,9 @@ RegionAsset decode_region_asset(std::string_view bytes) {
     });
     fields(object, {"format", "version", "terrain_recipe_sha256", "tiles", "grid", "floor_heights_m",
         "initial_depths_m", "faces", "exchanges"}, {"rain_cells", "surface_ripples", "surface_wave_layers", "surface_swell",
-        "swell_variation", "listener_audio", "optics", "shore_corner_heights_m"});
+        "swell_variation", "listener_audio", "optics", "shore_corner_heights_m", "currents"});
     require(object.at("format") == artifact_format, "Unsupported water asset format.");
-    const auto version=integer(object.at("version"),1,15);
+    const auto version=integer(object.at("version"),1,16);
     RegionAsset asset;
     asset.terrain_recipe_sha256 = hex(object.at("terrain_recipe_sha256"), 64);
     auto& definition = asset.definition;
@@ -434,13 +442,15 @@ Json region_authoring_schemas() {
     const Json fitted={{"required",{"follow_terrain"}},{"properties",{{"follow_terrain",{{"const",true}}}}}};
     optics["if"]={{"required",{"offshore"}}};
     optics["then"]=fitted;
+    const auto currents=object({{"max_speed_m_s",range("number",.1,30)},{"min_depth_m",range("number",.001,1)}},
+        {"max_speed_m_s","min_depth_m"});
     auto plan = object({{"revision", tick_schema}, {"terrain", std::move(source)}, {"expected_terrain_recipe_sha256", sha_schema},
         {"tile_entities", array(id_schema, 1, terrain::max_cook_tiles)}, {"grid", grid},
         {"initial_depths_m", array(range("number", 0, 1'000'000), 0, max_region_side * max_region_side)},
         {"faces", array(std::move(faces), 0, max_region_faces)}, {"exchanges", array(exchange, 0, max_region_exchanges)},
         {"rain_cells", array(cell, 0, max_region_side * max_region_side)}, {"surface_ripples", std::move(ripples)},
         {"surface_wave_layers", std::move(layers)}, {"surface_swell",std::move(swell)}, {"swell_variation",std::move(variation)},
-        {"listener_audio", std::move(listener_audio)}, {"optics",std::move(optics)}},
+        {"listener_audio", std::move(listener_audio)}, {"optics",std::move(optics)},{"currents",currents}},
         {"revision", "terrain", "expected_terrain_recipe_sha256", "tile_entities", "grid"});
     plan["not"] = {{"required", {"surface_ripples", "surface_wave_layers"}}};
     plan["if"]={{"required",{"surface_swell"}}};
@@ -459,8 +469,11 @@ Json region_authoring_schemas() {
 
 Json region_runtime_schema() {
     const auto endpoint=array(range("number",-1e6,1e6),3,3);
+    const auto cell=array(range("integer",0,max_region_side-1),2,2);
+    const auto current_face=object({{"cell",cell},{"axis",{{"enum",{"x","z"}}}}},{"cell","axis"});
     auto result = object({{"session_id", id_schema}, {"tick", tick_schema},
-        {"cells", array(array(range("integer", 0, max_region_side - 1), 2, 2), 0, 64)},
+        {"cells", array(cell, 0, 64)},
+        {"current_faces",array(current_face,0,64)},
         {"points", array(array(Json{{"type", "number"}}, 3, 3), 0, 64)},
         {"segments", array(object({{"from_world",endpoint},{"to_world",endpoint}},
             {"from_world","to_world"}),0,64)},
@@ -473,7 +486,8 @@ Json region_runtime_schema() {
         " Optional points in world [x,y,z] order report the containing column and the submersion depth."
         " Wet point columns in a swell region include the geometric surface_normal. Cell volumes follow the conserved grid."
         " Optional segments return the first top-surface entry for each world-space sweep, in request order."
-        " Optional bodies report current displaced volume, center and lift. Guard changed membership with structure_revision.";
+        " Optional bodies report current displaced volume, center and lift. Guard changed membership with structure_revision."
+        " Current-enabled regions expose velocity at sampled wet points and buoyant bodies. Use current_faces for signed face discharge.";
     return result;
 }
 } // namespace poima::water

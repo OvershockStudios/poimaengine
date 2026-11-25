@@ -14,6 +14,7 @@ nlohmann::json surface_wave_layers_json(std::span<const SurfaceRipples> layers);
 nlohmann::json swell_variation_json(const WaterSwellVariation& profile);
 nlohmann::json listener_audio_json(const ListenerAudio& profile);
 nlohmann::json optics_json(const WaterOptics& profile);
+nlohmann::json currents_json(const WaterCurrents& profile);
 
 struct SurfaceEntry {
     double fraction;
@@ -24,6 +25,7 @@ struct SurfaceEntry {
 struct Displacement {
     double volume_m3=0;
     std::array<double,3> center_offset_m{};
+    std::array<double,3> water_velocity_m_s{};
 };
 
 // Advances one frozen authored region at the runtime's fixed tick rate.
@@ -42,6 +44,7 @@ public:
     const std::optional<WaterSwellVariation>& swell_variation() const noexcept { return swell_variation_; }
     const std::optional<ListenerAudio>& listener_audio() const noexcept { return listener_audio_; }
     const std::optional<WaterOptics>& optics() const noexcept { return optics_; }
+    const std::optional<WaterCurrents>& currents() const noexcept { return currents_; }
     FittedWaterBed fitted_bed(Cell cell) const;
     std::optional<CellSample> sample_world(double x_m,double z_m,
         std::optional<std::array<double,3>>* surface_normal=nullptr) const;
@@ -52,6 +55,7 @@ public:
     // expressed relative to the box center in world axes.
     Displacement displaced_by_box(const std::array<double,3>& center,
                                   const std::array<std::array<double,3>,3>& half_axes) const;
+    std::array<double,3> current_at(Cell cell,double x_m,double z_m) const;
     double submersion_at(double x_m,double y_m,double z_m) const;
     std::uint64_t cumulative_rain_nm() const noexcept { return cumulative_rain_nm_; }
     double cumulative_rain_m3() const noexcept;
@@ -86,6 +90,7 @@ private:
     };
     std::vector<SurfaceRipples> surface_swell_;
     std::optional<WaterSwellVariation> swell_variation_;
+    std::optional<WaterCurrents> currents_;
     std::vector<SwellWave> swell_waves_;
     double swell_amplitude_m_=0;
     double swell_at(double cell_x,double cell_z) const noexcept;

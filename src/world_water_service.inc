@@ -33,7 +33,7 @@
         require(cook || method == "world.water.plan", "Unknown water authoring method.", -32601);
         fields(params, {"revision", "terrain", "expected_terrain_recipe_sha256", "expected_plan_sha256", "tile_entities",
             "grid", "initial_depths_m", "faces", "exchanges", "rain_cells", "surface_ripples", "surface_wave_layers",
-            "surface_swell", "swell_variation", "listener_audio", "optics"},
+            "surface_swell", "swell_variation", "listener_audio", "optics", "currents"},
             {"revision", "terrain", "expected_terrain_recipe_sha256", "tile_entities", "grid"});
         require(cook == params.contains("expected_plan_sha256"), "Water cooking requires a reviewed plan SHA-256.");
         current_revision(params);
@@ -82,6 +82,7 @@
             if (params.contains("surface_swell")) result["surface_swell"] = params.at("surface_swell");
             if (params.contains("swell_variation")) result["swell_variation"] = params.at("swell_variation");
             if (params.contains("listener_audio")) result["listener_audio"] = params.at("listener_audio");
+            if (params.contains("currents")) result["currents"] = params.at("currents");
             if (params.contains("optics")) {
                 auto optics=params.at("optics");
                 if(!optics.value("refraction",false))optics.erase("refraction");
@@ -97,7 +98,7 @@
     }
 
     Json water_inspect(const Json& params) const {
-        fields(params, {"session_id", "tick", "cells", "points", "segments", "bodies", "structure_revision"}, {"session_id", "tick"});
+        fields(params, {"session_id", "tick", "cells", "points", "segments", "bodies", "structure_revision", "current_faces"}, {"session_id", "tick"});
         runtime_guard(params);
         const auto tick = runtime_->inspect().tick;
         require(revision(params.at("tick")) == tick, "Runtime tick conflict.", -32009);
@@ -119,6 +120,7 @@
                 const auto center=body->center_of_buoyancy ? Json(*body->center_of_buoyancy) : Json(nullptr);
                 bodies.push_back({{"entity",id},{"body_volume_m3",body->body_volume_m3},
                     {"submerged_volume_m3",body->submerged_volume_m3},{"lift_n",body->lift_n},{"center_of_buoyancy",center}});
+                if (body->water_velocity_m_s) bodies.back()["water_velocity_m_s"]=*body->water_velocity_m_s;
             }
         } else {
             require(!params.contains("structure_revision"),"Water structure_revision accompanies a bodies query.");
@@ -178,7 +180,32 @@
                         {"surface_height_m",stage},{"depth_m",stage-floor},{"surface_normal",{0,1,0}}};
                     if (y>=floor && y<stage) row["submersion_m"]=stage-y;
                 }
+                if (region && region->currents()) {
+                    row["water_velocity_m_s"] = column && column->submersion_at(y)>0
+                        ? region->current_at(column->cell,x,z) : std::array<double,3>{};
+                }
                 result["points"].push_back(std::move(row));
+            }
+        }
+        if (params.contains("current_faces")) {
+            require(region && region->currents(),"Current faces require a water region with currents.");
+            const auto& requests=params.at("current_faces");
+            require(requests.is_array() && requests.size()<=64,"Water observation accepts at most 64 current faces.");
+            const auto& grid=region->grid();
+            auto& rows=result["current_faces"]=Json::array();
+            for (const auto& request : requests) {
+                fields(request,{"cell","axis"},{"cell","axis"});
+                const auto& index=request.at("cell");
+                const auto& axis=request.at("axis");
+                require(index.is_array() && index.size()==2 && (axis=="x" || axis=="z"),
+                    "Water current faces use a lower [x, z] cell and an x or z axis.");
+                const auto x=revision(index[0]),z=revision(index[1]);
+                require(x<grid.config().cells_x && z<grid.config().cells_z &&
+                    (axis=="x" ? x+1<grid.config().cells_x : z+1<grid.config().cells_z),
+                    "Water current faces must connect two interior cells.");
+                const water::Cell cell{static_cast<std::uint32_t>(x),static_cast<std::uint32_t>(z)};
+                const auto discharge=grid.face_discharge_m3_s(cell,axis=="x" ? water::FaceAxis::x : water::FaceAxis::z);
+                rows.push_back({{"cell",index},{"axis",axis},{"discharge_m3_s",discharge}});
             }
         }
         if (!region) return result;
@@ -197,6 +224,8 @@
             result["listener_audio"] = water::listener_audio_json(*listener_audio);
         if (const auto& optics = region->optics())
             result["optics"] = water::optics_json(*optics);
+        if (const auto& currents=region->currents())
+            result["currents"] = water::currents_json(*currents);
         if (params.contains("cells")) for (const auto& request : params.at("cells")) {
             require(request.is_array() && request.size() == 2, "Water observation cells use [x, z] indices.");
             const auto x = revision(request[0]), z = revision(request[1]);

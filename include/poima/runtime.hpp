@@ -143,6 +143,7 @@ struct BoxCollider {
 struct RuntimeWaterBody {
     double body_volume_m3, submerged_volume_m3, lift_n;
     std::optional<std::array<double,3>> center_of_buoyancy;
+    std::optional<std::array<double,3>> water_velocity_m_s{};
 };
 struct MeshCollider {
     std::shared_ptr<const MeshAsset> mesh;

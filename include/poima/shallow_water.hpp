@@ -62,6 +62,11 @@ struct StepReport {
     double rain_m3 = 0;
 };
 
+struct FaceTransfers {
+    // Signed depth-equivalent transfers, positive toward increasing X or Z.
+    std::vector<double> x_m, z_m;
+};
+
 struct Snapshot {
     GridConfig config;
     std::uint64_t tick = 0;
@@ -69,6 +74,7 @@ struct Snapshot {
     std::vector<double> depths_m;
     std::vector<FaceControl> x_faces;
     std::vector<FaceControl> z_faces;
+    std::optional<FaceTransfers> last_transfers{};
 };
 
 // One owner advances this localized, closed grid. Cells are row-major in X
@@ -76,7 +82,7 @@ struct Snapshot {
 class Grid {
 public:
     Grid(const GridConfig& config, std::span<const double> floor_heights_m,
-         std::span<const double> initial_depths_m = {});
+         std::span<const double> initial_depths_m = {}, bool track_transfers = false);
 
     const GridConfig& config() const noexcept { return config_; }
     std::uint64_t tick() const noexcept { return tick_; }
@@ -87,6 +93,7 @@ public:
 
     FaceControl face(Cell lower_cell, FaceAxis axis) const;
     void set_face(Cell lower_cell, FaceAxis axis, FaceControl control);
+    double face_discharge_m3_s(Cell lower_cell, FaceAxis axis) const;
 
     // Apply rain to unique cells in row-major order, process the authored
     // exchanges, then move water across interior faces. Rejected steps leave
@@ -96,6 +103,8 @@ public:
 
     Snapshot snapshot() const;
     static Grid restore(const Snapshot& snapshot);
+    // A region restores transfers after applying the gate states from the same tick.
+    void restore_transfers(FaceTransfers transfers);
 
 private:
     std::size_t cell_index(Cell cell) const;
@@ -108,6 +117,7 @@ private:
     std::vector<double> depths_;
     std::vector<FaceControl> x_faces_;
     std::vector<FaceControl> z_faces_;
+    std::optional<FaceTransfers> last_transfers_, staged_transfers_;
     std::vector<double> staged_depths_;
     std::vector<double> transfer_deltas_;
     std::vector<std::size_t> exchange_indices_;

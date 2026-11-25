@@ -106,7 +106,7 @@ struct VolumeMoment {
     double volume=0;
     Vec moment{};
 
-    void include(const Hull& box,std::span<const Plane> planes) {
+    void include(const Hull& box,std::span<const Plane> planes,VolumeMoment* alongside=nullptr) {
         auto polyhedron=box;
         for (const auto plane : planes) if (!clip(polyhedron,plane)) return;
 
@@ -126,8 +126,13 @@ struct VolumeMoment {
             for (std::size_t j=1;j+1<points.size();++j) {
                 const auto b=sub(points[j],interior),c=sub(points[j+1],interior);
                 const auto tetra=std::abs(dot(a,cross(b,c)))/6;
+                const auto weighted=mul(add(interior,mul(add(add(a,b),c),.25)),tetra);
                 volume+=tetra;
-                moment=add(moment,mul(add(interior,mul(add(add(a,b),c),.25)),tetra));
+                moment=add(moment,weighted);
+                if (alongside) {
+                    alongside->volume+=tetra;
+                    alongside->moment=add(alongside->moment,weighted);
+                }
             }
         }
     }
@@ -155,6 +160,7 @@ Displacement Region::displaced_by_box(const Vec& center,const std::array<Vec,3>&
     const auto x_end=x+size*config.cells_x,z_end=z+size*config.cells_z;
     const auto initial=box(axes);
     VolumeMoment total;
+    Vec current_moment{};
     if (optics_ && optics_->offshore) {
         const auto& sea=*optics_->offshore;
         const auto stage=sea.surface_height_m-center[1];
@@ -175,6 +181,8 @@ Displacement Region::displaced_by_box(const Vec& center,const std::array<Vec,3>&
             for (auto ix=index(-radius[0]-x,config.cells_x);ix<=index(radius[0]-x,config.cells_x);++ix) {
                 const auto left=x+size*ix,near=z+size*iz;
                 const Cell cell{ix,iz};
+                VolumeMoment per_cell;
+                auto* tracking=currents_ ? &per_cell : nullptr;
                 if (shore_corner_heights_m_.empty()) {
                     const auto sample=grid_.sample(cell);
                     const auto bottom=sample.floor_height_m-center[1],top=sample.surface_height_m-center[1];
@@ -183,33 +191,40 @@ Displacement Region::displaced_by_box(const Vec& center,const std::array<Vec,3>&
                         Plane{{-1,0,0},-left},Plane{{1,0,0},left+size},
                         Plane{{0,0,-1},-near},Plane{{0,0,1},near+size},
                         Plane{{0,-1,0},-bottom},Plane{{0,1,0},top}};
-                    total.include(initial,planes);
-                    continue;
+                    total.include(initial,planes,tracking);
+                } else {
+                    const auto bed=fitted_bed(cell);
+                    const Vec midpoint{left+.5*size,0,near+.5*size};
+                    const std::array<Vec,4> corners{{{left,0,near},{left+size,0,near},
+                        {left+size,0,near+size},{left,0,near+size}}};
+                    for (std::size_t side=0;side<corners.size();++side) {
+                        if (bed.inactive_wedges & (1u<<side)) continue;
+                        const auto next=(side+1)%corners.size();
+                        const auto top=bed.stages_m[side]-center[1];
+                        if (top+std::max({bed.swell_center_m,bed.swell_corners_m[side],bed.swell_corners_m[next]})<=-radius[1] ||
+                            std::min({bed.center_m,bed.corners_m[side],bed.corners_m[next]})-center[1]>=radius[1]) continue;
+                        const auto top_gradient=fitted_water_gradient(bed.swell_center_m,bed.swell_corners_m,side,size);
+                        const auto bed_gradient=fitted_water_gradient(bed.center_m,bed.corners_m,side,size);
+                        const Vec up{-top_gradient[0],1,-top_gradient[1]},down{bed_gradient[0],-1,bed_gradient[1]};
+                        const std::array planes{inside_edge(corners[side],corners[next]),
+                            inside_edge(corners[next],midpoint),inside_edge(midpoint,corners[side]),
+                            Plane{up,dot(up,midpoint)+top+bed.swell_center_m},
+                            Plane{down,dot(down,midpoint)+center[1]-bed.center_m}};
+                        total.include(initial,planes,tracking);
+                    }
                 }
-                const auto bed=fitted_bed(cell);
-                const Vec midpoint{left+.5*size,0,near+.5*size};
-                const std::array<Vec,4> corners{{{left,0,near},{left+size,0,near},
-                    {left+size,0,near+size},{left,0,near+size}}};
-                for (std::size_t side=0;side<corners.size();++side) {
-                    if (bed.inactive_wedges & (1u<<side)) continue;
-                    const auto next=(side+1)%corners.size();
-                    const auto top=bed.stages_m[side]-center[1];
-                    if (top+std::max({bed.swell_center_m,bed.swell_corners_m[side],bed.swell_corners_m[next]})<=-radius[1] ||
-                        std::min({bed.center_m,bed.corners_m[side],bed.corners_m[next]})-center[1]>=radius[1]) continue;
-                    const auto top_gradient=fitted_water_gradient(bed.swell_center_m,bed.swell_corners_m,side,size);
-                    const auto bed_gradient=fitted_water_gradient(bed.center_m,bed.corners_m,side,size);
-                    const Vec up{-top_gradient[0],1,-top_gradient[1]},down{bed_gradient[0],-1,bed_gradient[1]};
-                    const std::array planes{inside_edge(corners[side],corners[next]),
-                        inside_edge(corners[next],midpoint),inside_edge(midpoint,corners[side]),
-                        Plane{up,dot(up,midpoint)+top+bed.swell_center_m},
-                        Plane{down,dot(down,midpoint)+center[1]-bed.center_m}};
-                    total.include(initial,planes);
+                if (per_cell.volume>0) {
+                    const auto centroid=add(center,mul(per_cell.moment,1./per_cell.volume));
+                    // Within this cell the velocity field is affine, so its
+                    // submerged-volume average is the value at the centroid.
+                    const auto velocity=current_at(cell,centroid[0],centroid[2]);
+                    current_moment=add(current_moment,mul(velocity,per_cell.volume));
                 }
             }
         }
     }
     if (total.volume<=0) return {};
-    return {total.volume,mul(total.moment,1./total.volume)};
+    return {total.volume,mul(total.moment,1./total.volume),mul(current_moment,1./total.volume)};
 }
 
 } // namespace poima::water

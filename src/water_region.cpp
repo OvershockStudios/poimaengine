@@ -46,7 +46,7 @@ Grid initial_grid(const RegionDefinition& definition) {
         throw std::invalid_argument("Water expects at most four surface wave layers.");
     if (definition.surface_ripples && !definition.surface_wave_layers.empty())
         throw std::invalid_argument("Choose either surface_ripples or surface_wave_layers.");
-    return Grid(definition.config, definition.floor_heights_m, definition.initial_depths_m);
+    return Grid(definition.config, definition.floor_heights_m, definition.initial_depths_m, definition.currents.has_value());
 }
 
 void validate_surface_ripples(const SurfaceRipples& ripples) {
@@ -86,9 +86,11 @@ auto exchange_key(const CellExchange& rule) noexcept {
     return cell_key(rule.cell);
 }
 
-bool exact_fields(const Json& object, std::initializer_list<const char*> fields) {
-    return object.is_object() && object.size() == fields.size() &&
-        std::all_of(fields.begin(), fields.end(), [&](const char* name) { return object.contains(name); });
+bool exact_fields(const Json& object, std::initializer_list<const char*> fields,
+                  const char* extra=nullptr,const char* second=nullptr) {
+    return object.is_object() && object.size()==fields.size()+std::size_t(extra!=nullptr)+std::size_t(second!=nullptr) &&
+        std::ranges::all_of(fields,[&](const char* field){return object.contains(field);}) &&
+        (!extra || object.contains(extra)) && (!second || object.contains(second));
 }
 
 std::uint64_t unsigned_integer(const Json& value) {
@@ -234,8 +236,11 @@ Region::Region(const RegionDefinition& definition)
       rain_cells_(definition.rain_cells), surface_ripples_(definition.surface_ripples),
       surface_wave_layers_(definition.surface_wave_layers), listener_audio_(definition.listener_audio),
       optics_(definition.optics), shore_corner_heights_m_(definition.shore_corner_heights_m),
-      surface_swell_(definition.surface_swell), swell_variation_(definition.swell_variation) {
+      surface_swell_(definition.surface_swell), swell_variation_(definition.swell_variation),currents_(definition.currents) {
     const auto& config=grid_.config();
+    if (currents_ && !(currents_->max_speed_m_s>=.1 && currents_->max_speed_m_s<=30 &&
+            currents_->min_depth_m>=.001 && currents_->min_depth_m<=1))
+        throw std::invalid_argument("Water currents need max_speed_m_s in [0.1,30] and min_depth_m in [0.001,1].");
     const auto corner_count=static_cast<std::size_t>(config.cells_x+1)*(config.cells_z+1);
     if (optics_ && optics_->follow_terrain) {
         if (shore_corner_heights_m_.size()!=corner_count ||
@@ -467,6 +472,29 @@ std::optional<std::array<double,2>> Region::offshore_levels(double x_m,double z_
     return std::array{sea.surface_height_m-sea.depth_m,sea.surface_height_m};
 }
 
+Json currents_json(const WaterCurrents& profile) {
+    return {{"max_speed_m_s",profile.max_speed_m_s},{"min_depth_m",profile.min_depth_m}};
+}
+
+std::array<double,3> Region::current_at(Cell cell,double x_m,double z_m) const {
+    if (!currents_ || grid_.tick()==0 || !std::isfinite(x_m) || !std::isfinite(z_m)) return {};
+    const auto depth=grid_.sample(cell).depth_m;
+    if (depth<=0) return {};
+    const auto& config=grid_.config();
+    const auto size=config.cell_size_m;
+    // Discharge is signed along the positive axis at both faces.
+    const auto west=cell.x>0 ? grid_.face_discharge_m3_s({cell.x-1,cell.z},FaceAxis::x) : 0.;
+    const auto east=cell.x+1<config.cells_x ? grid_.face_discharge_m3_s(cell,FaceAxis::x) : 0.;
+    const auto north=cell.z>0 ? grid_.face_discharge_m3_s({cell.x,cell.z-1},FaceAxis::z) : 0.;
+    const auto south=cell.z+1<config.cells_z ? grid_.face_discharge_m3_s(cell,FaceAxis::z) : 0.;
+    const auto widest=std::hypot(std::max(std::abs(west),std::abs(east)),std::max(std::abs(north),std::abs(south)));
+    const auto area=size*std::max(depth,currents_->min_depth_m);
+    const auto divisor=std::max(area,widest/currents_->max_speed_m_s);
+    const auto u=std::clamp((x_m-config.origin_x_m)/size-cell.x,0.,1.);
+    const auto v=std::clamp((z_m-config.origin_z_m)/size-cell.z,0.,1.);
+    return {std::lerp(west,east,u)/divisor,0.,std::lerp(north,south,v)/divisor};
+}
+
 double Region::submersion_at(double x_m,double y_m,double z_m) const {
     if (const auto local=sample_world(x_m,z_m)) return local->submersion_at(y_m);
     if (const auto ocean=offshore_levels(x_m,z_m); ocean && y_m>=(*ocean)[0] && y_m<(*ocean)[1])
@@ -521,23 +549,25 @@ Json Region::save() const {
             action_faces.push_back(grid_.face(rule.cell, rule.axis).openness);
     auto snapshot = grid_.snapshot();
     const bool rain_enabled = !rain_cells_.empty();
-    Json result{{"format", snapshot_format}, {"version", rain_enabled ? 2 : 1}, {"plan_sha256", plan_sha256_},
+    Json result{{"format", snapshot_format}, {"version", currents_ ? 3 : rain_enabled ? 2 : 1}, {"plan_sha256", plan_sha256_},
         {"tick", snapshot.tick}, {"depths_m", std::move(snapshot.depths_m)},
         {"action_face_openness", std::move(action_faces)}, {"last_report", report_json(last_report_, rain_enabled)}};
     if (rain_enabled)
         result["rain"] = {{"first_quantum", first_rain_quantum_ ? Json(*first_rain_quantum_) : Json(nullptr)},
             {"cumulative_depth_nm", cumulative_rain_nm_}, {"last_step_depth_nm", last_rain_nm_}};
+    if (snapshot.last_transfers)
+        result["face_transfers"]={{"x_m",std::move(snapshot.last_transfers->x_m)},
+            {"z_m",std::move(snapshot.last_transfers->z_m)}};
     return result;
 }
 
 void Region::restore(const Json& saved, std::uint64_t expected_tick,
                      std::optional<std::uint64_t> next_quantum) {
     const bool rain_enabled = !rain_cells_.empty();
-    const bool fields_match = rain_enabled
-        ? exact_fields(saved, {"format", "version", "plan_sha256", "tick", "depths_m", "action_face_openness", "last_report", "rain"})
-        : exact_fields(saved, {"format", "version", "plan_sha256", "tick", "depths_m", "action_face_openness", "last_report"});
+    const bool fields_match=exact_fields(saved,{"format","version","plan_sha256","tick","depths_m","action_face_openness","last_report"},
+        rain_enabled ? "rain" : nullptr,currents_ ? "face_transfers" : nullptr);
     if (!fields_match || saved.at("format") != snapshot_format ||
-        unsigned_integer(saved.at("version")) != (rain_enabled ? 2u : 1u) ||
+        unsigned_integer(saved.at("version")) != (currents_ ? 3u : rain_enabled ? 2u : 1u) ||
         saved.at("plan_sha256") != plan_sha256_ || unsigned_integer(saved.at("tick")) != expected_tick)
         throw std::invalid_argument("Water snapshot format, plan identity or tick does not match.");
 
@@ -549,6 +579,10 @@ void Region::restore(const Json& saved, std::uint64_t expected_tick,
     if (expected_tick == 0 && snapshot.depths_m != initial_depths_m_)
         throw std::invalid_argument("Initial water snapshot depths do not match the plan.");
     snapshot.tick = expected_tick;
+    if (snapshot.last_transfers) {
+        std::ranges::fill(snapshot.last_transfers->x_m,0.);
+        std::ranges::fill(snapshot.last_transfers->z_m,0.);
+    }
     auto candidate = Grid::restore(snapshot);
 
     const auto& openings = saved.at("action_face_openness");
@@ -569,6 +603,22 @@ void Region::restore(const Json& saved, std::uint64_t expected_tick,
             control.openness = rule.action_openness;
         }
         candidate.set_face(rule.cell, rule.axis, control);
+    }
+    if (snapshot.last_transfers) {
+        const auto& face_transfers=saved.at("face_transfers");
+        if (!exact_fields(face_transfers,{"x_m","z_m"}))
+            throw std::invalid_argument("Water snapshot has an incomplete face transfer record.");
+        const auto read=[](const Json& row,std::vector<double>& values) {
+            if (!row.is_array() || row.size()!=values.size())
+                throw std::invalid_argument("Water snapshot face transfer count differs from the grid.");
+            std::transform(row.begin(),row.end(),values.begin(),[](const Json& value) {
+                if (!value.is_number()) throw std::invalid_argument("Saved water face transfer must be a number.");
+                return value.get<double>();
+            });
+        };
+        read(face_transfers.at("x_m"),snapshot.last_transfers->x_m);
+        read(face_transfers.at("z_m"),snapshot.last_transfers->z_m);
+        candidate.restore_transfers(std::move(*snapshot.last_transfers));
     }
     std::optional<std::uint64_t> first_quantum;
     std::uint64_t cumulative_rain_nm = 0;

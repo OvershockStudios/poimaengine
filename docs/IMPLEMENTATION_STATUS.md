@@ -1,8 +1,18 @@
 # Implementation status
 
-Updated 2026-11-25 for **0.0.435**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-25 for **0.0.436**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.436 adds [local water currents](SHALLOW_WATER.md#carry-floating-objects-with-a-current).
+Committed face transfers drive horizontal, depth-averaged velocity and drag
+on buoyant boxes. A two-channel fixture matches an independent transfer
+ledger, moves initially stationary floats in opposite directions and
+observes both sluices closing. Forward AMD and deferred NVIDIA reproduce
+their respective images after reopening a save in a relocated game.
+Ubuntu passes ten focused suites and the headless fixture. Water momentum,
+wave wakes, body feedback into water volume and scene-scale costs remain
+open. [Results and scope](evidence/m2-water-currents-436.json)
 
 Version 0.0.435 adds [buoyancy and drag for dynamic boxes](SHALLOW_WATER.md#float-a-dynamic-box).
 The shared water geometry determines submerged volume and the point where

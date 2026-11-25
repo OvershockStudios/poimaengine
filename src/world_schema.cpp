@@ -440,7 +440,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 231}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 232}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -1076,6 +1076,8 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"surface","water"},{"runtime_feature","particle_water_contact"},{"observation","runtime.water.inspect"}};
     result["water_buoyancy"]={{"available",Runtime::available()},{"component","BoxCollider.buoyancy"},
         {"max_bodies",water::max_buoyant_bodies},{"runtime_feature","water_buoyancy"},{"observation","runtime.water.inspect"}};
+    result["water_currents"]={{"available",Runtime::available()},{"profile","world.water.plan.currents"},
+        {"runtime_feature","water_currents"},{"observation","runtime.water.inspect"}};
     result["collision_surfaces"]={{"available",Runtime::available()},{"ray_method","runtime.surface.raycast"},
         {"max_name_bytes",max_collision_surface_length},{"max_impact_routes",max_particle_impact_surfaces},
         {"runtime_feature","collision_surfaces"}};

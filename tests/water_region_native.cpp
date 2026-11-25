@@ -417,6 +417,62 @@ void displaced_box_volume_matches_analytic_solids() {
         "The offshore band and local grid overlap or leave a gap.");
 }
 
+void currents_share_committed_gate_flow_and_restore() {
+    RegionDefinition definition{
+        .config={.cells_x=2,.cells_z=1,.origin_x_m=25,.origin_z_m=-12,.relaxation_per_second=6},
+        .floor_heights_m={0,0},.initial_depths_m={2,1},
+        .faces={{{0,0},FaceAxis::x,{0,.25},"use.sluice",.5}},
+        .plan_sha256=std::string(64,'d'),.rain_cells={{0,0}},
+        .currents=poima::water::WaterCurrents{10,.01},
+    };
+    const auto near=[](double a,double b){return std::abs(a-b)<1e-12;};
+    Region region(definition);
+    require(region.current_at({0,0},25.5,-11.5)==std::array<double,3>{},
+        "Initial water has a current before any fluid moved.");
+    region.step();
+    require(region.grid().face_discharge_m3_s({0,0},FaceAxis::x)==0,
+        "A closed gate reported discharge.");
+    region.step(toggle,100000,0);
+    const auto pin=region.save();
+    const auto flow=.5*.1*(2.0001-1.);
+    const auto discharge=flow*60;
+    require(pin.at("version")==3 && near(pin.at("face_transfers").at("x_m")[0],flow) &&
+        near(region.grid().face_discharge_m3_s({0,0},FaceAxis::x),discharge),
+        "Last transfer did not account for the water and rain before flow.");
+    const auto left=discharge/(2.0001-flow),right=discharge/(1+flow);
+    const auto velocity=region.current_at({0,0},25.75,-11.5);
+    require(near(velocity[0],.75*left) && velocity[1]==0 && velocity[2]==0,
+        "Current reconstruction did not interpolate signed discharge.");
+    const std::array axes{std::array{.25,0.,0.},std::array{0.,.25,0.},std::array{0.,0.,.25}};
+    const auto box=region.displaced_by_box({26,.5,-11.5},axes);
+    require(near(box.volume_m3,.125) && near(box.water_velocity_m_s[0],.875*(left+right)*.5),
+        "The spanning box did not average the two distinct wet cell velocities.");
+    Region cold(definition);
+    cold.restore(pin,2,1);
+    require(cold.save()==pin && cold.current_at({0,0},25.75,-11.5)==velocity,
+        "Cold water restore lost its last transfer or gate state.");
+    for (auto bad : {Json::array({.01}),Json::array({"0.05"}),Json::array()}) {
+        auto forged=pin;
+        forged["face_transfers"]["x_m"]=std::move(bad);
+        rejects<std::invalid_argument>([&]{cold.restore(forged,2,1);},"A forged current was accepted.");
+        require(cold.save()==pin,"A rejected current save changed the live state.");
+    }
+    cold.step(toggle);
+    require(cold.grid().face_discharge_m3_s({0,0},FaceAxis::x)==0,
+        "A closed gate retained its previous discharge.");
+    cold.restore(pin,2,1);
+    require(cold.save()==pin,"Reopening a checkpoint did not restore the matching transfers.");
+
+    definition.currents->max_speed_m_s=.1;
+    definition.rain_cells.clear();
+    std::swap(definition.initial_depths_m[0],definition.initial_depths_m[1]);
+    Region reverse(definition);
+    reverse.step(toggle);
+    require(reverse.grid().face_discharge_m3_s({0,0},FaceAxis::x)<0 &&
+        near(reverse.current_at({0,0},25.5,-11.5)[0],-.05),
+        "Negative flow or the velocity limit was lost.");
+}
+
 }
 
 int main() {
@@ -429,6 +485,7 @@ int main() {
         offshore_joins_only_the_selected_edge();
         surface_segments_cross_cells_and_clip_to_the_wet_bed();
         displaced_box_volume_matches_analytic_solids();
+        currents_share_committed_gate_flow_and_restore();
         std::cout << "Water region tests passed.\n";
     } catch (const std::exception& error) {
         std::cerr << error.what() << '\n';
