@@ -46,9 +46,9 @@ foreach(shader smoke scene scene_products scene_deferred scene_deferred_color de
         deferred_lighting_color_reflection deferred_lighting_color_ao_reflection screen_reflections height_fog height_fog_aerial aerial_perspective auto_exposure
         ambient_occlusion ambient_occlusion_filter scene_output scene_output_ao scene_output_products scene_output_bloom scene_output_products_bloom scene_output_grade scene_output_grade_bloom
         scene_output_exposure scene_output_bloom_exposure scene_output_grade_exposure scene_output_grade_bloom_exposure
-        spatial_aa bloom viewmodel_composite viewmodel_resolve sky sky_atmosphere sky_clouds atmosphere_density atmosphere_sky_view cloud_noise cloud_view
+        spatial_aa bloom viewmodel_composite viewmodel_resolve sky sky_atmosphere sky_clouds atmosphere_density atmosphere_sky_view cloud_noise cloud_view cloud_shadow
         shadow skinning cluster_lights temporal_inputs temporal_composed_inputs temporal_sprite_inputs temporal_composed_sprite_inputs editor_overlay game_ui particle_sprite particle_sprite_temporal)
-if(shader MATCHES "^(skinning|cluster_lights|temporal(_composed)?(_sprite)?_inputs|deferred_lighting.*|ambient_occlusion.*|screen_reflections|height_fog(_aerial)?|aerial_perspective|auto_exposure|atmosphere_density|atmosphere_sky_view|cloud_noise|cloud_view)$")
+if(shader MATCHES "^(skinning|cluster_lights|temporal(_composed)?(_sprite)?_inputs|deferred_lighting.*|ambient_occlusion.*|screen_reflections|height_fog(_aerial)?|aerial_perspective|auto_exposure|atmosphere_density|atmosphere_sky_view|cloud_(noise|view|shadow))$")
     set(shader_stages cs)
 elseif(shader MATCHES "^(scene_output_grade|spatial_aa)" OR shader MATCHES "^scene_output.*_exposure$" OR shader MATCHES "^sky_(atmosphere|clouds)$")
     set(shader_stages ps)
@@ -135,6 +135,9 @@ foreach(stage IN LISTS shader_stages)
     endif()
     if(shader MATCHES "^(aerial_perspective|height_fog_aerial)$")
         list(APPEND shader_dependencies "${CMAKE_SOURCE_DIR}/shaders/aerial_perspective_lookup.hlsli")
+    endif()
+    if(shader MATCHES "^cloud_(view|shadow)$")
+        list(APPEND shader_dependencies "${CMAKE_SOURCE_DIR}/shaders/cloud_density.hlsli")
     endif()
     if(shader MATCHES "^(deferred_lighting.*|scene_deferred.*|scene|scene_products|shadow|temporal(_composed)?(_sprite)?_inputs)$")
         list(APPEND shader_dependencies "${CMAKE_SOURCE_DIR}/shaders/scene_correspondence.hlsli")

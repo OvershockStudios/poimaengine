@@ -120,6 +120,8 @@ void validate_environment(const LightingEnvironment& e) {
             require(finite_between(clouds.extinction_per_km,0,32),"Cloud extinction_per_km must be finite and in [0,32].");
             for(float axis:clouds.wind_m_per_s)
                 require(finite_between(axis,-100,100),"Cloud wind_m_per_s must be finite and in [-100,100] on each axis.");
+            if(clouds.shadow_strength)
+                require(finite_between(*clouds.shadow_strength,0,1),"Cloud shadow_strength must be finite and in [0,1].");
         }
     }
     if(e.ibl) {

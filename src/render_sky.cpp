@@ -171,6 +171,8 @@ void Pass::prepare(nvrhi::IDevice& device, nvrhi::IBuffer* frame,
     constants_ = {};
     atmosphere_enabled_ = false;
     clouds_enabled_ = false;
+    cloud_shadows_enabled_ = false;
+    cloud_shadow_position_ = {};
     observer_height_m_ = 0;
     if (!enabled_) return;
 
@@ -195,6 +197,7 @@ void Pass::prepare(nvrhi::IDevice& device, nvrhi::IBuffer* frame,
 
     // The authored sun reference selects the direction, even as it moves at runtime.
     const auto& profile = lighting.environment.atmosphere;
+    bool sun_lit = false;
     for (const auto& sun : lighting.lights) {
         if (sky.sun.empty() || sun.entity_id != sky.sun || !sun.light.enabled || sun.light.kind != LightKind::directional) continue;
         const double length = std::hypot(sun.direction[0], sun.direction[1], sun.direction[2]);
@@ -205,6 +208,7 @@ void Pass::prepare(nvrhi::IDevice& device, nvrhi::IBuffer* frame,
             constants_.sun_color[axis] = sun.light.color[axis];
         }
         constants_.sun_intensity[3] = sky.sun_intensity;
+        sun_lit = sun.light.intensity > 0;
         if (profile && profile->radiance_scale > 0) {
             const auto height = std::clamp(scene.camera_world[13] - profile->sea_level_m,
                 0.0, static_cast<double>(atmosphere::max_observer_height_m));
@@ -225,6 +229,9 @@ void Pass::prepare(nvrhi::IDevice& device, nvrhi::IBuffer* frame,
         if (clouds_enabled_) {
             const auto time = lighting.solar_lighting ? lighting.solar_lighting->world_milliseconds : 0;
             prepare_clouds(device, frame, scene, *profile, time);
+            cloud_shadows_enabled_ = clouds->shadow_strength.value_or(0.0f) > 0 && sun_lit &&
+                constants_.sun_intensity[1] > 0.08f;
+            if (cloud_shadows_enabled_) prepare_cloud_shadow(device, *profile);
         }
     }
     prepare_raster(device, frame, framebuffers.front()->getFramebufferInfo(),
@@ -278,6 +285,11 @@ void Pass::commit_atmosphere() noexcept {
     if (cloud_noise_recorded_) cloud_noise_initialized_ = true;
     cloud_noise_recorded_ = false;
     cloud_view_recorded_ = false;
+    if (cloud_shadow_recorded_) {
+        accepted_cloud_shadow_parameters_ = cloud_shadow_parameters_;
+        ++cloud_shadow_generation_;
+        cloud_shadow_recorded_ = false;
+    }
 }
 
 void Pass::draw(nvrhi::ICommandList& commands, nvrhi::IFramebuffer* framebuffer,

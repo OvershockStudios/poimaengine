@@ -33,6 +33,7 @@
     "atmosphere_sky": @POIMA_RUNTIME_ATMOSPHERE_SKY@,
     "aerial_perspective": @POIMA_RUNTIME_AERIAL_PERSPECTIVE@,
     "volumetric_clouds": @POIMA_RUNTIME_VOLUMETRIC_CLOUDS@,
+    "cloud_shadows": @POIMA_RUNTIME_CLOUD_SHADOWS@,
     "foliage_motion": @POIMA_RUNTIME_RENDER_SMOKE@,
     "height_fog": @POIMA_RUNTIME_RENDER_SMOKE@,
     "audio": @POIMA_RUNTIME_AUDIO@,

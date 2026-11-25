@@ -98,6 +98,10 @@ def validate(runtime, header):
         need(type(flags['volumetric_clouds']) is bool, 'Runtime volumetric clouds capability must be Boolean.')
         need(not flags['volumetric_clouds'] or flags.get('atmosphere_sky') is True,
              'Volumetric clouds require atmospheric sky in the installed runtime.')
+    if 'cloud_shadows' in flags:
+        need(type(flags['cloud_shadows']) is bool, 'Runtime cloud shadows capability must be Boolean.')
+        need(not flags['cloud_shadows'] or flags.get('volumetric_clouds') is True,
+             'Cloud shadows require volumetric clouds in the installed runtime.')
     features = runtime.get('gameplay_features')
     need(type(features) is list and all(type(name) is str for name in features) and
          len(features) == len(set(features)), 'Runtime gameplay features must be unique strings.')
@@ -161,7 +165,9 @@ def self_test(header, cmake, stale_runtime=None):
     for flags in (dict(renderer=True, atmosphere_sky=True, aerial_perspective=True),
                   dict(aerial_perspective=False),
                   dict(renderer=True, atmosphere_sky=True, volumetric_clouds=True),
-                  dict(volumetric_clouds=False)):
+                  dict(volumetric_clouds=False),
+                  dict(renderer=True, atmosphere_sky=True, volumetric_clouds=True, cloud_shadows=True),
+                  dict(cloud_shadows=False)):
         candidate = copy.deepcopy(good)
         candidate['features'].update(flags)
         validate(candidate, header)
@@ -171,7 +177,10 @@ def self_test(header, cmake, stale_runtime=None):
                   dict(renderer=True, aerial_perspective=True),
                   dict(renderer=True, atmosphere_sky=True, volumetric_clouds='true'),
                   dict(renderer=True, atmosphere_sky=False, volumetric_clouds=True),
-                  dict(renderer=True, volumetric_clouds=True)):
+                  dict(renderer=True, volumetric_clouds=True),
+                  dict(renderer=True, atmosphere_sky=True, volumetric_clouds=True, cloud_shadows='true'),
+                  dict(renderer=True, atmosphere_sky=True, volumetric_clouds=False, cloud_shadows=True),
+                  dict(renderer=True, atmosphere_sky=True, cloud_shadows=True)):
         candidate = copy.deepcopy(good)
         candidate['features'].update(flags)
         reject(candidate)
@@ -318,7 +327,8 @@ def self_test(header, cmake, stale_runtime=None):
                 retained_and_spoofed_568_rejected=True, unnamed_576_rejected=True,
                 retained_and_spoofed_576_rejected=True, unnamed_584_rejected=True,
                 generated_navigation_false_and_true_checked=True, atmosphere_capability_checked=True,
-                aerial_perspective_capability_checked=True, volumetric_clouds_capability_checked=True)
+                aerial_perspective_capability_checked=True, volumetric_clouds_capability_checked=True,
+                cloud_shadows_capability_checked=True)
 
 
 def main():

@@ -193,8 +193,18 @@ const nvrhi::TextureHandle& Cache::texture_for(const TextureImage* image) const 
 nvrhi::BindingSetHandle Cache::material(const Upload& upload, const MaterialInputs& inputs, const MeshAsset* mesh,
                                         const MaterialTextures* textures, MaterialBindings* foreground) {
     auto& cache = foreground ? *foreground : materials_;
+    require(bool(inputs.cloud_shadow) == bool(inputs.cloud_shadow_sampler), "Cloud shadow needs a texture and sampler together.");
+    const auto ibl = inputs.environment.bound();
+    auto* const cloud_shadow = inputs.cloud_shadow ? inputs.cloud_shadow : ibl.brdf;
+    auto* const cloud_sampler = inputs.cloud_shadow_sampler ? inputs.cloud_shadow_sampler : ibl.sampler;
     const MaterialKey material_key{mesh, textures};
-    if (const auto found = cache.find(material_key); found != cache.end()) return found->second;
+    if (const auto found = cache.find(material_key); found != cache.end()) {
+        // Both cloud bindings are appended by this cache. Reuse all material
+        // textures across activation changes while refreshing the descriptor.
+        const auto& cached = found->second->getDesc()->bindings;
+        if (cached[cached.size() - 2].resourceHandle == cloud_shadow && cached.back().resourceHandle == cloud_sampler)
+            return found->second;
+    }
 
     // Preserve positional binding slots as well as shader registers. The
     // masked shadow pass takes its base texture and sampler from this set.
@@ -226,9 +236,11 @@ nvrhi::BindingSetHandle Cache::material(const Upload& upload, const MaterialInpu
         .addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(8, inputs.indices))
         .addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(9, inputs.objects));
     inputs.environment.bind(desc);
+    desc.addItem(nvrhi::BindingSetItem::Texture_SRV(13, cloud_shadow))
+        .addItem(nvrhi::BindingSetItem::Sampler(6, cloud_sampler));
     auto result = upload.device.createBindingSet(desc, inputs.layout);
     require(bool(result), "Material texture bindings failed.");
-    cache.emplace(material_key, result);
+    cache.insert_or_assign(material_key, result);
     return result;
 }
 

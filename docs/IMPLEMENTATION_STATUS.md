@@ -1,8 +1,17 @@
 # Implementation status
 
-Updated 2026-11-25 for **0.0.408**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-25 for **0.0.409**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.409 adds [cloud shadows](VOLUMETRIC_CLOUDS.md#shadows-on-world-geometry)
+that attenuate direct sunlight. AMD and NVIDIA passed 76 Vulkan captures across
+forward and deferred color, 4× MSAA and FSR Native AA. A relocated Native AOT
+game matched an independently displaced wind control and reproduced its final
+image after a cold load and replay. The four-frame replay baked the map twice.
+The Intel Arc compute witness passed synchronization validation and 2,496
+reference comparisons. Ubuntu passed 15 suites and the headless fixture.
+[Results](evidence/m2-cloud-shadows-409.json)
 
 Version 0.0.408 adds [volumetric clouds](VOLUMETRIC_CLOUDS.md) lit by the
 atmospheric sun and moved by saved world time. AMD and NVIDIA passed 90 Vulkan

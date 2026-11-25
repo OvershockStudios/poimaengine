@@ -1775,19 +1775,19 @@ void atmosphere_contracts() {
     reconstructed_air.plan().validate();
     ++accepted;
 
-    const auto setup_clouds=[](Fixture& target,bool noise_ready) {
-        const auto texture=[&](Format format,unsigned width,unsigned height,unsigned layers,bool ready) {
-            const auto id=target.add(Kind::texture,ready ? Lifetime::imported : Lifetime::shared,ready);
-            auto& image=target.f.resources[id];
-            image.format=format;
-            image.width=width;
-            image.height=height;
-            image.layers=layers;
-            image.supported=use_bit(Use::sampled)|use_bit(Use::image_write);
-            return id;
-        };
-        target.f.cloud_noise=texture(Format::rgba8_unorm,cloud_noise_size,cloud_noise_size,cloud_noise_size,noise_ready);
-        target.f.cloud_view=texture(Format::rgba16_float,cloud_view_width,cloud_view_height,1,false);
+    const auto cloud_texture=[](Fixture& target,Format format,unsigned width,unsigned height,unsigned layers,bool ready) {
+        const auto id=target.add(Kind::texture,ready ? Lifetime::imported : Lifetime::shared,ready);
+        auto& image=target.f.resources[id];
+        image.format=format;
+        image.width=width;
+        image.height=height;
+        image.layers=layers;
+        image.supported=use_bit(Use::sampled)|use_bit(Use::image_write);
+        return id;
+    };
+    const auto setup_clouds=[&](Fixture& target,bool noise_ready) {
+        target.f.cloud_noise=cloud_texture(target,Format::rgba8_unorm,cloud_noise_size,cloud_noise_size,cloud_noise_size,noise_ready);
+        target.f.cloud_view=cloud_texture(target,Format::rgba16_float,cloud_view_width,cloud_view_height,1,false);
     };
     auto cloud_settings=rich();
     cloud_settings.volumetric_clouds=true;
@@ -1854,6 +1854,94 @@ void atmosphere_contracts() {
     });
     invalid_warm.passes.insert(cloud_bake,{PassId::cloud_noise,{{invalid_warm.frame.cloud_noise,Use::image_write,true}}});
     rejects("cached cloud noise is immutable",[&]{invalid_warm.validate();});
+
+    const auto setup_cloud_shadows=[&](Fixture& target,bool cached) {
+        target.settings.cloud_shadows=true;
+        target.f.cloud_shadow=cloud_texture(target,Format::rgba16_float,cloud_shadow_size,cloud_shadow_size,1,cached);
+    };
+    const auto samples_map=[](Schedule& schedule,PassId id) {
+        const auto& accesses=pass(schedule,id).accesses;
+        return std::count_if(accesses.begin(),accesses.end(),[&](const auto& access) {
+            return access.resource==schedule.frame.cloud_shadow && access.use==Use::sampled && !access.initialize;
+        });
+    };
+    auto cold_shadows=cold_clouds;
+    setup_cloud_shadows(cold_shadows,false);
+    auto cold_shadow_plan=cold_shadows.plan();
+    cold_shadow_plan.validate();
+    const auto& bake=pass(cold_shadow_plan,PassId::cloud_shadow);
+    check(count(cold_shadow_plan,PassId::cloud_shadow)==1 &&
+        &pass(cold_shadow_plan,PassId::cloud_noise)<&bake && &bake<&pass(cold_shadow_plan,PassId::sky) &&
+        samples_map(cold_shadow_plan,PassId::opaque)==1,"Cold cloud shadow bake must precede forward shading");
+    ++accepted;
+
+    auto warm_shadows=warm_clouds;
+    setup_cloud_shadows(warm_shadows,true);
+    auto warm_shadow_plan=warm_shadows.plan();
+    warm_shadow_plan.validate();
+    check(count(warm_shadow_plan,PassId::cloud_shadow)==0 && samples_map(warm_shadow_plan,PassId::opaque)==1,
+        "Reconstructed forward shading must reuse a cached cloud shadow map");
+    ++accepted;
+
+    auto deferred_shadows=changed_sun;
+    setup_cloud_shadows(deferred_shadows,false);
+    setup_foreground(deferred_shadows);
+    auto deferred_shadow_plan=deferred_shadows.plan();
+    deferred_shadow_plan.validate();
+    check(count(deferred_shadow_plan,PassId::cloud_noise)==0 && count(deferred_shadow_plan,PassId::cloud_shadow)==1 &&
+        samples_map(deferred_shadow_plan,PassId::opaque)==0 &&
+        samples_map(deferred_shadow_plan,PassId::deferred_lighting)==1 &&
+        samples_map(deferred_shadow_plan,PassId::viewmodel_opaque)==1,
+        "Deferred world and separate foreground shading need the changed cloud shadow map");
+    ++accepted;
+    check(count(legacy,PassId::cloud_shadow)==0 && count(cloud_plan,PassId::cloud_shadow)==0,
+        "Inactive cloud shadows must skip the bake");
+
+    const auto bad_shadow=[](const Schedule& source,const char* label,auto mutate) {
+        auto broken=source;
+        mutate(broken);
+        rejects(label,[&]{broken.validate();});
+    };
+    const auto shadow=cold_shadow_plan.frame.cloud_shadow;
+    bad_shadow(cold_shadow_plan,"cloud shadow map remains when disabled",[](auto& p){p.settings.cloud_shadows=false;});
+    bad_shadow(cold_shadow_plan,"cloud shadows without volumetric clouds",[](auto& p){p.settings.volumetric_clouds=false;});
+    bad_shadow(cold_shadow_plan,"cloud shadow map is not registered",[](auto& p){p.frame.cloud_shadow=none;});
+    bad_shadow(cold_shadow_plan,"cloud shadow map aliases sky output",[&](auto& p){p.frame.cloud_view=shadow;});
+    bad_shadow(cold_shadow_plan,"cloud shadow map aliases environment BRDF",[&](auto& p){p.frame.ibl_brdf=shadow;});
+    bad_shadow(cold_shadow_plan,"cloud shadow map aliases fog output",[&](auto& p){p.frame.fogged_hdr=shadow;});
+    bad_shadow(cold_shadow_plan,"cloud shadow map has wrong precision",[&](auto& p){p.frame.resources[shadow].format=Format::rgba8_unorm;});
+    bad_shadow(cold_shadow_plan,"cloud shadow map has wrong extent",[&](auto& p){++p.frame.resources[shadow].width;});
+    bad_shadow(cold_shadow_plan,"cloud shadow map has extra layers",[&](auto& p){++p.frame.resources[shadow].layers;});
+    bad_shadow(cold_shadow_plan,"cloud shadow map has multiple samples",[&](auto& p){p.frame.resources[shadow].samples=4;});
+    bad_shadow(cold_shadow_plan,"cloud shadow map lacks write usage",[&](auto& p){p.frame.resources[shadow].supported&=~use_bit(Use::image_write);});
+    bad_shadow(cold_shadow_plan,"cold cloud shadow map is imported",[&](auto& p){p.frame.resources[shadow].lifetime=Lifetime::imported;});
+    bad_shadow(cold_shadow_plan,"cloud shadow cache outlives its atlas",[&](auto& p){
+        auto& map=p.frame.resources[shadow];
+        map.initialized=true;
+        map.lifetime=Lifetime::imported;
+        std::erase_if(p.passes,[](const auto& stage){return stage.id==PassId::cloud_shadow;});
+    });
+    bad_shadow(cold_shadow_plan,"cold cloud shadow bake missing",[](auto& p){
+        std::erase_if(p.passes,[](const auto& stage){return stage.id==PassId::cloud_shadow;});
+    });
+    bad_shadow(cold_shadow_plan,"cloud shadow bake lacks the density atlas",[&](auto& p){erase_access(p,PassId::cloud_shadow,noise,Use::sampled);});
+    bad_shadow(cold_shadow_plan,"cloud shadow bake initializes a partial result",[](auto& p){pass(p,PassId::cloud_shadow).accesses.back().initialize=false;});
+    bad_shadow(cold_shadow_plan,"cloud shadow bake before density atlas",[](auto& p){std::swap(pass(p,PassId::cloud_shadow),pass(p,PassId::cloud_noise));});
+    bad_shadow(cold_shadow_plan,"cloud shadow bake after forward shading",[](auto& p){std::swap(pass(p,PassId::cloud_shadow),pass(p,PassId::opaque));});
+    bad_shadow(cold_shadow_plan,"forward shading omits cloud shadows",[&](auto& p){erase_access(p,PassId::opaque,shadow,Use::sampled);});
+    bad_shadow(cold_shadow_plan,"forward shading duplicates cloud shadow binding",[&](auto& p){pass(p,PassId::opaque).accesses.push_back({shadow,Use::sampled});});
+    bad_shadow(cold_shadow_plan,"cloud shadows without the forward shading pass",[](auto& p){
+        std::erase_if(p.passes,[](const auto& stage){return stage.id==PassId::opaque;});
+    });
+    bad_shadow(cold_shadow_plan,"sky incorrectly samples cloud shadow map",[&](auto& p){pass(p,PassId::sky).accesses.push_back({shadow,Use::sampled});});
+    bad_shadow(warm_shadow_plan,"warm cloud shadow cache rewritten",[](auto& p){
+        const auto sky=std::find_if(p.passes.begin(),p.passes.end(),[](const auto& work){return work.id==PassId::sky;});
+        p.passes.insert(sky,{PassId::cloud_shadow,{{p.frame.cloud_noise,Use::sampled},{p.frame.cloud_shadow,Use::image_write,true}}});
+    });
+    bad_shadow(deferred_shadow_plan,"deferred geometry samples cloud shadow map",[](auto& p){pass(p,PassId::opaque).accesses.push_back({p.frame.cloud_shadow,Use::sampled});});
+    for(auto consumer:{PassId::deferred_lighting,PassId::viewmodel_opaque}) {
+        bad_shadow(deferred_shadow_plan,"lit pass omits cloud shadow map",[&](auto& p){erase_access(p,consumer,p.frame.cloud_shadow,Use::sampled);});
+    }
 }
 }
 

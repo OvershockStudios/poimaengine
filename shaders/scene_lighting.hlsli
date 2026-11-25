@@ -5,6 +5,8 @@
 StructuredBuffer<uint> cluster_counts : register(t7);
 StructuredBuffer<uint> cluster_indices : register(t8);
 Texture2DArray<float> shadow_map : register(t5);
+Texture2D<float4> cloud_shadow_map : register(t13);
+SamplerState cloud_shadow_sampler : register(s6);
 // Fixed equal-weight 4x4 strata mapped concentrically to a uniform disk.
 // No hash, history or per-frame rotation changes the footprint.
 static const float2 contact_shadow_disk[16]={
@@ -134,6 +136,23 @@ float light_visibility(SceneLight source,float3 position,float3 geometric_normal
     const float visibility=shadow_compare(first+face,biased,geometric_normal,source.shadow.z,0);
     return lerp(visibility,1,saturate((distance-.9*far)/(.1*far)));
 }
+float cloud_transmission(float3 position, float3 toward_sun) {
+    const float height_above_base = position.y - cloud_shadow_geometry.z;
+    const float layer_fraction = height_above_base / cloud_shadow_geometry.w;
+    if (layer_fraction >= 1.0 || toward_sun.y <= 0.08) return 1.0;
+
+    const float2 receiver_km = cloud_shadow_geometry.xy + (position.xz - camera.xz) * 0.001;
+    // Every optical-depth channel along this light ray shares its intersection
+    // with the layer base. Receivers inside the layer project back to that plane.
+    const float2 base_xz_km = receiver_km - toward_sun.xz * (height_above_base * 0.001 / toward_sun.y);
+    const float4 depth = cloud_shadow_map.SampleLevel(cloud_shadow_sampler, base_xz_km / 64.0, 0);
+    const float slices = saturate(layer_fraction) * 4.0;
+    const uint lower = min(uint(slices), 3u);
+    const float upper_depth = lower < 3u ? depth[min(lower + 1u, 3u)] : 0.0;
+    const float optical_depth = lerp(depth[lower], upper_depth, slices - float(lower));
+    const float strength = cloud_shadow_controls.x * smoothstep(0.08, 0.16, toward_sun.y);
+    return lerp(1.0, exp(-optical_depth), strength);
+}
 float3 direct_brdf(float3 n,float3 v,float3 l,float3 base,float metallic,float roughness) {
     const float nl=saturate(dot(n,l));if(nl<=0)return 0;
     const float3 halfway=v+l;
@@ -179,7 +198,11 @@ void accumulate_direct_lighting(inout float3 color,float3 world_position,float2 
                 }
             }
             float visibility=1;
-            [branch] if(receive_shadows)visibility=light_visibility(source,world_position,geometric_normal,l);
+            [branch] if(receive_shadows) {
+                visibility=light_visibility(source,world_position,geometric_normal,l);
+                [branch] if(cloud_shadow_controls.x>0 && index+1u==uint(cloud_shadow_controls.y) && source.position_kind.w<0.5)
+                    visibility*=cloud_transmission(world_position,l);
+            }
             color+=direct_brdf(n,v,l,base,metallic,roughness)*source.color_intensity.rgb*(source.color_intensity.w*attenuation*visibility);
         }
 }

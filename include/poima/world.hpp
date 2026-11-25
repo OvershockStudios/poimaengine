@@ -38,6 +38,7 @@ struct WorldPackageContent {
     bool needs_atmosphere_sky=false;
     bool needs_aerial_perspective=false;
     bool needs_volumetric_clouds=false;
+    bool needs_cloud_shadows=false;
 };
 enum class WorldRequestScope { standalone, shared_headless, shared_editor };
 struct WorldRuntimeStatus {

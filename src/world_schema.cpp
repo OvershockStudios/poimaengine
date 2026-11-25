@@ -252,9 +252,11 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     cloud_wind["description"]="Horizontal wind along world +X and +Z in metres per second.";
     auto clouds=object_schema({{"base_height_m",bounded_number(250,12000)},
         {"thickness_m",bounded_number(100,6000)},{"coverage",bounded_number(0,1)},
-        {"extinction_per_km",bounded_number(0,32)},{"wind_m_per_s",std::move(cloud_wind)}},
+        {"extinction_per_km",bounded_number(0,32)},{"wind_m_per_s",std::move(cloud_wind)},
+        {"shadow_strength",bounded_number(0,1)}},
         {"base_height_m","thickness_m","coverage","extinction_per_km","wind_m_per_s"});
     clouds["description"]="Optional volumetric cloud layer. Base height is relative to atmospheric sea level. Wind advances the layer with committed solar world time.";
+    clouds["properties"]["shadow_strength"]["description"]="Optional strength of cloud shadows on direct light from the linked sun. Zero disables cloud shadows.";
     auto atmosphere=object_schema({{"sea_level_m",bounded_number(-1e6,1e6)},
         {"aerosol_strength",bounded_number(0,4)},{"radiance_scale",bounded_number(0,64)},
         {"aerial_perspective_m",bounded_number(128,65536)},{"clouds",std::move(clouds)}},
@@ -415,7 +417,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 209}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 210}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -1235,7 +1237,10 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
             {"runtime_feature","aerial_perspective"},{"render_diagnostics","aerial_perspective"}}},
         {"volumetric_clouds",{{"available",POIMA_RENDER_SMOKE != 0 && POIMA_SIMULATION != 0},
             {"profile","LightingEnvironment.atmosphere.clouds"},
-            {"runtime_feature","volumetric_clouds"},{"render_diagnostics","volumetric_clouds"}}}};
+            {"runtime_feature","volumetric_clouds"},{"render_diagnostics","volumetric_clouds"}}},
+        {"cloud_shadows",{{"available",POIMA_RENDER_SMOKE != 0 && POIMA_SIMULATION != 0},
+            {"profile","LightingEnvironment.atmosphere.clouds.shadow_strength"},
+            {"runtime_feature","cloud_shadows"},{"render_diagnostics","cloud_shadows"}}}};
     result["wetness"]={{"available",Runtime::available()},{"component","SurfaceWetness"},
         {"seconds_per_quantum",1},{"max_receivers",wetness::max_receivers},{"max_batch",wetness::max_batch},
         {"max_rain_nm",wetness::max_rain_nm},{"film_units_per_nm",wetness::units_per_nm},

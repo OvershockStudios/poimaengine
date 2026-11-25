@@ -3,6 +3,7 @@
 
 #include "poima/atmosphere_dimensions.hpp"
 #include "poima/cloud_noise_cs.hpp"
+#include "poima/cloud_shadow_cs.hpp"
 #include "poima/cloud_view_cs.hpp"
 #include "poima/render_schedule.hpp"
 #include "poima/scene.hpp"
@@ -10,6 +11,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <limits>
 #include <stdexcept>
 #include <utility>
 
@@ -54,7 +56,8 @@ nvrhi::TextureHandle make_cloud_texture(nvrhi::IDevice& device, nvrhi::Format fo
 
 constexpr std::uint32_t noise_group_layers = 4;
 static_assert(atmosphere::cloud_noise_size % atmosphere::thread_group_size == 0 &&
-    atmosphere::cloud_noise_size % noise_group_layers == 0);
+    atmosphere::cloud_noise_size % noise_group_layers == 0 &&
+    atmosphere::cloud_shadow_size % atmosphere::thread_group_size == 0);
 
 void require_bindings(nvrhi::IBindingSet* bindings, const nvrhi::BindingSetDesc& expected) {
     require(bindings && std::ranges::equal(bindings->getDesc()->bindings, expected.bindings),
@@ -116,6 +119,14 @@ nvrhi::BindingSetDesc Pass::cloud_view_binding_desc(nvrhi::IBuffer* frame, nvrhi
         .addItem(nvrhi::BindingSetItem::Texture_UAV(0, view));
 }
 
+nvrhi::BindingSetDesc Pass::cloud_shadow_binding_desc(nvrhi::ITexture* noise, nvrhi::ITexture* shadow) const {
+    return nvrhi::BindingSetDesc()
+        .addItem(nvrhi::BindingSetItem::PushConstants(0, sizeof(CloudShadowParameters)))
+        .addItem(nvrhi::BindingSetItem::Texture_SRV(0, noise))
+        .addItem(nvrhi::BindingSetItem::Sampler(0, cloud_noise_sampler_))
+        .addItem(nvrhi::BindingSetItem::Texture_UAV(0, shadow));
+}
+
 void Pass::prepare_clouds(nvrhi::IDevice& device, nvrhi::IBuffer* frame, const SceneSnapshot& scene,
     const AtmosphereSettings& atmosphere, std::uint64_t world_milliseconds) {
     const auto& profile = *atmosphere.clouds;
@@ -139,8 +150,46 @@ void Pass::prepare_clouds(nvrhi::IDevice& device, nvrhi::IBuffer* frame, const S
     cloud_frame_ = frame;
 }
 
+void Pass::prepare_cloud_shadow(nvrhi::IDevice& device, const AtmosphereSettings& atmosphere) {
+    const auto& cloud = *atmosphere.clouds;
+    cloud_shadow_position_ = {cloud_parameters_.origin[0], cloud_parameters_.origin[1],
+        static_cast<float>(atmosphere.sea_level_m + cloud.base_height_m), cloud.thickness_m};
+    cloud_shadow_parameters_ = {cloud_parameters_.profile, cloud_parameters_.sun};
+    // The table stores optical depth. Light gain, wind, and the blend strength
+    // take effect when the table is sampled without invalidating this bake.
+    cloud_shadow_parameters_.sun[3] = 0.0f;
+
+    if (cloud_shadow_) return;
+    const auto size = atmosphere::cloud_shadow_size;
+    auto shadow = make_cloud_texture(device, nvrhi::Format::RGBA16_FLOAT,
+        size, size, 1, "Volumetric cloud shadow optical depth");
+    const auto shader = create_embedded_shader(&device,
+        nvrhi::ShaderDesc(nvrhi::ShaderType::Compute).setEntryName("compute_main"), poima_cloud_shadow_cs);
+    const auto layout = device.createBindingLayout(nvrhi::BindingLayoutDesc().setVisibility(nvrhi::ShaderType::Compute)
+        .addItem(nvrhi::BindingLayoutItem::PushConstants(0, sizeof(CloudShadowParameters)))
+        .addItem(nvrhi::BindingLayoutItem::Texture_SRV(0))
+        .addItem(nvrhi::BindingLayoutItem::Sampler(0))
+        .addItem(nvrhi::BindingLayoutItem::Texture_UAV(0)));
+    require(shader && layout, "Cloud shadow compute shader or layout creation failed.");
+    auto pipeline = device.createComputePipeline(nvrhi::ComputePipelineDesc()
+        .setComputeShader(shader).addBindingLayout(layout));
+    auto bindings = device.createBindingSet(cloud_shadow_binding_desc(cloud_noise_, shadow), layout);
+    require(pipeline && bindings, "Cloud shadow compute pipeline or bindings creation failed.");
+    cloud_shadow_ = std::move(shadow);
+    cloud_shadow_compute_ = {std::move(pipeline), std::move(bindings)};
+}
+
 std::uint64_t Pass::cloud_resident_bytes() const noexcept {
     return cloud_view_ ? atmosphere::cloud_noise_bytes + atmosphere::cloud_view_bytes : 0;
+}
+
+bool Pass::cloud_shadow_dirty() const noexcept {
+    return cloud_shadows_enabled_ &&
+        (cloud_shadow_generation_ == 0 || cloud_shadow_parameters_ != accepted_cloud_shadow_parameters_);
+}
+
+std::uint64_t Pass::cloud_shadow_resident_bytes() const noexcept {
+    return cloud_shadow_ ? atmosphere::cloud_shadow_bytes : 0;
 }
 
 void Pass::verify_cloud_bindings(const render_schedule::Schedule& plan) const {
@@ -158,6 +207,11 @@ void Pass::verify_cloud_bindings(const render_schedule::Schedule& plan) const {
         nvrhi::BindingSetDesc().addItem(nvrhi::BindingSetItem::Texture_UAV(0, noise)));
     require_bindings(cloud_view_compute_.bindings, cloud_view_binding_desc(frame, noise, density, clouds));
     require_bindings(cloud_raster_.bindings, sky_binding_desc(frame, density, texture(resources.atmosphere_view), clouds));
+    require(plan.settings.cloud_shadows == cloud_shadows_enabled_,
+        "Cloud shadow state differs from its validated schedule.");
+    if (plan.settings.cloud_shadows) {
+        require_bindings(cloud_shadow_compute_.bindings, cloud_shadow_binding_desc(noise, texture(resources.cloud_shadow)));
+    }
 }
 
 void Pass::compute_cloud_noise(nvrhi::ICommandList& commands) {
@@ -184,6 +238,21 @@ void Pass::compute_cloud_view(nvrhi::ICommandList& commands) {
     commands.dispatch((atmosphere::cloud_view_width + group - 1) / group,
         (atmosphere::cloud_view_height + group - 1) / group, 1);
     cloud_view_recorded_ = true;
+}
+
+void Pass::compute_cloud_shadow(nvrhi::ICommandList& commands) {
+    require(cloud_shadow_dirty() && !cloud_shadow_recorded_ &&
+        (!cloud_noise_dirty() || cloud_noise_recorded_), "Cloud shadow bake needs current cloud noise.");
+    require(cloud_shadow_generation_ < std::numeric_limits<std::uint64_t>::max(),
+        "Cloud shadow generation exhausted.");
+    nvrhi::ComputeState state;
+    state.pipeline = cloud_shadow_compute_.pipeline;
+    state.bindings.push_back(cloud_shadow_compute_.bindings);
+    commands.setComputeState(state);
+    commands.setPushConstants(&cloud_shadow_parameters_, sizeof(CloudShadowParameters));
+    constexpr auto groups = atmosphere::cloud_shadow_size / atmosphere::thread_group_size;
+    commands.dispatch(groups, groups, 1);
+    cloud_shadow_recorded_ = true;
 }
 
 }

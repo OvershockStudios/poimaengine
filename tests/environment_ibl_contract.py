@@ -61,7 +61,7 @@ class EnvironmentIblContract(unittest.TestCase):
     def test_discovery_preserves_complete_environment_and_mutation_envelope(self):
         c = self.open()
         d = c.rpc('world.describe')
-        self.assertEqual(d['schema_revision'], 209)
+        self.assertEqual(d['schema_revision'], 210)
         full = d['components']['LightingEnvironment']
         self.assertNotIn('ibl', full['required'])
         branch = full['properties']['ibl']
@@ -148,12 +148,17 @@ class EnvironmentIblContract(unittest.TestCase):
         self.assertFalse(clouds['additionalProperties'])
         for name, (minimum, maximum) in limits.items():
             self.assertEqual(clouds['properties'][name], dict(type='number', minimum=minimum, maximum=maximum))
+        strength = clouds['properties']['shadow_strength']
+        self.assertEqual((strength['type'], strength['minimum'], strength['maximum']), ('number', 0, 1))
         wind = clouds['properties']['wind_m_per_s']
         self.assertEqual((wind['type'], wind['minItems'], wind['maxItems']), ('array', 2, 2))
         self.assertEqual(wind['items'], dict(type='number', minimum=-100, maximum=100))
         self.assertEqual(discovery['atmosphere_sky']['volumetric_clouds'], dict(
             available=self.features['volumetric_clouds'], profile='LightingEnvironment.atmosphere.clouds',
             runtime_feature='volumetric_clouds', render_diagnostics='volumetric_clouds'))
+        self.assertEqual(discovery['atmosphere_sky']['cloud_shadows'], dict(
+            available=self.features['cloud_shadows'], profile='LightingEnvironment.atmosphere.clouds.shadow_strength',
+            runtime_feature='cloud_shadows', render_diagnostics='cloud_shadows'))
 
         linked_sky = dict(sky(), sun=uid(2))
         atmosphere = dict(sea_level_m=80, aerosol_strength=1, radiance_scale=1, aerial_perspective_m=4096)
@@ -163,6 +168,7 @@ class EnvironmentIblContract(unittest.TestCase):
         original = self.path.read_bytes()
         original_lighting = c.rpc('world.lighting')
         self.assertNotIn('needs_volumetric_clouds', c.rpc('world.dependencies'))
+        self.assertNotIn('needs_cloud_shadows', c.rpc('world.dependencies'))
         profile = dict(base_height_m=1600, thickness_m=1750, coverage=.625, extinction_per_km=3.75,
                        wind_m_per_s=[12.25, -8.5])
 
@@ -176,26 +182,38 @@ class EnvironmentIblContract(unittest.TestCase):
         for name, (minimum, maximum) in limits.items():
             for value in (minimum - .000001, maximum + .000001, True, '1'):
                 invalid.append(dict(profile, **{name: value}))
+        for value in (None, True, '1', [], {}, -.000000001, 1.000000001):
+            invalid.append(dict(profile, shadow_strength=value))
         for value in invalid:
             with self.subTest(clouds=value):
                 c.txn(1, [edit(value)], error=-32602)
                 self.assertEqual(self.path.read_bytes(), original)
                 self.assertEqual(c.rpc('world.lighting'), original_lighting)
-        preview = c.txn(1, [edit(profile)], preview=True)
+        preview = c.txn(1, [edit(dict(profile, shadow_strength=.625))], preview=True)
         self.assertFalse(preview['committed'])
         self.assertEqual(self.path.read_bytes(), original)
-        for revision, choice in enumerate((dict(base_height_m=250, thickness_m=100, coverage=0,
-                                                extinction_per_km=0, wind_m_per_s=[-100, 100]),
-                                           dict(base_height_m=12000, thickness_m=6000, coverage=1,
-                                                extinction_per_km=32, wind_m_per_s=[100, -100]), profile), start=1):
+        choices = (dict(base_height_m=250, thickness_m=100, coverage=0, extinction_per_km=0, wind_m_per_s=[-100, 100]),
+                   dict(base_height_m=12000, thickness_m=6000, coverage=1, extinction_per_km=32, wind_m_per_s=[100, -100]),
+                   profile, dict(profile, shadow_strength=0), dict(profile, shadow_strength=1),
+                   dict(profile, shadow_strength=.625))
+        for revision, choice in enumerate(choices, start=1):
             chosen = dict(atmosphere, clouds=choice)
             c.txn(revision, [edit(choice)])
             self.assertEqual(c.rpc('world.lighting')['atmosphere'], chosen)
-            self.assertIs(c.rpc('world.dependencies')['needs_volumetric_clouds'], True)
+            dependencies = c.rpc('world.dependencies')
+            self.assertIs(dependencies['needs_volumetric_clouds'], True)
+            if 'shadow_strength' in choice:
+                self.assertIs(dependencies['needs_cloud_shadows'], True)
+            else:
+                self.assertNotIn('needs_cloud_shadows', dependencies)
         c.close()
         c = self.open()
         self.assertEqual(c.rpc('world.lighting')['atmosphere'], chosen)
-        c.txn(4, [component(environment(sky=linked_sky, atmosphere=atmosphere))])
+        self.assertIs(c.rpc('world.dependencies')['needs_cloud_shadows'], True)
+        c.txn(len(choices) + 1, [edit(profile)])
+        self.assertEqual(c.rpc('world.lighting')['atmosphere']['clouds'], profile)
+        self.assertNotIn('needs_cloud_shadows', c.rpc('world.dependencies'))
+        c.txn(len(choices) + 2, [component(environment(sky=linked_sky, atmosphere=atmosphere))])
         self.assertEqual(c.rpc('world.lighting')['atmosphere'], atmosphere)
         self.assertNotIn('needs_volumetric_clouds', c.rpc('world.dependencies'))
         self.assertIs(c.rpc('world.dependencies')['needs_aerial_perspective'], True)

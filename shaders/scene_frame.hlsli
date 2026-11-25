@@ -2,7 +2,7 @@
 // Shared byte layout with FrameConstants/GpuLight/GpuShadow in render_smoke.cpp.
 // Directional cone.z is tan(half emitter diameter); local-light cone.zw retain
 // their existing distance/near values. Light/Shadow layouts are unchanged;
-// Frame appends environment-lighting and water presentation parameters.
+// Frame appends environment-lighting, water and cloud shadow parameters.
 struct SceneLight { float4 position_kind;float4 direction_range;float4 color_intensity;float4 cone;float4 shadow; };
 // splits.xy: camera cascade depths; zw: actual orthographic light-depth span
 // and world metres per shadow texel (zero for local-light views).
@@ -26,5 +26,7 @@ cbuffer Frame : register(b1) {
     float4 water_ripple_shape; // X/Z direction, maximum slope, radians/metre
     float4 water_ripple_motion; // committed phases in radians for active directions
     float4 water_wave_shapes[3]; // Additional directions for layered water
+    float4 cloud_shadow_geometry; // Advected camera X/Z in km, layer base Y and thickness in metres
+    float4 cloud_shadow_controls; // Strength, one-based sun index, reserved, reserved
 };
 StructuredBuffer<SceneLight> lights : register(t6);

@@ -260,7 +260,10 @@ FrozenContent freeze_world_content(const Json& source, const fs::path& directory
                 const auto& atmosphere=environment.at("atmosphere");
                 result.needs_atmosphere_sky=true;
                 if(atmosphere.contains("aerial_perspective_m"))result.needs_aerial_perspective=true;
-                if(atmosphere.contains("clouds"))result.needs_volumetric_clouds=true;
+                if(atmosphere.contains("clouds")) {
+                    result.needs_volumetric_clouds=true;
+                    if(atmosphere.at("clouds").contains("shadow_strength"))result.needs_cloud_shadows=true;
+                }
             }
             if(environment.contains("screen_reflections"))result.needs_screen_reflections=true;
             if(environment.contains("height_fog"))result.needs_height_fog=true;

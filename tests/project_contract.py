@@ -797,6 +797,59 @@ class ProjectContract(unittest.TestCase):
         self.assertEqual(tree(output), unchanged)
         self.assertEqual(tree(self.project), source)
 
+    def test_cloud_shadows_require_explicit_export_runtime_feature(self):
+        runtime, spec = self.metadata_runtime()
+        descriptor = runtime/'runtime.json'
+        world = json.loads((self.project/self.document['entry']['world']).read_bytes())
+        environment_id, = (key for key, row in world['entities'].items()
+                           if 'LightingEnvironment' in row['components'])
+        lighting = world['entities'][environment_id]['components']['LightingEnvironment']
+        clouds = dict(base_height_m=1500, thickness_m=2000, coverage=.5, extinction_per_km=4,
+                      wind_m_per_s=[5, 0], shadow_strength=0)
+        lighting['atmosphere'] = dict(sea_level_m=0, aerosol_strength=1, radiance_scale=1, clouds=clouds)
+        self.world_rpc('world.transact', base_revision=world['revision'], request_id=uuid.uuid4().hex,
+                       ops=[dict(op='component.set', id=environment_id, type='LightingEnvironment', value=lighting)])
+        feature = 'cloud_shadows'
+        dependency = 'needs_cloud_shadows'
+        for receipt in (self.inspect(), self.world_rpc('world.dependencies')):
+            self.assertIs(receipt[dependency], True)
+            self.assertIs(receipt['needs_volumetric_clouds'], True)
+        source = tree(self.project)
+        output = self.root/'Cloud shadow bundle'
+        build = ('project', 'build', native(self.manifest), '--runtime', native(runtime), '--output', native(output))
+        spec['features'].update(atmosphere_sky=True, volumetric_clouds=True)
+        for flags, diagnostic in (({}, 'Cloud shadows require a compatible Vulkan runtime.'),
+                                  (dict(cloud_shadows=False), 'Cloud shadows require a compatible Vulkan runtime.'),
+                                  (dict(cloud_shadows='true'), 'Boolean'),
+                                  (dict(volumetric_clouds=False, cloud_shadows=True),
+                                   'Runtime cloud shadows require the volumetric clouds feature.')):
+            with self.subTest(flags=flags):
+                descriptor.write_text(json.dumps(dict(spec, features=spec['features'] | flags)), encoding='utf-8')
+                self.run_cli(*build, success=False)
+                self.assertIn(diagnostic, CALLS[-1]['reply']['diagnostics'][0]['message'])
+                self.assertFalse(output.exists())
+                self.assertEqual(tree(self.project), source)
+        spec['features'][feature] = True
+        descriptor.write_text(json.dumps(spec), encoding='utf-8')
+        self.run_cli(*build)
+        manifest = output/'game.json'
+        inspected = self.run_cli('game', 'inspect', native(manifest))
+        self.assertIs(inspected[dependency], True)
+        self.assertIs(inspected['needs_volumetric_clouds'], True)
+        self.assertIs(inspected['needs_atmosphere_sky'], True)
+        game = json.loads(manifest.read_bytes())
+        del spec['features'][feature]
+        descriptor_bytes = json.dumps(spec).encode('utf-8')
+        (output/'runtime/runtime.json').write_bytes(descriptor_bytes)
+        row = next(item for item in game['files'] if item['path'] == 'runtime/runtime.json')
+        row.update(size=len(descriptor_bytes), sha256=hashlib.sha256(descriptor_bytes).hexdigest())
+        manifest.write_text(json.dumps(game), encoding='utf-8')
+        unchanged = tree(output)
+        self.run_cli('game', 'inspect', native(manifest), success=False)
+        self.assertIn('Cloud shadows require a compatible Vulkan runtime.', CALLS[-1]['reply']['diagnostics'][0]['message'])
+        self.assertEqual(tree(output), unchanged)
+        self.assertEqual(tree(self.project), source)
+
     @unittest.skipUnless(args.windows_interop or os.name == 'nt', 'Reproduces the Windows staging path limit.')
     def test_windows_export_reads_world_and_profile_in_deep_staging_paths(self):
         runtime, spec = self.metadata_runtime()

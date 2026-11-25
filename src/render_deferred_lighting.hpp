@@ -26,6 +26,8 @@ struct Inputs {
     nvrhi::ITexture* motion_valid;
     nvrhi::ITexture* ao;
     nvrhi::ITexture* reflection_roughness;
+    nvrhi::ITexture* cloud_shadow = nullptr;
+    nvrhi::ISampler* cloud_shadow_sampler = nullptr;
 };
 
 class Pass {
@@ -44,7 +46,7 @@ private:
     nvrhi::BindingLayoutHandle layout_;
     nvrhi::BindingSetHandle bindings_;
     nvrhi::ComputePipelineHandle pipeline_;
-    std::array<const void*, 19> binding_key_{};
+    std::array<const void*, 21> binding_key_{};
     bool reflection_variant_ = false;
 };
 

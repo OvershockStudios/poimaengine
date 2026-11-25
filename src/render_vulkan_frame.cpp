@@ -18,7 +18,7 @@ namespace fp = frame_performance;
 namespace {
 
 constexpr std::uint64_t retirement_timeout_ns = 5'000'000'000ULL;
-constexpr std::uint32_t frame_timestamp_count = 20;
+constexpr std::uint32_t frame_timestamp_count = 22;
 constexpr std::uint32_t shadow_timestamp_count = max_shadow_views + 1;
 constexpr std::uint32_t timestamp_count = frame_timestamp_count + shadow_timestamp_count;
 constexpr std::array shadow_view_counters = {
@@ -267,6 +267,7 @@ void Timestamps::collect(vk::Device device, const Dispatch& dispatch, std::size_
         if(frame.screen_reflections)timing_sample(diagnostics.screen_reflections_gpu,ms(14,15));
         if(frame.height_fog)timing_sample(diagnostics.height_fog_gpu,ms(16,17));
         if(frame.volumetric_clouds)timing_sample(diagnostics.volumetric_clouds_gpu,ms(18,19));
+        if(frame.cloud_shadow_baked)timing_sample(diagnostics.cloud_shadow_gpu,ms(20,21));
         timing_sample(diagnostics.post_gpu,ms(4,5));timing_sample(diagnostics.total_gpu,ms(0,5));
     }
     // GPU values are queue durations observed after completion, not CPU
@@ -283,6 +284,7 @@ void Timestamps::collect(vk::Device device, const Dispatch& dispatch, std::size_
     if(frame.screen_reflections)sample("gpu.screen_reflections.ns",14,15);
     if(frame.height_fog)sample("gpu.height_fog.ns",16,17);
     if(frame.volumetric_clouds)sample("gpu.volumetric_clouds.ns",18,19);
+    if(frame.cloud_shadow_baked)sample("gpu.cloud_shadow_bake.ns",20,21);
     sample("gpu.post.ns",4,5);sample("gpu.total.ns",0,5);
     if(frame.performance) {
         fp::GpuTiming timing;bool valid=true;

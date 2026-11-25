@@ -193,6 +193,12 @@ Json render_diagnostics(const RenderDiagnostics& d) {
             {"noise_bytes",clouds.noise_bytes},{"view_bytes",clouds.view_bytes},{"world_milliseconds",clouds.world_milliseconds}};
         if(d.volumetric_clouds_gpu.samples>0)result["volumetric_clouds"]["gpu"]=timing(d.volumetric_clouds_gpu);
     }
+    if(d.cloud_shadows) {
+        const auto& shadows=*d.cloud_shadows;
+        result["cloud_shadows"]={{"active",shadows.active},{"reason",shadows.reason},
+            {"texture_bytes",shadows.texture_bytes},{"generation",shadows.generation},{"light",shadows.light}};
+        if(d.cloud_shadow_gpu.samples>0)result["cloud_shadows"]["gpu"]=timing(d.cloud_shadow_gpu);
+    }
     if(d.viewmodel) {
         const auto& v=*d.viewmodel;
         result["viewmodel"]={{"rendered",v.rendered},{"samples",v.samples},{"output_width",v.output_width},{"output_height",v.output_height},
@@ -227,6 +233,7 @@ Json lighting_json(const SceneLighting& lighting) {
             const auto& clouds=*profile.clouds;
             result["atmosphere"]["clouds"]={{"base_height_m",clouds.base_height_m},{"thickness_m",clouds.thickness_m},
                 {"coverage",clouds.coverage},{"extinction_per_km",clouds.extinction_per_km},{"wind_m_per_s",clouds.wind_m_per_s}};
+            if(clouds.shadow_strength)result["atmosphere"]["clouds"]["shadow_strength"]=*clouds.shadow_strength;
         }
     }
     if(lighting.environment.auto_exposure) {

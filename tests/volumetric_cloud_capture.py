@@ -67,12 +67,17 @@ class CloudContract(AtmosphereContract):
             component(PANEL, 'PbrMaterial', dict(base_color=[0, 0, 0], emissive=PANEL_COLOR, roughness=.75,
                                                 metallic=0, double_sided=False)))
 
-    def check_authoring(self, client):
+    def check_authoring(self, client, *, has_cloud_shadows):
         catalog = client.call('world.describe', dict(view='component', name='LightingEnvironment'))
         atmosphere = catalog['components']['LightingEnvironment']['properties']['atmosphere']
         schema = atmosphere['properties']['clouds']
         assert 'clouds' not in atmosphere['required'] and schema['additionalProperties'] is False, schema
-        assert set(schema['required']) == set(schema['properties']) == set(CLOUD), schema
+        assert set(schema['required']) == set(CLOUD), schema
+        optional = {'shadow_strength'} if has_cloud_shadows else set()
+        assert set(schema['properties']) == set(CLOUD) | optional, schema
+        if has_cloud_shadows:
+            strength = schema['properties']['shadow_strength']
+            assert (strength['type'], strength['minimum'], strength['maximum']) == ('number', 0, 1), strength
         for field, bounds in BOUNDS.items():
             item = schema['properties'][field]
             assert (item['type'], item['minimum'], item['maximum']) == ('number', *bounds), item
@@ -411,7 +416,7 @@ class CloudContract(AtmosphereContract):
         self.measurements['captures'] = {}
         with self.owner('author volumetric clouds') as (client, _):
             self.create_witnesses(client)
-            self.check_authoring(client)
+            self.check_authoring(client, has_cloud_shadows='cloud_shadows' in features)
             if self.args.gpu is None:
                 self.edit(client, self.env(CLOUD_PROFILE))
                 self.check_selection(client)

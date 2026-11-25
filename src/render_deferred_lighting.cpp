@@ -63,6 +63,8 @@ void Pass::prepare(nvrhi::IDevice& device, const Inputs& inputs, const render_en
         for (std::uint32_t slot = 6; slot <= 8; ++slot) layout.addItem(nvrhi::BindingLayoutItem::StructuredBuffer_SRV(slot));
         for (std::uint32_t slot = 10; slot <= 12; ++slot) layout.addItem(nvrhi::BindingLayoutItem::Texture_SRV(slot));
         layout.addItem(nvrhi::BindingLayoutItem::Sampler(5));
+        layout.addItem(nvrhi::BindingLayoutItem::Texture_SRV(13))
+            .addItem(nvrhi::BindingLayoutItem::Sampler(6));
         if (ambient_occlusion) layout.addItem(nvrhi::BindingLayoutItem::Texture_SRV(4));
         layout_ = device.createBindingLayout(layout);
         require(shader_ && layout_, "Deferred shader/layout creation failed.");
@@ -71,10 +73,13 @@ void Pass::prepare(nvrhi::IDevice& device, const Inputs& inputs, const render_en
     }
 
     const auto ibl = environment.bound();
-    const std::array<const void*, 19> key = {inputs.frame, inputs.material_base, inputs.material_surface,
+    require(bool(inputs.cloud_shadow) == bool(inputs.cloud_shadow_sampler), "Cloud shadow needs a texture and sampler together.");
+    auto* const cloud_shadow = inputs.cloud_shadow ? inputs.cloud_shadow : ibl.brdf;
+    auto* const cloud_sampler = inputs.cloud_shadow_sampler ? inputs.cloud_shadow_sampler : ibl.sampler;
+    const std::array<const void*, 21> key = {inputs.frame, inputs.material_base, inputs.material_surface,
         inputs.material_correspondence, inputs.depth, inputs.shadow, inputs.lights, inputs.counts, inputs.indices,
         inputs.hdr, inputs.normal, inputs.motion, inputs.motion_valid, inputs.ao,
-        ibl.diffuse, ibl.specular, ibl.brdf, ibl.sampler, inputs.reflection_roughness};
+        ibl.diffuse, ibl.specular, ibl.brdf, ibl.sampler, inputs.reflection_roughness, cloud_shadow, cloud_sampler};
     if (bindings_ && key == binding_key_) return;
 
     auto desc = nvrhi::BindingSetDesc().addItem(nvrhi::BindingSetItem::ConstantBuffer(1, inputs.frame))
@@ -93,6 +98,8 @@ void Pass::prepare(nvrhi::IDevice& device, const Inputs& inputs, const render_en
     if (ambient_occlusion) desc.addItem(nvrhi::BindingSetItem::Texture_SRV(4, inputs.ao));
     if (reflection_variant) desc.addItem(nvrhi::BindingSetItem::Texture_UAV(4, inputs.reflection_roughness));
     environment.bind(desc);
+    desc.addItem(nvrhi::BindingSetItem::Texture_SRV(13, cloud_shadow))
+        .addItem(nvrhi::BindingSetItem::Sampler(6, cloud_sampler));
     bindings_ = device.createBindingSet(desc, layout_);
     require(bool(bindings_), "Deferred lighting binding creation failed.");
     binding_key_ = key;
@@ -107,6 +114,10 @@ void Pass::verify_bindings(const render_schedule::Schedule& plan) const {
     };
     for (const auto& binding : bindings_->getDesc()->bindings) {
         if (binding.type == nvrhi::ResourceType::Texture_SRV) {
+            if (binding.slot == 13) {
+                identity(plan.settings.cloud_shadows ? frame.cloud_shadow : frame.ibl_brdf, binding.resourceHandle);
+                continue;
+            }
             if (binding.slot >= 10) {
                 require(binding.slot <= 12, "Unexpected environment texture binding slot.");
                 const std::array ibl{frame.ibl_diffuse, frame.ibl_specular, frame.ibl_brdf};
@@ -126,6 +137,8 @@ void Pass::verify_bindings(const render_schedule::Schedule& plan) const {
         } else if (binding.type == nvrhi::ResourceType::StructuredBuffer_SRV) {
             const auto id = binding.slot == 6 ? frame.lights : binding.slot == 7 ? frame.counts : frame.indices;
             if (id != rs::none) identity(id, binding.resourceHandle);
+        } else if (binding.type == nvrhi::ResourceType::Sampler && binding.slot == 6) {
+            require(binding.resourceHandle == binding_key_.back(), "Cloud shadow sampler differs from its prepared binding.");
         }
     }
 }

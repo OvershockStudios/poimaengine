@@ -92,7 +92,7 @@ static SkySettings sky_value(const Json& value) {
     return result;
 }
 static CloudSettings cloud_value(const Json& value) {
-    fields(value,{"base_height_m","thickness_m","coverage","extinction_per_km","wind_m_per_s"},
+    fields(value,{"base_height_m","thickness_m","coverage","extinction_per_km","wind_m_per_s","shadow_strength"},
         {"base_height_m","thickness_m","coverage","extinction_per_km","wind_m_per_s"});
     const auto number=[&](const char* name,double minimum,double maximum) {
         const auto& field=value.at(name);
@@ -105,8 +105,10 @@ static CloudSettings cloud_value(const Json& value) {
     for(const auto& axis:wind)
         require(axis.is_number() && std::isfinite(axis.get<double>()) && axis>=-100 && axis<=100,
             "Cloud wind_m_per_s must be finite and in [-100,100] on each axis.");
-    return {number("base_height_m",250,12000),number("thickness_m",100,6000),number("coverage",0,1),
-        number("extinction_per_km",0,32),wind.get<std::array<float,2>>()};
+    CloudSettings result{number("base_height_m",250,12000),number("thickness_m",100,6000),number("coverage",0,1),
+        number("extinction_per_km",0,32),wind.get<std::array<float,2>>(),std::nullopt};
+    if(value.contains("shadow_strength"))result.shadow_strength=number("shadow_strength",0,1);
+    return result;
 }
 LightingEnvironment environment_value(const Json& value) {
     fields(value,{"ambient","exposure","shadow_resolution","shadow_filter","sky","ibl","bloom","post_effect","output_grade","screen_reflections","height_fog","auto_exposure","atmosphere"},{"ambient","exposure"});require(value.at("ambient").is_array() && value.at("ambient").size()==3,"Ambient fill needs three values.");

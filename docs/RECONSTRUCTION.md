@@ -110,6 +110,9 @@ Toggling [volumetric clouds](VOLUMETRIC_CLOUDS.md) also resets the view. With
 clouds active, the temporal input pass treats the background as reactive
 because camera rotation alone cannot describe the velocity of nearby cloud
 features.
+Changing the active cloud shadow strength resets reconstruction history as
+well. Continuous changes in the sun direction and wind leave the normal
+history and motion inputs in use.
 When no other reset also applies, diagnostics report
 `reset_reason: "world_composition_changed"`. Active composition reports
 `composition_mask_bytes` within the existing reconstruction byte total.

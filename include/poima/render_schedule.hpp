@@ -23,7 +23,7 @@ enum class Region { whole,prefix,cluster_members,probe_pixels };
 enum class Use { upload,storage_read,storage_write,vertex,index,constant,sampled,color,color_overwrite,depth,clear_color,clear_depth,copy_source,copy_destination,resolve_source,resolve_destination,present,image_write,image_read_write };
 using Uses=std::uint64_t;
 constexpr Uses use_bit(Use use) {return Uses{1}<<static_cast<unsigned>(use);}
-enum class PassId { stream_geometry,sprite_upload,surface_mark_upload,skinning,light_assignment,shadows,scene_clear,sky,opaque,ambient_occlusion,ambient_occlusion_filter,deferred_lighting,screen_reflections,height_fog,particle_sprites,resolve,temporal_inputs,reconstruction,viewmodel_lights,viewmodel_clear,viewmodel_opaque,viewmodel_resolve,viewmodel_composite,post_effect,bloom_extract,bloom_horizontal,bloom_vertical,output,spatial_aa,game_ui,overlay,editor_clear,editor_ui,product_probes,capture,present,auto_exposure,exposure_readback,atmosphere_density,atmosphere_view,aerial_perspective,cloud_noise,cloud_view };
+enum class PassId { stream_geometry,sprite_upload,surface_mark_upload,skinning,light_assignment,shadows,scene_clear,sky,opaque,ambient_occlusion,ambient_occlusion_filter,deferred_lighting,screen_reflections,height_fog,particle_sprites,resolve,temporal_inputs,reconstruction,viewmodel_lights,viewmodel_clear,viewmodel_opaque,viewmodel_resolve,viewmodel_composite,post_effect,bloom_extract,bloom_horizontal,bloom_vertical,output,spatial_aa,game_ui,overlay,editor_clear,editor_ui,product_probes,capture,present,auto_exposure,exposure_readback,atmosphere_density,atmosphere_view,aerial_perspective,cloud_noise,cloud_view,cloud_shadow };
 inline const char* pass_name(PassId id) {
     switch(id) {
     case PassId::stream_geometry:return "render.pass.stream_geometry";
@@ -37,6 +37,7 @@ inline const char* pass_name(PassId id) {
     case PassId::aerial_perspective:return "render.pass.aerial_perspective";
     case PassId::cloud_noise:return "render.pass.cloud_noise";
     case PassId::cloud_view:return "render.pass.cloud_view";
+    case PassId::cloud_shadow:return "render.pass.cloud_shadow";
     case PassId::ambient_occlusion:return "render.pass.ambient_occlusion";
     case PassId::ambient_occlusion_filter:return "render.pass.ambient_occlusion_filter";
     case PassId::deferred_lighting:return "render.pass.deferred_lighting";
@@ -118,7 +119,7 @@ struct FrameResources {
     ResourceId exposure_state=none,exposure_readback=none;
     ResourceId atmosphere_density=none,atmosphere_view=none;
     ResourceId aerial_scattering=none,aerial_transmittance=none;
-    ResourceId cloud_noise=none,cloud_view=none;
+    ResourceId cloud_noise=none,cloud_view=none,cloud_shadow=none;
 };
 struct Settings {
     bool scene=false,clustered=false,sky=false,game_ui=false,overlay=false,editor=false,capture=false,products=false,products_debug=false,reconstruction=false,deferred=false,ambient_occlusion=false;
@@ -131,7 +132,7 @@ struct Settings {
     bool screen_reflections=false;
     bool height_fog=false,height_fog_spots=false;
     bool aerial_perspective=false;
-    bool volumetric_clouds=false;
+    bool volumetric_clouds=false,cloud_shadows=false;
     bool spatial_aa=false;
     bool auto_exposure=false,exposure_history_valid=false;
 };

@@ -11,7 +11,8 @@ guarded transaction to keep its sky and atmosphere settings together.
   "thickness_m": 1600,
   "coverage": 0.55,
   "extinction_per_km": 3.5,
-  "wind_m_per_s": [8, 2]
+  "wind_m_per_s": [8, 2],
+  "shadow_strength": 0.8
 }
 ```
 
@@ -22,10 +23,11 @@ guarded transaction to keep its sky and atmosphere settings together.
 | `coverage` | Fractional control from 0 to 1 over which parts of the density field become visible. |
 | `extinction_per_km` | Optical density multiplier from 0 to 32 per kilometre. |
 | `wind_m_per_s` | Horizontal cloud motion along world X and Z, from −100 to 100 metres per second on each axis. |
+| `shadow_strength` | Optional strength from 0 to 1 for attenuation of direct sunlight on opaque surfaces. Zero clears the effect. |
 
 Omit the profile to use the atmospheric sky by itself. Coverage or extinction
 of zero also clears the layer. When the atmospheric sky is inactive, clouds
-fall back with it. All five fields are required when the profile is present.
+fall back with it. Only `shadow_strength` can be omitted from a profile.
 
 ## Motion and light
 
@@ -48,11 +50,32 @@ logical bytes in total, including the retained density field.
 
 Clouds appear in the sky draw. Opaque scene geometry can occlude the sky
 normally. The layer's internal illumination includes self-shadowing. Its
-scope is background composition, with full depth clipping for flying into
-clouds and moving cloud shadows on terrain requiring additional passes.
+sky composition uses the background. Viewing cloud volume in front of
+opaque objects while flying through the layer requires depth-aware composition.
 Forward color supports 1× and 4× MSAA. Deferred color uses 1×. With FSR active,
 background pixels receive a reactive signal to reduce accumulation of moving
 cloud edges. Opaque-surface history keeps its regular behavior.
+
+## Shadows on world geometry
+
+Set `shadow_strength` above zero to cast moving shadows from the linked sun.
+Opaque surfaces that receive shadows look up how much sunlight reaches them.
+The result attenuates the directional sun term before it combines with other
+lighting. Ambient light, emissive materials and unrelated lights keep their
+original gains. Shadow strength of 0.5 applies half of the computed loss.
+
+The renderer marches the same cloud density along the sun direction into a
+128 × 128 RGBA16F image. Each texel stores the remaining optical depth at four
+heights spanning the layer. Shading projects each world position onto the
+base of the layer, filters that map and interpolates its optical depths for
+the receiver height. Receivers at or above the top receive full sunlight from
+this effect. At low elevations the shadow fades to clear between sun direction
+Y of 0.16 and 0.08.
+
+The map uses 128 KiB and rebuilds when the linked sun direction or cloud
+layer density parameters change. Wind and camera motion change the lookup
+position in the 64 km tile. Strength changes scale attenuation at shading
+time. [Cloud shadow maps in Unreal's renderer](https://dev.epicgames.com/documentation/en-us/unreal-engine/volumetric-cloud-component-in-unreal-engine)
 
 ## Inspect and verify
 
@@ -65,10 +88,19 @@ reports available GPU timing for the cloud view integration.
 `needs_volumetric_clouds`. Export with an installed Vulkan runtime that
 advertises `features.volumetric_clouds`.
 
+When `shadow_strength` is authored, `render_diagnostics.cloud_shadows`
+reports activation, the selected light, the map generation and texture bytes.
+A profiled capture also reports any completed map bake. Export requires
+`features.cloud_shadows` for a scene that authors the strength field.
+
 Run the [cloud fixture](../tests/volumetric_cloud_capture.py) to check authoring
 and save restoration on a simulation build. Add `--gpu GPU_INDEX` for Windows
 Vulkan captures. The script's `--help` lists options for deferred rendering,
 MSAA, FSR and a relocated Native AOT replay.
+
+The [cloud shadow fixture](../tests/cloud_shadow_capture.py) checks the
+separate sun and fill contributions, the 64 km repeat, saved wind and map
+reuse. Its `--fsr` option checks Native AA at one sample.
 
 The bounded ray-march design draws on published work on grouping clouds
 into a height layer, using procedural 3D noise and sampling light within the

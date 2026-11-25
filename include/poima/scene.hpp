@@ -106,6 +106,7 @@ struct CloudSettings {
     float coverage=.5f;
     float extinction_per_km=4;
     std::array<float,2> wind_m_per_s{};
+    std::optional<float> shadow_strength;
 };
 struct AtmosphereSettings {
     double sea_level_m=0;

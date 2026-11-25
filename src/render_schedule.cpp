@@ -19,6 +19,7 @@ constexpr std::uint64_t pass_order(PassId id) {
     if(id==PassId::atmosphere_view)return ordinal(PassId::scene_clear)+2;
     if(id==PassId::cloud_noise)return ordinal(PassId::scene_clear)+3;
     if(id==PassId::cloud_view)return ordinal(PassId::scene_clear)+4;
+    if(id==PassId::cloud_shadow)return ordinal(PassId::scene_clear)+5;
     if(id==PassId::aerial_perspective)return ordinal(PassId::height_fog)-1;
     return ordinal(id);
 }
@@ -211,7 +212,7 @@ void Schedule::validate(bool before_acquire) const {
     } else if(frame.aerial_scattering!=none || frame.aerial_transmittance!=none) {
         fail("aerial perspective tables without an active profile");
     }
-    bool cloud_noise_dirty=false;
+    bool cloud_noise_dirty=false,cloud_shadow_dirty=false;
     if(settings.volumetric_clouds) {
         required(frame.cloud_noise);
         required(frame.cloud_view);
@@ -231,13 +232,25 @@ void Schedule::validate(bool before_acquire) const {
             !valid(clouds,Format::rgba16_float,atmosphere::cloud_view_width,atmosphere::cloud_view_height,1))
             fail("invalid volumetric cloud textures");
         require_distinct_roles(frame.cloud_noise,frame.cloud_view,"cloud texture aliases another resource role");
+        if(settings.cloud_shadows) {
+            required(frame.cloud_shadow);
+            const auto& map=resource(frame.cloud_shadow);
+            constexpr auto size=atmosphere::cloud_shadow_size;
+            if(!valid(map,Format::rgba16_float,size,size,1) || (!noise.initialized && map.initialized))
+                fail("invalid volumetric cloud shadow map");
+            if(frame.cloud_shadow==frame.cloud_noise || frame.cloud_shadow==frame.cloud_view)
+                fail("cloud shadow map aliases another cloud texture");
+            require_distinct_roles(frame.cloud_shadow,none,"cloud shadow map aliases another resource role");
+            cloud_shadow_dirty=!map.initialized;
+        } else if(frame.cloud_shadow!=none)fail("cloud shadow map without active cloud shadows");
         for(auto role:{frame.atmosphere_density,frame.atmosphere_view,frame.aerial_scattering,frame.aerial_transmittance,
             frame.reflected_hdr,frame.reflection_roughness,frame.fogged_hdr,frame.sprite_hdr,frame.sprite_coverage,
             frame.display_ldr,frame.composition_mask,frame.exposure_state,frame.exposure_readback}) {
-            if(role==frame.cloud_noise || role==frame.cloud_view)fail("cloud texture aliases an optical or composition role");
+            if(role!=none && (role==frame.cloud_noise || role==frame.cloud_view || role==frame.cloud_shadow))
+                fail("cloud texture aliases an optical or composition role");
         }
         cloud_noise_dirty=!noise.initialized;
-    } else if(frame.cloud_noise!=none || frame.cloud_view!=none) {
+    } else if(frame.cloud_noise!=none || frame.cloud_view!=none || frame.cloud_shadow!=none || settings.cloud_shadows) {
         fail("cloud textures without active volumetric clouds");
     }
     const bool exposure_readback=frame.exposure_readback!=none;
@@ -595,6 +608,12 @@ void Schedule::validate(bool before_acquire) const {
                 !matches(pass.accesses[2],frame.atmosphere_density,Use::sampled,false) ||
                 !matches(pass.accesses[3],frame.cloud_view,Use::image_write,true))fail("invalid cloud integration bindings");
         }
+        if(pass.id==PassId::cloud_shadow) {
+            if(!cloud_shadow_dirty || pass.accesses.size()!=2 ||
+                !matches(pass.accesses[0],frame.cloud_noise,Use::sampled,false) ||
+                !matches(pass.accesses[1],frame.cloud_shadow,Use::image_write,true))
+                fail("invalid cloud shadow precomputation");
+        }
         if(atmospheric_sky && pass.id==PassId::sky) {
             if(!has(frame.atmosphere_density,Use::sampled) || !has(frame.atmosphere_view,Use::sampled))
                 fail("atmospheric sky draw lacks its tables");
@@ -640,8 +659,14 @@ void Schedule::validate(bool before_acquire) const {
                 fail("opaque materials require the surface mark mask array");
             world_opaque=true;
         }
-        if((pass.id==PassId::opaque && !settings.deferred) || pass.id==PassId::deferred_lighting || pass.id==PassId::viewmodel_opaque)
+        const bool direct_lighting=(pass.id==PassId::opaque && !settings.deferred) ||
+            pass.id==PassId::deferred_lighting || pass.id==PassId::viewmodel_opaque;
+        if(direct_lighting) {
             for(auto id:{frame.ibl_diffuse,frame.ibl_specular,frame.ibl_brdf})if(id!=none && !has(id,Use::sampled))fail("missing environment lighting input");
+            if(settings.cloud_shadows && std::count_if(pass.accesses.begin(),pass.accesses.end(),[&](const Access& access) {
+                return matches(access,frame.cloud_shadow,Use::sampled,false);
+            })!=1)fail("direct lighting needs one cloud shadow map binding");
+        }
         if(pass.id==PassId::resolve)world_resolved=true;
         if(settings.deferred && pass.id==PassId::scene_clear)
             for(const auto id:{frame.material_base,frame.material_surface,frame.material_correspondence})if(!has(id,Use::clear_color))fail("missing deferred material clear");
@@ -1003,8 +1028,14 @@ void Schedule::validate(bool before_acquire) const {
                 const auto producer=noise ? PassId::cloud_noise : PassId::cloud_view;
                 const auto consumer=noise ? PassId::cloud_view : PassId::sky;
                 const bool produced=pass.id==producer && a.use==Use::image_write && a.initialize;
-                const bool consumed=pass.id==consumer && a.use==Use::sampled && !a.initialize;
+                const bool consumed=(pass.id==consumer || (noise && pass.id==PassId::cloud_shadow)) &&
+                    a.use==Use::sampled && !a.initialize;
                 if(!produced && !consumed)fail("cloud texture used outside cloud integration or sky composition");
+            }
+            if(settings.cloud_shadows && a.resource==frame.cloud_shadow) {
+                const bool produced=pass.id==PassId::cloud_shadow && a.use==Use::image_write && a.initialize;
+                const bool consumed=direct_lighting && a.use==Use::sampled && !a.initialize;
+                if(!produced && !consumed)fail("cloud shadow map used outside its bake or direct lighting");
             }
             if(!(r.supported&use_bit(a.use)))fail("unsupported resource usage");
             const bool buffer_use=a.use==Use::upload || a.use==Use::storage_read || a.use==Use::storage_write || a.use==Use::vertex || a.use==Use::index || a.use==Use::constant;
@@ -1048,6 +1079,8 @@ void Schedule::validate(bool before_acquire) const {
     if(settings.screen_reflections && (!screen_reflected || !world_effects_output))fail("missing screen reflection pass or composed output");
     if(settings.height_fog && (!world_fogged || !world_effects_output))fail("missing height fog pass or composed output");
     if(atmospheric_sky && !atmosphere_drawn)fail("missing atmospheric sky draw");
+    if(settings.cloud_shadows && (!world_opaque || !initialized[frame.cloud_shadow]))
+        fail("missing cloud shadow bake or world shading pass");
     if(settings.reconstruction && !reconstructed)fail("missing reconstruction pass");
     if(stream && !stream_uploaded)fail("missing streamed geometry upload");
     if((streamed_camera && !world_opaque) || (streamed_shadow && !stream_shadow_drawn))fail("missing streamed geometry draw pass");
@@ -1118,6 +1151,11 @@ Schedule build(FrameResources frame,Settings settings) {
         add(clouds,f.atmosphere_density,Use::sampled);
         add(clouds,f.cloud_view,Use::image_write,true);
     }
+    if(settings.cloud_shadows && f.cloud_shadow!=none && !result.resource(f.cloud_shadow).initialized) {
+        auto& shadow=pass(PassId::cloud_shadow);
+        add(shadow,f.cloud_noise,Use::sampled);
+        add(shadow,f.cloud_shadow,Use::image_write,true);
+    }
     if(settings.sky) {
         auto& sky=pass(PassId::sky);
         add(sky,f.color,Use::color);add(sky,f.depth,Use::depth);add(sky,f.frame,Use::constant);
@@ -1128,6 +1166,7 @@ Schedule build(FrameResources frame,Settings settings) {
     add(opaque,f.surface_marks,Use::storage_read);
     add(opaque,f.surface_mark_masks,Use::sampled);
     if(settings.scene) {add(opaque,f.frame,Use::constant);add(opaque,f.objects,Use::storage_read);if(!settings.deferred) {add(opaque,f.lights,Use::storage_read);add(opaque,f.shadow,Use::sampled);for(auto id:{f.ibl_diffuse,f.ibl_specular,f.ibl_brdf})add(opaque,id,Use::sampled);}geometry(opaque,f.camera_draws,true);if(settings.clustered && !settings.deferred) {add(opaque,f.counts,Use::storage_read);add(opaque,f.indices,Use::storage_read);}}
+    if(settings.cloud_shadows && !settings.deferred)add(opaque,f.cloud_shadow,Use::sampled);
     if(settings.deferred) {
         for(auto id:{f.material_base,f.material_surface,f.material_correspondence})add(opaque,id,Use::color);
         if(settings.ambient_occlusion) {
@@ -1141,6 +1180,7 @@ Schedule build(FrameResources frame,Settings settings) {
         }
         auto& lighting=pass(PassId::deferred_lighting);
         for(auto id:{f.ibl_diffuse,f.ibl_specular,f.ibl_brdf})add(lighting,id,Use::sampled);
+        if(settings.cloud_shadows)add(lighting,f.cloud_shadow,Use::sampled);
         if(settings.ambient_occlusion)add(lighting,f.ao_filtered,Use::sampled);
         for(auto id:{f.material_base,f.material_surface,f.material_correspondence,f.depth,f.shadow})add(lighting,id,Use::sampled);
         add(lighting,f.frame,Use::constant);add(lighting,f.lights,Use::storage_read);
@@ -1212,6 +1252,7 @@ Schedule build(FrameResources frame,Settings settings) {
         auto& clear=pass(PassId::viewmodel_clear);add(clear,f.viewmodel_color,Use::clear_color,true);add(clear,f.viewmodel_depth,Use::clear_depth,true);
         auto& draw=pass(PassId::viewmodel_opaque);add(draw,f.viewmodel_color,Use::color);add(draw,f.viewmodel_depth,Use::depth);add(draw,f.viewmodel_frame,Use::constant);add(draw,f.viewmodel_objects,Use::storage_read);add(draw,f.lights,Use::storage_read);add(draw,f.shadow,Use::sampled);
         for(auto id:{f.ibl_diffuse,f.ibl_specular,f.ibl_brdf})add(draw,id,Use::sampled);
+        if(settings.cloud_shadows)add(draw,f.cloud_shadow,Use::sampled);
         if(settings.viewmodel_clustered) {add(draw,f.viewmodel_counts,Use::storage_read);add(draw,f.viewmodel_indices,Use::storage_read);}
         for(const auto& d:f.viewmodel_draws) {add(draw,d.vertices,Use::vertex);add(draw,d.indices,Use::index);for(auto t:d.textures)add(draw,t,Use::sampled);}
         if(settings.viewmodel_samples!=1) {auto& resolve=pass(PassId::viewmodel_resolve);add(resolve,f.viewmodel_color,Use::sampled);add(resolve,f.viewmodel_resolved,Use::color_overwrite,true);}

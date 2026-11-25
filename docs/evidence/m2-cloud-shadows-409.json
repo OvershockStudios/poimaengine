@@ -1,0 +1,387 @@
+{
+  "checkpoint": "0.0.409",
+  "parent_commit": "9f436af",
+  "world_schema_revision": 210,
+  "render_schedule": {
+    "valid_variants": 579,
+    "rejected_mutations": 1493
+  },
+  "shader_sha256": {
+    "cloud_noise_cs": "fb5255f036e683d18a9f7fd046f94eac7bc9b20876987267b4f57c6471323ba3",
+    "cloud_view_cs": "15ccc95f58904afea5fbc7e3f5ba9d0770c02978160d812269cb8a6bb3177d81",
+    "cloud_shadow_cs": "2ed46745327b978b15d44c27e19636456e1326d394a1c5aa7f45b939939a19aa",
+    "scene_ps": "4c3f2d48a930cd4ad54bf453fb0d1d17c02f7b6b77386c31dbb445f6f700d268",
+    "deferred_lighting_cs": "b4fc739da878245da87ff596810abc2d9660d4fda73ac5268cec54d7ddc69c82"
+  },
+  "ubuntu": {
+    "suites": [
+      "world_water_contract",
+      "world_particles_contract",
+      "authoring_api_compatibility",
+      "save_upgrade_snapshot_native",
+      "render_schedule_native",
+      "world_session_native",
+      "world_ui_contract",
+      "project_contract",
+      "shared_session_contract",
+      "lighting_contract",
+      "contact_shadow_contract",
+      "environment_ibl_contract",
+      "cli_contract",
+      "world_contract",
+      "asset_references_contract"
+    ],
+    "junit_sha256": "22a47101e9cc8e1cab1f117470a23f5c72f738342d941331eaaad0c11724358c",
+    "binary_sha256": "d4f05bb91bf1f1851956ad14c5367aba61e27a4bc313d50b3101af5bfe5b4347",
+    "runtime_sha256": "a46a811cdee99661de354232823253c0136857ee7b98f114567e32babb7f1e86",
+    "runtime_check_sha256": "5e259edbdc49955a718e67e789bbba54f7771afdea2b15f1d0d544a5a613e6ed",
+    "fixture_sha256": "238beec11cec28473e26139ff5604415cb248c23586bbf0979adda18160b8854",
+    "fixture_source_sha256": "be0b287448a7514bcdf6b25e66f996a3e7dc653bfbb7cc8f702bd2aab243c650",
+    "source_pins": 40
+  },
+  "windows": {
+    "descriptor_check_sha256": "5e259edbdc49955a718e67e789bbba54f7771afdea2b15f1d0d544a5a613e6ed",
+    "configurations": {
+      "0-deferred-1x": {
+        "gpu": 0,
+        "samples": 1,
+        "lighting_path": "deferred",
+        "adapter": "AMD Radeon(TM) Graphics",
+        "binary_sha256": "47ac7130030f42b796a924ec75912d6dba46c5778511d49ecd369804eed8fad6",
+        "fixture_source_sha256": "be0b287448a7514bcdf6b25e66f996a3e7dc653bfbb7cc8f702bd2aab243c650",
+        "capture_evidence_sha256": "40beb76025e3f7989f224b56d6eed0a5908de0e03d2588f2dde925c170c16891",
+        "captured_images": 11,
+        "red_only_attenuation": {
+          "ground_pixels": 14740,
+          "visibly_dimmed": 14740,
+          "max_display_delta": 82,
+          "unchanged_sky_pixels": 3744,
+          "unchanged_unshadowed_pixels": 99
+        },
+        "receiver_optics": {
+          "comparison": "hdr",
+          "checked_sites": 13,
+          "max_half_strength_error": 0.00018310546875
+        },
+        "repeat_tile_max_display_delta": 0,
+        "inside_layer": {
+          "max_restored_display_red": 25
+        },
+        "profiled_first_bake_samples": 1,
+        "omitted_retained_image_byte_exact": true,
+        "capture_sha256": {
+          "omitted": "58e55aecd425636eb253cf77755724a7cabcd22903f8afd7990a768fa62b1c26",
+          "zero-strength": "58e55aecd425636eb253cf77755724a7cabcd22903f8afd7990a768fa62b1c26",
+          "half-strength": "269e36f3d3f5d4f6414e82eac03887e2917e1c54004a7275fa90332813449906",
+          "full-strength": "026e08f76fbbd2e03ba16da39c056c73c5c661511abe9598d4c0a91db59ba74c",
+          "unlit-sun": "d05b9ebf98b3de62af1341cbd9cb9c1abaffce3f941effd10dd09ea82bd77fc9",
+          "low-sun": "bd3b09069c1e608acc8cb2e74bf47c4da07aaabdf57b74cbf7dab5969b4ac23d",
+          "low-sun-omitted": "bd3b09069c1e608acc8cb2e74bf47c4da07aaabdf57b74cbf7dab5969b4ac23d",
+          "repeated-shadows-tile": "75bc4172fe14cfc118417f9e51d754163491cd6e693a447da2533af85283ed4e",
+          "inside-layer": "256fc44e20230110d2fb70a4cb45620636ac1b251ce229cfd968b842696c09c3",
+          "above-layer": "6d57252fe2dfd3731a5399a38a42adb54c8dd5175a289e325f86a36c8fa6a6ee",
+          "above-layer-omitted": "6d57252fe2dfd3731a5399a38a42adb54c8dd5175a289e325f86a36c8fa6a6ee"
+        }
+      },
+      "0-forward-1x": {
+        "gpu": 0,
+        "samples": 1,
+        "lighting_path": "forward",
+        "adapter": "AMD Radeon(TM) Graphics",
+        "binary_sha256": "47ac7130030f42b796a924ec75912d6dba46c5778511d49ecd369804eed8fad6",
+        "fixture_source_sha256": "be0b287448a7514bcdf6b25e66f996a3e7dc653bfbb7cc8f702bd2aab243c650",
+        "capture_evidence_sha256": "c765eb654e3429466a3bfe68661b164ef65ae29f2d6b3cff9e4662cebf360812",
+        "captured_images": 13,
+        "red_only_attenuation": {
+          "ground_pixels": 14740,
+          "visibly_dimmed": 14740,
+          "max_display_delta": 82,
+          "unchanged_sky_pixels": 3744,
+          "unchanged_unshadowed_pixels": 99
+        },
+        "receiver_optics": {
+          "comparison": "hdr",
+          "checked_sites": 13,
+          "max_half_strength_error": 0.00018310546875
+        },
+        "repeat_tile_max_display_delta": 0,
+        "inside_layer": {
+          "max_restored_display_red": 25
+        },
+        "profiled_first_bake_samples": 1,
+        "omitted_retained_image_byte_exact": true,
+        "capture_sha256": {
+          "omitted": "58e55aecd425636eb253cf77755724a7cabcd22903f8afd7990a768fa62b1c26",
+          "omitted-fsr": "f2689f07e4447d2834db693264f815cefcf2bd3fbcacbe8e194fe2e1f433aa43",
+          "zero-strength": "58e55aecd425636eb253cf77755724a7cabcd22903f8afd7990a768fa62b1c26",
+          "half-strength": "4dfda7dfd2896d3dee0499d3dcc4e6b441aabb46a0d37c25ed37aabeba52423c",
+          "full-strength": "cdc87bb16f90d0753e6e732b696abdda54ebc43b6b12dba06d1640583df37fc0",
+          "full-strength-fsr": "65a3454d08e0f066b89e921cc4903e5b7959aaf05ff07a3966708fbe0198e1ce",
+          "unlit-sun": "d05b9ebf98b3de62af1341cbd9cb9c1abaffce3f941effd10dd09ea82bd77fc9",
+          "low-sun": "730e44209e58e587fadf38ce233b7ff35f6673c73f8a2e7c56d3dac3bd4bb8d0",
+          "low-sun-omitted": "730e44209e58e587fadf38ce233b7ff35f6673c73f8a2e7c56d3dac3bd4bb8d0",
+          "repeated-shadows-tile": "6d6da7db2e1755889686ed21e72dde51b7af2b560c331e26556e0187f06dce3f",
+          "inside-layer": "6ef63ae83b6c7a681d5c13132ceb2e47abd1b81d7772168647ac6f62722ba3a9",
+          "above-layer": "6d57252fe2dfd3731a5399a38a42adb54c8dd5175a289e325f86a36c8fa6a6ee",
+          "above-layer-omitted": "6d57252fe2dfd3731a5399a38a42adb54c8dd5175a289e325f86a36c8fa6a6ee"
+        },
+        "fsr_native": {
+          "ground_pixels": 14740,
+          "visibly_dimmed": 14740,
+          "max_red_delta": 82,
+          "max_green_blue_delta": 1
+        }
+      },
+      "0-forward-4x": {
+        "gpu": 0,
+        "samples": 4,
+        "lighting_path": "forward",
+        "adapter": "AMD Radeon(TM) Graphics",
+        "binary_sha256": "47ac7130030f42b796a924ec75912d6dba46c5778511d49ecd369804eed8fad6",
+        "fixture_source_sha256": "be0b287448a7514bcdf6b25e66f996a3e7dc653bfbb7cc8f702bd2aab243c650",
+        "capture_evidence_sha256": "7d51c5998d77682a85e0b3f5531be38a528af6893330374861c9f04c366693ce",
+        "captured_images": 11,
+        "red_only_attenuation": {
+          "ground_pixels": 14740,
+          "visibly_dimmed": 14740,
+          "max_display_delta": 82,
+          "unchanged_sky_pixels": 3744,
+          "unchanged_unshadowed_pixels": 99
+        },
+        "receiver_optics": {
+          "comparison": "rgb",
+          "checked_sites": 13,
+          "max_half_strength_error": 1
+        },
+        "repeat_tile_max_display_delta": 0,
+        "inside_layer": {
+          "max_restored_display_red": 25
+        },
+        "profiled_first_bake_samples": 1,
+        "omitted_retained_image_byte_exact": true,
+        "capture_sha256": {
+          "omitted": "9667b318b705c3177f9923422e9f4a9f7a34529871c4b15cb52a8e4307d6e929",
+          "zero-strength": "9667b318b705c3177f9923422e9f4a9f7a34529871c4b15cb52a8e4307d6e929",
+          "half-strength": "46a92ed3e350d08190279f97344a25cdb96e54e4c811ef6cb3686d30f3012048",
+          "full-strength": "c9319c2380aca359c021517511042d7b4cf6133e8a3d9e993af296b9aff2efbb",
+          "unlit-sun": "c55c4c97cfcdbcba31af74cadd4309f69bb4ba50cf0a75dce88f956def83f069",
+          "low-sun": "4468b9bb80fc22219ac99ca6c96da140737e3dc68b51293270884fb861782d56",
+          "low-sun-omitted": "4468b9bb80fc22219ac99ca6c96da140737e3dc68b51293270884fb861782d56",
+          "repeated-shadows-tile": "51df017211f501c784cc3163cc6363c7dd743a2fadf351451cc2f1318345a013",
+          "inside-layer": "1c625fd30324aefa2392a95605342d213471af123a9ba97beb46feea4557a898",
+          "above-layer": "cf5c37e6c2040ee7363c72223fdab9e06f7468c8d219722f5a019042cbb8e6d7",
+          "above-layer-omitted": "cf5c37e6c2040ee7363c72223fdab9e06f7468c8d219722f5a019042cbb8e6d7"
+        }
+      },
+      "1-deferred-1x": {
+        "gpu": 1,
+        "samples": 1,
+        "lighting_path": "deferred",
+        "adapter": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "binary_sha256": "47ac7130030f42b796a924ec75912d6dba46c5778511d49ecd369804eed8fad6",
+        "fixture_source_sha256": "be0b287448a7514bcdf6b25e66f996a3e7dc653bfbb7cc8f702bd2aab243c650",
+        "capture_evidence_sha256": "f4214b1e03c7d446da1484e70b0f8abcfb93c0301db50030fceacf6f69525912",
+        "captured_images": 11,
+        "red_only_attenuation": {
+          "ground_pixels": 14740,
+          "visibly_dimmed": 14740,
+          "max_display_delta": 82,
+          "unchanged_sky_pixels": 3744,
+          "unchanged_unshadowed_pixels": 99
+        },
+        "receiver_optics": {
+          "comparison": "hdr",
+          "checked_sites": 13,
+          "max_half_strength_error": 0.00018310546875
+        },
+        "repeat_tile_max_display_delta": 0,
+        "inside_layer": {
+          "max_restored_display_red": 25
+        },
+        "profiled_first_bake_samples": 1,
+        "omitted_retained_image_byte_exact": true,
+        "capture_sha256": {
+          "omitted": "712db4a6c0360a5f1d73c66b154c29120af7b90ed89084d5ad1657cf958416d5",
+          "zero-strength": "712db4a6c0360a5f1d73c66b154c29120af7b90ed89084d5ad1657cf958416d5",
+          "half-strength": "eb3fc0ecc504f8a9950cffc031f0fa3bf227f1022125e2133e8f2ee767ab63d3",
+          "full-strength": "3413bd06c38c1e1db6052631a38cf53b99192a75932c21509d4411254d6f037d",
+          "unlit-sun": "ca926e5c4067c41300620e388a0e54bc027910b2d3c6b829e42cdf0ce8f5c722",
+          "low-sun": "41dc721aad0154727e8c4048d679b48d38e4551ce995c919978895285a7b4aed",
+          "low-sun-omitted": "41dc721aad0154727e8c4048d679b48d38e4551ce995c919978895285a7b4aed",
+          "repeated-shadows-tile": "eb3a3cf2e302fe970b2c0ec598247192103682b382690dd0e595d83be6429b44",
+          "inside-layer": "ab45b90084a23922ce9f86705bc9e6890beec4d035db1d02a7aadc6f38713458",
+          "above-layer": "107ad8301ef4eeb4cd09287f801fb29644484978146981286cdfaae335d0aa18",
+          "above-layer-omitted": "107ad8301ef4eeb4cd09287f801fb29644484978146981286cdfaae335d0aa18"
+        }
+      },
+      "1-forward-1x": {
+        "gpu": 1,
+        "samples": 1,
+        "lighting_path": "forward",
+        "adapter": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "binary_sha256": "47ac7130030f42b796a924ec75912d6dba46c5778511d49ecd369804eed8fad6",
+        "fixture_source_sha256": "be0b287448a7514bcdf6b25e66f996a3e7dc653bfbb7cc8f702bd2aab243c650",
+        "capture_evidence_sha256": "4c9247fd0f02513de9f8d08eb901b1897cc895cdc880da0edd80c07aebeb82d3",
+        "captured_images": 19,
+        "red_only_attenuation": {
+          "ground_pixels": 14740,
+          "visibly_dimmed": 14740,
+          "max_display_delta": 82,
+          "unchanged_sky_pixels": 3744,
+          "unchanged_unshadowed_pixels": 99
+        },
+        "receiver_optics": {
+          "comparison": "hdr",
+          "checked_sites": 13,
+          "max_half_strength_error": 0.00018310546875
+        },
+        "repeat_tile_max_display_delta": 1,
+        "inside_layer": {
+          "max_restored_display_red": 25
+        },
+        "profiled_first_bake_samples": 1,
+        "omitted_retained_image_byte_exact": true,
+        "capture_sha256": {
+          "omitted": "712db4a6c0360a5f1d73c66b154c29120af7b90ed89084d5ad1657cf958416d5",
+          "omitted-fsr": "c8553cff30b63b8ae647145dddc560a85a17b685b85a54b0959ac918c0b5bcf5",
+          "zero-strength": "712db4a6c0360a5f1d73c66b154c29120af7b90ed89084d5ad1657cf958416d5",
+          "half-strength": "1ba91b74ef757039b79f3397fc232515eee8dbd8a61f7a8c69fc96c4dcf309b7",
+          "full-strength": "b6a7b1eb2d5ecf64e2c3644d9b3d4bc006762552b58c5e44edf6ec1c5343307e",
+          "full-strength-fsr": "d2bd42dc554bfe77e3cf6c7b7309cbc3205bc5f72a4383542ba2f307b5c2ae4d",
+          "unlit-sun": "ca926e5c4067c41300620e388a0e54bc027910b2d3c6b829e42cdf0ce8f5c722",
+          "low-sun": "14767c3eea50d829751c625c221f049d500a3d6cfb57e87728640e497d2211a9",
+          "low-sun-omitted": "14767c3eea50d829751c625c221f049d500a3d6cfb57e87728640e497d2211a9",
+          "repeated-shadows-tile": "f76c68d3fdaa007b4bfc55dc3724d4e6f7861168a3d3f8eea32c5e68c8facb91",
+          "inside-layer": "f9e90c78774e5a937e86ae7be98272adb9e33b6c3bcaf115e8344954460efa77",
+          "above-layer": "107ad8301ef4eeb4cd09287f801fb29644484978146981286cdfaae335d0aa18",
+          "above-layer-omitted": "107ad8301ef4eeb4cd09287f801fb29644484978146981286cdfaae335d0aa18",
+          "expected-wind-displacement": "987e1d57387faa33179e9faf95f5ff07aa0c7609306c5be2f2f0936493108d09",
+          "relocated-authored": "b6a7b1eb2d5ecf64e2c3644d9b3d4bc006762552b58c5e44edf6ec1c5343307e",
+          "relocated-wind": "52d5bc5db1371ea3ec499c35e33132174be12318079d8c6d63c14679878b6cb7",
+          "relocated-wind-repeated": "52d5bc5db1371ea3ec499c35e33132174be12318079d8c6d63c14679878b6cb7",
+          "cold-wind": "52d5bc5db1371ea3ec499c35e33132174be12318079d8c6d63c14679878b6cb7"
+        },
+        "fsr_native": {
+          "ground_pixels": 14740,
+          "visibly_dimmed": 14740,
+          "max_red_delta": 82,
+          "max_green_blue_delta": 1
+        },
+        "relocated_native_aot": {
+          "replay_sha256": "52d5bc5db1371ea3ec499c35e33132174be12318079d8c6d63c14679878b6cb7",
+          "frames_presented": 4,
+          "generations": 2,
+          "game_sha256": "48386a9ca6b7eefb66f4b63257e98cfc667fd1c84e9b49c88992e68e2ba532bf",
+          "wind_displacement": {
+            "translated_by_m": [
+              -86400.0,
+              43200.0
+            ],
+            "changing_pixels": 12143,
+            "maximum_control_difference": 0
+          },
+          "cold_restore_exact": true,
+          "source_absent": true,
+          "rejected_runtime_without_feature": true
+        }
+      },
+      "1-forward-4x": {
+        "gpu": 1,
+        "samples": 4,
+        "lighting_path": "forward",
+        "adapter": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "binary_sha256": "47ac7130030f42b796a924ec75912d6dba46c5778511d49ecd369804eed8fad6",
+        "fixture_source_sha256": "be0b287448a7514bcdf6b25e66f996a3e7dc653bfbb7cc8f702bd2aab243c650",
+        "capture_evidence_sha256": "814fffa1836c98c2050146463db9856f56d2d816b3806bcb6d11204710cda773",
+        "captured_images": 11,
+        "red_only_attenuation": {
+          "ground_pixels": 14740,
+          "visibly_dimmed": 14740,
+          "max_display_delta": 82,
+          "unchanged_sky_pixels": 3744,
+          "unchanged_unshadowed_pixels": 99
+        },
+        "receiver_optics": {
+          "comparison": "rgb",
+          "checked_sites": 13,
+          "max_half_strength_error": 1
+        },
+        "repeat_tile_max_display_delta": 1,
+        "inside_layer": {
+          "max_restored_display_red": 25
+        },
+        "profiled_first_bake_samples": 1,
+        "omitted_retained_image_byte_exact": true,
+        "capture_sha256": {
+          "omitted": "f9e4a538186c54b3eeac9ee1b168eb90807192644d2f278b91613e7d6ffc0c1b",
+          "zero-strength": "f9e4a538186c54b3eeac9ee1b168eb90807192644d2f278b91613e7d6ffc0c1b",
+          "half-strength": "8e3c7163838f46301deec38791124548851bc3a66fb982e16c8351a22920bfeb",
+          "full-strength": "d4e5f08ec48dfb4755974c8cab8e5d43770890ef26c4778c799356d7373d067b",
+          "unlit-sun": "54bedf9ba8968e9a8cd26d1368ea0b9acb92820e1f72273c0b4851f30a438c03",
+          "low-sun": "ea3cc8d2c22e66ba9e1f085aac2f047aa41bbb48d5057c75a6f081930bdcf48b",
+          "low-sun-omitted": "ea3cc8d2c22e66ba9e1f085aac2f047aa41bbb48d5057c75a6f081930bdcf48b",
+          "repeated-shadows-tile": "ba50031fae8d4474ee3504e5f4a5263ff65f5506c4645d1da418ec8e7cc15096",
+          "inside-layer": "39ba1153d1555ba87dcfbd7e9c14ac3441ff3f42e6196ae4b77ab151399f4956",
+          "above-layer": "5b792bf7a965d730963e86a8d38050687861b33e9381246e3accb6654103044d",
+          "above-layer-omitted": "5b792bf7a965d730963e86a8d38050687861b33e9381246e3accb6654103044d"
+        }
+      }
+    },
+    "cloud_regression": {
+      "capture_evidence_sha256": "5443e36ac5ac9c418b651c60e8dfb9d3a538b9bc4c590819de35d55fbdb34b8b",
+      "capture_count": 15,
+      "legacy_authoring_evidence_sha256": "e1ca533db09cd2214d03033231922c872c4ad26a0fc1ec9cc94900c2f66dd1c8"
+    }
+  },
+  "intel_compute": {
+    "report": {
+      "scope": "standalone cloud compute readback",
+      "device": "Intel(R) Graphics (BMG G31)",
+      "vendor_id": 32902,
+      "device_id": 57891,
+      "vulkan_api": "1.4.335",
+      "validation_layer": true,
+      "sync_validation": true,
+      "validation_messages": 0,
+      "readback_bytes": 1703936,
+      "noise_bytes": 1048576,
+      "shadow_bytes_each": 131072,
+      "exact_gpu_repeat": true,
+      "exact_zero_extinction": true,
+      "monotonic_slices": true,
+      "stronger_shadow_texels": 6636,
+      "shifted_sun_texels": 6817,
+      "independent_samples": 2496,
+      "max_depth_error": 0.00765226064,
+      "depth_tolerance": 0.08,
+      "max_transmission_error": 0.000388108432,
+      "transmission_tolerance": 0.025,
+      "cpu_reference_passed": true,
+      "case_order": [
+        "clear",
+        "regular",
+        "stronger",
+        "opposite_sun",
+        "regular_repeat"
+      ],
+      "peak_optical_depths": [
+        0,
+        4.75,
+        9.5,
+        4.79296875,
+        4.75
+      ],
+      "nonzero_base_texels": [
+        0,
+        7517,
+        7517,
+        7430,
+        7517
+      ]
+    },
+    "evidence_sha256": "c570ff15cc033696c0222699b66f0948d65980daec53129360842da4f7be8244",
+    "readback_sha256": "c175befab8c51dc72fa331d6749340528c78fcbde455fb0839aebf76a1367ce0",
+    "validation_package_sha256": "2c17a34dd97c72ce819f4c8684fa5fea5a8ef1c689d6a8700f40fcf49d898df3",
+    "witness_source_sha256": "37879baf632d497f6400bdf4c78dc5774fb13d821d2ba5141c659b2d553976e8"
+  }
+}
