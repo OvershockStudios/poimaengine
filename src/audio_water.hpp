@@ -10,6 +10,15 @@
 
 namespace poima::audio_detail {
 
+inline std::optional<AudioWaterFlowSample> sample_water_flow(const AudioEmitter& emitter,
+                                                            const water::Region* region) {
+    if (!emitter.water_flow) return std::nullopt;
+    const auto& flow=*emitter.water_flow;
+    const double discharge=region ? region->storage().value().transfer_m3(flow.port).value()/water::step_seconds : 0.;
+    const auto selected=selected_water_flow(discharge,flow.direction);
+    return AudioWaterFlowSample{discharge,static_cast<float>(std::min(1.,selected/flow.full_discharge_m3_s))};
+}
+
 inline std::optional<AudioWaterMedium> listener_water_medium(const water::Region* region,
                                                              const Matrix4& listener) {
     if (!region || !region->listener_audio()) return std::nullopt;

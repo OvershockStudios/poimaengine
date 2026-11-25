@@ -795,8 +795,20 @@ struct Runtime::Impl {
         if(definition.snow)snow_binding.emplace(definition);
         require(definition.entities.size()<=10000,"Runtime entity limit exceeded.");
         validate_runtime_templates(definition);templates=definition.templates;
+        const auto validate_audio_flow=[&](const RuntimeEntityDefinition& entity) {
+            if (!entity.emitter || !entity.emitter->water_flow) return;
+            const auto& profile=*entity.emitter->water_flow;
+            require(profile.full_discharge_m3_s>=min_audio_full_discharge_m3_s &&
+                profile.full_discharge_m3_s<=max_audio_full_discharge_m3_s &&
+                (profile.direction==WaterFlowDirection::Forward || profile.direction==WaterFlowDirection::Reverse ||
+                    profile.direction==WaterFlowDirection::Both),"Invalid water-driven audio profile.");
+            require(water_region && water_region->storage() && water_region->storage()->transfer_m3(profile.port),
+                "Water-driven audio references an unknown storage port.");
+        };
+        for (const auto& entity:definition.entities) validate_audio_flow(entity);
         particle_sprites=particles::build_sprite_catalog(definition);
         for(const auto& recipe:templates)for(const auto& entity:recipe.entities) {
+            validate_audio_flow(entity);
             require(!entity.collider || !entity.collider->navigation_obstacle,"Navigation obstacles require authored world entities.");
             if(entity.camera && entity.camera->viewmodel_clearance) {
                 require(entity.camera->viewmodel.has_value(),"Viewmodel clearance requires a foreground lens.");validate_viewmodel_clearance_profile(*entity.camera->viewmodel_clearance);
@@ -2763,7 +2775,8 @@ AudioSnapshot Runtime::audio_snapshot(const std::string& listener) const {
         auto g=source;g.world=multiply(impl_->registry.get<Node>(impl_->find(g.entity)).world,g.world);result.geometry.push_back(std::move(g));
     }
     for(auto e:impl_->topology->order)if(auto* emitter=impl_->registry.try_get<AudioEmitter>(e);emitter && emitter->enabled) {
-        const auto& n=impl_->registry.get<Node>(e);result.sources.push_back({n.id,*emitter,n.world});
+        const auto& n=impl_->registry.get<Node>(e);
+        result.sources.push_back({n.id,*emitter,n.world,audio_detail::sample_water_flow(*emitter,water_region())});
     }
     return result;
 }

@@ -551,7 +551,8 @@ committed `storage.ports` report includes the same positive-direction
 `discharge_m3_s` field as other ports. The source and receiving water levels
 drive their existing visuals. Add a [falling sheet](#render-a-falling-water-sheet)
 for the continuous spill and a [flow-driven particle emitter](PARTICLES.md#drive-spray-from-committed-water-flow)
-for spray. Both use the same committed transfer.
+for spray. Both use the same committed transfer. A [water-driven audio emitter](AUDIO_EVENTS.md#drive-an-emitter-with-water-flow)
+uses that discharge to control the level of a spatial sound.
 The combined ledger includes the transfer once and a save retains the
 last completed discharge. Overflow uses `.pwater` v21 and requires
 `features.water_overflow` in exported runtimes.

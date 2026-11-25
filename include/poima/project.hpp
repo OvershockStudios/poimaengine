@@ -46,6 +46,7 @@ struct GameDefinition {
     std::string gameplay_descriptor,gameplay_descriptor_sha256,gameplay_values="{}";
     std::uint64_t revision=0;
     bool audio=false, startup_splash=true;
+    bool needs_audio_water_flow=false;
     StartupRenderOptions startup_render;
     bool needs_sprite_particles=false;
     bool needs_particle_collisions=false;

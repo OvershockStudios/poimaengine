@@ -144,6 +144,47 @@ logical voice save format stays at version 1. This first slice offers direct
 gain routes. Nested buses, live bus controls, effects and metering remain
 future work.
 
+## Drive an emitter with water flow
+
+Add `water_flow` to an `AudioEmitter` to scale a loop or one-shot with the
+committed discharge through an authored [water storage port](SHALLOW_WATER.md#fill-and-drain-connected-reservoirs).
+Place the emitter at the sound source, such as the bottom of a spillway.
+For ambience, set `loop` and start the sound once through the existing
+play command. If the gate closes, the loop becomes silent and keeps its
+playback position. Reopening the gate fades in the continuing loop.
+
+```json
+{
+  "port": "spill",
+  "full_discharge_m3_s": 0.3,
+  "direction": "forward"
+}
+```
+
+The full-gain rate is 0.000001–1,000,000 m³/s. The default `forward` selects
+positive discharge, `reverse` selects the magnitude of negative discharge,
+and `both` selects the absolute discharge. The chosen rate divided by the
+full-gain rate, capped at one, multiplies emitter, bus and event gain.
+Missing port references fail dependency resolution and export. The feature
+requires `features.audio_water_flow` in the installed runtime.
+
+`runtime.audio.inspect` reports the sampled signed discharge and target
+multiplier under each bound source's `water_flow`. Frozen captures use
+that multiplier throughout the recording. The logical voice list reports
+its base and event gains and clip position. Authored observations start
+at zero discharge. In the player, editor and `runtime.audio.replay`, a
+linear ramp follows each committed tick over 800 output frames, including
+when a DSP block crosses a tick boundary. The ramp scales the spatialized
+direct path and optional early reflection at the mix stage. The existing
+propagation delay still applies to the clip. The flow envelope itself
+follows the mix timeline. Save restoration recovers the committed
+discharge and logical clip position, and a newly attached mix starts at
+the saved target.
+
+The [native flow-audio fixture](../tests/audio_water_flow_capture.py) compares
+recorded PCM with a matching unbound source, closes and reopens the gate,
+and verifies the restored loop in a fresh relocated game.
+
 ## Verification
 
 `tests/audio_contract.py` extends the frozen acoustic suite with logical budgets/history, receipt replay, invalid commands, short one-shot onset/silence, loop phase, gain, midgame attachment, live moving geometry, partial-progress errors, C# creation/stop rollback and reload. Build the fixture with `.cache/toolchains/dotnet-10.0.401/dotnet build tests/fixtures/audio_game -c Release`, then supply `--sound-game tests/fixtures/audio_game/bin/Release/net10.0/Poima.AudioProbe.dll` plus the hostfxr/bridge paths to run it. The test injects a failure after sound and door movement and verifies joint rollback.

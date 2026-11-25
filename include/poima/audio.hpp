@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #pragma once
 #include "poima/scene.hpp"
+#include "poima/water_flow.hpp"
 #include <map>
 #include <optional>
 #include <span>
@@ -20,6 +21,12 @@ struct AcousticMaterial {
 };
 void validate_acoustic_material(const AcousticMaterial& material);
 struct AudioBusRoute { std::string name;float gain=1; };
+struct AudioWaterFlowProfile {
+    std::string port;
+    double full_discharge_m3_s;
+    WaterFlowDirection direction;
+};
+inline constexpr double min_audio_full_discharge_m3_s=.000001, max_audio_full_discharge_m3_s=1'000'000;
 struct AudioEmitter {
     std::string asset;
     std::shared_ptr<const AudioClip> clip;
@@ -28,6 +35,7 @@ struct AudioEmitter {
     // Authored route resolved from the frozen world. Omission selects unity gain.
     std::optional<AudioBusRoute> bus{};
     float bus_gain() const { return bus ? bus->gain : 1.0f; }
+    std::optional<AudioWaterFlowProfile> water_flow{};
 };
 struct AcousticGeometry {
     std::string entity;
@@ -35,7 +43,14 @@ struct AcousticGeometry {
     std::shared_ptr<const MeshAsset> mesh; // Null selects a unit box.
     AcousticMaterial material;
 };
-struct AudioSource { std::string entity;AudioEmitter emitter;Matrix4 world; };
+struct AudioWaterFlowSample { double discharge_m3_s;float gain; };
+struct AudioSource {
+    std::string entity;
+    AudioEmitter emitter;
+    Matrix4 world;
+    std::optional<AudioWaterFlowSample> water_flow{};
+    float flow_gain() const { return water_flow ? water_flow->gain : 1.0f; }
+};
 struct AudioWaterMedium {
     double cutoff_hz;
     double gain;

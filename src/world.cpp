@@ -614,6 +614,7 @@ public:
             if(content.needs_particle_impact_bursts)result["needs_particle_impact_bursts"]=true;
             if(content.needs_particle_water_contact)result["needs_particle_water_contact"]=true;
             if(content.needs_particle_water_flow)result["needs_particle_water_flow"]=true;
+            if(content.needs_audio_water_flow)result["needs_audio_water_flow"]=true;
             if(content.needs_water_buoyancy)result["needs_water_buoyancy"]=true;
             if(content.needs_water_currents)result["needs_water_currents"]=true;
             if(content.needs_water_surface_wakes)result["needs_water_surface_wakes"]=true;
@@ -1011,7 +1012,9 @@ public:
             }
             Json geometry=Json::array();
             for(const auto& e:source_definition.entities) {
-                if(e.emitter && e.emitter->enabled)snapshot.sources.push_back({e.id,*e.emitter,pose(e.id)});
+                if(e.emitter && e.emitter->enabled)
+                    snapshot.sources.push_back({e.id,*e.emitter,pose(e.id),
+                        audio_detail::sample_water_flow(*e.emitter,live ? runtime_->water_region() : nullptr)});
                 if(!e.acoustics || !e.acoustics->enabled)continue;
                 AcousticGeometry g;g.entity=e.id;g.world=pose(e.id);g.material=*e.acoustics;
                 std::string shape;
@@ -1037,7 +1040,17 @@ public:
             }
             for(std::size_t i=0;i<snapshot.sources.size();++i) {
                 paths[i]["gain"]=snapshot.sources[i].emitter.gain;paths[i]["loop"]=snapshot.sources[i].emitter.loop;paths[i]["clip_frames"]=snapshot.sources[i].emitter.clip->samples.size();
-                describe_audio_routing(paths[i],snapshot.sources[i].emitter);
+                const auto& source=snapshot.sources[i];
+                describe_audio_routing(paths[i],source.emitter);
+                if (source.water_flow) {
+                    const auto& profile=*source.emitter.water_flow;
+                    const char* direction=profile.direction==WaterFlowDirection::Both ? "both" :
+                        profile.direction==WaterFlowDirection::Reverse ? "reverse" : "forward";
+                    paths[i]["water_flow"]={{"port",profile.port},{"direction",direction},
+                        {"full_discharge_m3_s",profile.full_discharge_m3_s},
+                        {"discharge_m3_s",source.water_flow->discharge_m3_s},{"gain",source.flow_gain()}};
+                    paths[i]["effective_gain"]=source.emitter.gain*source.emitter.bus_gain()*source.flow_gain();
+                }
             }
             Json result={{"world_id",source_definition.world_id},{"revision",source_definition.authored_revision},{"tick",live ? Json(runtime_->inspect().tick) : Json(nullptr)},{"session_id",live ? Json(runtime_id_) : Json(nullptr)},
                 {"source",live ? "runtime" : "authored"},{"listener",listener},{"listener_world",snapshot.listener},{"backend","Steam Audio 4.8.1; CPU direct paths; default HRTF"},{"build_version",build_metadata().version},

@@ -169,8 +169,7 @@
         water::max_storage_rate * water::step_seconds * microlitres_per_cubic_metre + .5);
     std::uint64_t water_flow_volume(const RuntimeParticleWaterFlowProfile& profile) const {
         const auto transfer=water_region->storage()->transfer_m3(profile.port).value();
-        const double volume=profile.direction==WaterFlowDirection::Both ? std::abs(transfer) :
-            std::max(0.,profile.direction==WaterFlowDirection::Reverse ? -transfer : transfer);
+        const double volume=selected_water_flow(transfer,profile.direction);
         return static_cast<std::uint64_t>(std::floor(volume*microlitres_per_cubic_metre+.5));
     }
     void step_water_flow_particles() {

@@ -37,6 +37,36 @@ struct AudioStream::Impl {
     std::optional<audio_detail::WaterFilter> water_filter;
     std::uint64_t water_mix_boundary=0;
     double previous_water_blend=0, water_blend=0;
+    struct FlowEnvelope {
+        // A rendering block can contain the end of the previous simulation tick.
+        std::array<float,3> targets;
+        std::uint64_t tick;
+
+        float gain(std::uint64_t sample) const {
+            const auto end=tick*audio_tick_frames;
+            if (sample>=end) return targets[2];
+            const auto distance=end-sample-1;
+            const bool previous=distance>=audio_tick_frames;
+            const auto offset=previous ? distance-audio_tick_frames : distance;
+            const float weight=1.f-static_cast<float>(offset)/static_cast<float>(audio_tick_frames);
+            return previous ? std::lerp(targets[0],targets[1],weight) :
+                              std::lerp(targets[1],targets[2],weight);
+        }
+    };
+    std::map<std::string,FlowEnvelope> flow_envelopes;
+    void sample_flow(const AudioSnapshot& next,std::uint64_t tick) {
+        for (const auto& source:next.sources) {
+            if (!source.water_flow) continue;
+            const auto gain=source.flow_gain();
+            auto [entry,inserted]=flow_envelopes.try_emplace(source.entity,FlowEnvelope{{gain,gain,gain},tick});
+            if (!inserted) {
+                auto& envelope=entry->second;
+                envelope.targets={envelope.targets[1],envelope.targets[2],gain};
+                envelope.tick=tick;
+            }
+        }
+        std::erase_if(flow_envelopes,[tick](const auto& entry) { return entry.second.tick!=tick; });
+    }
     IPLContext context=nullptr;IPLHRTF hrtf=nullptr;
     struct DspPath {
         std::uint64_t delay=0;
@@ -96,7 +126,7 @@ struct AudioStream::Impl {
         for(const auto& state:states)seen=std::max(seen,state.id);
     }
     void render_path(std::span<float> mix,const SoundVoice& state,DspPath& dsp,const std::array<double,3>& direction,
-                     IPLDirectEffectParams params,float start_audibility=1,float end_audibility=1) {
+                     IPLDirectEffectParams params,const FlowEnvelope* flow,float start_audibility=1,float end_audibility=1) {
         if(dsp.done)return;
         const auto begin=state.start_tick*audio_tick_frames+dsp.delay;
         const auto emission_end=state.end_sample();
@@ -123,7 +153,12 @@ struct AudioStream::Impl {
         // voices, without touching the output assigned to other sources.
         if(bus_gain==0)return;
         for(std::size_t k=0;k<audio_block;++k)if(cursor+k>=begin) {
-            const float audibility=std::lerp(start_audibility,end_audibility,float(k+1)/audio_block);
+            float audibility=std::lerp(start_audibility,end_audibility,float(k+1)/audio_block);
+            if(flow) {
+                const float gain=flow->gain(cursor+k);
+                if(gain==0)continue;
+                audibility*=gain;
+            }
             if(bus_gain==1) {
                 mix[2*k]+=left[k]*state.sound.gain*state.gain*audibility;
                 mix[2*k+1]+=right[k]*state.sound.gain*state.gain*audibility;
@@ -144,14 +179,17 @@ struct AudioStream::Impl {
             params.distanceAttenuation=current.distance_gain;params.occlusion=current.occlusion;
             std::copy(current.air.begin(),current.air.end(),params.airAbsorption);
             std::copy(current.transmission.begin(),current.transmission.end(),params.transmission);
-            render_path(mix,voice.state,voice.direct,current.direction,params);
+            const FlowEnvelope* flow=nullptr;
+            if (voice.state.sound.water_flow)
+                flow=&flow_envelopes.at(voice.state.emitter);
+            render_path(mix,voice.state,voice.direct,current.direction,params,flow);
             if(auto& reflection=voice.reflected) {
                 const auto& path_now=current.reflection;
                 const bool visible=path_now && path_now->entity==reflection->path.entity && path_now->face==reflection->path.face;
                 if(visible)reflection->path=*path_now;
                 const float target=visible ? 1 : 0;
                 render_path(mix,voice.state,reflection->dsp,reflection->path.direction,
-                            audio_detail::reflection_filter(reflection->path),reflection->audibility,target);
+                            audio_detail::reflection_filter(reflection->path),flow,reflection->audibility,target);
                 reflection->audibility=target;
             }
         }
@@ -174,6 +212,7 @@ struct AudioStream::Impl {
 AudioStream::AudioStream(std::uint64_t tick,const AudioSnapshot& initial):impl_(std::make_unique<Impl>()) {
     check(audio_available(),"Audio stream is not built.");auto& s=*impl_;s.start=s.cursor=s.committed=tick*audio_tick_frames;s.snapshot=initial;s.paths=observe_audio(initial);s.stats.path_updates=1;
 #if POIMA_AUDIO
+    s.sample_flow(initial,tick);
     if (initial.water_medium) {
         s.water_filter.emplace(*initial.water_medium);
         s.previous_water_blend=s.water_blend=initial.water_medium->blend;
@@ -188,6 +227,7 @@ std::vector<float> AudioStream::advance(std::uint64_t tick,const AudioSnapshot& 
     auto& s=*impl_;check(!s.finished && tick*audio_tick_frames>=s.committed,"Audio stream cannot rewind or resume after finish.");
     check(tick*audio_tick_frames-s.committed<=audio_tick_frames,"Feed committed audio one simulation tick at a time.");
 #if POIMA_AUDIO
+    if (tick * audio_tick_frames > s.committed) s.sample_flow(snapshot,tick);
     if (s.water_filter && tick * audio_tick_frames > s.committed) {
         s.water_mix_boundary=s.committed;
         s.previous_water_blend=s.water_blend;

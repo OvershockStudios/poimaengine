@@ -32,6 +32,7 @@
     "water_offshore": @POIMA_RUNTIME_WATER_OPTICS@,
     "water_sprite_optics": @POIMA_RUNTIME_WATER_OPTICS@,
     "water_listener_audio": @POIMA_RUNTIME_WATER_LISTENER_AUDIO@,
+    "audio_water_flow": @POIMA_RUNTIME_WATER_LISTENER_AUDIO@,
     "scene_particles": @POIMA_RUNTIME_SIMULATION@,
     "surface_marks": @POIMA_RUNTIME_SIMULATION@,
     "surface_mark_masks": @POIMA_RUNTIME_SURFACE_MARK_MASKS@,

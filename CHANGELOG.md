@@ -2,6 +2,12 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.444
+
+- Let an audio emitter follow committed discharge through a water storage
+  port. Spatial loops fade with the flow and retain their playback position.
+  [Water-driven audio](docs/AUDIO_EVENTS.md#drive-an-emitter-with-water-flow)
+
 ## 0.0.443
 
 - Render a falling sheet from a reservoir overflow. Its landing height,

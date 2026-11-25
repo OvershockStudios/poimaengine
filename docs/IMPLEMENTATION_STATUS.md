@@ -1,8 +1,17 @@
 # Implementation status
 
-Updated 2026-11-25 for **0.0.443**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-25 for **0.0.444**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.444 lets [water flow drive spatial audio](AUDIO_EVENTS.md#drive-an-emitter-with-water-flow).
+A native loop follows the same committed discharge as the falling sheet and
+spray. A 6,400-frame recording follows an independent gain calculation,
+including exact silence while the gate is shut and a fade back into the same
+loop. A save restores the discharge and clip position, giving byte-identical
+continuation in a fresh relocated Windows game. Ubuntu passed nine focused
+suites and the same headless fixture. The envelope follows the mix timeline.
+[Results and scope](evidence/m2-audio-water-flow-444.json)
 
 Version 0.0.443 renders [falling water sheets](SHALLOW_WATER.md#render-a-falling-water-sheet)
 from committed weir discharge. The sheet changes thickness with flow and

@@ -185,7 +185,7 @@ FrozenContent freeze_world_content(const Json& source, const fs::path& directory
         add(id,".pimage",assets.images.at(id).bytes);
         return value;
     };
-    std::set<std::string,std::less<>> particle_water_ports;
+    std::set<std::string,std::less<>> particle_water_ports,audio_water_ports;
     auto collect_particle_emitter=[&](const Json& emitter) {
         result.needs_particles=true;
         if(emitter.contains("surface_collision"))result.needs_particle_collisions=true;
@@ -262,7 +262,10 @@ FrozenContent freeze_world_content(const Json& source, const fs::path& directory
         }
         if(components.contains("AudioEmitter")) {
             result.needs_audio=true;
-            const auto id=components.at("AudioEmitter").at("asset").get<std::string>();
+            const auto& emitter=components.at("AudioEmitter");
+            if (emitter.contains("water_flow"))
+                audio_water_ports.insert(emitter.at("water_flow").at("port").get<std::string>());
+            const auto id=emitter.at("asset").get<std::string>();
             if(!files.contains(id+".paudio")) {
                 (void)audio.get(directory,id);
                 add(id,".paudio",audio.clips.at(id).bytes);
@@ -346,10 +349,16 @@ FrozenContent freeze_world_content(const Json& source, const fs::path& directory
         definition.water=std::move(asset.definition);
     }
     result.needs_particle_water_flow=!particle_water_ports.empty();
+    result.needs_audio_water_flow=!audio_water_ports.empty();
     for (const auto& name : particle_water_ports) {
         require(definition.water && definition.water->storage &&
             std::ranges::any_of(definition.water->storage->ports,[&](const auto& port){return port.id==name;}),
             "Water-driven particle emitter references an unknown storage port: "+name+".",-32050);
+    }
+    for (const auto& name : audio_water_ports) {
+        require(definition.water && definition.water->storage &&
+            std::ranges::any_of(definition.water->storage->ports,[&](const auto& port){return port.id==name;}),
+            "Water-driven audio references an unknown storage port: "+name+".",-32050);
     }
     if(definition.snow)component_checked([&]{(void)snow::Region(definition);});
     result.needs_snow_water=definition.snow.has_value() && definition.water.has_value();

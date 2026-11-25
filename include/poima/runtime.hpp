@@ -470,7 +470,6 @@ template<class Profile,class Visit> void visit_impact_bursts(Profile& profile,Vi
         if(burst)visit(*burst);
     }
 }
-enum class WaterFlowDirection { Forward, Reverse, Both };
 inline constexpr std::uint32_t max_water_flow_particles_per_tick=64;
 inline constexpr std::uint32_t max_microlitres_per_particle=1'000'000'000;
 struct RuntimeParticleWaterFlowProfile {

@@ -300,7 +300,7 @@ AcousticMaterial acoustic_value(const Json& v) {
     return {v.at("absorption").get<std::array<float,3>>(),v.at("transmission").get<std::array<float,3>>(),v.at("scattering").get<float>(),v.at("enabled").get<bool>()};
 }
 AudioEmitter emitter_value(const Json& v) {
-    fields(v,{"asset","gain","loop","enabled","bus"},{"asset","gain","loop","enabled"});
+    fields(v,{"asset","gain","loop","enabled","bus","water_flow"},{"asset","gain","loop","enabled"});
     require(v.at("asset").is_string() && valid_asset_id(v.at("asset").get<std::string>()),"AudioEmitter needs a clip content hash.");
     require(v.at("gain").is_number() && std::isfinite(v.at("gain").get<double>()) && v.at("gain")>=0 && v.at("gain")<=4,"Audio gain must be in [0,4].");
     require(v.at("loop").is_boolean() && v.at("enabled").is_boolean(),"Audio loop/enabled must be Boolean.");
@@ -311,6 +311,23 @@ AudioEmitter emitter_value(const Json& v) {
         require(bus.is_string() && audio_buses::valid_name(bus.get_ref<const std::string&>()),
             "AudioEmitter bus must be a valid named route.");
         emitter.bus=AudioBusRoute{bus.get<std::string>()};
+    }
+    if (v.contains("water_flow")) {
+        const auto& flow=v.at("water_flow");
+        fields(flow,{"port","full_discharge_m3_s","direction"},{"port","full_discharge_m3_s"});
+        const auto& name=flow.at("port");
+        const auto& full=flow.at("full_discharge_m3_s");
+        require(name.is_string() && valid_input_action_name(name.get_ref<const std::string&>()),
+            "Water-driven audio needs a named storage port.");
+        require(full.is_number() && std::isfinite(full.get<double>()) &&
+            full>=min_audio_full_discharge_m3_s && full<=max_audio_full_discharge_m3_s,
+            "Water-driven audio full discharge must be in [0.000001,1000000] m³/s.");
+        const auto direction=flow.value("direction",Json("forward"));
+        require(direction=="forward" || direction=="reverse" || direction=="both",
+            "Water flow direction must be forward, reverse or both.");
+        emitter.water_flow=AudioWaterFlowProfile{name.get<std::string>(),full.get<double>(),
+            direction=="both" ? WaterFlowDirection::Both :
+            direction=="reverse" ? WaterFlowDirection::Reverse : WaterFlowDirection::Forward};
     }
     return emitter;
 }

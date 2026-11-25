@@ -1,0 +1,117 @@
+{
+  "version": "0.0.444",
+  "authoring_schema_revision": 240,
+  "date": "2026-11-25",
+  "base_commit": "ae0e7721131238653c5e04f1a4bd2da13dd9a47d",
+  "scope": "The gain of an authored emitter follows the committed signed discharge of a storage port.",
+  "candidate_patch_sha256": "247dff680d065023c3e0a491c7b7a9ca50122dbbb6e4d7462e413863b1590008",
+  "source_sha256": {
+    "CMakeLists.txt": "a81cad55397a1096cac4549322a15016d65d798401bd89dcc560bcf6d6b81536",
+    "cmake/runtime.json.in": "88fd48f297f239f19281fdd76cc21eb4e16282c7abfd2d1aaa8a8b3f0bbb3332",
+    "include/poima/audio.hpp": "ffa99c230d0eca561064cf13d8fa31c6555387a4ee945a13c7cbeebdd7ac9289",
+    "include/poima/project.hpp": "0a02119b6a30cc76015d00f17893ffd265967ac82f7d8a43bbd530586a6ff490",
+    "include/poima/runtime.hpp": "c6a3a949df2d4b2d9da7af76711e55afa3d8bbbaf6f497a14287fa39cb5982c2",
+    "include/poima/water_flow.hpp": "73ab4d6383aadead649745e4926f39bd29e09f2509195a187b6d07b142d6db7d",
+    "include/poima/world.hpp": "70b1eeb3d0315d40909d9c5e4d107eb3a233e4af30cfe947c2258e10fc669b67",
+    "src/audio.cpp": "ff398b9ebd7d1dabfeb480397051c17f7cd01a41ce46fbba97ddefc44e112c22",
+    "src/audio_stream.cpp": "03567adfe38442189e258b8942a0aa80ec88613f79cdaa4ca7582a34ed39b1e3",
+    "src/audio_water.hpp": "d6fb373fd9a78cbfc4c298395ebe2d34263a121951a2d84d9f36669e097c8593",
+    "src/core.cpp": "0b68251330c359fc3e02cd4272f8c034cc69e93cba18a5a90aae793043c4992f",
+    "src/project.cpp": "d7bf8313f5c4d4e60d8b3d017f7b87d870da24d83631212e2f849d21aff41ffa",
+    "src/runtime.cpp": "78f80a3eb2533bac47554a622222cbb243852ab081afa7df742a4a0c17a735ca",
+    "src/runtime_particles.inc": "72659853e0be35b5230b5ecb47b389d51be271fdd9109214b5d5f9f81a9c0703",
+    "src/world.cpp": "8cfb4bfce6569d3ca3f1d625b6116b9182fcb35c29c8a7e2c11e08e5b1e8be9e",
+    "src/world_content.cpp": "a76709704acc7870178c121c535f3059bcc0bafec31d027cb1520a9f8c01c2a4",
+    "src/world_document.cpp": "32554b9babc29ab88ec78d494d0f63ec15f84bd96c6ac7050428d1b5616f7d39",
+    "src/world_schema.cpp": "e66ef217c6198da6cb6210193952b3221792f935d03b1d0146da59f3f562e3e6",
+    "tests/audio_water_flow_capture.py": "a6a4421e0230007111a2e587cf75b103b847713e9b8736c392ce33038b69af8a",
+    "tests/water_flow_particles_capture.py": "d6aed6c7f7a9f116e5284878f4a2ff4be5be999493eefa4dbe498d76849c4ff7",
+    "tests/water_listener_audio_contract.py": "3f66366af354524478f14ae370a51c7ccc171b478c82eee067711d803936bfe9",
+    "tests/water_overflow_capture.py": "f27e20dc1014755a1dc90182144a203525fad1e4f040f6cce947a882d0d2fea7",
+    "tests/water_sheet_capture.py": "3050034f07a26b6459a178a6648c3a4056068950fdb24923483ed7ce5272ee6d"
+  },
+  "fixture": {
+    "water_sha256": "c35b961d012fe05a23f6d69d7e68be4394acf819c3db75fea08cac0169b8321c",
+    "audio_sha256": "890a9bd3e85e7035dbf81dddf05963aedee9011b4c456564c863522a240ce4a2",
+    "envelope_frames": 800,
+    "duration_frames": 6400,
+    "bound_port": "spill",
+    "target_gain": 0.5068420767784119,
+    "committed_discharge_m3_s": 0.15205262246998563,
+    "committed_sheet_depth_m": 0.022962772975377643,
+    "committed_spray_births": 8,
+    "saved_voice_frame": 1600,
+    "clips_started_per_replay": 1,
+    "propagation_reports_per_fixed_pose_replay": 1,
+    "denied": [
+      "zero full-gain discharge",
+      "out-of-range full-gain rate",
+      "unknown direction",
+      "invalid port name",
+      "missing port"
+    ]
+  },
+  "windows": {
+    "runtime_sha256": {
+      "bin/poima.exe": "de7169310d4122456fab2727f5439fb968666049d83f596eeaf9cd96061b6697",
+      "bin/poima_desktop.dll": "82a2a772c602e43d6a638c74963cb5a8015fe94f464dfb9ea656fb1468df4a79",
+      "runtime.json": "cd90129ec5b326a16963e67308766cf39c0dc12c345b05f679ae2dba44dc9c6a"
+    },
+    "independent_gain": {
+      "max_sample_error": 8.288019992530593e-10,
+      "frames": 6400,
+      "full_silence_ticks": [
+        1,
+        4,
+        8
+      ],
+      "unbound_peak": 0.014280569739639759
+    },
+    "fixture_sha256": "9dae88009407d708816d395dedaaaf3a47676196d520938e7b5d8c9bc94f68d3",
+    "continuation_frames": 4800,
+    "continuation_sha256": {
+      "source-continuation": "6ff7b94830d89eeba6070a7522cd0f880eae6beb987794407cd4cd23fc2359c2",
+      "warm-continuation": "6ff7b94830d89eeba6070a7522cd0f880eae6beb987794407cd4cd23fc2359c2",
+      "relocated-continuation": "6ff7b94830d89eeba6070a7522cd0f880eae6beb987794407cd4cd23fc2359c2",
+      "fresh-continuation": "6ff7b94830d89eeba6070a7522cd0f880eae6beb987794407cd4cd23fc2359c2"
+    },
+    "immutable_export_files": 62,
+    "source_hidden": true,
+    "audio_regression_passed": 22,
+    "audio_regression_skipped": 7,
+    "audio_regression_log_sha256": "64942e9e1b90a71c3bd9691ed6813f0abc5aa1606bc185b2c5187c59bfff5305",
+    "listener_water_regression_sha256": "adcd11161e5e88ffff0061694e60cb2e5142a0a3694638289d881959715df73e"
+  },
+  "ubuntu": {
+    "focused_suites_passed": 9,
+    "independent_gain": {
+      "max_sample_error": 8.590555558574131e-10,
+      "frames": 6400,
+      "full_silence_ticks": [
+        1,
+        4,
+        8
+      ],
+      "unbound_peak": 0.014280559495091438
+    },
+    "runtime_sha256": {
+      "poima": "d32e46b3fbef22ec73908d34b0846a755ffc68cdfbd465287d2c859c9a76a4d5",
+      "runtime.json": "0b8181372e70b32f10109d24d4ebd5f989c48fb147a4948c5e508c3efc4b8305"
+    },
+    "fixture_sha256": "7badaa0467a2207b2909451ee38aa5be8d658218ac1017a0c360523548674c53",
+    "ctest_sha256": "2e6447adbce76024bacc2d2cf70ed5917ea6cd49759e2f6a21535a23942bb6fb",
+    "continuation_sha256": {
+      "source-continuation": "741228021d411651a9fab97d253dc652687863c3ec7f1eda8be39a1e6e8971a7",
+      "warm-continuation": "741228021d411651a9fab97d253dc652687863c3ec7f1eda8be39a1e6e8971a7"
+    }
+  },
+  "rejected_export": {
+    "missing_flag": "audio_water_flow",
+    "no_bundle": true,
+    "diagnostic": "Project water-driven audio requires a compatible simulation and audio runtime."
+  },
+  "limits": [
+    "The clips use the existing propagation delay, while flow gain follows the presentation mix time.",
+    "The PCM witness compares a diagnostic signal. Physical output and the final showreel mix need separate listening checks."
+  ]
+}

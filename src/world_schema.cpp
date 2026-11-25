@@ -313,7 +313,11 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     const Json audio_bus_name={{"type","string"},{"pattern",audio_buses::name_pattern}};
     const Json audio_bus_catalog={{"type","object"},{"propertyNames",audio_bus_name},{"minProperties",1},
         {"maxProperties",audio_buses::max_buses},{"additionalProperties",{{"type","number"},{"minimum",0},{"maximum",1}}}};
-    const Json emitter=object_schema({{"asset",asset_id},{"gain",{{"type","number"},{"minimum",0},{"maximum",4}}},{"loop",{{"type","boolean"}}},{"enabled",{{"type","boolean"}}},{"bus",audio_bus_name}}, {"asset","gain","loop","enabled"});
+    auto water_flow=object_schema({{"port",{{"type","string"},{"pattern","^[a-z][a-z0-9_.-]{0,63}$"}}},
+        {"full_discharge_m3_s",bounded_number(min_audio_full_discharge_m3_s,max_audio_full_discharge_m3_s)},
+        {"direction",{{"enum",{"forward","reverse","both"}},{"default","forward"}}}},{"port","full_discharge_m3_s"});
+    water_flow["description"]="Optional gain multiplier driven by the committed signed storage-port discharge. Selected positive discharge divided by the full-gain rate, clamped to one.";
+    const Json emitter=object_schema({{"asset",asset_id},{"gain",{{"type","number"},{"minimum",0},{"maximum",4}}},{"loop",{{"type","boolean"}}},{"enabled",{{"type","boolean"}}},{"bus",audio_bus_name},{"water_flow",std::move(water_flow)}}, {"asset","gain","loop","enabled"});
     Json hit_variants=Json::array();
     for(const auto* shape:{"sphere","box","capsule"}) {
         Json props={{"owner",id},{"name",{{"type","string"},{"pattern","^[a-z][a-z0-9_.-]{0,63}$"}}},
@@ -440,7 +444,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 239}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 240}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -1077,6 +1081,9 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     result["particle_water_flow"]={{"available",Runtime::available()},{"component","ParticleEmitter.water_flow"},
         {"max_particles_per_tick",max_water_flow_particles_per_tick},{"runtime_feature","particle_water_flow"},
         {"observation","runtime.particles.inspect"}};
+    result["audio_water_flow"]={{"available",Runtime::available() && audio_available()},
+        {"component","AudioEmitter.water_flow"},{"runtime_feature","audio_water_flow"},
+        {"observation","runtime.audio.inspect"},{"envelope_frames",audio_tick_frames}};
     result["water_buoyancy"]={{"available",Runtime::available()},{"component","BoxCollider.buoyancy"},
         {"max_bodies",water::max_buoyant_bodies},{"runtime_feature","water_buoyancy"},{"observation","runtime.water.inspect"}};
     result["water_currents"]={{"available",Runtime::available()},{"profile","world.water.plan.currents"},
