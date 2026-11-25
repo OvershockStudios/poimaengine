@@ -49,6 +49,7 @@ struct RegionDefinition {
     std::optional<ListenerAudio> listener_audio;
     std::optional<WaterOptics> optics;
     std::vector<double> shore_corner_heights_m;
+    std::vector<SurfaceRipples> surface_swell;
 };
 
 }

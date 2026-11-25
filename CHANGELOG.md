@@ -2,6 +2,13 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.420
+
+- Author moving surface swell on terrain-fitted water. Rendering, point
+  queries and underwater audio follow the committed wave height.
+- Carry the tilted surface through refraction, caustics, shoreline foam and
+  translucent particles. Export and restore the same wave phase.
+
 ## 0.0.419
 
 - Apply water absorption, in-scattering, reflections and shoreline foam to translucent particle sprites at each card's depth.

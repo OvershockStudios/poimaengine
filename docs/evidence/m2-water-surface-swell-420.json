@@ -1,0 +1,251 @@
+{
+  "checkpoint": "0.0.420",
+  "parent_commit": "4dd2ff75b083a37f3f6cda26273702cafaa8e8ba",
+  "schema_revision": 218,
+  "source_sha256": {
+    "CMakeLists.txt": "e81eeb2c681637b4bb9b556b6c744b799910a8e1e9036f4f0b63faa6b237f816",
+    "cmake/runtime.json.in": "9d3994014b4777ebb9d37c7563e794f8ff476291e11d4aa175c87ecd640192da",
+    "include/poima/core.hpp": "77baa62da8a20d69d08a4c223d1b2d17cb9ffcc357f9f43e613003f8dea9a43c",
+    "include/poima/render_schedule.hpp": "c3270a48182fd1d1b709c4c9df9e13f5942f934a0f5a9d4d7aa7c453fd199b60",
+    "include/poima/scene.hpp": "a62eda8a67fbe5d3090558109e83d56248a73445a25f7ed55bf5083c5e636ab6",
+    "include/poima/water_bed.hpp": "cb2e3c1e9c23e61589682c44773a039cf9e5394bfdcac39575fc68a800791723",
+    "include/poima/water_region.hpp": "f1c4035ac4caabda20913acafd7db37c680d6b470546827309d32b6c06199784",
+    "include/poima/water_region_definition.hpp": "8e4c524d96d00c305e68e5132abcf08441d84b2285ba09f434c9efa1bc59e42d",
+    "include/poima/world.hpp": "e82563723fc6e3177c2e5ead1d90b4cca6fd86a0b3a0d3dcde716c49f72ed524",
+    "shaders/water_bed.hlsli": "2822a7fde176cea10effba0bc8b7a5aef39fffd94c3ce5d7ce1d8f06afb072b6",
+    "shaders/water_caustics.hlsli": "962f03b5795b36c6582bfcb59b22cdfaee2763d8d23c2e195dc843176877877f",
+    "shaders/water_constants.hlsli": "facbbdf13cfdac19e69f0b9370d761d6ca58673f3bc14da321d42727228959df",
+    "shaders/water_optics.hlsli": "d955f58959f908aee108360bfe884039b2aa3df168ef2c33e7466aad50bcb211",
+    "shaders/water_refraction.hlsli": "692b35cda283d4d48a042c1687482a932f3db6111e4d49e97bc0bb42fc6619ba",
+    "shaders/water_shore_foam.hlsli": "b07f14f7e77961fbf982145b50d93bee156ab891ed914ae6fc40b8da4fe580db",
+    "shaders/water_shore_trace.hlsli": "9c8de4bfc79fc525b26ab755f0dd11c76782038fd0372e9b5da832b3f9815b67",
+    "src/core.cpp": "358be1b33b156628c3bf5bc574cb75fe40079e6445e41680e5e8e7877b3400e0",
+    "src/project.cpp": "feb4ec27e2b0b0833c5868a1ee77bd189fe5c3268cac00f350ee0b1d2bb0094d",
+    "src/render_height_fog.cpp": "b4a8d142294e355c6a3b5b09ed9c6795f3fc256486ae7d1ca6b32a26efcdc10f",
+    "src/render_smoke.cpp": "2f80c0f3cf8ec5270514f9f7fe73134901af2b3627e5d51c2e456ea76f3621b0",
+    "src/water_asset.cpp": "1a43541a647d859294bdd47603fac0e289788e607ee5652a1ec4029dc3cd9222",
+    "src/water_region.cpp": "6483f5669b81852ba1536b151ff9f89763e7d72dfdd2ee2ebd827f0ff25166b3",
+    "src/water_region_scene.cpp": "dfbe4c71996251058edb227fb883dd2b04f60660ff027c4e9969eb7ac58fdd70",
+    "src/world.cpp": "ff94172fce846308bd9f0ae1c70191451241cc9da901a8115f430f517a42a5d5",
+    "src/world_content.cpp": "fbc852e24a627c763d6a3ef983eb5b12872db9fd06470d0a3ed6d7af8fb5589e",
+    "src/world_presentation_json.cpp": "772e88ccec7ef424ba93fdc334143c1c4b2cd45bb5d7237760d866738d663e1f",
+    "src/world_schema.cpp": "aecd0a56820cd69402ddc4fb28a7087c8865b384d360e5d933f3dc486ccdb330",
+    "src/world_water_service.inc": "edb3e1585278725002d7151c3e007af67e67d67e4988b54c0b087e64f434b111",
+    "tests/water_region_native.cpp": "74f849cd73241d78f9538111ff0fdd70cf61b0bfb62c2bc887f37a630e26ac15",
+    "tests/water_region_scene_native.cpp": "1a0f866f095b713ed339b7a81b6610b277b22cdf40cbe63b560a4c663ce6b0d3",
+    "tests/water_surface_swell_capture.py": "4aa9375fbb10e939b756c5a191ffd104a8e4ad57711e4cf07c5d6f20a41858b9"
+  },
+  "windows": {
+    "validation": "Khronos Vulkan validation with synchronization checking",
+    "binary_sha256": "342dd6b7343ff1c18e1cdb4517c14e79c8d994e69e1cc29aa3ce0519289c9ac1",
+    "bridge_sha256": "7d67d8c80396628ebc5471e38533d75fd691290030ffc7ce0124b6eeed747d75",
+    "runtime_manifest_sha256": "ad01510d65a7c17cbbd845fd82e78a787bec21f26cd773d864d02b6dcf6ab8df",
+    "adapters": {
+      "amd": {
+        "adapter": "AMD Radeon(TM) Graphics",
+        "extent": [
+          640,
+          360
+        ],
+        "lighting_path": "forward",
+        "original_evidence_sha256": "155db7ba2ade3bd924d7f94ad1618b5571a7526ed7d4ef70b0ab20118edb3dc9",
+        "captures": {
+          "crest": "d5aa6f2c07cf0d9dc15996f3ced9927fd495de81cad1ec80f4afb178128045ea",
+          "crest-low": "caa59a8e6c86384f8f026688e984d5119d2286f37e5cb9aacd70042c80bd694f",
+          "trough": "28c4ba25ef75d9ada3e6002e6506b8f751807b2930b2b3c8ea0578ef1a6148f8",
+          "cold": "d5aa6f2c07cf0d9dc15996f3ced9927fd495de81cad1ec80f4afb178128045ea"
+        },
+        "independent_hdr_probes": 192,
+        "max_absolute_hdr_error": 0.00023408727506757376,
+        "interface_crossings": 67,
+        "flat_direction_misclassifications": 6,
+        "independent_audio_max_error": 3.716110988372101e-09,
+        "restored_capture_sha256": "d5aa6f2c07cf0d9dc15996f3ced9927fd495de81cad1ec80f4afb178128045ea",
+        "restored_audio_sha256": "4ee6abaf6082e10ab7a4f860b8a79420db77f185efa09816eaafa1b1784dc0ac",
+        "relocated": false,
+        "states": {
+          "0": {
+            "listener_depth_m": 0.0,
+            "volume_m3": 2.5799999999999983
+          },
+          "1": {
+            "listener_depth_m": 0.2264197978037572,
+            "volume_m3": 2.5799999999999983
+          },
+          "42": {
+            "listener_depth_m": 0.0,
+            "volume_m3": 2.5799999999999983
+          }
+        },
+        "multisample_fallback": [
+          {
+            "tick": 1,
+            "sha256": "8bc24ec1fcb813e950fd9da3045283ccf106052985a20b7974d4ea433c8e8c18",
+            "reason": "multisample"
+          },
+          {
+            "tick": 42,
+            "sha256": "2a3c17f1af932f111e03462c213a3cb68f06f88bda8e74bdc16fa632a798d2c0",
+            "reason": "multisample"
+          }
+        ]
+      },
+      "nvidia": {
+        "adapter": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "extent": [
+          640,
+          360
+        ],
+        "lighting_path": "deferred",
+        "original_evidence_sha256": "19e558c0e22e31730d482f780e99ba58e2b55839cc58a26bbf35a8acfb8ffb24",
+        "captures": {
+          "crest": "91ea7f83465109c0c9ac0c5ccc7868e7abfb27a969d54f4d0e15ec622c947832",
+          "crest-low": "2399ae8d721f1b9673d824a33b6ea7113d40f3eb22f57f5d652270ec5c56b1df",
+          "crest-fsr": "e1245a7e3d1302f6930fb7abbce0a71e7ecf38f9e904ec6749cf76851dd605bb",
+          "trough": "241d354e3804d7395bc5a5cec03de313d5005edae00c6a5fee6633cf2746a430",
+          "cold": "91ea7f83465109c0c9ac0c5ccc7868e7abfb27a969d54f4d0e15ec622c947832"
+        },
+        "independent_hdr_probes": 192,
+        "max_absolute_hdr_error": 0.00023408727506757376,
+        "interface_crossings": 67,
+        "flat_direction_misclassifications": 6,
+        "independent_audio_max_error": 3.716110988372101e-09,
+        "restored_capture_sha256": "91ea7f83465109c0c9ac0c5ccc7868e7abfb27a969d54f4d0e15ec622c947832",
+        "restored_audio_sha256": "4ee6abaf6082e10ab7a4f860b8a79420db77f185efa09816eaafa1b1784dc0ac",
+        "relocated": true,
+        "states": {
+          "0": {
+            "listener_depth_m": 0.0,
+            "volume_m3": 2.5799999999999983
+          },
+          "1": {
+            "listener_depth_m": 0.2264197978037572,
+            "volume_m3": 2.5799999999999983
+          },
+          "42": {
+            "listener_depth_m": 0.0,
+            "volume_m3": 2.5799999999999983
+          }
+        },
+        "missing_runtime_feature_error": "Water surface swell requires a compatible Vulkan runtime."
+      }
+    },
+    "legacy_regressions": {
+      "legacy-fit-amd": {
+        "baseline_report_sha256": "00bafbd65c9b44d20bf7b562021968dc4c6ed80312a5094087952e4333fdd8b6",
+        "candidate_report_sha256": "317e8ecaf10368c11d83f64d10bd5110a6d904937c3f959a85966d44cfce5f9f",
+        "exact": {
+          "baseline-closed": "0473d9ac130ef7c4b8a45759631fcd204f3d198a32658cad65cb3e20771e6025",
+          "baseline-opened": "0473d9ac130ef7c4b8a45759631fcd204f3d198a32658cad65cb3e20771e6025",
+          "baseline-audio": "bedadc80e9e0aa4830f26a4988d61dfd197b06312810126b2ff2ac90afcdf573",
+          "fitted-closed": "c29f46e905bfba393011057ae08d64d8fe3dcec29621da7e4b49816f085e2a79",
+          "fitted-opened": "5020106f861af38f53f87ef1402353a50942a15158bfc768aaab23b9fc6cd52b",
+          "fitted-audio": "4add34f5b87916183c85eda38323dd5214587b5a194f0fab4e7a492bc4783a00",
+          "msaa-opened": "05c7ea9b0fe2ebe6998764275f25044d96c01d06722889a9697960ac017a95de"
+        }
+      },
+      "legacy-fit-nvidia": {
+        "baseline_report_sha256": "0fc1806d4b041091d8e839b03551105e643fc3168f082eb9fe2012d72fa06f5f",
+        "candidate_report_sha256": "9e0705bcf2935158c9da64aae6dde0d11a8480ea23a8f7878325082dc049ee96",
+        "exact": {
+          "baseline-closed": "888cc347e7a403875eb4e7a3418053ed106979c9fffd55066fd20c515c8f44d7",
+          "baseline-opened": "888cc347e7a403875eb4e7a3418053ed106979c9fffd55066fd20c515c8f44d7",
+          "baseline-audio": "bedadc80e9e0aa4830f26a4988d61dfd197b06312810126b2ff2ac90afcdf573",
+          "fitted-closed": "238329430425e014382b7cbd806e4b4699b3b3f41eee2f11036558d1e154321a",
+          "fitted-opened": "f4703b2fef45f55973e54cb65b3061b5a25a83d9d75a1640bd64b44816cc3ff3",
+          "fitted-audio": "4add34f5b87916183c85eda38323dd5214587b5a194f0fab4e7a492bc4783a00",
+          "fsr-opened": "698f9ec9d7d238353d113d2ca83904b019de63d3b7ca55ee2eae3a37de64aa48"
+        }
+      },
+      "legacy-caustics": {
+        "baseline_report_sha256": "7464b7ed04885fba66e940b9809a7dd6437f3d2fdf99049cb6f877137f3a5f7a",
+        "candidate_report_sha256": "583ba35df93175f015c41bc60f4f2193c6087b619985534aad597965e5658f81",
+        "exact": {
+          "baseline": "d5622156d01e7e490c4b8f524f1aaadafdddbb91aaa3352a623e7b2de171c1c1",
+          "still": "87d9e1d5e1cbb04f6468e642d3b618bdb82ed7ef523df0e818c66cc21a12039c",
+          "unlit": "8774513b5e219db8f40a4de91c8162e2639f05c66a26e7c638b73e379a5ca58c",
+          "lit": "f99ccbae0eccee7d02e54bac803d60cfc3655df30ceb279e2695a2cbeb95aa2f",
+          "moved": "b48529dd4d968db6adda52c3e6955f5910d9bbfec932396ca4035e755f71be13",
+          "fsr": "a39e45e67c83e397e1f54bd135549ed29ff23f177af69e213d425f1a60300902",
+          "entry-shadow-baseline": "e1f11909afd22afe1c416471a0b335a25073a6e06a29bfab8b6177d08131b364",
+          "entry-shadow-caustic": "05e43be59299c38eafa39763d6395d11025315ff2d21eab6cf8293677803385a"
+        }
+      },
+      "legacy-foam": {
+        "baseline_report_sha256": "b8d0f930d754c1b4246f03deb4123cd8b4d402cab43e621c2412bc8e8aa8ffb0",
+        "candidate_report_sha256": "b255f143ae79a7a018f63e56753a7ee3d16828707e63448de354515686fea794",
+        "exact": {
+          "control": "b0e0fe1f0cc00c774bfe24aeef0d9e345c1cbc2ff03919713b3d95a54c57c194",
+          "control-underwater": "4e5e4a85199639b41e3acbfd21cfb7e9a461f0fc3bc04bc7b53792c1dc56d0e2",
+          "zero-opacity": "b0e0fe1f0cc00c774bfe24aeef0d9e345c1cbc2ff03919713b3d95a54c57c194",
+          "enabled": "72d068493497631950491b6956db0e626e36baa31aa38f9db78d657edf289971",
+          "enabled-underwater": "4e5e4a85199639b41e3acbfd21cfb7e9a461f0fc3bc04bc7b53792c1dc56d0e2",
+          "later": "ac1c122984f786607166712ce3ff57ec636269c2931249753357e3a4a4758bac",
+          "fsr": "48d7b3e5136a092d6eff6d21595f839b509c15c5f7c950130f569e593488a874",
+          "shadow-control": "9f490918f9a4e9dd7fb62659a953a1f488b3e84d97fb199d79e29a24c14409ad",
+          "shadow-foam": "2d81ee7697bb7dae55a5b00dfe653c433e9865f1470c6aa5c19e1f1b56b1b5ac"
+        }
+      },
+      "legacy-sprites": {
+        "baseline_report_sha256": "42a28fa620bc8872199b5ff2bccba055ac9f8edff569e23681583659f3f44704",
+        "candidate_report_sha256": "899d84116acde85ae6388d0e6a795221a669fd2cc0e5d25dfb7b6911f1aea1a5",
+        "exact": {
+          "solid-above-air": "e1f8b1b4190418d87787a734bf948ffc3061bd4f4ab24d1e2795acc59f0970f5",
+          "solid-above-water": "133b22b907f6e23376f2016952e5e7e4fb7535b03e5321014d2747cb9a1c27ea",
+          "solid-near-air": "db036048d8d9efda18a21ac5e558d19e7d6524c472a364ad75e52c61032634ed",
+          "solid-near-water": "936cb2a8e2a9a25bb1c9e4e6f3b4ceba18903ad8456b597a8509ef60d16f7a3f",
+          "solid-far-air": "e6cd11edda325cd4d6c8bed1c7b5e30edc1ae047990087fd8d26ae9c971bc6eb",
+          "solid-far-water": "1711782f7fe65adc771da96fb5826031158119e10ca40ce4386f46b589991095",
+          "solid-dry-air": "6b7064c8b27c8ce5a56ab996e04312f265d4edb02696b54021eccf7043a5b6e9",
+          "solid-dry-water": "072198a595df69a4c8f39dcc914bf3d52b67a10f676eedbe00c3509cc66f3b7b",
+          "empty-air": "fb2e4c513b92f3a10a650d7635de012cdd6690491e51fb9bfecab14079e90746",
+          "empty-water": "133b22b907f6e23376f2016952e5e7e4fb7535b03e5321014d2747cb9a1c27ea",
+          "live-air": "8075f50d7f5ba5ba8ca93ac42e0b926566e413191330bd800f91ab067a132a5b",
+          "live-water": "cf740ac1708c11cf94250d59caaecdbfe0f249847d1ef799042f27df85218f75",
+          "fsr-air": "6aa64656a6f450b4af73fbaf40c025d3cd477e5ee58263bb4b741ba2a6a34b86",
+          "fsr-water": "deca692663dc28c19ce72a4141f904288b0331e5690244c4d82df36ba06e6be6"
+        }
+      }
+    }
+  },
+  "linux": {
+    "suites": [
+      "audio_contract",
+      "audio_reflections_native",
+      "audio_save_native",
+      "cli_contract",
+      "editor_audio_native",
+      "project_contract",
+      "render_schedule_native",
+      "shallow_water_native",
+      "water_listener_audio_contract",
+      "water_region_native",
+      "water_region_scene_native",
+      "world_audio_native",
+      "world_water_contract",
+      "world_water_rain_contract"
+    ],
+    "binary_sha256": "44a3ddc37e045ee7ac777c1121cb859be6295a8a5cd0e45a053a8ffc2b24cc5f",
+    "ctest_report_sha256": "7c82e029e7dfb1c3d5290ff6aff3882c33866ceb5a620eada6c6b699bd1d1d30",
+    "protocol_report_sha256": "70c3191b5610ceed12d5bac9ef0ab9ba2e51c594e063f4316c74b8b59e6dd8be"
+  },
+  "cove": {
+    "original_evidence_sha256": "176200cd3a439b0856e03fd5c123f7e993dde7f08b22a54492ffce6a2af568e8",
+    "frames": 109,
+    "checked_camera_segments": 108,
+    "single_waterline_crossing_frame": 35,
+    "visual_surface_travel_m": 0.3155910839289101,
+    "conserved_volume_m3": 281.85664640000005,
+    "active_effects": [
+      "surface_swell",
+      "refraction",
+      "caustics",
+      "shore_foam",
+      "water_sprite_optics",
+      "fsr3_native"
+    ],
+    "audio_sha256": "2ad1681d01a671304408b143fd0e7aa20fbccc2e6f58e8882949b70d66f725ae",
+    "audio_over_range_samples": 0,
+    "cadence": "Offline frame capture at authored simulation ticks"
+  }
+}

@@ -34,20 +34,25 @@ float water_interface_footprint(float distance, float ray_y) {
         temporal_up.w / cluster_viewport.w) / max(abs(ray_y), 0.03);
 }
 
-float3 water_interface_normal(WaterConstants water, float2 point_xz, float distance, float ray_y) {
+float3 water_interface_normal(WaterConstants water, float2 point_xz, float distance, float ray_y,float2 geometry_gradient) {
     const float mode = water.radiance_wave_mode.w;
-    if (mode == 0.0) return float3(0, 1, 0);
+    if (mode == 0.0) return normalize(float3(-geometry_gradient.x,1,-geometry_gradient.y));
     // Estimate a conservative pixel footprint on the flat surface and
     // damp unresolved waves at distance and along the grazing waterline.
     const float footprint = water_interface_footprint(distance, ray_y);
     const float2 dx = float2(footprint, 0);
     const float2 dz = float2(0, footprint);
-    if (mode == 1.0)
-        return water_ripple_normal(water_ripple_shape, water_ripple_motion.x, point_xz, dx, dz);
+    if (mode == 1.0) {
+        const float3 ripple=water_ripple_normal(water_ripple_shape,water_ripple_motion.x,point_xz,dx,dz);
+        if (!water_displaced(water)) return ripple;
+        const float2 combined=geometry_gradient-ripple.xz/ripple.y;
+        return normalize(float3(-combined.x,1,-combined.y));
+    }
     float2 gradient = water_wave_layer_gradient(water_ripple_shape, water_ripple_motion.x, point_xz, dx, dz);
     [unroll] for (uint i = 0; i < 3; ++i)
         if (mode > float(i + 2))
             gradient += water_wave_layer_gradient(water_wave_shapes[i], water_ripple_motion[i + 1], point_xz, dx, dz);
+    gradient+=geometry_gradient;
     return normalize(float3(-gradient.x, 1.0, -gradient.y));
 }
 
@@ -59,12 +64,14 @@ struct WaterPath {
     float length_m;
     float interface_m;
     float water_before_interface_m;
+    float2 interface_gradient;
+    bool enters;
 };
 
 #include "water_shore_trace.hlsli"
 
 WaterPath trace_water_columns(WaterConstants water, float3 eye, float3 ray, float max_distance, bool find_interface) {
-    WaterPath path = {0, -1, 0};
+    WaterPath path = {0,-1,0,float2(0,0),false};
     const float size = water.camera_cell_size.w;
     const int2 dimensions = water_grid_dimensions(water);
     float entry = 0, exit = max_distance;
@@ -89,8 +96,8 @@ WaterPath trace_water_columns(WaterConstants water, float3 eye, float3 ray, floa
         const float crossing = min(cross_at.x, cross_at.y);
         const float next = max(entry, min(exit, crossing));
         const WaterColumn surface = water_columns[cell.y * dimensions.x + cell.x];
-        const float2 column = surface.levels.xy;
-        bool coarse=surface.levels.z == 0.0;
+        const float2 column=float2(surface.floor_m,surface.stage_m);
+        bool coarse=!has_water_bed_fan(surface);
         bool fit=false;
         [branch] if (!coarse && next > entry) {
             const float2 y=eye.y+ray.y*float2(entry,next);
@@ -99,17 +106,19 @@ WaterPath trace_water_columns(WaterConstants water, float3 eye, float3 ray, floa
             const float highest=max(column.x,max(max(corners.x,corners.y),max(corners.z,corners.w)));
             // Over a wet center all four wedges share one stage. A ray
             // already above the entire bed needs only the flat surface test.
-            coarse=column.y>column.x && low>=highest;
+            coarse=!water_displaced(water) && column.y>column.x && low>=highest;
             if (!coarse) {
                 const float lowest=min(column.x,min(min(corners.x,corners.y),min(corners.z,corners.w)));
                 const float4 stages=surface.stages;
-                const float top=max(max(stages.x,stages.y),max(stages.z,stages.w));
+                const float4 swell=surface.swell_corners;
+                const float lift=max(surface.swell_center_m,max(max(swell.x,swell.y),max(swell.z,swell.w)));
+                const float top=max(max(stages.x,stages.y),max(stages.z,stages.w))+lift;
                 fit=top>lowest && low<=top && high>=lowest;
             }
         }
         [branch] if (fit) {
             integrate_fitted_water(surface,eye,ray,eye.xz/size-float2(cell),direction/size,
-                entry,next,max_distance,find_interface,path);
+                size,entry,next,max_distance,find_interface,path);
         } else if (coarse && column.y > column.x && next > entry) {
             float first_water = entry, last_water = next;
             if (clip_water_span(eye.y, ray.y, column.x, column.y, first_water, last_water))
@@ -118,6 +127,7 @@ WaterPath trace_water_columns(WaterConstants water, float3 eye, float3 ray, floa
                 const float top = (column.y - eye.y) / ray.y;
                 if (top >= entry && top <= next && top < max_distance) {
                     path.interface_m = top;
+                    path.enters=ray.y<0.0;
                     path.water_before_interface_m = path.length_m - max(0.0, last_water - max(top, first_water));
                 }
             }
@@ -147,8 +157,10 @@ float3 compose_water_path(WaterConstants water,float3 input_radiance,float3 ray,
     const float3 transmittance = exp(-water.extinction_per_m * path.length_m);
     float3 color = lerp(scattering, input_radiance, transmittance);
     if (interface_at >= 0.0) {
-        const bool from_air = ray.y < 0.0;
-        float3 normal = water_interface_normal(water, eye.xz + interface_at * ray.xz, interface_at, ray.y);
+        const bool from_air = path.enters;
+        const float3 geometry_normal=normalize(float3(-path.interface_gradient.x,1,-path.interface_gradient.y));
+        const float relative_y=water_displaced(water) ? dot(geometry_normal,ray) : ray.y;
+        float3 normal=water_interface_normal(water,eye.xz+interface_at*ray.xz,interface_at,relative_y,path.interface_gradient);
         if (!from_air) normal = -normal;
         const float fresnel = water_fresnel(saturate(-dot(normal, ray)), from_air);
         const float before_m = max(path.water_before_interface_m, 0.0);
@@ -157,7 +169,8 @@ float3 compose_water_path(WaterConstants water,float3 input_radiance,float3 ray,
             const float3 transmitted = refract(ray, normal, from_air ? 1.0 / 1.333 : 1.333);
             // A shading normal may tilt the bent ray beyond the actual flat
             // boundary. Such a ray cannot enter the selected outgoing medium.
-            if (from_air ? transmitted.y < -1e-5 : transmitted.y > 1e-5) {
+            const float transmitted_side=water_displaced(water) ? dot(geometry_normal,transmitted) : transmitted.y;
+            if (from_air ? transmitted_side < -1e-5 : transmitted_side > 1e-5) {
                 WaterRefractionHit hit;
                 const float3 offset = interface_at * ray;
                 if (water_refraction_hit(water, offset, transmitted, from_air, extent, hit)) {
@@ -185,7 +198,7 @@ float3 compose_water_path(WaterConstants water,float3 input_radiance,float3 ray,
         [branch] if (from_air && water_shore_foam.y > 0.0) {
             const float3 offset = interface_at * ray;
             const float3 entry = eye + offset;
-            const float coverage = shore_foam_coverage(water, entry, water_interface_footprint(interface_at, ray.y));
+            const float coverage = shore_foam_coverage(water, entry, water_interface_footprint(interface_at, relative_y));
             [branch] if (coverage > 0.0)
                 color = lerp(color, lerp(scattering, shore_foam_radiance(camera.xyz + offset), before), coverage);
         }

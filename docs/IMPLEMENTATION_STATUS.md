@@ -1,8 +1,21 @@
 # Implementation status
 
-Updated 2026-11-25 for **0.0.419**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-25 for **0.0.420**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.420 adds [surface swell](SHALLOW_WATER.md#displace-the-water-surface)
+to terrain-fitted water. AMD forward and NVIDIA deferred passed 384 HDR
+probes against independently clipped water volumes, including 12 crossings
+whose direction differed from a horizontal surface test. A crest submerged
+a fixed listener by 22.6 cm while the grid volume stayed exact. A relocated
+Windows save reproduced the captured image and stereo PCM. Forty-one older
+images and four audio captures stayed byte-exact. Ubuntu passed 14 suites
+and the new headless swell workflow. The cove study used swell, refraction,
+caustics, foam, sprites and FSR Native AA together. These are local regions
+with piecewise planar surfaces. Open-ocean coverage and breaking waves
+remain separate work.
+[Results](evidence/m2-water-surface-swell-420.json)
 
 Version 0.0.419 applies [water optics to translucent sprites](PARTICLES.md#see-particles-through-water).
 AMD forward and NVIDIA deferred passed 16 HDR blend comparisons with

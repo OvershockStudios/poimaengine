@@ -249,7 +249,7 @@ int main() {
         const auto media=capture(optical);
         check(media.water_volume && media.objects.front().water_region_surface &&
               media.water_volume->origin_m==std::array{137.,4.,-20.} &&
-              media.water_volume->columns==std::vector{poima::SceneWaterColumn{{0,2,0,0}},poima::SceneWaterColumn{{1,1,0,0}}},
+              media.water_volume->columns==std::vector{poima::SceneWaterColumn{0,2},poima::SceneWaterColumn{1,1}},
               "Volume presentation must include both the wet column and the dry terrain bed.");
         std::cout << "Water scene checks passed, including the combined water and particle stream budget.\n";
         return 0;

@@ -115,24 +115,34 @@ std::shared_ptr<const MeshAsset> clipped_surface_mesh(const SceneWaterVolume& wa
     for (std::uint32_t z=0;z<water.cells_z;++z) for (std::uint32_t x=0;x<water.cells_x;++x) {
         const auto& column=water.columns[z*water.cells_x+x];
         for (std::size_t side=0;side<perimeter.size();++side) {
+            if (column.inactive_wedges() & (1u<<side)) continue;
             const auto next=(side+1)%perimeter.size();
             const float stage=column.stages[side];
-            const std::array heights{column.levels[0],column.corners[next],column.corners[side]};
-            if (stage<=*std::ranges::min_element(heights)) continue;
+            const std::array heights{column.floor_m,column.corners[next],column.corners[side]};
+            const std::array tops{stage+column.swell_center_m,stage+column.swell_corners[next],
+                                  stage+column.swell_corners[side]};
+            const std::array depth{tops[0]-heights[0],tops[1]-heights[1],tops[2]-heights[2]};
+            if (*std::ranges::max_element(depth)<=0) continue;
             const std::array<std::array<float,2>,3> triangle{{{.5f,.5f},perimeter[next],perimeter[side]}};
+            const auto gradient=fitted_water_gradient(column.swell_center_m,column.swell_corners,side,size);
+            const auto factor=1/std::sqrt(1+gradient[0]*gradient[0]+gradient[1]*gradient[1]);
+            const std::array<float,3> normal{-gradient[0]*factor,factor,-gradient[1]*factor};
+            const auto along_x=1/std::sqrt(1+gradient[0]*gradient[0]);
+            const std::array<float,4> tangent{along_x,gradient[0]*along_x,0,1};
             const auto first=static_cast<std::uint32_t>(mesh->vertices.size());
-            const auto add=[&](float u,float v,float depth) {
-                const std::array<float,2> uv{.25f+.5f*std::min(depth,1.f),.5f};
-                mesh->vertices.push_back({{size*(static_cast<float>(x)+u),stage,size*(static_cast<float>(z)+v)},
-                    {0,1,0},uv,{1,0,0,1}});
+            const auto add=[&](float u,float v,float top,float depth_m) {
+                const std::array<float,2> uv{.25f+.5f*std::min(depth_m,1.f),.5f};
+                mesh->vertices.push_back({{size*(static_cast<float>(x)+u),top,size*(static_cast<float>(z)+v)},
+                    normal,uv,tangent});
             };
             for (std::size_t a=0;a<triangle.size();++a) {
                 const auto b=(a+1)%triangle.size();
-                const float da=stage-heights[a],db=stage-heights[b];
-                if (da>=0) add(triangle[a][0],triangle[a][1],da);
+                const float da=depth[a],db=depth[b];
+                if (da>=0) add(triangle[a][0],triangle[a][1],tops[a],da);
                 if ((da<0 && db>0) || (da>0 && db<0)) {
                     const float t=da/(da-db);
-                    add(std::lerp(triangle[a][0],triangle[b][0],t),std::lerp(triangle[a][1],triangle[b][1],t),0);
+                    add(std::lerp(triangle[a][0],triangle[b][0],t),std::lerp(triangle[a][1],triangle[b][1],t),
+                        std::lerp(tops[a],tops[b],t),0);
                 }
             }
             const auto end=static_cast<std::uint32_t>(mesh->vertices.size());
@@ -158,7 +168,8 @@ void append_region_scene(const Region& region, SceneSnapshot& scene) {
     SceneWaterVolume volume;
     if (const auto& optics = region.optics()) {
         volume={.origin_m={config.origin_x_m,origin_y,config.origin_z_m},.cell_size_m=config.cell_size_m,
-            .cells_x=config.cells_x,.cells_z=config.cells_z,.optics=*optics,.columns={}};
+            .cells_x=config.cells_x,.cells_z=config.cells_z,.optics=*optics,
+            .surface_swell=!region.surface_swell().empty(),.columns={}};
         if (optics->shore_foam) {
             constexpr std::uint64_t foam_cycle_ticks = 240;
             volume.shore_foam_phase = static_cast<float>(2 * std::numbers::pi *
@@ -173,14 +184,16 @@ void append_region_scene(const Region& region, SceneSnapshot& scene) {
             const auto sample = grid.sample({x, z});
             if (region.optics()) {
                 auto& column=volume.columns.emplace_back();
-                column.levels[0]=static_cast<float>(sample.floor_height_m-origin_y);
-                column.levels[1]=static_cast<float>(sample.surface_height_m-origin_y);
+                column.floor_m=static_cast<float>(sample.floor_height_m-origin_y);
+                column.stage_m=static_cast<float>(sample.surface_height_m-origin_y);
                 if (volume.optics.follow_terrain) {
-                    column.levels[2]=1;
                     const auto fitted=region.fitted_bed({x,z});
+                    column.flags=1u|(fitted.inactive_wedges<<1u);
+                    column.swell_center_m=static_cast<float>(fitted.swell_center_m);
                     for (std::size_t side=0;side<column.corners.size();++side) {
                         column.corners[side]=static_cast<float>(fitted.corners_m[side]-origin_y);
                         column.stages[side]=static_cast<float>(fitted.stages_m[side]-origin_y);
+                        column.swell_corners[side]=static_cast<float>(fitted.swell_corners_m[side]);
                     }
                 }
             }

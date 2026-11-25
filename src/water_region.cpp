@@ -9,6 +9,7 @@
 #include <cmath>
 #include <initializer_list>
 #include <limits>
+#include <numbers>
 #include <stdexcept>
 #include <tuple>
 #include <utility>
@@ -197,7 +198,8 @@ Region::Region(const RegionDefinition& definition)
       faces_(definition.faces), exchanges_(definition.exchanges), plan_sha256_(definition.plan_sha256),
       rain_cells_(definition.rain_cells), surface_ripples_(definition.surface_ripples),
       surface_wave_layers_(definition.surface_wave_layers), listener_audio_(definition.listener_audio),
-      optics_(definition.optics), shore_corner_heights_m_(definition.shore_corner_heights_m) {
+      optics_(definition.optics), shore_corner_heights_m_(definition.shore_corner_heights_m),
+      surface_swell_(definition.surface_swell) {
     const auto& config=grid_.config();
     const auto corner_count=static_cast<std::size_t>(config.cells_x+1)*(config.cells_z+1);
     if (optics_ && optics_->follow_terrain) {
@@ -210,6 +212,27 @@ Region::Region(const RegionDefinition& definition)
     if (surface_ripples_)
         validate_surface_ripples(*surface_ripples_);
     validate_wave_layers(surface_wave_layers_);
+    if (!surface_swell_.empty()) {
+        if (!optics_ || !optics_->follow_terrain || surface_swell_.size()>max_surface_wave_layers)
+            throw std::invalid_argument("Water surface swell needs terrain fitting and one to four layers.");
+        constexpr double tau=2*std::numbers::pi;
+        double total_slope=0;
+        for (const auto& wave : surface_swell_) {
+            if (!(wave.wavelength_m>=std::max(.1,4*config.cell_size_m) && wave.wavelength_m<=1024 &&
+                  wave.slope>0 && wave.slope<=.4 && wave.period_ticks>=8 && wave.period_ticks<=3600 &&
+                  wave.heading_degrees>=-180 && wave.heading_degrees<=180))
+                throw std::invalid_argument("Invalid swell layer. Use 4 or more cells per wavelength and a positive slope.");
+            const double heading=wave.heading_degrees*std::numbers::pi/180;
+            const double frequency=tau/wave.wavelength_m;
+            const double amplitude=wave.slope/frequency;
+            swell_waves_.push_back({{frequency*std::cos(heading),frequency*std::sin(heading)},
+                amplitude,wave.period_ticks});
+            total_slope+=wave.slope;
+            swell_amplitude_m_+=amplitude;
+        }
+        if (total_slope>.4 || swell_amplitude_m_>std::min(.5*config.cell_size_m,8.))
+            throw std::invalid_argument("Swell slopes must sum to at most 0.4 and amplitudes to at most half a cell or 8 metres.");
+    }
     if (listener_audio_) {
         const auto& profile = *listener_audio_;
         if (!(profile.cutoff_hz >= 80 && profile.cutoff_hz <= 8000 && unit_interval(profile.gain) &&
@@ -273,6 +296,17 @@ double Region::cumulative_rain_m3() const noexcept {
     return rain_volume_m3(cumulative_rain_nm_);
 }
 
+double Region::swell_at(double cell_x,double cell_z) const noexcept {
+    constexpr double tau=2*std::numbers::pi;
+    const double size=grid_.config().cell_size_m;
+    double offset=0;
+    for (const auto& wave : swell_waves_) {
+        const auto phase=tau*static_cast<double>(grid_.tick()%wave.period_ticks)/wave.period_ticks;
+        offset+=wave.amplitude_m*std::sin(size*(wave.frequency[0]*cell_x+wave.frequency[1]*cell_z)-phase);
+    }
+    return offset;
+}
+
 FittedWaterBed Region::fitted_bed(Cell cell) const {
     const auto sample=grid_.sample(cell);
     const auto& sizing=grid_.config();
@@ -283,12 +317,18 @@ FittedWaterBed Region::fitted_bed(Cell cell) const {
     FittedWaterBed out{sample.floor_height_m,
         {shore_corner_heights_m_[first],shore_corner_heights_m_[first+1],
          shore_corner_heights_m_[first+stride+1],shore_corner_heights_m_[first+stride]},{}};
+    if (!swell_waves_.empty()) {
+        const double x=cell.x,z=cell.z;
+        out.swell_center_m=swell_at(x+.5,z+.5);
+        out.swell_corners_m={swell_at(x,z),swell_at(x+1,z),swell_at(x+1,z+1),swell_at(x,z+1)};
+    }
     if (sample.depth_m>0) {
         out.stages_m.fill(sample.surface_height_m);
         return out;
     }
 
     const std::array<int,4> dx{0,1,0,-1},dz{-1,0,1,0};
+    if (!swell_waves_.empty()) out.inactive_wedges=0xf;
     for (std::size_t side=0;side<dx.size();++side) {
         const double edge_floor=std::min(out.corners_m[side],out.corners_m[(side+1)%dx.size()]);
         out.stages_m[side]=std::min(sample.floor_height_m,edge_floor);
@@ -299,26 +339,37 @@ FittedWaterBed Region::fitted_bed(Cell cell) const {
         const double level=neighbor.surface_height_m;
         // Only extend into the wedge facing a wet neighbor. A depressed dry
         // center belongs to the flow solver, including partially filled gates.
-        if (neighbor.depth_m==0 || level>sample.floor_height_m || level<=edge_floor) continue;
+        if (neighbor.depth_m==0 || level>sample.floor_height_m || level+swell_amplitude_m_<=edge_floor) continue;
         const Cell face{std::min(cell.x,donor.x),std::min(cell.z,donor.z)};
         const auto control=grid_.face(face,dx[side]!=0 ? FaceAxis::x : FaceAxis::z);
-        if (control.openness>0 && (!control.sill_height_m || level>*control.sill_height_m))
+        if (control.openness>0 && (!control.sill_height_m || level>*control.sill_height_m)) {
             out.stages_m[side]=level;
+            out.inactive_wedges&=~(1u<<side);
+        }
     }
     return out;
 }
 
-std::optional<CellSample> Region::sample_world(double x_m,double z_m) const {
+std::optional<CellSample> Region::sample_world(double x_m,double z_m,
+    std::optional<std::array<double,3>>* surface_normal) const {
+    if (surface_normal) surface_normal->reset();
     auto sample=grid_.sample_world(x_m,z_m);
     if (!sample || shore_corner_heights_m_.empty()) return sample;
     const auto bed=fitted_bed(sample->cell);
     const auto& sizing=grid_.config();
     const auto u=std::clamp((x_m-sizing.origin_x_m)/sizing.cell_size_m-sample->cell.x,0.,1.);
     const auto v=std::clamp((z_m-sizing.origin_z_m)/sizing.cell_size_m-sample->cell.z,0.,1.);
-    const auto levels=fitted_water_levels(bed.center_m,bed.corners_m,bed.stages_m,u,v);
+    const auto levels=fitted_water_levels(bed.center_m,bed.corners_m,bed.stages_m,u,v,
+        bed.swell_center_m,bed.swell_corners_m,bed.inactive_wedges);
     sample->floor_height_m=levels[0];
     sample->surface_height_m=levels[1];
     sample->depth_m=levels[1]-levels[0];
+    if (surface_normal && !swell_waves_.empty() && sample->depth_m>0) {
+        const auto gradient=fitted_water_gradient(bed.swell_center_m,bed.swell_corners_m,
+            fitted_water_side(u,v),sizing.cell_size_m);
+        const auto scale=1/std::sqrt(1+gradient[0]*gradient[0]+gradient[1]*gradient[1]);
+        *surface_normal=std::array{-gradient[0]*scale,scale,-gradient[1]*scale};
+    }
     return sample;
 }
 

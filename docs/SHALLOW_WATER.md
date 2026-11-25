@@ -172,6 +172,57 @@ and Vulkan normals. Pass `--runtime-root`, `--windows-interop` from WSL, and
 `--gpu` to exercise the standalone capture path. The forward and deferred
 recipes use `--lighting-path`.
 
+## Displace the water surface
+
+Add `surface_swell` to the same region plan and cook request. This example
+uses a grid with cells no larger than 1.1 metres.
+
+```json
+{
+  "surface_swell": [
+    {"wavelength_m": 5.4, "slope": 0.16, "period_ticks": 152, "heading_degrees": 32},
+    {"wavelength_m": 4.4, "slope": 0.08, "period_ticks": 118, "heading_degrees": -25}
+  ]
+}
+```
+
+Enable `optics.follow_terrain`. Each of the one to four layers needs at least
+four cells per wavelength. Wavelength ranges from 0.1 to 1,024 metres and a
+period from 8 to 3,600 simulation ticks. Heading zero travels along world +X,
+with positive angles turning toward +Z. Slope is positive and the sum is
+at most 0.4. Each layer's amplitude is slope times wavelength divided by
+`2π`. Their sum is bounded by half a cell or eight metres, whichever is lower.
+Keep the optional, shorter `surface_wave_layers` or `surface_ripples` for
+shading detail. Existing region plans can add swell through a new cook.
+
+The engine samples the sine waves at the cell centres and shared corners
+using the committed tick. Geometry and optical rays use the same piecewise
+planar surface. The wetted shore stops where that surface meets the fitted bed.
+An adjoining dry wedge needs a wet donor and an open face. The committed stage
+must exceed the sill before that face can supply the wedge. Water exchange,
+storage and rain accounting continue through the conserved grid.
+
+`runtime.water.inspect` returns the height, geometric normal and submersion
+for wet point samples. The `cells` rows and `volume_m3` describe the grid.
+A listener at a fixed position can enter or leave the water as the swell
+passes. Runtime and save restoration derive the wave phase from the saved
+tick. Camera translation and projection leave that phase intact.
+
+Single-sample Vulkan captures use the tilted surface for entry and exit,
+refraction, shoreline foam and sprite attenuation. Caustics use the displaced
+entry height and the local surface slope when the solver finds a stable light
+path. Scene capture reports `water_optics.surface_swell` and the rendered
+camera's submersion. The multisampled fallback draws the region's displaced
+surface mesh. The region remains bounded to its authored footprint.
+Ocean LOD, breaking-wave transport and buoyancy are separate systems.
+
+The selected field cooks `.pwater` version 11. Project and game inspection
+report `needs_water_surface_swell`, and exporting requires
+`features.water_surface_swell`. Omission retains the earlier artifact formats.
+The [swell fixture](../tests/water_surface_swell_capture.py) compares
+independent clipped wave prisms with rendered HDR and checks fresh-process
+save continuation, spatial audio and export admission.
+
 ## Author the waterline sound transition
 
 Discover `water_listener_audio` on an audio and simulation build. Add a
@@ -213,8 +264,9 @@ its cell index, bed height, surface height and depth, and `submersion_m`.
 A point outside the region has a null column and zero submersion. A point
 inside the footprint has zero submersion when the column is dry, when it is
 on or above the surface, or when it is below that cell's terrain bed. At an
-interior cell edge the higher-index cell owns the point. Surface shading
-waves leave these sampled heights unchanged.
+interior cell edge the higher-index cell owns the point. The normal-only
+wave profiles leave these sampled heights unchanged. Selected surface swell
+moves the point column's surface.
 
 ## Author transparent water
 

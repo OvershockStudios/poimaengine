@@ -313,6 +313,7 @@ FrozenContent freeze_world_content(const Json& source, const fs::path& directory
         result.needs_water_caustics=asset.definition.optics && asset.definition.optics->caustics_strength>0;
         result.needs_water_shore_foam=asset.definition.optics && asset.definition.optics->shore_foam.has_value();
         result.needs_water_terrain_fit=asset.definition.optics && asset.definition.optics->follow_terrain;
+        result.needs_water_surface_swell=!asset.definition.surface_swell.empty();
         definition.water=std::move(asset.definition);
     }
     if(definition.snow)component_checked([&]{(void)snow::Region(definition);});

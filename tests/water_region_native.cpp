@@ -6,6 +6,7 @@
 #include <cmath>
 #include <iostream>
 #include <limits>
+#include <numbers>
 #include <stdexcept>
 #include <string>
 
@@ -227,6 +228,42 @@ void restore_and_step_are_atomic() {
             "Failed tick did not restore actual gate state and the prior receipt.");
 }
 
+void swell_shares_cell_edges_and_restores_phase() {
+    RegionDefinition definition{
+        .config={.cells_x=2,.cells_z=1,.origin_x_m=20,.origin_z_m=-10,.relaxation_per_second=0},
+        .floor_heights_m={0,0},.initial_depths_m={1,1},.plan_sha256=std::string(64,'d'),
+        .optics=poima::WaterOptics{.extinction_per_m={},.scattered_radiance={},.follow_terrain=true},
+        .shore_corner_heights_m={0,0,0,0,0,0},
+        .surface_swell={{4,.2,64,0}},
+    };
+    Region live(definition);
+    const double amplitude=.4/std::numbers::pi;
+    const auto at_border=live.sample_world(21,-9.65);
+    require(std::abs(at_border->surface_height_m-(1+amplitude))<1e-13,"Swell crest differs at the shared edge.");
+    for (double x : {21-1e-8,21+1e-8})
+        require(std::abs(live.sample_world(x,-9.65)->surface_height_m-at_border->surface_height_m)<2e-9,
+            "Shared water edge is discontinuous.");
+    for (int tick=0;tick<32;++tick) live.step();
+    require(std::abs(live.sample_world(21,-9.65)->surface_height_m-(1-amplitude))<1e-13 &&
+            live.grid().volume_m3()==2.0,"Swell did not reverse cleanly over the static volume.");
+    Region cold(definition);
+    cold.restore(live.save(),32);
+    std::optional<std::array<double,3>> a,b;
+    const auto first=live.sample_world(20.4,-9.8,&a);
+    const auto restored=cold.sample_world(20.4,-9.8,&b);
+    require(a && a==b && first->surface_height_m==restored->surface_height_m,
+        "Cold-restored position or normal differs from the committed wave.");
+
+    definition.surface_swell[0].wavelength_m=3.99;
+    rejects<std::invalid_argument>([&] { (void)Region(definition); },"Undersampled swell was admitted.");
+    definition.surface_swell[0]={80,.2,64,0};
+    rejects<std::invalid_argument>([&] { (void)Region(definition); },"Excessive swell amplitude was admitted.");
+    definition.surface_swell[0]={4,.2,64,0};
+    definition.optics.reset();
+    definition.shore_corner_heights_m.clear();
+    rejects<std::invalid_argument>([&] { (void)Region(definition); },"Swell without fitted optics was admitted.");
+}
+
 }
 
 int main() {
@@ -235,6 +272,7 @@ int main() {
         invalid_definitions_are_rejected();
         surface_ripples_are_frozen_presentation_data();
         restore_and_step_are_atomic();
+        swell_shares_cell_edges_and_restores_phase();
         std::cout << "Water region tests passed.\n";
     } catch (const std::exception& error) {
         std::cerr << error.what() << '\n';

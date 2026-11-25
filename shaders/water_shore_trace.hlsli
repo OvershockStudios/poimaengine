@@ -9,17 +9,24 @@ bool clip_above_water_plane(float origin,float slope,bool owns_edge,inout float 
     return exit>entry;
 }
 
-void integrate_fitted_water(WaterColumn column,float3 eye,float3 ray,float2 start,float2 motion,
+void integrate_fitted_water(WaterColumn column,float3 eye,float3 ray,float2 start,float2 motion,float size,
                             float entry,float exit,float max_distance,bool find_interface,inout WaterPath path) {
     float2 wet_intervals[4];
     float interface_m=-1.0;
-    const bool seek=find_interface && path.interface_m<0.0 && abs(ray.y)>=1e-8;
+    const bool seek=find_interface && path.interface_m<0.0;
+    float2 gradient=0;
+    bool enters=false;
     float length_m=0.0;
     [unroll] for (uint side=0u;side<4u;++side) {
         wet_intervals[side]=0.0;
+        if (!water_wedge_active(column,side)) continue;
+        const uint next=(side+1u)%4u;
         const float stage=column.stages[side];
         const float3 bed=water_bed_plane(column,side);
-        if (stage<=min(column.levels.x,min(column.corners[side],column.corners[(side+1u)%4u]))) continue;
+        const float3 depth=float3(stage+column.swell_center_m-column.floor_m,
+            stage+column.swell_corners[side]-column.corners[side],
+            stage+column.swell_corners[next]-column.corners[next]);
+        if (max(depth.x,max(depth.y,depth.z))<=0.0) continue;
         const float2 p=water_bed_wedge_point(start,side),d=water_bed_orient(motion,side);
         float lower=entry,upper=exit;
         if (!clip_above_water_plane(p.x-p.y,d.x-d.y,side==0u,lower,upper) ||
@@ -27,19 +34,29 @@ void integrate_fitted_water(WaterColumn column,float3 eye,float3 ray,float2 star
         const float floor=bed.x+dot(bed.yz,p);
         const float floor_direction=dot(bed.yz,d);
         if (!clip_above_water_plane(eye.y-floor,ray.y-floor_direction,true,lower,upper)) continue;
-        if (seek) {
-            const float top=(stage-eye.y)/ray.y;
+        const float3 swell=water_swell_plane(column,side);
+        const float surface=stage+(swell.x+dot(swell.yz,p));
+        const float surface_direction=dot(swell.yz,d);
+        const float relative_direction=ray.y-surface_direction;
+        if (seek && abs(relative_direction)>=1e-8) {
+            const float top=(surface-eye.y)/relative_direction;
             if (top>=lower && top<=upper && top<max_distance &&
-                stage>floor+floor_direction*top && (interface_m<0.0 || top<interface_m) &&
-                water_bed_side(saturate(start+motion*top))==side)
+                surface+surface_direction*top>floor+floor_direction*top &&
+                (interface_m<0.0 || top<interface_m) &&
+                water_bed_side(saturate(start+motion*top))==side) {
                 interface_m=top;
+                gradient=water_plane_gradient(swell.yz,side)/size;
+                enters=relative_direction<0.0;
+            }
         }
-        if (!clip_above_water_plane(stage-eye.y,-ray.y,false,lower,upper)) continue;
+        if (!clip_above_water_plane(surface-eye.y,-relative_direction,false,lower,upper)) continue;
         wet_intervals[side]=float2(lower,upper);
         length_m+=upper-lower;
     }
     if (interface_m>=0.0) {
         path.interface_m=interface_m;
+        path.interface_gradient=gradient;
+        path.enters=enters;
         path.water_before_interface_m=path.length_m;
         [unroll] for (uint j=0u;j<4u;++j)
             path.water_before_interface_m+=max(0.0,min(interface_m,wet_intervals[j].y)-wet_intervals[j].x);

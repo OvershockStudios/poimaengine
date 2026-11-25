@@ -3,7 +3,7 @@
 
 float shore_bed_height(int2 cell, int2 dimensions) {
     const int2 at = clamp(cell, 0, dimensions - 1);
-    return water_columns[at.y * dimensions.x + at.x].levels.x;
+    return water_columns[at.y * dimensions.x + at.x].floor_m;
 }
 
 // Interpolate across cell centers so a ramp contributes a continuous shallow
@@ -13,7 +13,7 @@ float shore_depth(WaterConstants water, float3 surface) {
     const int2 dimensions = water_grid_dimensions(water);
     const int2 cell = clamp(int2(floor(local)),0,dimensions-1);
     const WaterColumn column = water_columns[cell.y * dimensions.x + cell.x];
-    if (column.levels.z != 0.0)
+    if (has_water_bed_fan(column))
         return max(0.0,surface.y-water_column_levels(column,saturate(local-float2(cell))).x);
 
     const float2 lattice = local - 0.5;

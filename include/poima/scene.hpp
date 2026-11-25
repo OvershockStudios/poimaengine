@@ -299,9 +299,11 @@ struct SceneWaterRipples {
 };
 inline constexpr std::size_t max_scene_water_wave_layers=4;
 struct SceneWaterColumn {
-    // Coarse floor and stage in XY. Z selects the four fitted bed wedges.
-    std::array<float,4> levels{};
-    std::array<float,4> corners{},stages{};
+    float floor_m=0,stage_m=0;
+    std::uint32_t flags=0; // Bit 0 selects the bed fan; bits 1..4 disable individual swell wedges.
+    float swell_center_m=0;
+    std::array<float,4> corners{},stages{},swell_corners{};
+    std::uint32_t inactive_wedges() const noexcept { return flags>>1; }
     friend bool operator==(const SceneWaterColumn&,const SceneWaterColumn&)=default;
 };
 struct SceneWaterVolume {
@@ -310,6 +312,7 @@ struct SceneWaterVolume {
     std::uint32_t cells_x,cells_z;
     WaterOptics optics{};
     float shore_foam_phase=0;
+    bool surface_swell=false;
     // Row-major columns with heights relative to the region's Y origin.
     std::vector<SceneWaterColumn> columns;
 };

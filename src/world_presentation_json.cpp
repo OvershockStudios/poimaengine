@@ -194,6 +194,7 @@ Json render_diagnostics(const RenderDiagnostics& d) {
             {"camera_submersion_m",water.camera_submersion_m},{"world_media_gpu",timing(d.height_fog_gpu)}};
         if(water.refraction)result["water_optics"]["refraction"]=true;
         if(water.follow_terrain)result["water_optics"]["follow_terrain"]=true;
+        if(water.surface_swell)result["water_optics"]["surface_swell"]=true;
         if(water.sprites)result["water_optics"]["sprites"]=true;
         if(water.caustics_strength>0)result["water_optics"]["caustics"]={{"active",water.caustics_reason=="active"},
             {"reason",water.caustics_reason},{"strength",water.caustics_strength}};

@@ -32,7 +32,8 @@
         const bool cook = method == "world.water.cook";
         require(cook || method == "world.water.plan", "Unknown water authoring method.", -32601);
         fields(params, {"revision", "terrain", "expected_terrain_recipe_sha256", "expected_plan_sha256", "tile_entities",
-            "grid", "initial_depths_m", "faces", "exchanges", "rain_cells", "surface_ripples", "surface_wave_layers", "listener_audio", "optics"},
+            "grid", "initial_depths_m", "faces", "exchanges", "rain_cells", "surface_ripples", "surface_wave_layers",
+            "surface_swell", "listener_audio", "optics"},
             {"revision", "terrain", "expected_terrain_recipe_sha256", "tile_entities", "grid"});
         require(cook == params.contains("expected_plan_sha256"), "Water cooking requires a reviewed plan SHA-256.");
         current_revision(params);
@@ -78,6 +79,7 @@
                 {"asset_bytes", bytes.size()}, {"cells", cells}, {"tiles", std::move(tiles)}};
             if (params.contains("surface_ripples")) result["surface_ripples"] = params.at("surface_ripples");
             if (params.contains("surface_wave_layers")) result["surface_wave_layers"] = params.at("surface_wave_layers");
+            if (params.contains("surface_swell")) result["surface_swell"] = params.at("surface_swell");
             if (params.contains("listener_audio")) result["listener_audio"] = params.at("listener_audio");
             if (params.contains("optics")) {
                 auto optics=params.at("optics");
@@ -116,12 +118,14 @@
                     return number;
                 };
                 const double x=coordinate(0),y=coordinate(1),z=coordinate(2);
-                const auto column=region ? region->sample_world(x,z) : std::nullopt;
+                std::optional<std::array<double,3>> normal;
+                const auto column=region ? region->sample_world(x,z,&normal) : std::nullopt;
                 Json row{{"point_world",point},{"column",nullptr},{"submersion_m",0.0}};
                 if (column) {
                     row["column"]={{"cell",{column->cell.x,column->cell.z}},{"floor_height_m",column->floor_height_m},
                         {"surface_height_m",column->surface_height_m},{"depth_m",column->depth_m}};
                     row["submersion_m"]=column->submersion_at(y);
+                    if (normal) row["column"]["surface_normal"]=*normal;
                 }
                 result["points"].push_back(std::move(row));
             }
@@ -134,6 +138,8 @@
             result["surface_ripples"] = water::surface_ripples_json(*ripples);
         if (!region->surface_wave_layers().empty())
             result["surface_wave_layers"] = water::surface_wave_layers_json(region->surface_wave_layers());
+        if (!region->surface_swell().empty())
+            result["surface_swell"] = water::surface_wave_layers_json(region->surface_swell());
         if (const auto& listener_audio = region->listener_audio())
             result["listener_audio"] = water::listener_audio_json(*listener_audio);
         if (const auto& optics = region->optics())

@@ -62,14 +62,14 @@ bool water_probe_medium(WaterConstants water, WaterScreenRay ray, WaterDepthProb
     // Reject a foreground object seen beside the entry ray before it can
     // supply a bracket or color. Check the candidate's own committed column.
     const float side = position.y - ray.interface_y;
-    if (ray.entering ? side >= -0.002 : side <= 0.002) return false;
+    if (!water_displaced(water) && (ray.entering ? side >= -0.002 : side <= 0.002)) return false;
     const int2 span = water_grid_dimensions(water);
     const float2 local_cell = position.xz / water.camera_cell_size.w;
     if (all(local_cell >= 0.0) && all(local_cell < float2(span))) {
         const int2 cell = int2(local_cell);
         const WaterColumn column = water_columns[cell.y * span.x + cell.x];
         const float2 limits = water_column_levels(column,frac(local_cell));
-        const bool above_bed = column.levels.z == 0.0 || position.y >= limits.x - .025;
+        const bool above_bed = !has_water_bed_fan(column) || position.y >= limits.x - .025;
         const bool wet = limits.y > limits.x && position.y < limits.y - 0.002 && above_bed;
         if (wet != ray.entering) return false;
     } else if (ray.entering) {

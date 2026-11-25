@@ -113,16 +113,22 @@ void require_bindings(nvrhi::IBindingSet* bindings, const nvrhi::BindingSetDesc&
 WaterView project_water_view(const SceneWaterVolume& water,const std::array<double,3>& eye,float wave_mode) {
     namespace rs=render_schedule;
     static_assert(sizeof(SceneWaterColumn)==rs::water_column_bytes);
+    static_assert(offsetof(SceneWaterColumn,corners)==16 && offsetof(SceneWaterColumn,swell_corners)==48);
     if (water.cells_x==0 || water.cells_z==0 || water.cells_x>rs::max_water_column_side ||
         water.cells_z>rs::max_water_column_side || water.columns.size()!=water.cells_x*water.cells_z ||
-        !(water.cell_size_m>=.01 && water.cell_size_m<=256))
+        !(water.cell_size_m>=.01 && water.cell_size_m<=256) ||
+        (water.surface_swell && !water.optics.follow_terrain))
         throw std::runtime_error("Invalid water optics column grid.");
     if (!std::ranges::all_of(water.columns,[&](const SceneWaterColumn& cell) {
         const auto finite=[](auto lane){return std::isfinite(lane);};
-        return std::isfinite(cell.levels[0]) && std::isfinite(cell.levels[1]) && cell.levels[0]<=cell.levels[1] &&
-            cell.levels[2]==(water.optics.follow_terrain ? 1.0f : 0.0f) &&
+        return std::isfinite(cell.floor_m) && std::isfinite(cell.stage_m) && cell.floor_m<=cell.stage_m &&
+            (cell.flags&1u)==static_cast<std::uint32_t>(water.optics.follow_terrain) &&
+            cell.inactive_wedges()<=(water.surface_swell ? 0xfu : 0u) &&
             (!water.optics.follow_terrain ||
-             (std::ranges::all_of(cell.corners,finite) && std::ranges::all_of(cell.stages,finite)));
+             (std::ranges::all_of(cell.corners,finite) && std::ranges::all_of(cell.stages,finite))) &&
+            (water.surface_swell ?
+                finite(cell.swell_center_m) && std::ranges::all_of(cell.swell_corners,finite) :
+                cell.swell_center_m==0 && cell.swell_corners==std::array<float,4>{});
     })) throw std::runtime_error("Invalid water column height.");
 
     WaterView result{};
@@ -139,16 +145,18 @@ WaterView project_water_view(const SceneWaterVolume& water,const std::array<doub
         parameters.radiance_wave_mode[axis]=static_cast<float>(scatter);
     }
     parameters.camera_cell_size[3]=static_cast<float>(water.cell_size_m);
-    parameters.dimensions=water.cells_x|(water.cells_z<<8u)|(water.optics.refraction ? 1u<<16u : 0u);
+    parameters.dimensions=water.cells_x|(water.cells_z<<8u)|(water.optics.refraction ? 1u<<16u : 0u)|
+        (water.surface_swell ? 1u<<17u : 0u);
     parameters.radiance_wave_mode[3]=wave_mode;
     const double x=local[0]/water.cell_size_m,z=local[2]/water.cell_size_m;
     if (x>=0 && z>=0 && x<water.cells_x && z<water.cells_z) {
         const auto ix=static_cast<std::size_t>(x),iz=static_cast<std::size_t>(z);
         const auto& column=water.columns[iz*water.cells_x+ix];
         const auto levels=water.optics.follow_terrain ?
-            water::fitted_water_levels(column.levels[0],column.corners,column.stages,
-                static_cast<float>(x-static_cast<double>(ix)),static_cast<float>(z-static_cast<double>(iz))) :
-            std::array<float,2>{column.levels[0],column.levels[1]};
+            water::fitted_water_levels(column.floor_m,column.corners,column.stages,
+                static_cast<float>(x-static_cast<double>(ix)),static_cast<float>(z-static_cast<double>(iz)),
+                column.swell_center_m,column.swell_corners,column.inactive_wedges()) :
+            std::array<float,2>{column.floor_m,column.stage_m};
         if (local[1]>=levels[0] && local[1]<levels[1])
             result.submersion_m=static_cast<double>(levels[1])-local[1];
     }
