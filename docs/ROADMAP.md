@@ -263,8 +263,10 @@ robust temporal reconstruction and separately qualified DLSS, FSR and NVIDIA
 frame generation; XeSS remains a bonus.
 
 [Ordered draw instancing](DRAW_INSTANCING.md) supplies a CPU-planned foundation
-for compatible adjacent geometry. GPU-resident updates, indirect visibility,
-occlusion, LOD and representative frame-time qualification remain separate work.
+for compatible adjacent geometry. [GPU camera visibility](GPU_VISIBILITY.md)
+can cull rigid indexed meshes and supply indirect commands under that same
+ordering contract. The scalable rendering track also covers GPU-resident scene
+updates, occlusion, GPU LOD selection and representative frame-time qualification.
 
 Build day/night lighting, atmospheric scattering, fog, clouds, wind and dense
 environmental motion around shared world time. New research techniques need

@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.412
+
+- Add opt-in GPU frustum visibility and indexed indirect draws for rigid world meshes, with retired-frame visibility counts.
+
 ## 0.0.411
 
 - Batch Vulkan image and buffer transitions that belong to the same NVRHI resource-state commit.

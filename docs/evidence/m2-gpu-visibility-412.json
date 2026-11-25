@@ -1,0 +1,295 @@
+{
+  "checkpoint": "0.0.412",
+  "parent_commit": "54e5f03",
+  "schema_revision": 211,
+  "source_sha256": {
+    "CMakeLists.txt": "3ffa1caa2adcaa565e8cff305f175e128130435cb97fbb8e6e30ae88dff601ac",
+    "cmake/render_smoke.cmake": "000b72b95a3e95274a9954eb7549e5e143eb0813cce318781e1a25547f83ee3f",
+    "include/poima/core.hpp": "c51f5bfaf74609d8ad1effed0bff15a24e67ce038b8836ae428d37fdf247f613",
+    "include/poima/render_schedule.hpp": "0aedaf2f9809e91df9e68fd48d3a6e549c14f9db3b63a7fe5abe55566865056d",
+    "shaders/gpu_visibility.hlsl": "31f0718b15f151a8f7fc574671c5da8971e16e9bde07d44b600c1067882842d9",
+    "src/core.cpp": "a89757ea73623c9374798311d5bb24f7b4a5d7f6c5d7c23eae1c339f08dec90b",
+    "src/game_launch.cpp": "35c8836611927c4fe30c1d41086e702f36c69c9712e49ac117421afe66393feb",
+    "src/main.cpp": "7208eb47654ff9a57947b43f30d642a0b8f23c1cdbc67617bae2f7663aa999b6",
+    "src/render_gpu_visibility.cpp": "b20cf991ec887a05e0c875443525f969b601802109c35e2f1d8950bb1f144d08",
+    "src/render_gpu_visibility.hpp": "fc0b4e5e8e2807d6b83c664e349eeb3e6aa0e1dcecfe7d6f7731b94abb3ec28d",
+    "src/render_scene_draw.hpp": "84cb6eb4ec15ffd02b39104c6b831df67de73318600c1e22b143ba56371e2625",
+    "src/render_schedule.cpp": "8a220e2ddc7c8085fcd44275817e3847b8aa6270f9bdc57f183f6d0035792bfe",
+    "src/render_smoke.cpp": "1e980c558c6de0be393981db7a36f1b6166b8f0847b2f1b2604078493fe02c2c",
+    "src/world.cpp": "492a5a50f9b1663ef634288b2ab3ee54f0288eb733b9f9f83e41c1f4969a3606",
+    "src/world_capture.cpp": "ac55393ce30f55155ac77a11368e185cc5c54f731d5adf5be69ac256792f0d2e",
+    "src/world_player_service.inc": "0b6ffdfe96974621824c9c754c28a05965f8476b43f6bc64ca3e4fd5f1d95c61",
+    "src/world_presentation_json.cpp": "284c26430dc9dbb60e0e23d741ada2350d792de0c17ffc76497c0166b3901773",
+    "src/world_schema.cpp": "e05fb39a8698bc39a90602431c2f33b2519aa9e93b9041d1f2628e9cd4e42744",
+    "tests/render_schedule.cpp": "bded726d94d8225d8864d47a12218fc37b0f7ce20578299252795f993804a2bb",
+    "tests/gpu_visibility_capture.py": "6d5babf6fef8320ffe317b8b72435e897d4996a4cbfb13a96bb32f0d26131c2e"
+  },
+  "render_schedule": {
+    "accepted": 580,
+    "rejected": 1503
+  },
+  "ubuntu": {
+    "suites": [
+      "authoring_api_compatibility",
+      "cli_contract",
+      "frame_performance_native",
+      "frame_performance_service",
+      "profiler_contract",
+      "profiler_jobs",
+      "profiler_native",
+      "profiler_service",
+      "project_contract",
+      "render_schedule_native",
+      "shared_session_contract",
+      "world_contract",
+      "world_schema_native",
+      "world_session_native"
+    ],
+    "log_sha256": "22070e5e99366abff644f89cd8e07b70c00739c28609717991f581655d7da9a0",
+    "junit_sha256": "9c66fba955f721ce470e64a06223f671782be9dd4e13c8c0b2a5390297a879f8"
+  },
+  "windows_build": {
+    "host": "Ubuntu x86_64",
+    "compiler": "LLVM-MinGW Clang 23.1.2",
+    "executable_sha256": "22357706e2de7440c4042bbcb1237caf232a3d14a1d3381dd3ad6cb61b06bd52",
+    "desktop_bridge_sha256": "e6e6b93b7ee58b196bd2e9ec11436e989135ffae02e1f8c142e85666af1067e3",
+    "runtime_descriptor_sha256": "197ba04f92b41879c5acfb4a9fba53f4653f625ac81bb623561efc799d33486b",
+    "shader_spirv_sha256": "c230190c1e893c5141fb39b492cf86432faceb1a9fc13eae162889dbc99afec3",
+    "candidate_patch_sha256": "dac3335feff3da906432cfa099565096c9abae784ce206afc40b4b7f6097b32e",
+    "schedule_recovery_sha256": "356f1b5697f2551d5b6bb5e0d0276336736e601239112cef4c9bc1d5f613ca90",
+    "transfer_archive_sha256": "8015f354f88246bfafee85d74b12e565c5de691e9fa080dbe6b3b19719ccb355"
+  },
+  "windows_gpus": [
+    {
+      "adapter": "AMD Radeon(TM) Graphics",
+      "gpu_index": 0,
+      "lighting_path": "forward",
+      "samples": 4,
+      "reconstruction": "none",
+      "validation": "Khronos synchronization validation",
+      "native_evidence_sha256": "291602f5560de527473a274cca5b0bbe6ed534eb7a2c602579fc10e28cafe81b",
+      "native_stderr_sha256": "4d3b3c87b9f160b105235bae513366522845029d29cd67c56be416f1e8a98126",
+      "exact_image_pairs_sha256": {
+        "coast": "1320c3ec59874e0eda7704241f88a18f61cb24b105b9c87fdf0144e8ce2b56a2",
+        "inland": "69d8fab06b735a390d1944c4274e716c75bc1ed13e834dc8095e0c0399711520",
+        "empty": "2907d972d5ad30bf3c88f49bc40dd7e044d34218d1c96d48bf368e8d15e66f61",
+        "culling_disabled": "1320c3ec59874e0eda7704241f88a18f61cb24b105b9c87fdf0144e8ce2b56a2",
+        "instancing_disabled": "1320c3ec59874e0eda7704241f88a18f61cb24b105b9c87fdf0144e8ce2b56a2"
+      },
+      "draws": {
+        "coast": {
+          "direct_commands": 257,
+          "indirect_commands": 5,
+          "visible": 257,
+          "culled": 256,
+          "gpu_visibility": {
+            "active": true,
+            "candidates": 512,
+            "indirect_batches": 4,
+            "reason": "active",
+            "slot_bytes": 26864,
+            "supported": true,
+            "visible": 256
+          }
+        },
+        "inland": {
+          "direct_commands": 256,
+          "indirect_commands": 4,
+          "visible": 256,
+          "culled": 257,
+          "gpu_visibility": {
+            "active": true,
+            "candidates": 512,
+            "indirect_batches": 4,
+            "reason": "active",
+            "slot_bytes": 26864,
+            "supported": true,
+            "visible": 256
+          }
+        },
+        "empty": {
+          "direct_commands": 0,
+          "indirect_commands": 4,
+          "visible": 0,
+          "culled": 513,
+          "gpu_visibility": {
+            "active": true,
+            "candidates": 512,
+            "indirect_batches": 4,
+            "reason": "active",
+            "slot_bytes": 26864,
+            "supported": true,
+            "visible": 0
+          }
+        }
+      }
+    },
+    {
+      "adapter": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "gpu_index": 1,
+      "lighting_path": "deferred",
+      "samples": 1,
+      "reconstruction": "none",
+      "validation": "Khronos synchronization validation",
+      "native_evidence_sha256": "a1466011b063f1896ff76d577b71ce6c4dc9202320effe73cb6e1757e69e9114",
+      "native_stderr_sha256": "6cdac7c25ec7ff85907b5407f84a7d6b33fe5e22cc64bc8225df0ae852f2a450",
+      "exact_image_pairs_sha256": {
+        "coast": "c50c7d239ef5425ec5636e8bc4f53c7efe04a74c5bb97b9ea5ec97065e54fdd5",
+        "inland": "f0c5bff4943a985adab43616da82b4671f8f32719bf6b0c9d74355f51a99fc4d",
+        "empty": "2907d972d5ad30bf3c88f49bc40dd7e044d34218d1c96d48bf368e8d15e66f61",
+        "culling_disabled": "c50c7d239ef5425ec5636e8bc4f53c7efe04a74c5bb97b9ea5ec97065e54fdd5",
+        "instancing_disabled": "c50c7d239ef5425ec5636e8bc4f53c7efe04a74c5bb97b9ea5ec97065e54fdd5",
+        "relocated": "13ba91956ce635c5e155ebe1e25732e81f36704dca49722bfbc9386a8dabb23c"
+      },
+      "draws": {
+        "coast": {
+          "direct_commands": 257,
+          "indirect_commands": 5,
+          "visible": 257,
+          "culled": 256,
+          "gpu_visibility": {
+            "active": true,
+            "candidates": 512,
+            "indirect_batches": 4,
+            "reason": "active",
+            "slot_bytes": 26864,
+            "supported": true,
+            "visible": 256
+          }
+        },
+        "inland": {
+          "direct_commands": 256,
+          "indirect_commands": 4,
+          "visible": 256,
+          "culled": 257,
+          "gpu_visibility": {
+            "active": true,
+            "candidates": 512,
+            "indirect_batches": 4,
+            "reason": "active",
+            "slot_bytes": 26864,
+            "supported": true,
+            "visible": 256
+          }
+        },
+        "empty": {
+          "direct_commands": 0,
+          "indirect_commands": 4,
+          "visible": 0,
+          "culled": 513,
+          "gpu_visibility": {
+            "active": true,
+            "candidates": 512,
+            "indirect_batches": 4,
+            "reason": "active",
+            "slot_bytes": 26864,
+            "supported": true,
+            "visible": 0
+          }
+        },
+        "relocated": {
+          "direct_commands": 257,
+          "indirect_commands": 5,
+          "visible": 257,
+          "culled": 256,
+          "gpu_visibility": {
+            "active": true,
+            "candidates": 512,
+            "indirect_batches": 4,
+            "reason": "active",
+            "slot_bytes": 26864,
+            "supported": true,
+            "visible": 256
+          }
+        }
+      },
+      "relocated_replay": {
+        "frames": 9,
+        "ticks": 8,
+        "observed_entities": [
+          "player",
+          "camera"
+        ],
+        "bundle_inventory_unchanged": true
+      }
+    },
+    {
+      "adapter": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "gpu_index": 1,
+      "lighting_path": "deferred",
+      "samples": 1,
+      "reconstruction": "fsr3_native",
+      "validation": "Khronos synchronization validation",
+      "native_evidence_sha256": "ddf3b7026cedc9e4dcb9d6c3a9aeae0383303c77d656c3ac8956ada22584a69c",
+      "native_stderr_sha256": "6cdac7c25ec7ff85907b5407f84a7d6b33fe5e22cc64bc8225df0ae852f2a450",
+      "exact_image_pairs_sha256": {
+        "coast": "05f511761f3dfad7a5db0530717971ff2f38625c23ea06b6755f543a998365c4",
+        "inland": "b7807c7fbd9de23332f3511662c784f8411eb8e514a5bd873c793021ae583613",
+        "empty": "2907d972d5ad30bf3c88f49bc40dd7e044d34218d1c96d48bf368e8d15e66f61",
+        "culling_disabled": "05f511761f3dfad7a5db0530717971ff2f38625c23ea06b6755f543a998365c4",
+        "instancing_disabled": "05f511761f3dfad7a5db0530717971ff2f38625c23ea06b6755f543a998365c4"
+      },
+      "draws": {
+        "coast": {
+          "direct_commands": 257,
+          "indirect_commands": 5,
+          "visible": 257,
+          "culled": 256,
+          "gpu_visibility": {
+            "active": true,
+            "candidates": 512,
+            "indirect_batches": 4,
+            "reason": "active",
+            "slot_bytes": 26864,
+            "supported": true,
+            "visible": 256
+          }
+        },
+        "inland": {
+          "direct_commands": 256,
+          "indirect_commands": 4,
+          "visible": 256,
+          "culled": 257,
+          "gpu_visibility": {
+            "active": true,
+            "candidates": 512,
+            "indirect_batches": 4,
+            "reason": "active",
+            "slot_bytes": 26864,
+            "supported": true,
+            "visible": 256
+          }
+        },
+        "empty": {
+          "direct_commands": 0,
+          "indirect_commands": 4,
+          "visible": 0,
+          "culled": 513,
+          "gpu_visibility": {
+            "active": true,
+            "candidates": 512,
+            "indirect_batches": 4,
+            "reason": "active",
+            "slot_bytes": 26864,
+            "supported": true,
+            "visible": 0
+          }
+        }
+      }
+    }
+  ],
+  "retained_default_profile": {
+    "adapter": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "reference": "0.0.411",
+    "exact_images": 8,
+    "exact_barrier_traces": true,
+    "before_evidence_sha256": "ae1c513c79aed0ecc6148144f41c641cd59fe4e64328460ea187b39e64810a27",
+    "after_evidence_sha256": "b6e2213b27d05037e00aa5cd3de71dce40b29328247f07459e5118058d1769f1"
+  },
+  "initial_failures": [
+    "The fixture initially passed the wrong transport option name, preventing launch.",
+    "The first native indirect capture exposed missing slot-work admission in the render-schedule validator. The recovered build checks the new resources and preserves the readback restriction.",
+    "The first relocated replay succeeded, but the fixture read its tick from the outer game envelope. The recovered fixture compares the nested play report and observed entity state."
+  ],
+  "measurement_scope": "Draw-command and image comparisons on a controlled 512-instance fixture. Frame-time and large-world performance remain open."
+}

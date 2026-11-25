@@ -265,7 +265,7 @@ poima::Reply run(int argc, char** argv) {
                 key!="--width" && key!="--height" && key!="--samples" && key!="--lighting-path" && key!="--post-aa" &&
                 key!="--reconstruction" && key!="--viewmodel-samples" && key!="--frames-in-flight" && key!="--settings-profile" &&
                 key!="--settings-revision" && key!="--settings-overrides" && key!="--lens-interpolation" &&
-                key!="--pose-interpolation" && key!="--default-save-root"))
+                key!="--pose-interpolation" && key!="--default-save-root" && key!="--gpu-visibility"))
                 return poima::usage_error("Unknown or repeated game run argument.");
             if(++i>=argc)return poima::usage_error("Missing game run argument value.");
             const std::string_view value=argv[i];
@@ -293,6 +293,10 @@ poima::Reply run(int argc, char** argv) {
             if(key=="--pose-interpolation") {
                 if(value!="true" && value!="false")return poima::usage_error("Pose interpolation expects true or false.");
                 options.pose_interpolation=value=="true";continue;
+            }
+            if(key=="--gpu-visibility") {
+                if(value!="true" && value!="false")return poima::usage_error("GPU visibility expects true or false.");
+                options.render.gpu_visibility=value=="true";continue;
             }
             if(key=="--lens-interpolation") {
                 if(value!="true" && value!="false")return poima::usage_error("Lens interpolation expects true or false.");

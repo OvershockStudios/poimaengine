@@ -49,8 +49,8 @@ foreach(shader smoke scene scene_products scene_deferred scene_deferred_color de
         ambient_occlusion ambient_occlusion_filter scene_output scene_output_ao scene_output_products scene_output_bloom scene_output_products_bloom scene_output_grade scene_output_grade_bloom
         scene_output_exposure scene_output_bloom_exposure scene_output_grade_exposure scene_output_grade_bloom_exposure
         spatial_aa bloom viewmodel_composite viewmodel_resolve sky sky_atmosphere sky_clouds atmosphere_density atmosphere_sky_view cloud_noise cloud_view cloud_shadow
-        shadow skinning cluster_lights temporal_inputs temporal_composed_inputs temporal_sprite_inputs temporal_composed_sprite_inputs editor_overlay game_ui particle_sprite particle_sprite_temporal)
-if(shader MATCHES "^(skinning|cluster_lights|temporal(_composed)?(_sprite)?_inputs|deferred_lighting.*|ambient_occlusion.*|screen_reflections|height_fog(_aerial)?|aerial_perspective|auto_exposure|atmosphere_density|atmosphere_sky_view|cloud_(noise|view|shadow))$")
+        shadow skinning gpu_visibility cluster_lights temporal_inputs temporal_composed_inputs temporal_sprite_inputs temporal_composed_sprite_inputs editor_overlay game_ui particle_sprite particle_sprite_temporal)
+if(shader MATCHES "^(skinning|gpu_visibility|cluster_lights|temporal(_composed)?(_sprite)?_inputs|deferred_lighting.*|ambient_occlusion.*|screen_reflections|height_fog(_aerial)?|aerial_perspective|auto_exposure|atmosphere_density|atmosphere_sky_view|cloud_(noise|view|shadow))$")
     set(shader_stages cs)
 elseif(shader MATCHES "^(scene_output_grade|spatial_aa)" OR shader MATCHES "^scene_output.*_exposure$" OR shader MATCHES "^sky_(atmosphere|clouds)$")
     set(shader_stages ps)
@@ -183,7 +183,7 @@ target_sources(poima_core PRIVATE
     src/render_ui.cpp src/render_environment_ibl.cpp src/render_ambient_occlusion.cpp
     src/render_shadows.cpp src/render_scene_assets.cpp src/render_light_clusters.cpp src/render_sky.cpp src/render_sky_clouds.cpp
     src/render_auto_exposure.cpp
-    src/render_skinning.cpp src/render_spatial_aa.cpp src/render_scene_output.cpp src/render_temporal_inputs.cpp src/render_sprite_targets.cpp
+    src/render_skinning.cpp src/render_gpu_visibility.cpp src/render_spatial_aa.cpp src/render_scene_output.cpp src/render_temporal_inputs.cpp src/render_sprite_targets.cpp
     "${poima_startup_wordmark}")
 target_link_libraries(poima_core PRIVATE nvrhi nvrhi_vk SDL3::SDL3-static)
 target_compile_definitions(poima_core PRIVATE NOMINMAX WIN32_LEAN_AND_MEAN)

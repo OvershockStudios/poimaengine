@@ -34,6 +34,7 @@ struct DrawItem {
     // Borrowed from the last accepted camera frame until the stream upload is packed.
     const MeshAsset* previous_stream_mesh=nullptr;
     std::uint32_t shadow_mask=0,surface_mark_offset=0,surface_mark_count=0;
+    std::uint32_t visibility_candidate=UINT32_MAX;
     // Allocated only if at least one shadow view narrows the immutable index range.
     std::vector<render_shadow_index_ranges::Range> shadow_ranges;
     render_shadow_index_ranges::Range shadow_range(std::size_t layer) const {

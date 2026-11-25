@@ -5,6 +5,7 @@
 #include "gpu_memory_json.hpp"
 #include "poima/core.hpp"
 #include "poima/player.hpp"
+#include "poima/render_schedule.hpp"
 #include "poima/scene.hpp"
 #include "world_document.hpp"
 #include <array>
@@ -137,6 +138,17 @@ Json render_diagnostics(const RenderDiagnostics& d) {
         {"cpu",{{"prepare",timing(d.prepare_cpu)},{"record",timing(d.record_cpu)},{"render_call",timing(d.render_call_cpu)},{"completion_wait",timing(d.completion_wait_cpu)}}},
         {"gpu",{{"available",d.gpu_timestamps},{"timestamp_valid_bits",d.timestamp_valid_bits},{"timestamp_period_ns",d.timestamp_period_ns},{"samples_dropped",d.gpu_samples_dropped},{"detail",d.gpu_timing_detail},
             {"skinning",timing(d.skinning_gpu)},{"light_assignment",timing(d.light_assignment_gpu)},{"shadows",timing(d.shadow_gpu)},{"opaque",timing(d.opaque_gpu)},{"post",timing(d.post_gpu)},{"total",timing(d.total_gpu)}}}};
+    if(d.gpu_visibility_requested) {
+        const auto& draw=d.last_draws;
+        const auto* reason=draw.gpu_visibility_candidates ? "active" :
+            !d.culling ? "culling_disabled" : !d.draw_instancing ? "instancing_disabled" :
+            !d.gpu_visibility_supported ? "device_features_unavailable" :
+            draw.objects>render_schedule::visibility_limit ? "scene_budget_exceeded" : "no_candidates";
+        result["gpu_visibility"]={{"supported",d.gpu_visibility_supported},
+            {"active",draw.gpu_visibility_candidates!=0},{"reason",reason},
+            {"candidates",draw.gpu_visibility_candidates},{"visible",draw.gpu_visibility_visible},
+            {"indirect_batches",draw.gpu_visibility_batches},{"slot_bytes",draw.gpu_visibility_bytes}};
+    }
     if(reconstruction.composition_mask_bytes)
         result["reconstruction"]["composition_mask_bytes"]=reconstruction.composition_mask_bytes;
     if(reconstruction.active && d.last_draws.sprite_instances)

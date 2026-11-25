@@ -49,6 +49,7 @@
 #include "poima/particle_sprite_temporal_ps.hpp"
 #include "render_sprite_targets.hpp"
 #include "render_light_clusters.hpp"
+#include "render_gpu_visibility.hpp"
 #include "render_scene_assets.hpp"
 #include "render_sky.hpp"
 #include "render_scene_draw.hpp"
@@ -223,6 +224,7 @@ struct Context {
         std::array<render_shadows::ViewWork,max_shadow_views> shadow_work;
         std::uint32_t shadow_profile_views=0;
         render_vulkan::BarrierTrace barriers;
+        render_gpu_visibility::Slot visibility;
         LightAssignmentDiagnostics lights;
         std::vector<std::string> skin_ids;
         profiling::DeferredContext profile;
@@ -370,6 +372,10 @@ struct Context {
     nvrhi::BindingLayoutHandle binding_layout;
     nvrhi::BindingSetHandle bindings;
     std::vector<DrawItem> draws;
+    render_gpu_visibility::Pass gpu_visibility;
+    std::vector<render_gpu_visibility::Candidate> visibility_candidates;
+    Frustum visibility_frustum{};
+    std::uint32_t max_indirect_draws=0;
     std::vector<render_batches::Batch> camera_batch_plan,viewmodel_batch_plan;
     std::vector<std::vector<render_batches::Batch>> shadow_batch_plans;
     FrameConstants frame_constants{};
@@ -417,6 +423,7 @@ struct Context {
         editor_ui.release_gpu();
 #endif
         skinning.reset();skin_readback=nullptr;
+        gpu_visibility={};
         shadows.reset();
         occlusion.reset();
         deferred_lighting.release_gpu();material_base=nullptr;material_surface=nullptr;material_correspondence=nullptr;
@@ -453,6 +460,7 @@ struct Context {
         for(auto& slot:slots) {
             slot.completion=nullptr;slot.cluster_readback=nullptr;slot.skin_readback=nullptr;
             slot.exposure_readback=nullptr;
+            slot.visibility={};
             slot.streamed_vertices=nullptr;slot.streamed_indices=nullptr;
             slot.surface_mark_binding=nullptr;slot.surface_marks=nullptr;slot.surface_mark_masks=nullptr;
             slot.sprite_instances=nullptr;slot.sprite_depth=nullptr;slot.sprite_bindings.clear();
@@ -482,6 +490,7 @@ struct Context {
         if(source && source->ui)validate_ui_frame(*source->ui);
         scene = source;capture_exclusive=options.capture_exclusive;player_context=player;
         deferred=options.deferred;diagnostics.deferred=deferred;diagnostics.draw_instancing=options.draw_instancing;
+        diagnostics.gpu_visibility_requested=options.gpu_visibility;
         shadow_filter_override=options.shadow_filter;
         shadow_filter=shadow_filter_override.value_or(source ? source->lighting.environment.shadow_filter : ShadowFilter::pcf3_point);
         require(shadow_filter==ShadowFilter::pcf3_point || shadow_filter==ShadowFilter::pcf3_fractional || shadow_filter==ShadowFilter::pcss_directional,"Invalid shadow filter.");
@@ -646,6 +655,15 @@ struct Context {
         }
         swapchain.configure_present_fences(maintenance1,diagnostics.frame_execution);
         vk::PhysicalDeviceFeatures enabled_features;
+        if(options.gpu_visibility) {
+            const auto supported=physical.getFeatures(dispatch);
+            if(supported.multiDrawIndirect && supported.drawIndirectFirstInstance) {
+                max_indirect_draws=physical.getProperties(dispatch).limits.maxDrawIndirectCount;
+                diagnostics.gpu_visibility_supported=max_indirect_draws!=0;
+                enabled_features.multiDrawIndirect=diagnostics.gpu_visibility_supported;
+                enabled_features.drawIndirectFirstInstance=diagnostics.gpu_visibility_supported;
+            }
+        }
         if(deferred) {
             require(physical.getFeatures(dispatch).shaderStorageImageExtendedFormats,"Deferred lighting requires storage image extended formats.");
             enabled_features.shaderStorageImageExtendedFormats=true;
@@ -913,7 +931,7 @@ struct Context {
         // Skin write/history buffers are selected by prepare_submission_history.
         // Plan only after that boundary, from the exact handles this submission binds.
         camera_batch_plan.clear();viewmodel_batch_plan.clear();shadow_batch_plans.clear();
-        pending_draws.camera_batches=0;pending_draws.shadow_batches=0;
+        pending_draws.camera_batches=0;pending_draws.shadow_batches=0;pending_draws.gpu_visibility_batches=0;
         if(pending_viewmodel)pending_viewmodel->draws.camera_batches=0;
         if(!scene)return;
         require(draws.size()<=std::numeric_limits<std::uint32_t>::max() && viewmodel_draws.size()<=std::numeric_limits<std::uint32_t>::max(),"Draw batch candidate count exceeds uint32.");
@@ -927,8 +945,28 @@ struct Context {
         // Pipeline values are exact local selectors of the two immutable pipeline
         // handles in each pass, never truncated pointers or hashed identities.
         std::vector<render_batches::Candidate> candidates;candidates.reserve(draws.size());
-        for(const auto& draw:draws)candidates.push_back({draw.object_index,scene_visible && draw.camera_visible,key(draw,draw.bindings.Get(),scene_products_enabled,draw.cull ? 1u : 0u)});
+        for(const auto& draw:draws) {
+            const auto indirect=draw.visibility_candidate!=render_gpu_visibility::no_candidate;
+            const auto selector=(draw.cull ? 1u : 0u) | (indirect ? 2u : 0u);
+            candidates.push_back({draw.object_index,scene_visible && draw.camera_visible,
+                key(draw,draw.bindings.Get(),scene_products_enabled,selector)});
+        }
         camera_batch_plan=render_batches::plan(candidates,diagnostics.draw_instancing);
+        if(scene_visible && !visibility_candidates.empty()) {
+            std::vector<render_batches::Batch> bounded;
+            bounded.reserve(camera_batch_plan.size());
+            for(auto batch:camera_batch_plan) {
+                if(draws.at(batch.first).visibility_candidate!=render_gpu_visibility::no_candidate) {
+                    while(batch.count>max_indirect_draws) {
+                        bounded.push_back({batch.first,max_indirect_draws});
+                        batch.first+=max_indirect_draws;
+                        batch.count-=max_indirect_draws;
+                    }
+                }
+                bounded.push_back(batch);
+            }
+            camera_batch_plan.swap(bounded);
+        }
         if (!shadow_plan.empty()) {
             std::vector<render_shadow_batches::Caster> casters;
             casters.reserve(draws.size());
@@ -1871,6 +1909,10 @@ struct Context {
         std::array<float,16> culling_projection;std::copy_n(frame_constants.view_projection,16,culling_projection.begin());
         if(reconstruction_mode!=ReconstructionMode::none)for(std::size_t k=0;k<4;++k) {culling_projection[k*4]/=1+2.0f/static_cast<float>(render_extent.width);culling_projection[k*4+1]/=1+2.0f/static_cast<float>(render_extent.height);}
         const auto camera_frustum=frustum(culling_projection.data());
+        visibility_candidates.clear();
+        visibility_frustum=camera_frustum;
+        const bool gpu_culling=diagnostics.gpu_visibility_supported && diagnostics.culling &&
+            diagnostics.draw_instancing && scene_visible && scene->world_object_count()<=render_gpu_visibility::max_candidates;
         std::vector<Frustum> shadow_frusta;
         std::vector<render_shadow_bounds::Frustum> shadow_index_frusta;
         for (std::size_t i = 0; i < shadow_plan.size(); ++i) {
@@ -1985,9 +2027,18 @@ struct Context {
                 item.foliage=object.foliage_motion->deformation;
                 bounds=foliage_displaced_bounds(bounds,object.world,*object.foliage_motion);
             }
-            item.camera_visible=object.camera_visible && (!diagnostics.culling || intersects(bounds,camera_frustum));
-            if(item.camera_visible) { ++pending_draws.camera_draws;pending_draws.camera_triangles+=item.geometry.count/3; }
-            else if(object.camera_visible)++pending_draws.camera_culled;
+            constexpr auto max_indices=3*(UINT32_MAX/render_gpu_visibility::group_size);
+            if(gpu_culling && list==0 && object.camera_visible && !object.camera_draw && !item.skin &&
+                !item.stream_geometry && item.geometry.indices && item.geometry.count<=max_indices) {
+                item.visibility_candidate=static_cast<std::uint32_t>(visibility_candidates.size());
+                visibility_candidates.push_back(render_gpu_visibility::pack(bounds,item.geometry.count,item.object_index));
+                // Declare the candidate geometry; the GPU writes its visible instance count.
+                item.camera_visible=true;
+            } else {
+                item.camera_visible=object.camera_visible && (!diagnostics.culling || intersects(bounds,camera_frustum));
+                if(item.camera_visible) { ++pending_draws.camera_draws;pending_draws.camera_triangles+=item.geometry.count/3; }
+                else if(object.camera_visible)++pending_draws.camera_culled;
+            }
             const bool casts_shadows = list == 0 && object.cast_shadows &&
                 !(object.camera_draw && object.camera_draw->mode == CameraDrawMode::Viewmodel);
             if (casts_shadows) {
@@ -2029,8 +2080,10 @@ struct Context {
         if(diagnostics.profile_requested)timing_sample(diagnostics.prepare_cpu,elapsed_ms(started));
         profiling::counter("renderer.objects",pending_draws.objects);
         profiling::counter("renderer.surface_marks",surface_marks.size());
-        profiling::counter("renderer.camera_draws",pending_draws.camera_draws);
-        profiling::counter("renderer.camera_triangles",pending_draws.camera_triangles);
+        if(visibility_candidates.empty()) {
+            profiling::counter("renderer.camera_draws",pending_draws.camera_draws);
+            profiling::counter("renderer.camera_triangles",pending_draws.camera_triangles);
+        }
         profiling::counter("renderer.shadow_draws",pending_draws.shadow_draws);
         profiling::counter("renderer.shadow_triangles",pending_draws.shadow_triangles);
         const auto assets = scene_assets.statistics();
@@ -2341,6 +2394,19 @@ struct Context {
                     require(status==vk::Result::eSuccess,"GPU frame completion timed out; recreate the renderer session.");
                 }
                 if(slot.has_skin)render_skinning::validate_status(*checked.Get(),slot.skin_readback,slot.skin_ids);
+                if(slot.visibility.count) {
+                    const auto counts=render_gpu_visibility::collect(*checked.Get(),slot.visibility);
+                    slot.draws.gpu_visibility_candidates=slot.visibility.count;
+                    slot.draws.gpu_visibility_visible=counts.visible;
+                    slot.draws.gpu_visibility_bytes=slot.visibility.bytes();
+                    slot.draws.camera_draws+=counts.visible;
+                    slot.draws.camera_culled+=slot.visibility.count-counts.visible;
+                    slot.draws.camera_triangles+=counts.triangles;
+                    profiling::deferred_counter(slot.profile,"renderer.camera_draws",slot.draws.camera_draws);
+                    profiling::deferred_counter(slot.profile,"renderer.camera_triangles",slot.draws.camera_triangles);
+                    profiling::deferred_counter(slot.profile,"renderer.gpu_visibility.candidates",slot.visibility.count);
+                    profiling::deferred_counter(slot.profile,"renderer.gpu_visibility.visible",counts.visible);
+                }
                 render_light_clusters::collect_world(*checked.Get(), slot.cluster_readback.Get(), slot.lights, slot.profile);
                 collect_viewmodel_assignment(slot);
                 timestamps.collect(device,dispatch,retire_slot%diagnostics.frame_execution.limit,{
@@ -2416,6 +2482,7 @@ struct Context {
             if(desc.isVertexBuffer)r.supported|=rs::use_bit(rs::Use::vertex);
             if(desc.isIndexBuffer)r.supported|=rs::use_bit(rs::Use::index);
             if(desc.isConstantBuffer)r.supported|=rs::use_bit(rs::Use::constant);
+            if(desc.isDrawIndirectArgs)r.supported|=rs::use_bit(rs::Use::indirect);
             return insert(std::move(r));
         };
         auto texture=[&](nvrhi::ITexture* value,rs::Lifetime lifetime,bool initial_contents) {
@@ -2446,6 +2513,16 @@ struct Context {
 #endif
         f.color=f.output;
         if(scene) {
+            const auto& visibility=slots.at(settings.slot).visibility;
+            if(visibility.count) {
+                const auto bytes=visibility.groups*sizeof(render_gpu_visibility::GroupTotals);
+                const auto life=rs::Lifetime::slot;
+                f.visibility={visibility.count,
+                    buffer(visibility.candidates,life,false,visibility.count*sizeof(render_gpu_visibility::Candidate)),
+                    buffer(visibility.parameters,life,false,sizeof(render_gpu_visibility::Parameters)),
+                    buffer(visibility.arguments,life,false,visibility.count*render_gpu_visibility::argument_bytes),
+                    buffer(visibility.totals,life,false,bytes),buffer(visibility.readback,life,false,bytes)};
+            }
             if(settings.sky && sky_pass.atmosphere_enabled()) {
                 const bool density_ready=!sky_pass.atmosphere_density_dirty();
                 const bool view_ready=!sky_pass.atmosphere_view_dirty();
@@ -2680,6 +2757,15 @@ struct Context {
         }
         if(scene) {
             const auto& slot=slots.at(plan.settings.slot);
+            if(f.visibility.count) {
+                const auto& visibility=slot.visibility;
+                require(visibility.count==f.visibility.count,"GPU visibility candidate count differs from its slot.");
+                identity(f.visibility.candidates,visibility.candidates.Get());
+                identity(f.visibility.view,visibility.parameters.Get());
+                identity(f.visibility.arguments,visibility.arguments.Get());
+                identity(f.visibility.totals,visibility.totals.Get());
+                identity(f.visibility.readback,visibility.readback.Get());
+            }
             const auto& mark_bindings=world_surface_mark_binding(slot)->getDesc()->bindings;
             require(mark_bindings.size()==3 && mark_bindings[0].type==nvrhi::ResourceType::StructuredBuffer_SRV &&
                 mark_bindings[0].slot==0 && mark_bindings[1].type==nvrhi::ResourceType::Texture_SRV &&
@@ -2855,8 +2941,20 @@ struct Context {
                 if(scene_products_enabled)state.vertexBuffers[1].setBuffer(draw.previous_vertices).setOffset(draw.geometry.stream.prior_vertex_offset());
                 state.indexBuffer=draw.geometry.indices ? nvrhi::IndexBufferBinding(draw.geometry.indices,nvrhi::Format::R32_UINT,
                     static_cast<std::uint32_t>(draw.geometry.stream.index_offset)) : nvrhi::IndexBufferBinding();
-                commands->setGraphicsState(state);const DrawIndices indices{draw.object_index};commands->setPushConstants(&indices,sizeof(indices));
-                if(draw.geometry.indices)commands->drawIndexed(nvrhi::DrawArguments().setVertexCount(draw.geometry.count).setInstanceCount(batch.count).setStartInstanceLocation(0));
+                const auto first=draw.visibility_candidate;
+                const bool indirect=first!=render_gpu_visibility::no_candidate;
+                state.indirectParams=indirect ? slot.visibility.arguments.Get() : nullptr;
+                commands->setGraphicsState(state);
+                const DrawIndices indices{indirect ? 0u : draw.object_index};
+                commands->setPushConstants(&indices,sizeof(indices));
+                if(indirect) {
+                    require(first<slot.visibility.count && batch.count<=slot.visibility.count-first &&
+                        batch.count<=max_indirect_draws &&
+                        draws.at(batch.first+batch.count-1).visibility_candidate==first+batch.count-1,
+                        "GPU visibility batch does not own its indirect argument range.");
+                    commands->drawIndexedIndirect(first*render_gpu_visibility::argument_bytes,batch.count);
+                    ++pending_draws.gpu_visibility_batches;
+                } else if(draw.geometry.indices)commands->drawIndexed(nvrhi::DrawArguments().setVertexCount(draw.geometry.count).setInstanceCount(batch.count).setStartInstanceLocation(0));
                 else commands->draw(nvrhi::DrawArguments().setVertexCount(draw.geometry.count).setInstanceCount(batch.count).setStartInstanceLocation(0));
                 ++pending_draws.camera_batches;
             }
@@ -2896,6 +2994,8 @@ struct Context {
         prepare_surface_mark_frame(slot);prepare_submission_history();prepare_stream_geometry(slot);
         prepare_exposure_frame(slot,capture_frame,frame_started);
         prepare_draw_batches();prepare_temporal_submission();
+        gpu_visibility.prepare(*checked.Get(),slot.visibility,
+            scene && scene_visible ? static_cast<std::uint32_t>(visibility_candidates.size()) : 0u);
         if(ao_enabled)occlusion.prepare(*checked.Get(),{frame_buffer.Get(),depth.Get(),material_surface.Get(),material_correspondence.Get()});
         if(deferred)deferred_lighting.prepare(*checked.Get(),{
             .frame=frame_buffer.Get(),.material_base=material_base.Get(),.material_surface=material_surface.Get(),
@@ -2992,6 +3092,9 @@ struct Context {
                     if(ao_enabled)occlusion.upload(*commands.Get(),planned_buffer(resources.ao_constants));
                 }
                 timestamp(1);break;
+            case render_schedule::PassId::gpu_visibility:
+                gpu_visibility.record(*commands.Get(),slot.visibility,visibility_candidates,visibility_frustum);
+                break;
             case render_schedule::PassId::light_assignment:
                 if(scene) {
                     if(!gpu_lights.empty())commands->writeBuffer(planned_buffer(resources.lights),gpu_lights.data(),gpu_lights.size()*sizeof(GpuLight));

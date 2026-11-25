@@ -1,8 +1,18 @@
 # Implementation status
 
-Updated 2026-11-25 for **0.0.411**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-25 for **0.0.412**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.412 adds opt-in [GPU camera visibility](GPU_VISIBILITY.md) for
+rigid indexed world meshes. In the 512-plant fixture, a mixed view kept
+257 visible objects and issued five camera draw calls instead of 257.
+AMD and NVIDIA passed 16 byte-identical CPU/GPU image comparisons across
+forward 4× MSAA, deferred color, and FSR Native AA. The relocated export
+matched the direct capture and the observed player and camera state at
+tick eight. The NVIDIA default-path profiler trace and eight images
+matched 0.0.411. Ubuntu passed 14 suites.
+[Results](evidence/m2-gpu-visibility-412.json)
 
 Version 0.0.411 batches [image and buffer transitions](PROFILER.md#vulkan-barriers)
 within each Vulkan resource-state commit. All 44 traced AMD and NVIDIA

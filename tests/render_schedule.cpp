@@ -1945,4 +1945,44 @@ void atmosphere_contracts() {
 }
 }
 
-int main(){try{matrix();faults();products();motion_contracts();reconstruction_contracts();deferred_contracts();deferred_color_contracts();viewmodel_contracts();ambient_occlusion_contracts();masked_shadow_contracts();environment_contracts();bloom_contracts();post_effect_contracts();output_grade_contracts();streamed_geometry_contracts();mutable_geometry_contracts();particle_sprite_contracts();surface_mark_contracts();screen_reflection_contracts();height_fog_contracts();composed_reconstruction_contracts();reconstructed_sprite_contracts();spatial_aa_contracts();auto_exposure_contracts();atmosphere_contracts();std::cout<<"Production render schedule: "<<accepted<<" valid variants, "<<rejected<<" rejected contract mutations.\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}
+namespace {
+void visibility_contracts() {
+    Fixture fixture(rich());
+    auto& frame=fixture.f;
+    constexpr auto candidates=visibility_group_size+1;
+    frame.camera_draws.resize(candidates,frame.camera_draws.front());
+    auto make_buffer=[&](auto size) {
+        const auto id=fixture.add(Kind::buffer,Lifetime::slot);
+        frame.resources[id].bytes=frame.resources[id].allocation_bytes=size;
+        return id;
+    };
+    frame.visibility={candidates,make_buffer(candidates*visibility_candidate_bytes),
+        make_buffer(visibility_view_bytes),make_buffer(candidates*visibility_argument_bytes),
+        make_buffer(2*visibility_tally_bytes),make_buffer(2*visibility_tally_bytes)};
+    const auto v=frame.visibility;
+    auto plan=fixture.plan();
+    plan.validate();
+    ++accepted;
+    const auto bad=[&](const char* label,auto mutate) {
+        auto copy=plan;
+        mutate(copy);
+        rejects(label,[&]{copy.validate();});
+    };
+    bad("visibility arguments read before dispatch",[](auto& p) {
+        std::swap(pass(p,PassId::gpu_visibility),pass(p,PassId::opaque));
+    });
+    bad("visibility arguments without a dispatch",[](auto& p) {
+        std::erase_if(p.passes,[](const auto& stage){return stage.id==PassId::gpu_visibility;});
+    });
+    bad("visibility arguments read from another slot",[&](auto& p){++p.frame.resources[v.arguments].owner;});
+    bad("visibility count exceeds draw list",[](auto& p){++p.frame.visibility.count;});
+    bad("visibility readback aliases totals",[&](auto& p){p.frame.visibility.readback=v.totals;});
+    bad("visibility indirect arguments truncated",[&](auto& p){--p.frame.resources[v.arguments].bytes;});
+    bad("visibility indirect usage absent",[&](auto& p){p.frame.resources[v.arguments].supported&=~use_bit(Use::indirect);});
+    bad("visibility opaque consumer omitted",[&](auto& p){erase_access(p,PassId::opaque,v.arguments,Use::indirect);});
+    bad("visibility opaque consumer duplicated",[&](auto& p){pass(p,PassId::opaque).accesses.push_back({v.arguments,Use::indirect});});
+    bad("visibility readback used by opaque",[&](auto& p){pass(p,PassId::opaque).accesses.push_back({v.readback,Use::storage_read});});
+}
+}
+
+int main(){try{matrix();faults();products();motion_contracts();reconstruction_contracts();deferred_contracts();deferred_color_contracts();viewmodel_contracts();ambient_occlusion_contracts();masked_shadow_contracts();environment_contracts();bloom_contracts();post_effect_contracts();output_grade_contracts();streamed_geometry_contracts();mutable_geometry_contracts();particle_sprite_contracts();surface_mark_contracts();screen_reflection_contracts();height_fog_contracts();composed_reconstruction_contracts();reconstructed_sprite_contracts();spatial_aa_contracts();auto_exposure_contracts();atmosphere_contracts();visibility_contracts();std::cout<<"Production render schedule: "<<accepted<<" valid variants, "<<rejected<<" rejected contract mutations.\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}

@@ -132,6 +132,10 @@ RenderOptions decode_render_options(const Json& params, const fs::path& world_pa
     require(options.samples == 1 || options.samples == 4, "Capture samples must be 1 or 4.");
     for(const auto* key:{"culling","draw_instancing","clustered_lighting","profile"})if(params.contains(key))require(params.at(key).is_boolean(),"Culling/draw_instancing/clustered_lighting/profile options must be boolean.");
     options.culling=params.value("culling",true);options.draw_instancing=params.value("draw_instancing",true);options.clustered_lighting=params.value("clustered_lighting",true);options.profile=params.value("profile",false);
+    if(params.contains("gpu_visibility")) {
+        require(params.at("gpu_visibility").is_boolean(),"gpu_visibility must be boolean.");
+        options.gpu_visibility=params.at("gpu_visibility").get<bool>();
+    }
 #if !POIMA_FSR3_UPSCALER
     require(options.reconstruction==ReconstructionMode::none,"FSR3 reconstruction is unavailable in this build.",-32003);
 #endif

@@ -20,8 +20,16 @@ constexpr std::uint64_t pass_order(PassId id) {
     if(id==PassId::cloud_noise)return ordinal(PassId::scene_clear)+3;
     if(id==PassId::cloud_view)return ordinal(PassId::scene_clear)+4;
     if(id==PassId::cloud_shadow)return ordinal(PassId::scene_clear)+5;
+    if(id==PassId::gpu_visibility)return ordinal(PassId::skinning)+1;
     if(id==PassId::aerial_perspective)return ordinal(PassId::height_fog)-1;
     return ordinal(id);
+}
+
+std::array<Access,8> visibility_accesses(const VisibilityBuffers& v) {
+    return {{{v.candidates,Use::upload,true},{v.view,Use::upload,true},
+        {v.candidates,Use::storage_read,false},{v.view,Use::constant,false},
+        {v.arguments,Use::storage_write,true},{v.totals,Use::storage_write,true},
+        {v.totals,Use::copy_source,false},{v.readback,Use::copy_destination,true}}};
 }
 }
 
@@ -34,6 +42,28 @@ void Schedule::validate(bool before_acquire) const {
     const bool reconstruct_composed=settings.reconstruction && (settings.screen_reflections || settings.height_fog);
     const bool reconstruct_sprites=settings.reconstruction && settings.particle_sprites;
     const bool atmospheric_sky=frame.atmosphere_density!=none || frame.atmosphere_view!=none;
+    const auto& visibility=frame.visibility;
+    const std::array visibility_roles{visibility.candidates,visibility.view,visibility.arguments,visibility.totals,visibility.readback};
+    if (visibility.count) {
+        if (!settings.scene || frame.camera_draws.empty() || visibility.count>visibility_limit ||
+            visibility.count>frame.camera_draws.size())fail("invalid GPU visibility candidate count");
+        const auto groups=(visibility.count+visibility_group_size-1)/visibility_group_size;
+        constexpr auto max_groups=visibility_limit/visibility_group_size;
+        const std::array used{visibility.count*visibility_candidate_bytes,visibility_view_bytes,
+            visibility.count*visibility_argument_bytes,groups*visibility_tally_bytes,groups*visibility_tally_bytes};
+        constexpr std::array limits{visibility_limit*visibility_candidate_bytes,visibility_view_bytes,
+            visibility_limit*visibility_argument_bytes,max_groups*visibility_tally_bytes,max_groups*visibility_tally_bytes};
+        for(std::size_t i=0;i<visibility_roles.size();++i) {
+            const auto id=visibility_roles[i];
+            required(id);
+            const auto& r=resource(id);
+            if(r.kind!=Kind::buffer || r.lifetime!=Lifetime::slot || r.region!=Region::prefix ||
+                r.initialized || r.bytes!=used[i] || r.allocation_bytes>limits[i] ||
+                std::count(visibility_roles.begin(),visibility_roles.end(),id)!=1)
+                fail("invalid GPU visibility buffer");
+        }
+    } else if(std::any_of(visibility_roles.begin(),visibility_roles.end(),[](auto id){return id!=none;}))
+        fail("GPU visibility buffers without candidates");
     const bool stream=frame.streamed_vertices!=none || frame.streamed_indices!=none;
     if(stream) {
         if(!settings.scene || frame.streamed_vertices==frame.streamed_indices)fail("invalid streamed geometry roles");
@@ -576,7 +606,7 @@ void Schedule::validate(bool before_acquire) const {
     std::uint64_t previous=0;bool first=true;
     bool surface_marks_uploaded=false,grade_applied=false,spatial_aa_applied=false;
     bool exposure_prepared=false,exposure_applied=false,exposure_copied=false;
-    bool atmosphere_drawn=false,aerial_baked=false;
+    bool atmosphere_drawn=false,aerial_baked=false,visibility_prepared=false;
     unsigned bloom_stage=0;
     for(const auto& pass:passes) {
         const auto order=pass_order(pass.id);
@@ -586,6 +616,13 @@ void Schedule::validate(bool before_acquire) const {
         auto matches=[](const Access& access,ResourceId id,Use use,bool initialize) {
             return access.resource==id && access.use==use && access.initialize==initialize;
         };
+        if(pass.id==PassId::gpu_visibility) {
+            const auto expected=visibility_accesses(visibility);
+            if(!visibility.count || !std::equal(pass.accesses.begin(),pass.accesses.end(),expected.begin(),expected.end(),
+                [&](const Access& a,const Access& b){return matches(a,b.resource,b.use,b.initialize);}))
+                fail("invalid GPU visibility pass");
+            visibility_prepared=true;
+        }
         if(pass.id==PassId::atmosphere_density) {
             if(!density_dirty || pass.accesses.size()!=1 ||
                 !matches(pass.accesses[0],frame.atmosphere_density,Use::image_write,true))
@@ -649,6 +686,9 @@ void Schedule::validate(bool before_acquire) const {
         if(pass.id==PassId::shadows)for(const auto& draw:frame.shadow_draws)
             for(auto texture:draw.textures)if(!has(texture,Use::sampled))fail("missing masked shadow material input");
         if(pass.id==PassId::opaque) {
+            if(visibility.count && (!visibility_prepared || std::count_if(pass.accesses.begin(),pass.accesses.end(),
+                [&](const Access& a){return matches(a,visibility.arguments,Use::indirect,false);})!=1))
+                fail("opaque geometry is missing GPU visibility arguments");
             if(settings.particle_sprites && (!has(frame.hdr,Use::color) || !has(frame.depth,Use::depth)))
                 fail("particle sprites require opaque HDR and world depth outputs");
             if(settings.height_fog && (!has(frame.hdr,Use::color) || !has(frame.depth,Use::depth)))
@@ -1038,7 +1078,14 @@ void Schedule::validate(bool before_acquire) const {
                 if(!produced && !consumed)fail("cloud shadow map used outside its bake or direct lighting");
             }
             if(!(r.supported&use_bit(a.use)))fail("unsupported resource usage");
-            const bool buffer_use=a.use==Use::upload || a.use==Use::storage_read || a.use==Use::storage_write || a.use==Use::vertex || a.use==Use::index || a.use==Use::constant;
+            if(a.use==Use::indirect && (!visibility.count || pass.id!=PassId::opaque || a.resource!=visibility.arguments || a.initialize))
+                fail("indirect read outside world opaque GPU visibility");
+            const bool visibility_role=visibility.count &&
+                std::find(visibility_roles.begin(),visibility_roles.end(),a.resource)!=visibility_roles.end();
+            if(visibility_role &&
+                pass.id!=PassId::gpu_visibility && a.use!=Use::indirect)
+                fail("GPU visibility buffer used outside its pass");
+            const bool buffer_use=a.use==Use::upload || a.use==Use::storage_read || a.use==Use::storage_write || a.use==Use::vertex || a.use==Use::index || a.use==Use::constant || a.use==Use::indirect;
             const bool texture_use=a.use==Use::image_read_write || a.use==Use::image_write || a.use==Use::sampled || a.use==Use::color || a.use==Use::color_overwrite || a.use==Use::depth || a.use==Use::clear_color || a.use==Use::clear_depth || a.use==Use::resolve_source || a.use==Use::resolve_destination || a.use==Use::present;
             if((buffer_use && r.kind!=Kind::buffer) || (texture_use && r.kind!=Kind::texture))fail("resource kind does not support access");
             const bool write=a.use==Use::image_read_write || a.use==Use::image_write || a.use==Use::upload || a.use==Use::storage_write || a.use==Use::color_overwrite || a.use==Use::clear_color || a.use==Use::clear_depth || a.use==Use::copy_destination || a.use==Use::resolve_destination;
@@ -1061,7 +1108,9 @@ void Schedule::validate(bool before_acquire) const {
                 if(settings.capture && !captured)fail("presentation precedes requested capture");
                 exported=true;
             }
-            if(r.lifetime==Lifetime::slot && !streamed && !sprite_instances && !mark_instances && a.use!=Use::copy_destination)fail("slot readback used by a GPU consumer");
+            const bool visibility_work=visibility_role && a.resource!=visibility.readback;
+            if(r.lifetime==Lifetime::slot && !streamed && !sprite_instances && !mark_instances &&
+                !visibility_work && a.use!=Use::copy_destination)fail("slot readback used by a GPU consumer");
             if(r.lifetime==Lifetime::capture && ((pass.id!=PassId::capture && pass.id!=PassId::product_probes) || a.use!=Use::copy_destination))fail("capture storage used outside capture copy");
         }
         if(pass.id==PassId::resolve || pass.id==PassId::capture) {
@@ -1075,6 +1124,7 @@ void Schedule::validate(bool before_acquire) const {
         }
     }
     if(settings.ambient_occlusion && (!ao_generated || !ao_filtered))fail("missing ambient occlusion passes");
+    if(visibility.count && (!visibility_prepared || !world_opaque))fail("missing GPU visibility producer or draw");
     if(settings.deferred && !deferred_lit)fail("missing deferred lighting pass");
     if(settings.screen_reflections && (!screen_reflected || !world_effects_output))fail("missing screen reflection pass or composed output");
     if(settings.height_fog && (!world_fogged || !world_effects_output))fail("missing height fog pass or composed output");
@@ -1125,6 +1175,10 @@ Schedule build(FrameResources frame,Settings settings) {
         for(const auto& s:f.skins) {add(skin,s.palette,Use::upload,true);add(skin,s.source,Use::storage_read);add(skin,s.influences,Use::storage_read);add(skin,s.palette,Use::storage_read);add(skin,s.output,Use::storage_write,true);}
         add(skin,f.skin_errors,Use::copy_source);add(skin,f.skin_readback,Use::copy_destination,true);
     }
+    if(f.visibility.count) {
+        const auto accesses=visibility_accesses(f.visibility);
+        pass(PassId::gpu_visibility).accesses.assign(accesses.begin(),accesses.end());
+    }
     auto& cluster=pass(PassId::light_assignment);
     if(settings.scene)add(cluster,f.lights,Use::upload,true);
     if(settings.clustered) {
@@ -1163,6 +1217,7 @@ Schedule build(FrameResources frame,Settings settings) {
         if(settings.volumetric_clouds)add(sky,f.cloud_view,Use::sampled);
     }
     auto& opaque=pass(PassId::opaque);add(opaque,f.color,Use::color);add(opaque,f.depth,Use::depth);if(settings.products && !settings.deferred) {add(opaque,f.normal,Use::color);add(opaque,f.motion,Use::color);add(opaque,f.motion_valid,Use::color);}
+    add(opaque,f.visibility.arguments,Use::indirect);
     add(opaque,f.surface_marks,Use::storage_read);
     add(opaque,f.surface_mark_masks,Use::sampled);
     if(settings.scene) {add(opaque,f.frame,Use::constant);add(opaque,f.objects,Use::storage_read);if(!settings.deferred) {add(opaque,f.lights,Use::storage_read);add(opaque,f.shadow,Use::sampled);for(auto id:{f.ibl_diffuse,f.ibl_specular,f.ibl_brdf})add(opaque,id,Use::sampled);}geometry(opaque,f.camera_draws,true);if(settings.clustered && !settings.deferred) {add(opaque,f.counts,Use::storage_read);add(opaque,f.indices,Use::storage_read);}}

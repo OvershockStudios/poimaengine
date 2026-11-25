@@ -1,9 +1,9 @@
 # Ordered draw instancing
 
 Compatible adjacent objects can share one Vulkan geometry draw command while
-retaining independent transforms and material values. This is a CPU-planned
-submission optimization. It does not implement GPU-resident scene management,
-indirect drawing, occlusion culling, streaming or geometry LOD.
+retaining independent transforms and material values. This guide covers
+CPU-planned submission. [GPU camera visibility](GPU_VISIBILITY.md) uses the
+same compatibility rules for an optional indexed indirect path.
 
 ## Controls and observations
 

@@ -137,6 +137,7 @@ struct RenderOptions {
     std::optional<ShadowFilter> shadow_filter; // Omission inherits authored environment; legacy scenes resolve to point PCF.
     std::uint32_t viewmodel_samples = 1; // Independent foreground samples: 1, 2, 4 or 8.
     bool fxaa = false; // Single-sample color rendering without reconstruction.
+    bool gpu_visibility = false; // Optional indirect world-camera draws on supported Vulkan adapters.
 };
 
 struct TimingSummary { std::uint64_t samples=0;double total_ms=0,min_ms=0,max_ms=0,last_ms=0; };
@@ -157,6 +158,7 @@ struct DrawCounts {
     std::uint64_t streamed_draws=0,streamed_vertex_bytes=0,streamed_index_bytes=0;
     std::uint64_t sprite_instances=0,sprite_batches=0;
     std::shared_ptr<const MeshLodDiagnostics> mesh_lod{};
+    std::uint64_t gpu_visibility_candidates=0,gpu_visibility_visible=0,gpu_visibility_batches=0,gpu_visibility_bytes=0;
 };
 struct LightAssignmentDiagnostics {
     bool requested=true,active=false,statistics_available=false;
@@ -327,6 +329,7 @@ struct RenderDiagnostics {
     std::optional<ViewmodelDiagnostics> viewmodel;
     std::uint64_t fxaa_buffer_bytes=0;
     std::optional<AutoExposureDiagnostics> auto_exposure;
+    bool gpu_visibility_requested=false,gpu_visibility_supported=false;
 };
 
 struct RenderReport {
