@@ -26,6 +26,14 @@ public static class WeatherClock
         if (milliseconds is < 0 or > MaximumTimeMilliseconds)
             throw new ArgumentOutOfRangeException(argument);
     }
+
+    // The northern spring equinox is at local noon on day 80.
+    internal static double AnnualPhase(GameDate date)
+    {
+        double fractionOfDay = date.MillisecondsOfDay / (double)MillisecondsPerDay;
+        double phase = (date.DayOfYear - 80.5 + fractionOfDay) / DaysPerYear;
+        return phase < 0 ? phase + 1 : phase;
+    }
 }
 
 /// <summary>Unit direction from an observer toward the sun in Poima world axes. North is −Z and east is +X.</summary>
@@ -50,9 +58,7 @@ public static class SolarClock
 
         GameDate date = WeatherClock.DateAt(worldMilliseconds);
         double fractionOfDay = date.MillisecondsOfDay / (double)WeatherClock.MillisecondsPerDay;
-        // The northern spring equinox is at local noon on day 80.
-        double seasonFraction = (date.DayOfYear - 80.5 + fractionOfDay) / WeatherClock.DaysPerYear;
-        if (seasonFraction < 0) seasonFraction += 1;
+        double seasonFraction = WeatherClock.AnnualPhase(date);
         Season season = (Season)(((int)(seasonFraction * 4) + (latitudeDegrees < 0 ? 2 : 0)) % 4);
 
         const double radiansPerDegree = Math.PI / 180;

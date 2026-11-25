@@ -354,6 +354,11 @@ extends one fitted edge with shared water optics and listener depth.
 [Rough sky reflections](SHALLOW_WATER.md#soften-water-reflections) retain
 unresolved wave-slope energy in the filtered reflection.
 
+[Seasonal climate profiles](WEATHER_CYCLE.md#author-a-seasonal-climate) sample
+air and wet-bulb temperatures on the solar calendar and split scheduled
+precipitation while conserving its water equivalent. Persistent snowpack,
+meltwater and seasonal game rules remain part of this track.
+
 Storms, lightning, precipitation, wind and seasons share world state with water,
 audio and surfaces. Longer-term effects must reach crops, resources and travel;
 accelerated time must preserve accumulated effects.

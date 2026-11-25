@@ -1,0 +1,105 @@
+{
+  "checkpoint": "0.0.425",
+  "baseline_commit": "5ed002f6beb57a1750ab4a66ab00d203314c8eb8",
+  "package": "Poima.Weather",
+  "source_sha256": {
+    "packages/weather/SeasonalClimate.cs": "d4936a23cb0823d3e7ae7fb959791814c5ab75d94059bf0d7fe2a90522270664",
+    "packages/weather/SolarClock.cs": "ed8b451b7d441a729f6644a4b4e2646b7336e1728099c1f50e7ea03edfc6a9b6",
+    "tests/WeatherCycle/Program.cs": "b7c4b30602cb8daa77460d4c76aa55329f00845e0c5a04b0a8eb58eea1e2db39"
+  },
+  "contract": {
+    "suite": "tests/WeatherCycle/Poima.WeatherCycle.Tests.csproj",
+    "sdk": "10.0.404",
+    "linux_coreclr_runtime": "10.0.15",
+    "windows_coreclr_runtime": "10.0.15",
+    "coreclr_assembly_sha256": "42d44a06da1f306a0bca29a58cede1fe1abfe3c30d82d9c40bc250a03af78297",
+    "linux_native_aot_runtime_pack": "10.0.12",
+    "linux_native_aot_executable_sha256": "d569bc2404e0983c8b0a22a6c8e5446b0c0da456119cd9d535d328152dc0b4ba",
+    "passed": [
+      "Linux CoreCLR",
+      "Windows CoreCLR",
+      "Linux Native AOT"
+    ],
+    "coverage": [
+      "unchanged solar and forecast fixtures",
+      "northern and southern season midpoints",
+      "year and equinox continuity",
+      "daily temperature cycle",
+      "full rain and full snow boundaries",
+      "exact rounding of mixed precipitation",
+      "64 conserved completed quanta across spring equinox",
+      "cold reconstruction in reverse query order",
+      "time and profile validation"
+    ]
+  },
+  "authored_scene_observation": {
+    "runtime": "Windows Vulkan 0.0.424 with the new package compiled into a managed game module",
+    "runtime_sha256": "d24fabff6deb22a50fe54f5088eb5e25e7124f407385ae37a683050dfb3e2faa",
+    "authored_foliage_and_ground": true,
+    "shared_camera": [
+      0.9994801118195299,
+      -1.0842021724855044e-19,
+      -0.03224137213612488,
+      0.0,
+      0.0016391963165016872,
+      0.9987067400475024,
+      0.05081496255165839,
+      0.0,
+      0.03219967566072765,
+      -0.05084139439168124,
+      0.9981875242175958,
+      0.0,
+      0.09746028507558924,
+      1.9120050543387352,
+      6.05,
+      1.0
+    ],
+    "shared_terrain_support_m": [
+      0.09746028507558924,
+      0.2620054358084618,
+      6.05
+    ],
+    "scene_samples": [
+      {
+        "season": "Spring",
+        "capture_sha256": "62d6dcf32bd3923f91421d8d1ea41a5f095b2469a7a41c8f02bdd510fa813eaa",
+        "clock_milliseconds": 11027988000,
+        "air_milli_celsius": 15119,
+        "wet_bulb_milli_celsius": 11117,
+        "liquid_nm": 2651,
+        "snow_water_equivalent_nm": 0,
+        "total_nm": 2651
+      },
+      {
+        "season": "Summer",
+        "capture_sha256": "eb2f866d261dfbc4b9209e0294413e83a67cde12c87b61b19af8c37d9ece2c5b",
+        "clock_milliseconds": 18115776000,
+        "air_milli_celsius": 26819,
+        "wet_bulb_milli_celsius": 21835,
+        "liquid_nm": 1610,
+        "snow_water_equivalent_nm": 0,
+        "total_nm": 1610
+      },
+      {
+        "season": "Autumn",
+        "capture_sha256": "bd5df1a449db4a9b8c1ae1cb8a29748dee1731d8138c1568cb14aadd0839d4f4",
+        "clock_milliseconds": 25366896000,
+        "air_milli_celsius": 12089,
+        "wet_bulb_milli_celsius": 8025,
+        "liquid_nm": 1752,
+        "snow_water_equivalent_nm": 0,
+        "total_nm": 1752
+      },
+      {
+        "season": "Winter",
+        "capture_sha256": "0d2b56152a5927ec1c3a6d31cdd6d8adaca60b13466b3ef91b9faa53ae3cf5c3",
+        "clock_milliseconds": 2036664000,
+        "air_milli_celsius": -2518,
+        "wet_bulb_milli_celsius": -5553,
+        "liquid_nm": 0,
+        "snow_water_equivalent_nm": 1152,
+        "total_nm": 1152
+      }
+    ]
+  }
+}

@@ -69,6 +69,45 @@ rounds its result once to an integer nanometre. Index zero spans [0, 1000)
 game milliseconds. The last complete index is 315,359,999,998. Feed the same
 sequence of quanta at different clock speeds to preserve the same dose history.
 
+## Author a seasonal climate
+
+Give `SeasonalClimate` the local latitude and four sets of daily mean air and
+wet-bulb temperatures in degrees Celsius. Each pair anchors the midpoint of
+its local season. Samples interpolate smoothly between the four anchors and
+across the year boundary. The southern calendar shifts by half a year.
+An optional daily amplitude adds a cycle with its peak at 15:00 local solar
+time and its minimum at 03:00. Input temperatures are finite and between
+−120 and 100 °C. Wet-bulb temperature must be at or below air temperature.
+
+```csharp
+var climate = new SeasonalClimate(latitudeDegrees: 46,
+    spring: new(12, 8), summer: new(24, 19),
+    autumn: new(9, 6), winter: new(-6, -8),
+    dailyAmplitudeCelsius: 3);
+SeasonalClimateSample local = climate.Sample(now);
+
+long completedQuantum = now / WeatherRainQuanta.MillisecondsPerQuantum - 1;
+if (completedQuantum >= 0)
+{
+    PrecipitationPhaseDepth depth = climate.Partition(schedule, completedQuantum);
+    // Feed depth.RainNanometers to rain and depth.SnowWaterEquivalentNanometers
+    // to the game's snowfall accounting for this same quantum.
+}
+```
+
+The default rain–snow transition spans −1 to 2 °C wet bulb. Authors can
+configure both endpoints. These are local game inputs with a smooth mixed
+phase, informed by research on how near-surface moisture changes the
+transition. [Tamang et al., wet-bulb temperature and snowfall](https://arxiv.org/abs/1905.07776)
+
+`Partition` samples the midpoint of a completed second. It splits the same
+integer water depth returned by `RainDepthNanometers`, rounds the snow portion
+once, and sends the remainder to rain. Zero input yields zero for both phases.
+Save the climate settings and next unapplied quantum. During fast-forward,
+process each complete quantum from the saved cursor through the new time.
+This preserves the exact depth under different update cadences. Snow depth,
+melting and crop or travel effects require their own state and response.
+
 ## Drive the sun and sky
 
 Give the world an enabled [procedural sky](LIGHTING.md#procedural-sky) linked to
@@ -163,8 +202,9 @@ dotnet run --project tests/WeatherCycle/Poima.WeatherCycle.Tests.csproj
 
 The checks cover year wrap, solar elevation and direction, both hemispheres
 and polar day and night. They also confirm seeded weather choices, smooth
-state, equivalent rainfall across partitioned intervals, and lightning replay
-with strict interval and buffer bounds.
+state, equivalent rainfall across partitioned intervals, lightning replay with
+strict bounds, seasonal interpolation across both hemispheres, and exact
+water-equivalent conservation through mixed rain and snow.
 
 The [solar lighting fixture](../tests/solar_lighting_contract.py) loads the
 same weather-driven game through CoreCLR or Native AOT. It checks the

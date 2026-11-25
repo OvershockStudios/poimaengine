@@ -158,4 +158,66 @@ Reject<ArgumentOutOfRangeException>(() => schedule.RainDepthNanometers(lastQuant
 Reject<ArgumentOutOfRangeException>(() => schedule.RainDepthNanometers(long.MaxValue));
 Reject<ArgumentNullException>(() => WeatherRainQuanta.RainDepthNanometers(null!, 0));
 
-Console.WriteLine("Weather clock verified calendar wrap, solar geometry, seeded transitions, rain accumulation, lightning replay and complete one-second rain quanta.");
+SeasonalTemperature[] normals = [new(12, 8), new(24, 19), new(9, 6), new(-6, -8)];
+var northClimate = new SeasonalClimate(46, normals[0], normals[1], normals[2], normals[3]);
+var southClimate = new SeasonalClimate(-46, normals[0], normals[1], normals[2], normals[3]);
+long equinox = At(80, 12);
+for (int phase = 0; phase < 4; ++phase)
+{
+    long midpoint = equinox + Year / 8 + phase * Year / 4;
+    SeasonalClimateSample north = northClimate.Sample(midpoint);
+    SeasonalClimateSample south = southClimate.Sample(midpoint);
+    Assert(north.Solar.Season == (Season)phase && north.Temperature == normals[phase],
+        "Northern seasonal midpoint failed to reach its authored normal.");
+    int southPhase = (phase + 2) % 4;
+    Assert(south.Solar.Season == (Season)southPhase && south.Temperature == normals[southPhase],
+        "Southern seasonal midpoint did not shift by half a year.");
+    SeasonalClimateSample nextYear = northClimate.Sample(midpoint + Year);
+    Assert(north.Temperature == nextYear.Temperature && north.SnowFraction == nextYear.SnowFraction,
+        "Seasonal climate did not repeat on the 365-day clock.");
+}
+Near(northClimate.Sample(equinox).Temperature.AirCelsius, 3);
+Near(northClimate.Sample(equinox).Temperature.WetBulbCelsius, 0);
+Near(northClimate.Sample(Year - 1).Temperature.AirCelsius,
+    northClimate.Sample(Year).Temperature.AirCelsius, 1e-6);
+Near(northClimate.Sample(equinox - 1).SnowFraction,
+    northClimate.Sample(equinox + 1).SnowFraction, 1e-6);
+
+SeasonalClimate Uniform(SeasonalTemperature temperature, double swing = 0) =>
+    new(0, temperature, temperature, temperature, temperature, dailyAmplitudeCelsius: swing);
+
+var daily = Uniform(new(10, 8), 3);
+Assert(daily.Sample(At(80, 15)).Temperature == new SeasonalTemperature(13, 11), "Afternoon peak differs.");
+Assert(daily.Sample(At(80, 3)).Temperature == new SeasonalTemperature(7, 5), "Overnight minimum differs.");
+Near(Uniform(new(2, -1)).Sample(0).SnowFraction, 1);
+Near(Uniform(new(3, 2)).Sample(0).SnowFraction, 0);
+Near(Uniform(new(3, .5)).Sample(0).SnowFraction, .5);
+Assert(Uniform(new(3, .5)).Partition(schedule, 132) == new PrecipitationPhaseDepth(968, 969),
+    "A half-quantum must round the snow once and keep the liquid remainder.");
+Assert(Uniform(new(-5, -6)).Partition(steadyStorm, lastQuantum) == new PrecipitationPhaseDepth(0, 5995),
+    "The final supported quantum must conserve snow water equivalent.");
+Assert(Uniform(new(26, 19)).Partition(steadyStorm, lastQuantum) == new PrecipitationPhaseDepth(5995, 0),
+    "A warm interval must keep the existing rain depth.");
+Assert(northClimate.Partition(clear, 0) == default, "Dry slots must stay dry.");
+
+var phaseQuanta = new Dictionary<long, PrecipitationPhaseDepth>();
+for (long quantum = equinox / 1000 - 32; quantum < equinox / 1000 + 32; ++quantum)
+{
+    PrecipitationPhaseDepth phase = northClimate.Partition(steadyStorm, quantum);
+    Assert(phase.TotalNanometers == steadyStorm.RainDepthNanometers(quantum), "A phase split lost precipitation.");
+    Assert(phase.RainNanometers > 0 && phase.SnowWaterEquivalentNanometers > 0, "Expected mixed precipitation.");
+    phaseQuanta.Add(quantum, phase);
+}
+var freshClimate = new SeasonalClimate(46, normals[0], normals[1], normals[2], normals[3]);
+foreach (var (quantum, phase) in phaseQuanta.Reverse())
+    Assert(freshClimate.Partition(steadyStorm, quantum) == phase, "Reopening a climate changed a completed quantum.");
+Reject<ArgumentOutOfRangeException>(() => northClimate.Partition(schedule, -1));
+Reject<ArgumentOutOfRangeException>(() => northClimate.Partition(schedule, lastQuantum + 1));
+Reject<ArgumentNullException>(() => northClimate.Partition(null!, 0));
+Reject<ArgumentOutOfRangeException>(() => Uniform(new(2, 3)));
+Reject<ArgumentOutOfRangeException>(() => Uniform(new(double.PositiveInfinity, -3)));
+Reject<ArgumentOutOfRangeException>(() => Uniform(new(-3, -5), double.NaN));
+Reject<ArgumentOutOfRangeException>(() => new SeasonalClimate(0, normals[0], normals[1], normals[2], normals[3],
+    fullSnowWetBulbCelsius: 2, fullRainWetBulbCelsius: 1));
+
+Console.WriteLine("Weather clock verified calendar wrap, solar geometry, seeded transitions, rain accumulation, lightning replay, seasonal climate and conserved rain/snow quanta.");

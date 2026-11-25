@@ -1,8 +1,16 @@
 # Implementation status
 
-Updated 2026-11-25 for **0.0.424**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-25 for **0.0.425**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.425 adds [seasonal climate profiles](WEATHER_CYCLE.md#author-a-seasonal-climate)
+to the optional `Poima.Weather` gameplay package. A local profile supplies
+air and wet-bulb temperatures across the solar year. The package conserves each
+complete second's scheduled water depth when separating rain from snow water
+equivalent. The compiled contract passed on Linux and Windows CoreCLR and
+as a Linux Native AOT executable. The game owns the resulting snowpack and
+gameplay response. [Results](evidence/m2-seasonal-climate-425.json)
 
 Version 0.0.424 adds [rough sky reflections](SHALLOW_WATER.md#soften-water-reflections).
 AMD forward and NVIDIA deferred matched 584 HDR probes with maximum linear
