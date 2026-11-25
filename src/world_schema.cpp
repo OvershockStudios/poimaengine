@@ -45,7 +45,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     const Json number = {{"type", "number"}, {"minimum", -1e9}, {"maximum", 1e9}};
     const Json transform = object_schema({{"position", vector(number, 3)}, {"rotation", vector(number, 4)},
         {"scale", vector({{"type", "number"}, {"exclusiveMinimum", 0}, {"maximum", 1e9}}, 3)}}, {"position", "rotation", "scale"});
-    const Json component_type = {{"enum", {"Transform", "Camera", "CameraDraw", "MeshRenderer", "BoxCollider", "MeshCollider", "CharacterController", "StaticMesh", "PbrMaterial", "PbrTextures", "Light", "LightingEnvironment", "AcousticMaterial", "AudioEmitter", "AnimationRig", "PhysicalRig", "RigNode", "SkinnedMesh", "HitRegion", "ParticleEmitter", "FootprintSurface", "SurfaceWetness"}}};
+    const Json component_type = {{"enum", {"Transform", "Camera", "CameraDraw", "MeshRenderer", "BoxCollider", "MeshCollider", "CharacterController", "StaticMesh", "PbrMaterial", "PbrTextures", "Light", "LightingEnvironment", "AcousticMaterial", "AudioRoom", "AudioEmitter", "AnimationRig", "PhysicalRig", "RigNode", "SkinnedMesh", "HitRegion", "ParticleEmitter", "FootprintSurface", "SurfaceWetness"}}};
     const Json lens = object_schema({{"vertical_fov", {{"type", "number"}, {"minimum", 5}, {"maximum", 150}}},
         {"near", {{"type", "number"}, {"minimum", 0.001}}}, {"far", {{"type", "number"}, {"maximum", 1e7}}}}, {"vertical_fov", "near", "far"});
     auto camera=lens;camera["properties"]["viewmodel"]=lens;
@@ -310,6 +310,13 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     lighting_environment["allOf"]=Json::array({Json{{"if",enabled_ibl},{"then",enabled_sky}},
         Json{{"if",Json{{"required",Json::array({"atmosphere"})}}},{"then",std::move(linked_sky)}}});
     const Json acoustic=object_schema({{"absorption",vector(unit,3)},{"transmission",vector(unit,3)},{"scattering",unit},{"enabled",{{"type","boolean"}}}}, {"absorption","transmission","scattering","enabled"});
+    auto audio_room=object_schema({
+        {"half_extents",vector(bounded_number(min_room_extent_m,max_room_extent_m),3)},
+        {"decay_seconds",bounded_number(min_room_decay_s,max_room_decay_s)},
+        {"high_frequency_decay_seconds",bounded_number(min_room_decay_s,max_room_decay_s)},
+        {"wet_gain",unit},{"priority",{{"type","integer"},{"minimum",0},{"maximum",255},{"default",0}}}},
+        {"half_extents","decay_seconds","high_frequency_decay_seconds","wet_gain"});
+    audio_room["description"]="Listener-local diffuse late reverb in a transformed box. Highest priority wins; ties use the lowest entity ID. High-frequency decay must not exceed decay_seconds.";
     const Json audio_bus_name={{"type","string"},{"pattern",audio_buses::name_pattern}};
     const Json audio_bus_catalog={{"type","object"},{"propertyNames",audio_bus_name},{"minProperties",1},
         {"maxProperties",audio_buses::max_buses},{"additionalProperties",{{"type","number"},{"minimum",0},{"maximum",1}}}};
@@ -358,7 +365,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"darkening",unit},{"roughness_factor",unit}},
         {"capacity_nm","retention_q16","drying_nm_per_second","probe_local_m","darkening","roughness_factor"});
     surface_wetness["description"]="Attach to an authored rigid world drawable with explicit PbrMaterial and no CameraDraw. Drying per game second must be at most capacity_nm. Darkening sets the full-film linear base color reduction; roughness_factor sets the full-film roughness multiplier.";
-    const Json components = {{"Transform", transform}, {"Camera", camera}, {"CameraDraw",camera_draw}, {"MeshRenderer", mesh}, {"BoxCollider",collider}, {"MeshCollider",mesh_collider}, {"CharacterController",character},{"StaticMesh",static_mesh},{"SkinnedMesh",skinned_mesh},{"AnimationRig",animation_rig},{"PhysicalRig",physical_rig_schema},{"RigNode",rig_node},{"HitRegion",hit_region},{"PbrMaterial",pbr},{"PbrTextures",textures},{"Light",{{"oneOf",light_variants}}},{"LightingEnvironment",lighting_environment},{"AcousticMaterial",acoustic},{"AudioEmitter",emitter},{"ParticleEmitter",particle_emitter_schema()},{"FootprintSurface",footprint},
+    const Json components = {{"Transform", transform}, {"Camera", camera}, {"CameraDraw",camera_draw}, {"MeshRenderer", mesh}, {"BoxCollider",collider}, {"MeshCollider",mesh_collider}, {"CharacterController",character},{"StaticMesh",static_mesh},{"SkinnedMesh",skinned_mesh},{"AnimationRig",animation_rig},{"PhysicalRig",physical_rig_schema},{"RigNode",rig_node},{"HitRegion",hit_region},{"PbrMaterial",pbr},{"PbrTextures",textures},{"Light",{{"oneOf",light_variants}}},{"LightingEnvironment",lighting_environment},{"AcousticMaterial",acoustic},{"AudioRoom",std::move(audio_room)},{"AudioEmitter",emitter},{"ParticleEmitter",particle_emitter_schema()},{"FootprintSurface",footprint},
         {"SurfaceWetness",std::move(surface_wetness)}};
     Json ops = Json::array();
     auto op = [&](const char* kind, Json properties, Json required) {
@@ -444,7 +451,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 243}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 244}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -1050,6 +1057,8 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         methods[method]=object_schema(props,required);
     }
     methods["runtime.audio.voices"]=object_schema({{"session_id",id},{"tick",rev},{"after",rev},{"limit",{{"type","integer"},{"minimum",1},{"maximum",256},{"default",64}}}}, {"session_id","tick"});
+    result["audio_rooms"]={{"maximum_rooms",max_audio_rooms},{"transition_frames",audio_rate/20},
+        {"feature","audio_room_reverb"},{"selection","Contain the committed listener in a transformed local box; prefer higher priority, then lower entity ID."}};
     result["audio_buses"]={{"operation","audio.buses.set"},{"catalog",audio_bus_catalog},
         {"routing","Optional AudioEmitter.bus refers to one authored name. Unrouted sources keep unity gain."},
         {"runtime","The mix and routes freeze at session start and persist in the saved authored definition."},

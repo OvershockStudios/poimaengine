@@ -20,6 +20,7 @@
 #include "pose_frames.hpp"
 #include "surface_measure.hpp"
 #include "audio_buses.hpp"
+#include "audio_room.hpp"
 #include "audio_water.hpp"
 #include "surface_marks_json.hpp"
 #include "attachment_outcome_json.hpp"
@@ -607,6 +608,7 @@ public:
             fields(params,{});const auto content=package_content();Json assets=Json::array();
             for(const auto& asset:content.assets)assets.push_back({{"filename",asset.filename},{"sha256",asset.sha256},{"bytes",asset.bytes}});
             Json result={{"revision",content.revision},{"needs_audio",content.needs_audio},{"assets",assets}};
+            if(content.needs_audio_room_reverb)result["needs_audio_room_reverb"]=true;
             if(content.needs_navigation)result["needs_navigation"]=true;
             if(content.needs_particles)result["needs_particles"]=true;
             if(content.needs_sprite_particles)result["needs_sprite_particles"]=true;
@@ -695,7 +697,7 @@ public:
             fields(params, {"revision", "parent", "after", "limit", "component"}); current_revision(params);
             if(params.contains("component") && params.at("component").is_string() && custom_component(params.at("component").get<std::string>())) {
                 const auto schemas=authored_component_schemas(doc_);(void)authored_schema(schemas,custom_type(params.at("component").get<std::string>()));
-            } else if (params.contains("component")) require(params["component"] == "Transform" || params["component"] == "Camera" || params["component"] == "CameraDraw" || params["component"] == "MeshRenderer" || params["component"] == "BoxCollider" || params["component"] == "MeshCollider" || params["component"] == "CharacterController" || params["component"] == "StaticMesh" || params["component"] == "PbrMaterial" || params["component"] == "PbrTextures" || params["component"] == "Light" || params["component"] == "LightingEnvironment" || params["component"] == "AcousticMaterial" || params["component"] == "AudioEmitter" || params["component"] == "AnimationRig" || params["component"] == "PhysicalRig" || params["component"] == "RigNode" || params["component"] == "SkinnedMesh" || params["component"] == "HitRegion" || params["component"] == "ParticleEmitter" || params["component"] == "FootprintSurface" ||
+            } else if (params.contains("component")) require(params["component"] == "Transform" || params["component"] == "Camera" || params["component"] == "CameraDraw" || params["component"] == "MeshRenderer" || params["component"] == "BoxCollider" || params["component"] == "MeshCollider" || params["component"] == "CharacterController" || params["component"] == "StaticMesh" || params["component"] == "PbrMaterial" || params["component"] == "PbrTextures" || params["component"] == "Light" || params["component"] == "LightingEnvironment" || params["component"] == "AcousticMaterial" || params["component"] == "AudioRoom" || params["component"] == "AudioEmitter" || params["component"] == "AnimationRig" || params["component"] == "PhysicalRig" || params["component"] == "RigNode" || params["component"] == "SkinnedMesh" || params["component"] == "HitRegion" || params["component"] == "ParticleEmitter" || params["component"] == "FootprintSurface" ||
                 params["component"] == "SurfaceWetness", "Unknown component type.");
             const auto after = params.contains("after") ? identifier(params.at("after")) : std::string{};
             if (params.contains("after")) require(params.contains("revision"), "Pagination requires a revision.");
@@ -981,6 +983,12 @@ public:
         return {{"submersion_m", medium.submersion_m}, {"target_blend", medium.blend},
             {"cutoff_hz", medium.cutoff_hz}, {"gain", medium.gain}};
     }
+    static Json describe_audio_room(const AudioRoomSelection& selection) {
+        const auto& room=selection.settings;
+        return {{"entity",selection.entity},{"decay_seconds",room.decay_seconds},
+            {"high_frequency_decay_seconds",room.high_frequency_decay_seconds},{"wet_gain",room.wet_gain},
+            {"priority",room.priority}};
+    }
     Json audio_dispatch(const std::string& method,const Json& params,bool live) const {
         const bool capture_audio=std::string_view(method).ends_with("capture");
         if(live) {
@@ -1014,6 +1022,8 @@ public:
             }
             Json geometry=Json::array();
             for(const auto& e:source_definition.entities) {
+                if(e.audio_room)
+                    audio_detail::select_room(snapshot.room,snapshot.listener,e.id,pose(e.id),*e.audio_room);
                 if(e.emitter && e.emitter->enabled)
                     snapshot.sources.push_back({e.id,*e.emitter,pose(e.id),
                         audio_detail::sample_water_flow(*e.emitter,live ? runtime_->water_region() : nullptr)});
@@ -1060,6 +1070,7 @@ public:
                 {"reflections",snapshot.early_reflections},{"diffraction",false},{"device_playback",false},{"snapshot_policy","fresh synchronous frozen geometry/poses; capture restarts clips at sample zero"}};
             if(snapshot.early_reflections)result["reflection_budget_exceeded"]=report.reflection_budget_exceeded;
             if(snapshot.water_medium)result["listener_water"]=describe_water_audio(*snapshot.water_medium);
+            if(snapshot.room)result["listener_room"]=describe_audio_room(*snapshot.room);
             if(capture_audio) {
                 const auto bytes=audio_wave(report.samples,2);const auto utf8=fs::path(std::u8string(output.begin(),output.end()));write_flushed(utf8,bytes);
                 result["capture"]={{"path",output},{"format","WAV IEEE float32"},{"sample_rate",audio_rate},{"channels",2},{"frames",frame_count},{"sha256",content_hash(bytes)},{"peak",report.peak},{"rms",report.rms},{"over_range_samples",report.over_range_samples}};
@@ -1162,6 +1173,7 @@ public:
         auto receipts=playback_receipts_;if(receipts.size()==32)receipts.erase(receipts.begin());receipts.push_back({{"params",normalized},{"result",Json::object()}});
         Json result={{"session_id",runtime_id_},{"previous_tick",expected},{"listener",listener},{"replayed",false},{"success",false},{"capture",nullptr}};
         if(reflections.get<bool>())result["early_reflections"]=true;
+        std::optional<AudioRoomSelection> final_room=initial_audio.room;
         if (initial_audio.water_medium) {
             result["listener_water"]={{"initial",describe_water_audio(*initial_audio.water_medium)},{"final",nullptr},
                 {"transition_frames",audio_detail::WaterFilter::transition_frames}};
@@ -1173,6 +1185,7 @@ public:
                 auto block=stream->advance(runtime_->inspect().tick,audio,runtime_->sound_state().voices(),finish);
                 pcm.insert(pcm.end(),block.begin(),block.end());
                 medium=audio.water_medium;
+                final_room=audio.room;
             };
             bool replaced=false;
             for(auto& segment:segments) {
@@ -1192,6 +1205,12 @@ public:
         }catch(const std::exception& e) { result["detail"]=e.what(); }
         result["current_session_id"]=runtime_id_;const auto stats=stream->stats();result["tick"]=runtime_->inspect().tick;result["stream"]={{"frames",stats.frames},{"blocks",stats.blocks},{"voices_started",stats.voices_started},{"path_updates",stats.path_updates},{"peak",stats.peak},{"over_range_samples",stats.over_range_samples},{"dsp_ms",stats.dsp_ms}};
         if(reflections.get<bool>())result["stream"]["reflection_handoffs"]=stats.reflection_handoffs;
+        if(stats.room_reverb_used) {
+            result["listener_room"]={{"initial",initial_audio.room ? describe_audio_room(*initial_audio.room) : Json(nullptr)},
+                {"final",final_room ? describe_audio_room(*final_room) : Json(nullptr)},
+                {"transition_frames",audio_detail::RoomReverb::transition_frames}};
+            result["stream"]["room_transitions"]=stats.room_transitions;
+        }
         receipts.back()["result"]=result;playback_receipts_.swap(receipts);return result;
     }
 #include "world_player_service.inc"

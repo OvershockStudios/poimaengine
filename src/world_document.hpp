@@ -17,6 +17,7 @@ Light light_value(const Json& value);
 Json sky_json(const SkySettings& sky);
 LightingEnvironment environment_value(const Json& value);
 AcousticMaterial acoustic_value(const Json& value);
+AudioRoom audio_room_value(const Json& value);
 AudioEmitter emitter_value(const Json& value);
 audio_buses::Catalog authored_audio_buses(const Json& document);
 

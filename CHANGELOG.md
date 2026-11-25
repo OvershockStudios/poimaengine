@@ -2,6 +2,12 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.449
+
+- Give rooms an authored late reverb tail that follows the committed listener.
+  Inspect the selected room and compare its output through headless capture
+  and the exported player. [Room reverb](docs/AUDIO.md#give-a-room-a-reverberant-tail)
+
 ## 0.0.448
 
 - Enable moving early reflections in a game's player through guarded project

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "poima/audio.hpp"
 #include "audio_water.hpp"
+#include "audio_room.hpp"
 #include "audio_hrtf.hpp"
 #include "poima/assets.hpp"
 #include <algorithm>
@@ -149,6 +150,10 @@ AudioReport observe_audio(const AudioSnapshot& s,std::uint32_t frames) {
         mix_path(source,path.propagation_delay_samples,path.direction,params);
         if(path.reflection)mix_path(source,path.reflection->propagation_delay_samples,path.reflection->direction,
                                     audio_detail::reflection_filter(*path.reflection));
+    }
+    if (s.room && s.room->settings.wet_gain>0) {
+        audio_detail::RoomReverb reverb(s.room->settings);
+        reverb.process(report.samples);
     }
     if (s.water_medium && s.water_medium->blend > 0) {
         audio_detail::WaterFilter filter(*s.water_medium);

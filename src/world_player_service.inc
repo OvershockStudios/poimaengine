@@ -184,6 +184,8 @@
             result["audio"]["early_reflections"]=audio.enabled;
             result["audio"]["reflection_handoffs"]=audio.stream.reflection_handoffs;
         }
+        if(audio.stream.room_reverb_used)
+            result["audio"]["room_transitions"]=audio.stream.room_transitions;
         return result;
     }
     struct PlayerOwner {

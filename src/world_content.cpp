@@ -271,6 +271,10 @@ FrozenContent freeze_world_content(const Json& source, const fs::path& directory
                 add(id,".paudio",audio.clips.at(id).bytes);
             }
         }
+        if(components.contains("AudioRoom")) {
+            result.needs_audio=true;
+            result.needs_audio_room_reverb=true;
+        }
         if(components.contains("LightingEnvironment")) {
             const auto& environment=components.at("LightingEnvironment");
             if(environment.contains("output_grade"))result.needs_output_grade=true;

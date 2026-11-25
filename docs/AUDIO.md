@@ -6,9 +6,10 @@ The snapshot methods on this page render **frozen audio snapshots offline**.
 [Sound events and player output](AUDIO_EVENTS.md) provide logical gameplay voices,
 C# play/stop calls and optional native device playback. The native
 [early reflection model](EARLY_REFLECTIONS.md) provides a single optional
-bounce. Late reverberation, diffraction, compressed streaming, buses, captions
-and the complete environmental audio system remain unfinished. Inspect build
-capabilities before using either path.
+bounce. Authored rooms provide [diffuse late reverb](#give-a-room-a-reverberant-tail).
+Diffraction, compressed streaming, a full mixer, captions and the complete
+environmental audio system remain unfinished. Inspect build capabilities before
+using either path.
 
 ## Build
 
@@ -123,6 +124,62 @@ Get-Content examples/audio-room.jsonl | .\build\windows-runtime\poima.exe world 
 ```
 
 The request file is platform-independent. It does not open a graphics window or audio device. Listen to the generated files using an ordinary audio player; headphones are needed to assess the binaural output. No automated listening or subjective realism claim is made by the numeric tests.
+
+## Give a room a reverberant tail
+
+Use `component.set` in a guarded `world.transact` to add `AudioRoom` to an
+entity with a Transform. For a stone hall, a starting profile is:
+
+```json
+{
+  "half_extents": [5, 2.5, 9],
+  "decay_seconds": 1.4,
+  "high_frequency_decay_seconds": 0.65,
+  "wet_gain": 0.3,
+  "priority": 0
+}
+```
+
+The box follows the entity's full transform, including parents. Place its
+center and extents to cover where the listener should hear the tail. Room
+selection uses the listener's committed position. Priority breaks overlaps
+first, then the lower stable entity ID. The box faces count as inside. A
+scene can have up to 64 rooms. Half extents are 0.05–4096 local metres.
+The decay controls target the time for the feedback to fall by 60 dB at
+DC and Nyquist. Both are 0.1–8 seconds and high-frequency decay can be
+shorter than or equal to the main decay. Wet gain is 0–1. Priority is an
+optional integer from 0–255 and defaults to 0.
+
+`world.audio.inspect` and `runtime.audio.inspect` return `listener_room` when
+the listener is inside a volume. The 48 kHz float capture includes the tail.
+`runtime.audio.replay` reports the initial and final selection and the number
+of room transitions. The same volume works in the native player when project
+audio is enabled. Use `poima project configure` with a manifest hash and patch
+`{"audio":true}`. Export requires the runtime's `audio_room_reverb` feature.
+
+One eight-delay stereo network adds diffuse energy to the current spatial
+mix before underwater filtering. Its first arrival follows the excitation
+by at least 743 frames, about 15.5 ms. Its feedback and send use a 50 ms
+time constant when the listener changes rooms. Leaving a room reduces the
+send and lets the existing tail decay. `wet_gain: 0` mutes new sends. The
+tail is presentation state. A new stream or save load starts with fresh
+delay history and the room selected at the restored pose. Geometry-derived
+decay, per-source room coupling, and physical device listening are separate
+work.
+
+The delay-dependent attenuation and orthogonal feedback follow published
+FDN designs. The engine uses fixed delays and one shelf per line. The
+papers evaluate FDNs with more flexible calibration, including fitted room
+impulse responses and frequency-dependent attenuation.
+[Modal decomposition](https://arxiv.org/abs/1901.08865)
+[Room impulse fitting](https://arxiv.org/abs/2404.00082)
+[Attenuation filter design](https://arxiv.org/abs/2511.20380)
+
+`tests/audio_room_reverb.py` measures impulse decay and tests movement in and
+out of a volume through a committed replay. Give it an existing output
+directory and the matching `poima` binary. To check a relocated Windows game
+through the SDL disk output, add `--runtime INSTALLED_RUNTIME --gpu 0`.
+Use `--windows-interop` with Windows-accessible paths when running from WSL.
 
 ## Verification and remaining work
 

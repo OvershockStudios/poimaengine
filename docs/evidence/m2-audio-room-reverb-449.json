@@ -1,0 +1,166 @@
+{
+  "version": "0.0.449",
+  "date": "2026-11-25",
+  "base_commit": "f6510b3c339958584b5a7c2fd7bba268bc2f85c7",
+  "scope": "Authored late reverb, listener room selection, committed transitions and native device-backend output.",
+  "world_schema_revision": 244,
+  "authoring_contract_version": 1,
+  "candidate_patch_sha256": "feabe5400124c03ad280a48be8cbf8f74b8c65ca9be6dbd190c3e38f50460ab4",
+  "source_sha256": {
+    "CMakeLists.txt": "8cb82265feba2068b789e27d621badfda253d27aa2bebba36bdbb4bf0341667f",
+    "cmake/runtime.json.in": "1a029f678b5d7ce8e9ac03471f4e063f825290d04ca1e4b87276aca31a9616b1",
+    "include/poima/audio.hpp": "4f6f04455d123bbf9690d01b435fc4b80c506f485b8673559cea419e261955b0",
+    "include/poima/runtime.hpp": "25b5ec41ba88aacedc4545c323c9d60e0b78f9990d8b06382074c71151a063cd",
+    "include/poima/world.hpp": "b66e50793405368328d01142f72cba7d348a01515dd0e5c4a118a858eb9c92d8",
+    "src/audio.cpp": "639126a35aa7b306a8d5f33a2b9082f77f3600ddc9eb102378b92667f5b63835",
+    "src/audio_room.cpp": "6e6df4a2172faa89df75a405ba81083d9f72ba2384dca2168ee383d91c0c00c1",
+    "src/audio_room.hpp": "e74d8b1ea294971269359660d8bae432a37744ba2c7f885290fa25d4b826ff46",
+    "src/audio_stream.cpp": "02389829d84278645e119e10633ee655ed58f9d06da69cb6f942cbac6ca4d552",
+    "src/core.cpp": "241e3f3c020b25ac7a85b45b15301d89fcfd13d74cceff6a2ea6140855957a90",
+    "src/player_audio.hpp": "2c38ccd9cfca2ad49a99e19f736beeb1e56505cede78aa1a9f9f6c2ea7684193",
+    "src/project.cpp": "85fa306b00f22bb181265547ebaa9976da6f18244252f1576489a0727f5187d5",
+    "src/runtime.cpp": "2269ab377f3d322fe7be1a9874478b8bce843109b419af6618c01c63e4f4139b",
+    "src/runtime_templates.cpp": "945de4a81cfaf20ec6dec859eab47c0e06a996bb2ff8c5e45c3ee04d2375aaef",
+    "src/world.cpp": "cbb574d9b882985c0b1165dee7d102ce75db38f012c53bb785b1bd971bc90f83",
+    "src/world_content.cpp": "5e485da01b6c0584e26c5a00112bc99c4aa5e28bb630d00ae3a7694eb73be34f",
+    "src/world_document.cpp": "8ecb3d3a0b08c67e858b05fe4a1f7629a34046b2f4517aa6d55c030286c1e51c",
+    "src/world_document.hpp": "dd845d67be990287fc420cba9f3b8b909fac3073589ed6a59882aafb6969b30b",
+    "src/world_player_service.inc": "201a328a5cd76b1008ddafa636b8645f9f03b2f57455f507d85da7fa465967ab",
+    "src/world_runtime_definition.cpp": "b9d9cd0ce4b29067847a143d16f2361a0e2d5ba0e7461f257d5799c5fc88efdd",
+    "src/world_schema.cpp": "0b5eeb0b0fb4c9689570a7691b6794a6cea165c936b1ead9f1b8848bac5e7c88",
+    "src/world_transaction_operations.cpp": "c5c8a5a065e4e677e60723e4846d17bd4b787bb9e70080659b5a6349e64569d2",
+    "tests/audio_room_reverb.py": "7d8595a605cdea534dda146f1da742a80818a884a080eaa32d52fda7cf3c014e"
+  },
+  "fixture": {
+    "script": "tests/audio_room_reverb.py",
+    "backend": "SDL3 disk output; Vulkan window on Windows",
+    "sample_rate_hz": 48000,
+    "channels": 2,
+    "frames_per_run": 67200,
+    "authored_room_decay_seconds": [
+      0.35,
+      1.4
+    ],
+    "transition": "outside, inside, outside",
+    "decay_estimate": "Extrapolate the reverse-integrated impulse energy time between -5 and -35 dB.",
+    "room_restore": "New offline capture from the restored committed pose. Reverb delay history is presentation state."
+  },
+  "ubuntu": {
+    "binary_sha256": "b76b63e2797f7ec38e926b219d6befa499dda243040ce51ba1847569cb9db263",
+    "raw_evidence_sha256": "36456da7e46696d6fbdc042679476a766e59919e9b660ec0cf923bceeaea88a1",
+    "decay": {
+      "short_t30_seconds": 0.34608333333333335,
+      "long_t30_seconds": 1.241625,
+      "late_energy_ratio": 45284697.434437186,
+      "identical_pre_arrival_frames": 1181
+    },
+    "exit_tail": {
+      "energy_at_400_to_650_ms": 0.00021732830253634326,
+      "frames": 67200
+    },
+    "replays": {
+      "moving dry": "805ed439f9141b108a74e0290ae0c479bbec6e7265e7dccca8a4f0b7fe515baf",
+      "moving wet": "93d455c518275c1a409fb64f8dfd7d3998122d546694a8f8055f5981eb437c77"
+    },
+    "passed": true,
+    "save_captures": {
+      "Saved original room": "6d8bb6489893cdeed6542b336ff09d7db2212fe28cf7393c44ca2e368392a322",
+      "Warm restored room": "6d8bb6489893cdeed6542b336ff09d7db2212fe28cf7393c44ca2e368392a322"
+    },
+    "passed_ctest": [
+      "audio_reflections_native",
+      "authoring_contract_identity",
+      "project_contract",
+      "project_draft_contract",
+      "audio_contract",
+      "world_contract"
+    ]
+  },
+  "windows": {
+    "runtime_sha256": {
+      "bin/poima.exe": "e5af70776e4d8df44bb542647366ba7f40dd88fdf771fd06971f109822a92daa",
+      "bin/poima_desktop.dll": "1a8b885234a148e76a17ad9d4ebaf8d876790df904a3e83e8145721c1fdadb6f",
+      "runtime.json": "cb1307b1e784e8238c84d831f0f36106c8c3f1b9ea89a2ebb643fbc2476de7bd"
+    },
+    "devices": {
+      "AMD": {
+        "gpu": "AMD Radeon(TM) Graphics",
+        "presented_frames": 84,
+        "room_transitions": 2,
+        "voices_started": 1,
+        "decay": {
+          "short_t30_seconds": 0.34608333333333335,
+          "long_t30_seconds": 1.241625,
+          "late_energy_ratio": 45284698.540818505,
+          "identical_pre_arrival_frames": 1181
+        },
+        "exit_tail": {
+          "energy_at_400_to_650_ms": 0.0002173283189419954,
+          "frames": 67200
+        },
+        "capture_sha256": {
+          "moving dry": "e98ad69fa3ad0b3dd80d3e64b166bc984e542cb721348157bbdcda1e4c28e346",
+          "moving wet": "e19854ae583d8865ae16dd7a2e71c086fe4767b9a34d918a7bcd18ee3508ffcb",
+          "relocated wet": "e19854ae583d8865ae16dd7a2e71c086fe4767b9a34d918a7bcd18ee3508ffcb"
+        },
+        "restored_room_capture_sha256": "7d99d7fdf909463aa7c129520491076e84f87ee26f47685d24a4348405a4daa8",
+        "sdl_output": {
+          "frames": 67200,
+          "sha256": "c304ffb8f150fe1e94655b3af56613d036a358ece716e54be6542ce1ab0abeb6",
+          "leading_silence": 3072,
+          "matches_every_submitted_pcm_frame": true
+        },
+        "relocated_bundle_files": 59,
+        "bundle_unchanged": true,
+        "source_project_hidden": true,
+        "runtime_without_room_capability_rejected_before_export": true
+      },
+      "NVIDIA": {
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "presented_frames": 84,
+        "room_transitions": 2,
+        "voices_started": 1,
+        "decay": {
+          "short_t30_seconds": 0.34608333333333335,
+          "long_t30_seconds": 1.241625,
+          "late_energy_ratio": 45284698.540818505,
+          "identical_pre_arrival_frames": 1181
+        },
+        "exit_tail": {
+          "energy_at_400_to_650_ms": 0.0002173283189419954,
+          "frames": 67200
+        },
+        "capture_sha256": {
+          "moving dry": "e98ad69fa3ad0b3dd80d3e64b166bc984e542cb721348157bbdcda1e4c28e346",
+          "moving wet": "e19854ae583d8865ae16dd7a2e71c086fe4767b9a34d918a7bcd18ee3508ffcb",
+          "relocated wet": "e19854ae583d8865ae16dd7a2e71c086fe4767b9a34d918a7bcd18ee3508ffcb"
+        },
+        "restored_room_capture_sha256": "7d99d7fdf909463aa7c129520491076e84f87ee26f47685d24a4348405a4daa8",
+        "sdl_output": {
+          "frames": 67200,
+          "sha256": "2c789950422466057b9c563a694a86a3ae70037ceb6e10828a668858af9f484f",
+          "leading_silence": 5120,
+          "matches_every_submitted_pcm_frame": true
+        },
+        "relocated_bundle_files": 59,
+        "bundle_unchanged": true,
+        "source_project_hidden": true,
+        "runtime_without_room_capability_rejected_before_export": true
+      }
+    },
+    "no_room_regression_against_0_0_448": {
+      "direct": {
+        "reference_wav_sha256": "dc303b7b7e80b00386e6d3db8a99e6899e8a9fa99df600e5e145b3df677b9347",
+        "frames_compared": 9600
+      },
+      "reflected": {
+        "reference_wav_sha256": "90933775e8da4aad2593146020fe4ea45a5da6e4ead385bbd57981257db40632",
+        "frames_compared": 9600
+      }
+    }
+  },
+  "limits": [
+    "The room is a listener-local diffuse approximation using authored parameters.",
+    "The SDL disk driver qualifies the PCM delivery path. Physical listening and game-scale cost are unqualified."
+  ]
+}

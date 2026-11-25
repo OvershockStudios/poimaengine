@@ -6,6 +6,7 @@
 #include "poima/jobs.hpp"
 #include "poima/water_region.hpp"
 #include "audio_water.hpp"
+#include "audio_room.hpp"
 #include "poima/snow.hpp"
 #include "poima/snow_releases.hpp"
 #include "poima/snow_sole.hpp"
@@ -564,6 +565,10 @@ struct Runtime::Impl {
         if(d.light) { validate_light(*d.light);registry.emplace<Light>(e,*d.light); }
         if(d.environment) { validate_environment(*d.environment);registry.emplace<LightingEnvironment>(e,*d.environment); }
         if(d.emitter)registry.emplace<AudioEmitter>(e,*d.emitter);
+        if(d.audio_room) {
+            validate_audio_room(*d.audio_room);
+            registry.emplace<AudioRoom>(e,*d.audio_room);
+        }
         if(d.acoustics && d.acoustics->enabled) {
             AcousticGeometry g;g.entity=d.id;g.material=*d.acoustics;
             if(d.collider)for(std::size_t k=0;k<3;++k)g.world[k*5]=2*d.collider->half_extents[k];
@@ -829,6 +834,8 @@ struct Runtime::Impl {
         physics.Init(RuntimeBodyIds::capacity,0,8192,8192,broad_layers,broad_filter,object_layers);
         physics.SetGravity(JPH::Vec3(0,-9.81f,0));
         auto definitions=definition.entities;
+        require(std::ranges::count_if(definitions,[](const auto& entity) { return entity.audio_room.has_value(); })<=
+            static_cast<std::ptrdiff_t>(max_audio_rooms),"Runtime audio room limit exceeded.");
         std::sort(definitions.begin(),definitions.end(),[](const auto& a,const auto& b){return a.id<b.id;});
         owned_entities.reserve(definitions.size());
         std::size_t body_count=0;
@@ -1571,7 +1578,7 @@ struct Runtime::Impl {
         return order;
     }
     void validate_scene_membership(const Topology& candidate) const {
-        std::size_t lights=0,environments=0,shadows=0,bodies=0,emitters=0;std::uint32_t resolution=1024;
+        std::size_t lights=0,environments=0,shadows=0,bodies=0,emitters=0,rooms=0;std::uint32_t resolution=1024;
         for(const auto& [id,d]:candidate.definitions) {
             if(d.camera && d.camera->focus_target) {
                 const auto& target=d.camera->focus_target->entity;
@@ -1580,6 +1587,7 @@ struct Runtime::Impl {
             if(d.collider || d.character || d.mesh_collider)++bodies;
             bodies+=physical_part_count(d);
             if(d.emitter && d.emitter->enabled)++emitters;
+            if(d.audio_room)++rooms;
             if(d.light && d.light->enabled)++lights;
             if(d.light)shadows+=shadow_view_count(*d.light);
             if(d.environment) {
@@ -1598,6 +1606,7 @@ struct Runtime::Impl {
         }
         require(lights<=max_scene_lights && environments<=1,"Runtime exceeds light/environment limits.");
         require(emitters<=max_audio_sources,"Runtime audio source limit exceeded.");
+        require(rooms<=max_audio_rooms,"Runtime audio room limit exceeded.");
         require(bodies<=RuntimeBodyIds::capacity,"Runtime physics body limit exceeded.");
         validate_shadow_budget(shadows,resolution);
     }
@@ -2771,6 +2780,11 @@ const SoundState& Runtime::sound_state() const { return impl_->sounds; }
 AudioSnapshot Runtime::audio_snapshot(const std::string& listener) const {
     AudioSnapshot result;result.listener=impl_->registry.get<Node>(impl_->find(listener)).world;
     result.water_medium=audio_detail::listener_water_medium(water_region(),result.listener);
+    auto rooms=impl_->registry.view<const AudioRoom,const Node>();
+    for (auto e:rooms) {
+        const auto& node=rooms.get<const Node>(e);
+        audio_detail::select_room(result.room,result.listener,node.id,node.world,rooms.get<const AudioRoom>(e));
+    }
     for(const auto& source:impl_->topology->acoustic_geometry) {
         auto g=source;g.world=multiply(impl_->registry.get<Node>(impl_->find(g.entity)).world,g.world);result.geometry.push_back(std::move(g));
     }

@@ -99,6 +99,8 @@ public:
         retired_.frames+=previous.frames;retired_.blocks+=previous.blocks;
         retired_.voices_started+=previous.voices_started;retired_.path_updates+=previous.path_updates;
         retired_.reflection_handoffs+=previous.reflection_handoffs;
+        retired_.room_transitions+=previous.room_transitions;
+        retired_.room_reverb_used|=previous.room_reverb_used;
         retired_.peak=std::max(retired_.peak,previous.peak);retired_.dsp_ms+=previous.dsp_ms;
         retired_.over_range_samples+=previous.over_range_samples;
         mixer_=std::move(replacement);++report_.timeline_resets;report_.stream_drained=false;
@@ -132,6 +134,8 @@ public:
         result.stream.frames+=retired_.frames;result.stream.blocks+=retired_.blocks;
         result.stream.voices_started+=retired_.voices_started;result.stream.path_updates+=retired_.path_updates;
         result.stream.reflection_handoffs+=retired_.reflection_handoffs;
+        result.stream.room_transitions+=retired_.room_transitions;
+        result.stream.room_reverb_used|=retired_.room_reverb_used;
         result.stream.peak=std::max(result.stream.peak,retired_.peak);result.stream.dsp_ms+=retired_.dsp_ms;
         result.stream.over_range_samples+=retired_.over_range_samples;return result;
     }

@@ -57,12 +57,26 @@ struct AudioWaterMedium {
     double submersion_m;
     double blend;
 };
+inline constexpr std::size_t max_audio_rooms=64;
+inline constexpr double min_room_extent_m=.05, max_room_extent_m=4096;
+inline constexpr double min_room_decay_s=.1, max_room_decay_s=8;
+struct AudioRoom {
+    std::array<double,3> half_extents{1,1,1};
+    double decay_seconds=1, high_frequency_decay_seconds=.5, wet_gain=.25;
+    std::uint8_t priority=0;
+};
+struct AudioRoomSelection {
+    std::string entity;
+    AudioRoom settings;
+};
+void validate_audio_room(const AudioRoom& room);
 struct AudioSnapshot {
     Matrix4 listener=identity_matrix();
     std::vector<AcousticGeometry> geometry;
     std::vector<AudioSource> sources;
     bool early_reflections=false;
     std::optional<AudioWaterMedium> water_medium;
+    std::optional<AudioRoomSelection> room;
 };
 struct AudioReflection {
     std::string entity;
@@ -128,6 +142,8 @@ struct AudioStreamStats {
     double peak=0,dsp_ms=0;
     std::uint64_t over_range_samples=0;
     std::uint64_t reflection_handoffs=0;
+    std::uint64_t room_transitions=0;
+    bool room_reverb_used=false;
 };
 // Persistent native direct/HRTF DSP, fed only after committed simulation ticks.
 // Full 512-frame blocks are rendered up to (never beyond) committed time.

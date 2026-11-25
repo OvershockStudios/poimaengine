@@ -1,8 +1,18 @@
 # Implementation status
 
-Updated 2026-11-25 for **0.0.448**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-25 for **0.0.449**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.449 adds [authored room reverb](AUDIO.md#give-a-room-a-reverberant-tail)
+to capture and playback. The measured decay estimates were 0.35 and 1.24
+seconds. A room tail remained after the listener left its bounds. Warm
+and relocated saves restored the selected room and reproduced its capture.
+AMD and NVIDIA Windows players matched all 67,200 replay frames through
+SDL disk output. Ubuntu passed six focused suites and the room fixture.
+The tail is a diffuse approximation. Geometry-driven room coupling,
+physical listening and game-scale cost remain open.
+[Results and scope](evidence/m2-audio-room-reverb-449.json)
 
 Version 0.0.448 lets projects [enable early reflections in exported games](EARLY_REFLECTIONS.md#enable-reflections-in-a-game).
 Relocated Windows players on AMD and NVIDIA reproduced all 9,600 frames of

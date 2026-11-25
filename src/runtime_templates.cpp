@@ -239,6 +239,7 @@ void validate_runtime_templates(const RuntimeDefinition& definition) {
                         "Template height fog must target local spot lights.");
             }
             if(entity.acoustics)validate_acoustic_material(*entity.acoustics);
+            if(entity.audio_room)validate_audio_room(*entity.audio_room);
             if(entity.emitter) {
                 check(bool(entity.emitter->clip) && bounded(entity.emitter->gain,0,4),"Template emitter requires a clip and gain in 0..4.");
                 if(clips.insert(entity.emitter->clip.get()).second) {

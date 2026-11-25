@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "poima/audio.hpp"
 #include "audio_hrtf.hpp"
+#include "audio_room.hpp"
 #include "audio_water.hpp"
 #include <algorithm>
 #include <array>
@@ -37,6 +38,35 @@ struct AudioStream::Impl {
     std::optional<audio_detail::WaterFilter> water_filter;
     std::uint64_t water_mix_boundary=0;
     double previous_water_blend=0, water_blend=0;
+    std::unique_ptr<audio_detail::RoomReverb> room_reverb;
+    std::optional<AudioRoomSelection> previous_room, room;
+    std::uint64_t room_boundary=0;
+    void sample_room(const std::optional<AudioRoomSelection>& next) {
+        if (!room && !next && !room_reverb) return;
+        previous_room=room;
+        room=next;
+        room_boundary=committed;
+        if (bool(room)!=bool(previous_room) || (room && room->entity!=previous_room->entity))
+            ++stats.room_transitions;
+        if (room) stats.room_reverb_used=true;
+    }
+    void filter_room(std::span<float> samples) {
+        if (!room_reverb && !previous_room && !room) return;
+        const auto previous_frames=room_boundary>cursor ?
+            std::min<std::uint64_t>(room_boundary-cursor,samples.size()/2) : 0;
+        const auto apply=[&](std::span<float> part,const std::optional<AudioRoomSelection>& selection) {
+            if (part.empty()) return;
+            if (!room_reverb && selection && selection->settings.wet_gain>0)
+                room_reverb=std::make_unique<audio_detail::RoomReverb>(selection->settings,true);
+            if (room_reverb) {
+                room_reverb->target(selection ? &selection->settings : nullptr);
+                room_reverb->process(part);
+            }
+        };
+        const auto split=static_cast<std::size_t>(2*previous_frames);
+        apply(samples.first(split),previous_room);
+        apply(samples.subspan(split),room);
+    }
     struct FlowEnvelope {
         // A rendering block can contain the end of the previous simulation tick.
         std::array<float,3> targets;
@@ -239,6 +269,12 @@ AudioStream::AudioStream(std::uint64_t tick,const AudioSnapshot& initial):impl_(
     check(audio_available(),"Audio stream is not built.");auto& s=*impl_;s.start=s.cursor=s.committed=tick*audio_tick_frames;s.snapshot=initial;s.paths=observe_audio(initial);s.stats.path_updates=1;
 #if POIMA_AUDIO
     s.sample_flow(initial,tick);
+    s.room=initial.room;
+    if (s.room) {
+        s.stats.room_reverb_used=true;
+        if (s.room->settings.wet_gain>0)
+            s.room_reverb=std::make_unique<audio_detail::RoomReverb>(s.room->settings);
+    }
     if (initial.water_medium) {
         s.water_filter.emplace(*initial.water_medium);
         s.previous_water_blend=s.water_blend=initial.water_medium->blend;
@@ -253,7 +289,10 @@ std::vector<float> AudioStream::advance(std::uint64_t tick,const AudioSnapshot& 
     auto& s=*impl_;check(!s.finished && tick*audio_tick_frames>=s.committed,"Audio stream cannot rewind or resume after finish.");
     check(tick*audio_tick_frames-s.committed<=audio_tick_frames,"Feed committed audio one simulation tick at a time.");
 #if POIMA_AUDIO
-    if (tick * audio_tick_frames > s.committed) s.sample_flow(snapshot,tick);
+    if (tick * audio_tick_frames > s.committed) {
+        s.sample_flow(snapshot,tick);
+        s.sample_room(snapshot.room);
+    }
     if (s.water_filter && tick * audio_tick_frames > s.committed) {
         s.water_mix_boundary=s.committed;
         s.previous_water_blend=s.water_blend;
@@ -268,6 +307,7 @@ std::vector<float> AudioStream::advance(std::uint64_t tick,const AudioSnapshot& 
         s.block(block);
         const auto count=static_cast<std::size_t>(std::min<std::uint64_t>(audio_block,s.committed-s.cursor));
         const auto committed_samples = std::span(block).first(count * 2);
+        s.filter_room(committed_samples);
         s.filter_water(committed_samples);
         result.insert(result.end(),committed_samples.begin(),committed_samples.end());
         s.cursor+=count;

@@ -299,6 +299,28 @@ AcousticMaterial acoustic_value(const Json& v) {
     require(v.at("enabled").is_boolean(),"Acoustic enabled must be Boolean.");
     return {v.at("absorption").get<std::array<float,3>>(),v.at("transmission").get<std::array<float,3>>(),v.at("scattering").get<float>(),v.at("enabled").get<bool>()};
 }
+AudioRoom audio_room_value(const Json& value) {
+    fields(value,{"half_extents","decay_seconds","high_frequency_decay_seconds","wet_gain","priority"},
+        {"half_extents","decay_seconds","high_frequency_decay_seconds","wet_gain"});
+    const auto& extents=value.at("half_extents");
+    require(extents.is_array() && extents.size()==3,"AudioRoom needs three half extents.");
+    const auto number=[](const Json& field) {
+        require(field.is_number(),"AudioRoom dimensions, decay and gain must be numbers.");
+        return field.get<double>();
+    };
+    AudioRoom room;
+    for (std::size_t axis=0;axis<3;++axis)
+        room.half_extents[axis]=number(extents.at(axis));
+    room.decay_seconds=number(value.at("decay_seconds"));
+    room.high_frequency_decay_seconds=number(value.at("high_frequency_decay_seconds"));
+    room.wet_gain=number(value.at("wet_gain"));
+    const auto priority=revision(value.value("priority",Json(0)));
+    require(priority<=255,"AudioRoom priority must be in [0,255].");
+    room.priority=static_cast<std::uint8_t>(priority);
+    try { validate_audio_room(room); }
+    catch(const std::invalid_argument& error) { throw Error(-32602,error.what()); }
+    return room;
+}
 AudioEmitter emitter_value(const Json& v) {
     fields(v,{"asset","gain","loop","enabled","bus","water_flow"},{"asset","gain","loop","enabled"});
     require(v.at("asset").is_string() && valid_asset_id(v.at("asset").get<std::string>()),"AudioEmitter needs a clip content hash.");
@@ -757,6 +779,7 @@ void validate_component(const std::string& type, const Json& value) {
         identifier(value.at("rig"));require(revision(value.at("node"))<10000 && revision(value.at("primitive"))<10000 && value.at("visible").is_boolean(),"Invalid skinned mesh node/primitive/visibility.");return;
     }
     if(type=="AcousticMaterial") { (void)acoustic_value(value);return; }
+    if(type=="AudioRoom") { (void)audio_room_value(value);return; }
     if(type=="AudioEmitter") { (void)emitter_value(value);return; }
     if(type=="Light") { (void)light_value(value);return; }
     if(type=="LightingEnvironment") { (void)environment_value(value);return; }
@@ -1133,7 +1156,7 @@ void validate(const Json& doc) {
         }
     }
     std::size_t audio_sources=0,wetness_receivers=0;
-    std::vector<std::string> particle_sources;
+    std::vector<std::string> particle_sources, audio_rooms;
     for (const auto& [id, entity] : entities.items()) {
         identifier(id);require(schemas.empty() || id!=std::string(32,'0'),"Custom component worlds reserve the zero entity identity as unset.");
         fields(entity, {"name", "parent", "components"}, {"name", "parent", "components"});
@@ -1152,6 +1175,10 @@ void validate(const Json& doc) {
             !audio_components.at("StaticMesh").contains("lods"),"Mesh LOD requires a world drawable without CameraDraw.");
         require(!audio_components.contains("MeshCollider") || (!audio_components.contains("BoxCollider") && !audio_components.contains("CharacterController")),"MeshCollider cannot combine with BoxCollider or CharacterController.");
         if(audio_components.contains("AcousticMaterial"))require(audio_components.contains("BoxCollider") || audio_components.contains("MeshRenderer") || audio_components.contains("StaticMesh"),"AcousticMaterial requires box collider or mesh geometry.");
+        if(audio_components.contains("AudioRoom")) {
+            require(audio_rooms.size()<max_audio_rooms,"World exceeds the audio room limit.");
+            audio_rooms.push_back(id);
+        }
         if(audio_components.contains("ParticleEmitter")) {
             require(particle_sources.size() < runtime_particle_limits.emitters, "Scene exceeds the particle emitter capacity.");
             particle_sources.push_back(id);
@@ -1253,9 +1280,13 @@ void validate(const Json& doc) {
         }
         for (const auto& item : chain) colors[item] = 2;
     }
-    if(!particle_sources.empty()) {
+    if(!particle_sources.empty() || !audio_rooms.empty()) {
         const auto matrices=world_matrices(entities);
         for(const auto& id:particle_sources)validate_particle_pose(matrices.at(id), id);
+        for(const auto& id:audio_rooms) {
+            try { (void)inverse_affine(matrices.at(id)); }
+            catch(const std::runtime_error&) { throw Error(-32602,"AudioRoom "+id+" requires an invertible world transform."); }
+        }
     }
     for(const auto& [id,entity]:entities.items()) {
         const auto& bag=entity.at("components");
