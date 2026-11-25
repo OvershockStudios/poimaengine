@@ -314,6 +314,7 @@ FrozenContent freeze_world_content(const Json& source, const fs::path& directory
         result.needs_water_shore_foam=asset.definition.optics && asset.definition.optics->shore_foam.has_value();
         result.needs_water_terrain_fit=asset.definition.optics && asset.definition.optics->follow_terrain;
         result.needs_water_surface_swell=!asset.definition.surface_swell.empty();
+        result.needs_water_swell_variation=asset.definition.swell_variation.has_value();
         result.needs_water_offshore=asset.definition.optics && asset.definition.optics->offshore.has_value();
         definition.water=std::move(asset.definition);
     }

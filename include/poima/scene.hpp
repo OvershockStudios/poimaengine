@@ -314,6 +314,7 @@ struct SceneWaterVolume {
     float shore_foam_phase=0;
     bool surface_swell=false;
     std::array<SceneWaterRipples,max_scene_water_wave_layers> offshore_swell{};
+    std::optional<WaterSwellVariation> swell_variation{};
     // Row-major columns with heights relative to the region's Y origin.
     std::vector<SceneWaterColumn> columns;
 };

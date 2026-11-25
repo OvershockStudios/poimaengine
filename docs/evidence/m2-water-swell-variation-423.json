@@ -1,0 +1,189 @@
+{
+  "checkpoint": "0.0.423",
+  "parent_commit": "dce333b9b3e7a25fc376cab424b13f5e8441c767",
+  "schema_revision": 220,
+  "source_sha256": {
+    "CMakeLists.txt": "05e01f094ae656cdc972e5475a6e0df9bd1dddf8458e5805dd5ba11d6044c7ca",
+    "cmake/render_smoke.cmake": "0ecde2c3dd1ae6448f4a1af74f8b9ccba2bb0edcd4f7e85763df265bc53f4f64",
+    "cmake/runtime.json.in": "a8a4933332f1bbbac343a861ff9dc6078fc4173789c6f6d94cef2f667ea1a07d",
+    "include/poima/core.hpp": "2d5224a039af6f47da65cead1396ce9c4ce18bda57d1a13804f00cf0eb076f60",
+    "include/poima/scene.hpp": "b3437dc8cb119f0fc74aae30d20ff11ee5ee72e1fcea6aaf505acfa32f3be6e6",
+    "include/poima/water_optics.hpp": "e0f85f26c0271c5b5bf0f1247f15a8934233cc16f6cdca5228565b26450136ff",
+    "include/poima/water_region.hpp": "c284ed74e9241562c686565f569f29a08026a06597511e2874976f8725767036",
+    "include/poima/water_region_definition.hpp": "eb0911c18f5feb81017b62c81e92305ee94998637bf6e91cc585c8b0936834cb",
+    "include/poima/world.hpp": "8e391db7f3f81dbdc35bd35c9ee351579cbf238f301085885f22d89a53521909",
+    "shaders/scene_frame.hlsli": "c69f961750f5f21ba4ffdee8e0fd7a628d2d6eceee043b5f69a64c50ccbe2de3",
+    "shaders/water_optics.hlsli": "71cea9228d24298bda6ea9ae152af0418ab0e0f4e9c9b7505c56147d170feaaf",
+    "shaders/water_swell_variation.hlsli": "5406da9e275e5610785ec688b055d04aee2402d5585cd451ba00f63c7d38dc62",
+    "src/core.cpp": "adc3ce31bc1d0d0aedab8f743f8ce6ae2b469f65dd0546bbe1d3d282e7eb2f9e",
+    "src/project.cpp": "f176e3f51dede41b60401982d63f1c0fb61ec35c3dda28a76d52ec316482c517",
+    "src/render_height_fog.cpp": "4fb73a0a9ec5a8fb0cc01953f09eca16cbceeac02bbfe014551379e5a7ac8d86",
+    "src/render_height_fog.hpp": "1248c12d65465eefd2504f81287494235e72784cabe10762416199da0ef55298",
+    "src/render_smoke.cpp": "b719e0ba8657bd651e6a1c843431f8056ce68ee47127eb008e3d4ca30d1b059d",
+    "src/water_asset.cpp": "5099dccc4adc208d75e1d3c2fd2715a2d0fb8871ab70dc8736c6ecc35f04a610",
+    "src/water_region.cpp": "79825bacdb163ddfaa34ae4fef2978a24ca7fc1286a363414dbae259dd6dc871",
+    "src/water_region_scene.cpp": "2744ee677900e58d9e04b0323a68c89e0f903fb0c995eaca632085c85f4dba36",
+    "src/world.cpp": "3fe9aef7c02409f0dc5b1a79981ef826ab8889ee3de85d9f76f307fa8a8b7892",
+    "src/world_content.cpp": "59a3292982d2711eea296ed42a824a93af31424db4b5499db76f4aa48a30884a",
+    "src/world_presentation_json.cpp": "db46be6a426e6757ce017ddc56781fd2a0ed28423a6dd777f81fbe14d9ad292f",
+    "src/world_schema.cpp": "9daa7a63005ef5546550cfd0eb12e8f5a339437a7257968c0a14dd978ff419c8",
+    "src/world_water_service.inc": "f9d457bb1f13ac995e8110130686e5a9f3d875a3df79080d3b1e32af0933707a",
+    "tests/water_offshore_capture.py": "cf79f1aa0a7d8b651420b38b6940365ff63d96b44538587efee32be6435a368f"
+  },
+  "windows": {
+    "binary_sha256": "0bfd53a34a166d8bb12f7252fce21d09da7e1d4ffd1c2d2986b7af1391c354d7",
+    "bridge_sha256": "e529cb4c8482eee9007f4b2331f14449944df4f2dceb3d105206f758a2775bba",
+    "runtime_manifest_sha256": "5313278dd89bd27e3223cd4e5cb84bba0c4ca1dbc1dd25d743546751255c5b9b",
+    "validation": "Khronos 1.4.363.0 with VK_LAYER_VALIDATE_SYNC=1",
+    "amd": {
+      "adapter": "AMD Radeon(TM) Graphics",
+      "lighting_path": "forward",
+      "linked_evidence_sha256": "492e7a3a4d980d973ae545d054eb730c85543e1c4ba68f647686cbfd8d513486",
+      "profile": {
+        "scale_m": 54.0,
+        "seed": 1779033703,
+        "strength": 0.72
+      },
+      "water_asset": "7c32400a5a4db1b010e8af38a25236411cd8d7c40cd0b701c10f10e174eb27fe",
+      "restored_tick": 45,
+      "local_volume_m3": 2.5799999999999983,
+      "captures": {
+        "from-shore": "873accf7361fe105a13eaee704e2df1f7520dd787905935492a06445ac8d74b3",
+        "from-ocean": "a7ace6c9f89ad9822a6774a770ee77f62ec833a97258a1d50bd7e1a0d30771c4",
+        "toward-horizon": "69295a535d6392012b4436f156cca27f62239dc2006b786ae8ebe407f7387fae",
+        "across-patches": "c92052ace0b50a92a67ffc5317a1d63855441fd3eabbaeaef2a9afb0393658ce",
+        "cold-ocean": "a7ace6c9f89ad9822a6774a770ee77f62ec833a97258a1d50bd7e1a0d30771c4"
+      },
+      "hdr_probes": 292,
+      "hdr_max_absolute_error": 0.0004876682761111306,
+      "variation_delta_probes_above_0_015": 68,
+      "far_patch_delta_probes_above_0_015": 26,
+      "largest_variation_hdr_delta": 0.1628201989317031,
+      "validation_device_markers": 5,
+      "relocated_export": false
+    },
+    "nvidia": {
+      "adapter": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "lighting_path": "deferred",
+      "linked_evidence_sha256": "cbf35fab3a06f4b3646f9e2625fc031f016794d2ccc6cc8aaa54503b0e8cb51f",
+      "profile": {
+        "scale_m": 54.0,
+        "seed": 1779033703,
+        "strength": 0.72
+      },
+      "water_asset": "7c32400a5a4db1b010e8af38a25236411cd8d7c40cd0b701c10f10e174eb27fe",
+      "restored_tick": 45,
+      "local_volume_m3": 2.5799999999999983,
+      "captures": {
+        "from-shore": "e414b8c794f75c1dc19d66f5349004945649a6ec191763128fd07b34cb8ce80f",
+        "from-ocean": "33bbc41b91e7bfc433b151c4113564468c08fcc69d064e7399da0ff23c1b2213",
+        "toward-horizon": "567163ab54f9b5297f4dd4cb79eb90e3ba20f351cecd17cbe25b2b91325c891a",
+        "across-patches": "cced2a19e02e8c2cfa81914b26889d04b7a58ce246909644de1d336d1ca1c578",
+        "cold-ocean": "33bbc41b91e7bfc433b151c4113564468c08fcc69d064e7399da0ff23c1b2213"
+      },
+      "hdr_probes": 292,
+      "hdr_max_absolute_error": 0.0004876682761111306,
+      "variation_delta_probes_above_0_015": 68,
+      "far_patch_delta_probes_above_0_015": 26,
+      "largest_variation_hdr_delta": 0.1628201989317031,
+      "validation_device_markers": 5,
+      "relocated_export": true
+    },
+    "missing_runtime_feature_error": "Spatially varied swell requires a compatible Vulkan runtime.",
+    "retained": {
+      "v11_swell_fsr": {
+        "baseline_evidence_sha256": "a54f5cddec67af9f26ccd5bc75aaac55d284ae75f8091c1f2266e963c3297733",
+        "candidate_evidence_sha256": "661fed6fcdf7c1b0617c88af1334b5d695a94b441c4dec144399ef6284f2be5f",
+        "exact_outputs": {
+          "dry-pcm": "bedadc80e9e0aa4830f26a4988d61dfd197b06312810126b2ff2ac90afcdf573",
+          "crest-pcm": "4ee6abaf6082e10ab7a4f860b8a79420db77f185efa09816eaafa1b1784dc0ac",
+          "crest": "91ea7f83465109c0c9ac0c5ccc7868e7abfb27a969d54f4d0e15ec622c947832",
+          "crest-low": "2399ae8d721f1b9673d824a33b6ea7113d40f3eb22f57f5d652270ec5c56b1df",
+          "crest-fsr": "e1245a7e3d1302f6930fb7abbce0a71e7ecf38f9e904ec6749cf76851dd605bb",
+          "trough": "241d354e3804d7395bc5a5cec03de313d5005edae00c6a5fee6633cf2746a430",
+          "cold": "91ea7f83465109c0c9ac0c5ccc7868e7abfb27a969d54f4d0e15ec622c947832",
+          "cold-pcm": "4ee6abaf6082e10ab7a4f860b8a79420db77f185efa09816eaafa1b1784dc0ac"
+        }
+      },
+      "v12_offshore_swell": {
+        "baseline_evidence_sha256": "c2cbc521a4fcdd8f55082c027dd5cd16b9fb946b7fcfd1772d5882fe2e4e65e4",
+        "candidate_evidence_sha256": "6159934abbac5aa2503145e955652df8c27b01e6b4e0b4faf4cfb3e9829e3ee2",
+        "exact_outputs": {
+          "from-shore": "7ff8571058e09913e81604d707ab4366c12541ffc5f868ceb9771148979706b6",
+          "from-ocean": "672b4f113e72eb24f1b7755fbf35d3907e345099c8781d14ba5502ef91c0e1a3",
+          "toward-horizon": "179d4e0d68c882558fd45706bf07a02fbe00d23ccaaebdc7b64f2fb7a874a0bc",
+          "cold-ocean": "672b4f113e72eb24f1b7755fbf35d3907e345099c8781d14ba5502ef91c0e1a3"
+        }
+      }
+    }
+  },
+  "ubuntu": {
+    "passed_ctest_suites": [
+      "audio_contract",
+      "audio_reflections_native",
+      "audio_save_native",
+      "cli_contract",
+      "editor_audio_native",
+      "project_contract",
+      "render_schedule_native",
+      "shallow_water_native",
+      "water_listener_audio_contract",
+      "water_region_native",
+      "water_region_scene_native",
+      "world_audio_native",
+      "world_water_contract",
+      "world_water_rain_contract"
+    ],
+    "binary_sha256": "e58b4b340cd4765a469d39ccd458399300ebca8482da1e42235d6526872809b3",
+    "junit_sha256": "eda3a02a4f368a60b90d94948aa86526da1232265f4b8112e295d5da6f34effa",
+    "variation_protocol_evidence_sha256": "684b735f38b598c9dc072c3bbc5b0f185c1651790d92bf00042a78ddf63b070c"
+  },
+  "authored_coast": {
+    "extent": [
+      1120,
+      630
+    ],
+    "profile": {
+      "scale_m": 172,
+      "strength": 0.75,
+      "seed": 1597463007
+    },
+    "witness_sha256": "e0866c1b1c566001b6890d2cf3955fefb96c2facc4ad42fea724def451ec97d3",
+    "same_camera_views": {
+      "uniform": {
+        "water_sha256": "60552192b47310b048ac4180bc65f0056a694f5c4aa2fddfaa646d40e37fc702",
+        "captures": {
+          "headland-and-open-sea": "f9b55c159466fdace55bafc637b3643e5788d9883d434e9b4c39e59de585d9d4",
+          "coast-to-horizon": "512943dc3b42f3263defd4c421ed6c1261eb0214553ac08e69cc31d127f438f7",
+          "from-offshore": "d6b2bb93d8a1b8b72cff19973f1ac588ca3a0b5460631c45a85c688a4ea8a370"
+        }
+      },
+      "varied": {
+        "water_sha256": "da05e5c1f3ff98854e528ecf5387bd52ee9b3a1ab13b70a5b94b5e7caffdd9c2",
+        "captures": {
+          "headland-and-open-sea": "594cb3eb3772056d4916ccd9da993340355ace29de396e1b63d9796790bde108",
+          "coast-to-horizon": "fbd6ddb410435027f3d79c305c0d04d95a6e77e40a702da8d903cebd81c4358f",
+          "from-offshore": "d9e4c0e972ee1fd03f16b6861d2347b21959f0bcffd7055a4c1718c7ec9b9cea"
+        }
+      }
+    },
+    "lookout": {
+      "extent": [
+        1280,
+        720
+      ],
+      "witness_sha256": "0c5ad761b55e4bce3eaccc3a488b5b94bc6be1e76af0925bd3bbb504420403c8",
+      "rocks": 36,
+      "wind_driven_tufts": 291,
+      "captures": {
+        "Above the wide bay": "c99a1f8e1ff1c371dbee1d34ce2e366be8482b720eef72c325a2fd932954960e",
+        "Between the lookout stones": "923021bc4465d57a1574cbfca436339629f4c4f65c0120e486469dbadc1d29c9"
+      }
+    }
+  },
+  "limits": [
+    "The varying wave field drives fitted displacement and offshore shading. Offshore optical depth still uses a plane.",
+    "The coast comparison retains regular short wave patterns and bright far-water bands.",
+    "The two Vulkan adapters and these scene sizes establish behavior. They do not establish game-scale frame cadence."
+  ]
+}

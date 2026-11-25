@@ -141,14 +141,16 @@ struct FrameConstants {
     height_fog::WaterParameters sprite_water{};
     std::array<float,4> water_offshore{};
     height_fog::OffshoreSwell water_offshore_swell{};
+    height_fog::SwellVariationParameters water_swell_variation{};
 };
-static_assert(sizeof(GpuShadow)==80 && sizeof(FrameConstants)==1904);
+static_assert(sizeof(GpuShadow)==80 && sizeof(FrameConstants)==1920);
 static_assert(offsetof(FrameConstants,water_ripple_shape)==1600 && offsetof(FrameConstants,water_ripple_motion)==1616 &&
     offsetof(FrameConstants,water_wave_shapes)==1632 && offsetof(FrameConstants,cloud_shadow_geometry)==1680 &&
     offsetof(FrameConstants,cloud_shadow_controls)==1696 && offsetof(FrameConstants,water_caustic_origin_size)==1712 &&
     offsetof(FrameConstants,water_caustic_extinction_strength)==1728 && offsetof(FrameConstants,water_caustic_grid_light)==1744 &&
     offsetof(FrameConstants,water_shore_foam)==1760 && offsetof(FrameConstants,sprite_water)==1776 &&
-    offsetof(FrameConstants,water_offshore)==1824 && offsetof(FrameConstants,water_offshore_swell)==1840);
+    offsetof(FrameConstants,water_offshore)==1824 && offsetof(FrameConstants,water_offshore_swell)==1840 &&
+    offsetof(FrameConstants,water_swell_variation)==1904);
 struct SpriteInstance {
     std::array<float,4> center_and_size,linear_rgba,fade_and_reserved;
     std::array<std::uint32_t,4> texel_rect;
@@ -1360,6 +1362,7 @@ struct Context {
         frame_constants.sprite_water={};
         frame_constants.water_offshore={};
         frame_constants.water_offshore_swell={};
+        frame_constants.water_swell_variation={};
         fog_spots={};
         const auto& selected=lighting.environment.height_fog;
         const auto& atmosphere_profile=lighting.environment.atmosphere;
@@ -1380,6 +1383,7 @@ struct Context {
                 water_parameters=view.parameters;
                 frame_constants.water_offshore=view.offshore;
                 frame_constants.water_offshore_swell=view.offshore_swell;
+                frame_constants.water_swell_variation=view.swell_variation;
                 prepare_water_shore_foam(*water,lighting);
             }
             pending_water_optics=WaterOpticsDiagnostics{color_reason=="active",color_reason,
@@ -1387,6 +1391,7 @@ struct Context {
                 strength,caustics,water->optics.shore_foam,frame_constants.water_shore_foam[3]>0,water->optics.follow_terrain};
             pending_water_optics->surface_swell=water->surface_swell;
             pending_water_optics->offshore=water->optics.offshore.has_value();
+            pending_water_optics->swell_variation=water->swell_variation;
             if (color_reason=="active") pending_water_optics->offshore_swell_layers=view.offshore_swell_layers;
         }
         if(wants_aerial) {

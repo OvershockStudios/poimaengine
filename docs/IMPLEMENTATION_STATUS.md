@@ -1,8 +1,17 @@
 # Implementation status
 
-Updated 2026-11-25 for **0.0.422**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-25 for **0.0.423**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.423 adds [seeded swell variation](SHALLOW_WATER.md#vary-the-swell-across-a-coast).
+AMD forward and NVIDIA deferred passed 584 HDR comparisons, including
+views across offshore spatial patches, with maximum channel error 0.000488.
+The relocated Windows save restored the same capture and point readings.
+Nine retained v11–12 images and three audio buffers matched exactly.
+Ubuntu passed 14 suites and the varied swell workflow. Open sea displacement
+and distant reflection roughness remain open.
+[Results](evidence/m2-water-swell-variation-423.json)
 
 Version 0.0.422 filters [shared coastal wave slopes](SHALLOW_WATER.md#continue-the-water-offshore)
 on both sides of the offshore join. The renderer uses the visible surface

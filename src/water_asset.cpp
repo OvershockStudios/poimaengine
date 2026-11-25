@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <limits>
 #include <set>
 #include <stdexcept>
 #include <tuple>
@@ -15,6 +16,7 @@ using Json = nlohmann::json;
 constexpr auto artifact_format = "poima.water.region";
 
 std::uint32_t artifact_version(const RegionDefinition& definition) noexcept {
+    if (definition.swell_variation) return 13;
     if (definition.optics && definition.optics->offshore) return 12;
     if (!definition.surface_swell.empty()) return 11;
     if (definition.optics) {
@@ -146,6 +148,12 @@ void parse_rules(const Json& object, RegionDefinition& definition) {
         for (const auto& layer : layers)
             definition.surface_swell.push_back(parse_surface_ripples(layer));
     }
+    if (object.contains("swell_variation")) {
+        const auto& profile=object.at("swell_variation");
+        fields(profile,{"scale_m","strength","seed"});
+        definition.swell_variation=WaterSwellVariation{number(profile.at("scale_m")),number(profile.at("strength")),
+            integer(profile.at("seed"),0,std::numeric_limits<std::uint32_t>::max())};
+    }
     if (object.contains("listener_audio")) {
         const auto& value = object.at("listener_audio");
         fields(value, {"cutoff_hz", "gain", "full_depth_m"});
@@ -233,6 +241,8 @@ Json artifact_document(const RegionAsset& asset) {
         document["surface_wave_layers"] = surface_wave_layers_json(definition.surface_wave_layers);
     if (!definition.surface_swell.empty())
         document["surface_swell"] = surface_wave_layers_json(definition.surface_swell);
+    if (definition.swell_variation)
+        document["swell_variation"] = swell_variation_json(*definition.swell_variation);
     if (definition.listener_audio)
         document["listener_audio"] = listener_audio_json(*definition.listener_audio);
     if (!definition.shore_corner_heights_m.empty())
@@ -300,9 +310,10 @@ RegionAsset decode_region_asset(std::string_view bytes) {
         return true;
     });
     fields(object, {"format", "version", "terrain_recipe_sha256", "tiles", "grid", "floor_heights_m",
-        "initial_depths_m", "faces", "exchanges"}, {"rain_cells", "surface_ripples", "surface_wave_layers", "surface_swell", "listener_audio", "optics", "shore_corner_heights_m"});
+        "initial_depths_m", "faces", "exchanges"}, {"rain_cells", "surface_ripples", "surface_wave_layers", "surface_swell",
+        "swell_variation", "listener_audio", "optics", "shore_corner_heights_m"});
     require(object.at("format") == artifact_format, "Unsupported water asset format.");
-    const auto version=integer(object.at("version"),1,12);
+    const auto version=integer(object.at("version"),1,13);
     RegionAsset asset;
     asset.terrain_recipe_sha256 = hex(object.at("terrain_recipe_sha256"), 64);
     auto& definition = asset.definition;
@@ -378,6 +389,10 @@ Json region_authoring_schemas() {
     swell_wave["properties"]["slope"]["exclusiveMinimum"]=0;
     auto swell=array(std::move(swell_wave),1,max_surface_wave_layers);
     swell["description"]="Displace the fitted water surface at committed ticks. Wavelength must span at least four cells. Total slope is at most 0.4 and total amplitude at most half a cell or eight metres. Existing normal-only waves can be layered over it.";
+    auto variation=object({{"scale_m",range("number",.1,65'536)},
+        {"strength",{{"type","number"},{"exclusiveMinimum",0},{"maximum",1}}},
+        {"seed",range("integer",0,std::numeric_limits<std::uint32_t>::max())}},{"scale_m","strength","seed"});
+    variation["description"]="Vary swell amplitude and crest position using seeded spatial patches. Requires surface_swell, a scale of at least eight cells, and at least four cells per resulting local wavelength. The warped slope bound remains 0.4.";
     auto listener_audio = object({{"cutoff_hz", range("number", 80, 8000)}, {"gain", unit},
         {"full_depth_m", range("number", .01, 10)}}, {"cutoff_hz", "gain", "full_depth_m"});
     listener_audio["description"] = "Low-pass and gain applied to the spatial mix when the listener enters the committed water column. Blend reaches full strength at full_depth_m.";
@@ -409,12 +424,13 @@ Json region_authoring_schemas() {
         {"initial_depths_m", array(range("number", 0, 1'000'000), 0, max_region_side * max_region_side)},
         {"faces", array(std::move(faces), 0, max_region_faces)}, {"exchanges", array(exchange, 0, max_region_exchanges)},
         {"rain_cells", array(cell, 0, max_region_side * max_region_side)}, {"surface_ripples", std::move(ripples)},
-        {"surface_wave_layers", std::move(layers)}, {"surface_swell",std::move(swell)},
+        {"surface_wave_layers", std::move(layers)}, {"surface_swell",std::move(swell)}, {"swell_variation",std::move(variation)},
         {"listener_audio", std::move(listener_audio)}, {"optics",std::move(optics)}},
         {"revision", "terrain", "expected_terrain_recipe_sha256", "tile_entities", "grid"});
     plan["not"] = {{"required", {"surface_ripples", "surface_wave_layers"}}};
     plan["if"]={{"required",{"surface_swell"}}};
     plan["then"]={{"required",{"optics"}},{"properties",{{"optics",fitted}}}};
+    plan["dependentRequired"]={{"swell_variation",{"surface_swell"}}};
     plan["properties"]["rain_cells"]["uniqueItems"] = true;
     plan["properties"]["rain_cells"]["description"] =
         "Cells designated to collect precipitation. Duplicate or out-of-grid cells are invalid. Omit or leave empty for no precipitation.";
@@ -433,7 +449,7 @@ Json region_runtime_schema() {
     result["description"] = "Read the region identity, latest volume receipt, authored face controls and up to 64 addressed cells at a committed tick."
         " Rain-enabled regions also report catchment cells and per-step and cumulative rain supply."
         " A selected surface_ripples profile is reported even at slope zero."
-        " Selected surface_wave_layers, surface_swell and optics are reported when authored."
+        " Selected surface_wave_layers, surface_swell, swell_variation and optics are reported when authored."
         " Optional points in world [x,y,z] order report the containing column and the submersion depth."
         " Wet point columns in a swell region include the geometric surface_normal. Cell volumes follow the conserved grid.";
     return result;

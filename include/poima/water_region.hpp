@@ -11,6 +11,7 @@ namespace poima::water {
 
 nlohmann::json surface_ripples_json(const SurfaceRipples& ripples);
 nlohmann::json surface_wave_layers_json(std::span<const SurfaceRipples> layers);
+nlohmann::json swell_variation_json(const WaterSwellVariation& profile);
 nlohmann::json listener_audio_json(const ListenerAudio& profile);
 nlohmann::json optics_json(const WaterOptics& profile);
 
@@ -27,6 +28,7 @@ public:
     const std::optional<SurfaceRipples>& surface_ripples() const noexcept { return surface_ripples_; }
     std::span<const SurfaceRipples> surface_wave_layers() const noexcept { return surface_wave_layers_; }
     std::span<const SurfaceRipples> surface_swell() const noexcept { return surface_swell_; }
+    const std::optional<WaterSwellVariation>& swell_variation() const noexcept { return swell_variation_; }
     const std::optional<ListenerAudio>& listener_audio() const noexcept { return listener_audio_; }
     const std::optional<WaterOptics>& optics() const noexcept { return optics_; }
     FittedWaterBed fitted_bed(Cell cell) const;
@@ -61,10 +63,12 @@ private:
     std::vector<double> shore_corner_heights_m_;
     struct SwellWave {
         std::array<double,2> frequency;
+        std::array<double,2> direction;
         double amplitude_m;
         std::uint32_t period_ticks;
     };
     std::vector<SurfaceRipples> surface_swell_;
+    std::optional<WaterSwellVariation> swell_variation_;
     std::vector<SwellWave> swell_waves_;
     double swell_amplitude_m_=0;
     double swell_at(double cell_x,double cell_z) const noexcept;

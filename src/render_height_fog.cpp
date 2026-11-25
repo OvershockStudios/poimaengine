@@ -183,6 +183,15 @@ WaterView project_water_view(const SceneWaterVolume& water,const std::array<doub
         }
         if (combined_slope>.4000001f || (result.offshore_swell_layers>0 && !water.surface_swell))
             throw std::runtime_error("Offshore shading needs the committed surface swell layers.");
+        if (const auto& variation=water.swell_variation) {
+            if (!water.surface_swell ||
+                !(variation->scale_m>=std::max(.1,8*water.cell_size_m) && variation->scale_m<=65'536 &&
+                  variation->strength>0 && variation->strength<=1))
+                throw std::runtime_error("Invalid swell variation presentation parameters.");
+            result.swell_variation={static_cast<float>(1/variation->scale_m),
+                static_cast<float>(WaterSwellVariation::phase_radians*variation->strength/std::numbers::sqrt2),
+                static_cast<float>(.5*WaterSwellVariation::amplitude_blend*variation->strength),variation->seed};
+        }
     }
     if (x>=0 && z>=0 && x<water.cells_x && z<water.cells_z) {
         const auto ix=static_cast<std::size_t>(x),iz=static_cast<std::size_t>(z);

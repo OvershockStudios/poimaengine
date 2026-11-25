@@ -347,6 +347,8 @@ Optional [terrain fitting](SHALLOW_WATER.md#fit-the-shoreline-to-the-terrain)
 aligns local shore contours, world-point queries and listener submersion.
 Optional [surface swell](SHALLOW_WATER.md#displace-the-water-surface) moves
 that shared surface and the wetted margin at each committed tick.
+[Seeded swell variation](SHALLOW_WATER.md#vary-the-swell-across-a-coast)
+changes crest shape and amplitude across local water and offshore shading.
 An optional [offshore plane](SHALLOW_WATER.md#continue-the-water-offshore)
 extends one fitted edge with shared water optics and listener depth.
 

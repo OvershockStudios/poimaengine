@@ -10,6 +10,13 @@ struct WaterShoreFoam {
     double depth_m;
     double opacity;
 };
+struct WaterSwellVariation {
+    static constexpr double phase_radians=2.5;
+    static constexpr double amplitude_blend=.55;
+    double scale_m;
+    double strength;
+    std::uint32_t seed;
+};
 enum class WaterEdge : std::uint32_t { min_z, max_x, max_z, min_x };
 struct WaterOffshore {
     WaterEdge edge;

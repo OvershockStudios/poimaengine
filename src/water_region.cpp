@@ -164,6 +164,30 @@ std::optional<StepReport> validated_report(const Json& report, const Grid& grid,
     return result;
 }
 
+std::array<double,2> swell_patch_value(std::uint32_t x,std::uint32_t z,std::uint32_t seed) noexcept {
+    constexpr std::uint32_t mask=(1u<<20)-1;
+    std::uint32_t bits=((x&mask)*0x8da6b343u)^((z&mask)*0xd8163841u)^seed;
+    bits=(bits^(bits>>16))*0x7feb352du;
+    bits=(bits^(bits>>15))*0x846ca68bu;
+    bits^=bits>>16;
+    constexpr double scale=2.0/65535;
+    return {static_cast<double>(bits&65535u)*scale-1.0,static_cast<double>(bits>>16)*scale-1.0};
+}
+
+std::array<double,2> swell_patch(const WaterSwellVariation& profile,double x,double z) noexcept {
+    const double u=x/profile.scale_m,v=z/profile.scale_m;
+    // The fitted grid provides nonnegative local coordinates on both axes.
+    const auto ix=static_cast<std::uint32_t>(u),iz=static_cast<std::uint32_t>(v);
+    const auto blend=[](double t) { return t*t*(3-2*t); };
+    const double sx=blend(u-ix),sz=blend(v-iz);
+    const auto a=swell_patch_value(ix,iz,profile.seed),b=swell_patch_value(ix+1,iz,profile.seed);
+    const auto c=swell_patch_value(ix,iz+1,profile.seed),d=swell_patch_value(ix+1,iz+1,profile.seed);
+    std::array<double,2> result{};
+    for (std::size_t i=0;i<result.size();++i)
+        result[i]=std::lerp(std::lerp(a[i],b[i],sx),std::lerp(c[i],d[i],sx),sz);
+    return result;
+}
+
 }
 
 nlohmann::json surface_ripples_json(const SurfaceRipples& ripples) {
@@ -176,6 +200,10 @@ nlohmann::json surface_wave_layers_json(std::span<const SurfaceRipples> layers) 
     for (const auto& layer : layers)
         result.push_back(surface_ripples_json(layer));
     return result;
+}
+
+nlohmann::json swell_variation_json(const WaterSwellVariation& profile) {
+    return {{"scale_m",profile.scale_m},{"strength",profile.strength},{"seed",profile.seed}};
 }
 
 nlohmann::json listener_audio_json(const ListenerAudio& profile) {
@@ -204,7 +232,7 @@ Region::Region(const RegionDefinition& definition)
       rain_cells_(definition.rain_cells), surface_ripples_(definition.surface_ripples),
       surface_wave_layers_(definition.surface_wave_layers), listener_audio_(definition.listener_audio),
       optics_(definition.optics), shore_corner_heights_m_(definition.shore_corner_heights_m),
-      surface_swell_(definition.surface_swell) {
+      surface_swell_(definition.surface_swell), swell_variation_(definition.swell_variation) {
     const auto& config=grid_.config();
     const auto corner_count=static_cast<std::size_t>(config.cells_x+1)*(config.cells_z+1);
     if (optics_ && optics_->follow_terrain) {
@@ -217,6 +245,18 @@ Region::Region(const RegionDefinition& definition)
     if (surface_ripples_)
         validate_surface_ripples(*surface_ripples_);
     validate_wave_layers(surface_wave_layers_);
+    double phase_gradient=0,amplitude_gradient=0;
+    if (const auto& variation=swell_variation_) {
+        if (surface_swell_.empty() ||
+            !(variation->scale_m>=std::max(.1,8*config.cell_size_m) && variation->scale_m<=65'536 &&
+              variation->strength>0 && variation->strength<=1))
+            throw std::invalid_argument("Swell variation needs surface_swell, strength in (0,1] and a scale of at least eight cells in [0.1,65536] m.");
+        // Cubic interpolation over [-1,1] samples changes at most 3 per
+        // axis. The paired phase field is projected along each wave heading.
+        const double max_gradient=3*std::numbers::sqrt2*variation->strength/variation->scale_m;
+        phase_gradient=WaterSwellVariation::phase_radians*max_gradient;
+        amplitude_gradient=.5*WaterSwellVariation::amplitude_blend*max_gradient;
+    }
     if (!surface_swell_.empty()) {
         if (!optics_ || !optics_->follow_terrain || surface_swell_.size()>max_surface_wave_layers)
             throw std::invalid_argument("Water surface swell needs terrain fitting and one to four layers.");
@@ -228,11 +268,13 @@ Region::Region(const RegionDefinition& definition)
                   wave.heading_degrees>=-180 && wave.heading_degrees<=180))
                 throw std::invalid_argument("Invalid swell layer. Use 4 or more cells per wavelength and a positive slope.");
             const double heading=wave.heading_degrees*std::numbers::pi/180;
+            const std::array direction{std::cos(heading),std::sin(heading)};
             const double frequency=tau/wave.wavelength_m;
             const double amplitude=wave.slope/frequency;
-            swell_waves_.push_back({{frequency*std::cos(heading),frequency*std::sin(heading)},
-                amplitude,wave.period_ticks});
-            total_slope+=wave.slope;
+            if (phase_gradient>0 && frequency+phase_gradient>tau/(4*config.cell_size_m))
+                throw std::invalid_argument("Swell variation makes a local wavelength shorter than four cells.");
+            swell_waves_.push_back({{frequency*direction[0],frequency*direction[1]},direction,amplitude,wave.period_ticks});
+            total_slope+=wave.slope+amplitude*(phase_gradient+amplitude_gradient);
             swell_amplitude_m_+=amplitude;
         }
         if (total_slope>.4 || swell_amplitude_m_>std::min(.5*config.cell_size_m,8.))
@@ -308,12 +350,22 @@ double Region::cumulative_rain_m3() const noexcept {
 double Region::swell_at(double cell_x,double cell_z) const noexcept {
     constexpr double tau=2*std::numbers::pi;
     const double size=grid_.config().cell_size_m;
+    std::array<double,2> phase_shift{};
+    double envelope=1;
+    if (const auto& variation=swell_variation_) {
+        const auto patch=swell_patch(*variation,size*cell_x,size*cell_z);
+        const auto phase_gain=WaterSwellVariation::phase_radians*variation->strength/std::numbers::sqrt2;
+        phase_shift={phase_gain*patch[0],phase_gain*patch[1]};
+        envelope-=.5*WaterSwellVariation::amplitude_blend*variation->strength*(1+patch[1]);
+    }
     double offset=0;
     for (const auto& wave : swell_waves_) {
         const auto phase=tau*static_cast<double>(grid_.tick()%wave.period_ticks)/wave.period_ticks;
-        offset+=wave.amplitude_m*std::sin(size*(wave.frequency[0]*cell_x+wave.frequency[1]*cell_z)-phase);
+        const double carrier=size*(wave.frequency[0]*cell_x+wave.frequency[1]*cell_z)-phase;
+        const double shift=wave.direction[0]*phase_shift[0]+wave.direction[1]*phase_shift[1];
+        offset+=wave.amplitude_m*std::sin(carrier+shift);
     }
-    return offset;
+    return offset*envelope;
 }
 
 FittedWaterBed Region::fitted_bed(Cell cell) const {

@@ -23,11 +23,14 @@ SEA=dict(edge='max_x',surface_height_m=SURFACE,depth_m=16.)
 OCEAN_VIEW,OCEAN_EAR,SHORE_EAR=map(uid,(8101,8102,8103))
 OCEAN_EYE=(17.2,6.1,-3.15)
 GRAZING_VIEW=uid(8104)
+PATCH_VIEW=uid(8105)
 CAMERAS={
     'shore': (LOW,LOW_EYE,0,False),
     'ocean': (OCEAN_VIEW,OCEAN_EYE,-18,True),
     'grazing': (GRAZING_VIEW,(13.0,5.42,-3.2),-.8,False),
+    'patches': (PATCH_VIEW,(65.2,6.85,-55.12),-14,True),
 }
+VARIATION=dict(scale_m=54.,strength=.72,seed=0x6a09e667)
 GRAZING_PROBES=[(x,y) for x in (279,320,365) for y in (174,175,176,177,178,180,183,189,200,232,270,310)]
 AMBIENT=(.68,.52,.88)
 FOG=dict(density_per_m=.026,base_height_m=4.93,height_falloff_per_m=0,start_distance_m=.1,max_distance_m=38,
@@ -50,10 +53,43 @@ def clip(half_planes,far):
     return (lo,hi) if hi>lo else None
 
 
-def joined_triangles(tick):
+def patch_values(x,z,profile):
+    u,v=x/profile['scale_m'],z/profile['scale_m']
+    ix,iz=math.floor(u),math.floor(v)
+    corners=[]
+    for dx,dz in ((0,0),(1,0),(0,1),(1,1)):
+        bits=((ix+dx)%1048576)*0x8da6b343 ^ ((iz+dz)%1048576)*0xd8163841 ^ profile['seed']
+        bits &= 0xffffffff
+        for shift,multiplier in ((16,0x7feb352d),(15,0x846ca68b)):
+            bits=((bits^(bits>>shift))*multiplier)%2**32
+        bits^=bits>>16
+        corners.append([(bits%65536)/32767.5-1,(bits//65536)/32767.5-1])
+    a,b=(t**2*(3-2*t) for t in (u-ix,v-iz))
+    basis=((1-a)*(1-b),a*(1-b),(1-a)*b,a*b)
+    return [sum(weight*corner[channel] for weight,corner in zip(basis,corners,strict=True))
+            for channel in (0,1)]
+
+
+def band_sample(wave,x,z,tick,profile):
+    heading=math.radians(wave['heading_degrees'])
+    e=(math.cos(heading),math.sin(heading))
+    k=math.tau/wave['wavelength_m']
+    phase=k*(x*e[0]+z*e[1])-math.tau*(tick%wave['period_ticks'])/wave['period_ticks']
+    amplitude=wave['slope']/k
+    if profile:
+        dx,dz=patch_values(x,z,profile)
+        phase+=2.5*profile['strength']*(dx*e[0]+dz*e[1])/math.sqrt(2)
+        amplitude*=1-.55*profile['strength']*(dz+1)/2
+    return amplitude*math.sin(phase),phase
+
+
+def joined_triangles(tick,profile=None):
     for vertices,heights,_ in polys(tick,False):
         # The outer vertices share the ocean datum. Interior fan vertices
         # retain the original phase and the conserved column stage.
+        if profile:
+            heights=[SURFACE+sum(band_sample(wave,x-10,z+4,tick,profile)[0] for wave in SWELL)
+                     for x,z in vertices]
         lifted=[SURFACE if x==14. else v for (x,_),v in zip(vertices,heights,strict=True)]
         yield vertices,lifted,gradient(lifted,vertices)
 
@@ -65,7 +101,7 @@ def sightline(pixel,rotation,from_sea):
     return (dx,dy,dz),view_cosine
 
 
-def wave_slopes(pixel,rotation,from_sea,ray,view_cosine,hit,eye,tick):
+def wave_slopes(pixel,rotation,from_sea,ray,view_cosine,hit,eye,tick,profile=None):
     # Sample nearby rays at the same view depth, then project their derivative
     # onto the horizontal datum. Limit the grazing projection as in the contract.
     def on_view_plane(i,j):
@@ -87,14 +123,23 @@ def wave_slopes(pixel,rotation,from_sea,ray,view_cosine,hit,eye,tick):
         heading=math.radians(wave['heading_degrees'])
         unit=(math.cos(heading),math.sin(heading))
         k=math.tau/wave['wavelength_m']
-        support=k*math.hypot(*(a*unit[0]+b*unit[1] for a,b in footprint))
+        phase=k*(x*unit[0]+z*unit[1])-math.tau*(tick%wave['period_ticks'])/wave['period_ticks']
+        slope=[math.cos(phase)*wave['slope']*axis for axis in unit]
+        frequency=[k*axis for axis in unit]
+        if profile:
+            # Differentiate the scalar height and phase by symmetric samples.
+            # The shader uses the analytic derivatives and no extra samples.
+            for i,(dx,dz) in enumerate(((1e-4,0),(0,1e-4))):
+                a=band_sample(wave,x-dx,z-dz,tick,profile)
+                b=band_sample(wave,x+dx,z+dz,tick,profile)
+                slope[i]=(b[0]-a[0])/.0002
+                frequency[i]=(b[1]-a[1])/.0002
+        support=math.hypot(*(a*frequency[0]+b*frequency[1] for a,b in footprint))
         weight=max(0.,min(1.,(support-.5)/(math.pi-.5)))
         coverage=1-weight*weight*(3-2*weight)
-        phase=k*(x*unit[0]+z*unit[1])-math.tau*(tick%wave['period_ticks'])/wave['period_ticks']
-        for i,axis in enumerate(unit):
-            slope=math.cos(phase)*wave['slope']*axis
-            filtered[i]+=slope*coverage
-            unfiltered[i]+=slope
+        for i,value in enumerate(slope):
+            filtered[i]+=value*coverage
+            unfiltered[i]+=value
     return filtered,unfiltered
 
 
@@ -108,7 +153,7 @@ def channel_delta(a,b):
     return max(abs(x-y) for x,y in zip(a,b,strict=True))
 
 
-def compose(pixel,probe,tick,camera):
+def compose(pixel,probe,tick,camera,profile=None):
     _,eye,rotation,from_sea=CAMERAS[camera]
     ray,view_cosine=sightline(pixel,rotation,from_sea)
     dx,dy,dz=ray
@@ -125,7 +170,7 @@ def compose(pixel,probe,tick,camera):
             hit=(SURFACE-y)/dy
             if 0<=hit<far and x+hit*dx>=14:
                 crossings.append((hit,dy,'ocean'))
-    for vertices,heights,(gx,gz) in joined_triangles(tick):
+    for vertices,heights,(gx,gz) in joined_triangles(tick,profile):
         from_eye=weights(vertices,x,z)
         one_step=weights(vertices,x+dx,z+dz)
         surface=sum(w*v for w,v in zip(from_eye,heights,strict=True))
@@ -149,7 +194,7 @@ def compose(pixel,probe,tick,camera):
     hdr=[s+(v-s)*math.exp(-k*length) for s,v,k in zip(tint,probe['raw_hdr'],extinction,strict=True)]
     solid_distance=far if depth<1 else FOG['max_distance_m']
     distance=solid_distance
-    no_filter=faceted=hdr
+    no_filter=faceted=regular=hdr
     if crossings:
         hit,cosine,interface=min(crossings)
         before=wet_length(bounds,hit)
@@ -166,12 +211,17 @@ def compose(pixel,probe,tick,camera):
             signed=(dy-gx*dx-gz*dz)/math.hypot(gx,1,gz)
             return min(-1e-15,signed) if from_air else max(0.,signed)
 
-        filtered,unfiltered=wave_slopes(pixel,rotation,from_sea,ray,view_cosine,hit,eye,tick)
+        filtered,unfiltered=wave_slopes(pixel,rotation,from_sea,ray,view_cosine,hit,eye,tick,profile)
         if from_air and before<=.0001:
             distance=hit
         no_filter=reflected(slope_incidence(unfiltered))
         faceted=reflected(cosine)
+        if profile:
+            periodic,_=wave_slopes(pixel,rotation,from_sea,ray,view_cosine,hit,eye,tick)
+            regular=reflected(slope_incidence(periodic))
         hdr=reflected(slope_incidence(filtered))
+        if not profile:
+            regular=hdr
     expected=haze(hdr,distance)
     return dict(pixel=pixel,direction=ray,medium_before_m=before,interface=interface,
         coastal_m=length-(sea_interval[1]-sea_interval[0] if sea_interval else 0),
@@ -179,6 +229,7 @@ def compose(pixel,probe,tick,camera):
         expected=expected,actual=probe['resolved_hdr'],solid_hit=depth<1,
         fog_surface_m=distance,filter_delta=channel_delta(expected,haze(no_filter,distance)),
         facet_delta=channel_delta(expected,haze(faceted,distance)),
+        variation_delta=channel_delta(expected,haze(regular,distance)),
         opaque_fog_delta=channel_delta(expected,haze(hdr,solid_distance)))
 
 
@@ -207,6 +258,14 @@ class OffshoreContract(SwellContract):
         # The leading positive band is subnormal in float presentation. It
         # must not suppress the two visible bands or invalidate the scene.
         self.definition['surface_swell']=[dict(SWELL[0],slope=1e-40),*SWELL]
+        if self.args.swell_variation:
+            p=math.radians(CAMERAS['patches'][2])*.5
+            revision=self.apply(revision,8106,
+                dict(op='entity.create',id=PATCH_VIEW,name='Across offshore swell patches'),
+                component(PATCH_VIEW,'Transform',transform(CAMERAS['patches'][1],
+                    [math.sin(p)*t,math.cos(p)*t,-math.sin(p)*t,math.cos(p)*t])),
+                component(PATCH_VIEW,'Camera',LENS))
+            self.definition.update(revision=revision,swell_variation=VARIATION)
         return revision
 
     def verify_seam(self,client,session,tick):
@@ -222,6 +281,19 @@ class OffshoreContract(SwellContract):
         near(row[2]['submersion_m'],SURFACE-4.61)
         assert row[3]['submersion_m']==row[4]['submersion_m']==0 and row[6]['column'] is None
         near(state['volume_m3'],sum(self.definition['initial_depths_m']))
+        if self.args.swell_variation:
+            assert state['swell_variation']==VARIATION
+            for i in (0,5):
+                x,_,z=SAMPLES[i]
+                candidates=[]
+                for vertices,heights,(gx,gz) in joined_triangles(tick,VARIATION):
+                    coords=weights(vertices,x,z)
+                    if min(coords)>=-1e-12:
+                        candidates.append((sum(a*b for a,b in zip(coords,heights,strict=True)),
+                                           (-gx/math.hypot(gx,1,gz),1/math.hypot(gx,1,gz),-gz/math.hypot(gx,1,gz))))
+                column=row[i]['column']
+                assert any(abs(height-column['surface_height_m'])<2e-11 and
+                    math.dist(normal,column['surface_normal'])<2e-11 for height,normal in candidates),column
         listeners=[client.call('runtime.audio.inspect',args|dict(listener=listener))['listener_water']
                    for listener in (SHORE_EAR,OCEAN_EAR)]
         for i,result in enumerate(listeners):
@@ -240,7 +312,9 @@ class OffshoreContract(SwellContract):
         diag=result['render_diagnostics']
         assert diag['water_optics']['offshore']
         assert diag['water_optics']['offshore_swell_layers']==len(SWELL) and diag['height_fog']['active']
-        rows=[compose(pixel,probe,tick,camera)
+        profile=VARIATION if self.args.swell_variation else None
+        assert diag['water_optics'].get('swell_variation')==profile
+        rows=[compose(pixel,probe,tick,camera,profile)
               for pixel,probe in zip(pixels,diag['scene_products']['probes'],strict=True)]
         for i in rows:
             near_vector(i['actual'],i['expected'],tolerance=.003)
@@ -259,13 +333,30 @@ class OffshoreContract(SwellContract):
                 ('bad_top',amended|dict(offshore=SEA|dict(surface_height_m=2e6))),
                 ('needs_fit',amended|dict(follow_terrain=False))
             )])
+        if self.args.swell_variation:
+            description=self.world_call('world.describe',view='method',name='world.water.plan')
+            assert '"swell_variation"' in json.dumps(description)
+            self.cases(*[(label,rpc('world.water.plan',**(self.definition|{key:value})),-32602)
+                for label,key,value in (
+                    ('missing_swell','surface_swell',[]),
+                    ('zero_variation','swell_variation',VARIATION|dict(strength=0)),
+                    ('sampled_too_coarsely','swell_variation',VARIATION|dict(scale_m=8)),
+                    ('invalid_seed','swell_variation',VARIATION|dict(seed=2**32)),
+                    ('bool_scale','swell_variation',VARIATION|dict(scale_m=True)),
+                )])
         plan=self.world_call('world.water.plan',**self.definition)
+        if self.args.swell_variation:
+            assert plan['swell_variation']==VARIATION
+            plain={k:v for k,v in self.definition.items() if k!='swell_variation'}
+            assert self.world_call('world.water.plan',**plain)['plan_sha256']!=plan['plan_sha256']
         pin=plan['plan_sha256']
         assert self.world_call('world.water.cook',**self.definition,expected_plan_sha256=pin)==plan
         source=self.assets/(pin+'.pwater')
-        assert file_hash(source)==pin and json.loads(source.read_bytes())['version']==12
+        assert file_hash(source)==pin and json.loads(source.read_bytes())['version']==(13 if self.args.swell_variation else 12)
         revision=self.apply(revision,8110,dict(op='water.set',asset=pin))
-        assert self.world_call('world.dependencies')['needs_water_offshore']
+        dependencies=self.world_call('world.dependencies')
+        assert dependencies['needs_water_offshore']
+        assert dependencies.get('needs_water_swell_variation',False) is self.args.swell_variation
         (self.root/'saves').mkdir()
         session=uid(8111)
         with self.owner('water seam') as (client,_):
@@ -287,6 +378,11 @@ class OffshoreContract(SwellContract):
                               for r in hits) for solid in (True,False))
                 assert sum(r['interface']=='ocean' and r['filter_delta']>.006
                            for r in self.measurements['toward-horizon']['samples'])>=4
+                if self.args.swell_variation:
+                    self.image(client,session,45,'across-patches','patches')
+                    across=self.measurements['across-patches']['samples']
+                    assert sum(r['interface']=='ocean' and r['variation_delta']>.015 for r in across)>=8
+                    assert any(r['interface']=='shore' and r['variation_delta']>.015 for r in hits)
             self.configure(client)
             client.call('save.write',self.write(session,45,'checkpoint',8113)['params'])
         self.measurements['point_checks']=at_tick
@@ -311,12 +407,14 @@ class OffshoreContract(SwellContract):
         older=self.root/'runtime missing offshore'
         older.mkdir()
         manifest=json.loads((self.args.runtime_root/'runtime.json').read_bytes())
-        assert manifest['features'].pop('water_offshore')
+        feature='water_swell_variation' if self.args.swell_variation else 'water_offshore'
+        assert manifest['features'].pop(feature)
         (older/'runtime.json').write_text(json.dumps(manifest),encoding='utf-8')
         args=['project','build',self.native(self.manifest),'--output',self.native(first),'--runtime']
         rej=subprocess.run([str(self.args.binary.resolve()),*args,self.native(older)],capture_output=True,text=True,timeout=60)
         assert rej.returncode==4 and not first.exists(),rej
-        assert json.loads(rej.stdout)['diagnostics'][0]['message']=='Offshore water requires a compatible Vulkan runtime.'
+        label='Spatially varied swell' if self.args.swell_variation else 'Offshore water'
+        assert json.loads(rej.stdout)['diagnostics'][0]['message']==f'{label} requires a compatible Vulkan runtime.'
         success(json.loads(self.cli(*args,self.native(self.args.runtime_root))))
         target=self.root/'relocated export'
         first.rename(target)
@@ -325,7 +423,8 @@ class OffshoreContract(SwellContract):
         try:
             game=target/'game.json'
             binary=target/json.loads(game.read_bytes())['engine']['executable']
-            assert success(json.loads(self.cli('game','inspect',self.native(game),executable=binary)))['needs_water_offshore']
+            inspected=success(json.loads(self.cli('game','inspect',self.native(game),executable=binary)))
+            assert inspected['needs_water_offshore'] and inspected['needs_'+feature]
             assets=list(target.rglob('*.pwater'))
             assert len(assets)==1 and file_hash(assets[0])==pin
             with self.owner('relocated ocean phase',game=game,saves=self.root/'saves') as (client,_):
@@ -345,6 +444,7 @@ def main():
     parser.add_argument('--gpu',type=int)
     parser.add_argument('--lighting-path',choices=('forward','deferred'),default='forward')
     parser.add_argument('--runtime-root',type=Path)
+    parser.add_argument('--swell-variation',action='store_true')
     parser.add_argument('--require-validation',action='store_true')
     args=parser.parse_args()
     args.output.mkdir(parents=True,exist_ok=True)

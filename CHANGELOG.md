@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.423
+
+- Author seeded variation in swell height and crest spacing. Fitted
+  water and offshore shading sample the same world-space wave field.
+
 ## 0.0.422
 
 - Shade coastal and offshore swell with shared, screen-filtered wave slopes.

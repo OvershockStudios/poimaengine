@@ -37,5 +37,7 @@ cbuffer Frame : register(b1) {
     WaterConstants sprite_water;
     float4 water_offshore; // One-based grid side, surface Y, floor Y, outward edge coordinate.
     float4 water_offshore_swell[4]; // Angular frequency X/Z, amplitude, phase.
+    float3 water_swell_variation; // Inverse patch scale, phase gain, envelope gain.
+    uint water_swell_seed;
 };
 StructuredBuffer<SceneLight> lights : register(t6);

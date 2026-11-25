@@ -223,6 +223,39 @@ The [swell fixture](../tests/water_surface_swell_capture.py) compares
 independent clipped wave prisms with rendered HDR and checks fresh-process
 save continuation, spatial audio and export admission.
 
+### Vary the swell across a coast
+
+Set `swell_variation` alongside `surface_swell` in the plan and cook request.
+This profile varies the crest positions and amplitude across the world:
+
+```json
+{
+  "scale_m": 172,
+  "strength": 0.75,
+  "seed": 1597463007
+}
+```
+
+The patch scale must be at least eight grid cells and lie in 0.1–65,536 m.
+Strength is greater than zero and at most one. Seed is an integer from zero
+through 4,294,967,295 and selects a reproducible field relative to the grid
+origin. The cooker includes the variation in its conservative four-cells-per-
+wavelength check and 0.4 combined slope bound. Longer swell wavelengths
+leave more room for crest variation at coarse grid resolutions.
+
+The fitted surface samples the field at its centres and corners. The
+offshore shader evaluates the same field and filters the wave slope using
+the resulting local wavelength. Spatial patches stay at fixed positions as
+the committed wave phase advances. Save continuation restores that phase.
+The offshore medium still uses the fixed plane for depth and crossings.
+
+A selected profile cooks `.pwater` version 13. Inspect it in
+`runtime.water.inspect` and `render_diagnostics.water_optics.swell_variation`.
+Project dependencies report `needs_water_swell_variation`. Export with a
+runtime that advertises `features.water_swell_variation`. The
+[offshore fixture](../tests/water_offshore_capture.py) exercises the field
+with `--swell-variation`, including a view across offshore patch boundaries.
+
 ## Continue the water offshore
 
 Set `offshore` inside the terrain-fitted `optics` profile when the water

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "water_ripple_normal.hlsli"
 #include "water_bed.hlsli"
+#include "water_swell_variation.hlsli"
 
 StructuredBuffer<WaterColumn> water_columns : register(t7);
 TextureCube<float4> water_environment : register(t8);
@@ -45,6 +46,7 @@ void projected_water_footprint(float3 ray, float distance, out float2 dx, out fl
 }
 
 float2 filtered_offshore_swell(float2 position, float2 dx, float2 dy) {
+    [branch] if (water_swell_variation.y>0.0) return varied_offshore_swell(position,dx,dy);
     float2 gradient=0;
     [unroll] for (uint i=0;i<4;++i) {
         const float4 wave=water_offshore_swell[i];

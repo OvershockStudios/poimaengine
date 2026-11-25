@@ -198,6 +198,9 @@ Json render_diagnostics(const RenderDiagnostics& d) {
         if(water.offshore)result["water_optics"]["offshore"]=water.active;
         if(water.offshore_swell_layers)
             result["water_optics"]["offshore_swell_layers"]=water.offshore_swell_layers;
+        if(const auto& variation=water.swell_variation)
+            result["water_optics"]["swell_variation"]={{"scale_m",variation->scale_m},
+                {"strength",variation->strength},{"seed",variation->seed}};
         if(water.sprites)result["water_optics"]["sprites"]=true;
         if(water.caustics_strength>0)result["water_optics"]["caustics"]={{"active",water.caustics_reason=="active"},
             {"reason",water.caustics_reason},{"strength",water.caustics_strength}};

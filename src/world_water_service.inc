@@ -33,7 +33,7 @@
         require(cook || method == "world.water.plan", "Unknown water authoring method.", -32601);
         fields(params, {"revision", "terrain", "expected_terrain_recipe_sha256", "expected_plan_sha256", "tile_entities",
             "grid", "initial_depths_m", "faces", "exchanges", "rain_cells", "surface_ripples", "surface_wave_layers",
-            "surface_swell", "listener_audio", "optics"},
+            "surface_swell", "swell_variation", "listener_audio", "optics"},
             {"revision", "terrain", "expected_terrain_recipe_sha256", "tile_entities", "grid"});
         require(cook == params.contains("expected_plan_sha256"), "Water cooking requires a reviewed plan SHA-256.");
         current_revision(params);
@@ -80,6 +80,7 @@
             if (params.contains("surface_ripples")) result["surface_ripples"] = params.at("surface_ripples");
             if (params.contains("surface_wave_layers")) result["surface_wave_layers"] = params.at("surface_wave_layers");
             if (params.contains("surface_swell")) result["surface_swell"] = params.at("surface_swell");
+            if (params.contains("swell_variation")) result["swell_variation"] = params.at("swell_variation");
             if (params.contains("listener_audio")) result["listener_audio"] = params.at("listener_audio");
             if (params.contains("optics")) {
                 auto optics=params.at("optics");
@@ -145,6 +146,8 @@
             result["surface_wave_layers"] = water::surface_wave_layers_json(region->surface_wave_layers());
         if (!region->surface_swell().empty())
             result["surface_swell"] = water::surface_wave_layers_json(region->surface_swell());
+        if (const auto& variation=region->swell_variation())
+            result["swell_variation"] = water::swell_variation_json(*variation);
         if (const auto& listener_audio = region->listener_audio())
             result["listener_audio"] = water::listener_audio_json(*listener_audio);
         if (const auto& optics = region->optics())

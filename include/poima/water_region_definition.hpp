@@ -50,6 +50,7 @@ struct RegionDefinition {
     std::optional<WaterOptics> optics;
     std::vector<double> shore_corner_heights_m;
     std::vector<SurfaceRipples> surface_swell;
+    std::optional<WaterSwellVariation> swell_variation{};
 };
 
 }
