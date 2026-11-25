@@ -1,0 +1,126 @@
+{
+  "version": "0.0.448",
+  "date": "2026-11-25",
+  "base_commit": "247e29d19b7d294a661509098bec589bc975f1cd",
+  "scope": "Guard the project option and verify early reflections through a relocated standalone Windows player.",
+  "world_schema_version": 243,
+  "authoring_contract_version": 1,
+  "candidate_patch_sha256": "be0a9cfedf1ec632144c0a0991f724ec22e0ee177c7334f125df7baea11fc7be",
+  "source_sha256": {
+    "CMakeLists.txt": "074f17ca5346690e4f61b70813c7d2c1c3d8b1a7e6a078e8b0830acc8c4e52ae",
+    "cmake/runtime.json.in": "a54bb13826fa58132455fdd3ff90408f1c0834f1c75f6183330cc038cae133ac",
+    "include/poima/player.hpp": "d290dfc0362f21ec62766c8e30d8b5dc217eab109bf577f763deb0b045d7a81d",
+    "include/poima/project.hpp": "abab685a1ce126e3de8eee427007291dde0e18e17278375296e8698b6577ded1",
+    "src/core.cpp": "0ba104330a96a4a48ce80bc697e36add0fd1f9f063b588266d5927889b7f7ae9",
+    "src/game_launch.cpp": "697ad1a4fb27941f889a5436a074a5d98009eec49300e69b65894e3c782fd846",
+    "src/player.cpp": "30eb9d2e9390fdff8aa45e1a401e415ef239796069fdb5dcce2df332bcb13be2",
+    "src/player_audio.hpp": "333a99d9c2dc732d03a3e3224d919b9ab4a63c04bff1cd9fdb0e2bdd4e61c3c9",
+    "src/player_window.cpp": "927cfeb5a69bcea2cadcfc053621c6595e76c28b1750a8aad3c666178bb923e6",
+    "src/project.cpp": "8741cf48bc816a4711ddeeb3dcb58442a158f70f607b6656fdd3d144f660f0e2",
+    "src/project_drafts.inc": "01ea6454ef74c28167e7b0af49110c1f99ce116a4ad47c767c77d4f83f200b55",
+    "src/project_recovery.inc": "d35f8535192e9830f6fc19e2cbc841d440a5f8592741ece7a7cb7b0ea3f1adf4",
+    "src/world_player_service.inc": "c6120fba3c96c7a0ef0a0a0bee8a76831b77b5fab16696bbe21543538e447969",
+    "src/world_schema.cpp": "2e9b7ee9e4ee8203fd29f59f4908b164eab33ea85e26ee77e56c80ab5fe2fb51",
+    "tests/player_early_reflections.py": "c2bc9da072528a188ba854093943533385a0c42a8bc648f0010c7ff6a1fa6962",
+    "tests/project_contract.py": "5bfde4869251bdd79032fce3b6a2dec910e3da5c177579a67a9d026f2a126c89"
+  },
+  "fixture": {
+    "script": "tests/player_early_reflections.py",
+    "audio_backend": "SDL3 disk output",
+    "format": "little-endian stereo float32",
+    "sample_rate_hz": 48000,
+    "committed_ticks": 12,
+    "output_frames_per_variant": 9600,
+    "whole_signal_comparison": "NVIDIA uses the final fixture. AMD used an independent whole-signal comparison after the fixture initially compared the settled tail.",
+    "capability_refusal": "Early reflections require a compatible player runtime."
+  },
+  "windows": {
+    "runtime_sha256": {
+      "bin/poima.exe": "af5071530dace28d438d488d83705cb5dff563a3d1ecd3610695d6a44f31f1cd",
+      "bin/poima_desktop.dll": "3e120718aac667bf9104a6bbae50efc4f6df9d56aead09e2ac8eba9c408696c2",
+      "runtime.json": "dd5dc16a4c3b4fd1198421ec3d5c670a2c461a0ad08e9da4f904f2624091b705"
+    },
+    "devices": {
+      "AMD": {
+        "gpu": "AMD Radeon(TM) Graphics",
+        "modes": {
+          "direct": {
+            "presented_frames": 12,
+            "voices_started": 1,
+            "reflection_handoffs": 0,
+            "peak": 0.07195734232664108,
+            "submitted_frames_compared": 9600,
+            "sample_mismatches": 0,
+            "leading_silence_frames": 3072,
+            "backend_capture_sha256": "6aa430a17a41048f43e4b78b3078bd198b66f82a05b6f03c205c6b9e3ff12c0f",
+            "reference_wav_sha256": "dc303b7b7e80b00386e6d3db8a99e6899e8a9fa99df600e5e145b3df677b9347"
+          },
+          "reflected": {
+            "presented_frames": 12,
+            "voices_started": 1,
+            "reflection_handoffs": 2,
+            "peak": 0.07915223389863968,
+            "submitted_frames_compared": 9600,
+            "sample_mismatches": 0,
+            "leading_silence_frames": 3072,
+            "backend_capture_sha256": "c7bdc5fc17911b33750682428da3f0483ef5e3b2762b5d1d35068293d7b56541",
+            "reference_wav_sha256": "90933775e8da4aad2593146020fe4ea45a5da6e4ead385bbd57981257db40632"
+          }
+        },
+        "version_matching_runtime_without_capability_rejected": true,
+        "source_project_hidden": true,
+        "relocated_bundles_unchanged": true
+      },
+      "NVIDIA": {
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "modes": {
+          "direct": {
+            "presented_frames": 12,
+            "voices_started": 1,
+            "reflection_handoffs": 0,
+            "peak": 0.07195734232664108,
+            "submitted_frames_compared": 9600,
+            "sample_mismatches": 0,
+            "leading_silence_frames": 4096,
+            "backend_capture_sha256": "60f1d0e2361ce26514e336f4c40e2683239a6d36ec4e32f2ac3bed1d5fe1be88",
+            "reference_wav_sha256": "dc303b7b7e80b00386e6d3db8a99e6899e8a9fa99df600e5e145b3df677b9347"
+          },
+          "reflected": {
+            "presented_frames": 12,
+            "voices_started": 1,
+            "reflection_handoffs": 2,
+            "peak": 0.07915223389863968,
+            "submitted_frames_compared": 9600,
+            "sample_mismatches": 0,
+            "leading_silence_frames": 4096,
+            "backend_capture_sha256": "c77ed44199183a3ffb369535fd134717bb7217464e05111058bbfcb627b0113b",
+            "reference_wav_sha256": "90933775e8da4aad2593146020fe4ea45a5da6e4ead385bbd57981257db40632"
+          }
+        },
+        "version_matching_runtime_without_capability_rejected": true,
+        "source_project_hidden": true,
+        "relocated_bundles_unchanged": true
+      }
+    },
+    "project_contract": {
+      "passed": 29,
+      "skipped": 2
+    }
+  },
+  "ubuntu": {
+    "passed_ctest": [
+      "audio_reflections_native",
+      "authoring_contract_identity",
+      "project_contract",
+      "project_draft_contract",
+      "audio_contract"
+    ],
+    "project_contract": {
+      "passed": 28,
+      "skipped": 3
+    }
+  },
+  "limits": [
+    "The output backend was SDL's disk driver. Physical listening and representative acoustic performance are unqualified."
+  ]
+}

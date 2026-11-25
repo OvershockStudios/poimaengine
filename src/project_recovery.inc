@@ -153,6 +153,8 @@ Checkpoint read_checkpoint(const fs::path& checkpoint,const char* report_name,
         game.definition.audio == source.spec.value("audio", false), "Verified game source differs from the checkpoint.");
     require(game.spec.value("startup_render",Json(nullptr)) == source.spec.value("startup_render",Json(nullptr)),
         "Verified game startup_render differs from the checkpoint.");
+    require(game.definition.early_reflections == project_early_reflections(source.spec),
+        "Verified game early_reflections differs from the checkpoint.");
     require(source.profile.empty() ? game.definition.input_profile.empty() :
         !game.definition.input_profile.empty() && read(path_of(game.definition.input_profile), 16 * 1024 * 1024) == source.profile_bytes,
         "Verified game input profile differs from the checkpoint.");

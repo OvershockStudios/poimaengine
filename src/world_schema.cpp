@@ -444,7 +444,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 242}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 243}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -931,6 +931,11 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     play["properties"]["sequence"]={{"type","array"},{"minItems",1},{"maxItems",256},{"items",segment}};
     for(const auto* key:{"path","width","height","gpu","samples","viewmodel_samples","culling","draw_instancing","gpu_visibility","clustered_lighting","frames_in_flight","scene_debug_view","scene_product_probes","lighting_path","ambient_occlusion","reconstruction","shadow_filter","post_aa","profile"}) play["properties"][key]=capture["properties"][key];
     play["properties"]["audio"]={{"type","boolean"},{"default",false}};
+    play["properties"]["early_reflections"]={{"type","boolean"},{"default",false},
+        {"description","Enable moving first-order reflections during player audio output. Requires audio:true. Outside authoring-core v1."}};
+    play["allOf"].push_back({
+        {"if",{{"required",{"early_reflections"}},{"properties",{{"early_reflections",{{"const",true}}}}}}},
+        {"then",{{"required",{"audio"}},{"properties",{{"audio",{{"const",true}}}}}}}});
     play["properties"]["pose_interpolation"]={{"type","boolean"},{"default",false},
         {"description","Opt-in saved camera-effect presentation interpolation; native look/movement/base aim stay committed. Interactive/background only; replay rejects true. Outside authoring-core v1."}};
     play["allOf"].push_back({{"if",{{"properties",{{"mode",{{"const","replay"}}}}}}},

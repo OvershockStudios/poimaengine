@@ -45,6 +45,28 @@ Use the same opt-in in `runtime.audio.replay` to record events with reflections.
 The reference image-source method is described by Allen and Berkley.
 [Image method for efficiently simulating small-room acoustics](https://jontallen.ece.illinois.edu/uploads/537.F18/Papers/Public/Allen-PDFs/AllenBerkley79.pdf)
 
+## Enable reflections in a game
+
+Read `manifest_sha256` with `poima project inspect`. Set both audio and the
+reflection option in one guarded update.
+
+```sh
+poima project configure MyRoom/project.poimaproject \
+  --expected-manifest-sha256 SHA256 \
+  --patch '{"audio":true,"early_reflections":true}'
+```
+
+Rebuild the project to use the option in the exported launcher. Export
+requires an installed runtime with `features.player_early_reflections`.
+Both `runtime.play` and `player.start` accept `early_reflections: true`
+with `audio: true` for a specific player. The player report includes the
+effective option and total `audio.reflection_handoffs`, including earlier
+audio timelines within that player. Existing projects default to direct sound.
+
+Set `early_reflections` to false to keep direct audio only. To disable all
+player audio, set both fields to false in the same update. The headless
+recording methods still select reflections on each request.
+
 ## Playback and recovery
 
 A persistent stream starts with the reflection selected when a voice
@@ -74,3 +96,17 @@ gains a reflection and switches to a farther surface on the opposite side.
 The settled signal is compared to phase-aligned fixed-path controls.
 Frequency-dependent reflected transmission, late reverb, production listening
 and scene-scale performance remain open.
+
+`tests/player_early_reflections.py` uses the main Windows player and SDL's
+disk output to check both variants after moving the export and its source.
+Run it with the matching installed runtime and an existing output directory.
+From WSL, use Windows-accessible paths and add `--windows-interop`.
+
+```sh
+python tests/player_early_reflections.py RUNTIME/bin/poima.exe \
+  --runtime RUNTIME --output EXISTING_DIRECTORY --gpu 0
+```
+
+The fixture compares every submitted PCM frame after accounting for SDL's
+silence before playback. Physical speaker and headphone playback require a
+separate check. [SDL disk output](https://wiki.libsdl.org/SDL3/SDL_HINT_AUDIO_DISK_OUTPUT_FILE)

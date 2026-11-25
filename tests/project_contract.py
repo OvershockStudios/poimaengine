@@ -403,6 +403,29 @@ class ProjectContract(unittest.TestCase):
                          {**removed, 'changed': False})
         self.assertEqual(tree(self.project), stable)
 
+    def test_configure_early_reflections_requires_audio_and_current_manifest(self):
+        inspected = self.inspect()
+        original = tree(self.project)
+        digest = inspected['manifest_sha256']
+        self.assertNotIn('early_reflections', inspected)
+        for patch in ({'early_reflections': True}, {'audio': True, 'early_reflections': 1}):
+            self.configure(patch, digest, success=False)
+            self.assertEqual(tree(self.project), original)
+
+        patch = {'audio': True, 'early_reflections': True}
+        enabled = self.configure(patch, digest)
+        self.assertIs(enabled['changed'], True)
+        self.assertIs(self.inspect()['early_reflections'], True)
+        committed = tree(self.project)
+        self.configure(patch, digest, success=False)
+        self.configure({'audio': False}, enabled['manifest_sha256'], success=False)
+        self.assertEqual(tree(self.project), committed)
+        self.assertEqual(self.configure(patch, enabled['manifest_sha256']), {**enabled, 'changed': False})
+        disabled = self.configure({'audio': False, 'early_reflections': False}, enabled['manifest_sha256'])
+        self.assertIs(disabled['changed'], True)
+        self.assertIs(self.inspect()['audio'], False)
+        self.assertIs(self.inspect()['early_reflections'], False)
+
     def test_configure_rejects_invalid_render_options_without_partial_changes(self):
         applied = self.configure({'startup_render': {'lighting_path': 'forward', 'samples': 4}},
                                  self.inspect()['manifest_sha256'])

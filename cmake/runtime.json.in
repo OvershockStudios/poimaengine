@@ -67,6 +67,7 @@
     "foliage_motion": @POIMA_RUNTIME_RENDER_SMOKE@,
     "height_fog": @POIMA_RUNTIME_RENDER_SMOKE@,
     "audio": @POIMA_RUNTIME_AUDIO@,
+    "player_early_reflections": @POIMA_RUNTIME_PLAYER_EARLY_REFLECTIONS@,
     "managed": @POIMA_RUNTIME_MANAGED_GAMEPLAY@,
     "native_gameplay": @POIMA_RUNTIME_NATIVE_GAMEPLAY@,
     "game_ui": @POIMA_RUNTIME_GAME_UI@,

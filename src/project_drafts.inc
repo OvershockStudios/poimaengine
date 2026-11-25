@@ -48,7 +48,7 @@ Project draft_input(const Json& manifest, const SourceCheckpoint& base, const st
         "Project draft lineage does not match the selected base checkpoint.");
     draft.manifest_bytes = read(draft.manifest, 65536);
     draft.spec = parse(draft.manifest_bytes);
-    fields(draft.spec, {"format", "version", "project_id", "name", "entry", "input_profile", "audio", "gameplay", "startup_splash", "startup_render"},
+    fields(draft.spec, {"format", "version", "project_id", "name", "entry", "input_profile", "audio", "early_reflections", "gameplay", "startup_splash", "startup_render"},
         {"format", "version", "project_id", "name", "entry"});
     const auto version = integer(draft.spec.at("version"));
     require(draft.spec.at("format") == "poima.project" && (version == 1 || version == 2) &&
@@ -57,6 +57,8 @@ Project draft_input(const Json& manifest, const SourceCheckpoint& base, const st
     (void)parse_startup_render(draft.spec);
     require(draft.spec.value("startup_render",Json(nullptr)) == base.source.spec.value("startup_render",Json(nullptr)),
         "Draft selection requires the checkpoint's startup_render settings.");
+    require(project_early_reflections(draft.spec) == project_early_reflections(base.source.spec),
+        "Draft selection requires the checkpoint's early_reflections setting.");
     const auto& entry = draft.spec.at("entry");
     fields(entry, {"world", "camera", "controller"}, {"world", "camera", "controller"});
     draft.world = draft.root / path_of(relative_path(entry.at("world")));

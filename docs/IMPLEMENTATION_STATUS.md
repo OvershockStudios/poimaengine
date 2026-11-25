@@ -1,8 +1,17 @@
 # Implementation status
 
-Updated 2026-11-25 for **0.0.447**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-25 for **0.0.448**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.448 lets projects [enable early reflections in exported games](EARLY_REFLECTIONS.md#enable-reflections-in-a-game).
+Relocated Windows players on AMD and NVIDIA reproduced all 9,600 frames of
+the direct and reflected headless mixes through SDL's disk output. The
+reflected run changed acoustic paths twice during one continuing voice.
+Export rejected a runtime that lacked the required capability. Windows and
+Ubuntu passed the project configuration checks. Physical listening and
+scene-scale performance remain open.
+[Results and scope](evidence/m2-player-early-reflections-448.json)
 
 Version 0.0.447 adds [early reflection handoffs](EARLY_REFLECTIONS.md#playback-and-recovery).
 A continuing voice can gain its first bounce and crossfade to a new face as

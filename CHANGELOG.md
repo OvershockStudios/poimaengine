@@ -2,6 +2,12 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.448
+
+- Enable moving early reflections in a game's player through guarded project
+  settings. Export keeps the setting and checks the runtime capability.
+  [Player setup](docs/EARLY_REFLECTIONS.md#enable-reflections-in-a-game)
+
 ## 0.0.447
 
 - Let an active sound acquire or change its early reflection as the scene

@@ -89,6 +89,10 @@ Successful output includes the WAV SHA-256 and format/frame metadata. `stream` r
 
 Set `audio:true` on `runtime.play` for interactive or replay output. It defaults to false. The camera is the listener; events may come from replay `sounds` or C# gameplay. `audio_device_playback` in `capabilities` indicates that the adapter was built, not that a device is present. `sound_events` and `audio_stream_capture` report the separate logical and recording capabilities.
 
+Set `early_reflections:true` alongside audio in the player request or in the
+[project launch settings](EARLY_REFLECTIONS.md#enable-reflections-in-a-game).
+The player uses the same committed reflection solver as timed replay.
+
 The first PC adapter uses SDL3's already-integrated platform layer. On Windows the build enables WASAPI while leaving PC rendering Vulkan-only. SDL receives copied 48 kHz stereo float PCM; its device thread never calls Poima gameplay, geometry construction or Steam Audio DSP. The current mixer/propagation work is synchronous on the player thread, so expensive acoustic scenes can still stall frames and starve output. Worker scheduling and production latency/resource gates remain outstanding. Source streaming is not implemented by this adapter.
 
 Output prebuffers 2,048 frames, uses bounded backpressure above 4,800 queued input frames, and errors if the queue does not drain within 500 ms. The largest ordinary submission is 1,024 frames. Interactive focus/capture loss pauses the device with simulation; resume continues the stream. Replay is paced by graphics and audio backpressure. Finishing trims the final DSP block to committed time, flushes and drains the stream with a two-second bound. The capture duration can truncate remaining tails; stopping the viewport does not advance the game to finish them.

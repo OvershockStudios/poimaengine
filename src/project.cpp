@@ -310,14 +310,25 @@ struct Project {
     Json gameplay_values=Json::object();
     StartupRenderOptions startup_render;
 };
+bool project_early_reflections(const Json& spec) {
+    require(!spec.contains("audio") || spec.at("audio").is_boolean(),"audio must be Boolean.");
+    require(!spec.contains("early_reflections") || spec.at("early_reflections").is_boolean(),"early_reflections must be Boolean.");
+    const auto enabled=spec.value("early_reflections",false);
+    require(!enabled || spec.value("audio",false),"Early reflections require audio:true.");
+    return enabled;
+}
+void require_player_reflection_runtime(bool enabled,const Json& runtime) {
+    require(!enabled || runtime.at("features").value("player_early_reflections",false),
+            "Early reflections require a compatible player runtime.");
+}
 Project project(const std::string& filename,const std::optional<Json>& prospective=std::nullopt) {
     Project p;p.manifest=fs::absolute(path_of(filename)).lexically_normal();regular(p.manifest);p.manifest=canonical_project_path(p.manifest);p.root=p.manifest.parent_path();require(fs::symlink_status(project_io_path(p.root/".poima-incomplete")).type()==fs::file_type::not_found,"Project publication is incomplete; retry with a new destination.");
     p.manifest_bytes=read(p.manifest,65536);p.spec=prospective ? *prospective : parse(p.manifest_bytes);
-    fields(p.spec,{"format","version","project_id","name","entry","input_profile","audio","gameplay","startup_splash","startup_render"},{"format","version","project_id","name","entry"});
+    fields(p.spec,{"format","version","project_id","name","entry","input_profile","audio","early_reflections","gameplay","startup_splash","startup_render"},{"format","version","project_id","name","entry"});
     const auto version=integer(p.spec.at("version"));
     require(p.spec.at("format")=="poima.project" && (version==1 || version==2),"Unsupported project format/version.");
     require(p.spec.contains("gameplay")== (version==2),"Project version 2 requires gameplay; version 1 has no gameplay field.");id(p.spec.at("project_id"));name_value(p.spec.at("name"));
-    require(!p.spec.contains("audio") || p.spec.at("audio").is_boolean(),"audio must be Boolean.");
+    (void)project_early_reflections(p.spec);
     require(!p.spec.contains("startup_splash") || p.spec.at("startup_splash").is_boolean(),"startup_splash must be Boolean.");
     p.startup_render=parse_startup_render(p.spec);
     fields(p.spec.at("entry"),{"world","camera","controller"},{"world","camera","controller"});p.world=contained(p.root,relative_path(p.spec.at("entry").at("world")));
@@ -345,6 +356,7 @@ Project project(const std::string& filename,const std::optional<Json>& prospecti
 Json project_summary(const Project& p) {
     Json assets=Json::array();for(const auto& asset:p.content.assets)assets.push_back({{"filename",asset.filename},{"sha256",asset.sha256},{"bytes",asset.bytes}});
     Json result={{"manifest",text(p.manifest)},{"manifest_sha256",hash(p.manifest_bytes)},{"world_sha256",hash(p.world_bytes)},{"project_id",p.spec.at("project_id")},{"name",p.spec.at("name")},{"entry",p.spec.at("entry")},{"revision",p.content.revision},{"assets",assets},{"needs_audio",p.content.needs_audio},{"audio",p.spec.value("audio",false)},{"input_profile",p.profile.empty() ? Json(nullptr) : Json(text(p.profile))}};
+    if(p.spec.contains("early_reflections"))result["early_reflections"]=p.spec.at("early_reflections");
     if(p.content.needs_navigation)result["needs_navigation"]=true;
     if(p.content.needs_particles)result["needs_particles"]=true;
     if(p.content.needs_sprite_particles)result["needs_sprite_particles"]=true;
@@ -577,12 +589,15 @@ Json runtime_spec(const std::string& bytes,std::string_view expected_version=bui
     require((value.at("target_os")=="Windows" || value.at("target_os")=="Linux") && value.at("target_arch")=="x86_64","Only Windows/Linux x86_64 runtime targets are supported.");
     require(value.at("executable")== (value.at("target_os")=="Windows" ? "bin/poima.exe" : "bin/poima"),"Runtime executable path does not match target.");
     const auto& features=value.at("features");
-    fields(features,{"simulation","renderer","audio","managed","editor","native_gameplay","game_ui",
+    fields(features,{"simulation","renderer","audio","player_early_reflections","managed","editor","native_gameplay","game_ui",
         "navigation","navigation_obstacles","asset_provenance","project_post_effects","water_regions","water_rain","audio_water_flow","water_sheet_aeration","water_impact_foam",
         "water_ripples","water_wave_layers","water_listener_audio","water_optics","water_refraction","water_caustics","water_shore_foam","water_terrain_fit","water_surface_swell","water_swell_variation","water_rough_reflection","water_solar_scattering","water_offshore","water_sprite_optics","snow_water_regions","scene_particles","scene_particle_sprites",
         "particle_collisions","particle_impact_bursts","particle_water_contact","particle_water_flow","water_buoyancy","water_currents","water_surface_wakes","water_body_displacement","water_storage","water_reservoirs","water_overflow","water_sheets","collision_surfaces","surface_marks","surface_mark_masks","mesh_lod","output_grade","auto_exposure","atmosphere_sky","orbital_atmosphere","aerial_perspective","volumetric_clouds","cloud_shadows","screen_reflections","depth_of_field","foliage_motion",
         "height_fog","physics_checkpoint","fsr3_upscaler"},{"simulation","renderer","audio","managed","editor"});
     for(const auto& feature:features)require(feature.is_boolean(),"Runtime feature flags must be Boolean.");
+    require(!features.value("player_early_reflections",false) ||
+        (features.at("simulation")==true && features.at("renderer")==true && features.at("audio")==true),
+        "Runtime early reflections require simulation, renderer and audio support.");
     require(!features.value("particle_collisions",false) || features.at("simulation")==true,
         "Runtime particle collisions require simulation support.");
     require(!features.value("particle_impact_bursts",false) || features.value("particle_collisions",false),
@@ -700,11 +715,12 @@ VerifiedGame verify_game(const std::string& filename,std::string_view expected_v
     result.definition.manifest_sha256=hash(manifest_bytes);
     require(expected_bundle.empty() || result.definition.manifest_sha256==expected_bundle,
         "Game bundle SHA-256 differs from the requested export.");
-    fields(spec,{"format","version","project_id","name","engine","entry","audio","input_profile","source","files","gameplay","startup_splash","startup_render"},{"format","version","project_id","name","engine","entry","audio","source","files"});
+    fields(spec,{"format","version","project_id","name","engine","entry","audio","early_reflections","input_profile","source","files","gameplay","startup_splash","startup_render"},{"format","version","project_id","name","engine","entry","audio","source","files"});
     const auto version=integer(spec.at("version"));require(spec.at("format")=="poima.game" && (version==1 || version==2),"Unsupported game bundle format/version.");
     require(spec.contains("gameplay")== (version==2),"Game version 2 requires gameplay; version 1 has no gameplay field.");id(spec.at("project_id"));name_value(spec.at("name"));require(spec.at("audio").is_boolean(),"Game audio flag must be Boolean.");
     require(!spec.contains("startup_splash") || spec.at("startup_splash").is_boolean(),"startup_splash must be Boolean.");
     result.definition.startup_render=parse_startup_render(spec);
+    result.definition.early_reflections=project_early_reflections(spec);
     const auto& engine=spec.at("engine");fields(engine,{"version","target_os","target_arch","executable"},{"version","target_os","target_arch","executable"});
     fields(spec.at("source"),{"revision","world_sha256"},{"revision","world_sha256"});const auto revision=integer(spec.at("source").at("revision"));require(spec.at("source").at("world_sha256").is_string() && hexadecimal(spec.at("source").at("world_sha256").get<std::string>(),64),"Invalid source world hash.");
     require(spec.at("files").is_array() && !spec.at("files").empty() && spec.at("files").size()<=count_limit,"Invalid bundle inventory.");
@@ -724,6 +740,7 @@ VerifiedGame verify_game(const std::string& filename,std::string_view expected_v
         expected_bundle.empty()?expected_version:std::string_view(bundle_version));
     require(engine.at("version")==runtime.at("engine_version") && engine.at("target_os")==runtime.at("target_os") && engine.at("target_arch")==runtime.at("target_arch") && engine.at("executable")=="runtime/"+runtime.at("executable").get<std::string>(),"Game engine descriptor differs from runtime descriptor.");
     require_startup_render_runtime(result.definition.startup_render,runtime);
+    require_player_reflection_runtime(result.definition.early_reflections,runtime);
     expect(engine.at("executable"),"runtime");executable_mode(contained(root,engine.at("executable")),runtime.at("target_os"));expect("runtime/share/poima/LICENSE","runtime");expect("runtime/share/poima/THIRD_PARTY_NOTICES.md","runtime");
     result.definition.executable=text(contained(root,engine.at("executable")));
     fields(spec.at("entry"),{"world","camera","controller"},{"world","camera","controller"});require(spec.at("entry").at("world")=="content/world.json","Bundle world must use content/world.json.");expect("content/world.json","world");
@@ -922,8 +939,8 @@ Reply project_text_reply(const std::string& manifest,const std::string& owned_wo
 }
 
 Json configure_project_manifest(const std::string& filename,const Json& patch,const std::string& expected_manifest) {
-    fields(patch,{"startup_splash","startup_render"});
-    require(!patch.empty(),"Supply startup_splash or startup_render.");
+    fields(patch,{"startup_splash","startup_render","audio","early_reflections"});
+    require(!patch.empty(),"Supply startup_splash, startup_render, audio or early_reflections.");
     require(!patch.contains("startup_splash") || patch.at("startup_splash").is_boolean(),"startup_splash must be Boolean.");
     require(hexadecimal(expected_manifest,64),"Expected a lowercase manifest SHA-256.");
     const auto requested=fs::absolute(path_of(filename)).lexically_normal();
@@ -944,6 +961,12 @@ Json configure_project_manifest(const std::string& filename,const Json& patch,co
         if(render.is_null())spec.erase("startup_render");
         else spec["startup_render"]=render;
     }
+    for(const auto* key:{"audio","early_reflections"}) {
+        const auto value=patch.find(key);
+        if(value==patch.end())continue;
+        require(value->is_boolean(),std::string(key)+" must be Boolean.");
+        if(*value==true || spec.contains(key))spec[key]=*value;
+    }
     // Validate the proposed settings so the creator can repair a profile
     // that became incompatible with the world after an edit.
     const auto current=project(text(manifest),spec);
@@ -953,6 +976,10 @@ Json configure_project_manifest(const std::string& filename,const Json& patch,co
     Json result={{"startup_splash",spec.value("startup_splash",true)},
         {"manifest_sha256",expected_manifest},{"changed",changed}};
     if(spec.contains("startup_render"))result["startup_render"]=spec.at("startup_render");
+    if(patch.contains("audio") || patch.contains("early_reflections")) {
+        result["audio"]=spec.value("audio",false);
+        result["early_reflections"]=project_early_reflections(spec);
+    }
     if(!changed)return result;
 
     const auto next=spec.dump(2)+"\n";
@@ -1130,6 +1157,7 @@ Reply build_project(const std::string& manifest,const std::string& output,const 
         require(!p.content.needs_navigation || runtime.at("features").value("navigation",false),"Project requires a navigation-enabled runtime.");
         require(p.content.provenance_records.empty() || runtime.at("features").value("asset_provenance",false),"Project requires an asset-provenance-enabled runtime.");
         require(!(p.content.needs_audio || p.spec.value("audio",false)) || runtime.at("features").at("audio")==true,"Project requires an audio-enabled runtime.");
+        require_player_reflection_runtime(project_early_reflections(p.spec),runtime);
         require(parse(p.content.document).value("ui",Json::object()).empty() || runtime.at("features").value("game_ui",false),"Project requires a game-UI-enabled runtime.");
         require_content_contract(p.content.document,runtime);
         require_scene_feature_support(p.content,runtime);
@@ -1180,6 +1208,7 @@ Reply build_project(const std::string& manifest,const std::string& output,const 
         inventory.sort();Json spec={{"format","poima.game"},{"version",1},{"project_id",p.spec.at("project_id")},{"name",p.spec.at("name")},{"engine",{{"version",runtime.at("engine_version")},{"target_os",runtime.at("target_os")},{"target_arch",runtime.at("target_arch")},{"executable","runtime/"+runtime.at("executable").get<std::string>()}}},{"entry",{{"world","content/world.json"},{"camera",p.spec.at("entry").at("camera")},{"controller",p.spec.at("entry").at("controller")}}},{"audio",p.spec.value("audio",false)},{"source",{{"revision",p.content.revision},{"world_sha256",hash(p.world_bytes)}}},{"files",inventory.files}};
         if(p.spec.contains("startup_splash"))spec["startup_splash"]=p.spec.at("startup_splash");
         if(p.spec.contains("startup_render"))spec["startup_render"]=p.spec.at("startup_render");
+        if(project_early_reflections(p.spec))spec["early_reflections"]=true;
         if(!p.profile.empty())spec["input_profile"]="content/default.poima-input.json";
         if(p.gameplay) { spec["version"]=2;spec["gameplay"]={{"descriptor","gameplay/native-gameplay.json"},{"values",p.gameplay_values}}; }
         exclusive_write(stage.path/"game.json",spec.dump(2)+"\n");verify_game(text(stage.path/"game.json"));
@@ -1206,6 +1235,7 @@ Reply inspect_game(const std::string& manifest,const std::string& expected_bundl
         const auto game=verify_game(manifest,build_metadata().version,expected_bundle);
         Json result={{"manifest",text(game.manifest)},{"name",game.definition.name},{"project_id",game.spec.at("project_id")},{"revision",game.definition.revision},{"target_os",game.definition.target_os},{"target_arch",game.definition.target_arch},{"entry",game.spec.at("entry")},{"audio",game.definition.audio},{"startup_splash",game.definition.startup_splash},{"files",game.spec.at("files")}};
         if(game.spec.contains("startup_render"))result["startup_render"]=game.spec.at("startup_render");
+        if(game.definition.early_reflections)result["early_reflections"]=true;
         if(game.definition.needs_sprite_particles)result["needs_sprite_particles"]=true;
         if(game.definition.needs_particle_collisions)result["needs_particle_collisions"]=true;
         if(game.definition.needs_particle_impact_bursts)result["needs_particle_impact_bursts"]=true;

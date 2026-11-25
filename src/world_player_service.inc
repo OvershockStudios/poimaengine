@@ -8,7 +8,7 @@
             options.render.fxaa};
     }
     static void validate_player_parameters(const Json& params) {
-        fields(params,{"session_id","request_id","expected_tick","controller","camera","mode","sequence","max_frames","path","width","height","gpu","samples","viewmodel_samples","culling","draw_instancing","gpu_visibility","clustered_lighting","frames_in_flight","scene_debug_view","scene_product_probes","lighting_path","ambient_occlusion","reconstruction","shadow_filter","post_aa","profile","audio","input_profile","input_revision","gamepad","expected_structure_revision","settings_profile","settings_revision","settings_overrides","lens_interpolation","pose_interpolation"},
+        fields(params,{"session_id","request_id","expected_tick","controller","camera","mode","sequence","max_frames","path","width","height","gpu","samples","viewmodel_samples","culling","draw_instancing","gpu_visibility","clustered_lighting","frames_in_flight","scene_debug_view","scene_product_probes","lighting_path","ambient_occlusion","reconstruction","shadow_filter","post_aa","profile","audio","early_reflections","input_profile","input_revision","gamepad","expected_structure_revision","settings_profile","settings_revision","settings_overrides","lens_interpolation","pose_interpolation"},
             {"session_id","request_id","expected_tick","camera","mode"});
         require(!params.contains("lens_interpolation") || params.at("lens_interpolation").is_boolean(),
             "lens_interpolation must be Boolean.");
@@ -24,8 +24,11 @@
         const auto expected=revision(params.at("expected_tick"));
         structure_mutation_guard(params);require(expected==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
         require(!params.contains("audio") || params.at("audio").is_boolean(),"audio must be Boolean.");
+        require(!params.contains("early_reflections") || params.at("early_reflections").is_boolean(),"early_reflections must be Boolean.");
+        require(!params.value("early_reflections",false) || params.value("audio",false),"Player early reflections require audio output.");
         require(!params.value("audio",false) || audio_available(),"Player audio is not built.",-32003);
         PlayerOptions options;options.audio=params.value("audio",false);
+        options.early_reflections=params.value("early_reflections",false);
         options.lens_interpolation=params.value("lens_interpolation",false);
         options.pose_interpolation=params.value("pose_interpolation",false);
         if(params.contains("controller"))options.controller=identifier(params.at("controller"));
@@ -177,6 +180,10 @@
         if(options.startup_splash)result["startup_splash"]={{"frames_presented",report.startup_frames_presented},
             {"visible_ms",report.startup_visible_ms},{"tick",report.initial_tick}};
         const auto& audio=report.audio;result["audio"]={{"enabled",audio.enabled},{"driver",audio.driver},{"submitted_frames",audio.submitted_frames},{"max_queued_frames",audio.max_queued_frames},{"empty_queue_observations",audio.empty_queue_observations},{"backpressure_ms",audio.backpressure_ms},{"stream_drained",audio.stream_drained},{"timeline_resets",audio.timeline_resets},{"voices_started",audio.stream.voices_started},{"peak",audio.stream.peak},{"over_range_samples",audio.stream.over_range_samples},{"dsp_ms",audio.stream.dsp_ms}};
+        if(options.early_reflections) {
+            result["audio"]["early_reflections"]=audio.enabled;
+            result["audio"]["reflection_handoffs"]=audio.stream.reflection_handoffs;
+        }
         return result;
     }
     struct PlayerOwner {

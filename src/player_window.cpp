@@ -119,6 +119,11 @@ struct PlayerWindow::Impl {
     void check_thread() const {
         if(std::this_thread::get_id()!=owner)throw std::runtime_error("Player window calls require its creating thread.");
     }
+    PlayerAudioState audio_state() const {
+        auto state=session.audio_state(options.camera);
+        state.snapshot.early_reflections|=options.early_reflections;
+        return state;
+    }
     player_diagnostics::AudioWork pending_audio() const noexcept {
         return player_diagnostics::audio_delta(audio_work,previous_audio_work);
     }
@@ -301,7 +306,7 @@ struct PlayerWindow::Impl {
     }
     void start_controls() {
         if(options.audio) {
-            try {audio=std::make_unique<PlayerAudio>(session.audio_state(options.camera),audio_work,result.preferences.requested_master_gain);}
+            try {audio=std::make_unique<PlayerAudio>(audio_state(),audio_work,result.preferences.requested_master_gain);}
             catch(...) {result.preferences.audio_outcome="initialization_failed";throw;}
             result.preferences.sink_gain=audio->report().master_gain;result.preferences.audio_outcome="sink_gain_verified";
         }
@@ -385,7 +390,7 @@ struct PlayerWindow::Impl {
         const auto current=session.identity();
         profiling::SessionScope current_session(current);
         if(current==result.final_session) {
-            if(audio)audio->advance(session.audio_state(options.camera));
+            if(audio)audio->advance(audio_state());
             return false;
         }
         intervention(fp::Flag::replacement);
@@ -400,7 +405,7 @@ struct PlayerWindow::Impl {
         if(audio)audio->discard_pending();
         require(options.controller.empty() || session.controller_valid(options.controller),"Restored runtime no longer has the selected CharacterController; choose a valid player before resuming.");
         fresh_snapshot();
-        if(audio)audio->reset(session.audio_state(options.camera));
+        if(audio)audio->reset(audio_state());
         if(options.replay) { quit=true;result.stop_reason="runtime_replaced"; }
         return true;
     }
@@ -463,7 +468,7 @@ struct PlayerWindow::Impl {
         else if(session.tick()!=result.final_tick) {
             // Explicit paused stepping belongs to a different input clock.
             intervention(fp::Flag::replacement);pause(true);ui_presented=false;
-            if(audio)audio->reset(session.audio_state(options.camera));
+            if(audio)audio->reset(audio_state());
             if(options.replay) {quit=true;result.stop_reason="runtime_changed";}
         }
         const auto old_ui=snapshot.logical_ui;
@@ -720,7 +725,7 @@ struct PlayerWindow::Impl {
         try {
             apply_preferences();
             profiling::SessionScope final_session(result.final_session);
-            if(initialized && audio)audio->finish(session.audio_state(options.camera));
+            if(initialized && audio)audio->finish(audio_state());
             if(initialized && !options.render.capture.empty()) {
                 intervention(fp::Flag::capture);
                 // Final screenshot work is an intervention, not another normal

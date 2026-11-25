@@ -103,6 +103,7 @@ struct PlayerOptions {
     std::optional<double> vertical_fov;
     std::optional<float> ui_scale;
     bool replay=false,audio=false;
+    bool early_reflections=false;
     // Live-clock FOV-only presentation between committed ticks. Authoritative
     // simulation and camera pose remain current; adds at most one tick of FOV lag.
     bool lens_interpolation=false;
