@@ -659,6 +659,49 @@ void placed_reservoirs_share_physics_water_levels() {
     rejects<std::invalid_argument>([&]{Region invalid(definition);},"A tank could intersect the offshore half-plane.");
 }
 
+void overflow_weirs_obey_crest_and_tailwater() {
+    using namespace poima::water;
+    RegionDefinition definition{
+        .config={.cells_x=1,.cells_z=1}, .floor_heights_m={0}, .initial_depths_m={.25},
+        .plan_sha256=std::string(64,'e'),
+        .storage=StorageDefinition{
+            {{"cistern",0,1,2,.9}},
+            {{"spill",std::string("cistern"),Cell{0,0},.7,0,20,1,{},1,OverflowWeir{1,1.7}}},
+        },
+    };
+    const auto near=[](double a,double b){ return std::abs(a-b)<1e-12; };
+    Region free(definition);
+    free.step();
+    const auto saved=free.save();
+    const auto free_rate=1.7*std::pow(.2,1.5);
+    require(near(saved["storage"]["transfers_m3"][0],free_rate*step_seconds) &&
+        near(free.grid().sample({0,0}).depth_m,.25+free_rate*step_seconds) &&
+        near(free.last_report()->volume_after_m3,1.15),"The free-flow weir broke the crest discharge or volume ledger.");
+    Region restored(definition);
+    restored.restore(saved,1);
+    for(int i=0;i<90;++i) { free.step(); restored.step(); }
+    require(free.save()==restored.save() && free.storage()->volume_m3()>=.7,"Weir continuation changed or drained below its lip.");
+    auto forged=saved;
+    forged["storage"]["transfers_m3"][0]=-free_rate*step_seconds;
+    rejects<std::invalid_argument>([&]{restored.restore(forged,1);},"A reversed spill survived restore validation.");
+
+    definition.initial_depths_m[0]=.8;
+    Region submerged(definition);
+    submerged.step();
+    const auto reduced=1.7*(std::pow(.2,1.5)-std::pow(.1,1.5))*step_seconds;
+    require(near(submerged.save()["storage"]["transfers_m3"][0],reduced),"Tailwater did not reduce the weir discharge.");
+    definition.initial_depths_m[0]=.96;
+    Region backed_up(definition);
+    backed_up.step();
+    require(backed_up.save()["storage"]["transfers_m3"][0]==0 && backed_up.grid().sample({0,0}).depth_m==.96,
+        "A backed-up spillway reversed flow.");
+    definition.initial_depths_m[0]=.1;
+    definition.storage->reservoirs[0].initial_volume_m3=.695;
+    Region below_lip(definition);
+    below_lip.step();
+    require(below_lip.save()["storage"]["transfers_m3"][0]==0,"Water spilled before crossing the crest.");
+}
+
 }
 
 int main() {
@@ -676,6 +719,7 @@ int main() {
         occupied_body_volume_moves_water_without_adding_it();
         finite_storage_ports_reverse_and_survive_restore();
         placed_reservoirs_share_physics_water_levels();
+        overflow_weirs_obey_crest_and_tailwater();
         std::cout << "Water region tests passed.\n";
     } catch (const std::exception& error) {
         std::cerr << error.what() << '\n';

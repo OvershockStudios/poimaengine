@@ -508,7 +508,7 @@ caustics stay on the terrain. The multisample path uses a simple top mesh.
 Gameplay point queries return `column.reservoir`; top-surface sweep hits
 return `reservoir`. The existing listener filter, particle water contacts
 and box buoyancy can use that same water level. Pressure from a moving box
-still affects terrain cells only. Overflow and portable vessels remain open.
+still affects terrain cells only. Portable vessels remain open.
 
 Placed reservoirs cook `.pwater` v20. Export needs `features.water_reservoirs`.
 The [fixture](../tests/water_reservoir_capture.py) verifies a gate transfer,
@@ -516,6 +516,48 @@ the change in listener submersion, and fresh save restoration. On Windows it
 also checks the Vulkan output against an independent calculation of the
 water path and Fresnel reflection. Use `--gpu` and `--runtime-root` for the
 rendered export check.
+
+#### Spill over a reservoir crest
+
+Give a storage port an `overflow` profile in place of `conductance_m2_s`.
+The `from` endpoint must be a reservoir. Connect `to` to a different
+reservoir or one of the terrain-water cells. Set `sill_height_m` to the crest
+elevation in world space. It must be above the source floor, below the
+source's full stage and at or above the receiving floor.
+
+```json
+{
+  "id": "cistern.spill",
+  "from": {"reservoir": "cistern"},
+  "to": {"cell": [0, 0]},
+  "sill_height_m": 0.7,
+  "overflow": {"width_m": 1, "coefficient_sqrt_m_s": 1.7},
+  "max_flow_m3_s": 10,
+  "openness": 1
+}
+```
+
+Use a width of 0.01–256 m and a coefficient of 0.01–10 √m/s. An open port
+starts draining on the first tick that begins with the source surface above
+the crest and above the receiving surface. Water above the crest at the
+receiving end reduces discharge. Rising tailwater can stop the flow entirely.
+Reverse flow is blocked. The free-flow relation is `Q = C × width × H^1.5`.
+Poima models partial submergence by subtracting the same head term for the
+tailwater, then applies the storage network's limits on capacity, available
+water and stable transfer per tick. [USACE spillway reference](https://www.hec.usace.army.mil/confluence/hmsdocs/hmstrm/reservoir-modeling/reservoir-modeling-concepts-and-equations/spillways)
+
+Optional `action` and `action_openness` control a gate on the weir. The
+committed `storage.ports` report includes the same positive-direction
+`discharge_m3_s` field as other ports. The source and receiving water levels
+drive their existing visuals. Author any falling stream or spray separately.
+The combined ledger includes the transfer once and a save retains the
+last completed discharge. Overflow uses `.pwater` v21 and requires
+`features.water_overflow` in exported runtimes.
+
+The [overflow fixture](../tests/water_overflow_capture.py) fills a cistern
+through a linear port, closes the inlet and checks 120 ticks of weir discharge
+and conserved volume across save restoration. With `--runtime-root` and
+`--gpu` it also checks the pictured waterline in a relocated Windows game.
 
 ### Vary the swell across a coast
 

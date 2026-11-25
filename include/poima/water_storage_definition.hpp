@@ -36,12 +36,18 @@ struct ReservoirDefinition {
     std::optional<ReservoirFootprint> footprint{};
 };
 
+struct OverflowWeir {
+    double width_m;
+    double coefficient_sqrt_m_s;
+};
+
 struct StoragePortDefinition {
     std::string id;
     StorageEndpoint from, to;
     double sill_height_m, conductance_m2_s, max_flow_m3_s, openness;
     std::string action;
     double action_openness = 1;
+    std::optional<OverflowWeir> overflow{};
 };
 
 struct StorageDefinition {
@@ -52,6 +58,10 @@ struct StorageDefinition {
 inline bool has_placed_reservoirs(const StorageDefinition& definition) noexcept {
     return std::ranges::any_of(definition.reservoirs,
         [](const auto& reservoir){ return reservoir.footprint.has_value(); });
+}
+
+inline bool has_overflow(const StorageDefinition& definition) noexcept {
+    return std::ranges::any_of(definition.ports,[](const auto& port){ return port.overflow.has_value(); });
 }
 
 }

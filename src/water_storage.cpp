@@ -45,7 +45,11 @@ bool overlaps(const ReservoirFootprint& a, const ReservoirFootprint& b) noexcept
 Json port_json(const StoragePortDefinition& port) {
     Json row{{"id", port.id}, {"from", endpoint_json(port.from)}, {"to", endpoint_json(port.to)},
         {"sill_height_m", port.sill_height_m}, {"openness", port.openness},
-        {"conductance_m2_s", port.conductance_m2_s}, {"max_flow_m3_s", port.max_flow_m3_s}};
+        {"max_flow_m3_s", port.max_flow_m3_s}};
+    if (const auto& weir=port.overflow)
+        row["overflow"]={{"width_m",weir->width_m},{"coefficient_sqrt_m_s",weir->coefficient_sqrt_m_s}};
+    else
+        row["conductance_m2_s"]=port.conductance_m2_s;
     if (!port.action.empty()) {
         row["action"] = port.action;
         row["action_openness"] = port.action_openness;
@@ -132,11 +136,23 @@ WaterStorage::WaterStorage(const StorageDefinition& definition, const Grid& grid
         const auto from = resolve(port.from), to = resolve(port.to);
         if (from == to || !valid_input_action_name(port.id) ||
                 !bounded(port.sill_height_m, -max_water_depth_m, max_water_depth_m) ||
-                !bounded(port.conductance_m2_s, 0, max_storage_rate) || port.conductance_m2_s == 0 ||
                 !bounded(port.max_flow_m3_s, 0, max_storage_rate) || port.max_flow_m3_s == 0 ||
                 !bounded(port.openness, 0, 1) || !bounded(port.action_openness, 0, 1) ||
                 (!port.action.empty() && !valid_input_action_name(port.action)))
             throw std::invalid_argument("Invalid water storage port endpoints, rates or gate control.");
+        if (const auto& weir=port.overflow) {
+            if (from>=reservoirs_.size() || port.conductance_m2_s!=0 ||
+                !bounded(weir->width_m,.01,256) || !bounded(weir->coefficient_sqrt_m_s,.01,10))
+                throw std::invalid_argument("An overflow port needs a reservoir source, width in [0.01,256] and coefficient in [0.01,10].");
+            const auto& source=reservoirs_[from];
+            const auto target_floor=to<reservoirs_.size() ? reservoirs_[to].floor_height_m :
+                grid.sample(cells_[to-reservoirs_.size()]).floor_height_m;
+            const auto rim_depth=port.sill_height_m-source.floor_height_m;
+            if (!(rim_depth>0 && rim_depth<source.capacity_m3/source.area_m2 && port.sill_height_m>=target_floor))
+                throw std::invalid_argument("An overflow crest must be above the source floor, below its full stage and at or above the receiving floor.");
+        } else if (!(port.conductance_m2_s>0 && port.conductance_m2_s<=max_storage_rate)) {
+            throw std::invalid_argument("A linear water port requires positive bounded conductance.");
+        }
         ports_.push_back({port, from, to});
     }
     std::ranges::sort(ports_, {}, [](const Port& port) -> const std::string& { return port.definition.id; });
@@ -191,7 +207,7 @@ WaterStorage::Step WaterStorage::stage(const Grid& grid, std::span<const std::st
     }
     Step next;
     next.openness = openness_;
-    struct Proposal { std::size_t donor, receiver; double difference, volume; };
+    struct Proposal { std::size_t donor, receiver; double difference, rate, volume; };
     std::array<Proposal, max_water_ports> proposals{};
     for (std::size_t i = 0; i < ports_.size(); ++i) {
         const auto& port = ports_[i];
@@ -204,9 +220,17 @@ WaterStorage::Step WaterStorage::stage(const Grid& grid, std::span<const std::st
         const auto sill = std::max({rule.sill_height_m, from.floor, to.floor});
         const auto from_head = std::max(0., from.depth - (sill - from.floor));
         const auto to_head = std::max(0., to.depth - (sill - to.floor));
-        if (from_head == to_head) continue;
+        if (from_head == to_head || (rule.overflow && from_head<to_head)) continue;
         auto& flow = proposals[i];
-        flow = {port.from, port.to, std::abs(from_head - to_head), 0};
+        const auto difference=std::abs(from_head-to_head);
+        double rate=rule.conductance_m2_s*difference;
+        if (const auto& weir=rule.overflow) {
+            // Subtract downstream head power in a form that retains the
+            // small positive difference when the two surfaces nearly meet.
+            const auto upper=std::sqrt(from_head), lower=std::sqrt(to_head);
+            rate=weir->coefficient_sqrt_m_s*weir->width_m*difference*(upper+to_head/(upper+lower));
+        }
+        flow = {port.from, port.to, difference, std::min(rule.max_flow_m3_s,rate), 0};
         if (to_head > from_head)
             std::swap(flow.donor, flow.receiver);
         if (nodes[flow.receiver].space == 0) {
@@ -219,16 +243,14 @@ WaterStorage::Step WaterStorage::stage(const Grid& grid, std::span<const std::st
     for (std::size_t i = 0; i < ports_.size(); ++i) {
         auto& flow = proposals[i];
         if (flow.difference == 0) continue;
-        const auto& port = ports_[i].definition;
         const auto& donor = nodes[flow.donor];
         auto& receiver = nodes[flow.receiver];
-        const auto rate = std::min(port.max_flow_m3_s, port.conductance_m2_s * flow.difference);
         // An open link shares the endpoint's per-tick stage correction with its
         // other active links. Even very high conductance cannot invert an isolated pair.
         const auto donor_links = static_cast<double>(donor.degree);
         const auto receiver_links = static_cast<double>(receiver.degree);
         const auto stable_volume = flow.difference / (donor.slope * donor_links + receiver.slope * receiver_links);
-        flow.volume = std::min({rate * step_seconds, stable_volume, donor.volume / donor_links}) * next.openness[i];
+        flow.volume = std::min({flow.rate * step_seconds, stable_volume, donor.volume / donor_links}) * next.openness[i];
         receiver.requested_in += flow.volume;
     }
     for (std::size_t i = 0; i < ports_.size(); ++i) {
@@ -301,7 +323,7 @@ void WaterStorage::restore(const Json& state, std::uint64_t tick) {
         const auto limit = tick ? port.definition.max_flow_m3_s * step_seconds * next.openness[i] : 0.;
         if ((next.openness[i] != port.definition.openness &&
                 (!tick || port.definition.action.empty() || next.openness[i] != port.definition.action_openness)) ||
-                std::abs(next.transfers[i]) > limit)
+                std::abs(next.transfers[i]) > limit || (port.definition.overflow && next.transfers[i]<0))
             throw std::invalid_argument("Saved water storage gate or transfer is outside the authored bounds.");
         if (port.from < reservoirs_.size()) delta[port.from] -= next.transfers[i];
         if (port.to < reservoirs_.size()) delta[port.to] += next.transfers[i];

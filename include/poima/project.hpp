@@ -57,6 +57,7 @@ struct GameDefinition {
     bool needs_water_body_displacement=false;
     bool needs_water_storage=false;
     bool needs_water_reservoirs=false;
+    bool needs_water_overflow=false;
     bool needs_collision_surfaces=false;
 };
 // Verifies all bundle files and their dependency closure before returning paths.

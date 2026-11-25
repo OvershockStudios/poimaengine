@@ -47,6 +47,7 @@ record correlated evidence, and identify a useful impossibility check.
 | Push water out of a compartment with a prop | [Body displacement](SHALLOW_WATER.md#let-props-push-water-into-adjacent-cells) | Check the occupied cell, gate discharge, receiving waterline and liquid-volume ledger. Remove the prop and replay from a save. |
 | Fill or drain a basin through gated reservoirs | [Connected reservoirs](SHALLOW_WATER.md#fill-and-drain-connected-reservoirs) | Compare tank stages, signed discharges, terrain waterline and combined volume across a saved replay. |
 | Put liquid inside a tank | [Placed reservoirs](SHALLOW_WATER.md#place-a-reservoir-in-the-world) | Probe the tank waterline, listener and buoyancy together, then compare phases in a saved Vulkan replay. |
+| Spill water from a cistern into a lower basin | [Overflow weirs](SHALLOW_WATER.md#spill-over-a-reservoir-crest) | Observe discharge above the crest, the rising receiver, and the combined ledger after restoring a save. |
 | Make rain splash or sparks scatter on contact | [Contact bursts](PARTICLES.md#spawn-a-burst-at-contact) and [surface routing](PARTICLES.md#vary-a-burst-by-surface) | Inspect the hit, selected emitter and sprite motion. Reopen a save and compare the continuation. |
 | Shape a local water surface | [Water regions and ripples](SHALLOW_WATER.md#author-surface-ripples) | Verify water levels and terrain collision, then compare the visible normals at the same tick after restoring a save. |
 

@@ -2,6 +2,12 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.441
+
+- Add one-way reservoir overflow weirs. The crest controls when a tank
+  starts spilling and high water downstream reduces the flow.
+  [Overflow weirs](docs/SHALLOW_WATER.md#spill-over-a-reservoir-crest)
+
 ## 0.0.440
 
 - Give reservoirs a world-space footprint. Their water level now drives

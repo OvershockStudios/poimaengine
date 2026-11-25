@@ -144,6 +144,7 @@ Reply capabilities() {
         ",\"water_body_displacement\":" + boolean(POIMA_SIMULATION != 0) +
         ",\"water_storage\":" + boolean(POIMA_SIMULATION != 0) +
         ",\"water_reservoirs\":" + boolean(POIMA_SIMULATION != 0) +
+        ",\"water_overflow\":" + boolean(POIMA_SIMULATION != 0) +
         ",\"water_currents\":" + boolean(POIMA_SIMULATION != 0) +
         ",\"particle_water_contact\":" + boolean(POIMA_SIMULATION != 0) +
         ",\"water_swell_variation\":" + boolean(POIMA_RENDER_SMOKE != 0 && POIMA_SIMULATION != 0) +

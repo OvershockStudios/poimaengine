@@ -1,8 +1,17 @@
 # Implementation status
 
-Updated 2026-11-25 for **0.0.440**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-25 for **0.0.441**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.441 adds [reservoir overflow weirs](SHALLOW_WATER.md#spill-over-a-reservoir-crest).
+The native fixture fills a cistern above its crest, then moves 135.85 litres
+into terrain water over 120 ticks while holding the total at 2.33 m³.
+Headless tests check the crest, reduced flow under high tailwater and blocked
+reverse flow. AMD forward and NVIDIA deferred reproduce the full and drained
+waterlines from relocated saves. Ubuntu passed ten focused suites and the
+headless fixture. Falling streams, spray and portable vessels remain separate
+work. [Results and scope](evidence/m2-water-overflow-441.json)
 
 Version 0.0.440 lets [placed reservoirs](SHALLOW_WATER.md#place-a-reservoir-in-the-world)
 render water at the saved level inside a fixed footprint. Releasing 120
