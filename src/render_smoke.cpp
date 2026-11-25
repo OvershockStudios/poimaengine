@@ -1407,10 +1407,13 @@ struct Context {
             if (roughness) require(*roughness>=0 && *roughness<=1,"Invalid water reflection roughness.");
             const auto caustics=strength>0 ? prepare_water_caustics(*water,lighting,water_normal_mode,color_reason) : std::string_view{};
             std::uint32_t aeration=0;
+            std::uint32_t sheet_count=0,foam_count=0;
             if (color_reason=="active") {
                 water_parameters=view.parameters;
                 optical_reservoirs=std::move(view.reservoirs);
                 optical_sheets=std::move(view.sheets);
+                sheet_count=view.sheet_count;
+                foam_count=view.foam_count;
                 frame_constants.water_offshore=view.offshore;
                 frame_constants.water_offshore_swell=view.offshore_swell;
                 frame_constants.water_swell_variation=view.swell_variation;
@@ -1418,7 +1421,7 @@ struct Context {
                     frame_constants.water_reflection={static_cast<float>(*roughness),1,0,0};
                 aeration=static_cast<std::uint32_t>(std::ranges::count_if(optical_sheets,
                     [](const auto& sheet){ return sheet.heading_width[3]>0; }));
-                prepare_water_foam_light(*water,lighting,aeration>0);
+                prepare_water_foam_light(*water,lighting,aeration>0 || foam_count>0);
             }
             pending_water_optics=WaterOpticsDiagnostics{color_reason=="active",color_reason,
                 water->cells_x*water->cells_z,view.submersion_m,water->optics.refraction && color_reason=="active",
@@ -1434,9 +1437,10 @@ struct Context {
                 pending_water_optics->solar_scattering=WaterSolarScatteringDiagnostics{*solar_scattering,sky_gain,scattering_scale};
             if (color_reason=="active") pending_water_optics->offshore_swell_layers=view.offshore_swell_layers;
             pending_water_optics->reservoir_volumes=static_cast<std::uint32_t>(optical_reservoirs.size());
-            pending_water_optics->falling_sheets=static_cast<std::uint32_t>(optical_sheets.size());
+            pending_water_optics->falling_sheets=sheet_count;
             pending_water_optics->aerated_sheets=aeration;
             pending_water_optics->aerated_sheets_sun=aeration>0 && frame_constants.water_shore_foam[3]>0;
+            pending_water_optics->impact_foam_patches=foam_count;
         }
         if(wants_aerial) {
             const auto reason=color_reason=="active" && !sky_pass.atmosphere_enabled() ?

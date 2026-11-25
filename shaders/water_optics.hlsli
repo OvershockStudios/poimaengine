@@ -341,6 +341,13 @@ float3 compose_water_path(WaterConstants water,float3 input_radiance,float3 ray,
                 color=lerp(color,water_medium(water_foam_radiance(camera.xyz+offset),scattering,
                     before,bubbles,path.bubble_before_interface),coverage*seam_fade);
         }
+        [branch] if (from_air && !path.offshore_interface && path.sheet_side==0 && impact_foam_count(water)>0) {
+            const float3 offset=interface_at*ray;
+            const float coverage=impact_foam_coverage(water,offset.xz,water_interface_footprint(interface_at,relative_y));
+            if (coverage>0)
+                color=lerp(color,water_medium(water_foam_radiance(camera.xyz+offset),scattering,
+                    before,bubbles,path.bubble_before_interface),coverage);
+        }
     }
     return clamp(color, -65504.0, 65504.0);
 }

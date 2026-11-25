@@ -624,6 +624,7 @@ public:
             if(content.needs_water_overflow)result["needs_water_overflow"]=true;
             if(content.needs_water_sheets)result["needs_water_sheets"]=true;
             if(content.needs_water_sheet_aeration)result["needs_water_sheet_aeration"]=true;
+            if(content.needs_water_impact_foam)result["needs_water_impact_foam"]=true;
             if(content.needs_collision_surfaces)result["needs_collision_surfaces"]=true;
             if(content.needs_surface_mark_masks)result["needs_surface_mark_masks"]=true;
             if(content.needs_mesh_lod)result["needs_mesh_lod"]=true;

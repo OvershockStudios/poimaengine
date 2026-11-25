@@ -246,7 +246,29 @@ WaterView project_water_view(const SceneWaterVolume& water,const std::array<doub
              static_cast<float>(.5*sheet.width_m),static_cast<float>(sheet.aeration)},
             {static_cast<float>(sheet.drop_per_m2),thickness,static_cast<float>(sheet.launch_speed_m_s),static_cast<float>(sheet.phase_s)}});
     }
-    parameters.dimensions |= static_cast<std::uint32_t>(result.sheets.size())<<24u;
+    result.sheet_count=static_cast<std::uint32_t>(result.sheets.size());
+    if (water.impact_foam.size()>rs::max_water_sheets) throw std::runtime_error("Too many impact foam patches.");
+    result.sheets.resize(std::max(result.sheets.size(),water.impact_foam.size()));
+    for (std::size_t i=0;i<water.impact_foam.size();++i) {
+        const auto& f=water.impact_foam[i];
+        if (!(f.radius_m>=.05 && f.radius_m<=64 && f.phase_s>=0 && f.phase_s<16 &&
+                f.core>=0 && f.core<=1 && f.fringe>=0 && f.fringe<=1 &&
+                std::abs(std::hypot(f.forward_xz[0],f.forward_xz[1])-1)<1e-9))
+            throw std::runtime_error("Invalid impact foam profile.");
+        for (std::size_t axis=0;axis<2;++axis)
+            if (!(std::isfinite(f.min_xz_m[axis]) && std::isfinite(f.max_xz_m[axis]) &&
+                  f.min_xz_m[axis]<=f.center_xz_m[axis] && f.center_xz_m[axis]<f.max_xz_m[axis]))
+                throw std::runtime_error("Impact foam falls outside its receiver.");
+        auto& row=result.sheets[result.foam_count++];
+        row.foam_center_radius_phase={static_cast<float>(f.center_xz_m[0]-eye[0]),static_cast<float>(f.center_xz_m[1]-eye[2]),
+            static_cast<float>(f.radius_m),static_cast<float>(f.phase_s)};
+        row.foam_heading_levels={static_cast<float>(f.forward_xz[0]),static_cast<float>(f.forward_xz[1]),
+            static_cast<float>(f.core),static_cast<float>(f.fringe)};
+        row.foam_bounds={static_cast<float>(f.min_xz_m[0]-eye[0]),static_cast<float>(f.min_xz_m[1]-eye[2]),
+            static_cast<float>(f.max_xz_m[0]-eye[0]),static_cast<float>(f.max_xz_m[1]-eye[2])};
+    }
+    parameters.dimensions |= result.sheet_count<<24u;
+    parameters.dimensions |= result.foam_count<<28u;
     return result;
 }
 

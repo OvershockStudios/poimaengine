@@ -42,10 +42,15 @@ struct OverflowWeir {
     double coefficient_sqrt_m_s;
 };
 
+struct ImpactFoamProfile {
+    double radius_m, half_life_s, spread_s, volume_at_full_coverage_m3;
+};
+
 struct WaterSheetDefinition {
     std::array<double,2> lip_xz_m, outlet_xz_m;
     double outlet_floor_m;
     std::optional<double> aeration{};
+    std::optional<ImpactFoamProfile> impact_foam{};
 };
 
 struct StoragePortDefinition {
@@ -78,6 +83,10 @@ inline bool has_water_sheets(const StorageDefinition& definition) noexcept {
 
 inline bool has_sheet_aeration(const StorageDefinition& definition) noexcept {
     return std::ranges::any_of(definition.ports,[](const auto& port){ return port.sheet && port.sheet->aeration; });
+}
+
+inline bool has_impact_foam(const StorageDefinition& definition) noexcept {
+    return std::ranges::any_of(definition.ports,[](const auto& port){ return port.sheet && port.sheet->impact_foam; });
 }
 
 }

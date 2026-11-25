@@ -71,3 +71,29 @@ float3 water_foam_radiance(float3 surface) {
     }
     return .82 * irradiance;
 }
+
+float impact_foam_coverage(WaterConstants water,float2 offset,float footprint) {
+    float uncovered=1.0;
+    const uint count=min(impact_foam_count(water),8u);
+    [loop] for(uint i=0;i<count;++i) {
+        const FallingWaterSheet foam=water_sheets[i];
+        if (any(offset<foam.foam_bounds.xy) || any(offset>=foam.foam_bounds.zw)) continue;
+        const float4 shape=foam.foam_center_radius_phase;
+        const float2 heading=foam.foam_heading_levels.xy;
+        const float2 lateral=float2(-heading.y,heading.x);
+        const float2 delta=offset-shape.xy;
+        const float2 uv=float2(dot(delta,heading),dot(delta,lateral))/shape.z;
+        if (abs(uv.x)>1.55 || abs(uv.y)>1.0) continue;
+        const float core=1-smoothstep(.12,.42,length(uv*float2(1.2,1)));
+        const float outside=length((uv-float2(.23,0))*float2(.8,1.1));
+        const float spread=(1-smoothstep(.48,1.0,outside))*(.35+.65*smoothstep(.05,.44,length(uv)));
+        const float shift=shape.w*.5;
+        const float2 swirl=float2(cos(shift*6.2831853),sin(shift*6.2831853));
+        const float coarse=lerp(foam_noise(delta*6.3+swirl*.5),.5,smoothstep(.042,.145,footprint));
+        const float detail=lerp(foam_noise(delta*16.0-swirl*.8),.5,smoothstep(.017,.060,footprint));
+        const float pattern=smoothstep(.18,.77,.64*coarse+.36*detail);
+        const float opacity=pattern*min(.94,core*foam.foam_heading_levels.z+spread*foam.foam_heading_levels.w*.82);
+        uncovered*=1-opacity;
+    }
+    return 1-uncovered;
+}

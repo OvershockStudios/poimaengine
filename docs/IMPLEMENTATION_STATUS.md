@@ -1,8 +1,19 @@
 # Implementation status
 
-Updated 2026-11-25 for **0.0.445**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-25 for **0.0.446**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.446 adds [impact foam](SHALLOW_WATER.md#leave-foam-in-the-receiving-pool).
+A falling sheet builds coverage in the receiving pool. The patch spreads
+and fades on the committed clock, including after the gate closes and the
+spray expires. AMD forward and NVIDIA deferred each matched the independent
+HDR calculation at 14 affected probes and reproduced the closed, reopened
+and expired states after saving and relocating the game. Ubuntu passed
+eleven focused suites and the headless fixture. Foam stays within the
+receiving cell or reservoir. Multisample rendering uses the surface mesh
+fallback. Performance at scene scale remains open.
+[Results and scope](evidence/m2-water-impact-foam-446.json)
 
 Version 0.0.445 adds [sheet aeration](SHALLOW_WATER.md#aerate-a-falling-water-sheet).
 AMD forward and NVIDIA deferred matched independent HDR calculations at

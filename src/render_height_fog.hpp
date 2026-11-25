@@ -60,8 +60,13 @@ struct WaterView {
     SwellVariationParameters swell_variation{};
     struct Reservoir { std::array<float,4> low_m,high_m; };
     std::vector<Reservoir> reservoirs;
-    struct Sheet { std::array<float,4> origin_length, heading_width, shape; };
+    struct Sheet {
+        std::array<float,4> origin_length, heading_width, shape;
+        // Independent packed range. Foam remains visible after a sheet has stopped.
+        std::array<float,4> foam_center_radius_phase,foam_heading_levels,foam_bounds;
+    };
     std::vector<Sheet> sheets;
+    std::uint32_t sheet_count=0,foam_count=0;
 };
 
 WaterView project_water_view(const SceneWaterVolume& water,const std::array<double,3>& eye,float wave_mode,

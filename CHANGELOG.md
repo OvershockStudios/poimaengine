@@ -2,6 +2,12 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.446
+
+- Let a falling sheet build surface foam in its receiving pool. The foam
+  spreads and fades with the committed simulation and survives save loads.
+  [Impact foam](docs/SHALLOW_WATER.md#leave-foam-in-the-receiving-pool)
+
 ## 0.0.445
 
 - Add optional aeration to falling water. A lit bubble layer builds down the

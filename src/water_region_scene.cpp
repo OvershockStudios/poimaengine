@@ -274,8 +274,14 @@ void append_region_scene(const Region& region, SceneSnapshot& scene) {
         object.water_region_surface=true;
         scene.objects.push_back(std::move(object));
     }
-    if (const auto& storage=region.storage())
+    if (const auto& storage=region.storage()) {
         for (const auto& sheet : storage->sheets(grid)) append_water_sheet(sheet,grid.tick(),volume,scene);
+        for (const auto& foam : storage->foam()) {
+            volume.impact_foam.push_back({foam.center_xz_m,foam.forward_xz,foam.footprint.min_xz_m,
+                {foam.footprint.edge(0),foam.footprint.edge(1)},foam.radius_m,foam.core,foam.fringe,
+                static_cast<double>(grid.tick()%960u)/60.});
+        }
+    }
     const bool has_storage_media=!volume.reservoirs.empty() || !volume.sheets.empty();
     if (!count && !volume.optics.offshore && has_storage_media) {
         scene.water_volume=std::move(volume);

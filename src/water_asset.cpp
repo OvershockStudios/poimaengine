@@ -16,6 +16,7 @@ using Json = nlohmann::json;
 constexpr auto artifact_format = "poima.water.region";
 
 std::uint32_t artifact_version(const RegionDefinition& definition) noexcept {
+    if (definition.storage && has_impact_foam(*definition.storage)) return 24;
     if (definition.storage && has_sheet_aeration(*definition.storage)) return 23;
     if (definition.storage && has_water_sheets(*definition.storage)) return 22;
     if (definition.storage && has_overflow(*definition.storage)) return 21;
@@ -175,13 +176,19 @@ StorageDefinition parse_storage(const Json& value, const GridConfig& grid) {
         }
         if (port.contains("sheet")) {
             const auto& shape=port.at("sheet");
-            fields(shape,{"lip_xz_m","outlet_xz_m","outlet_floor_m"},{"aeration"});
+            fields(shape,{"lip_xz_m","outlet_xz_m","outlet_floor_m"},{"aeration","impact_foam"});
             const auto pair=[](const Json& row) {
                 require(row.is_array() && row.size()==2,"Water sheet endpoints use [x,z].");
                 return std::array{number(row[0]),number(row[1])};
             };
             rule.sheet=WaterSheetDefinition{pair(shape.at("lip_xz_m")),pair(shape.at("outlet_xz_m")),number(shape.at("outlet_floor_m"))};
             if (shape.contains("aeration")) rule.sheet->aeration=number(shape.at("aeration"));
+            if (shape.contains("impact_foam")) {
+                const auto& foam=shape.at("impact_foam");
+                fields(foam,{"radius_m","half_life_s","spread_s","volume_at_full_coverage_m3"});
+                rule.sheet->impact_foam=ImpactFoamProfile{number(foam.at("radius_m")),number(foam.at("half_life_s")),
+                    number(foam.at("spread_s")),number(foam.at("volume_at_full_coverage_m3"))};
+            }
         }
         if (port.contains("action")) {
             require(port.at("action").is_string() && !port.at("action").get_ref<const std::string&>().empty(),
@@ -426,7 +433,7 @@ RegionAsset decode_region_asset(std::string_view bytes) {
         "initial_depths_m", "faces", "exchanges"}, {"rain_cells", "surface_ripples", "surface_wave_layers", "surface_swell",
         "swell_variation", "listener_audio", "optics", "shore_corner_heights_m", "currents", "surface_wakes", "body_displacement", "storage"});
     require(object.at("format") == artifact_format, "Unsupported water asset format.");
-    const auto version=integer(object.at("version"),1,23);
+    const auto version=integer(object.at("version"),1,24);
     RegionAsset asset;
     asset.terrain_recipe_sha256 = hex(object.at("terrain_recipe_sha256"), 64);
     auto& definition = asset.definition;
@@ -557,8 +564,11 @@ Json region_authoring_schemas() {
     const Json storage_rate{{"type", "number"}, {"exclusiveMinimum", 0}, {"maximum", max_storage_rate}};
     const auto overflow = object({{"width_m",range("number",.01,256)},
         {"coefficient_sqrt_m_s",range("number",.01,10)}},{"width_m","coefficient_sqrt_m_s"});
+    const auto foam=object({{"radius_m",range("number",.05,64)},{"half_life_s",range("number",.1,30)},
+        {"spread_s",range("number",.05,10)},{"volume_at_full_coverage_m3",range("number",.00001,1e6)}},
+        {"radius_m","half_life_s","spread_s","volume_at_full_coverage_m3"});
     auto sheet=object({{"lip_xz_m",array(coordinate,2,2)},{"outlet_xz_m",array(coordinate,2,2)},
-        {"outlet_floor_m",coordinate},{"aeration",unit}},{"lip_xz_m","outlet_xz_m","outlet_floor_m"});
+        {"outlet_floor_m",coordinate},{"aeration",unit},{"impact_foam",foam}},{"lip_xz_m","outlet_xz_m","outlet_floor_m"});
     sheet["properties"]["aeration"]["description"]="Optional unitless bubble scattering strength in [0,1] inside the falling sheet. Zero retains clear-water shading.";
     auto port = object({{"id", storage_id}, {"from", storage_endpoint}, {"to", storage_endpoint},
         {"sill_height_m", coordinate}, {"conductance_m2_s", storage_rate}, {"max_flow_m3_s", storage_rate},

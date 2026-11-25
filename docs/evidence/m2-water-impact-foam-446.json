@@ -1,0 +1,246 @@
+{
+  "version": "0.0.446",
+  "date": "2026-11-25",
+  "authoring_schema_revision": 242,
+  "base_commit": "baf48300e7675e1f943f9eebb7c2b48838f5079b",
+  "scope": "A falling sheet builds foam that spreads and decays in a specific receiving pool.",
+  "candidate_patch_sha256": "987fcf1be882da1294a6dd03c5b4bdd70656b6255ed99b15e0832d7f422d30b7",
+  "source_sha256": {
+    "CMakeLists.txt": "21ef34dfc7f5c5bbf85b83d922131ccbc2a004612562172cf5070b7347f03a24",
+    "cmake/runtime.json.in": "020a7b9e454e64e1ca670acb5f4ef2a2837c7de53f6188ae055769b02a543892",
+    "include/poima/core.hpp": "316e6b96e400a45f9aa934e82d40a436de20a3401e6d0a95f32ccd132f2b96a2",
+    "include/poima/project.hpp": "bdb3d1421ef6232eeab5d7d00089bad6f6b4472169c5ebd8a72f4e8a297bc2e2",
+    "include/poima/render_schedule.hpp": "dfdd4c55b7a8a69155128f660983f7d8fad0c1b65e1127aac9840ec24b8bf156",
+    "include/poima/scene.hpp": "5b1164f7d2d909ff3110be3ca4ed9715d0a254c0ef46d1f6fe00a25d836e9646",
+    "include/poima/water_storage.hpp": "9332caf9d1191a020d825af389f586e560288c5226c55a71feefa458392c1a09",
+    "include/poima/water_storage_definition.hpp": "b2a1b5383812eb749e5a62e87de6773c7d70a58df844fbf0f38051b4d63c7484",
+    "include/poima/world.hpp": "90ab0aaf9288f3baaae6c8691fcb00d7dadb817a2a619ac113eeecdd83dad936",
+    "shaders/water_constants.hlsli": "9e6b4c1938d71549a6d1f8be5e0cd0ffea0c710318b2bfd44c890e7c444feb05",
+    "shaders/water_optics.hlsli": "95e402d4d24183d9fc1684ae88acd96d2bafbc79c862358cf92446190074c4ce",
+    "shaders/water_sheets.hlsli": "8c0bad23dd1d40f9b4a2f4e83ad2be5e3b56e0fb2fd17be500910128fe8b1441",
+    "shaders/water_shore_foam.hlsli": "e7ea9d04cbc665f75ab9c6943e5965bd9638386e2674d09e6f51772c2a486e8c",
+    "src/core.cpp": "308dc0e97c5e4d1533960c8e3cd4494ccf88786831c529d2e4f900046e4e9efa",
+    "src/project.cpp": "bbbb3df590d97a83645dad67b53135c76153fea90bb066f1ea6cccad091bd500",
+    "src/render_height_fog.cpp": "69f0b98557d8490a22400fb319c246c653daf04ecd270e7d225fbc8c59386cdf",
+    "src/render_height_fog.hpp": "cbe320383f13c700086a8b2f4a56b8fd1ecb0ea24055bf811eb259333dcb9acd",
+    "src/render_smoke.cpp": "74cf7e78e49c4a7c4d928f02e91b4564feb44abbd29efe56066abc143ed23e13",
+    "src/water_asset.cpp": "953bb02357fe853145980372d57ce5513881f67c18f9b1dd7fdb949245f8a6bb",
+    "src/water_region.cpp": "6178229d9945452829d9c5b3da7b60b3859357bcb182bf5f916a2f4de7bfc071",
+    "src/water_region_scene.cpp": "0a5043ab8b0e7fb2f881658b2dd5db10a9013ef67995e3ba10f9c1720b91c33e",
+    "src/water_storage.cpp": "6f98e6315c551059a50805c31791ecd97dbc28dde595001919b810d39588ff9a",
+    "src/world.cpp": "b06098e089bb621e55c5145e2852c083ad7892a8e6699ecb814f10f923c6b07c",
+    "src/world_content.cpp": "22681212a71b5de82e07ae6b533cc1825e187177f604e4ea38c78c32952954eb",
+    "src/world_presentation_json.cpp": "6609689de0198ee8d7fb7a2aabbe3ae3d337957ae46d00c742e5a3f2978291b1",
+    "src/world_schema.cpp": "876bb9a639626faff10c258391862d8d9b90fe4a938417990d53b63199b7e9f9",
+    "tests/water_impact_foam_capture.py": "8fdf08050a8a9c786a8c2da653889a6fda19fdaabce1becb6b0f769fa4beaa4c",
+    "tests/water_sheet_aeration_capture.py": "c5d1ecdc4ea46229a35207bbb136faefe817799f27d14c151da3983f00636830",
+    "tests/water_sheet_capture.py": "3050034f07a26b6459a178a6648c3a4056068950fdb24923483ed7ce5272ee6d"
+  },
+  "fixture": {
+    "water_asset_sha256": "f7d402319e5294b967a0542f03e9b188ee3c3ab4018ea26f9440c074c3a34870",
+    "water_asset_version": 24,
+    "water_snapshot_version": 7,
+    "milestones": [
+      {
+        "tick": 14,
+        "volume_m3": 2.33,
+        "discharge_m3_s": 0.0,
+        "core": 0.193445000266543,
+        "fringe": 0.2866980806899326,
+        "live_spray": 0
+      },
+      {
+        "tick": 15,
+        "volume_m3": 2.3299999999999996,
+        "discharge_m3_s": 0.14917179673098097,
+        "core": 0.7967846478578886,
+        "fringe": 0.2939411030192166,
+        "live_spray": 8
+      },
+      {
+        "tick": 616,
+        "volume_m3": 2.3299999999999996,
+        "discharge_m3_s": 0.0,
+        "core": 0.0,
+        "fringe": 0.0,
+        "live_spray": 0
+      }
+    ],
+    "rejected_forged_fringe": 1.125,
+    "fault_left_live_state_intact": true
+  },
+  "windows_runtime_sha256": {
+    "bin/poima.exe": "4dbd12b081e0d67047e52ce517a8a0aa19c7bc1e504fc7f0d483ff7f67b5c934",
+    "bin/poima_desktop.dll": "2f311b5807776a64737454f3cc3be7f522dedd8e2357ef94dff7ac7c86026100",
+    "runtime.json": "633352ad3c24b06b77be59a8e712e1d8c224939438fecd58572c9070c18e81fc"
+  },
+  "windows": {
+    "amd": {
+      "gpu": "AMD Radeon(TM) Graphics",
+      "lighting_path": "forward",
+      "independent_hdr": {
+        "changed_probes": 14,
+        "unchanged_probes": 49,
+        "max_hdr_error": 0.00016814241837376231
+      },
+      "opaque_products_exact": true,
+      "immutable_export_files": 61,
+      "relocated_and_fresh_exact": true,
+      "save_sha256": {
+        "source": "d588bce410441144c9d6213801f6142402bfdd83755e71bb26144967dcc58542",
+        "relocated": "d588bce410441144c9d6213801f6142402bfdd83755e71bb26144967dcc58542"
+      },
+      "captures": {
+        "control-water": "4204ee323b0721a8f05719c234b9042a725c98887cefcf692d464c4e0f11da60",
+        "sealed-without-foam": "504c3b47a48104309ac4aa89f7d57a9978946f384ea8d06cbe1f0ac7f0d3b5d1",
+        "source-flow": "8dbe7a9401611e5f7c3916ed13b47b551b5af2209e0beae6119b58cf3dbbd376",
+        "source-closed": "c3d4f67394a9488c061115fd8402694e7bee1ef665d7490eee7c4aecddfc4bd1",
+        "source-reopened": "07704ecfc6b392180aa92364eb64fb9df33713ed067b71c652111e1367bd2ca9",
+        "source-expired": "8057678f8d93c6d199d22b9795d5bcc2f51c7cc91abb87908e7e23747c82f177",
+        "warm-closed": "c3d4f67394a9488c061115fd8402694e7bee1ef665d7490eee7c4aecddfc4bd1",
+        "warm-reopened": "07704ecfc6b392180aa92364eb64fb9df33713ed067b71c652111e1367bd2ca9",
+        "warm-expired": "8057678f8d93c6d199d22b9795d5bcc2f51c7cc91abb87908e7e23747c82f177",
+        "relocated-flow": "8dbe7a9401611e5f7c3916ed13b47b551b5af2209e0beae6119b58cf3dbbd376",
+        "relocated-closed": "c3d4f67394a9488c061115fd8402694e7bee1ef665d7490eee7c4aecddfc4bd1",
+        "relocated-reopened": "07704ecfc6b392180aa92364eb64fb9df33713ed067b71c652111e1367bd2ca9",
+        "relocated-expired": "8057678f8d93c6d199d22b9795d5bcc2f51c7cc91abb87908e7e23747c82f177",
+        "fresh-closed": "c3d4f67394a9488c061115fd8402694e7bee1ef665d7490eee7c4aecddfc4bd1",
+        "fresh-reopened": "07704ecfc6b392180aa92364eb64fb9df33713ed067b71c652111e1367bd2ca9",
+        "fresh-expired": "8057678f8d93c6d199d22b9795d5bcc2f51c7cc91abb87908e7e23747c82f177"
+      },
+      "raw_fixture_sha256": "59861cfda76bb9f359647bef84960e5abd7c8531d492d625e5868ba210dcabeb"
+    },
+    "nvidia": {
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "lighting_path": "deferred",
+      "independent_hdr": {
+        "changed_probes": 14,
+        "unchanged_probes": 49,
+        "max_hdr_error": 0.00016814241837376231
+      },
+      "opaque_products_exact": true,
+      "immutable_export_files": 61,
+      "relocated_and_fresh_exact": true,
+      "save_sha256": {
+        "source": "8f5d5d538ee734c74b6d0bbddbd544a6f25ba38bf6f61267bb1b0e874e8dc9e4",
+        "relocated": "8f5d5d538ee734c74b6d0bbddbd544a6f25ba38bf6f61267bb1b0e874e8dc9e4"
+      },
+      "captures": {
+        "control-water": "c7b4aaab1622a76aa2952bc488bc1d7ca3cfcdc2d27a5f1b82523351f46dab27",
+        "sealed-without-foam": "f715001ae08cc39c7a2cb04aa99100b8f6474dd9b3480a29af45dc0f205c0d3b",
+        "source-flow": "6c0d42009a337c1b99709f0371447f4f99910b7d74b54d29f9bd9c9e6d66d52c",
+        "source-closed": "06ae455e3ab48cc5aa8c55df2eca6d704a412b1931fae4c836c03a1245283cf7",
+        "source-reopened": "ac517812d5aa19cfa27ec330e0f3da2635816245b5421a7196430df72e9cee79",
+        "source-expired": "5551e9c256456b9d606f63d2bb27a267704a66f39ecfc02beab77b6215130533",
+        "warm-closed": "06ae455e3ab48cc5aa8c55df2eca6d704a412b1931fae4c836c03a1245283cf7",
+        "warm-reopened": "ac517812d5aa19cfa27ec330e0f3da2635816245b5421a7196430df72e9cee79",
+        "warm-expired": "5551e9c256456b9d606f63d2bb27a267704a66f39ecfc02beab77b6215130533",
+        "relocated-flow": "6c0d42009a337c1b99709f0371447f4f99910b7d74b54d29f9bd9c9e6d66d52c",
+        "relocated-closed": "06ae455e3ab48cc5aa8c55df2eca6d704a412b1931fae4c836c03a1245283cf7",
+        "relocated-reopened": "ac517812d5aa19cfa27ec330e0f3da2635816245b5421a7196430df72e9cee79",
+        "relocated-expired": "5551e9c256456b9d606f63d2bb27a267704a66f39ecfc02beab77b6215130533",
+        "fresh-closed": "06ae455e3ab48cc5aa8c55df2eca6d704a412b1931fae4c836c03a1245283cf7",
+        "fresh-reopened": "ac517812d5aa19cfa27ec330e0f3da2635816245b5421a7196430df72e9cee79",
+        "fresh-expired": "5551e9c256456b9d606f63d2bb27a267704a66f39ecfc02beab77b6215130533"
+      },
+      "raw_fixture_sha256": "b3ebe88f98324ce44837fc946c78661646248e95008408d9ca7f52f02d9bbf68"
+    }
+  },
+  "aerated_sheet_regression": {
+    "prior": "0.0.445 NVIDIA deferred",
+    "exact_captures": 9,
+    "exact_selected_state": true,
+    "previous_sha256": "cf0bf0848ec630b401ad2595952fe54af275629dcf2ab29685d6a5575f8e9782",
+    "raw_sha256": "a6561d8c01b7471c14e1caa3576e3aa107dbc77ce6cce8432b4ecf13da64f3cd"
+  },
+  "saltgate": {
+    "measurement": {
+      "scene_profile": {
+        "radius_m": 0.55,
+        "half_life_s": 0.65,
+        "spread_s": 0.14,
+        "volume_at_full_coverage_m3": 0.028
+      },
+      "scene_sha256": "0c41aaf7a6782bcc5d680685891a929f1559f5219f15878e6c2e5f79e413e230",
+      "native_confirmations": [
+        {
+          "tick": 120,
+          "core": 0.5382110627364363,
+          "fringe": 1.0
+        },
+        {
+          "tick": 450,
+          "core": 0.5223595822083533,
+          "fringe": 1.0
+        },
+        {
+          "tick": 592,
+          "core": 0.5216513028893565,
+          "fringe": 1.0
+        },
+        {
+          "tick": 666,
+          "core": 0.521510252313971,
+          "fringe": 1.0
+        },
+        {
+          "tick": 710,
+          "core": 0.5214599986774947,
+          "fringe": 1.0
+        },
+        {
+          "tick": 764,
+          "core": 0.5214192135507433,
+          "fringe": 1.0
+        },
+        {
+          "tick": 812,
+          "core": 0.5213957554161875,
+          "fringe": 1.0
+        },
+        {
+          "tick": 856,
+          "core": 0.5213812266402283,
+          "fringe": 1.0
+        },
+        {
+          "tick": 898,
+          "core": 0.5213716087004459,
+          "fringe": 1.0
+        }
+      ],
+      "matched_hydraulic_audio_and_spray": true,
+      "picture": {
+        "index": 346,
+        "baseline_sha256": "0eb0fce4b3fb43d5b3f98d341cbf3a2b3b09fb54a55742db7f2a6f079d44f21f",
+        "foam_sha256": "2600107a2fd45895ad10b834bd24f4e75c10b25095f22bc34f5d3b3cacd92157",
+        "pixels_delta_ge_4": 7116,
+        "max_rgb_delta": 43
+      }
+    },
+    "reconstruction": "FSR Native AA",
+    "comparison_sha256": "ce02f9939294fff6d60ffc1b4718e95daa073766ab0b36c961192c8ee9944ddb"
+  },
+  "ubuntu": {
+    "focused_suites_passed": 11,
+    "runtime_sha256": {
+      "final.xml": "e5b479991b7ec43b9a6f21627654affce0771998967cb42a4ae7ad7583c52e5a",
+      "poima": "fdff4c67d3b242e57bb6ac15f9adf63188ed1262ba941d22b184ff1ad0a2e198",
+      "runtime.json": "fedbd2097242f86e75bccdcfee83e0c364d39580fb1211d2619dc0bc4de62ab4"
+    },
+    "fixture_sha256": {
+      "foam-fixture": "6ff3de80778278ea0e5610d11ad5856a54b5554798359e981bfde03a163be2cd",
+      "aeration-regression": "79aa2357f758649fd7201551a4f84785be169f8e052b2d4c5360ec7f07808efa"
+    }
+  },
+  "rejected_export": {
+    "required_flag": "water_impact_foam",
+    "no_bundle": true,
+    "diagnostic": "Project water impact foam requires a compatible Vulkan runtime."
+  },
+  "limits": [
+    "The optical patch is bounded to the receiver footprint.",
+    "The surface layer requires the single-sample Vulkan path.",
+    "Scene-scale cost remains unqualified."
+  ]
+}

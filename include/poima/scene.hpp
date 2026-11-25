@@ -337,6 +337,10 @@ struct SceneWaterSheet {
     double width_m,length_m,drop_per_m2,vertical_depth_m,launch_speed_m_s,phase_s;
     double aeration=0;
 };
+struct SceneImpactFoam {
+    std::array<double,2> center_xz_m,forward_xz,min_xz_m,max_xz_m;
+    double radius_m,core,fringe,phase_s;
+};
 struct SceneWaterVolume {
     std::array<double,3> origin_m;
     double cell_size_m;
@@ -352,6 +356,7 @@ struct SceneWaterVolume {
     std::vector<SceneWaterColumn> columns;
     std::vector<SceneWaterBox> reservoirs{};
     std::vector<SceneWaterSheet> sheets{};
+    std::vector<SceneImpactFoam> impact_foam{};
 };
 // An immutable presentation copy; no pointers into authored or simulation state.
 struct SceneSnapshot {

@@ -37,6 +37,7 @@ struct WorldPackageContent {
     bool needs_water_overflow=false;
     bool needs_water_sheets=false;
     bool needs_water_sheet_aeration=false;
+    bool needs_water_impact_foam=false;
     bool needs_collision_surfaces=false;
     bool needs_surface_mark_masks=false;
     bool needs_mesh_lod=false;

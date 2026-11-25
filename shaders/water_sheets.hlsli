@@ -5,6 +5,11 @@ struct FallingWaterSheet {
     float4 origin_length;
     float4 heading_width; // Horizontal heading, half width, aeration strength.
     float4 shape; // Curvature, vertical thickness, launch speed, phase in seconds.
+    // Separate range with the same structured-buffer stride. A foam record
+    // can outlive the falling sheet in the first three vectors.
+    float4 foam_center_radius_phase;
+    float4 foam_heading_levels;
+    float4 foam_bounds;
 };
 StructuredBuffer<FallingWaterSheet> water_sheets : register(t11);
 

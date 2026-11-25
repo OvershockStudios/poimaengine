@@ -629,6 +629,43 @@ The [aeration fixture](../tests/water_sheet_aeration_capture.py) isolates
 the effect from the opaque scene and the clear sheet and checks its output
 against an independent optical calculation.
 
+##### Leave foam in the receiving pool
+
+Add `impact_foam` to a falling sheet when its outlet reaches a terrain cell
+or placed reservoir. The profile controls surface coverage around the
+landing point.
+
+```json
+{
+  "radius_m": 0.72,
+  "half_life_s": 0.5,
+  "spread_s": 0.22,
+  "volume_at_full_coverage_m3": 0.004
+}
+```
+
+Radius is 0.05–64 m, half-life is 0.1–30 s, spread time is 0.05–10 s, and
+the full-coverage volume is 0.00001–1,000,000 m³. Committed discharge adds
+coverage at the point where the sheet reaches the pool. Existing coverage
+decays each tick and moves from the dense center into a wider downstream
+fringe. The radius sets the scale, and the receiving footprint clips the patch. A dry
+receiver clears it, and a submerged lip or raised outlet stops new foam.
+Closing the gate leaves the existing patch to decay. These are bounded
+coverage fields with no effect on liquid volume.
+
+Single-sample Vulkan puts the patch on the visible wet interface and lights
+it with ambient light and the shadowed sun. At a distance, the bubble
+pattern fades to its average brightness. The patch is attached to its
+receiver and does not drift between cells. Multisample rendering uses the
+current surface meshes.
+
+The feature uses `.pwater` v24, water snapshot version 7 and
+`features.water_impact_foam` for export. `runtime.water.inspect` reports
+`impact_foam.core` and `impact_foam.fringe` on the port, and the Vulkan
+report includes the active `impact_foam_patches` count. The
+[native fixture](../tests/water_impact_foam_capture.py) checks a closed-gate
+save, a reopened gate and the disappearance of aged foam.
+
 ### Vary the swell across a coast
 
 Set `swell_variation` alongside `surface_swell` in the plan and cook request.

@@ -212,6 +212,8 @@ Json render_diagnostics(const RenderDiagnostics& d) {
             result["water_optics"]["aerated_sheets"]=water.aerated_sheets;
             result["water_optics"]["aerated_sheets_sun"]=water.aerated_sheets_sun;
         }
+        if(water.impact_foam_patches)
+            result["water_optics"]["impact_foam_patches"]=water.impact_foam_patches;
         if(const auto& variation=water.swell_variation)
             result["water_optics"]["swell_variation"]={{"scale_m",variation->scale_m},
                 {"strength",variation->strength},{"seed",variation->seed}};

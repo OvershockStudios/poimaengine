@@ -362,6 +362,7 @@ Json project_summary(const Project& p) {
     if(p.content.needs_water_overflow)result["needs_water_overflow"]=true;
     if(p.content.needs_water_sheets)result["needs_water_sheets"]=true;
     if(p.content.needs_water_sheet_aeration)result["needs_water_sheet_aeration"]=true;
+    if(p.content.needs_water_impact_foam)result["needs_water_impact_foam"]=true;
     if(p.content.needs_collision_surfaces)result["needs_collision_surfaces"]=true;
     if(p.content.needs_surface_mark_masks)result["needs_surface_mark_masks"]=true;
     if(p.content.needs_mesh_lod)result["needs_mesh_lod"]=true;
@@ -555,6 +556,8 @@ void require_scene_feature_support(const WorldPackageContent& content, const Jso
         "Project falling water sheets require a compatible Vulkan runtime.");
     require(!content.needs_water_sheet_aeration || runtime.at("features").value("water_sheet_aeration",false),
         "Project water sheet aeration requires a compatible Vulkan runtime.");
+    require(!content.needs_water_impact_foam || runtime.at("features").value("water_impact_foam",false),
+        "Project water impact foam requires a compatible Vulkan runtime.");
     require(!content.needs_collision_surfaces || runtime.at("features").value("collision_surfaces",false),
         "Project collision surfaces require a compatible simulation runtime.");
     require(!content.needs_surface_mark_masks || runtime.at("features").value("surface_mark_masks", false),
@@ -575,7 +578,7 @@ Json runtime_spec(const std::string& bytes,std::string_view expected_version=bui
     require(value.at("executable")== (value.at("target_os")=="Windows" ? "bin/poima.exe" : "bin/poima"),"Runtime executable path does not match target.");
     const auto& features=value.at("features");
     fields(features,{"simulation","renderer","audio","managed","editor","native_gameplay","game_ui",
-        "navigation","navigation_obstacles","asset_provenance","project_post_effects","water_regions","water_rain","audio_water_flow","water_sheet_aeration",
+        "navigation","navigation_obstacles","asset_provenance","project_post_effects","water_regions","water_rain","audio_water_flow","water_sheet_aeration","water_impact_foam",
         "water_ripples","water_wave_layers","water_listener_audio","water_optics","water_refraction","water_caustics","water_shore_foam","water_terrain_fit","water_surface_swell","water_swell_variation","water_rough_reflection","water_solar_scattering","water_offshore","water_sprite_optics","snow_water_regions","scene_particles","scene_particle_sprites",
         "particle_collisions","particle_impact_bursts","particle_water_contact","particle_water_flow","water_buoyancy","water_currents","water_surface_wakes","water_body_displacement","water_storage","water_reservoirs","water_overflow","water_sheets","collision_surfaces","surface_marks","surface_mark_masks","mesh_lod","output_grade","auto_exposure","atmosphere_sky","orbital_atmosphere","aerial_perspective","volumetric_clouds","cloud_shadows","screen_reflections","depth_of_field","foliage_motion",
         "height_fog","physics_checkpoint","fsr3_upscaler"},{"simulation","renderer","audio","managed","editor"});
@@ -617,6 +620,8 @@ Json runtime_spec(const std::string& bytes,std::string_view expected_version=bui
         "Runtime falling water sheets require overflow and water optics.");
     require(!features.value("water_sheet_aeration",false) || features.value("water_sheets",false),
         "Runtime water sheet aeration requires falling sheets.");
+    require(!features.value("water_impact_foam",false) || features.value("water_sheets",false),
+        "Runtime water impact foam requires falling sheets.");
     require(!features.value("water_listener_audio",false) || features.at("audio")==true,
         "Runtime water listener audio requires audio support.");
     require(!features.value("audio_water_flow",false) ||
@@ -746,6 +751,7 @@ VerifiedGame verify_game(const std::string& filename,std::string_view expected_v
     result.definition.needs_water_overflow=content.needs_water_overflow;
     result.definition.needs_water_sheets=content.needs_water_sheets;
     result.definition.needs_water_sheet_aeration=content.needs_water_sheet_aeration;
+    result.definition.needs_water_impact_foam=content.needs_water_impact_foam;
     result.definition.needs_collision_surfaces=content.needs_collision_surfaces;
     result.needs_output_grade=content.needs_output_grade;
     result.needs_auto_exposure=content.needs_auto_exposure;
@@ -1215,6 +1221,7 @@ Reply inspect_game(const std::string& manifest,const std::string& expected_bundl
         if(game.definition.needs_water_overflow)result["needs_water_overflow"]=true;
         if(game.definition.needs_water_sheets)result["needs_water_sheets"]=true;
         if(game.definition.needs_water_sheet_aeration)result["needs_water_sheet_aeration"]=true;
+        if(game.definition.needs_water_impact_foam)result["needs_water_impact_foam"]=true;
         if(game.definition.needs_collision_surfaces)result["needs_collision_surfaces"]=true;
         if(game.needs_output_grade)result["needs_output_grade"]=true;
         if(game.needs_auto_exposure)result["needs_auto_exposure"]=true;

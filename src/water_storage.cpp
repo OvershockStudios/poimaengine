@@ -54,6 +54,9 @@ Json port_json(const StoragePortDefinition& port) {
         row["sheet"]={{"lip_xz_m",sheet->lip_xz_m},{"outlet_xz_m",sheet->outlet_xz_m},
             {"outlet_floor_m",sheet->outlet_floor_m}};
         if (sheet->aeration) row["sheet"]["aeration"]=*sheet->aeration;
+        if (const auto& foam=sheet->impact_foam)
+            row["sheet"]["impact_foam"]={{"radius_m",foam->radius_m},{"half_life_s",foam->half_life_s},
+                {"spread_s",foam->spread_s},{"volume_at_full_coverage_m3",foam->volume_at_full_coverage_m3}};
     }
     if (!port.action.empty()) {
         row["action"] = port.action;
@@ -181,8 +184,10 @@ WaterStorage::WaterStorage(const StorageDefinition& definition, const Grid& grid
             if (!bounded(std::hypot(dx,dz),.05,256) || !bounded(drop,.05,256))
                 throw std::invalid_argument("Water sheet drop and horizontal reach must be in [0.05,256] metres.");
             const auto [target_x,target_z]=sheet->outlet_xz_m;
+            std::optional<ReservoirFootprint> receiving_footprint;
             if (port.to<reservoirs_.size()) {
                 const auto& sink=reservoirs_[port.to];
+                receiving_footprint=sink.footprint;
                 if (sink.footprint && !sink.footprint->contains(target_x,target_z))
                     throw std::invalid_argument("Water sheet outlet is outside the receiving reservoir footprint.");
             } else {
@@ -190,6 +195,15 @@ WaterStorage::WaterStorage(const StorageDefinition& definition, const Grid& grid
                 const auto target=cells_[port.to-reservoirs_.size()];
                 if (!sample || sample->cell.x!=target.x || sample->cell.z!=target.z)
                     throw std::invalid_argument("Water sheet outlet must be inside its receiving cell.");
+                receiving_footprint=ReservoirFootprint{{config.origin_x_m+target.x*config.cell_size_m,
+                    config.origin_z_m+target.z*config.cell_size_m},{config.cell_size_m,config.cell_size_m}};
+            }
+            if (const auto& foam=sheet->impact_foam) {
+                if (!receiving_footprint || !bounded(foam->radius_m,.05,64) || !bounded(foam->half_life_s,.1,30) ||
+                    !bounded(foam->spread_s,.05,10) || !bounded(foam->volume_at_full_coverage_m3,.00001,1e6))
+                    throw std::invalid_argument("Impact foam requires a placed receiver and bounded radius, lifetime, spread and volume.");
+                foam_ports_.push_back({i,*receiving_footprint,std::exp2(-step_seconds/foam->half_life_s),
+                    -std::expm1(-step_seconds/foam->spread_s)});
             }
             sheet_ports_.push_back(i);
         }
@@ -231,8 +245,7 @@ std::optional<WaterSheetSample> WaterStorage::sheet_sample(const Grid& grid,std:
     const auto crest=port.definition.sill_height_m;
     const double dx=sheet.outlet_xz_m[0]-sheet.lip_xz_m[0],dz=sheet.outlet_xz_m[1]-sheet.lip_xz_m[1];
     const auto length=std::hypot(dx,dz);
-    const auto receiving_stage=port.to<reservoirs_.size() ? reservoirs_[port.to].floor_height_m+
-        volumes_[port.to]/reservoirs_[port.to].area_m2 : grid.sample(cells_[port.to-reservoirs_.size()]).surface_height_m;
+    const auto receiving_stage=receiving_levels(port,grid,volumes_)[1];
     const auto drop=crest-std::max(sheet.outlet_floor_m,receiving_stage);
     // Keep the end anchored to the receiving surface as its stage changes.
     // A submerged lip has no free-falling visual.
@@ -248,6 +261,30 @@ std::vector<WaterSheetSample> WaterStorage::sheets(const Grid& grid) const {
     std::vector<WaterSheetSample> result;
     result.reserve(sheet_ports_.size());
     for (auto i : sheet_ports_) if (auto sample=sheet_sample(grid,i)) result.push_back(*sample);
+    return result;
+}
+
+std::array<double,2> WaterStorage::receiving_levels(const Port& port,const Grid& grid,
+    const std::array<double,max_water_reservoirs>& volumes) const noexcept {
+    if (port.to<reservoirs_.size()) {
+        const auto& tank=reservoirs_[port.to];
+        return {tank.floor_height_m,tank.floor_height_m+volumes[port.to]/tank.area_m2};
+    }
+    const auto cell=grid.sample(cells_[port.to-reservoirs_.size()]);
+    return {cell.floor_height_m,cell.surface_height_m};
+}
+
+std::vector<ImpactFoamSample> WaterStorage::foam() const {
+    std::vector<ImpactFoamSample> result;
+    result.reserve(foam_ports_.size());
+    for (const auto& foam : foam_ports_) {
+        if (foam.core==0 && foam.fringe==0) continue;
+        const auto& sheet=*ports_[foam.port].definition.sheet;
+        const auto dx=sheet.outlet_xz_m[0]-sheet.lip_xz_m[0],dz=sheet.outlet_xz_m[1]-sheet.lip_xz_m[1];
+        const auto length=std::hypot(dx,dz);
+        result.push_back({sheet.outlet_xz_m,{dx/length,dz/length},foam.footprint,
+            sheet.impact_foam->radius_m,foam.core,foam.fringe});
+    }
     return result;
 }
 
@@ -343,10 +380,30 @@ WaterStorage::Step WaterStorage::stage(const Grid& grid, std::span<const std::st
     return next;
 }
 
-void WaterStorage::commit(const Step& next) noexcept {
+void WaterStorage::apply_transfer(const Step& next) noexcept {
     volumes_ = next.volumes;
     openness_ = next.openness;
     transfers_ = next.transfers;
+}
+
+void WaterStorage::commit(const Step& next,const Grid& grid) noexcept {
+    apply_transfer(next);
+    for (auto& foam : foam_ports_) {
+        const auto& port=ports_[foam.port];
+        const auto& sheet=*port.definition.sheet;
+        const auto [floor,stage]=receiving_levels(port,grid,volumes_);
+        if (stage<=floor) {
+            foam.core=foam.fringe=0;
+            continue;
+        }
+        const auto dose=stage>=sheet.outlet_floor_m && stage<port.definition.sill_height_m ?
+            transfers_[foam.port]/sheet.impact_foam->volume_at_full_coverage_m3 : 0.;
+        const double core=foam.core*foam.decay;
+        const double spread=core*foam.spread;
+        foam.core=std::min(1.,core-spread+dose);
+        foam.fringe=std::min(1.,foam.fringe*foam.decay+spread);
+        if (foam.core+foam.fringe<.00001) foam.core=foam.fringe=0;
+    }
 }
 
 Json WaterStorage::inspect(const Grid* grid) const {
@@ -375,22 +432,34 @@ Json WaterStorage::inspect(const Grid* grid) const {
         }
         ports.push_back(std::move(row));
     }
+    for (const auto& foam:foam_ports_) {
+        const auto& shape=*ports_[foam.port].definition.sheet;
+        ports[foam.port]["impact_foam"]={{"core",foam.core},{"fringe",foam.fringe},
+            {"center_xz_m",shape.outlet_xz_m},{"radius_m",shape.impact_foam->radius_m}};
+    }
     return {{"volume_m3", volume_m3()}, {"reservoirs", std::move(tanks)}, {"ports", std::move(ports)}};
 }
 
 Json WaterStorage::save() const {
-    return {{"volumes_m3", std::vector(volumes_.begin(), volumes_.begin() + reservoirs_.size())},
+    Json state={{"volumes_m3", std::vector(volumes_.begin(), volumes_.begin() + reservoirs_.size())},
         {"openness", std::vector(openness_.begin(), openness_.begin() + ports_.size())},
         {"transfers_m3", std::vector(transfers_.begin(), transfers_.begin() + ports_.size())}};
+    if (!foam_ports_.empty()) {
+        auto values=Json::array();
+        for (const auto& foam:foam_ports_) values.push_back({foam.core,foam.fringe});
+        state["impact_foam"]=std::move(values);
+    }
+    return state;
 }
 
-void WaterStorage::restore(const Json& state, std::uint64_t tick) {
+void WaterStorage::restore(const Json& state,std::uint64_t tick,const Grid& grid) {
     const auto has_array = [&](const char* key, std::size_t size) {
         const auto field = state.find(key);
         return field != state.end() && field->is_array() && field->size() == size;
     };
-    if (!state.is_object() || state.size() != 3 || !has_array("volumes_m3", reservoirs_.size()) ||
-            !has_array("openness", ports_.size()) || !has_array("transfers_m3", ports_.size()))
+    if (!state.is_object() || state.size() != (foam_ports_.empty() ? 3u : 4u) || !has_array("volumes_m3", reservoirs_.size()) ||
+            !has_array("openness", ports_.size()) || !has_array("transfers_m3", ports_.size()) ||
+            (!foam_ports_.empty() && !has_array("impact_foam",foam_ports_.size())))
         throw std::invalid_argument("Saved water storage shape does not match the plan.");
     Step next;
     std::array<double, max_water_reservoirs> delta{};
@@ -417,7 +486,20 @@ void WaterStorage::restore(const Json& state, std::uint64_t tick) {
             throw std::invalid_argument("Saved reservoir volume is outside its capacity or does not balance.");
         next.volumes[i] = volume;
     }
-    commit(next);
+    auto foam_levels=foam_ports_;
+    for (std::size_t i=0;i<foam_levels.size();++i) {
+        auto& foam=foam_levels[i];
+        const auto& row=state.at("impact_foam")[i];
+        if (!row.is_array() || row.size()!=2) throw std::invalid_argument("Saved impact foam requires two coverage levels.");
+        foam.core=read_number(row,0);
+        foam.fringe=read_number(row,1);
+        const auto [floor,stage]=receiving_levels(ports_[foam.port],grid,next.volumes);
+        if (!bounded(foam.core,0,1) || !bounded(foam.fringe,0,1) ||
+            ((!tick || stage<=floor) && (foam.core!=0 || foam.fringe!=0)))
+            throw std::invalid_argument("Saved impact foam is outside its wet coverage bounds.");
+    }
+    apply_transfer(next);
+    foam_ports_.swap(foam_levels);
 }
 
 }

@@ -611,7 +611,7 @@ StepReport Region::step(std::span<const std::string_view> pressed, std::uint32_t
             const auto staged = storage_->stage(grid_, pressed, occupied);
             const auto transfers = std::span(staged.cell_changes).first(staged.cell_change_count);
             auto report = grid_.step(exchanges_, rain_cells, rain_depth_nm * nm_to_m, occupied, transfers);
-            storage_->commit(staged);
+            storage_->commit(staged,grid_);
             report.volume_before_m3 += before;
             report.volume_after_m3 += storage_->volume_m3();
             last_report_ = report;
@@ -637,6 +637,7 @@ StepReport Region::step(std::span<const std::string_view> pressed, std::uint32_t
 }
 
 std::uint32_t Region::snapshot_version() const noexcept {
+    if (storage_ && storage_->has_impact_foam()) return 7u;
     return storage_ ? 6u : body_displacement_ ? 5u : wakes_ ? 4u : currents_ ? 3u : !rain_cells_.empty() ? 2u : 1u;
 }
 
@@ -762,7 +763,7 @@ void Region::restore(const Json& saved, std::uint64_t expected_tick,
     }
     const auto rain_m3 = rain_enabled ? std::optional(rain_volume_m3(last_rain_nm)) : std::nullopt;
     auto storage = storage_;
-    if (storage) storage->restore(saved.at("storage"), expected_tick);
+    if (storage) storage->restore(saved.at("storage"), expected_tick,candidate);
     const auto receipt = validated_report(saved.at("last_report"), candidate, exchanges_, rain_m3,
         storage ? &*storage : nullptr);
     if (wakes_) {
