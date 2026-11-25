@@ -1,0 +1,372 @@
+{
+  "checkpoint": "0.0.416",
+  "parent_commit": "5d71418",
+  "schema_revision": 215,
+  "extent": [
+    640,
+    360
+  ],
+  "source_sha256": {
+    "CMakeLists.txt": "a83c6722ac51a28736465af215ab4c8e96975e7374736f283e0030cdf324b99f",
+    "cmake/render_smoke.cmake": "3b7ffa3cd440143d38e6db873e6af37e5faf6a2459410e265de94a71cf40fe5d",
+    "cmake/runtime.json.in": "bd1d9f41336d703bc286135ce0d9a6eaf05d5ee9d9c59348375e06db781b64c5",
+    "include/poima/core.hpp": "e89659e2ea8c0922fd164125c1892955f8f0411ca98d8ae1da9d3fff1a2be075",
+    "include/poima/render_schedule.hpp": "5ac371c1bdf6ffb792e666c9d4077b9a9ea18f7bb14ed27e2ff915597e543d67",
+    "include/poima/water_optics.hpp": "7d227c9469063ae1b20acee421c9608475210a78f02cb3f6e7e315480122d7ce",
+    "include/poima/world.hpp": "d0be2e6c8a6afb5101318d4ba06fda1178642585b4bb3fffa6e81e00ab16b516",
+    "shaders/scene_frame.hlsli": "c6fddf4a62bc67dcb8d4aff531aa709e0ac0d663e13ebf617167c0b6b804e5a7",
+    "shaders/scene_lighting.hlsli": "988fa502c09d13dcf8ed1db44dad12e452f6e347d4a36013301a2b355677d9d9",
+    "shaders/water_caustics.hlsli": "c3eebc90cb5354080c55c57aec39840ef9df2ae83465ca396b0c30545095889d",
+    "src/core.cpp": "40b34825ec24e3e9f276a40a1caa09d59cbefeac8a7d8315935b1ae2c91b7a2b",
+    "src/project.cpp": "c9154f21eacf8551a3a1815c7a8df2c8afe5a7f508b94d41d441f2ea624ab115",
+    "src/render_deferred_lighting.cpp": "47d5b793223e3de408eac0f22028df9e548ae047ad7c4b3c64876ca2e012d835",
+    "src/render_deferred_lighting.hpp": "f88c07791e3a589bc2850da3a95c38765cecc7e5050ff8cff0285732f0dbc1e7",
+    "src/render_scene_assets.cpp": "340853065b2f88785ef74c64ed622431f097d3bd762921c7e97e07f7d2c63954",
+    "src/render_scene_assets.hpp": "8f457d86c16c34999511437058cf085dfe87538f5418efa3df5d4ce7b40b47a4",
+    "src/render_schedule.cpp": "d440909966184d0e7ad333189015d18e1a21ee1a422d4c17a4737becedacc04a",
+    "src/render_smoke.cpp": "0b7f9716a41f6933bd1a7744a8d30f50097d602fff26104f3b50445e9657ae7d",
+    "src/water_asset.cpp": "6e8a9b18384b5a0bcdd57051265f2f1c9e76f524df317155ce3b70385c1d8307",
+    "src/water_region.cpp": "5a5b62fab057d30f0c52d5bd3a4978e0a77f77cd982bd69238e662a597dc86e6",
+    "src/world.cpp": "00cfc2f8ef88b95f0397b26cfb6528df3ca40d756740b2dd43c4d76a5a044764",
+    "src/world_content.cpp": "8550549ada78b03e13df4ae15b21adca3054a0a7645cc3a3b9152f1f059cc588",
+    "src/world_presentation_json.cpp": "8391f3fbccaaec16662afd21d49402579feec04f380fabb46627e5507cffc693",
+    "src/world_schema.cpp": "85225607d450becf219d2eb9db4037db974966b011a318689f96fcb61d815c7d",
+    "src/world_water_service.inc": "9fceb1561715c42ab639dbae729e3689acc0688d981caef08678c0b0b7e8c334",
+    "tests/render_schedule.cpp": "c2b70e6d885ca359e2c8ad52e05c95fb2ed9d6a166157100b2aa177120c999a7",
+    "tests/water_caustics_capture.py": "4f563f7615f71a9de88da1cdd8f2bb52430e0d72e81b01846bbc947388971b6f"
+  },
+  "windows": {
+    "validation": "Khronos Vulkan validation with synchronization checks",
+    "binary_sha256": "eface37ff373808216b3b438fcec5f6a64f18468bdd5347c874e6d9b22cb44ca",
+    "bridge_sha256": "c2d4d93156e37a4b598693b9fa1d52840172c28f0328cf673013ff7efff611cc",
+    "runtime_sha256": "eb006d6898218fda10c1a1e6fa8c7ed40f04331646e67bab4221c0c4fb440002",
+    "amd": {
+      "adapter": "AMD Radeon(TM) Graphics",
+      "evidence_sha256": "2521e4e894572c88f20bf27ab2f042d717555fbe25142c44bd9aec9b3e3ab083",
+      "comparisons": {
+        "initial": {
+          "points": 35,
+          "wet": 27,
+          "worst_channel_error": 0.00041218254677666266,
+          "blue_modulation_bounds": [
+            0.7389593257091264,
+            1.4367533172215166
+          ]
+        },
+        "later": {
+          "points": 35,
+          "wet": 27,
+          "worst_channel_error": 0.00042875490997773547,
+          "blue_modulation_bounds": [
+            0.7422948997791481,
+            1.490796962712133
+          ]
+        }
+      },
+      "captures": {
+        "baseline": {
+          "sha256": "65db07424f4505a06b96680957f934e5a65f1e816d9efd0142c45b8cea29df89",
+          "tick": 0,
+          "frames_presented": 2,
+          "caustics": null,
+          "refraction": false,
+          "fsr": false
+        },
+        "still": {
+          "sha256": "0700c8e6d22c62e59c36106e66ff08ef1d426cdcce0fe168488fb95d481ad21d",
+          "tick": 0,
+          "frames_presented": 2,
+          "caustics": {
+            "active": false,
+            "reason": "no_waves",
+            "strength": 0.92
+          },
+          "refraction": false,
+          "fsr": false
+        },
+        "unlit": {
+          "sha256": "1d7762b387b6f11885fe68570dd9852ec9e45a91f74298af19a46a2af8892f3f",
+          "tick": 0,
+          "frames_presented": 2,
+          "caustics": {
+            "active": false,
+            "reason": "sun_unlit",
+            "strength": 0.92
+          },
+          "refraction": false,
+          "fsr": false
+        },
+        "lit": {
+          "sha256": "309c160f6e146c06005794c04f27cd964b58e2535e11126bfbe37e88a0053fc8",
+          "tick": 0,
+          "frames_presented": 2,
+          "caustics": {
+            "active": true,
+            "reason": "active",
+            "strength": 0.92
+          },
+          "refraction": false,
+          "fsr": false
+        },
+        "moved": {
+          "sha256": "5dbb16171f0c32bba3d1554d4f4515c1e8f132ca68eadb25c52305ec8a834f77",
+          "tick": 9,
+          "frames_presented": 2,
+          "caustics": {
+            "active": true,
+            "reason": "active",
+            "strength": 0.92
+          },
+          "refraction": false,
+          "fsr": false
+        },
+        "entry-shadow-baseline": {
+          "sha256": "2974b592251fb826b946894e3f5fbff4f1ec1d7ce30bcc30f024c502ba195b18",
+          "tick": 0,
+          "frames_presented": 2,
+          "caustics": null,
+          "refraction": false,
+          "fsr": false
+        },
+        "entry-shadow-caustic": {
+          "sha256": "6ab36c226d5bb70801a920c3cb41e9a7d1dfccd5589b08c38e78d69494da589c",
+          "tick": 0,
+          "frames_presented": 2,
+          "caustics": {
+            "active": true,
+            "reason": "active",
+            "strength": 0.92
+          },
+          "refraction": false,
+          "fsr": false
+        }
+      },
+      "entry_shadow": {
+        "pixel": [
+          83,
+          228
+        ],
+        "entry": [
+          10.186431994359124,
+          6.2,
+          -2.740313346282072
+        ],
+        "unblocked": [
+          0.313232421875,
+          0.476318359375,
+          0.53466796875
+        ],
+        "blocked": [
+          0.27197265625,
+          0.376708984375,
+          0.408203125
+        ],
+        "base": [
+          0.27197265625,
+          0.376708984375,
+          0.408203125
+        ]
+      }
+    },
+    "nvidia": {
+      "adapter": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "evidence_sha256": "dbb1746d4f3f1dfe265184e6fc6a01000fba2affd9057fbc3356626ac19144bb",
+      "comparisons": {
+        "initial": {
+          "points": 35,
+          "wet": 27,
+          "worst_channel_error": 0.00032472310044029395,
+          "blue_modulation_bounds": [
+            0.7389593257091264,
+            1.4367533172215166
+          ]
+        },
+        "later": {
+          "points": 35,
+          "wet": 27,
+          "worst_channel_error": 0.0003261955072736411,
+          "blue_modulation_bounds": [
+            0.7422948997791481,
+            1.490796962712133
+          ]
+        }
+      },
+      "captures": {
+        "baseline": {
+          "sha256": "d5622156d01e7e490c4b8f524f1aaadafdddbb91aaa3352a623e7b2de171c1c1",
+          "tick": 0,
+          "frames_presented": 2,
+          "caustics": null,
+          "refraction": true,
+          "fsr": false
+        },
+        "still": {
+          "sha256": "87d9e1d5e1cbb04f6468e642d3b618bdb82ed7ef523df0e818c66cc21a12039c",
+          "tick": 0,
+          "frames_presented": 2,
+          "caustics": {
+            "active": false,
+            "reason": "no_waves",
+            "strength": 0.92
+          },
+          "refraction": true,
+          "fsr": false
+        },
+        "unlit": {
+          "sha256": "8774513b5e219db8f40a4de91c8162e2639f05c66a26e7c638b73e379a5ca58c",
+          "tick": 0,
+          "frames_presented": 2,
+          "caustics": {
+            "active": false,
+            "reason": "sun_unlit",
+            "strength": 0.92
+          },
+          "refraction": true,
+          "fsr": false
+        },
+        "lit": {
+          "sha256": "f99ccbae0eccee7d02e54bac803d60cfc3655df30ceb279e2695a2cbeb95aa2f",
+          "tick": 0,
+          "frames_presented": 2,
+          "caustics": {
+            "active": true,
+            "reason": "active",
+            "strength": 0.92
+          },
+          "refraction": true,
+          "fsr": false
+        },
+        "moved": {
+          "sha256": "b48529dd4d968db6adda52c3e6955f5910d9bbfec932396ca4035e755f71be13",
+          "tick": 9,
+          "frames_presented": 2,
+          "caustics": {
+            "active": true,
+            "reason": "active",
+            "strength": 0.92
+          },
+          "refraction": true,
+          "fsr": false
+        },
+        "fsr": {
+          "sha256": "a39e45e67c83e397e1f54bd135549ed29ff23f177af69e213d425f1a60300902",
+          "tick": 9,
+          "frames_presented": 2,
+          "caustics": {
+            "active": true,
+            "reason": "active",
+            "strength": 0.92
+          },
+          "refraction": true,
+          "fsr": true
+        },
+        "relocated": {
+          "sha256": "b48529dd4d968db6adda52c3e6955f5910d9bbfec932396ca4035e755f71be13",
+          "tick": 9,
+          "frames_presented": 2,
+          "caustics": {
+            "active": true,
+            "reason": "active",
+            "strength": 0.92
+          },
+          "refraction": true,
+          "fsr": false
+        },
+        "entry-shadow-baseline": {
+          "sha256": "e1f11909afd22afe1c416471a0b335a25073a6e06a29bfab8b6177d08131b364",
+          "tick": 0,
+          "frames_presented": 2,
+          "caustics": null,
+          "refraction": true,
+          "fsr": false
+        },
+        "entry-shadow-caustic": {
+          "sha256": "05e43be59299c38eafa39763d6395d11025315ff2d21eab6cf8293677803385a",
+          "tick": 0,
+          "frames_presented": 2,
+          "caustics": {
+            "active": true,
+            "reason": "active",
+            "strength": 0.92
+          },
+          "refraction": true,
+          "fsr": false
+        }
+      },
+      "entry_shadow": {
+        "pixel": [
+          83,
+          228
+        ],
+        "entry": [
+          10.186431994359124,
+          6.2,
+          -2.740313346282072
+        ],
+        "unblocked": [
+          0.31298828125,
+          0.476318359375,
+          0.5341796875
+        ],
+        "blocked": [
+          0.271728515625,
+          0.376708984375,
+          0.407958984375
+        ],
+        "base": [
+          0.271728515625,
+          0.376708984375,
+          0.407958984375
+        ]
+      },
+      "missing_feature_rejection": "Water caustics require a compatible Vulkan runtime."
+    }
+  },
+  "legacy_exact_parity": {
+    "v6_amd": {
+      "dry": "aa345a3e395963f92d1f6d64bb3edd0e463ddf4a057f294919b70682c09b2322",
+      "above": "7a5e1fa7e70a8a0229a2f628f255a6f61a895423d30f981eb06b07b7c0e5a64d",
+      "multisample": "a4682945f03485d3d40fb12ba6730b4ff081f4ce5d7f25ddda08d5fd0ee7fe63",
+      "under": "63b2053dacfa3760155fe03b8445184ff24ff919f84a001b55f196dee96b6650",
+      "restored": "63b2053dacfa3760155fe03b8445184ff24ff919f84a001b55f196dee96b6650"
+    },
+    "v7_nvidia": {
+      "straight-air": "25a930bfaca883f110bc265b4510b627783cec3ae676821e206ef67fcddedeb8",
+      "straight-water": "d2de8c6ae951ee3553e0b68f5c2d357433cb20e2fac58588e936074124b7a126",
+      "bent-air": "ff912fada0cba86a28b8c8e2c1e285a6157d32142f82f15a760cea03ddff6eaa",
+      "bent-water": "36edfe054e369b6ccf2a5fb449c5562b8b4248b6ac458cee473e3108574ea241",
+      "fsr-air": "c2a94b6e06d4117fcce501f8d9eb118d91d4d47f13fd6d5ee3472f675c1685cf",
+      "waves-straight-0": "5134e7208a541db79787c08f87868a8e947fd51cf451faa68db798742497133c",
+      "waves-straight-8": "75acff359cff919288445b9df72b5dcfe5202a4382a0bae3f44b8fc1a9e0ae35",
+      "waves-refracted-0": "4bfe9342adf1ae267120e1e898cb533307422e5775303326f739512000bf7185",
+      "waves-refracted-8": "7aa34ca9b215d782ed42447fa28d06cfa17a5e4c8aa5a8a070717c6a21e7e5d6",
+      "blocked-straight-air": "26e9dd5596254a51b52c743ce2135087e202351403ea7accf4d713ec74f2a524",
+      "blocked-bent-air": "f6ad14604fedabeface3b7f10c5cb6e3245bdc223c9f959afa3dc1e84560ac50"
+    }
+  },
+  "ubuntu": {
+    "suites": [
+      "audio_contract",
+      "audio_reflections_native",
+      "audio_save_native",
+      "cli_contract",
+      "editor_audio_native",
+      "project_contract",
+      "render_schedule_native",
+      "shallow_water_native",
+      "water_listener_audio_contract",
+      "water_region_native",
+      "water_region_scene_native",
+      "world_audio_native",
+      "world_water_contract",
+      "world_water_rain_contract"
+    ],
+    "binary_sha256": "3691736c1462eac741e6c0eb0973ccbe3e0ad61e2ce99cf50a4c972c0ffd131a",
+    "runtime_sha256": "e36bc9f0a8eda2eddf690772962995f05f5231ae038fc0d24d127a51bad494e2"
+  },
+  "render_schedule": {
+    "accepted": 583,
+    "rejected": 1511
+  },
+  "scope": "Local water grid and diffuse opaque receiver. Numerical derivatives supply independent radiance predictions. Supports the linked directional sun with existing shadows. Open cases include volumetric shafts, strongly breaking waves, more than one optical entry path, and representative performance."
+}

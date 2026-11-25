@@ -615,6 +615,7 @@ public:
             if(content.needs_water_listener_audio)result["needs_water_listener_audio"]=true;
             if(content.needs_water_optics)result["needs_water_optics"]=true;
             if(content.needs_water_refraction)result["needs_water_refraction"]=true;
+            if(content.needs_water_caustics)result["needs_water_caustics"]=true;
             if(content.needs_snow_water)result["needs_snow_water"]=true;
             if(content.needs_physics_checkpoint)result["needs_physics_checkpoint"]=true;
             if(content.needs_output_grade)result["needs_output_grade"]=true;

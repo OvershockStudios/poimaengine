@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.416
+
+- Focus directional sunlight into moving underwater caustics with committed wave phases and shadows at the light's water entry.
+
 ## 0.0.415
 
 - Refract opaque scene color through the water surface with depth and medium checks, including wave normals and absorption along the bent ray.

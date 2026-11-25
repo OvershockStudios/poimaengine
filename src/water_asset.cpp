@@ -14,14 +14,15 @@ namespace {
 using Json = nlohmann::json;
 constexpr auto artifact_format = "poima.water.region";
 
-std::uint32_t artifact_version(bool has_rain, bool has_ripples, bool has_wave_layers,
-                               bool has_listener_audio, bool has_optics, bool has_refraction) noexcept {
-    if (has_refraction) return 7;
-    if (has_optics) return 6;
-    if (has_listener_audio) return 5;
-    if (has_wave_layers) return 4;
-    if (has_ripples) return 3;
-    return has_rain ? 2 : 1;
+std::uint32_t artifact_version(const RegionDefinition& definition) noexcept {
+    if (definition.optics) {
+        if (definition.optics->caustics_strength>0) return 8;
+        return definition.optics->refraction ? 7 : 6;
+    }
+    if (definition.listener_audio) return 5;
+    if (!definition.surface_wave_layers.empty()) return 4;
+    if (definition.surface_ripples) return 3;
+    return definition.rain_cells.empty() ? 1 : 2;
 }
 
 void require(bool valid, const char* message) {
@@ -142,7 +143,7 @@ void parse_rules(const Json& object, RegionDefinition& definition) {
     }
     if (object.contains("optics")) {
         const auto& value=object.at("optics");
-        fields(value, {"extinction_per_m","scattered_radiance"}, {"refraction"});
+        fields(value, {"extinction_per_m","scattered_radiance"}, {"refraction","caustics_strength"});
         if (value.contains("refraction"))
             require(value.at("refraction").is_boolean(),"Water optics refraction must be Boolean.");
         const auto color=[&](const char* name, double maximum) {
@@ -157,7 +158,7 @@ void parse_rules(const Json& object, RegionDefinition& definition) {
             return result;
         };
         definition.optics=WaterOptics{color("extinction_per_m",8),color("scattered_radiance",16),
-            value.value("refraction",false)};
+            value.value("refraction",false),value.contains("caustics_strength") ? number(value.at("caustics_strength")) : 0};
     }
     std::ranges::sort(definition.rain_cells, {}, [](Cell cell) { return std::pair{cell.z, cell.x}; });
     std::sort(definition.faces.begin(), definition.faces.end(), [](const auto& left, const auto& right) {
@@ -184,9 +185,7 @@ Json artifact_document(const RegionAsset& asset) {
     for (const auto& exchange : definition.exchanges) exchanges.push_back({{"cell", {exchange.cell.x, exchange.cell.z}},
         {"source_m3_per_second", exchange.source_m3_per_second}, {"drain_m3_per_second", exchange.drain_m3_per_second}});
     Json document{{"format", artifact_format},
-        {"version", artifact_version(!definition.rain_cells.empty(), definition.surface_ripples.has_value(),
-            !definition.surface_wave_layers.empty(), definition.listener_audio.has_value(), definition.optics.has_value(),
-            definition.optics && definition.optics->refraction)},
+        {"version", artifact_version(definition)},
         {"terrain_recipe_sha256", asset.terrain_recipe_sha256},
         {"tiles", std::move(tiles)}, {"grid", {{"cells_x", grid.cells_x}, {"cells_z", grid.cells_z}, {"cell_size_m", grid.cell_size_m},
             {"origin_x_m", grid.origin_x_m}, {"origin_z_m", grid.origin_z_m}, {"relaxation_per_second", grid.relaxation_per_second}}},
@@ -257,7 +256,7 @@ RegionAsset decode_region_asset(std::string_view bytes) {
     fields(object, {"format", "version", "terrain_recipe_sha256", "tiles", "grid", "floor_heights_m",
         "initial_depths_m", "faces", "exchanges"}, {"rain_cells", "surface_ripples", "surface_wave_layers", "listener_audio", "optics"});
     require(object.at("format") == artifact_format, "Unsupported water asset format.");
-    const auto version=integer(object.at("version"),1,7);
+    const auto version=integer(object.at("version"),1,8);
     RegionAsset asset;
     asset.terrain_recipe_sha256 = hex(object.at("terrain_recipe_sha256"), 64);
     auto& definition = asset.definition;
@@ -267,9 +266,7 @@ RegionAsset decode_region_asset(std::string_view bytes) {
     require(definition.floor_heights_m.size() == count, "Water asset is missing floor samples.");
     definition.initial_depths_m = samples(object.at("initial_depths_m"), count);
     parse_rules(object, definition);
-    require(version==artifact_version(object.contains("rain_cells"),object.contains("surface_ripples"),
-        object.contains("surface_wave_layers"),object.contains("listener_audio"),object.contains("optics"),
-        definition.optics && definition.optics->refraction),"Unsupported water asset format.");
+    require(version==artifact_version(definition),"Unsupported water asset format.");
     const auto& tiles = object.at("tiles");
     require(tiles.is_array() && !tiles.empty() && tiles.size() <= terrain::max_cook_tiles, "Water asset requires 1..64 terrain tiles.");
     std::set<std::string> tile_entities;
@@ -331,9 +328,12 @@ Json region_authoring_schemas() {
     auto optics = object({{"extinction_per_m",array(range("number",0,8),3,3)},
         {"scattered_radiance",array(range("number",0,16),3,3)},
         {"refraction",{{"type","boolean"},{"default",false},
-            {"description","Bend the sightline at the first water interface and sample a matching opaque depth hit."}}}},
+            {"description","Bend the sightline at the first water interface and sample a matching opaque depth hit."}}},
+        {"caustics_strength",range("number",0,1)}},
         {"extinction_per_m","scattered_radiance"});
     optics["description"] = "Optional transparent surface and depth-dependent RGB extinction and in-scattering. Requires single-sample Vulkan color for optical composition.";
+    optics["properties"]["caustics_strength"]["description"] =
+        "Focus light from the linked sky sun below the surface using the authored wave normals. Zero disables the effect.";
     auto plan = object({{"revision", tick_schema}, {"terrain", std::move(source)}, {"expected_terrain_recipe_sha256", sha_schema},
         {"tile_entities", array(id_schema, 1, terrain::max_cook_tiles)}, {"grid", grid},
         {"initial_depths_m", array(range("number", 0, 1'000'000), 0, max_region_side * max_region_side)},

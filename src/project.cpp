@@ -356,6 +356,7 @@ Json project_summary(const Project& p) {
     if(p.content.needs_water_listener_audio)result["needs_water_listener_audio"]=true;
     if(p.content.needs_water_optics)result["needs_water_optics"]=true;
     if(p.content.needs_water_refraction)result["needs_water_refraction"]=true;
+    if(p.content.needs_water_caustics)result["needs_water_caustics"]=true;
     if(p.content.needs_output_grade)result["needs_output_grade"]=true;
     if(p.content.needs_auto_exposure)result["needs_auto_exposure"]=true;
     if(p.content.needs_atmosphere_sky)result["needs_atmosphere_sky"]=true;
@@ -478,6 +479,8 @@ void require_scene_feature_support(const WorldPackageContent& content, const Jso
         "Water optics require a compatible Vulkan runtime.");
     require(!content.needs_water_refraction || runtime.at("features").value("water_refraction",false),
         "Water refraction requires a compatible Vulkan runtime.");
+    require(!content.needs_water_caustics || runtime.at("features").value("water_caustics",false),
+        "Water caustics require a compatible Vulkan runtime.");
     require(!content.needs_particles || runtime.at("features").value("scene_particles", false),
         "Project particle emitters require a compatible particle runtime.");
     require(!content.needs_sprite_particles || runtime.at("features").value("scene_particle_sprites", false),
@@ -501,7 +504,7 @@ Json runtime_spec(const std::string& bytes,std::string_view expected_version=bui
     const auto& features=value.at("features");
     fields(features,{"simulation","renderer","audio","managed","editor","native_gameplay","game_ui",
         "navigation","navigation_obstacles","asset_provenance","project_post_effects","water_regions","water_rain",
-        "water_ripples","water_wave_layers","water_listener_audio","water_optics","water_refraction","snow_water_regions","scene_particles","scene_particle_sprites",
+        "water_ripples","water_wave_layers","water_listener_audio","water_optics","water_refraction","water_caustics","snow_water_regions","scene_particles","scene_particle_sprites",
         "surface_marks","surface_mark_masks","mesh_lod","output_grade","auto_exposure","atmosphere_sky","aerial_perspective","volumetric_clouds","cloud_shadows","screen_reflections","foliage_motion",
         "height_fog","physics_checkpoint","fsr3_upscaler"},{"simulation","renderer","audio","managed","editor"});
     for(const auto& feature:features)require(feature.is_boolean(),"Runtime feature flags must be Boolean.");
@@ -555,6 +558,7 @@ struct VerifiedGame {
     bool needs_water_listener_audio=false;
     bool needs_water_optics=false;
     bool needs_water_refraction=false;
+    bool needs_water_caustics=false;
     bool needs_screen_reflections=false;
     bool needs_foliage_motion=false;
     bool needs_height_fog=false;
@@ -616,6 +620,7 @@ VerifiedGame verify_game(const std::string& filename,std::string_view expected_v
     result.needs_water_listener_audio=content.needs_water_listener_audio;
     result.needs_water_optics=content.needs_water_optics;
     result.needs_water_refraction=content.needs_water_refraction;
+    result.needs_water_caustics=content.needs_water_caustics;
     result.needs_screen_reflections=content.needs_screen_reflections;
     result.needs_foliage_motion=content.needs_foliage_motion;
     result.needs_height_fog=content.needs_height_fog;
@@ -1060,6 +1065,7 @@ Reply inspect_game(const std::string& manifest,const std::string& expected_bundl
         if(game.needs_water_listener_audio)result["needs_water_listener_audio"]=true;
         if(game.needs_water_optics)result["needs_water_optics"]=true;
         if(game.needs_water_refraction)result["needs_water_refraction"]=true;
+        if(game.needs_water_caustics)result["needs_water_caustics"]=true;
         if(game.needs_screen_reflections)result["needs_screen_reflections"]=true;
         if(game.needs_foliage_motion)result["needs_foliage_motion"]=true;
         if(game.needs_height_fog)result["needs_height_fog"]=true;

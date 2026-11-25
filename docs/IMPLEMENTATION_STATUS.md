@@ -1,8 +1,18 @@
 # Implementation status
 
-Updated 2026-11-25 for **0.0.415**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-25 for **0.0.416**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.416 adds [wave-driven caustics](SHALLOW_WATER.md#focus-sunlight-underwater)
+to the linked sun in forward and deferred Vulkan lighting. The renderer
+matched 140 independent color comparisons across both GPUs and two wave
+phases. Blocking the light at the calculated water entry removed the
+pattern while preserving ordinary light on the receiver. NVIDIA captured
+caustics through refraction with FSR Native AA and reproduced the image
+from a relocated saved game. Sixteen older water images matched exactly.
+Ubuntu passed 14 suites. Volumetric underwater shafts remain open.
+[Results](evidence/m2-water-caustics-416.json)
 
 Version 0.0.415 adds [water refraction](SHALLOW_WATER.md#refract-the-view-across-the-surface).
 AMD forward and NVIDIA deferred passed 56 comparisons against independent
@@ -23,7 +33,7 @@ RGB sightline comparisons, including exact raw HDR and opaque depth parity.
 Fresh save loads and a relocated Windows capture reproduced the submerged
 image. NVIDIA also exercised FSR Native AA and a scene with water wave
 layers, sky IBL and aerial perspective. The MSAA path retained the opaque
-surface. Ubuntu passed 14 suites. Surface caustics remain open.
+surface. Ubuntu passed 14 suites.
 [Results](evidence/m2-water-optics-414.json)
 
 Version 0.0.413 adds [waterline audio](SHALLOW_WATER.md#author-the-waterline-sound-transition)

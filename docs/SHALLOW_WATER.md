@@ -244,8 +244,7 @@ ripples and wave layers affect the reflected angle. From below, the
 reflection uses the water scattering radiance and the Fresnel term permits
 total internal reflection. Air-media effects apply after water in the
 shared compositor. By default, transmission follows the original
-sightline. Sun caustics and water-aware transparent particle ordering
-remain separate work.
+sightline. Water-aware transparent particle ordering remains open.
 [Grid traversal](https://par.cse.nsysu.edu.tw/resource/paper/2024/241022/A%20Fast%20Voxel%20Traversal%20Algorithm.pdf)
 [Water optics reference](https://developer.nvidia.com/gpugems/gpugems/part-i-natural-effects/chapter-2-rendering-water-caustics)
 
@@ -281,6 +280,46 @@ views with the effect active. Compare two captures at the same tick,
 one with the option enabled and one without. Use raw HDR and depth to
 confirm that a foreground object stays in front of the water, then
 compare resolved HDR to judge the visible displacement.
+
+### Focus sunlight underwater
+
+Set `"caustics_strength": 0.9` inside `optics`. The range is `[0,1]`.
+Omission and zero produce the same artifact. A positive strength cooks
+version 8 and requires `features.water_caustics` for export. The same
+profile can also enable refraction.
+
+Set `LightingEnvironment.sky.sun` to the directional light that
+illuminates the water. The light needs positive intensity and a direction
+above the horizon cutoff. Author ripples or wave layers with positive
+slope. Their phase advances on the committed water clock and restores
+with it. The renderer reports the active path or an inactive reason in
+`render_diagnostics.water_optics.caustics`.
+
+The lighting pass bends incoming sunlight at the surface and estimates
+how much the neighboring rays converge at each submerged opaque
+receiver. The signed change in the sun's contribution is bounded and
+experiences RGB attenuation along the light's water path. Ordinary surface
+shadows remain in effect. A shadow at the calculated water entry also
+suppresses the pattern. Cloud shadows attenuate the linked sun when
+enabled.
+
+The approximation searches around one solution seeded by a flat water
+surface. It fades in near the surface, fades beyond 3 metres of depth,
+and stops at 8 metres. Near-horizon light, unstable solutions and a
+large height change between the receiver and entry column fade or fall
+back. Strong wave folds can send several light paths to one receiver.
+This stage captures the local contribution and uses the authored
+strength to control it. It runs in the forward and deferred lighting
+paths when single-sample water optics are active, including with FSR.
+The refracted image can see the lit geometry. Underwater volumetric
+shafts and multiple light paths through the waves remain open.
+[Water caustics reference](https://developer.nvidia.com/gpugems/gpugems/part-i-natural-effects/chapter-2-rendering-water-caustics)
+
+For a diagnostic, capture `raw_hdr` at the same receiver with strength
+zero and positive. Compare two committed phases. Test a dry receiver, a
+zero-slope control and a shadow at the water entry point. Inspect
+`resolved_hdr` or the BMP to review the effect through depth color and
+refraction.
 
 ## Observe and verify local flow
 

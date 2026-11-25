@@ -141,6 +141,7 @@ struct Settings {
     bool particle_sprites=false;
     bool screen_reflections=false;
     bool height_fog=false,height_fog_spots=false;
+    bool water_caustics=false;
     bool aerial_perspective=false;
     bool volumetric_clouds=false,cloud_shadows=false;
     bool spatial_aa=false;

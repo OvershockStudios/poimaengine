@@ -33,6 +33,7 @@ struct MaterialInputs {
     const render_environment_ibl::Resources& environment;
     nvrhi::ITexture* cloud_shadow = nullptr;
     nvrhi::ISampler* cloud_shadow_sampler = nullptr;
+    nvrhi::IBuffer* water_columns = nullptr;
 };
 
 struct RetainHooks {

@@ -133,11 +133,14 @@ struct FrameConstants {
     std::array<float,4> water_ripple_shape{},water_ripple_motion{};
     std::array<std::array<float,4>,max_scene_water_wave_layers-1> water_wave_shapes{};
     std::array<float,4> cloud_shadow_geometry{},cloud_shadow_controls{};
+    std::array<float,4> water_caustic_origin_size{},water_caustic_extinction_strength{};
+    std::array<std::uint32_t,4> water_caustic_grid_light{};
 };
-static_assert(sizeof(GpuShadow)==80 && sizeof(FrameConstants)==1712);
+static_assert(sizeof(GpuShadow)==80 && sizeof(FrameConstants)==1760);
 static_assert(offsetof(FrameConstants,water_ripple_shape)==1600 && offsetof(FrameConstants,water_ripple_motion)==1616 &&
     offsetof(FrameConstants,water_wave_shapes)==1632 && offsetof(FrameConstants,cloud_shadow_geometry)==1680 &&
-    offsetof(FrameConstants,cloud_shadow_controls)==1696);
+    offsetof(FrameConstants,cloud_shadow_controls)==1696 && offsetof(FrameConstants,water_caustic_origin_size)==1712 &&
+    offsetof(FrameConstants,water_caustic_extinction_strength)==1728 && offsetof(FrameConstants,water_caustic_grid_light)==1744);
 struct SpriteInstance {
     std::array<float,4> center_and_size,linear_rgba,fade_and_reserved;
     std::array<std::uint32_t,4> texel_rect;
@@ -754,7 +757,8 @@ struct Context {
             for(std::uint32_t slot=6;slot<=9;++slot)layout.addItem(nvrhi::BindingLayoutItem::StructuredBuffer_SRV(slot));
             for(std::uint32_t slot=10;slot<=12;++slot)layout.addItem(nvrhi::BindingLayoutItem::Texture_SRV(slot));
             layout.addItem(nvrhi::BindingLayoutItem::Sampler(5))
-                .addItem(nvrhi::BindingLayoutItem::Texture_SRV(13)).addItem(nvrhi::BindingLayoutItem::Sampler(6));
+                .addItem(nvrhi::BindingLayoutItem::Texture_SRV(13)).addItem(nvrhi::BindingLayoutItem::Sampler(6))
+                .addItem(nvrhi::BindingLayoutItem::StructuredBuffer_SRV(14));
             binding_layout = checked->createBindingLayout(layout);
             require(static_cast<bool>(binding_layout), "Scene push constant layout creation failed.");
             surface_mark_layout=checked->createBindingLayout(nvrhi::BindingLayoutDesc()
@@ -1036,6 +1040,7 @@ struct Context {
         environment_ibl.prepare_dummy(*checked.Get(),[this](const render_environment_ibl::RecordUpload& record) {
             submit_environment_upload(record);
         });
+        water_columns=height_fog::allocate_water_columns(*checked.Get());
         bindings=mesh_bindings(nullptr,nullptr);
         const auto mesh = box_vertices();
         nvrhi::BufferDesc desc;
@@ -1053,10 +1058,12 @@ struct Context {
         require(bool(surface_mark_mask_sampler),"Surface mark mask sampler creation failed.");
         empty_surface_mark_binding=make_surface_mark_binding(empty_surface_marks,white_surface_mark_mask);
         const GpuSurfaceMark unused_mark{};
+        const std::array<float,2> unused_column{};
         const std::uint8_t white_mask_texel=255;
         commands->open();
         commands->writeBuffer(vertices,mesh.data(),mesh.size()*sizeof(Vertex));
         commands->writeBuffer(empty_surface_marks,&unused_mark,sizeof(unused_mark));
+        commands->writeBuffer(water_columns,unused_column.data(),sizeof(unused_column));
         commands->writeTexture(white_surface_mark_mask,0,0,&white_mask_texel,1);
         commands->close();
         checked->executeCommandList(commands);
@@ -1200,6 +1207,7 @@ struct Context {
             .environment=environment_ibl,
             .cloud_shadow=cloud_shadows ? sky_pass.cloud_shadow_texture() : nullptr,
             .cloud_shadow_sampler=cloud_shadows ? sky_pass.cloud_shadow_sampler() : nullptr,
+            .water_columns=water_columns.Get(),
         }, mesh, textures, foreground ? &viewmodel->materials : nullptr);
     }
     void retain_scene_resources() {
@@ -1306,12 +1314,31 @@ struct Context {
         post_effect.detach_source(source);
         if(viewmodel)viewmodel->compose_bindings=nullptr;
     }
+    std::string_view prepare_water_caustics(const SceneWaterVolume& water,const SceneLighting& lighting,
+                                           float wave_mode,std::string_view reason) {
+        if(reason!="active")return reason;
+        if(wave_mode==0)return "no_waves";
+        const auto sun=std::ranges::find(lighting.lights,lighting.environment.sky.sun,&SceneLight::entity_id);
+        if(sun==lighting.lights.end() || sun->light.kind!=LightKind::directional)return "no_sun";
+        if(sun->light.intensity<=0)return "sun_unlit";
+        if(sun->direction[1]>=-.12)return "sun_below_cutoff";
+        for(std::size_t axis=0;axis<3;++axis) {
+            frame_constants.water_caustic_origin_size[axis]=static_cast<float>(water.origin_m[axis]);
+            frame_constants.water_caustic_extinction_strength[axis]=static_cast<float>(water.optics.extinction_per_m[axis]);
+        }
+        frame_constants.water_caustic_origin_size[3]=static_cast<float>(water.cell_size_m);
+        frame_constants.water_caustic_extinction_strength[3]=static_cast<float>(water.optics.caustics_strength);
+        frame_constants.water_caustic_grid_light={water.cells_x,water.cells_z,
+            static_cast<std::uint32_t>(sun-lighting.lights.begin()+1),static_cast<std::uint32_t>(wave_mode)};
+        return "active";
+    }
     void prepare_height_fog(const SceneLighting& lighting,float water_normal_mode) {
         diagnostics.height_fog.reset();
         aerial_parameters.reset();
         pending_aerial_perspective.reset();
         pending_water_optics.reset();
         water_parameters.reset();
+        frame_constants.water_caustic_grid_light={};
         fog_spots={};
         const auto& selected=lighting.environment.height_fog;
         const auto& atmosphere_profile=lighting.environment.atmosphere;
@@ -1326,12 +1353,11 @@ struct Context {
         if(const auto& water=scene->water_volume) {
             const auto& camera=scene->camera_world;
             const auto view=height_fog::project_water_view(*water,{camera[12],camera[13],camera[14]},water_normal_mode);
+            const auto strength=water->optics.caustics_strength;
+            const auto caustics=strength>0 ? prepare_water_caustics(*water,lighting,water_normal_mode,color_reason) : std::string_view{};
             pending_water_optics=WaterOpticsDiagnostics{color_reason=="active",color_reason,
-                water->cells_x*water->cells_z,view.submersion_m,water->optics.refraction && color_reason=="active"};
-            if(color_reason=="active") {
-                if(!water_columns)water_columns=height_fog::allocate_water_columns(*checked.Get());
-                water_parameters=view.parameters;
-            }
+                water->cells_x*water->cells_z,view.submersion_m,water->optics.refraction && color_reason=="active",strength,caustics};
+            if(color_reason=="active")water_parameters=view.parameters;
         }
         if(wants_aerial) {
             const auto reason=color_reason=="active" && !sky_pass.atmosphere_enabled() ?
@@ -1616,6 +1642,7 @@ struct Context {
             }
             validate_viewmodel_budget(viewmodel_resident_bytes());
             viewmodel->materials.clear();viewmodel_frame=frame_constants;
+            viewmodel_frame.water_caustic_grid_light={};
             const auto lens=foreground.effective_lens(scene->world_lens());
             require(std::isfinite(lens.vertical_fov) && lens.vertical_fov>=5 && lens.vertical_fov<=150 && std::isfinite(lens.near_plane) && std::isfinite(lens.far_plane) && lens.near_plane>=.001 && lens.near_plane<lens.far_plane && lens.far_plane<=1e7,"Invalid foreground lens.");
             const auto projection=multiply(perspective(lens.vertical_fov,double(width)/height,lens.near_plane,lens.far_plane),inverse_affine(scene->camera_world));
@@ -2482,6 +2509,7 @@ struct Context {
         settings.height_fog=scene && scene_visible && fog.radiance();
         settings.aerial_perspective=settings.height_fog && aerial_parameters.has_value();
         settings.height_fog_spots=settings.height_fog && (fog_spots[0]!=0 || fog_spots[1]!=0);
+        settings.water_caustics=settings.height_fog && frame_constants.water_caustic_grid_light[2]!=0;
         settings.particle_sprites=!sprite_instances.empty();
         settings.sky=scene && scene_visible && sky_pass.enabled();settings.products=bool(scene_normal);settings.products_debug=scene_debug_view!=SceneDebugView::color;settings.editor=editor;settings.capture=capture_frame;settings.reconstruction=pending_reconstruction.active;settings.deferred=deferred;settings.ambient_occlusion=ao_enabled;
         settings.volumetric_clouds=settings.sky && sky_pass.clouds_enabled();
@@ -2852,6 +2880,11 @@ struct Context {
                         }
                         if(binding.type==nvrhi::ResourceType::ConstantBuffer)identity(f.frame,binding.resourceHandle);
                         if(binding.type==nvrhi::ResourceType::StructuredBuffer_SRV) {
+                            if(binding.slot==14) {
+                                if(plan.settings.water_caustics && !plan.settings.deferred)
+                                    identity(f.water_columns,binding.resourceHandle);
+                                continue;
+                            }
                             const auto id=binding.slot==6 ? f.lights : binding.slot==7 ? f.counts : binding.slot==8 ? f.indices : f.objects;
                             if(id!=rs::none)identity(id,binding.resourceHandle);
                         }
@@ -2883,7 +2916,7 @@ struct Context {
                             else identity(binding.slot<5 ? input.textures.at(texture_index++) : f.shadow,binding.resourceHandle);
                         }
                         if(binding.type==nvrhi::ResourceType::ConstantBuffer)identity(f.viewmodel_frame,binding.resourceHandle);
-                        if(binding.type==nvrhi::ResourceType::StructuredBuffer_SRV) {const auto id=binding.slot==6 ? f.lights : binding.slot==7 ? f.viewmodel_counts : binding.slot==8 ? f.viewmodel_indices : f.viewmodel_objects;if(id!=rs::none)identity(id,binding.resourceHandle);}
+                        if(binding.type==nvrhi::ResourceType::StructuredBuffer_SRV && binding.slot!=14) {const auto id=binding.slot==6 ? f.lights : binding.slot==7 ? f.viewmodel_counts : binding.slot==8 ? f.viewmodel_indices : f.viewmodel_objects;if(id!=rs::none)identity(id,binding.resourceHandle);}
                     }
                 }
                 for(const auto& binding:viewmodel->compose_bindings->getDesc()->bindings)if(binding.type==nvrhi::ResourceType::Texture_SRV)identity(binding.slot==0 ? (plan.settings.reconstruction ? f.reconstructed : rs::world_radiance(f,plan.settings)) : f.viewmodel_resolved,binding.resourceHandle);
@@ -3035,7 +3068,8 @@ struct Context {
             .hdr=scene_hdr.Get(),.normal=scene_normal.Get(),.motion=scene_motion.Get(),.motion_valid=scene_motion_valid.Get(),
             .ao=occlusion.filtered(),.reflection_roughness=reflections.roughness(),
             .cloud_shadow=frame_constants.cloud_shadow_controls[0]>0 ? sky_pass.cloud_shadow_texture() : nullptr,
-            .cloud_shadow_sampler=frame_constants.cloud_shadow_controls[0]>0 ? sky_pass.cloud_shadow_sampler() : nullptr},
+            .cloud_shadow_sampler=frame_constants.cloud_shadow_controls[0]>0 ? sky_pass.cloud_shadow_sampler() : nullptr,
+            .water_columns=water_columns.Get()},
             environment_ibl,scene_products_enabled,ao_enabled);
         // Query storage belongs to this Context. Create it before acquiring an
         // image; stopped traces leave it allocated but perform no query work.

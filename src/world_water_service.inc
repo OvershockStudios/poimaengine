@@ -82,6 +82,7 @@
             if (params.contains("optics")) {
                 auto optics=params.at("optics");
                 if(!optics.value("refraction",false))optics.erase("refraction");
+                if(optics.value("caustics_strength",0.)==0.)optics.erase("caustics_strength");
                 result["optics"]=std::move(optics);
             }
             return result;

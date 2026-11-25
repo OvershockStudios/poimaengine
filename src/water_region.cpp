@@ -185,6 +185,7 @@ nlohmann::json listener_audio_json(const ListenerAudio& profile) {
 nlohmann::json optics_json(const WaterOptics& profile) {
     nlohmann::json result{{"extinction_per_m",profile.extinction_per_m},{"scattered_radiance",profile.scattered_radiance}};
     if(profile.refraction) result["refraction"]=true;
+    if(profile.caustics_strength>0) result["caustics_strength"]=profile.caustics_strength;
     return result;
 }
 
@@ -203,6 +204,8 @@ Region::Region(const RegionDefinition& definition)
             throw std::invalid_argument("Water listener audio needs cutoff_hz in [80,8000], gain in [0,1] and full_depth_m in [0.01,10].");
     }
     if (optics_) {
+        if (!unit_interval(optics_->caustics_strength))
+            throw std::invalid_argument("Water caustics_strength must be in [0,1].");
         for (double value : optics_->extinction_per_m)
             if (!(value >= 0 && value <= 8))
                 throw std::invalid_argument("Water extinction_per_m channels must be in [0,8].");

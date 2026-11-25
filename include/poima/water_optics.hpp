@@ -8,5 +8,6 @@ struct WaterOptics {
     std::array<double,3> extinction_per_m;
     std::array<double,3> scattered_radiance;
     bool refraction=false;
+    double caustics_strength=0;
 };
 }

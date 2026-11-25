@@ -28,5 +28,8 @@ cbuffer Frame : register(b1) {
     float4 water_wave_shapes[3]; // Additional directions for layered water
     float4 cloud_shadow_geometry; // Advected camera X/Z in km, layer base Y and thickness in metres
     float4 cloud_shadow_controls; // Strength, one-based sun index, reserved, reserved
+    float4 water_caustic_origin_size; // Committed grid origin XYZ, cell size
+    float4 water_caustic_extinction_strength; // Water extinction per metre RGB, strength
+    uint4 water_caustic_grid_light; // X and Z dimensions, one-based sun index, wave mode
 };
 StructuredBuffer<SceneLight> lights : register(t6);

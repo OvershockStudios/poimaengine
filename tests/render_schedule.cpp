@@ -1231,6 +1231,28 @@ void height_fog_contracts() {
     bad_water("water optics columns are read by a foreign pass",[&](auto& p){
         pass(p,PassId::output).accesses.push_back({water.f.water_columns,Use::storage_read});
     });
+    for(bool deferred:{false,true}) {
+        auto receiving=forward;
+        receiving.deferred=deferred;
+        receiving.water_caustics=true;
+        Fixture caustic(receiving);
+        environment_inputs(caustic,true);
+        const auto columns=caustic.add(Kind::buffer,Lifetime::shared);
+        caustic.f.water_columns=columns;
+        caustic.f.resources[columns].bytes=8*water_column_bytes;
+        auto prepared=caustic.plan();
+        prepared.validate();++accepted;
+        const auto light=deferred ? PassId::deferred_lighting : PassId::opaque;
+        check(access(prepared,light,columns,Use::storage_read) &&
+              access(prepared,PassId::height_fog,columns,Use::storage_read),
+              "World caustics and optical composition must share the committed columns");
+        auto unsafe=prepared;
+        erase_access(unsafe,light,columns,Use::storage_read);
+        rejects("World caustics lighting missing column access",[&]{unsafe.validate();});
+        unsafe=prepared;
+        unsafe.settings.water_caustics=false;
+        rejects("Inactive caustics still reads columns from lighting",[&]{unsafe.validate();});
+    }
     auto legacy=Fixture(rich(),4).plan();legacy.validate();
     check(legacy.frame.fogged_hdr==none && world_radiance(legacy.frame,legacy.settings)==legacy.frame.hdr &&
           std::none_of(legacy.passes.begin(),legacy.passes.end(),[](const auto& work){return work.id==PassId::height_fog;}),

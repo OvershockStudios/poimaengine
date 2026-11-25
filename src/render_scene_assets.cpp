@@ -202,7 +202,8 @@ nvrhi::BindingSetHandle Cache::material(const Upload& upload, const MaterialInpu
         // Both cloud bindings are appended by this cache. Reuse all material
         // textures across activation changes while refreshing the descriptor.
         const auto& cached = found->second->getDesc()->bindings;
-        if (cached[cached.size() - 2].resourceHandle == cloud_shadow && cached.back().resourceHandle == cloud_sampler)
+        if (cached[cached.size() - 3].resourceHandle == cloud_shadow &&
+            cached[cached.size() - 2].resourceHandle == cloud_sampler && cached.back().resourceHandle == inputs.water_columns)
             return found->second;
     }
 
@@ -237,7 +238,8 @@ nvrhi::BindingSetHandle Cache::material(const Upload& upload, const MaterialInpu
         .addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(9, inputs.objects));
     inputs.environment.bind(desc);
     desc.addItem(nvrhi::BindingSetItem::Texture_SRV(13, cloud_shadow))
-        .addItem(nvrhi::BindingSetItem::Sampler(6, cloud_sampler));
+        .addItem(nvrhi::BindingSetItem::Sampler(6, cloud_sampler))
+        .addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(14,inputs.water_columns));
     auto result = upload.device.createBindingSet(desc, inputs.layout);
     require(bool(result), "Material texture bindings failed.");
     cache.insert_or_assign(material_key, result);

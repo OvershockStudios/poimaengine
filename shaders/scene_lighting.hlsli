@@ -153,6 +153,8 @@ float cloud_transmission(float3 position, float3 toward_sun) {
     const float strength = cloud_shadow_controls.x * smoothstep(0.08, 0.16, toward_sun.y);
     return lerp(1.0, exp(-optical_depth), strength);
 }
+#include "water_caustics.hlsli"
+
 float3 direct_brdf(float3 n,float3 v,float3 l,float3 base,float metallic,float roughness) {
     const float nl=saturate(dot(n,l));if(nl<=0)return 0;
     const float3 halfway=v+l;
@@ -203,6 +205,10 @@ void accumulate_direct_lighting(inout float3 color,float3 world_position,float2 
                 [branch] if(cloud_shadow_controls.x>0 && index+1u==uint(cloud_shadow_controls.y) && source.position_kind.w<0.5)
                     visibility*=cloud_transmission(world_position,l);
             }
-            color+=direct_brdf(n,v,l,base,metallic,roughness)*source.color_intensity.rgb*(source.color_intensity.w*attenuation*visibility);
+            float3 direct_color=direct_brdf(n,v,l,base,metallic,roughness)*source.color_intensity.rgb*(source.color_intensity.w*attenuation*visibility);
+            [branch] if(water_caustic_grid_light.z!=0u && index+1u==water_caustic_grid_light.z &&
+                visibility>0 && l.y>.12 && dot(n,l)>0)
+                direct_color*=water_caustic_modulation(source,world_position,l,receive_shadows);
+            color+=direct_color;
         }
 }

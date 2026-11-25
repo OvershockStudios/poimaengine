@@ -371,6 +371,8 @@ void Schedule::validate(bool before_acquire) const {
                frame.ibl_specular==none)fail("invalid water optics resources");
             require_distinct_roles(frame.water_columns,none,"water optics buffer aliases another resource role");
         }
+        if(settings.water_caustics && frame.water_columns==none)
+            fail("water caustics require committed optical columns");
         if(settings.height_fog_spots) {
             required(frame.lights);
             const auto& shadow=resource(frame.shadow);
@@ -378,7 +380,7 @@ void Schedule::validate(bool before_acquire) const {
                 shadow.samples!=1 || !shadow.layers || shadow.lifetime!=Lifetime::shared || shadow.region!=Region::whole)
                 fail("invalid height fog spotlight inputs");
         }
-    } else if(frame.fogged_hdr!=none || settings.height_fog_spots || frame.water_columns!=none)
+    } else if(frame.fogged_hdr!=none || settings.height_fog_spots || frame.water_columns!=none || settings.water_caustics)
         fail("world media resources without world media pass");
     if(reconstruct_composed) {
         if(!scene_image(frame.composition_mask,Format::r8_unorm,resource(frame.hdr)) ||
@@ -713,6 +715,9 @@ void Schedule::validate(bool before_acquire) const {
         }
         const bool direct_lighting=(pass.id==PassId::opaque && !settings.deferred) ||
             pass.id==PassId::deferred_lighting || pass.id==PassId::viewmodel_opaque;
+        const bool caustic_lighting=settings.water_caustics && direct_lighting && pass.id!=PassId::viewmodel_opaque;
+        if(caustic_lighting && !has(frame.water_columns,Use::storage_read))
+            fail("world lighting needs the committed caustic columns");
         if(direct_lighting) {
             for(auto id:{frame.ibl_diffuse,frame.ibl_specular,frame.ibl_brdf})if(id!=none && !has(id,Use::sampled))fail("missing environment lighting input");
             if(settings.cloud_shadows && std::count_if(pass.accesses.begin(),pass.accesses.end(),[&](const Access& access) {
@@ -973,8 +978,8 @@ void Schedule::validate(bool before_acquire) const {
             const auto& r=resource(a.resource);
             if(frame.water_columns!=none && a.resource==frame.water_columns &&
                 !(pass.id==PassId::skinning && a.use==Use::upload && a.initialize) &&
-                !(pass.id==PassId::height_fog && a.use==Use::storage_read && !a.initialize))
-                fail("water columns used outside frame upload and media composition");
+                !((pass.id==PassId::height_fog || caustic_lighting) && a.use==Use::storage_read && !a.initialize))
+                fail("water columns used outside upload, world lighting and media composition");
             if(settings.spatial_aa && a.resource==frame.display_ldr &&
                 !(pass.id==PassId::output && a.use==Use::color_overwrite && a.initialize) &&
                 !(pass.id==PassId::spatial_aa && a.use==Use::sampled && !a.initialize))
@@ -1242,6 +1247,7 @@ Schedule build(FrameResources frame,Settings settings) {
     add(opaque,f.surface_mark_masks,Use::sampled);
     if(settings.scene) {add(opaque,f.frame,Use::constant);add(opaque,f.objects,Use::storage_read);if(!settings.deferred) {add(opaque,f.lights,Use::storage_read);add(opaque,f.shadow,Use::sampled);for(auto id:{f.ibl_diffuse,f.ibl_specular,f.ibl_brdf})add(opaque,id,Use::sampled);}geometry(opaque,f.camera_draws,true);if(settings.clustered && !settings.deferred) {add(opaque,f.counts,Use::storage_read);add(opaque,f.indices,Use::storage_read);}}
     if(settings.cloud_shadows && !settings.deferred)add(opaque,f.cloud_shadow,Use::sampled);
+    if(settings.water_caustics && !settings.deferred)add(opaque,f.water_columns,Use::storage_read);
     if(settings.deferred) {
         for(auto id:{f.material_base,f.material_surface,f.material_correspondence})add(opaque,id,Use::color);
         if(settings.ambient_occlusion) {
@@ -1256,6 +1262,7 @@ Schedule build(FrameResources frame,Settings settings) {
         auto& lighting=pass(PassId::deferred_lighting);
         for(auto id:{f.ibl_diffuse,f.ibl_specular,f.ibl_brdf})add(lighting,id,Use::sampled);
         if(settings.cloud_shadows)add(lighting,f.cloud_shadow,Use::sampled);
+        if(settings.water_caustics)add(lighting,f.water_columns,Use::storage_read);
         if(settings.ambient_occlusion)add(lighting,f.ao_filtered,Use::sampled);
         for(auto id:{f.material_base,f.material_surface,f.material_correspondence,f.depth,f.shadow})add(lighting,id,Use::sampled);
         add(lighting,f.frame,Use::constant);add(lighting,f.lights,Use::storage_read);
