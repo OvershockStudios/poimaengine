@@ -4,6 +4,7 @@
 #include "poima/water_region_definition.hpp"
 #include "poima/water_bed.hpp"
 #include "poima/water_wakes.hpp"
+#include "poima/water_storage.hpp"
 
 #include <nlohmann/json.hpp>
 #include <string_view>
@@ -50,6 +51,7 @@ public:
     const std::optional<WaterCurrents>& currents() const noexcept { return currents_; }
     const std::optional<WakeField>& wakes() const noexcept { return wakes_; }
     const std::optional<BodyDisplacement>& body_displacement() const noexcept { return body_displacement_; }
+    const std::optional<WaterStorage>& storage() const noexcept { return storage_; }
     bool displaced_surface() const noexcept { return !surface_swell_.empty() || wakes_.has_value(); }
     FittedWaterBed fitted_bed(Cell cell) const;
     std::optional<CellSample> sample_world(double x_m,double z_m,
@@ -67,7 +69,7 @@ public:
     std::uint64_t cumulative_rain_nm() const noexcept { return cumulative_rain_nm_; }
     double cumulative_rain_m3() const noexcept;
 
-    // An action toggles each assigned face once, even if it appears more
+    // An action toggles each assigned gate once, even if it appears more
     // than once within the pressed edges for this tick.
     StepReport step(std::span<const std::string_view> pressed = {},
                     std::uint32_t rain_depth_nm = 0,
@@ -102,6 +104,7 @@ private:
     std::optional<WaterCurrents> currents_;
     std::optional<WakeField> wakes_;
     std::optional<BodyDisplacement> body_displacement_;
+    std::optional<WaterStorage> storage_;
     std::uint32_t snapshot_version() const noexcept;
     std::vector<SwellWave> swell_waves_;
     double swell_amplitude_m_=0;

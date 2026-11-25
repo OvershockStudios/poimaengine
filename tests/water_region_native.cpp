@@ -578,6 +578,54 @@ void occupied_body_volume_moves_water_without_adding_it() {
         "Multi-face outflow exceeded the donor or the shallow stage cap.");
 }
 
+void finite_storage_ports_reverse_and_survive_restore() {
+    using namespace poima::water;
+    RegionDefinition def{
+        .config={.cells_x=1,.cells_z=1,.relaxation_per_second=0},
+        .floor_heights_m={0},.initial_depths_m={.2},.exchanges={{{0,0},12,0}},
+        .plan_sha256=std::string(64,'8'),
+        .storage=StorageDefinition{
+            {{"cistern",0,1,2,.6}},
+            {{"pipe",std::string("cistern"),Cell{0,0},0,12,20,1,"use.sluice",0}},
+        },
+    };
+    const auto near=[](double measured,double expected){return std::abs(measured-expected)<1e-12;};
+    Region live(def);
+    require(live.save().at("version")==6, "Storage must select its own checkpoint version.");
+    const auto first = live.step();
+    const auto first_save = live.save();
+    const auto first_storage = live.storage()->inspect();
+    require(near(first_storage["ports"][0]["discharge_m3_s"],4.8) &&
+            near(first_storage["reservoirs"][0]["volume_m3"],.52) &&
+            near(live.grid().sample({0,0}).depth_m,.48) && near(first.volume_after_m3,1) && near(first.supplied_m3,.2),
+        "A reservoir transfer must conserve water and remain separate from the external source.");
+    auto forged = first_save;
+    forged["storage"]["transfers_m3"][0]=.04;
+    rejects<std::invalid_argument>([&]{live.restore(forged,1);},"An impossible first-tick reservoir receipt was accepted.");
+    require(live.save()==first_save,"A rejected storage restore changed committed water.");
+    Region replay(def);
+    replay.restore(Json::parse(first_save.dump()),1);
+    for (int i=0;i<2;++i) { live.step(); replay.step(); }
+    require(live.save()==replay.save() && near(live.storage()->inspect()["ports"][0]["discharge_m3_s"],-2.112) &&
+            near(live.storage()->volume_m3(),.5472) && near(live.last_report()->volume_after_m3,1.4),
+        "A downstream source did not reverse the same port after restoration.");
+    live.step(repeated_toggle);
+    require(live.storage()->inspect()["ports"][0]["openness"]==0 &&
+            live.storage()->inspect()["ports"][0]["discharge_m3_s"]==0,
+        "Repeated input edges toggled the same storage gate twice.");
+
+    def.config.cells_x = 2;
+    def.floor_heights_m.push_back(0);
+    def.initial_depths_m.push_back(max_water_depth_m);
+    def.exchanges = {{{1,0},12,0}};
+    def.storage->ports[0].openness = 0;
+    def.storage->ports[0].action_openness = 1;
+    Region blocked(def);
+    const auto before = blocked.save();
+    rejects<std::overflow_error>([&]{blocked.step(toggle);},"An overfull grid step was accepted.");
+    require(blocked.save()==before,"A rejected grid step consumed reservoir water or changed its gate.");
+}
+
 }
 
 int main() {
@@ -593,6 +641,7 @@ int main() {
         currents_share_committed_gate_flow_and_restore();
         wake_pulse_propagates_only_across_wet_connected_faces();
         occupied_body_volume_moves_water_without_adding_it();
+        finite_storage_ports_reverse_and_survive_restore();
         std::cout << "Water region tests passed.\n";
     } catch (const std::exception& error) {
         std::cerr << error.what() << '\n';

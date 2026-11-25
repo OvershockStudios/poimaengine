@@ -2,6 +2,7 @@
 #pragma once
 
 #include "poima/shallow_water.hpp"
+#include "poima/water_storage_definition.hpp"
 #include "poima/water_optics.hpp"
 
 #include <optional>
@@ -68,6 +69,7 @@ struct RegionDefinition {
     std::optional<WaterCurrents> currents{};
     std::optional<SurfaceWakes> surface_wakes{};
     std::optional<BodyDisplacement> body_displacement{};
+    std::optional<StorageDefinition> storage{};
 };
 
 }

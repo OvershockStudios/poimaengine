@@ -2,6 +2,13 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.439
+
+- Connect finite reservoirs and terrain water through bidirectional gates.
+  Inspect reservoir levels, signed flow and the combined water ledger, then
+  continue from a saved checkpoint.
+  [Connected reservoirs](docs/SHALLOW_WATER.md#fill-and-drain-connected-reservoirs)
+
 ## 0.0.438
 
 - Let immersed bodies raise the water stage and transfer liquid through

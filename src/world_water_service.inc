@@ -33,7 +33,7 @@
         require(cook || method == "world.water.plan", "Unknown water authoring method.", -32601);
         fields(params, {"revision", "terrain", "expected_terrain_recipe_sha256", "expected_plan_sha256", "tile_entities",
             "grid", "initial_depths_m", "faces", "exchanges", "rain_cells", "surface_ripples", "surface_wave_layers",
-            "surface_swell", "swell_variation", "listener_audio", "optics", "currents", "surface_wakes", "body_displacement"},
+            "surface_swell", "swell_variation", "listener_audio", "optics", "currents", "surface_wakes", "body_displacement", "storage"},
             {"revision", "terrain", "expected_terrain_recipe_sha256", "tile_entities", "grid"});
         require(cook == params.contains("expected_plan_sha256"), "Water cooking requires a reviewed plan SHA-256.");
         current_revision(params);
@@ -84,6 +84,7 @@
             if (params.contains("listener_audio")) result["listener_audio"] = params.at("listener_audio");
             if (params.contains("currents")) result["currents"] = params.at("currents");
             if (params.contains("surface_wakes")) result["surface_wakes"] = params.at("surface_wakes");
+            if (params.contains("storage")) result["storage"] = params.at("storage");
             if (params.contains("body_displacement")) result["body_displacement"] = params.at("body_displacement");
             if (params.contains("optics")) {
                 auto optics=params.at("optics");
@@ -214,6 +215,11 @@
         const auto& grid = region->grid();
         result["plan_sha256"] = region->plan_sha256();
         result["volume_m3"] = grid.volume_m3();
+        if (const auto& storage = region->storage()) {
+            result["grid_volume_m3"] = grid.volume_m3();
+            result["volume_m3"] = grid.volume_m3() + storage->volume_m3();
+            result["storage"] = storage->inspect();
+        }
         if (const auto& ripples = region->surface_ripples())
             result["surface_ripples"] = water::surface_ripples_json(*ripples);
         if (!region->surface_wave_layers().empty())

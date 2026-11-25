@@ -411,6 +411,72 @@ Export with `features.water_body_displacement`. The
 checks a sealed sluice, a downstream waterline rise, backflow after
 removal, and save continuation in the relocated build.
 
+### Fill and drain connected reservoirs
+
+Add `storage` to the water plan and cook requests to connect finite tanks,
+cisterns or raised basins to the terrain. Each reservoir models a fixed
+horizontal cross-section. Its water surface in metres is its floor height
+plus the stored cubic metres divided by the area in square metres.
+
+```json
+{
+  "storage": {
+    "reservoirs": [
+      {"id": "cistern", "floor_height_m": 0, "area_m2": 1,
+       "capacity_m3": 2, "initial_volume_m3": 0.85}
+    ],
+    "ports": [
+      {"id": "sluice", "from": {"reservoir": "cistern"}, "to": {"cell": [0, 0]},
+       "sill_height_m": 0, "conductance_m2_s": 12, "max_flow_m3_s": 20,
+       "openness": 0, "action": "sluice.release", "action_openness": 1}
+    ]
+  }
+}
+```
+
+Author 1–32 reservoirs and 1–128 ports. Use unique IDs within each list and
+the same lowercase name grammar as input actions. The area is 0.01–1,000,000 m²,
+the capacity is 0.001–1,000,000 m³, and the capacity divided by area cannot
+exceed a depth of 1,000,000 m. Initial volume must fit the capacity. A port
+connects two different endpoints, at least one of which is a reservoir.
+Use interior faces for terrain-to-terrain flow. Sill and floor elevations
+are in metres within ±1,000,000. Conductance and maximum flow must be positive
+and at most 1,000,000 in their respective units. Port openings are in [0,1].
+On a pressed action edge the port toggles between its initial opening and
+`action_openness`, which defaults to 1.
+
+The simulator compares the surfaces above the higher of the sill and the
+endpoint floors. Water can flow in either direction. Conductance multiplied
+by that head difference is a flow rate in m³/s. The solver caps it by the
+authored maximum and opening, available water, the stability allowance for
+active connections, and receiving capacity. Ports compute from the same
+beginning-of-tick water state. Competing inflows share the available space
+in proportion to their proposals. Water received by storage ports during a
+tick becomes available to the network on its next tick. Terrain water can
+already spread through interior faces in the current tick. Rain and external
+sources and drains are applied to terrain after storage transfers. Closed
+gates and full receiving reservoirs stop flow.
+
+`runtime.water.inspect` reports the total liquid volume, the separate
+`grid_volume_m3`, each reservoir stage and volume under `storage`, and
+`discharge_m3_s` for the last committed transfer. Positive discharge follows
+the authored `from` to `to` direction. `last_step` accounts for the combined
+volume, with internal transfers excluded from supply and drain. Terrain
+optics, waterline sound and point queries follow the water added to and
+removed from terrain cells. Individual tanks expose their levels as
+simulation data. Tank surface meshes, overflow and moving containers are
+future work.
+
+The guarded cook uses `.pwater` v19 and sorts both lists by ID for a stable
+plan hash. Runtime snapshots preserve volumes, openings and the last
+transfer for every port. Project, world and game inspection report
+`needs_water_storage`. Export requires a simulation runtime advertising
+`features.water_storage`.
+
+Run the [storage fixture](../tests/water_storage_capture.py) on a simulation
+build. Supply `--runtime-root` and `--gpu` to check the waterline and relocated
+save on Windows. Add `--windows-interop` from WSL.
+
 ### Vary the swell across a coast
 
 Set `swell_variation` alongside `surface_swell` in the plan and cook request.

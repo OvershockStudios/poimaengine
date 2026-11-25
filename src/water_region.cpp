@@ -20,7 +20,7 @@ namespace {
 using Json = nlohmann::json;
 
 constexpr char snapshot_format[] = "poima.water-region-state";
-constexpr double max_depth_m = 1'000'000;
+constexpr double max_depth_m = max_water_depth_m;
 constexpr double max_exchange_rate = 1'000'000;
 constexpr double nm_to_m = 1e-9;
 constexpr std::uint64_t max_tick_rain_nm = wetness::max_batch * wetness::max_rain_nm;
@@ -124,7 +124,7 @@ Json report_json(const std::optional<StepReport>& report, bool rain_enabled) {
 
 std::optional<StepReport> validated_report(const Json& report, const Grid& grid,
                                           std::span<const CellExchange> exchanges,
-                                          std::optional<double> rain_m3) {
+                                          std::optional<double> rain_m3, const WaterStorage* storage) {
     if (grid.tick() == 0) {
         if (!report.is_null())
             throw std::invalid_argument("Initial water snapshot cannot have a step receipt.");
@@ -138,7 +138,8 @@ std::optional<StepReport> validated_report(const Json& report, const Grid& grid,
         finite_nonnegative(report.at("volume_before_m3")), finite_nonnegative(report.at("supplied_m3")),
         finite_nonnegative(report.at("drained_m3")), finite_nonnegative(report.at("volume_after_m3")),
         rain_m3 ? finite_nonnegative(report.at("rain_m3")) : 0.0};
-    if (result.tick != grid.tick() || result.volume_after_m3 != grid.volume_m3() ||
+    const auto volume = storage ? grid.volume_m3() + storage->volume_m3() : grid.volume_m3();
+    if (result.tick != grid.tick() || result.volume_after_m3 != volume ||
         result.rain_m3 != rain_m3.value_or(0.0))
         throw std::invalid_argument("Water step receipt does not match the restored tick and volume.");
 
@@ -150,7 +151,8 @@ std::optional<StepReport> validated_report(const Json& report, const Grid& grid,
     }
     const auto& config = grid.config();
     const double cell_area = config.cell_size_m * config.cell_size_m;
-    const double before_limit = max_depth_m * config.cells_x * config.cells_z * cell_area;
+    const double before_limit = max_depth_m * config.cells_x * config.cells_z * cell_area +
+        (storage ? storage->capacity_m3() : 0.);
     const double scale = std::max({1.0, before_limit, supply_limit, drain_limit});
     const double rate_rounding = 64 * std::numeric_limits<double>::epsilon() * scale;
     if (result.volume_before_m3 > before_limit + rate_rounding ||
@@ -240,6 +242,7 @@ Region::Region(const RegionDefinition& definition)
       surface_swell_(definition.surface_swell), swell_variation_(definition.swell_variation),currents_(definition.currents),
       body_displacement_(definition.body_displacement) {
     const auto& config=grid_.config();
+    if (definition.storage) storage_.emplace(*definition.storage, grid_);
     if (body_displacement_ && !(body_displacement_->max_rise_m>=.01 &&
             body_displacement_->max_rise_m<=std::min(4.,2*config.cell_size_m)))
         throw std::invalid_argument("Body displacement max_rise_m must be in [0.01,4] and at most twice the cell width.");
@@ -583,7 +586,18 @@ StepReport Region::step(std::span<const std::string_view> pressed, std::uint32_t
             changes[changed++] = {index, previous};
         }
         const auto rain_cells = rain_depth_nm ? std::span<const Cell>(rain_cells_) : std::span<const Cell>{};
-        last_report_ = grid_.step(exchanges_, rain_cells, rain_depth_nm * nm_to_m,occupied);
+        if (storage_) {
+            const auto before = storage_->volume_m3();
+            const auto staged = storage_->stage(grid_, pressed, occupied);
+            const auto transfers = std::span(staged.cell_changes).first(staged.cell_change_count);
+            auto report = grid_.step(exchanges_, rain_cells, rain_depth_nm * nm_to_m, occupied, transfers);
+            storage_->commit(staged);
+            report.volume_before_m3 += before;
+            report.volume_after_m3 += storage_->volume_m3();
+            last_report_ = report;
+        } else {
+            last_report_ = grid_.step(exchanges_, rain_cells, rain_depth_nm * nm_to_m, occupied);
+        }
     } catch (...) {
         // Only previously validated face values enter this buffer. Grid::step
         // leaves cells and its tick untouched when it rejects a step.
@@ -603,7 +617,7 @@ StepReport Region::step(std::span<const std::string_view> pressed, std::uint32_t
 }
 
 std::uint32_t Region::snapshot_version() const noexcept {
-    return body_displacement_ ? 5u : wakes_ ? 4u : currents_ ? 3u : !rain_cells_.empty() ? 2u : 1u;
+    return storage_ ? 6u : body_displacement_ ? 5u : wakes_ ? 4u : currents_ ? 3u : !rain_cells_.empty() ? 2u : 1u;
 }
 
 Json Region::save() const {
@@ -630,6 +644,7 @@ Json Region::save() const {
     }
     if (body_displacement_)
         result["occupied_depths_m"]=std::move(snapshot.occupied_depths_m);
+    if (storage_) result["storage"] = storage_->save();
     return result;
 }
 
@@ -638,7 +653,7 @@ void Region::restore(const Json& saved, std::uint64_t expected_tick,
     const bool rain_enabled = !rain_cells_.empty();
     const bool fields_match=exact_fields(saved,{"format","version","plan_sha256","tick","depths_m","action_face_openness","last_report"},
         {rain_enabled ? "rain" : nullptr,currents_ ? "face_transfers" : nullptr,wakes_ ? "wakes" : nullptr,
-            body_displacement_ ? "occupied_depths_m" : nullptr});
+            body_displacement_ ? "occupied_depths_m" : nullptr, storage_ ? "storage" : nullptr});
     if (!fields_match || saved.at("format") != snapshot_format ||
         unsigned_integer(saved.at("version")) != snapshot_version() ||
         saved.at("plan_sha256") != plan_sha256_ || unsigned_integer(saved.at("tick")) != expected_tick)
@@ -726,7 +741,10 @@ void Region::restore(const Json& saved, std::uint64_t expected_tick,
             throw std::invalid_argument("Water snapshot rain receipt exceeds the weather clock or tick bounds.");
     }
     const auto rain_m3 = rain_enabled ? std::optional(rain_volume_m3(last_rain_nm)) : std::nullopt;
-    const auto receipt = validated_report(saved.at("last_report"), candidate, exchanges_, rain_m3);
+    auto storage = storage_;
+    if (storage) storage->restore(saved.at("storage"), expected_tick);
+    const auto receipt = validated_report(saved.at("last_report"), candidate, exchanges_, rain_m3,
+        storage ? &*storage : nullptr);
     if (wakes_) {
         const auto& waves=saved.at("wakes");
         if (!exact_fields(waves,{"height_m","vertical_step_m"}))
@@ -747,6 +765,7 @@ void Region::restore(const Json& saved, std::uint64_t expected_tick,
         wakes_=std::move(next);
     }
     grid_ = std::move(candidate);
+    storage_ = std::move(storage);
     last_report_ = receipt;
     first_rain_quantum_ = first_quantum;
     cumulative_rain_nm_ = cumulative_rain_nm;

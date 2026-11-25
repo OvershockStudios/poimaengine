@@ -16,6 +16,7 @@ using Json = nlohmann::json;
 constexpr auto artifact_format = "poima.water.region";
 
 std::uint32_t artifact_version(const RegionDefinition& definition) noexcept {
+    if (definition.storage) return 19;
     if (definition.body_displacement) return 18;
     if (definition.surface_wakes) return 17;
     if (definition.currents) return 16;
@@ -122,6 +123,50 @@ SurfaceRipples parse_surface_ripples(const Json& ripples) {
         integer(ripples.at("period_ticks"), 8, 3600), number(ripples.at("heading_degrees"))};
 }
 
+StorageDefinition parse_storage(const Json& value, const GridConfig& grid) {
+    fields(value, {"reservoirs", "ports"});
+    const auto& tanks = value.at("reservoirs");
+    const auto& ports = value.at("ports");
+    require(tanks.is_array() && !tanks.empty() && tanks.size() <= max_water_reservoirs &&
+        ports.is_array() && !ports.empty() && ports.size() <= max_water_ports,
+        "The water storage reservoir or port count is outside its bounds.");
+    StorageDefinition result;
+    for (const auto& tank : tanks) {
+        fields(tank, {"id", "floor_height_m", "area_m2", "capacity_m3", "initial_volume_m3"});
+        require(tank.at("id").is_string(), "Water reservoirs need a named ID.");
+        result.reservoirs.push_back({tank.at("id"), number(tank.at("floor_height_m")),
+            number(tank.at("area_m2")), number(tank.at("capacity_m3")), number(tank.at("initial_volume_m3"))});
+    }
+    const auto endpoint = [&](const Json& raw) -> StorageEndpoint {
+        fields(raw, {}, {"cell", "reservoir"});
+        require(raw.size() == 1, "Water storage endpoints require exactly one cell or reservoir.");
+        if (raw.contains("cell")) return cell(raw.at("cell"), grid);
+        require(raw.at("reservoir").is_string(), "A water reservoir reference must be a named ID.");
+        return raw.at("reservoir").get<std::string>();
+    };
+    for (const auto& port : ports) {
+        fields(port, {"id", "from", "to", "sill_height_m", "conductance_m2_s", "max_flow_m3_s", "openness"},
+            {"action", "action_openness"});
+        require(port.at("id").is_string(), "Water storage ports need a named ID.");
+        StoragePortDefinition rule{port.at("id"), endpoint(port.at("from")), endpoint(port.at("to")),
+            number(port.at("sill_height_m")), number(port.at("conductance_m2_s")), number(port.at("max_flow_m3_s")),
+            number(port.at("openness")), {}};
+        if (port.contains("action")) {
+            require(port.at("action").is_string() && !port.at("action").get_ref<const std::string&>().empty(),
+                "Water storage gate action must be a named input string.");
+            rule.action = port.at("action");
+        }
+        if (port.contains("action_openness")) {
+            require(!rule.action.empty(), "Water storage action_openness needs an action.");
+            rule.action_openness = number(port.at("action_openness"));
+        }
+        result.ports.push_back(std::move(rule));
+    }
+    std::ranges::sort(result.reservoirs, {}, &ReservoirDefinition::id);
+    std::ranges::sort(result.ports, {}, &StoragePortDefinition::id);
+    return result;
+}
+
 void parse_rules(const Json& object, RegionDefinition& definition) {
     const auto read = [&](const char* field, auto limit, auto& result, const auto& convert) {
         if (!object.contains(field)) return;
@@ -181,6 +226,7 @@ void parse_rules(const Json& object, RegionDefinition& definition) {
         fields(profile,{"max_rise_m"});
         definition.body_displacement=BodyDisplacement{number(profile.at("max_rise_m"))};
     }
+    if (object.contains("storage")) definition.storage = parse_storage(object.at("storage"), definition.config);
     if (object.contains("optics")) {
         const auto& value=object.at("optics");
         fields(value, {"extinction_per_m","scattered_radiance"},
@@ -283,6 +329,7 @@ Json artifact_document(const RegionAsset& asset) {
         document["surface_wakes"] = surface_wakes_json(*definition.surface_wakes);
     if (definition.body_displacement)
         document["body_displacement"] = body_displacement_json(*definition.body_displacement);
+    if (definition.storage) document["storage"] = storage_definition_json(*definition.storage);
     return document;
 }
 
@@ -345,9 +392,9 @@ RegionAsset decode_region_asset(std::string_view bytes) {
     });
     fields(object, {"format", "version", "terrain_recipe_sha256", "tiles", "grid", "floor_heights_m",
         "initial_depths_m", "faces", "exchanges"}, {"rain_cells", "surface_ripples", "surface_wave_layers", "surface_swell",
-        "swell_variation", "listener_audio", "optics", "shore_corner_heights_m", "currents", "surface_wakes", "body_displacement"});
+        "swell_variation", "listener_audio", "optics", "shore_corner_heights_m", "currents", "surface_wakes", "body_displacement", "storage"});
     require(object.at("format") == artifact_format, "Unsupported water asset format.");
-    const auto version=integer(object.at("version"),1,18);
+    const auto version=integer(object.at("version"),1,19);
     RegionAsset asset;
     asset.terrain_recipe_sha256 = hex(object.at("terrain_recipe_sha256"), 64);
     auto& definition = asset.definition;
@@ -465,6 +512,25 @@ Json region_authoring_schemas() {
         {"max_amplitude_m",range("number",.001,.25)},{"body_gain",{{"type","number"},{"exclusiveMinimum",0},{"maximum",1}}}},
         {"speed_m_s","damping_per_second","max_amplitude_m","body_gain"});
     const auto displacement=object({{"max_rise_m",range("number",.01,4)}},{"max_rise_m"});
+    const Json storage_id{{"type", "string"}, {"pattern", "^[a-z][a-z0-9_.-]{0,63}$"}};
+    const auto tank = object({{"id", storage_id}, {"floor_height_m", coordinate},
+        {"area_m2", range("number", .01, max_reservoir_area_m2)},
+        {"capacity_m3", range("number", .001, max_reservoir_capacity_m3)},
+        {"initial_volume_m3", range("number", 0, max_reservoir_capacity_m3)}},
+        {"id", "floor_height_m", "area_m2", "capacity_m3", "initial_volume_m3"});
+    const auto tank_endpoint = object({{"reservoir", storage_id}}, {"reservoir"});
+    const Json storage_endpoint{{"oneOf", Json::array({object({{"cell", cell}}, {"cell"}), tank_endpoint})}};
+    const Json storage_rate{{"type", "number"}, {"exclusiveMinimum", 0}, {"maximum", max_storage_rate}};
+    auto port = object({{"id", storage_id}, {"from", storage_endpoint}, {"to", storage_endpoint},
+        {"sill_height_m", coordinate}, {"conductance_m2_s", storage_rate}, {"max_flow_m3_s", storage_rate},
+        {"openness", unit}, {"action", storage_id}, {"action_openness", unit}},
+        {"id", "from", "to", "sill_height_m", "conductance_m2_s", "max_flow_m3_s", "openness"});
+    port["anyOf"] = Json::array({Json{{"properties", {{"from", tank_endpoint}}}},
+        Json{{"properties", {{"to", tank_endpoint}}}}});
+    port["dependentRequired"] = {{"action_openness", {"action"}}};
+    auto storage = object({{"reservoirs", array(tank, 1, max_water_reservoirs)},
+        {"ports", array(port, 1, max_water_ports)}}, {"reservoirs", "ports"});
+    storage["description"] = "Finite fixed-area reservoirs and gated, bidirectional transfers to reservoirs or terrain cells.";
     auto plan = object({{"revision", tick_schema}, {"terrain", std::move(source)}, {"expected_terrain_recipe_sha256", sha_schema},
         {"tile_entities", array(id_schema, 1, terrain::max_cook_tiles)}, {"grid", grid},
         {"initial_depths_m", array(range("number", 0, 1'000'000), 0, max_region_side * max_region_side)},
@@ -472,7 +538,7 @@ Json region_authoring_schemas() {
         {"rain_cells", array(cell, 0, max_region_side * max_region_side)}, {"surface_ripples", std::move(ripples)},
         {"surface_wave_layers", std::move(layers)}, {"surface_swell",std::move(swell)}, {"swell_variation",std::move(variation)},
         {"listener_audio", std::move(listener_audio)}, {"optics",std::move(optics)},{"currents",currents},
-        {"surface_wakes",wakes},{"body_displacement",displacement}},
+        {"surface_wakes",wakes},{"body_displacement",displacement},{"storage",std::move(storage)}},
         {"revision", "terrain", "expected_terrain_recipe_sha256", "tile_entities", "grid"});
     plan["not"] = {{"required", {"surface_ripples", "surface_wave_layers"}}};
     plan["if"]={{"anyOf",{Json{{"required",{"surface_swell"}}},Json{{"required",{"surface_wakes"}}}}}};
@@ -511,7 +577,9 @@ Json region_runtime_schema() {
         " Optional bodies report current displaced volume, center and lift. Guard changed membership with structure_revision."
         " Current-enabled regions expose velocity at sampled wet points and buoyant bodies. Use current_faces for signed face discharge."
         " Regions with surface_wakes also report each selected cell's height offset and vertical increment."
-        " Regions with body_displacement report saved occupancy and its contribution to the water stage.";
+        " Regions with body_displacement report saved occupancy and its contribution to the water stage."
+        " Storage reports current reservoir volumes, surface elevations, gate openings and signed discharges."
+        " The total volume includes both stored and terrain water.";
     return result;
 }
 } // namespace poima::water

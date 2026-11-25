@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.24)
 if(CMAKE_LINKER_TYPE STREQUAL "LLD" AND CMAKE_VERSION VERSION_LESS "3.29")
     message(FATAL_ERROR "LLD linker selection requires CMake 3.29 or newer.")
 endif()
-project(Poima VERSION 0.0.438 LANGUAGES C CXX)
+project(Poima VERSION 0.0.439 LANGUAGES C CXX)
 
 option(POIMA_ENABLE_VULKAN_PROBE "Build the optional Vulkan device inspection" ON)
 option(POIMA_BUILD_TESTS "Build and register CLI contract tests (Python is test-only)" ON)
@@ -89,7 +89,7 @@ target_sources(poima_core PRIVATE src/terrain.cpp src/terrain_asset.cpp src/foli
 target_sources(poima_core PRIVATE src/snow.cpp src/snow_releases.cpp src/snow_sole.cpp)
 target_sources(poima_core PRIVATE src/surface_wetness.cpp)
 target_sources(poima_core PRIVATE src/water_region.cpp src/water_asset.cpp src/water_region_scene.cpp
-    src/water_surface_entry.cpp src/water_buoyancy.cpp src/water_wakes.cpp)
+    src/water_surface_entry.cpp src/water_buoyancy.cpp src/water_wakes.cpp src/water_storage.cpp)
 target_sources(poima_core PRIVATE src/particle_emitter_json.cpp src/particle_state_json.cpp src/particle_scene.cpp)
 target_sources(poima_core PRIVATE src/post_effect.cpp src/world_post_effect_assets.cpp src/world_model_assets.cpp)
 if(POIMA_BUILD_TESTS)

@@ -1,8 +1,17 @@
 # Implementation status
 
-Updated 2026-11-25 for **0.0.438**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-25 for **0.0.439**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.439 adds [connected reservoirs and gates](SHALLOW_WATER.md#fill-and-drain-connected-reservoirs).
+A fixed-area reservoir releases 120 litres into terrain water. The terrain
+and a bypass then fill a sump with 25 litres each, and the closed system
+holds 1.2 m³ throughout. AMD forward and NVIDIA deferred captures reproduced
+both waterlines from saves in relocated games. Ubuntu passed ten focused
+suites and the native fixture, including a test where a source reverses
+flow through the same port. Tank surface meshes, mobile containers and
+scene-scale performance remain open. [Results and scope](evidence/m2-water-storage-439.json)
 
 Version 0.0.438 adds [water displacement by buoyant boxes](SHALLOW_WATER.md#let-props-push-water-into-adjacent-cells).
 Clipped occupied volume raises the local stage and can drive conserved flow

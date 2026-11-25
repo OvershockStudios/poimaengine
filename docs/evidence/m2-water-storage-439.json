@@ -1,0 +1,222 @@
+{
+  "version": "0.0.439",
+  "authoring_schema_revision": 235,
+  "date": "2026-11-25",
+  "base_commit": "507e306b6e847bc53b3b9f5fa49dfed0906b25ce",
+  "scope": "Fixed-area storage connected to committed terrain water and other reservoirs through persistent bidirectional gates.",
+  "source_sha256": {
+    "CMakeLists.txt": "97f8676ccc6425c38797ec77d480459c4a75671b4dddd00b2844b77543fd6bbe",
+    "cmake/runtime.json.in": "95b9a993711234ba8b3403b88fd337b17f8118d345dec41e7832cfefcd7ce15d",
+    "include/poima/project.hpp": "83fb4b0815481400ed0070790f02f8ae1c5096265392aaefd9303e55dd7fc368",
+    "include/poima/shallow_water.hpp": "f0c735a0a01f4d932577c4fe3b79e09ef7e620048d06c3912b60701ac937c6a7",
+    "include/poima/water_region.hpp": "bbdc2f68f5863d0b4174ba72549ee90f0c225e21429b867b8ee9074e26aa14ad",
+    "include/poima/water_region_definition.hpp": "cce58290b66f9ce947d0c5b4d9bf30ac5cf1ec7d1c173e8ad84957644bc93fc0",
+    "include/poima/water_storage.hpp": "26eaec0c2a9906526df40a40e530dce532d95c2e8610f059d673af87b1391d5d",
+    "include/poima/water_storage_definition.hpp": "6207d42df1c529b13fe418bf338e8c97c9469597a094ab258c9bf5eadb318a3f",
+    "include/poima/world.hpp": "0c183b274a2e46a278054d63a3f0f9b6609e546dae7fb9ebdbb63ca3f0dac83c",
+    "src/core.cpp": "42c37febe576b5da635587180ccc99a8476b9cf4b830f43d9862799726c298f3",
+    "src/project.cpp": "6f2e2ad47c5d8bf37b7fd7125d3185c49947cb4d0db7688c5719904325d53d26",
+    "src/shallow_water.cpp": "4cfc1b481a5d498243313ff1ec7475c1d3d7cf4e737cd97cc6524e70c72d3ffb",
+    "src/water_asset.cpp": "80daa0e86c47c3dfd0fe25f5f7b99dd4924340138712a5685c5c43eaaf5deef0",
+    "src/water_region.cpp": "d2e248c46bc916778406289c855906225553c7658e9f7d246238ffe2be6677fc",
+    "src/water_storage.cpp": "31a59f97d09ffd2923c303cd0ac02f0e4a613a3bda6f72ffd6abffcb6f56db75",
+    "src/world.cpp": "233698be340950e24abd1326a56584b45f548de1027cb2425afc502e0d948cb4",
+    "src/world_content.cpp": "4ab235b8db9863b81d54f3614aa5060a487b2fbd00e53101cbfcdf6fe686ab94",
+    "src/world_schema.cpp": "15ab9dca86b8c4ce6827b4d707c7d1fa0b74001b75536bc4e3a37c7b66b54aab",
+    "src/world_water_service.inc": "5ebdf708fca2e7e61eaeb9959590338de85989bc1b0a86374de6b22ad5a51d8a",
+    "tests/water_region_native.cpp": "f3f7bc370a4bcb811e8a1467bdced84df93692d0cad8b22900674ffed067ee72",
+    "tests/water_storage_capture.py": "d617cfd6cb71e0dc8183345ef640fc52aef7c4f809353598b4bbaf06958fe565"
+  },
+  "candidate_patch_sha256": "056be4da32670f236df348f7f79c7d55736d7f86426f6b419911b0f69d516e70",
+  "fixture": {
+    "asset_sha256": "fba3f7b7329f9ffc8f762d79c1ae30fd61fd0b8fa159b2c4fd04b3bbf866941b",
+    "pwater_version": 19,
+    "checkpoint_version": 6,
+    "windows_headless_sha256": "ded10b9b2257f47930e858e4d0b27f859e8b402089144c8bb30c6c2f1b18d023",
+    "released_litres": 120,
+    "competing_sump_inflow_litres_each": 25,
+    "flooded": {
+      "tick": 2,
+      "total_m3": 1.2,
+      "terrain_m3": 0.37,
+      "camera_submersion_m": 0.015000000000000013,
+      "reservoirs_m3": {
+        "header": 0.73,
+        "sump": 0.1
+      },
+      "discharge_m3_s": {
+        "bypass": 0.0,
+        "capture": 0.0,
+        "release": 7.199999999999999
+      }
+    },
+    "drained": {
+      "tick": 3,
+      "total_m3": 1.2,
+      "terrain_m3": 0.345,
+      "camera_submersion_m": 0.0,
+      "reservoirs_m3": {
+        "header": 0.705,
+        "sump": 0.15
+      },
+      "discharge_m3_s": {
+        "bypass": 1.4999999999999998,
+        "capture": -1.4999999999999998,
+        "release": 0.0
+      }
+    },
+    "full_sink": {
+      "tick": 4,
+      "total_m3": 1.2,
+      "terrain_m3": 0.345,
+      "camera_submersion_m": 0.0,
+      "reservoirs_m3": {
+        "header": 0.705,
+        "sump": 0.15
+      },
+      "discharge_m3_s": {
+        "bypass": 0.0,
+        "capture": 0.0,
+        "release": 0.0
+      }
+    },
+    "rejected_authoring_cases": 8,
+    "sorted_plan_identity_preserved": true
+  },
+  "windows_installed_runtime_sha256": {
+    "bin/poima.exe": "435cb66a879bc0eb1446e9bd31026e0ae1e15ee5eb3efd41489f47f3885b6416",
+    "bin/poima_desktop.dll": "70f8e518635981065b494c966dbc847833f2ffc5a0cbb27cf4f78efc19b1924e",
+    "runtime.json": "e172bbeb83e761cac5dd2816de1ee187b9385994b1257c2f4b94bc129c9f411c"
+  },
+  "windows": {
+    "forward_amd": {
+      "gpu": "AMD Radeon(TM) Graphics",
+      "width": 240,
+      "height": 160,
+      "native_captures": 10,
+      "fresh_owner_count": 3,
+      "immutable_export_files": 60,
+      "source_hidden_during_exported_run": true,
+      "save_continuations_match": [
+        "same_owner",
+        "relocated",
+        "fresh_exported_owner"
+      ],
+      "initial": {
+        "image": "6dbf1b39316ebdd5d0b57ad1b70e38895c8916f601f91c1836145ad1ba9a5d82",
+        "submersion_m": 0.0
+      },
+      "flooded": {
+        "image": "c51f3bf6cf0a9795066601039b769f5f463ff9ae25a5a5561936cea20486a7c4",
+        "submersion_m": 0.0150000047683716
+      },
+      "drained": {
+        "image": "8d09118dae583310e9c1ef59b6bcd1b57925ff3b46adf40aa83e3d346c3900a9",
+        "submersion_m": 0.0
+      },
+      "saves": {
+        "source": "e8deac114255c95e870e3d4786ac15699253fb5458e164becf50848aa74ac07e",
+        "relocated": "e8deac114255c95e870e3d4786ac15699253fb5458e164becf50848aa74ac07e"
+      },
+      "raw_fixture_sha256": "e4fdaa5714ce01afa65949bd0cf3bb7c8ec7fe8f2632cf35ff6dc74651a24912"
+    },
+    "deferred_nvidia": {
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "width": 240,
+      "height": 160,
+      "native_captures": 10,
+      "fresh_owner_count": 3,
+      "immutable_export_files": 60,
+      "source_hidden_during_exported_run": true,
+      "save_continuations_match": [
+        "same_owner",
+        "relocated",
+        "fresh_exported_owner"
+      ],
+      "initial": {
+        "image": "6dbf1b39316ebdd5d0b57ad1b70e38895c8916f601f91c1836145ad1ba9a5d82",
+        "submersion_m": 0.0
+      },
+      "flooded": {
+        "image": "ab2984a9f83866c333b65a5137c40f1fb129e934de63adca64108b2740ff69c9",
+        "submersion_m": 0.0150000047683716
+      },
+      "drained": {
+        "image": "78a090c374c8005970d618ee023e847abcbc78458f6c0b412d036856682c2e2f",
+        "submersion_m": 0.0
+      },
+      "saves": {
+        "source": "58616f1f2e306bb53ba4ad16930dbc41d4bbebecf3ea365329171824de187aa4",
+        "relocated": "58616f1f2e306bb53ba4ad16930dbc41d4bbebecf3ea365329171824de187aa4"
+      },
+      "raw_fixture_sha256": "ad8d551ecd42aef5412b9b9fcc6731d73717ddc3013d0a48a464a9235da95f3c"
+    }
+  },
+  "ubuntu": {
+    "native_ctest_passed": 10,
+    "checks": [
+      "water_region_native",
+      "water_region_scene_native",
+      "world_water_contract",
+      "shallow_water_native",
+      "particle_scene_native",
+      "world_particles_contract",
+      "world_water_rain_contract",
+      "authoring_core_conformance",
+      "authoring_contract_identity",
+      "world_session_native"
+    ],
+    "headless_fixture_passed": true,
+    "repeatable_same_port_reversal_m3_s": -2.112,
+    "sha256": {
+      "evidence.json": "45233e6e179a80ef8af589762f3caafd377bdf3743c2c74613833c9045d5822e",
+      "poima": "20d5b371e33f600207ae353f05df012d98d1b851199b5ebb06aff01fe19ffd13",
+      "runtime.json": "7e48785279ed1093e625f5e81c670ce06db81a568de58e1153bd5eb3a21df513",
+      "result.xml": "c1bcd60175dd9d76c0b7663e8a943af0cc6d1e90f62f1d18b6d66fca1783b872"
+    }
+  },
+  "rejected_export": {
+    "removed_runtime_flag": "features.water_storage",
+    "diagnostic": "Project water storage requires a compatible water runtime.",
+    "no_partial_bundle": true
+  },
+  "unselected_displacement_regression": {
+    "prior_version": "0.0.438",
+    "gpu_path": "deferred NVIDIA",
+    "same_plan_sha256": "537a60670a9054f63c1e00c024f7f868fdc36f7384725cff2f66a16ba0831de5",
+    "captures_matched": 3,
+    "raw_baseline_sha256": "a2042afc143cf47d6715e28808cd94d7770b9d1dfbae4b324c174f04495011d6",
+    "raw_recheck_sha256": "576506211a343e7f6d75e26e7dc3abf4cbd076d78ceb74f04e77f0f0000ab736"
+  },
+  "exploratory_stress": {
+    "networks": 64,
+    "ports_per_network": 128,
+    "total_ticks": 15360,
+    "restore_points": 3840,
+    "matching_replay_ticks": 11520,
+    "max_combined_volume_drift_m3": 1.42109e-14,
+    "source_sha256": "b2d7be5ce3a4b0c5d44a002b5b932d1d4cfb11742af7474dfee959b6241084a8",
+    "log_sha256": "0ba47b02b5abf2ead3e59108c71c33ff84608b9c6b3874d17a924eee04e9fe2c"
+  },
+  "recoveries": [
+    {
+      "failure": "The first Windows candidate included a forward JSON header absent from the vendored single-header distribution.",
+      "correction": "Separated the storage definitions and included the vendored header only where full JSON was needed.",
+      "log_sha256": "eb9d63988d433ad30c441092a1fa006a0a89c4c51535fad1665232cc09d195e0"
+    },
+    {
+      "failure": "The initial integration fixture sent two input edges out of schema order.",
+      "correction": "Sorted the named input edges and repeated the fixture.",
+      "log_sha256": "73b0e8839925a69c653171ff09e7aaecc069be33c1117b61f96a1acc041857da"
+    },
+    {
+      "failure": "The final Ubuntu fixture initially used the historical build tree for its helper imports.",
+      "correction": "Loaded the archived fixture helpers for the same qualification and used the same compiled candidate.",
+      "log_sha256": "f2334f253ae62c2d55071a4517fcdaed4e1c8b7a2e570cdeaae98a08ccba1fdc"
+    }
+  ],
+  "limits": [
+    "Reservoirs report levels as data. Terrain connected to the ports renders water.",
+    "Overflow, portable containers, and scene-scale performance have separate qualification."
+  ]
+}

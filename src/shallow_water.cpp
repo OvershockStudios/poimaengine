@@ -9,7 +9,7 @@
 namespace poima::water {
 namespace {
 
-constexpr double max_height_m = 1'000'000;
+constexpr double max_height_m = max_water_depth_m;
 constexpr double max_exchange_rate = 1'000'000;
 // With four neighbors and at most 0.2 of the depth sent to each, a donor
 // retains at least 20% before receiving any flow. No dry-cell clamp is needed.
@@ -56,12 +56,6 @@ double transferred_depth(double lower_floor,double upper_floor,double lower_dept
     const auto lower_head=std::max(0.,lower_depth-(sill-lower_floor));
     const auto upper_head=std::max(0.,upper_depth-(sill-upper_floor));
     return (lower_head-upper_head)*fraction*control.openness;
-}
-
-double body_stage_rise(double depth,double occupation) {
-    // At 12 Hz relaxation the four-face explicit step permits at most
-    // 1.25 times the original stage-to-depth slope.
-    return std::min(.25*depth,occupation);
 }
 
 double pressure_transfer(double lower_floor,double upper_floor,double lower_depth,double upper_depth,
@@ -203,7 +197,8 @@ double Grid::occupied_depth_m(Cell cell) const {
 }
 
 StepReport Grid::step(std::span<const CellExchange> exchanges,
-                      std::span<const Cell> rain_cells, double rain_depth_m,std::span<const double> occupied_depths_m) {
+                      std::span<const Cell> rain_cells, double rain_depth_m,std::span<const double> occupied_depths_m,
+                      std::span<const CellVolumeChange> storage_transfers) {
     if (tick_ == std::numeric_limits<std::uint64_t>::max())
         throw std::overflow_error("Shallow-water tick limit reached.");
     if (exchanges.size() > depths_.size())
@@ -222,6 +217,13 @@ StepReport Grid::step(std::span<const CellExchange> exchanges,
             throw std::invalid_argument("Shallow-water rain cells must be unique and ordered.");
         previous_rain = index;
     }
+    std::size_t previous_transfer = no_exchange;
+    for (const auto& [cell, volume] : storage_transfers) {
+        const auto index = cell_index(cell);
+        if (!std::isfinite(volume) || (previous_transfer != no_exchange && previous_transfer >= index))
+            throw std::invalid_argument("Storage transfer cells must be unique, ordered and finite.");
+        previous_transfer = index;
+    }
 
     std::fill(exchange_indices_.begin(), exchange_indices_.end(), no_exchange);
     for (std::size_t i = 0; i < exchanges.size(); ++i) {
@@ -239,9 +241,18 @@ StepReport Grid::step(std::span<const CellExchange> exchanges,
     Sum drained;
     const double depth_per_rate = step_seconds / cell_area_m2_;
     auto rain = rain_cells.begin();
+    auto storage = storage_transfers.begin();
     for (std::size_t i = 0; i < depths_.size(); ++i) {
         double depth = depths_[i];
         before.add(depth);
+        if (storage != storage_transfers.end() &&
+                i == static_cast<std::size_t>(storage->cell.z) * config_.cells_x + storage->cell.x) {
+            const auto volume = storage->volume_m3;
+            if (!bounded(volume, -depth * cell_area_m2_, (max_height_m - depth) * cell_area_m2_))
+                throw std::overflow_error("Storage transfer exceeds the shallow-water depth bounds.");
+            depth = std::clamp(depth + volume / cell_area_m2_, 0., max_height_m);
+            ++storage;
+        }
         if (rain != rain_cells.end() && i == static_cast<std::size_t>(rain->z) * config_.cells_x + rain->x) {
             depth += rain_depth_m;
             if (!bounded(depth, 0, max_height_m))

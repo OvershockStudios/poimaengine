@@ -10,6 +10,7 @@
 namespace poima::water {
 
 inline constexpr std::uint32_t max_grid_side = 256;
+inline constexpr double max_water_depth_m = 1'000'000;
 inline constexpr double step_seconds = 1.0 / 60.0;
 
 struct Cell {
@@ -39,6 +40,17 @@ struct CellExchange {
     double source_m3_per_second = 0;
     double drain_m3_per_second = 0;
 };
+
+struct CellVolumeChange {
+    Cell cell;
+    double volume_m3;
+};
+
+inline double body_stage_rise(double depth_m, double occupation_m) noexcept {
+    // Preserve the stability margin of the four-face explicit pressure step.
+    const auto limit = .25 * depth_m;
+    return occupation_m < limit ? occupation_m : limit;
+}
 
 struct CellSample {
     Cell cell;
@@ -97,12 +109,13 @@ public:
     double face_discharge_m3_s(Cell lower_cell, FaceAxis axis) const;
     double occupied_depth_m(Cell cell) const;
 
-    // Apply rain to unique cells in row-major order, process the authored
-    // exchanges, then move water across interior faces. Rejected steps leave
-    // the whole observable state intact.
+    // Apply storage transfers first, then rain and external exchanges, then
+    // interior face flow. Both cell lists are unique and in row-major order.
+    // Rejected steps leave the whole observable state intact.
     StepReport step(std::span<const CellExchange> exchanges = {},
                     std::span<const Cell> rain_cells = {}, double rain_depth_m = 0,
-                    std::span<const double> occupied_depths_m = {});
+                    std::span<const double> occupied_depths_m = {},
+                    std::span<const CellVolumeChange> storage_transfers = {});
 
     Snapshot snapshot() const;
     static Grid restore(const Snapshot& snapshot);

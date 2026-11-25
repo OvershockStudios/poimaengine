@@ -42,6 +42,7 @@
     "water_currents": @POIMA_RUNTIME_SIMULATION@,
     "water_surface_wakes": @POIMA_RUNTIME_WATER_OPTICS@,
     "water_body_displacement": @POIMA_RUNTIME_SIMULATION@,
+    "water_storage": @POIMA_RUNTIME_SIMULATION@,
     "collision_surfaces": @POIMA_RUNTIME_SIMULATION@,
     "renderer": @POIMA_RUNTIME_RENDER_SMOKE@,
     "fsr3_upscaler": @POIMA_RUNTIME_FSR3_UPSCALER@,
