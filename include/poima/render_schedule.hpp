@@ -106,7 +106,7 @@ struct FrameResources {
     ResourceId ibl_diffuse=none,ibl_specular=none,ibl_brdf=none;
     ResourceId ao_raw=none,ao_filtered=none,ao_constants=none;
     ResourceId reflection_roughness=none,reflected_hdr=none;
-    ResourceId fogged_hdr=none,water_columns=none,focused_hdr=none,water_reservoirs=none;
+    ResourceId fogged_hdr=none,water_columns=none,focused_hdr=none,water_reservoirs=none,water_sheets=none;
     ResourceId reconstructed=none,dense_motion=none,reactive=none,dilated_depth=none,dilated_motion=none,reconstructed_depth=none;
     ResourceId composition_mask=none;
     ResourceId shadow=none,counts=none,indices=none,cluster_readback=none,skin_errors=none,skin_readback=none,capture=none;
@@ -182,6 +182,7 @@ inline constexpr std::uint64_t depth_of_field_budget_bytes=128u*1024u*1024u;
 inline constexpr std::uint64_t height_fog_budget_bytes=96u*1024u*1024u;
 inline constexpr std::uint32_t max_water_column_side=32,water_column_bytes=64;
 inline constexpr std::uint32_t max_water_reservoirs=32,water_reservoir_bytes=32;
+inline constexpr std::uint32_t max_water_sheets=8,water_sheet_bytes=48;
 inline constexpr std::uint32_t bloom_extent(std::uint32_t size) {return size/4+(size%4!=0);}
 inline constexpr std::uint64_t bloom_budget_bytes=32u*1024u*1024u;
 inline constexpr std::uint64_t output_grade_bytes=544;

@@ -50,6 +50,9 @@ Json port_json(const StoragePortDefinition& port) {
         row["overflow"]={{"width_m",weir->width_m},{"coefficient_sqrt_m_s",weir->coefficient_sqrt_m_s}};
     else
         row["conductance_m2_s"]=port.conductance_m2_s;
+    if (const auto& sheet=port.sheet)
+        row["sheet"]={{"lip_xz_m",sheet->lip_xz_m},{"outlet_xz_m",sheet->outlet_xz_m},
+            {"outlet_floor_m",sheet->outlet_floor_m}};
     if (!port.action.empty()) {
         row["action"] = port.action;
         row["action_openness"] = port.action_openness;
@@ -159,7 +162,33 @@ WaterStorage::WaterStorage(const StorageDefinition& definition, const Grid& grid
     for (std::size_t i = 0; i < ports_.size(); ++i) {
         if (i && ports_[i - 1].definition.id == ports_[i].definition.id)
             throw std::invalid_argument("Duplicate water storage port ID.");
-        openness_[i] = ports_[i].definition.openness;
+        const auto& port=ports_[i];
+        openness_[i] = port.definition.openness;
+        if (const auto& sheet=port.definition.sheet) {
+            constexpr double limit=1'000'000.;
+            if (!port.definition.overflow || sheet_ports_.size()>=max_water_sheets ||
+                !bounded(sheet->outlet_floor_m,-limit,limit))
+                throw std::invalid_argument("Water sheets require overflow weirs and at most eight authored sheets.");
+            for (std::size_t axis=0;axis<2;++axis)
+                if (!bounded(sheet->lip_xz_m[axis],-limit,limit) || !bounded(sheet->outlet_xz_m[axis],-limit,limit))
+                    throw std::invalid_argument("Water sheet endpoints must be within one million metres of the origin.");
+            const auto dx=sheet->outlet_xz_m[0]-sheet->lip_xz_m[0],dz=sheet->outlet_xz_m[1]-sheet->lip_xz_m[1];
+            const auto drop=port.definition.sill_height_m-sheet->outlet_floor_m;
+            if (!bounded(std::hypot(dx,dz),.05,256) || !bounded(drop,.05,256))
+                throw std::invalid_argument("Water sheet drop and horizontal reach must be in [0.05,256] metres.");
+            const auto [target_x,target_z]=sheet->outlet_xz_m;
+            if (port.to<reservoirs_.size()) {
+                const auto& sink=reservoirs_[port.to];
+                if (sink.footprint && !sink.footprint->contains(target_x,target_z))
+                    throw std::invalid_argument("Water sheet outlet is outside the receiving reservoir footprint.");
+            } else {
+                const auto sample=grid.sample_world(target_x,target_z);
+                const auto target=cells_[port.to-reservoirs_.size()];
+                if (!sample || sample->cell.x!=target.x || sample->cell.z!=target.z)
+                    throw std::invalid_argument("Water sheet outlet must be inside its receiving cell.");
+            }
+            sheet_ports_.push_back(i);
+        }
     }
 }
 
@@ -188,6 +217,34 @@ std::optional<ReservoirSample> WaterStorage::sample_world(double x_m, double z_m
     for (const auto i : placed_)
         if (reservoirs_[i].footprint->contains(x_m,z_m)) return sample(i);
     return std::nullopt;
+}
+
+std::optional<WaterSheetSample> WaterStorage::sheet_sample(const Grid& grid,std::size_t i) const {
+    if (transfers_[i]<=0) return std::nullopt;
+    const auto& port=ports_[i];
+    const auto& sheet=*port.definition.sheet;
+    const auto width=port.definition.overflow->width_m;
+    const auto crest=port.definition.sill_height_m;
+    const double dx=sheet.outlet_xz_m[0]-sheet.lip_xz_m[0],dz=sheet.outlet_xz_m[1]-sheet.lip_xz_m[1];
+    const auto length=std::hypot(dx,dz);
+    const auto receiving_stage=port.to<reservoirs_.size() ? reservoirs_[port.to].floor_height_m+
+        volumes_[port.to]/reservoirs_[port.to].area_m2 : grid.sample(cells_[port.to-reservoirs_.size()]).surface_height_m;
+    const auto drop=crest-std::max(sheet.outlet_floor_m,receiving_stage);
+    // Keep the end anchored to the receiving surface as its stage changes.
+    // A submerged lip has no free-falling visual.
+    if (drop<=1e-6) return std::nullopt;
+    const auto speed=length/std::sqrt(2*drop/9.81);
+    const auto thickness=std::min({transfers_[i]/(step_seconds*width*speed),drop,8.});
+    if (thickness<=0) return std::nullopt;
+    return WaterSheetSample{port.definition.id,{sheet.lip_xz_m[0],crest,sheet.lip_xz_m[1]},
+        {dx/length,dz/length},width,length,drop/(length*length),thickness,speed};
+}
+
+std::vector<WaterSheetSample> WaterStorage::sheets(const Grid& grid) const {
+    std::vector<WaterSheetSample> result;
+    result.reserve(sheet_ports_.size());
+    for (auto i : sheet_ports_) if (auto sample=sheet_sample(grid,i)) result.push_back(*sample);
+    return result;
 }
 
 WaterStorage::Step WaterStorage::stage(const Grid& grid, std::span<const std::string_view> pressed,
@@ -288,7 +345,7 @@ void WaterStorage::commit(const Step& next) noexcept {
     transfers_ = next.transfers;
 }
 
-Json WaterStorage::inspect() const {
+Json WaterStorage::inspect(const Grid* grid) const {
     Json tanks = Json::array(), ports = Json::array();
     for (std::size_t i = 0; i < reservoirs_.size(); ++i) {
         const auto& tank = reservoirs_[i];
@@ -302,6 +359,15 @@ Json WaterStorage::inspect() const {
         row["initial_openness"] = row["openness"];
         row["openness"] = openness_[i];
         row["discharge_m3_s"] = transfers_[i] / step_seconds;
+        if (grid && ports_[i].definition.sheet) {
+            row["active_sheet"]=nullptr;
+            if (const auto sheet=sheet_sample(*grid,i)) {
+                row["active_sheet"]={{"lip_m",sheet->lip_m},{"forward_xz",sheet->forward_xz},
+                    {"width_m",sheet->width_m},{"length_m",sheet->length_m},
+                    {"drop_per_m2",sheet->drop_per_m2},{"vertical_depth_m",sheet->vertical_depth_m},
+                    {"launch_speed_m_s",sheet->launch_speed_m_s}};
+            }
+        }
         ports.push_back(std::move(row));
     }
     return {{"volume_m3", volume_m3()}, {"reservoirs", std::move(tanks)}, {"ports", std::move(ports)}};

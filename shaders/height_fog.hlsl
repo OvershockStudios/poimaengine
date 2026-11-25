@@ -188,7 +188,7 @@ void compute_main(uint3 dispatch_id : SV_DispatchThreadID) {
     surface.rgb = compose_water_path(fog.water,surface.rgb,ray,path,uint2(width,height));
     // Water visible from air carries fog through to the entry on either side
     // of the coastal join. Opaque depth can be seabed or distant sky.
-    if ((water_offshore.x!=0.0 || path.reservoir_interface) && path.enters && path.interface_m>=0.0 && path.water_before_interface_m<=.0001)
+    if ((water_offshore.x!=0.0 || path.reservoir_interface || path.sheet_side!=0) && path.enters && path.interface_m>=0.0 && path.water_before_interface_m<=.0001)
         surface_distance=path.interface_m;
 #endif
     if (surface_distance<0.0 && depth<1.0 && depth>=0.0) {

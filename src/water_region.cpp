@@ -244,6 +244,8 @@ Region::Region(const RegionDefinition& definition)
     const auto& config=grid_.config();
     if (definition.storage) {
         storage_.emplace(*definition.storage, grid_);
+        if (has_water_sheets(*definition.storage) && !optics_)
+            throw std::invalid_argument("Falling water sheets require the region water optics profile.");
         for (const auto i : storage_->placed()) {
             const auto box=storage_->sample(i).footprint;
             if (!optics_) throw std::invalid_argument("Placed water reservoirs require water optics.");

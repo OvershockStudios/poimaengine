@@ -30,7 +30,7 @@ float reservoir_prefix(WaterConstants water,float3 origin,float3 ray,float dista
     return length_m;
 }
 
-WaterPath trace_water_columns(WaterConstants water,float3 eye,float3 ray,float max_distance,bool find_interface) {
+WaterPath trace_storage_water(WaterConstants water,float3 eye,float3 ray,float max_distance,bool find_interface) {
     WaterPath path=trace_terrain_water(water,eye,ray,max_distance,find_interface);
     const uint count=water_reservoir_count(water);
     [branch] if (count==0) return path;

@@ -156,6 +156,46 @@ std::shared_ptr<const MeshAsset> clipped_surface_mesh(const SceneWaterVolume& wa
     cache.mesh=mesh;
     return mesh;
 }
+
+void append_water_sheet(const WaterSheetSample& sheet,std::uint64_t tick,SceneWaterVolume& volume,SceneSnapshot& scene) {
+    volume.sheets.push_back({sheet.lip_m,sheet.forward_xz,sheet.width_m,sheet.length_m,sheet.drop_per_m2,
+        sheet.vertical_depth_m,sheet.launch_speed_m_s,static_cast<double>(tick%960u)/60.});
+    constexpr std::uint32_t segments=12;
+    const auto forward=sheet.forward_xz;
+    const std::array side{-forward[1],forward[0]};
+    auto mesh=std::make_shared<MeshAsset>();
+    mesh->vertices.reserve(2*(segments+1));
+    mesh->indices.reserve(6*segments);
+    mesh->material.metallic=0;
+    mesh->material.roughness=.18f;
+    mesh->material.double_sided=true;
+    for (std::uint32_t i=0;i<=segments;++i) {
+        const auto s=sheet.length_m*i/segments;
+        const auto height=sheet.vertical_depth_m-sheet.drop_per_m2*s*s;
+        const auto slope=2*sheet.drop_per_m2*s;
+        const auto inv=1/std::hypot(slope,1.);
+        const std::array normal{static_cast<float>(forward[0]*slope*inv),static_cast<float>(inv),
+            static_cast<float>(forward[1]*slope*inv)};
+        for (const double offset : {-.5*sheet.width_m,.5*sheet.width_m})
+            mesh->vertices.push_back({{static_cast<float>(s*forward[0]+offset*side[0]),static_cast<float>(height),
+                static_cast<float>(s*forward[1]+offset*side[1])},normal});
+        if(i>0) {
+            const auto base=(i-1)*2;
+            mesh->indices.insert(mesh->indices.end(),{base,base+1,base+2,base+1,base+3,base+2});
+        }
+    }
+    SceneObject object{};
+    object.entity_id="water-sheet/"+std::string(sheet.id);
+    object.world=identity_matrix();
+    for (std::size_t axis=0;axis<3;++axis) object.world[12+axis]=sheet.lip_m[axis];
+    object.albedo={.055f,.32f,.42f};
+    object.material=mesh->material;
+    object.mesh=std::move(mesh);
+    object.cast_shadows=false;
+    object.stream_geometry=true;
+    object.water_region_surface=true;
+    scene.objects.push_back(std::move(object));
+}
 }
 
 void append_region_scene(const Region& region, SceneSnapshot& scene) {
@@ -234,8 +274,10 @@ void append_region_scene(const Region& region, SceneSnapshot& scene) {
         object.water_region_surface=true;
         scene.objects.push_back(std::move(object));
     }
-    const bool has_reservoirs=!volume.reservoirs.empty();
-    if (!count && !volume.optics.offshore && has_reservoirs) {
+    if (const auto& storage=region.storage())
+        for (const auto& sheet : storage->sheets(grid)) append_water_sheet(sheet,grid.tick(),volume,scene);
+    const bool has_storage_media=!volume.reservoirs.empty() || !volume.sheets.empty();
+    if (!count && !volume.optics.offshore && has_storage_media) {
         scene.water_volume=std::move(volume);
         return;
     }

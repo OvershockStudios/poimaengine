@@ -226,7 +226,7 @@
         if (const auto& storage = region->storage()) {
             result["grid_volume_m3"] = grid.volume_m3();
             result["volume_m3"] = grid.volume_m3() + storage->volume_m3();
-            result["storage"] = storage->inspect();
+            result["storage"] = storage->inspect(&grid);
         }
         if (const auto& ripples = region->surface_ripples())
             result["surface_ripples"] = water::surface_ripples_json(*ripples);

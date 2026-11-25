@@ -2,6 +2,12 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.443
+
+- Render a falling sheet from a reservoir overflow. Its landing height,
+  thickness and ripples follow the committed water state.
+  [Falling water sheets](docs/SHALLOW_WATER.md#render-a-falling-water-sheet)
+
 ## 0.0.442
 
 - Drive particle emission from a water storage port. The emitter keeps its

@@ -206,6 +206,8 @@ Json render_diagnostics(const RenderDiagnostics& d) {
             result["water_optics"]["offshore_swell_layers"]=water.offshore_swell_layers;
         if(water.reservoir_volumes)
             result["water_optics"]["reservoir_volumes"]=water.reservoir_volumes;
+        if(water.falling_sheets)
+            result["water_optics"]["falling_sheets"]=water.falling_sheets;
         if(const auto& variation=water.swell_variation)
             result["water_optics"]["swell_variation"]={{"scale_m",variation->scale_m},
                 {"strength",variation->strength},{"seed",variation->seed}};

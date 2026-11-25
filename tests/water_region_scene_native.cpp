@@ -232,6 +232,42 @@ void terrain_fit_respects_committed_gates() {
 }
 }
 
+void water_sheet_projection_tracks_committed_discharge() {
+    using namespace poima::water;
+    const RegionDefinition definition{
+        .config={.cells_x=1,.cells_z=1}, .floor_heights_m={0}, .initial_depths_m={.25},
+        .plan_sha256=std::string(64,'e'),.optics=poima::WaterOptics{{.8,.4,.15},{.03,.12,.22}},
+        .storage=StorageDefinition{
+            {{"cistern",0,1,2,.9}},
+            {{"spill",std::string("cistern"),Cell{0,0},.7,0,20,0,"drain",1,OverflowWeir{1,1.7},
+                WaterSheetDefinition{{2,.5},{.5,.5},0}}},
+        },
+    };
+    Region region(definition);
+    check(capture(region).water_volume->sheets.empty(),"A closed weir produced a water sheet.");
+    const std::string_view action="drain";
+    region.step(std::span{&action,1});
+    const auto scene=capture(region);
+    check(scene.water_volume->sheets.size()==1,"A flowing weir did not produce a water sheet.");
+    const auto& sheet=scene.water_volume->sheets.front();
+    const auto terrain_level=region.grid().sample({0,0}).surface_height_m;
+    const auto drop=.7-terrain_level;
+    const auto speed=1.5/std::sqrt(2*drop/9.81);
+    const auto flow=1.7*std::pow(.2,1.5);
+    check(std::abs(sheet.drop_per_m2*2.25-drop)<1e-12 && std::abs(sheet.launch_speed_m_s-speed)<1e-12 &&
+        std::abs(sheet.vertical_depth_m*speed-flow)<1e-12,"The visible sheet missed its landing point or discharge thickness.");
+    const auto fallback=std::ranges::find(scene.objects,std::string("water-sheet/spill"),&poima::SceneObject::entity_id);
+    check(fallback!=scene.objects.end() && fallback->stream_geometry && fallback->mesh->indices.size()==72,
+        "The projected sheet needs a bounded multisample fallback mesh.");
+    const auto saved=region.save();
+    Region restored(definition);
+    restored.restore(saved,1);
+    check(capture(restored).water_volume->sheets.front().vertical_depth_m==sheet.vertical_depth_m,
+        "Restored discharge changed the projected sheet.");
+    region.step(std::span{&action,1});
+    check(capture(region).water_volume->sheets.empty(),"Sealing the port left a falling water sheet behind.");
+}
+
 int main() {
     try {
         uneven_bed_and_footprint();
@@ -239,6 +275,7 @@ int main() {
         ripple_phase_uses_only_committed_time();
         combined_stream_budget();
         terrain_fit_respects_committed_gates();
+        water_sheet_projection_tracks_committed_discharge();
         RegionDefinition profile{};
         profile.config={.cells_x=2,.cells_z=1,.origin_x_m=137,.origin_z_m=-20};
         profile.floor_heights_m={4,5};

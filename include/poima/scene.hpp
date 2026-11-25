@@ -331,6 +331,11 @@ struct SceneWaterColumn {
 struct SceneWaterBox {
     std::array<double,3> min_m,max_m;
 };
+struct SceneWaterSheet {
+    std::array<double,3> lip_m;
+    std::array<double,2> forward_xz;
+    double width_m,length_m,drop_per_m2,vertical_depth_m,launch_speed_m_s,phase_s;
+};
 struct SceneWaterVolume {
     std::array<double,3> origin_m;
     double cell_size_m;
@@ -345,6 +350,7 @@ struct SceneWaterVolume {
     // Row-major columns with heights relative to the region's Y origin.
     std::vector<SceneWaterColumn> columns;
     std::vector<SceneWaterBox> reservoirs{};
+    std::vector<SceneWaterSheet> sheets{};
 };
 // An immutable presentation copy; no pointers into authored or simulation state.
 struct SceneSnapshot {

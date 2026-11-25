@@ -110,12 +110,14 @@ struct WaterPath {
     bool enters;
     bool offshore_interface;
     bool reservoir_interface;
+    float sheet_side;
+    float2 sheet_ripple;
 };
 
 #include "water_shore_trace.hlsli"
 
 WaterPath trace_water_grid(WaterConstants water,float3 eye,float3 ray,float max_distance,bool find_interface) {
-    WaterPath path={0,-1,0,float2(0,0),false,false,false};
+    WaterPath path={0,-1,0,float2(0,0),false,false,false,0,float2(0,0)};
     const float size = water.camera_cell_size.w;
     const int2 dimensions = water_grid_dimensions(water);
     float entry = 0, exit = max_distance;
@@ -235,6 +237,7 @@ WaterPath trace_terrain_water(WaterConstants water,float3 eye,float3 ray,float m
 }
 
 #include "water_reservoirs.hlsli"
+#include "water_sheets.hlsli"
 #ifndef POIMA_WATER_STRAIGHT_SURFACE
 #include "water_refraction.hlsli"
 #endif
@@ -253,7 +256,10 @@ float3 compose_water_path(WaterConstants water,float3 input_radiance,float3 ray,
         const float relative_y=water_displaced(water) ? dot(geometry_normal,ray) : ray.y;
         float slope_variance=0;
         float3 normal=geometry_normal;
-        if (!path.reservoir_interface)
+        if (path.sheet_side!=0)
+            normal=normalize(float3(-(path.interface_gradient+path.sheet_ripple).x,1,
+                -(path.interface_gradient+path.sheet_ripple).y))*path.sheet_side;
+        else if (!path.reservoir_interface)
             normal=water_interface_normal(water,eye.xz+interface_at*ray.xz,interface_at,ray,relative_y,path.interface_gradient,slope_variance);
         if (!from_air) normal = -normal;
         const float nv=saturate(-dot(normal,ray));
@@ -270,7 +276,7 @@ float3 compose_water_path(WaterConstants water,float3 input_radiance,float3 ray,
         }
         const float before_m = max(path.water_before_interface_m, 0.0);
 #ifndef POIMA_WATER_STRAIGHT_SURFACE
-        [branch] if ((water.dimensions & (1u << 16u)) != 0u && fresnel < 0.999) {
+        [branch] if (path.sheet_side==0 && (water.dimensions & (1u << 16u)) != 0u && fresnel < 0.999) {
             const float3 transmitted = refract(ray, normal, from_air ? 1.0 / 1.333 : 1.333);
             // A shading normal may tilt the bent ray beyond the actual flat
             // boundary. Such a ray cannot enter the selected outgoing medium.
@@ -300,7 +306,7 @@ float3 compose_water_path(WaterConstants water,float3 input_radiance,float3 ray,
         }
         const float3 before = exp(-water.extinction_per_m * before_m);
         color = lerp(color, lerp(scattering, reflection, before), fresnel);
-        [branch] if (from_air && !path.offshore_interface && !path.reservoir_interface && water_shore_foam.y > 0.0) {
+        [branch] if (from_air && !path.offshore_interface && !path.reservoir_interface && path.sheet_side==0 && water_shore_foam.y > 0.0) {
             const float3 offset = interface_at * ray;
             const float3 entry = eye + offset;
             const float coverage = shore_foam_coverage(water, entry, water_interface_footprint(interface_at, relative_y));

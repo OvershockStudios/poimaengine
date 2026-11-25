@@ -1,8 +1,19 @@
 # Implementation status
 
-Updated 2026-11-25 for **0.0.442**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-25 for **0.0.443**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.443 renders [falling water sheets](SHALLOW_WATER.md#render-a-falling-water-sheet)
+from committed weir discharge. The sheet changes thickness with flow and
+meets the receiving water level. A same-tick control with fixed basin and
+spray conditions isolated the sheet. AMD forward and NVIDIA deferred each
+matched seven affected HDR probes against an independent optical calculation
+and preserved 20 dry probes. Warm and relocated saves reproduced the frames
+on each GPU. AMD also verified the 4× MSAA mesh fallback. Ubuntu passed
+eleven focused suites and the headless fixture. In-flight liquid physics,
+two-interface refraction and performance at scene scale remain open.
+[Results and scope](evidence/m2-water-sheets-443.json)
 
 Version 0.0.442 adds [flow-driven particles](PARTICLES.md#drive-spray-from-committed-water-flow).
 A native sprayer uses water moved through a named port. The fixture queues

@@ -317,8 +317,9 @@ struct Context {
     std::optional<DepthOfFieldDiagnostics> pending_depth_of_field;
     height_fog::Pass fog;
     std::array<std::uint32_t,2> fog_spots{};
-    nvrhi::BufferHandle water_columns,water_reservoirs;
+    nvrhi::BufferHandle water_columns,water_reservoirs,water_sheets;
     std::vector<height_fog::WaterView::Reservoir> optical_reservoirs;
+    std::vector<height_fog::WaterView::Sheet> optical_sheets;
     std::optional<height_fog::WaterParameters> water_parameters;
     std::optional<WaterOpticsDiagnostics> pending_water_optics;
     std::optional<height_fog::AerialParameters> aerial_parameters;
@@ -454,7 +455,7 @@ struct Context {
         occlusion.reset();
         deferred_lighting.release_gpu();material_base=nullptr;material_surface=nullptr;material_correspondence=nullptr;
         temporal_inputs.release_gpu();
-        depth_of_field={};fog={};reflections={};water_columns=nullptr;water_reservoirs=nullptr;
+        depth_of_field={};fog={};reflections={};water_columns=nullptr;water_reservoirs=nullptr;water_sheets=nullptr;
         pipeline = nullptr; culled_pipeline=nullptr;
         sky_pass.reset();
         scene_output.release_gpu();
@@ -1061,6 +1062,7 @@ struct Context {
         });
         water_columns=height_fog::allocate_water_columns(*checked.Get());
         water_reservoirs=height_fog::allocate_water_reservoirs(*checked.Get());
+        water_sheets=height_fog::allocate_water_sheets(*checked.Get());
         bindings=mesh_bindings(nullptr,nullptr);
         const auto mesh = box_vertices();
         nvrhi::BufferDesc desc;
@@ -1080,12 +1082,14 @@ struct Context {
         const GpuSurfaceMark unused_mark{};
         const SceneWaterColumn unused_column{};
         const height_fog::WaterView::Reservoir unused_reservoir{};
+        const height_fog::WaterView::Sheet unused_sheet{};
         const std::uint8_t white_mask_texel=255;
         commands->open();
         commands->writeBuffer(vertices,mesh.data(),mesh.size()*sizeof(Vertex));
         commands->writeBuffer(empty_surface_marks,&unused_mark,sizeof(unused_mark));
         commands->writeBuffer(water_columns,&unused_column,sizeof(unused_column));
         commands->writeBuffer(water_reservoirs,&unused_reservoir,sizeof(unused_reservoir));
+        commands->writeBuffer(water_sheets,&unused_sheet,sizeof(unused_sheet));
         commands->writeTexture(white_surface_mark_mask,0,0,&white_mask_texel,1);
         commands->close();
         checked->executeCommandList(commands);
@@ -1371,6 +1375,7 @@ struct Context {
         pending_water_optics.reset();
         water_parameters.reset();
         optical_reservoirs.clear();
+        optical_sheets.clear();
         frame_constants.water_caustic_grid_light={};
         frame_constants.water_shore_foam={};
         frame_constants.sprite_water={};
@@ -1403,6 +1408,7 @@ struct Context {
             if (color_reason=="active") {
                 water_parameters=view.parameters;
                 optical_reservoirs=std::move(view.reservoirs);
+                optical_sheets=std::move(view.sheets);
                 frame_constants.water_offshore=view.offshore;
                 frame_constants.water_offshore_swell=view.offshore_swell;
                 frame_constants.water_swell_variation=view.swell_variation;
@@ -1423,6 +1429,7 @@ struct Context {
                 pending_water_optics->solar_scattering=WaterSolarScatteringDiagnostics{*solar_scattering,sky_gain,scattering_scale};
             if (color_reason=="active") pending_water_optics->offshore_swell_layers=view.offshore_swell_layers;
             pending_water_optics->reservoir_volumes=static_cast<std::uint32_t>(optical_reservoirs.size());
+            pending_water_optics->falling_sheets=static_cast<std::uint32_t>(optical_sheets.size());
         }
         if(wants_aerial) {
             const auto reason=color_reason=="active" && !sky_pass.atmosphere_enabled() ?
@@ -1470,7 +1477,8 @@ struct Context {
                 water_parameters ? water_columns.Get() : nullptr, water_parameters ? environment.specular : nullptr,
                 water_parameters ? environment.brdf : nullptr,
                 water_parameters ? environment.sampler : nullptr,
-                water_parameters ? water_reservoirs.Get() : nullptr});
+                water_parameters ? water_reservoirs.Get() : nullptr,
+                water_parameters ? water_sheets.Get() : nullptr});
         }
         if(selected) {
             const auto light_count=static_cast<std::uint32_t>(std::ranges::count_if(fog_spots,[](auto ordinal){return ordinal!=0;}));
@@ -2770,6 +2778,8 @@ struct Context {
                 scene->water_volume->columns.size()*rs::water_column_bytes);
             if(!optical_reservoirs.empty())f.water_reservoirs=buffer(water_reservoirs,rs::Lifetime::shared,false,
                 optical_reservoirs.size()*rs::water_reservoir_bytes);
+            if(!optical_sheets.empty())f.water_sheets=buffer(water_sheets,rs::Lifetime::shared,false,
+                optical_sheets.size()*rs::water_sheet_bytes);
             if(settings.aerial_perspective) {
                 f.aerial_scattering=texture(fog.aerial_scattering(),rs::Lifetime::shared,false);
                 f.aerial_transmittance=texture(fog.aerial_transmittance(),rs::Lifetime::shared,false);
@@ -2924,6 +2934,7 @@ struct Context {
                         if(binding.slot==0)identity(f.sprite_instances,binding.resourceHandle);
                         if(binding.slot==7)identity(f.water_columns,binding.resourceHandle);
                         if(binding.slot==10 && f.water_reservoirs!=rs::none)identity(f.water_reservoirs,binding.resourceHandle);
+                        if(binding.slot==11 && f.water_sheets!=rs::none)identity(f.water_sheets,binding.resourceHandle);
                         if(binding.slot==6 && plan.settings.water_shore_foam_sun)identity(f.lights,binding.resourceHandle);
                     } else if(binding.type==Type::Texture_SRV) {
                         if(binding.slot==1)identity(f.depth,binding.resourceHandle);
@@ -3301,6 +3312,9 @@ struct Context {
                     if(resources.water_reservoirs!=render_schedule::none)
                         commands->writeBuffer(planned_buffer(resources.water_reservoirs),optical_reservoirs.data(),
                             optical_reservoirs.size()*render_schedule::water_reservoir_bytes);
+                    if(resources.water_sheets!=render_schedule::none)
+                        commands->writeBuffer(planned_buffer(resources.water_sheets),optical_sheets.data(),
+                            optical_sheets.size()*render_schedule::water_sheet_bytes);
                     skinning.record(*commands.Get(),{draws,viewmodel_draws},skin_readback);
                     if(ao_enabled)occlusion.upload(*commands.Get(),planned_buffer(resources.ao_constants));
                 }

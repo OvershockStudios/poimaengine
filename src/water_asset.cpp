@@ -16,6 +16,7 @@ using Json = nlohmann::json;
 constexpr auto artifact_format = "poima.water.region";
 
 std::uint32_t artifact_version(const RegionDefinition& definition) noexcept {
+    if (definition.storage && has_water_sheets(*definition.storage)) return 22;
     if (definition.storage && has_overflow(*definition.storage)) return 21;
     if (definition.storage && has_placed_reservoirs(*definition.storage)) return 20;
     if (definition.storage) return 19;
@@ -157,7 +158,7 @@ StorageDefinition parse_storage(const Json& value, const GridConfig& grid) {
     };
     for (const auto& port : ports) {
         fields(port, {"id", "from", "to", "sill_height_m", "max_flow_m3_s", "openness"},
-            {"conductance_m2_s", "overflow", "action", "action_openness"});
+            {"conductance_m2_s", "overflow", "sheet", "action", "action_openness"});
         require(port.at("id").is_string(), "Water storage ports need a named ID.");
         require(port.contains("conductance_m2_s")!=port.contains("overflow"),
             "Water storage ports require either linear conductance or an overflow weir.");
@@ -170,6 +171,15 @@ StorageDefinition parse_storage(const Json& value, const GridConfig& grid) {
             rule.overflow=OverflowWeir{number(profile.at("width_m")),number(profile.at("coefficient_sqrt_m_s"))};
         } else {
             rule.conductance_m2_s=number(port.at("conductance_m2_s"));
+        }
+        if (port.contains("sheet")) {
+            const auto& shape=port.at("sheet");
+            fields(shape,{"lip_xz_m","outlet_xz_m","outlet_floor_m"});
+            const auto pair=[](const Json& row) {
+                require(row.is_array() && row.size()==2,"Water sheet endpoints use [x,z].");
+                return std::array{number(row[0]),number(row[1])};
+            };
+            rule.sheet=WaterSheetDefinition{pair(shape.at("lip_xz_m")),pair(shape.at("outlet_xz_m")),number(shape.at("outlet_floor_m"))};
         }
         if (port.contains("action")) {
             require(port.at("action").is_string() && !port.at("action").get_ref<const std::string&>().empty(),
@@ -414,7 +424,7 @@ RegionAsset decode_region_asset(std::string_view bytes) {
         "initial_depths_m", "faces", "exchanges"}, {"rain_cells", "surface_ripples", "surface_wave_layers", "surface_swell",
         "swell_variation", "listener_audio", "optics", "shore_corner_heights_m", "currents", "surface_wakes", "body_displacement", "storage"});
     require(object.at("format") == artifact_format, "Unsupported water asset format.");
-    const auto version=integer(object.at("version"),1,21);
+    const auto version=integer(object.at("version"),1,22);
     RegionAsset asset;
     asset.terrain_recipe_sha256 = hex(object.at("terrain_recipe_sha256"), 64);
     auto& definition = asset.definition;
@@ -545,14 +555,16 @@ Json region_authoring_schemas() {
     const Json storage_rate{{"type", "number"}, {"exclusiveMinimum", 0}, {"maximum", max_storage_rate}};
     const auto overflow = object({{"width_m",range("number",.01,256)},
         {"coefficient_sqrt_m_s",range("number",.01,10)}},{"width_m","coefficient_sqrt_m_s"});
+    const auto sheet=object({{"lip_xz_m",array(coordinate,2,2)},{"outlet_xz_m",array(coordinate,2,2)},
+        {"outlet_floor_m",coordinate}},{"lip_xz_m","outlet_xz_m","outlet_floor_m"});
     auto port = object({{"id", storage_id}, {"from", storage_endpoint}, {"to", storage_endpoint},
         {"sill_height_m", coordinate}, {"conductance_m2_s", storage_rate}, {"max_flow_m3_s", storage_rate},
-        {"overflow",overflow},{"openness", unit}, {"action", storage_id}, {"action_openness", unit}},
+        {"overflow",overflow},{"sheet",sheet},{"openness", unit}, {"action", storage_id}, {"action_openness", unit}},
         {"id", "from", "to", "sill_height_m", "max_flow_m3_s", "openness"});
     port["oneOf"] = Json::array({Json{{"required",{"conductance_m2_s"}},{"not",{{"required",{"overflow"}}}},
         {"anyOf",Json::array({Json{{"properties",{{"from",tank_endpoint}}}},Json{{"properties",{{"to",tank_endpoint}}}}})}},
         Json{{"required",{"overflow"}},{"not",{{"required",{"conductance_m2_s"}}}},{"properties",{{"from",tank_endpoint}}}}});
-    port["dependentRequired"] = {{"action_openness", {"action"}}};
+    port["dependentRequired"] = {{"action_openness", {"action"}},{"sheet",{"overflow"}}};
     auto storage = object({{"reservoirs", array(tank, 1, max_water_reservoirs)},
         {"ports", array(port, 1, max_water_ports)}}, {"reservoirs", "ports"});
     storage["description"] = "Finite reservoirs, bidirectional linear ports and one-way overflow weirs.";

@@ -74,7 +74,8 @@
                     .addItem(nvrhi::BindingLayoutItem::Texture_SRV(8))
                     .addItem(nvrhi::BindingLayoutItem::Texture_SRV(9))
                     .addItem(nvrhi::BindingLayoutItem::Sampler(1))
-                    .addItem(nvrhi::BindingLayoutItem::StructuredBuffer_SRV(10));
+                    .addItem(nvrhi::BindingLayoutItem::StructuredBuffer_SRV(10))
+                    .addItem(nvrhi::BindingLayoutItem::StructuredBuffer_SRV(11));
             }
             sprite_layout=checked->createBindingLayout(desc);
         }
@@ -110,7 +111,8 @@
                 .addItem(nvrhi::BindingSetItem::Texture_SRV(8,environment.specular))
                 .addItem(nvrhi::BindingSetItem::Texture_SRV(9,environment.brdf))
                 .addItem(nvrhi::BindingSetItem::Sampler(1,environment.sampler))
-                .addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(10,water_reservoirs));
+                .addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(10,water_reservoirs))
+                .addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(11,water_sheets));
         }
         return desc;
     }

@@ -1,0 +1,212 @@
+{
+  "version": "0.0.443",
+  "authoring_schema_revision": 239,
+  "date": "2026-11-25",
+  "base_commit": "d271fc154d36e155ecbfc848a4eadff9e0ccaa22",
+  "scope": "A bounded continuous spill sheet follows committed weir discharge and the receiving water level.",
+  "windows_candidate_patch_sha256": "32678aabb55505ba70aba8dbec1ba65b1614f2aef327c38dad4cd0dfd51a50da",
+  "source_sha256": {
+    "CMakeLists.txt": "6b1a1aca3d7f6769227e704da8f018937c8868068c401fe6460337660d284fa6",
+    "cmake/render_smoke.cmake": "4a6a3e89f6a5bf2be850e87d62596e303c6f2fc2ff5decf74c25d74e2495e1e8",
+    "cmake/runtime.json.in": "4d21d0f7156f31ff7b86dd3439e5d92c979bf1eae9820f00afaec508da053084",
+    "include/poima/core.hpp": "4e1826be77d59759ed8349605d644cbe27ec243c2279bfadd84fcc37f4d5f2e1",
+    "include/poima/project.hpp": "15909a5f12593852998134f81225ff103b6bb982f56bef5ddb83aef9c599eb62",
+    "include/poima/render_schedule.hpp": "8ef2b3314218844f2fabdcb565944b16a7e66155cef504f4ba8fc55ee38efd61",
+    "include/poima/scene.hpp": "ea1fa9674121cb8532db87346c9f1c41de2e64c9da30ae7c17992d5ab43c3714",
+    "include/poima/water_storage.hpp": "1caaad3339d0e6ce693eb859d6fdf4fa5ecf6272d423ddb60d42bb4074188619",
+    "include/poima/water_storage_definition.hpp": "b99d1553ffac17501e098c4861fa59903ee596b77abc5e1a7bd0316b3f0f3484",
+    "include/poima/world.hpp": "4cf822eb9ff9b91b5879aaf66ba215ba4fbe8d6515be7058532a7ef6d8794f7e",
+    "shaders/height_fog.hlsl": "b5d8449b1e8d7bf52f53adacc0de9bf53a008f78d5add0bb9a7bf8ec9e3f043d",
+    "shaders/water_constants.hlsli": "8a5f54c0b759ab4833469098567a481cce9c9bd7ece6c7f20cdd57442e18c210",
+    "shaders/water_optics.hlsli": "fc550c7517e1169ae38e4ccf23d36cdc5ff149f90df5af1624172f737ab0a8d8",
+    "shaders/water_reservoirs.hlsli": "0c7a1838476bad923afc46519cd16cee71acc8f0c6fe1fd34dfe0d7ee26797bd",
+    "shaders/water_sheets.hlsli": "24425a7cf02165ad0dec07f7ab60d18b2dab6027672ff579bd77cdee14778518",
+    "src/core.cpp": "f7e0638800a7e4e591f71315f8630a4c41726b13a1fac8bd1a414712a1c41de3",
+    "src/project.cpp": "53976ffe70237185cacb4a0199a6d7463cdf4c1de56258301c33d9e44a4244d8",
+    "src/render_height_fog.cpp": "6ec59567f8897e7a525b327fb7c5f2b22a42ef5980a24a0a25f517497ad82862",
+    "src/render_height_fog.hpp": "d2ef1cc36ca073b68fa837fe5d1426d8c7b5d7042c1ac6340062e4ac8bbfe9bf",
+    "src/render_particle_sprites.inc": "068da88b296b335ff1577f936380f8356a839266479863a3d78691f64f7ab209",
+    "src/render_schedule.cpp": "59c89c25230635705bbee96aa552be2872b04be99aa4726928ecfd4fd7f2f559",
+    "src/render_smoke.cpp": "9a4607960e5ecf5117bbab65c361e562bba6f0aafcd493a008a6af393320bf28",
+    "src/water_asset.cpp": "d4f9f9d67cad5858f6188d612cc7dd9116a31b35b8b4859c749005506f73c830",
+    "src/water_region.cpp": "8fdc3e30c30895f8648287b73970ad5da4afbc7e292b00ccf2b446cf645f4706",
+    "src/water_region_scene.cpp": "9d02bdfe1115b34e16f2bf74a0a9de4943ecfa95c317725fd6da489b1db56a0c",
+    "src/water_storage.cpp": "e1f93abe56cf2162850aaabd73fcfa5e8cd319e15d9c3b44aff8d8be9db3f796",
+    "src/world.cpp": "a8836f4f730cc09424e497d0b44f3cfae85828479efdfa4cd9aab2357d6d1fe8",
+    "src/world_content.cpp": "9dbe451af5910448b801851453359c183592e6a6b764b02caef65b0f3d02e271",
+    "src/world_presentation_json.cpp": "1700e2b1117c9fc14f8d9f27c52ec156e6c6edbfa279e56684739b56d302db01",
+    "src/world_schema.cpp": "630ad38718025accce86b93f5f6514c6947c90dd66fdc3bbf19359cb5dd5af98",
+    "src/world_water_service.inc": "603cb90914c1144974ad545aac0e081cde8e0c7c1892ade5c2005b2c8c64322c",
+    "tests/render_schedule.cpp": "79d3458cb4dafa7859e694db104c5f8cf521acb47b63f7c52a54e0671f6db8a4",
+    "tests/water_flow_particles_capture.py": "d6aed6c7f7a9f116e5284878f4a2ff4be5be999493eefa4dbe498d76849c4ff7",
+    "tests/water_optics_capture.py": "fa4fbd49cf583216fd52835d9ed4e9957666f5c1d86504f0a7eac1022194c129",
+    "tests/water_overflow_capture.py": "f27e20dc1014755a1dc90182144a203525fad1e4f040f6cce947a882d0d2fea7",
+    "tests/water_region_scene_native.cpp": "a35abf83e8ec40ed096ffee934c001c73eb52405b4f6e1283765deb6b9711f2f",
+    "tests/water_reservoir_capture.py": "bb1e4352ba26140b15226c71efbf4209037a9df2f17d24d53b0a276cd7eba46e",
+    "tests/water_sheet_capture.py": "3050034f07a26b6459a178a6648c3a4056068950fdb24923483ed7ce5272ee6d"
+  },
+  "fixture": {
+    "asset_sha256": "c35b961d012fe05a23f6d69d7e68be4394acf819c3db75fea08cac0169b8321c",
+    "cooked_version": 22,
+    "windows_headless_sha256": "46a64db62abeab499133909fdd491d0922afb840365564ee3fb03559d523fce1",
+    "rejected_shapes": [
+      "outlet above the lip",
+      "outlet outside receiver",
+      "zero horizontal reach"
+    ],
+    "samples": {
+      "spray": {
+        "drop_per_m2": 0.11186644740637505,
+        "forward_xz": [
+          -1.0,
+          0.0
+        ],
+        "launch_speed_m_s": 6.621701248060394,
+        "length_m": 2.0,
+        "lip_m": [
+          1.5,
+          0.7,
+          -5.0
+        ],
+        "vertical_depth_m": 0.022962772975377643,
+        "width_m": 1.0
+      },
+      "drained": null,
+      "resumed": {
+        "drop_per_m2": 0.1112448982533293,
+        "forward_xz": [
+          -1.0,
+          0.0
+        ],
+        "launch_speed_m_s": 6.640173915248551,
+        "length_m": 2.0,
+        "lip_m": [
+          1.5,
+          0.7,
+          -5.0
+        ],
+        "vertical_depth_m": 0.02246504363212861,
+        "width_m": 1.0
+      }
+    }
+  },
+  "windows_runtime_sha256": {
+    "bin/poima.exe": "89f21b94853275521ba77b2f899738ac3a6f49ec597de5f6da76e123f6e47370",
+    "bin/poima_desktop.dll": "3eddc097c45547ad73a93ccbceddaa656f7c2ca2c566e74b2ebf09bc881355c4",
+    "runtime.json": "232273c0bb81fbaf9c3c5cf84f3a6dc9b60b0a2948329d4460d5ca811d9535ee"
+  },
+  "windows": {
+    "amd_forward": {
+      "gpu": "AMD Radeon(TM) Graphics",
+      "frames": 13,
+      "unchanged_opaque_probes": 30,
+      "independent_optics": {
+        "sheet_probes": 7,
+        "unchanged_dry_probes": 20,
+        "max_linear_error": 0.00023925439517824554
+      },
+      "same_tick_control_sha256": "4204ee323b0721a8f05719c234b9042a725c98887cefcf692d464c4e0f11da60",
+      "source_hidden_during_exported_run": true,
+      "immutable_export_files": 61,
+      "fresh_exported_replay_exact": true,
+      "frame_sha256": {
+        "source-spray": "83c2f57d5d8e7a76d1d538b1e5dc443908b7cef9eaf0f4aab182da524c111d2d",
+        "source-drained": "504c3b47a48104309ac4aa89f7d57a9978946f384ea8d06cbe1f0ac7f0d3b5d1",
+        "source-resumed": "147b793184c82fa40278c343132dbaf9f65f58c99d53836bfa0309a9f574aa07",
+        "warm-spray": "83c2f57d5d8e7a76d1d538b1e5dc443908b7cef9eaf0f4aab182da524c111d2d",
+        "warm-drained": "504c3b47a48104309ac4aa89f7d57a9978946f384ea8d06cbe1f0ac7f0d3b5d1",
+        "warm-resumed": "147b793184c82fa40278c343132dbaf9f65f58c99d53836bfa0309a9f574aa07",
+        "relocated-spray": "83c2f57d5d8e7a76d1d538b1e5dc443908b7cef9eaf0f4aab182da524c111d2d",
+        "relocated-drained": "504c3b47a48104309ac4aa89f7d57a9978946f384ea8d06cbe1f0ac7f0d3b5d1",
+        "relocated-resumed": "147b793184c82fa40278c343132dbaf9f65f58c99d53836bfa0309a9f574aa07",
+        "fresh-spray": "83c2f57d5d8e7a76d1d538b1e5dc443908b7cef9eaf0f4aab182da524c111d2d",
+        "fresh-drained": "504c3b47a48104309ac4aa89f7d57a9978946f384ea8d06cbe1f0ac7f0d3b5d1",
+        "fresh-resumed": "147b793184c82fa40278c343132dbaf9f65f58c99d53836bfa0309a9f574aa07"
+      },
+      "save_sha256": {
+        "source": "a747111c49e30b2467a33472944fbc17c8e04a1d9eb4b89369207d3abb2281ce",
+        "relocated": "a747111c49e30b2467a33472944fbc17c8e04a1d9eb4b89369207d3abb2281ce"
+      },
+      "raw_fixture_sha256": "882b1606e6239af5246f5bf12f9214c1729876bf87f8a172f855891da046d66c"
+    },
+    "nvidia_deferred": {
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "frames": 13,
+      "unchanged_opaque_probes": 30,
+      "independent_optics": {
+        "sheet_probes": 7,
+        "unchanged_dry_probes": 20,
+        "max_linear_error": 0.00023925439517824554
+      },
+      "same_tick_control_sha256": "c7b4aaab1622a76aa2952bc488bc1d7ca3cfcdc2d27a5f1b82523351f46dab27",
+      "source_hidden_during_exported_run": true,
+      "immutable_export_files": 61,
+      "fresh_exported_replay_exact": true,
+      "frame_sha256": {
+        "source-spray": "0d295bd1b8ecb9742aed39b5a511e7b9490f6a2db5457e9fd342adb6064677d4",
+        "source-drained": "f715001ae08cc39c7a2cb04aa99100b8f6474dd9b3480a29af45dc0f205c0d3b",
+        "source-resumed": "b1e5cb6c6446c38fb8692c983158e0ba5ab65a658654122cca6d39fa6fe8f2e0",
+        "warm-spray": "0d295bd1b8ecb9742aed39b5a511e7b9490f6a2db5457e9fd342adb6064677d4",
+        "warm-drained": "f715001ae08cc39c7a2cb04aa99100b8f6474dd9b3480a29af45dc0f205c0d3b",
+        "warm-resumed": "b1e5cb6c6446c38fb8692c983158e0ba5ab65a658654122cca6d39fa6fe8f2e0",
+        "relocated-spray": "0d295bd1b8ecb9742aed39b5a511e7b9490f6a2db5457e9fd342adb6064677d4",
+        "relocated-drained": "f715001ae08cc39c7a2cb04aa99100b8f6474dd9b3480a29af45dc0f205c0d3b",
+        "relocated-resumed": "b1e5cb6c6446c38fb8692c983158e0ba5ab65a658654122cca6d39fa6fe8f2e0",
+        "fresh-spray": "0d295bd1b8ecb9742aed39b5a511e7b9490f6a2db5457e9fd342adb6064677d4",
+        "fresh-drained": "f715001ae08cc39c7a2cb04aa99100b8f6474dd9b3480a29af45dc0f205c0d3b",
+        "fresh-resumed": "b1e5cb6c6446c38fb8692c983158e0ba5ab65a658654122cca6d39fa6fe8f2e0"
+      },
+      "save_sha256": {
+        "source": "c70feed1071e1951819af1199a6a5867c986b90fdbdcaf1392e9c58f3be295f5",
+        "relocated": "c70feed1071e1951819af1199a6a5867c986b90fdbdcaf1392e9c58f3be295f5"
+      },
+      "raw_fixture_sha256": "18e292d0d2e7aaaf677ebea684a832358d6114bdb6184fc5cda2343a98c91397"
+    }
+  },
+  "amd_forward_multisample": {
+    "samples": 4,
+    "gpu": "AMD Radeon(TM) Graphics",
+    "tick": 2,
+    "same_selected_hydraulic_state": true,
+    "sprite_instances": 0,
+    "extra_streamed_draws": 1,
+    "added_triangles": 24,
+    "image_sha256": {
+      "control": "816f0852c822a02d89391382c3f59dd3386b0084490ad1a9df99535f5e5cf3a5",
+      "sheet": "f1880793860c88a2ad45763625cfb8d0a7a8b5d593821e60179161825f62fcb7"
+    },
+    "raw_fixture_sha256": "584771d36350212c97e4b18bbe20ba14988d13486619ced9798da87d86dc0e86"
+  },
+  "ubuntu": {
+    "focused_suites_passed": 11,
+    "headless_fixture_passed": true,
+    "sha256": {
+      "evidence.json": "bb56f3f442b628080bb1ec51cc97e6efebb6743e12979dfb9656584431f003bf",
+      "poima": "4eccf0dc6ced03956fda077b6e54b1cc94eb2f7602d3bbf15b5a21ae0f47127a",
+      "runtime.json": "784c5e2b96d03729e14fbf00df8a1111e73966274b8dce6968f5f62f6dc00186",
+      "final.xml": "d5e29530dc91e6ef6aa77c375b752a2800543b6a6bc326607214affed7768ff1"
+    },
+    "first_schedule_fixture_failure": {
+      "reason": "The synthetic schedule allocated 4 KiB for the fixed 384-byte sheet buffer.",
+      "log_sha256": "78d7cd65a4bc1ad3a9c57da1fa5052f088bcb2b49db2cbc12410ccaca0aa7f48"
+    }
+  },
+  "rejected_export": {
+    "missing_flag": "water_sheets",
+    "no_bundle": true,
+    "diagnostic": "Project falling water sheets require a compatible Vulkan runtime."
+  },
+  "unselected_flow_regression": {
+    "baseline": "0.0.442 deferred NVIDIA",
+    "same_plan": true,
+    "same_selected_observations": true,
+    "exact_frames": 6,
+    "prior_raw_sha256": "ddfba7aca70f9e226a1bef0b740419e3d7e3018294feec6f3c041a9c00f6eb47",
+    "rerun_raw_sha256": "d94fe0636d4940a8ff3b6735386218db03edf190b3d17dbc100af47886739e73"
+  },
+  "limits": [
+    "The ledger exchanges liquid directly between endpoints. In-flight collision and transport remain open.",
+    "The optical estimator uses straight transmission and the nearest reflecting interface. Two-interface refraction remains open.",
+    "This fixture does not establish game-scale rendering cost."
+  ]
+}

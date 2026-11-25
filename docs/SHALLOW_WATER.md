@@ -549,9 +549,9 @@ water and stable transfer per tick. [USACE spillway reference](https://www.hec.u
 Optional `action` and `action_openness` control a gate on the weir. The
 committed `storage.ports` report includes the same positive-direction
 `discharge_m3_s` field as other ports. The source and receiving water levels
-drive their existing visuals. A [flow-driven particle emitter](PARTICLES.md#drive-spray-from-committed-water-flow)
-can produce spray from the same committed transfer. A continuous falling
-sheet remains a separate effect.
+drive their existing visuals. Add a [falling sheet](#render-a-falling-water-sheet)
+for the continuous spill and a [flow-driven particle emitter](PARTICLES.md#drive-spray-from-committed-water-flow)
+for spray. Both use the same committed transfer.
 The combined ledger includes the transfer once and a save retains the
 last completed discharge. Overflow uses `.pwater` v21 and requires
 `features.water_overflow` in exported runtimes.
@@ -560,6 +560,47 @@ The [overflow fixture](../tests/water_overflow_capture.py) fills a cistern
 through a linear port, closes the inlet and checks 120 ticks of weir discharge
 and conserved volume across save restoration. With `--runtime-root` and
 `--gpu` it also checks the pictured waterline in a relocated Windows game.
+
+#### Render a falling water sheet
+
+Add `sheet` to an overflow port and enable the region's `optics`. The
+port's crest supplies the lip height and its overflow width supplies the
+sheet width. Place the lip at the open edge of the spillway and put the
+outlet inside the receiving cell or the receiving tank's placed footprint.
+
+```json
+{
+  "sheet": {
+    "lip_xz_m": [1.5, -5],
+    "outlet_xz_m": [-0.5, -5],
+    "outlet_floor_m": 0
+  }
+}
+```
+
+Author up to eight sheets. Both the horizontal reach and the nominal drop
+from the crest to `outlet_floor_m` must be 0.05–256 m. The lower edge meets
+the higher of that floor and the receiving water stage. For each committed
+tick, Poima fits a parabolic fall between those endpoints. The visual
+thickness follows the transfer divided by the overflow width and the
+horizontal launch speed, capped at the current drop or 8 m. A closed port
+or submerged lip hides the sheet. `runtime.water.inspect` reports the
+derived geometry in the port's `active_sheet` field.
+
+Single-sample Vulkan uses the shaped water volume for absorption and
+Fresnel reflection. Small surface ripples travel down the sheet according
+to its launch speed and committed tick. Solids in front of the sheet stop
+the optical path. At higher sample counts the renderer projects a curved
+top mesh. The hydraulic ledger transfers water directly between the two
+stores. In-flight liquid, collision with the sheet and double-interface
+refraction have separate requirements.
+
+The sheet uses `.pwater` v22 and export requires `features.water_sheets`.
+The [sheet fixture](../tests/water_sheet_capture.py) compares the stock
+Vulkan image to a same-tick control with matching water levels and spray.
+It checks the visible depth and reflection against an independent ray
+calculation and verifies the sheet after restoring a save. Supply `--gpu`
+and `--runtime-root` to qualify the relocated game on Windows.
 
 ### Vary the swell across a coast
 

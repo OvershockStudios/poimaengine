@@ -1282,6 +1282,15 @@ void height_fog_contracts() {
         erase_access(candidate,PassId::height_fog,water.f.water_reservoirs,Use::storage_read);
         rejects("water optics lose the placed reservoir input",[&]{candidate.validate();});
     }
+    water.f.water_sheets=water.add(Kind::buffer,Lifetime::shared);
+    water.f.resources[water.f.water_sheets].bytes=water_sheet_bytes;
+    water.f.resources[water.f.water_sheets].allocation_bytes=max_water_sheets*water_sheet_bytes;
+    {
+        auto candidate=water.plan();
+        candidate.validate();++accepted;
+        erase_access(candidate,PassId::height_fog,water.f.water_sheets,Use::storage_read);
+        rejects("water optics lose the falling sheet input",[&]{candidate.validate();});
+    }
     for(bool deferred:{false,true}) {
         auto receiving=forward;
         receiving.deferred=deferred;

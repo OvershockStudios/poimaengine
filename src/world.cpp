@@ -621,6 +621,7 @@ public:
             if(content.needs_water_storage)result["needs_water_storage"]=true;
             if(content.needs_water_reservoirs)result["needs_water_reservoirs"]=true;
             if(content.needs_water_overflow)result["needs_water_overflow"]=true;
+            if(content.needs_water_sheets)result["needs_water_sheets"]=true;
             if(content.needs_collision_surfaces)result["needs_collision_surfaces"]=true;
             if(content.needs_surface_mark_masks)result["needs_surface_mark_masks"]=true;
             if(content.needs_mesh_lod)result["needs_mesh_lod"]=true;

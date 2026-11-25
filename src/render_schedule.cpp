@@ -383,6 +383,17 @@ void Schedule::validate(bool before_acquire) const {
                 fail("invalid optical reservoir buffer");
             require_distinct_roles(frame.water_reservoirs,none,"optical reservoir buffer aliases another resource role");
         }
+        if(frame.water_sheets!=none) {
+            const auto& sheets=resource(frame.water_sheets);
+            const auto uses=use_bit(Use::upload)|use_bit(Use::storage_read);
+            if(frame.water_columns==none || frame.water_sheets==frame.water_columns || frame.water_sheets==frame.water_reservoirs ||
+               sheets.kind!=Kind::buffer || sheets.lifetime!=Lifetime::shared || sheets.region!=Region::prefix ||
+               sheets.initialized || sheets.late_bound || (sheets.supported&uses)!=uses ||
+               !sheets.bytes || sheets.bytes%water_sheet_bytes!=0 || sheets.bytes>sheets.allocation_bytes ||
+               sheets.allocation_bytes>max_water_sheets*water_sheet_bytes)
+                fail("invalid falling water buffer");
+            require_distinct_roles(frame.water_sheets,none,"falling water buffer aliases another resource role");
+        }
         if(settings.water_caustics && frame.water_columns==none)
             fail("water caustics require committed optical columns");
         if(settings.water_shore_foam_sun && frame.water_columns==none)
@@ -395,7 +406,7 @@ void Schedule::validate(bool before_acquire) const {
                 fail("invalid world media lighting inputs");
         }
     } else if(frame.fogged_hdr!=none || world_media_reads_lighting(settings) || frame.water_columns!=none ||
-        frame.water_reservoirs!=none || settings.water_caustics)
+        frame.water_reservoirs!=none || frame.water_sheets!=none || settings.water_caustics)
         fail("world media resources without world media pass");
     if(settings.depth_of_field) {
         const auto& hdr=resource(frame.hdr);
@@ -813,7 +824,7 @@ void Schedule::validate(bool before_acquire) const {
             if(!settings.height_fog || !world_opaque || (settings.deferred && !deferred_lit) ||
                 (settings.screen_reflections && !screen_reflected))fail("unexpected or premature height fog pass");
             const auto inputs=4u+(world_media_reads_lighting(settings) ? 2u : 0u)+(settings.aerial_perspective ? 2u : 0u)+
-                (frame.water_columns!=none ? 3u : 0u)+(frame.water_reservoirs!=none ? 1u : 0u);
+                (frame.water_columns!=none ? 3u : 0u)+(frame.water_reservoirs!=none ? 1u : 0u)+(frame.water_sheets!=none ? 1u : 0u);
             if(pass.accesses.size()!=inputs ||
                 !has(surface_radiance(frame,settings),Use::sampled) || !has(frame.depth,Use::sampled) ||
                 !has(frame.frame,Use::constant) || !has(frame.fogged_hdr,Use::image_write))fail("invalid height fog bindings");
@@ -826,6 +837,8 @@ void Schedule::validate(bool before_acquire) const {
                 fail("missing water optics inputs");
             if(frame.water_reservoirs!=none && !has(frame.water_reservoirs,Use::storage_read))
                 fail("missing optical reservoirs");
+            if(frame.water_sheets!=none && !has(frame.water_sheets,Use::storage_read))
+                fail("missing falling water input");
             world_fogged=true;
         }
         if(pass.id==PassId::depth_of_field) {
@@ -841,7 +854,8 @@ void Schedule::validate(bool before_acquire) const {
         if(pass.id==PassId::particle_sprites) {
             const bool water=water_filtered_sprites(frame,settings);
             const bool sun=water && settings.water_shore_foam_sun;
-            const auto media_inputs=water ? (sun ? 6u : 4u)+(frame.water_reservoirs!=none ? 1u : 0u) : 0u;
+            const auto media_inputs=water ? (sun ? 6u : 4u)+(frame.water_reservoirs!=none ? 1u : 0u)+
+                (frame.water_sheets!=none ? 1u : 0u) : 0u;
             if(!settings.particle_sprites || !sprites_uploaded || !world_opaque || (settings.deferred && !deferred_lit) ||
                 (settings.screen_reflections && !screen_reflected) || (settings.height_fog && !world_fogged) || (settings.depth_of_field && !focused) ||
                 pass.accesses.size()!=(reconstruct_sprites ? 7u : 3u)+frame.sprite_textures.size()+media_inputs ||
@@ -851,6 +865,8 @@ void Schedule::validate(bool before_acquire) const {
                 !has(frame.ibl_specular,Use::sampled) || !has(frame.ibl_brdf,Use::sampled)))fail("missing particle water optics inputs");
             if(water && frame.water_reservoirs!=none && !has(frame.water_reservoirs,Use::storage_read))
                 fail("missing particle optical reservoirs");
+            if(water && frame.water_sheets!=none && !has(frame.water_sheets,Use::storage_read))
+                fail("missing particle falling water input");
             if(sun && (!has(frame.lights,Use::storage_read) || !has(frame.shadow,Use::sampled)))
                 fail("missing particle shore foam lighting inputs");
             if(reconstruct_sprites) {
@@ -1033,11 +1049,12 @@ void Schedule::validate(bool before_acquire) const {
                    (pass.id==PassId::particle_sprites && water_filtered_sprites(frame,settings))) &&
                    a.use==Use::storage_read && !a.initialize))
                 fail("water columns used outside their scheduled upload and optical consumers");
-            if(frame.water_reservoirs!=none && a.resource==frame.water_reservoirs &&
+            if(((frame.water_reservoirs!=none && a.resource==frame.water_reservoirs) ||
+                (frame.water_sheets!=none && a.resource==frame.water_sheets)) &&
                 !(pass.id==PassId::skinning && a.use==Use::upload && a.initialize) &&
                 !((pass.id==PassId::height_fog || (pass.id==PassId::particle_sprites && water_filtered_sprites(frame,settings))) &&
                     a.use==Use::storage_read && !a.initialize))
-                fail("optical reservoirs used outside their scheduled upload and optical consumers");
+                fail("bounded water media used outside their scheduled upload and optical consumers");
             if(settings.spatial_aa && a.resource==frame.display_ldr &&
                 !(pass.id==PassId::output && a.use==Use::color_overwrite && a.initialize) &&
                 !(pass.id==PassId::spatial_aa && a.use==Use::sampled && !a.initialize))
@@ -1258,6 +1275,7 @@ Schedule build(FrameResources frame,Settings settings) {
     if(settings.scene) {add(skin,f.frame,Use::upload,true);add(skin,f.objects,Use::upload,true);}
     add(skin,f.water_columns,Use::upload,true);
     add(skin,f.water_reservoirs,Use::upload,true);
+    add(skin,f.water_sheets,Use::upload,true);
     if(settings.viewmodel) {add(skin,f.viewmodel_frame,Use::upload,true);add(skin,f.viewmodel_objects,Use::upload,true);}
     if(settings.ambient_occlusion)add(skin,f.ao_constants,Use::upload,true);
     if(!f.skins.empty()) {
@@ -1360,6 +1378,7 @@ Schedule build(FrameResources frame,Settings settings) {
         if(f.water_columns!=none) {
             add(fog,f.water_columns,Use::storage_read);
             add(fog,f.water_reservoirs,Use::storage_read);
+            add(fog,f.water_sheets,Use::storage_read);
             add(fog,f.ibl_specular,Use::sampled);
             add(fog,f.ibl_brdf,Use::sampled);
         }
@@ -1386,6 +1405,7 @@ Schedule build(FrameResources frame,Settings settings) {
             add(sprites,f.frame,Use::constant);
             add(sprites,f.water_columns,Use::storage_read);
             add(sprites,f.water_reservoirs,Use::storage_read);
+            add(sprites,f.water_sheets,Use::storage_read);
             add(sprites,f.ibl_specular,Use::sampled);
             add(sprites,f.ibl_brdf,Use::sampled);
             if(settings.water_shore_foam_sun) {

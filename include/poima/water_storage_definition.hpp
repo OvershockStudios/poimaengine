@@ -12,6 +12,7 @@ namespace poima::water {
 
 inline constexpr std::size_t max_water_reservoirs = 32;
 inline constexpr std::size_t max_water_ports = 128;
+inline constexpr std::size_t max_water_sheets = 8;
 inline constexpr double max_reservoir_capacity_m3 = 1'000'000;
 inline constexpr double max_reservoir_area_m2 = 1'000'000;
 inline constexpr double max_storage_rate = 1'000'000;
@@ -41,6 +42,11 @@ struct OverflowWeir {
     double coefficient_sqrt_m_s;
 };
 
+struct WaterSheetDefinition {
+    std::array<double,2> lip_xz_m, outlet_xz_m;
+    double outlet_floor_m;
+};
+
 struct StoragePortDefinition {
     std::string id;
     StorageEndpoint from, to;
@@ -48,6 +54,7 @@ struct StoragePortDefinition {
     std::string action;
     double action_openness = 1;
     std::optional<OverflowWeir> overflow{};
+    std::optional<WaterSheetDefinition> sheet{};
 };
 
 struct StorageDefinition {
@@ -62,6 +69,10 @@ inline bool has_placed_reservoirs(const StorageDefinition& definition) noexcept 
 
 inline bool has_overflow(const StorageDefinition& definition) noexcept {
     return std::ranges::any_of(definition.ports,[](const auto& port){ return port.overflow.has_value(); });
+}
+
+inline bool has_water_sheets(const StorageDefinition& definition) noexcept {
+    return std::ranges::any_of(definition.ports,[](const auto& port){ return port.sheet.has_value(); });
 }
 
 }
