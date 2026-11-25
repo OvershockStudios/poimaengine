@@ -1,0 +1,149 @@
+{
+  "version": "0.0.437",
+  "authoring_schema_revision": 233,
+  "date": "2026-11-25",
+  "base_commit": "c9f52e5588204fa394bb6b901ffc007293d62bec",
+  "scope": "Body-driven wakes through wet connections, common fitted optics and geometry, and exact saved continuation.",
+  "source_sha256": {
+    "CMakeLists.txt": "4f1fd1506c2431ed990301f270906f1e1f455cbf4226309704226282bff6a6bd",
+    "cmake/runtime.json.in": "31c363b8a0781909c543c99001727f6d5602eb843859472b185f511b7063fc86",
+    "include/poima/core.hpp": "2e8e3ce4e3b90b67219523fab795477ac624ea5a431708f63076c925956a3887",
+    "include/poima/project.hpp": "f4f8f9029dca9874d55507a80b20d9ec093d5927cbdec2fcdca1696f1a68e3b2",
+    "include/poima/scene.hpp": "932528ae19911b952d9589dfba8c80913ab1334904b464457f105ec88a1aefa7",
+    "include/poima/water_region.hpp": "441490da9f2d23b996060dfef989ebc1a5df8bf158a5696d19553c1f1d935f3e",
+    "include/poima/water_region_definition.hpp": "09101e8e3668cc16e2e06aca17f0dd22990e96b203be183d7e3689bc2f8bba7b",
+    "include/poima/water_wakes.hpp": "3f89f75700e7a2b92202490f2a487630928477a496c940dabdf388dd277e2a10",
+    "include/poima/world.hpp": "d855ba9b57f8da0cef6b322a6e60c72f80192b9da602bfacb36cbf3358e5d03d",
+    "src/core.cpp": "ff19f8cdcfb0658308c01fbae6d8ff1886b584e0d3d32420af72fc024e9eb27b",
+    "src/project.cpp": "d22c8422a0f1936d8cafd699a8ee2db0083fc2dc7cb7bdce8f310df24ad14be4",
+    "src/render_height_fog.cpp": "280b5727b3fce5e50834dd338a71a0a55d5a58817a0f65fcef58852c69e5cde1",
+    "src/render_smoke.cpp": "b13e07f74ec5ad4ced157c9e39725058e7fbae5389ef009e5c92eb19679837e5",
+    "src/runtime.cpp": "86d6e25a65546a981729881b3afaaf04f5975bf9449c982beecaaff57051a548",
+    "src/runtime_water_bodies.inc": "773383f9bd760310d5d5a0aec0530374951ba310677c87bfc73420506fab662c",
+    "src/water_asset.cpp": "8d35f41ede4ddb9f1ea59b3bb980661ebc40a1ff676d8efd82e2c513b9941044",
+    "src/water_region.cpp": "ffb8e9e300656dd452c57fb13fa01a3b4b3ea7f58c918bf105313d20be9ab42c",
+    "src/water_region_scene.cpp": "b02e0105101a46cd7c6af871dbdeb665d92cdc9218491a37da4f04dbf08fa7be",
+    "src/water_wakes.cpp": "1390225f61b2df2218c5d93aa3321ac1ae08da64c7b5ce0cb4470b4a7efd6220",
+    "src/world.cpp": "baf4983daaa1ceb4090c27440028319ee380e9b17705cfbbe41f044d2303db27",
+    "src/world_content.cpp": "b1dd9f69a8e6a4046f1e08766a5310b1ae41a5627441acf414475ed1edf5848a",
+    "src/world_presentation_json.cpp": "fad14a82b4395ae7809b2c32251c9c2bda465b1aaeb14c3746228b9c5dae5b29",
+    "src/world_schema.cpp": "e7fbed87be72c3629936d3257c01750d29748eeac828d66782b7cfa4a38c797f",
+    "src/world_water_service.inc": "a898ebd87ec352ff06fe05d195719e148dbb2da66b24d0df6a521e98c617215a",
+    "tests/retained_capture.py": "6d1c605fa2e81ea8387c9e263ff4620fa49584b62f6b32c5c6f673310076c835",
+    "tests/water_currents_capture.py": "bf92ef4d4dffaedea214671adda1e89c0dfc8e60ff95908366e4bd7ca0bce883",
+    "tests/water_region_native.cpp": "fdb3194ef39b64cb11b7cb24af98f32141ee1f4c71080b34fce1c5495556aaab",
+    "tests/water_wakes_capture.py": "6d26b8a97dfb60bb7876e14a82231f0146686dfbc08379ad3193fe0aef2e438c"
+  },
+  "field": {
+    "first_committed_wake_centers_m": [
+      0.0070867354798505415,
+      -0.0070867354798505415,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      -0.007086735479850543,
+      0.007086735479850543
+    ],
+    "saved_continued_peak_m": 0.1,
+    "constant_solver_water_volume_m3": 16,
+    "native_checks": [
+      "Analytic equal crest and trough",
+      "Damped connected-face recurrence",
+      "Sealed sluice current wave isolation",
+      "Opened gate and restored wave continue identically",
+      "Wave energy decays with volume intact",
+      "Forged wake state rejected"
+    ]
+  },
+  "windows": {
+    "binary_sha256": "9d976c33c80b2f28e1027e5976bdcbda20a87d3bc4e5ed25feffb7e2c18e9eb0",
+    "runtime_descriptor_sha256": "0e7a7685b69ce5c0d8fe3752db12631187d3063c04ec9ad0d0908840e0c6975c",
+    "desktop_library_sha256": "3639737ff2a9396b9f8e7c67b321958776c605ee40a4d8d226a4812da5f49c38",
+    "amd_forward": {
+      "adapter": "AMD Radeon(TM) Graphics",
+      "raw_evidence_sha256": "d4c9a819c034b12d68bed611f913de0b15007e0f452f304cec27ee16b635408a",
+      "extent": [
+        240,
+        160
+      ],
+      "crest": {
+        "surface_query_submersion_m": 0.0060867354798505415,
+        "render_projection_submersion_m": 0.006086862564087081,
+        "captures": {
+          "displaced": "f784326f6592218c8b983415eb0901e7239ecf4aef5fef31398b5514a704cc42",
+          "undisplaced": "ef64436efaacdd0b46798bfa43cfee222c58a5ef709e154a8b349ef7309d87f1"
+        },
+        "equal_opaque_depth_and_hdr_probes": 16,
+        "changed_resolved_hdr_probes": 16,
+        "max_resolved_hdr_difference": 0.3383026123046875
+      },
+      "relocated_game": {
+        "source_unavailable": true,
+        "unchanged_files": 60,
+        "same_wake_queries_and_images": true,
+        "fresh_process_save": true
+      }
+    },
+    "nvidia_deferred": {
+      "adapter": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "raw_evidence_sha256": "4325d96f1901be06e9d7ac5d728226b0e99098111b21e18cee33127c5da1a61a",
+      "extent": [
+        240,
+        160
+      ],
+      "crest": {
+        "surface_query_submersion_m": 0.0060867354798505415,
+        "render_projection_submersion_m": 0.006086862564087081,
+        "captures": {
+          "displaced": "f784326f6592218c8b983415eb0901e7239ecf4aef5fef31398b5514a704cc42",
+          "undisplaced": "b2a80aa03d563e78a317c61e3fbe484327d144321e0204a6af7a57f718e487ca"
+        },
+        "equal_opaque_depth_and_hdr_probes": 16,
+        "changed_resolved_hdr_probes": 16,
+        "max_resolved_hdr_difference": 0.3383026123046875
+      },
+      "relocated_game": {
+        "source_unavailable": true,
+        "unchanged_files": 60,
+        "same_wake_queries_and_images": true,
+        "fresh_process_save": true
+      }
+    },
+    "retained_currents": {
+      "reference_version": "0.0.436",
+      "reference_evidence_sha256": "a385cca14cb79b435e201f5969fc0353a591d477a27b2064a2023bf629e7acda",
+      "candidate_evidence_sha256": "ba7ccbe654f4cf4641f2e992e6ad5727419e58891fd641269d25347a3b4dda3d",
+      "same_observations_and_pixels": true
+    },
+    "analytic_swell_regression": {
+      "raw_evidence_sha256": "213b44fd94ac4b85f554cc7612ff5b5a5791053a682278539d40632559fc0e71",
+      "matched_reference_optics_and_save": true
+    },
+    "feature_rejection": {
+      "receipt_sha256": "39f0c6af53aef314e4e7b2e47f2b24168c24843aa3ceabe06ae08241bace0841",
+      "published": false
+    }
+  },
+  "ubuntu_headless": {
+    "ctest_passed": [
+      "authoring_contract_identity",
+      "authoring_core_conformance",
+      "particle_scene_native",
+      "shallow_water_native",
+      "water_region_native",
+      "water_region_scene_native",
+      "world_particles_contract",
+      "world_session_native",
+      "world_water_contract",
+      "world_water_rain_contract"
+    ],
+    "fixture_evidence_sha256": "d0ed37d126ae067b98ab678d8b2ac25dc2decb0ae408a4a3f679be46551fe862",
+    "binary_sha256": "72ffc06a1552acdb6df2b5822fc63a5efd273829b8ec8639a6b738eb4d3c72ac",
+    "runtime_descriptor_sha256": "91bff3c8c3638030215137e0c3bc732b364eaa28b4bf465421375ea9f4e6ad2f",
+    "ctest_junit_sha256": "5b8d2a64a7ea8d35349fe8cb3f46dafa5af2b97ae4077494ab71b58d791c5e02"
+  },
+  "remaining": [
+    "This field represents damped waves over the local grid. Breaking waves, body displacement of the conserved water, offshore wake transport and scene-scale cost remain to be qualified."
+  ]
+}

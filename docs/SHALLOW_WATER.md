@@ -329,6 +329,49 @@ to 64 interior faces as `{"cell":[1,0],"axis":"x"}`. Each result reports
 [counterflow fixture](../tests/water_currents_capture.py) compares both
 directions with an independent water ledger and replays a relocated save.
 
+### Leave wakes behind floating props
+
+Supply `surface_wakes` in a water plan with `optics.follow_terrain: true`.
+The profile below works with one-metre cells. A moving buoyant box adds a
+crest in the direction of its motion through the water and a trough on
+the other side of the transfer.
+
+```json
+{
+  "speed_m_s": 5,
+  "damping_per_second": 4,
+  "max_amplitude_m": 0.1,
+  "body_gain": 1
+}
+```
+
+The wave field advances on the water tick. Open wet faces couple adjacent
+cells and partially open gates attenuate the wave transfer. Closed or dry
+seams anchor the affected corners. Prop sources use relative motion at the
+center of buoyancy and scale by immersion and body size. Wakes propagate
+after the source moves on and decay toward the underlying water surface.
+The grid still owns the water volume ledger.
+[Interactive water wave research](https://visualcomputing.ist.ac.at/publications/2018/WSW/)
+
+Wave speed is 0.1–30 m/s with a limit of half a cell per tick. Damping
+is 0.5–20 per second. Amplitude is 0.001–0.25 m and at most 12% of the
+cell width. Combined wake and authored swell amplitude is limited to
+half a cell or 8 m, whichever is smaller. Body gain is greater than zero
+and at most one. A body can generate a wake when it is 1–99% submerged
+and moves through the water faster than 0.05 m/s horizontally.
+
+Read `runtime.water.inspect` at the committed tick. Selected cells
+report `wake_height_m` and `wake_vertical_step_m`. Point submersion and
+segment crossings include the displaced surface, which also drives
+buoyancy and fitted-water rendering. `render_diagnostics.water_optics`
+reports when the rendered region uses `surface_wakes`.
+
+This profile cooks `.pwater` version 17 and saves both the height field
+and its vertical increment. Export with `features.water_surface_wakes`.
+The [wake fixture](../tests/water_wakes_capture.py) checks that a crest
+crosses an optical probe while the underlying grid stage is below it,
+then compares the field and captured frames after save restoration.
+
 ### Vary the swell across a coast
 
 Set `swell_variation` alongside `surface_swell` in the plan and cook request.

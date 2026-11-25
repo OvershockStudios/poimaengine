@@ -40,6 +40,12 @@ struct ListenerAudio {
 struct WaterCurrents {
     double max_speed_m_s, min_depth_m;
 };
+struct SurfaceWakes {
+    double speed_m_s, damping_per_second, max_amplitude_m, body_gain;
+};
+struct WakeDriver {
+    double x_m, z_m, speed_x_m_s, speed_z_m_s;
+};
 
 struct RegionDefinition {
     GridConfig config;
@@ -57,6 +63,7 @@ struct RegionDefinition {
     std::vector<SurfaceRipples> surface_swell;
     std::optional<WaterSwellVariation> swell_variation{};
     std::optional<WaterCurrents> currents{};
+    std::optional<SurfaceWakes> surface_wakes{};
 };
 
 }

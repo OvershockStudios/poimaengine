@@ -114,7 +114,7 @@ class Fixture:
         report = client.call('runtime.capture',params,timeout=60)
         elapsed = time.perf_counter()-start
         assert report['hardware'] and report['capture_written'] and report['nvrhi_errors']==0
-        assert report['tick']==tick and report['session_id']==session and report['camera']==CAMERA
+        assert report['tick']==tick and report['session_id']==session and report['camera']==params['camera']
         assert report['frames_presented']==params['capture_frames']
         assert (report['width'], report['height'], report['samples'])==(params['width'],params['height'],1)
         assert ('renderer_reused' in report) is (reuse is True)

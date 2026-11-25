@@ -3,6 +3,7 @@
 
 #include "poima/water_region_definition.hpp"
 #include "poima/water_bed.hpp"
+#include "poima/water_wakes.hpp"
 
 #include <nlohmann/json.hpp>
 #include <string_view>
@@ -15,6 +16,7 @@ nlohmann::json swell_variation_json(const WaterSwellVariation& profile);
 nlohmann::json listener_audio_json(const ListenerAudio& profile);
 nlohmann::json optics_json(const WaterOptics& profile);
 nlohmann::json currents_json(const WaterCurrents& profile);
+nlohmann::json surface_wakes_json(const SurfaceWakes& profile);
 
 struct SurfaceEntry {
     double fraction;
@@ -45,6 +47,8 @@ public:
     const std::optional<ListenerAudio>& listener_audio() const noexcept { return listener_audio_; }
     const std::optional<WaterOptics>& optics() const noexcept { return optics_; }
     const std::optional<WaterCurrents>& currents() const noexcept { return currents_; }
+    const std::optional<WakeField>& wakes() const noexcept { return wakes_; }
+    bool displaced_surface() const noexcept { return !surface_swell_.empty() || wakes_.has_value(); }
     FittedWaterBed fitted_bed(Cell cell) const;
     std::optional<CellSample> sample_world(double x_m,double z_m,
         std::optional<std::array<double,3>>* surface_normal=nullptr) const;
@@ -64,7 +68,8 @@ public:
     // than once within the pressed edges for this tick.
     StepReport step(std::span<const std::string_view> pressed = {},
                     std::uint32_t rain_depth_nm = 0,
-                    std::optional<std::uint64_t> first_quantum = {});
+                    std::optional<std::uint64_t> first_quantum = {},
+                    std::span<const WakeDriver> wake_drivers = {});
     nlohmann::json save() const;
     void restore(const nlohmann::json& saved, std::uint64_t expected_tick,
                  std::optional<std::uint64_t> next_quantum = {});
@@ -91,6 +96,7 @@ private:
     std::vector<SurfaceRipples> surface_swell_;
     std::optional<WaterSwellVariation> swell_variation_;
     std::optional<WaterCurrents> currents_;
+    std::optional<WakeField> wakes_;
     std::vector<SwellWave> swell_waves_;
     double swell_amplitude_m_=0;
     double swell_at(double cell_x,double cell_z) const noexcept;

@@ -615,6 +615,7 @@ public:
             if(content.needs_particle_water_contact)result["needs_particle_water_contact"]=true;
             if(content.needs_water_buoyancy)result["needs_water_buoyancy"]=true;
             if(content.needs_water_currents)result["needs_water_currents"]=true;
+            if(content.needs_water_surface_wakes)result["needs_water_surface_wakes"]=true;
             if(content.needs_collision_surfaces)result["needs_collision_surfaces"]=true;
             if(content.needs_surface_mark_masks)result["needs_surface_mark_masks"]=true;
             if(content.needs_mesh_lod)result["needs_mesh_lod"]=true;

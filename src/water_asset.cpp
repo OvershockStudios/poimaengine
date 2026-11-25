@@ -16,6 +16,7 @@ using Json = nlohmann::json;
 constexpr auto artifact_format = "poima.water.region";
 
 std::uint32_t artifact_version(const RegionDefinition& definition) noexcept {
+    if (definition.surface_wakes) return 17;
     if (definition.currents) return 16;
     if (definition.optics && definition.optics->solar_scattering) return 15;
     if (definition.optics && definition.optics->reflection_roughness) return 14;
@@ -168,6 +169,12 @@ void parse_rules(const Json& object, RegionDefinition& definition) {
         fields(profile,{"max_speed_m_s","min_depth_m"});
         definition.currents=WaterCurrents{number(profile.at("max_speed_m_s")),number(profile.at("min_depth_m"))};
     }
+    if (object.contains("surface_wakes")) {
+        const auto& profile=object.at("surface_wakes");
+        fields(profile,{"speed_m_s","damping_per_second","max_amplitude_m","body_gain"});
+        definition.surface_wakes=SurfaceWakes{number(profile.at("speed_m_s")),number(profile.at("damping_per_second")),
+            number(profile.at("max_amplitude_m")),number(profile.at("body_gain"))};
+    }
     if (object.contains("optics")) {
         const auto& value=object.at("optics");
         fields(value, {"extinction_per_m","scattered_radiance"},
@@ -266,6 +273,8 @@ Json artifact_document(const RegionAsset& asset) {
         document["optics"] = optics_json(*definition.optics);
     if (definition.currents)
         document["currents"] = currents_json(*definition.currents);
+    if (definition.surface_wakes)
+        document["surface_wakes"] = surface_wakes_json(*definition.surface_wakes);
     return document;
 }
 
@@ -328,9 +337,9 @@ RegionAsset decode_region_asset(std::string_view bytes) {
     });
     fields(object, {"format", "version", "terrain_recipe_sha256", "tiles", "grid", "floor_heights_m",
         "initial_depths_m", "faces", "exchanges"}, {"rain_cells", "surface_ripples", "surface_wave_layers", "surface_swell",
-        "swell_variation", "listener_audio", "optics", "shore_corner_heights_m", "currents"});
+        "swell_variation", "listener_audio", "optics", "shore_corner_heights_m", "currents", "surface_wakes"});
     require(object.at("format") == artifact_format, "Unsupported water asset format.");
-    const auto version=integer(object.at("version"),1,16);
+    const auto version=integer(object.at("version"),1,17);
     RegionAsset asset;
     asset.terrain_recipe_sha256 = hex(object.at("terrain_recipe_sha256"), 64);
     auto& definition = asset.definition;
@@ -444,16 +453,19 @@ Json region_authoring_schemas() {
     optics["then"]=fitted;
     const auto currents=object({{"max_speed_m_s",range("number",.1,30)},{"min_depth_m",range("number",.001,1)}},
         {"max_speed_m_s","min_depth_m"});
+    const auto wakes=object({{"speed_m_s",range("number",.1,30)},{"damping_per_second",range("number",.5,20)},
+        {"max_amplitude_m",range("number",.001,.25)},{"body_gain",{{"type","number"},{"exclusiveMinimum",0},{"maximum",1}}}},
+        {"speed_m_s","damping_per_second","max_amplitude_m","body_gain"});
     auto plan = object({{"revision", tick_schema}, {"terrain", std::move(source)}, {"expected_terrain_recipe_sha256", sha_schema},
         {"tile_entities", array(id_schema, 1, terrain::max_cook_tiles)}, {"grid", grid},
         {"initial_depths_m", array(range("number", 0, 1'000'000), 0, max_region_side * max_region_side)},
         {"faces", array(std::move(faces), 0, max_region_faces)}, {"exchanges", array(exchange, 0, max_region_exchanges)},
         {"rain_cells", array(cell, 0, max_region_side * max_region_side)}, {"surface_ripples", std::move(ripples)},
         {"surface_wave_layers", std::move(layers)}, {"surface_swell",std::move(swell)}, {"swell_variation",std::move(variation)},
-        {"listener_audio", std::move(listener_audio)}, {"optics",std::move(optics)},{"currents",currents}},
+        {"listener_audio", std::move(listener_audio)}, {"optics",std::move(optics)},{"currents",currents},{"surface_wakes",wakes}},
         {"revision", "terrain", "expected_terrain_recipe_sha256", "tile_entities", "grid"});
     plan["not"] = {{"required", {"surface_ripples", "surface_wave_layers"}}};
-    plan["if"]={{"required",{"surface_swell"}}};
+    plan["if"]={{"anyOf",{Json{{"required",{"surface_swell"}}},Json{{"required",{"surface_wakes"}}}}}};
     plan["then"]={{"required",{"optics"}},{"properties",{{"optics",fitted}}}};
     plan["dependentRequired"]={{"swell_variation",{"surface_swell"}}};
     plan["properties"]["rain_cells"]["uniqueItems"] = true;
@@ -487,7 +499,8 @@ Json region_runtime_schema() {
         " Wet point columns in a swell region include the geometric surface_normal. Cell volumes follow the conserved grid."
         " Optional segments return the first top-surface entry for each world-space sweep, in request order."
         " Optional bodies report current displaced volume, center and lift. Guard changed membership with structure_revision."
-        " Current-enabled regions expose velocity at sampled wet points and buoyant bodies. Use current_faces for signed face discharge.";
+        " Current-enabled regions expose velocity at sampled wet points and buoyant bodies. Use current_faces for signed face discharge."
+        " Regions with surface_wakes also report each selected cell's height offset and vertical increment.";
     return result;
 }
 } // namespace poima::water

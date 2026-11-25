@@ -1335,7 +1335,7 @@ struct Context {
     std::string_view prepare_water_caustics(const SceneWaterVolume& water,const SceneLighting& lighting,
                                            float wave_mode,std::string_view reason) {
         if(reason!="active")return reason;
-        if(wave_mode==0 && !water.surface_swell)return "no_waves";
+        if(wave_mode==0 && !water.displaced_surface())return "no_waves";
         const auto sun=std::ranges::find(lighting.lights,lighting.environment.sky.sun,&SceneLight::entity_id);
         if(sun==lighting.lights.end() || sun->light.kind!=LightKind::directional)return "no_sun";
         if(sun->light.intensity<=0)return "sun_unlit";
@@ -1348,7 +1348,7 @@ struct Context {
         frame_constants.water_caustic_extinction_strength[3]=static_cast<float>(water.optics.caustics_strength);
         frame_constants.water_caustic_grid_light={water.cells_x,water.cells_z,
             static_cast<std::uint32_t>(sun-lighting.lights.begin()+1),
-            static_cast<std::uint32_t>(wave_mode)|(water.surface_swell ? 8u : 0u)};
+            static_cast<std::uint32_t>(wave_mode)|(water.displaced_surface() ? 8u : 0u)};
         return "active";
     }
     void prepare_water_shore_foam(const SceneWaterVolume& water, const SceneLighting& lighting) {
@@ -1408,6 +1408,7 @@ struct Context {
                 water->cells_x*water->cells_z,view.submersion_m,water->optics.refraction && color_reason=="active",
                 strength,caustics,water->optics.shore_foam,frame_constants.water_shore_foam[3]>0,water->optics.follow_terrain};
             pending_water_optics->surface_swell=water->surface_swell;
+            pending_water_optics->surface_wakes=water->surface_wakes;
             pending_water_optics->offshore=water->optics.offshore.has_value();
             pending_water_optics->swell_variation=water->swell_variation;
             pending_water_optics->reflection_roughness=roughness;

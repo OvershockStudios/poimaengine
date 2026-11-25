@@ -1,8 +1,19 @@
 # Implementation status
 
-Updated 2026-11-25 for **0.0.436**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-25 for **0.0.437**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.437 adds [surface wakes from buoyant props](SHALLOW_WATER.md#leave-wakes-behind-floating-props).
+The damped wave field respects wet faces and gate connectivity. Water
+queries, buoyancy and Vulkan optics use the same displaced surface.
+Forward AMD and deferred NVIDIA both captured a crest that submerged a
+camera above the undisplaced stage. Same-tick controls matched the opaque
+inputs and measured the wake's effect on the resolved image. The relocated
+game reproduced the wake and captured frames after restoring a save.
+Ubuntu passed ten focused suites and the native wake fixture. Breaking
+waves, body displacement of stored water and scene-scale performance
+remain open. [Results and scope](evidence/m2-water-wakes-437.json)
 
 Version 0.0.436 adds [local water currents](SHALLOW_WATER.md#carry-floating-objects-with-a-current).
 Committed face transfers drive horizontal, depth-averaged velocity and drag

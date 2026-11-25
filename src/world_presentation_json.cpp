@@ -200,6 +200,7 @@ Json render_diagnostics(const RenderDiagnostics& d) {
         if(water.refraction)result["water_optics"]["refraction"]=true;
         if(water.follow_terrain)result["water_optics"]["follow_terrain"]=true;
         if(water.surface_swell)result["water_optics"]["surface_swell"]=true;
+        if(water.surface_wakes)result["water_optics"]["surface_wakes"]=true;
         if(water.offshore)result["water_optics"]["offshore"]=water.active;
         if(water.offshore_swell_layers)
             result["water_optics"]["offshore_swell_layers"]=water.offshore_swell_layers;

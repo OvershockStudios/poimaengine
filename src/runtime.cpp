@@ -2117,7 +2117,8 @@ struct Runtime::Impl {
                     for(auto e:topology->characters)registry.get<Controller>(e).character->UpdateVirtual(1.0f/60.0f);
                 }
                 physical_before_step();
-                apply_water_buoyancy();
+                std::array<water::WakeDriver,water::max_buoyant_bodies> wake_drivers;
+                const auto wakes=std::span(wake_drivers).first(apply_water_buoyancy(wake_drivers));
                 const auto error=[&] {
                     profiling::Scope physics_profile("runtime.physics.update");
                     JPH_IF_ENABLE_ASSERTS(runtime_assertions::PhysicsUpdateScope assertion_scope;)
@@ -2142,8 +2143,8 @@ struct Runtime::Impl {
                 if(water_region) {
                     if(weather && !water_region->rain_cells().empty()) {
                         const auto rain_nm=std::accumulate(weather->rain_nm.begin(),weather->rain_nm.end(),std::uint32_t{0});
-                        water_region->step(pressed_actions,rain_nm,weather->first_quantum);
-                    } else water_region->step(pressed_actions);
+                        water_region->step(pressed_actions,rain_nm,weather->first_quantum,wakes);
+                    } else water_region->step(pressed_actions,0,{},wakes);
                 }
                 prune_snow_holds();
                 ++tick;animation_locals(true);sync();physical_record_final();

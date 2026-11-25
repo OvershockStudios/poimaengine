@@ -328,6 +328,7 @@ FrozenContent freeze_world_content(const Json& source, const fs::path& directory
         result.needs_water_terrain_fit=asset.definition.optics && asset.definition.optics->follow_terrain;
         result.needs_water_surface_swell=!asset.definition.surface_swell.empty();
         result.needs_water_currents=asset.definition.currents.has_value();
+        result.needs_water_surface_wakes=asset.definition.surface_wakes.has_value();
         result.needs_water_swell_variation=asset.definition.swell_variation.has_value();
         result.needs_water_rough_reflection=asset.definition.optics && asset.definition.optics->reflection_roughness.has_value();
         result.needs_water_solar_scattering=asset.definition.optics && asset.definition.optics->solar_scattering.has_value();

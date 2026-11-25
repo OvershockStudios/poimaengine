@@ -169,7 +169,8 @@ void append_region_scene(const Region& region, SceneSnapshot& scene) {
     if (const auto& optics = region.optics()) {
         volume={.origin_m={config.origin_x_m,origin_y,config.origin_z_m},.cell_size_m=config.cell_size_m,
             .cells_x=config.cells_x,.cells_z=config.cells_z,.optics=*optics,
-            .surface_swell=!region.surface_swell().empty(),.swell_variation=region.swell_variation(),.columns={}};
+            .surface_swell=!region.surface_swell().empty(),.surface_wakes=region.wakes().has_value(),
+            .swell_variation=region.swell_variation(),.columns={}};
         if (optics->offshore) {
             const auto swell=region.surface_swell();
             for (std::size_t i=0;i<swell.size();++i)

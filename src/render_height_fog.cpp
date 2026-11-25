@@ -116,7 +116,7 @@ WaterView project_water_view(const SceneWaterVolume& water,const std::array<doub
                             double scattering_scale) {
     namespace rs=render_schedule;
     const auto& sea=water.optics.offshore;
-    const bool shaped=water.surface_swell || sea.has_value();
+    const bool shaped=water.displaced_surface() || sea.has_value();
     static_assert(sizeof(SceneWaterColumn)==rs::water_column_bytes);
     static_assert(offsetof(SceneWaterColumn,corners)==16 && offsetof(SceneWaterColumn,swell_corners)==48);
     static_assert(max_scene_water_wave_layers==max_offshore_swell_layers);
@@ -129,7 +129,7 @@ WaterView project_water_view(const SceneWaterVolume& water,const std::array<doub
         const auto finite=[](auto lane){return std::isfinite(lane);};
         return std::isfinite(cell.floor_m) && std::isfinite(cell.stage_m) && cell.floor_m<=cell.stage_m &&
             (cell.flags&1u)==static_cast<std::uint32_t>(water.optics.follow_terrain) &&
-            cell.inactive_wedges()<=(water.surface_swell ? 0xfu : 0u) &&
+            cell.inactive_wedges()<=(water.displaced_surface() ? 0xfu : 0u) &&
             (!water.optics.follow_terrain ||
              (std::ranges::all_of(cell.corners,finite) && std::ranges::all_of(cell.stages,finite))) &&
             (shaped ?

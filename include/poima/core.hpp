@@ -295,6 +295,7 @@ struct WaterOpticsDiagnostics {
     bool follow_terrain=false;
     bool sprites=false;
     bool surface_swell=false;
+    bool surface_wakes=false;
     bool offshore=false;
     std::uint32_t offshore_swell_layers=0;
     std::optional<WaterSwellVariation> swell_variation{};

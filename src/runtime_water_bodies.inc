@@ -76,10 +76,11 @@
             body.GetCenterOfMassPosition()+arm);
     }
 
-    void apply_water_buoyancy() {
-        if (!water_region || topology->buoyant.empty()) return;
+    std::size_t apply_water_buoyancy(std::span<water::WakeDriver> wake_drivers) {
+        if (!water_region || topology->buoyant.empty()) return 0;
         profiling::Scope scope("runtime.water.buoyancy",static_cast<std::int64_t>(tick));
         const auto gravity=physics.GetGravity();
+        std::size_t wake_count=0;
         for (const auto entity : topology->buoyant) {
             const auto id=registry.get<Body>(entity).id;
             const auto& collider=*topology->definitions.at(registry.get<Node>(entity).id).collider;
@@ -95,6 +96,18 @@
                 const auto& offset=wet.center_offset_m;
                 const auto wet_fraction=static_cast<float>(wet.volume_m3/forces.volume_m3);
                 const auto arm=JPH::Vec3(float(offset[0]),float(offset[1]),float(offset[2]));
+                if (water_region->wakes() && wet_fraction>.01f && wet_fraction<.99f) {
+                    const auto relative=body.GetLinearVelocity()+body.GetAngularVelocity().Cross(arm);
+                    const auto x=relative.GetX()-wet.water_velocity_m_s[0];
+                    const auto z=relative.GetZ()-wet.water_velocity_m_s[2];
+                    if (std::hypot(x,z)>.05) {
+                        require(wake_count<wake_drivers.size(),"Buoyant wake driver capacity exceeded.");
+                        const auto position=body.GetCenterOfMassPosition()+arm;
+                        const auto factor=4.*wet_fraction*(1-wet_fraction)*
+                            std::min(1.,std::cbrt(forces.volume_m3)/water_region->grid().config().cell_size_m);
+                        wake_drivers[wake_count++]={position.GetX(),position.GetZ(),x*factor,z*factor};
+                    }
+                }
                 const auto flowing=water_region->currents().has_value();
                 if (flowing) apply_relative_water_drag(body,wet,arm,wet_fraction,drag.linear_drag,collider.mass);
                 const bool applied=body.ApplyBuoyancyImpulse(static_cast<float>(forces.volume_m3),
@@ -105,4 +118,5 @@
             }
             if (wake) physics.GetBodyInterface().ActivateBody(id);
         }
+        return wake_count;
     }

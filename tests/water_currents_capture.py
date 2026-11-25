@@ -43,6 +43,9 @@ def oracle():
 class CurrentFixture(Fixture):
     expected = oracle()
 
+    def surface_options(self):
+        return {}
+
     def transact(self, client, revision, *ops):
         result = client.call('world.transact',dict(request_id=new_id(),base_revision=revision,ops=ops))
         assert result['committed']
@@ -84,7 +87,7 @@ class CurrentFixture(Fixture):
             for x,z,s,d in ((0,0,RATE,0),(3,0,0,RATE),(0,1,0,RATE),(3,1,RATE,0))]
         options = dict(revision=revision,terrain=dict(recipe=raw),expected_terrain_recipe_sha256=terrain['recipe_sha256'],
             tile_entities=[TERRAIN],grid=dict(cells_x=4,cells_z=2,cell_size_m=1,origin_x_m=-2,origin_z_m=-7,
-            relaxation_per_second=12),initial_depths_m=INITIAL+INITIAL[::-1],faces=faces,exchanges=exchanges)
+            relaxation_per_second=12),initial_depths_m=INITIAL+INITIAL[::-1],faces=faces,exchanges=exchanges) | self.surface_options()
         for invalid in ({},PROFILE | dict(max_speed_m_s=31),PROFILE | dict(min_depth_m=0),False):
             expect_error(-32602,'world.water.plan',client,options | dict(currents=invalid))
         ordinary = client.call('world.water.plan',options)

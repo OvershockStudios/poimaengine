@@ -87,10 +87,11 @@ auto exchange_key(const CellExchange& rule) noexcept {
 }
 
 bool exact_fields(const Json& object, std::initializer_list<const char*> fields,
-                  const char* extra=nullptr,const char* second=nullptr) {
-    return object.is_object() && object.size()==fields.size()+std::size_t(extra!=nullptr)+std::size_t(second!=nullptr) &&
+                  const char* extra=nullptr,const char* second=nullptr,const char* third=nullptr) {
+    const auto count=std::size_t(extra!=nullptr)+std::size_t(second!=nullptr)+std::size_t(third!=nullptr);
+    return object.is_object() && object.size()==fields.size()+count &&
         std::ranges::all_of(fields,[&](const char* field){return object.contains(field);}) &&
-        (!extra || object.contains(extra)) && (!second || object.contains(second));
+        (!extra || object.contains(extra)) && (!second || object.contains(second)) && (!third || object.contains(third));
 }
 
 std::uint64_t unsigned_integer(const Json& value) {
@@ -287,6 +288,16 @@ Region::Region(const RegionDefinition& definition)
         if (total_slope>.4 || swell_amplitude_m_>std::min(.5*config.cell_size_m,8.))
             throw std::invalid_argument("Swell slopes must sum to at most 0.4 and amplitudes to at most half a cell or 8 metres.");
     }
+    if (const auto& wakes=definition.surface_wakes) {
+        if (!optics_ || !optics_->follow_terrain ||
+            !(wakes->speed_m_s>=.1 && wakes->speed_m_s<=std::min(30.,.5*config.cell_size_m/step_seconds) &&
+              wakes->damping_per_second>=.5 && wakes->damping_per_second<=20 &&
+              wakes->max_amplitude_m>=.001 && wakes->max_amplitude_m<=std::min(.25,.12*config.cell_size_m) &&
+              wakes->max_amplitude_m+swell_amplitude_m_<=std::min(.5*config.cell_size_m,8.) &&
+              wakes->body_gain>0 && wakes->body_gain<=1))
+            throw std::invalid_argument("Surface wakes need terrain fitting and bounded speed, damping, amplitude and body gain.");
+        wakes_.emplace(*wakes,config);
+    }
     if (listener_audio_) {
         const auto& profile = *listener_audio_;
         if (!(profile.cutoff_hz >= 80 && profile.cutoff_hz <= 8000 && unit_interval(profile.gain) &&
@@ -397,6 +408,13 @@ FittedWaterBed Region::fitted_bed(Cell cell) const {
         out.swell_center_m=swell_at(x+.5,z+.5);
         out.swell_corners_m={swell_at(x,z),swell_at(x+1,z),swell_at(x+1,z+1),swell_at(x,z+1)};
     }
+    if (wakes_) {
+        const auto [x,z]=cell;
+        out.swell_center_m+=wakes_->height(cell);
+        const std::array corners{wakes_->corner(x,z),wakes_->corner(x+1,z),
+            wakes_->corner(x+1,z+1),wakes_->corner(x,z+1)};
+        for (std::size_t i=0;i<corners.size();++i) out.swell_corners_m[i]+=corners[i];
+    }
     if (optics_ && optics_->offshore) {
         const auto& sea=*optics_->offshore;
         const std::array boundary{cell.z==0,cell.x+1==sizing.cells_x,cell.z+1==sizing.cells_z,cell.x==0};
@@ -417,7 +435,7 @@ FittedWaterBed Region::fitted_bed(Cell cell) const {
     }
 
     const std::array<int,4> dx{0,1,0,-1},dz{-1,0,1,0};
-    if (!swell_waves_.empty()) out.inactive_wedges=0xf;
+    if (displaced_surface()) out.inactive_wedges=0xf;
     for (std::size_t side=0;side<dx.size();++side) {
         const double edge_floor=std::min(out.corners_m[side],out.corners_m[(side+1)%dx.size()]);
         out.stages_m[side]=std::min(sample.floor_height_m,edge_floor);
@@ -453,7 +471,7 @@ std::optional<CellSample> Region::sample_world(double x_m,double z_m,
     sample->floor_height_m=levels[0];
     sample->surface_height_m=levels[1];
     sample->depth_m=levels[1]-levels[0];
-    if (surface_normal && (!swell_waves_.empty() || (optics_ && optics_->offshore)) && sample->depth_m>0) {
+    if (surface_normal && (displaced_surface() || (optics_ && optics_->offshore)) && sample->depth_m>0) {
         const auto gradient=fitted_water_gradient(bed.swell_center_m,bed.swell_corners_m,
             fitted_water_side(u,v),sizing.cell_size_m);
         const auto scale=1/std::sqrt(1+gradient[0]*gradient[0]+gradient[1]*gradient[1]);
@@ -474,6 +492,11 @@ std::optional<std::array<double,2>> Region::offshore_levels(double x_m,double z_
 
 Json currents_json(const WaterCurrents& profile) {
     return {{"max_speed_m_s",profile.max_speed_m_s},{"min_depth_m",profile.min_depth_m}};
+}
+
+Json surface_wakes_json(const SurfaceWakes& profile) {
+    return {{"speed_m_s",profile.speed_m_s},{"damping_per_second",profile.damping_per_second},
+        {"max_amplitude_m",profile.max_amplitude_m},{"body_gain",profile.body_gain}};
 }
 
 std::array<double,3> Region::current_at(Cell cell,double x_m,double z_m) const {
@@ -503,11 +526,17 @@ double Region::submersion_at(double x_m,double y_m,double z_m) const {
 }
 
 StepReport Region::step(std::span<const std::string_view> pressed, std::uint32_t rain_depth_nm,
-                        std::optional<std::uint64_t> first_quantum) {
+                        std::optional<std::uint64_t> first_quantum,std::span<const WakeDriver> wake_drivers) {
     if ((first_quantum && (rain_cells_.empty() || *first_quantum > wetness::max_quantum)) ||
         (rain_depth_nm > 0 && !first_quantum) || rain_depth_nm > max_tick_rain_nm ||
         rain_depth_nm > max_total_rain_nm - cumulative_rain_nm_)
         throw std::invalid_argument("Rainfall exceeds the water region's coverage, clock or volume bounds.");
+    if ((!wakes_ && !wake_drivers.empty()) || wake_drivers.size()>max_buoyant_bodies ||
+        std::ranges::any_of(wake_drivers,[](const WakeDriver& driver) {
+            return !std::isfinite(driver.x_m) || !std::isfinite(driver.z_m) ||
+                !(std::abs(driver.speed_x_m_s)<=1e6 && std::abs(driver.speed_z_m_s)<=1e6);
+        }))
+        throw std::invalid_argument("Invalid surface wake drivers.");
     struct ChangedFace { std::size_t index; FaceControl previous; };
     std::array<ChangedFace, max_region_faces> changes;
     std::size_t changed = 0;
@@ -535,6 +564,7 @@ StepReport Region::step(std::span<const std::string_view> pressed, std::uint32_t
         }
         throw;
     }
+    if (wakes_) wakes_->advance(grid_,wake_drivers);
     if (!first_rain_quantum_)
         first_rain_quantum_ = first_quantum;
     last_rain_nm_ = rain_depth_nm;
@@ -549,7 +579,7 @@ Json Region::save() const {
             action_faces.push_back(grid_.face(rule.cell, rule.axis).openness);
     auto snapshot = grid_.snapshot();
     const bool rain_enabled = !rain_cells_.empty();
-    Json result{{"format", snapshot_format}, {"version", currents_ ? 3 : rain_enabled ? 2 : 1}, {"plan_sha256", plan_sha256_},
+    Json result{{"format", snapshot_format}, {"version", wakes_ ? 4 : currents_ ? 3 : rain_enabled ? 2 : 1}, {"plan_sha256", plan_sha256_},
         {"tick", snapshot.tick}, {"depths_m", std::move(snapshot.depths_m)},
         {"action_face_openness", std::move(action_faces)}, {"last_report", report_json(last_report_, rain_enabled)}};
     if (rain_enabled)
@@ -558,6 +588,10 @@ Json Region::save() const {
     if (snapshot.last_transfers)
         result["face_transfers"]={{"x_m",std::move(snapshot.last_transfers->x_m)},
             {"z_m",std::move(snapshot.last_transfers->z_m)}};
+    if (wakes_) {
+        const auto h=wakes_->heights(),v=wakes_->vertical_steps();
+        result["wakes"]={{"height_m",std::vector(h.begin(),h.end())},{"vertical_step_m",std::vector(v.begin(),v.end())}};
+    }
     return result;
 }
 
@@ -565,9 +599,9 @@ void Region::restore(const Json& saved, std::uint64_t expected_tick,
                      std::optional<std::uint64_t> next_quantum) {
     const bool rain_enabled = !rain_cells_.empty();
     const bool fields_match=exact_fields(saved,{"format","version","plan_sha256","tick","depths_m","action_face_openness","last_report"},
-        rain_enabled ? "rain" : nullptr,currents_ ? "face_transfers" : nullptr);
+        rain_enabled ? "rain" : nullptr,currents_ ? "face_transfers" : nullptr,wakes_ ? "wakes" : nullptr);
     if (!fields_match || saved.at("format") != snapshot_format ||
-        unsigned_integer(saved.at("version")) != (currents_ ? 3u : rain_enabled ? 2u : 1u) ||
+        unsigned_integer(saved.at("version")) != (wakes_ ? 4u : currents_ ? 3u : rain_enabled ? 2u : 1u) ||
         saved.at("plan_sha256") != plan_sha256_ || unsigned_integer(saved.at("tick")) != expected_tick)
         throw std::invalid_argument("Water snapshot format, plan identity or tick does not match.");
 
@@ -642,6 +676,25 @@ void Region::restore(const Json& saved, std::uint64_t expected_tick,
     }
     const auto rain_m3 = rain_enabled ? std::optional(rain_volume_m3(last_rain_nm)) : std::nullopt;
     const auto receipt = validated_report(saved.at("last_report"), candidate, exchanges_, rain_m3);
+    if (wakes_) {
+        const auto& waves=saved.at("wakes");
+        if (!exact_fields(waves,{"height_m","vertical_step_m"}))
+            throw std::invalid_argument("Water snapshot has an incomplete wake state.");
+        const auto samples=[&](const Json& values) {
+            if (!values.is_array() || values.size()!=wakes_->heights().size())
+                throw std::invalid_argument("Water snapshot wake sample count differs from the grid.");
+            std::vector<double> parsed;
+            parsed.reserve(values.size());
+            for (const auto& value : values) {
+                if (!value.is_number()) throw std::invalid_argument("Saved wake sample must be numeric.");
+                parsed.push_back(value.get<double>());
+            }
+            return parsed;
+        };
+        auto next=WakeField(wakes_->profile(),candidate.config());
+        next.restore(candidate,samples(waves.at("height_m")),samples(waves.at("vertical_step_m")));
+        wakes_=std::move(next);
+    }
     grid_ = std::move(candidate);
     last_report_ = receipt;
     first_rain_quantum_ = first_quantum;

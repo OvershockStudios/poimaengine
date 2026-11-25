@@ -473,6 +473,54 @@ void currents_share_committed_gate_flow_and_restore() {
         "Negative flow or the velocity limit was lost.");
 }
 
+void wake_pulse_propagates_only_across_wet_connected_faces() {
+    RegionDefinition definition{
+        .config={.cells_x=3,.cells_z=2,.origin_x_m=30,.origin_z_m=-12,.relaxation_per_second=0},
+        .floor_heights_m=std::vector<double>(6,-1),.initial_depths_m=std::vector<double>(6,2),
+        .faces={{{1,0},FaceAxis::x,{0,{}},"use.sluice",.5},{{0,0},FaceAxis::z,{0,{}},{},0},
+            {{1,0},FaceAxis::z,{0,{}},{},0},{{2,0},FaceAxis::z,{0,{}},{},0}},
+        .plan_sha256=std::string(64,'e'),
+        .optics=poima::WaterOptics{.extinction_per_m={},.scattered_radiance={},.follow_terrain=true},
+        .shore_corner_heights_m=std::vector<double>(12,-1),
+        .currents=poima::water::WaterCurrents{5,.1},
+        .surface_wakes=poima::water::SurfaceWakes{12,2,.1,.4},
+    };
+    const auto near=[](double measured,double expected){return std::abs(measured-expected)<1e-13;};
+    Region live(definition);
+    const std::array pulse{poima::water::WakeDriver{30.5,-11.5,3,0}};
+    live.step({},0,{},pulse);
+    const auto crest=live.sample_world(31.5,-11.5);
+    const auto entry=live.surface_entry({31.5,1.5,-11.5},{31.5,.5,-11.5});
+    const auto amplitude=.4*3/60;
+    require(entry && near(crest->surface_height_m,1+amplitude) &&
+        near(entry->position_m[1],crest->surface_height_m) &&
+        near(live.wakes()->height({0,0}),-amplitude) &&
+        live.wakes()->height({2,0})==0 && live.wakes()->corner(2,1)==0,
+        "A wake pulse changed the wrong water surface or crossed the sealed gate.");
+    const double decay=std::exp(-2./60);
+    const auto expected=2*amplitude*decay*(1-.2*.2);
+    live.step();
+    require(near(live.wakes()->height({1,0}),expected) && live.wakes()->height({2,0})==0 &&
+        live.grid().volume_m3()==12,"The damped wake recurrence or water volume differs.");
+    const auto checkpoint=live.save();
+    require(checkpoint.at("version")==4 && checkpoint.contains("face_transfers") && checkpoint.contains("wakes"),
+        "Combined currents and wakes omitted their continuation state.");
+    Region cold(definition);
+    cold.restore(checkpoint,2);
+    live.step(toggle);
+    cold.step(toggle);
+    require(live.save()==cold.save() && cold.wakes()->height({2,0})>0,
+        "The opened gate did not transmit the same wake after restore.");
+    for (int i=0;i<360;++i) live.step();
+    require(std::abs(live.wakes()->height({1,0}))<1e-5 && live.grid().volume_m3()==12,
+        "The wake did not settle or leaked conserved water.");
+    auto forged=checkpoint;
+    forged["wakes"]["height_m"][2]=1.;
+    rejects<std::invalid_argument>([&]{cold.restore(forged,2);},"A save with excessive wake height was accepted.");
+    definition.surface_wakes->speed_m_s=31;
+    rejects<std::invalid_argument>([&]{(void)Region(definition);},"An unstable wake speed was accepted.");
+}
+
 }
 
 int main() {
@@ -486,6 +534,7 @@ int main() {
         surface_segments_cross_cells_and_clip_to_the_wet_bed();
         displaced_box_volume_matches_analytic_solids();
         currents_share_committed_gate_flow_and_restore();
+        wake_pulse_propagates_only_across_wet_connected_faces();
         std::cout << "Water region tests passed.\n";
     } catch (const std::exception& error) {
         std::cerr << error.what() << '\n';

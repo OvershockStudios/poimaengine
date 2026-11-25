@@ -139,6 +139,10 @@ Reply capabilities() {
         ",\"water_shore_foam\":" + boolean(POIMA_RENDER_SMOKE != 0 && POIMA_SIMULATION != 0) +
         ",\"water_terrain_fit\":" + boolean(POIMA_RENDER_SMOKE != 0 && POIMA_SIMULATION != 0) +
         ",\"water_surface_swell\":" + boolean(POIMA_RENDER_SMOKE != 0 && POIMA_SIMULATION != 0) +
+        ",\"water_surface_wakes\":" + boolean(POIMA_RENDER_SMOKE != 0 && POIMA_SIMULATION != 0) +
+        ",\"water_buoyancy\":" + boolean(POIMA_SIMULATION != 0) +
+        ",\"water_currents\":" + boolean(POIMA_SIMULATION != 0) +
+        ",\"particle_water_contact\":" + boolean(POIMA_SIMULATION != 0) +
         ",\"water_swell_variation\":" + boolean(POIMA_RENDER_SMOKE != 0 && POIMA_SIMULATION != 0) +
         ",\"water_rough_reflection\":" + boolean(POIMA_RENDER_SMOKE != 0 && POIMA_SIMULATION != 0) +
         ",\"water_solar_scattering\":" + boolean(POIMA_RENDER_SMOKE != 0 && POIMA_SIMULATION != 0) +

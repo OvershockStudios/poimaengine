@@ -2,6 +2,12 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.437
+
+- Simulate wakes as buoyant props move through water. Inspect their crests
+  in the shared surface and restore the wave field with a saved game.
+  [Surface wakes](docs/SHALLOW_WATER.md#leave-wakes-behind-floating-props)
+
 ## 0.0.436
 
 - Use local water transfers to drive currents and carry buoyant props.
