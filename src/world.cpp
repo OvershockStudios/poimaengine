@@ -1191,6 +1191,7 @@ public:
             result["capture"]={{"path",output},{"sha256",content_hash(bytes)},{"frames",pcm.size()/2},{"channels",2},{"sample_rate",audio_rate},{"format","WAV IEEE float32"}};result["success"]=true;result["detail"]="Committed simulation recorded with persistent direct/HRTF voices; no audio device.";
         }catch(const std::exception& e) { result["detail"]=e.what(); }
         result["current_session_id"]=runtime_id_;const auto stats=stream->stats();result["tick"]=runtime_->inspect().tick;result["stream"]={{"frames",stats.frames},{"blocks",stats.blocks},{"voices_started",stats.voices_started},{"path_updates",stats.path_updates},{"peak",stats.peak},{"over_range_samples",stats.over_range_samples},{"dsp_ms",stats.dsp_ms}};
+        if(reflections.get<bool>())result["stream"]["reflection_handoffs"]=stats.reflection_handoffs;
         receipts.back()["result"]=result;playback_receipts_.swap(receipts);return result;
     }
 #include "world_player_service.inc"

@@ -2,6 +2,12 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.447
+
+- Let an active sound acquire or change its early reflection as the scene
+  moves. The new arrival follows the original clip timeline.
+  [Early reflections](docs/EARLY_REFLECTIONS.md#playback-and-recovery)
+
 ## 0.0.446
 
 - Let a falling sheet build surface foam in its receiving pool. The foam

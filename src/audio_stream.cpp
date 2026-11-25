@@ -93,6 +93,13 @@ struct AudioStream::Impl {
         IPLDirectEffectSettings direct_settings{1};status(iplDirectEffectCreate(context,&audio,&direct_settings,&dsp.direct));
         IPLBinauralEffectSettings spatial_settings{hrtf};status(iplBinauralEffectCreate(context,&audio,&spatial_settings,&dsp.spatial));
     }
+    std::unique_ptr<ReflectedVoice> make_reflection(const AudioReflection& path,float gain) const {
+        auto reflected=std::make_unique<ReflectedVoice>();
+        reflected->path=path;
+        reflected->audibility=gain;
+        setup(reflected->dsp,path.propagation_delay_samples);
+        return reflected;
+    }
     const AudioPath& path(const std::string& entity) const {
         const auto p=std::find_if(paths.paths.begin(),paths.paths.end(),[&](const auto& v){return v.entity==entity;});check(p!=paths.paths.end(),"Playing voice lost its emitter path.");return *p;
     }
@@ -116,14 +123,41 @@ struct AudioStream::Impl {
             check(voices.size()<256,"Audio presentation exceeded 256 active/delayed/tail voices.");
             auto voice=std::make_unique<Voice>();voice->state=state;
             setup(voice->direct,current.propagation_delay_samples);
-            if(current.reflection) {
-                voice->reflected=std::make_unique<ReflectedVoice>();
-                voice->reflected->path=*current.reflection;
-                setup(voice->reflected->dsp,current.reflection->propagation_delay_samples);
-            }
+            if(current.reflection)voice->reflected=make_reflection(*current.reflection,1);
             voices.emplace(state.id,std::move(voice));++stats.voices_started;
         }
         for(const auto& state:states)seen=std::max(seen,state.id);
+    }
+    void render_reflection(std::span<float> mix,const SoundVoice& state,ReflectedVoice& reflection,
+                           const FlowEnvelope* flow,float target) {
+        render_path(mix,state,reflection.dsp,reflection.path.direction,
+                    audio_detail::reflection_filter(reflection.path),flow,reflection.audibility,target);
+        reflection.audibility=target;
+    }
+    void update_reflection(std::span<float> mix,Voice& voice,const std::optional<AudioReflection>& selected,
+                           const FlowEnvelope* flow) {
+        auto& current=voice.reflected;
+        const auto same_face=current && selected && selected->entity==current->path.entity &&
+            selected->face==current->path.face;
+        if(same_face) {
+            current->path=*selected;
+            render_reflection(mix,voice.state,*current,flow,1);
+            return;
+        }
+        // An audible replacement needs source samples at its own delayed
+        // cursor. A new branch cannot restart the clip or revive an ended voice.
+        const auto end=voice.state.end_sample();
+        if(selected && (end==UINT64_MAX || cursor<end+selected->propagation_delay_samples)) {
+            auto replacement=make_reflection(*selected,0);
+            if(current && current->audibility>0)render_reflection(mix,voice.state,*current,flow,0);
+            current=std::move(replacement);
+            render_reflection(mix,voice.state,*current,flow,1);
+            ++stats.reflection_handoffs;
+        } else if(current) {
+            // Advance the muted branch in case this face becomes visible
+            // again. This also permits its delayed tail to retire naturally.
+            render_reflection(mix,voice.state,*current,flow,0);
+        }
     }
     void render_path(std::span<float> mix,const SoundVoice& state,DspPath& dsp,const std::array<double,3>& direction,
                      IPLDirectEffectParams params,const FlowEnvelope* flow,float start_audibility=1,float end_audibility=1) {
@@ -183,15 +217,7 @@ struct AudioStream::Impl {
             if (voice.state.sound.water_flow)
                 flow=&flow_envelopes.at(voice.state.emitter);
             render_path(mix,voice.state,voice.direct,current.direction,params,flow);
-            if(auto& reflection=voice.reflected) {
-                const auto& path_now=current.reflection;
-                const bool visible=path_now && path_now->entity==reflection->path.entity && path_now->face==reflection->path.face;
-                if(visible)reflection->path=*path_now;
-                const float target=visible ? 1 : 0;
-                render_path(mix,voice.state,reflection->dsp,reflection->path.direction,
-                            audio_detail::reflection_filter(reflection->path),flow,reflection->audibility,target);
-                reflection->audibility=target;
-            }
+            update_reflection(mix,voice,current.reflection,flow);
         }
         std::erase_if(voices,[](const auto& item){
             const auto& voice=*item.second;

@@ -47,16 +47,21 @@ The reference image-source method is described by Allen and Berkley.
 
 ## Playback and recovery
 
-A persistent stream selects the reflection identity and delay when a voice
-attaches. Updates use the latest direction and material gains if the same
-face still wins selection. If a blocker appears or a different face wins,
-the voice fades its old reflection over one 512-frame block. The selected
-face can resume when it returns. Voices started after an acoustic change
-select from the new snapshot. Voice timing, stopped emission, emitter
-retirement, stream resets and tail truncation retain the existing stream
-rules. Each voice holds at most two DSP paths within the existing 256-voice
-limit. Save data represents logical voices. A recreated stream estimates
-its paths and starts with fresh DSP history.
+A persistent stream starts with the reflection selected when a voice
+attaches. At subsequent mix blocks, the same face updates its direction and
+material gains while keeping its delay. When a different face wins, the
+stream fades the old contribution out and the new one in over one 512-frame
+block. A newly visible face can also fade in from silence. The replacement's
+delay is derived from its own path, and the emitter keeps its original clip
+position. The new branch starts with fresh filter history.
+
+If all faces are blocked, the last contribution fades out. Its filters can
+resume if that face returns. An active voice holds one direct and at most two
+reflected paths, with the second present only during a handoff block. With
+`early_reflections: true`, `runtime.audio.replay` reports the number of paths
+acquired or replaced after attachment as `stream.reflection_handoffs`. DSP
+history remains local to a stream. Save restoration recreates it from the
+logical voice timeline and current geometry.
 
 ## Verification
 
@@ -64,6 +69,8 @@ its paths and starts with fresh DSP history.
 face boundaries, material attenuation, occlusion, ear dominance,
 reproducibility, and preservation of a one-shot reflection after its direct
 tail completes. A continuing loop verifies fading and resuming its bounce
-when a reflector is removed and restored. Further gates include dynamic multi-reflector transitions,
-frequency-dependent reflected transmission, late reverb, production
-listening and scene-scale performance.
+when a reflector is removed and restored. A separate repeating-signal case
+gains a reflection and switches to a farther surface on the opposite side.
+The settled signal is compared to phase-aligned fixed-path controls.
+Frequency-dependent reflected transmission, late reverb, production listening
+and scene-scale performance remain open.

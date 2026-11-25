@@ -1,0 +1,97 @@
+{
+  "version": "0.0.447",
+  "date": "2026-11-25",
+  "base_commit": "7a2ebd39c90993ee09e122a236bacdf83da0e8bf",
+  "scope": "Timed native early reflections acquire and replace an audible path while one original voice continues.",
+  "candidate_patch_sha256": "ba14b8f35ac43ca3e1eb49eafb2ea0af2e4e915ad97033f92b8ba20bd7ed69c5",
+  "source_sha256": {
+    "CMakeLists.txt": "9ce396f757d146e6567bb3f84f3ba044e1731876cd464e3dd3ba4d9521c8dc3b",
+    "include/poima/audio.hpp": "80a51168f58cf851448d78b783ca1bbfc877f10152233efdddcfe787749db482",
+    "src/audio_stream.cpp": "e8174c8241f68b8350035fed6fc419453639291f1d0a5f3fa9c15d8d574882f1",
+    "src/world.cpp": "c18c730d123459d21f6c6318d5ce32f507f8959717c4c13edee58d045403eb8f",
+    "tests/audio_reflections_native.cpp": "ff009c5d9fda1705a6b5e624f30b0307e7e1eceee05ba8f0840bb2c8eb15e998"
+  },
+  "fixture": {
+    "native_test": "audio_reflections_native",
+    "commit_rate_hz": 60,
+    "sample_rate_hz": 48000,
+    "committed_ticks": 12,
+    "output_frames": 9600,
+    "active_handoffs": 2,
+    "original_voice_count": 1,
+    "block_frames": 512,
+    "phase_checked_against_fixed_path_controls": true,
+    "reflection_delays_samples": [
+      505,
+      1019
+    ],
+    "near_and_far_paths_use_opposite_stereo_sides": true
+  },
+  "windows": {
+    "runtime": {
+      "bin/poima.exe": "347478ba7a080034ed6b41d4e776c3f8e61ee9731fed13b24a098c881f9af37d",
+      "bin/poima_desktop.dll": "dfd4a94316a88bde1ca4458ea7b8bd01ee4ce5045e3d78e8f04535a43a9d2101",
+      "runtime.json": "9626da0523adb6d348e2eb393db4508363e1c019c6b38d63b2b7de25ac1072a3"
+    },
+    "measurement": {
+      "right_max_error": 0.0,
+      "left_max_error": 0.0,
+      "right_channel_energy": [
+        0.15572683993116654,
+        0.41039268764476167
+      ],
+      "left_channel_energy": [
+        0.3007624292468855,
+        0.07676532911734694
+      ]
+    },
+    "capture_sha256": {
+      "dry": "e7bedf00032c62ddaa9684e290693bb15659c05922594f5364e4c5f5d7aa81cb",
+      "right": "833016773e8e52dcf7df63805562ba4120ee86aee77dabc69224e0455abc5c36",
+      "left": "af118e8c40f7435e06c4652a55bff34e7f032dd1c0e8dba2eff74e79a0fddac1",
+      "moving": "2b15e942459677168bfebe2d17405a00fd1ac68addc3728ed6e62cff01267180",
+      "relocated": "2b15e942459677168bfebe2d17405a00fd1ac68addc3728ed6e62cff01267180"
+    },
+    "retries_replayed": true,
+    "relocated_immutable_bundle_files": 59,
+    "source_hidden_and_pcm_exact": true,
+    "audio_contract_cases_passed": 22,
+    "audio_contract_cases_skipped": 7,
+    "raw_sha256": "8019d23f300e7cce53ebd3586a407a0b8d4c2941f002ee3583d9fca2000cac53",
+    "raw_audio_contract_sha256": "d4cc26f79ec12ec6dccb7a997d6c3efe7e4aaf911c565e96a1d3f56371a22087"
+  },
+  "baseline_446": {
+    "reproduced": true,
+    "reflection_geometry_reports_the_new_face": true,
+    "native_mixer_remained_dry": true,
+    "raw_sha256": "665a70e81c22df5c960edcdb8b19eb49ed4abbc783ff872640a1a053cd5c2015",
+    "exe_sha256": "4dbd12b081e0d67047e52ce517a8a0aa19c7bc1e504fc7f0d483ff7f67b5c934"
+  },
+  "ubuntu": {
+    "focused_suites_passed": 4,
+    "measurement": {
+      "left_channel_energy": [
+        0.3007620517216219,
+        0.07676525489702546
+      ],
+      "left_max_error": 0.0,
+      "right_channel_energy": [
+        0.1557266697830024,
+        0.410392389044037
+      ],
+      "right_max_error": 0.0
+    },
+    "handoffs": 2,
+    "artifact_sha256": {
+      "poima": "ffa653184cb550e3044af3f7c45dce697f1b9e5e084364e8a9b6df4db29a502b",
+      "runtime.json": "e56b7c825848bded005a925679998ca3d740b3f488440a7de087b91c41eb23b7",
+      "result.xml": "b7f4cb93830051619229e4058d61d2a68bf7989b1623dec4ac591b44747f85f8"
+    },
+    "fixture_sha256": "1233fa8af8bff66aef6d46e8c3eb65bddaff8649d17a5a9e0ec0caae0961af58"
+  },
+  "boundaries": [
+    "The renderer and simulated sound state are outside this change.",
+    "The handoff is a block-based approximation with a newly initialized branch.",
+    "Physical playback and workload-scale audio cost remain unqualified."
+  ]
+}

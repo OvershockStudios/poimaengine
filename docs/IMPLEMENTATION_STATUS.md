@@ -1,8 +1,17 @@
 # Implementation status
 
-Updated 2026-11-25 for **0.0.446**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-25 for **0.0.447**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.447 adds [early reflection handoffs](EARLY_REFLECTIONS.md#playback-and-recovery).
+A continuing voice can gain its first bounce and crossfade to a new face as
+geometry moves. The native replay moved two reflecting panels on Windows
+and Ubuntu. Both settled signals exactly matched the corresponding fixed
+path and reflected toward opposite ears. A relocated Windows game repeated
+the recording byte for byte. This qualifies timed PCM capture. Audible
+device playback and room reverberation remain open.
+[Results and scope](evidence/m2-audio-reflection-handoffs-447.json)
 
 Version 0.0.446 adds [impact foam](SHALLOW_WATER.md#leave-foam-in-the-receiving-pool).
 A falling sheet builds coverage in the receiving pool. The patch spreads

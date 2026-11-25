@@ -53,6 +53,7 @@ record correlated evidence, and identify a useful impossibility check.
 | Show entrained bubbles within a falling sheet | [Sheet aeration](SHALLOW_WATER.md#aerate-a-falling-water-sheet) | Compare clear and aerated captures at the same tick, with unchanged opaque depth, spray and water volume. |
 | Leave a foam patch where a spillway lands | [Impact foam](SHALLOW_WATER.md#leave-foam-in-the-receiving-pool) | Observe the center and fringe while the water is flowing, after closure and after decay. Restore a closed-gate save. |
 | Make a spillway, sluice or pipe sound follow its flow | [Water-driven audio](AUDIO_EVENTS.md#drive-an-emitter-with-water-flow) | Compare signed port discharge, the gain target and a continuous recording across gate closure and restoration. |
+| Change a reflection while a sound is playing | [Early reflections](EARLY_REFLECTIONS.md#playback-and-recovery) | Compare the selected face and recorded stereo on both sides of the handoff. Check that the source still has one voice. |
 | Make rain splash or sparks scatter on contact | [Contact bursts](PARTICLES.md#spawn-a-burst-at-contact) and [surface routing](PARTICLES.md#vary-a-burst-by-surface) | Inspect the hit, selected emitter and sprite motion. Reopen a save and compare the continuation. |
 | Shape a local water surface | [Water regions and ripples](SHALLOW_WATER.md#author-surface-ripples) | Verify water levels and terrain collision, then compare the visible normals at the same tick after restoring a save. |
 

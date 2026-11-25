@@ -54,6 +54,61 @@ std::vector<float> stream(const AudioSnapshot& snapshot) {
     check(owner.stats().frames==frames && owner.stats().voices_started==1,"The reflection altered logical voice or stream timing.");
     return result;
 }
+
+void test_handoffs() {
+    auto right_side=fixture();
+    auto clip=std::make_shared<AudioClip>();
+    // An asymmetric repeating signal makes a restarted or incorrectly
+    // delayed clip distinguishable from continuous playback.
+    for(int i=0;i<911;++i)clip->samples.push_back(.16f*std::sin(.13f*i)+.07f*std::cos(.042f*i));
+    auto& emitter=right_side.sources.front().emitter;
+    emitter.clip=clip;
+    emitter.loop=true;
+    right_side.early_reflections=true;
+    auto left_side=right_side;
+    left_side.geometry.front().entity="far_wall";
+    left_side.geometry.front().world=pose(-4,0,0,1,8,8);
+    auto no_bounce=right_side;
+    no_bounce.geometry.front().material.enabled=false;
+    const auto right=observe_audio(right_side).paths.at(0).reflection;
+    const auto left=observe_audio(left_side).paths.at(0).reflection;
+    check(right && left && left->propagation_delay_samples>right->propagation_delay_samples,
+          "The handoff fixture needs two arrivals with unequal delays.");
+    SoundState logical;
+    logical.play("source",emitter,0,1);
+    AudioStream moving(0,no_bounce),dry(0,no_bounce),fixed_right(0,right_side),fixed_left(0,left_side);
+    std::array<std::vector<float>,4> pcm;
+    const auto append=[&](std::size_t index,AudioStream& owner,const AudioSnapshot& snapshot,std::uint64_t tick) {
+        const auto block=owner.advance(tick,snapshot,logical.voices(),tick==12);
+        pcm[index].insert(pcm[index].end(),block.begin(),block.end());
+    };
+    for(std::uint64_t tick=1;tick<=12;++tick) {
+        const auto& geometry=tick<=2 ? no_bounce : (tick<8 ? right_side : left_side);
+        append(0,moving,geometry,tick);
+        append(1,dry,no_bounce,tick);
+        append(2,fixed_right,right_side,tick);
+        append(3,fixed_left,left_side,tick);
+    }
+    check(moving.stats().reflection_handoffs==2 && moving.stats().voices_started==1 &&
+          moving.stats().frames==12*audio_tick_frames,"An acquired or replaced reflection restarted or lost the voice.");
+    check(std::equal(pcm[0].begin(),pcm[0].begin()+2*(3*audio_block),pcm[1].begin()),
+          "A reflection reached a block before the new geometry was sampled.");
+    const auto matches=[&](std::size_t reference,std::size_t begin,std::size_t end) {
+        for(std::size_t i=2*begin;i<2*end;++i)
+            if(std::abs(pcm[0][i]-pcm[reference][i])>2e-6f)return false;
+        return true;
+    };
+    check(matches(2,3200,4500) && matches(3,7400,9600),
+          "The audible branch disagrees with the independent steady, phase-aligned path.");
+    check(wet_energy(pcm[0],pcm[1],1,3200,4500)>wet_energy(pcm[0],pcm[1],0,3200,4500) &&
+          wet_energy(pcm[0],pcm[1],0,7400,9600)>wet_energy(pcm[0],pcm[1],1,7400,9600),
+          "The replacement reflection did not move the wet signal toward the new reflecting surface.");
+    // Separately check that both branches contribute within the handoff block.
+    const std::size_t handoff=(7*audio_tick_frames/audio_block)*audio_block;
+    check(wet_energy(pcm[0],pcm[1],0,handoff,handoff+audio_block)>1e-6 &&
+          !matches(2,handoff,handoff+audio_block) && !matches(3,handoff,handoff+audio_block),
+          "The handoff block did not blend the two arrivals.");
+}
 }
 
 int main() {
@@ -145,6 +200,7 @@ int main() {
               wet_energy(switched_pcm,direct_pcm,1,3400,4500)==0 &&
               wet_energy(switched_pcm,direct_pcm,1,5700,6400)>1e-6,
               "The timed voice did not fade and resume its selected reflection during a geometry update.");
+        test_handoffs();
         std::cout<<"First-order audio reflection checks passed. Analytic delay: "<<expected_delay
                  <<" samples. Stream delayed tail: "<<long_delay<<" samples.\n";
         return 0;

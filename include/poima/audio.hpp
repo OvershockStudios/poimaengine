@@ -127,6 +127,7 @@ struct AudioStreamStats {
     std::uint64_t frames=0,blocks=0,voices_started=0,path_updates=0;
     double peak=0,dsp_ms=0;
     std::uint64_t over_range_samples=0;
+    std::uint64_t reflection_handoffs=0;
 };
 // Persistent native direct/HRTF DSP, fed only after committed simulation ticks.
 // Full 512-frame blocks are rendered up to (never beyond) committed time.
