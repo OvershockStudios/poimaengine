@@ -17,6 +17,8 @@ FetchContent_Declare(nvrhi
     URL_HASH SHA256=2f62a5115ff8a11384b0d10c336b97aad73a78175addc11ca94c385eff94a452
     DOWNLOAD_EXTRACT_TIMESTAMP TRUE)
 FetchContent_MakeAvailable(nvrhi)
+include("${CMAKE_CURRENT_LIST_DIR}/nvrhi_vulkan_barriers.cmake")
+poima_batch_nvrhi_vulkan_barriers()
 
 set(SDL_SHARED OFF CACHE BOOL "" FORCE)
 set(SDL_STATIC ON CACHE BOOL "" FORCE)

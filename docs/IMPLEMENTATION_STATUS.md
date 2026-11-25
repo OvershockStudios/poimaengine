@@ -1,8 +1,17 @@
 # Implementation status
 
-Updated 2026-11-25 for **0.0.410**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-25 for **0.0.411**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.411 batches [image and buffer transitions](PROFILER.md#vulkan-barriers)
+within each Vulkan resource-state commit. All 44 traced AMD and NVIDIA
+frames issued two fewer barrier calls than 0.0.410, with identical
+memory, image and buffer barrier counts and 16 byte-identical images.
+Twenty-four GPU skinning captures and 31 retained cloud-shadow captures
+passed, including FSR Native AA and a relocated Native AOT replay.
+The Ubuntu cross-built runtime ran on both Windows GPUs. Ubuntu also
+passed 13 headless and native suites. [Results](evidence/m2-nvrhi-barrier-batching-411.json)
 
 Version 0.0.410 adds [Vulkan barrier counters](PROFILER.md#vulkan-barriers)
 to retired profiler traces. AMD and NVIDIA matched the pass and frame totals

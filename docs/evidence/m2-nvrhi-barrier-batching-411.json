@@ -1,0 +1,330 @@
+{
+  "checkpoint": "0.0.411",
+  "parent_commit": "90f14d8",
+  "source_sha256": {
+    "CMakeLists.txt": "7579834debbbe7e80cef31a061d4b0a4af96fab5e2e6d626ecae3ac923ebc923",
+    "cmake/render_smoke.cmake": "ca4861aec070f19a54e1b48cfde13336831ec2ebcbe49f74d6c182c8a0291ebc",
+    "cmake/nvrhi_vulkan_barriers.cmake": "4657c1df8cfe1d183fdda1420684bb4d37f8081f22fdf3cae40a22d65cedc4da",
+    "tests/profiler_capture.py": "38e07dd3fb732bf176094c27c4cc69cad964a336e41d897d37364642cc2efb42",
+    "tests/gpu_skinning_capture.py": "d1d36aecfd0d7ad7319db1e8c75250568c70fea088a1deafc97fb51acd823609",
+    "tests/cloud_shadow_capture.py": "be0b287448a7514bcdf6b25e66f996a3e7dc653bfbb7cc8f702bd2aab243c650"
+  },
+  "ubuntu": {
+    "suites": [
+      "authoring_api_compatibility",
+      "cli_contract",
+      "frame_performance_native",
+      "frame_performance_service",
+      "profiler_contract",
+      "profiler_jobs",
+      "profiler_native",
+      "profiler_service",
+      "project_contract",
+      "render_schedule_native",
+      "shared_session_contract",
+      "world_contract",
+      "world_session_native"
+    ],
+    "junit_sha256": "4a7ca714eeb98eca1148eac89386dbf3c2963106596d86cf00fb2f55ee2dc833",
+    "binary_sha256": "5d8b30c3fbdc1bbfd2be46a1afbb20639c3c7805f5e228f707d1b62ce2d1f77b"
+  },
+  "windows_cross_build": {
+    "host": "Ubuntu x86_64",
+    "compiler": "LLVM-MinGW Clang 23.1.2",
+    "workers": 4,
+    "executable_sha256": "0d8de5867e01579f640a0980f5dba64afaafe20e000eab539e7c4a833a131d05",
+    "desktop_bridge_sha256": "8712cffc1a51bb3380ad9cfd872867556fe67a724e7a0e87d7f7755c81525a25",
+    "descriptor_sha256": "9fb61ccb25df654d39c203f365f79048b36e39a7f9ea47871c9c4e01b699e819",
+    "original_nvrhi_source_sha256": "943cf750732b276566c34128e0f74ae9a4fe3e41dd7ab5aafdb5615af2459975",
+    "compiled_nvrhi_source_sha256": "2ada9ecd67a7bdbdc0d7d9a03b078cc1503c049f4784e59847b230b558971535",
+    "source_patch_sha256": "ea3ac6657593cb637747591596e8f6544a8765009aca6ba050a08b8e327bebb6",
+    "transfer_archive_sha256": "8ee30884848770d150600a12b5fba512a474164941432ccf795eb470d1196213"
+  },
+  "windows_adapters": [
+    {
+      "gpu_index": 0,
+      "name": "AMD Radeon(TM) Graphics",
+      "synchronization_validation": true,
+      "profiler_traced_frames": 22,
+      "profiler_comparison_images_sha256": {
+        "off-1.bmp": "f0c806bda333a093e8da01326cadb5579346056c38c9f154f480e7d4059af151",
+        "off-4.bmp": "c0fd36eb84eead7968447ee3d58b847b32bdb23519ab99a31da0821cb22d315b",
+        "on-1.bmp": "f0c806bda333a093e8da01326cadb5579346056c38c9f154f480e7d4059af151",
+        "on-4.bmp": "c0fd36eb84eead7968447ee3d58b847b32bdb23519ab99a31da0821cb22d315b",
+        "player-False.bmp": "16f3f77be6867e0cbba135d6b0456122d8b5e4603083e6cb6b5db2ef36d4fcc1",
+        "player-True.bmp": "16f3f77be6867e0cbba135d6b0456122d8b5e4603083e6cb6b5db2ef36d4fcc1",
+        "stopped-1.bmp": "f0c806bda333a093e8da01326cadb5579346056c38c9f154f480e7d4059af151",
+        "stopped-4.bmp": "c0fd36eb84eead7968447ee3d58b847b32bdb23519ab99a31da0821cb22d315b"
+      },
+      "profiler_before_evidence_sha256": "5b66e6681c22cab3271eb4db7bc19466bdb601f8906a0f8797ad92e32539759f",
+      "profiler_after_evidence_sha256": "d970d74cd9fbee2814257125f64441a23181199db4518edf07153e5038da6fda",
+      "calls_before": [
+        [
+          20,
+          21
+        ],
+        [
+          18,
+          19
+        ],
+        [
+          19,
+          19,
+          19,
+          19,
+          19,
+          19,
+          19,
+          19,
+          19,
+          19,
+          19,
+          19,
+          19,
+          19,
+          19,
+          19,
+          19,
+          20
+        ]
+      ],
+      "calls_after": [
+        [
+          18,
+          19
+        ],
+        [
+          16,
+          17
+        ],
+        [
+          17,
+          17,
+          17,
+          17,
+          17,
+          17,
+          17,
+          17,
+          17,
+          17,
+          17,
+          17,
+          17,
+          17,
+          17,
+          17,
+          17,
+          18
+        ]
+      ],
+      "avoided_calls_per_frame": {
+        "opaque": 1,
+        "shadows": 1
+      },
+      "barrier_entries_exact": true,
+      "skinning_captures": 12,
+      "skinning_comparisons": {
+        "base_cpu_gpu": {
+          "maximum_channel_error": 0,
+          "pixels_over_2": 0,
+          "changed_pixels": 0,
+          "mean_max_channel_error": 0.0
+        },
+        "base_culling": {
+          "maximum_channel_error": 0,
+          "pixels_over_2": 0,
+          "changed_pixels": 0,
+          "mean_max_channel_error": 0.0
+        },
+        "normal_frames": {
+          "maximum_channel_error": 0,
+          "pixels_over_2": 0,
+          "changed_pixels": 0,
+          "mean_max_channel_error": 0.0
+        },
+        "independent_instances": {
+          "maximum_channel_error": 0,
+          "pixels_over_2": 0,
+          "changed_pixels": 0,
+          "mean_max_channel_error": 0.0
+        },
+        "after_failure": {
+          "maximum_channel_error": 0,
+          "pixels_over_2": 0,
+          "changed_pixels": 0,
+          "mean_max_channel_error": 0.0
+        },
+        "shadow_cpu_gpu": {
+          "maximum_channel_error": 0,
+          "pixels_over_2": 0,
+          "changed_pixels": 0,
+          "mean_max_channel_error": 0.0
+        },
+        "shadow_culling": {
+          "maximum_channel_error": 0,
+          "pixels_over_2": 0,
+          "changed_pixels": 0,
+          "mean_max_channel_error": 0.0
+        },
+        "shadow_present": {
+          "maximum_channel_error": 58,
+          "pixels_over_2": 18531,
+          "changed_pixels": 18531,
+          "mean_max_channel_error": 2.600126953125
+        }
+      },
+      "skinning_evidence_sha256": "b099912203c559038a740f0ba81bc803bc84ce93774e800584a676b600d05bbc",
+      "cloud_shadow_evidence_sha256": "7738abd22c35ea0b10578c737858b162512da086b17be1acaa4d63c58fb90ba1",
+      "cloud_shadow_lighting_path": "deferred",
+      "cloud_shadows_fsr_native": true,
+      "cloud_shadow_retained_captures": 13,
+      "cloud_shadow_reference_version": "0.0.410"
+    },
+    {
+      "gpu_index": 1,
+      "name": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "synchronization_validation": true,
+      "profiler_traced_frames": 22,
+      "profiler_comparison_images_sha256": {
+        "off-1.bmp": "13d406216b483a59c47544b1141fa1509db66d22aca41a03105ac82ebabf9f46",
+        "off-4.bmp": "ee0d233446122f0b4f15ffe55f6705c5a346b81bb8e08693dd2b4bae6d498f6d",
+        "on-1.bmp": "13d406216b483a59c47544b1141fa1509db66d22aca41a03105ac82ebabf9f46",
+        "on-4.bmp": "ee0d233446122f0b4f15ffe55f6705c5a346b81bb8e08693dd2b4bae6d498f6d",
+        "player-False.bmp": "5dd2f4546a7e9b38a897827ab7a85e8bb7047a3fd13779675914ffaf7c6e2937",
+        "player-True.bmp": "5dd2f4546a7e9b38a897827ab7a85e8bb7047a3fd13779675914ffaf7c6e2937",
+        "stopped-1.bmp": "13d406216b483a59c47544b1141fa1509db66d22aca41a03105ac82ebabf9f46",
+        "stopped-4.bmp": "ee0d233446122f0b4f15ffe55f6705c5a346b81bb8e08693dd2b4bae6d498f6d"
+      },
+      "profiler_before_evidence_sha256": "1f66aa2f856f68a3af17ec7416b912834766a2d7fc3a13ce7a8d86f27d10fb59",
+      "profiler_after_evidence_sha256": "ae1c513c79aed0ecc6148144f41c641cd59fe4e64328460ea187b39e64810a27",
+      "calls_before": [
+        [
+          20,
+          21
+        ],
+        [
+          18,
+          19
+        ],
+        [
+          19,
+          19,
+          19,
+          19,
+          19,
+          19,
+          19,
+          19,
+          19,
+          19,
+          19,
+          19,
+          19,
+          19,
+          19,
+          19,
+          19,
+          20
+        ]
+      ],
+      "calls_after": [
+        [
+          18,
+          19
+        ],
+        [
+          16,
+          17
+        ],
+        [
+          17,
+          17,
+          17,
+          17,
+          17,
+          17,
+          17,
+          17,
+          17,
+          17,
+          17,
+          17,
+          17,
+          17,
+          17,
+          17,
+          17,
+          18
+        ]
+      ],
+      "avoided_calls_per_frame": {
+        "opaque": 1,
+        "shadows": 1
+      },
+      "barrier_entries_exact": true,
+      "skinning_captures": 12,
+      "skinning_comparisons": {
+        "base_cpu_gpu": {
+          "maximum_channel_error": 0,
+          "pixels_over_2": 0,
+          "changed_pixels": 0,
+          "mean_max_channel_error": 0.0
+        },
+        "base_culling": {
+          "maximum_channel_error": 0,
+          "pixels_over_2": 0,
+          "changed_pixels": 0,
+          "mean_max_channel_error": 0.0
+        },
+        "normal_frames": {
+          "maximum_channel_error": 0,
+          "pixels_over_2": 0,
+          "changed_pixels": 0,
+          "mean_max_channel_error": 0.0
+        },
+        "independent_instances": {
+          "maximum_channel_error": 0,
+          "pixels_over_2": 0,
+          "changed_pixels": 0,
+          "mean_max_channel_error": 0.0
+        },
+        "after_failure": {
+          "maximum_channel_error": 0,
+          "pixels_over_2": 0,
+          "changed_pixels": 0,
+          "mean_max_channel_error": 0.0
+        },
+        "shadow_cpu_gpu": {
+          "maximum_channel_error": 0,
+          "pixels_over_2": 0,
+          "changed_pixels": 0,
+          "mean_max_channel_error": 0.0
+        },
+        "shadow_culling": {
+          "maximum_channel_error": 0,
+          "pixels_over_2": 0,
+          "changed_pixels": 0,
+          "mean_max_channel_error": 0.0
+        },
+        "shadow_present": {
+          "maximum_channel_error": 58,
+          "pixels_over_2": 18531,
+          "changed_pixels": 18531,
+          "mean_max_channel_error": 2.6002734375
+        }
+      },
+      "skinning_evidence_sha256": "52d02c647fe60fb57fea82990876f5c31bf484fe84215f27a833d14a7fd2ebe8",
+      "cloud_shadow_evidence_sha256": "ddbd9d0942aa152319f0e6666e43ad632ef19f5835055192b2994460f260d666",
+      "cloud_shadow_lighting_path": "forward",
+      "cloud_shadows_fsr_native": true,
+      "cloud_shadow_retained_captures": 18,
+      "cloud_shadow_reference_version": "0.0.409",
+      "relocated_native_aot_replay": {
+        "retired_frames": 4,
+        "image_sha256": "52d5bc5db1371ea3ec499c35e33132174be12318079d8c6d63c14679878b6cb7"
+      }
+    }
+  ],
+  "measurement_scope": "Vulkan command counts on controlled fixtures, with independently checked image and state parity. Frame-time improvement remains unmeasured."
+}

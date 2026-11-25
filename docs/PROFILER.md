@@ -81,6 +81,17 @@ unobserved path. [Native check](../tests/profiler_capture.py) covers
 attribution, frame totals and exact output with tracing on and off using
 `--require-barriers`.
 
+Poima submits the pending image and buffer transitions of each NVRHI
+state commit in one synchronization2 command. Each barrier keeps its
+original resource, stage and access masks, and image layout. To reproduce
+the comparison, run the same native check with `--require-barriers` on
+0.0.410 and 0.0.411 on the same adapter. Compare the ordered
+`barrier_captures` rows in the two evidence files. The published fixture
+records one fewer call in each of the shadow and opaque passes, with
+identical barrier entry totals.
+[Vulkan dependency info](https://docs.vulkan.org/refpages/latest/refpages/source/VkDependencyInfo.html) ·
+[Checkpoint results](evidence/m2-nvrhi-barrier-batching-411.json)
+
 ### Shadow views
 
 An active capture records `gpu.shadow_clear.ns` and `gpu.shadow_view.N.ns` for

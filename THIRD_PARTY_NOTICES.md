@@ -84,6 +84,7 @@ Original Poima source is licensed under Apache-2.0; see [LICENSE](LICENSE).
 - Archive SHA-256: `2f62a5115ff8a11384b0d10c336b97aad73a78175addc11ca94c385eff94a452`.
 - License: MIT; original `LICENSE.txt` is installed.
 - Statically linked Vulkan backend and NVRHI validation layer. DirectX, NVAPI, RTXMU and Aftermath integrations are disabled.
+- Poima generates an adapted state-tracking source at configure time to submit image and buffer barriers together. The generated source retains the upstream license header.
 
 ## SPIRV-Tools and SPIRV-Headers (optional render build)
 

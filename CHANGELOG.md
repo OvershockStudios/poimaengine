@@ -2,6 +2,10 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.411
+
+- Batch Vulkan image and buffer transitions that belong to the same NVRHI resource-state commit.
+
 ## 0.0.410
 
 - Count recorded Vulkan barrier commands by render pass and report buffer, image, and memory barrier totals in the profiler.
