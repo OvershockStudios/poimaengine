@@ -66,12 +66,13 @@ struct WaterPath {
     float water_before_interface_m;
     float2 interface_gradient;
     bool enters;
+    bool offshore_interface;
 };
 
 #include "water_shore_trace.hlsli"
 
-WaterPath trace_water_columns(WaterConstants water, float3 eye, float3 ray, float max_distance, bool find_interface) {
-    WaterPath path = {0,-1,0,float2(0,0),false};
+WaterPath trace_water_grid(WaterConstants water,float3 eye,float3 ray,float max_distance,bool find_interface) {
+    WaterPath path={0,-1,0,float2(0,0),false,false};
     const float size = water.camera_cell_size.w;
     const int2 dimensions = water_grid_dimensions(water);
     float entry = 0, exit = max_distance;
@@ -144,6 +145,52 @@ WaterPath trace_water_columns(WaterConstants water, float3 eye, float3 ray, floa
     return path;
 }
 
+float2 offshore_outward() {
+    const uint side=uint(water_offshore.x);
+    if (side==1u) return float2(0,-1);
+    if (side==2u) return float2(1,0);
+    if (side==3u) return float2(0,1);
+    return float2(-1,0);
+}
+
+bool offshore_contains(float2 position) {
+    if (water_offshore.x==0.0) return false;
+    const float distance=dot(position,offshore_outward())-water_offshore.w;
+    return water_offshore.x==1.0 || water_offshore.x==4.0 ? distance>0.0 : distance>=0.0;
+}
+
+WaterPath trace_water_columns(WaterConstants water,float3 eye,float3 ray,float max_distance,bool find_interface) {
+    WaterPath local=trace_water_grid(water,eye,ray,max_distance,find_interface);
+    [branch] if (water_offshore.x==0.0) return local;
+
+    const float2 outward=offshore_outward();
+    const float origin=dot(outward,eye.xz)-water_offshore.w;
+    const float motion=dot(outward,ray.xz);
+    float entry=0.0,exit=max_distance;
+    const bool owns_edge=water_offshore.x==2.0 || water_offshore.x==3.0;
+    if (!clip_above_water_plane(origin,motion,owns_edge,entry,exit)) return local;
+    float underwater_entry=entry,underwater_exit=exit;
+    const bool wet=clip_water_span(eye.y,ray.y,water_offshore.z,water_offshore.y,
+        underwater_entry,underwater_exit);
+    const float sea_length=wet ? underwater_exit-underwater_entry : 0.0;
+    if (find_interface && abs(ray.y)>=1e-8) {
+        const float surface=(water_offshore.y-eye.y)/ray.y;
+        if (surface>=entry && surface<=exit && surface<max_distance &&
+            (local.interface_m<0.0 || surface<local.interface_m)) {
+            const float sea_before=wet ? max(0.0,min(surface,underwater_exit)-underwater_entry) : 0.0;
+            local.water_before_interface_m=sea_before+(motion>0.0 ? local.length_m : 0.0);
+            local.interface_m=surface;
+            local.interface_gradient=0.0;
+            local.enters=ray.y<0.0;
+            local.offshore_interface=true;
+        }
+    }
+    if (local.interface_m>=0.0 && !local.offshore_interface && motion<0.0)
+        local.water_before_interface_m+=sea_length;
+    local.length_m+=sea_length;
+    return local;
+}
+
 #ifndef POIMA_WATER_STRAIGHT_SURFACE
 #include "water_refraction.hlsli"
 #endif
@@ -195,12 +242,17 @@ float3 compose_water_path(WaterConstants water,float3 input_radiance,float3 ray,
         }
         const float3 before = exp(-water.extinction_per_m * before_m);
         color = lerp(color, lerp(scattering, reflection, before), fresnel);
-        [branch] if (from_air && water_shore_foam.y > 0.0) {
+        [branch] if (from_air && !path.offshore_interface && water_shore_foam.y > 0.0) {
             const float3 offset = interface_at * ray;
             const float3 entry = eye + offset;
             const float coverage = shore_foam_coverage(water, entry, water_interface_footprint(interface_at, relative_y));
+            float seam_fade=1.0;
+            if (water_offshore.x!=0.0) {
+                const float inward=water_offshore.w-dot(entry.xz,offshore_outward());
+                seam_fade=smoothstep(0.0,water.camera_cell_size.w,inward);
+            }
             [branch] if (coverage > 0.0)
-                color = lerp(color, lerp(scattering, shore_foam_radiance(camera.xyz + offset), before), coverage);
+                color = lerp(color,lerp(scattering,shore_foam_radiance(camera.xyz+offset),before),coverage*seam_fade);
         }
     }
     return clamp(color, -65504.0, 65504.0);

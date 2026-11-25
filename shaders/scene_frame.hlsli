@@ -35,5 +35,6 @@ cbuffer Frame : register(b1) {
     uint4 water_caustic_grid_light; // X and Z dimensions, one-based sun index, wave mode
     float4 water_shore_foam; // Depth limit, opacity, phase angle, one-based sun index
     WaterConstants sprite_water;
+    float4 water_offshore; // One-based grid side, surface Y, floor Y, outward edge coordinate.
 };
 StructuredBuffer<SceneLight> lights : register(t6);

@@ -72,8 +72,10 @@ bool water_probe_medium(WaterConstants water, WaterScreenRay ray, WaterDepthProb
         const bool above_bed = !has_water_bed_fan(column) || position.y >= limits.x - .025;
         const bool wet = limits.y > limits.x && position.y < limits.y - 0.002 && above_bed;
         if (wet != ray.entering) return false;
-    } else if (ray.entering) {
-        return false;
+    } else {
+        const bool wet=offshore_contains(position.xz) &&
+            position.y>=water_offshore.z-.025 && position.y<water_offshore.y-.002;
+        if (wet!=ray.entering) return false;
     }
     return true;
 }

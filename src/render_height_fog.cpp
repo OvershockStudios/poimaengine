@@ -112,12 +112,14 @@ void require_bindings(nvrhi::IBindingSet* bindings, const nvrhi::BindingSetDesc&
 
 WaterView project_water_view(const SceneWaterVolume& water,const std::array<double,3>& eye,float wave_mode) {
     namespace rs=render_schedule;
+    const auto& sea=water.optics.offshore;
+    const bool shaped=water.surface_swell || sea.has_value();
     static_assert(sizeof(SceneWaterColumn)==rs::water_column_bytes);
     static_assert(offsetof(SceneWaterColumn,corners)==16 && offsetof(SceneWaterColumn,swell_corners)==48);
     if (water.cells_x==0 || water.cells_z==0 || water.cells_x>rs::max_water_column_side ||
         water.cells_z>rs::max_water_column_side || water.columns.size()!=water.cells_x*water.cells_z ||
         !(water.cell_size_m>=.01 && water.cell_size_m<=256) ||
-        (water.surface_swell && !water.optics.follow_terrain))
+        (shaped && !water.optics.follow_terrain))
         throw std::runtime_error("Invalid water optics column grid.");
     if (!std::ranges::all_of(water.columns,[&](const SceneWaterColumn& cell) {
         const auto finite=[](auto lane){return std::isfinite(lane);};
@@ -126,7 +128,7 @@ WaterView project_water_view(const SceneWaterVolume& water,const std::array<doub
             cell.inactive_wedges()<=(water.surface_swell ? 0xfu : 0u) &&
             (!water.optics.follow_terrain ||
              (std::ranges::all_of(cell.corners,finite) && std::ranges::all_of(cell.stages,finite))) &&
-            (water.surface_swell ?
+            (shaped ?
                 finite(cell.swell_center_m) && std::ranges::all_of(cell.swell_corners,finite) :
                 cell.swell_center_m==0 && cell.swell_corners==std::array<float,4>{});
     })) throw std::runtime_error("Invalid water column height.");
@@ -146,9 +148,22 @@ WaterView project_water_view(const SceneWaterVolume& water,const std::array<doub
     }
     parameters.camera_cell_size[3]=static_cast<float>(water.cell_size_m);
     parameters.dimensions=water.cells_x|(water.cells_z<<8u)|(water.optics.refraction ? 1u<<16u : 0u)|
-        (water.surface_swell ? 1u<<17u : 0u);
+        (shaped ? 1u<<17u : 0u);
     parameters.radiance_wave_mode[3]=wave_mode;
     const double x=local[0]/water.cell_size_m,z=local[2]/water.cell_size_m;
+    if (sea) {
+        const double level=sea->surface_height_m-water.origin_m[1];
+        const double bed=level-sea->depth_m;
+        const auto edge=static_cast<std::uint32_t>(sea->edge);
+        if (edge>3 || !(std::abs(sea->surface_height_m)<=1e6) || !(sea->depth_m>=.1 && sea->depth_m<=10'000))
+            throw std::runtime_error("Invalid offshore water edge or levels.");
+        const double boundary=sea->edge==WaterEdge::max_x ? water.cells_x*water.cell_size_m :
+            sea->edge==WaterEdge::max_z ? water.cells_z*water.cell_size_m : 0;
+        result.offshore={static_cast<float>(edge+1),static_cast<float>(level),static_cast<float>(bed),
+            static_cast<float>(boundary)};
+        if (sea->contains(x,z,water.cells_x,water.cells_z) && local[1]>=bed && local[1]<level)
+            result.submersion_m=level-local[1];
+    }
     if (x>=0 && z>=0 && x<water.cells_x && z<water.cells_z) {
         const auto ix=static_cast<std::size_t>(x),iz=static_cast<std::size_t>(z);
         const auto& column=water.columns[iz*water.cells_x+ix];

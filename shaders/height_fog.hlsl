@@ -185,6 +185,15 @@ void compute_main(uint3 dispatch_id : SV_DispatchThreadID) {
         ((1.0 - water_depth) + water_depth * (cluster_depth.z / cluster_depth.w));
     const WaterPath path = trace_water_columns(fog.water,fog.water.camera_cell_size.xyz,ray,water_end,true);
     surface.rgb = compose_water_path(fog.water,surface.rgb,ray,path,uint2(width,height));
+#if defined(POIMA_AERIAL_PERSPECTIVE)
+    // A sea reflection against sky has surface depth even when the opaque
+    // depth buffer has no hit. Haze the reflected sea at that optical depth.
+    if (depth>=1.0 && path.offshore_interface && path.enters) {
+        const AerialPerspectiveSample sea=aerial_sample(aerial_scattering,aerial_transmittance,
+            aerial_sampler,uv,path.interface_m,fog.aerial_distances.x);
+        surface.rgb=clamp(surface.rgb*sea.transmittance+sea.scattered_light,-65504.0,65504.0);
+    }
+#endif
 #endif
     if (depth < 1.0 && depth >= 0.0) {
         const float near_plane = cluster_depth.z;

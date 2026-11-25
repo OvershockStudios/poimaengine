@@ -190,6 +190,11 @@ nlohmann::json optics_json(const WaterOptics& profile) {
     if(profile.caustics_strength>0) result["caustics_strength"]=profile.caustics_strength;
     if(const auto& foam=profile.shore_foam)
         result["shore_foam"]={{"depth_m",foam->depth_m},{"opacity",foam->opacity}};
+    if(const auto& sea=profile.offshore) {
+        constexpr std::array names{"min_z","max_x","max_z","min_x"};
+        result["offshore"]={{"edge",names.at(static_cast<std::size_t>(sea->edge))},
+            {"surface_height_m",sea->surface_height_m},{"depth_m",sea->depth_m}};
+    }
     return result;
 }
 
@@ -240,6 +245,10 @@ Region::Region(const RegionDefinition& definition)
             throw std::invalid_argument("Water listener audio needs cutoff_hz in [80,8000], gain in [0,1] and full_depth_m in [0.01,10].");
     }
     if (optics_) {
+        if (const auto& sea=optics_->offshore;
+            sea && (!optics_->follow_terrain || static_cast<std::uint32_t>(sea->edge)>3 ||
+                !(sea->depth_m>=.1 && sea->depth_m<=10'000) || !(std::abs(sea->surface_height_m)<=1e6)))
+            throw std::invalid_argument("Offshore water needs terrain fitting, a valid edge, finite stage and depth in [0.1,10000].");
         if (!unit_interval(optics_->caustics_strength))
             throw std::invalid_argument("Water caustics_strength must be in [0,1].");
         if (const auto& foam = optics_->shore_foam;
@@ -322,6 +331,20 @@ FittedWaterBed Region::fitted_bed(Cell cell) const {
         out.swell_center_m=swell_at(x+.5,z+.5);
         out.swell_corners_m={swell_at(x,z),swell_at(x+1,z),swell_at(x+1,z+1),swell_at(x,z+1)};
     }
+    if (optics_ && optics_->offshore) {
+        const auto& sea=*optics_->offshore;
+        const std::array boundary{cell.z==0,cell.x+1==sizing.cells_x,cell.z+1==sizing.cells_z,cell.x==0};
+        const auto side=static_cast<std::size_t>(sea.edge);
+        if (boundary[side]) {
+            // The outer edge belongs to the ocean datum. The inner corners
+            // and the center retain their committed local height and phase.
+            const auto offset=sea.surface_height_m-sample.surface_height_m;
+            out.stages_m.fill(sample.surface_height_m);
+            out.swell_corners_m[side]=offset;
+            out.swell_corners_m[(side+1)%4]=offset;
+            return out;
+        }
+    }
     if (sample.depth_m>0) {
         out.stages_m.fill(sample.surface_height_m);
         return out;
@@ -364,13 +387,30 @@ std::optional<CellSample> Region::sample_world(double x_m,double z_m,
     sample->floor_height_m=levels[0];
     sample->surface_height_m=levels[1];
     sample->depth_m=levels[1]-levels[0];
-    if (surface_normal && !swell_waves_.empty() && sample->depth_m>0) {
+    if (surface_normal && (!swell_waves_.empty() || (optics_ && optics_->offshore)) && sample->depth_m>0) {
         const auto gradient=fitted_water_gradient(bed.swell_center_m,bed.swell_corners_m,
             fitted_water_side(u,v),sizing.cell_size_m);
         const auto scale=1/std::sqrt(1+gradient[0]*gradient[0]+gradient[1]*gradient[1]);
         *surface_normal=std::array{-gradient[0]*scale,scale,-gradient[1]*scale};
     }
     return sample;
+}
+
+std::optional<std::array<double,2>> Region::offshore_levels(double x_m,double z_m) const noexcept {
+    if (!optics_ || !optics_->offshore || !std::isfinite(x_m) || !std::isfinite(z_m)) return std::nullopt;
+    const auto& sea=*optics_->offshore;
+    const auto& config=grid_.config();
+    if (!sea.contains(x_m-config.origin_x_m,z_m-config.origin_z_m,
+        config.cells_x*config.cell_size_m,config.cells_z*config.cell_size_m))
+        return std::nullopt;
+    return std::array{sea.surface_height_m-sea.depth_m,sea.surface_height_m};
+}
+
+double Region::submersion_at(double x_m,double y_m,double z_m) const {
+    if (const auto local=sample_world(x_m,z_m)) return local->submersion_at(y_m);
+    if (const auto ocean=offshore_levels(x_m,z_m); ocean && y_m>=(*ocean)[0] && y_m<(*ocean)[1])
+        return (*ocean)[1]-y_m;
+    return 0;
 }
 
 StepReport Region::step(std::span<const std::string_view> pressed, std::uint32_t rain_depth_nm,

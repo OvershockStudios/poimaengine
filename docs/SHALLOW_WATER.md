@@ -223,6 +223,45 @@ The [swell fixture](../tests/water_surface_swell_capture.py) compares
 independent clipped wave prisms with rendered HDR and checks fresh-process
 save continuation, spatial audio and export admission.
 
+## Continue the water offshore
+
+Set `offshore` inside the terrain-fitted `optics` profile when the water
+should continue beyond one side of the simulation grid. Choose the side that
+faces open water and a stage at the same world height as the adjacent coast.
+
+```json
+{
+  "edge": "min_z",
+  "surface_height_m": 0,
+  "depth_m": 80
+}
+```
+
+`edge` accepts `min_z`, `max_x`, `max_z` or `min_x`. The offshore band
+extends outward along that axis and across the other axis. It has a fixed
+surface height and depth. The world height ranges from −1,000,000 to
+1,000,000 m and the depth from 0.1 to 10,000 m. Keep terrain and opaque
+geometry in front of the band wherever those surfaces should occlude the sea.
+
+The fitted surface meets the offshore stage at its outer corners. Authored
+swell continues to move the inner corners and centers. The simulation grid
+keeps its original closed exterior faces and volume. Exchanges, rain, gates
+and saves continue to account for the simulated cells. Offshore uses the same
+extinction, scattering, refraction and authored wave normals as local water.
+Foam fades toward the boundary. Geometric swell and focused caustics remain
+within the local fit. Single-sample Vulkan color draws the offshore water,
+including the FSR path. Multisample fallback draws the local surface mesh.
+
+`runtime.water.inspect` reports offshore columns with `offshore:true`,
+`cell:null` and a vertical surface normal. Listener audio uses depth through
+the same boundary. A submitted color capture reports
+`render_diagnostics.water_optics.offshore`.
+
+The profile cooks `.pwater` version 12 and adds `needs_water_offshore` to
+project dependencies. Use a runtime that advertises `features.water_offshore`
+to export it. Run [the offshore fixture](../tests/water_offshore_capture.py)
+with `--help` for scenario, capture and relocated-export options.
+
 ## Author the waterline sound transition
 
 Discover `water_listener_audio` on an audio and simulation build. Add a

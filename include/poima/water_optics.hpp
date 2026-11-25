@@ -2,12 +2,29 @@
 #pragma once
 
 #include <array>
+#include <cstdint>
 #include <optional>
 
 namespace poima {
 struct WaterShoreFoam {
     double depth_m;
     double opacity;
+};
+enum class WaterEdge : std::uint32_t { min_z, max_x, max_z, min_x };
+struct WaterOffshore {
+    WaterEdge edge;
+    double surface_height_m;
+    double depth_m;
+
+    bool contains(double x,double z,double width,double length) const noexcept {
+        switch (edge) {
+        case WaterEdge::min_z: return z<0;
+        case WaterEdge::max_x: return x>=width;
+        case WaterEdge::max_z: return z>=length;
+        case WaterEdge::min_x: return x<0;
+        }
+        return false;
+    }
 };
 struct WaterOptics {
     std::array<double,3> extinction_per_m;
@@ -16,5 +33,6 @@ struct WaterOptics {
     double caustics_strength=0;
     std::optional<WaterShoreFoam> shore_foam{};
     bool follow_terrain=false;
+    std::optional<WaterOffshore> offshore;
 };
 }

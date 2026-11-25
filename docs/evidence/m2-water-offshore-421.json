@@ -1,0 +1,171 @@
+{
+  "checkpoint": "0.0.421",
+  "parent_commit": "0a7bb8273e8d895bad765a48fa65ad2d6841ae90",
+  "schema_revision": 219,
+  "source_sha256": {
+    "CMakeLists.txt": "5fccd1c4cc03c7ddba488d3db8268cf8becac3804e1003a9ed79c58cdb1d0f04",
+    "cmake/runtime.json.in": "d9ab03e2ede3f55d5109e9aa8b85e0f942fba88095b26887da6c4341b756440d",
+    "include/poima/core.hpp": "8ff0b7c0db602f0635333ddb8665c7f2fd2f5214d2e6c114dd1bae0feea995ab",
+    "include/poima/water_optics.hpp": "752a55e5755c82f41e2d045e747b1e2c4b217238c886ccf09384320e4e56adbc",
+    "include/poima/water_region.hpp": "e420e046bec168ac002f06ead26528942c27c575059a4993650a7b9658b666ef",
+    "include/poima/world.hpp": "82cb9cc6ca65ea4c25ccfc99a2280d7b4055bf975816537e8e9d8f3715d057cc",
+    "shaders/height_fog.hlsl": "da160a018c58bb331d2d611eb336971e42574f4424b47ed69f0ffc1f96415d95",
+    "shaders/scene_frame.hlsli": "ef8cc6787662d9f86ac84fd8e9611e77403399c037f0bfa2641a6c4192aadad2",
+    "shaders/water_optics.hlsli": "f27c925ef041b74c1c2bb9d1ff0891b38d1572cf4645450f1f514c2cea907fbb",
+    "shaders/water_refraction.hlsli": "e173fbd6c98b1a34b5e50acfd2ea70d3fcbc4c486622aab0f7165d364e261a30",
+    "src/audio_water.hpp": "234d4715fca517670f4f9c337ec66deb5790d71f761b1e21568bdaeed3f0c1a1",
+    "src/core.cpp": "bd0230aa14018a5950de9089d4fe185bf477f7df8f0bbf24195ecf72e068f53e",
+    "src/project.cpp": "705e2bd3e53e9e06806ed0543c81bb681e04c1904d88ed49531ba5f3061b4636",
+    "src/render_height_fog.cpp": "a19bc40e9eb35a9d6fdd6372b5eb7b5f939f6e34bbd8b9288bde803f7a79aa03",
+    "src/render_height_fog.hpp": "fa068f8cd9ddd687e008f93bd606e562114d90acdde190f4e0e5b4c1470e0c41",
+    "src/render_smoke.cpp": "c78578185fbc47cf2c16400524c4c8a98db34bfa00a4dba9c83f053c85720309",
+    "src/water_asset.cpp": "fef344daa3350cee9701e3c01cb6cdf0ef609da3fa3fcc21ccc338cbd7c8c4a7",
+    "src/water_region.cpp": "71f51d73906be18f684225f1eb2b9e2e9b7f0f26306bfbe0a8a438b1aba50574",
+    "src/water_region_scene.cpp": "2adc283a101019374d2398cf38188034d03886738c5c23b69b7d3bf39445123e",
+    "src/world.cpp": "8c1c082ea656eca71f020c82e2943fa357bf0d18c957252cc630e5d42ca854d8",
+    "src/world_content.cpp": "c69b406f0844f6cad44f9920b9d0d2551c777f8f3d10f58e6e331b85af7cab6f",
+    "src/world_presentation_json.cpp": "c3d071473c33a304c3d917f29f383227b85f0e96494df0498cb1a794fa1beec1",
+    "src/world_schema.cpp": "7ddd195bb1d3c575248b6c147a3512c0a96dc9828a25437ac8167ff1f7e20b72",
+    "src/world_water_service.inc": "556da2e48751d57b852415081dd788d07d30987279a7d6e98004ccc9305d8e21",
+    "tests/water_offshore_capture.py": "28221175c8eb9d06be13a01d9071977e3946f3aea2876558098d4b4f323aed25",
+    "tests/water_region_native.cpp": "6c70c7cd871686d173498cf1252beaab48d4798a6d537d1c66df35ad8d9ffb53"
+  },
+  "windows": {
+    "validation": "Khronos 1.4.363.0 with VK_LAYER_VALIDATE_SYNC=1",
+    "binary_sha256": "cb6a257b70e66b8a9534655b4cefbcc98e78d41b0d4b2e6864d2db2d09568a58",
+    "bridge_sha256": "8fc0de13cc17b3a66156a536fbc1ef863d42a13d071248798fd5bf4dae1b4bdf",
+    "runtime_manifest_sha256": "9ad5ccf64d4e9ca327937fddcdff132b69b5588f1de81844a96812df38faef60",
+    "amd": {
+      "adapter": "AMD Radeon(TM) Graphics",
+      "lighting_path": "forward",
+      "original_evidence_sha256": "d274911b14e43881f2a15fa3b280d31fe1a5b55b4f3979f1b78d8f806ab7419b",
+      "captures": {
+        "from-shore": "5a79b211cf429107d34250dc742992f204e20315fd21e568eb330d2406b4bdcb",
+        "from-ocean": "a53abb68a06d5841380757ce589e102913e9b0dc73a4a0ea5bb9952740a90cd2",
+        "cold-ocean": "a53abb68a06d5841380757ce589e102913e9b0dc73a4a0ea5bb9952740a90cd2"
+      },
+      "hdr_probes": 192,
+      "max_absolute_hdr_error": 0.0002427251782129436,
+      "probes_crossing_both_water_regions": 34,
+      "first_offshore_interfaces": 48,
+      "loader_device_validation_markers": 3,
+      "local_volume_m3": 2.5799999999999983,
+      "seam_listener_depths_m": [
+        0.1300002595846479,
+        0.1299999999999999
+      ],
+      "far_column": {
+        "cell": null,
+        "depth_m": 16.0,
+        "floor_height_m": -11.07,
+        "offshore": true,
+        "surface_height_m": 4.93,
+        "surface_normal": [
+          0,
+          1,
+          0
+        ]
+      },
+      "save_restore_tick": 45,
+      "relocated_export": false
+    },
+    "nvidia": {
+      "adapter": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "lighting_path": "deferred",
+      "original_evidence_sha256": "7fabfe49f21bda40fd3cf0c302c17e25cd6f98d211be498f3f83914404f17e14",
+      "captures": {
+        "from-shore": "05cade37d3160e98e2880fcd96cb3b90c5fa30b73c8066092a6334ec786ede4d",
+        "from-ocean": "c6d34cb5a69eccf563301e143db29c93147cc899a090a9542e22a48aa9e69f7e",
+        "cold-ocean": "c6d34cb5a69eccf563301e143db29c93147cc899a090a9542e22a48aa9e69f7e"
+      },
+      "hdr_probes": 192,
+      "max_absolute_hdr_error": 0.0002427251782129436,
+      "probes_crossing_both_water_regions": 34,
+      "first_offshore_interfaces": 48,
+      "loader_device_validation_markers": 3,
+      "local_volume_m3": 2.5799999999999983,
+      "seam_listener_depths_m": [
+        0.1300002595846479,
+        0.1299999999999999
+      ],
+      "far_column": {
+        "cell": null,
+        "depth_m": 16.0,
+        "floor_height_m": -11.07,
+        "offshore": true,
+        "surface_height_m": 4.93,
+        "surface_normal": [
+          0,
+          1,
+          0
+        ]
+      },
+      "save_restore_tick": 45,
+      "relocated_export": true
+    },
+    "missing_runtime_feature_error": "Offshore water requires a compatible Vulkan runtime.",
+    "legacy_fsr_swell": {
+      "baseline_evidence_sha256": "19e558c0e22e31730d482f780e99ba58e2b55839cc58a26bbf35a8acfb8ffb24",
+      "candidate_evidence_sha256": "13de8c4f0e548643e8945ee542b114657adf7d9d34f38506d1f6d98f6bed0e4b",
+      "exact_outputs": {
+        "dry-pcm": "bedadc80e9e0aa4830f26a4988d61dfd197b06312810126b2ff2ac90afcdf573",
+        "crest-pcm": "4ee6abaf6082e10ab7a4f860b8a79420db77f185efa09816eaafa1b1784dc0ac",
+        "crest": "91ea7f83465109c0c9ac0c5ccc7868e7abfb27a969d54f4d0e15ec622c947832",
+        "crest-low": "2399ae8d721f1b9673d824a33b6ea7113d40f3eb22f57f5d652270ec5c56b1df",
+        "crest-fsr": "e1245a7e3d1302f6930fb7abbce0a71e7ecf38f9e904ec6749cf76851dd605bb",
+        "trough": "241d354e3804d7395bc5a5cec03de313d5005edae00c6a5fee6633cf2746a430",
+        "cold": "91ea7f83465109c0c9ac0c5ccc7868e7abfb27a969d54f4d0e15ec622c947832",
+        "cold-pcm": "4ee6abaf6082e10ab7a4f860b8a79420db77f185efa09816eaafa1b1784dc0ac"
+      }
+    }
+  },
+  "ubuntu": {
+    "passed_ctest_suites": [
+      "audio_contract",
+      "audio_reflections_native",
+      "audio_save_native",
+      "cli_contract",
+      "editor_audio_native",
+      "project_contract",
+      "render_schedule_native",
+      "shallow_water_native",
+      "water_listener_audio_contract",
+      "water_region_native",
+      "water_region_scene_native",
+      "world_audio_native",
+      "world_water_contract",
+      "world_water_rain_contract"
+    ],
+    "binary_sha256": "7369e93f3a4841c8c803b9bcb0e2a807fb5dbe9288387a85482990dafe0c2482",
+    "junit_sha256": "951e0c302e8060b7b57bf48eb2bea7ce20a558bcc7c44bcfe32b4991a3612eab",
+    "offshore_protocol_evidence_sha256": "b0803f1ace486f91789e0ddb2580d3b36f6e631fa4129137afc6e5714d5efae5",
+    "edge_checks": [
+      "min_z",
+      "max_x",
+      "max_z",
+      "min_x"
+    ],
+    "scope": "Native headless build and protocol. Vulkan qualification used the Windows runtime."
+  },
+  "limits": [
+    "One authored outward half-plane with a fixed stage and depth.",
+    "Terrain fitting is required. Local grid volume and exterior face controls retain their original ownership.",
+    "Far water supplies optical and listener depth, with normals for shading. It does not simulate separate wave transport or exchanges.",
+    "Reviewed fixture and authored coast runs do not establish game-scale frame rates."
+  ],
+  "authored_study": {
+    "label": "Wide headland",
+    "extent": [
+      1120,
+      630
+    ],
+    "renderer": "Deferred Vulkan color with FSR Native AA, aerial perspective and volumetric clouds",
+    "original_evidence_sha256": "af4b5435684d01927a68511e2807b12570dd3dceb196afb8267350bdd29bc1b9",
+    "captures": {
+      "headland-and-open-sea": "356792b950e31a6019a32042e75d6076c770367ac7507220c071f44189eee8bb",
+      "coast-to-horizon": "07f48c40a93448ca2fa16554912ba908e59f632f31a84a84d590404057b0ad47",
+      "from-offshore": "d25ed4f6b62875322de88dc01c6fea67dd642a6b1d97e443e708246ec6892ac4"
+    },
+    "scope": "World-authored terrain and offshore continuation composed with stock effects in a still-frame study."
+  }
+}

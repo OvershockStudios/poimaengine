@@ -2,6 +2,12 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.421
+
+- Continue terrain-fitted water offshore from a chosen edge. The offshore
+  surface shares the coast's optical and listener-depth queries, while the
+  local grid retains its existing volume and flow accounting.
+
 ## 0.0.420
 
 - Author moving surface swell on terrain-fitted water. Rendering, point

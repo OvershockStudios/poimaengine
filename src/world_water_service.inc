@@ -126,6 +126,11 @@
                         {"surface_height_m",column->surface_height_m},{"depth_m",column->depth_m}};
                     row["submersion_m"]=column->submersion_at(y);
                     if (normal) row["column"]["surface_normal"]=*normal;
+                } else if (const auto sea=region ? region->offshore_levels(x,z) : std::nullopt) {
+                    const auto [floor,stage]=*sea;
+                    row["column"]={{"cell",nullptr},{"offshore",true},{"floor_height_m",floor},
+                        {"surface_height_m",stage},{"depth_m",stage-floor},{"surface_normal",{0,1,0}}};
+                    if (y>=floor && y<stage) row["submersion_m"]=stage-y;
                 }
                 result["points"].push_back(std::move(row));
             }

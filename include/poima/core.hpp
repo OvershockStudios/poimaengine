@@ -283,6 +283,7 @@ struct WaterOpticsDiagnostics {
     bool follow_terrain=false;
     bool sprites=false;
     bool surface_swell=false;
+    bool offshore=false;
 };
 struct AerialPerspectiveDiagnostics {
     bool active=false;

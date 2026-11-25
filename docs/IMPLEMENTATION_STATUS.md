@@ -1,8 +1,18 @@
 # Implementation status
 
-Updated 2026-11-25 for **0.0.420**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-25 for **0.0.421**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.421 adds an [offshore continuation](SHALLOW_WATER.md#continue-the-water-offshore)
+to one terrain-fitted boundary. AMD forward and NVIDIA deferred passed 384 HDR
+probes with Vulkan synchronization validation, including 68 sightlines through
+both water regions. The local grid retained its volume. Point and listener
+depth agreed across the seam, and a relocated Windows save reproduced the
+offshore capture. Ubuntu passed 14 suites and the offshore headless fixture.
+The offshore surface has a fixed stage. Swell moves the fitted cells.
+Breaking waves and transfers across the grid boundary remain open.
+[Results](evidence/m2-water-offshore-421.json)
 
 Version 0.0.420 adds [surface swell](SHALLOW_WATER.md#displace-the-water-surface)
 to terrain-fitted water. AMD forward and NVIDIA deferred passed 384 HDR

@@ -38,6 +38,7 @@ struct alignas(16) WaterParameters {
 struct WaterView {
     WaterParameters parameters;
     double submersion_m;
+    std::array<float,4> offshore{};
 };
 
 WaterView project_water_view(const SceneWaterVolume& water,const std::array<double,3>& eye,float wave_mode);

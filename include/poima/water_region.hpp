@@ -32,6 +32,8 @@ public:
     FittedWaterBed fitted_bed(Cell cell) const;
     std::optional<CellSample> sample_world(double x_m,double z_m,
         std::optional<std::array<double,3>>* surface_normal=nullptr) const;
+    std::optional<std::array<double,2>> offshore_levels(double x_m,double z_m) const noexcept;
+    double submersion_at(double x_m,double y_m,double z_m) const;
     std::uint64_t cumulative_rain_nm() const noexcept { return cumulative_rain_nm_; }
     double cumulative_rain_m3() const noexcept;
 

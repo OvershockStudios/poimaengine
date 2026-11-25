@@ -15,6 +15,7 @@ using Json = nlohmann::json;
 constexpr auto artifact_format = "poima.water.region";
 
 std::uint32_t artifact_version(const RegionDefinition& definition) noexcept {
+    if (definition.optics && definition.optics->offshore) return 12;
     if (!definition.surface_swell.empty()) return 11;
     if (definition.optics) {
         if (definition.optics->follow_terrain) return 10;
@@ -153,7 +154,8 @@ void parse_rules(const Json& object, RegionDefinition& definition) {
     }
     if (object.contains("optics")) {
         const auto& value=object.at("optics");
-        fields(value, {"extinction_per_m","scattered_radiance"}, {"refraction","caustics_strength","shore_foam","follow_terrain"});
+        fields(value, {"extinction_per_m","scattered_radiance"},
+            {"refraction","caustics_strength","shore_foam","follow_terrain","offshore"});
         if (value.contains("refraction"))
             require(value.at("refraction").is_boolean(),"Water optics refraction must be Boolean.");
         if (value.contains("follow_terrain"))
@@ -176,6 +178,16 @@ void parse_rules(const Json& object, RegionDefinition& definition) {
             const auto& foam = value.at("shore_foam");
             fields(foam, {"depth_m","opacity"});
             definition.optics->shore_foam = WaterShoreFoam{number(foam.at("depth_m")),number(foam.at("opacity"))};
+        }
+        if (value.contains("offshore")) {
+            const auto& sea=value.at("offshore");
+            fields(sea,{"edge","surface_height_m","depth_m"});
+            constexpr std::array<std::string_view,4> names{"min_z","max_x","max_z","min_x"};
+            require(sea.at("edge").is_string(),"Offshore edge must be a string.");
+            const auto edge=std::ranges::find(names,sea.at("edge").get_ref<const std::string&>());
+            require(edge!=names.end(),"Offshore edge must be min_z, max_x, max_z or min_x.");
+            definition.optics->offshore=WaterOffshore{static_cast<WaterEdge>(edge-names.begin()),
+                number(sea.at("surface_height_m")),number(sea.at("depth_m"))};
         }
     }
     std::ranges::sort(definition.rain_cells, {}, [](Cell cell) { return std::pair{cell.z, cell.x}; });
@@ -290,7 +302,7 @@ RegionAsset decode_region_asset(std::string_view bytes) {
     fields(object, {"format", "version", "terrain_recipe_sha256", "tiles", "grid", "floor_heights_m",
         "initial_depths_m", "faces", "exchanges"}, {"rain_cells", "surface_ripples", "surface_wave_layers", "surface_swell", "listener_audio", "optics", "shore_corner_heights_m"});
     require(object.at("format") == artifact_format, "Unsupported water asset format.");
-    const auto version=integer(object.at("version"),1,11);
+    const auto version=integer(object.at("version"),1,12);
     RegionAsset asset;
     asset.terrain_recipe_sha256 = hex(object.at("terrain_recipe_sha256"), 64);
     auto& definition = asset.definition;
@@ -376,6 +388,9 @@ Json region_authoring_schemas() {
         {"follow_terrain",{{"type","boolean"},{"default",false},
             {"description","Fit the optical bed and listener submersion to sampled terrain, respecting dry cells and gate controls."}}},
         {"caustics_strength",range("number",0,1)},
+        {"offshore",object({{"edge",{{"enum",{"min_z","max_x","max_z","min_x"}}}},
+            {"surface_height_m",coordinate},{"depth_m",range("number",.1,10'000)}},
+            {"edge","surface_height_m","depth_m"})},
         {"shore_foam",object({{"depth_m",range("number",.02,3)},{"opacity",range("number",0,1)}},
             {"depth_m","opacity"})}},
         {"extinction_per_m","scattered_radiance"});
@@ -384,6 +399,11 @@ Json region_authoring_schemas() {
         "Focus light from the linked sky sun below the surface using the authored wave normals. Zero disables the effect.";
     optics["properties"]["shore_foam"]["description"] =
         "Add surface foam to shallow committed water. Depth is measured vertically in metres. Opacity zero keeps the selected profile with a clear surface.";
+    optics["properties"]["offshore"]["description"] =
+        "Extend water across the half-plane beyond one fitted grid side. Its surface and bed are authored elevations independent of the conserved nearshore grid.";
+    const Json fitted={{"required",{"follow_terrain"}},{"properties",{{"follow_terrain",{{"const",true}}}}}};
+    optics["if"]={{"required",{"offshore"}}};
+    optics["then"]=fitted;
     auto plan = object({{"revision", tick_schema}, {"terrain", std::move(source)}, {"expected_terrain_recipe_sha256", sha_schema},
         {"tile_entities", array(id_schema, 1, terrain::max_cook_tiles)}, {"grid", grid},
         {"initial_depths_m", array(range("number", 0, 1'000'000), 0, max_region_side * max_region_side)},
@@ -394,7 +414,6 @@ Json region_authoring_schemas() {
         {"revision", "terrain", "expected_terrain_recipe_sha256", "tile_entities", "grid"});
     plan["not"] = {{"required", {"surface_ripples", "surface_wave_layers"}}};
     plan["if"]={{"required",{"surface_swell"}}};
-    const Json fitted={{"required",{"follow_terrain"}},{"properties",{{"follow_terrain",{{"const",true}}}}}};
     plan["then"]={{"required",{"optics"}},{"properties",{{"optics",fitted}}}};
     plan["properties"]["rain_cells"]["uniqueItems"] = true;
     plan["properties"]["rain_cells"]["description"] =

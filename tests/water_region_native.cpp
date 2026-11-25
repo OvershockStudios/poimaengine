@@ -264,6 +264,58 @@ void swell_shares_cell_edges_and_restores_phase() {
     rejects<std::invalid_argument>([&] { (void)Region(definition); },"Swell without fitted optics was admitted.");
 }
 
+void offshore_joins_only_the_selected_edge() {
+    RegionDefinition definition{
+        .config={.cells_x=2,.cells_z=2,.origin_x_m=20,.origin_z_m=-10,.relaxation_per_second=0},
+        .floor_heights_m={0,0,0,0},.initial_depths_m={1.125,.875,1.25,.75},
+        .plan_sha256=std::string(64,'e'),
+        .optics=poima::WaterOptics{.extinction_per_m={},.scattered_radiance={},.follow_terrain=true},
+        .shore_corner_heights_m={0,0,0,0,0,0,0,0,0},
+        .surface_swell={{4,.2,64,0}},
+    };
+    struct Shore {
+        poima::WaterEdge edge;
+        double x,z,dx,dz;
+        bool outside_at_edge;
+    };
+    constexpr std::array shores{
+        Shore{poima::WaterEdge::min_z,20.4,-10,0,-1,false},
+        Shore{poima::WaterEdge::max_x,22,-9.6,1,0,true},
+        Shore{poima::WaterEdge::max_z,20.4,-8,0,1,true},
+        Shore{poima::WaterEdge::min_x,20,-9.6,-1,0,false},
+    };
+    for (const auto& shore : shores) {
+        definition.optics->offshore=poima::WaterOffshore{shore.edge,1,20};
+        Region region(definition);
+        for (int phase=0;phase<2;++phase) {
+            constexpr double epsilon=1e-7;
+            const auto inside=region.sample_world(shore.x-shore.dx*epsilon,shore.z-shore.dz*epsilon);
+            require(inside && std::abs(inside->surface_height_m-1)<epsilon,
+                "Fitted water does not meet its offshore boundary.");
+            require(!region.offshore_levels(shore.x-shore.dx*epsilon,shore.z-shore.dz*epsilon) &&
+                region.offshore_levels(shore.x,shore.z).has_value()==shore.outside_at_edge,
+                "The grid and offshore water disagree on boundary ownership.");
+            const double x=shore.x+shore.dx*1e4,z=shore.z+shore.dz*1e4;
+            require(region.offshore_levels(x,z)==std::optional(std::array{-19.,1.}) &&
+                region.submersion_at(x,.75,z)==.25 && region.submersion_at(x,-20,z)==0 &&
+                region.submersion_at(x,1,z)==0 &&
+                !region.offshore_levels(shore.x-shore.dx*1e4,shore.z-shore.dz*1e4),
+                "Offshore depth or directional ownership is incorrect.");
+            for (int tick=0;tick<32;++tick) region.step();
+        }
+        require(region.grid().volume_m3()==4, "Offshore water changed the conserved local volume.");
+    }
+
+    auto invalid=definition;
+    invalid.optics->follow_terrain=false;
+    invalid.shore_corner_heights_m.clear();
+    invalid.surface_swell.clear();
+    rejects<std::invalid_argument>([&] { (void)Region(invalid); }, "An unfitted offshore edge was accepted.");
+    invalid=definition;
+    invalid.optics->offshore->depth_m=.01;
+    rejects<std::invalid_argument>([&] { (void)Region(invalid); }, "An out-of-range offshore depth was accepted.");
+}
+
 }
 
 int main() {
@@ -273,6 +325,7 @@ int main() {
         surface_ripples_are_frozen_presentation_data();
         restore_and_step_are_atomic();
         swell_shares_cell_edges_and_restores_phase();
+        offshore_joins_only_the_selected_edge();
         std::cout << "Water region tests passed.\n";
     } catch (const std::exception& error) {
         std::cerr << error.what() << '\n';

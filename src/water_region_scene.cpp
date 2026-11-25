@@ -203,10 +203,11 @@ void append_region_scene(const Region& region, SceneSnapshot& scene) {
             wet[count++] = {x, z, static_cast<float>(sample.surface_height_m - origin_y), palette_u};
         }
     }
-    if (!count) return;
+    if (!count && !volume.optics.offshore) return;
     auto surface=volume.optics.follow_terrain ? clipped_surface_mesh(volume) :
         surface_mesh(config.cell_size_m,std::span(wet).first(count));
     if (region.optics()) scene.water_volume=std::move(volume);
+    if (surface->indices.empty()) return;
 
     SceneObject object{};
     object.entity_id = "water-region/" + region.plan_sha256();
