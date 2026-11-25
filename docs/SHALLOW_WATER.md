@@ -257,6 +257,19 @@ including the FSR path. Multisample fallback draws the local surface mesh.
 the same boundary. A submitted color capture reports
 `render_diagnostics.water_optics.offshore`.
 
+With `surface_swell` authored, the reflection and refraction shaders use
+the same analytic wave slope across the fitted water and the offshore plane.
+Each band fades as its phase spans more of a projected screen pixel. Color
+capture reports the number of active bands in
+`render_diagnostics.water_optics.offshore_swell_layers`. The fitted triangles
+and offshore plane still determine water depth, medium crossings and the
+normal returned by point queries.
+
+When the camera sees the water surface from air, height fog and aerial
+perspective use the distance to the first water entry. This applies across
+the join, including views with a visible seabed or a sky background.
+[Multi-scale wave filtering research](https://onlinelibrary.wiley.com/doi/10.1111/cgf.70495)
+
 The profile cooks `.pwater` version 12 and adds `needs_water_offshore` to
 project dependencies. Use a runtime that advertises `features.water_offshore`
 to export it. Run [the offshore fixture](../tests/water_offshore_capture.py)

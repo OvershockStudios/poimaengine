@@ -36,5 +36,6 @@ cbuffer Frame : register(b1) {
     float4 water_shore_foam; // Depth limit, opacity, phase angle, one-based sun index
     WaterConstants sprite_water;
     float4 water_offshore; // One-based grid side, surface Y, floor Y, outward edge coordinate.
+    float4 water_offshore_swell[4]; // Angular frequency X/Z, amplitude, phase.
 };
 StructuredBuffer<SceneLight> lights : register(t6);

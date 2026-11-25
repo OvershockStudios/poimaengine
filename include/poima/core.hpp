@@ -284,6 +284,7 @@ struct WaterOpticsDiagnostics {
     bool sprites=false;
     bool surface_swell=false;
     bool offshore=false;
+    std::uint32_t offshore_swell_layers=0;
 };
 struct AerialPerspectiveDiagnostics {
     bool active=false;

@@ -1,0 +1,153 @@
+{
+  "checkpoint": "0.0.422",
+  "parent_commit": "f0221ca527988530cc51a3ed89a434a42d033d68",
+  "source_sha256": {
+    "CMakeLists.txt": "0cbfac773e3e212377e7a6a96de686b03a6a99c182c398c7aa3596f3722f6d2e",
+    "include/poima/core.hpp": "36d6b02c01bb3632aedb5e11480c303dddc5569ae4cb3418565379102c2dbd0e",
+    "include/poima/scene.hpp": "551cd2175688fb17b2129d644df54fdbf801ae4f7285054db9314fa68cff6ac4",
+    "shaders/height_fog.hlsl": "e27d08bfd8bea258e54283b6e835ec318148cb150fc129d6999e9ee0a3b978b6",
+    "shaders/scene_frame.hlsli": "945befb97a791bff81ce6c0f3ab870c6e7d84595bc8a9a1311aa082fe54ed8d5",
+    "shaders/water_optics.hlsli": "46692977c4f7d86aa2cd9454c305fd0eec818b03b9fc50c32263f96e33a21afd",
+    "src/render_height_fog.cpp": "c4c92cf62f5df7641f18d93d350c64a8ab332bae6720c556c546568c5aa3e55b",
+    "src/render_height_fog.hpp": "37242beebe65aff030577b93c4c4da2fc122773f5b3adca125a74a32b8b2469c",
+    "src/render_smoke.cpp": "78aa7a208c8f508d4c025ac0dbe96884ca1a790236077970b5d9ee34df60330c",
+    "src/water_region_scene.cpp": "455eca988a8dc99af9fd5ea99ce35ad8cd22d37978d670a90dd7ff014842348a",
+    "src/world_presentation_json.cpp": "c393b93477973cd1c680fd906e068e91f8f4b3800f205e2776d480c823136103",
+    "tests/water_offshore_capture.py": "ea574a1a80705cc0e31c97cdca7ecc4af90f794ff65825e09701830849ba83a8"
+  },
+  "windows": {
+    "binary_sha256": "7a21aa493eac93416251f25e1ef90483679f0c860a5a6e4f89594fad070328d3",
+    "bridge_sha256": "a8128baa5cec05b4c28e6590db2acb35dbbec50cba45d214d7deb6a02a585e2d",
+    "runtime_manifest_sha256": "4923ce83cca672d461ef0295f281749dea5b3b10263598d9818c88522c6ce874",
+    "validation": "Khronos 1.4.363.0 with VK_LAYER_VALIDATE_SYNC=1",
+    "amd": {
+      "adapter": "AMD Radeon(TM) Graphics",
+      "lighting_path": "forward",
+      "original_evidence_sha256": "bb5c89564e38db707c05c5c8a34467148eeeb5373ca26cb16fd216f1f612a516",
+      "captures": {
+        "from-shore": "92572a0f7925ef6b46f5852871f110c969b5098d263243d4367f5ec37d691639",
+        "from-ocean": "d531d9fb234e35af06063dd3f3dad4a9b0d88921ca991fe803b3946cae3ef757",
+        "toward-horizon": "12c001ddfc794461e3a610c4b9963d1b6c3c3d94c1e1145d5a279e233337fc93",
+        "cold-ocean": "d531d9fb234e35af06063dd3f3dad4a9b0d88921ca991fe803b3946cae3ef757"
+      },
+      "hdr_probes": 228,
+      "max_absolute_hdr_error": 0.0004859155722132247,
+      "filtered_probes_delta_above_0_006": 6,
+      "filtered_reference_max_delta": 0.061684256606541754,
+      "smooth_slope_max_delta": 0.2690174778969876,
+      "opaque_depth_fog_max_delta": 0.028625869153268813,
+      "sky_depth_fog_max_delta": 0.3189391846418787,
+      "restored_at_tick": 45,
+      "local_volume_m3": 2.5799999999999983,
+      "relocated_export": false
+    },
+    "nvidia": {
+      "adapter": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "lighting_path": "deferred",
+      "original_evidence_sha256": "c2cbc521a4fcdd8f55082c027dd5cd16b9fb946b7fcfd1772d5882fe2e4e65e4",
+      "captures": {
+        "from-shore": "7ff8571058e09913e81604d707ab4366c12541ffc5f868ceb9771148979706b6",
+        "from-ocean": "672b4f113e72eb24f1b7755fbf35d3907e345099c8781d14ba5502ef91c0e1a3",
+        "toward-horizon": "179d4e0d68c882558fd45706bf07a02fbe00d23ccaaebdc7b64f2fb7a874a0bc",
+        "cold-ocean": "672b4f113e72eb24f1b7755fbf35d3907e345099c8781d14ba5502ef91c0e1a3"
+      },
+      "hdr_probes": 228,
+      "max_absolute_hdr_error": 0.0004859155722132247,
+      "filtered_probes_delta_above_0_006": 6,
+      "filtered_reference_max_delta": 0.061684256606541754,
+      "smooth_slope_max_delta": 0.2690174778969876,
+      "opaque_depth_fog_max_delta": 0.028625869153268813,
+      "sky_depth_fog_max_delta": 0.3189391846418787,
+      "restored_at_tick": 45,
+      "local_volume_m3": 2.5799999999999983,
+      "relocated_export": true
+    },
+    "retained": {
+      "v11_swell_fsr": {
+        "baseline_evidence_sha256": "13de8c4f0e548643e8945ee542b114657adf7d9d34f38506d1f6d98f6bed0e4b",
+        "candidate_evidence_sha256": "a54f5cddec67af9f26ccd5bc75aaac55d284ae75f8091c1f2266e963c3297733",
+        "exact_outputs": {
+          "dry-pcm": "bedadc80e9e0aa4830f26a4988d61dfd197b06312810126b2ff2ac90afcdf573",
+          "crest-pcm": "4ee6abaf6082e10ab7a4f860b8a79420db77f185efa09816eaafa1b1784dc0ac",
+          "crest": "91ea7f83465109c0c9ac0c5ccc7868e7abfb27a969d54f4d0e15ec622c947832",
+          "crest-low": "2399ae8d721f1b9673d824a33b6ea7113d40f3eb22f57f5d652270ec5c56b1df",
+          "crest-fsr": "e1245a7e3d1302f6930fb7abbce0a71e7ecf38f9e904ec6749cf76851dd605bb",
+          "trough": "241d354e3804d7395bc5a5cec03de313d5005edae00c6a5fee6633cf2746a430",
+          "cold": "91ea7f83465109c0c9ac0c5ccc7868e7abfb27a969d54f4d0e15ec622c947832",
+          "cold-pcm": "4ee6abaf6082e10ab7a4f860b8a79420db77f185efa09816eaafa1b1784dc0ac"
+        }
+      },
+      "no_water_aerial_and_fog": {
+        "original_evidence_sha256": "3748e3fef819fd3a6e5672fbfb31961b4b227ad073dcb23cc81783df5f64fc85",
+        "exact_dry_atmosphere_sha256": "74c4da874a2b536705ca286b60e51fcd12ea2717a76197c3304f6a3dc9305646",
+        "checked_cases": [
+          "atmosphere-without-aerial",
+          "aerial-perspective",
+          "height-fog-only",
+          "aerial-and-height-fog"
+        ]
+      }
+    }
+  },
+  "ubuntu": {
+    "passed_ctest_suites": [
+      "audio_contract",
+      "audio_reflections_native",
+      "audio_save_native",
+      "cli_contract",
+      "editor_audio_native",
+      "project_contract",
+      "render_schedule_native",
+      "shallow_water_native",
+      "water_listener_audio_contract",
+      "water_region_native",
+      "water_region_scene_native",
+      "world_audio_native",
+      "world_water_contract",
+      "world_water_rain_contract"
+    ],
+    "binary_sha256": "faacb36a9945cb7df2d1f56ad0658d08bf4c1c9f959fe477ebc9fbdc532b2fd0",
+    "junit_sha256": "28a848e383e6aac27fe315ad21021bfd6e841680a0751dcc416715d88535c5dc",
+    "offshore_protocol_evidence_sha256": "f125b6ebeecfa9c32b52c104132c5b4085d216a965677628254a81dc51a621a0"
+  },
+  "stock_coast_study": {
+    "extent": [
+      1120,
+      630
+    ],
+    "world_sha256": "ea9788ac61360fd0680f6d974bd2f0768f72df7f649a49321cf80d6eb85c50d8",
+    "revision": 4,
+    "witness_sha256": "3011b62827cccec93195d382eb9bdea1d4f256f6cfdd943cc10c4fc1902d32e9",
+    "image_sha256": {
+      "headland-and-open-sea": "f09fb80d405384b1b2b4b5a931593a8802243a570a9c34a1db2d8a74d368b0d2",
+      "coast-to-horizon": "328a45053194c74487bd9150676f7119f47dd3378a4819a2ac20db68fabb77e3",
+      "from-offshore": "102ba4f6c73d4fc920629b277acf823ff97979a0069450831666345013c3f87b"
+    },
+    "join_measurement": {
+      "method": "Maximum RGB display-code difference at bilinear samples of the same view across 2 m of the authored join.",
+      "samples": 258,
+      "baseline_median": 4.574385286949784,
+      "current_median": 1.0701620543361656,
+      "baseline_max": 14.76436508707252,
+      "current_max": 10.65537915846528
+    },
+    "join_measurement_rows_sha256": "38dbe2c8fc005656058189007afe275b2d17be11af9d7d1092d55a28f28ef191",
+    "four_direction_profile": {
+      "candidate_binary_sha256": "b99897b594a754022e7e7cebfd2a743a72941d2d14dc2726bd0c8a09ebaeb35b",
+      "witness_sha256": "7a42f9450647d070f3c398a44eea4b30b09a49bd6dd322aff9b31a8eefa92404",
+      "revision": 5,
+      "water_sha256": "9318ae8b0f88996a8da32236285b2f3e18d716126372cb9a5268b9132fb66082",
+      "image_sha256": {
+        "headland-and-open-sea": "d3173f96dafd9cdc5e40aae39936343cd82e73541ab35674ce2247c94fdf14c8",
+        "coast-to-horizon": "ef5f76e9a5d4842db26d571fcf4e3730d5bb24d4f42d71cd33fce7eafdb1dd43",
+        "from-offshore": "aebb1eefaf2d45636e08325eab5c9ae059629b36905bd73d9a4b2b50a4bad985"
+      }
+    }
+  },
+  "limits": [
+    "The analytic slope is a shading representation. The fitted triangles and fixed offshore plane define crossings.",
+    "Aerial and height fog use the first water entry from air where offshore is enabled.",
+    "The stock coast comparison measured the visible join in three still views. Periodic wave patterns and coastline presentation remain visible.",
+    "These captures establish image behavior on two devices. They do not establish representative throughput."
+  ]
+}

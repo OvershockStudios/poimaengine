@@ -1,8 +1,17 @@
 # Implementation status
 
-Updated 2026-11-25 for **0.0.421**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-25 for **0.0.422**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.422 filters [shared coastal wave slopes](SHALLOW_WATER.md#continue-the-water-offshore)
+on both sides of the offshore join. The renderer uses the visible surface
+depth for fog from air. AMD forward and NVIDIA deferred passed 456 HDR
+probes, with maximum channel error of 0.000486. The relocated Windows
+save restored an exact capture. On a stock coast, the median display-color
+step across the join fell from 4.57 to 1.07 RGB levels in the same two
+views. The fixed offshore plane and repeating wave trains remain visible
+in wide shots. [Results](evidence/m2-water-offshore-filter-422.json)
 
 Version 0.0.421 adds an [offshore continuation](SHALLOW_WATER.md#continue-the-water-offshore)
 to one terrain-fitted boundary. AMD forward and NVIDIA deferred passed 384 HDR

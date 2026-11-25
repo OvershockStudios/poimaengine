@@ -34,25 +34,55 @@ float water_interface_footprint(float distance, float ray_y) {
         temporal_up.w / cluster_viewport.w) / max(abs(ray_y), 0.03);
 }
 
-float3 water_interface_normal(WaterConstants water, float2 point_xz, float distance, float ray_y,float2 geometry_gradient) {
+void projected_water_footprint(float3 ray, float distance, out float2 dx, out float2 dy) {
+    // Derivative of the ray's X/Z intersection with the shared datum.
+    // Cap the inverse at grazing angles where the linear footprint grows unbounded.
+    const float view_depth=distance*dot(ray,temporal_forward.xyz);
+    const float inv_y=(ray.y<0 ? -1.0 : 1.0)/max(abs(ray.y),.01);
+    const float2 rise=ray.xz*inv_y;
+    dx=(temporal_right.xz-rise*temporal_right.y)*(2.0*view_depth*temporal_right.w/cluster_viewport.z);
+    dy=(temporal_up.xz-rise*temporal_up.y)*(2.0*view_depth*temporal_up.w/cluster_viewport.w);
+}
+
+float2 filtered_offshore_swell(float2 position, float2 dx, float2 dy) {
+    float2 gradient=0;
+    [unroll] for (uint i=0;i<4;++i) {
+        const float4 wave=water_offshore_swell[i];
+        const float footprint=length(float2(dot(wave.xy,dx),dot(wave.xy,dy)));
+        const float coverage=1.0-smoothstep(.5,3.14159265,footprint);
+        gradient+=wave.xy*(wave.z*coverage*cos(dot(position,wave.xy)-wave.w));
+    }
+    return gradient;
+}
+
+float3 water_interface_normal(WaterConstants water, float2 point_xz, float distance, float3 ray,
+                              float ray_y, float2 geometry_gradient) {
     const float mode = water.radiance_wave_mode.w;
-    if (mode == 0.0) return normalize(float3(-geometry_gradient.x,1,-geometry_gradient.y));
-    // Estimate a conservative pixel footprint on the flat surface and
-    // damp unresolved waves at distance and along the grazing waterline.
-    const float footprint = water_interface_footprint(distance, ray_y);
-    const float2 dx = float2(footprint, 0);
-    const float2 dz = float2(0, footprint);
+    const bool shared_swell=water_offshore_swell[0].z>0.0;
+    if (mode==0.0 && !shared_swell) return normalize(float3(-geometry_gradient.x,1,-geometry_gradient.y));
+    float2 dx,dz;
+    float2 swell=geometry_gradient;
+    [branch] if (shared_swell) {
+        projected_water_footprint(ray,distance,dx,dz);
+        // Both sides of the seam use the same spectrum, phase and filter.
+        swell=filtered_offshore_swell(point_xz,dx,dz);
+    } else {
+        const float footprint=water_interface_footprint(distance,ray_y);
+        dx=float2(footprint,0);
+        dz=float2(0,footprint);
+    }
+    if (mode==0.0) return normalize(float3(-swell.x,1,-swell.y));
     if (mode == 1.0) {
         const float3 ripple=water_ripple_normal(water_ripple_shape,water_ripple_motion.x,point_xz,dx,dz);
         if (!water_displaced(water)) return ripple;
-        const float2 combined=geometry_gradient-ripple.xz/ripple.y;
+        const float2 combined=swell-ripple.xz/ripple.y;
         return normalize(float3(-combined.x,1,-combined.y));
     }
     float2 gradient = water_wave_layer_gradient(water_ripple_shape, water_ripple_motion.x, point_xz, dx, dz);
     [unroll] for (uint i = 0; i < 3; ++i)
         if (mode > float(i + 2))
             gradient += water_wave_layer_gradient(water_wave_shapes[i], water_ripple_motion[i + 1], point_xz, dx, dz);
-    gradient+=geometry_gradient;
+    gradient+=swell;
     return normalize(float3(-gradient.x, 1.0, -gradient.y));
 }
 
@@ -207,7 +237,7 @@ float3 compose_water_path(WaterConstants water,float3 input_radiance,float3 ray,
         const bool from_air = path.enters;
         const float3 geometry_normal=normalize(float3(-path.interface_gradient.x,1,-path.interface_gradient.y));
         const float relative_y=water_displaced(water) ? dot(geometry_normal,ray) : ray.y;
-        float3 normal=water_interface_normal(water,eye.xz+interface_at*ray.xz,interface_at,relative_y,path.interface_gradient);
+        float3 normal=water_interface_normal(water,eye.xz+interface_at*ray.xz,interface_at,ray,relative_y,path.interface_gradient);
         if (!from_air) normal = -normal;
         const float fresnel = water_fresnel(saturate(-dot(normal, ray)), from_air);
         const float before_m = max(path.water_before_interface_m, 0.0);

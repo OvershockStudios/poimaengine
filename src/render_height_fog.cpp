@@ -16,6 +16,7 @@
 #include <cmath>
 #include <cstddef>
 #include <limits>
+#include <numbers>
 #include <stdexcept>
 #include <utility>
 
@@ -116,6 +117,7 @@ WaterView project_water_view(const SceneWaterVolume& water,const std::array<doub
     const bool shaped=water.surface_swell || sea.has_value();
     static_assert(sizeof(SceneWaterColumn)==rs::water_column_bytes);
     static_assert(offsetof(SceneWaterColumn,corners)==16 && offsetof(SceneWaterColumn,swell_corners)==48);
+    static_assert(max_scene_water_wave_layers==max_offshore_swell_layers);
     if (water.cells_x==0 || water.cells_z==0 || water.cells_x>rs::max_water_column_side ||
         water.cells_z>rs::max_water_column_side || water.columns.size()!=water.cells_x*water.cells_z ||
         !(water.cell_size_m>=.01 && water.cell_size_m<=256) ||
@@ -163,6 +165,24 @@ WaterView project_water_view(const SceneWaterVolume& water,const std::array<doub
             static_cast<float>(boundary)};
         if (sea->contains(x,z,water.cells_x,water.cells_z) && local[1]>=bed && local[1]<level)
             result.submersion_m=level-local[1];
+        constexpr auto tau=2*std::numbers::pi;
+        float combined_slope=0;
+        for (const auto& wave : water.offshore_swell) {
+            if (wave.slope==0) continue;
+            const auto length=std::hypot(wave.direction[0],wave.direction[1]);
+            const auto k=wave.radians_per_metre;
+            if (!(std::abs(length-1)<.0001f && wave.slope>0 && wave.slope<=.4f &&
+                  k>=static_cast<float>(tau/1024) && k<=static_cast<float>(tau/std::max(.1,4*water.cell_size_m)) &&
+                  wave.phase_radians>=0 && wave.phase_radians<=static_cast<float>(tau)))
+                throw std::runtime_error("Invalid offshore swell presentation layer.");
+            combined_slope+=wave.slope;
+            const auto amplitude=wave.slope/k;
+            if (amplitude>=std::numeric_limits<float>::min())
+                result.offshore_swell[result.offshore_swell_layers++]={
+                    k*wave.direction[0],k*wave.direction[1],amplitude,wave.phase_radians};
+        }
+        if (combined_slope>.4000001f || (result.offshore_swell_layers>0 && !water.surface_swell))
+            throw std::runtime_error("Offshore shading needs the committed surface swell layers.");
     }
     if (x>=0 && z>=0 && x<water.cells_x && z<water.cells_z) {
         const auto ix=static_cast<std::size_t>(x),iz=static_cast<std::size_t>(z);

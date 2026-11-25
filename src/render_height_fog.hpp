@@ -3,12 +3,16 @@
 
 #include <nvrhi/nvrhi.h>
 #include <array>
+#include <cstddef>
 #include <cstdint>
 
 namespace poima { struct HeightFog; struct SceneWaterVolume; }
 namespace poima::render_schedule { struct Schedule; }
 
 namespace poima::height_fog {
+inline constexpr std::size_t max_offshore_swell_layers=4;
+using OffshoreSwell=std::array<std::array<float,4>,max_offshore_swell_layers>;
+
 struct Inputs {
     nvrhi::IBuffer* frame = nullptr;
     nvrhi::ITexture* surface_hdr = nullptr;
@@ -39,6 +43,8 @@ struct WaterView {
     WaterParameters parameters;
     double submersion_m;
     std::array<float,4> offshore{};
+    OffshoreSwell offshore_swell{};
+    std::uint32_t offshore_swell_layers=0;
 };
 
 WaterView project_water_view(const SceneWaterVolume& water,const std::array<double,3>& eye,float wave_mode);

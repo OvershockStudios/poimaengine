@@ -179,33 +179,31 @@ void compute_main(uint3 dispatch_id : SV_DispatchThreadID) {
     const float start = fog.distance_height.x;
     float end = fog.distance_height.y;
     const float depth = scene_depth.Load(int3(pixel, 0));
+    float surface_distance=-1.0;
 #if defined(POIMA_WATER_OPTICS)
     const float water_depth = saturate(depth);
     const float water_end = ray_scale * cluster_depth.z /
         ((1.0 - water_depth) + water_depth * (cluster_depth.z / cluster_depth.w));
     const WaterPath path = trace_water_columns(fog.water,fog.water.camera_cell_size.xyz,ray,water_end,true);
     surface.rgb = compose_water_path(fog.water,surface.rgb,ray,path,uint2(width,height));
-#if defined(POIMA_AERIAL_PERSPECTIVE)
-    // A sea reflection against sky has surface depth even when the opaque
-    // depth buffer has no hit. Haze the reflected sea at that optical depth.
-    if (depth>=1.0 && path.offshore_interface && path.enters) {
-        const AerialPerspectiveSample sea=aerial_sample(aerial_scattering,aerial_transmittance,
-            aerial_sampler,uv,path.interface_m,fog.aerial_distances.x);
-        surface.rgb=clamp(surface.rgb*sea.transmittance+sea.scattered_light,-65504.0,65504.0);
-    }
+    // Water visible from air carries fog through to the entry on either side
+    // of the coastal join. Opaque depth can be seabed or distant sky.
+    if (water_offshore.x!=0.0 && path.enters && path.interface_m>=0.0 && path.water_before_interface_m<=.0001)
+        surface_distance=path.interface_m;
 #endif
-#endif
-    if (depth < 1.0 && depth >= 0.0) {
+    if (surface_distance<0.0 && depth<1.0 && depth>=0.0) {
         const float near_plane = cluster_depth.z;
         const float far_plane = cluster_depth.w;
         const float view_z = near_plane / ((1.0 - depth) + depth * (near_plane / far_plane));
-        const float ray_distance = view_z * ray_scale;
+        surface_distance=view_z*ray_scale;
+    }
+    if (surface_distance>=0.0) {
 #if defined(POIMA_AERIAL_PERSPECTIVE)
         const AerialPerspectiveSample optics = aerial_sample(aerial_scattering, aerial_transmittance,
-            aerial_sampler, uv, ray_distance, fog.aerial_distances.x);
+            aerial_sampler, uv, surface_distance, fog.aerial_distances.x);
         surface.rgb = clamp(surface.rgb * optics.transmittance + optics.scattered_light, -65504.0, 65504.0);
 #endif
-        end = min(end, ray_distance);
+        end = min(end, surface_distance);
     }
     if (end <= start
 #if defined(POIMA_AERIAL_PERSPECTIVE) || defined(POIMA_WATER_OPTICS)

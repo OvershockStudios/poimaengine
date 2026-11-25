@@ -2,6 +2,12 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.422
+
+- Shade coastal and offshore swell with shared, screen-filtered wave slopes.
+- Apply fog and aerial perspective at the first visible water surface on
+  either side of the join.
+
 ## 0.0.421
 
 - Continue terrain-fitted water offshore from a chosen edge. The offshore

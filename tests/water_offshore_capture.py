@@ -9,10 +9,11 @@ import subprocess
 import tempfile
 import traceback
 
+from height_fog_capture import environment
 from solar_lighting_contract import VALIDATION_LAYER
-from water_optics_capture import AMBIENT, OPTICS, fresnel
+from water_optics_capture import OPTICS, fresnel
 from water_refraction_capture import LENS, direction
-from water_surface_swell_capture import LOW, LOW_EYE, SwellContract, gradient, polys, weights, wet_length
+from water_surface_swell_capture import LOW, LOW_EYE, SWELL, SwellContract, gradient, polys, weights, wet_length
 from water_terrain_fit_capture import PROBES, SURFACE
 from world_particles_contract import near_vector, transform
 from world_terrain_contract import CAPTURE_SIZE, file_hash
@@ -21,6 +22,16 @@ from world_water_contract import bed, component, near, rpc, success, uid
 SEA=dict(edge='max_x',surface_height_m=SURFACE,depth_m=16.)
 OCEAN_VIEW,OCEAN_EAR,SHORE_EAR=map(uid,(8101,8102,8103))
 OCEAN_EYE=(17.2,6.1,-3.15)
+GRAZING_VIEW=uid(8104)
+CAMERAS={
+    'shore': (LOW,LOW_EYE,0,False),
+    'ocean': (OCEAN_VIEW,OCEAN_EYE,-18,True),
+    'grazing': (GRAZING_VIEW,(13.0,5.42,-3.2),-.8,False),
+}
+GRAZING_PROBES=[(x,y) for x in (279,320,365) for y in (174,175,176,177,178,180,183,189,200,232,270,310)]
+AMBIENT=(.68,.52,.88)
+FOG=dict(density_per_m=.026,base_height_m=4.93,height_falloff_per_m=0,start_distance_m=.1,max_distance_m=38,
+         ambient_radiance=[.32,.24,.18],anisotropy=0)
 OFFSHORE_EAR=(14.000001,4.8,-3.37)
 NEARSHORE_EAR=(13.999999,4.8,-3.37)
 SAMPLES=(NEARSHORE_EAR,OFFSHORE_EAR,(12_000,4.61,93),
@@ -47,14 +58,61 @@ def joined_triangles(tick):
         yield vertices,lifted,gradient(lifted,vertices)
 
 
-def compose(pixel,probe,tick,from_sea):
-    eye=OCEAN_EYE if from_sea else LOW_EYE
-    rotation=-18 if from_sea else 0
+def sightline(pixel,rotation,from_sea):
     sx,dy,sz=direction(pixel,rotation)
     dx,dz=(sz,-sx) if from_sea else (-sz,sx)
-    ray=(dx,dy,dz)
-    x,y,z=eye
     view_cosine=dy*math.sin(math.radians(rotation))-sz*math.cos(math.radians(rotation))
+    return (dx,dy,dz),view_cosine
+
+
+def wave_slopes(pixel,rotation,from_sea,ray,view_cosine,hit,eye,tick):
+    # Sample nearby rays at the same view depth, then project their derivative
+    # onto the horizontal datum. Limit the grazing projection as in the contract.
+    def on_view_plane(i,j):
+        direction,cosine=sightline((i,j),rotation,from_sea)
+        return [v*hit*view_cosine/cosine for v in direction]
+
+    footprint=[]
+    for di,dj in ((.001,0),(0,.001)):
+        before=on_view_plane(pixel[0]-di,pixel[1]-dj)
+        after=on_view_plane(pixel[0]+di,pixel[1]+dj)
+        px,py,pz=((b-a)/.002 for a,b in zip(before,after,strict=True))
+        dy=math.copysign(max(.01,abs(ray[1])),ray[1])
+        footprint.append((px-ray[0]*py/dy,pz-ray[2]*py/dy))
+    x=eye[0]+ray[0]*hit-10
+    z=eye[2]+ray[2]*hit+4
+    filtered=[0.,0.]
+    unfiltered=[0.,0.]
+    for wave in SWELL:
+        heading=math.radians(wave['heading_degrees'])
+        unit=(math.cos(heading),math.sin(heading))
+        k=math.tau/wave['wavelength_m']
+        support=k*math.hypot(*(a*unit[0]+b*unit[1] for a,b in footprint))
+        weight=max(0.,min(1.,(support-.5)/(math.pi-.5)))
+        coverage=1-weight*weight*(3-2*weight)
+        phase=k*(x*unit[0]+z*unit[1])-math.tau*(tick%wave['period_ticks'])/wave['period_ticks']
+        for i,axis in enumerate(unit):
+            slope=math.cos(phase)*wave['slope']*axis
+            filtered[i]+=slope*coverage
+            unfiltered[i]+=slope
+    return filtered,unfiltered
+
+
+def haze(color,distance):
+    length=max(0.,min(FOG['max_distance_m'],distance)-FOG['start_distance_m'])
+    weight=math.exp(-length*FOG['density_per_m'])
+    return [base+(value-base)*weight for base,value in zip(FOG['ambient_radiance'],color,strict=True)]
+
+
+def channel_delta(a,b):
+    return max(abs(x-y) for x,y in zip(a,b,strict=True))
+
+
+def compose(pixel,probe,tick,camera):
+    _,eye,rotation,from_sea=CAMERAS[camera]
+    ray,view_cosine=sightline(pixel,rotation,from_sea)
+    dx,dy,dz=ray
+    x,y,z=eye
     depth=probe['depth']
     far=LENS['near']/(1-depth+depth*LENS['near']/LENS['far'])/view_cosine
     bounds=[]
@@ -89,23 +147,46 @@ def compose(pixel,probe,tick,from_sea):
     tint=OPTICS['scattered_radiance']
     extinction=OPTICS['extinction_per_m']
     hdr=[s+(v-s)*math.exp(-k*length) for s,v,k in zip(tint,probe['raw_hdr'],extinction,strict=True)]
+    solid_distance=far if depth<1 else FOG['max_distance_m']
+    distance=solid_distance
+    no_filter=faceted=hdr
     if crossings:
         hit,cosine,interface=min(crossings)
         before=wet_length(bounds,hit)
-        f=fresnel(max(-1.,min(1.,cosine)))
-        sky=AMBIENT if cosine<0 else tint
-        hdr=[(1-f)*v+f*(s+(r-s)*math.exp(-k*before))
-             for v,s,r,k in zip(hdr,tint,sky,extinction,strict=True)]
+        from_air=cosine<0
+        sky=AMBIENT if from_air else tint
+
+        def reflected(incidence):
+            f=fresnel(max(-1.,min(1.,incidence)))
+            return [(1-f)*v+f*(s+(r-s)*math.exp(-k*before))
+                    for v,s,r,k in zip(hdr,tint,sky,extinction,strict=True)]
+
+        def slope_incidence(slope):
+            gx,gz=slope
+            signed=(dy-gx*dx-gz*dz)/math.hypot(gx,1,gz)
+            return min(-1e-15,signed) if from_air else max(0.,signed)
+
+        filtered,unfiltered=wave_slopes(pixel,rotation,from_sea,ray,view_cosine,hit,eye,tick)
+        if from_air and before<=.0001:
+            distance=hit
+        no_filter=reflected(slope_incidence(unfiltered))
+        faceted=reflected(cosine)
+        hdr=reflected(slope_incidence(filtered))
+    expected=haze(hdr,distance)
     return dict(pixel=pixel,direction=ray,medium_before_m=before,interface=interface,
         coastal_m=length-(sea_interval[1]-sea_interval[0] if sea_interval else 0),
         offshore_m=sea_interval[1]-sea_interval[0] if sea_interval else 0,
-        expected=hdr,actual=probe['resolved_hdr'])
+        expected=expected,actual=probe['resolved_hdr'],solid_hit=depth<1,
+        fog_surface_m=distance,filter_delta=channel_delta(expected,haze(no_filter,distance)),
+        facet_delta=channel_delta(expected,haze(faceted,distance)),
+        opaque_fog_delta=channel_delta(expected,haze(hdr,solid_distance)))
 
 
 class OffshoreContract(SwellContract):
     def author(self):
         revision=super().author()
         p=math.radians(-18)*.5
+        g=math.radians(CAMERAS['grazing'][2])*.5
         # +90 degree yaw rotates forward to -X, keeping the -18 degree pitch.
         t=math.sqrt(.5)
         rotation=[math.sin(p)*t,math.cos(p)*t,-math.sin(p)*t,math.cos(p)*t]
@@ -113,11 +194,19 @@ class OffshoreContract(SwellContract):
             dict(op='entity.create',id=OCEAN_VIEW,name='Ocean toward coast'),
             component(OCEAN_VIEW,'Transform',transform(OCEAN_EYE,rotation)),
             component(OCEAN_VIEW,'Camera',LENS),
+            dict(op='entity.create',id=GRAZING_VIEW,name='Offshore grazing camera'),
+            component(GRAZING_VIEW,'Transform',transform(CAMERAS['grazing'][1],
+                [math.sin(g)*t,-math.cos(g)*t,math.sin(g)*t,math.cos(g)*t])),
+            component(GRAZING_VIEW,'Camera',LENS),
+            component(uid(4),'LightingEnvironment',environment(FOG)|dict(ambient=AMBIENT)),
             dict(op='entity.create',id=OCEAN_EAR,name='Offshore listener'),
             component(OCEAN_EAR,'Transform',transform(OFFSHORE_EAR)),
             dict(op='entity.create',id=SHORE_EAR,name='Nearshore listener'),
             component(SHORE_EAR,'Transform',transform(NEARSHORE_EAR)))
         self.definition=dict(self.definition,revision=revision,optics=self.definition['optics']|dict(offshore=SEA))
+        # The leading positive band is subnormal in float presentation. It
+        # must not suppress the two visible bands or invalidate the scene.
+        self.definition['surface_swell']=[dict(SWELL[0],slope=1e-40),*SWELL]
         return revision
 
     def verify_seam(self,client,session,tick):
@@ -140,17 +229,19 @@ class OffshoreContract(SwellContract):
             assert result['target_blend']==1
         return dict(state=state,listeners=listeners)
 
-    def image(self,client,session,tick,label,from_sea):
+    def image(self,client,session,tick,label,camera):
         path=self.root/(label+'.bmp')
-        result=client.call('runtime.capture',dict(session_id=session,tick=tick,camera=OCEAN_VIEW if from_sea else LOW,
+        pixels=GRAZING_PROBES if camera=='grazing' else PROBES
+        result=client.call('runtime.capture',dict(session_id=session,tick=tick,camera=CAMERAS[camera][0],
             path=self.native(path),width=CAPTURE_SIZE[0],height=CAPTURE_SIZE[1],gpu=self.args.gpu,samples=1,
             lighting_path=self.args.lighting_path,profile=True,capture_frames=2,
-            scene_product_probes=[dict(x=x,y=y) for x,y in PROBES]))
+            scene_product_probes=[dict(x=x,y=y) for x,y in pixels]))
         assert result['hardware'] and result['capture_written'] and result['nvrhi_errors']==0 and result['frames_presented']==2
         diag=result['render_diagnostics']
         assert diag['water_optics']['offshore']
-        rows=[compose(pixel,probe,tick,from_sea)
-              for pixel,probe in zip(PROBES,diag['scene_products']['probes'],strict=True)]
+        assert diag['water_optics']['offshore_swell_layers']==len(SWELL) and diag['height_fog']['active']
+        rows=[compose(pixel,probe,tick,camera)
+              for pixel,probe in zip(pixels,diag['scene_products']['probes'],strict=True)]
         for i in rows:
             near_vector(i['actual'],i['expected'],tolerance=.003)
         self.measurements[label]=dict(sha256=file_hash(path),adapter=result['gpu'],samples=rows)
@@ -184,11 +275,18 @@ class OffshoreContract(SwellContract):
             at_tick=self.verify_seam(client,session,45)
             assert initial['state']['points'][5]['column']['surface_height_m']!=at_tick['state']['points'][5]['column']['surface_height_m']
             if self.args.gpu is not None:
-                self.image(client,session,45,'from-shore',False)
-                self.image(client,session,45,'from-ocean',True)
+                self.image(client,session,45,'from-shore','shore')
+                self.image(client,session,45,'from-ocean','ocean')
+                self.image(client,session,45,'toward-horizon','grazing')
                 hits=[r for name in ('from-shore','from-ocean') for r in self.measurements[name]['samples']]
                 assert sum(r['coastal_m']>.01 and r['offshore_m']>.01 for r in hits)>=8
                 assert any(r['interface']=='ocean' for r in hits)
+                assert all(any(r['interface']==side and r['facet_delta']>.006 for r in hits)
+                           for side in ('shore','ocean'))
+                assert all(any(r['interface'] and r['solid_hit'] is solid and r['opaque_fog_delta']>.004
+                              for r in hits) for solid in (True,False))
+                assert sum(r['interface']=='ocean' and r['filter_delta']>.006
+                           for r in self.measurements['toward-horizon']['samples'])>=4
             self.configure(client)
             client.call('save.write',self.write(session,45,'checkpoint',8113)['params'])
         self.measurements['point_checks']=at_tick
@@ -205,7 +303,7 @@ class OffshoreContract(SwellContract):
         after=self.verify_seam(client,session,45)
         assert after==dict(before,state=dict(before['state'],session_id=session))
         if self.args.gpu is not None:
-            self.image(client,session,45,'cold-ocean',True)
+            self.image(client,session,45,'cold-ocean','ocean')
             assert self.measurements['cold-ocean']['sha256']==self.measurements['from-ocean']['sha256']
 
     def relocated(self,revision,pin,expected):

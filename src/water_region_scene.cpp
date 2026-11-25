@@ -170,6 +170,11 @@ void append_region_scene(const Region& region, SceneSnapshot& scene) {
         volume={.origin_m={config.origin_x_m,origin_y,config.origin_z_m},.cell_size_m=config.cell_size_m,
             .cells_x=config.cells_x,.cells_z=config.cells_z,.optics=*optics,
             .surface_swell=!region.surface_swell().empty(),.columns={}};
+        if (optics->offshore) {
+            const auto swell=region.surface_swell();
+            for (std::size_t i=0;i<swell.size();++i)
+                volume.offshore_swell[i]=project_ripple(swell[i],grid.tick());
+        }
         if (optics->shore_foam) {
             constexpr std::uint64_t foam_cycle_ticks = 240;
             volume.shore_foam_phase = static_cast<float>(2 * std::numbers::pi *
