@@ -9,6 +9,14 @@
 #include "poima/deferred_lighting_ao_reflection_cs.hpp"
 #include "poima/deferred_lighting_color_reflection_cs.hpp"
 #include "poima/deferred_lighting_color_ao_reflection_cs.hpp"
+#include "poima/deferred_lighting_donor_cs.hpp"
+#include "poima/deferred_lighting_ao_donor_cs.hpp"
+#include "poima/deferred_lighting_color_donor_cs.hpp"
+#include "poima/deferred_lighting_color_ao_donor_cs.hpp"
+#include "poima/deferred_lighting_reflection_donor_cs.hpp"
+#include "poima/deferred_lighting_ao_reflection_donor_cs.hpp"
+#include "poima/deferred_lighting_color_reflection_donor_cs.hpp"
+#include "poima/deferred_lighting_color_ao_reflection_donor_cs.hpp"
 #include "poima/render_schedule.hpp"
 #include "render_embedded_shader.hpp"
 #include "render_environment_ibl.hpp"
@@ -23,33 +31,40 @@ void require(bool condition, const char* detail) {
     if (!condition) throw std::runtime_error(detail);
 }
 
+template<auto& bytes>
+nvrhi::ShaderHandle create_shader(nvrhi::IDevice* device, const nvrhi::ShaderDesc& description) {
+    return create_embedded_shader(device, description, bytes);
+}
+
+// Index bits are products, ambient occlusion, reflection roughness and donor.
+constexpr std::array shaders{
+    create_shader<poima_deferred_lighting_color_cs>, create_shader<poima_deferred_lighting_cs>,
+    create_shader<poima_deferred_lighting_color_ao_cs>, create_shader<poima_deferred_lighting_ao_cs>,
+    create_shader<poima_deferred_lighting_color_reflection_cs>, create_shader<poima_deferred_lighting_reflection_cs>,
+    create_shader<poima_deferred_lighting_color_ao_reflection_cs>, create_shader<poima_deferred_lighting_ao_reflection_cs>,
+    create_shader<poima_deferred_lighting_color_donor_cs>, create_shader<poima_deferred_lighting_donor_cs>,
+    create_shader<poima_deferred_lighting_color_ao_donor_cs>, create_shader<poima_deferred_lighting_ao_donor_cs>,
+    create_shader<poima_deferred_lighting_color_reflection_donor_cs>, create_shader<poima_deferred_lighting_reflection_donor_cs>,
+    create_shader<poima_deferred_lighting_color_ao_reflection_donor_cs>, create_shader<poima_deferred_lighting_ao_reflection_donor_cs>,
+};
+
 } // namespace
 
 void Pass::prepare(nvrhi::IDevice& device, const Inputs& inputs, const render_environment_ibl::Resources& environment,
                    bool products, bool ambient_occlusion) {
-    // Product and AO modes are fixed when the renderer is created. Reflection
-    // roughness can join or leave this pass as the scene changes.
     const bool reflection_variant = inputs.reflection_roughness != nullptr;
-    if (reflection_variant_ != reflection_variant) {
-        reflection_variant_ = reflection_variant;
-        bindings_ = nullptr;
+    const bool donor_variant = inputs.diffuse_donor != nullptr;
+    const auto variant = (products ? 1u : 0u) | (ambient_occlusion ? 2u : 0u)
+        | (reflection_variant ? 4u : 0u) | (donor_variant ? 8u : 0u);
+    if (variant != shader_variant_) {
+        shader_variant_ = variant;
+        invalidate_bindings();
         pipeline_ = nullptr;
         layout_ = nullptr;
     }
     if (!layout_) {
         const auto compute = nvrhi::ShaderDesc(nvrhi::ShaderType::Compute).setEntryName("compute_main");
-        if (reflection_variant && products)
-            shader_ = ambient_occlusion ? create_embedded_shader(&device, compute, poima_deferred_lighting_ao_reflection_cs)
-                                        : create_embedded_shader(&device, compute, poima_deferred_lighting_reflection_cs);
-        else if (reflection_variant)
-            shader_ = ambient_occlusion ? create_embedded_shader(&device, compute, poima_deferred_lighting_color_ao_reflection_cs)
-                                        : create_embedded_shader(&device, compute, poima_deferred_lighting_color_reflection_cs);
-        else if (products)
-            shader_ = ambient_occlusion ? create_embedded_shader(&device, compute, poima_deferred_lighting_ao_cs)
-                                        : create_embedded_shader(&device, compute, poima_deferred_lighting_cs);
-        else
-            shader_ = ambient_occlusion ? create_embedded_shader(&device, compute, poima_deferred_lighting_color_ao_cs)
-                                        : create_embedded_shader(&device, compute, poima_deferred_lighting_color_cs);
+        shader_ = shaders[variant](&device, compute);
 
         auto layout = nvrhi::BindingLayoutDesc().setVisibility(nvrhi::ShaderType::Compute)
             .addItem(nvrhi::BindingLayoutItem::ConstantBuffer(1));
@@ -59,6 +74,7 @@ void Pass::prepare(nvrhi::IDevice& device, const Inputs& inputs, const render_en
             for (std::uint32_t slot = 1; slot < 4; ++slot) layout.addItem(nvrhi::BindingLayoutItem::Texture_UAV(slot));
         }
         if (reflection_variant) layout.addItem(nvrhi::BindingLayoutItem::Texture_UAV(4));
+        if (donor_variant) layout.addItem(nvrhi::BindingLayoutItem::Texture_UAV(5));
         layout.addItem(nvrhi::BindingLayoutItem::Texture_SRV(5));
         for (std::uint32_t slot = 6; slot <= 8; ++slot) layout.addItem(nvrhi::BindingLayoutItem::StructuredBuffer_SRV(slot));
         for (std::uint32_t slot = 10; slot <= 12; ++slot) layout.addItem(nvrhi::BindingLayoutItem::Texture_SRV(slot));
@@ -77,10 +93,11 @@ void Pass::prepare(nvrhi::IDevice& device, const Inputs& inputs, const render_en
     require(bool(inputs.cloud_shadow) == bool(inputs.cloud_shadow_sampler), "Cloud shadow needs a texture and sampler together.");
     auto* const cloud_shadow = inputs.cloud_shadow ? inputs.cloud_shadow : ibl.brdf;
     auto* const cloud_sampler = inputs.cloud_shadow_sampler ? inputs.cloud_shadow_sampler : ibl.sampler;
-    const std::array<const void*, 22> key = {inputs.frame, inputs.material_base, inputs.material_surface,
+    const std::array<const void*, 23> key = {inputs.frame, inputs.material_base, inputs.material_surface,
         inputs.material_correspondence, inputs.depth, inputs.shadow, inputs.lights, inputs.counts, inputs.indices,
         inputs.hdr, inputs.normal, inputs.motion, inputs.motion_valid, inputs.ao, inputs.water_columns,
-        ibl.diffuse, ibl.specular, ibl.brdf, ibl.sampler, inputs.reflection_roughness, cloud_shadow, cloud_sampler};
+        ibl.diffuse, ibl.specular, ibl.brdf, ibl.sampler, inputs.reflection_roughness, inputs.diffuse_donor,
+        cloud_shadow, cloud_sampler};
     if (bindings_ && key == binding_key_) return;
 
     auto desc = nvrhi::BindingSetDesc().addItem(nvrhi::BindingSetItem::ConstantBuffer(1, inputs.frame))
@@ -98,6 +115,7 @@ void Pass::prepare(nvrhi::IDevice& device, const Inputs& inputs, const render_en
         .addItem(nvrhi::BindingSetItem::Texture_UAV(3, inputs.motion_valid));
     if (ambient_occlusion) desc.addItem(nvrhi::BindingSetItem::Texture_SRV(4, inputs.ao));
     if (reflection_variant) desc.addItem(nvrhi::BindingSetItem::Texture_UAV(4, inputs.reflection_roughness));
+    if (donor_variant) desc.addItem(nvrhi::BindingSetItem::Texture_UAV(5, inputs.diffuse_donor));
     environment.bind(desc);
     desc.addItem(nvrhi::BindingSetItem::Texture_SRV(13, cloud_shadow))
         .addItem(nvrhi::BindingSetItem::Sampler(6, cloud_sampler))
@@ -131,8 +149,9 @@ void Pass::verify_bindings(const render_schedule::Schedule& plan) const {
                 : binding.slot == 4 ? frame.ao_filtered : frame.shadow;
             identity(id, binding.resourceHandle);
         } else if (binding.type == nvrhi::ResourceType::Texture_UAV) {
-            const auto id = binding.slot == 0 ? frame.hdr : binding.slot == 1 ? frame.normal
-                : binding.slot == 2 ? frame.motion : binding.slot == 3 ? frame.motion_valid : frame.reflection_roughness;
+            const std::array outputs{frame.hdr, frame.normal, frame.motion, frame.motion_valid,
+                frame.reflection_roughness, frame.diffuse_donor};
+            const auto id = outputs.at(binding.slot);
             identity(id, binding.resourceHandle);
         } else if (binding.type == nvrhi::ResourceType::ConstantBuffer) {
             identity(frame.frame, binding.resourceHandle);

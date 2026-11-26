@@ -4,6 +4,7 @@
 #include <nvrhi/nvrhi.h>
 
 #include <array>
+#include <cstdint>
 
 namespace poima::render_environment_ibl { class Resources; }
 namespace poima::render_schedule { struct Schedule; }
@@ -29,6 +30,7 @@ struct Inputs {
     nvrhi::ITexture* cloud_shadow = nullptr;
     nvrhi::ISampler* cloud_shadow_sampler = nullptr;
     nvrhi::IBuffer* water_columns = nullptr;
+    nvrhi::ITexture* diffuse_donor = nullptr;
 };
 
 class Pass {
@@ -47,8 +49,8 @@ private:
     nvrhi::BindingLayoutHandle layout_;
     nvrhi::BindingSetHandle bindings_;
     nvrhi::ComputePipelineHandle pipeline_;
-    std::array<const void*, 22> binding_key_{};
-    bool reflection_variant_ = false;
+    std::array<const void*, 23> binding_key_{};
+    std::uint32_t shader_variant_ = 0;
 };
 
 } // namespace poima::render_deferred_lighting

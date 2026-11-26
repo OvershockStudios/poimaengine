@@ -36,6 +36,7 @@
 #include "render_ambient_occlusion.hpp"
 #include "render_embedded_shader.hpp"
 #include "render_screen_reflections.hpp"
+#include "render_screen_diffuse_bounce.hpp"
 #include "render_depth_of_field.hpp"
 #include "render_height_fog.hpp"
 #include "render_viewmodel.hpp"
@@ -255,6 +256,7 @@ struct Context {
         std::optional<AtmosphereSkyDiagnostics> atmosphere_sky;
         std::optional<AerialPerspectiveDiagnostics> aerial_perspective;
         std::optional<WaterOpticsDiagnostics> water_optics;
+        std::optional<ScreenDiffuseBounceDiagnostics> diffuse_bounce;
         std::optional<DepthOfFieldDiagnostics> depth_of_field;
         std::optional<CloudDiagnostics> volumetric_clouds;
         std::optional<CloudShadowDiagnostics> cloud_shadows;
@@ -315,6 +317,8 @@ struct Context {
     }
     nvrhi::TextureHandle material_base,material_surface,material_correspondence;
     render_deferred_lighting::Pass deferred_lighting;
+    screen_diffuse_bounce::Pass diffuse_bounce;
+    std::optional<ScreenDiffuseBounceDiagnostics> pending_diffuse_bounce;
     screen_reflections::Pass reflections;
     DepthOfFieldPass depth_of_field;
     std::optional<DepthOfFieldDiagnostics> pending_depth_of_field;
@@ -329,8 +333,11 @@ struct Context {
     std::optional<AerialPerspectiveDiagnostics> pending_aerial_perspective;
     std::optional<CloudDiagnostics> pending_clouds;
     std::optional<CloudShadowDiagnostics> pending_cloud_shadows;
+    nvrhi::ITexture* diffuse_radiance_texture() const noexcept {
+        return diffuse_bounce.radiance() ? diffuse_bounce.radiance() : scene_hdr.Get();
+    }
     nvrhi::ITexture* surface_radiance_texture() const noexcept {
-        return reflections.radiance() ? reflections.radiance() : scene_hdr.Get();
+        return reflections.radiance() ? reflections.radiance() : diffuse_radiance_texture();
     }
     nvrhi::ITexture* unfocused_radiance_texture() const noexcept {
         return fog.radiance() ? fog.radiance() : surface_radiance_texture();
@@ -458,7 +465,7 @@ struct Context {
         occlusion.reset();
         deferred_lighting.release_gpu();material_base=nullptr;material_surface=nullptr;material_correspondence=nullptr;
         temporal_inputs.release_gpu();
-        depth_of_field={};fog={};reflections={};water_columns=nullptr;water_reservoirs=nullptr;water_sheets=nullptr;
+        depth_of_field={};fog={};reflections={};diffuse_bounce={};water_columns=nullptr;water_reservoirs=nullptr;water_sheets=nullptr;
         pipeline = nullptr; culled_pipeline=nullptr;
         sky_pass.reset();
         scene_output.release_gpu();
@@ -1298,6 +1305,35 @@ struct Context {
             diagnostics.ambient_occlusion_buffer_bytes=occlusion.allocate_targets(*checked.Get(),hdr);
         }
     }
+    void prepare_screen_diffuse_bounce(const std::optional<ScreenDiffuseBounce>& selected) {
+        pending_diffuse_bounce.reset();
+        if(selected) {
+            const std::string_view reason=selected->strength==0 ? "zero_strength" :
+                !scene_visible ? "scene_hidden" :
+                scene_debug_view!=SceneDebugView::color ? "diagnostic" :
+                !deferred ? "forward" :
+                !scene->world_viewmodel_draws().empty() ? "world_depth_foreground" : "active";
+            const bool active=reason=="active";
+            if(active) {
+                if(!diffuse_bounce.radiance()) {
+                    const auto& desc=scene_hdr->getDesc();
+                    require_reconstruction_composition_budget(reconstruction_pixels(),
+                        std::uint64_t(desc.width)*desc.height*16);
+                }
+                diffuse_bounce.prepare(*checked.Get(),{frame_buffer.Get(),scene_hdr.Get(),material_base.Get(),
+                    material_surface.Get(),depth.Get(),material_correspondence.Get()});
+            }
+            pending_diffuse_bounce=ScreenDiffuseBounceDiagnostics{active,reason,
+                active ? diffuse_bounce.buffer_bytes() : 0,active ? 12u : 0u,active ? 12u : 0u};
+            if(active)return;
+        }
+        if(auto* source=diffuse_bounce.radiance()) {
+            retire_frames(true);
+            deferred_lighting.invalidate_bindings();
+            detach_world_outputs(source);
+            diffuse_bounce.clear_targets();
+        }
+    }
     void prepare_screen_reflections(const std::optional<ScreenReflections>& selected) {
         diagnostics.screen_reflections.reset();
         if(selected) {
@@ -1320,7 +1356,7 @@ struct Context {
                         "Selected GPU lacks screen reflection image format support.");
                 }
                 const auto environment=environment_ibl.bound();
-                reflections.prepare(*checked.Get(),{frame_buffer.Get(),scene_hdr.Get(),material_base.Get(),
+                reflections.prepare(*checked.Get(),{frame_buffer.Get(),diffuse_radiance_texture(),material_base.Get(),
                     material_surface.Get(),depth.Get(),occlusion.filtered(),environment.specular,
                     environment.brdf,environment.sampler});
             }
@@ -1664,6 +1700,8 @@ struct Context {
         depth_of_field.clear();
         if(auto* source=reflections.radiance())detach_world_outputs(source);
         reflections.clear_targets();
+        if(auto* source=diffuse_bounce.radiance())detach_world_outputs(source);
+        diffuse_bounce.clear_targets();
         reconstruction.reset();scene_output.invalidate_bindings();
         framebuffers.clear();sky_framebuffers.clear();sky_pass.detach_framebuffer();
         history={};temporal_phase=0;temporal_clock.reset();render_extent=render;output_extent=output;
@@ -1769,7 +1807,7 @@ struct Context {
     std::uint64_t reconstruction_world_bytes(std::uint64_t composition_bytes) const noexcept {
         return reconstruction_pixels()*((deferred ? 82u : 50u)+(ao_enabled ? 4u : 0u))+
             std::uint64_t(output_extent.width)*output_extent.height*8+reflections.buffer_bytes()+fog.buffer_bytes()+
-            fog.aerial_buffer_bytes()+depth_of_field.bytes()+sky_pass.cloud_resident_bytes()+sky_pass.cloud_shadow_resident_bytes()+
+            fog.aerial_buffer_bytes()+depth_of_field.bytes()+diffuse_bounce.buffer_bytes()+sky_pass.cloud_resident_bytes()+sky_pass.cloud_shadow_resident_bytes()+
             composition_bytes+sprite_targets.bytes();
     }
     void require_reconstruction_composition_budget(std::uint64_t mask_bytes,std::uint64_t additional) const {
@@ -2074,7 +2112,9 @@ struct Context {
         validate_surface_mark_catalog();
         retain_scene_resources();warm_particle_sprites();prepare_shadows();
         auto lighting=scene->lighting;finalize_lighting(lighting);
-        prepare_environment(lighting);prepare_screen_reflections(lighting.environment.screen_reflections);
+        prepare_environment(lighting);
+        prepare_screen_diffuse_bounce(lighting.environment.screen_diffuse_bounce);
+        prepare_screen_reflections(lighting.environment.screen_reflections);
         prepare_screen_contact_shadows(lighting);
         shadow_filter=shadow_filter_override.value_or(lighting.environment.shadow_filter);
         diagnostics.shadow_filter=shadow_filter;
@@ -2342,7 +2382,7 @@ struct Context {
         exposure_rect={};exposure_clock.reset();prior_exposure=false;
         temporal_inputs.clear_targets();
         clear_sprite_targets();
-        depth_of_field.clear();fog.clear_targets();reflections.clear_targets();
+        depth_of_field.clear();fog.clear_targets();reflections.clear_targets();diffuse_bounce.clear_targets();
         reconstruction.reset();reconstructed=nullptr;dense_motion=nullptr;reactive=nullptr;dilated_depth=nullptr;dilated_motion=nullptr;reconstructed_depth=nullptr;render_extent={};output_extent={};temporal_phase=0;temporal_clock.reset();
         viewmodel.reset();viewmodel_enabled=false;viewmodel_draws.clear();viewmodel_objects.clear();
         commands=nullptr;
@@ -2648,6 +2688,7 @@ struct Context {
                     .reconstruction=slot.reconstruction.active,.screen_reflections=slot.screen_reflections,
                     .height_fog=slot.height_fog,.volumetric_clouds=slot.volumetric_clouds && slot.volumetric_clouds->active,
                     .cloud_shadow_baked=slot.cloud_shadow_baked,
+                    .screen_diffuse_bounce=slot.diffuse_bounce && slot.diffuse_bounce->active,
                     .cpu_interval_ms=elapsed_ms(slot.started),.profile=slot.profile,
                     .performance=slot.performance,.performance_ticket=slot.performance_ticket,
                     .shadow_views=slot.shadow_profile_views},diagnostics);
@@ -2658,6 +2699,7 @@ struct Context {
                 diagnostics.atmosphere_sky=slot.atmosphere_sky;
                 diagnostics.aerial_perspective=slot.aerial_perspective;
                 diagnostics.water_optics=slot.water_optics;
+                diagnostics.screen_diffuse_bounce=slot.diffuse_bounce;
                 diagnostics.volumetric_clouds=slot.volumetric_clouds;
                 diagnostics.depth_of_field=slot.depth_of_field;
                 diagnostics.cloud_shadows=slot.cloud_shadows;
@@ -2685,6 +2727,7 @@ struct Context {
         settings.exposure_history_valid=pending_exposure && !pending_exposure->history_reset;
         settings.post_effect=scene && post_effect_active;
         settings.spatial_aa=fxaa_enabled;
+        settings.screen_diffuse_bounce=scene && scene_visible && diffuse_bounce.radiance();
         settings.screen_reflections=scene && scene_visible && reflections.radiance();
         settings.height_fog=scene && scene_visible && fog.radiance();
         settings.depth_of_field=scene && scene_visible && depth_of_field.target();
@@ -2821,6 +2864,10 @@ struct Context {
             if(ao_enabled) {f.ao_raw=texture(occlusion.raw(),rs::Lifetime::shared,false);f.ao_filtered=texture(occlusion.filtered(),rs::Lifetime::shared,false);f.ao_constants=buffer(occlusion.constants(),rs::Lifetime::shared,false);}
             if(deferred) {f.material_base=texture(material_base,rs::Lifetime::shared,false);f.material_surface=texture(material_surface,rs::Lifetime::shared,false);f.material_correspondence=texture(material_correspondence,rs::Lifetime::shared,false);}
             f.hdr=texture(scene_hdr,rs::Lifetime::shared,false);f.color=multisample_color ? texture(multisample_color,rs::Lifetime::shared,false) : f.hdr;
+            if(settings.screen_diffuse_bounce) {
+                f.diffuse_donor=texture(diffuse_bounce.donor(),rs::Lifetime::shared,false);
+                f.bounced_hdr=texture(diffuse_bounce.radiance(),rs::Lifetime::shared,false);
+            }
             if(settings.screen_reflections) {
                 f.reflection_roughness=texture(reflections.roughness(),rs::Lifetime::shared,false);
                 f.reflected_hdr=texture(reflections.radiance(),rs::Lifetime::shared,false);
@@ -3005,6 +3052,7 @@ struct Context {
             identity(f.hdr,desc.colorAttachments[2].texture);identity(f.material_correspondence,desc.colorAttachments[3].texture);identity(f.depth,desc.depthAttachment.texture);
             deferred_lighting.verify_bindings(plan);
         } else framebuffer(framebuffers.at(index),f.color,f.depth,f.normal);
+        if(plan.settings.screen_diffuse_bounce)diffuse_bounce.verify_bindings(plan);
         if(plan.settings.screen_reflections)reflections.verify_bindings(plan,environment_ibl.bound().sampler);
         if(plan.settings.height_fog)fog.verify_bindings(plan);
         if(plan.settings.depth_of_field)depth_of_field.verify_bindings(plan);
@@ -3273,7 +3321,7 @@ struct Context {
             .ao=occlusion.filtered(),.reflection_roughness=reflections.roughness(),
             .cloud_shadow=frame_constants.cloud_shadow_controls[0]>0 ? sky_pass.cloud_shadow_texture() : nullptr,
             .cloud_shadow_sampler=frame_constants.cloud_shadow_controls[0]>0 ? sky_pass.cloud_shadow_sampler() : nullptr,
-            .water_columns=water_columns.Get()},
+            .water_columns=water_columns.Get(),.diffuse_donor=diffuse_bounce.donor()},
             environment_ibl,scene_products_enabled,ao_enabled);
         // Query storage belongs to this Context. Create it before acquiring an
         // image; stopped traces leave it allocated but perform no query work.
@@ -3436,6 +3484,11 @@ struct Context {
                 timestamp(13);
                 break;
             case render_schedule::PassId::deferred_lighting:dispatch_deferred_lighting();break;
+            case render_schedule::PassId::screen_diffuse_bounce:
+                timestamp(22);
+                diffuse_bounce.dispatch(*commands.Get(),*scene->lighting.environment.screen_diffuse_bounce);
+                timestamp(23);
+                break;
             case render_schedule::PassId::screen_reflections: {
                 timestamp(14);
                 const auto& lighting=scene->lighting;
@@ -3528,6 +3581,7 @@ struct Context {
                 commands->commitBarriers();
                 if(!plan.settings.volumetric_clouds) {timestamp(18);timestamp(19);}
                 if(!plan.settings.cloud_shadows || plan.resource(plan.frame.cloud_shadow).initialized) {timestamp(20);timestamp(21);}
+                if(!plan.settings.screen_diffuse_bounce) {timestamp(22);timestamp(23);}
                 timestamp(5);break;
             case render_schedule::PassId::count:
                 throw std::logic_error("Invalid render schedule pass.");
@@ -3557,6 +3611,7 @@ struct Context {
         slot.exposure=pending_exposure;slot.capture_exposure=plan.frame.exposure_readback!=render_schedule::none;
         slot.aerial_perspective=scene ? pending_aerial_perspective : std::nullopt;
         slot.water_optics=scene ? pending_water_optics : std::nullopt;
+        slot.diffuse_bounce=scene ? pending_diffuse_bounce : std::nullopt;
         slot.depth_of_field=scene ? pending_depth_of_field : std::nullopt;
         slot.volumetric_clouds=scene ? pending_clouds : std::nullopt;
         slot.cloud_shadows=scene ? pending_cloud_shadows : std::nullopt;

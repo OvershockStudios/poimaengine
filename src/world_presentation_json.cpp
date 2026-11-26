@@ -177,6 +177,12 @@ Json render_diagnostics(const RenderDiagnostics& d) {
         result["screen_contact_shadows"]={{"active",contact.active},{"reason",contact.reason},
             {"light",contact.light},{"max_samples",contact.max_samples}};
     }
+    if(d.screen_diffuse_bounce) {
+        const auto& bounce=*d.screen_diffuse_bounce;
+        result["screen_diffuse_bounce"]={{"active",bounce.active},{"reason",bounce.reason},
+            {"buffer_bytes",bounce.buffer_bytes},{"rays",bounce.rays},{"max_steps",bounce.max_steps},
+            {"gpu",timing(d.screen_diffuse_bounce_gpu)}};
+    }
     if(d.environment_ibl) {
         const auto& ibl=*d.environment_ibl;
         result["environment_ibl"]={{"enabled",ibl.enabled},{"diffuse_size",ibl.diffuse_size},{"specular_size",ibl.specular_size},
@@ -336,6 +342,9 @@ Json lighting_json(const SceneLighting& lighting) {
     if(const auto& contact=lighting.environment.screen_contact_shadows)
         result["screen_contact_shadows"]={{"light",contact->light},{"length_m",contact->length_m},
             {"thickness_m",contact->thickness_m},{"strength",contact->strength}};
+    if(const auto& bounce=lighting.environment.screen_diffuse_bounce)
+        result["screen_diffuse_bounce"]={{"radius_m",bounce->radius_m},{"thickness_m",bounce->thickness_m},
+            {"strength",bounce->strength}};
     if(lighting.environment.height_fog) {
         const auto& fog=*lighting.environment.height_fog;
         Json settings={{"density_per_m",fog.density_per_m},{"base_height_m",fog.base_height_m},

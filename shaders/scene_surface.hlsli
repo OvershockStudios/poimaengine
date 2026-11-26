@@ -19,7 +19,12 @@ float3 decode_normal(float2 oct) {
     if(n.z<0)n.xy=(1-abs(n.yx))*normal_sign(n.xy);
     return normalize(n);
 }
+#if POIMA_DIFFUSE_DONOR
+float3 shade_surface(SceneSurface material,float3 world,float2 pixel,float ambient_visibility,out float3 donor) {
+    donor=0;
+#else
 float3 shade_surface(SceneSurface material,float3 world,float2 pixel,float ambient_visibility=1) {
+#endif
     float3 color;
     if(material.legacy) {
         if(light_count.x==0)color=material.base*(.18*ambient_visibility);
@@ -31,7 +36,13 @@ float3 shade_surface(SceneSurface material,float3 world,float2 pixel,float ambie
         // response, including specular. Direct light and emission are unchanged.
         [branch] if(ibl_parameters.x>0)
             color+=environment_indirect(material.normal,v,material.base,material.metallic,material.roughness)*material.occlusion*ambient_visibility;
+#if POIMA_DIFFUSE_DONOR
+        donor=material.emission;
+        accumulate_direct_lighting(color,world,pixel,material.geometric_normal,material.normal,v,material.base,
+            material.metallic,material.roughness,material.receive_shadows,donor);
+#else
         accumulate_direct_lighting(color,world,pixel,material.geometric_normal,material.normal,v,material.base,material.metallic,material.roughness,material.receive_shadows);
+#endif
     }
     // Bound final linear radiance before half-float storage, as in forward.
     return select(isnan(color),0,clamp(color,0,65504));

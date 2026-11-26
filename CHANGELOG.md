@@ -2,6 +2,12 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.457
+
+- Add optional local diffuse bounce in the Vulkan deferred renderer.
+  Visible lit and emissive surfaces can add color to nearby receivers.
+  [Author the bounce](docs/DIFFUSE_BOUNCE.md#author-the-bounce)
+
 ## 0.0.456
 
 - Add optional screen-space contact shadows for an authored directional light.

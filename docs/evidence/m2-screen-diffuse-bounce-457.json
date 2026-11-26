@@ -1,0 +1,521 @@
+{
+  "format": "poima.qualification-summary",
+  "version": 1,
+  "engine_checkpoint": "0.0.457",
+  "comparison_commit": "c0afb0398444b5f41e3aa770b15d81585d08e1cc",
+  "scope": "Current-frame, bounded diffuse first-bounce color transfer in Windows Vulkan deferred rendering.",
+  "source_sha256": {
+    "CMakeLists.txt": "6fb3391086b8039ff6342c6cd90e900464bb68cfea3f4707f03017bb1662f10f",
+    "cmake/render_smoke.cmake": "9b9e72b654a859f7e86f780f2668e81d93dad59e324f9c5a6c6da2ac14147cd5",
+    "cmake/runtime.json.in": "dc33eedaf64e1355f80225c89c9abf6d9dd9463eba26fd420cea74b721cc625d",
+    "include/poima/core.hpp": "aef404779127268819e420271b07b592dae99e0a76dcc0e2eb9154227aa7c5f2",
+    "include/poima/render_schedule.hpp": "9b3c357db1427fb1b5bdb00f982dac28e8897941da6d1ae3f665d09cbd831f64",
+    "include/poima/scene.hpp": "e04d4c2c9e370f75cb2d5c716798c0c7a76fcd4dd3820fe2c57e74c27287ff43",
+    "include/poima/world.hpp": "881989a86ad1d081b62f3438871fc398321bd9ac4f139e3941cb011bbbc1e17c",
+    "shaders/deferred_lighting.hlsl": "581b22305cac1526f64d21646bd0b550ec646e1e043c2c81f9d667975a136469",
+    "shaders/scene_lighting.hlsli": "5a183b8ab1ba2de9e0916be359a25d61f22414ad2024788b8a8c8811254d2ede",
+    "shaders/scene_surface.hlsli": "b7deedee424dc878ecdb2fcfeff78d8cf9e9fd4e50d8d082d299e003f7ea8836",
+    "shaders/screen_diffuse_bounce.hlsl": "9291dc2694c22cca3c596b51f2a8232e8b177cb28d7bfe53b4677a9a4c38f323",
+    "src/core.cpp": "4e107754e5416d091db9223c5b4ff8202f746640076838944b333c5214bfebd5",
+    "src/lighting.cpp": "e67e14b42f02e936b875ce520639cc53db2ac3b9cda8076d8880686868290017",
+    "src/project.cpp": "d568213fd65cf142140d3b7e0a012b365fd2ced7551f32f409a4db42688481ce",
+    "src/render_deferred_lighting.cpp": "f2d04675edd8f700af0519de95448ded0d7543dbd8092a0a31b45cff2d85107b",
+    "src/render_deferred_lighting.hpp": "3549e1d064b73bf0a384a117380db6d846bd7010e7fdb4f91f5d398ca2a6e053",
+    "src/render_schedule.cpp": "5734512dbdc8d71516c52d849bc3d68e3a8be4fd3ac460cc126d3c509ca1f19b",
+    "src/render_screen_diffuse_bounce.cpp": "e8d43e2f7f7bfbd27fbf379be16a9c7fc7bf462f0eb4f24968125b0fb983d46f",
+    "src/render_screen_diffuse_bounce.hpp": "73070be00160c1897f8383cc9042da2b9d62e2a8d1856f3785e6d96d180c3f07",
+    "src/render_screen_reflections.cpp": "5853c96ef23d656027aaaa947e5729410814db05948fba80264f5d01d4e2cb09",
+    "src/render_smoke.cpp": "1243a37e7a090f77c2246917975dd0e0b6feab2e4bf90dee7d16af5db92607e3",
+    "src/render_vulkan_frame.cpp": "9a16a4117da4d73ce04e33f8687d5f2bdd8737e96de7422c47d4e53c0dcb3e13",
+    "src/render_vulkan_frame.hpp": "200a6cb613532ae7f04c8851dc0d387313350f8dbc98d452805c4536f2f2ee40",
+    "src/world.cpp": "5499317d27be678fc044add2e4d0c9a776709bcf3858731bb432b7c99cf1e8de",
+    "src/world_content.cpp": "fbf5e60e8cc27c6137b4911454b3a9eec1aa6ae179ff486a07029283f6fb1ec0",
+    "src/world_document.cpp": "3be7d3d866d8f054a3deee47049731873dc05e243c199e53253332220f548910",
+    "src/world_presentation_json.cpp": "8861b3abbfc7e61bc0ec946dfd2482ae3b25effff2fa2eb6eb485b2539fa06ca",
+    "src/world_schema.cpp": "e3edd866e4bffefe28252198cad52f132fe44c6ad0f6910b73fb2488100596d6",
+    "tests/lighting_contract.py": "003089684fb73e2ba859728d01bbea679df4ab5596258e7e6264bba8bf6bac60",
+    "tests/render_schedule.cpp": "e2e73ce06eb93ef78e4383583779ed304bda83dcbc469dacd68f725a8e9f5125",
+    "tests/screen_diffuse_bounce_capture.py": "ff7a3ae446a5606fe52f012eb8f15730f3d0432f973c63b94f1f1ea857e01dee"
+  },
+  "build": {
+    "cross_build_log_sha256": "6a965171be325bc472c5adb67db91cd216324b28fce829885fa8362f02fe269e",
+    "windows_installed_sha256": {
+      "bin/poima.exe": "0842c40e1a8b7fd19af29432d689b1f0656fc0b2ae3a001acefe347a93634e44",
+      "bin/poima_desktop.dll": "0d98bd07eb66fb0143172ccfe77b4bda31142d7e12bc9916ce4e345f548ffcee",
+      "runtime.json": "80f3679a0184eb7407dd4153697f2d5787b1e0828d67997050ea951bb1769bdf"
+    },
+    "exact_legacy_deferred_shader_variants": 8,
+    "compiled_donor_variant_sha256": [
+      "52e679b8fa6f6b55781f2fb8f65a584785d170bb2b32334c4aa8536fba3a31cd",
+      "f8cd0f2d4fb1ae849a45f32f5e169ae9972147fa72cc15cceef4b68ec5c178bb",
+      "06841d96fb59abeab70b07b3c43d231903bf9602a1891860ca7b587854823d43",
+      "385bd97ef9bb8d5a7f38b8f5bcaffec62604ee8c854ed2acaf772cd03875393b",
+      "443a61eda5f6e0f6c1725c367ec92edad4b5eaacc8b8be44609bb85585350895",
+      "3ff14ba4dbe104412f125636b8b371c09a4a175e050c5780b4e12f2088852d0c",
+      "45c7f822b1636c5fc6dd3623420384c50c08353576ca088ea2440f9bf115981f",
+      "15f84ab25504243022798bfc2edcddbd3784344e2f4be07199ffe2c916633056"
+    ],
+    "compiled_bounce_shader_sha256": "3221502f6b118d598c05b1e093bb1c9b34d44c937c4e40e4d1b4025151266356",
+    "linux_binary_sha256": "669c1115e577e8921559008c4c5566675aca49223ed1bfe311498a8bcbce898f",
+    "linux_junit_sha256": "62d9c3f28039822a22ad631a33ec02dbf0def4078d56b41f70f2e1a2cd7ca5e6",
+    "linux_passed_suites": [
+      "authoring_contract_identity",
+      "render_schedule_native",
+      "world_templates_contract",
+      "project_contract",
+      "project_draft_contract",
+      "lighting_contract",
+      "world_contract"
+    ],
+    "render_schedule": {
+      "valid_variants": 622,
+      "rejected_mutations": 1584
+    }
+  },
+  "windows_vulkan": [
+    {
+      "gpu": "AMD Radeon(TM) Graphics",
+      "report_sha256": "87f6a9d78df7df5e62af21b7df38566d9deb8eb62b509faaccebe685f84966ee",
+      "retained_binary_sha256": "0728e59439cf48e8b5f9bb501b44a81fdc4f999fdbde15dfa74fdab760e6f667",
+      "captures": {
+        "ambient-only-donor-enabled": "b17922629454868429b00a6f00b59e46d4842eaf58ef5ab242baf4ee45176dd1",
+        "ambient-only-donor-omitted": "b17922629454868429b00a6f00b59e46d4842eaf58ef5ab242baf4ee45176dd1",
+        "enabled": "6a3cf2d0a48514e69b25321e823fd6508c68a04913c8f8850f68f50aff8e2e76",
+        "forward-fallback": "957f411f872b5dc27c18e346e417cf4d43ada88c2beef3cf63dbefa8a6a68649",
+        "forward-omitted": "957f411f872b5dc27c18e346e417cf4d43ada88c2beef3cf63dbefa8a6a68649",
+        "half-strength": "0a36fe9ece11ec95e25f759ba695cd006c10602781d4421444b8332e178338a5",
+        "lit-donor-bounce": "afa404162f7dbc93cf03cd6baa89b71ffe8cc89db3554a4ebd518f640b27b5dd",
+        "lit-donor-omitted": "19980e329018a24297398dfa4e3c9d304e5b4089bc33ac098f9e50410597a550",
+        "metallic-receiver-enabled": "4e3a6d3efeede8386d42140e31408c3db775330a4989cfa6bc31a0e111af75ac",
+        "metallic-receiver-omitted": "4e3a6d3efeede8386d42140e31408c3db775330a4989cfa6bc31a0e111af75ac",
+        "omitted": "29b34e3e095e2e9868b48f1f072190643d5a12e5bc7a06ceae87f9ae8a697062",
+        "reflections-and-bounce": "6a3cf2d0a48514e69b25321e823fd6508c68a04913c8f8850f68f50aff8e2e76",
+        "reflections-only": "29b34e3e095e2e9868b48f1f072190643d5a12e5bc7a06ceae87f9ae8a697062",
+        "retained": "29b34e3e095e2e9868b48f1f072190643d5a12e5bc7a06ceae87f9ae8a697062",
+        "short-radius": "cc7453b668183367bef846a4d79057e846a24ab77d917244a1696d781e55ac21",
+        "zero-strength": "29b34e3e095e2e9868b48f1f072190643d5a12e5bc7a06ceae87f9ae8a697062"
+      },
+      "trace": {
+        "rays": 12,
+        "max_steps": 12,
+        "buffer_bytes": 1237776,
+        "gpu": {
+          "last_ms": 0.30052,
+          "max_ms": 0.30052,
+          "mean_ms": 0.29902,
+          "min_ms": 0.29752,
+          "samples": 2
+        }
+      },
+      "covered_receivers": [
+        {
+          "pixel": [
+            158,
+            104
+          ],
+          "red_delta_hdr": 0.054107666015625,
+          "strength_half_error": 1.52587890625e-05,
+          "measured_over_projected_solid_angle": 0.28545098590832635
+        },
+        {
+          "pixel": [
+            158,
+            120
+          ],
+          "red_delta_hdr": 0.108306884765625,
+          "strength_half_error": 4.57763671875e-05,
+          "measured_over_projected_solid_angle": 0.5369898679611553
+        },
+        {
+          "pixel": [
+            158,
+            136
+          ],
+          "red_delta_hdr": 0.108306884765625,
+          "strength_half_error": 4.57763671875e-05,
+          "measured_over_projected_solid_angle": 0.5713849684087139
+        },
+        {
+          "pixel": [
+            163,
+            104
+          ],
+          "red_delta_hdr": 0.162384033203125,
+          "strength_half_error": 1.52587890625e-05,
+          "measured_over_projected_solid_angle": 0.7387409836333751
+        },
+        {
+          "pixel": [
+            163,
+            120
+          ],
+          "red_delta_hdr": 0.162384033203125,
+          "strength_half_error": 1.52587890625e-05,
+          "measured_over_projected_solid_angle": 0.7024348943074612
+        },
+        {
+          "pixel": [
+            163,
+            136
+          ],
+          "red_delta_hdr": 0.108306884765625,
+          "strength_half_error": 4.57763671875e-05,
+          "measured_over_projected_solid_angle": 0.49272538073949146
+        },
+        {
+          "pixel": [
+            166,
+            104
+          ],
+          "red_delta_hdr": 0.162384033203125,
+          "strength_half_error": 1.52587890625e-05,
+          "measured_over_projected_solid_angle": 0.6771246069950293
+        },
+        {
+          "pixel": [
+            166,
+            120
+          ],
+          "red_delta_hdr": 0.162384033203125,
+          "strength_half_error": 1.52587890625e-05,
+          "measured_over_projected_solid_angle": 0.649924306234435
+        },
+        {
+          "pixel": [
+            166,
+            136
+          ],
+          "red_delta_hdr": 0.162384033203125,
+          "strength_half_error": 1.52587890625e-05,
+          "measured_over_projected_solid_angle": 0.6771246069950301
+        }
+      ],
+      "exact_other_probes": 14,
+      "direct_diffuse_red_delta_hdr": [
+        0.107452392578125,
+        0.214874267578125,
+        0.214874267578125,
+        0.322540283203125,
+        0.322540283203125,
+        0.214874267578125,
+        0.322540283203125,
+        0.322540283203125,
+        0.322540283203125
+      ],
+      "matte_reflections_composition": "exact HDR probes and BMPs"
+    },
+    {
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "report_sha256": "336392404d9eaa84f6d9a506bcc33eba33a6e8dc2451085e15f71af3529472fc",
+      "retained_binary_sha256": "0728e59439cf48e8b5f9bb501b44a81fdc4f999fdbde15dfa74fdab760e6f667",
+      "captures": {
+        "ambient-only-donor-enabled": "b17922629454868429b00a6f00b59e46d4842eaf58ef5ab242baf4ee45176dd1",
+        "ambient-only-donor-omitted": "b17922629454868429b00a6f00b59e46d4842eaf58ef5ab242baf4ee45176dd1",
+        "enabled": "c842ae056945d5526d137792bdfd608432fa6628cad19401e989c435cb0ebda9",
+        "forward-fallback": "957f411f872b5dc27c18e346e417cf4d43ada88c2beef3cf63dbefa8a6a68649",
+        "forward-omitted": "957f411f872b5dc27c18e346e417cf4d43ada88c2beef3cf63dbefa8a6a68649",
+        "half-strength": "6083194edc892f6ecf86a87beb863a76eb5c52efec0743ab48d87d8eb4dbbee9",
+        "lit-donor-bounce": "2f46107b231596b2eb994561f37b80a119c5c7d9ed72bfefc96900516eee38fa",
+        "lit-donor-omitted": "19980e329018a24297398dfa4e3c9d304e5b4089bc33ac098f9e50410597a550",
+        "metallic-receiver-enabled": "4e3a6d3efeede8386d42140e31408c3db775330a4989cfa6bc31a0e111af75ac",
+        "metallic-receiver-omitted": "4e3a6d3efeede8386d42140e31408c3db775330a4989cfa6bc31a0e111af75ac",
+        "native-aa-enabled": "e8550e52fc55809153d04c2b900717ec0237b69927b19556b616f9ed547f77aa",
+        "native-aa-omitted": "5083b4d079e5a934b275a5f55721ec0eb7e02447b52556a3a3db7e0bc7454af0",
+        "omitted": "29b34e3e095e2e9868b48f1f072190643d5a12e5bc7a06ceae87f9ae8a697062",
+        "reflections-and-bounce": "c842ae056945d5526d137792bdfd608432fa6628cad19401e989c435cb0ebda9",
+        "reflections-only": "29b34e3e095e2e9868b48f1f072190643d5a12e5bc7a06ceae87f9ae8a697062",
+        "relocated": "a11b46fba6bb3824cfcc91e20b9eb722f97c7c2f70965bc6126c0021d39029c9",
+        "retained": "29b34e3e095e2e9868b48f1f072190643d5a12e5bc7a06ceae87f9ae8a697062",
+        "short-radius": "d6ebbd574629d8927d56dfc47d78cf0c2f9b80c96b485d7fd95f42faa9dec155",
+        "zero-strength": "29b34e3e095e2e9868b48f1f072190643d5a12e5bc7a06ceae87f9ae8a697062"
+      },
+      "trace": {
+        "rays": 12,
+        "max_steps": 12,
+        "buffer_bytes": 1237776,
+        "gpu": {
+          "last_ms": 0.047104,
+          "max_ms": 0.047104,
+          "mean_ms": 0.046591999999999995,
+          "min_ms": 0.046079999999999996,
+          "samples": 2
+        }
+      },
+      "covered_receivers": [
+        {
+          "pixel": [
+            158,
+            104
+          ],
+          "red_delta_hdr": 0.054107666015625,
+          "strength_half_error": 1.52587890625e-05,
+          "measured_over_projected_solid_angle": 0.28545098590832635
+        },
+        {
+          "pixel": [
+            158,
+            120
+          ],
+          "red_delta_hdr": 0.108306884765625,
+          "strength_half_error": 4.57763671875e-05,
+          "measured_over_projected_solid_angle": 0.5369898679611553
+        },
+        {
+          "pixel": [
+            158,
+            136
+          ],
+          "red_delta_hdr": 0.108306884765625,
+          "strength_half_error": 4.57763671875e-05,
+          "measured_over_projected_solid_angle": 0.5713849684087139
+        },
+        {
+          "pixel": [
+            163,
+            104
+          ],
+          "red_delta_hdr": 0.162384033203125,
+          "strength_half_error": 1.52587890625e-05,
+          "measured_over_projected_solid_angle": 0.7387409836333751
+        },
+        {
+          "pixel": [
+            163,
+            120
+          ],
+          "red_delta_hdr": 0.162384033203125,
+          "strength_half_error": 1.52587890625e-05,
+          "measured_over_projected_solid_angle": 0.7024348943074612
+        },
+        {
+          "pixel": [
+            163,
+            136
+          ],
+          "red_delta_hdr": 0.108306884765625,
+          "strength_half_error": 4.57763671875e-05,
+          "measured_over_projected_solid_angle": 0.49272538073949146
+        },
+        {
+          "pixel": [
+            166,
+            104
+          ],
+          "red_delta_hdr": 0.162384033203125,
+          "strength_half_error": 1.52587890625e-05,
+          "measured_over_projected_solid_angle": 0.6771246069950293
+        },
+        {
+          "pixel": [
+            166,
+            120
+          ],
+          "red_delta_hdr": 0.162384033203125,
+          "strength_half_error": 1.52587890625e-05,
+          "measured_over_projected_solid_angle": 0.649924306234435
+        },
+        {
+          "pixel": [
+            166,
+            136
+          ],
+          "red_delta_hdr": 0.162384033203125,
+          "strength_half_error": 1.52587890625e-05,
+          "measured_over_projected_solid_angle": 0.6771246069950301
+        }
+      ],
+      "exact_other_probes": 14,
+      "direct_diffuse_red_delta_hdr": [
+        0.107452392578125,
+        0.214874267578125,
+        0.214874267578125,
+        0.322540283203125,
+        0.322540283203125,
+        0.214874267578125,
+        0.322540283203125,
+        0.322540283203125,
+        0.322540283203125
+      ],
+      "matte_reflections_composition": "exact HDR probes and BMPs",
+      "fsr_native_red_delta_hdr": [
+        0.07525634765625,
+        0.12249755859375,
+        0.12225341796875,
+        0.13848876953125,
+        0.13848876953125,
+        0.10833740234375,
+        0.15118408203125,
+        0.15399169921875,
+        0.13848876953125
+      ],
+      "relocated_export": {
+        "source_unavailable": true,
+        "incompatible_runtime_rejected": true,
+        "near": [
+          [
+            87,
+            90,
+            82
+          ],
+          [
+            104,
+            90,
+            82
+          ],
+          [
+            104,
+            90,
+            82
+          ],
+          [
+            117,
+            90,
+            82
+          ],
+          [
+            117,
+            90,
+            82
+          ],
+          [
+            104,
+            90,
+            82
+          ],
+          [
+            117,
+            90,
+            82
+          ],
+          [
+            117,
+            90,
+            82
+          ],
+          [
+            117,
+            90,
+            82
+          ]
+        ],
+        "far": [
+          [
+            63,
+            90,
+            82
+          ],
+          [
+            63,
+            90,
+            82
+          ],
+          [
+            63,
+            90,
+            82
+          ],
+          [
+            63,
+            90,
+            82
+          ],
+          [
+            63,
+            90,
+            82
+          ],
+          [
+            63,
+            90,
+            82
+          ],
+          [
+            63,
+            90,
+            82
+          ],
+          [
+            63,
+            90,
+            82
+          ],
+          [
+            63,
+            90,
+            82
+          ]
+        ]
+      }
+    }
+  ],
+  "matched_saltgate_stills": {
+    "study_sha256": "4af92f2802c8c22c292da3497ce6dc8a825072546a8c059b4b76467328de4a1a",
+    "extent": [
+      960,
+      540
+    ],
+    "lighting_path": "deferred",
+    "reconstruction": "fsr3_native",
+    "tone_mapper": "pbr_neutral",
+    "contact_shadows": true,
+    "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "cumulative_pass_timing": {
+      "last_ms": 0.5498879999999999,
+      "max_ms": 1.4878719999999999,
+      "mean_ms": 0.8861013333333334,
+      "min_ms": 0.5498879999999999,
+      "samples": 6
+    },
+    "frames": [
+      {
+        "frame": 0,
+        "tick": 120,
+        "baseline_sha256": "d4ee5057d8a93d609bf84e789f4548f7aa16c9aef2a214fd80edc10c9d7dfc09",
+        "bounce_sha256": "c8ff3237a3e189154bdb21c3efa3d39201c0b6fdd43be0be2086af88f4141b28",
+        "changed_pixels": 50941,
+        "shifted_at_least_three_codes": 8802,
+        "exact_depth_normal_raw_hdr_probes": 20
+      },
+      {
+        "frame": 224,
+        "tick": 568,
+        "baseline_sha256": "97be17c006b5e621b432e19b1a6043fc9083fc32ad2920443c2046c0248560f4",
+        "bounce_sha256": "529ebe5ca102c97f017157bcb5196972429709969a41f1f3feba2527d953be96",
+        "changed_pixels": 7318,
+        "shifted_at_least_three_codes": 272,
+        "exact_depth_normal_raw_hdr_probes": 20
+      },
+      {
+        "frame": 322,
+        "tick": 764,
+        "baseline_sha256": "20c3c57b267ff88a9a0a346bbdd5f5321c979304e332f3f23e70521aafa0e624",
+        "bounce_sha256": "0f482462cda27e770796db4b34f25b22f367218ff655167b9f3c806e9854a108",
+        "changed_pixels": 85720,
+        "shifted_at_least_three_codes": 10551,
+        "exact_depth_normal_raw_hdr_probes": 20
+      }
+    ]
+  },
+  "retained_attempts": [
+    {
+      "scope": "Native fixture authorship",
+      "report_sha256": [
+        "2ff8ee1742882cfa05863f0ca272f7a3269846bad27d5322afe6cfc3332c35b7",
+        "f014b0fed8b87e79347e62da7f8aa51144e0724b0632a775b4a82c2e4d25ab11"
+      ],
+      "cause": "The fixture set an emissive color above the current authored limit.",
+      "repair": "Used unit emission and strength, kept the receiver, solid-angle and exact control checks."
+    },
+    {
+      "scope": "Saltgate preparation",
+      "log_sha256": "72901534ad4c827e8bc00db69335cbaba7a480f9e31362fca75f29529b741869",
+      "cause": "The comparison used a transaction receipt ID already stored in its source copy.",
+      "repair": "Used the existing source profile for the baseline and a fresh guarded transaction for bounce."
+    }
+  ],
+  "outside_scope": [
+    "Off-camera donors and dynamic world-space GI",
+    "Motion stability",
+    "Game-scale cost and physical accuracy with small, hidden or layered donors"
+  ]
+}

@@ -90,6 +90,13 @@ void validate_environment(const LightingEnvironment& e) {
             "Screen contact shadows thickness_m must be finite, in [0.001,0.15], and at most length_m.");
         require(finite_between(contact.strength,0,1),"Screen contact shadows strength must be finite and in [0,1].");
     }
+    if(e.screen_diffuse_bounce) {
+        const auto& bounce=*e.screen_diffuse_bounce;
+        require(finite_between(bounce.radius_m,.2f,4),"Screen diffuse bounce radius_m must be finite and in [0.2,4].");
+        require(finite_between(bounce.thickness_m,.005f,.25f) && bounce.thickness_m<=bounce.radius_m,
+            "Screen diffuse bounce thickness_m must be finite, in [0.005,0.25], and at most radius_m.");
+        require(finite_between(bounce.strength,0,1),"Screen diffuse bounce strength must be finite and in [0,1].");
+    }
     if(e.height_fog) {
         const auto& fog=*e.height_fog;
         require(finite_between(fog.density_per_m,0,.75f),"Height fog density_per_m must be finite and in [0,0.75].");

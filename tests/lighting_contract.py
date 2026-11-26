@@ -412,6 +412,63 @@ class LightingContract(unittest.TestCase):
         if features['simulation']:
             self.assertEqual(c.rpc('runtime.lighting', {'session_id': session, 'tick': 0}), frozen)
 
+    def test_screen_diffuse_bounce_profile_is_strict_persistent_and_frozen(self):
+        c = self.open()
+        description = c.rpc('world.describe', {'view': 'component', 'name': 'LightingEnvironment'})
+        schema = description['components']['LightingEnvironment']['properties']['screen_diffuse_bounce']
+        bounds = {'radius_m': (.2, 4), 'thickness_m': (.005, .25), 'strength': (0, 1)}
+        self.assertGreaterEqual(description['schema_revision'], 250)
+        self.assertEqual(set(schema['required']), set(bounds))
+        self.assertFalse(schema['additionalProperties'])
+        for key, (low, high) in bounds.items():
+            self.assertEqual(schema['properties'][key], dict(type='number', minimum=low, maximum=high))
+
+        profile = dict(radius_m=4, thickness_m=.25, strength=0)
+
+        def edit(value):
+            return component(1, 'LightingEnvironment', dict(ambient=[0, 0, 0], exposure=1,
+                                                            screen_diffuse_bounce=value))
+
+        c.txn(0, [create(1), environment(1)])
+        original = c.rpc('world.lighting')
+        dependencies = c.rpc('world.dependencies')
+        self.assertNotIn('screen_diffuse_bounce', original)
+        self.assertNotIn('needs_screen_diffuse_bounce', dependencies)
+        c.txn(1, [edit(profile)])
+        selected = c.rpc('world.lighting')
+        self.assertEqual(selected, original | dict(revision=2, screen_diffuse_bounce=profile))
+        self.assertEqual(c.rpc('world.dependencies'), dependencies | dict(revision=2, needs_screen_diffuse_bounce=True))
+        c.close()
+        c = self.open()
+        self.assertEqual(c.rpc('world.lighting'), selected)
+
+        invalid = [None, [], profile | dict(unexpected=True), profile | dict(radius_m=.2)]
+        invalid.extend({key: value for key, value in profile.items() if key != field} for field in profile)
+        for key, (low, high) in bounds.items():
+            invalid.extend(profile | {key: value} for value in (False, '0', low-1e-10, high+1e-10))
+        before = self.path.read_bytes()
+        for value in invalid:
+            c.txn(2, [transform(1, (1, 2, 3)), edit(value)], error=-32602)
+            self.assertEqual(self.path.read_bytes(), before)
+        self.assertEqual(c.rpc('world.lighting'), selected)
+
+        features = json.loads(subprocess.check_output([BINARY, 'capabilities'], text=True))['result']['features']
+        if features['simulation']:
+            session = uid(954)
+            c.rpc('runtime.start', {'session_id': session, 'revision': 2})
+            frozen = c.rpc('runtime.lighting', {'session_id': session, 'tick': 0})
+            self.assertEqual(frozen['screen_diffuse_bounce'], profile)
+        low = dict(radius_m=.2, thickness_m=.005, strength=1)
+        c.txn(2, [edit(low)])
+        updated = c.rpc('world.lighting')['screen_diffuse_bounce']
+        for key, value in low.items():
+            self.assertAlmostEqual(updated[key], value)
+        c.txn(3, [environment(1)])
+        self.assertEqual(c.rpc('world.lighting'), original | dict(revision=4))
+        self.assertEqual(c.rpc('world.dependencies'), dependencies | dict(revision=4))
+        if features['simulation']:
+            self.assertEqual(c.rpc('runtime.lighting', {'session_id': session, 'tick': 0}), frozen)
+
     def test_runtime_screen_reflections_are_frozen_with_lighting(self):
         cap = json.loads(subprocess.check_output([BINARY, 'capabilities'], text=True))
         if not cap['result']['features']['simulation']:

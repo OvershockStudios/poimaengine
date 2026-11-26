@@ -32,6 +32,10 @@ struct Fixture {
                 f.material_surface=add(Kind::texture,Lifetime::shared);f.resources[f.material_surface].format=Format::rgba16_float;
                 f.material_correspondence=add(Kind::texture,Lifetime::shared);f.resources[f.material_correspondence].format=s.products ? Format::rgba32_float : Format::rg32_float;
             }
+            if(s.screen_diffuse_bounce) {
+                f.diffuse_donor=add(Kind::texture,Lifetime::shared);f.resources[f.diffuse_donor].format=Format::rgba16_float;
+                f.bounced_hdr=add(Kind::texture,Lifetime::shared);f.resources[f.bounced_hdr].format=Format::rgba16_float;
+            }
             if(s.screen_reflections) {
                 f.reflection_roughness=add(Kind::texture,Lifetime::shared);f.resources[f.reflection_roughness].format=Format::r16_float;
                 f.reflected_hdr=add(Kind::texture,Lifetime::shared);f.resources[f.reflected_hdr].format=Format::rgba16_float;
@@ -1357,7 +1361,8 @@ void setup_composed_reconstruction(Fixture& fixture,bool upscale) {
     f.composition_mask=image(Format::r8_unorm);
     f.resources[f.composition_mask].supported=use_bit(Use::sampled)|use_bit(Use::image_write);
     if(upscale)for(auto id:{f.hdr,f.depth,f.normal,f.motion,f.motion_valid,f.material_base,f.material_surface,
-        f.material_correspondence,f.ao_raw,f.ao_filtered,f.reflection_roughness,f.reflected_hdr,f.fogged_hdr,
+        f.material_correspondence,f.ao_raw,f.ao_filtered,f.diffuse_donor,f.bounced_hdr,
+        f.reflection_roughness,f.reflected_hdr,f.fogged_hdr,f.focused_hdr,
         f.dense_motion,f.reactive,f.dilated_depth,f.dilated_motion,f.reconstructed_depth,f.composition_mask}) {
         if(id==none)continue;
         f.resources[id].width=257;
@@ -1488,7 +1493,8 @@ void composed_reconstruction_contracts() {
 void setup_reconstructed_sprites(Fixture& fixture,bool upscale) {
     setup_particle_sprites(fixture);
     setup_composed_reconstruction(fixture,upscale);
-    if(!fixture.settings.screen_reflections && !fixture.settings.height_fog)fixture.f.composition_mask=none;
+    if(!fixture.settings.screen_diffuse_bounce && !fixture.settings.screen_reflections &&
+        !fixture.settings.height_fog && !fixture.settings.depth_of_field)fixture.f.composition_mask=none;
     auto& f=fixture.f;
     const auto image=[&](Format format,Use initialize) {
         const auto id=fixture.add(Kind::texture,Lifetime::shared);
@@ -1501,6 +1507,118 @@ void setup_reconstructed_sprites(Fixture& fixture,bool upscale) {
     };
     f.sprite_hdr=image(Format::rgba16_float,Use::copy_destination);
     f.sprite_coverage=image(Format::r8_unorm,Use::clear_color);
+}
+
+void screen_diffuse_bounce_contracts() {
+    for(unsigned path:{0u,1u,2u,3u,4u})for(unsigned temporal:{0u,1u,2u})for(bool sprites:{false,true}) {
+        auto settings=rich();
+        settings.deferred=settings.screen_diffuse_bounce=true;
+        settings.screen_reflections=path==1 || path==4;
+        settings.height_fog=path==2 || path==4;
+        settings.depth_of_field=path>=3;
+        settings.products=temporal!=0 || !sprites;
+        settings.reconstruction=temporal!=0;
+        settings.ambient_occlusion=path==4;
+        Fixture fixture(settings);
+        auto& f=fixture.f;
+        if(settings.depth_of_field) {
+            f.focused_hdr=fixture.add(Kind::texture,Lifetime::shared);
+            f.resources[f.focused_hdr].format=Format::rgba16_float;
+        }
+        if(path==0 && !sprites) {
+            f.camera_draws.clear();
+            f.shadow_draws.clear();
+        }
+        if(sprites) {
+            if(settings.reconstruction)setup_reconstructed_sprites(fixture,temporal==2);
+            else setup_particle_sprites(fixture);
+        } else if(settings.reconstruction)setup_composed_reconstruction(fixture,temporal==2);
+        if(path==4) {
+            setup_foreground(fixture);
+            environment_inputs(fixture);
+            setup_post_effect(fixture);
+            setup_bloom(fixture);
+        }
+        if(settings.products)world_hdr_probes(fixture);
+        auto plan=fixture.plan();plan.validate();++accepted;
+        const auto world=world_radiance(f,settings);
+        check(&pass(plan,PassId::deferred_lighting)+1==&pass(plan,PassId::screen_diffuse_bounce) &&
+              access(plan,PassId::deferred_lighting,f.diffuse_donor,Use::image_write,true) &&
+              access(plan,PassId::screen_diffuse_bounce,f.diffuse_donor,Use::sampled) &&
+              access(plan,PassId::screen_diffuse_bounce,f.hdr,Use::sampled) &&
+              access(plan,PassId::screen_diffuse_bounce,f.bounced_hdr,Use::image_write,true),
+              "Diffuse bounce must read newly produced donors and write a distinct radiance texture");
+        if(settings.screen_reflections)check(access(plan,PassId::screen_reflections,f.bounced_hdr,Use::sampled) &&
+                                              !access(plan,PassId::screen_reflections,f.hdr,Use::sampled),
+                                              "Reflections bypassed diffuse bounce");
+        if(settings.height_fog)check(access(plan,PassId::height_fog,surface_radiance(f,settings),Use::sampled),
+                                    "Fog bypassed surface composition");
+        if(settings.depth_of_field)check(access(plan,PassId::depth_of_field,unfocused_radiance(f,settings),Use::sampled),
+                                         "Focus bypassed world effects");
+        if(sprites)check(access(plan,PassId::particle_sprites,world,settings.reconstruction ? Use::copy_source : Use::color),
+                         "Sprites bypassed composed world radiance");
+        if(settings.reconstruction) {
+            check(access(plan,PassId::temporal_inputs,f.hdr,Use::sampled) &&
+                  access(plan,PassId::temporal_inputs,world,Use::sampled) &&
+                  access(plan,PassId::temporal_inputs,f.composition_mask,Use::image_write,true) &&
+                  access(plan,PassId::reconstruction,f.composition_mask,Use::sampled) &&
+                  access(plan,PassId::reconstruction,reconstruction_radiance(f,fixture.settings),Use::sampled) &&
+                  !access(plan,PassId::reconstruction,f.hdr,Use::sampled),
+                  "Reconstruction requires the final world composition and its mask");
+        }
+        if(settings.products)check(f.probe_copies[4].source==f.hdr &&
+                                   f.probe_copies[5].source==(settings.reconstruction ? f.reconstructed : world),
+                                   "Capture probes collapsed raw and composed HDR");
+    }
+
+    auto settings=rich();
+    settings.deferred=settings.screen_diffuse_bounce=settings.screen_reflections=settings.products=true;
+    Fixture fixture(settings);
+    world_hdr_probes(fixture);
+    const auto valid=fixture.plan();valid.validate();
+    const auto& f=valid.frame;
+    const auto bad=[&](const char* name,const auto& edit) {
+        auto plan=valid;
+        edit(plan);
+        rejects(name,[&]{plan.validate();});
+    };
+    bad("bounce without scene",[](auto& p){p.settings.scene=false;});
+    bad("bounce with forward shading",[](auto& p){p.settings.deferred=false;});
+    bad("bounce in a diagnostic view",[](auto& p){p.settings.products_debug=true;});
+    bad("bounce attachments when disabled",[](auto& p){p.settings.screen_diffuse_bounce=false;});
+    rejects("bounce with MSAA",[&]{Fixture(settings,4).plan().validate();});
+    for(auto role:{&FrameResources::diffuse_donor,&FrameResources::bounced_hdr}) {
+        const auto target=f.*role;
+        bad("missing bounce attachment",[&](auto& p){p.frame.*role=none;});
+        bad("invalid bounce attachment format",[&](auto& p){p.frame.resources[target].format=Format::r16_float;});
+        bad("stale bounce attachment",[&](auto& p){p.frame.resources[target].initialized=true;});
+        bad("wrong bounce attachment extent",[&](auto& p){++p.frame.resources[target].width;});
+        bad("aliased bounce attachment identity",[&](auto& p){p.frame.resources[target].identity=p.frame.resources[f.hdr].identity;});
+        for(auto alias:{f.hdr,f.material_base,f.material_surface,f.output,f.reflected_hdr})
+            bad("bounce attachment aliases a live role",[&](auto& p){p.frame.*role=alias;});
+    }
+    bad("bounce output aliases donor",[](auto& p){p.frame.bounced_hdr=p.frame.diffuse_donor;});
+    bad("bounce attachment payload over budget",[&](auto& p){p.frame.resources[f.hdr].width=p.frame.resources[f.hdr].height=4096;});
+    bad("bounce precedes donor production",[](auto& p){std::swap(pass(p,PassId::screen_diffuse_bounce),pass(p,PassId::deferred_lighting));});
+    bad("bounce follows reflection consumption",[](auto& p){std::swap(pass(p,PassId::screen_diffuse_bounce),pass(p,PassId::screen_reflections));});
+    bad("bounce pass absent",[](auto& p){std::erase_if(p.passes,[](const auto& work){return work.id==PassId::screen_diffuse_bounce;});});
+    bad("bounce donor producer absent",[&](auto& p){erase_access(p,PassId::deferred_lighting,f.diffuse_donor,Use::image_write);});
+    for(auto input:{f.hdr,f.diffuse_donor,f.depth,f.material_base,f.material_surface,f.material_correspondence})
+        bad("bounce input absent",[&](auto& p){erase_access(p,PassId::screen_diffuse_bounce,input,Use::sampled);});
+    bad("bounce frame constants absent",[&](auto& p){erase_access(p,PassId::screen_diffuse_bounce,f.frame,Use::constant);});
+    bad("bounce leaves output uninitialized",[](auto& p){pass(p,PassId::screen_diffuse_bounce).accesses.back().initialize=false;});
+    bad("bounce writes HDR in place",[&](auto& p){pass(p,PassId::screen_diffuse_bounce).accesses.back()={f.hdr,Use::image_read_write,false};});
+    bad("reflection bypasses bounce",[&](auto& p){pass(p,PassId::screen_reflections).accesses.front().resource=f.hdr;});
+    bad("display samples donor",[&](auto& p){pass(p,PassId::output).accesses.push_back({f.diffuse_donor,Use::sampled});});
+    bad("display additionally samples HDR from before reflections",[&](auto& p){pass(p,PassId::output).accesses.push_back({f.bounced_hdr,Use::sampled});});
+    bad("raw capture reads bounced HDR",[&](auto& p){p.frame.probe_copies[4].source=f.bounced_hdr;});
+
+    settings.screen_diffuse_bounce=false;
+    auto omitted=Fixture(settings).plan();omitted.validate();
+    check(omitted.frame.diffuse_donor==none && omitted.frame.bounced_hdr==none &&
+          diffuse_radiance(omitted.frame,settings)==omitted.frame.hdr &&
+          std::none_of(omitted.passes.begin(),omitted.passes.end(),[](const auto& work){return work.id==PassId::screen_diffuse_bounce;}),
+          "Omitted diffuse bounce reserved resources or work");
 }
 
 void reconstructed_sprite_contracts() {
@@ -2145,4 +2263,4 @@ void visibility_contracts() {
 }
 }
 
-int main(){try{matrix();faults();products();motion_contracts();reconstruction_contracts();deferred_contracts();deferred_color_contracts();viewmodel_contracts();ambient_occlusion_contracts();masked_shadow_contracts();environment_contracts();bloom_contracts();post_effect_contracts();output_grade_contracts();streamed_geometry_contracts();mutable_geometry_contracts();particle_sprite_contracts();surface_mark_contracts();screen_reflection_contracts();height_fog_contracts();depth_of_field_contracts();composed_reconstruction_contracts();reconstructed_sprite_contracts();spatial_aa_contracts();auto_exposure_contracts();atmosphere_contracts();visibility_contracts();std::cout<<"Production render schedule: "<<accepted<<" valid variants, "<<rejected<<" rejected contract mutations.\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}
+int main(){try{matrix();faults();products();motion_contracts();reconstruction_contracts();deferred_contracts();deferred_color_contracts();viewmodel_contracts();ambient_occlusion_contracts();masked_shadow_contracts();environment_contracts();bloom_contracts();post_effect_contracts();output_grade_contracts();streamed_geometry_contracts();mutable_geometry_contracts();particle_sprite_contracts();surface_mark_contracts();screen_reflection_contracts();screen_diffuse_bounce_contracts();height_fog_contracts();depth_of_field_contracts();composed_reconstruction_contracts();reconstructed_sprite_contracts();spatial_aa_contracts();auto_exposure_contracts();atmosphere_contracts();visibility_contracts();std::cout<<"Production render schedule: "<<accepted<<" valid variants, "<<rejected<<" rejected contract mutations.\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}

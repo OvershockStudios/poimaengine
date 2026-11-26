@@ -1,8 +1,19 @@
 # Implementation status
 
-Updated 2026-11-25 for **0.0.456**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-25 for **0.0.457**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.457 [adds local diffuse bounce](DIFFUSE_BOUNCE.md) from lit and
+emissive geometry in Vulkan deferred color. AMD and NVIDIA each reproduced
+red transfer at nine receiver probes and 14 exact control probes. The
+low-sample gather returned 29–74% of the independent projected solid-angle
+reference at those receivers. Both adapters passed matte SSR composition.
+NVIDIA also passed FSR Native AA and a relocated export. At 960×540, six
+Saltgate samples put the bounce pass at 0.89 ms mean on the RTX 4070 Laptop
+GPU. That timing covers matched stills. Motion stability, off-camera light
+and larger frame budgets remain open.
+[Results and scope](evidence/m2-screen-diffuse-bounce-457.json)
 
 Version 0.0.456 [adds screen-space contact shadows](SHADOWS.md#ground-small-casters-with-screen-space-shadows)
 for one directional light in deferred color. AMD and NVIDIA each matched

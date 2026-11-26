@@ -20,12 +20,18 @@ Texture2D<float> indirect_visibility : register(t4);
 #if POIMA_REFLECTION_ROUGHNESS
 [[vk::image_format("r16f")]] RWTexture2D<float> reflection_roughness : register(u4);
 #endif
+#if POIMA_DIFFUSE_DONOR
+[[vk::image_format("rgba16f")]] RWTexture2D<float4> diffuse_donor : register(u5);
+#endif
 [numthreads(8,8,1)]
 void compute_main(uint3 id : SV_DispatchThreadID) {
     uint width,height;scene_hdr.GetDimensions(width,height);
     if(any(id.xy>=uint2(width,height)))return;
     const float2 pixel=float2(id.xy)+.5;
     if(any(pixel<cluster_viewport.xy) || any(pixel>=cluster_viewport.xy+cluster_viewport.zw)) {
+#if POIMA_DIFFUSE_DONOR
+        diffuse_donor[id.xy]=0;
+#endif
 #if POIMA_REFLECTION_ROUGHNESS
         reflection_roughness[id.xy]=1;
 #endif
@@ -35,6 +41,9 @@ void compute_main(uint3 id : SV_DispatchThreadID) {
     const uint flags=(uint)round(surface.w);
     if((flags&1u)==0) {
         // Clear/sky radiance is already initialized; only geometry has products.
+#if POIMA_DIFFUSE_DONOR
+        diffuse_donor[id.xy]=0;
+#endif
 #if POIMA_REFLECTION_ROUGHNESS
         reflection_roughness[id.xy]=1;
 #endif
@@ -68,7 +77,14 @@ void compute_main(uint3 id : SV_DispatchThreadID) {
 #if POIMA_AMBIENT_OCCLUSION
     visibility=indirect_visibility.Load(int3(id.xy,0));
 #endif
+#if POIMA_DIFFUSE_DONOR
+    float3 outgoing;
+    scene_hdr[id.xy]=float4(shade_surface(material,world,pixel,visibility,outgoing),1);
+    const float3 finite_outgoing=select(isnan(outgoing),0,clamp(outgoing,0,65504));
+    diffuse_donor[id.xy]=float4(normal_is_valid ? finite_outgoing : 0,0);
+#else
     scene_hdr[id.xy]=float4(shade_surface(material,world,pixel,visibility),1);
+#endif
 #if POIMA_SCENE_PRODUCTS
     shading_normal[id.xy]=float4(material.normal,normal_is_valid ? 1 : 0);
     surface_motion[id.xy]=correspondence.zw;

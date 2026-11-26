@@ -92,6 +92,9 @@ struct ScreenContactShadows {
     std::string light;
     float length_m=.3f,thickness_m=.025f,strength=1;
 };
+struct ScreenDiffuseBounce {
+    float radius_m=1,thickness_m=.08f,strength=1;
+};
 struct DepthOfField {
     float focus_distance_m=4,focus_band_m=0,radius_at_infinity_px=0,max_radius_px=0;
 };
@@ -157,6 +160,7 @@ struct LightingEnvironment {
     std::optional<ToneMapper> tone_mapper;
     std::optional<ScreenReflections> screen_reflections;
     std::optional<ScreenContactShadows> screen_contact_shadows;
+    std::optional<ScreenDiffuseBounce> screen_diffuse_bounce;
     std::optional<HeightFog> height_fog;
     std::optional<DepthOfField> depth_of_field;
     std::optional<AutoExposureSettings> auto_exposure;

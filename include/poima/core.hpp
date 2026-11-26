@@ -271,6 +271,12 @@ struct ScreenContactShadowsDiagnostics {
     std::string light;
     std::uint32_t max_samples=0;
 };
+struct ScreenDiffuseBounceDiagnostics {
+    bool active=false;
+    std::string_view reason;
+    std::uint64_t buffer_bytes=0;
+    std::uint32_t rays=0,max_steps=0;
+};
 struct DepthOfFieldDiagnostics {
     bool active=false;
     std::string_view reason;
@@ -366,6 +372,8 @@ struct RenderDiagnostics {
     std::optional<AtmosphereSkyDiagnostics> atmosphere_sky;
     std::optional<ScreenReflectionsDiagnostics> screen_reflections;
     std::optional<ScreenContactShadowsDiagnostics> screen_contact_shadows;
+    std::optional<ScreenDiffuseBounceDiagnostics> screen_diffuse_bounce;
+    TimingSummary screen_diffuse_bounce_gpu;
     TimingSummary screen_reflections_gpu;
     std::optional<HeightFogDiagnostics> height_fog;
     std::optional<DepthOfFieldDiagnostics> depth_of_field;

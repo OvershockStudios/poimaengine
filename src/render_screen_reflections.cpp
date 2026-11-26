@@ -97,7 +97,7 @@ void Pass::verify_bindings(const render_schedule::Schedule& plan, nvrhi::ISample
     const auto expected=std::array{
         nvrhi::BindingSetItem::ConstantBuffer(1,reinterpret_cast<nvrhi::IBuffer*>(plan.resource(frame.frame).identity)),
         nvrhi::BindingSetItem::PushConstants(0,render_schedule::screen_reflections_constants_bytes),
-        nvrhi::BindingSetItem::Texture_SRV(0,texture(frame.hdr)),
+        nvrhi::BindingSetItem::Texture_SRV(0,texture(render_schedule::diffuse_radiance(frame,plan.settings))),
         nvrhi::BindingSetItem::Texture_SRV(1,texture(frame.material_base)),
         nvrhi::BindingSetItem::Texture_SRV(2,texture(frame.material_surface)),
         nvrhi::BindingSetItem::Texture_SRV(3,texture(frame.depth)),

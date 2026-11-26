@@ -13,6 +13,7 @@ namespace {
 // Preserve the existing pass IDs in captured plans while inserting new stages.
 constexpr std::uint64_t pass_order(PassId id) {
     constexpr auto ordinal=[](PassId pass){return 8ull*static_cast<unsigned>(pass);};
+    if(id==PassId::screen_diffuse_bounce)return ordinal(PassId::deferred_lighting)+1;
     if(id==PassId::depth_of_field)return ordinal(PassId::height_fog)+1;
     if(id==PassId::auto_exposure)return ordinal(PassId::resolve)+1;
     if(id==PassId::exposure_readback)return ordinal(PassId::product_probes)+1;
@@ -40,7 +41,8 @@ void Schedule::validate(bool before_acquire) const {
     required(frame.swapchain);required(frame.color);required(frame.output);
     const auto display_target=display_output_target(frame,settings);
     const auto world_hdr=world_radiance(frame,settings);
-    const bool reconstruct_composed=settings.reconstruction && (settings.screen_reflections || settings.height_fog || settings.depth_of_field);
+    const bool world_effects=settings.screen_diffuse_bounce || settings.screen_reflections || settings.height_fog || settings.depth_of_field;
+    const bool reconstruct_composed=settings.reconstruction && world_effects;
     const bool reconstruct_sprites=settings.reconstruction && settings.particle_sprites;
     const bool atmospheric_sky=frame.atmosphere_density!=none || frame.atmosphere_view!=none;
     const auto& visibility=frame.visibility;
@@ -331,6 +333,33 @@ void Schedule::validate(bool before_acquire) const {
         for(auto id:{frame.reflection_roughness,frame.reflected_hdr,frame.fogged_hdr})
             if(frame.display_ldr==id)fail(alias_error);
     } else if(frame.display_ldr!=none)fail("display attachment without spatial anti-aliasing");
+    if(settings.screen_diffuse_bounce) {
+        if(!settings.scene || !settings.deferred || settings.products_debug || frame.color!=frame.hdr)
+            fail("screen diffuse bounce requires a single-sample deferred color scene");
+        const auto& hdr=resource(frame.hdr);
+        if(std::uint64_t(hdr.width)*hdr.height>screen_diffuse_bounce_budget_bytes/16)
+            fail("screen diffuse bounce attachment payload exceeds limit");
+        const auto correspondence_format=settings.products ? Format::rgba32_float : Format::rg32_float;
+        if(frame.hdr==frame.output || frame.hdr==frame.swapchain || !scene_image(frame.hdr,Format::rgba16_float,hdr) ||
+            !scene_image(frame.depth,Format::depth32,hdr) || !scene_image(frame.material_base,Format::rgba16_float,hdr) ||
+            !scene_image(frame.material_surface,Format::rgba16_float,hdr) ||
+            !scene_image(frame.material_correspondence,correspondence_format,hdr))
+            fail("invalid screen diffuse bounce inputs");
+        for(auto id:{frame.diffuse_donor,frame.bounced_hdr}) {
+            if(!scene_image(id,Format::rgba16_float,hdr) || resource(id).late_bound ||
+                !(resource(id).supported&use_bit(Use::image_write)))
+                fail("invalid screen diffuse bounce attachment");
+        }
+        if(frame.diffuse_donor==frame.bounced_hdr)fail("screen diffuse bounce attachments alias");
+        constexpr auto alias_error="screen diffuse bounce attachment aliases another resource role";
+        require_distinct_roles(frame.diffuse_donor,frame.bounced_hdr,alias_error);
+        for(auto id:{frame.reflection_roughness,frame.reflected_hdr,frame.fogged_hdr,frame.focused_hdr,
+            frame.composition_mask,frame.sprite_hdr,frame.sprite_coverage,frame.display_ldr,
+            frame.exposure_state,frame.exposure_readback,frame.atmosphere_density,frame.atmosphere_view,
+            frame.aerial_scattering,frame.aerial_transmittance,frame.cloud_noise,frame.cloud_view,frame.cloud_shadow})
+            if(id==frame.diffuse_donor || id==frame.bounced_hdr)fail(alias_error);
+    } else if(frame.diffuse_donor!=none || frame.bounced_hdr!=none)
+        fail("screen diffuse bounce attachments without bounce pass");
     if(settings.screen_reflections) {
         if(!settings.scene || !settings.deferred || settings.products_debug || frame.color!=frame.hdr)
             fail("screen reflections require a single-sample deferred color scene");
@@ -655,7 +684,7 @@ void Schedule::validate(bool before_acquire) const {
     }
     bool world_resolved=false,world_opaque=false,foreground_lights=false,foreground_cleared=false,foreground_drawn=false,foreground_resolved=false,foreground_composed=false;
     bool exported=false,captured=false,probed=false,prepared=false,reconstructed=false,deferred_lit=false,deferred_opaque=false,ao_generated=false,ao_filtered=false;
-    bool post_effect_applied=false,screen_reflected=false,world_fogged=false,focused=false,world_effects_output=false;
+    bool post_effect_applied=false,diffuse_bounced=false,screen_reflected=false,world_fogged=false,focused=false,world_effects_output=false;
     bool stream_uploaded=false,stream_shadow_drawn=false,sprites_uploaded=false,sprites_drawn=false;
     std::uint64_t previous=0;bool first=true;
     bool surface_marks_uploaded=false,grade_applied=false,spatial_aa_applied=false;
@@ -793,15 +822,26 @@ void Schedule::validate(bool before_acquire) const {
             if(settings.clustered && (!has(frame.counts,Use::storage_read) || !has(frame.indices,Use::storage_read)))fail("missing deferred cluster inputs");
             if(settings.products)for(const auto id:{frame.normal,frame.motion,frame.motion_valid})
                 if(!has(id,Use::image_write))fail("missing deferred product output");
+            if(settings.screen_diffuse_bounce && !has(frame.diffuse_donor,Use::image_write))
+                fail("missing deferred diffuse donor output");
             if(settings.screen_reflections && !has(frame.reflection_roughness,Use::image_write))fail("missing deferred reflection roughness output");
             if(std::count_if(pass.accesses.begin(),pass.accesses.end(),[&](const Access& a){return a.resource==frame.hdr;})!=1)fail("deferred HDR cannot alias another access");
             std::unordered_set<ResourceId> accessed;
             for(const auto& access:pass.accesses)if(!accessed.insert(access.resource).second)fail("deferred lighting resource has conflicting duplicate accesses");
             deferred_lit=true;
         }
+        if(pass.id==PassId::screen_diffuse_bounce) {
+            if(!settings.screen_diffuse_bounce || !deferred_lit)fail("unexpected or premature screen diffuse bounce pass");
+            for(auto id:{frame.hdr,frame.material_base,frame.material_surface,frame.material_correspondence,frame.depth,frame.diffuse_donor})
+                if(!has(id,Use::sampled))fail("missing screen diffuse bounce input");
+            if(pass.accesses.size()!=8 || !has(frame.frame,Use::constant) || !has(frame.bounced_hdr,Use::image_write))
+                fail("invalid screen diffuse bounce bindings");
+            diffuse_bounced=true;
+        }
         if(pass.id==PassId::screen_reflections) {
-            if(!settings.screen_reflections || !deferred_lit)fail("unexpected or premature screen reflection pass");
-            for(auto id:{frame.hdr,frame.material_base,frame.material_surface,frame.depth,frame.reflection_roughness})
+            if(!settings.screen_reflections || !deferred_lit || (settings.screen_diffuse_bounce && !diffuse_bounced))
+                fail("unexpected or premature screen reflection pass");
+            for(auto id:{diffuse_radiance(frame,settings),frame.material_base,frame.material_surface,frame.depth,frame.reflection_roughness})
                 if(!has(id,Use::sampled))fail("missing screen reflection input");
             if(settings.ambient_occlusion && (!ao_filtered || !has(frame.ao_filtered,Use::sampled)))fail("missing screen reflection ambient occlusion input");
             const bool environment=frame.ibl_specular!=none;
@@ -822,6 +862,7 @@ void Schedule::validate(bool before_acquire) const {
         }
         if(pass.id==PassId::height_fog) {
             if(!settings.height_fog || !world_opaque || (settings.deferred && !deferred_lit) ||
+                (settings.screen_diffuse_bounce && !diffuse_bounced) ||
                 (settings.screen_reflections && !screen_reflected))fail("unexpected or premature height fog pass");
             const auto inputs=4u+(world_media_reads_lighting(settings) ? 2u : 0u)+(settings.aerial_perspective ? 2u : 0u)+
                 (frame.water_columns!=none ? 3u : 0u)+(frame.water_reservoirs!=none ? 1u : 0u)+(frame.water_sheets!=none ? 1u : 0u);
@@ -843,6 +884,7 @@ void Schedule::validate(bool before_acquire) const {
         }
         if(pass.id==PassId::depth_of_field) {
             if(!settings.depth_of_field || focused || !world_opaque || (settings.deferred && !deferred_lit) ||
+                (settings.screen_diffuse_bounce && !diffuse_bounced) ||
                 (settings.screen_reflections && !screen_reflected) || (settings.height_fog && !world_fogged) ||
                 pass.accesses.size()!=3 ||
                 !matches(pass.accesses[0],unfocused_radiance(frame,settings),Use::sampled,false) ||
@@ -857,6 +899,7 @@ void Schedule::validate(bool before_acquire) const {
             const auto media_inputs=water ? (sun ? 6u : 4u)+(frame.water_reservoirs!=none ? 1u : 0u)+
                 (frame.water_sheets!=none ? 1u : 0u) : 0u;
             if(!settings.particle_sprites || !sprites_uploaded || !world_opaque || (settings.deferred && !deferred_lit) ||
+                (settings.screen_diffuse_bounce && !diffuse_bounced) ||
                 (settings.screen_reflections && !screen_reflected) || (settings.height_fog && !world_fogged) || (settings.depth_of_field && !focused) ||
                 pass.accesses.size()!=(reconstruct_sprites ? 7u : 3u)+frame.sprite_textures.size()+media_inputs ||
                 !has(frame.depth,Use::sampled) || !has(frame.sprite_instances,Use::storage_read))
@@ -885,7 +928,8 @@ void Schedule::validate(bool before_acquire) const {
         }
         if(pass.id==PassId::auto_exposure) {
             if(!settings.auto_exposure || !world_opaque || (frame.color!=frame.hdr && !world_resolved) ||
-                (settings.deferred && !deferred_lit) || (settings.screen_reflections && !screen_reflected) ||
+                (settings.deferred && !deferred_lit) || (settings.screen_diffuse_bounce && !diffuse_bounced) ||
+                (settings.screen_reflections && !screen_reflected) ||
                 (settings.height_fog && !world_fogged) || (settings.depth_of_field && !focused) || (settings.particle_sprites && !sprites_drawn) ||
                 pass.accesses.size()!=(settings.exposure_history_valid ? 3u : 2u) ||
                 !matches(pass.accesses.front(),world_hdr,Use::sampled,false) ||
@@ -899,7 +943,8 @@ void Schedule::validate(bool before_acquire) const {
             if(!settings.reconstruction)fail("unexpected temporal input pass");
             for(const auto id:{frame.normal,frame.motion,frame.motion_valid})if(!has(id,Use::sampled))fail("missing temporal input");
             if(!has(frame.frame,Use::constant) || !has(frame.dense_motion,Use::image_write) || !has(frame.reactive,Use::image_write))fail("missing temporal input outputs");
-            if(reconstruct_composed && (!world_opaque || (settings.screen_reflections && !screen_reflected) ||
+            if(reconstruct_composed && (!world_opaque || (settings.screen_diffuse_bounce && !diffuse_bounced) ||
+                (settings.screen_reflections && !screen_reflected) ||
                 (settings.height_fog && !world_fogged) || (settings.depth_of_field && !focused) ||
                 !has(frame.hdr,Use::sampled) || !has(world_hdr,Use::sampled) || !has(frame.composition_mask,Use::image_write)))
                 fail("invalid or premature temporal composition mask preparation");
@@ -953,8 +998,9 @@ void Schedule::validate(bool before_acquire) const {
             foreground_composed=true;
         }
         if(pass.id==PassId::output && settings.viewmodel && (!foreground_composed || !has(display_radiance(frame,settings),Use::sampled)))fail("display precedes foreground composition");
-        if(pass.id==PassId::output && (settings.screen_reflections || settings.height_fog || settings.depth_of_field)) {
-            if((settings.screen_reflections && !screen_reflected) || (settings.height_fog && !world_fogged) || (settings.depth_of_field && !focused) ||
+        if(pass.id==PassId::output && world_effects) {
+            if((settings.screen_diffuse_bounce && !diffuse_bounced) || (settings.screen_reflections && !screen_reflected) ||
+                (settings.height_fog && !world_fogged) || (settings.depth_of_field && !focused) ||
                 !has(display_radiance(frame,settings),Use::sampled) || !has(display_target,Use::color_overwrite) ||
                 has(frame.hdr,Use::sampled))fail("display bypasses its world effects");
             world_effects_output=true;
@@ -1109,7 +1155,12 @@ void Schedule::validate(bool before_acquire) const {
                 !(pass.id==PassId::deferred_lighting && a.use==Use::image_write && a.initialize) &&
                 !(pass.id==PassId::screen_reflections && a.use==Use::sampled && !a.initialize))
                 fail("reflection roughness used outside deferred lighting and screen reflections");
-            const bool opaque_hdr_consumed=(settings.screen_reflections && order>pass_order(PassId::screen_reflections)) ||
+            if(settings.screen_diffuse_bounce && a.resource==frame.diffuse_donor &&
+                !(pass.id==PassId::deferred_lighting && a.use==Use::image_write && a.initialize) &&
+                !(pass.id==PassId::screen_diffuse_bounce && a.use==Use::sampled && !a.initialize))
+                fail("diffuse donor used outside deferred lighting and screen diffuse bounce");
+            const bool opaque_hdr_consumed=(settings.screen_diffuse_bounce && order>pass_order(PassId::screen_diffuse_bounce)) ||
+                (settings.screen_reflections && order>pass_order(PassId::screen_reflections)) ||
                 (settings.height_fog && order>pass_order(PassId::height_fog)) ||
                 (reconstruct_sprites && order>pass_order(PassId::particle_sprites)) ||
                 (settings.depth_of_field && order>pass_order(PassId::depth_of_field));
@@ -1125,14 +1176,18 @@ void Schedule::validate(bool before_acquire) const {
                 !(pass.id==PassId::temporal_inputs && a.use==Use::image_write && a.initialize) &&
                 !(pass.id==PassId::reconstruction && a.use==Use::sampled && !a.initialize))
                 fail("composition mask used outside preparation and reconstruction");
+            const bool bounced=settings.screen_diffuse_bounce && a.resource==frame.bounced_hdr;
             const bool reflected=settings.screen_reflections && a.resource==frame.reflected_hdr;
             const bool fogged=settings.height_fog && a.resource==frame.fogged_hdr;
             const bool focus_target=settings.depth_of_field && a.resource==frame.focused_hdr;
-            if(reflected || fogged || focus_target) {
-                const auto producer=focus_target ? PassId::depth_of_field :
+            if(bounced || reflected || fogged || focus_target) {
+                const auto producer=bounced ? PassId::screen_diffuse_bounce : focus_target ? PassId::depth_of_field :
                     reflected ? PassId::screen_reflections : PassId::height_fog;
                 const bool produced=pass.id==producer && a.use==Use::image_write && a.initialize;
-                const bool fog_input=reflected && settings.height_fog && pass.id==PassId::height_fog &&
+                const bool reflection_input=bounced && settings.screen_reflections && pass.id==PassId::screen_reflections &&
+                    a.use==Use::sampled && !a.initialize;
+                const bool fog_input=settings.height_fog && pass.id==PassId::height_fog &&
+                    a.resource==surface_radiance(frame,settings) &&
                     a.use==Use::sampled && !a.initialize;
                 const bool composed=!settings.reconstruction && a.use==Use::sampled && !a.initialize && (pass.id==PassId::viewmodel_composite ||
                     (pass.id==PassId::post_effect && scene_linear_radiance(frame,settings)==a.resource) ||
@@ -1144,7 +1199,7 @@ void Schedule::validate(bool before_acquire) const {
                 const bool final_world=a.resource==world_hdr && (composed || probe || sprites || mask_input || reconstruct_input || exposure_input);
                 const bool focus_input=settings.depth_of_field && pass.id==PassId::depth_of_field &&
                     a.resource==unfocused_radiance(frame,settings) && a.use==Use::sampled && !a.initialize;
-                if(!produced && !fog_input && !focus_input && !final_world)
+                if(!produced && !reflection_input && !fog_input && !focus_input && !final_world)
                     fail("processed world radiance used outside its scheduled composition");
             }
             if(settings.post_effect && a.resource==frame.post_effect && pass.id!=PassId::post_effect &&
@@ -1230,6 +1285,8 @@ void Schedule::validate(bool before_acquire) const {
     if(settings.ambient_occlusion && (!ao_generated || !ao_filtered))fail("missing ambient occlusion passes");
     if(visibility.count && (!visibility_prepared || !world_opaque))fail("missing GPU visibility producer or draw");
     if(settings.deferred && !deferred_lit)fail("missing deferred lighting pass");
+    if(settings.screen_diffuse_bounce && (!diffuse_bounced || !world_effects_output))
+        fail("missing screen diffuse bounce pass or composed output");
     if(settings.screen_reflections && (!screen_reflected || !world_effects_output))fail("missing screen reflection pass or composed output");
     if(settings.depth_of_field && (!focused || !world_effects_output))fail("missing depth of field pass or composed output");
     if(settings.height_fog && (!world_fogged || !world_effects_output))fail("missing height fog pass or composed output");
@@ -1353,10 +1410,19 @@ Schedule build(FrameResources frame,Settings settings) {
         add(lighting,f.hdr,Use::image_read_write);
         if(settings.products)for(auto id:{f.normal,f.motion,f.motion_valid})add(lighting,id,Use::image_write,true);
         if(settings.screen_reflections)add(lighting,f.reflection_roughness,Use::image_write,true);
+        if(settings.screen_diffuse_bounce)add(lighting,f.diffuse_donor,Use::image_write,true);
+    }
+    if(settings.screen_diffuse_bounce) {
+        auto& bounce=pass(PassId::screen_diffuse_bounce);
+        for(auto id:{f.hdr,f.material_base,f.material_surface,f.depth,f.material_correspondence,f.diffuse_donor})
+            add(bounce,id,Use::sampled);
+        add(bounce,f.frame,Use::constant);
+        add(bounce,f.bounced_hdr,Use::image_write,true);
     }
     if(settings.screen_reflections) {
         auto& reflections=pass(PassId::screen_reflections);
-        for(auto id:{f.hdr,f.material_base,f.material_surface,f.depth,f.reflection_roughness,f.ibl_specular,f.ibl_brdf})add(reflections,id,Use::sampled);
+        for(auto id:{diffuse_radiance(f,settings),f.material_base,f.material_surface,f.depth,
+                     f.reflection_roughness,f.ibl_specular,f.ibl_brdf})add(reflections,id,Use::sampled);
         if(settings.ambient_occlusion)add(reflections,f.ao_filtered,Use::sampled);
         add(reflections,f.frame,Use::constant);
         add(reflections,f.reflected_hdr,Use::image_write,true);
@@ -1426,7 +1492,7 @@ Schedule build(FrameResources frame,Settings settings) {
         for(auto id:{f.normal,f.motion,f.motion_valid})add(inputs,id,Use::sampled);
         for(auto id:{f.dense_motion,f.reactive})add(inputs,id,Use::image_write,true);
         const auto source=world_radiance(f,settings);
-        const bool composed=settings.screen_reflections || settings.height_fog || settings.depth_of_field;
+        const bool composed=settings.screen_diffuse_bounce || settings.screen_reflections || settings.height_fog || settings.depth_of_field;
         if(composed) {
             add(inputs,f.hdr,Use::sampled);add(inputs,source,Use::sampled);
             add(inputs,f.composition_mask,Use::image_write,true);

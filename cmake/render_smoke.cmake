@@ -45,13 +45,17 @@ find_program(POIMA_DXC NAMES dxc
 file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/generated/poima")
 foreach(shader smoke scene scene_products scene_deferred scene_deferred_color deferred_lighting deferred_lighting_ao deferred_lighting_color deferred_lighting_color_ao
         deferred_lighting_reflection deferred_lighting_ao_reflection
-        deferred_lighting_color_reflection deferred_lighting_color_ao_reflection screen_reflections depth_of_field height_fog height_fog_aerial height_fog_water height_fog_water_aerial aerial_perspective auto_exposure
+        deferred_lighting_color_reflection deferred_lighting_color_ao_reflection
+        deferred_lighting_donor deferred_lighting_ao_donor deferred_lighting_color_donor deferred_lighting_color_ao_donor
+        deferred_lighting_reflection_donor deferred_lighting_ao_reflection_donor
+        deferred_lighting_color_reflection_donor deferred_lighting_color_ao_reflection_donor
+        screen_diffuse_bounce screen_reflections depth_of_field height_fog height_fog_aerial height_fog_water height_fog_water_aerial aerial_perspective auto_exposure
         ambient_occlusion ambient_occlusion_filter scene_output scene_output_ao scene_output_products scene_output_bloom scene_output_products_bloom scene_output_grade scene_output_grade_bloom
         scene_output_exposure scene_output_bloom_exposure scene_output_grade_exposure scene_output_grade_bloom_exposure
         spatial_aa bloom viewmodel_composite viewmodel_resolve sky sky_atmosphere sky_orbital sky_clouds atmosphere_density atmosphere_sky_view cloud_noise cloud_view cloud_shadow
         shadow skinning gpu_visibility cluster_lights temporal_inputs temporal_composed_inputs temporal_sprite_inputs temporal_composed_sprite_inputs editor_overlay game_ui particle_sprite particle_sprite_temporal
         particle_sprite_water particle_sprite_temporal_water)
-if(shader MATCHES "^(skinning|gpu_visibility|cluster_lights|temporal(_composed)?(_sprite)?_inputs|deferred_lighting.*|ambient_occlusion.*|screen_reflections|depth_of_field|height_fog.*|aerial_perspective|auto_exposure|atmosphere_density|atmosphere_sky_view|cloud_(noise|view|shadow))$")
+if(shader MATCHES "^(skinning|gpu_visibility|cluster_lights|temporal(_composed)?(_sprite)?_inputs|deferred_lighting.*|ambient_occlusion.*|screen_diffuse_bounce|screen_reflections|depth_of_field|height_fog.*|aerial_perspective|auto_exposure|atmosphere_density|atmosphere_sky_view|cloud_(noise|view|shadow))$")
     set(shader_stages cs)
 elseif(shader MATCHES "^(scene_output_grade|spatial_aa)" OR shader MATCHES "^scene_output.*_exposure$" OR shader MATCHES "^sky_(atmosphere|orbital|clouds)$" OR shader MATCHES "^particle_sprite.*_water$")
     set(shader_stages ps)
@@ -80,11 +84,14 @@ foreach(stage IN LISTS shader_stages)
         if(NOT shader MATCHES "_color")
             list(APPEND shader_defines -DPOIMA_SCENE_PRODUCTS=1)
         endif()
-        if(shader MATCHES "_ao(_reflection)?$")
+        if(shader MATCHES "_ao(_reflection)?(_donor)?$")
             list(APPEND shader_defines -DPOIMA_AMBIENT_OCCLUSION=1)
         endif()
-        if(shader MATCHES "_reflection$")
+        if(shader MATCHES "_reflection(_donor)?$")
             list(APPEND shader_defines -DPOIMA_REFLECTION_ROUGHNESS=1)
+        endif()
+        if(shader MATCHES "_donor$")
+            list(APPEND shader_defines -DPOIMA_DIFFUSE_DONOR=1)
         endif()
     elseif(shader MATCHES "^scene_output")
         set(shader_source "${CMAKE_SOURCE_DIR}/shaders/scene_output.hlsl")
@@ -150,7 +157,7 @@ foreach(stage IN LISTS shader_stages)
         list(APPEND shader_dependencies "${CMAKE_SOURCE_DIR}/shaders/water_ripple_normal.hlsli"
             "${CMAKE_SOURCE_DIR}/shaders/foliage_motion.hlsli")
     endif()
-    if(shader MATCHES "^(ambient_occlusion.*|deferred_lighting.*|scene_deferred.*|scene|scene_products|shadow|cluster_lights|temporal(_composed)?(_sprite)?_inputs|sky(_atmosphere|_orbital|_clouds)?|screen_reflections|height_fog.*|aerial_perspective|cloud_view|particle_sprite.*_water)$")
+    if(shader MATCHES "^(ambient_occlusion.*|deferred_lighting.*|scene_deferred.*|scene|scene_products|shadow|cluster_lights|temporal(_composed)?(_sprite)?_inputs|sky(_atmosphere|_orbital|_clouds)?|screen_diffuse_bounce|screen_reflections|height_fog.*|aerial_perspective|cloud_view|particle_sprite.*_water)$")
         list(APPEND shader_dependencies "${CMAKE_SOURCE_DIR}/shaders/scene_frame.hlsli"
             "${CMAKE_SOURCE_DIR}/shaders/water_constants.hlsli")
     endif()
@@ -219,6 +226,7 @@ add_custom_command(OUTPUT "${poima_startup_wordmark}"
 target_sources(poima_core PRIVATE
     src/render_smoke.cpp src/render_readback.cpp src/render_screen_reflections.cpp src/render_depth_of_field.cpp src/render_height_fog.cpp src/render_viewmodel.cpp src/render_hdr_effects.cpp
     src/render_vulkan_instance.cpp src/render_vulkan_frame.cpp src/render_vulkan_barriers.cpp src/render_deferred_lighting.cpp
+    src/render_screen_diffuse_bounce.cpp
     src/player_window.cpp src/gamepad_sdl.cpp
     src/render_ui.cpp src/render_environment_ibl.cpp src/render_ambient_occlusion.cpp
     src/render_shadows.cpp src/render_scene_assets.cpp src/render_light_clusters.cpp src/render_sky.cpp src/render_sky_clouds.cpp

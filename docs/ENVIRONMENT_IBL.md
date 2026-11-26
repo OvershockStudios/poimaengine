@@ -4,9 +4,9 @@
 environment reflections in the shared Vulkan renderer. Forward, deferred opaque
 and first-person foreground materials use the same environment response.
 
-This profile convolves the procedural sky's color gradient. Local geometry does
-not appear in reflections or contribute bounced light. Local probes, screen-space
-reflections and geometry-aware global illumination remain separate work.
+This profile convolves the procedural sky's color gradient. The deferred
+renderer can also add light from visible geometry and reflect nearby surfaces.
+[Local diffuse bounce](DIFFUSE_BOUNCE.md) and [screen-space reflections](DEFERRED_RENDERING.md#screen-space-reflections).
 
 ## Authoring
 

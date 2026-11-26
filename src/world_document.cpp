@@ -112,7 +112,8 @@ static CloudSettings cloud_value(const Json& value) {
 }
 LightingEnvironment environment_value(const Json& value) {
     fields(value,{"ambient","exposure","shadow_resolution","shadow_filter","sky","ibl","bloom","post_effect","output_grade",
-        "tone_mapper","screen_reflections","screen_contact_shadows","height_fog","depth_of_field","auto_exposure","atmosphere"},{"ambient","exposure"});
+        "tone_mapper","screen_reflections","screen_contact_shadows","screen_diffuse_bounce","height_fog","depth_of_field",
+        "auto_exposure","atmosphere"},{"ambient","exposure"});
     require(value.at("ambient").is_array() && value.at("ambient").size()==3,"Ambient fill needs three values.");
     for(const auto& x:value.at("ambient"))require(x.is_number() && std::isfinite(x.get<double>()) && x>=0 && x<=1e6,"Ambient fill must be in [0,1e6].");
     require(value.at("exposure").is_number() && std::isfinite(value.at("exposure").get<double>()) && value.at("exposure")>=0 && value.at("exposure")<=1e6,"Exposure must be in [0,1e6].");
@@ -258,6 +259,21 @@ LightingEnvironment environment_value(const Json& value) {
         require(thickness<=length,"Screen contact shadows thickness_m must not exceed length_m.");
         result.screen_contact_shadows=ScreenContactShadows{identifier(authored.at("light")),
             static_cast<float>(length),static_cast<float>(thickness),static_cast<float>(number("strength",0,1))};
+    }
+    if(value.contains("screen_diffuse_bounce")) {
+        const auto& authored=value.at("screen_diffuse_bounce");
+        fields(authored,{"radius_m","thickness_m","strength"},{"radius_m","thickness_m","strength"});
+        const auto number=[&](const char* name,double low,double high) {
+            const auto& field=authored.at(name);
+            require(field.is_number() && std::isfinite(field.get<double>()) && field>=low && field<=high,
+                std::string("Screen diffuse bounce ")+name+" is outside its finite range.");
+            return field.get<double>();
+        };
+        const auto radius=number("radius_m",.2,4);
+        const auto thickness=number("thickness_m",.005,.25);
+        require(thickness<=radius,"Screen diffuse bounce thickness_m must not exceed radius_m.");
+        result.screen_diffuse_bounce=ScreenDiffuseBounce{
+            static_cast<float>(radius),static_cast<float>(thickness),static_cast<float>(number("strength",0,1))};
     }
     if(value.contains("depth_of_field")) {
         const auto& profile=value.at("depth_of_field");

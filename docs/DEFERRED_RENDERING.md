@@ -59,6 +59,12 @@ texture payload of four bytes per output pixel, up to 64 MiB. Depth,
 normals, motion and raw/resolved HDR probes describe the scene before
 the display filter. A color capture includes the filtered scene and UI.
 
+## Local diffuse bounce
+
+Single-sample deferred color can gather bounded first-bounce light from
+visible lit and emissive surfaces. Its output feeds reflections and the world
+image used by media and reconstruction. [Author and verify the bounce](DIFFUSE_BOUNCE.md).
+
 ## Screen-space reflections
 
 Set `LightingEnvironment.screen_reflections` in a guarded `component.set`

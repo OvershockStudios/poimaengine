@@ -43,7 +43,11 @@ float3 direct_brdf(float3 n,float3 v,float3 l,float3 base,float metallic,float r
     return ((1-F)*(1-metallic)*base/3.14159265359+D*visibility*F)*nl;
 }
 void accumulate_direct_lighting(inout float3 color,float3 world_position,float2 pixel_position,
-    float3 geometric_normal,float3 n,float3 v,float3 base,float metallic,float roughness,bool receive_shadows) {
+    float3 geometric_normal,float3 n,float3 v,float3 base,float metallic,float roughness,bool receive_shadows
+#if POIMA_DIFFUSE_DONOR
+    ,inout float3 donor
+#endif
+    ) {
         uint cell=0,count=light_count.x;bool clustered=false;
         if(cluster_grid.w!=0) {
             const float depth=dot(view_projection[3],float4(world_position,1));
@@ -86,9 +90,23 @@ void accumulate_direct_lighting(inout float3 color,float3 world_position,float2 
 #endif
             }
             float3 direct_color=direct_brdf(n,v,l,base,metallic,roughness)*source.color_intensity.rgb*(source.color_intensity.w*attenuation*visibility);
+#if POIMA_DIFFUSE_DONOR
+            // A diffuse donor is view-independent. Use the dielectric F0
+            // budget with Lambert's cosine and one over pi.
+            const float diffuse_weight=(.96/3.14159265359)*(1-metallic)*saturate(dot(n,l));
+            float3 donor_light=base*source.color_intensity.rgb*(source.color_intensity.w*attenuation*visibility*diffuse_weight);
+#endif
             [branch] if(water_caustic_grid_light.z!=0u && index+1u==water_caustic_grid_light.z &&
-                visibility>0 && l.y>.12 && dot(n,l)>0)
-                direct_color*=water_caustic_modulation(source,world_position,l,receive_shadows);
+                visibility>0 && l.y>.12 && dot(n,l)>0) {
+                const float3 transmission=water_caustic_modulation(source,world_position,l,receive_shadows);
+                direct_color*=transmission;
+#if POIMA_DIFFUSE_DONOR
+                donor_light*=transmission;
+#endif
+            }
             color+=direct_color;
+#if POIMA_DIFFUSE_DONOR
+            donor+=donor_light;
+#endif
         }
 }
