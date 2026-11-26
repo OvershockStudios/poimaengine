@@ -455,7 +455,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 245}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 246}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -1062,7 +1062,8 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     }
     methods["runtime.audio.voices"]=object_schema({{"session_id",id},{"tick",rev},{"after",rev},{"limit",{{"type","integer"},{"minimum",1},{"maximum",256},{"default",64}}}}, {"session_id","tick"});
     result["audio_portals"]={{"maximum_portals",max_audio_portals},{"feature","audio_portals"},
-        {"selection","For occluded sources on the opposite side, choose a visible single-aperture path with bounded work. A moving AcousticMaterial proxy can close the opening."}};
+        {"maximum_chain_length",max_audio_portal_chain},
+        {"selection","An occluded source can reach the listener through one or more visible openings. Each crossing uses committed acoustic geometry, including moving door panels."}};
     result["audio_rooms"]={{"maximum_rooms",max_audio_rooms},{"transition_frames",audio_rate/20},
         {"feature","audio_room_reverb"},{"selection","Contain the committed listener in a transformed local box; prefer higher priority, then lower entity ID."}};
     result["audio_buses"]={{"operation","audio.buses.set"},{"catalog",audio_bus_catalog},

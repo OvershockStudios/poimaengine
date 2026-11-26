@@ -2,6 +2,12 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.451
+
+- Route sound through successive doors in a corridor. Inspect the ordered
+  crossings, and restore the route from a saved door configuration.
+  [Connected doorways](docs/AUDIO.md#connect-several-doorways)
+
 ## 0.0.450
 
 - Route sound through a doorway while a wall still blocks the direct line.

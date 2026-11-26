@@ -12,7 +12,7 @@
 #if POIMA_AUDIO
 #include <phonon.h>
 #include "audio_reflections.hpp"
-#include "audio_portal.hpp"
+#include "audio_portal_chain.hpp"
 #endif
 namespace poima {
 bool audio_available() { return POIMA_AUDIO!=0; }
@@ -87,6 +87,7 @@ AudioReport observe_audio(const AudioSnapshot& s,std::uint32_t frames) {
     report.reflection_budget_exceeded=s.early_reflections && triangles.size()>audio_detail::max_reflection_triangles;
     report.portal_budget_exceeded=!s.portals.empty() && triangles.size()>audio_detail::max_portal_triangles;
     auto portal_probes=audio_detail::portal_probe_budget;
+    audio_detail::PortalChainBudget portal_chain_budget;
     Handle<IPLSimulator,iplSimulatorRelease> simulator;IPLSimulationSettings settings{};settings.flags=IPL_SIMULATIONFLAGS_DIRECT;settings.sceneType=IPL_SCENETYPE_DEFAULT;settings.maxNumOcclusionSamples=1;settings.maxNumSources=static_cast<IPLint32>(max_audio_sources);settings.numThreads=1;settings.samplingRate=audio_rate;settings.frameSize=audio_block;
     status(iplSimulatorCreate(context.value,&settings,&simulator.value));iplSimulatorSetScene(simulator.value,scene.value);
     std::vector<Handle<IPLSource,iplSourceRelease>> sources;sources.reserve(s.sources.size());
@@ -124,9 +125,16 @@ AudioReport observe_audio(const AudioSnapshot& s,std::uint32_t frames) {
         std::copy_n(out.direct.airAbsorption,3,path.air.begin());std::copy_n(out.direct.transmission,3,path.transmission.begin());
         if(s.early_reflections && !shapes.empty())
             path.reflection=audio_detail::first_reflection(path,s.listener,shapes,vertices,triangles);
-        if(!s.portals.empty() && report.triangles<=audio_detail::max_portal_triangles)
+        if(!s.portals.empty() && report.triangles<=audio_detail::max_portal_triangles) {
             path.portal=audio_detail::portal_path(path,s.listener,s.portals,shapes,vertices,triangles,
                 portal_probes,report.portal_budget_exceeded);
+            if(!path.portal && path.occlusion==0 && path.distance<audio_detail::max_portal_distance_m &&
+               s.portals.size()>1 && !portal_chain_budget.exceeded) {
+                audio_detail::PortalChainSearch route(path,s.portals,shapes,vertices,triangles,portal_chain_budget);
+                path.portal=route.find(s.listener);
+                report.portal_budget_exceeded|=portal_chain_budget.exceeded;
+            }
+        }
         report.paths.push_back(std::move(path));
     }
     if(s.early_reflections || !s.portals.empty())report.simulation_ms=ms(mark);

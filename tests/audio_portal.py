@@ -39,13 +39,17 @@ def energy(samples, first, last, channel=None):
 
 
 class PortalFixture(Fixture):
+    sequence = SEQUENCE
+    total_ticks = TOTAL_TICKS
+    portal_count = 1
+    project_name = 'Off-axis doorway'
+
     def edit(self, client, *ops):
         write = client.call('world.transact', dict(base_revision=self.revision, request_id=new_id(), ops=ops))
         assert write['committed']
         self.revision = write['revision']
 
-    def author(self, client):
-        self.revision = client.call('world.inspect')['revision']
+    def author_source(self, client, position):
         wav = self.project/'Doorway test tone.wav'
         samples = [round(5000*(math.sin(i*.045)+.35*math.sin(i*.39))) for i in range(1789)]
         with wave.open(str(wav), 'wb') as output:
@@ -54,11 +58,15 @@ class PortalFixture(Fixture):
         asset = client.call('asset.audio.import', dict(source=self.native(wav)))['asset']
         wav.unlink()
         self.edit(client,
-            dict(op='entity.create', id=PORTAL, name='Door aperture'),
-            component(PORTAL,'Transform',transform(CLOSED)), component(PORTAL,'AudioPortal',PROFILE),
             dict(op='entity.create', id=SOURCE, name='Source behind the wall'),
-            component(SOURCE,'Transform',transform([0,2.6,-2])),
+            component(SOURCE,'Transform',transform(position)),
             component(SOURCE,'AudioEmitter',dict(asset=asset,gain=.75,loop=True,enabled=True)))
+
+    def author(self, client):
+        self.revision = client.call('world.inspect')['revision']
+        self.author_source(client,[0,2.6,-2])
+        self.edit(client,dict(op='entity.create', id=PORTAL, name='Door aperture'),
+            component(PORTAL,'Transform',transform(CLOSED)), component(PORTAL,'AudioPortal',PROFILE))
         for entity, center, extents, kind in (
             (WALL,[-3.1,2.7,0],[4.6,4,.1],'static'), (GATE,CLOSED,[.6,.75,.08],'kinematic')):
             self.edit(client, dict(op='entity.create', id=entity, name=kind+' acoustic blocker'),
@@ -83,7 +91,7 @@ class PortalFixture(Fixture):
             result = client.call('world.audio.inspect',dict(revision=self.revision,listener=self.camera))
         source, = result['sources']
         assert source['entity'] == SOURCE and source['direct_visibility'] == 0
-        assert result['audio_portals'] == dict(count=1,budget_exceeded=False)
+        assert result['audio_portals'] == dict(count=self.portal_count,budget_exceeded=False)
         return source
 
     def aperture(self, source, visible):
@@ -116,16 +124,16 @@ class PortalFixture(Fixture):
 
     def replay(self, client, session, label):
         path = self.root/(label+'.wav')
-        sequence = [segment | dict(inputs=[dict(entity=self.controller)]) for segment in SEQUENCE]
+        sequence = [segment | dict(inputs=[dict(entity=self.controller)]) for segment in self.sequence]
         params = dict(session_id=session,expected_tick=0,request_id=new_id(),listener=self.camera,
                       path=self.native(path),sequence=sequence)
         result = client.call('runtime.audio.replay',params)
-        assert result['success'] and result['tick']==TOTAL_TICKS
+        assert result['success'] and result['tick']==self.total_ticks
         assert result['capture']['sha256']==file_hash(path)
         assert result['stream']['voices_started']==1 and result['stream']['portal_handoffs']>=1
         assert not result['stream']['portal_budget_exceeded']
         assert client.call('runtime.audio.replay',params) == result | dict(replayed=True)
-        self.aperture(self.observe(client,(session,TOTAL_TICKS)),0)
+        self.aperture(self.observe(client,(session,self.total_ticks)),0)
         self.data['replays'][label] = result
         return pcm(path)
 
@@ -153,7 +161,7 @@ class PortalFixture(Fixture):
     def player(self, game, expected):
         binary = game.parent/json.loads(game.read_bytes())['engine']['executable']
         raw, replay = (self.root/name for name in ('Player output.raw','Aperture sequence.json'))
-        replay.write_text(json.dumps(SEQUENCE)+'\n')
+        replay.write_text(json.dumps(self.sequence)+'\n')
         settings = dict(SDL_AUDIO_DRIVER='disk',SDL_AUDIO_FORMAT='F32',SDL_AUDIO_CHANNELS='2',
                         SDL_AUDIO_FREQUENCY='48000',SDL_AUDIO_DISK_OUTPUT_FILE=self.native(raw))
         env = os.environ | settings
@@ -166,9 +174,9 @@ class PortalFixture(Fixture):
         assert proc.returncode==0,proc
         report = json.loads(proc.stdout)['result']['play']
         output = report['audio']
-        assert report['hardware'] and report['tick']==TOTAL_TICKS and report['nvrhi_errors']==0
+        assert report['hardware'] and report['tick']==self.total_ticks and report['nvrhi_errors']==0
         assert output['driver']=='disk' and output['stream_drained'] and output['voices_started']==1
-        assert output['submitted_frames']==TOTAL_TICKS*FRAMES_PER_TICK
+        assert output['submitted_frames']==self.total_ticks*FRAMES_PER_TICK
         assert output['portal_handoffs']==self.data['replays']['source']['stream']['portal_handoffs']
         captured = tuple(entry[0] for entry in struct.iter_unpack('<f',raw.read_bytes()))
         first = next(i for i,value in enumerate(expected) if value)
@@ -202,14 +210,21 @@ class PortalFixture(Fixture):
         with self.owner('relocated',game=game,saves=saves) as client:
             session = client.call('runtime.status')['session_id']
             assert self.replay(client,session,'relocated') == pcm_source
-            assert self.restore_portal(client,session,TOTAL_TICKS) == saved
+            assert self.restore_portal(client,session,self.total_ticks) == saved
         if self.args.gpu is not None:
             self.player(game,pcm_source)
         assert tree_hashes(relocated)==before and not self.project.exists()
         self.data['relocated_files'] = len(before)
 
+    def review_capture(self, samples):
+        closed, opened, sealed = (energy(samples,*window) for window in ((0,4),(17,24),(38,44)))
+        left,right = (energy(samples,17,24,ear) for ear in (0,1))
+        assert opened>.001 and opened>1000*max(closed,sealed)
+        assert right>1.5*left
+        self.data['energy'] = dict(closed=closed,opened=opened,sealed=sealed,left=left,right=right)
+
     def run(self):
-        self.cli('project','create',self.native(self.project),'--name','Off-axis doorway')
+        self.cli('project','create',self.native(self.project),'--name',self.project_name)
         entry = json.loads(self.manifest.read_bytes())['entry']
         self.camera,self.controller = entry['camera'],entry['controller']
         saves = self.root/'Saves'
@@ -220,19 +235,15 @@ class PortalFixture(Fixture):
             session = self.mount(client)
             samples = self.replay(client,session,'source')
             client.call('runtime.stop',dict(session_id=session))
-            closed, opened, sealed = (energy(samples,*window) for window in ((0,4),(17,24),(38,44)))
-            left,right = (energy(samples,17,24,ear) for ear in (0,1))
-            assert opened>.001 and opened>1000*max(closed,sealed)
-            assert right>1.5*left
-            self.data['energy'] = dict(closed=closed,opened=opened,sealed=sealed,left=left,right=right)
+            self.review_capture(samples)
             saved = self.saved_portal(client,saves)
             self.data['paths']['warm_restored'] = saved
         if self.args.runtime:
             self.export(samples,saved,saves)
 
 
-if __name__=='__main__':
-    parser = ArgumentParser(description=__doc__)
+def main(fixture=PortalFixture, description=__doc__):
+    parser = ArgumentParser(description=description)
     parser.add_argument('binary',type=Path)
     parser.add_argument('--output',type=Path,required=True)
     parser.add_argument('--runtime',type=Path)
@@ -245,9 +256,13 @@ if __name__=='__main__':
     root = Path(tempfile.mkdtemp(prefix='audio-portal-',dir=args.output.resolve()))
     data = dict(binary_sha256=file_hash(args.binary),passed=False,cli=[],owners=[],paths={},replays={})
     try:
-        PortalFixture(args,root,data).run()
+        fixture(args,root,data).run()
         data['passed'] = True
     finally:
         path = root/'evidence.json'
         path.write_text(json.dumps(data,indent=2,allow_nan=False)+'\n')
         print(path,flush=True)
+
+
+if __name__=='__main__':
+    main()

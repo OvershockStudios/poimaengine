@@ -222,18 +222,49 @@ as `portal_handoffs`. Configure `{"audio":true}` in the project
 manifest through `poima project configure`. Export checks the installed
 runtime's `audio_portals` capability.
 
-The aperture model approximates one indirect path and uses the remaining
-visible area to follow a closing door. For context, published approaches
-use portal closure to attenuate computed acoustic paths and model larger
-room graphs. Those methods support richer multi-hop and diffuse transport.
-[Dynamic portal occlusion](https://arxiv.org/abs/2107.11548)
-[Floorplan-centric multi-room simulation](https://arxiv.org/abs/2610.22936)
-
 `tests/audio_portal.py` uses an off-axis doorway and verifies the delay,
 stereo direction, remaining aperture area and the original voice across
 closing and reopening. Give it an existing output directory. For native
 Windows replay and export, also supply `--runtime INSTALLED_RUNTIME --gpu 0`.
 From WSL, use Windows-accessible output paths and add `--windows-interop`.
+
+### Connect several doorways
+
+Place an `AudioPortal` at each frame. When there is no clear one-aperture
+route, the solver searches paths through up to four distinct apertures.
+Every leg needs visibility. Each crossing checks that the path enters
+and exits on opposite sides of the plane. Walls and door panels can block
+any leg. Connections follow acoustic geometry, so these paths use the
+same authored components as a single doorway.
+
+`portal_path.apertures` lists the crossings from source to listener.
+Each entry reports its selected sample, world point and visible sample
+count. The top-level aperture fields describe the last crossing, which
+sets the binaural direction. The length and arrival delay cover every
+leg. The three-band detour filter uses the total extra distance. Aperture
+gains and square roots of the visible fractions multiply along the route.
+Area is measured at each opening with the adjacent selected samples held
+fixed. Dynamic changes share the same voice and audio handoff as a single
+portal. A save restores the geometry from which the route is recalculated.
+
+The chain search ranks up to eight candidate apertures per source by
+the sum of the center distances to the source and listener. It uses the
+shortest admissible sampled route it finds within 2,048 new segment checks and
+256 route expansions across the
+snapshot. It caches the visibility of tested legs during the query.
+The 100 m route limit and 8,192-triangle limit still apply. A capped
+search reports `audio_portals.budget_exceeded` and keeps the direct path.
+Diffuse transport between rooms and game-scale performance remain open.
+
+The product of serial open-area fractions follows prior portal
+occlusion research. Published propagation models also explore larger
+room graphs and diffuse energy transport. [Dynamic portal occlusion](https://arxiv.org/abs/2107.11548)
+[Floorplan-centric multi-room simulation](https://arxiv.org/abs/2610.22936)
+
+`tests/audio_portal_chain.py` uses the same command line as the single-door
+fixture. It closes each of four doors in an authored switchback corridor,
+checks the saved route and compares the full replay against the output of a
+relocated Windows game.
 
 ## Verification and remaining work
 

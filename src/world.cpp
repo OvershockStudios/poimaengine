@@ -1059,6 +1059,16 @@ public:
                             {"listener_local_direction",opening.direction},{"distance_m",opening.distance},
                             {"propagation_delay_samples",opening.propagation_delay_samples},
                             {"distance_gain",opening.distance_gain},{"bands",opening.bands}};
+                        if(!opening.approach.empty()) {
+                            Json chain=Json::array();
+                            const auto append=[&](const AudioPortalCrossing& crossing) {
+                                chain.push_back({{"entity",crossing.entity},{"sample",crossing.sample},
+                                    {"visible_samples",crossing.visible_samples},{"point_world",crossing.point}});
+                            };
+                            for(const auto& crossing:opening.approach)append(crossing);
+                            append(opening);
+                            path["portal_path"]["apertures"]=std::move(chain);
+                        }
                     }
                 }
                 paths.push_back(std::move(path));

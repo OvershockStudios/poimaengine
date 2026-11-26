@@ -1,8 +1,18 @@
 # Implementation status
 
-Updated 2026-11-25 for **0.0.450**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-25 for **0.0.451**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.451 [connects up to four doorways](AUDIO.md#connect-several-doorways)
+in one acoustic route. Closing any panel in the switchback corridor blocked
+the route. Partly closing the second panel reduced its visible samples from
+nine to six. AMD and NVIDIA Windows exports matched all 89,600 replay frames
+at SDL disk output and restored the four crossings from a save. Ubuntu
+passed six focused suites and reproduced the 0.0.450 single-door path and
+recording. Diffuse room coupling, physical listening and representative
+cost remain open.
+[Results and scope](evidence/m2-audio-portal-chains-451.json)
 
 Version 0.0.450 adds [doorway acoustics](AUDIO.md#route-sound-through-a-doorway).
 A panel uncovered six of nine samples when partly open and all nine when

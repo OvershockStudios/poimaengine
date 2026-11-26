@@ -71,6 +71,7 @@ struct AudioRoomSelection {
 };
 void validate_audio_room(const AudioRoom& room);
 inline constexpr std::size_t max_audio_portals=32;
+inline constexpr std::size_t max_audio_portal_chain=4;
 inline constexpr double min_audio_portal_extent_m=.05, max_audio_portal_extent_m=32;
 struct AudioPortal {
     std::array<double,2> half_extents{.5,1};
@@ -100,14 +101,20 @@ struct AudioReflection {
     float distance_gain=1;
     std::array<float,3> bands{1,1,1};
 };
-struct AudioPortalPath {
+struct AudioPortalCrossing {
     std::string entity;
     std::uint32_t sample=0, visible_samples=0;
-    std::array<double,3> point{},direction{};
+    std::array<double,3> point{};
+};
+struct AudioPortalPath : AudioPortalCrossing {
+    std::array<double,3> direction{};
     double distance=0;
     std::uint32_t propagation_delay_samples=0;
     float distance_gain=1;
     std::array<float,3> bands{1,1,1};
+    // Earlier crossings in source-to-listener order. The inherited crossing
+    // is the listener-facing aperture, including on a one-aperture route.
+    std::vector<AudioPortalCrossing> approach;
 };
 struct AudioPath {
     std::string entity,asset;

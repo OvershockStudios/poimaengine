@@ -60,8 +60,7 @@ inline bool contains_point(const AcousticTriangle& triangle,const AcousticPoint&
 }
 
 inline bool intersects_bounds(const AcousticPoint& from,const AcousticPoint& delta,
-                              const AcousticShape& shape,double maximum) {
-    double begin=0,end=maximum;
+                              const AcousticShape& shape,double begin,double end) {
     for(std::size_t axis=0;axis<3;++axis) {
         if(std::abs(delta[axis])<1e-12) {
             if(from[axis]<shape.low[axis] || from[axis]>shape.high[axis])return false;
@@ -93,14 +92,16 @@ inline bool blocks_segment(const AcousticTriangle& triangle,const AcousticPoint&
 
 inline bool acoustic_segment_blocked(const AcousticPoint& from,const AcousticPoint& to,
                                    std::span<const AcousticShape> shapes,std::span<const IPLVector3> vertices,
-                                   std::span<const IPLTriangle> triangles,bool include_destination=false) {
+                                   std::span<const IPLTriangle> triangles,bool include_destination=false,
+                                   bool include_origin=false) {
     const auto delta=subtract(to,from);
     const auto margin=acoustic_surface_epsilon/std::sqrt(dot(delta,delta));
     const auto maximum=include_destination ? 1+margin : 1-margin;
+    const auto minimum=include_origin ? -margin : margin;
     for(const auto& shape:shapes) {
-        if(!intersects_bounds(from,delta,shape,maximum))continue;
+        if(!intersects_bounds(from,delta,shape,include_origin ? minimum : 0,maximum))continue;
         for(std::size_t i=shape.begin;i<shape.end;++i)
-            if(blocks_segment(acoustic_triangle(vertices,triangles[i]),from,delta,margin,maximum))return true;
+            if(blocks_segment(acoustic_triangle(vertices,triangles[i]),from,delta,minimum,maximum))return true;
     }
     return false;
 }

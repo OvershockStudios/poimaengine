@@ -180,7 +180,11 @@ struct AudioStream::Impl {
     }
     static bool same_secondary(const AudioPortalPath& a,const AudioPortalPath& b,std::uint64_t delay) {
         const auto next=std::uint64_t(b.propagation_delay_samples);
-        return a.entity==b.entity && a.sample==b.sample && next<=delay+32 && delay<=next+32;
+        return a.entity==b.entity && a.sample==b.sample && next<=delay+32 && delay<=next+32 &&
+            std::equal(a.approach.begin(),a.approach.end(),b.approach.begin(),b.approach.end(),
+                [](const AudioPortalCrossing& first,const AudioPortalCrossing& second) {
+                    return first.entity==second.entity && first.sample==second.sample;
+                });
     }
     template<class Path>
     void render_secondary(std::span<float> mix,const SoundVoice& state,SecondaryVoice<Path>& branch,

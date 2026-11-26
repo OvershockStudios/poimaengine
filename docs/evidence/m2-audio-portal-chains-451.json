@@ -1,0 +1,320 @@
+{
+  "version": "0.0.451",
+  "date": "2026-11-25",
+  "base_commit": "99c4dbd65015d80951506e7c2266f05c93440a6c",
+  "scope": "A four-aperture path responds to committed panel motion and survives saved geometry and relocated playback.",
+  "world_schema_revision": 246,
+  "authoring_contract_version": 1,
+  "candidate_patch_sha256": "432e6317b06cd4f1e61c7811074f4b4f878609d22e45434055cd69995571e6ed",
+  "source_sha256": {
+    "CMakeLists.txt": "b88f3d405087f33dc1ac85537a3b9f98409b25e9121f73dbf5f4fcb065741433",
+    "include/poima/audio.hpp": "89bc3b9c8be2557adc24ad134ea25eb6087a277195ba774eabec817223678240",
+    "src/audio.cpp": "98917c67f09a5434521b928e9ea702b1d1eb42d5d9be2f242dc9ef0a7e0e89a0",
+    "src/audio_portal.hpp": "b58260e75f5231e1be4a5e978142d3ba8eb8b4c8ac8a375a7d91dd23e25ce716",
+    "src/audio_portal_chain.hpp": "8f62e92469ef34d4fc0757661194d662db53fcfa34d9e9e7386701f0de89aa7e",
+    "src/audio_stream.cpp": "829078415d55e7e3af6bf3daa4c5d77bf535889761348140a6b66ad8186fc611",
+    "src/audio_visibility.hpp": "cd1302dd14405688bca4512cbefac98591d1c15ec7a94eeb4bb434a0c243b57c",
+    "src/world.cpp": "f33e8a68f2ab4a80de8893c3f088af7d752b807bf3acb8fc0bf7d85316d62acf",
+    "src/world_schema.cpp": "0d05396d95385cb7f4a44b1136e8043a9e06ac1da4f6e9850af7f89960b62831",
+    "tests/audio_portal.py": "13e1e8981628737d3d2321f9446a370bfd4d9003c63d4cd1662024874f955aed",
+    "tests/audio_portal_chain.py": "991e952724e76cf5b6c991734cea259b94e08de442bbc27015daed8554f8faff"
+  },
+  "fixture": {
+    "script": "tests/audio_portal_chain.py",
+    "closed_panel_controls": 4,
+    "direct_occluded_at_checked_poses": true,
+    "sample_rate_hz": 48000,
+    "frames": 89600,
+    "ticks": 112,
+    "energy_windows": {
+      "initially_open": [
+        6,
+        12
+      ],
+      "first_sealed": [
+        26,
+        32
+      ],
+      "first_reopened": [
+        46,
+        52
+      ],
+      "last_sealed": [
+        66,
+        72
+      ],
+      "last_reopened": [
+        86,
+        92
+      ],
+      "middle_sealed": [
+        106,
+        112
+      ]
+    },
+    "sampled_route_length_m": 18.066697597217964,
+    "sampled_delay_frames": 2528,
+    "all_open_samples": [
+      9,
+      9,
+      9,
+      9
+    ],
+    "partial_open_samples": [
+      9,
+      6,
+      9,
+      9
+    ],
+    "all_open_band_gains": [
+      0.10556350648403168,
+      0.04269213229417801,
+      0.021380038931965828
+    ],
+    "partial_open_band_gains": [
+      0.08619224280118942,
+      0.03485798090696335,
+      0.01745672896504402
+    ]
+  },
+  "ubuntu": {
+    "binary_sha256": "baebf38420bfd32a3189a4395b3a3c099337c66d5b9b52d9902a5ae02558c0ba",
+    "passed_ctest": [
+      "audio_reflections_native",
+      "authoring_contract_identity",
+      "project_contract",
+      "project_draft_contract",
+      "audio_contract",
+      "world_contract"
+    ],
+    "raw_evidence_sha256": "46601ca6f696fd53ccf978c41d5dba2b0d9c25f092548c29473a2463a7506117",
+    "capture_sha256": "ba7819b2acce972815ce9ea9f1d8b1aa84c1b3b66b37ec809a08d056450c3278",
+    "energy": {
+      "initially_open": 0.0015834892209748781,
+      "first_sealed": 0.0,
+      "first_reopened": 0.0015010948908840591,
+      "last_sealed": 0.0,
+      "last_reopened": 0.0015020906039998117,
+      "middle_sealed": 0.0,
+      "left": 0.0005938749313281943,
+      "right": 0.000989614289646684
+    },
+    "portal_handoffs": 5,
+    "single_door_regression_0_0_450": {
+      "single_aperture_replay": "298e826ec3993acb0ae3319877a44f163ff187c2b2bbc552709f767ffcc20ff1",
+      "paths_exact": true
+    }
+  },
+  "windows": {
+    "runtime_sha256": {
+      "bin/poima.exe": "bdb1a35cd3aa1135696437d896953009ca92840f3a603e9742daa7556e6a96c0",
+      "bin/poima_desktop.dll": "cefca2dbe59c4b2c3e33651edfea0bbdf26450aae47e47cbe7bbdb5902f7b8b7",
+      "runtime.json": "9afffc33e1dfdb04b3a333e223dc54b644ae4bcc74a255c57cbaed1c6afc61f1"
+    },
+    "devices": {
+      "AMD": {
+        "gpu": "AMD Radeon(TM) Graphics",
+        "frames_presented": 112,
+        "voices_started": 1,
+        "portal_handoffs": 5,
+        "raw_evidence_sha256": "2a6dcf4e87e28a462d27511bd234a75695b85319b70cc7014acf0787f03b5748",
+        "sdl_pcm": {
+          "frames": 89600,
+          "sha256": "6f3b35726717618e07522264685414400b2a02046ebcfe5a4ecf8c4c956c04c8",
+          "leading_silence": 3072,
+          "exact_submitted_signal": true
+        },
+        "capture_sha256": {
+          "source": "3cecca271c31cc7051abdabe7779a5581279b1427ab62b3e6a49b038568e331a",
+          "relocated": "3cecca271c31cc7051abdabe7779a5581279b1427ab62b3e6a49b038568e331a"
+        },
+        "energy": {
+          "initially_open": 0.0015834888949358278,
+          "first_sealed": 0.0,
+          "first_reopened": 0.001501091150845092,
+          "last_sealed": 0.0,
+          "last_reopened": 0.0015020867320319684,
+          "middle_sealed": 0.0,
+          "left": 0.0005938746839373624,
+          "right": 0.0009896142109984654
+        },
+        "restored_route": {
+          "apertures": [
+            {
+              "entity": "000000000000000000000000000003e8",
+              "point_world": [
+                -1.8499999999999999,
+                2.6,
+                -6.0
+              ],
+              "sample": 5,
+              "visible_samples": 9
+            },
+            {
+              "entity": "000000000000000000000000000003ee",
+              "point_world": [
+                1.8499999999999999,
+                2.6,
+                -4.0
+              ],
+              "sample": 3,
+              "visible_samples": 9
+            },
+            {
+              "entity": "000000000000000000000000000003f4",
+              "point_world": [
+                -1.8499999999999999,
+                2.6,
+                -2.0
+              ],
+              "sample": 5,
+              "visible_samples": 9
+            },
+            {
+              "entity": "000000000000000000000000000003fa",
+              "point_world": [
+                1.8499999999999999,
+                2.6,
+                0.0
+              ],
+              "sample": 3,
+              "visible_samples": 9
+            }
+          ],
+          "bands": [
+            0.10552545636892319,
+            0.042676400393247604,
+            0.02137213572859764
+          ],
+          "distance_gain": 0.055325303226709366,
+          "distance_m": 18.074912194281485,
+          "entity": "000000000000000000000000000003fa",
+          "listener_local_direction": [
+            0.6770007123918411,
+            0.07748010496431425,
+            -0.7318926620452337
+          ],
+          "point_world": [
+            1.8499999999999999,
+            2.6,
+            0.0
+          ],
+          "propagation_delay_samples": 2529,
+          "sample": 3,
+          "visible_samples": 9
+        },
+        "relocated_files": 59,
+        "relocated_source_hidden": true,
+        "relocated_bundle_unchanged": true,
+        "runtime_without_portals_rejected": true
+      },
+      "NVIDIA": {
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "frames_presented": 112,
+        "voices_started": 1,
+        "portal_handoffs": 5,
+        "raw_evidence_sha256": "9beb57145a8acc0c668374763001aa870a619803108bd17a0212ee159254e0bc",
+        "sdl_pcm": {
+          "frames": 89600,
+          "sha256": "d8752876dcabaa2985086b836a95c6354471d0865b5106231656874624f49551",
+          "leading_silence": 5120,
+          "exact_submitted_signal": true
+        },
+        "capture_sha256": {
+          "source": "3cecca271c31cc7051abdabe7779a5581279b1427ab62b3e6a49b038568e331a",
+          "relocated": "3cecca271c31cc7051abdabe7779a5581279b1427ab62b3e6a49b038568e331a"
+        },
+        "energy": {
+          "initially_open": 0.0015834888949358278,
+          "first_sealed": 0.0,
+          "first_reopened": 0.001501091150845092,
+          "last_sealed": 0.0,
+          "last_reopened": 0.0015020867320319684,
+          "middle_sealed": 0.0,
+          "left": 0.0005938746839373624,
+          "right": 0.0009896142109984654
+        },
+        "restored_route": {
+          "apertures": [
+            {
+              "entity": "000000000000000000000000000003e8",
+              "point_world": [
+                -1.8499999999999999,
+                2.6,
+                -6.0
+              ],
+              "sample": 5,
+              "visible_samples": 9
+            },
+            {
+              "entity": "000000000000000000000000000003ee",
+              "point_world": [
+                1.8499999999999999,
+                2.6,
+                -4.0
+              ],
+              "sample": 3,
+              "visible_samples": 9
+            },
+            {
+              "entity": "000000000000000000000000000003f4",
+              "point_world": [
+                -1.8499999999999999,
+                2.6,
+                -2.0
+              ],
+              "sample": 5,
+              "visible_samples": 9
+            },
+            {
+              "entity": "000000000000000000000000000003fa",
+              "point_world": [
+                1.8499999999999999,
+                2.6,
+                0.0
+              ],
+              "sample": 3,
+              "visible_samples": 9
+            }
+          ],
+          "bands": [
+            0.10552545636892319,
+            0.042676400393247604,
+            0.02137213572859764
+          ],
+          "distance_gain": 0.055325303226709366,
+          "distance_m": 18.074912194281485,
+          "entity": "000000000000000000000000000003fa",
+          "listener_local_direction": [
+            0.6770007123918411,
+            0.07748010496431425,
+            -0.7318926620452337
+          ],
+          "point_world": [
+            1.8499999999999999,
+            2.6,
+            0.0
+          ],
+          "propagation_delay_samples": 2529,
+          "sample": 3,
+          "visible_samples": 9
+        },
+        "relocated_files": 59,
+        "relocated_source_hidden": true,
+        "relocated_bundle_unchanged": true,
+        "runtime_without_portals_rejected": true
+      }
+    }
+  },
+  "pilot": {
+    "audio_portals": {
+      "budget_exceeded": true,
+      "count": 4
+    },
+    "correction": "Discard longer partial routes with identical visited apertures, sample and entry side."
+  },
+  "limits": [
+    "Path search is bounded and uses sampled clear area. Diffuse inter-room reverb remains separate.",
+    "The player was verified through SDL disk output. Physical listening and representative scene cost remain open."
+  ]
+}
