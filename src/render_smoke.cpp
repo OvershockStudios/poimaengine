@@ -251,6 +251,9 @@ struct Context {
         DrawCounts draws;
         std::array<render_shadows::ViewWork,max_shadow_views> shadow_work;
         std::uint32_t shadow_profile_views=0;
+        bool profile_schedule=false;
+        std::uint32_t profiled_passes=0;
+        std::array<render_schedule::PassId,render_vulkan_frame::schedule_pass_capacity> profile_pass_order;
         render_vulkan::BarrierTrace barriers;
         render_gpu_visibility::Slot visibility;
         LightAssignmentDiagnostics lights;
@@ -2716,7 +2719,9 @@ struct Context {
                         slot.diffuse_bounce->resolution==DiffuseBounceResolution::half,
                     .cpu_interval_ms=elapsed_ms(slot.started),.profile=slot.profile,
                     .performance=slot.performance,.performance_ticket=slot.performance_ticket,
-                    .shadow_views=slot.shadow_profile_views},diagnostics);
+                    .shadow_views=slot.shadow_profile_views,
+                    .schedule_requested=slot.profile_schedule,
+                    .scheduled_passes=std::span(slot.profile_pass_order).first(slot.profiled_passes)},diagnostics);
                 render_shadows::profile_views(std::span(slot.shadow_work).first(slot.shadow_profile_views), slot.profile);
                 render_vulkan::profile_barriers(slot.barriers, slot.profile);
                 auto reconstruction_gpu=diagnostics.reconstruction.gpu;diagnostics.reconstruction=slot.reconstruction;diagnostics.reconstruction.gpu=reconstruction_gpu;
@@ -3359,6 +3364,9 @@ struct Context {
         timestamps.begin(next_slot%diagnostics.frame_execution.limit,
             diagnostics.profile_requested || trace_active || bool(performance_token));
         slot.shadow_profile_views = trace_active && scene ? static_cast<std::uint32_t>(shadow_plan.size()) : 0;
+        slot.profile_schedule=profiling::gpu_passes_requested();
+        slot.profiled_passes=0;
+        const bool time_schedule=slot.profile_schedule && timestamps.recording();
         auto plan=make_schedule(capture_frame);
         plan.validate(true);
         // A finite acquire timeout bounds the experiment if presentation stalls.
@@ -3397,7 +3405,8 @@ struct Context {
             vk::AccessFlagBits::eMemoryRead|vk::AccessFlagBits::eMemoryWrite);
         native_commands().pipelineBarrier(vk::PipelineStageFlagBits::eAllCommands,vk::PipelineStageFlagBits::eAllCommands,
             {},1,&scratch_dependency,0,nullptr,0,nullptr,dispatch);
-        if(timestamps.recording())timestamps.reset_queries(native_commands(),dispatch,slot.shadow_profile_views);
+        if(timestamps.recording())timestamps.reset_queries(native_commands(),dispatch,slot.shadow_profile_views,
+            time_schedule ? static_cast<std::uint32_t>(plan.passes.size()) : 0);
         timestamp(0);
         // Only the acquired image is late-bound. All other resources were
         // resolved after preparation; no recording pass allocates/rebinds them.
@@ -3410,6 +3419,7 @@ struct Context {
             const auto& resource=plan.resource(id);require(resource.kind==render_schedule::Kind::buffer,"Scheduled buffer has the wrong kind.");
             return reinterpret_cast<nvrhi::IBuffer*>(resource.identity);
         };
+        if(time_schedule)timestamps.write_schedule_boundary(native_commands(),dispatch,0);
         plan.execute([&](const render_schedule::Pass& pass,const render_schedule::Schedule&) {
             profiling::Scope pass_scope(render_schedule::pass_name(pass.id));
             if(barrier_recording)barrier_recording->pass(pass.id);
@@ -3621,6 +3631,10 @@ struct Context {
                 timestamp(5);break;
             case render_schedule::PassId::count:
                 throw std::logic_error("Invalid render schedule pass.");
+            }
+            if(time_schedule) {
+                slot.profile_pass_order[slot.profiled_passes++]=pass.id;
+                timestamps.write_schedule_boundary(native_commands(),dispatch,slot.profiled_passes);
             }
         });
         std::uint64_t expected_shadow_batches=0;for(const auto& batches:shadow_batch_plans)expected_shadow_batches+=batches.size();

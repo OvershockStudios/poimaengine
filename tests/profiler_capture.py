@@ -31,7 +31,13 @@ def main():
     parser.add_argument('--gpu', type=int, default=0)
     parser.add_argument('--require-barriers', action='store_true')
     parser.add_argument('--require-submission', action='store_true')
+    parser.add_argument('--require-gpu-passes', action='store_true')
+    parser.add_argument('--reconstruct-rich', action='store_true', help='Use the optional FSR build for the detailed deferred capture.')
     args = parser.parse_args()
+    if args.require_gpu_passes:
+        args.require_submission = True
+    elif args.reconstruct_rich:
+        parser.error('--reconstruct-rich requires --require-gpu-passes')
     args.output = args.output.resolve()
     run = args.output / uuid.uuid4().hex
     run.mkdir(parents=True)
@@ -73,15 +79,19 @@ def main():
     current_capture = None
     renderer_ids = set()
 
-    def start():
+    def start(schedule=False):
         nonlocal current_capture
         wanted = uuid.uuid4().hex
-        result = call('profiler.start', {'capture_id': wanted,
-                      'expected_capture_id': current_capture, 'capacity': 16384})
+        params = {'capture_id': wanted, 'expected_capture_id': current_capture, 'capacity': 16384}
+        if args.require_gpu_passes:
+            params['gpu_passes'] = schedule
+        result = call('profiler.start', params)
         assert result['state'] == 'recording' and result['count'] == 0, result
+        if args.require_gpu_passes:
+            assert result['gpu_passes'] == schedule
         current_capture = wanted
 
-    def seal(expected_source, result, session=None):
+    def seal(expected_source, result, session=None, extra_passes=(), capture_passes=()):
         frame_count = result['frames_presented']
         stopped = call('profiler.stop', {'capture_id': current_capture})
         assert stopped['state'] == 'stopped' and stopped['open'] == 0 and stopped['dropped'] == 0, stopped
@@ -112,8 +122,11 @@ def main():
                 'renderer.capture_readback_write', 'renderer.camera_draws',
                 'renderer.camera_triangles', 'renderer.texture_payload_bytes'} <= names, names
         pass_order = ('skinning', 'light_assignment', 'shadows', 'scene_clear', 'sky',
-                      'opaque', 'resolve', 'output', 'game_ui', 'overlay',
-                      'editor_clear', 'editor_ui', 'capture', 'present')
+                      'opaque', 'ambient_occlusion', 'ambient_occlusion_filter', 'deferred_lighting',
+                      'screen_diffuse_bounce', 'screen_diffuse_resolve', 'resolve', 'auto_exposure',
+                      'temporal_inputs', 'reconstruction', 'bloom_extract', 'bloom_horizontal', 'bloom_vertical',
+                      'output', 'game_ui', 'overlay', 'editor_clear', 'editor_ui', 'product_probes',
+                      'exposure_readback', 'capture', 'present')
         ranks = {f'render.pass.{name}': i for i, name in enumerate(pass_order)}
         recorded_passes = defaultdict(list)
         for event in observed:
@@ -123,11 +136,17 @@ def main():
                 recorded_passes[event['parent']].append(event['name'])
         assert len(recorded_passes) == frame_count, recorded_passes
         required_passes = {f'render.pass.{name}' for name in
-                           ('skinning', 'light_assignment', 'shadows', 'scene_clear', 'opaque', 'output', 'present')}
+                           ('skinning', 'light_assignment', 'shadows', 'scene_clear', 'opaque', 'output', 'present', *extra_passes)}
         for sequence in recorded_passes.values():
             assert required_passes <= set(sequence), sequence
             assert len(set(sequence)) == len(sequence), sequence
             assert sequence == sorted(sequence, key=ranks.__getitem__), sequence
+        if capture_passes:
+            requested = {f'render.pass.{name}' for name in capture_passes}
+            found = [sequence for sequence in recorded_passes.values() if 'render.pass.capture' in sequence]
+            assert len(found) == 1 and requested <= set(found[0]), found
+            assert all(not requested.intersection(sequence) for sequence in recorded_passes.values()
+                       if 'render.pass.capture' not in sequence)
         gpu = [e for e in observed if e['kind'] == 'gpu']
         for name in ('skinning', 'light_assignment', 'shadows', 'opaque', 'post', 'total'):
             samples = [e for e in gpu if e['name'] == f'gpu.{name}.ns']
@@ -166,6 +185,30 @@ def main():
                 assert owner['name'] == 'render.frame' and owner['render_submission'] == scope['render_submission']
             evidence.setdefault('renderer_submissions', []).append(
                 {'renderer_id': renderer, 'submission_ids': submissions, 'source': expected_source})
+        if args.require_gpu_passes:
+            detailed = [e for e in observed if e['name'].startswith(('gpu.pass.', 'gpu.render_schedule.'))]
+            if stopped['gpu_passes']:
+                by_submission = defaultdict(list)
+                assert all(e['kind'] == 'gpu' and e['parent'] == 0 and e['duration_ns'] == 0 and
+                           type(e['value']) is int and e['value'] >= 0 for e in detailed)
+                for row in detailed:
+                    by_submission[row['render_submission']['submission_id']].append(row)
+                assert list(by_submission) == submissions
+                schedule_rows = []
+                for scope in scopes:
+                    parent = by_id[scope['parent']]
+                    record, = [e for e in observed if e['name']=='render.record' and e['parent']==parent['id']]
+                    serial = scope['render_submission']['submission_id']
+                    rows = by_submission[serial]
+                    names = [f'gpu.pass.{name.removeprefix("render.pass.")}.ns' for name in recorded_passes[record['id']]]
+                    assert [row['name'] for row in rows] == names + ['gpu.render_schedule.total.ns']
+                    total = rows[-1]['value']
+                    assert total > 0 and 0 <= total - sum(row['value'] for row in rows[:-1]) < len(rows)
+                    schedule_rows.append({'submission_id': serial, 'total_ns': total,
+                                          'pass_ns': {row['name']: row['value'] for row in rows[:-1]}})
+                evidence.setdefault('schedule_gpu_captures', []).append({'renderer_id': renderer, 'rows': schedule_rows})
+            else:
+                assert not detailed
         last_draws = diagnostics['last_draws']
         view_count = last_draws['shadow_views']
         lights = result['lighting']['lights']
@@ -263,9 +306,9 @@ def main():
                                                    'events': events, 'trace': f'{current_capture}.trace.json'})
         return stopped
 
-    def capture(name, samples):
+    def capture(name, samples, **options):
         result = call('world.capture', {'revision': 1, 'camera': uid(200), 'gpu': args.gpu,
-                      'samples': samples, 'frames_in_flight': 2, 'profile': False, 'path': native(run / f'{name}.bmp')})
+                      'samples': samples, 'frames_in_flight': 2, 'profile': False, 'path': native(run / f'{name}.bmp'), **options})
         assert result['capture_written'] and result['hardware'] and result['nvrhi_errors'] == 0, result
         assert not result['render_diagnostics']['profile_requested']
         return result
@@ -285,7 +328,7 @@ def main():
         for samples in (1, 4):
             off = capture(f'off-{samples}', samples)
             assert not off['render_diagnostics']['gpu']['available']
-            start()
+            start(schedule=args.require_gpu_passes and samples==4)
             on = capture(f'on-{samples}', samples)
             assert on['render_diagnostics']['gpu']['available']
             stopped = seal('request', on)
@@ -303,7 +346,7 @@ def main():
             session = uid(900 + int(traced))
             call('runtime.start', {'session_id': session, 'revision': 1})
             if traced:
-                start()
+                start(schedule=args.require_gpu_passes)
             result = call('runtime.play', {'session_id': session, 'request_id': uuid.uuid4().hex,
                           'expected_tick': 0, 'controller': uid(100), 'camera': uid(101),
                           'mode': 'replay', 'sequence': sequence, 'gpu': args.gpu, 'frames_in_flight': 2,
@@ -328,6 +371,31 @@ def main():
             evidence['checks'].append('Vulkan frame, pass and barrier-entry counts reconcile at retirement')
         if args.require_submission:
             evidence['checks'].append('each native submission joins its CPU scopes, delayed GPU samples, trace export and final retirement receipt')
+        if args.require_gpu_passes:
+            lighting = {'ambient': [.1, .12, .14], 'exposure': 1, 'shadow_resolution': 512,
+                        'auto_exposure': {}, 'bloom': {'intensity': .3, 'threshold': .5, 'radius': 8},
+                        'screen_diffuse_bounce': {'radius_m': 2, 'strength': .7, 'thickness_m': .1,
+                                                  'resolution': 'half'}}
+            call('world.transact', {'request_id': uid(10000), 'base_revision': 1, 'ops': [
+                {'op': 'component.set', 'id': uid(301), 'type': 'LightingEnvironment', 'value': lighting}
+            ]})
+            rich_world = world.read_bytes()
+            options = {'revision': 2, 'lighting_path': 'deferred', 'capture_frames': 4,
+                       'ambient_occlusion': {'mode': 'gtao', 'quality': 'high', 'radius': 1},
+                       'scene_product_probes': [{'x': 221, 'y': 173}]}
+            stages = ('ambient_occlusion', 'ambient_occlusion_filter', 'deferred_lighting', 'screen_diffuse_bounce',
+                      'screen_diffuse_resolve', 'auto_exposure', 'bloom_extract', 'bloom_horizontal',
+                      'bloom_vertical')
+            if args.reconstruct_rich:
+                options['reconstruction'] = 'fsr3_native'
+                stages += ('temporal_inputs', 'reconstruction')
+            capture('rich-off', 1, **options)
+            start(schedule=True)
+            seal('request', capture('rich-on', 1, **options), extra_passes=stages,
+                 capture_passes=('product_probes', 'exposure_readback'))
+            assert pixels(run / 'rich-off.bmp') == pixels(run / 'rich-on.bmp')
+            assert world.read_bytes() == rich_world
+            evidence['checks'].append('ordered GPU durations cover every scheduled pass, with exact pixels and explicit opt-in')
         evidence['checks'].append('sealed pages, parent intervals, independently recomputed percentiles, GPU-duration export semantics')
         call('session.close', {})
         process.stdin.close()

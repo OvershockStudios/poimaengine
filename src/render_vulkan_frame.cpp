@@ -20,7 +20,8 @@ namespace {
 constexpr std::uint64_t retirement_timeout_ns = 5'000'000'000ULL;
 constexpr std::uint32_t frame_timestamp_count = 25;
 constexpr std::uint32_t shadow_timestamp_count = max_shadow_views + 1;
-constexpr std::uint32_t timestamp_count = frame_timestamp_count + shadow_timestamp_count;
+constexpr std::uint32_t schedule_query_offset = frame_timestamp_count + shadow_timestamp_count;
+constexpr std::uint32_t timestamp_count = schedule_query_offset + schedule_pass_capacity + 1;
 constexpr std::array shadow_view_counters = {
     std::string_view{"gpu.shadow_view.0.ns"}, std::string_view{"gpu.shadow_view.1.ns"},
     std::string_view{"gpu.shadow_view.2.ns"}, std::string_view{"gpu.shadow_view.3.ns"},
@@ -32,6 +33,23 @@ constexpr std::array shadow_view_counters = {
     std::string_view{"gpu.shadow_view.14.ns"}, std::string_view{"gpu.shadow_view.15.ns"},
 };
 static_assert(shadow_view_counters.size() == max_shadow_views);
+
+constexpr auto schedule_counter_names() {
+    std::array<std::array<char,64>,schedule_pass_capacity> names{};
+    constexpr std::string_view cpu_prefix="render.pass.", gpu_prefix="gpu.pass.", suffix=".ns";
+    for(std::size_t index=0;index<names.size();++index) {
+        const std::string_view cpu_name=render_schedule::pass_name(static_cast<render_schedule::PassId>(index));
+        if(!cpu_name.starts_with(cpu_prefix))throw "Render pass name lacks its profiling prefix.";
+        const auto label=cpu_name.substr(cpu_prefix.size());
+        auto& name=names[index];
+        if(gpu_prefix.size()+label.size()+suffix.size()>=name.size())throw "Render pass profile name is too long.";
+        auto out=std::copy(gpu_prefix.begin(),gpu_prefix.end(),name.begin());
+        out=std::copy(label.begin(),label.end(),out);
+        std::copy(suffix.begin(),suffix.end(),out);
+    }
+    return names;
+}
+constexpr auto schedule_counters=schedule_counter_names();
 
 void require(bool condition, const char* detail) {
     if (!condition) throw std::runtime_error(detail);
@@ -221,9 +239,13 @@ void Timestamps::begin(std::size_t slot, bool requested) noexcept {
     recording_ = requested ? pools_[slot] : vk::QueryPool{};
 }
 
-void Timestamps::reset_queries(vk::CommandBuffer commands, const Dispatch& dispatch, std::uint32_t shadow_views) const {
+void Timestamps::reset_queries(vk::CommandBuffer commands, const Dispatch& dispatch, std::uint32_t shadow_views,
+    std::uint32_t scheduled_passes) const {
     require(shadow_views <= max_shadow_views, "Shadow timestamp view count exceeds the view limit.");
-    commands.resetQueryPool(recording_, 0, frame_timestamp_count + (shadow_views ? shadow_views + 1 : 0), dispatch);
+    require(scheduled_passes <= schedule_pass_capacity, "Render schedule timestamp capacity exceeded.");
+    const auto count=scheduled_passes ? schedule_query_offset+scheduled_passes+1 :
+        frame_timestamp_count+(shadow_views ? shadow_views+1 : 0);
+    commands.resetQueryPool(recording_,0,count,dispatch);
 }
 
 void Timestamps::write(vk::CommandBuffer commands, const Dispatch& dispatch, std::uint32_t query) const {
@@ -237,9 +259,46 @@ void Timestamps::write_shadow_boundary(vk::CommandBuffer commands, const Dispatc
     commands.writeTimestamp(vk::PipelineStageFlagBits::eBottomOfPipe,recording_,frame_timestamp_count+boundary,dispatch);
 }
 
+void Timestamps::write_schedule_boundary(vk::CommandBuffer commands, const Dispatch& dispatch, std::uint32_t boundary) const {
+    require(boundary<=schedule_pass_capacity,"Render schedule timestamp boundary is out of range.");
+    commands.writeTimestamp(vk::PipelineStageFlagBits::eBottomOfPipe,recording_,schedule_query_offset+boundary,dispatch);
+}
+
+void Timestamps::collect_schedule(vk::Device device, const Dispatch& dispatch, std::size_t slot,
+    const TimestampSample& frame, std::uint64_t mask, double period_ns) const {
+    const auto count=frame.scheduled_passes.size();
+    const auto dropped=[&] {profiling::deferred_counter(frame.profile,"gpu.render_schedule.samples_dropped",1);};
+    if(count==0 || count>schedule_pass_capacity) {dropped();return;}
+    const auto query_count=static_cast<std::uint32_t>(count+1);
+    std::array<std::uint64_t,schedule_pass_capacity+1> values{};
+    const auto status=device.getQueryPoolResults(pools_[slot],schedule_query_offset,query_count,query_count*sizeof(values[0]),
+        values.data(),sizeof(values[0]),vk::QueryResultFlagBits::e64,dispatch);
+    if(status!=vk::Result::eSuccess) {dropped();return;}
+    const auto total_ticks=(values[count]-values[0])&mask;
+    const long double total_ns=static_cast<long double>(total_ticks)*period_ns;
+    if(!std::isfinite(total_ns) || total_ns<0 || total_ns>=static_cast<long double>(std::numeric_limits<std::uint64_t>::max())) {
+        dropped();return;
+    }
+    auto remaining_ticks=total_ticks;
+    std::array<std::uint64_t,schedule_pass_capacity> durations{};
+    for(std::size_t i=0;i<count;++i) {
+        const auto ticks=(values[i+1]-values[i])&mask;
+        if(ticks>remaining_ticks) {dropped();return;}
+        remaining_ticks-=ticks;
+        durations[i]=static_cast<std::uint64_t>(static_cast<long double>(ticks)*period_ns);
+    }
+    if(remaining_ticks!=0) {dropped();return;}
+    for(std::size_t i=0;i<count;++i) {
+        const auto pass=static_cast<std::size_t>(frame.scheduled_passes[i]);
+        profiling::deferred_counter(frame.profile,schedule_counters[pass].data(),durations[i],profiling::Kind::gpu);
+    }
+    profiling::deferred_counter(frame.profile,"gpu.render_schedule.total.ns",static_cast<std::uint64_t>(total_ns),profiling::Kind::gpu);
+}
+
 void Timestamps::collect(vk::Device device, const Dispatch& dispatch, std::size_t slot,
     const TimestampSample& frame, RenderDiagnostics& diagnostics) const {
     if(!frame.recorded) {
+        if(frame.schedule_requested)profiling::deferred_counter(frame.profile,"gpu.render_schedule.unavailable",1);
         if(frame.performance)frame.performance->gpu_drop(frame.performance_ticket,fp::GpuDropReason::query_unavailable);
         return;
     }
@@ -254,6 +313,7 @@ void Timestamps::collect(vk::Device device, const Dispatch& dispatch, std::size_
         ++diagnostics.gpu_samples_dropped;profiling::deferred_counter(frame.profile,"gpu.samples_dropped",diagnostics.gpu_samples_dropped);
         if(frame.performance)frame.performance->gpu_drop(frame.performance_ticket,fp::GpuDropReason::query_failed);
         if(frame.shadow_views)drop_shadow_sample();
+        if(frame.schedule_requested)profiling::deferred_counter(frame.profile,"gpu.render_schedule.samples_dropped",1);
         return;
     }
     const auto mask=bits==64 ? ~std::uint64_t(0) : (std::uint64_t(1)<<bits)-1;
@@ -312,6 +372,7 @@ void Timestamps::collect(vk::Device device, const Dispatch& dispatch, std::size_
         if(valid)frame.performance->gpu_complete(frame.performance_ticket,timing);
         else frame.performance->gpu_drop(frame.performance_ticket,fp::GpuDropReason::invalid_timing);
     }
+    if(frame.schedule_requested)collect_schedule(device,dispatch,slot,frame,mask,diagnostics.timestamp_period_ns);
     if(!frame.shadow_views)return;
     if(frame.shadow_views>max_shadow_views) {
         drop_shadow_sample();

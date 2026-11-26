@@ -40,21 +40,24 @@ Json object(Json properties,Json required=Json::array()) { return {{"type","obje
 Json Service::status() const {
     const auto s=recorder_.status();return {{"capture_id",capture_.empty()?Json(nullptr):Json(capture_)},{"state",capture_.empty()?"empty":s.recording?"recording":s.full?"full":"stopped"},
         {"recording",s.recording},{"capacity",s.capacity},{"count",s.count},{"open",s.open},{"dropped",s.dropped},{"elapsed_ns",s.elapsed_ns},{"storage_bytes",s.storage_bytes},
-        {"clock_saturated",s.clock_saturated},{"captures_remaining",4096-used_.size()}};
+        {"clock_saturated",s.clock_saturated},{"gpu_passes",s.gpu_passes},{"captures_remaining",4096-used_.size()}};
 }
 Json Service::dispatch(const std::string& method,const Json& params) {
     if(method=="profiler.status") { fields(params,{});return status(); }
     if(method=="profiler.start") {
-        fields(params,{"capture_id","expected_capture_id","capacity"},{"capture_id","expected_capture_id"});
+        fields(params,{"capture_id","expected_capture_id","capacity","gpu_passes"},{"capture_id","expected_capture_id"});
         auto wanted=id(params.at("capture_id"));auto expected=params.at("expected_capture_id").is_null()?std::string{}:id(params.at("expected_capture_id"));
         const auto capacity=params.contains("capacity")?integer(params.at("capacity"),64,65536):16384;
-        if(wanted==capture_) { need(expected==expected_ && capacity==capacity_,"Capture start retry changed its parameters.",-32009);auto result=status();result["replayed"]=true;return result; }
+        need(!params.contains("gpu_passes") || params.at("gpu_passes").is_boolean(),"gpu_passes must be a boolean.");
+        const bool gpu_passes=params.value("gpu_passes",false);
+        const auto state=recorder_.status();
+        if(wanted==capture_) { need(expected==expected_ && capacity==capacity_ && gpu_passes==state.gpu_passes,"Capture start retry changed its parameters.",-32009);auto result=status();result["replayed"]=true;return result; }
         need(expected==capture_,"Profiler capture changed; inspect before replacing it.",-32009);
-        const auto state=recorder_.status();need(!state.recording && state.open==0,"Stop the current capture before replacing it.",-32009);
+        need(!state.recording && state.open==0,"Stop the current capture before replacing it.",-32009);
         need(!used_.contains(wanted),"A capture ID cannot be reused in this session.",-32009);
         need(used_.size()<4096,"Profiler session capture limit reached; reopen the session.",-32070);
         auto used=used_;used.insert(wanted); // All metadata allocations precede publication.
-        recorder_.start(capacity);capture_.swap(wanted);expected_.swap(expected);capacity_=capacity;used_.swap(used);
+        recorder_.start(capacity,gpu_passes);capture_.swap(wanted);expected_.swap(expected);capacity_=capacity;used_.swap(used);
         auto result=status();result["replayed"]=false;return result;
     }
     if(method=="profiler.stop") {
@@ -113,7 +116,8 @@ Json Service::schemas() {
     const Json capture={{"type","string"},{"pattern","^[0-9a-f]{32}$"}};
     const auto empty=object(Json::object());const auto by_id=object({{"capture_id",capture}},{"capture_id"});
     return {{"profiler.status",empty},{"profiler.start",object({{"capture_id",capture},{"expected_capture_id",{{"anyOf",{capture,Json{{"type","null"}}}}}},
-        {"capacity",{{"type","integer"},{"minimum",64},{"maximum",65536},{"default",16384}}}},{"capture_id","expected_capture_id"})},
+        {"capacity",{{"type","integer"},{"minimum",64},{"maximum",65536},{"default",16384}}},
+        {"gpu_passes",{{"type","boolean"},{"default",false},{"description","Record an additional graphics-queue timing interval for each executed render-schedule pass."}}}},{"capture_id","expected_capture_id"})},
         {"profiler.stop",by_id},{"profiler.summary",by_id},{"profiler.export",by_id},{"profiler.events",object({{"capture_id",capture},
         {"offset",{{"type","integer"},{"minimum",0},{"maximum",65536},{"default",0}}},{"limit",{{"type","integer"},{"minimum",1},{"maximum",1024},{"default",256}}}},{"capture_id"})}};
 }

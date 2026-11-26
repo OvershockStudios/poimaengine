@@ -1,0 +1,535 @@
+{
+  "format": "poima.qualification-summary",
+  "version": 1,
+  "engine_checkpoint": "0.0.460",
+  "comparison_commit": "e74bdd7d3deb70c2cfdf8086c7ea275ced3f89aa",
+  "scope": "Opt-in device timestamp intervals for each executed render-schedule pass, joined by accepted submission.",
+  "source_sha256": {
+    "CMakeLists.txt": "4fa47cf9dd60425653e5f9da44a727221bb314c018c66de5945540df38f5c5a9",
+    "include/poima/profiler.hpp": "b506d67239ab374b9304ece6522ba43053e75366396c2c8e0782e3c29ab375c3",
+    "include/poima/render_schedule.hpp": "2271e726aec026f6ae9b11ebbd742dcdc60d48310ac9b4966705b23695f19359",
+    "src/profiler.cpp": "3f8c912150768d1804415867badc360f5c4e6e8081965c3ffa107f417957e258",
+    "src/profiler_service.cpp": "94cfee43d16d7a431b6dcc11333226a93be26b97c97b3c87fb4c16c51a4f45af",
+    "src/render_smoke.cpp": "94052c7a01b4dcb7cc125cd91abdcc467ad221ebff54fef11203c72d6d7210f3",
+    "src/render_vulkan_frame.cpp": "b61ebf345c55cd97a3464ccccca64be85fe99f3bfe2edeedef870d0b4c7afeda",
+    "src/render_vulkan_frame.hpp": "8d9debfff5b4a2fc36d9f2b23427aca4dc84acb6043a0024f447bd14dd8b7fff",
+    "src/world_schema.cpp": "e060ab79684fabf10eb0314a80d50bbca639784e94d6c45dc2267758a1eaf49d",
+    "tests/profiler_capture.py": "fdd591c1fe84c945b294525df4c2a690c59c8c9e2f005f73c3f54a40ce758336",
+    "tests/profiler_contract.py": "85e3b837a0d8425d1425666b860af1928170fab935ec27ff1f0d0b8342f6b6ce"
+  },
+  "build": {
+    "patch_sha256": "9d925b227f94859bdc6932e79fa921e92182ff0268c313e5a8adb82e6f505c21",
+    "build_and_linux_test_log_sha256": "71ef094eb9414a5f82fae5db36955000f08dc57d9c3692563de04fc3f4e3cd6a",
+    "windows_installed_sha256": {
+      "bin/poima.exe": "1d3a83e5f973649b5a6da6f4343e55e32123881fa9bb64ec4cf6bd07c8467ff6",
+      "bin/poima_desktop.dll": "16ecf7be6008b98f63855326a077cc084cf743261f1e5660ddd1d55957080316",
+      "runtime.json": "dc8c0ece76708e23b29991f1cb6b35a4fe857fd90a425a05b5c8dd2ccdbb89f1"
+    },
+    "linux_binary_sha256": "20fc946bad6c2bde8bef6e8a6477fab0b545ca84806f4f095b3b439503af1230",
+    "linux_junit_sha256": "b8454fbdfd1ab9da211fb0861f142afd75d1643dbd98e94ed066f2803d0fd817",
+    "linux_passed_suites": [
+      "authoring_contract_identity",
+      "profiler_native",
+      "frame_performance_native",
+      "frame_performance_service",
+      "profiler_jobs",
+      "render_schedule_native",
+      "profiler_service",
+      "profiler_contract",
+      "world_contract"
+    ]
+  },
+  "windows_vulkan": [
+    {
+      "gpu": "AMD Radeon(TM) Graphics",
+      "gpu_index": 0,
+      "profiler_report_sha256": "5cac4ed59cef2634a6de7effd013d7edff39976e4ddc5e3dcc42ab003b08e9fb",
+      "player_report_sha256": "71cda129ca0f24f675a78d94d0ad5987bf9a242c0318c16e1e30118ce22127f3",
+      "player_test_sha256": "0c4b3dbc106a158fa214ea52986223708afcb801e6039a91a97d463b51c1dd04",
+      "executed_passes": [
+        "gpu.pass.ambient_occlusion.ns",
+        "gpu.pass.ambient_occlusion_filter.ns",
+        "gpu.pass.auto_exposure.ns",
+        "gpu.pass.bloom_extract.ns",
+        "gpu.pass.bloom_horizontal.ns",
+        "gpu.pass.bloom_vertical.ns",
+        "gpu.pass.capture.ns",
+        "gpu.pass.deferred_lighting.ns",
+        "gpu.pass.exposure_readback.ns",
+        "gpu.pass.light_assignment.ns",
+        "gpu.pass.opaque.ns",
+        "gpu.pass.output.ns",
+        "gpu.pass.present.ns",
+        "gpu.pass.product_probes.ns",
+        "gpu.pass.resolve.ns",
+        "gpu.pass.scene_clear.ns",
+        "gpu.pass.screen_diffuse_bounce.ns",
+        "gpu.pass.screen_diffuse_resolve.ns",
+        "gpu.pass.shadows.ns",
+        "gpu.pass.skinning.ns"
+      ],
+      "detailed_frame_count": 24,
+      "schedule_groups": [
+        {
+          "renderer_id": 5,
+          "frame_count": 2,
+          "submissions": [
+            4,
+            5
+          ]
+        },
+        {
+          "renderer_id": 8,
+          "frame_count": 18,
+          "submissions": [
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19,
+            20,
+            21
+          ]
+        },
+        {
+          "renderer_id": 10,
+          "frame_count": 4,
+          "submissions": [
+            4,
+            5,
+            6,
+            7
+          ]
+        }
+      ],
+      "final_deferred_capture_durations": {
+        "submission_id": 7,
+        "total_ns": 10487630,
+        "pass_ns": {
+          "gpu.pass.skinning.ns": 7280,
+          "gpu.pass.light_assignment.ns": 3000,
+          "gpu.pass.shadows.ns": 161720,
+          "gpu.pass.scene_clear.ns": 463640,
+          "gpu.pass.opaque.ns": 314240,
+          "gpu.pass.ambient_occlusion.ns": 5793400,
+          "gpu.pass.ambient_occlusion_filter.ns": 315960,
+          "gpu.pass.deferred_lighting.ns": 1593510,
+          "gpu.pass.screen_diffuse_bounce.ns": 1011280,
+          "gpu.pass.screen_diffuse_resolve.ns": 448560,
+          "gpu.pass.auto_exposure.ns": 54520,
+          "gpu.pass.bloom_extract.ns": 93560,
+          "gpu.pass.bloom_horizontal.ns": 11360,
+          "gpu.pass.bloom_vertical.ns": 9720,
+          "gpu.pass.output.ns": 69240,
+          "gpu.pass.product_probes.ns": 28520,
+          "gpu.pass.exposure_readback.ns": 5480,
+          "gpu.pass.capture.ns": 86040,
+          "gpu.pass.present.ns": 16600
+        }
+      },
+      "checks": [
+        "1x MSAA exact pixels with off/on/stopped tracing and real lazy GPU queries",
+        "4x MSAA exact pixels with off/on/stopped tracing and real lazy GPU queries",
+        "traced replay preserves exact controller/body state and final pixels; GPU records carry player session/tick",
+        "two-slot submission tickets retain shadow clear and four cascade timings and reconcile view work at retirement",
+        "Vulkan frame, pass and barrier-entry counts reconcile at retirement",
+        "each native submission joins its CPU scopes, delayed GPU samples, trace export and final retirement receipt",
+        "ordered GPU durations cover every scheduled pass, with exact pixels and explicit opt-in",
+        "sealed pages, parent intervals, independently recomputed percentiles, GPU-duration export semantics"
+      ],
+      "paused_player_joins": [
+        {
+          "slots": 2,
+          "renderer_id": 1,
+          "tick": 0,
+          "total_ns_by_submission": {
+            "26": 495720,
+            "27": 552400,
+            "28": 540000,
+            "29": 559400,
+            "30": 520480,
+            "31": 531320,
+            "32": 536360
+          }
+        },
+        {
+          "slots": 1,
+          "renderer_id": 2,
+          "tick": 0,
+          "total_ns_by_submission": {
+            "18": 582400,
+            "19": 570600,
+            "20": 535000,
+            "21": 590480,
+            "22": 612120,
+            "23": 693520,
+            "24": 581680,
+            "25": 591840
+          }
+        }
+      ],
+      "profile_statuses": [
+        {
+          "capacity": 16384,
+          "capture_id": "a01ea583e1a646bb8b720a97da3e8e5e",
+          "captures_remaining": 4095,
+          "clock_saturated": false,
+          "count": 139,
+          "dropped": 0,
+          "elapsed_ns": 417115200,
+          "gpu_passes": false,
+          "open": 0,
+          "recording": false,
+          "state": "stopped",
+          "storage_bytes": 3407872
+        },
+        {
+          "capacity": 16384,
+          "capture_id": "68466407d9d940319c6cd2fd3234f83d",
+          "captures_remaining": 4094,
+          "clock_saturated": false,
+          "count": 162,
+          "dropped": 0,
+          "elapsed_ns": 417270100,
+          "gpu_passes": true,
+          "open": 0,
+          "recording": false,
+          "state": "stopped",
+          "storage_bytes": 3407872
+        },
+        {
+          "capacity": 16384,
+          "capture_id": "81fc3bfce6bf4005baa28bd7bcdcabbe",
+          "captures_remaining": 4093,
+          "clock_saturated": false,
+          "count": 1825,
+          "dropped": 0,
+          "elapsed_ns": 616935500,
+          "gpu_passes": true,
+          "open": 0,
+          "recording": false,
+          "state": "stopped",
+          "storage_bytes": 3407872
+        },
+        {
+          "capacity": 16384,
+          "capture_id": "5b7881829a924fdaa261e9f293e7e646",
+          "captures_remaining": 4092,
+          "clock_saturated": false,
+          "count": 427,
+          "dropped": 0,
+          "elapsed_ns": 522917900,
+          "gpu_passes": true,
+          "open": 0,
+          "recording": false,
+          "state": "stopped",
+          "storage_bytes": 3407872
+        }
+      ]
+    },
+    {
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "gpu_index": 1,
+      "profiler_report_sha256": "b8d0c33553f32d25a791bab345e863f1342d02be402479384cc14a927a39c4e1",
+      "player_report_sha256": "46b3e8bb6155bdbd2adccfc262f4257bffbdff7bc7fc3a29447b8ca2d6bf6eb8",
+      "player_test_sha256": "0c4b3dbc106a158fa214ea52986223708afcb801e6039a91a97d463b51c1dd04",
+      "executed_passes": [
+        "gpu.pass.ambient_occlusion.ns",
+        "gpu.pass.ambient_occlusion_filter.ns",
+        "gpu.pass.auto_exposure.ns",
+        "gpu.pass.bloom_extract.ns",
+        "gpu.pass.bloom_horizontal.ns",
+        "gpu.pass.bloom_vertical.ns",
+        "gpu.pass.capture.ns",
+        "gpu.pass.deferred_lighting.ns",
+        "gpu.pass.exposure_readback.ns",
+        "gpu.pass.light_assignment.ns",
+        "gpu.pass.opaque.ns",
+        "gpu.pass.output.ns",
+        "gpu.pass.present.ns",
+        "gpu.pass.product_probes.ns",
+        "gpu.pass.reconstruction.ns",
+        "gpu.pass.resolve.ns",
+        "gpu.pass.scene_clear.ns",
+        "gpu.pass.screen_diffuse_bounce.ns",
+        "gpu.pass.screen_diffuse_resolve.ns",
+        "gpu.pass.shadows.ns",
+        "gpu.pass.skinning.ns",
+        "gpu.pass.temporal_inputs.ns"
+      ],
+      "detailed_frame_count": 24,
+      "schedule_groups": [
+        {
+          "renderer_id": 5,
+          "frame_count": 2,
+          "submissions": [
+            4,
+            5
+          ]
+        },
+        {
+          "renderer_id": 8,
+          "frame_count": 18,
+          "submissions": [
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19,
+            20,
+            21
+          ]
+        },
+        {
+          "renderer_id": 10,
+          "frame_count": 4,
+          "submissions": [
+            4,
+            5,
+            6,
+            7
+          ]
+        }
+      ],
+      "final_deferred_capture_durations": {
+        "submission_id": 7,
+        "total_ns": 2516320,
+        "pass_ns": {
+          "gpu.pass.skinning.ns": 6496,
+          "gpu.pass.light_assignment.ns": 2048,
+          "gpu.pass.shadows.ns": 11264,
+          "gpu.pass.scene_clear.ns": 17408,
+          "gpu.pass.opaque.ns": 33792,
+          "gpu.pass.ambient_occlusion.ns": 842752,
+          "gpu.pass.ambient_occlusion_filter.ns": 27648,
+          "gpu.pass.deferred_lighting.ns": 46080,
+          "gpu.pass.screen_diffuse_bounce.ns": 97280,
+          "gpu.pass.screen_diffuse_resolve.ns": 283648,
+          "gpu.pass.auto_exposure.ns": 17408,
+          "gpu.pass.temporal_inputs.ns": 22528,
+          "gpu.pass.reconstruction.ns": 238592,
+          "gpu.pass.bloom_extract.ns": 20480,
+          "gpu.pass.bloom_horizontal.ns": 4096,
+          "gpu.pass.bloom_vertical.ns": 2048,
+          "gpu.pass.output.ns": 9216,
+          "gpu.pass.product_probes.ns": 10528,
+          "gpu.pass.exposure_readback.ns": 3328,
+          "gpu.pass.capture.ns": 631264,
+          "gpu.pass.present.ns": 188416
+        }
+      },
+      "checks": [
+        "1x MSAA exact pixels with off/on/stopped tracing and real lazy GPU queries",
+        "4x MSAA exact pixels with off/on/stopped tracing and real lazy GPU queries",
+        "traced replay preserves exact controller/body state and final pixels; GPU records carry player session/tick",
+        "two-slot submission tickets retain shadow clear and four cascade timings and reconcile view work at retirement",
+        "Vulkan frame, pass and barrier-entry counts reconcile at retirement",
+        "each native submission joins its CPU scopes, delayed GPU samples, trace export and final retirement receipt",
+        "ordered GPU durations cover every scheduled pass, with exact pixels and explicit opt-in",
+        "sealed pages, parent intervals, independently recomputed percentiles, GPU-duration export semantics"
+      ],
+      "paused_player_joins": [
+        {
+          "slots": 2,
+          "renderer_id": 1,
+          "tick": 0,
+          "total_ns_by_submission": {
+            "23": 72512,
+            "24": 73216,
+            "25": 73664,
+            "26": 73280,
+            "27": 73952,
+            "28": 72544,
+            "29": 72448
+          }
+        },
+        {
+          "slots": 1,
+          "renderer_id": 2,
+          "tick": 0,
+          "total_ns_by_submission": {
+            "18": 69184,
+            "19": 90624,
+            "20": 69600,
+            "21": 69440,
+            "22": 67520,
+            "23": 63872,
+            "24": 64256,
+            "25": 65856
+          }
+        }
+      ],
+      "profile_statuses": [
+        {
+          "capacity": 16384,
+          "capture_id": "247bb07454ba49e5a1d9553078a328dc",
+          "captures_remaining": 4095,
+          "clock_saturated": false,
+          "count": 138,
+          "dropped": 0,
+          "elapsed_ns": 695565000,
+          "gpu_passes": false,
+          "open": 0,
+          "recording": false,
+          "state": "stopped",
+          "storage_bytes": 3407872
+        },
+        {
+          "capacity": 16384,
+          "capture_id": "0fcc73bf0ea740938bf984427cdcbf5e",
+          "captures_remaining": 4094,
+          "clock_saturated": false,
+          "count": 162,
+          "dropped": 0,
+          "elapsed_ns": 676322000,
+          "gpu_passes": true,
+          "open": 0,
+          "recording": false,
+          "state": "stopped",
+          "storage_bytes": 3407872
+        },
+        {
+          "capacity": 16384,
+          "capture_id": "fa1eac12fb2d4ae28d0b4abc3d0cce1a",
+          "captures_remaining": 4093,
+          "clock_saturated": false,
+          "count": 1825,
+          "dropped": 0,
+          "elapsed_ns": 796241800,
+          "gpu_passes": true,
+          "open": 0,
+          "recording": false,
+          "state": "stopped",
+          "storage_bytes": 3407872
+        },
+        {
+          "capacity": 16384,
+          "capture_id": "83b73f8cc6ce436c92a8099a428b9bec",
+          "captures_remaining": 4092,
+          "clock_saturated": false,
+          "count": 452,
+          "dropped": 0,
+          "elapsed_ns": 688585700,
+          "gpu_passes": true,
+          "open": 0,
+          "recording": false,
+          "state": "stopped",
+          "storage_bytes": 3407872
+        }
+      ]
+    }
+  ],
+  "detailed_frames": 48,
+  "distinct_native_passes": 22,
+  "paused_player_joins": 30,
+  "overhead_pilot": {
+    "study_sha256": "162d4fc78c3f3b56d819e147c2d6e3fc26b4926605777e66fc64830958e85716",
+    "script_sha256": "9cc8aba8010f7135b1f781f8bba9018d99fb71cbb46e27beecab039126fde5ff",
+    "world_sha256": "befbd9344cf8d8147ff02251c58d5005abd75e4cd7dca453465299056b178d28",
+    "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "scope": "One warmed 640x480 deferred native-AA renderer at a fixed tick. All four modes enable the ordinary profiler.",
+    "warmup_frames": 16,
+    "captured_frames_per_run": 24,
+    "skipped_initial_frames_per_run": 8,
+    "excluded_image_readback_frames_per_run": 1,
+    "runs": [
+      {
+        "detailed": false,
+        "gpu": {
+          "median_ns": 895424,
+          "p95_ns": 2454112,
+          "count": 15
+        },
+        "record_cpu": {
+          "median_ns": 366600,
+          "p95_ns": 521400,
+          "count": 15
+        },
+        "observation_counts": {
+          "total": 2093,
+          "scheduled_intervals": 0
+        }
+      },
+      {
+        "detailed": true,
+        "gpu": {
+          "median_ns": 809440,
+          "p95_ns": 830432,
+          "count": 15
+        },
+        "record_cpu": {
+          "median_ns": 394600,
+          "p95_ns": 505000,
+          "count": 15
+        },
+        "observation_counts": {
+          "total": 2566,
+          "scheduled_intervals": 24
+        }
+      },
+      {
+        "detailed": true,
+        "gpu": {
+          "median_ns": 810944,
+          "p95_ns": 2096256,
+          "count": 15
+        },
+        "record_cpu": {
+          "median_ns": 372200,
+          "p95_ns": 523100,
+          "count": 15
+        },
+        "observation_counts": {
+          "total": 2547,
+          "scheduled_intervals": 24
+        }
+      },
+      {
+        "detailed": false,
+        "gpu": {
+          "median_ns": 808704,
+          "p95_ns": 824032,
+          "count": 15
+        },
+        "record_cpu": {
+          "median_ns": 384100,
+          "p95_ns": 530500,
+          "count": 15
+        },
+        "observation_counts": {
+          "total": 2106,
+          "scheduled_intervals": 0
+        }
+      }
+    ],
+    "conclusion": "GPU tail varied between repeats. A stable incremental overhead is unqualified."
+  },
+  "remaining_scope": [
+    "Unexercised schedule pass variants",
+    "Cross-clock calibration",
+    "Vendor internal passes and other queues",
+    "Representative overhead, frame throughput and latency"
+  ]
+}

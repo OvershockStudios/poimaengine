@@ -1,8 +1,16 @@
 # Implementation status
 
-Updated 2026-11-25 for **0.0.459**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-25 for **0.0.460**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.460 adds [opt-in GPU timing for each scheduled pass](PROFILER.md#measure-each-render-pass).
+On AMD and NVIDIA, 48 detailed frames matched their CPU schedule and
+submission identities. The native fixtures exercised 22 distinct pass types
+and kept exact pixels and replay state with detailed profiling enabled.
+NVIDIA included FSR Native AA. Both adapters also passed the paused-player
+correlation check, and Ubuntu passed nine focused suites.
+[Results and scope](evidence/m2-gpu-pass-profiling-460.json)
 
 Version 0.0.459 [correlates render events by accepted submission](PROFILER.md#correlate-a-frame).
 Across AMD and NVIDIA, 30 paused-player frames joined their CPU scopes,

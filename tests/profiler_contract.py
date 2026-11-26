@@ -51,10 +51,13 @@ def main():
         assert first.call('profiler.status')['state']=='empty'
         cap=uid(10);params=dict(capture_id=cap,expected_capture_id=None,capacity=256)
         for bad in [True,63,65537,64.0,'64']:first.call('profiler.start',{**params,'capacity':bad},-32602)
+        for bad in [0,1,'true',None]:first.call('profiler.start',{**params,'gpu_passes':bad},-32602)
         first.call('profiler.start',{**params,'extra':1},-32602)
         accepted=first.call('profiler.start',params);assert accepted['recording'] and accepted['count']==0
         for _ in range(3):assert first.call('profiler.status')['count']==0
         assert first.call('profiler.start',params)['replayed']
+        assert first.call('profiler.start',{**params,'gpu_passes':False})['replayed']
+        first.call('profiler.start',{**params,'gpu_passes':True},-32009)
         first.call('profiler.start',{**params,'capacity':128},-32009)
         first.call('profiler.events',dict(capture_id=cap),-32009)
         first.call('profiler.stop',dict(capture_id=uid(11)),-32009)
@@ -76,7 +79,9 @@ def main():
             assert exported['tid']==event['thread'] and exported['args']['source']==event['source']
         assert first.call('profiler.events',dict(capture_id=cap))==page
         evidence['checks'].append('Discovery/guards/retries, independent owners, failed-operation spans and safe Unicode/NUL diagnostic names; profiler observation does not record itself.')
-        full=uid(12);first.call('profiler.start',dict(capture_id=full,expected_capture_id=cap,capacity=64))
+        full=uid(12)
+        full_params=dict(capture_id=full,expected_capture_id=cap,capacity=64,gpu_passes=True)
+        assert first.call('profiler.start',full_params)['gpu_passes']
         for _ in range(70):first.call('world.inspect')
         status=first.call('profiler.status');assert status['state']=='full' and not status['recording'] and status['open']==0 and status['count']==64 and status['dropped']==1,status
         joined=[];offset=0
@@ -89,6 +94,7 @@ def main():
         first.call('profiler.events',dict(capture_id=cap),-32009)
         first.call('profiler.start',dict(capture_id=cap,expected_capture_id=full,capacity=64),-32009)
         assert first.call('profiler.status')==status
+        assert status['gpu_passes'] and first.call('profiler.start',full_params)['replayed']
         evidence['checks'].append('Capacity overflow seals a retained prefix with one rejected reservation; paging remains stable, stale/reused capture IDs reject.')
         # This process may be the authoring-only configuration.
         runtime=first.call('runtime.status')

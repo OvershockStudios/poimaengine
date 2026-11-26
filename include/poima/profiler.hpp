@@ -29,6 +29,7 @@ struct Status {
     std::uint32_t capacity=0,count=0,open=0;
     std::uint64_t dropped=0,elapsed_ns=0,storage_bytes=0;
     bool clock_saturated=false;
+    bool gpu_passes=false;
 };
 struct DeferredRecording;
 // Submission-time attribution for delayed owner-thread observations. A ticket
@@ -52,7 +53,7 @@ public:
     ~Recorder() noexcept;
     Recorder(const Recorder&)=delete;
     Recorder& operator=(const Recorder&)=delete;
-    void start(std::uint32_t capacity);
+    void start(std::uint32_t capacity, bool gpu_passes=false);
     // Stops new records; already-open scopes still finish normally.
     void stop() noexcept;
     Status status() const noexcept;
@@ -61,6 +62,7 @@ private:
     friend class Scope;
     friend void counter(std::string_view,std::uint64_t,Kind) noexcept;
     friend bool active() noexcept;
+    friend bool gpu_passes_requested() noexcept;
     friend jobs::Attribution job_attribution() noexcept;
     friend void collect_jobs(jobs::Executor&) noexcept;
     friend DeferredContext capture_deferred(RenderSubmission) noexcept;
@@ -73,6 +75,7 @@ private:
     std::uint32_t capacity_=0,count_=0,open_=0;
     std::uint64_t dropped_=0,elapsed_=0;
     bool recording_=false,full_=false;
+    bool gpu_passes_=false;
     mutable bool clock_saturated_=false;
 };
 // Nestable TLS routing, not a process-wide singleton or thread propagation.
@@ -140,4 +143,5 @@ bool deferred_counter(const DeferredContext&,std::string_view name,std::uint64_t
 jobs::Attribution job_attribution() noexcept;
 void collect_jobs(jobs::Executor&) noexcept;
 bool active() noexcept;
+bool gpu_passes_requested() noexcept;
 }

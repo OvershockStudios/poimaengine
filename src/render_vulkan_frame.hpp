@@ -2,12 +2,14 @@
 #pragma once
 
 #include "render_vulkan_instance.hpp"
+#include "poima/render_schedule.hpp"
 
 #include <nvrhi/nvrhi.h>
 #include <array>
 #include <cstddef>
 #include <cstdint>
 #include <optional>
+#include <span>
 #include <vector>
 
 namespace poima {
@@ -70,6 +72,7 @@ private:
 };
 
 inline constexpr std::size_t slot_count = 2;
+inline constexpr auto schedule_pass_capacity = static_cast<std::uint32_t>(render_schedule::PassId::count);
 
 struct TimestampSample {
     bool recorded;
@@ -87,6 +90,8 @@ struct TimestampSample {
     frame_performance::Recorder* performance;
     const frame_performance::GpuTicket& performance_ticket;
     std::uint32_t shadow_views = 0;
+    bool schedule_requested = false;
+    std::span<const render_schedule::PassId> scheduled_passes;
 };
 
 class Timestamps {
@@ -95,15 +100,19 @@ public:
         const Dispatch& dispatch, RenderDiagnostics& diagnostics);
     void begin(std::size_t slot, bool requested) noexcept;
     bool recording() const noexcept { return bool(recording_); }
-    void reset_queries(vk::CommandBuffer commands, const Dispatch& dispatch, std::uint32_t shadow_views) const;
+    void reset_queries(vk::CommandBuffer commands, const Dispatch& dispatch, std::uint32_t shadow_views,
+        std::uint32_t scheduled_passes) const;
     void write(vk::CommandBuffer commands, const Dispatch& dispatch, std::uint32_t query) const;
     // Boundary zero follows the clear. Each subsequent boundary follows one view.
     void write_shadow_boundary(vk::CommandBuffer commands, const Dispatch& dispatch, std::uint32_t boundary) const;
+    void write_schedule_boundary(vk::CommandBuffer commands, const Dispatch& dispatch, std::uint32_t boundary) const;
     void collect(vk::Device device, const Dispatch& dispatch, std::size_t slot,
         const TimestampSample& sample, RenderDiagnostics& diagnostics) const;
     void release(vk::Device device, const Dispatch& dispatch) noexcept;
 
 private:
+    void collect_schedule(vk::Device, const Dispatch&, std::size_t slot, const TimestampSample&,
+        std::uint64_t mask, double period_ns) const;
     std::array<vk::QueryPool, slot_count> pools_{};
     vk::QueryPool recording_;
     bool prepared_ = false;

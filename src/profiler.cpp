@@ -65,7 +65,7 @@ Recorder::~Recorder() noexcept {
         deferred_recording_->owner=nullptr;
     }
 }
-void Recorder::start(std::uint32_t capacity) {
+void Recorder::start(std::uint32_t capacity, bool gpu_passes) {
     if(recording_ || open_)throw std::logic_error("Stop profiling and close scopes before starting another capture.");
     if(capacity<64 || capacity>65536)throw std::invalid_argument("Profiler capacity must be 64..65536 records.");
     auto storage=std::make_unique<Event[]>(capacity);
@@ -79,7 +79,7 @@ void Recorder::start(std::uint32_t capacity) {
         deferred_recording_->owner=nullptr;
     }
     events_=std::move(storage);deferred_recording_=std::move(deferred);epoch_=epoch;capacity_=capacity;count_=open_=0;
-    dropped_=elapsed_=0;clock_saturated_=false;full_=false;recording_=true;
+    dropped_=elapsed_=0;clock_saturated_=false;full_=false;gpu_passes_=gpu_passes;recording_=true;
 }
 std::uint64_t Recorder::now() const noexcept {
     const auto elapsed=std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now()-epoch_).count();
@@ -96,7 +96,7 @@ void Recorder::stop() noexcept {
 }
 Status Recorder::status() const noexcept {
     return {recording_,full_,capacity_,count_,open_,dropped_,
-        recording_ ? now() : elapsed_,static_cast<std::uint64_t>(capacity_)*sizeof(Event),clock_saturated_};
+        recording_ ? now() : elapsed_,static_cast<std::uint64_t>(capacity_)*sizeof(Event),clock_saturated_,gpu_passes_};
 }
 Event* Recorder::reserve(std::string_view name,Kind kind,std::int64_t tick) noexcept {
     if(!recording_)return nullptr;
@@ -191,6 +191,9 @@ bool deferred_counter(const DeferredContext& ticket,std::string_view name,std::u
 }
 bool active() noexcept {
     return context.recorder && context.recorder->recording_;
+}
+bool gpu_passes_requested() noexcept {
+    return active() && context.recorder->gpu_passes_;
 }
 jobs::Attribution job_attribution() noexcept {
     jobs::Attribution value;

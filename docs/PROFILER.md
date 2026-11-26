@@ -31,7 +31,7 @@ Run the workload between start and stop. Profiler control and observation reques
 
 | Operation | Contract |
 | --- | --- |
-| `profiler.start` | New 32-character lowercase hexadecimal ID, observed `expected_capture_id` (null initially), capacity 64–65,536; default 16,384. Allocates before replacing a stopped capture. |
+| `profiler.start` | New 32-character lowercase hexadecimal ID, observed `expected_capture_id` (null initially), capacity 64–65,536 with default 16,384, and optional `gpu_passes` Boolean with default false. Allocates before replacing a stopped capture. |
 | `profiler.stop` | Requires current capture ID; repeat is harmless. Stops accepting records while existing scopes finish. |
 | `profiler.status` | Current identity/state, recording flag, capacity, count, open scopes, loss indicator, elapsed ns and recorder-array bytes. Does not advance simulation. |
 | `profiler.events` | Sealed capture only; offset 0–count, limit 1–1,024, default 256. Returns total and nullable next offset. |
@@ -83,6 +83,34 @@ An active [diffuse-bounce](DIFFUSE_BOUNCE.md) pass records
 `gpu.screen_diffuse_gather.ns` and `gpu.screen_diffuse_resolve.ns`. These
 partition the enclosing bounce interval. Use the two child measurements to
 attribute the cost of tracing and reconstruction.
+
+### Measure each render pass
+
+Set `gpu_passes: true` in `profiler.start`. On each accepted and retired
+Vulkan submission, the profiler records `gpu.pass.<pass>.ns` in the
+[executed schedule's](RENDER_SCHEDULE.md) order. Match each sample to the
+corresponding `render.pass.<pass>` CPU scope through the
+[submission pair](#correlate-a-frame). Scheduled passes with little or no
+GPU work can measure zero. Optional passes appear only on the submissions
+that execute them. Sealed capture status and trace metadata retain the
+requested detail level.
+
+Each duration is an approximate graphics-queue interval between successive
+bottom-of-pipe timestamp writes. Adjacent intervals partition
+`gpu.render_schedule.total.ns` within rounding to integer nanoseconds.
+They include execution dependencies and any waits within those boundaries.
+`gpu.pass.present.ns` measures the recorded transition to presentation
+state. The CPU present call has its own scope. The existing coarse GPU
+intervals overlap the detailed intervals. Use one set of intervals when
+attributing cost. [Vulkan timestamp semantics](https://docs.vulkan.org/refpages/latest/refpages/source/vkCmdWriteTimestamp.html)
+
+A requested frame on a queue without usable timestamp support reports
+`gpu.render_schedule.unavailable`. A failed or inconsistent readback
+reports `gpu.render_schedule.samples_dropped`. Both are keyed to the
+accepted submission. Each active pass adds a timestamp and profiler record,
+plus a schedule boundary at the start and one total record. Use a short
+capture or larger capacity for detailed inspection, and use ordinary
+profiling to estimate the cost of the detailed mode.
 
 ### Vulkan barriers
 
@@ -196,7 +224,10 @@ The [frame-retirement milestone](evidence/m2-frame-retirement.json) adds native 
 Run [the native capture test](../tests/profiler_capture.py) with
 `--require-submission --require-barriers` to check submission identity in
 CPU scopes, GPU timing, render diagnostics and trace export while checking
-exact pixels and replay state.
+exact pixels and replay state. Add `--require-gpu-passes` to verify the
+per-pass timings, including deferred lighting, ambient occlusion, half-resolution
+diffuse bounce, exposure, bloom and capture readbacks. On a build with FSR,
+add `--reconstruct-rich` to cover reconstruction and its input pass.
 
 [Recorded evidence](evidence/m2-native-profiler.json) binds source and binaries to 45 runtime/37 authoring-only Linux suites, native recorder/service tests, real CoreCLR/Native AOT rollback/save/load traces on both OSes, exact GPU image/replay comparisons, and the final packaged editor. The [tool image](evidence/m2-profiler-window.png) is attached-window content; Windows was locked, so it is not an OS screenshot.
 

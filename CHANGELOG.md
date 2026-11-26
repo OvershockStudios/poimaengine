@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.460
+
+- Add opt-in GPU timings for each executed Vulkan render-schedule pass.
+  Inspect them by accepted submission through the [native profiler](docs/PROFILER.md#measure-each-render-pass).
+
 ## 0.0.459
 
 - Join native render CPU scopes, delayed GPU samples and frame-performance
