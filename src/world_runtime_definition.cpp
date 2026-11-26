@@ -63,6 +63,7 @@ std::shared_ptr<const MaterialTextures> resolve_textures(const Json& components,
                 require(index<model->images.size(),"Texture image index does not exist.",-32050);map.image=model->images[index];
             } else map.image=cache.image(assets,ref.at("asset"));
             require(map.image->srgb==(slot==0 || slot==2),"Texture color space does not match its material slot.",-32050);
+            require(!map.image->normal_variance || slot==4,"Normal variance images require a normal map slot.",-32050);
             map.wrap_s=ref.value("wrap_s",10497);map.wrap_t=ref.value("wrap_t",10497);map.min_filter=ref.value("min_filter",9987);map.mag_filter=ref.value("mag_filter",9729);
         }
         if(value.contains("occlusion_strength"))resolved->occlusion_strength=value.at("occlusion_strength");
@@ -73,6 +74,8 @@ std::shared_ptr<const MaterialTextures> resolve_textures(const Json& components,
                 if(!layer->contains(key))return {};
                 auto image=cache.image(assets,layer->at(key));
                 require(image->srgb==srgb,"Surface layer image has the wrong color space.",-32050);
+                require(!image->normal_variance || std::string_view(key)=="normal",
+                    "Normal variance images require a normal map slot.",-32050);
                 return image;
             };
             surface.base_color=map("base_color",true);

@@ -80,6 +80,7 @@ Json inspect_entity_material(const Json& components,const Json& entity_id,const 
             if(found!=model.model->images.end())ref={{"asset",id},{"image",std::size_t(found-model.model->images.begin())}};
         }
         ref["wrap_s"]=map.wrap_s;ref["wrap_t"]=map.wrap_t;ref["min_filter"]=map.min_filter;ref["mag_filter"]=map.mag_filter;
+        if(map.image->normal_variance)ref["alpha_channel"]="mean_normal_length";
         maps[names[slot]]=ref;
     }
     return {{"revision",current_revision},{"id",entity_id},{"material",mesh->material ? material_json(*mesh->material) : Json(nullptr)},

@@ -2,6 +2,12 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.474
+
+- Cook normal-map mips that carry sub-texel normal variation into the
+  specular response for UV-mapped and triplanar materials.
+  [Normal-map filtering](docs/MATERIAL_AUTHORING.md#reduce-shimmer-from-fine-normal-map-detail)
+
 ## 0.0.473
 
 - Add scene-controlled geometric specular antialiasing for glossy PBR

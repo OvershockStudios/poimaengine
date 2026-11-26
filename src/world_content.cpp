@@ -183,6 +183,7 @@ FrozenContent freeze_world_content(const Json& source, const fs::path& directory
     auto image=[&](const std::string& id) {
         const auto value=assets.image(directory,id);
         result.needs_alpha_coverage_images|=value->alpha_coverage_threshold!=0;
+        result.needs_normal_variance_images|=value->normal_variance;
         add(id,".pimage",assets.images.at(id).bytes);
         return value;
     };
@@ -249,6 +250,8 @@ FrozenContent freeze_world_content(const Json& source, const fs::path& directory
                 for(const auto* slot:{"base_color","orm","normal","mask"})if(layer.contains(slot)) {
                     const auto map=image(layer.at(slot).get<std::string>());
                     require(map->srgb==(std::string_view(slot)=="base_color"),"Surface layer image has the wrong color space.",-32050);
+                    require(!map->normal_variance || std::string_view(slot)=="normal",
+                        "Normal variance images require a normal map slot.",-32050);
                 }
                 result.needs_surface_layer=true;
                 result.needs_surface_layer_triplanar|=layer.contains("projection") && layer.at("projection")=="triplanar";
@@ -276,6 +279,7 @@ FrozenContent freeze_world_content(const Json& source, const fs::path& directory
                     value=source_model->images[static_cast<std::size_t>(index)];
                 } else value=image(ref.at("asset").get<std::string>());
                 require(value->srgb==(slot==0 || slot==2),"Package texture color space does not match its material slot.",-32050);
+                require(!value->normal_variance || slot==4,"Normal variance images require a normal map slot.",-32050);
             }
         }
         if(components.contains("AudioEmitter")) {

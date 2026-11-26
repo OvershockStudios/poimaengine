@@ -31,9 +31,10 @@ Json image_metadata(const TextureImage& image,std::string& binary) {
     return {{"srgb",image.srgb},{"mips",levels}};
 }
 std::shared_ptr<const TextureImage> parse_image(const Json& image,Reader& reader,std::size_t& total_texture_bytes,
-    std::uint8_t alpha_coverage_threshold=0) {
+    std::uint8_t alpha_coverage_threshold=0,bool normal_variance=false) {
     auto decoded=std::make_shared<TextureImage>();decoded->srgb=image.at("srgb");
     decoded->alpha_coverage_threshold=alpha_coverage_threshold;
+    decoded->normal_variance=normal_variance;
     const auto& levels=image.at("mips");require(levels.is_array() && !levels.empty() && levels.size()<=13,"Invalid texture mip count.");
     std::uint32_t previous_w=0,previous_h=0;
     for(const auto& level:levels) {
@@ -42,6 +43,8 @@ std::shared_ptr<const TextureImage> parse_image(const Json& image,Reader& reader
         require(mip.width && mip.height && std::size_t(mip.width)*mip.height<=4*1024*1024 && length==std::size_t(mip.width)*mip.height*4 && length<=reader.bytes.size()-reader.offset,"Invalid texture mip dimensions/length.");
         if(previous_w)require((previous_w>1 || previous_h>1) && mip.width==std::max(1u,previous_w/2) && mip.height==std::max(1u,previous_h/2),"Invalid texture mip sequence.");
         const auto* first=reinterpret_cast<const std::uint8_t*>(reader.bytes.data()+reader.offset);mip.rgba.assign(first,first+length);
+        if(normal_variance && !previous_w)
+            for(std::size_t i=3;i<mip.rgba.size();i+=4)require(mip.rgba[i]==255,"Normal variance mip zero must have unit mean length.");
         previous_w=mip.width;previous_h=mip.height;reader.offset+=length;total_texture_bytes+=length;decoded->mips.push_back(std::move(mip));
     }
     require(previous_w==1 && previous_h==1,"Texture mip chain is incomplete.");return decoded;
@@ -84,28 +87,33 @@ PbrMaterial parse_material(const Json& value,bool alpha) {
 }
 std::string encode_image(const TextureImage& image) {
     std::string binary;auto metadata=image_metadata(image,binary);
-    metadata["version"]=image.alpha_coverage_threshold ? 2 : 1;
+    require(!image.normal_variance || (!image.srgb && !image.alpha_coverage_threshold),"Normal variance is a linear image profile.");
+    metadata["version"]=image.normal_variance ? 3 : image.alpha_coverage_threshold ? 2 : 1;
     if(image.alpha_coverage_threshold)metadata["alpha_coverage_threshold"]=image.alpha_coverage_threshold;
     const auto header=metadata.dump();
     require(header.size()<=65536 && binary.size()<=32*1024*1024,"Image package exceeds limits.");
-    std::string result=image.alpha_coverage_threshold ? "POIMAI02" : "POIMAI01";
+    std::string result=image.normal_variance ? "POIMAI03" : image.alpha_coverage_threshold ? "POIMAI02" : "POIMAI01";
     u32(result,static_cast<std::uint32_t>(header.size()));u32(result,static_cast<std::uint32_t>(binary.size()));return result+header+binary;
 }
 std::shared_ptr<const TextureImage> decode_image(const std::string& bytes) {
     const bool coverage=bytes.starts_with("POIMAI02");
-    require(bytes.size()>=16 && bytes.size()<=32*1024*1024+65552 && (coverage || bytes.starts_with("POIMAI01")),
+    const bool normal_variance=bytes.starts_with("POIMAI03");
+    require(bytes.size()>=16 && bytes.size()<=32*1024*1024+65552 && (coverage || normal_variance || bytes.starts_with("POIMAI01")),
         "Invalid image package header/size.");
     Reader reader{bytes,8};const auto length=reader.integer(),binary=reader.integer();
     require(length<=65536 && std::size_t(length)+binary==bytes.size()-16,"Invalid image package lengths.");
     const auto metadata=Json::parse(bytes.begin()+16,bytes.begin()+16+length,[](int depth,Json::parse_event_t,Json&) { require(depth<=16,"Image metadata is too deeply nested.");return true; });
-    require(metadata.at("version")== (coverage ? 2 : 1),"Unsupported image package version.");
+    require(metadata.at("version")== (normal_variance ? 3 : coverage ? 2 : 1),"Unsupported image package version.");
     require(coverage==metadata.contains("alpha_coverage_threshold"),"Image coverage profile does not match its format.");
     require(!coverage || (metadata.size()==4 && metadata.at("version").is_number_integer() && metadata.at("srgb").is_boolean()),
         "Invalid coverage image metadata.");
+    require(!normal_variance || (metadata.size()==3 && metadata.at("version").is_number_integer() &&
+        metadata.at("srgb").is_boolean() && metadata.at("srgb")==false),
+        "Invalid normal variance image metadata.");
     const auto threshold=coverage ? count(metadata.at("alpha_coverage_threshold"),255) : 0;
     require(!coverage || threshold>0,"Invalid alpha coverage threshold.");
     reader.offset=16+length;std::size_t total=0;
-    const auto image=parse_image(metadata,reader,total,static_cast<std::uint8_t>(threshold));
+    const auto image=parse_image(metadata,reader,total,static_cast<std::uint8_t>(threshold),normal_variance);
     require(reader.offset==bytes.size(),"Trailing image package bytes.");return image;
 }
 std::string encode_model(const ModelAsset& model) { return encode_model_with_importer(model,{}); }
@@ -152,7 +160,7 @@ std::string encode_model_with_importer(const ModelAsset& model,const std::string
         metadata["animation_bytes"]=binary.size()-begin;
     }
     for(const auto& image:model.images) {
-        require(!image->alpha_coverage_threshold,"Use a standalone package for coverage-adjusted images.");
+        require(!image->alpha_coverage_threshold && !image->normal_variance,"Use a standalone package for derived image profiles.");
         metadata["images"].push_back(image_metadata(*image,binary));
     }
     for(const auto& n:model.nodes) { metadata["nodes"].push_back({{"name",n.name},{"parent",n.parent},{"position",n.position},{"rotation",n.rotation},{"scale",n.scale},{"primitives",n.primitives}});if(animated)metadata["nodes"].back()["skin"]=n.skin; }

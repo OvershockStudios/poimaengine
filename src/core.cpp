@@ -188,6 +188,7 @@ Reply capabilities() {
         ",\"diffuse_transmission\":" + boolean(POIMA_RENDER_SMOKE != 0) +
         ",\"geometric_specular_aa\":" + boolean(POIMA_RENDER_SMOKE != 0) +
         ",\"alpha_coverage_images\":true" +
+        ",\"normal_variance_images\":true" +
         ",\"material_displacement\":" + boolean(POIMA_RENDER_SMOKE != 0) +
         ",\"snow_material_displacement\":" + boolean(POIMA_RENDER_SMOKE != 0 && POIMA_SIMULATION != 0) +
         ",\"shadow_maps\":" + boolean(POIMA_RENDER_SMOKE != 0) +

@@ -69,13 +69,16 @@ float2 baked_normal_slope(float3 value) {
 }
 
 float3 sample_projected_normal(Texture2D map,SurfaceProjection projection,float repeat,bool triplanar,
-    float3 normal,float strength) {
+    float3 normal,float strength,out float mean_length) {
     if(!triplanar) {
-        float3 sampled=sample_projected_surface(map,projection,repeat,false).rgb*2-1;
+        const float4 value=sample_projected_surface(map,projection,repeat,false);
+        mean_length=value.a;
+        float3 sampled=value.rgb*2-1;
         sampled.xy*=strength;
         return projected_surface_normal(normal,sampled);
     }
     const ProjectionSamples values=sample_triplanar(map,projection,repeat);
+    mean_length=1-dot(1-float3(values.x.a,values.y.a,values.z.a),projection.weights);
     const float2 along_x=baked_normal_slope(values.x.rgb)*projection.weights.x;
     const float2 along_y=baked_normal_slope(values.y.rgb)*projection.weights.y;
     const float2 along_z=baked_normal_slope(values.z.rgb)*projection.weights.z;
@@ -98,12 +101,16 @@ void blend_surface_layer(inout SceneSurface surface,float4 blend,float4 options,
     const float3 orm=sample_projected_surface(layer_orm,projection,blend.x,triplanar).rgb;
     surface.base=lerp(surface.base,color,weight);
     surface.occlusion=lerp(surface.occlusion,orm.r,weight);
-    surface.roughness=lerp(surface.roughness,max(.045,orm.g*options.w),weight);
+    float roughness=max(.045,orm.g*options.w);
     surface.metallic=lerp(surface.metallic,orm.b,weight);
     surface.emission=lerp(surface.emission,0,weight);
     float3 normal=n;
-    if(options.y>0)
-        normal=sample_projected_normal(layer_normal,projection,blend.x,triplanar,n,1);
+    if(options.y>0) {
+        float mean_length;
+        normal=sample_projected_normal(layer_normal,projection,blend.x,triplanar,n,1,mean_length);
+        if(options.y>1.5)roughness=filter_normal_map_roughness(roughness,mean_length,1);
+    }
+    surface.roughness=lerp(surface.roughness,roughness,weight);
     const float3 mixed=lerp(surface.normal,front ? normal : -normal,weight);
     if(dot(mixed,mixed)>1e-12)surface.normal=normalize(mixed);
 }

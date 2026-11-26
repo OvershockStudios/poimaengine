@@ -1,8 +1,16 @@
 # Implementation status
 
-Updated 2026-11-26 for **0.0.473**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-26 for **0.0.474**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.474 cooks [normal-map mip variance](MATERIAL_AUTHORING.md#reduce-shimmer-from-fine-normal-map-detail)
+from standalone and embedded linear images. AMD forward and NVIDIA deferred
+match sampled GGX radiance against the independent mip and lighting references.
+The highlight pixel's brightness span falls by about 96% across three
+subpixel offsets in the controlled texture fixture. Both adapters check
+triplanar base and layer normals, FSR Native AA and relocated exports.
+[Qualification results](evidence/m2-normal-variance-474.json)
 
 Version 0.0.473 adds optional [geometric specular antialiasing](MATERIAL_AUTHORING.md#reduce-shimmer-on-curved-glossy-surfaces).
 AMD forward and NVIDIA deferred match an independent GGX reference on the

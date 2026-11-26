@@ -104,6 +104,15 @@ void require(bool condition, const std::string& detail) {
     if (!condition) throw std::runtime_error(detail);
 }
 
+float normal_map_mode(const TextureImage* image) {
+    return !image ? 0.f : image->normal_variance ? 2.f : 1.f;
+}
+
+float normal_map_mode(const SceneObject& object) {
+    const auto* map=object.textures ? &object.textures->maps[4] : object.mesh ? &object.mesh->textures[4] : nullptr;
+    return normal_map_mode(map ? map->image.get() : nullptr);
+}
+
 using render_draw::DrawConstants;
 using render_draw::DrawIndices;
 using render_draw::DrawItem;
@@ -1958,7 +1967,7 @@ struct Context {
                 } else {for(std::size_t k=0;k<3;++k)draw.base_metallic[k]=object.albedo[k];draw.base_metallic[3]=-1;}
                 draw.normal[0][3]=object.textures ? object.textures->occlusion_strength : object.mesh ? object.mesh->occlusion_strength : 1.0f;
                 draw.normal[1][3]=object.textures ? object.textures->normal_scale : object.mesh ? object.mesh->normal_scale : 1.0f;
-                draw.normal[2][3]=(object.textures ? bool(object.textures->maps[4].image) : object.mesh && object.mesh->textures[4].image) ? 1.0f : 0.0f;
+                draw.normal[2][3]=normal_map_mode(object);
                 item.bindings=mesh_bindings(object.mesh.get(),object.textures.get(),true);item.geometry=scene_assets.geometry(asset_upload(), object.mesh, vertices);Bounds bounds;
                 if(object.skin) {
                     require(object.mesh && !object.mesh->influences.empty() && active_skins.insert(object.entity_id).second,
@@ -2337,7 +2346,7 @@ struct Context {
             } else { for(std::size_t k=0;k<3;++k)draw.base_metallic[k]=object.albedo[k];draw.base_metallic[3]=-1; }
             draw.normal[0][3]=object.textures ? object.textures->occlusion_strength : object.mesh ? object.mesh->occlusion_strength : 1.0f;
             draw.normal[1][3]=object.textures ? object.textures->normal_scale : object.mesh ? object.mesh->normal_scale : 1.0f;
-            draw.normal[2][3]=(object.textures ? bool(object.textures->maps[4].image) : object.mesh && object.mesh->textures[4].image) ? 1.0f : 0.0f;
+            draw.normal[2][3]=normal_map_mode(object);
             if(object.textures && object.textures->surface_layer) {
                 const auto& layer=*object.textures->surface_layer;
                 require(list==0 && object.mesh && !object.skin && !object.camera_draw && draw.alpha[2]==0 && draw.alpha[3]==0 &&
@@ -2352,7 +2361,7 @@ struct Context {
                     "Surface layer requires an increasing slope range.");
                 item.surface_layer={1000.f/static_cast<float>(layer.tile_mm),layer.weight,slope[0],slope[1]};
                 item.surface_layer_options={layer.base_tile_mm ? 1000.f/static_cast<float>(layer.base_tile_mm) : 0.f,
-                    layer.normal ? 1.f : 0.f,item.wetness.base_scale,item.wetness.roughness_scale};
+                    normal_map_mode(layer.normal.get()),item.wetness.base_scale,item.wetness.roughness_scale};
                 item.surface_layer_triplanar=layer.triplanar;
             }
             if(object.water_ripple_surface) {

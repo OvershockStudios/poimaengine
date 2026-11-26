@@ -62,6 +62,7 @@
     "diffuse_transmission": @POIMA_RUNTIME_RENDER_SMOKE@,
     "geometric_specular_aa": @POIMA_RUNTIME_RENDER_SMOKE@,
     "alpha_coverage_images": true,
+    "normal_variance_images": true,
     "material_displacement": @POIMA_RUNTIME_RENDER_SMOKE@,
     "project_post_effects": @POIMA_RUNTIME_RENDER_SMOKE@,
     "output_grade": @POIMA_RUNTIME_RENDER_SMOKE@,

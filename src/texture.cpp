@@ -142,6 +142,67 @@ std::vector<TextureMip> texture_mips(TextureMip base,bool srgb,std::uint8_t alph
     }
     return result;
 }
+TextureImage normal_variance_image(const TextureImage& source) {
+    require(!source.srgb && !source.alpha_coverage_threshold && !source.mips.empty(),
+        "Normal variance requires a linear normal image without alpha coverage.");
+    if(source.normal_variance)return source;
+
+    TextureImage result{false,texture_mips(source.mips.front(),false),0,true};
+    auto& base=result.mips.front();
+    for(std::size_t i=3;i<base.rgba.size();i+=4)base.rgba[i]=255;
+    if(result.mips.size()==1)return result;
+
+    // Integrate unit normals from mip zero, rather than feeding rounded or
+    // renormalized mip data into the next level. Fractional prefix sampling
+    // includes every edge texel in non-power-of-two footprints.
+    using Vector=std::array<double,3>;
+    const auto stride=std::size_t(base.width)+1;
+    std::vector<Vector> integral(stride*(std::size_t(base.height)+1));
+    for(std::uint32_t y=0;y<base.height;++y) {
+        Vector row{};
+        for(std::uint32_t x=0;x<base.width;++x) {
+            const auto offset=(std::size_t(y)*base.width+x)*4;
+            const Vector n{double(base.rgba[offset])*2-255,double(base.rgba[offset+1])*2-255,
+                double(base.rgba[offset+2])*2-255};
+            const auto inverse=1/std::sqrt(n[0]*n[0]+n[1]*n[1]+n[2]*n[2]);
+            for(std::size_t c=0;c<3;++c) {
+                row[c]+=n[c]*inverse;
+                integral[(std::size_t(y)+1)*stride+x+1][c]=integral[std::size_t(y)*stride+x+1][c]+row[c];
+            }
+        }
+    }
+    const auto prefix=[&](double x,double y) {
+        const auto left=static_cast<std::uint32_t>(x),top=static_cast<std::uint32_t>(y);
+        const auto right=std::min(left+1,base.width),bottom=std::min(top+1,base.height);
+        const auto& a=integral[std::size_t(top)*stride+left];
+        const auto& b=integral[std::size_t(top)*stride+right];
+        const auto& c=integral[std::size_t(bottom)*stride+left];
+        const auto& d=integral[std::size_t(bottom)*stride+right];
+        Vector value{};
+        for(std::size_t channel=0;channel<3;++channel)
+            value[channel]=std::lerp(std::lerp(a[channel],b[channel],x-left),
+                std::lerp(c[channel],d[channel],x-left),y-top);
+        return value;
+    };
+    for(std::size_t level=1;level<result.mips.size();++level) {
+        auto& mip=result.mips[level];
+        for(std::uint32_t y=0;y<mip.height;++y)for(std::uint32_t x=0;x<mip.width;++x) {
+            const double x0=double(x)*base.width/mip.width,x1=double(x+1)*base.width/mip.width;
+            const double y0=double(y)*base.height/mip.height,y1=double(y+1)*base.height/mip.height;
+            const auto top_left=prefix(x0,y0),top_right=prefix(x1,y0);
+            const auto bottom_left=prefix(x0,y1),bottom_right=prefix(x1,y1);
+            double squared_length=0;
+            for(std::size_t c=0;c<3;++c) {
+                const double sum=bottom_right[c]-bottom_left[c]-top_right[c]+top_left[c];
+                squared_length+=sum*sum;
+            }
+            const double length=std::sqrt(squared_length)/((x1-x0)*(y1-y0));
+            mip.rgba[(std::size_t(y)*mip.width+x)*4+3]=static_cast<std::uint8_t>(
+                std::lround(std::clamp(length,0.0,1.0)*255));
+        }
+    }
+    return result;
+}
 std::shared_ptr<const TextureImage> decode_texture(std::span<const std::byte> bytes,bool srgb) {
     require(!bytes.empty() && bytes.size()<=32*1024*1024,"Encoded image exceeds the 32 MiB limit.");
     const auto* data=reinterpret_cast<const stbi_uc*>(bytes.data());const auto length=static_cast<int>(bytes.size());

@@ -5,7 +5,7 @@ struct ObjectData {
     float4 model_row2;
     float4 normal_row0;
     float4 normal_row1;
-    float4 normal_row2;
+    float4 normal_row2; // w selects no normal map, ordinary RGB, or RGB with mip mean length
     float4 base_metallic; // negative metallic selects the legacy preview material
     float4 emissive_roughness;
     float4 alpha; // x opacity, y cutoff, z mask; w water mode (>0) or negated diffuse transmission
@@ -13,7 +13,7 @@ struct ObjectData {
     uint4 history; // x: history flags; y: shadow and triplanar flags; zw: mark offset and count
     float4 foliage_current, foliage_previous; // local X/Z offset, root Y, reciprocal height
     float4 surface_layer; // repeats/metre, weight, slope start and full degrees
-    float4 surface_layer_options; // base repeats/metre, normal present, wetness color and roughness scales
+    float4 surface_layer_options; // base repeats/metre, normal map mode, wetness color and roughness scales
 };
 struct SurfaceMark {
     float4 center_depth;
@@ -230,13 +230,16 @@ SceneSurface evaluate_material(VertexOutput input,bool front) {
         const float base_repeat=draw.surface_layer_options.x;
         const bool triplanar=(draw.history.y&4u)!=0;
         const SurfaceProjection projection=surface_projection(input.world_position,position_dx,position_dy,n,triplanar);
+        float mean_length=1;
         if(draw.normal_row2.w>0.5 && base_repeat>0) {
-            n=sample_projected_normal(normal_map,projection,base_repeat,triplanar,n,draw.normal_row1.w);
+            n=sample_projected_normal(normal_map,projection,base_repeat,triplanar,n,draw.normal_row1.w,mean_length);
         } else if(draw.normal_row2.w>0.5) {
             const float3 raw_t=input.tangent.xyz-n*dot(n,input.tangent.xyz);
             const float3 t=raw_t*rsqrt(max(dot(raw_t,raw_t),1e-12));
             const float3 b=(input.tangent.w<0 ? -1 : 1)*cross(n,t);
-            float3 sampled=normal_map.Sample(normal_sampler,input.uv).rgb*2-1;
+            const float4 normal_sample=normal_map.Sample(normal_sampler,input.uv);
+            mean_length=normal_sample.a;
+            float3 sampled=normal_sample.rgb*2-1;
             sampled.xy*=draw.normal_row1.w;
             const float3 mapped=t*sampled.x+b*sampled.y+n*sampled.z;
             if(dot(mapped,mapped)>1e-12)n=normalize(mapped);
@@ -263,7 +266,9 @@ SceneSurface evaluate_material(VertexOutput input,bool front) {
         const float3 base=draw.base_metallic.rgb*sample_base_surface(base_map,base_sampler,input.uv,projection,base_repeat,triplanar).rgb;
         const float4 mr=sample_base_surface(mr_map,mr_sampler,input.uv,projection,base_repeat,triplanar);
         const float metallic=draw.base_metallic.w*mr.b;
-        const float roughness=max(draw.emissive_roughness.w*mr.g,0.045);
+        float roughness=max(draw.emissive_roughness.w*mr.g,0.045);
+        if(draw.normal_row2.w>1.5 && draw.alpha.w<=0.5)
+            roughness=filter_normal_map_roughness(roughness,mean_length,draw.normal_row1.w);
         const float3 emission=draw.emissive_roughness.rgb*
             sample_base_surface(emissive_map,emissive_sampler,input.uv,projection,base_repeat,triplanar).rgb;
         const float occlusion=lerp(1,sample_base_surface(occlusion_map,occlusion_sampler,input.uv,projection,base_repeat,triplanar).r,draw.normal_row0.w);
@@ -279,11 +284,8 @@ SceneSurface evaluate_material(VertexOutput input,bool front) {
     [branch] if(material_filtering.x>0) {
         const float3 normal_dx=ddx_fine(unperturbed_normal),normal_dy=ddy_fine(unperturbed_normal);
         const float variance=(dot(normal_dx,normal_dx)+dot(normal_dy,normal_dy)) * (1.0/3.14159265359);
-        if(!material.legacy && isfinite(variance) && variance>0) {
-            const float alpha=material.roughness*material.roughness;
-            const float filtered=saturate(alpha*alpha+material_filtering.x*min(variance,0.18));
-            material.roughness=sqrt(sqrt(filtered));
-        }
+        if(!material.legacy && isfinite(variance) && variance>0)
+            material.roughness=filter_roughness(material.roughness,material_filtering.x*min(variance,0.18));
     }
     return material;
 }

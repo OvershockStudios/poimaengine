@@ -1,0 +1,366 @@
+{
+  "format": "poima.normal-variance-qualification.v1",
+  "version": "0.0.474",
+  "status": "pass",
+  "source_base": "233948853f60edc930ba1346ad7dd580aeb40c95",
+  "source_sha256": {
+    "CMakeLists.txt": "27bd9ce1da81fc76d2b91cf6c7b2a4899372ff9b48b040245df8dae65fbd0ad6",
+    "cmake/runtime.json.in": "bf46ce4af9643964f178df5d8b78707aab095f6aee8f87a98c12ff1ba5e2325f",
+    "include/poima/assets.hpp": "2f7a21b9247336b97d9ea73017bacb7fb95580088ebbc8a94b928e80f27b6045",
+    "include/poima/world.hpp": "5a1ad0505f793e96f03b8dd22c85abb00aac7d03ab6571e0677ac2d98e8b5fca",
+    "shaders/scene.hlsl": "5b840f6f6319324f3a76a408d84166fcf71fe34a407096c4b20f368d6fe0d311",
+    "shaders/scene_surface.hlsli": "0533e5729b780bce810b98a9c6b211379fae6bb5daaf18cb47f75aabd432331b",
+    "shaders/surface_layer.hlsli": "8a85d242ce23673bd517642696bf9b0fbeb4a0e7d0582795e7aa2c4b24a9bc79",
+    "src/core.cpp": "3b9d5ef3f97766c11a890f82f48d789425883495ac145b5041cef0b7274ba36a",
+    "src/mcp.cpp": "daf82fb06895f0586a83a866e7bc436eb088d86cf508a050cb0f8caf6248eb13",
+    "src/model_codec.cpp": "05fcd1e37c5b4bc87ccd14509d926dfad8cfd59ea57cb52fd35c8af8f0120832",
+    "src/project.cpp": "50a25560b4532fe79460868504ae3d192168d9a37fc38239ab1311dd2e714168",
+    "src/render_smoke.cpp": "e92af842edc53881312a125bd2b6a4035ff83e4097c41efc57caef7bcfbd31ba",
+    "src/texture.cpp": "6656b3c24ceb538db7ac8520b9635a5038ac09d9ddd93c60efe37f92030dd734",
+    "src/world.cpp": "dbe1c2883e3b2aeb7cc238dfd30591d78bf0b3e647189e20c029e7ffdb157723",
+    "src/world_asset_commands.cpp": "dfa61bc9d147b0a6e6635200efba81c0437608fddd809a4a38760460c4c5289d",
+    "src/world_content.cpp": "beb736a4dba6a2f3320d568512cd9cc53ef2620ea63e817f54b1779f985fccb7",
+    "src/world_runtime_definition.cpp": "018a18f778d5b04f8070a9bc624235495a68fe4013c65a9185411b253a8f8fe1",
+    "src/world_schema.cpp": "699bec21124892a47b5a82dc584c3ef76e771bb078ac5146afb760ee87d051ac",
+    "src/world_schema_asset.cpp": "b1b9731f9ce5766a59e6600ad137df13bc6c8ebaca7ca449b6adc5d074b8a27a",
+    "tests/asset_references_contract.py": "08f1ef59c59aa5183fd2c7519ceb8141859597f3e83a3b6a43ad9f88d8a204b6",
+    "tests/contact_shadow_contract.py": "1b54655391238ab786a734fa12b5debb76e016af4cad3ef5b5f31d425f232443",
+    "tests/cutout_mips_capture.py": "5fae1de9a71c40ea04e4118b6ec0318bc24b13a91c0c92a7be358fc15208c138",
+    "tests/geometric_specular_aa_capture.py": "29081940018a7caaf87600dd17931db489aadb5a3186c9633e5215e82a691f31",
+    "tests/normal_variance_capture.py": "4dd8dfb9e6778905516498b23faa9ea0bb4fdc5483d52d7013d373f541c9a355",
+    "tests/terrain_surface_layer_capture.py": "247655e04f7e5ba461fece4c2dac42c610b42f68f7830812d21df7ed504e0eef",
+    "tests/texture_fixture.py": "b9b157237cdf3a493278e4551c1e635c41c43cd4eeea59c0d6ca34acc0828fb0",
+    "tests/world_terrain_contract.py": "08bcf8c5c65fed1157a52734cc5c32ec1c866e3825ca775523ae0be70ac90322"
+  },
+  "windows_installed_sha256": {
+    "bin/poima.exe": "ad95e7540fc77620e82d78ca513b6074b65172429936940460ea303bcc031ce8",
+    "bin/poima_desktop.dll": "4ef69901c94bdcaa74deccb1d8ae44ea4f301f724495c68133f4bbbc13d367ca",
+    "runtime.json": "848994c6bc94c3c427910857db5a88f4687a6d5bd5d0b2c63cfe05fc5c7ca38c"
+  },
+  "verified_spirv_modules": 108,
+  "changed_spirv_modules": [
+    "scene_deferred_color_ps.spv",
+    "scene_deferred_ps.spv",
+    "scene_products_ps.spv",
+    "scene_ps.spv"
+  ],
+  "cooked": {
+    "alpha_channel": "mean_normal_length",
+    "asset": "2558733b92028a7fca77b3babf82fd9bd060f006b6cce308198b788b7dd9dec3",
+    "bytes": 22146,
+    "color_space": "linear",
+    "format": "poima.image.v3",
+    "mips": [
+      {
+        "bytes": 16384,
+        "height": 64,
+        "width": 64
+      },
+      {
+        "bytes": 4096,
+        "height": 32,
+        "width": 32
+      },
+      {
+        "bytes": 1024,
+        "height": 16,
+        "width": 16
+      },
+      {
+        "bytes": 256,
+        "height": 8,
+        "width": 8
+      },
+      {
+        "bytes": 64,
+        "height": 4,
+        "width": 4
+      },
+      {
+        "bytes": 16,
+        "height": 2,
+        "width": 2
+      },
+      {
+        "bytes": 4,
+        "height": 1,
+        "width": 1
+      }
+    ]
+  },
+  "odd_mip_oracle": [
+    {
+      "width": 7,
+      "height": 5,
+      "length": [
+        255,
+        255,
+        255,
+        255,
+        255,
+        255,
+        255,
+        255,
+        255,
+        255,
+        255,
+        255,
+        255,
+        255,
+        255,
+        255,
+        255,
+        255,
+        255,
+        255,
+        255,
+        255,
+        255,
+        255,
+        255,
+        255,
+        255,
+        255,
+        255,
+        255,
+        255,
+        255,
+        255,
+        255,
+        255
+      ]
+    },
+    {
+      "width": 3,
+      "height": 2,
+      "length": [
+        231,
+        234,
+        232,
+        235,
+        232,
+        234
+      ]
+    },
+    {
+      "width": 1,
+      "height": 1,
+      "length": [
+        232
+      ]
+    }
+  ],
+  "windows": [
+    {
+      "device": "AMD Radeon(TM) Graphics",
+      "lighting_path": "forward",
+      "report_sha256": "c5819ad9a8acbe49f45e000a92c6a1e6f691548f8389cc4e1b48aaf6f3278467",
+      "captures": {
+        "motion-0-0": "3c3e38d5783701db32de1713840c677dc550e9f481c645010be83c31dcf2af9f",
+        "motion-0-1": "45cad20d319c1cd8168092809cdc47e95f7def3ca8c4f6d4858523a5d6299953",
+        "motion-1-0": "227faa2efcda778aba4dec2ca0ca3728199701a316c782e3eb2b492d4bc5d165",
+        "motion-1-1": "594eaf9b1089ce09575160d7be44c24ca1ccec5ae93f46e55bb660481f6bdd71",
+        "motion-2-0": "b90ca76cd1c4b8ff0a7319f944915860b49ba74995e4c1a4ba03de1314ed038d",
+        "motion-2-1": "6699c360945508055c486e36c1cc7f8daa86190747d6333c2ea620a1d953482c",
+        "base-mip-0": "2e2b9fe438cc035c519fb3ea6d8c0563f24e6f63a1cc6db3395d41e092ceb139",
+        "base-mip-1": "2e2b9fe438cc035c519fb3ea6d8c0563f24e6f63a1cc6db3395d41e092ceb139",
+        "zero-strength-0": "c3f5df45c51759d27154a3d15dbdcdf98f30fb5e39d50a4579e440a86123440f",
+        "zero-strength-1": "c3f5df45c51759d27154a3d15dbdcdf98f30fb5e39d50a4579e440a86123440f",
+        "native-aa": "3cf06988be79c06d235aa7cc4144da8516d3990957bb5e428ad7063dd5823081",
+        "base-projection-0": "b5487511d5a2eeb636f2eb4805189a94a9f7467084c448c883c7fa2f0519fc37",
+        "base-projection-1": "5c2d4533a81ba11ac9f197a9ad46f288a38f0fbca45dac211dc8cc6d0d8c9f0d",
+        "layer-projection-0": "55cb08714cd1d9e7383811faaf2fa567ccb3cee6775c380ccafa67bf376926d5",
+        "layer-projection-1": "413d835df4373f994f6db58b471316db10e483c61ab2595751998b5dd878040e",
+        "relocated": "6699c360945508055c486e36c1cc7f8daa86190747d6333c2ea620a1d953482c"
+      },
+      "phase_luminance": {
+        "phases": [
+          -0.3,
+          0.3,
+          0.65
+        ],
+        "peaks": [
+          [
+            6.578125,
+            0.01226806640625,
+            0.01226806640625
+          ],
+          [
+            0.33251953125,
+            0.0758056640625,
+            0.0758056640625
+          ]
+        ],
+        "spans": [
+          6.56585693359375,
+          0.2567138671875
+        ],
+        "level": 2
+      },
+      "relative_span_reduction": 0.9609016964908204,
+      "independent_rgb_sample_count": 108,
+      "max_linear_probe_error": 0.004998764797406352,
+      "projected_radiance": {
+        "base": [
+          0.08502197265625,
+          0.1885986328125
+        ],
+        "layer": [
+          0.08502197265625,
+          0.189697265625
+        ]
+      },
+      "validation_log_sha256": {
+        "cook wire": "994595d1e29941baaa681569bd42d33e0e322c248a57c14374a12b4971c65ce5",
+        "standalone wire": "f0668fadd5e389ab6533a6f66ffc31918c3f0c63305855351b2a8a2faa81e4ed"
+      }
+    },
+    {
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "lighting_path": "deferred",
+      "report_sha256": "b1cf3c077286f812771bab0c140db1c8f22252e6b8bcc279990baeda7c0ee07b",
+      "captures": {
+        "motion-0-0": "cf9ba88b87b4d0433db7f3ba7f00b6989ceaa63a52c020832900496c08232f3b",
+        "motion-0-1": "3f9ad7c4a584cbef48a25b9a715ae9cb282d4b34b06d670df3de4f8c9b0d47b7",
+        "motion-1-0": "4868bc97728e77e826335149c5652559a6cb1d0407ce331b6bb997ed024734f4",
+        "motion-1-1": "fa2ca404c5856ffd00ededb8a45198f6a4c7dad289b37ca2aa222080db39f2b8",
+        "motion-2-0": "af05cc37bb4837e57ce8ef02928c0a8a2e60c92d47c211d44c20dffb2aac505e",
+        "motion-2-1": "405d96100c421d7407b004bccba258b4d1d78cec9980543a7648577eadabf62c",
+        "base-mip-0": "44870751d1c548ca5caa1e0144be66054b0ff0e9e4193e7b338a34086b88865c",
+        "base-mip-1": "44870751d1c548ca5caa1e0144be66054b0ff0e9e4193e7b338a34086b88865c",
+        "zero-strength-0": "bc5e99d0114f533859c6c57d129c99cf6633ac0f369f149da02d4483e70ee605",
+        "zero-strength-1": "bc5e99d0114f533859c6c57d129c99cf6633ac0f369f149da02d4483e70ee605",
+        "native-aa": "4c4a2e488e6f7c32f2d399d48fb4cb38138bdd7d15308c4fdbfa1d811c0f6c93",
+        "base-projection-0": "eb39189e7b2ce343fc8beb4ae96f363cc358bb22a20207c9fcd06b9fd374d60b",
+        "base-projection-1": "637a2be986222a85c51cfac557206ca0a26031dab3787e86689c3135929dd29e",
+        "layer-projection-0": "c4f8d97303f2a6e81e682d12f0aa45e3e9f2b1f8bf477aa7cf7898b90dc87beb",
+        "layer-projection-1": "6e85347950be14d1e603281f987b582335e25ba12c877229050c014cc16f6fbc",
+        "relocated": "405d96100c421d7407b004bccba258b4d1d78cec9980543a7648577eadabf62c"
+      },
+      "phase_luminance": {
+        "phases": [
+          -0.3,
+          0.3,
+          0.65
+        ],
+        "peaks": [
+          [
+            6.58203125,
+            0.01229095458984375,
+            0.01229095458984375
+          ],
+          [
+            0.3330078125,
+            0.07586669921875,
+            0.07586669921875
+          ]
+        ],
+        "spans": [
+          6.569740295410156,
+          0.25714111328125
+        ],
+        "level": 2
+      },
+      "relative_span_reduction": 0.9608597750110613,
+      "independent_rgb_sample_count": 108,
+      "max_linear_probe_error": 0.0014157556535936422,
+      "projected_radiance": {
+        "base": [
+          0.08477783203125,
+          0.1884765625
+        ],
+        "layer": [
+          0.0848388671875,
+          0.189697265625
+        ]
+      },
+      "validation_log_sha256": {
+        "cook wire": "d2bb79241db66e666f956c48c460a8190c8ef9dd17f9ed609edec8648211a908",
+        "standalone wire": "36174f8e630d6584a10058ae86891b64f09dccdef00fe016a70b4f79ab9f2e0a"
+      }
+    }
+  ],
+  "regressions": {
+    "geometric_specular_aa": {
+      "report_sha256": "bfbcce9d584eab1f455a00dffccb7767330b276be355e6978e1d7c0cfc4deddd",
+      "captures": 12
+    },
+    "cutout_mips": {
+      "report_sha256": "ab9c2c6556c9ee43c93a885332a48508c6cda1521de688c0ae9a5a24ca333913",
+      "captures": 9
+    }
+  },
+  "coastal_scene": {
+    "receipts_sha256": "a6b31fd8bd2f893ebe07960fe84beac666d5d85fac251243a089d267c71052e7",
+    "derived_images": 5,
+    "bindings": 11,
+    "comparisons": [
+      {
+        "camera": "gateway",
+        "scope": "Fixed authored camera with FSR Native AA and GTAO.",
+        "identical_depth_normal_probes": 25,
+        "images": [
+          "8bc2669b5740a6d48ce9e3be6189f4466f3a5219b8cf781c1361850803ec66eb",
+          "8dfaa30d227cf79874c55404250bd6ed496e38adc39c580d8516e9c3c61fecdc"
+        ],
+        "max_srgb_step": 25,
+        "changed_rgb_pixels": 83543,
+        "shifted_four_steps": 1106,
+        "pixels": 518400
+      },
+      {
+        "camera": "vault",
+        "scope": "Fixed authored camera with FSR Native AA and GTAO.",
+        "identical_depth_normal_probes": 25,
+        "images": [
+          "48d6191e73cd645b3fbd7e22387b768643bda41f64f757cb98aa8c40fa11eafb",
+          "df96f73a52c23a855b0f7b02010d738597b7b3d5466c23e9eb9da9704466dc35"
+        ],
+        "max_srgb_step": 29,
+        "changed_rgb_pixels": 67746,
+        "shifted_four_steps": 2684,
+        "pixels": 518400
+      }
+    ]
+  },
+  "linux": {
+    "suites": [
+      "world_foliage_contract",
+      "authoring_contract_identity",
+      "texture_native",
+      "world_texture_native",
+      "mcp_native",
+      "mcp_contract",
+      "project_contract",
+      "contact_shadow_contract",
+      "asset_contract",
+      "world_contract",
+      "asset_references_contract"
+    ],
+    "binary_sha256": "555ad0ecb5720bce13fbb214db7e0ae5f68f5eeef6f033aedb4116d0b56a6e8a",
+    "junit_sha256": "ec170acd9aea78d64cf0e8b13f875f226b68437759c3fef725186ee970be5265",
+    "authoring_report_sha256": "31c78b7e049f708b1a7d2a068de722ae3a6b64342cd700ed940603f3d8ed611e"
+  },
+  "retained_failures": [
+    {
+      "stage": "initial Windows fixture",
+      "reason": "Texture-slot compatibility is checked at material resolution and dependency collection.",
+      "report_sha256": "ed2215b4f0b3d1153cc4d2cb49a1fbb92bddfc38a2254532f4e035b34f81ac85"
+    },
+    {
+      "stage": "initial Windows compile",
+      "reason": "The MCP draft allowlist extent had not been updated.",
+      "log_sha256": "689156258618d372af02ccc07fbf21273ba21280df51a3c0aa64f98390ac6991"
+    },
+    {
+      "stage": "initial Linux fixture",
+      "reason": "The fixture assumed a write-time check for unresolved texture overrides.",
+      "log_sha256": "36c017d24e51c2a8d786faf9788ad91c6f757dfd4ad1dd78e9976c2cf134e505"
+    },
+    {
+      "stage": "coastal study setup",
+      "reason": "The initial fixture counted distinct mesh primitives instead of unique embedded normal maps.",
+      "log_sha256": "135f100ae3739920a4ac55be1ab26b42db7ae833b1062318a2e13fa7cca68538"
+    }
+  ]
+}

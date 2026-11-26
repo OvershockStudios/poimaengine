@@ -60,7 +60,7 @@ Runtime creation freezes the resolved image references and factors. Ordinary aut
 
 The glTF importer retains supplied TANGENT values after validating unit length, perpendicularity to the normal and handedness +/-1. When UV0 exists but tangents do not, it generates tangent frames using the pinned upstream MikkTSpace implementation, then reindexes complete attributes. Mirrored UV seams split vertices where tangent direction or handedness differ. Seam expansion counts against the existing vertex/package limits and can change cooked vertex counts. The algorithm uses additional temporary memory; it is not covered by the cgltf parser's allocation budget.
 
-The shader transforms tangent vectors with the model matrix, normals with the inverse transpose, re-orthogonalizes the tangent, reconstructs the bitangent using handedness, applies normal scale to sampled X/Y and normalizes the result. Back faces reverse the resulting shading normal. Normal images use glTF's tangent-space convention; no automatic DirectX-style green-channel inversion is performed. Mips average encoded linear normal components and normalize during shading. Separate normal-map variance filtering is planned.
+The shader transforms tangent vectors with the model matrix, normals with the inverse transpose, re-orthogonalizes the tangent, reconstructs the bitangent using handedness, applies normal scale to sampled X/Y and normalizes the result. Back faces reverse the resulting shading normal. Normal images use glTF's tangent-space convention; no automatic DirectX-style green-channel inversion is performed. Mips average encoded linear normal components and normalize during shading.
 
 Default opaque static models cook as `POIMAM03`, with 48-byte vertices (position, normal, UV0, tangent XYZW), five texture slots, UV availability and normal scale. Animated opaque models use version 4; nondefault [alpha settings](MATERIAL_ALPHA.md) use version 5. Version 1/2 packages remain readable. They lack tangent data, so applying a normal override to them requires reimport; regular version-2 texture maps still render. New imports receive new hashes. The loader validates tangent frames, image uses and normal scale in addition to earlier checks. A missing normal/occlusion source map receives strength 1 for future overrides, including correction of the unused zero occlusion default in older packages.
 
@@ -92,6 +92,38 @@ setting. Positive strength appears in capture lighting receipts and
 `world.dependencies` reports `needs_geometric_specular_aa`. Restart a runtime
 session to adopt an authored change. Export requires a Vulkan runtime with
 `features.geometric_specular_aa`. [Qualification results](evidence/m2-geometric-specular-aa-473.json)
+
+## Reduce shimmer from fine normal-map detail
+
+Call `asset.image.normal_variance` with the content hash of a linear normal
+image. To use a model's embedded normal image, pass its model hash in `asset`
+and its zero-based image index in `image`.
+
+```json
+{"jsonrpc":"2.0","id":1,"method":"asset.image.normal_variance","params":{"asset":"<linear image hash>"}}
+```
+
+Bind the returned hash to `PbrTextures.normal` or `StaticMesh.surface_layer.normal`
+with a mipmapped sampler. Standard UV mapping, projected base normals and
+surface-layer normals support the derived image. Inspect the image or the
+resolved material to see `alpha_channel: "mean_normal_length"`. Cooking
+preserves the authored scene revision and the source asset. Repeating the
+cook with the same input returns the same hash.
+
+The new `poima.image.v3` keeps the ordinary normal RGB mip chain. Each mip's
+alpha stores the mean unit-normal length over the texel's full-resolution
+footprint. Mip zero stores unit length. The shader widens the GGX lobe using
+that statistic and the current normal strength, with a cap on the extra
+roughness. It reads the value from the same normal texture sample. Base
+normal strength zero and base-mip-only sampling retain their usual response.
+The approximation is isotropic and uses the average sampled lengths when
+interpolating between mips or projections. [Frostbite PBR course notes on normal-map prefiltering](https://media.contentapi.ea.com/content/dam/eacom/frostbite/files/course-notes-moving-frostbite-to-pbr-v2.pdf)
+
+`world.dependencies` reports `needs_normal_variance_images` when a scene
+references the derived image. A standalone export requires an image decoder
+that advertises `features.normal_variance_images`. Packaged games can inspect
+and sample these images. Authoring the derived image requires a writable
+project. [Qualification results](evidence/m2-normal-variance-474.json)
 
 ## Example
 

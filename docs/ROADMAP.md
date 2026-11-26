@@ -278,8 +278,9 @@ shadow occlusion.
 [Cutout mip cooking](MATERIAL_ALPHA.md#preserve-cutout-coverage-at-a-distance)
 keeps more of the original leaf coverage as the texture recedes.
 [Geometric specular antialiasing](MATERIAL_AUTHORING.md#reduce-shimmer-on-curved-glossy-surfaces)
-filters highlights before forward and deferred lighting. Normal-map variance
-prefiltering remains a separate material task.
+filters highlights before forward and deferred lighting.
+[Normal-map variance cooking](MATERIAL_AUTHORING.md#reduce-shimmer-from-fine-normal-map-detail)
+carries sub-texel normal variation into the material's specular response.
 Qualify shared edges, culling bounds, silhouettes, shadow and motion parity,
 LOD transitions, and predictable hardware fallbacks. Keep collision and
 gameplay queries tied to the declared authored geometry.

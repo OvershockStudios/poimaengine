@@ -24,6 +24,9 @@ void add_asset_method_schemas(Json& result, const Json& id, const Json& rev,
         {"image",{{"type","integer"},{"minimum",0},{"maximum",255}}},
         {"alpha_threshold",{{"type","integer"},{"minimum",1},{"maximum",255}}}},{"asset","alpha_threshold"});
     methods["asset.image.cutout"]["description"]="Cook coverage-adjusted RGBA8 mips from an existing standalone image, or an embedded model image selected by image index. Mip zero stays byte-exact. Alpha threshold is an inclusive byte value; returned mip rows report covered_texels. The new standalone asset preserves the authored revision.";
+    methods["asset.image.normal_variance"]=object_schema({{"asset",asset_id},
+        {"image",{{"type","integer"},{"minimum",0},{"maximum",255}}}},{"asset"});
+    methods["asset.image.normal_variance"]["description"]="Cook a linear normal image with projected normal variation in its mip alpha, from a standalone image or an embedded model image selected by image index. Use the result in a normal slot to filter specular highlights. Keeps RGB and the authored revision.";
     const Json reference_pose={{"oneOf",Json::array({
         object_schema({{"kind",{{"const","rest"}}}},{"kind"}),
         object_schema({{"kind",{{"const","sample"}}},{"clip",{{"type","integer"},{"minimum",0},{"maximum",255}}},

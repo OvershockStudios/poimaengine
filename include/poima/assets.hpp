@@ -12,6 +12,7 @@ struct TextureImage {
     bool srgb=false;
     std::vector<TextureMip> mips;
     std::uint8_t alpha_coverage_threshold=0;
+    bool normal_variance=false; // Alpha stores normalized mean length for mip footprints.
 };
 struct TextureMap {
     std::shared_ptr<const TextureImage> image;
@@ -72,6 +73,7 @@ struct ModelAsset {
 };
 std::shared_ptr<const TextureImage> decode_texture(std::span<const std::byte> bytes,bool srgb);
 std::vector<TextureMip> texture_mips(TextureMip base,bool srgb,std::uint8_t alpha_coverage_threshold=0);
+TextureImage normal_variance_image(const TextureImage& source);
 bool valid_texture_sampler(const TextureMap& map);
 void generate_tangents(MeshAsset& mesh);
 // Explicit import policy: repair only invalid frames on collapsed-UV triangles

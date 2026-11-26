@@ -6,6 +6,17 @@ struct SceneSurface {
     float metallic,roughness,occlusion,diffuse_transmission;
     bool legacy,receive_shadows;
 };
+float filter_roughness(float roughness,float extra_alpha_squared) {
+    const float alpha=roughness*roughness;
+    return sqrt(sqrt(saturate(alpha*alpha+extra_alpha_squared)));
+}
+float filter_normal_map_roughness(float roughness,float mean_length,float normal_scale) {
+    if(mean_length>=1 || normal_scale<=0)return roughness;
+    // Fit isotropic spread from the sampled mean unit-normal length.
+    const float r2=mean_length*mean_length;
+    const float variance=(1-r2)/max(2*mean_length*(3-r2),1e-5);
+    return filter_roughness(roughness,min(variance*normal_scale*normal_scale,0.18));
+}
 float2 normal_sign(float2 value) {return float2(value.x>=0 ? 1 : -1,value.y>=0 ? 1 : -1);}
 float2 encode_normal(float3 n) {
     // Never write NaNs to the G-buffer. Presence/normal-valid flags distinguish

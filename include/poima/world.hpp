@@ -49,6 +49,7 @@ struct WorldPackageContent {
     bool needs_diffuse_transmission=false;
     bool needs_geometric_specular_aa=false;
     bool needs_alpha_coverage_images=false;
+    bool needs_normal_variance_images=false;
     bool needs_material_displacement=false;
     bool needs_water_rain=false;
     bool needs_output_grade=false;
