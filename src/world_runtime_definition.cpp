@@ -84,6 +84,16 @@ std::optional<RuntimeMesh> resolve_mesh_component(const Json& components,
         mesh.cast_shadows=ref.value("cast_shadows",true);mesh.receive_shadows=ref.value("receive_shadows",true);
         if(!skinned && !geometry_only && ref.contains("foliage_motion"))
             mesh.foliage_motion=foliage_motion_value(ref.at("foliage_motion"));
+        if(!skinned && !geometry_only && ref.contains("displacement")) {
+            const auto& profile=ref.at("displacement");
+            auto& displacement=mesh.displacement.emplace();
+            try { displacement.texture=cache.image(assets,profile.at("texture")); }
+            catch(const std::exception& error) { throw Error(-32050,error.what()); }
+            require(!displacement.texture->srgb,"Displacement requires a linear height texture.",-32050);
+            displacement.height_m=profile.at("height_m");
+            displacement.tile_mm=static_cast<std::uint32_t>(revision(profile.at("tile_mm")));
+            displacement.axis=profile.at("axis")=="x" ? 0u : profile.at("axis")=="y" ? 1u : 2u;
+        }
     } else if(components.contains("MeshRenderer")) {
         const auto& ref=components.at("MeshRenderer");mesh.albedo=ref.at("albedo").get<std::array<float,3>>();mesh.visible=ref.at("visible");
         mesh.cast_shadows=ref.value("cast_shadows",true);mesh.receive_shadows=ref.value("receive_shadows",true);

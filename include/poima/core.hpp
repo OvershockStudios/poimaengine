@@ -158,6 +158,7 @@ struct DrawCounts {
     std::uint64_t skinned_instances=0,skinned_vertices=0;
     std::uint64_t shadow_views=0,shadow_candidates=0,shadow_draws=0,shadow_culled=0,shadow_triangles=0;
     std::uint64_t shadow_reused_views=0;
+    std::uint64_t displacement_requested=0,displacement_draws=0,displacement_patches=0;
     std::uint64_t streamed_draws=0,streamed_vertex_bytes=0,streamed_index_bytes=0;
     std::uint64_t sprite_instances=0,sprite_batches=0;
     std::shared_ptr<const MeshLodDiagnostics> mesh_lod{};
@@ -362,6 +363,7 @@ struct RenderDiagnostics {
     ReconstructionDiagnostics reconstruction;
     SceneProductsDiagnostics scene_products;
     bool culling=true,draw_instancing=true,profile_requested=false,gpu_timestamps=false;
+    bool material_displacement_supported=false;
     std::uint32_t timestamp_valid_bits=0;double timestamp_period_ns=0;
     std::uint64_t completed_submissions=0,gpu_samples_dropped=0;
     std::string gpu_timing_detail="Profiling not requested.";

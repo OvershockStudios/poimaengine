@@ -123,11 +123,14 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     template_foliage_motion["properties"].erase("touch");
     template_foliage_motion["required"].push_back("wind");
     template_foliage_motion["description"]="Wind-only deformation for a rigid spawned drawable. Local tip_y must exceed root_y by 0.05..128 m. Wind direction uses XZ coefficients with length at least 0.0001.";
+    auto displacement=object_schema({{"texture",asset_id},{"height_m",{{"type","number"},{"minimum",0},{"maximum",4}}},
+        {"tile_mm",unsigned_range(32,64000)},{"axis",{{"enum",{"x","y","z"}}}}},{"texture","height_m","tile_mm","axis"});
+    displacement["description"]="Adaptive tessellation from a linear cooked height image. Projection follows the chosen local axis. Author collision separately.";
     const Json static_mesh=object_schema({{"asset",asset_id},{"primitive",{{"type","integer"},{"minimum",0},{"maximum",9999}}},{"visible",{{"type","boolean"}}},
         {"cast_shadows",{{"type","boolean"},{"default",true}}},{"receive_shadows",{{"type","boolean"},{"default",true}}},
         {"lods",{{"type","array"},{"minItems",1},{"maxItems",max_mesh_lod_levels},{"items",lod_level},
           {"description","Optional alternate rigid geometry. Distances increase and triangle counts decrease from LOD0. Base materials and collision stay independent of visual tiers."}}},
-        {"foliage_motion",foliage_motion}},
+        {"foliage_motion",foliage_motion},{"displacement",displacement}},
         {"asset","primitive","visible"});
     const Json mesh_collider=object_schema({{"asset",asset_id},{"primitive",{{"type","integer"},{"minimum",0},{"maximum",9999}}},
         {"friction",{{"type","number"},{"minimum",0},{"maximum",2}}},{"restitution",unit},{"surface",collision_surface}}, {"asset","primitive","friction","restitution"});
@@ -446,8 +449,11 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         reference_cursor_variant("entity",texture_type,texture_paths),
         reference_cursor_variant("entity",sprite_type,sprite_path),
         reference_cursor_variant("entity",lod_type,lod_path),
+        reference_cursor_variant("entity",lod_type,{{"const","/displacement/texture"}}),
         reference_cursor_variant("template",{{"const","StaticMesh"}},direct_path),
         reference_cursor_variant("template",lod_type,lod_path),
+        reference_cursor_variant("template",lod_type,{{"const","/displacement/texture"}}),
+        reference_cursor_variant("template",lod_type,{{"type","string"},{"pattern","^/entities/(?!0{32}/)[0-9a-f]{32}/components/StaticMesh/displacement/texture$"}}),
         reference_cursor_variant("template",lod_type,{{"type","string"},{"pattern","^/entities/(?!0{32}/)[0-9a-f]{32}/components/StaticMesh/lods/[0-3]/asset$"}}),
         reference_cursor_variant("template",texture_type,texture_paths),
         reference_cursor_variant("template",sprite_type,sprite_path),
@@ -470,7 +476,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 254}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 255}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),

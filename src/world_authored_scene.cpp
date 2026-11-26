@@ -62,6 +62,7 @@ void append_geometry(SceneSnapshot& snapshot, const RuntimeDefinition& definitio
         snapshot.objects.push_back({id, matrices.at(id), mesh->albedo, mesh->mesh, mesh->material, mesh->textures,
             skin, 0, casts_shadows, mesh->receive_shadows, true, entity.camera_draw});
         snapshot.objects.back().lods = mesh->lods;
+        snapshot.objects.back().displacement = mesh->displacement;
         snapshot.objects.back().foliage_motion = authored_foliage_motion(*mesh, entities, matrices, id);
     }
 }

@@ -62,6 +62,7 @@ bool valid_cursor(const Cursor& value) noexcept {
     }
     if(value.owner.kind=="template" && !member && value.component!="StaticMesh" && value.component!="PbrTextures" && value.component!="ParticleEmitter")return false;
     if(value.component=="ParticleEmitter")return path=="/sprite/texture";
+    if(value.component=="StaticMesh" && path=="/displacement/texture")return true;
     if(value.component=="StaticMesh" && path.starts_with("/lods/")) {
         return path.size()==13 && path[6]>='0' && path[6]-'0'<static_cast<int>(max_mesh_lod_levels) &&
             path.substr(7)=="/asset";
@@ -140,6 +141,8 @@ Page collect(const Json& entities,const Json* templates,const Query& query,const
                 }
                 const auto base_path=prefix+(!prefix.empty() ? std::string(type):std::string{});
                 emit(owner,type,base_path+"/asset",component.at("asset"),type=="AudioEmitter" ? "audio":"model",subresource);
+                if(type=="StaticMesh" && component.contains("displacement") && result.edges.size()<=query.limit)
+                    emit(owner,type,base_path+"/displacement/texture",component.at("displacement").at("texture"),"image",std::nullopt);
                 if(type=="StaticMesh" && component.contains("lods")) {
                     const auto& lods=component.at("lods");
                     need(lods.is_array() && !lods.empty() && lods.size()<=max_mesh_lod_levels,"Malformed mesh LOD asset references.");

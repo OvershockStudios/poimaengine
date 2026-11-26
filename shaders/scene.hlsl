@@ -66,8 +66,7 @@ struct VertexOutput {
     float4 current_clip : TEXCOORD6;
 #endif
 };
-VertexOutput vertex_main(VertexInput input,uint instance_id : SV_InstanceID) {
-    const uint object_index=draw_indices.object_index+instance_id;
+VertexOutput scene_vertex(VertexInput input,uint object_index) {
     const ObjectData draw=objects[object_index];
     VertexOutput output;output.object_index=object_index;
     float3 position = input.position;
@@ -89,14 +88,22 @@ VertexOutput vertex_main(VertexInput input,uint instance_id : SV_InstanceID) {
     output.tangent=float4(dot(draw.model_row0.xyz,tangent),dot(draw.model_row1.xyz,tangent),dot(draw.model_row2.xyz,tangent),input.tangent.w);
     return output;
 }
+VertexOutput vertex_main(VertexInput input,uint instance_id : SV_InstanceID) {
+    return scene_vertex(input,draw_indices.object_index+instance_id);
+}
 struct ShadowVertexOutput {float4 position : SV_Position;float2 uv : TEXCOORD0;nointerpolation uint object_index : TEXCOORD1;};
-ShadowVertexOutput shadow_vertex_main(VertexInput input,uint instance_id : SV_InstanceID) {
-    const uint object_index=draw_indices.object_index+instance_id;
+ShadowVertexOutput shadow_vertex(VertexInput input,uint object_index) {
     const ObjectData draw=objects[object_index];
     const float4 p=float4(foliage_bend_position(input.position,draw.foliage_current),1);
     const float3 world=float3(dot(draw.model_row0,p),dot(draw.model_row1,p),dot(draw.model_row2,p));
     ShadowVertexOutput output;output.object_index=object_index;output.position=mul(shadows[draw_indices.shadow_layer].view_projection,float4(world,1));output.uv=input.uv;return output;
 }
+ShadowVertexOutput shadow_vertex_main(VertexInput input,uint instance_id : SV_InstanceID) {
+    return shadow_vertex(input,draw_indices.object_index+instance_id);
+}
+#if POIMA_DISPLACEMENT
+#include "material_displacement.hlsli"
+#endif
 void test_material_alpha(float2 uv,uint object_index) {
     const ObjectData draw=objects[object_index];
     // Alpha stays linear even when base RGB uses the sRGB texture format.

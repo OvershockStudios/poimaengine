@@ -1,0 +1,133 @@
+{
+  "format": "poima.qualification-summary",
+  "version": 1,
+  "engine_checkpoint": "0.0.464",
+  "comparison_commit": "353d3da664bd677f834fca47e06187548c2ec3be",
+  "scope": "Hardware-tessellated height textures on rigid indexed world meshes in Windows Vulkan.",
+  "source_sha256": {
+    "CMakeLists.txt": "ada78520d5aad734d6c9f047222560093bd8794e787e81048935db2a971c01e6",
+    "cmake/render_smoke.cmake": "98d54ca5a28cbe036da6798255856a56667e0bd5b2d7cb9bda9d6a6fba29cde3",
+    "shaders/scene.hlsl": "3c0cfc8a52aef6ea158604127dfdc47c2e096465696fc4bb35a8c4ddbb296e26",
+    "shaders/material_displacement.hlsli": "5e7a72bebbd264e245896d6e8bf6aef8e256b88d2d77d103c04e86851f932070",
+    "src/render_displacement.cpp": "e8c24c8c2da38bb72ea41c1b10e91047305a92c1ff6f8b9157442f154c1c5b5c",
+    "src/render_smoke.cpp": "53ba56bf2dc449023087db81bc293fdda5b13d6d59ea7be93c6dff84734c2619",
+    "src/render_shadows.cpp": "f8bd2df9a8e41493426ae055931250bb8ee956f4c0d1ae827756585d9867f4c9",
+    "src/render_scene_assets.cpp": "d6b0b9a31a9f3e3eab7a84ac794f55dff0c94930d1e2415384493061b3c39c33",
+    "src/world_content.cpp": "e9137634955feb9771d174d5ce4846742b4fdc0a2f89465e4eb2617b826da256",
+    "src/world_runtime_definition.cpp": "7529c46c8e842b3b143b8b1090a5d4e5bb82a4eacff237182af2a016aa60f415",
+    "tests/material_displacement_capture.py": "847b63b700076fea6471c06efc0684e445edb3095cbb4e71aa89aa57d0b39453",
+    "tests/render_schedule.cpp": "a2a3cb3247e45ae3add9f73065a93b7b19bad4ace5925b894c29c5d1e6585501"
+  },
+  "windows_installed_sha256": {
+    "bin/poima.exe": "d4f7e6527fe18b6304d1490e1a90f7c9d11902876a40dcb9e22dd1dc17cb7a6f",
+    "bin/poima_desktop.dll": "fd627540efd9a226f8d449715ca14eeac6e99951bdc49b382bae121581a5e3a4",
+    "runtime.json": "3c96d738d2cc52fe1bf1f2099cd7066ee5c94416693eab81a7bc57c06952957f"
+  },
+  "shaders": {
+    "tessellation_spirv_sha256": {
+      "displacement_camera_ds.spv": "67f1a5fc214b4f3ce36eb14e807aed919e78ff3886abb0948169cb2d385ec01b",
+      "displacement_camera_products_ds.spv": "c249882fb77b91d6ec0dcaa0308dd5fb19dca7b35b576e4b79a23fb82939cbb6",
+      "displacement_control_hs.spv": "501a4e4b9b726df73885484eed5565d0b90b3277429ef20cd3f93e7fa9e938c6",
+      "displacement_control_vs.spv": "00ec49bcca589d07d47e04f0e8ec09fa46e9f56e7fa257a59b9a520efd327b75",
+      "displacement_shadow_ds.spv": "143d3030c4da6735c1e3f6a1e73e8988c870787d1e971c90eda0a32e55beafc2"
+    },
+    "legacy_scene_and_shadow_variants_byte_exact": true
+  },
+  "ubuntu": {
+    "passed_suites": [
+      "authoring_contract_identity",
+      "render_batches_native",
+      "render_schedule_native",
+      "project_contract",
+      "lighting_contract",
+      "contact_shadow_contract",
+      "world_contract",
+      "asset_references_contract"
+    ],
+    "binary_sha256": "a6935e61adbc34c5e835cf0fbcdbc5bba5a2df3a5f5bad2a14b4a2df97744bad",
+    "junit_sha256": "dc9935124a32af27f2dcbadedc7ccc5644cebf9485196be2be889ea634599fb0"
+  },
+  "vulkan": [
+    {
+      "device": "AMD Radeon(TM) Graphics",
+      "lighting_path": "forward",
+      "report_sha256": "dd2ab82f28996007b7a3cbc6a270b6b6e9477db80922e50e7f206db6b34fc322",
+      "captures": {
+        "flat": "c7ff04ab83bbb89172e7271db7c42640b50970baa51e2be9cde1d57f8ec0e6f5",
+        "zero-height": "c7ff04ab83bbb89172e7271db7c42640b50970baa51e2be9cde1d57f8ec0e6f5",
+        "white-height": "8a66ad69b7c31a9b98f4e8f8b8c74cb992f7e8a4ed5e9af1f92f387c69eb9885",
+        "black-height": "c7ff04ab83bbb89172e7271db7c42640b50970baa51e2be9cde1d57f8ec0e6f5",
+        "ridge-height": "c0646a232b9aee86fd7ecd2cb462534adc631af7ef3c682a54fdb335865618fe",
+        "motion-first": "c0646a232b9aee86fd7ecd2cb462534adc631af7ef3c682a54fdb335865618fe",
+        "motion-shifted": "59b4e0412017e7a90e6ae33fe76d80021e6b3fe28068c0b66eff1c8c7c1ae800",
+        "flat-shadow": "a4b8179f8f48e5bb000deef4a254f5b679d56af822204780dce2efec0d210c19",
+        "displaced-shadow": "be95e685823a54203948e71378a0d1ef32bacda0118261f64d7024a0c8864b6e",
+        "displaced-no-cast": "efe58d8fb8bb1e02cd15a1d173559920c6e9bafb5ab1796f6ba0be77cd87b4c1"
+      },
+      "matched_zero_amplitude": true,
+      "seam_pixels": 435,
+      "maximum_depth_errors": {
+        "flat": 5.183012574683232e-09,
+        "white": 1.7018847331407017e-08,
+        "black": 5.183012574683232e-09,
+        "ridge": 3.7087791580070473e-06
+      },
+      "motion_error_uv": 2.6214574415373004e-07,
+      "shadow_witness": {
+        "occluded_pixels": 17955,
+        "shifted_pixels": 3024
+      },
+      "relocated": {
+        "image_sha256": "396a06297da34204193bc71e285ec89032fc3c0789af8620de91eb728780375b",
+        "height_sha256": "5b448d1b45ec2d54d51a15fd9ce6c643317b736d3128731fc489a5b597f51f12",
+        "replay_ticks": 1,
+        "missing_feature_refused": true
+      }
+    },
+    {
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "lighting_path": "deferred",
+      "report_sha256": "dd07ad11d15eed561565202136db05506ac20f5cb2482dee0d52660b30eb8cb8",
+      "captures": {
+        "flat": "c7ff04ab83bbb89172e7271db7c42640b50970baa51e2be9cde1d57f8ec0e6f5",
+        "zero-height": "c7ff04ab83bbb89172e7271db7c42640b50970baa51e2be9cde1d57f8ec0e6f5",
+        "white-height": "8a66ad69b7c31a9b98f4e8f8b8c74cb992f7e8a4ed5e9af1f92f387c69eb9885",
+        "black-height": "c7ff04ab83bbb89172e7271db7c42640b50970baa51e2be9cde1d57f8ec0e6f5",
+        "ridge-height": "c0646a232b9aee86fd7ecd2cb462534adc631af7ef3c682a54fdb335865618fe",
+        "motion-first": "c0646a232b9aee86fd7ecd2cb462534adc631af7ef3c682a54fdb335865618fe",
+        "motion-shifted": "59b4e0412017e7a90e6ae33fe76d80021e6b3fe28068c0b66eff1c8c7c1ae800",
+        "flat-shadow": "bd4d161a22c0185760ffb58c42b3aa0c68e8282d4f2b5939d21365e2a802a0fe",
+        "displaced-shadow": "a21e80b0a7d7169cdfe867192ac9775eddf11f2a2ef560a460f60bee7fe4e44b",
+        "displaced-no-cast": "ce35021b86d43e608b4c7d23f6fafadd59b5dd4c06afc65c817697324f2a02ef"
+      },
+      "matched_zero_amplitude": true,
+      "seam_pixels": 435,
+      "maximum_depth_errors": {
+        "flat": 5.183012574683232e-09,
+        "white": 1.7018847331407017e-08,
+        "black": 5.183012574683232e-09,
+        "ridge": 3.7087791580070473e-06
+      },
+      "motion_error_uv": 1.691551397356439e-07,
+      "shadow_witness": {
+        "occluded_pixels": 17955,
+        "shifted_pixels": 3024
+      },
+      "relocated": {
+        "image_sha256": "17e8c38827e9eb7498a3d470f0beee66483f2bd55434376d58390584472be91e",
+        "height_sha256": "5b448d1b45ec2d54d51a15fd9ce6c643317b736d3128731fc489a5b597f51f12",
+        "replay_ticks": 1,
+        "missing_feature_refused": true
+      }
+    }
+  ],
+  "recorded_stages": {
+    "first_linux_failure": "The asset references harness still expected discovery revision 210. The final run pins it to 255 and runs the complete suite.",
+    "initial_native_failure": "The single-sided tessellated plane was culled. The two-sided diagnostic confirmed the displaced depth. The corrected hull winding passed the single-sided checks.",
+    "local_export_harness": "The initial layout accidentally put the export under the source. The corrected layout uses sibling folders and the verifier decodes the CLI result envelope."
+  },
+  "limits": [
+    "The fixtures use a rigid split plane and one spotlight. They establish geometry, motion, shadow, and export correctness in this scope.",
+    "Mutable terrain, production geometry budgets, and native output on devices without the hardware feature have separate qualification scopes."
+  ]
+}

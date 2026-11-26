@@ -380,6 +380,7 @@ Json project_summary(const Project& p) {
     if(p.content.needs_collision_surfaces)result["needs_collision_surfaces"]=true;
     if(p.content.needs_surface_mark_masks)result["needs_surface_mark_masks"]=true;
     if(p.content.needs_mesh_lod)result["needs_mesh_lod"]=true;
+    if(p.content.needs_material_displacement)result["needs_material_displacement"]=true;
     if(p.content.needs_water_rain)result["needs_water_rain"]=true;
     if(p.content.needs_water_ripples)result["needs_water_ripples"]=true;
     if(p.content.needs_water_wave_layers)result["needs_water_wave_layers"]=true;
@@ -602,6 +603,8 @@ void require_scene_feature_support(const WorldPackageContent& content, const Jso
         "Project surface mark masks require a compatible Vulkan runtime.");
     require(!content.needs_mesh_lod || runtime.at("features").value("mesh_lod", false),
         "Project mesh LOD requires a compatible Vulkan runtime.");
+    require(!content.needs_material_displacement || runtime.at("features").value("material_displacement",false),
+        "Project height displacement requires a compatible Vulkan runtime.");
 }
 Json runtime_spec(const std::string& bytes,std::string_view expected_version=build_metadata().version) {
     const auto value=parse(bytes);fields(value,{"format","version","engine_version","gameplay_services_version","gameplay_call_version","gameplay_call_bytes","gameplay_services_bytes","gameplay_features","target_os","target_arch","executable","features"},{"format","version","engine_version","target_os","target_arch","executable","features"});
@@ -618,7 +621,7 @@ Json runtime_spec(const std::string& bytes,std::string_view expected_version=bui
     fields(features,{"simulation","renderer","audio","audio_room_reverb","audio_portals","player_early_reflections","managed","editor","native_gameplay","game_ui",
         "navigation","navigation_obstacles","asset_provenance","project_post_effects","water_regions","water_rain","audio_water_flow","water_sheet_aeration","water_impact_foam",
         "water_ripples","water_wave_layers","water_listener_audio","water_optics","water_refraction","water_caustics","water_shore_foam","water_terrain_fit","water_surface_swell","water_swell_variation","water_rough_reflection","water_solar_scattering","water_offshore","water_sprite_optics","snow_water_regions","scene_particles","scene_particle_sprites",
-        "particle_collisions","particle_impact_bursts","particle_water_contact","particle_water_flow","water_buoyancy","water_currents","water_surface_wakes","water_body_displacement","water_storage","water_reservoirs","water_overflow","water_sheets","water_sun_shafts","collision_surfaces","surface_marks","surface_mark_masks","mesh_lod","output_grade","auto_exposure","atmosphere_sky","orbital_atmosphere","aerial_perspective","volumetric_clouds","cloud_shadows","screen_reflections","depth_of_field","foliage_motion",
+        "particle_collisions","particle_impact_bursts","particle_water_contact","particle_water_flow","water_buoyancy","water_currents","water_surface_wakes","water_body_displacement","water_storage","water_reservoirs","water_overflow","water_sheets","water_sun_shafts","collision_surfaces","surface_marks","surface_mark_masks","mesh_lod","material_displacement","output_grade","auto_exposure","atmosphere_sky","orbital_atmosphere","aerial_perspective","volumetric_clouds","cloud_shadows","screen_reflections","depth_of_field","foliage_motion",
         "height_fog","physics_checkpoint","fsr3_upscaler","tone_mapping","tone_mapping_aces2_sdr","screen_contact_shadows","screen_diffuse_bounce",
         "screen_diffuse_bounce_half_resolution"},
         {"simulation","renderer","audio","managed","editor"});

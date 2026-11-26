@@ -2275,6 +2275,7 @@ struct Runtime::Impl {
         result.mutable_geometry=snow_binding && snow_binding->contains(node.id);
         result.wetness=scene_wetness(node.id);
         result.lods=mesh.lods;
+        result.displacement=mesh.displacement;
         if(const auto& motion=mesh.foliage_motion) {
             std::optional<FoliageActor> actor;
             if(motion->touch) {

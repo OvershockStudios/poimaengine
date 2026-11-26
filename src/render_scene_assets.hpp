@@ -61,6 +61,8 @@ public:
 
     nvrhi::TextureHandle upload_texture(const Upload& upload, const std::shared_ptr<const TextureImage>& image);
     const nvrhi::TextureHandle& texture_for(const TextureImage* image) const;
+    nvrhi::BindingSetHandle height_binding(const Upload& upload, nvrhi::IBindingLayout& layout,
+                                          const std::shared_ptr<const TextureImage>& image);
     nvrhi::BindingSetHandle material(const Upload& upload, const MaterialInputs& inputs, const MeshAsset* mesh,
                                      const MaterialTextures* textures, MaterialBindings* foreground = nullptr);
 
@@ -85,6 +87,8 @@ private:
     std::map<const MaterialTextures*, std::shared_ptr<const MaterialTextures>> material_owners_;
     std::map<const TextureImage*, std::shared_ptr<const TextureImage>> image_owners_;
     MaterialBindings materials_;
+    std::map<const TextureImage*, nvrhi::BindingSetHandle> height_bindings_;
+    nvrhi::SamplerHandle height_sampler_;
     std::map<const TextureImage*, nvrhi::TextureHandle> textures_;
     std::map<std::array<int, 4>, nvrhi::SamplerHandle> samplers_;
     std::shared_ptr<const TextureImage> white_image_;

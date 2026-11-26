@@ -55,6 +55,7 @@
     "renderer": @POIMA_RUNTIME_RENDER_SMOKE@,
     "fsr3_upscaler": @POIMA_RUNTIME_FSR3_UPSCALER@,
     "mesh_lod": @POIMA_RUNTIME_RENDER_SMOKE@,
+    "material_displacement": @POIMA_RUNTIME_RENDER_SMOKE@,
     "project_post_effects": @POIMA_RUNTIME_RENDER_SMOKE@,
     "output_grade": @POIMA_RUNTIME_RENDER_SMOKE@,
     "tone_mapping": @POIMA_RUNTIME_RENDER_SMOKE@,

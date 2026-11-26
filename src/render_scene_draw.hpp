@@ -7,6 +7,7 @@
 #include <nvrhi/nvrhi.h>
 
 #include <array>
+#include <bit>
 #include <cstdint>
 #include <memory>
 #include <span>
@@ -44,5 +45,16 @@ struct DrawItem {
     std::span<const SceneSurfaceMark> local_surface_marks;
     SceneWetness wetness;
     std::array<float,4> foliage{};
+    std::optional<HeightDisplacement> displacement;
+    nvrhi::BindingSetHandle displacement_bindings;
+
+    DrawIndices indices(std::uint32_t layer=0) const {
+        DrawIndices result{object_index,layer};
+        if(displacement) {
+            result.reserved[0]=std::bit_cast<std::uint32_t>(displacement->height_m);
+            result.reserved[1]=(displacement->axis<<16) | displacement->tile_mm;
+        }
+        return result;
+    }
 };
 }

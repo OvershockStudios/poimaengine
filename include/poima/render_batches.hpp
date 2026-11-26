@@ -12,6 +12,8 @@ struct Key {
     std::uintptr_t vertices=0,indices=0,previous_vertices=0,bindings=0;
     std::uint32_t count=0,pipeline=0;
     std::uint64_t vertex_offset=0,index_offset=0;
+    std::uintptr_t displacement_binding=0;
+    std::uint32_t height_bits=0,displacement_profile=0;
     friend bool operator==(const Key&,const Key&)=default;
 };
 struct Candidate {std::uint32_t object_index=0;bool visible=true;Key key;};

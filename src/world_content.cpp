@@ -236,6 +236,11 @@ FrozenContent freeze_world_content(const Json& source, const fs::path& directory
             const auto value=model(ref.at("asset").get<std::string>());
             if(type==std::string_view("StaticMesh") && ref.contains("foliage_motion"))
                 result.needs_foliage_motion=true;
+            if(type==std::string_view("StaticMesh") && ref.contains("displacement")) {
+                const auto height=image(ref.at("displacement").at("texture").get<std::string>());
+                require(!height->srgb,"Displacement requires a linear height texture.",-32050);
+                result.needs_material_displacement=true;
+            }
             if(type==std::string_view("StaticMesh") && ref.contains("lods")) {
                 result.needs_mesh_lod=true;
                 for(const auto& lod:ref.at("lods"))(void)model(lod.at("asset").get_ref<const std::string&>());

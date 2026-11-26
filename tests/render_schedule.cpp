@@ -499,6 +499,27 @@ void shadow_reuse_contracts() {
     pass(warm,PassId::shadows).accesses.push_back({frame.shadow,Use::clear_depth,true});
     rejects("fully reusable shadow depth overwritten",[&]{warm.validate();});
 }
+void displacement_contracts() {
+    Fixture fixture(rich(),1);
+    auto& frame=fixture.f;
+    const auto height=fixture.add(Kind::texture,Lifetime::imported,true);
+    frame.camera_draws.front().height_texture=height;
+    frame.shadow_draws.front().height_texture=height;
+    const auto valid=fixture.plan();
+    valid.validate();
+    ++accepted;
+    for(auto stage:{PassId::opaque,PassId::shadows}) {
+        auto bad=valid;
+        erase_access(bad,stage,height,Use::sampled);
+        rejects("missing height read", [&]{bad.validate();});
+    }
+    auto bad=valid;
+    bad.frame.resources[height].initialized=false;
+    rejects("uninitialized height contents", [&]{bad.validate();});
+    bad=valid;
+    bad.frame.camera_draws.front().indices=none;
+    rejects("height draw without triangle indices", [&]{bad.validate();});
+}
 void matrix(){
     for(bool scene:{false,true})for(bool editor:{false,true})for(bool capture:{false,true})for(bool ui:{false,true})
     for(bool overlay:{false,true})for(unsigned samples:{1u,4u})for(bool skin:{false,true})for(bool clustered:{false,true})for(bool sky:{false,true}){
@@ -2408,4 +2429,4 @@ void visibility_contracts() {
 }
 }
 
-int main(){try{matrix();faults();products();motion_contracts();reconstruction_contracts();deferred_contracts();deferred_color_contracts();viewmodel_contracts();ambient_occlusion_contracts();masked_shadow_contracts();environment_contracts();bloom_contracts();post_effect_contracts();output_grade_contracts();aces2_table_contracts();shadow_reuse_contracts();streamed_geometry_contracts();mutable_geometry_contracts();particle_sprite_contracts();surface_mark_contracts();screen_reflection_contracts();screen_diffuse_bounce_contracts();half_resolution_diffuse_contracts();height_fog_contracts();depth_of_field_contracts();composed_reconstruction_contracts();reconstructed_sprite_contracts();spatial_aa_contracts();auto_exposure_contracts();atmosphere_contracts();visibility_contracts();std::cout<<"Production render schedule: "<<accepted<<" valid variants, "<<rejected<<" rejected contract mutations.\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}
+int main(){try{matrix();faults();products();motion_contracts();reconstruction_contracts();deferred_contracts();deferred_color_contracts();viewmodel_contracts();ambient_occlusion_contracts();masked_shadow_contracts();environment_contracts();bloom_contracts();post_effect_contracts();output_grade_contracts();aces2_table_contracts();shadow_reuse_contracts();displacement_contracts();streamed_geometry_contracts();mutable_geometry_contracts();particle_sprite_contracts();surface_mark_contracts();screen_reflection_contracts();screen_diffuse_bounce_contracts();half_resolution_diffuse_contracts();height_fog_contracts();depth_of_field_contracts();composed_reconstruction_contracts();reconstructed_sprite_contracts();spatial_aa_contracts();auto_exposure_contracts();atmosphere_contracts();visibility_contracts();std::cout<<"Production render schedule: "<<accepted<<" valid variants, "<<rejected<<" rejected contract mutations.\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}

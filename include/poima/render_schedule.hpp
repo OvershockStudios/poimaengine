@@ -91,7 +91,13 @@ struct GeometrySlice {
     std::uint64_t uploaded_vertex_bytes() const {return prior_geometry ? 2*vertex_bytes : vertex_bytes;}
     friend bool operator==(const GeometrySlice&,const GeometrySlice&)=default;
 };
-struct DrawInputs {ResourceId vertices=none,indices=none;std::vector<ResourceId> textures;ResourceId previous_vertices=none;GeometrySlice stream{};};
+struct DrawInputs {
+    ResourceId vertices=none,indices=none;
+    std::vector<ResourceId> textures;
+    ResourceId previous_vertices=none;
+    GeometrySlice stream{};
+    ResourceId height_texture=none;
+};
 struct ProbePoint {std::uint32_t x=0,y=0;};
 struct ProbeCopy {ResourceId source=none,destination=none;};
 inline constexpr std::uint32_t visibility_group_size=64,visibility_limit=16384;

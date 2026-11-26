@@ -4,6 +4,7 @@
 #include "poima/profiler.hpp"
 #include "poima/shadow_ps.hpp"
 #include "poima/shadow_vs.hpp"
+#include "render_displacement.hpp"
 #include "render_embedded_shader.hpp"
 #include "render_scene_draw.hpp"
 #include "render_vulkan_instance.hpp"
@@ -54,7 +55,7 @@ std::uint32_t Cache::prepare(std::string_view source,
             view.projection=std::bit_cast<decltype(view.projection)>(projections[layer]);
             for(const auto& draw:draws) {
                 if(!(draw.shadow_mask&bit))continue;
-                if(draw.skin || draw.stream_geometry || view.casters.size()==max_casters_per_view) {
+                if(draw.skin || draw.stream_geometry || draw.displacement || view.casters.size()==max_casters_per_view) {
                     slot.reset();
                     break;
                 }
@@ -106,10 +107,11 @@ bool Pass::matches(Target target) const noexcept {
 
 void Pass::prepare(nvrhi::IDevice& checked, const vk::PhysicalDevice& physical,
                    const vk::detail::DispatchLoaderDynamic& dispatch, Target target,
-                   nvrhi::IInputLayout* input_layout, Buffers buffers) {
+                   nvrhi::IInputLayout* input_layout, Buffers buffers, nvrhi::IBindingLayout* displacement_layout) {
     ready_=false;
     const auto [resolution,layers]=target;
     masked_pipeline_=nullptr;masked_layout_=nullptr;masked_shader_=nullptr;
+    displaced_pipeline_=nullptr;displaced_masked_pipeline_=nullptr;
     framebuffers_.clear();pipeline_=nullptr;bindings_=nullptr;texture_=nullptr;
     const auto limits=physical.getProperties(dispatch).limits;
     require(resolution<=limits.maxImageDimension2D && layers<=limits.maxImageArrayLayers,"Shadow texture dimensions are unavailable on this GPU.");
@@ -123,7 +125,8 @@ void Pass::prepare(nvrhi::IDevice& checked, const vk::PhysicalDevice& physical,
         require(bool(fb),"Shadow framebuffer creation failed.");framebuffers_.push_back(fb);
     }
     shader_=create_embedded_shader(&checked,nvrhi::ShaderDesc(nvrhi::ShaderType::Vertex).setEntryName("shadow_vertex_main"),poima_shadow_vs);
-    layout_=checked.createBindingLayout(nvrhi::BindingLayoutDesc().setVisibility(nvrhi::ShaderType::Vertex)
+    layout_=checked.createBindingLayout(nvrhi::BindingLayoutDesc().setRegisterSpaceAndDescriptorSet(0)
+        .setVisibility(displacement_layout ? nvrhi::ShaderType::All : nvrhi::ShaderType::Vertex)
         .addItem(nvrhi::BindingLayoutItem::PushConstants(0,sizeof(DrawIndices))).addItem(nvrhi::BindingLayoutItem::ConstantBuffer(1)).addItem(nvrhi::BindingLayoutItem::StructuredBuffer_SRV(9)));
     require(shader_ && layout_,"Shadow shader/layout creation failed.");
     bindings_=checked.createBindingSet(base_bindings(buffers),layout_);
@@ -132,13 +135,17 @@ void Pass::prepare(nvrhi::IDevice& checked, const vk::PhysicalDevice& physical,
     pd.renderState.rasterState.cullMode=nvrhi::RasterCullMode::None;pd.renderState.rasterState.frontCounterClockwise=true;
     pipeline_=checked.createGraphicsPipeline(pd,framebuffers_.front()->getFramebufferInfo());
     require(bindings_ && pipeline_,"Shadow pipeline creation failed.");
+    if(displacement_layout)displaced_pipeline_=render_displacement::make_pipeline(checked,pd,
+        framebuffers_.front()->getFramebufferInfo(),*displacement_layout,true,false);
     masked_shader_=create_embedded_shader(&checked,nvrhi::ShaderDesc(nvrhi::ShaderType::Pixel).setEntryName("shadow_pixel_main"),poima_shadow_ps);
-    masked_layout_=checked.createBindingLayout(nvrhi::BindingLayoutDesc().setVisibility(nvrhi::ShaderType::All)
+    masked_layout_=checked.createBindingLayout(nvrhi::BindingLayoutDesc().setRegisterSpaceAndDescriptorSet(0).setVisibility(nvrhi::ShaderType::All)
         .addItem(nvrhi::BindingLayoutItem::PushConstants(0,sizeof(DrawIndices))).addItem(nvrhi::BindingLayoutItem::ConstantBuffer(1))
         .addItem(nvrhi::BindingLayoutItem::StructuredBuffer_SRV(9)).addItem(nvrhi::BindingLayoutItem::Texture_SRV(0)).addItem(nvrhi::BindingLayoutItem::Sampler(0)));
     pd.PS=masked_shader_;pd.bindingLayouts[0]=masked_layout_;
     masked_pipeline_=checked.createGraphicsPipeline(pd,framebuffers_.front()->getFramebufferInfo());
     require(masked_shader_ && masked_layout_ && masked_pipeline_,"Masked shadow shader/layout/pipeline creation failed.");
+    if(displacement_layout)displaced_masked_pipeline_=render_displacement::make_pipeline(checked,pd,
+        framebuffers_.front()->getFramebufferInfo(),*displacement_layout,true,false);
     ready_=true;
 }
 
@@ -174,6 +181,7 @@ void Pass::reset() noexcept {
     ready_=false;
     clear_masked_materials();
     masked_pipeline_=nullptr;masked_layout_=nullptr;masked_shader_=nullptr;
+    displaced_pipeline_=nullptr;displaced_masked_pipeline_=nullptr;
     pipeline_=nullptr;bindings_=nullptr;layout_=nullptr;shader_=nullptr;framebuffers_.clear();texture_=nullptr;
 }
 
@@ -204,15 +212,19 @@ void Pass::record(nvrhi::ICommandList& commands, const std::vector<render_draw::
         for(const auto& batch:batch_plans.at(layer)) {
             const auto& draw=draws.at(batch.first);
             const auto range = draw.shadow_range(layer);
-            state.pipeline=draw.masked_shadow_bindings ? masked_pipeline_ : pipeline_;
+            if(state.bindings.size()==2)state.bindings.pop_back();
+            if(draw.displacement)
+                state.pipeline=draw.masked_shadow_bindings ? displaced_masked_pipeline_ : displaced_pipeline_;
+            else state.pipeline=draw.masked_shadow_bindings ? masked_pipeline_ : pipeline_;
             state.bindings[0]=draw.masked_shadow_bindings ? draw.masked_shadow_bindings : bindings_;
+            if(draw.displacement)state.bindings.push_back(draw.displacement_bindings);
             state.vertexBuffers[0].setBuffer(draw.geometry.vertices).setOffset(draw.geometry.stream.vertex_offset);
             if(scene_products_enabled)state.vertexBuffers[1]
                 .setBuffer(draw.stream_geometry ? draw.geometry.vertices : draw.previous_vertices)
                 .setOffset(draw.geometry.stream.vertex_offset);
             state.indexBuffer=draw.geometry.indices ? nvrhi::IndexBufferBinding(draw.geometry.indices,nvrhi::Format::R32_UINT,
                 static_cast<std::uint32_t>(draw.geometry.stream.index_offset)) : nvrhi::IndexBufferBinding();
-            commands.setGraphicsState(state);const DrawIndices indices{draw.object_index,static_cast<std::uint32_t>(layer)};
+            commands.setGraphicsState(state);const DrawIndices indices=draw.indices(static_cast<std::uint32_t>(layer));
             commands.setPushConstants(&indices,sizeof(indices));
             if(draw.geometry.indices)commands.drawIndexed(nvrhi::DrawArguments().setVertexCount(range.count)
                 .setStartIndexLocation(range.first).setInstanceCount(batch.count).setStartInstanceLocation(0));

@@ -87,7 +87,7 @@ public:
     bool matches(Target target) const noexcept;
     void prepare(nvrhi::IDevice& device, const vk::PhysicalDevice& physical,
                  const vk::detail::DispatchLoaderDynamic& dispatch, Target target,
-                 nvrhi::IInputLayout* input_layout, Buffers buffers);
+                 nvrhi::IInputLayout* input_layout, Buffers buffers, nvrhi::IBindingLayout* displacement_layout);
 
     // The frame owner controls attachment consumers and retirement. Callers
     // clear alpha bindings when either object data or the attachments change.
@@ -118,6 +118,7 @@ private:
     nvrhi::ShaderHandle masked_shader_;
     nvrhi::BindingLayoutHandle masked_layout_;
     nvrhi::GraphicsPipelineHandle masked_pipeline_;
+    nvrhi::GraphicsPipelineHandle displaced_pipeline_, displaced_masked_pipeline_;
     std::map<MaterialKey, nvrhi::BindingSetHandle> masked_materials_;
     bool ready_=false;
 };

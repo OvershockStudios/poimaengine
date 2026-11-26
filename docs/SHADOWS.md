@@ -136,7 +136,8 @@ D32 array. It reuses a layer when the source, final GPU view projection,
 ordered rigid caster geometry, index ranges, transforms, foliage offsets,
 and alpha-test inputs match the last accepted submission. Camera motion
 can change a directional cascade without changing a spotlight's projection.
-A view that contains skinned or streamed geometry redraws each frame.
+A view that contains skinned, streamed or
+[displaced geometry](MATERIAL_DISPLACEMENT.md) redraws each frame.
 Views with more than 16,384 casters also redraw.
 
 When one view changes, the renderer clears and redraws that layer. A new

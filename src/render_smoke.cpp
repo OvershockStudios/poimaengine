@@ -58,6 +58,7 @@
 #include "render_scene_assets.hpp"
 #include "render_sky.hpp"
 #include "render_scene_draw.hpp"
+#include "render_displacement.hpp"
 #include "render_shadow_batches.hpp"
 #include "render_shadows.hpp"
 #include "render_skinning.hpp"
@@ -289,7 +290,7 @@ struct Context {
     };
     SurfaceMarkMaskArray surface_mark_array;
     bool sampled_surface_mark_masks=false;
-    nvrhi::BindingLayoutHandle surface_mark_layout;
+    nvrhi::BindingLayoutHandle surface_mark_layout,displacement_layout;
     nvrhi::BufferHandle empty_surface_marks;
     nvrhi::TextureHandle white_surface_mark_mask;
     nvrhi::SamplerHandle surface_mark_mask_sampler;
@@ -311,7 +312,7 @@ struct Context {
     std::vector<nvrhi::FramebufferHandle> framebuffers,sky_framebuffers;
     nvrhi::ShaderHandle vertex_shader;
     nvrhi::ShaderHandle pixel_shader;
-    nvrhi::GraphicsPipelineHandle pipeline,culled_pipeline;
+    nvrhi::GraphicsPipelineHandle pipeline,culled_pipeline,displaced_pipeline,displaced_culled_pipeline;
     nvrhi::CommandListHandle commands;
     nvrhi::StagingTextureHandle staging;
     const SceneSnapshot* scene = nullptr;
@@ -381,6 +382,7 @@ struct Context {
         std::shared_ptr<const MeshAsset> mesh;
         std::uint32_t mark_offset=0,mark_count=0;
         bool skinned=false,mutable_geometry=false;
+        std::optional<HeightDisplacement> displacement;
         SceneWetness wetness;
         std::array<float,4> foliage{};
     };
@@ -482,6 +484,7 @@ struct Context {
         temporal_inputs.release_gpu();
         depth_of_field={};fog={};reflections={};diffuse_bounce={};water_columns=nullptr;water_reservoirs=nullptr;water_sheets=nullptr;
         pipeline = nullptr; culled_pipeline=nullptr;
+        displaced_pipeline=nullptr;displaced_culled_pipeline=nullptr;displacement_layout=nullptr;
         sky_pass.reset();
         scene_output.release_gpu();
         exposure_meter.release_gpu();
@@ -708,6 +711,8 @@ struct Context {
         }
         swapchain.configure_present_fences(maintenance1,diagnostics.frame_execution);
         vk::PhysicalDeviceFeatures enabled_features;
+        diagnostics.material_displacement_supported=scene && physical.getFeatures(dispatch).tessellationShader;
+        enabled_features.tessellationShader=diagnostics.material_displacement_supported;
         if(options.gpu_visibility) {
             const auto supported=physical.getFeatures(dispatch);
             if(supported.multiDrawIndirect && supported.drawIndirectFirstInstance) {
@@ -830,6 +835,15 @@ struct Context {
             pipeline_desc.renderState.rasterState.cullMode=nvrhi::RasterCullMode::Back;
             culled_pipeline=checked->createGraphicsPipeline(pipeline_desc,framebuffers.front()->getFramebufferInfo());
             require(static_cast<bool>(culled_pipeline),"Culled mesh pipeline creation failed.");
+            if(diagnostics.material_displacement_supported) {
+                displacement_layout=render_displacement::make_layout(*checked.Get());
+                const auto& framebuffer=framebuffers.front()->getFramebufferInfo();
+                displaced_culled_pipeline=render_displacement::make_pipeline(*checked.Get(),pipeline_desc,
+                    framebuffer,*displacement_layout.Get(),false,scene_products_enabled);
+                pipeline_desc.renderState.rasterState.cullMode=nvrhi::RasterCullMode::None;
+                displaced_pipeline=render_displacement::make_pipeline(*checked.Get(),pipeline_desc,
+                    framebuffer,*displacement_layout.Get(),false,scene_products_enabled);
+            }
         }
         commands = checked->createCommandList();
         require(static_cast<bool>(commands), "NVRHI command-list creation failed.");
@@ -931,7 +945,7 @@ struct Context {
             auto previous=history.objects.find(item.entity_id);
             bool valid=pending_history_valid && item.incarnation && previous!=history.objects.end() &&
                 previous->second.incarnation==item.incarnation && previous->second.skinned==bool(item.skin) &&
-                previous->second.mutable_geometry==item.mutable_geometry;
+                previous->second.mutable_geometry==item.mutable_geometry && previous->second.displacement==item.displacement;
             item.previous_stream_mesh=nullptr;
             if(valid) {
                 const auto& prior_mesh=previous->second.mesh;
@@ -962,6 +976,7 @@ struct Context {
             ObjectHistory accepted;std::copy_n(&item.constants.model[0][0],12,accepted.model.begin());
             accepted.incarnation=item.incarnation;accepted.mesh=item.mesh;accepted.skinned=bool(item.skin);accepted.mutable_geometry=item.mutable_geometry;
             accepted.wetness=item.wetness;
+            accepted.displacement=item.displacement;
             accepted.foliage=item.foliage;
             if(scene_motion && !item.local_surface_marks.empty()) {
                 accepted.mark_offset=static_cast<std::uint32_t>(pending_history.surface_marks.size());
@@ -993,11 +1008,14 @@ struct Context {
         if(!scene)return;
         require(draws.size()<=std::numeric_limits<std::uint32_t>::max() && viewmodel_draws.size()<=std::numeric_limits<std::uint32_t>::max(),"Draw batch candidate count exceeds uint32.");
         auto key=[](const DrawItem& draw,nvrhi::IBindingSet* bindings,bool previous,std::uint32_t pipeline) {
+            const auto indices=draw.indices();
             return render_batches::Key{reinterpret_cast<std::uintptr_t>(draw.geometry.vertices.Get()),
                 reinterpret_cast<std::uintptr_t>(draw.geometry.indices.Get()),
                 previous ? reinterpret_cast<std::uintptr_t>(draw.previous_vertices.Get()) : 0,
                 reinterpret_cast<std::uintptr_t>(bindings),draw.geometry.count,pipeline,
-                draw.geometry.stream.vertex_offset,draw.geometry.stream.index_offset};
+                draw.geometry.stream.vertex_offset,draw.geometry.stream.index_offset,
+                reinterpret_cast<std::uintptr_t>(draw.displacement_bindings.Get()),
+                indices.reserved[0],indices.reserved[1]};
         };
         // Pipeline values are exact local selectors of the two immutable pipeline
         // handles in each pass, never truncated pointers or hashed identities.
@@ -1088,7 +1106,7 @@ struct Context {
         // NVRHI submission references retain old resources until completion.
         scene_assets.invalidate_materials();shadows.clear_masked_materials();bindings=nullptr;
         shadow_cache.reset();
-        shadows.prepare(*checked.Get(),physical,dispatch,target,input_layout,{frame_buffer,object_buffer});
+        shadows.prepare(*checked.Get(),physical,dispatch,target,input_layout,{frame_buffer,object_buffer},displacement_layout);
     }
 
     void prepare_scene() {
@@ -2334,6 +2352,20 @@ struct Context {
                 require(!object.mesh || object.mesh->influences.empty(),"Weighted geometry requires a skin pose.");
                 local_bounds=scene_assets.bounds(item.mesh.get());
             }
+            if(object.displacement && object.displacement->height_m>0) {
+                const auto& displacement=*object.displacement;
+                require(list==0 && item.mesh && !item.skin && !item.stream_geometry && !object.camera_draw &&
+                    !object.foliage_motion && displacement.texture && !displacement.texture->srgb &&
+                    std::isfinite(displacement.height_m) && displacement.height_m<=4 &&
+                    displacement.axis<3 && displacement.tile_mm>=32 && displacement.tile_mm<=64000,
+                    "Height displacement requires a rigid indexed world mesh and linear height map.");
+                ++pending_draws.displacement_requested;
+                if(displacement_layout) {
+                    item.displacement=displacement;
+                    item.displacement_bindings=scene_assets.height_binding(asset_upload(),*displacement_layout.Get(),displacement.texture);
+                    local_bounds.maximum[displacement.axis]+=displacement.height_m;
+                }
+            }
             auto bounds=transform_bounds(local_bounds,object.world);
             if(object.foliage_motion) {
                 require(list==0 && !object.camera_draw && object.mesh && !object.skin && !item.stream_geometry,
@@ -2342,7 +2374,7 @@ struct Context {
                 bounds=foliage_displaced_bounds(bounds,object.world,*object.foliage_motion);
             }
             constexpr auto max_indices=3*(UINT32_MAX/render_gpu_visibility::group_size);
-            if(gpu_culling && list==0 && object.camera_visible && !object.camera_draw && !item.skin &&
+            if(gpu_culling && list==0 && object.camera_visible && !object.camera_draw && !item.skin && !item.displacement &&
                 !item.stream_geometry && item.geometry.indices && item.geometry.count<=max_indices) {
                 item.visibility_candidate=static_cast<std::uint32_t>(visibility_candidates.size());
                 visibility_candidates.push_back(render_gpu_visibility::pack(bounds,item.geometry.count,item.object_index));
@@ -2358,7 +2390,7 @@ struct Context {
             item.cast_shadows=casts_shadows;
             if (casts_shadows) {
                 const bool can_trim = diagnostics.culling && !shadow_frusta.empty() && !item.skin &&
-                    !item.stream_geometry && !object.foliage_motion;
+                    !item.stream_geometry && !object.foliage_motion && !item.displacement;
                 const auto* hierarchy = can_trim ? scene_assets.shadow_ranges(item.mesh.get()) : nullptr;
                 const render_shadow_index_ranges::Range full{0, item.geometry.count};
                 for (std::size_t layer = 0; layer < shadow_frusta.size(); ++layer) {
@@ -2384,6 +2416,12 @@ struct Context {
                 }
             }
             if(item.skin && (item.camera_visible || item.shadow_mask)) { ++pending_draws.skinned_instances;pending_draws.skinned_vertices+=object.mesh->vertices.size(); }
+            if(item.displacement) {
+                const auto submissions=std::popcount(item.shadow_mask)+unsigned(scene_visible && item.camera_visible);
+                pending_draws.displacement_draws+=submissions;
+                pending_draws.displacement_patches+=std::uint64_t(submissions)*(item.geometry.count/3);
+                require(pending_draws.displacement_patches<=8192,"Displacement exceeds 8,192 input patches across camera and shadow views.");
+            }
             draws.push_back(std::move(item));
         }
         pending_draws.mesh_lod=std::move(mesh_lod);
@@ -2401,6 +2439,8 @@ struct Context {
         }
         profiling::counter("renderer.shadow_draws",pending_draws.shadow_draws);
         profiling::counter("renderer.shadow_triangles",pending_draws.shadow_triangles);
+        if(pending_draws.displacement_requested)
+            profiling::counter("renderer.displacement.input_patches",pending_draws.displacement_patches);
         const auto assets = scene_assets.statistics();
         profiling::counter("renderer.geometries", assets.geometries);
         profiling::counter("renderer.materials", assets.materials);
@@ -2955,6 +2995,8 @@ struct Context {
                 const bool shadow=(draw.shadow_mask&~reused_shadow_layers)!=0;
                 if(!camera && !shadow)continue;
                 rs::DrawInputs input;
+                if(draw.displacement)input.height_texture=texture(scene_assets.texture_for(draw.displacement->texture.get()),
+                    rs::Lifetime::imported,true);
                 if(draw.stream_geometry) {
                     input.vertices=f.streamed_vertices;input.indices=f.streamed_indices;input.stream=draw.geometry.stream;
                     if(settings.products)input.previous_vertices=f.streamed_vertices;
@@ -3166,6 +3208,14 @@ struct Context {
                 auto geometry=[&](const rs::DrawInputs& input) {
                     identity(input.vertices,draw.geometry.vertices.Get());if(input.indices!=rs::none)identity(input.indices,draw.geometry.indices.Get());if(input.previous_vertices!=rs::none)identity(input.previous_vertices,draw.previous_vertices.Get());
                     require(input.stream==draw.geometry.stream,"Streamed geometry slice differs from its draw binding.");
+                    require((input.height_texture!=rs::none)==bool(draw.displacement_bindings),
+                        "Height input differs from its draw pipeline.");
+                    if(draw.displacement_bindings) {
+                        const auto& bound=draw.displacement_bindings->getDesc()->bindings;
+                        require(bound.size()==2 && bound[0].type==nvrhi::ResourceType::Texture_SRV &&
+                            bound[1].type==nvrhi::ResourceType::Sampler,"Invalid height displacement descriptor.");
+                        identity(input.height_texture,bound[0].resourceHandle);
+                    }
                 };
                 if(draw.shadow_mask&~f.reused_shadow_layers) {
                     const auto& input=f.shadow_draws.at(shadow_index++);geometry(input);
@@ -3313,7 +3363,12 @@ struct Context {
         if(scene) {
             for(const auto& batch:camera_batch_plan) {
                 const auto& draw=draws.at(batch.first);
-                state.pipeline=draw.cull ? culled_pipeline : pipeline;state.bindings[0]=draw.bindings;
+                if(state.bindings.size()==3)state.bindings.pop_back();
+                if(draw.displacement) {
+                    state.pipeline=draw.cull ? displaced_culled_pipeline : displaced_pipeline;
+                    state.bindings.push_back(draw.displacement_bindings);
+                } else state.pipeline=draw.cull ? culled_pipeline : pipeline;
+                state.bindings[0]=draw.bindings;
                 state.vertexBuffers[0].setBuffer(draw.geometry.vertices).setOffset(draw.geometry.stream.vertex_offset);
                 if(scene_products_enabled)state.vertexBuffers[1].setBuffer(draw.previous_vertices).setOffset(draw.geometry.stream.prior_vertex_offset());
                 state.indexBuffer=draw.geometry.indices ? nvrhi::IndexBufferBinding(draw.geometry.indices,nvrhi::Format::R32_UINT,
@@ -3322,7 +3377,8 @@ struct Context {
                 const bool indirect=first!=render_gpu_visibility::no_candidate;
                 state.indirectParams=indirect ? slot.visibility.arguments.Get() : nullptr;
                 commands->setGraphicsState(state);
-                const DrawIndices indices{indirect ? 0u : draw.object_index};
+                auto indices=draw.indices();
+                if(indirect)indices.object=0;
                 commands->setPushConstants(&indices,sizeof(indices));
                 if(indirect) {
                     require(first<slot.visibility.count && batch.count<=slot.visibility.count-first &&

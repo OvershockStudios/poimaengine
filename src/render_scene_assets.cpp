@@ -48,6 +48,8 @@ void Cache::release_gpu() noexcept {
     pending_bytes_ = pending_copies_ = 0;
     geometry_.clear();
     materials_.clear();
+    height_bindings_.clear();
+    height_sampler_=nullptr;
     textures_.clear();
     samplers_.clear();
     bounds_.clear();
@@ -190,6 +192,27 @@ const nvrhi::TextureHandle& Cache::texture_for(const TextureImage* image) const 
     return textures_.at(image);
 }
 
+nvrhi::BindingSetHandle Cache::height_binding(const Upload& upload, nvrhi::IBindingLayout& layout,
+    const std::shared_ptr<const TextureImage>& image) {
+    if(auto found=height_bindings_.find(image.get());found!=height_bindings_.end())return found->second;
+    if(!height_sampler_) {
+        nvrhi::SamplerDesc desc;
+        desc.addressU=nvrhi::SamplerAddressMode::Wrap;
+        desc.addressV=nvrhi::SamplerAddressMode::Wrap;
+        desc.minFilter=desc.magFilter=true;
+        desc.mipFilter=false;
+        height_sampler_=upload.device.createSampler(desc);
+        require(bool(height_sampler_),"Height texture sampler creation failed.");
+    }
+    const auto texture=upload_texture(upload,image);
+    auto binding=upload.device.createBindingSet(nvrhi::BindingSetDesc()
+        .addItem(nvrhi::BindingSetItem::Texture_SRV(0,texture,nvrhi::Format::UNKNOWN,nvrhi::TextureSubresourceSet(0,1,0,1)))
+        .addItem(nvrhi::BindingSetItem::Sampler(0,height_sampler_)),&layout);
+    require(bool(binding),"Height texture binding creation failed.");
+    height_bindings_.emplace(image.get(),binding);
+    return binding;
+}
+
 nvrhi::BindingSetHandle Cache::material(const Upload& upload, const MaterialInputs& inputs, const MeshAsset* mesh,
                                         const MaterialTextures* textures, MaterialBindings* foreground) {
     auto& cache = foreground ? *foreground : materials_;
@@ -278,6 +301,7 @@ void Cache::retain_scene(const SceneSnapshot& scene, MaterialBindings* foregroun
                 material_owners_[object.textures.get()] = object.textures;
             }
             combinations.emplace(bound_mesh, object.textures.get());
+            if(object.displacement)retain_image(object.displacement->texture);
             for (std::size_t slot = 0; slot < 5; ++slot) {
                 const auto map = object.textures ? object.textures->maps[slot] : bound_mesh ? bound_mesh->textures[slot] : TextureMap{};
                 retain_image(map.image);
@@ -298,6 +322,7 @@ void Cache::retain_scene(const SceneSnapshot& scene, MaterialBindings* foregroun
     std::erase_if(bounds_, [&](const auto& item) { return item.first && !meshes.contains(item.first); });
     std::erase_if(shadow_ranges_, [&](const auto& item) { return !meshes.contains(item.first); });
     hooks.skins(meshes, skin_ids);
+    std::erase_if(height_bindings_, [&](const auto& item) { return !images.contains(item.first); });
     std::erase_if(textures_, [&](const auto& item) { return !images.contains(item.first); });
     std::erase_if(samplers_, [&](const auto& item) { return !samplers.contains(item.first); });
     std::erase_if(mesh_owners_, [&](const auto& item) { return !meshes.contains(item.first); });

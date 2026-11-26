@@ -277,6 +277,14 @@ struct MeshLodLevel {
 };
 using MeshLodChain=std::vector<MeshLodLevel>;
 
+struct HeightDisplacement {
+    std::shared_ptr<const TextureImage> texture;
+    float height_m=0;
+    std::uint32_t tile_mm=1000;
+    std::uint32_t axis=1;
+    bool operator==(const HeightDisplacement&) const=default;
+};
+
 struct SceneObject {
     std::string entity_id;
     Matrix4 world;
@@ -303,6 +311,7 @@ struct SceneObject {
     std::shared_ptr<const MeshLodChain> lods{};
     bool water_ripple_surface=false,water_region_surface=false;
     std::optional<FoliageMotionSample> foliage_motion{};
+    std::optional<HeightDisplacement> displacement;
 };
 struct SceneViewmodel {
     SceneLens lens;

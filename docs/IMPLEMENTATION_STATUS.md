@@ -1,8 +1,16 @@
 # Implementation status
 
-Updated 2026-11-25 for **0.0.463**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-25 for **0.0.464**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.464 adds [material height displacement](MATERIAL_DISPLACEMENT.md)
+for rigid indexed meshes. The Vulkan tessellation stages use the same
+screen-space rates and height evaluation for camera and shadow draws.
+The fixture checks displaced depth, an edge with split vertex UVs, motion
+under a camera move, cast shadows and standalone export. The current
+implementation uses repeatable local-axis projection and a bounded patch
+budget. [Qualification results](evidence/m2-material-displacement-464.json)
 
 Version 0.0.463 adds [per-view shadow depth reuse](SHADOWS.md#reuse-unchanged-shadow-views).
 Windows Vulkan fixtures match full rendered images and selected HDR and depth

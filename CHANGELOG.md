@@ -2,6 +2,12 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.464
+
+- Add adaptive Vulkan tessellation for rigid meshes with authored height
+  textures, using shared geometry for color, depth and shadows.
+  [Material displacement](docs/MATERIAL_DISPLACEMENT.md)
+
 ## 0.0.463
 
 - Reuse shadow depth per light view when the projection and casters match

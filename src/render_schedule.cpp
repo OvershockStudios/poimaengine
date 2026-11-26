@@ -92,6 +92,13 @@ void Schedule::validate(bool before_acquire) const {
         for(const auto& draw:*list) {
             const bool streamed=stream && (draw.vertices==frame.streamed_vertices || draw.indices==frame.streamed_indices ||
                 draw.previous_vertices==frame.streamed_vertices || draw.previous_vertices==frame.streamed_indices);
+            if(draw.height_texture!=none) {
+                const auto& height=resource(draw.height_texture);
+                if(!settings.scene || (!camera && !shadow) || streamed || draw.indices==none ||
+                    height.kind!=Kind::texture || height.lifetime!=Lifetime::imported ||
+                    !height.initialized || height.samples!=1)
+                    fail("invalid height displacement texture or draw");
+            }
             if(!streamed) {
                 if(draw.stream!=GeometrySlice{})fail("static geometry has a streaming slice");
                 continue;
@@ -800,6 +807,11 @@ void Schedule::validate(bool before_acquire) const {
             surface_marks_uploaded=true;
         }
         const bool stream_draw=(pass.id==PassId::opaque && streamed_camera) || (pass.id==PassId::shadows && streamed_shadow);
+        if(pass.id==PassId::opaque || pass.id==PassId::shadows) {
+            const auto& draws=pass.id==PassId::opaque ? frame.camera_draws : frame.shadow_draws;
+            for(const auto& draw:draws)if(draw.height_texture!=none && !has(draw.height_texture,Use::sampled))
+                fail("displaced draw lacks its height input");
+        }
         if(stream_draw && (!stream_uploaded || !has(frame.streamed_vertices,Use::vertex) ||
             !has(frame.streamed_indices,Use::index)))fail("streamed draw requires uploaded geometry");
         if(stream_draw && pass.id==PassId::shadows)stream_shadow_drawn=true;
@@ -1388,7 +1400,7 @@ Schedule build(FrameResources frame,Settings settings) {
     auto pass=[&](PassId id)->Pass& {result.passes.push_back({id,{}});return result.passes.back();};
     auto add=[](Pass& p,ResourceId id,Use use,bool initialize=false) {if(id!=none)p.accesses.push_back({id,use,initialize});};
     auto geometry=[&](Pass& p,const std::vector<DrawInputs>& draws,bool materials) {
-        for(const auto& d:draws) {add(p,d.vertices,Use::vertex);add(p,d.indices,Use::index);if(materials) {for(auto t:d.textures)add(p,t,Use::sampled);if(settings.products)add(p,d.previous_vertices,Use::vertex);}}
+        for(const auto& d:draws) {add(p,d.vertices,Use::vertex);add(p,d.indices,Use::index);add(p,d.height_texture,Use::sampled);if(materials) {for(auto t:d.textures)add(p,t,Use::sampled);if(settings.products)add(p,d.previous_vertices,Use::vertex);}}
     };
     if(f.streamed_vertices!=none || f.streamed_indices!=none) {
         auto& upload=pass(PassId::stream_geometry);

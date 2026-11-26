@@ -83,6 +83,8 @@ static Json draw_counts_json(const DrawCounts& c) {
         {"camera_batches",c.camera_batches},{"shadow_batches",c.shadow_batches},
         {"shadow_views",c.shadow_views},{"shadow_candidates",c.shadow_candidates},{"shadow_draws",c.shadow_draws},{"shadow_culled",c.shadow_culled},{"shadow_triangles",c.shadow_triangles},
         {"shadow_reused_views",c.shadow_reused_views},
+        {"displacement_requested",c.displacement_requested},{"displacement_draws",c.displacement_draws},
+        {"displacement_patches",c.displacement_patches},
         {"streamed_draws",c.streamed_draws},{"streamed_vertex_bytes",c.streamed_vertex_bytes},{"streamed_index_bytes",c.streamed_index_bytes},
         {"sprite_instances",c.sprite_instances},{"sprite_batches",c.sprite_batches}};
     if(c.mesh_lod) {
@@ -114,6 +116,7 @@ Json render_diagnostics(const RenderDiagnostics& d) {
     }
     const auto& reconstruction=d.reconstruction;
     Json result={{"memory_budget",gpu_memory::to_json(d.memory_budget)},
+        {"material_displacement_supported",d.material_displacement_supported},
         {"scene_receipts",{{"observed",renderer_scene_optional_json(d.scene_observed)},{"submitted",renderer_scene_optional_json(d.scene_submitted)},{"presented",renderer_scene_optional_json(d.scene_presented)}}},
         {"lighting_path",d.deferred ? "deferred" : "forward"},{"shadow_filter",shadow_filter_name(d.shadow_filter)},{"deferred_buffer_bytes",d.deferred_buffer_bytes},{"deferred_lighting_gpu",timing(d.deferred_lighting_gpu)},
         {"ambient_occlusion",{{"mode",ambient_occlusion_mode_name(d.ambient_occlusion.mode)},{"quality",ambient_occlusion_quality_name(d.ambient_occlusion.quality)},{"radius",d.ambient_occlusion.radius}}},

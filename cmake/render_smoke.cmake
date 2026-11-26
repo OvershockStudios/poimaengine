@@ -55,10 +55,15 @@ foreach(shader smoke scene scene_products scene_deferred scene_deferred_color de
         scene_output_exposure scene_output_bloom_exposure scene_output_grade_exposure scene_output_grade_bloom_exposure
         scene_output_aces2 scene_output_bloom_aces2 scene_output_grade_aces2 scene_output_grade_bloom_aces2
         scene_output_exposure_aces2 scene_output_bloom_exposure_aces2 scene_output_grade_exposure_aces2 scene_output_grade_bloom_exposure_aces2
+        displacement_control displacement_camera displacement_camera_products displacement_shadow
         spatial_aa bloom viewmodel_composite viewmodel_resolve sky sky_atmosphere sky_orbital sky_clouds atmosphere_density atmosphere_sky_view cloud_noise cloud_view cloud_shadow
         shadow skinning gpu_visibility cluster_lights temporal_inputs temporal_composed_inputs temporal_sprite_inputs temporal_composed_sprite_inputs editor_overlay game_ui particle_sprite particle_sprite_temporal
         particle_sprite_water particle_sprite_temporal_water)
-if(shader MATCHES "^(skinning|gpu_visibility|cluster_lights|temporal(_composed)?(_sprite)?_inputs|deferred_lighting.*|ambient_occlusion.*|screen_diffuse_bounce.*|screen_reflections|depth_of_field|height_fog.*|aerial_perspective|auto_exposure|atmosphere_density|atmosphere_sky_view|cloud_(noise|view|shadow))$")
+if(shader STREQUAL "displacement_control")
+    set(shader_stages vs hs)
+elseif(shader MATCHES "^displacement_")
+    set(shader_stages ds)
+elseif(shader MATCHES "^(skinning|gpu_visibility|cluster_lights|temporal(_composed)?(_sprite)?_inputs|deferred_lighting.*|ambient_occlusion.*|screen_diffuse_bounce.*|screen_reflections|depth_of_field|height_fog.*|aerial_perspective|auto_exposure|atmosphere_density|atmosphere_sky_view|cloud_(noise|view|shadow))$")
     set(shader_stages cs)
 elseif(shader MATCHES "^(scene_output_grade|spatial_aa)" OR shader MATCHES "^scene_output.*_(exposure|aces2)$" OR shader MATCHES "^sky_(atmosphere|orbital|clouds)$" OR shader MATCHES "^particle_sprite.*_water$")
     set(shader_stages ps)
@@ -82,7 +87,22 @@ foreach(stage IN LISTS shader_stages)
     endif()
     set(shader_source "${CMAKE_SOURCE_DIR}/shaders/${shader}.hlsl")
     set(shader_defines)
-    if(shader MATCHES "^deferred_lighting")
+    if(shader MATCHES "^displacement_")
+        set(shader_source "${CMAKE_SOURCE_DIR}/shaders/scene.hlsl")
+        list(APPEND shader_defines -DPOIMA_DISPLACEMENT=1)
+        if(stage STREQUAL "vs")
+            set(entry displacement_vertex_main)
+        elseif(stage STREQUAL "hs")
+            set(entry displacement_hull_main)
+        elseif(shader STREQUAL "displacement_shadow")
+            set(entry displacement_shadow_main)
+        else()
+            set(entry displacement_camera_main)
+            if(shader MATCHES "_products$")
+                list(APPEND shader_defines -DPOIMA_SCENE_PRODUCTS=1)
+            endif()
+        endif()
+    elseif(shader MATCHES "^deferred_lighting")
         set(shader_source "${CMAKE_SOURCE_DIR}/shaders/deferred_lighting.hlsl")
         if(NOT shader MATCHES "_color")
             list(APPEND shader_defines -DPOIMA_SCENE_PRODUCTS=1)
@@ -158,6 +178,9 @@ foreach(stage IN LISTS shader_stages)
         endif()
     endif()
     set(shader_dependencies "${shader_source}")
+    if(shader MATCHES "^displacement_")
+        list(APPEND shader_dependencies "${CMAKE_SOURCE_DIR}/shaders/material_displacement.hlsli")
+    endif()
     if(shader MATCHES "^scene_output")
         list(APPEND shader_dependencies "${CMAKE_SOURCE_DIR}/shaders/tone_mapping.hlsli")
         if(shader MATCHES "_aces2$")
@@ -170,11 +193,11 @@ foreach(stage IN LISTS shader_stages)
     if(shader STREQUAL "shadow")
         list(APPEND shader_dependencies "${CMAKE_SOURCE_DIR}/shaders/scene.hlsl")
     endif()
-    if(shader MATCHES "^(scene|scene_products|scene_deferred.*|shadow)$")
+    if(shader MATCHES "^(scene|scene_products|scene_deferred.*|shadow|displacement_.*)$")
         list(APPEND shader_dependencies "${CMAKE_SOURCE_DIR}/shaders/water_ripple_normal.hlsli"
             "${CMAKE_SOURCE_DIR}/shaders/foliage_motion.hlsli")
     endif()
-    if(shader MATCHES "^(ambient_occlusion.*|deferred_lighting.*|scene_deferred.*|scene|scene_products|shadow|cluster_lights|temporal(_composed)?(_sprite)?_inputs|sky(_atmosphere|_orbital|_clouds)?|screen_diffuse_bounce.*|screen_reflections|height_fog.*|aerial_perspective|cloud_view|particle_sprite.*_water)$")
+    if(shader MATCHES "^(ambient_occlusion.*|deferred_lighting.*|scene_deferred.*|scene|scene_products|shadow|displacement_.*|cluster_lights|temporal(_composed)?(_sprite)?_inputs|sky(_atmosphere|_orbital|_clouds)?|screen_diffuse_bounce.*|screen_reflections|height_fog.*|aerial_perspective|cloud_view|particle_sprite.*_water)$")
         list(APPEND shader_dependencies "${CMAKE_SOURCE_DIR}/shaders/scene_frame.hlsli"
             "${CMAKE_SOURCE_DIR}/shaders/water_constants.hlsli")
     endif()
@@ -246,7 +269,7 @@ target_sources(poima_core PRIVATE
     src/render_screen_diffuse_bounce.cpp
     src/player_window.cpp src/gamepad_sdl.cpp
     src/render_ui.cpp src/render_environment_ibl.cpp src/render_ambient_occlusion.cpp
-    src/render_shadows.cpp src/render_scene_assets.cpp src/render_light_clusters.cpp src/render_sky.cpp src/render_sky_clouds.cpp
+    src/render_shadows.cpp src/render_displacement.cpp src/render_scene_assets.cpp src/render_light_clusters.cpp src/render_sky.cpp src/render_sky_clouds.cpp
     src/render_auto_exposure.cpp
     src/render_skinning.cpp src/render_gpu_visibility.cpp src/render_spatial_aa.cpp src/render_scene_output.cpp src/render_temporal_inputs.cpp src/render_sprite_targets.cpp
     "${poima_startup_wordmark}")

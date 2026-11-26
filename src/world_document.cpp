@@ -868,7 +868,7 @@ void validate_component(const std::string& type, const Json& value) {
         return;
     }
     if(type=="StaticMesh") {
-        fields(value,{"asset","primitive","visible","cast_shadows","receive_shadows","lods","foliage_motion"},{"asset","primitive","visible"});
+        fields(value,{"asset","primitive","visible","cast_shadows","receive_shadows","lods","foliage_motion","displacement"},{"asset","primitive","visible"});
         require(value.at("asset").is_string() && valid_asset_id(value.at("asset").get<std::string>()),"StaticMesh requires a 64-character lowercase content hash.");
         require(revision(value.at("primitive"))<10000 && value.at("visible").is_boolean(),"Invalid StaticMesh primitive/visibility.");
         if(value.contains("lods")) {
@@ -887,6 +887,21 @@ void validate_component(const std::string& type, const Json& value) {
             }
         }
         if(value.contains("foliage_motion"))(void)foliage_motion_value(value.at("foliage_motion"));
+        if(value.contains("displacement")) {
+            const auto& displacement=value.at("displacement");
+            fields(displacement,{"texture","height_m","tile_mm","axis"},{"texture","height_m","tile_mm","axis"});
+            const auto& texture=displacement.at("texture");
+            require(texture.is_string() && valid_asset_id(texture.get_ref<const std::string&>()),
+                "Displacement requires a cooked height texture hash.");
+            const auto& height=displacement.at("height_m");
+            require(height.is_number() && std::isfinite(height.get<double>()) && height>=0 && height<=4,
+                "Displacement height_m must be finite and in [0,4].");
+            const auto tile=revision(displacement.at("tile_mm"));
+            require(tile>=32 && tile<=64000,"Displacement tile_mm must be an integer in [32,64000].");
+            const auto& axis=displacement.at("axis");
+            require(axis=="x" || axis=="y" || axis=="z","Displacement axis must be x, y or z.");
+            require(!value.contains("foliage_motion"),"Displacement and foliage bending require separate drawables.");
+        }
         return;
     }
     if(type=="PbrTextures") {
@@ -1215,6 +1230,9 @@ void validate(const Json& doc) {
             const auto components=entity.find("components");
             require(components==entity.end() || !authored_foliage_motion(*components),
                 "Snow tiles cannot use foliage motion.");
+            require(components==entity.end() || !components->contains("StaticMesh") ||
+                !components->at("StaticMesh").contains("displacement"),
+                "Mutable snow tiles cannot use material height displacement.");
         }
     }
     std::size_t audio_sources=0,wetness_receivers=0;
@@ -1236,6 +1254,8 @@ void validate(const Json& doc) {
         }
         require(!audio_components.contains("CameraDraw") || !audio_components.contains("StaticMesh") ||
             !audio_components.at("StaticMesh").contains("lods"),"Mesh LOD requires a world drawable without CameraDraw.");
+        require(!audio_components.contains("CameraDraw") || !audio_components.contains("StaticMesh") ||
+            !audio_components.at("StaticMesh").contains("displacement"),"Height displacement requires a world drawable without CameraDraw.");
         require(!audio_components.contains("MeshCollider") || (!audio_components.contains("BoxCollider") && !audio_components.contains("CharacterController")),"MeshCollider cannot combine with BoxCollider or CharacterController.");
         if(audio_components.contains("AcousticMaterial"))require(audio_components.contains("BoxCollider") || audio_components.contains("MeshRenderer") || audio_components.contains("StaticMesh"),"AcousticMaterial requires box collider or mesh geometry.");
         if(audio_components.contains("AudioRoom")) {
