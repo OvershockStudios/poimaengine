@@ -2,6 +2,12 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.455
+
+- Choose an AgX SDR approximation or Khronos PBR Neutral for a world's
+  Vulkan output. Existing projects keep the Reinhard default.
+  [Choose a tone mapper](docs/HDR_COMPOSITION.md#choose-a-tone-mapper)
+
 ## 0.0.454
 
 - Render underwater sun shafts through terrain-bound and offshore water.

@@ -162,7 +162,7 @@ void Pass::record(nvrhi::ICommandList& commands, nvrhi::IFramebuffer& destinatio
         static_cast<float>(draw.view), draw.near_plane, draw.far_plane, draw.raster_width, draw.raster_height,
         reconstruction_bound_ ? 1.0f : 0.0f, display.minX, display.minY, display.maxX - display.minX,
         display.maxY - display.minY, float(source_->getDesc().width), float(source_->getDesc().height),
-        bloom_bound_ ? draw.bloom_intensity : 0, 0};
+        bloom_bound_ ? draw.bloom_intensity : 0, static_cast<float>(draw.tone_mapper)};
     commands.setGraphicsState(state);
     commands.setPushConstants(constants.data(), sizeof(constants));
     commands.draw(nvrhi::DrawArguments().setVertexCount(3));

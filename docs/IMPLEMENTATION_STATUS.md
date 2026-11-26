@@ -1,8 +1,18 @@
 # Implementation status
 
-Updated 2026-11-25 for **0.0.454**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-25 for **0.0.455**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.455 [adds two optional SDR tone mappers](HDR_COMPOSITION.md#choose-a-tone-mapper)
+to the shared Vulkan output pass. AMD forward and NVIDIA deferred fixture
+captures agree with the CPU color reference within one sRGB code value.
+Both match the omitted 0.0.454 transform exactly when Reinhard is selected.
+The NVIDIA run also verified AgX after FSR Native AA, unchanged native game
+UI samples, and a relocated standalone export. These tests cover color
+transform correctness on the two adapters. HDR displays, grading LUTs and
+representative performance remain separate.
+[Results and scope](evidence/m2-tone-mapping-455.json)
 
 Version 0.0.454 [renders underwater sun shafts](SHALLOW_WATER.md#let-sunlight-shaft-through-water).
 On AMD forward and NVIDIA deferred, clear offshore probes agreed with an

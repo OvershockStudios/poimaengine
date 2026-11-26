@@ -83,6 +83,8 @@ struct OutputGrade {
     float input_max=4,strength=1;
     std::array<std::array<float,3>,output_grade_knot_count> knots{};
 };
+enum class ToneMapper : std::uint32_t { reinhard=0, agx=1, pbr_neutral=2 };
+std::string_view tone_mapper_name(ToneMapper mapper) noexcept;
 struct ScreenReflections {
     float strength=0,max_distance_m=8,thickness_m=.1f;
 };
@@ -148,6 +150,7 @@ struct LightingEnvironment {
     // Runtime lighting retains the artifact admitted when the scene was frozen.
     std::shared_ptr<const PostEffect> post_effect;
     std::optional<OutputGrade> output_grade;
+    std::optional<ToneMapper> tone_mapper;
     std::optional<ScreenReflections> screen_reflections;
     std::optional<HeightFog> height_fog;
     std::optional<DepthOfField> depth_of_field;

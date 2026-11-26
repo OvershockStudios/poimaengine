@@ -111,11 +111,18 @@ static CloudSettings cloud_value(const Json& value) {
     return result;
 }
 LightingEnvironment environment_value(const Json& value) {
-    fields(value,{"ambient","exposure","shadow_resolution","shadow_filter","sky","ibl","bloom","post_effect","output_grade","screen_reflections","height_fog","depth_of_field","auto_exposure","atmosphere"},{"ambient","exposure"});require(value.at("ambient").is_array() && value.at("ambient").size()==3,"Ambient fill needs three values.");
+    fields(value,{"ambient","exposure","shadow_resolution","shadow_filter","sky","ibl","bloom","post_effect","output_grade","tone_mapper","screen_reflections","height_fog","depth_of_field","auto_exposure","atmosphere"},{"ambient","exposure"});require(value.at("ambient").is_array() && value.at("ambient").size()==3,"Ambient fill needs three values.");
     for(const auto& x:value.at("ambient"))require(x.is_number() && std::isfinite(x.get<double>()) && x>=0 && x<=1e6,"Ambient fill must be in [0,1e6].");
     require(value.at("exposure").is_number() && std::isfinite(value.at("exposure").get<double>()) && value.at("exposure")>=0 && value.at("exposure")<=1e6,"Exposure must be in [0,1e6].");
     if(value.contains("shadow_resolution"))require(value.at("shadow_resolution").is_number_integer() && (value.at("shadow_resolution")==256 || value.at("shadow_resolution")==512 || value.at("shadow_resolution")==1024 || value.at("shadow_resolution")==2048),"Shadow resolution must be 256, 512, 1024 or 2048.");
     LightingEnvironment result;result.ambient=value.at("ambient").get<std::array<float,3>>();result.exposure=value.at("exposure").get<float>();result.shadow_resolution=value.value("shadow_resolution",1024u);
+    if(value.contains("tone_mapper")) {
+        const auto& authored=value.at("tone_mapper");
+        if(authored=="reinhard")result.tone_mapper=ToneMapper::reinhard;
+        else if(authored=="agx")result.tone_mapper=ToneMapper::agx;
+        else if(authored=="pbr_neutral")result.tone_mapper=ToneMapper::pbr_neutral;
+        else throw Error(-32602,"Tone mapper must be reinhard, agx or pbr_neutral.");
+    }
     if(value.contains("auto_exposure")) {
         const auto& authored=value.at("auto_exposure");
         fields(authored,{"min_stops","max_stops","brighten_stops_per_second","darken_stops_per_second"});

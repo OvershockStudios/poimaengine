@@ -316,6 +316,8 @@ Json lighting_json(const SceneLighting& lighting) {
         const auto& grade=*lighting.environment.output_grade;
         result["output_grade"]={{"input_max",grade.input_max},{"strength",grade.strength},{"knots",grade.knots}};
     }
+    if(lighting.environment.tone_mapper)
+        result["tone_mapper"]=tone_mapper_name(*lighting.environment.tone_mapper);
     if(lighting.environment.depth_of_field) {
         const auto& focus=*lighting.environment.depth_of_field;
         result["depth_of_field"]={{"focus_distance_m",focus.focus_distance_m},{"focus_band_m",focus.focus_band_m},

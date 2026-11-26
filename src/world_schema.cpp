@@ -247,6 +247,8 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"darken_stops_per_second",exposure_number(.125f,32,exposure_defaults.darken_stops_per_second)}});
     auto_exposure["description"]="Optional GPU auto exposure in stops. An empty object enables the defaults. min_stops must not exceed max_stops. The exposure field remains a separate manual multiplier.";
     lighting_environment["properties"]["auto_exposure"]=std::move(auto_exposure);
+    lighting_environment["properties"]["tone_mapper"]={{"enum",{"reinhard","agx","pbr_neutral"}},
+        {"default","reinhard"},{"description","Choose the SDR display transform after exposed HDR grading. Reinhard is the legacy default."}};
     lighting_environment["properties"]["output_grade"]=output_grade;
     lighting_environment["properties"]["output_grade"]["description"]="Optional per-channel curves over exposed scene HDR, after bloom and exposure and before tone mapping. All 33 RGB knots are required and knot zero is [0,0,0].";
     auto screen_reflections=object_schema({
@@ -456,7 +458,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 247}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 248}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),

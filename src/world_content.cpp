@@ -282,6 +282,7 @@ FrozenContent freeze_world_content(const Json& source, const fs::path& directory
         if(components.contains("LightingEnvironment")) {
             const auto& environment=components.at("LightingEnvironment");
             if(environment.contains("output_grade"))result.needs_output_grade=true;
+            if(environment.contains("tone_mapper"))result.needs_tone_mapping=true;
             if(environment.contains("auto_exposure"))result.needs_auto_exposure=true;
             if(environment.contains("atmosphere")) {
                 const auto& atmosphere=environment.at("atmosphere");

@@ -196,3 +196,33 @@ The 0.0.35 native gameplay publisher (`scripts/publish_native_gameplay.py`) comp
 `POIMA_ENABLE_FSR3_UPSCALER` is off by default. Enabled Windows builds use the MIT-licensed FidelityFX-SDK v1.1.4 source, pinned to commit `c6efa6bf7f2027b3ec94f28578bb5965eabb9e55`, implementing the FSR3.1.4 upscaler. The dependency is prepared explicitly with `scripts/prepare_fsr3.py`; CMake does not download the SDK or sample media. Enabled installs include the upstream SDK license in `share/poima/licenses/FidelityFX-SDK/LICENSE.txt`.
 
 The engine adapter and build compatibility header are Apache-2.0. The pinned SDK checkout remains unmodified. The compiled Vulkan backend is a generated copy with an explicit scratch-layout correction: its 32-byte-aligned effect-context array receives alignment padding and the scratch allocation reserves that padding. `scripts/patch_fsr3_backend.py` verifies the original source hash and records original, patched and patch-script hashes beside the generated source. The adapter uses 32-byte-aligned scratch storage. Shader preparation also generates a patched include-tree copy: the GLSL luma-history storage image declaration uses `rgba16f` to match the SDK’s allocated RGBA16_FLOAT images. The shader-cache manifest binds this correction and the preparation script by hash. This target excludes SDK frame generation, optical flow and replacement swapchains; its required frame-generation callback reports an error. Shader preparation uses the upstream development compiler tools, which are not shipped as part of the player. This integration does not cover the newer FSR ML SDK license or NVIDIA SDK redistribution terms.
+
+## SDR tone mapping
+
+The AgX shader adapts the linear Rec.709 SDR approximation from
+[three.js r180](https://github.com/mrdoob/three.js/blob/r180/src/renderers/shaders/ShaderChunk/tonemapping_pars_fragment.glsl.js).
+The adaptation uses HLSL and Poima's shared exposure, grading and sRGB
+encoding path. AgX originates with Troy Sobotka. The PBR Neutral operator
+implements the [Khronos specification](https://github.com/KhronosGroup/ToneMapping/tree/main/PBR_Neutral).
+
+The MIT License
+
+Copyright © 2010-2025 three.js authors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.

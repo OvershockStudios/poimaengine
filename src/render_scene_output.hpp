@@ -7,6 +7,7 @@
 
 namespace poima {
 enum class SceneDebugView : std::uint32_t;
+enum class ToneMapper : std::uint32_t;
 struct OutputGrade;
 }
 
@@ -36,6 +37,7 @@ struct Draw {
     float bloom_intensity;
     SceneDebugView view;
     bool srgb;
+    ToneMapper tone_mapper{};
 };
 
 class Pass {

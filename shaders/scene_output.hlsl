@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 // One display transform for resolved scene-linear radiance. UI is drawn later.
+#include "tone_mapping.hlsli"
 Texture2D<float4> scene_radiance : register(t0);
 #if POIMA_SCENE_PRODUCTS
 Texture2D<float> scene_depth : register(t1);
@@ -40,7 +41,7 @@ struct OutputConstants {
     float viewport_height;
     float reconstructed;
     float4 display_rect;
-    float4 source_extent;
+    float4 source_extent; // Source size, bloom intensity, tone mapper.
 };
 [[vk::push_constant]] ConstantBuffer<OutputConstants> output;
 float4 vertex_main(uint vertex : SV_VertexID) : SV_Position {
@@ -102,10 +103,10 @@ float4 pixel_main(float4 position : SV_Position) : SV_Target0 {
     const float3 exposed=radiance*output.exposure;
 #endif
 #if POIMA_OUTPUT_GRADE
-    const float3 graded = float3(grade_channel(exposed.r, 0), grade_channel(exposed.g, 1), grade_channel(exposed.b, 2));
-    const float3 mapped = graded / (1 + graded);
+    const float3 color = float3(grade_channel(exposed.r, 0), grade_channel(exposed.g, 1), grade_channel(exposed.b, 2));
 #else
-    const float3 mapped=exposed/(1+exposed);
+    const float3 color=exposed;
 #endif
+    const float3 mapped = tone_map(color, (uint)output.source_extent.w);
     return float4(output.attachment_srgb>.5 ? mapped : linear_to_srgb(mapped),1);
 }

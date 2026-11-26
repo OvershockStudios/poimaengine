@@ -1976,6 +1976,7 @@ struct Context {
             .raster_width=frame_constants.cluster_viewport[2], .raster_height=frame_constants.cluster_viewport[3],
             .bloom_intensity=scene->lighting.environment.bloom.intensity, .view=scene_debug_view,
             .srgb=!fxaa_enabled && ui_target().srgb,
+            .tone_mapper=scene->lighting.environment.tone_mapper.value_or(ToneMapper::reinhard),
         }, grade ? &*grade : nullptr, grade_buffer);
     }
     void validate_viewmodel_snapshot() const {

@@ -32,9 +32,19 @@ void validate_light(const Light& l) {
         require(l.kind==LightKind::directional || l.range==0 || l.range>s.near_plane,"Shadowed local light range must exceed shadow near.");
     }
 }
+std::string_view tone_mapper_name(ToneMapper mapper) noexcept {
+    switch (mapper) {
+        case ToneMapper::reinhard: return "reinhard";
+        case ToneMapper::agx: return "agx";
+        case ToneMapper::pbr_neutral: return "pbr_neutral";
+    }
+    return {};
+}
+
 void validate_environment(const LightingEnvironment& e) {
     for(auto x:e.ambient)require(std::isfinite(x) && x>=0 && x<=1e6f,"Ambient fill must be in [0,1e6].");
     require(std::isfinite(e.exposure) && e.exposure>=0 && e.exposure<=1e6f,"Exposure multiplier must be in [0,1e6].");
+    require(!e.tone_mapper || !tone_mapper_name(*e.tone_mapper).empty(),"Invalid tone mapper.");
     if(e.auto_exposure) {
         const auto& exposure=*e.auto_exposure;
         require(std::isfinite(exposure.min_stops) && std::isfinite(exposure.max_stops) &&

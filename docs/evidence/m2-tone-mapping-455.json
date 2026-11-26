@@ -1,0 +1,325 @@
+{
+  "format": "poima.qualification-summary",
+  "version": 1,
+  "engine_checkpoint": "0.0.455",
+  "comparison_commit": "ec1c82aa20369eccc73a833ffe9f54c569f1a066",
+  "scope": "Authored SDR output transforms, native presented capture and relocated Windows replay.",
+  "source_sha256": {
+    "CMakeLists.txt": "c0be94f17b8a06311cde105a0d36d178277694baf7d90388d615e692cf8338b4",
+    "THIRD_PARTY_NOTICES.md": "eb8da06f4d22c8f4ee7d52ce4003626f10ccc19cadab4dcb515966833759f982",
+    "cmake/render_smoke.cmake": "52060827019f8cd52942e717105c7fb7f9456975243e13b57ae0a05e6e20b549",
+    "cmake/runtime.json.in": "981762b46fa82e2f0a2d1b0f4fcb9cbe7b85bcb96737de5e8ba0fde75ef61e1b",
+    "include/poima/scene.hpp": "2f4247486c0f6f0c19690a418cb75f1234edc40f5a40ac477f8d4fa978465b2f",
+    "include/poima/world.hpp": "b2bef783b362d292dcd22f0d282646f095a1bef963d241500d1ca0fc34aa2194",
+    "shaders/scene_output.hlsl": "9c21c73a793e245f55e43324251826ec5747cf342adad111fa54f57c220a4f39",
+    "shaders/tone_mapping.hlsli": "4ed1d6de25403544b15041a65fc48f478e66c7de04f4fea81bb282421d67c3f2",
+    "src/core.cpp": "8cf2b835615f501f502ce275b80808af3e912155f4e345e905192a22d8832112",
+    "src/lighting.cpp": "f012bb63faaf7fefa71b942aa449d9cf3577bb77ca8c8b0c19e330b20ba90cab",
+    "src/project.cpp": "3632acf6564aee92fd19840b7d005f86b5295b94824986ad0cdba06c4adc0ab2",
+    "src/render_scene_output.cpp": "7a176715d497520d7c8a77034c9b206dde942586388f7e91297afece52af85cc",
+    "src/render_scene_output.hpp": "b9b1ee5fdf77ac1998e664774858fe901c10942593e204c74982a992cae7f4b3",
+    "src/render_smoke.cpp": "a98c13ebcc8e7bb2d00055a2955498dab4441b78a4fd9c05c1ad57095beb0953",
+    "src/world.cpp": "3c97cb558df083831044a68025933c63bbf7b4786328a757d97640f2bd668fb6",
+    "src/world_content.cpp": "bb43d4f432f1d7e25d46455670d7e1b78da941d57f097b867466a0a238ab6607",
+    "src/world_document.cpp": "73fc5566bc8b59e13977bd2d4e76952648871168e932bd8f9ca09c3cbf43993f",
+    "src/world_presentation_json.cpp": "8c9144b2799d1490576f6f1f61b15baacaf974665fa4495649e444c2b4d3fc56",
+    "src/world_schema.cpp": "661c6b5ba8938f3e8d3ba6949e498d1436b07bf72f5d1fe879f6ef54c3a522ce",
+    "tests/tone_mapping_capture.py": "50fb4c6440f730f1b2ce5c3eb222b8b6ff973d071ec777586ab97508bf34cd9b"
+  },
+  "build": {
+    "cross_build_log_sha256": "a410125855d9dc768bdd2746ecaadaa8404844326068b3142ea73b13c6c3ccbc",
+    "cross_build_reported_success_before_connection_closed": true,
+    "windows_runtime_verified_sha256": {
+      "bin/poima.exe": "f9fd5a6ce11fb33fa4abb070bb3c6b656f66cd0645d22f0dad08862db81f39ce",
+      "bin/poima_desktop.dll": "3e344e9230c04b040370d06fc00bf77b5682d7aa28777c40f9622b8ddcb63347",
+      "runtime.json": "7ee2acd8839b192df846046d27fec716f99ed01736d6752513143b341a08c8d7"
+    },
+    "host_dxc_smoke_sha256": {
+      "plain": "adc7d1a7858191aae8efdbb966ed27e3db912a05bb97bce8a4d1d1391eea8ad8",
+      "expanded": "cb953182b9b4ec7e09b6a343483869ec277c975119f543c41df8887384a35350"
+    }
+  },
+  "linux_authoring": {
+    "binary_sha256": "7a55f32dff708a86824e8af8261d8fd2c7c8906470c344eeb0ebc5214238d13b",
+    "junit_sha256": "cb5595cd4e19bee1cbedec7395654cf61c1a3d6ad372f7a7bc1f9ce61363a44f",
+    "raw_authoring_report_sha256": "6c85b634d820f9737388b5660bc23f47cbe232fc56c325d86ab9318f24e5e1f8",
+    "passed_suites": [
+      "authoring_contract_identity",
+      "project_contract",
+      "project_draft_contract",
+      "world_contract"
+    ],
+    "rejected_selectors": 6
+  },
+  "windows_vulkan": [
+    {
+      "gpu": "AMD Radeon(TM) Graphics",
+      "lighting_path": "forward",
+      "samples": 1,
+      "report_sha256": "7828d22f127717e54cb9f0a28afbc0368de244e8e352334753b8197df2d5cdfd",
+      "retained_0_0_454_binary_sha256": "969b3922c6d917766216c6e26c09f19af4e11976e14610fc582978150fb4f342",
+      "captures": {
+        "agx-black": "d403f7f03ff8236fdc70b056a0283159897b3a0bbb31cd53df4d2c3c9114589c",
+        "agx-midtone": "cbdb8fb2d67913fc8c530009698df42d818e81080ab35225e1ac81aa201adf04",
+        "agx-toe": "8bd7f5bd4ddfcabd794cb5badb71b3f612d0286aeeb7c9f85a27dafad3639e50",
+        "agx-warm": "67d718fe97f7f4e50fb313ef7f67b9c4baf30aa2a162cebc6010b5b27410b954",
+        "agx-white": "01c08d0c44b29083eaeecfca77eb2226e62fe33df7cc06bc4a0cd9f3edc39f92",
+        "bloom-graded-agx": "015ebca3b0f51f1ac14e061b30a5a3a68e72357b94f9669adb38a8589a42dabc",
+        "default": "ab4a3cee6ee092884cbca9217a2799f264e7891b88319ea283f89ed270ee2ff0",
+        "explicit": "ab4a3cee6ee092884cbca9217a2799f264e7891b88319ea283f89ed270ee2ff0",
+        "pbr_neutral-black": "d403f7f03ff8236fdc70b056a0283159897b3a0bbb31cd53df4d2c3c9114589c",
+        "pbr_neutral-midtone": "e6e18430e965f2ebeeb53e007badc3f9db03f0c4b4714d738abc2fc0c8932006",
+        "pbr_neutral-toe": "6f5b3d3625579bcd85d982c6dc1ad7f4fb5b22c6f6771ab958962aaf539552d6",
+        "pbr_neutral-warm": "2a891419353ca75004584c6ec1669c1ce4db197fa05cbbbd7971701a06c78d6c",
+        "pbr_neutral-white": "94ca4c42a9d41c242d796d57ebced051f64edf869e3c28fd552856ec749626da",
+        "retained": "ab4a3cee6ee092884cbca9217a2799f264e7891b88319ea283f89ed270ee2ff0"
+      },
+      "legacy_bmp_bytes_equal": true,
+      "untouched_input_probe_values": true,
+      "colors": {
+        "agx-midtone": {
+          "checked_pixels": 77361,
+          "maximum_rgb_error": 0,
+          "out_of_tolerance": 0,
+          "refutes_wrong_order": 0
+        },
+        "pbr_neutral-midtone": {
+          "checked_pixels": 77361,
+          "maximum_rgb_error": 0,
+          "out_of_tolerance": 0,
+          "refutes_wrong_order": 0
+        },
+        "agx-warm": {
+          "checked_pixels": 77361,
+          "maximum_rgb_error": 0,
+          "out_of_tolerance": 0,
+          "refutes_wrong_order": 0
+        },
+        "pbr_neutral-warm": {
+          "checked_pixels": 77361,
+          "maximum_rgb_error": 0,
+          "out_of_tolerance": 0,
+          "refutes_wrong_order": 0
+        },
+        "agx-white": {
+          "checked_pixels": 77361,
+          "maximum_rgb_error": 0,
+          "out_of_tolerance": 0,
+          "refutes_wrong_order": 0
+        },
+        "pbr_neutral-white": {
+          "checked_pixels": 77361,
+          "maximum_rgb_error": 0,
+          "out_of_tolerance": 0,
+          "refutes_wrong_order": 0
+        },
+        "agx-toe": {
+          "checked_pixels": 77361,
+          "maximum_rgb_error": 0,
+          "out_of_tolerance": 0,
+          "refutes_wrong_order": 0
+        },
+        "pbr_neutral-toe": {
+          "checked_pixels": 77361,
+          "maximum_rgb_error": 1,
+          "out_of_tolerance": 0,
+          "refutes_wrong_order": 0
+        },
+        "agx-black": {
+          "checked_pixels": 77361,
+          "maximum_rgb_error": 0,
+          "out_of_tolerance": 0,
+          "refutes_wrong_order": 0
+        },
+        "pbr_neutral-black": {
+          "checked_pixels": 77361,
+          "maximum_rgb_error": 0,
+          "out_of_tolerance": 0,
+          "refutes_wrong_order": 0
+        },
+        "bloom-graded-agx": {
+          "checked_pixels": 77361,
+          "maximum_rgb_error": 0,
+          "out_of_tolerance": 0,
+          "refutes_wrong_order": 77361
+        }
+      }
+    },
+    {
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "lighting_path": "deferred",
+      "samples": 1,
+      "report_sha256": "2829157366858e96b7549ec139a4f6c25361acdf3bce8e63396fe0c3e2115c51",
+      "retained_0_0_454_binary_sha256": "969b3922c6d917766216c6e26c09f19af4e11976e14610fc582978150fb4f342",
+      "captures": {
+        "agx-black": "d403f7f03ff8236fdc70b056a0283159897b3a0bbb31cd53df4d2c3c9114589c",
+        "agx-midtone": "cbdb8fb2d67913fc8c530009698df42d818e81080ab35225e1ac81aa201adf04",
+        "agx-toe": "8bd7f5bd4ddfcabd794cb5badb71b3f612d0286aeeb7c9f85a27dafad3639e50",
+        "agx-warm": "67d718fe97f7f4e50fb313ef7f67b9c4baf30aa2a162cebc6010b5b27410b954",
+        "agx-white": "01c08d0c44b29083eaeecfca77eb2226e62fe33df7cc06bc4a0cd9f3edc39f92",
+        "bloom-graded-agx": "015ebca3b0f51f1ac14e061b30a5a3a68e72357b94f9669adb38a8589a42dabc",
+        "default": "ab4a3cee6ee092884cbca9217a2799f264e7891b88319ea283f89ed270ee2ff0",
+        "explicit": "ab4a3cee6ee092884cbca9217a2799f264e7891b88319ea283f89ed270ee2ff0",
+        "fsr3_native-agx": "cbdb8fb2d67913fc8c530009698df42d818e81080ab35225e1ac81aa201adf04",
+        "fsr3_native-default": "f05e3e192c44727631e8d4bf270c956f7cebc824b750ca2e4417c9da8762aa31",
+        "hud-agx": "c6e77f1b63434872bde6994a1eeb3e67c0af53cfc776b4890f9588b755d6d463",
+        "hud-pbr_neutral": "105dde43150ae42fe3a7d2f6230219de56cc6ade5a00d4608bd4b4e23c41e945",
+        "hud-reinhard": "0ab3260ce32c73a40e7c405bcf8d548c64b3eadad684012bc2b90b310ea204fc",
+        "pbr_neutral-black": "d403f7f03ff8236fdc70b056a0283159897b3a0bbb31cd53df4d2c3c9114589c",
+        "pbr_neutral-midtone": "e6e18430e965f2ebeeb53e007badc3f9db03f0c4b4714d738abc2fc0c8932006",
+        "pbr_neutral-toe": "b061a222e01b792b370ee7c33aa17ad9dafa6b1c13e81dca87cbf69bd63fa3ef",
+        "pbr_neutral-warm": "2a891419353ca75004584c6ec1669c1ce4db197fa05cbbbd7971701a06c78d6c",
+        "pbr_neutral-white": "94ca4c42a9d41c242d796d57ebced051f64edf869e3c28fd552856ec749626da",
+        "relocated": "cbdb8fb2d67913fc8c530009698df42d818e81080ab35225e1ac81aa201adf04",
+        "retained": "ab4a3cee6ee092884cbca9217a2799f264e7891b88319ea283f89ed270ee2ff0"
+      },
+      "legacy_bmp_bytes_equal": true,
+      "untouched_input_probe_values": true,
+      "colors": {
+        "agx-midtone": {
+          "checked_pixels": 77361,
+          "maximum_rgb_error": 0,
+          "out_of_tolerance": 0,
+          "refutes_wrong_order": 0
+        },
+        "pbr_neutral-midtone": {
+          "checked_pixels": 77361,
+          "maximum_rgb_error": 0,
+          "out_of_tolerance": 0,
+          "refutes_wrong_order": 0
+        },
+        "agx-warm": {
+          "checked_pixels": 77361,
+          "maximum_rgb_error": 0,
+          "out_of_tolerance": 0,
+          "refutes_wrong_order": 0
+        },
+        "pbr_neutral-warm": {
+          "checked_pixels": 77361,
+          "maximum_rgb_error": 0,
+          "out_of_tolerance": 0,
+          "refutes_wrong_order": 0
+        },
+        "agx-white": {
+          "checked_pixels": 77361,
+          "maximum_rgb_error": 0,
+          "out_of_tolerance": 0,
+          "refutes_wrong_order": 0
+        },
+        "pbr_neutral-white": {
+          "checked_pixels": 77361,
+          "maximum_rgb_error": 0,
+          "out_of_tolerance": 0,
+          "refutes_wrong_order": 0
+        },
+        "agx-toe": {
+          "checked_pixels": 77361,
+          "maximum_rgb_error": 0,
+          "out_of_tolerance": 0,
+          "refutes_wrong_order": 0
+        },
+        "pbr_neutral-toe": {
+          "checked_pixels": 77361,
+          "maximum_rgb_error": 0,
+          "out_of_tolerance": 0,
+          "refutes_wrong_order": 0
+        },
+        "agx-black": {
+          "checked_pixels": 77361,
+          "maximum_rgb_error": 0,
+          "out_of_tolerance": 0,
+          "refutes_wrong_order": 0
+        },
+        "pbr_neutral-black": {
+          "checked_pixels": 77361,
+          "maximum_rgb_error": 0,
+          "out_of_tolerance": 0,
+          "refutes_wrong_order": 0
+        },
+        "bloom-graded-agx": {
+          "checked_pixels": 77361,
+          "maximum_rgb_error": 0,
+          "out_of_tolerance": 0,
+          "refutes_wrong_order": 77361
+        }
+      },
+      "fsr3_native": {
+        "maximum_rgb_error": 0,
+        "checked_pixels": 16
+      },
+      "hud_pixels_equal": 25,
+      "relocated_export": {
+        "source_unavailable": true,
+        "checked_pixels": 77361,
+        "maximum_rgb_error": 0,
+        "runtime_without_tone_mapping_refused": true
+      }
+    }
+  ],
+  "matched_cove_stills": {
+    "study_sha256": "0acf63b1244d12764caf291775f1e72e346b794f1f3fd3714b4875cca8484499",
+    "windows_binary_sha256": "f9fd5a6ce11fb33fa4abb070bb3c6b656f66cd0645d22f0dad08862db81f39ce",
+    "same_tick": 826,
+    "width": 960,
+    "height": 540,
+    "lighting_path": "deferred",
+    "reconstruction": "fsr3_native",
+    "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "exact_hdr_and_depth_probe_locations": 24,
+    "views": [
+      {
+        "path": "reinhard.bmp",
+        "sha256": "4411eb511cc920a6b1d9a207946e162065f23edb356243581dfc2c5aa2799518",
+        "luma": {
+          "p01": 74.144,
+          "p10": 87.2466,
+          "p50": 118.45799999999998,
+          "p90": 132.31119999999999,
+          "p99": 139.1404
+        }
+      },
+      {
+        "path": "agx.bmp",
+        "sha256": "7f1e1a661c0efdf7b28a8837d900066b2607ac7d986e4334065e7b687bc2df5f",
+        "luma": {
+          "p01": 85.79499999999999,
+          "p10": 102.74119999999999,
+          "p50": 138.2476,
+          "p90": 152.2746,
+          "p99": 160.869
+        }
+      },
+      {
+        "path": "pbr_neutral.bmp",
+        "sha256": "96a23feade4f802918d2cbfcbe501cd44c4c5e84791ebe4d749f0aee3429846c",
+        "luma": {
+          "p01": 55.2226,
+          "p10": 72.7608,
+          "p50": 118.88279999999999,
+          "p90": 140.0694,
+          "p99": 151.2086
+        }
+      }
+    ]
+  },
+  "retained_attempts": [
+    {
+      "scope": "Linux fixture staging",
+      "log_sha256": "4dcd4315eeeb54af48a4cd4aa278400595faab601f5aa5066a0034bfa7c9d308",
+      "cause": "Shared oracle helpers were on PYTHONPATH, but the evidence collector required a sibling file.",
+      "repair": "Staged the same helpers directly beside the fixture."
+    },
+    {
+      "scope": "First NVIDIA standalone replay",
+      "report_sha256": "71c4f7acc1880d3e4e96b3acc871931bdd457d11a2a3bc02fff289469660f0a3",
+      "cause": "The fixture added a HUD before export, then compared every pixel against a sky-only oracle.",
+      "repair": "Ran the full-image export test before adding the separate HUD qualification case.",
+      "nvidia_end_to_end_rerun": true
+    }
+  ],
+  "outside_scope": [
+    "HDR monitor output, exact OpenColorIO parity and authored 3D LUTs",
+    "Native Linux graphics, Intel GPU and representative performance",
+    "Full moving showreel visual review"
+  ]
+}

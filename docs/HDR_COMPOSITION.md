@@ -13,12 +13,44 @@ have separate implementation and qualification scopes.
 The output pass adds enabled bloom to the selected scene radiance, multiplies
 by `LightingEnvironment.exposure`, and evaluates the optional
 [output grade](PROJECT_POST_EFFECTS.md#grade-exposed-scene-color). It applies
-component-wise Reinhard mapping `x / (1 + x)` and encodes sRGB exactly once.
+the selected SDR tone mapper and encodes sRGB exactly once.
 An sRGB attachment performs that encoding. An UNORM attachment uses explicit
 shader encoding. The pass uses an integer texel load for scene radiance to
 keep sampling consistent between capture, player and editor.
 
 Exposure zero makes scene content black, including the flat background. UI remains visible. Legacy preview boxes retain their simple preview shading but now receive the same output transform as other geometry; their previous exposure bypass is intentionally removed. The standalone diagnostic triangle remains outside the scene pipeline.
+
+## Choose a tone mapper
+
+Author `LightingEnvironment.tone_mapper` on the world environment. Use
+`world.describe` to discover the enum and `world.lighting` or `runtime.lighting`
+to inspect the selected value. For example, a scene can opt into AgX with
+this environment component.
+
+```json
+{
+  "ambient": [0.04, 0.05, 0.07],
+  "exposure": 0.8,
+  "tone_mapper": "agx"
+}
+```
+
+| Value | SDR response |
+| --- | --- |
+| `reinhard` | Legacy component-wise `x / (1 + x)` mapping. Omission uses the same output. |
+| `agx` | Filmic contrast with a soft highlight shoulder and saturation roll-off, using the [three.js r180 AgX approximation](https://github.com/mrdoob/three.js/blob/r180/src/renderers/shaders/ShaderChunk/tonemapping_pars_fragment.glsl.js). |
+| `pbr_neutral` | Preserves product and material colors through most of the range, with strong highlights rolling toward white. [Khronos PBR Neutral specification](https://github.com/KhronosGroup/ToneMapping/tree/main/PBR_Neutral) |
+
+AgX here approximates an SDR display transform in linear Rec.709. Exact
+Blender/OpenColorIO color matching and HDR display output have separate
+qualification scopes. The transform follows reconstruction, bloom, exposure
+and the optional output grade. Native game UI and diagnostic views bypass it.
+
+The selector is case sensitive. Runtime sessions freeze the environment with
+the authored world revision. An explicitly selected value requires
+`features.tone_mapping` in the installed export runtime descriptor. Remove the
+field for legacy content compatibility. A runtime that lacks the feature
+refuses export before publishing a bundle.
 
 ## Adapt exposure between dark and bright areas
 
@@ -107,5 +139,12 @@ python3 tests/hdr_composition_capture.py build/windows-runtime/poima.exe --outpu
 ```
 
 The second command requires a freshly rebuilt renderer and a graphics session. [Earlier shader and syntax validation record](evidence/m2-hdr-composition-development.json).
+
+`tests/tone_mapping_capture.py` compares both optional transforms against a
+CPU color reference. Run it against a Windows Vulkan executable with a new
+`--output` directory and the intended `--gpu` index. Pass `--reference` with
+the retained 0.0.454 executable for exact legacy comparison, or `--runtime`
+with a matching installed runtime to exercise standalone export and replay.
+[Tone-mapping results](evidence/m2-tone-mapping-455.json)
 
 The output encoding follows the [Vulkan color-space contract](https://docs.vulkan.org/refpages/latest/refpages/source/VkColorSpaceKHR.html). See [authored lighting](LIGHTING.md) for component units and [implementation status](IMPLEMENTATION_STATUS.md) for qualified engine capabilities.
