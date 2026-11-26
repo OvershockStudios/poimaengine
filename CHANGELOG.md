@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.469
+
+- Project PBR surface layers from three world axes for cliffs and steep
+  terrain. [Material projection](docs/MATERIAL_AUTHORING.md#texture-steep-slopes-and-cliffs)
+
 ## 0.0.468
 
 - Blend an additional world-space PBR layer across terrain using slope and

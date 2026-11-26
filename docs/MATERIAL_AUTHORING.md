@@ -119,6 +119,28 @@ runtime snapshot.
 shading against a color, normal and lighting oracle. It also checks source-free
 export and the original material path. [Surface-layer qualification](evidence/m2-terrain-surface-layer-468.json)
 
+### Texture steep slopes and cliffs
+
+Set `"projection": "triplanar"` on `surface_layer` to project the textures
+from three world axes. The shader blends the projections using the fourth
+power of the unperturbed normal's absolute components. The three projections
+sample ZY, XZ and XY coordinates. Adjacent tiles share texture phase when their
+repeat periods match. The default `"xz"` keeps the original top-down mapping.
+
+With `base_tile_mm` set, the projection applies to the base maps at that
+repeat period and to the layer maps at `tile_mm`. The projected base maps
+work on rigid meshes without UVs or tangents. Omit `base_tile_mm` to keep
+the base maps on mesh UVs. A painted coverage mask always uses UV0.
+Each projected normal map contributes a slope in its own axes. The shader
+combines the slopes and applies the result within the surface's tangent plane.
+[Surface-gradient bump mapping](https://jcgt.org/published/0009/03/04/)
+
+Check `needs_surface_layer_triplanar` in the dependency or project report.
+The export runtime must advertise `features.surface_layer_triplanar`. Relocate
+the export and inspect the cliff and slope transitions from the intended
+camera. This option can sample a map from three directions near a blend.
+Measure it on the material and views you intend to ship.
+
 ## Evidence
 
 [Evidence](evidence/m2-material-authoring.json) covers native import/authoring tests, mirrored-seam unit checks, scalar/GPU normal-map comparisons, independent image overrides, preview/retry behavior, effective inspection, disable/inherit semantics, source-independent reload and frozen runtime replay. These are bounded fixtures, not full glTF conformance or production graphics qualification.

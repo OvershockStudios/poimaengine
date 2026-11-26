@@ -128,8 +128,9 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     displacement["description"]="Adaptive tessellation from a linear cooked height image. Projection follows the chosen local axis. Author collision separately.";
     auto surface_layer=object_schema({{"base_color",asset_id},{"orm",asset_id},{"normal",asset_id},{"mask",asset_id},
         {"tile_mm",unsigned_range(32,64000)},{"base_tile_mm",unsigned_range(32,64000)},{"weight",unit},
-        {"slope_degrees",vector({{"type","number"},{"minimum",0},{"maximum",90}},2)}},{"base_color","orm","tile_mm"});
-    surface_layer["description"]="Second opaque PBR layer with world-XZ repeat in millimetres. An optional linear red mask uses UV0. An optional increasing slope range sets the start/full blend in degrees. ORM packs occlusion, roughness and metallic in RGB.";
+        {"slope_degrees",vector({{"type","number"},{"minimum",0},{"maximum",90}},2)},
+        {"projection",{{"enum",{"xz","triplanar"}},{"default","xz"}}}},{"base_color","orm","tile_mm"});
+    surface_layer["description"]="Second opaque PBR layer with world repeat in millimetres. Projection is xz or triplanar and also applies to the base when base_tile_mm is set. An optional linear red mask uses UV0. An optional increasing slope range sets the start/full blend in degrees. ORM packs occlusion, roughness and metallic in RGB.";
     auto static_mesh=object_schema({{"asset",asset_id},{"primitive",{{"type","integer"},{"minimum",0},{"maximum",9999}}},{"visible",{{"type","boolean"}}},
         {"cast_shadows",{{"type","boolean"},{"default",true}}},{"receive_shadows",{{"type","boolean"},{"default",true}}},
         {"lods",{{"type","array"},{"minItems",1},{"maxItems",max_mesh_lod_levels},{"items",lod_level},
@@ -487,7 +488,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 258}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 259}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),

@@ -18,6 +18,8 @@ struct SurfaceLayer {
     std::uint32_t tile_mm=1000, base_tile_mm=0;
     float weight=1;
     std::optional<std::array<float,2>> slope_degrees;
+    bool triplanar=false;
+    bool projects_base_triplanar() const { return triplanar && base_tile_mm!=0; }
     bool operator==(const SurfaceLayer&) const=default;
 };
 // Slot order: base color, metallic/roughness, emissive, occlusion, normal.

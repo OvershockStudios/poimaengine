@@ -30,13 +30,14 @@ inline void validate_mesh_lod_geometry(const MeshAsset* base,const MeshLodChain&
 
 inline void validate_mesh_lod_textures(const MeshAsset& base,const MeshLodChain& lods,const MaterialTextures* override_maps) {
     const auto& maps=override_maps ? override_maps->maps : base.textures;
-    const bool needs_layer_uv=override_maps && override_maps->surface_layer && override_maps->surface_layer->mask;
-    const bool uses_uv=needs_layer_uv || std::ranges::any_of(maps,[](const auto& map){ return bool(map.image); });
-    if(!uses_uv)return;
+    const auto* layer=override_maps && override_maps->surface_layer ? &*override_maps->surface_layer : nullptr;
+    const bool base_uses_uv=(!layer || !layer->projects_base_triplanar()) &&
+        std::ranges::any_of(maps,[](const auto& map){ return bool(map.image); });
+    if(!base_uses_uv && !(layer && layer->mask))return;
     for(const auto& level:lods.levels) {
         if(!level.mesh->has_uv)
-            throw std::invalid_argument("Mesh LOD requires UV0 on every alternate when the base material uses texture maps.");
-        if(maps[4].image && !std::ranges::all_of(level.mesh->vertices,valid_tangent))
+            throw std::invalid_argument("Mesh LOD requires UV0 on every alternate for UV-mapped textures or a painted layer mask.");
+        if(base_uses_uv && maps[4].image && !std::ranges::all_of(level.mesh->vertices,valid_tangent))
             throw std::invalid_argument("Mesh LOD normal mapping requires valid tangent frames on every alternate.");
     }
 }

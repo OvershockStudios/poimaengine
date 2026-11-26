@@ -45,6 +45,7 @@ struct DrawItem {
     std::span<const SceneSurfaceMark> local_surface_marks;
     SceneWetness wetness;
     std::array<float,4> surface_layer{}, surface_layer_options{};
+    bool surface_layer_triplanar=false;
     std::array<float,4> foliage{};
     std::optional<HeightDisplacement> displacement;
     nvrhi::BindingSetHandle displacement_bindings;

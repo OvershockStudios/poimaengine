@@ -269,6 +269,9 @@ mutable snow region. Cook rigid [terrain detail levels](TERRAIN.md#cook-terrain-
 with matching tile boundaries. Extend qualification to representative terrain workloads.
 The [surface layer](MATERIAL_AUTHORING.md#blend-a-surface-layer) adds world-space
 PBR tiling with slope and painted coverage for opaque world meshes.
+Use [three-axis projection](MATERIAL_AUTHORING.md#texture-steep-slopes-and-cliffs)
+for steep slopes and cliffs. Test projected materials on representative camera
+paths and keep draw and texture budgets visible.
 Qualify shared edges, culling bounds, silhouettes, shadow and motion parity,
 LOD transitions, and predictable hardware fallbacks. Keep collision and
 gameplay queries tied to the declared authored geometry.

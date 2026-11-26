@@ -248,6 +248,7 @@ FrozenContent freeze_world_content(const Json& source, const fs::path& directory
                     require(map->srgb==(std::string_view(slot)=="base_color"),"Surface layer image has the wrong color space.",-32050);
                 }
                 result.needs_surface_layer=true;
+                result.needs_surface_layer_triplanar|=layer.contains("projection") && layer.at("projection")=="triplanar";
             }
             if(type==std::string_view("StaticMesh") && ref.contains("lods")) {
                 result.needs_mesh_lod=true;

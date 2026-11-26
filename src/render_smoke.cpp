@@ -975,7 +975,8 @@ struct Context {
             }
             // Keep geometry correspondence when only the surface appearance changed.
             gpu_object.history[0]=valid ? (surface_changed ? 3u : 1u) : 0u;
-            gpu_object.history[1]=(item.receive_shadows ? 0u : 1u) | (item.cast_shadows ? 0u : 2u);
+            gpu_object.history[1]=(item.receive_shadows ? 0u : 1u) | (item.cast_shadows ? 0u : 2u) |
+                (item.surface_layer_triplanar ? 4u : 0u);
             gpu_object.history[2]=item.surface_mark_offset;
             gpu_object.history[3]=item.surface_mark_count;
             item.previous_vertices=item.skin && valid ? item.skin->outputs[item.skin->accepted_index] : item.geometry.vertices;
@@ -2342,6 +2343,7 @@ struct Context {
                 item.surface_layer={1000.f/static_cast<float>(layer.tile_mm),layer.weight,slope[0],slope[1]};
                 item.surface_layer_options={layer.base_tile_mm ? 1000.f/static_cast<float>(layer.base_tile_mm) : 0.f,
                     layer.normal ? 1.f : 0.f,item.wetness.base_scale,item.wetness.roughness_scale};
+                item.surface_layer_triplanar=layer.triplanar;
             }
             if(object.water_ripple_surface) {
                 require(list==0 && water_normal_mode!=0 && !found_water_ripples && object.material &&

@@ -1,0 +1,169 @@
+{
+  "format": "poima.qualification-summary",
+  "version": 1,
+  "engine_checkpoint": "0.0.469",
+  "comparison_commit": "dd899e27ffb5f1111ce192f650b3d8529d337b08",
+  "scope": "World-space three-axis surface and base projections with independent HDR, shading-normal, and depth checks on six UV-less rigid ramps and one alternate detail tier.",
+  "source_sha256": {
+    "CMakeLists.txt": "d5277d27c719ffa491d2af4bac81d47e939374c8a5e445e193e6266623ff7fb7",
+    "cmake/runtime.json.in": "eac5de786e39d4feba1bbcb3f5d25c0383b282e7c2c40c7adf07dc41bace10f1",
+    "include/poima/assets.hpp": "102fc18d1b9ca35c71ff69dde699fe38b6eb47b7ebd212eb101b0f3f71ce901f",
+    "include/poima/world.hpp": "00019aab3437cc18430672e267adadc53f729ff0ca1d7edb97d91518c96530fd",
+    "shaders/scene.hlsl": "e967ddc4f5c5b947193e9cfeabc1aad58ff125e26f0f82b95353d98fee27826a",
+    "shaders/surface_layer.hlsli": "4473095fa2895e3c7df12e33cb5e9f5667ab61d2f1ee1e2b4b964a3fe646976b",
+    "src/core.cpp": "fe54a6db652b453a98612e6af4cd342fc7ce15f9d3119f61241da428f1d06bdf",
+    "src/mesh_lod.hpp": "26cb061b30358ed54bacfcb6787f6284041f953c6856c0dbd859eb3e77ef348c",
+    "src/project.cpp": "7c848e9d71285f2ac4a60490ed3506727af236410f6038b4c035d3b5c3c01c00",
+    "src/render_scene_draw.hpp": "08d52e449e055de3e81645a195b10101dfdf5c1da9ff61e4c033827b45888e20",
+    "src/render_smoke.cpp": "29c19e99734dae907cfd8307faba107eadecd174721fd7e273a53596b03a06f6",
+    "src/runtime.cpp": "38cdc21bb9475e3937c182bb14064986c3718d75b404dfcac574daca092f73bf",
+    "src/world.cpp": "601b23e2789062e97c831b7eb2536c6c409c9a54622b6f6284f1f455de7de08c",
+    "src/world_content.cpp": "dfc4b42443bfd8424dec8305dfd6b6971c303f884db7fe3a52005967ef32f33f",
+    "src/world_document.cpp": "9724554ec886aaed09cb61e898ca7f2547d8c8ac91a402931c65b83b25884cd4",
+    "src/world_runtime_definition.cpp": "ccbdb423513489e89350315f85870a4ab1f2d235b5de36560a0fd8cdf6aea4cb",
+    "src/world_schema.cpp": "ac3c0d2a1f463151f05e1b972f23f31200e2b80fab203eb66d0998f78203e310",
+    "tests/asset_references_contract.py": "a6e4aaf6b2ebabf8ce1faec645a79865afa0607199666fef0897aff7f253e8b9",
+    "tests/contact_shadow_contract.py": "4191fd633b5f7d9299d22ab6d43510e72e0acf2b41a50a40860c968ad9746e20",
+    "tests/terrain_surface_layer_capture.py": "a6d757e290512ff15921b08f67b761903576aca9b10e8cca43ab50aa833c98de",
+    "tests/triplanar_surface_capture.py": "40967e9548f4a11aa941cf212ff16037ac2e249643b63c62364da87d27a88adc"
+  },
+  "windows_installed_sha256": {
+    "bin/poima.exe": "a48f2e551cf28bacc3c3e7829ec469837944cd10c8067fd8ab4eaee36144a0a3",
+    "bin/poima_desktop.dll": "65cc0642feb3fa10940244445a27781ca66bd9ec15652f86b0d40eadcfea9562",
+    "runtime.json": "b3811fc6f9c8faad18ac3269b8ae74907640e0f7d3a3a453e7d303eaa32f581a"
+  },
+  "changed_spirv_modules": [
+    "scene_deferred_color_ps.spv",
+    "scene_deferred_ps.spv",
+    "scene_products_ps.spv",
+    "scene_ps.spv"
+  ],
+  "ubuntu": {
+    "suites": [
+      "world_terrain_contract",
+      "snow_compaction_contract",
+      "authoring_contract_identity",
+      "render_schedule_native",
+      "world_material_native",
+      "world_texture_native",
+      "project_contract",
+      "contact_shadow_contract",
+      "world_contract",
+      "asset_references_contract",
+      "rigid_mesh_lod_contract"
+    ],
+    "binary_sha256": "7249ac47e6daf5dc9446e84eb5fa8b3a2a5a44bbb283ddab47abf525ecb2394e",
+    "regression_junit_sha256": [
+      "2edcde827cb4374cd8d78dd979e601bbdd20042e4356a4f5eafc6904143cc9ce",
+      "726cdace6084563d4dd02fadfd76183da77265085f5250c0cb57c82b0a099031"
+    ],
+    "headless_authoring_report_sha256": "446572e81fcfccc7f3b01d337eb144af9b4d5db5d84afbd364295c6b106bd0a8"
+  },
+  "windows": [
+    {
+      "device": "AMD Radeon(TM) Graphics",
+      "lighting_path": "forward",
+      "report_sha256": "cb85b533b4bd0464dbcea26c342c4bcdd4c043db5ec416491bbc83c5f610a210",
+      "xz_probes_exact": true,
+      "frames": {
+        "xz": {
+          "image_sha256": "4a0b67029c9ed1e220bb2e3b9e9c22ce4ba56481faa4ec5c6cc42751fbdbaece",
+          "probes": 30
+        },
+        "previous-xz": {
+          "image_sha256": "4a0b67029c9ed1e220bb2e3b9e9c22ce4ba56481faa4ec5c6cc42751fbdbaece",
+          "probes": 30
+        },
+        "ambient": {
+          "image_sha256": "da8232646e24deb908d4e3a808fd8987979d21716a537cd8421c10a8cdefa23c",
+          "probes": 30,
+          "max_hdr_error": 0.00039783554449172864,
+          "max_normal_error": 0.0004890428533242952,
+          "max_depth_error": 3.2453902876206087e-07
+        },
+        "direct": {
+          "image_sha256": "1a63dff05fb56e48f75c7dd3a360b31dbbc0456535987e6def34a8b9fd70c277",
+          "probes": 30,
+          "max_hdr_error": 0.0004128903098092884,
+          "max_normal_error": 0.0004890428533242952,
+          "max_depth_error": 3.2453902876206087e-07
+        },
+        "restored-base": {
+          "image_sha256": "1a63dff05fb56e48f75c7dd3a360b31dbbc0456535987e6def34a8b9fd70c277",
+          "probes": 30,
+          "max_hdr_error": 0.0004128903098092884,
+          "max_normal_error": 0.0004890428533242952,
+          "max_depth_error": 3.2453902876206087e-07
+        },
+        "relocated": {
+          "image_sha256": "1a63dff05fb56e48f75c7dd3a360b31dbbc0456535987e6def34a8b9fd70c277",
+          "probes": 30,
+          "max_hdr_error": 0.0004128903098092884,
+          "max_normal_error": 0.0004890428533242952,
+          "max_depth_error": 3.2453902876206087e-07
+        }
+      }
+    },
+    {
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "lighting_path": "deferred",
+      "report_sha256": "b87ef7be1edb989876e10e31111fe3c0233ccc0601e63b52317bcfb9ea046a62",
+      "xz_probes_exact": true,
+      "frames": {
+        "xz": {
+          "image_sha256": "fdd023b7cd2b5fab435d2d4baf258301c8cfc184ab2f9961629efec11668c8de",
+          "probes": 30
+        },
+        "previous-xz": {
+          "image_sha256": "fdd023b7cd2b5fab435d2d4baf258301c8cfc184ab2f9961629efec11668c8de",
+          "probes": 30
+        },
+        "ambient": {
+          "image_sha256": "3c8c75ea3646caf1888c159b04ea478e3c2e14cffd11afbd6fca57cac29a82f1",
+          "probes": 30,
+          "max_hdr_error": 0.0011596934102340029,
+          "max_normal_error": 0.0011970310171410953,
+          "max_depth_error": 3.841436735374515e-07
+        },
+        "direct": {
+          "image_sha256": "828bcda3a49b85530776fcf996d52b615933b4926cf49fe68427db8ec28ebba9",
+          "probes": 30,
+          "max_hdr_error": 0.0009011715598092884,
+          "max_normal_error": 0.0011970310171410953,
+          "max_depth_error": 3.841436735374515e-07
+        },
+        "restored-base": {
+          "image_sha256": "828bcda3a49b85530776fcf996d52b615933b4926cf49fe68427db8ec28ebba9",
+          "probes": 30,
+          "max_hdr_error": 0.0009011715598092884,
+          "max_normal_error": 0.0011970310171410953,
+          "max_depth_error": 3.841436735374515e-07
+        },
+        "relocated": {
+          "image_sha256": "828bcda3a49b85530776fcf996d52b615933b4926cf49fe68427db8ec28ebba9",
+          "probes": 30,
+          "max_hdr_error": 0.0009011715598092884,
+          "max_normal_error": 0.0011970310171410953,
+          "max_depth_error": 3.841436735374515e-07
+        }
+      }
+    }
+  ],
+  "retained_harness_failures": [
+    {
+      "report_sha256": "61b350f3aa9c8827150456b0d7b27bec979dc9ffe8e43029a987afab01b995fb",
+      "harness_sha256": "c3854c04a1897e05a77723e4ea9eb65984d5dbf78ad5819e3f03b306178268e1",
+      "cause": "The first fixture omitted the required authored double_sided field. The corrected fixture reused the same engine binary."
+    },
+    {
+      "report_sha256": "6723e967ce4a6c9ecddde0fcf0f25ad63b8a9666d75fbbbfea8013f5dd03c4cd",
+      "harness_sha256": "846ee8a171101612b60ff3b5a18da77bd0609139dfed31ee7710466984a46717",
+      "cause": "The first Vulkan fixture counted five ordinary draws in mesh LOD diagnostics. The corrected assertion checks the exact alternate-tier entity. The engine binary was unchanged."
+    }
+  ],
+  "limits": [
+    "Single-sample fixed view of six original ramps with one low-detail draw. The witness tests all three axes and signed slopes.",
+    "Projected base and upper colors use six 2-by-2 fixture textures. Coverage is uniform and there are no wetness or surface marks.",
+    "Representative renderer cost, moving-camera texture stability and production material art remain outside this test."
+  ]
+}

@@ -124,6 +124,8 @@ Add a [world-space surface layer](MATERIAL_AUTHORING.md#blend-a-surface-layer)
 to repeat two PBR materials across the terrain. Use slope angles, a painted
 mask, or both to control where the upper material appears. The base material
 can keep its original UVs or use its own world-space repeat period.
+Use [three-axis projection](MATERIAL_AUTHORING.md#texture-steep-slopes-and-cliffs)
+to carry both materials over steep faces at consistent world scale.
 
 ## Compact snow on cooked tiles
 

@@ -1,8 +1,15 @@
 # Implementation status
 
-Updated 2026-11-26 for **0.0.468**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-26 for **0.0.469**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.469 adds [three-axis projection](MATERIAL_AUTHORING.md#texture-steep-slopes-and-cliffs)
+to opaque PBR surface layers. A projected base material can use meshes
+without UVs or tangents. Native forward and deferred captures check color,
+normal and depth across six ramps including one selected lower detail tier.
+Live texture edits and a relocated standalone export preserve the projection.
+[Qualification results](evidence/m2-triplanar-surface-469.json)
 
 Version 0.0.468 adds an authored [PBR surface layer](MATERIAL_AUTHORING.md#blend-a-surface-layer)
 with separate world-space tiling, a UV0 paint mask and slope coverage. The

@@ -58,6 +58,7 @@
     "mesh_lod": @POIMA_RUNTIME_RENDER_SMOKE@,
     "mesh_lod_anchor": @POIMA_RUNTIME_RENDER_SMOKE@,
     "surface_layer": @POIMA_RUNTIME_RENDER_SMOKE@,
+    "surface_layer_triplanar": @POIMA_RUNTIME_RENDER_SMOKE@,
     "material_displacement": @POIMA_RUNTIME_RENDER_SMOKE@,
     "project_post_effects": @POIMA_RUNTIME_RENDER_SMOKE@,
     "output_grade": @POIMA_RUNTIME_RENDER_SMOKE@,

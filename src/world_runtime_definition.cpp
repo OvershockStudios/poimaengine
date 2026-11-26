@@ -80,11 +80,12 @@ std::shared_ptr<const MaterialTextures> resolve_textures(const Json& components,
             surface.mask=map("mask",false);
             surface.tile_mm=layer->at("tile_mm");
             surface.base_tile_mm=layer->value("base_tile_mm",0u);
+            surface.triplanar=layer->contains("projection") && layer->at("projection")=="triplanar";
             surface.weight=layer->value("weight",1.f);
             if(layer->contains("slope_degrees"))surface.slope_degrees=layer->at("slope_degrees").get<std::array<float,2>>();
             require(!surface.mask || (inherited_mesh && inherited_mesh->has_uv),"A surface layer mask needs mesh UV0.",-32050);
         }
-        if(inherited_mesh) {
+        if(inherited_mesh && !(resolved->surface_layer && resolved->surface_layer->projects_base_triplanar())) {
             for(const auto& map:resolved->maps)require(!map.image || inherited_mesh->has_uv,"Material maps require mesh UV0.",-32050);
             if(resolved->maps[4].image)for(const auto& vertex:inherited_mesh->vertices)require(valid_tangent(vertex),"Normal mapping requires tangent frames; reimport this model with UV0.",-32050);
         }

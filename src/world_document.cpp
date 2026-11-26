@@ -898,8 +898,11 @@ void validate_component(const std::string& type, const Json& value) {
         if(value.contains("foliage_motion"))(void)foliage_motion_value(value.at("foliage_motion"));
         if(value.contains("surface_layer")) {
             const auto& layer=value.at("surface_layer");
-            fields(layer,{"base_color","orm","normal","mask","tile_mm","base_tile_mm","weight","slope_degrees"},
+            fields(layer,{"base_color","orm","normal","mask","tile_mm","base_tile_mm","weight","slope_degrees","projection"},
                 {"base_color","orm","tile_mm"});
+            if(layer.contains("projection"))
+                require(layer.at("projection")=="xz" || layer.at("projection")=="triplanar",
+                    "Surface layer projection must be xz or triplanar.");
             for(const auto* slot:{"base_color","orm","normal","mask"})if(layer.contains(slot)) {
                 const auto& asset=layer.at(slot);
                 require(asset.is_string() && valid_asset_id(asset.get_ref<const std::string&>()),

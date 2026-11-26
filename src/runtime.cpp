@@ -2441,7 +2441,7 @@ Runtime::PreparedTextureUpdate Runtime::prepare_textures(std::uint64_t expected,
                     width=level.width;height=level.height;
                 }
                 require(width==1 && height==1,"Texture mip chain must end at one pixel.");
-                if(mesh->mesh) {
+                if(mesh->mesh && !(copy->surface_layer && copy->surface_layer->projects_base_triplanar())) {
                     require(mesh->mesh->has_uv,"Texture adoption requires imported UV0.");
                     if(slot==4)for(const auto& vertex:mesh->mesh->vertices)
                         require(valid_tangent(vertex),"Normal mapping requires tangent frames.");
