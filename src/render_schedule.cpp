@@ -14,6 +14,7 @@ namespace {
 constexpr std::uint64_t pass_order(PassId id) {
     constexpr auto ordinal=[](PassId pass){return 8ull*static_cast<unsigned>(pass);};
     if(id==PassId::screen_diffuse_bounce)return ordinal(PassId::deferred_lighting)+1;
+    if(id==PassId::screen_diffuse_resolve)return ordinal(PassId::deferred_lighting)+2;
     if(id==PassId::depth_of_field)return ordinal(PassId::height_fog)+1;
     if(id==PassId::auto_exposure)return ordinal(PassId::resolve)+1;
     if(id==PassId::exposure_readback)return ordinal(PassId::product_probes)+1;
@@ -41,6 +42,7 @@ void Schedule::validate(bool before_acquire) const {
     required(frame.swapchain);required(frame.color);required(frame.output);
     const auto display_target=display_output_target(frame,settings);
     const auto world_hdr=world_radiance(frame,settings);
+    const auto diffuse_compositor=settings.screen_diffuse_half_resolution ? PassId::screen_diffuse_resolve : PassId::screen_diffuse_bounce;
     const bool world_effects=settings.screen_diffuse_bounce || settings.screen_reflections || settings.height_fog || settings.depth_of_field;
     const bool reconstruct_composed=settings.reconstruction && world_effects;
     const bool reconstruct_sprites=settings.reconstruction && settings.particle_sprites;
@@ -337,7 +339,12 @@ void Schedule::validate(bool before_acquire) const {
         if(!settings.scene || !settings.deferred || settings.products_debug || frame.color!=frame.hdr)
             fail("screen diffuse bounce requires a single-sample deferred color scene");
         const auto& hdr=resource(frame.hdr);
-        if(std::uint64_t(hdr.width)*hdr.height>screen_diffuse_bounce_budget_bytes/16)
+        const auto pixels=std::uint64_t(hdr.width)*hdr.height;
+        const auto half_width=screen_diffuse_half_extent(hdr.width),half_height=screen_diffuse_half_extent(hdr.height);
+        const auto budget=settings.screen_diffuse_half_resolution ?
+            screen_diffuse_half_resolution_budget_bytes : screen_diffuse_bounce_budget_bytes;
+        if(pixels>budget/16 || (settings.screen_diffuse_half_resolution &&
+            std::uint64_t(half_width)*half_height>(budget-16*pixels)/8))
             fail("screen diffuse bounce attachment payload exceeds limit");
         const auto correspondence_format=settings.products ? Format::rgba32_float : Format::rg32_float;
         if(frame.hdr==frame.output || frame.hdr==frame.swapchain || !scene_image(frame.hdr,Format::rgba16_float,hdr) ||
@@ -350,15 +357,25 @@ void Schedule::validate(bool before_acquire) const {
                 !(resource(id).supported&use_bit(Use::image_write)))
                 fail("invalid screen diffuse bounce attachment");
         }
+        if(settings.screen_diffuse_half_resolution) {
+            const auto& gather=resource(frame.diffuse_gather);
+            if(!scene_image(frame.diffuse_gather,Format::rgba16_float,gather) || gather.late_bound ||
+                gather.width!=half_width || gather.height!=half_height || !(gather.supported&use_bit(Use::image_write)))
+                fail("invalid screen diffuse gather attachment");
+        } else if(frame.diffuse_gather!=none)fail("screen diffuse gather attachment without half-resolution route");
         if(frame.diffuse_donor==frame.bounced_hdr)fail("screen diffuse bounce attachments alias");
+        if(frame.diffuse_gather==frame.diffuse_donor || frame.diffuse_gather==frame.bounced_hdr)
+            fail("screen diffuse gather aliases another bounce attachment");
         constexpr auto alias_error="screen diffuse bounce attachment aliases another resource role";
         require_distinct_roles(frame.diffuse_donor,frame.bounced_hdr,alias_error);
+        if(settings.screen_diffuse_half_resolution)require_distinct_roles(frame.diffuse_gather,none,alias_error);
         for(auto id:{frame.reflection_roughness,frame.reflected_hdr,frame.fogged_hdr,frame.focused_hdr,
             frame.composition_mask,frame.sprite_hdr,frame.sprite_coverage,frame.display_ldr,
             frame.exposure_state,frame.exposure_readback,frame.atmosphere_density,frame.atmosphere_view,
             frame.aerial_scattering,frame.aerial_transmittance,frame.cloud_noise,frame.cloud_view,frame.cloud_shadow})
-            if(id==frame.diffuse_donor || id==frame.bounced_hdr)fail(alias_error);
-    } else if(frame.diffuse_donor!=none || frame.bounced_hdr!=none)
+            if(id!=none && (id==frame.diffuse_donor || id==frame.bounced_hdr || id==frame.diffuse_gather))fail(alias_error);
+    } else if(settings.screen_diffuse_half_resolution || frame.diffuse_donor!=none ||
+        frame.bounced_hdr!=none || frame.diffuse_gather!=none)
         fail("screen diffuse bounce attachments without bounce pass");
     if(settings.screen_reflections) {
         if(!settings.scene || !settings.deferred || settings.products_debug || frame.color!=frame.hdr)
@@ -684,7 +701,7 @@ void Schedule::validate(bool before_acquire) const {
     }
     bool world_resolved=false,world_opaque=false,foreground_lights=false,foreground_cleared=false,foreground_drawn=false,foreground_resolved=false,foreground_composed=false;
     bool exported=false,captured=false,probed=false,prepared=false,reconstructed=false,deferred_lit=false,deferred_opaque=false,ao_generated=false,ao_filtered=false;
-    bool post_effect_applied=false,diffuse_bounced=false,screen_reflected=false,world_fogged=false,focused=false,world_effects_output=false;
+    bool post_effect_applied=false,diffuse_gathered=false,diffuse_bounced=false,screen_reflected=false,world_fogged=false,focused=false,world_effects_output=false;
     bool stream_uploaded=false,stream_shadow_drawn=false,sprites_uploaded=false,sprites_drawn=false;
     std::uint64_t previous=0;bool first=true;
     bool surface_marks_uploaded=false,grade_applied=false,spatial_aa_applied=false;
@@ -830,13 +847,20 @@ void Schedule::validate(bool before_acquire) const {
             for(const auto& access:pass.accesses)if(!accessed.insert(access.resource).second)fail("deferred lighting resource has conflicting duplicate accesses");
             deferred_lit=true;
         }
-        if(pass.id==PassId::screen_diffuse_bounce) {
-            if(!settings.screen_diffuse_bounce || !deferred_lit)fail("unexpected or premature screen diffuse bounce pass");
-            for(auto id:{frame.hdr,frame.material_base,frame.material_surface,frame.material_correspondence,frame.depth,frame.diffuse_donor})
+        if(pass.id==PassId::screen_diffuse_bounce || pass.id==PassId::screen_diffuse_resolve) {
+            const bool resolve=pass.id==PassId::screen_diffuse_resolve;
+            if(!settings.screen_diffuse_bounce || !deferred_lit ||
+                (resolve && (!settings.screen_diffuse_half_resolution || !diffuse_gathered)))
+                fail("unexpected or premature screen diffuse bounce pass");
+            const auto source=resolve ? frame.diffuse_gather : frame.diffuse_donor;
+            for(auto id:{frame.hdr,frame.material_base,frame.material_surface,frame.material_correspondence,frame.depth,source})
                 if(!has(id,Use::sampled))fail("missing screen diffuse bounce input");
-            if(pass.accesses.size()!=8 || !has(frame.frame,Use::constant) || !has(frame.bounced_hdr,Use::image_write))
+            const bool composite=pass.id==diffuse_compositor;
+            const auto target=composite ? frame.bounced_hdr : frame.diffuse_gather;
+            if(pass.accesses.size()!=8 || !has(frame.frame,Use::constant) || !has(target,Use::image_write))
                 fail("invalid screen diffuse bounce bindings");
-            diffuse_bounced=true;
+            diffuse_gathered=!composite;
+            diffuse_bounced=composite;
         }
         if(pass.id==PassId::screen_reflections) {
             if(!settings.screen_reflections || !deferred_lit || (settings.screen_diffuse_bounce && !diffuse_bounced))
@@ -1159,7 +1183,11 @@ void Schedule::validate(bool before_acquire) const {
                 !(pass.id==PassId::deferred_lighting && a.use==Use::image_write && a.initialize) &&
                 !(pass.id==PassId::screen_diffuse_bounce && a.use==Use::sampled && !a.initialize))
                 fail("diffuse donor used outside deferred lighting and screen diffuse bounce");
-            const bool opaque_hdr_consumed=(settings.screen_diffuse_bounce && order>pass_order(PassId::screen_diffuse_bounce)) ||
+            if(settings.screen_diffuse_half_resolution && a.resource==frame.diffuse_gather &&
+                !(pass.id==PassId::screen_diffuse_bounce && a.use==Use::image_write && a.initialize) &&
+                !(pass.id==PassId::screen_diffuse_resolve && a.use==Use::sampled && !a.initialize))
+                fail("half-resolution diffuse gather used outside gather and resolve");
+            const bool opaque_hdr_consumed=(settings.screen_diffuse_bounce && order>pass_order(diffuse_compositor)) ||
                 (settings.screen_reflections && order>pass_order(PassId::screen_reflections)) ||
                 (settings.height_fog && order>pass_order(PassId::height_fog)) ||
                 (reconstruct_sprites && order>pass_order(PassId::particle_sprites)) ||
@@ -1181,7 +1209,7 @@ void Schedule::validate(bool before_acquire) const {
             const bool fogged=settings.height_fog && a.resource==frame.fogged_hdr;
             const bool focus_target=settings.depth_of_field && a.resource==frame.focused_hdr;
             if(bounced || reflected || fogged || focus_target) {
-                const auto producer=bounced ? PassId::screen_diffuse_bounce : focus_target ? PassId::depth_of_field :
+                const auto producer=bounced ? diffuse_compositor : focus_target ? PassId::depth_of_field :
                     reflected ? PassId::screen_reflections : PassId::height_fog;
                 const bool produced=pass.id==producer && a.use==Use::image_write && a.initialize;
                 const bool reflection_input=bounced && settings.screen_reflections && pass.id==PassId::screen_reflections &&
@@ -1413,11 +1441,17 @@ Schedule build(FrameResources frame,Settings settings) {
         if(settings.screen_diffuse_bounce)add(lighting,f.diffuse_donor,Use::image_write,true);
     }
     if(settings.screen_diffuse_bounce) {
-        auto& bounce=pass(PassId::screen_diffuse_bounce);
-        for(auto id:{f.hdr,f.material_base,f.material_surface,f.depth,f.material_correspondence,f.diffuse_donor})
-            add(bounce,id,Use::sampled);
-        add(bounce,f.frame,Use::constant);
-        add(bounce,f.bounced_hdr,Use::image_write,true);
+        const auto diffuse_pass=[&](PassId id,ResourceId source,ResourceId target) {
+            auto& bounce=pass(id);
+            for(auto input:{f.hdr,f.material_base,f.material_surface,f.depth,f.material_correspondence,source})
+                add(bounce,input,Use::sampled);
+            add(bounce,f.frame,Use::constant);
+            add(bounce,target,Use::image_write,true);
+        };
+        diffuse_pass(PassId::screen_diffuse_bounce,f.diffuse_donor,
+            settings.screen_diffuse_half_resolution ? f.diffuse_gather : f.bounced_hdr);
+        if(settings.screen_diffuse_half_resolution)
+            diffuse_pass(PassId::screen_diffuse_resolve,f.diffuse_gather,f.bounced_hdr);
     }
     if(settings.screen_reflections) {
         auto& reflections=pass(PassId::screen_reflections);

@@ -23,7 +23,7 @@ enum class Region { whole,prefix,cluster_members,probe_pixels };
 enum class Use { upload,storage_read,storage_write,vertex,index,constant,sampled,color,color_overwrite,depth,clear_color,clear_depth,copy_source,copy_destination,resolve_source,resolve_destination,present,image_write,image_read_write,indirect };
 using Uses=std::uint64_t;
 constexpr Uses use_bit(Use use) {return Uses{1}<<static_cast<unsigned>(use);}
-enum class PassId { stream_geometry,sprite_upload,surface_mark_upload,skinning,light_assignment,shadows,scene_clear,sky,opaque,ambient_occlusion,ambient_occlusion_filter,deferred_lighting,screen_reflections,height_fog,particle_sprites,resolve,temporal_inputs,reconstruction,viewmodel_lights,viewmodel_clear,viewmodel_opaque,viewmodel_resolve,viewmodel_composite,post_effect,bloom_extract,bloom_horizontal,bloom_vertical,output,spatial_aa,game_ui,overlay,editor_clear,editor_ui,product_probes,capture,present,auto_exposure,exposure_readback,atmosphere_density,atmosphere_view,aerial_perspective,cloud_noise,cloud_view,cloud_shadow,gpu_visibility,depth_of_field,screen_diffuse_bounce,count };
+enum class PassId { stream_geometry,sprite_upload,surface_mark_upload,skinning,light_assignment,shadows,scene_clear,sky,opaque,ambient_occlusion,ambient_occlusion_filter,deferred_lighting,screen_reflections,height_fog,particle_sprites,resolve,temporal_inputs,reconstruction,viewmodel_lights,viewmodel_clear,viewmodel_opaque,viewmodel_resolve,viewmodel_composite,post_effect,bloom_extract,bloom_horizontal,bloom_vertical,output,spatial_aa,game_ui,overlay,editor_clear,editor_ui,product_probes,capture,present,auto_exposure,exposure_readback,atmosphere_density,atmosphere_view,aerial_perspective,cloud_noise,cloud_view,cloud_shadow,gpu_visibility,depth_of_field,screen_diffuse_bounce,screen_diffuse_resolve,count };
 inline const char* pass_name(PassId id) {
     switch(id) {
     case PassId::stream_geometry:return "render.pass.stream_geometry";
@@ -43,6 +43,7 @@ inline const char* pass_name(PassId id) {
     case PassId::ambient_occlusion_filter:return "render.pass.ambient_occlusion_filter";
     case PassId::deferred_lighting:return "render.pass.deferred_lighting";
     case PassId::screen_diffuse_bounce:return "render.pass.screen_diffuse_bounce";
+    case PassId::screen_diffuse_resolve:return "render.pass.screen_diffuse_resolve";
     case PassId::screen_reflections:return "render.pass.screen_reflections";
     case PassId::depth_of_field:return "render.pass.depth_of_field";
     case PassId::height_fog:return "render.pass.height_fog";
@@ -106,7 +107,7 @@ struct FrameResources {
     ResourceId material_base=none,material_surface=none,material_correspondence=none;
     ResourceId ibl_diffuse=none,ibl_specular=none,ibl_brdf=none;
     ResourceId ao_raw=none,ao_filtered=none,ao_constants=none;
-    ResourceId diffuse_donor=none,bounced_hdr=none;
+    ResourceId diffuse_donor=none,diffuse_gather=none,bounced_hdr=none;
     ResourceId reflection_roughness=none,reflected_hdr=none;
     ResourceId fogged_hdr=none,water_columns=none,focused_hdr=none,water_reservoirs=none,water_sheets=none;
     ResourceId reconstructed=none,dense_motion=none,reactive=none,dilated_depth=none,dilated_motion=none,reconstructed_depth=none;
@@ -142,7 +143,8 @@ struct Settings {
     std::uint32_t viewmodel_samples=1;
     bool bloom=false,post_effect=false;
     bool particle_sprites=false;
-    bool screen_diffuse_bounce=false,screen_reflections=false,depth_of_field=false;
+    bool screen_diffuse_bounce=false,screen_diffuse_half_resolution=false;
+    bool screen_reflections=false,depth_of_field=false;
     bool height_fog=false,height_fog_spots=false;
     bool water_caustics=false,water_shore_foam_sun=false;
     bool aerial_perspective=false;
@@ -182,6 +184,8 @@ inline constexpr ResourceId display_output_target(const FrameResources& frame,co
 }
 inline constexpr std::uint64_t post_effect_budget_bytes=128u*1024u*1024u;
 inline constexpr std::uint64_t screen_diffuse_bounce_budget_bytes=128u*1024u*1024u;
+inline constexpr std::uint64_t screen_diffuse_half_resolution_budget_bytes=160u*1024u*1024u;
+inline constexpr std::uint32_t screen_diffuse_half_extent(std::uint32_t size) {return size/2+(size%2!=0);}
 inline constexpr std::uint64_t screen_reflections_budget_bytes=128u*1024u*1024u;
 inline constexpr std::uint64_t screen_reflections_constants_bytes=32;
 inline constexpr std::uint64_t depth_of_field_budget_bytes=128u*1024u*1024u;

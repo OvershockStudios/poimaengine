@@ -417,9 +417,12 @@ class LightingContract(unittest.TestCase):
         description = c.rpc('world.describe', {'view': 'component', 'name': 'LightingEnvironment'})
         schema = description['components']['LightingEnvironment']['properties']['screen_diffuse_bounce']
         bounds = {'radius_m': (.2, 4), 'thickness_m': (.005, .25), 'strength': (0, 1)}
-        self.assertGreaterEqual(description['schema_revision'], 250)
+        self.assertGreaterEqual(description['schema_revision'], 251)
         self.assertEqual(set(schema['required']), set(bounds))
         self.assertFalse(schema['additionalProperties'])
+        resolution = schema['properties']['resolution']
+        self.assertEqual(resolution['enum'], ['full', 'half'])
+        self.assertEqual(resolution['default'], 'full')
         for key, (low, high) in bounds.items():
             self.assertEqual(schema['properties'][key], dict(type='number', minimum=low, maximum=high))
 
@@ -446,6 +449,7 @@ class LightingContract(unittest.TestCase):
         invalid.extend({key: value for key, value in profile.items() if key != field} for field in profile)
         for key, (low, high) in bounds.items():
             invalid.extend(profile | {key: value} for value in (False, '0', low-1e-10, high+1e-10))
+        invalid.extend(profile | dict(resolution=value) for value in (None, False, 0, [], {}, '', 'Half', 'quarter'))
         before = self.path.read_bytes()
         for value in invalid:
             c.txn(2, [transform(1, (1, 2, 3)), edit(value)], error=-32602)
@@ -453,6 +457,7 @@ class LightingContract(unittest.TestCase):
         self.assertEqual(c.rpc('world.lighting'), selected)
 
         features = json.loads(subprocess.check_output([BINARY, 'capabilities'], text=True))['result']['features']
+        self.assertIs(features['screen_diffuse_bounce_half_resolution'], features['screen_diffuse_bounce'])
         if features['simulation']:
             session = uid(954)
             c.rpc('runtime.start', {'session_id': session, 'revision': 2})
@@ -468,6 +473,23 @@ class LightingContract(unittest.TestCase):
         self.assertEqual(c.rpc('world.dependencies'), dependencies | dict(revision=4))
         if features['simulation']:
             self.assertEqual(c.rpc('runtime.lighting', {'session_id': session, 'tick': 0}), frozen)
+            c.rpc('runtime.stop', {'session_id': session})
+
+        for revision, mode in enumerate(('full', 'half'), start=4):
+            explicit = profile | dict(resolution=mode)
+            c.txn(revision, [edit(explicit)])
+            c.close()
+            c = self.open()
+            self.assertEqual(c.rpc('world.lighting')['screen_diffuse_bounce'], explicit)
+            required = dependencies | dict(revision=revision+1, needs_screen_diffuse_bounce=True)
+            if mode == 'half':
+                required['needs_screen_diffuse_bounce_half_resolution'] = True
+            self.assertEqual(c.rpc('world.dependencies'), required)
+            if features['simulation']:
+                session = uid(954+revision)
+                c.rpc('runtime.start', {'session_id': session, 'revision': revision+1})
+                self.assertEqual(c.rpc('runtime.lighting', {'session_id': session, 'tick': 0})['screen_diffuse_bounce'], explicit)
+                c.rpc('runtime.stop', {'session_id': session})
 
     def test_runtime_screen_reflections_are_frozen_with_lighting(self):
         cap = json.loads(subprocess.check_output([BINARY, 'capabilities'], text=True))

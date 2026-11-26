@@ -2,6 +2,12 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.458
+
+- Add half-resolution diffuse bounce with depth-aware reconstruction.
+  The gather uses one sample site per 2×2 block and reconstructs against
+  the full-resolution surface. [Set bounce resolution](docs/DIFFUSE_BOUNCE.md#choose-a-resolution)
+
 ## 0.0.457
 
 - Add optional local diffuse bounce in the Vulkan deferred renderer.

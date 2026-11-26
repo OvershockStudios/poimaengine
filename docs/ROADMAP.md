@@ -56,6 +56,12 @@ evidence. Any narrower release scope needs an explicit decision and a visible
 later milestone for the deferred requirements. A missing SDK or an unfinished
 system cannot be silently counted as complete.
 
+Use UE5 as the production comparison baseline across engine capabilities
+and workflows. Pin the builds and compare repeatable workloads on matching
+hardware, content, camera or input traces, output resolution, and quality
+settings. Qualify subsystem correctness independently of comparative
+rendering, playtest, and performance results.
+
 Situational systems may be installed as project packages rather than included
 in every engine/player. Their discovery, authoring, runtime/save integration
 and qualification remain required when enabled. The
@@ -257,6 +263,10 @@ retain the non-RT ambient-occlusion path and avoid double-counting visibility.
 Dense-scene research compares virtualized geometry with GPU-driven instancing
 and LOD under actual content/frame/VRAM budgets. Select and qualify the measured
 approach; a particular engine's geometry technique is not itself the requirement.
+Support adaptive material-driven height displacement on meshes and terrain.
+Qualify shared edges, culling bounds, silhouettes, shadow and motion parity,
+LOD transitions, and predictable hardware fallbacks. Keep collision and
+gameplay queries tied to the declared authored geometry.
 Integrate dynamic indirect lighting and reflections, including a
 reduced tier for hardware without ray tracing. The authored [depth-of-field
 pass](DEPTH_OF_FIELD.md) focuses a single-sample world view before sprites,
@@ -525,6 +535,11 @@ the beta boundary.
 - Run representative games and scenes on supported NVIDIA/AMD/Intel and older
   non-RT profiles. Measure pacing, CPU/GPU cost, RAM/VRAM, I/O, shader hitches,
   cooking and edit-to-play latency.
+- Make profiler tracks discoverable through the desktop and engine service.
+  Correlate accepted submissions with CPU scopes, jobs and waits, GPU passes,
+  streaming, asset and shader work, memory lifetimes, audio and managed
+  execution. Report track availability and dropped samples, and measure the
+  profiler's overhead against the same untraced workload.
 - Test retained projects/games/saves, supported upgrades, failed reloads,
   interruption, storage corruption, device loss and resource retirement.
 - Perform sustained play/authoring soaks, security/resource-budget checks on

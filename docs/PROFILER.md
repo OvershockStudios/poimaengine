@@ -54,6 +54,12 @@ Owner CPU failure flags indicate exception unwinding. Native job flags mark non-
 
 Native instrumentation covers runtime batch validation/checkpointing, fixed ticks, C# calls and command application, physics, animation sampling, hierarchy synchronization, rollback, owner advancement, snapshot/save preparation, renderer preparation/acquire/record/submit/present/retirement/wait/readback, player presentation and native audio queue/DSP boundaries. Only paths actually executed produce samples. Native audio device output and the editor DSP worker have separate [output contracts](AUDIO_EVENTS.md) and [editor qualification](EDITOR_AUDIO.md).
 
+An active [diffuse-bounce](DIFFUSE_BOUNCE.md) pass records
+`gpu.screen_diffuse_bounce.ns`. At half resolution the capture also records
+`gpu.screen_diffuse_gather.ns` and `gpu.screen_diffuse_resolve.ns`. These
+partition the enclosing bounce interval. Use the two child measurements to
+attribute the cost of tracing and reconstruction.
+
 ### Vulkan barriers
 
 Start `profiler.start` before capturing or playing a scene. Each retired

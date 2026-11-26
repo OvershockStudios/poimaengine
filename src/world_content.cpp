@@ -296,7 +296,12 @@ FrozenContent freeze_world_content(const Json& source, const fs::path& directory
             }
             if(environment.contains("screen_reflections"))result.needs_screen_reflections=true;
             if(environment.contains("screen_contact_shadows"))result.needs_screen_contact_shadows=true;
-            if(environment.contains("screen_diffuse_bounce"))result.needs_screen_diffuse_bounce=true;
+            if(environment.contains("screen_diffuse_bounce")) {
+                const auto& bounce=environment.at("screen_diffuse_bounce");
+                result.needs_screen_diffuse_bounce=true;
+                if(bounce.contains("resolution") && bounce.at("resolution")=="half")
+                    result.needs_screen_diffuse_bounce_half_resolution=true;
+            }
             if(environment.contains("depth_of_field"))result.needs_depth_of_field=true;
             if(environment.contains("height_fog"))result.needs_height_fog=true;
             if(environment.contains("post_effect")) {

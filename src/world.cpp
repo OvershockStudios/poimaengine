@@ -659,6 +659,8 @@ public:
             if(content.needs_screen_reflections)result["needs_screen_reflections"]=true;
             if(content.needs_screen_contact_shadows)result["needs_screen_contact_shadows"]=true;
             if(content.needs_screen_diffuse_bounce)result["needs_screen_diffuse_bounce"]=true;
+            if(content.needs_screen_diffuse_bounce_half_resolution)
+                result["needs_screen_diffuse_bounce_half_resolution"]=true;
             if(content.needs_depth_of_field)result["needs_depth_of_field"]=true;
             if(content.needs_foliage_motion)result["needs_foliage_motion"]=true;
             if(content.needs_height_fog)result["needs_height_fog"]=true;

@@ -276,6 +276,9 @@ struct ScreenDiffuseBounceDiagnostics {
     std::string_view reason;
     std::uint64_t buffer_bytes=0;
     std::uint32_t rays=0,max_steps=0;
+    DiffuseBounceResolution resolution=DiffuseBounceResolution::full;
+    std::array<std::uint32_t,2> gather_extent{};
+    std::uint64_t gather_bytes=0;
 };
 struct DepthOfFieldDiagnostics {
     bool active=false;
@@ -373,7 +376,7 @@ struct RenderDiagnostics {
     std::optional<ScreenReflectionsDiagnostics> screen_reflections;
     std::optional<ScreenContactShadowsDiagnostics> screen_contact_shadows;
     std::optional<ScreenDiffuseBounceDiagnostics> screen_diffuse_bounce;
-    TimingSummary screen_diffuse_bounce_gpu;
+    TimingSummary screen_diffuse_bounce_gpu, screen_diffuse_gather_gpu, screen_diffuse_resolve_gpu;
     TimingSummary screen_reflections_gpu;
     std::optional<HeightFogDiagnostics> height_fog;
     std::optional<DepthOfFieldDiagnostics> depth_of_field;

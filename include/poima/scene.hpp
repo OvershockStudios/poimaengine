@@ -92,8 +92,17 @@ struct ScreenContactShadows {
     std::string light;
     float length_m=.3f,thickness_m=.025f,strength=1;
 };
+enum class DiffuseBounceResolution { full, half };
+constexpr std::string_view diffuse_bounce_resolution_name(DiffuseBounceResolution resolution) {
+    switch(resolution) {
+    case DiffuseBounceResolution::full: return "full";
+    case DiffuseBounceResolution::half: return "half";
+    }
+    return "invalid";
+}
 struct ScreenDiffuseBounce {
     float radius_m=1,thickness_m=.08f,strength=1;
+    std::optional<DiffuseBounceResolution> resolution;
 };
 struct DepthOfField {
     float focus_distance_m=4,focus_band_m=0,radius_at_infinity_px=0,max_radius_px=0;

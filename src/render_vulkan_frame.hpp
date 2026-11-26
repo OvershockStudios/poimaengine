@@ -81,6 +81,7 @@ struct TimestampSample {
     bool volumetric_clouds;
     bool cloud_shadow_baked;
     bool screen_diffuse_bounce;
+    bool screen_diffuse_half_resolution;
     double cpu_interval_ms;
     const profiling::DeferredContext& profile;
     frame_performance::Recorder* performance;

@@ -63,6 +63,7 @@ struct WorldPackageContent {
     bool needs_screen_reflections=false;
     bool needs_screen_contact_shadows=false;
     bool needs_screen_diffuse_bounce=false;
+    bool needs_screen_diffuse_bounce_half_resolution=false;
     bool needs_depth_of_field=false;
     bool needs_foliage_motion=false;
     bool needs_height_fog=false;

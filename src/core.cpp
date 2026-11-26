@@ -128,6 +128,7 @@ Reply capabilities() {
         ",\"tone_mapping\":" + boolean(POIMA_RENDER_SMOKE != 0) +
         ",\"screen_contact_shadows\":" + boolean(POIMA_RENDER_SMOKE != 0) +
         ",\"screen_diffuse_bounce\":" + boolean(POIMA_RENDER_SMOKE != 0) +
+        ",\"screen_diffuse_bounce_half_resolution\":" + boolean(POIMA_RENDER_SMOKE != 0) +
         ",\"atmosphere_sky\":" + boolean(POIMA_RENDER_SMOKE != 0 && POIMA_SIMULATION != 0) +
         ",\"orbital_atmosphere\":" + boolean(POIMA_RENDER_SMOKE != 0 && POIMA_SIMULATION != 0) +
         ",\"aerial_perspective\":" + boolean(POIMA_RENDER_SMOKE != 0 && POIMA_SIMULATION != 0) +

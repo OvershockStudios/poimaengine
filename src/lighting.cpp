@@ -96,6 +96,8 @@ void validate_environment(const LightingEnvironment& e) {
         require(finite_between(bounce.thickness_m,.005f,.25f) && bounce.thickness_m<=bounce.radius_m,
             "Screen diffuse bounce thickness_m must be finite, in [0.005,0.25], and at most radius_m.");
         require(finite_between(bounce.strength,0,1),"Screen diffuse bounce strength must be finite and in [0,1].");
+        require(!bounce.resolution || *bounce.resolution==DiffuseBounceResolution::full ||
+            *bounce.resolution==DiffuseBounceResolution::half,"Screen diffuse bounce resolution must be full or half.");
     }
     if(e.height_fog) {
         const auto& fog=*e.height_fog;

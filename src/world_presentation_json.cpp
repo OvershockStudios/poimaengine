@@ -181,7 +181,14 @@ Json render_diagnostics(const RenderDiagnostics& d) {
         const auto& bounce=*d.screen_diffuse_bounce;
         result["screen_diffuse_bounce"]={{"active",bounce.active},{"reason",bounce.reason},
             {"buffer_bytes",bounce.buffer_bytes},{"rays",bounce.rays},{"max_steps",bounce.max_steps},
+            {"resolution",diffuse_bounce_resolution_name(bounce.resolution)},
             {"gpu",timing(d.screen_diffuse_bounce_gpu)}};
+        if(bounce.resolution==DiffuseBounceResolution::half) {
+            result["screen_diffuse_bounce"]["gather_extent"]=bounce.gather_extent;
+            result["screen_diffuse_bounce"]["gather_bytes"]=bounce.gather_bytes;
+            result["screen_diffuse_bounce"]["gather_gpu"]=timing(d.screen_diffuse_gather_gpu);
+            result["screen_diffuse_bounce"]["resolve_gpu"]=timing(d.screen_diffuse_resolve_gpu);
+        }
     }
     if(d.environment_ibl) {
         const auto& ibl=*d.environment_ibl;
@@ -342,9 +349,11 @@ Json lighting_json(const SceneLighting& lighting) {
     if(const auto& contact=lighting.environment.screen_contact_shadows)
         result["screen_contact_shadows"]={{"light",contact->light},{"length_m",contact->length_m},
             {"thickness_m",contact->thickness_m},{"strength",contact->strength}};
-    if(const auto& bounce=lighting.environment.screen_diffuse_bounce)
-        result["screen_diffuse_bounce"]={{"radius_m",bounce->radius_m},{"thickness_m",bounce->thickness_m},
-            {"strength",bounce->strength}};
+    if(const auto& bounce=lighting.environment.screen_diffuse_bounce) {
+        Json profile={{"radius_m",bounce->radius_m},{"thickness_m",bounce->thickness_m},{"strength",bounce->strength}};
+        if(bounce->resolution)profile["resolution"]=diffuse_bounce_resolution_name(*bounce->resolution);
+        result["screen_diffuse_bounce"]=std::move(profile);
+    }
     if(lighting.environment.height_fog) {
         const auto& fog=*lighting.environment.height_fog;
         Json settings={{"density_per_m",fog.density_per_m},{"base_height_m",fog.base_height_m},

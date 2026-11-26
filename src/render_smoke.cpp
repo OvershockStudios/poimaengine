@@ -1307,32 +1307,45 @@ struct Context {
     }
     void prepare_screen_diffuse_bounce(const std::optional<ScreenDiffuseBounce>& selected) {
         pending_diffuse_bounce.reset();
-        if(selected) {
-            const std::string_view reason=selected->strength==0 ? "zero_strength" :
+        const auto mode=selected ? selected->resolution.value_or(DiffuseBounceResolution::full) : DiffuseBounceResolution::full;
+        const bool half=mode==DiffuseBounceResolution::half;
+        const std::string_view reason=
+                !selected ? "absent" :
+                selected->strength==0 ? "zero_strength" :
                 !scene_visible ? "scene_hidden" :
                 scene_debug_view!=SceneDebugView::color ? "diagnostic" :
                 !deferred ? "forward" :
                 !scene->world_viewmodel_draws().empty() ? "world_depth_foreground" : "active";
-            const bool active=reason=="active";
-            if(active) {
-                if(!diffuse_bounce.radiance()) {
-                    const auto& desc=scene_hdr->getDesc();
-                    require_reconstruction_composition_budget(reconstruction_pixels(),
-                        std::uint64_t(desc.width)*desc.height*16);
-                }
-                diffuse_bounce.prepare(*checked.Get(),{frame_buffer.Get(),scene_hdr.Get(),material_base.Get(),
-                    material_surface.Get(),depth.Get(),material_correspondence.Get()});
-            }
-            pending_diffuse_bounce=ScreenDiffuseBounceDiagnostics{active,reason,
-                active ? diffuse_bounce.buffer_bytes() : 0,active ? 12u : 0u,active ? 12u : 0u};
-            if(active)return;
-        }
-        if(auto* source=diffuse_bounce.radiance()) {
+        const bool active=reason=="active";
+        if(auto* source=diffuse_bounce.radiance();source && (!active || bool(diffuse_bounce.gather())!=half)) {
             retire_frames(true);
             deferred_lighting.invalidate_bindings();
             detach_world_outputs(source);
             diffuse_bounce.clear_targets();
+            diagnostics.screen_diffuse_bounce_gpu={};
+            diagnostics.screen_diffuse_gather_gpu={};
+            diagnostics.screen_diffuse_resolve_gpu={};
         }
+        if(!selected)return;
+        std::array<std::uint32_t,2> gather_extent{};
+        if(active && half) {
+            const auto& desc=scene_hdr->getDesc();
+            gather_extent={render_schedule::screen_diffuse_half_extent(desc.width),
+                render_schedule::screen_diffuse_half_extent(desc.height)};
+        }
+        const auto gather_bytes=std::uint64_t(gather_extent[0])*gather_extent[1]*8;
+        if(active) {
+            if(!diffuse_bounce.radiance()) {
+                const auto& desc=scene_hdr->getDesc();
+                require_reconstruction_composition_budget(reconstruction_pixels(),
+                    std::uint64_t(desc.width)*desc.height*16+gather_bytes);
+            }
+            diffuse_bounce.prepare(*checked.Get(),{frame_buffer.Get(),scene_hdr.Get(),material_base.Get(),
+                material_surface.Get(),depth.Get(),material_correspondence.Get()},half);
+        }
+        pending_diffuse_bounce=ScreenDiffuseBounceDiagnostics{active,reason,
+            active ? diffuse_bounce.buffer_bytes() : 0,active ? 12u : 0u,active ? 12u : 0u,
+            mode,gather_extent,gather_bytes};
     }
     void prepare_screen_reflections(const std::optional<ScreenReflections>& selected) {
         diagnostics.screen_reflections.reset();
@@ -2689,6 +2702,8 @@ struct Context {
                     .height_fog=slot.height_fog,.volumetric_clouds=slot.volumetric_clouds && slot.volumetric_clouds->active,
                     .cloud_shadow_baked=slot.cloud_shadow_baked,
                     .screen_diffuse_bounce=slot.diffuse_bounce && slot.diffuse_bounce->active,
+                    .screen_diffuse_half_resolution=slot.diffuse_bounce && slot.diffuse_bounce->active &&
+                        slot.diffuse_bounce->resolution==DiffuseBounceResolution::half,
                     .cpu_interval_ms=elapsed_ms(slot.started),.profile=slot.profile,
                     .performance=slot.performance,.performance_ticket=slot.performance_ticket,
                     .shadow_views=slot.shadow_profile_views},diagnostics);
@@ -2728,6 +2743,7 @@ struct Context {
         settings.post_effect=scene && post_effect_active;
         settings.spatial_aa=fxaa_enabled;
         settings.screen_diffuse_bounce=scene && scene_visible && diffuse_bounce.radiance();
+        settings.screen_diffuse_half_resolution=settings.screen_diffuse_bounce && diffuse_bounce.gather();
         settings.screen_reflections=scene && scene_visible && reflections.radiance();
         settings.height_fog=scene && scene_visible && fog.radiance();
         settings.depth_of_field=scene && scene_visible && depth_of_field.target();
@@ -2867,6 +2883,8 @@ struct Context {
             if(settings.screen_diffuse_bounce) {
                 f.diffuse_donor=texture(diffuse_bounce.donor(),rs::Lifetime::shared,false);
                 f.bounced_hdr=texture(diffuse_bounce.radiance(),rs::Lifetime::shared,false);
+                if(settings.screen_diffuse_half_resolution)
+                    f.diffuse_gather=texture(diffuse_bounce.gather(),rs::Lifetime::shared,false);
             }
             if(settings.screen_reflections) {
                 f.reflection_roughness=texture(reflections.roughness(),rs::Lifetime::shared,false);
@@ -3486,7 +3504,13 @@ struct Context {
             case render_schedule::PassId::deferred_lighting:dispatch_deferred_lighting();break;
             case render_schedule::PassId::screen_diffuse_bounce:
                 timestamp(22);
-                diffuse_bounce.dispatch(*commands.Get(),*scene->lighting.environment.screen_diffuse_bounce);
+                diffuse_bounce.dispatch(*commands.Get(),*scene->lighting.environment.screen_diffuse_bounce,
+                    screen_diffuse_bounce::Pass::Stage::gather);
+                timestamp(plan.settings.screen_diffuse_half_resolution ? 24 : 23);
+                break;
+            case render_schedule::PassId::screen_diffuse_resolve:
+                diffuse_bounce.dispatch(*commands.Get(),*scene->lighting.environment.screen_diffuse_bounce,
+                    screen_diffuse_bounce::Pass::Stage::resolve);
                 timestamp(23);
                 break;
             case render_schedule::PassId::screen_reflections: {
@@ -3582,6 +3606,7 @@ struct Context {
                 if(!plan.settings.volumetric_clouds) {timestamp(18);timestamp(19);}
                 if(!plan.settings.cloud_shadows || plan.resource(plan.frame.cloud_shadow).initialized) {timestamp(20);timestamp(21);}
                 if(!plan.settings.screen_diffuse_bounce) {timestamp(22);timestamp(23);}
+                if(!plan.settings.screen_diffuse_half_resolution)timestamp(24);
                 timestamp(5);break;
             case render_schedule::PassId::count:
                 throw std::logic_error("Invalid render schedule pass.");

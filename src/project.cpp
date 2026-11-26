@@ -406,6 +406,8 @@ Json project_summary(const Project& p) {
     if(p.content.needs_screen_reflections)result["needs_screen_reflections"]=true;
     if(p.content.needs_screen_contact_shadows)result["needs_screen_contact_shadows"]=true;
     if(p.content.needs_screen_diffuse_bounce)result["needs_screen_diffuse_bounce"]=true;
+    if(p.content.needs_screen_diffuse_bounce_half_resolution)
+        result["needs_screen_diffuse_bounce_half_resolution"]=true;
     if(p.content.needs_depth_of_field)result["needs_depth_of_field"]=true;
     if(p.content.needs_foliage_motion)result["needs_foliage_motion"]=true;
     if(p.content.needs_height_fog)result["needs_height_fog"]=true;
@@ -508,6 +510,9 @@ void require_scene_feature_support(const WorldPackageContent& content, const Jso
         "Screen contact shadows require a compatible Vulkan runtime.");
     require(!content.needs_screen_diffuse_bounce || runtime.at("features").value("screen_diffuse_bounce",false),
         "Screen diffuse bounce requires a compatible Vulkan runtime.");
+    require(!content.needs_screen_diffuse_bounce_half_resolution ||
+        runtime.at("features").value("screen_diffuse_bounce_half_resolution",false),
+        "Half-resolution screen diffuse bounce requires a compatible Vulkan runtime.");
     require(!content.needs_foliage_motion || runtime.at("features").value("foliage_motion", false),
         "Foliage motion requires a compatible Vulkan runtime.");
     require(!content.needs_depth_of_field || runtime.at("features").value("depth_of_field",false),
@@ -611,13 +616,16 @@ Json runtime_spec(const std::string& bytes,std::string_view expected_version=bui
         "navigation","navigation_obstacles","asset_provenance","project_post_effects","water_regions","water_rain","audio_water_flow","water_sheet_aeration","water_impact_foam",
         "water_ripples","water_wave_layers","water_listener_audio","water_optics","water_refraction","water_caustics","water_shore_foam","water_terrain_fit","water_surface_swell","water_swell_variation","water_rough_reflection","water_solar_scattering","water_offshore","water_sprite_optics","snow_water_regions","scene_particles","scene_particle_sprites",
         "particle_collisions","particle_impact_bursts","particle_water_contact","particle_water_flow","water_buoyancy","water_currents","water_surface_wakes","water_body_displacement","water_storage","water_reservoirs","water_overflow","water_sheets","water_sun_shafts","collision_surfaces","surface_marks","surface_mark_masks","mesh_lod","output_grade","auto_exposure","atmosphere_sky","orbital_atmosphere","aerial_perspective","volumetric_clouds","cloud_shadows","screen_reflections","depth_of_field","foliage_motion",
-        "height_fog","physics_checkpoint","fsr3_upscaler","tone_mapping","screen_contact_shadows","screen_diffuse_bounce"},
+        "height_fog","physics_checkpoint","fsr3_upscaler","tone_mapping","screen_contact_shadows","screen_diffuse_bounce",
+        "screen_diffuse_bounce_half_resolution"},
         {"simulation","renderer","audio","managed","editor"});
     for(const auto& feature:features)require(feature.is_boolean(),"Runtime feature flags must be Boolean.");
     require(!features.value("screen_contact_shadows",false) || features.at("renderer")==true,
         "Runtime screen contact shadows require renderer support.");
     require(!features.value("screen_diffuse_bounce",false) || features.at("renderer")==true,
         "Runtime screen diffuse bounce requires renderer support.");
+    require(!features.value("screen_diffuse_bounce_half_resolution",false) || features.value("screen_diffuse_bounce",false),
+        "Runtime half-resolution screen diffuse bounce requires screen diffuse bounce support.");
     require(!features.value("audio_portals",false) ||
         (features.at("audio")==true && features.at("simulation")==true),
         "Runtime audio portals require simulation and audio support.");
@@ -737,6 +745,7 @@ struct VerifiedGame {
     bool needs_screen_reflections=false;
     bool needs_screen_contact_shadows=false;
     bool needs_screen_diffuse_bounce=false;
+    bool needs_screen_diffuse_bounce_half_resolution=false;
     bool needs_depth_of_field=false;
     bool needs_foliage_motion=false;
     bool needs_height_fog=false;
@@ -832,6 +841,7 @@ VerifiedGame verify_game(const std::string& filename,std::string_view expected_v
     result.needs_screen_reflections=content.needs_screen_reflections;
     result.needs_screen_contact_shadows=content.needs_screen_contact_shadows;
     result.needs_screen_diffuse_bounce=content.needs_screen_diffuse_bounce;
+    result.needs_screen_diffuse_bounce_half_resolution=content.needs_screen_diffuse_bounce_half_resolution;
     result.needs_depth_of_field=content.needs_depth_of_field;
     result.needs_foliage_motion=content.needs_foliage_motion;
     result.needs_height_fog=content.needs_height_fog;
@@ -1321,6 +1331,7 @@ Reply inspect_game(const std::string& manifest,const std::string& expected_bundl
         if(game.needs_screen_reflections)result["needs_screen_reflections"]=true;
         if(game.needs_screen_contact_shadows)result["needs_screen_contact_shadows"]=true;
         if(game.needs_screen_diffuse_bounce)result["needs_screen_diffuse_bounce"]=true;
+        if(game.needs_screen_diffuse_bounce_half_resolution)result["needs_screen_diffuse_bounce_half_resolution"]=true;
         if(game.needs_depth_of_field)result["needs_depth_of_field"]=true;
         if(game.needs_foliage_motion)result["needs_foliage_motion"]=true;
         if(game.needs_height_fog)result["needs_height_fog"]=true;

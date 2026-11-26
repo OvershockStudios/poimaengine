@@ -262,7 +262,7 @@ LightingEnvironment environment_value(const Json& value) {
     }
     if(value.contains("screen_diffuse_bounce")) {
         const auto& authored=value.at("screen_diffuse_bounce");
-        fields(authored,{"radius_m","thickness_m","strength"},{"radius_m","thickness_m","strength"});
+        fields(authored,{"radius_m","thickness_m","strength","resolution"},{"radius_m","thickness_m","strength"});
         const auto number=[&](const char* name,double low,double high) {
             const auto& field=authored.at(name);
             require(field.is_number() && std::isfinite(field.get<double>()) && field>=low && field<=high,
@@ -272,8 +272,14 @@ LightingEnvironment environment_value(const Json& value) {
         const auto radius=number("radius_m",.2,4);
         const auto thickness=number("thickness_m",.005,.25);
         require(thickness<=radius,"Screen diffuse bounce thickness_m must not exceed radius_m.");
-        result.screen_diffuse_bounce=ScreenDiffuseBounce{
-            static_cast<float>(radius),static_cast<float>(thickness),static_cast<float>(number("strength",0,1))};
+        ScreenDiffuseBounce bounce{static_cast<float>(radius),static_cast<float>(thickness),
+            static_cast<float>(number("strength",0,1)),std::nullopt};
+        if(authored.contains("resolution")) {
+            const auto& resolution=authored.at("resolution");
+            require(resolution=="full" || resolution=="half","Screen diffuse bounce resolution must be full or half.");
+            bounce.resolution=resolution=="half" ? DiffuseBounceResolution::half : DiffuseBounceResolution::full;
+        }
+        result.screen_diffuse_bounce=bounce;
     }
     if(value.contains("depth_of_field")) {
         const auto& profile=value.at("depth_of_field");

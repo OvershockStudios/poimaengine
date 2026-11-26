@@ -35,6 +35,13 @@ struct Fixture {
             if(s.screen_diffuse_bounce) {
                 f.diffuse_donor=add(Kind::texture,Lifetime::shared);f.resources[f.diffuse_donor].format=Format::rgba16_float;
                 f.bounced_hdr=add(Kind::texture,Lifetime::shared);f.resources[f.bounced_hdr].format=Format::rgba16_float;
+                if(s.screen_diffuse_half_resolution) {
+                    f.diffuse_gather=add(Kind::texture,Lifetime::shared);
+                    auto& gather=f.resources[f.diffuse_gather];
+                    gather.format=Format::rgba16_float;
+                    gather.width=screen_diffuse_half_extent(f.resources[f.hdr].width);
+                    gather.height=screen_diffuse_half_extent(f.resources[f.hdr].height);
+                }
             }
             if(s.screen_reflections) {
                 f.reflection_roughness=add(Kind::texture,Lifetime::shared);f.resources[f.reflection_roughness].format=Format::r16_float;
@@ -1368,6 +1375,10 @@ void setup_composed_reconstruction(Fixture& fixture,bool upscale) {
         f.resources[id].width=257;
         f.resources[id].height=145;
     }
+    if(f.diffuse_gather!=none) {
+        f.resources[f.diffuse_gather].width=screen_diffuse_half_extent(f.resources[f.hdr].width);
+        f.resources[f.diffuse_gather].height=screen_diffuse_half_extent(f.resources[f.hdr].height);
+    }
 }
 
 void composed_reconstruction_contracts() {
@@ -1510,9 +1521,10 @@ void setup_reconstructed_sprites(Fixture& fixture,bool upscale) {
 }
 
 void screen_diffuse_bounce_contracts() {
-    for(unsigned path:{0u,1u,2u,3u,4u})for(unsigned temporal:{0u,1u,2u})for(bool sprites:{false,true}) {
+    for(unsigned path:{0u,1u,2u,3u,4u})for(unsigned temporal:{0u,1u,2u})for(bool sprites:{false,true})for(bool half:{false,true}) {
         auto settings=rich();
         settings.deferred=settings.screen_diffuse_bounce=true;
+        settings.screen_diffuse_half_resolution=half;
         settings.screen_reflections=path==1 || path==4;
         settings.height_fog=path==2 || path==4;
         settings.depth_of_field=path>=3;
@@ -1542,12 +1554,26 @@ void screen_diffuse_bounce_contracts() {
         if(settings.products)world_hdr_probes(fixture);
         auto plan=fixture.plan();plan.validate();++accepted;
         const auto world=world_radiance(f,settings);
+        const auto gather_target=half ? f.diffuse_gather : f.bounced_hdr;
         check(&pass(plan,PassId::deferred_lighting)+1==&pass(plan,PassId::screen_diffuse_bounce) &&
               access(plan,PassId::deferred_lighting,f.diffuse_donor,Use::image_write,true) &&
               access(plan,PassId::screen_diffuse_bounce,f.diffuse_donor,Use::sampled) &&
               access(plan,PassId::screen_diffuse_bounce,f.hdr,Use::sampled) &&
-              access(plan,PassId::screen_diffuse_bounce,f.bounced_hdr,Use::image_write,true),
+              access(plan,PassId::screen_diffuse_bounce,gather_target,Use::image_write,true),
               "Diffuse bounce must read newly produced donors and write a distinct radiance texture");
+        if(half) {
+            check(&pass(plan,PassId::screen_diffuse_bounce)+1==&pass(plan,PassId::screen_diffuse_resolve) &&
+                  access(plan,PassId::screen_diffuse_resolve,f.diffuse_gather,Use::sampled) &&
+                  access(plan,PassId::screen_diffuse_resolve,f.bounced_hdr,Use::image_write,true) &&
+                  !access(plan,PassId::screen_diffuse_resolve,f.diffuse_donor,Use::sampled) &&
+                  !access(plan,PassId::screen_diffuse_bounce,f.bounced_hdr,Use::image_write) &&
+                  !access(plan,PassId::output,f.diffuse_gather,Use::sampled),
+                  "Half-resolution bounce requires a separate resolve before color output");
+            if(temporal==2)check(f.resources[f.diffuse_gather].width==129 && f.resources[f.diffuse_gather].height==73,
+                                 "Odd gather extent must cover the last full-resolution row and column");
+        } else check(f.diffuse_gather==none &&
+                     std::none_of(plan.passes.begin(),plan.passes.end(),[](const auto& work){return work.id==PassId::screen_diffuse_resolve;}),
+                     "Full-resolution bounce reserved a half-resolution attachment or dispatch");
         if(settings.screen_reflections)check(access(plan,PassId::screen_reflections,f.bounced_hdr,Use::sampled) &&
                                               !access(plan,PassId::screen_reflections,f.hdr,Use::sampled),
                                               "Reflections bypassed diffuse bounce");
@@ -1612,6 +1638,10 @@ void screen_diffuse_bounce_contracts() {
     bad("display samples donor",[&](auto& p){pass(p,PassId::output).accesses.push_back({f.diffuse_donor,Use::sampled});});
     bad("display additionally samples HDR from before reflections",[&](auto& p){pass(p,PassId::output).accesses.push_back({f.bounced_hdr,Use::sampled});});
     bad("raw capture reads bounced HDR",[&](auto& p){p.frame.probe_copies[4].source=f.bounced_hdr;});
+    bad("full-resolution bounce runs a resolve",[&](auto& p){
+        auto next=std::find_if(p.passes.begin(),p.passes.end(),[](const auto& work){return work.id==PassId::screen_reflections;});
+        p.passes.insert(next,{PassId::screen_diffuse_resolve,{}});
+    });
 
     settings.screen_diffuse_bounce=false;
     auto omitted=Fixture(settings).plan();omitted.validate();
@@ -1619,6 +1649,71 @@ void screen_diffuse_bounce_contracts() {
           diffuse_radiance(omitted.frame,settings)==omitted.frame.hdr &&
           std::none_of(omitted.passes.begin(),omitted.passes.end(),[](const auto& work){return work.id==PassId::screen_diffuse_bounce;}),
           "Omitted diffuse bounce reserved resources or work");
+}
+
+void half_resolution_diffuse_contracts() {
+    auto settings=rich();
+    settings.deferred=settings.screen_diffuse_bounce=settings.screen_diffuse_half_resolution=true;
+    settings.screen_reflections=settings.products=settings.reconstruction=true;
+    Fixture fixture(settings);
+    setup_composed_reconstruction(fixture,true);
+    world_hdr_probes(fixture);
+    const auto valid=fixture.plan();valid.validate();
+    const auto& f=valid.frame;
+    const auto bad=[&](const char* name,const auto& edit) {
+        auto plan=valid;
+        edit(plan);
+        rejects(name,[&]{plan.validate();});
+    };
+    bad("gather missing",[](auto& p){p.frame.diffuse_gather=none;});
+    bad("gather while bounce disabled",[](auto& p){p.settings.screen_diffuse_bounce=false;});
+    bad("gather on full-resolution route",[](auto& p){p.settings.screen_diffuse_half_resolution=false;});
+    bad("gather rounded down",[](auto& p){--p.frame.resources[p.frame.diffuse_gather].width;});
+    bad("gather has wrong format",[](auto& p){p.frame.resources[p.frame.diffuse_gather].format=Format::rg32_float;});
+    bad("gather reuses initialized pixels",[](auto& p){p.frame.resources[p.frame.diffuse_gather].initialized=true;});
+    bad("gather is aliased with full-resolution HDR",[](auto& p){p.frame.diffuse_gather=p.frame.bounced_hdr;});
+    bad("gather identity aliases donor",[](auto& p){
+        p.frame.resources[p.frame.diffuse_gather].identity=p.frame.resources[p.frame.diffuse_donor].identity;
+    });
+    for(auto use:{Use::sampled,Use::image_write})bad("gather lacks required access",[&](auto& p){
+        p.frame.resources[p.frame.diffuse_gather].supported&=~use_bit(use);
+    });
+    bad("gather does not initialize target",[](auto& p){pass(p,PassId::screen_diffuse_bounce).accesses.back().initialize=false;});
+    bad("half-resolution bounce writes full target",[&](auto& p){pass(p,PassId::screen_diffuse_bounce).accesses.back().resource=f.bounced_hdr;});
+    bad("resolve absent",[](auto& p){std::erase_if(p.passes,[](const auto& work){return work.id==PassId::screen_diffuse_resolve;});});
+    bad("resolve before gather",[](auto& p){std::swap(pass(p,PassId::screen_diffuse_bounce),pass(p,PassId::screen_diffuse_resolve));});
+    bad("resolve after reflections",[](auto& p){std::swap(pass(p,PassId::screen_reflections),pass(p,PassId::screen_diffuse_resolve));});
+    for(auto input:{f.hdr,f.depth,f.material_base,f.material_surface,f.material_correspondence,f.diffuse_gather})
+        bad("resolve input absent",[&](auto& p){erase_access(p,PassId::screen_diffuse_resolve,input,Use::sampled);});
+    bad("resolve might leave stale output",[](auto& p){pass(p,PassId::screen_diffuse_resolve).accesses.back().initialize=false;});
+    bad("resolve samples donor instead of gather",[&](auto& p){
+        for(auto& access:pass(p,PassId::screen_diffuse_resolve).accesses)
+            if(access.resource==f.diffuse_gather)access.resource=f.diffuse_donor;
+    });
+    bad("reconstruction samples half-resolution gather",[&](auto& p){
+        pass(p,PassId::reconstruction).accesses.push_back({f.diffuse_gather,Use::sampled});
+    });
+    bad("reflections sample half-resolution gather",[&](auto& p){
+        pass(p,PassId::screen_reflections).accesses.front().resource=f.diffuse_gather;
+    });
+
+    auto bounded=rich();
+    bounded.deferred=bounded.screen_diffuse_bounce=bounded.screen_diffuse_half_resolution=true;
+    Fixture large(bounded);
+    auto resize=[&](std::uint32_t width,std::uint32_t height) {
+        auto& frame=large.f;
+        for(auto id:{frame.hdr,frame.depth,frame.material_base,frame.material_surface,frame.material_correspondence,
+            frame.diffuse_donor,frame.bounced_hdr}) {
+            frame.resources[id].width=width;
+            frame.resources[id].height=height;
+        }
+        frame.resources[frame.diffuse_gather].width=screen_diffuse_half_extent(width);
+        frame.resources[frame.diffuse_gather].height=screen_diffuse_half_extent(height);
+    };
+    resize(3840,2160);
+    large.plan().validate();++accepted;
+    resize(4096,2304);
+    rejects("gather brings total attachments over half-resolution cap",[&]{large.plan().validate();});
 }
 
 void reconstructed_sprite_contracts() {
@@ -2263,4 +2358,4 @@ void visibility_contracts() {
 }
 }
 
-int main(){try{matrix();faults();products();motion_contracts();reconstruction_contracts();deferred_contracts();deferred_color_contracts();viewmodel_contracts();ambient_occlusion_contracts();masked_shadow_contracts();environment_contracts();bloom_contracts();post_effect_contracts();output_grade_contracts();streamed_geometry_contracts();mutable_geometry_contracts();particle_sprite_contracts();surface_mark_contracts();screen_reflection_contracts();screen_diffuse_bounce_contracts();height_fog_contracts();depth_of_field_contracts();composed_reconstruction_contracts();reconstructed_sprite_contracts();spatial_aa_contracts();auto_exposure_contracts();atmosphere_contracts();visibility_contracts();std::cout<<"Production render schedule: "<<accepted<<" valid variants, "<<rejected<<" rejected contract mutations.\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}
+int main(){try{matrix();faults();products();motion_contracts();reconstruction_contracts();deferred_contracts();deferred_color_contracts();viewmodel_contracts();ambient_occlusion_contracts();masked_shadow_contracts();environment_contracts();bloom_contracts();post_effect_contracts();output_grade_contracts();streamed_geometry_contracts();mutable_geometry_contracts();particle_sprite_contracts();surface_mark_contracts();screen_reflection_contracts();screen_diffuse_bounce_contracts();half_resolution_diffuse_contracts();height_fog_contracts();depth_of_field_contracts();composed_reconstruction_contracts();reconstructed_sprite_contracts();spatial_aa_contracts();auto_exposure_contracts();atmosphere_contracts();visibility_contracts();std::cout<<"Production render schedule: "<<accepted<<" valid variants, "<<rejected<<" rejected contract mutations.\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}
