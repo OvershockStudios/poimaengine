@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "frame_performance_service.hpp"
+#include "render_submission_json.hpp"
 #include <algorithm>
 #include <vector>
 namespace poima::frame_performance {
@@ -39,7 +40,7 @@ Json row_json(const Row& row,std::uint64_t epoch) {
         for(const auto byte:c.session) {const auto v=static_cast<unsigned char>(byte);hex.push_back(digits[v>>4]);hex.push_back(digits[v&15]);}
         raw_session=std::move(hex);
     }
-    return {{"sequence",row.sequence},{"cpu_complete",row.cpu_complete},{"cpu_failed",row.cpu_failed},{"begin_ns",relative(c.begin_ns)},{"end_ns",relative(c.end_ns)},
+    Json result={{"sequence",row.sequence},{"cpu_complete",row.cpu_complete},{"cpu_failed",row.cpu_failed},{"begin_ns",relative(c.begin_ns)},{"end_ns",relative(c.end_ns)},
         {"present_return_ns",c.successful_present?relative(c.present_return_ns):Json(nullptr)},
         {"poll_wall_ns",c.end_ns>=c.begin_ns?Json(c.end_ns-c.begin_ns):Json(nullptr)},
         {"tick_before",c.tick_before},{"tick_after",c.tick_after},{"session",row.cpu_failed?Json(nullptr):Json(std::string(c.session.begin(),std::find(c.session.begin(),c.session.end(),'\0')))},{"failed_session_bytes_hex",std::move(raw_session)},
@@ -51,6 +52,8 @@ Json row_json(const Row& row,std::uint64_t epoch) {
         {"gpu_ns",{{"total",g.total_ns},{"skinning",g.skinning_ns},{"light_assignment",g.light_assignment_ns},{"shadows",g.shadows_ns},
             {"opaque",g.opaque_ns},{"deferred_lighting",g.deferred_lighting_ns},{"ambient_occlusion",g.ambient_occlusion_ns},
             {"ambient_occlusion_filter",g.ambient_occlusion_filter_ns},{"reconstruction",g.reconstruction_ns},{"post",g.post_ns},{"pass_mask",g.pass_mask}}}};
+    if(row.render_submission)result["render_submission"]=render_submission_json(row.render_submission);
+    return result;
 }
 Json object(Json properties,Json required=Json::array()) {return {{"type","object"},{"properties",properties},{"required",required},{"additionalProperties",false}};}
 }

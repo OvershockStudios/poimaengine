@@ -1,0 +1,296 @@
+{
+  "format": "poima.qualification-summary",
+  "version": 1,
+  "engine_checkpoint": "0.0.459",
+  "comparison_commit": "a69037b41650d1c1eebad812d7d183289b2edc02",
+  "scope": "Accepted renderer submission identity across CPU profiler scopes, GPU durations, retirement receipts, exported traces and frame performance.",
+  "source_sha256": {
+    "CMakeLists.txt": "bb4a5ebe0a27d4dbc07f69b7b3d2a7691639374bbd710af40b5dd39d851796cc",
+    "include/poima/core.hpp": "d0ad9aea2c745d7c7ad70eb70a0b7911c93bc9800e6d4fd5c5c69f4bfc8cca35",
+    "include/poima/frame_performance.hpp": "1b31e05873f6b45e20d2ac0398df86fa266b8836bfa92acebf775bd5cc1a9edc",
+    "include/poima/profiler.hpp": "19b514828e72ef33ede15317ac26d8c37d88dbb55706a52733c28f888a3c506b",
+    "include/poima/render_submission.hpp": "3211fbca360324cd10d09bee83e73bed34743271cdd486afc1cfc21635951424",
+    "src/frame_performance.cpp": "cc62b23d30a7ad649aa8ae673c5f26f932096b7c1733291e399df8f917b5b4cb",
+    "src/frame_performance_service.cpp": "e2157feccf10d368002101f0310154b8b23442ad01655d893a9a3ce870702b08",
+    "src/profiler.cpp": "617b2b06a69125a33288aaf0092631458cc89e41d30a7c9331d2c448a9428c7c",
+    "src/profiler_service.cpp": "ddba56e9b6c5f74de69734820053f2e9771d1e916f377ead7e06199ea2d37884",
+    "src/render_smoke.cpp": "3719229b3ea4e7a22cbb1796db8f944011d495e6ce9198dec665b2f7c5f04e63",
+    "src/render_submission_json.hpp": "f2efb1ab4b79eb06d84dc58132abb85fc4ff7ab210dd3bc3992fd846b3c695a7",
+    "src/world.cpp": "cd229fb04e691e6e58d17440451466a92a1ada7eb2870c98c2c4e35225339369",
+    "src/world_presentation_json.cpp": "0315220c5a1fd36f3f4d6770f7e0a6e0ee3bb6d8ab743233d962265fb32e4a8f",
+    "src/world_schema.cpp": "a8d148654966bc3ca112f7812d00d71d1af0b536fdf2041c49d4b0ae397799fd",
+    "tests/frame_performance_service.cpp": "3c2a77aa1df3ccbbd8663d170c0b1080c6059d3b75e13100ba096b8982dcc03a",
+    "tests/player_performance.py": "0c4b3dbc106a158fa214ea52986223708afcb801e6039a91a97d463b51c1dd04",
+    "tests/profiler_capture.py": "9896f2d3ea87f9cd3b028a0e0fefa0257bec5e0d8b188fd9ec5602c34923edc4",
+    "tests/profiler_service.cpp": "514552881be1c9783e2ab86354e936546edcfe764b13b6635ebc2b6bc2c3599e"
+  },
+  "build": {
+    "windows_cross_build_log_sha256": "436b34e0cc2e411067c466a879977f12f8e8702ef6e96f6f75bd71ce9295bd02",
+    "windows_installed_sha256": {
+      "bin/poima.exe": "7fe0f2ac1675099b4c27225715f74bee147c70508df323bbb8e13857c1732534",
+      "bin/poima_desktop.dll": "9a886be917fb89e08a9b75b111dcea25fa5d2a623c7d0da1510710608084b473",
+      "runtime.json": "5873382d5d8394ae9ee470cdd293d640203b22fce4ec334a6525ef298b2c5b0a"
+    },
+    "linux_build_and_test_log_sha256": "5ff0afe19be43db5171b719129ff4ccc28d0b641471527679df6df4092615824",
+    "linux_binary_sha256": "e94eecd9e51184053e931bf3c127456afb4a90e143b416d3d1e72ee072e5c993",
+    "linux_junit_sha256": "c35779d9f82318949bf8816e38793608f3ab033571c5158e450e3db7693c0b19",
+    "linux_passed_suites": [
+      "authoring_contract_identity",
+      "profiler_native",
+      "frame_performance_native",
+      "frame_performance_service",
+      "profiler_jobs",
+      "profiler_service",
+      "profiler_contract",
+      "world_contract"
+    ],
+    "recovered_build_attempts": [
+      {
+        "log_sha256": "a8d0a1f7175e3cbde00759beed7a10c8faa3e526a40baea0d1a307dec2864cee",
+        "reason": "The older Ubuntu checkout differed in a Windows-only test. Kept Windows verification on the unchanged exact test source."
+      },
+      {
+        "log_sha256": "b0b06ada07c616036d2b425e4a7719cf6d82762ad7fc89a35669cef407c22dfc",
+        "reason": "The Ubuntu build command used an incorrect test target name. The corrected command built the required portable tests."
+      }
+    ],
+    "candidate_patch_sha256": "6deab90cd6af33198092635f2da508c8704437253ff1c40f7449562019db8f21",
+    "acceptance_patch_sha256": "2291535b5e24fbdb068d74b053daafbe4d8b45caf997bbb9fd8706adb3688e21"
+  },
+  "windows_vulkan": [
+    {
+      "gpu": "AMD Radeon(TM) Graphics",
+      "gpu_index": 0,
+      "profile_sha256": "422c453535188da4b67ee9ef2f294e75bc6c3371fbfadef6bf48ae3cce2f940e",
+      "player_sha256": "46ee03248c90e0b7dbd9131b9b7f2defde55ea93707988b533df9f77b6a21358",
+      "cpu_gpu_trace_joins": [
+        {
+          "renderer_id": 2,
+          "submission_ids": [
+            4,
+            5
+          ],
+          "source": "request"
+        },
+        {
+          "renderer_id": 5,
+          "submission_ids": [
+            4,
+            5
+          ],
+          "source": "request"
+        },
+        {
+          "renderer_id": 8,
+          "submission_ids": [
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19,
+            20,
+            21
+          ],
+          "source": "player"
+        }
+      ],
+      "profile_event_counts_by_capture": [
+        138,
+        143,
+        1660
+      ],
+      "native_profile_checks": [
+        "1x MSAA exact pixels with off/on/stopped tracing and real lazy GPU queries",
+        "4x MSAA exact pixels with off/on/stopped tracing and real lazy GPU queries",
+        "traced replay preserves exact controller/body state and final pixels; GPU records carry player session/tick",
+        "two-slot submission tickets retain shadow clear and four cascade timings and reconcile view work at retirement",
+        "Vulkan frame, pass and barrier-entry counts reconcile at retirement",
+        "each native submission joins its CPU scopes, delayed GPU samples, trace export and final retirement receipt",
+        "sealed pages, parent intervals, independently recomputed percentiles, GPU-duration export semantics"
+      ],
+      "paused_player_joins": [
+        {
+          "slots": 2,
+          "renderer_id": 1,
+          "tick": 0,
+          "total_ns_by_submission": {
+            "27": 618600,
+            "28": 584400,
+            "29": 620720,
+            "30": 609000,
+            "31": 588600,
+            "32": 540880,
+            "33": 659680
+          }
+        },
+        {
+          "slots": 1,
+          "renderer_id": 2,
+          "tick": 0,
+          "total_ns_by_submission": {
+            "18": 555480,
+            "19": 943240,
+            "20": 613920,
+            "21": 937080,
+            "22": 565480,
+            "23": 571360,
+            "24": 944320,
+            "25": 763520
+          }
+        }
+      ],
+      "player_frames": [
+        {
+          "slots": 2,
+          "gpu": "AMD Radeon(TM) Graphics",
+          "frames_presented": 63,
+          "swapchain_rebuilds": 2,
+          "nvrhi_errors": 0
+        },
+        {
+          "slots": 1,
+          "gpu": "AMD Radeon(TM) Graphics",
+          "frames_presented": 54,
+          "swapchain_rebuilds": 2,
+          "nvrhi_errors": 0
+        }
+      ],
+      "capture_bmp_sha256": [
+        "6fc99d7c219319cfa12827215dc491237708b56e14427e1b5a01ec1b17b9532c",
+        "6fc99d7c219319cfa12827215dc491237708b56e14427e1b5a01ec1b17b9532c"
+      ]
+    },
+    {
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "gpu_index": 1,
+      "profile_sha256": "abab335ef4d8196dd35d3b1611a07b72f67958f92824acb5b661b001fcde0219",
+      "player_sha256": "34f424ca6df721b3d66d053259bda24d081f24f7d13626a45f7d25651cca338e",
+      "cpu_gpu_trace_joins": [
+        {
+          "renderer_id": 2,
+          "submission_ids": [
+            4,
+            5
+          ],
+          "source": "request"
+        },
+        {
+          "renderer_id": 5,
+          "submission_ids": [
+            4,
+            5
+          ],
+          "source": "request"
+        },
+        {
+          "renderer_id": 8,
+          "submission_ids": [
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19,
+            20,
+            21
+          ],
+          "source": "player"
+        }
+      ],
+      "profile_event_counts_by_capture": [
+        139,
+        143,
+        1660
+      ],
+      "native_profile_checks": [
+        "1x MSAA exact pixels with off/on/stopped tracing and real lazy GPU queries",
+        "4x MSAA exact pixels with off/on/stopped tracing and real lazy GPU queries",
+        "traced replay preserves exact controller/body state and final pixels; GPU records carry player session/tick",
+        "two-slot submission tickets retain shadow clear and four cascade timings and reconcile view work at retirement",
+        "Vulkan frame, pass and barrier-entry counts reconcile at retirement",
+        "each native submission joins its CPU scopes, delayed GPU samples, trace export and final retirement receipt",
+        "sealed pages, parent intervals, independently recomputed percentiles, GPU-duration export semantics"
+      ],
+      "paused_player_joins": [
+        {
+          "slots": 2,
+          "renderer_id": 1,
+          "tick": 0,
+          "total_ns_by_submission": {
+            "20": 72384,
+            "21": 70848,
+            "22": 71360,
+            "23": 71712,
+            "24": 71520,
+            "25": 71936,
+            "26": 72160
+          }
+        },
+        {
+          "slots": 1,
+          "renderer_id": 2,
+          "tick": 0,
+          "total_ns_by_submission": {
+            "18": 72192,
+            "19": 70944,
+            "20": 71104,
+            "21": 72320,
+            "22": 71520,
+            "23": 72000,
+            "24": 72928,
+            "25": 71712
+          }
+        }
+      ],
+      "player_frames": [
+        {
+          "slots": 2,
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "frames_presented": 54,
+          "swapchain_rebuilds": 2,
+          "nvrhi_errors": 0
+        },
+        {
+          "slots": 1,
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "frames_presented": 53,
+          "swapchain_rebuilds": 2,
+          "nvrhi_errors": 0
+        }
+      ],
+      "capture_bmp_sha256": [
+        "6fc99d7c219319cfa12827215dc491237708b56e14427e1b5a01ec1b17b9532c",
+        "6fc99d7c219319cfa12827215dc491237708b56e14427e1b5a01ec1b17b9532c"
+      ]
+    }
+  ],
+  "joined_paused_player_frames": 30,
+  "joined_capture_and_replay_frames": 44,
+  "remaining_scope": [
+    "Calibrated CPU/GPU timeline alignment",
+    "Physical input and scanout latency",
+    "Representative performance and other hardware",
+    "Expanded per-pass and subsystem coverage"
+  ]
+}

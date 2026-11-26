@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.459
+
+- Join native render CPU scopes, delayed GPU samples and frame-performance
+  rows by the accepted renderer submission. [Correlate a frame](docs/PROFILER.md#correlate-a-frame)
+
 ## 0.0.458
 
 - Add half-resolution diffuse bounce with depth-aware reconstruction.

@@ -30,6 +30,7 @@ def main():
     parser.add_argument('--windows-interop', action='store_true')
     parser.add_argument('--gpu', type=int, default=0)
     parser.add_argument('--require-barriers', action='store_true')
+    parser.add_argument('--require-submission', action='store_true')
     args = parser.parse_args()
     args.output = args.output.resolve()
     run = args.output / uuid.uuid4().hex
@@ -70,6 +71,7 @@ def main():
         return response['result']
 
     current_capture = None
+    renderer_ids = set()
 
     def start():
         nonlocal current_capture
@@ -143,6 +145,27 @@ def main():
         execution = diagnostics['frame_execution']
         assert execution['limit'] == 2 and 0 < execution['peak_outstanding'] <= 2, execution
         assert execution['submitted'] == diagnostics['completed_submissions'] == frame_count and not execution['outstanding'], execution
+        if args.require_submission:
+            renderer = execution['renderer_id']
+            assert type(renderer) is int and renderer > 0 and renderer not in renderer_ids, execution
+            renderer_ids.add(renderer)
+            tracked = [e for e in observed if 'render_submission' in e]
+            assert all(e['render_submission']['renderer_id'] == renderer for e in tracked), tracked
+            scopes = [e for e in tracked if e['name'] == 'render.submit']
+            assert len(scopes) == frame_count, scopes
+            submissions = [e['render_submission']['submission_id'] for e in scopes]
+            assert all(type(value) is int and value > 0 for value in submissions)
+            assert submissions == sorted(set(submissions)), submissions
+            assert submissions[-1] == execution['last_completed_submission_id']
+            for name in ('gpu.total.ns', 'renderer.completed_submissions'):
+                rows = [e for e in observed if e['name'] == name]
+                assert [e['render_submission']['submission_id'] for e in rows] == submissions, rows
+            assert all(e['render_submission']['submission_id'] in submissions for e in gpu)
+            for scope in scopes:
+                owner = by_id[scope['parent']]
+                assert owner['name'] == 'render.frame' and owner['render_submission'] == scope['render_submission']
+            evidence.setdefault('renderer_submissions', []).append(
+                {'renderer_id': renderer, 'submission_ids': submissions, 'source': expected_source})
         last_draws = diagnostics['last_draws']
         view_count = last_draws['shadow_views']
         lights = result['lighting']['lights']
@@ -231,6 +254,10 @@ def main():
         gpu_rows = [row for row in trace['traceEvents'] if row.get('cat') == 'gpu']
         assert len(gpu_rows) == len([e for e in events if e['kind'] == 'gpu'])
         assert all(row['ph'] == 'C' and 'dur' not in row and 'duration_ns' in row['args'] for row in gpu_rows)
+        if args.require_submission:
+            exported_keys = {row['args']['event_id']: row['args']['render_submission']
+                             for row in trace['traceEvents'] if 'render_submission' in row.get('args', {})}
+            assert exported_keys == {e['id']: e['render_submission'] for e in events if 'render_submission' in e}
         (run / f'{current_capture}.trace.json').write_text(json.dumps(trace, indent=2) + '\n')
         evidence.setdefault('captures', []).append({'status': stopped, 'summary': summary,
                                                    'events': events, 'trace': f'{current_capture}.trace.json'})
@@ -299,6 +326,8 @@ def main():
         evidence['checks'].append('two-slot submission tickets retain shadow clear and four cascade timings and reconcile view work at retirement')
         if args.require_barriers:
             evidence['checks'].append('Vulkan frame, pass and barrier-entry counts reconcile at retirement')
+        if args.require_submission:
+            evidence['checks'].append('each native submission joins its CPU scopes, delayed GPU samples, trace export and final retirement receipt')
         evidence['checks'].append('sealed pages, parent intervals, independently recomputed percentiles, GPU-duration export semantics')
         call('session.close', {})
         process.stdin.close()

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #pragma once
+#include "poima/render_submission.hpp"
 #include <array>
 #include <chrono>
 #include <cstdint>
@@ -14,6 +15,7 @@ enum class Kind { cpu,counter,gpu };
 struct Event {
     std::uint64_t id=0,parent=0,start_ns=0,duration_ns=0,value=0;
     std::uint64_t thread=0,group=0,queued_ns=0;
+    RenderSubmission render_submission;
     std::uint32_t task=UINT32_MAX;
     std::int64_t tick=-1;
     Source source=Source::native;
@@ -32,9 +34,10 @@ struct DeferredRecording;
 // Submission-time attribution for delayed owner-thread observations. A ticket
 // does not keep its recorder alive and never inherits retirement-time TLS.
 class DeferredContext {
-    friend DeferredContext capture_deferred() noexcept;
+    friend DeferredContext capture_deferred(RenderSubmission) noexcept;
     friend bool deferred_counter(const DeferredContext&,std::string_view,std::uint64_t,Kind) noexcept;
     std::weak_ptr<DeferredRecording> recording_;
+    RenderSubmission render_submission_;
     std::uint64_t start_ns_=0;
     std::int64_t tick_=-1;
     Source source_=Source::native;
@@ -60,7 +63,7 @@ private:
     friend bool active() noexcept;
     friend jobs::Attribution job_attribution() noexcept;
     friend void collect_jobs(jobs::Executor&) noexcept;
-    friend DeferredContext capture_deferred() noexcept;
+    friend DeferredContext capture_deferred(RenderSubmission) noexcept;
     friend bool deferred_counter(const DeferredContext&,std::string_view,std::uint64_t,Kind) noexcept;
     Event* reserve(std::string_view,Kind,std::int64_t) noexcept;
     std::uint64_t now() const noexcept;
@@ -112,6 +115,7 @@ public:
     ~Scope() noexcept;
     Scope(const Scope&)=delete;
     Scope& operator=(const Scope&)=delete;
+    void set_render_submission(RenderSubmission) noexcept;
 private:
     Recorder* recorder_=nullptr;
     Event* event_=nullptr;
@@ -126,7 +130,7 @@ void counter(std::string_view name,std::uint64_t value,Kind kind=Kind::counter) 
 // restart, destruction, on a different thread, or when capacity is exhausted.
 // Deferred events have parent=0: their submitting CPU scope may have finished.
 // GPU values remain durations, not intervals beginning at the CPU timestamp.
-DeferredContext capture_deferred() noexcept;
+DeferredContext capture_deferred(RenderSubmission={}) noexcept;
 bool deferred_counter(const DeferredContext&,std::string_view name,std::uint64_t value,Kind kind=Kind::counter) noexcept;
 // Capture attribution on the recording owner before submitting native work.
 // Workers receive only this detached value and never access a Recorder.

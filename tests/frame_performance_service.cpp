@@ -24,7 +24,8 @@ int main() {
         const auto token=service.recorder().begin_frame(i+1);
         auto sample=cpu(epoch+100+i*100,i==2?focused|capture:focused);
         check(service.recorder().finish_frame(token,sample),"CPU sample rejected");
-        auto ticket=service.recorder().gpu_submit(token);if(i==5)last=ticket;
+        check(!service.recorder().gpu_submit(token,{0,200+i}),"Partial renderer submission was accepted.");
+        auto ticket=service.recorder().gpu_submit(token,{9,200+i});if(i==5)last=ticket;
         else {GpuTiming timing;timing.total_ns=i+10;timing.pass_mask=GpuPass::total;check(service.recorder().gpu_complete(ticket,timing),"GPU completion rejected");}
     }
     auto stopped=service.dispatch("performance.stop",{{"capture_id",a}},p,true,[&]{
@@ -40,6 +41,8 @@ int main() {
     check(summary.at("gpu_total").at("p50")==12 && summary.at("gpu_total").at("p99")==15,"Completed GPU distribution differs");
     auto page=service.dispatch("performance.frames",{{"capture_id",a},{"offset",2},{"limit",2}});
     check(page.at("total")==6 && page.at("next_offset")==4 && page.at("frames")[0].at("begin_ns")==300,"Paged epoch projection differs");
+    const Json submission={{"renderer_id",9},{"submission_id",202}};
+    check(page.at("frames")[0].at("render_submission")==submission,"Paged frame lost its accepted submission.");
     check(service.dispatch("performance.frames",{{"capture_id",a},{"offset",2},{"limit",2}})==page,"Frozen page changed");
     for(const char* key:{"extra","player_id"})rejects([&]{service.dispatch("performance.summary",{{"capture_id",a},{key,1}});},-32602);
     rejects([&]{service.dispatch("performance.frames",{{"capture_id",a},{"offset",7}});},-32602);rejects([&]{service.dispatch("performance.frames",{{"capture_id",b}});},-32009);
@@ -62,7 +65,8 @@ int main() {
     auto filtered=filters.dispatch("performance.summary",{{"capture_id",a}});
     check(filtered.at("present_return_cadence_all").at("samples")==3 && filtered.at("present_return_cadence_eligible").at("samples")==1,"Unfocused non-present or missing sequence admitted as eligible");
     check(filtered.at("gpu_not_submitted_unavailable")==1 && filtered.at("gpu_unavailable")==0 && filtered.at("gpu_submitted")==0,"No-submission observation confused with GPU retirement");
-    check(!filters.dispatch("performance.frames",{{"capture_id",a}}).at("frames")[0].at("gpu_submitted"),"No-submission row has no independent identity");
+    const auto unavailable=filters.dispatch("performance.frames",{{"capture_id",a}}).at("frames")[0];
+    check(!unavailable.at("gpu_submitted") && !unavailable.contains("render_submission"),"No-submission row gained a renderer identity.");
     filters.dispatch("performance.start",start(b,a,1),p,true);const auto failed=filters.recorder().begin_frame(10);
     auto bad=cpu(filters.recorder().status().epoch_ns+100);bad.end_ns=bad.begin_ns-1;bad.session.fill('x');bad.session[5]=static_cast<char>(0xff);
     check(!filters.recorder().finish_frame(failed,bad),"Malformed sample certified");check(filters.recorder().fail_frame(failed,bad),"Failed raw sample not closed explicitly");

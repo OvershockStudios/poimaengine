@@ -48,6 +48,30 @@ Each event has a capture-local ID, parent ID, bounded name, kind (`cpu`, `gpu`, 
 
 Delayed renderer GPU durations and completion counters retain the submitting frame's source, runtime session, tick and CPU submission timestamp. Collection under a later tick or another bound session does not change that attribution. These events have parent ID zero: their submitting CPU scope may already have ended. Their `start_ns` identifies CPU submission, not GPU execution start; GPU duration remains in `value`, with `duration_ns` zero. Records are appended when collected, so record order need not match submission timestamps.
 
+### Correlate a frame
+
+Record the native profiler and [frame performance](FRAME_PERFORMANCE.md)
+on the same running player. Join `profiler.events` to `performance.frames`
+using both fields of `render_submission`, for example
+`{"renderer_id":2,"submission_id":73}`. The same pair appears in Chrome
+trace event arguments. The renderer ID identifies one renderer lifetime in
+the host process. The submission ID is the accepted graphics queue serial.
+Pause, replay and resize can draw the same tick many times with distinct pairs.
+Keep observations from different host processes separate.
+
+The `render.frame` and `render.submit` CPU scopes carry the pair once the
+queue accepts their work. Find recording and pass-level CPU scopes through
+their event parentage. The frame scope can include CPU work that retires
+older submissions. GPU durations and per-submission readbacks such as
+barrier and shadow counters carry the pair from their original frame.
+Compare `gpu.total.ns` to `gpu_ns.total` on a matched completed performance
+row. Use the runtime tick and row sequence to order the matched observations.
+
+Frames without accepted work omit the pair. Overlapping recording windows,
+available device timestamps and successful retirement determine which pairs
+have GPU samples in both captures. Diagnostic readback and a successful
+present can follow the same accepted submission at different times.
+
 Deferred observations are accepted only on the original owner thread while the same recording is still active. Stopping, restarting or destroying that recorder discards outstanding observations rather than attaching them to a later capture. Thus **Stop does not flush pending GPU samples**. Existing CPU scopes still finish normally. Deferred tickets allocate no storage during capture or emission; recording start allocates their lifetime identity along with the event array.
 
 Owner CPU failure flags indicate exception unwinding. Native job flags mark non-success task outcomes, including cooperative cancellation. Neither is a complete semantic classification of every operation error. Work performed before a rolled-back batch remains in the diagnostic trace. It does not mean that simulation state committed. Scope parentage identifies the enclosing batch; there is no separate permanent gameplay event log.
@@ -77,7 +101,8 @@ The counts come from Poima's native Vulkan pipeline-barrier calls and
 NVRHI's Vulkan synchronization2 dispatch for the frame command buffer.
 Asset upload lists, queue semaphores, and barriers internal to a vendor SDK
 are outside this measurement. Match the submission stamp and session when
-reconciling counts. Use GPU timings to assess cost because the number of
+reconciling counts on older builds. Use `render_submission` when present.
+Use GPU timings to assess cost because the number of
 recorded barriers does not measure stalls.
 
 The profiler observes the calls with a scoped dispatcher on the render
@@ -167,6 +192,11 @@ separate from profiler observations. The installed-client playbook and manual's
 C++ example are checked against the same engine source checkpoint.
 
 The [frame-retirement milestone](evidence/m2-frame-retirement.json) adds native deferred-recorder tests and original-submission attribution checks for all 49 changing frames per mode on both laptop GPUs. The evidence below records the earlier full profiler/editor checkpoint.
+
+Run [the native capture test](../tests/profiler_capture.py) with
+`--require-submission --require-barriers` to check submission identity in
+CPU scopes, GPU timing, render diagnostics and trace export while checking
+exact pixels and replay state.
 
 [Recorded evidence](evidence/m2-native-profiler.json) binds source and binaries to 45 runtime/37 authoring-only Linux suites, native recorder/service tests, real CoreCLR/Native AOT rollback/save/load traces on both OSes, exact GPU image/replay comparisons, and the final packaged editor. The [tool image](evidence/m2-profiler-window.png) is attached-window content; Windows was locked, so it is not an OS screenshot.
 

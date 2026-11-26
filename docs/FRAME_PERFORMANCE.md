@@ -53,6 +53,12 @@ session, extent, flags and submission outcome. CPU timestamps are nanoseconds
 relative to the capture epoch. `poll_wall_ns` measures the whole player poll;
 `host_poll_gap` measures time between retained polls.
 
+A frame whose submission is accepted includes `render_submission.renderer_id` and
+`render_submission.submission_id`. Use both identifiers to join the row with
+the [profiler](PROFILER.md#correlate-a-frame) in the same process. The pair
+survives a failed or unavailable GPU timing query. Polls without established
+submission acceptance omit the pair.
+
 The named CPU stages are wall durations, including waits and scheduling, not
 CPU execution cycles. They overlap: `render` includes `retire`, `acquire`,
 `record`, `submit` and `present`; `gpu_wait` also occurs inside retirement and
@@ -151,9 +157,11 @@ immutable pages, raw/filtered intervals and safe failed-sample serialization.
 The actual-window probe is separate:
 
 ```powershell
-python tests/player_performance.py build/windows-runtime/poima.exe --gpu 1 --output build/player-performance
+python tests/player_performance.py build/windows-runtime/poima.exe --gpu 1 --output build/player-performance --require-submission
 ```
 
+It joins the paused player's GPU duration and CPU scopes across both profiler
+and performance capture with one and two frames in flight.
 It uses a small physics fixture, actual Vulkan submissions and targeted resize
 messages to its own window. It also checks profiler independence, paused ticks,
 capture flags, full-buffer behavior and actual process memory. It does not

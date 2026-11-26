@@ -138,6 +138,10 @@ Json render_diagnostics(const RenderDiagnostics& d) {
         {"cpu",{{"prepare",timing(d.prepare_cpu)},{"record",timing(d.record_cpu)},{"render_call",timing(d.render_call_cpu)},{"completion_wait",timing(d.completion_wait_cpu)}}},
         {"gpu",{{"available",d.gpu_timestamps},{"timestamp_valid_bits",d.timestamp_valid_bits},{"timestamp_period_ns",d.timestamp_period_ns},{"samples_dropped",d.gpu_samples_dropped},{"detail",d.gpu_timing_detail},
             {"skinning",timing(d.skinning_gpu)},{"light_assignment",timing(d.light_assignment_gpu)},{"shadows",timing(d.shadow_gpu)},{"opaque",timing(d.opaque_gpu)},{"post",timing(d.post_gpu)},{"total",timing(d.total_gpu)}}}};
+    if(f.renderer_id) {
+        result["frame_execution"]["renderer_id"]=f.renderer_id;
+        result["frame_execution"]["last_completed_submission_id"]=f.last_completed_submission_id ? Json(f.last_completed_submission_id) : Json(nullptr);
+    }
     if(d.gpu_visibility_requested) {
         const auto& draw=d.last_draws;
         const auto* reason=draw.gpu_visibility_candidates ? "active" :

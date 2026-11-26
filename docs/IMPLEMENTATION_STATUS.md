@@ -1,8 +1,17 @@
 # Implementation status
 
-Updated 2026-11-25 for **0.0.458**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-25 for **0.0.459**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.459 [correlates render events by accepted submission](PROFILER.md#correlate-a-frame).
+Across AMD and NVIDIA, 30 paused-player frames joined their CPU scopes,
+GPU durations and performance rows with exact agreement on total GPU
+nanoseconds. The 44 capture and replay frames also matched their trace
+and retirement identities. Pixel and replay-state controls passed on both
+adapters. Ubuntu passed eight focused suites. Cross-clock calibration and
+broader subsystem coverage remain open.
+[Results and scope](evidence/m2-render-submission-459.json)
 
 Version 0.0.458 adds [half-resolution diffuse bounce](DIFFUSE_BOUNCE.md#choose-a-resolution).
 AMD and NVIDIA each verified red transfer beside a protected foreground

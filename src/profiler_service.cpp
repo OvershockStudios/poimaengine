@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "profiler_service.hpp"
+#include "render_submission_json.hpp"
 #include "poima/build_metadata.hpp"
 #include <algorithm>
 #include <cmath>
@@ -27,10 +28,12 @@ const char* source(Source s) {
 }
 const char* kind(Kind k) { switch(k) {case Kind::cpu:return "cpu";case Kind::counter:return "counter";case Kind::gpu:return "gpu";}return "unknown"; }
 Json event(const Event& e) {
-    return {{"id",e.id},{"parent",e.parent},{"name",e.name.data()},{"kind",kind(e.kind)},{"source",source(e.source)},
+    Json result={{"id",e.id},{"parent",e.parent},{"name",e.name.data()},{"kind",kind(e.kind)},{"source",source(e.source)},
         {"session",e.session[0] ? Json(e.session.data()):Json(nullptr)},{"tick",e.tick>=0 ? Json(e.tick):Json(nullptr)},
         {"start_ns",e.start_ns},{"duration_ns",e.duration_ns},{"value",e.value},{"failed",e.failed},{"name_truncated",e.name_truncated},
         {"thread",e.thread},{"job",e.group ? Json{{"group",e.group},{"task",e.task},{"lane",e.background?"background":"frame"},{"queued_ns",e.queued_ns}} : Json(nullptr)}};
+    if(e.render_submission)result["render_submission"]=render_submission_json(e.render_submission);
+    return result;
 }
 Json object(Json properties,Json required=Json::array()) { return {{"type","object"},{"properties",properties},{"required",required},{"additionalProperties",false}}; }
 }
@@ -95,12 +98,13 @@ Json Service::dispatch(const std::string& method,const Json& params) {
             {"tick",e.tick>=0?Json(e.tick):Json(nullptr)},{"source",source(e.source)},
             {"failed",e.failed},{"name_truncated",e.name_truncated}};
         if(e.group)args["job"]={{"group",e.group},{"task",e.task},{"lane",e.background?"background":"frame"},{"queued_ns",e.queued_ns}};
+        if(e.render_submission)args["render_submission"]=render_submission_json(e.render_submission);
         Json row={{"name",e.name.data()},{"cat",kind(e.kind)},{"pid",1},{"tid",e.thread},{"ts",static_cast<double>(e.start_ns)/1000.0}};
         if(e.kind==Kind::cpu) {row["ph"]="X";row["dur"]=static_cast<double>(e.duration_ns)/1000.0;row["args"]=std::move(args);}
         else {row["ph"]="C";args[e.kind==Kind::gpu?"duration_ns":"value"]=e.value;row["args"]=std::move(args);}
         trace.push_back(std::move(row));
     }
-    auto metadata=status();metadata["timing"]="CPU monotonic relative ns; exported timestamps in us. GPU values are duration samples at CPU observation time, not aligned GPU spans.";
+    auto metadata=status();metadata["timing"]="CPU monotonic relative ns; exported timestamps in us. Renderer GPU durations are keyed to the accepted submission, with CPU submission timestamps.";
     metadata["sources"]="Actual CPU thread IDs with source/session/tick attribution; native job spans merge on the recording owner. No process/VRAM allocation tracking.";
     metadata["engine_version"]=build_metadata().version;
     return {{"capture_id",capture_},{"trace",{{"traceEvents",std::move(trace)},{"displayTimeUnit","ms"},{"poima",std::move(metadata)}}}};

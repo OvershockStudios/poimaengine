@@ -100,8 +100,10 @@ bool Recorder::fail_frame(const FrameToken& token,const CpuSample& sample) noexc
     auto* value=row(token);if(!value || value->cpu_complete || value->cpu_failed)return false;
     value->cpu=sample;value->cpu_failed=true;--status_.cpu_open;increment(status_.frames_failed);return true;
 }
-GpuTicket Recorder::gpu_submit(const FrameToken& token) noexcept {
+GpuTicket Recorder::gpu_submit(const FrameToken& token,RenderSubmission submission) noexcept {
     auto* value=row(token);if(!value || value->gpu_state!=GpuState::not_submitted)return {};
+    if(!submission && submission!=RenderSubmission{})return {};
+    value->render_submission=submission;
     value->gpu_submitted=true;value->gpu_state=GpuState::pending;increment(status_.gpu_submitted);increment(status_.gpu_pending);
     GpuTicket ticket;ticket.generation_=generation_;ticket.sequence_=token.sequence_;ticket.index_=token.index_;return ticket;
 }

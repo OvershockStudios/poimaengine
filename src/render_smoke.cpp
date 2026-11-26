@@ -201,6 +201,15 @@ std::vector<Vertex> box_vertices() {
     return result;
 }
 
+std::uint64_t next_renderer_id() {
+    static std::atomic<std::uint64_t> last{0};
+    auto previous=last.load(std::memory_order_relaxed);
+    for(;;) {
+        require(previous<std::numeric_limits<std::uint64_t>::max(),"Renderer identity exhausted.");
+        if(last.compare_exchange_weak(previous,previous+1,std::memory_order_relaxed))return previous+1;
+    }
+}
+
 struct Context {
     Messages messages;
     std::shared_ptr<const render_vulkan::SharedInstance> shared_instance;
@@ -550,6 +559,7 @@ struct Context {
         live_temporal=live_temporal_clock(player,hosted,replay);
         require(options.frames_in_flight>=1 && options.frames_in_flight<=2,"frames_in_flight must be 1 or 2.");
         diagnostics.frame_execution.limit=options.frames_in_flight;
+        diagnostics.frame_execution.renderer_id=next_renderer_id();
         diagnostics.frame_execution.presentation_retirement="bounded idle compatibility cleanup (not a presentation completion proof)";
         diagnostics.culling=options.culling;diagnostics.profile_requested=options.profile;
         clustered_requested=options.clustered_lighting;diagnostics.light_assignment.requested=clustered_requested;
@@ -2723,6 +2733,7 @@ struct Context {
                 if(slot.capture_probes)collect_product_probes();
                 collect_exposure(slot);
                 ++diagnostics.completed_submissions;--diagnostics.frame_execution.outstanding;
+                diagnostics.frame_execution.last_completed_submission_id=slot.submission;
                 profiling::deferred_counter(slot.profile,"renderer.completed_submissions",diagnostics.completed_submissions);
                 checked->resetEventQuery(slot.completion);slot.occupied=false;slot.viewmodel.reset();slot.performance=nullptr;slot.performance_ticket={};++retire_slot;
                 release_stale_surface_mark_binding(slot);
@@ -3630,7 +3641,7 @@ struct Context {
         if(slot_viewmodel && pending_viewmodel)slot_viewmodel->draws.camera_batches=pending_viewmodel->draws.camera_batches;
         slot.viewmodel_diagnostics.swap(slot_viewmodel);slot.has_skin=render_skinning::has_draws({draws,viewmodel_draws});slot.viewmodel=viewmodel_enabled ? viewmodel : nullptr;
         slot.skin_ids.swap(submitted_skin_ids);slot.screen_reflections=plan.settings.screen_reflections;slot.height_fog=plan.settings.height_fog;
-        slot.profile=profiling::capture_deferred();slot.timing=timestamps.recording();
+        slot.timing=timestamps.recording();
         slot.history_valid=pending_history_valid;slot.history_sequence=scene ? history_sequence+1 : 0;slot.history_reset=pending_history_reset;
         slot.capture_probes=capture_frame && !product_probes.empty();slot.reconstruction=pending_reconstruction;
         slot.exposure=pending_exposure;slot.capture_exposure=plan.frame.exposure_readback!=render_schedule::none;
@@ -3642,11 +3653,20 @@ struct Context {
         slot.cloud_shadows=scene ? pending_cloud_shadows : std::nullopt;
         slot.cloud_shadow_baked=plan.settings.cloud_shadows && !plan.resource(plan.frame.cloud_shadow).initialized;
         slot.submission=checked->executeCommandList(commands);
-        // The GPU may have accepted work even if a later validation/query/
-        // present operation fails. Attribute that submission immediately.
+        // NVRHI can return a queue serial with a device-lost callback.
+        // Retain the existing fault accounting without publishing a join
+        // key for work whose acceptance could not be established.
+        const bool accepted=slot.submission!=0 && messages.errors==0;
+        const RenderSubmission submission=accepted ?
+            RenderSubmission{diagnostics.frame_execution.renderer_id,slot.submission} : RenderSubmission{};
         slot.performance=performance;slot.performance_ticket={};
-        if(slot.submission && performance)slot.performance_ticket=performance->gpu_submit(performance_token);
-        require(slot.submission!=0 && messages.errors==0,"Frame submission was not accepted; history was not advanced.");
+        if(accepted) {
+            profile_scope.set_render_submission(submission);
+            submit_scope.set_render_submission(submission);
+            slot.profile=profiling::capture_deferred(submission);
+        }
+        if(slot.submission && performance)slot.performance_ticket=performance->gpu_submit(performance_token,submission);
+        require(accepted,"Frame submission was not accepted; history was not advanced.");
         slot.atmosphere_sky.reset();
         if(plan.frame.atmosphere_view!=render_schedule::none) {
             sky_pass.commit_atmosphere();

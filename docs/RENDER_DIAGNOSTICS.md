@@ -51,6 +51,10 @@ Successful capture and all returned player reports include `render_diagnostics`:
 - `culling`, `draw_instancing`, `profile_requested`: selected options.
 - `completed_submissions`: command submissions whose graphics completion and diagnostic readbacks have retired. An out-of-date presentation may still have completed GPU work, so this is distinct from presented frames.
 - `frame_execution`: configured limit, submitted/outstanding/peak counts, slot/drain/device-idle wait counts and the presentation retirement policy.
+- Native `frame_execution.renderer_id` identifies the context.
+  `last_completed_submission_id` stays null until the first retirement.
+  Together they identify `last_draws` and can be matched to an overlapping
+  [profiler capture](PROFILER.md#correlate-a-frame).
 - `last_draws`: counts for the last completed submission, not lifetime totals.
 - `light_assignment`: selected path, grid and buffer bounds, and actual GPU candidate counts when available. Unsampled candidate statistics are null.
 - `cpu`: timing summaries for scene preparation, command recording, the render call and blocking completion waits.

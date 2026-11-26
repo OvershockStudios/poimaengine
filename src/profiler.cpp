@@ -151,17 +151,21 @@ Scope::~Scope() noexcept {
     --recorder_->open_;recorder_->elapsed_=std::max(recorder_->elapsed_,end);
     context.parent=parent_;context.tick=tick_;
 }
+void Scope::set_render_submission(RenderSubmission submission) noexcept {
+    if(event_ && submission)event_->render_submission=submission;
+}
 void counter(std::string_view name,std::uint64_t value,Kind kind) noexcept {
     auto* recorder=context.recorder;
     if(!recorder || !recorder->recording_)return;
     if(kind!=Kind::counter && kind!=Kind::gpu) { increment(recorder->dropped_);return; }
     if(auto* event=recorder->reserve(name,kind,-1)) { event->value=value;event->complete=true; }
 }
-DeferredContext capture_deferred() noexcept {
+DeferredContext capture_deferred(RenderSubmission submission) noexcept {
     DeferredContext ticket;
     auto* recorder=context.recorder;
     if(!recorder || !recorder->recording_)return ticket;
     ticket.recording_=recorder->deferred_recording_;
+    if(submission)ticket.render_submission_=submission;
     ticket.start_ns_=recorder->now();ticket.tick_=context.tick;
     ticket.source_=context.source;ticket.session_=context.session;
     return ticket;
@@ -179,6 +183,7 @@ bool deferred_counter(const DeferredContext& ticket,std::string_view name,std::u
     if(auto* event=recorder->reserve(name,kind,ticket.tick_)) {
         event->parent=0;event->start_ns=ticket.start_ns_;event->tick=ticket.tick_;
         event->source=ticket.source_;event->session=ticket.session_;
+        event->render_submission=ticket.render_submission_;
         event->value=value;event->complete=true;
         return true;
     }

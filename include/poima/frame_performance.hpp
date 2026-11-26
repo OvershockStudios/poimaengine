@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #pragma once
+#include "poima/render_submission.hpp"
 #include <array>
 #include <cstdint>
 #include <memory>
@@ -44,6 +45,7 @@ enum class GpuState { not_submitted,pending,completed,dropped,unavailable };
 enum class GpuDropReason { none,query_unavailable,query_failed,capacity_pressure,stopped,owner_shutdown,device_fault,invalid_timing };
 struct Row {
     std::uint64_t sequence=0;
+    RenderSubmission render_submission;
     CpuSample cpu{};
     GpuTiming gpu{};
     GpuState gpu_state=GpuState::not_submitted;
@@ -102,7 +104,7 @@ public:
     // statistics, validate timestamps before subtraction, and export session
     // bytes with a bounded view (the retained malformed input may lack NUL).
     bool fail_frame(const FrameToken&,const CpuSample&) noexcept;
-    GpuTicket gpu_submit(const FrameToken&) noexcept;
+    GpuTicket gpu_submit(const FrameToken&,RenderSubmission={}) noexcept;
     bool gpu_complete(const GpuTicket&,const GpuTiming&) noexcept;
     // query_unavailable/query_failed/invalid_timing are known-executed
     // retirements without usable timing. Other reasons abandon pending work.

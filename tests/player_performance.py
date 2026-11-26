@@ -59,8 +59,50 @@ def verify_capture(client,capture_id):
     assert client.call('performance.summary',dict(capture_id=capture_id))==summary
     return dict(summary=summary,rows=rows)
 
+def verify_submissions(client, profiler_id, frames, renderer_id, session, tick):
+    frame_keys = {}
+    for row in frames:
+        if not row['gpu_submitted']:
+            assert 'render_submission' not in row, row
+            continue
+        key = row['render_submission']
+        serial = key['submission_id']
+        assert key['renderer_id'] == renderer_id and serial > 0 and serial not in frame_keys, row
+        frame_keys[serial] = row
+
+    events, offset = [], 0
+    while offset is not None:
+        page = client.call('profiler.events', dict(capture_id=profiler_id, offset=offset, limit=256))
+        events.extend(page['events'])
+        offset = page['next_offset']
+    owners = {event['id']: event for event in events if event['name'] == 'render.frame'}
+    cpu_scopes = {event['render_submission']['submission_id']: event for event in events
+                  if event['name'] == 'render.submit' and 'render_submission' in event}
+    matched = {}
+    for event in events:
+        if event['kind'] != 'gpu':
+            continue
+        key = event['render_submission']
+        serial = key['submission_id']
+        assert key['renderer_id'] == renderer_id and event['source'] == 'player', event
+        scope = cpu_scopes[serial]
+        assert scope['render_submission'] == owners[scope['parent']]['render_submission'] == key
+        assert event['session'] == scope['session'] == session
+        assert event['tick'] == scope['tick'] == tick == frame_keys[serial]['tick_after']
+        if event['name'] == 'gpu.total.ns':
+            assert frame_keys[serial]['gpu_state'] == 'completed', frame_keys[serial]
+            assert event['value'] == frame_keys[serial]['gpu_ns']['total'] and serial not in matched
+            matched[serial] = event['value']
+    assert len(matched) >= 3, matched
+    return dict(renderer_id=renderer_id, tick=tick, total_ns_by_submission=matched)
+
 def main():
-    ap=argparse.ArgumentParser(description=__doc__);ap.add_argument('binary',type=Path);ap.add_argument('--output',type=Path,required=True);ap.add_argument('--gpu',type=int,default=1);args=ap.parse_args()
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument('binary', type=Path)
+    ap.add_argument('--output', type=Path, required=True)
+    ap.add_argument('--gpu', type=int, default=1)
+    ap.add_argument('--require-submission', action='store_true')
+    args = ap.parse_args()
     if os.name!='nt':ap.error('Run with native Windows Python for actual HWND/PID identity.')
     run=args.output.resolve()/uuid.uuid4().hex;run.mkdir(parents=True)
     args.output=run;args.windows_interop=False;args.timeout=30
@@ -94,7 +136,7 @@ def main():
         pool=ThreadPoolExecutor(max_workers=1)
         probe=memory.WindowsProvider(memory.Options(host.process.pid));identity=probe.creation_filetime;probe.close()
         sampling=pool.submit(memory.collect,memory.Options(host.process.pid,duration=8,interval=.2,system_ram=True,expected_creation_filetime=identity))
-        previous=None;generation=0
+        previous=None;generation=0;renderer_ids=set()
         for slots in (2,1):
             params=shared.start_parameters(sid,generation=generation,gpu=args.gpu,frames_in_flight=slots)
             client.call('player.start',params);state=shared.await_state(client,lambda row:row['ready'],'ready-'+str(slots));generation=state['generation'];window=find_window()
@@ -104,8 +146,19 @@ def main():
             client.call('performance.start',start);assert client.call('performance.start',start)['replayed']
             time.sleep(.4);status=client.call('performance.status');assert status['count']>=2
             client.reject('performance.frames',dict(capture_id=cap),-32009)
-            client.call('profiler.start',dict(capture_id=uuid.uuid4().hex,expected_capture_id=client.call('profiler.status')['capture_id'],capacity=64))
-            profiler=client.call('profiler.status')['capture_id'];time.sleep(.15);client.call('profiler.stop',dict(capture_id=profiler));frozen_profiler=client.call('profiler.status')
+            profiler = uuid.uuid4().hex
+            client.call('profiler.start', dict(capture_id=profiler, expected_capture_id=client.call('profiler.status')['capture_id'],
+                        capacity=16384 if args.require_submission else 64))
+            if args.require_submission:
+                beginning = client.call('player.inspect')['report']['frames_presented']
+                observed = shared.await_state(client, lambda row: row['report']['frames_presented'] >= beginning + 8,
+                                              'profiled-submissions-' + str(slots))
+                renderer = observed['report']['render_diagnostics']['frame_execution']['renderer_id']
+                assert renderer > 0 and renderer not in renderer_ids
+                renderer_ids.add(renderer)
+            else:
+                time.sleep(.15)
+            frozen_profiler = client.call('profiler.stop', dict(capture_id=profiler))
             # An explicit screenshot is retained separately; following cadence
             # must carry the capture flag, even though capture is not a poll row.
             state=client.call('player.inspect');path=run/('capture-'+str(slots)+'.bmp')
@@ -117,6 +170,10 @@ def main():
             stopped=client.call('performance.stop',dict(capture_id=cap));assert stopped['gpu_pending']==0 and stopped['frozen']
             assert client.call('profiler.status')==frozen_profiler,'Performance drain changed existing frozen profiler'
             result=verify_capture(client,cap);result['slots']=slots;result['capture_sha256']=shared.sha(path)
+            if args.require_submission:
+                assert frozen_profiler['state']=='stopped' and not frozen_profiler['dropped']
+                record.setdefault('profiler_joins', []).append(
+                    dict(slots=slots, **verify_submissions(client, profiler, result['rows'], renderer, sid, tick)))
             assert any(row['flags']&16 for row in result['rows']),'Screenshot intervention was lost'
             assert any(row['flags']&8 for row in result['rows']),'Resize intervention was lost'
             assert all(row['tick_before']==tick and row['tick_after']==tick for row in result['rows']),'Paused measurement advanced simulation'

@@ -25,8 +25,10 @@ int main() {
             Binding binding(&service.recorder(),Source::request);
             SessionScope session("0123456789abcdef0123456789abcdef");
             Scope root("request",42);
+            root.set_render_submission({12,19});
             for(std::uint64_t i=1;i<=100;++i)counter("known.samples",i);
-            counter("gpu.test.ns",250,Kind::gpu);
+            check(deferred_counter(capture_deferred({12,19}),"gpu.test.ns",250,Kind::gpu),
+                "Deferred GPU record was rejected.");
             check(service.dispatch("profiler.start",start(a)).at("replayed"),"Exact start was not idempotent.");
             rejects([&]{service.dispatch("profiler.start",start(a,nullptr,128));},-32009,"Changed start retry accepted.");
             rejects([&]{service.dispatch("profiler.summary",{{"capture_id",a}});},-32009,"Unsealed capture could be read.");
@@ -55,12 +57,17 @@ int main() {
         }
         check(joined.size()==102 && joined[0].at("id")==1 && joined[101].at("id")==102 && joined[1].at("parent")==1 && joined[1].at("tick")==42,"Paging lost order/parent/tick metadata.");
         check(joined[1].at("session")=="0123456789abcdef0123456789abcdef","Event session metadata missing.");
+        const Json submission={{"renderer_id",12},{"submission_id",19}};
+        check(joined[0].at("render_submission")==submission && joined[101].at("render_submission")==submission &&
+            !joined[1].contains("render_submission"),"Paged submission identity differs.");
         check(joined[0].at("thread").get<std::uint64_t>()!=0 && joined[1].at("thread")==joined[0].at("thread"),"Owner events lost their actual CPU thread identity.");
         const auto exported=service.dispatch("profiler.export",{{"capture_id",a}});
         bool cpu_export=false,gpu_export=false;
         for(const auto& row:exported.at("trace").at("traceEvents")) {
             if(row.at("name")=="request") {cpu_export=true;check(row.at("tid")==joined[0].at("thread") && row.at("args").at("source")=="request","Trace export replaced the actual thread ID with a logical source lane.");check(row.at("ph")=="X" && row.at("dur").get<double>()==joined[0].at("duration_ns").get<double>()/1000.0,"Export CPU units differ.");}
             if(row.at("name")=="gpu.test.ns") {gpu_export=true;check(row.at("ph")=="C" && row.at("args").at("duration_ns")==250 && !row.contains("dur"),"GPU sample became an aligned span.");}
+            if(row.at("name")=="request" || row.at("name")=="gpu.test.ns")
+                check(row.at("args").at("render_submission")==submission,"Export lost the submission identity.");
         }
         check(cpu_export && gpu_export,"Export omitted actual observations.");
         rejects([&]{service.dispatch("profiler.events",{{"capture_id",b}});},-32009,"Stale capture read accepted.");

@@ -187,6 +187,7 @@ struct FrameExecutionDiagnostics {
     std::uint64_t slot_waits=0,drain_waits=0,device_idle_waits=0;
     bool presentation_fences=false;
     std::string presentation_retirement;
+    std::uint64_t renderer_id=0,last_completed_submission_id=0;
 };
 struct SceneProductsDiagnostics {
     bool available=false,motion_available=false,history_valid=false;
