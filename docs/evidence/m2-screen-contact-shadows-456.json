@@ -1,0 +1,184 @@
+{
+  "format": "poima.qualification-summary",
+  "version": 1,
+  "engine_checkpoint": "0.0.456",
+  "comparison_commit": "9e0d352c92296a5f7283fb35756e66e17400c92b",
+  "scope": "Short-range directional contact shadows in single-sample deferred Windows Vulkan color.",
+  "source_sha256": {
+    "CMakeLists.txt": "3377d72ff5f2b335487278a2f6ea19fc21d6f01d4a99e525866482565b43021a",
+    "cmake/render_smoke.cmake": "db716ac05e609f1b1ba0de85f82033447e46f71244a7ae582e46f0dea2a9f323",
+    "cmake/runtime.json.in": "4f850bdaa9d6ab63e4393a6bfd41b10c56d5f16b288617cf298ece66a47c2fa0",
+    "include/poima/core.hpp": "eb2ae6a2f0c437e0d5bf30eef6b012cbed7e8c16a872f9cb33065f76257b65dd",
+    "include/poima/scene.hpp": "493f18d9c4eb053514bd72fa693833b6fb0bc8eb85aa01bfc6eb63ce33819c66",
+    "include/poima/world.hpp": "f8373d5fe0638424fbf80cb86d90fc3cf4d6503cca9088e7849e2fefdba7ef3d",
+    "shaders/deferred_lighting.hlsl": "e0e310ed4105163a54347b0a8c4e79023fa19d9c692e4f34ec367360d5984f2f",
+    "shaders/scene.hlsl": "f015c1054c18ed827d7fd5a58603ffb630f4ac1c42b47f1365075421b42e1772",
+    "shaders/scene_frame.hlsli": "94044904ca1d36a707871bb20c7a2a39f9e5c17ff93d3e7f4cb6add1b8ec86bb",
+    "shaders/scene_lighting.hlsli": "c7536f3025f0ae3df5856e28d9c3a3439079a7c79215501352eeceaccfc8d20c",
+    "shaders/screen_contact_shadows.hlsli": "642cfef3791680bb8bae1c4156e83e9c76ac551505dee87f6fe5dbf34fd494c9",
+    "src/core.cpp": "311be7f483585c25df5c09fc5d313f414f91fabbdc496276ad27f57c14d74df4",
+    "src/lighting.cpp": "df7ec69bd932cfc823eb03c61a98db0fe2e58f5715dd65f9ed71af0ccfc4c3e2",
+    "src/project.cpp": "57332c7c0429cbf396f52d1b40c01b23fdca2b6f06c3a95029fc1cc7acfae30c",
+    "src/render_scene_draw.hpp": "bd09a64856ebfd931a42e7fc5111634d7fa03d4919bddb498215be5550a9bab2",
+    "src/render_smoke.cpp": "a6e47c2886fdb5bc856e0bd494e423993e062413350457f925058718cec89727",
+    "src/runtime.cpp": "f6dd57ddab15b825ae17d22cdf399dfa63a91dee6a4734854ca8dbad437489bf",
+    "src/runtime_templates.cpp": "9d8bf892f1a896e8a5eb789bdabe4647ed9f97582622ea3b1feabfc08504043b",
+    "src/world.cpp": "31359e7809c24d0bdf239edf892c98257791a3980e902070da6ca6172e8b5cc1",
+    "src/world_content.cpp": "ab72d70bcd16dfbf693060f109e75691fbd888af77b78851ae1d561507d24d24",
+    "src/world_document.cpp": "3fae4a13a717bc61e856691f8f7de636e3caed00195e98be3265a618172ec1fa",
+    "src/world_presentation_json.cpp": "8188303d0d868f40522251e520357ce5978b8ba7b8d479d81a3cc147f7e94257",
+    "src/world_schema.cpp": "637c203a5fd08a3a97994a95c7c2edbc51344d5d5d19ad7b653aa97a3799414f",
+    "tests/lighting_contract.py": "6ee55e0dec0fdb496b6e41ec70258414c0e0eec2352c0e79ffac066b6cef34f3",
+    "tests/screen_contact_shadow_capture.py": "a5ec2748ff0302bf1169ac6660ce3d576fac034c60a19a03e9fa6068a0de5123"
+  },
+  "build": {
+    "cross_build_log_sha256": "21c2eb7e45aef52c9d9edc2c23b2663f815a2dfbb913a1716c4d66356ebbade0",
+    "windows_installed_sha256": {
+      "bin/poima.exe": "0728e59439cf48e8b5f9bb501b44a81fdc4f999fdbde15dfa74fdab760e6f667",
+      "bin/poima_desktop.dll": "cb4c911baeef2d228a50cb42d8a6343e4f0f153bf15bc20409b8cbb8fba2b29a",
+      "runtime.json": "8458ca121af51184be0e561171a9bc952a9cc60016fdfb976c910a54fdeab98c"
+    },
+    "dxc_spirv_sha256": {
+      "deferred": "fbd2cb07150ac4ba4d1a896471a186bebb89e9b89717f31053348d910032649b",
+      "products": "686c42bc5d0f82827e382eb586d91f67595d53edc104523e4ff280e84c45398e"
+    },
+    "linux_binary_sha256": "fdfefee1b0455fc7dc63c15d2b5fffc3b29aebadaf9f65e983d2f22a41f935e1",
+    "linux_junit_sha256": "34617dd20ba68f23f56cbebce4961b6c4903e65bbba26aa669d48d4d590f7a3d",
+    "linux_passed_suites": [
+      "authoring_contract_identity",
+      "world_templates_contract",
+      "project_contract",
+      "project_draft_contract",
+      "lighting_contract",
+      "world_contract"
+    ]
+  },
+  "windows_vulkan": [
+    {
+      "gpu": "AMD Radeon(TM) Graphics",
+      "report_sha256": "19fbe97ed28602e72026339079d139172570e88292cd3bae0c0f7208eafa0e7c",
+      "retained_binary_sha256": "f9fd5a6ce11fb33fa4abb070bb3c6b656f66cd0645d22f0dad08862db81f39ce",
+      "captures": {
+        "caster-disabled": "f4a5870ccb509b2d1b3a9fb1f7de30c5df0425caef766261d2b26c0ff409a708",
+        "enabled": "25d36309d46647041fa5065fa5a5843cc00c536259ba965514d6c698b59c8d2e",
+        "forward-fallback": "f4a5870ccb509b2d1b3a9fb1f7de30c5df0425caef766261d2b26c0ff409a708",
+        "forward-omitted": "f4a5870ccb509b2d1b3a9fb1f7de30c5df0425caef766261d2b26c0ff409a708",
+        "light-disabled": "bd80aacfccd36bf454403d1e1d8f670b928b3809c098971fc8b0b5be20e7392a",
+        "light-disabled-omitted": "bd80aacfccd36bf454403d1e1d8f670b928b3809c098971fc8b0b5be20e7392a",
+        "omitted": "f4a5870ccb509b2d1b3a9fb1f7de30c5df0425caef766261d2b26c0ff409a708",
+        "partial-strength": "437b4799bf36ba36f9552c3223908684c481ea18149c47bee291d6d1148621fa",
+        "receiver-disabled": "f4a5870ccb509b2d1b3a9fb1f7de30c5df0425caef766261d2b26c0ff409a708",
+        "retained": "f4a5870ccb509b2d1b3a9fb1f7de30c5df0425caef766261d2b26c0ff409a708",
+        "short-ray": "f4a5870ccb509b2d1b3a9fb1f7de30c5df0425caef766261d2b26c0ff409a708",
+        "zero-strength": "f4a5870ccb509b2d1b3a9fb1f7de30c5df0425caef766261d2b26c0ff409a708"
+      },
+      "covered_receivers": 9,
+      "exact_control_pixels": 12,
+      "selected_direct_removed": [
+        0.8000634719136782,
+        0.8000634719136782
+      ],
+      "maximum_half_strength_hdr_error": 6.103515625e-05,
+      "unchanged_geometry_and_unrelated_channels": true,
+      "exact_omitted_controls": [
+        "retained",
+        "zero-strength",
+        "short-ray",
+        "caster-disabled",
+        "receiver-disabled"
+      ],
+      "exact_forward_fallback": true,
+      "exact_disabled_light": true
+    },
+    {
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "report_sha256": "9f11e34c8cdf8b52a5dc57790381449ffd6273f49ba71490b036fe4a7b69aed8",
+      "retained_binary_sha256": "f9fd5a6ce11fb33fa4abb070bb3c6b656f66cd0645d22f0dad08862db81f39ce",
+      "captures": {
+        "caster-disabled": "f4a5870ccb509b2d1b3a9fb1f7de30c5df0425caef766261d2b26c0ff409a708",
+        "enabled": "25d36309d46647041fa5065fa5a5843cc00c536259ba965514d6c698b59c8d2e",
+        "forward-fallback": "f4a5870ccb509b2d1b3a9fb1f7de30c5df0425caef766261d2b26c0ff409a708",
+        "forward-omitted": "f4a5870ccb509b2d1b3a9fb1f7de30c5df0425caef766261d2b26c0ff409a708",
+        "light-disabled": "bd80aacfccd36bf454403d1e1d8f670b928b3809c098971fc8b0b5be20e7392a",
+        "light-disabled-omitted": "bd80aacfccd36bf454403d1e1d8f670b928b3809c098971fc8b0b5be20e7392a",
+        "native-aa-enabled": "5252187e3b7c987a25acae69d067d3e745d3bdcab1a3c6764fae93dba83f66d9",
+        "native-aa-omitted": "cefc3fa126512caf7370ff7b6d7ea9b091755a44d3117499cda101ff28caaf3b",
+        "omitted": "f4a5870ccb509b2d1b3a9fb1f7de30c5df0425caef766261d2b26c0ff409a708",
+        "partial-strength": "437b4799bf36ba36f9552c3223908684c481ea18149c47bee291d6d1148621fa",
+        "receiver-disabled": "f4a5870ccb509b2d1b3a9fb1f7de30c5df0425caef766261d2b26c0ff409a708",
+        "relocated": "25d36309d46647041fa5065fa5a5843cc00c536259ba965514d6c698b59c8d2e",
+        "retained": "f4a5870ccb509b2d1b3a9fb1f7de30c5df0425caef766261d2b26c0ff409a708",
+        "short-ray": "f4a5870ccb509b2d1b3a9fb1f7de30c5df0425caef766261d2b26c0ff409a708",
+        "zero-strength": "f4a5870ccb509b2d1b3a9fb1f7de30c5df0425caef766261d2b26c0ff409a708"
+      },
+      "covered_receivers": 9,
+      "exact_control_pixels": 12,
+      "selected_direct_removed": [
+        0.8000634719136782,
+        0.8000634719136782
+      ],
+      "maximum_half_strength_hdr_error": 6.103515625e-05,
+      "unchanged_geometry_and_unrelated_channels": true,
+      "exact_omitted_controls": [
+        "retained",
+        "zero-strength",
+        "short-ray",
+        "caster-disabled",
+        "receiver-disabled"
+      ],
+      "exact_forward_fallback": true,
+      "exact_disabled_light": true,
+      "relocated_export": {
+        "covered": [
+          123,
+          168,
+          80
+        ],
+        "clear": [
+          161,
+          168,
+          80
+        ],
+        "source_unavailable": true,
+        "incompatible_runtime_rejected": true
+      },
+      "fsr_native_aa": true
+    }
+  ],
+  "matched_saltgate_stills": {
+    "study_sha256": "b054ab8c5ead80e7d34ed11bb5c4f1a4146b2f9607528d6d4de44f3f7f2c8004",
+    "extent": [
+      960,
+      540
+    ],
+    "lighting_path": "deferred",
+    "reconstruction": "fsr3_native",
+    "tone_mapper": "pbr_neutral",
+    "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "frames": [
+      {
+        "frame": 0,
+        "tick": 120,
+        "baseline_sha256": "ffbc77bc59c2e1b226d9da99a879d3c674db047d338fc784ff8ca40eeb18cd8b",
+        "contact_sha256": "d4ee5057d8a93d609bf84e789f4548f7aa16c9aef2a214fd80edc10c9d7dfc09",
+        "changed_pixels": 13290,
+        "shifted_at_least_three_codes": 6087,
+        "exact_depth_normal_probes": 20
+      },
+      {
+        "frame": 322,
+        "tick": 764,
+        "baseline_sha256": "e2263b38369ef0e1340670db9a5bbad5a0df5b30f45163a189b90b53f611ee44",
+        "contact_sha256": "3647d2dd7fe574f6aa6032817a4fdf59e4c341155a1df374f0022603a84f64a8",
+        "changed_pixels": 1466,
+        "shifted_at_least_three_codes": 594,
+        "exact_depth_normal_probes": 20
+      }
+    ]
+  },
+  "outside_scope": [
+    "Off-camera supplemental visibility and dynamic GI",
+    "Animation and camera-motion stability over a complete take",
+    "Representative frame budgets"
+  ]
+}

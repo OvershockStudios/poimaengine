@@ -876,6 +876,12 @@ struct Runtime::Impl {
                     const auto* light=registry.try_get<Light>(found->second);
                     require(light && light->kind==LightKind::directional,"Runtime sky sun must reference a directional Light.");
                 }
+                if(const auto& contact=d.environment->screen_contact_shadows) {
+                    const auto found=candidate->identities.find(contact->light);
+                    const auto* light=found==candidate->identities.end() ? nullptr : registry.try_get<Light>(found->second);
+                    require(light && light->kind==LightKind::directional,
+                        "Runtime screen contact shadows must reference an existing directional Light.");
+                }
                 if(const auto& fog=d.environment->height_fog)for(const auto& spot:fog->spot_lights) {
                     const auto found=candidate->identities.find(spot.entity);
                     const auto* light=found==candidate->identities.end() ? nullptr : registry.try_get<Light>(found->second);
@@ -1609,6 +1615,12 @@ struct Runtime::Impl {
                     const auto found=candidate.definitions.find(d.environment->sky.sun);
                     require(found!=candidate.definitions.end() && found->second.light && found->second.light->kind==LightKind::directional,
                         "Runtime sky sun must reference a live directional Light.");
+                }
+                if(const auto& contact=d.environment->screen_contact_shadows) {
+                    const auto found=candidate.definitions.find(contact->light);
+                    require(found!=candidate.definitions.end() && found->second.light &&
+                        found->second.light->kind==LightKind::directional,
+                        "Runtime screen contact shadows must reference a live directional Light.");
                 }
                 if(const auto& fog=d.environment->height_fog)for(const auto& spot:fog->spot_lights) {
                     const auto found=candidate.definitions.find(spot.entity);

@@ -131,6 +131,7 @@ std::vector<RuntimeEntityDefinition> runtime_template_entities(const RuntimeSpaw
         if(entity.hit_region)remap(entity.hit_region->owner);
         if(entity.environment) {
             remap(entity.environment->sky.sun);
+            if(auto& contact=entity.environment->screen_contact_shadows)remap(contact->light);
             if(auto& fog=entity.environment->height_fog)for(auto& spot:fog->spot_lights)remap(spot.entity);
         }
         remap_payloads(entity,nodes,schemas);result.push_back(std::move(entity));
@@ -234,6 +235,11 @@ void validate_runtime_templates(const RuntimeDefinition& definition) {
                 validate_environment(*entity.environment);
                 const auto& sun=entity.environment->sky.sun;
                 check(sun.empty() || (graph.contains(sun) && graph.at(sun)->light && graph.at(sun)->light->kind==LightKind::directional),"Template sky sun must target a local directional light.");
+                if(const auto& contact=entity.environment->screen_contact_shadows) {
+                    const auto target=graph.find(contact->light);
+                    check(target!=graph.end() && target->second->light && target->second->light->kind==LightKind::directional,
+                        "Template screen contact shadows must target a local directional Light.");
+                }
                 if(const auto& fog=entity.environment->height_fog)for(const auto& spot:fog->spot_lights)
                     check(graph.contains(spot.entity) && graph.at(spot.entity)->light && graph.at(spot.entity)->light->kind==LightKind::spot,
                         "Template height fog must target local spot lights.");

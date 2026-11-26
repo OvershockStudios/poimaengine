@@ -41,5 +41,7 @@ cbuffer Frame : register(b1) {
     uint water_swell_seed;
     float4 water_reflection; // Authored perceptual roughness, rough environment reflection enabled.
     float4 water_sun_shafts; // Single-scattering strength, one-based sun index, reserved.
+    float4 screen_contact_shadows; // World length, view-Z thickness, strength, one-based light index.
 };
+static const uint deferred_no_shadow_cast = 64u;
 StructuredBuffer<SceneLight> lights : register(t6);

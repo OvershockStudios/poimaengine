@@ -30,7 +30,7 @@ struct DrawItem {
     std::uint32_t object_index=0;std::uint64_t incarnation=0;std::shared_ptr<const MeshAsset> mesh;
     nvrhi::BufferHandle previous_vertices;std::string entity_id;SkinInstance* skin=nullptr;
     DrawConstants constants{};Geometry geometry;nvrhi::BindingSetHandle bindings,masked_shadow_bindings;
-    bool cull=false,camera_visible=true,receive_shadows=true,stream_geometry=false,mutable_geometry=false;
+    bool cull=false,camera_visible=true,receive_shadows=true,cast_shadows=false,stream_geometry=false,mutable_geometry=false;
     // Borrowed from the last accepted camera frame until the stream upload is packed.
     const MeshAsset* previous_stream_mesh=nullptr;
     std::uint32_t shadow_mask=0,surface_mark_offset=0,surface_mark_count=0;

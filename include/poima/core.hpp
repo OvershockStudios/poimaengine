@@ -265,6 +265,12 @@ struct ScreenReflectionsDiagnostics {
     std::string_view reason;
     std::uint64_t buffer_bytes=0;
 };
+struct ScreenContactShadowsDiagnostics {
+    bool active=false;
+    std::string_view reason;
+    std::string light;
+    std::uint32_t max_samples=0;
+};
 struct DepthOfFieldDiagnostics {
     bool active=false;
     std::string_view reason;
@@ -359,6 +365,7 @@ struct RenderDiagnostics {
     std::optional<EnvironmentIblDiagnostics> environment_ibl;
     std::optional<AtmosphereSkyDiagnostics> atmosphere_sky;
     std::optional<ScreenReflectionsDiagnostics> screen_reflections;
+    std::optional<ScreenContactShadowsDiagnostics> screen_contact_shadows;
     TimingSummary screen_reflections_gpu;
     std::optional<HeightFogDiagnostics> height_fog;
     std::optional<DepthOfFieldDiagnostics> depth_of_field;

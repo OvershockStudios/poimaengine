@@ -81,6 +81,15 @@ void validate_environment(const LightingEnvironment& e) {
         require(std::isfinite(reflections.thickness_m) && reflections.thickness_m>=.01f && reflections.thickness_m<=.5f,
                 "Screen reflections thickness_m must be finite and in [0.01,0.5].");
     }
+    if(e.screen_contact_shadows) {
+        const auto& contact=*e.screen_contact_shadows;
+        require(contact.light.size()==32 && contact.light.find_first_not_of("0123456789abcdef")==std::string::npos,
+            "Screen contact shadows require a 32-character lowercase hexadecimal light ID.");
+        require(finite_between(contact.length_m,.02f,2),"Screen contact shadows length_m must be finite and in [0.02,2].");
+        require(finite_between(contact.thickness_m,.001f,.15f) && contact.thickness_m<=contact.length_m,
+            "Screen contact shadows thickness_m must be finite, in [0.001,0.15], and at most length_m.");
+        require(finite_between(contact.strength,0,1),"Screen contact shadows strength must be finite and in [0,1].");
+    }
     if(e.height_fog) {
         const auto& fog=*e.height_fog;
         require(finite_between(fog.density_per_m,0,.75f),"Height fog density_per_m must be finite and in [0,0.75].");

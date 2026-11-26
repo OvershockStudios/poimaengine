@@ -111,7 +111,9 @@ static CloudSettings cloud_value(const Json& value) {
     return result;
 }
 LightingEnvironment environment_value(const Json& value) {
-    fields(value,{"ambient","exposure","shadow_resolution","shadow_filter","sky","ibl","bloom","post_effect","output_grade","tone_mapper","screen_reflections","height_fog","depth_of_field","auto_exposure","atmosphere"},{"ambient","exposure"});require(value.at("ambient").is_array() && value.at("ambient").size()==3,"Ambient fill needs three values.");
+    fields(value,{"ambient","exposure","shadow_resolution","shadow_filter","sky","ibl","bloom","post_effect","output_grade",
+        "tone_mapper","screen_reflections","screen_contact_shadows","height_fog","depth_of_field","auto_exposure","atmosphere"},{"ambient","exposure"});
+    require(value.at("ambient").is_array() && value.at("ambient").size()==3,"Ambient fill needs three values.");
     for(const auto& x:value.at("ambient"))require(x.is_number() && std::isfinite(x.get<double>()) && x>=0 && x<=1e6,"Ambient fill must be in [0,1e6].");
     require(value.at("exposure").is_number() && std::isfinite(value.at("exposure").get<double>()) && value.at("exposure")>=0 && value.at("exposure")<=1e6,"Exposure must be in [0,1e6].");
     if(value.contains("shadow_resolution"))require(value.at("shadow_resolution").is_number_integer() && (value.at("shadow_resolution")==256 || value.at("shadow_resolution")==512 || value.at("shadow_resolution")==1024 || value.at("shadow_resolution")==2048),"Shadow resolution must be 256, 512, 1024 or 2048.");
@@ -241,6 +243,21 @@ LightingEnvironment environment_value(const Json& value) {
         };
         result.screen_reflections=ScreenReflections{
             read_number("strength",0,1),read_number("max_distance_m",.25,32),read_number("thickness_m",.01,.5)};
+    }
+    if(value.contains("screen_contact_shadows")) {
+        const auto& authored=value.at("screen_contact_shadows");
+        fields(authored,{"light","length_m","thickness_m","strength"},{"light","length_m","thickness_m","strength"});
+        const auto number=[&](const char* name,double low,double high) {
+            const auto& field=authored.at(name);
+            require(field.is_number() && std::isfinite(field.get<double>()) && field>=low && field<=high,
+                std::string("Screen contact shadows ")+name+" is outside its finite range.");
+            return field.get<double>();
+        };
+        const auto length=number("length_m",.02,2);
+        const auto thickness=number("thickness_m",.001,.15);
+        require(thickness<=length,"Screen contact shadows thickness_m must not exceed length_m.");
+        result.screen_contact_shadows=ScreenContactShadows{identifier(authored.at("light")),
+            static_cast<float>(length),static_cast<float>(thickness),static_cast<float>(number("strength",0,1))};
     }
     if(value.contains("depth_of_field")) {
         const auto& profile=value.at("depth_of_field");
@@ -1062,6 +1079,8 @@ static void validate_template_graph(const Json& document,const Json& recipe,
         if(bag.contains("LightingEnvironment")) {
             const auto& environment=bag.at("LightingEnvironment");
             if(environment.contains("sky"))local_reference(environment.at("sky").at("sun"),"Light");
+            if(environment.contains("screen_contact_shadows"))
+                local_reference(environment.at("screen_contact_shadows").at("light"),"Light");
             if(environment.contains("height_fog") && environment.at("height_fog").contains("spot_lights"))
                 for(const auto& spot:environment.at("height_fog").at("spot_lights"))
                     local_reference(spot.at("entity"),"Light");
@@ -1284,6 +1303,12 @@ void validate(const Json& doc) {
                 require(entities.contains(environment.sky.sun),"Sky sun entity does not exist.");
                 const auto& sun=entities.at(environment.sky.sun).at("components");
                 require(sun.contains("Light") && sun.at("Light").at("kind")=="directional","Sky sun must reference a directional Light.");
+            }
+            if(const auto& contact=environment.screen_contact_shadows) {
+                require(entities.contains(contact->light),"Screen contact shadow light entity does not exist.");
+                const auto& target=entities.at(contact->light).at("components");
+                require(target.contains("Light") && target.at("Light").at("kind")=="directional",
+                    "Screen contact shadows must reference a directional Light.");
             }
             if(environment.height_fog)for(const auto& spot:environment.height_fog->spot_lights) {
                 require(entities.contains(spot.entity),"Height fog spot light entity does not exist.");

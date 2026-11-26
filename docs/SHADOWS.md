@@ -76,6 +76,59 @@ Basic shadow discovery dates to schema revision 13; revision 120 adds directiona
 
 Visible opaque geometry casts and receives direct-light shadows by default. Each drawable can opt out independently through the controls below. Hidden geometry does neither; collision-only objects do not cast. [Alpha-masked PBR casters](MATERIAL_ALPHA.md) use their texture alpha, opacity and cutoff in the shadow pass; discarded texels write no shadow depth. Blended transparency and light transmission remain unsupported. Shadow rasterization is two-sided, including thin imported planes; color-pass sidedness is unchanged. Material AO/ambient/emission are not multiplied by direct-light shadow visibility.
 
+## Ground small casters with screen-space shadows
+
+Set `LightingEnvironment.screen_contact_shadows` to add short-range shadow
+detail around visible contact surfaces. Merge the object into the existing
+environment and submit the full component with a revision guard.
+
+```json
+{
+  "light": "00000000000000000000000000000005",
+  "length_m": 0.4,
+  "thickness_m": 0.035,
+  "strength": 0.65
+}
+```
+
+| Required field | Meaning |
+| --- | --- |
+| `light` | Existing directional Light entity. Use the ID from your scene. |
+| `length_m` | Ray length in world metres, in [0.02, 2]. |
+| `thickness_m` | Approximate depth of a visible caster along camera Z, in [0.001, 0.15] metres and at most the ray length. |
+| `strength` | Multiplier for the added visibility loss, in [0, 1]. Zero selects an identity result. |
+
+Use single-sample deferred color. A game can set
+`startup_render.lighting_path` to `deferred` in its project manifest.
+Configuration remains visible in `world.lighting` and `runtime.lighting`.
+Capture diagnostics report `active`, `reason`, `light` and `max_samples`.
+Forward and diagnostic views use the existing shading paths. A disabled
+light or a light with zero intensity leaves the effect inactive.
+The option freezes with the runtime scene. Export requires
+`features.screen_contact_shadows` in the chosen Vulkan runtime.
+
+Eligible casters are the opaque or alpha-tested surfaces present in the
+camera depth buffer with casting enabled. Deferred surfaces with receiving
+enabled trace toward the selected light. Its screen visibility multiplies
+any existing map and cloud visibility. Emission, ambient fill, sky lighting
+and the other lights follow their own contributions. Off-screen and
+occluded casters rely on the shadow map.
+
+The trace takes up to 16 samples along the perspective-projected ray. The
+receiver's geometric plane rejects self-intersections. The effect fades
+near the maximum ray length and the edge of the active viewport. Start with
+a short ray and a thin depth slab at the scale of the contact. A longer ray
+can skip thin blockers. The shared depth buffer adds no separate shadow
+target or temporal allocation. The approach follows established
+[screen-space ray projection](https://jcgt.org/published/0003/04/04/) and
+[per-light contact shading](https://dev.epicgames.com/documentation/unreal-engine/shadowing-in-unreal-engine?lang=en-US).
+
+Run `tests/screen_contact_shadow_capture.py` against a matching Vulkan
+binary. The fixture separates the selected direct light from another light
+and compares known receiver, caster and sky locations. `--reference` uses
+the retained 0.0.455 Windows executable for legacy comparison, `--fsr` adds
+Native AA captures, and `--runtime` tests standalone export.
+
 ## Per-drawable controls
 
 `MeshRenderer`, `StaticMesh` and `SkinnedMesh` accept optional `cast_shadows`

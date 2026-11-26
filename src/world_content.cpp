@@ -295,6 +295,7 @@ FrozenContent freeze_world_content(const Json& source, const fs::path& directory
                 }
             }
             if(environment.contains("screen_reflections"))result.needs_screen_reflections=true;
+            if(environment.contains("screen_contact_shadows"))result.needs_screen_contact_shadows=true;
             if(environment.contains("depth_of_field"))result.needs_depth_of_field=true;
             if(environment.contains("height_fog"))result.needs_height_fog=true;
             if(environment.contains("post_effect")) {

@@ -172,6 +172,11 @@ Json render_diagnostics(const RenderDiagnostics& d) {
         result["contact_shadows"]={{"blocker_samples",d.shadow_blocker_samples},{"filter_samples",d.shadow_filter_samples},
             {"max_comparisons",d.shadow_max_comparisons},{"max_radius_texels",d.shadow_max_radius_texels},{"guard_texels",d.shadow_guard_texels},
             {"local_fallback","pcf3_fractional"},{"zero_angular_size_fallback","pcf3_fractional"},{"no_blocker_fallback","pcf3_fractional"}};
+    if(d.screen_contact_shadows) {
+        const auto& contact=*d.screen_contact_shadows;
+        result["screen_contact_shadows"]={{"active",contact.active},{"reason",contact.reason},
+            {"light",contact.light},{"max_samples",contact.max_samples}};
+    }
     if(d.environment_ibl) {
         const auto& ibl=*d.environment_ibl;
         result["environment_ibl"]={{"enabled",ibl.enabled},{"diffuse_size",ibl.diffuse_size},{"specular_size",ibl.specular_size},
@@ -328,6 +333,9 @@ Json lighting_json(const SceneLighting& lighting) {
         result["screen_reflections"]={{"strength",reflections.strength},
             {"max_distance_m",reflections.max_distance_m},{"thickness_m",reflections.thickness_m}};
     }
+    if(const auto& contact=lighting.environment.screen_contact_shadows)
+        result["screen_contact_shadows"]={{"light",contact->light},{"length_m",contact->length_m},
+            {"thickness_m",contact->thickness_m},{"strength",contact->strength}};
     if(lighting.environment.height_fog) {
         const auto& fog=*lighting.environment.height_fog;
         Json settings={{"density_per_m",fog.density_per_m},{"base_height_m",fog.base_height_m},

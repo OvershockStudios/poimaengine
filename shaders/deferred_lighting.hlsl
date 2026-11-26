@@ -1,15 +1,16 @@
 // SPDX-License-Identifier: Apache-2.0
+Texture2D<float4> surface_buffer : register(t1);
+Texture2D<float> scene_depth : register(t3);
+#define POIMA_SCREEN_CONTACT_SHADOWS 1
 #include "scene_surface.hlsli"
 #if POIMA_SCENE_PRODUCTS
 #include "scene_correspondence.hlsli"
 #endif
 Texture2D<float4> material_buffer : register(t0);
-Texture2D<float4> surface_buffer : register(t1);
 Texture2D<float4> correspondence_buffer : register(t2);
 #if POIMA_AMBIENT_OCCLUSION
 Texture2D<float> indirect_visibility : register(t4);
 #endif
-Texture2D<float> scene_depth : register(t3);
 [[vk::image_format("rgba16f")]] RWTexture2D<float4> scene_hdr : register(u0);
 #if POIMA_SCENE_PRODUCTS
 [[vk::image_format("rgba16f")]] RWTexture2D<float4> shading_normal : register(u1);

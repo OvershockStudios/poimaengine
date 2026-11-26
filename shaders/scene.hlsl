@@ -208,7 +208,7 @@ SceneSurface evaluate_material(VertexOutput input,bool front) {
     SceneSurface material;
     material.normal=n;material.geometric_normal=geometric_normal;
     material.base=draw.base_metallic.rgb;material.metallic=0;material.roughness=1;material.emission=0;material.occlusion=1;
-    material.legacy=draw.base_metallic.w<0;material.receive_shadows=draw.history.y==0;
+    material.legacy=draw.base_metallic.w<0;material.receive_shadows=(draw.history.y&1u)==0u;
     if(draw.base_metallic.w<0) {
         // Legacy preview deliberately keeps its original unflipped vertex normal.
     } else {
@@ -301,6 +301,7 @@ float4 pixel_main(VertexOutput input, bool front : SV_IsFrontFace) : SV_Target0 
     result.base_metallic=float4(material.base,material.metallic);
     // Presence and valid shading normal are distinct: bad geometry must not become sky.
     uint flags=1u | (material.legacy ? 2u : 0u) | (normal_valid ? 8u : 0u) | (material.receive_shadows ? 0u : 16u);
+    flags|=(objects[input.object_index].history.y&2u)!=0u ? deferred_no_shadow_cast : 0u;
 #if POIMA_SCENE_PRODUCTS
     flags|=motion_valid ? deferred_motion_valid : 0u;
     flags|=motion_valid && marks_changed ? deferred_surface_marks_changed : 0u;

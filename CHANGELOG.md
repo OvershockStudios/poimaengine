@@ -2,6 +2,12 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.456
+
+- Add optional screen-space contact shadows for an authored directional light.
+  The deferred renderer traces short rays through opaque scene depth to resolve
+  contacts around small casters. [Author contact shadows](docs/SHADOWS.md#ground-small-casters-with-screen-space-shadows)
+
 ## 0.0.455
 
 - Choose an AgX SDR approximation or Khronos PBR Neutral for a world's

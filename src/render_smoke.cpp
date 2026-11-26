@@ -146,8 +146,9 @@ struct FrameConstants {
     height_fog::SwellVariationParameters water_swell_variation{};
     std::array<float,4> water_reflection{};
     std::array<float,4> water_sun_shafts{};
+    std::array<float,4> screen_contact_shadows{};
 };
-static_assert(sizeof(GpuShadow)==80 && sizeof(FrameConstants)==1952);
+static_assert(sizeof(GpuShadow)==80 && sizeof(FrameConstants)==1968);
 static_assert(offsetof(FrameConstants,water_ripple_shape)==1600 && offsetof(FrameConstants,water_ripple_motion)==1616 &&
     offsetof(FrameConstants,water_wave_shapes)==1632 && offsetof(FrameConstants,cloud_shadow_geometry)==1680 &&
     offsetof(FrameConstants,cloud_shadow_controls)==1696 && offsetof(FrameConstants,water_caustic_origin_size)==1712 &&
@@ -155,7 +156,7 @@ static_assert(offsetof(FrameConstants,water_ripple_shape)==1600 && offsetof(Fram
     offsetof(FrameConstants,water_shore_foam)==1760 && offsetof(FrameConstants,sprite_water)==1776 &&
     offsetof(FrameConstants,water_offshore)==1824 && offsetof(FrameConstants,water_offshore_swell)==1840 &&
     offsetof(FrameConstants,water_swell_variation)==1904 && offsetof(FrameConstants,water_reflection)==1920 &&
-    offsetof(FrameConstants,water_sun_shafts)==1936);
+    offsetof(FrameConstants,water_sun_shafts)==1936 && offsetof(FrameConstants,screen_contact_shadows)==1952);
 struct SpriteInstance {
     std::array<float,4> center_and_size,linear_rgba,fade_and_reserved;
     std::array<std::uint32_t,4> texel_rect;
@@ -929,7 +930,7 @@ struct Context {
             }
             // Keep geometry correspondence when only the surface appearance changed.
             gpu_object.history[0]=valid ? (surface_changed ? 3u : 1u) : 0u;
-            gpu_object.history[1]=item.receive_shadows ? 0u : 1u;
+            gpu_object.history[1]=(item.receive_shadows ? 0u : 1u) | (item.cast_shadows ? 0u : 2u);
             gpu_object.history[2]=item.surface_mark_offset;
             gpu_object.history[3]=item.surface_mark_count;
             item.previous_vertices=item.skin && valid ? item.skin->outputs[item.skin->accepted_index] : item.geometry.vertices;
@@ -1331,6 +1332,26 @@ struct Context {
             deferred_lighting.invalidate_bindings();
             detach_world_outputs(source);
             reflections.clear_targets();
+        }
+    }
+    void prepare_screen_contact_shadows(const SceneLighting& lighting) {
+        diagnostics.screen_contact_shadows.reset();
+        frame_constants.screen_contact_shadows={};
+        const auto& selected=lighting.environment.screen_contact_shadows;
+        if(!selected)return;
+        const auto light=std::ranges::find(lighting.lights,selected->light,&SceneLight::entity_id);
+        const std::string_view reason=selected->strength==0 ? "zero_strength" :
+            !scene_visible ? "scene_hidden" :
+            scene_debug_view!=SceneDebugView::color ? "diagnostic" :
+            !deferred ? "forward" :
+            light==lighting.lights.end() || !light->light.enabled ? "light_disabled" :
+            light->light.intensity==0 ? "zero_intensity" : "active";
+        const bool active=reason=="active";
+        diagnostics.screen_contact_shadows=ScreenContactShadowsDiagnostics{active,reason,selected->light,active ? 16u : 0u};
+        if(active) {
+            require(light->light.kind==LightKind::directional,"Screen contact shadows need a directional light.");
+            frame_constants.screen_contact_shadows={selected->length_m,selected->thickness_m,selected->strength,
+                static_cast<float>(light-lighting.lights.begin()+1)};
         }
     }
     void detach_world_outputs(const nvrhi::ITexture* source) {
@@ -2054,6 +2075,7 @@ struct Context {
         retain_scene_resources();warm_particle_sprites();prepare_shadows();
         auto lighting=scene->lighting;finalize_lighting(lighting);
         prepare_environment(lighting);prepare_screen_reflections(lighting.environment.screen_reflections);
+        prepare_screen_contact_shadows(lighting);
         shadow_filter=shadow_filter_override.value_or(lighting.environment.shadow_filter);
         diagnostics.shadow_filter=shadow_filter;
         const bool contact_shadows=shadow_filter==ShadowFilter::pcss_directional;
@@ -2252,6 +2274,7 @@ struct Context {
             }
             const bool casts_shadows = list == 0 && object.cast_shadows &&
                 !(object.camera_draw && object.camera_draw->mode == CameraDrawMode::Viewmodel);
+            item.cast_shadows=casts_shadows;
             if (casts_shadows) {
                 const bool can_trim = diagnostics.culling && !shadow_frusta.empty() && !item.skin &&
                     !item.stream_geometry && !object.foliage_motion;

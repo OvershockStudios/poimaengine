@@ -1,8 +1,19 @@
 # Implementation status
 
-Updated 2026-11-25 for **0.0.455**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-25 for **0.0.456**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.456 [adds screen-space contact shadows](SHADOWS.md#ground-small-casters-with-screen-space-shadows)
+for one directional light in deferred color. AMD and NVIDIA each matched
+nine covered receivers and twelve unchanged control probes. The retained
+0.0.455 control and the omitted profile produced identical images on both
+adapters. The NVIDIA run verified FSR Native AA and the relocated standalone
+replay, and rejected a runtime descriptor missing the feature. Two matched
+Saltgate stills show localized changes around the entrance and column base.
+Camera-visible opaque depth bounds the added shadows. Moving-image stability
+and game-scale cost remain open.
+[Results and scope](evidence/m2-screen-contact-shadows-456.json)
 
 Version 0.0.455 [adds two optional SDR tone mappers](HDR_COMPOSITION.md#choose-a-tone-mapper)
 to the shared Vulkan output pass. AMD forward and NVIDIA deferred fixture

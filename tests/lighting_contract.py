@@ -357,6 +357,61 @@ class LightingContract(unittest.TestCase):
         self.assertEqual(c.rpc('world.lighting'), original | dict(revision=4))
         self.assertEqual(c.rpc('world.dependencies'), dependencies | dict(revision=4))
 
+    def test_screen_contact_shadow_profile_and_directional_reference(self):
+        c = self.open()
+        description = c.rpc('world.describe', {'view': 'component', 'name': 'LightingEnvironment'})
+        schema = description['components']['LightingEnvironment']['properties']['screen_contact_shadows']
+        fields = {'length_m': (.02, 2), 'thickness_m': (.001, .15), 'strength': (0, 1)}
+        self.assertGreaterEqual(description['schema_revision'], 249)
+        self.assertEqual(set(schema['required']), {'light', *fields})
+        self.assertFalse(schema['additionalProperties'])
+        for key, (minimum, maximum) in fields.items():
+            self.assertEqual(schema['properties'][key], dict(type='number', minimum=minimum, maximum=maximum))
+
+        profile = dict(light=uid(2), length_m=.5, thickness_m=.125, strength=0)
+
+        def edit(value):
+            return component(1, 'LightingEnvironment', dict(ambient=[0, 0, 0], exposure=1,
+                                                            screen_contact_shadows=value))
+
+        c.txn(0, [create(1), environment(1), create(2), light(2, 'directional', enabled=False),
+                  create(3), light(3, 'point'), create(4)])
+        original = c.rpc('world.lighting')
+        dependencies = c.rpc('world.dependencies')
+        self.assertNotIn('screen_contact_shadows', original)
+        self.assertNotIn('needs_screen_contact_shadows', dependencies)
+        c.txn(1, [edit(profile)])
+        selected = c.rpc('world.lighting')
+        self.assertEqual(selected, original | dict(revision=2, screen_contact_shadows=profile))
+        self.assertEqual(c.rpc('world.dependencies'), dependencies | dict(revision=2, needs_screen_contact_shadows=True))
+        c.close()
+        c = self.open()
+        self.assertEqual(c.rpc('world.lighting'), selected)
+
+        invalid = [None, [], profile | dict(unexpected=True), profile | dict(length_m=.0625)]
+        invalid.extend(profile | dict(light=value) for value in (None, 'A'*32, uid(3), uid(4), uid(99)))
+        invalid.extend({key: value for key, value in profile.items() if key != field} for field in profile)
+        for key, (low, high) in fields.items():
+            invalid.extend(profile | {key: value} for value in (False, '0', low-1e-10, high+1e-10))
+        delete_light = {'op': 'entity.delete', 'id': uid(2), 'recursive': True}
+        before = self.path.read_bytes()
+        for operation in [*(edit(value) for value in invalid), delete_light, light(2, 'point')]:
+            c.txn(2, [transform(1, (45, 0, 0)), operation], error=-32602)
+            self.assertEqual(self.path.read_bytes(), before)
+        self.assertEqual(c.rpc('world.lighting'), selected)
+
+        features = json.loads(subprocess.check_output([BINARY, 'capabilities'], text=True))['result']['features']
+        if features['simulation']:
+            session = uid(953)
+            c.rpc('runtime.start', {'session_id': session, 'revision': 2})
+            frozen = c.rpc('runtime.lighting', {'session_id': session, 'tick': 0})
+            self.assertEqual(frozen['screen_contact_shadows'], profile)
+        c.txn(2, [delete_light, environment(1)])
+        self.assertEqual(c.rpc('world.lighting'), original | dict(revision=3))
+        self.assertEqual(c.rpc('world.dependencies'), dependencies | dict(revision=3))
+        if features['simulation']:
+            self.assertEqual(c.rpc('runtime.lighting', {'session_id': session, 'tick': 0}), frozen)
+
     def test_runtime_screen_reflections_are_frozen_with_lighting(self):
         cap = json.loads(subprocess.check_output([BINARY, 'capabilities'], text=True))
         if not cap['result']['features']['simulation']:

@@ -8,6 +8,9 @@ Texture2DArray<float> shadow_map : register(t5);
 Texture2D<float4> cloud_shadow_map : register(t13);
 SamplerState cloud_shadow_sampler : register(s6);
 #include "scene_shadow_filter.hlsli"
+#if POIMA_SCREEN_CONTACT_SHADOWS
+#include "screen_contact_shadows.hlsli"
+#endif
 float cloud_transmission(float3 position, float3 toward_sun) {
     const float height_above_base = position.y - cloud_shadow_geometry.z;
     const float layer_fraction = height_above_base / cloud_shadow_geometry.w;
@@ -76,6 +79,11 @@ void accumulate_direct_lighting(inout float3 color,float3 world_position,float2 
                 visibility=light_visibility(source,world_position,geometric_normal,l);
                 [branch] if(cloud_shadow_controls.x>0 && index+1u==uint(cloud_shadow_controls.y) && source.position_kind.w<0.5)
                     visibility*=cloud_transmission(world_position,l);
+#if POIMA_SCREEN_CONTACT_SHADOWS
+                [branch] if (screen_contact_shadows.z > 0 && index + 1u == uint(screen_contact_shadows.w)
+                    && visibility > 0 && dot(n, l) > 0)
+                    visibility *= screen_contact_visibility(pixel_position, geometric_normal, l);
+#endif
             }
             float3 direct_color=direct_brdf(n,v,l,base,metallic,roughness)*source.color_intensity.rgb*(source.color_intensity.w*attenuation*visibility);
             [branch] if(water_caustic_grid_light.z!=0u && index+1u==water_caustic_grid_light.z &&

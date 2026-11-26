@@ -61,6 +61,7 @@ record correlated evidence, and identify a useful impossibility check.
 | Shape a local water surface | [Water regions and ripples](SHALLOW_WATER.md#author-surface-ripples) | Verify water levels and terrain collision, then compare the visible normals at the same tick after restoring a save. |
 | Light water with underwater sun shafts | [Sun shafts](SHALLOW_WATER.md#let-sunlight-shaft-through-water) | Compare clear and shadowed views at the same tick, and check that dry pixels and opaque depth stay exact. |
 | Compare highlight roll-off and scene contrast | [Tone mapping](HDR_COMPOSITION.md#choose-a-tone-mapper) | Capture the same tick and exposure in each mode. Compare displayed color with matching upstream HDR probes. |
+| Ground small sunlit detail | [Screen-space contact shadows](SHADOWS.md#ground-small-casters-with-screen-space-shadows) | Capture one camera pose with and without the effect. Inspect directly lit contacts and compare unrelated light and depth samples. |
 
 ## Start with a complete example
 
