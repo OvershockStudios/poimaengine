@@ -1,8 +1,16 @@
 # Implementation status
 
-Updated 2026-11-25 for **0.0.464**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-25 for **0.0.465**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.465 supports matching [height profiles on snow tiles](TERRAIN.md#add-material-height-to-snow).
+AMD forward and NVIDIA deferred runs compare seam depth and motion after a
+stamp with an independent lattice calculation. A separate receiver responds to
+the displaced shadow while the physical ray and capsule continue to use the
+compaction lattice. The relocated build restores the same images after loading
+a save in a fresh process. The fixture uses two 32-cell tiles.
+[Qualification results](evidence/m2-snow-material-displacement-465.json)
 
 Version 0.0.464 adds [material height displacement](MATERIAL_DISPLACEMENT.md)
 for rigid indexed meshes. The Vulkan tessellation stages use the same

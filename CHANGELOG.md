@@ -2,6 +2,12 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.465
+
+- Add material height displacement to paired snow tiles, including compacted
+  geometry in camera, shadow and motion passes.
+  [Snow terrain](docs/TERRAIN.md#add-material-height-to-snow)
+
 ## 0.0.464
 
 - Add adaptive Vulkan tessellation for rigid meshes with authored height

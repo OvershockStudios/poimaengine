@@ -476,7 +476,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 255}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 256}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -835,6 +835,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"expected_generation","receiver","triangle","ray","radius_units","depth_units"});
     snow_stamp["description"]="On the first tick, compact the committed snow surface hit by the ray. Its first hit must match the receiver and cooked triangle at the expected generation. A failed stamp rejects the batch. Outside runtime-game-session v1.";
     result["snow"]={{"available",Runtime::available()},{"binding_operation","snow.set"},{"water_coexistence",true},
+        {"material_displacement","Set the same y-axis StaticMesh.displacement on both tiles. Height texture relief affects rendering and shadows on the compacted mesh. Collisions use the compacted lattice."},
         {"samples_x",snow::samples_x},{"samples_z",snow::samples_z},{"spacing_m",snow::spacing_m},
         {"depth_unit_m",snow::unit_m},{"volume_unit_m3",snow::volume_unit_m3},{"stamps_per_step",1},
         {"foot_release",std::move(foot_release)},

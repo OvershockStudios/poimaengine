@@ -264,8 +264,8 @@ Dense-scene research compares virtualized geometry with GPU-driven instancing
 and LOD under actual content/frame/VRAM budgets. Select and qualify the measured
 approach; a particular engine's geometry technique is not itself the requirement.
 The first [material height displacement](MATERIAL_DISPLACEMENT.md) path
-uses adaptive tessellation on rigid indexed meshes. Continue that support
-through the terrain authoring and rendering path.
+uses adaptive tessellation on rigid indexed meshes and the two-tile
+mutable snow region. Extend qualification to representative terrain workloads.
 Qualify shared edges, culling bounds, silhouettes, shadow and motion parity,
 LOD transitions, and predictable hardware fallbacks. Keep collision and
 gameplay queries tied to the declared authored geometry.

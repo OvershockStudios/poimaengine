@@ -84,7 +84,8 @@ static Json draw_counts_json(const DrawCounts& c) {
         {"shadow_views",c.shadow_views},{"shadow_candidates",c.shadow_candidates},{"shadow_draws",c.shadow_draws},{"shadow_culled",c.shadow_culled},{"shadow_triangles",c.shadow_triangles},
         {"shadow_reused_views",c.shadow_reused_views},
         {"displacement_requested",c.displacement_requested},{"displacement_draws",c.displacement_draws},
-        {"displacement_patches",c.displacement_patches},
+        {"displacement_patches",c.displacement_patches},{"displacement_segment_cap",c.displacement_segment_cap},
+        {"displacement_budget_fallback",c.displacement_budget_fallback},
         {"streamed_draws",c.streamed_draws},{"streamed_vertex_bytes",c.streamed_vertex_bytes},{"streamed_index_bytes",c.streamed_index_bytes},
         {"sprite_instances",c.sprite_instances},{"sprite_batches",c.sprite_batches}};
     if(c.mesh_lod) {

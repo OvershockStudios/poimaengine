@@ -55,11 +55,11 @@ foreach(shader smoke scene scene_products scene_deferred scene_deferred_color de
         scene_output_exposure scene_output_bloom_exposure scene_output_grade_exposure scene_output_grade_bloom_exposure
         scene_output_aces2 scene_output_bloom_aces2 scene_output_grade_aces2 scene_output_grade_bloom_aces2
         scene_output_exposure_aces2 scene_output_bloom_exposure_aces2 scene_output_grade_exposure_aces2 scene_output_grade_bloom_exposure_aces2
-        displacement_control displacement_camera displacement_camera_products displacement_shadow
+        displacement_control displacement_control_products displacement_camera displacement_camera_products displacement_shadow
         spatial_aa bloom viewmodel_composite viewmodel_resolve sky sky_atmosphere sky_orbital sky_clouds atmosphere_density atmosphere_sky_view cloud_noise cloud_view cloud_shadow
         shadow skinning gpu_visibility cluster_lights temporal_inputs temporal_composed_inputs temporal_sprite_inputs temporal_composed_sprite_inputs editor_overlay game_ui particle_sprite particle_sprite_temporal
         particle_sprite_water particle_sprite_temporal_water)
-if(shader STREQUAL "displacement_control")
+if(shader MATCHES "^displacement_control(_products)?$")
     set(shader_stages vs hs)
 elseif(shader MATCHES "^displacement_")
     set(shader_stages ds)
@@ -90,6 +90,9 @@ foreach(stage IN LISTS shader_stages)
     if(shader MATCHES "^displacement_")
         set(shader_source "${CMAKE_SOURCE_DIR}/shaders/scene.hlsl")
         list(APPEND shader_defines -DPOIMA_DISPLACEMENT=1)
+        if(shader MATCHES "_products$")
+            list(APPEND shader_defines -DPOIMA_SCENE_PRODUCTS=1)
+        endif()
         if(stage STREQUAL "vs")
             set(entry displacement_vertex_main)
         elseif(stage STREQUAL "hs")
@@ -98,9 +101,6 @@ foreach(stage IN LISTS shader_stages)
             set(entry displacement_shadow_main)
         else()
             set(entry displacement_camera_main)
-            if(shader MATCHES "_products$")
-                list(APPEND shader_defines -DPOIMA_SCENE_PRODUCTS=1)
-            endif()
         endif()
     elseif(shader MATCHES "^deferred_lighting")
         set(shader_source "${CMAKE_SOURCE_DIR}/shaders/deferred_lighting.hlsl")

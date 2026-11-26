@@ -159,6 +159,8 @@ struct DrawCounts {
     std::uint64_t shadow_views=0,shadow_candidates=0,shadow_draws=0,shadow_culled=0,shadow_triangles=0;
     std::uint64_t shadow_reused_views=0;
     std::uint64_t displacement_requested=0,displacement_draws=0,displacement_patches=0;
+    std::uint32_t displacement_segment_cap=0;
+    bool displacement_budget_fallback=false;
     std::uint64_t streamed_draws=0,streamed_vertex_bytes=0,streamed_index_bytes=0;
     std::uint64_t sprite_instances=0,sprite_batches=0;
     std::shared_ptr<const MeshLodDiagnostics> mesh_lod{};

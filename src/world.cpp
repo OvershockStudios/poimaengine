@@ -650,6 +650,7 @@ public:
             if(content.needs_water_sun_shafts)result["needs_water_sun_shafts"]=true;
             if(content.needs_water_offshore)result["needs_water_offshore"]=true;
             if(content.needs_snow_water)result["needs_snow_water"]=true;
+            if(content.needs_snow_material_displacement)result["needs_snow_material_displacement"]=true;
             if(content.needs_physics_checkpoint)result["needs_physics_checkpoint"]=true;
             if(content.needs_output_grade)result["needs_output_grade"]=true;
             if(content.needs_tone_mapping)result["needs_tone_mapping"]=true;

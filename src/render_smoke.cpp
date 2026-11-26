@@ -2354,11 +2354,12 @@ struct Context {
             }
             if(object.displacement && object.displacement->height_m>0) {
                 const auto& displacement=*object.displacement;
-                require(list==0 && item.mesh && !item.skin && !item.stream_geometry && !object.camera_draw &&
+                require(list==0 && item.mesh && !item.skin && (!item.stream_geometry || item.mutable_geometry) &&
+                    (!item.mutable_geometry || displacement.axis==1) && !object.camera_draw &&
                     !object.foliage_motion && displacement.texture && !displacement.texture->srgb &&
                     std::isfinite(displacement.height_m) && displacement.height_m<=4 &&
                     displacement.axis<3 && displacement.tile_mm>=32 && displacement.tile_mm<=64000,
-                    "Height displacement requires a rigid indexed world mesh and linear height map.");
+                    "Height displacement requires indexed rigid or mutable terrain geometry and a linear height map.");
                 ++pending_draws.displacement_requested;
                 if(displacement_layout) {
                     item.displacement=displacement;
@@ -2420,9 +2421,27 @@ struct Context {
                 const auto submissions=std::popcount(item.shadow_mask)+unsigned(scene_visible && item.camera_visible);
                 pending_draws.displacement_draws+=submissions;
                 pending_draws.displacement_patches+=std::uint64_t(submissions)*(item.geometry.count/3);
-                require(pending_draws.displacement_patches<=8192,"Displacement exceeds 8,192 input patches across camera and shadow views.");
             }
             draws.push_back(std::move(item));
+        }
+        if(pending_draws.displacement_patches>render_schedule::max_height_input_patches) {
+            // Keep the base surface contiguous. Every view and tile drops
+            // height in the same frame, including off-camera casters.
+            for(auto& draw:draws) {
+                draw.displacement.reset();
+                draw.displacement_bindings=nullptr;
+            }
+            pending_draws.displacement_budget_fallback=true;
+            pending_draws.displacement_draws=0;
+            pending_draws.displacement_patches=0;
+        } else if(pending_draws.displacement_patches) {
+            const auto max_segments=render_schedule::max_height_segments;
+            constexpr auto work_budget=8192.0 * render_schedule::max_height_segments * render_schedule::max_height_segments;
+            const auto estimate=static_cast<std::uint32_t>(std::sqrt(work_budget/
+                static_cast<double>(pending_draws.displacement_patches)));
+            const auto segments=std::clamp(estimate,2u,max_segments)&~1u;
+            pending_draws.displacement_segment_cap=segments;
+            for(auto& draw:draws)draw.displacement_segment_cap=segments;
         }
         pending_draws.mesh_lod=std::move(mesh_lod);
         require(found_water_ripples==(water_normal_mode!=0),"Water ripple surface is missing.");
@@ -2439,8 +2458,11 @@ struct Context {
         }
         profiling::counter("renderer.shadow_draws",pending_draws.shadow_draws);
         profiling::counter("renderer.shadow_triangles",pending_draws.shadow_triangles);
-        if(pending_draws.displacement_requested)
+        if(pending_draws.displacement_requested) {
             profiling::counter("renderer.displacement.input_patches",pending_draws.displacement_patches);
+            profiling::counter("renderer.displacement.segment_cap",pending_draws.displacement_segment_cap);
+            profiling::counter("renderer.displacement.budget_fallback",pending_draws.displacement_budget_fallback);
+        }
         const auto assets = scene_assets.statistics();
         profiling::counter("renderer.geometries", assets.geometries);
         profiling::counter("renderer.materials", assets.materials);

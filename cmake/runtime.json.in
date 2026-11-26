@@ -16,6 +16,7 @@
     "physics_checkpoint": @POIMA_RUNTIME_SIMULATION@,
     "water_regions": @POIMA_RUNTIME_SIMULATION@,
     "snow_water_regions": @POIMA_RUNTIME_SIMULATION@,
+    "snow_material_displacement": @POIMA_RUNTIME_SNOW_MATERIAL_DISPLACEMENT@,
     "water_rain": @POIMA_RUNTIME_SIMULATION@,
     "water_ripples": @POIMA_RUNTIME_RENDER_SMOKE@,
     "water_wave_layers": @POIMA_RUNTIME_WATER_WAVE_LAYERS@,

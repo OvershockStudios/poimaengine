@@ -178,6 +178,21 @@ enabled and disabled. The native `poima-reconstruction-quality-test` accepts
 `OUTPUT_PREFIX GPU --mutable-snow-motion forward fsr3_native`. It also accepts
 `deferred` and `fsr3_quality`.
 
+### Add material height to snow
+
+Apply the same [height profile](MATERIAL_DISPLACEMENT.md) to both tile
+`StaticMesh` components in one guarded transaction. Use the `y` axis and a
+linear height texture. The cooked positions give both tiles the same
+projection origin. The camera and shadow draws use the height detail on
+top of the current compaction lattice. Motion uses the prior lattice with
+the same profile when a capture preserves renderer history. Collision,
+gameplay queries and stored snow samples use the physical lattice.
+
+Project and world inspection report `needs_snow_material_displacement`.
+Export requires `features.snow_material_displacement`. The runtime uses
+the base snow geometry when hardware support or the frame patch budget
+precludes tessellation.
+
 ### Leave depressions with planted feet
 
 Add a `foot_release` profile to the `snow.set` definition to use authored

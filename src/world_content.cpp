@@ -385,7 +385,11 @@ FrozenContent freeze_world_content(const Json& source, const fs::path& directory
             std::ranges::any_of(definition.water->storage->ports,[&](const auto& port){return port.id==name;}),
             "Water-driven audio references an unknown storage port: "+name+".",-32050);
     }
-    if(definition.snow)component_checked([&]{(void)snow::Region(definition);});
+    if(definition.snow) {
+        component_checked([&]{(void)snow::Region(definition);});
+        const auto& west=source.at("entities").at(definition.snow->tiles[0]).at("components").at("StaticMesh");
+        result.needs_snow_material_displacement=west.contains("displacement");
+    }
     result.needs_snow_water=definition.snow.has_value() && definition.water.has_value();
     result.needs_physics_checkpoint=definition.physics_checkpoint;
     auto document=source;

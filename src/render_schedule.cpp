@@ -94,7 +94,7 @@ void Schedule::validate(bool before_acquire) const {
                 draw.previous_vertices==frame.streamed_vertices || draw.previous_vertices==frame.streamed_indices);
             if(draw.height_texture!=none) {
                 const auto& height=resource(draw.height_texture);
-                if(!settings.scene || (!camera && !shadow) || streamed || draw.indices==none ||
+                if(!settings.scene || (!camera && !shadow) || (streamed && !draw.stream.mutable_geometry) || draw.indices==none ||
                     height.kind!=Kind::texture || height.lifetime!=Lifetime::imported ||
                     !height.initialized || height.samples!=1)
                     fail("invalid height displacement texture or draw");

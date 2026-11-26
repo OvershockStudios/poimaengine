@@ -1,0 +1,317 @@
+{
+  "format": "poima.qualification-summary",
+  "version": 1,
+  "engine_checkpoint": "0.0.465",
+  "comparison_commit": "150e9c7a186fd7d24f1aaad46f7e5f913168180b",
+  "scope": "Matching linear height profiles on two mutable 32-cell snow tiles, verified in Windows Vulkan. Collision and saves use the compaction lattice.",
+  "source_sha256": {
+    "CMakeLists.txt": "58a953515df13197a9cc8a0660e5ccea65f5c380add051d0dc9e3eaae0e57e12",
+    "cmake/render_smoke.cmake": "d359336e81f650a0e883e62f0a4ef14026deefa38514e2b8d483b7b1ae12ebfd",
+    "cmake/runtime.json.in": "c3e82cb9b6881651dac58fb2b561a87e26b800250d7347792a0b7734fce38b77",
+    "include/poima/core.hpp": "4a2b46d013a3ed92acdd82525893110b410e430bfa54355249f6ac31a3ea354d",
+    "include/poima/render_schedule.hpp": "a0694465fa40042eda8f2d376a292df2b2c80f43fa03e9bcc3267bd357addbb5",
+    "include/poima/runtime.hpp": "c4a40fc1dca0d5327e183e6e633f5cedcd3df19e09d40e75c8eaf16da2c780d9",
+    "include/poima/scene.hpp": "9291b7fdc143c221bc73b21d5be896eb71a4a3242d62e74947e7aace3865ddc2",
+    "include/poima/world.hpp": "e37ae121cc4d0201579568ca339f38db58147d3aa492ab22fa19af8ddfae865c",
+    "shaders/material_displacement.hlsli": "52146e192f05e491261b213a2e8effc64f6cbc074e0f455396015ced5f0bc576",
+    "src/core.cpp": "5ac8fd384f63874f317309b618a72cbe6657d879d553f791d57d8c692fa6caa4",
+    "src/project.cpp": "ebc47a5126cc412def8c819ba1f979a328a62f68ab2a428b8788c07b37360871",
+    "src/render_displacement.cpp": "1935129c495591ef4841946cad8af8e89f3d583a3f8fdd6fbbbbea9beb436c42",
+    "src/render_scene_draw.hpp": "6b786d9c65a5f6d1539d91cb0610fd8f8f91403339631a02a0560aef8de881a6",
+    "src/render_schedule.cpp": "6e472b3ebd8fe0942c4d2261ba91b1fcb0cecf8ff5f9aea8cab48c1a492ea300",
+    "src/render_smoke.cpp": "7f73bea31fdbd50733b10c14a88eef643b7ff3e695c719fae65a11b2b0f2bf6e",
+    "src/snow.cpp": "575110429086d309f2fcf4a96313d786855db9c4de8bb8504227a7e8d6b344b9",
+    "src/world.cpp": "270dee7e644f15dfa5b2bc46cb32bbb083a00dada690906fd8a4d7e4991ebd3c",
+    "src/world_content.cpp": "cb35f5d5061de91eb5f0af3c16b9ecc37c0be5f67abaf8bfa613c550e63826d4",
+    "src/world_document.cpp": "09158a44046debd048ed519c78767007d62623e2ecb03c952b74a739e2d680f4",
+    "src/world_presentation_json.cpp": "4eda00f2fcb69d479f45560fb87384b5ea3ff8f0a864e56b6208f3d0f28b17e7",
+    "src/world_schema.cpp": "bf734397e7840c7df64655d4d43c948761409400dd764bf0caf6c3396c691f0f",
+    "tests/asset_references_contract.py": "2e770dd480f9d5e7ee923770f0dd0c2b5251897a1b1c2a9a521837e76b4cfd2a",
+    "tests/contact_shadow_contract.py": "507d8fcf31fc67f284e52cafb21ecdf6eab783d35ab6690f143e43786bb5ce9c",
+    "tests/material_displacement_budget_capture.py": "c17a723779d9de78ffb2d3642331e7c5a0d01c108f7ad57afd654d31b2c23b09",
+    "tests/material_displacement_capture.py": "847b63b700076fea6471c06efc0684e445edb3095cbb4e71aa89aa57d0b39453",
+    "tests/render_schedule.cpp": "064c168917d8f8d5de1025d5e97c5899d72fb12992150be8699bb43ffe54eaab",
+    "tests/snow_compaction_contract.py": "dab277f7aa0ef2a3cafe65506ac0e2365a0148fa79a1bf3488b187de4f384026",
+    "tests/snow_material_displacement_capture.py": "a5917930637579a96e41eac2fcbd06f1a17b127d0cfe4ea2054a6222ba2aaab1",
+    "tests/snow_shadow_contract.py": "6e7190bbe2a8ef197ccc96147e68aa3d626f3a311fbec1f705e2e88f29061fca"
+  },
+  "windows_installed_sha256": {
+    "bin/poima.exe": "d76a6e7ce898425d1ba495cefe37f26e43e87dcbe82230dfdc7ee23ae9dc9c72",
+    "bin/poima_desktop.dll": "e28e313dbd263a5ef3a58db56c6b1e6b85424e9ec40654a3b6e2b19e0aa9cf80",
+    "runtime.json": "335aaf0f41a06dee8dd6dadd78c25a6e054bc02dae692907bf7d79a36dce1a04"
+  },
+  "shaders": {
+    "tessellation_spirv_sha256": {
+      "displacement_camera_ds.spv": "60983b11c40c67003a8099ac3c06810044cb6a875f9b627480bf342c78505636",
+      "displacement_camera_products_ds.spv": "e7e91c7fb03c0d32811171379dce6a101635f0d92faa916ebf0a40c522919af1",
+      "displacement_control_hs.spv": "e68ca8e1a44385deb032b7dad2ead0317c3364316c22c7a5895231cc8ddf0fbf",
+      "displacement_control_products_hs.spv": "34b14a60b3b37b5d3920f9fef70196aa4b60830b11471a4cfb03854d4dbb9803",
+      "displacement_control_products_vs.spv": "791195dbb761b45e805f8ba7ecbf82f489e2830a122f6db9886960a414ef213e",
+      "displacement_control_vs.spv": "00ec49bcca589d07d47e04f0e8ec09fa46e9f56e7fa257a59b9a520efd327b75",
+      "displacement_shadow_ds.spv": "149f78618822b89b83c64bf8af930a2e27d713dd0a5a4fb0facbf7a06c1cf9f4"
+    },
+    "legacy_scene_and_shadow_variants_byte_exact": true
+  },
+  "ubuntu": {
+    "passed_suites": [
+      "world_terrain_contract",
+      "snow_compaction_contract",
+      "authoring_contract_identity",
+      "render_batches_native",
+      "render_schedule_native",
+      "project_contract",
+      "lighting_contract",
+      "contact_shadow_contract",
+      "world_contract",
+      "asset_references_contract"
+    ],
+    "binary_sha256": "ad2e3e00e6bd5a5ba639f235a857fafb3631b6c67b9142a336fe915349d50d4c",
+    "junit_sha256": "e9e70877d52410cd360824ff4c8e7b0811084bd198252150439facb1cf17bd97",
+    "admission_collision_and_reload_report_sha256": "75ef5830a3a483337c1c69653adf2c68f03157c320b8e147b9135b5686fa41d9",
+    "updated_render_schedule_contract_passed": true
+  },
+  "vulkan": [
+    {
+      "device": "AMD Radeon(TM) Graphics",
+      "lighting_path": "forward",
+      "snow_captures": {
+        "report_sha256": "5093c529d45bc9146f3bdbecd025677a1db7328a1c0d9f0fb7678141e0934514",
+        "images_sha256": {
+          "pristine": "c032d6ab4e601a5c08dc60e5a9f5e486866b7ef4262c56ef8d990d0efd756e65",
+          "warm-checkpoint": "2c20a0b40877982094486d4ea07c24b00d8d092778b85696b11b59441926d671",
+          "warm-final": "91078c17772b59cc0ee845fc9d843a23eeab9433d3e16b00c1ea516fc0158920",
+          "cold-checkpoint": "2c20a0b40877982094486d4ea07c24b00d8d092778b85696b11b59441926d671",
+          "cold-final": "91078c17772b59cc0ee845fc9d843a23eeab9433d3e16b00c1ea516fc0158920",
+          "motion-first": "c032d6ab4e601a5c08dc60e5a9f5e486866b7ef4262c56ef8d990d0efd756e65",
+          "motion-stamped": "2c20a0b40877982094486d4ea07c24b00d8d092778b85696b11b59441926d671"
+        },
+        "seam_probes_per_capture": 21,
+        "maximum_depth_error": 2.3935603034042074e-06,
+        "maximum_motion_error_uv": 7.746121517002505e-08,
+        "visible_height_texture_sha256": "e32905c1bbe3662c7631313059f5b28f7c197fc0a9dfe22bfe3cb1898221ef73",
+        "standalone_manifest_sha256": "1345720c1786a50c170061a912860d8adbbf4f79af8c09afca49f2f6b81337a0",
+        "same_images_after_fresh_process_save_recovery": true,
+        "physical_lattice_ray_and_capsule_checks": true,
+        "missing_snow_height_feature_export_refused": true,
+        "submitted_patches": 16384,
+        "whole_frame_segment_cap": 10,
+        "stream_vertex_bytes": [
+          104544,
+          209088
+        ]
+      },
+      "shadow_witness": {
+        "images_sha256": {
+          "Base snow pristine": "99edd05840c400cd0829afbc525928b613e96320c6ba475ad823ddd11cf45a88",
+          "Base snow modified": "10f9fcb25e26ffdd6d5c212ed87b60b71e73229634f1a26bf407afaac213462a",
+          "Raised snow pristine": "d89d1baebf22bb008d03a92650f3b80957516c477dffcffebb05f06e849ffad0",
+          "Raised snow modified": "735d14ba2f4c4415b9edb530efa10077a6b4f22fd27af87364389951abd93409",
+          "Unshadowed raised snow pristine": "485d60d91fdd5010cb08a643c7714f55d7164a5197e80c115351d9ba626d2edc",
+          "Unshadowed raised snow modified": "5b49d17f29149074534e9c430add1eec3909c7fdd20a571c1044f9de67aa4fce"
+        },
+        "receiver_hdr_ratios": {
+          "west": {
+            "base_over_reference": [
+              1.0,
+              1.0,
+              1.0
+            ],
+            "raised_over_reference": [
+              0.018468045112781956,
+              0.018468045112781956,
+              0.018468045112781956
+            ]
+          },
+          "east": {
+            "base_over_reference": [
+              1.0,
+              1.0,
+              1.0
+            ],
+            "raised_over_reference": [
+              0.018468045112781956,
+              0.018468045112781956,
+              0.018468045112781956
+            ]
+          }
+        },
+        "physical_rays_reached_receiver_in_each_case": true
+      },
+      "budget_witness": {
+        "report_sha256": "30527b12f305d4f1517ffa84908327f39e8f6a48daf0518fc84309ebe8d60eeb",
+        "added_draw_triangles": 32768,
+        "frames": {
+          "base": {
+            "sha256": "b1b2d492b73de45b607a786d1178707dea793341a2b0d925cfc620a42d6e08ab",
+            "displacement_requested": 0,
+            "displacement_draws": 0,
+            "displacement_patches": 0,
+            "displacement_segment_cap": 0,
+            "displacement_budget_fallback": false,
+            "streamed_vertex_bytes": 0
+          },
+          "active": {
+            "sha256": "e788ffb1561d196c29f7c9f4d6c40ada57ab0378c82c55e415968ca65938576b",
+            "displacement_requested": 2,
+            "displacement_draws": 10,
+            "displacement_patches": 20480,
+            "displacement_segment_cap": 10,
+            "displacement_budget_fallback": false,
+            "streamed_vertex_bytes": 0
+          },
+          "over-budget": {
+            "sha256": "b1b2d492b73de45b607a786d1178707dea793341a2b0d925cfc620a42d6e08ab",
+            "displacement_requested": 3,
+            "displacement_draws": 0,
+            "displacement_patches": 0,
+            "displacement_segment_cap": 0,
+            "displacement_budget_fallback": true,
+            "streamed_vertex_bytes": 0
+          },
+          "recovered": {
+            "sha256": "e788ffb1561d196c29f7c9f4d6c40ada57ab0378c82c55e415968ca65938576b",
+            "displacement_requested": 2,
+            "displacement_draws": 10,
+            "displacement_patches": 20480,
+            "displacement_segment_cap": 10,
+            "displacement_budget_fallback": false,
+            "streamed_vertex_bytes": 0
+          }
+        },
+        "pixels_and_selected_scene_products_match_base_and_recovery": true
+      },
+      "rigid_regression": {
+        "report_sha256": "641a8e1e8d627155fab7dd76df20dbca8e087e5d5484fa13b12a930568f49711",
+        "reference_checkpoint": "0.0.464",
+        "matching_fixture_capture_images": 10,
+        "matching_relocated_replay_image": true
+      }
+    },
+    {
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "lighting_path": "deferred",
+      "snow_captures": {
+        "report_sha256": "9db98e261dddb0a0e74f41fa3e5a73b11d1869b75f8df3ff5872b79489b42fca",
+        "images_sha256": {
+          "pristine": "e05fce2a261444f6ff88b49f2c886c325578bf2185cd2034e26d07b3c2c2ce53",
+          "warm-checkpoint": "91a588876a107e4a0123792013a701435359f7802ed809b9fa62b80f3700d3f1",
+          "warm-final": "f295b99b8a92b44891005643788aa55f7620efbced817a02a1ec316cd93887d5",
+          "cold-checkpoint": "91a588876a107e4a0123792013a701435359f7802ed809b9fa62b80f3700d3f1",
+          "cold-final": "f295b99b8a92b44891005643788aa55f7620efbced817a02a1ec316cd93887d5",
+          "motion-first": "e05fce2a261444f6ff88b49f2c886c325578bf2185cd2034e26d07b3c2c2ce53",
+          "motion-stamped": "91a588876a107e4a0123792013a701435359f7802ed809b9fa62b80f3700d3f1"
+        },
+        "seam_probes_per_capture": 21,
+        "maximum_depth_error": 2.333955658628817e-06,
+        "maximum_motion_error_uv": 9.422502151310366e-08,
+        "visible_height_texture_sha256": "e32905c1bbe3662c7631313059f5b28f7c197fc0a9dfe22bfe3cb1898221ef73",
+        "standalone_manifest_sha256": "5f83696438c68233d4571bc35014bc2467414af37af129cfe85335e7fa12bc5b",
+        "same_images_after_fresh_process_save_recovery": true,
+        "physical_lattice_ray_and_capsule_checks": true,
+        "missing_snow_height_feature_export_refused": true,
+        "submitted_patches": 16384,
+        "whole_frame_segment_cap": 10,
+        "stream_vertex_bytes": [
+          104544,
+          209088
+        ]
+      },
+      "shadow_witness": {
+        "images_sha256": {
+          "Base snow pristine": "0ad9e5a573335c9e02af9a09700690dfabb86677521c42d1246a9d1dc63a0534",
+          "Base snow modified": "83e06d8280af425e543ac62b1cf68974173f31b75f051192a1b7207f21d9bd12",
+          "Raised snow pristine": "9e5c102b10df5b857101d16dfab736c36e7da9c78c75dd266be027785b0c99af",
+          "Raised snow modified": "707579c84b33114bb1efdb75b834c8de287f245d67a7cfef73a8efa8c3d62d5f",
+          "Unshadowed raised snow pristine": "6d3fb8e110e392c9d0e936dabcaf169921a157c81e1a033b0785f909bebc619a",
+          "Unshadowed raised snow modified": "8fe7d18eacdd7c43be8bd11d74c283e7bdb0f025bdb66edea7288962ef00eb25"
+        },
+        "receiver_hdr_ratios": {
+          "west": {
+            "base_over_reference": [
+              1.0,
+              1.0,
+              1.0
+            ],
+            "raised_over_reference": [
+              0.018456296992481202,
+              0.018456296992481202,
+              0.018456296992481202
+            ]
+          },
+          "east": {
+            "base_over_reference": [
+              1.0,
+              1.0,
+              1.0
+            ],
+            "raised_over_reference": [
+              0.018456296992481202,
+              0.018456296992481202,
+              0.018456296992481202
+            ]
+          }
+        },
+        "physical_rays_reached_receiver_in_each_case": true
+      },
+      "budget_witness": {
+        "report_sha256": "107cf917d4185e10f1bafab6e4ff1714549f791c9d5bdc041734fb1badab8d39",
+        "added_draw_triangles": 32768,
+        "frames": {
+          "base": {
+            "sha256": "a7f63ccd1abd7053f6c8504ce6ec2a67e72a6c5f884d0b8ae9c442e5a6e1c82c",
+            "displacement_requested": 0,
+            "displacement_draws": 0,
+            "displacement_patches": 0,
+            "displacement_segment_cap": 0,
+            "displacement_budget_fallback": false,
+            "streamed_vertex_bytes": 0
+          },
+          "active": {
+            "sha256": "3e019e53e4c3015a2ce7d63ca9bdc0530eb9f1f354f5fff125288147a5d8d8d9",
+            "displacement_requested": 2,
+            "displacement_draws": 10,
+            "displacement_patches": 20480,
+            "displacement_segment_cap": 10,
+            "displacement_budget_fallback": false,
+            "streamed_vertex_bytes": 0
+          },
+          "over-budget": {
+            "sha256": "a7f63ccd1abd7053f6c8504ce6ec2a67e72a6c5f884d0b8ae9c442e5a6e1c82c",
+            "displacement_requested": 3,
+            "displacement_draws": 0,
+            "displacement_patches": 0,
+            "displacement_segment_cap": 0,
+            "displacement_budget_fallback": true,
+            "streamed_vertex_bytes": 0
+          },
+          "recovered": {
+            "sha256": "3e019e53e4c3015a2ce7d63ca9bdc0530eb9f1f354f5fff125288147a5d8d8d9",
+            "displacement_requested": 2,
+            "displacement_draws": 10,
+            "displacement_patches": 20480,
+            "displacement_segment_cap": 10,
+            "displacement_budget_fallback": false,
+            "streamed_vertex_bytes": 0
+          }
+        },
+        "pixels_and_selected_scene_products_match_base_and_recovery": true
+      },
+      "rigid_regression": {
+        "report_sha256": "b092c02a779b5352e0f52b974c5385381acd33d00eba746ba1cea1fa0ba089d1",
+        "reference_checkpoint": "0.0.464",
+        "matching_fixture_capture_images": 10,
+        "matching_relocated_replay_image": true
+      }
+    }
+  ],
+  "retained_initial_budget_attempt": {
+    "report_sha256": "4b15cb4689b9aa78d7aca3ea4e27f04b3ce30ffd9d1e0af76920d2e918ec4754",
+    "fixture_sha256": "11e9d34ff9153c81b6728ce36c0d16f50336277c54b0f6dc93f0e49e4c6fde64",
+    "device": "AMD Radeon(TM) Graphics",
+    "failure": "The small linear rise under a vertical light changed selected depth and HDR values but produced identical 8-bit display images. Increased authored relief and angled the light in the budget fixture for a visible positive control. The engine binary was unchanged."
+  },
+  "limits": [
+    "Single-sample Windows Vulkan qualification on the two listed devices.",
+    "Two paired mutable snow tiles and a fixed-resolution budget witness. Game-scale tessellation performance and patch LOD transitions remain open."
+  ]
+}

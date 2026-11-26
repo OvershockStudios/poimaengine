@@ -70,6 +70,7 @@ struct WorldPackageContent {
     bool needs_foliage_motion=false;
     bool needs_height_fog=false;
     bool needs_snow_water=false;
+    bool needs_snow_material_displacement=false;
     bool needs_physics_checkpoint=false;
     bool needs_auto_exposure=false;
     bool needs_atmosphere_sky=false;

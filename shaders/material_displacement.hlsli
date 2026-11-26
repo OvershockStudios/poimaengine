@@ -8,6 +8,9 @@ struct DisplacementVertex {
     float2 uv : TEXCOORD0;
     float4 tangent : TANGENT;
     nointerpolation uint object_index : TEXCOORD7;
+#if POIMA_SCENE_PRODUCTS
+    float3 previous_position : PREVIOUS_POSITION;
+#endif
 };
 struct DisplacementFactors {
     float edge[3] : SV_TessFactor;
@@ -21,22 +24,26 @@ DisplacementVertex displacement_vertex_main(VertexInput input, uint instance : S
     vertex.uv=input.uv;
     vertex.tangent=input.tangent;
     vertex.object_index=draw_indices.object_index+instance;
+#if POIMA_SCENE_PRODUCTS
+    vertex.previous_position=input.previous_position;
+#endif
     return vertex;
 }
 
 // Both camera and shadow patches use the unjittered world camera. A shared
 // edge computes its rate from its endpoints, independently of either patch.
 float displacement_edge_rate(float3 a, float3 b, ObjectData object) {
+    const float segment_cap=float(draw_indices.reserved.y>>18);
     float4 p=float4(a,1), q=float4(b,1);
     float3 world_a=float3(dot(object.model_row0,p),dot(object.model_row1,p),dot(object.model_row2,p));
     float3 world_b=float3(dot(object.model_row0,q),dot(object.model_row1,q),dot(object.model_row2,q));
     float4 clip_a=mul(view_projection,float4(world_a,1));
     float4 clip_b=mul(view_projection,float4(world_b,1));
     if(clip_a.w<=0.001 || clip_b.w<=0.001)
-        return max(clip_a.w,clip_b.w)<=0.001 ? 2 : 16;
+        return max(clip_a.w,clip_b.w)<=0.001 ? 2 : segment_cap;
     float2 ndc_a=clamp(clip_a.xy/clip_a.w,-4,4);
     float2 ndc_b=clamp(clip_b.xy/clip_b.w,-4,4);
-    return clamp(length((ndc_a-ndc_b)*cluster_viewport.zw*0.5)/18.0,2,16);
+    return clamp(length((ndc_a-ndc_b)*cluster_viewport.zw*0.5)/18.0,2,segment_cap);
 }
 
 DisplacementFactors displacement_rates(InputPatch<DisplacementVertex,3> patch) {
@@ -73,14 +80,14 @@ float3 edge_position(float3 a, float3 b, float wa, float wb) {
     return p;
 }
 
-float3 patch_position(OutputPatch<DisplacementVertex,3> patch, float3 bary) {
-    if(bary.x==1)return patch[0].position;
-    if(bary.y==1)return patch[1].position;
-    if(bary.z==1)return patch[2].position;
-    if(bary.x==0)return edge_position(patch[1].position,patch[2].position,bary.y,bary.z);
-    if(bary.y==0)return edge_position(patch[2].position,patch[0].position,bary.z,bary.x);
-    if(bary.z==0)return edge_position(patch[0].position,patch[1].position,bary.x,bary.y);
-    return patch[0].position*bary.x+patch[1].position*bary.y+patch[2].position*bary.z;
+float3 patch_position(float3 a, float3 b, float3 c, float3 bary) {
+    if(bary.x==1)return a;
+    if(bary.y==1)return b;
+    if(bary.z==1)return c;
+    if(bary.x==0)return edge_position(b,c,bary.y,bary.z);
+    if(bary.y==0)return edge_position(c,a,bary.z,bary.x);
+    if(bary.z==0)return edge_position(a,b,bary.x,bary.y);
+    return a*bary.x+b*bary.y+c*bary.z;
 }
 
 float2 height_coordinates(float3 position, uint axis) {
@@ -100,10 +107,10 @@ float read_height(float2 uv) {
 VertexInput displacement_surface(OutputPatch<DisplacementVertex,3> patch, float3 bary, bool surface_frame) {
     VertexInput result;
     const uint packed=draw_indices.reserved.y;
-    const uint axis=packed>>16;
+    const uint axis=(packed>>16)&3u;
     const float frequency=1000.0/(packed&65535u);
     const float amplitude=asfloat(draw_indices.reserved.x);
-    result.position=patch_position(patch,bary);
+    result.position=patch_position(patch[0].position,patch[1].position,patch[2].position,bary);
     const float2 uv=height_coordinates(result.position,axis)*frequency;
     result.position[axis]+=amplitude*read_height(uv);
     result.uv=patch[0].uv*bary.x+patch[1].uv*bary.y+patch[2].uv*bary.z;
@@ -121,8 +128,10 @@ VertexInput displacement_surface(OutputPatch<DisplacementVertex,3> patch, float3
         result.tangent.w=result.tangent.w<0 ? -1 : result.tangent.w>0 ? 1 : 0;
     }
 #if POIMA_SCENE_PRODUCTS
-    // Rigid meshes share the same local displaced surface across transforms.
-    result.previous_position=result.position;
+    result.previous_position=patch_position(patch[0].previous_position,patch[1].previous_position,
+        patch[2].previous_position,bary);
+    const float2 previous_uv=height_coordinates(result.previous_position,axis)*frequency;
+    result.previous_position[axis]+=amplitude*read_height(previous_uv);
 #endif
     return result;
 }

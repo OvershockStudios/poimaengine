@@ -47,12 +47,13 @@ struct DrawItem {
     std::array<float,4> foliage{};
     std::optional<HeightDisplacement> displacement;
     nvrhi::BindingSetHandle displacement_bindings;
+    std::uint32_t displacement_segment_cap=render_schedule::max_height_segments;
 
     DrawIndices indices(std::uint32_t layer=0) const {
         DrawIndices result{object_index,layer};
         if(displacement) {
             result.reserved[0]=std::bit_cast<std::uint32_t>(displacement->height_m);
-            result.reserved[1]=(displacement->axis<<16) | displacement->tile_mm;
+            result.reserved[1]=(displacement_segment_cap<<18) | (displacement->axis<<16) | displacement->tile_mm;
         }
         return result;
     }

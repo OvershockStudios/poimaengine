@@ -185,6 +185,7 @@ Region::Region(const RuntimeDefinition& runtime) {
     definition_ = *runtime.snow;
     validate_definition(definition_);
     require(!runtime.navigation, "Snow cannot share a world with a baked navigation region.");
+    std::optional<HeightDisplacement> displacement;
     for (unsigned tile = 0; tile < base_meshes_.size(); ++tile) {
         const auto entity = std::ranges::find(runtime.entities, definition_.tiles[tile], &RuntimeEntityDefinition::id);
         require(entity != runtime.entities.end(), "Snow tile entity is absent from the frozen world.");
@@ -199,6 +200,11 @@ Region::Region(const RuntimeDefinition& runtime) {
         require(entity->mesh && entity->mesh->visible && entity->mesh->mesh && entity->mesh_collider &&
             entity->mesh->mesh == entity->mesh_collider->mesh && !entity->mesh->lods,
             "Snow tiles need the same visible cooked primitive for rendering and triangle collision, without mesh LODs.");
+        const auto& profile=entity->mesh->displacement;
+        require(!profile || (profile->axis==1 && profile->texture && !profile->texture->srgb),
+            "Snow material height displacement requires a linear height texture and the y axis.");
+        if(tile==0)displacement=profile;
+        else require(displacement==profile,"Snow tiles require the same resolved height displacement.");
         const auto& base = *entity->mesh->mesh;
         require(base.influences.empty() && base.has_uv && base.material.alpha_mode == MaterialAlphaMode::opaque &&
             (!entity->mesh->material || entity->mesh->material->alpha_mode == MaterialAlphaMode::opaque) &&

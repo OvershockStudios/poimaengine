@@ -1224,15 +1224,23 @@ void validate(const Json& doc) {
     if(doc.contains("snow")) {
         require(!doc.contains("navigation"),"Snow cannot be combined with authored navigation.");
         const auto snow_binding=component_checked([&]{return snow::parse_definition(doc.at("snow"));});
-        for(const auto& tile:snow_binding.tiles) {
+        std::array<const Json*,2> displacement{};
+        for(std::size_t index=0;index<snow_binding.tiles.size();++index) {
+            const auto& tile=snow_binding.tiles[index];
             require(entities.contains(tile),"Snow tile entity does not exist.");
             const auto& entity=entities.at(tile);
             const auto components=entity.find("components");
             require(components==entity.end() || !authored_foliage_motion(*components),
                 "Snow tiles cannot use foliage motion.");
-            require(components==entity.end() || !components->contains("StaticMesh") ||
-                !components->at("StaticMesh").contains("displacement"),
-                "Mutable snow tiles cannot use material height displacement.");
+            if(components==entity.end() || !components->contains("StaticMesh"))continue;
+            const auto& mesh=components->at("StaticMesh");
+            if(mesh.contains("displacement"))displacement[index]=&mesh.at("displacement");
+        }
+        if(displacement[0] || displacement[1]) {
+            require(displacement[0] && displacement[1] && *displacement[0]==*displacement[1],
+                "Snow tiles require matching material height displacement profiles.");
+            require(displacement[0]->contains("axis") && displacement[0]->at("axis")=="y",
+                "Snow material height displacement requires the y axis.");
         }
     }
     std::size_t audio_sources=0,wetness_receivers=0;

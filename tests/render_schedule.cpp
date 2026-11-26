@@ -168,6 +168,21 @@ void mutable_geometry_contracts() {
                 p.frame.shadow_draws.back().stream.prior_geometry=true;
             });
         }
+        const auto height=fixture.add(Kind::texture,Lifetime::imported,true);
+        f.camera_draws.back().height_texture=height;
+        f.shadow_draws[1].height_texture=height;
+        f.shadow_draws.back().height_texture=height;
+        const auto displaced=fixture.plan();
+        displaced.validate();
+        ++accepted;
+        for(auto id:{PassId::opaque,PassId::shadows}) {
+            auto missing=displaced;
+            erase_access(missing,id,height,Use::sampled);
+            rejects("mutable height sampled resource omitted",[&]{missing.validate();});
+        }
+        auto transient=displaced;
+        transient.frame.camera_draws[1].height_texture=height;
+        rejects("transient water cannot use mesh tessellation",[&]{transient.validate();});
         f.camera_draws.resize(1);
         f.shadow_draws.resize(1);
         f.shadow_draws.push_back({f.streamed_vertices,f.streamed_indices,{},none,{0,0,tile_vertices,tile_indices,true,false}});

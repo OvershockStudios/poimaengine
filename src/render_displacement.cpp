@@ -3,6 +3,8 @@
 
 #include "poima/displacement_control_vs.hpp"
 #include "poima/displacement_control_hs.hpp"
+#include "poima/displacement_control_products_vs.hpp"
+#include "poima/displacement_control_products_hs.hpp"
 #include "poima/displacement_camera_ds.hpp"
 #include "poima/displacement_camera_products_ds.hpp"
 #include "poima/displacement_shadow_ds.hpp"
@@ -28,8 +30,13 @@ nvrhi::GraphicsPipelineHandle make_pipeline(nvrhi::IDevice& device,
     const auto hull=nvrhi::ShaderDesc(nvrhi::ShaderType::Hull).setEntryName("displacement_hull_main");
     const auto domain=nvrhi::ShaderDesc(nvrhi::ShaderType::Domain)
         .setEntryName(shadow ? "displacement_shadow_main" : "displacement_camera_main");
-    desc.VS=create_embedded_shader(&device,vertex,poima_displacement_control_vs);
-    desc.HS=create_embedded_shader(&device,hull,poima_displacement_control_hs);
+    if(products && !shadow) {
+        desc.VS=create_embedded_shader(&device,vertex,poima_displacement_control_products_vs);
+        desc.HS=create_embedded_shader(&device,hull,poima_displacement_control_products_hs);
+    } else {
+        desc.VS=create_embedded_shader(&device,vertex,poima_displacement_control_vs);
+        desc.HS=create_embedded_shader(&device,hull,poima_displacement_control_hs);
+    }
     if(shadow)desc.DS=create_embedded_shader(&device,domain,poima_displacement_shadow_ds);
     else if(products)desc.DS=create_embedded_shader(&device,domain,poima_displacement_camera_products_ds);
     else desc.DS=create_embedded_shader(&device,domain,poima_displacement_camera_ds);

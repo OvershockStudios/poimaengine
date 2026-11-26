@@ -311,7 +311,7 @@ struct SceneObject {
     std::shared_ptr<const MeshLodChain> lods{};
     bool water_ripple_surface=false,water_region_surface=false;
     std::optional<FoliageMotionSample> foliage_motion{};
-    std::optional<HeightDisplacement> displacement;
+    std::optional<HeightDisplacement> displacement{};
 };
 struct SceneViewmodel {
     SceneLens lens;
