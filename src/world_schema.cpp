@@ -314,9 +314,10 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"half_extents",vector(bounded_number(min_room_extent_m,max_room_extent_m),3)},
         {"decay_seconds",bounded_number(min_room_decay_s,max_room_decay_s)},
         {"high_frequency_decay_seconds",bounded_number(min_room_decay_s,max_room_decay_s)},
-        {"wet_gain",unit},{"priority",{{"type","integer"},{"minimum",0},{"maximum",255},{"default",0}}}},
+        {"wet_gain",unit},{"priority",{{"type","integer"},{"minimum",0},{"maximum",255},{"default",0}}},
+        {"portal_send",{{"type","number"},{"minimum",0},{"maximum",1},{"default",0}}}},
         {"half_extents","decay_seconds","high_frequency_decay_seconds","wet_gain"});
-    audio_room["description"]="Listener-local diffuse late reverb in a transformed box. Highest priority wins; ties use the lowest entity ID. High-frequency decay must not exceed decay_seconds.";
+    audio_room["description"]="Diffuse late reverb in a transformed box. Highest priority wins; ties use the lowest entity ID. High-frequency decay must not exceed decay_seconds. A positive portal_send also routes the source room's late tail through visible apertures.";
     auto audio_portal=object_schema({
         {"half_extents",vector(bounded_number(min_audio_portal_extent_m,max_audio_portal_extent_m),2)},
         {"gain",{{"type","number"},{"minimum",0},{"maximum",1},{"default",1}}}},{"half_extents"});
@@ -455,7 +456,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 246}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 247}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -1065,6 +1066,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"maximum_chain_length",max_audio_portal_chain},
         {"selection","An occluded source can reach the listener through one or more visible openings. Each crossing uses committed acoustic geometry, including moving door panels."}};
     result["audio_rooms"]={{"maximum_rooms",max_audio_rooms},{"transition_frames",audio_rate/20},
+        {"maximum_portal_sends",max_audio_room_sends},
         {"feature","audio_room_reverb"},{"selection","Contain the committed listener in a transformed local box; prefer higher priority, then lower entity ID."}};
     result["audio_buses"]={{"operation","audio.buses.set"},{"catalog",audio_bus_catalog},
         {"routing","Optional AudioEmitter.bus refers to one authored name. Unrouted sources keep unity gain."},

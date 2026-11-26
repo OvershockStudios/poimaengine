@@ -58,18 +58,27 @@ struct AudioWaterMedium {
     double blend;
 };
 inline constexpr std::size_t max_audio_rooms=64;
+inline constexpr std::size_t max_audio_room_sends=8;
 inline constexpr double min_room_extent_m=.05, max_room_extent_m=4096;
 inline constexpr double min_room_decay_s=.1, max_room_decay_s=8;
 struct AudioRoom {
     std::array<double,3> half_extents{1,1,1};
     double decay_seconds=1, high_frequency_decay_seconds=.5, wet_gain=.25;
     std::uint8_t priority=0;
+    double portal_send=0;
+    bool operator==(const AudioRoom&) const=default;
 };
 struct AudioRoomSelection {
     std::string entity;
     AudioRoom settings;
 };
 void validate_audio_room(const AudioRoom& room);
+struct AudioRoomInstance {
+    std::string entity;
+    Matrix4 world=identity_matrix();
+    AudioRoom settings;
+    bool operator==(const AudioRoomInstance&) const=default;
+};
 inline constexpr std::size_t max_audio_portals=32;
 inline constexpr std::size_t max_audio_portal_chain=4;
 inline constexpr double min_audio_portal_extent_m=.05, max_audio_portal_extent_m=32;
@@ -91,6 +100,7 @@ struct AudioSnapshot {
     std::optional<AudioWaterMedium> water_medium;
     std::optional<AudioRoomSelection> room;
     std::vector<AudioPortalInstance> portals;
+    std::vector<AudioRoomInstance> room_volumes;
 };
 struct AudioReflection {
     std::string entity;
@@ -125,10 +135,17 @@ struct AudioPath {
     std::array<float,3> air{1,1,1},transmission{1,1,1};
     std::optional<AudioReflection> reflection;
     std::optional<AudioPortalPath> portal;
+    std::string sending_room;
+};
+struct AudioRoomReturn {
+    std::string entity;
+    AudioRoom settings;
+    std::optional<AudioPortalPath> route;
 };
 struct AudioReport {
     std::vector<AudioPath> paths;
     std::vector<float> samples; // Stereo 48 kHz, unclipped float mix.
+    std::vector<AudioRoomReturn> room_returns;
     std::size_t triangles=0;
     double scene_ms=0,simulation_ms=0,dsp_ms=0,peak=0,rms=0;
     std::size_t over_range_samples=0;
@@ -175,6 +192,8 @@ struct AudioStreamStats {
     std::uint64_t reflection_handoffs=0;
     std::uint64_t room_transitions=0;
     bool room_reverb_used=false;
+    std::uint64_t room_return_route_changes=0;
+    bool room_returns_observed=false;
     std::uint64_t portal_handoffs=0;
     bool portals_observed=false, portal_budget_exceeded=false;
 };

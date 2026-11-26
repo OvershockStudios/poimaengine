@@ -1,0 +1,255 @@
+{
+  "version": "0.0.452",
+  "date": "2026-11-25",
+  "base_commit": "a406613890ec076e1300fe9335e9e6c270ad6a5e",
+  "scope": "An authored room keeps its decaying tail behind a sealed door and sends it through a later opening.",
+  "world_schema_revision": 247,
+  "authoring_contract_version": 1,
+  "candidate_patch_sha256": "b5273886b28190dc3bf7cb467897664c363a38832b79d7039c4a7d39808dcc72",
+  "source_sha256": {
+    "CMakeLists.txt": "e6ba12940a861c66344a2921ec30412cff40dfa3cb14c849f99e82e02a2626a4",
+    "include/poima/audio.hpp": "1bf5e7739ace533b66c1f11be0eb89c457ccbe96b4efceceb36af2401864bdd1",
+    "src/audio.cpp": "dca31a95e6e8f0d0d549a112a719e91f3417823d7f34981596ed4c5eec7909cf",
+    "src/audio_room.cpp": "39527690a2eb6b985cf70dee8de419c4fb741b7dd1de2724c371937673789316",
+    "src/audio_room.hpp": "a1480d2fad2f994ed2c9573cb154ecde11672182064a2836eb907bbeab18cb60",
+    "src/audio_stream.cpp": "92c5d8fa6ee6258baab5a365a90dd5022bb54e113da9d85a652f43b5f45b6f35",
+    "src/core.cpp": "fe39c2236a67a28cb49b794922d360f6296598b9b6684fc3092e28e1f3284830",
+    "src/player_audio.hpp": "bc87717adf83c82fa3e60a2ac7d8d76d7ff7381efe76cf54baffa5f2a7fe51d8",
+    "src/runtime.cpp": "fd34eae0218a65570336130b1c0d1ea6221f1857abf7ccf4d5eb887b2e42ad48",
+    "src/world.cpp": "b24fae58ae06738959903aeb5665b2f0c0c15a72e1c4a9d361f5f8bebb84df1d",
+    "src/world_document.cpp": "f6b6cef37ca079c040f80a04d8c755f57666d03027b0fa9b281aeb49a35c5228",
+    "src/world_player_service.inc": "014c4031ea68ba7bded8ee6e7af8587ce3a874ded729e2bf79e3d67677ae3d8f",
+    "src/world_schema.cpp": "48887cca5bf5a70ba3c7bc60a133e6cd0025288157e3df1ef988002338f888a5",
+    "tests/audio_room_returns.py": "f57ae1f472575fb94a0ffe21db4da1a030f981f4cfaf701a0b12fb9270766c20"
+  },
+  "fixture": {
+    "script": "tests/audio_room_returns.py",
+    "voice_frames": 1,
+    "sample_rate_hz": 48000,
+    "ticks": 122,
+    "output_frames": 97600,
+    "max_enabled_room_sends": 8,
+    "dry_control": "No output across the complete closed-source replay with portal_send=0.",
+    "initial_arrival": "The frozen wet and dry captures agree until the aperture delay plus the earliest FDN tap.",
+    "frozen_dry_floor": "The pilot's absolute-silence assertion was too strict for frozen HRTF convolution. The retained dry late energy was 9.18e-16, about 66 billion times below the return.",
+    "energy_windows": {
+      "before_open": [
+        0,
+        6
+      ],
+      "after_open": [
+        21,
+        39
+      ],
+      "after_seal": [
+        57,
+        63
+      ],
+      "after_reopening": [
+        79,
+        96
+      ],
+      "after_final_seal": [
+        115,
+        122
+      ]
+    }
+  },
+  "ubuntu": {
+    "binary_sha256": "75f8bb2ac78245543c4fa1b47f137893876f9e201fee50ef65d15a24c54a659d",
+    "raw_evidence_sha256": "0b601da6c5de34bf0733ec9564a3d1e1111319966a9d90f3f74574ad3f64f7ff",
+    "capture_sha256": "6c1302f6ac4b928f3ac207195dee048553d30c6d3f82857d02bf96041a442c04",
+    "window_energy": {
+      "before_open": 0.0,
+      "after_open": 2.373692994847618e-05,
+      "after_seal": 0.0,
+      "after_reopening": 1.0293798006514533e-07,
+      "after_final_seal": 0.0,
+      "left": 5.6021890921332e-06,
+      "right": 1.8134740856342978e-05
+    },
+    "frozen": {
+      "identical_frames_before_room_arrival": 1506,
+      "late_energy": 6.0622098851775584e-05,
+      "dry_late_energy": 9.176590412858113e-16
+    },
+    "energy_windows": {
+      "before_open": [
+        0,
+        6
+      ],
+      "after_open": [
+        21,
+        39
+      ],
+      "after_seal": [
+        57,
+        63
+      ],
+      "after_reopening": [
+        79,
+        96
+      ],
+      "after_final_seal": [
+        115,
+        122
+      ]
+    },
+    "paths": {
+      "open": {
+        "bands": [
+          0.323112428188324,
+          0.13686631619930267,
+          0.06903447210788727
+        ],
+        "distance_gain": 0.18352486193180084,
+        "distance_m": 5.448853090330111,
+        "entity": "00000000000000000000000000000385",
+        "listener_local_direction": [
+          0.679041981617427,
+          0.0,
+          -0.7340994395864077
+        ],
+        "point_world": [
+          1.8499999999999999,
+          2.6,
+          0.0
+        ],
+        "propagation_delay_samples": 763,
+        "sample": 3,
+        "visible_samples": 9
+      },
+      "warm_restored": {
+        "bands": [
+          0.3228587210178375,
+          0.13674581050872803,
+          0.0689726173877716
+        ],
+        "distance_gain": 0.1832485944032669,
+        "distance_m": 5.45706768739363,
+        "entity": "00000000000000000000000000000385",
+        "listener_local_direction": [
+          0.6770007123918411,
+          0.07748010496431425,
+          -0.7318926620452337
+        ],
+        "point_world": [
+          1.8499999999999999,
+          2.6,
+          0.0
+        ],
+        "propagation_delay_samples": 764,
+        "sample": 3,
+        "visible_samples": 9
+      }
+    },
+    "route_changes": 4,
+    "corridor_regression_sha256": "ba7819b2acce972815ce9ea9f1d8b1aa84c1b3b66b37ec809a08d056450c3278",
+    "corridor_observations_exact": true,
+    "passed_ctest": [
+      "audio_reflections_native",
+      "authoring_contract_identity",
+      "project_contract",
+      "project_draft_contract",
+      "audio_contract",
+      "world_contract"
+    ],
+    "local_room_regression_0_0_449": {
+      "hashes": {
+        "moving dry": "805ed439f9141b108a74e0290ae0c479bbec6e7265e7dccca8a4f0b7fe515baf",
+        "moving wet": "93d455c518275c1a409fb64f8dfd7d3998122d546694a8f8055f5981eb437c77"
+      },
+      "saved_captures": {
+        "Saved original room": "6d8bb6489893cdeed6542b336ff09d7db2212fe28cf7393c44ca2e368392a322",
+        "Warm restored room": "6d8bb6489893cdeed6542b336ff09d7db2212fe28cf7393c44ca2e368392a322"
+      }
+    }
+  },
+  "windows": {
+    "runtime_sha256": {
+      "bin/poima.exe": "da16eeab47e1db56b5020f09a4a428ee562229d74164dbe171b532f47975bee8",
+      "bin/poima_desktop.dll": "d2f3bbe7aa0dc53ef5c48cfe6dc4d45c2ad617d2868bdf9e15c2606e3907fb05",
+      "runtime.json": "7220cdc201444f37fb84a0b74e2ffec7c5ecbfebba0b489747ceb2d825448ad0"
+    },
+    "devices": {
+      "AMD": {
+        "gpu": "AMD Radeon(TM) Graphics",
+        "frames_presented": 122,
+        "voices_started": 1,
+        "room_return_changes": 4,
+        "whole_pcm_exact": {
+          "frames": 97600,
+          "sha256": "a3da2f64a165a9b800e091bf7eeb22be594c848c5a896500d9fbffe4f36a64ea",
+          "leading_silence": 3072
+        },
+        "capture_sha256": {
+          "control without return": "91dd76ad6b4b9120fde86e74f117b0f4648e93017881f91fa4d9f0905e59edcc",
+          "source": "6c1302f6ac4b928f3ac207195dee048553d30c6d3f82857d02bf96041a442c04",
+          "relocated": "6c1302f6ac4b928f3ac207195dee048553d30c6d3f82857d02bf96041a442c04"
+        },
+        "raw_evidence_sha256": "99e89e7b35b2acf96062a3e171b37768487c1b6be14a742efc3d2d5c5c1529f2",
+        "frozen_control": {
+          "identical_frames_before_room_arrival": 1506,
+          "late_energy": 6.0622098851775584e-05,
+          "dry_late_energy": 9.176588527867728e-16
+        },
+        "energy": {
+          "before_open": 0.0,
+          "after_open": 2.373692994847618e-05,
+          "after_seal": 0.0,
+          "after_reopening": 1.0293798006514533e-07,
+          "after_final_seal": 0.0,
+          "left": 5.6021890921332e-06,
+          "right": 1.8134740856342978e-05
+        },
+        "export": {
+          "immutable_files": 59,
+          "source_hidden": true,
+          "open_route_restored_from_save": true,
+          "missing_portal_capability_refused": true
+        }
+      },
+      "NVIDIA": {
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "frames_presented": 122,
+        "voices_started": 1,
+        "room_return_changes": 4,
+        "whole_pcm_exact": {
+          "frames": 97600,
+          "sha256": "e678d4e652a2eca78d8fe64109a80519c60091faf4248e524e1b6b507eab94c8",
+          "leading_silence": 7168
+        },
+        "capture_sha256": {
+          "control without return": "91dd76ad6b4b9120fde86e74f117b0f4648e93017881f91fa4d9f0905e59edcc",
+          "source": "6c1302f6ac4b928f3ac207195dee048553d30c6d3f82857d02bf96041a442c04",
+          "relocated": "6c1302f6ac4b928f3ac207195dee048553d30c6d3f82857d02bf96041a442c04"
+        },
+        "raw_evidence_sha256": "123c6394cf808eea21195bb613dbab08de4047afe61cef45ab7c6ad09fb2a707",
+        "frozen_control": {
+          "identical_frames_before_room_arrival": 1506,
+          "late_energy": 6.0622098851775584e-05,
+          "dry_late_energy": 9.176588527867728e-16
+        },
+        "energy": {
+          "before_open": 0.0,
+          "after_open": 2.373692994847618e-05,
+          "after_seal": 0.0,
+          "after_reopening": 1.0293798006514533e-07,
+          "after_final_seal": 0.0,
+          "left": 5.6021890921332e-06,
+          "right": 1.8134740856342978e-05
+        },
+        "export": {
+          "immutable_files": 59,
+          "source_hidden": true,
+          "open_route_restored_from_save": true,
+          "missing_portal_capability_refused": true
+        }
+      }
+    }
+  },
+  "limits": [
+    "One-way room return with authored decay. Inter-room feedback and measured room calibration are separate.",
+    "SDL disk output verifies delivered PCM. Physical listening and representative scene cost remain open."
+  ]
+}

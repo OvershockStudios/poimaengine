@@ -101,6 +101,8 @@ public:
         retired_.reflection_handoffs+=previous.reflection_handoffs;
         retired_.room_transitions+=previous.room_transitions;
         retired_.room_reverb_used|=previous.room_reverb_used;
+        retired_.room_return_route_changes+=previous.room_return_route_changes;
+        retired_.room_returns_observed|=previous.room_returns_observed;
         retired_.portal_handoffs+=previous.portal_handoffs;
         retired_.portals_observed|=previous.portals_observed;
         retired_.portal_budget_exceeded|=previous.portal_budget_exceeded;
@@ -139,6 +141,8 @@ public:
         result.stream.reflection_handoffs+=retired_.reflection_handoffs;
         result.stream.room_transitions+=retired_.room_transitions;
         result.stream.room_reverb_used|=retired_.room_reverb_used;
+        result.stream.room_return_route_changes+=retired_.room_return_route_changes;
+        result.stream.room_returns_observed|=retired_.room_returns_observed;
         result.stream.portal_handoffs+=retired_.portal_handoffs;
         result.stream.portals_observed|=retired_.portals_observed;
         result.stream.portal_budget_exceeded|=retired_.portal_budget_exceeded;

@@ -300,7 +300,7 @@ AcousticMaterial acoustic_value(const Json& v) {
     return {v.at("absorption").get<std::array<float,3>>(),v.at("transmission").get<std::array<float,3>>(),v.at("scattering").get<float>(),v.at("enabled").get<bool>()};
 }
 AudioRoom audio_room_value(const Json& value) {
-    fields(value,{"half_extents","decay_seconds","high_frequency_decay_seconds","wet_gain","priority"},
+    fields(value,{"half_extents","decay_seconds","high_frequency_decay_seconds","wet_gain","priority","portal_send"},
         {"half_extents","decay_seconds","high_frequency_decay_seconds","wet_gain"});
     const auto& extents=value.at("half_extents");
     require(extents.is_array() && extents.size()==3,"AudioRoom needs three half extents.");
@@ -314,6 +314,7 @@ AudioRoom audio_room_value(const Json& value) {
     room.decay_seconds=number(value.at("decay_seconds"));
     room.high_frequency_decay_seconds=number(value.at("high_frequency_decay_seconds"));
     room.wet_gain=number(value.at("wet_gain"));
+    if(value.contains("portal_send"))room.portal_send=number(value.at("portal_send"));
     const auto priority=revision(value.value("priority",Json(0)));
     require(priority<=255,"AudioRoom priority must be in [0,255].");
     room.priority=static_cast<std::uint8_t>(priority);
@@ -1169,6 +1170,7 @@ void validate(const Json& doc) {
     }
     std::size_t audio_sources=0,wetness_receivers=0;
     std::vector<std::string> particle_sources, audio_rooms, audio_portals;
+    std::size_t audio_room_sends=0;
     for (const auto& [id, entity] : entities.items()) {
         identifier(id);require(schemas.empty() || id!=std::string(32,'0'),"Custom component worlds reserve the zero entity identity as unset.");
         fields(entity, {"name", "parent", "components"}, {"name", "parent", "components"});
@@ -1190,6 +1192,9 @@ void validate(const Json& doc) {
         if(audio_components.contains("AudioRoom")) {
             require(audio_rooms.size()<max_audio_rooms,"World exceeds the audio room limit.");
             audio_rooms.push_back(id);
+            const auto& room=audio_components.at("AudioRoom");
+            if(room.contains("portal_send") && room.at("portal_send").is_number() && room.at("portal_send").get<double>()>0)
+                require(++audio_room_sends<=max_audio_room_sends,"World exceeds the audio room send limit.");
         }
         if(audio_components.contains("AudioPortal")) {
             require(audio_portals.size()<max_audio_portals,"World exceeds the audio portal limit.");

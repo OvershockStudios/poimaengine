@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "audio_room.hpp"
+#include <algorithm>
 #include <cmath>
 #include <stdexcept>
 
@@ -11,8 +12,8 @@ void validate_audio_room(const AudioRoom& room) {
     if (!(room.decay_seconds>=min_room_decay_s && room.decay_seconds<=max_room_decay_s &&
         room.high_frequency_decay_seconds>=min_room_decay_s &&
         room.high_frequency_decay_seconds<=room.decay_seconds &&
-        room.wet_gain>=0 && room.wet_gain<=1))
-        throw std::invalid_argument("AudioRoom requires decay in [0.1,8] seconds, high-frequency decay no longer than the main decay, and wet gain in [0,1].");
+        room.wet_gain>=0 && room.wet_gain<=1 && room.portal_send>=0 && room.portal_send<=1))
+        throw std::invalid_argument("AudioRoom requires decay in [0.1,8] seconds, high-frequency decay no longer than the main decay, and wet gain and portal send in [0,1].");
 }
 
 namespace audio_detail {
@@ -50,7 +51,7 @@ void RoomReverb::target(const AudioRoom* room) {
     }
 }
 
-void RoomReverb::process(std::span<float> stereo) noexcept {
+void RoomReverb::process(std::span<float> stereo,bool wet_only) noexcept {
     constexpr std::array<float,8> left{1,-1,1,-1,1,-1,1,-1}, right{1,1,-1,-1,1,1,-1,-1};
     constexpr float normalization=.3535533905932738f;
     constexpr float slew=1.f/transition_frames;
@@ -81,8 +82,73 @@ void RoomReverb::process(std::span<float> stereo) noexcept {
             delay.samples[delay.cursor]=std::abs(value)<1e-18f ? 0.f : value;
             if (++delay.cursor==delay.samples.size()) delay.cursor=0;
         }
-        stereo[sample]+=out_left*normalization;
-        stereo[sample+1]+=out_right*normalization;
+        if(wet_only) {
+            stereo[sample]=out_left*normalization;
+            stereo[sample+1]=out_right*normalization;
+        } else {
+            stereo[sample]+=out_left*normalization;
+            stereo[sample+1]+=out_right*normalization;
+        }
+    }
+}
+
+RoomReturnMixer::RoomReturnMixer(const AudioRoomReturn& initial)
+    : reverb_(initial.settings),history_(100*audio_rate/343+3) {
+    configure(initial);
+    gains_=target_;
+    fade_remaining_=0;
+}
+
+bool RoomReturnMixer::configure(const AudioRoomReturn& target) {
+    reverb_.target(&target.settings);
+    Bands next{};
+    if(const auto& route=target.route) {
+        const auto lateral=std::clamp(route->direction[0],-1.,1.);
+        const std::array pan{std::sqrt(1-.85*lateral),std::sqrt(1+.85*lateral)};
+        for(std::size_t ear=0;ear<pan.size();++ear)
+            for(std::size_t band=0;band<next[ear].size();++band)
+                next[ear][band]=static_cast<float>(target.settings.portal_send*route->distance_gain*
+                    route->bands[band]*pan[ear]);
+        target_delay_=std::min<std::size_t>(route->propagation_delay_samples,history_.size()-2);
+        if(!seen_route_)delay_=target_delay_;
+        seen_route_=true;
+    }
+    if(next!=target_) {
+        target_=next;
+        fade_remaining_=audio_block;
+    }
+    const auto changed=has_route_!=target.route.has_value();
+    has_route_=target.route.has_value();
+    return changed;
+}
+
+void RoomReturnMixer::mix(std::span<const float> excitation,std::span<float> destination) {
+    std::array<float,2*audio_block> buffered;
+    for(std::size_t frame=0;frame<excitation.size();++frame) {
+        buffered[2*frame]=excitation[frame];
+        buffered[2*frame+1]=excitation[frame];
+    }
+    reverb_.process(std::span(buffered).first(excitation.size()*2),true);
+    constexpr float low_step=.05101270f, mid_step=.27909858f; // 400 Hz and 2.5 kHz poles at 48 kHz.
+    for(std::size_t frame=0;frame<excitation.size();++frame) {
+        history_[cursor_]={buffered[2*frame],buffered[2*frame+1]};
+        delay_+=std::clamp(target_delay_-delay_,-.25,.25);
+        const auto offset=static_cast<std::size_t>(delay_);
+        const auto fraction=static_cast<float>(delay_-static_cast<double>(offset));
+        const auto near=(cursor_+history_.size()-offset)%history_.size();
+        const auto far=(near+history_.size()-1)%history_.size();
+        const auto fade=fade_remaining_==0 ? 1.f : 1.f/static_cast<float>(fade_remaining_);
+        for(std::size_t ear=0;ear<low_.size();++ear) {
+            for(std::size_t band=0;band<gains_[ear].size();++band)
+                gains_[ear][band]=std::lerp(gains_[ear][band],target_[ear][band],fade);
+            const auto delayed=std::lerp(history_[near][ear],history_[far][ear],fraction);
+            low_[ear]+=low_step*(delayed-low_[ear]);
+            mid_[ear]+=mid_step*(delayed-mid_[ear]);
+            destination[2*frame+ear]+=low_[ear]*gains_[ear][0]+(mid_[ear]-low_[ear])*gains_[ear][1]+
+                (delayed-mid_[ear])*gains_[ear][2];
+        }
+        if(fade_remaining_>0)--fade_remaining_;
+        if(++cursor_==history_.size())cursor_=0;
     }
 }
 }

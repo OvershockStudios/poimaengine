@@ -186,6 +186,8 @@
         }
         if(audio.stream.room_reverb_used)
             result["audio"]["room_transitions"]=audio.stream.room_transitions;
+        if(audio.stream.room_returns_observed)
+            result["audio"]["room_return_route_changes"]=audio.stream.room_return_route_changes;
         if(audio.stream.portals_observed) {
             result["audio"]["portal_handoffs"]=audio.stream.portal_handoffs;
             result["audio"]["portal_budget_exceeded"]=audio.stream.portal_budget_exceeded;

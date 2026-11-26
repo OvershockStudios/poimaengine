@@ -45,6 +45,9 @@ AudioReport observe_audio(const AudioSnapshot& s,std::uint32_t frames) {
 #else
     check(frames<=10*audio_rate && s.sources.size()<=max_audio_sources && s.geometry.size()<=10000,"Audio source/capture/geometry budget exceeded.");
     check(s.portals.size()<=max_audio_portals,"Audio portal limit exceeded.");
+    check(s.room_volumes.size()<=max_audio_rooms,"Audio room limit exceeded.");
+    const auto sends=std::ranges::count_if(s.room_volumes,[](const auto& room) { return room.settings.portal_send>0; });
+    check(sends<=static_cast<std::ptrdiff_t>(max_audio_room_sends),"Audio room send limit exceeded.");
     for(const auto& portal:s.portals) {
         validate_audio_portal(portal.opening);
         (void)inverse_affine(portal.world);
@@ -110,6 +113,18 @@ AudioReport observe_audio(const AudioSnapshot& s,std::uint32_t frames) {
     }
     iplSimulatorCommit(simulator.value);IPLSimulationSharedInputs shared{};shared.listener=listener;iplSimulatorSetSharedInputs(simulator.value,IPL_SIMULATIONFLAGS_DIRECT,&shared);
     report.scene_ms=ms(started);auto mark=Clock::now();iplSimulatorRunDirect(simulator.value);report.simulation_ms=ms(mark);
+    const auto route_through_portals=[&](const AudioPath& path) -> std::optional<AudioPortalPath> {
+        if(s.portals.empty() || report.triangles>audio_detail::max_portal_triangles)return {};
+        auto route=audio_detail::portal_path(path,s.listener,s.portals,shapes,vertices,triangles,
+            portal_probes,report.portal_budget_exceeded);
+        if(!route && path.occlusion==0 && path.distance<audio_detail::max_portal_distance_m &&
+           s.portals.size()>1 && !portal_chain_budget.exceeded) {
+            audio_detail::PortalChainSearch search(path,s.portals,shapes,vertices,triangles,portal_chain_budget);
+            route=search.find(s.listener);
+            report.portal_budget_exceeded|=portal_chain_budget.exceeded;
+        }
+        return route;
+    };
     std::vector<IPLDirectEffectParams> direct;
     for(std::size_t i=0;i<s.sources.size();++i) {
         IPLSimulationOutputs out{};iplSourceGetOutputs(sources[i].value,IPL_SIMULATIONFLAGS_DIRECT,&out);direct.push_back(out.direct);
@@ -125,17 +140,33 @@ AudioReport observe_audio(const AudioSnapshot& s,std::uint32_t frames) {
         std::copy_n(out.direct.airAbsorption,3,path.air.begin());std::copy_n(out.direct.transmission,3,path.transmission.begin());
         if(s.early_reflections && !shapes.empty())
             path.reflection=audio_detail::first_reflection(path,s.listener,shapes,vertices,triangles);
-        if(!s.portals.empty() && report.triangles<=audio_detail::max_portal_triangles) {
-            path.portal=audio_detail::portal_path(path,s.listener,s.portals,shapes,vertices,triangles,
-                portal_probes,report.portal_budget_exceeded);
-            if(!path.portal && path.occlusion==0 && path.distance<audio_detail::max_portal_distance_m &&
-               s.portals.size()>1 && !portal_chain_budget.exceeded) {
-                audio_detail::PortalChainSearch route(path,s.portals,shapes,vertices,triangles,portal_chain_budget);
-                path.portal=route.find(s.listener);
-                report.portal_budget_exceeded|=portal_chain_budget.exceeded;
-            }
+        path.portal=route_through_portals(path);
+        if(sends!=0) {
+            std::optional<AudioRoomSelection> source_room;
+            for(const auto& room:s.room_volumes)
+                audio_detail::select_room(source_room,s.sources[i].world,room.entity,room.world,room.settings);
+            if(source_room && source_room->settings.portal_send>0 && source_room->settings.wet_gain>0)
+                path.sending_room=source_room->entity;
         }
         report.paths.push_back(std::move(path));
+    }
+    if(sends!=0) {
+        std::vector<const AudioRoomInstance*> transmitters;
+        for(const auto& room:s.room_volumes)if(room.settings.portal_send>0 && room.settings.wet_gain>0)
+            transmitters.push_back(&room);
+        std::ranges::sort(transmitters,{},&AudioRoomInstance::entity);
+        for(const auto* room:transmitters) {
+            AudioRoomReturn entry{room->entity,room->settings,{}};
+            if(!s.room || s.room->entity!=room->entity) {
+                AudioPath origin;
+                origin.source=position(room->world);
+                origin.listener=position(s.listener);
+                origin.distance=audio_detail::length(audio_detail::subtract(origin.source,origin.listener));
+                origin.occlusion=0; // The room return always uses the authored openings.
+                entry.route=route_through_portals(origin);
+            }
+            report.room_returns.push_back(std::move(entry));
+        }
     }
     if(s.early_reflections || !s.portals.empty())report.simulation_ms=ms(mark);
     if(frames==0)return report;
@@ -178,6 +209,25 @@ AudioReport observe_audio(const AudioSnapshot& s,std::uint32_t frames) {
     if (s.room && s.room->settings.wet_gain>0) {
         audio_detail::RoomReverb reverb(s.room->settings);
         reverb.process(report.samples);
+    }
+    for(const auto& room:report.room_returns) {
+        if(!room.route)continue;
+        audio_detail::RoomReturnMixer reverb(room);
+        std::array<float,audio_block> excitation;
+        for(std::uint32_t first=0;first<frames;first+=audio_block) {
+            const auto count=std::min(audio_block,frames-first);
+            std::fill_n(excitation.begin(),count,0.f);
+            for(std::size_t i=0;i<s.sources.size();++i) {
+                if(report.paths[i].sending_room!=room.entity)continue;
+                const auto& source=s.sources[i];
+                const auto& clip=source.emitter.clip->samples;
+                const auto gain=source.emitter.gain*source.emitter.bus_gain()*source.flow_gain();
+                for(std::uint32_t k=0;k<count;++k)
+                    if(source.emitter.loop || first+k<clip.size())excitation[k]+=clip[(first+k)%clip.size()]*gain;
+            }
+            reverb.mix(std::span(excitation).first(count),
+                std::span(report.samples).subspan(2*first,2*count));
+        }
     }
     if (s.water_medium && s.water_medium->blend > 0) {
         audio_detail::WaterFilter filter(*s.water_medium);

@@ -19,7 +19,7 @@ void check(bool ok,const char* text) { if(!ok)throw std::runtime_error(text); }
 [[maybe_unused]] bool same_paths(const AudioSnapshot& a,const AudioSnapshot& b) {
     if(a.listener!=b.listener || a.early_reflections!=b.early_reflections ||
        a.geometry.size()!=b.geometry.size() || a.sources.size()!=b.sources.size() ||
-       a.portals.size()!=b.portals.size())return false;
+       a.portals.size()!=b.portals.size() || a.room_volumes!=b.room_volumes)return false;
     for(std::size_t i=0;i<a.geometry.size();++i) {
         const auto& x=a.geometry[i];const auto& y=b.geometry[i];
         if(x.entity!=y.entity || x.world!=y.world || x.mesh!=y.mesh || x.material.enabled!=y.material.enabled || x.material.absorption!=y.material.absorption || x.material.transmission!=y.material.transmission || x.material.scattering!=y.material.scattering)return false;
@@ -90,6 +90,39 @@ struct AudioStream::Impl {
         }
     };
     std::map<std::string,FlowEnvelope> flow_envelopes;
+    std::map<std::string,audio_detail::RoomReturnMixer> room_returns;
+    void configure_room_returns() {
+        std::erase_if(room_returns,[&](const auto& old) {
+            return std::ranges::none_of(paths.room_returns,[&](const auto& room) { return room.entity==old.first; });
+        });
+        for(const auto& room:paths.room_returns) {
+            auto [bus,added]=room_returns.try_emplace(room.entity,room);
+            if(!added && bus->second.configure(room))++stats.room_return_route_changes;
+        }
+        stats.room_returns_observed|=!room_returns.empty();
+    }
+    void filter_room_returns(std::span<float> samples,const std::vector<SoundVoice>& states) {
+        if(room_returns.empty())return;
+        std::array<std::array<float,audio_block>,max_audio_room_sends> excitation{};
+        const auto frames=samples.size()/2;
+        for(const auto& voice:states) {
+            const auto begin=voice.start_tick*audio_tick_frames;
+            const auto end=voice.end_sample();
+            if(end<=cursor || begin>=cursor+frames)continue;
+            const auto& source=path(voice.emitter);
+            if(source.sending_room.empty())continue;
+            const auto room=std::ranges::find(paths.room_returns,source.sending_room,&AudioRoomReturn::entity);
+            if(room==paths.room_returns.end())continue;
+            auto& signal=excitation[static_cast<std::size_t>(room-paths.room_returns.begin())];
+            const auto& clip=voice.sound.clip->samples;
+            const float gain=voice.sound.bus_gain()*voice.sound.gain*voice.gain;
+            const auto* flow=voice.sound.water_flow ? &flow_envelopes.at(voice.emitter) : nullptr;
+            for(auto sample=std::max(cursor,begin);sample<std::min(cursor+frames,end);++sample)
+                signal[sample-cursor]+=clip[(sample-begin)%clip.size()]*gain*(flow ? flow->gain(sample) : 1.f);
+        }
+        for(std::size_t i=0;i<paths.room_returns.size();++i)
+            room_returns.at(paths.room_returns[i].entity).mix(std::span(excitation[i]).first(frames),samples);
+    }
     void sample_flow(const AudioSnapshot& next,std::uint64_t tick) {
         for (const auto& source:next.sources) {
             if (!source.water_flow) continue;
@@ -149,6 +182,7 @@ struct AudioStream::Impl {
         if(!same_paths(snapshot,next)) {
             paths=observe_audio(next);snapshot=next;++stats.path_updates;
             record_portal_observation();
+            configure_room_returns();
         }
         // A committed instance removal retires emitter membership. Its delayed
         // and tail DSP voices cannot keep borrowing a now absent propagation
@@ -299,6 +333,7 @@ AudioStream::AudioStream(std::uint64_t tick,const AudioSnapshot& initial):impl_(
 #if POIMA_AUDIO
     s.sample_flow(initial,tick);
     s.record_portal_observation();
+    s.configure_room_returns();
     s.room=initial.room;
     if (s.room) {
         s.stats.room_reverb_used=true;
@@ -338,6 +373,7 @@ std::vector<float> AudioStream::advance(std::uint64_t tick,const AudioSnapshot& 
         const auto count=static_cast<std::size_t>(std::min<std::uint64_t>(audio_block,s.committed-s.cursor));
         const auto committed_samples = std::span(block).first(count * 2);
         s.filter_room(committed_samples);
+        s.filter_room_returns(committed_samples,voices);
         s.filter_water(committed_samples);
         result.insert(result.end(),committed_samples.begin(),committed_samples.end());
         s.cursor+=count;

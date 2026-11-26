@@ -990,6 +990,24 @@ public:
             {"high_frequency_decay_seconds",room.high_frequency_decay_seconds},{"wet_gain",room.wet_gain},
             {"priority",room.priority}};
     }
+    static Json describe_audio_portal(const AudioPortalPath& opening) {
+        Json path={{"entity",opening.entity},{"sample",opening.sample},
+            {"visible_samples",opening.visible_samples},{"point_world",opening.point},
+            {"listener_local_direction",opening.direction},{"distance_m",opening.distance},
+            {"propagation_delay_samples",opening.propagation_delay_samples},
+            {"distance_gain",opening.distance_gain},{"bands",opening.bands}};
+        if(!opening.approach.empty()) {
+            Json chain=Json::array();
+            const auto append=[&](const AudioPortalCrossing& crossing) {
+                chain.push_back({{"entity",crossing.entity},{"sample",crossing.sample},
+                    {"visible_samples",crossing.visible_samples},{"point_world",crossing.point}});
+            };
+            for(const auto& crossing:opening.approach)append(crossing);
+            append(opening);
+            path["apertures"]=std::move(chain);
+        }
+        return path;
+    }
     Json audio_dispatch(const std::string& method,const Json& params,bool live) const {
         const bool capture_audio=std::string_view(method).ends_with("capture");
         if(live) {
@@ -1023,8 +1041,11 @@ public:
             }
             Json geometry=Json::array();
             for(const auto& e:source_definition.entities) {
-                if(e.audio_room)
-                    audio_detail::select_room(snapshot.room,snapshot.listener,e.id,pose(e.id),*e.audio_room);
+                if(e.audio_room) {
+                    const auto world=pose(e.id);
+                    audio_detail::select_room(snapshot.room,snapshot.listener,e.id,world,*e.audio_room);
+                    snapshot.room_volumes.push_back({e.id,world,*e.audio_room});
+                }
                 if(e.audio_portal)snapshot.portals.push_back({e.id,pose(e.id),*e.audio_portal});
                 if(e.emitter && e.emitter->enabled)
                     snapshot.sources.push_back({e.id,*e.emitter,pose(e.id),
@@ -1050,27 +1071,9 @@ public:
                             {"distance_gain",reflection.distance_gain},{"bands",reflection.bands}};
                     }
                 }
-                if(!snapshot.portals.empty()) {
-                    path["portal_path"]=nullptr;
-                    if(p.portal) {
-                        const auto& opening=*p.portal;
-                        path["portal_path"]={{"entity",opening.entity},{"sample",opening.sample},
-                            {"visible_samples",opening.visible_samples},{"point_world",opening.point},
-                            {"listener_local_direction",opening.direction},{"distance_m",opening.distance},
-                            {"propagation_delay_samples",opening.propagation_delay_samples},
-                            {"distance_gain",opening.distance_gain},{"bands",opening.bands}};
-                        if(!opening.approach.empty()) {
-                            Json chain=Json::array();
-                            const auto append=[&](const AudioPortalCrossing& crossing) {
-                                chain.push_back({{"entity",crossing.entity},{"sample",crossing.sample},
-                                    {"visible_samples",crossing.visible_samples},{"point_world",crossing.point}});
-                            };
-                            for(const auto& crossing:opening.approach)append(crossing);
-                            append(opening);
-                            path["portal_path"]["apertures"]=std::move(chain);
-                        }
-                    }
-                }
+                if(!snapshot.portals.empty())
+                    path["portal_path"]=p.portal ? describe_audio_portal(*p.portal) : Json(nullptr);
+                if(!p.sending_room.empty())path["sending_room"]=p.sending_room;
                 paths.push_back(std::move(path));
             }
             for(std::size_t i=0;i<snapshot.sources.size();++i) {
@@ -1094,6 +1097,14 @@ public:
             if(snapshot.early_reflections)result["reflection_budget_exceeded"]=report.reflection_budget_exceeded;
             if(snapshot.water_medium)result["listener_water"]=describe_water_audio(*snapshot.water_medium);
             if(snapshot.room)result["listener_room"]=describe_audio_room(*snapshot.room);
+            if(!report.room_returns.empty()) {
+                Json returns=Json::array();
+                for(const auto& room:report.room_returns) {
+                    returns.push_back({{"entity",room.entity},{"portal_send",room.settings.portal_send},
+                        {"portal_path",room.route ? describe_audio_portal(*room.route) : Json(nullptr)}});
+                }
+                result["room_returns"]=std::move(returns);
+            }
             if(!snapshot.portals.empty())
                 result["audio_portals"]={{"count",snapshot.portals.size()},{"budget_exceeded",report.portal_budget_exceeded}};
             if(capture_audio) {
@@ -1240,6 +1251,8 @@ public:
                 {"transition_frames",audio_detail::RoomReverb::transition_frames}};
             result["stream"]["room_transitions"]=stats.room_transitions;
         }
+        if(stats.room_returns_observed)
+            result["stream"]["room_return_route_changes"]=stats.room_return_route_changes;
         receipts.back()["result"]=result;playback_receipts_.swap(receipts);return result;
     }
 #include "world_player_service.inc"

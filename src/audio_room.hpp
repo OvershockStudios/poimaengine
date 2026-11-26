@@ -13,7 +13,7 @@ public:
 
     explicit RoomReverb(const AudioRoom& initial, bool fade_in=false);
     void target(const AudioRoom* room);
-    void process(std::span<float> stereo) noexcept;
+    void process(std::span<float> stereo,bool wet_only=false) noexcept;
 
 private:
     struct Delay {
@@ -25,5 +25,26 @@ private:
     std::array<Delay,8> delays_;
     double decay_=0, high_decay_=0;
     float send_=0, send_target_=0;
+};
+
+// One diffuse return remains alive while its door is sealed. The route gates
+// the listener's output after delay, independently of the room excitation.
+class RoomReturnMixer {
+public:
+    explicit RoomReturnMixer(const AudioRoomReturn& initial);
+    bool configure(const AudioRoomReturn& target);
+    void mix(std::span<const float> excitation,std::span<float> destination);
+
+private:
+    using Stereo=std::array<float,2>;
+    using Bands=std::array<std::array<float,3>,2>;
+    RoomReverb reverb_;
+    std::vector<Stereo> history_;
+    std::size_t cursor_=0;
+    Stereo low_{},mid_{};
+    Bands gains_{},target_{};
+    std::uint32_t fade_remaining_=0;
+    double delay_=0,target_delay_=0;
+    bool has_route_=false,seen_route_=false;
 };
 }

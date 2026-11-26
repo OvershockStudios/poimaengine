@@ -840,6 +840,9 @@ struct Runtime::Impl {
         auto definitions=definition.entities;
         require(std::ranges::count_if(definitions,[](const auto& entity) { return entity.audio_room.has_value(); })<=
             static_cast<std::ptrdiff_t>(max_audio_rooms),"Runtime audio room limit exceeded.");
+        require(std::ranges::count_if(definitions,[](const auto& entity) {
+            return entity.audio_room && entity.audio_room->portal_send>0;
+        })<=static_cast<std::ptrdiff_t>(max_audio_room_sends),"Runtime audio room send limit exceeded.");
         require(std::ranges::count_if(definitions,[](const auto& entity) { return entity.audio_portal.has_value(); })<=
             static_cast<std::ptrdiff_t>(max_audio_portals),"Runtime audio portal limit exceeded.");
         std::sort(definitions.begin(),definitions.end(),[](const auto& a,const auto& b){return a.id<b.id;});
@@ -1584,7 +1587,7 @@ struct Runtime::Impl {
         return order;
     }
     void validate_scene_membership(const Topology& candidate) const {
-        std::size_t lights=0,environments=0,shadows=0,bodies=0,emitters=0,rooms=0,portals=0;std::uint32_t resolution=1024;
+        std::size_t lights=0,environments=0,shadows=0,bodies=0,emitters=0,rooms=0,portals=0,room_sends=0;std::uint32_t resolution=1024;
         for(const auto& [id,d]:candidate.definitions) {
             if(d.camera && d.camera->focus_target) {
                 const auto& target=d.camera->focus_target->entity;
@@ -1593,7 +1596,10 @@ struct Runtime::Impl {
             if(d.collider || d.character || d.mesh_collider)++bodies;
             bodies+=physical_part_count(d);
             if(d.emitter && d.emitter->enabled)++emitters;
-            if(d.audio_room)++rooms;
+            if(d.audio_room) {
+                ++rooms;
+                if(d.audio_room->portal_send>0)++room_sends;
+            }
             if(d.audio_portal)++portals;
             if(d.light && d.light->enabled)++lights;
             if(d.light)shadows+=shadow_view_count(*d.light);
@@ -1614,6 +1620,7 @@ struct Runtime::Impl {
         require(lights<=max_scene_lights && environments<=1,"Runtime exceeds light/environment limits.");
         require(emitters<=max_audio_sources,"Runtime audio source limit exceeded.");
         require(rooms<=max_audio_rooms,"Runtime audio room limit exceeded.");
+        require(room_sends<=max_audio_room_sends,"Runtime audio room send limit exceeded.");
         require(portals<=max_audio_portals,"Runtime audio portal limit exceeded.");
         require(bodies<=RuntimeBodyIds::capacity,"Runtime physics body limit exceeded.");
         validate_shadow_budget(shadows,resolution);
@@ -2791,7 +2798,9 @@ AudioSnapshot Runtime::audio_snapshot(const std::string& listener) const {
     auto rooms=impl_->registry.view<const AudioRoom,const Node>();
     for (auto e:rooms) {
         const auto& node=rooms.get<const Node>(e);
-        audio_detail::select_room(result.room,result.listener,node.id,node.world,rooms.get<const AudioRoom>(e));
+        const auto& settings=rooms.get<const AudioRoom>(e);
+        audio_detail::select_room(result.room,result.listener,node.id,node.world,settings);
+        result.room_volumes.push_back({node.id,node.world,settings});
     }
     auto portals=impl_->registry.view<const AudioPortal,const Node>();
     for (auto e:portals) {

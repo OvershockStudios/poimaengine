@@ -163,9 +163,8 @@ by at least 743 frames, about 15.5 ms. Its feedback and send use a 50 ms
 time constant when the listener changes rooms. Leaving a room reduces the
 send and lets the existing tail decay. `wet_gain: 0` mutes new sends. The
 tail is presentation state. A new stream or save load starts with fresh
-delay history and the room selected at the restored pose. Geometry-derived
-decay, per-source room coupling, and physical device listening are separate
-work.
+delay history and the room selected at the restored pose. A room can also
+[send its tail through doors](#hear-a-room-through-its-doorway).
 
 The delay-dependent attenuation and orthogonal feedback follow published
 FDN designs. The engine uses fixed delays and one shelf per line. The
@@ -254,7 +253,7 @@ shortest admissible sampled route it finds within 2,048 new segment checks and
 snapshot. It caches the visibility of tested legs during the query.
 The 100 m route limit and 8,192-triangle limit still apply. A capped
 search reports `audio_portals.budget_exceeded` and keeps the direct path.
-Diffuse transport between rooms and game-scale performance remain open.
+Game-scale performance remains open.
 
 The product of serial open-area fractions follows prior portal
 occlusion research. Published propagation models also explore larger
@@ -265,6 +264,43 @@ room graphs and diffuse energy transport. [Dynamic portal occlusion](https://arx
 fixture. It closes each of four doors in an authored switchback corridor,
 checks the saved route and compares the full replay against the output of a
 relocated Windows game.
+
+### Hear a room through its doorway
+
+Set `portal_send` on the source's `AudioRoom` to a value in [0,1]. It
+defaults to zero. A scene can have up to eight sending rooms. Place the
+volume center where the room can reach its apertures. Membership uses
+emitter position and the same priority and entity-ID tie break as the
+listener volume. One room network receives the sum of the clips emitted
+inside that volume, including bus, event and water-flow gains. Its
+`wet_gain` and decay settings control how it rings.
+
+The room's late tail can reach a listener outside the sending volume through
+a visible aperture route from the room center. The same limits apply as for
+direct portal sound. The return follows route delay, open-area pressure and
+frequency losses. Its stereo blend favors the side of the last opening.
+Door motion fades the return over 512 frames. The room keeps decaying while
+sealed, so opening a door can reveal a tail after the original sound ends.
+The listener's own volume continues to supply local reverb. A save load
+recalculates the route and starts fresh presentation buffers.
+
+Inspect `sending_room` on the source and `room_returns` on the audio
+observation. Each return reports its selected `portal_path` or null when
+sealed or heard from within the sending room. The replay and native
+player report `room_return_route_changes` when a route opens or closes.
+Look for `audio_room_portal_returns` in capability discovery. The same
+project audio setting and room and portal export capabilities apply.
+
+This model uses independent room decays and a one-way listener return.
+Recirculation between rooms and acoustics derived from measured room
+impulse responses are separate work. Recent feedback delay network
+research models richer multi-slope decay in coupled volumes.
+[Grouped feedback delay networks](https://arxiv.org/abs/2508.06686)
+
+`tests/audio_room_returns.py` uses the portal fixture command line.
+It emits an impulse behind a sealed door. Only the room tail is present
+when the door opens. A matched capture with `portal_send: 0` isolates the
+return, and a relocated save checks the doorway route.
 
 ## Verification and remaining work
 

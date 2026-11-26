@@ -1,8 +1,19 @@
 # Implementation status
 
-Updated 2026-11-25 for **0.0.451**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-25 for **0.0.452**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.452 [carries a room's late tail through doorways](AUDIO.md#hear-a-room-through-its-doorway).
+A single-sample impulse played while the door was sealed. Opening it
+revealed the tail, closing it silenced the return, and reopening it
+revealed the remaining decay. The same replay with the send disabled
+stayed silent. Relocated AMD and NVIDIA Windows exports matched all
+97,600 frames through SDL disk output and recovered the open path from a
+save. Ubuntu passed six focused suites and preserved the 0.0.451 corridor
+recording. Recirculating room feedback, physical listening and
+representative cost remain open.
+[Results and scope](evidence/m2-audio-room-returns-452.json)
 
 Version 0.0.451 [connects up to four doorways](AUDIO.md#connect-several-doorways)
 in one acoustic route. Closing any panel in the switchback corridor blocked

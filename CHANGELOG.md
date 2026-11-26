@@ -2,6 +2,12 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.452
+
+- Carry a room's late reverb through open doorways. A room keeps its own
+  decay behind a closed door, so a later opening can reveal the remaining
+  tail. [Room returns through doorways](docs/AUDIO.md#hear-a-room-through-its-doorway)
+
 ## 0.0.451
 
 - Route sound through successive doors in a corridor. Inspect the ordered
