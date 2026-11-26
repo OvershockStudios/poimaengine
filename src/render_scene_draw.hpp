@@ -44,6 +44,7 @@ struct DrawItem {
     // Borrowed from the current snapshot during draw preparation and submission.
     std::span<const SceneSurfaceMark> local_surface_marks;
     SceneWetness wetness;
+    std::array<float,4> surface_layer{}, surface_layer_options{};
     std::array<float,4> foliage{};
     std::optional<HeightDisplacement> displacement;
     nvrhi::BindingSetHandle displacement_bindings;

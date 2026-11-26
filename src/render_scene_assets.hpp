@@ -16,6 +16,11 @@ namespace poima::render_scene_assets {
 
 using MaterialKey = std::pair<const MeshAsset*, const MaterialTextures*>;
 using MaterialBindings = std::map<MaterialKey, nvrhi::BindingSetHandle>;
+inline constexpr std::uint32_t layer_texture_begin = 20, layer_texture_end = 24;
+inline constexpr std::uint32_t layer_repeat_sampler = 7, layer_mask_sampler = 8;
+constexpr bool material_texture_slot(std::uint32_t slot) noexcept {
+    return slot < 5 || (slot >= layer_texture_begin && slot < layer_texture_end);
+}
 
 struct Upload {
     nvrhi::IDevice& device;

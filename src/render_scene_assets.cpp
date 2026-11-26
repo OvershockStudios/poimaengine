@@ -235,9 +235,7 @@ nvrhi::BindingSetHandle Cache::material(const Upload& upload, const MaterialInpu
     nvrhi::BindingSetDesc desc;
     desc.addItem(nvrhi::BindingSetItem::PushConstants(0, sizeof(render_draw::DrawIndices)))
         .addItem(nvrhi::BindingSetItem::ConstantBuffer(1, inputs.frame));
-    for (std::uint32_t slot = 0; slot < 5; ++slot) {
-        const TextureMap map = textures ? textures->maps[slot] : mesh ? mesh->textures[slot] : TextureMap{};
-        const auto image = upload_texture(upload, map.image ? map.image : white_image_);
+    const auto sampler_for = [&](const TextureMap& map) {
         auto& sampler = samplers_[sampler_key(map)];
         if (!sampler) {
             nvrhi::SamplerDesc sampler_desc;
@@ -249,11 +247,25 @@ nvrhi::BindingSetHandle Cache::material(const Upload& upload, const MaterialInpu
             sampler = upload.device.createSampler(sampler_desc);
             require(bool(sampler), "Texture sampler creation failed.");
         }
+        return sampler;
+    };
+    for (std::uint32_t slot = 0; slot < 5; ++slot) {
+        const TextureMap map = textures ? textures->maps[slot] : mesh ? mesh->textures[slot] : TextureMap{};
+        const auto image = upload_texture(upload, map.image ? map.image : white_image_);
         auto levels = nvrhi::AllSubresources;
         if (map.min_filter == 9728 || map.min_filter == 9729) levels.setMipLevels(0, 1);
         desc.addItem(nvrhi::BindingSetItem::Texture_SRV(slot, image, nvrhi::Format::UNKNOWN, levels))
-            .addItem(nvrhi::BindingSetItem::Sampler(slot, sampler));
+            .addItem(nvrhi::BindingSetItem::Sampler(slot, sampler_for(map)));
     }
+    const auto* layer = textures && textures->surface_layer ? &*textures->surface_layer : nullptr;
+    const std::array layer_maps = layer ? std::array{layer->base_color, layer->orm, layer->normal, layer->mask} :
+        std::array<std::shared_ptr<const TextureImage>,4>{};
+    for (std::size_t slot = 0; slot < layer_maps.size(); ++slot)
+        desc.addItem(nvrhi::BindingSetItem::Texture_SRV(layer_texture_begin + static_cast<std::uint32_t>(slot),
+            upload_texture(upload, layer_maps[slot] ? layer_maps[slot] : white_image_)));
+    desc.addItem(nvrhi::BindingSetItem::Sampler(layer_repeat_sampler, sampler_for(TextureMap{})))
+        .addItem(nvrhi::BindingSetItem::Sampler(layer_mask_sampler,
+            sampler_for(TextureMap{.wrap_s=33071,.wrap_t=33071})));
     desc.addItem(nvrhi::BindingSetItem::Texture_SRV(5, inputs.shadow))
         .addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(6, inputs.lights))
         .addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(7, inputs.counts))
@@ -275,7 +287,7 @@ void Cache::retain_scene(const SceneSnapshot& scene, MaterialBindings* foregroun
     std::set<const TextureImage*> images;
     std::set<std::string> skin_ids;
     std::set<MaterialKey> combinations{{nullptr, nullptr}};
-    std::set<std::array<int, 4>> samplers{sampler_key(TextureMap{})};
+    std::set<std::array<int, 4>> samplers{sampler_key(TextureMap{}),sampler_key(TextureMap{.wrap_s=33071,.wrap_t=33071})};
 
     const auto retain_image = [&](const std::shared_ptr<const TextureImage>& image) {
         if (image) {
@@ -299,6 +311,12 @@ void Cache::retain_scene(const SceneSnapshot& scene, MaterialBindings* foregroun
             if (object.textures) {
                 materials.insert(object.textures.get());
                 material_owners_[object.textures.get()] = object.textures;
+                if(const auto& layer=object.textures->surface_layer) {
+                    retain_image(layer->base_color);
+                    retain_image(layer->orm);
+                    retain_image(layer->normal);
+                    retain_image(layer->mask);
+                }
             }
             combinations.emplace(bound_mesh, object.textures.get());
             if(object.displacement)retain_image(object.displacement->texture);

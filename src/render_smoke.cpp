@@ -114,9 +114,11 @@ struct ObjectData {
     // Motion and surface change flags, receive-shadows disabled, mark offset, mark count.
     std::uint32_t history[4]{};
     std::array<float,4> foliage_current{},foliage_previous{};
+    std::array<float,4> surface_layer{},surface_layer_options{};
 };
-static_assert(sizeof(ObjectData)==240);
+static_assert(sizeof(ObjectData)==272);
 static_assert(offsetof(ObjectData,foliage_current)==208 && offsetof(ObjectData,foliage_previous)==224);
+static_assert(offsetof(ObjectData,surface_layer)==240 && offsetof(ObjectData,surface_layer_options)==256);
 struct GpuSurfaceMark {
     float center_depth[4],normal_minimum_dot[4],tangent_half_width[4],color_opacity[4],half_height_roughness_edge[3];
     std::uint32_t mask=0;
@@ -804,6 +806,10 @@ struct Context {
             auto layout=nvrhi::BindingLayoutDesc().setVisibility(nvrhi::ShaderType::All).setRegisterSpaceAndDescriptorSet(0)
                 .addItem(nvrhi::BindingLayoutItem::PushConstants(0, sizeof(DrawIndices))).addItem(nvrhi::BindingLayoutItem::ConstantBuffer(1));
             for(std::uint32_t slot=0;slot<5;++slot)layout.addItem(nvrhi::BindingLayoutItem::Texture_SRV(slot)).addItem(nvrhi::BindingLayoutItem::Sampler(slot));
+            for(std::uint32_t slot=render_scene_assets::layer_texture_begin;slot<render_scene_assets::layer_texture_end;++slot)
+                layout.addItem(nvrhi::BindingLayoutItem::Texture_SRV(slot));
+            layout.addItem(nvrhi::BindingLayoutItem::Sampler(render_scene_assets::layer_repeat_sampler))
+                .addItem(nvrhi::BindingLayoutItem::Sampler(render_scene_assets::layer_mask_sampler));
             layout.addItem(nvrhi::BindingLayoutItem::Texture_SRV(5));
             for(std::uint32_t slot=6;slot<=9;++slot)layout.addItem(nvrhi::BindingLayoutItem::StructuredBuffer_SRV(slot));
             for(std::uint32_t slot=10;slot<=12;++slot)layout.addItem(nvrhi::BindingLayoutItem::Texture_SRV(slot));
@@ -959,6 +965,8 @@ struct Context {
             if(item.skin)valid=valid && item.skin->accepted_sequence==history.sequence;
             std::copy_n(valid ? previous->second.model.data() : &item.constants.model[0][0],12,&gpu_object.previous_model[0][0]);
             gpu_object.foliage_current=item.foliage;
+            gpu_object.surface_layer=item.surface_layer;
+            gpu_object.surface_layer_options=item.surface_layer_options;
             gpu_object.foliage_previous=valid ? previous->second.foliage : item.foliage;
             bool surface_changed=valid && previous->second.wetness!=item.wetness;
             if(valid && !surface_changed && (previous->second.mark_count || !item.local_surface_marks.empty())) {
@@ -2319,6 +2327,22 @@ struct Context {
             draw.normal[0][3]=object.textures ? object.textures->occlusion_strength : object.mesh ? object.mesh->occlusion_strength : 1.0f;
             draw.normal[1][3]=object.textures ? object.textures->normal_scale : object.mesh ? object.mesh->normal_scale : 1.0f;
             draw.normal[2][3]=(object.textures ? bool(object.textures->maps[4].image) : object.mesh && object.mesh->textures[4].image) ? 1.0f : 0.0f;
+            if(object.textures && object.textures->surface_layer) {
+                const auto& layer=*object.textures->surface_layer;
+                require(list==0 && object.mesh && !object.skin && !object.camera_draw && draw.alpha[2]==0 &&
+                    layer.base_color && layer.base_color->srgb && layer.orm && !layer.orm->srgb &&
+                    (!layer.normal || !layer.normal->srgb) && (!layer.mask || (!layer.mask->srgb && item.mesh->has_uv)) &&
+                    layer.tile_mm>=32 && layer.tile_mm<=64000 &&
+                    (!layer.base_tile_mm || (layer.base_tile_mm>=32 && layer.base_tile_mm<=64000)) &&
+                    std::isfinite(layer.weight) && layer.weight>=0 && layer.weight<=1,
+                    "Surface layer requires opaque world geometry and valid repeat and map inputs.");
+                const auto slope=layer.slope_degrees.value_or(std::array<float,2>{-1,-1});
+                require(!layer.slope_degrees || (slope[0]>=0 && slope[1]<=90 && slope[0]<slope[1]),
+                    "Surface layer requires an increasing slope range.");
+                item.surface_layer={1000.f/static_cast<float>(layer.tile_mm),layer.weight,slope[0],slope[1]};
+                item.surface_layer_options={layer.base_tile_mm ? 1000.f/static_cast<float>(layer.base_tile_mm) : 0.f,
+                    layer.normal ? 1.f : 0.f,item.wetness.base_scale,item.wetness.roughness_scale};
+            }
             if(object.water_ripple_surface) {
                 require(list==0 && water_normal_mode!=0 && !found_water_ripples && object.material &&
                     object.stream_geometry && !object.mutable_geometry && !object.incarnation && !object.skin &&
@@ -3051,7 +3075,7 @@ struct Context {
                 }
                 if(camera) {
                     for(const auto& binding:draw.bindings->getDesc()->bindings)
-                        if(binding.type==nvrhi::ResourceType::Texture_SRV && binding.slot<5)
+                        if(binding.type==nvrhi::ResourceType::Texture_SRV && render_scene_assets::material_texture_slot(binding.slot))
                             input.textures.push_back(texture(static_cast<nvrhi::ITexture*>(binding.resourceHandle),rs::Lifetime::imported,true));
                     f.camera_draws.push_back(std::move(input));
                 }
@@ -3064,7 +3088,9 @@ struct Context {
             for(const auto& draw:viewmodel_draws)if(draw.camera_visible) {
                 rs::DrawInputs input;input.vertices=buffer(draw.geometry.vertices,draw.skin ? rs::Lifetime::shared : rs::Lifetime::imported,!draw.skin);
                 if(draw.geometry.indices)input.indices=buffer(draw.geometry.indices,rs::Lifetime::imported,true);
-                for(const auto& binding:draw.bindings->getDesc()->bindings)if(binding.type==nvrhi::ResourceType::Texture_SRV && binding.slot<5)input.textures.push_back(texture(static_cast<nvrhi::ITexture*>(binding.resourceHandle),rs::Lifetime::imported,true));
+                for(const auto& binding:draw.bindings->getDesc()->bindings)
+                    if(binding.type==nvrhi::ResourceType::Texture_SRV && render_scene_assets::material_texture_slot(binding.slot))
+                        input.textures.push_back(texture(static_cast<nvrhi::ITexture*>(binding.resourceHandle),rs::Lifetime::imported,true));
                 f.viewmodel_draws.push_back(std::move(input));
             }
         }
@@ -3264,9 +3290,11 @@ struct Context {
                     const auto& input=f.camera_draws.at(camera_index++);geometry(input);std::size_t material_index=0;
                     for(const auto& binding:draw.bindings->getDesc()->bindings) {
                         if(binding.type==nvrhi::ResourceType::Texture_SRV) {
-                            if(binding.slot>=10)environment_identity(binding.slot,binding.resourceHandle,
+                            if(render_scene_assets::material_texture_slot(binding.slot))
+                                identity(input.textures.at(material_index++),binding.resourceHandle);
+                            else if(binding.slot>=10)environment_identity(binding.slot,binding.resourceHandle,
                                 plan.settings.cloud_shadows && !plan.settings.deferred);
-                            else identity(binding.slot<5 ? input.textures.at(material_index++) : f.shadow,binding.resourceHandle);
+                            else identity(f.shadow,binding.resourceHandle);
                         }
                         if(binding.type==nvrhi::ResourceType::ConstantBuffer)identity(f.frame,binding.resourceHandle);
                         if(binding.type==nvrhi::ResourceType::StructuredBuffer_SRV) {
@@ -3302,8 +3330,10 @@ struct Context {
                     const auto& input=f.viewmodel_draws.at(foreground_index++);identity(input.vertices,draw.geometry.vertices.Get());if(input.indices!=rs::none)identity(input.indices,draw.geometry.indices.Get());std::size_t texture_index=0;
                     for(const auto& binding:draw.bindings->getDesc()->bindings) {
                         if(binding.type==nvrhi::ResourceType::Texture_SRV) {
-                            if(binding.slot>=10)environment_identity(binding.slot,binding.resourceHandle,plan.settings.cloud_shadows);
-                            else identity(binding.slot<5 ? input.textures.at(texture_index++) : f.shadow,binding.resourceHandle);
+                            if(render_scene_assets::material_texture_slot(binding.slot))
+                                identity(input.textures.at(texture_index++),binding.resourceHandle);
+                            else if(binding.slot>=10)environment_identity(binding.slot,binding.resourceHandle,plan.settings.cloud_shadows);
+                            else identity(f.shadow,binding.resourceHandle);
                         }
                         if(binding.type==nvrhi::ResourceType::ConstantBuffer)identity(f.viewmodel_frame,binding.resourceHandle);
                         if(binding.type==nvrhi::ResourceType::StructuredBuffer_SRV && binding.slot!=14) {const auto id=binding.slot==6 ? f.lights : binding.slot==7 ? f.viewmodel_counts : binding.slot==8 ? f.viewmodel_indices : f.viewmodel_objects;if(id!=rs::none)identity(id,binding.resourceHandle);}

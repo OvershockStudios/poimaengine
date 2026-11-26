@@ -63,6 +63,8 @@ bool valid_cursor(const Cursor& value) noexcept {
     if(value.owner.kind=="template" && !member && value.component!="StaticMesh" && value.component!="PbrTextures" && value.component!="ParticleEmitter")return false;
     if(value.component=="ParticleEmitter")return path=="/sprite/texture";
     if(value.component=="StaticMesh" && path=="/displacement/texture")return true;
+    if(value.component=="StaticMesh" && (path=="/surface_layer/base_color" || path=="/surface_layer/mask" ||
+        path=="/surface_layer/normal" || path=="/surface_layer/orm"))return true;
     if(value.component=="StaticMesh" && path.starts_with("/lods/")) {
         return path.size()==13 && path[6]>='0' && path[6]-'0'<static_cast<int>(max_mesh_lod_levels) &&
             path.substr(7)=="/asset";
@@ -152,6 +154,14 @@ Page collect(const Json& entities,const Json* templates,const Query& query,const
                         need(lod.is_object() && lod.contains("asset") && lod.contains("primitive"),"Malformed mesh LOD asset reference.");
                         emit(owner,type,base_path+"/lods/"+std::to_string(level)+"/asset",lod.at("asset"),"model",
                             Subresource{"primitive",index(lod.at("primitive"),9999)});
+                    }
+                }
+                if(type=="StaticMesh" && component.contains("surface_layer")) {
+                    const auto& layer=component.at("surface_layer");
+                    for(const auto* slot:{"base_color","mask","normal","orm"}) {
+                        if(result.edges.size()>query.limit)return;
+                        if(layer.contains(slot))emit(owner,type,base_path+"/surface_layer/"+slot,
+                            layer.at(slot),"image",std::nullopt);
                     }
                 }
             }

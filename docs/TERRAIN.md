@@ -120,6 +120,11 @@ The Windows trial checks mixed tiers across a camera move, then replays those
 captures from a relocated standalone build.
 [Qualification results](evidence/m2-terrain-lods-467.json)
 
+Add a [world-space surface layer](MATERIAL_AUTHORING.md#blend-a-surface-layer)
+to repeat two PBR materials across the terrain. Use slope angles, a painted
+mask, or both to control where the upper material appears. The base material
+can keep its original UVs or use its own world-space repeat period.
+
 ## Compact snow on cooked tiles
 
 Cook one heightfield with `samples_x: 65`, `samples_z: 33`, `tile_cells: 32`

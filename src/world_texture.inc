@@ -133,8 +133,9 @@
                 // Sampler-only edits retain existing immutable image owners.
                 // Omitted slots already inherit the ORIGINAL MeshAsset owners.
                 auto maps=std::make_shared<MaterialTextures>(*replacement);const auto previous=effective_textures(*found->mesh);
+                maps->surface_layer=previous.surface_layer;
                 for(std::size_t slot=0;slot<texture_slots.size();++slot)if(old.contains("PbrTextures") && old.at("PbrTextures").contains(texture_slots[slot]) &&
-                    next.at("PbrTextures").contains(texture_slots[slot])) {
+                    next.contains("PbrTextures") && next.at("PbrTextures").contains(texture_slots[slot])) {
                     const auto& a=old.at("PbrTextures").at(texture_slots[slot]);const auto& b=next.at("PbrTextures").at(texture_slots[slot]);
                     if(!a.is_null() && !b.is_null() && a.at("asset")==b.at("asset") && a.value("image",Json(nullptr))==b.value("image",Json(nullptr)))maps->maps[slot].image=previous.maps[slot].image;
                 }

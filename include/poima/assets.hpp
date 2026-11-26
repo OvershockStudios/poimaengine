@@ -13,10 +13,18 @@ struct TextureMap {
     std::shared_ptr<const TextureImage> image;
     int wrap_s=10497,wrap_t=10497,min_filter=9987,mag_filter=9729;
 };
+struct SurfaceLayer {
+    std::shared_ptr<const TextureImage> base_color, orm, normal, mask;
+    std::uint32_t tile_mm=1000, base_tile_mm=0;
+    float weight=1;
+    std::optional<std::array<float,2>> slope_degrees;
+    bool operator==(const SurfaceLayer&) const=default;
+};
 // Slot order: base color, metallic/roughness, emissive, occlusion, normal.
 struct MaterialTextures {
     std::array<TextureMap,5> maps;
     float occlusion_strength=1,normal_scale=1;
+    std::optional<SurfaceLayer> surface_layer;
 };
 struct SkinWeight { std::array<std::uint16_t,4> joints{};std::array<float,4> weights{}; };
 struct MeshAsset {

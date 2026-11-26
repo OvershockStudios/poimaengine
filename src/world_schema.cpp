@@ -126,12 +126,16 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     auto displacement=object_schema({{"texture",asset_id},{"height_m",{{"type","number"},{"minimum",0},{"maximum",4}}},
         {"tile_mm",unsigned_range(32,64000)},{"axis",{{"enum",{"x","y","z"}}}}},{"texture","height_m","tile_mm","axis"});
     displacement["description"]="Adaptive tessellation from a linear cooked height image. Projection follows the chosen local axis. Author collision separately.";
+    auto surface_layer=object_schema({{"base_color",asset_id},{"orm",asset_id},{"normal",asset_id},{"mask",asset_id},
+        {"tile_mm",unsigned_range(32,64000)},{"base_tile_mm",unsigned_range(32,64000)},{"weight",unit},
+        {"slope_degrees",vector({{"type","number"},{"minimum",0},{"maximum",90}},2)}},{"base_color","orm","tile_mm"});
+    surface_layer["description"]="Second opaque PBR layer with world-XZ repeat in millimetres. An optional linear red mask uses UV0. An optional increasing slope range sets the start/full blend in degrees. ORM packs occlusion, roughness and metallic in RGB.";
     auto static_mesh=object_schema({{"asset",asset_id},{"primitive",{{"type","integer"},{"minimum",0},{"maximum",9999}}},{"visible",{{"type","boolean"}}},
         {"cast_shadows",{{"type","boolean"},{"default",true}}},{"receive_shadows",{{"type","boolean"},{"default",true}}},
         {"lods",{{"type","array"},{"minItems",1},{"maxItems",max_mesh_lod_levels},{"items",lod_level},
           {"description","Optional alternate rigid geometry. Distances increase and triangle counts decrease from LOD0. Base materials and collision stay independent of visual tiers."}}},
         {"lod_anchor",vector({{"type","number"},{"minimum",-max_mesh_lod_distance_m},{"maximum",max_mesh_lod_distance_m}},3)},
-        {"foliage_motion",foliage_motion},{"displacement",displacement}},
+        {"foliage_motion",foliage_motion},{"displacement",displacement},{"surface_layer",surface_layer}},
         {"asset","primitive","visible"});
     static_mesh["dependentRequired"]={{"lod_anchor",{"lods"}}};
     static_mesh["properties"]["lod_anchor"]["description"]="Optional point in the mesh's local coordinates from which to measure the LOD distance. Defaults to the drawable origin.";
@@ -188,7 +192,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     rig_fields["root_motion"]=std::move(root_profile);
     const auto animation_rig=object_schema(rig_fields,{"asset","clip","time","speed","loop","playing"});
     const auto rig_node=object_schema({{"rig",id},{"node",model_node}},{"rig","node"});
-    auto skin_fields=static_mesh.at("properties");skin_fields.erase("lods");skin_fields.erase("lod_anchor");skin_fields.erase("foliage_motion");skin_fields["rig"]=id;skin_fields["node"]=model_node;
+    auto skin_fields=static_mesh.at("properties");skin_fields.erase("lods");skin_fields.erase("lod_anchor");skin_fields.erase("foliage_motion");skin_fields.erase("surface_layer");skin_fields["rig"]=id;skin_fields["node"]=model_node;
     const auto skinned_mesh=object_schema(skin_fields,{"asset","primitive","visible","rig","node"});
     Json pbr=object_schema({{"base_color",vector(unit,3)},{"emissive",vector(unit,3)},{"metallic",unit},{"roughness",unit},{"double_sided",{{"type","boolean"}}},
         {"alpha_mode",{{"enum",{"opaque","mask"}},{"default","opaque"}}},
@@ -447,14 +451,18 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     const Json sprite_type={{"const","ParticleEmitter"}},sprite_path={{"const","/sprite/texture"}};
     const Json lod_type={{"const","StaticMesh"}};
     const Json lod_path={{"type","string"},{"pattern","^/lods/[0-3]/asset$"}};
+    const Json layer_path={{"type","string"},{"pattern","^/surface_layer/(base_color|mask|normal|orm)$"}};
     Json reference_cursor={{"oneOf",Json::array({
         reference_cursor_variant("entity",{{"enum",{"AnimationRig","AudioEmitter","MeshCollider","SkinnedMesh","StaticMesh"}}},direct_path),
         reference_cursor_variant("entity",texture_type,texture_paths),
         reference_cursor_variant("entity",sprite_type,sprite_path),
         reference_cursor_variant("entity",lod_type,lod_path),
+        reference_cursor_variant("entity",lod_type,layer_path),
         reference_cursor_variant("entity",lod_type,{{"const","/displacement/texture"}}),
         reference_cursor_variant("template",{{"const","StaticMesh"}},direct_path),
         reference_cursor_variant("template",lod_type,lod_path),
+        reference_cursor_variant("template",lod_type,layer_path),
+        reference_cursor_variant("template",lod_type,{{"type","string"},{"pattern","^/entities/(?!0{32}/)[0-9a-f]{32}/components/StaticMesh/surface_layer/(base_color|mask|normal|orm)$"}}),
         reference_cursor_variant("template",lod_type,{{"const","/displacement/texture"}}),
         reference_cursor_variant("template",lod_type,{{"type","string"},{"pattern","^/entities/(?!0{32}/)[0-9a-f]{32}/components/StaticMesh/displacement/texture$"}}),
         reference_cursor_variant("template",lod_type,{{"type","string"},{"pattern","^/entities/(?!0{32}/)[0-9a-f]{32}/components/StaticMesh/lods/[0-3]/asset$"}}),
@@ -479,7 +487,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 257}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 258}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),

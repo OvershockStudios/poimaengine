@@ -241,6 +241,14 @@ FrozenContent freeze_world_content(const Json& source, const fs::path& directory
                 require(!height->srgb,"Displacement requires a linear height texture.",-32050);
                 result.needs_material_displacement=true;
             }
+            if(type==std::string_view("StaticMesh") && ref.contains("surface_layer")) {
+                const auto& layer=ref.at("surface_layer");
+                for(const auto* slot:{"base_color","orm","normal","mask"})if(layer.contains(slot)) {
+                    const auto map=image(layer.at(slot).get<std::string>());
+                    require(map->srgb==(std::string_view(slot)=="base_color"),"Surface layer image has the wrong color space.",-32050);
+                }
+                result.needs_surface_layer=true;
+            }
             if(type==std::string_view("StaticMesh") && ref.contains("lods")) {
                 result.needs_mesh_lod=true;
                 result.needs_mesh_lod_anchor|=ref.contains("lod_anchor");

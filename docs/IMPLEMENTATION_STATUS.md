@@ -1,8 +1,15 @@
 # Implementation status
 
-Updated 2026-11-25 for **0.0.467**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-26 for **0.0.468**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.468 adds an authored [PBR surface layer](MATERIAL_AUTHORING.md#blend-a-surface-layer)
+with separate world-space tiling, a UV0 paint mask and slope coverage. The
+Vulkan fixture checks color, normals and lighting across four displaced tiles
+using mixed detail levels. A live base-texture edit preserves the layer and a
+relocated build reproduces its capture. The fixture uses dry ground.
+[Qualification results](evidence/m2-terrain-surface-layer-468.json)
 
 Version 0.0.467 cooks [terrain detail levels](TERRAIN.md#cook-terrain-detail-levels)
 with a full shared perimeter and tile-local distance anchors. The Vulkan

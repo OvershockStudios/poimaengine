@@ -267,6 +267,8 @@ The first [material height displacement](MATERIAL_DISPLACEMENT.md) path
 uses adaptive tessellation on rigid indexed meshes and the two-tile
 mutable snow region. Cook rigid [terrain detail levels](TERRAIN.md#cook-terrain-detail-levels)
 with matching tile boundaries. Extend qualification to representative terrain workloads.
+The [surface layer](MATERIAL_AUTHORING.md#blend-a-surface-layer) adds world-space
+PBR tiling with slope and painted coverage for opaque world meshes.
 Qualify shared edges, culling bounds, silhouettes, shadow and motion parity,
 LOD transitions, and predictable hardware fallbacks. Keep collision and
 gameplay queries tied to the declared authored geometry.

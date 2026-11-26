@@ -868,7 +868,7 @@ void validate_component(const std::string& type, const Json& value) {
         return;
     }
     if(type=="StaticMesh") {
-        fields(value,{"asset","primitive","visible","cast_shadows","receive_shadows","lods","lod_anchor","foliage_motion","displacement"},{"asset","primitive","visible"});
+        fields(value,{"asset","primitive","visible","cast_shadows","receive_shadows","lods","lod_anchor","foliage_motion","displacement","surface_layer"},{"asset","primitive","visible"});
         require(value.at("asset").is_string() && valid_asset_id(value.at("asset").get<std::string>()),"StaticMesh requires a 64-character lowercase content hash.");
         require(revision(value.at("primitive"))<10000 && value.at("visible").is_boolean(),"Invalid StaticMesh primitive/visibility.");
         if(value.contains("lod_anchor")) {
@@ -896,6 +896,30 @@ void validate_component(const std::string& type, const Json& value) {
             }
         }
         if(value.contains("foliage_motion"))(void)foliage_motion_value(value.at("foliage_motion"));
+        if(value.contains("surface_layer")) {
+            const auto& layer=value.at("surface_layer");
+            fields(layer,{"base_color","orm","normal","mask","tile_mm","base_tile_mm","weight","slope_degrees"},
+                {"base_color","orm","tile_mm"});
+            for(const auto* slot:{"base_color","orm","normal","mask"})if(layer.contains(slot)) {
+                const auto& asset=layer.at(slot);
+                require(asset.is_string() && valid_asset_id(asset.get_ref<const std::string&>()),
+                    "Surface layer maps require cooked image hashes.");
+            }
+            for(const auto* field:{"tile_mm","base_tile_mm"})if(layer.contains(field)) {
+                const auto size=revision(layer.at(field));
+                require(size>=32 && size<=64000,"Surface layer repeat periods must be 32..64000 mm.");
+            }
+            if(layer.contains("weight")) {
+                const auto& weight=layer.at("weight");
+                require(weight.is_number() && weight>=0 && weight<=1,"Surface layer weight must be in [0, 1].");
+            }
+            if(layer.contains("slope_degrees")) {
+                const auto& slope=layer.at("slope_degrees");
+                require(slope.is_array() && slope.size()==2 && slope[0].is_number() && slope[1].is_number() &&
+                    slope[0]>=0 && slope[1]<=90 && slope[0].get<float>()<slope[1].get<float>(),
+                    "Surface layer slope needs increasing start and full angles in [0, 90] degrees.");
+            }
+        }
         if(value.contains("displacement")) {
             const auto& displacement=value.at("displacement");
             fields(displacement,{"texture","height_m","tile_mm","axis"},{"texture","height_m","tile_mm","axis"});
@@ -1273,6 +1297,8 @@ void validate(const Json& doc) {
             !audio_components.at("StaticMesh").contains("lods"),"Mesh LOD requires a world drawable without CameraDraw.");
         require(!audio_components.contains("CameraDraw") || !audio_components.contains("StaticMesh") ||
             !audio_components.at("StaticMesh").contains("displacement"),"Height displacement requires a world drawable without CameraDraw.");
+        require(!audio_components.contains("CameraDraw") || !audio_components.contains("StaticMesh") ||
+            !audio_components.at("StaticMesh").contains("surface_layer"),"A surface layer requires a world drawable without CameraDraw.");
         require(!audio_components.contains("MeshCollider") || (!audio_components.contains("BoxCollider") && !audio_components.contains("CharacterController")),"MeshCollider cannot combine with BoxCollider or CharacterController.");
         if(audio_components.contains("AcousticMaterial"))require(audio_components.contains("BoxCollider") || audio_components.contains("MeshRenderer") || audio_components.contains("StaticMesh"),"AcousticMaterial requires box collider or mesh geometry.");
         if(audio_components.contains("AudioRoom")) {

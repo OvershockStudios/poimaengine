@@ -195,7 +195,7 @@ foreach(stage IN LISTS shader_stages)
     endif()
     if(shader MATCHES "^(scene|scene_products|scene_deferred.*|shadow|displacement_.*)$")
         list(APPEND shader_dependencies "${CMAKE_SOURCE_DIR}/shaders/water_ripple_normal.hlsli"
-            "${CMAKE_SOURCE_DIR}/shaders/foliage_motion.hlsli")
+            "${CMAKE_SOURCE_DIR}/shaders/foliage_motion.hlsli" "${CMAKE_SOURCE_DIR}/shaders/surface_layer.hlsli")
     endif()
     if(shader MATCHES "^(ambient_occlusion.*|deferred_lighting.*|scene_deferred.*|scene|scene_products|shadow|displacement_.*|cluster_lights|temporal(_composed)?(_sprite)?_inputs|sky(_atmosphere|_orbital|_clouds)?|screen_diffuse_bounce.*|screen_reflections|height_fog.*|aerial_perspective|cloud_view|particle_sprite.*_water)$")
         list(APPEND shader_dependencies "${CMAKE_SOURCE_DIR}/shaders/scene_frame.hlsli"

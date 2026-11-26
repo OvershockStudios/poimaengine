@@ -70,6 +70,55 @@ Get-Content examples/normal-grid.jsonl | .\build\windows-runtime\poima.exe world
 
 Use fresh world/capture paths. The [captured example](evidence/m2-normal-grid.png) compares normal scale 0 in the upper row with 1.5 below; metallic increases across the columns, with matching factor roughness. The source is original sample art generated offline by `python3 examples/assets/generate_textured_sphere.py --normal-map`. This offline script does not provide native procedural-material authoring.
 
+## Blend a surface layer
+
+Add `surface_layer` to an opaque world `StaticMesh` through a guarded
+`world.transact` component set. Import the layer color as sRGB and the
+other images as linear data. Replace the example IDs with cooked hashes.
+
+```json
+{
+  "base_color": "<color image hash>",
+  "orm": "<packed occlusion, roughness and metallic image hash>",
+  "normal": "<optional normal image hash>",
+  "mask": "<optional painted mask image hash>",
+  "tile_mm": 3000,
+  "base_tile_mm": 1200,
+  "weight": 0.85,
+  "slope_degrees": [20, 45]
+}
+```
+
+The two repeat periods use world XZ coordinates. Keep matching periods on
+neighboring terrain tiles to align their texture phase. `tile_mm` is required.
+Omitting `base_tile_mm` keeps the base material on its original UVs and
+samplers. Provide integer millimetres in 32–64,000. Layer normals use +X
+and +Z as their texture directions on level ground.
+
+The layer starts with `weight` in `[0, 1]`, with a default of 1. An optional
+mask multiplies it by the linear red channel, sampled with clamped UV0.
+An optional pair of strictly increasing angles in `[0, 90]` blends smoothly
+from zero coverage to full coverage using the surface normal before normal
+mapping. With no slope range, coverage follows the weight and mask.
+
+The renderer blends linear base color, occlusion, roughness and metallic
+independently. The layer normal blends with the underlying shading normal.
+Covered areas suppress base emission in proportion to coverage. Wetness
+scales both layers before blending. Surface marks apply after the blend.
+Terrain detail levels and material displacement share the same shading path.
+When using a mask, supply valid UV0 on each detail tier.
+
+`world.asset.references` exposes the layer images under `/surface_layer/`.
+Dependency and project inspection report `needs_surface_layer`. Standalone
+export includes the selected images and requires `features.surface_layer`.
+The layer belongs to the authored `StaticMesh`. Live `PbrTextures` edits
+preserve the layer, and edits to the layer itself take effect in a new
+runtime snapshot.
+
+`tests/terrain_surface_layer_capture.py` checks native forward and deferred
+shading against a color, normal and lighting oracle. It also checks source-free
+export and the original material path. [Surface-layer qualification](evidence/m2-terrain-surface-layer-468.json)
+
 ## Evidence
 
 [Evidence](evidence/m2-material-authoring.json) covers native import/authoring tests, mirrored-seam unit checks, scalar/GPU normal-map comparisons, independent image overrides, preview/retry behavior, effective inspection, disable/inherit semantics, source-independent reload and frozen runtime replay. These are bounded fixtures, not full glTF conformance or production graphics qualification.

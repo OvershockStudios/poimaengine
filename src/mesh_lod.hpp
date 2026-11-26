@@ -30,7 +30,8 @@ inline void validate_mesh_lod_geometry(const MeshAsset* base,const MeshLodChain&
 
 inline void validate_mesh_lod_textures(const MeshAsset& base,const MeshLodChain& lods,const MaterialTextures* override_maps) {
     const auto& maps=override_maps ? override_maps->maps : base.textures;
-    const bool uses_uv=std::ranges::any_of(maps,[](const auto& map){ return bool(map.image); });
+    const bool needs_layer_uv=override_maps && override_maps->surface_layer && override_maps->surface_layer->mask;
+    const bool uses_uv=needs_layer_uv || std::ranges::any_of(maps,[](const auto& map){ return bool(map.image); });
     if(!uses_uv)return;
     for(const auto& level:lods.levels) {
         if(!level.mesh->has_uv)

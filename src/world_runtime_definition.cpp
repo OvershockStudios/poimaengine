@@ -45,8 +45,13 @@ PbrMaterial material_from_json(const Json& value) {
 // inherited maps, explicit null clears and inherited strengths.
 std::shared_ptr<const MaterialTextures> resolve_textures(const Json& components,
     const std::shared_ptr<const MeshAsset>& inherited_mesh, const std::filesystem::path& assets, ModelCache& cache) {
-    if(!components.contains("PbrTextures"))return {};
-    const auto& value=components.at("PbrTextures");auto resolved=std::make_shared<MaterialTextures>();
+    const Json* layer=nullptr;
+    if(components.contains("StaticMesh") && components.at("StaticMesh").contains("surface_layer"))
+        layer=&components.at("StaticMesh").at("surface_layer");
+    if(!components.contains("PbrTextures") && !layer)return {};
+    static const Json empty=Json::object();
+    const auto& value=components.contains("PbrTextures") ? components.at("PbrTextures") : empty;
+    auto resolved=std::make_shared<MaterialTextures>();
     if(inherited_mesh) { resolved->maps=inherited_mesh->textures;resolved->occlusion_strength=inherited_mesh->occlusion_strength;resolved->normal_scale=inherited_mesh->normal_scale; }
     const char* names[]={"base_color","metallic_roughness","emissive","occlusion","normal"};
     try {
@@ -61,6 +66,24 @@ std::shared_ptr<const MaterialTextures> resolve_textures(const Json& components,
         }
         if(value.contains("occlusion_strength"))resolved->occlusion_strength=value.at("occlusion_strength");
         if(value.contains("normal_scale"))resolved->normal_scale=value.at("normal_scale");
+        if(layer) {
+            auto& surface=resolved->surface_layer.emplace();
+            const auto map=[&](const char* key, bool srgb) -> std::shared_ptr<const TextureImage> {
+                if(!layer->contains(key))return {};
+                auto image=cache.image(assets,layer->at(key));
+                require(image->srgb==srgb,"Surface layer image has the wrong color space.",-32050);
+                return image;
+            };
+            surface.base_color=map("base_color",true);
+            surface.orm=map("orm",false);
+            surface.normal=map("normal",false);
+            surface.mask=map("mask",false);
+            surface.tile_mm=layer->at("tile_mm");
+            surface.base_tile_mm=layer->value("base_tile_mm",0u);
+            surface.weight=layer->value("weight",1.f);
+            if(layer->contains("slope_degrees"))surface.slope_degrees=layer->at("slope_degrees").get<std::array<float,2>>();
+            require(!surface.mask || (inherited_mesh && inherited_mesh->has_uv),"A surface layer mask needs mesh UV0.",-32050);
+        }
         if(inherited_mesh) {
             for(const auto& map:resolved->maps)require(!map.image || inherited_mesh->has_uv,"Material maps require mesh UV0.",-32050);
             if(resolved->maps[4].image)for(const auto& vertex:inherited_mesh->vertices)require(valid_tangent(vertex),"Normal mapping requires tangent frames; reimport this model with UV0.",-32050);
@@ -102,9 +125,11 @@ std::optional<RuntimeMesh> resolve_mesh_component(const Json& components,
     if(components.contains("PbrMaterial")) {
         mesh.material=material_from_json(components.at("PbrMaterial"));
     }
-    if(components.contains("PbrTextures")) {
+    if(components.contains("PbrTextures") || (components.contains("StaticMesh") && components.at("StaticMesh").contains("surface_layer"))) {
         mesh.textures=resolve_textures(components,mesh.mesh,assets,cache);
         if(!mesh.material) { PbrMaterial material;material.base_color=mesh.albedo;material.metallic=0;mesh.material=material; }
+        if(mesh.textures->surface_layer)require(mesh.material->alpha_mode==MaterialAlphaMode::opaque,
+            "A surface layer requires an opaque base material.",-32050);
     }
     if(components.contains("StaticMesh") && components.at("StaticMesh").contains("lods")) {
         auto lods=std::make_shared<MeshLodChain>();

@@ -2343,6 +2343,8 @@ Runtime::PreparedMaterialUpdate Runtime::prepare_materials(std::uint64_t expecte
         require(mesh && mesh->material.has_value(),"Material adoption needs an existing PBR drawable.");
         require(edit.material.double_sided==mesh->material->double_sided,"Material adoption cannot change double_sided.");
         validate_pbr_material(edit.material);
+        require(edit.material.alpha_mode==MaterialAlphaMode::opaque || !mesh->textures || !mesh->textures->surface_layer,
+            "A surface layer requires an opaque base material.");
         auto& definition=candidate->definitions.at(edit.id);
         if(edit.material.alpha_mode!=MaterialAlphaMode::opaque)
             require(!definition.footprint_surface && !(impl_->snow_binding && impl_->snow_binding->contains(edit.id)) &&
@@ -2447,6 +2449,9 @@ Runtime::PreparedTextureUpdate Runtime::prepare_textures(std::uint64_t expected,
             }
             textures=std::move(copy);
         }
+        const auto previous_layer=mesh->textures ? mesh->textures->surface_layer : std::nullopt;
+        const auto next_layer=textures ? textures->surface_layer : std::nullopt;
+        require(previous_layer==next_layer,"Live texture adoption preserves the authored surface layer.");
         if(mesh->lods)validate_mesh_lod_textures(*mesh->mesh,*mesh->lods,textures.get());
         auto& definition=candidate->definitions.at(edit.id);
         require(definition.mesh && definition.mesh->material.has_value(),"Texture definition is not a PBR drawable.");

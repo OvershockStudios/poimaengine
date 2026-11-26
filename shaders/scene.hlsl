@@ -12,6 +12,8 @@ struct ObjectData {
     float4 previous_model_row0,previous_model_row1,previous_model_row2;
     uint4 history; // x: motion/mark history flags; y: receive-shadows disabled; zw: mark offset and count
     float4 foliage_current, foliage_previous; // local X/Z offset, root Y, reciprocal height
+    float4 surface_layer; // repeats/metre, weight, slope start and full degrees
+    float4 surface_layer_options; // base repeats/metre, normal present, wetness color and roughness scales
 };
 struct SurfaceMark {
     float4 center_depth;
@@ -45,6 +47,7 @@ SamplerState mr_sampler : register(s1);
 SamplerState emissive_sampler : register(s2);
 SamplerState occlusion_sampler : register(s3);
 SamplerState normal_sampler : register(s4);
+#include "surface_layer.hlsli"
 // NVRHI's Vulkan input layout assigns locations by the declared CPU attribute
 // order, not by reflected semantics. Keep UV at2 even in the shadow shader,
 // where unused normal/tangent inputs may be eliminated by the compiler.
@@ -203,10 +206,12 @@ void apply_surface_marks(inout SceneSurface material,float3 position,float3 posi
 SceneSurface evaluate_material(VertexOutput input,bool front) {
     const ObjectData draw=objects[input.object_index];
     float3 n=normalize(input.normal);
+    const float3 unperturbed_normal=n;
     // Smooth vertex normals describe shading, not the rasterized triangle plane.
     // Compute the plane before any divergent light/cascade branches.
     const float3 facing_normal=front ? n : -n;
     const float3 position_dx=ddx(input.world_position),position_dy=ddy(input.world_position);
+    const float2 uv_dx=ddx(input.uv),uv_dy=ddy(input.uv);
     const float3 triangle_normal=cross(position_dx,position_dy);
     const float triangle_length2=dot(triangle_normal,triangle_normal);
     const float3 geometric_normal=triangle_length2>1e-20 ?
@@ -221,7 +226,14 @@ SceneSurface evaluate_material(VertexOutput input,bool front) {
     } else {
         // Opaque metallic/roughness; ambient is an authored fill, not GI/IBL.
 
-        if(draw.normal_row2.w>0.5) {
+        const float base_repeat=draw.surface_layer_options.x;
+        const float2 world_uv=input.world_position.xz*base_repeat;
+        const float2 world_dx=position_dx.xz*base_repeat,world_dy=position_dy.xz*base_repeat;
+        if(draw.normal_row2.w>0.5 && base_repeat>0) {
+            float3 sampled=normal_map.SampleGrad(layer_repeat_sampler,world_uv,world_dx,world_dy).rgb*2-1;
+            sampled.xy*=draw.normal_row1.w;
+            n=projected_surface_normal(n,sampled);
+        } else if(draw.normal_row2.w>0.5) {
             const float3 raw_t=input.tangent.xyz-n*dot(n,input.tangent.xyz);
             const float3 t=raw_t*rsqrt(max(dot(raw_t,raw_t),1e-12));
             const float3 b=(input.tangent.w<0 ? -1 : 1)*cross(n,t);
@@ -249,14 +261,20 @@ SceneSurface evaluate_material(VertexOutput input,bool front) {
                 input.world_position.xz-origin,position_dx.xz,position_dy.xz);
         }
         if(!front)n=-n;
-        const float3 base=draw.base_metallic.rgb*base_map.Sample(base_sampler,input.uv).rgb;
-        const float4 mr=mr_map.Sample(mr_sampler,input.uv);
+        const float3 base=draw.base_metallic.rgb*(base_repeat>0 ?
+            base_map.SampleGrad(layer_repeat_sampler,world_uv,world_dx,world_dy) : base_map.Sample(base_sampler,input.uv)).rgb;
+        const float4 mr=base_repeat>0 ? mr_map.SampleGrad(layer_repeat_sampler,world_uv,world_dx,world_dy) : mr_map.Sample(mr_sampler,input.uv);
         const float metallic=draw.base_metallic.w*mr.b;
         const float roughness=max(draw.emissive_roughness.w*mr.g,0.045);
-        const float3 emission=draw.emissive_roughness.rgb*emissive_map.Sample(emissive_sampler,input.uv).rgb;
-        const float occlusion=lerp(1,occlusion_map.Sample(occlusion_sampler,input.uv).r,draw.normal_row0.w);
+        const float3 emission=draw.emissive_roughness.rgb*(base_repeat>0 ?
+            emissive_map.SampleGrad(layer_repeat_sampler,world_uv,world_dx,world_dy) : emissive_map.Sample(emissive_sampler,input.uv)).rgb;
+        const float occlusion=lerp(1,(base_repeat>0 ?
+            occlusion_map.SampleGrad(layer_repeat_sampler,world_uv,world_dx,world_dy) : occlusion_map.Sample(occlusion_sampler,input.uv)).r,draw.normal_row0.w);
         material.base=base;material.metallic=metallic;material.roughness=roughness;
         material.emission=emission;material.occlusion=occlusion;material.normal=n;
+        if(draw.surface_layer.x>0 && draw.surface_layer.y>0)
+            blend_surface_layer(material,draw.surface_layer,draw.surface_layer_options,unperturbed_normal,front,
+                input.world_position.xz,position_dx.xz,position_dy.xz,input.uv,uv_dx,uv_dy);
         apply_surface_marks(material,input.world_position,position_dx,position_dy,draw.history.z,draw.history.w);
     }
     return material;

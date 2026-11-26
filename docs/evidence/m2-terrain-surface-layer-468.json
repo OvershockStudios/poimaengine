@@ -1,0 +1,247 @@
+{
+  "format": "poima.qualification-summary",
+  "version": 1,
+  "engine_checkpoint": "0.0.468",
+  "comparison_commit": "51bfc4cf14f20d4ae35a27429f7e25ec628ea6de",
+  "scope": "Two opaque PBR surface layers over four terrain tiles, using independent world tiling, a UV0 mask, slope transitions and a directional-light BRDF check.",
+  "source_sha256": {
+    "CMakeLists.txt": "b76127f23f7276ed9c1c0981c37d8ec7cfa24a053d375e4a04634aed05d2a18e",
+    "cmake/render_smoke.cmake": "c2f51b62d8c65738100dada0bf3dd7424e95e053fa42c21cc2ccb8b565c67070",
+    "cmake/runtime.json.in": "6235d1ca85e0f3d0609876f22e25f8bbf06e1c71cde3db5c96e454d82268b566",
+    "include/poima/assets.hpp": "8722cc8913fc22cdc5e26490124ed4b324b9ebbcb782f15ad32e1a7b4b536987",
+    "include/poima/world.hpp": "9c292786be375421d4843abd4c61b6799c8a1755de3e884019d128a9358a9788",
+    "shaders/scene.hlsl": "aa66c1bf464aef011ddaa2a5ae2cb93369ec566f68c7e030e2d0f57a7fecaaee",
+    "shaders/surface_layer.hlsli": "6ab8343980da73505499504180ed174af6174cbc0b10059f6bcdbeb353ce91b1",
+    "src/asset_references.cpp": "f5660c5847d9b1c26e636f5a63a2251a8b687f66bd6f9c7848fba8241c5b56ad",
+    "src/core.cpp": "a7d963367584dae92eefe55b463508751dd2dbdd95f3dae5fc744558a239afea",
+    "src/mesh_lod.hpp": "d9c06081bbe7923b9eb395684e57938af72a4bc2023ad592fce1df63cf2854d7",
+    "src/project.cpp": "568aaafe15e2a3b02ae7e3d33619ba4d25649056610b8116fa5acafaff9be5c5",
+    "src/render_scene_assets.cpp": "56b7ddfd78cb2aa198c32aaf1f543811e28df713061e8220c975125ebf7ccf97",
+    "src/render_scene_assets.hpp": "5d693c806392684cbcf6ef0d1637e658263faa3e9a43f64861f7f609b9e52484",
+    "src/render_scene_draw.hpp": "35bc781a78c78c9af865f1101c527d384e455c8fbe036c7dec8a9ffaa844c5f4",
+    "src/render_smoke.cpp": "addfc0867a2f2c813ca2065e01a9292da97b715ec3f83e696bcede2908cdaef5",
+    "src/runtime.cpp": "55caba8b61a0f0f0ff06dd3249a8523498260b60edea0f32f97eb8bbe371124a",
+    "src/world.cpp": "0213a3d4d0b849fa57006fe4363521780abbfd57568aae0ca1c76924d88fe567",
+    "src/world_content.cpp": "b7ea27fbc4527a8fa08b50b790ecbcfa35751a693dced95e08726f53843e6d69",
+    "src/world_document.cpp": "13061ead5e32a7bfdad325249f5face37e8c60b1f57ea2d2b0137f84e39b897c",
+    "src/world_runtime_definition.cpp": "5dfb417a612988eec69ffeb44777eb2b0ac200c47be4cbd93976d63cecd0113f",
+    "src/world_schema.cpp": "fadca52ada82d688f66c5d63ce3cfe2612d1f7941d47fe78c197c532d1eb9a3d",
+    "src/world_texture.inc": "7ad87d66f36b750e9252d6be3094b96197ba80d53832c734c94241240c4d00a3",
+    "tests/asset_references_contract.py": "dcf53ebebdc7516f6d9d114ca89ef867acd963a50508f8c2c054d25aa6c133ac",
+    "tests/contact_shadow_contract.py": "57d09f63f4a1c46a3a0d9d7eb40b8e851ab41e0206f2c67dbd31055d6915bcc2",
+    "tests/terrain_lod_capture.py": "9734430925819d72dbbfeaa263c52d2a4e33860288a646371771a73acc553628",
+    "tests/terrain_surface_layer_capture.py": "a6d757e290512ff15921b08f67b761903576aca9b10e8cca43ab50aa833c98de"
+  },
+  "windows_installed_sha256": {
+    "bin/poima.exe": "615bd5bc67f2754c8224b16551bb2fc328de08f487ff5618eedf8c51c0acb8e1",
+    "bin/poima_desktop.dll": "697453448fd43d38f3278333cd7f75086cf69f1969802bc4c85cd6c182bc4a7d",
+    "runtime.json": "9f28a6c7988c87e3426899b0090a30ee535e2b403e821e9351b803a901b5eb98"
+  },
+  "changed_spirv_modules": [
+    "displacement_camera_ds.spv",
+    "displacement_camera_products_ds.spv",
+    "displacement_control_hs.spv",
+    "displacement_control_products_hs.spv",
+    "displacement_shadow_ds.spv",
+    "scene_deferred_color_ps.spv",
+    "scene_deferred_color_vs.spv",
+    "scene_deferred_ps.spv",
+    "scene_deferred_vs.spv",
+    "scene_products_ps.spv",
+    "scene_products_vs.spv",
+    "scene_ps.spv",
+    "scene_vs.spv",
+    "shadow_ps.spv",
+    "shadow_vs.spv"
+  ],
+  "ubuntu": {
+    "suites": [
+      "world_terrain_contract",
+      "snow_compaction_contract",
+      "authoring_contract_identity",
+      "render_schedule_native",
+      "project_contract",
+      "contact_shadow_contract",
+      "world_contract",
+      "asset_references_contract",
+      "rigid_mesh_lod_contract",
+      "world_material_native",
+      "world_texture_native"
+    ],
+    "binary_sha256": "9b615d0614477227c79e67cd48fd1ffc7a93dec8612aab06970aaccd82367caf",
+    "regression_junit_sha256": [
+      "b81e170ecdf58eb5d5b47e74823cb674feda5b8cfd18f4814b294eded45d9271",
+      "4ab7b9d2f5cf95636ad00eb8deb69d274a07ff5534c921017aaebb154d58393c"
+    ],
+    "headless_layer_report_sha256": "acf52d9c29cd8d6dcd795d3517f76be69b3c12b35bed203e8ca92837bd4c6c9c"
+  },
+  "windows": [
+    {
+      "device": "AMD Radeon(TM) Graphics",
+      "lighting_path": "forward",
+      "result_sha256": "84a989bc517e0ba803b251f144d825c1b49cdf9963c031b157cc5e620b20e747",
+      "unchanged_displaced_terrain_regression_sha256": "e2da99a3145f7939e1d16fce269a57580959659985138f9984c17670fdfade88",
+      "frames": {
+        "base": {
+          "image_sha256": "41eed58b3260b2fe76c5a56153b8c2b5c32004d091c0e70f36fffa161c191e7c",
+          "max_checked_hdr_error": 0.001029659372866476,
+          "max_normal_error": 0.0003906249999999778,
+          "max_depth_error": 9.16601515799087e-08,
+          "probes": 21,
+          "hdr_check": "Ambient and emissive irradiance"
+        },
+        "old-base": {
+          "image_sha256": "41eed58b3260b2fe76c5a56153b8c2b5c32004d091c0e70f36fffa161c191e7c",
+          "max_checked_hdr_error": 0.001029659372866476,
+          "max_normal_error": 0.0003906249999999778,
+          "max_depth_error": 9.16601515799087e-08,
+          "probes": 21,
+          "hdr_check": "Ambient and emissive irradiance"
+        },
+        "zero": {
+          "image_sha256": "41eed58b3260b2fe76c5a56153b8c2b5c32004d091c0e70f36fffa161c191e7c",
+          "max_checked_hdr_error": 0.001029659372866476,
+          "max_normal_error": 0.0003906249999999778,
+          "max_depth_error": 9.16601515799087e-08,
+          "probes": 21,
+          "hdr_check": "Ambient and emissive irradiance"
+        },
+        "mask": {
+          "image_sha256": "4dd3cd0bb98839a14346e0d13528784c2a7375ee4fed564a2a552e8141db15ff",
+          "max_checked_hdr_error": 0.0009149681275710253,
+          "max_normal_error": 0.0005732809564297503,
+          "max_depth_error": 9.16601515799087e-08,
+          "probes": 21,
+          "hdr_check": "Ambient and emissive irradiance"
+        },
+        "slope": {
+          "image_sha256": "c6b77a99f14f70fd22640af1a2b1804c30e7d182bd66b298120610c32d236f50",
+          "max_checked_hdr_error": 0.0009149681275710253,
+          "max_normal_error": 0.0004602093369742155,
+          "max_depth_error": 9.16601515799087e-08,
+          "probes": 21,
+          "hdr_check": "Ambient and emissive irradiance"
+        },
+        "lit": {
+          "image_sha256": "7607e7d01d6a6b4e579d80e8712788be1ec81f3c1336a64f3ce0b2826ba69f6b",
+          "max_checked_hdr_error": 0.00034906789667765725,
+          "max_normal_error": 0.0004602093369742155,
+          "max_depth_error": 9.16601515799087e-08,
+          "probes": 21,
+          "hdr_check": "Directional increment above the separately verified ambient render",
+          "max_combined_hdr_error": 0.0011253127657931405
+        },
+        "live-layer": {
+          "image_sha256": "7607e7d01d6a6b4e579d80e8712788be1ec81f3c1336a64f3ce0b2826ba69f6b",
+          "max_checked_hdr_error": 0.00034906789667765725,
+          "max_normal_error": 0.0004602093369742155,
+          "max_depth_error": 9.16601515799087e-08,
+          "probes": 21,
+          "hdr_check": "Directional increment above the separately verified ambient render",
+          "max_combined_hdr_error": 0.0011253127657931405
+        },
+        "relocated": {
+          "image_sha256": "7607e7d01d6a6b4e579d80e8712788be1ec81f3c1336a64f3ce0b2826ba69f6b",
+          "max_checked_hdr_error": 0.00034906789667765725,
+          "max_normal_error": 0.0004602093369742155,
+          "max_depth_error": 9.16601515799087e-08,
+          "probes": 21,
+          "hdr_check": "Directional increment above the separately verified ambient render",
+          "max_combined_hdr_error": 0.0011253127657931405
+        }
+      }
+    },
+    {
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "lighting_path": "deferred",
+      "result_sha256": "c4046617d5a81c06b0f544900d3fcf060d7597d2ffca03f8a97f90ae4dfbc199",
+      "unchanged_displaced_terrain_regression_sha256": "5fbd67500253c0f6b19cce8ecd17c3ce00abd7f39573f2a770b37d74ab0f0e15",
+      "frames": {
+        "base": {
+          "image_sha256": "f7faa306c47dfdab40cb8bec72927412b6cf3aa79b78cefd06129648adf2e051",
+          "max_checked_hdr_error": 0.0028464799891098624,
+          "max_normal_error": 0.0003906249999999778,
+          "max_depth_error": 9.16601515799087e-08,
+          "probes": 21,
+          "hdr_check": "Ambient and emissive irradiance"
+        },
+        "old-base": {
+          "image_sha256": "f7faa306c47dfdab40cb8bec72927412b6cf3aa79b78cefd06129648adf2e051",
+          "max_checked_hdr_error": 0.0028464799891098624,
+          "max_normal_error": 0.0003906249999999778,
+          "max_depth_error": 9.16601515799087e-08,
+          "probes": 21,
+          "hdr_check": "Ambient and emissive irradiance"
+        },
+        "zero": {
+          "image_sha256": "f7faa306c47dfdab40cb8bec72927412b6cf3aa79b78cefd06129648adf2e051",
+          "max_checked_hdr_error": 0.0028464799891098624,
+          "max_normal_error": 0.0003906249999999778,
+          "max_depth_error": 9.16601515799087e-08,
+          "probes": 21,
+          "hdr_check": "Ambient and emissive irradiance"
+        },
+        "mask": {
+          "image_sha256": "37c3e54b4b227ce2b7b0652bc7985d6bcbf0f0a0251a45708b7073621105a8c7",
+          "max_checked_hdr_error": 0.0025579599119555374,
+          "max_normal_error": 0.001893535807676705,
+          "max_depth_error": 9.16601515799087e-08,
+          "probes": 21,
+          "hdr_check": "Ambient and emissive irradiance"
+        },
+        "slope": {
+          "image_sha256": "0df5b12755ba314cd349649ba07ed79b00ccbd938cbac2744eb6565e875d679e",
+          "max_checked_hdr_error": 0.003038897500905857,
+          "max_normal_error": 0.0009484905869742155,
+          "max_depth_error": 9.16601515799087e-08,
+          "probes": 21,
+          "hdr_check": "Ambient and emissive irradiance"
+        },
+        "lit": {
+          "image_sha256": "4591bed80739e4a7733fad931b382511e695da5bc95952ab9becaac02c918d91",
+          "max_checked_hdr_error": 0.001063167785072261,
+          "max_normal_error": 0.0009484905869742155,
+          "max_depth_error": 9.16601515799087e-08,
+          "probes": 21,
+          "hdr_check": "Directional increment above the separately verified ambient render",
+          "max_combined_hdr_error": 0.004102065285978118
+        },
+        "live-layer": {
+          "image_sha256": "4591bed80739e4a7733fad931b382511e695da5bc95952ab9becaac02c918d91",
+          "max_checked_hdr_error": 0.001063167785072261,
+          "max_normal_error": 0.0009484905869742155,
+          "max_depth_error": 9.16601515799087e-08,
+          "probes": 21,
+          "hdr_check": "Directional increment above the separately verified ambient render",
+          "max_combined_hdr_error": 0.004102065285978118
+        },
+        "relocated": {
+          "image_sha256": "4591bed80739e4a7733fad931b382511e695da5bc95952ab9becaac02c918d91",
+          "max_checked_hdr_error": 0.001063167785072261,
+          "max_normal_error": 0.0009484905869742155,
+          "max_depth_error": 9.16601515799087e-08,
+          "probes": 21,
+          "hdr_check": "Directional increment above the separately verified ambient render",
+          "max_combined_hdr_error": 0.004102065285978118
+        }
+      }
+    }
+  ],
+  "retained_harness_failures": [
+    {
+      "report_sha256": "02b82ccaab29b0daffc6d073aa12292c4ac86cbfdf9e5868b4e2491bf000993b",
+      "harness_sha256": "66591c3ddf6c0818561f8ed26ee33d4a29c482c2544bb0d61b9467fbf62173c5",
+      "cause": "The initial live capture omitted its required material revision. The revised request supplied revision two. The engine binary was unchanged."
+    },
+    {
+      "report_sha256": "97e18e6d71c2df85bb8bd49d4b0a320c38bfaf3af381544107c670b02825ab30",
+      "harness_sha256": "6ebb8de190bf8af5c6ddcb6ce9b5797a6954bd3e087ef4051c41658be3b407f6",
+      "cause": "The first deferred witness applied one error bound to the sum of ambient and direct light. The revised witness compares the ambient image and direct-light increment independently under the same bound, checks for unchanged depth and normals, and retains the measured combined error. The engine binary was unchanged."
+    }
+  ],
+  "limits": [
+    "Fixed overhead view of four displaced terrain tiles, including mixed lower and full detail levels.",
+    "Separate wetness and surface-mark qualifications cover their existing stages. The layer fixture uses a dry unmarked surface.",
+    "Representative layer performance measurements remain open."
+  ]
+}

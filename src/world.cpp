@@ -634,6 +634,7 @@ public:
             if(content.needs_surface_mark_masks)result["needs_surface_mark_masks"]=true;
             if(content.needs_mesh_lod)result["needs_mesh_lod"]=true;
             if(content.needs_mesh_lod_anchor)result["needs_mesh_lod_anchor"]=true;
+            if(content.needs_surface_layer)result["needs_surface_layer"]=true;
             if(content.needs_material_displacement)result["needs_material_displacement"]=true;
             if(content.needs_water_rain)result["needs_water_rain"]=true;
             if(content.needs_water_ripples)result["needs_water_ripples"]=true;
