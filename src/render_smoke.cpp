@@ -2049,9 +2049,11 @@ struct Context {
             .bloom=use_bloom ? bloom.radiance() : nullptr, .bloom_sampler=use_bloom ? bloom.sampler() : nullptr,
             .view=scene_debug_view, .reconstructed=use_reconstructed, .grade=use_grade,
             .exposure_state=exposure_rect[2] ? exposure_meter.state() : nullptr,
+            .aces2_sdr=scene_visible && scene_debug_view==SceneDebugView::color &&
+                scene->lighting.environment.tone_mapper==ToneMapper::aces2_sdr,
         }, *scene_output_framebuffer(0));
     }
-    void render_scene_output(std::uint32_t image_index, nvrhi::IBuffer* grade_buffer) {
+    void render_scene_output(std::uint32_t image_index, nvrhi::IBuffer* grade_buffer, nvrhi::IBuffer* aces2_upload) {
         if(!scene)return;
         const nvrhi::Viewport target(static_cast<float>(extent.width),static_cast<float>(extent.height));
         const auto& grade=scene->lighting.environment.output_grade;
@@ -2062,7 +2064,7 @@ struct Context {
             .bloom_intensity=scene->lighting.environment.bloom.intensity, .view=scene_debug_view,
             .srgb=!fxaa_enabled && ui_target().srgb,
             .tone_mapper=scene->lighting.environment.tone_mapper.value_or(ToneMapper::reinhard),
-        }, grade ? &*grade : nullptr, grade_buffer);
+        }, grade ? &*grade : nullptr, grade_buffer, aces2_upload);
     }
     void validate_viewmodel_snapshot() const {
         if(!scene->viewmodel)return;
@@ -2977,6 +2979,8 @@ struct Context {
         if(settings.post_effect)f.post_effect=texture(post_effect.radiance(),rs::Lifetime::shared,false);
         if(settings.spatial_aa)f.display_ldr=texture(spatial_aa.input(),rs::Lifetime::shared,false);
         if(settings.scene)if(auto* grade=scene_output.grade_buffer())f.output_grade=buffer(grade,rs::Lifetime::shared,false);
+        if(settings.scene)if(auto* table=scene_output.aces2_table())
+            f.aces2_table=buffer(table,rs::Lifetime::shared,scene_output.aces2_initialized());
         if(settings.auto_exposure) {
             f.exposure_state=buffer(exposure_meter.state(),rs::Lifetime::shared,settings.exposure_history_valid);
             if(capture_frame)f.exposure_readback=buffer(slots[settings.slot].exposure_readback,rs::Lifetime::slot,false);
@@ -3238,13 +3242,19 @@ struct Context {
                     if(binding.type==nvrhi::ResourceType::StructuredBuffer_UAV)identity(f.exposure_state,binding.resourceHandle);
                 }
             }
-            bool grade_bound=false,exposure_bound=false;
+            bool grade_bound=false,aces2_bound=false,exposure_bound=false;
             for(const auto& binding:scene_output.bindings()->getDesc()->bindings) {
                 if(binding.type==nvrhi::ResourceType::Texture_SRV)identity(output_resources.at(binding.slot),binding.resourceHandle);
                 if(binding.type==nvrhi::ResourceType::ConstantBuffer) {
-                    require(binding.slot==1 && !grade_bound,"Invalid scene output grade binding.");
-                    identity(f.output_grade,binding.resourceHandle);
-                    grade_bound=true;
+                    if(binding.slot==2) {
+                        require(!aces2_bound,"Duplicate ACES 2 SDR lookup binding.");
+                        identity(f.aces2_table,binding.resourceHandle);
+                        aces2_bound=true;
+                    } else {
+                        require(binding.slot==1 && !grade_bound,"Invalid scene output grade binding.");
+                        identity(f.output_grade,binding.resourceHandle);
+                        grade_bound=true;
+                    }
                 }
                 if(binding.type==nvrhi::ResourceType::StructuredBuffer_SRV) {
                     require(binding.slot==7 && !exposure_bound,"Invalid exposure output binding.");
@@ -3253,6 +3263,7 @@ struct Context {
                 }
             }
             require(grade_bound==(f.output_grade!=rs::none),"Scene output grade binding differs from its schedule.");
+            require(aces2_bound==(f.aces2_table!=rs::none),"ACES 2 SDR lookup binding differs from its schedule.");
             require(exposure_bound==plan.settings.auto_exposure,"Exposure output binding differs from its schedule.");
         }
         if(f.game_vertices!=rs::none)identity(f.game_vertices,game_ui.vertices());
@@ -3584,9 +3595,13 @@ struct Context {
                 bloom.record(*commands.Get(),scene->lighting.environment.bloom,hdr_effects::BloomStage::horizontal);break;
             case render_schedule::PassId::bloom_vertical:
                 bloom.record(*commands.Get(),scene->lighting.environment.bloom,hdr_effects::BloomStage::vertical);break;
-            case render_schedule::PassId::output:
-                render_scene_output(index,resources.output_grade!=render_schedule::none ? planned_buffer(resources.output_grade) : nullptr);
+            case render_schedule::PassId::output: {
+                const auto grade=resources.output_grade;
+                const auto table=resources.aces2_table;
+                auto* upload=table!=render_schedule::none && !plan.resource(table).initialized ? planned_buffer(table) : nullptr;
+                render_scene_output(index,grade!=render_schedule::none ? planned_buffer(grade) : nullptr,upload);
                 break;
+            }
             case render_schedule::PassId::spatial_aa:
                 spatial_aa.record(*commands.Get(),*game_ui.framebuffer(index));break;
             case render_schedule::PassId::game_ui:game_ui.record(*commands.Get(),ui_target(),index);break;
@@ -3697,6 +3712,7 @@ struct Context {
         }
         if(plan.frame.surface_mark_masks!=render_schedule::none && !plan.resource(plan.frame.surface_mark_masks).initialized)
             std::vector<std::uint8_t>{}.swap(surface_mark_array.pending_texels);
+        if(plan.frame.aces2_table!=render_schedule::none)scene_output.commit_aces2_table();
         for(auto* receipt:{&submitted_scene,&presented_scene,&slot_scene})if(*receipt)(*receipt)->submission_id=slot.submission;
         slot.scene.swap(slot_scene);diagnostics.scene_submitted.swap(submitted_scene);
         commit_history();

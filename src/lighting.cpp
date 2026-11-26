@@ -37,6 +37,7 @@ std::string_view tone_mapper_name(ToneMapper mapper) noexcept {
         case ToneMapper::reinhard: return "reinhard";
         case ToneMapper::agx: return "agx";
         case ToneMapper::pbr_neutral: return "pbr_neutral";
+        case ToneMapper::aces2_sdr: return "aces2_sdr";
     }
     return {};
 }

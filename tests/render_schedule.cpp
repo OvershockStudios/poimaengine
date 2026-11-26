@@ -449,6 +449,32 @@ void output_grade_contracts() {
         bad("grade payload has wrong size",[](auto& p){--p.frame.resources[p.frame.output_grade].bytes;});
     }
 }
+void aces2_table_contracts() {
+    for(bool initialized:{false,true}) {
+        auto settings=rich();
+        Fixture fixture(settings,1);
+        setup_bloom(fixture);
+        auto& f=fixture.f;
+        f.aces2_table=fixture.add(Kind::buffer,Lifetime::shared);
+        auto& table=f.resources[f.aces2_table];
+        table.region=Region::whole;
+        table.bytes=table.allocation_bytes=aces2_table_bytes;
+        table.supported=use_bit(Use::upload)|use_bit(Use::constant);
+        table.initialized=initialized;
+        const auto valid=fixture.plan();
+        valid.validate();
+        ++accepted;
+        auto bad=[&](const char* label,const auto& change){auto p=valid;change(p);rejects(label,[&]{p.validate();});};
+        bad("ACES 2 lookup read omitted",[](auto& p){erase_access(p,PassId::output,p.frame.aces2_table,Use::constant);});
+        bad("ACES 2 lookup used in game UI",[](auto& p){pass(p,PassId::game_ui).accesses.push_back({p.frame.aces2_table,Use::constant,false});});
+        bad("ACES 2 lookup has wrong size",[](auto& p){--p.frame.resources[p.frame.aces2_table].bytes;});
+        bad("ACES 2 lookup on diagnostic output",[](auto& p){p.settings.products_debug=true;});
+        if(initialized)
+            bad("warm ACES 2 lookup rewritten",[](auto& p){pass(p,PassId::output).accesses.push_back({p.frame.aces2_table,Use::upload,true});});
+        else
+            bad("cold ACES 2 lookup upload omitted",[](auto& p){erase_access(p,PassId::output,p.frame.aces2_table,Use::upload);});
+    }
+}
 void matrix(){
     for(bool scene:{false,true})for(bool editor:{false,true})for(bool capture:{false,true})for(bool ui:{false,true})
     for(bool overlay:{false,true})for(unsigned samples:{1u,4u})for(bool skin:{false,true})for(bool clustered:{false,true})for(bool sky:{false,true}){
@@ -2358,4 +2384,4 @@ void visibility_contracts() {
 }
 }
 
-int main(){try{matrix();faults();products();motion_contracts();reconstruction_contracts();deferred_contracts();deferred_color_contracts();viewmodel_contracts();ambient_occlusion_contracts();masked_shadow_contracts();environment_contracts();bloom_contracts();post_effect_contracts();output_grade_contracts();streamed_geometry_contracts();mutable_geometry_contracts();particle_sprite_contracts();surface_mark_contracts();screen_reflection_contracts();screen_diffuse_bounce_contracts();half_resolution_diffuse_contracts();height_fog_contracts();depth_of_field_contracts();composed_reconstruction_contracts();reconstructed_sprite_contracts();spatial_aa_contracts();auto_exposure_contracts();atmosphere_contracts();visibility_contracts();std::cout<<"Production render schedule: "<<accepted<<" valid variants, "<<rejected<<" rejected contract mutations.\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}
+int main(){try{matrix();faults();products();motion_contracts();reconstruction_contracts();deferred_contracts();deferred_color_contracts();viewmodel_contracts();ambient_occlusion_contracts();masked_shadow_contracts();environment_contracts();bloom_contracts();post_effect_contracts();output_grade_contracts();aces2_table_contracts();streamed_geometry_contracts();mutable_geometry_contracts();particle_sprite_contracts();surface_mark_contracts();screen_reflection_contracts();screen_diffuse_bounce_contracts();half_resolution_diffuse_contracts();height_fog_contracts();depth_of_field_contracts();composed_reconstruction_contracts();reconstructed_sprite_contracts();spatial_aa_contracts();auto_exposure_contracts();atmosphere_contracts();visibility_contracts();std::cout<<"Production render schedule: "<<accepted<<" valid variants, "<<rejected<<" rejected contract mutations.\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}

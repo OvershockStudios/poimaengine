@@ -146,6 +146,13 @@ void Schedule::validate(bool before_acquire) const {
             grade.bytes!=output_grade_bytes || grade.allocation_bytes!=output_grade_bytes)
             fail("invalid output grade constants");
     }
+    if(frame.aces2_table!=none) {
+        const auto& table=resource(frame.aces2_table);
+        if(!settings.scene || settings.products_debug || table.kind!=Kind::buffer ||
+            table.lifetime!=Lifetime::shared || table.region!=Region::whole ||
+            table.bytes!=aces2_table_bytes || table.allocation_bytes!=aces2_table_bytes)
+            fail("invalid ACES 2 SDR lookup");
+    }
     const bool surface_marks=frame.surface_marks!=none;
     if(surface_marks) {
         required(frame.surface_marks);
@@ -186,7 +193,7 @@ void Schedule::validate(bool before_acquire) const {
             frame.reconstructed,frame.dense_motion,frame.reactive,frame.dilated_depth,frame.dilated_motion,frame.reconstructed_depth,frame.shadow,frame.frame,frame.objects,frame.lights,
             frame.counts,frame.indices,frame.cluster_readback,frame.skin_errors,frame.skin_readback,frame.capture,frame.game_vertices,frame.game_indices,frame.overlay_vertices,
             frame.editor_vertices,frame.editor_indices,frame.viewmodel_frame,frame.viewmodel_objects,frame.viewmodel_counts,frame.viewmodel_indices,frame.viewmodel_readback,
-            frame.viewmodel_color,frame.viewmodel_depth,frame.viewmodel_resolved,frame.composite,frame.post_effect,frame.bloom,frame.bloom_scratch,frame.output_grade,
+            frame.viewmodel_color,frame.viewmodel_depth,frame.viewmodel_resolved,frame.composite,frame.post_effect,frame.bloom,frame.bloom_scratch,frame.output_grade,frame.aces2_table,
             frame.streamed_vertices,frame.streamed_indices,frame.sprite_instances,frame.surface_marks,frame.surface_mark_masks})disjoint(id);
         for(const auto& skin:frame.skins)for(auto id:{skin.source,skin.influences,skin.palette,skin.output})disjoint(id);
         for(const auto* list:{&frame.camera_draws,&frame.shadow_draws,&frame.viewmodel_draws})for(const auto& draw:*list) {
@@ -1047,6 +1054,14 @@ void Schedule::validate(bool before_acquire) const {
                 fail("display requires uploaded output grade constants");
             grade_applied=true;
         }
+        if(pass.id==PassId::output && frame.aces2_table!=none) {
+            const bool initialized=resource(frame.aces2_table).initialized;
+            const auto count=std::count_if(pass.accesses.begin(),pass.accesses.end(),
+                [&](const Access& access){return access.resource==frame.aces2_table;});
+            if(!has(frame.aces2_table,Use::constant) || has(frame.aces2_table,Use::upload)==initialized ||
+                count!=(initialized ? 1 : 2))
+                fail("display requires the initialized ACES 2 SDR lookup");
+        }
         if(pass.id==PassId::output && settings.auto_exposure) {
             if(!exposure_prepared || !has(frame.exposure_state,Use::storage_read) ||
                 std::count_if(pass.accesses.begin(),pass.accesses.end(),[&](const Access& a){return a.resource==frame.exposure_state;})!=1 ||
@@ -1076,7 +1091,8 @@ void Schedule::validate(bool before_acquire) const {
         if(pass.id==PassId::output && settings.bloom &&
             (bloom_stage!=3 || !has(frame.bloom,Use::sampled) || !has(display_radiance(frame,settings),Use::sampled)))fail("display requires filtered bloom and HDR radiance");
         if(pass.id==PassId::output && settings.spatial_aa) {
-            const auto accesses=2u+unsigned(settings.bloom)+2u*unsigned(frame.output_grade!=none)+unsigned(settings.auto_exposure);
+            const auto aces2_accesses=frame.aces2_table==none ? 0u : 1u+unsigned(!resource(frame.aces2_table).initialized);
+            const auto accesses=2u+unsigned(settings.bloom)+2u*unsigned(frame.output_grade!=none)+unsigned(settings.auto_exposure)+aces2_accesses;
             if(pass.accesses.size()!=accesses || !has(display_radiance(frame,settings),Use::sampled) ||
                 !has(frame.display_ldr,Use::color_overwrite))fail("invalid spatial anti-aliasing display producer");
         }
@@ -1142,6 +1158,10 @@ void Schedule::validate(bool before_acquire) const {
                 (pass.id!=PassId::output || (a.use!=Use::upload && a.use!=Use::constant) ||
                  a.initialize!=(a.use==Use::upload)))
                 fail("output grade constants used outside display upload and read");
+            if(a.resource==frame.aces2_table &&
+                (pass.id!=PassId::output || (a.use!=Use::upload && a.use!=Use::constant) ||
+                 a.initialize!=(a.use==Use::upload)))
+                fail("ACES 2 SDR lookup used outside its display upload and read");
             if(a.resource==frame.exposure_state &&
                 !(pass.id==PassId::auto_exposure && ((settings.exposure_history_valid && a.use==Use::storage_read && !a.initialize) ||
                     (a.use==Use::storage_write && a.initialize))) &&
@@ -1565,6 +1585,10 @@ Schedule build(FrameResources frame,Settings settings) {
         if(f.output_grade!=none) {
             add(output,f.output_grade,Use::upload,true);
             add(output,f.output_grade,Use::constant);
+        }
+        if(f.aces2_table!=none) {
+            if(!result.resource(f.aces2_table).initialized)add(output,f.aces2_table,Use::upload,true);
+            add(output,f.aces2_table,Use::constant);
         }
         if(settings.auto_exposure)add(output,f.exposure_state,Use::storage_read);
         if(settings.products_debug) {

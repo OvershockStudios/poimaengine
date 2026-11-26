@@ -46,6 +46,7 @@ struct WorldPackageContent {
     bool needs_water_rain=false;
     bool needs_output_grade=false;
     bool needs_tone_mapping=false;
+    bool needs_tone_mapping_aces2_sdr=false;
     bool needs_water_ripples=false;
     bool needs_water_wave_layers=false;
     bool needs_water_listener_audio=false;

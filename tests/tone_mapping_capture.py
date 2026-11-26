@@ -17,6 +17,17 @@ from project_post_effect_capture import (
 )
 
 MODES = ('reinhard', 'agx', 'pbr_neutral')
+ACES2 = 'aces2_sdr'
+
+
+def aces2_reference():
+    import PyOpenColorIO as ocio
+
+    check(ocio.__version__ == '2.5.2', 'Use the pinned OpenColorIO 2.5.2 oracle')
+    config = ocio.Config.CreateFromBuiltinConfig('cg-config-v4.0.0_aces-v2.0_ocio-v2.5')
+    output = ocio.DisplayViewTransform(
+        src='Linear Rec.709 (sRGB)', display='sRGB - Display', view='ACES 2.0 - SDR 100 nits (Rec.709)')
+    return config.getProcessor(output).getDefaultCPUProcessor()
 
 
 def transform(color, mode):
@@ -64,15 +75,29 @@ class ToneQualification(GradeQualification):
         self.report['test_sha256'] = sha256(path.read_bytes())
         self.report['oracle_helpers_sha256']['output_grade_capture.py'] = sha256(
             path.with_name('output_grade_capture.py').read_bytes())
+        self.modes = MODES + (ACES2,) if options.aces2 else MODES
+        self.aces2 = aces2_reference() if options.aces2 and not options.authoring_only else None
+        if self.aces2:
+            self.report['aces2_oracle'] = 'OpenColorIO 2.5.2, CG v4.0, SDR 100 nits Rec.709, sRGB'
 
-    def select(self, mode=None, color=SKY, exposure=1, graded=False):
-        value = fixture_environment(bloom=graded, exposure=exposure)
+    def expected(self, color, mode):
+        if mode == ACES2:
+            return tuple(round(255 * min(1., max(0., value)))
+                         for value in self.aces2.applyRGB([max(0., value) for value in color]))
+        return expected_rgb(color, mode)
+
+    def select(self, mode=None, color=SKY, exposure=1, graded=False, *, bloom=None, auto_exposure=False):
+        if bloom is None:
+            bloom = graded
+        value = fixture_environment(bloom=bloom, exposure=exposure)
         for name in ('zenith', 'horizon', 'ground'):
             value['sky'][name] = list(color)
         if mode is not None:
             value['tone_mapper'] = mode
         if graded:
             value['output_grade'] = GRADE
+        if auto_exposure:
+            value['auto_exposure'] = {'min_stops': 0, 'max_stops': 0}
         self.edit([component(2, 'LightingEnvironment', value)])
 
     def capture_tone(self, label, tone=None, **kwargs):
@@ -87,11 +112,13 @@ class ToneQualification(GradeQualification):
             ('world.lighting', {'revision': self.revision}),
         )
         schema = description['components']['LightingEnvironment']['properties']['tone_mapper']
-        check(schema['enum'] == list(MODES) and schema['default'] == 'reinhard'
+        accepted_schemas = [list(self.modes)] if self.options.aces2 else [list(MODES), [*MODES, ACES2]]
+        check(schema['enum'] in accepted_schemas and schema['default'] == 'reinhard'
               and 'tone_mapper' not in discover, (schema, discover))
-        self.select('agx')
+        mode = ACES2 if self.options.aces2 else 'agx'
+        self.select(mode)
         prior = self.world.read_bytes()
-        invalid_values = ('filmic', 'AgX', 1, False, None, {})
+        invalid_values = ('filmic', 'AgX', 'aces2', 'ACES2_SDR', 1, False, None, {})
         calls = [('world.transact', {'request_id': uuid.uuid4().hex, 'base_revision': self.revision,
                   'ops': [component(2, 'LightingEnvironment',
                                     {**fixture_environment(), 'tone_mapper': invalid})]})
@@ -99,8 +126,10 @@ class ToneQualification(GradeQualification):
         errors = self.rpc(*calls, expected_errors={index: -32602 for index in range(len(calls))})
         lighting, dependencies = self.rpc(('world.lighting', {'revision': self.revision}),
                                           ('world.dependencies', {}))
-        check(prior == self.world.read_bytes() and lighting['tone_mapper'] == 'agx'
-              and dependencies['needs_tone_mapping'] is True, 'Invalid selector changed the world')
+        check(prior == self.world.read_bytes() and lighting['tone_mapper'] == mode
+              and dependencies['needs_tone_mapping'] is True
+              and dependencies.get('needs_tone_mapping_aces2_sdr', False) == self.options.aces2,
+              'Invalid selector changed the world')
         self.report['checks']['invalid_selectors'] = errors
 
     def color(self):
@@ -123,11 +152,11 @@ class ToneQualification(GradeQualification):
                   ('white', (1., 1., 1.), 8), ('toe', (.0625, .03125, .015625), .75),
                   ('black', SKY, 0)]
         for tag, source, exposure in colors:
-            for mode in MODES[1:]:
+            for mode in self.modes[1:]:
                 label = f'{mode}-{tag}'
                 self.select(mode, source, exposure)
                 data, image = self.capture_tone(label, mode)
-                target = expected_rgb([value * exposure for value in source], mode)
+                target = self.expected([value * exposure for value in source], mode)
                 verify_image(image, [[target] * WIDTH] * HEIGHT, comparisons.setdefault(label, {}))
                 if tag == 'midtone':
                     check(data != baseline and self.probe_values(label) == raw, 'HDR changed or display did not')
@@ -148,16 +177,50 @@ class ToneQualification(GradeQualification):
             rows.append(row)
             wrong_rows.append(wrong_row)
         verify_image(image, rows, comparisons.setdefault('bloom-graded-agx', {}), wrong=wrong_rows)
+        if self.options.aces2:
+            self.aces2_color(comparisons)
+
+    def aces2_color(self, comparisons):
+        colors = [('red', (1., .03125, .015625), 8), ('green', (.015625, 1., .03125), 8),
+                  ('blue', (.03125, .015625, 1.), 8), ('skin', (.75, .375, .1875), 1),
+                  ('gray', (.1875,) * 3, 1), ('near-black', (.015625, .0078125, .00390625), 1)]
+        for tag, source, exposure in colors:
+            label = f'{ACES2}-{tag}'
+            self.select(ACES2, source, exposure)
+            _, image = self.capture_tone(label, ACES2)
+            target = self.expected([value * exposure for value in source], ACES2)
+            verify_image(image, [[target] * WIDTH] * HEIGHT, comparisons.setdefault(label, {}))
+
+        halo = bloom_grid(False)
+        for auto in (False, True):
+            for bloom in (False, True):
+                for graded in (False, True):
+                    if not (auto or bloom or graded):
+                        continue
+                    label = f'aces2-composed-auto-{int(auto)}-bloom-{int(bloom)}-grade-{int(graded)}'
+                    self.select(ACES2, exposure=1.375, graded=graded, bloom=bloom, auto_exposure=auto)
+                    _, image = self.capture_tone(label, ACES2, grade=GRADE if graded else None)
+                    rows = []
+                    for y in range(HEIGHT):
+                        row = []
+                        for x in range(WIDTH):
+                            glow = bilinear(halo, x, y) if bloom else (0.,) * 3
+                            exposed = [(base + added * BLOOM['intensity']) * 1.375
+                                       for base, added in zip(SKY, glow)]
+                            row.append(self.expected(grade_color(exposed) if graded else exposed, ACES2))
+                        rows.append(row)
+                    verify_image(image, rows, comparisons.setdefault(label, {}))
 
     def reconstruction_and_hud(self):
+        mode = ACES2 if self.options.aces2 else 'agx'
         for reconstruction in self.options.reconstruction:
             self.select()
             self.capture_tone(f'{reconstruction}-default', mode=reconstruction)
-            self.select('agx')
-            _, image = self.capture_tone(f'{reconstruction}-agx', 'agx', mode=reconstruction)
-            check(self.probe_values(f'{reconstruction}-default') == self.probe_values(f'{reconstruction}-agx'),
+            self.select(mode)
+            _, image = self.capture_tone(f'{reconstruction}-{mode}', mode, mode=reconstruction)
+            check(self.probe_values(f'{reconstruction}-default') == self.probe_values(f'{reconstruction}-{mode}'),
                   'FSR HDR changed')
-            expected = expected_rgb(SKY, 'agx')
+            expected = self.expected(SKY, mode)
             values = [image[HEIGHT*y//8][WIDTH*x//8] for x in (1, 3, 5, 7) for y in (1, 3, 5, 7)]
             error = max(difference(value, expected) for value in values)
             check(error <= 2, (values, expected))
@@ -165,38 +228,44 @@ class ToneQualification(GradeQualification):
         if self.options.check_ui:
             self.edit([ui_operation()])
             patches = []
-            for mode in MODES:
-                self.select(mode, exposure=0 if mode == 'pbr_neutral' else 1)
+            for mode in self.modes:
+                self.select(mode, exposure=0 if mode in ('pbr_neutral', ACES2) else 1)
                 _, image = self.capture_tone(f'hud-{mode}', mode, runtime=True)
                 patches.append([image[y][x] for y in range(24, 29) for x in range(25, 30)])
-            check(patches[0] == patches[1] == patches[2]
+            check(all(patch == patches[0] for patch in patches)
                   and all(difference(pixel, (84, 162, 219)) <= 2 for pixel in patches[0]),
                   'Tone mapping changed the authored HUD')
             self.report['checks']['hud_pixels_exact'] = len(patches[0])
 
     def export(self):
-        self.select('agx')
+        mode = ACES2 if self.options.aces2 else 'agx'
+        feature = 'tone_mapping_aces2_sdr' if self.options.aces2 else 'tone_mapping'
+        requirement = f'needs_{feature}'
+        self.select(mode)
         manifest = self.source / 'project.poimaproject'
         manifest.write_text(json.dumps({'format': 'poima.project', 'version': 1,
             'project_id': uuid.uuid4().hex, 'name': 'Tone mapping fixture', 'audio': False,
             'startup_splash': False, 'entry': {'world': self.world.name, 'camera': CAMERA,
                                                  'controller': CONTROLLER}}) + '\n', encoding='utf-8')
-        check(self.cli(self.binary, 'project', 'inspect', self.native(manifest))['needs_tone_mapping'],
+        check(self.cli(self.binary, 'project', 'inspect', self.native(manifest))[requirement],
               'Project did not retain the runtime requirement')
         runtime = self.options.runtime.resolve(strict=True)
         descriptor = json.loads((runtime / 'runtime.json').read_bytes())
-        check(descriptor['features']['tone_mapping'] is True, 'Installed runtime lacks tone mapping')
+        check(descriptor['features'][feature] is True, 'Installed runtime lacks the selected tone mapper')
         unsupported = self.run / 'Incompatible runtime'
         unsupported.mkdir()
         missing = deepcopy(descriptor)
-        del missing['features']['tone_mapping']
+        del missing['features'][feature]
+        if not self.options.aces2:
+            missing['features'].pop('tone_mapping_aces2_sdr', None)
         (unsupported / 'runtime.json').write_text(json.dumps(missing), encoding='utf-8')
         build = [self.binary, 'project', 'build', self.native(manifest)]
         refused = self.run / 'Unpublished'
         rejection = self.invoke_refusal([*build, '--output', self.native(refused),
                                          '--runtime', self.native(unsupported)])
+        label = 'ACES 2 SDR' if self.options.aces2 else 'Authored'
         check(not refused.exists() and [error['message'] for error in rejection['diagnostics']]
-              == ['Authored tone mapping requires a compatible Vulkan runtime.'], rejection)
+              == [f'{label} tone mapping requires a compatible Vulkan runtime.'], rejection)
         initial = self.run / 'Initial'
         payload = self.run / 'Relocated'
         self.cli(self.binary, 'project', 'build', self.native(manifest), '--output', self.native(initial),
@@ -210,7 +279,7 @@ class ToneQualification(GradeQualification):
             engine = payload / bundle['engine']['executable']
             world = payload / bundle['entry']['world']
             frozen = world.read_bytes()
-            check(self.cli(engine, 'game', 'inspect', self.native(game))['needs_tone_mapping'],
+            check(self.cli(engine, 'game', 'inspect', self.native(game))[requirement],
                   'Relocated game lost the required runtime feature')
             replay = self.run / 'Replay.json'
             replay.write_text('[{"ticks":1}]\n', encoding='utf-8')
@@ -219,11 +288,11 @@ class ToneQualification(GradeQualification):
                              '--replay', self.native(replay), '--capture', self.native(path),
                              '--width', WIDTH, '--height', HEIGHT, '--samples', 1, cwd=self.run)['play']
             self.require_validation()
-            check(not self.source.exists() and played['lighting']['tone_mapper'] == 'agx'
+            check(not self.source.exists() and played['lighting']['tone_mapper'] == mode
                   and played['tick'] == 1 and played['stop_reason'] == 'replay_complete'
                   and world.read_bytes() == frozen, played)
             _, image = self.image('relocated', path, played, 1)
-            target = expected_rgb(SKY, 'agx')
+            target = self.expected(SKY, mode)
             records = self.report['checks']['export'] = {'rejected': rejection, 'source_unavailable': True}
             verify_image(image, [[target] * WIDTH] * HEIGHT, records)
         finally:
@@ -262,6 +331,7 @@ def main():
     parser.add_argument('--require-validation', action='store_true')
     parser.add_argument('--windows-interop', action='store_true')
     parser.add_argument('--authoring-only', action='store_true')
+    parser.add_argument('--aces2', action='store_true', help='Compare ACES 2 SDR with OpenColorIO 2.5.2')
     parser.set_defaults(samples=1)
     ToneQualification(parser.parse_args()).run_checks()
 

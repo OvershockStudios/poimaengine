@@ -123,7 +123,7 @@ struct FrameResources {
     ResourceId viewmodel_resolved=none;
     ResourceId post_effect=none;
     ResourceId bloom=none,bloom_scratch=none;
-    ResourceId output_grade=none;
+    ResourceId output_grade=none,aces2_table=none;
     ResourceId streamed_vertices=none,streamed_indices=none;
     ResourceId sprite_instances=none,sprite_hdr=none,sprite_coverage=none;
     std::vector<ResourceId> sprite_textures;
@@ -196,6 +196,7 @@ inline constexpr std::uint32_t max_water_sheets=8,water_sheet_bytes=96;
 inline constexpr std::uint32_t bloom_extent(std::uint32_t size) {return size/4+(size%4!=0);}
 inline constexpr std::uint64_t bloom_budget_bytes=32u*1024u*1024u;
 inline constexpr std::uint64_t output_grade_bytes=544;
+inline constexpr std::uint64_t aces2_table_bytes=363*2*16;
 inline constexpr std::uint64_t auto_exposure_state_bytes=16;
 inline constexpr std::uint64_t spatial_aa_budget_bytes=64u*1024u*1024u;
 inline constexpr std::uint64_t stream_vertex_budget=4u*1024u*1024u;

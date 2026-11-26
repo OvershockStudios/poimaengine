@@ -1,8 +1,15 @@
 # Implementation status
 
-Updated 2026-11-25 for **0.0.461**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-25 for **0.0.462**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.462 adds the [ACES 2 SDR 100-nit display transform](HDR_COMPOSITION.md#choose-a-tone-mapper).
+Windows Vulkan checks on AMD and NVIDIA covered all eight combinations of
+bloom, grading and automatic exposure. Both adapters verified FSR Native
+AA, exact HUD pixels and relocated standalone playback. The default color
+capture matched its retained reference byte for byte. Ubuntu passed five
+focused suites. [Qualification evidence](evidence/m2-aces2-sdr-462.json)
 
 Version 0.0.461 [shares nearby samples during half-resolution diffuse resolve](DIFFUSE_BOUNCE.md#choose-a-resolution).
 Matched Vulkan fixtures preserved exact displayed pixels and HDR probes

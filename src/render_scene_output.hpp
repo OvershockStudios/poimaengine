@@ -26,6 +26,7 @@ struct Inputs {
     bool reconstructed;
     bool grade;
     nvrhi::IBuffer* exposure_state = nullptr;
+    bool aces2_sdr = false;
 };
 
 struct Draw {
@@ -46,7 +47,8 @@ public:
     // before removing images used by the pass.
     void prepare(nvrhi::IDevice& device, const Inputs& inputs, const nvrhi::IFramebuffer& destination);
     void record(nvrhi::ICommandList& commands, nvrhi::IFramebuffer& destination,
-                const Draw& draw, const OutputGrade* grade, nvrhi::IBuffer* grade_buffer) const;
+                const Draw& draw, const OutputGrade* grade, nvrhi::IBuffer* grade_buffer,
+                nvrhi::IBuffer* aces2_upload) const;
 
     void invalidate_bindings() noexcept { bindings_ = nullptr; }
     void detach_source() noexcept;
@@ -56,6 +58,9 @@ public:
 
     bool uses_bloom() const noexcept { return bloom_bound_; }
     nvrhi::IBuffer* grade_buffer() const noexcept { return grade_bound_ ? grade_buffer_.Get() : nullptr; }
+    nvrhi::IBuffer* aces2_table() const noexcept { return aces2_bound_ ? aces2_table_.Get() : nullptr; }
+    bool aces2_initialized() const noexcept { return aces2_initialized_; }
+    void commit_aces2_table() noexcept { aces2_initialized_ = true; }
     nvrhi::IBindingSet* bindings() const noexcept { return bindings_.Get(); }
 
 private:
@@ -65,7 +70,10 @@ private:
     bool reconstruction_bound_ = false;
     bool bloom_bound_ = false;
     bool grade_bound_ = false;
+    bool aces2_bound_ = false;
+    bool aces2_initialized_ = false;
     nvrhi::BufferHandle grade_buffer_;
+    nvrhi::BufferHandle aces2_table_;
     const nvrhi::ITexture* source_ = nullptr;
     const nvrhi::IBuffer* exposure_state_ = nullptr;
     nvrhi::GraphicsPipelineHandle pipeline_;

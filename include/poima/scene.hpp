@@ -83,7 +83,7 @@ struct OutputGrade {
     float input_max=4,strength=1;
     std::array<std::array<float,3>,output_grade_knot_count> knots{};
 };
-enum class ToneMapper : std::uint32_t { reinhard=0, agx=1, pbr_neutral=2 };
+enum class ToneMapper : std::uint32_t { reinhard=0, agx=1, pbr_neutral=2, aces2_sdr=3 };
 std::string_view tone_mapper_name(ToneMapper mapper) noexcept;
 struct ScreenReflections {
     float strength=0,max_distance_m=8,thickness_m=.1f;

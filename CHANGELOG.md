@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.462
+
+- Add the ACES 2 SDR 100-nit tone mapper alongside Reinhard, AgX and
+  PBR Neutral. [Choose a tone mapper](docs/HDR_COMPOSITION.md#choose-a-tone-mapper)
+
 ## 0.0.461
 
 - Reuse half-resolution diffuse-bounce samples across each 8×8 resolve group.

@@ -1,0 +1,302 @@
+{
+  "format": "poima.qualification-summary",
+  "version": 1,
+  "engine_checkpoint": "0.0.462",
+  "comparison_commit": "f7ad121e35e2ac268bd670857e6a7a9a97c21239",
+  "scope": "ACES 2 SDR 100-nit Rec.709 display transform on Windows Vulkan and standalone export.",
+  "reference": {
+    "opencolorio_version": "2.5.2",
+    "opencolorio_commit": "c52966a6677723d5bd2dbef0ccec3fed9cbc3790",
+    "config": "cg-config-v4.0.0_aces-v2.0_ocio-v2.5",
+    "source": "Linear Rec.709 (sRGB)",
+    "display": "sRGB - Display",
+    "view": "ACES 2.0 - SDR 100 nits (Rec.709)"
+  },
+  "source_sha256": {
+    "scripts/generate_aces2_sdr.py": "6a6442a9dd73cc0fb12eff57aedd4b6d631c9c4ee02f32e10b2e804f03626743",
+    "shaders/aces2_sdr.hlsli": "6e9c233e684c584233d1592ebaed1224418b9eeebf3117922924f95f92ad5ca9",
+    "shaders/scene_output.hlsl": "c72c94e6c47789adfa42ea414a651a8c45fa1b8147a7d763dd6233bec96c88fc",
+    "src/aces2_sdr_lookup.hpp": "017108176e2265d81b1988fbb4d741fed8cc1b14a77516f3deac77d0013a7aad",
+    "tests/tone_mapping_capture.py": "53ac1f12c9d492d25883070066c2837564b9e2a8d1517100674f05dc37ed4565",
+    "tests/render_schedule.cpp": "e70f4b5dbb6e575aafbcb06abf0a811fcac50d7f58db8ea4851618622b137357",
+    "THIRD_PARTY_NOTICES.md": "1d361fd9f1135aa751a1e3f34522abc2ceb79bf673146db4c4573ff2038011a3"
+  },
+  "build": {
+    "dxc": "libdxcompiler.so: 1.9(dev;4950-b106a961); libdxil.so: 1.9",
+    "regenerated_source_and_lookup_match": true,
+    "untouched_legacy_pixel_shaders": [
+      "scene_output_ao_ps.spv",
+      "scene_output_bloom_exposure_ps.spv",
+      "scene_output_bloom_ps.spv",
+      "scene_output_exposure_ps.spv",
+      "scene_output_grade_bloom_exposure_ps.spv",
+      "scene_output_grade_bloom_ps.spv",
+      "scene_output_grade_exposure_ps.spv",
+      "scene_output_grade_ps.spv",
+      "scene_output_products_bloom_ps.spv",
+      "scene_output_products_ps.spv",
+      "scene_output_ps.spv"
+    ],
+    "aces2_spirv_sha256_reproduced_after_source_relocation": {
+      "scene_output_aces2_ps.spv": "dda360054b7af25dd881657e18a247174b9d740dcbfc5acd40b6a2a1c6fba420",
+      "scene_output_grade_aces2_ps.spv": "7474c70c5703f0d3a6779cabd14fd9727f7d911c93140604856a58f7c3c66938",
+      "scene_output_bloom_aces2_ps.spv": "5ac668218ab4830287bf829db34e3273b34420c2cab5391177d8b67f9e9482e1",
+      "scene_output_grade_bloom_aces2_ps.spv": "b2095fd772b5453be434a42e8e9af05ad08b5d73678326a663806e325a717e32",
+      "scene_output_exposure_aces2_ps.spv": "c67f257fcc7a282e343ae42f55ff1597306a01780ae9909b12d1f5bf0fd1f66b",
+      "scene_output_grade_exposure_aces2_ps.spv": "4852ccf6a5bfe34eed8992ad12469632b2c092e926d839a54d7178ebb4f68fd1",
+      "scene_output_bloom_exposure_aces2_ps.spv": "506940e02f9ecd018728c20e75d00238818c257e3e240be4f563e5662d5e4db7",
+      "scene_output_grade_bloom_exposure_aces2_ps.spv": "a0227854b7fddf3eac1b83d21fe4659a081b53765101a6dea35ada4115b0e043"
+    },
+    "windows_installed_sha256": {
+      "bin/poima.exe": "624933bc1b084c4d139ee3e2046af817b771e1970b88230f5412c0bea2a65aa8",
+      "bin/poima_desktop.dll": "a5eb3cb88b9fb8bbbd1955635e6434dec8b96e1e82113088467d7d962ca13ea4",
+      "runtime.json": "bf571c10a1e6d5a1036d57b66bd031550aba7a09e4df27eb288db97f0a8bdd38",
+      "share/poima/THIRD_PARTY_NOTICES.md": "1d361fd9f1135aa751a1e3f34522abc2ceb79bf673146db4c4573ff2038011a3"
+    },
+    "ubuntu_passed_suites": [
+      "authoring_contract_identity",
+      "render_schedule_native",
+      "project_contract",
+      "lighting_contract",
+      "world_contract"
+    ],
+    "ubuntu_binary_sha256": "1f796ab6e70b2237278b0cc0d526c8b78c2727c91bd4fca478f938149e8baf4f",
+    "ubuntu_junit_sha256": "729469b0a38dcb34d952b343b8be4b826e93b4a7055074405d97974524d2ebe8"
+  },
+  "windows_vulkan": [
+    {
+      "gpu": "AMD Radeon(TM) Graphics",
+      "lighting_path": "forward",
+      "extent": [
+        321,
+        241
+      ],
+      "fixture_capture_count": 39,
+      "report_sha256": "9001fab07c4cbf45ce4983b68c01b1b43d2fd1437248ab91f1143ff523f99bc4",
+      "default_retained_reference_checkpoint": "0.0.454",
+      "default_and_explicit_capture_sha256": "ab4a3cee6ee092884cbca9217a2799f264e7891b88319ea283f89ed270ee2ff0",
+      "hdr_probes_preserved": true,
+      "cpu_oracle_rgb_byte_error": {
+        "aces2_sdr-midtone": {
+          "pixels": 77361,
+          "maximum_rgb_error": 0
+        },
+        "aces2_sdr-warm": {
+          "pixels": 77361,
+          "maximum_rgb_error": 0
+        },
+        "aces2_sdr-white": {
+          "pixels": 77361,
+          "maximum_rgb_error": 0
+        },
+        "aces2_sdr-toe": {
+          "pixels": 77361,
+          "maximum_rgb_error": 0
+        },
+        "aces2_sdr-black": {
+          "pixels": 77361,
+          "maximum_rgb_error": 0
+        },
+        "aces2_sdr-red": {
+          "pixels": 77361,
+          "maximum_rgb_error": 0
+        },
+        "aces2_sdr-green": {
+          "pixels": 77361,
+          "maximum_rgb_error": 0
+        },
+        "aces2_sdr-blue": {
+          "pixels": 77361,
+          "maximum_rgb_error": 0
+        },
+        "aces2_sdr-skin": {
+          "pixels": 77361,
+          "maximum_rgb_error": 1
+        },
+        "aces2_sdr-gray": {
+          "pixels": 77361,
+          "maximum_rgb_error": 0
+        },
+        "aces2_sdr-near-black": {
+          "pixels": 77361,
+          "maximum_rgb_error": 0
+        },
+        "aces2-composed-auto-0-bloom-0-grade-1": {
+          "pixels": 77361,
+          "maximum_rgb_error": 0
+        },
+        "aces2-composed-auto-0-bloom-1-grade-0": {
+          "pixels": 77361,
+          "maximum_rgb_error": 0
+        },
+        "aces2-composed-auto-0-bloom-1-grade-1": {
+          "pixels": 77361,
+          "maximum_rgb_error": 0
+        },
+        "aces2-composed-auto-1-bloom-0-grade-0": {
+          "pixels": 77361,
+          "maximum_rgb_error": 0
+        },
+        "aces2-composed-auto-1-bloom-0-grade-1": {
+          "pixels": 77361,
+          "maximum_rgb_error": 0
+        },
+        "aces2-composed-auto-1-bloom-1-grade-0": {
+          "pixels": 77361,
+          "maximum_rgb_error": 0
+        },
+        "aces2-composed-auto-1-bloom-1-grade-1": {
+          "pixels": 77361,
+          "maximum_rgb_error": 0
+        }
+      },
+      "fsr3_native": {
+        "maximum_rgb_error": 0,
+        "checked_pixels": 16
+      },
+      "hud_pixels_exact": 25,
+      "relocated": {
+        "source_unavailable": true,
+        "missing_aces2_feature_refused_before_export": true,
+        "max_rgb_error": 0,
+        "pixels": 77361,
+        "bsd_notice_sha256": "1d361fd9f1135aa751a1e3f34522abc2ceb79bf673146db4c4573ff2038011a3"
+      }
+    },
+    {
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "lighting_path": "deferred",
+      "extent": [
+        321,
+        241
+      ],
+      "fixture_capture_count": 39,
+      "report_sha256": "3d1c5998c0e572c7aa6cd192cb9efe4386bc7b0507fcbe36d52a53d36561a11d",
+      "default_retained_reference_checkpoint": "0.0.454",
+      "default_and_explicit_capture_sha256": "ab4a3cee6ee092884cbca9217a2799f264e7891b88319ea283f89ed270ee2ff0",
+      "hdr_probes_preserved": true,
+      "cpu_oracle_rgb_byte_error": {
+        "aces2_sdr-midtone": {
+          "pixels": 77361,
+          "maximum_rgb_error": 0
+        },
+        "aces2_sdr-warm": {
+          "pixels": 77361,
+          "maximum_rgb_error": 0
+        },
+        "aces2_sdr-white": {
+          "pixels": 77361,
+          "maximum_rgb_error": 0
+        },
+        "aces2_sdr-toe": {
+          "pixels": 77361,
+          "maximum_rgb_error": 0
+        },
+        "aces2_sdr-black": {
+          "pixels": 77361,
+          "maximum_rgb_error": 0
+        },
+        "aces2_sdr-red": {
+          "pixels": 77361,
+          "maximum_rgb_error": 1
+        },
+        "aces2_sdr-green": {
+          "pixels": 77361,
+          "maximum_rgb_error": 0
+        },
+        "aces2_sdr-blue": {
+          "pixels": 77361,
+          "maximum_rgb_error": 0
+        },
+        "aces2_sdr-skin": {
+          "pixels": 77361,
+          "maximum_rgb_error": 1
+        },
+        "aces2_sdr-gray": {
+          "pixels": 77361,
+          "maximum_rgb_error": 0
+        },
+        "aces2_sdr-near-black": {
+          "pixels": 77361,
+          "maximum_rgb_error": 0
+        },
+        "aces2-composed-auto-0-bloom-0-grade-1": {
+          "pixels": 77361,
+          "maximum_rgb_error": 0
+        },
+        "aces2-composed-auto-0-bloom-1-grade-0": {
+          "pixels": 77361,
+          "maximum_rgb_error": 1
+        },
+        "aces2-composed-auto-0-bloom-1-grade-1": {
+          "pixels": 77361,
+          "maximum_rgb_error": 0
+        },
+        "aces2-composed-auto-1-bloom-0-grade-0": {
+          "pixels": 77361,
+          "maximum_rgb_error": 0
+        },
+        "aces2-composed-auto-1-bloom-0-grade-1": {
+          "pixels": 77361,
+          "maximum_rgb_error": 0
+        },
+        "aces2-composed-auto-1-bloom-1-grade-0": {
+          "pixels": 77361,
+          "maximum_rgb_error": 1
+        },
+        "aces2-composed-auto-1-bloom-1-grade-1": {
+          "pixels": 77361,
+          "maximum_rgb_error": 0
+        }
+      },
+      "fsr3_native": {
+        "maximum_rgb_error": 0,
+        "checked_pixels": 16
+      },
+      "hud_pixels_exact": 25,
+      "relocated": {
+        "source_unavailable": true,
+        "missing_aces2_feature_refused_before_export": true,
+        "max_rgb_error": 0,
+        "pixels": 77361,
+        "bsd_notice_sha256": "1d361fd9f1135aa751a1e3f34522abc2ceb79bf673146db4c4573ff2038011a3"
+      }
+    }
+  ],
+  "saltgate": {
+    "scope": "Same authored exposure, reconstruction jitter, cameras and selected HDR probes across all four tone mappers.",
+    "extent": [
+      1280,
+      720
+    ],
+    "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "authored_exposure": 1.23,
+    "mode_capture_sha256": {
+      "reinhard": {
+        "454": "4adc14213dc0e8d196fc0cdcab59de7c0e427ba07ffcb8f4290f59c286ecacac",
+        "532": "aa3db78a2b3b448cfa8753af3241549233735590bc74553c938606ea36c82fb6",
+        "592": "fcb2621edbde2ec3b00b700aa9e9969ff267803161b91b15e713c8dee6cee3f7"
+      },
+      "agx": {
+        "454": "22fdedee8109b4569897b876ab3ee73e950cf3d39495f68e1c9b871a32dd069e",
+        "532": "04cee98951f6aec5fcf5e7207b035720448eb5e3a1e40941c3bd7fa85e61a592",
+        "592": "c3c3585be410014c5531045a99d9263a33b4bd0ee4e75cd767b31a86ef19460e"
+      },
+      "pbr_neutral": {
+        "454": "969178874fff86f3e1a4912bc4ab8aeb94131410fc2757a4911d980d0bd3d2c7",
+        "532": "4c00662e9383a4b3501af02c17305298e8903d80fdcf522d8e2cc1e565848a88",
+        "592": "9df3a7ec9b710fa298794a7003281062d8e0f8f84e58637eb40081ac526bd4b8"
+      },
+      "aces2_sdr": {
+        "454": "47a032ca894138aa5809c3fe929f6f4534a30722549e8c6fa362b88a664d5ff2",
+        "532": "85fda630e5037e74ad1ce0133afb842cbb268396dcb497aea61a0f87b8042814",
+        "592": "7755a11d6ff114fbcf1406dc97def0939ceff4ed9121a49461aa01d6d160d17a"
+      }
+    },
+    "report_sha256": "34bc6fc95bfd74408e93d6ac743fb7fa08ad36330353e403156263b04e7533c5"
+  },
+  "limits": [
+    "SDR readback fixtures and three visual comparison poses. Performance, HDR display output and editor UI qualification have separate scopes.",
+    "Shader reproducibility uses the same pinned DXC on the Ubuntu cross-build host."
+  ]
+}

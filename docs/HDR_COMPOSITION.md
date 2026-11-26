@@ -40,6 +40,7 @@ this environment component.
 | `reinhard` | Legacy component-wise `x / (1 + x)` mapping. Omission uses the same output. |
 | `agx` | Filmic contrast with a soft highlight shoulder and saturation roll-off, using the [three.js r180 AgX approximation](https://github.com/mrdoob/three.js/blob/r180/src/renderers/shaders/ShaderChunk/tonemapping_pars_fragment.glsl.js). |
 | `pbr_neutral` | Preserves product and material colors through most of the range, with strong highlights rolling toward white. [Khronos PBR Neutral specification](https://github.com/KhronosGroup/ToneMapping/tree/main/PBR_Neutral) |
+| `aces2_sdr` | ACES 2 SDR 100-nit Rec.709 output with D65 white, using the pinned OpenColorIO CG config. [ACES output presets](https://docs.acescentral.com/system-components/output-transforms/parameters/) |
 
 AgX here approximates an SDR display transform in linear Rec.709. Exact
 Blender/OpenColorIO color matching and HDR display output have separate
@@ -48,9 +49,19 @@ and the optional output grade. Native game UI and diagnostic views bypass it.
 
 The selector is case sensitive. Runtime sessions freeze the environment with
 the authored world revision. An explicitly selected value requires
-`features.tone_mapping` in the installed export runtime descriptor. Remove the
-field for legacy content compatibility. A runtime that lacks the feature
-refuses export before publishing a bundle.
+`features.tone_mapping` in the installed export runtime descriptor.
+`aces2_sdr` also requires `features.tone_mapping_aces2_sdr`. Remove the
+field for legacy content compatibility. A runtime that lacks a required
+feature refuses export before publishing a bundle.
+
+ACES 2 maps Poima's exposed linear Rec.709 through the ACES rendering
+transform into linear display Rec.709. The output pass then applies the usual
+sRGB encoding. The config and its hue and gamut tables are pinned to
+OpenColorIO 2.5.2, CG v4.0. The Vulkan renderer uploads the 11,616-byte lookup
+on the first accepted ACES 2 frame of each renderer context. The shader and
+tables are embedded in the runtime. Regenerate them using
+`scripts/generate_aces2_sdr.py` with the OpenColorIO 2.5.2 Python package.
+[OpenColorIO release](https://github.com/AcademySoftwareFoundation/OpenColorIO/releases/tag/v2.5.2)
 
 ## Adapt exposure between dark and bright areas
 
@@ -124,6 +135,13 @@ build/windows-runtime/bin/poima-auto-exposure-test.exe \
 The fixture compares the captured GPU state and pixel values against an
 independent meter, checks camera cuts and resize, and verifies the manual
 capture after disabling the effect. [Exposure results](evidence/m2-auto-exposure-400.json).
+
+Run `tests/tone_mapping_capture.py` with `--aces2` and the pinned
+OpenColorIO Python package to compare Windows Vulkan captures with
+the CPU display transform. The test covers color patches, bloom,
+grading and fixed-stop auto exposure. Pass `--runtime` for the relocated
+export check, `--reconstruction fsr3_native` for reconstruction, and
+`--check-ui` for the composed HUD. [ACES 2 results](evidence/m2-aces2-sdr-462.json)
 
 The Windows native engine, UI capture executable and desktop bridge build and link. Both the RTX 4070 Laptop GPU and AMD integrated GPU pass 174 scene captures across the HDR, lighting, sky and material suites. Eight additional integration groups cover UI at 1×/4× MSAA, standalone player parity and independent native Scene/Game viewport lifetimes on both GPUs. [Qualification evidence](evidence/m2-hdr-composition.json).
 

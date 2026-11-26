@@ -124,7 +124,8 @@ LightingEnvironment environment_value(const Json& value) {
         if(authored=="reinhard")result.tone_mapper=ToneMapper::reinhard;
         else if(authored=="agx")result.tone_mapper=ToneMapper::agx;
         else if(authored=="pbr_neutral")result.tone_mapper=ToneMapper::pbr_neutral;
-        else throw Error(-32602,"Tone mapper must be reinhard, agx or pbr_neutral.");
+        else if(authored=="aces2_sdr")result.tone_mapper=ToneMapper::aces2_sdr;
+        else throw Error(-32602,"Tone mapper must be reinhard, agx, pbr_neutral or aces2_sdr.");
     }
     if(value.contains("auto_exposure")) {
         const auto& authored=value.at("auto_exposure");

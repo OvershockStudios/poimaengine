@@ -397,6 +397,7 @@ Json project_summary(const Project& p) {
     if(p.content.needs_water_offshore)result["needs_water_offshore"]=true;
     if(p.content.needs_output_grade)result["needs_output_grade"]=true;
     if(p.content.needs_tone_mapping)result["needs_tone_mapping"]=true;
+    if(p.content.needs_tone_mapping_aces2_sdr)result["needs_tone_mapping_aces2_sdr"]=true;
     if(p.content.needs_auto_exposure)result["needs_auto_exposure"]=true;
     if(p.content.needs_atmosphere_sky)result["needs_atmosphere_sky"]=true;
     if(p.content.needs_orbital_atmosphere)result["needs_orbital_atmosphere"]=true;
@@ -492,6 +493,8 @@ void require_scene_feature_support(const WorldPackageContent& content, const Jso
         "Project output grading requires a compatible Vulkan runtime.");
     require(!content.needs_tone_mapping || runtime.at("features").value("tone_mapping", false),
         "Authored tone mapping requires a compatible Vulkan runtime.");
+    require(!content.needs_tone_mapping_aces2_sdr || runtime.at("features").value("tone_mapping_aces2_sdr", false),
+        "ACES 2 SDR tone mapping requires a compatible Vulkan runtime.");
     require(!content.needs_auto_exposure || runtime.at("features").value("auto_exposure", false),
         "Project auto exposure requires a compatible Vulkan runtime.");
     require(!content.needs_atmosphere_sky || runtime.at("features").value("atmosphere_sky", false),
@@ -616,10 +619,12 @@ Json runtime_spec(const std::string& bytes,std::string_view expected_version=bui
         "navigation","navigation_obstacles","asset_provenance","project_post_effects","water_regions","water_rain","audio_water_flow","water_sheet_aeration","water_impact_foam",
         "water_ripples","water_wave_layers","water_listener_audio","water_optics","water_refraction","water_caustics","water_shore_foam","water_terrain_fit","water_surface_swell","water_swell_variation","water_rough_reflection","water_solar_scattering","water_offshore","water_sprite_optics","snow_water_regions","scene_particles","scene_particle_sprites",
         "particle_collisions","particle_impact_bursts","particle_water_contact","particle_water_flow","water_buoyancy","water_currents","water_surface_wakes","water_body_displacement","water_storage","water_reservoirs","water_overflow","water_sheets","water_sun_shafts","collision_surfaces","surface_marks","surface_mark_masks","mesh_lod","output_grade","auto_exposure","atmosphere_sky","orbital_atmosphere","aerial_perspective","volumetric_clouds","cloud_shadows","screen_reflections","depth_of_field","foliage_motion",
-        "height_fog","physics_checkpoint","fsr3_upscaler","tone_mapping","screen_contact_shadows","screen_diffuse_bounce",
+        "height_fog","physics_checkpoint","fsr3_upscaler","tone_mapping","tone_mapping_aces2_sdr","screen_contact_shadows","screen_diffuse_bounce",
         "screen_diffuse_bounce_half_resolution"},
         {"simulation","renderer","audio","managed","editor"});
     for(const auto& feature:features)require(feature.is_boolean(),"Runtime feature flags must be Boolean.");
+    require(!features.value("tone_mapping_aces2_sdr",false) || (features.at("renderer")==true && features.value("tone_mapping",false)),
+        "Runtime ACES 2 SDR requires Vulkan tone mapping support.");
     require(!features.value("screen_contact_shadows",false) || features.at("renderer")==true,
         "Runtime screen contact shadows require renderer support.");
     require(!features.value("screen_diffuse_bounce",false) || features.at("renderer")==true,
@@ -720,6 +725,7 @@ struct VerifiedGame {
     fs::path manifest;
     bool needs_output_grade=false;
     bool needs_tone_mapping=false;
+    bool needs_tone_mapping_aces2_sdr=false;
     bool needs_auto_exposure=false;
     bool needs_atmosphere_sky=false;
     bool needs_orbital_atmosphere=false;
@@ -818,6 +824,7 @@ VerifiedGame verify_game(const std::string& filename,std::string_view expected_v
     result.definition.needs_collision_surfaces=content.needs_collision_surfaces;
     result.needs_output_grade=content.needs_output_grade;
     result.needs_tone_mapping=content.needs_tone_mapping;
+    result.needs_tone_mapping_aces2_sdr=content.needs_tone_mapping_aces2_sdr;
     result.needs_auto_exposure=content.needs_auto_exposure;
     result.needs_atmosphere_sky=content.needs_atmosphere_sky;
     result.needs_orbital_atmosphere=content.needs_orbital_atmosphere;
@@ -1308,6 +1315,7 @@ Reply inspect_game(const std::string& manifest,const std::string& expected_bundl
         if(game.definition.needs_collision_surfaces)result["needs_collision_surfaces"]=true;
         if(game.needs_output_grade)result["needs_output_grade"]=true;
         if(game.needs_tone_mapping)result["needs_tone_mapping"]=true;
+        if(game.needs_tone_mapping_aces2_sdr)result["needs_tone_mapping_aces2_sdr"]=true;
         if(game.needs_auto_exposure)result["needs_auto_exposure"]=true;
         if(game.needs_atmosphere_sky)result["needs_atmosphere_sky"]=true;
         if(game.needs_orbital_atmosphere)result["needs_orbital_atmosphere"]=true;

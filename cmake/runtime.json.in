@@ -58,6 +58,7 @@
     "project_post_effects": @POIMA_RUNTIME_RENDER_SMOKE@,
     "output_grade": @POIMA_RUNTIME_RENDER_SMOKE@,
     "tone_mapping": @POIMA_RUNTIME_RENDER_SMOKE@,
+    "tone_mapping_aces2_sdr": @POIMA_RUNTIME_RENDER_SMOKE@,
     "screen_reflections": @POIMA_RUNTIME_RENDER_SMOKE@,
     "screen_contact_shadows": @POIMA_RUNTIME_RENDER_SMOKE@,
     "screen_diffuse_bounce": @POIMA_RUNTIME_RENDER_SMOKE@,

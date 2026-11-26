@@ -652,6 +652,7 @@ public:
             if(content.needs_physics_checkpoint)result["needs_physics_checkpoint"]=true;
             if(content.needs_output_grade)result["needs_output_grade"]=true;
             if(content.needs_tone_mapping)result["needs_tone_mapping"]=true;
+            if(content.needs_tone_mapping_aces2_sdr)result["needs_tone_mapping_aces2_sdr"]=true;
             if(content.needs_auto_exposure)result["needs_auto_exposure"]=true;
             if(content.needs_atmosphere_sky)result["needs_atmosphere_sky"]=true;
             if(content.needs_orbital_atmosphere)result["needs_orbital_atmosphere"]=true;

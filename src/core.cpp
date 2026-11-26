@@ -126,6 +126,7 @@ Reply capabilities() {
         ",\"fsr3_upscaler\":" + boolean(POIMA_FSR3_UPSCALER != 0 && POIMA_RENDER_SMOKE != 0) +
         ",\"auto_exposure\":" + boolean(POIMA_RENDER_SMOKE != 0) +
         ",\"tone_mapping\":" + boolean(POIMA_RENDER_SMOKE != 0) +
+        ",\"tone_mapping_aces2_sdr\":" + boolean(POIMA_RENDER_SMOKE != 0) +
         ",\"screen_contact_shadows\":" + boolean(POIMA_RENDER_SMOKE != 0) +
         ",\"screen_diffuse_bounce\":" + boolean(POIMA_RENDER_SMOKE != 0) +
         ",\"screen_diffuse_bounce_half_resolution\":" + boolean(POIMA_RENDER_SMOKE != 0) +

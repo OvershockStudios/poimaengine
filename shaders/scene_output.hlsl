@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 // One display transform for resolved scene-linear radiance. UI is drawn later.
+#if POIMA_ACES2_SDR
+#include "aces2_sdr.hlsli"
+#else
 #include "tone_mapping.hlsli"
+#endif
 Texture2D<float4> scene_radiance : register(t0);
 #if POIMA_SCENE_PRODUCTS
 Texture2D<float> scene_depth : register(t1);
@@ -107,6 +111,10 @@ float4 pixel_main(float4 position : SV_Position) : SV_Target0 {
 #else
     const float3 color=exposed;
 #endif
+#if POIMA_ACES2_SDR
+    const float3 mapped = poima_aces2_transform(float4(max(color, 0.), 1.)).rgb;
+#else
     const float3 mapped = tone_map(color, (uint)output.source_extent.w);
+#endif
     return float4(output.attachment_srgb>.5 ? mapped : linear_to_srgb(mapped),1);
 }
