@@ -1,8 +1,15 @@
 # Implementation status
 
-Updated 2026-11-26 for **0.0.472**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-26 for **0.0.473**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.473 adds optional [geometric specular antialiasing](MATERIAL_AUTHORING.md#reduce-shimmer-on-curved-glossy-surfaces).
+AMD forward and NVIDIA deferred match an independent GGX reference on the
+authored normal field. At the measured highlight pixel, brightness swings
+fall by about 85% across four subpixel camera offsets. Flat-normal controls,
+depth and shading normals match exactly. Both adapters cover FSR Native AA
+and relocated standalone export. [Qualification results](evidence/m2-geometric-specular-aa-473.json)
 
 Version 0.0.472 shares texture bindings across independently authored materials.
 In a 1,024-plant fixture, AMD forward and NVIDIA deferred reduce camera draw

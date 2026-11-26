@@ -313,6 +313,8 @@ Json lighting_json(const SceneLighting& lighting) {
     }
     Json result={{"preview_fallback",lighting.preview},{"lights",lights},{"ambient",lighting.environment.ambient},{"exposure",lighting.environment.exposure},{"shadow_resolution",lighting.environment.shadow_resolution},{"shadow_filter",shadow_filter_name(lighting.environment.shadow_filter)},{"shadow_views",shadow_count},{"shadow_bytes",shadow_count*lighting.environment.shadow_resolution*lighting.environment.shadow_resolution*4},
         {"sky",sky_json(sky)},{"sky_sun",sun}};
+    if(lighting.environment.geometric_specular_aa>0)
+        result["geometric_specular_aa"]=lighting.environment.geometric_specular_aa;
     if(lighting.solar_lighting)result["solar_lighting"]=solar_lighting_json(*lighting.solar_lighting);
     if(lighting.environment.atmosphere) {
         const auto& profile=*lighting.environment.atmosphere;

@@ -60,9 +60,38 @@ Runtime creation freezes the resolved image references and factors. Ordinary aut
 
 The glTF importer retains supplied TANGENT values after validating unit length, perpendicularity to the normal and handedness +/-1. When UV0 exists but tangents do not, it generates tangent frames using the pinned upstream MikkTSpace implementation, then reindexes complete attributes. Mirrored UV seams split vertices where tangent direction or handedness differ. Seam expansion counts against the existing vertex/package limits and can change cooked vertex counts. The algorithm uses additional temporary memory; it is not covered by the cgltf parser's allocation budget.
 
-The shader transforms tangent vectors with the model matrix, normals with the inverse transpose, re-orthogonalizes the tangent, reconstructs the bitangent using handedness, applies normal scale to sampled X/Y and normalizes the result. Back faces reverse the resulting shading normal. Normal images use glTF's tangent-space convention; no automatic DirectX-style green-channel inversion is performed. Mips average encoded linear normal components and normalize during shading. Variance-aware specular antialiasing is not implemented.
+The shader transforms tangent vectors with the model matrix, normals with the inverse transpose, re-orthogonalizes the tangent, reconstructs the bitangent using handedness, applies normal scale to sampled X/Y and normalizes the result. Back faces reverse the resulting shading normal. Normal images use glTF's tangent-space convention; no automatic DirectX-style green-channel inversion is performed. Mips average encoded linear normal components and normalize during shading. Separate normal-map variance filtering is planned.
 
 Default opaque static models cook as `POIMAM03`, with 48-byte vertices (position, normal, UV0, tangent XYZW), five texture slots, UV availability and normal scale. Animated opaque models use version 4; nondefault [alpha settings](MATERIAL_ALPHA.md) use version 5. Version 1/2 packages remain readable. They lack tangent data, so applying a normal override to them requires reimport; regular version-2 texture maps still render. New imports receive new hashes. The loader validates tangent frames, image uses and normal scale in addition to earlier checks. A missing normal/occlusion source map receives strength 1 for future overrides, including correction of the unused zero occlusion default in older packages.
+
+## Reduce shimmer on curved glossy surfaces
+
+Set `geometric_specular_aa` on the scene's `LightingEnvironment`. The strength
+is a number from 0 to 1. Omission and zero select the original material
+response. Start with 1 for shiny curved meshes and compare at the intended
+render resolution. Keep the rest of the environment component when editing it.
+
+```json
+{
+  "ambient": [0.03, 0.035, 0.045],
+  "exposure": 1,
+  "geometric_specular_aa": 1
+}
+```
+
+The renderer measures normalized mesh normals across the pixel quad, after
+object and vertex deformation. It uses their squared variation to widen the
+GGX specular lobe, capped before applying the authored strength. Flat normals
+retain the material's original roughness. Forward lighting and the deferred
+G-buffer consume the same filtered roughness. The filter runs before
+reconstruction. The variance estimate uses mesh normals. Normal-map mips
+still average encoded samples. [Tokuyoshi and Kaplanyan, projected-space NDF filtering](https://jcgt.org/published/0010/02/02/)
+
+Use the `LightingEnvironment` component from `world.describe` to discover the
+setting. Positive strength appears in capture lighting receipts and
+`world.dependencies` reports `needs_geometric_specular_aa`. Restart a runtime
+session to adopt an authored change. Export requires a Vulkan runtime with
+`features.geometric_specular_aa`. [Qualification results](evidence/m2-geometric-specular-aa-473.json)
 
 ## Example
 

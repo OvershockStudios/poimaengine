@@ -384,6 +384,7 @@ Json project_summary(const Project& p) {
     if(p.content.needs_surface_layer)result["needs_surface_layer"]=true;
     if(p.content.needs_surface_layer_triplanar)result["needs_surface_layer_triplanar"]=true;
     if(p.content.needs_diffuse_transmission)result["needs_diffuse_transmission"]=true;
+    if(p.content.needs_geometric_specular_aa)result["needs_geometric_specular_aa"]=true;
     if(p.content.needs_alpha_coverage_images)result["needs_alpha_coverage_images"]=true;
     if(p.content.needs_material_displacement)result["needs_material_displacement"]=true;
     if(p.content.needs_water_rain)result["needs_water_rain"]=true;
@@ -617,6 +618,8 @@ void require_scene_feature_support(const WorldPackageContent& content, const Jso
         "Project triplanar surface layers require a compatible Vulkan runtime.");
     require(!content.needs_diffuse_transmission || runtime.at("features").value("diffuse_transmission",false),
         "Project diffuse transmission requires a compatible Vulkan runtime.");
+    require(!content.needs_geometric_specular_aa || runtime.at("features").value("geometric_specular_aa",false),
+        "Project geometric specular antialiasing requires a compatible Vulkan runtime.");
     require(!content.needs_alpha_coverage_images || runtime.at("features").value("alpha_coverage_images",false),
         "Project coverage-adjusted images require a compatible image decoder.");
     require(!content.needs_material_displacement || runtime.at("features").value("material_displacement",false),
@@ -642,7 +645,7 @@ Json runtime_spec(const std::string& bytes,std::string_view expected_version=bui
         "particle_collisions","particle_impact_bursts","particle_water_contact","particle_water_flow","water_buoyancy","water_currents","water_surface_wakes","water_body_displacement","water_storage","water_reservoirs","water_overflow","water_sheets","water_sun_shafts","collision_surfaces","surface_marks","surface_mark_masks","mesh_lod","material_displacement","output_grade","auto_exposure","atmosphere_sky","orbital_atmosphere","aerial_perspective","volumetric_clouds","cloud_shadows","screen_reflections","depth_of_field","foliage_motion",
         "height_fog","physics_checkpoint","fsr3_upscaler","tone_mapping","tone_mapping_aces2_sdr","screen_contact_shadows","screen_diffuse_bounce",
         "screen_diffuse_bounce_half_resolution","mesh_lod_anchor","surface_layer","surface_layer_triplanar","diffuse_transmission",
-        "alpha_coverage_images"},
+        "alpha_coverage_images","geometric_specular_aa"},
         {"simulation","renderer","audio","managed","editor"});
     for(const auto& feature:features)require(feature.is_boolean(),"Runtime feature flags must be Boolean.");
     require(!features.value("surface_layer",false) || features.at("renderer")==true,
@@ -651,6 +654,8 @@ Json runtime_spec(const std::string& bytes,std::string_view expected_version=bui
         "Runtime triplanar projection requires Vulkan surface layer support.");
     require(!features.value("diffuse_transmission",false) || features.at("renderer")==true,
         "Runtime diffuse transmission requires Vulkan renderer support.");
+    require(!features.value("geometric_specular_aa",false) || features.at("renderer")==true,
+        "Runtime geometric specular antialiasing requires Vulkan renderer support.");
     require(!features.value("mesh_lod_anchor",false) || (features.at("renderer")==true && features.value("mesh_lod",false)),
         "Runtime mesh LOD anchors require Vulkan mesh LOD support.");
     require(!features.value("tone_mapping_aces2_sdr",false) || (features.at("renderer")==true && features.value("tone_mapping",false)),
@@ -781,6 +786,7 @@ struct VerifiedGame {
     bool needs_screen_reflections=false;
     bool needs_screen_contact_shadows=false;
     bool needs_screen_diffuse_bounce=false;
+    bool needs_geometric_specular_aa=false;
     bool needs_screen_diffuse_bounce_half_resolution=false;
     bool needs_depth_of_field=false;
     bool needs_foliage_motion=false;
@@ -879,6 +885,7 @@ VerifiedGame verify_game(const std::string& filename,std::string_view expected_v
     result.needs_screen_reflections=content.needs_screen_reflections;
     result.needs_screen_contact_shadows=content.needs_screen_contact_shadows;
     result.needs_screen_diffuse_bounce=content.needs_screen_diffuse_bounce;
+    result.needs_geometric_specular_aa=content.needs_geometric_specular_aa;
     result.needs_screen_diffuse_bounce_half_resolution=content.needs_screen_diffuse_bounce_half_resolution;
     result.needs_depth_of_field=content.needs_depth_of_field;
     result.needs_foliage_motion=content.needs_foliage_motion;
@@ -1371,6 +1378,7 @@ Reply inspect_game(const std::string& manifest,const std::string& expected_bundl
         if(game.needs_screen_reflections)result["needs_screen_reflections"]=true;
         if(game.needs_screen_contact_shadows)result["needs_screen_contact_shadows"]=true;
         if(game.needs_screen_diffuse_bounce)result["needs_screen_diffuse_bounce"]=true;
+        if(game.needs_geometric_specular_aa)result["needs_geometric_specular_aa"]=true;
         if(game.needs_screen_diffuse_bounce_half_resolution)result["needs_screen_diffuse_bounce_half_resolution"]=true;
         if(game.needs_depth_of_field)result["needs_depth_of_field"]=true;
         if(game.needs_foliage_motion)result["needs_foliage_motion"]=true;

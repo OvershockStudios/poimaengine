@@ -174,6 +174,7 @@ struct LightingEnvironment {
     std::optional<DepthOfField> depth_of_field;
     std::optional<AutoExposureSettings> auto_exposure;
     std::optional<AtmosphereSettings> atmosphere;
+    float geometric_specular_aa=0;
 };
 struct SceneLight { std::string entity_id;Light light;std::array<double,3> position{},direction{0,0,-1}; };
 inline constexpr std::uint64_t max_solar_world_milliseconds = 315359999999999ULL;

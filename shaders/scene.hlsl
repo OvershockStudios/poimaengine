@@ -274,6 +274,17 @@ SceneSurface evaluate_material(VertexOutput input,bool front) {
                 projection,triplanar,input.uv,uv_dx,uv_dy);
         apply_surface_marks(material,input.world_position,position_dx,position_dy,draw.history.z,draw.history.w);
     }
+    // Section 5.5 of Tokuyoshi and Kaplanyan (JCGT 2021).
+    // Measure mesh normals in the screen-space quad before alpha discard.
+    [branch] if(material_filtering.x>0) {
+        const float3 normal_dx=ddx_fine(unperturbed_normal),normal_dy=ddy_fine(unperturbed_normal);
+        const float variance=(dot(normal_dx,normal_dx)+dot(normal_dy,normal_dy)) * (1.0/3.14159265359);
+        if(!material.legacy && isfinite(variance) && variance>0) {
+            const float alpha=material.roughness*material.roughness;
+            const float filtered=saturate(alpha*alpha+material_filtering.x*min(variance,0.18));
+            material.roughness=sqrt(sqrt(filtered));
+        }
+    }
     return material;
 }
 

@@ -637,6 +637,7 @@ public:
             if(content.needs_surface_layer)result["needs_surface_layer"]=true;
             if(content.needs_surface_layer_triplanar)result["needs_surface_layer_triplanar"]=true;
             if(content.needs_diffuse_transmission)result["needs_diffuse_transmission"]=true;
+            if(content.needs_geometric_specular_aa)result["needs_geometric_specular_aa"]=true;
             if(content.needs_alpha_coverage_images)result["needs_alpha_coverage_images"]=true;
             if(content.needs_material_displacement)result["needs_material_displacement"]=true;
             if(content.needs_water_rain)result["needs_water_rain"]=true;

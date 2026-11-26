@@ -151,8 +151,9 @@ struct FrameConstants {
     std::array<float,4> water_reflection{};
     std::array<float,4> water_sun_shafts{};
     std::array<float,4> screen_contact_shadows{};
+    std::array<float,4> material_filtering{};
 };
-static_assert(sizeof(GpuShadow)==80 && sizeof(FrameConstants)==1968);
+static_assert(sizeof(GpuShadow)==80 && sizeof(FrameConstants)==1984);
 static_assert(offsetof(FrameConstants,water_ripple_shape)==1600 && offsetof(FrameConstants,water_ripple_motion)==1616 &&
     offsetof(FrameConstants,water_wave_shapes)==1632 && offsetof(FrameConstants,cloud_shadow_geometry)==1680 &&
     offsetof(FrameConstants,cloud_shadow_controls)==1696 && offsetof(FrameConstants,water_caustic_origin_size)==1712 &&
@@ -160,7 +161,8 @@ static_assert(offsetof(FrameConstants,water_ripple_shape)==1600 && offsetof(Fram
     offsetof(FrameConstants,water_shore_foam)==1760 && offsetof(FrameConstants,sprite_water)==1776 &&
     offsetof(FrameConstants,water_offshore)==1824 && offsetof(FrameConstants,water_offshore_swell)==1840 &&
     offsetof(FrameConstants,water_swell_variation)==1904 && offsetof(FrameConstants,water_reflection)==1920 &&
-    offsetof(FrameConstants,water_sun_shafts)==1936 && offsetof(FrameConstants,screen_contact_shadows)==1952);
+    offsetof(FrameConstants,water_sun_shafts)==1936 && offsetof(FrameConstants,screen_contact_shadows)==1952 &&
+    offsetof(FrameConstants,material_filtering)==1968);
 struct SpriteInstance {
     std::array<float,4> center_and_size,linear_rgba,fade_and_reserved;
     std::array<std::uint32_t,4> texel_rect;
@@ -2216,6 +2218,10 @@ struct Context {
         bindings=mesh_bindings(nullptr,nullptr);
         for(std::size_t k=0;k<3;++k)frame_constants.ambient_exposure[k]=lighting.environment.ambient[k];
         frame_constants.ambient_exposure[3]=lighting.environment.exposure;
+        const float specular_aa=lighting.environment.geometric_specular_aa;
+        require(std::isfinite(specular_aa) && specular_aa>=0 && specular_aa<=1,
+            "Geometric specular antialiasing strength must be in [0,1].");
+        frame_constants.material_filtering[0]=specular_aa;
         frame_constants.light_count[0]=static_cast<std::uint32_t>(lighting.lights.size());
         frame_constants.light_count[1]=lighting.environment.shadow_resolution;
         // Reserved scalar retains its original offset in the shared frame layout.

@@ -1,0 +1,218 @@
+{
+  "format": "poima.geometric-specular-aa-qualification.v1",
+  "version": "0.0.473",
+  "status": "pass",
+  "source_base": "a07e879bae8a81d617266fe7e1dfeef031b58792",
+  "source_sha256": {
+    "CMakeLists.txt": "21944b167df82c472ac53a9de57530d684d086bd4491d4deff864d52c6a6d365",
+    "cmake/runtime.json.in": "d51105b1ff7c8a7db81981bae960c23af4671181926764bc6686a6002950409e",
+    "include/poima/scene.hpp": "53e18ddf9e646536bda9c73abe615c6cf4b0d65c436f918e96f61a2352a38170",
+    "include/poima/world.hpp": "0539a88167b35ec2c3bcaa1962574691c9a04dd68b17f5b105b684f71bf825e9",
+    "shaders/scene.hlsl": "c622c8b22497324707c2335282233dda7142c821d628743e8ad61cb1124b46b0",
+    "shaders/scene_frame.hlsli": "4dc45f0054ef36340372a9b7df2cf4ed1486d852f68adca78034a37807fd6d8e",
+    "src/core.cpp": "08a1a3ac3e7ce2d7d5c3c50a8611e076e88c5901b649b86ec5bd8a3972ddaef4",
+    "src/project.cpp": "50dd5b8e73720d9eff072684bf7c9fdfc4a4ab571bf728f5ec120014d1cc71a5",
+    "src/render_smoke.cpp": "bcb535e312c784e0e2921ea3e016d6f6ac5dce2d74c4ab73fd0bd0037c1e3795",
+    "src/world.cpp": "c3b4c1aaaf93ca0c02fddea34e31701bd7cee0a3f3e8a0f8f29039e6c739b1fa",
+    "src/world_content.cpp": "a0383f4c37d5b359127c7550f7a5a24e3c116eb6d323f82c62361b84a75953fa",
+    "src/world_document.cpp": "4fc5726058a08c14efbcccda0230b023771cfed14eaa18bf2b991ac0b367473b",
+    "src/world_presentation_json.cpp": "72b4eb27ed1130bf969c51d30dd9bcc46e71d623f2a41e3fe3de540817550ef1",
+    "src/world_schema.cpp": "5a3c0f9c681cd57eddf8c6c64d81c27e28dda97f8f74334be16f1047f29f4e3e",
+    "tests/asset_references_contract.py": "804d735fa4acf1e79a6d17a50b4dd5bb4c4c8e70816efcd9b3f3e983e7a487af",
+    "tests/contact_shadow_contract.py": "7a6118219ccfc4ef9d9c3a72379bafa695bf957e22877da4814cb2efe1f5b057",
+    "tests/geometric_specular_aa_capture.py": "29081940018a7caaf87600dd17931db489aadb5a3186c9633e5215e82a691f31",
+    "tests/snow_compaction_contract.py": "dab277f7aa0ef2a3cafe65506ac0e2365a0148fa79a1bf3488b187de4f384026",
+    "tests/terrain_surface_layer_capture.py": "247655e04f7e5ba461fece4c2dac42c610b42f68f7830812d21df7ed504e0eef",
+    "tests/texture_fixture.py": "b9b157237cdf3a493278e4551c1e635c41c43cd4eeea59c0d6ca34acc0828fb0",
+    "tests/world_terrain_contract.py": "08bcf8c5c65fed1157a52734cc5c32ec1c866e3825ca775523ae0be70ac90322"
+  },
+  "windows_installed_sha256": {
+    "bin/poima.exe": "29095b911efa98d8850364c6fd0c6afad4496096dd75bfb507ba5ed08892d4d8",
+    "bin/poima_desktop.dll": "555a178b026dadf59bb821da573c7de303f49e8071c106ef1b7c949bf01ae2ea",
+    "runtime.json": "3643a573dd79ead6c2e9d7087eb8b0a2d05115bc1f04af3a85d978ba269d6b9b"
+  },
+  "changed_spirv_modules": 53,
+  "original_windows_binary_sha256": "ab0a54272d0d5dc5499f3edf38ea1c53436fb96aa7c88382d39a11626682c3e2",
+  "windows": [
+    {
+      "device": "AMD Radeon(TM) Graphics",
+      "lighting_path": "forward",
+      "report_sha256": "fb2dd068973e216f6cf9c8e2e69e9851d2f6f5975864b20c373549f05e404c68",
+      "captures": {
+        "default": "731e31c7a01d038ed1655df141b5336c9e450b69ba286bf7575f34f0c45652aa",
+        "prior-default": "731e31c7a01d038ed1655df141b5336c9e450b69ba286bf7575f34f0c45652aa",
+        "phase-0-0": "731e31c7a01d038ed1655df141b5336c9e450b69ba286bf7575f34f0c45652aa",
+        "phase-0-1": "53f0963ffd241753bbbbc9e26e0ac6b060a16fade17419a6d2271aa16017e74c",
+        "phase-1-0": "87353d75012f1420e1388f82aa7f2aac122b12925f9005513e9a548ec2fbad61",
+        "phase-1-1": "0cdb017ef3a5a47f7e4942dd6c0422575d5be5ef18ad849ef8b946f6d2e5077f",
+        "phase-2-0": "6e96ae4e432226982bd2c743d197af14f16bca875e8499a77b65d0f02601e0d8",
+        "phase-2-1": "f25440480243a4f9b0e9a86c6a15be9f16d2020a12fb93d8b0e90ad7ed686aa5",
+        "phase-3-0": "53d9ec4426914b9305a299beb18cff6c5df91ae1e8966cbb81b808add67cb2dc",
+        "phase-3-1": "a1241dadf59dd7dc360507df9f02c092ec367f44bf3f1936352240edd592519d",
+        "native-aa": "f2aecddbbb61d399228c5444ba2473c2b92e24c2707ee4f934dc53428fa52918",
+        "relocated": "a1241dadf59dd7dc360507df9f02c092ec367f44bf3f1936352240edd592519d"
+      },
+      "phase_luminance": {
+        "offsets": [
+          0,
+          0.25,
+          0.5,
+          0.75
+        ],
+        "disabled": [
+          6.79296875,
+          1.7705078125,
+          0.29443359375,
+          0.0762939453125
+        ],
+        "enabled": [
+          1.1748046875,
+          0.87939453125,
+          0.435791015625,
+          0.1943359375
+        ],
+        "spans": [
+          6.7166748046875,
+          0.98046875
+        ]
+      },
+      "relative_span_reduction": 0.8540246805881178,
+      "independent_rgb_sample_count": 144,
+      "max_linear_probe_error": 0.001091726226701617,
+      "validation_log_sha256": {
+        "author wire": "f0668fadd5e389ab6533a6f66ffc31918c3f0c63305855351b2a8a2faa81e4ed",
+        "measure wire": "7d7253b8b8944fdc9f015104cc9c773c5b08389228a794476743d5c5ecd2227b",
+        "prior-transport": "f0668fadd5e389ab6533a6f66ffc31918c3f0c63305855351b2a8a2faa81e4ed",
+        "standalone wire": "f0668fadd5e389ab6533a6f66ffc31918c3f0c63305855351b2a8a2faa81e4ed"
+      }
+    },
+    {
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "lighting_path": "deferred",
+      "report_sha256": "ffaec521d2d2821c79c510a707d3b979f40ebde2df65addf43d1b52d9b3379cf",
+      "captures": {
+        "default": "7f5bd62193add61182a1e60f6cbae40491def9540fb8e9a3e74b93bf6b1a7ec4",
+        "prior-default": "7f5bd62193add61182a1e60f6cbae40491def9540fb8e9a3e74b93bf6b1a7ec4",
+        "phase-0-0": "7f5bd62193add61182a1e60f6cbae40491def9540fb8e9a3e74b93bf6b1a7ec4",
+        "phase-0-1": "71fd8f29b2b6b4c357b6a3da6ac36d85ec914cb8f869b9b469e154b51f62e11e",
+        "phase-1-0": "59317df9749c706667dc87835d5d2d0b1da3649fa9bc386072c6bffe8462fab6",
+        "phase-1-1": "0e839792c62a65b2ed2bab022ee79064ad29a2987e43058befdacb4f305cc11f",
+        "phase-2-0": "c5cdc2d0b1a17e0b748747e3a0861d325f83e8fe1651c27ab373e187a887fff6",
+        "phase-2-1": "6e61cbdb2b46bf73b10f8fc7c584cdb62aef4194dfedf2f23c7cc6f0b40c860b",
+        "phase-3-0": "68706450d72b88694c400e4403833b1df4d2b60bf66247d323280258115a704f",
+        "phase-3-1": "bbbdde018c60fbe2dfd41f27094f129c9498fa3e82974eb2a327edff0e938755",
+        "native-aa": "18446734c0ef65854073a5aba33fa315aa8898b14e923219f3e8f27632d97146",
+        "relocated": "bbbdde018c60fbe2dfd41f27094f129c9498fa3e82974eb2a327edff0e938755"
+      },
+      "phase_luminance": {
+        "offsets": [
+          0,
+          0.25,
+          0.5,
+          0.75
+        ],
+        "disabled": [
+          6.79296875,
+          1.771484375,
+          0.29443359375,
+          0.0762939453125
+        ],
+        "enabled": [
+          1.17578125,
+          0.880859375,
+          0.435791015625,
+          0.1943359375
+        ],
+        "spans": [
+          6.7166748046875,
+          0.9814453125
+        ]
+      },
+      "relative_span_reduction": 0.8538792868436835,
+      "independent_rgb_sample_count": 144,
+      "max_linear_probe_error": 0.0018066124721531907,
+      "validation_log_sha256": {
+        "author wire": "36174f8e630d6584a10058ae86891b64f09dccdef00fe016a70b4f79ab9f2e0a",
+        "measure wire": "6f271da105bdec9205916b7e4c6687857bc3ea9ca2bca54ed053dcaead11bbda",
+        "prior-transport": "36174f8e630d6584a10058ae86891b64f09dccdef00fe016a70b4f79ab9f2e0a",
+        "standalone wire": "36174f8e630d6584a10058ae86891b64f09dccdef00fe016a70b4f79ab9f2e0a"
+      }
+    }
+  ],
+  "coastal_scene": {
+    "receipts_sha256": "41ca1e9fbcf7752754289fec2517115f6a94ea564ce255d1d093b06ea4221c7c",
+    "comparisons": [
+      {
+        "camera": "gateway",
+        "scope": "Fixed authored camera, FSR Native AA with GTAO and one fixed lighting environment.",
+        "identical_depth_normal_probes": 25,
+        "images": [
+          "8bc2669b5740a6d48ce9e3be6189f4466f3a5219b8cf781c1361850803ec66eb",
+          "8e674a0e3edf968ec6cfa110b604f8e8dde2a786ea252ddfa6c597ca236b7f23"
+        ],
+        "max_srgb_step": 3,
+        "changed_rgb_pixels": 1422,
+        "shifted_four_steps": 0,
+        "pixels": 518400
+      },
+      {
+        "camera": "vault",
+        "scope": "Fixed authored camera, FSR Native AA with GTAO and one fixed lighting environment.",
+        "identical_depth_normal_probes": 25,
+        "images": [
+          "48d6191e73cd645b3fbd7e22387b768643bda41f64f757cb98aa8c40fa11eafb",
+          "0df0d5eef00f2a439028c377c53216f53672097e6e377e9db4efc2cde9a36647"
+        ],
+        "max_srgb_step": 7,
+        "changed_rgb_pixels": 1560,
+        "shifted_four_steps": 2,
+        "pixels": 518400
+      }
+    ]
+  },
+  "linux": {
+    "suites": [
+      "world_foliage_contract",
+      "authoring_contract_identity",
+      "texture_native",
+      "world_texture_native",
+      "mcp_native",
+      "mcp_contract",
+      "project_contract",
+      "contact_shadow_contract",
+      "asset_contract",
+      "world_contract",
+      "asset_references_contract"
+    ],
+    "binary_sha256": "84af55345aeb9c602ba5bcf651aa41360fde0ba853167cc949c7a07325bfe191",
+    "junit_sha256": "0d3e661b7743600f127b60e3a0f1736fa791c5bd57ffad1f88de5b1d1579977e",
+    "schema_report_sha256": "1a047f9edefcd43d76f281568860259502b66829508a43837464bcf3ad1bc2a0"
+  },
+  "retained_failures": [
+    {
+      "stage": "fixture setup",
+      "reason": "The reference client attempted to open the authored project before its writer closed.",
+      "report_sha256": "1e6abcb847320b32f0f963839e52b6a9bbac17f468f376b1bdef6349ffbf95b0"
+    },
+    {
+      "stage": "fixture setup",
+      "reason": "The fixture left the directional light at the template rotation.",
+      "report_sha256": "da436d1d537453772c5a9c2a1428da793758f22b127ff620e484ff3a5d2f3343"
+    },
+    {
+      "stage": "initial headless patch admission",
+      "reason": "The retained Linux build still used 0.0.471 as its version base.",
+      "log_sha256": "891805a124b59e8edfb36a16854d6eda93a3c6a9e91df03364cbed6e4168e369"
+    },
+    {
+      "stage": "coastal study launch",
+      "reason": "The initial script omitted the local Python SDK search path.",
+      "log_sha256": "2c2b991bb698c8ebca6a4c24f9ca1bda2242ee9f53bcdaa133ac0781cda7f8da"
+    },
+    {
+      "stage": "coastal study launch",
+      "reason": "The staged project omitted the manifest input profile directory.",
+      "log_sha256": "ca193e80f2d41e499ad4f43f92aa91f206890add26ea79b5f8af442717304d08"
+    }
+  ]
+}

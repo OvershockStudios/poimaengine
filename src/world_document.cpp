@@ -113,12 +113,18 @@ static CloudSettings cloud_value(const Json& value) {
 LightingEnvironment environment_value(const Json& value) {
     fields(value,{"ambient","exposure","shadow_resolution","shadow_filter","sky","ibl","bloom","post_effect","output_grade",
         "tone_mapper","screen_reflections","screen_contact_shadows","screen_diffuse_bounce","height_fog","depth_of_field",
-        "auto_exposure","atmosphere"},{"ambient","exposure"});
+        "auto_exposure","atmosphere","geometric_specular_aa"},{"ambient","exposure"});
     require(value.at("ambient").is_array() && value.at("ambient").size()==3,"Ambient fill needs three values.");
     for(const auto& x:value.at("ambient"))require(x.is_number() && std::isfinite(x.get<double>()) && x>=0 && x<=1e6,"Ambient fill must be in [0,1e6].");
     require(value.at("exposure").is_number() && std::isfinite(value.at("exposure").get<double>()) && value.at("exposure")>=0 && value.at("exposure")<=1e6,"Exposure must be in [0,1e6].");
     if(value.contains("shadow_resolution"))require(value.at("shadow_resolution").is_number_integer() && (value.at("shadow_resolution")==256 || value.at("shadow_resolution")==512 || value.at("shadow_resolution")==1024 || value.at("shadow_resolution")==2048),"Shadow resolution must be 256, 512, 1024 or 2048.");
     LightingEnvironment result;result.ambient=value.at("ambient").get<std::array<float,3>>();result.exposure=value.at("exposure").get<float>();result.shadow_resolution=value.value("shadow_resolution",1024u);
+    if(value.contains("geometric_specular_aa")) {
+        const auto& strength=value.at("geometric_specular_aa");
+        require(strength.is_number() && std::isfinite(strength.get<double>()) && strength>=0 && strength<=1,
+            "Geometric specular antialiasing strength must be in [0,1].");
+        result.geometric_specular_aa=strength.get<float>();
+    }
     if(value.contains("tone_mapper")) {
         const auto& authored=value.at("tone_mapper");
         if(authored=="reinhard")result.tone_mapper=ToneMapper::reinhard;
