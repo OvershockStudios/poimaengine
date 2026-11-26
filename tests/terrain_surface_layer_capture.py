@@ -253,6 +253,7 @@ class SurfaceLayerFixture(SnowContract):
         old.mkdir()
         descriptor=json.loads((self.args.runtime_root/'runtime.json').read_bytes())
         assert descriptor['features'].pop('surface_layer')
+        descriptor['features'].pop('surface_layer_triplanar',None)
         (old/'runtime.json').write_text(json.dumps(descriptor),encoding='utf-8')
         refusal=subprocess.run([str(self.args.binary.resolve()),*build,'--runtime',self.native(old)],
                                capture_output=True,text=True,encoding='utf-8',timeout=90)

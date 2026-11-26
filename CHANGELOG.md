@@ -2,6 +2,12 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.472
+
+- Share GPU material bindings across independently authored objects with identical
+  textures and samplers. Batch cutout shadows by their base color bindings.
+  [Ordered draw instancing](docs/DRAW_INSTANCING.md#eligibility-and-ownership)
+
 ## 0.0.471
 
 - Cook coverage-adjusted mipmaps for thin foliage and other alpha cutouts.

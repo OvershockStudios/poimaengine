@@ -24,8 +24,19 @@ std::size_t image_bytes(const TextureImage& image) {
     return bytes;
 }
 
-std::array<int, 4> sampler_key(const TextureMap& map) {
+SamplerKey sampler_key(const TextureMap& map) {
     return {map.wrap_s, map.wrap_t, map.min_filter, map.mag_filter};
+}
+
+const TextureMap& texture_map(const MeshAsset* mesh, const MaterialTextures* textures, std::size_t slot) {
+    static const TextureMap fallback;
+    return textures ? textures->maps[slot] : mesh ? mesh->textures[slot] : fallback;
+}
+
+std::array<std::shared_ptr<const TextureImage>, 4> layer_images(const MaterialTextures* textures) {
+    if (!textures || !textures->surface_layer) return {};
+    const auto& layer = *textures->surface_layer;
+    return {layer.base_color, layer.orm, layer.normal, layer.mask};
 }
 
 nvrhi::SamplerAddressMode address_mode(int value) {
@@ -48,6 +59,7 @@ void Cache::release_gpu() noexcept {
     pending_bytes_ = pending_copies_ = 0;
     geometry_.clear();
     materials_.clear();
+    material_keys_.clear();
     height_bindings_.clear();
     height_sampler_=nullptr;
     textures_.clear();
@@ -213,6 +225,25 @@ nvrhi::BindingSetHandle Cache::height_binding(const Upload& upload, nvrhi::IBind
     return binding;
 }
 
+const MaterialKey& Cache::material_key(const MeshAsset* mesh, const MaterialTextures* textures) {
+    const auto [position, inserted] = material_keys_.try_emplace({textures ? nullptr : mesh, textures});
+    auto& key = position->second;
+    if (inserted) {
+        for (std::size_t slot = 0; slot < key.maps.size(); ++slot) {
+            const auto& map = texture_map(mesh, textures, slot);
+            key.maps[slot] = {reinterpret_cast<std::uintptr_t>(map.image.get()), sampler_key(map)};
+        }
+        const auto images = layer_images(textures);
+        for (std::size_t slot = 0; slot < images.size(); ++slot)
+            key.layer_images[slot] = reinterpret_cast<std::uintptr_t>(images[slot].get());
+    }
+    return key;
+}
+
+TextureBindingKey Cache::base_color_key(const MeshAsset* mesh, const MaterialTextures* textures) {
+    return material_key(mesh, textures).maps.front();
+}
+
 nvrhi::BindingSetHandle Cache::material(const Upload& upload, const MaterialInputs& inputs, const MeshAsset* mesh,
                                         const MaterialTextures* textures, MaterialBindings* foreground) {
     auto& cache = foreground ? *foreground : materials_;
@@ -220,8 +251,8 @@ nvrhi::BindingSetHandle Cache::material(const Upload& upload, const MaterialInpu
     const auto ibl = inputs.environment.bound();
     auto* const cloud_shadow = inputs.cloud_shadow ? inputs.cloud_shadow : ibl.brdf;
     auto* const cloud_sampler = inputs.cloud_shadow_sampler ? inputs.cloud_shadow_sampler : ibl.sampler;
-    const MaterialKey material_key{mesh, textures};
-    if (const auto found = cache.find(material_key); found != cache.end()) {
+    const auto& key = material_key(mesh, textures);
+    if (const auto found = cache.find(key); found != cache.end()) {
         // Both cloud bindings are appended by this cache. Reuse all material
         // textures across activation changes while refreshing the descriptor.
         const auto& cached = found->second->getDesc()->bindings;
@@ -250,16 +281,14 @@ nvrhi::BindingSetHandle Cache::material(const Upload& upload, const MaterialInpu
         return sampler;
     };
     for (std::uint32_t slot = 0; slot < 5; ++slot) {
-        const TextureMap map = textures ? textures->maps[slot] : mesh ? mesh->textures[slot] : TextureMap{};
+        const auto& map = texture_map(mesh, textures, slot);
         const auto image = upload_texture(upload, map.image ? map.image : white_image_);
         auto levels = nvrhi::AllSubresources;
         if (map.min_filter == 9728 || map.min_filter == 9729) levels.setMipLevels(0, 1);
         desc.addItem(nvrhi::BindingSetItem::Texture_SRV(slot, image, nvrhi::Format::UNKNOWN, levels))
             .addItem(nvrhi::BindingSetItem::Sampler(slot, sampler_for(map)));
     }
-    const auto* layer = textures && textures->surface_layer ? &*textures->surface_layer : nullptr;
-    const std::array layer_maps = layer ? std::array{layer->base_color, layer->orm, layer->normal, layer->mask} :
-        std::array<std::shared_ptr<const TextureImage>,4>{};
+    const auto layer_maps = layer_images(textures);
     for (std::size_t slot = 0; slot < layer_maps.size(); ++slot)
         desc.addItem(nvrhi::BindingSetItem::Texture_SRV(layer_texture_begin + static_cast<std::uint32_t>(slot),
             upload_texture(upload, layer_maps[slot] ? layer_maps[slot] : white_image_)));
@@ -277,7 +306,7 @@ nvrhi::BindingSetHandle Cache::material(const Upload& upload, const MaterialInpu
         .addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(14,inputs.water_columns));
     auto result = upload.device.createBindingSet(desc, inputs.layout);
     require(bool(result), "Material texture bindings failed.");
-    cache.insert_or_assign(material_key, result);
+    cache.insert_or_assign(key, result);
     return result;
 }
 
@@ -286,8 +315,10 @@ void Cache::retain_scene(const SceneSnapshot& scene, MaterialBindings* foregroun
     std::set<const MaterialTextures*> materials;
     std::set<const TextureImage*> images;
     std::set<std::string> skin_ids;
-    std::set<MaterialKey> combinations{{nullptr, nullptr}};
-    std::set<std::array<int, 4>> samplers{sampler_key(TextureMap{}),sampler_key(TextureMap{.wrap_s=33071,.wrap_t=33071})};
+    std::set<MaterialSource> sources{{nullptr, nullptr}};
+    std::set<MaterialKey> bindings{material_key(nullptr, nullptr)};
+    std::set<TextureBindingKey> masks{bindings.begin()->maps.front()};
+    std::set<SamplerKey> samplers{sampler_key(TextureMap{}),sampler_key(TextureMap{.wrap_s=33071,.wrap_t=33071})};
 
     const auto retain_image = [&](const std::shared_ptr<const TextureImage>& image) {
         if (image) {
@@ -308,20 +339,18 @@ void Cache::retain_scene(const SceneSnapshot& scene, MaterialBindings* foregroun
                 meshes.insert(level.mesh.get());
                 mesh_owners_[level.mesh.get()] = level.mesh;
             }
+            if(object.displacement)retain_image(object.displacement->texture);
+            if (!sources.emplace(object.textures ? nullptr : bound_mesh, object.textures.get()).second) continue;
             if (object.textures) {
                 materials.insert(object.textures.get());
                 material_owners_[object.textures.get()] = object.textures;
-                if(const auto& layer=object.textures->surface_layer) {
-                    retain_image(layer->base_color);
-                    retain_image(layer->orm);
-                    retain_image(layer->normal);
-                    retain_image(layer->mask);
-                }
             }
-            combinations.emplace(bound_mesh, object.textures.get());
-            if(object.displacement)retain_image(object.displacement->texture);
+            const auto& key = material_key(bound_mesh, object.textures.get());
+            masks.insert(key.maps.front());
+            if (!bindings.insert(key).second) continue;
+            for (const auto& image : layer_images(object.textures.get())) retain_image(image);
             for (std::size_t slot = 0; slot < 5; ++slot) {
-                const auto map = object.textures ? object.textures->maps[slot] : bound_mesh ? bound_mesh->textures[slot] : TextureMap{};
+                const auto& map = texture_map(bound_mesh, object.textures.get(), slot);
                 retain_image(map.image);
                 samplers.insert(sampler_key(map));
             }
@@ -332,10 +361,11 @@ void Cache::retain_scene(const SceneSnapshot& scene, MaterialBindings* foregroun
     for (const auto& style : scene.particle_sprites.styles) retain_image(style.texture);
 
     // Preserve pointer identities until all caches keyed by them are pruned.
-    const auto stale_material = [&](const auto& item) { return !combinations.contains(item.first); };
+    const auto stale_material = [&](const auto& item) { return !bindings.contains(item.first); };
     std::erase_if(materials_, stale_material);
-    hooks.shadow_materials(combinations);
+    hooks.shadow_materials(masks);
     if (foreground) std::erase_if(*foreground, stale_material);
+    std::erase_if(material_keys_, [&](const auto& item) { return !sources.contains(item.first); });
     std::erase_if(geometry_, [&](const auto& item) { return !meshes.contains(item.first); });
     std::erase_if(bounds_, [&](const auto& item) { return item.first && !meshes.contains(item.first); });
     std::erase_if(shadow_ranges_, [&](const auto& item) { return !meshes.contains(item.first); });

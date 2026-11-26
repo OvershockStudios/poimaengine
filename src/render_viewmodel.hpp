@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 #pragma once
 
+#include "render_scene_assets.hpp"
+
 #include <nvrhi/nvrhi.h>
 #include <array>
 #include <cstdint>
@@ -45,7 +47,7 @@ struct Resources {
     nvrhi::BindingSetHandle cluster_bindings, compose_bindings, resolve_bindings;
     nvrhi::GraphicsPipelineHandle pipeline, culled_pipeline, compose_pipeline, resolve_pipeline;
     nvrhi::FramebufferHandle framebuffer, compose_framebuffer, resolve_framebuffer;
-    std::map<std::pair<const MeshAsset*, const MaterialTextures*>, nvrhi::BindingSetHandle> materials;
+    render_scene_assets::MaterialBindings materials;
 };
 
 std::uint64_t logical_bytes(const Configuration& config);

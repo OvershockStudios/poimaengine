@@ -1,0 +1,580 @@
+{
+  "format": "poima.material-binding-qualification.v1",
+  "version": "0.0.472",
+  "source_base": "05878d1d48e7763da9280d14fad3b29e4f481c01",
+  "status": "pass",
+  "scope": "Vulkan binding reuse, ordered camera and masked shadow draws, and frozen-scene diagnostics.",
+  "source_sha256": {
+    "CMakeLists.txt": "97611c09ca54784de4cd3554051dcfbeb98c5ac08d40d93958695348233ac6e0",
+    "src/render_material_key.hpp": "3a1591e37070014b4894725ad6972ef469c4400ff5fd79af3c737d227304484c",
+    "src/render_scene_assets.cpp": "0e0be46dbd9cab6ddb45131375a13740d0dd59a97746001287b81db2d2de1fdc",
+    "src/render_scene_assets.hpp": "c9ecf4123cfba9091db2f4b04e23f2df29c67757e97f173dc0cee870cefeb779",
+    "src/render_shadows.cpp": "fe371f61664747e806fb8480681805f16b6ad416cd6adf40a9d6cae853752069",
+    "src/render_shadows.hpp": "319ededd384987dc37a31fdd10311f8ab37801426a78ebc9ac44e5846cc71b9f",
+    "src/render_smoke.cpp": "2cc5d8ae98b4c730f0b24739e7ded41892e18e087006f8c7de8d19875c628207",
+    "src/render_viewmodel.hpp": "ab2496c2c45fde8abdb05799e3918e8a66310c8f1fe139782c52a944540f5914",
+    "tests/cutout_mips_capture.py": "5fae1de9a71c40ea04e4118b6ec0318bc24b13a91c0c92a7be358fc15208c138",
+    "tests/gpu_visibility_capture.py": "6d5babf6fef8320ffe317b8b72435e897d4996a4cbfb13a96bb32f0d26131c2e",
+    "tests/material_binding_capture.py": "c30da3328a920ba73ad3a9ea958a21200afa470177c1321f353068d503d59ab6",
+    "tests/rigid_mesh_lod_capture.py": "d81a03843cd6775198fa44d8b4dac7e56c6c2e7bb1dcdfff8191c5f6f6fb20a6",
+    "tests/terrain_surface_layer_capture.py": "247655e04f7e5ba461fece4c2dac42c610b42f68f7830812d21df7ed504e0eef",
+    "tests/texture_fixture.py": "b9b157237cdf3a493278e4551c1e635c41c43cd4eeea59c0d6ca34acc0828fb0",
+    "tests/viewmodel_world_depth.py": "e9e475209168d542108cb82f4f33e9c24a82436e7f45b9b0a62273da0d36fa46"
+  },
+  "windows_installed_sha256": {
+    "bin/poima.exe": "ab0a54272d0d5dc5499f3edf38ea1c53436fb96aa7c88382d39a11626682c3e2",
+    "bin/poima_desktop.dll": "ee6e5c12002157dce326665724df621460da0c244f002624f557bc5544d8ad92",
+    "runtime.json": "e05b733d7a0047b852084e1dceddf713ebf832d05e6db6f2ebfa73beb88b453e"
+  },
+  "original_windows_binary_sha256": "d1afbabd991bda7106c9df47fa07d22736024c0ae466280030e853de2b0ea1c2",
+  "unchanged_spirv_modules": 108,
+  "validation_layer": {
+    "repository": "KhronosGroup/Vulkan-ValidationLayers",
+    "channel": "nightly",
+    "archive_sha256": "5fc71e0f368e6af07dad605c767fe6074a343a01506c0223465c2af061b0815c"
+  },
+  "windows": [
+    {
+      "device": "AMD Radeon(TM) Graphics",
+      "lighting_path": "forward",
+      "report_sha256": "a6e50ba848c46a3cd462ac40a2004596b6021edf4f12b1f2dd9ac3252528ddd4",
+      "images": {
+        "prior": "1854666b49d0b10b8f662916e7477de3825aa9e5b6abbe1b011f061ee14f0b10",
+        "unbatched": "1854666b49d0b10b8f662916e7477de3825aa9e5b6abbe1b011f061ee14f0b10",
+        "candidate": "1854666b49d0b10b8f662916e7477de3825aa9e5b6abbe1b011f061ee14f0b10"
+      },
+      "counts": {
+        "prior": {
+          "camera_batches": 1025,
+          "camera_culled": 0,
+          "camera_draws": 1025,
+          "camera_triangles": 2060,
+          "displacement_budget_fallback": false,
+          "displacement_draws": 0,
+          "displacement_patches": 0,
+          "displacement_requested": 0,
+          "displacement_segment_cap": 0,
+          "objects": 1025,
+          "shadow_batches": 3072,
+          "shadow_candidates": 4096,
+          "shadow_culled": 1024,
+          "shadow_draws": 3072,
+          "shadow_reused_views": 0,
+          "shadow_triangles": 6144,
+          "shadow_views": 4,
+          "skinned_instances": 0,
+          "skinned_vertices": 0,
+          "sprite_batches": 0,
+          "sprite_instances": 0,
+          "streamed_draws": 0,
+          "streamed_index_bytes": 0,
+          "streamed_vertex_bytes": 0
+        },
+        "unbatched": {
+          "camera_batches": 1025,
+          "camera_culled": 0,
+          "camera_draws": 1025,
+          "camera_triangles": 2060,
+          "displacement_budget_fallback": false,
+          "displacement_draws": 0,
+          "displacement_patches": 0,
+          "displacement_requested": 0,
+          "displacement_segment_cap": 0,
+          "objects": 1025,
+          "shadow_batches": 3072,
+          "shadow_candidates": 4096,
+          "shadow_culled": 1024,
+          "shadow_draws": 3072,
+          "shadow_reused_views": 0,
+          "shadow_triangles": 6144,
+          "shadow_views": 4,
+          "skinned_instances": 0,
+          "skinned_vertices": 0,
+          "sprite_batches": 0,
+          "sprite_instances": 0,
+          "streamed_draws": 0,
+          "streamed_index_bytes": 0,
+          "streamed_vertex_bytes": 0
+        },
+        "candidate": {
+          "camera_batches": 5,
+          "camera_culled": 0,
+          "camera_draws": 1025,
+          "camera_triangles": 2060,
+          "displacement_budget_fallback": false,
+          "displacement_draws": 0,
+          "displacement_patches": 0,
+          "displacement_requested": 0,
+          "displacement_segment_cap": 0,
+          "objects": 1025,
+          "shadow_batches": 9,
+          "shadow_candidates": 4096,
+          "shadow_culled": 1024,
+          "shadow_draws": 3072,
+          "shadow_reused_views": 0,
+          "shadow_triangles": 6144,
+          "shadow_views": 4,
+          "skinned_instances": 0,
+          "skinned_vertices": 0,
+          "sprite_batches": 0,
+          "sprite_instances": 0,
+          "streamed_draws": 0,
+          "streamed_index_bytes": 0,
+          "streamed_vertex_bytes": 0
+        }
+      },
+      "validation": {
+        "prior_stderr_sha256": "f0668fadd5e389ab6533a6f66ffc31918c3f0c63305855351b2a8a2faa81e4ed",
+        "candidate_stderr_sha256": "5130dbc4b3b53ef1f0cc2d561c001b3ae0dc7fd82e631dd401966341a51dc1aa"
+      },
+      "timing": {
+        "request": {
+          "width": 960,
+          "height": 540,
+          "capture_frames": 24,
+          "profile": true,
+          "samples": 1
+        },
+        "scope": "Frozen authored scene, two runs per version, Khronos layer disabled. Shadow layers are generally reused after the initial submission.",
+        "timing_receipts_sha256": "e00117baa6864cdf3f5f4468bc7438d0616e6f7634a6ea2b4d3d0784bb7617ee",
+        "runs": [
+          {
+            "version": "0.0.471",
+            "frames": 24,
+            "prepare": {
+              "last_ms": 37.8565,
+              "max_ms": 37.8565,
+              "mean_ms": 37.8565,
+              "min_ms": 37.8565,
+              "samples": 1
+            },
+            "record": {
+              "last_ms": 1.6351,
+              "max_ms": 7.569,
+              "mean_ms": 1.894033333333333,
+              "min_ms": 1.2764,
+              "samples": 24
+            },
+            "gpu_opaque": {
+              "last_ms": 1.90312,
+              "max_ms": 3.1346,
+              "mean_ms": 2.1812608333333334,
+              "min_ms": 1.813,
+              "samples": 24
+            },
+            "gpu_total": {
+              "last_ms": 2.18056,
+              "max_ms": 3.8126499999999997,
+              "mean_ms": 2.4314329166666666,
+              "min_ms": 1.95756,
+              "samples": 24
+            }
+          },
+          {
+            "version": "0.0.472",
+            "frames": 24,
+            "prepare": {
+              "last_ms": 10.6161,
+              "max_ms": 10.6161,
+              "mean_ms": 10.6161,
+              "min_ms": 10.6161,
+              "samples": 1
+            },
+            "record": {
+              "last_ms": 0.4562,
+              "max_ms": 1.9017,
+              "mean_ms": 0.5590458333333334,
+              "min_ms": 0.3702,
+              "samples": 24
+            },
+            "gpu_opaque": {
+              "last_ms": 1.6910399999999999,
+              "max_ms": 2.09701,
+              "mean_ms": 1.69719875,
+              "min_ms": 1.60172,
+              "samples": 24
+            },
+            "gpu_total": {
+              "last_ms": 1.97728,
+              "max_ms": 2.74539,
+              "mean_ms": 2.117748333333333,
+              "min_ms": 1.74616,
+              "samples": 24
+            }
+          },
+          {
+            "version": "0.0.472",
+            "frames": 24,
+            "prepare": {
+              "last_ms": 8.3344,
+              "max_ms": 8.3344,
+              "mean_ms": 8.3344,
+              "min_ms": 8.3344,
+              "samples": 1
+            },
+            "record": {
+              "last_ms": 0.5464,
+              "max_ms": 1.6327,
+              "mean_ms": 0.5511458333333333,
+              "min_ms": 0.3846,
+              "samples": 24
+            },
+            "gpu_opaque": {
+              "last_ms": 1.6901599999999999,
+              "max_ms": 1.8363999999999998,
+              "mean_ms": 1.6805083333333333,
+              "min_ms": 1.5728799999999998,
+              "samples": 24
+            },
+            "gpu_total": {
+              "last_ms": 2.64961,
+              "max_ms": 2.69176,
+              "mean_ms": 2.0507741666666663,
+              "min_ms": 1.7056799999999999,
+              "samples": 24
+            }
+          },
+          {
+            "version": "0.0.471",
+            "frames": 24,
+            "prepare": {
+              "last_ms": 32.2201,
+              "max_ms": 32.2201,
+              "mean_ms": 32.2201,
+              "min_ms": 32.2201,
+              "samples": 1
+            },
+            "record": {
+              "last_ms": 1.433,
+              "max_ms": 4.8346,
+              "mean_ms": 1.6121791666666672,
+              "min_ms": 1.1913,
+              "samples": 24
+            },
+            "gpu_opaque": {
+              "last_ms": 1.97884,
+              "max_ms": 3.4116899999999997,
+              "mean_ms": 2.350502916666666,
+              "min_ms": 1.8586799999999999,
+              "samples": 24
+            },
+            "gpu_total": {
+              "last_ms": 2.24208,
+              "max_ms": 3.5894,
+              "mean_ms": 2.564124583333333,
+              "min_ms": 2.01156,
+              "samples": 24
+            }
+          }
+        ],
+        "results": {
+          "prior": {
+            "record_mean_ms_median": 1.75310625
+          },
+          "candidate": {
+            "record_mean_ms_median": 0.5550958333333333
+          }
+        }
+      }
+    },
+    {
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "lighting_path": "deferred",
+      "report_sha256": "7f95f2761f673f5b1f6a252a4a041d6cee2a288e43a1716354c354c0d6a8fb85",
+      "images": {
+        "prior": "755b190cad4b775827b4b5a20667153b57b01f102996ea173bdfe94bb1425431",
+        "unbatched": "755b190cad4b775827b4b5a20667153b57b01f102996ea173bdfe94bb1425431",
+        "candidate": "755b190cad4b775827b4b5a20667153b57b01f102996ea173bdfe94bb1425431"
+      },
+      "counts": {
+        "prior": {
+          "camera_batches": 1025,
+          "camera_culled": 0,
+          "camera_draws": 1025,
+          "camera_triangles": 2060,
+          "displacement_budget_fallback": false,
+          "displacement_draws": 0,
+          "displacement_patches": 0,
+          "displacement_requested": 0,
+          "displacement_segment_cap": 0,
+          "objects": 1025,
+          "shadow_batches": 3072,
+          "shadow_candidates": 4096,
+          "shadow_culled": 1024,
+          "shadow_draws": 3072,
+          "shadow_reused_views": 0,
+          "shadow_triangles": 6144,
+          "shadow_views": 4,
+          "skinned_instances": 0,
+          "skinned_vertices": 0,
+          "sprite_batches": 0,
+          "sprite_instances": 0,
+          "streamed_draws": 0,
+          "streamed_index_bytes": 0,
+          "streamed_vertex_bytes": 0
+        },
+        "unbatched": {
+          "camera_batches": 1025,
+          "camera_culled": 0,
+          "camera_draws": 1025,
+          "camera_triangles": 2060,
+          "displacement_budget_fallback": false,
+          "displacement_draws": 0,
+          "displacement_patches": 0,
+          "displacement_requested": 0,
+          "displacement_segment_cap": 0,
+          "objects": 1025,
+          "shadow_batches": 3072,
+          "shadow_candidates": 4096,
+          "shadow_culled": 1024,
+          "shadow_draws": 3072,
+          "shadow_reused_views": 0,
+          "shadow_triangles": 6144,
+          "shadow_views": 4,
+          "skinned_instances": 0,
+          "skinned_vertices": 0,
+          "sprite_batches": 0,
+          "sprite_instances": 0,
+          "streamed_draws": 0,
+          "streamed_index_bytes": 0,
+          "streamed_vertex_bytes": 0
+        },
+        "candidate": {
+          "camera_batches": 5,
+          "camera_culled": 0,
+          "camera_draws": 1025,
+          "camera_triangles": 2060,
+          "displacement_budget_fallback": false,
+          "displacement_draws": 0,
+          "displacement_patches": 0,
+          "displacement_requested": 0,
+          "displacement_segment_cap": 0,
+          "objects": 1025,
+          "shadow_batches": 9,
+          "shadow_candidates": 4096,
+          "shadow_culled": 1024,
+          "shadow_draws": 3072,
+          "shadow_reused_views": 0,
+          "shadow_triangles": 6144,
+          "shadow_views": 4,
+          "skinned_instances": 0,
+          "skinned_vertices": 0,
+          "sprite_batches": 0,
+          "sprite_instances": 0,
+          "streamed_draws": 0,
+          "streamed_index_bytes": 0,
+          "streamed_vertex_bytes": 0
+        }
+      },
+      "validation": {
+        "prior_stderr_sha256": "36174f8e630d6584a10058ae86891b64f09dccdef00fe016a70b4f79ab9f2e0a",
+        "candidate_stderr_sha256": "a62053957868862605da2d2687aaef02745f3f3f26a9a3183e68cbf30a8ec222"
+      },
+      "timing": {
+        "request": {
+          "width": 960,
+          "height": 540,
+          "capture_frames": 24,
+          "profile": true,
+          "samples": 1
+        },
+        "scope": "Frozen authored scene, two runs per version, Khronos layer disabled. Shadow layers are generally reused after the initial submission.",
+        "timing_receipts_sha256": "7d7dc66d6bba43f2bbc1899f4370c84ccf4ea5ea7e42286bde647d9612868b0e",
+        "runs": [
+          {
+            "version": "0.0.471",
+            "frames": 24,
+            "prepare": {
+              "last_ms": 112.3218,
+              "max_ms": 112.3218,
+              "mean_ms": 112.3218,
+              "min_ms": 112.3218,
+              "samples": 1
+            },
+            "record": {
+              "last_ms": 1.5353,
+              "max_ms": 9.8118,
+              "mean_ms": 2.0606666666666666,
+              "min_ms": 1.3388,
+              "samples": 24
+            },
+            "gpu_opaque": {
+              "last_ms": 0.098304,
+              "max_ms": 0.109568,
+              "mean_ms": 0.100412,
+              "min_ms": 0.09727999999999999,
+              "samples": 24
+            },
+            "gpu_total": {
+              "last_ms": 0.407744,
+              "max_ms": 0.407744,
+              "mean_ms": 0.22001600000000002,
+              "min_ms": 0.20096,
+              "samples": 24
+            }
+          },
+          {
+            "version": "0.0.472",
+            "frames": 24,
+            "prepare": {
+              "last_ms": 6.8262,
+              "max_ms": 6.8262,
+              "mean_ms": 6.8262,
+              "min_ms": 6.8262,
+              "samples": 1
+            },
+            "record": {
+              "last_ms": 0.3734,
+              "max_ms": 1.673,
+              "mean_ms": 0.5025666666666667,
+              "min_ms": 0.3571,
+              "samples": 24
+            },
+            "gpu_opaque": {
+              "last_ms": 0.09215999999999999,
+              "max_ms": 0.10134399999999999,
+              "mean_ms": 0.09447066666666663,
+              "min_ms": 0.091136,
+              "samples": 24
+            },
+            "gpu_total": {
+              "last_ms": 0.35935999999999996,
+              "max_ms": 0.35935999999999996,
+              "mean_ms": 0.21277066666666666,
+              "min_ms": 0.194048,
+              "samples": 24
+            }
+          },
+          {
+            "version": "0.0.472",
+            "frames": 24,
+            "prepare": {
+              "last_ms": 6.2721,
+              "max_ms": 6.2721,
+              "mean_ms": 6.2721,
+              "min_ms": 6.2721,
+              "samples": 1
+            },
+            "record": {
+              "last_ms": 0.4405,
+              "max_ms": 1.6018,
+              "mean_ms": 0.5318875,
+              "min_ms": 0.3751,
+              "samples": 24
+            },
+            "gpu_opaque": {
+              "last_ms": 0.09215999999999999,
+              "max_ms": 0.101376,
+              "mean_ms": 0.09423733333333333,
+              "min_ms": 0.090752,
+              "samples": 24
+            },
+            "gpu_total": {
+              "last_ms": 0.355968,
+              "max_ms": 0.355968,
+              "mean_ms": 0.21043866666666658,
+              "min_ms": 0.193344,
+              "samples": 24
+            }
+          },
+          {
+            "version": "0.0.471",
+            "frames": 24,
+            "prepare": {
+              "last_ms": 61.8064,
+              "max_ms": 61.8064,
+              "mean_ms": 61.8064,
+              "min_ms": 61.8064,
+              "samples": 1
+            },
+            "record": {
+              "last_ms": 1.4058,
+              "max_ms": 4.3323,
+              "mean_ms": 1.7159374999999997,
+              "min_ms": 1.2315,
+              "samples": 24
+            },
+            "gpu_opaque": {
+              "last_ms": 0.09727999999999999,
+              "max_ms": 0.11673599999999999,
+              "mean_ms": 0.10039466666666667,
+              "min_ms": 0.09705599999999999,
+              "samples": 24
+            },
+            "gpu_total": {
+              "last_ms": 0.369536,
+              "max_ms": 0.369536,
+              "mean_ms": 0.21630266666666664,
+              "min_ms": 0.198016,
+              "samples": 24
+            }
+          }
+        ],
+        "results": {
+          "prior": {
+            "record_mean_ms_median": 1.888302083333333
+          },
+          "candidate": {
+            "record_mean_ms_median": 0.5172270833333333
+          }
+        }
+      }
+    }
+  ],
+  "regression_checks": {
+    "gpu_visibility": {
+      "summary": "Direct and indirect submissions, including relocated standalone replay.",
+      "report_sha256": "1d674a2741bd1472019c808e9e2b60c505f3efdc65e7df62996e81ddd5530449"
+    },
+    "cutout_mips": {
+      "summary": "Nearest mip coverage, trilinear comparison, cutout shadows and relocated standalone image closure.",
+      "report_sha256": "198ed3f7e9de919aa958a36a430ee7bf2866de5d468c6c49f07b5e8c4f05f074"
+    },
+    "viewmodel_world_depth": {
+      "summary": "World-depth held geometry, wall occlusion and the grip handoff.",
+      "report_sha256": "9fd33bf228d82cf23ca7097ed6bab56e58dd4f12f0f69e8fd43df26bdc9efbb0"
+    },
+    "terrain_surface_layer": {
+      "summary": "Live PbrTextures removal and re-adoption plus restored layer capture in a relocated standalone bundle.",
+      "report_sha256": "17994a26b76f0f1a5f2132b708720a826cb1133d88b2f1722059ccfd1e877269",
+      "matched_image_sha256": "4591bed80739e4a7733fad931b382511e695da5bc95952ab9becaac02c918d91"
+    }
+  },
+  "retained_failures": [
+    {
+      "stage": "material fixture",
+      "reason": "The Khronos validation layer was unavailable to the loader.",
+      "report_sha256": "0201e95cf77a88c61336787a23d88f419c69a08a9e93426712a175872674f4e6"
+    },
+    {
+      "stage": "material fixture",
+      "reason": "The fixture omitted capture_frames and got the default two submissions.",
+      "report_sha256": "d9e66f0febff4ccfae35d8ac6d3f5cb395e684051171968eb44e3d7d4e0d1e2e"
+    },
+    {
+      "stage": "initial cross-build",
+      "reason": "The foreground renderer still declared the legacy material binding key type.",
+      "report_sha256": "616aebbee800214aee53f721c75fca5de9e8eaa40faa1d8cf4b4c3c990531bdc"
+    },
+    {
+      "stage": "initial timing harness",
+      "reason": "The timing harness expected 24 scene preparations for a frozen scene. The actual single preparation remained distinct from 24 command-recording samples.",
+      "report_sha256": "13fb51a17dfd68045dfcae52da2e9939bc338a2c9d301947a6da3b569a9e1e38"
+    },
+    {
+      "stage": "historical live texture fixture",
+      "reason": "The fixture pins the candidate runtime to 0.0.114.",
+      "report_sha256": "4ade8035f0f41a4eed90fe899a721e042dd390224bcdc470cf64401762cf90f4"
+    },
+    {
+      "stage": "historical viewmodel fixture",
+      "reason": "The fixture pins the candidate runtime to 0.0.121.",
+      "report_sha256": "1cb558de11a6dd692dfb80f5f32293330556eca7ba7b664c995ecfc256098fec"
+    },
+    {
+      "stage": "surface layer fixture",
+      "reason": "A simulated older runtime advertised triplanar support after base layer support was removed. The renderer had already reproduced the authored image after live edits.",
+      "report_sha256": "c776d8d3879d6b55f584fb52ac295b3329efe2a3d57218a3578a91042e53c33c"
+    }
+  ]
+}

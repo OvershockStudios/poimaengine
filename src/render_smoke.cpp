@@ -2379,9 +2379,10 @@ struct Context {
                 item.geometry.count=static_cast<std::uint32_t>(object.mesh->indices.size());
             }
             pack_surface_marks(object,item);
-            item.bindings=mesh_bindings(item.stream_geometry ? nullptr : object.mesh.get(),object.textures.get());
+            const auto* material_mesh = item.stream_geometry ? nullptr : object.mesh.get();
+            item.bindings=mesh_bindings(material_mesh,object.textures.get());
             if(draw.alpha[2]>.5f)item.masked_shadow_bindings=shadows.masked_material(*checked.Get(),{frame_buffer,object_buffer},
-                {object.mesh.get(),object.textures.get()},*item.bindings.Get());
+                scene_assets.base_color_key(material_mesh,object.textures.get()),*item.bindings.Get());
             if(!item.stream_geometry)item.geometry=scene_assets.geometry(asset_upload(), item.mesh, vertices);
             Bounds local_bounds;
             if(object.skin) {

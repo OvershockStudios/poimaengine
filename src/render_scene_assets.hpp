@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #pragma once
 
+#include "render_material_key.hpp"
 #include "render_scene_draw.hpp"
 #include "render_shadow_index_ranges.hpp"
 
@@ -14,7 +15,6 @@ namespace poima::render_environment_ibl { class Resources; }
 
 namespace poima::render_scene_assets {
 
-using MaterialKey = std::pair<const MeshAsset*, const MaterialTextures*>;
 using MaterialBindings = std::map<MaterialKey, nvrhi::BindingSetHandle>;
 inline constexpr std::uint32_t layer_texture_begin = 20, layer_texture_end = 24;
 inline constexpr std::uint32_t layer_repeat_sampler = 7, layer_mask_sampler = 8;
@@ -42,7 +42,7 @@ struct MaterialInputs {
 };
 
 struct RetainHooks {
-    std::function<void(const std::set<MaterialKey>&)> shadow_materials;
+    std::function<void(const std::set<TextureBindingKey>&)> shadow_materials;
     std::function<void(const std::set<const MeshAsset*>&, const std::set<std::string>&)> skins;
 };
 
@@ -70,11 +70,15 @@ public:
                                           const std::shared_ptr<const TextureImage>& image);
     nvrhi::BindingSetHandle material(const Upload& upload, const MaterialInputs& inputs, const MeshAsset* mesh,
                                      const MaterialTextures* textures, MaterialBindings* foreground = nullptr);
+    TextureBindingKey base_color_key(const MeshAsset* mesh, const MaterialTextures* textures);
 
     void retain_scene(const SceneSnapshot& scene, MaterialBindings* foreground, const RetainHooks& hooks);
     Statistics statistics() const noexcept;
 
 private:
+    using MaterialSource = std::pair<const MeshAsset*, const MaterialTextures*>;
+    const MaterialKey& material_key(const MeshAsset* mesh, const MaterialTextures* textures);
+
     struct MeshUpload {
         std::shared_ptr<const MeshAsset> mesh;
         render_draw::Geometry geometry;
@@ -91,11 +95,12 @@ private:
     std::map<const MeshAsset*, std::shared_ptr<const MeshAsset>> mesh_owners_;
     std::map<const MaterialTextures*, std::shared_ptr<const MaterialTextures>> material_owners_;
     std::map<const TextureImage*, std::shared_ptr<const TextureImage>> image_owners_;
+    std::map<MaterialSource, MaterialKey> material_keys_;
     MaterialBindings materials_;
     std::map<const TextureImage*, nvrhi::BindingSetHandle> height_bindings_;
     nvrhi::SamplerHandle height_sampler_;
     std::map<const TextureImage*, nvrhi::TextureHandle> textures_;
-    std::map<std::array<int, 4>, nvrhi::SamplerHandle> samplers_;
+    std::map<SamplerKey, nvrhi::SamplerHandle> samplers_;
     std::shared_ptr<const TextureImage> white_image_;
     std::size_t texture_bytes_ = 0;
     // Staging owns both ends of every copy until the batch has completed.

@@ -38,23 +38,28 @@ GPU object indices and the exact same vertex, index, previous-vertex and materia
 binding resources, element count and selected graphics pipeline. Planning never
 sorts objects or bridges a culled slot. Different per-object transform, color,
 roughness and other scalar material values remain in the existing object buffer.
-Resource identity must still match: equal-looking independent meshes or textures
-do not qualify by appearance.
+Independently authored texture overrides share a material binding when all five
+maps, their samplers and mip views, and the four optional surface layer images
+resolve to the same resources. Scalar overrides such as normal strength and
+layer weight remain per object. Use the same cooked texture asset across repeated
+objects, and set the filter and wrap modes to suit the material.
 
 Camera, each shadow view and first-person foreground have separate plans.
 The shadow planner builds all layer plans in one pass over the source objects,
 visiting only the layers in each caster's visibility mask. A missing caster in
 a layer still breaks adjacency in that layer. Casters that share a layer also
 need the same first index and index count in their submitted ranges.
-Masked shadows retain their texture-aware bindings; opaque shadows retain the
-shared depth-only binding. Skinning plans use the final current/history buffer
-handles selected for that submission. Independently skinned buffers do not become
-one shared stream merely because they originate from the same mesh.
+Masked shadows share bindings when the base color texture, mip view and sampler
+match. Normal maps, other camera-only textures and per-object alpha cutoffs can
+vary within a masked shadow batch. Opaque shadows use the shared depth-only
+binding. Skinning plans use the final current/history buffer handles selected
+for that submission. Independently skinned objects have separate geometry
+streams.
 
 Every native draw uses `firstInstance: 0`; `SV_InstanceID` offsets the pushed
 base object index. A flat resolved index carries the object's identity through
-fragment material and alpha tests, including masked shadows. Object data remains
-208 bytes and draw push constants remain 16 bytes. Existing per-object render
+fragment material and alpha tests, including masked shadows. Object data uses
+272 bytes and draw push constants use 16 bytes. Existing per-object render
 schedule resource declarations, GPU slot ownership and completion fences remain
 in use. The implementation follows conventional [Vulkan indexed/instanced
 drawing](https://docs.vulkan.org/spec/latest/chapters/drawing.html) and
@@ -66,6 +71,19 @@ services table, gameplay save encoding or cooked-model format. It does not make
 a general promise of prebuilt C++ binary compatibility.
 
 ## Qualification
+
+[Shared material binding evidence](evidence/m2-material-sharing-472.json) compares
+0.0.471 with 0.0.472 in a dense 1,024-plant fixture. The plants share geometry
+but have individually authored texture overrides, with controls for color
+textures, filters and normal maps. Both AMD forward and NVIDIA deferred
+render 1,025 camera objects and 3,072 shadow caster/view pairs. Camera commands
+fall from 1,025 to 5 and shadow commands from 3,072 to 9. Each adapter's BMP
+matches both its previous checkpoint and the current direct render byte for
+byte. The evidence includes frozen-scene timestamps and retained regression
+checks. Across two 24-frame runs per version on each adapter, the median of the
+mean CPU command-recording time fell from 1.75 to 0.56 ms on AMD and from 1.89
+to 0.52 ms on NVIDIA. The camera and simulation state were fixed during
+these measurements.
 
 [Checkpoint evidence](evidence/m2-render-instancing.json) records native 0.0.211
 builds, six portable planner groups with 1,969,893 checks on Linux and Windows,
@@ -117,5 +135,22 @@ The nonindexed controls use the renderer's shared built-in geometry. Imported
 `MeshAsset` controls retain explicit triangle indices. Raw scene-product
 comparisons cover requested pixel probes, rather than complete floating-point
 attachments. Forward 1×/4× and deferred 1× are separate cases; foreground uses
-its own 4× samples. These are controlled correctness fixtures, not production
-content or representative frame-time measurements.
+its own 4× samples.
+
+The shared-binding fixture uses Windows Python and requires the Vulkan
+validation layer. Make the Khronos layer available to the loader before
+starting the check. [Enable Vulkan validation](https://github.com/KhronosGroup/Vulkan-ValidationLayers#ways-to-enable-the-layer)
+
+```powershell
+$env:VK_INSTANCE_LAYERS = 'VK_LAYER_KHRONOS_validation'
+$env:VK_LOADER_DEBUG = 'layer'
+$candidate = 'C:\poima\candidate\bin\poima.exe'
+$reference = 'C:\poima\0.0.471\bin\poima.exe'
+python -B tests/material_binding_capture.py $candidate --reference $reference --gpu 0 --lighting-path forward --output build/material-binding-check
+```
+
+For diagnostic timing, reuse the generated scene and capture 24 identical
+frames with `profile:true`, `samples:1` and the same camera and lighting path on
+both executables. Disable validation-layer overhead for the timing run. The
+CPU preparation metric samples the initial snapshot upload and preparation
+once. Command recording is sampled every frame.

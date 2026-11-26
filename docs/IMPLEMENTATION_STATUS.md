@@ -1,8 +1,14 @@
 # Implementation status
 
-Updated 2026-11-26 for **0.0.471**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-26 for **0.0.472**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.472 shares texture bindings across independently authored materials.
+In a 1,024-plant fixture, AMD forward and NVIDIA deferred reduce camera draw
+commands from 1,025 to 5 and masked shadow commands from 3,072 to 9. Each adapter
+matches its prior capture byte for byte with the same visible objects and
+submitted triangles. [Qualification results](evidence/m2-material-sharing-472.json)
 
 Version 0.0.471 cooks [coverage-adjusted cutout mipmaps](MATERIAL_ALPHA.md#preserve-cutout-coverage-at-a-distance)
 from standalone and embedded images. Windows Vulkan checks on AMD and NVIDIA

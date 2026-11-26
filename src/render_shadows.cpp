@@ -176,7 +176,7 @@ void Pass::clear_masked_materials() noexcept {
     masked_materials_.clear();
 }
 
-void Pass::prune_masked_materials(const std::set<MaterialKey>& retained) {
+void Pass::prune_masked_materials(const std::set<TextureBindingKey>& retained) {
     std::erase_if(masked_materials_,[&](const auto& item){return !retained.contains(item.first);});
 }
 
@@ -187,7 +187,7 @@ void Pass::rebind_objects(nvrhi::IDevice& checked, Buffers buffers) {
 }
 
 nvrhi::BindingSetHandle Pass::masked_material(nvrhi::IDevice& checked, Buffers buffers,
-                                              MaterialKey key, const nvrhi::IBindingSet& material) {
+                                              TextureBindingKey key, const nvrhi::IBindingSet& material) {
     if(const auto found=masked_materials_.find(key);found!=masked_materials_.end())return found->second;
     auto desc=base_bindings(buffers);
     bool image=false,sampler=false;

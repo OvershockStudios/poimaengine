@@ -2,6 +2,7 @@
 #pragma once
 
 #include "poima/render_batches.hpp"
+#include "render_material_key.hpp"
 #include <nvrhi/nvrhi.h>
 
 #include <array>
@@ -25,14 +26,13 @@ namespace detail { class DispatchLoaderDynamic; }
 
 namespace poima {
 struct MeshAsset;
-struct MaterialTextures;
 struct SceneLighting;
 
 namespace render_draw { struct DrawItem; }
 namespace profiling { class DeferredContext; }
 
 namespace render_shadows {
-using MaterialKey = std::pair<const MeshAsset*, const MaterialTextures*>;
+using render_scene_assets::TextureBindingKey;
 
 struct Target {
     std::uint32_t resolution;
@@ -97,10 +97,10 @@ public:
     // The frame owner controls attachment consumers and retirement. Callers
     // clear alpha bindings when either object data or the attachments change.
     void clear_masked_materials() noexcept;
-    void prune_masked_materials(const std::set<MaterialKey>& retained);
+    void prune_masked_materials(const std::set<TextureBindingKey>& retained);
     void rebind_objects(nvrhi::IDevice& device, Buffers buffers);
     nvrhi::BindingSetHandle masked_material(nvrhi::IDevice& device, Buffers buffers,
-                                            MaterialKey key, const nvrhi::IBindingSet& material);
+                                            TextureBindingKey key, const nvrhi::IBindingSet& material);
     void reset() noexcept;
 
     void record(nvrhi::ICommandList& commands, const std::vector<render_draw::DrawItem>& draws,
@@ -124,7 +124,7 @@ private:
     nvrhi::BindingLayoutHandle masked_layout_;
     nvrhi::GraphicsPipelineHandle masked_pipeline_;
     nvrhi::GraphicsPipelineHandle displaced_pipeline_, displaced_masked_pipeline_;
-    std::map<MaterialKey, nvrhi::BindingSetHandle> masked_materials_;
+    std::map<TextureBindingKey, nvrhi::BindingSetHandle> masked_materials_;
     bool ready_=false;
 };
 }
