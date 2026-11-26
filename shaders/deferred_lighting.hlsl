@@ -57,7 +57,8 @@ void compute_main(uint3 id : SV_DispatchThreadID) {
     // Each invocation reads and replaces only its own HDR pixel.
     const float4 emission=scene_hdr[id.xy];
     SceneSurface material;
-    material.base=base.rgb;material.metallic=base.a;
+    material.base=base.rgb;material.metallic=max(0,base.a);
+    material.diffuse_transmission=max(0,-base.a);
     const bool normal_is_valid=(flags&8u)!=0;
     material.normal=normal_is_valid ? decode_normal(surface.xy) : float3(0,0,0);material.occlusion=surface.z;
     material.geometric_normal=normal_is_valid ? decode_normal(correspondence.xy) : float3(0,0,0);

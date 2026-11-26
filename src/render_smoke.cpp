@@ -1948,9 +1948,11 @@ struct Context {
                 if(object.material || !scene->lighting.preview) {
                     PbrMaterial material;if(object.material)material=*object.material;else {material.base_color=object.albedo;material.metallic=0;}
                     validate_material_alpha(material);
+                    validate_diffuse_transmission(material);
                     for(std::size_t k=0;k<3;++k) {draw.base_metallic[k]=material.base_color[k];draw.emissive_roughness[k]=material.emissive[k];}
                     draw.base_metallic[3]=material.metallic;draw.emissive_roughness[3]=material.roughness;item.cull=!material.double_sided;
                     draw.alpha[0]=material.opacity;draw.alpha[1]=material.alpha_cutoff;draw.alpha[2]=material.alpha_mode==MaterialAlphaMode::mask ? 1.f : 0.f;
+                    draw.alpha[3]=-material.diffuse_transmission;
                 } else {for(std::size_t k=0;k<3;++k)draw.base_metallic[k]=object.albedo[k];draw.base_metallic[3]=-1;}
                 draw.normal[0][3]=object.textures ? object.textures->occlusion_strength : object.mesh ? object.mesh->occlusion_strength : 1.0f;
                 draw.normal[1][3]=object.textures ? object.textures->normal_scale : object.mesh ? object.mesh->normal_scale : 1.0f;
@@ -2311,6 +2313,7 @@ struct Context {
             if(object.material || !lighting.preview) {
                 PbrMaterial m;if(object.material)m=*object.material;else { m.base_color=object.albedo;m.metallic=0; }
                 validate_material_alpha(m);
+                validate_diffuse_transmission(m);
                 if(object.wetness) {
                     item.wetness=*object.wetness;
                     for(float scale:{item.wetness.base_scale,item.wetness.roughness_scale})
@@ -2324,13 +2327,14 @@ struct Context {
                 for(std::size_t k=0;k<3;++k) { draw.base_metallic[k]=m.base_color[k];draw.emissive_roughness[k]=m.emissive[k]; }
                 draw.base_metallic[3]=m.metallic;draw.emissive_roughness[3]=m.roughness;item.cull=!m.double_sided;
                 draw.alpha[0]=m.opacity;draw.alpha[1]=m.alpha_cutoff;draw.alpha[2]=m.alpha_mode==MaterialAlphaMode::mask ? 1.f : 0.f;
+                draw.alpha[3]=-m.diffuse_transmission;
             } else { for(std::size_t k=0;k<3;++k)draw.base_metallic[k]=object.albedo[k];draw.base_metallic[3]=-1; }
             draw.normal[0][3]=object.textures ? object.textures->occlusion_strength : object.mesh ? object.mesh->occlusion_strength : 1.0f;
             draw.normal[1][3]=object.textures ? object.textures->normal_scale : object.mesh ? object.mesh->normal_scale : 1.0f;
             draw.normal[2][3]=(object.textures ? bool(object.textures->maps[4].image) : object.mesh && object.mesh->textures[4].image) ? 1.0f : 0.0f;
             if(object.textures && object.textures->surface_layer) {
                 const auto& layer=*object.textures->surface_layer;
-                require(list==0 && object.mesh && !object.skin && !object.camera_draw && draw.alpha[2]==0 &&
+                require(list==0 && object.mesh && !object.skin && !object.camera_draw && draw.alpha[2]==0 && draw.alpha[3]==0 &&
                     layer.base_color && layer.base_color->srgb && layer.orm && !layer.orm->srgb &&
                     (!layer.normal || !layer.normal->srgb) && (!layer.mask || (!layer.mask->srgb && item.mesh->has_uv)) &&
                     layer.tile_mm>=32 && layer.tile_mm<=64000 &&
@@ -2346,7 +2350,7 @@ struct Context {
                 item.surface_layer_triplanar=layer.triplanar;
             }
             if(object.water_ripple_surface) {
-                require(list==0 && water_normal_mode!=0 && !found_water_ripples && object.material &&
+                require(list==0 && water_normal_mode!=0 && !found_water_ripples && object.material && draw.alpha[3]==0 &&
                     object.stream_geometry && !object.mutable_geometry && !object.incarnation && !object.skin &&
                     !object.camera_draw && !object.lods && !object.cast_shadows,
                     "Water ripple parameters require one transient world water surface.");

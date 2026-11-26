@@ -1,0 +1,224 @@
+{
+  "format": "poima.qualification-summary",
+  "version": 1,
+  "engine_checkpoint": "0.0.470",
+  "comparison_commit": "1fd66c6c4b2386c08fc8e9ffb50012b1296b32a2",
+  "scope": "Diffuse transmission on two original cutout dielectric sheets under front, back and sky lighting, with an opaque light-side occluder and an independently verified standalone export.",
+  "source_sha256": {
+    "CMakeLists.txt": "63ad77e27e4fbd756f0a922d074954f378e58cacb8b91f295aba38bf954954f2",
+    "cmake/runtime.json.in": "2d73a45acd620116b403eb2161cb1a3118e3606b603339aa0988bbff8c225164",
+    "include/poima/scene.hpp": "117517b7542cc6240e80279010471363394a7f0f8ba4bcf90533f5dbdcf211f0",
+    "include/poima/world.hpp": "914fda93fe0f230ec76bcea141b640829701e2d706916a9bc275a81b83f60850",
+    "shaders/deferred_lighting.hlsl": "0485f7a01c54abd066ecfe94526cb921a836dcac72527700b0145265b824f91b",
+    "shaders/environment_ibl.hlsli": "ec7d24d9ed3cc95f2414d86c79321c754ba681a15cd4961224eef6a5b8b73a40",
+    "shaders/scene.hlsl": "760275e02409b9014f3ff2bfb46b130d6b44482be035855f766e04e0ffa6cd6c",
+    "shaders/scene_lighting.hlsli": "aac5bfad67e4a9aa4c5452a5b346a0aa42e994591a653a51bd67930fbf08a38c",
+    "shaders/scene_surface.hlsli": "05544cea0b369ffe93a891df3f7f3ac6268dc8722428d555968e65591d19ad74",
+    "shaders/screen_diffuse_bounce.hlsl": "b7c3b7f3184b91ee14b41837b67bbf81ab92adf46d3243b8c2a91bd72413585c",
+    "shaders/screen_reflections.hlsl": "d99e7521ab789633d17de4c1e5f6b36aa32d6217ee92c98b3c4f4d189e16217f",
+    "src/core.cpp": "f458bec6c1f4ffa6be71f39434ef8986bd33527131d22bfc1a794fa533005de2",
+    "src/project.cpp": "0d8d27bc34782c467a35d496954062a2350d32d057a3ce8786ca413b612dec91",
+    "src/render_smoke.cpp": "3b0e38e4b6e273486c1884f4d869f84164aa2f34df72bec09ed8f2baa1a25fea",
+    "src/runtime.cpp": "25c8a0d32ee10165e0731f908df0a63703cfcf4d7d94e76297e39d3c036e7454",
+    "src/scene.cpp": "19cca0dd66631c600eee50f5882b9e1486c28cb6a573ac76078c5322d6c57eb0",
+    "src/world.cpp": "ce31eada14072cace20c289889ab8eaa9d641f0e93e8b111682c929b44bc9c17",
+    "src/world_content.cpp": "2f5cf57dec7e9df89dec7997d49fa5032dd97cbdfbe6d7253b675914e8a0e7e8",
+    "src/world_document.cpp": "20da54d163442e8143e44184a0cd307696f05b46d960f99576f10428660858d4",
+    "src/world_material.inc": "b69a1916be80d75c2cba3bd37a157d2ce7c37a484cc37607b68d314fd9ccd56d",
+    "src/world_model_assets.cpp": "8f87a17030d0a89f621cafba94b6518b41a1a5851c865119ff7ac7f82d0df4eb",
+    "src/world_runtime_definition.cpp": "af759abcd3b7e791372fceed8fb9e981054bb3efba338f9328e2179c08671628",
+    "src/world_schema.cpp": "79af599422da55e4a96d7297713c84e51d4e15e3ebeec4f6ca907d6c7c60e443",
+    "tests/asset_references_contract.py": "d401e8db951557d2ea9155b52609c0d252d1688b765fbeae7eec0bf2ffe9702f",
+    "tests/contact_shadow_contract.py": "3e7e94a56ace1a4acd686a0d6beef6a137440bc9140a0ac022e398d563a15c09",
+    "tests/diffuse_transmission_capture.py": "9a9bb2e5ca10e11aa49b07ae8b803365960b7ff31764699e5e159ebe2a53e070",
+    "tests/material_alpha_contract.py": "9297008c500266b2b6f74622de198d066251d4c09c566bb936f64deb38d04c56",
+    "tests/screen_diffuse_bounce_capture.py": "8e4125df2c0eab855154ac86a5d433dcbf252439cb551fb586f81fbbd3eef773",
+    "tests/terrain_surface_layer_capture.py": "a6d757e290512ff15921b08f67b761903576aca9b10e8cca43ab50aa833c98de",
+    "tests/world_particles_contract.py": "70ebcd7e2727f8bbcc611c993e8d06d55c0d21a07d5bcab5a65032afcbdb13af"
+  },
+  "windows_installed_sha256": {
+    "bin/poima.exe": "14a4892a804fe751f03071246564bab29aa7e0afb97f32e391c1c18bf12fe220",
+    "bin/poima_desktop.dll": "3bc9b37ec87fc9e5e8d2b0aecde89e3be8d47043136fc64f65b87ec2fc67a81c",
+    "runtime.json": "47c16a38747bcc6783785da02d118ced9c66cea477f3627417d60fcd7613028f"
+  },
+  "changed_spirv_modules": [
+    "deferred_lighting_ao_cs.spv",
+    "deferred_lighting_ao_donor_cs.spv",
+    "deferred_lighting_ao_reflection_cs.spv",
+    "deferred_lighting_ao_reflection_donor_cs.spv",
+    "deferred_lighting_color_ao_cs.spv",
+    "deferred_lighting_color_ao_donor_cs.spv",
+    "deferred_lighting_color_ao_reflection_cs.spv",
+    "deferred_lighting_color_ao_reflection_donor_cs.spv",
+    "deferred_lighting_color_cs.spv",
+    "deferred_lighting_color_donor_cs.spv",
+    "deferred_lighting_color_reflection_cs.spv",
+    "deferred_lighting_color_reflection_donor_cs.spv",
+    "deferred_lighting_cs.spv",
+    "deferred_lighting_donor_cs.spv",
+    "deferred_lighting_reflection_cs.spv",
+    "deferred_lighting_reflection_donor_cs.spv",
+    "scene_deferred_color_ps.spv",
+    "scene_deferred_ps.spv",
+    "scene_products_ps.spv",
+    "scene_ps.spv",
+    "screen_diffuse_bounce_cs.spv",
+    "screen_diffuse_bounce_resolve_cs.spv",
+    "screen_reflections_cs.spv"
+  ],
+  "ubuntu": {
+    "suites": [
+      "world_foliage_contract",
+      "snow_compaction_contract",
+      "authoring_contract_identity",
+      "render_schedule_native",
+      "world_material_native",
+      "world_texture_native",
+      "project_contract",
+      "contact_shadow_contract",
+      "world_contract",
+      "asset_references_contract",
+      "rigid_mesh_lod_contract"
+    ],
+    "binary_sha256": "8de2ca45497dd9001b1e56e08d45dc15c47847daa79c66a174a32fe47abeda7b",
+    "regression_junit_sha256": "fabd1e4e0b87a1d001296cba8d96a73f28b1c07f4191a29acc80a8010bae215c",
+    "headless_authoring_report_sha256": "4c8021a91d3e0bf81e580b17abd3de96c799a770ab3ae59d2d155bc85538cca5",
+    "alpha_contract": {
+      "report_sha256": "094e4abf30ef2f209dad1406f0c959c8a9c7669946e2602775ace8a8f5875a73",
+      "passed": true,
+      "rpc": 197,
+      "owners": 2,
+      "checkpoints": 15,
+      "whole_pairs": 6,
+      "adoptions": 3
+    }
+  },
+  "windows": [
+    {
+      "device": "AMD Radeon(TM) Graphics",
+      "lighting_path": "forward",
+      "report_sha256": "c5ffd546ed0432f02e3b5c059d560631e78d6f05e873bbf509d209d0b368fdb7",
+      "original_probes_exact": true,
+      "frames": {
+        "original": {
+          "image_sha256": "3dc2a049ea6e08d41efb30c9886fee516be9fa9f4e3d7e1cbf335c54a7182169",
+          "probes": 12,
+          "max_hdr_error": 0
+        },
+        "prior-original": {
+          "image_sha256": "3dc2a049ea6e08d41efb30c9886fee516be9fa9f4e3d7e1cbf335c54a7182169",
+          "probes": 12,
+          "max_hdr_error": 0
+        },
+        "backlit": {
+          "image_sha256": "7f16a49a47f156aa0f3654caa90e21d93873c0c9eb6c556ffd27910e139bc33d",
+          "probes": 12,
+          "max_hdr_error": 1.108421338639684e-05
+        },
+        "blocked": {
+          "image_sha256": "db7be9235bcbbe4f1732a7653b947973d7948fb36b37a0568b6f883099b7a7f6",
+          "probes": 12,
+          "max_hdr_error": 1.108421338639684e-05
+        },
+        "sky": {
+          "image_sha256": "aab6ed03256d7216fb45f9ff8dbe92b1545ad4c35c9916da535d7d2bb305cfbe",
+          "probes": 12,
+          "max_hdr_error": 0.0001690700158727132
+        },
+        "front": {
+          "image_sha256": "f4f1bd22222961989f61d0fb7e6979381800873658cb339e3779ef2489581f10",
+          "probes": 12,
+          "max_hdr_error": 0.00011493698921247186
+        },
+        "live-1": {
+          "image_sha256": "1fe4c3f2dd72388b7dbd3726e275b5716a8db4f9ca36588c4127d2f7615c150a",
+          "probes": 12,
+          "max_hdr_error": 0.00011493698921247186
+        },
+        "live-2": {
+          "image_sha256": "f4f1bd22222961989f61d0fb7e6979381800873658cb339e3779ef2489581f10",
+          "probes": 12,
+          "max_hdr_error": 0.00011493698921247186
+        },
+        "relocated": {
+          "image_sha256": "f4f1bd22222961989f61d0fb7e6979381800873658cb339e3779ef2489581f10",
+          "probes": 12,
+          "max_hdr_error": 0.00011493698921247186
+        }
+      }
+    },
+    {
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "lighting_path": "deferred",
+      "report_sha256": "7942fa05922863e6d4ad63a8f8c634c9dcf1f230f586c6f6d100966be738ecc5",
+      "original_probes_exact": true,
+      "frames": {
+        "original": {
+          "image_sha256": "3dc2a049ea6e08d41efb30c9886fee516be9fa9f4e3d7e1cbf335c54a7182169",
+          "probes": 12,
+          "max_hdr_error": 0
+        },
+        "prior-original": {
+          "image_sha256": "3dc2a049ea6e08d41efb30c9886fee516be9fa9f4e3d7e1cbf335c54a7182169",
+          "probes": 12,
+          "max_hdr_error": 0
+        },
+        "backlit": {
+          "image_sha256": "7f16a49a47f156aa0f3654caa90e21d93873c0c9eb6c556ffd27910e139bc33d",
+          "probes": 12,
+          "max_hdr_error": 6.559653091371687e-05
+        },
+        "blocked": {
+          "image_sha256": "db7be9235bcbbe4f1732a7653b947973d7948fb36b37a0568b6f883099b7a7f6",
+          "probes": 12,
+          "max_hdr_error": 6.559653091371687e-05
+        },
+        "sky": {
+          "image_sha256": "99d95ddccbea12e0e1098c2055c73165aafab64c50077b7b106646a52859fcac",
+          "probes": 12,
+          "max_hdr_error": 0.0002911403283727132
+        },
+        "front": {
+          "image_sha256": "daf98b20b6f99c3ad77ec02026cd2957bd419faf786ebbf531241d5a470102b4",
+          "probes": 12,
+          "max_hdr_error": 0.00011493698921247186
+        },
+        "live-1": {
+          "image_sha256": "f655795b1c38ae5eb15f1ae34e5712322bcecd1c3085a92e60be5c4df43aa8eb",
+          "probes": 12,
+          "max_hdr_error": 0.0001390539851833239
+        },
+        "live-2": {
+          "image_sha256": "daf98b20b6f99c3ad77ec02026cd2957bd419faf786ebbf531241d5a470102b4",
+          "probes": 12,
+          "max_hdr_error": 0.00011493698921247186
+        },
+        "relocated": {
+          "image_sha256": "daf98b20b6f99c3ad77ec02026cd2957bd419faf786ebbf531241d5a470102b4",
+          "probes": 12,
+          "max_hdr_error": 0.00011493698921247186
+        }
+      }
+    }
+  ],
+  "deferred_regression": {
+    "report_sha256": "1f1c2f2a6d53c19afd96d85faa861c210cafb2cbda167fbc99dcf6dc4b17d90b",
+    "images": 22,
+    "omitted_matches_reference": true,
+    "direct_diffuse": true,
+    "half_resolution": true,
+    "matte_reflections": true
+  },
+  "retained_trials": [
+    {
+      "report_sha256": "4de6f1cd1d75a3d1e5e133d1650757b6d867168e7980d98c922fa74e0c76330f",
+      "harness_sha256": "9a9bb2e5ca10e11aa49b07ae8b803365960b7ff31764699e5e159ebe2a53e070",
+      "observation": "The first AMD capture and session.close acknowledgement succeeded. Its native owner left with exit code 1. The unmodified trace and image are retained."
+    }
+  ],
+  "limits": [
+    "Single-sample fixed view with two thin rigid sheets and a single directional source or baked procedural sky.",
+    "Numerical checks on the thin material cover direct light, diffuse IBL, cutout depth and sampled occlusion. The deferred regression exercises bounce and reflections on conventional materials.",
+    "Production foliage density, moving canopies and indirect-light quality on foliage remain outside this fixture."
+  ]
+}

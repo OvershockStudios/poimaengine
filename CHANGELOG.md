@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.470
+
+- Light thin PBR materials such as foliage from behind with shadow-aware
+  diffuse transmission. [Foliage lighting](docs/FOLIAGE_SCATTER.md#light-leaves-from-behind)
+
 ## 0.0.469
 
 - Project PBR surface layers from three world axes for cliffs and steep

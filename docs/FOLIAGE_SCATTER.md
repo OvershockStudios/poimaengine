@@ -163,6 +163,33 @@ installed Windows build for the relocated Vulkan checks. Use
 `--lighting-path forward` for the forward path and `--windows-interop`
 when invoking Windows from WSL.
 
+## Light leaves from behind
+
+Add `diffuse_transmission` to a leaf's [PBR material](MATERIAL_AUTHORING.md).
+Set it to a fraction from 0 to 1, use `"metallic": 0` and
+`"double_sided": true`. The base color tints the transmitted light. Use
+`"alpha_mode": "mask"` with a base-color cutout image for leaf silhouettes.
+Leave the field absent or zero for the original material response.
+
+With a positive fraction, light behind the leaf contributes colored diffuse
+light to the visible side. The same fraction reduces front-side diffuse
+reflection. Specular reflection uses the ordinary dielectric response.
+The shader checks shadow occluders on either side and uses the same
+alpha-test coverage for camera and shadow depth. Sky image-based lighting
+uses the diffuse irradiance from both hemispheres.
+[Filament diffuse transmission](https://google.github.io/filament/main/materials.html)
+
+This approximation uses the local shading normal, one fraction per material
+and a single transmitted diffuse lobe. Keep surface layers on separate
+materials. Cutout foliage continues to cast depth-based shadows.
+
+Agents can read and revise the fraction through the authored material
+or [live material editing](LIVE_MATERIALS.md). Project inspection reports
+`needs_diffuse_transmission` and export requires a runtime advertising
+`features.diffuse_transmission`. Set up a backlit and front-lit capture
+with a visible shadow blocker and inspect matching pixels in the exported
+game. [Qualification results](evidence/m2-diffuse-transmission-470.json)
+
 ## Sample a terrain patch from C++
 
 Use a metre-based, Y-up grid. The caller supplies the terrain height and the

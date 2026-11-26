@@ -239,7 +239,7 @@ float3 screen_reflection(int2 pixel, uint2 extent, float3 prior) {
 
     const float4 material = material_buffer.Load(int3(pixel, 0));
     if (!all(isfinite(material))) return prior;
-    const float3 f0 = lerp(float3(.04, .04, .04), material.rgb, material.a);
+    const float3 f0 = lerp(float3(.04, .04, .04), material.rgb, max(0, material.a));
     float3 response;
     [branch] if (ibl_parameters.x > 0) {
         // Replace only the sky specular contribution already in prior radiance.

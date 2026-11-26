@@ -8,7 +8,7 @@ struct ObjectData {
     float4 normal_row2;
     float4 base_metallic; // negative metallic selects the legacy preview material
     float4 emissive_roughness;
-    float4 alpha; // x opacity, y cutoff, z mask mode; w water ripple surface
+    float4 alpha; // x opacity, y cutoff, z mask; w water mode (>0) or negated diffuse transmission
     float4 previous_model_row0,previous_model_row1,previous_model_row2;
     uint4 history; // x: history flags; y: shadow and triplanar flags; zw: mark offset and count
     float4 foliage_current, foliage_previous; // local X/Z offset, root Y, reciprocal height
@@ -220,6 +220,7 @@ SceneSurface evaluate_material(VertexOutput input,bool front) {
     SceneSurface material;
     material.normal=n;material.geometric_normal=geometric_normal;
     material.base=draw.base_metallic.rgb;material.metallic=0;material.roughness=1;material.emission=0;material.occlusion=1;
+    material.diffuse_transmission=max(0,-draw.alpha.w);
     material.legacy=draw.base_metallic.w<0;material.receive_shadows=(draw.history.y&1u)==0u;
     if(draw.base_metallic.w<0) {
         // Legacy preview deliberately keeps its original unflipped vertex normal.
@@ -319,7 +320,9 @@ float4 pixel_main(VertexOutput input, bool front : SV_IsFrontFace) : SV_Target0 
 #endif
 #if POIMA_SCENE_DEFERRED
     ScenePixel result;
-    result.base_metallic=float4(material.base,material.metallic);
+    // Transmission is limited to dielectrics, leaving the signed material
+    // channel unambiguous without changing the G-buffer size.
+    result.base_metallic=float4(material.base,material.metallic-material.diffuse_transmission);
     // Presence and valid shading normal are distinct: bad geometry must not become sky.
     uint flags=1u | (material.legacy ? 2u : 0u) | (normal_valid ? 8u : 0u) | (material.receive_shadows ? 0u : 16u);
     flags|=(objects[input.object_index].history.y&2u)!=0u ? deferred_no_shadow_cast : 0u;

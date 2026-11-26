@@ -3,7 +3,7 @@
 #include "environment_ibl.hlsli"
 struct SceneSurface {
     float3 normal,geometric_normal,base,emission;
-    float metallic,roughness,occlusion;
+    float metallic,roughness,occlusion,diffuse_transmission;
     bool legacy,receive_shadows;
 };
 float2 normal_sign(float2 value) {return float2(value.x>=0 ? 1 : -1,value.y>=0 ? 1 : -1);}
@@ -35,13 +35,15 @@ float3 shade_surface(SceneSurface material,float3 world,float2 pixel,float ambie
         // Material and screen-space AO are each applied once to environment
         // response, including specular. Direct light and emission are unchanged.
         [branch] if(ibl_parameters.x>0)
-            color+=environment_indirect(material.normal,v,material.base,material.metallic,material.roughness)*material.occlusion*ambient_visibility;
+            color+=environment_indirect(material.normal,v,material.base,material.metallic,material.roughness,
+                material.diffuse_transmission)*material.occlusion*ambient_visibility;
 #if POIMA_DIFFUSE_DONOR
         donor=material.emission;
         accumulate_direct_lighting(color,world,pixel,material.geometric_normal,material.normal,v,material.base,
-            material.metallic,material.roughness,material.receive_shadows,donor);
+            material.metallic,material.roughness,material.diffuse_transmission,material.receive_shadows,donor);
 #else
-        accumulate_direct_lighting(color,world,pixel,material.geometric_normal,material.normal,v,material.base,material.metallic,material.roughness,material.receive_shadows);
+        accumulate_direct_lighting(color,world,pixel,material.geometric_normal,material.normal,v,material.base,
+            material.metallic,material.roughness,material.diffuse_transmission,material.receive_shadows);
 #endif
     }
     // Bound final linear radiance before half-float storage, as in forward.

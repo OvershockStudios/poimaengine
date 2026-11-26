@@ -218,9 +218,11 @@ struct PbrMaterial {
     bool double_sided=false;
     MaterialAlphaMode alpha_mode=MaterialAlphaMode::opaque;
     float opacity=1,alpha_cutoff=.5f;
+    float diffuse_transmission=0;
 };
 void validate_pbr_material(const PbrMaterial& material);
 void validate_material_alpha(const PbrMaterial& material);
+void validate_diffuse_transmission(const PbrMaterial& material);
 struct MeshAsset;
 struct Bounds { std::array<double,3> minimum{},maximum{}; };
 using Frustum=std::array<std::array<double,4>,6>;

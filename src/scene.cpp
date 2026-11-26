@@ -18,12 +18,20 @@ void validate_material_alpha(const PbrMaterial& material) {
     if(!std::isfinite(material.opacity) || material.opacity<0 || material.opacity>1 || !std::isfinite(material.alpha_cutoff) || material.alpha_cutoff<0 || material.alpha_cutoff>max_material_alpha_cutoff)
         throw std::runtime_error("Invalid material opacity/alpha cutoff.");
 }
+void validate_diffuse_transmission(const PbrMaterial& material) {
+    const auto fraction=material.diffuse_transmission;
+    if(!std::isfinite(fraction) || fraction<0 || fraction>1)
+        throw std::runtime_error("Material diffuse transmission must be in [0,1].");
+    if(fraction>0 && (!material.double_sided || material.metallic!=0))
+        throw std::runtime_error("Diffuse transmission requires a double-sided dielectric material.");
+}
 void validate_pbr_material(const PbrMaterial& material) {
     const auto factor=[](float value) { return std::isfinite(value) && value>=0 && value<=1; };
     for(float value:material.base_color)if(!factor(value))throw std::runtime_error("Invalid material base color.");
     for(float value:material.emissive)if(!factor(value))throw std::runtime_error("Invalid material emissive color.");
     if(!factor(material.metallic) || !factor(material.roughness))throw std::runtime_error("Invalid material metallic/roughness.");
     validate_material_alpha(material);
+    validate_diffuse_transmission(material);
 }
 std::string new_presentation_source_id() {
     std::random_device random;

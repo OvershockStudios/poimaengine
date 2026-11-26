@@ -536,6 +536,7 @@ struct Runtime::Impl {
         if(d.mesh_collider && !d.mesh_collider->surface.empty())require(valid_collision_surface(d.mesh_collider->surface),"Invalid MeshCollider surface name.");
         if(d.mesh) {
             if(d.mesh->material)validate_material_alpha(*d.mesh->material);
+            if(d.mesh->material)validate_diffuse_transmission(*d.mesh->material);
             if(d.mesh->mesh)validate_material_alpha(d.mesh->mesh->material);
             if(d.mesh->foliage_motion) {
                 require(d.mesh->mesh && d.mesh->mesh->influences.empty() && !d.camera_draw && !d.skinned_mesh,
@@ -2345,6 +2346,8 @@ Runtime::PreparedMaterialUpdate Runtime::prepare_materials(std::uint64_t expecte
         validate_pbr_material(edit.material);
         require(edit.material.alpha_mode==MaterialAlphaMode::opaque || !mesh->textures || !mesh->textures->surface_layer,
             "A surface layer requires an opaque base material.");
+        require(edit.material.diffuse_transmission==0 || !mesh->textures || !mesh->textures->surface_layer,
+            "A surface layer requires zero diffuse transmission.");
         auto& definition=candidate->definitions.at(edit.id);
         if(edit.material.alpha_mode!=MaterialAlphaMode::opaque)
             require(!definition.footprint_surface && !(impl_->snow_binding && impl_->snow_binding->contains(edit.id)) &&

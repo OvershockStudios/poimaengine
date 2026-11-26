@@ -1,8 +1,17 @@
 # Implementation status
 
-Updated 2026-11-26 for **0.0.469**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-26 for **0.0.470**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.470 adds [diffuse transmission](FOLIAGE_SCATTER.md#light-leaves-from-behind)
+for double-sided dielectric materials. The forward and deferred fixtures
+check color under front, back and sky lighting, depth at leaf cutouts, and
+shadow occlusion on a backlit leaf. Live material edits and a relocated
+standalone build reproduce the authored captures. The NVIDIA deferred
+regression also checks diffuse bounce and matte reflections on
+conventional materials.
+[Qualification results](evidence/m2-diffuse-transmission-470.json)
 
 Version 0.0.469 adds [three-axis projection](MATERIAL_AUTHORING.md#texture-steep-slopes-and-cliffs)
 to opaque PBR surface layers. A projected base material can use meshes

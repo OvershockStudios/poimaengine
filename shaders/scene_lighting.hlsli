@@ -43,11 +43,13 @@ float3 direct_brdf(float3 n,float3 v,float3 l,float3 base,float metallic,float r
     return ((1-F)*(1-metallic)*base/3.14159265359+D*visibility*F)*nl;
 }
 void accumulate_direct_lighting(inout float3 color,float3 world_position,float2 pixel_position,
-    float3 geometric_normal,float3 n,float3 v,float3 base,float metallic,float roughness,bool receive_shadows
+    float3 geometric_normal,float3 n,float3 v,float3 base,float metallic,float roughness,float diffuse_transmission,bool receive_shadows
 #if POIMA_DIFFUSE_DONOR
     ,inout float3 donor
 #endif
     ) {
+        const float reflected_fraction=1-diffuse_transmission;
+        const float3 reflected_base=base*reflected_fraction;
         uint cell=0,count=light_count.x;bool clustered=false;
         if(cluster_grid.w!=0) {
             const float depth=dot(view_projection[3],float4(world_position,1));
@@ -78,26 +80,34 @@ void accumulate_direct_lighting(inout float3 color,float3 world_position,float2 
                     attenuation*=cone*cone;
                 }
             }
+            const float facing=dot(n,l);
+            const bool backlit=diffuse_transmission>0 && facing<0;
+            // Offset the same thin surface on the source side for map and
+            // contact shadows. Both hemispheres still evaluate occluders.
+            const float3 bias_normal=diffuse_transmission>0 && dot(geometric_normal,l)<0 ? -geometric_normal : geometric_normal;
             float visibility=1;
             [branch] if(receive_shadows) {
-                visibility=light_visibility(source,world_position,geometric_normal,l);
+                visibility=light_visibility(source,world_position,bias_normal,l);
                 [branch] if(cloud_shadow_controls.x>0 && index+1u==uint(cloud_shadow_controls.y) && source.position_kind.w<0.5)
                     visibility*=cloud_transmission(world_position,l);
 #if POIMA_SCREEN_CONTACT_SHADOWS
                 [branch] if (screen_contact_shadows.z > 0 && index + 1u == uint(screen_contact_shadows.w)
-                    && visibility > 0 && dot(n, l) > 0)
-                    visibility *= screen_contact_visibility(pixel_position, geometric_normal, l);
+                    && visibility > 0 && (facing>0 || backlit))
+                    visibility *= screen_contact_visibility(pixel_position, bias_normal, l);
 #endif
             }
-            float3 direct_color=direct_brdf(n,v,l,base,metallic,roughness)*source.color_intensity.rgb*(source.color_intensity.w*attenuation*visibility);
+            const float light_weight=source.color_intensity.w*attenuation*visibility;
+            float3 direct_color=direct_brdf(n,v,l,reflected_base,metallic,roughness)*source.color_intensity.rgb*light_weight;
+            const float transmitted_weight=backlit ? (.96/3.14159265359)*diffuse_transmission*saturate(-facing) : 0;
+            if(backlit)direct_color+=base*source.color_intensity.rgb*(light_weight*transmitted_weight);
 #if POIMA_DIFFUSE_DONOR
             // A diffuse donor is view-independent. Use the dielectric F0
             // budget with Lambert's cosine and one over pi.
-            const float diffuse_weight=(.96/3.14159265359)*(1-metallic)*saturate(dot(n,l));
-            float3 donor_light=base*source.color_intensity.rgb*(source.color_intensity.w*attenuation*visibility*diffuse_weight);
+            const float diffuse_weight=(.96/3.14159265359)*(1-metallic)*saturate(facing)*reflected_fraction+transmitted_weight;
+            float3 donor_light=base*source.color_intensity.rgb*(light_weight*diffuse_weight);
 #endif
             [branch] if(water_caustic_grid_light.z!=0u && index+1u==water_caustic_grid_light.z &&
-                visibility>0 && l.y>.12 && dot(n,l)>0) {
+                visibility>0 && l.y>.12 && (facing>0 || backlit)) {
                 const float3 transmission=water_caustic_modulation(source,world_position,l,receive_shadows);
                 direct_color*=transmission;
 #if POIMA_DIFFUSE_DONOR

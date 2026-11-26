@@ -954,7 +954,7 @@ void validate_component(const std::string& type, const Json& value) {
         return;
     }
     if(type=="PbrMaterial") {
-        fields(value,{"base_color","emissive","metallic","roughness","double_sided","alpha_mode","opacity","alpha_cutoff"},{"base_color","emissive","metallic","roughness","double_sided"});
+        fields(value,{"base_color","emissive","metallic","roughness","double_sided","alpha_mode","opacity","alpha_cutoff","diffuse_transmission"},{"base_color","emissive","metallic","roughness","double_sided"});
         for(const auto* key:{"base_color","emissive"}) {
             require(value.at(key).is_array() && value.at(key).size()==3,"Material needs three color components.");
             for(const auto& x:value.at(key))require(x.is_number() && std::isfinite(x.get<double>()) && x>=0 && x<=1,"Material colors must be in [0,1].");
@@ -963,7 +963,15 @@ void validate_component(const std::string& type, const Json& value) {
         require(value.at("double_sided").is_boolean(),"double_sided must be boolean.");
         if(value.contains("alpha_mode"))require(value.at("alpha_mode").is_string() && (value.at("alpha_mode")=="opaque" || value.at("alpha_mode")=="mask"),"alpha_mode must be opaque or mask.");
         if(value.contains("opacity"))require(value.at("opacity").is_number() && std::isfinite(value.at("opacity").get<double>()) && value.at("opacity")>=0 && value.at("opacity")<=1,"opacity must be in [0,1].");
-        if(value.contains("alpha_cutoff"))require(value.at("alpha_cutoff").is_number() && std::isfinite(value.at("alpha_cutoff").get<double>()) && value.at("alpha_cutoff")>=0 && value.at("alpha_cutoff")<=max_material_alpha_cutoff,"alpha_cutoff must be in [0,1000000].");return;
+        if(value.contains("alpha_cutoff"))require(value.at("alpha_cutoff").is_number() && std::isfinite(value.at("alpha_cutoff").get<double>()) && value.at("alpha_cutoff")>=0 && value.at("alpha_cutoff")<=max_material_alpha_cutoff,"alpha_cutoff must be in [0,1000000].");
+        if(value.contains("diffuse_transmission")) {
+            const auto& fraction=value.at("diffuse_transmission");
+            require(fraction.is_number() && std::isfinite(fraction.get<double>()) && fraction>=0 && fraction<=1,
+                "Material diffuse transmission must be in [0,1].");
+            require(fraction==0 || (value.at("double_sided")==true && value.at("metallic")==0),
+                "Diffuse transmission requires a double-sided dielectric material.");
+        }
+        return;
     }
     if (type == "MeshCollider") {
         fields(value,{"asset","primitive","friction","restitution","surface"},{"asset","primitive","friction","restitution"});

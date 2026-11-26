@@ -77,8 +77,8 @@
             for(const auto* key:{"base_color","emissive","metallic","roughness"}) {
                 changed=changed || value.at(key)!=old.at("PbrMaterial").at(key);
             }
-            const Json alpha_defaults={{"alpha_mode","opaque"},{"opacity",1},{"alpha_cutoff",.5}};
-            for(const auto& [key,fallback]:alpha_defaults.items())
+            const Json material_defaults={{"alpha_mode","opaque"},{"opacity",1},{"alpha_cutoff",.5},{"diffuse_transmission",0}};
+            for(const auto& [key,fallback]:material_defaults.items())
                 changed=changed || value.value(key,fallback)!=old.at("PbrMaterial").value(key,fallback);
             require(changed,"Every selected material must contain a scalar change.");
             // Restore the exact old shape: omitted alpha defaults are not added

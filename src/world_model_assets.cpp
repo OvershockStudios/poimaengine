@@ -128,6 +128,7 @@ Json material_json(const PbrMaterial& m) {
     if(m.alpha_mode!=MaterialAlphaMode::opaque || m.opacity!=1 || m.alpha_cutoff!=.5f) {
         result["alpha_mode"]=material_alpha_mode_name(m.alpha_mode);result["opacity"]=m.opacity;result["alpha_cutoff"]=m.alpha_cutoff;
     }
+    if(m.diffuse_transmission>0)result["diffuse_transmission"]=m.diffuse_transmission;
     return result;
 }
 

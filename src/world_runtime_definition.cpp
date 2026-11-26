@@ -39,7 +39,8 @@ PbrMaterial material_from_json(const Json& value) {
     m.base_color=value.at("base_color").get<std::array<float,3>>();m.emissive=value.at("emissive").get<std::array<float,3>>();
     m.metallic=value.at("metallic");m.roughness=value.at("roughness");m.double_sided=value.at("double_sided");
     m.alpha_mode=value.value("alpha_mode",std::string("opaque"))=="mask" ? MaterialAlphaMode::mask : MaterialAlphaMode::opaque;
-    m.opacity=value.value("opacity",1.f);m.alpha_cutoff=value.value("alpha_cutoff",.5f);validate_pbr_material(m);return m;
+    m.opacity=value.value("opacity",1.f);m.alpha_cutoff=value.value("alpha_cutoff",.5f);
+    m.diffuse_transmission=value.value("diffuse_transmission",0.f);validate_pbr_material(m);return m;
 }
 // Resolve overrides against the original immutable mesh, including omitted
 // inherited maps, explicit null clears and inherited strengths.
@@ -131,6 +132,8 @@ std::optional<RuntimeMesh> resolve_mesh_component(const Json& components,
         if(!mesh.material) { PbrMaterial material;material.base_color=mesh.albedo;material.metallic=0;mesh.material=material; }
         if(mesh.textures->surface_layer)require(mesh.material->alpha_mode==MaterialAlphaMode::opaque,
             "A surface layer requires an opaque base material.",-32050);
+        if(mesh.textures->surface_layer)require(mesh.material->diffuse_transmission==0,
+            "A surface layer requires zero diffuse transmission.",-32050);
     }
     if(components.contains("StaticMesh") && components.at("StaticMesh").contains("lods")) {
         auto lods=std::make_shared<MeshLodChain>();

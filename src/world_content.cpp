@@ -231,6 +231,8 @@ FrozenContent freeze_world_content(const Json& source, const fs::path& directory
         for(const auto* type:{"BoxCollider","MeshCollider"})
             if(components.contains(type) && components.at(type).contains("surface"))result.needs_collision_surfaces=true;
         if(components.contains("Camera") && components.at("Camera").contains("focus_target"))result.needs_depth_of_field=true;
+        if(components.contains("PbrMaterial") && components.at("PbrMaterial").value("diffuse_transmission",0.0)>0)
+            result.needs_diffuse_transmission=true;
         for(const auto* type:{"StaticMesh","SkinnedMesh","AnimationRig","MeshCollider"})if(components.contains(type)) {
             const auto& ref=components.at(type);
             const auto value=model(ref.at("asset").get<std::string>());

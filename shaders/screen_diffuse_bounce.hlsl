@@ -185,7 +185,7 @@ float4 resolve_at(int2 texel, uint2 extent, int2 half_extent, int2 tile_origin,
     float3 receiver, world_normal;
     if (!load_receiver(texel, lower, upper, receiver, world_normal)) return lit;
     const float4 base = material_base.Load(int3(texel, 0));
-    const float3 diffuse = saturate(base.rgb) * (1 - saturate(base.a));
+    const float3 diffuse = saturate(base.rgb) * (1 - saturate(abs(base.a)));
     if (all(diffuse <= 0)) return lit;
     const float3 normal = view_vector(world_normal);
 
@@ -238,7 +238,7 @@ float4 bounce_at(int2 texel, uint2 extent) {
     const float flags = material_surface.Load(int3(texel, 0)).w;
     if (!isfinite(flags) || ((uint)round(flags) & 11u) != 9u) return lit;
     const float4 base = material_base.Load(int3(texel, 0));
-    const float3 diffuse = saturate(base.rgb) * (1 - saturate(base.a));
+    const float3 diffuse = saturate(base.rgb) * (1 - saturate(abs(base.a)));
     if (all(diffuse <= 0)) return lit;
     const float depth = scene_depth.Load(int3(texel, 0));
     if (!isfinite(depth) || depth < 0 || depth >= 1) return lit;

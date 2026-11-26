@@ -115,6 +115,13 @@ to test the FSR path.
 
 Opaque rasterization writes base color/metallic, octahedrally encoded shading normal/occlusion/flags, emission/roughness, and octahedrally encoded geometric normals. A compute pass reconstructs world position from depth, evaluates shared lighting, and writes HDR radiance. Background pixels retain the clear or procedural sky. GTAO and shadow bias use geometric normals at the same precision in both storage layouts.
 
+The base-color attachment's fourth channel holds metallic in `[0, 1]` or
+negative [diffuse transmission](FOLIAGE_SCATTER.md#light-leaves-from-behind)
+for a thin dielectric. Material consumers decode a negative value as
+metallic zero. The screen-space diffuse bounce receiver reduces its reflected
+diffuse budget by the transmitted fraction. Attachment formats and counts
+stay the same.
+
 Ordinary color playback without numeric scene-product probes or FSR skips previous-position raster inputs and the expanded normal, motion and validity attachments. Color screenshots are still available during that playback. Standalone captures, diagnostic playback, playback with probes and FSR use the full layout. In the full layout, opaque rasterization also writes motion and the compute pass expands the normal, motion and validity products before inspection or reconstruction. Exposure, output conversion and game UI composition follow lighting.
 
 Additional material buffers cost **24 bytes per render pixel** for ordinary color playback and **32 bytes** for the full layout. The expanded products of the full layout use another **17 bytes per pixel**. At 1920×1080 ordinary color playback uses **51,840,000 fewer logical image bytes** (49.4 MiB). These counts exclude reused HDR and depth, and measure texel payload. Reconstruction uses its internal render extent for the full layout.
