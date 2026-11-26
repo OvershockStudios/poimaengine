@@ -149,7 +149,8 @@ void verify_errors() {
     };
     invalid_field("format", "poima.unknown", "format");
     invalid_field("version", 1.0, "version");
-    invalid_field("version", 2, "version");
+    invalid_field("version", 3, "version");
+    invalid_field("version", 2, "lods");
     invalid_field("samples_x", -2, "samples_x");
     invalid_field("samples_z", std::numeric_limits<std::uint64_t>::max(), "samples_z");
     invalid_field("tile_cells", true, "tile_cells");

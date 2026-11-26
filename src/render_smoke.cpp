@@ -2273,10 +2273,16 @@ struct Context {
                 require(list==0 && !object.camera_draw && !object.skin && !object.stream_geometry && !object.mutable_geometry,
                     "Mesh LOD requires rigid world geometry without camera routing or streamed deformation.");
                 validate_mesh_lod_geometry(object.mesh.get(),*object.lods);
-                const auto distance=std::hypot(object.world[12]-scene->camera_world[12],
-                    object.world[13]-scene->camera_world[13],object.world[14]-scene->camera_world[14]);
+                std::array<double,3> anchor{object.world[12],object.world[13],object.world[14]};
+                if(object.lods->anchor) {
+                    const auto& local=*object.lods->anchor;
+                    for(std::size_t axis=0;axis<anchor.size();++axis)
+                        anchor[axis]+=object.world[axis]*local[0]+object.world[axis+4]*local[1]+object.world[axis+8]*local[2];
+                }
+                const auto distance=std::hypot(anchor[0]-scene->camera_world[12],
+                    anchor[1]-scene->camera_world[13],anchor[2]-scene->camera_world[14]);
                 std::uint32_t tier=0;
-                for(const auto& level:*object.lods) {
+                for(const auto& level:object.lods->levels) {
                     if(distance<level.min_distance_m)break;
                     ++tier;
                     selected_mesh=level.mesh;

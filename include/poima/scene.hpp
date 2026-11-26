@@ -275,7 +275,10 @@ struct MeshLodLevel {
     double min_distance_m=0;
     std::shared_ptr<const MeshAsset> mesh;
 };
-using MeshLodChain=std::vector<MeshLodLevel>;
+struct MeshLodChain {
+    std::vector<MeshLodLevel> levels;
+    std::optional<std::array<double,3>> anchor;
+};
 
 struct HeightDisplacement {
     std::shared_ptr<const TextureImage> texture;

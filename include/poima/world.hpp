@@ -43,6 +43,7 @@ struct WorldPackageContent {
     bool needs_collision_surfaces=false;
     bool needs_surface_mark_masks=false;
     bool needs_mesh_lod=false;
+    bool needs_mesh_lod_anchor=false;
     bool needs_material_displacement=false;
     bool needs_water_rain=false;
     bool needs_output_grade=false;

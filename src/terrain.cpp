@@ -102,6 +102,19 @@ std::array<float, 3> Heightfield::vertex_normal(GridPoint point) const {
     return {static_cast<float>(normal[0]), static_cast<float>(normal[1]), static_cast<float>(normal[2])};
 }
 
+MeshVertex Heightfield::vertex(GridPoint point) const {
+    const double min_x = x_.front(), min_z = z_.front();
+    const double extent_x = static_cast<double>(x_.back()) - min_x, extent_z = static_cast<double>(z_.back()) - min_z;
+    const auto p = position(point);
+    MeshVertex result;
+    result.position = {static_cast<float>(p[0]), static_cast<float>(p[1]), static_cast<float>(p[2])};
+    result.normal = vertex_normal(point);
+    result.uv = {static_cast<float>((p[0] - min_x) / extent_x), static_cast<float>((p[2] - min_z) / extent_z)};
+    const auto tangent = unit({result.normal[1], -result.normal[0], 0});
+    result.tangent = {static_cast<float>(tangent[0]), static_cast<float>(tangent[1]), 0, -1};
+    return result;
+}
+
 MeshAsset Heightfield::build_tile(std::uint32_t tile_x, std::uint32_t tile_z) const {
     if (tile_x >= tile_count_x() || tile_z >= tile_count_z()) throw std::out_of_range("Terrain tile is outside the grid.");
     const auto start_x = tile_x * layout_.tile_cells, start_z = tile_z * layout_.tile_cells;
@@ -113,23 +126,70 @@ MeshAsset Heightfield::build_tile(std::uint32_t tile_x, std::uint32_t tile_z) co
     mesh.material.metallic = 0;
     mesh.vertices.reserve(static_cast<std::size_t>(width) * (end_z - start_z + 1));
     mesh.indices.reserve(static_cast<std::size_t>(end_x - start_x) * (end_z - start_z) * 6);
-    const double min_x = x_.front(), min_z = z_.front();
-    const double extent_x = static_cast<double>(x_.back()) - min_x, extent_z = static_cast<double>(z_.back()) - min_z;
     for (auto z = start_z; z <= end_z; ++z) {
-        for (auto x = start_x; x <= end_x; ++x) {
-            const auto p = position({x, z});
-            auto& vertex = mesh.vertices.emplace_back();
-            vertex.position = {static_cast<float>(p[0]), static_cast<float>(p[1]), static_cast<float>(p[2])};
-            vertex.normal = vertex_normal({x, z});
-            vertex.uv = {static_cast<float>((p[0] - min_x) / extent_x), static_cast<float>((p[2] - min_z) / extent_z)};
-            const auto tangent = unit({vertex.normal[1], -vertex.normal[0], 0});
-            vertex.tangent = {static_cast<float>(tangent[0]), static_cast<float>(tangent[1]), 0, -1};
-        }
+        for (auto x = start_x; x <= end_x; ++x) mesh.vertices.push_back(vertex({x, z}));
     }
     for (auto z = start_z; z < end_z; ++z) {
         for (auto x = start_x; x < end_x; ++x) {
             for (const auto& triangle : cell_triangles(x, z)) {
                 for (const auto point : triangle) mesh.indices.push_back((point.z - start_z) * width + point.x - start_x);
+            }
+        }
+    }
+    return mesh;
+}
+
+MeshAsset Heightfield::build_tile_lod(std::uint32_t tile_x, std::uint32_t tile_z, std::uint32_t stride) const {
+    if (tile_x >= tile_count_x() || tile_z >= tile_count_z()) throw std::out_of_range("Terrain tile is outside the grid.");
+    require(stride >= 2 && stride <= max_tile_cells, "Terrain LOD stride must be 2..128 cells.");
+    const auto start_x = tile_x * layout_.tile_cells, start_z = tile_z * layout_.tile_cells;
+    const auto end_x = std::min(start_x + layout_.tile_cells, layout_.samples_x - 1);
+    const auto end_z = std::min(start_z + layout_.tile_cells, layout_.samples_z - 1);
+    if (end_x - start_x == 1 || end_z - start_z == 1) return build_tile(tile_x, tile_z);
+
+    // Merge a one-cell remainder so each patch can use an interior sample.
+    const auto partition = [stride](std::uint32_t start, std::uint32_t end) {
+        std::vector<std::uint32_t> points{start};
+        for (auto p = start + stride; p + 1 < end; p += stride) points.push_back(p);
+        points.push_back(end);
+        return points;
+    };
+    const auto columns = partition(start_x, end_x), rows = partition(start_z, end_z);
+    const auto width = end_x - start_x + 1;
+    std::vector<std::uint32_t> vertices(static_cast<std::size_t>(width) * (end_z - start_z + 1), UINT32_MAX);
+    MeshAsset mesh;
+    mesh.has_uv = true;
+    mesh.material.metallic = 0;
+    const auto index = [&](GridPoint p) {
+        auto& slot = vertices[(p.z - start_z) * width + p.x - start_x];
+        if (slot == UINT32_MAX) {
+            slot = static_cast<std::uint32_t>(mesh.vertices.size());
+            mesh.vertices.push_back(vertex(p));
+        }
+        return slot;
+    };
+    std::vector<GridPoint> perimeter;
+    for (std::size_t row = 1; row < rows.size(); ++row) {
+        for (std::size_t column = 1; column < columns.size(); ++column) {
+            const auto l = columns[column-1], r = columns[column];
+            const auto b = rows[row-1], t = rows[row];
+            if (l != start_x && r != end_x && b != start_z && t != end_z) {
+                const auto a = index({l,b}), d = index({r,t}), right = index({r,b}), left = index({l,t});
+                mesh.indices.insert(mesh.indices.end(), {a,d,right,a,left,d});
+                continue;
+            }
+            perimeter.clear();
+            // Walk clockwise in XZ. Interior edges use the patch corners;
+            // tile borders use every sample, regardless of their neighbor's tier.
+            for (auto z = b; z < t; z += l == start_x ? 1 : t-b) perimeter.push_back({l,z});
+            for (auto x = l; x < r; x += t == end_z ? 1 : r-l) perimeter.push_back({x,t});
+            for (auto z = t; z > b; z -= r == end_x ? 1 : t-b) perimeter.push_back({r,z});
+            for (auto x = r; x > l; x -= b == start_z ? 1 : r-l) perimeter.push_back({x,b});
+            const auto center = index({(l+r)/2,(b+t)/2});
+            for (std::size_t i = 0; i < perimeter.size(); ++i) {
+                mesh.indices.push_back(center);
+                mesh.indices.push_back(index(perimeter[i]));
+                mesh.indices.push_back(index(perimeter[(i+1) % perimeter.size()]));
             }
         }
     }

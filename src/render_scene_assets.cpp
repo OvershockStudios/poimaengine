@@ -292,7 +292,7 @@ void Cache::retain_scene(const SceneSnapshot& scene, MaterialBindings* foregroun
                 meshes.insert(bound_mesh);
                 mesh_owners_[bound_mesh] = object.mesh;
             }
-            if (object.lods) for (const auto& level : *object.lods) if (level.mesh) {
+            if (object.lods) for (const auto& level : object.lods->levels) if (level.mesh) {
                 meshes.insert(level.mesh.get());
                 mesh_owners_[level.mesh.get()] = level.mesh;
             }

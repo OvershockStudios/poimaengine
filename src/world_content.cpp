@@ -243,6 +243,7 @@ FrozenContent freeze_world_content(const Json& source, const fs::path& directory
             }
             if(type==std::string_view("StaticMesh") && ref.contains("lods")) {
                 result.needs_mesh_lod=true;
+                result.needs_mesh_lod_anchor|=ref.contains("lod_anchor");
                 for(const auto& lod:ref.at("lods"))(void)model(lod.at("asset").get_ref<const std::string&>());
             }
             if(ref.contains("primitive"))

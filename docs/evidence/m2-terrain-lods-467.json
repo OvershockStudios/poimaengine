@@ -1,0 +1,229 @@
+{
+  "format": "poima.qualification-summary",
+  "version": 1,
+  "engine_checkpoint": "0.0.467",
+  "comparison_commit": "696debc2d493fffc75b7d9ba79c3e6d042fc227b",
+  "scope": "Generated rigid terrain tiers with unchanged full-resolution perimeter and collision. Mixed native Vulkan LODs with material height displacement.",
+  "source_sha256": {
+    "CMakeLists.txt": "f792e02ab03f6794e7d1bb96207f6c6b23a340edbc8acc7e54d747f00dc9d4be",
+    "cmake/runtime.json.in": "ebd63d89291a9f031ed820e6978e77cb7db342ea8cf86ecad6cb3878e48b886b",
+    "include/poima/scene.hpp": "ec9be2521cbe5f053df589bf32c49f36b31a5f4709d17f82be84d4f0db5e4a54",
+    "include/poima/terrain.hpp": "399fd7fe1063b5cb50e75ff4cb4b022b886c242b0ed6f4ff492a4250fa8e16e4",
+    "include/poima/terrain_asset.hpp": "ae9f02d67e42de0e86fa71f244cd233d5b0a785ba5e3bcc4b4b440d73858bfd7",
+    "include/poima/world.hpp": "ab26055aeb63fca29b20b4efc6db8933668fbcd837a53ec986448cf903975252",
+    "src/core.cpp": "2d01c6ff7d2f220e283ae583ee25df96d441647e30b0d70f645f04d87bb6cab3",
+    "src/mesh_lod.hpp": "49a8bcd0a59261e059cf3a74c0f70445823e970a374bd1747a30eb7307bfe163",
+    "src/project.cpp": "773cb3b79c02b5ba40eb297c892c9fa4ba5b5755eae9b849a313c06dec4acfc6",
+    "src/render_scene_assets.cpp": "e5e21da26c8db85ccc67bb67324ab05eb1f5e5cf2de6cdff61eb89163586804d",
+    "src/render_smoke.cpp": "3280a48e2cf877d5420b3963d17ce0adec57fd1efec7e5161672093da9dd5df7",
+    "src/terrain.cpp": "fd638f52e71c8d366616aba3dabd3fa628646e841b9cb766b2364304b814811a",
+    "src/terrain_asset.cpp": "58de73bcb868a8ba5fb2fd1246abcb9aae75ac8d6f1f9dee549a426414eae631",
+    "src/world.cpp": "bb18206a3c08a86f02fb856772d57a1b46d49db148263f9b24941cbf15507c17",
+    "src/world_content.cpp": "26e8c5c18e51f3342781b8d4d21ad734edb24845ce97925f6d734f62bbc4b3f7",
+    "src/world_document.cpp": "0e13582c3af98f6faed5e43f0164cd7f62b2275a1e31fa55fe719b77175dd71e",
+    "src/world_runtime_definition.cpp": "3cfc421ec32a9ef9ccbab6930c082bee2c35adcd11688bc9cf4e8f717eceec6c",
+    "src/world_schema.cpp": "aa6cbe09c54283b32253290a85d6501d452c3832d71361c0551fdb5e19d3d8df",
+    "src/world_terrain_service.inc": "b80d9bf28479af3e2199914a9648c3e973bc25069565588ee4ff603bedf35c28",
+    "tests/asset_references_contract.py": "d8c1fe2d51a8c59dc4a34b9810d9473fe9e6c849e4a43e68b62d9d50a769e9b1",
+    "tests/contact_shadow_contract.py": "5a645481add18c08c7faf04d1aca7b1022d538ed3e960b0af69475280f32b6bd",
+    "tests/rigid_mesh_lod_capture.py": "d81a03843cd6775198fa44d8b4dac7e56c6c2e7bb1dcdfff8191c5f6f6fb20a6",
+    "tests/snow_compaction_contract.py": "dab277f7aa0ef2a3cafe65506ac0e2365a0148fa79a1bf3488b187de4f384026",
+    "tests/terrain_asset_native.cpp": "ae1d38ecbb2214813b5f487ffd2b37b47f231840c65a8709c33ea9087db2b641",
+    "tests/terrain_lod_capture.py": "9734430925819d72dbbfeaa263c52d2a4e33860288a646371771a73acc553628",
+    "tests/terrain_navigation_contract.py": "a1501cca2292932b93e4ba815ceb0d0e3300fde2f379a215454d79c6940b2dc4",
+    "tests/world_terrain_contract.py": "08bcf8c5c65fed1157a52734cc5c32ec1c866e3825ca775523ae0be70ac90322"
+  },
+  "windows_installed_sha256": {
+    "bin/poima.exe": "dc5731269bb5b4f6ae6ab9c995e3993437b05419b951597365c1905bcf2df9a1",
+    "bin/poima_desktop.dll": "a9c37b388429a0f8e25100fa36b32479bd3e0e0e14d4559ecd39afd8f79d1d98",
+    "runtime.json": "ef2e79bb488d36debf4629c85bad7d249f503d6d793783bf0c517c6550c6441a"
+  },
+  "unchanged_spirv_modules": 108,
+  "terrain": {
+    "recipe_sha256": "3866e95f76d3a79c8cdd0b4093f31dda8a339c2a621854303787ce2181085eee",
+    "exact_shared_edge_segments": [
+      16,
+      16
+    ],
+    "identical_v1_plans_against_checkpoint": "0.0.466",
+    "identical_v2_plans_on_ubuntu_and_windows": true,
+    "tiles": [
+      {
+        "grid": [
+          0,
+          0
+        ],
+        "asset": "519d0b9b5c174f37d5c6f0344affbdc8fe62d9e5fd19aa2177fa2152c406d659",
+        "anchor_m": [
+          68.0,
+          0.3212890625,
+          24.0
+        ],
+        "triangles": [
+          512,
+          104,
+          72
+        ]
+      },
+      {
+        "grid": [
+          1,
+          0
+        ],
+        "asset": "2b2b8326a196735048c477990bfef80f354c087019d43f1c970b4030557cacdd",
+        "anchor_m": [
+          76.0,
+          0.2490234375,
+          24.0
+        ],
+        "triangles": [
+          512,
+          104,
+          72
+        ]
+      },
+      {
+        "grid": [
+          2,
+          0
+        ],
+        "asset": "32891c2bc86089935f47394591073467456ce954ad03ea866fe03edb8fb0d36c",
+        "anchor_m": [
+          81.5,
+          0.3310546875,
+          24.0
+        ],
+        "triangles": [
+          192,
+          64,
+          46
+        ]
+      }
+    ]
+  },
+  "ubuntu": {
+    "passed_suites": [
+      "terrain_native",
+      "terrain_asset_native",
+      "world_terrain_contract",
+      "snow_compaction_contract",
+      "authoring_contract_identity",
+      "project_contract",
+      "contact_shadow_contract",
+      "world_contract",
+      "asset_references_contract",
+      "rigid_mesh_lod_contract"
+    ],
+    "binary_sha256": "12972dcf12c55d71a9bdcc4bd316f78c957eadaa80c244bbab38df579c76747b",
+    "junit_sha256": "61d57524cd881b541739303e8cc9d3675ab6dfac00a96839c886c35b9c1044ea",
+    "headless_report_sha256": "bdde5d695c47697870b35320f62800a99d558c714cf73579929a3058e9780e13",
+    "v1_navigation_regression_report_sha256": "624ee5129bfabb3f7164a7368aad09f49f87b2f3a4897f714e5360df30d6b1a1"
+  },
+  "vulkan": [
+    {
+      "device": "AMD Radeon(TM) Graphics",
+      "lighting_path": "forward",
+      "raw_report_sha256": "c88608c6d0c03be3ca3e32982164436d70b380598c66325ea2b6dfd521badab7",
+      "prior_rigid_lod_regression_sha256": "65ab5dee0a530e82cff7e15e265c3ffec9fbe7f9ab433b464228718a029a9c3f",
+      "export_without_anchor_feature_rejected": true,
+      "authored_and_relocated_capture_match": true,
+      "captures": {
+        "near": {
+          "image_sha256": "d82aae95e54b207c66f8e88128bbe49528058b2c52d547446115b0da4bb4cde2",
+          "camera_triangles": 616,
+          "shadow_triangles": 2452,
+          "displacement_input_patches": 3068,
+          "selected_tiers": [
+            0,
+            1,
+            2
+          ],
+          "seam_probes": 15,
+          "maximum_depth_error": 1.4230516842683727e-07,
+          "collider_triangle": 180,
+          "collider_position": [
+            69.5,
+            0.6425762176513672,
+            23.0
+          ]
+        },
+        "shifted": {
+          "image_sha256": "72893f8886f33e4cd9205caf9724adb5e1142d66ae8cadfa890caa2311337ecd",
+          "camera_triangles": 680,
+          "shadow_triangles": 2040,
+          "displacement_input_patches": 2720,
+          "selected_tiers": [
+            1,
+            0,
+            1
+          ],
+          "seam_probes": 30,
+          "maximum_depth_error": 1.3977670132447884e-07,
+          "collider_triangle": 180,
+          "collider_position": [
+            69.5,
+            0.6425762176513672,
+            23.0
+          ]
+        }
+      }
+    },
+    {
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "lighting_path": "deferred",
+      "raw_report_sha256": "5bd67893bbc23146ce3edf31909802df547dd4a5d7fb857108fe0da4bc458022",
+      "prior_rigid_lod_regression_sha256": "cafbd18c67bf983a5fc1f026b33140b1cd148656844039404ba2366d3c4bfd9f",
+      "export_without_anchor_feature_rejected": true,
+      "authored_and_relocated_capture_match": true,
+      "captures": {
+        "near": {
+          "image_sha256": "d66a5b58a09452f2983fad0e65218a86a3f473298f758230c04dc8493b6f2dfa",
+          "camera_triangles": 616,
+          "shadow_triangles": 2452,
+          "displacement_input_patches": 3068,
+          "selected_tiers": [
+            0,
+            1,
+            2
+          ],
+          "seam_probes": 15,
+          "maximum_depth_error": 1.4230516842683727e-07,
+          "collider_triangle": 180,
+          "collider_position": [
+            69.5,
+            0.6425762176513672,
+            23.0
+          ]
+        },
+        "shifted": {
+          "image_sha256": "c76c7112f34d0300f06b46d3b830a8e4021c3dade451b8eb06e52eb38c813469",
+          "camera_triangles": 680,
+          "shadow_triangles": 2040,
+          "displacement_input_patches": 2720,
+          "selected_tiers": [
+            1,
+            0,
+            1
+          ],
+          "seam_probes": 30,
+          "maximum_depth_error": 1.3801891318721005e-07,
+          "collider_triangle": 180,
+          "collider_position": [
+            69.5,
+            0.6425762176513672,
+            23.0
+          ]
+        }
+      }
+    }
+  ],
+  "initial_ubuntu_fixture_failure": {
+    "build_report_sha256": "9769a5380f38224e42724158f8be946b4a8aaa4e445198c07817abddc026cbb3",
+    "cause": "The legacy fixture expected unsupported version 2. Its revised version case uses unsupported version 3 and separately checks version 2 with missing LOD rules. The engine binary was unchanged."
+  },
+  "limits": [
+    "Three static terrain tiles, including one partial tile, with two alternate sampling strides.",
+    "A single camera shift crosses LOD thresholds. Physics continues to use primitive zero. Interior geometry can change discretely.",
+    "Representative game-scale frame timing remains open."
+  ]
+}

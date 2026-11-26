@@ -36,6 +36,13 @@ changes, that object's motion history starts using its new geometry. Other
 drawables keep their history. Selection is stateless and can switch repeatedly
 if a camera oscillates across a threshold.
 
+Use `StaticMesh.lod_anchor: [x, y, z]` to measure distance from another
+point in the mesh's local coordinates. The renderer transforms that point
+with the drawable. Supply three finite coordinates within ±1,000,000 m and
+a `lods` chain. [Cooked terrain levels](TERRAIN.md#cook-terrain-detail-levels)
+use a separate anchor for each tile while keeping their geometry in the
+same coordinate space.
+
 LOD applies to ordinary rigid world drawables. Camera-routed meshes, skinned
 geometry and deforming snow tiles use their dedicated paths. Physics and
 navigation use the explicitly authored collision geometry. Acoustic mesh
@@ -55,6 +62,9 @@ even if the camera did not select it. A bundle with any LOD chain requires a
 runtime descriptor with `features.mesh_lod: true`. The cooked model format
 and gameplay save format remain compatible. An older authoring binary may
 reject the additional component field.
+When a chain uses `lod_anchor`, the package also requires
+`features.mesh_lod_anchor`. Dependency queries and project inspection report
+`needs_mesh_lod_anchor`.
 
 `render_diagnostics.last_draws.mesh_lod` is present when the last completed
 submission contains any LOD-enabled drawables. Its five-element
@@ -63,8 +73,6 @@ submission contains any LOD-enabled drawables. Its five-element
 `{"id": "...", "tier": 1}`. Hidden entities are excluded by scene extraction.
 Use the existing camera and shadow triangle counters to inspect submitted work.
 Already uploaded tier geometry stays cached while the chain is active.
-This path does not generate proxy meshes, stream assets, blend across
-thresholds, or measure game-scale performance.
 
 ## Verification
 

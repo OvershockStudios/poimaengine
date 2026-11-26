@@ -2,6 +2,12 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.467
+
+- Cook lower-detail terrain interiors with matching edges across tiers.
+  Distance anchors let each tile select its geometry for camera and shadows.
+  [Terrain detail levels](docs/TERRAIN.md#cook-terrain-detail-levels)
+
 ## 0.0.466
 
 - Reuse unchanged shadow layers for height-displaced meshes and snow. Skip

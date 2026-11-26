@@ -76,6 +76,50 @@ python3 tests/world_terrain_contract.py "$runtime/bin/poima.exe" \
   --capture-output build/terrain-captures
 ```
 
+## Cook terrain detail levels
+
+Set `version` to `2` and add `lods` to the same heightfield recipe.
+Each entry specifies an interior sampling stride and the camera distance
+at which the tile may use it. Strides are increasing integers in 2–128
+cells. Distances are increasing metres in `(0, 1000000]`. Supply one to
+four entries.
+
+```json
+{
+  "version": 2,
+  "lods": [
+    {"stride": 4, "min_distance_m": 24},
+    {"stride": 8, "min_distance_m": 50}
+  ]
+}
+```
+
+The cooker preserves every border segment and its vertex positions, UVs,
+normals and tangents. Each coarser tier samples fewer interior heights.
+The transition triangles join coarse interior cells to the full border.
+Neighboring tiles can select different tiers and retain the same shared
+edge, including the last partial tile. A requested tier appears in the
+tile only when it reduces its triangle count. Interior heights can change
+when the camera crosses a threshold.
+
+Use each v2 result's `static_mesh` as the complete `StaticMesh` value.
+It contains the tile's model, a distance anchor at its bounds center,
+and the chosen `lods` when the tile has lower tiers. `lod_tiers` lists the
+stride, primitive, vertex and triangle counts of those alternates. Keep
+the entity transform at identity. Make the `MeshCollider` from the tile's
+top-level `asset` and `primitive`, which select the original full-resolution
+grid. The size budget includes all primitives of all tiles.
+
+Use matching [material height profiles](MATERIAL_DISPLACEMENT.md) on adjacent
+tiles to preserve a shared displaced edge. The same camera distance chooses
+the geometry for depth, shading and shadows. Displacement keeps its existing
+patch budget. A mutable snow region uses its fixed resolution.
+
+`tests/terrain_lod_capture.py` audits the cooked topology and collision ray.
+The Windows trial checks mixed tiers across a camera move, then replays those
+captures from a relocated standalone build.
+[Qualification results](evidence/m2-terrain-lods-467.json)
+
 ## Compact snow on cooked tiles
 
 Cook one heightfield with `samples_x: 65`, `samples_z: 33`, `tile_cells: 32`

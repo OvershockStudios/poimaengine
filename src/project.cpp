@@ -380,6 +380,7 @@ Json project_summary(const Project& p) {
     if(p.content.needs_collision_surfaces)result["needs_collision_surfaces"]=true;
     if(p.content.needs_surface_mark_masks)result["needs_surface_mark_masks"]=true;
     if(p.content.needs_mesh_lod)result["needs_mesh_lod"]=true;
+    if(p.content.needs_mesh_lod_anchor)result["needs_mesh_lod_anchor"]=true;
     if(p.content.needs_material_displacement)result["needs_material_displacement"]=true;
     if(p.content.needs_water_rain)result["needs_water_rain"]=true;
     if(p.content.needs_water_ripples)result["needs_water_ripples"]=true;
@@ -604,6 +605,8 @@ void require_scene_feature_support(const WorldPackageContent& content, const Jso
         "Project surface mark masks require a compatible Vulkan runtime.");
     require(!content.needs_mesh_lod || runtime.at("features").value("mesh_lod", false),
         "Project mesh LOD requires a compatible Vulkan runtime.");
+    require(!content.needs_mesh_lod_anchor || runtime.at("features").value("mesh_lod_anchor", false),
+        "Project mesh LOD anchors require a compatible Vulkan runtime.");
     require(!content.needs_material_displacement || runtime.at("features").value("material_displacement",false),
         "Project height displacement requires a compatible Vulkan runtime.");
     require(!content.needs_snow_material_displacement || runtime.at("features").value("snow_material_displacement",false),
@@ -626,9 +629,11 @@ Json runtime_spec(const std::string& bytes,std::string_view expected_version=bui
         "water_ripples","water_wave_layers","water_listener_audio","water_optics","water_refraction","water_caustics","water_shore_foam","water_terrain_fit","water_surface_swell","water_swell_variation","water_rough_reflection","water_solar_scattering","water_offshore","water_sprite_optics","snow_water_regions","snow_material_displacement","scene_particles","scene_particle_sprites",
         "particle_collisions","particle_impact_bursts","particle_water_contact","particle_water_flow","water_buoyancy","water_currents","water_surface_wakes","water_body_displacement","water_storage","water_reservoirs","water_overflow","water_sheets","water_sun_shafts","collision_surfaces","surface_marks","surface_mark_masks","mesh_lod","material_displacement","output_grade","auto_exposure","atmosphere_sky","orbital_atmosphere","aerial_perspective","volumetric_clouds","cloud_shadows","screen_reflections","depth_of_field","foliage_motion",
         "height_fog","physics_checkpoint","fsr3_upscaler","tone_mapping","tone_mapping_aces2_sdr","screen_contact_shadows","screen_diffuse_bounce",
-        "screen_diffuse_bounce_half_resolution"},
+        "screen_diffuse_bounce_half_resolution","mesh_lod_anchor"},
         {"simulation","renderer","audio","managed","editor"});
     for(const auto& feature:features)require(feature.is_boolean(),"Runtime feature flags must be Boolean.");
+    require(!features.value("mesh_lod_anchor",false) || (features.at("renderer")==true && features.value("mesh_lod",false)),
+        "Runtime mesh LOD anchors require Vulkan mesh LOD support.");
     require(!features.value("tone_mapping_aces2_sdr",false) || (features.at("renderer")==true && features.value("tone_mapping",false)),
         "Runtime ACES 2 SDR requires Vulkan tone mapping support.");
     require(!features.value("screen_contact_shadows",false) || features.at("renderer")==true,

@@ -868,9 +868,18 @@ void validate_component(const std::string& type, const Json& value) {
         return;
     }
     if(type=="StaticMesh") {
-        fields(value,{"asset","primitive","visible","cast_shadows","receive_shadows","lods","foliage_motion","displacement"},{"asset","primitive","visible"});
+        fields(value,{"asset","primitive","visible","cast_shadows","receive_shadows","lods","lod_anchor","foliage_motion","displacement"},{"asset","primitive","visible"});
         require(value.at("asset").is_string() && valid_asset_id(value.at("asset").get<std::string>()),"StaticMesh requires a 64-character lowercase content hash.");
         require(revision(value.at("primitive"))<10000 && value.at("visible").is_boolean(),"Invalid StaticMesh primitive/visibility.");
+        if(value.contains("lod_anchor")) {
+            const auto& anchor=value.at("lod_anchor");
+            require(value.contains("lods") && anchor.is_array() && anchor.size()==3,
+                "StaticMesh.lod_anchor requires lods and three local coordinates.");
+            for(const auto& coordinate:anchor)
+                require(coordinate.is_number() && std::isfinite(coordinate.get<double>()) &&
+                    std::abs(coordinate.get<double>())<=max_mesh_lod_distance_m,
+                    "Mesh LOD anchor coordinates must be finite and within +/-1000000 metres.");
+        }
         if(value.contains("lods")) {
             const auto& lods=value.at("lods");
             require(lods.is_array() && !lods.empty() && lods.size()<=max_mesh_lod_levels,"StaticMesh.lods requires 1..4 alternate levels.");

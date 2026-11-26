@@ -45,6 +45,8 @@ public:
     // Tiles use world-space positions. The last tile on an axis may be partial.
     // Invalid tile indices throw std::out_of_range.
     MeshAsset build_tile(std::uint32_t tile_x, std::uint32_t tile_z) const;
+    // Reduce the interior while preserving the full edge and its vertex data.
+    MeshAsset build_tile_lod(std::uint32_t tile_x, std::uint32_t tile_z, std::uint32_t stride) const;
 
     // Intersects a vertical line with the mesh. The mesh extent is inclusive.
     // Nonfinite coordinates and points outside that extent return std::nullopt.
@@ -62,6 +64,7 @@ private:
     Point position(GridPoint point) const;
     Point face_area_normal(const Triangle& triangle) const;
     std::array<float, 3> vertex_normal(GridPoint point) const;
+    MeshVertex vertex(GridPoint point) const;
 
     Layout layout_;
     std::vector<float> x_, y_, z_;

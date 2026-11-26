@@ -108,12 +108,14 @@ std::optional<RuntimeMesh> resolve_mesh_component(const Json& components,
     }
     if(components.contains("StaticMesh") && components.at("StaticMesh").contains("lods")) {
         auto lods=std::make_shared<MeshLodChain>();
+        const auto& geometry=components.at("StaticMesh");
+        if(geometry.contains("lod_anchor"))lods->anchor=geometry.at("lod_anchor").get<std::array<double,3>>();
         try {
-            for(const auto& lod:components.at("StaticMesh").at("lods")) {
+            for(const auto& lod:geometry.at("lods")) {
                 const auto model=cache.get(assets,lod.at("asset"));
                 const auto primitive=revision(lod.at("primitive"));
                 require(primitive<model->primitives.size(),"Mesh LOD primitive does not exist in its asset.",-32050);
-                lods->push_back({lod.at("min_distance_m").get<double>(),model->primitives[primitive]});
+                lods->levels.push_back({lod.at("min_distance_m").get<double>(),model->primitives[primitive]});
             }
             validate_mesh_lod_geometry(mesh.mesh.get(),*lods);
             validate_mesh_lod_textures(*mesh.mesh,*lods,mesh.textures.get());

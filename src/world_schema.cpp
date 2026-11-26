@@ -126,12 +126,15 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     auto displacement=object_schema({{"texture",asset_id},{"height_m",{{"type","number"},{"minimum",0},{"maximum",4}}},
         {"tile_mm",unsigned_range(32,64000)},{"axis",{{"enum",{"x","y","z"}}}}},{"texture","height_m","tile_mm","axis"});
     displacement["description"]="Adaptive tessellation from a linear cooked height image. Projection follows the chosen local axis. Author collision separately.";
-    const Json static_mesh=object_schema({{"asset",asset_id},{"primitive",{{"type","integer"},{"minimum",0},{"maximum",9999}}},{"visible",{{"type","boolean"}}},
+    auto static_mesh=object_schema({{"asset",asset_id},{"primitive",{{"type","integer"},{"minimum",0},{"maximum",9999}}},{"visible",{{"type","boolean"}}},
         {"cast_shadows",{{"type","boolean"},{"default",true}}},{"receive_shadows",{{"type","boolean"},{"default",true}}},
         {"lods",{{"type","array"},{"minItems",1},{"maxItems",max_mesh_lod_levels},{"items",lod_level},
           {"description","Optional alternate rigid geometry. Distances increase and triangle counts decrease from LOD0. Base materials and collision stay independent of visual tiers."}}},
+        {"lod_anchor",vector({{"type","number"},{"minimum",-max_mesh_lod_distance_m},{"maximum",max_mesh_lod_distance_m}},3)},
         {"foliage_motion",foliage_motion},{"displacement",displacement}},
         {"asset","primitive","visible"});
+    static_mesh["dependentRequired"]={{"lod_anchor",{"lods"}}};
+    static_mesh["properties"]["lod_anchor"]["description"]="Optional point in the mesh's local coordinates from which to measure the LOD distance. Defaults to the drawable origin.";
     const Json mesh_collider=object_schema({{"asset",asset_id},{"primitive",{{"type","integer"},{"minimum",0},{"maximum",9999}}},
         {"friction",{{"type","number"},{"minimum",0},{"maximum",2}}},{"restitution",unit},{"surface",collision_surface}}, {"asset","primitive","friction","restitution"});
     const Json model_node={{"type","integer"},{"minimum",0},{"maximum",9999}};
@@ -185,7 +188,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     rig_fields["root_motion"]=std::move(root_profile);
     const auto animation_rig=object_schema(rig_fields,{"asset","clip","time","speed","loop","playing"});
     const auto rig_node=object_schema({{"rig",id},{"node",model_node}},{"rig","node"});
-    auto skin_fields=static_mesh.at("properties");skin_fields.erase("lods");skin_fields.erase("foliage_motion");skin_fields["rig"]=id;skin_fields["node"]=model_node;
+    auto skin_fields=static_mesh.at("properties");skin_fields.erase("lods");skin_fields.erase("lod_anchor");skin_fields.erase("foliage_motion");skin_fields["rig"]=id;skin_fields["node"]=model_node;
     const auto skinned_mesh=object_schema(skin_fields,{"asset","primitive","visible","rig","node"});
     Json pbr=object_schema({{"base_color",vector(unit,3)},{"emissive",vector(unit,3)},{"metallic",unit},{"roughness",unit},{"double_sided",{{"type","boolean"}}},
         {"alpha_mode",{{"enum",{"opaque","mask"}},{"default","opaque"}}},
@@ -476,7 +479,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 256}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 257}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -1065,7 +1068,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     result["invariants"].push_back("Capture/play culling defaults true; camera and each shadow view cull independently. Profile defaults false. Render diagnostics report submitted draws and optional CPU/GPU intervals, not a qualified game frame time.");
     result["invariants"].push_back("Kinematic targets begin on the first tick of step/replay segments and persist across batches. Targets must be unique roots, normalized, at most 100 m/s and 20 rad/s. Raycasts query physics, including hidden colliders; ties use stable IDs. Primitive origin-inside hits have no surface normal; mesh hits retain triangle winding normals.");
     result["invariants"].push_back("StaticMesh.foliage_motion optionally adds local-height wind and touch deformation. The profile can coexist with rigid LOD and collision proxies, which continue to use the authored collision shape. CameraDraw, snow tiles and terrain tiles bound to water cannot use it. A touch actor is a distinct authored CharacterController. Spawn templates support wind profiles only.");
-    result["invariants"].push_back("StaticMesh.lods optionally declares one to four indexed rigid primitives with increasing min_distance_m thresholds and decreasing triangle counts. Camera distance from the object's world origin selects the same tier for all camera and shadow views. LOD0 retains material ownership and physics/navigation use their authored colliders. Completed draw diagnostics report selected tiers for LOD-enabled objects.");
+    result["invariants"].push_back("StaticMesh.lods optionally declares one to four indexed rigid primitives with increasing min_distance_m thresholds and decreasing triangle counts. Camera distance from the object's world origin or transformed lod_anchor selects the same tier for camera and shadows. LOD0 retains material ownership and physics/navigation use their authored colliders. Completed draw diagnostics report selected tiers for LOD-enabled objects.");
     result["invariants"].push_back("MeshCollider is an explicit static indexed model primitive, independent of rendering visibility. It cannot combine with BoxCollider/CharacterController or inherit moving/animation-owned transforms. Physics contacts use triangle front faces; rays query both sides and return the source triangle ordinal (null for non-mesh hits), retaining winding normals. No convexification, texture-cutout collision or deforming meshes. Limits: 100000 triangles/300000 vertices per body and 250000 triangles/750000 vertices per world. Geometry/material/transform validation runs at runtime preparation and export; malformed or degenerate geometry rejects.");
     result["invariants"].push_back("Managed gameplay is optional trusted project code. One module per runtime; typed native state is inspected/edited separately from authoring. Load/edit use tick/revision guards and shared retry receipts. Use input is a first-tick edge. Gameplay updates and queued motion join physics batch rollback.");
     result["input_actions"]={{"maximum_controllers",32},{"maximum_actions_per_controller",32},{"name_pattern","^[a-z][a-z0-9_.-]{0,63}$"},

@@ -49,9 +49,29 @@
 
             Json tiles = Json::array();
             for (const auto& tile : cooked.tiles) {
-                tiles.push_back({{"x", tile.x}, {"z", tile.z}, {"asset", tile.asset}, {"primitive", 0},
+                Json row = {{"x", tile.x}, {"z", tile.z}, {"asset", tile.asset}, {"primitive", 0},
                     {"bytes", tile.bytes.size()}, {"vertices", tile.vertex_count}, {"triangles", tile.triangle_count},
-                    {"bounds", {{"min", tile.bounds.minimum}, {"max", tile.bounds.maximum}}}});
+                    {"bounds", {{"min", tile.bounds.minimum}, {"max", tile.bounds.maximum}}}};
+                if (cooked.lod_recipe) {
+                    Json mesh = {{"asset", tile.asset}, {"primitive", 0}, {"visible", true}};
+                    Json tiers = Json::array();
+                    if (!tile.lods.empty()) {
+                        std::array<double,3> center{};
+                        for (std::size_t axis = 0; axis < center.size(); ++axis)
+                            center[axis] = (tile.bounds.minimum[axis] + tile.bounds.maximum[axis]) * .5;
+                        mesh["lod_anchor"] = center;
+                        mesh["lods"] = Json::array();
+                        for (const auto& lod : tile.lods) {
+                            mesh["lods"].push_back({{"asset", tile.asset}, {"primitive", lod.primitive},
+                                {"min_distance_m", lod.min_distance_m}});
+                            tiers.push_back({{"primitive", lod.primitive}, {"stride", lod.stride},
+                                {"vertices", lod.vertex_count}, {"triangles", lod.triangle_count}});
+                        }
+                    }
+                    row["static_mesh"] = std::move(mesh);
+                    row["lod_tiers"] = std::move(tiers);
+                }
+                tiles.push_back(std::move(row));
             }
             Json result = {{"recipe_sha256", cooked.recipe_sha256}, {"tiles_x", cooked.tiles_x},
                 {"tiles_z", cooked.tiles_z}, {"tiles", std::move(tiles)}};

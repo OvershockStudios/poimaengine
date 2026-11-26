@@ -1,8 +1,16 @@
 # Implementation status
 
-Updated 2026-11-25 for **0.0.466**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-25 for **0.0.467**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.467 cooks [terrain detail levels](TERRAIN.md#cook-terrain-detail-levels)
+with a full shared perimeter and tile-local distance anchors. The Vulkan
+fixture uses two full tiles and one partial tile. A camera move selects
+different neighboring tiers in the camera and shadow passes. Depth probes
+check the displaced seams and a collider ray checks the original terrain
+through the swap. Each relocated game reproduces the authored captures.
+[Qualification results](evidence/m2-terrain-lods-467.json)
 
 Version 0.0.466 extends [shadow reuse](SHADOWS.md#reuse-unchanged-shadow-views)
 to rigid height-displaced geometry and mutable snow. Windows Vulkan fixtures

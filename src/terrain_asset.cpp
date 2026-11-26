@@ -44,17 +44,22 @@ std::string digest(std::string_view bytes) {
 }
 
 struct Recipe {
+    struct Lod { std::uint32_t stride; double min_distance_m; };
     Layout layout;
     std::vector<float> heights;
+    std::vector<Lod> lods;
 };
 
 Recipe read_recipe(const Json& input) {
     constexpr std::array fields{"format", "version", "samples_x", "samples_z", "tile_cells",
         "origin_m", "spacing_m", "heights_m"};
-    require(input.is_object() && input.size() == fields.size(), "Terrain recipe must contain exactly the v1 fields.");
+    require(input.is_object(), "Terrain recipe must contain exactly the v1 fields or v2 fields.");
+    require(input.contains("version"), "Terrain recipe is missing its version.");
+    const auto version = count(input.at("version"), 1, 2, "Unsupported terrain recipe version.");
+    require(input.size() == fields.size() + (version == 2 ? 1 : 0),
+        "Terrain recipe must contain exactly the v1 fields or the v2 fields with lods.");
     for (const auto* field : fields) require(input.contains(field), "Terrain recipe is missing a required v1 field.");
     require(input.at("format") == heightfield_recipe_format, "Unknown terrain recipe format.");
-    (void)count(input.at("version"), 1, 1, "Unsupported terrain recipe version.");
 
     Recipe recipe;
     auto& layout = recipe.layout;
@@ -67,6 +72,25 @@ Recipe read_recipe(const Json& input) {
     require(triangles <= max_cook_triangles, "Terrain cook exceeds 250000 triangles.");
     layout.origin = coordinates<3>(input.at("origin_m"), "Terrain origin_m requires [x, y, z].");
     layout.spacing = coordinates<2>(input.at("spacing_m"), "Terrain spacing_m requires [x, z].");
+    if (version == 2) {
+        require(input.contains("lods"), "Terrain recipe version 2 requires lods.");
+        const auto& levels = input.at("lods");
+        require(levels.is_array() && !levels.empty() && levels.size() <= max_mesh_lod_levels,
+            "Terrain recipe lods requires one to four levels.");
+        std::uint32_t prior_stride = 1;
+        double prior_distance = 0;
+        for (const auto& level : levels) {
+            require(level.is_object() && level.size() == 2 && level.contains("stride") && level.contains("min_distance_m"),
+                "Terrain LOD level requires stride and min_distance_m.");
+            const auto stride = count(level.at("stride"), 2, max_tile_cells, "Terrain LOD stride must be 2..128 cells.");
+            const auto distance = number(level.at("min_distance_m"));
+            require(stride > prior_stride && distance > prior_distance && distance <= max_mesh_lod_distance_m,
+                "Terrain LOD strides and distances must increase. Distances are limited to 1000000 metres.");
+            recipe.lods.push_back({stride, distance});
+            prior_stride = stride;
+            prior_distance = distance;
+        }
+    }
     const auto& heights = input.at("heights_m");
     require(heights.is_array() && heights.size() == samples, "Terrain heights_m count differs from the declared grid.");
     recipe.heights.reserve(samples);
@@ -81,9 +105,14 @@ Recipe read_recipe(const Json& input) {
 
 std::string recipe_digest(const Recipe& recipe) {
     const auto& layout = recipe.layout;
-    const Json canonical{{"format", heightfield_recipe_format}, {"version", 1},
+    Json canonical{{"format", heightfield_recipe_format}, {"version", recipe.lods.empty() ? 1 : 2},
         {"samples_x", layout.samples_x}, {"samples_z", layout.samples_z}, {"tile_cells", layout.tile_cells},
         {"origin_m", layout.origin}, {"spacing_m", layout.spacing}, {"heights_m", recipe.heights}};
+    if (!recipe.lods.empty()) {
+        canonical["lods"] = Json::array();
+        for (const auto& lod : recipe.lods)
+            canonical["lods"].push_back({{"stride", lod.stride}, {"min_distance_m", lod.min_distance_m}});
+    }
     return digest(canonical.dump());
 }
 
@@ -105,8 +134,7 @@ Json parse_recipe(std::string_view bytes) {
         throw std::invalid_argument("Invalid terrain recipe JSON.");
     }
 }
-SampledHeightfield load_recipe(const Json& input) {
-    const auto recipe = read_recipe(input);
+SampledHeightfield load_recipe(const Recipe& recipe) {
     auto field = std::make_unique<const Heightfield>(recipe.layout, recipe.heights);
     const auto tiles = static_cast<std::size_t>(field->tile_count_x()) * field->tile_count_z();
     require(tiles <= max_cook_tiles, "Terrain cook exceeds 64 tiles.");
@@ -115,13 +143,15 @@ SampledHeightfield load_recipe(const Json& input) {
 } // namespace
 
 SampledHeightfield load_heightfield_recipe(std::string_view recipe) {
-    return load_recipe(parse_recipe(recipe));
+    return load_recipe(read_recipe(parse_recipe(recipe)));
 }
 
 CookedHeightfield cook_heightfield(const nlohmann::json& input) {
-    auto sampled = load_recipe(input);
+    const auto recipe = read_recipe(input);
+    auto sampled = load_recipe(recipe);
     const auto& field = *sampled.field;
     CookedHeightfield result;
+    result.lod_recipe = !recipe.lods.empty();
     result.tiles_x = field.tile_count_x();
     result.tiles_z = field.tile_count_z();
     const auto total_tiles = static_cast<std::size_t>(result.tiles_x) * result.tiles_z;
@@ -153,14 +183,24 @@ CookedHeightfield cook_heightfield(const nlohmann::json& input) {
             node.name = "Terrain";
             node.primitives.push_back(0);
             model.roots.push_back(0);
-
-            auto bytes = encode_model_with_importer(model, heightfield_model_importer);
+            std::vector<CookedTile::Lod> lods;
+            auto prior_index_count = mesh->indices.size();
+            for (const auto& rule : recipe.lods) {
+                auto coarse = field.build_tile_lod(x, z, rule.stride);
+                if (coarse.indices.size() >= prior_index_count) continue;
+                prior_index_count = coarse.indices.size();
+                lods.push_back({static_cast<std::uint32_t>(model.primitives.size()), rule.stride,
+                    rule.min_distance_m, coarse.vertices.size(), coarse.indices.size() / 3});
+                model.primitives.push_back(std::make_shared<MeshAsset>(std::move(coarse)));
+            }
+            const auto* importer = lods.empty() ? heightfield_model_importer : heightfield_lod_model_importer;
+            auto bytes = encode_model_with_importer(model, importer);
             require(bytes.size() <= max_cook_package_bytes - total_bytes, "Terrain cook exceeds 32 MiB of encoded packages.");
             total_bytes += bytes.size();
             (void)decode_model(bytes);
             auto id = digest(bytes);
             result.tiles.push_back({x, z, std::move(id), std::move(bytes), mesh_bounds(mesh.get()),
-                mesh->vertices.size(), mesh->indices.size() / 3});
+                mesh->vertices.size(), mesh->indices.size() / 3, std::move(lods)});
         }
     }
     return result;
@@ -179,11 +219,11 @@ Json authoring_schemas() {
             {"description", "Local .json recipe up to 4 MiB. Draft paths are relative to the entry world directory."}}}};
     Json inspect = {{"type", "object"}, {"additionalProperties", false}, {"properties", inputs},
         {"required", Json::array()}, {"oneOf", choices},
-        {"description", "Plan heightfield tiles from a v1 recipe without publishing. Returns the canonical recipe digest, ordered models, primitive indices, bounds and counts."}};
+        {"description", "Plan heightfield tiles from a v1 or v2 recipe without publishing. V2 adds edge-preserving render LODs. Returns the canonical digest, model and primitive identities, bounds and counts."}};
     auto cook = inspect;
     cook["properties"]["expected_recipe_sha256"] = {{"type", "string"}, {"pattern", "^[0-9a-f]{64}$"}};
     cook["required"] = {"expected_recipe_sha256"};
-    cook["description"] = "Publish the planned tiles if the canonical recipe digest still matches. Bind each tile's primitive zero to StaticMesh and MeshCollider in a guarded world transaction.";
+    cook["description"] = "Publish tiles if the canonical recipe digest matches. V2 returns a ready StaticMesh value for each tile. Bind primitive zero to MeshCollider in a guarded world transaction.";
     return {{"world.terrain.inspect", std::move(inspect)}, {"world.terrain.cook", std::move(cook)}};
 }
 
