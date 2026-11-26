@@ -96,6 +96,44 @@ Require(retry is { Version: "0.0.297", Downloaded: false } && handler.ArchiveReq
     install.State().Active == "0.0.297", "Explicit reactivation uses verified cached install");
 results.Add("rollback_persists_until_explicit_reactivation");
 
+var projectPin = new ProjectEnginePin(first.Version!, install.Installed(first.Version)!.ArchiveSha256);
+Require(projectPin.ArchiveSha256 is not null, "The original install records its archive digest");
+var selectedState = install.State();
+var versionFolder = Path.GetDirectoryName(install.Executable(first.Version))!;
+Directory.Move(versionFolder, Path.Combine(args[1], "removed-project-engine"));
+Require(install.ProjectEngine(projectPin) is null, "The remembered installation is missing");
+
+var lookups = handler.VersionRequests.Count;
+var checksBeforeAssets = (handler.InventoryRequests, handler.ArchiveRequests);
+foreach (var (pin, message) in new[]
+{
+    (new ProjectEnginePin("0.0.291", null), "No public Windows package"),
+    (new ProjectEnginePin(first.Version!, new string('0', 64)), "original Poima")
+})
+{
+    try
+    {
+        await install.RestoreProjectEngineAsync(pin, null, null, cancel);
+        throw new InvalidOperationException("An unavailable project pin unexpectedly installed.");
+    }
+    catch (InvalidOperationException error) when (error.Message.Contains(message, StringComparison.Ordinal)) { }
+    catch (InvalidDataException error) when (error.Message.Contains(message, StringComparison.Ordinal)) { }
+}
+Require((handler.InventoryRequests, handler.ArchiveRequests) == checksBeforeAssets &&
+    install.State() == selectedState && install.ProjectEngine(projectPin) is null,
+    "Missing release and archive mismatch preserve the current selection without downloading assets");
+results.Add("exact_tag_unavailable_or_wrong_archive_keeps_active");
+
+var recovered = await install.RestoreProjectEngineAsync(projectPin, null, null, cancel);
+Require(recovered is { Version: "0.0.296", Downloaded: true } && install.State() == selectedState &&
+    install.ProjectEngine(projectPin)?.ArchiveSha256 == projectPin.ArchiveSha256 &&
+    await NativeVersion(recovered.Version) == projectPin.Version,
+    "Exact release restoration starts the original project engine and leaves the active selection alone");
+var cached = await install.RestoreProjectEngineAsync(projectPin, null, null, cancel);
+Require(!cached.Downloaded && handler.VersionRequests.Skip(lookups).SequenceEqual(new[] { "0.0.291", "0.0.296", "0.0.296" }),
+    "Exact release restoration uses the tag endpoint and reuses the verified installed package");
+results.Add("exact_tag_recovers_project_without_activating");
+
 foreach (var path in new[] { "../poima.exe", "/poima.exe", "C:/poima.exe", "runtime\\poima.exe", "NUL.txt",
     "foo./poima.exe", "foo//poima.exe", "foo/open:stream", "com¹.txt", ".poima-install.json" })
     Require(!PackageInventory.SafePath(path), $"Windows path validation rejected {path}");
@@ -105,7 +143,7 @@ results.Add("windows_archive_path_bounds");
 Console.WriteLine(JsonSerializer.Serialize(new
 {
     passed = true, tests = results, archive_requests = handler.ArchiveRequests,
-    inventory_requests = handler.InventoryRequests, file_counts = handler.FileCounts,
+    inventory_requests = handler.InventoryRequests, tag_lookups = handler.VersionRequests, file_counts = handler.FileCounts,
     active = install.State().Active, previous = install.State().Previous,
     scope = "Windows installation and native process startup with a controlled GitHub HTTP fixture and original archives"
 }));
@@ -148,6 +186,7 @@ sealed class FixtureFeed : HttpMessageHandler
     public bool BadFileInventory { get; set; }
     public int ArchiveRequests { get; private set; }
     public int InventoryRequests { get; private set; }
+    public List<string> VersionRequests { get; } = new();
     public Dictionary<string, int> FileCounts { get; } = new();
 
     public FixtureFeed(string assets)
@@ -170,7 +209,16 @@ sealed class FixtureFeed : HttpMessageHandler
         cancel.ThrowIfCancellationRequested();
         var uri = request.RequestUri!;
         HttpResponseMessage response;
-        if (uri.Host == "api.github.com")
+        if (uri.Host == "api.github.com" &&
+            uri.AbsolutePath.StartsWith($"/repos/{Repository}/releases/tags/v", StringComparison.Ordinal))
+        {
+            var version = uri.Segments[^1][1..];
+            VersionRequests.Add(version);
+            response = archives.ContainsKey(version)
+                ? new(HttpStatusCode.OK) { Content = new ByteArrayContent(JsonSerializer.SerializeToUtf8Bytes(Release(version, version, true))) }
+                : new(HttpStatusCode.NotFound);
+        }
+        else if (uri.Host == "api.github.com")
         {
             var page = uri.Query.EndsWith("page=1", StringComparison.Ordinal);
             var releases = new List<object>();

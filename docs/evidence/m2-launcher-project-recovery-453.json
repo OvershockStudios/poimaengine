@@ -1,0 +1,117 @@
+{
+  "version": "0.0.453",
+  "date": "2026-11-25",
+  "base_commit": "74a3bffa57a79184b89b4f00e03d408eadf25d68",
+  "scope": "Recover the exact launcher-pinned engine and reopen the project without switching the active or rollback engine.",
+  "source_sha256": {
+    "desktop/Poima.Launcher/EngineInstall.cs": "c3a5e31f708a80a70a040866e116d644c5401c8ed3cf76a7808ca9a1c299e503",
+    "desktop/Poima.Launcher/LauncherForm.cs": "cbcf909c78848a86036396957135805711a53400308985f7152e2d804004c053",
+    "desktop/Poima.Launcher/ReleaseFeed.cs": "5dbe8105716671d54f4e98df23e2936982336490f6608766c461355dcf000b3a",
+    "tests/windows_launcher/LocalInstallTests.cs": "9879c5846a98d4a907867c7519e2fd22344e419baaf40656f4e95acc1e58dc26",
+    "tests/windows_launcher/Program.cs": "cbaf398b7ed848385b76080f903c712ec304ba125cc4684223a5e69c8936c42d",
+    "tests/windows_launcher_workspace.ps1": "ce83fe48180c730fa621539996e23c62037fb762677ef9ed95867f94d91204f8"
+  },
+  "windows_dotnet_sdk": "10.0.404",
+  "retained_package_sha256": {
+    "0.0.296": "87ea88775ae1f687ecfe0944903ba3cdc36e3e33363cc45a79a7a6b9a01a982c",
+    "0.0.297": "700383f8b1f552a4e0c849e006c4ab4f2577d5997e0821846efdb8212f864429",
+    "0.0.309": "b23ee9da2f0db2287efde955c6706985ca90066f0c86069fec48c7eb10d009bb"
+  },
+  "exact_release_feed": {
+    "passed": true,
+    "tests": [
+      "first_preview_install_and_native_engine",
+      "no_download_for_same_version",
+      "empty_stable_channel_preserves_active",
+      "stable_and_preview_selection_with_pagination",
+      "interrupted_download_keeps_active_and_cleans_staging",
+      "corrupt_archive_rejected",
+      "individual_file_digest_rejected_after_archive_passed",
+      "update_preserves_working_prior_engine",
+      "rollback_persists_until_explicit_reactivation",
+      "exact_tag_unavailable_or_wrong_archive_keeps_active",
+      "exact_tag_recovers_project_without_activating",
+      "windows_archive_path_bounds"
+    ],
+    "archive_requests": 6,
+    "inventory_requests": 6,
+    "tag_lookups": [
+      "0.0.291",
+      "0.0.296",
+      "0.0.296"
+    ],
+    "file_counts": {
+      "0.0.296": 499,
+      "0.0.297": 499
+    },
+    "active": "0.0.297",
+    "previous": "0.0.296",
+    "scope": "Windows installation and native process startup with a controlled GitHub HTTP fixture and original archives"
+  },
+  "offline_package": {
+    "passed": true,
+    "first": "0.0.296",
+    "active": "0.0.297",
+    "previous": "0.0.296",
+    "http_requests": 0,
+    "cases": [
+      "install",
+      "reuse",
+      "missing_manifest",
+      "wrong_length",
+      "corrupt_zip",
+      "corrupt_member_inventory",
+      "cancel",
+      "update",
+      "rollback",
+      "reactivate",
+      "wrong_project_version_rejected",
+      "exact_project_zip_restored_without_activating"
+    ]
+  },
+  "portable_launcher_ui": {
+    "passed": true,
+    "engine_version": "0.0.309",
+    "checks": {
+      "compact_first_run": true,
+      "installation_options_opened": true,
+      "compact_installed": true,
+      "installed_inventory_files": 499,
+      "install_staging_empty": true,
+      "portable_project_created": true,
+      "creator_editor_sha256": "f69863c1124f7b477b63ba330df4777cc10277f4b4ce5ef66de611dab2454e24",
+      "pinned_project_recovered": {
+        "archive_sha256": "b23ee9da2f0db2287efde955c6706985ca90066f0c86069fec48c7eb10d009bb",
+        "version": "0.0.309",
+        "back_kept_engine_missing": true,
+        "manifest_preserved": true,
+        "selection_preserved": true,
+        "reopened_creator_exit": 0
+      },
+      "default_launcher_settings_preserved": true,
+      "launcher_exit": 0,
+      "creator_exit": 0
+    },
+    "archive_sha256": "b23ee9da2f0db2287efde955c6706985ca90066f0c86069fec48c7eb10d009bb",
+    "launcher_sha256": "b6809337ddcb7bbd379f5cdeda2654fbb3773e0812a42cf7de53e54572464da6"
+  },
+  "earlier_ui_trials": [
+    {
+      "passed": false,
+      "launcher_sha256": "f0074551cb58889c2660812e963283665238e3ad2bc8b4f87c9aa87de26441f8",
+      "failure": "Timed out waiting for the pinned engine version.",
+      "cause": "The fixed accessible status name hid the displayed version message from UI Automation.",
+      "forced_cleanup": true
+    },
+    {
+      "passed": true,
+      "launcher_sha256": "493be44b3645d58f3f3d6bfc50dc4efd3b61a09ac757c8b3844005a8d4af1968",
+      "scope": "The recovery prompt exposed the version and the ZIP reopened the project. Final validation rebuilt the launcher with the project picker available during automatic update checks."
+    }
+  ],
+  "limits": [
+    "Exact-tag discovery used a controlled HTTP release feed and original engine archives.",
+    "The desktop test used a portable profile on the development Windows machine.",
+    "Public asset delivery and an install on a fresh machine remain unqualified."
+  ]
+}

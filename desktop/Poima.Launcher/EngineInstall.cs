@@ -8,6 +8,17 @@ namespace Poima.Launcher;
 internal sealed record InstallState(string? Active = null, string? Previous = null, string? HeldUpdate = null);
 internal sealed record InstallResult(string? Version, bool Downloaded, bool Held = false);
 internal sealed record PackageFile(string Path, long Bytes, string Sha256);
+internal sealed record InstalledEngine(string Version, string Editor, string? ArchiveSha256);
+internal sealed record ProjectEnginePin(string Version, string? ArchiveSha256)
+{
+    public void RequireMatch(string version, string? archiveSha256)
+    {
+        if (Version != version)
+            throw new InvalidDataException($"This project needs the Poima {Version} Windows package.");
+        if (ArchiveSha256 is not null && ArchiveSha256 != archiveSha256)
+            throw new InvalidDataException($"This project needs its original Poima {Version} Windows package. Check the ZIP or choose its installation folder.");
+    }
+}
 
 internal sealed record PackageInventory(string Version, long ArchiveBytes, string ArchiveSha256,
     IReadOnlyDictionary<string, PackageFile> Files)
@@ -110,7 +121,7 @@ internal sealed class EngineInstall(string root, ReleaseFeed feed)
         ? ReadSmall<InstallState>(StatePath)
         : new();
 
-    public string? Executable(string? version)
+    public InstalledEngine? Installed(string? version)
     {
         if (version is null) return null;
         var folder = InstallFolder(version);
@@ -124,7 +135,18 @@ internal sealed class EngineInstall(string root, ReleaseFeed feed)
         var info = new FileInfo(editor);
         if (!info.Exists || info.Length != receipt.EditorBytes || info.Attributes.HasFlag(FileAttributes.ReparsePoint)) return null;
         using var stream = File.OpenRead(editor);
-        return ReleaseFeed.Hex(SHA256.HashData(stream)) == receipt.EditorSha256 ? editor : null;
+        return ReleaseFeed.Hex(SHA256.HashData(stream)) == receipt.EditorSha256
+            ? new(version, editor, receipt.ArchiveSha256 is { } sha && ReleaseFeed.IsSha256(sha) ? sha : null)
+            : null;
+    }
+
+    public string? Executable(string? version) => Installed(version)?.Editor;
+
+    public InstalledEngine? ProjectEngine(ProjectEnginePin pin)
+    {
+        var installed = Installed(pin.Version);
+        if (installed is not null) pin.RequireMatch(installed.Version, installed.ArchiveSha256);
+        return installed;
     }
 
     public async Task<InstallResult> UpdateAsync(ReleaseChannel channel, bool automatic, IProgress<string>? status,
@@ -144,19 +166,45 @@ internal sealed class EngineInstall(string root, ReleaseFeed feed)
         if (chosen is null) return new(null, false);
         if (automatic && state.HeldUpdate == chosen.Version) return new(chosen.Version, false, true);
         var available = Executable(chosen.Version) is not null;
-        if (!available)
-        {
-            status?.Report($"Downloading Poima {chosen.Version}…");
-            var inventory = PackageInventory.Read(await feed.InventoryAsync(chosen.Inventory, cancel), chosen.Version, chosen.Archive);
-            await InstallAsync(inventory, path => feed.DownloadAsync(chosen.Archive, path, progress, cancel), status, cancel);
-        }
+        if (!available) await InstallPublishedAsync(chosen, status, progress, cancel);
         cancel.ThrowIfCancellationRequested();
         Activate(state, chosen.Version);
         return new(chosen.Version, !available);
     }
 
-    public async Task<InstallResult> InstallPackageAsync(string archive, IProgress<string>? status,
+    public async Task<InstallResult> RestoreProjectEngineAsync(ProjectEnginePin pin, IProgress<string>? status,
         IProgress<double>? progress, CancellationToken cancel)
+    {
+        await using var installLock = OpenInstallLock();
+        cancel.ThrowIfCancellationRequested();
+        if (ProjectEngine(pin) is not null) return new(pin.Version, false);
+        status?.Report($"Finding Poima {pin.Version} for this project…");
+        using var check = CancellationTokenSource.CreateLinkedTokenSource(cancel);
+        check.CancelAfter(TimeSpan.FromSeconds(45));
+        EngineRelease? release;
+        try { release = await feed.VersionAsync(pin.Version, check.Token); }
+        catch (OperationCanceledException) when (!cancel.IsCancellationRequested)
+        {
+            throw new TimeoutException("The release check timed out. Try again or choose the engine ZIP.");
+        }
+        if (release is null)
+            throw new InvalidOperationException($"No public Windows package for Poima {pin.Version}. Choose its engine ZIP.");
+        pin.RequireMatch(release.Version, release.Archive.Sha256);
+        await InstallPublishedAsync(release, status, progress, cancel);
+        return new(pin.Version, true);
+    }
+
+    private async Task InstallPublishedAsync(EngineRelease release, IProgress<string>? status,
+        IProgress<double>? progress, CancellationToken cancel)
+    {
+        status?.Report($"Downloading Poima {release.Version}…");
+        var inventory = PackageInventory.Read(await feed.InventoryAsync(release.Inventory, cancel),
+            release.Version, release.Archive);
+        await InstallAsync(inventory, path => feed.DownloadAsync(release.Archive, path, progress, cancel), status, cancel);
+    }
+
+    public async Task<InstallResult> InstallPackageAsync(string archive, IProgress<string>? status,
+        IProgress<double>? progress, CancellationToken cancel, ProjectEnginePin? pin = null)
     {
         const string prefix = "Poima-";
         const string suffix = "-Windows-x64.zip";
@@ -182,18 +230,18 @@ internal sealed class EngineInstall(string root, ReleaseFeed feed)
             if (input.ReadByte() != -1) throw new InvalidDataException("The release inventory changed during reading.");
         }
         var inventory = PackageInventory.Read(contents, version);
+        pin?.RequireMatch(version, inventory.ArchiveSha256);
 
         await using var installLock = OpenInstallLock();
-        var state = State();
-        var available = Executable(version) is not null;
+        var state = pin is null ? State() : null;
+        var installed = Installed(version);
         await using var source = File.OpenRead(archive);
         if (source.Length != inventory.ArchiveBytes)
             throw new InvalidDataException("The engine ZIP length differs from its inventory.");
         status?.Report($"Checking Poima {version}…");
-        if (available)
+        if (installed is not null)
         {
-            var receipt = ReadSmall<Receipt>(Path.Combine(InstallFolder(version), ".poima-install.json"));
-            if (receipt.ArchiveSha256 != inventory.ArchiveSha256)
+            if (installed.ArchiveSha256 != inventory.ArchiveSha256)
                 throw new InvalidDataException("This version is already installed from a different or older package record. Choose a separate install location.");
             await ReleaseFeed.CopyVerifiedAsync(source, Stream.Null, inventory.ArchiveBytes, inventory.ArchiveSha256, progress, cancel);
         }
@@ -207,8 +255,8 @@ internal sealed class EngineInstall(string root, ReleaseFeed feed)
             }, status, cancel);
         }
         cancel.ThrowIfCancellationRequested();
-        Activate(state, version);
-        return new(version, !available);
+        if (state is not null) Activate(state, version);
+        return new(version, installed is null);
     }
 
     private FileStream OpenInstallLock()

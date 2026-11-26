@@ -1,8 +1,18 @@
 # Implementation status
 
-Updated 2026-11-25 for **0.0.452**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-25 for **0.0.453**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.453 [reopens projects with a missing pinned
+engine](WINDOWS_LAUNCHER.md#reopen-a-project). The launcher can look up the
+exact release tag or read a local ZIP and its companion inventory. It
+records the archive checksum on project open when the install has that
+identity. Windows installer tests restored older packages while preserving
+the active and rollback versions. The interactive Windows test removed the
+remembered install from a portable profile, restored it from its ZIP and
+reopened the same project. The release lookup used a controlled HTTP feed.
+[Results and scope](evidence/m2-launcher-project-recovery-453.json)
 
 Version 0.0.452 [carries a room's late tail through doorways](AUDIO.md#hear-a-room-through-its-doorway).
 A single-sample impulse played while the door was sealed. Opening it

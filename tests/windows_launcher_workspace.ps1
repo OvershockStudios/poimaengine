@@ -12,6 +12,7 @@ param(
     [Parameter(ParameterSetName = 'Launcher')][switch]$ExpectBuildSetup,
     [Parameter(ParameterSetName = 'Launcher')][switch]$ExpectCompactStart,
     [Parameter(ParameterSetName = 'Launcher')][switch]$WithFirstPlay,
+    [Parameter(ParameterSetName = 'Launcher')][switch]$WithProjectRecovery,
     [Parameter(ParameterSetName = 'Launcher')][switch]$WithSplashSettings,
     [Parameter(ParameterSetName = 'Launcher')][switch]$WithStartupRenderSettings
 )
@@ -165,6 +166,20 @@ function Set-Field($Field, $Text) {
 function Close-ProcessWindow($Process) {
     if (!$Process.CloseMainWindow() -or !$Process.WaitForExit(20000) -or $Process.ExitCode -ne 0) {
         throw "Process $($Process.Id) did not close normally."
+    }
+}
+
+function Choose-LauncherFile($Owner, $Window, $Button, $Title, $Path) {
+    $pick = Wait-For $Button { Element $Window $Button }
+    $handle = [IntPtr]$pick.Current.NativeWindowHandle
+    # The WinForms button opens a synchronous modal dialog on its UI thread.
+    if ($handle -eq [IntPtr]::Zero -or
+        ![InstalledCreatorWindow]::PostMessage($handle, 0x00F5, [IntPtr]::Zero, [IntPtr]::Zero)) {
+        throw "Could not open '$Title'."
+    }
+    $dialog = Wait-For $Title { Window $Owner $Title }
+    if (![InstalledCreatorWindow]::ChooseFile([IntPtr]$dialog.Current.NativeWindowHandle, $Path)) {
+        throw "Could not select the file in '$Title'."
     }
 }
 
@@ -448,17 +463,7 @@ try {
     } elseif (Element $window 'Installation options') {
         Invoke-Button $window 'Installation options'
     }
-    $pick = Wait-For $installLabel { Element $window $installLabel }
-    $buttonHandle = [IntPtr]$pick.Current.NativeWindowHandle
-    # The WinForms button opens a synchronous modal dialog on its UI thread.
-    if ($buttonHandle -eq [IntPtr]::Zero -or
-        ![InstalledCreatorWindow]::PostMessage($buttonHandle, 0x00F5, [IntPtr]::Zero, [IntPtr]::Zero)) {
-        throw 'Could not open the engine ZIP chooser.'
-    }
-    $dialog = Wait-For 'engine ZIP picker' { Window $owner 'Select a Poima engine ZIP' }
-    if (![InstalledCreatorWindow]::ChooseFile([IntPtr]$dialog.Current.NativeWindowHandle, $EngineZip)) {
-        throw 'Could not select the engine ZIP in the owned dialog.'
-    }
+    Choose-LauncherFile $owner $window $installLabel 'Select a Poima engine ZIP' $EngineZip
     $null = Wait-For 'installed engine' { (Test-Path -LiteralPath $editorPath) -and (Element $window 'Open Poima') } 120
     if ($ExpectCompactStart) {
         $null = Wait-For 'Check for updates' { Element $window 'Check for updates' }
@@ -539,6 +544,61 @@ try {
         Check-SplashSettings $workspace $projectPath -StartupRender:$WithStartupRenderSettings
     }
     Close-ProcessWindow $creator
+    if ($WithProjectRecovery) {
+        $pickProject = 'Open project' + [char]0x2026
+        $chooseZip = 'Use engine ZIP' + [char]0x2026
+        $settingsPath = Join-Path $root 'installer.json'
+        $manifestBefore = Hash $projectPath
+        Choose-LauncherFile $owner $window $pickProject 'Open a Poima project' $projectPath
+        $creator = Wait-For 'creator opened from the launcher project picker' {
+            Get-Process -Name Poima.Editor -ErrorAction SilentlyContinue |
+                Where-Object { $_.Path -ieq $editorPath } | Select-Object -First 1
+        }
+        $null = $creator.Handle
+        $expectedTitle = 'Portable Starter ' + [char]0x2014 + ' Poima Creator'
+        $null = Wait-For 'remembered project workspace' { Window $creator $expectedTitle }
+        $settings = Get-Content -Raw -LiteralPath $settingsPath | ConvertFrom-Json
+        if ($settings.Projects.PSObject.Properties[$projectPath].Value -cne $version -or
+            $settings.ProjectArchives.PSObject.Properties[$projectPath].Value -cne $manifest.archive.sha256) {
+            throw 'Opening a project did not remember its engine and archive.'
+        }
+        Close-ProcessWindow $creator
+        Close-ProcessWindow $owner
+        $engineSelection = Get-ChildItem -LiteralPath (Join-Path $root 'Engines') -Filter '*.json' -File
+        if (@($engineSelection).Count -ne 1) { throw 'Expected one engine selection record.' }
+        $selectionBefore = Hash $engineSelection.FullName
+        Move-Item -LiteralPath $installed -Destination (Join-Path $run 'removed-project-engine')
+        $owner = Start-Process -FilePath $exe -ArgumentList '--portable' -WorkingDirectory $run -PassThru
+        $null = $owner.Handle
+        $window = Wait-For 'launcher without the project engine' { Window $owner 'Poima Launcher' }
+        Choose-LauncherFile $owner $window $pickProject 'Open a Poima project' $projectPath
+        $null = Wait-For 'exact release recovery' { Element $window 'Install and open' }
+        $null = Wait-For 'the pinned engine version' {
+            Visible-Element $window "This project uses Poima $version. Install that engine or choose its ZIP."
+        }
+        Invoke-Button $window 'Back'
+        $null = Wait-For 'project picker after backing out' { Element $window $pickProject }
+        if (Test-Path -LiteralPath $installed) { throw 'Backing out installed the engine.' }
+        Choose-LauncherFile $owner $window $pickProject 'Open a Poima project' $projectPath
+        Choose-LauncherFile $owner $window $chooseZip 'Select a Poima engine ZIP' $EngineZip
+        $creator = Wait-For 'creator reopened with the recovered engine' {
+            Get-Process -Name Poima.Editor -ErrorAction SilentlyContinue |
+                Where-Object { $_.Path -ieq $editorPath } | Select-Object -First 1
+        } 120
+        $null = $creator.Handle
+        $null = Wait-For 'recovered project workspace' { Window $creator $expectedTitle }
+        $null = Wait-For 'recovery completion' { Element $window 'Open Poima' }
+        if ((Hash $projectPath) -cne $manifestBefore -or (Hash $engineSelection.FullName) -cne $selectionBefore -or
+            (Hash $editorPath) -cne $report.checks.creator_editor_sha256) {
+            throw 'Project recovery changed the manifest, engine selection, or executable.'
+        }
+        Close-ProcessWindow $creator
+        $report.checks.pinned_project_recovered = [ordered]@{
+            archive_sha256 = $manifest.archive.sha256; version = $version
+            back_kept_engine_missing = $true; manifest_preserved = $true; selection_preserved = $true
+            reopened_creator_exit = $creator.ExitCode
+        }
+    }
     Close-ProcessWindow $owner
     if ((SettingsHash) -cne $before) { throw 'Portable mode modified normal launcher settings.' }
     $report.checks.default_launcher_settings_preserved = $true

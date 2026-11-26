@@ -20,14 +20,28 @@ fails or is cancelled.
 
 Under **Installation options**, **Use previous version** switches back to the
 prior install. An automatic check skips the version you just rolled back from.
-Use **Check for updates** to reselect it. **Open project…** remembers the engine
-version used with that project manifest path. Keep the matching install on
-disk to open it through the launcher.
+Use **Check for updates** to reselect it.
 
 Run `Poima.Launcher.exe --portable` from a writable folder to put launcher
 settings, default engine installs, and the new-project folder in
 `PoimaData` beside the executable. This can be used for a separate preview
 installation.
+
+## Reopen a project
+
+**Open project…** remembers the engine version and, when recorded by the
+installer, the archive checksum used to open that manifest path.
+If that engine is missing, select **Install and open** to look up its
+exact release tag or **Use engine ZIP…** to choose the matching archive
+with its inventory beside it. **Back** returns to the launcher.
+[GitHub release lookup by tag](https://docs.github.com/en/rest/releases/releases#get-a-release-by-tag-name)
+
+The recovered engine opens the project. The active version, rollback
+selection and update channel stay in place. Projects with earlier
+version-only settings record the archive checksum the next time they open
+with an identified package. If an incomplete installation already occupies
+the version's folder, use **Installation options** to select a separate
+install location before restoring the package.
 
 ## Prepare release assets
 
@@ -97,6 +111,11 @@ first-run actions, local package install, accessible icon names and first
 presented game frame from the installed creator.
 For 0.0.333 or later, `-WithSplashSettings` checks the default game splash
 setting, saving a change, and canceling further edits.
+For 0.0.453 or later, `-WithProjectRecovery` opens a project through the
+launcher, makes its engine temporarily unavailable in the test profile,
+and restores the engine from its ZIP. It checks that the original project
+and launcher selection survive the recovery. The installer regression
+also exercises exact-tag recovery against a controlled HTTP feed.
 
 Qualification with a public release, a fresh Windows machine and a first-time
 creator remains open.

@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+using System.Net;
 using System.Security.Cryptography;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -50,34 +51,57 @@ internal sealed class ReleaseFeed(HttpClient client)
         EngineRelease? latest = null;
         for (var page = 1; page <= 20; ++page)
         {
-            using var request = new HttpRequestMessage(HttpMethod.Get,
-                $"https://api.github.com/repos/{Repo}/releases?per_page=100&page={page}");
-            request.Headers.Accept.ParseAdd("application/vnd.github+json");
-            request.Headers.Add("X-GitHub-Api-Version", "2022-11-28");
+            using var request = ReleaseRequest($"releases?per_page=100&page={page}");
             using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancel);
             response.EnsureSuccessStatusCode();
             var data = await ReadAsync(response, 8 * 1024 * 1024, cancel);
             using var document = JsonDocument.Parse(data);
             foreach (var release in document.RootElement.EnumerateArray())
             {
-                if (release.GetProperty("draft").GetBoolean()) continue;
-                var tag = release.GetProperty("tag_name").GetString() ?? "";
-                if (!tag.StartsWith('v')) continue;
-                var version = tag[1..];
-                var order = EngineVersion.Parse(version);
-                if (order is null || order.Stable != (channel == ReleaseChannel.Stable) ||
-                    release.GetProperty("prerelease").GetBoolean() == order.Stable) continue;
-                var prefix = Folder(version);
-                var assets = release.GetProperty("assets");
-                var zip = Asset(assets, tag, prefix + ".zip", MaxArchiveBytes);
-                var list = Asset(assets, tag, prefix + ".manifest.json", MaxInventoryBytes);
-                if (zip is not null && list is not null && (latest is null || order.CompareTo(latest.Order) > 0))
-                    latest = new(version, order, zip, list);
+                var candidate = ReadRelease(release, channel);
+                if (candidate is not null && (latest is null || candidate.Order.CompareTo(latest.Order) > 0))
+                    latest = candidate;
             }
             if (!response.Headers.TryGetValues("Link", out var links) ||
                 !links.Any(link => link.Contains("rel=\"next\"", StringComparison.Ordinal))) return latest;
         }
         throw new InvalidDataException("The release list exceeded the launcher's paging limit.");
+    }
+
+    public async Task<EngineRelease?> VersionAsync(string version, CancellationToken cancel)
+    {
+        if (EngineVersion.Parse(version) is null) throw new InvalidDataException("The remembered engine version is invalid.");
+        using var request = ReleaseRequest($"releases/tags/v{version}");
+        using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancel);
+        if (response.StatusCode == HttpStatusCode.NotFound) return null;
+        response.EnsureSuccessStatusCode();
+        using var document = JsonDocument.Parse(await ReadAsync(response, 8 * 1024 * 1024, cancel));
+        var release = ReadRelease(document.RootElement);
+        return release?.Version == version ? release : null;
+    }
+
+    private static HttpRequestMessage ReleaseRequest(string path)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, $"https://api.github.com/repos/{Repo}/{path}");
+        request.Headers.Accept.ParseAdd("application/vnd.github+json");
+        request.Headers.Add("X-GitHub-Api-Version", "2022-11-28");
+        return request;
+    }
+
+    private static EngineRelease? ReadRelease(JsonElement release, ReleaseChannel? channel = null)
+    {
+        if (release.GetProperty("draft").GetBoolean()) return null;
+        var tag = release.GetProperty("tag_name").GetString() ?? "";
+        if (!tag.StartsWith('v')) return null;
+        var version = tag[1..];
+        var order = EngineVersion.Parse(version);
+        if (order is null || (channel is not null && order.Stable != (channel == ReleaseChannel.Stable)) ||
+            release.GetProperty("prerelease").GetBoolean() == order.Stable) return null;
+        var prefix = Folder(version);
+        var assets = release.GetProperty("assets");
+        var zip = Asset(assets, tag, prefix + ".zip", MaxArchiveBytes);
+        var list = Asset(assets, tag, prefix + ".manifest.json", MaxInventoryBytes);
+        return zip is not null && list is not null ? new(version, order, zip, list) : null;
     }
 
     private static ReleaseAsset? Asset(JsonElement assets, string tag, string name, long limit)

@@ -21,7 +21,7 @@ internal sealed class LauncherForm : Form
     private readonly TextBox location = new() { ReadOnly = true, AccessibleName = "Install location" };
     private readonly ComboBox channel = new() { DropDownStyle = ComboBoxStyle.DropDownList, AccessibleName = "Release channel" };
     private readonly Label current = new();
-    private readonly Label status = new() { AutoSize = false, Height = 44, AccessibleName = "Install status" };
+    private readonly Label status = new() { AutoSize = false, Height = 44 };
     private readonly ProgressBar progress = new() { Height = 6, AccessibleName = "Download progress" };
     private readonly Button update = Button("Install Poima", primary: true);
     private readonly Button installPackage = Button("Install from ZIP…");
@@ -29,6 +29,9 @@ internal sealed class LauncherForm : Form
     private readonly Button open = Button("Open Poima", primary: true);
     private readonly Button project = Button("Open project…");
     private readonly Button rollback = Button("Use previous version");
+    private readonly Button restoreDownload = Button("Install and open", primary: true);
+    private readonly Button restoreZip = Button("Use engine ZIP…");
+    private readonly Button dismissRestore = Button("Back");
     private readonly Button cancel = Button("Cancel");
     private readonly Button showOptions = Button("Installation options");
     private readonly ToolTip tooltips = new();
@@ -56,10 +59,14 @@ internal sealed class LauncherForm : Form
         AutoSizeMode = AutoSizeMode.GrowAndShrink, Visible = false, BackColor = Color.Transparent
     };
     private readonly Dictionary<string, string> pins;
+    private readonly Dictionary<string, string> archivePins;
     private CancellationTokenSource? pending;
+    private ProjectRecovery? projectRecovery;
     private bool closeAfterInstall;
 
-    private sealed record Settings(string Location, ReleaseChannel Channel, Dictionary<string, string> Projects);
+    private sealed record Settings(string Location, ReleaseChannel Channel, Dictionary<string, string> Projects,
+        Dictionary<string, string>? ProjectArchives = null);
+    private sealed record ProjectRecovery(string Manifest, ProjectEnginePin Engine);
 
     public LauncherForm(bool portable)
     {
@@ -78,6 +85,7 @@ internal sealed class LauncherForm : Form
         StartPosition = FormStartPosition.CenterScreen;
         var settings = LoadSettings();
         pins = new(settings.Projects, StringComparer.OrdinalIgnoreCase);
+        archivePins = new(settings.ProjectArchives ?? new Dictionary<string, string>(), StringComparer.OrdinalIgnoreCase);
 
         var layout = new TableLayoutPanel
         {
@@ -112,7 +120,7 @@ internal sealed class LauncherForm : Form
 
         var actions = new FlowLayoutPanel { Dock = DockStyle.Fill, WrapContents = false, BackColor = Color.Transparent };
         SetIcon(project, folderIcon, "Open project…");
-        actions.Controls.AddRange([open, update, project, cancel]);
+        actions.Controls.AddRange([open, update, project, restoreDownload, restoreZip, dismissRestore, cancel]);
         layout.Controls.Add(actions, 0, 2);
         status.Dock = DockStyle.Fill;
         status.BackColor = Color.Transparent;
@@ -145,8 +153,20 @@ internal sealed class LauncherForm : Form
         installPackage.Click += async (_, _) => await PickPackageAsync();
         cancel.Click += (_, _) => pending?.Cancel();
         rollback.Click += (_, _) => RunWithStatus(() => { status.Text = $"Poima {Install.Rollback()} is active."; RefreshInstall(); });
-        open.Click += (_, _) => RunWithStatus(() => Launch(Install.State().Active));
+        open.Click += (_, _) => RunWithStatus(() => Launch(Install.Installed(Install.State().Active) ??
+            throw new InvalidOperationException("Install a Poima engine first.")));
         project.Click += (_, _) => RunWithStatus(PickProject);
+        restoreDownload.Click += async (_, _) =>
+        {
+            if (projectRecovery is { } recovery) await UpdateAsync(automatic: false, recovery: recovery);
+        };
+        restoreZip.Click += async (_, _) => await PickPackageAsync(projectRecovery);
+        dismissRestore.Click += (_, _) => RunWithStatus(() =>
+        {
+            projectRecovery = null;
+            status.Text = "";
+            RefreshInstall();
+        });
         FormClosing += (_, args) =>
         {
             if (pending is null) return;
@@ -271,6 +291,7 @@ internal sealed class LauncherForm : Form
         var install = Install;
         var state = install.State();
         var ready = install.Executable(state.Active) is not null;
+        var recovering = projectRecovery is not null;
         current.Text = ready ? $"Poima {state.Active}" : "Set up Poima on this PC";
         if (ready) SetIcon(update, updateIcon, "Check for updates");
         else
@@ -283,8 +304,13 @@ internal sealed class LauncherForm : Form
             tooltips.SetToolTip(update, "");
             StyleAction(update, primary: true);
         }
-        open.Visible = project.Visible = ready;
-        open.Enabled = project.Enabled = ready;
+        open.Visible = ready && !recovering;
+        open.Enabled = ready;
+        project.Visible = !recovering && (ready || pins.Count > 0);
+        project.Enabled = pending is null;
+        update.Visible = !recovering;
+        restoreDownload.Visible = restoreZip.Visible = dismissRestore.Visible = recovering;
+        restoreDownload.Enabled = restoreZip.Enabled = dismissRestore.Enabled = pending is null;
         rollback.Visible = install.Executable(state.Previous) is not null;
         rollback.Enabled = pending is null;
         cancel.Visible = pending is not null;
@@ -299,7 +325,7 @@ internal sealed class LauncherForm : Form
         RunWithStatus(() => { SaveSettings(); status.Text = ""; RefreshInstall(); });
     }
 
-    private async Task PickPackageAsync()
+    private async Task PickPackageAsync(ProjectRecovery? recovery = null)
     {
         using var dialog = new OpenFileDialog
         {
@@ -307,16 +333,19 @@ internal sealed class LauncherForm : Form
             CheckFileExists = true, RestoreDirectory = true
         };
         if (dialog.ShowDialog(this) == DialogResult.OK)
-            await UpdateAsync(automatic: false, archive: dialog.FileName);
+            await UpdateAsync(automatic: false, archive: dialog.FileName, recovery: recovery);
     }
 
-    private async Task UpdateAsync(bool automatic, string? archive = null)
+    private async Task UpdateAsync(bool automatic, string? archive = null, ProjectRecovery? recovery = null)
     {
+        if (pending is not null) return;
         using var work = new CancellationTokenSource(TimeSpan.FromMinutes(15));
         pending = work;
         try
         {
             browse.Enabled = channel.Enabled = update.Enabled = rollback.Enabled = installPackage.Enabled = false;
+            project.Enabled = automatic;
+            restoreDownload.Enabled = restoreZip.Enabled = dismissRestore.Enabled = false;
             showOptions.Enabled = false;
             cancel.Visible = progress.Visible = true;
             progress.Value = 0;
@@ -326,15 +355,30 @@ internal sealed class LauncherForm : Form
             var selected = (ReleaseChannel)channel.SelectedItem!;
             var messages = new Progress<string>(message => status.Text = message);
             var download = new Progress<double>(fraction => progress.Value = (int)Math.Round(fraction * 100));
-            var result = await Task.Run(() => archive is null
-                ? install.UpdateAsync(selected, automatic, messages, download, work.Token)
-                : install.InstallPackageAsync(archive, messages, download, work.Token));
+            var result = await Task.Run(() =>
+            {
+                if (archive is not null)
+                    return install.InstallPackageAsync(archive, messages, download, work.Token, recovery?.Engine);
+                return recovery is null
+                    ? install.UpdateAsync(selected, automatic, messages, download, work.Token)
+                    : install.RestoreProjectEngineAsync(recovery.Engine, messages, download, work.Token);
+            });
+            if (recovery is not null)
+            {
+                work.Token.ThrowIfCancellationRequested();
+                var restored = install.ProjectEngine(recovery.Engine) ??
+                    throw new InvalidOperationException("Choose the project's engine ZIP to finish installation.");
+                LaunchProject(restored, recovery.Manifest);
+                projectRecovery = null;
+                status.Text = $"Opened the project with Poima {restored.Version}.";
+                return;
+            }
             status.Text = result.Version is null ? $"No {selected.ToString().ToLowerInvariant()} Windows releases are available." :
                 result.Held ? $"Poima {result.Version} is available. Check for updates to switch back." :
                 result.Downloaded ? $"Poima {result.Version} is installed." : $"Poima {result.Version} is already installed.";
             if (result.Downloaded) ShowInstallationOptions(false);
         }
-        catch (OperationCanceledException) { status.Text = "Installation stopped. Your active engine is unchanged."; }
+        catch (OperationCanceledException) { status.Text = "Installation stopped."; }
         catch (Exception error) when (Expected(error)) { Report(error); }
         finally
         {
@@ -342,6 +386,7 @@ internal sealed class LauncherForm : Form
             browse.Enabled = channel.Enabled = update.Enabled = installPackage.Enabled = showOptions.Enabled = true;
             progress.Visible = false;
             RunWithStatus(RefreshInstall);
+            if (automatic && projectRecovery is { } waiting) ShowRecoveryStatus(waiting.Engine);
             if (closeAfterInstall) BeginInvoke(Close);
         }
     }
@@ -356,15 +401,43 @@ internal sealed class LauncherForm : Form
         var manifest = Path.GetFullPath(dialog.FileName);
         var remembered = pins.TryGetValue(manifest, out var pinned);
         var version = remembered ? pinned : Install.State().Active;
-        Launch(version, manifest);
-        if (!remembered && version is not null) { pins[manifest] = version; SaveSettings(); }
+        if (version is null) throw new InvalidOperationException("Install a Poima engine first.");
+        archivePins.TryGetValue(manifest, out var archiveSha256);
+        var identity = new ProjectEnginePin(version, remembered ? archiveSha256 : null);
+        var engine = Install.ProjectEngine(identity);
+        if (engine is not null)
+        {
+            LaunchProject(engine, manifest);
+            return;
+        }
+        if (!remembered) throw new InvalidOperationException("Install a Poima engine first.");
+        projectRecovery = new(manifest, identity);
+        pending?.Cancel();
+        ShowInstallationOptions(false);
+        ShowRecoveryStatus(identity);
+        RefreshInstall();
     }
 
-    private void Launch(string? version, string? manifest = null)
+    private void ShowRecoveryStatus(ProjectEnginePin pin)
     {
-        var editor = Install.Executable(version) ??
-            throw new InvalidOperationException($"Poima {version ?? "is not installed"}. Choose its installation folder.");
-        var start = new ProcessStartInfo(editor) { WorkingDirectory = Path.GetDirectoryName(editor)! };
+        status.ForeColor = Muted;
+        status.Text = $"This project uses Poima {pin.Version}. Install that engine or choose its ZIP.";
+    }
+
+    private void LaunchProject(InstalledEngine engine, string manifest)
+    {
+        Launch(engine, manifest);
+        pins.TryGetValue(manifest, out var rememberedVersion);
+        archivePins.TryGetValue(manifest, out var rememberedSha);
+        if (rememberedVersion == engine.Version && rememberedSha == engine.ArchiveSha256) return;
+        pins[manifest] = engine.Version;
+        if (engine.ArchiveSha256 is { } sha) archivePins[manifest] = sha;
+        SaveSettings();
+    }
+
+    private void Launch(InstalledEngine engine, string? manifest = null)
+    {
+        var start = new ProcessStartInfo(engine.Editor) { WorkingDirectory = Path.GetDirectoryName(engine.Editor)! };
         if (manifest is not null)
         {
             start.ArgumentList.Add("--creator");
@@ -398,7 +471,7 @@ internal sealed class LauncherForm : Form
         try
         {
             File.WriteAllBytes(temporary, JsonSerializer.SerializeToUtf8Bytes(
-                new Settings(location.Text, (ReleaseChannel)channel.SelectedItem!, pins)));
+                new Settings(location.Text, (ReleaseChannel)channel.SelectedItem!, pins, archivePins)));
             File.Move(temporary, preferences, overwrite: true);
         }
         finally { File.Delete(temporary); }

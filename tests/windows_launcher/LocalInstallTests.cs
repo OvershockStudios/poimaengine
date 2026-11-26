@@ -64,13 +64,30 @@ internal static class LocalInstallTests
         Require(install.Rollback() == first && install.Executable(next) is not null, "Local rollback failed.");
         var reactivated = await install.InstallPackageAsync(nextArchive, null, null, cancel);
         Require(!reactivated.Downloaded && install.State() == new InstallState(next, first), "Local cached reactivation failed.");
+        var previous = install.Installed(first)!;
+        var pin = new ProjectEnginePin(first, previous.ArchiveSha256);
+        Require(pin.ArchiveSha256 is not null, "The installed package has an archive identity.");
+        Directory.Move(Path.GetDirectoryName(previous.Editor)!, Path.Combine(root, "removed-project-engine"));
+        try
+        {
+            await install.InstallPackageAsync(nextArchive, null, null, cancel, pin);
+            throw new InvalidOperationException("The wrong version was accepted for the pinned project.");
+        }
+        catch (InvalidDataException error) when (error.Message.Contains($"needs the Poima {first}", StringComparison.Ordinal)) { }
+        Require(install.ProjectEngine(pin) is null && install.State() == new InstallState(next, first),
+            "A different package changed the remembered engine or the active selection.");
+        var restored = await install.InstallPackageAsync(firstArchive, null, null, cancel, pin);
+        Require(restored is { Downloaded: true } && restored.Version == first &&
+            install.ProjectEngine(pin) == previous && install.State() == new InstallState(next, first),
+            "ZIP recovery did not restore the exact project engine or affected the active selection.");
         ExpectEmptyStaging();
         Require(blockedNetwork.Requests == 0, "Installing from files unexpectedly attempted HTTP.");
         Console.WriteLine(JsonSerializer.Serialize(new
         {
             passed = true, first, active = next, previous = first, http_requests = blockedNetwork.Requests,
             cases = new[] { "install", "reuse", "missing_manifest", "wrong_length", "corrupt_zip",
-                "corrupt_member_inventory", "cancel", "update", "rollback", "reactivate" }
+                "corrupt_member_inventory", "cancel", "update", "rollback", "reactivate",
+                "wrong_project_version_rejected", "exact_project_zip_restored_without_activating" }
         }));
 
         async Task ExpectInvalidAsync(string archive, string message)

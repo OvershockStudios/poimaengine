@@ -2,6 +2,12 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.453
+
+- Reopen a project whose remembered engine is missing by installing its
+  exact version from a release or local ZIP. The default engine selection
+  stays in place. [Reopen a project](docs/WINDOWS_LAUNCHER.md#reopen-a-project)
+
 ## 0.0.452
 
 - Carry a room's late reverb through open doorways. A room keeps its own
