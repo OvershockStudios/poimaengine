@@ -1,0 +1,1130 @@
+{
+  "format": "poima.qualification-summary",
+  "version": 1,
+  "engine_checkpoint": "0.0.466",
+  "comparison_commit": "f11610d19a6a8bebfac9c0652b76ab7034ef6a47",
+  "comparison_binary_sha256": "d76a6e7ce898425d1ba495cefe37f26e43e87dcbe82230dfdc7ee23ae9dc9c72",
+  "scope": "Exact per-view shadow cache reuse for height-displaced rigid terrain and mutable snow on Windows Vulkan.",
+  "source_sha256": {
+    "CMakeLists.txt": "4afaf2b9c1cab157d11960037bb5d1948b038aae02ffe364b72b0675c61e0b12",
+    "src/render_smoke.cpp": "a01c384b7239b26e20d845b38421a4a9367ce9814cdabf4399f159f4839fe503",
+    "src/render_shadows.cpp": "312d687383d2e08f40c2f1b0d9f4c586a2d365e430f30e932f51d8815523ab30",
+    "src/render_shadows.hpp": "ffc244260db2624d4271c52b67be7a6bfb38342eb724576fa99e83ce230126cf",
+    "shaders/material_displacement.hlsli": "52146e192f05e491261b213a2e8effc64f6cbc074e0f455396015ced5f0bc576",
+    "tests/displacement_shadow_cache_capture.py": "7101a3cfb01d95c74c1202a938c5e8acc7d7dc15468dd94c4f03fea2c6b161a5",
+    "tests/shadow_cache_capture.py": "90d944f02c28bd358578b29642ab0b60f46c64bb305bc21d6ef7fa7c2ce4441c",
+    "tests/snow_shadow_contract.py": "6e7190bbe2a8ef197ccc96147e68aa3d626f3a311fbec1f705e2e88f29061fca",
+    "tests/snow_compaction_contract.py": "dab277f7aa0ef2a3cafe65506ac0e2365a0148fa79a1bf3488b187de4f384026"
+  },
+  "windows_installed_sha256": {
+    "bin/poima.exe": "89e5448b8f6ec382ad5105e3be2971fb7aae1e696fa999cac634cab5e2ca8c8f",
+    "bin/poima_desktop.dll": "1ab13f68ca8c9f8d6877360c7a01788b447d80c881b6235a57fad636e4728908",
+    "runtime.json": "07a518383640f2ddc7a7c1d6bd6e88ded592c703ef94b0936bb898771eea9221"
+  },
+  "unchanged_spirv_modules": 108,
+  "ubuntu": {
+    "passed_suites": [
+      "world_terrain_contract",
+      "snow_compaction_contract",
+      "authoring_contract_identity",
+      "render_batches_native",
+      "render_schedule_native",
+      "project_contract",
+      "contact_shadow_contract",
+      "world_contract"
+    ],
+    "binary_sha256": "5e29e70d6966c0242c09fcbcd73d3d2ebecd13703bd165ea30a65b2c3c5d4150",
+    "junit_sha256": "ef9b42b4e70df783e594b824d3816037b9c1d4ead706f29451ca759c71b56227"
+  },
+  "columns": "Two-value measurement arrays list the 0.0.465 reference first and 0.0.466 second.",
+  "vulkan": [
+    {
+      "device": "AMD Radeon(TM) Graphics",
+      "lighting_path": "forward",
+      "geometry": "snow",
+      "report_sha256": "fbc6578c8062817b43c888dc578dbb37d8ecbfc10eaa1b57f41d1d1f19a472e9",
+      "compared_frames": 12,
+      "probes_per_frame": 9,
+      "stationary_warm_gpu_shadow_ms_median": [
+        1.4905199999999998,
+        0.0009199999999999999
+      ],
+      "frames": {
+        "cold": {
+          "image_sha256": "0378d0ede249e7f2e273acd061645c76019e63ab278057fecc16e17d34852b44",
+          "reused_views": [
+            0,
+            0
+          ],
+          "shadow_batches": [
+            3,
+            3
+          ],
+          "stream_upload_bytes": [
+            153696,
+            153696
+          ],
+          "gpu_shadow_ms": [
+            2.67956,
+            2.53204
+          ],
+          "profile_reused_by_view": [
+            false,
+            false
+          ]
+        },
+        "warm-0": {
+          "image_sha256": "0378d0ede249e7f2e273acd061645c76019e63ab278057fecc16e17d34852b44",
+          "reused_views": [
+            1,
+            2
+          ],
+          "shadow_batches": [
+            2,
+            0
+          ],
+          "stream_upload_bytes": [
+            153696,
+            153696
+          ],
+          "gpu_shadow_ms": [
+            1.3721999999999999,
+            0.0009199999999999999
+          ],
+          "profile_reused_by_view": [
+            true,
+            true
+          ]
+        },
+        "warm-1": {
+          "image_sha256": "0378d0ede249e7f2e273acd061645c76019e63ab278057fecc16e17d34852b44",
+          "reused_views": [
+            1,
+            2
+          ],
+          "shadow_batches": [
+            2,
+            0
+          ],
+          "stream_upload_bytes": [
+            153696,
+            153696
+          ],
+          "gpu_shadow_ms": [
+            1.4905199999999998,
+            0.0009199999999999999
+          ],
+          "profile_reused_by_view": [
+            true,
+            true
+          ]
+        },
+        "warm-2": {
+          "image_sha256": "0378d0ede249e7f2e273acd061645c76019e63ab278057fecc16e17d34852b44",
+          "reused_views": [
+            1,
+            2
+          ],
+          "shadow_batches": [
+            2,
+            0
+          ],
+          "stream_upload_bytes": [
+            153696,
+            153696
+          ],
+          "gpu_shadow_ms": [
+            1.5131999999999999,
+            0.0008799999999999999
+          ],
+          "profile_reused_by_view": [
+            true,
+            true
+          ]
+        },
+        "stamped": {
+          "image_sha256": "61464a7efc9fe44ef3d00d408605209ac1369ec0d96531de512102839945d8ff",
+          "reused_views": [
+            1,
+            1
+          ],
+          "shadow_batches": [
+            2,
+            2
+          ],
+          "stream_upload_bytes": [
+            258240,
+            258240
+          ],
+          "gpu_shadow_ms": [
+            1.48528,
+            1.45516
+          ],
+          "profile_reused_by_view": [
+            false,
+            true
+          ]
+        },
+        "stamped-warm": {
+          "image_sha256": "61464a7efc9fe44ef3d00d408605209ac1369ec0d96531de512102839945d8ff",
+          "reused_views": [
+            1,
+            2
+          ],
+          "shadow_batches": [
+            2,
+            0
+          ],
+          "stream_upload_bytes": [
+            153696,
+            153696
+          ],
+          "gpu_shadow_ms": [
+            1.5020799999999999,
+            0.0008799999999999999
+          ],
+          "profile_reused_by_view": [
+            true,
+            true
+          ]
+        },
+        "camera-moved": {
+          "image_sha256": "14911ee5bcd71bc21ea59b1a9c8e4e4f3cc26bc87d9914ade7a047847781be9a",
+          "reused_views": [
+            1,
+            1
+          ],
+          "shadow_batches": [
+            2,
+            2
+          ],
+          "stream_upload_bytes": [
+            153696,
+            153696
+          ],
+          "gpu_shadow_ms": [
+            1.48872,
+            1.39364
+          ],
+          "profile_reused_by_view": [
+            false,
+            true
+          ]
+        },
+        "camera-warm": {
+          "image_sha256": "14911ee5bcd71bc21ea59b1a9c8e4e4f3cc26bc87d9914ade7a047847781be9a",
+          "reused_views": [
+            1,
+            2
+          ],
+          "shadow_batches": [
+            2,
+            0
+          ],
+          "stream_upload_bytes": [
+            153696,
+            153696
+          ],
+          "gpu_shadow_ms": [
+            1.5145199999999999,
+            0.0008799999999999999
+          ],
+          "profile_reused_by_view": [
+            true,
+            true
+          ]
+        },
+        "offscreen-casters": {
+          "image_sha256": "b1eb21ced30122ed930636b5a2205813296c349799bab54c4a572332ba106445",
+          "reused_views": [
+            1,
+            1
+          ],
+          "shadow_batches": [
+            2,
+            2
+          ],
+          "stream_upload_bytes": [
+            153696,
+            153696
+          ],
+          "gpu_shadow_ms": [
+            1.44044,
+            1.39988
+          ],
+          "profile_reused_by_view": [
+            false,
+            true
+          ]
+        },
+        "offscreen-warm": {
+          "image_sha256": "b1eb21ced30122ed930636b5a2205813296c349799bab54c4a572332ba106445",
+          "reused_views": [
+            1,
+            2
+          ],
+          "shadow_batches": [
+            2,
+            0
+          ],
+          "stream_upload_bytes": [
+            153696,
+            0
+          ],
+          "gpu_shadow_ms": [
+            1.3972799999999999,
+            0.0008799999999999999
+          ],
+          "profile_reused_by_view": [
+            true,
+            true
+          ]
+        },
+        "reopened": {
+          "image_sha256": "b1eb21ced30122ed930636b5a2205813296c349799bab54c4a572332ba106445",
+          "reused_views": [
+            0,
+            0
+          ],
+          "shadow_batches": [
+            3,
+            3
+          ],
+          "stream_upload_bytes": [
+            153696,
+            153696
+          ],
+          "gpu_shadow_ms": [
+            2.44808,
+            2.29848
+          ],
+          "profile_reused_by_view": [
+            false,
+            false
+          ]
+        },
+        "reopened-warm": {
+          "image_sha256": "b1eb21ced30122ed930636b5a2205813296c349799bab54c4a572332ba106445",
+          "reused_views": [
+            1,
+            2
+          ],
+          "shadow_batches": [
+            2,
+            0
+          ],
+          "stream_upload_bytes": [
+            153696,
+            0
+          ],
+          "gpu_shadow_ms": [
+            1.5331599999999999,
+            0.0008799999999999999
+          ],
+          "profile_reused_by_view": [
+            true,
+            true
+          ]
+        }
+      }
+    },
+    {
+      "device": "AMD Radeon(TM) Graphics",
+      "lighting_path": "forward",
+      "geometry": "rigid",
+      "report_sha256": "3cb7f448cbfb415fc8840c6d09e5114c868cc0b3fdbbf8b7bb87da56cb08e90a",
+      "compared_frames": 10,
+      "probes_per_frame": 9,
+      "stationary_warm_gpu_shadow_ms_median": [
+        1.39036,
+        0.0009199999999999999
+      ],
+      "frames": {
+        "cold": {
+          "image_sha256": "0378d0ede249e7f2e273acd061645c76019e63ab278057fecc16e17d34852b44",
+          "reused_views": [
+            0,
+            0
+          ],
+          "shadow_batches": [
+            3,
+            3
+          ],
+          "stream_upload_bytes": [
+            0,
+            0
+          ],
+          "gpu_shadow_ms": [
+            2.37444,
+            2.39456
+          ],
+          "profile_reused_by_view": [
+            false,
+            false
+          ]
+        },
+        "warm-0": {
+          "image_sha256": "0378d0ede249e7f2e273acd061645c76019e63ab278057fecc16e17d34852b44",
+          "reused_views": [
+            1,
+            2
+          ],
+          "shadow_batches": [
+            2,
+            0
+          ],
+          "stream_upload_bytes": [
+            0,
+            0
+          ],
+          "gpu_shadow_ms": [
+            1.4401199999999998,
+            0.0009199999999999999
+          ],
+          "profile_reused_by_view": [
+            true,
+            true
+          ]
+        },
+        "warm-1": {
+          "image_sha256": "0378d0ede249e7f2e273acd061645c76019e63ab278057fecc16e17d34852b44",
+          "reused_views": [
+            1,
+            2
+          ],
+          "shadow_batches": [
+            2,
+            0
+          ],
+          "stream_upload_bytes": [
+            0,
+            0
+          ],
+          "gpu_shadow_ms": [
+            1.39036,
+            0.0008799999999999999
+          ],
+          "profile_reused_by_view": [
+            true,
+            true
+          ]
+        },
+        "warm-2": {
+          "image_sha256": "0378d0ede249e7f2e273acd061645c76019e63ab278057fecc16e17d34852b44",
+          "reused_views": [
+            1,
+            2
+          ],
+          "shadow_batches": [
+            2,
+            0
+          ],
+          "stream_upload_bytes": [
+            0,
+            0
+          ],
+          "gpu_shadow_ms": [
+            1.38612,
+            0.0009199999999999999
+          ],
+          "profile_reused_by_view": [
+            true,
+            true
+          ]
+        },
+        "camera-moved": {
+          "image_sha256": "d6e75f6d059d1eb8aa79d72d92439542ba063cce836f41c8dc2d8ca5c0a87807",
+          "reused_views": [
+            1,
+            1
+          ],
+          "shadow_batches": [
+            2,
+            2
+          ],
+          "stream_upload_bytes": [
+            0,
+            0
+          ],
+          "gpu_shadow_ms": [
+            1.3574,
+            1.45172
+          ],
+          "profile_reused_by_view": [
+            false,
+            true
+          ]
+        },
+        "camera-warm": {
+          "image_sha256": "d6e75f6d059d1eb8aa79d72d92439542ba063cce836f41c8dc2d8ca5c0a87807",
+          "reused_views": [
+            1,
+            2
+          ],
+          "shadow_batches": [
+            2,
+            0
+          ],
+          "stream_upload_bytes": [
+            0,
+            0
+          ],
+          "gpu_shadow_ms": [
+            1.514,
+            0.0008799999999999999
+          ],
+          "profile_reused_by_view": [
+            true,
+            true
+          ]
+        },
+        "offscreen-casters": {
+          "image_sha256": "4d17d37f39d59196eccbc3d50b0c5239d6d0069a88b2d291f6a8907d991b0507",
+          "reused_views": [
+            1,
+            1
+          ],
+          "shadow_batches": [
+            2,
+            2
+          ],
+          "stream_upload_bytes": [
+            0,
+            0
+          ],
+          "gpu_shadow_ms": [
+            1.8313,
+            1.4789599999999998
+          ],
+          "profile_reused_by_view": [
+            false,
+            true
+          ]
+        },
+        "offscreen-warm": {
+          "image_sha256": "4d17d37f39d59196eccbc3d50b0c5239d6d0069a88b2d291f6a8907d991b0507",
+          "reused_views": [
+            1,
+            2
+          ],
+          "shadow_batches": [
+            2,
+            0
+          ],
+          "stream_upload_bytes": [
+            0,
+            0
+          ],
+          "gpu_shadow_ms": [
+            1.4245599999999998,
+            0.0009199999999999999
+          ],
+          "profile_reused_by_view": [
+            true,
+            true
+          ]
+        },
+        "reopened": {
+          "image_sha256": "4d17d37f39d59196eccbc3d50b0c5239d6d0069a88b2d291f6a8907d991b0507",
+          "reused_views": [
+            0,
+            0
+          ],
+          "shadow_batches": [
+            3,
+            3
+          ],
+          "stream_upload_bytes": [
+            0,
+            0
+          ],
+          "gpu_shadow_ms": [
+            2.44792,
+            2.43492
+          ],
+          "profile_reused_by_view": [
+            false,
+            false
+          ]
+        },
+        "reopened-warm": {
+          "image_sha256": "4d17d37f39d59196eccbc3d50b0c5239d6d0069a88b2d291f6a8907d991b0507",
+          "reused_views": [
+            1,
+            2
+          ],
+          "shadow_batches": [
+            2,
+            0
+          ],
+          "stream_upload_bytes": [
+            0,
+            0
+          ],
+          "gpu_shadow_ms": [
+            1.3937199999999998,
+            0.0008799999999999999
+          ],
+          "profile_reused_by_view": [
+            true,
+            true
+          ]
+        }
+      }
+    },
+    {
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "lighting_path": "deferred",
+      "geometry": "snow",
+      "report_sha256": "11ed93da5a56352d015dde4c160e988c5d002642bbe652347935f9c171048df3",
+      "compared_frames": 12,
+      "probes_per_frame": 9,
+      "stationary_warm_gpu_shadow_ms_median": [
+        0.035679999999999996,
+        0.000384
+      ],
+      "frames": {
+        "cold": {
+          "image_sha256": "5142e6bbcd2d3a5e55819121d28a18e28d983ebf83ac4c39984a199428998249",
+          "reused_views": [
+            0,
+            0
+          ],
+          "shadow_batches": [
+            3,
+            3
+          ],
+          "stream_upload_bytes": [
+            153696,
+            153696
+          ],
+          "gpu_shadow_ms": [
+            0.074112,
+            0.074144
+          ],
+          "profile_reused_by_view": [
+            false,
+            false
+          ]
+        },
+        "warm-0": {
+          "image_sha256": "5142e6bbcd2d3a5e55819121d28a18e28d983ebf83ac4c39984a199428998249",
+          "reused_views": [
+            1,
+            2
+          ],
+          "shadow_batches": [
+            2,
+            0
+          ],
+          "stream_upload_bytes": [
+            153696,
+            153696
+          ],
+          "gpu_shadow_ms": [
+            0.035679999999999996,
+            0.000384
+          ],
+          "profile_reused_by_view": [
+            true,
+            true
+          ]
+        },
+        "warm-1": {
+          "image_sha256": "5142e6bbcd2d3a5e55819121d28a18e28d983ebf83ac4c39984a199428998249",
+          "reused_views": [
+            1,
+            2
+          ],
+          "shadow_batches": [
+            2,
+            0
+          ],
+          "stream_upload_bytes": [
+            153696,
+            153696
+          ],
+          "gpu_shadow_ms": [
+            0.035296,
+            0.000384
+          ],
+          "profile_reused_by_view": [
+            true,
+            true
+          ]
+        },
+        "warm-2": {
+          "image_sha256": "5142e6bbcd2d3a5e55819121d28a18e28d983ebf83ac4c39984a199428998249",
+          "reused_views": [
+            1,
+            2
+          ],
+          "shadow_batches": [
+            2,
+            0
+          ],
+          "stream_upload_bytes": [
+            153696,
+            153696
+          ],
+          "gpu_shadow_ms": [
+            0.035712,
+            0.000384
+          ],
+          "profile_reused_by_view": [
+            true,
+            true
+          ]
+        },
+        "stamped": {
+          "image_sha256": "34de2f015a9c112219491bdcb13c90b663eba50f7222ddd6fccfec64bbce306e",
+          "reused_views": [
+            1,
+            1
+          ],
+          "shadow_batches": [
+            2,
+            2
+          ],
+          "stream_upload_bytes": [
+            258240,
+            258240
+          ],
+          "gpu_shadow_ms": [
+            0.035616,
+            0.03392
+          ],
+          "profile_reused_by_view": [
+            false,
+            true
+          ]
+        },
+        "stamped-warm": {
+          "image_sha256": "34de2f015a9c112219491bdcb13c90b663eba50f7222ddd6fccfec64bbce306e",
+          "reused_views": [
+            1,
+            2
+          ],
+          "shadow_batches": [
+            2,
+            0
+          ],
+          "stream_upload_bytes": [
+            153696,
+            153696
+          ],
+          "gpu_shadow_ms": [
+            0.034272,
+            0.000384
+          ],
+          "profile_reused_by_view": [
+            true,
+            true
+          ]
+        },
+        "camera-moved": {
+          "image_sha256": "b09fc1fd4d9c31a20c7fb42d6b07ecf33b42fa71a725a4b366ca9856a92ae48f",
+          "reused_views": [
+            1,
+            1
+          ],
+          "shadow_batches": [
+            2,
+            2
+          ],
+          "stream_upload_bytes": [
+            153696,
+            153696
+          ],
+          "gpu_shadow_ms": [
+            0.034016,
+            0.033504
+          ],
+          "profile_reused_by_view": [
+            false,
+            true
+          ]
+        },
+        "camera-warm": {
+          "image_sha256": "b09fc1fd4d9c31a20c7fb42d6b07ecf33b42fa71a725a4b366ca9856a92ae48f",
+          "reused_views": [
+            1,
+            2
+          ],
+          "shadow_batches": [
+            2,
+            0
+          ],
+          "stream_upload_bytes": [
+            153696,
+            153696
+          ],
+          "gpu_shadow_ms": [
+            0.033728,
+            0.000384
+          ],
+          "profile_reused_by_view": [
+            true,
+            true
+          ]
+        },
+        "offscreen-casters": {
+          "image_sha256": "6207a79eef30a4d489987ecab4f30b6fab72b51764345439f0e26e24fa4359f9",
+          "reused_views": [
+            1,
+            1
+          ],
+          "shadow_batches": [
+            2,
+            2
+          ],
+          "stream_upload_bytes": [
+            153696,
+            153696
+          ],
+          "gpu_shadow_ms": [
+            0.032799999999999996,
+            0.033215999999999996
+          ],
+          "profile_reused_by_view": [
+            false,
+            true
+          ]
+        },
+        "offscreen-warm": {
+          "image_sha256": "6207a79eef30a4d489987ecab4f30b6fab72b51764345439f0e26e24fa4359f9",
+          "reused_views": [
+            1,
+            2
+          ],
+          "shadow_batches": [
+            2,
+            0
+          ],
+          "stream_upload_bytes": [
+            153696,
+            0
+          ],
+          "gpu_shadow_ms": [
+            0.032832,
+            0.000384
+          ],
+          "profile_reused_by_view": [
+            true,
+            true
+          ]
+        },
+        "reopened": {
+          "image_sha256": "6207a79eef30a4d489987ecab4f30b6fab72b51764345439f0e26e24fa4359f9",
+          "reused_views": [
+            0,
+            0
+          ],
+          "shadow_batches": [
+            3,
+            3
+          ],
+          "stream_upload_bytes": [
+            153696,
+            153696
+          ],
+          "gpu_shadow_ms": [
+            0.07532799999999999,
+            0.074432
+          ],
+          "profile_reused_by_view": [
+            false,
+            false
+          ]
+        },
+        "reopened-warm": {
+          "image_sha256": "6207a79eef30a4d489987ecab4f30b6fab72b51764345439f0e26e24fa4359f9",
+          "reused_views": [
+            1,
+            2
+          ],
+          "shadow_batches": [
+            2,
+            0
+          ],
+          "stream_upload_bytes": [
+            153696,
+            0
+          ],
+          "gpu_shadow_ms": [
+            0.035072,
+            0.000384
+          ],
+          "profile_reused_by_view": [
+            true,
+            true
+          ]
+        }
+      }
+    },
+    {
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "lighting_path": "deferred",
+      "geometry": "rigid",
+      "report_sha256": "ccb98ed4224f1b411845736dc67480f1905e7fe73732efbc08fcbda42c40d57a",
+      "compared_frames": 10,
+      "probes_per_frame": 9,
+      "stationary_warm_gpu_shadow_ms_median": [
+        0.036384,
+        0.000384
+      ],
+      "frames": {
+        "cold": {
+          "image_sha256": "5142e6bbcd2d3a5e55819121d28a18e28d983ebf83ac4c39984a199428998249",
+          "reused_views": [
+            0,
+            0
+          ],
+          "shadow_batches": [
+            3,
+            3
+          ],
+          "stream_upload_bytes": [
+            0,
+            0
+          ],
+          "gpu_shadow_ms": [
+            0.074752,
+            0.0744
+          ],
+          "profile_reused_by_view": [
+            false,
+            false
+          ]
+        },
+        "warm-0": {
+          "image_sha256": "5142e6bbcd2d3a5e55819121d28a18e28d983ebf83ac4c39984a199428998249",
+          "reused_views": [
+            1,
+            2
+          ],
+          "shadow_batches": [
+            2,
+            0
+          ],
+          "stream_upload_bytes": [
+            0,
+            0
+          ],
+          "gpu_shadow_ms": [
+            0.036384,
+            0.000384
+          ],
+          "profile_reused_by_view": [
+            true,
+            true
+          ]
+        },
+        "warm-1": {
+          "image_sha256": "5142e6bbcd2d3a5e55819121d28a18e28d983ebf83ac4c39984a199428998249",
+          "reused_views": [
+            1,
+            2
+          ],
+          "shadow_batches": [
+            2,
+            0
+          ],
+          "stream_upload_bytes": [
+            0,
+            0
+          ],
+          "gpu_shadow_ms": [
+            0.036064,
+            0.000384
+          ],
+          "profile_reused_by_view": [
+            true,
+            true
+          ]
+        },
+        "warm-2": {
+          "image_sha256": "5142e6bbcd2d3a5e55819121d28a18e28d983ebf83ac4c39984a199428998249",
+          "reused_views": [
+            1,
+            2
+          ],
+          "shadow_batches": [
+            2,
+            0
+          ],
+          "stream_upload_bytes": [
+            0,
+            0
+          ],
+          "gpu_shadow_ms": [
+            0.036576,
+            0.000384
+          ],
+          "profile_reused_by_view": [
+            true,
+            true
+          ]
+        },
+        "camera-moved": {
+          "image_sha256": "9f13a56701abd8277c9b6377da394400c2a9a3ffb6ae3f3b8b59812c995801c2",
+          "reused_views": [
+            1,
+            1
+          ],
+          "shadow_batches": [
+            2,
+            2
+          ],
+          "stream_upload_bytes": [
+            0,
+            0
+          ],
+          "gpu_shadow_ms": [
+            0.034688,
+            0.033152
+          ],
+          "profile_reused_by_view": [
+            false,
+            true
+          ]
+        },
+        "camera-warm": {
+          "image_sha256": "9f13a56701abd8277c9b6377da394400c2a9a3ffb6ae3f3b8b59812c995801c2",
+          "reused_views": [
+            1,
+            2
+          ],
+          "shadow_batches": [
+            2,
+            0
+          ],
+          "stream_upload_bytes": [
+            0,
+            0
+          ],
+          "gpu_shadow_ms": [
+            0.034367999999999996,
+            0.000384
+          ],
+          "profile_reused_by_view": [
+            true,
+            true
+          ]
+        },
+        "offscreen-casters": {
+          "image_sha256": "ccbfd68a23c71c47112bf4bbe056bf4aa3320038cb4b68b0fb0b2f769a000bd0",
+          "reused_views": [
+            1,
+            1
+          ],
+          "shadow_batches": [
+            2,
+            2
+          ],
+          "stream_upload_bytes": [
+            0,
+            0
+          ],
+          "gpu_shadow_ms": [
+            0.033568,
+            0.03344
+          ],
+          "profile_reused_by_view": [
+            false,
+            true
+          ]
+        },
+        "offscreen-warm": {
+          "image_sha256": "ccbfd68a23c71c47112bf4bbe056bf4aa3320038cb4b68b0fb0b2f769a000bd0",
+          "reused_views": [
+            1,
+            2
+          ],
+          "shadow_batches": [
+            2,
+            0
+          ],
+          "stream_upload_bytes": [
+            0,
+            0
+          ],
+          "gpu_shadow_ms": [
+            0.033696,
+            0.000352
+          ],
+          "profile_reused_by_view": [
+            true,
+            true
+          ]
+        },
+        "reopened": {
+          "image_sha256": "ccbfd68a23c71c47112bf4bbe056bf4aa3320038cb4b68b0fb0b2f769a000bd0",
+          "reused_views": [
+            0,
+            0
+          ],
+          "shadow_batches": [
+            3,
+            3
+          ],
+          "stream_upload_bytes": [
+            0,
+            0
+          ],
+          "gpu_shadow_ms": [
+            0.07532799999999999,
+            0.07459199999999999
+          ],
+          "profile_reused_by_view": [
+            false,
+            false
+          ]
+        },
+        "reopened-warm": {
+          "image_sha256": "ccbfd68a23c71c47112bf4bbe056bf4aa3320038cb4b68b0fb0b2f769a000bd0",
+          "reused_views": [
+            1,
+            2
+          ],
+          "shadow_batches": [
+            2,
+            0
+          ],
+          "stream_upload_bytes": [
+            0,
+            0
+          ],
+          "gpu_shadow_ms": [
+            0.034912,
+            0.000384
+          ],
+          "profile_reused_by_view": [
+            true,
+            true
+          ]
+        }
+      }
+    }
+  ],
+  "retained_harness_failures": [
+    {
+      "attempt": "camera-offset",
+      "report_sha256": "2cf0184a71235ebbf0b7095f3dc9b36408b0db5270497b49e3ba7a30a59c5f6e",
+      "harness_sha256": "0cd7dc60876884e214281244b07db3085130ad06c7c9d0a088d549505b6b8138",
+      "reason": "The first harness treated a camera-local presentation offset as an absolute transform and rotated away from the witness.",
+      "candidate_binary_unchanged": true
+    },
+    {
+      "attempt": "capture-key",
+      "report_sha256": "f9163c818dd5e8c37f039c1461cbdbde4a9914e4a52abeff3598159cbf2f1c76",
+      "harness_sha256": "7408d19e956e8b94675bcdcfba97c0d4ead868305ce51bb4716d4dacc3d8bc5d",
+      "reason": "The next harness changed the scene probe coordinates for the off-screen phase. Those coordinates participate in the retained renderer key.",
+      "candidate_binary_unchanged": true
+    }
+  ],
+  "limits": [
+    "The reference redraws the displaced view every frame and already caches the independent ordinary spotlight.",
+    "The performance measurements use a fixed two-spotlight fixture at 480 by 270, with no reconstruction."
+  ]
+}

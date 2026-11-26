@@ -998,12 +998,24 @@ struct Context {
         }
         if(viewmodel_enabled && viewmodel_objects.empty())viewmodel_objects.push_back({});
     }
+    void prepare_shadow_reuse() {
+        reused_shadow_layers=0;
+        if(!scene)return;
+        std::array<std::array<float,16>,max_shadow_views> shadow_projections{};
+        for(std::size_t i=0;i<shadow_plan.size();++i)
+            std::copy_n(frame_constants.shadows[i].view_projection,16,shadow_projections[i].begin());
+        reused_shadow_layers=shadow_cache.prepare(scene->presentation_source_id,
+            std::span(shadow_projections).first(shadow_plan.size()),frame_constants.view_projection,
+            {frame_constants.cluster_viewport[2],frame_constants.cluster_viewport[3]},draws,
+            shadows.texture()->getDesc().arraySize);
+        const auto live_layer_mask=(1u<<shadow_plan.size())-1;
+        pending_draws.shadow_reused_views=static_cast<std::uint32_t>(std::popcount(reused_shadow_layers & live_layer_mask));
+    }
     void prepare_draw_batches() {
         // Skin write/history buffers are selected by prepare_submission_history.
         // Plan only after that boundary, from the exact handles this submission binds.
         camera_batch_plan.clear();viewmodel_batch_plan.clear();shadow_batch_plans.clear();
         pending_draws.camera_batches=0;pending_draws.shadow_batches=0;pending_draws.gpu_visibility_batches=0;
-        reused_shadow_layers=0;
         if(pending_viewmodel)pending_viewmodel->draws.camera_batches=0;
         if(!scene)return;
         require(draws.size()<=std::numeric_limits<std::uint32_t>::max() && viewmodel_draws.size()<=std::numeric_limits<std::uint32_t>::max(),"Draw batch candidate count exceeds uint32.");
@@ -1042,13 +1054,6 @@ struct Context {
             }
             camera_batch_plan.swap(bounded);
         }
-        std::array<std::array<float,16>,max_shadow_views> shadow_projections{};
-        for(std::size_t i=0;i<shadow_plan.size();++i)
-            std::copy_n(frame_constants.shadows[i].view_projection,16,shadow_projections[i].begin());
-        reused_shadow_layers=shadow_cache.prepare(scene->presentation_source_id,
-            std::span(shadow_projections).first(shadow_plan.size()),draws,shadows.texture()->getDesc().arraySize);
-        const auto live_layer_mask=(1u<<shadow_plan.size())-1;
-        pending_draws.shadow_reused_views=static_cast<std::uint32_t>(std::popcount(reused_shadow_layers & live_layer_mask));
         if (!shadow_plan.empty()) {
             std::vector<render_shadow_batches::Caster> casters;
             casters.reserve(draws.size());
@@ -1170,7 +1175,8 @@ struct Context {
         pending_draws.streamed_vertex_bytes=0;
         pending_draws.streamed_index_bytes=0;
         auto needs_stream=[&](const DrawItem& draw) {
-            return draw.stream_geometry && ((scene_visible && draw.camera_visible) || (draw.mutable_geometry && draw.shadow_mask));
+            return draw.stream_geometry && ((scene_visible && draw.camera_visible) ||
+                (draw.mutable_geometry && (draw.shadow_mask&~reused_shadow_layers)));
         };
         std::size_t draw_count=0;
         for(auto& draw:draws) {
@@ -3446,7 +3452,7 @@ struct Context {
         cluster_readback=slot.cluster_readback;skin_readback=slot.skin_readback;
         if(capture_frame)prepare_capture_staging();
         prepare_game_ui();prepare_sprite_frame(slot);prepare_temporal_inputs();
-        prepare_surface_mark_frame(slot);prepare_submission_history();prepare_stream_geometry(slot);
+        prepare_surface_mark_frame(slot);prepare_submission_history();prepare_shadow_reuse();prepare_stream_geometry(slot);
         prepare_exposure_frame(slot,capture_frame,frame_started);
         prepare_draw_batches();prepare_temporal_submission();
         gpu_visibility.prepare(*checked.Get(),slot.visibility,

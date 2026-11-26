@@ -9,6 +9,7 @@
 #include <cstdint>
 #include <functional>
 #include <map>
+#include <memory>
 #include <optional>
 #include <set>
 #include <span>
@@ -55,6 +56,7 @@ class Cache {
 public:
     std::uint32_t prepare(std::string_view source,
         std::span<const std::array<float,16>> projections,
+        std::span<const float,16> camera_projection, std::array<float,2> camera_extent,
         std::span<const render_draw::DrawItem> draws, std::uint32_t layers);
     void accept() noexcept;
     void reset() noexcept;
@@ -62,13 +64,16 @@ public:
 private:
     struct Caster {
         nvrhi::BufferHandle vertices, indices;
-        nvrhi::BindingSetHandle mask;
+        nvrhi::BindingSetHandle mask, height;
+        std::shared_ptr<const MeshAsset> streamed_mesh;
         std::array<std::uint32_t,18> pose{};
+        std::array<std::uint32_t,2> displacement{};
         std::uint32_t first=0, count=0;
         bool operator==(const Caster& other) const;
     };
     struct View {
         std::array<std::uint32_t,16> projection{};
+        std::optional<std::array<std::uint32_t,18>> tessellation_camera;
         std::vector<Caster> casters;
         bool operator==(const View&) const=default;
     };

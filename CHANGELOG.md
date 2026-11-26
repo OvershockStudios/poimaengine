@@ -2,6 +2,12 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.466
+
+- Reuse unchanged shadow layers for height-displaced meshes and snow. Skip
+  uploading off-screen snow when its shadow depth is already available.
+  [Shadow reuse](docs/SHADOWS.md#reuse-unchanged-shadow-views)
+
 ## 0.0.465
 
 - Add material height displacement to paired snow tiles, including compacted

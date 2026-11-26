@@ -1,8 +1,16 @@
 # Implementation status
 
-Updated 2026-11-25 for **0.0.465**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-25 for **0.0.466**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.466 extends [shadow reuse](SHADOWS.md#reuse-unchanged-shadow-views)
+to rigid height-displaced geometry and mutable snow. Windows Vulkan fixtures
+compare rendered images and selected scene probes against 0.0.465. A stamp or
+camera move refreshes the displaced spotlight while reusing the independent
+spotlight. Warm off-screen snow needs no geometry upload when its shadow layer
+matches. The two-light fixture also checks profiler counts by submission.
+[Qualification results](evidence/m2-displaced-shadow-reuse-466.json)
 
 Version 0.0.465 supports matching [height profiles on snow tiles](TERRAIN.md#add-material-height-to-snow).
 AMD forward and NVIDIA deferred runs compare seam depth and motion after a

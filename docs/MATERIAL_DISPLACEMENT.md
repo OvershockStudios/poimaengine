@@ -47,17 +47,18 @@ The renderer evaluates the same height profile on the current and previous
 local positions. On mutable snow those positions include the corresponding
 compacted tile geometry. Profile changes invalidate prior correspondence.
 The geometric bounds expand in the authored direction. Displaced casters
-participate in full shadow-view culling and refresh affected shadow maps
-as the camera can change their tessellation rate.
+participate in full shadow-view culling. [Shadow reuse](SHADOWS.md#reuse-unchanged-shadow-views)
+tracks the height bindings, tessellation settings and camera inputs that
+affect their rasterized geometry.
 
 GPUs without Vulkan tessellation draw the base mesh. Inspect
 `material_displacement_supported`, `last_draws.displacement_requested`,
 `last_draws.displacement_draws` and `last_draws.displacement_patches` in
 render diagnostics. Counts describe active draw instances and input patches
-across camera and shadow views. Above 8,192 submitted input patches, the
+across camera and shadow views before shadow reuse. Above 8,192 input patches, the
 renderer lowers the maximum segment count for the whole frame. The cap is
 the even floor of `sqrt(8192 × 16² / patches)`, bounded from 2 through 16.
-Above 32,768 submitted input patches, every pass uses base geometry for the
+Above 32,768 input patches, every pass uses base geometry for the
 frame. `last_draws.displacement_segment_cap` and
 `last_draws.displacement_budget_fallback` describe that decision. The profiler
 records `renderer.displacement.input_patches`,

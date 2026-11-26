@@ -31,15 +31,20 @@ nvrhi::BindingSetDesc base_bindings(Buffers buffers) {
 
 bool Cache::Caster::operator==(const Caster& other) const {
     return vertices.Get()==other.vertices.Get() && indices.Get()==other.indices.Get() &&
-        mask.Get()==other.mask.Get() && pose==other.pose && first==other.first && count==other.count;
+        mask.Get()==other.mask.Get() && height.Get()==other.height.Get() && streamed_mesh==other.streamed_mesh &&
+        pose==other.pose && displacement==other.displacement && first==other.first && count==other.count;
 }
 
 std::uint32_t Cache::prepare(std::string_view source,
     std::span<const std::array<float,16>> projections,
+    std::span<const float,16> camera_projection, std::array<float,2> camera_extent,
     std::span<const render_draw::DrawItem> draws, std::uint32_t layers) {
     require(layers>0 && layers<=max_shadow_views && projections.size()<=layers,
         "Shadow cache views exceed the target.");
     constexpr std::size_t max_casters_per_view=16384;
+    std::array<std::uint32_t,18> tessellation_camera;
+    std::ranges::transform(camera_projection,tessellation_camera.begin(),std::bit_cast<std::uint32_t,float>);
+    std::ranges::transform(camera_extent,tessellation_camera.begin()+16,std::bit_cast<std::uint32_t,float>);
     pending_.source=source;
     pending_.views.resize(layers);
     std::uint32_t reusable=0;
@@ -50,18 +55,36 @@ std::uint32_t Cache::prepare(std::string_view source,
         if(!slot)slot.emplace();
         auto& view=*slot;
         view.projection={};
+        view.tessellation_camera.reset();
         view.casters.clear();
         if(layer<projections.size()) {
             view.projection=std::bit_cast<decltype(view.projection)>(projections[layer]);
             for(const auto& draw:draws) {
                 if(!(draw.shadow_mask&bit))continue;
-                if(draw.skin || draw.stream_geometry || draw.displacement || view.casters.size()==max_casters_per_view) {
+                if(draw.skin || (draw.stream_geometry && (!draw.mutable_geometry || !draw.mesh)) ||
+                    view.casters.size()==max_casters_per_view) {
                     slot.reset();
                     break;
                 }
                 const auto range=draw.shadow_range(layer);
-                Caster caster{draw.geometry.vertices,draw.geometry.indices,draw.masked_shadow_bindings,
-                    {},range.first,range.count};
+                Caster caster;
+                caster.first=range.first;
+                caster.count=range.count;
+                caster.mask=draw.masked_shadow_bindings;
+                if(draw.stream_geometry) {
+                    // Mutable tiles replace their immutable mesh snapshot when
+                    // they change. Their frame-local upload handles are reused.
+                    caster.streamed_mesh=draw.mesh;
+                } else {
+                    caster.vertices=draw.geometry.vertices;
+                    caster.indices=draw.geometry.indices;
+                }
+                if(draw.displacement) {
+                    const auto push=draw.indices();
+                    caster.height=draw.displacement_bindings;
+                    caster.displacement={push.reserved[0],push.reserved[1]};
+                    view.tessellation_camera=tessellation_camera;
+                }
                 for(std::size_t row=0;row<3;++row)
                     for(std::size_t column=0;column<4;++column)
                         caster.pose[row*4+column]=std::bit_cast<std::uint32_t>(draw.constants.model[row][column]);

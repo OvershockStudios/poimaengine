@@ -133,12 +133,18 @@ Native AA captures, and `--runtime` tests standalone export.
 
 Each renderer context can keep a light view's depth map in its existing
 D32 array. It reuses a layer when the source, final GPU view projection,
-ordered rigid caster geometry, index ranges, transforms, foliage offsets,
+ordered caster geometry, index ranges, transforms, foliage offsets,
 and alpha-test inputs match the last accepted submission. Camera motion
 can change a directional cascade without changing a spotlight's projection.
-A view that contains skinned, streamed or
-[displaced geometry](MATERIAL_DISPLACEMENT.md) redraws each frame.
-Views with more than 16,384 casters also redraw.
+
+For [material height displacement](MATERIAL_DISPLACEMENT.md), the key also
+includes the height binding, the packed displacement profile and segment cap,
+and the exact camera projection and raster extent that size the patches. A
+spotlight with displaced casters can therefore redraw on a camera move. Each
+mutable snow tile uses its immutable geometry snapshot as its identity. A
+stamp that replaces the snapshot refreshes the affected views. A snow tile
+outside the camera frustum needs an upload only when a shadow view needs it.
+Skinned casters, other streamed casters and views above 16,384 casters redraw.
 
 When one view changes, the renderer clears and redraws that layer. A new
 target, changed source or unknown prior state starts with a full clear.
@@ -160,6 +166,13 @@ the local-light result through stationary frames, a caster move, a camera
 move, renderer replacement and a saved pose restore. Use `--check-profiler`
 to match view reuse and submitted batches to their accepted submissions.
 [Shadow-cache results](evidence/m2-shadow-reuse-463.json)
+
+Run `tests/displacement_shadow_cache_capture.py` with the retained 0.0.465
+runtime as `--reference` to compare displaced views. It checks a live stamp,
+camera movement, warm off-screen views and a reopened renderer. `--rigid`
+uses immutable terrain in the same test. The harness compares images, scene
+probes and profiler rows by accepted submission.
+[Displaced-shadow results](evidence/m2-displaced-shadow-reuse-466.json)
 
 ## Per-drawable controls
 
