@@ -43,5 +43,6 @@ struct WaterOptics {
     std::optional<WaterOffshore> offshore;
     std::optional<double> reflection_roughness{};
     std::optional<double> solar_scattering{};
+    double sun_shafts=0;
 };
 }

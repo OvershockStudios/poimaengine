@@ -1,0 +1,203 @@
+{
+  "version": "0.0.454",
+  "date": "2026-11-25",
+  "base_commit": "0781d98bde50dcb62c85804f1ffd74edf18802cc",
+  "scope": "Surface-entry shadows and directional in-scattering in terrain water and offshore water.",
+  "candidate_patch_sha256": "6009c59380e4501f1ba64f843f0f4d485e944612d04f078b4b1dea0a119916dc",
+  "source_sha256": {
+    "CMakeLists.txt": "9408923191f3b87a4ad6fcf18fdf769323318fd9be6007b14e651116031dde93",
+    "cmake/render_smoke.cmake": "0260d38070178338af28942dc73b48d2a5ed0ed4f0291113d96e2fdc9b526726",
+    "cmake/runtime.json.in": "3556ddbc240f7599093a3c36727da37a5c41bdcedfeb1b4f52af7389abc90aa8",
+    "include/poima/core.hpp": "b2c026b051ad1d549f41599570d9f8d17d754f0e157150835016f668b6267b9d",
+    "include/poima/water_optics.hpp": "94cdfc36b74af11513e95ee6c9afb02fba866244e3c38d4422af26898bf5e355",
+    "include/poima/world.hpp": "e83db2a2dd742bcbf9fe85c32e711d357d342ab4c374dfae37880d4d8afd6f67",
+    "shaders/scene_frame.hlsli": "612a25b4c55456c1e4b8c9c7620efd1fc1435680c0a40ed9c766e3b4b308eb2a",
+    "shaders/water_optics.hlsli": "226fe4dcc3774bd8dcc3b46ec421ed814d239212c1fb3ae1fbdfa47d13522de5",
+    "shaders/water_shore_trace.hlsli": "c5a16dac726710ffaed64b9d03c407a24de143028d24d75c1814bd56005d59b4",
+    "shaders/water_sun_shafts.hlsli": "3342dabe5b17009f5bbd54d61262208acaaf4b9597bc7a7adfc00f48140640af",
+    "src/core.cpp": "99788b5515b066e5ea0002913ba069f8f6623703bd3e2996158cb63b00500d96",
+    "src/project.cpp": "ec287b0c768b5264f9ece1c08fe2835b02bd1a55dc1332bebca684e00d48bdc7",
+    "src/render_smoke.cpp": "8ceadc6489f059591579f282749135726d36e3f7195833fd873fb1f5395b0b59",
+    "src/water_asset.cpp": "0b94798772e05131d89d71ca3e5f2521788d0f2cb5220d7cba4adae7c70b1d82",
+    "src/water_region.cpp": "7d1d266bebb60ac5c2534e9913c33e976753e792c5923b50d5ab5542beb03708",
+    "src/world.cpp": "516934bcc476adcd4620db0f599efb57cafc8acb26014f7165421935cfb8fce2",
+    "src/world_content.cpp": "dece4ff41abc116defff9e22377ddbcb22f886f3c497b7a2950c9768b3036cfe",
+    "src/world_presentation_json.cpp": "baba80138e64f63ef4753e69de15d1b5cae8621ed3c48a6b3574c09e111d70fd",
+    "src/world_water_service.inc": "e18b66195a2561fa44ea86e14528c6ad3ea8e7a59e0908482d1b10b39a3e4929",
+    "tests/water_sun_shafts_capture.py": "e9055780f63f721d50671a86fbd4ddd468e64bf5d8d5e4be04f3e0aaacbff366"
+  },
+  "shader_sha256": {
+    "water.spv": "cd6de97924c987a6f2f79e94d963a8c6b44e470d29006d77baa8fd6268f78688",
+    "water_aerial.spv": "eef4c2bd0b6754f75bfed2629ae8a9b7a3b201c47827355be544ecda64d7ac11",
+    "water_sprite.spv": "0ebc2b35b0624a5b419ebebc4fa18d74b286102e896312c5d889ed9b888bd495"
+  },
+  "ubuntu": {
+    "ctest": [
+      "water_region_native",
+      "water_region_scene_native",
+      "world_water_contract",
+      "world_water_rain_contract",
+      "authoring_contract_identity",
+      "project_contract"
+    ],
+    "authoring_and_fresh_save": true
+  },
+  "windows_runtime_sha256": {
+    "bin/poima.exe": "969b3922c6d917766216c6e26c09f19af4e11976e14610fc582978150fb4f342",
+    "bin/poima_desktop.dll": "e545fb9415a822dc5c826beb4156a53e20d25544eb8fc18a9401c54203eebae1",
+    "runtime.json": "7c2c0513182769a42aef83251c184f838334ebe6dfa7d867ac705ace20d6aaf5"
+  },
+  "windows": [
+    {
+      "adapter": "AMD Radeon(TM) Graphics",
+      "lighting": "forward",
+      "oracle": {
+        "max_abs_error": 0.00010536888571649472,
+        "max_shadow_fraction": 0.0,
+        "mean_boundary_fractions": [
+          0.0,
+          0.9998752125066003
+        ],
+        "exact_dry_probes": 15
+      },
+      "export": {
+        "files": 61,
+        "immutable": true,
+        "incompatible_refused": true
+      },
+      "restore_matches": true,
+      "images": {
+        "0-clear": "1b2c3e9f0fab392451789f197d72f301d80d2ed0c33cf6384aedac2fdad744d7",
+        "0-shadow": "ae81fd5af8454d0e9d39f4881d6cb288c0614e0a950bec2ac051a805d22a3565",
+        "0-shadow_edge": "be629cf289cb7e87e2c12286a2a1700c4b56c9c83c5de5686897dc27e1f7c0a9",
+        "0-dry": "c49e187b776840cb3d36ef2b44f6f74465f93919bcb7727be27e50522acee8ae",
+        "1-clear": "93da96ac0bccdc40a46ee251c201e3b5148aefaffbb7b00b6753889a54d0c428",
+        "1-shadow": "1fbbb928bce5236f358dd07c5bac3998daa12f43be83ca078538b178d916f5a1",
+        "1-shadow_edge": "58c0f67e4fe596d638f763bdcc4f9e6dfc60b33b13697762206404dc2cf3aa85",
+        "1-dry": "ea6b90d507f3163e204958499b7cb56e38e42636666d033819887aecae1a5885",
+        "restored-shadow-edge": "58c0f67e4fe596d638f763bdcc4f9e6dfc60b33b13697762206404dc2cf3aa85"
+      },
+      "selected_two_frame_post_mean_ms": {
+        "omitted": 0.30079999999999996,
+        "enabled": 2.667255
+      }
+    },
+    {
+      "adapter": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "lighting": "deferred",
+      "oracle": {
+        "max_abs_error": 0.00010536888571649472,
+        "max_shadow_fraction": 0.0,
+        "mean_boundary_fractions": [
+          0.0,
+          0.9998752125066003
+        ],
+        "exact_dry_probes": 15
+      },
+      "export": {
+        "files": 61,
+        "immutable": true,
+        "incompatible_refused": true
+      },
+      "restore_matches": true,
+      "images": {
+        "0-clear": "fc4d9217388f3118a8b4b9bb9a900a90117e486d2f2a3cddad95bd84acd2b4f1",
+        "0-shadow": "002b389397a5cc71b554146c46080fab80e0d2681047158eb2a344b08b7f4a22",
+        "0-shadow_edge": "71bdfc0b8d3bfe19fc625ad4292a5c8ea7ea05b66c0aae21c4a0704c7eca691e",
+        "0-dry": "835cc5046b7ec3154da76960343f1f3dffe13210e7bbd23a1e9c4c1651fcb996",
+        "0-native-aa": "fdc0b6d8972525a08db754ceb660b3912032f3c89004db0af560fd442d5ea147",
+        "1-clear": "62055791e5b4d72d614c22724a5294d2ae8812ed5c43cbd23c6885b795b8eeca",
+        "1-shadow": "bc5782470f55049191fb3ff9d4932af3eeabb84b795f09eb5555d026a9266d2f",
+        "1-shadow_edge": "80b94c4e769955bc8b102d10453eb768892ef038dbe26bdf8fc419e7d6ce1087",
+        "1-dry": "dbb955f24dad6dbb2a220852fe813f69c836f9c9fd7afd53d2c28cfd4f61d848",
+        "1-native-aa": "e593f0c47f89f035739d0f6846bffb47e07005937d9fd93e38daef69aabdb1a7",
+        "restored-shadow-edge": "80b94c4e769955bc8b102d10453eb768892ef038dbe26bdf8fc419e7d6ce1087"
+      },
+      "selected_two_frame_post_mean_ms": {
+        "omitted": 0.105984,
+        "enabled": 0.29952
+      }
+    }
+  ],
+  "cove": {
+    "geometry_and_camera_shared": true,
+    "water_and_wildlife_observations_exact": true,
+    "old_world_sha256": "c7e42259cd055ca8236d78bff674e16404122861e02ddc8a938dcf89dee03ae7",
+    "new_world_sha256": "358bb942c75c805e071bd1d0fbb8399e3cc43da880bd21a7464cae9edb5209b6",
+    "frames": [
+      {
+        "tick": 102,
+        "index": 0,
+        "submersion_m": 0.0,
+        "before": "1f94d33c3cce77793b920611b032669a716ccfd34b91c063ecebbab46fc62d23",
+        "after": "5773866ddc9f32012a70c398a43abb4c87825b82445acc30f5e82cd111981673"
+      },
+      {
+        "tick": 152,
+        "index": 25,
+        "submersion_m": 0.0,
+        "before": "614f6c8797bb640042d2a237feffb408d0de9323e3e0c4d15fd8f9db74c1f984",
+        "after": "421db388c97f3fa558a51eaddeace1c1e54b4da69e11f2fa3ca2f2b5f4ce3421"
+      },
+      {
+        "tick": 198,
+        "index": 48,
+        "submersion_m": 0.0,
+        "before": "d7ac31f9c6795f7b176b396ce908f206d37482ecba5eb4f9125bfe99f782ddeb",
+        "after": "f6614a1de63615ec54f1c207246a043dce87994c88bc1241e4e21df38305ec4e"
+      },
+      {
+        "tick": 236,
+        "index": 67,
+        "submersion_m": 0.15764532987230595,
+        "before": "ae7d578302eb3bb1aaab5053af60a5c81d9cca830fc8fbe4e8624e0feff75d38",
+        "after": "bed3f5d7dc49fd704fa31b037f6c2276e257c5e0f6b5563b389fe958f14fa953"
+      },
+      {
+        "tick": 272,
+        "index": 85,
+        "submersion_m": 0.33724576221017877,
+        "before": "1952b8f9da05fd048373a10cf6aa9739eb9a394fa973a691454c8d444b7b4496",
+        "after": "376e3727a02d055681e2a7a21ed6b103084e7d59a31bda9dab4750b7a6774395"
+      },
+      {
+        "tick": 318,
+        "index": 108,
+        "submersion_m": 0.7268241215384972,
+        "before": "919d7515c27bb530faa9f4b4e5c18db8226ce9c04054151aab5c2d7c0feb429a",
+        "after": "e22454bf8d6eb5d9b615cec2a8812583e5c7c1151d6358b545319aa372ef851d"
+      },
+      {
+        "tick": 386,
+        "index": 142,
+        "submersion_m": 1.0552609797352233,
+        "before": "0c3454e895839f46425e0d4062b9450819e1fbf9edc89a12a6cea24fd8f26723",
+        "after": "22384c90ee609cbb237236a8fcb24c0b935b7eb63385b607dce6e60fa0d75deb"
+      },
+      {
+        "tick": 464,
+        "index": 181,
+        "submersion_m": 1.0650980139863915,
+        "before": "49f48aca90d4519cf3a9c39b1658abe481ceddd052e6a17b573eab5dbf2384db",
+        "after": "1a4391065af991e0bfd5a4f6cb8402758b44bb1ab07bc427afe3883685b15ccd"
+      },
+      {
+        "tick": 532,
+        "index": 215,
+        "submersion_m": 0.9793709564208992,
+        "before": "49b51b1bb08d9243a1d1779de0505dc23b835d7678e1707512cc5ca242142f7f",
+        "after": "d0abdc4d2152302bd1490a745bd6812f0fbb8c7d481cd8cf26842d51ae88f393"
+      }
+    ],
+    "width": 960,
+    "height": 540,
+    "quality": "FSR Native AA, deferred, RTX 4070 Laptop",
+    "visual_review": "Brighter water column between the camera and the headland. Subtle light separation in this framing."
+  },
+  "limits": [
+    "RGB single scattering and a mean Snell direction approximate the underwater light transport.",
+    "Submerged occluders, reservoirs, spill sheets and fine volumetric caustics remain open.",
+    "Performance timings cover two-frame captures at 640x360.",
+    "The cove pilot covers nine selected frames."
+  ]
+}

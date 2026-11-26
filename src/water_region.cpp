@@ -220,6 +220,7 @@ nlohmann::json optics_json(const WaterOptics& profile) {
     nlohmann::json result{{"extinction_per_m",profile.extinction_per_m},{"scattered_radiance",profile.scattered_radiance}};
     if(const auto& roughness=profile.reflection_roughness) result["reflection_roughness"]=*roughness;
     if(profile.solar_scattering.value_or(0)>0) result["solar_scattering"]=*profile.solar_scattering;
+    if(profile.sun_shafts>0) result["sun_shafts"]=profile.sun_shafts;
     if(profile.refraction) result["refraction"]=true;
     if(profile.follow_terrain) result["follow_terrain"]=true;
     if(profile.caustics_strength>0) result["caustics_strength"]=profile.caustics_strength;
@@ -343,6 +344,8 @@ Region::Region(const RegionDefinition& definition)
             throw std::invalid_argument("Offshore water needs terrain fitting, a valid edge, finite stage and depth in [0.1,10000].");
         if (!unit_interval(optics_->caustics_strength))
             throw std::invalid_argument("Water caustics_strength must be in [0,1].");
+        if (!unit_interval(optics_->sun_shafts))
+            throw std::invalid_argument("Water sun_shafts must be in [0,1].");
         if (const auto& foam = optics_->shore_foam;
             foam && (!(foam->depth_m >= .02 && foam->depth_m <= 3) || !unit_interval(foam->opacity)))
             throw std::invalid_argument("Water shore foam needs depth_m in [0.02,3] and opacity in [0,1].");

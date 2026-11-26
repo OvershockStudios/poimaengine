@@ -166,6 +166,7 @@ foreach(stage IN LISTS shader_stages)
             "${CMAKE_SOURCE_DIR}/shaders/water_shore_trace.hlsli"
             "${CMAKE_SOURCE_DIR}/shaders/water_refraction.hlsli"
             "${CMAKE_SOURCE_DIR}/shaders/water_shore_foam.hlsli"
+            "${CMAKE_SOURCE_DIR}/shaders/water_sun_shafts.hlsli"
             "${CMAKE_SOURCE_DIR}/shaders/scene_shadow_filter.hlsli"
             "${CMAKE_SOURCE_DIR}/shaders/water_ripple_normal.hlsli")
     endif()

@@ -51,6 +51,7 @@ void integrate_fitted_water(WaterColumn column,float3 eye,float3 ray,float2 star
         }
         if (!clip_above_water_plane(surface-eye.y,-relative_direction,false,lower,upper)) continue;
         wet_intervals[side]=float2(lower,upper);
+        include_water_sun_span(path,lower,upper);
         length_m+=upper-lower;
     }
     if (interface_m>=0.0) {

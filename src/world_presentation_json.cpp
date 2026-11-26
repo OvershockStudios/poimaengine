@@ -223,6 +223,9 @@ Json render_diagnostics(const RenderDiagnostics& d) {
         if(const auto& solar=water.solar_scattering)
             result["water_optics"]["solar_scattering"]={{"strength",solar->strength},{"sky_gain",solar->sky_gain},
                 {"radiance_scale",solar->radiance_scale}};
+        if(water.sun_shafts_strength>0)
+            result["water_optics"]["sun_shafts"]={{"active",water.sun_shafts_reason=="active"},
+                {"reason",water.sun_shafts_reason},{"strength",water.sun_shafts_strength}};
         if(water.sprites)result["water_optics"]["sprites"]=true;
         if(water.caustics_strength>0)result["water_optics"]["caustics"]={{"active",water.caustics_reason=="active"},
             {"reason",water.caustics_reason},{"strength",water.caustics_strength}};

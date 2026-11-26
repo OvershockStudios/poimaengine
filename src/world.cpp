@@ -644,6 +644,7 @@ public:
             if(content.needs_water_swell_variation)result["needs_water_swell_variation"]=true;
             if(content.needs_water_rough_reflection)result["needs_water_rough_reflection"]=true;
             if(content.needs_water_solar_scattering)result["needs_water_solar_scattering"]=true;
+            if(content.needs_water_sun_shafts)result["needs_water_sun_shafts"]=true;
             if(content.needs_water_offshore)result["needs_water_offshore"]=true;
             if(content.needs_snow_water)result["needs_snow_water"]=true;
             if(content.needs_physics_checkpoint)result["needs_physics_checkpoint"]=true;

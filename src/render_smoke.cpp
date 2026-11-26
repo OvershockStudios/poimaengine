@@ -145,15 +145,17 @@ struct FrameConstants {
     height_fog::OffshoreSwell water_offshore_swell{};
     height_fog::SwellVariationParameters water_swell_variation{};
     std::array<float,4> water_reflection{};
+    std::array<float,4> water_sun_shafts{};
 };
-static_assert(sizeof(GpuShadow)==80 && sizeof(FrameConstants)==1936);
+static_assert(sizeof(GpuShadow)==80 && sizeof(FrameConstants)==1952);
 static_assert(offsetof(FrameConstants,water_ripple_shape)==1600 && offsetof(FrameConstants,water_ripple_motion)==1616 &&
     offsetof(FrameConstants,water_wave_shapes)==1632 && offsetof(FrameConstants,cloud_shadow_geometry)==1680 &&
     offsetof(FrameConstants,cloud_shadow_controls)==1696 && offsetof(FrameConstants,water_caustic_origin_size)==1712 &&
     offsetof(FrameConstants,water_caustic_extinction_strength)==1728 && offsetof(FrameConstants,water_caustic_grid_light)==1744 &&
     offsetof(FrameConstants,water_shore_foam)==1760 && offsetof(FrameConstants,sprite_water)==1776 &&
     offsetof(FrameConstants,water_offshore)==1824 && offsetof(FrameConstants,water_offshore_swell)==1840 &&
-    offsetof(FrameConstants,water_swell_variation)==1904 && offsetof(FrameConstants,water_reflection)==1920);
+    offsetof(FrameConstants,water_swell_variation)==1904 && offsetof(FrameConstants,water_reflection)==1920 &&
+    offsetof(FrameConstants,water_sun_shafts)==1936);
 struct SpriteInstance {
     std::array<float,4> center_and_size,linear_rgba,fade_and_reserved;
     std::array<std::uint32_t,4> texel_rect;
@@ -1369,6 +1371,17 @@ struct Context {
             foam ? static_cast<float>(foam->opacity) : 0.f,
             water.shore_foam_phase,sun_above_surface ? static_cast<float>(sun-lighting.lights.begin()+1) : 0.f};
     }
+    std::string_view prepare_water_sun_shafts(const SceneWaterVolume& water,const SceneLighting& lighting,
+                                             std::string_view reason) {
+        if (reason!="active") return reason;
+        const auto sun=std::ranges::find(lighting.lights,lighting.environment.sky.sun,&SceneLight::entity_id);
+        if (sun==lighting.lights.end() || sun->light.kind!=LightKind::directional) return "no_sun";
+        if (sun->light.intensity<=0) return "sun_unlit";
+        if (sun->direction[1]>=-.12) return "sun_below_cutoff";
+        frame_constants.water_sun_shafts={static_cast<float>(water.optics.sun_shafts),
+            static_cast<float>(sun-lighting.lights.begin()+1),0,0};
+        return "active";
+    }
     void prepare_height_fog(const SceneLighting& lighting,float water_normal_mode) {
         diagnostics.height_fog.reset();
         aerial_parameters.reset();
@@ -1384,6 +1397,7 @@ struct Context {
         frame_constants.water_offshore_swell={};
         frame_constants.water_swell_variation={};
         frame_constants.water_reflection={};
+        frame_constants.water_sun_shafts={};
         fog_spots={};
         const auto& selected=lighting.environment.height_fog;
         const auto& atmosphere_profile=lighting.environment.atmosphere;
@@ -1435,6 +1449,10 @@ struct Context {
             pending_water_optics->rough_reflection_active=frame_constants.water_reflection[1]>0;
             if (solar_scattering)
                 pending_water_optics->solar_scattering=WaterSolarScatteringDiagnostics{*solar_scattering,sky_gain,scattering_scale};
+            if (water->optics.sun_shafts>0) {
+                pending_water_optics->sun_shafts_strength=water->optics.sun_shafts;
+                pending_water_optics->sun_shafts_reason=prepare_water_sun_shafts(*water,lighting,color_reason);
+            }
             if (color_reason=="active") pending_water_optics->offshore_swell_layers=view.offshore_swell_layers;
             pending_water_optics->reservoir_volumes=static_cast<std::uint32_t>(optical_reservoirs.size());
             pending_water_optics->falling_sheets=sheet_count;

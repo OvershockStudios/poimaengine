@@ -115,12 +115,18 @@ struct WaterPath {
     float bubble_depth;
     float bubble_before_interface;
     float bubble_distance_weighted;
+    float2 sun_span;
 };
+
+void include_water_sun_span(inout WaterPath path,float entry,float exit) {
+    if (water_sun_shafts.y>0 && exit>entry)
+        path.sun_span=float2(min(path.sun_span.x,entry),max(path.sun_span.y,exit));
+}
 
 #include "water_shore_trace.hlsli"
 
 WaterPath trace_water_grid(WaterConstants water,float3 eye,float3 ray,float max_distance,bool find_interface) {
-    WaterPath path={0,-1,0,float2(0,0),false,false,false,0,float2(0,0),0,0,0};
+    WaterPath path={0,-1,0,float2(0,0),false,false,false,0,float2(0,0),0,0,0,float2(max_distance,0)};
     const float size = water.camera_cell_size.w;
     const int2 dimensions = water_grid_dimensions(water);
     float entry = 0, exit = max_distance;
@@ -170,8 +176,10 @@ WaterPath trace_water_grid(WaterConstants water,float3 eye,float3 ray,float max_
                 size,entry,next,max_distance,find_interface,path);
         } else if (coarse && column.y > column.x && next > entry) {
             float first_water = entry, last_water = next;
-            if (clip_water_span(eye.y, ray.y, column.x, column.y, first_water, last_water))
+            if (clip_water_span(eye.y, ray.y, column.x, column.y, first_water, last_water)) {
                 path.length_m += last_water - first_water;
+                include_water_sun_span(path,first_water,last_water);
+            }
             if (find_interface && path.interface_m < 0.0 && abs(ray.y) >= 1e-8) {
                 const float top = (column.y - eye.y) / ray.y;
                 if (top >= entry && top <= next && top < max_distance) {
@@ -221,6 +229,7 @@ WaterPath trace_terrain_water(WaterConstants water,float3 eye,float3 ray,float m
     const bool wet=clip_water_span(eye.y,ray.y,water_offshore.z,water_offshore.y,
         underwater_entry,underwater_exit);
     const float sea_length=wet ? underwater_exit-underwater_entry : 0.0;
+    if (wet) include_water_sun_span(local,underwater_entry,underwater_exit);
     if (find_interface && abs(ray.y)>=1e-8) {
         const float surface=(water_offshore.y-eye.y)/ray.y;
         if (surface>=entry && surface<=exit && surface<max_distance &&
@@ -245,6 +254,7 @@ WaterPath trace_terrain_water(WaterConstants water,float3 eye,float3 ray,float m
 #include "water_refraction.hlsli"
 #endif
 #include "water_shore_foam.hlsli"
+#include "water_sun_shafts.hlsli"
 
 float3 water_medium(float3 leaving,float3 scattering,float3 water_depth,float3 bubbles,float bubble_depth) {
     [branch] if (bubble_depth>0) {
@@ -268,6 +278,13 @@ float3 compose_water_path(WaterConstants water,float3 input_radiance,float3 ray,
     const float3 scattering = water.radiance_wave_mode.xyz;
     const float3 bubbles=sheet_bubble_radiance(path,camera.xyz,ray,scattering);
     float3 color=water_medium(input_radiance,scattering,water.extinction_per_m*path.length_m,bubbles,path.bubble_depth);
+    float3 shafts_before=0;
+    [branch] if (water_sun_shafts.y>0 && path.sun_span.y>path.sun_span.x) {
+        const float split=interface_at<0 ? path.sun_span.y : clamp(interface_at,path.sun_span.x,path.sun_span.y);
+        shafts_before=integrate_water_sun(water,eye,ray,float2(path.sun_span.x,split));
+        const float3 prefix=exp(-water.extinction_per_m*max(0.0,path.water_before_interface_m)-path.bubble_before_interface);
+        color+=shafts_before+prefix*integrate_water_sun(water,eye,ray,float2(split,path.sun_span.y));
+    }
     if (interface_at >= 0.0) {
         const bool from_air = path.enters;
         const float3 geometry_normal=normalize(float3(-path.interface_gradient.x,1,-path.interface_gradient.y));
@@ -312,8 +329,12 @@ float3 compose_water_path(WaterConstants water,float3 input_radiance,float3 ray,
                         const float bubble_depth=path.bubble_before_interface+bent.bubble_depth;
                         const float3 mixed_bubbles=bubble_depth>0 ?
                             (path.bubble_before_interface*bubbles+bent.bubble_depth*bent_bubbles)/bubble_depth : scattering;
-                        color=lerp(color,water_medium(bent_radiance,scattering,
-                            water.extinction_per_m*(before_m+bent.length_m),mixed_bubbles,bubble_depth),hit.confidence);
+                        float3 bent_color=water_medium(bent_radiance,scattering,
+                            water.extinction_per_m*(before_m+bent.length_m),mixed_bubbles,bubble_depth);
+                        [branch] if (water_sun_shafts.y>0)
+                            bent_color+=shafts_before+exp(-water.extinction_per_m*before_m-path.bubble_before_interface)*
+                                integrate_water_sun(water,eye+offset,transmitted,bent.sun_span);
+                        color=lerp(color,bent_color,hit.confidence);
                     }
                 }
             }
@@ -327,7 +348,7 @@ float3 compose_water_path(WaterConstants water,float3 input_radiance,float3 ray,
                     ibl_parameters.z;
         }
         const float3 before = water.extinction_per_m * before_m;
-        color=lerp(color,water_medium(reflection,scattering,before,bubbles,path.bubble_before_interface),fresnel);
+        color=lerp(color,water_medium(reflection,scattering,before,bubbles,path.bubble_before_interface)+shafts_before,fresnel);
         [branch] if (from_air && !path.offshore_interface && !path.reservoir_interface && path.sheet_side==0 && water_shore_foam.y > 0.0) {
             const float3 offset = interface_at * ray;
             const float3 entry = eye + offset;

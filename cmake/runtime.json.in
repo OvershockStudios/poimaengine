@@ -31,6 +31,7 @@
     "water_swell_variation": @POIMA_RUNTIME_WATER_OPTICS@,
     "water_rough_reflection": @POIMA_RUNTIME_WATER_OPTICS@,
     "water_solar_scattering": @POIMA_RUNTIME_WATER_OPTICS@,
+    "water_sun_shafts": @POIMA_RUNTIME_WATER_OPTICS@,
     "water_offshore": @POIMA_RUNTIME_WATER_OPTICS@,
     "water_sprite_optics": @POIMA_RUNTIME_WATER_OPTICS@,
     "water_listener_audio": @POIMA_RUNTIME_SIMULATION_AUDIO@,

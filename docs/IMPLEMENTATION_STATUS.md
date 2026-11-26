@@ -1,8 +1,19 @@
 # Implementation status
 
-Updated 2026-11-25 for **0.0.453**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-25 for **0.0.454**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.454 [renders underwater sun shafts](SHALLOW_WATER.md#let-sunlight-shaft-through-water).
+On AMD forward and NVIDIA deferred, clear offshore probes agreed with an
+independent flat-water integral within 0.000106 HDR. The blocked and dry
+probes matched their controls exactly. Both relocated exports restored the
+same shadowed view from a save, and NVIDIA also exercised FSR Native AA.
+The cove pilot compared nine native frames along the same camera track with
+identical water and wildlife observations. It showed a subtle lift in the
+water column. Submerged light occlusion, fine volumetric caustics and
+representative performance remain open.
+[Results and scope](evidence/m2-water-sun-shafts-454.json)
 
 Version 0.0.453 [reopens projects with a missing pinned
 engine](WINDOWS_LAUNCHER.md#reopen-a-project). The launcher can look up the

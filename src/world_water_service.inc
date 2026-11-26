@@ -92,6 +92,7 @@
                 if(!optics.value("follow_terrain",false))optics.erase("follow_terrain");
                 if(optics.value("caustics_strength",0.)==0.)optics.erase("caustics_strength");
                 if(optics.value("solar_scattering",0.)==0.)optics.erase("solar_scattering");
+                if(optics.value("sun_shafts",0.)==0.)optics.erase("sun_shafts");
                 result["optics"]=std::move(optics);
             }
             return result;

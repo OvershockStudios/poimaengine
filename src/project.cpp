@@ -393,6 +393,7 @@ Json project_summary(const Project& p) {
     if(p.content.needs_water_swell_variation)result["needs_water_swell_variation"]=true;
     if(p.content.needs_water_rough_reflection)result["needs_water_rough_reflection"]=true;
     if(p.content.needs_water_solar_scattering)result["needs_water_solar_scattering"]=true;
+    if(p.content.needs_water_sun_shafts)result["needs_water_sun_shafts"]=true;
     if(p.content.needs_water_offshore)result["needs_water_offshore"]=true;
     if(p.content.needs_output_grade)result["needs_output_grade"]=true;
     if(p.content.needs_auto_exposure)result["needs_auto_exposure"]=true;
@@ -536,6 +537,8 @@ void require_scene_feature_support(const WorldPackageContent& content, const Jso
         "Rough water reflection requires a compatible Vulkan runtime.");
     require(!content.needs_water_solar_scattering || runtime.at("features").value("water_solar_scattering",false),
         "Solar water scattering requires a compatible Vulkan runtime.");
+    require(!content.needs_water_sun_shafts || runtime.at("features").value("water_sun_shafts",false),
+        "Underwater sun shafts require a compatible Vulkan runtime.");
     require(!content.needs_water_offshore || runtime.at("features").value("water_offshore",false),
         "Offshore water requires a compatible Vulkan runtime.");
     require(!content.needs_particles || runtime.at("features").value("scene_particles", false),
@@ -598,7 +601,7 @@ Json runtime_spec(const std::string& bytes,std::string_view expected_version=bui
     fields(features,{"simulation","renderer","audio","audio_room_reverb","audio_portals","player_early_reflections","managed","editor","native_gameplay","game_ui",
         "navigation","navigation_obstacles","asset_provenance","project_post_effects","water_regions","water_rain","audio_water_flow","water_sheet_aeration","water_impact_foam",
         "water_ripples","water_wave_layers","water_listener_audio","water_optics","water_refraction","water_caustics","water_shore_foam","water_terrain_fit","water_surface_swell","water_swell_variation","water_rough_reflection","water_solar_scattering","water_offshore","water_sprite_optics","snow_water_regions","scene_particles","scene_particle_sprites",
-        "particle_collisions","particle_impact_bursts","particle_water_contact","particle_water_flow","water_buoyancy","water_currents","water_surface_wakes","water_body_displacement","water_storage","water_reservoirs","water_overflow","water_sheets","collision_surfaces","surface_marks","surface_mark_masks","mesh_lod","output_grade","auto_exposure","atmosphere_sky","orbital_atmosphere","aerial_perspective","volumetric_clouds","cloud_shadows","screen_reflections","depth_of_field","foliage_motion",
+        "particle_collisions","particle_impact_bursts","particle_water_contact","particle_water_flow","water_buoyancy","water_currents","water_surface_wakes","water_body_displacement","water_storage","water_reservoirs","water_overflow","water_sheets","water_sun_shafts","collision_surfaces","surface_marks","surface_mark_masks","mesh_lod","output_grade","auto_exposure","atmosphere_sky","orbital_atmosphere","aerial_perspective","volumetric_clouds","cloud_shadows","screen_reflections","depth_of_field","foliage_motion",
         "height_fog","physics_checkpoint","fsr3_upscaler"},{"simulation","renderer","audio","managed","editor"});
     for(const auto& feature:features)require(feature.is_boolean(),"Runtime feature flags must be Boolean.");
     require(!features.value("audio_portals",false) ||
@@ -714,6 +717,7 @@ struct VerifiedGame {
     bool needs_water_swell_variation=false;
     bool needs_water_rough_reflection=false;
     bool needs_water_solar_scattering=false;
+    bool needs_water_sun_shafts=false;
     bool needs_water_offshore=false;
     bool needs_screen_reflections=false;
     bool needs_depth_of_field=false;
@@ -805,6 +809,7 @@ VerifiedGame verify_game(const std::string& filename,std::string_view expected_v
     result.needs_water_swell_variation=content.needs_water_swell_variation;
     result.needs_water_rough_reflection=content.needs_water_rough_reflection;
     result.needs_water_solar_scattering=content.needs_water_solar_scattering;
+    result.needs_water_sun_shafts=content.needs_water_sun_shafts;
     result.needs_water_offshore=content.needs_water_offshore;
     result.needs_screen_reflections=content.needs_screen_reflections;
     result.needs_depth_of_field=content.needs_depth_of_field;
@@ -1290,6 +1295,7 @@ Reply inspect_game(const std::string& manifest,const std::string& expected_bundl
         if(game.needs_water_swell_variation)result["needs_water_swell_variation"]=true;
         if(game.needs_water_rough_reflection)result["needs_water_rough_reflection"]=true;
         if(game.needs_water_solar_scattering)result["needs_water_solar_scattering"]=true;
+        if(game.needs_water_sun_shafts)result["needs_water_sun_shafts"]=true;
         if(game.needs_water_offshore)result["needs_water_offshore"]=true;
         if(game.needs_screen_reflections)result["needs_screen_reflections"]=true;
         if(game.needs_depth_of_field)result["needs_depth_of_field"]=true;

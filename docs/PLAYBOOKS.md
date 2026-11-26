@@ -59,6 +59,7 @@ record correlated evidence, and identify a useful impossibility check.
 | Change a reflection while a sound is playing | [Early reflections](EARLY_REFLECTIONS.md#playback-and-recovery) | Compare the selected face and recorded stereo on both sides of the handoff. Check that the source still has one voice. |
 | Make rain splash or sparks scatter on contact | [Contact bursts](PARTICLES.md#spawn-a-burst-at-contact) and [surface routing](PARTICLES.md#vary-a-burst-by-surface) | Inspect the hit, selected emitter and sprite motion. Reopen a save and compare the continuation. |
 | Shape a local water surface | [Water regions and ripples](SHALLOW_WATER.md#author-surface-ripples) | Verify water levels and terrain collision, then compare the visible normals at the same tick after restoring a save. |
+| Light water with underwater sun shafts | [Sun shafts](SHALLOW_WATER.md#let-sunlight-shaft-through-water) | Compare clear and shadowed views at the same tick, and check that dry pixels and opaque depth stay exact. |
 
 ## Start with a complete example
 

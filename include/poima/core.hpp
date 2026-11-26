@@ -307,6 +307,8 @@ struct WaterOpticsDiagnostics {
     std::optional<double> reflection_roughness{};
     bool rough_reflection_active=false;
     std::optional<WaterSolarScatteringDiagnostics> solar_scattering{};
+    double sun_shafts_strength=0;
+    std::string_view sun_shafts_reason{};
 };
 struct AerialPerspectiveDiagnostics {
     bool active=false;

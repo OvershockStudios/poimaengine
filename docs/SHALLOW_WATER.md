@@ -952,8 +952,9 @@ back. Strong wave folds can send several light paths to one receiver.
 This stage captures the local contribution and uses the authored
 strength to control it. It runs in the forward and deferred lighting
 paths when single-sample water optics are active, including with FSR.
-The refracted image can see the lit geometry. Underwater volumetric
-shafts and multiple light paths through the waves remain open.
+The refracted image can see the lit geometry. [Underwater shafts](#let-sunlight-shaft-through-water)
+add a separate scattering contribution along the view ray. Multiple light
+paths through the waves remain open.
 [Water caustics reference](https://developer.nvidia.com/gpugems/gpugems/part-i-natural-effects/chapter-2-rendering-water-caustics)
 
 For a diagnostic, capture `raw_hdr` at the same receiver with strength
@@ -961,6 +962,35 @@ zero and positive. Compare two committed phases. Test a dry receiver, a
 zero-slope control and a shadow at the water entry point. Inspect
 `resolved_hdr` or the BMP to review the effect through depth color and
 refraction.
+
+### Let sunlight shaft through water
+
+Set `"sun_shafts": 0.4` inside `optics` and link the directional sun in
+`LightingEnvironment.sky.sun`. Enable its shadows to see a jetty, cliff,
+or other shadow caster interrupt the beams. The range is `[0,1]`.
+Omission and zero produce the same cooked bytes. A positive value cooks
+water format version 25 and requires `features.water_sun_shafts` for export.
+
+The renderer integrates directional scattering along the submerged part of
+the view. It bends the sun's direction at a level interface, finds entry
+heights on the committed water and uses the directional shadow map at
+those points. RGB extinction applies to both the incoming sunlight and the
+view path. Fitted terrain and offshore water share the calculation.
+Reflection and refraction use the scattering along their visible view
+segments. The world-media and particle sprite passes use the same optical
+calculation. [Real-Time Underwater Spectral Rendering](https://onlinelibrary.wiley.com/doi/full/10.1111/cgf.15009)
+
+The approximation takes 12 samples over at most 12 metres per view segment.
+It uses a fixed forward-scattering phase function and samples for surface-entry
+visibility. Fine focusing by waves belongs to the caustics lighting pass.
+Shadowing by submerged objects, diffuse multiple scattering and shafts in
+placed reservoirs and spill sheets need separate treatment.
+
+Inspect `render_diagnostics.water_optics.sun_shafts` for the authored
+strength and active reason. Single-sample forward and deferred composition
+support it. For verification, compare same-tick `resolved_hdr` probes on
+both sides of an overhead shadow. Check that dry probes and opaque
+`raw_hdr` and depth match the control.
 
 ### Add shoreline foam
 
