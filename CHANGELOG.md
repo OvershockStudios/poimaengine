@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.463
+
+- Reuse shadow depth per light view when the projection and casters match
+  the previous accepted frame. [Shadow-map reuse](docs/SHADOWS.md#reuse-unchanged-shadow-views)
+
 ## 0.0.462
 
 - Add the ACES 2 SDR 100-nit tone mapper alongside Reinhard, AgX and

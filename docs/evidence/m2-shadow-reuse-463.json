@@ -1,0 +1,434 @@
+{
+  "format": "poima.qualification-summary",
+  "version": 1,
+  "engine_checkpoint": "0.0.463",
+  "comparison_commit": "97103b8264df7c3428e7f374cb7f53deb0e5dab5",
+  "scope": "Exact per-view shadow depth reuse in the Windows Vulkan renderer.",
+  "source_sha256": {
+    "src/render_shadows.cpp": "b664f062a5415097ed61b3d063c8ecad758385a9a24b08bcb72c8a3561f49c94",
+    "src/render_shadows.hpp": "173ff51d2949388f261d1fa474332767f1636c6e4ff1e13068fdfab06d15467d",
+    "src/render_smoke.cpp": "fa09808c337f60363ef7400a9eecdc94a4a25a4e50ea8c65ba223246662686fa",
+    "src/render_schedule.cpp": "dc4d464213bd5947034b8e94d26ab4e5728d9f81607b13f1bac2200146115174",
+    "tests/render_schedule.cpp": "dec059f135611a560d6b3ee71159c83a00a387e9fd5bdf7b8d0671be061bdcac",
+    "tests/shadow_cache_capture.py": "90d944f02c28bd358578b29642ab0b60f46c64bb305bc21d6ef7fa7c2ce4441c",
+    "tests/contact_shadow_contract.py": "5ac009050edce6c1fafc329b1f87d13d06ae17b18cc22afced13109a94109ff7",
+    "tests/shadow_index_culling_capture.py": "9acbc55f5d6eca9aeafcaf93802ef1e7207ff47682cb3028705178ef6be4cb7f"
+  },
+  "windows_installed_sha256": {
+    "bin/poima.exe": "c39eaef407b9d2063ec81524c1007e023ab7de08a6f32318f0513437e3f96169",
+    "bin/poima_desktop.dll": "98fb3de3d5ae7a8a345408d0eca03c15ed499fa99f7f2433d7fdd371d49d3d8b",
+    "runtime.json": "8160bc9ecb66901cc718a40ac9f6e6bc6c264ae0327ace24b2578481bea98f2c"
+  },
+  "comparison_binary_sha256": "624933bc1b084c4d139ee3e2046af817b771e1970b88230f5412c0bea2a65aa8",
+  "vulkan": [
+    {
+      "gpu": "AMD Radeon(TM) Graphics",
+      "lighting_path": "forward",
+      "reconstruction": "none",
+      "exact_frames_and_hdr_depth_probe_sets": 15,
+      "profiled_submissions": 15,
+      "report_sha256": "0ec97df30fd2455afb52cc25ffd9c9610e1f2d9f253eba249e49dad2f1c4a2cf",
+      "restored_checkpoint_sha256": "8abbad9f2a45b37db8969ae2e41eda8a9cedb1aeed986da55588ee8f8760aa64",
+      "moved_rgb_difference_pixels": {
+        "affected_half": 3564,
+        "separate_light_half": 0
+      },
+      "shadow_interval": {
+        "retained": {
+          "cold_ms": 0.39239999999999997,
+          "warm_samples_ms": [
+            0.44176,
+            0.42984,
+            0.42896,
+            0.36219999999999997,
+            0.38383999999999996,
+            0.44739999999999996
+          ],
+          "warm_median_ms": 0.4294,
+          "moved_ms": 0.38088
+        },
+        "reused": {
+          "cold_ms": 0.34596,
+          "warm_samples_ms": [
+            0.0008399999999999999,
+            0.0008399999999999999,
+            0.0009199999999999999,
+            0.0008799999999999999,
+            0.0008799999999999999,
+            0.0008799999999999999
+          ],
+          "warm_median_ms": 0.0008799999999999999,
+          "moved_ms": 0.22871999999999998
+        }
+      },
+      "cases": {
+        "cold": {
+          "image_sha256": "e6e5f29ab1c4713f88a4a5a699ccbf5a2724bb0e4c0d67eb8da3a405b7d7d462",
+          "layer_reuse": 0,
+          "submitted_shadow_batches": 2
+        },
+        "warm-0": {
+          "image_sha256": "e6e5f29ab1c4713f88a4a5a699ccbf5a2724bb0e4c0d67eb8da3a405b7d7d462",
+          "layer_reuse": 2,
+          "submitted_shadow_batches": 0
+        },
+        "warm-1": {
+          "image_sha256": "e6e5f29ab1c4713f88a4a5a699ccbf5a2724bb0e4c0d67eb8da3a405b7d7d462",
+          "layer_reuse": 2,
+          "submitted_shadow_batches": 0
+        },
+        "warm-2": {
+          "image_sha256": "e6e5f29ab1c4713f88a4a5a699ccbf5a2724bb0e4c0d67eb8da3a405b7d7d462",
+          "layer_reuse": 2,
+          "submitted_shadow_batches": 0
+        },
+        "warm-3": {
+          "image_sha256": "e6e5f29ab1c4713f88a4a5a699ccbf5a2724bb0e4c0d67eb8da3a405b7d7d462",
+          "layer_reuse": 2,
+          "submitted_shadow_batches": 0
+        },
+        "warm-4": {
+          "image_sha256": "e6e5f29ab1c4713f88a4a5a699ccbf5a2724bb0e4c0d67eb8da3a405b7d7d462",
+          "layer_reuse": 2,
+          "submitted_shadow_batches": 0
+        },
+        "warm-5": {
+          "image_sha256": "e6e5f29ab1c4713f88a4a5a699ccbf5a2724bb0e4c0d67eb8da3a405b7d7d462",
+          "layer_reuse": 2,
+          "submitted_shadow_batches": 0
+        },
+        "caster-moved": {
+          "image_sha256": "df75972bc76da65358b987cfda2b189a93b27705928ff12fbaa62140b4c5964f",
+          "layer_reuse": 1,
+          "submitted_shadow_batches": 1
+        },
+        "caster-still": {
+          "image_sha256": "df75972bc76da65358b987cfda2b189a93b27705928ff12fbaa62140b4c5964f",
+          "layer_reuse": 2,
+          "submitted_shadow_batches": 0
+        },
+        "camera-moved": {
+          "image_sha256": "dee85a16bfab7ba5f8da6a90b909faafbf62c67e485c96a44ee89739925d7fac",
+          "layer_reuse": 2,
+          "submitted_shadow_batches": 0
+        },
+        "resized": {
+          "image_sha256": "abebf3d695676d89c0a6a2d8cbec7fb30d25281240b1d9f0ac2bf8fbc99bfce3",
+          "layer_reuse": 0,
+          "submitted_shadow_batches": 2
+        },
+        "resized-warm": {
+          "image_sha256": "abebf3d695676d89c0a6a2d8cbec7fb30d25281240b1d9f0ac2bf8fbc99bfce3",
+          "layer_reuse": 2,
+          "submitted_shadow_batches": 0
+        },
+        "reopened": {
+          "image_sha256": "dee85a16bfab7ba5f8da6a90b909faafbf62c67e485c96a44ee89739925d7fac",
+          "layer_reuse": 0,
+          "submitted_shadow_batches": 2
+        },
+        "restored": {
+          "image_sha256": "e6e5f29ab1c4713f88a4a5a699ccbf5a2724bb0e4c0d67eb8da3a405b7d7d462",
+          "layer_reuse": 0,
+          "submitted_shadow_batches": 2
+        },
+        "restored-warm": {
+          "image_sha256": "e6e5f29ab1c4713f88a4a5a699ccbf5a2724bb0e4c0d67eb8da3a405b7d7d462",
+          "layer_reuse": 2,
+          "submitted_shadow_batches": 0
+        }
+      }
+    },
+    {
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "lighting_path": "deferred",
+      "reconstruction": "fsr3_native",
+      "exact_frames_and_hdr_depth_probe_sets": 15,
+      "profiled_submissions": 15,
+      "report_sha256": "74b88d44873890609b687b588d21813b8cbe4674ac38e9f5da02242d9f1baa3e",
+      "restored_checkpoint_sha256": "c774c5b8b93d22b7a6403ac12937d92519e801a75432ebee92113196cb285e69",
+      "moved_rgb_difference_pixels": null,
+      "shadow_interval": {
+        "retained": {
+          "cold_ms": 0.019648,
+          "warm_samples_ms": [
+            0.014976,
+            0.016736,
+            0.015903999999999998,
+            0.015808,
+            0.015552,
+            0.016064
+          ],
+          "warm_median_ms": 0.015856,
+          "moved_ms": 0.016512
+        },
+        "reused": {
+          "cold_ms": 0.019488,
+          "warm_samples_ms": [
+            0.000384,
+            0.000384,
+            0.000384,
+            0.000416,
+            0.000384,
+            0.000384
+          ],
+          "warm_median_ms": 0.000384,
+          "moved_ms": 0.010048
+        }
+      },
+      "cases": {
+        "cold": {
+          "image_sha256": "fe06ed7448ec6389b86a22b3eef34cc2f930e9595941350e50defd5c558748bb",
+          "layer_reuse": 0,
+          "submitted_shadow_batches": 2
+        },
+        "warm-0": {
+          "image_sha256": "cadbb63ef263bdff22419e5f78621345e29b5a2c81b1723614fa0e31bb34d8d0",
+          "layer_reuse": 2,
+          "submitted_shadow_batches": 0
+        },
+        "warm-1": {
+          "image_sha256": "a2ac89466940acd0ee4bf21349d1145c1c291f622c6dbe427fb92e52fb297c50",
+          "layer_reuse": 2,
+          "submitted_shadow_batches": 0
+        },
+        "warm-2": {
+          "image_sha256": "5a36ed0d8ba2db0dc88edd4eb59e49226604005b0898750391687a026ec102bd",
+          "layer_reuse": 2,
+          "submitted_shadow_batches": 0
+        },
+        "warm-3": {
+          "image_sha256": "714e67d402b691fb29d82936d5b8fce19be5f8a677b9bfdd884dc57c27aa0c46",
+          "layer_reuse": 2,
+          "submitted_shadow_batches": 0
+        },
+        "warm-4": {
+          "image_sha256": "98cc9eb47b69c57e4331e0cd8c0c7722f1dbe0a2e323f66b18542404cdf58524",
+          "layer_reuse": 2,
+          "submitted_shadow_batches": 0
+        },
+        "warm-5": {
+          "image_sha256": "42dafb8c1c44d4f99200a1d026ed5849a9ae262de593fd679fb159845aedb6e4",
+          "layer_reuse": 2,
+          "submitted_shadow_batches": 0
+        },
+        "caster-moved": {
+          "image_sha256": "44def8445cad41e647e9ca992c7078f97a677b2b2f978836a09583a8936df9b8",
+          "layer_reuse": 1,
+          "submitted_shadow_batches": 1
+        },
+        "caster-still": {
+          "image_sha256": "46a2979248c2325e8970fad80a1ad1d90d9615640853132a2119cbea6e5e7405",
+          "layer_reuse": 2,
+          "submitted_shadow_batches": 0
+        },
+        "camera-moved": {
+          "image_sha256": "1744558348c53f8284737142441704a41f76687c9b5f40f9bf6567ffe3946038",
+          "layer_reuse": 2,
+          "submitted_shadow_batches": 0
+        },
+        "resized": {
+          "image_sha256": "bb024945339200deecf93255e58699f296abd4bd84dc17aa8c524366b912271a",
+          "layer_reuse": 0,
+          "submitted_shadow_batches": 2
+        },
+        "resized-warm": {
+          "image_sha256": "6cdc017659bf85ceec4108a5725064f94aeb586ec40eb6a80c930b3bc9efc9e8",
+          "layer_reuse": 2,
+          "submitted_shadow_batches": 0
+        },
+        "reopened": {
+          "image_sha256": "8cd1958c66be21244746306c561b7721f2966707ae83581e2347a9124a33ae00",
+          "layer_reuse": 0,
+          "submitted_shadow_batches": 2
+        },
+        "restored": {
+          "image_sha256": "fe06ed7448ec6389b86a22b3eef34cc2f930e9595941350e50defd5c558748bb",
+          "layer_reuse": 0,
+          "submitted_shadow_batches": 2
+        },
+        "restored-warm": {
+          "image_sha256": "cadbb63ef263bdff22419e5f78621345e29b5a2c81b1723614fa0e31bb34d8d0",
+          "layer_reuse": 2,
+          "submitted_shadow_batches": 0
+        }
+      }
+    },
+    {
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "lighting_path": "deferred",
+      "reconstruction": "none",
+      "exact_frames_and_hdr_depth_probe_sets": 15,
+      "profiled_submissions": 15,
+      "report_sha256": "35e66fa392a772dba75d162f7a9856acd3880dcb78b6cd48a5226b6dac998e47",
+      "restored_checkpoint_sha256": "4bd74dc91faf417cacdf4cf9e19bb1bccfd3abf294b30709dd9ec248d29f2708",
+      "moved_rgb_difference_pixels": {
+        "affected_half": 3563,
+        "separate_light_half": 0
+      },
+      "shadow_interval": {
+        "retained": {
+          "cold_ms": 0.019136,
+          "warm_samples_ms": [
+            0.016576,
+            0.015903999999999998,
+            0.015808,
+            0.016576,
+            0.01616,
+            0.014431999999999999
+          ],
+          "warm_median_ms": 0.016031999999999998,
+          "moved_ms": 0.016512
+        },
+        "reused": {
+          "cold_ms": 0.019584,
+          "warm_samples_ms": [
+            0.000384,
+            0.000384,
+            0.000384,
+            0.000384,
+            0.000384,
+            0.000384
+          ],
+          "warm_median_ms": 0.000384,
+          "moved_ms": 0.010464
+        }
+      },
+      "cases": {
+        "cold": {
+          "image_sha256": "83b9dd56a7ca410cb2ad7ea5088d87c5bf6587e01b0666bf86d57d633649342f",
+          "layer_reuse": 0,
+          "submitted_shadow_batches": 2
+        },
+        "warm-0": {
+          "image_sha256": "83b9dd56a7ca410cb2ad7ea5088d87c5bf6587e01b0666bf86d57d633649342f",
+          "layer_reuse": 2,
+          "submitted_shadow_batches": 0
+        },
+        "warm-1": {
+          "image_sha256": "83b9dd56a7ca410cb2ad7ea5088d87c5bf6587e01b0666bf86d57d633649342f",
+          "layer_reuse": 2,
+          "submitted_shadow_batches": 0
+        },
+        "warm-2": {
+          "image_sha256": "83b9dd56a7ca410cb2ad7ea5088d87c5bf6587e01b0666bf86d57d633649342f",
+          "layer_reuse": 2,
+          "submitted_shadow_batches": 0
+        },
+        "warm-3": {
+          "image_sha256": "83b9dd56a7ca410cb2ad7ea5088d87c5bf6587e01b0666bf86d57d633649342f",
+          "layer_reuse": 2,
+          "submitted_shadow_batches": 0
+        },
+        "warm-4": {
+          "image_sha256": "83b9dd56a7ca410cb2ad7ea5088d87c5bf6587e01b0666bf86d57d633649342f",
+          "layer_reuse": 2,
+          "submitted_shadow_batches": 0
+        },
+        "warm-5": {
+          "image_sha256": "83b9dd56a7ca410cb2ad7ea5088d87c5bf6587e01b0666bf86d57d633649342f",
+          "layer_reuse": 2,
+          "submitted_shadow_batches": 0
+        },
+        "caster-moved": {
+          "image_sha256": "a0f36a52d445ccd6c4c960f5772142c59cf5dc5da876cd73042cfb55dcb734be",
+          "layer_reuse": 1,
+          "submitted_shadow_batches": 1
+        },
+        "caster-still": {
+          "image_sha256": "a0f36a52d445ccd6c4c960f5772142c59cf5dc5da876cd73042cfb55dcb734be",
+          "layer_reuse": 2,
+          "submitted_shadow_batches": 0
+        },
+        "camera-moved": {
+          "image_sha256": "5e73724d53f8475abf71f4cc6709b8ba93b0e7682619afa0173cb92156a340ba",
+          "layer_reuse": 2,
+          "submitted_shadow_batches": 0
+        },
+        "resized": {
+          "image_sha256": "5a19e0759a482d3e3cefaa36a84073b32ee99776a0797fc008713067bff715e9",
+          "layer_reuse": 0,
+          "submitted_shadow_batches": 2
+        },
+        "resized-warm": {
+          "image_sha256": "5a19e0759a482d3e3cefaa36a84073b32ee99776a0797fc008713067bff715e9",
+          "layer_reuse": 2,
+          "submitted_shadow_batches": 0
+        },
+        "reopened": {
+          "image_sha256": "5e73724d53f8475abf71f4cc6709b8ba93b0e7682619afa0173cb92156a340ba",
+          "layer_reuse": 0,
+          "submitted_shadow_batches": 2
+        },
+        "restored": {
+          "image_sha256": "83b9dd56a7ca410cb2ad7ea5088d87c5bf6587e01b0666bf86d57d633649342f",
+          "layer_reuse": 0,
+          "submitted_shadow_batches": 2
+        },
+        "restored-warm": {
+          "image_sha256": "83b9dd56a7ca410cb2ad7ea5088d87c5bf6587e01b0666bf86d57d633649342f",
+          "layer_reuse": 2,
+          "submitted_shadow_batches": 0
+        }
+      }
+    }
+  ],
+  "regressions": [
+    {
+      "suite": "native-contact-0",
+      "report_sha256": "419a5f976cb79398f073372353c821085153ab534aac8bd7ec83f5bb6a6ec8ba",
+      "captures": 50
+    },
+    {
+      "suite": "native-contact-1",
+      "report_sha256": "1575351e3b5279a3a1d5308e8b07a5a76cadbbbdc13607f9f210930170fa1ada",
+      "captures": 50
+    },
+    {
+      "suite": "native-instancing-0",
+      "report_sha256": "1d925e2511a7322b666fec03718a7f68213f6b53bf5906c4e1c8b168b44bf9ca",
+      "captures": 32
+    },
+    {
+      "suite": "native-instancing-1",
+      "report_sha256": "825791b38b99032fdd9a548532a9cdc41acda2edaf0411674eceef674678c7e6",
+      "captures": 32
+    },
+    {
+      "suite": "index-0",
+      "report_sha256": "1245608ddf5d5523a0405f310939b1c63c62e84a29b49f31fba71b17ac62a260",
+      "captures": 3
+    },
+    {
+      "suite": "index-1",
+      "report_sha256": "32cfa217c719b21a17c44801c287cd23873e2b2626725410567fe3358b63c933",
+      "captures": 3
+    }
+  ],
+  "retained_capture_and_export": {
+    "report_sha256": "9f5645ff40a44cdf41572b79b92bafb456351b68df84fda98ea6f165f05136ce",
+    "retained_frame_pairs_exact": 8,
+    "export_files": 58
+  },
+  "ubuntu": {
+    "passed_suites": [
+      "authoring_contract_identity",
+      "render_batches_native",
+      "render_schedule_native",
+      "shadow_math",
+      "project_contract",
+      "lighting_contract",
+      "contact_shadow_contract",
+      "world_contract"
+    ],
+    "executable_sha256": "5f2e2e39ee4d8f930f85b1aebc21f8da74e72332a1b72142f70bb3d6a3c5c066",
+    "original_junit_sha256": "935912a63fb5669d157efc7a1ec3ce35251003ca6549615328e0c5c83d94e227",
+    "final_junit_sha256": "df2b77fda04c035b3f815735396836d4dc04cddce05211b230cee001632fc160",
+    "original_failure": "The preexisting contact-shadow test expected discovery revision 210. The current reply is 254.",
+    "correction": "Updated the exact harness expectation to current revision 254. Assertions on the shadow contract still run."
+  },
+  "limits": [
+    "Local-light fixture timings use a 480 \u00d7 270 view and two 1024 \u00d7 1024 shadow maps. They measure the shadow interval with profiler timestamps and do not establish game-scale frame time.",
+    "Motion and culling regressions use the existing small native fixtures. Cached visibility only covers identical inputs per light view."
+  ]
+}

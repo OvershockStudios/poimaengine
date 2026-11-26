@@ -435,6 +435,8 @@ struct Context {
     bool clustered_requested=true;
     render_sky::Pass sky_pass;
     render_shadows::Pass shadows;
+    render_shadows::Cache shadow_cache;
+    std::uint32_t reused_shadow_layers=0;
     std::vector<ShadowView> shadow_plan;
     render_scene_assets::Cache scene_assets;
     render_skinning::Pass skinning;
@@ -473,6 +475,7 @@ struct Context {
 #endif
         skinning.reset();skin_readback=nullptr;
         gpu_visibility={};
+        shadow_cache.reset();
         shadows.reset();
         occlusion.reset();
         deferred_lighting.release_gpu();material_base=nullptr;material_surface=nullptr;material_correspondence=nullptr;
@@ -985,6 +988,7 @@ struct Context {
         // Plan only after that boundary, from the exact handles this submission binds.
         camera_batch_plan.clear();viewmodel_batch_plan.clear();shadow_batch_plans.clear();
         pending_draws.camera_batches=0;pending_draws.shadow_batches=0;pending_draws.gpu_visibility_batches=0;
+        reused_shadow_layers=0;
         if(pending_viewmodel)pending_viewmodel->draws.camera_batches=0;
         if(!scene)return;
         require(draws.size()<=std::numeric_limits<std::uint32_t>::max() && viewmodel_draws.size()<=std::numeric_limits<std::uint32_t>::max(),"Draw batch candidate count exceeds uint32.");
@@ -1020,17 +1024,25 @@ struct Context {
             }
             camera_batch_plan.swap(bounded);
         }
+        std::array<std::array<float,16>,max_shadow_views> shadow_projections{};
+        for(std::size_t i=0;i<shadow_plan.size();++i)
+            std::copy_n(frame_constants.shadows[i].view_projection,16,shadow_projections[i].begin());
+        reused_shadow_layers=shadow_cache.prepare(scene->presentation_source_id,
+            std::span(shadow_projections).first(shadow_plan.size()),draws,shadows.texture()->getDesc().arraySize);
+        const auto live_layer_mask=(1u<<shadow_plan.size())-1;
+        pending_draws.shadow_reused_views=static_cast<std::uint32_t>(std::popcount(reused_shadow_layers & live_layer_mask));
         if (!shadow_plan.empty()) {
             std::vector<render_shadow_batches::Caster> casters;
             casters.reserve(draws.size());
             for (const auto& draw : draws) {
                 render_batches::Key binding_key{};
-                if (draw.shadow_mask) {
+                const auto refreshed=draw.shadow_mask&~reused_shadow_layers;
+                if (refreshed) {
                     auto* masked = draw.masked_shadow_bindings.Get();
                     binding_key = key(draw, masked ? masked : shadows.opaque_bindings(),
                         scene_products_enabled, masked ? 1u : 0u);
                 }
-                casters.push_back({draw.object_index, draw.shadow_mask, binding_key, draw.shadow_ranges});
+                casters.push_back({draw.object_index, refreshed, binding_key, draw.shadow_ranges});
             }
             shadow_batch_plans = render_shadow_batches::plan(casters,
                 static_cast<std::uint32_t>(shadow_plan.size()), diagnostics.draw_instancing);
@@ -1075,6 +1087,7 @@ struct Context {
         if(shadows.matches(target))return;
         // NVRHI submission references retain old resources until completion.
         scene_assets.invalidate_materials();shadows.clear_masked_materials();bindings=nullptr;
+        shadow_cache.reset();
         shadows.prepare(*checked.Get(),physical,dispatch,target,input_layout,{frame_buffer,object_buffer});
     }
 
@@ -2920,7 +2933,9 @@ struct Context {
                 f.aerial_scattering=texture(fog.aerial_scattering(),rs::Lifetime::shared,false);
                 f.aerial_transmittance=texture(fog.aerial_transmittance(),rs::Lifetime::shared,false);
             }
-            f.depth=texture(depth,rs::Lifetime::shared,false);if(scene_normal) {f.normal=texture(scene_normal,rs::Lifetime::shared,false);f.motion=texture(scene_motion,rs::Lifetime::shared,false);f.motion_valid=texture(scene_motion_valid,rs::Lifetime::shared,false);}f.shadow=texture(shadows.texture(),rs::Lifetime::shared,false);
+            f.depth=texture(depth,rs::Lifetime::shared,false);if(scene_normal) {f.normal=texture(scene_normal,rs::Lifetime::shared,false);f.motion=texture(scene_motion,rs::Lifetime::shared,false);f.motion_valid=texture(scene_motion_valid,rs::Lifetime::shared,false);}
+            f.reused_shadow_layers=reused_shadow_layers;
+            f.shadow=texture(shadows.texture(),rs::Lifetime::shared,reused_shadow_layers!=0);
             if(settings.clustered) {
                 f.counts=buffer(light_clusters.counts(),rs::Lifetime::shared,false);f.indices=buffer(light_clusters.indices(),rs::Lifetime::shared,false);
                 f.resources[f.indices].region=rs::Region::cluster_members;f.resources[f.indices].counts=f.counts;
@@ -2936,7 +2951,8 @@ struct Context {
             }
             if(!f.skins.empty()) {f.skin_errors=buffer(skinning.errors(),rs::Lifetime::shared,false);f.skin_readback=buffer(skin_readback,rs::Lifetime::slot,false);}
             for(const auto& draw:draws) {
-                const bool camera=scene_visible && draw.camera_visible;const bool shadow=draw.shadow_mask!=0;
+                const bool camera=scene_visible && draw.camera_visible;
+                const bool shadow=(draw.shadow_mask&~reused_shadow_layers)!=0;
                 if(!camera && !shadow)continue;
                 rs::DrawInputs input;
                 if(draw.stream_geometry) {
@@ -3151,7 +3167,7 @@ struct Context {
                     identity(input.vertices,draw.geometry.vertices.Get());if(input.indices!=rs::none)identity(input.indices,draw.geometry.indices.Get());if(input.previous_vertices!=rs::none)identity(input.previous_vertices,draw.previous_vertices.Get());
                     require(input.stream==draw.geometry.stream,"Streamed geometry slice differs from its draw binding.");
                 };
-                if(draw.shadow_mask) {
+                if(draw.shadow_mask&~f.reused_shadow_layers) {
                     const auto& input=f.shadow_draws.at(shadow_index++);geometry(input);
                     require(input.textures.size()==(draw.masked_shadow_bindings ? 1u : 0u),"Shadow material schedule differs from the actual alpha pipeline.");
                     if(draw.masked_shadow_bindings)for(const auto& binding:draw.masked_shadow_bindings->getDesc()->bindings) {
@@ -3490,7 +3506,7 @@ struct Context {
                         };
                     }
                     shadows.record(*commands.Get(), draws, shadow_batch_plans, scene_products_enabled,
-                        pending_draws.shadow_batches, work, boundary);
+                        resources.reused_shadow_layers,pending_draws.shadow_batches,work,boundary);
                     for (std::size_t layer = 0; layer < work.size(); ++layer)
                         work[layer].light_index = shadow_plan[layer].light_index;
                 }
@@ -3696,6 +3712,7 @@ struct Context {
         }
         if(slot.submission && performance)slot.performance_ticket=performance->gpu_submit(performance_token,submission);
         require(accepted,"Frame submission was not accepted; history was not advanced.");
+        if(scene)shadow_cache.accept();
         slot.atmosphere_sky.reset();
         if(plan.frame.atmosphere_view!=render_schedule::none) {
             sky_pass.commit_atmosphere();

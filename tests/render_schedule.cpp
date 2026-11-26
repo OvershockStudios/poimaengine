@@ -475,6 +475,30 @@ void aces2_table_contracts() {
             bad("cold ACES 2 lookup upload omitted",[](auto& p){erase_access(p,PassId::output,p.frame.aces2_table,Use::upload);});
     }
 }
+void shadow_reuse_contracts() {
+    Fixture fixture(rich(),1);
+    auto& frame=fixture.f;
+    auto& depth=frame.resources[frame.shadow];
+    depth.layers=4;
+    depth.initialized=true;
+    frame.reused_shadow_layers=0b1010;
+    const auto partial=fixture.plan();
+    partial.validate();
+    ++accepted;
+    auto bad=[&](const char* label,const auto& change){auto copy=partial;change(copy);rejects(label,[&]{copy.validate();});};
+    bad("reused shadow layer outside texture",[](auto& p){p.frame.reused_shadow_layers|=1u<<4;});
+    bad("reused shadow texture uninitialized",[](auto& p){p.frame.resources[p.frame.shadow].initialized=false;});
+    bad("partial refresh clears the whole shadow texture",[](auto& p){pass(p,PassId::shadows).accesses.front().initialize=true;});
+    bad("partial refresh omits dirty layers",[](auto& p){std::erase_if(p.passes,[](const auto& stage){return stage.id==PassId::shadows;});});
+    frame.shadow_draws.clear();
+    frame.reused_shadow_layers=0b1111;
+    auto warm=fixture.plan();
+    warm.validate();
+    ++accepted;
+    check(pass(warm,PassId::shadows).accesses.empty(),"Fully reusable shadow depth has raster work");
+    pass(warm,PassId::shadows).accesses.push_back({frame.shadow,Use::clear_depth,true});
+    rejects("fully reusable shadow depth overwritten",[&]{warm.validate();});
+}
 void matrix(){
     for(bool scene:{false,true})for(bool editor:{false,true})for(bool capture:{false,true})for(bool ui:{false,true})
     for(bool overlay:{false,true})for(unsigned samples:{1u,4u})for(bool skin:{false,true})for(bool clustered:{false,true})for(bool sky:{false,true}){
@@ -2384,4 +2408,4 @@ void visibility_contracts() {
 }
 }
 
-int main(){try{matrix();faults();products();motion_contracts();reconstruction_contracts();deferred_contracts();deferred_color_contracts();viewmodel_contracts();ambient_occlusion_contracts();masked_shadow_contracts();environment_contracts();bloom_contracts();post_effect_contracts();output_grade_contracts();aces2_table_contracts();streamed_geometry_contracts();mutable_geometry_contracts();particle_sprite_contracts();surface_mark_contracts();screen_reflection_contracts();screen_diffuse_bounce_contracts();half_resolution_diffuse_contracts();height_fog_contracts();depth_of_field_contracts();composed_reconstruction_contracts();reconstructed_sprite_contracts();spatial_aa_contracts();auto_exposure_contracts();atmosphere_contracts();visibility_contracts();std::cout<<"Production render schedule: "<<accepted<<" valid variants, "<<rejected<<" rejected contract mutations.\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}
+int main(){try{matrix();faults();products();motion_contracts();reconstruction_contracts();deferred_contracts();deferred_color_contracts();viewmodel_contracts();ambient_occlusion_contracts();masked_shadow_contracts();environment_contracts();bloom_contracts();post_effect_contracts();output_grade_contracts();aces2_table_contracts();shadow_reuse_contracts();streamed_geometry_contracts();mutable_geometry_contracts();particle_sprite_contracts();surface_mark_contracts();screen_reflection_contracts();screen_diffuse_bounce_contracts();half_resolution_diffuse_contracts();height_fog_contracts();depth_of_field_contracts();composed_reconstruction_contracts();reconstructed_sprite_contracts();spatial_aa_contracts();auto_exposure_contracts();atmosphere_contracts();visibility_contracts();std::cout<<"Production render schedule: "<<accepted<<" valid variants, "<<rejected<<" rejected contract mutations.\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}

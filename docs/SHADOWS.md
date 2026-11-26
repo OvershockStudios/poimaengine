@@ -129,6 +129,37 @@ and compares known receiver, caster and sky locations. `--reference` uses
 the retained 0.0.455 Windows executable for legacy comparison, `--fsr` adds
 Native AA captures, and `--runtime` tests standalone export.
 
+## Reuse unchanged shadow views
+
+Each renderer context can keep a light view's depth map in its existing
+D32 array. It reuses a layer when the source, final GPU view projection,
+ordered rigid caster geometry, index ranges, transforms, foliage offsets,
+and alpha-test inputs match the last accepted submission. Camera motion
+can change a directional cascade without changing a spotlight's projection.
+A view that contains skinned or streamed geometry redraws each frame.
+Views with more than 16,384 casters also redraw.
+
+When one view changes, the renderer clears and redraws that layer. A new
+target, changed source or unknown prior state starts with a full clear.
+The graphics queue orders reads and writes to the shared array, including
+when there are multiple frames in flight. Installing an updated cache key
+requires an accepted submission. The cache lives in GPU renderer state.
+Restore and export rebuild depth from authored geometry and committed poses.
+
+Inspect `render_diagnostics.last_draws.shadow_reused_views` on retired
+frames. `shadow_batches` counts submitted commands after reuse.
+`shadow_draws` and `shadow_triangles` describe the eligible geometry
+before reuse. The native profiler exposes `renderer.shadow_view.N.reused`
+with the per-view draw, batch and triangle counts. Warm views report zero
+for those three work counts.
+
+Run `tests/shadow_cache_capture.py` with a matching Windows Vulkan
+binary and the retained 0.0.462 binary as `--reference`. It compares
+the local-light result through stationary frames, a caster move, a camera
+move, renderer replacement and a saved pose restore. Use `--check-profiler`
+to match view reuse and submitted batches to their accepted submissions.
+[Shadow-cache results](evidence/m2-shadow-reuse-463.json)
+
 ## Per-drawable controls
 
 `MeshRenderer`, `StaticMesh` and `SkinnedMesh` accept optional `cast_shadows`

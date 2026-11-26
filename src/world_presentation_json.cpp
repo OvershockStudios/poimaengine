@@ -82,6 +82,7 @@ static Json draw_counts_json(const DrawCounts& c) {
     Json result {{"skinned_instances",c.skinned_instances},{"skinned_vertices",c.skinned_vertices},{"objects",c.objects},{"camera_draws",c.camera_draws},{"camera_culled",c.camera_culled},{"camera_triangles",c.camera_triangles},
         {"camera_batches",c.camera_batches},{"shadow_batches",c.shadow_batches},
         {"shadow_views",c.shadow_views},{"shadow_candidates",c.shadow_candidates},{"shadow_draws",c.shadow_draws},{"shadow_culled",c.shadow_culled},{"shadow_triangles",c.shadow_triangles},
+        {"shadow_reused_views",c.shadow_reused_views},
         {"streamed_draws",c.streamed_draws},{"streamed_vertex_bytes",c.streamed_vertex_bytes},{"streamed_index_bytes",c.streamed_index_bytes},
         {"sprite_instances",c.sprite_instances},{"sprite_batches",c.sprite_batches}};
     if(c.mesh_lod) {

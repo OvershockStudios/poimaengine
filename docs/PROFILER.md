@@ -162,6 +162,9 @@ recorded timestamps.
 
 `renderer.shadow_view.N.draws`, `.batches` and `.triangles` report the retired
 layer's submitted instances, actual draw commands and triangle instances.
+`.reused` is 1 for an unchanged depth layer and 0 for a redrawn layer.
+Reused layers have zero draw work. Their timestamp interval still includes
+the boundary markers.
 `.light_index` indexes the frame's effective light list. Match events by source,
 session, tick and submission stamp before comparing layers. A layer can map to
 a different light when active views change. View detail uses the same bounded

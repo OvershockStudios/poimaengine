@@ -4,12 +4,16 @@
 #include "poima/render_batches.hpp"
 #include <nvrhi/nvrhi.h>
 
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <functional>
 #include <map>
+#include <optional>
 #include <set>
 #include <span>
+#include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -42,6 +46,37 @@ struct Buffers {
 struct ViewWork {
     std::uint64_t draws = 0, batches = 0, triangles = 0;
     std::size_t light_index = 0;
+    bool reused = false;
+};
+
+// One exact depth identity per layer. Retain immutable GPU inputs to prevent
+// handle reuse from making a different asset compare equal.
+class Cache {
+public:
+    std::uint32_t prepare(std::string_view source,
+        std::span<const std::array<float,16>> projections,
+        std::span<const render_draw::DrawItem> draws, std::uint32_t layers);
+    void accept() noexcept;
+    void reset() noexcept;
+
+private:
+    struct Caster {
+        nvrhi::BufferHandle vertices, indices;
+        nvrhi::BindingSetHandle mask;
+        std::array<std::uint32_t,18> pose{};
+        std::uint32_t first=0, count=0;
+        bool operator==(const Caster& other) const;
+    };
+    struct View {
+        std::array<std::uint32_t,16> projection{};
+        std::vector<Caster> casters;
+        bool operator==(const View&) const=default;
+    };
+    struct Submitted {
+        std::string source;
+        std::vector<std::optional<View>> views;
+    };
+    Submitted submitted_, pending_;
 };
 
 Target target_for(const SceneLighting& lighting);
@@ -65,7 +100,8 @@ public:
 
     void record(nvrhi::ICommandList& commands, const std::vector<render_draw::DrawItem>& draws,
                 const std::vector<std::vector<render_batches::Batch>>& batch_plans,
-                bool scene_products_enabled, std::uint64_t& recorded_batches, std::span<ViewWork> work,
+                bool scene_products_enabled, std::uint32_t reused_layers,
+                std::uint64_t& recorded_batches, std::span<ViewWork> work,
                 const std::function<void(std::uint32_t)>& timestamp_boundary) const;
 
     nvrhi::ITexture* texture() const noexcept { return texture_.Get(); }

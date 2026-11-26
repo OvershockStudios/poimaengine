@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <array>
+#include <bit>
 #include <map>
 #include <unordered_set>
 #include <utility>
@@ -138,6 +139,18 @@ void Schedule::validate(bool before_acquire) const {
     if(settings.sky && !settings.scene)fail("sky pass without a scene");
     if(settings.overlay)required(frame.overlay_vertices);
     if(settings.scene) {required(frame.frame);required(frame.objects);required(frame.depth);required(frame.hdr);required(frame.shadow);}
+    std::uint32_t shadow_layers=0;
+    if(settings.scene) {
+        const auto& shadow=resource(frame.shadow);
+        if(shadow.kind!=Kind::texture || !shadow.layers || shadow.layers>16 ||
+            (frame.reused_shadow_layers && !shadow.initialized))
+            fail("invalid retained shadow array");
+        shadow_layers=(1u<<shadow.layers)-1;
+    }
+    if((frame.reused_shadow_layers&~shadow_layers) ||
+        (frame.reused_shadow_layers==shadow_layers && !frame.shadow_draws.empty()))
+        fail("invalid reused shadow layer mask");
+    const bool refresh_shadow=settings.scene && frame.reused_shadow_layers!=shadow_layers;
     if(frame.output_grade!=none) {
         required(frame.output_grade);
         const auto& grade=resource(frame.output_grade);
@@ -709,7 +722,7 @@ void Schedule::validate(bool before_acquire) const {
     bool world_resolved=false,world_opaque=false,foreground_lights=false,foreground_cleared=false,foreground_drawn=false,foreground_resolved=false,foreground_composed=false;
     bool exported=false,captured=false,probed=false,prepared=false,reconstructed=false,deferred_lit=false,deferred_opaque=false,ao_generated=false,ao_filtered=false;
     bool post_effect_applied=false,diffuse_gathered=false,diffuse_bounced=false,screen_reflected=false,world_fogged=false,focused=false,world_effects_output=false;
-    bool stream_uploaded=false,stream_shadow_drawn=false,sprites_uploaded=false,sprites_drawn=false;
+    bool stream_uploaded=false,stream_shadow_drawn=false,sprites_uploaded=false,sprites_drawn=false,shadow_work=false;
     std::uint64_t previous=0;bool first=true;
     bool surface_marks_uploaded=false,grade_applied=false,spatial_aa_applied=false;
     bool exposure_prepared=false,exposure_applied=false,exposure_copied=false;
@@ -790,8 +803,20 @@ void Schedule::validate(bool before_acquire) const {
         if(stream_draw && (!stream_uploaded || !has(frame.streamed_vertices,Use::vertex) ||
             !has(frame.streamed_indices,Use::index)))fail("streamed draw requires uploaded geometry");
         if(stream_draw && pass.id==PassId::shadows)stream_shadow_drawn=true;
-        if(pass.id==PassId::shadows)for(const auto& draw:frame.shadow_draws)
-            for(auto texture:draw.textures)if(!has(texture,Use::sampled))fail("missing masked shadow material input");
+        if(pass.id==PassId::shadows) {
+            if(refresh_shadow) {
+                const auto clear=std::find_if(pass.accesses.begin(),pass.accesses.end(),[&](const Access& a) {
+                    return a.resource==frame.shadow && a.use==Use::clear_depth;
+                });
+                if(clear==pass.accesses.end() || clear->initialize!=(frame.reused_shadow_layers==0) ||
+                    !has(frame.shadow,Use::depth) || !has(frame.frame,Use::constant) ||
+                    !has(frame.objects,Use::storage_read))
+                    fail("shadow refresh does not match the retained layers");
+                for(const auto& draw:frame.shadow_draws)
+                    for(auto texture:draw.textures)if(!has(texture,Use::sampled))fail("missing masked shadow material input");
+            } else if(!pass.accesses.empty())fail("fully retained shadows have raster work");
+            shadow_work=true;
+        }
         if(pass.id==PassId::opaque) {
             if(visibility.count && (!visibility_prepared || std::count_if(pass.accesses.begin(),pass.accesses.end(),
                 [&](const Access& a){return matches(a,visibility.arguments,Use::indirect,false);})!=1))
@@ -1344,6 +1369,7 @@ void Schedule::validate(bool before_acquire) const {
     if(settings.reconstruction && !reconstructed)fail("missing reconstruction pass");
     if(stream && !stream_uploaded)fail("missing streamed geometry upload");
     if((streamed_camera && !world_opaque) || (streamed_shadow && !stream_shadow_drawn))fail("missing streamed geometry draw pass");
+    if(refresh_shadow && !shadow_work)fail("missing required shadow refresh");
     if(settings.particle_sprites && !sprites_drawn)fail("missing particle sprite pass");
     if(surface_marks && !world_opaque)fail("missing opaque surface mark consumer");
     if(settings.post_effect && !post_effect_applied)fail("missing post effect pass");
@@ -1399,7 +1425,14 @@ Schedule build(FrameResources frame,Settings settings) {
         add(cluster,f.counts,Use::copy_source);add(cluster,f.cluster_readback,Use::copy_destination,true);
     }
     auto& shadows=pass(PassId::shadows);
-    if(settings.scene) {add(shadows,f.shadow,Use::clear_depth,true);add(shadows,f.frame,Use::constant);add(shadows,f.objects,Use::storage_read);geometry(shadows,f.shadow_draws,false);for(const auto& draw:f.shadow_draws)for(auto texture:draw.textures)add(shadows,texture,Use::sampled);add(shadows,f.shadow,Use::depth);}
+    if(settings.scene && (f.reused_shadow_layers==0 ||
+        static_cast<std::uint32_t>(std::popcount(f.reused_shadow_layers))!=result.resource(f.shadow).layers)) {
+        add(shadows,f.shadow,Use::clear_depth,f.reused_shadow_layers==0);
+        add(shadows,f.frame,Use::constant);add(shadows,f.objects,Use::storage_read);
+        geometry(shadows,f.shadow_draws,false);
+        for(const auto& draw:f.shadow_draws)for(auto texture:draw.textures)add(shadows,texture,Use::sampled);
+        add(shadows,f.shadow,Use::depth);
+    }
     auto& clear=pass(PassId::scene_clear);add(clear,f.color,Use::clear_color,true);add(clear,f.depth,Use::clear_depth,true);if(settings.products) {add(clear,f.normal,Use::clear_color,true);add(clear,f.motion,Use::clear_color,true);add(clear,f.motion_valid,Use::clear_color,true);}
     if(settings.deferred)for(auto id:{f.material_base,f.material_surface,f.material_correspondence})add(clear,id,Use::clear_color,true);
     if(f.atmosphere_density!=none && !result.resource(f.atmosphere_density).initialized)

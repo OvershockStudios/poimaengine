@@ -115,17 +115,18 @@ class Fixture:
         assert result['committed'] and not result['replayed'] and result['revision'] == self.revision + 1, result
         self.revision = result['revision']
 
-    def capture(self, name, culling):
+    def capture(self, name, culling, frames=1):
         sample_count = 1 if self.args.lighting_path == 'deferred' else 4
         return 'world.capture', dict(camera=CAMERA, path=self.native(self.args.output / f'{name}.bmp'),
             revision=self.revision, gpu=self.args.gpu, width=WIDTH, height=HEIGHT, samples=sample_count,
-            lighting_path=self.args.lighting_path, culling=culling, profile=False)
+            lighting_path=self.args.lighting_path, culling=culling, profile=False,
+            capture_frames=frames)
 
-    def audit(self, result, culling, expected):
+    def audit(self, result, culling, expected, frames=1):
         diagnostics = result['render_diagnostics']
         draws = diagnostics['last_draws']
         assert result['capture_written'] and result['hardware'] and result['nvrhi_errors'] == 0, result
-        assert result['frames_presented'] == diagnostics['completed_submissions'] == 2, result
+        assert result['frames_presented'] == diagnostics['completed_submissions'] == frames, result
         assert diagnostics['lighting_path'] == self.args.lighting_path and diagnostics['culling'] == culling, diagnostics
         assert {key: draws[key] for key in expected} == expected, draws
         return draws
@@ -159,11 +160,19 @@ class Fixture:
             mesh(CASTER, caster, True),
         ])
         source_hash = file_sha(self.world)
-        full, culled = self.call([self.capture('full-indices', False), self.capture('culled-indices', True)])
+        full, culled, warm = self.call([self.capture('full-indices', False),
+            self.capture('culled-indices', True), self.capture('culled-indices-warm', True, 2)])
         assert file_sha(self.world) == source_hash
         base = dict(shadow_views=1, shadow_candidates=1, shadow_draws=1, shadow_culled=0, shadow_batches=1)
         full_counts = self.audit(full, False, base | dict(shadow_triangles=4 * TRIANGLES_PER_BLOCK))
         culled_counts = self.audit(culled, True, base | dict(shadow_triangles=TRIANGLES_PER_BLOCK))
+        warm_draws = warm['render_diagnostics']['last_draws']
+        if 'shadow_reused_views' in warm_draws:
+            self.audit(warm, True, base | dict(shadow_triangles=TRIANGLES_PER_BLOCK,
+                        shadow_reused_views=1, shadow_batches=0), frames=2)
+        else:
+            self.audit(warm, True, base | dict(shadow_triangles=TRIANGLES_PER_BLOCK), frames=2)
+        assert file_sha(self.args.output/'culled-indices-warm.bmp') == file_sha(self.args.output/'culled-indices.bmp')
         assert full_counts['camera_triangles'] == culled_counts['camera_triangles'] == 4 * TRIANGLES_PER_BLOCK + 2
 
         self.edit([mesh(CASTER, caster, False)])

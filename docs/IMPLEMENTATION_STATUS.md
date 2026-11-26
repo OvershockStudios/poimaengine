@@ -1,8 +1,17 @@
 # Implementation status
 
-Updated 2026-11-25 for **0.0.462**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-25 for **0.0.463**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.463 adds [per-view shadow depth reuse](SHADOWS.md#reuse-unchanged-shadow-views).
+Windows Vulkan fixtures match full rendered images and selected HDR and depth
+probes against 0.0.462 on AMD and NVIDIA. Moving a caster redraws its
+affected spotlight layer. Idle frames reuse both layers, and renderer
+replacement and save restore start with fresh depth. Native profiler
+counters match retired draws by submission. Both GPUs passed instancing,
+shadow culling and soft-shadow regressions. Ubuntu passed eight focused suites.
+[Qualification evidence](evidence/m2-shadow-reuse-463.json)
 
 Version 0.0.462 adds the [ACES 2 SDR 100-nit display transform](HDR_COMPOSITION.md#choose-a-tone-mapper).
 Windows Vulkan checks on AMD and NVIDIA covered all eight combinations of

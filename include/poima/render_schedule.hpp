@@ -113,6 +113,8 @@ struct FrameResources {
     ResourceId reconstructed=none,dense_motion=none,reactive=none,dilated_depth=none,dilated_motion=none,reconstructed_depth=none;
     ResourceId composition_mask=none;
     ResourceId shadow=none,counts=none,indices=none,cluster_readback=none,skin_errors=none,skin_readback=none,capture=none;
+    // Bit N preserves the last accepted depth contents of layer N.
+    std::uint32_t reused_shadow_layers=0;
     ResourceId game_vertices=none,game_indices=none,overlay_vertices=none,editor_vertices=none,editor_indices=none;
     std::vector<ResourceId> game_textures,editor_textures;
     std::vector<ProbePoint> probe_points;
