@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.461
+
+- Reuse half-resolution diffuse-bounce samples across each 8×8 resolve group.
+  [Diffuse bounce](docs/DIFFUSE_BOUNCE.md#choose-a-resolution)
+
 ## 0.0.460
 
 - Add opt-in GPU timings for each executed Vulkan render-schedule pass.

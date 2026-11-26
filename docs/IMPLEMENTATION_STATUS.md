@@ -1,8 +1,19 @@
 # Implementation status
 
-Updated 2026-11-25 for **0.0.460**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-25 for **0.0.461**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.461 [shares nearby samples during half-resolution diffuse resolve](DIFFUSE_BOUNCE.md#choose-a-resolution).
+Matched Vulkan fixtures preserved exact displayed pixels and HDR probes
+on AMD and NVIDIA, and both adapters completed a relocated export. At
+720p, the two fixed-scene runs per variant reduced
+NVIDIA median resolve time from 0.069–0.073 ms to 0.055–0.058 ms. AMD
+went from 0.667–0.697 ms to 0.477–0.482 ms. All 32 matched Saltgate
+motion frames stayed exact, with almost unchanged median total bounce
+time. The compiled full-resolution and half-gather shaders matched their
+prior bytes. Ubuntu passed five focused suites.
+[Results and scope](evidence/m2-tiled-diffuse-resolve-461.json)
 
 Version 0.0.460 adds [opt-in GPU timing for each scheduled pass](PROFILER.md#measure-each-render-pass).
 On AMD and NVIDIA, 48 detailed frames matched their CPU schedule and

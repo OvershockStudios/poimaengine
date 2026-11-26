@@ -1,0 +1,1337 @@
+{
+  "format": "poima.qualification-summary",
+  "version": 1,
+  "engine_checkpoint": "0.0.461",
+  "comparison_commit": "45533982ad6955cd03f508961819fd15141a5400",
+  "scope": "Shared half-resolution diffuse reconstruction on native Vulkan, with exact image and probe controls and bounded cost measurements.",
+  "source_sha256": {
+    "CMakeLists.txt": "edac714fa1c10ed866712aaaf0cb56176edb1d370d00e20c812a99ed6ab409fc",
+    "shaders/screen_diffuse_bounce.hlsl": "247b193a72c4b18a498ed30416daf75398ef33d6e2d3ab0c276f99977bd900c0",
+    "tests/screen_diffuse_bounce_capture.py": "8e4125df2c0eab855154ac86a5d433dcbf252439cb551fb586f81fbbd3eef773"
+  },
+  "build": {
+    "shader_sha256": {
+      "full": {
+        "stock": "3221502f6b118d598c05b1e093bb1c9b34d44c937c4e40e4d1b4025151266356",
+        "current": "3221502f6b118d598c05b1e093bb1c9b34d44c937c4e40e4d1b4025151266356"
+      },
+      "half_gather": {
+        "stock": "53f97fcf5bf248d5c58d20ac36f4b6ad785e1b2fd2746a5f334fd1b5ad548f2a",
+        "current": "53f97fcf5bf248d5c58d20ac36f4b6ad785e1b2fd2746a5f334fd1b5ad548f2a"
+      },
+      "half_resolve": {
+        "stock": "33394b61891449ede4caa5be55b5fa6ba7b92407d9c021050297c286ba23c95d",
+        "current": "71d070b159663229dacca702bfab4a3b20154a433e5e69e1ef12ee5203cfe904"
+      }
+    },
+    "pilot_resolve_matches_final": true,
+    "pilot_executable_sha256": "008862443884183de212698a9e20cf2935755cdd4e8427b0e57941a4544c3475",
+    "windows_installed_sha256": {
+      "bin/poima.exe": "73d2040bf82e269156cf1329a34166df46275aa1e052f7a6a6de98d7bdf10aa5",
+      "bin/poima_desktop.dll": "11e33df2f25ac2be1077d0393719bb3f615ff793c91206a12b01ac9ce01339a4",
+      "runtime.json": "d0609976301479eefcccf5799999185b83b283283cf29e3d16caf085078a8e57"
+    },
+    "linux_tests": [
+      "authoring_contract_identity",
+      "render_schedule_native",
+      "project_contract",
+      "lighting_contract",
+      "world_contract"
+    ],
+    "linux_binary_sha256": "b4fcc1c919d80086d19d9087aa0f3c5b69085f94a0e0d2da80f6c5e5066a8b70",
+    "linux_junit_sha256": "f8427473203853e76e655dd6d8435b677c66ad629fe63d12d084de8a377411d7",
+    "pilot_build_log_sha256": "fa3102e7bdfcefe79deda5f9942effe488821e43ee98b67f698be24a373b5cfd",
+    "final_build_log_sha256": "1b91d26dc08d81ad7eb21fe4c6545396aa2f976f1165f39026710d4fd8fdd4bf"
+  },
+  "windows_vulkan": [
+    {
+      "gpu": "AMD Radeon(TM) Graphics",
+      "stock_report_sha256": "48557146905fc469eb2722629ed9cf4d7ef98bb24d6239ad4984ba9cb26442ee",
+      "final_report_sha256": "52ff4500f894f9989dbc018af2ebecf88598731381dd23f39405f11d7a7504ee",
+      "stock_executable_sha256": "1d3a83e5f973649b5a6da6f4343e55e32123881fa9bb64ec4cf6bd07c8467ff6",
+      "final_executable_sha256": "73d2040bf82e269156cf1329a34166df46275aa1e052f7a6a6de98d7bdf10aa5",
+      "exact_captures": {
+        "omitted": {
+          "sha256": "29b34e3e095e2e9868b48f1f072190643d5a12e5bc7a06ceae87f9ae8a697062",
+          "probe_count": 23
+        },
+        "retained": {
+          "sha256": "29b34e3e095e2e9868b48f1f072190643d5a12e5bc7a06ceae87f9ae8a697062",
+          "probe_count": 23
+        },
+        "forward-omitted": {
+          "sha256": "957f411f872b5dc27c18e346e417cf4d43ada88c2beef3cf63dbefa8a6a68649",
+          "probe_count": 23
+        },
+        "enabled": {
+          "sha256": "6a3cf2d0a48514e69b25321e823fd6508c68a04913c8f8850f68f50aff8e2e76",
+          "probe_count": 23
+        },
+        "forward-fallback": {
+          "sha256": "957f411f872b5dc27c18e346e417cf4d43ada88c2beef3cf63dbefa8a6a68649",
+          "probe_count": 23
+        },
+        "half-strength": {
+          "sha256": "0a36fe9ece11ec95e25f759ba695cd006c10602781d4421444b8332e178338a5",
+          "probe_count": 23
+        },
+        "explicit-full": {
+          "sha256": "6a3cf2d0a48514e69b25321e823fd6508c68a04913c8f8850f68f50aff8e2e76",
+          "probe_count": 23
+        },
+        "half-resolution": {
+          "sha256": "0cfbc785605f77bc409c42ca5cd92a379d16174b4f169b96298c4376578e2028",
+          "probe_count": 23
+        },
+        "half-resolution-half-strength": {
+          "sha256": "1b8447e3cc7fc85ede6cdb21ea024a311bfd99c2caaf110670988c377c1e78ab",
+          "probe_count": 23
+        },
+        "half-edge-omitted": {
+          "sha256": "29b34e3e095e2e9868b48f1f072190643d5a12e5bc7a06ceae87f9ae8a697062",
+          "probe_count": 7
+        },
+        "half-edge-enabled": {
+          "sha256": "07eec15b52b8d5c54751679951b3483892b30c923314f3270e17e702d93b4ec2",
+          "probe_count": 7
+        },
+        "half-resolution-forward": {
+          "sha256": "957f411f872b5dc27c18e346e417cf4d43ada88c2beef3cf63dbefa8a6a68649",
+          "probe_count": 23
+        },
+        "zero-strength": {
+          "sha256": "29b34e3e095e2e9868b48f1f072190643d5a12e5bc7a06ceae87f9ae8a697062",
+          "probe_count": 23
+        },
+        "short-radius": {
+          "sha256": "324423d9e5da76e401aed6839658b19bc34e7a1e95183e77f134891a25707045",
+          "probe_count": 23
+        },
+        "metallic-receiver-omitted": {
+          "sha256": "4e3a6d3efeede8386d42140e31408c3db775330a4989cfa6bc31a0e111af75ac",
+          "probe_count": 23
+        },
+        "metallic-receiver-enabled": {
+          "sha256": "4e3a6d3efeede8386d42140e31408c3db775330a4989cfa6bc31a0e111af75ac",
+          "probe_count": 23
+        },
+        "ambient-only-donor-omitted": {
+          "sha256": "b17922629454868429b00a6f00b59e46d4842eaf58ef5ab242baf4ee45176dd1",
+          "probe_count": 23
+        },
+        "ambient-only-donor-enabled": {
+          "sha256": "b17922629454868429b00a6f00b59e46d4842eaf58ef5ab242baf4ee45176dd1",
+          "probe_count": 23
+        },
+        "reflections-only": {
+          "sha256": "29b34e3e095e2e9868b48f1f072190643d5a12e5bc7a06ceae87f9ae8a697062",
+          "probe_count": 23
+        },
+        "reflections-and-bounce": {
+          "sha256": "0cfbc785605f77bc409c42ca5cd92a379d16174b4f169b96298c4376578e2028",
+          "probe_count": 23
+        },
+        "native-aa-omitted": {
+          "sha256": "5083b4d079e5a934b275a5f55721ec0eb7e02447b52556a3a3db7e0bc7454af0",
+          "probe_count": 23
+        },
+        "native-aa-enabled": {
+          "sha256": "b44c58451aa3654b7bdc21ab94db9bae52f5f49d1f052d83d68434185db670f8",
+          "probe_count": 23
+        },
+        "lit-donor-omitted": {
+          "sha256": "19980e329018a24297398dfa4e3c9d304e5b4089bc33ac098f9e50410597a550",
+          "probe_count": 23
+        },
+        "lit-donor-bounce": {
+          "sha256": "986fa4581530840233ac14064eeca1656d285f5568be0615e32d9a2650ea1985",
+          "probe_count": 23
+        }
+      },
+      "retained_control_executable_sha256": "0842c40e1a8b7fd19af29432d689b1f0656fc0b2ae3a001acefe347a93634e44",
+      "edge": {
+        "protected_pixels": [
+          [
+            158,
+            108
+          ],
+          [
+            158,
+            120
+          ],
+          [
+            158,
+            132
+          ],
+          [
+            163,
+            162
+          ]
+        ],
+        "adjacent_red_delta_hdr": [
+          0.107818603515625,
+          0.107574462890625,
+          0.107330322265625
+        ]
+      },
+      "relocated": {
+        "image_sha256": "6bd3f783740ba396921ddce9968e3d5deb1c605eb21dc52f6795d62c945c2260",
+        "source_unavailable": true,
+        "incompatible_runtime_rejected": true,
+        "near": [
+          [
+            92,
+            90,
+            82
+          ],
+          [
+            104,
+            90,
+            82
+          ],
+          [
+            104,
+            90,
+            82
+          ],
+          [
+            117,
+            90,
+            82
+          ],
+          [
+            117,
+            90,
+            82
+          ],
+          [
+            104,
+            90,
+            82
+          ],
+          [
+            104,
+            90,
+            82
+          ],
+          [
+            111,
+            90,
+            82
+          ],
+          [
+            104,
+            90,
+            82
+          ]
+        ],
+        "far": [
+          [
+            63,
+            90,
+            82
+          ],
+          [
+            63,
+            90,
+            82
+          ],
+          [
+            63,
+            90,
+            82
+          ],
+          [
+            63,
+            90,
+            82
+          ],
+          [
+            63,
+            90,
+            82
+          ],
+          [
+            63,
+            90,
+            82
+          ],
+          [
+            63,
+            90,
+            82
+          ],
+          [
+            63,
+            90,
+            82
+          ],
+          [
+            63,
+            90,
+            82
+          ]
+        ]
+      }
+    },
+    {
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "stock_report_sha256": "1999fe5e2610cd9f5466892b6170194f67434a664541e0c5ecf5094dcd76095e",
+      "final_report_sha256": "5da15d64f5478f34351634c3bdbea222a4e33d70bdb95b3868197274752ab773",
+      "stock_executable_sha256": "1d3a83e5f973649b5a6da6f4343e55e32123881fa9bb64ec4cf6bd07c8467ff6",
+      "final_executable_sha256": "73d2040bf82e269156cf1329a34166df46275aa1e052f7a6a6de98d7bdf10aa5",
+      "exact_captures": {
+        "omitted": {
+          "sha256": "29b34e3e095e2e9868b48f1f072190643d5a12e5bc7a06ceae87f9ae8a697062",
+          "probe_count": 23
+        },
+        "retained": {
+          "sha256": "29b34e3e095e2e9868b48f1f072190643d5a12e5bc7a06ceae87f9ae8a697062",
+          "probe_count": 23
+        },
+        "forward-omitted": {
+          "sha256": "957f411f872b5dc27c18e346e417cf4d43ada88c2beef3cf63dbefa8a6a68649",
+          "probe_count": 23
+        },
+        "enabled": {
+          "sha256": "c842ae056945d5526d137792bdfd608432fa6628cad19401e989c435cb0ebda9",
+          "probe_count": 23
+        },
+        "forward-fallback": {
+          "sha256": "957f411f872b5dc27c18e346e417cf4d43ada88c2beef3cf63dbefa8a6a68649",
+          "probe_count": 23
+        },
+        "half-strength": {
+          "sha256": "6083194edc892f6ecf86a87beb863a76eb5c52efec0743ab48d87d8eb4dbbee9",
+          "probe_count": 23
+        },
+        "explicit-full": {
+          "sha256": "c842ae056945d5526d137792bdfd608432fa6628cad19401e989c435cb0ebda9",
+          "probe_count": 23
+        },
+        "half-resolution": {
+          "sha256": "4f15c7f2e43a086117d38910fd9108d8df75daac78ddc3fa55437df22827b2ac",
+          "probe_count": 23
+        },
+        "half-resolution-half-strength": {
+          "sha256": "91642d2dcae28aac280207cca11ecb3cbe17cd93d78faf19564ebdc42f1c03ec",
+          "probe_count": 23
+        },
+        "half-edge-omitted": {
+          "sha256": "29b34e3e095e2e9868b48f1f072190643d5a12e5bc7a06ceae87f9ae8a697062",
+          "probe_count": 7
+        },
+        "half-edge-enabled": {
+          "sha256": "9b0f4e1992df232e878d5b68c2694629729786d56149127bca972aeab428f193",
+          "probe_count": 7
+        },
+        "half-resolution-forward": {
+          "sha256": "957f411f872b5dc27c18e346e417cf4d43ada88c2beef3cf63dbefa8a6a68649",
+          "probe_count": 23
+        },
+        "zero-strength": {
+          "sha256": "29b34e3e095e2e9868b48f1f072190643d5a12e5bc7a06ceae87f9ae8a697062",
+          "probe_count": 23
+        },
+        "short-radius": {
+          "sha256": "fdbcb33001e427ab0624cf7ea24842b3f32c87bde9967c25405d483198f114b1",
+          "probe_count": 23
+        },
+        "metallic-receiver-omitted": {
+          "sha256": "4e3a6d3efeede8386d42140e31408c3db775330a4989cfa6bc31a0e111af75ac",
+          "probe_count": 23
+        },
+        "metallic-receiver-enabled": {
+          "sha256": "4e3a6d3efeede8386d42140e31408c3db775330a4989cfa6bc31a0e111af75ac",
+          "probe_count": 23
+        },
+        "ambient-only-donor-omitted": {
+          "sha256": "b17922629454868429b00a6f00b59e46d4842eaf58ef5ab242baf4ee45176dd1",
+          "probe_count": 23
+        },
+        "ambient-only-donor-enabled": {
+          "sha256": "b17922629454868429b00a6f00b59e46d4842eaf58ef5ab242baf4ee45176dd1",
+          "probe_count": 23
+        },
+        "reflections-only": {
+          "sha256": "29b34e3e095e2e9868b48f1f072190643d5a12e5bc7a06ceae87f9ae8a697062",
+          "probe_count": 23
+        },
+        "reflections-and-bounce": {
+          "sha256": "4f15c7f2e43a086117d38910fd9108d8df75daac78ddc3fa55437df22827b2ac",
+          "probe_count": 23
+        },
+        "native-aa-omitted": {
+          "sha256": "5083b4d079e5a934b275a5f55721ec0eb7e02447b52556a3a3db7e0bc7454af0",
+          "probe_count": 23
+        },
+        "native-aa-enabled": {
+          "sha256": "f66837401c13ba8510a897888dad19519639e9835e49cffa027863b95c7c1a32",
+          "probe_count": 23
+        },
+        "lit-donor-omitted": {
+          "sha256": "19980e329018a24297398dfa4e3c9d304e5b4089bc33ac098f9e50410597a550",
+          "probe_count": 23
+        },
+        "lit-donor-bounce": {
+          "sha256": "2b1d3bad87252b3513469382f8575e11151bee0fe71acabbadae7c5359011631",
+          "probe_count": 23
+        }
+      },
+      "retained_control_executable_sha256": "0842c40e1a8b7fd19af29432d689b1f0656fc0b2ae3a001acefe347a93634e44",
+      "edge": {
+        "protected_pixels": [
+          [
+            158,
+            108
+          ],
+          [
+            158,
+            120
+          ],
+          [
+            158,
+            132
+          ],
+          [
+            163,
+            162
+          ]
+        ],
+        "adjacent_red_delta_hdr": [
+          0.107818603515625,
+          0.107574462890625,
+          0.107330322265625
+        ]
+      },
+      "relocated": {
+        "image_sha256": "9af1100776617f72d34f49441006ddc9931695b102a4b23e072b17bf6b280516",
+        "source_unavailable": true,
+        "incompatible_runtime_rejected": true,
+        "near": [
+          [
+            92,
+            90,
+            82
+          ],
+          [
+            104,
+            90,
+            82
+          ],
+          [
+            104,
+            90,
+            82
+          ],
+          [
+            117,
+            90,
+            82
+          ],
+          [
+            117,
+            90,
+            82
+          ],
+          [
+            104,
+            90,
+            82
+          ],
+          [
+            104,
+            90,
+            82
+          ],
+          [
+            111,
+            90,
+            82
+          ],
+          [
+            104,
+            90,
+            82
+          ]
+        ],
+        "far": [
+          [
+            63,
+            90,
+            82
+          ],
+          [
+            63,
+            90,
+            82
+          ],
+          [
+            63,
+            90,
+            82
+          ],
+          [
+            63,
+            90,
+            82
+          ],
+          [
+            63,
+            90,
+            82
+          ],
+          [
+            63,
+            90,
+            82
+          ],
+          [
+            63,
+            90,
+            82
+          ],
+          [
+            63,
+            90,
+            82
+          ],
+          [
+            63,
+            90,
+            82
+          ]
+        ]
+      }
+    }
+  ],
+  "fixed_scene_timing": {
+    "width": 1280,
+    "height": 720,
+    "warmup_frames": 12,
+    "replayed_frames": 24,
+    "compared_frames_per_run": 15,
+    "execution_order": [
+      "stock",
+      "tiled",
+      "tiled",
+      "stock"
+    ],
+    "binaries": {
+      "stock": "1d3a83e5f973649b5a6da6f4343e55e32123881fa9bb64ec4cf6bd07c8467ff6",
+      "tiled": "008862443884183de212698a9e20cf2935755cdd4e8427b0e57941a4544c3475"
+    },
+    "gpu_runs": [
+      [
+        {
+          "mode": "stock",
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "bmp_sha256": "98c2b9dc16051e00cb654a0e4fc58de3ac6040619dee96551c5b7e9104ea2455",
+          "probes": [
+            {
+              "ambient_visibility": 1.0,
+              "depth": 0.9941684007644653,
+              "motion": [
+                5.723886642439169e-12,
+                1.701920548935476e-11
+              ],
+              "motion_valid": true,
+              "raw_ambient_visibility": 1.0,
+              "raw_hdr": [
+                0.01398468017578125,
+                0.02398681640625,
+                0.0335693359375
+              ],
+              "resolved_hdr": [
+                0.0193939208984375,
+                0.033294677734375,
+                0.04473876953125
+              ],
+              "resolved_x": 640,
+              "resolved_y": 360,
+              "shading_normal": [
+                0.0,
+                1.0,
+                0.0
+              ],
+              "surface_valid": true,
+              "x": 640,
+              "y": 360
+            },
+            {
+              "ambient_visibility": 1.0,
+              "depth": 1.0,
+              "motion": [
+                0.0,
+                0.0
+              ],
+              "motion_valid": false,
+              "raw_ambient_visibility": 1.0,
+              "raw_hdr": [
+                0.024993896484375,
+                0.03497314453125,
+                0.05499267578125
+              ],
+              "resolved_hdr": [
+                0.024993896484375,
+                0.03497314453125,
+                0.05499267578125
+              ],
+              "resolved_x": 221,
+              "resolved_y": 173,
+              "shading_normal": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "surface_valid": false,
+              "x": 221,
+              "y": 173
+            }
+          ],
+          "stages": {
+            "gpu.screen_diffuse_gather.ns": {
+              "count": 15,
+              "median_ns": 192512,
+              "p95_ns": 206848
+            },
+            "gpu.screen_diffuse_resolve.ns": {
+              "count": 15,
+              "median_ns": 68608,
+              "p95_ns": 1609728
+            },
+            "gpu.screen_diffuse_bounce.ns": {
+              "count": 15,
+              "median_ns": 261120,
+              "p95_ns": 1800192
+            },
+            "gpu.total.ns": {
+              "count": 15,
+              "median_ns": 541248,
+              "p95_ns": 2097856
+            }
+          }
+        },
+        {
+          "mode": "tiled",
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "bmp_sha256": "98c2b9dc16051e00cb654a0e4fc58de3ac6040619dee96551c5b7e9104ea2455",
+          "probes": [
+            {
+              "ambient_visibility": 1.0,
+              "depth": 0.9941684007644653,
+              "motion": [
+                5.723886642439169e-12,
+                1.701920548935476e-11
+              ],
+              "motion_valid": true,
+              "raw_ambient_visibility": 1.0,
+              "raw_hdr": [
+                0.01398468017578125,
+                0.02398681640625,
+                0.0335693359375
+              ],
+              "resolved_hdr": [
+                0.0193939208984375,
+                0.033294677734375,
+                0.04473876953125
+              ],
+              "resolved_x": 640,
+              "resolved_y": 360,
+              "shading_normal": [
+                0.0,
+                1.0,
+                0.0
+              ],
+              "surface_valid": true,
+              "x": 640,
+              "y": 360
+            },
+            {
+              "ambient_visibility": 1.0,
+              "depth": 1.0,
+              "motion": [
+                0.0,
+                0.0
+              ],
+              "motion_valid": false,
+              "raw_ambient_visibility": 1.0,
+              "raw_hdr": [
+                0.024993896484375,
+                0.03497314453125,
+                0.05499267578125
+              ],
+              "resolved_hdr": [
+                0.024993896484375,
+                0.03497314453125,
+                0.05499267578125
+              ],
+              "resolved_x": 221,
+              "resolved_y": 173,
+              "shading_normal": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "surface_valid": false,
+              "x": 221,
+              "y": 173
+            }
+          ],
+          "stages": {
+            "gpu.screen_diffuse_gather.ns": {
+              "count": 15,
+              "median_ns": 191488,
+              "p95_ns": 194560
+            },
+            "gpu.screen_diffuse_resolve.ns": {
+              "count": 15,
+              "median_ns": 58368,
+              "p95_ns": 1285120
+            },
+            "gpu.screen_diffuse_bounce.ns": {
+              "count": 15,
+              "median_ns": 250880,
+              "p95_ns": 1476608
+            },
+            "gpu.total.ns": {
+              "count": 15,
+              "median_ns": 530784,
+              "p95_ns": 1761440
+            }
+          }
+        },
+        {
+          "mode": "tiled",
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "bmp_sha256": "98c2b9dc16051e00cb654a0e4fc58de3ac6040619dee96551c5b7e9104ea2455",
+          "probes": [
+            {
+              "ambient_visibility": 1.0,
+              "depth": 0.9941684007644653,
+              "motion": [
+                5.723886642439169e-12,
+                1.701920548935476e-11
+              ],
+              "motion_valid": true,
+              "raw_ambient_visibility": 1.0,
+              "raw_hdr": [
+                0.01398468017578125,
+                0.02398681640625,
+                0.0335693359375
+              ],
+              "resolved_hdr": [
+                0.0193939208984375,
+                0.033294677734375,
+                0.04473876953125
+              ],
+              "resolved_x": 640,
+              "resolved_y": 360,
+              "shading_normal": [
+                0.0,
+                1.0,
+                0.0
+              ],
+              "surface_valid": true,
+              "x": 640,
+              "y": 360
+            },
+            {
+              "ambient_visibility": 1.0,
+              "depth": 1.0,
+              "motion": [
+                0.0,
+                0.0
+              ],
+              "motion_valid": false,
+              "raw_ambient_visibility": 1.0,
+              "raw_hdr": [
+                0.024993896484375,
+                0.03497314453125,
+                0.05499267578125
+              ],
+              "resolved_hdr": [
+                0.024993896484375,
+                0.03497314453125,
+                0.05499267578125
+              ],
+              "resolved_x": 221,
+              "resolved_y": 173,
+              "shading_normal": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "surface_valid": false,
+              "x": 221,
+              "y": 173
+            }
+          ],
+          "stages": {
+            "gpu.screen_diffuse_gather.ns": {
+              "count": 15,
+              "median_ns": 182272,
+              "p95_ns": 183296
+            },
+            "gpu.screen_diffuse_resolve.ns": {
+              "count": 15,
+              "median_ns": 55296,
+              "p95_ns": 56320
+            },
+            "gpu.screen_diffuse_bounce.ns": {
+              "count": 15,
+              "median_ns": 237568,
+              "p95_ns": 239616
+            },
+            "gpu.total.ns": {
+              "count": 15,
+              "median_ns": 504832,
+              "p95_ns": 1280512
+            }
+          }
+        },
+        {
+          "mode": "stock",
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "bmp_sha256": "98c2b9dc16051e00cb654a0e4fc58de3ac6040619dee96551c5b7e9104ea2455",
+          "probes": [
+            {
+              "ambient_visibility": 1.0,
+              "depth": 0.9941684007644653,
+              "motion": [
+                5.723886642439169e-12,
+                1.701920548935476e-11
+              ],
+              "motion_valid": true,
+              "raw_ambient_visibility": 1.0,
+              "raw_hdr": [
+                0.01398468017578125,
+                0.02398681640625,
+                0.0335693359375
+              ],
+              "resolved_hdr": [
+                0.0193939208984375,
+                0.033294677734375,
+                0.04473876953125
+              ],
+              "resolved_x": 640,
+              "resolved_y": 360,
+              "shading_normal": [
+                0.0,
+                1.0,
+                0.0
+              ],
+              "surface_valid": true,
+              "x": 640,
+              "y": 360
+            },
+            {
+              "ambient_visibility": 1.0,
+              "depth": 1.0,
+              "motion": [
+                0.0,
+                0.0
+              ],
+              "motion_valid": false,
+              "raw_ambient_visibility": 1.0,
+              "raw_hdr": [
+                0.024993896484375,
+                0.03497314453125,
+                0.05499267578125
+              ],
+              "resolved_hdr": [
+                0.024993896484375,
+                0.03497314453125,
+                0.05499267578125
+              ],
+              "resolved_x": 221,
+              "resolved_y": 173,
+              "shading_normal": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "surface_valid": false,
+              "x": 221,
+              "y": 173
+            }
+          ],
+          "stages": {
+            "gpu.screen_diffuse_gather.ns": {
+              "count": 15,
+              "median_ns": 202752,
+              "p95_ns": 1406976
+            },
+            "gpu.screen_diffuse_resolve.ns": {
+              "count": 15,
+              "median_ns": 72704,
+              "p95_ns": 658432
+            },
+            "gpu.screen_diffuse_bounce.ns": {
+              "count": 15,
+              "median_ns": 275456,
+              "p95_ns": 1510400
+            },
+            "gpu.total.ns": {
+              "count": 15,
+              "median_ns": 571392,
+              "p95_ns": 1796768
+            }
+          }
+        }
+      ],
+      [
+        {
+          "mode": "stock",
+          "gpu": "AMD Radeon(TM) Graphics",
+          "bmp_sha256": "c2adcfdf0c7227404eb572593d6679604eb70b4db05e650367037a0e8f3908a9",
+          "probes": [
+            {
+              "ambient_visibility": 1.0,
+              "depth": 0.9941683411598206,
+              "motion": [
+                5.853724449611519e-11,
+                4.2369010522236294e-09
+              ],
+              "motion_valid": true,
+              "raw_ambient_visibility": 1.0,
+              "raw_hdr": [
+                0.01398468017578125,
+                0.02398681640625,
+                0.0335693359375
+              ],
+              "resolved_hdr": [
+                0.0193939208984375,
+                0.033294677734375,
+                0.04473876953125
+              ],
+              "resolved_x": 640,
+              "resolved_y": 360,
+              "shading_normal": [
+                0.0,
+                1.0,
+                0.0
+              ],
+              "surface_valid": true,
+              "x": 640,
+              "y": 360
+            },
+            {
+              "ambient_visibility": 1.0,
+              "depth": 1.0,
+              "motion": [
+                0.0,
+                0.0
+              ],
+              "motion_valid": false,
+              "raw_ambient_visibility": 1.0,
+              "raw_hdr": [
+                0.024993896484375,
+                0.03497314453125,
+                0.05499267578125
+              ],
+              "resolved_hdr": [
+                0.024993896484375,
+                0.03497314453125,
+                0.05499267578125
+              ],
+              "resolved_x": 221,
+              "resolved_y": 173,
+              "shading_normal": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "surface_valid": false,
+              "x": 221,
+              "y": 173
+            }
+          ],
+          "stages": {
+            "gpu.screen_diffuse_gather.ns": {
+              "count": 15,
+              "median_ns": 1230240,
+              "p95_ns": 1479200
+            },
+            "gpu.screen_diffuse_resolve.ns": {
+              "count": 15,
+              "median_ns": 666840,
+              "p95_ns": 758080
+            },
+            "gpu.screen_diffuse_bounce.ns": {
+              "count": 15,
+              "median_ns": 1897080,
+              "p95_ns": 2237280
+            },
+            "gpu.total.ns": {
+              "count": 15,
+              "median_ns": 4832120,
+              "p95_ns": 5396430
+            }
+          }
+        },
+        {
+          "mode": "tiled",
+          "gpu": "AMD Radeon(TM) Graphics",
+          "bmp_sha256": "c2adcfdf0c7227404eb572593d6679604eb70b4db05e650367037a0e8f3908a9",
+          "probes": [
+            {
+              "ambient_visibility": 1.0,
+              "depth": 0.9941683411598206,
+              "motion": [
+                5.853724449611519e-11,
+                4.2369010522236294e-09
+              ],
+              "motion_valid": true,
+              "raw_ambient_visibility": 1.0,
+              "raw_hdr": [
+                0.01398468017578125,
+                0.02398681640625,
+                0.0335693359375
+              ],
+              "resolved_hdr": [
+                0.0193939208984375,
+                0.033294677734375,
+                0.04473876953125
+              ],
+              "resolved_x": 640,
+              "resolved_y": 360,
+              "shading_normal": [
+                0.0,
+                1.0,
+                0.0
+              ],
+              "surface_valid": true,
+              "x": 640,
+              "y": 360
+            },
+            {
+              "ambient_visibility": 1.0,
+              "depth": 1.0,
+              "motion": [
+                0.0,
+                0.0
+              ],
+              "motion_valid": false,
+              "raw_ambient_visibility": 1.0,
+              "raw_hdr": [
+                0.024993896484375,
+                0.03497314453125,
+                0.05499267578125
+              ],
+              "resolved_hdr": [
+                0.024993896484375,
+                0.03497314453125,
+                0.05499267578125
+              ],
+              "resolved_x": 221,
+              "resolved_y": 173,
+              "shading_normal": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "surface_valid": false,
+              "x": 221,
+              "y": 173
+            }
+          ],
+          "stages": {
+            "gpu.screen_diffuse_gather.ns": {
+              "count": 15,
+              "median_ns": 1349840,
+              "p95_ns": 1632640
+            },
+            "gpu.screen_diffuse_resolve.ns": {
+              "count": 15,
+              "median_ns": 482000,
+              "p95_ns": 524360
+            },
+            "gpu.screen_diffuse_bounce.ns": {
+              "count": 15,
+              "median_ns": 1831680,
+              "p95_ns": 2157000
+            },
+            "gpu.total.ns": {
+              "count": 15,
+              "median_ns": 4954520,
+              "p95_ns": 5679200
+            }
+          }
+        },
+        {
+          "mode": "tiled",
+          "gpu": "AMD Radeon(TM) Graphics",
+          "bmp_sha256": "c2adcfdf0c7227404eb572593d6679604eb70b4db05e650367037a0e8f3908a9",
+          "probes": [
+            {
+              "ambient_visibility": 1.0,
+              "depth": 0.9941683411598206,
+              "motion": [
+                5.853724449611519e-11,
+                4.2369010522236294e-09
+              ],
+              "motion_valid": true,
+              "raw_ambient_visibility": 1.0,
+              "raw_hdr": [
+                0.01398468017578125,
+                0.02398681640625,
+                0.0335693359375
+              ],
+              "resolved_hdr": [
+                0.0193939208984375,
+                0.033294677734375,
+                0.04473876953125
+              ],
+              "resolved_x": 640,
+              "resolved_y": 360,
+              "shading_normal": [
+                0.0,
+                1.0,
+                0.0
+              ],
+              "surface_valid": true,
+              "x": 640,
+              "y": 360
+            },
+            {
+              "ambient_visibility": 1.0,
+              "depth": 1.0,
+              "motion": [
+                0.0,
+                0.0
+              ],
+              "motion_valid": false,
+              "raw_ambient_visibility": 1.0,
+              "raw_hdr": [
+                0.024993896484375,
+                0.03497314453125,
+                0.05499267578125
+              ],
+              "resolved_hdr": [
+                0.024993896484375,
+                0.03497314453125,
+                0.05499267578125
+              ],
+              "resolved_x": 221,
+              "resolved_y": 173,
+              "shading_normal": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "surface_valid": false,
+              "x": 221,
+              "y": 173
+            }
+          ],
+          "stages": {
+            "gpu.screen_diffuse_gather.ns": {
+              "count": 15,
+              "median_ns": 1312000,
+              "p95_ns": 1595760
+            },
+            "gpu.screen_diffuse_resolve.ns": {
+              "count": 15,
+              "median_ns": 476680,
+              "p95_ns": 518200
+            },
+            "gpu.screen_diffuse_bounce.ns": {
+              "count": 15,
+              "median_ns": 1792200,
+              "p95_ns": 2113960
+            },
+            "gpu.total.ns": {
+              "count": 15,
+              "median_ns": 4781640,
+              "p95_ns": 5330270
+            }
+          }
+        },
+        {
+          "mode": "stock",
+          "gpu": "AMD Radeon(TM) Graphics",
+          "bmp_sha256": "c2adcfdf0c7227404eb572593d6679604eb70b4db05e650367037a0e8f3908a9",
+          "probes": [
+            {
+              "ambient_visibility": 1.0,
+              "depth": 0.9941683411598206,
+              "motion": [
+                5.853724449611519e-11,
+                4.2369010522236294e-09
+              ],
+              "motion_valid": true,
+              "raw_ambient_visibility": 1.0,
+              "raw_hdr": [
+                0.01398468017578125,
+                0.02398681640625,
+                0.0335693359375
+              ],
+              "resolved_hdr": [
+                0.0193939208984375,
+                0.033294677734375,
+                0.04473876953125
+              ],
+              "resolved_x": 640,
+              "resolved_y": 360,
+              "shading_normal": [
+                0.0,
+                1.0,
+                0.0
+              ],
+              "surface_valid": true,
+              "x": 640,
+              "y": 360
+            },
+            {
+              "ambient_visibility": 1.0,
+              "depth": 1.0,
+              "motion": [
+                0.0,
+                0.0
+              ],
+              "motion_valid": false,
+              "raw_ambient_visibility": 1.0,
+              "raw_hdr": [
+                0.024993896484375,
+                0.03497314453125,
+                0.05499267578125
+              ],
+              "resolved_hdr": [
+                0.024993896484375,
+                0.03497314453125,
+                0.05499267578125
+              ],
+              "resolved_x": 221,
+              "resolved_y": 173,
+              "shading_normal": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "surface_valid": false,
+              "x": 221,
+              "y": 173
+            }
+          ],
+          "stages": {
+            "gpu.screen_diffuse_gather.ns": {
+              "count": 15,
+              "median_ns": 1300280,
+              "p95_ns": 1584360
+            },
+            "gpu.screen_diffuse_resolve.ns": {
+              "count": 15,
+              "median_ns": 696520,
+              "p95_ns": 809880
+            },
+            "gpu.screen_diffuse_bounce.ns": {
+              "count": 15,
+              "median_ns": 1996040,
+              "p95_ns": 2394240
+            },
+            "gpu.total.ns": {
+              "count": 15,
+              "median_ns": 4987880,
+              "p95_ns": 5461600
+            }
+          }
+        }
+      ]
+    ],
+    "study_sha256": "beeb0c5ab4117d264d8a8ad06fce2141465d5d70f2c8177737ac127053c86e10",
+    "interpretation": "Lower median resolve cost in both repetitions on both GPUs. Whole-frame and tail measurements varied."
+  },
+  "motion": {
+    "study_sha256": "95d74f1c9f1b7cb281c947fa4dd9a30d4fbc7a1769d7a3a355bb44e7891e9695",
+    "extent": [
+      1280,
+      720
+    ],
+    "exact_frames": 32,
+    "matched_probe_pairs": 640,
+    "measured_frames_per_mode": 24,
+    "median_and_tail_ms": {
+      "stock": {
+        "gpu": {
+          "count": 24,
+          "median_ms": 0.502272,
+          "p95_ms": 5.422079999999999
+        },
+        "gather_gpu": {
+          "count": 24,
+          "median_ms": 0.37632,
+          "p95_ms": 1.713152
+        },
+        "resolve_gpu": {
+          "count": 24,
+          "median_ms": 0.12185599999999999,
+          "p95_ms": 2.49344
+        }
+      },
+      "tiled": {
+        "gpu": {
+          "count": 24,
+          "median_ms": 0.500736,
+          "p95_ms": 1.790976
+        },
+        "gather_gpu": {
+          "count": 24,
+          "median_ms": 0.38707199999999997,
+          "p95_ms": 1.640448
+        },
+        "resolve_gpu": {
+          "count": 24,
+          "median_ms": 0.114688,
+          "p95_ms": 0.172032
+        }
+      }
+    },
+    "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "image_sha256_by_tick": {
+      "532": "faae6bbe39594664a9c59ebe6ac0d0a81359ab4af37413c1d628312940d3c24b",
+      "534": "cdc2fb1336aba05ec94a2f13e2e5aad16bcfb354b193aab7c2fdaf1205341a1f",
+      "536": "4b3d555affb82aca5d79856a6216a0e293533089c78ae02c2d837ecc71a95651",
+      "538": "02ea5a45291ccddf13809ad5c100ef745ec5d88185f7e0b804326e8cdfe1f590",
+      "540": "a7170b1dfef6054ad58b3498e470de5bea383a093351c457ce1da42c15869d9f",
+      "542": "0c219939ddfcfe9a326ab63f18bdc9855358b2993f2dd575fb8eff2dda14388e",
+      "544": "07d1aa48248303380e7e4026aecf3d277827922839bec7615016fcc1b16a16b6",
+      "546": "c28093228de4bb74f2b79164a767efd2be97d5cefe4b948ba5b5bf1906f3f6a6",
+      "548": "098165980f958825546b84c2716f7f786df233c0b20596b5f42de15ac90bcae4",
+      "550": "9e969e54583e6dc43c0a18fa1d672728f853edbceef0baaa39f17ec3cab28b58",
+      "552": "c3aa9b3e26126d80f76ae871a433e996aaea184274342532f93aea38cf3a7c44",
+      "554": "08f26e6f40ffdf086a27c92643ed8fa98c0f788da898f605406c925fdf65b0c4",
+      "556": "b84c5141861a5a8765f3fe2acfcab385458c72a55b30111bf255dd58d17627f7",
+      "558": "52d4d490201d9b7c8dc68c06d083a189f3433accecff92d40f7d7a7694529a89",
+      "560": "eff6aa7184124e28604a6bb8dd77c18e13461f91adc190f6948285c866aef18b",
+      "562": "6cc2ef876317e46b6bd856530094ff37bd8b37547788f0a4ed03276a6b990402",
+      "564": "850fbcad7a47b01ead7693f493923c04102382fe2e4c49f6f868037a8569b861",
+      "566": "6f826c0884dd76fb497e03aa9a5f71580a196092e4effaae571430827b3d4821",
+      "568": "e40f425a313f62d9186251548869e850d3daf902c06252d0f88a8b3a71e7ee09",
+      "570": "a47ea24e658c1ba3dd0756816b100f9357aea5ec8e02bde56a9cb6c86db59a6b",
+      "572": "028164914f5b02817feeb9e65d2d98dc3dc34dbd47e9f6de270b52f8ade75174",
+      "574": "5fe872d05b299548cb5966b5ba1bb3fe909f8178ee1276d6df990feadfb7761f",
+      "576": "f33b21001117c2b932cacc3f649b4777e0b6418e82a950e3e79065ba0d1eed24",
+      "578": "b1c315d01d13d4461343e466d630419f5647cb4eea21158c896ff9fb7a63af8b",
+      "580": "0cd16903727600816294ae5292cc0280d1d2e45c982a8d9930db6f8c09333201",
+      "582": "6649cc11b7b8f8bfb6e40e891d86873ae9f686e1eb80e15d4848444c6e7b539c",
+      "584": "03b3c03070a846054c0ed8d0e5e1c8e42a53da0e9a71dd12942406057980e630",
+      "586": "e2af33ce441002fd32d9a605677a7ce8ab10443acfa161ed06102bd894ae30ce",
+      "588": "4217533a63936c98db5636b8518895b31069b0f2cf2c871e4bb57fdbd6543177",
+      "590": "2272058040e6f80322dcff422630db5a4dff427ed6d677884d6461a8b22282be",
+      "592": "6e49064978af01017955133d22f1f4e9965e7c2e740729f5f24020c9fc6ae6d0",
+      "594": "c6d253b78bb3cf01f17520b1027df922c3fc27030dda2ce1574978d10e5efbb3"
+    },
+    "interpretation": "Total bounce median changed by about one microsecond. Motion comparison establishes sample and pixel parity."
+  },
+  "qualification_note": {
+    "original_capture_log_sha256": "5fd2029ef0cb710d6ae276e2e75792768b4bbf46108cc6d3224121fe70663452",
+    "reconciliation_log_sha256": "6b0daf1053c42ed0913b1df588097d9dc7512147450009ef4517d4c84533b3be",
+    "original_comparison_issue": "The outer comparison expected the new version for a deliberately retained 0.0.457 control. Reconciliation verified the retained executable and all original captures."
+  },
+  "remaining_scope": [
+    "Representative game throughput and frame pacing",
+    "Full motion qualification across more devices and scene types",
+    "Off-screen diffuse transport and temporal history"
+  ]
+}

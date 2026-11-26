@@ -37,6 +37,12 @@ plane constrain interpolation across surfaces. The final resolve applies
 each receiver's own diffuse color. An isolated receiver can fall back to
 its direct and sky lighting when no compatible anchor contributes.
 
+An 8×8 resolve group loads and decodes its 5×5 neighborhood of half-resolution
+anchors once into shared memory. Receivers reuse that neighborhood while
+keeping the same depth and normal weights. Partial edge groups participate in
+the same synchronization and clamp their anchors to the image bounds.
+[HLSL group synchronization](https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/groupmemorybarrierwithgroupsync)
+
 Explicit `"full"` uses the original per-pixel gather. Omission defaults
 to full. Explicit half requires `features.screen_diffuse_bounce_half_resolution`
 as well as `features.screen_diffuse_bounce` in an export runtime.

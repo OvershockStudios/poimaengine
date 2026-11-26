@@ -152,10 +152,36 @@ bool load_receiver(int2 texel, float2 lower, float2 upper, out float3 position, 
 #endif
 
 #if POIMA_DIFFUSE_HALF_RESOLVE
-float4 resolve_at(int2 texel, uint2 extent) {
+struct ResolveAnchor {
+    float4 incident;
+    float3 receiver;
+    float3 world_normal;
+    float3 normal;
+};
+// An 8x8 output group spans four half-resolution cells in each axis,
+// plus the neighboring anchor required for interpolation at its edges.
+static const uint resolve_tile_side = 5;
+groupshared ResolveAnchor resolve_anchors[resolve_tile_side * resolve_tile_side];
+
+void load_resolve_anchor(uint lane, int2 tile_origin, int2 half_extent, uint2 extent,
+                         float2 lower, float2 upper) {
+    const int2 local = int2(lane % resolve_tile_side, lane / resolve_tile_side);
+    const int2 half_texel = clamp(tile_origin + local, 0, half_extent - 1);
+    ResolveAnchor anchor = (ResolveAnchor)0;
+    anchor.incident = gathered_incident.Load(int3(half_texel, 0));
+    if (anchor.incident.a > 0 && all(isfinite(anchor.incident))
+        && load_receiver(full_anchor(half_texel, extent), lower, upper,
+                         anchor.receiver, anchor.world_normal)) {
+        anchor.normal = view_vector(anchor.world_normal);
+    } else {
+        anchor.incident = 0;
+    }
+    resolve_anchors[lane] = anchor;
+}
+
+float4 resolve_at(int2 texel, uint2 extent, int2 half_extent, int2 tile_origin,
+                  float2 lower, float2 upper) {
     const float4 lit = lit_hdr.Load(int3(texel, 0));
-    const float2 lower = max(cluster_viewport.xy, 0);
-    const float2 upper = min(cluster_viewport.xy + cluster_viewport.zw, float2(extent));
     float3 receiver, world_normal;
     if (!load_receiver(texel, lower, upper, receiver, world_normal)) return lit;
     const float4 base = material_base.Load(int3(texel, 0));
@@ -163,11 +189,10 @@ float4 resolve_at(int2 texel, uint2 extent) {
     if (all(diffuse <= 0)) return lit;
     const float3 normal = view_vector(world_normal);
 
-    uint2 half_extent;
-    gathered_incident.GetDimensions(half_extent.x, half_extent.y);
     const int2 corner = int2(floor((float2(texel) - 1) * .5));
-    const int2 a = clamp(corner, 0, int2(half_extent) - 1);
-    const int2 b = clamp(corner + 1, 0, int2(half_extent) - 1);
+    const int2 a = clamp(corner, 0, half_extent - 1);
+    const int2 b = clamp(corner + 1, 0, half_extent - 1);
+    const int2 local = corner - tile_origin;
     const int2 from = full_anchor(a, extent);
     const int2 to = full_anchor(b, extent);
     // The last interval of an odd-sized buffer can span only one pixel.
@@ -180,19 +205,14 @@ float4 resolve_at(int2 texel, uint2 extent) {
             const float spatial = (x == 0 ? 1 - fraction.x : fraction.x)
                                  * (y == 0 ? 1 - fraction.y : fraction.y);
             if (spatial <= 0) continue;
-            const int2 half_texel = int2(x == 0 ? a.x : b.x, y == 0 ? a.y : b.y);
-            const float4 sample_value = gathered_incident.Load(int3(half_texel, 0));
-            if (sample_value.a <= 0 || !all(isfinite(sample_value))) continue;
-            float3 sample_receiver, sample_world_normal;
-            if (!load_receiver(full_anchor(half_texel, extent), lower, upper, sample_receiver, sample_world_normal))
-                continue;
-            const float3 sample_normal = view_vector(sample_world_normal);
-            const float3 delta = sample_receiver - receiver;
-            const float plane_distance = max(abs(dot(delta, normal)), abs(dot(delta, sample_normal)));
+            const ResolveAnchor anchor = resolve_anchors[(local.y + y) * resolve_tile_side + local.x + x];
+            if (anchor.incident.a <= 0) continue;
+            const float3 delta = anchor.receiver - receiver;
+            const float plane_distance = max(abs(dot(delta, normal)), abs(dot(delta, anchor.normal)));
             const float plane_weight = 1 - smoothstep(.25 * plane_limit, plane_limit, plane_distance);
-            const float normal_weight = smoothstep(.85, .97, dot(world_normal, sample_world_normal));
+            const float normal_weight = smoothstep(.85, .97, dot(world_normal, anchor.world_normal));
             const float weight = spatial * plane_weight * normal_weight;
-            weighted_incident += sample_value.rgb * weight;
+            weighted_incident += anchor.incident.rgb * weight;
             weight_sum += weight;
         }
     }
@@ -250,6 +270,22 @@ float4 bounce_at(int2 texel, uint2 extent) {
 #endif
 
 [numthreads(8, 8, 1)]
+#if POIMA_DIFFUSE_HALF_RESOLVE
+void compute_main(uint3 id : SV_DispatchThreadID, uint3 group : SV_GroupID, uint lane : SV_GroupIndex) {
+    uint2 extent;
+    bounced_hdr.GetDimensions(extent.x, extent.y);
+    const int2 half_extent = int2((extent + 1) / 2);
+    const int2 tile_origin = int2(group.xy) * 4 - 1;
+    const float2 lower = max(cluster_viewport.xy, 0);
+    const float2 upper = min(cluster_viewport.xy + cluster_viewport.zw, float2(extent));
+    if (lane < resolve_tile_side * resolve_tile_side)
+        load_resolve_anchor(lane, tile_origin, half_extent, extent, lower, upper);
+    // Lanes outside a partial edge group must still join the rendezvous.
+    GroupMemoryBarrierWithGroupSync();
+    if (any(id.xy >= extent)) return;
+    bounced_hdr[id.xy] = resolve_at(int2(id.xy), extent, half_extent, tile_origin, lower, upper);
+}
+#else
 void compute_main(uint3 id : SV_DispatchThreadID) {
     uint2 extent;
     bounced_hdr.GetDimensions(extent.x, extent.y);
@@ -258,9 +294,8 @@ void compute_main(uint3 id : SV_DispatchThreadID) {
     uint2 full_extent;
     lit_hdr.GetDimensions(full_extent.x, full_extent.y);
     bounced_hdr[id.xy] = bounce_at(full_anchor(int2(id.xy), full_extent), full_extent);
-#elif POIMA_DIFFUSE_HALF_RESOLVE
-    bounced_hdr[id.xy] = resolve_at(int2(id.xy), extent);
 #else
     bounced_hdr[id.xy] = bounce_at(int2(id.xy), extent);
 #endif
 }
+#endif
