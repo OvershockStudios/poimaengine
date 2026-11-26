@@ -1,0 +1,313 @@
+{
+  "format": "poima.qualification-summary",
+  "version": 1,
+  "engine_checkpoint": "0.0.471",
+  "comparison_commit": "390ea4e09d736a3f714b6cdc0dd5a0f42927a287",
+  "scope": "Coverage-adjusted cutout images derived from standalone and embedded inputs, projected through Windows Vulkan and consumed by a relocated standalone game.",
+  "source_sha256": {
+    "CMakeLists.txt": "4329fe2f8b7837f905736620163159defe40da8b5993e9697b804ea94c8aa7d2",
+    "cmake/runtime.json.in": "328971c199065847d21273ea4328d0d9bee95b3881a17ff2897ad55a3fa34853",
+    "include/poima/assets.hpp": "9bc6f17e9baa06014500fd49dbef0d8c0703a04a89a41bd06eb88fef493e0d3d",
+    "include/poima/world.hpp": "bd7662b7e292a9a6476204579f97debe93ea67c6dc9e3ae139b6991b53e739c2",
+    "src/core.cpp": "18039c041925e2c46fc215b9788fefc7423f3405defcd8c496048215cabf578c",
+    "src/mcp.cpp": "465a2efc57746e645adb18431ea2ae0daeb6bf91467ee8e7abd2eea35a5139ea",
+    "src/model_codec.cpp": "021dfbc0c9114860a08fdd4cf2830f4444d881364dedc1455e6998add6beb7d9",
+    "src/project.cpp": "d782f9d0c82f06f5da445029db8f727293d6cc0d68ce7d3becd1e51762bcdd85",
+    "src/texture.cpp": "0134f590333c79a9c39165a029e4b38c65e035604618553bf4c498de7854bf5e",
+    "src/world.cpp": "bd394d445951be9aaf2fc2ae07eb40b1241d888ad58d9a26a1c6ecca6a2b5288",
+    "src/world_content.cpp": "97426f3ecf7dc9b46888c60b8990a2be120514a3880ed11f2afe045f4d537cd1",
+    "src/world_schema.cpp": "9583d61f64be10404a1283f7e4e3ba54c5613fbe517e1e5ea82840be61a3a7dc",
+    "src/world_schema_asset.cpp": "54eafa9bc9bb0aff990402cde8978138f5654a3a1da97395ca21500807708bac",
+    "tests/asset_references_contract.py": "f36fa8dee1f92cef848742b93ed162407e8b2256c0469ec12673e53d5abbab02",
+    "tests/contact_shadow_contract.py": "4f2bfa77484f9cf811bb5eb4b2ed02cc6ff7ff21bc871c11f3e548e26a083e1d",
+    "tests/cutout_mips_capture.py": "5fae1de9a71c40ea04e4118b6ec0318bc24b13a91c0c92a7be358fc15208c138",
+    "tests/scene_capture.py": "4ecb4d6fca9cc46cde70209ed8749547abd71356366361ca6c0f4f3b140761c1",
+    "tests/terrain_surface_layer_capture.py": "a6d757e290512ff15921b08f67b761903576aca9b10e8cca43ab50aa833c98de",
+    "tests/texture_fixture.py": "b9b157237cdf3a493278e4551c1e635c41c43cd4eeea59c0d6ca34acc0828fb0"
+  },
+  "windows_installed_sha256": {
+    "bin/poima.exe": "d1afbabd991bda7106c9df47fa07d22736024c0ae466280030e853de2b0ea1c2",
+    "bin/poima_desktop.dll": "72516d2b52278bad558c7d2b099d48c8a4fac293e7976798a9fa9d9596cee17b",
+    "runtime.json": "5d541870240fb2264f9bd5be310301f0c296327189f8d930213e814f928a73d8"
+  },
+  "unchanged_spirv_modules": 108,
+  "ubuntu": {
+    "suites": [
+      "world_foliage_contract",
+      "authoring_contract_identity",
+      "texture_native",
+      "world_texture_native",
+      "mcp_native",
+      "mcp_contract",
+      "project_contract",
+      "contact_shadow_contract",
+      "asset_contract",
+      "world_contract",
+      "asset_references_contract"
+    ],
+    "binary_sha256": "5b9a659dc65dfe07c65549181c8e8f6bcd74bad641839fb709d95b073c8e7533",
+    "regression_junit_sha256": "e9014f72304c00b5e47def07920eb428fa69af9ada641c541ad3a6a5a5a888c0",
+    "headless_report_sha256": "54c5c04cc7a112d649e122a4ac8eff91b856ed3c9de2a3a2b2372b797db307ba"
+  },
+  "cooked_images": {
+    "cooked_image": {
+      "alpha_threshold": 128,
+      "asset": "802f128d0641861c9593300b838a3ed2b292e2cb9d7389ca4399eb53c16049dd",
+      "bytes": 87753,
+      "color_space": "srgb",
+      "format": "poima.image.v2",
+      "mips": [
+        {
+          "bytes": 65536,
+          "covered_texels": 4096,
+          "height": 128,
+          "width": 128
+        },
+        {
+          "bytes": 16384,
+          "covered_texels": 1024,
+          "height": 64,
+          "width": 64
+        },
+        {
+          "bytes": 4096,
+          "covered_texels": 256,
+          "height": 32,
+          "width": 32
+        },
+        {
+          "bytes": 1024,
+          "covered_texels": 64,
+          "height": 16,
+          "width": 16
+        },
+        {
+          "bytes": 256,
+          "covered_texels": 16,
+          "height": 8,
+          "width": 8
+        },
+        {
+          "bytes": 64,
+          "covered_texels": 4,
+          "height": 4,
+          "width": 4
+        },
+        {
+          "bytes": 16,
+          "covered_texels": 1,
+          "height": 2,
+          "width": 2
+        },
+        {
+          "bytes": 4,
+          "covered_texels": 0,
+          "height": 1,
+          "width": 1
+        }
+      ]
+    },
+    "source_images": {
+      "image": "89fb969432c3876809d10f019913f98bf31921af0376a02f5a2f0d164ea353b7",
+      "model": "929ca9a30f9e3df8d68fdac11df59071b6ab20b0c036dfa4379a21bd2a6a4d75"
+    },
+    "odd_image": {
+      "alpha_threshold": 128,
+      "asset": "bb75232d39b2a5e983dfafb2033074921f5baf46430ef30ec5f2446b8d4bc23f",
+      "bytes": 352,
+      "color_space": "linear",
+      "format": "poima.image.v2",
+      "mips": [
+        {
+          "bytes": 140,
+          "covered_texels": 4,
+          "height": 5,
+          "width": 7
+        },
+        {
+          "bytes": 24,
+          "covered_texels": 1,
+          "height": 2,
+          "width": 3
+        },
+        {
+          "bytes": 4,
+          "covered_texels": 0,
+          "height": 1,
+          "width": 1
+        }
+      ]
+    }
+  },
+  "windows": [
+    {
+      "device": "AMD Radeon(TM) Graphics",
+      "lighting_path": "forward",
+      "report_sha256": "c15607528b79915e78899fac8de42957fba8b1adda572ba8ced3982f364fb9d4",
+      "frames": {
+        "original": "9337d7f390862a8ac4d65b325f3bbaa2d0eef9b7d60c774e9a51f54ac4c2dad9",
+        "prior-original": "9337d7f390862a8ac4d65b325f3bbaa2d0eef9b7d60c774e9a51f54ac4c2dad9",
+        "near": "9337d7f390862a8ac4d65b325f3bbaa2d0eef9b7d60c774e9a51f54ac4c2dad9",
+        "nearest-24": "a384846e75bd92ca59f8a8c2f94fdf4b756fae04a3dffdc85c43959eb7cb5934",
+        "nearest-48": "c0be54dc8e684239a8a761ad17fce2f906bd44e453ea316925d3aa5664ae8cde",
+        "trilinear": "04de987b7311aae3aa03e2630bf238bb689b34079698ed7dba09631f366e44f6",
+        "shadows-off": "76a15ad02f0987e12851de650a5b8216db9fbd21d61a5b07251ab429f672e985",
+        "shadows-on": "8d83fd0fc57127646dc29acf6c077b425ee66c585c3df0437a6e531ddf122d1e",
+        "relocated": "8d83fd0fc57127646dc29acf6c077b425ee66c585c3df0437a6e531ddf122d1e"
+      },
+      "nearest": {
+        "original": {
+          "mip": 0,
+          "ordinary": {
+            "tested": 55696,
+            "surviving": 14042
+          },
+          "adjusted": {
+            "tested": 55696,
+            "surviving": 13806
+          }
+        },
+        "near": {
+          "mip": 0,
+          "ordinary": {
+            "tested": 55696,
+            "surviving": 14042
+          },
+          "adjusted": {
+            "tested": 55696,
+            "surviving": 13806
+          }
+        },
+        "nearest-24": {
+          "mip": 2,
+          "ordinary": {
+            "tested": 1520,
+            "surviving": 0
+          },
+          "adjusted": {
+            "tested": 1520,
+            "surviving": 365
+          }
+        },
+        "nearest-48": {
+          "mip": 3,
+          "ordinary": {
+            "tested": 360,
+            "surviving": 0
+          },
+          "adjusted": {
+            "tested": 360,
+            "surviving": 90
+          }
+        }
+      },
+      "trilinear": [
+        {
+          "covered": 0,
+          "pixels": 1406
+        },
+        {
+          "covered": 130,
+          "pixels": 1406
+        }
+      ],
+      "shadow_pixels": [
+        {
+          "shadowed": 0,
+          "pixels": 676
+        },
+        {
+          "shadowed": 145,
+          "pixels": 676
+        }
+      ]
+    },
+    {
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "lighting_path": "deferred",
+      "report_sha256": "c1ba6aaaba83fe9232e3d915b64689980573499b9a16ffb632dd31cc04f0c0e2",
+      "frames": {
+        "original": "9337d7f390862a8ac4d65b325f3bbaa2d0eef9b7d60c774e9a51f54ac4c2dad9",
+        "prior-original": "9337d7f390862a8ac4d65b325f3bbaa2d0eef9b7d60c774e9a51f54ac4c2dad9",
+        "near": "9337d7f390862a8ac4d65b325f3bbaa2d0eef9b7d60c774e9a51f54ac4c2dad9",
+        "nearest-24": "82e478d5a9df03719e742e26f270eb341c5f880849e60acad9ca214b4e431b1b",
+        "nearest-48": "9ffc7f6a6bc62b5da230fb678373bdf8f12e0373265a4772396a4978db5daca7",
+        "trilinear": "1b652ad178a96b8cc19a1edb46a9461a79f6c314f52e9dc45623c1eee95d245a",
+        "shadows-off": "bfbe3fdf175dacab429b37681a237a0ad3c47e29461a3447fab2742fcb0fa532",
+        "shadows-on": "e0625a32493832264c43774f262b4a3f08a602580f353c377c1ea24dfcf8bf56",
+        "relocated": "e0625a32493832264c43774f262b4a3f08a602580f353c377c1ea24dfcf8bf56"
+      },
+      "nearest": {
+        "original": {
+          "mip": 0,
+          "ordinary": {
+            "tested": 55696,
+            "surviving": 14042
+          },
+          "adjusted": {
+            "tested": 55696,
+            "surviving": 13806
+          }
+        },
+        "near": {
+          "mip": 0,
+          "ordinary": {
+            "tested": 55696,
+            "surviving": 14042
+          },
+          "adjusted": {
+            "tested": 55696,
+            "surviving": 13806
+          }
+        },
+        "nearest-24": {
+          "mip": 2,
+          "ordinary": {
+            "tested": 1520,
+            "surviving": 0
+          },
+          "adjusted": {
+            "tested": 1520,
+            "surviving": 365
+          }
+        },
+        "nearest-48": {
+          "mip": 3,
+          "ordinary": {
+            "tested": 360,
+            "surviving": 0
+          },
+          "adjusted": {
+            "tested": 360,
+            "surviving": 90
+          }
+        }
+      },
+      "trilinear": [
+        {
+          "covered": 0,
+          "pixels": 1406
+        },
+        {
+          "covered": 133,
+          "pixels": 1406
+        }
+      ],
+      "shadow_pixels": [
+        {
+          "shadowed": 0,
+          "pixels": 676
+        },
+        {
+          "shadowed": 145,
+          "pixels": 676
+        }
+      ]
+    }
+  ],
+  "limits": [
+    "Two rigid cards with the same regular transparent pattern, fixed views and one directional shadow test.",
+    "Nearest-mip coverage is checked per pixel. The trilinear count measures this particular footprint and does not imply exact filtered coverage.",
+    "The 1-by-1 level rounds to a single texel decision. Temporal behavior and production forest cost remain outside this fixture."
+  ]
+}

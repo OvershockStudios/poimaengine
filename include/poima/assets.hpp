@@ -8,7 +8,11 @@
 namespace poima {
 struct MeshVertex { std::array<float,3> position{}, normal{}; std::array<float,2> uv{}; std::array<float,4> tangent{1,0,0,0}; };
 struct TextureMip { std::uint32_t width=0,height=0; std::vector<std::uint8_t> rgba; };
-struct TextureImage { bool srgb=false; std::vector<TextureMip> mips; };
+struct TextureImage {
+    bool srgb=false;
+    std::vector<TextureMip> mips;
+    std::uint8_t alpha_coverage_threshold=0;
+};
 struct TextureMap {
     std::shared_ptr<const TextureImage> image;
     int wrap_s=10497,wrap_t=10497,min_filter=9987,mag_filter=9729;
@@ -67,7 +71,7 @@ struct ModelAsset {
     std::vector<std::string> diagnostics;
 };
 std::shared_ptr<const TextureImage> decode_texture(std::span<const std::byte> bytes,bool srgb);
-std::vector<TextureMip> texture_mips(TextureMip base,bool srgb);
+std::vector<TextureMip> texture_mips(TextureMip base,bool srgb,std::uint8_t alpha_coverage_threshold=0);
 bool valid_texture_sampler(const TextureMap& map);
 void generate_tangents(MeshAsset& mesh);
 // Explicit import policy: repair only invalid frames on collapsed-UV triangles

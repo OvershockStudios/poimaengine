@@ -186,6 +186,7 @@ Reply capabilities() {
         ",\"surface_layer\":" + boolean(POIMA_RENDER_SMOKE != 0) +
         ",\"surface_layer_triplanar\":" + boolean(POIMA_RENDER_SMOKE != 0) +
         ",\"diffuse_transmission\":" + boolean(POIMA_RENDER_SMOKE != 0) +
+        ",\"alpha_coverage_images\":true" +
         ",\"material_displacement\":" + boolean(POIMA_RENDER_SMOKE != 0) +
         ",\"snow_material_displacement\":" + boolean(POIMA_RENDER_SMOKE != 0 && POIMA_SIMULATION != 0) +
         ",\"shadow_maps\":" + boolean(POIMA_RENDER_SMOKE != 0) +

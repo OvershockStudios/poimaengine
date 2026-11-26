@@ -60,6 +60,7 @@
     "surface_layer": @POIMA_RUNTIME_RENDER_SMOKE@,
     "surface_layer_triplanar": @POIMA_RUNTIME_RENDER_SMOKE@,
     "diffuse_transmission": @POIMA_RUNTIME_RENDER_SMOKE@,
+    "alpha_coverage_images": true,
     "material_displacement": @POIMA_RUNTIME_RENDER_SMOKE@,
     "project_post_effects": @POIMA_RUNTIME_RENDER_SMOKE@,
     "output_grade": @POIMA_RUNTIME_RENDER_SMOKE@,

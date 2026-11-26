@@ -1,8 +1,16 @@
 # Implementation status
 
-Updated 2026-11-26 for **0.0.470**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-11-26 for **0.0.471**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.471 cooks [coverage-adjusted cutout mipmaps](MATERIAL_ALPHA.md#preserve-cutout-coverage-at-a-distance)
+from standalone and embedded images. Windows Vulkan checks on AMD and NVIDIA
+reproduce the original near image and match the cooked coverage per pixel at
+two nearest-mip distances. In the trilinear comparison, the adjusted card
+covers about 9% of the measured pixels and the ordinary card covers zero.
+Both adapters reproduce the distant shadow in a relocated game.
+[Qualification results](evidence/m2-cutout-mips-471.json)
 
 Version 0.0.470 adds [diffuse transmission](FOLIAGE_SCATTER.md#light-leaves-from-behind)
 for double-sided dielectric materials. The forward and deferred fixtures

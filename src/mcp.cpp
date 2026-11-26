@@ -87,10 +87,10 @@ constexpr std::array review_methods{
     std::string_view("entity.query"), std::string_view("entity.get"), std::string_view("entity.world_transform"),
     std::string_view("world.asset.references"), std::string_view("world.ui.list"), std::string_view("world.ui.get")
 };
-constexpr std::array<std::string_view, 41> draft_methods{
+constexpr std::array<std::string_view, 42> draft_methods{
     "asset.animation.author", "asset.animation.bounds", "asset.animation.channel", "asset.animation.sample",
     "asset.animation.skin", "asset.audio.import", "asset.audio.inspect", "asset.catalog",
-    "asset.image.import", "asset.image.inspect", "asset.import", "asset.inspect", "asset.label",
+    "asset.image.cutout", "asset.image.import", "asset.image.inspect", "asset.import", "asset.inspect", "asset.label",
     "asset.mesh.extract_rigid", "asset.mesh.triangles", "asset.post-effect.import", "asset.provenance.create", "asset.provenance.inspect",
     "asset.source.inspect", "component.schema.import", "component.schemas",
     "entity.get", "entity.material", "entity.query", "entity.world_transform",

@@ -30,8 +30,10 @@ Json image_metadata(const TextureImage& image,std::string& binary) {
     for(const auto& mip:image.mips) { levels.push_back({{"width",mip.width},{"height",mip.height},{"bytes",mip.rgba.size()}});binary.append(reinterpret_cast<const char*>(mip.rgba.data()),mip.rgba.size()); }
     return {{"srgb",image.srgb},{"mips",levels}};
 }
-std::shared_ptr<const TextureImage> parse_image(const Json& image,Reader& reader,std::size_t& total_texture_bytes) {
+std::shared_ptr<const TextureImage> parse_image(const Json& image,Reader& reader,std::size_t& total_texture_bytes,
+    std::uint8_t alpha_coverage_threshold=0) {
     auto decoded=std::make_shared<TextureImage>();decoded->srgb=image.at("srgb");
+    decoded->alpha_coverage_threshold=alpha_coverage_threshold;
     const auto& levels=image.at("mips");require(levels.is_array() && !levels.empty() && levels.size()<=13,"Invalid texture mip count.");
     std::uint32_t previous_w=0,previous_h=0;
     for(const auto& level:levels) {
@@ -81,17 +83,30 @@ PbrMaterial parse_material(const Json& value,bool alpha) {
 }
 }
 std::string encode_image(const TextureImage& image) {
-    std::string binary;auto metadata=image_metadata(image,binary);metadata["version"]=1;const auto header=metadata.dump();
+    std::string binary;auto metadata=image_metadata(image,binary);
+    metadata["version"]=image.alpha_coverage_threshold ? 2 : 1;
+    if(image.alpha_coverage_threshold)metadata["alpha_coverage_threshold"]=image.alpha_coverage_threshold;
+    const auto header=metadata.dump();
     require(header.size()<=65536 && binary.size()<=32*1024*1024,"Image package exceeds limits.");
-    std::string result="POIMAI01";u32(result,static_cast<std::uint32_t>(header.size()));u32(result,static_cast<std::uint32_t>(binary.size()));return result+header+binary;
+    std::string result=image.alpha_coverage_threshold ? "POIMAI02" : "POIMAI01";
+    u32(result,static_cast<std::uint32_t>(header.size()));u32(result,static_cast<std::uint32_t>(binary.size()));return result+header+binary;
 }
 std::shared_ptr<const TextureImage> decode_image(const std::string& bytes) {
-    require(bytes.size()>=16 && bytes.size()<=32*1024*1024+65552 && bytes.substr(0,8)=="POIMAI01","Invalid image package header/size.");
+    const bool coverage=bytes.starts_with("POIMAI02");
+    require(bytes.size()>=16 && bytes.size()<=32*1024*1024+65552 && (coverage || bytes.starts_with("POIMAI01")),
+        "Invalid image package header/size.");
     Reader reader{bytes,8};const auto length=reader.integer(),binary=reader.integer();
     require(length<=65536 && std::size_t(length)+binary==bytes.size()-16,"Invalid image package lengths.");
     const auto metadata=Json::parse(bytes.begin()+16,bytes.begin()+16+length,[](int depth,Json::parse_event_t,Json&) { require(depth<=16,"Image metadata is too deeply nested.");return true; });
-    require(metadata.at("version")==1,"Unsupported image package version.");reader.offset=16+length;std::size_t total=0;
-    const auto image=parse_image(metadata,reader,total);require(reader.offset==bytes.size(),"Trailing image package bytes.");return image;
+    require(metadata.at("version")== (coverage ? 2 : 1),"Unsupported image package version.");
+    require(coverage==metadata.contains("alpha_coverage_threshold"),"Image coverage profile does not match its format.");
+    require(!coverage || (metadata.size()==4 && metadata.at("version").is_number_integer() && metadata.at("srgb").is_boolean()),
+        "Invalid coverage image metadata.");
+    const auto threshold=coverage ? count(metadata.at("alpha_coverage_threshold"),255) : 0;
+    require(!coverage || threshold>0,"Invalid alpha coverage threshold.");
+    reader.offset=16+length;std::size_t total=0;
+    const auto image=parse_image(metadata,reader,total,static_cast<std::uint8_t>(threshold));
+    require(reader.offset==bytes.size(),"Trailing image package bytes.");return image;
 }
 std::string encode_model(const ModelAsset& model) { return encode_model_with_importer(model,{}); }
 std::string encode_model_with_importer(const ModelAsset& model,const std::string& importer) {
@@ -136,7 +151,10 @@ std::string encode_model_with_importer(const ModelAsset& model,const std::string
         }
         metadata["animation_bytes"]=binary.size()-begin;
     }
-    for(const auto& image:model.images)metadata["images"].push_back(image_metadata(*image,binary));
+    for(const auto& image:model.images) {
+        require(!image->alpha_coverage_threshold,"Use a standalone package for coverage-adjusted images.");
+        metadata["images"].push_back(image_metadata(*image,binary));
+    }
     for(const auto& n:model.nodes) { metadata["nodes"].push_back({{"name",n.name},{"parent",n.parent},{"position",n.position},{"rotation",n.rotation},{"scale",n.scale},{"primitives",n.primitives}});if(animated)metadata["nodes"].back()["skin"]=n.skin; }
     const auto header=metadata.dump();require(header.size()<=8*1024*1024 && binary.size()<=64*1024*1024-16-header.size(),"Model package exceeds size limits.");
     std::string result=alpha ? "POIMAM05" : animated ? "POIMAM04" : "POIMAM03";u32(result,static_cast<std::uint32_t>(header.size()));u32(result,static_cast<std::uint32_t>(binary.size()));

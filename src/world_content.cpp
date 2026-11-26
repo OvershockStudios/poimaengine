@@ -182,6 +182,7 @@ FrozenContent freeze_world_content(const Json& source, const fs::path& directory
     };
     auto image=[&](const std::string& id) {
         const auto value=assets.image(directory,id);
+        result.needs_alpha_coverage_images|=value->alpha_coverage_threshold!=0;
         add(id,".pimage",assets.images.at(id).bytes);
         return value;
     };
@@ -346,10 +347,8 @@ FrozenContent freeze_world_content(const Json& source, const fs::path& directory
     component_checked([&]{ validate_runtime_surface_wetness(definition); });
     result.needs_surface_mark_masks=!definition.surface_mark_profiles.empty();
     resolve_ui_images(definition.ui,directory,assets);
-    for(const auto& element:definition.ui)if(element.style && element.style->image) {
-        const auto& id=element.style->image->asset;
-        add(id,".pimage",assets.images.at(id).bytes);
-    }
+    for(const auto& element:definition.ui)if(element.style && element.style->image)
+        (void)image(element.style->image->asset);
     if(source.contains("navigation")) {
         auto checked=resolve_navigation_binding(source, directory);
         definition.navigation=checked.definition;

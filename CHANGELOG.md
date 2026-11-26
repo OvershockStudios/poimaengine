@@ -2,6 +2,11 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.471
+
+- Cook coverage-adjusted mipmaps for thin foliage and other alpha cutouts.
+  [Cutout mip cooking](docs/MATERIAL_ALPHA.md#preserve-cutout-coverage-at-a-distance)
+
 ## 0.0.470
 
 - Light thin PBR materials such as foliage from behind with shadow-aware

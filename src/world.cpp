@@ -134,7 +134,7 @@ std::string read(const fs::path& path) {
     require(bytes.size() <= max_document_bytes, "World document exceeds 16 MiB.");
     return bytes;
 }
-constexpr std::array authoring_methods{"component.schema.import","world.reference","world.transact","world.undo","world.redo","asset.import","asset.image.import","asset.audio.import","asset.post-effect.import","asset.label","input.transact","settings.transact","development.compile","development.profiles","development.publish","development.export","development.verify","development.candidate","project.candidate.retain","development.jobs","development.inspect","development.diagnostics","development.cancel","development.forget","project.inspect","project.gameplay.adopt","project.source.read","project.source.write","project.verification.read","project.verification.write","asset.material.generate","asset.material.job","asset.material.jobs","asset.material.cancel","asset.material.forget","world.navigation.bake","asset.provenance.create","asset.animation.author","asset.mesh.extract_rigid","world.terrain.inspect","world.terrain.cook","world.foliage.plan","world.water.plan","world.water.cook"};
+constexpr std::array authoring_methods{"component.schema.import","world.reference","world.transact","world.undo","world.redo","asset.import","asset.image.import","asset.image.cutout","asset.audio.import","asset.post-effect.import","asset.label","input.transact","settings.transact","development.compile","development.profiles","development.publish","development.export","development.verify","development.candidate","project.candidate.retain","development.jobs","development.inspect","development.diagnostics","development.cancel","development.forget","project.inspect","project.gameplay.adopt","project.source.read","project.source.write","project.verification.read","project.verification.write","asset.material.generate","asset.material.job","asset.material.jobs","asset.material.cancel","asset.material.forget","world.navigation.bake","asset.provenance.create","asset.animation.author","asset.mesh.extract_rigid","world.terrain.inspect","world.terrain.cook","world.foliage.plan","world.water.plan","world.water.cook"};
 class World {
     profiling::Service profiler_;
     frame_performance::Service performance_;
@@ -637,6 +637,7 @@ public:
             if(content.needs_surface_layer)result["needs_surface_layer"]=true;
             if(content.needs_surface_layer_triplanar)result["needs_surface_layer_triplanar"]=true;
             if(content.needs_diffuse_transmission)result["needs_diffuse_transmission"]=true;
+            if(content.needs_alpha_coverage_images)result["needs_alpha_coverage_images"]=true;
             if(content.needs_material_displacement)result["needs_material_displacement"]=true;
             if(content.needs_water_rain)result["needs_water_rain"]=true;
             if(content.needs_water_ripples)result["needs_water_ripples"]=true;
@@ -778,12 +779,42 @@ public:
                 require(params.at("color_space")=="srgb" || params.at("color_space")=="linear","Image color space must be srgb or linear.");
                 auto source=fs::path(std::u8string(text.begin(),text.end()));if(source.is_relative())source=path_.parent_path()/source;
                 loaded=store_image_asset(asset_directory(),source,params.at("color_space")=="srgb");
+            } else if(method=="asset.image.cutout") {
+                fields(params,{"asset","image","alpha_threshold"},{"asset","alpha_threshold"});
+                const auto& asset=params.at("asset");
+                require(asset.is_string() && valid_asset_id(asset.get_ref<const std::string&>()),"Invalid image asset ID.");
+                const auto threshold=revision(params.at("alpha_threshold"));
+                require(threshold>0 && threshold<=255,"Cutout alpha_threshold must be an integer in [1,255].");
+                std::shared_ptr<const TextureImage> source;
+                if(params.contains("image")) {
+                    const auto index=revision(params.at("image"));
+                    require(index<=255,"Model image index must be in [0,255].");
+                    const auto model=read_model_asset(asset_directory(),asset).model;
+                    require(index<model->images.size(),"Model image index is unavailable.",-32050);
+                    source=model->images.at(static_cast<std::size_t>(index));
+                } else source=read_image_asset(asset_directory(),asset).image;
+                const auto cutoff=static_cast<std::uint8_t>(threshold);
+                const TextureImage cooked{source->srgb,texture_mips(source->mips.front(),source->srgb,cutoff),cutoff};
+                loaded=store_cooked_image(asset_directory(),encode_image(cooked));
             } else {
                 fields(params,{"asset"},{"asset"});require(params.at("asset").is_string() && valid_asset_id(params.at("asset").get<std::string>()),"Invalid image asset ID.");
                 loaded=read_image_asset(asset_directory(),params.at("asset"));
             }
-            Json mips=Json::array();for(const auto& mip:loaded.image->mips)mips.push_back({{"width",mip.width},{"height",mip.height},{"bytes",mip.rgba.size()}});
-            return {{"asset",loaded.id},{"format","poima.image.v1"},{"bytes",loaded.bytes},{"color_space",loaded.image->srgb ? "srgb" : "linear"},{"mips",mips}};
+            const auto threshold=loaded.image->alpha_coverage_threshold;
+            Json mips=Json::array();
+            for(const auto& mip:loaded.image->mips) {
+                Json level={{"width",mip.width},{"height",mip.height},{"bytes",mip.rgba.size()}};
+                if(threshold) {
+                    std::size_t covered=0;
+                    for(std::size_t i=3;i<mip.rgba.size();i+=4)covered+=mip.rgba[i]>=threshold;
+                    level["covered_texels"]=covered;
+                }
+                mips.push_back(std::move(level));
+            }
+            Json result={{"asset",loaded.id},{"format",threshold ? "poima.image.v2" : "poima.image.v1"},
+                {"bytes",loaded.bytes},{"color_space",loaded.image->srgb ? "srgb" : "linear"},{"mips",mips}};
+            if(threshold)result["alpha_threshold"]=threshold;
+            return result;
         } catch(const Error&) { throw; }catch(const std::exception& error) { throw Error(-32050,error.what()); }
     }
     Json import_post_effect(const Json& params) const {
@@ -866,7 +897,8 @@ public:
         if(method.starts_with("asset.animation."))return animation_dispatch(method,params);
         if(method=="asset.audio.import" || method=="asset.audio.inspect")return audio_asset_dispatch(method,params);
         if(method=="asset.post-effect.import")return import_post_effect(params);
-        if(method=="asset.image.import" || method=="asset.image.inspect")return image_dispatch(method,params);
+        if(method=="asset.image.import" || method=="asset.image.inspect" || method=="asset.image.cutout")
+            return image_dispatch(method,params);
         if(method=="asset.source.inspect")return source_model_inspection(params,path_);
         return model_asset_dispatch(method,params,path_,asset_directory());
     }

@@ -16,6 +16,10 @@ Images are stored beside models in `<world>.assets/<hash>.pimage`. Packages cont
 
 The image profile remains PNG/JPEG, 4096 per dimension, four million pixels, 32 MiB encoded source and 32 MiB cooked mip payload. The independent decoder allocation budget is 128 MiB; referenced model and image packages share a 256 MiB observation/runtime-construction budget. These stage bounds are not a hard process-memory ceiling.
 
+Use [cutout mip cooking](MATERIAL_ALPHA.md#preserve-cutout-coverage-at-a-distance)
+to derive a coverage-adjusted image from an existing standalone or embedded
+texture. Its own package and inspection record carry the reference cutoff.
+
 ## Override texture slots
 
 `PbrTextures` is an optional component. Use ordinary `component.set` transactions, for example:

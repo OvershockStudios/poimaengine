@@ -20,6 +20,10 @@ void add_asset_method_schemas(Json& result, const Json& id, const Json& rev,
         {"source","expected_sha256"});
     methods["asset.post-effect.import"]["description"]="Admit a local .poimapost file using its whole-file SHA-256 and publish the exact reviewed bytes in this world's asset store. Returns the asset, effect ID, artifact byte count, and SPIR-V word count. Import preserves the authored revision.";
     methods["asset.image.inspect"]=object_schema({{"asset",asset_id}}, {"asset"});
+    methods["asset.image.cutout"]=object_schema({{"asset",asset_id},
+        {"image",{{"type","integer"},{"minimum",0},{"maximum",255}}},
+        {"alpha_threshold",{{"type","integer"},{"minimum",1},{"maximum",255}}}},{"asset","alpha_threshold"});
+    methods["asset.image.cutout"]["description"]="Cook coverage-adjusted RGBA8 mips from an existing standalone image, or an embedded model image selected by image index. Mip zero stays byte-exact. Alpha threshold is an inclusive byte value; returned mip rows report covered_texels. The new standalone asset preserves the authored revision.";
     const Json reference_pose={{"oneOf",Json::array({
         object_schema({{"kind",{{"const","rest"}}}},{"kind"}),
         object_schema({{"kind",{{"const","sample"}}},{"clip",{{"type","integer"},{"minimum",0},{"maximum",255}}},

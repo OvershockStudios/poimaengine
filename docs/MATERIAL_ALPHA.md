@@ -78,6 +78,45 @@ members (inherit), null members (disable) and explicit asset references.
 Export requires the runtime's engine version to match the exporter exactly;
 an older installed runtime is rejected before bundle staging.
 
+## Preserve cutout coverage at a distance
+
+Cook a second image from an existing asset with `asset.image.cutout`:
+
+```json
+{"asset":"<cooked image SHA-256>","alpha_threshold":128}
+```
+
+For a texture embedded in a model, pass the model's hash as `asset` and
+the zero-based image index as `image`. Find the index with
+`asset.inspect` and its `images` section. For either source, the operation
+works with the cooked asset alone. It creates a new `POIMAI02` image and
+keeps mip zero byte-exact. Lower mips filter RGB in linear light with alpha
+weighting, then adjust alpha toward the original number of covered texels
+per unit area. Equal-alpha texels use a deterministic spatial tie break.
+
+Set `alpha_threshold` to an inclusive byte value from 1 to 255. For a
+positive opacity and a cutoff in `(0, opacity]`, use
+`ceil(255 * alpha_cutoff / opacity)` as the reference. The usual material
+cutoff of 0.5 at opacity 1 uses 128. Re-cook if that reference changes.
+Assign the returned asset to `PbrTextures.base_color` through a normal
+guarded transaction and keep a mipmapped minification filter.
+
+`asset.image.inspect` reports the threshold and covered texels per level.
+The target rounds to a whole texel and can be lower when filtered alpha
+rounds to zero. The count describes texel centers. Bilinear and trilinear
+sampling can change the number of surviving screen pixels between levels.
+The original texture and scene revision remain available for comparison.
+
+A project containing a coverage-adjusted image requires
+`features.alpha_coverage_images` in its export runtime. Existing imports
+and packages keep their previous formats. [Qualification results](evidence/m2-cutout-mips-471.json)
+
+Run `python3 tests/cutout_mips_capture.py POIMA --headless --output DIRECTORY`
+to verify the cooked bytes and inspection records. On Windows, replace
+`--headless` with `--runtime-root RUNTIME --gpu INDEX` for the native
+distance, shadow and relocated-bundle checks. Select `--lighting-path deferred`
+to exercise the deferred path.
+
 ## Rendering and shadows
 
 The shared alpha test applies before writing forward color, deferred material
@@ -128,9 +167,9 @@ Physics and weapon queries use collision geometry. A texture hole does not cut
 a hole in a triangle collider. Author actual geometric apertures or suitable
 query collision for gameplay that must pass through a grille.
 
-This is hard clipping, including at 4× MSAA. Alpha-to-coverage, coverage-aware
-mipmap generation, blended transparency, wind and dense-foliage rendering are
-separate work. Ordinary filtered alpha mips can lose coverage at distance.
+This is hard clipping, including at 4× MSAA. Alpha-to-coverage, blended
+transparency and dense-foliage performance remain separate work. Ordinary
+filtered alpha mips can lose coverage at distance.
 Geometric motion products do not establish reconstruction acceptance or masked
 temporal image quality. A tiny cutout fixture is not a foliage performance or
 production asset-quality qualification.

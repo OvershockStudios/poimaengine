@@ -275,6 +275,8 @@ paths and keep draw and texture budgets visible.
 [Diffuse transmission](FOLIAGE_SCATTER.md#light-leaves-from-behind) lights
 thin, double-sided materials from behind while preserving cutout depth and
 shadow occlusion.
+[Cutout mip cooking](MATERIAL_ALPHA.md#preserve-cutout-coverage-at-a-distance)
+keeps more of the original leaf coverage as the texture recedes.
 Qualify shared edges, culling bounds, silhouettes, shadow and motion parity,
 LOD transitions, and predictable hardware fallbacks. Keep collision and
 gameplay queries tied to the declared authored geometry.
